@@ -11769,6 +11769,9 @@ Nothing is wrong with the drawing - it is just not laid out for the paper it is 
   of each text (the `Frame.blockId` is already there) and refuse a text outside its own frame;
   note that this changes a ported module and would need a divergence. For (b): nothing - it needs
   a decision first.
+- **ROUND 2 OF TASK 15: clause (a) IS NOT ITS OWN FINDING AND IS SUPERSEDED BY G212**, which
+  measures the same missing invariant at two more scales and carries the consolidated criterion.
+  Read (a) there; it is left here because this entry's narrative is what found it.
 
 ### G166 - perturbed and restored: making `staleFiles` compare mtimes turns two tests red, and the one the brief names reports a hand-edited file with a FRESH mtime as current
 
@@ -14725,14 +14728,25 @@ stated mechanism. The two added:
   `mechanismFor` are read by nobody: **a rail drawn only as a global label passes all three of the
   brief's clauses**, and spec §3.4's third criterion is exactly that case.
 
-- **Found** 2026-10-20, Task 15, Steps 1-3.
+**ROUND 2: THE CROSSING-WITH-NEITHER CLAUSE WAS PER-SET AND IS NOW PER-SHEET, and the difference
+is the whole usefulness of it.** `drawnWith` unions a net's representation over every drawing, so
+the clause asked *"is this net drawn ANYWHERE"* and fired only when the answer was nowhere.
+`[RAN]` on the three-sheet `SIG` fixture through the real `generate`: stripping s3's label alone
+reported **nothing**; stripping s2's and s3's reported **nothing**; only stripping all three
+fired. **The likely instance - one sheet's piece left unrepresented and electrically orphaned
+while the other sheets carry the net - was invisible.** The clause now asks it of every sheet
+carrying a pin of the net and names the sheet, and the three cases above report 1, 2 and 3.
+
+- **Found** 2026-10-20, Task 15, Steps 1-3; the per-sheet correction at round 2, by the review.
 - **Evidence** `tests/schgen/render/cross-sheet.kicad.test.ts`, which drives each clause over real
   generated drawings. Checks that could have failed: a rail's power symbols replaced by global
   labels reports *"net GND is a \"declared-rail\" connection, whose one authoritative mechanism is
   \"power-symbol\", and it is drawn with \"global-label\""*; the unperturbed drawings report
   nothing. `unmappedClasses` is driven with a table missing an entry and with the shipped table,
   and only the first reports.
-- **Verified** CONFIRMED - this writer wrote the module and the tests and ran them.
+- **Verified** CONFIRMED for the decision and for the per-sheet fix - this writer wrote the
+  module and the tests and ran them. **RELAYED for the discovery of the per-set weakness**,
+  which is the round-2 review's, driven here before it was changed.
 - **Why it is open** it is a DECISION recorded so it can be disputed, not a defect. The reading
   above is the arguable part: a reader who thinks §1.6 meant one mechanism per SHEET would refuse
   this design, and the spec's revision-4 note is the evidence that it does not.
@@ -14787,8 +14801,13 @@ Spec §1.9 and plan decision **D9** both leave open *"how seam B chooses among n
 positions"*. Task 15 owns that choice. What `composeBlocks` implements:
 
 > **An interface port attaches at the block's own `Anchor` for that net, translated by the offset
-> the packing gave its frame, and nowhere else. A declared side the drawn anchor does not sit on is
-> a refusal, not an instruction to move it.**
+> the packing gave its frame, and nowhere else. A declared side the anchor's position within the
+> block's own extent does not put it on is a refusal, not an instruction to move it.**
+
+**ROUND 2 CORRECTED THE SECOND SENTENCE, AND THE CORRECTION IS G210's.** Round 1 compared the
+anchor's `side` - a DIRECTION its glyph points - against the declaration's EDGE. It now derives
+the edge from the anchor's position within `anchorExtent(layout)` (`edgesOfAnchor`), a corner
+lies on two edges and satisfies either, and `pinSideOfAnchor` is deleted rather than replaced.
 
 **THE REASON IS §1.9's OWN CONTRACT AND NOT A SHORTAGE OF IMAGINATION.** An `Anchor` is where a
 block's layout brings a net to its boundary, and the wire that reaches it is inside the block.
@@ -14853,10 +14872,21 @@ blocks with no geometry, where `negotiable` is still the only true claim.
 **AND THE DECLARATION OVERSTATES THE FREEDOM VISIBLY IN SIX OF THE TEN.** `BASE` and `COLLECTOR` are
 declared `sides: [left, right]` - two acceptable edges - and the geometry permits exactly one.
 
-**G153 NAMES THE THUMB ON THE SCALE AND IT IS STILL THERE**: `negotiablePort` is a one-call helper
-and there is no `fixedPort` beside it, so declaring a fixed port means writing the `InterfacePort`
-literal by hand. That asymmetry did not cause this - no authoring file was revisited at all - but it
-is what a later writer will meet when acting on this entry.
+**ROUND 2: THE FALSE CLAIM IS NOT ONLY IN `position`, AND THE OTHER HALF IS IN THE FIELD §1.9
+MAKES CARRY IT.** `negotiablePort` generates a `why` ending *"The position within that edge is
+seam B's, because this block declares no template and so has no internal geometry to fix it."*
+**That sentence is false for all ten of these ports**: the block has internal geometry, it is
+drawn, and the position is fixed by it. `InterfacePort.why` is required non-blank precisely
+because a position is a claim, so a stale `why` is the same defect as a stale `position` and is
+the one a reader meets first.
+
+**G153's THUMB ON THE SCALE IS DOING WORK HERE, AND ROUND 1's "it did not cause this" IS
+WITHDRAWN.** There is no `fixedPort` anywhere and `negotiablePort` is the only helper; **17 files
+call it**, and `tests/schgen/__fixtures__/composed.ts` synthesises the whole of `mini`'s 33-port
+interface through it. So it is not merely that a later writer will meet the asymmetry: **every
+port in every measurement in G205, G206 and G210 is produced by that one helper's rule rather
+than by an authored declaration**, with a single exception (`mini`'s `FLASH` `3V3`, declared as a
+literal at round 2). One helper, one rule, and no second way to write a port.
 
 - **Found** 2026-10-20, Task 15, Step 5a.
 - **Evidence** the census output for the declared half; for the measured half, `blockContent` run
@@ -14868,12 +14898,20 @@ is what a later writer will meet when acting on this entry.
 - **Verified** CONFIRMED - this writer ran the census, the per-block layout dump and the tests.
 - **Why it is open** the declarations now carry a claim the geometry contradicts for five blocks,
   and nothing refuses it.
-- **What would settle it** **CRITERION: a block that has been drawn declares `fixed` for every
-  interface port its layout gives exactly one anchor.** **MECHANISM, untried:** a check comparing
-  each declared `position` against the number of anchors the block's realised layout draws for that
-  net, refusing `negotiable` where there is exactly one - note that it can only run on a block that
-  draws, so it would report nothing for the other seven, and a check that is silent for 7 of 12
-  needs to say so.
+- **What would settle it** **CRITERION: a block that has been drawn declares `fixed`, with a true
+  `why`, for every interface port its layout gives exactly one anchor.**
+  **AND ROUND 1's PROPOSED MECHANISM IS WITHDRAWN AS AN INVERSION, which is the part of this
+  entry a later reader most needs.** It proposed comparing each declared `position` against the
+  anchors **the block's realised ELK layout draws**. For these five blocks that makes the agent's
+  own artifact the criterion for the declaration the artifact is judged against - `CLAUDE.md`'s
+  governing invariant, wearing a measurement's clothes. **The legitimate sources for an authored
+  `fixed` and its `sides` are the ones already reviewed:** the part's own library pin sides
+  (`pinSidesFor` / `sideOfPin`, read off the symbol's `(at x y angle)`), or, for a block that
+  declares a template, that template's anchor. **Reading a side off a reviewed ported template is
+  reading someone else's artifact and is fine; reading it off the backend under test is not.**
+  **MECHANISM, untried, under that constraint:** derive the candidate sides from the symbol's own
+  pin geometry and refuse a declaration that names an edge no pin of the block's boundary net sits
+  on - which needs the symbols, so it belongs in `authoring-checks.ts` and not in seam B.
 
 ### G207 - BOTH PACKINGS MEASURED, SIDE BY SIDE, WITH NO PREFERENCE EXPRESSED - and the first thing the numbers say is that no packing changes how much ink is on the page
 
@@ -14932,10 +14970,21 @@ here *is the finding*.
   here"* asserts the two extents DIFFER and the two ink figures AGREE, so a packer that silently
   returned the other's positions would fail it.
 - **Verified** CONFIRMED - this writer ran both packers, exported, converted and read both pages.
+**ROUND 2: THE ELK PACKING IS IN PRODUCTION WHILE THE QUESTION IS OPEN, AND THAT BELONGS IN THIS
+ENTRY RATHER THAN ONLY IN A REPORT.** `generate` runs `sheetPackPrePass` -> `packSheet`, and the
+selection rule - stated once, in `tools/schgen/elk/sheet-layout.ts`, and mandated by Task 15's
+brief - sends any sheet with an inter-frame edge to ELK. **So `mini`'s signal sheet now emits as
+the ELK page: the page this entry records a preference against.** That is not a rule violation -
+the brief required the mechanical selection - but *"the shipped page changed shape to the one the
+writer would rather not read, and nobody has ruled on (b)"* is exactly the state this entry
+exists to carry, and round 1 left it in a report that `.superpowers/` gitignores.
+
 - **Why it is open** G165's criterion (b) is unanswered and this entry does not answer it. It adds
-  the numbers the decision needs and one reader's preference, both of which were missing.
+  the numbers the decision needs and one reader's preference, both of which were missing. **And
+  the decision now has a shipped artifact riding on it.**
 - **What would settle it** **an OWNER DECISION**, which is what G165 says. The numbers above are
-  what there is to decide on.
+  what there is to decide on. **If the answer is "report it rather than pack it better", the
+  change is one line in `packSheet` and the ELK packer stays as a measured alternative.**
 
 ### G208 - MEASURED: seam B draws NO wire and adds NO crossing, so §1.1's 6.1x upper bound is not spent on seam B's own geometry at all - what composition costs is glyphs and page area
 
@@ -14971,8 +15020,11 @@ drawing already. **The cost that remains is page area and eye-travel, not ink.**
 
 - **Found** 2026-10-20, Task 15, Step 5a.
 - **Evidence** the table; `tests/schgen/render/compose.test.ts`'s *"spec §3.4 on a composed sheet"*,
-  which asserts every wire falls inside exactly one frame box and that the drawing has wires at all,
-  so the zero is not an empty-set pass. For the frame disjointness, `frameBoxOverlaps` over both
+  which asserts **both endpoints** of every wire fall inside exactly one frame box and that the
+  drawing has wires at all, so the zero is not an empty-set pass. (**Round 1 tested only endpoint
+  `a`**, which is weaker than the claim this entry carries; the review confirmed the claim true for
+  both before it was strengthened.) A further check that could have failed: a point outside every
+  frame is reported as held by none. For the frame disjointness, `frameBoxOverlaps` over both
   packings of all three content lists, with a driven case that reports an overlap and a driven case
   of two frames that merely touch and reports none.
 - **Verified** CONFIRMED - this writer ran every figure.
@@ -15007,7 +15059,13 @@ property of a block's interior and only of that.**
 
 - **Found** 2026-10-20, Task 15, Steps 5 and 6.
 - **Evidence** the per-block tally above, computed over the composed layouts under both packings,
-  beside G200's own table; and the sheet-scale tally over `mini/signal`. A check that could have
+  beside G200's own table; and the sheet-scale tally over `mini/signal`. **ROUND 2 PUT THE
+  MEASURE IN A COMMITTED FILE**: `shapeMeasures` in `lib/schgen/render/compose.ts`, asserted
+  against G200's six figures by `tests/schgen/render/compose.test.ts`, so a later reader can
+  re-run it. Round 1's figures were computed in a scratch script and were the only number in
+  these entries nobody else could reproduce. The sheet-scale vacuity is asserted there too, with
+  both halves: `mini`'s eleven template-drawn parts occupy **5** distinct x in their own frames
+  and **11** once the frames are placed. A check that could have
   failed: `tests/schgen/render/compose.test.ts`'s *"composition never alters a block's interior,
   under either packer"* asserts `interiorDrift` is empty over five blocks under both packings, and
   the Step 7 perturbation that nudges one part by one grid step turns it red naming every block and
@@ -15021,56 +15079,100 @@ property of a block's interior and only of that.**
   block path, and a later divergence between the two tables is worth investigating before it is
   explained.
 
-### G210 - `composeBlocks` REFUSES 8 of the ported `mini` design's 33 declared interface ports, and the disagreement is between Task 9's sides rule and the ported templates' anchors - an OWNER QUESTION
+### G210 - REWRITTEN AT ROUND 2 AND THE REWRITE INVERTS IT: six of round 1's eight refusals were a CATEGORY ERROR IN THE CHECK, not a clash between a rule and a template
 
-Spec §1.9 requires seam B to honour a port's declared `sides`: *"a negotiable one is chosen among
-the declared acceptable sides and nowhere else"*. `composeBlocks` does, and refuses otherwise.
-`[RAN]` Over the only multi-block sheets in the repository that compose:
+**ROUND 1 RECORDED AN OWNER QUESTION THAT DID NOT EXIST.** It reported that `composeBlocks` refused
+8 of the ported `mini` design's 33 declared interface ports, concluded that Task 9's sides rule and
+the ported templates' anchor placement were in conflict, and handed the owner a choice between
+editing four templates, rewriting the rule, or amending spec §1.9. **The entry is replaced rather
+than softened**, because as written it bought one of those three for a defect in fifteen lines of
+this task's own code.
 
-| sheet | declared ports | refused | the disagreement |
+**THE DEFECT: A DIRECTION COMPARED AGAINST AN EDGE.** `Anchor.side` is a `Side`, and
+`lib/schgen/render/block-types.ts` says what it is - *"`side` points away from the circuit"* - a
+**direction**, consumed by `anchorsToSymbols` -> `powerRotation` to rotate a glyph.
+`InterfacePort.sides` is a `PinSide`, and spec §1.9 says what it is - *"which sides of the block's
+drawn extent a given interface port may be reached from"* - an **edge**.
+**`lib/schgen/rules/pin-sides.ts` already states that these are two quantities**: *"that module says
+up/down because it is describing a DIRECTION in the library frame; a block interface is described by
+the EDGE a pin sits on."* Round 1 wrote `pinSideOfAnchor`, a second copy of that module's
+`SIDE_NAMES`, and compared the renamed direction against the edge.
+
+**RE-MEASURED EDGE AGAINST EDGE.** Each anchor's edge is now derived from its position within the
+block's own extent (`edgesOfAnchor`, `anchorExtent`), with a corner lying on two edges and
+satisfying either:
+
+| port | glyph direction | edge it is on | declared | round 1 | round 2 |
+| --- | --- | --- | --- | --- | --- |
+| `REG` `3V3` | right | **top** | `[top]` | refused | satisfied |
+| `REG` `VIN` | left | **top** | `[top]` | refused | satisfied |
+| `J_IN` `VIN` | left | **top** | `[top]` | refused | satisfied |
+| `J_IN` `GND` | left | **bottom** | `[bottom]` | refused | satisfied |
+| `XTAL` `XI` | up | **left** | `[left,right]` | refused | satisfied |
+| `XTAL` `XO` | up | **right** | `[left,right]` | refused | satisfied |
+| `FLASH` `3V3` x2 | left | **left** | `[top]` | refused | **genuine** |
+
+**Six of eight were the check's error. One port, two anchors, is a real disagreement.**
+
+**AND THE REFERENCE EXTENT IS `anchorExtent` AND NOT `FrameContent.box`, WHICH IS A SECOND
+MEASURED CORRECTION INSIDE THIS ONE.** The frame box is the union of the block's bodies, wire ends
+**and its drawn boundary glyphs**, and a glyph extends outward from its own anchor - so the box's
+edge in a glyph's direction is pushed past that anchor by the glyph's own length, and asking which
+edge the anchor is nearest compares it against a box it inflated itself. `[RAN]` against the full
+box, `J_OUT`'s seven anchors - one column on the connector's left, every one declared
+`[left, right]` - read as `top`, `top`, `top`, `top/bottom`, `bottom`, `bottom`, `bottom`: **seven
+fresh false refusals**, the same family of mistake as reading an allowed offset off the data under
+test (**G214**). Against the extent over placements, wire ends and anchors, every one reads `left`.
+
+**THE ONE GENUINE CASE, AND THE TEMPLATE WINS.** `mini`'s `FLASH` is drawn by the bus renderer,
+which fans `Memory_Flash:W25X40CLSS`'s pins out on the side the symbol's own `(at x y angle)` puts
+them: `~{WP}` and `~{HOLD}` are left-hand pins, so two of the block's three `3V3` anchors are on its
+left edge, while `negotiablePort`'s rule says a supply rail attaches at the top. **Spec §3.1 makes
+the reviewed human arrangement the thing a backend is measured against, §1.5 step 1 is *"an explicit
+orientation in a reviewed template wins"*, and `negotiablePort`'s own `why` scopes its rule to a
+block *"that declares no template"* - which this is not.** So the port is declared as a literal with
+the symbol's pin geometry as its reason. **No template edited, no pinned geometry test moved, no
+spec amendment.** Both `mini` sheets then compose with every port attached.
+
+**AND THE ELK-DRAWN BLOCKS NOW REFUSE, WHERE ROUND 1 REPORTED ZERO - WHICH WAS NEAR-STRUCTURAL.**
+Round 1 offered *"the same function composes the five ELK-drawn blocks with 0 refusals"* as evidence
+that the check was not refusing everything. **It was not independent evidence.** **G193** records
+that an ELK anchor's `side` is *"taken from the reviewed rule and not from ELK's route"*, so the
+comparison had `negotiablePort`'s rule on both sides of it. Asking where ELK actually put the net:
+
+| block | port | declared | edge ELK put it on |
 | --- | --- | --- | --- |
-| `mini/power` | 8 | **2** | `REG`: `3V3` and `VIN` are declared `sides: [top]`, and the `regulator` template brings them out **right** and **left** |
-| `mini/signal` | 25 | **6** | `J_IN`: `VIN` declared `[top]`, `GND` declared `[bottom]`, both brought out **left** by `connector-fanout`; `XTAL`: `XI` and `XO` declared `[left, right]`, both brought out **up** by `crystal`; `FLASH`: `3V3` declared `[top]`, brought out **left**, twice |
+| `tp-leg-feedback` | `COLLECTOR` | `[left, right]` | **top** |
+| `tp-leg-lower-a` | `BASE` | `[left, right]` | **top** |
+| `tp-leg-lower-b` | `BASE` | `[left, right]` | **top** |
 
-**NEITHER SIDE IS OBVIOUSLY WRONG, WHICH IS WHY THIS IS NOT FIXED HERE.** `negotiablePort`'s rule
-(**G153**) says a supply rail attaches at the top because `RailSpec`'s own doc comment says a
-supply's glyph goes there, and a non-rail port attaches left or right because decision **D4** pins
-flow left-to-right. The `regulator` template brings `VIN` in on the left and `3V3` out on the right,
-which is how a person draws a regulator; `crystal` stands its two clock labels up on either side.
-**A regulator's input rail entering from the left is better schematic practice than one dropping in
-from the top**, and the declaration forbids it.
+**Three of the ten.** These blocks are `{ kind: "auto" }` and declare no template, so
+`negotiablePort`'s rule IS in scope and **the declaration is the authority**: decision **D4** pins
+flow left-to-right, a crossing net arrives left or leaves right, and the backend brought three of
+them out at the top. Seam B is right to refuse, and the disagreement is G193's, now visible in a
+composed sheet rather than in a port dump. **The two answers are not inconsistent: §1.5's authority
+order gives the template the say where one is declared and the rule the say where none is.**
 
-**THE THREE WAYS OUT, none of them this task's to choose:** (a) the templates' anchor sides are
-authoritative and `negotiablePort`'s sides rule is wrong; (b) the rule is right and the templates
-violate it; (c) `sides` means something weaker than *"and nowhere else"* and §1.9 should say so.
-
-**THE CONSEQUENCE, STATED PLAINLY: `composeBlocks` IS NOT WIRED INTO `generate`.** It is reached by
-its tests and by measurement, and nothing in the generation path calls it, because on today's
-declarations it would refuse the only design in the repository that generates. **That is a check
-this repository has and does not run**, and it is recorded here rather than hidden behind a relaxed
-criterion - relaxing it would be this agent choosing the acceptance criterion for its own artifact.
-`crossSheetProblems` IS wired in (`assertCrossSheet` in `tools/schgen/generate.ts`) and passes.
-
-**IT IS G193's SHAPE ONE LEVEL UP.** That entry records *"an anchor's SIDE is taken from the
-reviewed rule and not from ELK's route, and the two disagree on 18 of the 38 boundary anchors"*.
-Here the reviewed rule and a reviewed TEMPLATE disagree, on 8 of 33.
-
-- **Found** 2026-10-20, Task 15, Step 5.
-- **Evidence** the table, printed by `composeBlocks` over both `mini` sheets; the eight refusal lines
-  name the block, the port, the declared sides and the drawn side.
-  `tests/schgen/render/compose.test.ts`'s *"mini's sheets REFUSE, and the refusal is a
-  declaration-against-template disagreement"* pins the count at 6 for the signal sheet and 25 for
-  its declared total, so neither can move silently. A check that could have failed in the other
-  direction: the same function composes the five ELK-drawn blocks with **0** refusals, so it is not
-  refusing everything.
-- **Verified** CONFIRMED - this writer ran it and read every line.
-- **Why it is open** it needs a decision nobody has made, and until it is made seam B's interface
-  check cannot be a gate.
-- **What would settle it** **an OWNER (or controller) DECISION among (a), (b) and (c) above.**
-  **MECHANISMS, untried, one per branch:** (a) derive a declaration's `sides` from the template's
-  anchor where a block declares a template - note this would make the declaration a derivation and
-  §1.9 forbids exactly that; (b) change the four templates' anchor sides, which changes ported files
-  and every pinned geometry test with them; (c) a spec amendment, which is not an implementer's.
+- **Found** 2026-10-20, Task 15, Step 5; **inverted and rewritten at round 2**, by the review.
+- **Evidence** the two tables, printed from `composeBlocks` over `mini`'s two sheets and over the
+  five-block probe; the `FrameContent.box` comparison run over every anchor of both sheets.
+  Checks that could have failed, all in `tests/schgen/render/compose.test.ts`: `mini` composing with
+  **29** attachments for **25** declared ports (a net with several anchors attaches several times)
+  and refusing exactly **2** when `FLASH`'s hand-declared port is replaced by the helper's rule; the
+  legs probe refusing exactly the three ports named above; and forcing every declaration to `[top]`
+  refusing **5 of 10** rather than all ten, so the check is not a blanket.
+- **Verified** CONFIRMED for both re-measurements - this writer ran them. **RELAYED for the
+  discovery**, which is the round-2 review's, including the expected residue of one port.
+- **Why it is open** the three ELK refusals are real and unfixed, and they are **G193**'s open
+  question with a cost now attached: a composed sheet cannot be produced for those blocks.
+- **What would settle it** **CRITERION: every anchor the ELK backend brings to a block's boundary
+  sits on an edge that block's declaration names.** **MECHANISMS, untried:** (1) give the ELK graph
+  a layer constraint for a boundary net whose declared sides are horizontal - `layerConstraintFor`
+  already computes one and `elk.portConstraints` already fixes port positions, so the gap is that a
+  boundary NODE's final y is unconstrained; (2) treat the three as evidence for G193's own question
+  and decide there whether the rule or the route owns an anchor's side. **Note that (1) is a change
+  to the backend under test and its result must not then be read back as the criterion** - the
+  criterion is the declaration.
 
 ### G211 - NOT ONE of the four parity circuits has a sheet that can be composed, so seam B's whole measured record rests on a ported fixture and a five-block probe
 
@@ -15114,50 +15216,74 @@ besides `mini`.
   do. **MECHANISM, untried:** nothing here - it is downstream of the ELK backend's clearance
   refusals.
 
-### G212 - PERTURBED: a frame placed OUTSIDE the page margin is refused by NOTHING downstream - `assertTextClear` accepts it, and the brief predicted otherwise
+### G212 - ONE MISSING INVARIANT WITH THREE INSTANCES: nothing in this generator checks that a drawn thing is INSIDE the box that owns it, and the whole sheet can be emitted off the paper with every guard green
 
-Task 15's brief, Step 7: *"make `packFramesWithElk` ignore the paper bound; a frame lands outside
-the margin and `assertTextClear` goes red."* **It does not.**
+**CONSOLIDATED AT ROUND 2, AND THE CONSOLIDATION IS THE POINT.** Round 1 filed this as a narrow
+finding about one perturbation, beside **G165**'s clause (a) about a text outside its frame. They
+are the same missing invariant at different scales, and **filed as two narrow entries they would be
+fixed one at a time and the third instance found a third time** - which is the pattern G165 itself
+warns about.
 
-**THE PERTURBATION.** `elk.padding` set to zero on all four sides and `readSheetPacking`'s own
-in-bounds check deleted. `[RAN]` The ELK packer then returns
+**THE INVARIANT, STATED ONCE: every whole-sheet guard this generator has checks a PAIRWISE RELATION
+between two drawn items - do they straddle, overlap, come within a clearance - and NOT ONE of them
+checks containment in a reference box.** `assertSheetSafe` relates wires to pins and to each other;
+`assertTextClear`'s frame clause is `boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)`,
+which refuses a text that straddles a border and says nothing about one entirely outside;
+`nonMemberContainments` checks only the NEGATIVE (a non-member inside a frame). The three instances:
+
+| # | the containment nobody checks | first measured |
+| --- | --- | --- |
+| (a) | a frame's own **text** inside **that frame** | **G165**, Task 6b: a frame shrunk to 60 % accepted |
+| (b) | a **frame** inside the **paper's drawable area** | here |
+| (c) | a block's **symbols and wires** inside **their own frame** | here, as the same gap read from inside |
+
+**(b), DRIVEN WITH NO SOURCE EDIT AT ALL, which is what makes it worse than round 1 reported.**
+Round 1 reached it by zeroing `elk.padding` and deleting `readSheetPacking`'s bound check. The
+round-2 review found it needs neither: `layoutSheet`'s own `packing` parameter - this task's
+addition - takes a perfectly valid, on-grid, non-overlapping packing, and translating it rigidly off
+the paper is accepted. `[RAN]` on `mini`'s signal sheet (A3, 7 frames, 11 symbols), reproduced here:
 
 ```
-[{"x":53340,"y":6350},{"x":102870,"y":0},{"x":0,"y":0},{"x":31750,"y":0},
- {"x":146050,"y":33020},{"x":140970,"y":71120},{"x":198120,"y":69850}]
++199.39 mm in x : ACCEPTED - 1/7 frames and 1/11 symbols off the paper
++499.11 mm in x : ACCEPTED - 7/7 frames and 11/11 symbols off the paper
+-49.53 mm in both: ACCEPTED - 5/7 frames and 6/11 symbols off the paper, at negative coordinates
 ```
 
-- three frames at `y = 0` and one at `x = 0`, against a `MARGIN` of 12 700 um - and **`layoutSheet`
-ACCEPTED all seven.** `assertSheetSafe` and `assertTextClear` both passed, `generate` wrote the
-files, `kicad-cli` exported the PDF, and the rendered page shows the top three frames sitting on and
-across the sheet border, the leftmost one clipped by the page edge and its title overlapping the
-border ruler.
+**The entire sheet can be placed off the page and every guard passes**, `generate` writes the files
+and `kicad-cli` exports the PDF. Round 1's own perturbation - padding zeroed, bound check removed -
+put three frames at `y = 0` and one at `x = 0` against a `MARGIN` of 12 700 µm and was likewise
+accepted; the rendered page shows the top frames sitting on and across the sheet border with the
+leftmost clipped.
 
-**WHY, and it is G165's blind spot from a third direction.** `textProblems`' frame clause refuses a
-text that STRADDLES a frame's border and says nothing about a text outside one; **nothing anywhere
-in the pipeline compares any geometry against the paper's drawable area.** The only thing standing
-between an out-of-margin frame and an emitted sheet is the bound check inside `readSheetPacking` -
-written for this task, and now the sole guard of a property three other checks look like they
-cover.
+**WHAT ACTUALLY STANDS BETWEEN THIS AND AN EMITTED SHEET** is the in-bounds check inside
+`readSheetPacking`, written for this task, and `packFrames`'s own refusal - **two packers' internal
+arithmetic, not a guard over the drawing.** Hand `layoutSheet` a packing from anywhere else and
+nothing looks.
 
-**The perturbation was restored**, and `git status --porcelain` is clean in this worktree and in
-`digital-pedal-platform`.
+**AND THE TASK 15 BRIEF PREDICTED OTHERWISE**, which is why round 1 recorded it: Step 7 says *"a
+frame lands outside the margin and `assertTextClear` goes red"*. It does not.
 
-- **Found** 2026-10-20, Task 15, Step 7.
-- **Evidence** the position list above, printed from the perturbed `packFramesWithElk`; `layoutSheet`
-  returning a `SheetDrawing` rather than throwing; the exported PDF converted at 110 dpi and read
-  with the Read tool. A check that could have failed: the same perturbation with
-  `readSheetPacking`'s bound check left in place returns `{ ok: false }` with a `needed` size, which
-  is how the guard was confirmed to be the one doing the work.
-- **Verified** CONFIRMED - this writer perturbed, ran, rendered, read and restored.
-- **Why it is open** it is a real gap and it is not fixed. It is narrow today - the packers both
-  keep inside the margin - and it is exactly the shape **G165** warns about: a property several
-  checks appear to cover and none does.
-- **What would settle it** **CRITERION: a frame, a symbol, a label or a text outside the paper's
-  drawable area fails a check.** **MECHANISM, untried:** give `assertTextClear`'s scene the paper
-  size and refuse anything outside `MARGIN`-inset bounds; note this changes a ported module
-  (`text-scene.ts`) and would need a divergence, which is the same cost G165's own mechanism (a)
-  carries.
+- **Found** 2026-10-20, Task 15 Step 7 (instance (b) under a source edit); **extended at round 2 by
+  the review**, which drove it with no source edit and connected it to **G165**(a) and to (c).
+- **Evidence** the three acceptances above, reproduced here through `layoutSheet` with a translated
+  packing; round 1's position list and the PDF rendered from it, converted at 110 dpi and read with
+  the Read tool; `textProblems`' frame clause and `nonMemberContainments` read directly. **A check
+  that could have failed:** the same translated packings with `readSheetPacking`'s bound check in
+  place return `{ ok: false }` with a `needed` size, which is what identifies that check as the one
+  doing the work.
+- **Verified** CONFIRMED - this writer ran round 1's perturbation and reproduced all three of the
+  round-2 translations. **RELAYED for the discovery that no source edit is needed**, and for the
+  consolidation.
+- **Why it is open** it is a real gap at three scales and none of them is fixed. It is the shape
+  **G165** warns about: a property several checks appear to cover and none does.
+- **What would settle it** **CRITERION, one clause covering all three: every drawn item lies
+  strictly within the box that owns it - a text within its own frame, a symbol and a wire within
+  their own frame, and every frame within the paper's drawable area - and a check that cannot run
+  says so.** **MECHANISM, untried:** give `textScene`'s scene the paper size and each item's owning
+  frame (`Frame.blockId` is already there), and refuse on containment rather than on straddle;
+  note this changes a ported module (`text-scene.ts`) and would need a divergence, which is the
+  cost G165's own mechanism already carried. **Taking the three separately is what this entry
+  exists to prevent.**
 
 ### G213 - Task 15's deviations from its own brief, each with what it cost - including the one that AVOIDED a divergence
 
@@ -15211,7 +15337,14 @@ against one per sheet - so a shared instance would have to be threaded through b
 **What the duplication costs is a second place to change if `elkjs`'s construction path ever does**,
 and it is named here rather than left to be noticed.
 
-- **Found** 2026-10-20, Task 15, Steps 1-9.
+**(8) ROUND 2: `interiorDrift` TAKES A THIRD ARGUMENT**, the composition offsets, because round
+1's version derived the allowed translation from the data it was checking and could not see a nudge
+inside a one-part block (**G214**). **(9) ROUND 2: `composeBlocks` compares an EDGE against an
+edge** through `edgesOfAnchor`/`anchorExtent`, and `pinSideOfAnchor` - which was a second copy of
+`rules/pin-sides.ts`'s `SIDE_NAMES`, both claiming to be "the one place" the two vocabularies meet -
+is **deleted** rather than kept beside it (**G210**).
+
+- **Found** 2026-10-20, Task 15, Steps 1-9; (8) and (9) at round 2.
 - **Evidence** each item is a diff against the brief at
   `.superpowers/sdd/2026-10-19-schematic-authoring-m1/task-15-brief.md`, read directly; (1) is
   checked by `tests/schgen/elk/sheet-graph.test.ts`'s *"shelfPacking is packFrames, reported in the
@@ -15225,3 +15358,97 @@ and it is named here rather than left to be noticed.
   knows how to construct an `ELK` under Bun.** **MECHANISM, untried:** export `elkFactory` from
   `tools/schgen/elk/layout.ts` and have the sheet driver call it - which couples the two drivers'
   module graphs for a four-line function, and is offered as a trade rather than a fix.
+### G214 - `interiorDrift` could not see a nudge inside a block with ONE placement, because it read the allowed offset off the data it was checking
+
+Spec §1.9's criterion is *"no block's internal geometry is altered after that block passed its own
+clearance check"*, and `interiorDrift` is the check. Round 1 computed the one translation a block is
+allowed from **the first placement's own displacement**:
+
+```ts
+const a = before.placements[0]; const b = after.placements[0]
+return { x: b.at.x - a.at.x, y: b.at.y - a.at.y }
+```
+
+**So a block with one placement, no wires and no anchors had its entire displacement absorbed as the
+allowed translation.** `[RAN]` `mini`'s `AMP_SPARE` - one op-amp unit, three no-connects, nothing
+else - slid **50.8 mm** returns `interiorDrift === []`. `AMP_PWR` is the same shape.
+
+**IT IS THE FAMILY OF DEFECT G202 RECORDS ONE LEVEL UP** - *"it compared `bothPasses.wiresAfter`
+against `layout.wires.length` ... so it was `x !== x`"* - and it is precisely the silent nudge Task
+15's Step 7 perturbation exists to prove is caught. The perturbation did not catch it because it
+moves placement index 1, and these blocks have only index 0.
+
+**FIXED AT ROUND 2**: the offset is a required third argument, built by `compositionOffsets` from
+the packing and `contentOffset` - the quantity the caller already computed - so nothing is inferred
+from the geometry under test, and a block with no offset entry **refuses** rather than being
+skipped.
+
+- **Found** 2026-10-20 by the Task 15 round-2 review; reproduced and fixed in the same round.
+- **Evidence** the `AMP_SPARE` slide, reproduced here before the fix and red after it; the
+  `offsetOf` source read in the tree at `a2518d9`. A check that could have failed:
+  `tests/schgen/render/compose.test.ts` drives a one-grid-step nudge and asserts the refusal names
+  the block and the part, and the five-block probe's two one-part blocks are now compared like any
+  other.
+- **Verified** CONFIRMED for the reproduction and the fix. **RELAYED for the discovery.**
+- **Why it is open** it is recorded rather than open; the defect is fixed. **The shape is the
+  reason it stays**: this repository has now produced three checks that compared a value against
+  the value they were handed (**G202** twice, this once), and all three were written to guard
+  against exactly the thing they could not see.
+- **What would settle it** **CRITERION: no check derives its own reference value from the data it
+  is checking.** **MECHANISM, untried:** nothing automatic; a reviewer's question - *"where does
+  the expected value come from, and could the actual value have produced it?"* - is what found all
+  three.
+
+### G215 - seam B's interface check CANNOT be wired into `generate`, and the blocker is not the one refusal left: `generate` has no path to an interface declaration at all
+
+**THIS IS AN OWNER/CONTROLLER DECISION REQUEST, recorded here because the question outlives the
+session that asked it.**
+
+After **G210**'s correction, `composeBlocks` accepts both `mini` sheets with every port attached, so
+the round-1 reason for not making it a gate - *"it would refuse the only design in the repository
+that generates"* - is **gone**. It is still not wired in, and the remaining blocker is structural
+rather than a refusal count:
+
+**`generate` takes a `LoadedDesign`, whose `DesignSpec` holds a `CircuitSpec`, and NO interface
+declaration is reachable from any of them.** `InterfacePort` lives on `BlockDeclaration` in
+`lib/schgen/authoring.ts`, and ruling **R29** deliberately deleted `GenerateEnv.authoring` on the
+ground that *"nothing beside a design has to be handed to `generate` for a block to reach ELK"*.
+Seam B is not what that ruling was about, but re-adding the field re-opens exactly what it closed.
+
+**THE TWO OPTIONS, COSTED.**
+
+1. **Carry the declaration into the IR**, as R29 did for `orientations` and `portDirections`:
+   `CircuitSpec.interfaces`, required, with an explicit *undeclared, and here is why* variant on the
+   `BomSource` pattern this repository already uses for exactly this situation. `[RAN]` **35 files
+   construct a `CircuitSpec`; none of them is a byte-checked port** (13 hand-written, 22 diverged),
+   so the edit is mechanical. The real cost is that every design that is to be GATED must then
+   declare its blocks' interfaces - `mini`'s ten blocks are 33 ports - and `mini` is a ported
+   fixture whose declaration this repository would be authoring on the pedals project's behalf.
+2. **Re-add a field to `GenerateEnv`**, which is one edit and reverses R29's sentence.
+
+**WHY NEITHER WAS TAKEN HERE.** Both are decisions about the IR's shape with a 35-file blast radius,
+and round 1's reasoning for keeping the declaration out of the IR (**G213**(3)) was reviewed and
+passed. **Taking it unilaterally at the end of a review round would be this task choosing the
+architecture to satisfy its own check.**
+
+**WHAT IS TRUE TODAY, stated plainly so it is not read as a passing gate:** `assertCrossSheet` IS
+wired into `generate` and runs on every design. **`composeBlocks` and `interiorDrift` are not: they
+are exercised by `tests/schgen/render/compose.test.ts` and by measurement, and no generation path
+calls them.** So spec §1.9's criterion is checked over two subjects by tests and over nothing by the
+pipeline.
+
+- **Found** 2026-10-20, Task 15 round 2, attempting the review's step (4).
+- **Evidence** `generate`'s signature and `DesignSpec`'s fields read directly; R29's sentence quoted
+  from `tools/schgen/elk/layout.ts`'s `elkPrePass` comment; the 35-site census classified against
+  `tools/schgen/port-manifest.json`'s three lists, which is what establishes that no byte-checked
+  port is among them.
+- **Verified** CONFIRMED - this writer ran the census and read every signature.
+- **Why it is open** it needs a ruling, and until it is given this repository has a §1.9 check that
+  tests run and the generator does not.
+- **What would settle it** **A RULING between (1) and (2) above**, or a third option. **MECHANISM
+  for (1), untried:** `CircuitSpec.interfaces` as a two-variant declaration, `generate` running
+  `composeBlocks` per sheet with the packing the pre-pass already produced, and reporting
+  *"interface check NOT RUN: <why>"* for an undeclared circuit - **the report line is the load-
+  bearing part**, because an undeclared circuit silently skipping the check is the failure
+  `CLAUDE.md` names.
+
