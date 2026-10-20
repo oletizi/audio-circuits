@@ -15431,6 +15431,37 @@ and round 1's reasoning for keeping the declaration out of the IR (**G213**(3)) 
 passed. **Taking it unilaterally at the end of a review round would be this task choosing the
 architecture to satisfy its own check.**
 
+**RULING R34, 2026-10-20 — DEFERRED, with a named trigger, and option 1 is the route when it
+fires.** The task was right not to take either, and the sentence that decides it is its own:
+***"`mini` is a ported fixture whose declaration this repository would be authoring on the pedals
+project's behalf."***
+
+Option 1 requires every design that is to be gated to declare its blocks' interfaces. Today the
+only design that generates is a **ported fixture**, and **G211** establishes that **no parity
+circuit has a composable sheet at all** — so wiring the gate now would enforce §1.9 over exactly
+one subject, and that subject's 33-port declaration would be **this repository inventing a claim
+about an artifact it did not design**. That is the governing invariant in a new costume: the thing
+being gated and the declaration it is gated against would both be ours, authored to satisfy the
+gate.
+
+**THE TRIGGER: the first design this repository OWNS that has a composable sheet** — a sheet
+carrying more than one block, among the circuits in `circuits/`. At that point the declaration is
+ours to author legitimately, against a circuit we designed, and option 1 becomes correct rather
+than merely available.
+
+**Option 2 is rejected outright, not deferred.** Re-adding a field to `GenerateEnv` reverses
+**R29**'s sentence for a different reason than R29 addressed — and R29's own reasoning points the
+other way: port directions went **into the IR beside rails** precisely because that is where
+block-boundary data belongs. Option 1 is continuous with that; option 2 contradicts it to save an
+edit.
+
+**What must stay true while this is deferred**, and the entry already says it: **`composeBlocks`
+and `interiorDrift` are exercised by tests and by measurement, and no generation path calls them**,
+so §1.9's criterion is checked over two subjects by tests and over **nothing** by the pipeline.
+That sentence is the deferral's price and it is not to be softened. `assertCrossSheet` IS wired and
+runs on every design — the two halves of seam B are in different states and the register must keep
+saying so.
+
 **WHAT IS TRUE TODAY, stated plainly so it is not read as a passing gate:** `assertCrossSheet` IS
 wired into `generate` and runs on every design. **`composeBlocks` and `interiorDrift` are not: they
 are exercised by `tests/schgen/render/compose.test.ts` and by measurement, and no generation path
