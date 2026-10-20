@@ -1382,16 +1382,157 @@ idiom.
   and re-executed neither. **One exception, CONFIRMED by the writer:** the two
   strap declarations quoted above were read in `circuits/pultec/electrical/three-band.ts`
   and `circuits/transistor-preamp/parts.ts` directly.
-- **Why it is open** it is a defect in a dependency the design proposes to adopt,
-  and **the design has no value for the outcome it produces.**
+
+**AMENDED 2026-10-20 BY TASK 14, UNDER CONTROLLER RULING R30: THE GENERATOR
+REFUSES WITH A DIAGNOSIS, AND THE CRASH ITSELF IS NOT REACHABLE THROUGH THIS
+DRIVER.** Task 12's review went looking for this entry's crash across **twenty
+arms** beyond the production run of twelve declared blocks - every vertical
+two-port node turned horizontal on all twelve, at both rotations, and each
+circuit flattened to a single graph - and got **zero raises** (`docs/known-gaps.md`
+**G185**). The reason is principled rather than lucky, and it is `docs/known-gaps.md`
+**G180**'s caveat biting in the useful direction: this entry's crash is a
+HITBOX computation, and this driver changed every one of its inputs relative to
+the two spikes that measured it through `netlistsvg` - **boundary nodes are
+zero-size here where `netlistsvg` drew 30x20 `inputExt` cells, node sizes are
+the library's own micrometres rather than skin-scaled extents, and the
+direction is `RIGHT` rather than the skin's `DOWN`.** So: **the crash is not
+reachable through the production path, nor through any graph this repository's
+own data produces.** It remains reachable only by hand-building an `ElkNode` -
+which `tests/schgen/elk/layout.elk.test.ts` already does, for a DIFFERENT
+rejection: it raises a **`JsonImportException`**, an input-validity error (a
+dangling edge reference), **never this entry's `IllegalStateException`.** The
+raise-HANDLING is therefore genuinely exercised by a real `elkjs` rejection;
+the raise this entry measured is not, by anything in the tree.
+
+**WHAT THIS AMENDMENT DOES NOT SAY.** It does not say this entry was wrong, and
+it does not say `elkjs` cannot crash this way. It says this driver does not
+feed it the inputs that crashed the spikes' driver, measured over the circuits
+this repository has.
+
+**DECIDED: the generator REFUSES, with a diagnosis, and does not retry.** Four
+reasons:
+
+- **The criterion above is a defined outcome, and refusal is one.** Nothing in
+  it asks for recovery.
+- **A retry under different orientations would be the generator choosing a
+  semantic property of the circuit**, which spec §1.5 assigns to a reviewed
+  template or a reviewed rule and explicitly denies the backend.
+- **The one mechanism anybody has proposed is measured wrong**, immediately
+  above - *"constraining laterals on a self-loop net to vertical"* leaves 32 of
+  128 `oc-audio` assignments still failing. An implementer who followed it
+  would ship a non-fix. `CLAUDE.md`'s criterion-versus-mechanism rule applies
+  exactly: the criterion binds, the mechanism was advice from someone who had
+  not yet tried it, and the deviation is recorded here rather than silently
+  worked around.
+- **A silent retry would hide the dependency defect** - `docs/known-gaps.md`
+  **G84**'s lesson one level down: the sheet would look fine and a backend that
+  cannot draw a unity-gain buffer would never be reported.
+
+**WHAT THE REFUSAL CARRIES, built by `tools/schgen/elk/diagnose.ts`'s
+`diagnoseRaise`/`renderDiagnosis` and wired into `tools/schgen/elk/layout.ts`'s
+`elkBackendFrom`:** the block and the backend's exact pinned version, the
+exception's own sentence, **the self-loop cells** (`lib/schgen/elk/self-loop.ts`'s
+`selfLoops` - the structural reading of the one shape this entry measured as
+necessary, diagnostic only and never a rule: an empty result does not mean the
+raise is unrelated to this entry's family, and a non-empty one does not license
+a retry), the horizontal passives hanging off those nets, and **the exact
+serialized bytes that produced the raise, printed verbatim.**
+
+**THE INPUTKEY DECISION, STATED AND COSTED, PER THE BRIEF'S OPEN QUESTION.**
+`tools/schgen/elk/layout.ts` already carried the serialized bytes as
+`Mismatch.backend-raised.inputKey` since Task 12; Task 14's decision is to
+PRINT THEM VERBATIM in the diagnosis rather than hash them. Three reasons: (1)
+the bytes already exist on the value for free - `elkInputOf` computes them
+once and `raised()` already carries them, so printing costs one more line and a
+hash would cost the same to compute but more to USE; (2) a hash needs a
+recovery path - a written artefact keyed by the hash - that nothing in this
+tree builds, and building one for a case **G185**'s twenty-arm sweep found
+**zero occurrences of** is untried machinery for an unobserved problem, which
+is exactly what `CLAUDE.md`'s criterion-versus-mechanism rule declines to do on
+no evidence; (3) **this entry's own `docs/known-gaps.md` G95 is why a hash is
+the worse choice and not merely the costlier one** - *"the serialization is
+deterministic; the circuit is not"* means the bytes already ARE the manifest's
+key, with no collision between two different graphs and no instability for one
+fixed graph, and a hash of them can only ever be a second identity for the same
+thing - a second place a bug (truncation, a weak hash, the wrong line copied)
+could make two different graphs agree or one graph disagree with itself. **The
+cost, stated rather than hidden:** the diagnosis is as big as the graph - on
+the largest declared block measured (`pt2399-core/pt-core`, **G189**: 151 wires
+after canonicalisation), the serialized input runs to several kilobytes, and
+that whole string lands in a thrown error's message. Accepted because a raise
+is, by every measurement in this register, not a path any real block takes
+today, so the cost is paid on an exceptional path rather than a hot one.
+
+**WHAT WOULD MAKE THE CRASH REACHABLE AGAIN, AS A CRITERION RATHER THAN A
+WARNING.** `docs/known-gaps.md` **G200** records that the staircase and the
+doubling-back in this driver's drawings are properties of `lib/schgen/elk/graph.ts`'s
+edge model, and the edge model, the port sides and the node sizing are all live
+questions. This driver's zero-raise result holds only as long as all three of
+the following stay true, per the table in **G180**:
+
+1. **boundary nodes stay zero SIZE** (not `netlistsvg`'s drawn 30x20 `inputExt`
+   cell);
+2. **node sizes stay the library symbol's own micrometre boxes**, never scaled
+   to a skin's drawn extent;
+3. **`elk.direction` stays `RIGHT`**, never reverted to the analog skin's
+   `DOWN`.
+
+A change to `graph.ts` that alters ANY of the three - on a block that ALSO
+carries a self-loop with a horizontally-drawn lateral on that net, this
+entry's own necessary condition - must re-run the arms this entry and **G185**
+measured (the twenty-arm horizontal/flattened sweep, and the three `oc-audio`
+arms: break the self-loop, remove the lateral, remove the lateral and the
+rheostat strap) before trusting a zero-raise result again. Nothing in Task 14
+re-runs that sweep on a changed graph builder, because nothing in Task 14
+changes one.
+
+- **Found** `docs/schematic/elk-spike.md` §4, 2026-10-19. **Amended from**
+  `docs/schematic/elk-block-spike.md` §5, the same day. **Amended again** by
+  Task 12's review (the twenty-arm sweep, recorded in **G185**) and by Task 14
+  (the refusal-with-diagnosis decision, the inputKey costing, and the
+  reachability criterion above), under controller ruling **R30**.
+- **Evidence** the 32-subset sweep, the two-condition test, and the direct
+  two-version run. A check that could have failed: 23 of 32 assignments succeed.
+  For the amendment: the 256-subset sweep and the three-arm narrowing on
+  `oc-audio`, the 2x3x3 parent runs, and the 108-flip sweep - each with a
+  passing arm (0 of 256 after breaking the self-loop; 5 of 5 sections laying
+  out) that could have come back the other way. **For Task 14's amendment:**
+  the twenty-arm sweep is **G185**'s own evidence, re-cited rather than
+  re-executed; `tests/schgen/elk/self-loop.test.ts` and `tests/schgen/elk/raised.elk.test.ts`
+  drive `selfLoops`, `diagnoseRaise` and `renderDiagnosis` directly (a check
+  that could have failed: a fixture with no self-loop asserts an EMPTY result,
+  not an omitted one, and a fixture with the self-loop but a vertical passive
+  asserts that passive is NOT reported horizontal), and a real `elkjs`
+  rejection (a dangling edge, the same mechanism `tests/schgen/elk/layout.elk.test.ts`
+  already used) drives the full backend seam end to end.
+- **Verified** RELAYED, both halves - the writer read both spikes' measurements
+  and re-executed neither. **One exception, CONFIRMED by the writer:** the two
+  strap declarations quoted above were read in `circuits/pultec/electrical/three-band.ts`
+  and `circuits/transistor-preamp/parts.ts` directly. **For Task 14's
+  amendment:** RELAYED for the twenty-arm sweep (Task 12's review, re-cited
+  from **G185**). CONFIRMED for the diagnosis module, its wiring into
+  `elkBackendFrom`, and every test named above - this writer wrote and ran all
+  of them, and perturbed the wiring (below) rather than only asserting it.
+- **Why it is open** it is a defect in a dependency the design proposes to
+  adopt, and **the design has no value for the outcome it produces.**
+  **Narrowed by Task 14:** the HANDLING half - what the generator does when
+  the backend throws - is now decided and built; what stays open is the
+  dependency defect itself (unfixed upstream, and this entry does not claim it
+  is fixed) and §1.5's separate question below.
 - **What would settle it** **CRITERION: a generator must have a defined outcome
   when its layout backend throws.** The spec's §1.3 selector is three-valued -
   `not-applicable`, `applicable`, `generation-failed` - and **a block that reaches
   ELK and makes ELK throw is a further outcome it does not name.** Spec §5.3
   sharpens where that lands: `RealiseResult` is **two-valued** in the source,
   with 30 `mismatch(...)` call sites funnelling into one `ok: false`, so a
-  `realise` that RAISES is outside that type entirely. Separately, whether
-  §1.5's orientation rule library can be required never to emit this shape.
+  `realise` that RAISES is outside that type entirely. **MET by Task 14:** a
+  throw is `backend-raised`, with a diagnosis, never an escaped exception and
+  never a silent `not-applicable` (**G84**). Separately, whether §1.5's
+  orientation rule library can be required never to emit this shape - **NOT
+  settled by Task 14** and stays open. **A second criterion, Task 14's own: the
+  reachability conditions above** - boundary-node size, node sizing and
+  `elk.direction` - **are what a later change to `graph.ts` must check against**
+  before trusting a zero-raise result.
 - **MECHANISM, and the first one is now MEASURED WRONG.** This entry suggested
   *"constraining laterals on a self-loop net to vertical"*. **On `oc-audio` that
   leaves 32 of 128 assignments still failing**, so a rule library built to it
@@ -1399,7 +1540,8 @@ idiom.
   replacement:** constrain the self-loop itself, which is the only arm that
   cleared a whole sweep - and it is untested as a RULE, because a strapped pot
   wiper is a deliberate convention here and a rule that refuses it refuses house
-  style.
+  style. **Task 14 proposes no mechanism for the dependency defect itself** - the
+  decision is to refuse with a diagnosis, not to fix `elkjs`.
 
 ### G95 - ELK's output is a function of input cell ORDER, so a drawing is not a stable property of a circuit
 

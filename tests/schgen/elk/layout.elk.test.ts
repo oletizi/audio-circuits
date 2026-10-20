@@ -126,15 +126,32 @@ test("a backend raise is a backend-raised mismatch, never an escaped exception",
   expect(raiseLines(outcomes)).toEqual([`RAISES: ${outcome.mismatch.reason} [backend-raised: ${ELK_BACKEND} raised on ${RAISING_INPUT.serialized}]`])
 })
 
+/**
+ * **BUILT FROM A REAL SUBGRAPH, NOT A SECOND HAND-BUILT GRAPH LIKE `RAISING_INPUT` ABOVE.**
+ *
+ * Since Task 14, `elkBackendFrom` recomputes `elkInputOf(g)` to diagnose a raise and REFUSES if
+ * those bytes disagree with the ones that actually raised (`docs/known-gaps.md` **G95**: a
+ * diagnosis keyed to the wrong graph's bytes is exactly the failure a serialized key exists to
+ * prevent). `RAISING_INPUT`'s bytes (`'{"id":"RAISES"}'`) are not any subgraph's own serialization,
+ * so pairing it with `dividerSubgraph()` the way this test used to would now trip that guard
+ * instead of exercising forwarding. This corrupts the GRAPH fed to `elk.layout()` - a dangling edge,
+ * the same mechanism `RAISING_INPUT` uses - while leaving `serialized` as `elkInputOf(g)` honestly
+ * produces, so the two agree the way a real pre-pass/backend pair always does.
+ */
 test("the backend forwards a raise to the caller and refuses a missing block by name", async () => {
-  const outcomes = await layoutBlocks([RAISING_INPUT])
+  const base = dividerSubgraph()
+  const g = { ...base, block: { ...base.block, id: "RAISES" } }
+  const input = elkInputOf(g)
+  const corrupted: ElkBlockInput = {
+    ...input,
+    graph: { ...input.graph, edges: [...(input.graph.edges ?? []), { id: "BOGUS", sources: ["nonexistent"], targets: ["also-nonexistent"] }] },
+  }
+  const outcomes = await layoutBlocks([corrupted])
   const backend = elkBackendFrom(outcomes)
-  const g = dividerSubgraph()
-  const raising = { ...g, block: { ...g.block, id: "RAISES" } }
-  const result = backend.realise(raising)
+  const result = backend.realise(g)
   expect(result.ok).toBe(false)
   if (!result.ok) expect(result.mismatch.kind).toBe("backend-raised")
-  expect(() => backend.realise(g)).toThrow(/holds no outcome for it/)
+  expect(() => backend.realise(base)).toThrow(/holds no outcome for it/)
 })
 
 /**

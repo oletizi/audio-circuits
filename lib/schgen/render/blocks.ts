@@ -278,6 +278,18 @@ const drawnBy = (s: Selection): string => (s.kind === "template" ? `template ${s
  * rendering (**G84**, **G140**) is that there is no inferior output to fall back to. So a missing
  * backend is an error that names the block, and a backend that refuses is an error that carries
  * its mismatch - including the `backend-raised` one that **G94**'s elkjs crash produces.
+ *
+ * **SINCE TASK 14, A `backend-raised` MISMATCH'S `reason` IS ALREADY A FULL DIAGNOSIS, BUILT
+ * BEFORE IT GETS HERE.** `describeMismatch(r.mismatch)` below prints it unchanged: nothing in this
+ * module constructs the diagnosis or could - `tools/schgen/elk/diagnose.ts`'s `diagnoseRaise`
+ * needs the `BlockSubgraph` AND the raw raise together, which only `tools/schgen/elk/layout.ts`'s
+ * `elkBackendFrom` holds at once, and `lib/schgen/` may not import from `tools/` (the plan's global
+ * constraint this file's own module comment already lives under). So the enrichment happens one
+ * layer down, in the `Backend` this function is handed, and by the time its `Mismatch` reaches
+ * here it already carries the backend's name, the exact serialized bytes that raised, and whether
+ * G94's necessary self-loop shape is present in this block's own graph - all printable from this
+ * one thrown message, which is the point: a reader does not have to come to this file, or to
+ * `diagnose.ts`, to get from a raise to the graph that produced it.
  */
 function elkLayout(g: BlockSubgraph, id: BlockId, elk: Backend | null): BlockLayout {
   if (elk === null) {

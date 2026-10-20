@@ -796,6 +796,10 @@
     "tests/schgen/elk/adapt.test.ts",
     "tests/schgen/elk/snap.test.ts",
     "tests/schgen/elk/junctions.test.ts",
-    "tests/schgen/elk/obstacle-census.test.ts"
+    "tests/schgen/elk/obstacle-census.test.ts",
+    "lib/schgen/elk/self-loop.ts",
+    "tools/schgen/elk/diagnose.ts",
+    "tests/schgen/elk/self-loop.test.ts",
+    "tests/schgen/elk/raised.elk.test.ts"
   ]
 }

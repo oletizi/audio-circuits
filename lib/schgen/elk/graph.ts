@@ -98,8 +98,15 @@ export function pinPortId(nodeId: string, pinNumber: string): string {
   return `${nodeId}#${pinNumber}`
 }
 
-/** The library pin of `u` carrying `number`, or a refusal naming the symbol and the pin. */
-function libPinOf(u: BlockUnit, number: string): LibPin {
+/**
+ * The library pin of `u` carrying `number`, or a refusal naming the symbol and the pin.
+ *
+ * **EXPORTED SINCE TASK 14, FOR THE SAME REASON `unitBoxOf` BELOW IS.** `tools/schgen/elk/
+ * diagnose.ts` needs the same library pin to decide whether a two-terminal unit on a self-loop
+ * net is drawn horizontally, and a second copy of this lookup - and its refusal - would be a
+ * second place to keep correct.
+ */
+export function libPinOf(u: BlockUnit, number: string): LibPin {
   const pin = u.symbol.pins.find((p) => p.number === number && (p.unit === u.unit || p.unit === 0))
   if (pin === undefined) {
     throw new Error(

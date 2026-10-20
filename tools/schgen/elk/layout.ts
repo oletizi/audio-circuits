@@ -35,20 +35,22 @@ import { selectRenderer, subgraphOf } from "../../../lib/schgen/render/blocks.ts
 import { TEMPLATES } from "../../../lib/schgen/render/templates/index.ts"
 import { elkInputOf, type ElkBlockInput, type ElkOutcome } from "../../../lib/schgen/elk/graph.ts"
 import { adaptElkLayout } from "../../../lib/schgen/elk/adapt.ts"
+import { diagnoseRaise, ELK_BACKEND, renderDiagnosis } from "./diagnose.ts"
 import type { ELK as ElkApi, ElkNode } from "elkjs/lib/elk-api.js"
 import type { Backend, Mismatch, RealiseResult, BlockSubgraph } from "../../../lib/schgen/render/block-types.ts"
 import type { BlockId, Circuit } from "../../../lib/schgen/ir/types.ts"
 import type { SymbolResolver } from "../../../lib/schgen/render/library.ts"
 
 /**
- * The backend's name in a `backend-raised` mismatch, with its exact pinned version.
- *
- * It names the version because **G94** is a defect in this dependency at a version - *"elkjs
- * 0.7.1 and 0.9.3 both raise"* - and a refusal that says only "elkjs" cannot be compared against
- * that measurement. `package.json` pins `0.9.3` exactly; this constant is checked against the
- * installed package by `tests/schgen/elk/layout.elk.test.ts`, so the two cannot drift.
+ * Re-exported, not declared: `ELK_BACKEND` moved to `tools/schgen/elk/diagnose.ts` in Task 14,
+ * because a `RaiseDiagnosis` needs the same pinned backend name a `Mismatch` does and the
+ * alternative was a second string to keep in step with `package.json`'s pin. Every existing
+ * importer (`tests/schgen/elk/layout.elk.test.ts`, `tools/schgen/generate.ts`) names this module,
+ * not `diagnose.ts`, so the re-export is what keeps them unaffected. See `diagnose.ts` for why it
+ * names the version: **G94** is a defect at a pinned version and a refusal that said only "elkjs"
+ * could not be compared against what that entry measured.
  */
-export const ELK_BACKEND = "elkjs@0.9.3"
+export { ELK_BACKEND }
 
 /**
  * Re-exported, not declared: the type moved to `lib/schgen/elk/graph.ts` beside `ElkBlockInput` in
@@ -151,7 +153,14 @@ export async function layoutBlocks(inputs: readonly ElkBlockInput[]): Promise<Re
  * - **absent** - the pre-pass never ran for this block. That is a wiring defect in the caller, so
  *   it throws naming the block and the pre-pass rather than laying it out lazily, which would make
  *   `realise` asynchronous and defeat **D2**;
- * - **raised** - returned as the `backend-raised` mismatch it is, for `realiseBlock` to refuse on;
+ * - **raised** - returned as the `backend-raised` mismatch it is, for `realiseBlock` to refuse on -
+ *   **and ENRICHED first, since Task 14, with the diagnosis `tools/schgen/elk/diagnose.ts` builds
+ *   from `g`.** The pre-pass's own stored outcome keeps its short `reason` untouched (so
+ *   `tests/schgen/elk/layout.elk.test.ts`'s pinned assertions over `layoutBlocks`'s raw output stay
+ *   exactly as they were); it is only the `Mismatch` this backend hands to `realiseBlock` - the one
+ *   a generation run actually throws - that carries the full `renderDiagnosis` text, because this
+ *   is the one place that holds both the raise AND the `BlockSubgraph` `diagnoseRaise` needs for
+ *   its self-loop reading;
  * - **laid out** - handed to `adaptElkLayout` (`lib/schgen/elk/adapt.ts`), which is spec §1.4's
  *   realization contract: the canonical topology, the grid snapping, the junction comparison and
  *   the clearance check, in that order, with a classified `Mismatch` for each way it refuses.
@@ -178,10 +187,59 @@ export function elkBackendFrom(outcomes: ReadonlyMap<BlockId, ElkOutcome>): Back
             "Backend.realise that returned a promise would change every template.",
         )
       }
-      if (!outcome.ok) return { ok: false, mismatch: outcome.mismatch }
+      if (!outcome.ok) return { ok: false, mismatch: enrichedRaise(g, outcome.mismatch) }
       return adaptElkLayout(g, outcome)
     },
   }
+}
+
+/**
+ * The pre-pass's stored `backend-raised` mismatch, with its `reason` replaced by the full
+ * diagnosis: the same backend and bytes it already carried, plus the self-loop reading
+ * `diagnoseRaise` computes from `g` - which the pre-pass, holding only the serialized bytes and no
+ * `BlockSubgraph`, could never have attached itself (Task 14, ruling R30).
+ *
+ * **WHY A FRESH `elkInputOf(g)` AND NOT THE PRE-PASS'S OWN INPUT.** The pre-pass discards the
+ * `ElkBlockInput` it built once `layoutBlocks` has run - only `ElkOutcome` survives, and its false
+ * arm carries `serialized` but no `graph`. Recomputing is not a guess: `elkInputOf` is a pure
+ * function of `g` alone (**G95**: *"determinism for a FIXED input holds"*), and `realiseBlock`
+ * calls this backend with the identical `g` `elkPrePass` built the stored outcome from - the same
+ * `Circuit` and `SymbolResolver`, by construction of `tools/schgen/generate.ts`'s one call to each.
+ * The guard below is what makes that an asserted invariant rather than an assumption: a caller that
+ * ever handed this backend a DIFFERENT block's subgraph than the one that raised would get a
+ * diagnosis whose self-loops belong to one block and whose bytes belong to another - precisely what
+ * `docs/known-gaps.md` **G95** says a serialized key must never let happen - so it refuses instead.
+ *
+ * **ONLY `backend-raised` IS ENRICHED, AND THE CHECK IS A REAL GUARD, NOT A FORMALITY.** `layoutBlocks`'s
+ * one producer of a false `ElkOutcome` is `raised()`, which always constructs `backend-raised` -
+ * but `Mismatch` is a four-variant union at the type level, so nothing STATICALLY rules out a
+ * future second producer returning a different kind. If one ever does, this throws rather than
+ * silently re-labelling a different kind of refusal as a raise.
+ */
+function enrichedRaise(g: BlockSubgraph, mismatch: Mismatch): Mismatch {
+  if (mismatch.kind !== "backend-raised") {
+    throw new Error(
+      `elkBackendFrom: block ${g.block.id}'s pre-pass outcome is a false ElkOutcome carrying a ` +
+        `"${mismatch.kind}" mismatch, not "backend-raised". layoutBlocks's only producer of a ` +
+        "false ElkOutcome (raised(), in this file) always returns backend-raised; a different " +
+        "kind here means something else is now constructing ElkOutcome and this diagnosis wiring " +
+        "was not updated for it.",
+    )
+  }
+  const input = elkInputOf(g)
+  if (input.serialized !== mismatch.inputKey) {
+    throw new Error(
+      `elkBackendFrom: block ${g.block.id} raised on bytes different from the ones elkInputOf(g) ` +
+        "produces for the SAME g right now. The pre-pass and this backend must be given the " +
+        "identical BlockSubgraph for the identical block (tools/schgen/generate.ts's one Circuit " +
+        "and one SymbolResolver, shared between elkPrePass and layoutSheet) - a mismatch here means " +
+        "that invariant broke, and attaching a self-loop reading to the wrong graph's bytes is " +
+        "exactly the failure docs/known-gaps.md G95 exists to prevent, so this refuses rather than " +
+        "diagnosing the wrong graph.",
+    )
+  }
+  const diagnosis = diagnoseRaise(g, input, new Error(mismatch.reason))
+  return { ...mismatch, reason: renderDiagnosis(diagnosis) }
 }
 
 /**

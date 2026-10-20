@@ -129,6 +129,65 @@ export function dividerSubgraph(): BlockSubgraph {
 }
 
 /**
+ * A SELF-LOOP ON ONE UNIT, WITH A HORIZONTALLY-DRAWN LATERAL HANGING OFF THE SAME NET - the shape
+ * `docs/known-gaps.md` **G94** measured as necessary for `elkjs`'s hitbox crash, for Task 14's
+ * `selfLoops`/`diagnoseRaise` tests to find structurally (never to make `elkjs` raise - ruling
+ * **R30** forbids hand-building a graph for that, and this is not one: it is an ordinary subgraph,
+ * built the same way every other fixture here is).
+ *
+ * **WHY `Fix:REG3` AND NOT A TWO-PIN PASSIVE.** `selfLoops` needs one unit with two of its OWN
+ * pins on one net; a two-terminal part's two pins ARE its only two pins, so tying them together
+ * would leave nothing else connected and the IR's own single-pin-net rule would have something to
+ * say about every other net this part touches. `Fix:REG3` (`regulatorBlock`'s part, above) has
+ * five, so pins `2` and `5` can share one net (`LOOP`) while `1`, `3` and `4` keep the part
+ * genuinely multi-net, the same shape `regulatorBlock` already relies on for `MID`.
+ *
+ * **`R_LATERAL` is drawn horizontally by construction, not by discovery.** `Fix:R` puts pin 1 at
+ * angle 270 and pin 2 at angle 90, which `pinSide`/`sideOfPin` read as top/bottom at rotation 0 and
+ * as left/right at rotation 90 (`render/geometry.ts`'s `SIDE_OF_ANGLE`) - the same arithmetic
+ * `groundedPinOneBlock` above already depends on for its own rotation. Rotation 90 is declared on
+ * `R_LATERAL` for exactly that reason.
+ */
+export function selfLoopBlock(): BlockSubgraph {
+  const part: PartSpec = {
+    label: "U_LOOP",
+    refPrefix: "U",
+    libId: "Fix:REG3",
+    units: [1],
+    value: "REG3",
+    footprint: "F",
+    bom: TEST_BOM,
+    dnp: false,
+    checklist: [],
+    source: "fixture",
+    pinTable: null,
+    pins: {
+      "1": { net: "3V3", identity: "IN" },
+      "2": { net: "LOOP", identity: "EN" },
+      "3": { net: "GND", identity: "GND" },
+      "4": { net: "MID", identity: "NR" },
+      // Pin 5 shares net LOOP with pin 2: two of this unit's own pins on one net, the self-loop.
+      "5": { net: "LOOP", identity: "OUT" },
+    },
+    mechanicalPads: [],
+    ncUnlisted: null,
+  }
+  // MID needs a second pin, same as regulatorBlock's, or the IR's singlePinNets rule refuses.
+  const load = res("R_LOAD", "MID", "GND")
+  // Hangs off LOOP, drawn horizontally at rotation 90 - G94's "lateral."
+  const lateral = res("R_LATERAL", "LOOP", "3V3")
+  return autoBlock(
+    [part, load, lateral],
+    [],
+    new Map<PartLabel, Rotation | null>([
+      ["U_LOOP", null],
+      ["R_LOAD", null],
+      ["R_LATERAL", 90],
+    ]),
+  )
+}
+
+/**
  * `GND` reached by five resistor pins plus the block's own boundary node: **degree six**, so a
  * spanning path over it is five edges.
  *
