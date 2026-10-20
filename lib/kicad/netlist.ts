@@ -8,6 +8,30 @@
  */
 import { attr, child, children, parseSexpr } from "./sexpr.ts"
 
+/**
+ * THE PATH TO `kicad-cli`, NOT A SPAWNER. Nothing here runs it; this is the
+ * string two different consumers derive a path FROM.
+ *
+ * **Why it lives in this module.** `digital-pedal-platform`'s
+ * `tools/kicad/netlist.ts` - the counterpart this file's name matches - exports
+ * `KICAD_CLI`, and `lib/schgen/render/library.ts`'s ported `stockSymbolDir()`
+ * imports it from there to derive
+ * `dirname(KICAD_CLI)/../SharedSupport/symbols`. `tools/schgen/port-manifest.json`
+ * resolves that `@/kicad/netlist` import to THIS file, so the specifier points
+ * at the module it names rather than at a stand-in. Task 11 of the M1 schematic
+ * plan adapts the rest of pedals' netlist API (`connectivityFromXml`) here; a
+ * ported file that needs it before then fails `bun run typecheck` naming the
+ * missing export.
+ *
+ * **It duplicates the `KICAD_CLI ?=` default in `make/board.mk`**, exactly as
+ * `tests/circuits/kicad-round-trip.ts` and `tools/pultec/schematic-sync.ts`
+ * already each do, and for the same reason: Make cannot import TypeScript. An
+ * explicitly set `KICAD_CLI` always wins. Four copies of one path is a smell
+ * recorded in `docs/known-gaps.md`, not a design.
+ */
+export const KICAD_CLI: string =
+  process.env["KICAD_CLI"] ?? "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
+
 export interface ImportedComponent {
   readonly designator: string
   readonly value: string

@@ -17,12 +17,24 @@
  * pedals source file.
  *
  * **Scope of this manifest.** It covers only files with no import this
- * repository cannot yet resolve: no `@/kicad/netlist`, `@/kicad/footprint`,
- * `@/kicad/libtable` or `@/kicad/components` (this repository's
- * `lib/kicad/netlist.ts` has a different shape from pedals' - adapting it is
- * Task 11's job, not this one's), and nothing reachable only through
+ * repository cannot yet resolve: no `@/kicad/footprint`, `@/kicad/libtable`
+ * or `@/kicad/components`, and nothing reachable only through
  * `@/schgen/design`, `@/schgen/generate` or `@/schgen/gates/oscar/*` (the
- * same reason, plus `gates/oscar/` being Task 18's). `@/pinmap/*` is NOT in
+ * same reason, plus `gates/oscar/` being Task 18's).
+ *
+ * **`@/kicad/netlist` IS resolved, but only for `KICAD_CLI`** (Task 4). Pedals'
+ * `tools/kicad/netlist.ts` exports both that path constant and
+ * `connectivityFromXml`; `render/library.ts`'s `stockSymbolDir()` needs only
+ * the constant, so `lib/kicad/netlist.ts` gained it and `externals` points the
+ * specifier at the module it names rather than at a stand-in. **This repository's
+ * `lib/kicad/netlist.ts` still has a different shape from pedals' for everything
+ * else** (`importNetlist`/`ImportedNetlist` here versus `connectivityFromXml`
+ * there) and adapting gate 3 to it is still Task 11's job. The consequence of
+ * resolving the specifier is that a later file importing `connectivityFromXml`
+ * no longer refuses at port time; it fails `bun run typecheck` naming the
+ * missing export instead. Recorded in `docs/known-gaps.md`.
+ *
+ * `@/pinmap/*` is NOT in
  * this category any more: there is no MCU here, so Task 2 ported
  * `ir/build.ts` and `ir/types.ts` *with a cut* that removes the pin-map
  * branch outright (supersede means delete - see `docs/known-gaps.md`
@@ -72,16 +84,22 @@ export interface PortManifest {
   readonly moduleRenames: Readonly<Record<string, string>>
   readonly files: readonly ManifestFileEntry[]
   /**
-   * Every hand-written (never ported) `.ts` file this port's manifest
-   * tracks, repo-relative - primarily under `lib/schgen/`, where
-   * `tests/schgen/port-fidelity.test.ts` asserts this list plus `files[].to`
-   * is the *complete* set of `.ts` files under that directory, so a new
-   * hand-written file there must be added here deliberately, or the test
-   * fails naming it, rather than silently passing as if it were ported. A
-   * hand-written file outside `lib/schgen/` (e.g. a `tests/schgen/` test
-   * written to give a `docs/known-gaps.md` entry a durable, re-runnable
-   * home - not a port) may also be listed here for visibility, though the
-   * completeness check does not scope to it.
+   * Every hand-written (never ported) `.ts` file **under `lib/schgen/`**,
+   * repo-relative. `tests/schgen/port-fidelity.test.ts` asserts this list
+   * plus `files[].to` is the *complete* set of `.ts` files under that
+   * directory, so a new hand-written file there must be added here
+   * deliberately, or the test fails naming it, rather than silently passing
+   * as if it were ported.
+   *
+   * **A PATH OUTSIDE `lib/schgen/` DOES NOT BELONG HERE**, and
+   * `port-fidelity.test.ts` fails on one. The field carried two
+   * `tests/schgen/` entries "for visibility" (Tasks 2 and 3) while three
+   * other hand-written files under `tests/schgen/` were not listed, so it was
+   * neither a complete inventory of hand-written files nor no inventory at
+   * all - a reader could not use it as either. `bun test` discovers test
+   * files by glob and reads nothing here, so the declaration bought nothing
+   * while the inconsistency misled. Narrowed in Task 4; `docs/known-gaps.md`
+   * G114 and Controller ruling R6 record why.
    */
   readonly handWritten: readonly string[]
 }

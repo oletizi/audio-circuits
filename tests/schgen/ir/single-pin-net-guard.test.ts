@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test"
 import type { Circuit } from "../../../lib/schgen/ir/types.ts"
 import { validateCircuit } from "../../../lib/schgen/ir/validate.ts"
-import type { LibSymbol, SymbolResolver } from "../../../lib/schgen/render/library.ts"
+import { fixtureResolver } from "../__fixtures__/fixture-lib.ts"
 
 /**
  * Hand-written, not ported: a durable, re-runnable home for Task 2 Step 6's
@@ -18,17 +18,17 @@ import type { LibSymbol, SymbolResolver } from "../../../lib/schgen/render/libra
  * naming exactly these two messages missing, then restore the file and
  * confirm it passes again.
  *
- * Builds a `Circuit` directly (not through `buildCircuit`, which needs a
- * real resolver) because `ir/build.test.ts`/`validate.test.ts`'s own
- * fixture-backed tests moved to Task 4 (Controller ruling R4) - this test
- * needs no resolver beyond a stub that is never asked to resolve anything
- * meaningful, since `R_A`'s part spec declares no mechanical pads and no
- * pins the `pinsDeclared`/`pinSemantics`/`mechanicalPads` rules would read.
+ * Builds a `Circuit` directly rather than through `buildCircuit`, which is
+ * what keeps this test about `singlePinNets` and nothing else.
+ *
+ * **It used a hand-built three-field `LibSymbol` stub until Task 4**, because
+ * `createResolver` threw until the real `render/library.ts` was ported
+ * (`docs/known-gaps.md` G113). The real `LibSymbol` carries ten fields, so the
+ * stub stopped typechecking when the port landed, and it is replaced by the
+ * real `fixtureResolver()` rather than widened: `Fix:R` is a one-unit,
+ * non-power symbol with exactly pins "1" and "2", which is what this
+ * fixture's `R_A` declares, and `rails` is empty so nothing reads `isPower`.
  */
-function stubResolver(): SymbolResolver {
-  const symbol: LibSymbol = { pins: [], unitCount: 1, isPower: true }
-  return { resolve: () => symbol, files: new Map() }
-}
 
 // One resistor (R_A) on two nets, LONELY (pin 1) and GND (pin 2), each with
 // no other pin - deliberately, so the guard must name both.
@@ -64,7 +64,7 @@ const circuit: Circuit = {
 }
 
 test("singlePinNets names every single-pin net in the circuit it validates", () => {
-  const problems = validateCircuit(circuit, stubResolver())
+  const problems = validateCircuit(circuit, fixtureResolver())
   expect(problems).toContain("net LONELY has only one pin (R_A.1); connect it or declare the pin not connected")
   expect(problems).toContain("net GND has only one pin (R_A.2); connect it or declare the pin not connected")
 })

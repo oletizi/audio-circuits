@@ -1,10 +1,10 @@
 {
   "sourceEnvVar": "SCHGEN_SOURCE",
   "externals": {
+    "@/kicad/netlist": "lib/kicad/netlist.ts",
     "@/kicad/sexpr": "lib/kicad/sexpr.ts",
     "@/placement/strict": "lib/schgen/strict.ts",
-    "@/repo": "tools/perfboard/repo-root.ts",
-    "@/schgen/render/library": "lib/schgen/render/library.ts"
+    "@/repo": "tools/perfboard/repo-root.ts"
   },
   "moduleRenames": {
     "vitest": "bun:test"
@@ -71,12 +71,11 @@
     { "from": "ir/author.test.ts", "to": "tests/schgen/ir/author.test.ts" },
     { "from": "ir/order.test.ts", "to": "tests/schgen/ir/order.test.ts" },
     { "from": "render/uuid.test.ts", "to": "tests/schgen/render/uuid.test.ts" },
-    { "from": "render/sexprWrite.test.ts", "to": "tests/schgen/render/sexpr-write.test.ts" }
+    { "from": "render/sexprWrite.test.ts", "to": "tests/schgen/render/sexpr-write.test.ts" },
+    { "from": "render/library.ts", "to": "lib/schgen/render/library.ts" },
+    { "from": "render/library.test.ts", "to": "tests/schgen/render/library.test.ts" }
   ],
   "handWritten": [
-    "lib/schgen/strict.ts",
-    "lib/schgen/render/library.ts",
-    "tests/schgen/ir/single-pin-net-guard.test.ts",
-    "tests/schgen/render/uuid-stable.test.ts"
+    "lib/schgen/strict.ts"
   ]
 }

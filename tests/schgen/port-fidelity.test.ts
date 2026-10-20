@@ -14,7 +14,7 @@ import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
  * check that silently skips looks like a passing one, which `CLAUDE.md` and
  * this repository's own conventions both name as the failure to avoid.
  */
-test("every ported file is its source, rewritten only by the manifest", () => {
+function requireSourceRoot(): string {
   const sourceRoot = process.env["SCHGEN_SOURCE"]
   if (sourceRoot === undefined || sourceRoot === "") {
     throw new Error(
@@ -23,7 +23,11 @@ test("every ported file is its source, rewritten only by the manifest", () => {
         "nothing here defaults to a guessed path.",
     )
   }
+  return sourceRoot
+}
 
+test("every ported file is its source, rewritten only by the manifest", () => {
+  const sourceRoot = requireSourceRoot()
   const manifest = loadManifest()
   const repoRoot = moduleRepoRoot()
 
@@ -34,6 +38,70 @@ test("every ported file is its source, rewritten only by the manifest", () => {
     const ported = fs.readFileSync(path.join(repoRoot, entry.to), "utf8")
     expect(rewrite(source, entry, manifest), entry.to).toBe(ported)
   }
+})
+
+/**
+ * The fixture symbol libraries the ported tests read are NOT `.ts`, so
+ * `port.ts` does not rewrite them and the test above never sees them - they
+ * are copied verbatim from the pedals source by hand (Task 4). This is the
+ * check that keeps a transcription honest: a hand-edited or drifted copy
+ * changes what every fixture-backed assertion in `tests/schgen/` measures,
+ * silently, and `CLAUDE.md`'s rule is that a transcription checked only
+ * against itself is one nobody verified.
+ */
+const COPIED_FIXTURES: readonly { readonly from: string; readonly to: string }[] = [
+  { from: "__fixtures__/symbols/Fix.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Fix.kicad_sym" },
+  { from: "__fixtures__/symbols/Pwr.kicad_sym", to: "tests/schgen/__fixtures__/symbols/Pwr.kicad_sym" },
+]
+
+test("every copied (non-.ts) fixture is byte-identical to its pedals source", () => {
+  const sourceRoot = requireSourceRoot()
+  const repoRoot = moduleRepoRoot()
+  expect(COPIED_FIXTURES.length, "a list nothing iterates is a check that cannot fail")
+    .toBeGreaterThan(0)
+  for (const { from, to } of COPIED_FIXTURES) {
+    const source = fs.readFileSync(path.join(sourceRoot, from), "utf8")
+    const copied = fs.readFileSync(path.join(repoRoot, to), "utf8")
+    expect(copied, `${to} has drifted from ${from}; re-copy it rather than editing it here`)
+      .toBe(source)
+  }
+})
+
+/**
+ * `handWritten` MEANS `lib/schgen/`, and this is where that is enforced
+ * (`docs/known-gaps.md` G114, Controller ruling R6).
+ *
+ * Two claims, both of which can fail. **Existence:** an entry naming a path
+ * that is not on disk fails here, whatever directory it names. The
+ * completeness test below cannot catch that for a path outside `lib/schgen/`,
+ * because it filters such entries out of both arms, and the comment that
+ * claimed `bun test` would catch it was simply wrong - a missing test file is
+ * one the glob never discovers, so the suite reports fewer tests and stays
+ * green. **Scope:** the field is narrowed to `lib/schgen/`. It previously
+ * carried two `tests/schgen/` entries "for visibility" while three other
+ * hand-written files under `tests/schgen/` were not listed, which was neither
+ * a complete inventory nor no inventory at all; `bun test` discovers test
+ * files by glob, so a declaration list it does not read bought nothing.
+ */
+test("every handWritten entry is under lib/schgen/ and is on disk", () => {
+  const manifest = loadManifest()
+  const repoRoot = moduleRepoRoot()
+  expect(manifest.handWritten.length, "an empty handWritten list is a check that cannot fail")
+    .toBeGreaterThan(0)
+  const outsideLibSchgen = manifest.handWritten.filter((p) => !p.startsWith("lib/schgen/")).sort()
+  const missing = manifest.handWritten.filter((p) => !fs.existsSync(path.join(repoRoot, p))).sort()
+  expect(
+    outsideLibSchgen,
+    "handWritten declares hand-written files under lib/schgen/ and nothing else - a " +
+      "hand-written test under tests/schgen/ is discovered by bun test's glob and needs no " +
+      "declaration. Remove these, or change the rule in PortManifest.handWritten and here.",
+  ).toEqual([])
+  expect(
+    missing,
+    "these handWritten paths are not on disk. A typo here is otherwise invisible: the " +
+      "completeness check below filters a non-lib/schgen/ entry out of both arms, and bun " +
+      "test never discovers a file it cannot find.",
+  ).toEqual([])
 })
 
 /** Every `.ts` file under `dir`, repo-relative, posix-separated. */
@@ -59,13 +127,19 @@ function listTsFiles(repoRoot: string, dir: string): string[] {
  * (which only iterates `manifest.files`), so "every ported file is its
  * source" stays green while a file under `lib/schgen/` silently is not.
  *
- * `files[].to` and `handWritten` entries outside `lib/schgen/` - a ported
- * test under `tests/schgen/`, or a hand-written one listed there "for
- * visibility" per `PortManifest.handWritten`, both since Task 2 - are a
- * different kind of claim (that *this* destination is on disk, checked by
- * the first test above, or by `bun test` simply failing to find the file)
- * and are deliberately excluded here rather than compared against a
- * `lib/schgen/` directory listing they never claimed to be complete over.
+ * A `files[].to` destination outside `lib/schgen/` - a ported test under
+ * `tests/schgen/`, since Task 2 - is a different kind of claim, that *this*
+ * destination is on disk holding exactly the rewritten source, and the first
+ * test above is what checks it. Such an entry is excluded here rather than
+ * compared against a `lib/schgen/` directory listing it never claimed to be
+ * complete over.
+ *
+ * **`handWritten` has no entry outside `lib/schgen/` to exclude**, and the
+ * test above is what holds it to that. The earlier version of this comment
+ * said a non-`lib/schgen/` entry was covered "by `bun test` simply failing to
+ * find the file", which was false in both directions: `bun test` discovers
+ * test files by glob, so a misspelt entry names a file nothing looks for and
+ * the suite stays green with fewer tests - `docs/known-gaps.md` G114.
  */
 test("every .ts file under lib/schgen/ is either ported (in the manifest) or declared hand-written", () => {
   const manifest = loadManifest()

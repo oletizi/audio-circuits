@@ -63,38 +63,35 @@ the files that import nothing this repository cannot yet resolve. Several
 things are missing on purpose, and later tasks add to the manifest as each
 is resolved rather than hand-porting around the gap:
 
-- **`@/kicad/netlist`, `@/kicad/footprint`, `@/kicad/libtable`,
-  `@/kicad/components`.** This repository's `lib/kicad/netlist.ts` has a
-  different shape from pedals' `tools/kicad/netlist.ts` (`importNetlist` /
-  `ImportedNetlist` here, versus `connectivityFromXml` / `KICAD_CLI` there) —
-  adapting gate 3 to it is Task 11's job, stated in the plan, not a mapping
-  this task can shortcut.
+- **`@/kicad/footprint`, `@/kicad/libtable`, `@/kicad/components`.** Not
+  resolved, and nothing here imports them yet.
+- **`@/kicad/netlist` resolves, but only for `KICAD_CLI`** (Task 4).
+  `render/library.ts`'s `stockSymbolDir()` derives
+  `dirname(KICAD_CLI)/../SharedSupport/symbols`, so `lib/kicad/netlist.ts`
+  gained that path constant and `externals` points the specifier at the module
+  it names. **Everything else about the two modules still differs** —
+  `importNetlist` / `ImportedNetlist` here, versus `connectivityFromXml` there
+  — and adapting gate 3 to it is Task 11's job. A later ported file importing
+  `connectivityFromXml` therefore fails `bun run typecheck` naming the missing
+  export rather than refusing at port time.
 - **`@/pinmap/*` is gone, not deferred.** There is no MCU in this repository.
   Task 2 ports `ir/build.ts` and `ir/types.ts` *with a cut* that removes the
   `PinmapInput` branch, `BuildContext.pinmap`, `CircuitSpec.mcu` and
   `Circuit.mcu` entirely (supersede means delete — see `docs/known-gaps.md`
   **G112**) rather than waiting on `@/pinmap/*` to resolve; nothing here
   imports it any more.
-- **`@/schgen/render/library` resolves to a hand-written forward
-  declaration, not a port.** `lib/schgen/ir/build.ts`, `validate.ts`,
-  `validate-nets.ts` and `validate-rule.ts` need `SymbolResolver` (and
-  `LibPin`) as a type today; `lib/schgen/render/library.ts` declares just
-  that plus a `createResolver` that throws, naming Task 4 — the task that
-  ports the real `render/library.ts` here and replaces this file wholesale.
-  It is in `handWritten` and is the one hand-written file this directory
-  carries besides `strict.ts`. See `docs/known-gaps.md` **G113**.
-- **`@/schgen/__fixtures__/fixtureLib` ports** (to
-  `tests/schgen/__fixtures__/fixture-lib.ts`) because its own imports now
-  resolve, even though calling what it returns still reaches the throwing
-  `createResolver` above — nothing in this directory calls it yet, but it is
-  already correct and Task 4 needs it too. **Three of the five pedals `ir/`
-  test files are not ported at all yet**: `build.test.ts`, `classify.test.ts`
-  and `validate.test.ts` all call `fixtureResolver()` at module scope, so
-  porting them before `createResolver` is real would have landed three
-  module-load errors on `HEAD` - Controller ruling R4 (Task 2 round 1) moved
-  them to Task 4 instead, arriving together with the real `render/library.ts`.
-  See `docs/known-gaps.md` **G113**. `author.test.ts` and `order.test.ts`
-  need no resolver, are ported, and run today.
+- **`render/library.ts` is PORTED** (Task 4). It was a hand-written forward
+  declaration — the interfaces plus a `createResolver` that threw, naming
+  Task 4 — until that task replaced it wholesale with the pedals source and
+  removed its `handWritten` entry in favour of a `files[]` one. `strict.ts`
+  is now the only hand-written file under `lib/schgen/`.
+
+  Its fixture libraries are NOT `.ts` and so are not ported by this
+  manifest: `tests/schgen/__fixtures__/symbols/Fix.kicad_sym` and
+  `Pwr.kicad_sym` are copied verbatim from the pedals source, and
+  `tests/schgen/port-fidelity.test.ts` compares them byte-for-byte against
+  `$SCHGEN_SOURCE` so a hand-edited or drifted copy fails rather than
+  quietly changing what every fixture-backed test measures.
 - **`@/schgen/gates/oscar/*`.** Five files, deferred to Task 18 by the plan
   (the Pultec reference-graph comparison needs the complete pipeline first).
 - **`@/schgen/design`, `@/schgen/generate`, `@/schgen/generateFiles`,
