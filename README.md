@@ -127,6 +127,14 @@ audio-circuits/
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
+- **Two npm RUNTIME dependencies, installed by `bun install` rather than by
+  you**: `eecircuit-engine` (the vendored SPICE engine) and `elkjs` (the
+  schematic layout backend, pinned to an exact version). Neither pulls in
+  anything transitively and both ship their own types, so there is nothing to
+  configure. `elkjs` is 7.7 MB on disk, almost all of it one
+  GWT-compiled worker, and it needs a non-obvious construction under Bun -
+  `docs/known-gaps.md` G183 records why, and why the pinned version is 0.9.3
+  rather than the latest.
 - **`SCHGEN_SOURCE`**, an environment variable (no default - see below),
   pointing at a local checkout of `digital-pedal-platform`'s
   `tools/schgen/` directory, the source tree the `lib/schgen/` port is

@@ -196,10 +196,34 @@ is resolved rather than hand-porting around the gap:
 - **`render/library.ts` is PORTED** (Task 4). It was a hand-written forward
   declaration — the interfaces plus a `createResolver` that threw, naming
   Task 4 — until that task replaced it wholesale with the pedals source and
-  removed its `handWritten` entry in favour of a `files[]` one. The
-  hand-written files under `lib/schgen/` are now `strict.ts`,
-  `render/stock-symbols.ts`, `render/problem-obstacles.ts` (Task 8) and the
-  seven `render/obstacle-*.ts` modules (Task 5).
+  removed its `handWritten` entry in favour of a `files[]` one.
+
+  **The hand-written files under `lib/schgen/` are TWENTY-ONE as of Task 12**,
+  and the manifest is the inventory rather than this list - an enumeration in
+  prose goes stale, and this one had already lost
+  `gates/oscar/boundary.ts` before Task 12 added to it. By family:
+  `strict.ts`; `render/stock-symbols.ts` and `render/problem-obstacles.ts`;
+  the seven `render/obstacle-*.ts` modules (Task 5); `authoring.ts`,
+  `authoring-checks.ts`, `from-network.ts` and the three `rules/*.ts`
+  modules (Task 9); `gates/round-trip.ts` (Task 11);
+  `gates/oscar/boundary.ts` (Task 6b, a forward declaration);
+  and the three `elk/*.ts` modules (Task 12, below).
+
+  **`elk/graph.ts`, `elk/options.ts` and `elk/serialize.ts` are hand-written
+  and have no pedals source**, because the pedals generator has no layout
+  backend: it draws every block with a template. They hold the ELK layout
+  GRAPH and nothing that runs ELK - `lib/schgen/` *"spawns nothing"*, and
+  driving `elkjs` spawns a worker, so the driver is `tools/schgen/elk/layout.ts`
+  behind the same seam `tools/schgen/kicad-run.ts` draws around `kicad-cli`.
+  Spec §1.2 is what transfers from `netlistsvg` and nothing else does: every
+  symbol declares which SIDE each pin leaves from, and ELK is told those port
+  positions are FIXED. `elk/serialize.ts`'s output is a CONTRACT - the
+  generation manifest and the readability baseline hash those bytes rather
+  than the `Network`'s content, because `docs/known-gaps.md` **G95** measured
+  that reordering a circuit file's declarations changes every drawing.
+  **G180** carries the caveat against every spike figure, **G182** the two
+  Task 9 rules the graph cannot reach, **G183** the dependency, and **G186**
+  what making `generate` asynchronous cost.
 
   **`render/problem-obstacles.ts` is hand-written and has no pedals source.**
   It turns one of `checkLayout`'s problem strings into the relation and the

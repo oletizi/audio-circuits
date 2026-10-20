@@ -50,9 +50,11 @@ interface MiniRun {
 }
 
 /** Generate the mini design into a fresh registered scratch outDir (new reference lock) and write it. */
-function generateMiniInScratch(): MiniRun {
+async function generateMiniInScratch(): Promise<MiniRun> {
   const d = miniInScratch()
-  const g = generate(d, { kicadVersion: kicadVersion(), stockDir: stockSymbolDir(), initLock: true, acceptToolchain: false })
+  // Task 12: `generate` is async (plan decision D2) and the mini design's blocks are `wired` or
+  // `bus`, so the ELK pre-pass has nothing to lay out and needs no authoring declaration.
+  const g = await generate(d, { kicadVersion: kicadVersion(), stockDir: stockSymbolDir(), initLock: true, acceptToolchain: false, authoring: null })
   writeGeneration(d, g)
   return { d, g }
 }
@@ -68,9 +70,9 @@ function requireKicadCli(): void {
 
 describe("gates on the generated fixture design", () => {
   let run: MiniRun | null = null
-  beforeAll(() => {
+  beforeAll(async () => {
     requireKicadCli()
-    run = generateMiniInScratch()
+    run = await generateMiniInScratch()
   }, 120_000)
   const mini = (): MiniRun => {
     if (run === null) throw new Error("mini design was not generated")
@@ -86,9 +88,9 @@ describe("gates on the generated fixture design", () => {
     expect(gate3(mini())).toEqual([])
   }, 120_000)
 
-  it("gate 3 catches a hand-moved wire end", () => {
+  it("gate 3 catches a hand-moved wire end", async () => {
     // A generation of its own: this test edits the schematic on disk.
-    const moved = generateMiniInScratch()
+    const moved = await generateMiniInScratch()
     const file = path.join(moved.d.outDir, "power.kicad_sch")
     const text = fs.readFileSync(file, "utf8")
     const firstWire = /\(wire\s*\(pts\s*\(xy ([-\d.]+) ([-\d.]+)\)/.exec(text)

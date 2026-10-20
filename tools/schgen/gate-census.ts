@@ -92,26 +92,29 @@ export function parityDesign(c: ParityCase, symbols: SymbolResolver, repoRoot: s
   return { file: path.join(repoRoot, `${c.name}.design.ts`), dir: repoRoot, spec, outDir: scratch }
 }
 
-export function gateCensus(repoRoot: string): readonly CircuitGates[] {
+export async function gateCensus(repoRoot: string): Promise<readonly CircuitGates[]> {
   const symbols = parityResolver()
-  const env: GenerateEnv = {
-    kicadVersion: kicadVersion(),
-    stockDir: stockSymbolDir(),
-    initLock: false,
-    acceptToolchain: false,
-  }
+  const kicad = kicadVersion()
+  const stockDir = stockSymbolDir()
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "schgen-gate-census-"))
   try {
-    return PARITY_CASES.map((c): CircuitGates => {
-      const results = runGates(parityDesign(c, symbols, repoRoot, scratch), env)
+    const out: CircuitGates[] = []
+    for (const c of PARITY_CASES) {
+      // Task 12: `authoring` is the ELK pre-pass's input, and each parity case has its own. Gate 1
+      // refuses on all four before the pre-pass runs (docs/known-gaps.md G151, G178), so this
+      // changes no row today - it is passed because it is the circuit's own declaration and
+      // passing `null` would be a claim that the circuit has none.
+      const env: GenerateEnv = { kicadVersion: kicad, stockDir, initLock: false, acceptToolchain: false, authoring: c.authoring }
+      const results = await runGates(parityDesign(c, symbols, repoRoot, scratch), env)
       const registered = new Set(results.map((r) => r.gate))
-      return {
+      out.push({
         name: c.name,
         entry: c.entry,
         results,
         notRegistered: GATE_ORDER.filter(({ gate }) => !registered.has(gate)).map(({ gate, absentWhen }) => ({ gate, why: absentWhen })),
-      }
-    })
+      })
+    }
+    return out
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true })
   }
@@ -169,5 +172,5 @@ export function renderGateCensus(census: readonly CircuitGates[], everyProblem: 
 if (import.meta.main) {
   // The repository root, from this file's own location: two directories up from tools/schgen/.
   const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..", "..")
-  console.log(renderGateCensus(gateCensus(repoRoot), process.argv.includes("--all")))
+  console.log(renderGateCensus(await gateCensus(repoRoot), process.argv.includes("--all")))
 }

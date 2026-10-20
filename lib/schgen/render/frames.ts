@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/frames.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/frames.ts`, and DIVERGED from it by
+ * Task 12 of the M1 schematic-authoring plan: `blockContent` takes the ELK `Backend` and passes it
+ * to `renderBlock`. That one parameter is the whole divergence.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139** and **G186**.
  */
 
 /**
@@ -11,7 +15,7 @@
  * content is translated by a grid-multiple offset into its frame, below the title band.
  */
 import type { BlockId, Circuit, NetName, RailSpec, SheetId, SheetSpec } from "../ir/types.ts";
-import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
+import type { Backend, BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { subgraphOf } from "./blocks.ts";
 import { renderBlock } from "./bus.ts";
 import { assertOnGrid, GRID, gridCeil, gridFloor, placeBox, unionBox, type Point, type Side, type Um } from "./geometry.ts";
@@ -58,10 +62,17 @@ export function titleOf(title: string, checklist: readonly string[]): string {
   return checklist.length === 0 ? title : `${title} [${checklist.join(", ")}]`;
 }
 
-export function blockContent(c: Circuit, id: BlockId, symbols: SymbolResolver): FrameContent {
+/**
+ * **`elk` IS TASK 12's ADDITION AND IT IS WHY THIS FILE IS DIVERGED** (`docs/known-gaps.md`
+ * **G186**). An `auto` block that no template draws needs the ELK backend, and `renderBlock` ->
+ * `realiseBlock` is where it is used; this is the parameter that carries it from `layoutSheet`.
+ * It defaults to `null` for `docs/known-gaps.md` **G146**'s reason - a missing backend REFUSES,
+ * naming the block - and the default is what keeps every ported caller unchanged.
+ */
+export function blockContent(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): FrameContent {
   const block = c.blocks.get(id);
   if (block === undefined) throw new Error(`unknown block ${id}`);
-  const { layout, legend } = renderBlock(c, id, symbols);
+  const { layout, legend } = renderBlock(c, id, symbols, elk);
   const g = subgraphOf(c, id, symbols);
   const bodies = layout.placements.map((pl) => {
     const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);

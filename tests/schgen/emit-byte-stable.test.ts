@@ -32,14 +32,17 @@ const env = (): GenerateEnv => ({
   stockDir: stockSymbolDir(),
   initLock: true,
   acceptToolchain: false,
+  // The mini design renders every block `wired` or `bus`, so the Task 12 ELK pre-pass has nothing
+  // to lay out and needs no authoring declaration. A block that DID select ELK would refuse here.
+  authoring: null,
 })
 
 describe("generate over the ported mini design", () => {
   let d: LoadedDesign
   let a: Generation
-  beforeAll(() => {
+  beforeAll(async () => {
     d = miniInScratch()
-    a = generate(d, env())
+    a = await generate(d, env())
   })
 
   it("produces the whole declared file set", () => {
@@ -59,15 +62,15 @@ describe("generate over the ported mini design", () => {
     ])
   })
 
-  it("generating twice gives identical bytes", () => {
-    const b = generate(d, env())
+  it("generating twice gives identical bytes", async () => {
+    const b = await generate(d, env())
     expect([...b.files.keys()].sort()).toEqual([...a.files.keys()].sort())
     for (const [name, text] of a.files) expect(b.files.get(name), name).toBe(text)
   })
 
-  it("generate writes nothing", () => {
+  it("generate writes nothing", async () => {
     const before = fs.readdirSync(d.outDir)
-    generate(d, env())
+    await generate(d, env())
     expect(fs.readdirSync(d.outDir)).toEqual(before)
   })
 
@@ -83,21 +86,21 @@ describe("generate over the ported mini design", () => {
 })
 
 describe("writeGeneration is the only writer", () => {
-  it("writes every generated file, and staleFiles then reports none", () => {
+  it("writes every generated file, and staleFiles then reports none", async () => {
     const d = miniInScratch()
-    const g = generate(d, env())
+    const g = await generate(d, env())
     expect(staleFiles(d, g).length, "a fresh scratch outDir holds none of them yet").toBe(g.files.size)
     const written = writeGeneration(d, g)
     expect(written.map((f) => path.basename(f)).sort()).toEqual([...g.files.keys()].sort())
     expect(staleFiles(d, g), "written and then immediately compared by content").toEqual([])
   })
 
-  it("reports a file stale when its CONTENT differs, not when its mtime does", () => {
+  it("reports a file stale when its CONTENT differs, not when its mtime does", async () => {
     // This is the claim the Step 7 perturbation drives red: `staleFiles` compares content. Here it
     // is asserted the way a reader would want it - the file is rewritten with different bytes and
     // nothing is said about time.
     const d = miniInScratch()
-    const g = generate(d, env())
+    const g = await generate(d, env())
     writeGeneration(d, g)
     expect(staleFiles(d, g)).toEqual([])
     const victim = "REFMAP.md"
@@ -118,18 +121,18 @@ describe("writeGeneration is the only writer", () => {
    * ran - 0.0% - so a hermetic configuration that silently stopped being hermetic would have
    * failed nothing. `docs/known-gaps.md` **G124**.
    */
-  it("runs ERC on a generated sheet through the hermetic KiCad configuration", () => {
+  it("runs ERC on a generated sheet through the hermetic KiCad configuration", async () => {
     const d = miniInScratch()
-    const g = generate(d, env())
+    const g = await generate(d, env())
     writeGeneration(d, g)
     const erc = runErc(path.join(d.outDir, "mini.kicad_sch"), "error")
     expect(erc.errors, `ERC errors on the generated project:\n${erc.report}`).toBe(0)
     expect(erc.report, "a report with no totals line means parseErcCounts guessed").toContain("ERC messages:")
   })
 
-  it("refuses a generated name that would escape outDir, and writes nothing when it does", () => {
+  it("refuses a generated name that would escape outDir, and writes nothing when it does", async () => {
     const d = miniInScratch()
-    const g = generate(d, env())
+    const g = await generate(d, env())
     const escaping = { files: new Map([["../escaped.kicad_sch", "(kicad_sch)"]]) }
     expect(() => writeGeneration(d, escaping)).toThrow(/would be written outside/)
     expect(fs.existsSync(path.resolve(d.outDir, "..", "escaped.kicad_sch"))).toBe(false)

@@ -1,15 +1,28 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/generate.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/generate.ts` (with the MCU pin-map `cuts` of
+ * `docs/known-gaps.md` **G112**), and DIVERGED from it by Task 12 of the M1 schematic-authoring
+ * plan: `generate` is **async** and runs the ELK pre-pass, `GenerateEnv` carries the circuit's
+ * `SchematicAuthoring`, and `layoutSheet` is handed the backend the pre-pass produced.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139** and **G186**.
  */
 
 /**
  * The generation pipeline: build → strict validation → symbol pin-text self-check → reference lock →
- * version lock → layout → emit.
+ * version lock → **ELK pre-pass** → layout → emit.
  * generate only reads; writeGeneration is the only writer, so any refusal leaves every file untouched.
+ *
+ * **WHY THE PRE-PASS SITS WHERE IT DOES, and why `generate` is therefore async** - plan decision
+ * **D2**. `elkjs` has no synchronous layout entry point (Task 12 Step 1 verified the premise), and
+ * `Template.realise` is synchronous, so ELK cannot run inside the realise dispatch. It runs once,
+ * here, over every block `selectRenderer` sends to it, and `elkBackendFrom` turns the result into
+ * the synchronous `Backend` `layoutSheet` passes down to `realiseBlock`.
+ *
+ * It runs AFTER the version lock on purpose: a toolchain drift refuses before anything is laid
+ * out, so a run that is going to be rejected does not spawn an ELK worker first.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -24,6 +37,9 @@ import { createResolver, splitLibId, type SymbolResolver } from "../../lib/schge
 import { withReferences } from "../../lib/schgen/render/drawn-text.ts";
 import { assertRefsMatchDrawings } from "../../lib/schgen/render/page-refs.ts";
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts";
+import { elkBackendFrom, elkPrePass, type ElkOutcome } from "./elk/layout.ts";
+import type { SchematicAuthoring } from "../../lib/schgen/authoring.ts";
+import type { BlockId } from "../../lib/schgen/ir/types.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
 import { generatedFiles, initHint, REFS_LOCK, VERSION_LOCK } from "./generated-files.ts";
@@ -37,11 +53,30 @@ export interface GenerateEnv {
   readonly initLock: boolean;
   /** --accept-toolchain: accept a new toolchain/library baseline. */
   readonly acceptToolchain: boolean;
+  /**
+   * The circuit's schematic authoring declaration, for the ELK pre-pass - **Task 12's addition**.
+   *
+   * **WHY IT IS HERE AND NOT ON `DesignSpec`.** `elkInputOf` needs two declared things to place a
+   * block's boundary nets: `portDirections` and `rails`, both read through
+   * `lib/schgen/authoring.ts`'s `negotiablePort`. `circuitSpecFrom` has already distilled the
+   * authoring file into a `CircuitSpec` by the time this function holds a `Circuit`, and the IR
+   * has **no slot for a port direction at all** - so it cannot be recovered from `d`. Putting it
+   * on `DesignSpec` would diverge `lib/schgen/design.ts` and every design fixture as well; this
+   * diverges one file. `docs/known-gaps.md` **G186** records the choice and its cost.
+   *
+   * **`null` IS NOT A FALLBACK.** No design module in this repository declares an authoring file
+   * yet, and every design ported from `digital-pedal-platform` renders its blocks `wired` or
+   * `bus`, so the pre-pass has nothing to do for them. A block that DOES select ELK with `null`
+   * here refuses, naming the block and this field (`elkPrePass`, `tools/schgen/elk/layout.ts`).
+   */
+  readonly authoring: SchematicAuthoring | null;
 }
 
 export interface Generation {
   /** Path relative to outDir -> exact text. */
   readonly files: ReadonlyMap<string, string>;
+  /** Per block the ELK pre-pass laid out or refused; empty when no block selected ELK. */
+  readonly elk: ReadonlyMap<BlockId, ElkOutcome>;
   readonly circuit: Circuit;
   readonly annotation: Annotation;
   readonly versions: VersionLock;
@@ -112,7 +147,7 @@ function resolveVersions(d: LoadedDesign, env: GenerateEnv, current: VersionLock
   return { versions: locked, text };
 }
 
-export function generate(d: LoadedDesign, env: GenerateEnv): Generation {
+export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
   if (!isPlainFileName(d.spec.project)) {
     throw new Error(`project name "${d.spec.project}" must be a plain file name (no path separator or ".."); it names files in the output directory`);
   }
@@ -134,8 +169,11 @@ export function generate(d: LoadedDesign, env: GenerateEnv): Generation {
 
   // The drawing prints reference designators where titles and notes name parts by design label.
   const drawn = withReferences(circuit, annotation.refs);
-  const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID));
+  // Every block selectRenderer sends to ELK, laid out once, before the synchronous dispatch runs.
+  const elk = await elkPrePass(drawn, symbols, env.authoring);
+  const backend = elkBackendFrom(elk);
+  const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend));
   assertRefsMatchDrawings(drawn, drawings);
   const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings });
-  return { files, circuit, annotation, versions, drawings, symbols };
+  return { files, circuit, annotation, versions, drawings, symbols, elk };
 }

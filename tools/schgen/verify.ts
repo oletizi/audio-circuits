@@ -175,11 +175,12 @@ function oscarGate(d: LoadedDesign): string[] {
  * reference lock or accepts toolchain drift, whatever `env` says: both flags are forced off.
  * When gate 1's generation is refused, every later gate reports NOT_RUN and runs nothing.
  */
-export function runGates(d: LoadedDesign, env: GenerateEnv): GateResult[] {
+export async function runGates(d: LoadedDesign, env: GenerateEnv): Promise<GateResult[]> {
   let generation: Generation | null;
   let gate1: GateResult;
   try {
-    generation = generate(d, { ...env, initLock: false, acceptToolchain: false });
+    // Task 12: `generate` is async (plan decision D2's ELK pre-pass), so this is too.
+    generation = await generate(d, { ...env, initLock: false, acceptToolchain: false });
     const produced = generation;
     gate1 = runGate(GATES.upToDate, () => staleFiles(d, produced));
   } catch (e) {

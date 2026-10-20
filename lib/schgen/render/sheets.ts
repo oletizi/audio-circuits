@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/sheets.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/sheets.ts`, and DIVERGED from it by
+ * Task 12 of the M1 schematic-authoring plan: `layoutSheet` takes the ELK `Backend` and hands it
+ * to `blockContent`. That one parameter is the whole divergence.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139** and **G186**.
  */
 
 /**
@@ -12,7 +16,7 @@
  * backstop. Junction dots are cosmetic: exactly the junctionPoints() of the sheet's items.
  */
 import type { Circuit, Paper, SheetId } from "../ir/types.ts";
-import type { BlockLayout, BlockSubgraph, Placement, Wire } from "./block-types.ts";
+import type { Backend, BlockLayout, BlockSubgraph, Placement, Wire } from "./block-types.ts";
 import { pinMarks, type PinMark } from "./pin-marks.ts";
 import { placedNoConnects } from "./blocks.ts";
 import { junctionPoints } from "./connectivity.ts";
@@ -102,7 +106,15 @@ function noConnects(blocks: readonly SheetBlock[]): Point[] {
   return [...byKey.values()];
 }
 
-export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string): SheetDrawing {
+/**
+ * **`elk` IS TASK 12's ADDITION AND IT IS WHY THIS FILE IS DIVERGED** (`docs/known-gaps.md`
+ * **G186**). It is the last link of the chain `generate` -> `layoutSheet` -> `blockContent` ->
+ * `renderBlock` -> `realiseBlock`, which is how the asynchronous ELK pre-pass's result reaches a
+ * synchronous realise dispatch (plan decision **D2**). It defaults to `null` for **G146**'s
+ * reason: an `auto` block that reaches ELK with no backend REFUSES, naming the block, and the
+ * default is what keeps every ported caller of this function unchanged.
+ */
+export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null = null): SheetDrawing {
   const sheet = c.sheets.find((s) => s.id === sheetId);
   if (sheet === undefined) throw new Error(`unknown sheet ${sheetId}`);
   const paper = PAPER[sheet.paper];
@@ -110,7 +122,7 @@ export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolve
   const flags = flagsContent([...c.rails.values()], sheetId, flagLibId, symbols);
   const notes = notesContent(sheet);
   const contents: FrameContent[] = [
-    ...blocks.map((b) => blockContent(c, b.id, symbols)),
+    ...blocks.map((b) => blockContent(c, b.id, symbols, elk)),
     ...(notes === null ? [] : [notes]),
     ...(flags === null ? [] : [flags]),
   ];

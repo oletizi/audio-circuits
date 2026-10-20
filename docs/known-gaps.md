@@ -12884,3 +12884,425 @@ the recurrence biting the commit cadence rather than the code.
   scoped run include `tests/kicad/` and `tests/stripboard/temp-scratch.test.ts` by default, since
   **G176** establishes that those are precisely the files a ported fixture breaks. That is the
   narrowest fix and the one that would have caught this instance.
+
+### G180 - every spike figure now carries a SECOND caveat: this driver is not `netlistsvg`, and three specific numbers were properties of its skin
+
+Task 12 lands the ELK backend, and **it does not drive ELK through `netlistsvg`.** Both spikes
+did - `docs/schematic/elk-spike.md` and `docs/schematic/elk-block-spike.md`, through
+`netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1 - so every figure in **G94** through
+**G101** was taken with a skin in the loop that this pipeline does not have. **G101** already
+carries this caveat for its own floor; this entry carries it for the rest, and names the three
+places the skin is demonstrably the cause rather than a confound.
+
+| the spikes, through `netlistsvg` | here, measured | consequence |
+| --- | --- | --- |
+| a node's size is a skin template's declared extent, resized by the skin | `u.symbol.boxes.get(u.unit)` placed at rotation 0, in micrometres | crossing counts depend on node size, so **G96**'s and **G100**'s numbers are not comparable |
+| a declared port is a drawn 30x20 `inputExt` CELL | a boundary node of **width 0, height 0** | **G101**'s floor and its *"port glyphs are 10-67 % of a block's cells"* do not apply |
+| the x-offset between congruent blocks is predicted by `6 * len(id) + 5`, the skin's 0.6 em at 10 px monospace (**G97**) | nothing in this graph draws a component id | **measured gone** - see **G185** |
+| `elk.direction = DOWN`, the analog skin's | `RIGHT`, plan decision **D4** | D4 states this cost itself |
+
+**AND ONE THING THIS ENTRY DOES NOT CLAIM.** It does not say the spikes' numbers are wrong, and
+it does not re-measure them. Task 17 is the re-measurement; `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`
+decision **D4** names §1.1, §1.8, §3.3 and §3.4 as the figures that may move.
+
+**A SECOND, SMALLER ITEM BELONGS HERE because it is an interpretation and not a measurement.**
+The Task 12 brief asks for `elk.spacing.nodeNode` and
+`elk.layered.spacing.nodeNodeBetweenLayers` *"in whole grid steps"* and names no number.
+`lib/schgen/elk/options.ts` takes them from the ported templates' own reviewed constants -
+`STUB` (`2 * GRID`) within a layer and `PITCH` (`4 * GRID`) between layers - on spec §3.1's
+grounds that the templates are the reviewed human arrangement and ELK is the thing being made to
+match them. **Which constant maps to which option is this writer's reading**: `columnXs` uses
+`PITCH` as the minimum step between adjacent rung COLUMNS, which under `direction = RIGHT` is a
+layer step, and `STUB` is the smallest reviewed non-unit spacing in the kit. Nothing in the spec
+or the plan states the correspondence.
+
+- **Found** 2026-10-20, Task 12 of the M1 schematic-authoring plan, Step 10 (which requires this
+  entry) and Step 5.
+- **Evidence** the landed `lib/schgen/elk/graph.ts` and `options.ts`, read directly: a node's
+  `width`/`height` come from `placeBox(ORIGIN, GRAPH_ROTATION, u.symbol.boxes.get(u.unit))` and a
+  boundary node's are the literals `0`. `tests/schgen/elk/serialize.test.ts`'s pinned
+  `ONE_RESISTOR` string shows both, byte for byte, and is a check that could have failed.
+  For the skin's side: **G101**'s own `[CODE]` citation of the `inputExt` glyph and **G97**'s
+  `6 * len(id) + 5` prediction, quoted from the entries rather than re-derived.
+- **Verified** CONFIRMED for this side of the comparison - this writer wrote the graph builder and
+  ran the pinned serialization. **RELAYED for the spikes' side**, which is read out of **G97**
+  and **G101** and was not re-executed.
+- **Why it is open** it is a caveat on numbers two later tasks will quote, and nothing in the tree
+  states it where those numbers are. It stays open until Task 17 re-measures.
+- **What would settle it** **CRITERION, from the plan's §5.6 and D4: Task 17's re-measurement
+  reports each of §1.1's, §1.8's, §3.3's and §3.4's numbers as REPRODUCED or MOVED, on this
+  driver.** For the spacing reading, the criterion is the same re-measurement: if the drawings it
+  measures are worse than the templates' on a stated axis, the spacing correspondence is one of
+  the things to question - and **it must be questioned with a measurement, not adjusted by eye**,
+  which is what `CLAUDE.md`'s governing invariant forbids the producing agent from doing.
+  **MECHANISM, untried:** none proposed. This entry records the caveat; it does not fix anything.
+
+### G181 - `elkjs` stamps a GWT identity hash on the graph it returns, and its value depends on what the worker laid out BEFORE - so the raw returned object is not a function of the input
+
+`[RAN]` `elkjs@0.9.3`'s returned `ElkNode` carries a `$H` property on the root, on every child and
+on every edge. It is not in `elkjs`'s own `ElkNode` type; it is GWT's identity hash code, assigned
+in sequence as the worker hashes objects. **It therefore depends on everything laid out before,
+on the same worker.** Two blocks with the SAME graph in one `layoutBlocks` call:
+
+```
+FIRST   $H: 277 282 286 288 13
+SECOND  $H: 371 375 379 381 369
+```
+
+So `JSON.stringify(outcome.graph)` is **not** a key for a drawing. `lib/schgen/elk/serialize.ts`
+emits only declared keys, so `$H` never appears in it, and every determinism comparison in
+`tests/schgen/elk/layout.elk.test.ts` goes through it.
+
+**THIS DOES NOT CONTRADICT G95's DETERMINISM HALF, and the distinction is worth stating because it
+is easy to mis-state in either direction.** G95: *"determinism for a FIXED input still holds - 14
+of 14 inputs gave one distinct output over three runs."* That holds here too: `layoutBlocks`
+builds one `ELK` per call, so a fresh worker starts a fresh hash sequence and three separate calls
+on one input give three IDENTICAL raw strings. **The instability shows up only within a single
+call over two or more blocks** - which is exactly how the pre-pass runs. An earlier probe in this
+task measured 3 distinct of 3 by calling `layout` three times on ONE instance; that figure is
+correct for that arrangement and is NOT what `layoutBlocks` does.
+
+- **Found** 2026-10-20, Task 12, Step 8, while writing the determinism test.
+- **Evidence** `tests/schgen/elk/layout.elk.test.ts`'s test *"two identical graphs on one worker
+  serialize alike and raw-stringify differently"*, which asserts BOTH halves - the serialized
+  forms equal and the raw forms unequal - so it fails if either stops being true. The `$H` numbers
+  above are from the probe that found it. A second test asserts the serialized output does not
+  contain `$H` **and** that the raw object does, so neither half is a check of nothing.
+- **Verified** CONFIRMED - this writer ran the probe and wrote both tests.
+- **Why it is open** it is a property of the dependency, not a defect to fix here, and it is a trap
+  for any later task that compares ELK output: Task 16's manifest and Task 17's re-measurement both
+  compare drawings, and the obvious `JSON.stringify` is wrong for the reason above.
+- **What would settle it** **CRITERION: every comparison of an ELK output goes through
+  `serializeElkInput` (or another writer that emits only declared keys), never through
+  `JSON.stringify` of the returned object.** Nothing needs fixing for that to hold today; what
+  would break it is a later task reaching for the raw object. **MECHANISM, untried:** a guard that
+  greps for `JSON.stringify` applied to an `ElkNode` would be a text sweep over a shape the type
+  system already describes, so it is recorded as an option and not taken.
+
+### G182 - two of Task 9's three rules key on `ComponentKind`, which the IR does not carry, so neither `pinSidesFor` nor `preferredOrientation` is callable from a `BlockSubgraph` - and the ELK graph is built in the library frame as a result
+
+`[CODE]` `grep -rn "ComponentKind" --include="*.ts" lib/schgen` returns **15 lines: 13 in
+`lib/schgen/rules/`** (`pin-sides.ts`, `orientation.ts`, `symbols.ts`) **and 2 in
+`lib/schgen/elk/graph.ts`'s own doc comment**, which is this entry restated at the call site.
+**Nothing under `lib/schgen/ir/` or `lib/schgen/render/` names the type at all.**
+`ComponentKind` is declared in
+`lib/model/types.ts` and reaches `lib/schgen/` only through `from-network.ts`, which holds the
+`Network`. **`IrPart` has no kind field** - its fourteen fields are label, refPrefix, libId, units,
+value, footprint, bom, dnp, checklist, source, pinTable, mechanicalPads, ncUnlistedReason, order -
+and a `BlockSubgraph`'s units carry `IrPart`. So:
+
+- **`pinSidesFor(kind, symbol)` cannot be called**, and `lib/schgen/elk/graph.ts` calls
+  `sideOfPin(rot, pin)` instead. **That is the same rule, not a substitute:** `pinSidesFor`'s own
+  doc comment says it is `sideOfPin(0, pin)` per pin, and `kind` is read by ONE refusal in it (a
+  symbol with no pins). The equivalent refusal is in `graph.ts`'s `libPinOf`, naming the part, the
+  unit, the symbol and the pin number. **This half costs nothing measurable.**
+- **`preferredOrientation(kind, context)` cannot be called either, and this half DOES cost
+  something.** `lib/schgen/elk/graph.ts` builds every node at `GRAPH_ROTATION = 0`. That is a
+  stated frame - the orientation the symbol library itself draws the part in - and `pinEnd`,
+  `placeBox` and `sideOfPin` are all applied through that one value, so spec §1.4 obligation 3's
+  *"the transform is applied once, to the library pin geometry, and the result is what both ELK and
+  the emitter see"* holds within this layer. **But spec §1.5's step-2 rule library never runs**, so
+  a part whose grounded end the rule would have put at the bottom is not turned, and §1.5's step 3
+  (*"ELK may choose among orientations the rules leave open"*) is not available either, because
+  FIXED_POS needs a rotation fixed before the graph exists.
+
+**AND THE GAP WIDENS AT `generate`, WHICH IS WHY THIS IS NOT ONLY ABOUT ONE SIGNATURE.**
+`preferredOrientationsOf` - the rule's one existing consumer - takes a `Network`, and `generate`
+never holds one: it holds a `LoadedDesign` whose `DesignSpec.circuit` is a `CircuitSpec`. So the
+orientation map cannot be computed inside the pipeline as it stands, with or without a signature
+change to `elkInputOf`.
+
+**THE CONCRETE COLLISION THIS SETS UP IS TASK 13's.** Its brief says `adaptElkLayout` takes `rot`
+from `preferredOrientation`. A placement rotated after the ports were fixed at rotation 0 is the
+SECOND transform obligation 3 forbids by name, and the wire attachment points would be computed
+from geometry ELK never saw.
+
+- **Found** 2026-10-20, Task 12, Step 5, when the brief's *"`"elk.port.side"` from `pinSidesFor`"*
+  turned out not to be callable.
+- **Evidence** the grep above (15 lines, 13 of them in `rules/` and the other 2 a doc comment, none
+  under `ir/` or `render/`); `IrPart`'s field list read
+  directly in `lib/schgen/ir/types.ts`; `preferredOrientationsOf`'s signature in
+  `lib/schgen/from-network.ts` (`network: Network`); and `generate`'s own parameter list. A check
+  that could have failed: `bun run typecheck` fails if `graph.ts` tries to call either rule, which
+  is how this was found rather than reasoned about.
+- **Verified** CONFIRMED - this writer ran the grep, read the three files and hit the type error.
+- **Why it is open** closing it is a change to the IR or to `generate`'s inputs, which is larger
+  than Task 12 and lands in the middle of Task 13's obligations. Nothing is broken today: every
+  block draws, and the drawing is in the library frame rather than in a wrong frame.
+- **What would settle it** **CRITERION: the rotation a block's ELK ports are fixed at is the same
+  rotation its placements are emitted at, and it is the one spec §1.5's authority order chooses.**
+  Note what this does NOT say: it does not require rotation 0 to be replaced, only that the two
+  agree and that the choice comes from §1.5 rather than from whichever module needed a number.
+  **MECHANISMS, three, all untried and they disagree:** (1) carry a `ComponentKind` on `PartSpec`
+  and `IrPart`, which makes all three rules reachable everywhere and is the largest change;
+  (2) compute the orientation map in `from-network.ts` (where the `Network` is) and carry it as a
+  field on `CircuitSpec`/`Circuit`, which keeps the kind out of the IR but adds a derived map to it;
+  (3) leave the graph in the library frame and make Task 13 emit placements at rotation 0 too,
+  which satisfies the criterion trivially and gives up §1.5 step 2 - **and that is a decision about
+  a drawing's semantics, so it is not Task 13's to make silently.**
+
+### G183 - `elkjs`'s documented node entry point cannot construct an `ELK` under Bun, in every version from 0.9.3 to 0.12.0, and the reason is that Bun defines a global `self`
+
+**THE FIRST RUNTIME DEPENDENCY THIS REPOSITORY HAS ADDED SINCE `eecircuit-engine`**, so what it is
+and what it costs are recorded rather than left in `package.json`.
+
+**WHAT WAS PINNED, AND WHY NOT THE LATEST.** `elkjs@0.9.3`, exactly (`bun add elkjs@0.9.3
+--exact`). It is one of the two versions **G94** reproduced its crash on (*"elkjs 0.7.1 and 0.9.3
+both raise"*), so Task 14's reproduction and G94's measurement are about the same build.
+**The cost of that choice: 0.10.0, 0.10.1, 0.10.2, 0.11.0, 0.11.1 and 0.12.0 exist and none of
+them has been evaluated here.** **Transitive cost: zero packages** - `elkjs` declares no runtime
+dependencies, in 0.9.3 and in 0.12.0 alike. **On-disk cost: 7.7 MB in 12 files**, almost all of it
+the GWT-compiled `lib/elk-worker.js` and `lib/elk-worker.min.js`. Licence **EPL-2.0**.
+
+**STEP 1's PREMISE CHECK, AND IT FOUND NOTHING WRONG, WHICH IS WHY IT IS HERE.**
+`elkjs@0.9.3` **does** ship `lib/elk-api.d.ts`, plus `lib/main.d.ts`, `lib/elk.bundled.d.ts` and
+`lib/elk-worker.d.ts`, and `package.json` declares `"types": "lib/main"`. So no
+`lib/schgen/elk/elkjs.d.ts` was written and no declaration file for an untyped dependency exists.
+**And there is NO synchronous layout entry point**: the `ELK` interface's five members are
+`layout`, `knownLayoutAlgorithms`, `knownLayoutOptions`, `knownLayoutCategories` and
+`terminateWorker`, and every one but the last returns a `Promise`. `lib/elk-worker.min.js` exports
+only its `FakeWorker` class. **So plan decision D2's premise holds and there is no deviation to
+record** - which is the half of a premise check that gets forgotten.
+
+**THE DEFECT.** `require("elkjs")` -> `lib/main.js` asks `lib/elk-worker.min.js` for its
+`FakeWorker`, and that file chooses what to be with:
+
+```js
+if(typeof document===Yxe&&typeof self!==Yxe){var i=new h(self);self.onmessage=i.saveDispatch}
+else if(typeof module!==Yxe&&module.exports){...module.exports={'default':j,Worker:j}}
+```
+
+(`Yxe` is `'undefined'`.) **Under Bun `typeof self` is `"object"` and `typeof document` is
+`"undefined"`**, so the first branch wins: the module installs itself as a web worker, never
+exports its class, and `main.js` then throws
+
+```
+TypeError: undefined is not a constructor (evaluating 'new _Worker(url)')
+```
+
+Importing that file directly also hangs, because it registers `self.onmessage` and runs
+`gwtOnLoad`. **The branch is byte-identical in 0.9.3, 0.10.0, 0.11.0 and 0.12.0**, so no upgrade
+fixes it.
+
+**WHAT IS DONE INSTEAD, and it is `elkjs`'s own documented path rather than a workaround on the
+library's internals.** `tools/schgen/elk/layout.ts` imports `ELK` from `elkjs/lib/elk-api.js` and
+passes `workerUrl` plus a `workerFactory` that builds Bun's native `Worker`. Inside a real worker
+`self` IS a worker scope, so the first branch above is the CORRECT one and the library works as
+designed. The URL comes from `import.meta.resolve("elkjs/lib/elk-worker.min.js")` - owner ruling
+**G169**: no path may be unique to one machine.
+
+**No global is patched.** Deleting `globalThis.self` around the import would also work and was not
+taken: it mutates a global for the lifetime of a module load, and a second library testing `self`
+during that window would see the wrong answer.
+
+- **Found** 2026-10-20, Task 12, Step 1, on the first attempt to construct an `ELK`.
+- **Evidence** the four version tarballs' `lib/elk-worker.min.js`, each grepped for the branch and
+  each identical; the `TypeError` above, run; `typeof self === "object"` printed under
+  `bun run`; and the `ELK` interface read in `lib/elk-api.d.ts`. A check that could have failed:
+  `tests/schgen/elk/layout.elk.test.ts`'s first test reads the installed package's own
+  `version` and compares it against `ELK_BACKEND`, so the pinned version and the string a refusal
+  prints cannot drift; and 25 further tests in that directory lay out real graphs through the
+  worker, which fail outright if the construction regresses.
+- **Verified** CONFIRMED - this writer ran every measurement above.
+- **Why it is open** it is a defect in a dependency and in Bun's globals, neither of which this
+  repository fixes. It is recorded because the fix is non-obvious, because the obvious upgrade does
+  not help, and because a future `bun` or `elkjs` release could change it in either direction.
+- **What would settle it** **CRITERION: an `ELK` constructs and lays a graph out under the
+  repository's own runtime, and the construction is checked by a test that fails when it stops
+  working.** That is met today. What is NOT settled is whether the pinned version is the right one:
+  **MECHANISM, untried:** run the four later versions against `tests/schgen/elk/` and against
+  **G94**'s three arms, which is Task 14's or Task 17's measurement and not this task's - and
+  **a version bump is a change to a measured baseline, not a maintenance chore.**
+
+### G184 - the Task 12 brief's Step 9 names a test that CANNOT fail for the perturbation it describes, and a second reading of the same perturbation fails nothing at all
+
+Step 9: *"Then reorder the serializer's keys; the byte-identity test goes red."*
+
+**It does not.** The byte-identity test is *"two serializations of one input are byte-identical"* -
+`serializeElkInput(graph)` compared with itself. Reordering a declared key list moves both sides of
+that comparison together, so it stays green while **every hashed byte in the generation manifest
+and every readability baseline taken against it changes.** That is the exact shape of a check that
+cannot fail.
+
+`[RAN]` What was done instead: `tests/schgen/elk/serialize.test.ts` pins one small graph's
+serialization as a literal string, and THAT is what goes red.
+
+| perturbation | byte-identity test | pinned-string test |
+| --- | --- | --- |
+| `NODE_KEYS` `width`/`height` swapped | **green** (6 pass before, 5 pass after) | **RED**, printing both strings |
+| `NODE_KEYS` `x`/`y` moved after `width`/`height` | green | **green** |
+
+**THE SECOND ROW IS A FINDING IN ITS OWN RIGHT AND IT IS A LIMIT OF THE GOLDEN.** An INPUT graph's
+nodes carry no `x` or `y` - ELK assigns those - so reordering two keys that only an OUTPUT graph
+carries changes no input serialization and nothing in the suite notices. The pinned string
+constrains the declared order **only over the keys an input actually uses**. The first
+perturbation above is the honest one, and it is the one reported.
+
+- **Found** 2026-10-20, Task 12, Step 9, by running the perturbation the brief names.
+- **Evidence** the two runs above, with their pass counts, and the failure output quoting the
+  expected and received strings in full. A check that could have failed in the other direction: the
+  first row's pinned-string test was green before the perturbation and red after, and green again
+  after the restore.
+- **Verified** CONFIRMED - this writer ran all four states.
+- **Why it is open** the brief's sentence is in `.superpowers/`, which is gitignored, so the entry
+  is the only durable record; and the golden's blind spot is real and is inherited by every later
+  task that edits the serializer.
+- **What would settle it** **CRITERION: a change to any declared key order in
+  `lib/schgen/elk/serialize.ts` turns a test red.** Met for the keys an input carries; **NOT met
+  for `x`, `y`, `bendPoints`, `sections`, `junctionPoints`, `incomingShape`, `outgoingShape`,
+  `incomingSections` and `outgoingSections`**, which only an output carries.
+  **MECHANISM, untried:** pin a second golden over a LAID-OUT graph. The cost is that it pins
+  `elkjs`'s geometry as well as this module's key order, so a version bump would move it - which is
+  arguably correct (a moved baseline should be visible) and arguably noise. Deciding that is Task
+  16's, which owns the manifest.
+
+### G185 - measured on this driver: 12 of 12 declared blocks lay out, 0 raise, and the four congruent bias legs draw BYTE-IDENTICALLY - which is G97's remaining x difference, gone
+
+`[RAN]` Every declared block of the four parity circuits, through `elkInputOf` and the pinned
+`elkjs@0.9.3`, at `GRAPH_ROTATION = 0` and `elk.direction = RIGHT`:
+
+| circuit | block | units | nodes | edges | outcome |
+| --- | --- | --- | --- | --- | --- |
+| opamp-buffer | ob-buffer | 11 | 14 | 18 | laid out 95314 x 47156 |
+| optical-compressor | oc-power | 8 | 11 | 15 | laid out 65820 x 20394 |
+| optical-compressor | oc-audio | 14 | 18 | 25 | laid out 118672 x 40776 |
+| optical-compressor | oc-sidechain | 19 | 24 | 32 | laid out 133186 x 61116 |
+| pt2399-core | pt-core | 24 | 26 | 46 | laid out 149640 x 107051 |
+| transistor-preamp | tp-leg-upper | 3 | 5 | 5 | laid out 32302 x 17102 |
+| transistor-preamp | tp-leg-feedback | 3 | 5 | 5 | laid out 32302 x 17102 |
+| transistor-preamp | tp-leg-lower-a | 3 | 5 | 5 | laid out 32302 x 17102 |
+| transistor-preamp | tp-leg-lower-b | 3 | 5 | 5 | laid out 32302 x 17102 |
+| transistor-preamp | tp-leg-collector | 2 | 4 | 4 | laid out 17052 x 15314 |
+| transistor-preamp | tp-leg-emitter-bypass | 2 | 6 | 5 | laid out 15274 x 10742 |
+| transistor-preamp | tp-stage | 16 | 23 | 24 | laid out 70174 x 32698 |
+
+**`selectRenderer` returns `{kind:"elk"}` for all twelve**, which is **G160**'s and **G141**'s
+result re-confirmed on the derived arm.
+
+**ZERO RAISES IS NOT EVIDENCE THAT G94 IS FIXED, AND READING IT THAT WAY WOULD BE WRONG.**
+G94's crash needs *"at least two horizontal passives"* on a net with a self-loop, and its own
+block-scale sweep found *"a single-flip sweep over all 18 blocks - 108 flips, one passive each -
+produced ZERO failures."* At rotation 0 every two-terminal passive in these libraries is drawn
+VERTICALLY (`Device:R`, `Device:C` and `Device:C_Polarized` put pin 1 at the top and pin 2 at the
+bottom), so this run is the all-vertical assignment - **the arm G94 predicts lays out.** It is
+consistent with G94 and establishes nothing about it. Task 14 reproduces the crash deliberately.
+
+**THE CONGRUENCE RESULT, WHICH IS THE PART SOMEBODY WILL WANT TO ACT ON.** `circuits/transistor-preamp`
+declares four structurally identical bias legs. **G97**'s amendment measured them at block scale
+through `netlistsvg` and found every vertical offset, the internal vector and the starting corner
+identical, with **one x difference predicted exactly by `6 * len(component id) + 5`** - the skin's
+0.6 em at 10 px monospace. On this driver the four come back with identical canvases and
+**identical node positions and sizes**:
+
+```
+tp-leg-upper          JP1:1@(22,22) 10160x2286  R1:1@(15262,1810) 2032x7620  RV1:1@(22374,9450) 4826x7620
+tp-leg-feedback       JP2:1@(22,22) 10160x2286  R2:1@(15262,1810) 2032x7620  RV2:1@(22374,9450) 4826x7620
+tp-leg-lower-a        JP3:1@(22,22) 10160x2286  R3:1@(15262,1810) 2032x7620  RV3:1@(22374,9450) 4826x7620
+tp-leg-lower-b        JP4:1@(22,22) 10160x2286  R4:1@(15262,1810) 2032x7620  RV4:1@(22374,9450) 4826x7620
+```
+
+Nothing in this graph draws a component id, so the term that separated them is gone. **And
+G97's second qualification is answered in the same run rather than left open:** it warns that
+*"adding a rail symbol to one of two otherwise identical blocks stops them drawing alike"* -
+`tp-leg-upper` runs from `VCC`, `tp-leg-lower-a` from `GND`, and under `netlistsvg`'s `v-rails`
+that broke the congruence. Here a boundary net is a **zero-size node with no glyph**, so the two
+still draw alike.
+
+**WHAT THAT IS NOT.** It is **not** G97's re-measurement, for two reasons the entry itself gives:
+no template is in the loop, and these blocks are drawn in ISOLATION rather than in sheet context.
+It is also measured on node boxes, not on the drawn `.kicad_sch` - there is no drawing yet, because
+the adapter is Task 13's.
+
+- **Found** 2026-10-20, Task 12, Steps 6 and 8.
+- **Evidence** the two probe runs above, driven through the landed `elkInputOf` and `layoutBlocks`.
+  The committed check that could have failed is `tests/schgen/elk/layout.elk.test.ts`'s *"all twelve
+  declared blocks produce an ElkOutcome"*, which asserts `selectRenderer` chooses `elk` for each
+  block by name, that the input count equals `declaredBlockCount(PARITY_CASES)`, and that every
+  block has an outcome - so a block that vanished, or an exception that escaped, fails it.
+  **The ok/raised SPLIT is deliberately not asserted**: it is a property of a dependency defect at a
+  pinned version, and pinning 12/0 would make a later `elkjs` bump look like a regression in this
+  repository.
+- **Verified** CONFIRMED - this writer ran both probes and wrote the test.
+- **Why it is open** it is a measurement, recorded so the next agent does not re-derive it, and
+  because the congruence half is the before-measurement for Task 17.
+- **What would settle it** nothing - it is not a defect. **Two cautions instead.** (1) The twelve
+  figures are node-box geometry and not a drawing; any readability number taken from them is taken
+  over an uncanonicalised topology, which **G106** says is inflated by an unknown amount.
+  (2) **CRITERION for the congruence half, carried from G97: the same measurement again with a
+  template in the loop and the blocks in sheet context.** That is Task 17's.
+
+### G186 - making `generate` asynchronous cost THREE more byte-checked files, and the manifest's three lists are now 80 ported / 48 diverged / 60 hand-written
+
+Plan decision **D2** puts the ELK layout in an asynchronous pre-pass inside `generate`. Threading
+its result to the place it is used means touching the whole chain
+
+```
+generate -> layoutSheet -> blockContent -> renderBlock -> realiseBlock
+```
+
+and **three of those five modules were still byte-checked ports**. They are now `diverged[]`
+entries with a `sourceSha`, which is ruling **R18** as extended:
+
+| file | what changed | what it costs |
+| --- | --- | --- |
+| `tools/schgen/generate.ts` | `generate` is `async`; `GenerateEnv` gains `authoring`; `Generation` gains `elk`; `layoutSheet` is handed the backend | its MCU pin-map `cuts` (**G112**) are no longer carried as data - the deletions now live in the file |
+| `lib/schgen/render/sheets.ts` | `layoutSheet` takes `elk: Backend \| null = null` and passes it on | one parameter |
+| `lib/schgen/render/frames.ts` | `blockContent` takes `elk` and passes it on | one parameter |
+
+`lib/schgen/render/bus.ts` and `tools/schgen/verify.ts` were already diverged; their `why` strings
+are amended rather than re-stamped, because their pedals sources have not moved. **The counts
+move from 83 / 45 / 52 to 80 / 48 / 60** (the eight new hand-written files are the three
+`lib/schgen/elk/` modules, `tools/schgen/elk/layout.ts`, and four files under `tests/schgen/elk/`).
+**G139** is the entry that holds what a divergence costs: *"nothing compares a diverged file
+against its source again."* Three more files are now in that state, and two of them -
+`sheets.ts` and `frames.ts` - diverge by **one parameter each**, which is the worst ratio of
+divergence cost to divergence content in the manifest so far.
+
+**TWO SMALLER DECISIONS INSIDE THAT, BOTH RECORDED BECAUSE A READER WOULD ASK.**
+
+**(a) `GenerateEnv.authoring` and not `DesignSpec.authoring`.** `elkInputOf` needs
+`portDirections` and `rails`; `circuitSpecFrom` has distilled the authoring file away by the time
+`generate` holds a `Circuit`, and the IR has no slot for a port direction (**G182**). Putting the
+field on `DesignSpec` would have diverged `lib/schgen/design.ts` as well and changed every design
+fixture; putting it on `GenerateEnv` diverges one file that was being diverged anyway. **The cost
+is that a design-data field now rides on a type whose other four fields are environment**, which
+is the wrong shape and is recorded as such.
+
+**(b) `authoring: null` is passed by `tools/cli/schgen.ts` and by every design fixture, and it is
+not a fallback.** No design module in this repository declares an authoring file, and every design
+ported from `digital-pedal-platform` renders its blocks `wired` or `bus`, so the pre-pass has
+nothing to do for them. A block that DOES select ELK with `null` refuses, naming the block and the
+field. **`tools/schgen/gate-census.ts` passes the real thing** - each parity case's own
+declaration - which changes no row today, because gate 1 already refuses on all four parity
+circuits before the pre-pass runs (**G151**, **G178**).
+
+**AND `generate` BEING ASYNC RIPPLED FURTHER THAN THE THREE.** `runGates` in
+`tools/schgen/verify.ts` is now `async`; `gateCensus` in `tools/schgen/gate-census.ts` is now
+`async` and builds its `GenerateEnv` per circuit rather than once; `runSchgen` awaits; and four
+test files - `tests/schgen/emit-byte-stable.test.ts`, `tests/schgen/verify.test.ts`,
+`tests/schgen/gates/gates.kicad.test.ts` and `tests/schgen/gates/round-trip.kicad.test.ts` -
+await it across eleven call sites, with their enclosing `it`/`beforeAll` callbacks made `async`.
+None of those four needed a new divergence: two were already diverged and two are hand-written.
+
+- **Found** 2026-10-20, Task 12, Step 7.
+- **Evidence** `tools/schgen/port-manifest.json`'s three lists, counted after the edit (80 / 48 /
+  60), and the three `sourceSha` values taken with `shasum -a 256` against
+  `$SCHGEN_SOURCE`. A check that could have failed: `tests/schgen/port-fidelity.test.ts` -
+  12 tests, 124 assertions - holds the three lists disjoint and complete over `lib/schgen/`,
+  `tests/schgen/` and `tools/schgen/`, so a file moved between lists without being declared, or a
+  new file left undeclared, fails it; it passed before the move with the three files byte-checked
+  and passes after with them diverged.
+- **Verified** CONFIRMED - this writer made every edit and ran the fidelity test and the full suite.
+- **Why it is open** the divergences are permanent and the shape of (a) is wrong. Neither is a
+  defect to fix inside Task 12: a better home for the authoring declaration is a change to
+  `DesignSpec` that belongs with Task 15's or Task 16's work, when something in the tree actually
+  declares a design for a parity circuit.
+- **What would settle it** **CRITERION: a design module names the authoring declaration its circuit
+  was built from, so `generate`'s caller does not have to supply it beside the design.** That is
+  what makes (a)'s shape right rather than merely tolerable, and it is also what lets
+  `tools/cli/schgen.ts` stop passing `null`. **MECHANISM, untried:** add
+  `authoring: SchematicAuthoring | null` to `DesignSpec`, check it in `isDesignSpec`, and have
+  `generate` read `d.spec.authoring` - which diverges `lib/schgen/design.ts` (one more file) and
+  touches the `mini` fixture (already diverged). **Not done here because no design module in the
+  tree would use it yet**, so it would be a field with no reader, which is the shape **G141**'s
+  third mechanism and **G149** both warn about.

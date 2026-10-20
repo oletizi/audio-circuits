@@ -40,6 +40,8 @@ const env = (): GenerateEnv => ({
   stockDir: stockSymbolDir(),
   initLock: true,
   acceptToolchain: false,
+  // Task 12: the mini design's blocks are `wired` or `bus`, so the ELK pre-pass has nothing to do.
+  authoring: null,
 })
 
 function requireKicadCli(): void {
@@ -66,10 +68,10 @@ const generated = (): Generated => {
   return g
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   requireKicadCli()
   const d = miniInScratch()
-  const generation = generate(d, env())
+  const generation = await generate(d, env())
   writeGeneration(d, generation)
   const net = exportSexprNetlist(path.join(d.outDir, `${d.spec.project}.kicad_sch`))
   g = { circuit: generation.circuit, refs: generation.annotation.refs, exported: importNetlist(net.text) }

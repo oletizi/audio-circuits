@@ -27,7 +27,7 @@
  * the divergence note above.)
  */
 import type { BlockId, Circuit, NetName } from "../ir/types.ts";
-import type { Anchor, BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
+import type { Anchor, Backend, BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
 import { checkLayout, realiseBlock, subgraphOf } from "./blocks.ts";
 import { fmtPoint } from "./connectivity.ts";
 // `gridCeil` and `PITCH` are gone from these two import lines with `realiseLabelled`, which was
@@ -177,19 +177,20 @@ function attributed<T>(id: BlockId, kind: "bus", run: () => T): T {
  * Realises any block: `wired` and `auto` through `realiseBlock` (which picks the template or the
  * ELK backend - `selectRenderer`, spec §1.3), `bus` through the bus renderer.
  *
- * **`auto` is this file's divergence.** `realiseBlock` is handed no backend here, so an `auto`
- * block that no template draws **throws, naming the block and saying the backend is missing** -
- * that is `realiseBlock`'s own documented refusal (`docs/known-gaps.md` **G146**) and not a
- * fallback. Threading a `Backend` through `renderBlock`, `blockContent` and `layoutSheet` is Task
- * 12's, and doing it here would diverge two more ported modules for a parameter nothing can yet
- * supply.
+ * **`auto` is this file's divergence.** **Task 12 threaded the `Backend` the rest of the way**:
+ * `elk` is now a fourth parameter, passed on to `realiseBlock`, and it reaches here from
+ * `layoutSheet` through `blockContent`. It still defaults to `null` for `docs/known-gaps.md`
+ * **G146**'s reason - an `auto` block that no template draws and that is handed no backend
+ * **throws, naming the block and saying the backend is missing**, which is a refusal and not a
+ * fallback - and the default is what keeps the ported test files that call this with three
+ * arguments byte-checked.
  */
-export function renderBlock(c: Circuit, id: BlockId, symbols: SymbolResolver): BusResult {
+export function renderBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): BusResult {
   const block = c.blocks.get(id);
   if (block === undefined) throw new Error(`unknown block ${id}`);
   switch (block.rendering.kind) {
     case "wired":
-    case "auto": return { layout: realiseBlock(c, id, symbols), legend: [] };
+    case "auto": return { layout: realiseBlock(c, id, symbols, elk), legend: [] };
     case "bus": return attributed(id, "bus", () => realiseBus(c, id, symbols));
   }
 }

@@ -23,6 +23,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "eecircuit-engine": "1.5.8"
+    "eecircuit-engine": "1.5.8",
+    "elkjs": "0.9.3"
   }
 }

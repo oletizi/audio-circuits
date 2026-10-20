@@ -31,7 +31,9 @@ import { generate, writeGeneration } from "../../tools/schgen/generate.ts";
 import { annotationProblems, OSCAR_NOT_PORTED, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "symbols");
-const ENV = { kicadVersion: "10.0.5", stockDir: FIX, initLock: false, acceptToolchain: false };
+// Task 12: `authoring` is the ELK pre-pass's input. This fixture design's one block declares
+// the `decoupling-bank` template, so no block selects ELK and the pre-pass has nothing to do.
+const ENV = { kicadVersion: "10.0.5", stockDir: FIX, initLock: false, acceptToolchain: false, authoring: null };
 const NOT_RUN = ["not run: generation was refused"];
 
 /**
@@ -89,10 +91,10 @@ function loaded(dir: string, s: DesignSpec): LoadedDesign {
 const OSCAR = { brief: "CORE-BRIEF.md", netlists: {}, symmetricSymbols: {}, subcircuits: [] };
 
 describe("runGates", () => {
-  it("after a gate-1 generate refusal, reports every later gate as not run", () => {
+  it("after a gate-1 generate refusal, reports every later gate as not run", async () => {
     const d = loaded(tmpDir(), spec());
     // No refs.lock.json in the empty tmp dir and initLock false: generate refuses in gate 1.
-    const r = runGates(d, ENV);
+    const r = await runGates(d, ENV);
     expect(r).toEqual([
       { gate: "1 up to date", problems: [expect.stringMatching(/refs\.lock\.json not found; run pnpm schgen generate --init/)] },
       { gate: "3 netlist equals IR", problems: ["not run: generation was refused"] },
@@ -101,18 +103,18 @@ describe("runGates", () => {
     ]);
   });
 
-  it("cascades to gate 8 when OSCAR is configured, and omits gate 7 when no checklist is", () => {
+  it("cascades to gate 8 when OSCAR is configured, and omits gate 7 when no checklist is", async () => {
     const dir = tmpDir();
-    const r = runGates(loaded(dir, spec({ checklist: null, oscar: OSCAR })), ENV);
+    const r = await runGates(loaded(dir, spec({ checklist: null, oscar: OSCAR })), ENV);
     expect(r.map((g) => g.gate)).toEqual(["1 up to date", "3 netlist equals IR", "6 pin identity", "8 OSCAR equivalence"]);
     expect(r.slice(1).map((g) => g.problems)).toEqual([NOT_RUN, NOT_RUN, NOT_RUN]);
   });
 
-  it("reports an invalid circuit as gate 1 problems, one per line, and cascades", () => {
+  it("reports an invalid circuit as gate 1 problems, one per line, and cascades", async () => {
     const dir = tmpDir();
     const s = spec();
     const bad = spec({ circuit: { ...s.circuit, parts: [cap("C1", "3V3", "GND"), cap("C2", "low_er", "GND")] } });
-    const r = runGates(loaded(dir, bad), ENV);
+    const r = await runGates(loaded(dir, bad), ENV);
     const gate1 = r[0];
     expect(gate1?.gate).toBe("1 up to date");
     expect(gate1?.problems[0]).toBe("circuit is invalid:");
@@ -121,12 +123,12 @@ describe("runGates", () => {
     expect(r.slice(1).map((g) => g.problems)).toEqual([NOT_RUN, NOT_RUN, NOT_RUN]);
   });
 
-  it("refuses toolchain drift in gate 1 even when the caller passes acceptToolchain, and writes nothing", () => {
+  it("refuses toolchain drift in gate 1 even when the caller passes acceptToolchain, and writes nothing", async () => {
     const dir = tmpRepo();
     const d = loaded(dir, spec({ checklist: null }));
-    writeGeneration(d, generate(d, { ...ENV, initLock: true }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
     const lockBefore = fs.readFileSync(path.join(dir, "schgen.lock.json"), "utf8");
-    const r = runGates(d, { ...ENV, kicadVersion: "10.1.0", acceptToolchain: true, initLock: true });
+    const r = await runGates(d, { ...ENV, kicadVersion: "10.1.0", acceptToolchain: true, initLock: true });
     expect(r[0]?.problems).toEqual([
       expect.stringMatching(/^toolchain drift against .*schgen\.lock\.json; nothing was written:$/),
       "- KiCad 10.1.0 does not match the locked 10.0.5: 10.0.x is pinned",
@@ -141,11 +143,11 @@ describe("runGates", () => {
    * succeeds, gate 8's row is reached and carries the refusal - so neither its absence nor an
    * empty problem list can be read as OSCAR equivalence holding.
    */
-  it("reports gate 8 as unavailable, not as passing, when the generation succeeds", () => {
+  it("reports gate 8 as unavailable, not as passing, when the generation succeeds", async () => {
     const dir = tmpRepo();
     const d = loaded(dir, spec({ checklist: null, oscar: OSCAR }));
-    writeGeneration(d, generate(d, { ...ENV, initLock: true }));
-    const r = runGates(d, ENV);
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const r = await runGates(d, ENV);
     const gate8 = r.find((g) => g.gate === "8 OSCAR equivalence");
     expect(gate8?.problems).toEqual([OSCAR_NOT_PORTED]);
     expect(gate8?.problems).not.toEqual([]);

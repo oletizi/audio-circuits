@@ -113,9 +113,7 @@
     { "from": "render/templates/connectorFanout.test.ts", "to": "tests/schgen/render/templates/connector-fanout.test.ts" },
     { "from": "render/bodyClearance.test.ts", "to": "tests/schgen/render/body-clearance.test.ts" },
     { "from": "kicad/libtable.ts", "to": "lib/kicad/libtable.ts", "root": "pedals-tools" },
-    { "from": "render/frames.ts", "to": "lib/schgen/render/frames.ts" },
     { "from": "render/sheetCheck.ts", "to": "lib/schgen/render/sheet-check.ts" },
-    { "from": "render/sheets.ts", "to": "lib/schgen/render/sheets.ts" },
     { "from": "render/glyphClearance.test.ts", "to": "tests/schgen/render/glyph-clearance.test.ts" },
     { "from": "render/glyphGlyphClearance.test.ts", "to": "tests/schgen/render/glyph-glyph-clearance.test.ts" },
     {
@@ -138,22 +136,6 @@
     { "from": "generateFiles.ts", "to": "tools/schgen/generated-files.ts" },
     { "from": "kicadConfig.ts", "to": "tools/schgen/kicad-config.ts" },
     { "from": "kicadRun.ts", "to": "tools/schgen/kicad-run.ts" },
-    {
-      "from": "generate.ts",
-      "to": "tools/schgen/generate.ts",
-      "cuts": [
-        { "text": "import { loadPinMap } from \"@/pinmap/load\";\n", "occurrences": 1 },
-        { "text": "import { loadStMcu } from \"@/pinmap/stPinData\";\n", "occurrences": 1 },
-        { "text": ", type PinmapInput", "occurrences": 1 },
-        {
-          "text": "/**\n * The design's MCU pin map and the ST pin data it names (paths relative to the pin map file),\n * as buildCircuit takes them; null when the design has no pin map. Exported for harnesses that\n * build part of a design's circuit themselves.\n */\nexport function pinmapInputFor(d: LoadedDesign): PinmapInput | null {\n  if (d.spec.pinmap === null) return null;\n  const file = path.resolve(d.dir, d.spec.pinmap);\n  const map = loadPinMap(file);\n  const dir = path.dirname(file);\n  return { map, mcu: loadStMcu(path.resolve(dir, map.pinData), path.resolve(dir, map.gpioModes)) };\n}\n\n",
-          "occurrences": 1
-        },
-        { "text": "  const pinmap = pinmapInputFor(d);\n", "occurrences": 1 },
-        { "text": "  if (circuit.mcu !== null && pinmap !== null) pinned.set(circuit.mcu, pinmap.map.schematicRef);\n", "occurrences": 1 },
-        { "text": ", pinmap", "occurrences": 1 }
-      ]
-    },
     { "from": "kicad/footprint.ts", "to": "lib/kicad/footprint.ts", "root": "pedals-tools" },
     { "from": "gates/pinIdentity.ts", "to": "lib/schgen/gates/pin-identity.ts" },
     { "from": "gates/traceability.ts", "to": "lib/schgen/gates/traceability.ts" },
@@ -193,7 +175,7 @@
       "to": "tools/schgen/verify.ts",
       "sourceSha": "d44870078770a4a3e06dd2ba165ecd6b414cddb7b5215434952093b9ea59bf90",
       "task": "Task 11",
-      "why": "Two divergences, both forced. (1) ONE NETLIST READER, as for gates/connectivity.ts: gate 3 reads the s-expression export with `importNetlist`. The ported `kicad-run.ts`'s `exportNetlist` asks kicad-cli for `kicadxml` and is a `files[]` entry this task may not hand-edit, so `exportSexprNetlist` - the one new function in the file - asks the same hermetic `runKicadCli` for `kicadsexpr`. (2) GATE 8's GRAPH COMPARISON IS NOT PORTED: `gates/oscar/compare.ts` and `graph.ts` are Task 18's (`graph.ts` needs `@/kicad/components`, unresolved). Gate 8 is NOT deferred (spec revision 4; docs/known-gaps.md G104), so `runGates` still registers its row for a design declaring `oscar` and that row carries `OSCAR_NOT_PORTED` - a gate omitted from the census reads exactly like a gate that passed. `oscarGate` and `oscarBoardGraph` are reduced to that refusal plus `symmetricSymbolsProblems`; `annotationProblems` and `symmetricSymbolsProblems` are kept verbatim and tested, because deleting them would make Task 18 re-transcribe them from a source this file no longer re-derives from."
+      "why": "Two divergences, both forced. (1) ONE NETLIST READER, as for gates/connectivity.ts: gate 3 reads the s-expression export with `importNetlist`. The ported `kicad-run.ts`'s `exportNetlist` asks kicad-cli for `kicadxml` and is a `files[]` entry this task may not hand-edit, so `exportSexprNetlist` - the one new function in the file - asks the same hermetic `runKicadCli` for `kicadsexpr`. (2) GATE 8's GRAPH COMPARISON IS NOT PORTED: `gates/oscar/compare.ts` and `graph.ts` are Task 18's (`graph.ts` needs `@/kicad/components`, unresolved). Gate 8 is NOT deferred (spec revision 4; docs/known-gaps.md G104), so `runGates` still registers its row for a design declaring `oscar` and that row carries `OSCAR_NOT_PORTED` - a gate omitted from the census reads exactly like a gate that passed. `oscarGate` and `oscarBoardGraph` are reduced to that refusal plus `symmetricSymbolsProblems`; `annotationProblems` and `symmetricSymbolsProblems` are kept verbatim and tested, because deleting them would make Task 18 re-transcribe them from a source this file no longer re-derives from. AMENDED BY TASK 12: `runGates` is `async`, because `generate` is - decision D2's ELK pre-pass."
     },
     {
       "from": "verify.test.ts",
@@ -305,7 +287,7 @@
       "to": "lib/schgen/render/bus.ts",
       "sourceSha": "14f103ad8db9de7606fc48914a7662d450e9cde9b664e926a25f9fb44624b569",
       "task": "Task 6b",
-      "why": "The labels renderer is deleted with the `labels` rendering (plan decision D3, docs/known-gaps.md G140/G84): `realiseLabelled`, `labelledRotation` and the `\"labels\"` arm of `blockOf`/`attributed` are gone, with `gridCeil` and `PITCH`, their only remaining callers. That much is pure deletion; what makes it a divergence is `renderBlock`'s switch, which must cover Task 8's new `auto` kind - a non-exhaustive switch fails the compiler (TS2366) and covering it is new code, which `cuts` cannot express. `auto` goes to `realiseBlock` with no ELK backend, so an `auto` block no template draws throws naming the block (G146); threading a Backend through renderBlock/blockContent/layoutSheet is Task 12's."
+      "why": "The labels renderer is deleted with the `labels` rendering (plan decision D3, docs/known-gaps.md G140/G84): `realiseLabelled`, `labelledRotation` and the `\"labels\"` arm of `blockOf`/`attributed` are gone, with `gridCeil` and `PITCH`, their only remaining callers. That much is pure deletion; what makes it a divergence is `renderBlock`'s switch, which must cover Task 8's new `auto` kind - a non-exhaustive switch fails the compiler (TS2366) and covering it is new code, which `cuts` cannot express. `auto` goes to `realiseBlock` with no ELK backend, so an `auto` block no template draws throws naming the block (G146); threading a Backend through renderBlock/blockContent/layoutSheet is Task 12's. AMENDED BY TASK 12, which did exactly that: `renderBlock` now takes `elk: Backend | null = null` as a fourth parameter and passes it to `realiseBlock`."
     },
     {
       "from": "render/blockTypes.ts",
@@ -488,6 +470,27 @@
       "sourceSha": "d494c245aa168fd164b3ff7727382ec11e25035bf1b6c400d2f16d4806ef8963",
       "task": "Task 8",
       "why": "D3: the SPLIT and PEER blocks declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "render/frames.ts",
+      "to": "lib/schgen/render/frames.ts",
+      "sourceSha": "b577314c5fa88f30cfba27a5457aff4fc4f41f3b6a1e8c13ad8abfef906db28d",
+      "task": "Task 12",
+      "why": "`blockContent` takes the ELK `Backend` and passes it to `renderBlock` - the middle link of the chain generate -> layoutSheet -> blockContent -> renderBlock -> realiseBlock that carries the asynchronous pre-pass's result into the synchronous realise dispatch (plan decision D2). One parameter is the whole divergence, and it defaults to null for G146's reason. docs/known-gaps.md G186."
+    },
+    {
+      "from": "render/sheets.ts",
+      "to": "lib/schgen/render/sheets.ts",
+      "sourceSha": "920d2bb1ba9dc597eed0438f837049623fd5684e608f9066e0f4c50223e731a6",
+      "task": "Task 12",
+      "why": "`layoutSheet` takes the ELK `Backend` and hands it to `blockContent`. One parameter is the whole divergence, and it defaults to null for G146's reason - an auto block that reaches ELK with no backend refuses, naming the block. docs/known-gaps.md G186."
+    },
+    {
+      "from": "generate.ts",
+      "to": "tools/schgen/generate.ts",
+      "sourceSha": "c3c514694ee854cf81b1750b10ed0fe27e3cc3dd5d3f301022199add8da5caf0",
+      "task": "Task 12",
+      "why": "The ELK pre-pass is threaded through the function that owns the pipeline: `generate` is `async` (decision D2 - elkjs has no synchronous layout entry point, premise verified at Task 12 Step 1), `GenerateEnv` gains `authoring: SchematicAuthoring | null` because `elkInputOf` needs portDirections and rails and the IR has no slot for a port direction, `Generation` gains `elk`, and `layoutSheet` is handed `elkBackendFrom(...)`. The pedals source has no ELK backend and never will, so no rewrite rule reconciles the two. Its MCU pin-map `cuts` (G112) were applied before divergence - they are no longer carried as data and the deletions now live in the file. docs/known-gaps.md G186."
     }
   ],
   "handWritten": [
@@ -542,6 +545,14 @@
     "tests/schgen/rules/orientation.test.ts",
     "lib/schgen/gates/round-trip.ts",
     "tests/schgen/gates/round-trip.kicad.test.ts",
-    "tools/schgen/gate-census.ts"
+    "tools/schgen/gate-census.ts",
+    "lib/schgen/elk/options.ts",
+    "lib/schgen/elk/serialize.ts",
+    "lib/schgen/elk/graph.ts",
+    "tools/schgen/elk/layout.ts",
+    "tests/schgen/elk/fixtures.ts",
+    "tests/schgen/elk/graph.test.ts",
+    "tests/schgen/elk/serialize.test.ts",
+    "tests/schgen/elk/layout.elk.test.ts"
   ]
 }
