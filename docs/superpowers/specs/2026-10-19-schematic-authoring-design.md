@@ -731,7 +731,68 @@ every template-drawn block and every ELK block, and report the difference.**
 **What this ruling does not claim.** It does not say `junctionPoints` is wrong
 for templates - it says it is the wrong **source** for ELK geometry. And it
 does not predict the measurement: if the template sheets move, the right answer
-may yet be (1), and this ruling is to be reopened rather than worked around. And it does not claim the corpus will stay this way: the
+may yet be (1), and this ruling is to be reopened rather than worked around.
+
+---
+
+**R32 IS REOPENED AND REVERSED. RULING R33, 2026-10-20: take mechanism (1) -
+split the container at the contained segment's interior endpoint.** The gate
+R32 imposed is why: the task took the measurement, it sent the decision the
+other way, and it **stopped and reported rather than working around it.**
+Nothing was landed in `lib/`.
+
+**What the measurement found.**
+
+**The template gate fired, narrowly.** Nine template-drawn blocks examined,
+**eight agree exactly, one differs**: `mini/XTAL` at a single point, where
+`junctionPoints` emits a dot and `branchJunctions` does not. The cause is one
+`GND` wire end plus **two coincident pins of `Y1`** - `junctionPoints` counts
+pin ends individually and reaches three; `branchJunctions` counts *"a pin is
+here"* as a boolean and reaches two. **Neither rule is electrically wrong**:
+KiCad connects a wire end to coincident pins natively, so a dot there is
+neither required nor harmful. One cosmetic dot. On its own this would not have
+reversed the ruling - see **G197**.
+
+**What reversed it is the second measurement.** Mechanism (2) satisfies
+obligation 2 and is **then refused by `checkWireSafety` at the same 25 points,
+and at 0 others** - the same block-for-block identity G194 measured, arriving
+from the other side. **Obligation 2 says *emit a junction*; `checkWireSafety`
+says *split the wire there*.** And `connectivity.ts`'s own module comment states
+which policy this repository holds: ***"the generator never relies on the
+junction-dependent cases … junction dots are cosmetic."***
+
+**So my stated reason for rejecting (1) was wrong.** I called it *"a rule
+written for a different case happening to catch this one."* The measurement
+says otherwise: **split the wire there is not a different case — it is the
+standing policy of every geometric check in this generator**, stated in the
+tree. Mechanism (2) would have built connectivity on dots that this
+generator's own policy calls cosmetic.
+
+**And the obligation-5 question I raised against (1) is answered, not dodged.**
+I asked whether a collinear split of a segment the router drew is a repair.
+**It is not.** A segment from A to C with a branch at B is **the same ink**
+whether it is held as one wire or as two; the choice is representational, not
+geometric. And criterion (b) of this very clause requires the canonical
+topology to *"represent each net's branches explicitly"* - **a split at a
+branch point is literally that**, performed in the wire list rather than in a
+side table. So the three operations now line up as one discipline:
+
+| clause (a) | coincident duplicates | **merge** |
+| **R31** | same-net containments | **merge**, one dimension up |
+| **R33** | branch points | **split**, making criterion (b)'s branch explicit |
+
+None of the three moves ink, changes connectivity, or chooses between two
+readings. **Obligation 5 is satisfied because no repair occurs.**
+
+**What stays from R32.** Its gate was right and is the reason this ruling
+exists: a decision that touches the reviewed human arrangement gets measured
+before it lands, and a task that finds the measurement against its instruction
+**stops and says so**. That is the behaviour, not the exception.
+
+**G197 stays open on its own merits.** The two rules genuinely disagree about
+coincident pins, the one-line fix is recorded and deliberately not taken, and
+which rule is right about that point is a question this ruling does not
+answer. And it does not claim the corpus will stay this way: the
 30/30 containment measurement is a property of **these twelve blocks under this
 backend at this version**, and the refusing arms exist for the day that changes.
 
