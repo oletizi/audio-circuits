@@ -25,7 +25,7 @@
 
 import { negotiablePort } from "../../../lib/schgen/authoring.ts"
 import { DESIGNATORS, LEGS } from "../lab-board.ts"
-import type { BlockDeclaration, ComponentOverride, PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
+import type { BlockDeclaration, PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
 import type { RailSpec, SheetSpec } from "../../../lib/schgen/ir/types.ts"
 
 const SHEET = "lab"
@@ -140,50 +140,21 @@ const BLOCKS: readonly BlockDeclaration[] = [
 ]
 
 /**
- * TEN OVERRIDES, ALL OF THEM PIN SIDES, NONE OF THEM A CORRECTION.
+ * NO OVERRIDES. All 32 components declare their own symbol in the model, through the shared
+ * constructors in `../parts.ts`, and every one of them names its pins either by number (jumpers,
+ * headers, test points) or in a vocabulary a reviewed rule maps (`a`/`b`, `ccw`/`wiper`/`cw`,
+ * `base`/`collector`/`emitter`). So `symbolForKind` is consulted for none of them and no pin map
+ * is declared here.
  *
- * Every component here declares its own symbol and names its own pins by number, so neither
- * `symbolForKind` nor a pin map is consulted. What refuses is `pinSidesFor`: a
- * `Connector_Generic:Conn_01x02` puts both pins at angle 0 and a `Connector:TestPoint` has a
- * single pin at angle 90, so each gives fewer than two distinct sides. **In both cases the symbol
- * is one-sided and correct rather than ambiguous** - a two-way header's pins do both leave the
- * left edge, and a test point has one pin and nothing to partition - so these restate the
- * geometry. `docs/known-gaps.md` **G155** records the cost: ten of this circuit's thirty-two
- * components carry an override whose content is the symbol's own geometry, and the open question
- * is whether the two-sides rule should exempt a symbol with no second side to have.
+ * **IT CARRIED TEN UNTIL THE TASK 9 REVIEW, and they were all the same mistake.** Three headers
+ * (`Connector_Generic:Conn_01x02`, both pins at angle 0) and seven test points
+ * (`Connector:TestPoint`, one pin at angle 90) each had a `pinSides` declaration, because
+ * `pinSidesFor` used to refuse a symbol giving fewer than two distinct sides. All thirteen pins
+ * agreed with `sideOfPin(0, pin)`: the declarations stated what the library already said. The
+ * refusal is deleted and they are deleted with it; `docs/known-gaps.md` **G155** carries the
+ * measurement.
  */
-const HEADER_OVERRIDE: ComponentOverride = {
-  pinSides: { "1": "left", "2": "left" },
-  why:
-    "Connector_Generic:Conn_01x02's two pins both sit at angle 0, so pinSidesFor refuses the " +
-    "one-sided symbol. These are the symbol's own sides restated, not a partition chosen here " +
-    "(G155); the symbol and the pin numbering both come from circuits/transistor-preamp/parts.ts.",
-}
-
-const TEST_POINT_OVERRIDE: ComponentOverride = {
-  pinSides: { "1": "bottom" },
-  why:
-    "Connector:TestPoint has ONE pin, at angle 90, so pinSidesFor refuses it for giving fewer " +
-    "than two distinct sides - but a one-pin symbol has no partition to get wrong, which is the " +
-    "case G155 asks about. \"bottom\" is that pin's own side, read off the symbol.",
-}
-
-const HEADERS: readonly string[] = ["input_header", "output_header", "power_header"]
-
-const TEST_POINTS: readonly string[] = [
-  "vcc_test_point",
-  "base_test_point",
-  "emitter_test_point",
-  "collector_test_point",
-  "ground_test_point",
-  "input_test_point",
-  "output_test_point",
-]
-
-const OVERRIDES: SchematicAuthoring["overrides"] = {
-  ...Object.fromEntries(HEADERS.map((id) => [id, HEADER_OVERRIDE])),
-  ...Object.fromEntries(TEST_POINTS.map((id) => [id, TEST_POINT_OVERRIDE])),
-}
+const OVERRIDES: SchematicAuthoring["overrides"] = {}
 
 export const TRANSISTOR_PREAMP_SCHEMATIC: SchematicAuthoring = {
   project: "transistor-preamp-lab",

@@ -1639,7 +1639,7 @@ nothing since has:**
 | the spike invented | where it is now | state |
 | --- | --- | --- |
 | a **symbol** per kind | `lib/schgen/rules/symbols.ts`'s `symbolForKind` - a whitelist of four kinds that refuses loudly for the other seven, each with the reason the kind cannot answer - plus `part.symbol` in the model and a `ComponentOverride.symbol` in the authoring file for the residue | **settled** |
-| a **pin-side partition** for an IC | `lib/schgen/rules/pin-sides.ts`'s `pinSidesFor`, which reads every pin's side off the symbol's own `(at x y angle)` through the port's existing `pinSide()` | **settled for a symbol that answers**; see below |
+| a **pin-side partition** for an IC | `lib/schgen/rules/pin-sides.ts`'s `pinSidesFor`, which reads every pin's side off the symbol's own `(at x y angle)` through the port's existing `pinSide()`, **on every path** | **settled** - a KiCad pin always carries an angle, so the geometry always answers (**G155**) |
 | a **drawn orientation** | `lib/schgen/rules/orientation.ts`, spec §1.5 step 2, holding one entry and returning `null` - which means step 3, not rotation 0 - everywhere else | **settled** |
 | a **rail convention** | `SchematicAuthoring.rails`, declared per net with its power symbol and `"ground" \| "supply"` | **settled** |
 | a **port DIRECTION** | `SchematicAuthoring.portDirections`, declared per net | **settled at the circuit boundary, OPEN below it** |
@@ -1664,13 +1664,22 @@ in the spike consulted the symbol, and the next IC would not have been so kind.
    `optical-compressor` has one, `VBIAS_RAW`, which crosses from the power block
    to the sidechain block because U2's two sections serve two blocks. Three nets
    of 51 declared interface ports, and nothing says which way they point.
-2. **AN IC WHOSE SYMBOL IS AMBIGUOUS.** `pinSidesFor` refuses a symbol giving
-   fewer than two distinct sides, and that refusal is exactly right for a
-   one-sided IC glyph - but **no IC in the parity set is in that class**, so the
-   case the original entry was most worried about is untested on a real part.
-   What IS in that class, on nineteen components carrying 37 of the four
-   circuits' 243 symbol pins, is a single-row connector or a test point, where one-sidedness is correct rather than ambiguous; **G155**
-   records that cost and the question it raises.
+2. **"AN IC WHOSE SYMBOL IS AMBIGUOUS" WAS A CATEGORY ERROR AND IS NOT A
+   RESIDUE.** This entry's original worry was an IC whose symbol does not say
+   which pins are an interface in and which out, and Task 9 first answered it
+   with a refusal in `pinSidesFor` for a symbol giving fewer than two distinct
+   sides. **The Task 9 review proved that wrong and the refusal is deleted**
+   (**G155**): a KiCad pin always carries an `(at x y angle)` and an angle always
+   yields a side, so the geometry always answers which EDGE a pin sits on, and a
+   one-sided glyph is a definite answer rather than an ambiguous one. The
+   question the worry was really about - which pins are IN and which OUT - is a
+   DIRECTION, it lives in `portDirections` and `InterfacePort`, and its gap is
+   residue 1 above and nowhere else. The refusal never fired on the motivating
+   part either: `Audio:PT2399` gives two distinct sides.
+
+   What survives from it is a defect the refusal was camouflaging and that is now
+   fixed: a declared pin side used to reach a `CircuitSpec` without ever being
+   compared against the glyph's geometry. **G155** carries both halves.
 3. **NET NAMES**, which is a SIXTH invention this entry did not have. See
    **G150**: the IR requires UPPER_SNAKE and 31 nets across two of the four
    parity circuits are not, so something between a model and a KiCad label has
@@ -1685,9 +1694,13 @@ in the spike consulted the symbol, and the next IC would not have been so kind.
   symbol came from, how many pins were sided by the symbol's geometry against a
   declared override, how many parts the orientation library preferred a rotation
   for, and per block its interface-port count split fixed/negotiable. Its output
-  on 2026-10-20: **102 components, symbol from the model 35, from an override
-  14, from the by-kind rule 53; 12 declared blocks carrying 51 interface ports,
-  0 fixed and 51 negotiable** (**G153** says why none is fixed).
+  on 2026-10-20, after the Task 9 review's round-1 corrections: **102
+  components, symbol from the model 35, from an override 14, from the by-kind
+  rule 53; 14 components carrying an override, and ZERO declared pin sides
+  (**G155**); 12 declared blocks carrying 51 interface ports, 0 fixed and 51
+  negotiable** (**G153** says why none is fixed). It also reports, per circuit,
+  every component whose `part.mpn` differs from the part name of the symbol it
+  is drawn with - **8 across the four**, and **G156** classifies all eight.
   `tests/schgen/authoring-complete.test.ts` is the check that could fail and is
   what makes this entry's claim hold on every run: over all four circuits it
   asserts that every component resolves a non-empty `libId`, that every pin of
@@ -9404,6 +9417,16 @@ design-note section or datasheet the part comes from"* - and
 parity circuits**. Each circuit's module comment names its own authority in
 prose; `declared.source` is that sentence in a field, one per circuit.
 
+**AND THAT IS A GRANULARITY LOSS, named here because the field hides it**
+(Task 9 review, round 1, minor M3). `PartSpec.source` is PER PART and
+`partShapes` reads it that way - *"the design-note section or datasheet the part
+comes from"* - so a 37-component circuit whose spec states a different section
+per part collapses to one string. `circuits/optical-compressor/index.ts`'s
+`SPEC_NAMES` already carries the per-part sections (*"R_SHUNT (8.3)"*,
+*"C_DET (8.6)"*) and nothing reads them. The loss is real and was accepted
+because a per-part source map is a fourth declared field for a value no consumer
+reads yet; the criterion below covers it.
+
 **`BomFields`, and this is the decision Task 9's brief asked for by name**
 (*"either the authoring file declares them or `bomFields` refuses - do not
 default them to empty strings and do not widen the exemption list silently.
@@ -9450,9 +9473,12 @@ purchasing data, which is worse than none because it looks orderable.
 - **Why it is open** it is a deviation from a stated interface plus an owner-
   relevant decision about where purchasing data lives, and the join it names
   does not exist.
-- **What would settle it** **CRITERION: a generated schematic's BOM fields are
-  either read from this repository's own catalog or absent by a declaration that
-  says why - never blank by default.** The first half is unmet and is the
+- **What would settle it** two criteria. For `source`, **CRITERION: a part's
+  `source` names the section or datasheet THAT PART comes from, not only the
+  document its circuit comes from** - unmet, and `SPEC_NAMES` is where the data
+  for `optical-compressor` already is. For BOM, **CRITERION: a generated
+  schematic's BOM fields are either read from this repository's own catalog or
+  absent by a declaration that says why - never blank by default.** The first half is unmet and is the
   interesting one. **MECHANISM, untried and this writer has not tried to judge
   it: a join from a circuit model's component to a `parts/*.json` catalog id**,
   which `boards/<board>/bom.json` today spells as a `"<kind> <value>
@@ -9541,11 +9567,13 @@ the circuit un-validatable until something declares the intent.
   `createResolver(symbolLibraries(["Amplifier_Operational"])).resolve("Amplifier_Operational:TL072")`
   - 8 pins, 3 units, pins 5 (`+`, unit 2), 6 (`-`, unit 2) and 7 (output, unit
   2) - against `opamp-buffer.ts`, which declares one unit named "A" with three
-  pins plus the two package pins. A check that could have failed and does not
-  yet exist: Task 9's completeness test asserts every symbol pin has a SIDE, not
-  that every symbol pin has a connection, so **this gap is invisible to the
-  suite as it stands** and will surface in the first task that validates a
-  `CircuitSpec` built from these declarations.
+  pins plus the two package pins. **A check that could have failed, added by the Task 9
+  review's round 1:** `tests/schgen/authoring-complete.test.ts` now runs
+  `validateCircuit` on all four circuits and asserts the exact refusal counts
+  per rule class, of which `pinsDeclared` is **3 on `opamp-buffer` and 0 on the
+  other three** - pins 5, 6 and 7 of U1, by name. The earlier version of this
+  entry said the gap was invisible to the suite; that was true when it was
+  written and is no longer.
 - **Verified** CONFIRMED - this writer resolved the symbol, read its pins, and
   read the circuit's declaration and its header sentence.
 - **Why it is open** it needs either a model change (somewhere to say "this
@@ -9659,6 +9687,15 @@ cannot be derived by the thing that reads it.
   and not of a `fixed` arm that does not work.
 - **Verified** CONFIRMED - this writer wrote the declarations, the census and
   the tests, and read the output.
+**AND THERE IS NO `fixedPort` HELPER BESIDE `negotiablePort`, which is a mild
+thumb on the scale** (Task 9 review, round 1, minor M4). Declaring a negotiable
+port is one call; declaring a fixed one means writing the `InterfacePort`
+literal with its `sides`, its `position` and its `why` by hand. Nothing stops a
+Task 15 author doing that - `tests/schgen/from-network.test.ts` drives a `fixed`
+port through `authoringProblems` and finds no problem, so the arm works - but
+the asymmetry is named here so it is read as an absence rather than as a
+prohibition.
+
 - **Why it is open** it is a measurement Task 15 needs and cannot re-derive once
   blocks start declaring templates, and it is **bait**: a seam B implementer
   reading "0 fixed, 51 negotiable" may conclude that fixed positions are rare,
@@ -9668,61 +9705,97 @@ cannot be derived by the thing that reads it.
   sides rule above is Task 9's declaration rather than a settled design, so
   Task 15 should state its own and say where it disagrees.
 
-### G155 - the two-distinct-sides rule forces a `pinSides` override on 19 components whose symbol is one-sided and CORRECT, and 37 of 243 symbol pins are therefore declared rather than derived
+### G155 - the two-distinct-sides rule produced 37 declarations that agreed with the library on 37 of 37, and it was guarding a question it could not reach - DELETED, and what it camouflaged is fixed
 
-`pinSidesFor` refuses a symbol whose pins give fewer than two distinct sides.
-That rule comes from Task 9's brief - *"a symbol whose pins give fewer than two
-distinct sides refuses, naming the symbol and that an override must say which
-pins leave where"* - and the failure it exists to prevent is G99's: a 16-pin IC
-split in half because nothing said otherwise.
+**REWRITTEN 2026-10-20 BY THE TASK 9 REVIEW, ROUND 1.** The entry this replaces recorded the rule's
+COST - nineteen components forced to declare pin sides - and treated the rule itself as a given,
+because it was Task 9's stated acceptance criterion and an agent may not author the criteria for
+what it produces. The review was not bound that way and settled it: **the rule was wrong, not
+mis-scoped, and the controller withdrew it.**
 
-**NO IC IN THE PARITY SET IS IN THAT CLASS.** `Audio:PT2399` gives two sides and
-`Amplifier_Operational:TL072` gives four. What IS in that class is every
-single-row connector and every test point:
+**WHAT THE RULE WAS.** `pinSidesFor` refused a symbol whose pins gave fewer than two distinct
+sides, requiring a `pinSides` declaration instead. The failure it was aimed at is **G99**'s: a
+16-pin IC split *"first half in, second half out"* with *"no basis in the model at all"*.
 
-| symbol | pins | sides it gives | components |
-| --- | --- | --- | --- |
-| `Connector_Generic:Conn_01x02` | 2, both at angle 0 | left only | 8 |
-| `Connector_Generic:Conn_01x03` | 3, all at angle 0 | left only | 3 |
-| `Connector_Generic:Conn_01x05` | 5, all at angle 0 | left only | 1 |
-| `Connector:TestPoint` | 1, at angle 90 | bottom only | 7 |
-| | | | **19 components, 37 pins** |
+**THE MEASUREMENT THAT SETTLES IT.** The nineteen declarations the rule forced - every single-row
+header and every test point in the four parity circuits, 37 pins in total - **agreed with
+`sideOfPin(0, pin)` on 37 of 37, with zero divergence.** The rule produced thirty-seven
+declarations and bought zero bits.
 
-**AND IN ALL NINETEEN THE SYMBOL IS NOT AMBIGUOUS - IT IS ONE-SIDED AND RIGHT.**
-A 1xN header's pins really do all leave the left edge of its glyph, and a test
-point has one pin and nothing to partition. So nineteen overrides exist whose
-content is the symbol's own geometry copied out, each carrying a `why` that says
-so. That is 19 of the four circuits' 25 component overrides, and the cost is paid
-in a place the rule was not aimed at.
+**AND THE PREDICATE IS WRONG RATHER THAN MERELY EXPENSIVE.** A KiCad library pin always carries an
+`(at x y angle)` - `readPin` in `render/lib-pins.ts` refuses a pin without one - and an angle
+always yields a side. **So the geometry ALWAYS answers which EDGE a pin sits on**, and a symbol
+whose pins are all on the left is a definite answer, not an ambiguous one. `distinct.size < 2` does
+not detect ambiguity; it detects one-sidedness. The rule conflated two questions:
 
-- **Found** 2026-10-20, Task 9, Step 5, while writing the four declarations.
-- **Evidence** every symbol above resolved through
-  `createResolver(symbolLibraries(...))` and its pins' angles read:
-  `Conn_01x02` is `1:Pin_1@0 2:Pin_2@0`, `Conn_01x05` is `1..5` all at angle 0,
-  `TestPoint` is `1:1@90`. `tests/schgen/rules/pin-sides.test.ts` asserts the
-  refusal verbatim for `Conn_01x05` (*"puts all 5 of its pins on one side
-  (\"left\")"*) and for `TestPoint` (*"puts all 1 of its pins on one side
-  (\"bottom\")"*), and asserts that `Audio:PT2399`, `Device:R`, `Device:D`,
-  `Transistor_BJT:2N3904` and `Amplifier_Operational:TL072` do NOT refuse - the
-  arm that could have failed, and the one that shows the rule is not refusing
-  everything. The 19/37/243 counts are `bun tools/schgen/authoring-census.ts`'s
-  per-circuit "sided by a declared override" figures (7 + 12 + 5 + 13) over its
-  pin totals (25 + 89 + 65 + 64).
-- **Verified** CONFIRMED - this writer resolved every symbol, read the angles,
-  wrote the nineteen overrides and ran the census.
-- **Why it is open** the rule is Task 9's acceptance criterion and was followed
-  rather than argued with (`CLAUDE.md`: an agent may not author the criteria for
-  what it produces). The cost is recorded so the next reader sees it was
-  measured rather than overlooked, and so nobody reads nineteen identical-looking
-  overrides as sloppiness.
-- **What would settle it** **CRITERION: a symbol whose geometry cannot say which
-  of its pins are an interface in and which out requires a declaration; a symbol
-  that has only one edge to put pins on does not.** Those are different
-  conditions and the current rule cannot tell them apart. **MECHANISM, untried,
-  and this writer is not confident in it:** exempt a symbol whose pins are all
-  on one side AND whose pin count is 1, which covers the seven test points and
-  not the twelve headers - which is why the criterion above is the thing to test
-  against rather than this.
+| question | answered by | always available? |
+| --- | --- | --- |
+| which EDGE does this pin sit on? | the symbol's `(at x y angle)`, through `pinSidesFor` | **yes** |
+| which pins are interface IN and which OUT? | `SchematicAuthoring.portDirections` and `InterfacePort`, both declared | a separate channel, and **G99** residue 1 is where its gap lives |
+
+`pinSidesFor` is not the home of the second question and could not guard it.
+
+**AND IT NEVER FIRED ON THE PART THAT MOTIVATED IT.** `Audio:PT2399` puts pins 1-8 at angle 0 and
+9-16 at angle 180: **two distinct sides, so the refusal never fired on it and never would have.**
+`Amplifier_Operational:TL072` gives four. What actually closes G99's hole is `pinSidesFor` being
+the SOLE source of a pin's side plus `tests/schgen/authoring-complete.test.ts` asserting that every
+pin of every resolved symbol has one - and the deletion touches neither.
+
+**WHAT THE RULE WAS CAMOUFLAGING, WHICH IS THE PART THAT WAS A DEFECT.** A **total** `pinSides`
+override returned outright and **never called `pinSidesFor` at all**, so a declared side was never
+compared against the glyph's geometry and nothing in the suite would have caught a declaration the
+symbol contradicts. That is an invention at the call site wearing a declaration's clothes - G99's
+own failure mode - and the rule made it worse by normalising "the authoring file states the sides"
+across 19 of the 25 override-carrying components, so a genuinely wrong one would have looked
+ordinary.
+
+**WHAT CHANGED.**
+
+1. the `distinct.size < 2` branch is **deleted** from `pinSidesFor`. The `sides.size === 0` branch
+   **stays**: a symbol with no pins is genuinely broken and cannot be drawn at all;
+2. the nineteen declarations are gone - eleven whole overrides deleted (`pt2399-core`'s header,
+   `transistor-preamp`'s three headers and seven test points) and eight `pinSides` keys removed
+   from overrides that also carry a `symbol` and a `symbolPins` map (`opamp-buffer`'s three screw
+   terminals, `optical-compressor`'s five connectors). `transistor-preamp` and `pt2399-core` now
+   declare **no overrides at all**;
+3. `ComponentOverride.pinSides` survives as an **ASSERTION**: the geometry is read on every path
+   and a declared side that disagrees refuses, naming the pin, the declared side and the library's.
+   No parity circuit declares one.
+
+**THE `why` STRINGS WERE NOT THE PROBLEM.** The review read all nineteen individually and judged
+them honest - each said the sides were the symbol's own restated, and `TEST_POINT_OVERRIDE` flagged
+the open question inline. The rule should not have demanded them.
+
+- **Found** 2026-10-20, Task 9, Step 5 (as a cost). **Rewritten** the same day by the Task 9
+  review, round 1, which proved the rule wrong.
+- **Evidence** the 37-of-37 agreement, computed by comparing every declared side against
+  `sideOfPin(0, pin)` before the declarations were deleted; `readPin` in
+  `lib/schgen/render/lib-pins.ts` refusing a pin with no `(at …)`, which is why the geometry always
+  answers; and the pin angles of `Audio:PT2399` (1-8 at 0, 9-16 at 180) and
+  `Amplifier_Operational:TL072` (four sides), which is why the refusal never fired on the motivating
+  part. **Checks that could have failed, and are live:**
+  `tests/schgen/rules/pin-sides.test.ts` now asserts that a one-sided symbol is ANSWERED (all five
+  pins of `Conn_01x05` left, `TestPoint`'s single pin bottom) rather than refused, drives the
+  surviving no-pins refusal by emptying a real symbol's pin list, and sweeps 50 pins across
+  thirteen symbols requiring a side for each; `tests/schgen/from-network.test.ts` drives the
+  agreement check in both directions - a declaration of `{1: left, 2: right}` on a `Device:R`
+  refuses with *"pin 1: declared \"left\", library says \"top\"; pin 2: declared \"right\", library
+  says \"bottom\""*, and a declaration of `{1: top}` is accepted and recorded as asserted; and
+  `tests/schgen/authoring-complete.test.ts` asserts the parity set declares **zero** pin sides, so
+  a reintroduced declaration cannot slip in without the agreement test beside it.
+- **Verified** CONFIRMED - this writer measured the 37-of-37 agreement, deleted the branch and the
+  nineteen declarations, wrote the agreement check and ran all of it.
+- **Why it is open** it is a withdrawn criterion and a fixed defect, kept rather than deleted for
+  one reason: **the shape of the mistake is the reusable part.** A rule that demands a declaration
+  for a question its predicate cannot distinguish produces declarations that agree with what they
+  were meant to override, and then those declarations become the place a real error hides. The
+  G99-era instinct that "an authoring file stating it" is safer than "a rule deriving it" is what
+  produced it, and that instinct will recur.
+- **What would settle it** **CRITERION: a symbol pin's side is read from the library on every
+  path, and a declaration that disagrees with the library refuses.** Both halves are met and both
+  are driven by test. This entry is DELETED when a later reader no longer needs the shape of the
+  mistake - not before, and **not** by anyone re-adding a two-sides rule, which would need the
+  37-of-37 measurement answered first.
 
 ### G156 - `symbolForKind(kind, parameters)` cannot see `part.mpn`, which is the one thing in the model that names the part - so three symbols the library holds under the model's own part numbers reach the drawing through an authoring override
 
@@ -9781,6 +9854,18 @@ the drawing's value field, so the sheet will read `TL072H` beside a symbol named
   is not generally a symbol name - `RM-065` is a trimmer whose symbol is
   `Device:R_Potentiometer_Trim`, and `TL072H` has no symbol at all - so an
   mpn-to-symbol rule would be a whitelist with misses, not a lookup.
+- **THE CHECK THE REVIEW REQUIRED, ADDED.** Nothing noticed that a declared
+  symbol's part name differs from the component's `part.mpn`, which is the
+  signature of this whole class and is computable from data already in hand.
+  `mpnSymbolDisagreements` in `lib/schgen/from-network.ts` computes it,
+  `tools/schgen/authoring-census.ts` prints it per circuit, and
+  `tests/schgen/authoring-complete.test.ts` PINS the exact set of **eight** -
+  the two `TL072H` op-amps above, and six `RM-065` trimmers drawn as
+  `Device:R_Potentiometer_Trim`, which are benign because a symbol name is not
+  an order code. It is a report rather than a refusal for exactly that reason:
+  what is unacceptable is a disagreement nobody has looked at, so a NEW one
+  turns the suite red until a reader classifies it. **It would have flagged this
+  one.**
 - **Verified** CONFIRMED for the mpn counts, the symbol existence, the pin
   readings and the Description property - this writer ran the sweep, the greps,
   the resolver and the probe. **NOT VERIFIED, and stated as such:** that a
@@ -9793,7 +9878,13 @@ the drawing's value field, so the sheet will read `TL072H` beside a symbol named
   section's pins is electrically wrong in a sheet that looks right.
 - **What would settle it** for the pinout, **a reading of the TL072H datasheet,
   recorded here or in the circuit** - it is one page and it either agrees or it
-  does not. For the signature, **CRITERION: a symbol rule can read every field
+  does not. **It is OWED BY THE FIRST TASK THAT EMITS A SHEET FOR
+  `optical-compressor`**, which the Task 9 review carried forward as a gate,
+  because that sheet makes the claim whether or not anyone has checked it: value
+  `TL072H` beside a `TL072` glyph with pin 1 as section A's output. *"Every
+  DIP-8 dual op-amp is pinned that way"* is exactly the reasoning `CLAUDE.md`'s
+  *"transcription is evidence, not memory"* forbids, and it is not what this
+  entry rests on. For the signature, **CRITERION: a symbol rule can read every field
   of the model that names the part it is choosing a symbol for, or the rule
   refuses rather than answering from a narrower view.** **MECHANISM, untried,
   and the evidence above already limits it:** widen the rule to
@@ -9910,3 +10001,73 @@ recorded.
   out of `Diode.kicad_sym` - so both need the `extends` flattening G117 records,
   which `createResolver` does and `tools/kicad/vendor-symbols.ts` must also do
   for the vendored copy to compare equal.
+
+### G159 - `pt2399-core`'s authoring file DECLARES the CLK_O placeholder net a port with a careful reason, and the IR's `singlePinNets` rule refuses it - the declaration and the IR disagree about the same net
+
+`circuits/pt2399-core/pt2399-core.ts` records why that net exists, in its own
+header: KiCad assigns `unconnected-(U1-CLK_O-Pad5)` to a floating symbol pin, it
+is transcribed verbatim because the netlist of a built unit is the authority,
+and *"that placeholder net has exactly one member, so - like every other net
+that leaves the board - it needs a declared port to satisfy validation; the port
+does not imply the pin does anything off-board, only that the netlist shows it on
+a net rather than showing no connection at all."*
+
+Task 9's declaration follows that, deliberately and twice: `portDirections`
+gives the net `"out"` (CLK_O is an output pin and the symbol names it so, and the
+reason is written out beside the entry), and `pt-core` declares it an interface
+port. **And `validateCircuit` refuses it:**
+
+```
+net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5); connect it or declare the pin not connected
+```
+
+**So two parts of this repository disagree about one net and both are
+defensible.** The model says a single-pin net needs a port, and
+`lib/model/validate.ts` accepts it on that basis. The IR says a single-pin net is
+an error whatever a port says, because a schematic with a net of one pin is a
+wire going nowhere. **Nothing recorded the disagreement until now**, and Task 9's
+own report listed three refusing rules when there are four - this is the fourth
+and the sharpest, because the other three refuse things nobody declared while
+this one refuses something declared on purpose.
+
+The IR's own instruction - *"connect it or declare the pin not connected"* - is
+the second arm of **G151**: declaring pin 5 not-connected needs an `ncUnlisted`
+reason the circuit model has nowhere to hold. So the two entries settle together
+or not at all.
+
+- **Found** 2026-10-20, Task 9 review, round 1, item I4, by running
+  `validateCircuit` on all four parity circuits - which Task 9 had reasoned
+  about but not run.
+- **Evidence** `tests/schgen/authoring-complete.test.ts` now runs
+  `buildCircuit` + `validateCircuit` over all four and asserts the exact refusal
+  counts per rule class: `opamp-buffer` 39 (netNames 0 / pinsDeclared 3 /
+  singlePinNets 0 / bomFields 36), `optical-compressor` 162 (14 / 0 / 0 / 148),
+  **`pt2399-core` 114 (17 / 0 / 1 / 96)**, `transistor-preamp` 100 (0 / 0 / 0 /
+  100). A second test names this net specifically and asserts that the
+  declaration still declares what the IR refuses - the port direction `"out"`
+  and the interface port - so the disagreement cannot be silently resolved by
+  deleting one side. **Checks that could have failed:** the suite also asserts
+  that NO refusal falls outside those four classes, so a fifth deferral appears
+  as a named failure rather than as a number drifting; and every `bomFields`
+  count is exactly four times the circuit's non-exempt part count, which is what
+  **G149**'s decision predicts and what `BOM_EXEMPT_PREFIXES` covering
+  `transistor-preamp`'s seven `TP` parts produces (25 parts, not 32).
+- **Verified** CONFIRMED - this writer ran `validateCircuit` on all four, read
+  the full problem lists, and wrote both tests.
+- **Why it is open** it needs a ruling about which layer is right, and that is
+  not an agent's to make: either the IR's rule is too strong for a transcribed
+  board (a netlist really does show that pin on a net), or the model's
+  single-pin-net-plus-port is a fiction the IR is right to reject and the
+  circuit should declare the pin not connected instead - which **G151** says it
+  cannot yet do.
+- **What would settle it** **CRITERION: a net that one layer declares legal and
+  another refuses is recorded as a disagreement, or one layer changes - never
+  left as two silent opinions.** The first half is met by this entry and the
+  tests. **MECHANISMS, untried, and they disagree:** teach `singlePinNets` that
+  a net the circuit declares a port for is not an error (which makes the IR read
+  a model concept it currently has no notion of); or give the model somewhere to
+  hold an `ncUnlisted` reason so the pin can be declared not connected (the
+  **G151** mechanism, and the one that removes the net rather than excusing it);
+  or leave it refusing and treat this circuit as not-emittable, which is the
+  status quo and which nobody has decided. **The criterion is what binds, not
+  these.**

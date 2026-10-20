@@ -118,47 +118,44 @@ const BLOCKS: readonly BlockDeclaration[] = [
  *
  * `symbolForKind` refuses `connector` because a connector's symbol carries its way count and the
  * way count is a property of the part; the model declares neither symbol nor pin numbering for
- * these, only a `pinrow2`/`pinrow3` footprint and the pin names P1/P2/P3. So three things are
+ * these, only a `pinrow2`/`pinrow3` footprint and the pin names P1/P2/P3. So two things are
  * declared per terminal and each is a separate claim:
  *
  * - the **symbol**, chosen by way count against the footprint the model already declares -
  *   `pinrow2` is two ways and `pinrow3` is three;
  * - the **pin numbering**, P1/P2/P3 onto 1/2/3, which is the order `opamp-buffer.ts` writes them
- *   in and the order a 1xN header's pads are numbered in;
- * - the **pin sides**, because `Connector_Generic:Conn_01xNN` puts every pin at angle 0 and
- *   `pinSidesFor` refuses a symbol that gives fewer than two distinct sides. **Here the symbol is
- *   not ambiguous, it is one-sided and correct** - a single-row header's pins really do all leave
- *   the left edge of its glyph - so this override restates the geometry rather than correcting it.
- *   That cost is recorded in `docs/known-gaps.md` **G155**, which asks whether the two-sides rule
- *   should exempt a symbol with no second side to have.
+ *   in and the order a 1xN header's pads are numbered in.
+ *
+ * **The pin SIDES are not declared, and the deleted rule that once demanded them is recorded in
+ * `docs/known-gaps.md` **G155**.** A `Connector_Generic:Conn_01xNN` puts every pin at angle 0,
+ * which is a definite answer rather than an ambiguous one, and `pinSidesFor` reads it from the
+ * library on every path. A `pinSides` entry here would now be an ASSERTION checked against that
+ * geometry, not an override of it.
  */
 const OVERRIDES: SchematicAuthoring["overrides"] = {
   input_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
     symbolPins: { MAIN: { P1: "1", P2: "2" } },
-    pinSides: { "1": "left", "2": "left" },
     why:
       "a two-way screw terminal: opamp-buffer.ts declares footprint pinrow2 and pins P1/P2 and " +
       "no symbol, and symbolForKind refuses `connector` because the way count is a part fact. " +
-      "Conn_01x02's two pins both sit at angle 0, so pinSidesFor refuses the one-sided symbol " +
-      "and the sides are stated; they are the symbol's own geometry (G155).",
+      "The pin SIDES are not declared: Conn_01x02 puts both pins at angle 0 and the library is " +
+      "the sole source of a side (G155).",
   },
   output_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
     symbolPins: { MAIN: { P1: "1", P2: "2" } },
-    pinSides: { "1": "left", "2": "left" },
     why:
-      "a two-way screw terminal, as input_terminal: footprint pinrow2, pins P1/P2, no symbol in " +
-      "the model, and a one-sided Conn_01x02 glyph whose sides are stated (G155).",
+      "a two-way screw terminal, as input_terminal: footprint pinrow2, pins P1/P2, and no symbol " +
+      "in the model.",
   },
   power_terminal: {
     symbol: "Connector_Generic:Conn_01x03",
     symbolPins: { MAIN: { P1: "1", P2: "2", P3: "3" } },
-    pinSides: { "1": "left", "2": "left", "3": "left" },
     why:
       "a THREE-way screw terminal - opamp-buffer.ts declares footprint pinrow3 and pins " +
       "P1/P2/P3 on VCC, GND and VEE, which is the bipolar supply its header establishes from the " +
-      "wiring. Conn_01x03 is the three-way glyph; its pins are one-sided and stated (G155).",
+      "wiring. Conn_01x03 is the three-way glyph.",
   },
 }
 

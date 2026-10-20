@@ -103,26 +103,17 @@ const BLOCKS: readonly BlockDeclaration[] = [
 ]
 
 /**
- * ONE OVERRIDE, and it is a pin-side declaration rather than a correction.
+ * NO OVERRIDES. Every component of this circuit resolves its symbol from the model or from the
+ * by-kind rule, and every pin number from the model's own names or a reviewed rule.
  *
- * `power_signal_header` declares its own symbol (`Connector_Generic:Conn_01x05`, from the modern
- * netlist's libsource) and names its pins "1" through "5", which ARE the symbol's pin numbers, so
- * neither `symbolForKind` nor a pin map is needed. What is needed is the side partition:
- * Conn_01x05 puts all five pins at angle 0, and `pinSidesFor` refuses a symbol giving fewer than
- * two distinct sides. The symbol is not ambiguous here, it is one-sided and right - a single-row
- * header's pins do all leave the left edge of its glyph - so this restates the geometry.
- * `docs/known-gaps.md` **G155** records that cost and asks whether the rule should exempt a
- * symbol with no second side to have.
+ * **IT CARRIED ONE UNTIL THE TASK 9 REVIEW, and what it carried is worth knowing was wrong.**
+ * `power_signal_header` had a `pinSides` declaration naming all five pins of
+ * `Connector_Generic:Conn_01x05` "left", because `pinSidesFor` used to refuse a symbol giving
+ * fewer than two distinct sides. All five agreed with `sideOfPin(0, pin)`, so the declaration
+ * stated what the library already said; the refusal is deleted and the declaration with it.
+ * `docs/known-gaps.md` **G155** carries the measurement.
  */
-const OVERRIDES: SchematicAuthoring["overrides"] = {
-  power_signal_header: {
-    pinSides: { "1": "left", "2": "left", "3": "left", "4": "left", "5": "left" },
-    why:
-      "Connector_Generic:Conn_01x05's five pins all sit at angle 0, so pinSidesFor refuses the " +
-      "one-sided symbol; these are the symbol's own sides restated, not a partition chosen here " +
-      "(G155). The symbol and the pin numbering both come from the model.",
-  },
-}
+const OVERRIDES: SchematicAuthoring["overrides"] = {}
 
 export const PT2399_CORE_SCHEMATIC: SchematicAuthoring = {
   project: "pt2399-core",

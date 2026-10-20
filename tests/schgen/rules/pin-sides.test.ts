@@ -9,12 +9,12 @@
  */
 
 import { test, expect } from "bun:test"
-import { pinSidesFor, sideOfPin, symbolStatesItsSides } from "../../../lib/schgen/rules/pin-sides.ts"
+import { isPinSide, pinSidesFor, sideOfPin } from "../../../lib/schgen/rules/pin-sides.ts"
 import { ROTATIONS } from "../../../lib/schgen/render/geometry.ts"
 import { createResolver } from "../../../lib/schgen/render/library.ts"
 import { symbolLibraries } from "../../../lib/schgen/render/stock-symbols.ts"
 
-const resolver = createResolver(symbolLibraries(["Device", "Audio", "Connector", "Connector_Generic", "Amplifier_Operational", "Transistor_BJT"]))
+const resolver = createResolver(symbolLibraries(["Device", "Audio", "Connector", "Connector_Generic", "Amplifier_Operational", "Transistor_BJT", "Jumper"]))
 
 test("the PT2399's side partition comes from the symbol: pins 1-8 left, 9-16 right", () => {
   const sides = pinSidesFor("ic", resolver.resolve("Audio:PT2399"))
@@ -61,41 +61,67 @@ test("a multi-unit op-amp's pins are sided per pin, across all four sides", () =
   ])
 })
 
-test("a one-sided symbol refuses, naming the symbol, the kind and every pin number", () => {
-  expect(() => pinSidesFor("connector", resolver.resolve("Connector_Generic:Conn_01x05")))
-    .toThrow(/Connector_Generic:Conn_01x05 \(declared for a "connector"\) puts all 5 of its pins on one side \("left"\)/)
-  expect(() => pinSidesFor("connector", resolver.resolve("Connector_Generic:Conn_01x05")))
-    .toThrow(/covering every pin number \(1, 2, 3, 4, 5\)/)
-  expect(() => pinSidesFor("connector", resolver.resolve("Connector:TestPoint")))
-    .toThrow(/puts all 1 of its pins on one side \("bottom"\)/)
+test("a ONE-SIDED symbol is answered, not refused - the deleted rule's whole mistake", () => {
+  // Task 9 review, round 1: `pinSidesFor` used to refuse a symbol giving fewer than two distinct
+  // sides. A KiCad pin always carries an `(at x y angle)` and an angle always yields a side, so a
+  // one-sided glyph is a DEFINITE answer about which edge each pin sits on - not an ambiguous
+  // one. The question the refusal was really reaching for, which pins are an interface in and
+  // which out, is a DIRECTION and lives in portDirections and InterfacePort. See G155.
+  expect([...pinSidesFor("connector", resolver.resolve("Connector_Generic:Conn_01x05"))]).toEqual([
+    ["1", "left"],
+    ["2", "left"],
+    ["3", "left"],
+    ["4", "left"],
+    ["5", "left"],
+  ])
+  expect([...pinSidesFor("connector", resolver.resolve("Connector:TestPoint"))]).toEqual([["1", "bottom"]])
+  expect([...pinSidesFor("connector", resolver.resolve("Connector_Generic:Conn_01x02"))]).toEqual([
+    ["1", "left"],
+    ["2", "left"],
+  ])
 })
 
-test("symbolStatesItsSides agrees with whether pinSidesFor refuses, on every symbol tried", () => {
-  const cases: readonly [string, boolean][] = [
-    ["Audio:PT2399", true],
-    ["Device:R", true],
-    ["Device:D", true],
-    ["Amplifier_Operational:TL072", true],
-    ["Transistor_BJT:2N3904", true],
-    ["Connector_Generic:Conn_01x02", false],
-    ["Connector_Generic:Conn_01x05", false],
-    ["Connector:TestPoint", false],
+test("the surviving refusal is about a BROKEN symbol: no pins at all", () => {
+  // The one case where geometry genuinely cannot answer. Built by emptying a real symbol's pin
+  // list rather than hunting for a pinless library symbol, so the refusal is driven rather than
+  // described.
+  const pinless = { ...resolver.resolve("Device:R"), pins: [] }
+  expect(() => pinSidesFor("resistor", pinless))
+    .toThrow(/Device:R \(declared for a "resistor"\) has no pins/)
+})
+
+test("every pin of every symbol the parity circuits use gets a side, and the sides are the four", () => {
+  const ids = [
+    "Audio:PT2399",
+    "Amplifier_Operational:TL072",
+    "Device:R",
+    "Device:C",
+    "Device:C_Polarized",
+    "Device:R_Photo",
+    "Device:R_Potentiometer_Trim",
+    "Device:D",
+    "Transistor_BJT:2N3904",
+    "Connector_Generic:Conn_01x02",
+    "Connector_Generic:Conn_01x05",
+    "Connector:TestPoint",
+    "Jumper:Jumper_2_Open",
   ]
-  expect(cases.length, "a case list nothing iterates is a check that cannot fail").toBe(8)
-  const disagreements: string[] = []
-  for (const [libId, expected] of cases) {
-    const symbol = resolver.resolve(libId)
-    const states = symbolStatesItsSides(symbol)
-    if (states !== expected) disagreements.push(`${libId}: symbolStatesItsSides ${states}, expected ${expected}`)
-    let refused = false
-    try {
-      pinSidesFor("connector", symbol)
-    } catch {
-      refused = true
+  expect(ids.length, "a symbol list nothing iterates is a check that cannot fail").toBe(13)
+  const missing: string[] = []
+  let pins = 0
+  for (const id of ids) {
+    const symbol = resolver.resolve(id)
+    const sides = pinSidesFor("ic", symbol)
+    for (const pin of symbol.pins) {
+      pins += 1
+      const side = sides.get(pin.number)
+      if (side === undefined || !isPinSide(side)) missing.push(`${id}.${pin.number}`)
     }
-    if (refused === states) disagreements.push(`${libId}: predicate ${states} but refusal ${refused}`)
   }
-  expect(disagreements).toEqual([])
+  expect(missing).toEqual([])
+  // 16 + 8 + 2 + 2 + 2 + 2 + 3 + 2 + 3 + 2 + 5 + 1 + 2, pinned so a sweep that silently
+  // stopped covering a symbol shows up as a count rather than as a pass.
+  expect(pins, "the sweep covered the wrong number of pins").toBe(50)
 })
 
 test("a rotation moves a pin's side and never its identity", () => {

@@ -15,6 +15,7 @@
  * | `bom` | `SchematicAuthoring.declared.bom`, declared (see `BomSource`) |
  * | `source` | `SchematicAuthoring.declared.source`, declared |
  * | `pins` | the model's connections, through `part.symbolPins`, a `symbolPins` override, or `canonicalPinNumbers` |
+ * | pin sides (on `SchematicPart`, not `PartSpec`) | `rules/pin-sides.ts`, always; a declared `pinSides` is checked against it and never replaces it |
  * | `dnp`, `checklist`, `pinTable`, `mechanicalPads`, `ncUnlisted` | fixed, each for a stated reason |
  *
  * **THE FIVE FIXED FIELDS, because "fixed" has to be a decision rather than a shrug:**
@@ -261,40 +262,56 @@ export interface SchematicPart {
   readonly sidesFromOverride: ReadonlySet<PinNumber>
 }
 
-/** Every symbol pin's side: the symbol's geometry, overlaid by - or wholly replaced by - an override. */
+/**
+ * Every symbol pin's side, read from the library - and a declared side CHECKED against it.
+ *
+ * **`ComponentOverride.pinSides` IS AN ASSERTION, NOT AN OVERRIDE, AND THAT IS A CHANGE**
+ * (Task 9 review, round 1; `docs/known-gaps.md` **G155**). It used to be an override, and a
+ * TOTAL one returned outright without ever calling `pinSidesFor` - so a declared side was never
+ * compared against the glyph's geometry and **nothing in the suite would have caught a
+ * declaration the symbol contradicts.** That is an invention at the call site wearing a
+ * declaration's clothes, which is G99's own failure mode; and because the deleted
+ * two-distinct-sides rule had forced such a declaration onto 19 of the 25 override-carrying
+ * components, a genuinely wrong one would have looked ordinary.
+ *
+ * So the geometry is read on EVERY path, a declared side that disagrees with it refuses naming
+ * the pin, the declared side and the library's, and `sidesFromOverride` records which pins were
+ * asserted - not which were overridden, because none can be.
+ */
 function sidesFor(component: Component, symbol: LibSymbol, override: ComponentOverride | undefined): {
   readonly sides: ReadonlyMap<PinNumber, PinSide>
   readonly fromOverride: ReadonlySet<PinNumber>
 } {
+  const sides = new Map(pinSidesFor(component.kind, symbol))
   const declared = override?.pinSides
+  if (declared === undefined) return { sides, fromOverride: new Set<PinNumber>() }
   const numbers = symbol.pins.map((p) => p.number)
-  if (declared !== undefined) {
-    const unknown = Object.keys(declared).filter((n) => !numbers.includes(n))
-    if (unknown.length > 0) {
-      throw new Error(
-        `component "${component.id}": the pinSides override names pin number(s) ` +
-          `[${unknown.join(", ")}], which ${symbol.libId} does not have (its pins: ` +
-          `${numbers.join(", ")}).`,
-      )
-    }
-    const total = new Map<PinNumber, PinSide>()
-    for (const number of numbers) {
-      const side = declared[number]
-      if (side !== undefined) total.set(number, side)
-    }
-    // A TOTAL override replaces the geometry outright: that is the case `pinSidesFor` refuses on
-    // (a symbol putting every pin on one side), and consulting the geometry anyway would mean
-    // refusing a question the authoring file has already answered in full.
-    if (total.size === numbers.length) return { sides: total, fromOverride: new Set(numbers) }
+  const unknown = Object.keys(declared).filter((n) => !numbers.includes(n))
+  if (unknown.length > 0) {
+    throw new Error(
+      `component "${component.id}": the pinSides declaration names pin number(s) ` +
+        `[${unknown.join(", ")}], which ${symbol.libId} does not have (its pins: ` +
+        `${numbers.join(", ")}).`,
+    )
   }
-  const geometric = pinSidesFor(component.kind, symbol)
-  const sides = new Map(geometric)
-  const fromOverride = new Set<PinNumber>()
-  for (const [number, side] of Object.entries(declared ?? {})) {
-    sides.set(number, side)
-    fromOverride.add(number)
+  const asserted = new Set<PinNumber>()
+  const disagreements: string[] = []
+  for (const [number, side] of Object.entries(declared)) {
+    const library = sides.get(number)
+    if (library !== side) disagreements.push(`pin ${number}: declared "${side}", library says "${library ?? "nothing"}"`)
+    asserted.add(number)
   }
-  return { sides, fromOverride }
+  if (disagreements.length > 0) {
+    throw new Error(
+      `component "${component.id}": the pinSides declaration disagrees with ${symbol.libId}'s ` +
+        `own geometry - ${disagreements.join("; ")}. A pin's side is read from the library on ` +
+        "every path and a declaration cannot move it: the symbol's `(at x y angle)` is where a " +
+        "pin is drawn, and a declaration that contradicts it would put a net on an edge the " +
+        "glyph does not have. Fix the declaration, or use a symbol that draws the pin where the " +
+        "circuit needs it.",
+    )
+  }
+  return { sides, fromOverride: asserted }
 }
 
 /**
@@ -461,4 +478,44 @@ export function nicknamesOf(network: Network, authoring: SchematicAuthoring): re
     nicknames.add(nickname)
   }
   return [...nicknames].sort()
+}
+
+export interface MpnSymbolDisagreement {
+  readonly component: string
+  readonly mpn: string
+  readonly libId: string
+  /** The lib id's part name - what the symbol calls itself. */
+  readonly symbolName: string
+}
+
+/**
+ * Components whose `part.mpn` differs from the part name of the symbol they are drawn with.
+ *
+ * **ADDED BY THE TASK 9 REVIEW, round 1, and it is the signature of a whole class.** Nothing
+ * noticed that `circuits/optical-compressor/` declares `part.mpn: "TL072H"` on two op-amps while
+ * the drawing gives them `Amplifier_Operational:TL072` - a hardware claim (that the two share a
+ * pinout) made in an authoring file, unguarded, and invisible because the sheet carries BOTH
+ * names, the mpn in the value field and `TL072` in the lib id. The disagreement is computable
+ * from data already in hand, so it is computed.
+ *
+ * **IT IS A REPORT AND NOT A REFUSAL, deliberately.** A disagreement is often correct: a trimmer
+ * ordered as an `RM-065` is drawn with `Device:R_Potentiometer_Trim`, and a symbol name is not an
+ * order code. What is NOT acceptable is a disagreement nobody has looked at, so
+ * `tests/schgen/authoring-complete.test.ts` pins the exact set over the parity circuits and a new
+ * one turns the suite red until a reader classifies it. `docs/known-gaps.md` **G156** carries the
+ * one live hardware claim in the current set.
+ */
+export function mpnSymbolDisagreements(parts: readonly SchematicPart[]): readonly MpnSymbolDisagreement[] {
+  const out: MpnSymbolDisagreement[] = []
+  for (const part of parts) {
+    const mpn = part.component.part?.mpn
+    if (mpn === undefined) continue
+    const libId = part.spec.libId
+    const colon = libId.indexOf(":")
+    if (colon < 0) throw new Error(`lib id "${libId}" is not in Lib:Name form`)
+    const symbolName = libId.slice(colon + 1)
+    if (symbolName === mpn) continue
+    out.push({ component: part.component.id, mpn, libId, symbolName })
+  }
+  return out
 }

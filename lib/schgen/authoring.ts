@@ -10,7 +10,7 @@
  * | invention | where it lives now |
  * | --- | --- |
  * | a **symbol** per kind | `rules/symbols.ts`'s `symbolForKind`, with `ComponentOverride.symbol` for the residue |
- * | a **pin-side partition** | `rules/pin-sides.ts`'s `pinSidesFor`, read off the symbol's own pin angles, with `ComponentOverride.pinSides` for a symbol that does not answer |
+ * | a **pin-side partition** | `rules/pin-sides.ts`'s `pinSidesFor`, read off the symbol's own pin angles, on every path. `ComponentOverride.pinSides` is an ASSERTION checked against that geometry, never an override of it (**G155**) |
  * | a **drawn orientation** | `rules/orientation.ts`, as step 2 of spec §1.5's authority order |
  * | a **rail convention** | `SchematicAuthoring.rails` - declared per net, with its power symbol and whether it is a ground or a supply |
  * | a **port direction** | `SchematicAuthoring.portDirections` - declared per net |
@@ -35,6 +35,7 @@
 
 import { NET_NAME, type BlockId, type BomFields, type NetName, type RailSpec, type SheetSpec } from "./ir/types.ts"
 import type { Rendering, TemplateAnchor } from "./ir/types.ts"
+import { isPinSide } from "./rules/pin-sides.ts"
 import type { PinSide } from "./rules/pin-sides.ts"
 import type { Network } from "../model/types.ts"
 
@@ -114,7 +115,13 @@ export interface ComponentOverride {
   readonly symbol?: string
   /** Unit name as the model names it -> canonical pin -> KiCad pin number. */
   readonly symbolPins?: Readonly<Record<string, Readonly<Record<string, string>>>>
-  /** KiCad pin number -> side. Partial overlays the symbol's geometry; total replaces it. */
+  /**
+   * KiCad pin number -> side, as an ASSERTION rather than an override: a pin's side is read from
+   * the library on every path, and a declaration that disagrees with the symbol's own
+   * `(at x y angle)` refuses naming the pin, the declared side and the library's. None of the
+   * four parity circuits declares one; `docs/known-gaps.md` **G155** records why the nineteen it
+   * once carried are gone.
+   */
   readonly pinSides?: Readonly<Record<string, PinSide>>
   /** Never blank: an override is a claim and carries its reason. */
   readonly why: string
@@ -279,9 +286,7 @@ export function authoringProblems(authoring: SchematicAuthoring, network: Networ
         )
       }
       for (const side of port.sides) {
-        if (side !== "left" && side !== "right" && side !== "top" && side !== "bottom") {
-          out.push(`block ${block.id}: interface port ${port.net} declares side "${side}"`)
-        }
+        if (!isPinSide(side)) out.push(`block ${block.id}: interface port ${port.net} declares side "${side}"`)
       }
       if (BLANK(port.why)) {
         out.push(

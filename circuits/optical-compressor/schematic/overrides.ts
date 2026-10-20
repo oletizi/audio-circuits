@@ -45,29 +45,19 @@ const TL072_SECTIONS = {
   B: { "in+": "5", "in-": "6", out: "7" },
 } as const
 
-/** A single-row header's pins all leave the left edge of its glyph; see `./authoring.ts` and G155. */
-const HEADER_SIDES_2 = { "1": "left", "2": "left" } as const
-const HEADER_SIDES_3 = { "1": "left", "2": "left", "3": "left" } as const
-
-const ONE_SIDED =
-  "Connector_Generic:Conn_01xNN puts every pin at angle 0, so pinSidesFor refuses it for giving " +
-  "fewer than two distinct sides. The sides stated here are the symbol's own geometry restated, " +
-  "not a partition chosen here (G155)."
-
 const NO_PACKAGING =
   "parts/inert-terminal.ts declares one PartSpec for every connector in this circuit, with " +
   "electricallyInert and nothing else: \"the spec names the connectors and their pins and says " +
-  "nothing about packaging, and inventing either would be fabricated data\". So the symbol, the " +
-  "pin numbering and the sides are all declared here."
+  "nothing about packaging, and inventing either would be fabricated data\". So the symbol and " +
+  "the pin numbering are declared here; the pin SIDES are not, because a pin's side is read from " +
+  "the library on every path (G155)."
 
 export const OPTICAL_COMPRESSOR_OVERRIDES: Readonly<Record<string, ComponentOverride>> = {
   power_power_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
     symbolPins: { MAIN: { "+9V_RAW": "1", GND: "2" } },
-    pinSides: HEADER_SIDES_2,
     why:
-      `J_PWR, spec section 10.1: two ways, pins named +9V_RAW and GND in that order. ${NO_PACKAGING} ` +
-      `${ONE_SIDED}`,
+      `J_PWR, spec section 10.1: two ways, pins named +9V_RAW and GND in that order. ${NO_PACKAGING}`,
   },
   power_reverse_polarity_diode: {
     symbol: "Diode:1N5817",
@@ -84,8 +74,7 @@ export const OPTICAL_COMPRESSOR_OVERRIDES: Readonly<Record<string, ComponentOver
   audio_input_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
     symbolPins: { MAIN: { IN: "1", GND: "2" } },
-    pinSides: HEADER_SIDES_2,
-    why: `J_IN, spec section 10.1: "AC-coupled audio input", pins IN and GND. ${NO_PACKAGING} ${ONE_SIDED}`,
+    why: `J_IN, spec section 10.1: "AC-coupled audio input", pins IN and GND. ${NO_PACKAGING}`,
   },
   audio_signal_opamp: {
     symbol: "Amplifier_Operational:TL072",
@@ -100,26 +89,23 @@ export const OPTICAL_COMPRESSOR_OVERRIDES: Readonly<Record<string, ComponentOver
   audio_gain_terminal: {
     symbol: "Connector_Generic:Conn_01x03",
     symbolPins: { MAIN: { TOP: "1", WIPER: "2", BOTTOM: "3" } },
-    pinSides: HEADER_SIDES_3,
     why:
       "J_GAIN, spec section 10.1: three ways for an off-board pot, pins TOP, WIPER and BOTTOM, " +
       "mapped onto 1/2/3 - the order a 1x03 header's pads are numbered in and the order a pot's " +
-      `own terminals are numbered in (wiper on 2). ${NO_PACKAGING} ${ONE_SIDED}`,
+      `own terminals are numbered in (wiper on 2). ${NO_PACKAGING}`,
   },
   audio_output_terminal: {
     symbol: "Connector_Generic:Conn_01x02",
     symbolPins: { MAIN: { OUT: "1", GND: "2" } },
-    pinSides: HEADER_SIDES_2,
-    why: `J_OUT, spec section 10.1: two ways, pins OUT and GND. ${NO_PACKAGING} ${ONE_SIDED}`,
+    why: `J_OUT, spec section 10.1: two ways, pins OUT and GND. ${NO_PACKAGING}`,
   },
   sidechain_peak_terminal: {
     symbol: "Connector_Generic:Conn_01x03",
     symbolPins: { MAIN: { TOP: "1", WIPER: "2", BOTTOM: "3" } },
-    pinSides: HEADER_SIDES_3,
     why:
       "J_PEAK, spec section 10.1: three ways, pins TOP, WIPER and BOTTOM - and parts/sidechain.ts " +
       "records that the third is deliberately NOT called VBIAS although it lands on it, so the " +
-      `numbering follows the terminal names rather than the nets. ${NO_PACKAGING} ${ONE_SIDED}`,
+      `numbering follows the terminal names rather than the nets. ${NO_PACKAGING}`,
   },
   sidechain_control_opamp: {
     symbol: "Amplifier_Operational:TL072",

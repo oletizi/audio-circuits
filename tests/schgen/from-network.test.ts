@@ -378,13 +378,41 @@ describe("the refusals that keep a backend from inventing an input", () => {
     expect(() => schematicParts(network, authoring, symbols)).toThrow(/pin number "1" of Device:R is claimed by both/)
   })
 
-  test("a pinSides override naming a pin the symbol does not have refuses", () => {
+  test("a pinSides declaration naming a pin the symbol does not have refuses", () => {
     const network = twoBlockNetwork()
     const authoring = {
       ...twoBlockAuthoring(),
       overrides: { a_series: { pinSides: { "7": "left" as const }, why: "a test" } },
     }
-    expect(() => schematicParts(network, authoring, symbols)).toThrow(/the pinSides override names pin number\(s\) \[7\], which Device:R does not have/)
+    expect(() => schematicParts(network, authoring, symbols)).toThrow(/the pinSides declaration names pin number\(s\) \[7\], which Device:R does not have/)
+  })
+
+  test("a pinSides declaration that DISAGREES with the symbol's geometry refuses", () => {
+    // Task 9 review, round 1. A total pinSides override used to return without ever consulting
+    // the geometry, so a declared side the symbol contradicts reached a CircuitSpec unchecked -
+    // an invention at the call site wearing a declaration's clothes. Device:R puts pin 1 at the
+    // top and pin 2 at the bottom; this says otherwise and is refused.
+    const network = twoBlockNetwork()
+    const authoring = {
+      ...twoBlockAuthoring(),
+      overrides: { a_series: { pinSides: { "1": "left" as const, "2": "right" as const }, why: "a test" } },
+    }
+    expect(() => schematicParts(network, authoring, symbols))
+      .toThrow(/the pinSides declaration disagrees with Device:R's own geometry/)
+    expect(() => schematicParts(network, authoring, symbols))
+      .toThrow(/pin 1: declared "left", library says "top"; pin 2: declared "right", library says "bottom"/)
+  })
+
+  test("a pinSides declaration that AGREES is accepted and is recorded as asserted", () => {
+    const network = twoBlockNetwork()
+    const authoring = {
+      ...twoBlockAuthoring(),
+      overrides: { a_series: { pinSides: { "1": "top" as const }, why: "a test" } },
+    }
+    const parts = schematicParts(network, authoring, symbols)
+    const part = parts.find((p) => p.component.id === "a_series")
+    expect(part?.sidesFromOverride).toEqual(new Set(["1"]))
+    expect(part?.pinSides.get("2")).toBe("bottom")
   })
 
   test("a declared BOM source carries its fields, and a component missing from it refuses", () => {
