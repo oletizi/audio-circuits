@@ -76,6 +76,14 @@ export type CanonicalTopology =
        * defect once the refusal stops hiding it.
        */
       readonly contained: number
+      /**
+       * How many times a segment was DIVIDED at a branch point of its own net - ruling **R33**,
+       * spec §1.4 criterion (b). **Reported, never silent**, exactly as the three merge counts are:
+       * a reader must be able to see what the canonicalisation did to the router's segment list in
+       * both directions. The wire list grows by exactly this number, and the points are the
+       * `branches` below.
+       */
+      readonly split: number
     }
   /**
    * An overlap that is neither a duplicate nor a clean T: named segments, and a refusal.
@@ -96,6 +104,8 @@ export type CanonicalTopology =
       readonly zeroLength: number
       /** Zero on this arm unless the containments were collapsed before the refusal was reached. */
       readonly contained: number
+      /** Always zero on this arm: the split runs only after the ambiguity check has passed. */
+      readonly split: number
     }
 
 /** A segment's geometry, independent of which end was called `a`. */
@@ -167,6 +177,81 @@ function contains(outer: Wire, inner: Wire): boolean {
   const [ol, oh] = spanOf(outer)
   const [il, ih] = spanOf(inner)
   return ol <= il && ih <= oh
+}
+
+/**
+ * SPEC §1.4 CRITERION (b) PERFORMED IN THE WIRE LIST: every same-net branch point becomes a real
+ * segment end - **ruling R33**.
+ *
+ * **WHAT IT DOES.** A segment is divided wherever another segment of its own net, or a pin of its
+ * own net, has an END strictly inside it. A segment from A to C with a branch at B comes out as
+ * A-B and B-C.
+ *
+ * **WHY THIS IS NOT A REPAIR, WHICH IS THE QUESTION OBLIGATION 5 ASKS AND WHICH R33 ANSWERS.**
+ * A segment from A to C with a branch at B is **the same ink** whether it is held as one wire or as
+ * two: the choice is representational, not geometric. No point moves, no connection is created or
+ * destroyed, and no reading is chosen over another. And criterion (b) requires this topology to
+ * *"represent each net's branches explicitly"* - **a split at a branch point is literally that**,
+ * performed in the wire list rather than in a side table. So the three operations here are one
+ * discipline, not a merge rule plus an exception:
+ *
+ * | clause (a) | coincident duplicates | **merge** |
+ * | **R31** | same-net containments | **merge**, one dimension up |
+ * | **R33** | branch points | **split**, making criterion (b)'s branch explicit |
+ *
+ * **AND IT IS WHAT THE REST OF THE GENERATOR ALREADY ASKS FOR.** `checkWireSafety` refuses a
+ * same-net end inside a wire with *"split the wire there"*, and `connectivity.ts`'s module comment
+ * states the standing policy: *"the generator never relies on the junction-dependent cases …
+ * junction dots are cosmetic."* `[RAN]` Ruling **R32** took the other mechanism - emit a junction
+ * instead - and it satisfied obligation 2 and was then refused by `checkWireSafety` at **the same
+ * 25 points and 0 others** (`docs/known-gaps.md` **G199**). That measurement is what reversed it.
+ *
+ * **IT RUNS AFTER THE AMBIGUITY CHECK, AND THE ORDER IS LOAD-BEARING.** A genuine partial - A at
+ * 0..10 and B at 5..15, neither containing the other - would be split by this function into
+ * 0..5/5..10 and 5..10/10..15, producing two identical 5..10 segments that the duplicate rule would
+ * then quietly merge. **That would repair a shape clause (d) exists to refuse.** Running the
+ * ambiguity check first means no overlapping same-net pair ever reaches here: containments are
+ * merged, partials and cross-net overlaps refuse, so what is left only ever touches at points.
+ */
+function splitAtBranches(
+  wires: readonly Tracked[],
+  pins: readonly PlacedPin[],
+): { readonly kept: readonly Tracked[]; readonly split: number } {
+  const out: Tracked[] = []
+  let split = 0
+  for (const t of wires) {
+    const net = t.wire.net
+    const inside = new Map<string, Point>()
+    for (const other of wires) {
+      if (other === t || other.wire.net !== net) continue
+      for (const end of [other.wire.a, other.wire.b]) {
+        if (strictlyInside(end, t.wire.a, t.wire.b)) inside.set(pointKey(end), end)
+      }
+    }
+    for (const pin of pins) {
+      // A FOREIGN-net pin inside a wire is not split for: it is `wireOverPins`' first refusal, a
+      // real clearance defect, and dividing the wire around it would hide it.
+      if (pin.net !== net) continue
+      if (strictlyInside(pin.at, t.wire.a, t.wire.b)) inside.set(pointKey(pin.at), pin.at)
+    }
+    if (inside.size === 0) {
+      out.push(t)
+      continue
+    }
+    const horizontal = isHorizontal(t.wire)
+    const along = (p: Point): number => (horizontal ? p.x : p.y)
+    const forward = along(t.wire.a) < along(t.wire.b)
+    const cuts = [...inside.values()].sort((x, y) => (forward ? along(x) - along(y) : along(y) - along(x)))
+    const points = [t.wire.a, ...cuts, t.wire.b]
+    for (let k = 1; k < points.length; k += 1) {
+      const a = points[k - 1]
+      const b = points[k]
+      if (a === undefined || b === undefined) continue
+      out.push({ wire: { a, b, net }, index: t.index })
+    }
+    split += points.length - 2
+  }
+  return { kept: out, split }
 }
 
 /**
@@ -345,7 +430,10 @@ function branchesOf(wires: readonly Wire[], pins: readonly PlacedPin[]): readonl
  * 2. **exact same-net duplicates are collapsed**, counted as `collapsed` - clause (a);
  * 3. **same-net collinear CONTAINMENTS are collapsed onto the container**, counted as `contained` -
  *    clause (a) one dimension up, ruling **R31**;
- * 4. **the ambiguity check runs over what is left** - cross-net overlaps and genuine partials.
+ * 4. **the ambiguity check runs over what is left** - cross-net overlaps and genuine partials;
+ * 5. **every segment is SPLIT at the branch points of its own net**, counted as `split` - criterion
+ *    (b) performed in the wire list, ruling **R33**. It is last because splitting a genuine partial
+ *    would turn it into two duplicates and repair a shape clause (d) exists to refuse.
  *
  * Running the ambiguity check earlier would report every duplicate and every containment as
  * ambiguous, which is the failure this module exists to avoid: those are known, countable backend
@@ -360,7 +448,7 @@ function branchesOf(wires: readonly Wire[], pins: readonly PlacedPin[]): readonl
  * sits in the container's INTERIOR and is joined only if a junction is emitted at that point.
  *
  * **A partition comparison here was written, measured and then DELETED, and both halves are worth
- * knowing** (`docs/known-gaps.md` **G194**). `[RAN]` It fires: on `tp-leg-upper` the collapse takes
+ * knowing** (`docs/known-gaps.md` **G199**). `[RAN]` It fires: on `tp-leg-upper` the collapse takes
  * a 4-piece partition to 5, so the concern is real rather than theoretical, and with the guard in
  * place **R31 could not take effect on any block**. But `connectedComponents` cannot see junctions
  * by construction, so the guard was answering a question with a model that excludes the answer.
@@ -393,15 +481,18 @@ export function canonicalTopology(l: BlockLayout, pins: readonly PlacedPin[]): C
   const { kept, contained } = collapseContainments(deduped)
 
   const ambiguous = ambiguousOverlaps(kept)
-  if (ambiguous.length > 0) return { ok: false, ambiguous, collapsed, zeroLength, contained }
+  if (ambiguous.length > 0) return { ok: false, ambiguous, collapsed, zeroLength, contained, split: 0 }
 
+  const divided = splitAtBranches(kept, pins)
+  const wires = divided.kept.map((t) => t.wire)
   return {
     ok: true,
-    wires: kept.map((t) => t.wire),
-    branches: branchesOf(kept.map((t) => t.wire), pins),
+    wires,
+    branches: branchesOf(wires, pins),
     collapsed,
     zeroLength,
     contained,
+    split: divided.split,
   }
 }
 

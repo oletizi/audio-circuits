@@ -106,6 +106,8 @@ export interface CanonicalisationCounts {
   readonly zeroLength: number
   /** Same-net collinear containments collapsed onto their container - ruling **R31**. */
   readonly contained: number
+  /** Segments divided at a branch point of their own net - ruling **R33**. The list GROWS by this. */
+  readonly split: number
   readonly wiresBefore: number
   readonly wiresAfter: number
 }
@@ -116,8 +118,10 @@ function countsOf(before: readonly Wire[], t: CanonicalTopology): Canonicalisati
     collapsed: t.collapsed,
     zeroLength: t.zeroLength,
     contained: t.contained,
+    split: t.split,
     wiresBefore: before.length,
-    wiresAfter: before.length - t.collapsed - t.zeroLength - t.contained,
+    // The three merges remove and the split adds, which is why the sign matters here.
+    wiresAfter: before.length - t.collapsed - t.zeroLength - t.contained + t.split,
   }
 }
 
@@ -237,6 +241,8 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
         "be drawn.",
     )
   }
+  // `post.split` is NOT asserted zero either: snapping can bring a same-net end onto another
+  // segment's interior, and R33 divides it there exactly as it would before snapping.
   // `post.contained` is NOT asserted zero: snapping can bring two same-net segments onto one line
   // where they were parallel before, and a containment appearing there has the same single reading
   // ruling R31 gives any other. It is reported in the counts rather than refused.

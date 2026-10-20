@@ -11,6 +11,7 @@
 import { expect, test } from "bun:test"
 import { branchJunctions, canonicalTopology, crossings, junctionProblems } from "../../../lib/schgen/elk/junctions.ts"
 import { checkWireSafety } from "../../../lib/schgen/render/wire-safety.ts"
+import { junctionPoints } from "../../../lib/schgen/render/connectivity.ts"
 import type { ConnItem } from "../../../lib/schgen/render/connectivity.ts"
 import { GRID } from "../../../lib/schgen/render/geometry.ts"
 import type { BlockLayout, Wire } from "../../../lib/schgen/render/block-types.ts"
@@ -411,4 +412,108 @@ test("a junction where one net branches AND another crosses is a problem, not an
   expect(problems.length).toBe(1)
   expect(problems[0] ?? "").toContain("DIFFERENT nets")
   expect(problems[0] ?? "").toContain("does not excuse it")
+})
+
+/**
+ * **RULING R33, DRIVEN: a branch point becomes a real segment end, and the count is reported.**
+ *
+ * A spine from 0 to 6 with a stem meeting it at 3 is one wire plus one wire in the router's output;
+ * criterion (b) requires the branch to be explicit, so the spine comes out as 0-3 and 3-6. **No
+ * point moves and no connection changes** - which is why R33 answers obligation 5's repair question
+ * in the negative rather than waiving it.
+ */
+test("a segment is SPLIT at a branch point of its own net, and the count is reported", () => {
+  const t = canonicalTopology(
+    layout([
+      { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+      { a: { x: G(3), y: 0 }, b: { x: G(3), y: G(3) }, net: "A" },
+    ]),
+    NO_PINS,
+  )
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(t.split).toBe(1)
+  // The list GREW: two wires in, three out, and the same ink.
+  expect(t.wires.length).toBe(3)
+  const spine = t.wires.filter((w) => w.a.y === 0 && w.b.y === 0)
+  expect(spine.length).toBe(2)
+  expect(spine.map((w) => [w.a.x, w.b.x])).toEqual([[0, G(3)], [G(3), G(6)]])
+  // And the branch is still a branch, now by three coincident ENDS rather than an end on an interior.
+  expect(branchJunctions(t, NO_PINS)).toEqual([{ x: G(3), y: 0 }])
+})
+
+test("a segment is split at a PIN of its own net lying mid-wire, which is what checkWireSafety asks for", () => {
+  const at = { x: G(3), y: 0 }
+  const t = canonicalTopology(
+    layout([{ a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" }]),
+    [{ part: "R_A", unit: 1, pin: "1", at, net: "A" }],
+  )
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(t.split).toBe(1)
+  expect(t.wires.length).toBe(2)
+})
+
+/**
+ * **A FOREIGN-NET PIN MID-WIRE IS NOT SPLIT FOR, AND THAT IS THE DIFFERENCE BETWEEN A
+ * REPRESENTATION CHANGE AND HIDING A DEFECT.**
+ *
+ * `wireOverPins`' first refusal is *"wire (net X) passes over pin end (net Y)"* - a real clearance
+ * defect. Dividing the wire around it would leave the geometry unchanged and the defect unreported,
+ * which is exactly the repair obligation 5 forbids. So the splitter reads the net.
+ */
+test("a FOREIGN-net pin lying mid-wire is NOT split for", () => {
+  const t = canonicalTopology(
+    layout([{ a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" }]),
+    [{ part: "R_B", unit: 1, pin: "1", at: { x: G(3), y: 0 }, net: "B" }],
+  )
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(t.split).toBe(0)
+  expect(t.wires.length).toBe(1)
+})
+
+/**
+ * **THE ORDER IS LOAD-BEARING AND THIS IS THE TEST THAT HOLDS IT.**
+ *
+ * A genuine partial - `0..4` and `2..6`, neither containing the other - would be split by R33 into
+ * `0..2`/`2..4` and `2..4`/`4..6`, producing **two identical `2..4` segments** that the duplicate
+ * rule would then quietly merge. **That would repair a shape clause (d) exists to refuse.** The
+ * ambiguity check therefore runs BEFORE the split, and this asserts the refusal still happens rather
+ * than the partial being silently tidied away.
+ */
+test("a genuine partial still REFUSES and is never silently split into duplicates", () => {
+  const t = canonicalTopology(partiallyOverlappingSegments(), NO_PINS)
+  expect(t.ok).toBe(false)
+  if (!t.ok) {
+    expect(t.ambiguous.length).toBe(1)
+    expect(t.ambiguous.join(" ")).toContain("NEITHER span contains the other")
+    // The refusal arm reports no split, because the split never ran.
+    expect(t.split).toBe(0)
+  }
+})
+
+/**
+ * **R33 IS WHAT MAKES OBLIGATION 2 AND `checkWireSafety` AGREE**, which is the measurement that
+ * reversed R32: before the split, `branchJunctions` wanted a junction at a point `junctionPoints`
+ * was silent at and `checkWireSafety` refused outright. After it, all three agree.
+ */
+test("after the split, junctionPoints and branchJunctions agree and wire-safety is silent", () => {
+  const l = layout([
+    { a: { x: 0, y: 0 }, b: { x: G(6), y: 0 }, net: "A" },
+    { a: { x: G(3), y: 0 }, b: { x: G(3), y: G(3) }, net: "A" },
+  ])
+  const t = canonicalTopology(l, NO_PINS)
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  const items: ConnItem[] = t.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
+  // The ported cosmetic rule now fires at the branch, because the split made it three coincident ends.
+  expect(junctionPoints(items)).toEqual([{ x: G(3), y: 0 }])
+  expect(branchJunctions(t, NO_PINS)).toEqual([{ x: G(3), y: 0 }])
+  expect(junctionProblems(t, NO_PINS, junctionPoints(items))).toEqual([])
+  // And the refusal that reversed R32 is gone: nothing ends mid-wire any more.
+  expect(checkWireSafety(items).filter((p) => p.includes("mid-wire"))).toEqual([])
+  // Anti-vacuity: the UNSPLIT geometry is what wire-safety refuses, so the line above means something.
+  const unsplit: ConnItem[] = l.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
+  expect(checkWireSafety(unsplit).filter((p) => p.includes("mid-wire")).length).toBe(1)
 })

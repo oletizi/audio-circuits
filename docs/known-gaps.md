@@ -7429,8 +7429,16 @@ figure is thirteen newly ported modules, twelve of them unexercised.
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
 
 
+**ROUND 5 CORRECTION TO THE AMENDMENT BELOW: ON THE LANDED CONFIGURATION IT IS ONE CELL, NOT TWO.**
+Ruling **R33** split the segments whose mid-wire ends made `wire`/`wire` fire, so that pair no
+longer does. What fires on the shipped generator is **`body`/`label-outline` alone, on one block** -
+a cell this matrix already marks `checked`. **So 95 becomes 94, not 93**, and **13 of the 14
+categories never appear at all.** The re-validation §1.4 asks for is still not done, and the
+paragraph below should be read with its own warning applied to itself: the round-4 figure was taken
+under a probe arm and did not survive landing.
+
 **ROUND 4 AMENDMENT: TWO CELLS NOW HAVE EVIDENCE, AND NEITHER IS A BLIND SPOT.** Under the probe
-arm of **G198**, 10 of 12 ELK blocks reach `checkLayout` and exactly two pairs fire - `wire`/`wire`
+arm of ruling R32 (reversed by **R33**), 10 of 12 ELK blocks reached `checkLayout` and two pairs fired - `wire`/`wire`
 and `body`/`label-outline` - **both of them cells this matrix already marks `checked`.** No
 uncovered cell and no reason-only cell fired. That is **2 of 105 cells with first evidence**, and
 the 95 figure below becomes **93**; it is NOT the re-validation §1.4 asks for, because 12 of the 14
@@ -13709,7 +13717,7 @@ criterion** - a stated rule, not a preference. Which reviewed constant should fe
 still nobody's answer (**G180**).
 
 **AND THE BARRIER UNDER A FULLY-MET CRITERION IS NOT SNAP.** It is **obligation 2, on 10 of the 12
-blocks** - see **G194**, which predicted exactly this gate. One block refuses at snap
+blocks** - which ruling **R33** then resolved by splitting at the branch point (**G199**). One block refuses at snap
 (`oc-audio`, and it is the membership arm firing for the first time - **G196**) and one at
 obligation 3 (`oc-sidechain`, **G190**). **Still 0 drawn and still no `PAIR_COVERAGE` pair fires.**
 
@@ -13777,7 +13785,7 @@ twelve declared blocks:
 
 **So R31 removed this entry's barrier entirely and the next one is G188's.** With the G188 probe
 spacings as well, the stops are **snap 9, junctions (obligation 2) 2, obligation 3 1** - and those
-two junction refusals are this defect's last consequence, recorded in **G194**.
+two junction refusals were this defect's last consequence, and ruling **R33** resolved them (**G199**).
 
 **The per-block canonicalisation, which is G106's figure on this driver:**
 
@@ -13927,8 +13935,48 @@ overlaps | value of power symbol GND 1 at (34.29, 17.78) | label OUT at (39.37, 
   `problem-obstacles.ts` correctly reports as naming **no pair at all** - a field-placement refusal
   is not a clearance pair, and the census reports it separately rather than inventing one.
 
+**ROUND 5, ON THE LANDED CONFIGURATION: FIVE BLOCKS DRAW, AND EXACTLY ONE PAIR FIRES.** Ruling
+**R33**'s split landed, and the probe-arm result below does **not** carry over unchanged - which is
+itself the finding, and the reason a probe arm is never reported as a result.
+
+| | R32 probe arm (not landed) | **R33, landed** |
+| --- | --- | --- |
+| **drawn** | 0 | **5 of 12** |
+| reach `checkLayout` and fail | 10 | 5 |
+| refused earlier | 2 | 2 |
+| **pairs fired** | `wire`/`wire` (10 blocks), `body`/`label-outline` (1) | **`body`/`label-outline` only (1 block)** |
+
+**`wire`/`wire` no longer fires, and it was never a second defect.** All 25 of its findings were the
+containment collapse's mid-wire ends; R33 splits the segment there, so the end becomes a coincident
+end and `checkWireSafety` is silent. **The probe arm was measuring unsplit geometry** - it fired
+because mechanism (2) left those ends in place, which is precisely why mechanism (2) was reversed.
+
+**THE LANDED RESULT, in full:**
+
+- **5 blocks draw**: `tp-leg-upper`, `tp-leg-feedback`, `tp-leg-lower-a`, `tp-leg-lower-b`,
+  `tp-leg-collector` - the first geometry this generator has ever produced from ELK;
+- **5 reach `checkLayout` and are refused**: `ob-buffer`, `oc-power`, `pt-core`,
+  `tp-leg-emitter-bypass`, `tp-stage`;
+- **2 never reach it**: `oc-audio` at the snap gate (**G196**) and `oc-sidechain` at obligation 3
+  (**G190**);
+- **one pair fires**: **`body`/`label-outline`**, constraint *overlaps*, on `tp-stage` -
+  `body of Q1#1` against `label BYPASS_CAP at (11.43, 11.43)`. The matrix marks that cell
+  **`checked`**;
+- **five problems name no pair at all** and are reported separately rather than counted as matrix
+  evidence: all five are *"no place for its Reference and Value"* field-placement refusals, on
+  `ob-buffer`, `oc-power`, `pt-core`, `tp-leg-emitter-bypass` and `tp-stage`.
+
+**AND THE CAVEAT IS LOUDER THAN THE RESULT. 13 of the 14 obstacle categories never appear**:
+`pin-line`, `pin-number`, `pin-name`, `interior-graphic`, `wire`, `junction`, `power-glyph`,
+`pwr-flag-glyph`, `field-text`, `frame-border`, `no-connect-marker` and `dnp-cross` are untouched,
+and `body` and `label-outline` appear only through one pair on one block. **This is evidence for 1
+cell of 105.** §1.4 predicts *"a fresh blind spot"* from pointing a pairwise-accreted check set at a
+new geometry source, and **no uncovered and no reason-only cell fired** - but **an absent blind spot
+on geometry this narrow is not an absent blind spot.** Five blocks of one circuit family drew; the
+other three circuits produced nothing that reached the matrix at all.
+
 **ROUND 4: TWO PAIRS FIRE. THIS IS THE FIRST EVIDENCE ANY OF G125's 95 UNEVIDENCED CELLS HAS EVER
-HAD, AND IT IS MEASURED UNDER A PROBE ARM RATHER THAN A SHIPPED CONFIGURATION** (**G198**: ruling
+HAD, AND THE FIRST READING WAS TAKEN UNDER A PROBE ARM** (ruling
 R32's mechanism (2), which is NOT landed). With the emitter's junctions sourced from
 `branchJunctions`, **10 of 12 blocks reach `checkLayout`** - from 0 - and:
 
@@ -13959,7 +14007,7 @@ one for: split nets, pieces of a labelled net with no label or power symbol, and
 anyone acts on them; they are not clearance pairs and must not be counted as matrix evidence.
 
 **The `wire`/`wire` firing is not independent of the rest of this task**: `[RAN]` **all 25 of its
-findings are at the 25 containment-collapse branch points**, 0 elsewhere (**G198**). So the pair
+findings are at the 25 containment-collapse branch points**, 0 elsewhere (**G199**). So the pair
 that fired on 10 blocks is one defect seen through the matrix, not ten.
 
 **ROUND 2: R31 LANDED AND THE RESULT IS STILL EMPTY, WHICH IS THE USEFUL PART.** The containment
@@ -14082,100 +14130,6 @@ boundary, OPEN below it"* reaching the drawing.
   a direction for the nets that cross a BLOCK boundary without being a port of the network, which is
   G99's open fifth input and is a declaration question rather than a geometry one.
 
-### G194 - R31's justification says the containment collapse preserves connectivity, and that is true only WITH a junction; a guard that checked it was written, measured, and deleted
-
-Ruling **R31** collapses a same-net collinear containment because *"the contained span's endpoints
-stay covered by the container"*, so dropping it *"changes neither the drawn picture nor the
-connectivity"*. **The first half is true geometrically. The second needs a junction, and the ruling
-does not say so.**
-
-`connectedComponents` joins a wire to another wire or to a pin **only at coincident ENDS** - its own
-module comment says why: *"a pin end or wire end on a wire's INTERIOR connects ONLY with a junction
-there"*, which is KiCad's rule. The containments here are between consecutive chain edges `X:k` and
-`X:k+1` sharing a terminal, so the contained segment's **far** endpoint carries the join to the rest
-of edge `X:k`. After the collapse that endpoint sits in the container's **interior**.
-
-**A PARTITION GUARD WAS WRITTEN AND IT FIRES.** `[RAN]` On `transistor-preamp/tp-leg-upper`,
-collapsing the one containment takes a **4-piece partition to 5**, and with the guard in place
-**R31 could not take effect on a single block** - every one refused on it instead of on clause (d).
-So the concern is real rather than theoretical, and reading R31's justification as self-evidently
-true would be wrong.
-
-**IT WAS DELETED ANYWAY, AND THE REASON IS THAT IT ANSWERED THE QUESTION WITH THE WRONG MODEL.**
-`connectedComponents` cannot see junctions by construction, so a partition comparison through it can
-only ever report the junction-free reading. **The gate that does see it is spec §1.4 obligation 2**,
-and it was already built: the collapse makes that endpoint a **degree-3 branch point**,
-`branchJunctions` requires a junction there, `junctionPoints` does not emit one at a pass-through
-(it counts coincident ENDS), and `junctionProblems` refuses by name. `[RAN]` With R31 live and the
-**G188** probe spacings, `optical-compressor/oc-power` and `transistor-preamp/tp-stage` refuse at
-exactly that gate - *"net GND branches at (20.32, 21.59) (t-junction) and no junction is emitted
-there"* and six more on `tp-stage`. **Two checks for one question is what `CLAUDE.md` forbids**, and
-of the two the obligation-2 one is strictly more precise.
-
-**WHAT A LATER READER MUST NOT CONCLUDE.** Not *"the collapse is safe"*. The correct statement is:
-**the collapse is safe when a junction is emitted at the contained segment's interior endpoint, and
-obligation 2 is what refuses the drawing when one is not.** On this corpus that refusal currently
-fires, which means the collapse is **not yet** connectivity-preserving in practice - it has moved
-the problem from clause (d) to obligation 2, where it is a more specific and more actionable
-refusal.
-
-**ROUND 4 SETTLES WHICH MECHANISM, AND IT IS NOT THE ONE THE RULING TOOK.** Controller ruling
-**R32** chose mechanism (2) - emit at every branch point the topology requires. `[RAN]` Under a
-probe arm it works exactly as intended: obligation 2 passes and **10 of 12 blocks reach
-`checkLayout`**, from 0. **And all ten are then refused by `checkWireSafety` at the same 25 points,
-0 elsewhere** - because that rule says *"split the wire there"* and `connectivity.ts`'s own module
-comment states the standing policy: *"the generator never relies on the junction-dependent cases …
-junction dots are cosmetic."* **Mechanism (2) satisfies obligation 2 and is refused by the very next
-gate, by the same count, at the same coordinates.** **G198** has it in full, and R32 asks to be
-reopened rather than worked around in exactly this case.
-
-**ROUND 3 ANSWERS THE QUESTION THIS ENTRY LEFT OPEN, AND THE ANSWER IS UNAMBIGUOUS: YES, ALL OF
-THEM.** With **G188**'s options set, 10 of the 12 blocks refuse at obligation 2. Measured over
-every block that reaches the gate - classifying each missing junction by whether a wire END sits at
-the point while another segment of the same net passes THROUGH it, which is precisely what dropping
-a contained segment leaves behind:
-
-| block | missing junctions | end-on-interior | containments collapsed |
-| --- | --- | --- | --- |
-| `ob-buffer` | 5 | **5** | 5 |
-| `oc-power` | 1 | **1** | 1 |
-| `oc-sidechain` | 3 | **3** | 3 |
-| `pt-core` | 4 | **4** | 4 |
-| each of the six `tp-leg-*` | 1 | **1** | 1 |
-| `tp-stage` | 6 | **6** | 6 |
-| **total** | **25** | **25** | **25** |
-
-**25 of 25 are the collapse's shape, 0 are anything else, and the missing-junction count equals the
-containment count block for block.** One collapsed containment, one branch point with no junction.
-
-**So the remaining work is emitting the junction**, and this entry's two mechanisms are no longer
-speculative alternatives - they are the two ways to do one known thing. Nothing is fixed in round 3
-deliberately: which of them is right is a decision about what the canonical topology IS, and
-mechanism 2 changes what a TEMPLATE sheet emits as well.
-
-- **Found** 2026-10-20, Task 13 round 2, while implementing R31.
-- **Evidence** the 4-to-5 partition measurement on `tp-leg-upper`, printed by the guard before it
-  was removed; the two obligation-2 refusals with their named points; and the stop census under R31
-  (snap 9, junctions 2, obligation 3 1 with the G188 spacings). A check that could have failed and
-  still can: `junctionProblems` compares `branchJunctions` against `junctionPoints`, two
-  independently computed sets, and `tests/schgen/elk/adapt.test.ts` drives the comparison.
-- **Verified** CONFIRMED - this writer wrote the guard, measured it, read the obligation-2 refusals
-  and removed it.
-- **Why it is open** the drawing still does not pass obligation 2 on two blocks, and whether the
-  right answer is to emit a junction at such a point or to split the container there is a decision
-  about what the canonical topology IS, not a defect in these modules. `junctionPoints` is the
-  ported *cosmetic* rule; making it emit at pass-throughs would change template output too.
-- **What would settle it** **CRITERION: after the containment collapse, every point that carries a
-  join in the pre-collapse topology still carries one in the emitted schematic - by coincidence of
-  ends, or by a junction that is actually emitted.** **MECHANISMS, both untried and they are
-  different decisions, not two routes to one place:** (1) **split the container** at the contained
-  segment's interior endpoint, so the join is by coincident ends and no junction is needed - which
-  keeps `junctionPoints` untouched but adds a segment the router did not draw, and is therefore a
-  repair obligation 5 would have to be read against; (2) **emit a junction at every branch point the
-  canonical topology requires**, making `junctionPoints`' cosmetic rule the wrong source for an ELK
-  sheet and giving the emitter `branchJunctions` instead - which is the larger change and touches
-  what a template sheet emits.
-
 ### G195 - spec §1.4 obligation 3 says "rotation AND mirroring", and mirroring is unrepresentable anywhere in this generator
 
 `[CODE]` `Rotation` in `lib/schgen/render/geometry.ts` is `0 | 90 | 180 | 270` and **nothing else**.
@@ -14274,6 +14228,18 @@ the sub-grid-versus-grid split cannot discriminate a benign merge from a dangero
 that does is same-net versus cross-net**, and that is the distinction any future refinement of
 obligation 1 has to be built on.
 
+**ROUND 5: `oc-audio` IS NOT THE LAST BLOCK STANDING, AND THE DECISION IS STILL THE CONTROLLER'S.**
+Ruling **R33** made 5 of 12 blocks draw. `oc-audio` still refuses here, on the same same-net
+`OUT_PRE` piece merge - but it is **one of seven blocks that do not draw**, and one of **two** that
+never reach the clearance checks (the other is `oc-sidechain`, at obligation 3, **G190**). The other
+five reach `checkLayout` and are refused by it.
+
+**So the question this entry raises is not yet on the critical path**, and it is recorded rather
+than decided: whether obligation 1's membership arm should refuse a merge that joins two pieces of
+ONE net - which shorts nothing and which the drawing arguably wanted - is a change to what the
+obligation means, and that is not this task's to make. If a later change makes the other six draw,
+`oc-audio` becomes the last one standing and the question becomes urgent.
+
 - **Found** 2026-10-20, Task 13 round 3, after **G188**'s options unmasked the arm.
 - **Evidence** the three-arm count over all twelve blocks, run here; `oc-audio`'s refusal text
   verbatim; the gate's own `if (collapsed.length === 0)` read directly, and `assertWireShape`'s
@@ -14328,7 +14294,7 @@ XTAL dot) and the `power` sheet is **unchanged at 7**.
 
 **IT IS RECORDED AND NOT FIXED.** R32 says *"do not reconcile it by adjusting either rule until the
 difference has been read"*, and reading it is what this entry is. **It is also now moot for the
-decision it was gating** - see **G198**: mechanism (2) cannot make anything draw, so the question of
+decision it was gating** - see **G199**: mechanism (2) could not make anything draw, so the question of
 whether to accept one lost dot on the crystal sheet does not arise until that is settled.
 
 - **Found** 2026-10-20, Task 13 round 4, running R32's gate before landing anything.
@@ -14349,71 +14315,58 @@ whether to accept one lost dot on the crystal sheet does not arise until that is
   net constitute a current division is a question nobody here has answered. It is not taken on the
   authority of making two numbers match.
 
-### G198 - R32's mechanism (2) satisfies obligation 2 and then fails `checkWireSafety` at the SAME 25 points, so it cannot make anything draw
 
-**MEASURED UNDER A PROBE ARM, NOT LANDED.** With the emitter's junctions sourced from
-`branchJunctions` - ruling **R32**'s mechanism (2) - obligation 2 passes by construction and the
-blocks advance:
+### G199 - a PARTITION comparison cannot answer a JUNCTION question, and a gate built on one will refuse what the schematic would have connected
 
-| | shipped | R32 probe arm |
-| --- | --- | --- |
-| reach `checkLayout` | **0 of 12** | **10 of 12** |
-| **drawn** | 0 | **0** |
-| refused at snap (**G196**) | 1 (`oc-audio`) | 1 (`oc-audio`) |
-| refused at obligation 3 (**G190**) | 1 (`oc-sidechain`) | 1 (`oc-sidechain`) |
+**THIS ENTRY CARRIES FORWARD WHAT G194 AND G198 ESTABLISHED. Both are deleted**: their defect -
+the containment collapse leaving a branch with no junction - is resolved by ruling **R33**, which
+splits the container so the join is by coincident ends and needs no junction at all. What is NOT
+resolved is the reusable hazard underneath them, and it is recorded here so the next gate does not
+hit it.
 
-**AND ALL TEN ARE REFUSED BY `checkWireSafety`, AT EXACTLY THE POINTS OBLIGATION 2 JUST PUT
-JUNCTIONS ON.** `[RAN]`:
+**THE HAZARD.** `lib/schgen/render/connectivity.ts` joins a wire to another wire or to a pin **only
+at coincident ENDS**, and says why in its own module comment: *"a pin end or wire end on a wire's
+INTERIOR connects ONLY with a junction there"*, and *"the generator never relies on the
+junction-dependent cases … junction dots are cosmetic."* **So `connectedComponents` is junction-blind
+by construction.** Any check that compares two connectivity partitions through it is therefore
+answering *"what connects without junctions"*, which is a different question from *"what the
+schematic will connect"* whenever a junction is in play.
 
-```
-checkWireSafety "mid-wire" findings: 25
-   AT a containment-collapse branch point: 25
-   elsewhere: 0
-other wire-safety findings: 0
-```
+**IT WAS HIT, AND THE COST IS MEASURED.** Task 13 round 2 wrote a guard asserting that R31's
+containment collapse preserves the partition. `[RAN]` **It fires on 12 of 12 blocks** - on
+`tp-leg-upper` a 4-piece partition becomes 5 - and with it in place **R31 could not take effect on a
+single block**. The collapse was correct; the guard was asking a junction question with a model that
+excludes junctions. It was deleted, and the gate that genuinely sees the case is spec §1.4
+obligation 2, which compares required branch points against emitted junctions.
 
-**25 of 25, 0 elsewhere** - the same identity **G194** measured for the missing junctions, from the
-other side. One collapsed containment, one branch point, one junction emitted, one `checkWireSafety`
-refusal.
+**AND THE SAME BLINDNESS, READ FROM THE OTHER SIDE, IS WHAT REVERSED A RULING.** `[RAN]` Ruling
+**R32** took the mechanism of emitting a junction at every required branch point. It satisfied
+obligation 2 and was then refused by `checkWireSafety` **at the same 25 points and at 0 others** -
+one collapsed containment, one branch point, one junction emitted, one refusal - because that
+check embodies the *"split the wire there"* policy rather than the junction-dependent one.
+**Mechanism (2) would have built connectivity on dots this generator's own policy calls cosmetic.**
+Ruling **R33** reverses it; the full reasoning is in spec §1.4 and is not duplicated here.
 
-**THE TWO RULES EMBODY OPPOSITE POLICIES AND `connectivity.ts` STATES WHICH ONE THIS REPOSITORY
-HOLDS**, in its own module comment:
+**WHAT A LATER READER SHOULD TAKE FROM THIS.** Before building a check on `connectedComponents`,
+ask whether the question involves a junction. If it does, that function cannot answer it, and the
+check will be confidently wrong in the direction of **refusing geometry the schematic would have
+connected** - the expensive direction, because it stops a drawing rather than shipping a bad one.
 
-> *"The generator never relies on the junction-dependent cases: `checkWireSafety` refuses a pin end
-> or wire end inside a wire (**split the wire there instead**) and a label at a crossing. … Junction
-> dots (`junctionPoints`) are **cosmetic**."*
-
-So obligation 2 says *emit a junction at the branch point* and `checkWireSafety` says *split the
-wire there and do not rely on a junction*. **R32's mechanism (2) implements the first and is then
-refused by the second, at the same count and the same coordinates.**
-
-**THIS SENDS R32's DECISION THE OTHER WAY, AND THE RULING ASKS TO BE TOLD SO RATHER THAN WORKED
-AROUND.** Mechanism (1) - splitting the container at the contained segment's interior endpoint - is
-**what `checkWireSafety` itself prescribes**, in the words of its own refusal. R32 rejected it as
-*"a workaround wearing a repair's clothes… a rule written for a different case happens to catch this
-one"*; the measurement says the rule was not written for a different case at all - *split the wire
-there* is the standing policy of the whole generator, stated in the module every geometric check
-goes through.
-
-**WHAT MECHANISM (2) DID BUY, AND IT IS NOT NOTHING.** It is what let 10 blocks reach the clearance
-checks for the first time, which is how the obstacle-matrix pairs in **G191** were measured at all.
-Whatever ruling follows, that measurement is now in hand.
-
-- **Found** 2026-10-20, Task 13 round 4, probing R32 before landing it.
-- **Evidence** the census under the probe arm (10 reaching `checkLayout`, 0 drawn); the 25/25
-  classification above, computed by matching each `checkWireSafety` *"mid-wire"* coordinate against
-  the branch points whose shape is an end on another same-net segment's interior;
-  `connectivity.ts`'s module comment read directly. A check that could have failed: the classifier
-  reports `elsewhere` separately and it is 0, so "all of them" is measured rather than assumed.
-- **Verified** CONFIRMED - this writer ran the probe and the classification, and restored the
-  probe arm afterwards.
-- **Why it is open** **it is a ruling to reopen, not a defect to fix.** Nothing is landed.
-- **What would settle it** **CRITERION: a block whose only remaining defect is the containment
-  collapse's fragmentation passes BOTH obligation 2 and `checkWireSafety`.** Mechanism (2) satisfies
-  the first and fails the second on all 25 points; **mechanism (1) satisfies both by construction**,
-  because a split converts the mid-wire end into a coincident-end meeting that `checkWireSafety`
-  accepts and `junctionPoints` already emits for. **MECHANISM, untried and not this task's to
-  choose:** split the container, which is R32's rejected (1) and `checkWireSafety`'s own
-  instruction. The obligation-5 question R32 raises against it is real and is the thing to rule on:
-  is a collinear split of a segment the router drew a *repair*, or is it the canonicalisation
-  clause (a) already performs one dimension up?
+- **Found** 2026-10-20, Task 13 rounds 2 and 4; consolidated at round 5 when R33 resolved the two
+  entries it is drawn from.
+- **Evidence** the 4-to-5 partition measurement on `tp-leg-upper`, printed by the guard before it
+  was removed; the 25/25 classification of `checkWireSafety`'s *"mid-wire"* findings against the
+  collapse's branch points, with `elsewhere` separately reported and equal to 0;
+  `connectivity.ts`'s module comment read directly. A check that could have failed and now stands:
+  `tests/schgen/elk/junctions.test.ts`'s *"after the split, junctionPoints and branchJunctions
+  agree and wire-safety is silent"* asserts all three agree on split geometry **and** that the
+  UNSPLIT geometry is what wire-safety refuses, so neither half can pass by finding nothing.
+- **Verified** CONFIRMED - this writer ran every measurement and wrote and deleted the guard.
+- **Why it is open** it is a property of a ported module that this repository relies on and does not
+  intend to change, and it is a trap any future gate can fall into. It is not a defect to fix.
+- **What would settle it** **CRITERION: no check in the realization contract compares connectivity
+  through `connectedComponents` to answer a question whose answer depends on a junction.** Met
+  today: obligation 1's membership arm compares partitions and is about coincident ends only, and
+  obligation 2 compares junction SETS rather than partitions. **MECHANISM, untried:** state the
+  limit on `connectedComponents` itself rather than in its module header, so a caller sees it at
+  the call site - which is where the guard that had to be deleted was written.

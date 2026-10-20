@@ -117,15 +117,16 @@ test("the census runs end to end over a real circuit and accounts for every bloc
   expect(census.drawn + census.refusedBefore.length + census.reachedClearance.length).toBe(census.blocks)
   // The canonicalisation counts are internally consistent with the wire lists they describe.
   for (const c of census.counts) {
-    expect(c.after, c.block).toBe(c.before - c.collapsed - c.zeroLength - c.contained)
+    // The three merges REMOVE and R33's split ADDS, so the sign matters.
+    expect(c.after, c.block).toBe(c.before - c.collapsed - c.zeroLength - c.contained + c.split)
     expect(c.before, c.block).toBeGreaterThan(0)
   }
-  // **Nothing was dropped for want of a classification rule - AND THIS ASSERTION IS CURRENTLY
-  // VACUOUS, which is said rather than left for someone to discover.** `unclassified` is populated
-  // only from the obstacle pairs of a `checkLayout` problem, and `[RAN]` 0 of 12 blocks reach
-  // `checkLayout` at all (docs/known-gaps.md G191), so the list is empty because nothing was
-  // classified rather than because everything was. It is kept because it costs nothing and becomes
-  // load-bearing the moment a block draws; the test above it is what actually exercises the rules.
+  // **Nothing was dropped for want of a classification rule, AND THIS ASSERTION IS NO LONGER
+  // VACUOUS.** Round 3 recorded it as vacuous - 0 of 12 blocks reached `checkLayout`, so the list
+  // was empty because nothing had been classified - and pinned the 0 so that the day it changed
+  // would be visible. **Ruling R33 changed it**, and this is that tripwire being spent: blocks now
+  // reach the clearance checks, their problems are classified, and an obstacle name the census
+  // cannot read would now show up here.
   expect(census.unclassified).toEqual([])
-  expect(census.reachedClearance.length, "when this stops being 0, the assertion above gains teeth").toBe(0)
+  expect(census.reachedClearance.length, "this case must reach the clearance checks for the line above to bite").toBeGreaterThan(0)
 }, 120_000)

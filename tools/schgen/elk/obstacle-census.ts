@@ -100,7 +100,7 @@ export interface Census {
   readonly fired: readonly FiredPair[]
   readonly unclassified: readonly Unclassified[]
   /** Per block, what canonicalisation removed - the G106 measurement on this driver. */
-  readonly counts: readonly { readonly block: BlockId; readonly collapsed: number; readonly zeroLength: number; readonly contained: number; readonly before: number; readonly after: number }[]
+  readonly counts: readonly { readonly block: BlockId; readonly collapsed: number; readonly zeroLength: number; readonly contained: number; readonly split: number; readonly before: number; readonly after: number }[]
   /** `checkLayout` problems that name no pair at all, which are not clearance findings. */
   readonly nonPairProblems: readonly { readonly block: BlockId; readonly problem: string }[]
 }
@@ -133,7 +133,7 @@ export async function obstacleCensus(cases: readonly ParityCase[] = PARITY_CASES
   const unclassified: Unclassified[] = []
   const refusedBefore: { block: BlockId; at: string }[] = []
   const reachedClearance: BlockId[] = []
-  const counts: { block: BlockId; collapsed: number; zeroLength: number; contained: number; before: number; after: number }[] = []
+  const counts: { block: BlockId; collapsed: number; zeroLength: number; contained: number; split: number; before: number; after: number }[] = []
   const nonPairProblems: { block: BlockId; problem: string }[] = []
   let blocks = 0
   let drawn = 0
@@ -154,6 +154,7 @@ export async function obstacleCensus(cases: readonly ParityCase[] = PARITY_CASES
           collapsed: report.counts.collapsed,
           zeroLength: report.counts.zeroLength,
           contained: report.counts.contained,
+          split: report.counts.split,
           before: report.counts.wiresBefore,
           after: report.counts.wiresAfter,
         })
