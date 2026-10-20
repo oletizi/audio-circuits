@@ -676,7 +676,62 @@ clause now says.
 refuses a repair it cannot justify. It does not touch any serialized byte, so
 no manifest key moves. **And it did not make anything draw**: clause (d)'s
 refusals went 11 to 0 with 30 containments collapsed, and the same eleven
-blocks then refuse one gate later, at snapping (**G188**). The barrier moved. And it does not claim the corpus will stay this way: the
+blocks then refuse one gate later, at snapping (**G188**). The barrier moved.
+
+---
+
+**RULING R32, 2026-10-20 — where a junction comes from, which is the decision
+that makes something draw.** With `elk.spacing.nodeSelfLoop` set and the
+criterion fully met (**G188**), the barrier is obligation 2 on **10 of 12
+blocks**, and it is measurably R31's own doing: **25 missing junctions, 25 of
+25 at a wire END sitting on a point another same-net segment passes THROUGH** -
+the containment collapse's exact signature - and **the missing-junction count
+equals the containment count block for block.** One collapsed containment, one
+branch point with no junction. **G194** offers two mechanisms and says plainly
+they are different decisions rather than two routes to one place.
+
+**Decided: mechanism (2) — emit a junction at every branch point the canonical
+topology requires, giving the emitter `branchJunctions` rather than
+`junctionPoints`' coincident-ends rule — AND GATED ON A MEASUREMENT THAT MUST
+BE TAKEN FIRST.**
+
+**Why (2) rather than (1).** Criterion (b) of this very clause already requires
+that the canonical topology **"represents each net's branches explicitly."**
+Having built that, reading junctions from anywhere else is leaving the
+authority we constructed unused and asking a coincidence rule to guess what the
+topology already knows. `junctionPoints` emits where three or more wire **ends**
+coincide; it is silent at a pass-through by design, because it was written for
+template geometry, which does not produce one. That is not a bug in
+`junctionPoints` - it is the wrong source for a sheet whose geometry a router
+drew.
+
+**Mechanism (1) — splitting the container at the contained segment's interior
+endpoint - is rejected, and not because it fails.** It would work: a collinear
+split changes no ink, converts the T into a three-end meeting, and
+`junctionPoints` would then fire unmodified. It is rejected because it reshapes
+the geometry so that a rule written for a different case happens to catch this
+one. **That is a workaround wearing a repair's clothes**, and obligation 5 would
+have to be read against a segment the router did not draw - a question
+mechanism (2) does not raise at all.
+
+**THE GATE, and it is not optional.** Mechanism (2) *"touches what a template
+sheet emits"*, and a template sheet is the **reviewed human arrangement** that
+§3.1 and D4 make the thing ELK is measured against. So, **before landing it:
+compute both junction sets - `junctionPoints`' and `branchJunctions`' - for
+every template-drawn block and every ELK block, and report the difference.**
+
+- **If the template sheets are unchanged**, there is no risk and it lands: the
+  two rules agree wherever a template draws, which is the expected result
+  because a template's branches are all coincident-end meetings.
+- **If any template sheet changes, STOP and report it.** That is a defect in one
+  of the two rules, and which one it is is a finding, not an implementation
+  detail to absorb. **Do not reconcile it by adjusting either rule until the
+  difference has been read.**
+
+**What this ruling does not claim.** It does not say `junctionPoints` is wrong
+for templates - it says it is the wrong **source** for ELK geometry. And it
+does not predict the measurement: if the template sheets move, the right answer
+may yet be (1), and this ruling is to be reopened rather than worked around. And it does not claim the corpus will stay this way: the
 30/30 containment measurement is a property of **these twelve blocks under this
 backend at this version**, and the refusing arms exist for the day that changes.
 
