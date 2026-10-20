@@ -5959,3 +5959,131 @@ emit if any atom carries one.
   a vendored symbol containing a quoted empty string or a `lossyEscape`-
   bearing atom is rejected or handled explicitly rather than silently
   mis-serialised, and delete this entry when that test exists and passes.
+
+### G110 - the test suite's greenness now depends on a private sibling checkout (`SCHGEN_SOURCE`), and it will for all 19 tasks of this plan
+
+`tests/schgen/port-fidelity.test.ts` is the only proof that every file under
+`lib/schgen/` is still a mechanical port of its `digital-pedal-platform`
+source rather than a hand edit. It needs `SCHGEN_SOURCE` to point at that
+other repository's `tools/schgen/` directory on disk, and it **fails**
+(never skips) when that variable is unset, by design (Task 1's brief, Step
+2). This is the right behaviour for the test itself - a fidelity check that
+silently skips looks like a passing one - but it has a consequence beyond
+this one test that is worth recording on its own: **every one of this
+plan's 19 tasks ports more of the same tree, so every one of them adds to or
+depends on this manifest, and every one of them needs the same private
+checkout present to get a genuinely green `bun test`.** A contributor (or an
+agent) without that checkout gets exactly one named failure today; the same
+will be true, for a growing reason, through Task 19.
+
+Unlike this repository's other environment-dependent tests - `kicad-cli`
+(`tests/circuits/transistor-preamp-lab.test.ts`) and Chrome
+(`tests/guide/print-pdf.test.ts`) - `SCHGEN_SOURCE` has **no default path**.
+`kicad-cli` and Chrome are installed packages with one standard location
+per OS, so the README names a default and an override variable. `SCHGEN_SOURCE`
+names another private repository checkout, which has no standard location
+to assume - there is nothing here to default to without guessing a path
+that would be wrong on any machine other than the one the plan was written
+on. The `README.md` Prerequisites section and `lib/schgen/README.md` both
+say this plainly now; before this fix, `README.md`'s Prerequisites section
+closed by saying *"none of this requires an environment variable,"* which
+this test contradicted from the moment it landed.
+
+- **Found** 2026-10-19/2026-10-20 (review round 1's Important finding 2,
+  fixed in the same round): the review on Task 1 noted the README's false
+  claim and asked for the structural consequence - not just the one line -
+  to be recorded.
+- **Evidence** `README.md`'s Prerequisites section (read directly, now
+  corrected) against `tests/schgen/port-fidelity.test.ts`'s unconditional
+  throw when `SCHGEN_SOURCE` is unset (read directly, confirmed by running
+  `bun test tests/schgen/` both with and without the variable set - see the
+  Task 1 fix report for the exact commands and output).
+- **Verified** CONFIRMED - this writer read both files and ran both cases
+  directly.
+- **Why it is open** it is not a defect to fix; it is a standing property of
+  how this plan ports a tree that lives in another repository, recorded so
+  a later task (or a reviewer, or a fresh contributor) does not have to
+  rediscover it from a single test's throw message. It stays open for the
+  life of the plan, the same way the `kicad-cli` and Chrome prerequisites
+  stay open for the life of this repository.
+- **What would settle it** **CRITERION:** either `digital-pedal-platform`'s
+  `tools/schgen/` is vendored into this repository (so no external checkout
+  is needed - a larger decision than any single task should make
+  unilaterally, since it changes the whole plan's "the pedals source is the
+  port's upstream" premise) or the plan's governing docs accept this as a
+  permanent prerequisite, the way `kicad-cli` and Chrome already are.
+  **MECHANISM:** not attempted here - this entry records the consequence,
+  not a fix for it, per the brief's instruction to record it rather than
+  decide it.
+
+### G111 - the `tsconfig.json` target bump to ES2022 repeals a recorded ES2020 constraint, and roughly twelve call sites are now an unnecessary workaround left in place deliberately
+
+Two ported files need ES2021/2022 stdlib methods that must stay byte-
+identical to their pedals source: `lib/schgen/lock/annotate.ts` uses
+`Object.hasOwn`, `lib/schgen/lock/refmap.ts` uses
+`String.prototype.replaceAll`. Neither compiles under this repository's
+previous `tsconfig.json` (`"target": "ES2020"`, no explicit `"lib"`, so TS
+used `lib.es2020.full`): `tsc` raised `TS2550` on both. The fix landed in
+Task 1's first commit was `"target": "ES2022"` (not an explicit `"lib"`
+override - see below for why that distinction matters).
+
+**This silently repeals a constraint recorded elsewhere.**
+`docs/superpowers/plans/2026-09-22-canonical-model-plan-b.md:77` states:
+*"`tsconfig.json` targets ES2020. `Object.hasOwn` does not compile
+(TS2550) — use `Object.prototype.hasOwnProperty.call`. `key in obj` is NOT
+equivalent."* That constraint produced **exactly twelve live call sites**
+across eight files, all using the `hasOwnProperty.call` workaround the
+constraint names:
+`lib/model/builder.ts:91`, `lib/model/kinds.ts:93,164`,
+`lib/model/include.ts:45,53`, `lib/model/control-state.ts:82,212,221,228`,
+`lib/model/pin-collision.ts:40`, `lib/model/topology.ts:109`,
+`lib/model/validate.ts:22`, `lib/sim/device-lines.ts:198`. **All twelve are
+now an unnecessary workaround** - `Object.hasOwn` compiles under
+`"target": "ES2022"` - which is `CLAUDE.md`'s *"a result that makes someone
+want to act."* **This task does not act on it**: rewriting twelve call
+sites in eight files across `lib/model/` and `lib/sim/` is out of scope for
+a schematic-port task and would bury this fix's diff; it is recorded here
+instead, for a task that owns `lib/model/`'s and `lib/sim/`'s style to pick
+up deliberately.
+
+**The chosen mechanism, and why, resolving the review's Important finding
+3(c).** The first attempt added an explicit `"lib": ["ES2022"]` while
+leaving `"target": "ES2020"`. That compiled, but it **changed more than
+described**: with no explicit `"lib"`, TypeScript had been defaulting to
+`lib.es2020.full`, which is ES2020 **plus `DOM`, `DOM.Iterable` and
+`ScriptHost`**; `"lib": ["ES2022"]` on its own **drops all three**, silently
+narrowing what the whole repository can typecheck against (nothing broke at
+the time, because `types: ["bun-types"]` already supplies `fetch`, used in
+`tools/suppliers/http.ts:67` and `tools/cli/parts.ts:116`, but the removal
+was real and undocumented). **The fix adopted instead bumps `"target"` to
+`"ES2022"` and leaves `"lib"` unset**, so TypeScript's default becomes
+`lib.es2022.full` - ES2022 plus the same `DOM`/`DOM.Iterable`/`ScriptHost`
+the repository already had. This raises the stdlib floor the twelve call
+sites' constraint was written against **without removing anything** - the
+narrower, more easily-overlooked change.
+
+- **Found** 2026-10-19/2026-10-20, review round 1's Important finding 3,
+  fixed in the same round.
+- **Evidence** `tsc --noEmit` raising `TS2550` on both files under the
+  original `tsconfig.json`; the twelve call sites above, each read directly
+  and confirmed to use `Object.prototype.hasOwnProperty.call` (a check that
+  could have failed: the grep that found them matches exactly twelve lines,
+  not an estimate); `docs/superpowers/plans/2026-09-22-canonical-model-plan-b.md`
+  line 77, read directly, quoted verbatim above; TypeScript's documented
+  default-`lib`-by-`target` behaviour (`lib2020.full` includes `DOM`;
+  `lib.es2022.full` includes it too) checked by running `bun run typecheck`
+  clean under the final `"target": "ES2022"`, no `"lib"` override, config.
+- **Verified** CONFIRMED - every claim above was checked directly by this
+  writer, not relayed.
+- **Why it is open** it is not a defect in this task's own work; it is left
+  open because the twelve-site workaround is now unnecessary code nobody
+  has removed, and because the ES2020 constraint in the plan-b document is
+  now stale text describing a `tsconfig.json` that no longer exists.
+- **What would settle it** **CRITERION:** either `docs/superpowers/plans/2026-09-22-canonical-model-plan-b.md`'s
+  line 77 is corrected to describe the current target (or marked historical,
+  since that plan is closed work), and the twelve `hasOwnProperty.call` call
+  sites are replaced with `Object.hasOwn` in a task that owns `lib/model/`
+  and `lib/sim/`'s style - with a test run before and after to show the
+  substitution changes nothing observable. **MECHANISM, untried:** a small
+  follow-up pass over the twelve named sites; not attempted here because it
+  is out of scope for a schematic-port task.

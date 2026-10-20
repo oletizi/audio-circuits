@@ -39,6 +39,14 @@ export interface PortManifest {
   readonly sourceEnvVar: string
   readonly externals: Readonly<Record<string, string>>
   readonly files: readonly ManifestFileEntry[]
+  /**
+   * Every hand-written (never ported) `.ts` file under `lib/schgen/`, repo-
+   * relative. `tests/schgen/port-fidelity.test.ts` asserts this list plus
+   * `files[].to` is the *complete* set of `.ts` files under `lib/schgen/` -
+   * so a new hand-written file must be added here deliberately, or the test
+   * fails naming it, rather than silently passing as if it were ported.
+   */
+  readonly handWritten: readonly string[]
 }
 
 const MANIFEST_PATH = path.join(import.meta.dir, "port-manifest.json")
@@ -66,16 +74,26 @@ function readFileEntry(value: unknown, where: string): ManifestFileEntry {
   return { from: readString(value, "from", where), to: readString(value, "to", where) }
 }
 
+function readStringArray(obj: Record<string, unknown>, key: string, where: string): string[] {
+  const value = obj[key]
+  if (!Array.isArray(value)) throw new Error(`${where}: "${key}" must be an array`)
+  return value.map((v, i) => {
+    if (typeof v !== "string" || v === "") throw new Error(`${where}.${key}[${i}]: must be a non-empty string`)
+    return v
+  })
+}
+
 export function loadManifest(): PortManifest {
   const parsed: unknown = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"))
   if (!isRecord(parsed)) throw new Error(`${MANIFEST_PATH}: expected a JSON object at the top level`)
-  rejectUnknown(parsed, ["sourceEnvVar", "externals", "files"], MANIFEST_PATH)
+  rejectUnknown(parsed, ["sourceEnvVar", "externals", "files", "handWritten"], MANIFEST_PATH)
   const filesValue = parsed["files"]
   if (!Array.isArray(filesValue)) throw new Error(`${MANIFEST_PATH}: "files" must be an array`)
   return {
     sourceEnvVar: readString(parsed, "sourceEnvVar", MANIFEST_PATH),
     externals: readStringRecord(parsed, "externals", MANIFEST_PATH),
     files: filesValue.map((entry, i) => readFileEntry(entry, `${MANIFEST_PATH}.files[${i}]`)),
+    handWritten: readStringArray(parsed, "handWritten", MANIFEST_PATH),
   }
 }
 

@@ -17,13 +17,22 @@ file is produced by `tools/schgen/port.ts`, which reads
 explicit relative paths), and a prepended provenance header. Nothing else
 changes — see `rewrite()` in `tools/schgen/port.ts`.
 
-`tests/schgen/port-fidelity.test.ts` holds this to account: for every entry
-in the manifest, it re-derives the ported file from the pedals source and
-the manifest's own rewrite rule, and asserts the result is byte-identical to
-what is on disk. **A ported file is never hand-edited.** If a ported file
-needs to change, the pedals source changes (or the file is edited in a later
-task that has a stated reason to diverge, recording the deviation), and
-`port.ts` runs again.
+`tests/schgen/port-fidelity.test.ts` holds this to account two ways: for
+every entry in the manifest, it re-derives the ported file from the pedals
+source and the manifest's own rewrite rule, and asserts the result is
+byte-identical to what is on disk; separately, it lists every `.ts` file
+that actually exists under `lib/schgen/` and asserts that list is exactly
+`files[].to` plus `handWritten` — not a subset. **A ported file is never
+hand-edited**, and a hand-written file never slips in unlisted: a new
+hand-written file must be added to `handWritten` deliberately, or the
+second check fails naming it. If a ported file needs to change, the pedals
+source changes (or the file is edited in a later task that has a stated
+reason to diverge, recording the deviation), and `port.ts` runs again.
+
+**`SCHGEN_SOURCE` has no default** — see the root `README.md`'s
+Prerequisites section and `docs/known-gaps.md` **G110** for why, and for the
+consequence that this plan's remaining 18 tasks inherit the same
+dependency.
 
 ## What is ported, and what is not yet
 

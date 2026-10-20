@@ -24,5 +24,6 @@
     { "from": "render/uuid.ts", "to": "lib/schgen/render/uuid.ts" },
     { "from": "render/wireSafety.ts", "to": "lib/schgen/render/wire-safety.ts" },
     { "from": "gates/pintable.ts", "to": "lib/schgen/gates/pin-table.ts" }
-  ]
+  ],
+  "handWritten": ["lib/schgen/strict.ts"]
 }

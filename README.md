@@ -127,18 +127,32 @@ audio-circuits/
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
+- **`SCHGEN_SOURCE`**, an environment variable (no default - see below),
+  pointing at a local checkout of `digital-pedal-platform`'s
+  `tools/schgen/` directory, the source tree the `lib/schgen/` port is
+  ported from. Required for exactly one test,
+  "every ported file is its source, rewritten only by the manifest" in
+  `tests/schgen/port-fidelity.test.ts`, which **fails** (never skips) when
+  it is unset, because it is the only proof that every file under
+  `lib/schgen/` is still a mechanical port of its pedals source and not a
+  hand edit. Unlike `kicad-cli`, Chrome or `qt@5`, this has **no default
+  path to assume**: it names another private repository checkout on this
+  machine, not a package with one standard install location, so nothing
+  here guesses where that checkout lives. See `lib/schgen/README.md` and
+  `docs/known-gaps.md` G110.
 
 Nothing else needs setting up: the perfboard tooling builds and locates the
-VeroRoute fork itself, and none of this requires an environment variable. If
-you want to point at your own builds instead, `VEROROUTE`, `QMAKE`,
-`KICAD_CLI` and `HTML_TO_PDF` are overrides, not required setup.
+VeroRoute fork itself, and none of the rest of this requires an environment
+variable. If you want to point at your own builds instead, `VEROROUTE`,
+`QMAKE`, `KICAD_CLI` and `HTML_TO_PDF` are overrides, not required setup.
 
 ## Usage
 
 ```bash
 bun install
-bun test           # the full suite, including the SPICE simulations and one
-                   # test that invokes kicad-cli directly (see Prerequisites)
+bun test           # the full suite, including the SPICE simulations, one
+                   # test that invokes kicad-cli directly, and one that
+                   # requires SCHGEN_SOURCE (see Prerequisites)
 bun run typecheck
 ```
 
