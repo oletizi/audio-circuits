@@ -60,14 +60,35 @@ test("every classification rule fires on a name its cited producer really writes
   for (const { name, category } of NAMES) expect(categoryOf(name), name).toBe(category)
 })
 
-test("every obstacle category the matrix declares is reachable by some rule", () => {
+/**
+ * **`pwr-flag-glyph` CANNOT BE CLASSIFIED FROM AN OBSTACLE NAME, AND THIS ASSERTS IT OF THE CENSUS's
+ * OWN RULES.**
+ *
+ * **Round 2's version of this test did not hold that claim.** It computed `unreachable` from this
+ * file's own `NAMES` table, so a reviewer who added a real `pwr-flag-glyph` rule to
+ * `obstacle-census.ts` watched the test **stay green** - it reddened only when the *fixture table*
+ * changed. It pinned the matrix vocabulary and the table, not the census's behaviour, while its
+ * comment claimed the census could not tell a flag glyph apart.
+ *
+ * This version asks `categoryOf` directly. `glyphPair` (`render/glyph-clearance.ts`) writes
+ * *"glyph of power symbol …"* for a `PWR_FLAG` exactly as it does for a `GND`, and nothing in the
+ * name carries `flag: true` - so a flag glyph classifies as `power-glyph` and the matrix's
+ * `pwr-flag-glyph` row gets no evidence from this instrument. **If someone teaches the census to
+ * tell them apart, this goes red**, which is the behaviour round 2 claimed and did not have.
+ */
+test("a PWR_FLAG glyph classifies as power-glyph, so the pwr-flag row gets no evidence here", () => {
+  const flag = "glyph of power symbol PWR_FLAG 0 at (20.32, 21.59)"
+  const rail = "glyph of power symbol GND 1 at (20.32, 21.59)"
+  expect(categoryOf(flag)).toBe("power-glyph")
+  expect(categoryOf(rail)).toBe("power-glyph")
+  expect(categoryOf(flag)).toBe(categoryOf(rail))
+  // And `pwr-flag-glyph` is a category the matrix really declares, so this is a gap and not a typo.
+  expect(ALL_CATEGORIES).toContain("pwr-flag-glyph")
+})
+
+test("every other obstacle category the matrix declares is reachable by some rule", () => {
   const reached = new Set(NAMES.map((n) => n.category))
-  // `pwr-flag-glyph` is the one category no rule distinguishes: `glyphPair` writes "glyph of power
-  // symbol …" for a PWR_FLAG too, and nothing in the name says `flag: true`. It is recorded here
-  // rather than left as an unexplained hole, because a census that silently filed every flag glyph
-  // as a plain power glyph would under-report the pwr-flag row of the matrix.
-  const unreachable = ALL_CATEGORIES.filter((c) => !reached.has(c))
-  expect(unreachable).toEqual(["pwr-flag-glyph"])
+  expect(ALL_CATEGORIES.filter((c) => !reached.has(c))).toEqual(["pwr-flag-glyph"])
 })
 
 test("a name no transcribed rule reads is REPORTED as unclassified, never guessed at", () => {
@@ -99,6 +120,12 @@ test("the census runs end to end over a real circuit and accounts for every bloc
     expect(c.after, c.block).toBe(c.before - c.collapsed - c.zeroLength - c.contained)
     expect(c.before, c.block).toBeGreaterThan(0)
   }
-  // Nothing was dropped for want of a classification rule.
+  // **Nothing was dropped for want of a classification rule - AND THIS ASSERTION IS CURRENTLY
+  // VACUOUS, which is said rather than left for someone to discover.** `unclassified` is populated
+  // only from the obstacle pairs of a `checkLayout` problem, and `[RAN]` 0 of 12 blocks reach
+  // `checkLayout` at all (docs/known-gaps.md G191), so the list is empty because nothing was
+  // classified rather than because everything was. It is kept because it costs nothing and becomes
+  // load-bearing the moment a block draws; the test above it is what actually exercises the rules.
   expect(census.unclassified).toEqual([])
+  expect(census.reachedClearance.length, "when this stops being 0, the assertion above gains teeth").toBe(0)
 }, 120_000)

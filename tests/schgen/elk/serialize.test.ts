@@ -44,11 +44,23 @@ test("elkInputOf's own `serialized` is that same string", () => {
  * If this string changes, every hash in the generation manifest and every baseline taken against
  * it changes with it. That is a deliberate act, not a refactor: update it here, in the same change
  * that changes the serializer or the graph, and say why.
+ *
+ * **IT CHANGED IN ROUND 3 OF TASK 13, AND THIS IS THE WHY.** `BLOCK_OPTIONS` gained seven spacing
+ * and padding options that ELK had been left to default - at 10 to 12 **micrometres**, which is
+ * 0.8% of the electrical grid and is what produced the sub-grid jogs `docs/known-gaps.md` **G188**
+ * measures. **Every manifest key moves with this string.** Tasks 16 and 17 are unrun, so no
+ * baseline exists yet to invalidate; this was the cheapest moment the change would ever have, and
+ * that is why it was made now rather than deferred.
  */
 const ONE_RESISTOR =
   '{"id":"B","layoutOptions":{"elk.algorithm":"layered","elk.direction":"RIGHT",' +
-  '"elk.edgeRouting":"ORTHOGONAL","elk.layered.spacing.nodeNodeBetweenLayers":"5080",' +
-  '"elk.spacing.nodeNode":"2540"},"children":[{"id":"R_A:1","width":2032,"height":7620,' +
+  '"elk.edgeRouting":"ORTHOGONAL","elk.layered.spacing.edgeEdgeBetweenLayers":"1270",' +
+  '"elk.layered.spacing.edgeNodeBetweenLayers":"1270",' +
+  '"elk.layered.spacing.nodeNodeBetweenLayers":"5080",' +
+  '"elk.padding":"[top=1270,left=1270,bottom=1270,right=1270]",' +
+  '"elk.spacing.edgeEdge":"1270","elk.spacing.edgeNode":"1270",' +
+  '"elk.spacing.nodeNode":"2540","elk.spacing.nodeSelfLoop":"1270",' +
+  '"elk.spacing.portPort":"1270"},"children":[{"id":"R_A:1","width":2032,"height":7620,' +
   '"layoutOptions":{"elk.portConstraints":"FIXED_POS"},"ports":[{"id":"R_A:1#1","x":1016,"y":0,' +
   '"width":0,"height":0,"layoutOptions":{"elk.port.side":"NORTH"}},{"id":"R_A:1#2","x":1016,' +
   '"y":7620,"width":0,"height":0,"layoutOptions":{"elk.port.side":"SOUTH"}}]},' +

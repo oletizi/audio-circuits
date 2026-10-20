@@ -13644,31 +13644,81 @@ reach is **the two options this backend sends**, while the sentence a reader tak
 the spacings ELK USES. That is **G125**'s shape again: a guard whose reach is a fraction of its
 claimed reach.
 
-**ROUND 2 AMENDMENT: THIS ENTRY's CRITERION WOULD NOT FIX WHAT IT BLAMES, AND SOMEONE WOULD HAVE
-ACTED ON IT AS IF IT WOULD.** `[RAN]` With `elk.padding` and all five remaining spacings at one grid
-step, over all twelve declared blocks, counting canonical segments shorter than a grid step:
+**ROUND 3: THE CAUSE IS SELF-LOOPS, THE OPTIONS ARE NOW SET, AND ROUND 2's CONCLUSION WAS WRONG
+WHERE IT MATTERS.**
 
-| arm | canonical segments | **shorter than one grid step** | blocks carrying one |
-| --- | --- | --- | --- |
-| shipped | 502 | **147** | **12 of 12** |
-| padding + five spacings at `GRID` | 501 | **9** | **8 of 12** |
+**Round 2 concluded that the criterion was *"necessary and NOT sufficient"*. That is wrong, and the
+way it is wrong is this register's own worked example one layer up.** The criterion is *"every
+spacing and padding `elkjs` uses is a whole number of grid steps"*, and round 2's probe arm set
+**six of roughly thirteen**. It then measured a residue of 9 sub-grid segments and blamed the
+criterion. **When the criterion is actually met, the residue is zero.** The criterion was right; the
+instantiation was partial; the conclusion drawn was about the criterion.
 
-**138 of 147 go away and nine do not**, and those nine are enough to keep **9 of 12 blocks refusing
-at the snap gate** with R31 live. Every survivor is still exactly 10 µm - for example
-`opamp-buffer/ob-buffer` `FB` at `(57.18, 26.67)-(57.19, 26.67)`. **So the sub-grid jogs are not
-only the six unset spacing options**, and the criterion below - *"every spacing and padding `elkjs`
-uses is a whole number of grid steps"* - is **necessary and NOT sufficient**. Something else in
-`layered` emits a 10 µm offset that no spacing option this writer has found controls.
+**THE MISSING OPTION IS `elk.spacing.nodeSelfLoop`, AND IT HAS A NAMED CAUSE.** `edgesForNet` chains
+a net of degree n into n-1 two-terminal edges, and when two consecutive terminals are pins of the
+**same unit node** that chain edge is a **self-loop**, which `layered` routes with this option
+alone - default **10**, in micrometres here.
 
-**AND ONE LINE BELOW IS LOOSELY WORDED.** The evidence calls four options *"DOUBLE options targeting
-PARENTS that this backend never sets"*. The *"never sets"* half is right and is the finding; the
-rest reads as though targeting PARENTS made them inert on the root graph, and **setting them on the
-root demonstrably changes the layout** - that is how the probe arm above was measured. They are
-unset, not unusable.
+`[RAN]` **Exactly 11 self-loops across 10 of the 12 blocks**, and their nets are exactly the nets
+that carried the residual sub-grid segments:
+
+| block | self-loops | on |
+| --- | --- | --- |
+| `ob-buffer` | 1 | `FB` on `U1:1` |
+| `oc-power` | **0** | - |
+| `oc-audio` | 2 | `MAKEUP_FB` on `J3:1`, `audio_BUF_OUT` on `U1:1` |
+| `oc-sidechain` | 1 | `VBIAS` on `U2:2` |
+| `pt-core` | 1 | `GND` on `U1:1` |
+| the six `tp-leg-*` | 1 each | `BASE`/`GND`/`COLLECTOR` on `RV1`..`RV6` |
+| `tp-stage` | **0** | - |
+
+**The clincher: `oc-power` and `tp-stage` have zero self-loops, and they are precisely the two
+blocks that cleared the snap gate before this option was set.** Not node size, not port position,
+not edge count - a net with two terminals on one unit. A trimmer with its wiper tied to one end; an
+op-amp with its output and inverting input on the feedback net.
+
+**The three arms, measured:**
+
+| arm | sub-grid segments | blocks carrying one | refuse at snap | refuse at obligation 2 | drawn |
+| --- | --- | --- | --- | --- | --- |
+| ELK's defaults | **147 / 502** | 12 | 11 | 0 | 0 |
+| six options, no `nodeSelfLoop` | 9 / 501 | 8 | 9 | 2 | 0 |
+| **all seven** | **0 / 501** | **0** | **1** | **10** | **0** |
+
+**A bisection over 14 unset candidates found only this one moves the count**:
+`layered.spacing.baseValue`, `spacing.portsSurrounding`, `port.borderOffset`, `edge.thickness`,
+`spacing.componentComponent`, `additionalEdgeSpacing` and every label and comment spacing leave it
+unchanged.
+
+**THE OPTIONS ARE NOW SET, UNDER AN EXPLICIT CONTROLLER SANCTION, AND THAT CHANGES A PIECE OF
+EVIDENCE.** Task 12's review verified `lib/schgen/elk/options.ts` **byte-identical** as evidence
+that no drawing had been tuned. **Round 3 changes that file**, so the byte-identity is spent and
+must not be read as simply broken: this is a measured defect with a named cause, fixed under the
+spec's own criterion, not an adjustment made until a drawing looked better. `GRID_SCALE_SPACINGS`
+in that file carries the full argument. **The value question is untouched and stays open**: nothing
+in the ported templates corresponds to *"the gap ELK leaves between an edge and a node"*, so there
+is no reviewed constant to cite and `GRID` is used as the **smallest value satisfying the
+criterion** - a stated rule, not a preference. Which reviewed constant should feed which option is
+still nobody's answer (**G180**).
+
+**AND THE BARRIER UNDER A FULLY-MET CRITERION IS NOT SNAP.** It is **obligation 2, on 10 of the 12
+blocks** - see **G194**, which predicted exactly this gate. One block refuses at snap
+(`oc-audio`, and it is the membership arm firing for the first time - **G196**) and one at
+obligation 3 (`oc-sidechain`, **G190**). **Still 0 drawn and still no `PAIR_COVERAGE` pair fires.**
+
+**This entry's own tripwire is spent and was replaced deliberately.** `options.elk.test.ts` pinned
+four options as unset so that setting one without saying so would go red. It went red, as designed.
+The test now asserts the criterion instead - every spacing-and-padding value sent is a whole number
+of grid steps, the set sent is pinned, and `elk.spacing.nodeSelfLoop` is named because its absence
+is the one nobody would guess at.
 
 - **Found** 2026-10-20, Task 13, while diagnosing why every block refused at the snap gate.
 - **Evidence** the node and edge dump above, printed from a real `layoutBlocks` run; the two-arm
-  probe table, both arms run here; and `knownLayoutOptions()` confirming `spacing.edgeEdge`,
+  probe table, both arms run here; and **the default VALUES (padding 12, the edge spacings 10, `nodeSelfLoop` 10) come from ELK's own
+  documentation and not from `knownLayoutOptions()`**, which at 0.9.3 returns `id`, `name`,
+  `description`, `group`, `type` and `targets` and **no `default` field at all** - so they are
+  relayed, while every geometric consequence of them below was measured here; and
+  `knownLayoutOptions()` confirming `spacing.edgeEdge`,
   `spacing.edgeNode`, `layered.spacing.edgeEdgeBetweenLayers` and
   `layered.spacing.edgeNodeBetweenLayers` are DOUBLE options targeting PARENTS that this backend
   never sets. **A check that could have failed and now stands:**
@@ -13750,10 +13800,14 @@ the one block that takes it was missing from the measurement entirely, along wit
   (refuses, naming *"NEITHER span contains the other"*), a cross-net containment (refuses) and an
   exact duplicate (counted separately) - so the three arms are distinguished by tests rather than by
   this prose, and the partial arm is driven although the corpus never produces one.
-- **Verified** CONFIRMED for every figure in the tables - this writer ran them. **RELAYED for the
-  30/30/0 interval characterisation**, which is the review's measurement; this writer confirmed its
-  consequence independently (all 11 clause-(d) refusals clear under R31's containment collapse, and
-  the containment count is exactly 30).
+- **Verified** CONFIRMED for the census tables and the canonicalisation counts - this writer ran
+  them. **RELAYED for the 30/30/0 interval characterisation**, which is the review's measurement;
+  this writer confirmed its consequence independently (all 11 clause-(d) refusals clear under R31's
+  containment collapse, and the containment count is exactly 30). **RELAYED for the per-algorithm
+  table and the star measurement below** - both are the review's probes, and round 2's Verified line
+  wrongly claimed *"CONFIRMED for every figure in the tables"* while the prose beside it said whose
+  they were. This writer has NOT run `mrtree`, `radial`, `stress` or `force`, nor built a star
+  model.
 - **Why it is open** the retrace is still there. R31 makes it harmless to the topology and
   **countable**, which is better than refused, but `contained` is now the measure of a backend
   defect rather than a defect that stops the generator.
@@ -14023,6 +14077,30 @@ fires, which means the collapse is **not yet** connectivity-preserving in practi
 the problem from clause (d) to obligation 2, where it is a more specific and more actionable
 refusal.
 
+**ROUND 3 ANSWERS THE QUESTION THIS ENTRY LEFT OPEN, AND THE ANSWER IS UNAMBIGUOUS: YES, ALL OF
+THEM.** With **G188**'s options set, 10 of the 12 blocks refuse at obligation 2. Measured over
+every block that reaches the gate - classifying each missing junction by whether a wire END sits at
+the point while another segment of the same net passes THROUGH it, which is precisely what dropping
+a contained segment leaves behind:
+
+| block | missing junctions | end-on-interior | containments collapsed |
+| --- | --- | --- | --- |
+| `ob-buffer` | 5 | **5** | 5 |
+| `oc-power` | 1 | **1** | 1 |
+| `oc-sidechain` | 3 | **3** | 3 |
+| `pt-core` | 4 | **4** | 4 |
+| each of the six `tp-leg-*` | 1 | **1** | 1 |
+| `tp-stage` | 6 | **6** | 6 |
+| **total** | **25** | **25** | **25** |
+
+**25 of 25 are the collapse's shape, 0 are anything else, and the missing-junction count equals the
+containment count block for block.** One collapsed containment, one branch point with no junction.
+
+**So the remaining work is emitting the junction**, and this entry's two mechanisms are no longer
+speculative alternatives - they are the two ways to do one known thing. Nothing is fixed in round 3
+deliberately: which of them is right is a decision about what the canonical topology IS, and
+mechanism 2 changes what a TEMPLATE sheet emits as well.
+
 - **Found** 2026-10-20, Task 13 round 2, while implementing R31.
 - **Evidence** the 4-to-5 partition measurement on `tp-leg-upper`, printed by the guard before it
   was removed; the two obligation-2 refusals with their named points; and the stop census under R31
@@ -14088,3 +14166,79 @@ by reflection, because no such transform exists to exercise.
   `mirror: "none" | "x" | "y"` to `Placement`, thread it through `rotate`/`pinEnd`/`placeBox`, and
   emit KiCad's `(mirror …)`. The cost is every consumer of a placed box, which is most of
   `lib/schgen/render/`.
+
+### G196 - obligation 1's MEMBERSHIP arm had never run on any real block, and the first time it ran it fired
+
+Spec §1.4 obligation 1 requires **two** sets to be unchanged by snapping: *"the set of distinct wire
+geometries and the set of net memberships."* `snapToGrid` computes both. **Until round 3 the second
+had never been evaluated on a single block of the four parity circuits, and nothing said so.**
+
+**WHY IT COULD NOT RUN, which is structural rather than incidental.** `snapToGrid` computes the
+partition only when the first two arms are clean:
+
+```ts
+if (collapsed.length === 0) { const was = partition(...); const now = partition(...) }
+```
+
+That gate is not arbitrary - `connectedComponents` calls `assertWireShape`, which **throws** on a
+zero-length wire, so the membership comparison cannot be attempted on geometry the zero-length arm
+has already condemned. And **G188**'s 10 µm jogs meant the zero-length arm fired on every block. So
+arm 3 was unreachable on the whole corpus, by construction, and a reader of the 3363-pass suite had
+nothing to tell them.
+
+**WITH G188's OPTIONS SET, IT RUNS - AND IT FIRES ON ONE BLOCK.** `[RAN]` Over all twelve:
+
+| arm | findings |
+| --- | --- |
+| zero-length | **0** |
+| geometry merge | **0** |
+| **membership** | **1** - `optical-compressor/oc-audio` |
+
+```
+snapping changed which nets the geometry joins: 15 connected piece(s) became 14
+pieces lost: OUT_PRE
+```
+
+**The merge is SAME-NET**: two separate pieces of `OUT_PRE` became one. No component's net set
+gained a net, so nothing is shorted - but the partition changed, which is exactly what the
+obligation says must not happen, and the gate refuses. **Whether a same-net piece merge should
+refuse at all is a real question this entry does not answer.** Two pieces of one net joining is
+electrically harmless and arguably what the drawing wanted; the obligation as written does not
+distinguish it from a cross-net merge, and neither does the gate.
+
+**THE ROUND-2 REVIEW's FIGURES FOR THIS ARM WERE TAKEN BEFORE THE OPTIONS CHANGED AND ARE RECORDED
+AS SUCH.** On the pre-round-3 options it measured **265 cross-net endpoint pairs** distinct before
+snapping and coincident after, across 6 blocks (`pt-core` 197, `tp-stage` 25, `ob-buffer` 18,
+`oc-audio` 14, `oc-sidechain` 9, `tp-leg-emitter-bypass` 2) with separations up to **585.92 µm**,
+and **18 of 20 merge findings genuine and ALL cross-net** - `GND`+`VCC`, `GND`+`OUT_PRE`,
+`BASE`+`OUT`, `INPUT`+`Net-(C7-Pad1)` - at 10-31 µm closest approach. **Coalescing those would have
+shorted the circuit, and the gate was right about every one.** `[RAN]` **On the round-3 options all
+of those are gone**: 0 cross-net endpoint pairs, 0 geometry merges. They were a consequence of the
+sub-grid jogs, not of the routing.
+
+**AND ONE ANALYTIC POINT THAT CORRECTS HOW THIS WAS FRAMED.** A merge requires BOTH coordinates to
+fall in one rounding bucket, so **no merged pair can be a grid step or more apart on either axis** -
+the sub-grid-versus-grid split cannot discriminate a benign merge from a dangerous one. **The split
+that does is same-net versus cross-net**, and that is the distinction any future refinement of
+obligation 1 has to be built on.
+
+- **Found** 2026-10-20, Task 13 round 3, after **G188**'s options unmasked the arm.
+- **Evidence** the three-arm count over all twelve blocks, run here; `oc-audio`'s refusal text
+  verbatim; the gate's own `if (collapsed.length === 0)` read directly, and `assertWireShape`'s
+  throw in `connectivity.ts` which is why the gate is there. **A check that could have failed:**
+  `tests/schgen/elk/snap.test.ts`'s *"snapping that changes a net's membership REFUSES"* drives the
+  arm on a hand-built fixture and has passed throughout - so the arm was correct all along and only
+  unreachable on real geometry, which is the distinction this entry exists to draw.
+- **Verified** CONFIRMED for the round-3 figures and for the structural account - this writer ran
+  and read them. **RELAYED for the 265 pairs and the 18 cross-net merges**, which are the round-2
+  review's measurements on the pre-round-3 options; this writer confirmed only that both are zero
+  now.
+- **Why it is open** `oc-audio` still refuses, and whether a same-net piece merge ought to is
+  unsettled. It is also a standing hazard: a gate arm can be live and structurally invisible, and
+  a passing suite says nothing about which arms ran.
+- **What would settle it** **CRITERION: every arm of every gate in the realization contract is
+  known to have been evaluated on real geometry, or is recorded as unreachable with the reason.**
+  This entry discharges that for obligation 1's three arms; **no equivalent audit has been done for
+  obligations 2 to 5**. **MECHANISM, untried:** have `snapToGrid` report which arms it evaluated
+  rather than only what they found, so the census can print arm coverage beside its results - which
+  makes an unreachable arm visible without anybody thinking to look for one.

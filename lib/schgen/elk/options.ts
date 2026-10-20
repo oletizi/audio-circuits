@@ -71,6 +71,59 @@ export function wholeGridSteps(v: Um): boolean {
 }
 
 /**
+ * THE SEVEN OPTIONS THIS BACKEND USED TO LEAVE AT ELK's DEFAULTS, AND WHY THEY ARE NOW SET.
+ *
+ * **THIS IS NOT TUNING, AND THE DISTINCTION IS THE WHOLE REASON THIS COMMENT IS LONG.** Task 12's
+ * review verified this file byte-identical as evidence that no drawing had been adjusted until it
+ * looked better; **this change breaks that evidence deliberately**, under an explicit controller
+ * sanction, and `docs/known-gaps.md` **G188** records why so the byte-identity is not read as
+ * simply lost.
+ *
+ * **THE DEFECT, MEASURED.** `elkjs` expresses every spacing as a bare number in whatever unit the
+ * geometry is in, and this backend's unit is the **micrometre**. So ELK's defaults - padding 12,
+ * the edge spacings 10, `nodeSelfLoop` 10 - are **0.8% of the 1.27 mm electrical grid**, and the
+ * router emits 10 µm jogs that grid snapping then collapses to zero length. `[RAN]` Over the twelve
+ * declared blocks of the four parity circuits, canonical segments shorter than one grid step:
+ *
+ * | arm | sub-grid segments | blocks carrying one |
+ * | --- | --- | --- |
+ * | ELK's defaults | **147 of 502** | 12 of 12 |
+ * | the six below, without `nodeSelfLoop` | 9 of 501 | 8 of 12 |
+ * | **all seven** | **0 of 501** | **0 of 12** |
+ *
+ * **`elk.spacing.nodeSelfLoop` IS THE ONE THAT MATTERS AND IT HAS A NAMED CAUSE.** `edgesForNet`
+ * chains a net of degree n into n-1 two-terminal edges; when two consecutive terminals are pins of
+ * the **same unit node**, that edge is a **self-loop**, which `layered` routes using this option.
+ * `[RAN]` There are exactly **11 self-loops across 10 of the 12 blocks** - a trimmer with two
+ * terminals on one net, an op-amp with its output and inverting input on the feedback net - and
+ * their nets are exactly the nets that carried the residual sub-grid segments. The clincher:
+ * **`oc-power` and `tp-stage` have ZERO self-loops, and they are precisely the two blocks that
+ * cleared the snap gate before this option was set.** A bisection over 14 unset candidates found
+ * that **only this one moves the count**: `layered.spacing.baseValue`, `spacing.portsSurrounding`,
+ * `port.borderOffset`, `edge.thickness`, `spacing.componentComponent`, `additionalEdgeSpacing` and
+ * every label and comment spacing leave it unchanged.
+ *
+ * **WHY `GRID` AND NOT A PORTED CONSTANT, WHICH IS THE PART THAT IS STILL OPEN.** `NODE_SEPARATION`
+ * and `LAYER_SEPARATION` cite `STUB` and `PITCH` because a template already uses those quantities
+ * for the same purpose. **Nothing in the ported templates corresponds to "the gap ELK leaves
+ * between an edge and a node"**, so there is no reviewed constant to cite, and inventing a
+ * correspondence would be the taste judgement this file forbids. `GRID` is chosen as **the smallest
+ * value that satisfies the criterion** - one whole grid step - which is a stated rule rather than a
+ * preference: it is the minimum of the set the spec admits, so no smaller legal value exists and no
+ * larger one is justified by anything. **Which reviewed constant should feed which option remains
+ * an open question** (**G180**, **G188**), and a later task with an answer should change these.
+ */
+export const GRID_SCALE_SPACINGS: Readonly<Record<string, string>> = {
+  "elk.padding": `[top=${GRID},left=${GRID},bottom=${GRID},right=${GRID}]`,
+  "elk.spacing.edgeEdge": String(GRID),
+  "elk.spacing.edgeNode": String(GRID),
+  "elk.spacing.portPort": String(GRID),
+  "elk.spacing.nodeSelfLoop": String(GRID),
+  "elk.layered.spacing.edgeNodeBetweenLayers": String(GRID),
+  "elk.layered.spacing.edgeEdgeBetweenLayers": String(GRID),
+}
+
+/**
  * The root graph's options.
  *
  * - `elk.algorithm = layered` - spec §1.1's measured algorithm; both spikes ran `layered` and
@@ -88,6 +141,10 @@ export const BLOCK_OPTIONS: Readonly<Record<string, string>> = {
   "elk.edgeRouting": "ORTHOGONAL",
   "elk.spacing.nodeNode": String(NODE_SEPARATION),
   "elk.layered.spacing.nodeNodeBetweenLayers": String(LAYER_SEPARATION),
+  // The seven below are spec §1.4's own criterion applied to the options this backend had been
+  // leaving at ELK's defaults. See `GRID_SCALE_SPACINGS` for why they are here and why the value
+  // is `GRID`.
+  ...GRID_SCALE_SPACINGS,
 }
 
 /**

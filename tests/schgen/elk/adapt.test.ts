@@ -373,3 +373,43 @@ test("a displaced ELK section endpoint is ignored: the wire attaches at the reco
   expect(after.a).toEqual(before.a)
   expect(after.a.x).not.toBe(section.startPoint.x + 1270)
 }, 120_000)
+
+/**
+ * **M9's FIX, HELD BY A FIXTURE - because reverting it left the suite green.**
+ *
+ * Round 2 made the obligation-3 arm report its canonicalisation counts instead of `null`, and
+ * `[RAN]` reverting that to `counts: null` **changed no test**: the only block that takes the arm is
+ * `optical-compressor/oc-sidechain`, and no test drove it. Its 15 collapsed duplicates were missing
+ * from the per-block measurement entirely and nothing noticed.
+ *
+ * Here a port is displaced in the FIXTURE so the arm is taken deliberately. The counts must be
+ * present and consistent with the wire list they describe: the port's position has nothing to do
+ * with the wire topology, so there is no reason for the measurement to be unavailable - which is
+ * the whole argument that earned `zeroLength` and `contained` their places.
+ */
+test("an obligation-3 refusal still reports what it canonicalised", async () => {
+  const g = dividerSubgraph()
+  const outcome = await gridAlignedOutcome(g)
+  const children = outcome.graph.children ?? []
+  const withPort = children.find((c) => (c.ports ?? []).length > 0)
+  expect(withPort, "the fixture must have a node carrying a port").toBeDefined()
+  if (withPort === undefined) return
+  const displaced: ElkNode = {
+    ...outcome.graph,
+    children: children.map((c) =>
+      c.id !== withPort.id ? c : { ...c, ports: (c.ports ?? []).map((p, i) => (i === 0 ? { ...p, x: (p.x ?? 0) + 1270 } : p)) },
+    ),
+  }
+  const report = adaptElkLayoutReported(g, { ...outcome, graph: displaced })
+  expect(report.result.ok).toBe(false)
+  if (report.result.ok) return
+  // The arm really was taken, and not some other refusal.
+  expect(report.result.mismatch.reason).toContain("port coordinate")
+  // And it reported the measurement it had already made.
+  expect(report.counts).not.toBeNull()
+  if (report.counts === null) return
+  expect(report.counts.wiresBefore).toBeGreaterThan(0)
+  expect(report.counts.wiresAfter).toBe(
+    report.counts.wiresBefore - report.counts.collapsed - report.counts.zeroLength - report.counts.contained,
+  )
+}, 120_000)

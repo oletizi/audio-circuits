@@ -28,7 +28,7 @@
 import { beforeAll, expect, test } from "bun:test"
 import ELK from "elkjs/lib/elk-api.js"
 import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
-import { BLOCK_OPTIONS } from "../../../lib/schgen/elk/options.ts"
+import { BLOCK_OPTIONS, wholeGridSteps } from "../../../lib/schgen/elk/options.ts"
 import { dividerSubgraph, inboundAndOutboundBlock } from "./fixtures.ts"
 import type { ElkLayoutAlgorithmDescription, ElkLayoutOptionDescription, ElkNode } from "elkjs/lib/elk-api.js"
 
@@ -94,17 +94,26 @@ test("elkjs reports a non-empty option vocabulary, so the checks below are not o
   expect(emitted.length).toBeGreaterThan(0)
 })
 
-test("the emitted set is exactly the eight option keys this backend declares", () => {
-  // If graph.ts starts emitting a ninth, this fails and the checks below then cover it too.
+test("the emitted set is exactly the fifteen option keys this backend declares", () => {
+  // If graph.ts starts emitting a sixteenth, this fails and the checks below then cover it too.
+  // It went from eight to fifteen in round 3, when the seven options ELK had been left to default
+  // were set at whole grid steps (docs/known-gaps.md G188).
   expect([...new Set(emitted.map((e) => e.key))].sort()).toEqual([
     "elk.algorithm",
     "elk.direction",
     "elk.edgeRouting",
     "elk.layered.layering.layerConstraint",
+    "elk.layered.spacing.edgeEdgeBetweenLayers",
+    "elk.layered.spacing.edgeNodeBetweenLayers",
     "elk.layered.spacing.nodeNodeBetweenLayers",
+    "elk.padding",
     "elk.port.side",
     "elk.portConstraints",
+    "elk.spacing.edgeEdge",
+    "elk.spacing.edgeNode",
     "elk.spacing.nodeNode",
+    "elk.spacing.nodeSelfLoop",
+    "elk.spacing.portPort",
   ])
 })
 
@@ -172,44 +181,57 @@ test("knownLayoutOptions exposes no enum choices, which is why G187's value half
 })
 
 /**
- * **THE SPACING OPTIONS THIS BACKEND DOES NOT SET, PINNED - because their DEFAULTS are 10 and 12 in
- * whatever unit the geometry is in, and here that unit is the MICROMETRE.**
+ * **EVERY SPACING AND THE PADDING THIS BACKEND SENDS IS A WHOLE NUMBER OF GRID STEPS, AND THE SET
+ * IT SENDS IS PINNED.**
  *
- * `docs/known-gaps.md` **G188** has the measurement. `BLOCK_OPTIONS` sets two spacings, both whole
- * grid steps, and `tests/schgen/elk/graph.test.ts` asserts exactly that - *"both spacings are whole
- * grid steps, which is what the plan asks both spacings to be"*. **The claim a reader takes from
- * that sentence is about the spacings ELK USES, and its reach is the two the backend sends.** ELK
- * uses the rest at their defaults, and `[RAN]` on `dividerSubgraph` that puts the whole drawing at
- * `(12, 22)` and inserts a **10 µm** jog at every port - 0.8% of a grid step - which snapping then
- * collapses, so every block refuses at spec §1.4 obligation 1.
+ * **THIS TEST REPLACES ONE THAT ASSERTED THE OPPOSITE, AND THE REPLACEMENT IS THE POINT.** Round 2
+ * pinned four spacing options as **unset**, as a tripwire over `docs/known-gaps.md` **G188** - *"it
+ * goes RED if someone sets one without updating this list"*. Round 3 set them, under an explicit
+ * controller sanction, so **the tripwire did its job and is now spent**: what it guarded against
+ * was an undeclared change, not the change itself.
  *
- * This test is the gap made visible rather than the gap fixed: **choosing a value for each of these
- * options is choosing a layout option**, which `lib/schgen/elk/options.ts`'s own header forbids
- * doing because a drawing improves. It goes RED if someone sets one without updating this list, and
- * red if `elkjs` changes its spacing vocabulary - either of which is a change that must be read, not
- * absorbed.
+ * What it guards now is the other direction. ELK's defaults are bare numbers in the geometry's
+ * unit - micrometres here - so **an option left unset is an option at roughly 10 µm**, which is
+ * 0.8% of a grid step and is what produced the sub-grid jogs G188 measures. So:
+ *
+ * - every spacing-or-padding value this backend sends is a **whole number of grid steps**, which is
+ *   spec §1.4's criterion stated as an assertion rather than as prose;
+ * - the SET it sends is pinned, so adding or dropping one is a deliberate edit;
+ * - `elk.spacing.nodeSelfLoop` is asserted present **by name**, because it is the one option whose
+ *   absence a reader would never guess at: a net with two terminals on one unit becomes a
+ *   self-loop, and `layered` routes those with that option alone. Measured: 11 self-loops across 10
+ *   of 12 blocks, and dropping this option takes sub-grid segments from 0 back to 9.
  */
-test("the spacing options this backend does NOT set are enumerated, so the gap cannot go quiet", () => {
-  const spacingIds = known.flatMap((o) => (o.id !== undefined && /\.spacing\./.test(o.id) ? [o.id] : []))
-  // elkjs must actually report a spacing vocabulary, or the subtraction below is over nothing.
-  expect(spacingIds.length).toBeGreaterThan(5)
-  const sent = new Set(Object.keys(BLOCK_OPTIONS).map(FULL_ID))
-  const unsent = spacingIds.filter((id) => !sent.has(id)).sort()
-  const sentSpacings = spacingIds.filter((id) => sent.has(id)).sort()
-  expect(sentSpacings).toEqual([
-    "org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers",
-    "org.eclipse.elk.spacing.nodeNode",
+test("every spacing and padding this backend sends is a whole number of grid steps", () => {
+  const spacingIds = known.flatMap((o) => (o.id !== undefined && /\.(spacing|padding)/.test(o.id) ? [o.id] : []))
+  expect(spacingIds.length, "elkjs must report a spacing vocabulary, or the subtraction is over nothing").toBeGreaterThan(5)
+  const sent = Object.keys(BLOCK_OPTIONS).filter((k) => /\.(spacing|padding)/.test(k))
+  expect(sent.sort()).toEqual([
+    "elk.layered.spacing.edgeEdgeBetweenLayers",
+    "elk.layered.spacing.edgeNodeBetweenLayers",
+    "elk.layered.spacing.nodeNodeBetweenLayers",
+    "elk.padding",
+    "elk.spacing.edgeEdge",
+    "elk.spacing.edgeNode",
+    "elk.spacing.nodeNode",
+    "elk.spacing.nodeSelfLoop",
+    "elk.spacing.portPort",
   ])
-  // The four whose defaults were measured to put sub-grid geometry into the route.
-  for (const id of [
-    "org.eclipse.elk.spacing.edgeEdge",
-    "org.eclipse.elk.spacing.edgeNode",
-    "org.eclipse.elk.layered.spacing.edgeEdgeBetweenLayers",
-    "org.eclipse.elk.layered.spacing.edgeNodeBetweenLayers",
-  ]) {
-    expect(unsent, `${id} must still be unset, or G188 has been acted on`).toContain(id)
+  // The one whose absence nobody would guess at, named so it cannot be dropped silently.
+  expect(Object.keys(BLOCK_OPTIONS)).toContain("elk.spacing.nodeSelfLoop")
+  // Every one is a known option id, and every VALUE is a whole number of grid steps.
+  let checked = 0
+  for (const key of sent) {
+    expect(known.some((o) => o.id === FULL_ID(key)), `${key} must be a known option id`).toBe(true)
+    const value = BLOCK_OPTIONS[key] ?? ""
+    const numbers = [...value.matchAll(/\d+/g)].map((m) => Number(m[0]))
+    expect(numbers.length, `${key} = "${value}" must carry a number`).toBeGreaterThan(0)
+    for (const n of numbers) {
+      checked += 1
+      expect(wholeGridSteps(n), `${key} = "${value}": ${n} is not a whole number of grid steps`).toBe(true)
+    }
   }
-  // And `elk.padding`, which is not a `.spacing.` id and is the source of the (12, 22) offset.
-  expect(sent.has(FULL_ID("elk.padding"))).toBe(false)
-  expect(known.some((o) => o.id === FULL_ID("elk.padding"))).toBe(true)
+  // `elk.padding` carries four numbers and the other eight one each: a run that checked nothing
+  // would pass every loop above.
+  expect(checked).toBe(12)
 })

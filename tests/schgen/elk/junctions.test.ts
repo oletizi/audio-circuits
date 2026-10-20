@@ -323,6 +323,13 @@ test("a refusal names a wire by its index in the INPUT list, not among the survi
 /**
  * **DEVIATION 7's HOLDING MECHANISM, WHICH ROUND 1 CLAIMED AND DID NOT BUILD.**
  *
+ * **ITS RESOLUTION IS COARSE, AND THAT IS WORTH KNOWING RATHER THAN DISCOVERING.** Every shape
+ * below is built from whole grid steps, so the biconditional holds the two copies in step on
+ * WHETHER there is a collinear overlap and not on the threshold at which each decides there is
+ * one. A 1 µm overlap introduced into the ported `collinearOverlap` - changing `hi <= lo` to
+ * `hi - lo <= 1`, say - goes **undetected** here, because no fixture places two segments that close
+ * together. Not a defect in either copy; a limit of this coupling.
+ *
  * `junctions.ts`'s `collinearOverlap` re-derives `wire-safety.ts`'s, which is module-private there.
  * Round 1's comment said this test *"holds them in step over four shapes"* - and the test never
  * imported `wire-safety.ts` and never evaluated `checkWireSafety`, so it asserted the coupling in
@@ -367,4 +374,41 @@ test("the collinear-overlap rule agrees with wire-safety's, shape for shape", ()
   }
   expect(overlapping).toBe(3)
   expect(shapes.length - overlapping).toBe(3)
+})
+
+/**
+ * **M13's FIX, HELD BY A FIXTURE THAT DRIVES THE SHAPE IT IS ABOUT.**
+ *
+ * Round 2 tested the cross-net arm FIRST and unconditionally, and **reverting that change left the
+ * suite green** - no fixture drove a point that is simultaneously one net's branch AND another
+ * net's contact, so the guard it removed (`&& !requiredKeys.has(...)`) could not be caught putting
+ * itself back. Here net `A` branches at the origin with three segments, and net `B` passes straight
+ * through the same point. A junction there is legitimate for `A` and shorts `B`, and the obligation
+ * is *"every emitted junction sits on exactly one net"* - so it must be reported, and the message
+ * must say that being a branch point does not excuse it.
+ */
+test("a junction where one net branches AND another crosses is a problem, not an exemption", () => {
+  // **Net `B` ENDS at the origin rather than passing through it, and that is forced rather than
+  // chosen.** A degree-3 orthogonal branch occupies three of the four axes at its point, so any
+  // straight line THROUGH it would be collinear with one of `A`'s own segments - a cross-net
+  // collinear overlap, which clause (d) refuses before the junction rule is ever asked. The one
+  // arrangement that makes the point both `A`'s branch and `B`'s contact is `B` arriving on the
+  // fourth axis and stopping.
+  const l = layout([
+    { a: { x: -G(3), y: 0 }, b: { x: 0, y: 0 }, net: "A" },
+    { a: { x: 0, y: 0 }, b: { x: G(3), y: 0 }, net: "A" },
+    { a: { x: 0, y: 0 }, b: { x: 0, y: G(3) }, net: "A" },
+    { a: { x: 0, y: -G(3) }, b: { x: 0, y: 0 }, net: "B" },
+  ])
+  const t = canonicalTopology(l, NO_PINS)
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  const origin = { x: 0, y: 0 }
+  // The premise: the point is BOTH a branch of A and a contact of B. Without both, this says nothing.
+  expect(branchJunctions(t, NO_PINS)).toContainEqual(origin)
+  expect(crossings(t)).toContainEqual(origin)
+  const problems = junctionProblems(t, NO_PINS, [origin])
+  expect(problems.length).toBe(1)
+  expect(problems[0] ?? "").toContain("DIFFERENT nets")
+  expect(problems[0] ?? "").toContain("does not excuse it")
 })
