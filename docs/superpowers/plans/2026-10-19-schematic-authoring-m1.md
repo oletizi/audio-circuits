@@ -660,11 +660,24 @@ test("generate writes nothing", () => {
   export function realiseBlock(c: Circuit, id: BlockId, symbols: SymbolResolver): BlockLayout
   export function ladder(spec: LadderSpec, g: BlockSubgraph, origin: Point): BlockLayout
   export function chain(spec: ChainSpec, g: BlockSubgraph): ChainLayout
-  export function fanout(g: BlockSubgraph, unit: BlockUnit, rot: Rotation, paths: readonly Path[]): BlockLayout
-  export function tracePaths(g: BlockSubgraph, unit: BlockUnit, skip: ReadonlySet<NetName>): TraceResult
-  export function planStage(g: BlockSubgraph): StagePlanResult
+  export function fanout(g: BlockSubgraph, anchor: BlockUnit, rot: Rotation, paths: readonly OutwardPath[]): BlockLayout
+  export function tracePaths(g: BlockSubgraph, anchor: BlockUnit, skip: ReadonlySet<PinNumber>): TraceResult
+  export function planStage(g: BlockSubgraph): Planned
   export function commonRailLadder(g: BlockSubgraph): CommonRailLadder
   ```
+  **Three rows above were wrong and are CORRECTED 2026-10-19 by controller
+  ruling R16** — see `docs/known-gaps.md` **G138**, found by Task 7's
+  implementer and verified against `$SCHGEN_SOURCE` by its reviewer before
+  being written here, because **Task 8 is scoped from this block** and a wrong
+  signature in it becomes a wrong implementation there. The plan originally
+  read `paths: readonly Path[]` (the type is `OutwardPath`,
+  `fanoutKit.ts:209`), `skip: ReadonlySet<NetName>` (it is
+  `ReadonlySet<PinNumber>`, `fanoutKit.ts:52` — the sharpest of the three for
+  Task 8's classification work), and `StagePlanResult`, **which does not exist
+  in the source at all**: `grep -rn StagePlanResult` over the pedals tree
+  returns nothing, and `opampClassify.ts:102` returns `Planned`. The second
+  parameter of both `fanout` and `tracePaths` is `anchor`, not `unit`. Step 5
+  below carried the same `StagePlanResult` error and is corrected with it.
   The eight registered ids are `"rail-row"`, `"decoupling-bank"`, `"divider"`, `"passive-chain"`, `"crystal"`, `"connector-fanout"`, `"regulator"`, `"opamp-stage"` — eight entries for seven template modules, because `railRow.ts` exports two.
 
 **The load-bearing constraint, carried over verbatim:** *templates never create electrical connectivity.* A template receives a fully connected IR subgraph and may only choose symbol positions, rotations and the wire geometry that realises connections the IR already defines. *"An op-amp template does not know that the feedback resistor joins OUT to IN−; it places the parts on the IR's feedback net in its feedback corridor."* **Any IR connection a template cannot realise is a generation error, never a silent omission.**
@@ -684,7 +697,7 @@ test("every mismatch site is in the census Task 8 widens", () => {
 })
 ```
   **30 is a measured number, not a recalled one**: `passive-chain` 1, `regulator` 8, `connector-fanout` 3, `opamp-stage` 1, `rail-row` 5, `divider` 6, `crystal` 6. It agrees with spec §1.3's *"30 `mismatch(...)` call sites"*. **If the census finds another number, that is a finding — report it and do not adjust the test to match.**
-- [ ] **Step 5: List the five helper result types that forward a reason into a mismatch**, in the task report, because Task 8 must widen them too: `CommonRailLadder` (`rail-row.ts`), `StagePlanResult` (`opamp-classify.ts`), `TraceResult` (`fanout-kit.ts`), `Measured` (`drawn-extent.ts`), `FieldsResult` (`field-placement.ts`). Each is `{ok:true,…} | {ok:false, reason:string}`.
+- [ ] **Step 5: List the five helper result types that forward a reason into a mismatch**, in the task report, because Task 8 must widen them too: `CommonRailLadder` (`rail-row.ts`), `Planned` (`opamp-classify.ts` - **corrected from `StagePlanResult`, which does not exist in the source**, ruling R16), `TraceResult` (`fanout-kit.ts`), `Measured` (`drawn-extent.ts`), `FieldsResult` (`field-placement.ts`). Each is `{ok:true,…} | {ok:false, reason:string}`.
 - [ ] **Step 6: Draw a block with each of the eight registered templates and LOOK AT THE OUTPUT.** Eight single-block fixture designs, emitted, exported to PDF, converted, **read with the Read tool.** Say what each one looks like. `CLAUDE.md`: netlist-level assertions are necessary and not sufficient.
 - [ ] **Step 7: Perturb `ladder`'s row-split rule** (emit one wire per row instead of splitting at every attachment); the wire-safety check goes red naming the mid-wire pin end. Restore, report.
 - [ ] **Step 8: `shasum`, `bun run check`, commit, push.**
@@ -790,7 +803,7 @@ test("a template that realised its subgraph is used", () => {
 ```
 - [ ] **Step 3: Run both.** Expected: fail — `Mismatch` and `selectRenderer` do not exist.
 - [ ] **Step 4: Widen `block-types.ts`** — `Mismatch`, `RealiseResult`, the four constructors, `Backend`, `Selection`. **Delete `mismatch(reason: string)`**: leaving it would let a site stay unclassified. Typecheck: 30 errors, one per site, which is the list to work through.
-- [ ] **Step 5: Widen the five helper result types** so a forwarded reason carries its kind: `CommonRailLadder`, `StagePlanResult`, `TraceResult`, `Measured`, `FieldsResult` each replace `reason: string` with `mismatch: Mismatch`. The ten forwarding sites (`return mismatch(plan.reason)`) become `return { ok: false, mismatch: plan.mismatch }`.
+- [ ] **Step 5: Widen the five helper result types** so a forwarded reason carries its kind: `CommonRailLadder`, `Planned` (**not `StagePlanResult`** - ruling R16), `TraceResult`, `Measured`, `FieldsResult` each replace `reason: string` with `mismatch: Mismatch`. The ten forwarding sites (`return mismatch(plan.reason)`) become `return { ok: false, mismatch: plan.mismatch }`.
 - [ ] **Step 6: Classify all 30 sites.** Work file by file. **Record the classification of each site in the task report, with the reason**, and record any site that could not be classified by reading in `docs/known-gaps.md`.
 - [ ] **Step 7: Write `selectRenderer` and rewire `realiseBlock`.** `wired` runs its declared template; `auto` tries `TEMPLATES` in registered order; **all `not-applicable` → `{kind:"elk"}`; any other mismatch → `{kind:"refused"}`**. `realiseBlock` throws on `refused` with the mismatch's full text, and calls `elk.realise(g)` on `{kind:"elk"}` — or throws naming the block and that no ELK backend was supplied, when `elk` is null. `attributed(…)` returns `backendRaised("template", …)` instead of rethrowing.
 - [ ] **Step 8: Delete the `labels` rendering** from `Rendering`, from `validate.ts`'s `renderings` rule and from `classify.ts`'s `labelledNets` (which tests `rendering.kind !== "wired"` and must now mean *not `wired` and not `auto`*, i.e. `bus`). **Read `labelledNets` before changing it** — getting this wrong silently unlabels a cross-block net.
