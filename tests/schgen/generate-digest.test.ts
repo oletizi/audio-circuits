@@ -26,7 +26,7 @@ import { describe, expect, it } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { RULE_LIBRARY_DIR, TEMPLATE_LIBRARY_DIR, moduleTreeDigest } from "../../tools/schgen/generate.ts"
+import { DIGEST_EXEMPT, RULE_LIBRARY_DIR, TEMPLATE_LIBRARY_DIR, moduleTreeDigest } from "../../tools/schgen/generate.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
@@ -122,6 +122,82 @@ describe("the manifest's template library version", () => {
       )
       expect(() => moduleTreeDigest(root, TEMPLATE_LIBRARY_DIR)).toThrow(/skipped check/)
     })
+  })
+})
+
+/**
+ * CONTROLLER RULING **R43**: the loud refusal stays as the general rule, with a NAMED exemption
+ * list holding exactly one entry.
+ *
+ * **WHY THE LIST IS NOT A FALLBACK, which is the thing these tests are really holding in place.** A
+ * fallback substitutes behaviour when something is missing, so the unknown case PASSES; a named
+ * list refuses everything not named, so the unknown case REFUSES. The second and third tests here
+ * are the load-bearing ones: one proves the exemption works, the other proves it has not become a
+ * general extension rule. Without the third, the next edit turns one name into a suffix match and
+ * nothing notices.
+ */
+describe("the digest's named exemption list", () => {
+  it("holds exactly one entry, and that entry cites the committed declaration that settled it", () => {
+    // Asserting the LENGTH is what makes growing the list impossible to do quietly - CLAUDE.md's
+    // extension discipline for a whitelist is a deliberate edit with a test beside it.
+    expect(DIGEST_EXEMPT.length, "a longer list is a deliberate edit and lands here first").toBe(1)
+    expect(DIGEST_EXEMPT.map((e) => e.name)).toEqual([".DS_Store"])
+    for (const { name, why } of DIGEST_EXEMPT) {
+      expect(why, `${name}: an exemption with no committed declaration behind it is a judgement`).toContain(
+        ".gitignore",
+      )
+    }
+  })
+
+  it("is a reading of .gitignore and not a fresh judgement: that file still declares the name", () => {
+    // The entry's reason cites `.gitignore:20`. If that declaration were removed, the exemption
+    // would become this repository's own opinion, which is what R43 says it must not be.
+    const ignored = fs
+      .readFileSync(path.join(moduleRepoRoot(), ".gitignore"), "utf8")
+      .split("\n")
+      .map((l) => l.trim())
+    for (const { name } of DIGEST_EXEMPT) {
+      expect(ignored, `${name} is exempt because .gitignore declares it a non-artifact`).toContain(name)
+    }
+  })
+
+  it("does not refuse an exempt file, and the exempt file does not move the digest", () => {
+    withTreeCopy(TEMPLATE_LIBRARY_DIR, (root) => {
+      const before = moduleTreeDigest(root, TEMPLATE_LIBRARY_DIR)
+      fs.writeFileSync(path.join(root, TEMPLATE_LIBRARY_DIR, ".DS_Store"), "finder metadata\n")
+      fs.writeFileSync(path.join(root, TEMPLATE_LIBRARY_DIR, "templates", ".DS_Store"), "more of it\n")
+      expect(() => moduleTreeDigest(root, TEMPLATE_LIBRARY_DIR), "a Finder visit must not refuse a generation").not.toThrow()
+      expect(
+        moduleTreeDigest(root, TEMPLATE_LIBRARY_DIR),
+        "and it is not hashed either, so it cannot move the recorded library version",
+      ).toBe(before)
+    })
+  })
+
+  it("is EXACT and not a suffix rule: a near-miss name, and the name as a DIRECTORY, still refuse", () => {
+    const cases: readonly { readonly what: string; readonly make: (tree: string) => void; readonly names: RegExp }[] = [
+      {
+        what: ".DS_Store.bak",
+        make: (tree) => fs.writeFileSync(path.join(tree, ".DS_Store.bak"), "x\n"),
+        names: /does not hash: \.DS_Store\.bak/,
+      },
+      {
+        what: "foo.DS_Store",
+        make: (tree) => fs.writeFileSync(path.join(tree, "foo.DS_Store"), "x\n"),
+        names: /does not hash: foo\.DS_Store/,
+      },
+      {
+        what: ".DS_Store as a directory",
+        make: (tree) => fs.mkdirSync(path.join(tree, ".DS_Store")),
+        names: /\.DS_Store \(a directory, not the file the exemption names\)/,
+      },
+    ]
+    for (const { what, make, names } of cases) {
+      withTreeCopy(TEMPLATE_LIBRARY_DIR, (root) => {
+        make(path.join(root, TEMPLATE_LIBRARY_DIR))
+        expect(() => moduleTreeDigest(root, TEMPLATE_LIBRARY_DIR), `${what} must still refuse`).toThrow(names)
+      })
+    }
   })
 
   it("refuses a tree with no module rather than hashing a constant", () => {

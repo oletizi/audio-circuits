@@ -16305,11 +16305,43 @@ mis-attribution is now between two fields of one record rather than a gap.**
 **AND THE GENERATION PATH's REFUSAL SURFACE WIDENED AGAIN, which is the same class of thing G225
 records.** Clause (b) of the fix round's criterion was that *adding a file the digest does not cover
 cannot pass silently*, so `moduleTreeDigest` **refuses by name** any entry in the tree it cannot
-hash, rather than filtering it out: there is no whitelist of ignorable names, because an empty
-whitelist that refuses loudly beats a general rule that quietly accepts a guess. **The cost, and it
-is a real one: a stray non-`.ts` file under `lib/schgen/render/` or `lib/schgen/rules/` - a
-`.DS_Store` from a Finder visit, an editor backup - now refuses every generation** until it is
-deleted. The refusal names the file and names both legitimate resolutions.
+hash, rather than filtering it out. **THE COST THE FIRST ROUND OF THIS FIX MEASURED, and it is a
+real one: a stray non-`.ts` file under `lib/schgen/render/` or `lib/schgen/rules/` - a `.DS_Store`
+from a Finder visit, an editor backup - refused every generation** until it was deleted. That round
+took the position that there should be NO whitelist of ignorable names at all, on
+`CLAUDE.md`'s *"an empty whitelist that refuses loudly beats a general rule that quietly accepts a
+guess"*, and put the cost here rather than paying it silently.
+
+**CONTROLLER RULING R43, 2026-10-20, PAYS IT THE OTHER WAY, AND THE FACT THAT DECIDED IT WAS
+ALREADY COMMITTED.** The refusal stays as the general rule, with a **named exemption list holding
+exactly one entry, `.DS_Store`** (`DIGEST_EXEMPT` in `tools/schgen/generate.ts`). The ruling:
+**`.gitignore:20` already declares `.DS_Store` a non-artifact of this repository**, under its `OS
+files` heading and by the same reasoning `.gitignore:54` applies to `*.kicad_prl` - per-user state,
+never design data. Refusing a generation over it was *"two parts of the repository disagreeing"*,
+and the owner is on macOS where a single Finder visit to a library directory arms it; a refusal that
+says *delete the file your file manager made* teaches nothing about the circuit, which is not
+`CLAUDE.md`'s standard for a refusal. **So the entry is a reading of an existing decision, not a
+fresh judgement**, and that is why the code cites the `.gitignore` line.
+
+**AND THE RULING CORRECTS A MISREADING THIS WRITER HAD OF `CLAUDE.md`, which is worth keeping
+because it is a confusion anybody could repeat.** The first round treated a named list as a
+FALLBACK. It is the opposite: **a fallback substitutes behaviour when something is missing, so the
+UNKNOWN case passes; a named exemption list refuses everything not named, so the unknown case
+REFUSES.** The sentence quoted above is not a grudging allowance for a whitelist - it is the
+prescribed shape, and it specifies the default state (empty) and the extension discipline (a
+deliberate edit with a test beside it, never a silent widening).
+
+**THE OBJECTION THE FIRST ROUND RAISED - *"it would hide exactly the file somebody hid
+deliberately"* - LOSES ON A FACT RATHER THAN ON TASTE.** Drawn geometry reaches a template through a
+`.ts` import, and the digest now hashes every `.ts` in the tree recursively, so a geometry-bearing
+`.json`, a `.ts.bak` or a vendored data file **still refuses by name under a one-entry list exactly
+as it did under none**. The one-entry list loses nothing clause (b) was protecting.
+
+**THE RESIDUAL COST OF R43, NAMED PLAINLY AND NOT TO BE SOFTENED: a file named exactly `.DS_Store`
+that CARRIED GEOMETRY would be neither hashed nor refused.** That is the price of the direction
+chosen. It is one name, it is exact (`.DS_Store.bak`, `foo.DS_Store` and a DIRECTORY called
+`.DS_Store` all still refuse), and the judgement behind accepting it is R43's: if geometry hidden in
+a file with that name is the threat model, **the digest is the wrong place to fight it.**
 
 - **Found** 2026-10-20, Task 16 review (its Important 2); fixed in fix round 1.
 - **Evidence** `tests/schgen/generate-digest.test.ts`, which copies the library tree to scratch,
@@ -16320,15 +16352,29 @@ deleted. The refusal names the file and names both legitimate resolutions.
   the walk non-recursive turns three named tests red; filtering the unhashable file instead of
   refusing turns one red; **reverting the directory to `templates/` turns ELEVEN red, including all
   eight geometry producers** - which is this entry's defect, reproduced as a failing check.
-- **Verified** CONFIRMED - this writer made the fix, wrote the tests and drove all three
-  perturbations. The eight-module import claim is the review's and was re-run here.
+  **FOR R43's EXEMPTION, three more checks and three more perturbations:** an unexempted non-`.ts`
+  file refuses by name; `.DS_Store` present does NOT refuse and does NOT move the digest; and the
+  exemption is exact - `.DS_Store.bak`, `foo.DS_Store` and `.DS_Store` as a DIRECTORY each still
+  refuse. The list's LENGTH is asserted, so growing it cannot be quiet, and a separate check reads
+  `.gitignore` and fails if it stops declaring the name - which is what keeps the exemption a
+  reading of a committed decision rather than this repository's own opinion. Driven, each restored:
+  making the match a suffix test, and dropping the directory guard, each turn the exactness test
+  red; removing the exemption skip turns the no-refusal test red naming both `.DS_Store` paths.
+- **Verified** CONFIRMED - this writer made the fix, wrote the tests and drove all six
+  perturbations. The eight-module import claim is the review's and was re-run here. **R43 is
+  RELAYED from the controller; the `.gitignore` lines it rests on were read directly here** (line 20
+  `.DS_Store`, line 54 `*.kicad_prl`).
 - **Why it is open** the over-coverage is a recorded decision and the rule-digest attribution is a
-  recorded limit; what keeps the entry open is the refusal cost in the last paragraph, which nobody
-  has hit yet and which will look like a generator bug the first time somebody does.
+  recorded limit; what keeps the entry open is R43's residual - a file named exactly `.DS_Store`
+  carrying geometry is neither hashed nor refused - which nobody has hit and which no check can
+  catch, by construction.
 - **What would settle it** nothing for the fix - it is driven. **For the over-coverage, CRITERION:
   `templateLibrarySha256` moves when and only when something a template draws with has changed.**
   **MECHANISM, untried:** the transitive import closure, which needs an import walker; it is the
-  exact answer and nobody has costed building one. **For the refusal cost, CRITERION: a file that
-  cannot carry geometry does not stop a generation, and a file that can is not skipped.** No
-  mechanism meeting both is known - the two pull against each other, which is why the loud refusal
-  was chosen over a guess.
+  exact answer and nobody has costed building one. **For R43's residual: nothing settles it inside
+  this digest, and that is the ruling rather than a gap** - the criterion *a file that cannot carry
+  geometry does not stop a generation, and a file that can is not skipped* cannot be met for a name
+  the repository has declared empty of content, so one of the two clauses is chosen deliberately.
+  R43 chose the first. **MECHANISM, untried and recorded only to be refused clearly:** reading the
+  exempt file's bytes to check it really is Finder metadata would put a parser for a foreign binary
+  format in the generation path, which is more surface than the residual is worth.
