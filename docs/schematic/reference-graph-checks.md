@@ -82,6 +82,30 @@ artifact regenerated every run and compared by content, which `CLAUDE.md`
 requires, and it means the figures above can be re-derived without `kicad-cli`.
 **It is not gate 8**, because neither side came out of the generator.
 
+One thing the gate's own signature had to be fixed for
+-----------------------------------------------------
+
+**A GATE ROW NAMES THE DRAWING IT CHECKED AGAINST (spec §2.1), AND AN
+`ImportedNetlist` CARRIES NO RECORD OF WHERE IT CAME FROM.** So the reference's
+file travels with it. It first travelled as a loose fifth `referenceFile: string`
+parameter beside the manifest citation, and **a swap of those two was
+undetectable** - both checks were blankness checks, which a swap passes. The
+consequence of a swap is a provenance error inside a provenance gate: the row
+would name the wrong file as the drawing it checked against **while reporting a
+pass.**
+
+Controller ruling **R53** closed it with a type rather than with care: the file
+now travels inside `ReferenceNetlist`, so the swap is unrepresentable.
+`[RAN]` the project's own `tsc --noEmit`, against a probe file written into the
+tree so the project tsconfig applies and counting only errors that name the
+probe - baseline **0** errors; correct order **ACCEPTED, 0 errors**; reference
+and manifest swapped **REJECTED**, `error TS2345: Argument of type 'string' is
+not assignable to parameter of type 'ReferenceNetlist'`; a bare file string
+where the reference goes **REJECTED**, same error. The first version of that
+probe invoked `tsc` on the single file, which ignores the tsconfig and reported
+unrelated errors for all three cases - it could not discriminate, and is
+recorded here because a probe whose control also fails proves nothing.
+
 What the comparison does
 ------------------------
 

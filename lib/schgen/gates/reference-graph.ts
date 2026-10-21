@@ -173,35 +173,60 @@ export const DECLARED_DELTAS_ARE_M2 =
   "declared entries would be a pass that means nothing. See docs/known-gaps.md G104."
 
 /**
- * **THE DEVIATION FROM THE BRIEF's SIGNATURE, STATED HERE BECAUSE IT IS A DEVIATION.** The brief
- * declares `checkReferenceGraph(generated, reference, permitted, manifest)` and a result carrying
- * `reference: string`. **Those two cannot both hold**: an `ImportedNetlist` has no source field, so
- * nothing in that parameter list can name the drawing. A gate that named nothing is exactly the
- * shape spec §2.1 refuses, so `referenceFile` is a fifth parameter. It and `manifest` are both
- * non-blank strings and nothing can tell a swap of the two apart, which is why each is checked for
- * blankness and the parameter is named for the file.
+ * **A REFERENCE DRAWING'S NETLIST AND THE FILE IT CAME FROM, BOUND TOGETHER SO THE TWO CANNOT BE
+ * SEPARATED.**
+ *
+ * It exists to make one mistake unrepresentable rather than merely unlikely - see
+ * `checkReferenceGraph`'s comment for the mistake and controller ruling **R53** for the
+ * instruction. An `ImportedNetlist` carries no record of where it came from, so the file has to
+ * travel beside it, and travelling as a loose string next to the manifest citation was a hazard
+ * nothing could detect.
+ */
+export interface ReferenceNetlist {
+  /** The hand-arranged drawing this netlist was exported from, as the result and the gate row name it. */
+  readonly file: string
+  readonly netlist: ImportedNetlist
+}
+
+/**
+ * **THE DEVIATION FROM THE BRIEF's SIGNATURE, STATED HERE BECAUSE IT IS A DEVIATION, AND THE
+ * HAZARD IT FIRST INTRODUCED, CLOSED UNDER RULING R53.**
+ *
+ * The brief declares `checkReferenceGraph(generated, reference, permitted, manifest)` and a result
+ * carrying `reference: string`. **Those two cannot both hold**: an `ImportedNetlist` has no source
+ * field, so nothing in that parameter list can name the drawing, and a gate that named nothing is
+ * exactly the shape spec §2.1 refuses. The brief is underspecified there; inventing a value to
+ * satisfy the shape would have been worse.
+ *
+ * **THE FIRST FIX WAS A FIFTH `referenceFile: string` PARAMETER, AND IT WAS THE WRONG FIX.** It and
+ * `manifest` were adjacent non-blank strings, so **a swap of the two was undetectable** - every
+ * check either one had was a blankness check, which a swap passes. **And the consequence of a swap
+ * is a provenance error inside a provenance gate:** the row would name the wrong file as the
+ * drawing it checked against, while reporting a pass. R53: *"two adjacent non-blank strings that
+ * nothing can distinguish is the shape this repository closes with a type, not with care."* So the
+ * file travels INSIDE `ReferenceNetlist` and the swap is now unrepresentable - a string is not a
+ * `ReferenceNetlist` and the compiler says so.
  *
  * `undeclared` is empty only when the two graphs match completely. Non-empty is a FAILURE and
  * every entry names what differs by value, library id and pin - never by designator.
  */
 export function checkReferenceGraph(
   generated: ImportedNetlist,
-  reference: ImportedNetlist,
+  reference: ReferenceNetlist,
   permitted: PermittedDelta,
   manifest: string,
-  referenceFile: string,
 ): ReferenceGraphResult {
-  if (referenceFile.trim() === "") {
+  if (reference.file.trim() === "") {
     throw new Error("checkReferenceGraph needs the reference's file to name it in the result; spec 2.1 refuses a gate row that names nothing")
   }
   if (manifest.trim() === "") {
     throw new Error("checkReferenceGraph needs the manifest citation; spec 2.1's criterion is that a gate reporting a pass names the manifest it ran against")
   }
-  const base = { reference: referenceFile, manifest, permitted }
+  const base = { reference: reference.file, manifest, permitted }
   if (permitted.kind === "declared") return { ...base, undeclared: [DECLARED_DELTAS_ARE_M2] }
   const g = graphFromNetlist(generated, "the generated schematic's netlist")
-  const r = graphFromNetlist(reference, referenceFile)
-  const m = matchGraphs(g, r, ["the generated schematic", `the reference ${referenceFile}`])
+  const r = graphFromNetlist(reference.netlist, reference.file)
+  const m = matchGraphs(g, r, ["the generated schematic", `the reference ${reference.file}`])
   return { ...base, undeclared: m.problems }
 }
 

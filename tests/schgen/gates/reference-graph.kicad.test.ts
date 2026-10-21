@@ -121,7 +121,8 @@ describe("the reference graph of each hand-arranged drawing", () => {
     it(`${r.name}: the committed netlist fixture still describes the same circuit as the drawing`, () => {
       // A derived artifact compared by CONTENT and not by timestamp, which is what lets the figures
       // above be re-derived without kicad-cli. It is NOT gate 8: neither side is generated.
-      const r1 = checkReferenceGraph(of(r.name).committed, of(r.name).live, EMPTY_DELTA, "not a gate row: a fixture-against-drawing control", r.schematic)
+      const side = { file: r.schematic, netlist: of(r.name).live }
+      const r1 = checkReferenceGraph(of(r.name).committed, side, EMPTY_DELTA, "not a gate row: a fixture-against-drawing control")
       expect(r1.undeclared).toEqual([])
     })
 
@@ -134,7 +135,7 @@ describe("the reference graph of each hand-arranged drawing", () => {
         ...live,
         components: live.components.map((c) => (c.designator === first.designator ? { ...c, value: "999.99 Giga" } : c)),
       }
-      const result = checkReferenceGraph(perturbed, live, EMPTY_DELTA, "not a gate row: a perturbation", r.schematic)
+      const result = checkReferenceGraph(perturbed, { file: r.schematic, netlist: live }, EMPTY_DELTA, "not a gate row: a perturbation")
       expect(result.undeclared.length).toBeGreaterThan(0)
       expect(result.undeclared.join(" ")).toContain(`raw:999.99 Giga|${first.libPart ?? ""}`)
     })
@@ -156,7 +157,7 @@ describe("the reference graph of each hand-arranged drawing", () => {
         ...live,
         nets: { ...live.nets, [from[0]]: from[1].filter((m) => m !== moved), [to[0]]: [...to[1], moved].sort() },
       }
-      const result = checkReferenceGraph(perturbed, live, EMPTY_DELTA, "not a gate row: a perturbation", r.schematic)
+      const result = checkReferenceGraph(perturbed, { file: r.schematic, netlist: live }, EMPTY_DELTA, "not a gate row: a perturbation")
       expect(result.undeclared.length).toBeGreaterThan(0)
       expect(result.undeclared.join(" ")).toContain("connections only in")
     })

@@ -42,7 +42,7 @@ const DIVIDER: ImportedNetlist = {
 }
 
 const check = (generated: ImportedNetlist, reference: ImportedNetlist) =>
-  checkReferenceGraph(generated, reference, EMPTY_DELTA, MANIFEST, REF_FILE)
+  checkReferenceGraph(generated, { file: REF_FILE, netlist: reference }, EMPTY_DELTA, MANIFEST)
 
 describe("graphFromNetlist", () => {
   it("keys components by canonical value and library id, and the adjacency by pin", () => {
@@ -329,7 +329,7 @@ describe("a DECLARED permitted delta is refused rather than compared anyway", ()
   }
 
   it("reports the M2 refusal as an undeclared difference, so it can never read as a pass", () => {
-    const r = checkReferenceGraph(DIVIDER, DIVIDER, declared(), MANIFEST, REF_FILE)
+    const r = checkReferenceGraph(DIVIDER, { file: REF_FILE, netlist: DIVIDER }, declared(), MANIFEST)
     expect(r.undeclared).toEqual([DECLARED_DELTAS_ARE_M2])
     // The control: with the same two identical netlists and an EMPTY delta, it IS a pass - so the
     // refusal above is about the declared list and not about the comparison failing.
@@ -339,7 +339,23 @@ describe("a DECLARED permitted delta is refused rather than compared anyway", ()
 
 describe("the result names the reference and the manifest, or refuses", () => {
   it("refuses a blank reference file and a blank manifest citation", () => {
-    expect(() => checkReferenceGraph(DIVIDER, DIVIDER, EMPTY_DELTA, MANIFEST, "  ")).toThrow(/name it in the result/)
-    expect(() => checkReferenceGraph(DIVIDER, DIVIDER, EMPTY_DELTA, " ", REF_FILE)).toThrow(/names the manifest it ran against/)
+    expect(() => checkReferenceGraph(DIVIDER, { file: "  ", netlist: DIVIDER }, EMPTY_DELTA, MANIFEST)).toThrow(/name it in the result/)
+    expect(() => checkReferenceGraph(DIVIDER, { file: REF_FILE, netlist: DIVIDER }, EMPTY_DELTA, " ")).toThrow(/names the manifest it ran against/)
+  })
+
+  /**
+   * **RULING R53: THE SWAP THAT USED TO BE UNDETECTABLE IS NOW UNREPRESENTABLE, and this is the
+   * check that notices if it comes back.** The first version took a fifth `referenceFile: string`
+   * parameter beside `manifest`, and **a swap of the two passed every check either one had**,
+   * because both were blankness checks. The file now travels inside `ReferenceNetlist`, so the
+   * compiler refuses the swap - and the one thing a runtime check can still hold is that no fifth
+   * loose string has reappeared.
+   */
+  it("takes four parameters, only ONE of which is a bare string", () => {
+    expect(
+      checkReferenceGraph.length,
+      "a fifth parameter beside `manifest` is how the undetectable swap got in; the reference's " +
+        "file belongs inside ReferenceNetlist (ruling R53)",
+    ).toBe(4)
   })
 })

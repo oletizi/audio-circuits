@@ -358,7 +358,7 @@ function oscarGate(d: LoadedDesign, manifest: string): string[] {
     // Annotation errors in a reference's export make its graph unsound, so they are gate 8's
     // (`annotationProblems`); every other stderr line from a foreign, pinned drawing is ignored.
     problems.push(...annotationProblems(r.board, net.stderr));
-    const result = checkReferenceGraph(generated, importNetlist(net.text), permitted, manifest, r.rel);
+    const result = checkReferenceGraph(generated, { file: r.rel, netlist: importNetlist(net.text) }, permitted, manifest);
     problems.push(...result.undeclared.map((p) => `reference ${r.board} (${r.rel}): ${p}`));
   }
   return problems;
