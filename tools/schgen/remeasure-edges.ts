@@ -45,9 +45,24 @@
  * > `edgesForNet` makes a net of degree n into n - 1 chain edges. Under the BLOCKED declaration a
  * > net crossing k blocks is labelled, so it is external in each of them and gains a boundary
  * > terminal in each: it contributes `(U + k) - k = U` edges. Under the FLAT declaration the same
- * > net is internal unless it is a rail or off-sheet, so it contributes `U - 1`. A rail is a
- * > boundary net on both sides and contributes `U` on both. **So blocked minus flat is exactly the
- * > number of nets that cross a block boundary and are NOT rails.**
+ * > net is internal unless it is a boundary net of the subject, so it contributes `U - 1`. A
+ * > boundary net of the subject contributes `U` on both sides and cancels. **So blocked minus flat
+ * > is exactly the number of nets that (1) cross a block boundary inside the subject, (2) are not
+ * > rails, (3) are not off-sheet, and (4) do not leave the subject.**
+ *
+ * **ALL FOUR CLAUSES ARE NAMED BECAUSE THREE OF THEM IS NOT THE RULE - fix round 2, item B.** Round
+ * 1 published *"crossing and not rails"* and applied it to a sub-circuit, which made one printed
+ * figure false as literally stated: on the five-leg union the three-clause set is `{BASE,
+ * COLLECTOR}` and the document printed *"none"*. **The predicted difference was right and the set
+ * named was wrong**, because both nets leave the union and therefore cancel. Clauses (2) and (3) are
+ * what `crossingNonRailNets` tests - `!rail && !offSheet` - and clause (4) is vacuous for a whole
+ * circuit and load-bearing for a subject, which is why `governingNetsOf` exists.
+ *
+ * **CLAUSE (3) IS UNEXERCISED BY ANY CIRCUIT AND THAT IS STATED RATHER THAN DISCOVERED.**
+ * `buildCircuit` hard-codes `offSheet: new Set()` (`lib/schgen/ir/build.ts:152`), so no declaration
+ * in this repository reaches it. `[RELAYED]` The review drove it by hand - with `BASE` off-sheet the
+ * measured difference is 4 and the code predicts 4, while the three-clause SENTENCE predicts 5 - so
+ * **the code was already right about a case the published sentence was already wrong about.**
  *
  * **That set is measurable and non-empty here - three nets on `optical-compressor` and five on
  * `transistor-preamp` - and `crossingNonRailNets` counts it, so the prediction is shown agreeing
@@ -156,6 +171,11 @@ export function flatSubgraphOf(
  * `labelledNets` folds four conditions together and only one of them is the one at issue.
  */
 export function crossingNonRailNets(c: Circuit): readonly NetName[] {
+  return crossingNets(c).filter((n) => !c.rails.has(n.net) && !c.offSheet.has(n.net)).map((n) => n.net)
+}
+
+/** Every net with pins in more than one block, with the blocks it touches. */
+function crossingNets(c: Circuit): readonly { readonly net: NetName; readonly blocks: ReadonlySet<BlockId> }[] {
   const blocksOfNet = new Map<NetName, Set<BlockId>>()
   for (const pin of c.pins) {
     if (pin.net === null) continue
@@ -163,11 +183,36 @@ export function crossingNonRailNets(c: Circuit): readonly NetName[] {
     set.add(blockOfPin(c, pin))
     blocksOfNet.set(pin.net, set)
   }
-  const out: NetName[] = []
-  for (const [net, blocks] of blocksOfNet) {
-    if (blocks.size > 1 && !c.rails.has(net) && !c.offSheet.has(net)) out.push(net)
-  }
-  return out.sort()
+  return [...blocksOfNet]
+    .filter(([, blocks]) => blocks.size > 1)
+    .map(([net, blocks]) => ({ net, blocks }))
+    .sort((a, b) => a.net.localeCompare(b.net))
+}
+
+/**
+ * **THE GOVERNING SET FOR A SUBJECT, WITH ALL FOUR CLAUSES - fix round 2, item B.**
+ *
+ * `crossingNonRailNets` states three clauses - *crossing*, *not a rail*, *not off-sheet* - and for a
+ * WHOLE circuit those three are the whole rule, because a net cannot leave the subject when the
+ * subject is everything. **For a SUB-circuit there is a fourth clause and it is not decorative: a
+ * net that leaves the union is a boundary net of the flat subject too, so it contributes `U` on both
+ * sides and cancels.**
+ *
+ * **ROUND 1 PUBLISHED THE THREE-CLAUSE SENTENCE AND APPLIED IT TO A SUB-CIRCUIT, which made one
+ * printed figure false as literally stated.** On the five-leg union the three-clause set is
+ * `{BASE, COLLECTOR}` and the document printed *"none"*. The figure it predicted - a difference of
+ * zero - was right, because both nets leave the union; **the set it named was wrong.** This function
+ * is what the union's row is now computed with, instead of `g.external` standing in as a proxy.
+ */
+export function governingNetsOf(c: Circuit, ids: readonly BlockId[]): readonly NetName[] {
+  const subject = new Set(ids)
+  return crossingNets(c)
+    .filter((n) => {
+      const inside = [...n.blocks].filter((b) => subject.has(b))
+      const leaves = [...n.blocks].some((b) => !subject.has(b))
+      return inside.length > 1 && !leaves && !c.rails.has(n.net) && !c.offSheet.has(n.net)
+    })
+    .map((n) => n.net)
 }
 
 export interface EdgeCensus {

@@ -18,7 +18,7 @@
  * the charitable reading and **ADDS 3 and 5 under the correct one.**
  */
 import { beforeAll, describe, expect, it } from "bun:test"
-import { crossingNonRailNets, edgeCensus, flatSubgraphOf, renderEdgeCensus, type EdgeCensus } from "../../tools/schgen/remeasure-edges.ts"
+import { crossingNonRailNets, edgeCensus, flatSubgraphOf, governingNetsOf, renderEdgeCensus, type EdgeCensus } from "../../tools/schgen/remeasure-edges.ts"
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { elkInputOf } from "../../lib/schgen/elk/graph.ts"
@@ -71,11 +71,25 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
    * not rails*, which is non-empty here and which a circuit could have none of.
    */
   it("predicts the difference from the crossing non-rail nets, on both circuits", () => {
+    // On a WHOLE circuit the fourth clause is vacuous - nothing can leave the subject - so the
+    // three-clause set and the four-clause set agree. This is what makes the whole-circuit figures
+    // right under either sentence, and it is asserted rather than assumed.
     expect(oc.crossingNonRail).toEqual(["OUT_PRE", "VBIAS", "VBIAS_RAW"])
     expect(tp.crossingNonRail).toEqual(["BASE", "BYPASS_CAP", "BYPASS_JUMPED", "COLLECTOR", "EMITTER"])
     // The prediction and the measurement are compared, which is the check round 1 skipped.
     expect(oc.crossingNonRail.length).toBe(oc.blockEdgeTotal - oc.flatEdges)
     expect(tp.crossingNonRail.length).toBe(tp.blockEdgeTotal - tp.flatEdges)
+  })
+
+  it("agrees with the four-clause set on a WHOLE circuit, where clause four is vacuous", () => {
+    const symbols = parityResolver()
+    for (const name of ["optical-compressor", "transistor-preamp"]) {
+      const found = PARITY_CASES.find((c) => c.name === name)
+      if (found === undefined) throw new Error(`no ${name} parity case`)
+      const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
+      const all = [...circuit.blocks.keys()]
+      expect(governingNetsOf(circuit, all).slice().sort(), name).toEqual(crossingNonRailNets(circuit).slice().sort())
+    }
   })
 
   it("counts a set that is NON-EMPTY, so the rule is not vacuously satisfied", () => {
@@ -148,12 +162,26 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
    * all three agree with what was measured.
    */
   it("predicts EQUALITY on the five-leg union, where the governing set is empty, and 24 against 24 is measured", () => {
+    // Fix round 2, item B: the set is COMPUTED by governingNetsOf, with all four clauses, rather
+    // than read off g.external as a proxy. Under the three-clause sentence round 1 published, the
+    // union's set is {BASE, COLLECTOR} and not empty - it is empty only once the fourth clause,
+    // does-not-leave-the-subject, is applied, and both of those nets reach tp-stage.
     const symbols = parityResolver()
     const found = PARITY_CASES.find((c) => c.name === "transistor-preamp")
     if (found === undefined) throw new Error("no transistor-preamp parity case")
     const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
     const legs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
     const g = flatSubgraphOf(circuit, legs, symbols, "legs~flat", "flat")
+    // THE THREE-CLAUSE SET, which is what round 1's sentence literally named: NOT empty.
+    const threeClause = crossingNonRailNets(circuit).filter((net) =>
+      legs.some((id) => {
+        const block = circuit.blocks.get(id)
+        return block?.members.some((m) => circuit.pins.some((pin) => pin.part === m.part && pin.net === net)) ?? false
+      }),
+    )
+    expect(threeClause.sort()).toEqual(["BASE", "COLLECTOR"])
+    // THE FOUR-CLAUSE SET, which is the rule: empty, because both of those leave the union.
+    expect(governingNetsOf(circuit, legs)).toEqual([])
     // A net leaving the union is still multi-block and still gets its boundary node, which is the
     // truth about a sub-circuit - and is why Step 4's five-leg figures did not move when the fix
     // landed.

@@ -177,14 +177,25 @@ baseline.**
 `edgesForNet` makes a net of degree n into n - 1 chain edges; under the blocked
 declaration a net crossing k blocks is labelled, external in each, and
 contributes `(U + k) - k = U`, while under the flat declaration it is internal
-unless it is a rail and contributes `U - 1`. **So blocked minus flat is the count
-of nets that cross a block boundary and are not rails:**
+unless it is a boundary net of the subject and contributes `U - 1`; a boundary net
+of the subject contributes `U` on both sides and cancels. **So blocked minus flat
+is the count of nets that (1) cross a block boundary inside the subject, (2) are
+not rails, (3) are not off-sheet, and (4) do not leave the subject:**
 
-| circuit | those nets | predicted | measured |
+| subject | the governing set | predicted | measured |
 | --- | --- | --- | --- |
-| `optical-compressor` | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | 3 | **3** |
-| `transistor-preamp` | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | 5 | **5** |
-| the five-leg union | none | 0 | **0** |
+| `optical-compressor`, whole | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | 3 | **3** |
+| `transistor-preamp`, whole | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | 5 | **5** |
+| the five-leg union | **empty, and only by clause (4)**: `BASE` and `COLLECTOR` cross inside it and are not rails, but both reach `tp-stage` | 0 | **0** |
+
+**ALL FOUR CLAUSES ARE NAMED BECAUSE TWO OF THEM IS NOT THE RULE.** An earlier
+version of this document said *"crossing and not rails"* and printed a bare
+*"none"* for the union, which was false as literally stated - the two-clause set
+there is `{BASE, COLLECTOR}`. **The predicted figure was right and the set named
+was wrong.** Clause (3) is unexercised by any declaration here, because
+`buildCircuit` hard-codes `offSheet: new Set()`; `[RELAYED]` the review drove it
+by hand and the code predicted the measured 4 where the two-clause sentence
+predicted 5.
 
 **That a cross-block net is always labelled is `lib/schgen/ir/classify.ts:47` and
 not a measurement**, so the edge addition is a consequence of this generator's

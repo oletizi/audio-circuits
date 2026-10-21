@@ -2176,15 +2176,16 @@ ASSERTED.** `edgesForNet` makes a net of degree n into n - 1 chain edges. Under
 the BLOCKED declaration a net crossing k blocks is labelled, so it is external in
 each of them and gains a boundary terminal in each: it contributes
 `(U + k) - k = U`. Under the FLAT declaration the same net is internal unless it
-is a rail or off-sheet, so it contributes `U - 1`. A rail is a boundary net on
-both sides and contributes `U` on both. **So blocked minus flat is exactly the
-number of nets that cross a block boundary and are NOT rails:**
+is a boundary net of the subject, so it contributes `U - 1`; a boundary net of the
+subject contributes `U` on both sides and cancels. **So blocked minus flat is
+exactly the number of nets that (1) cross a block boundary inside the subject,
+(2) are not rails, (3) are not off-sheet, and (4) do not leave the subject:**
 
-| circuit | those nets | predicted difference | measured difference |
+| subject | the governing set | predicted difference | measured difference |
 | --- | --- | --- | --- |
-| `optical-compressor` | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | **3** | **3** |
-| `transistor-preamp` | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | **5** | **5** |
-| the five-leg union | **none** - every crossing net leaves the union or is a rail | **0** | **0** |
+| `optical-compressor`, whole | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | **3** | **3** |
+| `transistor-preamp`, whole | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | **5** | **5** |
+| the five-leg union | **empty - and only because of clause (4).** The crossing non-rail nets touching it are `BASE` and `COLLECTOR`; both reach `tp-stage`, so both leave the subject and cancel | **0** | **0** |
 
 **ROUND 1 STATED A RULE WHOSE REFUTATION ROUTE COULD NOT FIRE, AND THAT WAS
 WORSE THAN STATING IT FLATLY.** It said the difference is one edge per
@@ -2194,10 +2195,26 @@ two circuits had none. **`lib/schgen/ir/classify.ts:47` labels every net with
 claim was a property of `labelledNets` wearing a measurement's clothes, and round
 1's sentence *"nothing establishes that no such circuit exists"* was false:
 **`classify.ts:47` establishes it.** The sentence is withdrawn. The governing set
-is the one in the table above - *crossing and not a rail* - which is non-empty on
-both circuits and **empty on the five-leg union, where the same rule correctly
-predicts equality.** That is the refutation route firing in both directions on
-real subjects.
+is the one in the table above - the four clauses, not the two round 1 named -
+which is non-empty on both whole circuits and **empty on the five-leg union,
+where the same rule correctly predicts equality.** That is the refutation route
+firing in both directions on real subjects.
+
+**AND ROUND 1's OWN SENTENCE NAMED TWO OF THE FOUR CLAUSES, WHICH MADE ONE
+PUBLISHED FIGURE FALSE AS LITERALLY STATED - fix round 2, item B.** It said
+*"crossing and not rails"*. The code tests `!rail && !offSheet`, and a SUBJECT
+adds *does not leave it*. On the five-leg union the two-clause set is **`{BASE,
+COLLECTOR}`, not empty**, and `docs/schematic/m1-remeasurement.md` printed a bare
+*"none"*: **the predicted difference was right and the set named was wrong.**
+`governingNetsOf` now computes all four clauses and
+`tests/schgen/remeasure-edges.test.ts` asserts the two-clause set and the
+four-clause set SEPARATELY on that union, so the difference between them is a
+check rather than a caveat. **Clause (3) is unexercised by any declaration here** -
+`buildCircuit` hard-codes `offSheet: new Set()` (`lib/schgen/ir/build.ts:152`) -
+and `[RELAYED]` the review drove it by hand: with `BASE` off-sheet the measured
+difference is 4, the code predicts 4, and the two-clause sentence predicts 5. **So
+the code was already right about a case the published sentence was already wrong
+about.**
 
 **WHAT IS A PROPERTY OF THE IR RATHER THAN AN OUTCOME, stated plainly because it
 is the load-bearing half.** That a cross-block net is ALWAYS labelled, and
