@@ -1195,6 +1195,17 @@ not have. **Those are products of modularization, not foreign matter.**
 > > price. **So the delta list was never what stood in the way; the generator's
 > > input validation was**, and nothing in this row contemplated that.
 > >
+> > **FURTHER AMENDED 2026-10-21 UNDER RULING R70: *"115 and 101"* IS HISTORICAL,
+> > MEASURED UNDER THE OLD RULE COMPOSITION, AND THE CORRECTED CONCLUSION IS
+> > UNCHANGED.** Task 20 took `bomFields` out of `validateCircuit` under the
+> > owner's ruling that the BOM requirement belongs to the CONSUMER of an
+> > artifact. `[RAN]`: `pt2399-core` refuses at gate 1 on **18**;
+> > `transistor-preamp` validates clean and `generate` refuses it at **layout**,
+> > on **G232**'s field-placement defect. **The generator's input validation is
+> > still what stood in the way for one of the two, and a LAYOUT defect is what
+> > stands in the way for the other** - the delta list is still not it.
+> > `docs/known-gaps.md` **G245**.
+> >
 > > **The first row's word *"exercised"* is scope-wording and is read as *ported
 > > for*, not as a claim that it ran** - that cell answers *what is ported*. It is
 > > flagged rather than rewritten because rewriting a scope cell to carry an
@@ -1927,6 +1938,20 @@ delta. M1 still produces no Pultec section schematic.
 > layout backend - so the half is ported, driven and wired, and it has run on two
 > real hand-arranged drawings and on nothing generated. `docs/known-gaps.md`
 > **G238** and **G240**.
+>
+> **FURTHER AMENDED 2026-10-21 UNDER RULING R70.** *"115 and 101"* above is
+> HISTORICAL - measured before Task 20 took `bomFields` out of the drawing path
+> under the owner's ruling that the BOM requirement belongs to the CONSUMER of an
+> artifact. `[RAN]` after it: `pt2399-core` **18** at gate 1;
+> `transistor-preamp` **0** at gate 1, refusing instead at layout on **G232**'s
+> field-placement defect. **"Exercised" is still not true of a generated drawing
+> and still cannot be made true inside M1 as it stands**, so this amendment's
+> conclusion is untouched; what changed is that the **four authoring classes**
+> the R56 amendment above names ("*Closing this needs the four authoring classes
+> G238 names*") **are now three** - the BOM class is gone because the drawing
+> path stopped asking, not because any circuit grew purchasing data - and for
+> `transistor-preamp` the remaining wall is one LAYOUT defect and no authoring
+> work at all. `docs/known-gaps.md` **G245**.
 
 **M1 producing no Pultec schematic is not a cost to be minimised**, and the
 parent says so in terms: the milestone order *"is the discipline rather than an

@@ -98,9 +98,10 @@ describe.each(PARITY_CASES.map((c) => [c.name, c] as const))("%s", (_name, c) =>
  * **WHICH RULES REFUSE, AND THAT IT IS ONLY THESE FOUR** - Task 9 review, round 1, item I4.
  *
  * `circuitSpecFrom`'s output does NOT validate clean, and that is the consequence of obeying
- * G99's criterion rather than a violation of it: making it pass would need an invented net
- * rename, an invented no-connect reason and invented BOM fields, which are three of the exact
- * inventions the criterion forbids. Each refusing rule has a register entry - `netNames`
+ * G99's criterion rather than a violation of it: making `validateCircuit` pass would need an
+ * invented net rename and an invented no-connect reason, and making `validateSourcing` pass would
+ * need invented BOM fields - three of the exact inventions the criterion forbids, now split across
+ * the two compositions rather than all three gating a drawing (Task 20, **G245**). Each refusing rule has a register entry - `netNames`
  * **G150**, `pinsDeclared` **G151**, `singlePinNets` **G159**, `bomFields` **G149** - and this
  * test locks all four deferrals at once.
  *
