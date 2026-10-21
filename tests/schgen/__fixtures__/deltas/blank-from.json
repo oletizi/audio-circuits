@@ -1,0 +1,11 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "",
+      "why": "a fixture: a delta that names no transformation, which parseDeclaredDeltas must refuse",
+      "edit": { "kind": "setValue", "part": "R1", "value": "10k" }
+    }
+  ]
+}
