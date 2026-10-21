@@ -824,6 +824,12 @@
     "tests/schgen/readability/baseline.test.ts",
     "tests/schgen/readability/finding.test.ts",
     "tests/schgen/generate-digest.test.ts",
-    "tests/schgen/gate-census.test.ts"
+    "tests/schgen/gate-census.test.ts",
+    "tools/schgen/remeasure.ts",
+    "tools/schgen/remeasure-spikes.ts",
+    "tools/schgen/remeasure-ceiling.ts",
+    "tools/schgen/remeasure-composed.ts",
+    "tools/schgen/remeasure-criteria.ts",
+    "tests/schgen/remeasure.test.ts"
   ]
 }

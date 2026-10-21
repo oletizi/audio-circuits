@@ -443,6 +443,39 @@ export function blocksOutside(rows: readonly Remeasurement[], bound: BlockSizeDe
     .map((r) => `${r.block} has ${r.geometry.placements} placements, above the ceiling of ${bound.ceiling}: ${r.scale.kind}`)
 }
 
+/**
+ * WHICH GATE OF SPEC §1.4's REALIZATION CONTRACT REFUSED A BLOCK, read off the refusal's own words.
+ *
+ * **IT IS A WHITELIST THAT THROWS, AND THAT IS THE POINT.** The question *"how many of the seven
+ * non-drawing blocks reach `checkLayout` and how many refuse earlier"* is one a reader needs and
+ * cannot get from a refusal count, and the honest way to answer it is to recognise each refusal's
+ * own sentence. A default arm would silently file a refusal nobody has read under a gate it may not
+ * belong to - and this classification is printed in a document, so a wrong one would be published.
+ * A new refusal arm in `lib/schgen/elk/adapt.ts` fails here, naming the text it could not place.
+ */
+export const REFUSAL_GATES: readonly { readonly marker: string; readonly gate: string }[] = [
+  { marker: "port coordinate(s) that disagree", gate: "obligation 3: one transform, two readers" },
+  { marker: "overlap(s) that are", gate: "clause (d) pre-snap: an ambiguous wire overlap" },
+  { marker: "collapsed geometry that was distinct", gate: "obligation 1: the snap collapsed geometry" },
+  { marker: "CREATED", gate: "obligations 1 and 5: snapping created an ambiguous overlap" },
+  { marker: "the junctions the sheet emitter would place disagree", gate: "obligation 2: a branch point with no junction" },
+  { marker: "does not pass the clearance checks", gate: "obligation 4: checkLayout" },
+]
+
+export function gateOf(refusal: string): string {
+  const found = REFUSAL_GATES.find((r) => refusal.includes(r.marker))
+  if (found === undefined) {
+    throw new Error(
+      `this refusal matches no gate marker, so which stage of spec 1.4's realization contract ` +
+        `produced it cannot be reported: ${refusal.slice(0, 200)}. It is NOT filed under a default ` +
+        "gate - the classification is published in docs/schematic/m1-remeasurement.md and a wrong " +
+        "one would be a published claim about a stage that did not refuse. Add the marker to " +
+        `REFUSAL_GATES with the obligation it names. Known markers: ${REFUSAL_GATES.map((r) => r.marker).join(" | ")}.`,
+    )
+  }
+  return found.gate
+}
+
 /** One row as a line: the per-block figures, the stage, and the spike verdict beside them. */
 export function renderRow(r: Remeasurement): string {
   const m = r.geometry.measures
@@ -462,7 +495,7 @@ if (import.meta.main) {
   for (const r of rows) console.log(renderRow(r))
   console.log("")
   for (const r of rows) {
-    if (r.geometry.refusal !== null) console.log(`REFUSED ${r.block}: ${r.geometry.refusal.slice(0, 300)}`)
+    if (r.geometry.refusal !== null) console.log(`REFUSED ${r.block} at ${gateOf(r.geometry.refusal)}`)
   }
   console.log("")
   for (const line of blocksOutside(rows)) console.log(`OUTSIDE THE REPORTING BOUND ${line}`)
