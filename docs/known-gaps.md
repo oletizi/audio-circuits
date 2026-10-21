@@ -1257,7 +1257,10 @@ happily.** Different failures; neither substitutes for the other.
   hand-arranged references at gate 1 - 115 and 101 `validateCircuit` problems -
   before any block reaches a layout backend. So the gate's own subject, *a
   generated drawing*, does not exist for either reference, and **G240** records
-  that state with its price. The Pultec-specific manifest remains M2 for the
+  that state with its price. (**Task 20 moved one of the two blockers without
+  removing it**: `transistor-preamp` now validates clean and `generate` refuses it
+  at layout on **G232**'s defect, `pt2399-core` still refuses at gate 1 on 18 -
+  **G245**. The gate's subject still does not exist for either.) The Pultec-specific manifest remains M2 for the
   reason this entry already gave: **M1 emits no Pultec section schematic at
   all.**
 - **What would settle it** **CRITERION: a generated schematic for at least one
@@ -10609,6 +10612,20 @@ declaration is the silent default the brief forbids by name; widening
 manufacturers and supplier part numbers into four authoring files is fabricated
 purchasing data, which is worse than none because it looks orderable.
 
+> **AMENDED 2026-10-21 BY TASK 20, AND THE FOURTH OPTION WAS THE ONE NOBODY HAD.**
+> *"the moment anyone validates the circuit"* is no longer true of a DRAWING:
+> `validateCircuit` does not run `bomFields` any more and `validateSourcing`
+> does, under the owner's ruling that the BOM requirement is a property of the
+> CONSUMER of an artifact rather than of the circuit. **The decision above is not
+> withdrawn** - `unsourced` stays, is not optional, and the three alternatives are
+> still worse - and `declared` / `unsourced` is now read as what it always
+> actually was, a statement about SOURCING READINESS. **What this entry got
+> structurally wrong is worth more than the sentence: all four options it weighed
+> accept that a purchasing rule gates a drawing**, plausibly because the rule
+> lives in a port-managed file whose header says to edit the pedals source
+> instead. **G245** carries his words verbatim, the measurement, and the
+> divergence that implements it.
+
 - **Found** 2026-10-20, Task 9, Step 4.
 - **Evidence** `bun tools/schgen/authoring-census.ts` builds all four circuits
   and would have reported a `provenance` or `mpn` to read if there were one;
@@ -12905,7 +12922,8 @@ Task 11 made gate 8 report `OSCAR_NOT_PORTED` for a design that declares `oscar`
 unavailability was then a fact about the PORT, and gate 7's missing piece was the INPUT - a real
 difference. **Task 18 ported gate 8's M1 comparison, so that difference is gone**: gate 8 is now
 available and complete too, and what it lacks is also an input - a GENERATED schematic, which
-**G238** measures as unavailable for both references, and **G240** records. The two gates are now
+**G238** measures as unavailable for both references, and **G240** records (still unavailable for
+both after Task 20, for two now-different reasons - **G245**). The two gates are now
 one shape with two different missing inputs, and the paragraph is kept rather than deleted because
 its reasoning about gate 7 stands unchanged. A design with no
 checklist has nothing to trace to, and inventing a `SCHEMATIC-CHECKLIST.md` so the gate has
@@ -13551,6 +13569,20 @@ than re-worded:**
 | `optical-compressor` | 1 | 14 | 0 | 0 | 148 |
 | `pt2399-core` | 1 | 17 | 0 | 1 | 96 |
 | `transistor-preamp` | 1 | 0 | 0 | 0 | 100 |
+
+> **AMENDED 2026-10-21 BY TASK 20.** The `bomFields` column above is no longer a column of GATE-1
+> refusals: `validateCircuit` stopped running the rule and `validateSourcing` runs it, under the
+> owner's ruling that the BOM requirement belongs to the CONSUMER of an artifact (**G245**). The
+> per-class table is left as measured, because it is what made the change worth making. `[RAN]`
+> after the change the census reports **4 / 15 / 19 / 1** against the **40 / 163 / 115 / 101**
+> above, and the sourcing counts are the same **36 / 148 / 96 / 100** this column holds.
+> **THIS ENTRY'S CRITERION IS STILL UNMET and its own warning is why**: it said *"that would NOT by
+> itself satisfy the criterion"*, and gates 3 and 6 still run on no circuit in `circuits/` -
+> `transistor-preamp` now validates clean and `generate` refuses it at layout on **G232**'s
+> field-placement defect. **Its mechanism's predicted figure landed exactly** - *"would drop the
+> remaining refusals to 3 / 14 / 18 / 0"*, and the drawing refusals are **3 / 14 / 18 / 0** -
+> **reached by moving the gate rather than by supplying any BOM data**, which is a route this entry
+> did not consider.
 
 **BOM FIELDS ARE 380 OF THE 419 REFUSALS - 91%.** That is one finding, not four hundred: the
 circuit model has no BOM, so `from-network.ts` emits empty `Manufacturer`, `MPN`, `Supplier` and
@@ -17178,7 +17210,21 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > **before any block reaches a layout backend at all** - so every figure in this
 > entry describes a stage neither circuit's generation currently reaches. The
 > leverage is real as a statement about block layout and it buys **no** new
-> generated schematic by itself. **A scope decision taken on "9 of 12" as though
+> generated schematic by itself.
+>
+> **AMENDED 2026-10-21 BY TASK 20, AND THIS IS THE DIRECTION THAT CHANGED: THE
+> DEFECT IN THIS ENTRY IS NOW THE WHOLE OF ONE CIRCUIT'S WALL.** With `bomFields`
+> out of the drawing path (the owner's ruling, **G245**), `[RAN]`
+> `transistor-preamp` validates clean - **0** `validateCircuit` problems - and
+> `generate` refuses it **at layout**, on this entry's defect, in
+> `tp-leg-emitter-bypass`: *"JP5#1 (Jumper:Jumper_2_Open): no place for its
+> Reference and Value"*. **So for that one circuit "fix this defect" and "get a
+> generated drawing, and with it gate 8's first real run" are now the same
+> sentence**, which is what the paragraph above says was NOT true before. It is
+> still not true of `pt2399-core`, which refuses at gate 1 on 18 problems. **This
+> is bait, recorded beside the trap: nothing here estimates the defect's size,
+> ruling R46 reserves it as an owner-visible scope decision, and Task 20 did not
+> touch it.** **A scope decision taken on "9 of 12" as though
 > it were draw coverage of whole circuits would be taken on a number that does
 > not mean that**, and the figure was published here before anybody had put the
 > gate-1 refusal beside it. **G239** adds the other half: five of the eleven
@@ -17835,6 +17881,22 @@ single block reaches a layout backend.** `[RAN]` `bun tools/schgen/gate-census.t
 | `opamp-buffer` | 40 | 1 header; 3 pinsDeclared (**G151**); 36 bomFields |
 | `optical-compressor` | 163 | 1 header; 14 netNames; 148 bomFields |
 
+> **AMENDED 2026-10-21 BY TASK 20, AND THE TABLE ABOVE IS LEFT AS MEASURED
+> BECAUSE IT IS WHY THE CHANGE HAPPENED.** The owner ruled that the BOM
+> requirement is a property of the CONSUMER of an artifact rather than of the
+> circuit (*"a fully specified BOM isn't needed for schematics, stripboard
+> layout, and, in many cases, tht pcbs"*), so `validateCircuit` no longer runs
+> `bomFields` and `validateSourcing` does. `[RAN]` `bun tools/schgen/gate-census.ts`
+> after the change: `opamp-buffer` **4**, `optical-compressor` **15**,
+> `pt2399-core` **19**, `transistor-preamp` **1** - and that last one is the
+> HARNESS's refusal (a missing `refs.lock.json`, because `runGates` forces
+> `initLock: false`), not the circuit's. **`transistor-preamp` validates clean
+> and refuses at LAYOUT instead**, inside `tp-leg-emitter-bypass`, on the
+> field-placement defect this entry's own block table below already names. **So
+> THIS ENTRY'S HEADLINE STILL HOLDS - neither reference can be generated - and
+> one of its two reasons has changed.** **G245** carries the ruling, the
+> per-circuit figures and the evidence.
+
 `generate` calls `validateCircuit` and throws on a non-empty problem list
 (`tools/schgen/generate.ts`, the `circuit is invalid:` raise), and `realiseBlock`
 - the function that would reach field placement - is called later, from
@@ -17920,6 +17982,12 @@ was built under it with the price of its not having run.
   refusal (**G232**, with **G239**'s measurement of how much room its candidate
   set really has). **Nothing here estimates the order or the size of any of
   them**, and the count of classes is not a count of edits.
+  **AMENDED BY TASK 20: the first of those five is no longer one of them**, and
+  not because it was done - because the drawing path stopped asking (the ruling,
+  in **G245**). What remains for `pt2399-core` is the net names and the single-pin
+  net; what remains for `transistor-preamp` is **the field-placement refusal
+  alone**, which makes **G232** the whole of its wall and makes this criterion's
+  first half already met for it.
 
 ### G239 - MEASURED: FIVE of the eleven candidate field slots can NEVER serve a small two-pin passive, so G232's "give it more candidate positions" mechanism starts from six usable slots and not eleven
 
@@ -18061,6 +18129,17 @@ generated drawing* - does not exist for either reference, and no design in this
 repository declares `oscar`, so `oscarGate`'s comparison is reachable only from
 `tests/schgen/gates/reference-graph.kicad.test.ts`.
 
+> **AMENDED 2026-10-21 BY TASK 20: ONE OF THE TWO REFERENCES NO LONGER REFUSES AT
+> GATE 1, AND THE GATE IS STILL UNREACHABLE.** Under the owner's ruling that the
+> BOM requirement belongs to the CONSUMER of an artifact, `validateCircuit`
+> stopped running `bomFields`. `[RAN]` `transistor-preamp` now validates clean -
+> **0** drawing problems, where 100 of its 101 were empty purchasing fields - and
+> `generate` refuses it **at layout** instead, inside `tp-leg-emitter-bypass`, on
+> **G232**'s field-placement defect. `pt2399-core` still refuses at gate 1, on
+> **18**. **So this entry's headline is unchanged and its "why" is now two
+> different reasons**, one of which is a single defect rather than authoring
+> work. **G245** carries the measurement and the probe that produced it.
+
 **THE PRICE, which is what G226 asks for rather than the fact.** The gate exists
 to catch a defect class the round trip structurally cannot: *a generator that
 mangles a circuit the same way at both ends passes a round trip happily.*
@@ -18109,7 +18188,9 @@ contract. Citing it rather than re-deriving it is R51's instruction.
 - **Why it is open** the input does not exist. **It is open rather than being a
   deferral, because nothing about the gate is waiting on a decision** - what is
   waiting is **G238**'s four classes of authoring work on the circuits plus
-  **G232**'s field-placement defect.
+  **G232**'s field-placement defect. **Since Task 20 that list is one class
+  shorter and, for `transistor-preamp`, it is G232's defect and nothing else**
+  (**G245**).
 - **What would settle it** **CRITERION: `oscarGate` reports a gate 8 row for a
   design whose generated schematic exists, with an EMPTY permitted delta and an
   empty `undeclared` list - or a non-empty one, which would be a generator
@@ -18761,3 +18842,180 @@ precision it did not have.** The restoration's comment says `refineBoth` is
 characters against 2070** - so a reader diffing would have seen a whitespace
 hunk. The extra newline is removed and the block is now byte-identical, driven
 with a control that the comparison detects a one-character change.
+
+### G245 - OWNER DECISION: the BOM requirement is a property of the CONSUMER of an artifact, so the drawing path stopped asking - and `transistor-preamp`'s blocker MOVED rather than cleared
+
+**THE OWNER'S WORDS, VERBATIM, AND THEY ARE THE CRITERION.** He asked first:
+
+> *"why does a schematic need bom-level specificity?"*
+
+and then, when the answer came back that it does not:
+
+> *"the gate you describe \*is\* important for pcb layout intended for outsourced
+> manufacture-but a fully specified BOM isn't needed for schematics, stripboard
+> layout, and, in many cases, tht pcbs."*
+
+So: **the BOM requirement is a property of the CONSUMER of an artifact rather
+than of the circuit.** It binds when a part has to be sourced and placed by
+somebody else. **A schematic is never that artifact** - it is upstream of every
+one of those decisions. **A stripboard layout built by hand is not either**, and
+**a through-hole board the owner stuffs himself usually is not** - those are the
+three cases he excluded, by name.
+
+**WHAT WAS WRONG, AND WHERE.** `lib/schgen/ir/validate-parts.ts`'s `bomFields`
+requires `Manufacturer`, `MPN`, `Supplier` and `SupplierPart` non-empty on every
+part whose `refPrefix` is not `TP`, `H` or `FID`. `lib/schgen/ir/validate.ts`
+had it in `validateCircuit`'s single `RULES` list, and
+`tools/schgen/generate.ts` calls `validateCircuit` and throws on any problem
+before it emits anything. **So four purchasing fields per part gated the
+emission of a drawing**, and for one circuit that was the ONLY thing gating it:
+`[RAN]` `bun tools/schgen/gate-census.ts` before the change reported
+`transistor-preamp` at **101** gate-1 problems - 1 header and **100**
+`bomFields` - with nothing else wrong with the circuit.
+
+**THE FIX IS A COMPOSITION AND NOT A RULE CHANGE.** `validateCircuit` now runs
+`DRAWING_RULES`, the eleven rules a drawing depends on; a new `validateSourcing`
+runs `SOURCING_RULES`, which is `[bomFields]`. **`bomFields` itself is
+untouched** - `validate-parts.ts` is still in the port's `files[]` and still
+byte-checked, the four keys and `BOM_EXEMPT_PREFIXES` are unchanged, and no
+flag, mode or widened exemption relaxes it in place. The split is a **declared
+divergence** from the port (`tools/schgen/port-manifest.json`, `Task 20`, with
+the upstream `sourceSha`), because a `cuts` entry is deletion-only and could not
+carry the half of the ruling that has to survive: the consumer the rule still
+binds for.
+
+**WHY THE EARLIER DECISION DID NOT CATCH THIS, WHICH IS THE BETTER LESSON.**
+`lib/schgen/authoring.ts`'s `BomSource` comment is an honest, well-reasoned
+decision - **G149** - that weighed four options: declaring the fields per
+component, blanking them with no declaration, widening `BOM_EXEMPT_PREFIXES`,
+and writing plausible manufacturers and supplier part numbers. **All four accept
+that a purchasing rule gates a drawing.** The option the owner's question raises
+- that the gate is in the wrong PLACE - was not among them, and the plausible
+reason is structural: `validate-parts.ts` is port-managed and its header says
+*"Edit the pedals source and re-run the port rather than hand-editing this
+file"*, so changing the rule was outside the frame the decision was made in.
+**A port's edit rule can quietly bound what a decision is allowed to consider**,
+and that is worth more than the fix.
+
+**THE MEASUREMENT, PER CIRCUIT.** `[RAN]` a scratch script over
+`circuitSpecFrom` + `buildCircuit`, calling both compositions:
+
+| circuit | DRAWING problems (`validateCircuit`) | the classes | SOURCING problems (`validateSourcing`) |
+| --- | --- | --- | --- |
+| `opamp-buffer` | **3** | 3 `pinsDeclared` (**G151**) | **36** |
+| `optical-compressor` | **14** | 14 `netNames` (**G150**) | **148** |
+| `pt2399-core` | **18** | 17 `netNames`; 1 `singlePinNets` (**G159**) | **96** |
+| `transistor-preamp` | **0** | - | **100** |
+
+`[RAN]` `bun tools/schgen/gate-census.ts` after the change agrees, off by the
+one `header` line each as **G178** explains: **4 / 15 / 19** for the first three.
+The sourcing figures are **the same 36 / 148 / 96 / 100** the register and
+`tests/schgen/authoring-complete.test.ts` carried as `bomFields` counts before
+the split, which is the check that the rule still runs on all four circuits.
+
+**AND THIS IS EXACTLY THE FIGURE G178's MECHANISM PREDICTED, BY A ROUTE IT DID
+NOT CONSIDER.** That entry's untried mechanism was *"a `bom` entry in
+`ComponentOverride` (or a per-circuit BOM beside the authoring declaration)
+would drop the remaining refusals to **3 / 14 / 18 / 0**"*. Task 20 supplied no
+BOM data at all and the drawing refusals are **3 / 14 / 18 / 0**. The entry also
+said *"that would NOT by itself satisfy the criterion"*, and it was right -
+see the next paragraph.
+
+**GATE 8's FIRST RUN AGAINST A GENERATED DRAWING IS STILL NOT REACHABLE, AND
+THE BLOCKER MOVED RATHER THAN CLEARING. THIS IS THE RESULT WORTH READING.**
+`[RAN]` a scratch probe that builds each parity design exactly as
+`tools/schgen/gate-census.ts`'s `parityDesign` does and calls `generate` with
+`initLock: true` into a `mkdtemp` directory (the committed census forces
+`initLock: false`, so it cannot get past the reference lock):
+
+| circuit | where `generate` refuses now |
+| --- | --- |
+| `opamp-buffer` | validation: `part U1: pin 5 (+) is neither on a net nor declared not connected`, and two more |
+| `optical-compressor` | validation: 14 net names, `"+9V_PROTECTED"` first |
+| `pt2399-core` | validation: 17 net names and the one single-pin net, `"+5V"` first |
+| `transistor-preamp` | **validates clean and refuses at LAYOUT**: `block tp-leg-emitter-bypass: ... JP5#1 (Jumper:Jumper_2_Open): no place for its Reference and Value` |
+
+So for `transistor-preamp` the wall is now **one defect** - the field-placement
+refusal **G232** records and **G238**'s block table already measured - instead
+of four classes of authoring work. **Nothing here attempted it**: ruling R46
+reserves **G232** as an owner-visible scope decision, and the brief for this
+task says to report this rather than pursue it. **Gate 8 was NOT run**; the
+reachability answer above is read off `generate`'s own refusal, which is the
+thing that has to stop happening first.
+
+**A SIDE EFFECT ON THE CENSUS, RECORDED BECAUSE THE ROW NO LONGER MEASURES WHAT
+A READER WILL THINK IT MEASURES.** `transistor-preamp`'s gate-1 row is now
+`1 other: <tmpdir>/refs.lock.json not found; run pnpm schgen generate --init transistor-preamp.design.ts to create it`.
+That is **the harness's refusal rather than the circuit's**: `runGates` forces
+`initLock: false`, so the generation only reads and the reference lock the
+circuit needs is never created. Two consequences. First, the one circuit that
+now validates is the one whose census row says least about it. Second, **the row
+contains an absolute temp path, so that line of the census output differs on
+every run** - every other line is stable. Nothing is fixed here: changing
+`initLock` is a change to `tools/schgen/verify.ts`'s contract, not to the
+census, and it would make a census run write files.
+
+**WHAT MUST SURVIVE TWO OPPOSITE FUTURE ERRORS.** `bomFields` is **not dead
+code and must not be deleted**: it is correct and load-bearing for a consumer
+that has to source and place parts, which is the case the owner named -
+*"pcb layout intended for outsourced manufacture"*. **G241** on this branch is a
+safeguard deleted precisely because no check could fail on it, and restored a
+round later. Equally, **it must not be put back into `DRAWING_RULES` to make
+validation uniform**: uniformity is what the ruling refuses, and the price is
+measured above. `lib/schgen/ir/validate.ts`'s header states both, and
+`tests/schgen/authoring-complete.test.ts` asserts that no BOM problem reaches
+the drawing path.
+
+**THE UPSTREAM OBSERVATION, FOR THE OWNER, NOT ACTED ON.** This decision is
+about THIS repository. `digital-pedal-platform`'s generator may legitimately
+require sourcing data before it emits, if what its output feeds is a board going
+out for assembly - the divergence here is declared and does not ask upstream to
+change. **Nothing in the sibling tree was touched** and it was left clean; this
+writer has not read its board process and has no view on whether its gate is in
+the right place for it.
+
+- **Found** 2026-10-21, Task 20, from a question the owner asked about
+  `transistor-preamp`'s refusal count.
+- **Evidence** every figure above was driven in the same session and its output
+  pasted into the task report. **Checks that could have failed, and were each
+  driven red once:** putting `bomFields` back into `DRAWING_RULES` fails
+  `tests/schgen/authoring-complete.test.ts` naming itself (*"a purchasing field
+  refused a DRAWING"*); an empty `SOURCING_RULES` fails that file's sourcing
+  counts and both V10 cases in `tests/schgen/ir/validate.test.ts`; a
+  `BOM_EXEMPT_PREFIXES` widened to cover `R` fails the V10 exemption case's new
+  control alone, and the widening was reverted and the revert verified by the
+  port's own byte-check rather than by eye. **The divergence declaration is
+  load-bearing in both directions:** with the `diverged[]` entry removed,
+  `tests/schgen/port-fidelity.test.ts` fails with *"on disk under lib/schgen/
+  but in none of files[], diverged[] or handWritten"*; with it restored, 12 pass
+  / 0 fail. **And the divergence was necessary rather than convenient:**
+  `rewrite(source) === disk` is **false** for `ir/validate.ts` (so the
+  byte-check would have caught the edit had the entry stayed in `files[]`) and
+  **true** for `ir/validateParts.ts`, which is the control proving the rule file
+  is untouched.
+- **Verified** CONFIRMED - this writer made every edit, ran every probe and read
+  every output quoted here. **The `G232` field-placement defect is RELAYED**
+  from that entry and from **G238**'s block table; what is confirmed here is
+  that `generate` now reaches it for `transistor-preamp`, which is the refusal
+  the probe printed.
+- **Why it is open** three things, none of them resolved. (1) `validateSourcing`
+  **has no production caller**: nothing in this repository emits an artifact
+  somebody else sources, so the rule is exercised by tests alone - deliberate
+  and recorded, not an oversight. (2) `transistor-preamp` validates and still
+  does not generate, for a defect this task did not touch. (3) The census row
+  above measures the harness.
+- **What would settle it** three criteria, kept apart from their mechanisms.
+  **(a) CRITERION: the first consumer in this repository that emits an artifact
+  somebody else sources and places refuses on `validateSourcing` before it
+  emits.** **MECHANISM, untried:** whatever produces a fabrication or assembly
+  package calls it the way `generate` calls `validateCircuit`. **(b) CRITERION:
+  `bun tools/schgen/gate-census.ts` reports zero gate-1 problems for a reference
+  AND `bun tools/schgen/remeasure-coverage.ts` reports every block of that
+  reference as DRAWS** - **G238**'s criterion, unchanged, with the first half now
+  met for `transistor-preamp` and the second half not. **MECHANISM, untried and
+  it is not this task's:** **G232**'s defect, which ruling R46 reserves.
+  **(c) CRITERION: `transistor-preamp`'s census row names a refusal of the
+  CIRCUIT**, so that the one circuit which validates is legible in the committed
+  census. **MECHANISM, untried and this writer has not judged it:** a census that
+  can create a reference lock in its own scratch directory, which today means
+  changing what `runGates` forces.
