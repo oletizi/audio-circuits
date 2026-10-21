@@ -19142,9 +19142,21 @@ the right place for it.
   `tests/schgen/authoring-complete.test.ts` naming itself (*"a purchasing field
   refused a DRAWING"*); an empty `SOURCING_RULES` fails that file's sourcing
   counts and both V10 cases in `tests/schgen/ir/validate.test.ts`; a
-  `BOM_EXEMPT_PREFIXES` widened to cover `R` fails the V10 exemption case's new
-  control alone, and the widening was reverted and the revert verified by the
-  port's own byte-check rather than by eye. **The divergence declaration is
+  `BOM_EXEMPT_PREFIXES` widened to cover `R` fails **both** V10 cases and the
+  port's byte-check as well, and the widening was reverted and the revert
+  verified by that byte-check rather than by eye.
+
+  **THAT THIRD DRIVE WAS DESCRIBED AS FAILING THE NEW CONTROL "ALONE" AND IT DOES
+  NOT; the substantive claim holds at LINE granularity and is restated there**
+  (review item 3). `[RAN]` with `"R"` added to the exemption list: **16 pass / 2
+  fail** - the DNP case fails too, correctly, because that fixture's `refPrefix`
+  is `R` and the widening exempts it; and `tests/schgen/port-fidelity.test.ts`
+  fails naming `lib/schgen/ir/validate-parts.ts`, correctly, because the rule
+  file is byte-checked. **What is true, and is the claim that matters:** inside
+  the exemption case, the **new control** (`part R_B: BOM field MPN is empty`)
+  fails while the **old absence-only assertion** (`not.toContain("part R_A …")`)
+  still passes - so an assertion that could not fail has genuinely been replaced
+  by one that can, and the perturbation distinguishes them line by line. **The divergence declaration is
   load-bearing in both directions:** with the `diverged[]` entry removed,
   `tests/schgen/port-fidelity.test.ts` fails with *"on disk under lib/schgen/
   but in none of files[], diverged[] or handWritten"*; with it restored, 12 pass
