@@ -15764,17 +15764,26 @@ target. This writer did not confirm it against `elkjs`'s router.
 - **Verified** CONFIRMED - this writer wrote and ran the count. **The explanation of WHY they are
   reversed is RELAYED from G189's reading of the edge model and is not confirmed against the
   router.**
+**THE RESIDUAL THIS ENTRY OPENED IS NOW CLOSED, and it is recorded here rather than left as a
+mechanism nobody tried.** Round 1 of this entry said *"nothing in the tree asserts that the sort is
+load-bearing"* and offered an assertion in `tests/schgen/elk/junctions.test.ts` as an untried
+mechanism, declining it on the ground that `junctions.ts` is Task 13's module. **That reason was
+weak** - adding a test modifies nobody's module - so the check was written instead, in
+`tests/schgen/readability/measures.test.ts` (*"collapses two REVERSED copies of one segment, which a
+direction-sensitive key would not"*), where it belongs because it is what **G218**'s inflation table
+rests on. It asserts `collapsed: 1` over two reversed copies of one segment, and carries the control
+that the same two segments on DIFFERENT nets are REFUSED rather than deduplicated - so the collapse
+is keyed on the net as well as on the geometry, which the first half alone would not establish.
+
 - **Why it is open** it is a measurement, and it is also a near miss worth keeping: the reason it
   was found is that a perturbation did nothing, and a perturbation that does nothing looks exactly
-  like a check with no teeth. **Nothing in the tree asserts that the sort is load-bearing**, so a
-  later reader simplifying `geometryKey` to a direction-sensitive key would see every test stay
-  green except **G218**'s inflation table.
-- **What would settle it** **CRITERION: a change that makes `geometryKey` direction-sensitive fails
-  a named check.** **MECHANISM, untried:** an assertion in
-  `tests/schgen/elk/junctions.test.ts` over two reversed copies of one segment, which must report
-  `collapsed: 1`. It is not added here because `junctions.ts` is Task 13's module and this entry's
-  finding arrived at the end of Task 16's review; **the criterion is the settlement and the
-  mechanism is this writer's guess at how to meet it.**
+  like a check with no teeth.
+- **What would settle it** nothing for the measurement. **The criterion it carried - *a change that
+  makes `geometryKey` direction-sensitive fails a named check* - IS MET**, by the test named above.
+  **What remains open is the explanation**, which is RELAYED: nothing has confirmed against
+  `elkjs`'s router that the reversal comes from consecutive chain edges running in opposite
+  directions. **MECHANISM, untried:** read the `ElkEdgeSection` provenance of one duplicate pair,
+  which `tools/schgen/elk/diagnose.ts` already prints for a raise.
 
 ### G220 - `bendsPerEdge`'s DENOMINATOR is this repository's and NOT the spikes', so G96's 1.72 and 2.19-3.27 must not be compared against it
 

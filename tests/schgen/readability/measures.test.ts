@@ -230,6 +230,34 @@ describe("the four measures of every block that draws", () => {
  * bends and bends per edge move the OTHER way - the raw list reports FEWER bends, because a
  * duplicate segment turns a degree-2 corner into a higher-degree node and a node is not a bend.
  */
+describe("the deduplication the raw-versus-canonical comparison rests on", () => {
+  /**
+   * **`geometryKey`'s SORT IS THE WHOLE DEDUPLICATION, AND `docs/known-gaps.md` G219 MEASURED THAT
+   * NOTHING ASSERTED IT.** `[RAN]` Over all twelve declared ELK blocks, **0 of 82** duplicate
+   * segments are duplicates under exact endpoint order and **82 of 82** are once the ends are
+   * sorted - so every exact duplicate ELK emits is direction-reversed, and a key built from `(a,
+   * b)` in order would collapse none of them. That is how perturbation P4 came to change nothing.
+   *
+   * This check is here rather than in `tests/schgen/elk/junctions.test.ts` because it is what the
+   * comparison below rests on: if the sort went away, the raw and canonical columns would agree on
+   * the six blocks that have duplicates and the inflation table would read as zero.
+   */
+  it("collapses two REVERSED copies of one segment, which a direction-sensitive key would not", () => {
+    const forward = wire("N", 0, 0, 4, 0)
+    const backward = wire("N", 4, 0, 0, 0)
+    const t = canonicalTopology({ placements: [], wires: [forward, backward], anchors: [] }, [])
+    if (!t.ok) throw new Error("two collinear copies of one segment are not an ambiguous overlap")
+    expect(t.collapsed, "the reversed copy is a duplicate").toBe(1)
+    expect(t.wires.length).toBe(1)
+    expect(measuresOf(t, []).wireLength, "and the length is counted once").toBe(4)
+    // The control: the same two segments on DIFFERENT nets are not duplicates at all - they are a
+    // short drawn as one line, which clause (d) refuses. So the collapse above is keyed on the net
+    // as well as on the geometry, and this half would pass even if the net were ignored.
+    const crossNet = canonicalTopology({ placements: [], wires: [forward, { ...backward, net: "M" }], anchors: [] }, [])
+    expect(crossNet.ok, "a cross-net collinear overlap is refused, never deduplicated").toBe(false)
+  })
+})
+
 describe("raw segment list versus canonical topology, over every block that lays out", () => {
   it("inflates wire length on all twelve, leaves crossings and area alone, and UNDER-reports bends", async () => {
     const symbols = parityResolver()
