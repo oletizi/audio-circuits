@@ -19490,3 +19490,148 @@ is contradicted by this single case rather than supported by it.
   it asks for a second party, so it cannot be a self-check. **Neither mechanism
   is proposed as the answer**, and the honest position is that the criterion is
   measurable and the remedy is not yet known.
+
+### G247 - MEASURED: only ONE of the five transistor-preamp boards can be offered to `generate` at all, and the other four are not blocked by a defect - they have no authoring declaration. So the precondition for retiring the stub writer is TWO things and not one
+
+**THIS IS TASK 19's STEP 0, ORDERED BY THE CONTROLLER AS A DELIVERABLE IN ITS OWN
+RIGHT** on the grounds that *"which of this repository's own boards the generator
+will accept is not re-derivable later"*. **G238** measured `lab-board` only;
+**G245** moved that measurement once; the brief names FIVE boards and nothing had
+measured the other four.
+
+**THE READING THAT WAS INCOMPLETE, verbatim from the Task 19 controller
+addendum's post-Task-20 update:** *"The precondition is now: **the
+field-placement defect is fixed, so the five boards GENERATE.** That is a single
+named defect rather than four authoring classes."* **The single named defect is
+real and it is not sufficient.** Fixing **G232** would make `lab` reach a drawing
+and would leave the other four exactly where they are, because `generate` cannot
+be invoked on them: `circuitSpecFrom` takes a `SchematicAuthoring` and **four of
+the five boards have none.**
+
+`[RAN]` the Step 0 probe (`generate` per board, `initLock: true`, into a
+`mkdtemp`, the refusal text printed in full and not truncated):
+
+| board | components | authoring declaration | nets not UPPER_SNAKE | `generate` |
+| --- | --- | --- | --- | --- |
+| `lab` | 32 | `transistor-preamp-lab` | **0** | **REFUSED at LAYOUT** (text below) |
+| `buffered` | 21 | **NONE** | **0** | **NOT RUN: no declaration exists** |
+| `feedback` | 16 | **NONE** | **0** | **NOT RUN: no declaration exists** |
+| `loop` | 25 | **NONE** | **0** | **NOT RUN: no declaration exists** |
+| `staged` | 34 | **NONE** | **0** | **NOT RUN: no declaration exists** |
+
+`lab`'s refusal, in full, which confirms **G245**'s update independently:
+
+> `block tp-leg-emitter-bypass: the ELK backend cannot realise its subgraph: block tp-leg-emitter-bypass: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): block tp-leg-emitter-bypass: JP5#1 (Jumper:Jumper_2_Open): no place for its Reference and Value — every pin-free side, every spot inside its body and beside its outermost pins is blocked by wires, pins, pin text, interior graphics, labels or other text [invalid-geometry: template elk cannot realise tp-leg-emitter-bypass: ...]`
+
+**NOTHING ABOUT VALIDATION BLOCKS ANY OF THE FIVE, AND THAT IS NEW.** `lab`
+passes `validateCircuit` and refuses at layout - **G245** measured that. The
+other four cannot be validated without a declaration, but the one drawing rule
+whose input is the raw `Network` and needs no declaration is measurable, and it
+reports **zero** for all five: `netsNotUpperSnake` finds no net outside
+`^[A-Z0-9][A-Z0-9_]*$` on any board, so **G150**'s class - the one that still
+blocks `pt2399-core` and `optical-compressor` - would refuse none of these five.
+
+**AND THE BLOCKING PART ON `lab` IS A PART THE OTHER FOUR DO NOT CARRY.** This is
+the reason "fix G232 and all five generate" cannot be concluded even for the
+boards that would then have declarations. Per board, the components drawn with
+each symbol **G238**'s two measured field-placement refusals name:
+
+| board | `Jumper:Jumper_2_Open` | `Device:C` | `Device:C_Polarized` |
+| --- | --- | --- | --- |
+| `lab` | **5** | 0 | 4 |
+| `buffered` | **0** | 0 | 5 |
+| `feedback` | **0** | 0 | 4 |
+| `loop` | **0** | 0 | 6 |
+| `staged` | **0** | 0 | 9 |
+
+`lab` is the only board with a jumper, and the jumper is what its
+`tp-leg-emitter-bypass` block refuses on - the unit **G245**'s update measures as
+*"the HARDER one ... body 2286 um against the 5080 um the grown Reference and
+Value pair needs, 0 of 5 inside slots"*. The other four carry 4 to 9
+`Device:C_Polarized` parts each, which is the symbol `lab`'s **`tp-stage`** block
+ALSO refuses on (**G238**'s block table: `C3#1 (Device:C_Polarized)` field
+placement). **So the honest statement is that a refusal is likely on all four and
+its site is unmeasured**, and the jumper is not the thing to predict it by.
+
+**WHAT WRITING THE FOUR MISSING DECLARATIONS WOULD COST, because "four files"
+understates it.** `circuits/transistor-preamp/schematic/authoring.ts` derives its
+seven blocks from `LEGS`, which `lab-board.ts` exports - plan decision **D1**'s
+point that a block comes *"from `include()`, `OWNERSHIP`/`partitionReference()`,
+`LEGS` and `allStandIns()` and from nothing an agent chose"*. **That pattern does
+not transfer.** `[RAN]` `grep -n '^export const [A-Z_]*LEG' circuits/transistor-preamp/*-board.ts`:
+
+```
+circuits/transistor-preamp/feedback-board.ts:45:export const FEEDBACK_LEGS: Readonly<Record<FeedbackLegName, Leg>> = {
+circuits/transistor-preamp/lab-board.ts:51:export const LEGS: Readonly<Record<LegName, Leg>> = {
+circuits/transistor-preamp/loop-board.ts:41:export const LOOP_LEG: Leg = {
+circuits/transistor-preamp/staged-board.ts:62:export const CHARACTER_LEG: Leg = {
+```
+
+Four different shapes and `buffered-board.ts` exports none at all - so each of
+the four needs its own answer to "what declares this board's blocks", which is
+Task 9's work and is a decision per board rather than a copy.
+
+**THE STEP 1 BASELINE, recorded here because it is what any later move off the
+stub writer must still pass.** `[RAN]` `bun test` per file:
+
+| file | tests | `expect()` calls | drives the stub writer through `kicad-cli` |
+| --- | --- | --- | --- |
+| `tests/circuits/transistor-preamp-lab.test.ts` | **19** | 197 | 1 |
+| `tests/circuits/transistor-preamp-buffered.test.ts` | **10** | 101 | 1 |
+| `tests/circuits/transistor-preamp-feedback.test.ts` | **10** | 67 | 1 |
+| `tests/circuits/transistor-preamp-loop.test.ts` | **11** | 384 | 1 |
+| `tests/circuits/transistor-preamp-staged.test.ts` | **14** | 187 | 1 |
+
+**64 tests, of which exactly FIVE reach `writeSchematicStub`** - one per file,
+all named *"KiCad reads the generated stub as the same circuit"*. The
+second KiCad test in each file, *"the schematic's netlist export describes the
+same circuit as the model"*, reads a committed `.net` fixture and does not touch
+the writer. `[RAN]` `grep -c 'kicadRoundTrip(' tests/circuits/transistor-preamp-*.test.ts`
+returns `1` for each of the five. **So the irreplaceable coverage is five tests,
+not sixty-four**, and every one of the other fifty-nine is independent of the
+stub writer.
+
+- **Found** 2026-10-21, Task 19 Step 0 and Step 1, before any file was changed.
+- **Evidence** `[RAN]` a probe that calls the real `generate` through the real
+  `circuitSpecFrom` for each board, assembling the `DesignSpec` exactly as
+  `tools/schgen/gate-census.ts`'s `parityDesign` does except for `initLock: true`
+  into a `mkdtemp`, which is what **G245**'s **R68** note says the committed
+  census cannot do. **ITS CONTROL, which could have answered differently and
+  did:** the same assembly run over the ported `mini` fixture reports
+  `CONTROL ACCEPTED: generate produced 11 files`, so `lab`'s refusal is the
+  circuit's and not the probe's `DesignSpec`, `stockDir` or lock handling. A
+  second, independent and COMMITTED route agrees: `[RAN]`
+  `bun tools/schgen/remeasure-coverage.ts` prints
+  `tp-leg-emitter-bypass refused at obligation 4: checkLayout problems field-placement`
+  and `5 of 12 declared blocks draw`, and that tool's `classOf` and `gateOf`
+  **throw** on a refusal text they do not know, so a different refusal could not
+  have passed as this one. The symbol counts and the net-name figures are read off
+  each built `Network`, never off a text sweep. The declaration census is
+  `[RAN] grep -rln 'SchematicAuthoring = {' circuits/`, which returns four files
+  for four circuits and no second file for `transistor-preamp` - a check that
+  could have failed, since a fifth file would have appeared. **The probe is
+  gitignored** (`.superpowers/`), which is why every figure it produced is
+  transcribed above rather than cited.
+- **Verified** CONFIRMED - this writer wrote and ran the probe, its control and
+  the committed remeasurement, and read `lab`'s refusal text in full. **G232**'s
+  reserved status and **G239**'s "the fix is not narrow" measurement are
+  **RELAYED** from those entries, which this writer read and did not re-measure.
+- **Why it is open** nothing here was attempted. **G232** is reserved by ruling
+  **R46** as an owner-visible scope decision, and the four missing declarations
+  are Task 9's work rather than Task 19's - the controller addendum's rulings
+  **R65** and its update both direct this task to report rather than pursue. **It
+  stays open because it is the standing answer to "can the five KiCad tests move
+  onto the generator yet", and that question is asked every time somebody reads
+  `lib/kicad/schematic.ts` and wonders why it is still there.**
+- **What would settle it** **CRITERION: `generate` returns a `Generation` for all
+  five boards** - which is `tools/schgen/remeasure-coverage.ts` reporting every
+  declared block of every one of them as DRAWS, and the Step 0 probe reporting
+  ACCEPTED five times. **MECHANISMS, two pieces, BOTH UNTRIED, and the second is
+  the one the addendum's update left out**: (1) the field-placement refusal
+  (**G232**, with **G239**'s measurement of how little room its candidate set
+  really has, and **G245**'s that the blocking jumper is the harder case on
+  width); and (2) **four `SchematicAuthoring` declarations, one per board, each
+  needing its own block-declaration source** - the grep above shows four
+  different leg-constant shapes and one board with none, so nothing here
+  estimates this as a copy of `lab`'s. **Neither piece is sufficient alone and
+  the order matters: (2) is what makes (1) measurable for four of the five.**
