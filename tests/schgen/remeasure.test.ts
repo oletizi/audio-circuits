@@ -19,7 +19,8 @@ import { beforeAll, describe, expect, it } from "bun:test"
 import { afterAll } from "bun:test"
 import { cleanUpTempScratch } from "../support/temp-scratch.ts"
 import { drawnBlocks as composedLegs, miniSheet, type ComposedSubject, type DrawnBlocks } from "./__fixtures__/composed.ts"
-import { BLOCK_SIZE, blocksOutside, gateOf, remeasure, renderRow, type Remeasurement } from "../../tools/schgen/remeasure.ts"
+import { BLOCK_SIZE, blocksOutside, remeasure, renderRow, type Remeasurement } from "../../tools/schgen/remeasure.ts"
+import { classOf, coverageCensus, gateOf, leverageOf, renderCoverage, type BlockCoverage } from "../../tools/schgen/remeasure-coverage.ts"
 import { comparabilityOf, SPIKE_BLOCKS, spikeRowFor } from "../../tools/schgen/remeasure-spikes.ts"
 import { floorEvidence, orderSweep, renderSweep, sizeCoverage, type OrderSweepRow } from "../../tools/schgen/remeasure-ceiling.ts"
 import { edgeCensus, integratedExperiment, type IntegratedExperiment } from "../../tools/schgen/remeasure-composed.ts"
@@ -38,6 +39,7 @@ let legs: readonly LegShape[]
 let groups: Disjointness
 let probe: DrawnBlocks
 let signal: ComposedSubject
+let coverage: readonly BlockCoverage[]
 
 beforeAll(async () => {
   rows = await remeasure()
@@ -47,6 +49,7 @@ beforeAll(async () => {
   groups = await disjointness()
   probe = await composedLegs("transistor-preamp")
   signal = await miniSheet("signal")
+  coverage = await coverageCensus()
 }, 600_000)
 
 describe("step 1 and step 3: which blocks draw, and the four measures of each", () => {
@@ -312,6 +315,67 @@ describe("step 4: the integrated experiment, on the five blocks that draw", () =
     expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.bends, 0)).toBe(38)
     // NOT the spike's 6.1x and not a fraction of it: the ratio has no denominator on this subject.
     expect(experiment.crossingRatio).toBeNull()
+  })
+})
+
+describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () => {
+  /**
+   * **ONE DEFECT IS THE SOLE BLOCKER OF FOUR BLOCKS, AND THAT IS THE LEVERAGE R46 ASKS TO HAVE
+   * RECORDED.** All five blocks that reach `checkLayout` fail on a part with nowhere to put its
+   * Reference and Value, and on four of the five it is the ONLY problem - so fixing it alone takes
+   * this repository from **5 of 12 blocks drawing to 9 of 12**.
+   */
+  it("classifies every checkLayout problem of every declared block", () => {
+    expect(renderCoverage(coverage)).toEqual([
+      "ob-buffer refused at obligation 4: checkLayout problems field-placement",
+      "oc-power refused at obligation 4: checkLayout problems field-placement",
+      "oc-audio refused at obligation 1: the snap collapsed geometry",
+      "oc-sidechain refused at obligation 3: one transform, two readers",
+      "pt-core refused at obligation 4: checkLayout problems field-placement",
+      "tp-leg-upper DRAWS",
+      "tp-leg-feedback DRAWS",
+      "tp-leg-lower-a DRAWS",
+      "tp-leg-lower-b DRAWS",
+      "tp-leg-collector DRAWS",
+      "tp-leg-emitter-bypass refused at obligation 4: checkLayout problems field-placement",
+      "tp-stage refused at obligation 4: checkLayout problems body-label-overlap, body-label-overlap, field-placement",
+      "5 of 12 declared blocks draw",
+      "class body-label-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
+      "class field-placement: sole blocker of 4 block(s) (ob-buffer, oc-power, pt-core, tp-leg-emitter-bypass), partial blocker of 1 (tp-stage)",
+    ])
+  })
+
+  it("is ONE defect and not four, and names the four blocks it alone blocks", () => {
+    const field = leverageOf(coverage).find((l) => l.problemClass === "field-placement")
+    expect(field).toBeDefined()
+    expect(field?.soleBlocker).toEqual(["ob-buffer", "oc-power", "pt-core", "tp-leg-emitter-bypass"])
+    expect(field?.partialBlocker).toEqual(["tp-stage"])
+    // 5 draw now; the four above would take it to 9. A check that could have failed: the sole/partial
+    // SPLIT is asserted, so a class that blocks nothing by itself cannot be read as leverage -
+    // body-label-overlap is sole blocker of ZERO and that is asserted too.
+    expect(coverage.filter((r) => r.draws).length).toBe(5)
+    expect(coverage.filter((r) => r.draws).length + (field?.soleBlocker.length ?? 0)).toBe(9)
+    const overlap = leverageOf(coverage).find((l) => l.problemClass === "body-label-overlap")
+    expect(overlap?.soleBlocker).toEqual([])
+  })
+
+  it("refuses a problem whose text names no known class, rather than binning it as other", () => {
+    expect(() => classOf("block X: something nobody has classified")).toThrow(/matches no known class/)
+    expect(() => classOf("block X: something nobody has classified")).toThrow(/ruling R46/)
+    expect(classOf("no place for its Reference and Value")).toBe("field-placement")
+  })
+
+  /**
+   * **A BLOCK REFUSED BEFORE `checkLayout` HAS NO PROBLEM CLASSES, AND THAT IS NOT THE SAME AS
+   * HAVING NONE.** Nothing has looked at `oc-audio`'s or `oc-sidechain`'s clearances, so their
+   * empty lists must not be read as clean.
+   */
+  it("leaves the two blocks refused at earlier obligations with no problem classes at all", () => {
+    const earlier = coverage.filter((r) => !r.draws && r.problemClasses.length === 0)
+    expect(earlier.map((r) => `${r.block} ${r.gate}`)).toEqual([
+      "oc-audio obligation 1: the snap collapsed geometry",
+      "oc-sidechain obligation 3: one transform, two readers",
+    ])
   })
 })
 

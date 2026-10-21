@@ -16882,3 +16882,96 @@ review, absent from the history and destroyed by `git clean -fdx`.
   16 module's two constants, and substituting Step 4's subject under R38.
 - **What would settle it** **an opinion from the reviewing agent on those two
   rows.** The other seven are forced by a stated rule and need nothing.
+
+### G232 - MEASURED: ONE defect is the SOLE blocker of FOUR declared blocks, so fixing it alone takes this repository from 5 of 12 blocks drawing to 9 of 12
+
+**RECORDED UNDER CONTROLLER RULING R46, which is explicit that it is a scope
+input and not a defect report against the task that found it:** *"whether M1
+spends a task on draw coverage is an owner-visible scope decision rather than a
+defect in your task... What I need from you is that the number is recorded so
+that decision can be made on evidence instead of on somebody's recollection of a
+report."* **Nothing here is fixed and nothing was attempted.**
+
+**THE DEFECT.** `checkLayout` reports *"<part>#<unit> (<libId>): no place for its
+Reference and Value - every pin-free side, every spot inside its body and beside
+its outermost pins is blocked by wires, pins, pin text..."*. It is a
+FIELD-PLACEMENT failure: the part is placed, the route is legal, and there is
+nowhere left on the sheet to print the designator and the value.
+
+`[RAN]` `tools/schgen/remeasure-coverage.ts`, over all twelve declared blocks:
+
+| block | outcome | the problem classes `checkLayout` reported |
+| --- | --- | --- |
+| the four bias legs, `tp-leg-collector` | **DRAW** | - |
+| `ob-buffer` | refused, obligation 4 | **field-placement** (`C3#1`, `Device:C`) |
+| `oc-power` | refused, obligation 4 | **field-placement** (`C3#1`, `Device:C`) |
+| `pt-core` | refused, obligation 4 | **field-placement** (`C7#1`, `Device:C`) |
+| `tp-leg-emitter-bypass` | refused, obligation 4 | **field-placement** (`JP5#1`, `Jumper:Jumper_2_Open`) |
+| `tp-stage` | refused, obligation 4 | body-label-overlap, body-label-overlap, **field-placement** (`C3#1`, `Device:C_Polarized`) |
+| `oc-audio` | refused **earlier**, obligation 1 | none - `checkLayout` never ran |
+| `oc-sidechain` | refused **earlier**, obligation 3 | none - `checkLayout` never ran |
+
+**IT IS ONE DEFECT AND NOT FOUR.** All five blocks that reach `checkLayout` fail
+on it, and **on four of the five it is the only problem reported** - so those four
+would draw if it alone were fixed. `tp-stage` would not: it carries two
+body-label overlaps as well. **5 of 12 draw today; this one fix is what stands
+between that and 9 of 12**, and both overlaps on top of it would make 10.
+
+**THE SOLE-BLOCKER / PARTIAL-BLOCKER SPLIT IS LOAD-BEARING AND IS WHY THE
+LEVERAGE IS 4 AND NOT 5.** `leverageOf` reports, per problem class, the blocks
+whose ONLY blocker it is and the blocks it blocks alongside something else. **A
+total would overstate it**: `body-label-overlap` appears on one block and is the
+sole blocker of **zero**, so fixing it by itself moves nothing. Quoting a count
+of blocks a class *appears on* as the number a fix unblocks is the error this
+split exists to prevent.
+
+**WHAT THIS DOES NOT SAY.** It does not say the field-placement routine is wrong -
+`lib/schgen/render/field-placement.ts` is ported, reviewed and drawing the pedals
+corpus - nor that the fix is small, nor where it belongs. It is plausible that
+what is wrong is the ROUTE that leaves no room rather than the placement that
+cannot find any, and **this writer did not determine which.** The two candidates
+point at different modules and the entry names neither as the culprit.
+
+**AND IT DOES NOT SAY THE OTHER TWO BLOCKS ARE CLOSE.** `oc-audio` and
+`oc-sidechain` refuse at obligations 1 and 3, before any clearance check runs, so
+**nothing has looked at their clearances** and their empty problem lists must not
+be read as clean. Those two are **G185**'s and **G190**'s territory, not this
+entry's.
+
+- **Found** 2026-10-20, Task 17, while classifying the seven refusals for the
+  re-measurement document; **recorded as its own entry under ruling R46** rather
+  than left as a clause.
+- **Evidence** the table, computed by `coverageCensus` and asserted row by row in
+  `tests/schgen/remeasure.test.ts`, so it recomputes on every run and a block that
+  started or stopped drawing moves it. **Checks that could have failed:** the
+  sole-blocker and partial-blocker lists are asserted SEPARATELY, so a class that
+  blocks nothing by itself cannot pass as leverage - and `body-label-overlap`'s
+  sole-blocker list is asserted EMPTY, which is that check firing in the negative;
+  `5 + 4 = 9` is asserted against the measured draw count rather than written as a
+  sentence; and `classOf` **throws** for a problem text matching no known class,
+  which is driven by a test, so a new `checkLayout` problem shape fails rather
+  than being binned as *other* and quietly changing the leverage.
+- **Verified** CONFIRMED - this writer wrote the census, ran it and read every
+  problem string in full rather than the truncated forms that appear in a
+  refusal message. **The first version of this finding, in the Task 17 report,
+  said "four of the five checkLayout refusals are the same defect"; the measured
+  statement is narrower and is the one above**: the defect is in 5 of 5 and is the
+  SOLE blocker of 4.
+- **Why it is open** nothing is fixed, by instruction. **The leverage is the
+  reason it is open rather than closed as a measurement:** a one-defect fix that
+  nearly doubles draw coverage is a scope question somebody has to answer, and
+  until it is answered every figure in this register that rests on *"5 of 12
+  blocks draw"* - **G200**, **G208**, **G209**, **G211**, **G216** and Task 17's
+  own - is scoped to a corpus one fix would change.
+- **What would settle it** **AN OWNER-VISIBLE SCOPE DECISION, which R46 is
+  carrying to the final review: does M1 spend a task on draw coverage?** This
+  entry is the evidence for it and does not answer it. **CRITERION if the answer
+  is yes: a declared block whose parts are placed and whose route is legal has
+  somewhere to print every designator and value, or the refusal names which of
+  the two - the route or the placement - it attributes the failure to.**
+  **MECHANISMS, untried and they are alternatives rather than a plan:** give
+  `field-placement.ts` more candidate positions, which risks text where a reader
+  does not expect it; or treat *"no room for the fields"* as a routing cost the
+  backend should avoid, which means `lib/schgen/elk/` knowing about text and is a
+  much larger change. **Nothing here chooses between them, and the criterion is
+  what binds.**

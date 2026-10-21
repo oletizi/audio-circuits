@@ -43,7 +43,9 @@
  *   - `./remeasure-composed.ts` - the integrated experiment: one sub-circuit drawn flat against the
  *     same blocks composed by seam B (ruling **R38**);
  *   - `./remeasure-criteria.ts` - §3.4's two criteria: congruence of the four bias legs with the
- *     rail glyphs they would actually get, and disjointness at sheet level.
+ *     rail glyphs they would actually get, and disjointness at sheet level;
+ *   - `./remeasure-coverage.ts` - which gate refused each block that does not draw, and what one
+ *     fix would unblock (ruling **R46**). `gateOf` lives there and is used here.
  */
 
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"
@@ -61,6 +63,7 @@ import { baselineScale, SCALE_INVARIANT_UPTO, SCALE_UNSTABLE_FROM, type Baseline
 import { elkPrePass } from "./elk/layout.ts"
 import { PARITY_CASES, parityResolver, type ParityCase } from "./authoring-census.ts"
 import { comparabilityOf, spikeRowFor, type SpikeBlockRow } from "./remeasure-spikes.ts"
+import { gateOf } from "./remeasure-coverage.ts"
 import type { BlockId } from "../../lib/schgen/ir/types.ts"
 import type { BlockLayout, BlockSubgraph } from "../../lib/schgen/render/block-types.ts"
 import type { ElkOutcome } from "../../lib/schgen/elk/graph.ts"
@@ -441,39 +444,6 @@ export function blocksOutside(rows: readonly Remeasurement[], bound: BlockSizeDe
   return rows
     .filter((r) => r.geometry.placements > bound.ceiling)
     .map((r) => `${r.block} has ${r.geometry.placements} placements, above the ceiling of ${bound.ceiling}: ${r.scale.kind}`)
-}
-
-/**
- * WHICH GATE OF SPEC §1.4's REALIZATION CONTRACT REFUSED A BLOCK, read off the refusal's own words.
- *
- * **IT IS A WHITELIST THAT THROWS, AND THAT IS THE POINT.** The question *"how many of the seven
- * non-drawing blocks reach `checkLayout` and how many refuse earlier"* is one a reader needs and
- * cannot get from a refusal count, and the honest way to answer it is to recognise each refusal's
- * own sentence. A default arm would silently file a refusal nobody has read under a gate it may not
- * belong to - and this classification is printed in a document, so a wrong one would be published.
- * A new refusal arm in `lib/schgen/elk/adapt.ts` fails here, naming the text it could not place.
- */
-export const REFUSAL_GATES: readonly { readonly marker: string; readonly gate: string }[] = [
-  { marker: "port coordinate(s) that disagree", gate: "obligation 3: one transform, two readers" },
-  { marker: "overlap(s) that are", gate: "clause (d) pre-snap: an ambiguous wire overlap" },
-  { marker: "collapsed geometry that was distinct", gate: "obligation 1: the snap collapsed geometry" },
-  { marker: "CREATED", gate: "obligations 1 and 5: snapping created an ambiguous overlap" },
-  { marker: "the junctions the sheet emitter would place disagree", gate: "obligation 2: a branch point with no junction" },
-  { marker: "does not pass the clearance checks", gate: "obligation 4: checkLayout" },
-]
-
-export function gateOf(refusal: string): string {
-  const found = REFUSAL_GATES.find((r) => refusal.includes(r.marker))
-  if (found === undefined) {
-    throw new Error(
-      `this refusal matches no gate marker, so which stage of spec 1.4's realization contract ` +
-        `produced it cannot be reported: ${refusal.slice(0, 200)}. It is NOT filed under a default ` +
-        "gate - the classification is published in docs/schematic/m1-remeasurement.md and a wrong " +
-        "one would be a published claim about a stage that did not refuse. Add the marker to " +
-        `REFUSAL_GATES with the obligation it names. Known markers: ${REFUSAL_GATES.map((r) => r.marker).join(" | ")}.`,
-    )
-  }
-  return found.gate
 }
 
 /** One row as a line: the per-block figures, the stage, and the spike verdict beside them. */
