@@ -17039,6 +17039,9 @@ review, absent from the history and destroyed by `git clean -fdx`.
 | one file, `tools/schgen/remeasure.ts` | five files | `CLAUDE.md`'s 300-500 line ceiling; written as one module this is about 1600 lines. **Cost: a reader arrives at a front door and follows four pointers** |
 | *(not in the brief)* | `SCALE_INVARIANT_UPTO` and `SCALE_UNSTABLE_FROM` changed from 9 and 13 to 3 and 8 | the re-measurement falsified the numbers a Task 16 module states as G95's, on the same block the spike measured. **Cost: one pinned expectation in `tests/schgen/readability/baseline.test.ts` moved** - 11 cells is no longer in the unmeasured gap - and `oc-power` is now classified `about-a-serialization`, which is the measured answer. Leaving 9 would have shipped a module asserting a withdrawn number |
 | *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
+| *(not in the brief)* | the pinning assertions split again into `tests/schgen/remeasure-ceiling.test.ts` | fix round 1 took `remeasure.test.ts` to 526 lines, past `CLAUDE.md`'s cap. **Cost: seven register and module pointers went stale naming the old file, one of them a constant's pin that then verified GREEN** - fix round 2 item A, and `tests/schgen/pointers.test.ts` is what stops the next split doing it silently |
+| *(not in the brief)* | `governingNetsOf`, a four-clause subject-relative governing set beside `crossingNonRailNets` | fix round 2 item B: the published sentence named two of the code's clauses and a subject needs a fourth, which made the union's set `{BASE, COLLECTOR}` where the document printed *"none"*. **Cost: two functions where one would do** - and they are kept apart on purpose, because folding the circuit-wide prediction into the subject-relative one would have changed the bus-block prediction and silently resolved item C's falsifier |
+| *(not in the brief)* | `tests/schgen/pointers.test.ts` | fix round 2 item A asked whether a stale pointer can be made to fail rather than rot. **Cost: a hand-maintained whitelist of ten pointers**, which is not a complete inventory of the repository's citations and says so |
 | *(not in the brief)* | the flat probe rebuilt to be genuinely flat, and the edge census split into `tools/schgen/remeasure-edges.ts` | fix round 1, item 1: round 1's probe never rebuilt `Circuit.unitBlock`, so it inherited the blocked declaration's boundary nodes. **Cost: the headline figure changed from 1.000x to 0.958x and 0.906x, and its direction from "removes none" to "ADDS"** - the finding it supports is unchanged and stronger |
 | *(not in the brief)* | both `SCALE_*` constants pinned to the sweep rather than to a classification | fix round 1, item 2: the old assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, so a one-step drift of the upper bound was not caught. **Cost: the pin now runs the ELK sweep, so it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations** |
 
@@ -17059,7 +17062,8 @@ costed with this case in hand.
 
 - **Found** 2026-10-20, Task 17, as each deviation was made.
 - **Evidence** each row names the file the deviation is in and the rule or ruling
-  that forced it; all nine are readable in the diff of this change, and the type
+  that forced it; **all fifteen** are readable in the diffs of this change and its
+  two fix rounds, and the type
   shapes are what `bun run typecheck` enforces. A check that could have failed:
   the `verdict` widening is driven by
   `tests/schgen/remeasure.test.ts`'s per-figure assertion, which reports
@@ -17070,7 +17074,10 @@ costed with this case in hand.
   reviewer has not ruled on the two that are judgement calls**: changing a Task
   16 module's two constants, and substituting Step 4's subject under R38.
 - **What would settle it** **an opinion from the reviewing agent on those two
-  rows.** The other seven are forced by a stated rule and need nothing.
+  rows**, and both now have one: ruling **R44** accepted the constants change with
+  two conditions, and ruling **R45** accepted Step 4's substituted subject and
+  recorded its price as the controller's. **The other thirteen are forced by a
+  stated rule or by a fix-round item and need nothing.**
 
 ### G232 - MEASURED: ONE defect is the SOLE blocker of FOUR declared blocks, so fixing it alone takes this repository from 5 of 12 blocks drawing to 9 of 12
 
@@ -17183,3 +17190,82 @@ entry's.
   mechanism and is a ceiling rather than a count for the second, because the
   second moves geometry and re-opens four other obligations. **A scope decision
   taken on 9 of 12 is taking it on the field-local mechanism.**
+
+### G233 - A PERTURBATION HARNESS THAT NAMES A TEST FILE SILENTLY NO-OPS WHEN THE ASSERTION MOVES, AND REPORTS THE RESULTING GREEN AS A PASSING DRIVE
+
+**MEASURED HERE, TWICE, ONE LAYER APART.** A perturbation is how this repository
+proves a check has teeth - *"a skipped check must never look like a passing
+one"*. **A perturbation harness that names the test file to run is itself a
+pointer, and it rots exactly as a prose pointer does.**
+
+**WHAT HAPPENED.** Task 17's fix round 1 split the two scale-constant pins out of
+`tests/schgen/remeasure.test.ts` into `tests/schgen/remeasure-ceiling.test.ts`.
+The drive harness still named the old file. `[RAN]` Driving all four
+perturbations against it:
+
+| drive | against the stale file | against the file that holds the pin |
+| --- | --- | --- |
+| `SCALE_INVARIANT_UPTO` 3 -> 2 | 22 pass / **1 fail**, pinning test NOT named | 6 pass / 2 fail, pinning test red |
+| `SCALE_INVARIANT_UPTO` 3 -> 4 | 23 pass / **0 fail** | 6 pass / 2 fail, pinning test red |
+| `SCALE_UNSTABLE_FROM` 8 -> 7 | 23 pass / **0 fail** | 7 pass / 1 fail, pinning test red |
+| `SCALE_UNSTABLE_FROM` 8 -> 9 | 22 pass / **1 fail**, pinning test NOT named | 7 pass / 1 fail, pinning test red |
+
+**TWO OF THE FOUR WERE GREEN AND THE OTHER TWO WERE RED FOR UNRELATED REASONS.**
+That is the dangerous half: a harness that only checks *did something go red*
+accepts a drive that reddened some other test, and **red for the wrong reason
+reads exactly like a check with teeth.**
+
+**AND THE SAME STALENESS REACHED THE REGISTER, which is how it was found a second
+time.** Seven pointers in `docs/known-gaps.md` and in the modules named the old
+file as the home of checks that had moved - including **G101**'s Evidence and
+`BLOCK_SIZE.evidence`, both of which tell a reader which file verifies the two
+bounds. `[RAN]` Perturb `SCALE_UNSTABLE_FROM` to 7 and run the file they named:
+**23 pass / 0 fail.** The register was instructing a reader to verify a pinned
+constant against a file that does not pin it.
+
+**THREE HARDENINGS, EACH FROM A DISTINCT FAILURE, because the first two were not
+enough.**
+
+1. **the needle must be present.** An edit that matches nothing changes nothing
+   and the suite is green. This fired for a different reason first: an unquoted
+   shell variable in a `zsh` loop - which does not word-split - wrote
+   `SCALE_UNSTABLE_FROM = 8 9 FROM-up8 7 FROM-down...` into the module, so four
+   "drives" ran against one corrupted line. Caught by reading the diff;
+2. **the named test file must contain the assertion being driven.** This is the
+   defect above. The harness now refuses to start when it does not, naming the
+   assertion it looked for;
+3. **the named assertion must be the thing that went red.** `[RAN]` With this
+   added, all four drives are valid: red, and red because the pinning test
+   failed. Without it, the two drives that went red for unrelated reasons passed
+   as valid.
+
+- **Found** 2026-10-20, Task 17 fix round 1, when two of four drives came back
+  green; **re-found in the register** at fix round 2, item A, by the review.
+- **Evidence** the table above, driven both ways on the same four perturbations,
+  plus the register's own false green at 23 pass / 0 fail. **A check that could
+  have failed and does:** `tests/schgen/pointers.test.ts` asserts, for each
+  pointer that cites a measurement, that the cited file exists AND contains a
+  fragment of the cited assertion's own title - and it is driven in both
+  directions: reverting `BLOCK_SIZE.evidence`'s pointer to the old file turns it
+  red (2 failures), and moving the pin's title out of the cited file turns it red
+  (3 failures) saying the assertion has moved.
+- **Verified** CONFIRMED - this writer ran every row of the table, both drive
+  arms and both perturbations of the pointer guard. **The register half was found
+  by the Task 17 review and the figure 23 pass / 0 fail was re-measured here.**
+- **Why it is open** the pointer guard covers the ten pointers that cite a
+  measurement and **is not a complete inventory of the repository's citations**,
+  which it says in its own header. Every other prose reference to a test file in
+  this repository can still rot silently. **And the harness itself is a
+  scratchpad throwaway** - `.superpowers/` is gitignored and the script is not
+  committed - so the three hardenings survive only as this entry. The next agent
+  writing one has to read this rather than inherit it.
+- **What would settle it** **CRITERION: a perturbation is reported as a valid
+  drive only when the named assertion is the thing that failed, and a citation of
+  a test file fails a check when the assertion it names is no longer there.** The
+  second half is met for the ten pointers in the guard and unmet everywhere else.
+  **MECHANISMS, untried:** extend `POINTERS` as entries are written, which is
+  cheap and manual; or derive the pointers mechanically by scanning for
+  `tests/.*\.test\.ts` in the register and requiring each to carry a marker in a
+  declared format, which needs a convention nobody has written and would flag
+  every passing mention. **The first is what is happening; the second is the one
+  that would actually close this.**
