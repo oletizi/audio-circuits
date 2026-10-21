@@ -270,3 +270,25 @@ and both are outside all six files:
   independent review found that it had quoted the third pass's most regular probe
   and generalised from it, and the overclaiming sentence is shown withdrawn
   rather than edited away.
+
+What this index does NOT cover
+------------------------------
+
+**It indexes the six research passes and nothing else, and five later documents
+in this directory are not in it.** Stated here rather than left for a reader to
+notice, because this index's own opening says *"committed is not durable if
+nobody can find it"*:
+
+| document | what it is | how much it can be trusted |
+| --- | --- | --- |
+| [`elk-spike.md`](elk-spike.md) | ELK on whole circuits, flat | **Measured, no template and no block scale.** Every figure went through `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1, which this generator does not use - `../known-gaps.md` **G180** names the three figures that were properties of its skin |
+| [`elk-block-spike.md`](elk-block-spike.md) | the same, one declared block at a time | **Measured, with a paired control and a byte-identical regeneration of the first spike's inputs as the check that its extracted converter changed no behaviour.** Same frontend contamination |
+| [`template-parity.md`](template-parity.md) | do the ported templates draw this repository's blocks? | **GENERATED and content-compared on every test run.** A measurement with no target (spec §5.1) |
+| [`template-parity-anchors.md`](template-parity-anchors.md) | what a template COULD draw under an anchor probed over a block's own members | **GENERATED.** Read it only beside `template-parity.md`: `../known-gaps.md` **G160** is explicit that a realised probe is not a recommendation to declare that anchor |
+| [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on this generator, every figure produced by committed code and pinned by a committed test.** It is also the record of which spike figures CANNOT be compared, and why |
+
+**The two spikes are the strongest evidence in this directory about ELK and the
+weakest about THIS generator**, and `m1-remeasurement.md` is where the difference
+is measured rather than argued: of the five figures the block spike's own table
+publishes per block, **two are the same quantity as this generator's and three
+are not.**

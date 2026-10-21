@@ -417,7 +417,7 @@ export const BLOCK_SIZE: BlockSizeDecision = {
   costPaid:
     "THE CEILING's COST, on 7 of the 12 declared blocks. Above the ceiling the measured quality is " +
     "not a property of the circuit: the crossing count moves with the order the members are " +
-    "declared in, by up to 2.7x (pt-core, 39 to 78), so §3.3's four measures over ob-buffer, " +
+    "declared in, by up to 3.0x (oc-power, 1 to 3; the largest absolute swing is pt-core's 39 to 78), so section 3.3's four measures over ob-buffer, " +
     "oc-power, oc-audio, oc-sidechain, pt-core and tp-stage are partly measurements of a " +
     "serialization. The FLOOR's cost is not being paid and cannot be: this backend emits a " +
     "zero-size boundary node, so a block whose cells are two-thirds boundary has a drawing with no " +
