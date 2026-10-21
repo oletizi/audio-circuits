@@ -19824,6 +19824,26 @@ Task 19 carries an amendment pointing here, beside its unchanged file list.
   is explicit, and the reason is that a test which only passed against the stub
   was not testing what its name said.
 
+**ONE THING THIS ENTRY DOES NOT HAVE, NAMED SO IT IS A DECISION RATHER THAN AN
+OMISSION: THE PRECONDITION ABOVE IS PROSE, AND NOTHING FIRES WHEN IT IS MET.**
+A superseded file kept "until X" is kept forever unless something notices X. The
+obvious guard is a test asserting that `generate` still refuses the
+`transistor-preamp` design, which would go RED the day **G232** is fixed and say
+in its message that the five KiCad tests can now move and this writer can go.
+**It was considered and NOT written, for a reason worth weighing rather than
+dismissing: it makes the suite fail on a day somebody fixes a defect**, which
+turns a reminder into a blockage on unrelated work, and it is a check that
+enforces the current state rather than a requirement. **That is a decision about
+how this repository wants its "kept until" entries to retire, and it is not this
+task's to take** - `CLAUDE.md`'s invariant is that an agent does not author the
+criteria its own artifact is measured against, and a guard that decides when the
+artifact may be deleted is exactly such a criterion. **MECHANISM, UNTRIED, and
+offered for a ruling rather than proposed**: the test above, or a periodic
+re-run of **G247**'s probe, or nothing at all with this entry as the only
+reminder. Today it is the third, and the third is the option that has already
+failed once in this repository - **G81**'s criterion said the stub is deleted
+when its replacement lands, the replacement landed, and nothing noticed.
+
 ### G249 - M1's CLOSING DRAWING COMPARISON, AND IT IS AN OBSERVATION WITH NO VERDICT: the comparison the step asked for could not be made, because `generate` refuses the circuit whose hand-arranged drawing is the reference
 
 **WHAT THIS IS NOT.** It is not a gate-8 result, it is not a pass, and it is not
