@@ -190,11 +190,11 @@ not rails, (3) are not off-sheet, and (4) do not leave the subject:**
 
 **ALL FOUR CLAUSES ARE NAMED BECAUSE TWO OF THEM IS NOT THE RULE.** An earlier
 version of this document said *"crossing and not rails"* and printed a bare
-*"none"* for the union, which was false as literally stated - the two-clause set
-there is `{BASE, COLLECTOR}`. **The predicted figure was right and the set named
+*"none"* for the union, which was false as literally stated - the THREE-clause
+set there is `{BASE, COLLECTOR}`. **The predicted figure was right and the set named
 was wrong.** Clause (3) is unexercised by any declaration here, because
 `buildCircuit` hard-codes `offSheet: new Set()`; `[RELAYED]` the review drove it
-by hand and the code predicted the measured 4 where the two-clause sentence
+by hand and the code predicted the measured 4 where that two-clause SENTENCE
 predicted 5.
 
 **That a cross-block net is always labelled is `lib/schgen/ir/classify.ts:47` and

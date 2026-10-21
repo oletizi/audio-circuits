@@ -51,9 +51,9 @@
  * > rails, (3) are not off-sheet, and (4) do not leave the subject.**
  *
  * **ALL FOUR CLAUSES ARE NAMED BECAUSE THREE OF THEM IS NOT THE RULE - fix round 2, item B.** Round
- * 1 published *"crossing and not rails"* and applied it to a sub-circuit, which made one printed
- * figure false as literally stated: on the five-leg union the three-clause set is `{BASE,
- * COLLECTOR}` and the document printed *"none"*. **The predicted difference was right and the set
+ * 1 published a TWO-clause sentence - *"crossing and not rails"* - and applied it to a
+ * sub-circuit, which made one printed figure false as literally stated: on the five-leg union the
+ * THREE-clause set is `{BASE, COLLECTOR}` and the document printed *"none"*. **The predicted difference was right and the set
  * named was wrong**, because both nets leave the union and therefore cancel. Clauses (2) and (3) are
  * what `crossingNonRailNets` tests - `!rail && !offSheet` - and clause (4) is vacuous for a whole
  * circuit and load-bearing for a subject, which is why `governingNetsOf` exists.
@@ -237,7 +237,12 @@ export interface EdgeCensus {
   /** The same union with the blocked declaration's boundary nodes imposed - NOT a flat baseline. */
   readonly inheritedNodes: number
   readonly inheritedEdges: number
-  /** Nets crossing a declared block boundary that are not rails: the predicted difference. */
+  /**
+   * The THREE-clause set, circuit-wide: nets crossing a declared block boundary that are neither
+   * rails nor off-sheet. **On a whole circuit this IS the predicted difference**, because the
+   * fourth clause - does not leave the subject - cannot exclude anything when the subject is the
+   * whole circuit. For a SUBJECT use `governingNetsOf`, which adds it.
+   */
   readonly crossingNonRail: readonly NetName[]
   /** `flatEdges / blockEdgeTotal`. Below 1 means the decomposition ADDS edges. */
   readonly ratio: number

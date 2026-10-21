@@ -2196,25 +2196,30 @@ claim was a property of `labelledNets` wearing a measurement's clothes, and roun
 1's sentence *"nothing establishes that no such circuit exists"* was false:
 **`classify.ts:47` establishes it.** The sentence is withdrawn. The governing set
 is the one in the table above - the four clauses, not the two round 1 named -
-which is non-empty on both whole circuits and **empty on the five-leg union,
-where the same rule correctly predicts equality.** That is the refutation route
-firing in both directions on real subjects.
+which is non-empty on both whole circuits and **empty on the five-leg union
+ONCE THE FOURTH CLAUSE IS APPLIED, where the same rule correctly predicts
+equality.** That is the refutation route firing in both directions on real
+subjects.
 
 **AND ROUND 1's OWN SENTENCE NAMED TWO OF THE FOUR CLAUSES, WHICH MADE ONE
 PUBLISHED FIGURE FALSE AS LITERALLY STATED - fix round 2, item B.** It said
-*"crossing and not rails"*. The code tests `!rail && !offSheet`, and a SUBJECT
-adds *does not leave it*. On the five-leg union the two-clause set is **`{BASE,
-COLLECTOR}`, not empty**, and `docs/schematic/m1-remeasurement.md` printed a bare
-*"none"*: **the predicted difference was right and the set named was wrong.**
+*"crossing and not rails"*. The code tests `!rail && !offSheet` - three clauses -
+and a SUBJECT adds a fourth, *does not leave it*. On the five-leg union the
+THREE-clause set is **`{BASE, COLLECTOR}`, not empty**, and
+`docs/schematic/m1-remeasurement.md` printed a bare *"none"*: **the predicted
+difference was right and the set named was wrong.** **ONE VOCABULARY, used
+throughout:** a set is named by the number of clauses IT has - **three**
+circuit-wide, **four** for a subject - and round 1's defect was a **two-clause
+SENTENCE** describing a set that always had more clauses than it named.
 `governingNetsOf` now computes all four clauses and
-`tests/schgen/remeasure-edges.test.ts` asserts the two-clause set and the
+`tests/schgen/remeasure-edges.test.ts` asserts the three-clause set and the
 four-clause set SEPARATELY on that union, so the difference between them is a
 check rather than a caveat. **Clause (3) is unexercised by any declaration here** -
 `buildCircuit` hard-codes `offSheet: new Set()` (`lib/schgen/ir/build.ts:152`) -
 and `[RELAYED]` the review drove it by hand: with `BASE` off-sheet the measured
-difference is 4, the code predicts 4, and the two-clause sentence predicts 5. **So
-the code was already right about a case the published sentence was already wrong
-about.**
+difference is 4, the code predicts 4, and round 1's two-clause SENTENCE predicts
+5. **So the code was already right about a case the published sentence was
+already wrong about.**
 
 **THE RULE's SCOPE, AND THE FALSIFIER - AND THAT A FALSIFIER EXISTS IS A GOOD
 RESULT RATHER THAN A DEFECT.** Round 1's form could not be refuted at all; this

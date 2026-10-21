@@ -67,8 +67,14 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
    * **ROUND 1's RULE COULD NOT BE REFUTED AND THIS ONE CAN.** It said the difference is one edge
    * per *"multi-block net that is neither a rail nor a labelled net"* - and
    * `lib/schgen/ir/classify.ts:47` labels every net with `blocks.size > 1`, so that set is empty in
-   * every circuit this IR builds. The governing set is *nets that cross a block boundary and are
-   * not rails*, which is non-empty here and which a circuit could have none of.
+   * every circuit this IR builds.
+   *
+   * **THE GOVERNING SET HAS FOUR CLAUSES** - crossing inside the subject, not a rail, not
+   * off-sheet, and does not leave the subject - of which the first three are what
+   * `crossingNonRailNets` computes circuit-wide and the fourth is what `governingNetsOf` adds for a
+   * subject. **Round 1's published sentence named two of them**, which is why one printed figure was
+   * false as literally stated (fix round 2, item B). The four-clause set is non-empty on both whole
+   * circuits and a circuit could have none of it.
    */
   it("predicts the difference from the crossing non-rail nets, on both circuits", () => {
     // On a WHOLE circuit the fourth clause is vacuous - nothing can leave the subject - so the
@@ -202,16 +208,18 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
 
   /**
    * **THE REFUTATION ROUTE FIRING IN THE OTHER DIRECTION, ON A REAL SUBJECT.** The rule says the
-   * difference is the number of nets crossing a block boundary that are not rails. For the
-   * five-leg union that set is EMPTY - every net crossing between legs either leaves the union
-   * (`BASE`, `COLLECTOR` reach `tp-stage`) or is a rail (`VCC`, `GND`) - **so the rule predicts
-   * equality, and the measurement is 24 against 24.**
+   * difference is the number of nets that cross a block boundary inside the subject, are not rails,
+   * are not off-sheet, **and do not leave the subject**. For the five-leg union the FOUR-clause set
+   * is EMPTY, and **only the fourth clause makes it so**: `BASE` and `COLLECTOR` cross between legs
+   * and are not rails, so the three-clause set is `{BASE, COLLECTOR}` - which the assertions below
+   * compute and prove - and both of them reach `tp-stage`, so both leave the subject and cancel.
+   * **So the rule predicts equality, and the measurement is 24 against 24.**
    *
    * This is what makes the corrected rule a measurement rather than round 1's theorem: the same
    * rule predicts a difference of 3 and 5 on the two whole circuits and a difference of 0 here, and
    * all three agree with what was measured.
    */
-  it("predicts EQUALITY on the five-leg union, where the governing set is empty, and 24 against 24 is measured", () => {
+  it("predicts EQUALITY on the five-leg union, where the FOUR-clause set is empty, and 24 against 24 is measured", () => {
     // Fix round 2, item B: the set is COMPUTED by governingNetsOf, with all four clauses, rather
     // than read off g.external as a proxy. Under the three-clause sentence round 1 published, the
     // union's set is {BASE, COLLECTOR} and not empty - it is empty only once the fourth clause,
