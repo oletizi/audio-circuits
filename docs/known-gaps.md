@@ -17294,3 +17294,82 @@ enough.**
   declared format, which needs a convention nobody has written and would flag
   every passing mention. **The first is what is happening; the second is the one
   that would actually close this.**
+
+### G234 - A BATCH EDIT SCRIPT THAT ASSERTS A LATER NEEDLE CAN RAISE BEFORE ITS WRITE AND DISCARD EARLIER REPLACEMENTS IN THE SAME RUN - and the reason nobody noticed is that three people checked the figures and not the prose
+
+**MEASURED HERE, AND THE COST WAS TWO REGISTER EDITS REPORTED AS LANDED AND
+ABSENT FROM DISK.** This is **G233**'s class one layer over: that entry records a
+PERTURBATION harness that silently no-ops, and this one records an EDIT script
+that silently discards.
+
+**THE SHAPE.** A script applies several replacements to one file, asserting each
+needle is present, and writes the file at the end:
+
+```
+s = s.replace(old1, new1)      applied in memory
+assert old2 in s               <- raises here
+s = s.replace(old2, new2)
+open(p, "w").write(s)          never reached
+```
+
+**The first replacement is lost without a trace.** The script reports an
+`AssertionError` about the SECOND edit, which reads as *"one edit did not apply"*
+and is acted on as such - a follow-up script fixes the second edit and nobody
+re-checks the first. **Nothing in the output says the earlier replacement was
+discarded**, because from the script's point of view it never happened.
+
+**WHAT IT COST, at Task 17 fix round 1.** Two edits to **G100** were reported to
+the controller as landed and were not on disk: its **Evidence** paragraph still
+described the superseded assertion (*"asserts the edge counts of both circuits as
+EQUALITIES"*, naming a test file and a check that the corrected re-take had
+replaced), and its **Verified** line was missing the statement that this writer
+re-measured 69 and 48 independently and agreed to the edge. Both were applied at
+fix round 2 in `bb532aa`, in the same change that fixed the stale pointers -
+which is how they were found at all.
+
+**HOW IT WAS FOUND, AND THIS IS THE CLAUSE A LATER AGENT MOST NEEDS.** It was
+found by **READING THE PROSE** while editing a pointer in the same paragraph -
+not by any check and not by re-reading the figures.
+
+> **VERIFYING A REGISTER FIX BY ITS FIGURES IS NOT VERIFYING IT.** Three readers
+> checked round 1 - the implementer, the re-reviewer and the controller - and
+> **all three checked the numbers.** The numbers were right the whole time, which
+> is exactly why nobody read the sentences around them. A register entry's claim
+> lives in its prose: which file holds the check, what the check could have
+> failed on, whether a figure is CONFIRMED or RELAYED. **None of that is a
+> number, and none of it is covered by verifying the numbers.**
+
+**THE SHAPE NOW USED, and it is two rules rather than one.** Every edit script in
+this task since fix round 2: **reports a miss per edit** - printing `ok` or `MISS`
+for each, continuing rather than aborting - **and writes each file exactly once**,
+after all replacements for it have been attempted. It exits non-zero at the end
+when anything missed, so a partial application is loud and complete. The scripts
+are scratchpad throwaways, so the shape survives only as this entry.
+
+- **Found** 2026-10-20, Task 17 fix round 2, while repairing an unrelated pointer
+  in the same paragraph. **Not found by a check** - there is none that would.
+- **Evidence** the two restored edits are in `bb532aa`'s diff against
+  `docs/known-gaps.md`, and their absence beforehand is visible as the same diff's
+  removal of the superseded Evidence text. **A check that could have failed and
+  did not, which is the point of recording this:** the Task 17 re-review searched
+  five ways for other reported-as-landed edits missing from disk, including a
+  mechanical sweep of all **4,664 added prose lines** across the task that
+  resolved every backticked path and identifier against disk, **and found none**.
+  So the damage was bounded at two edits - but it was bounded by a sweep nobody
+  runs routinely, not by anything in the workflow.
+- **Verified** CONFIRMED - this writer caused the defect, found it, applied both
+  recovered edits and changed the script shape. **The five-way sweep that bounded
+  it is RELAYED from the re-review and was not re-executed here.**
+- **Why it is open** nothing mechanical prevents it. The script shape is a habit
+  carried in prose, the scripts themselves are not committed, and **the
+  figures-not-prose reading failure has no guard at all** - it is the kind of
+  thing only a reader catches.
+- **What would settle it** **CRITERION: a change that reports an edit as applied
+  has the applied text checked against disk before it is reported.** **MECHANISMS,
+  one tried and one untried.** Tried and in use: the report-a-miss-per-edit,
+  write-once shape above, which makes a partial application loud - it does not
+  make a WRONG report impossible, only unlikely. Untried: have the edit script
+  re-read each file after writing and assert every `new` string is present, which
+  is cheap and would turn *"reported as landed"* into a checked claim; it was not
+  done here because the scripts are throwaways and the habit was the cheaper fix.
+  **Neither addresses the prose-versus-figures half, and nothing proposed does.**
