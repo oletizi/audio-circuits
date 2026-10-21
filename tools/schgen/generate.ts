@@ -144,12 +144,37 @@ function resolveVersions(d: LoadedDesign, env: GenerateEnv, current: VersionLock
   return { versions: locked, text };
 }
 
-/** The template library, and the rule library that graded the drawing - spec §2.1's two libraries. */
-const TEMPLATE_LIBRARY_DIR = "lib/schgen/render/templates";
-const RULE_LIBRARY_DIR = "lib/schgen/rules";
+/**
+ * Spec §2.1's two libraries: the modules a template DRAWS with, and the rules that graded the
+ * drawing.
+ *
+ * **THE TEMPLATE LIBRARY IS THE WHOLE OF `render/` AND NOT `render/templates/`, WHICH
+ * OVER-COVERS, AND THAT IS THE CHOICE RATHER THAN AN OVERSIGHT.** Eight of the nine modules in
+ * `render/templates/` import their geometry producers from the parent directory -
+ * `chain-kit.ts`, `layout-kit.ts`, `fanout-kit.ts`, `geometry.ts`, `drawn-extent.ts`,
+ * `power-text.ts`, `text-boxes.ts`, `lib-pins.ts` - so a digest over `templates/` alone **did not
+ * move when a template's drawn geometry moved**, which is the exact failure this digest exists to
+ * detect. The alternative mechanism was the transitive import closure of the template modules:
+ * exact, and it needs an import walker this repository does not have. The directory tree is the
+ * cheaper mechanism and its error is in the safe direction - **it will move on an edit anywhere
+ * in `render/` that changes no template's geometry at all.**
+ *
+ * **SO: A READER WHO SEES `templateLibrarySha256` MOVE FOR AN UNRELATED REASON IS LOOKING AT THE
+ * DESIGN AND NOT A BUG.** A false-positive staleness costs a regeneration; a false pass certifies
+ * a drawing against a library version that did not draw it. Those are not symmetric.
+ *
+ * **WHAT IS STILL NOT COVERED, SAID HERE RATHER THAN DISCOVERED LATER.** `lib/schgen/rules/*.ts`
+ * import `../render/geometry.ts` and `../render/library.ts`, so a geometry edit moves the TEMPLATE
+ * digest and not the RULE digest even though it changes what the rules computed. Both fields sit
+ * in one manifest and `staleManifestInputs` reports either, so the manifest as a whole still goes
+ * stale - the mis-attribution is between two fields of one record, not a blind spot.
+ */
+export const TEMPLATE_LIBRARY_DIR = "lib/schgen/render";
+export const RULE_LIBRARY_DIR = "lib/schgen/rules";
 
 /**
- * A library's version, as the sha256 of each of its modules.
+ * A library's version, as the sha256 of every `.ts` module in its directory TREE, each beside its
+ * path relative to that tree's root.
  *
  * **IT HASHES THE SOURCES AND NOT A DECLARED VERSION STRING, and the alternative was measurably
  * worse.** `TEMPLATES` is a registry of ids, so a digest over the ids would not move when a
@@ -157,24 +182,68 @@ const RULE_LIBRARY_DIR = "lib/schgen/rules";
  * `CLAUDE.md`'s *"a skipped check must never look like a passing one"* in a hash's clothing. The
  * parent's `run.json` records the engine COMMIT for the same reason.
  *
- * The name is included beside each hash, so adding a module moves the digest even if the new
+ * The path is included beside each hash, so adding a module moves the digest even if the new
  * module is empty, and the list is sorted so the digest does not depend on directory order.
  *
- * **AN EMPTY DIRECTORY REFUSES.** A digest over no files is a constant that can never move, which
+ * **IT WALKS SUBDIRECTORIES, AND THE FLAT VERSION OF THIS FUNCTION WAS THE SAME FAILURE IN
+ * MINIATURE.** `fs.readdirSync` without recursion covers one directory level, so adding a
+ * subdirectory under `templates/` or `rules/` silently NARROWED the digest with nothing failing -
+ * inside the record whose whole job is to say what graded the output. A subdirectory is now
+ * covered rather than dropped.
+ *
+ * **A FILE THIS DIGEST CANNOT HASH REFUSES BY NAME rather than being filtered out.** The `.ts`
+ * filter is the one thing between *covered* and *invisible*, and a filter that quietly drops a
+ * `.json` of coordinates sitting beside a template is the skipped check again. There is no
+ * whitelist of ignorable names, because an empty whitelist that refuses loudly beats a general
+ * rule that quietly accepts a guess.
+ *
+ * **AN EMPTY TREE REFUSES.** A digest over no files is a constant that can never move, which
  * would make the manifest certify a drawing against a library it never read.
+ *
+ * **`root` IS A PARAMETER AND NOT `moduleRepoRoot()` INSIDE, so the digest can be taken over a
+ * COPY of the tree.** That is what lets `tests/schgen/generate-digest.test.ts` mutate a geometry
+ * producer's bytes in a scratch copy and assert the digest moved, which is a real perturbation
+ * rather than an assertion that a name appears in a list.
  */
-function libraryDigest(dir: string): string {
-  const abs = path.join(moduleRepoRoot(), dir);
-  const names = fs.readdirSync(abs).filter((n) => n.endsWith(".ts")).sort();
-  if (names.length === 0) {
+export function moduleTreeDigest(root: string, dir: string): string {
+  const abs = path.join(root, dir);
+  const modules: string[] = [];
+  const unhashed: string[] = [];
+  const walk = (at: string, prefix: string): void => {
+    for (const entry of fs.readdirSync(at, { withFileTypes: true })) {
+      const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) {
+        walk(path.join(at, entry.name), rel);
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith(".ts")) modules.push(rel);
+      else unhashed.push(rel);
+    }
+  };
+  walk(abs, "");
+  if (unhashed.length > 0) {
     throw new Error(
-      `the library at ${dir} holds no .ts module, so its manifest digest would be a constant that ` +
-        "can never move - a hash that cannot detect the change it exists to detect. It is not " +
+      `the library tree at ${dir} holds ${unhashed.length} entr${unhashed.length === 1 ? "y" : "ies"} ` +
+        `this manifest digest does not hash: ${unhashed.sort().join(", ")}. They are NOT filtered ` +
+        "out: spec 2.1 has the manifest record the library version that graded the drawing, and a " +
+        "file the digest skips is a library input that can change with nothing failing - " +
+        'CLAUDE.md\'s "a skipped check must never look like a passing one". Either delete it (an ' +
+        "editor artifact, a .DS_Store) or hash it deliberately by extending moduleTreeDigest in " +
+        "tools/schgen/generate.ts, with a test beside the change.",
+    );
+  }
+  if (modules.length === 0) {
+    throw new Error(
+      `the library tree at ${dir} holds no .ts module, so its manifest digest would be a constant ` +
+        "that can never move - a hash that cannot detect the change it exists to detect. It is not " +
         "defaulted to an empty digest (spec 2.1: the manifest records the template library version " +
         "and the rule library version that graded the drawing).",
     );
   }
-  return names.map((n) => `${n} ${sha256(fs.readFileSync(path.join(abs, n), "utf8"))}`).join("\n");
+  return modules
+    .sort()
+    .map((rel) => `${rel} ${sha256(fs.readFileSync(path.join(abs, rel), "utf8"))}`)
+    .join("\n");
 }
 
 /**
@@ -202,8 +271,8 @@ function manifestSourcesOf(d: LoadedDesign, elk: ReadonlyMap<BlockId, ElkOutcome
     canonicalNetlist: null,
     sectionNetwork: canonicalNetworkText(d.spec.circuit),
     layoutInputs,
-    templateLibrary: libraryDigest(TEMPLATE_LIBRARY_DIR),
-    ruleLibrary: libraryDigest(RULE_LIBRARY_DIR),
+    templateLibrary: moduleTreeDigest(moduleRepoRoot(), TEMPLATE_LIBRARY_DIR),
+    ruleLibrary: moduleTreeDigest(moduleRepoRoot(), RULE_LIBRARY_DIR),
   };
 }
 
