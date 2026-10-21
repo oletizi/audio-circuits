@@ -29,6 +29,9 @@ import { generate, type Generation } from "../../../tools/schgen/generate.ts"
 import { kicadVersion } from "../../../tools/schgen/kicad-run.ts"
 import { stockSymbolDir } from "../../../lib/schgen/render/library.ts"
 import { PARITY_CASES, parityResolver } from "../../../tools/schgen/authoring-census.ts"
+import { elkInputOf } from "../../../lib/schgen/elk/graph.ts"
+import { readElkGraph } from "../../../lib/schgen/elk/read-graph.ts"
+import { baselineScale } from "../../../lib/schgen/readability/baseline.ts"
 import { GRID } from "../../../lib/schgen/render/geometry.ts"
 import type { Wire } from "../../../lib/schgen/render/block-types.ts"
 import type { LoadedDesign } from "../../../lib/schgen/design.ts"
@@ -195,6 +198,135 @@ describe("the four measures of every block that draws", () => {
     for (const b of blocks) {
       expect(measuresOf(b.topology, b.pins).occupiedArea, b.id).toBe(measuresOf(b.topology, []).occupiedArea)
     }
+  })
+})
+
+/**
+ * **D1's REPORT LINE, PINNED - plan decision D1 and spec §1.8 revision 4.** D1: *"Task 16's report
+ * prints, per block, its part count, its port-glyph share of cells, and where it sits against the
+ * ceiling's shape and against the interface cost - with the cost named, and with the floor reported
+ * as unmeasured rather than as a bound the block is inside or outside. It is a report line, never a
+ * refusal."*
+ *
+ * **THE PORT-GLYPH SHARE IS A GRAPH SHARE AND NOT A DRAWN-AREA SHARE ON THIS BACKEND, which is
+ * §1.8 revision 4's floor withdrawal measured rather than relayed.** G101's floor rested on
+ * `netlistsvg` emitting a 30 by 20 `inputExt` glyph per declared port, so *"a 1-part block's
+ * drawing was two-thirds boundary"*. Here `boundaryNodeOf` emits a node of ZERO width and height,
+ * and the assertion below checks that for every boundary node of every declared ELK block - so a
+ * block whose cells are two-thirds boundary has a drawing with no boundary AREA at all. **The share
+ * is still reported, because it is the interface cost's size in the graph ELK solves**, and that is
+ * the relationship §1.8 says to name. **The floor stays unmeasured.**
+ */
+/**
+ * **THE SIZE OF `docs/known-gaps.md` G106's DEFECT ON THIS DRIVER, which that entry says
+ * *"nobody has measured yet"*.** It is taken PRE-SNAP on both sides, so the only difference between
+ * the two columns is the canonicalisation: same ELK geometry, once as the router emitted it and
+ * once through `canonicalTopology`.
+ *
+ * **IT CORRECTS G106's OWN EXPECTATION IN THREE OF FIVE NUMBERS**, which is why it is pinned here
+ * rather than only written down. That entry says *"every one of the four measures the spec requires
+ * - bends, bends per edge, crossings, wire length - is then inflated by an unknown amount"*. On this
+ * driver: wire length IS inflated, on 12 of 12 blocks; crossings do not move on any of them; and
+ * bends and bends per edge move the OTHER way - the raw list reports FEWER bends, because a
+ * duplicate segment turns a degree-2 corner into a higher-degree node and a node is not a bend.
+ */
+describe("raw segment list versus canonical topology, over every block that lays out", () => {
+  it("inflates wire length on all twelve, leaves crossings and area alone, and UNDER-reports bends", async () => {
+    const symbols = parityResolver()
+    const rows: string[] = []
+    for (const c of PARITY_CASES) {
+      const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+      const outcomes = await elkPrePass(circuit, symbols)
+      for (const block of circuit.blocks.values()) {
+        const g = subgraphOf(circuit, block.id, symbols)
+        if (selectRenderer(g, TEMPLATES).kind !== "elk") continue
+        const o = outcomes.get(block.id)
+        if (o === undefined || !o.ok) continue
+        const built = readElkGraph(g, o.graph)
+        const pins = placedPins(g, built.placements)
+        const canon = canonicalTopology({ placements: built.placements, wires: built.wires, anchors: built.anchors }, pins)
+        if (!canon.ok) throw new Error(`${block.id}: the pre-snap topology was refused, so this comparison cannot be made`)
+        const raw = topology(built.wires)
+        const a = measuresOf(canon, pins)
+        const b = measuresOf(raw, pins)
+        expect(b.crossings, `${block.id} crossings`).toBe(a.crossings)
+        expect(b.occupiedArea, `${block.id} area`).toBe(a.occupiedArea)
+        expect(b.wireLength, `${block.id} length`).toBeGreaterThan(a.wireLength)
+        expect(b.bends, `${block.id} bends`).toBeLessThanOrEqual(a.bends)
+        rows.push(
+          `${block.id} wires ${built.wires.length}->${canon.wires.length} bends ${b.bends}/${a.bends} ` +
+            `crossings ${b.crossings}/${a.crossings} lenInflation ${(100 * (b.wireLength / a.wireLength - 1)).toFixed(2)}%`,
+        )
+      }
+    }
+    expect(rows).toEqual([
+      "ob-buffer wires 65->57 bends 26/28 crossings 7/7 lenInflation 10.30%",
+      "oc-power wires 42->31 bends 4/5 crossings 1/1 lenInflation 18.16%",
+      "oc-audio wires 82->70 bends 28/30 crossings 5/5 lenInflation 14.54%",
+      "oc-sidechain wires 91->76 bends 26/27 crossings 7/7 lenInflation 13.99%",
+      "pt-core wires 179->155 bends 81/83 crossings 78/78 lenInflation 11.14%",
+      "tp-leg-upper wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
+      "tp-leg-feedback wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
+      "tp-leg-lower-a wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
+      "tp-leg-lower-b wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
+      "tp-leg-collector wires 11->11 bends 6/6 crossings 0/0 lenInflation 3.09%",
+      "tp-leg-emitter-bypass wires 12->12 bends 6/6 crossings 0/0 lenInflation 2.07%",
+      "tp-stage wires 75->63 bends 21/24 crossings 7/7 lenInflation 13.05%",
+    ])
+  })
+})
+
+describe("D1's report line, per declared ELK block", () => {
+  it("prints parts, cells and the port-glyph share, and every port glyph is zero-size", () => {
+    const symbols = parityResolver()
+    const rows: string[] = []
+    let glyphs = 0
+    for (const c of PARITY_CASES) {
+      const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+      for (const block of circuit.blocks.values()) {
+        const g = subgraphOf(circuit, block.id, symbols)
+        if (selectRenderer(g, TEMPLATES).kind !== "elk") continue
+        const children = elkInputOf(g).graph.children ?? []
+        const boundary = children.filter((n) => n.id.startsWith("port:"))
+        glyphs += boundary.length
+        for (const node of boundary) {
+          expect(node.width ?? 0, `${block.id} boundary ${node.id} width`).toBe(0)
+          expect(node.height ?? 0, `${block.id} boundary ${node.id} height`).toBe(0)
+        }
+        rows.push(`${block.id} parts=${g.units.length} cells=${children.length} portGlyphs=${boundary.length} share=${((100 * boundary.length) / children.length).toFixed(1)}%`)
+      }
+    }
+    // A non-zero denominator for the zero-size claim: an empty boundary set would pass the loop
+    // above over nothing, which is the "term under test was zero" failure.
+    expect(glyphs, "no port glyph at all would make the zero-size assertion vacuous").toBe(38)
+    expect(rows).toEqual([
+      "ob-buffer parts=11 cells=14 portGlyphs=3 share=21.4%",
+      "oc-power parts=8 cells=11 portGlyphs=3 share=27.3%",
+      "oc-audio parts=14 cells=18 portGlyphs=4 share=22.2%",
+      "oc-sidechain parts=19 cells=24 portGlyphs=5 share=20.8%",
+      "pt-core parts=24 cells=26 portGlyphs=2 share=7.7%",
+      "tp-leg-upper parts=3 cells=5 portGlyphs=2 share=40.0%",
+      "tp-leg-feedback parts=3 cells=5 portGlyphs=2 share=40.0%",
+      "tp-leg-lower-a parts=3 cells=5 portGlyphs=2 share=40.0%",
+      "tp-leg-lower-b parts=3 cells=5 portGlyphs=2 share=40.0%",
+      "tp-leg-collector parts=2 cells=4 portGlyphs=2 share=50.0%",
+      "tp-leg-emitter-bypass parts=2 cells=6 portGlyphs=4 share=66.7%",
+      "tp-stage parts=16 cells=23 portGlyphs=7 share=30.4%",
+    ])
+  })
+
+  it("classifies each drawn block against the CEILING's shape, and names no floor", async () => {
+    const blocks = await drawnBlocks()
+    expect(blocks.map((b) => `${b.id} cells=${b.cells} ${baselineScale(b.cells).kind}`)).toEqual([
+      "tp-leg-upper cells=3 about-the-circuit",
+      "tp-leg-feedback cells=3 about-the-circuit",
+      "tp-leg-lower-a cells=3 about-the-circuit",
+      "tp-leg-lower-b cells=3 about-the-circuit",
+      "tp-leg-collector cells=2 about-the-circuit",
+    ])
+    // The floor is UNMEASURED for this backend (spec 1.8 revision 4), so nothing here reports one:
+    // the classification has three arms and none of them is a lower bound.
+    for (const b of blocks) expect(baselineScale(b.cells).why).not.toContain("floor")
   })
 })
 
