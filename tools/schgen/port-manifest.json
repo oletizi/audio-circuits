@@ -822,6 +822,8 @@
     "tests/schgen/manifest.test.ts",
     "tests/schgen/readability/measures.test.ts",
     "tests/schgen/readability/baseline.test.ts",
-    "tests/schgen/readability/finding.test.ts"
+    "tests/schgen/readability/finding.test.ts",
+    "tests/schgen/generate-digest.test.ts",
+    "tests/schgen/gate-census.test.ts"
   ]
 }
