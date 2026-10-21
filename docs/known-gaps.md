@@ -17291,12 +17291,22 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > | 0 of 5 | the remaining eleven | connectors, passives, diodes, the test point |
 >
 > **2 of 16 fit at least one inside slot**, so the predicate does answer non-zero
-> on reachable inputs and the three negative rows mean what they say. `[RELAYED,
-> NOT REPRODUCED HERE]` the reviewer's `STM32H743IITx` half: that nickname is not
-> configured in this repository's resolver, so `PT2399` is the one of its two this
-> run could re-drive - and it reproduced, as `Audio:PT2399`. **Every figure the
-> original run reported reproduced exactly, so this changed no result; what it
-> changed is what the run established.**
+> on reachable inputs and the three negative rows mean what they say.
+>
+> **AND THE REASON PUBLISHED FOR NOT REPRODUCING THE OTHER HALF OF THE POSITIVE
+> CONTROL WAS FALSE.** This entry said the reviewer's `STM32H743IITx` case was
+> *"not reproduced here"* because *"that nickname is not configured in this
+> repository's resolver"*. `[RAN, CONFIRMED]`
+> `symbolLibraries(["MCU_ST_STM32H7"])` resolves to
+> `/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/MCU_ST_STM32H7.kicad_sym`,
+> and `createResolver(...).resolve("MCU_ST_STM32H7:STM32H743IITx")` **succeeds**,
+> body **60960 x 220980 um**, **5 of 5** inside slots under the strict test. **The
+> real reason it is outside this measurement is SCOPE: no parity circuit declares
+> an STM32** (`declared.has(...)` is `false`), so it is not in the population the
+> sweep was over - which is a better reason than the one published, because it
+> says the symbol is irrelevant here rather than unavailable. **Two independent
+> parties now hold the same two body numbers**: the original reviewer and the
+> closing verification, and this run agrees with both.
 >
 > **NOTHING IS PROPOSED AND NOTHING IS FIXED.** The 13-character value is an
 > observation, not a mechanism: shortening or blanking it would change what the
