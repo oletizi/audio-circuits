@@ -1880,7 +1880,9 @@ results.** What it does is stop §1.1 from standing on the regular case.
 
 | | M1 | M2 |
 | --- | --- | --- |
-| **deliverable** | `schgen` ported; ELK integrated at both seams; the geometry and verification contracts of §1.3, §1.4, §1.5, §1.6, §1.9, §2 and §2.1 established; **gate 8's empty-delta half ported and exercised** | the analog idioms designed and implemented, **the Pultec transformation manifest derived from the partition**, then **all five Pultec section schematics** |
+| **deliverable** | `schgen` ported; ELK integrated at both seams; the geometry and verification contracts of §1.3, §1.4, §1.5, §1.6, §1.9, §2 and §2.1 established; **gate 8's empty-delta half ported and — see the amendment below — NOT exercised on a generated drawing** | the analog idioms designed and implemented, **the Pultec transformation manifest derived from the partition**, then **all five Pultec section schematics** |
+
+> **AMENDED 2026-10-21 UNDER CONTROLLER RULING R56, with the original wording left visible.** The M1 cell above read *"gate 8's empty-delta half ported and **exercised**"*. **The half is ported, driven and wired; "exercised" is not true of a generated drawing and cannot be made true inside M1 as it stands.** Task 18 measured why rather than inheriting it: `generate` refuses BOTH hand-arranged references at **gate 1** — `pt2399-core` on 115 `validateCircuit` problems (17 netNames, 1 single-pin net, 96 BOM fields) and `transistor-preamp` on 101 (100 BOM fields) — **before any block reaches a layout backend**, so the gate's own subject does not exist for either. `docs/known-gaps.md` **G238** holds the measurement, **G240** holds the gap with its price, and `docs/schematic/reference-graph-checks.md` states both as that document's headline rather than a footnote. **What WAS exercised is the comparison, end to end, on two real hand-arranged drawings through the real `kicad-cli` and on no generated one** — and the live-export-against-committed-fixture agreement that proves is explicitly **not** gate 8, because neither side is generated. **Closing this needs the four authoring classes G238 names, which are the circuits' own data and not generator defects.**
 | **acceptance**, **restated in revision 4 as four separate measurements** (§5.1) | **port parity** against the source project's own template fixtures (a REGRESSION); **template applicability** on this repository's circuit blocks (a MEASUREMENT, no target); **ELK coverage** of the blocks no template supports; **integrated correctness** - the completed schematics pass the KiCad and geometric checks, **and the reference-graph check with an EMPTY declared delta** | the five sections generable **from general templates**, without special-casing, with every electrical delta declared from the transformation in advance |
 | **what it does NOT produce** | any Pultec section schematic | - |
 
@@ -1894,9 +1896,18 @@ for it. The four measurements are separated above, and only two of them are
 verdicts.
 
 **And M1 now carries gate 8's empty-delta half** (§2, finding 17). It is not a
-reordering toward a Pultec sheet - the circuit it runs on is one rendered from
-its own model, with no electrical change and therefore an empty permitted delta.
-M1 still produces no Pultec section schematic.
+reordering toward a Pultec sheet - the circuit it would run on is one rendered
+from its own model, with no electrical change and therefore an empty permitted
+delta. M1 still produces no Pultec section schematic.
+
+> **AMENDED 2026-10-21 UNDER RULING R56: the present tense above was wrong and is
+> corrected to the conditional.** This paragraph said *"the circuit it runs on is
+> one rendered from its own model"*. **No such circuit exists.** Task 18 measured
+> that `generate` refuses both of this repository's hand-arranged references at
+> gate 1 - 115 and 101 `validateCircuit` problems, before any block reaches a
+> layout backend - so the half is ported, driven and wired, and it has run on two
+> real hand-arranged drawings and on nothing generated. `docs/known-gaps.md`
+> **G238** and **G240**.
 
 **M1 producing no Pultec schematic is not a cost to be minimised**, and the
 parent says so in terms: the milestone order *"is the discipline rather than an
