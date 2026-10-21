@@ -17373,3 +17373,118 @@ are scratchpad throwaways, so the shape survives only as this entry.
   is cheap and would turn *"reported as landed"* into a checked claim; it was not
   done here because the scripts are throwaways and the habit was the cheaper fix.
   **Neither addresses the prose-versus-figures half, and nothing proposed does.**
+
+### G235 - THE PATTERN, NAMED: a change whose PRIMARY effect is correct and whose COLLATERAL effect is wrong, so a reviewer checking the changed behaviour passes it - three instances in one task, all three found by reading the whole diff
+
+**RULING R48, AND IT IS THE IMPLEMENTER's OBSERVATION RATHER THAN THE REVIEW's.**
+Each of the three instances below is already recorded individually. **What was
+not recorded is that they are one shape**, and an entry that only re-listed them
+would add nothing - so this one names the shape, states the property that made
+all three invisible to the obvious check, and says what might catch the next one.
+
+**AND THE CIRCUMSTANCE OF ITS OWN WRITING IS EVIDENCE FOR G234, which is why it
+is recorded here rather than left as a remark.** The implementer put this pattern
+in a hand-back message to the controller and **did not write it down** - **one
+message after writing G234**, the entry about exactly that failure. The
+controller's words: *"you told me something interesting and did not write it down
+- which is exactly what G234 is about, one message after you wrote G234. That is
+not a criticism; it is the strongest possible evidence that G234 generalises."*
+**So G234 is not about register fixes specifically. It is about anything
+interesting that reaches a human before it reaches a file.**
+
+**THE SHAPE.** A change has a primary effect and a collateral one. **The primary
+effect is correct; the collateral effect is wrong; and every check anyone would
+naturally run is a check of the primary effect.** A reviewer reading the changed
+behaviour - *did the fix fix the thing?* - passes it. The defect is visible only
+to someone reading the WHOLE change for what else it moved.
+
+**THE THREE INSTANCES, with what each one's primary effect was and what its
+collateral effect broke.**
+
+| instance | the primary effect, correct | the collateral effect, wrong | what it broke | found by |
+| --- | --- | --- | --- | --- |
+| `flatSubgraphOf` spreading `{...c, blocks}` (Task 17, `2d0a003`) | a `BlockSubgraph` over the union of several blocks' members - it built one, and it laid out | `Circuit.unitBlock` was not rebuilt, so `labelledNets` still saw the original split | **the headline figure and its direction**: the flat control inherited the decomposition it was controlling for, and 1.000x was one artefact cancelling another. Corrected to 0.958x / 0.906x, **ADDS** rather than removes (**G100**) | the review, round 1 item 1(c) |
+| splitting the pinning assertions into `remeasure-ceiling.test.ts` (fix round 1, `83c4042`) | the split itself - `remeasure.test.ts` was at 526 lines against `CLAUDE.md`'s cap, and the split was the right remedy | seven pointers in the register and the modules kept naming the old file | **the register instructed a reader to verify a pinned constant against a file that does not pin it, and the verification came back 23 pass / 0 fail** (**G233**) | the review, round 2 item A |
+| extracting `crossingNets` so `governingNetsOf` could reuse it (fix round 2, `7977ea4`) | the extraction - two functions needed one traversal, and sharing it was right | `crossingNonRailNets`'s `Array.sort()` became a `localeCompare` comparator nothing had asked for | **nothing published, yet**: membership and every list were unchanged, but both lists are compared with `toEqual` and the two orders differ on `["AB", "A_B"]` - a latent shift in a published figure (**G100**) | the review, round 3 item 3 |
+
+**WHAT THE THREE HAVE IN COMMON, which is the useful part.** In every case **the
+thing the change was for worked**. The flat probe produced a subgraph that laid
+out; the split brought the file under the cap; the extraction removed a duplicated
+traversal. **So the natural check passed in all three** - and in the third case
+the whole suite passed, because nothing asserted the quantity that moved. **All
+three were found by someone reading the whole change rather than the changed
+behaviour, and all three were found by the reviewing agent rather than by the
+implementer.**
+
+> **A CORRECTION TO THE RULING THAT COMMISSIONED THIS ENTRY.** R48 says *"two of
+> the three were found by a reviewer rather than by you."* **It is three of
+> three.** Round 1's item 1(c), round 2's item A and round 3's item 3 were each
+> brought by the review; the implementer found the pattern, and the separate
+> lost-edit defect of **G234**, but none of these three. The correction makes the
+> finding slightly worse rather than better, which is why it is here.
+
+**ONE HONEST DIFFERENCE BETWEEN THE INSTANCES, because forcing three into one
+mould would be the kind of tidiness this register distrusts.** Instances two and
+three are collateral damage from a STRUCTURAL EDIT made in service of something
+else. Instance one is **stale DERIVED STATE on a copied record** - a different
+mechanism of error. **What all three share is the DETECTION property, not the
+cause**, and the detection property is what the entry is about.
+
+- **Found** 2026-10-20, Task 17 fix round 3, by the implementer, after the third
+  instance was reported by the review. **Named as a pattern under ruling R48**,
+  on the precedent that *"built, tested and unwired"* earned one entry after
+  three instances rather than being discovered a fourth time.
+- **Evidence** the three rows above, each traceable to a commit and to the entry
+  that records it individually - `2d0a003` and **G100**'s correction block,
+  `83c4042` and **G233**, `7977ea4` and **G100**'s *"what was and was not
+  touched"* block. **A check that could have failed and did not:** the Task 17
+  re-review swept all **4,664** added prose lines of the task resolving every
+  backticked path and identifier against disk, looking for a fourth instance of
+  this class in the documentation, and found none - so three is the measured
+  count for this task and not a floor anybody has reason to raise. `[RELAYED]`
+  that sweep is the re-review's and was not re-executed here.
+- **Verified** CONFIRMED - the implementer caused all three, and read each
+  instance's own entry while writing this one. **The attribution of each
+  discovery is read off the three fix-round briefs**, which name the reviewer as
+  the source in each case.
+- **Why it is open** **OPEN, and the reason is specific: the pattern is recorded
+  and no mechanism for catching the next one has any evidence behind it.** Three
+  are proposed below and **none has been tested**. The entry would be resolvable
+  if one of them were measured against a fourth instance, and manufacturing a
+  fourth instance to test it is not something to do deliberately. **What is
+  settled is the shape; what is open is the remedy.**
+- **What would settle it** **CRITERION: a mechanism that catches a collateral
+  change whose primary change is correct, with evidence that it does - not an
+  instruction to be careful.** Three candidates, **all UNTRIED**:
+
+  **(a) the controller's, R48:** *read the full diff of a fix for collateral
+  change rather than reading the fix.* **Evidence: suggestive and not a
+  measurement** - all three were in fact caught that way, by reviewers. **Its
+  weakness, stated because R48 asks not to be taken as settled: it is
+  attention-based**, it tells a reader to look without telling them what for, and
+  the implementer read each of these diffs too.
+
+  **(b) the implementer's alternative, which is the one with the best odds on two
+  of the three instances:** *for every structural change made in service of a
+  fix, NAME the observable quantity it could move, and assert that quantity in
+  the same change.* It produces an artefact instead of relying on attention, and
+  it is what both later fixes actually did once the defect was known - the order
+  pin for instance three, `tests/schgen/pointers.test.ts` for instance two.
+  **What it would and would not have caught, stated rather than claimed:** it
+  catches instance three cleanly (*extracting a function that returns a sorted
+  list* names the order) and instance two cleanly (*splitting a test file* names
+  what cites it); on instance one it **degrades to "know your data model"**,
+  because naming the quantity requires already knowing that `unitBlock` derives
+  from `blocks`, which is precisely the knowledge that was missing. **So: 2 of 3,
+  and honest about the third.**
+
+  **(c) narrow, for instance one's class only:** make a `Circuit` copied with a
+  field overridden rebuild every field derived from it, so `{...c, blocks}` is
+  not reachable. **It is a code change and R48 forbids one for this entry**, so
+  it is recorded and not built; it would also need someone to decide where
+  derived-field knowledge lives, which is a generator design question and not
+  this task's.
+
+  **None of the three addresses the half that worries the implementer most: that
+  the natural check passing is what makes this class safe to ship.** A mechanism
+  that only improves reading does not change that.
