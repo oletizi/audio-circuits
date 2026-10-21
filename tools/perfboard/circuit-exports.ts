@@ -4,13 +4,24 @@
  * `PIN_NUMBERS` (kind -> canonical pin -> footprint pin number).
  *
  * Its own module, rather than living in check.ts, so every consumer (the check,
- * the build guide, the parts list, the schematic stub) can import it without
- * importing the check - and the check can import the parts list without a cycle.
+ * the build guide, the parts list) can import it without importing the check -
+ * and the check can import the parts list without a cycle. The schematic-stub
+ * verb was a fourth consumer until Task 19 deleted it (`docs/known-gaps.md`
+ * **G248**).
  */
 import { isRecord } from "./guards.ts"
 
-/** Where a circuit's exports were read from, for error messages. A PerfboardDeclaration
- * is one; the schematic-stub verb passes the module path for both fields. */
+/**
+ * Where a circuit's exports were read from, for error messages. A PerfboardDeclaration is one,
+ * and it is the only shape left: the deleted schematic-stub verb had no declaration file, so it
+ * passed its own name as `file` and the module path as `circuitPath` to keep the message from
+ * printing the path twice. **That "once, not twice" was the CALLER's choice and not a property of
+ * this module** - `[RAN]` the two calls side by side, the message reads
+ * `schematic-stub: /abs/x.ts does not export a DESIGNATORS map` with the path once and
+ * `/abs/x.ts: /abs/x.ts does not export a DESIGNATORS map` with it twice - so the test that
+ * asserted it went with the verb rather than being coverage this module lost
+ * (`docs/known-gaps.md` **G248**).
+ */
 export interface SourceOfExports {
   readonly file: string
   readonly circuitPath: string

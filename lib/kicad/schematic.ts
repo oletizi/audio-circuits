@@ -1,12 +1,36 @@
 /**
  * A KiCad schematic STUB, written once from a canonical Network.
  *
- * Every part is placed on a plain grid with its symbol, reference, value and
+ * **SUPERSEDED. DO NOT REACH FOR THIS.** `lib/schgen/` is the schematic
+ * generator and `bun run schgen` is its front door. This module survives for
+ * ONE reason: `tests/circuits/kicad-round-trip.ts` and the five
+ * `tests/circuits/transistor-preamp-*.test.ts` files are this repository's only
+ * `kicad-cli` proof that KiCad reads a stub the way the circuit means it, and
+ * they cannot move onto `generate` yet because it refuses all five of those
+ * boards (`docs/known-gaps.md` **G247**). **G248** records that non-deletion,
+ * what has to be true before this file goes, and the price of keeping it. There
+ * is no CLI verb, no `package.json` script and no documented command that
+ * reaches this writer: Task 19 deleted all three.
+ *
+ * **WHAT IT EMITS IS A KNOWN FAILURE MODE AND NOT MERELY A ROUGH DRAFT.** Every
+ * part is placed on a plain grid with its symbol, reference, value and
  * footprint, and every pin is carried by a short wire to a net label, so
- * connectivity is carried entirely by labels. That is a starting point, not a
- * drawing: the operator arranges it in KiCad and owns it from then on. After
- * that, only electrical equivalence to the Network is ever enforced (through
- * the exported netlist); positions, wires, labels and text are the operator's.
+ * connectivity is carried entirely by labels. `docs/known-gaps.md` **G81**
+ * records that a third-party design review blocked exactly this representation
+ * in another project, citing this repository as where the pathology was first
+ * seen: when almost every connection becomes a label, the drawing stops
+ * communicating circuit topology. `lib/schgen/` is the fix, not an alternative.
+ *
+ * **THE DIVISION OF LABOUR THIS COMMENT USED TO ASSERT IS NOT THIS PROJECT'S
+ * ANY MORE.** It said *"the operator arranges it in KiCad and owns it from then
+ * on ... positions, wires, labels and text are the operator's"*. `CLAUDE.md`
+ * reversed that on 2026-10-10: **agents do the placing and routing, of
+ * schematics and of board layouts both.** A reader who trusted this comment
+ * over `CLAUDE.md` would hand schematic work back, which is the second defect
+ * **G81** names. What is still true is narrower and is a fact about the boards
+ * already in `circuits/`: their committed `.kicad_sch` files were arranged by
+ * hand, nothing regenerates them, and only electrical equivalence to the
+ * Network is enforced on them (through the exported netlist).
  *
  * Symbols come from lib/kicad/symbols/ (vendored), never from an installed
  * KiCad, so the output does not depend on the machine.

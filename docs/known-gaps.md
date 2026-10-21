@@ -727,6 +727,12 @@ Task 9's work.
   differently - a string a typecheck cannot see. A check
   that could have failed: the file could have had no importers, in which case
   the move would have been cheap.
+  **AMENDED 2026-10-21 BY TASK 19, WHICH DELETED `tests/cli/schematic-stub.test.ts`
+  (**G248**) AND SO CHANGED THIS FIGURE.** `[RAN]` the same grep at this commit:
+  **15 lines, of which 3 are imports, and 0 in `tests/cli/schematic-stub.test.ts`**
+  - so the string-reference hazard this clause named is gone and **the only
+  remaining cost of the move is the three import depths.** The owner question is
+  unchanged and cheaper than it was.
 - **Verified** CONFIRMED - this writer created the second file and read the
   CLAUDE.md sentences it sits against.
 - **Why it is open** **it is the owner's to decide and nobody asks him again
@@ -5422,9 +5428,21 @@ record the disagreement so its cost is visible"*.
    is the guard, while `tools/cli/schematic-stub.ts` refuses to overwrite at all
    (*"The stub is written once; after that the schematic is yours"*). Gate 1's
    "regenerates byte-identically" and that posture are not obviously compatible.
+   **AMENDED 2026-10-21: `tools/cli/schematic-stub.ts` was deleted by Task 19
+   (`docs/known-gaps.md` **G248**), so this clause's present tense is now a
+   statement about the tree at `1dd5814`.** The clause itself still stands: the
+   committed `.kicad_sch` is still the netlist authority for those six boards,
+   and `lib/schgen/`'s `check` compares by CONTENT rather than refusing to
+   overwrite, which is the posture gate 1 wanted - so what changed is the
+   mechanism, not the tension.
 6. **Two of the four circuits the spec names as T2's verification material cannot
    even be stubbed today.** `tools/cli/schematic-stub.ts` requires the module to
-   export `DESIGNATORS`, `PIN_NUMBERS` and `schematicNotes()`. Measured:
+   export `DESIGNATORS`, `PIN_NUMBERS` and `schematicNotes()`. **AMENDED
+   2026-10-21: that verb was deleted by Task 19 (**G248**), so this clause and
+   its evidence below describe the tree at `1dd5814`. The measurement is kept
+   because it is what the clause rests on and because nothing re-derives it: the
+   three exports it counted are still exported by the same modules, and what no
+   longer exists is the consumer that demanded them.** Measured:
    `circuits/opamp-buffer.ts` exports none of the three,
    `circuits/optical-compressor/` none of the three and no symbol for any
    component, `pt2399-core` two of three, the five preamp boards all three, the
@@ -5470,7 +5488,10 @@ the register entries are what an agent consults before acting.
   and `.tools/` returns nothing - a check that could have failed, since the same
   find unfiltered returns many. Clause 6 confirmed by this writer for the
   optical compressor (`grep -c 'symbol:'` = 0 in all five modules) and for the
-  stub's three requirements, read at `tools/cli/schematic-stub.ts:6-7, 72-79`.
+  stub's three requirements, read at `tools/cli/schematic-stub.ts:6-7, 72-79`
+  **(that file, and so those line numbers, were deleted by Task 19 - see clause
+  6's amendment and `git show 1dd5814:tools/cli/schematic-stub.ts` to re-read
+  them)**.
   Clause 4 confirmed by `ls circuits/pultec/physical/`. The spec text of every
   clause read at `1dd5814`.
 - **Verified** clauses 3, 4 and 6 yes, by this writer. Clauses 1, 2, 5 and 7 are
@@ -6348,6 +6369,25 @@ comment over `CLAUDE.md` will hand schematic work back.
   delete). The stale division-of-labour sentence in the doc comment is a separate
   one-line fix that need not wait for the port. **MECHANISM:** the port described
   in `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`.
+
+> **AMENDED 2026-10-21 BY TASK 19. THE PORT LANDED, THE REPLACEMENT EXISTS, AND
+> THE SECOND HALF OF THIS CRITERION IS DELIBERATELY NOT MET - SO THIS ENTRY IS
+> NOT DELETED.** `lib/schgen/` shows local topology with wires and
+> `lib/kicad/schematic.ts` still emits the labels stub beside it, because
+> `generate` refuses this repository's own preamp boards (**G247**) and the stub
+> writer carries the only `kicad-cli` proof that KiCad reads a stub as the
+> circuit means it. **What Task 19 deleted is the INVITATION, not the writer**:
+> the `schematic-stub` verb, its `package.json` script, its test and
+> `README.md`'s instructions are gone, so no supported path reaches the
+> pathology. **G248** records the non-deletion, its precondition and its price,
+> and the price is that the pathology this entry describes is still in the tree,
+> reachable by import. **The stale division-of-labour sentence named above is
+> fixed** - `lib/kicad/schematic.ts`'s doc comment no longer asserts that the
+> operator owns arrangement - so that half of this entry is discharged and the
+> topology half is what keeps it open. **The Evidence below cites "lines 2-9",
+> which was right at `9eb6394` and is not right now**: the doc comment was
+> rewritten in this amendment's own change and the quoted sentences above are
+> the durable copy of what it said.
 
 ### G83 - the readability gate this program would copy handed its reviewer a LIST of defects to look for, and five of twenty findings map onto that list one-to-one
 
@@ -19635,3 +19675,133 @@ stub writer.
   different leg-constant shapes and one board with none, so nothing here
   estimates this as a copy of `lab`'s. **Neither piece is sufficient alone and
   the order matters: (2) is what makes (1) measurable for four of the five.**
+
+### G248 - "SUPERSEDE MEANS DELETE" IS DELIBERATELY UNSATISFIED HERE: the stub writer's INVITATION is deleted and the writer itself is KEPT, because it carries this repository's only `kicad-cli` proof that KiCad reads a stub as the circuit means it
+
+**THE PRICE FIRST, IN THE SENTENCE THE CONTROLLER SAID NOT TO SOFTEN: the
+pathology G81 describes remains in the tree, reachable by import, for as long as
+this stands.** `lib/kicad/schematic.ts` still carries every pin to a net label by
+a short wire, still puts connectivity entirely in labels, and still takes
+`newUuid: () => string` - so its output cannot be compared by content. **G81**
+records that this is the exact thing a third-party review blocked another project
+from shipping, and that the blocking review cites THIS repository as where the
+pathology was first seen.
+
+**WHAT WAS DELETED, which is what the rule is actually protecting.** Controller
+ruling **R65** split the deletion on the grounds that *"supersede means delete"*
+exists so nobody finds a superseded pattern and trusts it - *"that is an argument
+about somebody REACHING it, not about a test fixture existing"*. So the
+invitation went:
+
+| deleted | sha before deletion |
+| --- | --- |
+| `tools/cli/schematic-stub.ts` | `7def87ef86279eaabea5f2202b460846dc5a68d9` |
+| `tests/cli/schematic-stub.test.ts` | `f5a22f2c2a74b0b6c81738a97b8775a5d3911563` |
+| the `schematic-stub` script in `package.json` | - |
+| `README.md`'s instructions for running it | - |
+
+After this there is no supported path to the pathology: no script, no verb, no
+documented command. What remains is a library function three test files import.
+
+**WHAT WAS KEPT, AND WHY DELETING IT WOULD HAVE COST A MEASURED CAPABILITY.**
+`lib/kicad/schematic.ts`, `tests/kicad/schematic.test.ts`,
+`tests/circuits/kicad-round-trip.ts` and the five `transistor-preamp-*.test.ts`
+files stay. **G247** measures why they cannot move: `generate` refuses `lab` at
+layout on **G232**'s field-placement defect, and the other four boards have no
+`SchematicAuthoring` declaration at all, so `generate` cannot be invoked on them.
+`[RAN]` `grep -c 'kicadRoundTrip(' tests/circuits/transistor-preamp-*.test.ts`
+returns `1` for each of the five: **five tests, one per board**, each named *"KiCad
+reads the generated stub as the same circuit"*, and
+`tests/circuits/kicad-round-trip.ts`'s own header is the claim they rest on -
+*"the only proof KiCad reads a stub the way the circuit means it, so a missing
+kicad-cli FAILS them rather than skipping"*. Deleting the writer deletes those
+five and nothing in this repository replaces them today.
+
+**THE NON-DELETION IS THE CHOICE AND IT IS RECORDED AS ONE RATHER THAN AS AN
+OVERSIGHT.** `CLAUDE.md` says a pattern replaced by a better one *"is removed in
+the same change, not left as a stub for somebody to find and trust"*. That is not
+what happened here. The rule is unsatisfied, knowingly, with the precondition
+named below, and the reason is that the alternative trades a measured capability
+for a tidier tree.
+
+**THE PRECONDITION, AND IT IS NARROWER THAN THE ADDENDUM STATED AND WIDER THAN
+ITS UPDATE STATED.** Ruling **R65** said the writer can go once *"the five boards
+validate, so the five tests can move onto `generate` and `roundTrip`"*.
+Validation stopped being the obstacle at Task 20 (**G245**). Its update then said
+the precondition is *"the field-placement defect is fixed, so the five boards
+GENERATE"*. **G247** measures that as incomplete: fixing **G232** reaches `lab`
+only. **The precondition is both of G247's mechanisms** - the field-placement
+defect fixed, AND four `SchematicAuthoring` declarations written - after which
+`kicadRoundTrip(board, stem)` becomes a call into `generate` plus
+`roundTrip`, the five tests move, and `lib/kicad/schematic.ts`,
+`tests/kicad/schematic.test.ts` and the `writeSchematicStub` call in
+`tests/circuits/kicad-round-trip.ts` are deleted in that change.
+
+**THE BRIEF'S CONSUMER LIST WAS SHORT BY ONE, AND THE ONE IT MISSED IS A TEST
+FILE.** The brief names *"six live consumers: `tools/cli/schematic-stub.ts`,
+`tests/kicad/schematic.test.ts`, `tests/circuits/kicad-round-trip.ts`, and
+through it the five `transistor-preamp-*.test.ts` files"*. It does not name
+`tests/cli/schematic-stub.test.ts`, which imports `runSchematicStub` and
+`SchematicStubDeps` directly and carries six assertions. **Five of them are the
+verb's own behaviour** - writes the stub, writes a `.kicad_pro` beside it, keeps
+an existing project, refuses to overwrite a schematic, refuses the wrong argument
+count - and die with it. **The sixth looked like coverage of something that
+outlives the verb and is not.** It is named *"refuses a module that does not
+export DESIGNATORS, naming the module path once, not twice"*, and
+`assertDesignators` lives in `tools/perfboard/circuit-exports.ts`, which
+`tools/guide/circuit.ts` still calls. `[RAN]` the two calls side by side:
+
+```
+as the verb called it (file is the verb's own name, circuitPath is the module):
+  message: schematic-stub: /abs/circuits/opamp-buffer.ts does not export a DESIGNATORS map
+  occurrences of the module path: 1
+as it would read if the caller passed the module path for BOTH fields:
+  message: /abs/circuits/opamp-buffer.ts: /abs/circuits/opamp-buffer.ts does not export a DESIGNATORS map
+  occurrences of the module path: 2
+```
+
+**The "once" is the CALLER's choice of `where`, not a property of
+`assertDesignators`** - so the assertion was testing the verb, and no coverage of
+a surviving module was lost. That reasoning is now in
+`tools/perfboard/circuit-exports.ts`'s own comment, beside the type whose fields
+the verb was the second shape of. **This is R65's split applied one level down,
+and it was found by checking what cited the file rather than by reading the
+brief's list.**
+
+- **Found** 2026-10-21, Task 19, under controller ruling **R65** and its
+  post-Task-20 update.
+- **Evidence** the two deletions' shas are `[RAN] shasum` on each file
+  immediately before `git rm`, and the files are absent from the tree at this
+  commit. The kept files' irreplaceability is **G247**'s measurement, driven
+  there. The "short by one" claim is `[RAN]`
+  `git grep -n 'schematic-stub\|runSchematicStub\|SchematicStubDeps' HEAD -- '*.ts' '*.json' tools tests package.json`
+  against the pre-deletion tree. Beyond `package.json` and the verb itself it
+  returned citations in **three files the brief does not name**: twelve lines in
+  `tests/cli/schematic-stub.test.ts`, which imports the verb and carries six
+  assertions, plus one doc-comment line each in `tools/cli/schgen.ts` and
+  `tools/perfboard/circuit-exports.ts`. **A check that could have failed: the
+  grep could have returned only `package.json` and the verb, which is what a
+  complete consumer list would have predicted.** The once-versus-twice figures are a probe that calls
+  `assertDesignators` both ways; **its own control is the second call**, which
+  answers `2` where the first answers `1`, so a probe that could not tell them
+  apart would have printed the same number twice.
+- **Verified** CONFIRMED - this writer deleted the files, ran the greps, ran the
+  probe and read `tests/cli/schematic-stub.test.ts` in full before deleting it.
+  **G81**'s pedals-review half is **RELAYED** through that entry, which is
+  explicit that it relays it too.
+- **Why it is open** it is open BY DECISION rather than by omission, and the
+  decision is the controller's. **G81** stays open for the same reason and is NOT
+  deleted: the entry describes a pathology that is still in the tree, so deleting
+  it would remove the only durable record of what the kept file does wrong -
+  which is the failure mode the register's own header names, where *"one deletion
+  removed an open owner question that only survived in a gitignored report"*.
+- **What would settle it** **CRITERION: `lib/kicad/schematic.ts`,
+  `tests/kicad/schematic.test.ts` and `writeSchematicStub`'s call in
+  `tests/circuits/kicad-round-trip.ts` are absent from the tree, and the five
+  tests named above still pass** - the same five names, through `generate` and
+  `roundTrip` instead. **MECHANISM, UNTRIED, and it is G247's two pieces and not
+  one**: the field-placement defect (**G232**) fixed, and four
+  `SchematicAuthoring` declarations written, one per board. **A test that needed
+  editing to survive that move would be a finding and not an edit** - the brief
+  is explicit, and the reason is that a test which only passed against the stub
+  was not testing what its name said.

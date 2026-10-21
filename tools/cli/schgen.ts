@@ -15,9 +15,10 @@
  * makes that true and `tests/schgen/emit-byte-stable.test.ts` is what holds it to it.
  *
  * The shape - injected deps, an `isMain` guard, a `USAGE` string, a `runSchgen` that returns an
- * exit code instead of calling `process.exit` - follows `tools/cli/schematic-stub.ts`, for the
- * reason `tools/cli/entrypoint.ts` gives: a CLI that exits inside its own body cannot be asserted
- * on.
+ * exit code instead of calling `process.exit` - is `tools/cli/perfboard.ts`'s and was taken from
+ * `tools/cli/schematic-stub.ts`, which this verb superseded and Task 19 deleted
+ * (`docs/known-gaps.md` **G248**). The reason is `tools/cli/entrypoint.ts`'s: a CLI that exits
+ * inside its own body cannot be asserted on.
  */
 import fs from "node:fs"
 import path from "node:path"
