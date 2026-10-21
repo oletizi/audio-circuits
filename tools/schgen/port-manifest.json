@@ -836,6 +836,13 @@
     "tests/schgen/remeasure-edges.test.ts",
     "tests/schgen/remeasure-ceiling.test.ts",
     "tests/schgen/pointers.test.ts",
-    "tests/schgen/render/field-slots.test.ts"
+    "tests/schgen/render/field-slots.test.ts",
+    "lib/schgen/gates/canonical-value.ts",
+    "lib/schgen/gates/graph-match.ts",
+    "lib/schgen/gates/declared-delta.ts",
+    "lib/schgen/gates/reference-graph.ts",
+    "tests/schgen/gates/declared-delta.test.ts",
+    "tests/schgen/gates/reference-graph.test.ts",
+    "tests/schgen/gates/reference-graph.kicad.test.ts"
   ]
 }

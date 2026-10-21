@@ -17,8 +17,13 @@
  * **THE GATE-8 CASCADE TEST IS UNCHANGED AND STILL MEANS WHAT IT MEANT.** `runGates` still
  * registers a gate 8 row for a design that declares `oscar`, so that row still reports
  * `NOT_RUN` after a gate-1 refusal. The one test added here is the other half of that: with a
- * generation that SUCCEEDS, gate 8 reports `OSCAR_NOT_PORTED` rather than an empty problem list,
- * because a gate that reports nothing reads exactly like a gate that passed.
+ * generation that SUCCEEDS, gate 8 reports a PROBLEM rather than an empty problem list, because a
+ * gate that reports nothing reads exactly like a gate that passed. **Task 18 changed which problem
+ * it is**: the row used to carry `OSCAR_NOT_PORTED`, and now that the M1 comparison is wired it
+ * carries `OSCAR_NO_REFERENCE`, because this fixture's `oscar.netlists` is empty and a gate with
+ * nothing to compare against still does not pass. Task 18 adds two cases beside it: a declared
+ * reference that is not on disk is reported LOUDLY, and a declaration whose permitted-delta file is
+ * not a committed .json is refused by name.
  */
 import { afterEach, describe, expect, it } from "bun:test";
 import fs from "node:fs";
@@ -28,7 +33,7 @@ import { fileURLToPath } from "node:url";
 import { cap, RAILS } from "./__fixtures__/circuits.ts";
 import type { DesignSpec, LoadedDesign } from "../../lib/schgen/design.ts";
 import { generate, writeGeneration } from "../../tools/schgen/generate.ts";
-import { annotationProblems, baselineCensus, MANIFEST_UNREAD, OSCAR_NOT_PORTED, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
+import { annotationProblems, baselineCensus, MANIFEST_UNREAD, OSCAR_NO_REFERENCE, oscarBriefNotJson, oscarReferenceMissing, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "./__fixtures__/orientations.ts";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "symbols");
@@ -97,6 +102,16 @@ function loaded(dir: string, s: DesignSpec): LoadedDesign {
 const OSCAR = { brief: "CORE-BRIEF.md", netlists: {}, symmetricSymbols: {}, subcircuits: [] };
 
 /**
+ * A COMMITTED permitted-delta declaration, absolute so it resolves from a temp design directory.
+ *
+ * It has to be committed: `parseDeclaredDeltas` refuses a declaration whose text is not git's HEAD
+ * text, which is the whole provenance guarantee (`lib/schgen/gates/declared-delta.ts`). So the
+ * cases below borrow the corpus `tests/schgen/gates/declared-delta.test.ts` owns rather than
+ * writing one into the scratch directory, where it could never be committed.
+ */
+const DELTA_DECLARATION = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "deltas", "empty.json");
+
+/**
  * Task 16: the citation every row carries when the generation was refused.
  *
  * It names BOTH files - there is no derivation to name, and the readability-baseline registry's
@@ -157,20 +172,69 @@ describe("runGates", () => {
   });
 
   /**
-   * ADDED BY TASK 11, and it is the claim the divergence above exists to make: gate 8 is
-   * unavailable here, and an unavailable gate must report a PROBLEM. With a generation that
-   * succeeds, gate 8's row is reached and carries the refusal - so neither its absence nor an
-   * empty problem list can be read as OSCAR equivalence holding.
+   * ADDED BY TASK 11 and RETARGETED BY TASK 18: gate 8 must report a PROBLEM whenever it has not
+   * compared anything. With a generation that succeeds, its row is reached - so neither its absence
+   * nor an empty problem list can be read as OSCAR equivalence holding. Task 11's reason was that
+   * the comparison was unported; Task 18's is that this fixture declares no reference, and the
+   * refusal is specific to that.
    */
-  it("reports gate 8 as unavailable, not as passing, when the generation succeeds", async () => {
+  it("reports gate 8 as having nothing to compare, not as passing, when the generation succeeds", async () => {
     const dir = tmpRepo();
     const d = loaded(dir, spec({ checklist: null, oscar: OSCAR }));
     writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
     const r = await runGates(d, ENV);
     const gate8 = r.find((g) => g.gate === "8 OSCAR equivalence");
-    expect(gate8?.problems).toEqual([OSCAR_NOT_PORTED]);
+    expect(gate8?.problems).toEqual([OSCAR_NO_REFERENCE]);
     expect(gate8?.problems).not.toEqual([]);
     expect(r[0]?.problems).toEqual([]);
+  });
+
+  /**
+   * **TASK 18, STEP 6: A REFERENCE THE GATE CANNOT FIND REPORTS LOUDLY AND DOES NOT PASS.** This is
+   * the gate whose absence a table already lost once (`docs/known-gaps.md` **G104**), and a missing
+   * reference is the quietest way for it to stop checking anything: the comparison simply has no
+   * second side. The refusal names the board and the path it looked for.
+   */
+  it("reports a declared reference that is not on disk, naming it, and does not pass", async () => {
+    const dir = tmpRepo();
+    const missing = path.join(dir, "no-such-board.kicad_sch");
+    const oscar = { ...OSCAR, brief: DELTA_DECLARATION, netlists: { board: "no-such-board.kicad_sch" }, symmetricSymbols: { board: [] } };
+    const d = loaded(dir, spec({ checklist: null, oscar }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const r = await runGates(d, ENV);
+    const gate8 = r.find((g) => g.gate === "8 OSCAR equivalence");
+    expect(gate8?.problems).toEqual([oscarReferenceMissing("board", missing)]);
+    expect(gate8?.problems).not.toEqual([]);
+  });
+
+  /**
+   * **AND THE PERMITTED-DELTA DECLARATION IS REFUSED BY NAME WHEN IT IS NOT ONE.** `oscar.brief` is
+   * a `CORE-BRIEF.md` upstream and pedals' reader for it is not ported, so a design naming one is
+   * told that rather than quietly compared under an empty delta - which would admit every
+   * difference by default, the exact inversion of the gate's purpose.
+   */
+  it("refuses a CORE-BRIEF.md permitted-delta declaration by name rather than defaulting to empty", async () => {
+    const dir = tmpRepo();
+    // A reference that EXISTS, so the gate gets past the missing-reference arm to the declaration.
+    const oscar = { ...OSCAR, brief: "CORE-BRIEF.md", netlists: { board: "power.kicad_sch" }, symmetricSymbols: { board: [] } };
+    const d = loaded(dir, spec({ checklist: null, oscar }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const r = await runGates(d, ENV);
+    const gate8 = r.find((g) => g.gate === "8 OSCAR equivalence");
+    expect(gate8?.problems.join(" ")).toContain(oscarBriefNotJson("CORE-BRIEF.md"));
+  });
+
+  /** A declared subcircuit is M2's and is refused rather than ignored. */
+  it("refuses an oscar.subcircuits declaration, naming it as M2's", async () => {
+    const dir = tmpRepo();
+    const sub = { id: "VCAP", board: "board", oscar: { parts: [], anchors: {}, rails: {} }, ours: { parts: [], anchors: {}, rails: {} }, deltas: [] };
+    const oscar = { ...OSCAR, netlists: {}, symmetricSymbols: {}, subcircuits: [sub] };
+    const d = loaded(dir, spec({ checklist: null, oscar }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const r = await runGates(d, ENV);
+    const gate8 = r.find((g) => g.gate === "8 OSCAR equivalence");
+    expect(gate8?.problems.join(" ")).toContain("the subcircuit comparison is M2's");
+    expect(gate8?.problems.join(" ")).toContain(OSCAR_NO_REFERENCE);
   });
 
   /**

@@ -28,17 +28,25 @@
  *    PORTED file this task may not edit, so `exportSexprNetlist` below asks the same hermetic
  *    `runKicadCli` for `kicadsexpr` instead. It is the one new function in this file.
  *
- * 2. **GATE 8's GRAPH COMPARISON IS NOT PORTED YET, AND THIS FILE SAYS SO OUT LOUD.**
- *    `gates/oscar/compare.ts` and `gates/oscar/graph.ts` are Task 18's (the latter needs
- *    `@/kicad/components`, which this manifest does not resolve). **Gate 8 is NOT deferred** -
- *    spec revision 4 moved its empty-delta half into M1 and `docs/known-gaps.md` **G104**
- *    records why the deferral argument was withdrawn. So a design that declares `oscar` still
- *    gets a gate 8 row, and that row carries a refusal naming Task 18 rather than vanishing: a
- *    gate omitted from the census reads exactly like a gate that passed, which is the failure
- *    `CLAUDE.md` names. `annotationProblems` and `symmetricSymbolsProblems` are gate 8's two
- *    graph-free halves and are KEPT, tested, and waiting for Task 18 to wire them - deleting
- *    them would make Task 18 re-transcribe them from a source this file no longer re-derives
- *    from.
+ * 2. **GATE 8 RUNS ITS M1 HALF HERE AND REFUSES ITS M2 HALF BY NAME.** Task 18 replaced the
+ *    `OSCAR_NOT_PORTED` refusal this file used to carry with `oscarGate` below, which builds a
+ *    `ReferenceGraph` from each declared reference and compares the generated schematic against
+ *    it under a COMMITTED permitted-delta declaration
+ *    (`lib/schgen/gates/reference-graph.ts`, `lib/schgen/gates/declared-delta.ts`). What is
+ *    still refused is the SUBCIRCUIT comparison with declared deltas applied - pedals'
+ *    `applyDeltas`, the `CORE-BRIEF.md` reader and `gates/oscar/boundary.ts`'s per-subcircuit
+ *    map - which is M2's and which `DECLARED_DELTAS_ARE_M2` and `oscarSubcircuitsAreM2` name.
+ *    Every refusal here is a PROBLEM on the row and never an omission: a gate missing from the
+ *    census reads exactly like a gate that passed, which is the failure `CLAUDE.md` names.
+ *    `annotationProblems` and `symmetricSymbolsProblems` were kept unwired for Task 18 and are
+ *    now both wired.
+ *
+ *    **AND IT HAS NEVER RUN AGAINST A GENERATED DRAWING, which this file says rather than
+ *    leaving to be discovered.** `docs/known-gaps.md` **G238** measures that `generate` refuses
+ *    both of this repository's hand-arranged references at gate 1, so no design here declares
+ *    `oscar` and the gate's comparison is exercised only by
+ *    `tests/schgen/gates/reference-graph.kicad.test.ts`. That is the state **G226** names, and
+ *    **G240** records it with the precondition that would wire it.
  *
  * 3. **EVERY GATE ROW NAMES THE DERIVATION IT RAN AGAINST - about a hundred lines Task 16 added,
  *    and the widest of the three.** Pedals' `GateResult` is `{ gate, problems }`. Here it carries
@@ -57,6 +65,8 @@ import os from "node:os";
 import path from "node:path";
 import { importNetlist, KICAD_CLI } from "../../lib/kicad/netlist.ts";
 import type { LoadedDesign, OscarConfig } from "../../lib/schgen/design.ts";
+import { parseDeclaredDeltas, type PermittedDelta } from "../../lib/schgen/gates/declared-delta.ts";
+import { checkReferenceGraph } from "../../lib/schgen/gates/reference-graph.ts";
 import { generate, staleFiles, type GenerateEnv, type Generation } from "./generate.ts";
 import { compareConnectivity, expectedConnectivity } from "../../lib/schgen/gates/connectivity.ts";
 import { checkPinIdentity, footprintPads } from "../../lib/schgen/gates/pin-identity.ts";
@@ -98,14 +108,40 @@ export const GATES = {
 export const NOT_RUN = "not run: generation was refused";
 
 /**
- * Gate 8's refusal while its graph comparison is unported. It is a PROBLEM and not a skip: the
- * gate appears in the census with this text, so nobody reads its absence as agreement.
+ * **A DESIGN THAT DECLARES `oscar` AND NAMES NO REFERENCE SCHEMATIC.** It is a PROBLEM and not a
+ * skip: gate 8's whole claim is that a generated drawing matches one a human made and trusts, and
+ * with nothing to compare against there is no claim to make. An empty problem list here would read
+ * exactly like agreement.
  */
-export const OSCAR_NOT_PORTED =
-  "gate 8 is not available: lib/schgen/gates/oscar/compare.ts and graph.ts are not ported yet " +
-  "(Task 18 of the M1 schematic-authoring plan; graph.ts needs @/kicad/components, which " +
-  "tools/schgen/port-manifest.json does not resolve). This design declares `oscar`, so the gate " +
-  "is reported as unavailable rather than omitted - see docs/known-gaps.md G104.";
+export const OSCAR_NO_REFERENCE =
+  "gate 8 has nothing to compare against: this design declares `oscar` but `oscar.netlists` names " +
+  "no reference schematic. The gate proves a generated schematic matches a hand-arranged drawing a " +
+  "human trusts (spec 2, revision 4), so a declaration with no reference is reported rather than " +
+  "passed - see docs/known-gaps.md G104 and docs/schematic/reference-graph-checks.md.";
+
+/** A declared reference that is not on disk. LOUD, and never a pass: see `OSCAR_NO_REFERENCE`. */
+export const oscarReferenceMissing = (board: string, file: string): string =>
+  `gate 8 cannot find the reference schematic for board ${board}: ${file} is not on disk. The ` +
+  "reference is what the generated drawing is compared against, so a missing one is reported " +
+  "loudly and the gate does not pass. A skipped check must never look like a passing one.";
+
+/** The subcircuit comparison with declared deltas APPLIED is M2's; a declaration of one is refused. */
+export const oscarSubcircuitsAreM2 = (n: number): string =>
+  `gate 8 was given ${n} oscar.subcircuit(s), and the subcircuit comparison is M2's: nothing in ` +
+  "this repository extracts a subcircuit boundary or applies a declared delta " +
+  "(lib/schgen/gates/oscar/boundary.ts is a forward declaration whose oscarParts throws, and " +
+  "pedals' applyDeltas/applyDeltasTraced are not ported). M1's half of the gate compares WHOLE " +
+  "circuits under an empty permitted delta. It is refused rather than ignored, because comparing " +
+  "whole circuits while holding a subcircuit declaration nobody read would be a pass that means " +
+  "nothing - see docs/known-gaps.md G104.";
+
+/** `oscar.brief` must name a committed permitted-delta declaration; the `CORE-BRIEF.md` reader is M2's. */
+export const oscarBriefNotJson = (file: string): string =>
+  `gate 8's permitted-delta declaration must be a .json file and oscar.brief names ${file}. ` +
+  "Pedals' CORE-BRIEF.md reader (deltaIdsFromBrief) is NOT ported: M1's half of the gate takes a " +
+  "declaration lib/schgen/gates/declared-delta.ts can parse and hold to its rules - every delta " +
+  "names the transformation that produces it, and the file is committed. It is refused rather " +
+  "than read as an empty delta, which would admit every difference by default.";
 
 export interface SexprNetlist {
   /** The `.net` export's text, as `importNetlist` takes it. */
@@ -286,14 +322,46 @@ export function symmetricSymbolsProblems(cfg: OscarConfig): string[] {
   return problems;
 }
 
+/** The permitted-delta declaration `oscar.brief` names, parsed and held to its rules, or a refusal. */
+function permittedDeltaOf(d: LoadedDesign, cfg: OscarConfig): PermittedDelta {
+  const file = path.resolve(d.dir, cfg.brief);
+  if (!file.endsWith(".json")) throw new Error(oscarBriefNotJson(cfg.brief));
+  // The text and the path both go in: `parseDeclaredDeltas` compares the text it is given against
+  // git's HEAD copy, so reading the file elsewhere and passing the path would defeat the check.
+  return parseDeclaredDeltas(fs.readFileSync(file, "utf8"), file);
+}
+
 /**
- * Gate 8 until Task 18 ports the graph comparison: the checks that need no graph, plus
- * `OSCAR_NOT_PORTED` so the row can never be read as a pass.
+ * **GATE 8's M1 HALF: each declared reference's netlist against the generated schematic's, by
+ * component value and pin-level adjacency, under a committed permitted-delta declaration.**
+ *
+ * Order matters and it is deliberate. The references are located FIRST, so a design whose
+ * references are all missing is refused without running `kicad-cli` at all; then the declaration is
+ * read, because it is what licenses any difference; then the comparison runs. Every arm that cannot
+ * proceed adds a PROBLEM - there is no path through this function that returns an empty list
+ * without having compared something.
  */
-function oscarGate(d: LoadedDesign): string[] {
+function oscarGate(d: LoadedDesign, manifest: string): string[] {
   const cfg = d.spec.oscar;
   if (cfg === null) throw new Error("internal: OSCAR gate run without an oscar configuration");
-  return [OSCAR_NOT_PORTED, ...symmetricSymbolsProblems(cfg)];
+  const problems: string[] = [...symmetricSymbolsProblems(cfg)];
+  if (cfg.subcircuits.length > 0) problems.push(oscarSubcircuitsAreM2(cfg.subcircuits.length));
+  const declared = Object.entries(cfg.netlists).map(([board, rel]) => ({ board, rel, file: path.resolve(d.dir, rel) }));
+  if (declared.length === 0) return [...problems, OSCAR_NO_REFERENCE];
+  const found = declared.filter((r) => fs.existsSync(r.file));
+  for (const r of declared) if (!found.includes(r)) problems.push(oscarReferenceMissing(r.board, r.file));
+  if (found.length === 0) return problems;
+  const permitted = permittedDeltaOf(d, cfg);
+  const generated = importNetlist(exportSexprNetlist(path.join(d.outDir, `${d.spec.project}.kicad_sch`)).text);
+  for (const r of found) {
+    const net = exportSexprNetlist(r.file);
+    // Annotation errors in a reference's export make its graph unsound, so they are gate 8's
+    // (`annotationProblems`); every other stderr line from a foreign, pinned drawing is ignored.
+    problems.push(...annotationProblems(r.board, net.stderr));
+    const result = checkReferenceGraph(generated, importNetlist(net.text), permitted, manifest, r.rel);
+    problems.push(...result.undeclared.map((p) => `reference ${r.board} (${r.rel}): ${p}`));
+  }
+  return problems;
 }
 
 /**
@@ -313,12 +381,14 @@ export async function runGates(d: LoadedDesign, env: GenerateEnv): Promise<GateR
     generation = null;
     gate1 = { gate: GATES.upToDate, problems: messageLines(e), manifest: MANIFEST_UNREAD };
   }
-  const later: { gate: string; check: (gen: Generation) => string[] }[] = [
+  // The second parameter is spec 2.1's citation. Gate 8 needs it INSIDE the check rather than only
+  // on the row, because `ReferenceGraphResult` names the manifest it ran against per reference.
+  const later: { gate: string; check: (gen: Generation, manifest: string) => string[] }[] = [
     { gate: GATES.netlist, check: (gen) => netlistGate(d, gen) },
     { gate: GATES.pinIdentity, check: (gen) => pinIdentityGate(d, gen, env) },
   ];
   if (d.spec.checklist !== null) later.push({ gate: GATES.checklist, check: (gen) => checklistGate(d, gen) });
-  if (d.spec.oscar !== null) later.push({ gate: GATES.oscar, check: () => oscarGate(d) });
+  if (d.spec.oscar !== null) later.push({ gate: GATES.oscar, check: (_gen, citation) => oscarGate(d, citation) });
   const g = generation;
   // Spec 2.1's criterion, attached here rather than inside each gate: the manifest is one
   // derivation's record and the gates are checks over it, so one read and one comparison serve all
@@ -332,7 +402,7 @@ export async function runGates(d: LoadedDesign, env: GenerateEnv): Promise<GateR
   const rows: GateResult[] = [
     { ...gate1, manifest: manifest.citation },
     ...later.map(({ gate, check }) =>
-      g === null ? { gate, problems: [NOT_RUN], manifest: manifest.citation } : runGate(gate, () => check(g), manifest.citation),
+      g === null ? { gate, problems: [NOT_RUN], manifest: manifest.citation } : runGate(gate, () => check(g, manifest.citation), manifest.citation),
     ),
   ];
   // **THE MANIFEST's OWN PROBLEMS GO ON THE ROWS THAT WOULD OTHERWISE READ AS A PASS, and only
