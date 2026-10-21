@@ -25,6 +25,7 @@ import { comparabilityOf, SPIKE_BLOCKS, spikeRowFor } from "../../tools/schgen/r
 import { floorEvidence, orderSweep, renderSweep, sizeCoverage, type OrderSweepRow } from "../../tools/schgen/remeasure-ceiling.ts"
 import { integratedExperiment, type IntegratedExperiment } from "../../tools/schgen/remeasure-composed.ts"
 import { disjointness, legShapes, skinIdWidth, type Disjointness, type LegShape } from "../../tools/schgen/remeasure-criteria.ts"
+import { SCALE_INVARIANT_UPTO, SCALE_UNSTABLE_FROM } from "../../lib/schgen/readability/baseline.ts"
 import { nonMemberContainments } from "../../lib/schgen/render/compose.ts"
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts"
 import { packSheet } from "../../tools/schgen/elk/sheet-layout.ts"
@@ -246,6 +247,38 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
     // The four legs are one topology drawn four times (G185: byte-identical), so the distinct
     // subjects are {a bias leg, tp-leg-collector, tp-leg-emitter-bypass}.
     expect(new Set(invariant.map((r) => r.placements))).toEqual(new Set([2, 3]))
+  })
+
+  /**
+   * **BOTH CONSTANTS ARE PINNED TO THE SWEEP THEY CAME FROM, NOT TO A LITERAL - fix round 1, item
+   * 2.** The review drove the neighbourhood and found `SCALE_UNSTABLE_FROM` GREEN at 7 and at 6:
+   * the previous assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, because they asserted
+   * CLASSIFICATIONS that depend on the constants rather than the constants themselves. **A full
+   * revert to 9/13 was caught and a one-step drift of the upper bound was not - and the upper bound
+   * is the one `baseline-model.ts` says rests on a single refused layout.**
+   *
+   * These two assertions derive each bound from the measurement, so they fail in BOTH directions
+   * for BOTH constants, and they also fail if the sweep itself moves - which is the stronger
+   * property: a constant and the measurement it is named after cannot drift apart silently.
+   */
+  it("pins both scale constants to the sweep they were measured from", () => {
+    const invariant = sweep.filter((r) => r.invariant).map((r) => r.placements)
+    const moving = sweep.filter((r) => !r.invariant).map((r) => r.placements)
+    expect(invariant.length, "no block measured invariant, so the lower bound has no subject").toBeGreaterThan(0)
+    expect(moving.length, "no block measured moving, so the upper bound has no subject").toBeGreaterThan(0)
+    expect(
+      Math.max(...invariant),
+      "SCALE_INVARIANT_UPTO must be the LARGEST block size whose crossing count was measured " +
+        "invariant over four declaration orders. The sweep says that size is " +
+        `${Math.max(...invariant)}; the constant says ${SCALE_INVARIANT_UPTO}. One of the two moved.`,
+    ).toBe(SCALE_INVARIANT_UPTO)
+    expect(
+      Math.min(...moving),
+      "SCALE_UNSTABLE_FROM must be the SMALLEST block size whose crossing count was measured MOVING " +
+        `under reordering - oc-power at 8 placements, 1, 3, 2, 2. The sweep says ${Math.min(...moving)}; ` +
+        `the constant says ${SCALE_UNSTABLE_FROM}. One of the two moved, and this bound rests on a ` +
+        "single subject whose layout the gates refuse.",
+    ).toBe(SCALE_UNSTABLE_FROM)
   })
 
   it("names the ceiling 3 and the floor unmeasured, and reports 6 declared blocks outside it", () => {
