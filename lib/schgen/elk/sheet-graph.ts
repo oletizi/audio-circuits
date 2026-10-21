@@ -40,7 +40,6 @@
 import { GRID, gridCeil, type Point, type Um } from "../render/geometry.ts"
 import { frameSize, type FrameContent } from "../render/frames.ts"
 import { GAP, MARGIN, TITLE_BLOCK, packFrames, type Size } from "../render/pack.ts"
-import { serializeElkInput } from "./serialize.ts"
 import type { ElkExtendedEdge, ElkNode } from "elkjs/lib/elk-api.js"
 import type { NetName } from "../ir/types.ts"
 
@@ -157,12 +156,6 @@ export function sheetOptions(paper: Size): Readonly<Record<string, string>> {
   }
 }
 
-export interface SheetGraphInput {
-  readonly graph: ElkNode
-  /** The exact bytes identifying this layout input, on `serialize.ts`'s declared key order. */
-  readonly serialized: string
-}
-
 /**
  * The sheet's ELK graph: one node per frame content at its own `frameSize`, one edge per
  * inter-frame step of each shared labelled net.
@@ -186,11 +179,23 @@ export function sheetGraphOf(contents: readonly FrameContent[], paper: Size): El
   return { id: "sheet", layoutOptions: { ...sheetOptions(paper) }, children, edges }
 }
 
-/** The graph and the bytes that identify it, for a manifest or a report that must name the input. */
-export function sheetGraphInputOf(contents: readonly FrameContent[], paper: Size): SheetGraphInput {
-  const graph = sheetGraphOf(contents, paper)
-  return { graph, serialized: serializeElkInput(graph) }
-}
+/*
+ * **`sheetGraphInputOf` AND ITS `SheetGraphInput` TYPE ARE DELETED HERE, 2026-10-21.** They
+ * returned `{ graph, serialized: serializeElkInput(graph) }` - a SECOND layout-input identity, for
+ * "a manifest or a report that must name the input" at SHEET level, as `elkInputOf` provides at
+ * BLOCK level. **Nothing ever called either**: no `.ts`, no test and no `.md` in this repository
+ * referenced them, while `elkInputOf` is referenced in twenty-five files. `CLAUDE.md`'s *"supersede
+ * means delete"* and the M1 plan's own type-consistency clause - *"one set of bytes, four
+ * consumers, no second serialization"* - both say a dead second producer of a second input identity
+ * does not sit here, and the plan's clause was FALSE AS WRITTEN while it did.
+ *
+ * **A SHEET-LEVEL INPUT IDENTITY DOES NOT EXIST ANY MORE, AND THAT IS THE RESIDUAL.** Nothing
+ * needs one today - `GenerationManifest.layoutInputSha256` and
+ * `ReadabilityBaseline.layoutInputSha256` both name the BLOCK-level bytes - so work that wants a
+ * sheet packing to be reproducibility-identified writes it then, against a consumer, rather than
+ * resurrecting this. `sheetGraphOf` and `serializeElkInput` are both still here and the two
+ * compose in one line.
+ */
 
 /** How many inter-frame edges a sheet graph carries: the ELK-packs half of the selection rule. */
 export function interFrameEdgeCount(graph: ElkNode): number {
