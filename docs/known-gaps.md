@@ -20527,9 +20527,21 @@ would have been wrong by exactly that if the first arm had been believed.
   that erased tests in every arm would have given no contrast, and `noqt` in
   fact exits 0 with no failure at all. **The positive control is the VeroRoute
   arm**: it reproduces this entry's own 48 with its 21 / 11 / 10 / 6
-  decomposition and its `78 fail / 1 error` summary, at a different commit from
-  the one the original measurement used, so the 48 is not an artefact of that
-  tree. The VeroRoute arm's treatment renames a gitignored binary; it was
+  decomposition, at a different commit from the one the original measurement
+  used, so the 48 is not an artefact of that tree. **CORRECTED 2026-10-21: this
+  clause also claimed the arm reproduces a `78 fail / 1 error` summary, and it
+  does not.** The six-arm table above says **77** named failures for this arm,
+  and a re-drive gives `3548 pass / 77 fail / 1 error`, `Ran 3625 across 345
+  files`. **78 belongs to the original two-arm measurement at `3825752`**, a tree
+  one test smaller - `3546 pass / 78 fail / 1 error`, `Ran 3624 across 344
+  files`, which is the row still shown above - and it was carried forward into a
+  sentence about the NEW run, so this entry contradicted itself by one between
+  its table and its prose. The 48 and the decomposition are unaffected. Found by
+  the scoped re-review, which drove the arm by a different mechanism
+  (`VEROROUTE` override rather than a rename) and agreed on the 48, the
+  decomposition, 344 top-level suites and 3624 registered while differing by one
+  on named failures - **a figure claimed as reproduced that did not, inside the
+  clause whose job is to say what the positive control established.** The VeroRoute arm's treatment renames a gitignored binary; it was
   restored unconditionally and **verified by sha256 before and after**
   (`89eb6173d8bfbccb9230bdccd5b03799f09918b6493a93bdd7b571b93762ba5f`), with
   `git status --porcelain` empty throughout.
