@@ -20052,3 +20052,78 @@ would have been wrong by exactly that if the first arm had been believed.
   advice from someone who has not tried it**, and it addresses only the six; the
   42 that collapse to three `(unnamed)` failures would still not be named, and
   whether that matters is not judged here.
+
+### G251 - MEASURED: the repository root's `make check` does NOT pass, and has not for at least this branch - three of the five transistor-preamp boards refuse on an incomplete committed layout, identically before and after Task 19
+
+**WHY THIS IS WORTH AN ENTRY RATHER THAN A SHRUG.** `README.md` calls `make
+check`, *"run from a board's directory ... or from the repository root to check
+every declared board"*, **the perfboard workflow's *"front door"***, and
+`CLAUDE.md` says it *"invokes `kicad-cli` on every board on every run"* and to
+treat KiCad *"the way you would a compiler"*. **An agent that runs it at the
+root as a final check gets exit 2 and has to decide, with nothing to consult,
+whether it broke something.** Task 19 had to make that decision and measured it
+rather than reasoning about it, and the next agent should not have to repeat the
+measurement.
+
+`[RAN]` `make -C boards/<board> check` per board, at `8813c6c` (before this task,
+in a `git worktree` with `node_modules` and `.tools` linked) and at this commit:
+
+| board | before | after |
+| --- | --- | --- |
+| the five `pultec-*` boards | exit 0 | exit 0 |
+| `transistor-preamp-buffered` | **exit 0** | **exit 0** |
+| `transistor-preamp-feedback` | **exit 0** | **exit 0** |
+| `transistor-preamp-lab` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
+| `transistor-preamp-loop` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
+| `transistor-preamp-staged` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
+
+**The two passing preamp boards are the control and they could have answered
+differently**: a change that broke the board checks generally would have taken
+`buffered` and `feedback` down too, and it did not.
+
+**WHAT THE THREE ACTUALLY REFUSE ON, read in full rather than from the summary
+line.** Not a toolchain problem and not the lead-span whitelist the message's
+tail talks about: **the committed layouts are unfinished.** `transistor-preamp-lab`'s
+reports `BASE incomplete`, `BYPASS_CAP incomplete`, `COLLECTOR incomplete`,
+`GND blocked (J2 unplaced)`, `OUT blocked (J2 unplaced)` and
+`Cuts: not resolved (strip connectivity incomplete - run --update)` among its
+nets. **That is a board in progress, which is what this repository is for** -
+`CLAUDE.md`: *"This is hardware in progress, not software that ships ... Nothing
+here reaches a state called 'done'."* **G62** already records that
+`boards/transistor-preamp-lab`'s layout *"has 19 strips joining two different
+nets across unpainted holes"* and calls it pre-existing; **nothing recorded that
+`loop` and `staged` are in the same state, or that the root `make check`
+therefore cannot pass.**
+
+**AND THE REFUSAL ITSELF IS CORRECT, WHICH IS WHY THIS IS NOT A DEFECT ENTRY.**
+Its own words: *"This is a REFUSAL TO GRADE and not a verdict that the board is
+buildable: the four constraints have no answer about this layout, which is why
+the board is reported as failing rather than as passing. A constraint whose check
+silently passes is worse than no constraint."* That is `CLAUDE.md`'s rule working.
+
+- **Found** 2026-10-21, Task 19 Step 7, by running the root `make check` after
+  the five `pultec-*` boards the brief asked for had all passed.
+- **Evidence** the BEFORE column is five `make -C boards/transistor-preamp-*
+  check` runs in a detached `git worktree` at `8813c6c`, with `node_modules` and
+  `.tools` symlinked so the VeroRoute binary resolves (**G250** is what happens
+  without it). The AFTER column is the five `make -C boards/pultec-* check` runs
+  Task 19 Step 7 asked for, plus the root `make check` walk, which covers all
+  eleven declared boards in one run. The refusal text is read from that walk's own
+  output in full, not summarised from the `FAIL` line. The control is named above.
+- **Verified** CONFIRMED - this writer ran every one of them. **G62**'s 19-strip
+  measurement is **RELAYED** from that entry.
+- **Why it is open** **nothing here is a defect to fix.** Three boards are
+  mid-layout, which is the normal state of a board in this repository. It is open
+  because the root `make check` is documented as the front door in two places and
+  neither says it does not currently exit 0, so the next agent to run it meets an
+  unexplained failure at exactly the moment it is most likely to be misread as
+  its own.
+- **What would settle it** **CRITERION: either the root `make check` exits 0, or
+  the two documents that call it the front door say which boards are expected to
+  refuse and why.** Both are checkable. **MECHANISMS, both UNTRIED and neither
+  preferred here**: finish the three layouts, which is bench work and nobody's to
+  schedule from a register entry; or have the per-board walk distinguish *this
+  board is mid-layout* from *this board is wrong*, which is a change to
+  `make/board.mk`'s contract and **an owner decision rather than a tidy-up** -
+  the current behaviour is deliberate, and an "expected to refuse" list is one
+  edit away from a list that excuses a real failure.
