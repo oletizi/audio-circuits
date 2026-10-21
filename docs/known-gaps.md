@@ -17148,6 +17148,20 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > marks the figure PLAUSIBLE rather than confirmed for exactly this reason, and
 > that is the right reading.
 
+> **AND IT IS CONDITIONAL IN A SECOND WAY THIS ENTRY DID NOT KNOW, ADDED BY TASK
+> 18's STEP 0: "9 of 12 blocks draw" IS NOT "two more circuits generate".**
+> **G238** measures that `generate` refuses both `pt2399-core` and
+> `transistor-preamp` at **gate 1**, on 115 and 101 `validateCircuit` problems,
+> **before any block reaches a layout backend at all** - so every figure in this
+> entry describes a stage neither circuit's generation currently reaches. The
+> leverage is real as a statement about block layout and it buys **no** new
+> generated schematic by itself. **A scope decision taken on "9 of 12" as though
+> it were draw coverage of whole circuits would be taken on a number that does
+> not mean that**, and the figure was published here before anybody had put the
+> gate-1 refusal beside it. **G239** adds the other half: five of the eleven
+> candidate field slots can never serve a small two-pin passive, so the first
+> mechanism below has six positions to work with rather than eleven.
+
 **THE SOLE-BLOCKER / PARTIAL-BLOCKER SPLIT IS LOAD-BEARING AND IS WHY THE
 LEVERAGE IS 4 AND NOT 5.** `leverageOf` reports, per problem class, the blocks
 whose ONLY blocker it is and the blocks it blocks alongside something else. **A
@@ -17282,8 +17296,9 @@ enough.**
   `[RAN]` The count is now computed by `citationCount` in
   `tests/schgen/pointers.test.ts` on every run, which asserts the coverage
   FRACTION is under a tenth rather than any exact numerator; the register holds a
-  few hundred citations and the guard holds **12 rows - 9 register rows, 2 module
-  comments and 1 document line.** `[RELAYED]` The review puts roughly **120** of
+  few hundred citations and the guard holds **13 rows - 10 register rows, 2 module
+  comments and 1 document line** (Task 18's Step 0 added the tenth register row,
+  for **G239**). `[RELAYED]` The review puts roughly **120** of
   those citations in evidentiary positions. Round 2's
   *"covers the ten pointers that cite a measurement"* reads as if ten were the
   population - it is the sample. **What the guard does guarantee is narrower and
@@ -17769,3 +17784,206 @@ says nothing about net names.**
   change claims, which is what actually caught all three and is the reviewer's
   cost rather than a mechanism. **Nothing here converts this into something a
   check can catch, and that is the finding.**
+
+### G238 - MEASURED: NEITHER hand-arranged reference can be generated, and the blocker is NOT the one the plan believed - `generate` refuses at gate 1 on both, BEFORE any block is laid out
+
+**THIS IS TASK 18's STEP 0, ORDERED BY THE CONTROLLER AS A DELIVERABLE IN ITS OWN
+RIGHT**, on the grounds that *"what stands between the generator and this
+repository's own circuits is something a later reader cannot re-derive"*. **It
+corrects the controller's own reading, which was offered as a hypothesis to be
+measured rather than trusted.**
+
+**THE READING THAT WAS WRONG, verbatim from the Task 18 addendum:** *"`pt2399-core`'s
+schematic declares ONE block, `pt-core`, and `pt-core` is on that sole-blocker
+list. **So pt2399-core may become generatable if and only if the field-placement
+defect is fixed.**"* It is false in both directions. Fixing the field-placement
+defect would NOT make `pt2399-core` generatable, and the field-placement defect
+is not what stands in the way.
+
+**WHAT ACTUALLY STANDS IN THE WAY: `validateCircuit`, inside `generate`, before a
+single block reaches a layout backend.** `[RAN]` `bun tools/schgen/gate-census.ts`:
+
+| circuit | gate 1 problems | the classes, as `classify` reports them |
+| --- | --- | --- |
+| `pt2399-core` | **115** | 1 header; **17** netNames (**G150**); **1** singlePinNets (**G159**); **96** bomFields (**G149**) |
+| `transistor-preamp` (lab-board) | **101** | 1 header; **100** bomFields (**G149**) |
+| `opamp-buffer` | 40 | 1 header; 3 pinsDeclared (**G151**); 36 bomFields |
+| `optical-compressor` | 163 | 1 header; 14 netNames; 148 bomFields |
+
+`generate` calls `validateCircuit` and throws on a non-empty problem list
+(`tools/schgen/generate.ts`, the `circuit is invalid:` raise), and `realiseBlock`
+- the function that would reach field placement - is called later, from
+`layoutSheet`. **So every block-level measurement in G232 describes a stage
+neither reference's generation reaches.** Gates 3, 6 and 8 all cascade to
+`not run: generation was refused`.
+
+**AND THOSE REFUSALS ARE NOT TO BE RELAXED, which is why this is a wall rather
+than a punch list.** `tools/schgen/gate-census.ts`'s own header records it:
+*"passing would need an invented net rename, an invented no-connect reason and
+invented BOM fields - and no backend invents an input"*. **G149**, **G150**,
+**G151** and **G159** each record one class, and each says the refusal IS the
+measurement. Closing them is authoring work on the circuits - real BOM fields,
+real net names - not a defect fix in the generator.
+
+**THE BLOCK-LEVEL PICTURE, measured, which is the part the addendum had right.**
+`[RAN]` `bun tools/schgen/remeasure-coverage.ts`: **5 of 12 declared blocks
+draw.** Per reference:
+
+| reference | declared blocks | draw | refused, with the full refusal text's cause |
+| --- | --- | --- | --- |
+| `circuits/pt2399-core/pt2399-core.kicad_sch` | **1** (`pt-core`, rendering `auto`) | **0** | `pt-core`, obligation 4: `C7#1 (Device:C): no place for its Reference and Value` |
+| `circuits/transistor-preamp/lab-board.kicad_sch` | **7** (all `auto`) | **5** | `tp-leg-emitter-bypass`, obligation 4: `JP5#1 (Jumper:Jumper_2_Open)` field placement. `tp-stage`, obligation 4: `body of Q1#1 overlaps label BYPASS_CAP at (11.43, 11.43)`; `body of TP1#1 overlaps label BASE at (53.34, 25.4)`; `C3#1 (Device:C_Polarized)` field placement |
+
+**WHAT A `DesignSpec` COSTS, since the addendum asks whether one exists.** No
+module in this repository exports a hand-written `DesignSpec` for either
+reference; the only two `export const design` declarations outside
+`lib/schgen/design.ts`'s own prose are the ported `mini` fixture
+(`tests/schgen/__fixtures__/designs/mini/index.ts`) and a literal inside
+`tests/cli/schgen.test.ts`. **But one does not have to be written**:
+`parityDesign` in `tools/schgen/gate-census.ts` already derives a real
+`DesignSpec` per parity circuit from the authoring declaration through
+`circuitSpecFrom`, and `gateCensus` already drives the real `runGates` over it.
+That is how the table above was measured. **So the generated side of gate 8 is
+blocked by the four authoring classes and not by a missing design module**, and
+writing a design module would add nothing a later reader could use.
+
+**WHAT THIS MEANS FOR GATE 8's M1 HALF, stated here because the consequence is
+this entry's whole point.** Gate 8 compares a GENERATED schematic against a
+hand-arranged one. The reference half is fully available for both references -
+both drawings are committed, both have a committed s-expression netlist
+(`tests/fixtures/pt2399-core.net`, `tests/fixtures/transistor-preamp-lab.net`),
+and `kicad-cli` exports either on demand. **The generated half is available for
+neither.** Controller ruling R51 governs that case.
+
+- **Found** 2026-10-20, Task 18 Step 0, by running the two committed censuses
+  before writing any gate code - which is the only reason the addendum's reading
+  was caught. Reasoning about it would not have caught it: the field-placement
+  refusal is real, and it is simply downstream of a refusal nobody had put beside
+  it.
+- **Evidence** both censuses are committed tools whose figures are asserted on
+  every run: `tools/schgen/gate-census.ts` (the gate-1 problem classes, asserted
+  in `tests/schgen/gate-census.test.ts`) and `tools/schgen/remeasure-coverage.ts`
+  (the per-block table, asserted row by row in `tests/schgen/remeasure.test.ts`).
+  **Checks that could have failed:** `classify`'s unmatched arm prints
+  `other: <problem>` in full rather than binning a new refusal, and
+  `remeasure-coverage.ts`'s `classOf` and `gateOf` **throw** for an unknown
+  problem or refusal text - so a class this entry does not list cannot pass
+  silently through either census. The ordering claim - `validateCircuit` before
+  `realiseBlock` - is read off the two call sites and is confirmed by the census
+  output itself: every gate after gate 1 reports `not run: generation was
+  refused`, which cannot happen if any block was laid out.
+- **Verified** CONFIRMED - this writer ran both censuses, read every refusal text
+  in full (not the truncated form a message shows) and read `generate`'s and
+  `realiseBlock`'s call order in the source. **The four authoring classes'
+  "do not relax" status is RELAYED** from `gate-census.ts`'s header and from
+  **G149**, **G150**, **G151** and **G159**, which this writer read but did not
+  re-measure.
+- **Why it is open** nothing here is fixed and nothing was attempted: the four
+  authoring classes are the circuits' own, and the field-placement defect is
+  **G232**'s, reserved by ruling R46 as an owner-visible scope decision. **It
+  stays open because it is the standing answer to "why can gate 8 not run", and
+  that answer will be wanted again.**
+- **What would settle it** **CRITERION: `bun tools/schgen/gate-census.ts`
+  reports zero gate-1 problems for a reference, and
+  `bun tools/schgen/remeasure-coverage.ts` reports every block of that reference
+  as DRAWS.** Both halves are needed and the first comes first. **MECHANISMS,
+  all untried, and they are four separate pieces of authoring work plus one
+  defect**: real BOM fields for 96 and 100 components (**G149**); UPPER_SNAKE net
+  names for 17 of `pt2399-core`'s nets, which **G150** records cannot be invented
+  by the generator; the one single-pin net (**G159**); and the field-placement
+  refusal (**G232**, with **G239**'s measurement of how much room its candidate
+  set really has). **Nothing here estimates the order or the size of any of
+  them**, and the count of classes is not a count of edits.
+
+### G239 - MEASURED: FIVE of the eleven candidate field slots can NEVER serve a small two-pin passive, so G232's "give it more candidate positions" mechanism starts from six usable slots and not eleven
+
+**THIS ANSWERS HALF OF WHAT G232 LEFT OPEN AND NOT THE WHOLE QUESTION.** That
+entry says: *"It is plausible that what is wrong is the ROUTE that leaves no room
+rather than the placement that cannot find any, and this writer did not determine
+which."* This does not determine which either. **What it measures is the size of
+the search space the placement mechanism has to work in**, which is the number
+G232's first mechanism - *give `field-placement.ts` more candidate positions* -
+would be starting from, and it is smaller than the code's candidate list makes it
+look.
+
+**THE ARITHMETIC.** `candidates()` offers eleven slots for a vertical two-pin
+passive: two pin-free sides, five inside the body, four beside the outermost
+pins. `slotFields` stacks the Reference one `GRID` above the slot's centre and
+the Value one `GRID` below it, `textBox` gives each line a height of `GRID`, and
+`tryPlaceFields` grows both by `MARGIN = GRID / 2`. **So the grown pair is
+`4 x GRID = 5080 um` tall at every slot.** An inside slot is taken only when both
+grown boxes lie STRICTLY within the unit's own body, and **`Fix:C`'s body is
+`2032 um` tall** - the same height as `Device:C`'s body as placed in `pt-core`,
+measured as `{minX: 90678, minY: 59944, maxX: 94742, maxY: 61976}`. **No inside
+slot can hold the pair, at any route, for any symbol whose body is shorter than
+`4 x GRID`.**
+
+**SO A SMALL TWO-PIN PASSIVE HAS SIX USABLE CANDIDATES, ALL SIX OUTSIDE THE BODY
+WHERE THE ROUTE CAN REACH THEM.** On the three units that refuse in this
+repository, all six are blocked, and `[MEASURED, by temporary instrumentation of
+`blockerOf`, NOT COMMITTED]` by what:
+
+| unit | the six outside candidates' blockers |
+| --- | --- |
+| `pt-core` `C7#1` (`Device:C`) | right slot and both right-hand beside-pin slots: `wire 70`/`wire 69 (Net-(C7-Pad1))` - **C7's OWN net**; left slot and both left-hand beside-pin slots: `wire 77 (Net-(C8-Pad2))` |
+| `tp-leg-emitter-bypass` `JP5#1` (`Jumper:Jumper_2_Open`) | `wire 4 (EMITTER)`, `pin RV6.1 text`, `label EMITTER`, `label BYPASS_CAP` |
+| `tp-stage` `C3#1` (`Device:C_Polarized`) | `wire 3 (BASE)`, `wire 2 (BASE)`, `wire 19 (EMITTER)`, `body of R6#1` (twice) |
+
+**That table is the part of this entry that is NOT backed by a committed check**,
+and it is marked as such rather than dropped: `blockerOf` and `candidates` are
+private to `lib/schgen/render/field-placement.ts`, and exporting them to measure
+them would be a structural change to a ported-and-diverged module in service of a
+diagnostic - the shape **G235** names. It is re-derivable by printing
+`candidates(p)` with `blockerOf(c)` from the `cand === undefined` arm of
+`tryPlaceFields` and running `tools/schgen/remeasure-coverage.ts`.
+
+**WHAT IS BACKED BY A COMMITTED CHECK is the five-of-eleven finding**, in
+`tests/schgen/render/field-slots.test.ts`, and its sharpest case is the third:
+**only the SIX OUTSIDE candidates are blocked and the unit still refuses**, so the
+five inside slots are shown to add nothing by an assertion that goes red the day
+one of them starts working. The wires are derived from the candidate geometry
+rather than written as coordinates, so a change to `slotFields` or
+`besidePinFields` moves them with it.
+
+- **Found** 2026-10-20, Task 18 Step 0, while establishing whether controller
+  ruling R49's *"narrowest thing that makes the field placeable"* was obvious. It
+  is not: see **Why it is open**.
+- **Evidence** `tests/schgen/render/field-slots.test.ts`, three cases, 19
+  assertions. **Every one of them was driven RED once before being relied on**:
+  `[RAN]` ten perturbations of that file, each applied to a copy so the original
+  was never written, **10 red / 0 green**, including the one that matters - with
+  only FIVE of the six outside candidates blocked the unit is placed and the
+  refusal assertion fails, so the test is sensitive to exactly the candidate set
+  and not to the wires being numerous. The 2032 and 5080 figures are read off
+  the live API (`symbols.resolve("Fix:C").bodies`, `GRID`) rather than written as
+  literals a reader must trust, and both were driven red.
+- **Verified** CONFIRMED - this writer wrote the test, drove all ten
+  perturbations and read the instrumented blocker table in full. **The blocker
+  table is this writer's own measurement and is NOT backed by a committed
+  check**, which is stated above rather than left for a reader to discover.
+- **Why it is open** **it is a measurement, and it is open because the thing it
+  was taken for was declined.** R49 put the field-placement fix in scope as a
+  prerequisite *if* a reference were blocked only by it, with the condition that
+  *"if the narrowest fix is not obvious, stop and report rather than choosing a
+  wide one"*. **R49's precondition turned out to be false** - **G238** measures
+  that `generate` refuses both references at gate 1, so the fix would unblock
+  nothing - **and the fix is not narrow either.** Every one of the six usable
+  candidates is blocked by wiring, a neighbouring body or a label, and the five
+  unusable ones cannot be made usable by moving text: 5080 does not fit in 2032.
+  So a fix is either a new KIND of candidate position, which is a placement
+  design decision on a ported, reviewed module, or G232's second mechanism, which
+  that entry calls *"a much larger change"*. **Neither was attempted.**
+- **What would settle it** nothing settles the measurement; it is true. **For the
+  defect behind it, G232's criterion stands unchanged and this entry does not
+  author a new one** - an agent may not write the acceptance criteria for the
+  artifact it would produce, and this writer would be the one producing the fix.
+  **What this adds to that criterion is one quantity a mechanism has to answer
+  to: a small two-pin passive has six candidate slots outside its body and zero
+  usable inside it**, so any mechanism that works by trying more positions has to
+  say which new positions, and any mechanism that works by moving geometry is the
+  one G232 marks as re-opening four other obligations. **MECHANISM, untried and
+  recorded only so the next agent does not spend the measurement again:** a
+  candidate placed further out along a pin-free side, at increasing offsets, is
+  the smallest new KIND of position - and it is not obviously acceptable, because
+  a Reference that drifts away from its symbol is the *"text where a reader does
+  not expect it"* cost G232 already names.

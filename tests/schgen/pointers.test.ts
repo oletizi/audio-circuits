@@ -22,7 +22,7 @@
  * **IT IS A SAMPLE AND NOT AN INVENTORY, AND THE FRACTION IS STATED BECAUSE A COUNT READ LIKE A
  * POPULATION.** `[RAN]` `docs/known-gaps.md` holds a few hundred test-file citations - **counted by
  * `citationCount` below on every run, so the figure cannot go stale in this comment** - and this
- * file holds **12 rows: 9 register rows, 2 module comments and 1 document line.** `[RELAYED]` The
+ * file holds **13 rows: 10 register rows, 2 module comments and 1 document line.** `[RELAYED]` The
  * review puts **roughly 120** of those citations in evidentiary positions; that estimate is the
  * review's and was not measured here, which is why it is not inside the `[RAN]` clause. Round 2 described it as *"the ten
  * pointers that cite a measurement"*, which reads as if ten were all there were.
@@ -147,6 +147,16 @@ const POINTERS: readonly Pointer[] = [
     marker: "gives order 0 the same crossing count as the unsuffixed block",
     why: "orderSweep's doc comment for the per-order block-id control - repaired at fix round 2 item A and uncovered until now.",
   },
+  // TASK 18, STEP 0: G239's measurement lives in a file this guard did not cover, and that entry's
+  // sharpest claim - that blocking only the six OUTSIDE candidates still refuses - is exactly the
+  // kind of assertion that moves to another file during a split.
+  {
+    citedBy: "docs/known-gaps.md",
+    citation: "`tests/schgen/render/field-slots.test.ts`, three cases",
+    test: "tests/schgen/render/field-slots.test.ts",
+    marker: "the five inside slots rescue nothing",
+    why: "G239's Evidence for the five-of-eleven finding and for the only-six-blocked case that gives it teeth.",
+  },
 ]
 
 /**
@@ -189,11 +199,11 @@ describe("the guard is a SAMPLE of the citation population, and says so", () => 
     // The CLAIM: a sample, not an inventory. Asserted as a magnitude so it cannot go stale as the
     // register grows - which is exactly how the published literal went stale at its own commit.
     expect(POINTERS.length / lines, `${POINTERS.length} rows against ${lines} citing lines`).toBeLessThan(0.1)
-    // And the breakdown G233 publishes, which is composition rather than a count: 9 register rows,
-    // 2 module comments, 1 document line.
+    // And the breakdown G233 publishes, which is composition rather than a count: 10 register rows,
+    // 2 module comments, 1 document line. Task 18's Step 0 added the tenth register row (G239).
     const byFile = new Map<string, number>()
     for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
-    expect(byFile.get("docs/known-gaps.md")).toBe(9)
+    expect(byFile.get("docs/known-gaps.md")).toBe(10)
     expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
     // THE THIRD CLAUSE COUNTS THE MODULE COMMENTS RATHER THAN SUBTRACTING FROM THE TOTAL. The
     // version this replaces was `POINTERS.length - 9 - 1 === 2`, which is arithmetic on literals:
