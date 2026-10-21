@@ -19266,11 +19266,54 @@ the right place for it.
   - and the lines that mention the register are exactly the evidentiary ones.
   (2) **A claim about what a sweep missed is a claim about the sweep's OUTPUT, so
   it is checked against that output and not against what was eventually fixed.**
+
+  **AND THE LESSON ARRIVED AHEAD OF THE DEFECT FOR THE FIRST TIME, which is worth
+  recording because three rounds of it arriving afterwards are.** `[RELAYED]` the
+  review swept for the claim itself and **found no unamended site**, in its words
+  *"the first time on this branch the named set has been complete."* On the three
+  previous occasions the sites nobody had named outnumbered the ones that were
+  named - including inside this very task, where the sweep found two the brief had
+  not listed. **The sweep-for-the-claim habit is what changed, not the care**:
+  R70 required sweeping rather than visiting, so the named set stopped being the
+  working set.
 - **Verified** CONFIRMED - this writer made every edit, ran every probe and read
   every output quoted here. **The `G232` field-placement defect is RELAYED**
   from that entry and from **G238**'s block table; what is confirmed here is
   that `generate` now reaches it for `transistor-preamp`, which is the refusal
   the probe printed.
+- **HOW THE SPLIT ITSELF WAS ESTABLISHED, `[RELAYED]` from the review, recorded
+  because it answers *"only the BOM rule moved"* better than the implementation
+  did.** The implementer's evidence was the composition, the divergence and the
+  tests; the review drove the question three independent ways with controls that
+  fire: a whole-file diff against upstream with comments collapsed; set algebra
+  over both rule literals parsed from source, reporting `MOVED OUT: bomFields`,
+  `LOST FROM BOTH: none`, `INVENTED: none`; and reachability showing `generate`
+  still calls `validateCircuit` and still throws before emission. **It closed a
+  route neither the brief nor this entry had named - a rule KEEPING ITS PLACE
+  WHILE ITS BODY IS GUTTED** - by checking that every other rule body is
+  byte-identical to upstream.
+
+  **AND IT DROVE THE OWNER'S CRITERION RATHER THAN ARGUING IT**, which is the
+  strongest evidence in this entry and is none of it this writer's: `[RELAYED]`
+  the `mini` fixture generated twice - control, with its non-empty test BOM,
+  exporting **40839 bytes**; then with **every BOM field blanked**, where
+  `validateSourcing` reports **68 problems** and **`kicad-cli` parses the
+  schematic and exports 40240 bytes**. **A drawing with empty purchasing fields
+  is a valid drawing, measured.** That is better support for the criterion than
+  the owner's argument or the controller's, and neither of them produced it.
+
+  **TWO OF THE REVIEW's OWN PROBES WERE CAUGHT MID-FLIGHT BY ITS AUTHOR AND ARE
+  RECORDED HERE AS ITS OWN `[RELAYED]`, because they are this entry's family.**
+  Its set-algebra probe first matched the `[` in `Rule[]` and reported every rule
+  list EMPTY - caught only because all three runs printed identically, which is
+  the fifth row of **G241**'s table in miniature: a result that cannot differ.
+  And its own claim sweep truncated with `head -20` and hid one site until it was
+  re-run untruncated, which is **this entry's own `grep -v` miss wearing a
+  different filter**. **TWO authors hid true positives behind their own output
+  filters in this one round** - a `grep -v` on a line and a `head -20` - and that
+  count is this round's, not the branch's: nobody has swept the branch for the
+  shape, and stating a larger number would be the overclaim item 1 of this
+  review existed to correct.
 - **Why it is open** three things, none of them resolved. (1) `validateSourcing`
   **has no production caller**: nothing in this repository emits an artifact
   somebody else sources, so the rule is exercised by tests alone - deliberate
