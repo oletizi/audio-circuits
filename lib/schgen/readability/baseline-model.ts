@@ -131,13 +131,41 @@ export type BaselineScale =
   | { readonly kind: "unmeasured-scale"; readonly cells: number; readonly why: string }
 
 /**
+ * **HOW NARROWLY THE TWO BOUNDS BELOW ARE FOUNDED - controller ruling R44(a), and it is here in
+ * CODE rather than only in the register for the reason that ruling gives: *"a later reader who
+ * finds 3 and 8 must not be able to mistake them for the same quality of evidence as the numbers
+ * they replaced."***
+ *
+ * The 9 and 13 these replaced came from 18 blocks of two parents. These come from **12 declared
+ * blocks of 4 circuits**, and the subject set is thinner in four specific ways:
+ *
+ * - **of the seven sizes the spike swept - 3, 4, 8, 9, 13, 17, 28 - only TWO have a real subject
+ *   here.** Size 3 has four (the congruent bias legs) and size 8 has one (`oc-power`). **Five are
+ *   unmeasured**, and ruling **R40** forbids constructing a block to fill them;
+ * - **7 of the 12 subjects are geometry the post-layout gates REFUSE**, so the bounds are a
+ *   property of the backend's OUTPUT and not of the pipeline's accepted output (R40 again);
+ * - **the only subject at size 8 is one of those seven** - `oc-power` fails `checkLayout` - and it
+ *   is the subject that fixes `SCALE_UNSTABLE_FROM`. The upper bound rests on one refused layout;
+ * - **the invariant side is three distinct topologies, not six blocks.** Six blocks are at or below
+ *   `SCALE_INVARIANT_UPTO`, and four of them are the bias legs, which draw byte-identically
+ *   (`docs/known-gaps.md` **G185**).
+ *
+ * **WHAT IS STRONGER HERE THAN IN THE NUMBERS REPLACED:** these were measured on the backend that
+ * actually draws, and the decisive row is a direct contradiction on a shared subject - `oc-power`,
+ * 8 parts, measured 0, 0, 0, 0 through `netlistsvg` and **1, 3, 2, 2** here. **What is weaker: the
+ * range covered.** Both halves travel with the figure, in **G95** and **G101** and here.
+ */
+
+/**
  * The largest block size at which the crossing count was measured INVARIANT under reordering, in
- * PLACEMENTS - Task 17's re-measurement on this backend, not the spike's 9.
+ * PLACEMENTS - Task 17's re-measurement on this backend, not the spike's 9. **Read the block above
+ * before quoting it.**
  */
 export const SCALE_INVARIANT_UPTO = 3
 /**
  * The smallest block size at which the crossing count was measured MOVING under reordering - Task
- * 17's re-measurement, not the spike's 13.
+ * 17's re-measurement, not the spike's 13. **It rests on a single subject, `oc-power`, whose layout
+ * the gates refuse** - see the block above.
  */
 export const SCALE_UNSTABLE_FROM = 8
 

@@ -256,10 +256,19 @@ describe("baselineScale, G95's block-scale refinement", () => {
   })
 
   it("refuses to extend either measured range into the gap between them", () => {
+    // THE WINDOW IS ASSERTED NON-EMPTY FIRST, and that is controller ruling R44(b)'s condition
+    // rather than a flourish: the loop below is parameterised on the two constants, so it moved
+    // with them from 10-12 to 4-7 without being touched - but it would also pass over NOTHING if
+    // the two bounds ever became adjacent, and an arm that answers for no size looks exactly like
+    // an arm that refuses correctly. With 3 and 8 the window holds four sizes.
+    expect(SCALE_UNSTABLE_FROM - SCALE_INVARIANT_UPTO - 1, "an empty window makes the loop below vacuous").toBeGreaterThan(0)
     for (let cells = SCALE_INVARIANT_UPTO + 1; cells < SCALE_UNSTABLE_FROM; cells += 1) {
       expect(baselineScale(cells).kind, `${cells} cells`).toBe("unmeasured-scale")
     }
+    // BOTH ENDS of the window say so, not just the first: R44(b) asks that the arm refuse across
+    // the whole window rather than at one end.
     expect(baselineScale(SCALE_INVARIANT_UPTO + 1).why).toContain("nothing is known between")
+    expect(baselineScale(SCALE_UNSTABLE_FROM - 1).why).toContain("nothing is known between")
   })
 
   it("every arm says why, so a report can print the reason beside the classification", () => {
