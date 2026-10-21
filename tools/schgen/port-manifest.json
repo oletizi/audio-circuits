@@ -834,6 +834,7 @@
     "tools/schgen/remeasure-coverage.ts",
     "tools/schgen/remeasure-edges.ts",
     "tests/schgen/remeasure-edges.test.ts",
-    "tests/schgen/remeasure-ceiling.test.ts"
+    "tests/schgen/remeasure-ceiling.test.ts",
+    "tests/schgen/pointers.test.ts"
   ]
 }

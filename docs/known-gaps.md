@@ -1634,7 +1634,7 @@ moves when the declaration is reordered.
 - **Evidence** md5 comparison plus re-measurement of each shuffle. At block
   scale, the same comparison over 18 blocks - a check that could have failed in
   either direction and reported invariance on 4 of 9 rows. **For the Task 17
-  re-take:** `tests/schgen/remeasure.test.ts` asserts all twelve sweep rows, so
+  re-take:** `tests/schgen/remeasure-ceiling.test.ts` asserts all twelve sweep rows, so
   they recompute on every run, plus a CONTROL that could have failed - each order
   is laid out under a suffixed block id because `layoutBlocks` refuses two inputs
   for one id, and the test asserts order 0's crossing count equals the
@@ -2243,14 +2243,23 @@ unfavourable on the smallest, and none of the three is a drawing.
   changed no behaviour, and a partition check passing 54 of 54 and failing 54 of
   54 under mutation. A check that could have failed: the parent could have scored
   better than its blocks, and under one policy one block does score worse than
-  its parent. **For the re-take:** `tests/schgen/remeasure.test.ts` asserts the
-  edge counts of both circuits as EQUALITIES in both directions, so a change in
-  the edge model moves them either way rather than only when the total grows -
-  and the flat probe goes through the same `elkInputOf` every declared block
-  does. A check that could have failed: the two sides could have differed by one
-  edge per multi-block net, and the test would have reported the ratio.
-- **Verified** RELAYED for the spike's own table. **CONFIRMED for the edge
-  census and for the three re-taken per-block crossing figures.**
+  its parent. **For the corrected re-take:**
+  `tests/schgen/remeasure-edges.test.ts` asserts both circuits' flat and blocked
+  counts, the DIRECTION (`ratio < 1`, which is the half round 1 got backwards),
+  the governing net lists by name, and **the prediction against the measurement**
+  on three subjects - two where it predicts a difference and one where it
+  predicts equality. **Checks that could have failed, and one of them did:** the
+  prediction-against-measurement comparison is `3 === 3` and `5 === 5` with the
+  set asserted NON-EMPTY beside it, so it cannot pass as `0 === 0`, which is
+  exactly how round 1's version passed; and the fix itself is driven - the same
+  union through the same function with `BoundarySource` flipped gives 69 against
+  72, so the defect is reproducible on demand rather than described.
+- **Verified** RELAYED for the spike's own table. **CONFIRMED for the corrected
+  edge census and for the three re-taken per-block crossing figures** - this
+  writer re-measured 69 and 48 independently after the review reported them and
+  **agrees to the edge on both circuits**, including the two governing net lists.
+  **The defect in round 1's probe was found by the review, not here**, and the
+  correction is this writer's.
 - **Why it is open** it is a measurement, not a defect. **It was the strongest
   evidence in the repository for the architecture's block seam, and the
   re-measurement weakens it**: the headline ratio is not re-derivable on this
@@ -2420,7 +2429,7 @@ them.
   split computed from each input's own `ports` declaration. Checks that could
   have failed: crossings were 0 on 11 blocks and nonzero on 7; the dangling-net
   scan could have found an undeclared one and found none. **For the re-derivation:**
-  `tests/schgen/remeasure.test.ts` pins the twelve-row sweep, the per-size subject
+  `tests/schgen/remeasure-ceiling.test.ts` pins the twelve-row sweep, the per-size subject
   coverage with the refused-geometry count per size, both of `BLOCK_SIZE`'s
   bounds, the six blocks `blocksOutside` names, and the floor's 38 zero-size
   boundary nodes. Checks that could have failed: the boundary-node assertion
@@ -16969,7 +16978,7 @@ review, absent from the history and destroyed by `git clean -fdx`.
 | *(not in the brief)* | `SCALE_INVARIANT_UPTO` and `SCALE_UNSTABLE_FROM` changed from 9 and 13 to 3 and 8 | the re-measurement falsified the numbers a Task 16 module states as G95's, on the same block the spike measured. **Cost: one pinned expectation in `tests/schgen/readability/baseline.test.ts` moved** - 11 cells is no longer in the unmeasured gap - and `oc-power` is now classified `about-a-serialization`, which is the measured answer. Leaving 9 would have shipped a module asserting a withdrawn number |
 | *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
 | *(not in the brief)* | the flat probe rebuilt to be genuinely flat, and the edge census split into `tools/schgen/remeasure-edges.ts` | fix round 1, item 1: round 1's probe never rebuilt `Circuit.unitBlock`, so it inherited the blocked declaration's boundary nodes. **Cost: the headline figure changed from 1.000x to 0.958x and 0.906x, and its direction from "removes none" to "ADDS"** - the finding it supports is unchanged and stronger |
-| *(not in the brief)* | both `SCALE_*` constants pinned to the sweep rather than to a classification | fix round 1, item 2: the old assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, so a one-step drift of the upper bound was not caught. **Cost: the pin now runs the ELK sweep, so it lives in `remeasure.test.ts` rather than beside the declarations** |
+| *(not in the brief)* | both `SCALE_*` constants pinned to the sweep rather than to a classification | fix round 1, item 2: the old assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, so a one-step drift of the upper bound was not caught. **Cost: the pin now runs the ELK sweep, so it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations** |
 
 **R38's PRICE WAS HIGHER THAN THE RULING STATED, AND THAT IS RECORDED AS THE
 CONTROLLER'S COST RATHER THAN THE IMPLEMENTER'S - ruling R45.** R38 substituted

@@ -139,7 +139,7 @@ export interface OrderSweepRow {
  * refuses two inputs for one block id, so each order is laid out under `<id>~o<n>`; the root id is
  * the only thing that changes and `elkjs` has no documented use for it. **Order 0 IS declaration
  * order**, so its crossing count must equal the one `./remeasure.ts` reports for the unsuffixed
- * block - and `tests/schgen/remeasure.test.ts` asserts exactly that, which is what makes the
+ * block - and `tests/schgen/remeasure-ceiling.test.ts` asserts exactly that, which is what makes the
  * suffixing a checked assumption rather than a hope.
  */
 export async function orderSweep(cases: readonly ParityCase[] = PARITY_CASES): Promise<readonly OrderSweepRow[]> {

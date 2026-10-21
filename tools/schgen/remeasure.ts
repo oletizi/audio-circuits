@@ -431,7 +431,10 @@ export const BLOCK_SIZE: BlockSizeDecision = {
     "power symbol per crossing net, drawn inside the block's own extent (G208) - and that cost is " +
     "glyphs and eye-travel rather than ink.",
   evidence:
-    "bun tools/schgen/remeasure-ceiling.ts, and tests/schgen/remeasure.test.ts pins every figure. " +
+    "bun tools/schgen/remeasure-ceiling.ts, and tests/schgen/remeasure-ceiling.test.ts pins every " +
+    "figure - BOTH BOUNDS INCLUDED. That is the pointer a reader has to be able to trust: run " +
+    "THAT file. tests/schgen/remeasure.test.ts no longer holds the pins and a constant perturbed " +
+    "against it comes back GREEN (fix round 2, item A). " +
     "CONFIRMED by this writer: both bounds were run here, neither is relayed. THE CAVEAT TRAVELS " +
     "WITH THE FIGURE, AND THE CEILING's OWN SIZE IS THE THIN SPOT: the window comes from 12 " +
     "declared blocks of 4 circuits, and at size 3 - the ceiling itself - all FOUR subjects are ONE " +

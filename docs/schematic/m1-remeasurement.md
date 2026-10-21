@@ -39,7 +39,9 @@ bun tools/schgen/remeasure-ceiling.ts    the ceiling's shape and the floor's bas
 bun tools/schgen/remeasure-composed.ts   the integrated experiment
 bun tools/schgen/remeasure-edges.ts      the flat probe and G100's edge mechanism
 bun tools/schgen/remeasure-criteria.ts   congruence and disjointness
-bun test tests/schgen/remeasure.test.ts  all of it, pinned
+bun test tests/schgen/remeasure.test.ts          the per-block table, step 4, coverage, 3.4
+bun test tests/schgen/remeasure-ceiling.test.ts  BOTH BOUNDS, the sweep, and BLOCK_SIZE
+bun test tests/schgen/remeasure-edges.test.ts    the flat-against-blocked edge counts
 ```
 
 **EVERY FIGURE HERE IS CONFIRMED BY THIS WRITER** - run, read and pinned - with
