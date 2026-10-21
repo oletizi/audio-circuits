@@ -45,10 +45,27 @@ import { loadPinTables, type PinTable } from "../../lib/schgen/gates/pin-table.t
 import { checklistIds, checkTraceability } from "../../lib/schgen/gates/traceability.ts";
 import { stockFootprintTable } from "./kicad-config.ts";
 import { runKicadCli, stderrProblems } from "./kicad-run.ts";
+import { MANIFEST_FILE, manifestInputsOf, parseManifest, sha256, staleManifestInputs } from "../../lib/schgen/manifest.ts";
+import { BASELINES_FILE, loadBaselines } from "../../lib/schgen/readability/baseline.ts";
 
 export interface GateResult {
   readonly gate: string;
   readonly problems: readonly string[];
+  /**
+   * **THE DERIVATION AND THE GOVERNANCE THIS GATE RAN AGAINST - spec §2.1's criterion, which is
+   * that *"a gate that reports a pass names the manifest it passed against"*.**
+   *
+   * It is a field on every row and never blank, because the thing §2.1 exists to prevent is four
+   * checks that each pass while nobody can say they ran over one derivation. A row whose
+   * `problems` are empty and whose `manifest` named nothing would be exactly that.
+   *
+   * **IT NAMES TWO FILES AND NOT ONE.** `MANIFEST.json` is the derivation; and the readability
+   * baseline registry's COUNT is printed beside it, because *"zero baselines"* and *"some baselines
+   * that this row did not consult"* are different states and a row that said nothing would leave a
+   * reader to assume the second. §3.3's acceptance table makes zero the correct state for a first
+   * generation, which every circuit here is - so it is information on the row rather than a problem.
+   */
+  readonly manifest: string;
 }
 
 export const GATES = {
@@ -109,11 +126,101 @@ function messageLines(e: unknown): string[] {
 }
 
 /** Runs one gate; an error it throws becomes its problems instead of escaping. */
-export function runGate(gate: string, check: () => readonly string[]): GateResult {
+export function runGate(gate: string, check: () => readonly string[], manifest: string = MANIFEST_UNREAD): GateResult {
   try {
-    return { gate, problems: check() };
+    return { gate, problems: check(), manifest };
   } catch (e) {
-    return { gate, problems: messageLines(e) };
+    return { gate, problems: messageLines(e), manifest };
+  }
+}
+
+/** The citation a gate carries when no generation happened, so no manifest could be compared. */
+export const MANIFEST_UNREAD = `${MANIFEST_FILE} not read: generation was refused, so no gate here reports a pass`;
+
+/**
+ * THE COMMITTED MANIFEST, AND WHETHER IT IS STILL LIVE - spec §2.1's second half: *"a manifest
+ * whose input hashes do not match the files on disk fails rather than regenerating silently."*
+ *
+ * **WHAT IS COMPARED AGAINST WHAT, because the obvious version of this check is a tautology.** The
+ * manifest `generate` just built is live for the inputs `generate` just read, by construction -
+ * comparing those two would be `x !== x`, which is the shape `docs/known-gaps.md` **G179** and the
+ * Task 13 review both name. What is compared here is the manifest **committed in `outDir`** against
+ * the inputs this run read: a template edit, a rule edit, a reordered block or a changed netlist
+ * export moves an input hash, the committed manifest no longer describes the derivation, and every
+ * gate that would otherwise report a pass stops reporting one.
+ *
+ * **GATE 1 ALSO NOTICES, AND THE TWO ARE NOT THE SAME CHECK.** `staleFiles` compares
+ * `MANIFEST.json` by content like every other generated file and says *this file differs*. This
+ * says **which input moved**, and it attaches that to every gate rather than to gate 1 alone -
+ * which is the half gate 1 cannot give, because gates 3, 6, 7 and 8 run and pass today whatever
+ * gate 1 reported.
+ */
+interface ManifestState {
+  readonly citation: string;
+  readonly problems: readonly string[];
+}
+
+function manifestState(d: LoadedDesign, g: Generation): ManifestState {
+  const file = path.join(d.outDir, MANIFEST_FILE);
+  let text: string;
+  try {
+    text = fs.readFileSync(file, "utf8");
+  } catch (e) {
+    return {
+      citation: `${MANIFEST_FILE} absent from ${d.outDir}`,
+      problems: [
+        `${MANIFEST_FILE} is not in the output directory (${e instanceof Error ? e.message : String(e)}), so no gate ` +
+          "here can name the derivation it passed against. Spec 2.1: four link checks that each " +
+          "pass prove nothing jointly unless they ran over the same derivation. It is reported " +
+          "loudly rather than regenerated: run `bun run schgen generate` and commit the manifest.",
+      ],
+    };
+  }
+  const citation = `${MANIFEST_FILE} ${sha256(text).slice(0, 12)}`;
+  try {
+    const stale = staleManifestInputs(parseManifest(text), manifestInputsOf(g.manifestSources, g.files));
+    if (stale.length === 0) return { citation, problems: [] };
+    return {
+      citation: `${citation} (NOT LIVE)`,
+      problems: [
+        `${MANIFEST_FILE} records input hashes that no longer match what this run read, so it does ` +
+          "not describe this derivation and nothing here is a pass. It is NOT regenerated silently " +
+          `(spec 2.1): ${stale.join("; ")}`,
+      ],
+    };
+  } catch (e) {
+    return { citation: `${citation} (unreadable)`, problems: messageLines(e) };
+  }
+}
+
+/**
+ * The readability-baseline registry, READ, with the count it holds reported.
+ *
+ * **IT IS INFORMATION AND NEVER A PROBLEM, and that is spec §3.3's acceptance table rather than
+ * leniency**: *"a circuit generated for the first time reports the measures with no pass or fail.
+ * A first generation has nothing to regress against, and inventing a verdict for it is inventing a
+ * threshold."* The registry ships empty, so every lookup is `absent`, so there is nothing here to
+ * refuse.
+ *
+ * **WHAT IT DOES BUY IS THAT THE LOADER RUNS IN PRODUCTION AND THAT THE COUNT IS PRINTED.** A
+ * malformed registry refuses loudly on the next `verify` rather than on whatever day somebody first
+ * grants a baseline; and a reader is told *zero baselines* rather than left to assume there were
+ * some, which is the protection this registry has in place of the approvals loader's
+ * refuse-an-empty-list clause (see `lib/schgen/readability/baseline.ts`).
+ */
+export function baselineCensus(): ManifestState {
+  try {
+    const registry = loadBaselines();
+    return { citation: `${BASELINES_FILE} ${registry.baselines.length} baseline(s)`, problems: [] };
+  } catch (e) {
+    return {
+      citation: `${BASELINES_FILE} UNREADABLE`,
+      problems: [
+        "the readability-baseline registry could not be read, so no gate here can say what " +
+          "externally-held judgement it ran under. It is reported rather than treated as an empty " +
+          "registry: an absent file is not \"no baseline is held\". " + messageLines(e).join(" "),
+      ],
+    };
   }
 }
 
@@ -185,7 +292,7 @@ export async function runGates(d: LoadedDesign, env: GenerateEnv): Promise<GateR
     gate1 = runGate(GATES.upToDate, () => staleFiles(d, produced));
   } catch (e) {
     generation = null;
-    gate1 = { gate: GATES.upToDate, problems: messageLines(e) };
+    gate1 = { gate: GATES.upToDate, problems: messageLines(e), manifest: MANIFEST_UNREAD };
   }
   const later: { gate: string; check: (gen: Generation) => string[] }[] = [
     { gate: GATES.netlist, check: (gen) => netlistGate(d, gen) },
@@ -194,5 +301,26 @@ export async function runGates(d: LoadedDesign, env: GenerateEnv): Promise<GateR
   if (d.spec.checklist !== null) later.push({ gate: GATES.checklist, check: (gen) => checklistGate(d, gen) });
   if (d.spec.oscar !== null) later.push({ gate: GATES.oscar, check: () => oscarGate(d) });
   const g = generation;
-  return [gate1, ...later.map(({ gate, check }) => (g === null ? { gate, problems: [NOT_RUN] } : runGate(gate, () => check(g))))];
+  // Spec 2.1's criterion, attached here rather than inside each gate: the manifest is one
+  // derivation's record and the gates are checks over it, so one read and one comparison serve all
+  // of them.
+  const derivation = g === null ? { citation: MANIFEST_UNREAD, problems: [] } : manifestState(d, g);
+  const baselines = baselineCensus();
+  const manifest = {
+    citation: `${derivation.citation}; ${baselines.citation}`,
+    problems: [...derivation.problems, ...baselines.problems],
+  };
+  const rows: GateResult[] = [
+    { ...gate1, manifest: manifest.citation },
+    ...later.map(({ gate, check }) =>
+      g === null ? { gate, problems: [NOT_RUN], manifest: manifest.citation } : runGate(gate, () => check(g), manifest.citation),
+    ),
+  ];
+  // **THE MANIFEST's OWN PROBLEMS GO ON THE ROWS THAT WOULD OTHERWISE READ AS A PASS, and only
+  // those.** Spec 2.1's criterion is about a gate that REPORTS A PASS; a row already carrying a
+  // problem is already not one, and repeating the manifest complaint on five rows would bury the
+  // thing that actually failed. A row with no problems and a dead manifest is exactly the shape
+  // 2.1 exists to refuse, so that row gets it.
+  if (manifest.problems.length === 0) return rows;
+  return rows.map((row) => (row.problems.length === 0 ? { ...row, problems: manifest.problems } : row));
 }

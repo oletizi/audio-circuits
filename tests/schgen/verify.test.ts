@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url";
 import { cap, RAILS } from "./__fixtures__/circuits.ts";
 import type { DesignSpec, LoadedDesign } from "../../lib/schgen/design.ts";
 import { generate, writeGeneration } from "../../tools/schgen/generate.ts";
-import { annotationProblems, OSCAR_NOT_PORTED, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
+import { annotationProblems, baselineCensus, MANIFEST_UNREAD, OSCAR_NOT_PORTED, runGate, runGates, symmetricSymbolsProblems } from "../../tools/schgen/verify.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "./__fixtures__/orientations.ts";
 
 const FIX = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "symbols");
@@ -96,16 +96,29 @@ function loaded(dir: string, s: DesignSpec): LoadedDesign {
 
 const OSCAR = { brief: "CORE-BRIEF.md", netlists: {}, symmetricSymbols: {}, subcircuits: [] };
 
+/**
+ * Task 16: the citation every row carries when the generation was refused.
+ *
+ * It names BOTH files - there is no derivation to name, and the readability-baseline registry's
+ * count is printed beside it because "zero baselines" and "baselines this row did not consult" are
+ * different states. It is composed from the two exported pieces rather than written out as a
+ * literal, so a change to either half cannot leave this test asserting a string nothing produces.
+ */
+const REFUSED_CITATION = `${MANIFEST_UNREAD}; ${baselineCensus().citation}`;
+
 describe("runGates", () => {
   it("after a gate-1 generate refusal, reports every later gate as not run", async () => {
     const d = loaded(tmpDir(), spec());
     // No refs.lock.json in the empty tmp dir and initLock false: generate refuses in gate 1.
     const r = await runGates(d, ENV);
+    // Task 16: every row names the manifest it ran against (spec 2.1). Here the generation was
+    // refused, so there is no derivation to name and no row reports a pass - the citation says so
+    // rather than being blank, which would read as "named nothing and passed anyway".
     expect(r).toEqual([
-      { gate: "1 up to date", problems: [expect.stringMatching(/refs\.lock\.json not found; run pnpm schgen generate --init/)] },
-      { gate: "3 netlist equals IR", problems: ["not run: generation was refused"] },
-      { gate: "6 pin identity", problems: ["not run: generation was refused"] },
-      { gate: "7 checklist traceability", problems: ["not run: generation was refused"] },
+      { gate: "1 up to date", problems: [expect.stringMatching(/refs\.lock\.json not found; run pnpm schgen generate --init/)], manifest: REFUSED_CITATION },
+      { gate: "3 netlist equals IR", problems: ["not run: generation was refused"], manifest: REFUSED_CITATION },
+      { gate: "6 pin identity", problems: ["not run: generation was refused"], manifest: REFUSED_CITATION },
+      { gate: "7 checklist traceability", problems: ["not run: generation was refused"], manifest: REFUSED_CITATION },
     ]);
   });
 
@@ -184,14 +197,14 @@ describe("symmetricSymbolsProblems", () => {
 
 describe("runGate", () => {
   it("returns a gate's problems", () => {
-    expect(runGate("x", () => ["a", "b"])).toEqual({ gate: "x", problems: ["a", "b"] });
+    expect(runGate("x", () => ["a", "b"])).toEqual({ gate: "x", problems: ["a", "b"], manifest: MANIFEST_UNREAD });
   });
 
   it("turns a gate's thrown error into its problems, one per line", () => {
     const r = runGate("x", () => {
       throw new Error("first\n  - second\n");
     });
-    expect(r).toEqual({ gate: "x", problems: ["first", "- second"] });
+    expect(r).toEqual({ gate: "x", problems: ["first", "- second"], manifest: MANIFEST_UNREAD });
   });
 });
 

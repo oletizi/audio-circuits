@@ -325,10 +325,6 @@
       ]
     },
     {
-      "from": "generateFiles.ts",
-      "to": "tools/schgen/generated-files.ts"
-    },
-    {
       "from": "kicadConfig.ts",
       "to": "tools/schgen/kicad-config.ts"
     },
@@ -723,6 +719,13 @@
       "sourceSha": "b53b1c7671a3caaf88a0bc13ba50162febf33da02a35aa00704deb8a48238a19",
       "task": "Task 13",
       "why": "Ruling R29 (plan, Task 13). `buildCircuit` carries `CircuitSpec`'s two new maps onto the `Circuit` - `orientations` (spec 1.5 step 2's answer per part, derived in `from-network.ts` where the `Network` is; docs/known-gaps.md G182) and `portDirections` (G186's \"only input genuinely missing from the IR\") - and adds `orientationsOf`, which refuses an orientation map that is not TOTAL over the spec's parts in both directions. The totality refusal is the content of the divergence: a missing entry must not read as `null`, because `null` means the rule declined and both states would draw the part in the library frame, so an absence would be invisible in the output. The pedals source has neither field and no layout backend to need them."
+    },
+    {
+      "from": "generateFiles.ts",
+      "to": "tools/schgen/generated-files.ts",
+      "sourceSha": "5a6e2b71594fb458bbd512cb471c474665a6cab089cc469d5496a426a7e75e49",
+      "task": "Task 16",
+      "why": "Task 16 adds MANIFEST.json to the generated file set (spec 2.1's generation manifest), which is a content change `rewrite()` cannot produce and `cuts` cannot express - a cut is deletion-only. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger), and all it retains is the `sourceSha` watch on the other end of the line. WHY IT WAS TAKEN ANYWAY: the alternative was for `generate` to add one entry to the map `generatedFiles` returns, which works end to end because `staleFiles` and `writeGeneration` both read that map - but `generatedFiles`'s contract is THE GENERATED FILE SET, so a second caller of it would then produce a set with no manifest in it. Two places to keep correct, which CLAUDE.md forbids, in exchange for one byte-check. The manifest is added LAST in that function, because it hashes the files produced before it; `manifestInputsOf` in lib/schgen/manifest.ts excludes MANIFEST.json itself, and is the one rule tools/schgen/verify.ts rebuilds the inputs with so the producer and the verifier cannot disagree about what is hashed."
     }
   ],
   "handWritten": [
@@ -809,6 +812,16 @@
     "tests/schgen/render/cross-sheet.kicad.test.ts",
     "tests/schgen/elk/sheet-graph.test.ts",
     "tests/schgen/render/compose.test.ts",
-    "tests/schgen/__fixtures__/composed.ts"
+    "tests/schgen/__fixtures__/composed.ts",
+    "lib/schgen/manifest.ts",
+    "lib/schgen/readability/measures.ts",
+    "lib/schgen/readability/baseline-model.ts",
+    "lib/schgen/readability/baseline-read.ts",
+    "lib/schgen/readability/baseline.ts",
+    "lib/schgen/readability/finding.ts",
+    "tests/schgen/manifest.test.ts",
+    "tests/schgen/readability/measures.test.ts",
+    "tests/schgen/readability/baseline.test.ts",
+    "tests/schgen/readability/finding.test.ts"
   ]
 }

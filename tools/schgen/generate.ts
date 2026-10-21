@@ -47,6 +47,8 @@ import type { BlockId } from "../../lib/schgen/ir/types.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
 import { generatedFiles, initHint, REFS_LOCK, VERSION_LOCK } from "./generated-files.ts";
+import { canonicalNetworkText, sha256, type ManifestSources } from "../../lib/schgen/manifest.ts";
+import { moduleRepoRoot } from "../perfboard/repo-root.ts";
 
 export { staleFiles, writeGeneration } from "./generated-files.ts";
 
@@ -69,6 +71,14 @@ export interface Generation {
   readonly versions: VersionLock;
   readonly drawings: readonly SheetDrawing[];
   readonly symbols: SymbolResolver;
+  /**
+   * Spec §2.1's five manifest inputs, as TEXT - what `MANIFEST.json` was built from.
+   *
+   * It is exposed so `tools/schgen/verify.ts` can compare the manifest ON DISK against the inputs
+   * this run actually read (`staleManifestInputs`). The manifest this run produced is trivially
+   * live for them, so comparing it against them would be a tautology; the committed one is not.
+   */
+  readonly manifestSources: ManifestSources;
 }
 
 /** Flag symbol for rails driven only by passive pins; the stock `power` library always loads for it. */
@@ -134,6 +144,69 @@ function resolveVersions(d: LoadedDesign, env: GenerateEnv, current: VersionLock
   return { versions: locked, text };
 }
 
+/** The template library, and the rule library that graded the drawing - spec §2.1's two libraries. */
+const TEMPLATE_LIBRARY_DIR = "lib/schgen/render/templates";
+const RULE_LIBRARY_DIR = "lib/schgen/rules";
+
+/**
+ * A library's version, as the sha256 of each of its modules.
+ *
+ * **IT HASHES THE SOURCES AND NOT A DECLARED VERSION STRING, and the alternative was measurably
+ * worse.** `TEMPLATES` is a registry of ids, so a digest over the ids would not move when a
+ * template's GEOMETRY changed - a hash that cannot detect the thing it exists to detect, which is
+ * `CLAUDE.md`'s *"a skipped check must never look like a passing one"* in a hash's clothing. The
+ * parent's `run.json` records the engine COMMIT for the same reason.
+ *
+ * The name is included beside each hash, so adding a module moves the digest even if the new
+ * module is empty, and the list is sorted so the digest does not depend on directory order.
+ *
+ * **AN EMPTY DIRECTORY REFUSES.** A digest over no files is a constant that can never move, which
+ * would make the manifest certify a drawing against a library it never read.
+ */
+function libraryDigest(dir: string): string {
+  const abs = path.join(moduleRepoRoot(), dir);
+  const names = fs.readdirSync(abs).filter((n) => n.endsWith(".ts")).sort();
+  if (names.length === 0) {
+    throw new Error(
+      `the library at ${dir} holds no .ts module, so its manifest digest would be a constant that ` +
+        "can never move - a hash that cannot detect the change it exists to detect. It is not " +
+        "defaulted to an empty digest (spec 2.1: the manifest records the template library version " +
+        "and the rule library version that graded the drawing).",
+    );
+  }
+  return names.map((n) => `${n} ${sha256(fs.readFileSync(path.join(abs, n), "utf8"))}`).join("\n");
+}
+
+/**
+ * Spec §2.1's five manifest inputs for one generation.
+ *
+ * **`canonicalNetlist` IS `null` FOR EVERY DESIGN IN THIS REPOSITORY TODAY, AND THAT IS A FACT
+ * ABOUT THE DESIGNS RATHER THAN A DEFAULT.** `DesignSpec` carries no canonical-netlist field:
+ * `CLAUDE.md` says authority runs in both directions, and a canonical netlist export exists only
+ * for a SCHEMATIC-FIRST circuit - the Pultec - which has no design module yet. The manifest field
+ * is `string | null` for exactly this case, and `staleManifestInputs` reports a design that gains
+ * or loses one, so the null is not read as agreement. **It is recorded in `docs/known-gaps.md`**,
+ * because a reader seeing `"canonicalNetlistSha256": null` in every manifest needs to know whether
+ * that is a gap in the generator or a property of the inputs.
+ *
+ * **`layoutInputs` COVERS ONLY THE BLOCKS THAT REACHED THE LAYOUT BACKEND.** A block drawn by a
+ * reviewed template was never handed to one, so it has no entry, and the ABSENCE means *no layout
+ * backend input* rather than *no drawing*. `staleManifestInputs` reports a block appearing on one
+ * side and not the other, in both directions, so a block that stops selecting ELK invalidates the
+ * manifest rather than silently dropping out of it.
+ */
+function manifestSourcesOf(d: LoadedDesign, elk: ReadonlyMap<BlockId, ElkOutcome>): ManifestSources {
+  const layoutInputs: Record<BlockId, string> = {};
+  for (const [id, outcome] of elk) layoutInputs[id] = outcome.serialized;
+  return {
+    canonicalNetlist: null,
+    sectionNetwork: canonicalNetworkText(d.spec.circuit),
+    layoutInputs,
+    templateLibrary: libraryDigest(TEMPLATE_LIBRARY_DIR),
+    ruleLibrary: libraryDigest(RULE_LIBRARY_DIR),
+  };
+}
+
 export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
   if (!isPlainFileName(d.spec.project)) {
     throw new Error(`project name "${d.spec.project}" must be a plain file name (no path separator or ".."); it names files in the output directory`);
@@ -179,6 +252,7 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
   // sheet as unrepresented. It sits beside `assertRefsMatchDrawings`, which is the other
   // whole-drawing-set check, for the same reason. `docs/known-gaps.md` records the deviation.
   assertCrossSheet(drawn, drawings);
-  const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings });
-  return { files, circuit, annotation, versions, drawings, symbols, elk };
+  const manifestSources = manifestSourcesOf(d, elk);
+  const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings, manifestSources });
+  return { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources };
 }

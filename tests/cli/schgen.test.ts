@@ -89,6 +89,8 @@ describe("the schgen CLI's argument handling", () => {
 })
 
 const GENERATED = [
+  // Task 16: spec 2.1's generation manifest, produced last because it hashes the rest.
+  "MANIFEST.json",
   "REFMAP.md",
   "RENDER-REPORT.md",
   "fp-lib-table",

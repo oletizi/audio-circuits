@@ -46,6 +46,8 @@ describe("generate over the ported mini design", () => {
     // Named one by one rather than counted: a count passes when a file is renamed, and the lock
     // files and lib tables are what make the output reproducible on another machine.
     expect([...a.files.keys()].sort()).toEqual([
+      // Task 16: spec 2.1's generation manifest. It is produced LAST, because it hashes the rest.
+      "MANIFEST.json",
       "REFMAP.md",
       "RENDER-REPORT.md",
       "fp-lib-table",

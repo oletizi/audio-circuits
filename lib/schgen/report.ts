@@ -7,6 +7,8 @@
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
+ *
+ * **DIVERGED FURTHER BY TASK 16**: the report carries spec §3.3's four measures per sheet.
  */
 
 /**
@@ -21,6 +23,7 @@
  */
 import type { BlockId, Circuit, PartLabel, SheetId } from "./ir/types.ts";
 import type { SheetDrawing } from "./render/sheet-types.ts";
+import { renderMeasures, sheetMeasuresOf, type SchematicMeasures } from "./readability/measures.ts";
 
 export interface BlockReport {
   readonly id: BlockId;
@@ -41,9 +44,28 @@ export interface SheetCounts {
   readonly junctions: number;
 }
 
+/**
+ * Spec §3.3's four measures for one emitted sheet.
+ *
+ * **IT IS IN THE RENDER REPORT BECAUSE OF G209's LESSON AND NOT FOR COMPLETENESS.** That entry
+ * records that Task 15's figures *"were computed in a scratch script and were the only number in
+ * these entries nobody else could reproduce"*; the fix was to put the measure in a committed file.
+ * These four go in the report every generation produces, so the numbers behind any claim about a
+ * sheet are regenerated and compared by content on every run.
+ *
+ * **AND THEY ARE DIAGNOSTICS, WHICH THE REPORT SAYS IN WORDS.** Spec §3.3 revision 4: absent a
+ * dominance rule, a four-measure comparison is descriptive, not pass/fail. The section carries
+ * that sentence, so a reader cannot take a row of improving numbers for an acceptance result.
+ */
+export interface SheetMeasures {
+  readonly sheet: SheetId;
+  readonly measures: SchematicMeasures;
+}
+
 export interface RenderReport {
   readonly blocks: readonly BlockReport[];
   readonly sheets: readonly SheetCounts[];
+  readonly measures: readonly SheetMeasures[];
   readonly ncUnlisted: readonly { part: PartLabel; reason: string; pins: readonly string[] }[];
 }
 
@@ -84,7 +106,12 @@ export function buildReport(c: Circuit, drawings: readonly SheetDrawing[]): Rend
         ? []
         : [{ part: p.label, reason: p.ncUnlistedReason, pins: c.pins.filter((x) => x.part === p.label && x.origin === "nc-unlisted").map((x) => x.pin) }],
     );
-  return { blocks: blockReports(c), sheets: drawings.map(sheetCounts), ncUnlisted };
+  return {
+    blocks: blockReports(c),
+    sheets: drawings.map(sheetCounts),
+    measures: drawings.map((d) => ({ sheet: d.sheet.id, measures: sheetMeasuresOf(d) })),
+    ncUnlisted,
+  };
 }
 
 const cell = (s: string): string => s.replaceAll("|", "\\|");
@@ -113,6 +140,14 @@ export function renderReport(r: RenderReport): string {
         : ["| Sheet | Parts | Units | Wires | Labels | Power symbols | No-connects | Junctions |", "|---|---|---|---|---|---|---|---|", ...sheetRows],
     ),
     ...section("Pins declared not connected in bulk", nc),
+    ...section("Readability measures, per sheet", [
+      "Spec 3.3's four measures. There is NO composite score: four numbers moving in different",
+      "directions cannot be resolved into a verdict by anything the spec states, so these are",
+      "DIAGNOSTICS and never an acceptance result. Acceptance rests on the hard geometric checks",
+      "and on independent render approval (schematic/readability-baselines.json).",
+      "",
+      ...r.measures.map((m) => `- ${cell(m.sheet)}: ${renderMeasures(m.measures)}`),
+    ]),
     "",
   ].join("\n");
 }

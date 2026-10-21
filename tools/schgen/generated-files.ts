@@ -1,9 +1,20 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/generateFiles.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
- */
+ * Ported from digital-pedal-platform's `tools/schgen/generateFiles.ts`, and DIVERGED from it by
+ * Task 16 of the M1 schematic-authoring plan: the generated file set gains `MANIFEST.json`
+ * (spec §2.1).
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md`.
+ *
+ * **WHY THE DIVERGENCE IS HERE AND NOT IN `generate.ts`, which would have kept the byte-check.**
+ * `generate` could have added one entry to the map `generatedFiles` returns, and that was weighed:
+ * `staleFiles` and `writeGeneration` both read the map, so end to end it would have worked. It is
+ * NOT done, because `generatedFiles`'s contract is *the generated file set* and a second caller of
+ * it would then produce a set with no manifest in it - two places to keep correct, which
+ * `CLAUDE.md` forbids, in exchange for one byte-check. The cost of the divergence is recorded in
+ * `docs/known-gaps.md` rather than paid silently.
 
 /**
  * The generated file set, staleness against disk (read-only) and the one writer.
@@ -22,6 +33,7 @@ import type { SymbolResolver } from "../../lib/schgen/render/library.ts";
 import { libTable, projectFile } from "../../lib/schgen/render/project.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import { buildReport, renderReport } from "../../lib/schgen/report.ts";
+import { MANIFEST_FILE, buildManifest, manifestInputsOf, serializeManifest, type ManifestSources } from "../../lib/schgen/manifest.ts";
 
 export const REFS_LOCK = "refs.lock.json";
 export const VERSION_LOCK = "schgen.lock.json";
@@ -66,6 +78,11 @@ export interface FileInputs {
   /** schgen.lock.json exactly as recorded: an existing clean lock's bytes, or the serialized current versions. */
   readonly versionLockText: string;
   readonly drawings: readonly SheetDrawing[];
+  /**
+   * Spec §2.1's five manifest INPUTS. The sixth - the generated set - is assembled here, because
+   * the manifest hashes the files this function produces and is itself one of them.
+   */
+  readonly manifestSources: ManifestSources;
 }
 
 export function generatedFiles(x: FileInputs): Map<string, string> {
@@ -88,6 +105,11 @@ export function generatedFiles(x: FileInputs): Map<string, string> {
   add(VERSION_LOCK, x.versionLockText);
   add("REFMAP.md", renderRefmap(x.circuit, x.annotation));
   add("RENDER-REPORT.md", renderReport(buildReport(x.circuit, x.drawings)));
+  // LAST, and after every other file: spec §2.1's manifest hashes the generated set, so it can
+  // only be built once that set is complete. `manifestInputsOf` excludes MANIFEST.json itself -
+  // one rule, shared with tools/schgen/verify.ts, so the producer and the verifier cannot disagree
+  // about what is hashed.
+  add(MANIFEST_FILE, serializeManifest(buildManifest(manifestInputsOf(x.manifestSources, files))));
   return files;
 }
 

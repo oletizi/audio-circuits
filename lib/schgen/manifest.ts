@@ -116,6 +116,33 @@ const hashedRecord = (r: Readonly<Record<string, string>>): Record<string, strin
   return out
 }
 
+/**
+ * The whole `ManifestInputs` from the five sources and the generated file set - **one rule, so the
+ * producer and the verifier cannot disagree about what is hashed.**
+ *
+ * **`MANIFEST.json` IS EXCLUDED FROM `generated`, and the reason is a fixed point rather than a
+ * preference.** The manifest hashes the generated set and is itself one of the generated files, so
+ * including it would require its own hash to be known before it was written. It is excluded HERE,
+ * once, rather than at each call site - `tools/schgen/generated-files.ts` builds the manifest and
+ * `tools/schgen/verify.ts` rebuilds the inputs to compare against it, and a difference between
+ * those two exclusions would make every manifest look stale.
+ *
+ * **WHAT THAT COSTS: the manifest does not hash itself**, so a hand-edited `MANIFEST.json` is not
+ * caught by `generatedSha256`. It is caught by `staleFiles` (gate 1), which compares every
+ * generated file including this one by CONTENT against what the generator produces.
+ */
+export function manifestInputsOf(
+  sources: ManifestSources,
+  files: ReadonlyMap<string, string>,
+): ManifestInputs {
+  const generated: Record<string, string> = {}
+  for (const [name, text] of files) {
+    if (name === MANIFEST_FILE) continue
+    generated[name] = text
+  }
+  return { ...sources, generated }
+}
+
 export function buildManifest(x: ManifestInputs): GenerationManifest {
   return {
     version: MANIFEST_VERSION,
@@ -302,7 +329,20 @@ export function staleManifestInputs(m: GenerationManifest, current: ManifestInpu
  * undeclared ELK field for.
  */
 export function canonicalNetworkText(c: CircuitSpec): string {
-  return JSON.stringify(canonicalValue(c, "circuit"))
+  return canonicalTextOf(c, "circuit")
+}
+
+/**
+ * The same canonicalisation over ANY data value.
+ *
+ * **IT IS EXPORTED SO THE TWO REFUSALS BELOW ARE DRIVABLE WITHOUT A CAST.** `CircuitSpec` has no
+ * optional field and no `unknown`, so there is no type-legal way to hand `canonicalNetworkText` an
+ * undefined nested value or a function - and this repository's rule is no casts, so a guard reached
+ * only through one would be a guard no test covers. `CLAUDE.md`: *"a skipped check must never look
+ * like a passing one"*. `tests/schgen/manifest.test.ts` drives both arms through this entry.
+ */
+export function canonicalTextOf(value: unknown, where: string): string {
+  return JSON.stringify(canonicalValue(value, where))
 }
 
 type Canonical = string | number | boolean | null | readonly Canonical[] | { readonly [k: string]: Canonical }
