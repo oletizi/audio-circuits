@@ -195,7 +195,12 @@ describe("the guard is a SAMPLE of the citation population, and says so", () => 
     for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
     expect(byFile.get("docs/known-gaps.md")).toBe(9)
     expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
-    expect(POINTERS.length - 9 - 1, "the rest are module comments").toBe(2)
+    // THE THIRD CLAUSE COUNTS THE MODULE COMMENTS RATHER THAN SUBTRACTING FROM THE TOTAL. The
+    // version this replaces was `POINTERS.length - 9 - 1 === 2`, which is arithmetic on literals:
+    // it asserted only that POINTERS has twelve rows, and swapping a module row for a document row
+    // left it green while "2 module comments" became false. Counting the `.ts` citers tests what
+    // the message says.
+    expect(POINTERS.filter((p) => p.citedBy.endsWith(".ts")).length, "2 module comments").toBe(2)
   })
 })
 

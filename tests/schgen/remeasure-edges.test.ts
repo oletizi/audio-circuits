@@ -111,11 +111,21 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
    * needs a `_` adjacent to an alphanumeric in a particular position. `OUT_PRE, VBIAS, VBIAS_RAW`
    * and `BASE, BYPASS_CAP, BYPASS_JUMPED, COLLECTOR, EMITTER` have no such pair.
    *
-   * **IT IS NOT VACUOUS IN GENERAL AND IT IS KEPT FOR WHAT IT DOES CATCH:** a REVERSING comparator
-   * reddens it - `[RAN]` **12 pass / 3 fail** at HEAD, where the review measured 12 pass / 2 fail
-   * before this file gained the fixture check below, which also fails under reversal. **What it does not catch is a collation comparator on
-   * these particular nets**, which is the one it was built for - so the check that catches that is
-   * the next one, over a fixture, and this one is honest about its own reach.
+   * **IT IS NOT VACUOUS IN GENERAL AND IT IS KEPT FOR WHAT IT DOES CATCH - and the three
+   * perturbations are NOT interchangeable, which an earlier version of this comment got wrong.**
+   * `[RAN]` This round, each comparator put into BOTH name-returning functions:
+   *
+   * | comparator | this file | does the fixture test below fail? |
+   * | --- | --- | --- |
+   * | `a.localeCompare(b)` - locale ascending, the one it was built for | 14 pass / 1 fail | **yes** |
+   * | `(a, b) => b.localeCompare(a)` - locale REVERSAL | 13 pass / 2 fail | **NO - it passes** |
+   * | code-unit descending | 12 pass / 3 fail | **yes** |
+   *
+   * **So this assertion catches locale-reversal and code-unit descending, and NOT the locale
+   * ascending it was written for** - that is the next test's job. And locale-reversal leaves the
+   * fixture pair in default order (`BYPASSED, BYPASS_CAP`), which is why the fixture test passes
+   * there: reversal and code-unit descending are different perturbations and the earlier comment
+   * conflated them.
    */
   it("returns both published lists in default-sort order - which a REVERSING comparator breaks and a collation one does not", () => {
     expect(oc.crossingNonRail).toEqual([...oc.crossingNonRail].sort())
@@ -136,12 +146,23 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
    * name-returning functions over a FIXTURE whose crossing non-rail nets are a pair the two
    * comparators order differently, so `localeCompare` in either function reddens it.
    *
-   * **THE PAIR IS COMPUTED, NOT GUESSED, and the first assertion is that computation.** A sweep
-   * over 216 candidate `NET_NAME`-legal names found 7,740 diverging pairs, all of the same shape: a
-   * `_` adjacent to an alphanumeric, where `_` (0x5F) sorts AFTER letters and digits by code unit
-   * and BEFORE them under ICU collation. `BYPASS_CAP` and `BYPASSED` are two real
-   * `transistor-preamp` net names of exactly that shape, which is why they are the pair. **An
-   * earlier figure on this task was guessed and the test caught it; this one is derived.**
+   * **WHERE THE PAIR COMES FROM: ONE REAL NET AND ONE CONSTRUCTED NAME - and it HAD to be
+   * constructed.** `BYPASS_CAP` is a real `transistor-preamp` net; **`BYPASSED` is not a net of any
+   * circuit in this repository.** It is a name of the diverging shape, built for this fixture.
+   *
+   * **The reason it had to be built is the interesting part.** `[RAN]` Over all 153 pairs of
+   * `transistor-preamp`'s 18 declared nets, **0 diverge** between the two comparators - including
+   * `BYPASS_CAP` against `BYPASS_JUMPED`, which both orders put the same way round. **So no two
+   * real nets of that circuit would have served**, and the term under test is one the real corpus
+   * cannot drive at all - the same justification the fixtures in
+   * `tests/schgen/readability/measures.test.ts` rest on.
+   *
+   * **The SHAPE is derived rather than guessed**, and `docs/known-gaps.md` **G236** carries the
+   * sweep it came from with its candidate set defined, since that script is not committed: `_` is 0x5F,
+   * after letters and digits by code unit and before them under ICU collation, so two names diverge
+   * exactly when the first position at which they differ holds `_` in one and an alphanumeric in
+   * the other. **An earlier round of this task wrote a provenance sentence that did not reproduce**
+   * - it called `BYPASSED` a real net - and `docs/known-gaps.md` **G237** records that.
    *
    * **THE FIXTURE IS A REAL `Circuit`, NOT A HAND-BUILT OBJECT.** `blockCircuit` goes through
    * `buildCircuit`, and each `external` net gets a peer resistor in a second block - so both nets
@@ -156,7 +177,10 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
     const byCollation = [...pair].sort((a, b) => a.localeCompare(b))
     expect(byDefault, "default sort puts _ after E, by code unit").toEqual(["BYPASSED", "BYPASS_CAP"])
     expect(byCollation, "ICU collation puts _ before E").toEqual(["BYPASS_CAP", "BYPASSED"])
-    expect(byDefault, "so this pair discriminates the two comparators").not.toEqual(byCollation)
+    // The two literals above differ, so this pair discriminates the comparators. That was an
+    // `expect(byDefault).not.toEqual(byCollation)` and it is now a comment: it is ENTAILED by the
+    // two assertions above and could never have been the cause of a failure, which made it the
+    // fourth check-that-cannot-fail on this task (G237).
 
     const circuit = blockCircuit([res("R1", "BYPASS_CAP", "BYPASSED")], { kind: "auto" }, { external: pair })
     // Both nets cross from block "B" into the peer block, and neither is a rail, so both are in the

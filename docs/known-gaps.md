@@ -17061,7 +17061,7 @@ review, absent from the history and destroyed by `git clean -fdx`.
 | *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
 | *(not in the brief)* | the pinning assertions split again into `tests/schgen/remeasure-ceiling.test.ts` | fix round 1 took `remeasure.test.ts` to 526 lines, past `CLAUDE.md`'s cap. **Cost: seven register and module pointers went stale naming the old file, one of them a constant's pin that then verified GREEN** - fix round 2 item A, and `tests/schgen/pointers.test.ts` is what stops the next split doing it silently |
 | *(not in the brief)* | `governingNetsOf`, a four-clause subject-relative governing set beside `crossingNonRailNets` | fix round 2 item B: the published sentence named two of the code's clauses and a subject needs a fourth, which made the union's set `{BASE, COLLECTOR}` where the document printed *"none"*. **Cost: two functions where one would do** - and they are kept apart on purpose, because folding the circuit-wide prediction into the subject-relative one would have changed the bus-block prediction and silently resolved item C's falsifier |
-| *(not in the brief)* | `tests/schgen/pointers.test.ts` | fix round 2 item A asked whether a stale pointer can be made to fail rather than rot. **Cost: a hand-maintained whitelist of ten pointers**, which is not a complete inventory of the repository's citations and says so |
+| *(not in the brief)* | `tests/schgen/pointers.test.ts` | fix round 2 item A asked whether a stale pointer can be made to fail rather than rot. **Cost: a hand-maintained whitelist**, twelve rows since fix round 3, which is not a complete inventory of the repository's citations and says so |
 | *(not in the brief)* | the flat probe rebuilt to be genuinely flat, and the edge census split into `tools/schgen/remeasure-edges.ts` | fix round 1, item 1: round 1's probe never rebuilt `Circuit.unitBlock`, so it inherited the blocked declaration's boundary nodes. **Cost: the headline figure changed from 1.000x to 0.958x and 0.906x, and its direction from "removes none" to "ADDS"** - the finding it supports is unchanged and stronger |
 | *(not in the brief)* | both `SCALE_*` constants pinned to the sweep rather than to a classification | fix round 1, item 2: the old assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, so a one-step drift of the upper bound was not caught. **Cost: the pin now runs the ELK sweep, so it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations** |
 
@@ -17527,12 +17527,22 @@ sorts AFTER letters and digits by code unit and BEFORE them under ICU collation.
 `BASE, BYPASS_CAP, BYPASS_JUMPED, COLLECTOR, EMITTER` come out identically under
 both orders, so the assertion compares a list against itself.
 
-**IT IS NOT VACUOUS IN GENERAL, AND THE CONTRAST IS WHAT MAKES THAT MEASURABLE
-RATHER THAN ARGUED.** `[RAN]` A REVERSING comparator reddens it - **12 pass / 3
-fail** at HEAD, and 12 pass / 2 fail when the review measured it, before the file
-gained the fixture check below. **So the assertion does catch a class of
-comparator. It just misses the one it was built for**, which is the only one that
-has ever been introduced here.
+**IT IS NOT VACUOUS IN GENERAL, AND THE THREE PERTURBATIONS ARE NOT
+INTERCHANGEABLE - which this entry's first version got wrong.** `[RAN]` Each
+comparator put into BOTH name-returning functions, this round:
+
+| comparator | that test file | does the fixture test fail? |
+| --- | --- | --- |
+| `a.localeCompare(b)` - locale ascending, the one the pin was written for | 14 pass / 1 fail | **yes** |
+| `(a, b) => b.localeCompare(a)` - locale REVERSAL | 13 pass / 2 fail | **NO - it passes** |
+| code-unit descending | 12 pass / 3 fail | **yes** |
+
+**So the order assertion catches locale-reversal and code-unit descending and
+misses the locale ascending it was built for** - which is the only comparator ever
+actually introduced here. **And the 12/3 figure this entry first published belongs
+to code-unit descending, not to the review's locale-reversal**: under reversal the
+fixture pair comes out `BYPASSED, BYPASS_CAP`, identical to default order, so the
+fixture test passes. **G237** records that mis-attribution.
 
 **WHAT WAS DONE, and both halves of the criterion were taken rather than one.**
 
@@ -17548,13 +17558,35 @@ has ever been introduced here.
    reintroduced comparator it reddens: **14 pass / 1 fail, the failing test being
    the one built for it.**
 
-**THE DIVERGING PAIR IS COMPUTED, NOT GUESSED, and that is deliberate.** A sweep
-over **216** `NET_NAME`-legal candidate names found **7,740** diverging pairs, all
-of one shape. `BYPASS_CAP` and `BYPASSED` are two real `transistor-preamp` net
-names of that shape, and the test asserts the divergence itself before relying on
-it. **An earlier figure on this task was guessed and a test caught it** (the
-five-leg union's edge count, 14 guessed against 24 measured), which is why this
-one is derived.
+**THE DIVERGING SHAPE IS COMPUTED, NOT GUESSED, and that is deliberate.** `[RAN]`
+A sweep over the **216** names `A` + three characters from `{A, B, Z, 0, 9, _}` -
+all `NET_NAME`-legal - found **7,740** of the **23,220** pairs diverging. **The
+candidate set is defined here because the sweep script is NOT committed**, so a
+later reader must rebuild it from that definition rather than re-run it; the
+figures were re-driven in fix round 6 and rest on that run.
+
+**AND THE ONE-THIRD IS EXPLAINED RATHER THAN LEFT AS A CURIOSITY.** 7,740 is
+exactly `23,220 / 3`, which the review noticed and left undiagnosed. `[RAN]` It is
+**`2/n` for an n-character alphabet containing one `_`**, because two names
+diverge **exactly when the first position at which they differ holds `_` in one
+and an alphanumeric in the other** - and given that two such names differ, that
+first differing position carries a uniformly distributed unordered pair of
+distinct characters, of which `n - 1` of the `C(n, 2)` include the `_`. Driven on
+four alphabet and length combinations, where the diverging count and the
+first-differing-position count agree exactly every time: **6 chars / len 3 =
+7,740 of 23,220; 6 / len 2 = 210 of 630; 4 / len 3 = 1,008 of 2,016 (a half);
+5 / len 3 = 3,100 of 7,750 (two fifths).** **So the one third is an artefact of a
+six-character alphabet with one underscore in it, and says nothing about net
+names.** **The pair is ONE REAL NET AND ONE CONSTRUCTED NAME, and it had to
+be:** `BYPASS_CAP` is a real `transistor-preamp` net and **`BYPASSED` is not a net
+of any circuit here.** `[RAN]` Over all **153** pairs of that circuit's **18**
+declared nets, **0 diverge** - `BYPASS_CAP` against `BYPASS_JUMPED` included - so
+**no two real nets would have served** and the term is one the real corpus cannot
+drive. The test asserts the divergence before relying on it. **An earlier figure
+on this task was guessed and a test caught it** (the five-leg union's edge count,
+14 guessed against 24 measured), and **the sentence this paragraph replaces was
+itself a claim that did not reproduce** - it called `BYPASSED` a real net - which
+is **G237**.
 
 **THE FIXTURE IS TEST DATA IN TEST CODE AND NOT A HAND-BUILT OBJECT.**
 `blockCircuit` goes through `buildCircuit`, and each `external` net gets a peer

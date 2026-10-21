@@ -60,9 +60,14 @@
  *
  * **CLAUSE (3) IS UNEXERCISED BY ANY CIRCUIT AND THAT IS STATED RATHER THAN DISCOVERED.**
  * `buildCircuit` hard-codes `offSheet: new Set()` (`lib/schgen/ir/build.ts:152`), so no declaration
- * in this repository reaches it. `[RELAYED]` The review drove it by hand - with `BASE` off-sheet the
- * measured difference is 4 and the code predicts 4, while the three-clause SENTENCE predicts 5 - so
- * **the code was already right about a case the published sentence was already wrong about.**
+ * in this repository reaches it. `[RAN]` Driven here by putting `BASE` in a copied circuit's
+ * `offSheet`: the **TWO-clause** set - crossing and not a rail, which is what round 1's sentence
+ * named - stays at **5** (`BASE, BYPASS_CAP, BYPASS_JUMPED, COLLECTOR, EMITTER`), while the
+ * **THREE-clause** set the code computes drops to **4** (`BYPASS_CAP, BYPASS_JUMPED, COLLECTOR,
+ * EMITTER`). **So the sentence that predicts 5 is the TWO-clause one and the code predicts 4** -
+ * the code was right about a case the published sentence was wrong about. An earlier version of
+ * this paragraph attributed the 5 to the THREE-clause sentence, contradicting this module's own
+ * docblock eight lines above it; **G237** records it.
  *
  * **That set is measurable and non-empty here - three nets on `optical-compressor` and five on
  * `transistor-preamp` - and `crossingNonRailNets` counts it, so the prediction is shown agreeing
