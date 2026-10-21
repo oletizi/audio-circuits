@@ -19823,3 +19823,130 @@ Task 19 carries an amendment pointing here, beside its unchanged file list.
   editing to survive that move would be a finding and not an edit** - the brief
   is explicit, and the reason is that a test which only passed against the stub
   was not testing what its name said.
+
+### G249 - M1's CLOSING DRAWING COMPARISON, AND IT IS AN OBSERVATION WITH NO VERDICT: the comparison the step asked for could not be made, because `generate` refuses the circuit whose hand-arranged drawing is the reference
+
+**WHAT THIS IS NOT.** It is not a gate-8 result, it is not a pass, and it is not
+a readability finding under spec §3.5. **No gate was run.** Controller rulings
+**R56** and **R66** both exist because this step is the single most likely place
+on this plan to read an empty `undeclared` list as a verdict, and that list is
+empty because nothing generated. §3.3 gives no threshold, and §3.5's reviewer
+gets the criterion and never a list.
+
+**WHAT THE STEP ASKED FOR AND WHY IT COULD NOT BE DONE.** Task 19 Step 8 asks for
+a `transistor-preamp` board generated through `schgen`, printed, read, and set
+beside the committed hand-arranged `circuits/transistor-preamp/lab-board.kicad_sch`
+printed the same way. **G247** measures why there is no generated side:
+`generate` refuses `lab` at layout on **G232**'s field-placement defect and
+cannot be invoked at all on the other four boards. R66 governs that case - *"say
+that the comparison could not be made on a generated drawing and compare what you
+have ... named for what it is"*.
+
+**SO WHAT IS COMPARED, NAMED FOR WHAT IT IS: TWO DIFFERENT CIRCUITS.** The human
+side is `lab-board.kicad_sch`, 32 components, one A3 sheet, arranged by hand. The
+generated side is the ported `mini` fixture - the only design in this repository
+that generates - whose `signal` sheet is A3 and whose `power` sheet is A4.
+**`mini` is used here as A DRAWING TO LOOK AT and not as a comparison subject**;
+ruling **R50** forbids pointing gate 8 at it to obtain a row, and nothing here
+runs a gate. **Every difference below could be a difference between the circuits
+rather than between the drawers, and nothing here separates the two.**
+
+`[RAN]` `kicad-cli` 10.0.5 `sch export pdf` on both, `pdftoppm -r 170 -png`, read
+with the Read tool. `[RAN]` greps over the two `.kicad_sch` files:
+
+| | `lab-board` (human) | `signal` (generated) | `power` (generated) |
+| --- | --- | --- | --- |
+| paper | A3 | A3 | A4 |
+| placed symbols (`^\t(symbol`) | **40** | 23 | 21 |
+| of those, `power:GND` | 8 | 7 | 6 |
+| wire segments | **89** | 39 | 17 |
+| junctions | 21 | 5 | 7 |
+| block frames (`^\t(rectangle`) | **0** | **7** | **4** |
+| label glyphs | **43** | 17 | **1** |
+| distinct net names labelled | 18 | 9 | 1 |
+
+**THE ONE NUMBER WORTH READING TWICE, AND IT IS THE ONE G81 IS ABOUT.** Of the
+human drawing's 43 label glyphs, **`GND` appears 11 times and `BASE` nine**, on
+top of 8 separate `power:GND` arrows; `IN_EXT` and `COLLECTOR` appear three times
+each. Of the generated `signal` sheet's 17, **every repeated name appears exactly
+twice** - `SIG_IN`, `AMP_OUT`, `XI`, `XO`, `FL_CS`, `FL_CLK`, `FL_DI`, `FL_DO` -
+once on each side of the block boundary it crosses, and the `power` sheet carries
+**one label on the whole page**. That is the rev-2 requirement **G81** quotes
+(*"Generated schematics SHALL show local circuit topology using wires. Net labels
+SHALL primarily identify rails, interfaces, and connections crossing
+functional-block or sheet boundaries"*) visible in the artifact. **It is NOT a
+claim that the generator would do better on the lab board**, which it refuses.
+
+**WHAT THE HUMAN DRAWING LOOKS LIKE.** Signal flows left to right across the
+middle - `J1` into `C2` into the `BASE` rail, `Q1` at centre, `C3` out to `J2` -
+with `VCC` as one horizontal wire along the top and the bias legs hung off the
+`BASE` rail as six vertical columns, each jumper then resistor then trim-pot. The
+four divider legs are drawn as four aligned instances of one shape, so a reader
+sees immediately that they are four of the same thing, which is what they are.
+Twelve lines of bench settings sit in the lower left. **Where it is worse:** the
+drawing occupies roughly the top-left half of the A3 and the right third and
+bottom quarter are empty; it has **no `title_block` at all** - `[RAN]`
+`grep -A 6 title_block` on it returns nothing, so the printed Title, Date and Rev
+fields are blank; and the repeated `BASE` and `GND` labels mean that tracing the
+base node means finding nine glyphs rather than following a wire.
+
+**WHAT THE GENERATED DRAWING LOOKS LIKE.** Seven dashed blue frames on the
+`signal` sheet, each titled in its own top-left corner - *Spare op-amp channel*,
+*Op-amp supply*, *Input connector*, *Input buffer*, *Crystal*, *SPI flash*,
+*Output connector*. Inside each, local topology is wires: `R3` into the node
+`C6` hangs off, into `U2A`'s `+` input, with the feedback wire drawn round the
+body. The title block carries its own provenance - *"Generated by schgen from
+tests/schgen/__fixtures__/designs/mini/index.ts; do not edit"* and *"KiCad
+10.0.5; stock libraries 895cc96749279fdc"* - which the human drawing has no
+equivalent of and which is the thing that makes a generated artifact auditable.
+**Where it is worse, and these are the observations the step owes:**
+
+1. **The blocks descend in a staircase and leave a large diagonal of white
+   space.** *Crystal*, *SPI flash* and *Output connector* step down and right
+   instead of filling the row, so the drawing uses roughly the top-left half of
+   an A3 while crowding the blocks into a narrow column. The human drawing wastes
+   paper too, so this is not a difference between them - it is a defect both have.
+2. **`Op-amp supply` is a tall thin frame with its text set vertically.** `3V3`,
+   `V+`, `V-` and `GND` are rotated 90 degrees, which is harder to read than the
+   human drawing's horizontal `VCC` rail, and the frame is barely wider than the
+   glyphs it holds.
+3. **Rails are per-block arrows rather than one rail across the sheet.** `3V3`
+   and `GND` appear as separate arrows inside *3V3 regulator*, *3V3 decoupling*,
+   *VIN sense divider* and *Power flags*, so following the supply means hopping
+   between glyphs. The human drawing's single `VCC` wire along the top is easier
+   to follow, and this is the one place where the label-versus-wire comparison
+   runs the OTHER way.
+4. **`Spare op-amp channel` sits hard against the left frame margin**, with
+   `U2B`'s pin numbers 5 and 6 touching the sheet border, and the X on the unused
+   output sits over the pin-7 number.
+5. **There is no flow direction across blocks.** Inside a block the convention is
+   left to right; between blocks there is none, so the eye has no path from
+   `Input connector` to `Output connector`.
+
+- **Found** 2026-10-21, Task 19 Step 8.
+- **Evidence** `[RAN]` `tools/schgen/kicad-run.ts`'s own `exportPdf` on both
+  files with `kicad-cli` 10.0.5, `pdftoppm -r 170 -png`, and the images read with
+  the Read tool - not described from the s-expressions. The table's figures are
+  greps over the two files, stated above with their patterns so they can be
+  re-run. **A check that could have failed:** the `power` sheet's label count is
+  **1** and the human board's is **43** against similar symbol counts (21 and
+  40), so the measurement distinguishes the two styles rather than returning a
+  figure proportional to size; a count that tracked only part count would have
+  returned similar numbers. The refusal that removed the generated side is
+  **G247**'s, driven there with its own control.
+- **Verified** CONFIRMED - this writer exported, converted and read both
+  drawings and ran every grep in the table.
+- **Why it is open** **it is open because it is not a finding to fix.** It is the
+  closing measurement M1 owes, recorded so the next reader does not have to
+  re-derive what the generator's output looks like, and so that the comparison
+  the step actually wanted is visibly still outstanding.
+- **What would settle it** **CRITERION: the same comparison taken on ONE circuit
+  - a generated `transistor-preamp` board beside the hand-arranged
+  `lab-board.kicad_sch`** - at which point every difference above is attributable
+  to the drawer rather than to the circuit, which is the only reading that could
+  support a judgement. **MECHANISM, UNTRIED:** **G247**'s two pieces, after which
+  the comparison is available. **Items 1 to 5 are NOT a defect list to work
+  through**: an agent may never author the acceptance criteria for the artifact
+  it produces, and §3.5's reviewer gets the criterion - *can you follow this
+  block from the drawing alone* - and never this list (**G83** is the entry about
+  exactly that contamination).
