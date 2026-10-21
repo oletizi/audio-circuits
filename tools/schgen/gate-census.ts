@@ -8,7 +8,13 @@
  * and not a paragraph: `CLAUDE.md`'s rule is that *"a skipped check must never look like a
  * passing one"*, and the way a gate census breaks that rule is by listing four gates and quietly
  * leaving out the fifth. So every gate `runGates` can register appears below with its problem
- * count, and the two that cannot register appear with the reason:
+ * count, and the two that cannot register appear with the reason.
+ *
+ * **AND EVERY GATE THAT RAN NAMES THE DERIVATION IT RAN AGAINST** - spec §2.1, added in Task 16's
+ * fix round 1; see `renderGateCensus`. **THIS TOOL AND THE TESTS ARE THE ONLY PLACES THAT RUN:**
+ * `bun run schgen check` calls `generate` and `staleFiles` and never `runGates`, so a user at the
+ * CLI never sees a gate's derivation citation - only the `MANIFEST.json` file itself, which
+ * `generate` writes and `check` compares by content. `docs/known-gaps.md` records that scope.
  *
  * | gate | on these four circuits |
  * | --- | --- |
@@ -152,12 +158,28 @@ export function classify(problems: readonly string[]): ReadonlyMap<string, numbe
   return out
 }
 
+/**
+ * **EVERY `ran` ROW NAMES THE DERIVATION THAT GATE RAN AGAINST, on its own line beneath the
+ * row.** Spec §2.1's criterion is that *"a gate that reports a pass names the manifest it passed
+ * against"*, and `GateResult.manifest` met it in the data structure and in no artifact a person
+ * reads: this renderer printed the gate, the problem count, the classified labels and optionally
+ * each problem, and DROPPED the field. `CLAUDE.md`: look at the output, not only the tests.
+ *
+ * It is a line rather than a column because the citation names two files and carries a hash, so a
+ * column would wrap or be truncated - and a truncated citation is two gates that ran against
+ * different derivations looking identical, which is the state §2.1 exists to make visible.
+ *
+ * **THE `DID NOT RUN` ROWS CARRY NO DERIVATION, and that is not an omission.** A gate `runGates`
+ * never registered produced no `GateResult`, so there is no manifest it ran against; what those
+ * rows owe a reader is the reason they are absent, which they already give.
+ */
 export function renderGateCensus(census: readonly CircuitGates[], everyProblem: boolean): string {
   const lines: string[] = []
   for (const c of census) {
     lines.push(`${c.name} (${c.entry})`)
     for (const r of c.results) {
       lines.push(`  ran         ${r.gate.padEnd(28)} ${r.problems.length} problem(s)`)
+      lines.push(`              derivation  ${r.manifest}`)
       for (const [label, n] of classify(r.problems)) lines.push(`                  ${String(n).padStart(4)}  ${label}`)
       if (everyProblem) for (const p of r.problems) lines.push(`                        ${p}`)
     }
