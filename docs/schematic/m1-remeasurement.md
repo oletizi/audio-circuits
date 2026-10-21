@@ -235,6 +235,16 @@ criterion."*
 | the five blocks, summed | backend-output | 14 | - | - | 38 | - | **0** | **227.60** | - | - |
 | the five blocks, each | accepted | 14 | 67 | - | 38 | - | **0** | **224** | - | - |
 | **composed by seam B** | accepted | 14 | 67 | 13 | 38 | 1.31 | **0** | **224** | 7038 | 3.33 |
+| **the crossing RATIO of the two ends** | - | - | - | - | - | - | **NOT TAKEN** | - | - | - |
+
+**THE CROSSING RATIO IS A ROW THAT SAYS "NOT TAKEN" RATHER THAN A ROW THAT IS
+MISSING, and the reason is in the table above it: the composed side measures
+ZERO crossings, so there is no denominator.** A ratio there would have had to be
+written as infinite, or capped at some number nobody measured, and either would
+have been a fabricated headline for the one experiment this task exists to make
+possible. **What there is instead is the two figures** - 1 crossing flat against
+0 in blocks, at the one stage where both sides have a figure - and the wire ratio
+below, which does have a denominator.
 
 - **the composed row reproduces G200's and G209's own figures** - 14 placements,
   67 segments, 224 grid steps - which is the strongest evidence available that

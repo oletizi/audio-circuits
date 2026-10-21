@@ -2147,9 +2147,21 @@ same graph better; it hands ELK a smaller graph"* is false here. **The reason is
 structural rather than lucky:** `lib/schgen/elk/graph.ts` makes a net of degree n
 into n - 1 chain edges, and a net that crosses a block boundary becomes a
 boundary NODE in each block it touches - so the chain edge reaching that node
-replaces exactly the chain edge the split removed. The two counts can differ only
-for a multi-block net that is neither a rail nor a labelled net, and these two
-circuits have none.
+replaces exactly the chain edge the split removed.
+
+**THE ARGUMENT IS STATED SO IT CAN BE REFUTED ON THE NUMBERS, which is what a
+structural claim owes a reader.** Per net, with `U` its unit-pin terminals: a net
+inside one block contributes `U - 1` edges on both sides; a net spanning `k`
+blocks is a boundary net of each of those `k`, so the blocked side contributes
+`U + k - k = U` while the flat side contributes `U` when the net also leaves the
+union and `U - 1` when it does not. **So the two counts are equal exactly when
+every multi-block net is also a boundary net of the whole circuit - a rail or a
+labelled net - and the blocked side is LARGER by one edge per multi-block net
+that is neither.** `optical-compressor` and `transistor-preamp` have none of the
+latter, which is why both ratios are exactly 1.000. **A circuit that had one
+would measure above 1.000x here, and this claim would then be narrower than the
+sentence above states it.** Nothing establishes that no such circuit exists; the
+two measured are the two there are.
 
 **THE ABSOLUTES 139 AND 96 ARE NOT COMPARED AGAINST 72 AND 72.** The spike's edge
 count came out of `netlistsvg`'s converter and nothing establishes that it builds
@@ -16863,7 +16875,22 @@ review, absent from the history and destroyed by `git clean -fdx`.
 | `spike: { measures: SchematicMeasures; verdict }` | `spike: { row: SpikeBlockRow; figures; verdict }` | the spikes published no bend COUNT, no occupied area and no per-block wire length, so filling a `SchematicMeasures` for the spike side would have meant **inventing three numbers per row**. **Cost: the two sides are not the same type**, which is the honest shape |
 | `verdict: "reproduced" \| "moved"` | `"reproduced" \| "moved" \| "not-comparable"` | three of the five figures are not the same quantity as the spikes' (**G220** for `bendsPerEdge`; unit for the other two). A binary verdict would have published a comparison between different quantities. **Cost: none - the brief itself says to record a figure that cannot be compared** |
 | `BlockSizeDecision.ceiling: number` | unchanged, `number` | ruling **R39** widens it only if Step 5 cannot measure a ceiling. **It could, so R39 did not fire** and the plan's signature stands |
-| Step 4 on `optical-compressor` | Step 4 on five `transistor-preamp` legs | controller ruling **R38**: all three `oc-*` blocks are refused by the gates. **Cost: the architecture's one integrated measurement is on a five-block subset of one circuit family**, and the narrowness travels with every figure |
+| Step 4 on `optical-compressor` | Step 4 on five `transistor-preamp` legs | controller ruling **R38**: all three `oc-*` blocks are refused by the gates. **Cost: the architecture's one integrated measurement is on a five-block subset of one circuit family**, and the narrowness travels with every figure. **AND THE PRICE CAME OUT HIGHER THAN THE RULING STATED - see below** |
+
+**R38's PRICE WAS HIGHER THAN THE RULING STATED, AND THAT IS RECORDED AS THE
+CONTROLLER'S COST RATHER THAN THE IMPLEMENTER'S - ruling R45.** R38 substituted
+the five-leg subject expecting BOTH ends to be measurable: *"measure BOTH ENDS
+HERE."* **One end is not measurable.** The flat side is refused by spec §1.4
+obligation 2 (**G229**), so the accepted-stage comparison has a composed drawing
+and a refusal rather than two drawings, and the only stage-matched comparison is
+between two geometries that are **not drawings on either side**. The controller's
+own words for the record: *"I ruled the substitute subject in expecting both ends
+to be measurable, and its flat side refuses as well. That cost is mine, not
+yours, and it belongs in the record as a controller ruling whose price was higher
+than stated."* **The ruling was still the right call on its own reasoning** - a
+narrow measured number carrying its own caveat beats no number - and this entry
+records the price so that the next substitution of a measurement's subject is
+costed with this case in hand.
 | one file, `tools/schgen/remeasure.ts` | five files | `CLAUDE.md`'s 300-500 line ceiling; written as one module this is about 1600 lines. **Cost: a reader arrives at a front door and follows four pointers** |
 | *(not in the brief)* | `SCALE_INVARIANT_UPTO` and `SCALE_UNSTABLE_FROM` changed from 9 and 13 to 3 and 8 | the re-measurement falsified the numbers a Task 16 module states as G95's, on the same block the spike measured. **Cost: one pinned expectation in `tests/schgen/readability/baseline.test.ts` moved** - 11 cells is no longer in the unmeasured gap - and `oc-power` is now classified `about-a-serialization`, which is the measured answer. Leaving 9 would have shipped a module asserting a withdrawn number |
 | *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
