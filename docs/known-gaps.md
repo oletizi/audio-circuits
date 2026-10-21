@@ -15883,6 +15883,19 @@ different drawings being certified under one input hash covers nothing at all.**
 output would be invisible to the manifest. Nothing is known about whether a template's output DOES
 move under reordering; **G95**'s measurement is of ELK.
 
+**AND THE OTHER HALF, ADDED IN TASK 16's FIX ROUND 1 AND RAISED BY THE REVIEW AS OUT OF SCOPE: NO
+DESIGN's GENERATED OUTPUT IS COMMITTED ANYWHERE, so no manifest is ever present in a diff.**
+`[RAN]` `git ls-files | grep -i MANIFEST.json` finds **one** file and it is
+`tools/schgen/port-manifest.json`, which is not a generation manifest; `git ls-files | grep -i
+RENDER-REPORT` finds **nothing**. The only design that emits is the ported `mini` fixture, whose
+`outDir` is a temp scratch directory (`miniInScratch` in
+`tests/schgen/__fixtures__/designs/mini/run.ts`, registered with the temp-scratch sweep), so **the manifest and the four measures exist only inside temp directories
+during a test run.** `CLAUDE.md` says a committed derived artifact earns its keep by being *"the
+form in which a human's schematic edit becomes legible to an agent in a diff"*, and this one is
+never in a diff. **The sentence in `lib/schgen/manifest.ts`'s `serializeManifest` comment - *"it is
+a COMMITTED derived artifact, so it is written to be read in a diff"* - is therefore a statement
+about how the bytes are FORMATTED and not about where they live today.**
+
 **`canonicalNetlistSha256` IS `null` EVERYWHERE.** `DesignSpec` carries no canonical-netlist field.
 `CLAUDE.md` says authority runs in both directions, and a canonical netlist export exists only for a
 **schematic-first** circuit - the Pultec - which has no design module yet. So the null is a fact
@@ -15907,6 +15920,19 @@ needs to know which of the two it is**, which is why this is here rather than on
   a template-drawn design and see whether the emitted sheet changes at all; if it does not, the
   criterion is already met by `sectionNetworkSha256` and this entry resolves. **The criterion is the
   settlement; the mechanism is a measurement nobody has taken.**
+
+  **FOR THE UNCOMMITTED-OUTPUT HALF: it BELONGS TO THE WHOLE-BRANCH REVIEW and is nobody's fix
+  inside Task 16, which has no design of its own to commit output for.** The review that raised it
+  said so explicitly. **CRITERION, for whoever takes it: at least one design in this repository
+  commits its generated set, so a manifest and a render report appear in a diff.** **MECHANISM,
+  untried:** the first design this repository OWNS - which is the same trigger **G215**'s ruling
+  R34 names, so the two land together or neither does. Committing `mini`'s output instead would
+  commit a ported fixture's bytes, which is the objection R34 already sustained in another costume.
+  - **Found** 2026-10-20 for this half, by the Task 16 review, and confirmed by the fix-round-1
+    writer: the two `git ls-files` sweeps above were re-run here. **A check that could have failed:**
+    the first sweep DOES match a file - `tools/schgen/port-manifest.json` - so it is not a grep that
+    could only ever return nothing; what establishes the finding is that the one match is not a
+    generation manifest.
 
 ### G222 - Task 16's deviations from its own brief, each with what it cost - including the one that was FORCED by a line ceiling and the one that cost a byte-check
 
@@ -16020,3 +16046,289 @@ decide whether the reversal measure *"falls out of"* the four measures and, if s
 - **What would settle it** nothing - it is settled. **A caution for whoever writes Task 17's
   brief:** G209 and G200 were both amended in place by later rounds, and a brief quoting them must
   quote the current text.
+
+### G224 - THE GATE CENSUS, MANIFEST CITATION AND ALL, IS REACHED BY ONE TOOL AND BY THE TESTS - AND NOT BY `schgen check`, SO A USER AT THE CLI NEVER SEES A GATE NAME ITS DERIVATION
+
+Spec §2.1's criterion is that *"a gate that reports a pass names the manifest it passed against"*.
+Task 16 put `manifest` on every `GateResult`; its fix round 1 made `renderGateCensus` print it, so
+the criterion is now met in an artifact a person reads. **This entry is the honest scope of that,
+because the artifact is not one a user of the generator ever produces.**
+
+`[CODE]` `tools/cli/schgen.ts`'s `runSchgen` has two verbs and **neither calls `runGates`**. `check`
+calls `generate` and then `staleFiles`, and prints the stale list; `generate` calls `generate` and
+then `writeGeneration`. `runGates` has exactly one non-test caller in the tree -
+`tools/schgen/gate-census.ts`, which is run by hand (`bun run tools/schgen/gate-census.ts`) and by
+`tests/schgen/gate-census.test.ts`.
+
+**SO, PLAINLY: NO. A user running `bun run schgen check` or `bun run schgen generate` never sees a
+gate's derivation citation.** What they do see is the `MANIFEST.json` FILE: `generate` writes it
+into `outDir` as one of the generated files, and `check` compares it by content like every other
+generated file and names it when it is stale. Those are gate 1's half - *this file differs* - and
+not the half §2.1 added, which is *which input moved, attached to every gate that would otherwise
+report a pass*.
+
+**WHY IT IS NOT FIXED HERE.** Controller ruling **R37**, 2026-10-20: *"`schgen check` never calling
+`runGates` at all is NOT yours to fix. It is Task 11's surface, the CLI plumbing question is larger
+than a fix round, and re-plumbing it here would be scope you were not given."* Recorded rather than
+argued, because the gap is not visible from either file on its own: `verify.ts` looks fully wired
+and `schgen.ts` looks complete.
+
+- **Found** 2026-10-20, Task 16 review, ruled R37; written up in fix round 1.
+- **Evidence** `runSchgen` read directly - the `check` arm is six lines and `staleFiles` is the only
+  gate-shaped thing in it - plus the census of `runGates` callers in the tree. **A check that could
+  have failed:** the caller census is non-empty and finds a REAL production caller
+  (`gate-census.ts`), so it is not a search that could only have returned tests; the finding is
+  which caller is missing, not that there are none.
+- **Verified** CONFIRMED - the fix-round-1 writer read both files and re-ran the caller census. The
+  ruling is RELAYED from the controller, verbatim above.
+- **Why it is open** spec §2.1's criterion is met by a tool and by tests and by nothing a user
+  invokes, and that is exactly the shape `CLAUDE.md` warns about in reverse: not a skipped check
+  looking like a passing one, but a passing check nobody on the normal path runs.
+- **What would settle it** **CRITERION: a user who runs the repository's own front door against a
+  design is told which derivation each gate ran against, or is told plainly that no gate ran.**
+  **MECHANISMS, both untried and both larger than they look:** a third verb (`schgen verify`) that
+  calls `runGates` and renders the census, which is the smallest edit and leaves `check` still
+  looking like a gate runner it is not; or `check` calling `runGates` instead of `staleFiles`, which
+  changes what `check` means and what it exits on, and `tests/cli/schgen.test.ts` pins the current
+  meaning. **Neither has been tried and the choice is Task 11's surface, not this round's.**
+
+### G225 - THE GENERATION PATH's REFUSAL SURFACE WIDENED INSIDE REPORT RENDERING: `generate` can now fail for a MEASUREMENT reason, attributed to the report rather than to a gate
+
+`buildReport` calls `sheetMeasuresOf(d)` for every drawing (`lib/schgen/report.ts`), and
+`sheetMeasuresOf` **throws** when `canonicalTopology` refuses the sheet's wires
+(`lib/schgen/readability/measures.ts`): *"sheet `<id>`: the canonical topology of its wires was
+refused (`<n>` ambiguous overlap(s)), so its four measures would be taken over a geometry with more
+than one reading. It is refused rather than measured on one of them."* `buildReport` is called from
+`generatedFiles`, which is called from `generate`. **So the path `generate` -> `generatedFiles` ->
+`buildReport` -> `sheetMeasuresOf` can now refuse a generation for a reason that is a MEASUREMENT,
+inside report rendering, and the message a user sees is attributed to the report rather than to any
+gate.**
+
+**THE REFUSAL ITSELF IS RIGHT AND IS NOT THE QUESTION.** Spec §1.4 revision 4 clause d is *refuse
+rather than repair*: an ambiguous overlap has more than one reading and measuring one of them would
+publish a number nobody can reproduce. **The question is whether its ATTRIBUTION is right** - a
+geometry a generator will not certify arguably belongs to a geometric guard that says so as a gate,
+not to the renderer of a diagnostics section - and that is an owner-visible design question rather
+than a fix. **Nothing here moves or softens the throw.**
+
+**REACHABILITY ON A REAL TEMPLATE-DRAWN SHEET IS NOT ESTABLISHED, which is why this is a recorded
+observation rather than a defect.** `[RELAYED]` The Task 16 review DROVE the throw, with a
+constructed cross-net collinear partial overlap, and got exactly the message above. It constructed
+the case; nobody has produced one from a template. The two halves of why that is unresolved:
+
+- An **ELK** block's wires are already canonicalised before they leave `adaptElkLayoutReported`
+  (`lib/schgen/elk/adapt.ts`'s `pre` pass), and a block whose route is ambiguous is refused THERE,
+  as an `invalidGeometry` mismatch naming the block - so an ELK sheet cannot carry an ambiguity into
+  `sheetMeasuresOf`.
+- A **template-drawn** block's wires are not canonicalised anywhere, and **G212** records that
+  sheet-level geometry is not fully guarded: not one whole-sheet guard checks containment in a
+  reference box, and the guards that do exist check pairwise straddling and clearance rather than
+  collinear overlap across nets. **So nothing in the tree establishes that a template cannot draw
+  the shape the review constructed.**
+
+- **Found** 2026-10-20, by the Task 16 review; written up in fix round 1 under the review's
+  instruction to record rather than change.
+- **Evidence** the call chain read directly (`generatedFiles` line `add("RENDER-REPORT.md",
+  renderReport(buildReport(...)))`, `buildReport`'s `drawings.map`, `sheetMeasuresOf`'s `if (!t.ok)
+  throw`), and the review's own probe quoted above. **A check that could have failed:** the ELK half
+  is a claim that could be false and was checked - `adapt.ts` returns `invalidGeometry` on
+  `!pre.ok`, so the ambiguity is caught before a drawing exists, which is why the live corpus does
+  not hit this throw.
+- **Verified** CONFIRMED for the call chain and for the ELK pre-pass refusal - this writer read
+  all four modules. **RELAYED for the probe**: the review constructed and ran it; this writer did
+  not reproduce it.
+- **Why it is open** because the attribution is a decision nobody has taken, and because a
+  generation that fails inside RENDER-REPORT rendering reads, to whoever runs it, as a reporting
+  bug rather than as a refusal about their drawing.
+- **What would settle it** **CRITERION: a sheet whose wire topology has more than one reading is
+  refused by something whose name says it is checking the geometry, and the message says which
+  sheet and which overlap.** The second clause is already met; the first is not. **MECHANISMS, both
+  untried:** canonicalise a template-drawn block's wires where an ELK block's are canonicalised, so
+  the refusal lands on the block that drew it; or add the check to the whole-sheet guard
+  neighbourhood (`assertSheetSafe`) and let `sheetMeasuresOf` assume a topology already proven
+  unambiguous. **An owner decision about attribution is the other way this settles**, and it is not
+  to be asked for unprompted.
+
+### G226 - THE PATTERN, NAMED: a mechanism exercised only by its own tests, and the thing that distinguishes an acceptable instance from the G201 failure is whether the PRICE is recorded
+
+**THREE TASKS HAVE NOW PRODUCED ONE EACH AND THE REGISTER HAD RECORDED TWO OF THREE.** The pattern,
+in the Task 16 review's words, which controller ruling **R35** adopts as this entry's claim: **a
+mechanism exercised only by its own tests is a mechanism whose first real use is its first test;
+that is acceptable when the precondition for wiring it is NAMED and the price is RECORDED, and it is
+the G201 failure when it is not.**
+
+**THE DISTINGUISHING FEATURE IS NOT WHETHER THE THING IS WIRED. IT IS WHETHER THE GAP IS RECORDED
+WITH ITS PRICE.** R35: *"the right name is not 'unwired'."*
+
+| instance | state | recorded? |
+| --- | --- | --- |
+| **G215** - `composeBlocks` and `interiorDrift`, Task 15 | deferred by ruling R34, with a named trigger (the first design this repository owns that has a composable sheet) | **YES, and it is the model**: *"§1.9's criterion is checked over two subjects by tests and over NOTHING by the pipeline"* is the deferral's price, and that entry says it is not to be softened |
+| **G201** - `elkBackendFrom`'s stale refusal, Task 13 | unwired AND undeclared: the real pipeline could not emit a single ELK block for five rounds | **NO - this is the failure.** A test asserted `toThrow(/adaptElkLayout/)`, so the one check that would have caught it was pinning it. Nobody could see the gap, because nothing said it was there |
+| **G217** residuals 1 and 2 - `compareMeasures` and `consultedBy`, Task 16 | **CORRECT BY DESIGN** and recorded: the registry ships empty by design, so every lookup is `absent` and a consumer would be code that cannot execute | **YES**, with the precondition named - the owner grants a baseline - and *"nobody is to ask him for one unprompted"* |
+
+**R35 RULES THAT NO CONSUMER IS TO BE BUILT FOR `compareMeasures` OR `consultedBy`, and that a
+reviewer would refuse one.** That is the ruling to read before "fixing" either.
+
+**TASK 16 PRODUCED TWO MEMBERS THAT WERE IN NO ENTRY AT ALL, AND THEY ARE THE REASON THIS ENTRY
+EXISTS.**
+
+1. **SPEC §3.5's WHOLE FINDING CONTRACT IS DRIVEN BY ONE TEST FILE AND BY NOTHING ELSE.** `[RAN]`
+   `parseFindings`, `ReadabilityFinding`, `FINDING_KEYS` and `FORBIDDEN_FINDING_KEYS` are declared
+   in `lib/schgen/readability/finding.ts` and named in exactly one other file in the tree:
+   `tests/schgen/readability/finding.test.ts`. **This is correct by design** - the M1 plan's
+   obligation table maps both §3.5 rows to Task 16 alone, and **no M1 task builds the reviewer** the
+   contract is for - but **G217** records the equivalent state for `compareMeasures` and
+   `consultedBy` and nothing recorded it for the finding contract. The next agent to touch §3.5 had
+   no way to learn that the whole contract rests on one test file. **The price: if that file is
+   deleted, weakened or narrowed, §3.5's contract has no check at all and nothing else in the tree
+   will notice.**
+2. **`GateResult.manifest` WAS POPULATED, ASSERTED, AND RENDERED BY NOTHING, FOR A ROUND.**
+   `runGates` set it on every row and `tests/schgen/verify.test.ts` asserted it; its only non-test
+   consumer, `renderGateCensus`, dropped the field, so spec §2.1's criterion - *a gate that reports
+   a pass NAMES the manifest it passed against* - was met in the data structure and in no artifact a
+   person reads. **Fix round 1's item 3 fixed the rendering** (a derivation line per `ran` row,
+   driven by `tests/schgen/gate-census.test.ts` on the content). The instance is recorded anyway,
+   because the instance is that it shipped unrendered - a field nothing renders is a field whose
+   first real use is its first test, and the whole task's point was that a gate must say what it
+   graded against.
+
+**WHAT THIS ENTRY ASKS OF A LATER TASK, since the pattern is now named rather than re-derived:**
+when you build a mechanism nothing calls, say in the register which precondition would wire it and
+what its absence costs. That is a sentence, and **G201** is what it costs to leave it out.
+
+- **Found** 2026-10-20, Task 16 review (the lead question and its Important 5); written up in fix
+  round 1 under ruling R35.
+- **Evidence** the consumer census for member 1, run over `lib`, `tools` and `tests` for all four
+  names, which returns the declaring module and one test file; the `renderGateCensus` body before
+  fix round 1 for member 2; and the three cited entries read in full. **A check that could have
+  failed:** the same census run for `compareMeasures` and `consultedBy` returns **thirteen** files
+  against member 1's **two**, because those names are shared with the stripboard approvals and
+  exemptions loaders - so the search discriminates rather than returning one file for everything,
+  and member 1's result is a fact about §3.5's contract and not an artefact of how the census was
+  run.
+- **Verified** CONFIRMED - this writer ran both censuses and made the item 3 fix. **The pattern's
+  statement is RELAYED from the review and adopted verbatim by R35**; the classification of G201,
+  G215 and G217 into the table is this writer's reading of those three entries.
+- **Why it is open** it is a recorded pattern rather than a defect, and it stays open because the
+  thing that makes an instance acceptable - a recorded price - is a discipline no check enforces.
+  Member 1 in particular remains in the state it describes: nothing but one test file drives §3.5's
+  contract, and that is correct until the reviewer exists.
+- **What would settle it** nothing for the pattern. **For member 1, CRITERION: §3.5's contract has
+  a consumer that is not a test, or the register says why it does not.** The second half is now
+  met; the first waits on the reviewer, which no M1 task builds. **MECHANISM, untried, and offered
+  only to be refused clearly:** writing a reviewer-shaped consumer now would be a consumer with no
+  reviewer behind it, which is the shape **R35** refuses for `compareMeasures` - so the honest
+  settlement is a later milestone's, not a mechanism available here.
+
+### G227 - `CanonicalTopology` IS AN UNBRANDED INTERFACE, so *"measures are taken over the canonical topology, never a raw segment list"* is a convention the type makes awkward rather than impossible - DEFERRED to the whole-branch review
+
+`[CODE]` `lib/schgen/elk/junctions.ts` declares `CanonicalTopology` as a plain discriminated union:
+an `ok: true` arm carrying `wires`, `branches`, `collapsed`, `zeroLength` and `contained`, and a
+refusal arm. **There is no brand, no private symbol and no opaque witness**, so nothing at the type
+level prevents a caller assembling an object of that shape from a raw `Wire[]` and handing it to
+`measuresOf` - which is the one thing the whole measure design rests on NOT happening
+(`lib/schgen/readability/measures.ts`: *"`measuresOf` takes a `CanonicalTopology` and not a
+`Wire[]`"*, **G106**).
+
+**IT IS THE SAME SHAPE AS THE `verdict` FINDING - a type that makes the defect hard to write by
+accident and trivial to write on purpose.** Writing it by accident is genuinely hard: the arm
+requires five fields including two counts whose values a fabricator would have to invent, and
+`assertPinsAgree` refuses a topology whose pin ends do not match the pins it is handed. Writing it
+on purpose takes one object literal.
+
+**DEFERRED, NOT DECLINED - controller ruling R36, 2026-10-20.** Branding the type touches every
+caller **including the test helpers that deliberately construct one**, so it is a whole-branch edit
+rather than a fix-round one, and it is deferred to the whole-branch review together with the
+`verdict` finding it resembles. **The price of the deferral, stated so it is not read as a closed
+question: until then, the rule that measures are taken over a canonical topology is held by the
+signature's TYPE NAME and by review, and by nothing a compiler enforces.**
+
+- **Found** 2026-10-20, Task 16 review (its Minor 9); recorded in fix round 1 under R36.
+- **Evidence** the type declaration read directly at `lib/schgen/elk/junctions.ts`, and
+  `measuresOf`'s signature. **A check that could have failed:** the type DOES carry a real guard
+  that could have made the finding false - `assertPinsAgree` - and it was read; it constrains a
+  topology's pin ends against a pin list and says nothing about where the wires came from, so the
+  finding survives contact with the one defence the module has.
+- **Verified** CONFIRMED - this writer read the declaration and the guard. The ruling to defer is
+  RELAYED from the controller (R36).
+- **Why it is open** it is deferred with no trigger beyond the whole-branch review, and a deferral
+  with no recorded price is the **G226** failure.
+- **What would settle it** **CRITERION: a caller cannot hand `measuresOf` a topology it assembled
+  itself without the compiler objecting.** **MECHANISM, untried:** a brand - a private symbol field
+  on the `ok: true` arm, with `canonicalTopology` the only producer and the test helpers routed
+  through it rather than around it. **Its cost, which is why R36 deferred rather than ruled:** every
+  deliberately-constructed fixture in the tests must then go through the real producer, which makes
+  some fixtures harder to write and may make one or two impossible - and that is the trade the
+  whole-branch review is to make, not this round.
+
+### G228 - MEASURED AND FIXED: `templateLibrarySha256` did not move when a template's DRAWN GEOMETRY moved, and the fix OVER-COVERS on purpose
+
+**THE DEFECT.** `libraryDigest` in `tools/schgen/generate.ts` hashed
+`fs.readdirSync("lib/schgen/render/templates").filter(n => n.endsWith(".ts"))` - nine files,
+one directory level. `[RAN]` **Eight of those nine import their geometry producers from the PARENT
+directory**: `chain-kit.ts`, `layout-kit.ts`, `fanout-kit.ts`, `geometry.ts`, `drawn-extent.ts`,
+`power-text.ts`, `text-boxes.ts`, `lib-pins.ts`. So an edit to `chain-kit.ts` changed a template's
+drawn geometry and left `templateLibrarySha256` exactly where it was - **the failure the function's
+own doc comment said it existed to prevent** (*"a digest over the ids would not move when a
+template's GEOMETRY changed - a hash that cannot detect the thing it exists to detect"*).
+
+**IT WAS A MIS-ATTRIBUTION RATHER THAN A BLIND SPOT IN THE GATE, AND THAT MATTERS FOR HOW ALARMED TO
+BE.** The resulting output change was still caught by `generatedSha256` through gate 1's
+`staleFiles`. What was wrong is what spec §2.1 asks the manifest to RECORD: the template library
+version that graded the output, which was incomplete.
+
+**AND A SECOND DEFECT, WORSE IN KIND: `readdirSync` IS NON-RECURSIVE AND THE FUNCTION REFUSED ONLY
+AN EMPTY DIRECTORY.** Adding a subdirectory under `templates/` or `rules/` silently NARROWED the
+digest with nothing failing - *"a skipped check must never look like a passing one"* in miniature,
+inside the record whose whole job is to say what graded the output.
+
+**THE FIX, AND THE MECHANISM CHOICE, because the mechanism matters to a later reader.** The function
+is now `moduleTreeDigest(root, dir)` and hashes every `.ts` module in the directory **tree**, each
+beside its path relative to the tree's root, and **the template library is the whole of
+`lib/schgen/render` rather than `lib/schgen/render/templates`.** Two mechanisms were available and
+the review had tried neither: the transitive import closure of the template modules, which is exact
+and needs an import walker this repository does not have; and a wholesale directory hash, which is
+cheaper and **OVER-COVERS**.
+
+**THE OVER-COVERAGE IS THE CHOICE AND IS SAID OUT LOUD IN THE CODE, because a reader who later sees
+the digest move for an unrelated reason needs to know that is by design rather than a bug.** An edit
+anywhere in `render/` that changes no template's geometry moves `templateLibrarySha256`. That is a
+false-positive staleness, which costs a regeneration; the alternative error is a false pass, which
+certifies a drawing against a library version that did not draw it. **The two are not symmetric.**
+
+**WHAT IS STILL NOT COVERED, STATED RATHER THAN DISCOVERED LATER.** `lib/schgen/rules/*.ts` import
+`../render/geometry.ts` and `../render/library.ts`, so a geometry edit moves the TEMPLATE digest and
+not the RULE digest even though it changed what the rules computed. Both fields are in one manifest
+and `staleManifestInputs` reports either, so the manifest as a whole still goes stale - **the
+mis-attribution is now between two fields of one record rather than a gap.**
+
+**AND THE GENERATION PATH's REFUSAL SURFACE WIDENED AGAIN, which is the same class of thing G225
+records.** Clause (b) of the fix round's criterion was that *adding a file the digest does not cover
+cannot pass silently*, so `moduleTreeDigest` **refuses by name** any entry in the tree it cannot
+hash, rather than filtering it out: there is no whitelist of ignorable names, because an empty
+whitelist that refuses loudly beats a general rule that quietly accepts a guess. **The cost, and it
+is a real one: a stray non-`.ts` file under `lib/schgen/render/` or `lib/schgen/rules/` - a
+`.DS_Store` from a Finder visit, an editor backup - now refuses every generation** until it is
+deleted. The refusal names the file and names both legitimate resolutions.
+
+- **Found** 2026-10-20, Task 16 review (its Important 2); fixed in fix round 1.
+- **Evidence** `tests/schgen/generate-digest.test.ts`, which copies the library tree to scratch,
+  proves the copy digests identically to what `generate` hashes, then **mutates each of the eight
+  geometry producers' bytes in the copy and asserts the digest moved** - a real perturbation, not a
+  membership assertion - and asserts separately that each of the eight is NOT under `templates/`,
+  which is the finding. **Three perturbations of the implementation, applied and restored:** making
+  the walk non-recursive turns three named tests red; filtering the unhashable file instead of
+  refusing turns one red; **reverting the directory to `templates/` turns ELEVEN red, including all
+  eight geometry producers** - which is this entry's defect, reproduced as a failing check.
+- **Verified** CONFIRMED - this writer made the fix, wrote the tests and drove all three
+  perturbations. The eight-module import claim is the review's and was re-run here.
+- **Why it is open** the over-coverage is a recorded decision and the rule-digest attribution is a
+  recorded limit; what keeps the entry open is the refusal cost in the last paragraph, which nobody
+  has hit yet and which will look like a generator bug the first time somebody does.
+- **What would settle it** nothing for the fix - it is driven. **For the over-coverage, CRITERION:
+  `templateLibrarySha256` moves when and only when something a template draws with has changed.**
+  **MECHANISM, untried:** the transitive import closure, which needs an import walker; it is the
+  exact answer and nobody has costed building one. **For the refusal cost, CRITERION: a file that
+  cannot carry geometry does not stop a generation, and a file that can is not skipped.** No
+  mechanism meeting both is known - the two pull against each other, which is why the loud refusal
+  was chosen over a guess.
