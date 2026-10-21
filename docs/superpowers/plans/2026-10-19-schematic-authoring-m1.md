@@ -1947,6 +1947,17 @@ test("an undeclared difference fails by construction", () => {
 
 ### Task 19: Supersede means delete
 
+> **AMENDED 2026-10-21 UNDER CONTROLLER RULING R65, AS IMPLEMENTED. THE FILE LIST
+> BELOW IS LEFT AS WRITTEN BECAUSE IT IS THE REQUIREMENT AND IT IS NOT MET.** The
+> deletion was SPLIT: `tools/cli/schematic-stub.ts`, its test, the
+> `schematic-stub` script and `README.md`'s instructions are deleted, and
+> **`lib/kicad/schematic.ts`, `tests/kicad/schematic.test.ts` and
+> `tests/circuits/kicad-round-trip.ts` are KEPT**, because Steps 2 to 4 cannot be
+> performed: `generate` refuses all five preamp boards. **G81 is NOT deleted.**
+> `docs/known-gaps.md` **G247** is the per-board measurement and **G248** records
+> the non-deletion, its precondition and its price. A reader following the list
+> below to delete those three files should read G248 first.
+
 **Files:**
 - Delete: `lib/kicad/schematic.ts`, `tools/cli/schematic-stub.ts`, `tests/kicad/schematic.test.ts`
 - Modify: `tests/circuits/kicad-round-trip.ts` and the five `tests/circuits/transistor-preamp-*.test.ts`

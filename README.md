@@ -26,10 +26,19 @@ doing that work end to end:**
   every check it set itself.
 
 Authority runs in both directions depending on where a circuit came from.
-`lib/kicad/schematic.ts` writes a `.kicad_sch` **from** a model, though today
-only as a stub with a useless arrangement. The Pultec runs the other way: an
-existing design imported schematic-first, with the model derived from a netlist
-export.
+`lib/schgen/` writes a `.kicad_sch` **from** a model — templates, a layout
+backend, deterministic UUIDs and a set of gates — and `bun run schgen` is its
+front door. The Pultec runs the other way: an existing design imported
+schematic-first, with the model derived from a netlist export.
+
+`lib/kicad/schematic.ts` is the **superseded** stub writer that `lib/schgen/`
+replaced. Nothing invites you to it: there is no script and no verb. It survives
+only because the five `tests/circuits/transistor-preamp-*.test.ts` files are this
+repository's only `kicad-cli` proof that KiCad reads a generated schematic the
+way the circuit means it, and `schgen` refuses all five of those boards today.
+`docs/known-gaps.md` **G247** measures the refusals, **G248** records what has to
+be true before the file goes, and **G81** records what is wrong with what it
+emits.
 
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
@@ -58,11 +67,12 @@ audio-circuits/
 │   │                     # vocabularies, validation, the circuit() builder,
 │   │                     # include() composition
 │   ├── kicad/            # Readers for two KiCad netlist export formats, and
-│   │   │                 # the schematic-stub writer (schematic.ts) that
-│   │   │                 # writes a KiCad .kicad_sch from a Network
+│   │   │                 # the superseded stub writer (schematic.ts) - see
+│   │   │                 # "Authority runs in both directions" above and
+│   │   │                 # docs/known-gaps.md G248 for why it is still here
 │   │   └── symbols/      # Vendored KiCad symbol definitions the stub writer
-│   │                     # embeds, so a generated schematic never depends on
-│   │                     # an installed KiCad - see symbols/PROVENANCE.md
+│   │                     # embeds, so its output never depends on an installed
+│   │                     # KiCad - see symbols/PROVENANCE.md
 │   └── sim/              # SPICE netlist generation, AC and operating-point
 │       └── models/       # Device models, each with its own provenance
 │
@@ -243,11 +253,12 @@ to one supplier. Keys are read from `~/.config/mouser/mouser-credentials.txt`
 and `~/.config/digikey/digikey-credentials.txt` and never printed; see
 `docs/parts/sourcing-notes.md`.
 
-A new board's KiCad schematic starts from a generated stub, written once with
-`bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
-`circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in
-KiCad from there; see `lib/kicad/schematic.ts`'s module comment for what the
-stub does and does not carry.
+A new board's KiCad schematic comes from `bun run schgen` — its two verbs and
+what a design module is are at the top of this section. The committed
+schematics under `circuits/` predate the generator and were arranged by hand;
+nothing regenerates them, and `docs/known-gaps.md` **G247** measures which of
+this repository's own boards `schgen` will accept today, which is none of the
+five preamp boards.
 
 ## How the Pultec reference is validated
 

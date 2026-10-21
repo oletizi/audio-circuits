@@ -69,10 +69,21 @@ So:
   cycles are cheaper than mine" is the governing economics here. A first
   solution that technically works but leaves a person doing fiddly remedial work
   is a failure, not a delivery.
-- **`lib/kicad/schematic.ts` still emits a stub** - a correct netlist with a
-  useless arrangement. That is a statement about the current emitter, not a
-  permanent division of labour: say "stub" when that is what you made, and
-  expect it to stop being true as the schematic-generation port lands.
+- **The schematic generator is `lib/schgen/`, and `lib/kicad/schematic.ts` is the
+  superseded stub it replaced.** This sentence used to say the stub was all there
+  was and to *"expect it to stop being true as the schematic-generation port
+  lands"*. **The port landed and the prediction was wrong for a reason nobody
+  anticipated, which is worth more than a silent correction.** `lib/schgen/`
+  exists, draws five of this repository's twelve declared blocks, and **refuses
+  every one of its own preamp boards**: `generate` refuses `lab-board` at layout
+  on a field-placement defect, and the other four boards have no authoring
+  declaration for it to read. `docs/known-gaps.md` **G247** measures that per
+  board, **G238** and **G245** are how the blocker got there, and **G248** records
+  why the stub writer is still in the tree - it carries the only `kicad-cli`
+  proof that KiCad reads a generated schematic as the circuit means it. **Nothing
+  invites you to the stub**: its CLI verb, its script and its instructions are
+  deleted. Say "stub" when that is what you made, and read **G81** before you
+  reach for `lib/kicad/schematic.ts` for anything.
 - **KiCad and VeroRoute are primary tools here, not optional extras.**
   `make check` invokes `kicad-cli` on every board on every run, and one test
   invokes it directly and fails rather than skips. Treat KiCad the way you would

@@ -19768,6 +19768,24 @@ the verb was the second shape of. **This is R65's split applied one level down,
 and it was found by checking what cited the file rather than by reading the
 brief's list.**
 
+**SEVEN LINES IN FOUR COMPLETED PLANS AND SPECS STILL INSTRUCT A READER TO RUN
+THE DELETED VERB, AND THEY ARE DELIBERATELY NOT EDITED.** `[RAN]`
+`grep -rln "bun run schematic-stub" docs/` returns
+`docs/superpowers/plans/2026-09-23-transistor-preamp-lab.md`,
+`docs/superpowers/plans/2026-09-28-transistor-preamp-staged.md`,
+`docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md` and
+`docs/superpowers/specs/2026-09-24-transistor-preamp-buffered-design.md`;
+`grep -rn` counts **7** lines. Those are the record of work that was done with the
+verb while it existed, and rewriting them would make the history describe a tool
+the work did not use. **`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`
+is a separate case and is not edited for a stronger reason**: it is the parent
+spec that ORDERS this deletion (*"the stub writer is removed in the same change
+that replaces it"*), so it holds the criterion this task is measured against, and
+`CLAUDE.md`'s invariant is that an agent never authors the criteria for the
+artifact it produces. **The deviation is recorded here instead, which is the only
+place it belongs.** `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`'s
+Task 19 carries an amendment pointing here, beside its unchanged file list.
+
 - **Found** 2026-10-21, Task 19, under controller ruling **R65** and its
   post-Task-20 update.
 - **Evidence** the two deletions' shas are `[RAN] shasum` on each file
