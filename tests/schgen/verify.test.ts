@@ -172,6 +172,86 @@ describe("runGates", () => {
     expect(gate8?.problems).not.toEqual([]);
     expect(r[0]?.problems).toEqual([]);
   });
+
+  /**
+   * **SPEC §2.1's CRITERION, BOTH HALVES, AS CHECKS THAT CAN FAIL** (Task 16): *"a gate that
+   * reports a pass names the manifest it passed against, and a manifest whose input hashes do not
+   * match the files on disk fails rather than regenerating silently."*
+   *
+   * The control is the test above: with the manifest written and live, gate 1's problems are
+   * empty. These two take it away in the two ways it can go.
+   */
+  it("names the manifest on every row, and the citation is the file's own hash when it is live", async () => {
+    const dir = tmpRepo();
+    const d = loaded(dir, spec({ checklist: null }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const r = await runGates(d, ENV);
+    expect(r.length).toBeGreaterThan(1);
+    for (const row of r) {
+      expect(row.manifest, row.gate).toMatch(/^MANIFEST\.json [0-9a-f]{12}; schematic\/readability-baselines\.json 0 baseline\(s\)$/);
+    }
+    expect(r[0]?.problems).toEqual([]);
+  });
+
+  /**
+   * **THE GATES THAT WOULD HAVE REPORTED A PASS ARE IDENTIFIED FROM THE CONTROL RUN, NEVER NAMED
+   * HERE.** This fixture's gate 6 already fails on its own (no pin table, an unresolvable
+   * footprint), so an assertion over *every* row would be asserting that the manifest complaint
+   * reaches a row it deliberately does not reach - and a test that named the passing gates as a
+   * literal would stop meaning anything the moment the fixture changed. The control run says which
+   * rows are passes; the perturbed run must take exactly those away and leave the rest alone.
+   */
+  async function passingGatesOf(d: LoadedDesign): Promise<readonly string[]> {
+    return (await runGates(d, ENV)).filter((row) => row.problems.length === 0).map((row) => row.gate);
+  }
+
+  it("stops every would-be-passing gate when MANIFEST.json is absent", async () => {
+    const dir = tmpRepo();
+    const d = loaded(dir, spec({ checklist: null }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const passing = await passingGatesOf(d);
+    expect(passing.length, "the control run has a passing gate, or this proves nothing").toBeGreaterThan(0);
+
+    fs.rmSync(path.join(dir, "MANIFEST.json"));
+    const r = await runGates(d, ENV);
+    expect(r.filter((row) => row.problems.length === 0).map((row) => row.gate), "no gate passes without a manifest").toEqual([]);
+    // Gate 1 is taken away by `staleFiles` - the file it produced is not on disk - and every OTHER
+    // control-passing gate is taken away by the manifest complaint, which is the half gate 1 cannot
+    // give. So the complaint is asserted over the union rather than per row.
+    for (const gate of passing) expect(r.find((x) => x.gate === gate)?.problems.length ?? 0, gate).toBeGreaterThan(0);
+    expect(r.flatMap((row) => row.problems).join(" ")).toContain("is not in the output directory");
+    for (const row of r) expect(row.manifest, row.gate).toContain("absent from");
+  });
+
+  it("stops every would-be-passing gate when a committed manifest's INPUT hash has moved, naming which", async () => {
+    const dir = tmpRepo();
+    const d = loaded(dir, spec({ checklist: null }));
+    writeGeneration(d, await generate(d, { ...ENV, initLock: true }));
+    const passing = await passingGatesOf(d);
+    expect(passing.length, "the control run has a passing gate, or this proves nothing").toBeGreaterThan(0);
+
+    const file = path.join(dir, "MANIFEST.json");
+    const onDisk: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (typeof onDisk !== "object" || onDisk === null) throw new Error("the written manifest is not an object");
+    // One input hash moved, and nothing else: the manifest is still well formed and still describes
+    // the same output, so only staleManifestInputs can notice.
+    fs.writeFileSync(file, JSON.stringify({ ...onDisk, templateLibrarySha256: "c".repeat(64) }, null, 2) + "\n");
+    const r = await runGates(d, ENV);
+    expect(r.filter((row) => row.problems.length === 0).map((row) => row.gate), "no gate passes against a dead manifest").toEqual([]);
+    for (const gate of passing) expect(r.find((x) => x.gate === gate)?.problems.length ?? 0, gate).toBeGreaterThan(0);
+    const all = r.flatMap((row) => row.problems).join(" ");
+    expect(all, "it names WHICH input moved").toContain("templateLibrary: the manifest records");
+    expect(all).toContain("It is NOT regenerated silently");
+    for (const row of r) expect(row.manifest, row.gate).toContain("(NOT LIVE)");
+  });
+
+  it("names the readability-baseline registry and its count on every row", async () => {
+    // Information and never a problem: spec 3.3's acceptance table makes zero the correct state for
+    // a first generation. What it buys is that the loader RUNS and the count is printed, so a
+    // reader is told zero rather than left to assume there were some.
+    expect(baselineCensus().problems).toEqual([]);
+    expect(baselineCensus().citation).toBe("schematic/readability-baselines.json 0 baseline(s)");
+  });
 });
 
 describe("symmetricSymbolsProblems", () => {
