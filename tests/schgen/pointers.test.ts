@@ -22,7 +22,7 @@
  * **IT IS A SAMPLE AND NOT AN INVENTORY, AND THE FRACTION IS STATED BECAUSE A COUNT READ LIKE A
  * POPULATION.** `[RAN]` `docs/known-gaps.md` holds a few hundred test-file citations - **counted by
  * `citationCount` below on every run, so the figure cannot go stale in this comment** - and this
- * file holds **16 rows: 12 register rows, 2 module comments and 2 document lines.** `[RELAYED]` The
+ * file holds **17 rows: 13 register rows, 2 module comments and 2 document lines.** `[RELAYED]` The
  * review puts **roughly 120** of those citations in evidentiary positions; that estimate is the
  * review's and was not measured here, which is why it is not inside the `[RAN]` clause. Round 2 described it as *"the ten
  * pointers that cite a measurement"*, which reads as if ten were all there were.
@@ -177,6 +177,16 @@ const POINTERS: readonly Pointer[] = [
     marker: "did not complete within 1 bindings",
     why: "G241's Evidence: the two cases the deleted matcher stages left standing on.",
   },
+  // TASK 18, ruling R62: the hub construction that GUARDS the colour refinement moved out of
+  // reference-graph.test.ts when that file crossed the line cap, and four pointers named the old
+  // file for one commit. This row is what makes the next move of it fail here instead.
+  {
+    citedBy: "docs/known-gaps.md",
+    citation: "`tests/schgen/gates/graph-match.test.ts` now holds the hub construction",
+    test: "tests/schgen/gates/graph-match.test.ts",
+    marker: "pinned on a graph inside the matcher's domain",
+    why: "G241's R61 block: the test that stops the refinement being deleted a third time.",
+  },
   {
     citedBy: "docs/schematic/reference-graph-checks.md",
     citation: "bun test tests/schgen/gates/reference-graph.kicad.test.ts   THE FIGURES ABOVE",
@@ -227,11 +237,12 @@ describe("the guard is a SAMPLE of the citation population, and says so", () => 
     // register grows - which is exactly how the published literal went stale at its own commit.
     expect(POINTERS.length / lines, `${POINTERS.length} rows against ${lines} citing lines`).toBeLessThan(0.1)
     // And the breakdown G233 publishes, which is composition rather than a count: 12 register rows,
-    // 2 module comments, 2 document lines. Task 18 added G239's, G240's and G241's register rows and
-    // the reference-graph document's.
+    // 2 module comments, 2 document lines, plus R62's row for the moved hub test - 13 register rows
+    // since Task 18 added G239's, G240's, G241's and the R61 guard's, and the reference-graph
+    // document's.
     const byFile = new Map<string, number>()
     for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
-    expect(byFile.get("docs/known-gaps.md")).toBe(12)
+    expect(byFile.get("docs/known-gaps.md")).toBe(13)
     expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
     expect(byFile.get("docs/schematic/reference-graph-checks.md")).toBe(1)
     // THE THIRD CLAUSE COUNTS THE MODULE COMMENTS RATHER THAN SUBTRACTING FROM THE TOTAL. The

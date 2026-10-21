@@ -17319,9 +17319,10 @@ enough.**
   `[RAN]` The count is now computed by `citationCount` in
   `tests/schgen/pointers.test.ts` on every run, which asserts the coverage
   FRACTION is under a tenth rather than any exact numerator; the register holds a
-  few hundred citations and the guard holds **16 rows - 12 register rows, 2 module
-  comments and 2 document lines** (Task 18 added the tenth, eleventh and twelfth
-  register rows - **G239**, **G240**, **G241** - and the second document line).
+  few hundred citations and the guard holds **17 rows - 13 register rows, 2 module
+  comments and 2 document lines** (Task 18 added the tenth to thirteenth register
+  rows - **G239**, **G240**, **G241**, and R61's guard after ruling R62 moved it to
+  another file - and the second document line).
   `[RELAYED]` The review puts roughly **120** of
   those citations in evidentiary positions. Round 2's
   *"covers the ten pointers that cite a measurement"* reads as if ten were the
@@ -18214,9 +18215,12 @@ than documented.**
 > criterion is that an arm is either evaluated on real data **or recorded as
 > unreachable with the reason**. The test plus this entry are exactly that.
 >
-> `tests/schgen/gates/reference-graph.test.ts` now holds the hub construction as a
+> `tests/schgen/gates/graph-match.test.ts` now holds the hub construction as a
 > **unit test of the matcher**, labelled in those terms, with the clique asserted
-> beside it so the label is checkable rather than prose. `[RAN]` **the whole suite
+> beside it so the label is checkable rather than prose. (It was written into
+> `reference-graph.test.ts` and moved out under ruling **R62** when that file
+> crossed `CLAUDE.md`'s cap; **the move went stale in four pointers before they
+> were repaired**, which is **G233**'s shape again and is recorded in **G243**.) `[RAN]` **the whole suite
 > with the refinement removed: RED, 3672 pass / 3 fail** - the 14-, 16- and
 > 18-node cases - against a control of **3675 pass / 0 fail**. **So the next agent
 > who deletes it on "no check fails" grounds gets a red test instead of a green

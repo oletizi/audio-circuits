@@ -65,7 +65,7 @@
  * `docs/known-gaps.md` **G241** has the figures, the census and the withdrawal.
  *
  * **IT IS GUARDED - ruling R61, and that is what stops it being deleted a third time.**
- * `tests/schgen/gates/reference-graph.test.ts` holds that hub construction as a **unit test of this
+ * `tests/schgen/gates/graph-match.test.ts` holds that hub construction as a **unit test of this
  * matcher** - a graph inside `matchGraphs`'s declared domain, with no cast, and outside what
  * `graphFromNetlist` emits today, labelled in exactly those terms - with the clique asserted beside
  * it so the label is checkable. Removing this loop takes the whole suite **RED, 3 failing**. **If

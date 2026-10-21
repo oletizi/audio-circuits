@@ -843,6 +843,7 @@
     "lib/schgen/gates/reference-graph.ts",
     "tests/schgen/gates/declared-delta.test.ts",
     "tests/schgen/gates/reference-graph.test.ts",
-    "tests/schgen/gates/reference-graph.kicad.test.ts"
+    "tests/schgen/gates/reference-graph.kicad.test.ts",
+    "tests/schgen/gates/graph-match.test.ts"
   ]
 }

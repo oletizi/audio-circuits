@@ -143,8 +143,8 @@ withdrawal.
 The search's budget is bounded and **exhausting it is reported as a problem -
 never as a pass.** A check that could not finish must not resemble one that
 agreed. **And a real difference must not arrive that way either**, which is what
-`tests/schgen/gates/reference-graph.test.ts` pins at 24, 32 and 48 nodes — the
-first two being these references' own sizes.
+`tests/schgen/gates/graph-match.test.ts` pins at 24, 32 and 48 nodes — the first
+two being these references' own sizes.
 
 Where a permitted delta comes from
 ----------------------------------
@@ -207,6 +207,7 @@ How to re-run everything here
 ```
 bun test tests/schgen/gates/reference-graph.kicad.test.ts   THE FIGURES ABOVE
 bun test tests/schgen/gates/reference-graph.test.ts         THE COMPARISON
+bun test tests/schgen/gates/graph-match.test.ts             THE MATCHER ITSELF
 bun test tests/schgen/gates/declared-delta.test.ts          THE PROVENANCE RULE
 bun tools/schgen/gate-census.ts                             WHY NOTHING GENERATES
 ```
