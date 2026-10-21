@@ -15,6 +15,7 @@
  * it would then produce a set with no manifest in it - two places to keep correct, which
  * `CLAUDE.md` forbids, in exchange for one byte-check. The cost of the divergence is recorded in
  * `docs/known-gaps.md` rather than paid silently.
+ */
 
 /**
  * The generated file set, staleness against disk (read-only) and the one writer.
