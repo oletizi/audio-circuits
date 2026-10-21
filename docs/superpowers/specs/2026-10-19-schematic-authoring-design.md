@@ -1182,6 +1182,25 @@ not have. **Those are products of modularization, not foreign matter.**
 > | **the permitted delta** | **EMPTY.** A circuit rendered from its own model should differ from its own reference in nothing at all | the manifest's declared deltas, **derived mechanically from the partition** |
 > | **why it is checkable then** | an empty list needs no generator to write it, so **this is checkable on day one of the port** | the partition exists already; the manifest is read off it, not off a drawing |
 >
+> > **AMENDED 2026-10-21 UNDER RULING R56, EXTENDED BY R63: THE THIRD ROW's
+> > PREMISE IS TRUE AND ITS CONCLUSION IS FALSE**, which is why it is corrected
+> > here rather than rewritten. *"An empty list needs no generator to write it"*
+> > is exactly right and is the whole reason the M1 half was brought forward.
+> > **But *"this is checkable on day one of the port"* does not follow, and Task
+> > 18 measured it false:** checking the empty delta needs a GENERATED schematic
+> > to compare against the reference, and `generate` refuses both of this
+> > repository's hand-arranged references at **gate 1** - 115 and 101
+> > `validateCircuit` problems, before any block reaches a layout backend.
+> > `docs/known-gaps.md` **G238** has the measurement, **G240** the gap with its
+> > price. **So the delta list was never what stood in the way; the generator's
+> > input validation was**, and nothing in this row contemplated that.
+> >
+> > **The first row's word *"exercised"* is scope-wording and is read as *ported
+> > for*, not as a claim that it ran** - that cell answers *what is ported*. It is
+> > flagged rather than rewritten because rewriting a scope cell to carry an
+> > outcome is how a split table stops recording the split. The deliverable row at
+> > the milestone table below carries the outcome, and it is corrected there.
+>
 > **AND THE RULE THAT REPLACES THE WITHDRAWN ARGUMENT: the list of permitted
 > electrical changes must NEVER be inferred from a generated schematic.** A
 > delta is admitted because a transformation is declared to produce it, named
