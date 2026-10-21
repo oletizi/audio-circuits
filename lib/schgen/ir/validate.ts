@@ -1,9 +1,39 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/ir/validate.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
- * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/ir/validate.ts` (with the `labels`
+ * rendering-reason check that plan decision D3 deletes, carried as this entry's declared `cuts`
+ * until Task 20), and DIVERGED from it by Task 20 of the M1 schematic-authoring plan: the rule
+ * list is SPLIT, and `validateCircuit` - the function `tools/schgen/generate.ts` calls before it
+ * emits a drawing - no longer runs `bomFields`.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason and the upstream
+ * `sourceSha`; see `lib/schgen/README.md` and `docs/known-gaps.md` **G139** and **G245**.
+ *
+ * **WHY, AND IT IS THE OWNER'S DECISION RATHER THAN THIS REPOSITORY'S CONVENIENCE.** He asked
+ * *"why does a schematic need bom-level specificity?"*, and then ruled: *"the gate you describe
+ * *is* important for pcb layout intended for outsourced manufacture-but a fully specified BOM
+ * isn't needed for schematics, stripboard layout, and, in many cases, tht pcbs."*
+ *
+ * So **the BOM requirement is a property of the CONSUMER of an artifact rather than of the
+ * circuit.** It binds when a part has to be sourced and placed by somebody else. A schematic is
+ * never that artifact - it is upstream of every one of those decisions; a stripboard layout built
+ * by hand is not either; and a through-hole board the owner stuffs himself usually is not.
+ *
+ * **`bomFields` ITSELF IS UNTOUCHED, AND IT IS NOT DEAD CODE.** `ir/validate-parts.ts` is still
+ * byte-checked against the pedals source and holds the rule exactly as it always did - four keys,
+ * non-empty, on every part whose `refPrefix` is not `TP`, `H` or `FID`. What changed is which
+ * composition runs it. **Two opposite edits to this file are both wrong:**
+ *
+ * - **deleting the rule, or `SOURCING_RULES`, because no production caller runs it.** Nothing in
+ *   this repository emits an artifact somebody else sources yet, which is exactly why
+ *   `validateSourcing` has only test callers; `docs/known-gaps.md` **G245** records that with what
+ *   would settle it, and **G241** is this branch deleting a safeguard on that reasoning and
+ *   restoring it a round later;
+ * - **putting `bomFields` back into `DRAWING_RULES` to make validation uniform.** Uniformity is
+ *   what the ruling refuses: it gates a drawing on purchasing data the drawing does not use.
+ *   **G238** measured the price - 100 of `transistor-preamp`'s 101 gate-1 problems were empty
+ *   purchasing fields, and nothing else was wrong with the circuit.
  */
 
 import { pinsOfUnit } from "./classify.ts";
@@ -111,12 +141,42 @@ const renderings: Rule = (c) => {
   return out;
 };
 
-const RULES: readonly Rule[] = [
+/**
+ * **THE RULES A DRAWING DEPENDS ON, AND ONLY THOSE**, because this is the list `generate` runs
+ * before it emits one. Eleven of the twelve ported rules; the header says why `bomFields` is not
+ * among them and why putting it back is a defect rather than a tidy-up.
+ */
+const DRAWING_RULES: readonly Rule[] = [
   netNames, partShapes, pinsDeclared, unitsPlaced, sheetsAndBlocks, renderings,
-  singlePinNets, rails, pinSemantics, bomFields, sheetFiles, mechanicalPads,
+  singlePinNets, rails, pinSemantics, sheetFiles, mechanicalPads,
 ];
 
-/** Strict: every problem, one line each, in rule order. Empty means valid. No escape hatch. */
+/**
+ * **THE RULES AN ARTIFACT SOMEBODY ELSE SOURCES AND PLACES DEPENDS ON.** A board going out for
+ * outsourced assembly is the case the owner named: the assembler cannot buy a part the artifact
+ * does not name, so an empty purchasing field there is a refusal and not a nicety.
+ *
+ * **Nothing in this repository emits such an artifact yet**, so the callers are tests -
+ * `tests/schgen/ir/validate.test.ts`'s two V10 cases drive the rule's own behaviour, and
+ * `tests/schgen/authoring-complete.test.ts` keeps the four parity circuits' sourcing counts
+ * pinned. That is a residual rather than a design: `docs/known-gaps.md` **G245** states it, and
+ * the first consumer that emits an artifact for somebody else to source is what settles it.
+ */
+const SOURCING_RULES: readonly Rule[] = [bomFields];
+
+/**
+ * Strict: every DRAWING problem, one line each, in rule order. Empty means the circuit may be
+ * drawn. No escape hatch - there is no flag, no mode and no exemption list that relaxes a rule in
+ * this list, and sourcing readiness is a different question asked by `validateSourcing`.
+ */
 export function validateCircuit(c: Circuit, symbols: SymbolResolver): string[] {
-  return RULES.flatMap((rule) => rule(c, symbols));
+  return DRAWING_RULES.flatMap((rule) => rule(c, symbols));
+}
+
+/**
+ * Strict, the same way, for the sourcing readiness `validateCircuit` deliberately does not ask
+ * about. Empty means every part names who makes it and who sells it.
+ */
+export function validateSourcing(c: Circuit, symbols: SymbolResolver): string[] {
+  return SOURCING_RULES.flatMap((rule) => rule(c, symbols));
 }

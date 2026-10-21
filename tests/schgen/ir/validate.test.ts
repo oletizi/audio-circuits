@@ -4,6 +4,13 @@
  * schematic-authoring plan: decision D3 deletes the `labels` rendering, and with it the V6 rule
  * "labels rendering needs a reason" that one test here exercised.
  *
+ * **DIVERGED FURTHER BY TASK 20**, which split the rule list: `validateCircuit` runs the rules a
+ * DRAWING depends on and `validateSourcing` runs `bomFields`, under the owner's ruling that the
+ * BOM requirement is a property of the CONSUMER of an artifact rather than of the circuit. The two
+ * V10 cases therefore ask `sourcing` rather than `problems`; their expected problem strings are
+ * verbatim, and the exemption case gained the control it had always needed.
+ * `docs/known-gaps.md` **G245**.
+ *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
@@ -22,7 +29,7 @@ import { fixtureResolver, TEST_BOM } from "../__fixtures__/fixture-lib.ts";
 import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { CircuitSpec, PartSpec, Rendering } from "../../../lib/schgen/ir/types.ts";
-import { validateCircuit } from "../../../lib/schgen/ir/validate.ts";
+import { validateCircuit, validateSourcing } from "../../../lib/schgen/ir/validate.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const symbols = fixtureResolver();
@@ -39,6 +46,8 @@ const base = (parts: PartSpec[], over: Partial<CircuitSpec> = {}): CircuitSpec =
   ...over,
 });
 const problems = (spec: CircuitSpec) => validateCircuit(buildCircuit(spec, { symbols }), symbols);
+/** The sourcing composition, which Task 20 took `bomFields` out of `validateCircuit` into. */
+const sourcing = (spec: CircuitSpec) => validateSourcing(buildCircuit(spec, { symbols }), symbols);
 
 describe("validateCircuit", () => {
   it("accepts a well-formed circuit", () => {
@@ -134,14 +143,27 @@ describe("validateCircuit", () => {
     expect(problems(base([big]))).toContain("part U_B: pin 7 is a no_connect pin but is on net A");
   });
 
+  // V10 IS NOW ASKED OF `validateSourcing` AND NOT OF `validateCircuit` - Task 20, the owner's
+  // ruling that the BOM requirement is a property of the CONSUMER of an artifact rather than of
+  // the circuit, recorded in `lib/schgen/ir/validate.ts`'s header, this file's `diverged` entry
+  // and `docs/known-gaps.md` G245. Every expected problem string is verbatim; what changed is
+  // which composition is asked. `problems` (`validateCircuit`) reports NO BOM problem at all now,
+  // so leaving these two here would have made both of them pass without the rule running - the
+  // second one vacuously, since it only asserts an absence.
   it("V10: DNP parts still need every BOM field", () => {
     const dnp: PartSpec = { ...res("R_A", "X", "GND"), dnp: true, bom: { ...TEST_BOM, SupplierPart: "" } };
-    expect(problems(base([dnp, res("R_B", "X", "GND")]))).toContain("part R_A: BOM field SupplierPart is empty");
+    expect(sourcing(base([dnp, res("R_B", "X", "GND")]))).toContain("part R_A: BOM field SupplierPart is empty");
   });
 
   it("V10: TP, H and FID parts are exempt from BOM fields", () => {
     const tp: PartSpec = { ...res("R_A", "X", "GND"), refPrefix: "TP", bom: { ...TEST_BOM, MPN: "" } };
-    expect(problems(base([tp, res("R_B", "X", "GND")]))).not.toContain("part R_A: BOM field MPN is empty");
+    // THE CONTROL, added in the same edit: an assertion that something is absent proves nothing
+    // unless the same input makes the rule speak, and this one would have passed over a
+    // `SOURCING_RULES` that was empty, an exemption list that covered every prefix, or a rule that
+    // never ran. `R_B` carries the identical empty MPN and is not exempt, so it must be named.
+    const p = sourcing(base([tp, { ...res("R_B", "X", "GND"), bom: { ...TEST_BOM, MPN: "" } }]));
+    expect(p).not.toContain("part R_A: BOM field MPN is empty");
+    expect(p, "the control: the same empty field on a non-exempt part is refused").toContain("part R_B: BOM field MPN is empty");
   });
 
   it("V11: sheet files end in .kicad_sch and are unique", () => {

@@ -81,16 +81,6 @@
       "to": "lib/schgen/gates/pin-table.ts"
     },
     {
-      "from": "ir/validate.ts",
-      "to": "lib/schgen/ir/validate.ts",
-      "cuts": [
-        {
-          "text": "    if (r.kind === \"labels\" && r.reason.trim() === \"\") out.push(`block ${b.id}: labels rendering needs a reason`);\n",
-          "occurrences": 1
-        }
-      ]
-    },
-    {
       "from": "ir/validateNets.ts",
       "to": "lib/schgen/ir/validate-nets.ts"
     },
@@ -654,8 +644,8 @@
       "from": "ir/validate.test.ts",
       "to": "tests/schgen/ir/validate.test.ts",
       "sourceSha": "1c2db45219f2b76be3d8fbda0de06310bfd262d0e5cd3d7d536f9faa563b9e3a",
-      "task": "Task 8",
-      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the cut that removes that rule from ir/validate.ts is declared in files[]). Its MCU `cuts` (G112) were applied before divergence."
+      "task": "Task 8; diverged further by Task 20",
+      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the removal of that rule from ir/validate.ts is part of that file's own Task 20 divergence entry in this array, and was a declared `cuts` entry in files[] until then). Its MCU `cuts` (G112) were applied before divergence. TASK 20: `validateCircuit` no longer runs `bomFields` (the owner's ruling, in that entry), so the two V10 cases call the new `validateSourcing` instead - every expected problem string verbatim, as ruling R4 requires. The exemption case gained a CONTROL in the same edit: it asserted only that an exempt TP part is NOT refused, which under either composition can pass without the rule running at all, so it now also asserts that the same empty field on a non-exempt part IS refused by name. docs/known-gaps.md G245."
     },
     {
       "from": "render/drawnText.test.ts",
@@ -726,6 +716,13 @@
       "sourceSha": "5a6e2b71594fb458bbd512cb471c474665a6cab089cc469d5496a426a7e75e49",
       "task": "Task 16",
       "why": "Task 16 adds MANIFEST.json to the generated file set (spec 2.1's generation manifest), which is a content change `rewrite()` cannot produce and `cuts` cannot express - a cut is deletion-only. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger), and all it retains is the `sourceSha` watch on the other end of the line. WHY IT WAS TAKEN ANYWAY: the alternative was for `generate` to add one entry to the map `generatedFiles` returns, which works end to end because `staleFiles` and `writeGeneration` both read that map - but `generatedFiles`'s contract is THE GENERATED FILE SET, so a second caller of it would then produce a set with no manifest in it. Two places to keep correct, which CLAUDE.md forbids, in exchange for one byte-check. The manifest is added LAST in that function, because it hashes the files produced before it; `manifestInputsOf` in lib/schgen/manifest.ts excludes MANIFEST.json itself, and is the one rule tools/schgen/verify.ts rebuilds the inputs with so the producer and the verifier cannot disagree about what is hashed."
+    },
+    {
+      "from": "ir/validate.ts",
+      "to": "lib/schgen/ir/validate.ts",
+      "sourceSha": "b9e10e418655e63622e80815612d8cfdd8425616c1cfa7b301b00e465d955672",
+      "task": "Task 20",
+      "why": "THE BOM GATE IS A PROPERTY OF THE CONSUMER OF AN ARTIFACT, NOT OF THE CIRCUIT, and that is the owner's ruling. He asked \"why does a schematic need bom-level specificity?\" and then ruled: \"the gate you describe *is* important for pcb layout intended for outsourced manufacture-but a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht pcbs.\" The pedals source runs twelve rules in one `RULES` list, so `bomFields` - Manufacturer, MPN, Supplier and SupplierPart non-empty on every part whose refPrefix is not TP/H/FID - gated the emission of a DRAWING. This file now splits that list: `DRAWING_RULES` (eleven rules) is what `validateCircuit` runs and therefore what `tools/schgen/generate.ts` gates on, and `SOURCING_RULES` ([bomFields]) is what the new `validateSourcing` runs for a consumer that has to source and place the parts. THE RULE ITSELF IS UNTOUCHED: `ir/validateParts.ts` is still byte-checked in files[], the four keys and `BOM_EXEMPT_PREFIXES` are unchanged, and no flag, mode or widened exemption relaxes it in place. A `cuts` entry cannot express this: a cut is deletion-only, and deleting `bomFields` from the list would leave nothing naming the consumer it still binds for, which is the half of the ruling that has to survive. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger) and keeps only the sourceSha watch on the upstream end. IT ALSO SUBSUMES THE `cuts` ENTRY THIS FILE CARRIED IN files[]: plan decision D3 deletes the `labels` rendering, so the line `if (r.kind === \"labels\" && r.reason.trim() === \"\") ...` is absent here, as it was before - that deletion is now part of the divergence rather than a declared cut, and the `ir/validate.test.ts` entry in this array points here for it. WHAT IT UNBLOCKS, measured: docs/known-gaps.md G238 recorded `transistor-preamp` refusing at gate 1 on 101 problems of which 100 were empty purchasing fields; G245 records this change, what each parity circuit validates at now, and that `validateSourcing` has no production caller yet."
     }
   ],
   "handWritten": [
