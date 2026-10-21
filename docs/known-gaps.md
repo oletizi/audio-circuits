@@ -2259,7 +2259,20 @@ criterion for"*). **MECHANISMS, both untried and they are alternatives rather
 than a plan:** have `edgeCensus` re-key a dropped bus block's units the way
 `flatSubgraphOf` re-keys the flat probe's, which makes the two halves agree; or
 leave the census alone and narrow the rule's stated scope, which is what this
-entry does today. **Nothing here chooses, and `edgeCensus` is unchanged.**
+entry does today. **Nothing here chooses, and `edgeCensus` is byte-identical.**
+
+**WHAT WAS AND WAS NOT TOUCHED, SAID EXACTLY, because fix round 2 reported
+`crossingNonRailNets` as untouched and that was not literally true.** `edgeCensus`
+is byte-identical and the bus prediction it feeds is still 5 against a measured 4,
+so the falsifier above is live. **`crossingNonRailNets` WAS rewritten** - to
+delegate to a shared `crossingNets` helper so that `governingNetsOf` could reuse
+it - and that refactor **silently changed its sort from the default
+`Array.sort()` to a `localeCompare` comparator nothing had asked for.** Membership
+and every published list were unaffected, which is why it passed; but both lists
+are compared with `toEqual` and the two orders differ (`["AB", "A_B"]` orders one
+way under each), so it was a latent behaviour change riding in a refactor. **Fix
+round 3 reverted the sort** and `tests/schgen/remeasure-edges.test.ts` now pins
+that both published lists are in default-sort order.
 
 **WHAT IS A PROPERTY OF THE IR RATHER THAN AN OUTCOME, stated plainly because it
 is the load-bearing half.** That a cross-block net is ALWAYS labelled, and

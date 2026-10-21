@@ -171,10 +171,23 @@ export function flatSubgraphOf(
  * `labelledNets` folds four conditions together and only one of them is the one at issue.
  */
 export function crossingNonRailNets(c: Circuit): readonly NetName[] {
-  return crossingNets(c).filter((n) => !c.rails.has(n.net) && !c.offSheet.has(n.net)).map((n) => n.net)
+  return crossingNets(c)
+    .filter((n) => !c.rails.has(n.net) && !c.offSheet.has(n.net))
+    .map((n) => n.net)
+    .sort()
 }
 
-/** Every net with pins in more than one block, with the blocks it touches. */
+/**
+ * Every net with pins in more than one block, with the blocks it touches.
+ *
+ * **IT DOES NOT SORT, AND THAT IS DELIBERATE AFTER AN ACCIDENT.** Fix round 2 extracted this helper
+ * out of `crossingNonRailNets` and, in doing so, replaced that function's `Array.sort()` with a
+ * `localeCompare` comparator **that nothing had asked for**. The two orders differ - `["AB", "A_B"]`
+ * comes out one way under each - and both of this module's published net lists are compared with
+ * `toEqual`, so an unrequested comparator is a published figure waiting to move for no reason. The
+ * sort belongs to the functions that return the NAMES, each using the default `Array.sort()` the
+ * original had, and this helper returns the pairs in map-insertion order.
+ */
 function crossingNets(c: Circuit): readonly { readonly net: NetName; readonly blocks: ReadonlySet<BlockId> }[] {
   const blocksOfNet = new Map<NetName, Set<BlockId>>()
   for (const pin of c.pins) {
@@ -183,10 +196,7 @@ function crossingNets(c: Circuit): readonly { readonly net: NetName; readonly bl
     set.add(blockOfPin(c, pin))
     blocksOfNet.set(pin.net, set)
   }
-  return [...blocksOfNet]
-    .filter(([, blocks]) => blocks.size > 1)
-    .map(([net, blocks]) => ({ net, blocks }))
-    .sort((a, b) => a.net.localeCompare(b.net))
+  return [...blocksOfNet].filter(([, blocks]) => blocks.size > 1).map(([net, blocks]) => ({ net, blocks }))
 }
 
 /**
@@ -213,6 +223,7 @@ export function governingNetsOf(c: Circuit, ids: readonly BlockId[]): readonly N
       return inside.length > 1 && !leaves && !c.rails.has(n.net) && !c.offSheet.has(n.net)
     })
     .map((n) => n.net)
+    .sort()
 }
 
 export interface EdgeCensus {

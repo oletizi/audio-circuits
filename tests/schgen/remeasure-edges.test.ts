@@ -92,6 +92,28 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
     }
   })
 
+  /**
+   * **THE ORDER OF THE PUBLISHED LISTS IS THE DEFAULT `Array.sort()` ORDER - fix round 3, item 3.**
+   * Fix round 2 refactored `crossingNonRailNets` to share a helper and, in doing so, replaced its
+   * `Array.sort()` with a `localeCompare` comparator nothing had asked for. Membership did not
+   * move, so nothing failed; but both lists below are compared with `toEqual`, and the two orders
+   * differ - `["AB", "A_B"]` comes out one way under each. The sort is reverted and this pins it, so
+   * a comparator reintroduced into either function fails here rather than quietly reordering a
+   * published figure.
+   */
+  it("returns both published lists in default-sort order, not a comparator's", () => {
+    expect(oc.crossingNonRail).toEqual([...oc.crossingNonRail].sort())
+    expect(tp.crossingNonRail).toEqual([...tp.crossingNonRail].sort())
+    const symbols = parityResolver()
+    for (const name of ["optical-compressor", "transistor-preamp"]) {
+      const found = PARITY_CASES.find((c) => c.name === name)
+      if (found === undefined) throw new Error(`no ${name} parity case`)
+      const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
+      const governing = governingNetsOf(circuit, [...circuit.blocks.keys()])
+      expect(governing, name).toEqual([...governing].sort())
+    }
+  })
+
   it("counts a set that is NON-EMPTY, so the rule is not vacuously satisfied", () => {
     // Round 1 claimed these circuits had none of the governing set. They have three and five, and
     // asserting non-emptiness is what stops the agreement above being 0 === 0.
