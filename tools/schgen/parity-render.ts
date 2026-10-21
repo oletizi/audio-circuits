@@ -59,6 +59,21 @@ template. Nothing in the circuits, the declarations or the templates may be tune
 this census never becomes a threshold - Task 17 re-runs it as a second reading of the same
 measurement.
 
+## TASK 17 RE-RAN IT WITH THE ELK BACKEND LIVE, AND THE TEMPLATE COUNT DID NOT MOVE
+
+**\`realised\` is still 0 of 12 and no block moved to \`refused\`.** The re-run was byte-identical to
+the committed copy, which is the strongest form the result can take: this census consults
+\`selectRenderer\` and the template registry only, so a working ELK backend cannot move a number in
+it, and the re-run says so rather than leaving a reader to assume it.
+
+**THE TWO AXES ARE DIFFERENT AND ONE OF THEM HAS NOT MOVED AT ALL - controller ruling R41.** Five
+of the twelve declared blocks now DRAW: the four congruent bias legs and \`tp-leg-collector\`. **That
+is the ELK axis.** In this census's vocabulary \`realised\` means A TEMPLATE DREW THE BLOCK, and a
+sentence like *"five blocks moved from elk to realised"* would be false here and would read as
+template progress that has not happened. The template axis is 0 of 12 as declared, and
+\`docs/schematic/template-parity-anchors.md\`'s 2 of 12 is what a template COULD draw under an anchor
+nobody declared (\`docs/known-gaps.md\` **G160**). **Quote both columns or neither.**
+
 ## Two readings, and they answer different questions
 
 - **Outcome** is what \`selectRenderer\` would actually do with the block under spec §1.3. For a
