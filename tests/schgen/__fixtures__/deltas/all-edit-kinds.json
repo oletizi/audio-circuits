@@ -1,0 +1,35 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "fixture transformation: every GraphEdit kind, so the parser's five arms are each read",
+      "why": "a fixture; nothing in this repository applies a GraphEdit - see declared-delta.ts",
+      "edit": { "kind": "setValue", "part": "R1", "value": "4k7" }
+    },
+    {
+      "id": "D2",
+      "from": "fixture transformation: every GraphEdit kind",
+      "why": "a fixture",
+      "edit": { "kind": "removePart", "part": "R2" }
+    },
+    {
+      "id": "D3",
+      "from": "fixture transformation: every GraphEdit kind",
+      "why": "a fixture",
+      "edit": { "kind": "addPart", "part": "R9", "value": "1k", "pins": { "1": "new:STANDIN", "2": "GND" } }
+    },
+    {
+      "id": "D4",
+      "from": "fixture transformation: every GraphEdit kind",
+      "why": "a fixture",
+      "edit": { "kind": "mergeNets", "keep": "JUNCTION", "drop": "new:STANDIN" }
+    },
+    {
+      "id": "D5",
+      "from": "fixture transformation: every GraphEdit kind",
+      "why": "a fixture",
+      "edit": { "kind": "movePin", "part": "R1", "pin": "2", "to": "JUNCTION" }
+    }
+  ]
+}
