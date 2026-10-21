@@ -171,10 +171,14 @@ export interface ComponentOverride {
  * PURCHASING rule gates a DRAWING. The owner's question - *"why does a schematic need bom-level
  * specificity?"* - raises the option that was not in the frame, which is that the gate is in the
  * wrong place; his ruling is quoted in full in `lib/schgen/ir/validate.ts`'s header, and
- * `docs/known-gaps.md` **G245** records why the earlier decision could not see it (the rule lives
- * in a port-managed file whose header says to edit the pedals source, so changing it was outside
- * the frame). `unsourced` is unchanged and is NOT optional: it is a statement about sourcing
- * readiness, which is what it always actually was.
+ * `docs/known-gaps.md` **G245** records why the earlier decision could not see it, and under ruling
+ * **R69** the cause is NOT the one first offered: the port's edit rule on `validate-parts.ts`
+ * reinforced the frame, and what SET it was Task 9's own brief, which said *"either the authoring
+ * file declares them or `bomFields` refuses - do not default them to empty strings and do not
+ * widen the exemption list silently"*. That is a binary with both relaxations forbidden by name,
+ * so an obedient implementer could not reach *"the gate is in the wrong place"* without stepping
+ * outside its instructions. `unsourced` is unchanged and is NOT optional: it is a statement about
+ * sourcing readiness, which is what it always actually was.
  */
 export type BomSource =
   | { readonly kind: "declared"; readonly fields: Readonly<Record<string, BomFields>> }

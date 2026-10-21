@@ -18924,22 +18924,47 @@ file"*, so changing the rule was outside the frame the decision was made in.
 **A port's edit rule can quietly bound what a decision is allowed to consider**,
 and that is worth more than the fix.
 
-**AND THE PORT'S EDIT RULE WAS NOT THE ONLY THING FRAMING IT - THE BRIEF ITSELF
-OFFERED A BINARY WHOSE BOTH HALVES ACCEPT THE GATE**, which this writer owes
-back to the controller as a correction to its own reading. `[RAN]`
+**THE PORT'S EDIT RULE REINFORCED THE FRAME; IT DID NOT CAUSE IT. THE CAUSE IS
+UPSTREAM OF IT, AND IT IS THE BRIEF** - controller ruling **R69**, which accepts
+this diagnosis over its own and asks for the attribution recorded against the
+brief rather than against the implementer who followed it. `[RAN]`
 `docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`, Task 9 Step 4,
 verbatim: *"**`BomFields` has no source in this model**: `BOM_EXEMPT_PREFIXES`
 covers `TP`/`H`/`FID` and nothing else, so **either the authoring file declares
 them or `bomFields` refuses** - do not default them to empty strings and do not
-widen the exemption list silently. Decide, implement, and record which."* Both
-branches of *"either … or"* are about what the CIRCUIT supplies, and the two
-things it forbids are the two ways of making the rule stop asking - so an
-implementer obeying the brief exactly could not reach *"the rule is in the wrong
-place"* without going outside it. **The register entry and the comment are
-therefore not where the frame was set**, and the generalisable version is:
-**when a brief states the options, the option it omits is invisible to a task
-doing what it was told**, and that is a cost of a well-specified brief rather
-than a defect in one.
+widen the exemption list silently. Decide, implement, and record which."*
+
+Both branches of that *"either … or"* are about what the CIRCUIT supplies, and
+the two things it forbids by name are the two ways of making the rule stop
+asking. **So the move space was enumerated, the fifth option was not in it, and
+an implementer obeying the brief exactly COULD NOT REACH *"the gate is in the
+wrong place"* without stepping outside its instructions.** That brief is the
+controller's, and R69 records the correction as landing there.
+
+**THE GENERALISABLE FORM, in the ruling's own terms: a brief that offers a binary
+and forbids the alternatives cannot be escaped by an obedient implementer.** The
+more precisely a brief enumerates the options, the more completely it forecloses
+the one nobody thought of - and an implementer following it faithfully will
+produce the best of the LISTED answers and **never signal that the list was
+wrong**. That is a cost of a well-specified brief rather than a defect in one,
+and it is the inverse of the usual failure: here the instructions were good
+enough to be followed exactly, and being followed exactly is what hid the
+option.
+
+**THE MECHANISM IS THE CONTROLLER'S AND IT IS UNTRIED, SO IT IS MARKED AS SUCH
+AT ITS AUTHOR'S INSISTENCE: a brief that enumerates options should say what
+QUESTION the options answer**, so an implementer can report that the question is
+wrong rather than only choosing among answers. **There is no evidence that
+works.** It asks an implementer to challenge its own brief, which is the
+class of remedy this branch has watched fail: **a discipline stated, accepted,
+and then broken by the author who had just stated it.** `[RAN]` three citations,
+each from the entry itself rather than characterised: **G235** records that the
+implementer put a pattern in a hand-back message and did not write it down *"one
+message after writing G234, the entry about exactly that failure"*; **G236**
+counts *"three instances in one task - four, counting the one inside the test
+written to fix this third"*; **G237**'s own title is *"THE PATTERN THAT SURVIVED
+FIVE ROUNDS OF FIXING"*. **Untried, and weak for a known reason** rather than
+untried and promising.
 
 **THE MEASUREMENT, PER CIRCUIT.** `[RAN]` a scratch script over
 `circuitSpecFrom` + `buildCircuit`, calling both compositions:
