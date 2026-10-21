@@ -111,7 +111,15 @@ describe("a symmetric pair that does NOT match, at the references' own sizes", (
  * *"`ConnectionClass` is a two-value union, `classOf` is total over it"*, and records that the
  * clause replacing it is driven *"with no cast"*. **That building the refused circuit would need a
  * cast is an inference from those words, not a quotation of them.** This graph needs no cast and
- * violates no invariant. The precedent for the shape is **G196**, where
+ * violates no invariant.
+ *
+ * **AND THAT IS THE NARROWER OBJECTION. THE REGISTER RAISES A WIDER ONE AND `G244` CARRIES THE
+ * ANSWER.** **G236** and **G100** both license a constructed test input on the ground that it goes
+ * **through the production constructor**, with *"hand-built object"* as the pejorative they
+ * distance themselves from - and this graph does NOT go through `graphFromNetlist`. **What makes it
+ * defensible anyway is below, and it is a mitigation neither of those entries required of itself:**
+ * the clique is asserted beside the hub and the production path is asserted to catch the flip, so
+ * nobody can mistake the hub for a reachable input. The precedent for the shape is **G196**, where
  * `tests/schgen/elk/snap.test.ts` *"drives the arm on a hand-built fixture and has passed
  * throughout - so the arm was correct all along and only unreachable on real geometry"*, and whose
  * criterion is that an arm is either evaluated on real data **or recorded as unreachable with the

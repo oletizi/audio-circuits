@@ -205,7 +205,6 @@ function refineBoth(ia: Indexed, ib: Indexed): { readonly a: ReadonlyMap<string,
   return { a, b }
 }
 
-
 /** Elements of xs in excess of ys, as sorted `<item> x<n>`. */
 export function multisetDiff(xs: readonly string[], ys: readonly string[]): string[] {
   const count = new Map<string, number>()

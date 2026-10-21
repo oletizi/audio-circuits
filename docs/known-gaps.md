@@ -18215,6 +18215,18 @@ than documented.**
 > criterion is that an arm is either evaluated on real data **or recorded as
 > unreachable with the reason**. The test plus this entry are exactly that.
 >
+> **AND THAT JUSTIFICATION IS NARROWER THAN THE OBJECTION THE REGISTER ACTUALLY
+> RAISES - see G244, which carries the real one.** **G236** and **G100** both
+> license a constructed input on the ground that **it goes through the PRODUCTION
+> CONSTRUCTOR**, with *"hand-built object"* as the pejorative they distance
+> themselves from; the hub does not go through `graphFromNetlist`, so on that
+> phrasing it is on the wrong side. **What saves the test is a mitigation neither
+> of those entries required of itself:** it asserts the clique beside the hub,
+> asserts the production path catches the flip, and labels the hub's status - so
+> a reader cannot mistake it for a reachable input. **G244** also records that
+> G196's unreachability was INCIDENTAL and the hub's is STRUCTURAL, which is why
+> neither the test nor this entry claims the hub *"will matter one day"*.
+>
 > `tests/schgen/gates/graph-match.test.ts` now holds the hub construction as a
 > **unit test of the matcher**, labelled in those terms, with the clique asserted
 > beside it so the label is checkable rather than prose. (It was written into
@@ -18644,3 +18656,108 @@ brief's file list does not read as unmet.
   generatable, *"the output the brief asks for does not exist"* stops being true,
   and the row should be rewritten against what the check then reported rather
   than deleted - **G240**'s criterion is the trigger.
+
+### G244 - A TRUE CONCLUSION REACHED BY A SEARCH DESCRIBED MORE THOROUGHLY THAN IT WAS PERFORMED, and the reason the test it licensed survives anyway
+
+**THIS IS G237's SHAPE APPLIED TO A SEARCH RATHER THAN TO A DRIVE, and it is the
+harder instance because the conclusion was RIGHT.** **G237** records three prose
+claims about the author's own drives that did not reproduce. This records a prose
+claim about the author's own **investigation** that did not hold - and **nothing
+downstream broke, because the answer was correct.** That is what makes it worth
+its own entry rather than a line in G237: a wrong conclusion gets caught by the
+next person who tries the thing; **a right conclusion with an overstated search
+behind it gets adopted.**
+
+**THE CLAIM.** Asked whether the register's unreachable-input warning licensed a
+hand-built graph as a test input, this writer reported having *"gone looking for
+text that would contradict you and found the opposite."*
+
+**WHAT WAS ACTUALLY DONE: one grep, over five phrasings** -
+`unreachable|cannot produce|no pipeline can produce|input no|a shape the production` -
+and two passages read from its hits (**G196** and **G213**(6)). **Contrary text
+exists in two entries and neither was found**, `[RELAYED]` from the closing
+re-review which located both:
+
+| entry | the contrary line |
+| --- | --- |
+| **G236** | *"**THE FIXTURE IS TEST DATA IN TEST CODE AND NOT A HAND-BUILT OBJECT.** `blockCircuit` goes through `buildCircuit`... **The real corpus cannot drive this term**"* |
+| **G100** | *"`kind: "bus"` is a real authoring option - declared at `lib/schgen/ir/types.ts:145`, validated at `lib/schgen/ir/validate.ts:89`, rendered by `lib/schgen/render/bus.ts` - so this is a **reachable declaration and not a hand-built object**"* |
+
+**THE SEARCH MISSED THEM FOR A BORING AND INSTRUCTIVE REASON: it searched for the
+CONCLUSION's vocabulary and not the OBJECTION's.** Both passages turn on
+*"hand-built object"*, which was in none of the five phrasings. A grep for the
+words you expect to find cannot find the words somebody else used to say the
+opposite. **And the miss has a sharp edge: G241 opens *"THIS IS G236's CLASS"*,
+so the contrary line sits inside the entry G241 names as its own class, about 650
+lines above the text that needed it.**
+
+**WHY THE RULING AND THE TEST SURVIVE, AND THIS IS THE ACTUAL JUSTIFICATION -
+NOT THE ONE ORIGINALLY GIVEN.** `[RELAYED]` from the re-review, and adopted here
+because it is better than either the controller's reasoning or this writer's:
+
+- **It cuts both ways, and the pro half is stronger.** G236's own defence of its
+  fixture is *"the real corpus cannot drive this term"* - **precisely the hub's
+  situation**, and precisely what licenses a constructed input.
+- **But in both passages what LICENSES the constructed input is that it goes
+  THROUGH THE PRODUCTION CONSTRUCTOR** - `blockCircuit` through `buildCircuit`, a
+  `bus` rendering through the real validator - **and *"hand-built object"* is the
+  pejorative they distance themselves from.** The hub does **not** go through
+  `graphFromNetlist`. **So on the register's own phrasing the hub sits on the
+  WRONG side of that line**, and the original justification - which rested on
+  **G213**(6)'s *input that cannot exist* - was answering a narrower objection
+  than the one the register actually raises.
+- **What saves it is a mitigation neither G236 nor G100 required of itself:** the
+  committed test **asserts the clique beside the hub**, **asserts that the
+  production path catches the flip**, and **labels the hub as outside what
+  `graphFromNetlist` emits.** A reader cannot take the hub for a reachable input,
+  because the test itself shows what the reachable one does. That is the defence,
+  and it is stronger than the precedents it leans on.
+
+**AND G196 IS A GENUINE PRECEDENT WITH ONE HONEST DIFFERENCE, `[RELAYED]` and
+worth carrying.** It is not a recruitment: a hand-built fixture driving an arm
+real data could not reach is exactly its shape, and its criterion - evaluated on
+real data **or recorded as unreachable with the reason** - is exactly what R61
+plus **G241** do. **The difference: in G196 the unreachability was INCIDENTAL** -
+a defect (**G188**'s sub-grid jogs) masked the arm, and once the options changed
+the arm ran and fired on `oc-audio` - **while the hub's is STRUCTURAL and
+probably permanent**, because a net expands to a clique and that is what
+`graphFromNetlist` is. **So G196 is weak as *"this will matter one day"* and
+exactly as strong as what R61 actually claims**, which is that a hand-built input
+inside an algorithm's declared domain is a legitimate unit test. Neither the test
+comment nor G241 claims the first thing; this entry records why they must not.
+
+- **Found** 2026-10-21, Task 18's closing re-review, which went looking for
+  contrary text where this writer had reported there was none.
+- **Evidence** the two quoted passages, read in full at `docs/known-gaps.md`
+  G236 and G100; the grep that missed them is reconstructed above from what it
+  searched for. **A check that could have failed:** the two passages were
+  resolved against their entries here rather than taken from the review's quote,
+  and **G100**'s three source citations (`ir/types.ts:145`,
+  `ir/validate.ts:89`, `render/bus.ts`) are what make its *"reachable
+  declaration"* claim checkable rather than asserted - which is the standard the
+  hub test now meets by asserting the clique.
+- **Verified** CONFIRMED for the miss - this writer made the claim, ran the one
+  grep, and re-read both passages after being shown them. **RELAYED** for the
+  re-review's location of both entries and for its licensing analysis, which is
+  adopted above rather than re-derived.
+- **Why it is open** **the conclusion was right, so nothing failed, so nothing
+  would have caught this.** That is the whole finding. The register has no
+  mechanism that notices an overstated search, and unlike a wrong figure there is
+  no downstream artifact to contradict it.
+- **What would settle it** **CRITERION: a claim about one's own search states
+  what was searched FOR, not only what was found** - so a reader can judge the
+  coverage rather than trusting the conclusion. This entry does that for the
+  grep that missed. **MECHANISM, untried and weak for the same reason G237's is:**
+  there is nothing to run. **A better-than-nothing habit, and it is the one thing
+  here with any mechanism behind it: search for the OBJECTION's vocabulary as
+  well as the conclusion's** - had *"hand-built"* been one of the five phrasings,
+  both passages would have surfaced immediately. That is a checkable omission
+  after the fact, which is more than *"search harder"* offers.
+
+**ONE SMALL THING FIXED IN THE SAME CHANGE, because the comment claimed
+precision it did not have.** The restoration's comment says `refineBoth` is
+*"lifted verbatim"* from `f57c5dd^` and that *"a reader diffing against
+`f57c5dd^` sees an identical block"*. `[RAN]` it was one newline longer - **2071
+characters against 2070** - so a reader diffing would have seen a whitespace
+hunk. The extra newline is removed and the block is now byte-identical, driven
+with a control that the comparison detects a one-character change.
