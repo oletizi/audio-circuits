@@ -286,6 +286,7 @@ nobody can find it"*:
 | [`template-parity.md`](template-parity.md) | do the ported templates draw this repository's blocks? | **GENERATED and content-compared on every test run.** A measurement with no target (spec §5.1) |
 | [`template-parity-anchors.md`](template-parity-anchors.md) | what a template COULD draw under an anchor probed over a block's own members | **GENERATED.** Read it only beside `template-parity.md`: `../known-gaps.md` **G160** is explicit that a realised probe is not a recommendation to declare that anchor |
 | [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on this generator, every figure produced by committed code and pinned by a committed test.** It is also the record of which spike figures CANNOT be compared, and why |
+| [`reference-graph-checks.md`](reference-graph-checks.md) | gate 8's M1 half: a generated schematic's netlist against a hand-arranged one, by value and pin-level adjacency | **Measured, and the headline is a GAP rather than a result.** Every figure comes from a real `kicad-cli` export and is asserted on every run - and the gate **has never run against a generated drawing**, because `generate` refuses both references at gate 1 (`../known-gaps.md` **G238**, **G240**). Read the first section before reading the table |
 
 **The two spikes are the strongest evidence in this directory about ELK and the
 weakest about THIS generator**, and `m1-remeasurement.md` is where the difference
