@@ -15483,3 +15483,491 @@ pipeline.
   bearing part**, because an undeclared circuit silently skipping the check is the failure
   `CLAUDE.md` names.
 
+
+### G216 - MEASURED: spec §3.3's four measures for every block that draws and every sheet that emits, with D1's line beside each - and two of the four are ZERO or INERT on the whole corpus
+
+`[RAN]` Over the canonical topology (Task 13's `canonicalTopology`), per block, with `occupiedArea`
+in square grid steps and `wireLength` in grid steps:
+
+| block | cells | bends | bends/edge | crossings | wire length | occupied area | block scale (G95) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `tp-leg-upper` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
+| `tp-leg-feedback` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
+| `tp-leg-lower-a` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
+| `tp-leg-lower-b` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
+| `tp-leg-collector` | 2 | 6 | 1.20 | **0** | 32 | 221 | about-the-circuit |
+
+The four bias legs are identical on every measure, which is **G185**'s *"the four congruent bias
+legs draw BYTE-IDENTICALLY"* seen from the measure side. The five sum to **14 placements and 224
+grid steps**, which agrees with **G200**'s independently taken table to the micrometre - and that
+agreement is a cross-check rather than a restatement, because G200's figures came from
+`shapeMeasures` over raw `BlockLayout.wires` and these come from `measuresOf` over the canonical
+topology.
+
+**AND THE TWO SHEETS THAT EMIT**, over the only design in the repository that generates:
+
+| sheet | bends | bends/edge | crossings | wire length | occupied area |
+| --- | --- | --- | --- | --- | --- |
+| `mini/power` (4 frames) | 3 | **0.30** | 0 | 93 | 4380.00 |
+| `mini/signal` (7 frames) | 5 | **0.16** | 0 | 154 | 19300.00 |
+
+**THE CONTRAST IS THE INTERESTING PART AND IT IS A SECOND INDEPENDENT READING OF G200's
+STAIRCASE.** Every `mini` block is drawn by a reviewed TEMPLATE and every block above by ELK, and
+**bends per edge is 0.16-0.30 for the templates against 1.20-1.33 for ELK** - four to eight times
+as many corners per polyline. G200 read the same difference qualitatively (*"ELK draws a STAIRCASE
+where a template draws a column"*); this is it as a number, and it is the term the one user study in
+evidence blames for unreadability.
+
+**D1's REPORT LINE, per declared ELK block** - plan decision **D1**: *"Task 16's report prints, per
+block, its part count, its port-glyph share of cells, and where it sits against the ceiling's shape
+and against the interface cost."*
+
+| block | parts | cells | port glyphs | share |
+| --- | --- | --- | --- | --- |
+| `ob-buffer` | 11 | 14 | 3 | 21.4 % |
+| `oc-power` | 8 | 11 | 3 | 27.3 % |
+| `oc-audio` | 14 | 18 | 4 | 22.2 % |
+| `oc-sidechain` | 19 | 24 | 5 | 20.8 % |
+| `pt-core` | 24 | 26 | 2 | 7.7 % |
+| `tp-leg-upper` / `-feedback` / `-lower-a` / `-lower-b` | 3 | 5 | 2 | 40.0 % |
+| `tp-leg-collector` | 2 | 4 | 2 | 50.0 % |
+| `tp-leg-emitter-bypass` | 2 | 6 | 4 | **66.7 %** |
+| `tp-stage` | 16 | 23 | 7 | 30.4 % |
+
+**7.7 % to 66.7 %, against the spikes' 10-67 % - and the number means something different here.**
+`[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and height 0.** G101's
+floor rested on `netlistsvg` emitting a 30 by 20 `inputExt` glyph per declared port, so *"a 1-part
+block's drawing was two-thirds boundary"*; here a block whose CELLS are two-thirds boundary has a
+drawing with **no boundary area at all**. So the share is the interface cost's size in the graph ELK
+solves, which is the relationship §1.8 revision 4 says to name - and **the floor stays unmeasured
+for this backend**, exactly as that revision requires. None of `baselineScale`'s three arms is a
+lower bound.
+
+**THE CEILING's SHAPE: all five drawn blocks are 2 or 3 cells, so all five are
+`about-the-circuit`** - at or below the 9 cells G95 measured the crossing count invariant over four
+declaration orders. **Nothing in this corpus is a baseline about a serialization**, and nothing
+falls in the 10-to-12 gap G95 never measured either.
+
+**NO VERDICT, AND THE REASON IS NOT THAT NOBODY GOT ROUND TO ONE.** Every drawing here is a first
+generation and §3.3's acceptance table says a first generation *"reports the measures with no pass
+or fail"*. Spec revision 4 adds the stronger clause: absent a dominance rule, a four-measure
+comparison **would not be a verdict even on a known fixture**, so `MeasureComparison.verdict` is the
+literal type `"descriptive"`.
+
+**TWO OF THE FOUR MEASURES ARE INERT ON THIS CORPUS, WHICH IS A FINDING ABOUT WHAT CAN BE TESTED
+HERE.** `[RAN]` `crossings` is **0 on 5 of 5** drawn blocks and **0 on both** emitted sheets; and
+the pin set **enlarges none of the five areas** - the wires already span every pin end, so
+`measuresOf(t, pins)` and `measuresOf(t, [])` return the same area on 5 of 5. A crossing check or an
+area check taken only over this corpus would therefore run over a term that is zero, which is
+exactly the second of the two failures the Task 13 review found in one guard. Both facts are
+asserted in `tests/schgen/readability/measures.test.ts`, so the reason the fixture-level tests exist
+is itself a check rather than a claim.
+
+- **Found** 2026-10-20, Task 16, Step 7.
+- **Evidence** every figure above is asserted in `tests/schgen/readability/measures.test.ts` and
+  recomputed on every run, which is **G209**'s lesson applied (*"round 1's figures were computed in
+  a scratch script and were the only number in these entries nobody else could reproduce"*). Checks
+  that could have failed, driven: the zero-size claim over the boundary nodes goes red when
+  `boundaryNodeOf` is given `netlistsvg`'s 30 by 20 (perturbation P11, restored); the five-block sum
+  is compared against G200's independently computed 14 and 224; and the inertness claims are
+  asserted as EQUALITIES, so a corpus that started producing a crossing would turn them red rather
+  than quietly making the fixtures redundant.
+- **Verified** CONFIRMED - this writer ran every measurement and every perturbation.
+- **Why it is open** it is a measurement. **It is also BAIT, and the trap is named here:**
+  `bends/edge 0.16` for a template sheet against `1.33` for an ELK block invites the conclusion that
+  templates are four to eight times more readable. That is not what the number says. The two are
+  taken over different subjects - one is a whole composed sheet of ten template-drawn blocks, the
+  other is one three-part block - and §3.3 gives neither a threshold. **What it does support is
+  §1.7's question** (*"do an ELK block and a template block read as the same visual language"*), and
+  there the answer so far is no, in a second measure.
+- **What would settle it** nothing - it is a measurement. **A caution for Task 17:** the sheet
+  figures' `occupiedArea` includes the frames, so it moves with `packSheet` - **G207** measured the
+  two packers giving one sheet extents of 185.42 x 38.10 mm and 109.22 x 71.12 mm for the same
+  content. The first three sheet measures are properties of the drawing; the fourth is partly a
+  property of the packing, and must not be compared across a packer change.
+
+### G217 - the readability-baseline registry ships EMPTY and no agent may fill it, and the twelve-field shape departs TWICE - one departure the spec predicted and one it did not
+
+`schematic/readability-baselines.json` holds `"baselines": []` and seven design notes.
+`grantedBy` is a whitelist of one - `owner` - and `lib/schgen/readability/baseline-read.ts` refuses
+anything else by name, citing `CLAUDE.md`'s invariant: **an agent that could enter its own drawing's
+numbers as the reference would be authoring the criterion outright**, which is the failure that file
+describes as an agent building the intent from the artifact it had already produced and then
+checking the artifact against it.
+
+**THE EMPTY LIST IS THE CORRECT STATE AND NOT AN UNFINISHED ONE.** §3.3's acceptance table: a
+circuit generated for the first time *"reports the measures with no pass or fail"*, and every
+drawing this repository has produced is a first generation. **One refusal of
+`tools/stripboard/approvals.ts` is therefore deliberately NOT carried across**: that loader refuses
+an empty `approvals` list - *"a registry that approves nothing is a file that looks like governance
+and governs nothing"* - which is right THERE, because an empty approvals file means the gate it
+feeds can never open. The protection here is instead that **every consumer prints the count it
+read**: `tools/schgen/verify.ts` puts `schematic/readability-baselines.json 0 baseline(s)` on every
+`GateResult`, so a reader is told zero rather than left to assume there were some.
+
+**DEPARTURE ONE, WHICH SPEC §3.3 PREDICTED:** *"an approval admits one termination, whereas a
+baseline carries four measured numbers"*, so `admits` becomes `measures`. It carries **five**
+numbers and not four, because §3.3's table reads *"bends: count, and per edge"* - one measure in two
+units - and the loader refuses a sixth by name, since §3.3 refuses a composite score and an extra
+figure recorded beside the four is how a composite arrives without anybody deciding to adopt one.
+
+**DEPARTURE TWO, WHICH IT DID NOT PREDICT, AND IT COSTS SOMETHING.** An approval's `board` becomes
+`circuit` AND `block`, because a baseline is per block and a block id is unique only within a
+circuit. The twelfth field that makes room for the second of those is **`renderedFrom`, which is
+deleted.** That field is load-bearing in the approvals registry: it is where *"WHAT HE LOOKED AT WAS
+THE PICTURE AND NOT THESE BYTES"* is said in prose a reader can judge, with the picture-to-bytes
+link recorded as an agent's claim rather than collapsed into a path that would imply he inspected
+the bytes (**G27**(2)). **A baseline has nowhere to say it.** What he was shown has to go in `why`
+or `note`, and no field obliges anyone to say it at all.
+
+**THREE RESIDUALS, each stated here rather than discovered later.**
+
+1. **`compareMeasures` has no production exercise, and that follows from the registry being empty.**
+   Every lookup is `absent`, so nothing in the pipeline ever builds a comparison; the
+   `comparable-hash-moved` arm and the four rows are driven by
+   `tests/schgen/readability/baseline.test.ts` and by nothing else. That is a consequence of *no
+   agent may populate it*, not a wiring defect, and it will stop being true the first time he grants
+   one.
+2. **`consultedBy` is unexercised for the same reason.** The approvals loader proves each cited
+   consumer exists and `tests/stripboard/approvals.test.ts` proves it reaches the loader; here there
+   is no entry to check, so the clause is code no record has driven.
+3. **A change in the EDGE COUNT alone is invisible to `compareMeasures`.** Its four rows are §3.3's
+   four measures, and `bendsPerEdge` is not a fifth row - the same bends spread over more or fewer
+   polylines moves `renderMeasures`'s second number and no row of the comparison.
+
+**AND THE LIMIT THE APPROVALS CHANNEL ALREADY RECORDS IS CARRIED, NOT PAPERED OVER: no file can
+prove the owner said anything** (**G27**). The three readings refuse a record that quotes nothing, a
+quote in the narrator's voice, and a quote in which nobody is speaking - **the same code**, now in
+`lib/owner-words.ts` and called by both loaders - and **a fabricated plausible sentence passes all
+three.** What the design buys instead is scope and visibility.
+
+**ONE NARROWING RELATIVE TO THE APPROVALS LOADER, deliberate:** the SELECTION shape
+(*"low-cut: part-walk-s1"*) is **not admitted here.** It was added to the approvals registry on
+2026-10-17 by a controller ruling **after the voice reading refused a real reply of his**; no
+equivalent case has arisen for a baseline, so admitting it would be widening an admission on no
+evidence. The refusal nonetheless CALLS `isSelectionFor` and reports whether the quote would have
+passed it, so the cost of the narrowing is measured rather than assumed.
+
+- **Found** 2026-10-20, Task 16, Steps 3 and 5.
+- **Evidence** `tests/schgen/readability/baseline.test.ts`, which drives a well-formed entry through
+  the loader FIRST - a loader that threw on everything would satisfy every refusal - and then each
+  refusal in turn. Three perturbations, applied and restored: dropping the `grantedBy` whitelist,
+  the voice reading and the narration sweep each turn a named test red (P5, P6, P7). The two
+  departures are read off `BASELINE_ENTRY_KEYS` against `APPROVAL_ENTRY_KEYS`, both in the tree.
+- **Verified** CONFIRMED - this writer wrote both, ran the tests and drove the perturbations.
+- **Why it is open** residual 2 in particular: a clause no record has driven is a clause whose first
+  real use is its first test. And the `renderedFrom` loss is a real reduction in what a baseline can
+  be held to.
+- **What would settle it** **CRITERION for the `renderedFrom` loss: a reader of a granted baseline
+  can tell what the owner actually looked at, and whether the link from that to the hashed bytes is
+  a measurement or an agent's inference.** **MECHANISM, untried:** a thirteenth field, which would
+  take this registry's shape off `render-approvals.json`'s twelve - so the alternative mechanism,
+  also untried, is to require it in `why` and have the loader refuse a `why` that does not say what
+  was shown. **The criterion is the settlement; neither mechanism has been tried.** For residuals 1
+  and 2, **an owner decision is what settles them**, because both end the moment he grants a
+  baseline - and nobody is to ask him for one unprompted.
+
+### G218 - MEASURED: the size of G106's canonicalisation defect on this driver, over all twelve blocks - and it CORRECTS that entry's own expectation in three of five numbers
+
+**G106** says *"every one of the four measures the spec requires - bends, bends per edge, crossings,
+wire length - is then inflated by an unknown amount"*, and that *"that difference is the size of this
+defect and nobody has measured it yet."* It is measured now. `[RAN]` Pre-snap on both sides, so the
+only difference between the columns is the canonicalisation - same ELK geometry, once as the router
+emitted it and once through `canonicalTopology`:
+
+| block | wires raw -> canonical | bends raw / canonical | crossings raw / canonical | wire length inflation | area |
+| --- | --- | --- | --- | --- | --- |
+| `ob-buffer` | 65 -> 57 | **26 / 28** | 7 / 7 | **+10.30 %** | identical |
+| `oc-power` | 42 -> 31 | **4 / 5** | 1 / 1 | **+18.16 %** | identical |
+| `oc-audio` | 82 -> 70 | **28 / 30** | 5 / 5 | **+14.54 %** | identical |
+| `oc-sidechain` | 91 -> 76 | **26 / 27** | 7 / 7 | **+13.99 %** | identical |
+| `pt-core` | 179 -> 155 | **81 / 83** | 78 / 78 | **+11.14 %** | identical |
+| `tp-leg-upper` / `-feedback` / `-lower-a` / `-lower-b` | 14 -> 14 | 8 / 8 | 0 / 0 | **+2.05 %** | identical |
+| `tp-leg-collector` | 11 -> 11 | 6 / 6 | 0 / 0 | **+3.09 %** | identical |
+| `tp-leg-emitter-bypass` | 12 -> 12 | 6 / 6 | 0 / 0 | **+2.07 %** | identical |
+| `tp-stage` | 75 -> 63 | **21 / 24** | 7 / 7 | **+13.05 %** | identical |
+
+**WIRE LENGTH IS THE ONE MEASURE G106 GOT RIGHT: inflated on 12 of 12, by 2.05 % to 18.16 %.** That
+range is the size of the defect on this driver.
+
+**CROSSINGS DO NOT MOVE ON ANY OF THE TWELVE, which contradicts the spike sentence the whole
+entry rests on.** `docs/schematic/elk-spike.md` §7: *"any measure that does not collapse them
+double-counts crossings."* On this driver it does not, for a structural reason rather than a lucky
+one: `crossings` in `lib/schgen/elk/junctions.ts` collects CONTACT POINTS into a `Map` keyed by
+`pointKey`, so two duplicate segments touching another net at one point contribute one entry however
+many copies there are. **The spike's claim was about a measure that counts contacts per segment
+pair; this one counts points.**
+
+**BENDS AND BENDS PER EDGE MOVE THE OTHER WAY - the raw list reports FEWER, on 6 of 12 blocks.**
+26 against 28, 4 against 5, 28 against 30, 26 against 27, 81 against 83, 21 against 24. The cause is
+in the definition: a bend is a vertex of degree two whose two segments are perpendicular, and a
+duplicate segment raises that vertex's degree, so the corner stops being counted as a bend and
+starts being counted as a node. **So an uncanonicalised bend count is an UNDER-count, not an
+inflation**, and a reader who took G106's sentence at face value would correct it in the wrong
+direction.
+
+**AREA IS IDENTICAL ON 12 OF 12, as it must be**: the bounding box of a point set is unchanged by
+repeating a point. It is recorded because a measure that cannot be wrong in a given way should say
+so rather than borrow the credibility of the ones that can.
+
+- **Found** 2026-10-20, Task 16, Step 8.
+- **Evidence** the table, asserted row by row in `tests/schgen/readability/measures.test.ts`
+  (*"inflates wire length on all twelve, leaves crossings and area alone, and UNDER-reports
+  bends"*), so it is recomputed on every run. **A check that could have failed, and the first form
+  of it DID NOT:** perturbation P4 made `measuresOf` deduplicate its own input by exact endpoint
+  order and the test stayed green - because of **G219** - so the perturbation was replaced with one
+  that canonicalises the input properly (P4b), and that turns the comparison red naming
+  `ob-buffer`. The first form is recorded rather than quietly replaced, because a perturbation that
+  changes nothing is indistinguishable from a check with no teeth until you find out which it was.
+- **Verified** CONFIRMED - this writer ran every figure and both perturbations.
+- **Why it is open** G106 is still open on its own terms, and this entry does not close it: what it
+  establishes is that **the defect's size is now known and its SHAPE is not what that entry says.**
+  The sentences in G106 and in spec §1.4 revision 4 that say all four measures are inflated are
+  wrong for this driver and are left in place rather than edited, so the disagreement is visible.
+- **What would settle it** nothing - it is a measurement. **A caution for anyone comparing against
+  the spikes:** these are deltas between two readings of ONE geometry, and the spikes' absolute
+  crossing figures were taken over uncanonicalised geometry through a different frontend. The two
+  are not the same quantity.
+
+### G219 - MEASURED: EVERY ONE of the 82 duplicate wire segments ELK emits is DIRECTION-REVERSED, so a deduplication keyed on `(a, b)` in order would collapse NONE of them
+
+`[RAN]` Over all twelve declared ELK blocks of the four parity circuits, counting duplicates in the
+raw pre-snap wire list two ways:
+
+| keyed on | duplicates found |
+| --- | --- |
+| net plus `a` then `b` **in the order the segment carries them** | **0** |
+| net plus the two endpoints **sorted** | **82** |
+
+Per block, by sorted ends: `ob-buffer` 8, `oc-power` 11, `oc-audio` 12, `oc-sidechain` 15,
+`pt-core` 24, `tp-stage` 12, and zero on the six `tp-leg-*` blocks. **By exact order, zero
+everywhere.**
+
+**SO `geometryKey`'s SORT IS LOAD-BEARING AND NOT DEFENSIVE.** `lib/schgen/elk/junctions.ts`
+describes it as *"a segment's geometry, independent of which end was called `a`"* - which reads like
+a tidiness measure. It is the entire deduplication: without the sort, clause (a) of spec §1.4's
+canonical-topology criterion would collapse nothing at all, and **G218**'s measured wire-length
+inflation of up to 18 % would survive into every drawing.
+
+**WHY THE DUPLICATES ARE REVERSED, as far as this writer can tell, and it is stated as a reading
+rather than a measurement.** The segments come in consecutive pairs of one net's spanning chain
+(**G189**: edges `X:k` and `X:k+1` retracing one another), and a chain's successive edges run in
+opposite directions along the shared stretch because each is routed from its own source to its own
+target. This writer did not confirm it against `elkjs`'s router.
+
+- **Found** 2026-10-20, Task 16, Step 8, when perturbation P4 - a deduplication keyed on exact
+  endpoint order - changed **nothing** and the test it was meant to drive red stayed green.
+- **Evidence** the two-way count above, run over the same twelve blocks **G218** measures, with both
+  columns printed. A check that could have failed in either direction: the sorted column is
+  non-zero on 6 of 12 blocks and zero on the other 6, so the measurement discriminates rather than
+  reporting one number everywhere.
+- **Verified** CONFIRMED - this writer wrote and ran the count. **The explanation of WHY they are
+  reversed is RELAYED from G189's reading of the edge model and is not confirmed against the
+  router.**
+- **Why it is open** it is a measurement, and it is also a near miss worth keeping: the reason it
+  was found is that a perturbation did nothing, and a perturbation that does nothing looks exactly
+  like a check with no teeth. **Nothing in the tree asserts that the sort is load-bearing**, so a
+  later reader simplifying `geometryKey` to a direction-sensitive key would see every test stay
+  green except **G218**'s inflation table.
+- **What would settle it** **CRITERION: a change that makes `geometryKey` direction-sensitive fails
+  a named check.** **MECHANISM, untried:** an assertion in
+  `tests/schgen/elk/junctions.test.ts` over two reversed copies of one segment, which must report
+  `collapsed: 1`. It is not added here because `junctions.ts` is Task 13's module and this entry's
+  finding arrived at the end of Task 16's review; **the criterion is the settlement and the
+  mechanism is this writer's guess at how to meet it.**
+
+### G220 - `bendsPerEdge`'s DENOMINATOR is this repository's and NOT the spikes', so G96's 1.72 and 2.19-3.27 must not be compared against it
+
+`lib/schgen/readability/measures.ts` defines an EDGE as **a maximal polyline of one net between two
+nodes**, where a node is a point of that net whose degree is anything but two. That is the
+graph-drawing sense of the phrase and it is the only one computable from a canonical topology, which
+deliberately keeps no edge identity of its own - and it is also defined for a template-drawn block,
+where there is no ELK graph at all.
+
+**THE SPIKES DIVIDED BY SOMETHING ELSE.** **G96**'s figures - 1.72 for the representative probe,
+2.19 to 3.27 over fourteen whole-circuit runs, *"0 of 14 beat the probe"* - divide ELK's own
+`bendPoints` by ELK's own EDGE count, which for this backend is *"a net of degree n becomes n - 1
+edges"* (`lib/schgen/elk/graph.ts`): a count of the two-terminal connections in the spanning chain,
+not of the polylines the route came out as. **The two agree for a two-terminal net and diverge for
+every other.**
+
+**WHY THIS IS REGISTERED RATHER THAN LEFT TO A MODULE COMMENT.** §3.3's whole objection to a
+composite score is that it *"would produce a number that looks cited"*. A `bends/edge` of 1.33
+printed in this repository's render report, set beside a published 1.72, looks like a comparison and
+is not one. The module comment says so; this entry is so that a reader who finds the two figures in
+two different places finds the warning as well.
+
+- **Found** 2026-10-20, Task 16, while defining the measure.
+- **Evidence** the two definitions read directly - `shapeOfNet` in
+  `lib/schgen/readability/measures.ts` and `edgesForNet` in `lib/schgen/elk/graph.ts`, whose own
+  comment states *"a net of degree n becomes n - 1 edges"*. A check that could have failed:
+  `tests/schgen/readability/measures.test.ts` asserts a five-segment, four-corner single-net
+  polyline measures **4 bends over 1 edge**, where the ELK denominator for the same route would be
+  the number of chain edges that produced it - so the two are demonstrably different counts on a
+  fixture.
+- **Verified** CONFIRMED for this repository's definition; the spike denominator is **RELAYED** from
+  G96 and from `docs/schematic/generation-prior-art-third-pass.md` as that entry quotes them.
+- **Why it is open** two figures with one name are in the tree and in the register, and nothing
+  mechanical stops a later task putting them in one table.
+- **What would settle it** **CRITERION: any report that prints a bends-per-edge figure states which
+  denominator it used.** **MECHANISMS, untried, and they are alternatives rather than a plan:**
+  rename the field to `bendsPerPolyline`, which would break the spec's own wording; or compute BOTH
+  denominators and report them side by side, which is more honest and costs an ELK graph that a
+  template-drawn block does not have. Neither has been tried.
+
+### G221 - the generation manifest's DRAWING-identity claim covers 0 of 10 blocks on the only design that emits, and `canonicalNetlistSha256` is `null` on every design in the repository
+
+Spec §2.1's manifest exists so *"four link checks that each pass prove nothing jointly unless they
+ran over the same derivation"*. It now exists (`MANIFEST.json`, generated, committed, compared by
+content). **Two of its six fields are empty or null for everything in this repository, and that is a
+property of the inputs rather than a defect in the manifest - which is exactly why it is recorded.**
+
+**`layoutInputSha256` IS EMPTY FOR `mini`.** `[RAN]` All ten of that design's blocks are drawn by
+reviewed templates, so **none was handed to a layout backend** and the record has no entries. The
+absence is meaningful - it means *no layout backend input*, never *no drawing* - and
+`staleManifestInputs` reports a block appearing on one side and not the other in both directions, so
+a block that starts or stops selecting ELK invalidates the manifest. **But the consequence stands:
+on the only design in the repository that generates a schematic, the field that exists to stop two
+different drawings being certified under one input hash covers nothing at all.** What identifies
+`mini`'s drawing today is `sectionNetworkSha256` plus the template-library digest, and
+`sectionNetworkSha256` is deliberately order-insensitive - so a reordering that moved a template's
+output would be invisible to the manifest. Nothing is known about whether a template's output DOES
+move under reordering; **G95**'s measurement is of ELK.
+
+**`canonicalNetlistSha256` IS `null` EVERYWHERE.** `DesignSpec` carries no canonical-netlist field.
+`CLAUDE.md` says authority runs in both directions, and a canonical netlist export exists only for a
+**schematic-first** circuit - the Pultec - which has no design module yet. So the null is a fact
+about the designs; `staleManifestInputs` reports a design that gains or loses one, and the
+`tests/schgen/manifest.test.ts` case for that is driven. **A reader seeing `null` in every manifest
+needs to know which of the two it is**, which is why this is here rather than only in a comment.
+
+- **Found** 2026-10-20, Task 16, Step 5.
+- **Evidence** `tests/schgen/readability/measures.test.ts` asserts
+  `Object.keys(g.manifestSources.layoutInputs)` is `[]` for a real `generate` of `mini`, and
+  `tests/schgen/manifest.test.ts` asserts `canonicalNetlistSha256` is null and that a netlist
+  appearing is reported. A check that could have failed: that same file's *"reports a block whose
+  layout input appeared or vanished"* case THROWS *"no block of the subject circuit reached the
+  layout backend"* if `layoutInputs` is empty for the `transistor-preamp` parity circuit - so the
+  empty result for `mini` is specific to `mini` rather than a function that always returns nothing.
+- **Verified** CONFIRMED - this writer ran both.
+- **Why it is open** the manifest's strongest field is inert on the only emitting design, and
+  nothing says whether that matters: it would matter if a template's output moved under declaration
+  reordering, and that has not been measured.
+- **What would settle it** **CRITERION: for a design whose blocks are all template-drawn, something
+  in the manifest moves when the drawing moves.** **MECHANISM, untried:** run G95's shuffle against
+  a template-drawn design and see whether the emitted sheet changes at all; if it does not, the
+  criterion is already met by `sectionNetworkSha256` and this entry resolves. **The criterion is the
+  settlement; the mechanism is a measurement nobody has taken.**
+
+### G222 - Task 16's deviations from its own brief, each with what it cost - including the one that was FORCED by a line ceiling and the one that cost a byte-check
+
+Recorded for the reason **G213** was: a deviation nobody wrote down is a deviation the next reader
+re-derives from scratch, or re-argues.
+
+1. **`lib/schgen/readability/baseline.ts` is THREE files, not one.** Written as one it is just over
+   **800 lines** against `CLAUDE.md`'s stated 300-500 ceiling. The seam is
+   `tools/stripboard/approvals-*.ts`'s own and is not invented here - model, entry reader, registry
+   front door. **Cost:** a reader following the brief's file list finds three files; the front door
+   re-exports everything so nobody imports the parts.
+2. **`compareMeasures` takes a FOURTH parameter and `MeasureComparison` carries a FOURTH field.**
+   The brief declares three fields and three parameters, and separately requires that
+   *"`compareMeasures` reports which of the two it is"* for G95's block-scale refinement. That
+   classification is a function of the block's CELL COUNT, which neither a `ReadabilityBaseline` nor
+   a `SchematicMeasures` carries, so the two requirements cannot both be met by the declared
+   signature. **Cost:** every caller passes a cell count; the alternative - exporting `baselineScale`
+   alone - would let a caller print four rows with no statement of which kind of baseline they came
+   from, which is the precise thing the refinement exists to prevent.
+3. **`tools/schgen/generated-files.ts` is DIVERGED, which costs its byte-check** against
+   `digital-pedal-platform`'s `generateFiles.ts` permanently (**G139**'s loss, one file larger). The
+   cheaper alternative was weighed and refused: `generate` could have added `MANIFEST.json` to the
+   map `generatedFiles` returns, and it would have worked end to end, but `generatedFiles`'s
+   contract is *the generated file set* and a second caller of it would then produce a set with no
+   manifest in it. **Two places to keep correct in exchange for one byte-check.** The `sourceSha`
+   watch on the other end of the line survives.
+4. **The three `ownerWords` readings MOVED to `lib/owner-words.ts`.** The brief says to reuse
+   `tools/stripboard/approvals-read.ts`'s three refusals rather than writing a fourth reader, and
+   `lib/schgen/` **may not import from `tools/`** (the M1 plan's global constraint, stated in
+   `lib/schgen/render/blocks.ts`). Reuse was therefore impossible where the readings lived. **Cost:**
+   two stripboard modules now re-export rather than declare; nothing was widened, and
+   `tests/stripboard/approvals-refusals.test.ts` passes unchanged, which is what makes the move
+   checked rather than asserted.
+5. **The modules were written BEFORE the tests, against the brief's Steps 1-4.** The measure
+   definitions needed real geometry to pin - `bends`, `bendsPerEdge` and `occupiedArea` have no
+   published values and the corpus had to be measured before an assertion could be written. **Cost:
+   the tests were not seen to fail first**, and what replaces that guarantee is Step 8: twelve
+   perturbations, eleven of which turned a named test red, and the twelfth replaced after it turned
+   out to change nothing (**G219**). That is a weaker guarantee for the fixture-level tests and a
+   stronger one for the corpus-level ones.
+6. **`verify.ts` attaches the manifest's problems only to rows that would otherwise have NONE.**
+   Spec §2.1's criterion is about a gate that *reports a pass*; a row already carrying a problem is
+   already not one, and repeating the complaint on five rows would bury what actually failed.
+   **Cost:** on a design whose gate 6 fails for its own reasons, the manifest complaint does not
+   appear on that row - so `tests/schgen/verify.test.ts` identifies the passing gates from a CONTROL
+   RUN rather than naming them, and asserts that the perturbed run leaves none.
+
+- **Found** 2026-10-20, Task 16, Steps 5 to 9.
+- **Evidence** each deviation is stated in the module or manifest entry it affects - the three-file
+  split in `baseline-model.ts`'s header, the fourth parameter in `compareMeasures`'s doc comment,
+  the divergence in `tools/schgen/port-manifest.json`'s `diverged[]` entry with its `sourceSha`, the
+  move in `tools/stripboard/approvals-words.ts`'s re-export comment. A check that could have failed
+  for (3): `tests/schgen/port-fidelity.test.ts` refuses a file in two of the manifest's three lists
+  and refuses a diverged entry with no reason, and both ran green only after the entry was written.
+- **Verified** CONFIRMED - this writer made each deviation and ran each check.
+- **Why it is open** (5) in particular: the fixture-level tests in
+  `tests/schgen/readability/measures.test.ts` were written against behaviour that already existed,
+  so each one is a statement about what the code does rather than about what it should do. The
+  perturbations are what distinguish those two, and they were run per test file rather than per
+  assertion.
+- **What would settle it** nothing for (1) to (4) and (6) - they are recorded decisions. For (5),
+  **CRITERION: every assertion in that file fails when the behaviour it names is removed.**
+  **MECHANISM, untried:** a per-assertion mutation sweep rather than a per-file one.
+
+### G223 - the Task 16 brief's premise about G209's uncommitted direction-reversal figure is FALSE: it is in a committed file and it re-runs
+
+The brief for this task states: *"G209's minor 6: the direction-reversal figure behind G200's '47% of
+nets reverse direction on an axis' exists in no committed file - it was inherited from Task 13 and
+nobody can re-run it. The other four G200 numbers reproduce exactly."*
+
+**`[RAN]` It is committed and it re-runs.** `ShapeMeasures.reversing` is a field of `shapeMeasures`
+in `lib/schgen/render/compose.ts`, and `tests/schgen/render/compose.test.ts`'s *"G209's figures are
+re-runnable"* asserts
+`{ placements: 14, distinctX: 14, wiredNets: 19, reversing: 9, segments: 67, wire: 284_480 }` -
+**six figures including the reversal, not five.** Task 15 round 2 landed it, and G209's own Evidence
+section says so: *"ROUND 2 PUT THE MEASURE IN A COMMITTED FILE ... asserted against G200's six
+figures by `tests/schgen/render/compose.test.ts`, so a later reader can re-run it. Round 1's figures
+were computed in a scratch script and were the only number in these entries nobody else could
+reproduce."*
+
+**So the brief was written against round 1's state of that entry.** The task was instructed to
+decide whether the reversal measure *"falls out of"* the four measures and, if so, to commit it.
+**The decision, and the reason:** it does NOT belong in the four, and it did not need committing.
+
+- **It is not one of §3.3's four measures.** That table names bends, crossings between different
+  nets, wire length and occupied area. Adding a fifth measure to `SchematicMeasures` would be this
+  task widening the spec's measure set, which the brief forbids in as many words.
+- **Taken over a canonical topology it would be UNSTABLE, and this is the part to read carefully
+  because the obvious version of the argument is wrong.** A reversal is a property of a net's
+  ROUTE DIRECTION: `shapeMeasures` reads the sign of each segment's displacement per net and asks
+  whether both signs appear on one axis. A canonical topology's segments DO still carry a direction
+  - `geometryKey` sorts the two ends only to build the deduplication KEY, and the surviving `Wire`
+  keeps its own `a` and `b`. **What canonicalisation destroys is not direction but WHICH direction
+  survives:** of two reversed duplicates it keeps whichever `canonicalTopology` met first, and
+  **G219** measures that 82 of 82 duplicates are reversed pairs - so on the six blocks that have
+  duplicates, the direction of every surviving segment is an artefact of encounter order. A
+  reversal measure taken there would move when the iteration order did.
+- **It already has the right home.** `shapeMeasures` is per block (**G209**: *"the number is a
+  property of a block's interior and only of that"*), which is where G200 takes it.
+
+- **Found** 2026-10-20, Task 16, checking the brief's premise before acting on it.
+- **Evidence** `grep` is not the evidence - the field and the assertion were read directly, and
+  `bun test tests/schgen/render/compose.test.ts` runs them. A check that could have failed: the
+  assertion is a `toEqual` over all six figures, so a reversal count that moved would turn it red
+  naming the number.
+- **Verified** CONFIRMED - this writer read both files and ran the test.
+- **Why it is open** it is not a defect; it is a correction to a dispatch, recorded because **the
+  same false premise could reach another dispatch.** The register entry it came from (G209) already
+  carried the correction in its Evidence section, and the brief quoted the part of it that predates
+  round 2.
+- **What would settle it** nothing - it is settled. **A caution for whoever writes Task 17's
+  brief:** G209 and G200 were both amended in place by later rounds, and a brief quoting them must
+  quote the current text.
