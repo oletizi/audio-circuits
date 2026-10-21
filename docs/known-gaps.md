@@ -19717,6 +19717,26 @@ reads the generated stub as the same circuit"*, and
 kicad-cli FAILS them rather than skipping"*. Deleting the writer deletes those
 five and nothing in this repository replaces them today.
 
+**THE TEST THAT DECIDED IT, AND IT IS RECORDED SO A LATER READER CAN DISAGREE ON
+THE MERITS RATHER THAN ON THE CONCLUSION** (controller ruling **R71**). The
+question asked was: **is the coverage at stake coverage of the STUB, or of the
+CIRCUITS?** If it is the stub's, it dies with the stub and the argument for
+deleting the writer whole wins. **It is the circuits'.** Those five tests
+establish that five transistor-preamp board MODELS produce KiCad-valid netlists
+with the connectivity the model intends; the stub is merely the vehicle that
+gets them there. **That claim is covered nowhere else, because the generator
+refuses these circuits** - which is the same fact that stopped this task doing
+what it was written to do. Deleting them would discard a measured fact about the
+hardware to satisfy a rule about discoverability, **and the rule's own text is
+about discoverability**: *"left as a stub for somebody to find and TRUST"*.
+
+**AND THE SIZE OF THAT COVERAGE IS SMALLER THAN THE BRIEF'S WORDING SUGGESTS,
+WHICH DOES NOT CHANGE THE CONCLUSION.** It is five TESTS, not five files:
+`[RAN]` `grep -c 'kicadRoundTrip(' tests/circuits/transistor-preamp-*.test.ts`
+returns `1` for each file, and the other 59 of the 64 tests in those files are
+independent of the writer (**G247** has the per-file counts). **Five, and still
+irreplaceable** - that second clause is what carries the ruling, not the first.
+
 **THE NON-DELETION IS THE CHOICE AND IT IS RECORDED AS ONE RATHER THAN AS AN
 OVERSIGHT.** `CLAUDE.md` says a pattern replaced by a better one *"is removed in
 the same change, not left as a stub for somebody to find and trust"*. That is not
@@ -19824,25 +19844,53 @@ Task 19 carries an amendment pointing here, beside its unchanged file list.
   is explicit, and the reason is that a test which only passed against the stub
   was not testing what its name said.
 
-**ONE THING THIS ENTRY DOES NOT HAVE, NAMED SO IT IS A DECISION RATHER THAN AN
-OMISSION: THE PRECONDITION ABOVE IS PROSE, AND NOTHING FIRES WHEN IT IS MET.**
-A superseded file kept "until X" is kept forever unless something notices X. The
-obvious guard is a test asserting that `generate` still refuses the
-`transistor-preamp` design, which would go RED the day **G232** is fixed and say
-in its message that the five KiCad tests can now move and this writer can go.
-**It was considered and NOT written, for a reason worth weighing rather than
-dismissing: it makes the suite fail on a day somebody fixes a defect**, which
-turns a reminder into a blockage on unrelated work, and it is a check that
-enforces the current state rather than a requirement. **That is a decision about
-how this repository wants its "kept until" entries to retire, and it is not this
-task's to take** - `CLAUDE.md`'s invariant is that an agent does not author the
-criteria its own artifact is measured against, and a guard that decides when the
-artifact may be deleted is exactly such a criterion. **MECHANISM, UNTRIED, and
-offered for a ruling rather than proposed**: the test above, or a periodic
-re-run of **G247**'s probe, or nothing at all with this entry as the only
-reminder. Today it is the third, and the third is the option that has already
-failed once in this repository - **G81**'s criterion said the stub is deleted
-when its replacement lands, the replacement landed, and nothing noticed.
+**THE PRECONDITION ABOVE HAS TEETH, AND THE TEETH ARE WHAT MAKES THE
+NON-DELETION DEFENSIBLE RATHER THAN MERELY CONVENIENT.**
+`tests/circuits/stub-writer-tripwire.test.ts` is one assertion that goes RED when
+`generate` accepts a transistor-preamp board, with a failure message that names
+the board and instructs: delete `lib/kicad/schematic.ts`,
+`tests/kicad/schematic.test.ts` and the tripwire itself, move what moves onto
+`generate` and `roundTrip`, and treat a test that needs editing to survive that
+move as a finding.
+
+**IT WAS WRITTEN BECAUSE THE ARGUMENT AGAINST THIS ENTRY IS A GOOD ONE AND IT IS
+ONLY ANSWERED BY ENFORCEABILITY.** The argument: *"supersede means delete" exists
+BECAUSE "we'll delete it when X" has failed before, and **G81** IS that failure* -
+its criterion said the stub goes when the replacement lands, the replacement
+landed, nothing noticed, and this entry is a second promise of the same thing.
+**Prose is exactly what failed as G81.** Controller ruling **R72**: the split is
+*"only defensible if the promise is enforceable"*.
+
+**THE CRITERION IS THE CONTROLLER'S AND NOT THE IMPLEMENTER'S, WHICH IS WHAT
+DISPOSES OF THE INVARIANT OBJECTION.** `CLAUDE.md` forbids an agent authoring the
+acceptance criteria for the artifact it produces, and a guard deciding when an
+artifact may be deleted is such a criterion. So it was authored elsewhere, in
+**R72**, verbatim: *"the writer, its test and the five preamp tests may be
+deleted when `generate` accepts a preamp board."* The test transcribes it and its
+header says not to refine it.
+
+**AND THE OTHER OBJECTION - that it makes the suite fail on the day somebody
+fixes a defect - IS ANSWERED BY WHAT KIND OF TEST IT IS.** It does not assert
+that a defect persists. **It fires when a PRECONDITION IS MET, and its message is
+an instruction rather than an obstacle.** Ruling **R72**: *"The cost is one
+annoyed afternoon; the cost of the alternative is G81 again, and we have the
+receipt."* That is this repository's refusals-teach rule applied to a deletion
+obligation.
+
+**TWO THINGS THE TRIPWIRE DOES NOT COVER, SAID HERE SO IT IS NOT OVER-READ.**
+
+1. **IT COVERS THE FIELD-PLACEMENT HALF, FOR `lab` ONLY. THE FOUR MISSING
+   DECLARATIONS ARE COVERED BY NO CHECK AND CANNOT BE.** `buffered`, `feedback`,
+   `loop` and `staged` have no `SchematicAuthoring`, so `circuitSpecFrom` has
+   nothing to build from and `generate` cannot be offered them at all - **a test
+   cannot fire on a file nobody has written.** So the day **G232** is fixed the
+   tripwire fires on `lab` and says nothing about the other four, and the person
+   it fires at still has **G247**'s second mechanism to do. **That gap is honest
+   and it is smaller than the one being closed**, which was the whole precondition.
+2. **IT IS GREEN WHENEVER `generate` REFUSES, FOR ANY REASON.** A broken symbol
+   library or a changed KiCad would hold it green exactly as **G232** does. It
+   fires on ACCEPTANCE and not on the absence of a particular defect. That is the
+   criterion as authored and the test's header says so.
 
 ### G249 - M1's CLOSING DRAWING COMPARISON, AND IT IS AN OBSERVATION WITH NO VERDICT: the comparison the step asked for could not be made, because `generate` refuses the circuit whose hand-arranged drawing is the reference
 
@@ -19972,6 +20020,26 @@ equivalent of and which is the thing that makes a generated artifact auditable.
   exactly that contamination).
 
 ### G250 - MEASURED: in a tree without the acquired VeroRoute binary, 48 tests NEVER REGISTER, and six of them leave nothing behind at all - no failure, no name, no `testsuite` element
+
+**THIS IS A SKIPPED CHECK THAT LOOKS LIKE A PASSING ONE, AT A SCALE OF 48, IN THE
+SUITE EVERY AGENT ON THIS BRANCH HAS BEEN QUOTING AS A GREEN.** `CLAUDE.md` names
+that as the failure mode the whole workflow exists to prevent - *"A skipped check
+must never look like a passing one. If a guard cannot run, say so loudly. Silence
+that resembles success is the failure mode the whole workflow exists to
+prevent."* Controller ruling **R74** grades it as **this repository's cardinal
+sin, found incidentally**, and parks it as the highest-severity open item on this
+branch, above the field-placement defect.
+
+**WHAT A READER OF A GREEN RUN IS NOT BEING TOLD, QUANTIFIED.** In a tree without
+`.tools/`, a reader who sees the summary learns about **78 failures** and is told
+nothing about **48 further tests that did not run**. Of those 48, **42 collapse
+into three `(unnamed)` failures** - so their files are visibly broken but
+**none of their 42 names is ever printed** - and **6 are not represented at all**:
+no failure, no name, no `testsuite` element, with a bare `1 error` beside the
+totals as the only trace. **The one number that would betray it is `Ran N tests`,
+which a reader has no reason to compare against anything**, and which **G251**
+shows is not constant across trees either. **Nobody comparing a before-and-after
+count can tell a 48-test change in what RAN from a 48-test change in what PASSED.**
 
 **FOUND BY ACCIDENT WHILE ESTABLISHING A BASELINE, WHICH IS THE ONLY REASON IT
 WAS FOUND.** Task 19 Step 7 needed the suite count at the commit before its
