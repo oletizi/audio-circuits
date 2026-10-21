@@ -17271,6 +17271,33 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > RESOLVED lib id. **So this unit asks for nearly three times the horizontal room
 > of G239's case, from a stated decision rather than from a defect.**
 >
+> **AND THAT RUN's THREE CONTROLS WERE ALL NEGATIVE, WHICH IS A NEW ROUTE TO A
+> FALSE GREEN AND IS RECORDED AS ONE** (**G241**'s control clause, now five rows).
+> The jumper and both capacitors answered `0 of 5`, so **no control in the run
+> could have answered differently** - three negatives cannot distinguish a correct
+> measurement from a predicate that only ever answers zero. `[RELAYED]` the
+> reviewer supplied the missing positive control (`STM32H743IITx` and `PT2399`
+> fitting 5 of 5) and it passed. `[RAN, CONFIRMED]` re-driven here over the real
+> population rather than two chosen symbols - every distinct lib id the four
+> parity circuits declare, **16 of them**, same arithmetic:
+>
+> | inside slots that fit | body (um) | lib id |
+> | --- | --- | --- |
+> | **5 of 5** | 20320 x 30480 | `Audio:PT2399` |
+> | **5 of 5** | 10160 x 10160 | `Amplifier_Operational:TL072` |
+> | 0 of 5 | 6630 x 5640 | `Transistor_BJT:2N3904` |
+> | 0 of 5 | 5080 x 5080 | `Device:R_Photo` |
+> | 0 of 5 | 5080 x 2286 | `Jumper:Jumper_2_Open` |
+> | 0 of 5 | the remaining eleven | connectors, passives, diodes, the test point |
+>
+> **2 of 16 fit at least one inside slot**, so the predicate does answer non-zero
+> on reachable inputs and the three negative rows mean what they say. `[RELAYED,
+> NOT REPRODUCED HERE]` the reviewer's `STM32H743IITx` half: that nickname is not
+> configured in this repository's resolver, so `PT2399` is the one of its two this
+> run could re-drive - and it reproduced, as `Audio:PT2399`. **Every figure the
+> original run reported reproduced exactly, so this changed no result; what it
+> changed is what the run established.**
+>
 > **NOTHING IS PROPOSED AND NOTHING IS FIXED.** The 13-character value is an
 > observation, not a mechanism: shortening or blanking it would change what the
 > drawing says a part is, which is a decision about the artifact and not a
@@ -18500,6 +18527,7 @@ perturbed in both directions and both go red.
 > | **the implementer** `[CONFIRMED]` | `bunx tsc --noEmit` on a single probe file | a single-file invocation ignores the project `tsconfig`, so unrelated `lib/kicad/install.ts` errors came back for **all three cases including the control** |
 > | **the reviewer** `[RELAYED]` | a probe with `// @ts-expect-error` written at the head of a comment | the directive **suppressed the diagnostic it was there to catch**, so the case passed for the wrong reason; re-driven clean afterwards |
 > | **the reviewer** `[RELAYED]` | a hand-built `ReferenceGraph` treated as representative of `graphFromNetlist`'s output | the shape was unreachable through the production path, so its 14-node urgency figure described no input the gate can see. **Withdrawn by its author**; see the R57/R61 block above |
+> | **the implementer, Task 20** `[CONFIRMED]` | the jumper-geometry run's **three controls were all NEGATIVE** - `Jumper:Jumper_2_Open` and the two capacitors, each answering `0 of 5` inside slots | **a control that returns the same answer as the treatment tests nothing.** Three negatives cannot distinguish a correct measurement from a probe that only ever answers zero. **It is a NEW SHAPE**: not a probe that cannot fail, but a control that cannot differ. Every figure it reported reproduced, so no result changed - what changed is what the run established. See **G245**, where the missing positive control was supplied and passed |
 >
 > **WHAT THAT STRENGTHENS, and it is the reason to record more than one: the
 > clause is not about carelessness in one author.** Two people reached false
@@ -18507,6 +18535,16 @@ perturbed in both directions and both go red.
 > invocation, a suppressed diagnostic, an unreachable input - and **none of them
 > looks like a mistake while you are making it, because in every case the probe
 > RAN AND REPORTED SOMETHING.**
+>
+> > **AMENDED, TASK 20: THE TABLE NOW CARRIES FIVE AND THE CLAUSE IS WIDER THAN
+> > "A CONTROL THAT PASSES".** The fifth row is a control that passed and could
+> > not have answered differently, which the clause as written does not exclude -
+> > a negative control for a predicate that is answering negative everywhere is
+> > indistinguishable from a broken predicate. **So the clause is now: every probe
+> > needs a control that passes AND that could have answered differently.**
+> > `[RELAYED]` the controller counts this as the **eighth** route to a false
+> > green on this branch; that count is its own and was not re-derived here, and
+> > what is confirmed here is the row.
 >
 > **THAT IS THIS BRANCH's FIRST ARGUMENT FROM MECHANISM RATHER THAN FROM
 > EXHORTATION FOR WHY A CONTROL BEATS A DISCIPLINE.** A control that passes is
