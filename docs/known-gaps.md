@@ -17517,6 +17517,19 @@ collateral effect broke.**
 | `flatSubgraphOf` spreading `{...c, blocks}` (Task 17, `2d0a003`) | a `BlockSubgraph` over the union of several blocks' members - it built one, and it laid out | `Circuit.unitBlock` was not rebuilt, so `labelledNets` still saw the original split | **the headline figure and its direction**: the flat control inherited the decomposition it was controlling for, and 1.000x was one artefact cancelling another. Corrected to 0.958x / 0.906x, **ADDS** rather than removes (**G100**) | the review, round 1 item 1(c) |
 | splitting the pinning assertions into `remeasure-ceiling.test.ts` (fix round 1, `83c4042`) | the split itself - `remeasure.test.ts` was at 526 lines against `CLAUDE.md`'s cap, and the split was the right remedy | seven pointers in the register and the modules kept naming the old file | **the register instructed a reader to verify a pinned constant against a file that does not pin it, and the verification came back 23 pass / 0 fail** (**G233**) | the review, round 2 item A |
 | extracting `crossingNets` so `governingNetsOf` could reuse it (fix round 2, `7977ea4`) | the extraction - two functions needed one traversal, and sharing it was right | `crossingNonRailNets`'s `Array.sort()` became a `localeCompare` comparator nothing had asked for | **nothing published, yet**: membership and every list were unchanged, but both lists are compared with `toEqual` and the two orders differ on `["AB", "A_B"]` - a latent shift in a published figure (**G100**) | the review, round 3 item 3 |
+| taking `bomFields` out of the drawing path (Task 20, **G245**) | the split itself - the owner's ruling is implemented, and `transistor-preamp` went from 101 gate-1 problems to **0** | the gate census's `transistor-preamp` row stopped reporting the CIRCUIT and started reporting a HARNESS artifact (a missing `refs.lock.json`, because `runGates` forces `initLock: false`), on a non-deterministic temp path | **the committed census became LESS informative for the one circuit the change unblocked**, and a reader comparing censuses across the commit sees the refusal MOVE from 101 to 1 rather than disappear - whose obvious reading is that the fix did not work | the implementer, driving the census after the change; **parked under ruling R68** |
+
+> **THE FOURTH ROW IS FROM A DIFFERENT TASK AND WAS FOUND A DIFFERENT WAY, so the
+> title's "three instances in one task" is the original naming rather than the
+> current count** (added under ruling **R68**, Task 20). It matters because it
+> varies the one claim below that is about detection: all three original
+> instances were found **by the reviewing agent reading the whole diff**, and the
+> fourth was found **by the implementer RUNNING THE TOOL the change affected** and
+> reading its output - `CLAUDE.md`'s *"look at the output, not only the tests"*,
+> which no diff read would have produced because the census output is not in the
+> diff. **So the pattern now has two detection routes rather than one**, and the
+> second is cheaper than it looks: re-run the committed measurement tools after a
+> change and read them, not only the suite.
 
 **WHAT THE THREE HAVE IN COMMON, which is the useful part.** In every case **the
 thing the change was for worked**. The flat probe produced a subgraph that laid
@@ -18987,17 +19000,39 @@ task says to report this rather than pursue it. **Gate 8 was NOT run**; the
 reachability answer above is read off `generate`'s own refusal, which is the
 thing that has to stop happening first.
 
-**A SIDE EFFECT ON THE CENSUS, RECORDED BECAUSE THE ROW NO LONGER MEASURES WHAT
-A READER WILL THINK IT MEASURES.** `transistor-preamp`'s gate-1 row is now
-`1 other: <tmpdir>/refs.lock.json not found; run pnpm schgen generate --init transistor-preamp.design.ts to create it`.
-That is **the harness's refusal rather than the circuit's**: `runGates` forces
-`initLock: false`, so the generation only reads and the reference lock the
-circuit needs is never created. Two consequences. First, the one circuit that
-now validates is the one whose census row says least about it. Second, **the row
-contains an absolute temp path, so that line of the census output differs on
-every run** - every other line is stable. Nothing is fixed here: changing
-`initLock` is a change to `tools/schgen/verify.ts`'s contract, not to the
-census, and it would make a census run write files.
+**COLLATERAL DAMAGE FROM A CORRECT FIX: THE CENSUS BECAME LESS INFORMATIVE FOR
+THE ONE CIRCUIT THIS CHANGE UNBLOCKED. PARKED UNDER RULING R68, AND IT IS
+G235's PATTERN EXACTLY.** That entry names *a change whose PRIMARY effect is
+correct and whose COLLATERAL effect is wrong, so a reviewer checking the changed
+behaviour passes it* - and the changed behaviour here is right by every check
+that was run.
+
+**BEFORE this change**, `transistor-preamp`'s gate-1 census row reported **the
+circuit's own validation refusal**: 1 header and 100 `bomFields`. **AFTER it**,
+the row reports
+`1 other: <tmpdir>/refs.lock.json not found; run pnpm schgen generate --init transistor-preamp.design.ts to create it`
+- **a HARNESS artifact**, because `runGates` forces `initLock: false` so the
+generation only reads and the reference lock the circuit needs is never created.
+Two consequences, and the first is the dangerous one.
+
+**THE ROW MUST NOT BE READ AS THE CIRCUIT'S STATE.** A reader comparing censuses
+across this commit sees `transistor-preamp`'s gate-1 refusal **move from 101 to
+1 rather than disappear**, and the obvious reading of a surviving refusal is that
+the fix did not work. It did: the circuit has **0** `validateCircuit` problems,
+which the probe table above drives directly and which
+`tests/schgen/authoring-complete.test.ts` pins. **What the row now measures is
+the census's own `initLock` choice**, and nothing in the row says so - which is
+why it is said here and in `tools/schgen/gate-census.ts`'s header.
+
+**AND THAT LINE IS NOW NON-DETERMINISTIC.** It carries an absolute `mkdtemp`
+path, so it differs on every run where every other line of the census output is
+stable. A census whose purpose is to be re-run and compared has one line that
+never compares equal.
+
+**NOTHING IS FIXED HERE AND NOTHING IS PRESCRIBED.** Changing `initLock` is a
+change to `tools/schgen/verify.ts`'s contract rather than to the census, and it
+would make a census run write a lock file; whether that is the right route is
+not judged here. The criterion is below as (c).
 
 **WHAT MUST SURVIVE TWO OPPOSITE FUTURE ERRORS.** `bomFields` is **not dead
 code and must not be deleted**: it is correct and load-bearing for a consumer
@@ -19093,8 +19128,14 @@ the right place for it.
   reference as DRAWS** - **G238**'s criterion, unchanged, with the first half now
   met for `transistor-preamp` and the second half not. **MECHANISM, untried and
   it is not this task's:** **G232**'s defect, which ruling R46 reserves.
-  **(c) CRITERION: `transistor-preamp`'s census row names a refusal of the
-  CIRCUIT**, so that the one circuit which validates is legible in the committed
-  census. **MECHANISM, untried and this writer has not judged it:** a census that
-  can create a reference lock in its own scratch directory, which today means
-  changing what `runGates` forces.
+  **(c) CRITERION: the gate census reports the CIRCUIT's own state for every
+  circuit it lists, and no row of it reports an artifact of the harness** - so
+  the one circuit that validates is legible in the committed census, and so no
+  line of a tool built to be re-run and compared differs on every run.
+  **MECHANISM, untried, and deliberately not prescribed under ruling R68:** one
+  route is a census that can create a reference lock in its own scratch
+  directory, which today means changing what `runGates` forces about `initLock`
+  and letting a census run write a file; **whether that is the right route is
+  unjudged here**, and the criterion is met by any route that satisfies it.
+  Parked, not deferred: **R68** parks it loudly rather than ruling it
+  acceptable.

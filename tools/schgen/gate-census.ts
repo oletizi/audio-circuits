@@ -39,10 +39,20 @@
  * that the BOM requirement is a property of the CONSUMER of an artifact rather than of the circuit
  * (*"a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht
  * pcbs"*), so `validateCircuit` no longer runs `bomFields` and `validateSourcing` does.
- * `lib/schgen/ir/validate.ts`'s header carries his words; **G245** carries the decision, this
- * census's before-and-after rows, and the one row of it that is now the HARNESS's refusal rather
- * than the circuit's - `transistor-preamp` reaches the reference lock that `initLock: false`
- * declines to create, which is a fact about this file and not about that circuit.
+ * `lib/schgen/ir/validate.ts`'s header carries his words; **G245** carries the decision and this
+ * census's before-and-after rows.
+ *
+ * **AND ONE ROW OF THIS CENSUS NO LONGER MEASURES ITS CIRCUIT. DO NOT READ IT AS ONE** - ruling
+ * **R68**, parked. `transistor-preamp`'s gate-1 row reports
+ * `other: <tmpdir>/refs.lock.json not found` - **the HARNESS's refusal, not the circuit's**:
+ * `runGates` forces `initLock: false`, so the generation only reads and the reference lock this
+ * circuit now gets far enough to need is never created. **A reader comparing this census across
+ * Task 20 sees that refusal move from 101 to 1 rather than disappear, and the obvious reading of a
+ * surviving refusal is that the change did not work.** It did: `transistor-preamp` has **0**
+ * `validateCircuit` problems, which `tests/schgen/authoring-complete.test.ts` pins and which the
+ * probe in **G245** drives. That line also carries an absolute temp path, so it is the one line of
+ * this output that differs on every run. **G245**'s criterion (c) is what would settle it, with no
+ * mechanism prescribed.
  *
  * **IT MEASURES THE DERIVED ARM.** Each circuit is built, `circuitSpecFrom` turns it into a
  * `CircuitSpec` under its authoring declaration, and the result goes to the real `runGates`
