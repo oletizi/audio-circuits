@@ -17284,7 +17284,7 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > | inside slots that fit | body (um) | lib id |
 > | --- | --- | --- |
 > | **5 of 5** | 20320 x 30480 | `Audio:PT2399` |
-> | **5 of 5** | 10160 x 10160 | `Amplifier_Operational:TL072` |
+> | **1 of 5** (centre only - CORRECTED, see below) | 10160 x 10160 | `Amplifier_Operational:TL072` |
 > | 0 of 5 | 6630 x 5640 | `Transistor_BJT:2N3904` |
 > | 0 of 5 | 5080 x 5080 | `Device:R_Photo` |
 > | 0 of 5 | 5080 x 2286 | `Jumper:Jumper_2_Open` |
@@ -17292,6 +17292,27 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 >
 > **2 of 16 fit at least one inside slot**, so the predicate does answer non-zero
 > on reachable inputs and the three negative rows mean what they say.
+>
+> > **CORRECTED, AND THE CORRECTION IS THE SECOND OVERCLAIM THIS ENTRY MADE WHILE
+> > FIXING THE FIRST - see the block below it.** `[RELAYED]` from the closing
+> > verification, `[RAN, CONFIRMED]` here: **`Amplifier_Operational:TL072` fits 1
+> > of 5, not 5 of 5.** The sweep that produced the table compared the grown pair's
+> > HEIGHT and WIDTH against the body's, which is a DIMENSIONAL test;
+> > `field-placement.ts` applies `within` **per box and strictly**, and a quadrant
+> > slot is offset toward a corner, so a pair dimensionally smaller than the body
+> > still crosses its edge. Re-driven with that module's own test transcribed:
+> > **only `centre` fits, and each of the four quadrant slots overflows - the
+> > Reference box by 635 um and the Value box by 1270 um**, which reconciles the
+> > verification's *"635 to 1270"* as the per-box pair rather than a range. `[RAN]`
+> > the loose and strict tests side by side on all five subjects: **they disagree
+> > on TL072 alone** - `PT2399` is 5 of 5 under both, and `Device:C`,
+> > `Device:C_Polarized` and `Jumper:Jumper_2_Open` are 0 of 5 under both (the
+> > capacitors' centre slot overflows by 1524 um, the jumper's by 6350).
+> >
+> > **THE BOTTOM LINE IS CARRIED THROUGH UNAFFECTED AND THIS IS NOT A RETRACTION:
+> > 2 of 16 lib ids still fit at least one inside slot**, because `PT2399` fits
+> > five and `TL072` fits one. The positive control still passes and still could
+> > have answered differently, which is what the figure was for.
 >
 > **AND THE REASON PUBLISHED FOR NOT REPRODUCING THE OTHER HALF OF THE POSITIVE
 > CONTROL WAS FALSE.** This entry said the reviewer's `STM32H743IITx` case was
