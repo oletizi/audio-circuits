@@ -42,6 +42,7 @@ import {
   narratedDetail,
   neitherShapeDetail,
 } from "./approvals-words.ts"
+import { narrationMarkerIn } from "../../lib/owner-words.ts"
 import {
   ADMITTED_TERMINATIONS,
   APPROVAL_EDGES_REQUIRED,
@@ -51,7 +52,6 @@ import {
   APPROVALS_FILE,
   APPROVALS_SCHEMA,
   APPROVAL_TOP_LEVEL_KEYS,
-  NARRATION_MARKERS,
   type AdmittedTermination,
   type ApprovalGrantor,
   type RenderApproval,
@@ -416,14 +416,13 @@ function readOwnerWords(
     )
   }
   const joined = words.join(" ")
-  for (const marker of NARRATION_MARKERS) {
-    if (joined.toLowerCase().includes(marker)) {
-      refuse(
-        "approvals-words-narrated",
-        narratedDetail(id, joined, marker),
-        file,
-      )
-    }
+  // The SWEEP itself is `lib/owner-words.ts`'s since Task 16 of the M1
+  // schematic-authoring plan, so the readability-baseline loader cannot drift
+  // from this one on WHICH markers are checked or in what order. The refusal
+  // stays here, beside every other refusal this loader raises.
+  const marker = narrationMarkerIn(joined)
+  if (marker !== null) {
+    refuse("approvals-words-narrated", narratedDetail(id, joined, marker), file)
   }
   const spoken = isSpokenVoice(joined)
   const selected = isSelectionFor(words, board)
