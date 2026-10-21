@@ -2276,8 +2276,10 @@ it - and that refactor **silently changed its sort from the default
 and every published list were unaffected, which is why it passed; but both lists
 are compared with `toEqual` and the two orders differ (`["AB", "A_B"]` orders one
 way under each), so it was a latent behaviour change riding in a refactor. **Fix
-round 3 reverted the sort** and `tests/schgen/remeasure-edges.test.ts` now pins
-that both published lists are in default-sort order.
+round 3 reverted the sort** and `tests/schgen/remeasure-edges.test.ts` pins the
+order - **but see G236: round 3's pin could not catch the comparator it named**,
+because both published lists are fixed points of both orders. The check that does
+catch it is a fixture, added at fix round 5.
 
 **WHAT IS A PROPERTY OF THE IR RATHER THAN AN OUTCOME, stated plainly because it
 is the load-bearing half.** That a cross-block net is ALWAYS labelled, and
@@ -17270,11 +17272,19 @@ enough.**
 - **Verified** CONFIRMED - this writer ran every row of the table, both drive
   arms and both perturbations of the pointer guard. **The register half was found
   by the Task 17 review and the figure 23 pass / 0 fail was re-measured here.**
-- **Why it is open** **the pointer guard covers about 5 per cent of the
-  population, and stating it as a count was itself misleading.** `[RAN]`
-  `docs/known-gaps.md` holds **269 test-file citations across 262 lines**, of
-  which the review puts roughly **120 in evidentiary positions**; the guard holds
-  **12 rows covering 10 register lines and 2 module comments.** Round 2's
+- **Why it is open** **the pointer guard covers well under a tenth of the
+  population, and stating that as a bare count was itself misleading - twice.**
+  Round 2 published a count that read like a population; round 3 replaced it with
+  a literal **269 citations across 262 lines** that was **already stale at the
+  commit which published it**, because that commit's own insertion changed it.
+  Measured per revision: `4ba4260` 268/261, `38ff473` 269/262, `0039872`
+  **270/263**, HEAD higher again. **So no literal is published here any more.**
+  `[RAN]` The count is now computed by `citationCount` in
+  `tests/schgen/pointers.test.ts` on every run, which asserts the coverage
+  FRACTION is under a tenth rather than any exact numerator; the register holds a
+  few hundred citations and the guard holds **12 rows - 9 register rows, 2 module
+  comments and 1 document line.** `[RELAYED]` The review puts roughly **120** of
+  those citations in evidentiary positions. Round 2's
   *"covers the ten pointers that cite a measurement"* reads as if ten were the
   population - it is the sample. **What the guard does guarantee is narrower and
   worth having: every pointer fix round 2 repaired is under it** - all seven since
@@ -17287,7 +17297,8 @@ enough.**
 - **What would settle it** **CRITERION: a perturbation is reported as a valid
   drive only when the named assertion is the thing that failed, and a citation of
   a test file fails a check when the assertion it names is no longer there.** The
-  second half is met for the ten pointers in the guard and unmet everywhere else.
+  second half is met for the pointers the guard covers - twelve rows, listed in
+  `POINTERS` - and unmet everywhere else.
   **MECHANISMS, untried:** extend `POINTERS` as entries are written, which is
   cheap and manual; or derive the pointers mechanically by scanning for
   `tests/.*\.test\.ts` in the register and requiring each to carry a marker in a

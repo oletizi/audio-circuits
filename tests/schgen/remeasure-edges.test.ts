@@ -274,7 +274,7 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
    */
   it("predicts EQUALITY on the five-leg union, where the FOUR-clause set is empty, and 24 against 24 is measured", () => {
     // Fix round 2, item B: the set is COMPUTED by governingNetsOf, with all four clauses, rather
-    // than read off g.external as a proxy. Under the three-clause sentence round 1 published, the
+    // than read off g.external as a proxy. Under the TWO-clause sentence round 1 published, the
     // union's set is {BASE, COLLECTOR} and not empty - it is empty only once the fourth clause,
     // does-not-leave-the-subject, is applied, and both of those nets reach tp-stage.
     const symbols = parityResolver()
@@ -283,7 +283,8 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
     const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
     const legs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
     const g = flatSubgraphOf(circuit, legs, symbols, "legs~flat", "flat")
-    // THE THREE-CLAUSE SET, which is what round 1's sentence literally named: NOT empty.
+    // THE THREE-CLAUSE SET - the clauses the CODE tests, which is one more than round 1's
+    // sentence named: NOT empty.
     const threeClause = crossingNonRailNets(circuit).filter((net) =>
       legs.some((id) => {
         const block = circuit.blocks.get(id)

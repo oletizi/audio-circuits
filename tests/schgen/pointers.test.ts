@@ -20,9 +20,11 @@
  * valid and the marker absent, which is exactly the case that went green.
  *
  * **IT IS A SAMPLE AND NOT AN INVENTORY, AND THE FRACTION IS STATED BECAUSE A COUNT READ LIKE A
- * POPULATION.** `[RAN]` `docs/known-gaps.md` holds **269 test-file citations across 262 lines**, of
- * which roughly **120 sit in evidentiary positions**. This file holds **12 rows, covering 10
- * register lines and 2 module comments - about 5 per cent.** Round 2 described it as *"the ten
+ * POPULATION.** `[RAN]` `docs/known-gaps.md` holds a few hundred test-file citations - **counted by
+ * `citationCount` below on every run, so the figure cannot go stale in this comment** - and this
+ * file holds **12 rows: 9 register rows, 2 module comments and 1 document line.** `[RELAYED]` The
+ * review puts **roughly 120** of those citations in evidentiary positions; that estimate is the
+ * review's and was not measured here, which is why it is not inside the `[RAN]` clause. Round 2 described it as *"the ten
  * pointers that cite a measurement"*, which reads as if ten were all there were.
  *
  * **WHAT IT DOES GUARANTEE is narrower and is the part worth having: every pointer fix round 2
@@ -162,6 +164,40 @@ const REPAIRED_AT_ROUND_2: readonly { readonly citedBy: string; readonly citatio
   { citedBy: "tools/schgen/remeasure.ts", citation: "tests/schgen/remeasure-ceiling.test.ts pins every" },
   { citedBy: "docs/schematic/m1-remeasurement.md", citation: "bun test tests/schgen/remeasure-ceiling.test.ts  BOTH BOUNDS" },
 ]
+
+/**
+ * **THE CITATION POPULATION, COMPUTED RATHER THAN PUBLISHED - fix round 5, item 6.**
+ *
+ * **A LITERAL COUNT PUBLISHED IN THE REGISTER ROTS ON EVERY REGISTER EDIT, INCLUDING THE EDIT THAT
+ * PUBLISHES IT.** Fix round 3 printed *"269 test-file citations across 262 lines"* in `G233`, and
+ * the review measured it **already stale at that commit**: counted before the insertion that
+ * published it, which took the register to 270/263. So the figure is computed here on every run and
+ * the assertion is on the FRACTION's magnitude, which does not move when the register grows.
+ */
+function citationCount(register: string): { readonly citations: number; readonly lines: number } {
+  const lines = register.split("\n").filter((l) => /tests\/[\w/.-]*\.test\.ts/.test(l))
+  const citations = register.match(/tests\/[\w/.-]*\.test\.ts/g) ?? []
+  return { citations: citations.length, lines: lines.length }
+}
+
+describe("the guard is a SAMPLE of the citation population, and says so", () => {
+  it("covers well under a tenth of the register's test-file citations", () => {
+    const { citations, lines } = citationCount(read("docs/known-gaps.md"))
+    // Non-vacuity first: a register that cited no test file would make the fraction below 0/0.
+    expect(citations, "the register must cite test files for this to measure anything").toBeGreaterThan(100)
+    expect(lines).toBeGreaterThan(100)
+    // The CLAIM: a sample, not an inventory. Asserted as a magnitude so it cannot go stale as the
+    // register grows - which is exactly how the published literal went stale at its own commit.
+    expect(POINTERS.length / lines, `${POINTERS.length} rows against ${lines} citing lines`).toBeLessThan(0.1)
+    // And the breakdown G233 publishes, which is composition rather than a count: 9 register rows,
+    // 2 module comments, 1 document line.
+    const byFile = new Map<string, number>()
+    for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
+    expect(byFile.get("docs/known-gaps.md")).toBe(9)
+    expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
+    expect(POINTERS.length - 9 - 1, "the rest are module comments").toBe(2)
+  })
+})
 
 describe("every pointer that cites a measurement names the file that holds it", () => {
   it("has pointers to check, so the suite below is not vacuous", () => {

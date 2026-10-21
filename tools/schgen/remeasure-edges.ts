@@ -208,9 +208,10 @@ function crossingNets(c: Circuit): readonly { readonly net: NetName; readonly bl
  * net that leaves the union is a boundary net of the flat subject too, so it contributes `U` on both
  * sides and cancels.**
  *
- * **ROUND 1 PUBLISHED THE THREE-CLAUSE SENTENCE AND APPLIED IT TO A SUB-CIRCUIT, which made one
- * printed figure false as literally stated.** On the five-leg union the three-clause set is
- * `{BASE, COLLECTOR}` and the document printed *"none"*. The figure it predicted - a difference of
+ * **ROUND 1 PUBLISHED A TWO-CLAUSE SENTENCE AND APPLIED IT TO A SUB-CIRCUIT, which made one
+ * printed figure false as literally stated.** On the five-leg union the THREE-clause set - the
+ * clauses the CODE tests, one more than that sentence named - is `{BASE, COLLECTOR}` and the
+ * document printed *"none"*. The figure it predicted - a difference of
  * zero - was right, because both nets leave the union; **the set it named was wrong.** This function
  * is what the union's row is now computed with, instead of `g.external` standing in as a proxy.
  */
