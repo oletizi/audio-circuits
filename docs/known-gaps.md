@@ -913,6 +913,28 @@ every adopted board - so the record stays, with his words, rather than being
 deleted: it exists so a later agent neither re-opens the question nor asks him
 again unprompted.
 
+**OWNER DECISION, 2026-10-21: THE LAB BOARD STAYS, AND HE REVERSED HIMSELF
+AFTER LOOKING AT IT.** Asked whether a task should be spent on the
+field-placement defect that stops `transistor-preamp-lab` generating, he first
+said: *"I don't care about the lab board. We should delete it. It's deprecated
+and has led to more confusion than its historical value warrants"* - then asked
+for a PDF of its committed hand-arranged schematic, and after reading it said:
+*"ok. Let's leave the lab board alone - It's a useful example."*
+
+**So the deletion is OFF and nobody proposes it again unprompted.** What this
+settles and what it does not: `circuits/transistor-preamp/lab-board.ts`, its
+`LEGS`, `boards/transistor-preamp-lab/`, `lab-board.kicad_sch` and its test all
+stay. It settles NOTHING about the field-placement defect - that question was
+never answered, because the deletion was offered as an alternative to answering
+it and then withdrawn. **G232 is still open and still unscheduled.**
+
+Worth recording because the scoping was what changed his mind rather than an
+argument: deleting it would have taken one of gate 8's two trusted reference
+drawings, and either moved or destroyed the only blocks the generator draws -
+the five bias legs every readability measurement on this branch was taken on.
+**A deletion that reads as cheap because the artifact is deprecated can still be
+load-bearing for the measurements, and the scope was the thing worth showing.**
+
 **A ruling here is not a licence to stop believing the measurement underneath
 it.** G47 is the worked example: he declined the re-derivation, and the
 electrical fact that made it risky is unaffected by his declining it. Read each
