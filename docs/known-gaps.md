@@ -17499,3 +17499,124 @@ cause**, and the detection property is what the entry is about.
   **None of the three addresses the half that worries the implementer most: that
   the natural check passing is what makes this class safe to ship.** A mechanism
   that only improves reading does not change that.
+
+### G236 - MEASURED: the order pin written to catch a reintroduced comparator CANNOT catch it, because both published lists are FIXED POINTS of both orders - the third check-that-cannot-fail on this task
+
+**THE BEST CATCH ON TASK 17, AND IT IS THE REVIEW's.** Fix round 3 reverted an
+unintended `localeCompare` comparator (**G100**, **G235**) and added an assertion
+described - in the test, in the commit body and in the register - as making *"a
+comparator reintroduced into either function fail here"*. **That statement was
+false.**
+
+`[RAN]` The review put `localeCompare` back into **BOTH** name-returning
+functions - where it has to go to do harm, since the shared `crossingNets`
+helper's two `.sort()` calls erase a comparator placed there - and measured:
+
+| the tree | result |
+| --- | --- |
+| clean | 3593 pass / 0 fail / 41,913 `expect()` |
+| **both comparators reintroduced** | **3593 pass / 0 fail / 41,913 `expect()` - identical** |
+| that one test file, comparators reintroduced | **14 pass / 0 fail** |
+
+**THE CAUSE: both published lists are fixed points of both comparators.**
+`expect(x).toEqual([...x].sort())` can only fail when the function's own order
+differs from default-sorted order. Divergence between the two comparators needs a
+`_` adjacent to an alphanumeric in a particular position - `_` is 0x5F, which
+sorts AFTER letters and digits by code unit and BEFORE them under ICU collation.
+**Neither published list has such a pair**: `OUT_PRE, VBIAS, VBIAS_RAW` and
+`BASE, BYPASS_CAP, BYPASS_JUMPED, COLLECTOR, EMITTER` come out identically under
+both orders, so the assertion compares a list against itself.
+
+**IT IS NOT VACUOUS IN GENERAL, AND THE CONTRAST IS WHAT MAKES THAT MEASURABLE
+RATHER THAN ARGUED.** `[RAN]` A REVERSING comparator reddens it - **12 pass / 3
+fail** at HEAD, and 12 pass / 2 fail when the review measured it, before the file
+gained the fixture check below. **So the assertion does catch a class of
+comparator. It just misses the one it was built for**, which is the only one that
+has ever been introduced here.
+
+**WHAT WAS DONE, and both halves of the criterion were taken rather than one.**
+
+1. **THE CLAIM IS WITHDRAWN WHEREVER IT APPEARED.** The test's doc comment now
+   states what the assertion catches (a reversing comparator, with the figure) and
+   what it cannot (a collation comparator on these nets). **G100**'s statement
+   points here instead of implying the pin is sufficient. `38ff473`'s commit body
+   carries the superseded claim and cannot be edited, which is why this entry
+   exists;
+2. **A CHECK THAT CAN FAIL WAS ADDED, and it does.** `[RAN]` It drives both
+   name-returning functions over a `blockCircuit` fixture whose two crossing
+   non-rail nets are a pair the two comparators order differently, and under the
+   reintroduced comparator it reddens: **14 pass / 1 fail, the failing test being
+   the one built for it.**
+
+**THE DIVERGING PAIR IS COMPUTED, NOT GUESSED, and that is deliberate.** A sweep
+over **216** `NET_NAME`-legal candidate names found **7,740** diverging pairs, all
+of one shape. `BYPASS_CAP` and `BYPASSED` are two real `transistor-preamp` net
+names of that shape, and the test asserts the divergence itself before relying on
+it. **An earlier figure on this task was guessed and a test caught it** (the
+five-leg union's edge count, 14 guessed against 24 measured), which is why this
+one is derived.
+
+**THE FIXTURE IS TEST DATA IN TEST CODE AND NOT A HAND-BUILT OBJECT.**
+`blockCircuit` goes through `buildCircuit`, and each `external` net gets a peer
+resistor in a second block, so both nets genuinely cross a block boundary and
+neither is a rail - which is what puts them in the governing set. **The real
+corpus cannot drive this term**: no declared circuit here has a diverging pair,
+which is the same *"the term under test was zero"* shape that justified the
+fixtures in `tests/schgen/readability/measures.test.ts`.
+
+**THIS IS THE THIRD CHECK-THAT-CANNOT-FAIL ON THIS TASK**, after the `x !== x`
+tautology in `adaptElkLayoutReported`'s counts assertion (**G218**-era, recorded
+in `lib/schgen/elk/adapt.ts`) and the window loop that would pass over nothing
+with adjacent bounds (fix round 1, item 2). **`CLAUDE.md`: evidence must be a
+check that could have failed, and a skipped check must never look like a passing
+one.** Three instances in one task says the rule is easy to satisfy in appearance.
+
+**FIVE SMALLER FINDINGS FROM THE SAME REVIEW, recorded here rather than in five
+entries because each is one sentence and they share a cause - a correction landing
+in one place while a second place keeps the superseded text.**
+
+| finding | what it was | fixed |
+| --- | --- | --- |
+| three statements attributed a **THREE**-clause sentence to round 1, which published **TWO** | one was two lines below the title the fixing commit rewrote; one was the round-2 review's nit, **which survived because the brief labelled it a nit** | all three; no file contradicts itself on the point now |
+| **G233**'s *"met for the ten pointers"* survived nine lines below the paragraph that replaced the count | inside the very commit that was fixing that count | names the twelve rows and points at `POINTERS` |
+| the coverage breakdown was wrong **by composition** in both homes | *"10 register lines and 2 module comments"* folded the document line into the register; it is **9 / 2 / 1** | corrected, and the guard now ASSERTS the composition so prose cannot drift from it |
+| the review's **~120** evidentiary estimate was adopted inside a `[RAN]`-marked sentence | a relayed estimate presented as measured here - the attribution failure this register exists to prevent | marked `[RELAYED]`, outside the measured clause |
+| the **269/262** citation literal was **stale at the commit that published it** | counted before that commit's own insertion, which took the register to 270/263; per revision: `4ba4260` 268/261, `38ff473` 269/262, `0039872` **270/263**, later higher | **no literal is published any more** - see the ruling below |
+
+**RULING, FROM THE CONTROLLER, AND IT GENERALISES BEYOND THIS FIGURE: a literal
+citation count published in the register rots on every register edit, including
+the edit that publishes it.** The remedy taken is the stronger of the two offered:
+`citationCount` in `tests/schgen/pointers.test.ts` computes the population on
+every run and the assertion is on the **fraction's magnitude** - under a tenth -
+which does not move as the register grows. **A figure that rots became one that
+cannot.**
+
+- **Found** 2026-10-20, Task 17 fix round 5, by the review, which drove the
+  comparator reintroduction rather than reading the assertion.
+- **Evidence** the three-row table above, re-driven here before anything was
+  changed: comparators into both functions gives 14 pass / 0 fail in that file,
+  and the reversing-comparator contrast gives 12 pass / 3 fail, so the
+  not-vacuous-in-general claim is measured and not asserted. **The check that
+  could have failed and now does:** the fixture assertion reddens at 14 pass / 1
+  fail under the exact comparator, driven, with the failing test named - and its
+  pair's divergence is asserted in the test before being relied on.
+- **Verified** CONFIRMED - this writer re-drove the comparator reintroduction, the
+  reversing contrast, the fixture check's red, and the per-revision citation
+  counts. **The original discovery is the review's**, as is the ~120 estimate,
+  which is **RELAYED**.
+- **Why it is open** **RESOLVED for the pin and OPEN for the class.** The specific
+  defect is closed: the claim is withdrawn, the replacement check reddens under
+  the comparator it names, and the citation count can no longer go stale. **What
+  stays open is the pattern** - three checks that could not fail, in one task,
+  each written by someone who believed it had teeth. **G235** names the sibling
+  pattern for collateral change; this is its equivalent for assertions, and
+  nothing mechanical catches either.
+- **What would settle it** **CRITERION: a new assertion is accompanied by a drive
+  that makes it fail**, so *"this check has teeth"* is a measurement rather than a
+  belief. **MECHANISMS, both UNTRIED.** The discipline on its own - *drive every
+  new assertion red once before committing it* - is cheap, and the three instances
+  here were all written without it. A mechanical form - mutation testing over the
+  changed lines, which would have caught all three - is the real answer and is far
+  larger than this task: it needs a mutation harness nobody has costed, and
+  `bun test` has no such mode. **The discipline is what is available; the
+  mechanism is what would settle it.**
