@@ -17648,8 +17648,15 @@ cannot.**
   comparator reintroduction rather than reading the assertion.
 - **Evidence** the three-row table above, re-driven here before anything was
   changed: comparators into both functions gives 14 pass / 0 fail in that file,
-  and the reversing-comparator contrast gives 12 pass / 3 fail, so the
-  not-vacuous-in-general claim is measured and not asserted. **The check that
+  and the CODE-UNIT-DESCENDING contrast gives 12 pass / 3 fail, so the
+  not-vacuous-in-general claim is measured and not asserted. **That label was
+  wrong here until 2026-10-20** - it read "the reversing-comparator contrast",
+  and 12/3 is code-unit descending, while locale-reversal gives 13 pass / 2 fail
+  with the fixture test PASSING. The figure always reproduced; the perturbation
+  it was attributed to did not. The three-row table above distinguishes them,
+  and this bullet did not, which is **this entry's own defect class inside this
+  entry** - a right number under a wrong label, in a sentence whose point was
+  that the claim is measured. **The check that
   could have failed and now does:** the fixture assertion reddens at 14 pass / 1
   fail under the exact comparator, driven, with the failing test named - and its
   pair's divergence is asserted in the test before being relied on.
