@@ -136,8 +136,9 @@ export const PT2399_CORE_SCHEMATIC: SchematicAuthoring = {
         "entry in the version committed - and resolves to a parts/*.json catalog id. Nothing " +
         "joins a board line to a circuit model's component, so a per-component Manufacturer, " +
         "Supplier and SupplierPart cannot be derived from it and would have to be invented. The " +
-        "four keys are empty BY DECLARATION; the IR's own bomFields rule refuses every " +
-        "non-exempt part by name the moment this circuit is validated.",
+        "four keys are empty BY DECLARATION; the IR's own bomFields rule, through " +
+        "validateSourcing, names every non-exempt part for any consumer that has to source and " +
+        "place them. It does not gate a drawing: Task 20 and docs/known-gaps.md G245.",
     },
   },
 }

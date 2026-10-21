@@ -191,8 +191,9 @@ export const OPAMP_BUFFER_SCHEMATIC: SchematicAuthoring = {
         "boards/<board>/bom.json; there is no board for this circuit and no reviewed rule joins " +
         "either to a circuit model's component. Writing plausible manufacturers here would be " +
         "fabricated purchasing data, which is worse than none because it looks orderable, so the " +
-        "four keys are empty BY DECLARATION and the IR's own bomFields rule refuses every " +
-        "non-exempt part by name the moment this circuit is validated.",
+        "four keys are empty BY DECLARATION and the IR's own bomFields rule, through " +
+        "validateSourcing, names every non-exempt part for any consumer that has to source and " +
+        "place them. It does not gate a drawing: Task 20 and docs/known-gaps.md G245.",
     },
   },
 }

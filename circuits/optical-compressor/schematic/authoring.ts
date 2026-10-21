@@ -256,8 +256,9 @@ export const OPTICAL_COMPRESSOR_SCHEMATIC: SchematicAuthoring = {
         "manufacturer and no supplier part for any of them). There is no board for this " +
         "circuit, so there is no " +
         "boards/<board>/bom.json to join to parts/*.json even by board line. The four keys are " +
-        "empty BY DECLARATION; the IR's own bomFields rule refuses every non-exempt part by name " +
-        "the moment this circuit is validated.",
+        "empty BY DECLARATION; the IR's own bomFields rule, through validateSourcing, names every " +
+        "non-exempt part for any consumer that has to source and place them. It does not gate a " +
+        "drawing: Task 20 and docs/known-gaps.md G245.",
     },
   },
 }

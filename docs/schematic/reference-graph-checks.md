@@ -34,12 +34,28 @@ THE HEADLINE, AND IT IS NOT A GOOD ONE: THE GATE HAS NEVER RUN AGAINST A GENERAT
 -------------------------------------------------------------------------------------------
 
 **The gate is built, driven, and wired into `runGates`, and the generated side
-of the comparison does not exist for either reference.** `generate` refuses both
+of the comparison does not exist for either reference.** `generate` refused both
 of this repository's hand-arranged drawings at **gate 1**, before any block
-reaches a layout backend - 115 `validateCircuit` problems for `pt2399-core` and
+reached a layout backend - 115 `validateCircuit` problems for `pt2399-core` and
 101 for `transistor-preamp`, measured in **G238**. So no design here declares
 `oscar`, and the comparison is exercised by
 `tests/schgen/gates/reference-graph.kicad.test.ts` and by nothing else.
+
+**TASK 20 MOVED ONE OF THE TWO BLOCKERS AND DID NOT REMOVE IT, so the headline
+above still stands and its reason is now different for each reference.** The
+owner ruled that a fully specified BOM is a property of the CONSUMER of an
+artifact rather than of the circuit, so `validateCircuit` stopped running
+`bomFields` - 96 of `pt2399-core`'s 115 problems and 100 of
+`transistor-preamp`'s 101 were empty purchasing fields. Measured after the
+change: `pt2399-core` still refuses at **gate 1** on **18** problems (17
+`netNames`, 1 `singlePinNets`), and **`transistor-preamp` validates clean and
+refuses LATER**, at the field-placement check inside block
+`tp-leg-emitter-bypass` (`JP5#1 (Jumper:Jumper_2_Open)`: no place for its
+Reference and Value) - the defect **G232** records and **G238**'s block table
+already measured. **G245** holds both measurements. So gate 8's first run
+against a generated drawing is still unreachable, and what stands in the way for
+`transistor-preamp` is now one defect rather than four classes of authoring
+work.
 
 This is **the fourth instance in this plan of machinery built and not
 exercised**, and it belongs to the pattern **G226** already records rather than

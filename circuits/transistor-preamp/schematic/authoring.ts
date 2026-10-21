@@ -179,8 +179,10 @@ export const TRANSISTOR_PREAMP_SCHEMATIC: SchematicAuthoring = {
         "model's component. The model carries mpn on two of this circuit's parts (RM-065 " +
         "trimmers, 2N3904) and Manufacturer, Supplier and SupplierPart have no slot in it at " +
         "all. The four keys are empty BY DECLARATION rather than invented; the IR's own " +
-        "bomFields rule then refuses every non-exempt part by name, and note that the seven " +
-        "test points are exempt already because BOM_EXEMPT_PREFIXES covers TP.",
+        "bomFields rule, through validateSourcing, then names every non-exempt part for any " +
+        "consumer that has to source and place them - it does not gate a drawing (Task 20 and " +
+        "docs/known-gaps.md G245) - and note that the seven test points are exempt already " +
+        "because BOM_EXEMPT_PREFIXES covers TP.",
     },
   },
 }

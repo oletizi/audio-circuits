@@ -5,8 +5,12 @@
  * **READ THIS BEFORE READING A GREEN RUN HERE AS GATE 8 PASSING. IT IS NOT.** Gate 8 compares a
  * GENERATED schematic against a hand-arranged one a human made and trusts. **No generated
  * schematic exists for either reference**: `docs/known-gaps.md` **G238** measures that `generate`
- * refuses `pt2399-core` on 115 `validateCircuit` problems and `transistor-preamp` on 101, at gate
- * 1, before any block reaches a layout backend. So what runs below is **the comparison, end to
+ * refused `pt2399-core` on 115 `validateCircuit` problems and `transistor-preamp` on 101, at gate
+ * 1, before any block reached a layout backend. **Task 20 moved the second one's blocker without
+ * removing it** - `transistor-preamp` now validates clean (0 drawing problems) and refuses inside
+ * block `tp-leg-emitter-bypass` on the field-placement defect **G232** records, so the generated
+ * side still does not exist for either reference; **G245** carries that measurement. So what runs
+ * below is **the comparison, end to
  * end, on real netlists of a human-trusted drawing - and never on a generated one.** Controller
  * ruling R51 governs that case, `docs/schematic/reference-graph-checks.md` states it in full, and
  * **G226** names the pattern of a mechanism exercised only by its own tests.

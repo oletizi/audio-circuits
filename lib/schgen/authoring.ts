@@ -151,18 +151,30 @@ export interface ComponentOverride {
  * So the authoring file states which case it is in, per circuit:
  *
  * - `declared` - the fields, per component id. A component with no entry refuses, by name;
- * - `unsourced` - **an explicit declaration, carrying its reason, that this circuit carries no
- *   purchasing data.** `bomFieldsFor` then returns the four keys empty, and the IR's OWN
- *   `bomFields` validation rule (`ir/validate-parts.ts`) refuses every non-exempt part by name
- *   the moment anyone validates the circuit. That is the brief's *"or `bomFields` refuses"*, and
- *   the exemption list is untouched: `BOM_EXEMPT_PREFIXES` still covers `TP`, `H` and `FID` and
- *   nothing else.
+ * - `unsourced` - **a declaration of SOURCING READINESS: this circuit is not sourced, and here is
+ *   why.** `bomFieldsFor` then returns the four keys empty rather than invented, and
+ *   `ir/validate.ts`'s `validateSourcing` - which runs the IR's own `bomFields` rule - names every
+ *   non-exempt part for any consumer that has to source and place them. The exemption list is
+ *   untouched: `BOM_EXEMPT_PREFIXES` still covers `TP`, `H` and `FID` and nothing else.
  *
  * What is NOT done, and why each is worse: defaulting to empty strings with no declaration (a
  * silent blank that nobody chose, which the brief forbids by name); widening
  * `BOM_EXEMPT_PREFIXES` so the rule stops asking (a check quietly made unable to fail); and
  * writing plausible manufacturers and supplier part numbers into the authoring files (fabricated
  * purchasing data, which is worse than no data because it looks orderable).
+ *
+ * **WHAT THIS COMMENT GOT WRONG UNTIL TASK 20, left visible because the error is more instructive
+ * than the fix.** It read `unsourced` as an apology to a validator: *"an explicit declaration,
+ * carrying its reason, that this circuit carries no purchasing data"*, followed by the observation
+ * that `bomFields` then *"refuses every non-exempt part by name the moment anyone validates the
+ * circuit"* - and that refusal was accepted as the price. All four options it weighed accept that a
+ * PURCHASING rule gates a DRAWING. The owner's question - *"why does a schematic need bom-level
+ * specificity?"* - raises the option that was not in the frame, which is that the gate is in the
+ * wrong place; his ruling is quoted in full in `lib/schgen/ir/validate.ts`'s header, and
+ * `docs/known-gaps.md` **G245** records why the earlier decision could not see it (the rule lives
+ * in a port-managed file whose header says to edit the pedals source, so changing it was outside
+ * the frame). `unsourced` is unchanged and is NOT optional: it is a statement about sourcing
+ * readiness, which is what it always actually was.
  */
 export type BomSource =
   | { readonly kind: "declared"; readonly fields: Readonly<Record<string, BomFields>> }

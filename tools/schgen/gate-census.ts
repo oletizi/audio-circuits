@@ -22,17 +22,27 @@
  * | 3 netlist equals IR | registered, and reports `not run: generation was refused` after gate 1 refuses |
  * | 6 pin identity | the same |
  * | 7 checklist traceability | **NOT REGISTERED**: `DesignSpec.checklist` is null for every one of these designs and `runGates` registers gate 7 only when it is not. The gate PORTS WHOLE (`lib/schgen/gates/traceability.ts`) and its twenty ported tests pass over fixtures - but nothing in this repository has a `SCHEMATIC-CHECKLIST.md`, so **gate 7 is unexercised against a real circuit** and this census says so rather than letting its absence read as a pass. `docs/known-gaps.md` records it. |
- * | 8 OSCAR equivalence | **NOT REGISTERED**: `DesignSpec.oscar` is null for every one of these designs. Gate 8 is **not deferred** (spec revision 4; **G104**) and Task 18 wired its M1 half - `oscarGate` in `tools/schgen/verify.ts` builds a `ReferenceGraph` per declared reference and compares the generated schematic against it under a committed permitted-delta declaration. **No design here declares `oscar`, so the comparison is exercised only by `tests/schgen/gates/reference-graph.kicad.test.ts`, and never against a generated drawing** - `docs/known-gaps.md` **G238** measures why (gate 1 refuses both references) and **G240** records the gap. `tests/schgen/verify.test.ts` drives the refusals a declaring design gets. |
+ * | 8 OSCAR equivalence | **NOT REGISTERED**: `DesignSpec.oscar` is null for every one of these designs. Gate 8 is **not deferred** (spec revision 4; **G104**) and Task 18 wired its M1 half - `oscarGate` in `tools/schgen/verify.ts` builds a `ReferenceGraph` per declared reference and compares the generated schematic against it under a committed permitted-delta declaration. **No design here declares `oscar`, so the comparison is exercised only by `tests/schgen/gates/reference-graph.kicad.test.ts`, and never against a generated drawing** - `docs/known-gaps.md` **G238** measures why (gate 1 refused both references; since Task 20 it refuses `pt2399-core`, and `transistor-preamp` refuses later at field placement - **G245**) and **G240** records the gap. `tests/schgen/verify.test.ts` drives the refusals a declaring design gets. |
  *
  * **WHY GATE 1 REFUSES, AND WHY THAT IS THE CORRECT RESULT RATHER THAN A DEFECT.**
  * `docs/known-gaps.md` **G151** measured it: `circuitSpecFrom`'s output does not pass
- * `validateCircuit`, because passing would need an invented net rename, an invented no-connect
- * reason and invented BOM fields - and *"no backend invents an input"*. `generate` calls
- * `validateCircuit` and throws, so gate 1 carries those refusals and every later gate cascades to
- * `NOT_RUN`. **Nothing here calls `validateCircuit` differently, relaxes a rule, or supplies a
- * value the model does not hold**, which G151's criterion forbids: the refusals ARE the
- * measurement. A circuit that stops refusing is a circuit whose authoring declaration grew the
- * three missing things honestly.
+ * `validateCircuit`, because passing would need an invented net rename and an invented no-connect
+ * reason - and *"no backend invents an input"*. `generate` calls `validateCircuit` and throws, so
+ * gate 1 carries those refusals and every later gate cascades to `NOT_RUN`. **Nothing here calls
+ * `validateCircuit` differently, relaxes a rule, or supplies a value the model does not hold**,
+ * which G151's criterion forbids: the refusals ARE the measurement. A circuit that stops refusing
+ * is a circuit whose authoring declaration grew the missing things honestly.
+ *
+ * **THE THIRD THING IS NO LONGER ON THAT LIST, AND TASK 20 TOOK IT OFF FOR A STATED REASON.** This
+ * header used to name *"invented BOM fields"* as the third refusal class, and it was the largest:
+ * 96 of `pt2399-core`'s 115 gate-1 problems and 100 of `transistor-preamp`'s 101. The owner ruled
+ * that the BOM requirement is a property of the CONSUMER of an artifact rather than of the circuit
+ * (*"a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht
+ * pcbs"*), so `validateCircuit` no longer runs `bomFields` and `validateSourcing` does.
+ * `lib/schgen/ir/validate.ts`'s header carries his words; **G245** carries the decision, this
+ * census's before-and-after rows, and the one row of it that is now the HARNESS's refusal rather
+ * than the circuit's - `transistor-preamp` reaches the reference lock that `initLock: false`
+ * declines to create, which is a fact about this file and not about that circuit.
  *
  * **IT MEASURES THE DERIVED ARM.** Each circuit is built, `circuitSpecFrom` turns it into a
  * `CircuitSpec` under its authoring declaration, and the result goes to the real `runGates`
@@ -73,8 +83,9 @@ export const GATE_ORDER: readonly { readonly gate: string; readonly absentWhen: 
       "the design's `oscar` is null, so there is no reference board to compare against - and NO " +
       "design in this repository declares one, so gate 8's M1 comparison is exercised only by " +
       "tests/schgen/gates/reference-graph.kicad.test.ts and has NEVER run against a generated " +
-      "schematic (docs/known-gaps.md G238 measures why: generate refuses both hand-arranged " +
-      "references at gate 1; G240 records the gap with its price)",
+      "schematic (docs/known-gaps.md G238 and G245 measure why: generate refuses pt2399-core at " +
+      "gate 1 on 18 problems, and refuses transistor-preamp LATER, at the field-placement check " +
+      "inside block tp-leg-emitter-bypass; G240 records the gap with its price)",
   },
 ]
 
@@ -145,12 +156,20 @@ export async function gateCensus(repoRoot: string): Promise<readonly CircuitGate
  * of distinct reasons it actually is.
  *
  * **The four refusing classes are the ones `tests/schgen/authoring-complete.test.ts`'s
- * `RULE_CLASSES` already pins, with its matchers transcribed rather than re-invented** - that
- * test asserts those four and no others refuse, and each has its own register entry (`netNames`
- * **G150**, `pinsDeclared` **G151**, `singlePinNets` **G159**, `bomFields` **G149**). Writing a
- * second, differently-worded set here would make a FIFTH class look like a classification bug
- * instead of a finding. Anything unmatched is printed in full under `other: <problem>`, so a new
- * refusal shows up rather than disappearing into a total.
+ * `RULE_CLASSES` and `BOM_CLASS` pin, with its matchers transcribed rather than re-invented** -
+ * that test asserts which of them refuse a DRAWING and which refuse SOURCING, and each has its own
+ * register entry (`netNames` **G150**, `pinsDeclared` **G151**, `singlePinNets` **G159**,
+ * `bomFields` **G149**). Writing a second, differently-worded set here would make a FIFTH class
+ * look like a classification bug instead of a finding. Anything unmatched is printed in full under
+ * `other: <problem>`, so a new refusal shows up rather than disappearing into a total.
+ *
+ * **THE `bomFields` LABEL IS KEPT AND NO GATE CAN PRODUCE IT ANY MORE** (Task 20). `validateCircuit`
+ * stopped running the rule, so gate 1 cannot carry a BOM refusal and no other gate ever did. It
+ * stays because this list is read as the inventory of refusal classes a reader may meet: an empty
+ * `bomFields` row is the visible form of the owner's ruling, and a BOM problem arriving here from
+ * somewhere new is better labelled than binned under `other`. **It is a LABEL and not a check** -
+ * the thing with teeth is the unmatched arm, which prints an unknown problem in full, and
+ * `tests/schgen/authoring-complete.test.ts` is where a BOM refusal reaching the drawing path fails.
  */
 const PROBLEM_CLASSES: readonly { readonly label: string; readonly match: (p: string) => boolean }[] = [
   { label: "header", match: (p) => p === "circuit is invalid:" },

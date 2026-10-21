@@ -29,8 +29,11 @@
  *
  * **THE GENERATED SIDE DOES NOT EXIST YET FOR EITHER REFERENCE, AND THIS MODULE SAYS SO RATHER
  * THAN SUBSTITUTING SOMETHING THAT DOES.** `docs/known-gaps.md` **G238** measures it: `generate`
- * refuses both references at gate 1, on 115 and 101 `validateCircuit` problems, before any block
- * reaches a layout backend. So the comparison below has been exercised on **two real hand-arranged
+ * refused both references at gate 1, on 115 and 101 `validateCircuit` problems, before any block
+ * reached a layout backend. **Since Task 20 only one of the two refuses there** - `pt2399-core`, on
+ * 18 - and `transistor-preamp` validates clean and refuses LATER, inside block
+ * `tp-leg-emitter-bypass` on the field-placement defect **G232** records; **G245** carries that
+ * measurement. So the comparison below has been exercised on **two real hand-arranged
  * drawings and on no generated one** - which controller ruling R51 governs and
  * `docs/schematic/reference-graph-checks.md` states in full. **Running it against the ported
  * `mini` fixture instead is forbidden**: `mini` has no hand-arranged schematic a human trusts, so a

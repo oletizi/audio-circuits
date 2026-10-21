@@ -27,10 +27,12 @@
  * input is invented.
  *
  * **`validateCircuit` IS DELIBERATELY NOT CALLED.** `docs/known-gaps.md` **G151** records that
- * `circuitSpecFrom`'s output does not pass it - four rule classes refuse, which is the correct
- * consequence of *"no backend invents an input"*, since passing would need an invented net
- * rename, an invented no-connect reason and invented BOM fields. `buildCircuit` does not call it,
- * so the census builds and measures without inventing any of the three.
+ * `circuitSpecFrom`'s output does not pass it - which is the correct consequence of *"no backend
+ * invents an input"*, since passing would need an invented net rename and an invented no-connect
+ * reason. `buildCircuit` does not call it, so the census builds and measures without inventing
+ * either. (The third class this sentence used to name, invented BOM fields, is no longer one of
+ * `validateCircuit`'s: Task 20 moved `bomFields` to `validateSourcing` under the owner's ruling
+ * that the BOM requirement belongs to the CONSUMER of an artifact - **G245**.)
  *
  * **TWO READINGS ARE REPORTED, AND THEY ARE DIFFERENT QUESTIONS.** `outcome` is the SELECTOR's
  * answer for a block - what §1.3 would actually use, which for a `wired` block consults only the
