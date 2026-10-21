@@ -1589,17 +1589,26 @@ NUMBERS ABOVE ARE LEFT STANDING SO THE DISAGREEMENT IS VISIBLE.** `[RAN]`
 three seeded shuffles, permuting `g.units`, which is where this pipeline exposes
 *"reordering the `.capacitor(...)` calls"* - over **all twelve declared blocks**:
 
-| block | parts | placements | distinct orders | inter-net crossings over those orders | |
-| --- | --- | --- | --- | --- | --- |
-| `tp-leg-collector` | 2 | 2 | 2 | 0, 0 | INVARIANT |
-| `tp-leg-emitter-bypass` | 2 | 2 | 2 | 0, 0 | INVARIANT |
-| the four bias legs | 3 | 3 | 3 each | 0, 0, 0 each | INVARIANT |
-| `oc-power` | 8 | 8 | 4 | **1, 3, 2, 2** | MOVES |
-| `ob-buffer` | 9 | 11 | 4 | **7, 7, 4, 8** | MOVES |
-| `oc-audio` | 12 | 14 | 4 | **5, 12, 7, 6** | MOVES |
-| `tp-stage` | 16 | 16 | 4 | **7, 4, 5, 6** | MOVES |
-| `oc-sidechain` | 17 | 19 | 4 | **7, 14, 9, 19** | MOVES |
-| `pt-core` | 24 | 24 | 4 | **78, 53, 39, 65** | MOVES |
+| block | parts | placements | distinct orders | inter-net crossings over those orders | | gates (**R40**) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `tp-leg-collector` | 2 | 2 | 2 | 0, 0 | INVARIANT | accepted |
+| `tp-leg-emitter-bypass` | 2 | 2 | 2 | 0, 0 | INVARIANT | **REFUSED** |
+| the four bias legs | 3 | 3 | 3 each | 0, 0, 0 each | INVARIANT | accepted |
+| `oc-power` | 8 | 8 | 4 | **1, 3, 2, 2** | MOVES | **REFUSED** |
+| `ob-buffer` | 9 | 11 | 4 | **7, 7, 4, 8** | MOVES | **REFUSED** |
+| `oc-audio` | 12 | 14 | 4 | **5, 12, 7, 6** | MOVES | **REFUSED** |
+| `tp-stage` | 16 | 16 | 4 | **7, 4, 5, 6** | MOVES | **REFUSED** |
+| `oc-sidechain` | 17 | 19 | 4 | **7, 14, 9, 19** | MOVES | **REFUSED** |
+| `pt-core` | 24 | 24 | 4 | **78, 53, 39, 65** | MOVES | **REFUSED** |
+
+**SEVEN OF THESE TWELVE SUBJECTS ARE GEOMETRY THE POST-LAYOUT GATES REFUSE -
+ruling R40's label, and it belongs in THIS span because this is where the bound
+is asserted.** The sweep is taken at the uniform pre-snap `backend-output` stage
+on all twelve so that the stage is not a confound, and **the bound is therefore a
+property of the backend's OUTPUT rather than of the pipeline's accepted output.**
+**The decisive row is itself refused geometry:** `oc-power` is the only subject at
+8 placements and its layout fails `checkLayout`, so the upper end of the window
+rests on a layout this pipeline would not draw.
 
 **INVARIANCE HOLDS AT 2 AND 3 PLACEMENTS AND FAILS AT 8 AND EVERY LARGER SIZE
 MEASURED, so the bound is 3 and not 9.** The clearest row is `oc-power`: **the
@@ -2373,7 +2382,13 @@ repository at all** and ruling **R40** forbids constructing one.
 **THE FLOOR IS UNMEASURED BECAUSE THE QUANTITY DOES NOT EXIST ON THIS BACKEND.**
 `[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and
 height 0.** The worst port-glyph share is `tp-leg-emitter-bypass` at **66.7 %**
-of graph cells - the same range as the spikes' 10-67 %, so the SHARE reproduces -
+of graph cells. **That falls inside the spikes' published 10-67 %, and a RANGE
+OVERLAP is all that is: no per-block share was compared against any spike row, so
+nothing here is a reproduction verdict.** The spike's own per-block shares are for
+blocks this repository does not declare - `standin-mid` at 0.67, `pultec-low-cut`
+at 0.18, `pultec-mid` at 0.10 - so there is no row-to-row comparison to make. What
+the overlap does establish is that the share is the same ORDER of quantity on both
+frontends;
 **but a block whose cells are two-thirds boundary has a drawing with no boundary
 AREA at all.** The share is the interface cost's size in the graph ELK solves,
 which is the relationship §1.8 revision 4 says to name, and **nothing measured
@@ -2426,9 +2441,12 @@ them.
   spikes' ~9 came from 18 blocks out of TWO unusual parents - a 76-part passive
   EQ and a 37-part compressor with two dual op-amps - and nothing above 28 parts
   was tested. **The re-derived 3 comes from 12 declared blocks of 4 circuits,
-  its invariant side rests on THREE distinct topologies (four of the six small
-  blocks are the congruent bias legs), and no declared block here has more than
-  24 placements.** The ceiling is also a property of the backend's OUTPUT and not
+  and the CEILING's OWN SIZE is the thin spot: at size 3 all four subjects are
+  ONE topology - the bias legs draw byte-identically (G185) - each swept over 3
+  of its 6 possible permutations. Size 2 is better supported, two distinct
+  topologies swept exhaustively, and size 2 is not the ceiling. "Three distinct
+  topologies" is true of sizes 2 and 3 TOGETHER and discloses neither. And no
+  declared block here has more than 24 placements.** The ceiling is also a property of the backend's OUTPUT and not
   of the pipeline's accepted output: 7 of the 12 subjects are layouts the gates
   refuse, including the only subject at size 8, which is the one that fixes the
   upper end of the window. **MECHANISM, still untried: whether a template in the
@@ -2564,6 +2582,13 @@ down**, and a reader quoting 6.1x without that sentence is quoting a bound as a
 result. **A result below 1x after composition is possible** and would be a
 finding about seam B rather than a failure of the measurement.
 
+> **THE FOOTER BELOW IS THE ORIGINAL 2026-10-19 ONE AND IT PRE-DATES THE
+> RE-TAKE. DO NOT STOP HERE: the entry continues, the premise it rests on has
+> been measured false on this backend, and the second footer at the end of the
+> entry is the current one.** It is kept rather than deleted because it records
+> who found the gap and on what evidence, which the re-take does not supersede -
+> but a reader who left at this line would leave believing 43 edges went missing.
+
 - **Found** 2026-10-19, in a second third-party review of
   `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, recorded as
   that document's Revision 4, finding 15. **The supporting quotation was already
@@ -2576,6 +2601,9 @@ finding about seam B rather than a failure of the measurement.
   result rather than a decomposition one.
 - **Verified** CONFIRMED - the controller read §4's table and §11's limitation
   list in the spike, and quoted §11 rather than paraphrasing it.
+
+**THE RE-TAKE IS BELOW AND IT CHANGES THE PREMISE, NOT ONLY THE FIGURE.** Read on
+before quoting anything above.
 **THE INTEGRATED MEASUREMENT WAS TAKEN 2026-10-20 BY TASK 17, ON A MUCH NARROWER
 SUBJECT, AND THE 43 EDGES TURN OUT NOT TO EXIST ON THIS BACKEND.** Two separate
 results, and they must not be read as one:
@@ -16936,7 +16964,12 @@ review, absent from the history and destroyed by `git clean -fdx`.
 | `spike: { measures: SchematicMeasures; verdict }` | `spike: { row: SpikeBlockRow; figures; verdict }` | the spikes published no bend COUNT, no occupied area and no per-block wire length, so filling a `SchematicMeasures` for the spike side would have meant **inventing three numbers per row**. **Cost: the two sides are not the same type**, which is the honest shape |
 | `verdict: "reproduced" \| "moved"` | `"reproduced" \| "moved" \| "not-comparable"` | three of the five figures are not the same quantity as the spikes' (**G220** for `bendsPerEdge`; unit for the other two). A binary verdict would have published a comparison between different quantities. **Cost: none - the brief itself says to record a figure that cannot be compared** |
 | `BlockSizeDecision.ceiling: number` | unchanged, `number` | ruling **R39** widens it only if Step 5 cannot measure a ceiling. **It could, so R39 did not fire** and the plan's signature stands |
-| Step 4 on `optical-compressor` | Step 4 on five `transistor-preamp` legs | controller ruling **R38**: all three `oc-*` blocks are refused by the gates. **Cost: the architecture's one integrated measurement is on a five-block subset of one circuit family**, and the narrowness travels with every figure. **AND THE PRICE CAME OUT HIGHER THAN THE RULING STATED - see below** |
+| Step 4 on `optical-compressor` | Step 4 on five `transistor-preamp` legs | controller ruling **R38**: all three `oc-*` blocks are refused by the gates. **Cost: the architecture's one integrated measurement is on a five-block subset of one circuit family**, and the narrowness travels with every figure. **AND THE PRICE CAME OUT HIGHER THAN THE RULING STATED - see below the table** |
+| one file, `tools/schgen/remeasure.ts` | five files | `CLAUDE.md`'s 300-500 line ceiling; written as one module this is about 1600 lines. **Cost: a reader arrives at a front door and follows four pointers** |
+| *(not in the brief)* | `SCALE_INVARIANT_UPTO` and `SCALE_UNSTABLE_FROM` changed from 9 and 13 to 3 and 8 | the re-measurement falsified the numbers a Task 16 module states as G95's, on the same block the spike measured. **Cost: one pinned expectation in `tests/schgen/readability/baseline.test.ts` moved** - 11 cells is no longer in the unmeasured gap - and `oc-power` is now classified `about-a-serialization`, which is the measured answer. Leaving 9 would have shipped a module asserting a withdrawn number |
+| *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
+| *(not in the brief)* | the flat probe rebuilt to be genuinely flat, and the edge census split into `tools/schgen/remeasure-edges.ts` | fix round 1, item 1: round 1's probe never rebuilt `Circuit.unitBlock`, so it inherited the blocked declaration's boundary nodes. **Cost: the headline figure changed from 1.000x to 0.958x and 0.906x, and its direction from "removes none" to "ADDS"** - the finding it supports is unchanged and stronger |
+| *(not in the brief)* | both `SCALE_*` constants pinned to the sweep rather than to a classification | fix round 1, item 2: the old assertions constrained `UPTO` to {3,4} and `FROM` to {6,7,8}, so a one-step drift of the upper bound was not caught. **Cost: the pin now runs the ELK sweep, so it lives in `remeasure.test.ts` rather than beside the declarations** |
 
 **R38's PRICE WAS HIGHER THAN THE RULING STATED, AND THAT IS RECORDED AS THE
 CONTROLLER'S COST RATHER THAN THE IMPLEMENTER'S - ruling R45.** R38 substituted
@@ -16952,9 +16985,6 @@ than stated."* **The ruling was still the right call on its own reasoning** - a
 narrow measured number carrying its own caveat beats no number - and this entry
 records the price so that the next substitution of a measurement's subject is
 costed with this case in hand.
-| one file, `tools/schgen/remeasure.ts` | five files | `CLAUDE.md`'s 300-500 line ceiling; written as one module this is about 1600 lines. **Cost: a reader arrives at a front door and follows four pointers** |
-| *(not in the brief)* | `SCALE_INVARIANT_UPTO` and `SCALE_UNSTABLE_FROM` changed from 9 and 13 to 3 and 8 | the re-measurement falsified the numbers a Task 16 module states as G95's, on the same block the spike measured. **Cost: one pinned expectation in `tests/schgen/readability/baseline.test.ts` moved** - 11 cells is no longer in the unmeasured gap - and `oc-power` is now classified `about-a-serialization`, which is the measured answer. Leaving 9 would have shipped a module asserting a withdrawn number |
-| *(not in the brief)* | four later documents added to `docs/schematic/README.md`'s index | that index's own opening is *"committed is not durable if nobody can find it"* and it covered the six research passes only. **Cost: none** |
 
 - **Found** 2026-10-20, Task 17, as each deviation was made.
 - **Evidence** each row names the file the deviation is in and the rule or ruling
@@ -17004,6 +17034,21 @@ on it, and **on four of the five it is the only problem reported** - so those fo
 would draw if it alone were fixed. `tp-stage` would not: it carries two
 body-label overlaps as well. **5 of 12 draw today; this one fix is what stands
 between that and 9 of 12**, and both overlaps on top of it would make 10.
+
+> **THE "9 OF 12" IS CONDITIONAL ON THE FIX BEING FIELD-LOCAL, AND THE
+> CONDITION IS STATED HERE BECAUSE THIS NUMBER IS GOING TO THE OWNER AS THE BASIS
+> FOR A SCOPE DECISION.** The figure counts blocks whose ONLY reported problem is
+> field placement, which makes it exact for a fix that changes **where text is
+> placed and nothing else** - the first of the two mechanisms at the end of this
+> entry. **It does NOT hold for the second mechanism.** Treating *"no room for
+> the fields"* as a routing cost would move geometry, and moved geometry
+> re-enters obligations 1, 2, 3 and 5: the snap could collapse something, a
+> branch point could lose its junction (**G229** is that arm firing on a real
+> graph), a port coordinate could disagree, or a new clearance pair could appear.
+> **Under that mechanism the four blocks are candidates and not a count**, and
+> nothing here predicts how many would survive the other gates. The reviewer
+> marks the figure PLAUSIBLE rather than confirmed for exactly this reason, and
+> that is the right reading.
 
 **THE SOLE-BLOCKER / PARTIAL-BLOCKER SPLIT IS LOAD-BEARING AND IS WHY THE
 LEVERAGE IS 4 AND NOT 5.** `leverageOf` reports, per problem class, the blocks
@@ -17062,4 +17107,8 @@ entry's.
   does not expect it; or treat *"no room for the fields"* as a routing cost the
   backend should avoid, which means `lib/schgen/elk/` knowing about text and is a
   much larger change. **Nothing here chooses between them, and the criterion is
-  what binds.**
+  what binds.** **AND THE LEVERAGE FIGURE DISCRIMINATES BETWEEN THEM, which is
+  worth knowing before the scope decision:** *"9 of 12"* is exact for the first
+  mechanism and is a ceiling rather than a count for the second, because the
+  second moves geometry and re-opens four other obligations. **A scope decision
+  taken on 9 of 12 is taking it on the field-local mechanism.**

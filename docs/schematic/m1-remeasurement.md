@@ -353,10 +353,19 @@ window. The sweep is taken at the uniform `backend-output` stage on all twelve
 precisely so that the stage is not a confound; a sweep over accepted geometry
 only would cover five blocks of one circuit family at two sizes.
 
-**AND THE INVARIANT SIDE RESTS ON THREE DISTINCT TOPOLOGIES.** Six blocks are at
-or below the ceiling and four of them are the congruent bias legs, which draw
-byte-identically (**G185**). The distinct subjects are *a bias leg*,
-`tp-leg-collector` and `tp-leg-emitter-bypass`.
+**AND THE CEILING's OWN SIZE IS THE THIN SPOT, which an aggregate conceals.**
+Size 3 - the ceiling itself - has **four subjects that are ONE topology**: the
+four bias legs draw byte-identically (**G185**), so they are the same block four
+times, and each was swept over **3 of its 6 possible permutations**. Size 2 is
+better supported - **two distinct topologies, both swept exhaustively** (2 of 2
+permutations) - **but size 2 is not the ceiling.** So the bound's upper edge rests
+on one refused layout at size 8 and its lower edge on one topology at half its
+permutations. *"Three distinct topologies"* is true of sizes 2 and 3 together and
+does not disclose either of those.
+
+Across sizes 2 and 3 together the distinct subjects are *a bias leg*,
+`tp-leg-collector` and `tp-leg-emitter-bypass` - three topologies over six
+blocks.
 
 ### The floor is UNMEASURED, and the reason is that the quantity does not exist
 
@@ -364,9 +373,11 @@ byte-identically (**G185**). The distinct subjects are *a bias leg*,
 declared port, so *"a 1-part block's drawing was two-thirds boundary"*.
 `[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and
 height 0.** The worst port-glyph share is `tp-leg-emitter-bypass` at **66.7 %**
-of graph cells - against the spikes' 10-67 %, so the SHARE is in the same range -
-**but a block whose cells are two-thirds boundary has a drawing with no boundary
-AREA at all.**
+of graph cells. **That falls inside the spikes' published 10-67 %, and a RANGE
+OVERLAP is all that is** - no per-block share was compared against any spike row,
+because the spike's per-block shares are for blocks this repository does not
+declare. **And a block whose cells are two-thirds boundary has a drawing with no
+boundary AREA at all.**
 
 **So the share is the interface cost's size in the graph ELK solves, which is the
 relationship §1.8 revision 4 says to name, and the floor stays unmeasured.** The

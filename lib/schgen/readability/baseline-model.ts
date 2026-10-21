@@ -146,9 +146,12 @@ export type BaselineScale =
  *   property of the backend's OUTPUT and not of the pipeline's accepted output (R40 again);
  * - **the only subject at size 8 is one of those seven** - `oc-power` fails `checkLayout` - and it
  *   is the subject that fixes `SCALE_UNSTABLE_FROM`. The upper bound rests on one refused layout;
- * - **the invariant side is three distinct topologies, not six blocks.** Six blocks are at or below
- *   `SCALE_INVARIANT_UPTO`, and four of them are the bias legs, which draw byte-identically
- *   (`docs/known-gaps.md` **G185**).
+ * - **the invariant side is three distinct topologies, not six blocks** - and the CEILING's OWN
+ *   SIZE is thinner than that aggregate admits. Six blocks are at or below `SCALE_INVARIANT_UPTO`,
+ *   but **at size 3, the bound itself, all four subjects are ONE topology**: the bias legs draw
+ *   byte-identically (`docs/known-gaps.md` **G185**), so they are the same block four times, and
+ *   each was swept over **3 of its 6 possible permutations**. **Size 2 is the better-supported
+ *   size - two distinct topologies, both swept exhaustively - and size 2 is not the bound.**
  *
  * **WHAT IS STRONGER HERE THAN IN THE NUMBERS REPLACED:** these were measured on the backend that
  * actually draws, and the decisive row is a direct contradiction on a shared subject - `oc-power`,

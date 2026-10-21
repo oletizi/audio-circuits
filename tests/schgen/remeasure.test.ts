@@ -237,6 +237,39 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
     ])
   })
 
+  /**
+   * **THE CEILING's OWN SIZE, NOT THE AGGREGATE - fix round 1, item 3.** The caveat used to say
+   * *"three distinct topologies"*, which is true of sizes 2 and 3 together and conceals that the
+   * ceiling's own size has ONE topology swept over half its permutations. Both figures are
+   * asserted here so the disclosure cannot drift from the measurement.
+   */
+  it("supports the CEILING's size with one topology over 3 of its 6 permutations", () => {
+    const atCeiling = sweep.filter((r) => r.placements === SCALE_INVARIANT_UPTO)
+    expect(atCeiling.map((r) => r.block)).toEqual(["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b"])
+    // ONE topology: the four are byte-identical (G185), which these four measure rows show.
+    const shapes = new Set(atCeiling.map((r) => r.results.map((x) => x.crossings).join(",")))
+    expect(shapes.size, "the four subjects at the ceiling are one topology four times").toBe(1)
+    // The four MEASURE identically. The rendered rows differ only in which spike row each is paired
+    // with, so the comparison is over the measures themselves rather than over the printed line.
+    const legMeasures = new Set(
+      rows
+        .filter((r) => atCeiling.some((a) => a.block === r.block))
+        .map((r) => JSON.stringify({ ...r.geometry.measures, aspect: r.geometry.aspect, placements: r.geometry.placements })),
+    )
+    expect(legMeasures.size, "and they measure identically, which is what makes them one topology").toBe(1)
+    // 3 of 6 permutations: 3 placements have 3! = 6 orderings and the sweep laid out 3 distinct ones.
+    const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1))
+    for (const row of atCeiling) {
+      expect(row.distinctOrders, `${row.block} distinct orders`).toBe(3)
+      expect(factorial(row.placements), `${row.block} possible orders`).toBe(6)
+    }
+    // Size 2 is the better-supported size - two topologies, swept exhaustively - and is NOT the
+    // ceiling, which is the half an aggregate caveat hides.
+    const atTwo = sweep.filter((r) => r.placements === 2)
+    expect(atTwo.map((r) => r.block)).toEqual(["tp-leg-collector", "tp-leg-emitter-bypass"])
+    for (const row of atTwo) expect(row.distinctOrders, `${row.block}`).toBe(factorial(row.placements))
+  })
+
   it("rests its invariant side on THREE distinct topologies, because four of the six are congruent", () => {
     const invariant = sweep.filter((r) => r.invariant)
     expect(invariant.map((r) => r.block)).toEqual([
@@ -387,6 +420,8 @@ describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () =
     // SPLIT is asserted, so a class that blocks nothing by itself cannot be read as leverage -
     // body-label-overlap is sole blocker of ZERO and that is asserted too.
     expect(coverage.filter((r) => r.draws).length).toBe(5)
+    // 9 of 12 is exact for a FIELD-LOCAL fix and is a ceiling for the routing-cost mechanism, which
+    // would move geometry and re-open obligations 1, 2, 3 and 5. G232 carries the condition.
     expect(coverage.filter((r) => r.draws).length + (field?.soleBlocker.length ?? 0)).toBe(9)
     const overlap = leverageOf(coverage).find((l) => l.problemClass === "body-label-overlap")
     expect(overlap?.soleBlocker).toEqual([])

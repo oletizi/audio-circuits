@@ -433,10 +433,14 @@ export const BLOCK_SIZE: BlockSizeDecision = {
   evidence:
     "bun tools/schgen/remeasure-ceiling.ts, and tests/schgen/remeasure.test.ts pins every figure. " +
     "CONFIRMED by this writer: both bounds were run here, neither is relayed. THE CAVEAT TRAVELS " +
-    "WITH THE FIGURE: the window comes from 12 declared blocks of 4 circuits, the invariant side " +
-    "rests on 6 blocks of which 4 are the structurally identical bias legs - so THREE distinct " +
-    "topologies at or below the ceiling - and no declared block in this repository has more than " +
-    "24 placements, so nothing above that was tested at all. G101's own caveat applies unchanged: " +
+    "WITH THE FIGURE, AND THE CEILING's OWN SIZE IS THE THIN SPOT: the window comes from 12 " +
+    "declared blocks of 4 circuits, and at size 3 - the ceiling itself - all FOUR subjects are ONE " +
+    "topology, because the four bias legs draw byte-identically (G185), each swept over 3 of its 6 " +
+    "possible permutations. Size 2 is the better-supported size, two distinct topologies swept " +
+    "exhaustively, and size 2 is not the ceiling. The upper end rests on a single refused layout " +
+    "at size 8. Across sizes 2 and 3 together there are three distinct topologies, which is true " +
+    "and conceals both of those. And no declared block in this repository has more than 24 " +
+    "placements, so nothing above that was tested at all. G101's own caveat applies unchanged: " +
     "the spikes' 18 blocks came from two unusual parents, a 76-part passive EQ and a 37-part " +
     "compressor with two dual op-amps.",
 }
