@@ -19950,3 +19950,85 @@ equivalent of and which is the thing that makes a generated artifact auditable.
   it produces, and §3.5's reviewer gets the criterion - *can you follow this
   block from the drawing alone* - and never this list (**G83** is the entry about
   exactly that contamination).
+
+### G250 - MEASURED: in a tree without the acquired VeroRoute binary, 48 tests NEVER REGISTER, and six of them leave nothing behind at all - no failure, no name, no `testsuite` element
+
+**FOUND BY ACCIDENT WHILE ESTABLISHING A BASELINE, WHICH IS THE ONLY REASON IT
+WAS FOUND.** Task 19 Step 7 needed the suite count at the commit before its
+changes, so the run was taken in a fresh `git worktree` with `node_modules`
+symlinked. `.tools/` is gitignored - it holds the forked VeroRoute binary
+`tools/perfboard/acquire.ts` builds - so the fresh tree did not have it. **The
+run that came back was not the baseline, and the difference is worth more than
+the baseline was.**
+
+**THE TWO ARMS, ON THE SAME WORKTREE AT THE SAME COMMIT**, the second taken by
+adding one symlink and re-running nothing else:
+
+| arm | `bun test` summary | `testsuite` elements in the junit report | testcases registered |
+| --- | --- | --- | --- |
+| `.tools/` **absent** | `3546 pass / 78 fail / 1 error`, `Ran 3624 tests across 344 files` | **523** | **3623** |
+| `.tools/` **linked** (the control) | `3671 pass / 0 fail`, `Ran 3671 tests across 344 files` | **524** | **3671** |
+
+**MOST OF IT IS LOUD, AND THAT PART IS WORKING AS INTENDED.** 78 failures, and
+`[RAN]` `grep -c` finds the refusal text **99** times: *"no veroroute binary
+built yet. Run the \"veroroute\" verb (`bun run perfboard veroroute`) to build the
+pinned one, or set VEROROUTE to point at your own checkout."* **That message
+names the prerequisite AND the command that fixes it**, which is exactly what
+`CLAUDE.md` asks a refusal to do. 32 distinct test files report it.
+
+**THE PART THAT IS NOT LOUD IS THE ENTRY.** 3671 − 3623 = **48 tests never
+register**, and they are not among the 78 failures. `[RAN]` a name-level diff of
+the two junit reports:
+
+| file | tests in a complete run | what the no-`.tools` run leaves | lost silently |
+| --- | --- | --- | --- |
+| `tests/stripboard/materialize-run-perturbed.test.ts` | 22 | **1** testcase, `(unnamed)`, failing | 21 |
+| `tests/stripboard/materialize-run.test.ts` | 12 | **1** testcase, `(unnamed)`, failing | 11 |
+| `tests/stripboard/adopt-approval-gate.test.ts` | 11 | **1** testcase, `(unnamed)`, failing | 10 |
+| `tests/stripboard/seed-geometry.test.ts` | **6** | **NO `testsuite` ELEMENT AT ALL** | **6** |
+
+21 + 11 + 10 + 6 = **48**, which closes against the header difference exactly.
+
+**THE THREE THAT COLLAPSE TO `(unnamed)` ARE ACCEPTABLE**: a reader sees a
+failure, with the refusal message, against the file. **`seed-geometry.test.ts` is
+the one that is not.** `[RAN]` the text log: it throws at
+`tests/stripboard/seed-geometry.test.ts:82`, in top-level module code outside any
+`test()`, so bun reports it under *"Unhandled error between tests"* and counts it
+as the summary's **`1 error`**. It contributes **no `testsuite` element** to the
+junit report (523 against 524) and **no testcase name**. **Its six checks are
+gone and the only trace is a bare `1 error` beside the totals, which names
+nothing.** `CLAUDE.md`: *"A skipped check must never look like a passing one. If
+a guard cannot run, say so loudly."*
+
+**AND THE THING A LATER READER ACTUALLY NEEDS: a `Ran N tests` total is not a
+constant, so a suite comparison across two trees can be off by 48 for a reason
+that has nothing to do with the change being measured.** The Task 19 baseline
+would have been wrong by exactly that if the first arm had been believed.
+
+- **Found** 2026-10-21, Task 19 Step 7, incidentally.
+- **Evidence** the two arms above are the same `git worktree` at the same commit,
+  differing by one symlink, with `SCHGEN_SOURCE` set in both. **The control is
+  the second arm and it could have answered differently**: had the 78 failures
+  been caused by the worktree rather than by the missing binary - a plausible
+  alternative, since `node_modules` was also symlinked - adding `.tools/` would
+  not have taken it to `3671 pass / 0 fail`, and it did. The per-file table is a
+  name-level `comm` over `bun test --reporter=junit` output from both arms; the
+  three `(unnamed)` placeholders are visible in the diff's other direction and
+  are why the one-sided count reads 51 where the header difference reads 48.
+- **Verified** CONFIRMED - this writer ran both arms, diffed the two junit
+  reports and read the unhandled-error stanza in the text log.
+- **Why it is open** nothing was attempted. The fix is in a test file this task
+  has no business editing, and whether `seed-geometry.test.ts` should resolve the
+  binary inside a `test()` or inside a `beforeAll` is a decision for whoever owns
+  the stripboard tests. **It is recorded because the next agent to take a suite
+  count in a fresh tree will meet it, and because six checks disappearing without
+  a name is the failure mode the whole workflow exists to prevent.**
+- **What would settle it** **CRITERION: in a tree without `.tools/`, every test
+  that would have run in a complete tree is accounted for BY NAME - as a pass, as
+  a failure, or as an explicit refusal - and `Ran N tests` is the same N.**
+  Checkable by re-running the two arms above and diffing the junit reports.
+  **MECHANISM, UNTRIED:** move `seed-geometry.test.ts`'s binary resolution out of
+  module scope so the throw lands inside a named test. **That mechanism is
+  advice from someone who has not tried it**, and it addresses only the six; the
+  42 that collapse to three `(unnamed)` failures would still not be named, and
+  whether that matters is not judged here.
