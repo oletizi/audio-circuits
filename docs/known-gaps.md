@@ -13583,6 +13583,19 @@ than re-worded:**
 > remaining refusals to 3 / 14 / 18 / 0"*, and the drawing refusals are **3 / 14 / 18 / 0** -
 > **reached by moving the gate rather than by supplying any BOM data**, which is a route this entry
 > did not consider.
+>
+> **AND THAT AGREEMENT IS ITSELF A RESULT, WHICH IS WHY IT IS RECORDED AS ONE RATHER THAN AS A
+> COINCIDENCE** (controller ruling, Task 20 review). **Two different routes reach the same four
+> numbers.** This entry's route was to GIVE the circuits real purchasing data, which would have
+> satisfied `bomFields` part by part; Task 20's route was to stop asking a DRAWING for it, which
+> supplied nothing and satisfied nothing. **The two agree exactly, and what that establishes is that
+> the BOM demand was ORTHOGONAL to every other rule in the set**: none of the 380 purchasing
+> refusals was entangled with a net name, a no-connect, a single-pin net or anything else, so
+> meeting the demand and removing it are indistinguishable in the arithmetic. **That is the
+> strongest available support for the owner's criterion** - a purchasing requirement that shares
+> nothing with any rule a drawing depends on is a requirement a drawing does not depend on - **and
+> nobody set out to produce it.** It fell out of two independently-written predictions landing on
+> one figure, and **G245** records it from the other end.
 
 **BOM FIELDS ARE 380 OF THE 419 REFUSALS - 91%.** That is one finding, not four hundred: the
 circuit model has no BOM, so `from-network.ts` emits empty `Manufacturer`, `MPN`, `Supplier` and
@@ -18937,6 +18950,19 @@ would drop the remaining refusals to **3 / 14 / 18 / 0**"*. Task 20 supplied no
 BOM data at all and the drawing refusals are **3 / 14 / 18 / 0**. The entry also
 said *"that would NOT by itself satisfy the criterion"*, and it was right -
 see the next paragraph.
+
+**WHAT THE TWO ROUTES AGREEING ACTUALLY ESTABLISHES, and it is evidence FOR the
+owner's criterion that nobody set out to produce** (controller ruling, Task 20
+review). **G178** predicted those four numbers for a route that SUPPLIES the
+purchasing data; Task 20 reached them by a route that supplies none and asks for
+none. Two independently-written predictions landing on one figure means **the BOM
+demand was ORTHOGONAL to every other rule in the set** - not one of the 380
+purchasing refusals was entangled with a net name, a no-connect or a single-pin
+net, so satisfying the demand and withdrawing it are indistinguishable in the
+arithmetic. **A purchasing requirement that shares nothing with any rule a
+drawing depends on is a requirement a drawing does not depend on.** That is the
+criterion restated as a measurement, and it is stronger than the argument that
+preceded it because the figure was published before this task existed.
 
 **GATE 8's FIRST RUN AGAINST A GENERATED DRAWING IS STILL NOT REACHABLE, AND
 THE BLOCKER MOVED RATHER THAN CLEARING. THIS IS THE RESULT WORTH READING.**
