@@ -34,17 +34,36 @@
  * the allow-list needs the `<libpart>` polarity data, which `lib/kicad/netlist.ts`'s
  * `importNetlist` does not expose; `docs/known-gaps.md` records that and what it would cost.
  *
- * **TWO: THERE IS NO COLOUR REFINEMENT, AND IT WAS REMOVED AFTER BEING MEASURED.** The first
- * version of this module refined each node's signature from its neighbourhood until the partition
- * stopped growing, compressing the signatures each round over the union of both sides. It was
- * **deleted, because three measurements said it earned nothing** (`docs/known-gaps.md` **G241**
- * records them): the whole loop could be perturbed out of existence and every check in this
- * repository stayed green; it is a bijection INVARIANT, so it can only ever prune a search that
- * would have reached the same verdict; and timed against both real references and a fourteen-way
- * fully symmetric resistor ladder it was **marginally SLOWER** than not having it, because
- * `consistent` below already prunes on the first bound neighbour. Keeping it would have been sixty
- * lines of machinery exercised only by its own absence. **What survives is the signature itself**,
- * `<value>|<libId>|<connected pins>`, as the key that decides which nodes may map to which.
+ * **TWO: THE COLOUR REFINEMENT WAS DELETED AND THEN RESTORED, AND BOTH DECISIONS RESTED ON
+ * MEASUREMENTS THAT DISAGREE.** It refines each node's signature from its neighbourhood until the
+ * partition stops growing, compressing the signatures each round over the UNION of both sides -
+ * compressing them independently would make a class id on one side mean nothing on the other.
+ *
+ * **IT WAS DELETED** on three measurements (`docs/known-gaps.md` **G241**): the whole loop could be
+ * perturbed out of existence with every check in this repository staying green; it is a bijection
+ * INVARIANT, so it can only ever prune a search that would have reached the same `ok`; and timed
+ * against both real references and a fourteen-way symmetric resistor ladder it was marginally
+ * SLOWER than not having it, because `consistent` below already prunes on the first bound
+ * neighbour.
+ *
+ * **IT WAS RESTORED under controller ruling R57**, on a review measurement that the deletion's own
+ * figures did not cover: **a matching symmetric pair is the EASY case, and the worst case for a
+ * backtracking search is a symmetric pair that does NOT match.** The review reports that from 14
+ * nodes up - below both references' 24 and 32 - a real difference stops being reported as a stated
+ * topology difference and becomes *"the search did not complete"*, and that the refinement settles
+ * the same cases in 0.1-0.4 ms with a stated difference. **That costs nothing in `ok` and costs the
+ * gate's primary DIAGNOSTIC:** **G242**'s discriminator tells an operator to read the undeclared
+ * list for transposed pins, and a budget exhaustion invites them to raise the budget instead.
+ *
+ * **THE RESTORATION IS HONEST ABOUT WHAT IT IS: the review's measurement did NOT reproduce here,
+ * and G241 records all four constructions that were tried.** On this build the refinement changes
+ * no verdict and no timing on any shape that was found, the described shape (a parallel bank with
+ * one pad transposed) is caught by the connection-multiset arm before the search is reached, and
+ * the budget first exhausts at **120 nodes** rather than 14. It is restored anyway because it is an
+ * invariant - it cannot cause a false pass - and because an unreproduced measurement is a reason to
+ * keep a cheap safeguard, not to drop one. **What survives beside it is the signature**,
+ * `<value>|<libId>|<connected pins>`, as the key that decides which nodes may map to which; the
+ * signature COMPARISON stage stays deleted, which the review confirmed redundant.
  *
  * **THE SEARCH REFUSES RATHER THAN HANGING.** `MAX_BINDINGS` bounds the backtracking, and
  * exhausting it is reported as a PROBLEM - *"the search did not complete"* - which is a failure of
@@ -116,19 +135,20 @@ function index(g: ReferenceGraph, name: string): Indexed {
 }
 
 /**
- * Each node's signature: `<value>|<libId>|<connected pins>` - which nodes the search may map to
- * which, and nothing else about a node is allowed to decide that.
+ * **LIFTED VERBATIM FROM `f57c5dd^` under ruling R57**, which is the commit that deleted it. The
+ * only change is this comment: `initialSignatures` is what `signaturesOf` was called before the
+ * deletion, and it is kept under its original name so a reader diffing against `f57c5dd^` sees an
+ * identical block.
  *
- * **IT IS A GROUPING KEY AND NOT A CHECK, which was measured rather than assumed.** A comparison
- * of the two sides' signature multisets stood here and was deleted: perturbing it away left every
- * check in this repository green, and so did dropping the pin list from the key
- * (`docs/known-gaps.md` **G241**). It cannot change a verdict either: the component multiset, the
- * edge count and the connection multiset have already agreed by the time this is built, and an
- * injective node map that preserves pin numbers over equal edge counts covers every edge on both
- * sides - so a pin-set difference cannot survive the search even with a coarser key. What the pin
- * list buys is a smaller candidate list.
+ * **IT IS A GROUPING KEY AND NOT A CHECK.** A comparison of the two sides' signature multisets once
+ * stood beside it and is STILL deleted: perturbing it away left every check green, dropping the pin
+ * list from the key did too, and the review confirmed it redundant with zero surviving references
+ * (`docs/known-gaps.md` **G241**). The component multiset, the edge count and the connection
+ * multiset have all agreed by the time this is built, and an injective node map preserving pin
+ * numbers over equal edge counts covers every edge on both sides - so a pin-set difference cannot
+ * survive the search even with a coarser key.
  */
-const signaturesOf = (ix: Indexed): Map<string, string> => {
+const initialSignatures = (ix: Indexed): Map<string, string> => {
   const m = new Map<string, string>()
   for (const [k, base] of ix.base) {
     const pins = (ix.incident.get(k) ?? []).map((i) => i.pin)
@@ -136,6 +156,44 @@ const signaturesOf = (ix: Indexed): Map<string, string> => {
   }
   return m
 }
+
+/**
+ * Both sides' node signatures, refined together until the partition over their UNION stops
+ * growing.
+ *
+ * Round 0 is `<value>|<libId>` plus the node's own sorted pin numbers. Each later round appends,
+ * per incident pin, the previous round's class of the node at the other end and that end's pin
+ * number - so two nodes keep one class only while their neighbourhoods agree to the depth reached.
+ * It is an invariant of any bijection, which is what licenses comparing the class multisets before
+ * searching at all.
+ */
+function refineBoth(ia: Indexed, ib: Indexed): { readonly a: ReadonlyMap<string, string>; readonly b: ReadonlyMap<string, string> } {
+  let a: Map<string, string> = initialSignatures(ia)
+  let b: Map<string, string> = initialSignatures(ib)
+  let classes = new Set([...a.values(), ...b.values()]).size
+  const grow = (ix: Indexed, sig: ReadonlyMap<string, string>): Map<string, string> => {
+    const out = new Map<string, string>()
+    for (const [k, s] of sig) {
+      const around = (ix.incident.get(k) ?? []).map((i) => `${i.pin}>${sig.get(i.other) ?? ""}.${i.otherPin}`).sort()
+      out.set(k, `${s}[${around.join(";")}]`)
+    }
+    return out
+  }
+  for (let round = 0; round < Math.max(ia.base.size, ib.base.size); round += 1) {
+    const ga = grow(ia, a)
+    const gb = grow(ib, b)
+    const all = [...new Set([...ga.values(), ...gb.values()])].sort()
+    if (all.length === classes) return { a, b }
+    const idOf = new Map(all.map((s, i): readonly [string, string] => [s, `c${i}`]))
+    const compress = (m: ReadonlyMap<string, string>): Map<string, string> =>
+      new Map([...m].map(([k, s]): readonly [string, string] => [k, idOf.get(s) ?? ""]))
+    a = compress(ga)
+    b = compress(gb)
+    classes = all.length
+  }
+  return { a, b }
+}
+
 
 /** Elements of xs in excess of ys, as sorted `<item> x<n>`. */
 export function multisetDiff(xs: readonly string[], ys: readonly string[]): string[] {
@@ -199,8 +257,7 @@ export function matchGraphs(
   if (connOnlyB.length > 0) problems.push(`connections only in ${names[1]}: ${connOnlyB.join(", ")}`)
   if (problems.length > 0) return { ok: false, problems }
 
-  const sa = signaturesOf(ia)
-  const sb = signaturesOf(ib)
+  const { a: sa, b: sb } = refineBoth(ia, ib)
   const byClass = new Map<string, string[]>()
   for (const [k, c] of sb) {
     const list = byClass.get(c) ?? []

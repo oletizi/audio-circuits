@@ -18107,6 +18107,59 @@ implementation rather than to the assertions found two stages nothing in the
 repository depended on, and **the measurements are what got them deleted rather
 than documented.**
 
+> **REVERSED 2026-10-21 UNDER CONTROLLER RULING R57: THE REFINEMENT IS RESTORED,
+> AND THE JUSTIFICATION BELOW IS LEFT STANDING BECAUSE IT IS WHERE THE GAP WAS.**
+> The deletion's three measurements are all true and all about **a MATCHING
+> symmetric pair, which is the EASY case.** The worst case for a backtracking
+> search is **a symmetric pair that does NOT match**, and the deletion never
+> measured one - this entry's own words, *"Every case matched (ok=true) under
+> both"*, are the admission. `[RELAYED]` The review measured that case and reports
+> that from 14 nodes up - **below both references' 24 and 32** - a real difference
+> stops being a stated topology difference and becomes *"did not complete within
+> 2000000 bindings"* (its figures: 9 ms at 10 nodes, 406 ms at 12, budget
+> exhaustion at 14 and 18), while `refineBoth` lifted out of `f57c5dd^` settles
+> the same cases in 0.1-0.4 ms with 7 class mismatches. **No false pass either
+> way** - both outcomes are loud refusals on the gate row - **and the cost is that
+> G242's discriminator becomes unusable in exactly the case G242 tells the
+> operator to look for:** they get *"search did not complete"* instead of the
+> transposed-pin signature, and are invited to raise the budget instead of reading
+> the diagnosis. So *"it can only ever prune a search that would have reached the
+> same verdict"* is **true of `ok` and false of what is REPORTED**, and that
+> sentence is the one this entry got wrong.
+>
+> **AND THE REVIEW's MEASUREMENT DID NOT REPRODUCE HERE, which is recorded rather
+> than smoothed over.** `[RAN]` four constructions on this build:
+>
+> | construction | result |
+> | --- | --- |
+> | **the review's described shape** - a parallel bank of n identical resistors against the same bank with one resistor's pins transposed, n = 10 and 12 | **caught by the CONNECTION-MULTISET arm**, `connections only in`, 0.8 and 0.4 ms. The search is never reached, so it can neither grind nor exhaust. A single pad transposition always perturbs the pin-labelled connection multiset, which is checked before the search |
+| the same shape with two different capacitors terminating the bank, n = 8, 10, 12, 16 | the same: caught before the search, 0.2-0.6 ms |
+| **m rings of s identical resistors against a different m x s with the same node, net and connection counts** - every cheap invariant agrees and no bijection exists - at 24, 32, 36 and 48 nodes | **`topology differs` (STATED) under BOTH**, 2.9 / 7.6 / 7.6 / 20.5 ms with the refinement absent and 2.9 / 7.7 / 7.8 / 20.8 ms with it restored. **The refinement changes no verdict and no timing**, because a ring is vertex-transitive and refinement cannot split automorphic nodes |
+| the same rings, scaled | `topology differs` at 72 nodes (62 ms) and 96 nodes (150 ms); **the budget first exhausts at 120 nodes** (176 ms), which is 3.75x the larger reference |
+>
+> **So on this build the threshold is 120 nodes rather than 14, and the refinement
+> moves nothing on any shape that was found.** The two measurements are not
+> reconcilable from the review's description alone: its `matchGraphs` figures
+> report `topology differs` for an input this build answers with `connections only
+> in`, which means the two probes are not comparing the same construction. **The
+> refinement is restored anyway**, because it is an invariant and cannot cause a
+> false pass, and an unreproduced measurement is a reason to keep a cheap
+> safeguard rather than to drop one. **Marked RELAYED for every figure in the
+> review's table; the four rows above are this writer's own re-takes.**
+>
+> **THE CHECK THE DELETION WAS MISSING IS NOW IN PLACE, which is the half of R57
+> that does not depend on the disagreement.** `tests/schgen/gates/reference-graph.test.ts`
+> holds a non-matching symmetric pair at **24, 32 and 48 nodes** - the first two
+> being the references' own sizes - asserting a **stated** topology difference and
+> **not** a budget exhaustion, with a per-size control that the two sides match
+> their own copies. `[RAN]` four drives, after a control that passes
+> (**38 pass / 0 fail**): the budget forced to 1 goes **RED** (17 fail), the
+> search disabled goes **RED** (5 fail), **the drive R57 prescribes - removing the
+> refinement again - stays GREEN (38 pass / 0 fail)**, and compressing the two
+> sides independently stays GREEN. The first two are what give the new cases
+> teeth; the third is the non-reproduction, stated as a measurement rather than as
+> a disagreement.
+
 **ONE: THE COLOUR REFINEMENT.** `graph-match.ts` refined each node's signature
 from its neighbourhood until the partition stopped growing, compressing the
 signatures each round over the union of both sides. Three measurements:
@@ -18209,7 +18262,18 @@ drawings would be a false defect report.
   thing standing against it is this paragraph. It is the same shape as **G235**'s
   and **G237**'s remedies - a discipline with no mechanism - and the same doubt
   applies.
-- **What would settle it** nothing for the deletions; they are done.
+- **What would settle it** nothing for the signature-comparison deletion; it is
+  done and the review confirmed it. **FOR THE REFINEMENT, RESTORED UNDER R57,
+  THERE IS AN OPEN QUESTION AND IT IS NOT MINE TO CLOSE: the review's measurement
+  and this writer's disagree about the same function.** **CRITERION: one
+  construction, written down, on which the refinement converts a budget
+  exhaustion into a stated topology difference.** The review has one and its
+  description did not reproduce here; four constructions were tried and none did.
+  **MECHANISM, untried and it is the controller's to direct:** the review's probe,
+  committed or quoted, run on this build - which settles it either way in one run.
+  Until then the refinement is kept as a cheap invariant that cannot cause a false
+  pass, and **G242**'s discriminator rests on a threshold this writer measures at
+  120 nodes and the review measures at 14.
   **CRITERION for item three: a perturbation reported as leaving a check green
   has been shown to be the only way that check could have caught the defect** -
   i.e. a symmetric check is perturbed on both sides, and a discriminating probe
@@ -18262,6 +18326,14 @@ loudly beats a general rule that quietly accepts a guess.*
 > electrically nothing and is still a difference between the two drawings, and
 > whether it is a generator defect or a missing symmetry model is a question to
 > ANSWER, not to route around.
+>
+> **AND THE DISCRIMINATOR HAS TO SURVIVE THE SEARCH TO BE READABLE AT ALL, which
+> is why the colour refinement was restored under ruling R57** (**G241**): if a
+> real difference comes back as *"the search did not complete"* instead of a
+> stated topology difference, the operator gets nothing to discriminate on and is
+> invited to raise a budget instead of reading this entry. On this build that
+> threshold measures at 120 nodes rather than at the 14 the review reports, and
+> **G241** records both figures and the disagreement.
 >
 > **IT IS ALSO THE FIRST THING TO CHECK WHEN THE GATE FIRST RUNS AGAINST A
 > GENERATED SIDE** (**G240**'s criterion). A non-empty `undeclared` list whose

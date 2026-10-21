@@ -125,9 +125,20 @@ pair. `lib/schgen/gates/graph-match.ts` then compares, in order:
    first three cannot see. Two rings of three resistors against one ring of six
    agree on all of 1 to 3 and are not the same circuit.
 
+Nodes are grouped for step 4 by a signature refined from each node's
+neighbourhood until the partition stops growing — **restored under controller
+ruling R57 after being deleted and measured**, because a real difference that
+comes back as *"the search did not complete"* instead of a stated topology
+difference leaves the operator nothing to discriminate on. `../known-gaps.md`
+**G241** records the restoration, the review measurement behind it, and the fact
+that **it did not reproduce on this build** — four constructions tried, the
+budget first exhausting at 120 nodes rather than the 14 the review reports.
+
 The search's budget is bounded and **exhausting it is reported as a problem -
 never as a pass.** A check that could not finish must not resemble one that
-agreed.
+agreed. **And a real difference must not arrive that way either**, which is what
+`tests/schgen/gates/reference-graph.test.ts` pins at 24, 32 and 48 nodes — the
+first two being these references' own sizes.
 
 Where a permitted delta comes from
 ----------------------------------
