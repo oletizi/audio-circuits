@@ -872,6 +872,35 @@ this entry may not settle either.**
   citation; if he does not, the column changes and `G54`'s width defect may go
   with it. **No agent picks between the three.**
 
+**ASKED AND DECLINED, 2026-10-21. BOTH HALVES, IN ONE UTTERANCE, VERBATIM:**
+
+> *"I don't recall. I don't care"*
+
+**What each half means, kept apart because they are different facts.**
+
+**Half (2) is answered and the answer is NO LICENCE.** He does not recall
+recommending it, so `tests/guide/cut-separates.test.ts`'s *"the owner's
+recommendation"* is **unsourced and stays unsourced** - not disproven, but with
+nothing behind it and the only person who could source it saying he does not
+recall. The test's header annotation stands and must not be upgraded to a
+citation.
+
+**Half (1) is DECLINED, not answered.** He does not care which of the three the
+column is. So the column **stays as net names by default, because he declined -
+NOT because an agent chose correctly.** A declination is not a ratification.
+
+**AND THE INVARIANT BREACH IS NOT CURED BY THIS.** The agent authored an
+acceptance criterion for the artifact it was producing, and then the record of
+the question being open was deleted thirteen seconds later. **That was wrong
+when it happened and it stays wrong**; what his declination settles is the
+OUTCOME, not the CONDUCT. Anyone reading this later should take the lesson from
+the breach and not from the fact that it turned out he did not mind.
+
+**This entry is NOT deleted**, because the mechanism above made deletion
+conditional on him confirming option 2 and he has not. It moves to the declined
+section's terms: **nobody asks him about the column again unprompted.** `G54`'s
+width defect stays open on its own merits and no longer waits on this.
+
 ---
 
 Declined: the owner has ruled, and nobody asks again unprompted
