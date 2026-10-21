@@ -18120,7 +18120,7 @@ contract. Citing it rather than re-deriving it is R51's instruction.
   `brief`, and nothing else. **Do NOT meet this criterion by pointing the gate at
   the `mini` fixture** - R50 forbids it and the reason is recorded above.
 
-### G241 - MEASURED: TWO STAGES OF THE GATE-8 MATCHER COULD BE PERTURBED OUT OF EXISTENCE WITH THE WHOLE SUITE STAYING GREEN, and a one-sided perturbation of a symmetric check cannot go red at all
+### G241 - MEASURED: TWO STAGES OF THE GATE-8 MATCHER COULD BE PERTURBED OUT OF EXISTENCE WITH THE WHOLE SUITE STAYING GREEN; one of them is RESTORED on a measurement that did not reproduce; and a probe without a passing control proved nothing FOUR times, twice on one item from two different authors
 
 **THIS IS G236's CLASS, FOUND BY THE DISCIPLINE G236 ASKED FOR, and both findings
 are this writer's own code.** The controller imposed *"drive every new assertion
@@ -18252,6 +18252,26 @@ perturbed in both directions and both go red.
 > **THE END STATE, which is the figure to quote rather than the journey:** `[RAN]`
 > **20 perturbations, 20 red, 0 green**, each restoring the file it edited and
 > asserting the restore byte for byte before continuing.
+>
+> **AND THE CLAUSE HAS TWO INDEPENDENT INSTANCES ON ONE ITEM, FROM TWO AUTHORS,
+> WHICH IS WHAT MAKES IT A CLASS RATHER THAN A LAPSE - ruling R60.** Both are
+> about the SAME ruling, R53's type change, within a day:
+>
+> | author | the probe | why it proved nothing |
+> | --- | --- | --- |
+> | **the implementer** `[CONFIRMED]` | `bunx tsc --noEmit` on a single probe file | a single-file invocation ignores the project `tsconfig`, so unrelated `lib/kicad/install.ts` errors came back for **all three cases including the control** |
+> | **the reviewer** `[RELAYED]` | a probe with `// @ts-expect-error` written at the head of a comment | the directive **suppressed the diagnostic it was there to catch**, so the case passed for the wrong reason; re-driven clean afterwards |
+>
+> **WHAT THAT STRENGTHENS, and it is the reason to record a second instance at
+> all: the clause is not about carelessness in one author.** Two people reached
+> the same false green on the same item by **two different routes** - a wrong
+> compiler invocation and a suppressed diagnostic - neither of which looks like a
+> mistake while you are making it, because in both cases the probe RAN and
+> reported something. **A control that passes is what separates "my probe
+> discriminates" from "my probe emits output"**, and it would have caught both
+> without either author knowing what their specific error was going to be. That
+> is the property a discipline needs to be worth stating: it does not require
+> anticipating the failure.
 
 **FOUR: THE REFUSAL THAT SEPARATES "COULD NOT FINISH" FROM "AGREED" HAD NEVER
 BEEN TAKEN.** `matchGraphs` bounds its backtracking and reports exhaustion as a
@@ -18299,9 +18319,13 @@ drawings would be a false defect report.
   **CRITERION for item three: a perturbation reported as leaving a check green
   has been shown to be the only way that check could have caught the defect** -
   i.e. a symmetric check is perturbed on both sides, and a discriminating probe
-  has a CONTROL that passes, before a green is believed. **The control clause is
-  the half this task got wrong twice** (here and in **G243** row two's `tsc`
-  probe), and it is cheap: a probe whose control also fails has measured nothing.
+  has a CONTROL that passes, before a green is believed. **The control clause has
+  four instances now, and two of them are on one item from two different
+  authors** (ruling R60, the table above): the implementer's single-file `tsc`
+  run and the reviewer's suppressed `@ts-expect-error`, plus this task's
+  one-sided perturbations of the component and connection multisets. It is cheap:
+  **a probe whose control also fails has measured nothing**, and the clause
+  catches that without the author having to anticipate their own error.
   **MECHANISMS, both untried:** a harness that refuses a perturbation whose
   needle appears more than once in the file, which would have flagged both
   one-sided attempts mechanically; or a harness that requires every perturbation
