@@ -20062,7 +20062,34 @@ adding one symlink and re-running nothing else:
 built yet. Run the \"veroroute\" verb (`bun run perfboard veroroute`) to build the
 pinned one, or set VEROROUTE to point at your own checkout."* **That message
 names the prerequisite AND the command that fixes it**, which is exactly what
-`CLAUDE.md` asks a refusal to do. 32 distinct test files report it.
+`CLAUDE.md` asks a refusal to do.
+
+**THE 99 IS EXACT. THE FILE COUNT BESIDE IT WAS NOT, AND THE REASON IT WAS NOT
+IS WORTH MORE THAN THE CORRECTED FIGURE: "distinct test files" IS AMBIGUOUS
+ACROSS THREE DEFENSIBLE COUNTS, AND PUBLISHING A NUMBER WITHOUT ITS METHOD IS
+WHAT LET A WRONG ONE SIT HERE.** An earlier version of this line said **32**,
+`[RAN]` `grep -oE '^tests/[^ :]*\.test\.ts' <log> | sort -u | wc -l`, which
+counts every file that printed **any** log section - including files whose only
+output was an unrelated console line. It is not a count of files that reported
+the refusal and no method reaches 32. The three that are defensible, each driven,
+and what separates them:
+
+| method | count | what it counts |
+| --- | --- | --- |
+| A | **24** | files whose junit `testsuite` reports `failures > 0` |
+| **B** | **25** | **files whose log section carries at least one of the 99 refusal lines** |
+| C | **26** | files whose log section mentions the binary at all |
+
+**THE FIGURE THIS ENTRY PUBLISHES IS B = 25**, because "report it" means the
+refusal, and **the one file B has that A does not is
+`tests/stripboard/seed-geometry.test.ts`** - this entry's own subject, which
+reports the refusal and has no `testsuite` element to carry a failure count. The
+one C has that B does not is `tests/perfboard/verbs.test.ts`, which mentions
+veroroute because it fails on its own fake-binary fixture and not on the missing
+real one. Both deltas are `[RAN]` as a `comm` between the three file lists.
+**CONTROL, which could have answered differently and did**: all three methods
+return **0** on the linked arm, so they measure the refusal rather than the size
+of the suite.
 
 **THE PART THAT IS NOT LOUD IS THE ENTRY.** 3671 − 3623 = **48 tests never
 register**, and they are not among the 78 failures. `[RAN]` a name-level diff of
