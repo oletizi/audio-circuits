@@ -20121,7 +20121,7 @@ would have been wrong by exactly that if the first arm had been believed.
   42 that collapse to three `(unnamed)` failures would still not be named, and
   whether that matters is not judged here.
 
-### G251 - MEASURED: the repository root's `make check` does NOT pass, and has not for at least this branch - three of the five transistor-preamp boards refuse on an incomplete committed layout, identically before and after Task 19
+### G251 - MEASURED: the repository root's `make check` does NOT pass, and has not for at least this branch - FOUR of the eleven declared boards refuse, in TWO different cause classes, identically before and after Task 19
 
 **WHY THIS IS WORTH AN ENTRY RATHER THAN A SHRUG.** `README.md` calls `make
 check`, *"run from a board's directory ... or from the repository root to check
@@ -20136,22 +20136,39 @@ measurement.
 `[RAN]` `make -C boards/<board> check` per board, at `8813c6c` (before this task,
 in a `git worktree` with `node_modules` and `.tools` linked) and at this commit:
 
-| board | before | after |
-| --- | --- | --- |
-| the five `pultec-*` boards | exit 0 | exit 0 |
-| `transistor-preamp-buffered` | **exit 0** | **exit 0** |
-| `transistor-preamp-feedback` | **exit 0** | **exit 0** |
-| `transistor-preamp-lab` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
-| `transistor-preamp-loop` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
-| `transistor-preamp-staged` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` |
+**ALL ELEVEN DECLARED BOARDS, none omitted** - an earlier version of this entry
+listed ten and left out the one whose cause is DIFFERENT, which defeated the
+entry's whole purpose: a reader found three of four refusals explained and would
+reasonably have concluded the fourth was theirs:
 
-**The two passing preamp boards are the control and they could have answered
-differently**: a change that broke the board checks generally would have taken
-`buffered` and `feedback` down too, and it did not.
+| board | before | after | cause class |
+| --- | --- | --- | --- |
+| the five `pultec-*` boards | exit 0 | exit 0 | - |
+| `transistor-preamp-buffered` | **exit 0** | **exit 0** | - |
+| `transistor-preamp-feedback` | **exit 0** | **exit 0** | - |
+| **`pt2399-core`** | **exit 2, 1 `FAIL`** | **exit 2, 1 `FAIL`** | **a MISSING EXPORT** |
+| `transistor-preamp-lab` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` | an unfinished layout |
+| `transistor-preamp-loop` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` | an unfinished layout |
+| `transistor-preamp-staged` | exit 2, 1 `FAIL` | exit 2, 1 `FAIL` | an unfinished layout |
 
-**WHAT THE THREE ACTUALLY REFUSE ON, read in full rather than from the summary
-line.** Not a toolchain problem and not the lead-span whitelist the message's
-tail talks about: **the committed layouts are unfinished.** `transistor-preamp-lab`'s
+**The passing boards are the control and they could have answered differently**:
+a change that broke the board checks generally would have taken `pultec-mid`,
+`buffered` and `feedback` down too, and it did not - driven in the same worktree,
+in the same run, as the `pt2399-core` figures.
+
+**`pt2399-core` IS A SECOND CAUSE CLASS AND NOT A FOURTH MID-LAYOUT BOARD.**
+`[RAN]` its refusal, in full, identically at `8813c6c` and at this commit:
+
+> `circuits/pt2399-core/pt2399-core.ts: no "bomConditions" export. Export `bomConditions(): BomConditions` (tools/bom/conditions.ts).`
+
+Its layout is not the problem; the circuit module does not export what the BOM
+conditions check requires. **A reader who knows only about the mid-layout class
+will not recognise this one**, which is the reason it is named here rather than
+folded into a count.
+
+**WHAT THE THREE MID-LAYOUT BOARDS REFUSE ON.** Not a toolchain problem and not
+the lead-span whitelist the message's tail talks about: **the committed layouts
+are unfinished.** `transistor-preamp-lab`'s
 reports `BASE incomplete`, `BYPASS_CAP incomplete`, `COLLECTOR incomplete`,
 `GND blocked (J2 unplaced)`, `OUT blocked (J2 unplaced)` and
 `Cuts: not resolved (strip connectivity incomplete - run --update)` among its
@@ -20171,27 +20188,45 @@ silently passes is worse than no constraint."* That is `CLAUDE.md`'s rule workin
 
 - **Found** 2026-10-21, Task 19 Step 7, by running the root `make check` after
   the five `pultec-*` boards the brief asked for had all passed.
-- **Evidence** the BEFORE column is five `make -C boards/transistor-preamp-*
-  check` runs in a detached `git worktree` at `8813c6c`, with `node_modules` and
+- **Evidence** the BEFORE column is `make -C <worktree>/boards/<board> check` run
+  per board in a detached `git worktree` at `8813c6c`, with `node_modules` and
   `.tools` symlinked so the VeroRoute binary resolves (**G250** is what happens
-  without it). The AFTER column is the five `make -C boards/pultec-* check` runs
-  Task 19 Step 7 asked for, plus the root `make check` walk, which covers all
-  eleven declared boards in one run. The refusal text is read from that walk's own
-  output in full, not summarised from the `FAIL` line. The control is named above.
+  without it). **It is per-board rather than the root walk for a reason worth
+  having**: `[RAN]` the root `make check` in that worktree refuses before
+  reaching any board - *"node_modules: is a symlink to a directory.
+  discoverDeclarations does not follow symlinked board directories, because a
+  perfboard.json reachable only through one would otherwise be silently
+  skipped"* - so **the root walk cannot be taken in a symlinked worktree at all**,
+  and a later agent trying to reproduce the BEFORE column this way will meet that
+  refusal rather than a result. The AFTER column is the root `make check` walk,
+  which covers all eleven declared boards in one run, plus per-board runs of
+  `pt2399-core`, `pultec-mid` and `transistor-preamp-buffered` taken beside the
+  BEFORE ones so the two columns are compared through the same command.
+  **CORRECTION, and it is why this entry needed a second pass: an earlier version
+  of this line claimed the walk's output was "read in full", and it was not** -
+  the walk's `FAIL` lines were read and `pt2399-core`'s was missed, so the table
+  listed ten boards of eleven. The refusal texts quoted above are now read from
+  the runs' own output, and the board list is `[RAN]`
+  `grep -E '^FAIL' <walk log>`, which returns **four** lines.
 - **Verified** CONFIRMED - this writer ran every one of them. **G62**'s 19-strip
   measurement is **RELAYED** from that entry.
-- **Why it is open** **nothing here is a defect to fix.** Three boards are
-  mid-layout, which is the normal state of a board in this repository. It is open
+- **Why it is open** **nothing here is a defect to fix by this task.** Three
+  boards are mid-layout, which is the normal state of a board in this
+  repository; `pt2399-core`'s missing export may well be one, and this entry does
+  not judge it. It is open
   because the root `make check` is documented as the front door in two places and
   neither says it does not currently exit 0, so the next agent to run it meets an
   unexplained failure at exactly the moment it is most likely to be misread as
   its own.
 - **What would settle it** **CRITERION: either the root `make check` exits 0, or
-  the two documents that call it the front door say which boards are expected to
-  refuse and why.** Both are checkable. **MECHANISMS, both UNTRIED and neither
-  preferred here**: finish the three layouts, which is bench work and nobody's to
-  schedule from a register entry; or have the per-board walk distinguish *this
-  board is mid-layout* from *this board is wrong*, which is a change to
-  `make/board.mk`'s contract and **an owner decision rather than a tidy-up** -
-  the current behaviour is deliberate, and an "expected to refuse" list is one
-  edit away from a list that excuses a real failure.
+  the two documents that call it the front door say which of the eleven boards
+  are expected to refuse and in which cause class.** Both are checkable, and the
+  second half says *cause class* because a bare list of four board names is what
+  let this entry lose one of them. **MECHANISMS, all UNTRIED and none preferred
+  here**: finish the three layouts, which is bench work and nobody's to schedule
+  from a register entry; add `pt2399-core`'s `bomConditions` export, which is a
+  different and probably much smaller job and is still not this task's; or have
+  the per-board walk distinguish *this board is mid-layout* from *this board is
+  wrong*, which is a change to `make/board.mk`'s contract and **an owner decision
+  rather than a tidy-up** - the current behaviour is deliberate, and an "expected
+  to refuse" list is one edit away from a list that excuses a real failure.
