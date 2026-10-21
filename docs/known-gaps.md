@@ -17313,6 +17313,11 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > > 2 of 16 lib ids still fit at least one inside slot**, because `PT2399` fits
 > > five and `TL072` fits one. The positive control still passes and still could
 > > have answered differently, which is what the figure was for.
+> >
+> > **BOTH THIS CORRECTION AND THE STM32 ONE BELOW ARE RECORDED AS A PAIR IN
+> > G246**, because they entered this entry in ONE commit, inside the round that
+> > was correcting their own class, and were found by a named suspicion that a
+> > thorough general audit had passed.
 >
 > **AND THE REASON PUBLISHED FOR NOT REPRODUCING THE OTHER HALF OF THE POSITIVE
 > CONTROL WAS FALSE.** This entry said the reviewer's `STM32H743IITx` case was
@@ -19407,3 +19412,81 @@ the right place for it.
   unjudged here**, and the criterion is met by any route that satisfies it.
   Parked, not deferred: **R68** parks it loudly rather than ruling it
   acceptable.
+
+### G246 - MEASURED: the round that corrected an overclaim introduced TWO overclaims into the same entry, in ONE commit - and both were found by a NAMED SUSPICION where a thorough general audit had passed them
+
+**THIS IS THE STRONGEST EVIDENCE ON THIS BRANCH THAT THE OVERCLAIM HABIT IS
+SYSTEMATIC RATHER THAN CARELESS**, and it is recorded for that reason rather than
+to re-list two corrected numbers. The corrections themselves are in **G245**;
+what this entry holds is the shape they make together.
+
+**THE INSTANCES, BOTH IN `docs/known-gaps.md`'s G245, BOTH INTRODUCED BY
+`c77cfff`** - `[RAN]` `git show c77cfff -- docs/known-gaps.md` puts both added
+lines in that one commit, which is **the item-4 commit of the review round whose
+item 3 was itself an overclaim correction**:
+
+| the claim as published | what it actually was | whose class |
+| --- | --- | --- |
+| *"that nickname is not configured in this repository's resolver"*, given as why the reviewer's `STM32H743IITx` positive control was not reproduced | **FALSE.** `symbolLibraries(["MCU_ST_STM32H7"])` resolves to an installed KiCad stock library and `resolve("MCU_ST_STM32H7:STM32H743IITx")` succeeds, body 60960 x 220980 um. The real reason is SCOPE - no parity circuit declares an STM32 | **G237**: a claim about the author's OWN investigation that does not hold. The limitation was real and the reason given for it was invented |
+| `Amplifier_Operational:TL072` fits **5 of 5** inside slots | **1 of 5**, centre only. The sweep compared the grown pair's HEIGHT and WIDTH against the body's; `field-placement.ts` applies `within` per box and strictly, and a quadrant slot is offset toward a corner | the class **the previous round's own item 3** existed to correct: a figure not measured the way the entry implies |
+
+**SO THE SECOND ONE IS THE SAME ERROR THE ROUND WAS FIXING, COMMITTED WHILE
+FIXING IT.** The previous round's item 3 corrected *"fails the new control
+alone"* to what was true at line granularity - a claim stated at a coarser
+granularity than it was measured. The TL072 figure is exactly that again: a
+containment claim stated from a dimensional measurement.
+
+**AND THE FIRST ONE IS G237's CLASS ARRIVING IN AN ENTRY THAT CITES G237**, which
+is the third time on this branch an entry has exhibited its own pattern inside
+itself - **G235** (a pattern put in a hand-back message and not written down *"one
+message after writing G234"*), **G245**'s own sweep-coverage claim (**G244**'s
+class, inside the round recording it), and this.
+
+**THE DETECTION FACT, WHICH IS WORTH AS MUCH AS THE FINDING, and it is stated
+without being inflated.** `[RELAYED]` Both were found by a closing verification
+**running on a smaller model than the review that had already accepted them** -
+that review was thorough, drove the split three independent ways, and passed
+both claims. **What differed was not capability: the verification was told, in so
+many words, to check whether a stated reason was an excuse.** A named suspicion
+found what a general audit did not.
+
+**THE SAMPLE IS ONE AND NOTHING HERE IS A CLAIM ABOUT MODEL TIERS.** One
+verification, one round, two findings. It is recorded because the cheap
+intervention - *name the suspicion* - is the only thing that distinguished the
+two runs, and because the alternative reading (that a bigger audit finds more)
+is contradicted by this single case rather than supported by it.
+
+- **Found** 2026-10-21, Task 20's closing verification; the corrections are
+  **G245**'s, driven and confirmed by this writer.
+- **Evidence** `[RAN, CONFIRMED]` by this writer, not accepted on report: the
+  STM32 resolves and its body is 60960 x 220980 um, agreeing with the original
+  reviewer's figures and the verification's; and `Amplifier_Operational:TL072`
+  is 1 of 5 under `field-placement.ts`'s own `within`, with the four quadrant
+  slots overflowing **635 um on the Reference box and 1270 um on the Value box**,
+  which reconciles the verification's *"635 to 1270"* as a per-box pair rather
+  than a range. **The check that could have answered differently:** the loose and
+  strict tests were run side by side on five subjects and **disagree on TL072
+  alone** - `Audio:PT2399` is 5 of 5 under both, and the two capacitors and the
+  jumper are 0 of 5 under both. A probe that found the loose test wrong
+  everywhere, or nowhere, would have failed that comparison.
+  `[RAN]` `git show c77cfff` for the one-commit claim. **The detection fact is
+  RELAYED**: this writer did not observe the two runs and cannot measure what
+  differed between them beyond what the review said.
+- **Verified** CONFIRMED for both corrections and for the commit attribution.
+  **RELAYED** for the verification's method, for its model being the smaller one,
+  and for the review having passed both claims.
+- **Why it is open** nothing here is fixed, because what would be fixed is a
+  habit. Two overclaims entered an entry *about* overclaiming, in the round
+  *correcting* one, past a review that was looking for exactly this.
+- **What would settle it** **CRITERION: a round that corrects a class of error
+  does not introduce an instance of that class**, which is checkable after the
+  fact and was not met here. **MECHANISMS, both UNTRIED and one of them already
+  known to fail.** (1) *The same discipline, harder* - check every number and
+  every stated reason before publishing - **is the remedy this branch has already
+  watched fail at least three times** (**G234**, **G236**, **G237**), so it is
+  recorded as a non-mechanism rather than as advice. (2) **The named suspicion:
+  a reviewer told to check whether a STATED REASON is an excuse, rather than
+  whether the work is sound.** Its whole evidence is the single case above, and
+  it asks for a second party, so it cannot be a self-check. **Neither mechanism
+  is proposed as the answer**, and the honest position is that the criterion is
+  measurable and the remedy is not yet known.
