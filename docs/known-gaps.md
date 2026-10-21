@@ -17238,7 +17238,48 @@ between that and 9 of 12**, and both overlaps on top of it would make 10.
 > still not true of `pt2399-core`, which refuses at gate 1 on 18 problems. **This
 > is bait, recorded beside the trap: nothing here estimates the defect's size,
 > ruling R46 reserves it as an owner-visible scope decision, and Task 20 did not
-> touch it.** **A scope decision taken on "9 of 12" as though
+> touch it.**
+>
+> **AND THE BLOCKING INSTANCE IS THE SAME CASE G239 MEASURED, NOT AN EASIER ONE -
+> ASKED BY THE CONTROLLER AND MEASURED RATHER THAN REASONED.** The question was
+> whether a JUMPER's body and pin spacing differ enough from the small two-pin
+> passive **G239**'s arithmetic is about that this instance might be tractable
+> where the passive case is not. `[RAN]` over the installed stock libraries, with
+> the two passives **G232** names as controls:
+>
+> | symbol | body (w x h, um) | pin tip spread | grown field pair | inside slots that fit |
+> | --- | --- | --- | --- | --- |
+> | `Jumper:Jumper_2_Open` (`JP5#1`, the blocker) | **5080 x 2286** | x 10160, y 0 | **17780 x 5080** | **0 of 5** |
+> | `Device:C` (`pt-core` `C7#1`) | 4064 x 2032 | x 0, y 7620 | 6350 x 5080 | **0 of 5** |
+> | `Device:C_Polarized` (`tp-stage` `C3#1`) | 4572 x 3810 | x 0, y 7620 | 6350 x 5080 | **0 of 5** |
+>
+> **SAME ARITHMETIC, SAME RESULT: the jumper's body is 2286 um against the
+> 5080 um the grown pair needs, so none of its five inside slots can hold it** -
+> which is **G239**'s finding for a 2032 um capacitor, unchanged by the different
+> symbol. The jumper is drawn HORIZONTALLY (pin spread in x, not y) where the
+> capacitors are vertical, so its pin-free sides are up and down rather than left
+> and right; that rotates which slots are which and changes nothing about the
+> count.
+>
+> **AND ON ONE AXIS IT IS THE HARDER INSTANCE, WHICH IS THE OPPOSITE OF WHAT A
+> FAVOURABLE ANSWER WOULD HAVE BEEN.** Its grown field pair is **17780 um wide
+> against the capacitor's 6350** - 2.8x - because the VALUE text is the literal
+> string `Jumper_2_Open`. That is not an accident or a fixable typo: a jumper has
+> no electrical parameter, so `lib/kicad/value-notation.ts`'s `valueFor` falls
+> through to *"for a part with no electrical parameter - an IC, a connector -
+> KiCad's value field holds the part name"*, and `from-network.ts` hands it the
+> RESOLVED lib id. **So this unit asks for nearly three times the horizontal room
+> of G239's case, from a stated decision rather than from a defect.**
+>
+> **NOTHING IS PROPOSED AND NOTHING IS FIXED.** The 13-character value is an
+> observation, not a mechanism: shortening or blanking it would change what the
+> drawing says a part is, which is a decision about the artifact and not a
+> placement fix, and **G239**'s own warning is that the route rather than the slot
+> count may be what leaves no room. **G239**'s blocker list for this very unit -
+> `wire 4 (EMITTER)`, `pin RV6.1 text`, `label EMITTER`, `label BYPASS_CAP` - is
+> **RELAYED** from that entry and was not re-measured here. What this answers is
+> only the controller's question: **it is the same case, and on the width axis a
+> worse one.** `docs/known-gaps.md` **G245** holds the measurement's context. **A scope decision taken on "9 of 12" as though
 > it were draw coverage of whole circuits would be taken on a number that does
 > not mean that**, and the figure was published here before anybody had put the
 > gate-1 refusal beside it. **G239** adds the other half: five of the eleven
@@ -18060,6 +18101,21 @@ diagnostic - the shape **G235** names. It is re-derivable by printing
 
 **WHAT IS BACKED BY A COMMITTED CHECK is the five-of-eleven finding**, in
 `tests/schgen/render/field-slots.test.ts`.
+
+> **THE JUMPER IN THAT TABLE IS THE SAME CASE AS THE CAPACITORS, MEASURED AFTER
+> TASK 20 MADE IT THE ONE THAT MATTERS** (controller question, Task 20 review).
+> `JP5#1 (Jumper:Jumper_2_Open)` is now the SOLE blocker of `transistor-preamp`'s
+> generation - **G232**, **G245** - so whether its geometry escapes this entry's
+> arithmetic was worth asking. It does not. `[RAN]` **body 5080 x 2286 um against
+> the 5080 um the grown pair needs: 0 of 5 inside slots fit**, exactly as for
+> `Device:C`'s 2032 um body, with `Device:C` and `Device:C_Polarized` driven as
+> controls in the same run. The jumper is drawn horizontally rather than
+> vertically, which rotates which sides are pin-free and changes no count. **On
+> width it is the HARDER instance: its grown pair is 17780 um against the
+> capacitors' 6350**, because a jumper has no electrical parameter and `valueFor`
+> therefore puts the symbol's part name - `Jumper_2_Open`, thirteen characters -
+> in the value field. **So this entry's "the fix is not narrow" conclusion covers
+> the blocking unit too**, and nothing about the jumper makes it the cheap case.
 
 > **CORRECTED 2026-10-21 UNDER RULING R59: THIS ENTRY CITED THE WRONG CASE AS ITS
 > SHARPEST, AND THE FINDING IS SOUND ANYWAY.** It said the sharpest case was the
@@ -19097,6 +19153,23 @@ the right place for it.
   byte-check would have caught the edit had the entry stayed in `files[]`) and
   **true** for `ir/validateParts.ts`, which is the control proving the rule file
   is untouched.
+
+  **AND ONE PROBE OF THIS TASK's OWN HAD A FALSE NEGATIVE THAT NEARLY COST FOUR
+  SITES, recorded because it is a reusable way to be wrong and it is G244's
+  family** - a claim about one's own search that is better than the search.
+  Ruling **R70** required sweeping for the stale CLAIM rather than visiting the
+  sites it named. The first sweep excluded the register with `grep -v
+  known-gaps.md` applied to the GREP OUTPUT, which drops **every line that CITES
+  the register** rather than the register FILE - and the four unvisited sites
+  (`docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` at the two R56
+  amendments, and the design spec at two) each cite `docs/known-gaps.md` **G238**
+  on the same line, so all four were invisible to it. Re-run with
+  `--exclude=known-gaps.md` they appeared immediately. **The control is in the
+  script and it discriminates**: the same pattern with the register included
+  prints 22 lines against 15, so it was not matching everything. **The shape to
+  remember: a filter written to exclude a FILE, applied to a LINE, silently
+  excludes every line that mentions the file** - and the lines that mention the
+  register are exactly the evidentiary ones.
 - **Verified** CONFIRMED - this writer made every edit, ran every probe and read
   every output quoted here. **The `G232` field-placement defect is RELAYED**
   from that entry and from **G238**'s block table; what is confirmed here is
