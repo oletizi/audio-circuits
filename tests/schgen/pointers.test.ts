@@ -19,12 +19,19 @@
  * what makes this more than an existence check: moving an assertion to another file leaves the path
  * valid and the marker absent, which is exactly the case that went green.
  *
- * **IT IS NOT A COMPLETE INVENTORY OF THE REPOSITORY'S POINTERS AND DOES NOT CLAIM TO BE.** It
- * covers the pointers that cite a MEASUREMENT a register entry rests on - the ones where a false
- * green is a false evidentiary claim. A citation to a test that merely exists is not worth a row
- * here, and a complete inventory would be a different and much larger thing. **`CLAUDE.md`: an
- * empty whitelist that refuses loudly beats a general rule that quietly accepts a guess** - this is
- * the whitelist, and `POINTERS` is where a later task adds to it.
+ * **IT IS A SAMPLE AND NOT AN INVENTORY, AND THE FRACTION IS STATED BECAUSE A COUNT READ LIKE A
+ * POPULATION.** `[RAN]` `docs/known-gaps.md` holds **269 test-file citations across 262 lines**, of
+ * which roughly **120 sit in evidentiary positions**. This file holds **12 rows, covering 10
+ * register lines and 2 module comments - about 5 per cent.** Round 2 described it as *"the ten
+ * pointers that cite a measurement"*, which reads as if ten were all there were.
+ *
+ * **WHAT IT DOES GUARANTEE is narrower and is the part worth having: every pointer fix round 2
+ * repaired is under it** - all seven since fix round 3 - and `REPAIRED_AT_ROUND_2` below makes that
+ * checkable rather than a claim, so a later repair that forgets a row fails here. A citation to a
+ * test that merely exists is not worth a row, and covering all 120 needs a declared marker
+ * convention nobody has written - recorded as the mechanism in **G233** rather than built.
+ * **`CLAUDE.md`: an empty whitelist that refuses loudly beats a general rule that quietly accepts a
+ * guess** - this is the whitelist, and `POINTERS` is where a later task adds to it.
  */
 import { describe, expect, it } from "bun:test"
 import fs from "node:fs"
@@ -121,6 +128,39 @@ const POINTERS: readonly Pointer[] = [
     marker: "names the ceiling 3 and the floor unmeasured",
     why: "The document's own re-run instructions, which a reader follows to check the bounds.",
   },
+  // THE LAST TWO OF THE SEVEN POINTERS FIX ROUND 2 REPAIRED - added at fix round 3, item 4, because
+  // without them two citations this task had just corrected could rot again at the next split,
+  // which is the specific failure this guard exists for.
+  {
+    citedBy: "docs/known-gaps.md",
+    citation: "it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations",
+    test: "tests/schgen/remeasure-ceiling.test.ts",
+    marker: "pins both scale constants to the sweep they were measured from",
+    why: "G231's deviation row for the constant pins - repaired at fix round 2 item A and uncovered until now.",
+  },
+  {
+    citedBy: "tools/schgen/remeasure-ceiling.ts",
+    citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts exactly that",
+    test: "tests/schgen/remeasure-ceiling.test.ts",
+    marker: "gives order 0 the same crossing count as the unsuffixed block",
+    why: "orderSweep's doc comment for the per-order block-id control - repaired at fix round 2 item A and uncovered until now.",
+  },
+]
+
+/**
+ * **EVERY POINTER FIX ROUND 2 REPAIRED IS IN `POINTERS`, and this list is what makes that
+ * checkable** rather than a claim in a report. Two of the seven were outside the guard until fix
+ * round 3 - G231's row and `remeasure-ceiling.ts`'s order-0 control - so two citations this task had
+ * just corrected could have rotted again at the next split.
+ */
+const REPAIRED_AT_ROUND_2: readonly { readonly citedBy: string; readonly citation: string }[] = [
+  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts all twelve sweep rows" },
+  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-edges.test.ts` asserts both circuits' flat and blocked" },
+  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-ceiling.test.ts` pins the twelve-row sweep" },
+  { citedBy: "docs/known-gaps.md", citation: "it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations" },
+  { citedBy: "tools/schgen/remeasure-ceiling.ts", citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts exactly that" },
+  { citedBy: "tools/schgen/remeasure.ts", citation: "tests/schgen/remeasure-ceiling.test.ts pins every" },
+  { citedBy: "docs/schematic/m1-remeasurement.md", citation: "bun test tests/schgen/remeasure-ceiling.test.ts  BOTH BOUNDS" },
 ]
 
 describe("every pointer that cites a measurement names the file that holds it", () => {
@@ -149,6 +189,27 @@ describe("every pointer that cites a measurement names the file that holds it", 
       ).toBe(true)
     })
   }
+})
+
+describe("every pointer fix round 2 repaired is under this guard", () => {
+  /**
+   * **THE COVERAGE CLAIM, MADE CHECKABLE - fix round 3, item 4.** Round 2 repaired seven pointers
+   * and put five of them under this guard. The other two could have rotted again at the next split,
+   * which is exactly what the guard is for. This asserts that all seven are covered, so a later
+   * repair that forgets to add a row fails here.
+   */
+  it("covers all seven, by citation", () => {
+    expect(REPAIRED_AT_ROUND_2.length).toBe(7)
+    for (const repaired of REPAIRED_AT_ROUND_2) {
+      const covered = POINTERS.some((p) => p.citedBy === repaired.citedBy && p.citation === repaired.citation)
+      expect(
+        covered,
+        `the pointer in ${repaired.citedBy} citing "${repaired.citation}" was repaired at fix round 2 ` +
+          "and is not in POINTERS, so it can go stale again without anything failing - the specific " +
+          "failure this guard was built for.",
+      ).toBe(true)
+    }
+  })
 })
 
 describe("the two pointers that pin a constant name the file that actually pins it", () => {

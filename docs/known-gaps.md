@@ -17270,10 +17270,17 @@ enough.**
 - **Verified** CONFIRMED - this writer ran every row of the table, both drive
   arms and both perturbations of the pointer guard. **The register half was found
   by the Task 17 review and the figure 23 pass / 0 fail was re-measured here.**
-- **Why it is open** the pointer guard covers the ten pointers that cite a
-  measurement and **is not a complete inventory of the repository's citations**,
-  which it says in its own header. Every other prose reference to a test file in
-  this repository can still rot silently. **And the harness itself is a
+- **Why it is open** **the pointer guard covers about 5 per cent of the
+  population, and stating it as a count was itself misleading.** `[RAN]`
+  `docs/known-gaps.md` holds **269 test-file citations across 262 lines**, of
+  which the review puts roughly **120 in evidentiary positions**; the guard holds
+  **12 rows covering 10 register lines and 2 module comments.** Round 2's
+  *"covers the ten pointers that cite a measurement"* reads as if ten were the
+  population - it is the sample. **What the guard does guarantee is narrower and
+  worth having: every pointer fix round 2 repaired is under it** - all seven since
+  fix round 3, which `tests/schgen/pointers.test.ts` asserts by citation, so a
+  later repair that forgets a row fails. **Every other prose reference to a test
+  file in this repository can still rot silently.** **And the harness itself is a
   scratchpad throwaway** - `.superpowers/` is gitignored and the script is not
   committed - so the three hardenings survive only as this entry. The next agent
   writing one has to read this rather than inherit it.
