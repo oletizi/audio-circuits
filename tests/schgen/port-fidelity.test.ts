@@ -261,14 +261,17 @@ const SHADOWS_A_PEDALS_FILE_BY_DECISION: Readonly<Record<string, string>> = {
   // R26: `lib/schgen/design.ts` imports `Subcircuit` as a type from
   // `@/schgen/gates/oscar/boundary`, whose real module needs `gates/oscar/graph.ts` and through it
   // `@/kicad/components` - Task 18's. The hand-written file carries the types `design.ts` needs
-  // plus an `oscarParts` that throws naming Task 18, and Task 18 replaces it wholesale. The
-  // shadowing is the POINT of the pattern rather than a lost provenance, and it expires when that
-  // port lands and this entry is deleted with it.
+  // plus an `oscarParts` that throws. **Task 18 did NOT replace it**, which this comment used to
+  // predict: Task 18 ported gate 8's M1 half, which compares whole circuits and needs no
+  // subcircuit boundary, and the real boundary.ts is the SUBCIRCUIT one - M2's
+  // (`docs/known-gaps.md` G242 item three). The shadowing is the POINT of the pattern rather than a
+  // lost provenance, and it expires when that port lands and this entry is deleted with it.
   "lib/schgen/gates/oscar/boundary.ts":
-    "R26 (Task 6b): a hand-written forward declaration for Task 18's gates/oscar/boundary.ts, " +
+    "R26 (Task 6b): a hand-written forward declaration for M2's gates/oscar/boundary.ts, " +
     "which cannot port until @/kicad/components resolves. It carries NetRef, DeltaEdit, SideSpec " +
-    "and Subcircuit's five fields, and an oscarParts that throws naming Task 18. Task 18 replaces " +
-    "the file wholesale and deletes this exemption. See docs/known-gaps.md.",
+    "and Subcircuit's five fields, and an oscarParts that throws. Task 18 did NOT replace the " +
+    "file: it ported gate 8's M1 half, which needs no subcircuit boundary. M2's subcircuit " +
+    "comparison replaces the file and deletes this exemption. See docs/known-gaps.md G242.",
 }
 
 test("no hand-written file shadows a pedals source file", () => {

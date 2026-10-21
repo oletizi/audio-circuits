@@ -1245,27 +1245,40 @@ happily.** Different failures; neither substitutes for the other.
 - **Verified** CONFIRMED - the controller read both gate modules and both spec
   passages, and **confirmed the overturn by reading this entry's own withdrawn
   wording** rather than relaying the review's characterisation of it.
-- **Why it is open** the gate is **not yet ported.** What was blocking it is now
-  one thing rather than two: **`graphFromNetlist` is written against pedals'
-  `connectivityFromXml`/`componentsFromXml` XML readers**, which the M1 plan's
-  Task 11 replaces with `importNetlist` for gate 3 and Task 18 must replace again
-  here. **That was never a reason to defer the gate - it is work.** The
-  Pultec-specific manifest remains M2 for a reason that is not a sequencing
-  argument: **M1 emits no Pultec section schematic at all**, so a manifest
-  describing that artifact's deltas would be written against nothing.
+- **Why it is open** **THE COMPARISON IS PORTED AND WIRED, AND THE GATE HAS
+  NEVER RUN AGAINST A GENERATED DRAWING.** Task 18 landed it: `graphFromNetlist`
+  is adapted to `importNetlist` (so no XML reader enters the tree - Task 11's own
+  criterion), `checkReferenceGraph` compares two netlists by value, library id
+  and pin-level adjacency, `parseDeclaredDeltas` holds a permitted-delta
+  declaration to its rules, and `oscarGate` in `tools/schgen/verify.ts` runs the
+  comparison per declared reference. **What is still missing is the GENERATED
+  side**, and it is not a sequencing argument this time, it is a measurement:
+  **G238** records that `generate` refuses both of this repository's
+  hand-arranged references at gate 1 - 115 and 101 `validateCircuit` problems -
+  before any block reaches a layout backend. So the gate's own subject, *a
+  generated drawing*, does not exist for either reference, and **G240** records
+  that state with its price. The Pultec-specific manifest remains M2 for the
+  reason this entry already gave: **M1 emits no Pultec section schematic at
+  all.**
 - **What would settle it** **CRITERION: a generated schematic for at least one
   circuit with a hand-arranged reference is compared against that reference by
   graph isomorphism - by value and pin-level adjacency, independent of references
   and net names - with every permitted difference declared in advance and an
   undeclared difference failing.** **AND A SECOND CRITERION THE FIRST ONE DID NOT
   PROTECT: no permitted difference is admitted that was not derived from a
-  declared transformation.** **MECHANISM, and the previous one is recorded as
-  measured-wrong rather than replaced quietly:** the withdrawn mechanism was
-  *"author the delta list from M1's parity census"*, which breaches the second
-  criterion by construction. The M1 plan's Task 18 instead ports the comparison
-  and runs it with an **empty** permitted delta on the two references above, and
-  gives `DeclaredDelta` a mandatory `from` field naming the transformation, so
-  the M2 shape cannot be populated without one.
+  declared transformation.** **THE SECOND CRITERION IS MET.** The first is met in
+  every part except the word GENERATED: the comparison runs on two real
+  hand-arranged drawings and on no generated one, and what stands in the way is
+  **G238**'s four authoring classes rather than anything in the gate.
+  **MECHANISM, and the withdrawn one is recorded as measured-wrong rather than
+  replaced quietly:** the withdrawn mechanism was *"author the delta list from
+  M1's parity census"*, which breaches the second criterion by construction.
+  What was built instead is `{ kind: "empty" }` for a circuit nothing
+  transforms, plus a mandatory `from` field naming the transformation, so the M2
+  shape cannot be populated without one. **UNTRIED, for the remaining half:**
+  nothing is proposed here for making a reference generatable, because that is
+  **G238**'s four classes of authoring work on the circuits and this entry would
+  be guessing at their order.
 
   **AMENDED 2026-10-20, Task 11, and this is the half of the corrected position
   that was still missing: the gate now has a ROW, and the row carries a
@@ -1275,12 +1288,17 @@ happily.** Different failures; neither substitutes for the other.
   registered it with nothing to report.** An unported gate whose row is simply
   absent from the census is indistinguishable from a gate that passed, which is
   the failure `CLAUDE.md` names and which this entry's own subject matter is
-  about. `tools/schgen/verify.ts` now reports `OSCAR_NOT_PORTED` for such a
-  design - naming the two unported modules, the task that lands them and this
-  entry - alongside `symmetricSymbolsProblems`, which needs no graph and is
-  kept. `tests/schgen/verify.test.ts` drives both halves: `NOT_RUN` after a
-  gate-1 refusal, and the refusal itself after a generation that succeeds.
-  **No design in this repository declares `oscar` today**, so the row is
+  about. Task 11 reported `OSCAR_NOT_PORTED` for such a design; **Task 18
+  deleted that constant** - supersede means delete - and `oscarGate` now reports
+  the specific thing that is wrong instead: `OSCAR_NO_REFERENCE` when the design
+  names no reference schematic, `oscarReferenceMissing` when a declared one is
+  not on disk, `oscarBriefNotJson` when the permitted-delta declaration is a
+  `CORE-BRIEF.md` the reader for which is not ported, and
+  `oscarSubcircuitsAreM2` when a subcircuit is declared. **There is no path
+  through `oscarGate` that returns an empty problem list without having compared
+  something**, which is the property the row is for.
+  `tests/schgen/verify.test.ts` drives all of them, and `NOT_RUN` after a gate-1
+  refusal. **No design in this repository declares `oscar` today**, so the row is
   reachable only from that test - which is why the test exists rather than
   being left to the census. `tools/schgen/gate-census.ts`'s `GATE_ORDER` table
   states gate 8's absence and its reason for all four parity circuits
@@ -12882,9 +12900,14 @@ repository has: the ported `mini` fixture, and the four parity circuits as
 `tools/schgen/gate-census.ts` assembles them. **So gate 7 is registered zero times on a real
 circuit**, and its row is absent from the census rather than carrying a problem.
 
-**WHY THAT IS NOT THE SAME SHAPE AS GATE 8.** Task 11 made gate 8 report
-`OSCAR_NOT_PORTED` for a design that declares `oscar`, because its unavailability is a fact about
-the PORT. Gate 7 is available and complete; what is missing is the INPUT. A design with no
+**WHY THAT IS NOT THE SAME SHAPE AS GATE 8, AND SINCE TASK 18 IT IS THE SAME SHAPE AFTER ALL.**
+Task 11 made gate 8 report `OSCAR_NOT_PORTED` for a design that declares `oscar`, because its
+unavailability was then a fact about the PORT, and gate 7's missing piece was the INPUT - a real
+difference. **Task 18 ported gate 8's M1 comparison, so that difference is gone**: gate 8 is now
+available and complete too, and what it lacks is also an input - a GENERATED schematic, which
+**G238** measures as unavailable for both references, and **G240** records. The two gates are now
+one shape with two different missing inputs, and the paragraph is kept rather than deleted because
+its reasoning about gate 7 stands unchanged. A design with no
 checklist has nothing to trace to, and inventing a `SCHEMATIC-CHECKLIST.md` so the gate has
 something to run on is precisely the invention `CLAUDE.md`'s acceptance-criteria invariant and
 **G151**'s criterion forbid - the checklist is a statement of design intent, and an agent
@@ -17296,9 +17319,10 @@ enough.**
   `[RAN]` The count is now computed by `citationCount` in
   `tests/schgen/pointers.test.ts` on every run, which asserts the coverage
   FRACTION is under a tenth rather than any exact numerator; the register holds a
-  few hundred citations and the guard holds **13 rows - 10 register rows, 2 module
-  comments and 1 document line** (Task 18's Step 0 added the tenth register row,
-  for **G239**). `[RELAYED]` The review puts roughly **120** of
+  few hundred citations and the guard holds **16 rows - 12 register rows, 2 module
+  comments and 2 document lines** (Task 18 added the tenth, eleventh and twelfth
+  register rows - **G239**, **G240**, **G241** - and the second document line).
+  `[RELAYED]` The review puts roughly **120** of
   those citations in evidentiary positions. Round 2's
   *"covers the ten pointers that cite a measurement"* reads as if ten were the
   population - it is the sample. **What the guard does guarantee is narrower and
@@ -17853,7 +17877,8 @@ hand-arranged one. The reference half is fully available for both references -
 both drawings are committed, both have a committed s-expression netlist
 (`tests/fixtures/pt2399-core.net`, `tests/fixtures/transistor-preamp-lab.net`),
 and `kicad-cli` exports either on demand. **The generated half is available for
-neither.** Controller ruling R51 governs that case.
+neither.** Controller ruling R51 governs that case, and **G240** records what
+was built under it with the price of its not having run.
 
 - **Found** 2026-10-20, Task 18 Step 0, by running the two committed censuses
   before writing any gate code - which is the only reason the addendum's reading
@@ -17987,3 +18012,294 @@ rather than written as coordinates, so a change to `slotFields` or
   the smallest new KIND of position - and it is not obviously acceptable, because
   a Reference that drifts away from its symbol is the *"text where a reader does
   not expect it"* cost G232 already names.
+
+### G240 - GATE 8's M1 COMPARISON IS BUILT, DRIVEN AND WIRED, AND HAS NEVER RUN AGAINST A GENERATED DRAWING - the fourth instance of G226's pattern in this plan
+
+**RECORDED UNDER CONTROLLER RULING R51, which is explicit about what this entry
+is for:** *"say plainly, in the document and in the register, that the gate is
+built and has never run against a human-trusted drawing, and what stands in the
+way. **That is a worse outcome than exercising it and it is an honest one.**"*
+
+**WHAT IS BUILT.** `lib/schgen/gates/reference-graph.ts` reduces a netlist to
+components keyed by canonical value and library id plus the unordered pin pairs
+of every net; `lib/schgen/gates/graph-match.ts` compares two such graphs;
+`lib/schgen/gates/declared-delta.ts` holds a permitted-delta declaration to its
+rules; `oscarGate` in `tools/schgen/verify.ts` runs the comparison per declared
+reference and refuses loudly on every arm that cannot proceed.
+
+**WHAT IT HAS RUN ON.** Two real hand-arranged drawings, through the real
+`kicad-cli`: `pt2399-core` (24 components, 117 pin-to-pin pairs) and
+`transistor-preamp` lab-board (32, 150). **On NO generated schematic.**
+
+**WHY, AND IT IS A MEASUREMENT RATHER THAN A SEQUENCING ARGUMENT.** **G238**:
+`generate` refuses both references at gate 1, on 115 and 101 `validateCircuit`
+problems, before any block reaches a layout backend. The gate's subject - *a
+generated drawing* - does not exist for either reference, and no design in this
+repository declares `oscar`, so `oscarGate`'s comparison is reachable only from
+`tests/schgen/gates/reference-graph.kicad.test.ts`.
+
+**THE PRICE, which is what G226 asks for rather than the fact.** The gate exists
+to catch a defect class the round trip structurally cannot: *a generator that
+mangles a circuit the same way at both ends passes a round trip happily.*
+**Until it runs on a generated drawing, that defect class is unguarded in this
+repository**, and nothing else in the suite covers it - the round trip
+(`tests/schgen/gates/round-trip.kicad.test.ts`) is self-consistency by
+construction and its own module comment says it must never be reported as this
+check. So what is unexercised is not a convenience; it is the only check of its
+kind.
+
+**AND WHAT WAS NOT DONE INSTEAD, because it is the tempting thing.** Running the
+empty-delta check against the ported `mini` fixture would have produced a green
+gate 8. R50 forbids it: *"`mini` is a ported fixture with no hand-arranged
+schematic a human trusts, and the gate's entire premise is that it proves the
+generated drawing matches a drawing a human made and trusts... Substituting the
+fixture would produce a green gate that checks self-consistency, which is the
+round trip wearing gate 8's name."*
+
+**THIS IS THE FOURTH INSTANCE OF G226's PATTERN IN THIS PLAN** - *a mechanism
+exercised only by its own tests* - and that entry's distinguishing test is
+whether the precondition is named and the price recorded, which is what the two
+paragraphs above do. The three before it are **G215** (`composeBlocks`),
+**G217**'s residuals (`compareMeasures`, `consultedBy`) and §3.5's finding
+contract. Citing it rather than re-deriving it is R51's instruction.
+
+- **Found** 2026-10-21, Task 18, at Step 0 - before the gate was written, which
+  is why the task's branch was chosen on evidence rather than discovered
+  afterwards.
+- **Evidence** `tests/schgen/gates/reference-graph.kicad.test.ts` asserts the
+  four figures above for both references and builds the graphs from a real
+  `kicad-cli` export on every run, failing rather than skipping when the tool is
+  absent; `tests/schgen/verify.test.ts` drives the four refusals `oscarGate`
+  gives a declaring design. **Checks that could have failed, and are the reason
+  this entry's claims are not prose:** the component and pin-pair counts are
+  asserted as equalities, so a drawing that changed moves them; the test asserts
+  that no net NAME reached the graph, over the graph's own serialised text; and
+  the comparison's stages were each perturbed out of the implementation and the
+  tests re-run - `[RAN]` **20 perturbations, 20 red, 0 green**, with every source
+  file restored byte for byte and the restore verified. Two of those
+  perturbations started green and are **G241**.
+- **Verified** CONFIRMED - this writer wrote the gate, ran the censuses behind
+  **G238**, drove all twenty perturbations and read both references' graphs. **The
+  claim that nothing else in the suite covers the round trip's blind spot is
+  this writer's reading of `gates/round-trip.ts`'s module comment and of the
+  gate census, not a sweep of the whole suite.**
+- **Why it is open** the input does not exist. **It is open rather than being a
+  deferral, because nothing about the gate is waiting on a decision** - what is
+  waiting is **G238**'s four classes of authoring work on the circuits plus
+  **G232**'s field-placement defect.
+- **What would settle it** **CRITERION: `oscarGate` reports a gate 8 row for a
+  design whose generated schematic exists, with an EMPTY permitted delta and an
+  empty `undeclared` list - or a non-empty one, which would be a generator
+  defect and the most interesting result M1 could produce.** The criterion is met
+  by a row in a real census, not by a test. **MECHANISM, untried:** the shortest
+  path is a reference that generates, which is **G238**'s criterion and not this
+  entry's to propose; once one does, the design needs an `oscar` block naming
+  that drawing in `netlists` and a committed `{"kind":"empty"}` declaration in
+  `brief`, and nothing else. **Do NOT meet this criterion by pointing the gate at
+  the `mini` fixture** - R50 forbids it and the reason is recorded above.
+
+### G241 - MEASURED: TWO STAGES OF THE GATE-8 MATCHER COULD BE PERTURBED OUT OF EXISTENCE WITH THE WHOLE SUITE STAYING GREEN, and a one-sided perturbation of a symmetric check cannot go red at all
+
+**THIS IS G236's CLASS, FOUND BY THE DISCIPLINE G236 ASKED FOR, and both findings
+are this writer's own code.** The controller imposed *"drive every new assertion
+red once before you rely on it"* on Task 18 directly. Doing it to the
+implementation rather than to the assertions found two stages nothing in the
+repository depended on, and **the measurements are what got them deleted rather
+than documented.**
+
+**ONE: THE COLOUR REFINEMENT.** `graph-match.ts` refined each node's signature
+from its neighbourhood until the partition stopped growing, compressing the
+signatures each round over the union of both sides. Three measurements:
+
+1. `[RAN]` perturbing the whole loop to `for (let round = 0; round < 0; ...)`:
+   **30 pass / 0 fail** over the unit and `kicad` gate tests, both real
+   references included. Nothing depended on it.
+2. It is a bijection INVARIANT, so a class mismatch always implies no bijection
+   exists. **It can only prune a search that would have reached the same
+   verdict** - it cannot pass something the search would refuse.
+3. `[RAN]` timed with the loop enabled and disabled, over all five cases
+   measured - both real references, a twelve-resistor chain, and parallel
+   resistor ladders of ten and fourteen identical parts, which are the worst
+   case for the search: enabled **1.4 / 0.8 / 0.2 / 0.3 / 0.5 ms**, disabled
+   **1.2 / 0.5 / 0.1 / 0.2 / 0.4 ms**. **Marginally slower with it, on every one
+   of the five**, because `consistent` already prunes on the first bound
+   neighbour. Every case matched (`ok=true`) under both.
+
+**AND A PROSE CLAIM ABOUT IT DID NOT REPRODUCE, which is G237's shape.** The
+module header said compressing the two sides independently *"would make `c3` on
+one side unrelated to `c3` on the other and every comparison downstream
+meaningless."* `[RAN]` perturbing exactly that: **22 pass / 0 fail**, then
+**30 pass / 0 fail** with the `kicad` tests added. **The sentence is false**: a
+signature carries no designator, so two isomorphic graphs produce identical
+signature STRINGS and compress consistently even independently; the only effect
+is a degraded class LABEL in a message about a difference that is reported
+either way. The sentence is gone with the code it was about.
+
+**TWO: THE PER-COMPONENT SIGNATURE COMPARISON.** A multiset comparison of
+`<value>|<libId>|<connected pins>` stood between the connection multiset and the
+search. `[RAN]` removing the arm: **30 pass / 0 fail**. `[RAN]` dropping the pin
+list from the key as well: **30 pass / 0 fail**. It is redundant by argument too:
+by the time it ran, the component multiset, the edge count and the connection
+multiset had agreed, and **an injective node map preserving pin numbers over
+equal edge counts covers every edge on both sides**, so a pin-set difference
+cannot survive the search even with a coarser key. The comparison is deleted and
+the signature survives as the search's grouping key, which the module now says.
+
+**THREE, AND THIS ONE IS A LESSON ABOUT PERTURBING RATHER THAN ABOUT THE CODE: A
+ONE-SIDED PERTURBATION OF A SYMMETRIC CHECK CANNOT GO RED.** The first attempt at
+the connection-multiset perturbation disabled only `connOnlyA`. `[RAN]`
+**27 pass / 0 fail** - because `connOnlyB` catches the same differences from the
+other side. The same was true of the component multiset. **A green there says
+nothing about the check and everything about the perturbation**, and reading it
+as *"this check has no teeth"* would have deleted a check that does. Both are now
+perturbed in both directions and both go red.
+
+**FOUR: THE REFUSAL THAT SEPARATES "COULD NOT FINISH" FROM "AGREED" HAD NEVER
+BEEN TAKEN.** `matchGraphs` bounds its backtracking and reports exhaustion as a
+problem. `[RAN]` perturbing that arm to `if (false)`: **22 pass / 0 fail**. The
+budget is now a parameter *solely* so a test can exhaust it, and the test
+asserts the refusal says `This is NOT a pass` and does NOT say `topology
+differs`, because reporting an unfinished search as a difference between the
+drawings would be a false defect report.
+
+- **Found** 2026-10-21, Task 18, by driving every new check red against the
+  implementation rather than against the assertions. **The three deletions and
+  the one addition were all made in the same change as the measurement.**
+- **Evidence** the perturbation harness is a scratchpad throwaway and is NOT
+  committed, which is this entry's own weakness and is stated rather than
+  glossed: what IS committed is the resulting code and
+  `tests/schgen/gates/reference-graph.test.ts`, whose budget-refusal case and
+  two-three-rings case are the two the deletions left standing on. **A check that
+  could have failed and did:** the final drive is `[RAN]` **20 perturbations, 20
+  red, 0 green**, and each one restores the file it edited and asserts the
+  restore byte for byte before continuing - an unrestored source would stop the
+  run rather than silently poison the next perturbation.
+- **Verified** CONFIRMED - this writer wrote the code, wrote the perturbations,
+  ran every figure quoted above and read each output. **The timing figures are
+  single runs, not repeated measurements**, which is why the conclusion drawn
+  from them is only *"no measurable benefit"* and not a speedup claim.
+- **Why it is open** **the code is fixed; the METHOD finding is what stays
+  open.** Three of the four items here are closed by deletion or by a new test.
+  What is open is item three: **nothing stops the next agent from perturbing one
+  side of a symmetric check and reading the green as a finding**, and the only
+  thing standing against it is this paragraph. It is the same shape as **G235**'s
+  and **G237**'s remedies - a discipline with no mechanism - and the same doubt
+  applies.
+- **What would settle it** nothing for the deletions; they are done.
+  **CRITERION for item three: a perturbation reported as leaving a check green
+  has been shown to be the only way that check could have caught the defect** -
+  i.e. a symmetric check is perturbed on both sides before a green is believed.
+  **MECHANISM, untried:** a harness that refuses a perturbation whose needle
+  appears more than once in the file, which would have flagged both one-sided
+  attempts mechanically; it is untried because the harness is a throwaway and
+  committing one is a larger decision than this task's.
+
+### G242 - THREE THINGS GATE 8's COMPARISON DOES NOT DO: two deliberate narrowings that make it STRICTER, one of which could make two different symbols compare equal, and one type declared twice on purpose
+
+**RECORDED BECAUSE EACH IS A PLACE A LATER READER WOULD OTHERWISE READ THE GATE
+AS CLAIMING MORE THAN IT DOES**, and because the first one will produce a
+difference that looks like a false positive and must not be treated as one.
+
+**ONE: THERE IS NO PIN-SYMMETRY MODEL.** Pedals' gate 8 treats an allow-listed
+non-polarised two-pin symbol's pads as interchangeable - `SYMMETRIC_LIB_IDS`
+plus a per-netlist declaration (`OscarConfig.symmetricSymbols`), each id checked
+against its `<libpart>`'s polarity mark in `gates/oscar/symbols.ts`. **None of
+that is ported.** Here every pin matches by number, so **a non-polarised
+capacitor whose two pads are wired the other way round from the reference is
+reported as an undeclared difference.**
+
+**IT ERRS TOWARD FAILING AND NEVER TOWARD PASSING, which is why it was shipped
+this way rather than guessed at.** `CLAUDE.md`: *an empty whitelist that refuses
+loudly beats a general rule that quietly accepts a guess.* And the response to
+one of these differences is a DEFECT REPORT, not a permitted delta: the gate's
+whole rule is that a difference found by looking at output is a defect report
+until a declared transformation accounts for it. **A pad swap on a non-polarised
+part is electrically nothing and is still a difference between the two drawings**
+- which is a real finding about the generator's pin assignment, not noise.
+
+**WHAT PORTING IT WOULD NEED, so the next agent does not re-derive it:** the
+allow-list is keyed by exact library id and validated against each component's
+`<libpart>` - the symbol's pin-polarity mark - and `lib/kicad/netlist.ts`'s
+`importNetlist` exposes neither. It reads `(libsource (lib ...) (part ...))` and
+keeps only `part`.
+
+**TWO, AND IT FOLLOWS FROM THE SAME GAP: THE GRAPH KEYS ON THE LIBSOURCE PART
+NAME, NOT A FULL `Library:Part` ID.** `ReferenceGraph.nodes[i].libId` is
+`ImportedComponent.libPart`, which is `libsource`'s `part` attribute - `"C"`,
+`"C_Polarized"`, `"TL072"`. The s-expression netlist carries `lib` beside it and
+`importNetlist` drops it. **So two symbols with the same part name in different
+libraries would compare equal**, and a swap between them would be invisible to
+this gate.
+
+**HOW MUCH THAT MATTERS HERE, measured rather than assumed - and the first
+draft of this paragraph got it wrong, which is why it was driven.** `[RAN]` over
+both committed netlists' `(libsource (lib ...) (part ...))` blocks:
+`pt2399-core` holds **24** blocks naming **3** libraries - `Audio`,
+`Connector_Generic`, `Device` - and **5** distinct part names; lab-board holds
+**32** naming **5** - `Connector`, `Connector_Generic`, `Device`, `Jumper`,
+`Transistor_BJT` - and **7** distinct part names. **Part names appearing in more
+than one library: 0 in both.** So the narrowing costs nothing on today's corpus
+and is a latent gap rather than a live one. (The draft said one of the libraries
+was `Amplifier_Audio`; it is `Audio`. The figure that mattered - zero shared
+names - was right, and the name beside it was not, which is **G237**'s shape
+caught before it was committed.)
+
+**THREE: `GraphEdit` AND `DeltaEdit` ARE ONE SHAPE DECLARED TWICE, AND THE
+DUPLICATION IS DELIBERATE RATHER THAN AN OVERSIGHT.**
+`lib/schgen/gates/declared-delta.ts` declares `GraphEdit` with five kinds -
+`setValue`, `removePart`, `addPart`, `mergeNets`, `movePin` - and
+`lib/schgen/gates/oscar/boundary.ts` declares `DeltaEdit` with the same five
+plus a `delta` (a CORE-BRIEF id) and a `why` on every one. **They were not
+unified**, because unifying them means choosing M2's provenance channel - a
+CORE-BRIEF id against `DeclaredDelta.from` - and that choice belongs with the
+CORE-BRIEF reader, which is not ported. `CLAUDE.md` is explicit that *supersede
+means delete* and that one canonical model is the rule, so a duplication kept on
+purpose is recorded with its price rather than left to be found: **an edit kind
+added to one and not the other is a silent divergence nothing checks.**
+`boundary.ts` also still says Task 18 *"replaces this file WHOLESALE"*; it does
+not, and that file's header now says what Task 18 actually did.
+
+**AND THE `declared` ARM OF `parseDeclaredDeltas` IS EXERCISED ONLY BY ITS OWN
+TESTS**, which is **G226**'s state again: no design in this repository declares
+`oscar`, and if one did, `checkReferenceGraph` would refuse a declared list as
+M2's rather than applying it. **The precondition that would wire it** is M2's
+Pultec transformation manifest; **the price** is that a declaration shape nobody
+has used may not be the shape M2 wants, and the committed corpus in
+`tests/schgen/__fixtures__/deltas/` is the only thing holding it to anything.
+
+- **Found** 2026-10-21, Task 18, while adapting `graphFromNetlist` from the
+  pedals XML readers to `importNetlist` - the adaptation Task 11's one-netlist-
+  reader criterion requires. **Item three was found while writing the module
+  comment that claims the register records it**, which is the only reason it is
+  here rather than in prose nobody checks.
+- **Evidence** `tests/schgen/gates/reference-graph.test.ts` asserts the symmetry
+  narrowing as a POSITIVE check - *"reports a non-polarised capacitor's pads
+  wired the other way round, having no symmetry model"* - so the behaviour is
+  pinned rather than merely described, and the day a symmetry model lands that
+  case goes red and has to be rewritten deliberately. **A check that could have
+  failed:** `graphFromNetlist` **throws** for a component with no `libsource`
+  part rather than keying it by value alone, and that refusal is driven, so a
+  netlist missing the field cannot silently weaken the key further. The
+  single-library claim is read off both committed netlists' `libsource` blocks.
+- **Verified** CONFIRMED for the two narrowings and for the refusal - this writer
+  wrote them and drove both. **The "no part name is shared across two libraries"
+  claim is this writer's reading of the two committed netlists and is NOT
+  asserted by any check**, so it is true of those two files today and would not
+  fail if a third reference broke it.
+- **Why it is open** both are open: neither is fixed, and the first will produce
+  differences that look like noise to somebody who has not read this entry.
+- **What would settle it** **CRITERION for ONE: a non-polarised two-pin symbol
+  declared symmetric has its pads compared either way round, and a symbol NOT so
+  declared does not** - the declaration being external to the comparison, as the
+  acceptance-criteria invariant requires. **CRITERION for TWO: two symbols with
+  the same part name in different libraries compare as different components.**
+  **CRITERION for THREE: one edit vocabulary, or a check that the two agree.**
+  **MECHANISMS, all untried, and ONE's is the prerequisite for TWO's:**
+  `importNetlist` carries `libsource`'s `lib` beside its `part`, which is a few
+  lines in one reader and makes `libId` a full `Library:Part`; then the pedals
+  allow-list can be ported keyed on that. **Watch for collateral change (G235) if
+  you take it**: `ImportedComponent` is read by the round trip, by
+  `tests/circuits/*` and by the stripboard importers, and a field added there
+  reaches all of them. For THREE, the cheap half is a test asserting the two
+  unions' kind lists are equal - which does not unify them but makes a divergence
+  loud - and the real settlement is M2 choosing one provenance channel.

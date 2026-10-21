@@ -1,16 +1,24 @@
 /**
- * **A HAND-WRITTEN FORWARD DECLARATION, NOT A PORT.** Task 18 replaces this file WHOLESALE with
- * `digital-pedal-platform`'s `tools/schgen/gates/oscar/boundary.ts` and removes its `handWritten`
- * entry in favour of a `files[]` one, exactly as Task 4 did for `render/library.ts`
- * (`docs/known-gaps.md` G113's pattern). Nothing here is extended; it is swapped out.
+ * **A HAND-WRITTEN FORWARD DECLARATION, NOT A PORT - AND TASK 18 DID NOT REPLACE IT.** This header
+ * said Task 18 *"replaces this file WHOLESALE"* with `digital-pedal-platform`'s
+ * `tools/schgen/gates/oscar/boundary.ts`, removing its `handWritten` entry in favour of a `files[]`
+ * one. **That did not happen and the prediction is left visible rather than quietly corrected.**
+ * Task 18 ported gate 8's M1 half - the WHOLE-circuit comparison under an empty permitted delta -
+ * and the real `boundary.ts` is the SUBCIRCUIT boundary: `applyDeltas`, `oscarParts`, the
+ * per-subcircuit map and the `CORE-BRIEF.md` delta ids, every one of which belongs to M2. So this
+ * file is still a forward declaration, `OscarConfig.subcircuits` still needs its `Subcircuit`
+ * type, and `oscarParts` below still throws. `docs/known-gaps.md` **G242** item three records the
+ * one live consequence: `DeltaEdit` here and `GraphEdit` in
+ * `lib/schgen/gates/declared-delta.ts` are one shape declared twice, on purpose, and nothing
+ * checks that they agree.
  *
  * **Why it exists.** `lib/schgen/design.ts` is a port, and it imports `Subcircuit` as a type from
  * `@/schgen/gates/oscar/boundary` for `OscarConfig.subcircuits`. The real module needs
  * `gates/oscar/canonical.ts` and `gates/oscar/graph.ts`, and `graph.ts` needs
- * `@/kicad/components`, which this repository does not have - so the whole oscar group is Task
- * 18's (the Pultec reference-graph comparison needs the complete pipeline first). Controller
+ * `@/kicad/components`, which this repository does not have - so the SUBCIRCUIT half of the oscar
+ * group is still unported, and it is M2's. Controller
  * ruling R26, Task 6b: a `cuts` entry that deleted `OscarConfig.subcircuits` would port
- * `design.ts` by deleting what Task 18 needs, and the plan declares no such cut, so the forward
+ * `design.ts` by deleting what gate 8 needs, and the plan declares no such cut, so the forward
  * declaration is the mechanism instead.
  *
  * **WHAT IT CARRIES, and it is a transcription of the real shapes rather than a guess.** Read
@@ -21,16 +29,18 @@
  * **WHAT IT DOES NOT CARRY, said plainly** (`CLAUDE.md`: *"states plainly anything it did NOT
  * carry across"*): `deltaIdsFromBrief`, `deltaTarget`, `applyDeltas`, `applyDeltasTraced`,
  * `AppliedDeltas` and every private helper of the real module - nothing in this repository calls
- * them yet. The one function declared here, `oscarParts`, **throws, naming Task 18**, because
+ * them yet. The one function declared here, `oscarParts`, **throws, naming the milestone that
+ * would implement it**, because
  * `CLAUDE.md`'s rule for functionality that does not exist is a named throw and never a fallback
  * or a stub answer.
  *
  * **A DEVIATION WORTH SEEING: `SideSpec` IS DECLARED HERE AND DOES NOT BELONG HERE.** Upstream it
  * lives in `gates/oscar/graph.ts` and `boundary.ts` imports it. It is transcribed into this file
  * because `graph.ts` is unportable today (`@/kicad/components`), and because a second hand-written
- * forward declaration for one interface would be a second file for Task 18 to remember to delete.
- * When Task 18 replaces this file, `SideSpec` goes back to `graph.ts` and this copy must go with
- * it - recorded in `docs/known-gaps.md`.
+ * forward declaration for one interface would be a second file to remember to delete. **Task 18
+ * did not port `graph.ts` either** - its `extractSubgraph`, `SubPart` and `Subgraph` are the
+ * subcircuit boundary, which is M2's - so `SideSpec` stays here, and whichever task does port
+ * `graph.ts` takes it back and deletes this copy with it.
  */
 
 /**
@@ -90,21 +100,24 @@ export interface Subcircuit {
 }
 
 /**
- * Every OSCAR part a subcircuit covers, which is what gate 8 compares its two sides over.
+ * Every OSCAR part a SUBCIRCUIT covers, which is what gate 8's M2 half would compare its two sides
+ * over.
  *
  * **It throws, and that is the whole content of this file's behaviour.** The real implementation
- * walks `sc.deltas` and `sc.oscar.parts` and needs `canonicalValue` from
- * `gates/oscar/canonical.ts`; neither that module nor `gates/oscar/graph.ts` is in this
- * repository, so there is nothing here to compute from and nothing is guessed.
+ * walks `sc.deltas` and `sc.oscar.parts` and needs `canonicalValue` and `extractSubgraph`. Task 18
+ * transcribed `canonicalValue` into `lib/schgen/gates/canonical-value.ts`, so that half is here
+ * now; `extractSubgraph` and the rest of `gates/oscar/graph.ts` are not, and neither is
+ * `applyDeltas`. So there is still nothing here to compute from, and nothing is guessed.
  */
 export function oscarParts(sc: Subcircuit): string[] {
   throw new Error(
     `gates/oscar/boundary is a forward declaration: oscarParts(${sc.id}) is not implemented here. ` +
-      "Task 18 of the M1 schematic-authoring plan ports digital-pedal-platform's " +
-      "tools/schgen/gates/oscar/boundary.ts (with canonical.ts and graph.ts, which needs " +
-      "@/kicad/components) and replaces this file wholesale. Until then nothing in this " +
-      "repository may compute an OSCAR boundary, and this refuses rather than returning an " +
-      "answer no code here can derive. See lib/schgen/gates/oscar/boundary.ts's file comment " +
-      "and docs/known-gaps.md.",
+      "Computing an OSCAR boundary needs digital-pedal-platform's gates/oscar/graph.ts " +
+      "(extractSubgraph, which needs @/kicad/components) and its applyDeltas, neither of which is " +
+      "ported: Task 18 landed gate 8's M1 half, which compares WHOLE circuits under an empty " +
+      "permitted delta and needs no boundary, and the SUBCIRCUIT comparison is M2's. Until then " +
+      "nothing in this repository may compute an OSCAR boundary, and this refuses rather than " +
+      "returning an answer no code here can derive. See this file's comment, " +
+      "lib/schgen/gates/reference-graph.ts's, and docs/known-gaps.md G104 and G242.",
   )
 }

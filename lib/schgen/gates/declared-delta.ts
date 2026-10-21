@@ -38,15 +38,17 @@
  * applied would be the worst available outcome - a pass that means nothing. M1's half of gate 8 is
  * the EMPTY delta (spec revision 4), and the Pultec's transformation manifest, derived from
  * `circuits/pultec/partition.ts`'s declared transformations and never from a generated drawing, is
- * M2's. `docs/known-gaps.md` records that this module's `declared` arm is exercised only by its own
- * tests, which is the state **G226** names, with the precondition that would wire it.
+ * M2's. **`docs/known-gaps.md` G242 records that this module's `declared` arm is exercised only by
+ * its own tests** - the state **G226** names - with the precondition that would wire it and what
+ * its absence costs.
  *
  * **ONE DELIBERATE DUPLICATION, RECORDED RATHER THAN TIDIED.** `lib/schgen/gates/oscar/boundary.ts`
  * declares `DeltaEdit`, the OSCAR shape, whose five kinds carry the same payloads as `GraphEdit`'s
  * plus their own `delta` (a CORE-BRIEF id) and `why`. They are not unified here because unifying
  * them means choosing M2's provenance channel - a CORE-BRIEF id against this module's `from` - and
- * that choice belongs with the CORE-BRIEF reader, which is not ported. `docs/known-gaps.md` holds
- * the reconciliation as an open item so it is not discovered a third time.
+ * that choice belongs with the CORE-BRIEF reader, which is not ported. **`docs/known-gaps.md`
+ * G242, item three, holds the reconciliation open with its price**, which is that an edit kind
+ * added to one union and not the other is a silent divergence nothing checks.
  */
 import { execFileSync } from "node:child_process"
 import path from "node:path"

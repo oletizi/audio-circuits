@@ -49,7 +49,9 @@
  * reader, which is Task 11's own criterion. **No `fast-xml-parser`.**
  *
  * **WHAT WAS NOT PORTED, said plainly** (`CLAUDE.md`: *"states plainly anything it did NOT carry
- * across"*). From `gates/oscar/`: the OSCAR acquisition and `tools/schgen/oscar/acquire.test.ts`;
+ * across"*). Every path in this paragraph is in the PEDALS tree, under `$SCHGEN_SOURCE`, and not
+ * in this one. From `gates/oscar/`: the OSCAR acquisition (`../oscar/acquire.sh` and
+ * `../oscar/acquire.test.ts`);
  * the `CORE-BRIEF.md` reader (`deltaIdsFromBrief`); `applyDeltas`/`applyDeltasTraced` and the
  * whole delta application; `boundary.ts`'s per-subcircuit map and `oscarParts`; `graph.ts`'s
  * `SideSpec`, `extractSubgraph`, `SubPart`, `Subgraph` and `graphFromCircuit`; `symbols.ts`'s
