@@ -348,6 +348,60 @@ function flatBackend(g: BlockSubgraph, outcome: ElkOutcome | undefined): Side {
   return sideOf({ placements: built.placements, wires: built.wires, anchors: built.anchors }, placedPins(g, built.placements))
 }
 
+/**
+ * **G100's MECHANISM, RE-TAKEN: the EDGE COUNTS a decomposition removes.**
+ *
+ * G100 explains its 6.1x crossing reduction by *"the three blocks carry FEWER EDGES THAN THE WHOLE
+ * - 96 against 139"*, and G105 turns that into the bound: *"they became connections BETWEEN blocks
+ * ... each block was drawn on its own canvas, so the 43 edges were drawn nowhere at all and counted
+ * as removed."* **This is the one part of the paired control that does not need a drawing**, so it
+ * can be re-taken on `optical-compressor` itself although none of its three blocks draws.
+ *
+ * **THE ABSOLUTE COUNTS ARE NOT COMPARABLE AND THE RATIO IS COMPARABLE IN KIND.** The spike's edge
+ * count came out of `netlistsvg`'s converter and nothing establishes that it builds a net's edges
+ * the way `lib/schgen/elk/graph.ts` does (a net of degree n becomes n - 1 chain edges, **G220**). So
+ * 139 and 96 are not set beside these numbers as the same quantity; what IS the same claim is
+ * *"decomposition hands ELK a smaller graph"*, and the ratio measures it.
+ */
+export interface EdgeCensus {
+  readonly circuit: string
+  readonly blocks: readonly { readonly id: BlockId; readonly nodes: number; readonly edges: number }[]
+  readonly blockEdgeTotal: number
+  readonly flatNodes: number
+  readonly flatEdges: number
+  /** `flatEdges / blockEdgeTotal`: how much smaller a graph the decomposition hands ELK. */
+  readonly ratio: number
+}
+
+export async function edgeCensus(name: string = "optical-compressor", cases: readonly ParityCase[] = PARITY_CASES): Promise<EdgeCensus> {
+  const found = cases.find((c) => c.name === name)
+  if (found === undefined) throw new Error(`no parity circuit is called ${name}`)
+  const symbols = parityResolver()
+  const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
+  const ids = [...circuit.blocks.values()].filter((b) => b.rendering.kind !== "bus").map((b) => b.id)
+  const blocks = ids.map((id) => {
+    const graph = elkInputOf(subgraphOf(circuit, id, symbols)).graph
+    return { id, nodes: (graph.children ?? []).length, edges: (graph.edges ?? []).length }
+  })
+  const flat = elkInputOf(flatSubgraphOf(circuit, ids, symbols, `${name}~flat`)).graph
+  const blockEdgeTotal = blocks.reduce((n, b) => n + b.edges, 0)
+  return {
+    circuit: name,
+    blocks,
+    blockEdgeTotal,
+    flatNodes: (flat.children ?? []).length,
+    flatEdges: (flat.edges ?? []).length,
+    ratio: blockEdgeTotal === 0 ? 0 : (flat.edges ?? []).length / blockEdgeTotal,
+  }
+}
+
+export function renderEdgeCensus(c: EdgeCensus): readonly string[] {
+  return [
+    ...c.blocks.map((b) => `  ${b.id}: ${b.nodes} nodes, ${b.edges} edges`),
+    `${c.circuit}: flat ${c.flatNodes} nodes / ${c.flatEdges} edges against ${c.blocks.length} blocks totalling ${c.blockEdgeTotal} edges - ratio ${c.ratio.toFixed(3)}x`,
+  ]
+}
+
 export function renderExperiment(x: IntegratedExperiment): readonly string[] {
   const side = (label: string, s: Side): string =>
     s.ok
@@ -377,4 +431,8 @@ export function renderExperiment(x: IntegratedExperiment): readonly string[] {
 
 if (import.meta.main) {
   for (const line of renderExperiment(await integratedExperiment())) console.log(line)
+  console.log("")
+  for (const name of ["optical-compressor", SUBJECT_CIRCUIT]) {
+    for (const line of renderEdgeCensus(await edgeCensus(name))) console.log(line)
+  }
 }
