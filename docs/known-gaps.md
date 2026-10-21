@@ -18389,10 +18389,11 @@ drawings would be a false defect report.
   has been shown to be the only way that check could have caught the defect** -
   i.e. a symmetric check is perturbed on both sides, and a discriminating probe
   has a CONTROL that passes, before a green is believed. **The control clause has
-  four instances now, and two of them are on one item from two different
-  authors** (ruling R60, the table above): the implementer's single-file `tsc`
-  run and the reviewer's suppressed `@ts-expect-error`, plus this task's
-  one-sided perturbations of the component and connection multisets. It is cheap:
+  FIVE instances across two authors** (rulings R60 and R61, the table above):
+  this task's one-sided perturbations of the component and connection multisets,
+  the implementer's single-file `tsc` run, the reviewer's suppressed
+  `@ts-expect-error`, and the reviewer's hand-built `ReferenceGraph` treated as
+  representative of what `graphFromNetlist` emits. It is cheap:
   **a probe whose control also fails has measured nothing**, and the clause
   catches that without the author having to anticipate their own error.
   **MECHANISMS, both untried:** a harness that refuses a perturbation whose
