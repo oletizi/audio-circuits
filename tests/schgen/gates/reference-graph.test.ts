@@ -384,9 +384,11 @@ describe("a symmetric pair that does NOT match, at the references' own sizes", (
  *
  * **WHY A HAND-BUILT INPUT IS LEGITIMATE HERE, which is the one thing a reader should not have to
  * take on trust.** The register's warning is about asserting over an input that CANNOT EXIST -
- * **G216** item 6 refuses a test over a circuit with an unclassed crossing net because
- * `ConnectionClass` is a total two-value union, so building one needs a cast. This graph needs no
- * cast and violates no invariant. The precedent for the shape is **G196**, where
+ * **`docs/known-gaps.md` G213**(6) refuses a test over a circuit with an unclassed crossing net,
+ * *"`ConnectionClass` is a two-value union, `classOf` is total over it"*, and records that the
+ * clause replacing it is driven *"with no cast"*. **That building the refused circuit would need a
+ * cast is an inference from those words, not a quotation of them.** This graph needs no cast and
+ * violates no invariant. The precedent for the shape is **G196**, where
  * `tests/schgen/elk/snap.test.ts` *"drives the arm on a hand-built fixture and has passed
  * throughout - so the arm was correct all along and only unreachable on real geometry"*, and whose
  * criterion is that an arm is either evaluated on real data **or recorded as unreachable with the

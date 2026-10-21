@@ -18202,10 +18202,12 @@ than documented.**
 > construction as the guard, on the grounds that it asserts over a
 > `ReferenceGraph` the production path cannot produce. **The controller overruled
 > that reading and the register supports the overrule:** the unreachable-input
-> warning is about asserting over an input that **cannot exist** - **G216** item 6
-> refuses a test over a circuit with an unclassed crossing net because
-> `ConnectionClass` is a total two-value union, so building one needs a cast -
-> whereas this graph needs **no cast** and violates no invariant of
+> warning is about asserting over an input that **cannot exist** - **G213**(6)
+> refuses a test over a circuit with an unclassed crossing net, *"`ConnectionClass`
+> is a two-value union, `classOf` is total over it"*, and records that the clause
+> that replaced it is driven *"with no cast"*. **The inference from that is this
+> writer's and is not a quotation: building the refused circuit would require
+> defeating the type.** This graph needs **no cast** and violates no invariant of
 > `matchGraphs`'s declared domain. The precedent is **G196**, where a hand-built
 > fixture *"drives the arm on a hand-built fixture and has passed throughout - so
 > the arm was correct all along and only unreachable on real geometry"*, and whose
