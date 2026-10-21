@@ -112,13 +112,20 @@ audio-circuits/
 - **[KiCad](https://www.kicad.org/)**, for `kicad-cli`. Required: the perfboard
   workflow re-exports each board's netlist from its KiCad schematic on every
   run (see `make/board.mk`'s `netlist-agrees`), not just once, so `kicad-cli`
-  has to be present to run `make check` against a declared board. It is also
-  required for `bun test`: exactly one test, "KiCad reads the generated stub
-  as the same circuit" in `tests/circuits/transistor-preamp-lab.test.ts`,
-  deliberately invokes `kicad-cli` and **fails** (never skips) when it cannot
-  find it, because it is the only proof that KiCad reads a generated
-  schematic stub the way the circuit means it. Every other test injects
-  `kicad-cli` out. The default assumes a standard macOS install
+  has to be present to run `make check` against a declared board. **It is
+  required for `bun test` far more widely than this paragraph used to claim.**
+  It said *"exactly one test"* - "KiCad reads the generated stub as the same
+  circuit" in `tests/circuits/transistor-preamp-lab.test.ts` - *"and every
+  other test injects `kicad-cli` out."* **Both halves are false, measured:**
+  with `KICAD_CLI` pointed at a path that does not exist, **208 testcases fail
+  across 55 files, 294 further tests never register at all** (144 of them in
+  twelve files that leave no trace whatever), and **50 more skip**. That test
+  is also **one of five bearing the same name**, one per transistor-preamp
+  board. `docs/known-gaps.md` **G250** carries the six-arm measurement. What is
+  true of the original sentence is its *point*: those tests invoke `kicad-cli`
+  and **fail rather than skip**, because they are the only proof that KiCad
+  reads a generated schematic stub the way the circuit means it. The default
+  assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
 - **[Google Chrome](https://www.google.com/chrome/)** (or another
@@ -131,7 +138,9 @@ audio-circuits/
   `tests/guide/print-pdf.test.ts`, invokes it and **fails** (never skips) when
   it cannot find it, because Chrome's headless flags have changed across
   versions and it is the only proof that the flags this repository passes
-  still produce a PDF. The default assumes a standard macOS install
+  still produce a PDF. **That "exactly one" is measured and exact**: masking
+  `HTML_TO_PDF` gives **one** failing testcase, that one, and nothing
+  unregistered (**G250**'s `nochrome` arm). The default assumes a standard macOS install
   (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); override
   `HTML_TO_PDF` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
@@ -150,7 +159,11 @@ audio-circuits/
 - **`SCHGEN_SOURCE`**, an environment variable (no default - see below),
   pointing at a local checkout of `digital-pedal-platform`'s
   `tools/schgen/` directory, the source tree the `lib/schgen/` port is
-  ported from. Required for exactly one test,
+  ported from. Required for **eight tests, all in one file** - the sentence
+  here said *"exactly one test"* and is understated by seven, measured
+  (**G250**'s `noschgen` arm): unsetting it fails eight testcases, every one of
+  them in `tests/schgen/port-fidelity.test.ts` and every one of them named,
+  with nothing unregistered. The one it named is
   "every ported file is its source, rewritten only by the manifest" in
   `tests/schgen/port-fidelity.test.ts`, which **fails** (never skips) when
   it is unset, because it is the only proof that every file under
@@ -165,6 +178,30 @@ Nothing else needs setting up: the perfboard tooling builds and locates the
 VeroRoute fork itself, and none of the rest of this requires an environment
 variable. If you want to point at your own builds instead, `VEROROUTE`,
 `QMAKE`, `KICAD_CLI` and `HTML_TO_PDF` are overrides, not required setup.
+
+### Which of these a green `bun test` is NOT evidence about
+
+**A missing prerequisite does not always produce a failure. Two of the five
+make tests DISAPPEAR, and the suite's printed file count does not move when
+they do** - so `3672 pass / 0 fail` in a tree missing one of them is a true
+statement about a smaller suite than the number suggests. Measured over six
+full-suite arms; `docs/known-gaps.md` **G250** carries the table, the method and
+the per-file losses.
+
+| prerequisite | what its absence does to `bun test` |
+| --- | --- |
+| **`kicad-cli`** | **ERASES 294 tests**, 144 of them in twelve files that leave no `testsuite` element, no name and no failure; 208 further testcases fail by name; 50 skip |
+| **the VeroRoute binary** | **ERASES 48 tests**, 6 of them with no trace at all; 77 testcases fail by name |
+| Google Chrome | fails **1** test, by name. Nothing erased |
+| `SCHGEN_SOURCE` | fails **8** tests, by name, all in one file. Nothing erased |
+| Homebrew `qt@5` | **nothing at all** - the suite exits 0. It is needed to BUILD the VeroRoute binary, not to use one that exists |
+
+**The rule behind the table is where the prerequisite is resolved, not which
+prerequisite it is**: resolved inside a test it fails loudly, resolved at a test
+file's module scope it takes the rest of the file with it. If you are comparing
+two suite runs, compare the junit reports' per-file testcase counts; `Ran N
+tests` under-reports the gap by the number of unhandled errors, and `across N
+files` does not move at all.
 
 ## Usage
 

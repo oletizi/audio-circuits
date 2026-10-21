@@ -20193,7 +20193,168 @@ equivalent of and which is the thing that makes a generated artifact auditable.
   block from the drawing alone* - and never this list (**G83** is the entry about
   exactly that contamination).
 
-### G250 - MEASURED: in a tree without the acquired VeroRoute binary, 48 tests NEVER REGISTER, and six of them leave nothing behind at all - no failure, no name, no `testsuite` element
+### G250 - MEASURED: 300 tests across 27 files - 8.2% of the suite - NEVER REGISTER when one of five documented local prerequisites is absent, and 144 of them leave no name, no failure and no `testsuite` element; the VeroRoute binary is 48 of the 300
+
+**THE FIGURE IN THIS HEADING WAS 48 UNTIL 2026-10-21, AND THE OLD ONE IS LEFT
+VISIBLE RATHER THAN OVERWRITTEN**, because the way it was wrong is the finding:
+48 was one arm of a five-arm phenomenon, measured correctly, generalised
+cautiously, and **six times too small.** Everything below the six-arm block is
+the original entry, unchanged except where it is marked, and its 48 still
+reproduces exactly.
+
+**THE HEADLINE, AND IT IS A PROPERTY OF AN UNVERSIONED LOCAL PREREQUISITE
+RATHER THAN OF THE SUITE.** `[RAN]` **300 tests across 27 files - 8.2% of the
+3672 - fail to REGISTER under at least one of the five prerequisite absences
+measured here.** None of them is reported as a skip, a failure or a name; the
+union is taken as the worst arm per file, and the per-file table is below.
+**The prerequisites are the ones `README.md` documents**, so this is not an
+exotic tree: it is what a reader who followed the Prerequisites section
+imperfectly gets.
+
+**THE SIX ARMS, DRIVEN AT `c96fb08` BY THIS WRITER**, each the full suite with
+`--reporter=junit`, run **sequentially** (several files carry wall-clock budgets
+sized for full-suite contention, so two concurrent suites would turn a timeout
+into a confound). `SCHGEN_SOURCE` was set in five of the six; unsetting it is
+the sixth's treatment.
+
+**THE COUNTING METHOD, STATED BECAUSE A COUNT WITHOUT ONE IS WHAT PUT A WRONG
+NUMBER IN THIS ENTRY ONCE ALREADY** (the `32` below). bun's junit writer nests a
+`<testsuite>` per `describe` INSIDE the `<testsuite>` for the FILE, so summing
+every `tests=` attribute double-counts: `[RAN]` on the control arm that sum is
+**4650** against the root element's own **3672**. The figures below count only
+**top-level `<testsuite>` elements** - direct children of `<testsuites>`, whose
+`name` is the file path - and count `<testcase>` elements by **walking the
+tree**, never trusting a `tests=` attribute. Loss is a per-file diff of two
+reports rather than a difference of two totals.
+
+| arm | how the prerequisite was removed | registered | NOT registered | files leaving NO `testsuite` element | lost with no name at all | named failures | files with a failure | skipped | exit | wall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **control** | nothing | **3672** | **0** | 0 | 0 | 0 | 0 | 0 | 0 | 142s |
+| no Chrome | `HTML_TO_PDF=/nonexistent-prereq/Google Chrome` | 3672 | **0** | 0 | 0 | **1** | 1 | 0 | 1 | 139s |
+| no `SCHGEN_SOURCE` | variable unset | 3672 | **0** | 0 | 0 | **8** | 1 | 0 | 1 | 144s |
+| no qt@5 | a `brew` shim on `PATH` exiting 1 on `--prefix qt@5` | 3672 | **0** | 0 | 0 | **0** | 0 | 0 | **0** | 146s |
+| no VeroRoute binary | the acquired binary renamed away | 3624 | **48** | 1 | **6** | 77 | 24 | 0 | 1 | 122s |
+| **no `kicad-cli`** | `KICAD_CLI=/nonexistent-prereq/kicad-cli` | **3378** | **294** | **12** | **144** | 208 | 55 | **50** | 1 | **87s** |
+
+**THE PATTERN IS NOT "A PREREQUISITE". IT IS WHERE THE RESOLUTION SITS - AND IT
+IS A TRICHOTOMY, NOT THE DICHOTOMY THE WHOLE-BRANCH REVIEW NAMED.**
+
+1. **Resolved inside a test, or inside a function a test calls: it FAILS LOUDLY
+   and loses nothing.** Chrome, `SCHGEN_SOURCE` and qt@5. Three arms, zero
+   registration loss.
+2. **Resolved at MODULE SCOPE in a test file: the file loses everything after
+   the throw.** `kicad-cli` and the VeroRoute binary. Two arms, 294 and 48.
+3. **Resolved at module scope and handed to `describe.skipIf`: the tests
+   REGISTER and SKIP.** `[RAN]` 50 testcases skip in the `nokicad` arm and in no
+   other, in three files - `stock-fields.kicad.test.ts` 38,
+   `templates/template-stock.kicad.test.ts` 6,
+   `templates/opamp-stock.kicad.test.ts` 6. **They are NOT in the 300**, because
+   they register; bun prints `50 skip`, which is more than the 294 get.
+
+**AND CLASS 3's OWN GUARD AGAINST BEING INVISIBLE EXHIBITS CLASS 2.**
+`tests/schgen/__fixtures__/require-tool.ts`'s `skipWithout` throws instead of
+skipping when `CI` is set, and its comment states the reason exactly: *"a test
+that skips when its tool is missing cannot be told apart from one that passed,
+so in CI the job that provides the tool is the proof that the test ran."* **The
+throw lands at module scope**, because `describe.skipIf(skipWithout(...))`
+evaluates there. `[RAN]` over those three files, with two controls:
+
+| arm | result |
+| --- | --- |
+| `KICAD_CLI` masked, `CI` unset | 0 pass / **50 skip** / 0 fail, `Ran 50 tests across 3 files` |
+| `KICAD_CLI` masked, **`CI=1`** | 0 pass / **3 fail, 3 errors**, `Ran 3 tests across 3 files` - **the guard erases 47 of the 50 instead of failing them by name** |
+| **CONTROL**: `kicad-cli` present, `CI=1` | **50 pass / 0 fail**, 118 `expect()` calls |
+
+**So the designed remedy for an invisible skip produces an invisible erasure**,
+and the control rules out the alternative reading that `CI=1` reddens these
+files for some unrelated reason: with the binary present and `CI` set they all
+pass.
+
+**THE NEGATIVE CONTROLS COULD HAVE ANSWERED DIFFERENTLY AND DID, WHICH IS WHAT
+MAKES THE TWO LOUD ARMS MEAN ANYTHING.** Three arms show **zero** registration
+loss and one of them (`noqt`) **exits 0 with no failure at all** - a
+prerequisite `README.md` calls required is completely invisible to the suite
+once the binary it builds exists. A method that found every prerequisite
+destructive, or none, would have failed this comparison.
+
+**AND THIS ENTRY'S OWN CLAIM ABOUT WHICH NUMBER WOULD BETRAY IT IS WRONG.**
+Below it says *"The one number that would betray it is `Ran N tests`"*. `Ran N`
+does move - 3672 to 3389 in the `nokicad` arm - **but `across 345 files` is
+IDENTICAL IN ALL SIX ARMS, including the arm where twelve whole files left no
+`testsuite` element.** `[RAN]` the junit reports carry **345 / 345 / 345 / 345 /
+344 / 333** top-level `testsuite` elements while bun prints `across 345 files`
+every time. **A reader comparing file counts - the cheaper and more natural
+comparison - gets no signal at all.** Separately, this entry's *"bun's `Ran`
+under-reports the gap by one"* generalises: it under-reports by the number of
+unhandled errors, **11** in the `nokicad` arm (`Ran 3389` against 3378
+registered), where bun printed a `13 errors` line and a separate `2 errors` line.
+
+**THE TWELVE FILES THAT VANISH UNDER `kicad-cli`, with the tests each takes:**
+
+| file | tests | file | tests |
+| --- | --- | --- | --- |
+| `tests/schgen/authoring-complete.test.ts` | **37** | `tests/schgen/rules/symbols.test.ts` | 9 |
+| `tests/schgen/from-network.test.ts` | 26 | `tests/kicad/footprint-names.test.ts` | 9 |
+| `tests/schgen/manifest.test.ts` | 13 | `tests/schgen/rules/pin-sides.test.ts` | 8 |
+| `tests/schgen/parity.test.ts` | 12 | `tests/schgen/rules/orientation.test.ts` | 7 |
+| `tests/schgen/anchor-sweep.test.ts` | 9 | `tests/stripboard/model/benchmark.test.ts` | 6 |
+| `tests/schgen/symbol-census.test.ts` | 5 | `tests/stripboard/model/area-agree.test.ts` | 3 |
+
+**`authoring-complete.test.ts` is the worst single loss and it is worth naming
+why: it is G99's criterion made checkable**, and it leaves no trace at all.
+**Fourteen more files collapse to one `(unnamed)` failing testcase each**,
+losing **150** further tests behind a visible failure - `remeasure.test.ts`
+23→1, `materialize-run-perturbed.test.ts` 22→1, `render/compose.test.ts` 18→1,
+`elk/sheet-graph.test.ts` 15→1, `remeasure-edges.test.ts` 15→1,
+`render/cross-sheet.kicad.test.ts` 13→1, `materialize-run.test.ts` 12→1,
+`adopt-approval-gate.test.ts` 11→1, `gates/reference-graph.kicad.test.ts` 8→1,
+`remeasure-ceiling.test.ts` 8→1, `gates/round-trip.kicad.test.ts` 7→1,
+`readability/measures.test.ts` 18→14, `emit-byte-stable.test.ts` 8→5,
+`gates/gates.kicad.test.ts` 3→1. 144 + 150 = **294**.
+
+**THE UNION, PER FILE, WORST ARM** - 27 files, 300 tests, and the only file
+whose worst arm is not `nokicad` is this entry's original subject:
+
+```
+ 37 nokicad     schgen/authoring-complete      9 nokicad     schgen/rules/symbols
+ 26 nokicad     schgen/from-network            8 nokicad     schgen/rules/pin-sides
+ 22 nokicad     schgen/remeasure               7 nokicad     schgen/remeasure-ceiling
+ 21 nokicad     stripboard/materialize-run-perturbed
+ 17 nokicad     schgen/render/compose          7 nokicad     schgen/gates/reference-graph.kicad
+ 14 nokicad     schgen/remeasure-edges         7 nokicad     schgen/rules/orientation
+ 14 nokicad     schgen/elk/sheet-graph         6 nokicad     stripboard/model/benchmark
+ 13 nokicad     schgen/manifest                6 nokicad     schgen/gates/round-trip.kicad
+ 12 nokicad     schgen/parity                  6 NOVEROROUTE stripboard/seed-geometry
+ 12 nokicad     schgen/render/cross-sheet.kicad   5 nokicad  schgen/symbol-census
+ 11 nokicad     stripboard/materialize-run     4 nokicad     schgen/readability/measures
+ 10 nokicad     stripboard/adopt-approval-gate 3 nokicad     schgen/emit-byte-stable
+  9 nokicad     kicad/footprint-names          3 nokicad     stripboard/model/area-agree
+                                               2 nokicad     schgen/gates/gates.kicad
+```
+
+**HEAD's COMPLETE RUN, STATED WITH ITS COMMIT BECAUSE NO COMMITTED FILE CARRIED
+IT.** `[RAN]` at **`c96fb08`**: **`3672 pass / 0 fail`, `Ran 3672 tests across
+345 files`, 42,181 `expect()` calls, 141.56s, exit 0.** It reconciles with the
+two figures this branch has been quoting: the `3677 across 345` of Task 20's
+closing verification at `8813c6c` minus the **6** tests of
+`tests/cli/schematic-stub.test.ts` (deleted at `3825752`) plus the **1** test of
+`tests/circuits/stub-writer-tripwire.test.ts` (added at `f9f884b`) - `[RAN]`
+both counts off the two files - and the **3671 across 344** in this entry's own
+two-arm table at `3825752`, which is before the tripwire landed. **`[RAN]` the
+tracked `.test.ts` file count is 345 at `8813c6c` and 345 at HEAD**, one file
+having gone and one arrived, which is why no file count moves across any of it.
+
+**AND ONE OBSERVATION THIS WRITER COULD NOT DIAGNOSE, RECORDED UNDIAGNOSED.**
+`tests/stripboard/seed-geometry.test.ts` resolves a netlist export at module
+scope (`await exportNetlistFor(declaration)`) and ought, on the class-2 reading
+above, to be erased by the `nokicad` arm as it is by the `noveroroute` one. **It
+is not: it loses nothing under `KICAD_CLI=/nonexistent-prereq/kicad-cli`.**
+`lib/kicad/install.ts`'s deliberately non-throwing `firstExisting` is the
+likeliest reason and was not run to ground. It changes no figure above, because
+the union takes the worst arm per file and that file's worst arm is
+`noveroroute`.
+
+**WHAT FOLLOWS IS THE ORIGINAL ENTRY.**
 
 **THIS IS A SKIPPED CHECK THAT LOOKS LIKE A PASSING ONE, AT A SCALE OF 48, IN THE
 SUITE EVERY AGENT ON THIS BRANCH HAS BEEN QUOTING AS A GREEN.** `CLAUDE.md` names
@@ -20212,7 +20373,9 @@ into three `(unnamed)` failures** - so their files are visibly broken but
 no failure, no name, no `testsuite` element, with a bare `1 error` beside the
 totals as the only trace. **The one number that would betray it is `Ran N tests`,
 which a reader has no reason to compare against anything**, and which **G251**
-shows is not constant across trees either. **Nobody comparing a before-and-after
+shows is not constant across trees either. **THAT SENTENCE IS WITHDRAWN - see
+the six-arm block above: `across N files` does not move in ANY arm, and it is
+the comparison a reader is likelier to make.** **Nobody comparing a before-and-after
 count can tell a 48-test change in what RAN from a 48-test change in what PASSED.**
 
 **FOUND BY ACCIDENT WHILE ESTABLISHING A BASELINE, WHICH IS THE ONLY REASON IT
@@ -20317,7 +20480,30 @@ constant, so a suite comparison across two trees can be off by 48 for a reason
 that has nothing to do with the change being measured.** The Task 19 baseline
 would have been wrong by exactly that if the first arm had been believed.
 
-- **Found** 2026-10-21, Task 19 Step 7, incidentally.
+- **Found** 2026-10-21, Task 19 Step 7, incidentally. **WIDENED from 48 to 300**
+  2026-10-21 by the whole-branch review (which drove five arms at `94af540`) and
+  **re-driven independently at `c96fb08`** by the whole-branch fix round, whose
+  figures are the six-arm table's.
+- **Evidence, FOR THE SIX-ARM BLOCK** - all six arms are the full suite at
+  `c96fb08` in this working tree, sequentially, with `SCHGEN_SOURCE` set in five
+  and unset as the sixth's treatment; junit reports diffed per file by a
+  nesting-aware parser whose method is stated above and in its own docstring.
+  **The three negative-control arms are what make the two loud ones mean
+  something and they could have answered differently**: a prerequisite absence
+  that erased tests in every arm would have given no contrast, and `noqt` in
+  fact exits 0 with no failure at all. **The positive control is the VeroRoute
+  arm**: it reproduces this entry's own 48 with its 21 / 11 / 10 / 6
+  decomposition and its `78 fail / 1 error` summary, at a different commit from
+  the one the original measurement used, so the 48 is not an artefact of that
+  tree. The VeroRoute arm's treatment renames a gitignored binary; it was
+  restored unconditionally and **verified by sha256 before and after**
+  (`89eb6173d8bfbccb9230bdccd5b03799f09918b6493a93bdd7b571b93762ba5f`), with
+  `git status --porcelain` empty throughout.
+- **Verified, FOR THE SIX-ARM BLOCK** **CONFIRMED** - this writer ran all six
+  arms, parsed every report, drove the `CI=1` probe with both its controls, and
+  computed the union. The whole-branch review drove the same five arms
+  independently at `94af540` and every figure agrees; where this block states
+  one, it is this writer's own run and not that review's.
 - **Evidence** the two arms above are the same `git worktree` at **`3825752`**,
   differing by one symlink, with `SCHGEN_SOURCE` set in both. **The control is
   the second arm and it could have answered differently**: had the 78 failures
@@ -20351,6 +20537,19 @@ would have been wrong by exactly that if the first arm had been believed.
   advice from someone who has not tried it**, and it addresses only the six; the
   42 that collapse to three `(unnamed)` failures would still not be named, and
   whether that matters is not judged here.
+
+  **THE CRITERION IS UNCHANGED BY THE WIDENING AND THE MECHANISM IS NOW KNOWN TO
+  BE FAR TOO NARROW.** The criterion above reads *"in a tree without `.tools/`"*;
+  it should be read as **in a tree missing any of the five documented
+  prerequisites**, which is what the six arms measure, and the number to hold it
+  to is **300 across 27 files**, not 48 across 4. **The suggested mechanism -
+  moving one file's resolution out of module scope - addresses 6 of 300.** Twelve
+  further files need the same treatment for `kicad-cli` alone, fourteen more
+  collapse behind a visible failure, and **class 3's `CI` guard is evidence that
+  the obvious mechanism can reproduce the defect**: it moves a silent skip to a
+  module-scope throw, which is class 2. **No mechanism here is preferred, and
+  the one originally offered is recorded as insufficient rather than deleted**,
+  because it is still correct about the file it names.
 
 ### G251 - MEASURED: the repository root's `make check` does NOT pass, and has not for at least this branch - FOUR of the eleven declared boards refuse, in TWO different cause classes, identically before and after Task 19
 
