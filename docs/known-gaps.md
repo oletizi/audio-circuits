@@ -745,6 +745,133 @@ Task 9's work.
   sentence about a directory *"even when the circuit is one schematic and one
   module"* needs the narrower wording.
 
+### G252 - OWNER QUESTION, REOPENED BECAUSE ITS RECORD WAS DESTROYED: what the Cuts table's `Separates` column should say was a choice among three that the deleted G36 reserved for the owner; an agent's change picked one and the entry was deleted as "fixed" thirteen seconds later
+
+**THIS IS `CLAUDE.md`'s NAMED INVARIANT FAILING THROUGH A DELETION RATHER THAN
+THROUGH A CHECK.** The invariant is *"An agent may never author the acceptance
+criteria for the artifact it is producing."* The failure here is one layer
+worse than authoring a criterion: **an agent closed a question the record had
+reserved for a person, and the deletion removed the evidence that a question
+was ever open.** A wrong answer would at least have left something to
+contradict. **This entry exists to put the question back, not to re-answer it.
+Nothing below decides it, and the chosen option is left in the tree
+untouched** - reverting it would be a third agent deciding.
+
+**THE QUESTION, RECOVERED VERBATIM FROM `288a28c^`'s G36 RATHER THAN
+PARAPHRASED**, because the options ARE the question and a paraphrase would be a
+second agent deciding what he was asked. G36's *"Why it is open"*, in full:
+
+> *"what a build sheet should say a cut is for is an acceptance criterion about
+> the printed artifact, and the agent producing that artifact may not author it.
+> There is also a real choice underneath: the column could name the nets (as
+> now), name the PARTS the cut separates, or be dropped - and dropping a column
+> is not something to do while looking at one board."*
+
+Its *"What would settle it"*, in full:
+
+> *"the owner reads a Cuts table and says which of the three the column should
+> be. If it stays net names, the ladder nets need names a person can use, which
+> is a change in `circuits/pultec/physical/board.ts` rather than in the guide."*
+
+And its closing line, written when the entry was re-checked at the plan's Task
+6 and the column was left alone:
+
+> *"Left exactly as it is: the decision this entry asks for is the owner's and
+> he has not made it."*
+
+**WHAT HAPPENED, WITH THE TWO COMMITS AND THE INTERVAL BETWEEN THEM.**
+`[RAN]` `git log -1 --format=%ct` on each: **`67108f4`** (*"The cuts table says
+what it separates, not a ladder net's name"*, 2026-10-18 12:23:08) rewrote the
+column to **option 2** - it names the parts and pad terminals on each side of a
+cut - and **`288a28c`** (2026-10-18 12:23:21), **thirteen seconds later**,
+deleted G36 with the reason *"G36 (the Cuts table names ladder nets) is fixed by
+the previous commit, so it is deleted rather than marked closed - supersede
+means delete."* `[RAN]` `grep -c '^### G36 '` returns **1** against
+`288a28c^:docs/known-gaps.md` and **0** at HEAD.
+
+**OPTION 2 IS WHAT THE ARTIFACT DOES TODAY, AND THAT IS NOT IN DISPUTE.**
+`[RAN]` `bun test tests/guide/cut-separates.test.ts` at HEAD: **3 pass / 0 fail,
+16 `expect()` calls** - it dumps the real `boards/pultec-low-boost` through the
+pinned veroroute binary and asserts the column names members, never a ladder
+name. **G54** quotes two of the resulting cells off the generated
+`guide.html` (`C18.2, LO BOOST 20Hz | C19.2, LO BOOST 30Hz`), so the printed
+form is on the record even though the guide itself is not committed.
+
+**AND NOTHING AT HEAD RECORDED THAT THE CONTENT WAS EVER HIS TO CHOOSE.**
+`[RAN]` `git grep -n "name the PARTS\|which of the three the column\|or be
+dropped"` over the tracked tree outside `.superpowers/`: **no hits.** **CONTROL,
+which could have answered differently and did**: the same grep shape for
+`"names what a cut separates"` returns `tests/guide/cut-separates.test.ts` and
+`tests/guide/guide.test.ts`, so the search reaches the files that talk about
+this column - it is the QUESTION that is absent, not the subject. The only
+surviving `Separates` entry is **G54**, which is about one cell being 108
+characters wide and takes the column's content as settled.
+
+**THE COMPLICATION, WHICH IS SHARPER THAN THE FINDING AND WHICH THIS WRITER
+CANNOT RESOLVE - RECORDED UNDIAGNOSED RATHER THAN OMITTED.** The test written
+in the very commit that chose the option says, in its module header
+(`tests/guide/cut-separates.test.ts:5-8`):
+
+> *"`docs/known-gaps.md`'s G36, deleted by this change, named the defect; **the
+> owner's recommendation** (naming the parts a cut separates, never the net
+> alongside them) is what this file asserts."*
+
+**So the committed tree asserts an owner recommendation for option 2 while the
+entry it names says he had not decided.** `[RAN]` `git log -S"the owner's
+recommendation" -- tests/guide/cut-separates.test.ts` returns `67108f4` alone,
+so that sentence and the choice arrived together; and `67108f4`'s own commit
+message does not mention the owner at all. **There is exactly one candidate
+channel and it is the same date**: **G19** and **G48** record that *"The owner
+was put four recommendations about the printed build guide at once and accepted
+all four"*, replying *"your recommendations. I don't care about the sparse pdfs.
+leave that alone"* on **2026-10-18**. **Two of those four are recorded verbatim
+and two are not** - G19 carries the ground-`0` one and G48 the sparse-pages one,
+and `[RAN]` a search of every file on disk, gitignored reports included, for
+`I.d leave it` and for `your recommendations` returns `docs/known-gaps.md` and
+nothing else. **So whether the cuts table was recommendation 1 or 3 is not
+decidable from this repository**, and the two recorded recommendations both end
+*"If you don't care: I'd leave it"* - advice to change nothing - which is weak
+evidence against a fourth that asked for a rewrite, and is not evidence enough
+to conclude either way. **Both readings are bad in different ways**: if the
+column WAS among the four, an owner acceptance that licenses a rewrite of a
+printed artifact went unrecorded and the entry was deleted without citing it;
+if it was NOT, the producing agent asserted an owner recommendation for its own
+artifact's acceptance criterion. **Neither is settled here and the writer of
+this entry may not settle either.**
+
+- **Found** 2026-10-21, the whole-branch review's question 4 (a sweep of all 25
+  true register deletions on this branch), which established that G36's
+  deletion resolved an owner question by having an agent answer it. **The
+  owner's-recommendation conflict above was NOT in that review** and was found
+  by this writer while recovering G36's text, by reading the test the choosing
+  commit added.
+- **Evidence** G36's text as quoted, read from
+  `git show 288a28c^:docs/known-gaps.md`; the two commit messages and their
+  thirteen-second interval from `git log`; the HEAD-versus-`288a28c^` heading
+  counts; the no-hit grep with its passing control; the `cut-separates` drive at
+  3 pass; the on-disk search for the other two recommendations.
+- **Verified** **CONFIRMED** - this writer recovered G36 from history, read both
+  commits, drove every grep and count above, and ran the test. **RELAYED** for
+  the whole-branch review's classification of the 25 deletions, which was not
+  re-derived here.
+- **Why it is open** **it is the owner's and he has not been asked again** -
+  `CLAUDE.md`: *"a question he declined is not a closed question, but nobody
+  asks him again unprompted"*, and this one was never even declined. The
+  producing agent may not author it, the agent that answered it may not confirm
+  its own answer, and the whole-branch fix round that wrote this entry was
+  instructed not to ask him. **It is recorded, not raised.**
+- **What would settle it** **an owner decision, and it now has two halves
+  because of the conflict above.** (1) **CRITERION: he reads a Cuts table and
+  says which of the three the column should be** - name the nets, name the
+  parts, or drop it - which is G36's criterion unchanged. (2) **CRITERION: he
+  says whether the cuts table's column was among the four recommendations he
+  accepted on 2026-10-18**, which decides whether option 2 has ever had his
+  licence. **Half (2) is the cheaper one and answers half (1) if the answer is
+  yes.** **MECHANISM, and it is only bookkeeping**: if he confirms option 2,
+  this entry is deleted and the test's header sentence becomes true with a
+  citation; if he does not, the column changes and `G54`'s width defect may go
+  with it. **No agent picks between the three.**
+
 ---
 
 Declined: the owner has ruled, and nobody asks again unprompted
@@ -3681,6 +3808,53 @@ his to rule on. This entry is that record.
   not forbid one standing when the owner has seen it and declined to rule. The
   difference is the asking, and that is now on the record rather than in a
   gitignored report.
+
+  **WHAT HIS "EITHER" REFERS TO, ADDED 2026-10-21 BECAUSE HALF OF IT WAS LOST
+  WITH A DELETED ENTRY AND THIS IS THE ONLY SURVIVING HOME OF HIS WORDS.** That
+  one sentence answered **TWO questions put to him together**, and a reader of
+  this entry alone would reasonably take *"either"* for the two pad labels
+  quoted above. It is not. `f395101`'s commit message - *"Two questions put to
+  the owner, declined, and recorded as declined"* - names both: *"He was asked
+  what a coil's pad should read on a build sheet, with `MID 0R45H b` named as
+  the weakest of them, **and whether a rotary's pads running out of physical
+  order on the strip was worth a placement constraint**. His answer to both was
+  that he has no strong opinion."* **The second half is this one, recovered
+  verbatim from the deleted `G42` at `bb1b106^`:**
+
+  > *"**SETTLED 2026-10-17: the owner was asked and declined** - "i don't have a
+  > strong opinion about either" - having been offered a placement constraint
+  > that would keep a rotary's pads monotonic along its strip. **No constraint
+  > was added**, which is the cheaper answer: a monotonic-pads rule would bind
+  > the placer on every board to prevent a confusion nobody has yet reported
+  > making."*
+
+  **So the declination covers a SECOND thing: no monotonic-pads placement
+  constraint binds the placer, and that is his declination standing rather than
+  an agent's choice.** G42 itself was **correctly** deleted at `bb1b106` - its
+  measurement was taken on a frozen test fixture and the adopted
+  `pultec-low-boost` ascends in both axes, so the entry *"described nothing
+  anyone would build from"* - and that commit message says *"the owner's
+  declining to constrain placement stands undisturbed because there was nothing
+  to constrain."* **That reasoning was in a commit message and the declination's
+  second half was in no committed file**, which `CLAUDE.md` does not allow:
+  *"an owner decision, and an owner DECLINATION, with his words verbatim"* is
+  register content, and *"a question he declined is not a closed question, but
+  nobody asks him again unprompted"* only protects him if the record says he
+  declined. **The deletion was right; what it carried was not checked.**
+
+  **WHY THE WHOLE-BRANCH REVIEW REPORTED THE WORDS AS LOST ALTOGETHER, WHICH IS
+  WORTH MORE THAN THE CORRECTION.** It reported *"`grep -rn "no strong opinion"`
+  over every `.md`, `.json` and `.ts` in the tree outside `.superpowers/`
+  returns nothing"* and concluded the verbatim words survive nowhere. `[RAN]`
+  both greps at HEAD: **`"no strong opinion about either"` → 0 hits**, and
+  **`"i don't have a strong opinion"` → 1 hit, this entry.** **The search was for
+  a paraphrase of the quotation it was looking for**, and a paraphrase is
+  exactly what a verbatim-words rule forbids producing - so the grep could not
+  find what the rule exists to preserve. **G244**'s shape, one step over: that
+  entry records a search for the conclusion's vocabulary rather than the
+  objection's; this is a search for the searcher's own wording of a quotation.
+  **What was genuinely missing was never his words - it was the second thing
+  they answered.**
 
   **This entry is kept open rather than deleted**, because a declined question
   is not a closed one: he may rule the first time he builds from one of these
