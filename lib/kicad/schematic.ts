@@ -6,8 +6,11 @@
  * ONE reason: `tests/circuits/kicad-round-trip.ts` and the five
  * `tests/circuits/transistor-preamp-*.test.ts` files are this repository's only
  * `kicad-cli` proof that KiCad reads a stub the way the circuit means it, and
- * they cannot move onto `generate` yet because it refuses all five of those
- * boards (`docs/known-gaps.md` **G247**). **G248** records that non-deletion,
+ * `generate` draws none of those five boards today - it REFUSES `lab-board` at
+ * layout, and the other four it CANNOT BE OFFERED at all, since no module
+ * declares a `SchematicAuthoring` for them, so there is nothing for
+ * `circuitSpecFrom` to build from (`docs/known-gaps.md` **G247** measures both,
+ * per board). **G248** records that non-deletion,
  * what has to be true before this file goes, and the price of keeping it. There
  * is no CLI verb, no `package.json` script and no documented command that
  * reaches this writer: Task 19 deleted all three.

@@ -35,7 +35,9 @@ schematic-first, with the model derived from a netlist export.
 replaced. Nothing invites you to it: there is no script and no verb. It survives
 only because the five `tests/circuits/transistor-preamp-*.test.ts` files are this
 repository's only `kicad-cli` proof that KiCad reads a generated schematic the
-way the circuit means it, and `schgen` refuses all five of those boards today.
+way the circuit means it, and `schgen` cannot draw any of those five boards
+today — it **refuses** `lab-board` at layout, and the other four it **cannot be
+offered at all**, because no module declares a schematic for them.
 `docs/known-gaps.md` **G247** measures the refusals, **G248** records what has to
 be true before the file goes, and **G81** records what is wrong with what it
 emits.
