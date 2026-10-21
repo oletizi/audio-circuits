@@ -234,9 +234,13 @@ describe("compareMeasures", () => {
   })
 
   it("says which of G95's two kinds of baseline this is, with a third arm for the unmeasured range", () => {
+    // The three sizes move with SCALE_INVARIANT_UPTO and SCALE_UNSTABLE_FROM, which Task 17's
+    // re-measurement moved from 9 and 13 to 3 and 8 (G95, rewritten). 5 is in the new gap; 11 is
+    // no longer in it and is now a serialization baseline, which is the measured answer.
     expect(compareMeasures(entry, after, HASH_A, 3).scale.kind).toBe("about-the-circuit")
     expect(compareMeasures(entry, after, HASH_A, 17).scale.kind).toBe("about-a-serialization")
-    expect(compareMeasures(entry, after, HASH_A, 11).scale.kind).toBe("unmeasured-scale")
+    expect(compareMeasures(entry, after, HASH_A, 11).scale.kind).toBe("about-a-serialization")
+    expect(compareMeasures(entry, after, HASH_A, 5).scale.kind).toBe("unmeasured-scale")
   })
 })
 
@@ -255,10 +259,10 @@ describe("baselineScale, G95's block-scale refinement", () => {
     for (let cells = SCALE_INVARIANT_UPTO + 1; cells < SCALE_UNSTABLE_FROM; cells += 1) {
       expect(baselineScale(cells).kind, `${cells} cells`).toBe("unmeasured-scale")
     }
-    expect(baselineScale(10).why).toContain("nothing is known between")
+    expect(baselineScale(SCALE_INVARIANT_UPTO + 1).why).toContain("nothing is known between")
   })
 
   it("every arm says why, so a report can print the reason beside the classification", () => {
-    for (const cells of [3, 11, 17]) expect(baselineScale(cells).why.length).toBeGreaterThan(80)
+    for (const cells of [3, 5, 17]) expect(baselineScale(cells).why.length).toBeGreaterThan(80)
   })
 })

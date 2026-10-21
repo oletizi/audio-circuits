@@ -104,26 +104,42 @@ export type BaselineLookup =
  * WHETHER A BASELINE IS ABOUT THE CIRCUIT OR ABOUT A SERIALIZATION - `[RAN]` **G95**'s block-scale
  * refinement, which decides whether a baseline is worth holding at all.
  *
- * Measured: order-instability is **absent at and below 9 cells** - crossing counts invariant over
- * four orders at 3, 4, 8 and 9 - and **present from 13 cells up**, moving 22 to 29. So *"a baseline
- * over blocks small enough that the measure does not move under reordering is a baseline about the
- * circuit. Over large blocks it is a baseline about a serialization"* - legitimate and much weaker
- * - *"and a gate citing one must not be read as the former."*
+ * Measured: *"a baseline over blocks small enough that the measure does not move under reordering is
+ * a baseline about the circuit. Over large blocks it is a baseline about a serialization"* -
+ * legitimate and much weaker - *"and a gate citing one must not be read as the former."*
  *
- * **THERE ARE THREE ARMS AND NOT TWO, because 10 to 12 cells was never measured.** G95's table
- * jumps from 9 to 13. Calling an 11-cell block *about the circuit* would be extending a measured
- * range by assertion, which is what `CLAUDE.md` means by a silent widening; calling it *about a
- * serialization* would overstate a defect nobody has seen at that size. `unmeasured-scale` says so.
+ * **THE TWO BOUNDS ARE TASK 17's AND NO LONGER THE SPIKE's, AND THE RE-MEASUREMENT MOVED THEM
+ * BOTH.** Until 2026-10-20 they were 9 and 13, read off G95's table of a shuffle run through
+ * `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1. `[RAN]`
+ * `tools/schgen/remeasure-ceiling.ts` ran the same shuffle on THIS backend over all twelve declared
+ * blocks: the crossing count is **invariant at 2 and 3 placements** and **moves at 8 and at every
+ * larger size measured** - and the clearest row is `oc-power`, the SAME 8-part block the spike
+ * measured at **0, 0, 0, 0**, which here gives **1, 3, 2, 2**. Carrying 9 forward would have left
+ * this module classifying `oc-power` as *about the circuit* on evidence this repository has
+ * falsified, which is the exact failure G101's caveat records about itself.
+ *
+ * **THERE ARE THREE ARMS AND NOT TWO, because 4 to 7 placements was never measured.** No declared
+ * block of this repository has 4, 5, 6 or 7 placements, and ruling **R40** forbids constructing one:
+ * *"if no real subject exists at a size, that size is unmeasured and you say so, per size."*
+ * Calling a 5-placement block *about the circuit* would be extending a measured range by assertion,
+ * which is what `CLAUDE.md` means by a silent widening; calling it *about a serialization* would
+ * overstate a defect nobody has seen at that size. `unmeasured-scale` says so.
  */
 export type BaselineScale =
   | { readonly kind: "about-the-circuit"; readonly cells: number; readonly why: string }
   | { readonly kind: "about-a-serialization"; readonly cells: number; readonly why: string }
   | { readonly kind: "unmeasured-scale"; readonly cells: number; readonly why: string }
 
-/** The largest block size at which G95 measured the crossing count invariant under reordering. */
-export const SCALE_INVARIANT_UPTO = 9
-/** The smallest block size at which G95 measured the crossing count moving under reordering. */
-export const SCALE_UNSTABLE_FROM = 13
+/**
+ * The largest block size at which the crossing count was measured INVARIANT under reordering, in
+ * PLACEMENTS - Task 17's re-measurement on this backend, not the spike's 9.
+ */
+export const SCALE_INVARIANT_UPTO = 3
+/**
+ * The smallest block size at which the crossing count was measured MOVING under reordering - Task
+ * 17's re-measurement, not the spike's 13.
+ */
+export const SCALE_UNSTABLE_FROM = 8
 
 export function baselineScale(cells: number): BaselineScale {
   if (cells <= SCALE_INVARIANT_UPTO) {
@@ -132,9 +148,10 @@ export function baselineScale(cells: number): BaselineScale {
       cells,
       why:
         `${cells} cells is at or below ${SCALE_INVARIANT_UPTO}, and docs/known-gaps.md G95 measured ` +
-        "the inter-net crossing count INVARIANT over four declaration orders at 3, 4, 8 and 9 " +
-        "cells. At this size the measured quality is a property of the block, so a baseline over " +
-        "it is a baseline about the circuit.",
+        "the inter-net crossing count INVARIANT over four declaration orders at 2 and 3 placements " +
+        "on this backend - 0 in every order, on six blocks. At this size the measured quality is a " +
+        "property of the block, so a baseline over it is a baseline about the circuit. The six " +
+        "blocks are three distinct topologies, because four of them are the congruent bias legs.",
     }
   }
   if (cells >= SCALE_UNSTABLE_FROM) {
@@ -143,22 +160,23 @@ export function baselineScale(cells: number): BaselineScale {
       cells,
       why:
         `${cells} cells is at or above ${SCALE_UNSTABLE_FROM}, and docs/known-gaps.md G95 measured ` +
-        "the crossing count MOVING under reordering from that size up - 28/26/22/29 at 13 cells, " +
-        "and up to 2.1x at block scale. The numbers are then partly a property of the order " +
-        "somebody typed the components in, so a baseline over this block is a baseline about a " +
-        "SERIALIZATION. That is legitimate and much weaker, and a gate citing it must not be read " +
-        "as citing a property of the circuit.",
+        "the crossing count MOVING under reordering from that size up on this backend - oc-power at " +
+        "8 placements gives 1, 3, 2, 2 and pt-core at 24 gives 78, 53, 39, 65. The numbers are then " +
+        "partly a property of the order somebody typed the components in, so a baseline over this " +
+        "block is a baseline about a SERIALIZATION. That is legitimate and much weaker, and a gate " +
+        "citing it must not be read as citing a property of the circuit.",
     }
   }
   return {
     kind: "unmeasured-scale",
     cells,
     why:
-      `${cells} cells falls in the gap G95 did not measure: its table runs 3, 4, 8, 9 (invariant) ` +
-      `and then 13, 17, 28, 39 (moving), so nothing is known between ${SCALE_INVARIANT_UPTO + 1} ` +
-      `and ${SCALE_UNSTABLE_FROM - 1}. It is reported as unmeasured rather than assigned to the ` +
-      "nearer arm, because extending a measured range by assertion is exactly the silent widening " +
-      "CLAUDE.md forbids. Running G95's shuffle at this size would settle it.",
+      `${cells} cells falls in the gap nothing has measured: no declared block of this repository ` +
+      `has 4, 5, 6 or 7 placements, so nothing is known between ${SCALE_INVARIANT_UPTO + 1} and ` +
+      `${SCALE_UNSTABLE_FROM - 1}. It is reported as unmeasured rather than assigned to the nearer ` +
+      "arm, because extending a measured range by assertion is exactly the silent widening " +
+      "CLAUDE.md forbids - and ruling R40 forbids constructing a synthetic block to fill the gap. " +
+      "A DECLARED block of this size, run through tools/schgen/remeasure-ceiling.ts, would settle it.",
   }
 }
 
