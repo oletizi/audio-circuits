@@ -17601,7 +17601,28 @@ tautology in `adaptElkLayoutReported`'s counts assertion (**G218**-era, recorded
 in `lib/schgen/elk/adapt.ts`) and the window loop that would pass over nothing
 with adjacent bounds (fix round 1, item 2). **`CLAUDE.md`: evidence must be a
 check that could have failed, and a skipped check must never look like a passing
-one.** Three instances in one task says the rule is easy to satisfy in appearance.
+one.** Three instances in one task - **four, counting the one inside the test
+written to fix this third** (**G237**) - says the rule is easy to satisfy in
+appearance.
+
+**AND THE DISCLOSURE THAT BELONGS IN THE ACTIVE VOICE, BECAUSE IT IS THE CLAUSE A
+LATER AGENT NEEDS AND IT ALMOST DID NOT GET RECORDED.** The implementer's own
+account, in the implementer's own words rather than as *"someone believed it had
+teeth"*:
+
+> **I claimed a drive I never performed.** My fix-round-3 report stated that the
+> order pin made *"a comparator reintroduced into either function fail here"*.
+> **I drove the revert and I never drove the pin.** Had I driven it once, in the
+> same action as the claim, I would have seen 14 pass / 0 fail and the sentence
+> would never have been written. **And all four checks-that-cannot-fail on this
+> task are mine** - the `x !== x` counts assertion, the window loop with adjacent
+> bounds, this order pin, and the entailed `not.toEqual` inside the test I wrote
+> to fix it.
+
+**This disclosure reached the controller in a hand-back message and sat in a
+gitignored report for a full round before being recorded**, which is **G234**'s
+failure for the third time on this task and is why the passive construction above
+is called out rather than quietly rewritten.
 
 **FIVE SMALLER FINDINGS FROM THE SAME REVIEW, recorded here rather than in five
 entries because each is one sentence and they share a cause - a correction landing
@@ -17652,3 +17673,92 @@ cannot.**
   larger than this task: it needs a mutation harness nobody has costed, and
   `bun test` has no such mode. **The discipline is what is available; the
   mechanism is what would settle it.**
+
+### G237 - THE PATTERN THAT SURVIVED FIVE ROUNDS OF FIXING: three times on this task a prose claim about the author's OWN drive did not reproduce, and a wrong sentence about a drive passes every test in the suite
+
+**THIS IS THE SIBLING OF G235 AND G236 AND IT IS THE ONE THAT KEPT GOING.**
+**G235** names collateral change - a correct primary effect with a wrong secondary
+one. **G236** names the check that cannot fail. This names the third and most
+durable: **a claim IN PROSE about a measurement the author performed, where the
+measurement was sound and the sentence describing it was not.**
+
+**WHY IT OUTLIVED FIVE FIX ROUNDS: nothing can catch it.** A can't-fail check can
+be caught by driving it. Collateral change can be caught by reading the whole
+diff. **A wrong sentence about a drive passes `bun test`, passes `tsc`, passes the
+suite, and passes a reviewer who checks the numbers** - because the numbers are
+usually right. It is caught only by someone re-performing the drive the sentence
+describes.
+
+**THE THREE INSTANCES, each driven and each corrected in a later round.**
+
+| round | the claim | what was actually true | found by |
+| --- | --- | --- | --- |
+| 3 | the order pin means *"a comparator reintroduced into either function fails here"* | `[RAN]` **14 pass / 0 fail**: both published lists are fixed points of both comparators, so the assertion compared a list against itself (**G236**) | the round-5 review |
+| 5 | `BYPASS_CAP` and `BYPASSED` are *"two real `transistor-preamp` net names"* | `[RAN]` `BYPASSED` is **not a net of any circuit here**. Of all **153** pairs of that circuit's **18** nets, **0 diverge**, so the name HAD to be constructed - which is a better fact than the false one | the round-6 review |
+| 5 | a reversing comparator gives *"12 pass / 3 fail ... which also fails under reversal"* | `[RAN]` **the review's locale-reversal gives 13 pass / 2 fail and the fixture test PASSES.** 12/3 is CODE-UNIT DESCENDING, a different perturbation | the round-6 review |
+
+**ALL THREE SENTENCES SAT INSIDE PARAGRAPHS ABOUT RIGOUR**, which is the part
+worth noticing. The first was the sentence claiming a check had teeth. The second
+was three lines above *"an earlier figure on this task was guessed and a test
+caught it; this one is derived"* - inside a paragraph headed *"THE DIVERGING PAIR
+IS COMPUTED, NOT GUESSED"*. The third was marked `[RAN]`. **A rigour claim is
+exactly where this defect is least likely to be re-checked**, because the
+paragraph tells the reader it already was.
+
+**THIS ROUND's OTHER FINDINGS, recorded here because each is one sentence and all
+five share the shape above or G236's.**
+
+| finding | what it was | fixed |
+| --- | --- | --- |
+| a **fourth** home of the clause-count attribution defect, eight lines from where the previous round edited | said the *"THREE-clause SENTENCE predicts 5"*; `[RAN]` with `BASE` off-sheet the **TWO**-clause set is **5** and the THREE-clause set is **4**, so the sentence predicting 5 is the two-clause one | corrected, and the drive is now `[RAN]` in that module rather than `[RELAYED]` - it is the repository's only record of the clause-(3) falsifier |
+| the composition guard's third clause was **arithmetic on literals** | `POINTERS.length - 9 - 1 === 2` asserted only that `POINTERS` has twelve rows; swapping a module row for a document row left it **1 pass / 0 fail** while its message *"2 module comments"* became false | counts the module-comment citers instead. `[RAN]` the same swap now gives **14 pass / 2 fail** |
+| the **fourth** check that cannot fail, inside the test written to fix the third | `expect(byDefault).not.toEqual(byCollation)` is entailed by the two literal assertions above it and could never be the cause of a failure | now a comment, which is what it always was |
+| **G233**'s *"whitelist of ten pointers"* in **G231** | true at fix round 2; the guard has held twelve since fix round 3 | corrected |
+| the sweep's **216 / 7,740** figures were unreproducible - candidate set undefined, script uncommitted | a `[RAN]` figure a later reader cannot re-drive | the candidate set is now DEFINED in **G236** (`A` plus three characters from `{A, B, Z, 0, 9, _}`) and the figures were re-driven this round; **the script is still not committed and the entry says so** |
+
+**ONE THING THE REVIEW LEFT UNDIAGNOSED IS NOW ESTABLISHED, and it is recorded as
+established rather than as a curiosity.** 7,740 is exactly `C(216, 2) / 3`.
+`[RAN]` The cause: two names diverge **exactly when the first position at which
+they differ holds `_` in one and an alphanumeric in the other**, so the diverging
+share is `(n - 1) / C(n, 2) = 2/n` for an n-character alphabet containing one
+`_`. Driven on four alphabet-and-length combinations, with the diverging count
+and the first-differing-position count agreeing exactly every time: **6 chars,
+length 3 - 7,740 of 23,220 (a third); 6 chars, length 2 - 210 of 630; 4 chars -
+1,008 of 2,016 (a half); 5 chars - 3,100 of 7,750 (two fifths).** **So the one
+third is an artefact of a six-character alphabet with one underscore in it and
+says nothing about net names.**
+
+- **Found** 2026-10-20, Task 17 fix round 6, by the controller naming the pattern
+  across rounds after the review found its third instance.
+- **Evidence** the three-row table, every figure in it driven in fix round 6
+  before the correcting sentence was written - which is the remedy below applied
+  to the entry that proposes it. **A check that could have failed:** the three
+  comparators were driven SEPARATELY and gave three different results (14/1,
+  13/2, 12/3) with the fixture test failing under two of them and passing under
+  one, so the measurement discriminates between perturbations rather than
+  reporting one number for all three.
+- **Verified** CONFIRMED - this writer caused all three instances, drove all
+  three corrections and pasted the outputs into the task report. **The discovery
+  of instances two and three is the round-6 review's; instance one's is the
+  round-5 review's.**
+- **Why it is open** **OPEN, and more firmly than G235 or G236.** Those two have
+  mechanisms that at least exist - drive the assertion, read the whole diff.
+  **This one has no mechanism at all that does not depend on the author's own
+  discipline**, and the author failed the discipline three times across five
+  rounds *while* writing entries about failing it. **Every instance was found by a
+  reviewer, never by the author**, including the two found in the round that was
+  itself fixing the first.
+- **What would settle it** **CRITERION, imposed by the controller for fix round 6
+  and the candidate remedy: a `[RAN]` mark means the stated numbers reproduce
+  under the stated perturbation, and a number that cannot be driven in the same
+  action is not written.** **MARK IT UNTRIED.** It was followed for one round -
+  this one - and that is not evidence it works: **the same author has now failed
+  three discipline-based remedies on this task** (drive every new assertion;
+  report a miss per edit; read the whole diff), so a fourth stated as prose
+  deserves the same doubt. **MECHANISMS, both untried and neither cheap:** a
+  convention that every `[RAN]` figure carries the command that produces it, so a
+  reader can re-run rather than re-derive - which does not stop a wrong number,
+  only shortens the path to catching one; or review that re-performs every drive a
+  change claims, which is what actually caught all three and is the reviewer's
+  cost rather than a mechanism. **Nothing here converts this into something a
+  check can catch, and that is the finding.**
