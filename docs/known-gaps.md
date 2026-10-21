@@ -2216,6 +2216,51 @@ difference is 4, the code predicts 4, and the two-clause sentence predicts 5. **
 the code was already right about a case the published sentence was already wrong
 about.**
 
+**THE RULE's SCOPE, AND THE FALSIFIER - AND THAT A FALSIFIER EXISTS IS A GOOD
+RESULT RATHER THAN A DEFECT.** Round 1's form could not be refuted at all; this
+one can, **and the review found the circuit where it fails.** The condition: **a
+circuit that declares a BUS block touched by a non-rail net that also reaches a
+non-bus block.** `edgeCensus` drops `rendering.kind === "bus"` blocks from BOTH
+sides while their units keep their own block ids, so such a net costs a boundary
+terminal on both sides and cancels - while `crossingNonRailNets` still counts it.
+
+`[RELAYED]` **The review re-declared `tp-leg-upper` as a bus block and changed
+nothing else:** baseline blocked 53 edges / flat 48 / difference 5, predicted 5,
+AGREES; with the bus block, **blocked 48 / flat 44 / difference 4, predicted 5,
+DISAGREES.** These are the review's driven figures and this writer did not
+re-execute them. `kind: "bus"` is a real authoring option - declared at
+`lib/schgen/ir/types.ts:145`, validated at `lib/schgen/ir/validate.ts:89`,
+rendered by `lib/schgen/render/bus.ts` - so this is a reachable declaration and
+not a hand-built object.
+
+**SO THE SCOPE IS: the prediction holds for a circuit with no bus block, which is
+all four of this repository's.** `[RAN]` Measured here - `opamp-buffer` 1 block,
+`optical-compressor` 3, `pt2399-core` 1, `transistor-preamp` 7, **every one of
+the twelve `auto` and zero `bus`** - and asserted in
+`tests/schgen/remeasure-edges.test.ts`, so a circuit that starts declaring one
+turns that check red rather than letting the prediction quietly go wrong. **No
+figure published in this entry is affected**, because no subject measured has a
+bus block.
+
+**WHETHER `edgeCensus`'s BUS HANDLING IS ITSELF A DEFECT IS UNDETERMINED, AND IT
+IS RECORDED AS UNDETERMINED RATHER THAN GUESSED.** Dropping a bus block from both
+sides while its units keep their own block ids is **at least an inconsistency**:
+the census excludes the block from the comparison and `blockOfPin` still reports
+its units as living in it, which is what makes a net touching it look like a
+crossing to one half of the machinery and not to the other. **Which end is wrong
+is not a fix round's call** - the census could exclude those units from the
+crossing count, or the rule's scope could simply exclude bus-declaring circuits,
+and those two disagree about what the measurement is of. **What would settle it:
+a circuit in this repository that declares a bus block, so the question has a
+real subject** - `pt2399-core` is the candidate its own authoring file discusses
+and declines, for the reason **G160** records (declaring `bus` means authoring bus
+groups for nineteen non-rail nets, *"choosing a grouping this task has no
+criterion for"*). **MECHANISMS, both untried and they are alternatives rather
+than a plan:** have `edgeCensus` re-key a dropped bus block's units the way
+`flatSubgraphOf` re-keys the flat probe's, which makes the two halves agree; or
+leave the census alone and narrow the rule's stated scope, which is what this
+entry does today. **Nothing here chooses, and `edgeCensus` is unchanged.**
+
 **WHAT IS A PROPERTY OF THE IR RATHER THAN AN OUTCOME, stated plainly because it
 is the load-bearing half.** That a cross-block net is ALWAYS labelled, and
 therefore always gains a boundary node in each block it touches, is

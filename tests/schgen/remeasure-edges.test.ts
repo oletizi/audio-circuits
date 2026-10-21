@@ -113,6 +113,34 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
   })
 })
 
+describe("the rule's SCOPE, and the falsifier the review found", () => {
+  /**
+   * **THE CLAIM HOLDS FOR CIRCUITS WITH NO BUS BLOCK, AND THAT IS ALL FOUR OF THIS REPOSITORY's -
+   * measured, not assumed.** `edgeCensus` drops `rendering.kind === "bus"` blocks from BOTH sides
+   * while their units keep their own block ids, so a non-rail net touching a bus block costs a
+   * boundary terminal on both sides and cancels - while `crossingNonRailNets` still counts it.
+   * `[RELAYED]` The review re-declared `tp-leg-upper` as a bus block and changed nothing else:
+   * blocked 48 / flat 44 / difference 4 against a predicted 5, **DISAGREES**.
+   *
+   * **This assertion is the scope boundary, so it has to be able to fail:** a circuit here that
+   * started declaring a bus block would turn it red, which is the signal that the prediction in
+   * G100 needs the falsifier's caveat applied to it rather than quietly going wrong.
+   */
+  it("holds because no circuit here declares a bus block, on all four", () => {
+    const symbols = parityResolver()
+    for (const c of PARITY_CASES) {
+      const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+      const bus = [...circuit.blocks.values()].filter((b) => b.rendering.kind === "bus")
+      expect(
+        bus.map((b) => b.id),
+        `${c.name} declares a bus block, which is the condition G100's falsifier describes: the ` +
+          "edge-difference prediction can disagree with the measurement there, and the entry's " +
+          "scope statement needs revisiting rather than the figures being trusted.",
+      ).toEqual([])
+    }
+  })
+})
+
 describe("the two flat subjects are DIFFERENT subjects, and only one is a baseline", () => {
   /**
    * **THE INHERITED-BOUNDARY SUBJECT IS KEPT AND NAMED, AND IT READS 1.000x.** It is what round 1
