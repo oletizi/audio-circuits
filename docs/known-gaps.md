@@ -18120,7 +18120,7 @@ contract. Citing it rather than re-deriving it is R51's instruction.
   `brief`, and nothing else. **Do NOT meet this criterion by pointing the gate at
   the `mini` fixture** - R50 forbids it and the reason is recorded above.
 
-### G241 - MEASURED: TWO STAGES OF THE GATE-8 MATCHER COULD BE PERTURBED OUT OF EXISTENCE WITH THE WHOLE SUITE STAYING GREEN; one of them is RESTORED on a measurement that did not reproduce; and a probe without a passing control proved nothing FOUR times, twice on one item from two different authors
+### G241 - MEASURED: TWO STAGES OF THE GATE-8 MATCHER COULD BE PERTURBED OUT OF EXISTENCE WITH THE WHOLE SUITE STAYING GREEN; one is RESTORED AND NOW GUARDED after the urgency figure behind it was withdrawn by its own author; and a probe without a passing control proved nothing FIVE times, across two authors
 
 **THIS IS G236's CLASS, FOUND BY THE DISCIPLINE G236 ASKED FOR, and both findings
 are this writer's own code.** The controller imposed *"drive every new assertion
@@ -18129,58 +18129,112 @@ implementation rather than to the assertions found two stages nothing in the
 repository depended on, and **the measurements are what got them deleted rather
 than documented.**
 
-> **REVERSED 2026-10-21 UNDER CONTROLLER RULING R57: THE REFINEMENT IS RESTORED,
-> AND THE JUSTIFICATION BELOW IS LEFT STANDING BECAUSE IT IS WHERE THE GAP WAS.**
-> The deletion's three measurements are all true and all about **a MATCHING
-> symmetric pair, which is the EASY case.** The worst case for a backtracking
-> search is **a symmetric pair that does NOT match**, and the deletion never
-> measured one - this entry's own words, *"Every case matched (ok=true) under
-> both"*, are the admission. `[RELAYED]` The review measured that case and reports
-> that from 14 nodes up - **below both references' 24 and 32** - a real difference
-> stops being a stated topology difference and becomes *"did not complete within
-> 2000000 bindings"* (its figures: 9 ms at 10 nodes, 406 ms at 12, budget
-> exhaustion at 14 and 18), while `refineBoth` lifted out of `f57c5dd^` settles
-> the same cases in 0.1-0.4 ms with 7 class mismatches. **No false pass either
-> way** - both outcomes are loud refusals on the gate row - **and the cost is that
-> G242's discriminator becomes unusable in exactly the case G242 tells the
-> operator to look for:** they get *"search did not complete"* instead of the
-> transposed-pin signature, and are invited to raise the budget instead of reading
-> the diagnosis. So *"it can only ever prune a search that would have reached the
-> same verdict"* is **true of `ok` and false of what is REPORTED**, and that
-> sentence is the one this entry got wrong.
+> **REVERSED 2026-10-21 UNDER RULING R57 AND SETTLED UNDER R61: THE REFINEMENT IS
+> RESTORED AND IS NOW GUARDED. The justification below is left standing because it
+> is where the gap was, and the gap was real.** Deleted in `f57c5dd`, restored in
+> `586ab53`.
 >
-> **AND THE REVIEW's MEASUREMENT DID NOT REPRODUCE HERE, which is recorded rather
-> than smoothed over.** `[RAN]` four constructions on this build:
+> **THE DIAGNOSIS THAT GOT IT RESTORED, AND IT IS CORRECT.** The deletion's three
+> measurements are all true and all about **a MATCHING symmetric pair, which is
+> the EASY case.** The worst case for a backtracking search is **a symmetric pair
+> that does NOT match**, and the deletion never measured one - this entry's own
+> words, *"Every case matched (ok=true) under both"*, are the admission. So
+> *"it can only ever prune a search that would have reached the same verdict"* is
+> **true of `ok` and false of what is REPORTED**, and that sentence is the one
+> this entry got wrong.
 >
-> | construction | result |
+> **WHAT IS ACTUALLY TRUE, in three numbers.**
+>
+> 1. **On inputs `graphFromNetlist` can produce, the budget first exhausts at 120
+>    nodes** - `[RAN]` `topology differs` (STATED) at 24, 32, 36, 48, 72 and 96
+>    nodes, and *"did not complete"* first at 120 (176 ms). That is **3.75x the
+>    larger reference**, not below it, and it is the figure of record for how
+>    urgent this is.
+> 2. **The only construction on which the refinement changes what is reported is a
+>    hand-built graph the netlist path cannot produce**, and on it the difference
+>    is stark: `[RAN]` with the refinement **a stated difference at 0.2 ms** at 12
+>    through 18 nodes; without it, **402 ms stated at 12 nodes and COULD NOT
+>    FINISH at 14, 16, 18 and 20** (391-469 ms), self-match controls MATCHED under
+>    both.
+> 3. **The reason the cheap arm always wins first, which is the generalisation and
+>    is the review's:** **pin-labelled connection signatures are sensitive to
+>    ORIENTATION**, and both a pad transposition and a fitting flip are orientation
+>    changes - while **a net expands to a CLIQUE** over its members. So in any real
+>    netlist an orientation change moves the connection multiset and is caught
+>    before the search is reached.
+>
+> **THE 14-NODE URGENCY IS WITHDRAWN BY ITS AUTHOR**, and that is recorded as the
+> thing that worked here rather than as a correction. `[RELAYED]` The review
+> reproduced its own figures, then established that **its construction is
+> unreachable**: its two rails are modelled as two-pin PARTS each contributing
+> only pin 1, so both rail endpoints carry the identical signature `1e+4|R.1` and
+> transposing one resistor swaps a `(1-1)` for a `(1-2)` and a `(1-2)` for a
+> `(1-1)` - **net zero, so the cheap arm is blind and the search is reached.**
+> `graphFromNetlist` cannot emit that shape, because a rail is a NET and a net
+> becomes a clique, never a star through a part. Its census, `[RELAYED]` and
+> **re-driven here identically**:
+>
+> | construction | pin-labelled connection census |
 > | --- | --- |
-> | **the review's described shape** - a parallel bank of n identical resistors against the same bank with one resistor's pins transposed, n = 10 and 12 | **caught by the CONNECTION-MULTISET arm**, `connections only in`, 0.8 and 0.4 ms. The search is never reached, so it can neither grind nor exhaust. A single pad transposition always perturbs the pin-labelled connection multiset, which is checked before the search |
-| the same shape with two different capacitors terminating the bank, n = 8, 10, 12, 16 | the same: caught before the search, 0.2-0.6 ms |
-| **m rings of s identical resistors against a different m x s with the same node, net and connection counts** - every cheap invariant agrees and no bijection exists - at 24, 32, 36 and 48 nodes | **`topology differs` (STATED) under BOTH**, 2.9 / 7.6 / 7.6 / 20.5 ms with the refinement absent and 2.9 / 7.7 / 7.8 / 20.8 ms with it restored. **The refinement changes no verdict and no timing**, because a ring is vertex-transitive and refinement cannot split automorphic nodes |
-| the same rings, scaled | `topology differs` at 72 nodes (62 ms) and 96 nodes (150 ms); **the budget first exhausts at 120 nodes** (176 ms), which is 3.75x the larger reference |
+> | `hub(10)` flip=false | `(1-1) x10  (1-2) x10` |
+> | `hub(10)` flip=true | `(1-1) x10  (1-2) x10` - **identical, so the cheap arm is blind** |
+> | `clique(10)` flip=false | `(1-1) x45  (2-2) x45` |
+> | `clique(10)` flip=true | `(1-1) x36  (1-2) x18  (2-2) x36` - **grossly different** |
 >
-> **So on this build the threshold is 120 nodes rather than 14, and the refinement
-> moves nothing on any shape that was found.** The two measurements are not
-> reconcilable from the review's description alone: its `matchGraphs` figures
-> report `topology differs` for an input this build answers with `connections only
-> in`, which means the two probes are not comparing the same construction. **The
-> refinement is restored anyway**, because it is an invariant and cannot cause a
-> false pass, and an unreproduced measurement is a reason to keep a cheap
-> safeguard rather than to drop one. **Marked RELAYED for every figure in the
-> review's table; the four rows above are this writer's own re-takes.**
+> `[RAN]` under the clique shape - what a netlist really produces for that circuit
+> - the connection arm catches the transposition at **6, 8, 10, 12, 14, 16 and 24
+> nodes, 0.1 to 0.9 ms, under both builds, search never reached.** The review also
+> hunted for a reachable construction rather than stopping at the withdrawal -
+> non-vertex-transitive rings of identical two-pin parts with equal flip counts in
+> different arrangements, six cases at 24 to 48 nodes - and **all were caught by
+> the cheap arm at 0.1 ms under both builds.** It found none, and said so.
 >
-> **THE CHECK THE DELETION WAS MISSING IS NOW IN PLACE, which is the half of R57
-> that does not depend on the disagreement.** `tests/schgen/gates/reference-graph.test.ts`
-> holds a non-matching symmetric pair at **24, 32 and 48 nodes** - the first two
-> being the references' own sizes - asserting a **stated** topology difference and
-> **not** a budget exhaustion, with a per-size control that the two sides match
-> their own copies. `[RAN]` four drives, after a control that passes
-> (**38 pass / 0 fail**): the budget forced to 1 goes **RED** (17 fail), the
-> search disabled goes **RED** (5 fail), **the drive R57 prescribes - removing the
-> refinement again - stays GREEN (38 pass / 0 fail)**, and compressing the two
-> sides independently stays GREEN. The first two are what give the new cases
-> teeth; the third is the non-reproduction, stated as a measurement rather than as
-> a disagreement.
+> **AND IT NAMED ITS OWN ERROR: it hand-built a `ReferenceGraph` and treated it as
+> representative of `graphFromNetlist`'s output without checking** - its second
+> probe-without-a-control on one task, the other being the suppressed
+> `@ts-expect-error` in item three's table. **An unreproduced inference withdrawn
+> by its author, with the reason, is worth recording as the thing that worked: it
+> cost one message**, and the alternative was this entry carrying a 14-node
+> urgency figure that no reachable input can produce.
+>
+> **THE REFINEMENT IS KEPT AND IS NOW GUARDED - R61, and this is what breaks the
+> loop R60 was about to record as open.** The review declined to prescribe its own
+> construction as the guard, on the grounds that it asserts over a
+> `ReferenceGraph` the production path cannot produce. **The controller overruled
+> that reading and the register supports the overrule:** the unreachable-input
+> warning is about asserting over an input that **cannot exist** - **G216** item 6
+> refuses a test over a circuit with an unclassed crossing net because
+> `ConnectionClass` is a total two-value union, so building one needs a cast -
+> whereas this graph needs **no cast** and violates no invariant of
+> `matchGraphs`'s declared domain. The precedent is **G196**, where a hand-built
+> fixture *"drives the arm on a hand-built fixture and has passed throughout - so
+> the arm was correct all along and only unreachable on real geometry"*, and whose
+> criterion is that an arm is either evaluated on real data **or recorded as
+> unreachable with the reason**. The test plus this entry are exactly that.
+>
+> `tests/schgen/gates/reference-graph.test.ts` now holds the hub construction as a
+> **unit test of the matcher**, labelled in those terms, with the clique asserted
+> beside it so the label is checkable rather than prose. `[RAN]` **the whole suite
+> with the refinement removed: RED, 3672 pass / 3 fail** - the 14-, 16- and
+> 18-node cases - against a control of **3675 pass / 0 fail**. **So the next agent
+> who deletes it on "no check fails" grounds gets a red test instead of a green
+> suite.**
+>
+> **THE GENERAL PRINCIPLE SURVIVES THIS INSTANCE AND IS UPHELD, AND THE INSTANCE
+> TURNED OUT BENIGN - both halves, because an entry that records only the scare
+> teaches the wrong lesson.** The principle: **"no check fails when I remove this"
+> is not sufficient grounds to delete something whose absence changes WHAT IS
+> REPORTED in a case nobody has measured.** It is **better evidenced** by this
+> episode, not worse: the original deletion's justification was true on reachable
+> inputs, the uncovered case existed, and it simply lay outside the netlist path -
+> which nobody knew until somebody built it. **And the benign half matters just as
+> much: the gap was not live, the 120-node threshold is the operational figure,
+> and G242's discriminator was never actually at risk on a real drawing.**
+> **MARK THE PRINCIPLE's REMEDY UNTRIED.** There is no evidence a stated principle
+> stops a future deletion: the three discipline-based remedies on this branch have
+> all been followed correctly and still failed, and this one is weaker than those
+> because it fires only when somebody happens to read the entry first. **What
+> actually protects the refinement now is the test, not the principle.**
 
 **ONE: THE COLOUR REFINEMENT.** `graph-match.ts` refined each node's signature
 from its neighbourhood until the partition stopped growing, compressing the
@@ -18253,25 +18307,35 @@ perturbed in both directions and both go red.
 > **20 perturbations, 20 red, 0 green**, each restoring the file it edited and
 > asserting the restore byte for byte before continuing.
 >
-> **AND THE CLAUSE HAS TWO INDEPENDENT INSTANCES ON ONE ITEM, FROM TWO AUTHORS,
-> WHICH IS WHAT MAKES IT A CLASS RATHER THAN A LAPSE - ruling R60.** Both are
-> about the SAME ruling, R53's type change, within a day:
+> **AND THE CLAUSE HAS FIVE INSTANCES ACROSS TWO AUTHORS, WHICH IS WHAT MAKES IT
+> A CLASS RATHER THAN A LAPSE - rulings R60 and R61.** Two of them are on the SAME
+> ruling, R53's type change, within a day:
 >
 > | author | the probe | why it proved nothing |
 > | --- | --- | --- |
+> | **the implementer** `[CONFIRMED]` | a one-sided perturbation of the component multiset | `compOnlyB` catches the same differences from the other side |
+> | **the implementer** `[CONFIRMED]` | a one-sided perturbation of the connection multiset | the same, through `connOnlyB` |
 > | **the implementer** `[CONFIRMED]` | `bunx tsc --noEmit` on a single probe file | a single-file invocation ignores the project `tsconfig`, so unrelated `lib/kicad/install.ts` errors came back for **all three cases including the control** |
 > | **the reviewer** `[RELAYED]` | a probe with `// @ts-expect-error` written at the head of a comment | the directive **suppressed the diagnostic it was there to catch**, so the case passed for the wrong reason; re-driven clean afterwards |
+> | **the reviewer** `[RELAYED]` | a hand-built `ReferenceGraph` treated as representative of `graphFromNetlist`'s output | the shape was unreachable through the production path, so its 14-node urgency figure described no input the gate can see. **Withdrawn by its author**; see the R57/R61 block above |
 >
-> **WHAT THAT STRENGTHENS, and it is the reason to record a second instance at
-> all: the clause is not about carelessness in one author.** Two people reached
-> the same false green on the same item by **two different routes** - a wrong
-> compiler invocation and a suppressed diagnostic - neither of which looks like a
-> mistake while you are making it, because in both cases the probe RAN and
-> reported something. **A control that passes is what separates "my probe
-> discriminates" from "my probe emits output"**, and it would have caught both
-> without either author knowing what their specific error was going to be. That
-> is the property a discipline needs to be worth stating: it does not require
-> anticipating the failure.
+> **WHAT THAT STRENGTHENS, and it is the reason to record more than one: the
+> clause is not about carelessness in one author.** Two people reached false
+> greens by **four different routes** - a one-sided perturbation, a wrong compiler
+> invocation, a suppressed diagnostic, an unreachable input - and **none of them
+> looks like a mistake while you are making it, because in every case the probe
+> RAN AND REPORTED SOMETHING.**
+>
+> **THAT IS THIS BRANCH's FIRST ARGUMENT FROM MECHANISM RATHER THAN FROM
+> EXHORTATION FOR WHY A CONTROL BEATS A DISCIPLINE.** A control that passes is
+> what separates *"my probe discriminates"* from *"my probe emits output"*, and it
+> **catches all four routes without the author having to anticipate which one they
+> are taking.** Every other remedy on this branch - read the whole diff (**G235**),
+> drive every assertion red (**G236**), check your own prose (**G237**) - asks the
+> author to look for something, and so can only catch a failure the author has
+> already imagined. **A control is a check the probe has to pass, not an
+> instruction the author has to remember**, which is why it is the one remedy here
+> with an argument behind it rather than a hope.
 
 **FOUR: THE REFUSAL THAT SEPARATES "COULD NOT FINISH" FROM "AGREED" HAD NEVER
 BEEN TAKEN.** `matchGraphs` bounds its backtracking and reports exhaustion as a
@@ -18377,9 +18441,15 @@ loudly beats a general rule that quietly accepts a guess.*
 > is why the colour refinement was restored under ruling R57** (**G241**): if a
 > real difference comes back as *"the search did not complete"* instead of a
 > stated topology difference, the operator gets nothing to discriminate on and is
-> invited to raise a budget instead of reading this entry. On this build that
-> threshold measures at 120 nodes rather than at the 14 the review reports, and
-> **G241** records both figures and the disagreement.
+> invited to raise a budget instead of reading this entry. **On reachable inputs
+> that threshold is 120 nodes - 3.75x the larger reference - and the 14-node
+> figure that made this look urgent was WITHDRAWN by its own author** once the
+> construction behind it turned out to be a graph `graphFromNetlist` cannot emit.
+> **G241** records both, and the reason: pin-labelled connection signatures are
+> orientation-sensitive while a net expands to a clique, so on any real netlist an
+> orientation change is caught before the search is reached. **This discriminator
+> was never actually at risk on a real drawing**, which is worth knowing before
+> anybody treats it as fragile.
 >
 > **IT IS ALSO THE FIRST THING TO CHECK WHEN THE GATE FIRST RUNS AGAINST A
 > GENERATED SIDE** (**G240**'s criterion). A non-empty `undeclared` list whose

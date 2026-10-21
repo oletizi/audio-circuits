@@ -46,24 +46,35 @@
  * SLOWER than not having it, because `consistent` below already prunes on the first bound
  * neighbour.
  *
- * **IT WAS RESTORED under controller ruling R57**, on a review measurement that the deletion's own
- * figures did not cover: **a matching symmetric pair is the EASY case, and the worst case for a
- * backtracking search is a symmetric pair that does NOT match.** The review reports that from 14
- * nodes up - below both references' 24 and 32 - a real difference stops being reported as a stated
- * topology difference and becomes *"the search did not complete"*, and that the refinement settles
- * the same cases in 0.1-0.4 ms with a stated difference. **That costs nothing in `ok` and costs the
- * gate's primary DIAGNOSTIC:** **G242**'s discriminator tells an operator to read the undeclared
- * list for transposed pins, and a budget exhaustion invites them to raise the budget instead.
+ * **IT WAS RESTORED under ruling R57** on a correct diagnosis the deletion's own figures did not
+ * cover: **a matching symmetric pair is the EASY case, and the worst case for a backtracking search
+ * is a symmetric pair that does NOT match.** Without the refinement a real difference can come back
+ * as *"the search did not complete"* instead of a stated topology difference - which costs nothing
+ * in `ok` and costs the gate's primary DIAGNOSTIC, because **G242** tells an operator to read the
+ * undeclared list for transposed pins and a budget exhaustion invites them to raise the budget
+ * instead.
  *
- * **THE RESTORATION IS HONEST ABOUT WHAT IT IS: the review's measurement did NOT reproduce here,
- * and G241 records all four constructions that were tried.** On this build the refinement changes
- * no verdict and no timing on any shape that was found, the described shape (a parallel bank with
- * one pad transposed) is caught by the connection-multiset arm before the search is reached, and
- * the budget first exhausts at **120 nodes** rather than 14. It is restored anyway because it is an
- * invariant - it cannot cause a false pass - and because an unreproduced measurement is a reason to
- * keep a cheap safeguard, not to drop one. **What survives beside it is the signature**,
- * `<value>|<libId>|<connected pins>`, as the key that decides which nodes may map to which; the
- * signature COMPARISON stage stays deleted, which the review confirmed redundant.
+ * **HOW URGENT THAT IS, MEASURED: not very, and the figure that said otherwise was withdrawn by its
+ * own author.** On inputs `graphFromNetlist` can produce the budget first exhausts at **120 nodes**,
+ * 3.75x the larger reference. The one construction where the refinement changes what is reported is
+ * a **hand-built graph this repository's netlist path cannot emit** - two rails modelled as two-pin
+ * PARTS each contributing only pin 1, so the pin-labelled connection census is identical with and
+ * without a pad transposition and the cheap arm goes blind. **A real net expands to a CLIQUE**, and
+ * **pin-labelled connection signatures are orientation-sensitive**, so in any real netlist an
+ * orientation change moves the connection multiset and is caught before the search is reached.
+ * `docs/known-gaps.md` **G241** has the figures, the census and the withdrawal.
+ *
+ * **IT IS GUARDED - ruling R61, and that is what stops it being deleted a third time.**
+ * `tests/schgen/gates/reference-graph.test.ts` holds that hub construction as a **unit test of this
+ * matcher** - a graph inside `matchGraphs`'s declared domain, with no cast, and outside what
+ * `graphFromNetlist` emits today, labelled in exactly those terms - with the clique asserted beside
+ * it so the label is checkable. Removing this loop takes the whole suite **RED, 3 failing**. **If
+ * you are here because no check seemed to fail on it: one does now, and it was deleted once before
+ * on that reasoning.**
+ *
+ * **What survives beside it is the signature**, `<value>|<libId>|<connected pins>`, as the key that
+ * decides which nodes may map to which; the signature COMPARISON stage stays deleted, which the
+ * review confirmed redundant with zero surviving references.
  *
  * **THE SEARCH REFUSES RATHER THAN HANGING.** `MAX_BINDINGS` bounds the backtracking, and
  * exhausting it is reported as a PROBLEM - *"the search did not complete"* - which is a failure of

@@ -126,13 +126,19 @@ pair. `lib/schgen/gates/graph-match.ts` then compares, in order:
    agree on all of 1 to 3 and are not the same circuit.
 
 Nodes are grouped for step 4 by a signature refined from each node's
-neighbourhood until the partition stops growing — **restored under controller
-ruling R57 after being deleted and measured**, because a real difference that
-comes back as *"the search did not complete"* instead of a stated topology
-difference leaves the operator nothing to discriminate on. `../known-gaps.md`
-**G241** records the restoration, the review measurement behind it, and the fact
-that **it did not reproduce on this build** — four constructions tried, the
-budget first exhausting at 120 nodes rather than the 14 the review reports.
+neighbourhood until the partition stops growing — **deleted, then restored under
+ruling R57, and guarded by a unit test under R61**, because a real difference
+that comes back as *"the search did not complete"* instead of a stated topology
+difference leaves the operator nothing to discriminate on.
+
+**How urgent that is, measured: on inputs this gate can actually see, the budget
+first exhausts at 120 nodes — 3.75x the larger reference here.** The construction
+that made it look urgent at 14 nodes was **withdrawn by its own author**: it is a
+hand-built graph the netlist path cannot emit, because a net expands to a
+**clique** and pin-labelled connection signatures are **orientation-sensitive**,
+so on any real netlist an orientation change is caught before the search is
+reached. `../known-gaps.md` **G241** has the figures, the census and the
+withdrawal.
 
 The search's budget is bounded and **exhausting it is reported as a problem -
 never as a pass.** A check that could not finish must not resemble one that
