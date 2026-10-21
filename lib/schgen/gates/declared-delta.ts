@@ -15,9 +15,20 @@
  *
  * **THE FOUR THINGS THAT MAKE IT A RULE AND NOT A WISH.**
  *
- * 1. **`DeclaredDelta.from` NAMES THE TRANSFORMATION AND HAS NO DEFAULT.** There is no constructor
- *    anywhere that omits it: `parseDeclaredDeltas` is the only way to obtain a `PermittedDelta`
- *    with deltas in it, and it refuses a blank `from`.
+ * 1. **`DeclaredDelta.from` NAMES THE TRANSFORMATION AND HAS NO DEFAULT**, and
+ *    `parseDeclaredDeltas` refuses a blank one. **THE CLAIM THAT USED TO STAND HERE WAS WIDER THAN
+ *    THE TRUTH AND IS CORRECTED RATHER THAN DELETED:** it said *"`parseDeclaredDeltas` is the only
+ *    way to obtain a `PermittedDelta` with deltas in it"*. That is true of every CALL SITE in this
+ *    repository and **false of the TYPE** - `PermittedDelta` is a structural union, so a caller can
+ *    write `{ kind: "declared", deltas: [{ id, from: "", why: "", edit }] }` as a literal and never
+ *    pass through the parser at all. `[RAN]` it typechecks and reaches
+ *    `checkReferenceGraph` - **and comes back as a FAILURE**, because M1 refuses a declared list
+ *    outright (`DECLARED_DELTAS_ARE_M2`), with the control confirming the same two netlists under
+ *    an EMPTY delta ARE a pass. **So the bypass cannot pass in M1, and M2 is where it would bite**,
+ *    because M2 is what makes a declared list something the gate acts on rather than refuses.
+ *    `docs/known-gaps.md` **G242** records it with M2 named. **The type is deliberately NOT branded
+ *    here** (ruling R54's reasoning applied again by R58): that is M2's surface and the fix belongs
+ *    with the task that needs it.
  * 2. **THE FILE MUST BE COMMITTED.** A delta list edited in a working tree and not committed is
  *    exactly the provenance hole: it can be written after the difference is seen and before the
  *    gate is run, and nothing in the history would show it. `parseDeclaredDeltas` refuses a file

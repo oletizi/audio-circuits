@@ -27,7 +27,11 @@ import { describe, expect, it } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { EMPTY_DELTA, GRAPH_EDIT_KINDS, describePermitted, parseDeclaredDeltas } from "../../../lib/schgen/gates/declared-delta.ts"
+import type { ImportedNetlist } from "../../../lib/kicad/netlist.ts"
+import { EMPTY_DELTA, GRAPH_EDIT_KINDS, describePermitted, parseDeclaredDeltas, type PermittedDelta } from "../../../lib/schgen/gates/declared-delta.ts"
+import { DECLARED_DELTAS_ARE_M2, checkReferenceGraph } from "../../../lib/schgen/gates/reference-graph.ts"
+
+const comp = (designator: string, value: string, libPart: string) => ({ designator, value, libPart })
 
 const repoRoot = path.resolve(import.meta.dir, "..", "..", "..")
 const FIXTURES = path.join(repoRoot, "tests", "schgen", "__fixtures__", "deltas")
@@ -178,5 +182,32 @@ describe("there is no code path from a generated graph to a permitted delta", ()
 
   it("takes a declaration's text and its path, and nothing a generator produced", () => {
     expect(parseDeclaredDeltas.length).toBe(2)
+  })
+
+  /**
+   * **THE PARSER IS NOT THE ONLY WAY TO BUILD A `PermittedDelta`, AND THIS IS WHAT STOPS THAT FROM
+   * MATTERING IN M1.** `PermittedDelta` is a structural union, so a caller can write a literal with
+   * a blank `from` and never reach `parseDeclaredDeltas`. The module header used to claim the
+   * parser was the only way in; it is the only CALL SITE, not the only way.
+   *
+   * **In M1 the bypass cannot pass**, because a declared list is refused outright - and the control
+   * is the same two netlists under an EMPTY delta, which IS a pass, so this case is about the
+   * literal and not about the comparison failing. **This assertion goes RED the day M2 makes a
+   * declared list something the gate acts on**, which is exactly when the bypass starts to matter
+   * and `docs/known-gaps.md` **G242** says so.
+   */
+  it("cannot be bypassed to a PASS by a hand-written literal, because M1 refuses a declared list", () => {
+    const N: ImportedNetlist = {
+      components: [comp("R1", "10k", "R"), comp("R2", "10k", "R")],
+      nets: { A: ["R1.1", "R2.1"], B: ["R1.2", "R2.2"] },
+    }
+    const reference = { file: "ref.kicad_sch", netlist: N }
+    // The forbidden shape, built without the parser: a blank `from` and a blank `why`.
+    const bypass: PermittedDelta = { kind: "declared", deltas: [{ id: "D1", from: "", why: "", edit: { kind: "removePart", part: "R1" } }] }
+    const r = checkReferenceGraph(N, reference, bypass, "a manifest citation")
+    expect(r.undeclared).toEqual([DECLARED_DELTAS_ARE_M2])
+    expect(r.undeclared.length, "a hand-written literal must not reach a pass").toBeGreaterThan(0)
+    // THE CONTROL: with an EMPTY delta the same pair IS a pass, so the refusal above is the literal's.
+    expect(checkReferenceGraph(N, reference, EMPTY_DELTA, "a manifest citation").undeclared).toEqual([])
   })
 })

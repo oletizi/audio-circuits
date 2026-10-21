@@ -18289,7 +18289,7 @@ drawings would be a false defect report.
   the one that generalises, since "perturb its mirror image" only applies to a
   symmetric check while "your control must pass" applies to every probe.**
 
-### G242 - THREE THINGS GATE 8's COMPARISON DOES NOT DO: two deliberate narrowings that make it STRICTER, one of which could make two different symbols compare equal, and one type declared twice on purpose
+### G242 - FOUR THINGS GATE 8's COMPARISON DOES NOT DO: two deliberate narrowings that make it STRICTER, one of which could make two different symbols compare equal, one type declared twice on purpose, and a structural bypass that M1 refuses and M2 would act on
 
 **RECORDED BECAUSE EACH IS A PLACE A LATER READER WOULD OTHERWISE READ THE GATE
 AS CLAIMING MORE THAN IT DOES**, and because the first one will produce a
@@ -18392,11 +18392,38 @@ Pultec transformation manifest; **the price** is that a declaration shape nobody
 has used may not be the shape M2 wants, and the committed corpus in
 `tests/schgen/__fixtures__/deltas/` is the only thing holding it to anything.
 
+**FOUR, ADDED UNDER RULING R58: `parseDeclaredDeltas` IS THE ONLY CALL SITE THAT
+BUILDS A `PermittedDelta`, NOT THE ONLY WAY TO BUILD ONE - and M2 is where that
+starts to matter.** `declared-delta.ts`'s header claimed *"`parseDeclaredDeltas`
+is the only way to obtain a `PermittedDelta` with deltas in it"*. **True of every
+call site in this repository, false of the TYPE:** `PermittedDelta` is a
+structural union, so a caller can write
+`{ kind: "declared", deltas: [{ id, from: "", why: "", edit }] }` as a literal and
+never pass through the parser or its blank-`from` refusal.
+
+`[RAN]`, with a control: the literal **typechecks and reaches
+`checkReferenceGraph`**, and comes back carrying `DECLARED_DELTAS_ARE_M2` -
+**`undeclared` length 1, a FAILURE** - while the control, the same two netlists
+under an EMPTY delta, returns `undeclared` length **0**, a pass. **So in M1 the
+bypass cannot reach a pass**, because the gate refuses a declared list outright
+rather than acting on it.
+
+**WHERE IT BITES IS M2**, which is the milestone that makes a declared list
+something the gate applies instead of refusing: at that point a literal with a
+blank `from` becomes a permitted electrical change nobody declared a
+transformation for, which is the breach item ONE's blockquote forbids arriving by
+a different door. **The type is deliberately NOT branded** - R58 applies R54's
+reasoning: that is M2's surface and the fix belongs with the task that needs it.
+`tests/schgen/gates/declared-delta.test.ts` pins the current behaviour and **goes
+RED the day a declared list stops being refused**, which is exactly when somebody
+should read this.
+
 - **Found** 2026-10-21, Task 18, while adapting `graphFromNetlist` from the
   pedals XML readers to `importNetlist` - the adaptation Task 11's one-netlist-
   reader criterion requires. **Item three was found while writing the module
   comment that claims the register records it**, which is the only reason it is
-  here rather than in prose nobody checks.
+  here rather than in prose nobody checks. **Item four is the review's**, and the
+  drive and its control are this writer's.
 - **Evidence** `tests/schgen/gates/reference-graph.test.ts` asserts the symmetry
   narrowing as a POSITIVE check - *"reports a non-polarised capacitor's pads
   wired the other way round, having no symmetry model"* - so the behaviour is
@@ -18428,6 +18455,12 @@ has used may not be the shape M2 wants, and the committed corpus in
   acceptance-criteria invariant requires. **CRITERION for TWO: two symbols with
   the same part name in different libraries compare as different components.**
   **CRITERION for THREE: one edit vocabulary, or a check that the two agree.**
+  **CRITERION for FOUR: a `PermittedDelta` carrying deltas cannot be constructed
+  without passing the blank-`from` refusal** - which is a statement about the
+  TYPE and not about the call sites. **MECHANISM, untried and explicitly deferred
+  by R58:** brand the type, so only `parseDeclaredDeltas` can mint one. **Do not
+  take it in M1** - it is M2's surface, and in M1 the bypass cannot reach a pass
+  because a declared list is refused outright.
   **MECHANISMS, all untried, AND R54 DEFERS THEM - taking one is a decision
   somebody makes, not a gap to close on sight.** `importNetlist` carrying
   `libsource`'s `lib` beside its `part` is a few lines in one reader and makes
