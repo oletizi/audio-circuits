@@ -831,6 +831,8 @@
     "tools/schgen/remeasure-composed.ts",
     "tools/schgen/remeasure-criteria.ts",
     "tests/schgen/remeasure.test.ts",
-    "tools/schgen/remeasure-coverage.ts"
+    "tools/schgen/remeasure-coverage.ts",
+    "tools/schgen/remeasure-edges.ts",
+    "tests/schgen/remeasure-edges.test.ts"
   ]
 }

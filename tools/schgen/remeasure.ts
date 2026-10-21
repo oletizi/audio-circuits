@@ -45,7 +45,9 @@
  *   - `./remeasure-criteria.ts` - §3.4's two criteria: congruence of the four bias legs with the
  *     rail glyphs they would actually get, and disjointness at sheet level;
  *   - `./remeasure-coverage.ts` - which gate refused each block that does not draw, and what one
- *     fix would unblock (ruling **R46**). `gateOf` lives there and is used here.
+ *     fix would unblock (ruling **R46**). `gateOf` lives there and is used here;
+ *   - `./remeasure-edges.ts` - the flat probe and G100's edge mechanism, **corrected at fix round
+ *     1**: round 1's flat subject inherited the blocked declaration's boundary nodes.
  */
 
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"

@@ -23,7 +23,7 @@ import { BLOCK_SIZE, blocksOutside, remeasure, renderRow, type Remeasurement } f
 import { classOf, coverageCensus, gateOf, leverageOf, renderCoverage, type BlockCoverage } from "../../tools/schgen/remeasure-coverage.ts"
 import { comparabilityOf, SPIKE_BLOCKS, spikeRowFor } from "../../tools/schgen/remeasure-spikes.ts"
 import { floorEvidence, orderSweep, renderSweep, sizeCoverage, type OrderSweepRow } from "../../tools/schgen/remeasure-ceiling.ts"
-import { edgeCensus, integratedExperiment, type IntegratedExperiment } from "../../tools/schgen/remeasure-composed.ts"
+import { integratedExperiment, type IntegratedExperiment } from "../../tools/schgen/remeasure-composed.ts"
 import { disjointness, legShapes, skinIdWidth, type Disjointness, type LegShape } from "../../tools/schgen/remeasure-criteria.ts"
 import { nonMemberContainments } from "../../lib/schgen/render/compose.ts"
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts"
@@ -377,42 +377,6 @@ describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () =
       "oc-sidechain obligation 3: one transform, two readers",
     ])
   })
-})
-
-describe("step 3's mechanism: the edge counts a decomposition removes, which is G100's explanation", () => {
-  /**
-   * **THE RATIO IS EXACTLY 1.000x ON BOTH CIRCUITS, SO G100's STATED MECHANISM DOES NOT EXIST ON
-   * THIS BACKEND.** That entry explains its 6.1x by *"the three blocks carry FEWER EDGES THAN THE
-   * WHOLE - 96 against 139"*. Here the flat graph and the blocks carry the SAME number of edges,
-   * for a structural reason: a net that crosses a block boundary becomes a boundary NODE in each
-   * block it touches, and the chain edge reaching that node replaces exactly the chain edge the
-   * split removed. **The assertion is an equality in both directions**, so a change in the edge
-   * model moves it either way rather than only when it grows.
-   */
-  it("is 72 edges flat and 72 in blocks on optical-compressor, and 53 and 53 on transistor-preamp", async () => {
-    const oc = await edgeCensus("optical-compressor")
-    expect(oc.blocks.map((b) => `${b.id} ${b.nodes}/${b.edges}`)).toEqual([
-      "oc-power 11/15", "oc-audio 18/25", "oc-sidechain 24/32",
-    ])
-    expect(oc.flatNodes).toBe(46)
-    expect(oc.flatEdges).toBe(72)
-    expect(oc.blockEdgeTotal).toBe(72)
-    expect(oc.ratio).toBe(1)
-    const tp = await edgeCensus("transistor-preamp")
-    expect(tp.flatNodes).toBe(39)
-    expect(tp.flatEdges).toBe(53)
-    expect(tp.blockEdgeTotal).toBe(53)
-    expect(tp.ratio).toBe(1)
-  }, 300_000)
-
-  it("counts 46 flat nodes against the spike's 9 ports on a 37-part parent, which is the same parent", async () => {
-    // A check that could have failed: the spike's §3 parent row reports 37 parts and 9 ports, and
-    // this flat graph holds 41 UNITS (37 parts, four of them multi-unit) plus 5 boundary nodes.
-    // So the two graphs are not the same graph even for one circuit, which is why the edge
-    // ABSOLUTES are not compared and only the ratio is.
-    const oc = await edgeCensus("optical-compressor")
-    expect(oc.flatNodes - oc.blocks.reduce((n, b) => n + b.nodes, 0)).toBe(-7)
-  }, 300_000)
 })
 
 describe("step 6: congruence, WITH the rail glyphs the instances actually get", () => {

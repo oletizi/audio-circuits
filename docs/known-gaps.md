@@ -2134,39 +2134,83 @@ catastrophe and leaves the complaint.**
 
 **THE MECHANISM WAS RE-TAKEN 2026-10-20 BY TASK 17 AND IT DOES NOT REPRODUCE ON
 THIS BACKEND. THIS IS THE MOST CONSEQUENTIAL THING IN THE RE-MEASUREMENT.**
-`[RAN]` `tools/schgen/remeasure-composed.ts`'s `edgeCensus` counts the ELK graph
-edges of each declared block and of the same circuit as ONE flat graph:
 
-| circuit | flat graph | its declared blocks | ratio |
+> **CORRECTED AT FIX ROUND 1, AND THE CORRECTION MAKES THE REFUTATION STRONGER
+> RATHER THAN WEAKER. READ THIS BLOCK BEFORE THE FIGURES.** Round 1 reported
+> **1.000x** - *"the decomposition removes ZERO edges"* - and that figure was an
+> artefact of its own probe. `flatSubgraphOf` spread `{...c, blocks}` and **never
+> rebuilt `c.unitBlock`**; `labelledNets` reaches `blockOfPin`, which reads
+> `unitBlock`, so the "flat" subject was still told that `BASE` and `OUT_PRE`
+> span several blocks - and `lib/schgen/ir/classify.ts:47` labels every net with
+> `blocks.size > 1`. A labelled net becomes `external`, and an external net
+> becomes a boundary NODE. **So the flat side was handed a boundary node for
+> exactly the nets the split created: it inherited the decomposition it was the
+> control for**, and 1.000x was one artefact cancelling another. **The finding
+> is unchanged and its direction is now worse for the spike: decomposition does
+> not merely fail to shed edges, it ADDS them.**
+
+`[RAN]` `tools/schgen/remeasure-edges.ts`'s `edgeCensus`, with the probe fixed -
+**the genuinely flat subject is the circuit declared as ONE block**, so no net is
+multi-block and only a rail or an off-sheet net gets a boundary node:
+
+| circuit | genuinely FLAT | its declared blocks | ratio | direction |
+| --- | --- | --- | --- | --- |
+| `optical-compressor` | 43 nodes, **69 edges** | 3 blocks, 53 nodes, **72 edges** | **0.958x** | **ADDS 3** |
+| `transistor-preamp` | 34 nodes, **48 edges** | 7 blocks, 53 nodes, **53 edges** | **0.906x** | **ADDS 5** |
+
+**So *"decomposition does not route the same graph better; it hands ELK a smaller
+graph"* is not merely unsupported here - it is backwards.** The blocked
+declaration hands ELK a graph with MORE edges than the flat one.
+
+**THE PER-NET RULE, AND IT IS SHOWN AGREEING WITH THE MEASUREMENT RATHER THAN
+ASSERTED.** `edgesForNet` makes a net of degree n into n - 1 chain edges. Under
+the BLOCKED declaration a net crossing k blocks is labelled, so it is external in
+each of them and gains a boundary terminal in each: it contributes
+`(U + k) - k = U`. Under the FLAT declaration the same net is internal unless it
+is a rail or off-sheet, so it contributes `U - 1`. A rail is a boundary net on
+both sides and contributes `U` on both. **So blocked minus flat is exactly the
+number of nets that cross a block boundary and are NOT rails:**
+
+| circuit | those nets | predicted difference | measured difference |
 | --- | --- | --- | --- |
-| `optical-compressor` | 46 nodes, **72 edges** | 3 blocks, 53 nodes, **72 edges** | **1.000x** |
-| `transistor-preamp` | 39 nodes, **53 edges** | 7 blocks, 53 nodes, **53 edges** | **1.000x** |
+| `optical-compressor` | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | **3** | **3** |
+| `transistor-preamp` | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | **5** | **5** |
+| the five-leg union | **none** - every crossing net leaves the union or is a rail | **0** | **0** |
 
-**The decomposition removes ZERO edges**, so *"decomposition does not route the
-same graph better; it hands ELK a smaller graph"* is false here. **The reason is
-structural rather than lucky:** `lib/schgen/elk/graph.ts` makes a net of degree n
-into n - 1 chain edges, and a net that crosses a block boundary becomes a
-boundary NODE in each block it touches - so the chain edge reaching that node
-replaces exactly the chain edge the split removed.
+**ROUND 1 STATED A RULE WHOSE REFUTATION ROUTE COULD NOT FIRE, AND THAT WAS
+WORSE THAN STATING IT FLATLY.** It said the difference is one edge per
+*"multi-block net that is neither a rail nor a labelled net"*, and asserted these
+two circuits had none. **`lib/schgen/ir/classify.ts:47` labels every net with
+`blocks.size > 1`, so that set is EMPTY in every circuit this IR builds** - the
+claim was a property of `labelledNets` wearing a measurement's clothes, and round
+1's sentence *"nothing establishes that no such circuit exists"* was false:
+**`classify.ts:47` establishes it.** The sentence is withdrawn. The governing set
+is the one in the table above - *crossing and not a rail* - which is non-empty on
+both circuits and **empty on the five-leg union, where the same rule correctly
+predicts equality.** That is the refutation route firing in both directions on
+real subjects.
 
-**THE ARGUMENT IS STATED SO IT CAN BE REFUTED ON THE NUMBERS, which is what a
-structural claim owes a reader.** Per net, with `U` its unit-pin terminals: a net
-inside one block contributes `U - 1` edges on both sides; a net spanning `k`
-blocks is a boundary net of each of those `k`, so the blocked side contributes
-`U + k - k = U` while the flat side contributes `U` when the net also leaves the
-union and `U - 1` when it does not. **So the two counts are equal exactly when
-every multi-block net is also a boundary net of the whole circuit - a rail or a
-labelled net - and the blocked side is LARGER by one edge per multi-block net
-that is neither.** `optical-compressor` and `transistor-preamp` have none of the
-latter, which is why both ratios are exactly 1.000. **A circuit that had one
-would measure above 1.000x here, and this claim would then be narrower than the
-sentence above states it.** Nothing establishes that no such circuit exists; the
-two measured are the two there are.
+**WHAT IS A PROPERTY OF THE IR RATHER THAN AN OUTCOME, stated plainly because it
+is the load-bearing half.** That a cross-block net is ALWAYS labelled, and
+therefore always gains a boundary node in each block it touches, is
+`classify.ts:47` and not a measurement. **The edge addition is therefore a
+consequence of this generator's labelling rule, not of decomposition as such** -
+and that is a sharper statement than round 1's, because it names the mechanism
+that produces the result instead of a set that cannot exist.
 
-**THE ABSOLUTES 139 AND 96 ARE NOT COMPARED AGAINST 72 AND 72.** The spike's edge
+**ONE SUPERSEDED READING IS KEPT AS A NAMED SUBJECT, AND IT IS NOT A BASELINE.**
+`BoundarySource = "declared-blocks"` reproduces round 1's figure - 46 nodes / 72
+edges and 39 / 53, exactly the blocked totals, **1.000x** - and it is retained
+because it isolates one quantity exactly: whether a boundary node replaces the
+chain edge a split removes. It does, to the edge. **Nothing may quote it as a
+flat baseline**, and the node counts are what give the artefact away: 46 against
+the flat 43, and 39 against 34, differing by exactly the governing set's size.
+
+**THE ABSOLUTES 139 AND 96 ARE NOT COMPARED AGAINST 69 AND 72.** The spike's edge
 count came out of `netlistsvg`'s converter and nothing establishes that it builds
 a net's edges the way `graph.ts` does. **What is the same CLAIM is the ratio**,
-and the ratio is 1.000x.
+and the ratio is **0.958x on `optical-compressor` and 0.906x on
+`transistor-preamp` - on the wrong side of 1 for the spike's mechanism.**
 
 **AND THE 6.1x ITSELF IS NOT RE-DERIVABLE, which is controller ruling R38.** All
 three `oc-*` blocks are refused by the post-layout gates, so there is no composed
@@ -2211,7 +2255,15 @@ unfavourable on the smallest, and none of the three is a drawing.
   template was in the loop in either spike, **nor in the re-take**. **AND the
   edge mechanism is backend-specific**: a reader carrying *"decomposition hands
   ELK a smaller graph"* to another edge model is carrying a claim neither
-  measurement supports.
+  measurement supports. **AND THE EDGE ADDITION IS SPECIFIC TO THIS GENERATOR's
+  LABELLING RULE** - `lib/schgen/ir/classify.ts:47`, which labels every
+  multi-block net - rather than to decomposition in general. That is the one
+  place a later reader is most likely to over-generalise, and it is also an
+  OBSERVATION this task does not resolve: **whether labelling every multi-block
+  net is right for the generator is a design question, not a defect**, and
+  nothing here changes `classify.ts`. **What would settle THAT: a stated reason
+  why a net crossing a block boundary needs a label in every block it touches,
+  or a measurement of what is lost if it does not.** Neither exists.
 
 ### G101 - block size has a CEILING near 9 parts and, under the tested frontend, an interface cost that dominates a very small block
 
@@ -2528,15 +2580,24 @@ finding about seam B rather than a failure of the measurement.
 SUBJECT, AND THE 43 EDGES TURN OUT NOT TO EXIST ON THIS BACKEND.** Two separate
 results, and they must not be read as one:
 
-**1. There are no missing edges.** `[RAN]` **G100**'s re-taken edge census:
-`optical-compressor` as one flat graph has **72 edges** and its three declared
-blocks have **72 edges between them** - ratio **1.000x**, and the same on
-`transistor-preamp`, 53 against 53. A net that crosses a block boundary becomes a
-boundary NODE in each block it touches, and the chain edge reaching that node
-replaces exactly the chain edge the split removed. **So the premise of this entry
-- that 43 edges "became connections BETWEEN blocks" and "were drawn nowhere at
-all" - is a property of `netlistsvg`'s edge model and not of this generator's.**
-Here every boundary net is represented in every block's graph.
+**1. There are no missing edges - there are ADDED ones.** `[RAN]` **G100**'s
+re-taken edge census, **corrected at fix round 1**: a genuinely flat
+`optical-compressor` has **69 edges** against its three declared blocks' **72**,
+and a flat `transistor-preamp` **48** against its seven blocks' **53** -
+**0.958x and 0.906x, so the decomposition ADDS 3 and 5 edges.** A net that
+crosses a block boundary is labelled (`lib/schgen/ir/classify.ts:47`), so it
+becomes a boundary NODE in each block it touches and gains a chain edge there
+that the flat graph does not have. **So the premise of this entry - that 43 edges
+"became connections BETWEEN blocks" and "were drawn nowhere at all" - is a
+property of `netlistsvg`'s edge model and not of this generator's.** Here every
+boundary net is represented in every block's graph, and representing it costs an
+edge per block rather than saving one.
+
+> **Round 1 of this amendment reported 1.000x and "removes zero", from a flat
+> probe that had inherited the blocked declaration's boundary nodes.** G100
+> carries the defect, the corrected figures and the superseded reading as a named
+> subject. **The refutation of the spike's mechanism is unchanged in substance
+> and stronger in direction.**
 
 **2. The experiment this entry asks for was run on five blocks of one circuit
 family, not on `optical-compressor`** - controller ruling **R38**, because all

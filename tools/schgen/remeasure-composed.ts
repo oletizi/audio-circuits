@@ -36,7 +36,8 @@
  * 4. **a ratio below 1x is a legitimate outcome** and is reported as one - a finding about seam B,
  *    not a failure of the measurement.
  *
- * **THE FLAT SIDE IS A PROBE AND DECLARES NOTHING.** `flatSubgraphOf` builds one `BlockSubgraph`
+ * **THE FLAT SIDE IS A PROBE AND DECLARES NOTHING.** `flatSubgraphOf` - now in `./remeasure-edges.ts`,
+ * where fix round 1 corrected it to rebuild `Circuit.unitBlock` - builds one `BlockSubgraph`
  * whose members are the union of five declared blocks' members, hands it to the same
  * `elkInputOf` -> `layoutBlocks` -> `adaptElkLayoutReported` chain every block goes through, and
  * writes no file, no declaration and no authoring entry. It is the same posture
@@ -69,63 +70,16 @@ import { elkBackendFrom, elkPrePass, layoutBlocks } from "./elk/layout.ts"
 import { packSheet } from "./elk/sheet-layout.ts"
 import { PARITY_CASES, parityResolver, type ParityCase } from "./authoring-census.ts"
 import { aspectOf } from "./remeasure.ts"
+import { flatSubgraphOf } from "./remeasure-edges.ts"
 import { SPIKE_BLOCKED_OPTICAL_COMPRESSOR, SPIKE_CROSSING_RATIO, SPIKE_WHOLE_OPTICAL_COMPRESSOR } from "./remeasure-spikes.ts"
 import type { BlockLayout, BlockSubgraph } from "../../lib/schgen/render/block-types.ts"
 import type { ElkOutcome } from "../../lib/schgen/elk/graph.ts"
 import type { FrameContent } from "../../lib/schgen/render/frames.ts"
-import type { BlockId, Circuit, IrBlock } from "../../lib/schgen/ir/types.ts"
+import type { BlockId } from "../../lib/schgen/ir/types.ts"
 import type { PlacedPin } from "../../lib/schgen/render/unit-pins.ts"
-import type { SymbolResolver } from "../../lib/schgen/render/library.ts"
 
 /** The circuit the experiment's subject comes from: the one with blocks that draw. */
 export const SUBJECT_CIRCUIT = "transistor-preamp"
-
-/** The id the flat probe's block carries. The tilde marks it as a probe id, not a declared one. */
-export const FLAT_PROBE_ID = "tp-drawing-legs~flat"
-
-/**
- * ONE `BlockSubgraph` OVER THE UNION OF SEVERAL DECLARED BLOCKS' MEMBERS.
- *
- * **IT GOES THROUGH `subgraphOf` RATHER THAN BUILDING A SUBGRAPH BY HAND, and that is the whole
- * reason it is shaped this way.** Which nets are rails, which are ground, which are labelled and
- * external, which power symbols are needed and what intersheet reference each label prints are all
- * decided by `subgraphOf` from the circuit; a hand-merged subgraph would be a second answer to five
- * questions that already have one. So this builds an `IrBlock` whose `members` are the union, puts
- * it in a copy of the circuit, and asks `subgraphOf` about it.
- *
- * **WHAT THE COPY DOES NOT CHANGE:** the parts, the nets, the rails, the sheets, the orientations
- * and the port directions are the circuit's own, so every net classification the flat graph gets is
- * the one the declared blocks got. The union's external nets therefore include nets that are
- * internal to the union and still leave it - `BASE` reaches `tp-stage` and `COLLECTOR` reaches
- * `tp-stage` too - which is correct and is what makes the flat graph a sub-circuit rather than a
- * closed one.
- */
-export function flatSubgraphOf(c: Circuit, ids: readonly BlockId[], symbols: SymbolResolver, id: string = FLAT_PROBE_ID): BlockSubgraph {
-  const blocks = ids.map((b) => {
-    const found = c.blocks.get(b)
-    if (found === undefined) {
-      throw new Error(
-        `the flat probe was asked for block ${b} and this circuit has no such block (it has ` +
-          `${[...c.blocks.keys()].join(", ")}). It is not skipped: a probe that quietly dropped a ` +
-          "block would measure a different sub-circuit from the one the composed side draws, which " +
-          "is the one thing this comparison must not do.",
-      )
-    }
-    return found
-  })
-  const [first] = blocks
-  if (first === undefined) throw new Error("the flat probe was given no blocks, so there is nothing to lay out flat")
-  const flat: IrBlock = {
-    id,
-    sheet: first.sheet,
-    title: `flat probe over ${ids.join(", ")}`,
-    members: blocks.flatMap((b) => b.members),
-    checklist: [],
-    rendering: { kind: "auto" },
-    order: first.order,
-  }
-  return subgraphOf({ ...c, blocks: new Map([...c.blocks, [id, flat]]) }, id, symbols)
-}
 
 export interface SideMeasures {
   readonly measures: SchematicMeasures
@@ -348,60 +302,6 @@ function flatBackend(g: BlockSubgraph, outcome: ElkOutcome | undefined): Side {
   return sideOf({ placements: built.placements, wires: built.wires, anchors: built.anchors }, placedPins(g, built.placements))
 }
 
-/**
- * **G100's MECHANISM, RE-TAKEN: the EDGE COUNTS a decomposition removes.**
- *
- * G100 explains its 6.1x crossing reduction by *"the three blocks carry FEWER EDGES THAN THE WHOLE
- * - 96 against 139"*, and G105 turns that into the bound: *"they became connections BETWEEN blocks
- * ... each block was drawn on its own canvas, so the 43 edges were drawn nowhere at all and counted
- * as removed."* **This is the one part of the paired control that does not need a drawing**, so it
- * can be re-taken on `optical-compressor` itself although none of its three blocks draws.
- *
- * **THE ABSOLUTE COUNTS ARE NOT COMPARABLE AND THE RATIO IS COMPARABLE IN KIND.** The spike's edge
- * count came out of `netlistsvg`'s converter and nothing establishes that it builds a net's edges
- * the way `lib/schgen/elk/graph.ts` does (a net of degree n becomes n - 1 chain edges, **G220**). So
- * 139 and 96 are not set beside these numbers as the same quantity; what IS the same claim is
- * *"decomposition hands ELK a smaller graph"*, and the ratio measures it.
- */
-export interface EdgeCensus {
-  readonly circuit: string
-  readonly blocks: readonly { readonly id: BlockId; readonly nodes: number; readonly edges: number }[]
-  readonly blockEdgeTotal: number
-  readonly flatNodes: number
-  readonly flatEdges: number
-  /** `flatEdges / blockEdgeTotal`: how much smaller a graph the decomposition hands ELK. */
-  readonly ratio: number
-}
-
-export async function edgeCensus(name: string = "optical-compressor", cases: readonly ParityCase[] = PARITY_CASES): Promise<EdgeCensus> {
-  const found = cases.find((c) => c.name === name)
-  if (found === undefined) throw new Error(`no parity circuit is called ${name}`)
-  const symbols = parityResolver()
-  const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
-  const ids = [...circuit.blocks.values()].filter((b) => b.rendering.kind !== "bus").map((b) => b.id)
-  const blocks = ids.map((id) => {
-    const graph = elkInputOf(subgraphOf(circuit, id, symbols)).graph
-    return { id, nodes: (graph.children ?? []).length, edges: (graph.edges ?? []).length }
-  })
-  const flat = elkInputOf(flatSubgraphOf(circuit, ids, symbols, `${name}~flat`)).graph
-  const blockEdgeTotal = blocks.reduce((n, b) => n + b.edges, 0)
-  return {
-    circuit: name,
-    blocks,
-    blockEdgeTotal,
-    flatNodes: (flat.children ?? []).length,
-    flatEdges: (flat.edges ?? []).length,
-    ratio: blockEdgeTotal === 0 ? 0 : (flat.edges ?? []).length / blockEdgeTotal,
-  }
-}
-
-export function renderEdgeCensus(c: EdgeCensus): readonly string[] {
-  return [
-    ...c.blocks.map((b) => `  ${b.id}: ${b.nodes} nodes, ${b.edges} edges`),
-    `${c.circuit}: flat ${c.flatNodes} nodes / ${c.flatEdges} edges against ${c.blocks.length} blocks totalling ${c.blockEdgeTotal} edges - ratio ${c.ratio.toFixed(3)}x`,
-  ]
-}
-
 export function renderExperiment(x: IntegratedExperiment): readonly string[] {
   const side = (label: string, s: Side): string =>
     s.ok
@@ -431,8 +331,4 @@ export function renderExperiment(x: IntegratedExperiment): readonly string[] {
 
 if (import.meta.main) {
   for (const line of renderExperiment(await integratedExperiment())) console.log(line)
-  console.log("")
-  for (const name of ["optical-compressor", SUBJECT_CIRCUIT]) {
-    for (const line of renderEdgeCensus(await edgeCensus(name))) console.log(line)
-  }
 }

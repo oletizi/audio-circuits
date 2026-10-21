@@ -36,7 +36,8 @@ and were the only number in these entries nobody else could reproduce"*):
 ```
 bun tools/schgen/remeasure.ts            the per-block table, and BLOCK_SIZE
 bun tools/schgen/remeasure-ceiling.ts    the ceiling's shape and the floor's basis
-bun tools/schgen/remeasure-composed.ts   the integrated experiment and the edge census
+bun tools/schgen/remeasure-composed.ts   the integrated experiment
+bun tools/schgen/remeasure-edges.ts      the flat probe and G100's edge mechanism
 bun tools/schgen/remeasure-criteria.ts   congruence and disjointness
 bun test tests/schgen/remeasure.test.ts  all of it, pinned
 ```
@@ -151,28 +152,47 @@ circuits.
 and that agreement is a check that could have failed: a re-partition between the
 spike and Task 9's declaration would have moved one.
 
-### Step 3's mechanism: the decomposition removes ZERO edges on this backend
+### Step 3's mechanism: the decomposition ADDS edges on this backend
 
 **G100** explains its 6.1x crossing reduction by *"the three blocks carry FEWER
 EDGES THAN THE WHOLE - 96 against 139"*, and **G105** turns the 43 missing edges
-into the bound. **Re-taken here, and it does not reproduce:**
+into the bound. **Re-taken here, and it is backwards:**
 
-| circuit | flat graph | its declared blocks | ratio |
+| circuit | genuinely FLAT | its declared blocks | ratio | direction |
+| --- | --- | --- | --- | --- |
+| `optical-compressor` | 43 nodes, **69 edges** | 3 blocks, 53 nodes, **72 edges** | **0.958x** | **ADDS 3** |
+| `transistor-preamp` | 34 nodes, **48 edges** | 7 blocks, 53 nodes, **53 edges** | **0.906x** | **ADDS 5** |
+
+**THE GENUINELY FLAT SUBJECT IS THE CIRCUIT DECLARED AS ONE BLOCK**, so no net is
+multi-block and only a rail or an off-sheet net gets a boundary node. **An earlier
+version of this document reported 1.000x from a probe that had inherited the
+blocked declaration's boundary nodes** - it never rebuilt `Circuit.unitBlock`, so
+`labelledNets` still saw the original split. That figure is retained in G100 as a
+named subject because it isolates the cancellation exactly; **it is not a flat
+baseline.**
+
+**THE PER-NET RULE, AGREEING WITH THE MEASUREMENT ON THREE SUBJECTS.**
+`edgesForNet` makes a net of degree n into n - 1 chain edges; under the blocked
+declaration a net crossing k blocks is labelled, external in each, and
+contributes `(U + k) - k = U`, while under the flat declaration it is internal
+unless it is a rail and contributes `U - 1`. **So blocked minus flat is the count
+of nets that cross a block boundary and are not rails:**
+
+| circuit | those nets | predicted | measured |
 | --- | --- | --- | --- |
-| `optical-compressor` | 46 nodes, **72 edges** | 3 blocks, 53 nodes, **72 edges** | **1.000x** |
-| `transistor-preamp` | 39 nodes, **53 edges** | 7 blocks, 53 nodes, **53 edges** | **1.000x** |
+| `optical-compressor` | `OUT_PRE`, `VBIAS`, `VBIAS_RAW` | 3 | **3** |
+| `transistor-preamp` | `BASE`, `BYPASS_CAP`, `BYPASS_JUMPED`, `COLLECTOR`, `EMITTER` | 5 | **5** |
+| the five-leg union | none | 0 | **0** |
 
-**The reason is structural rather than lucky.** `lib/schgen/elk/graph.ts` makes a
-net of degree n into n - 1 chain edges, and a net that crosses a block boundary
-becomes a boundary NODE in each block it touches - so the chain edge reaching
-that node replaces exactly the chain edge the split removed. The counts can only
-differ for a multi-block net that is neither a rail nor a labelled net, and
-these two circuits have none.
+**That a cross-block net is always labelled is `lib/schgen/ir/classify.ts:47` and
+not a measurement**, so the edge addition is a consequence of this generator's
+labelling rule rather than of decomposition as such. Whether that rule is right
+is a generator design question this task does not answer.
 
 **The absolute counts are not set beside 139 and 96.** The spike's edge count
 came out of `netlistsvg`'s converter and nothing establishes that it builds a
 net's edges the way `graph.ts` does. What is the same CLAIM is *"decomposition
-hands ELK a smaller graph"*, and the ratio measures it: here it does not.
+hands ELK a smaller graph"*, and the measurement refutes it in direction.
 
 **This is the one part of the paired control that needs no drawing**, which is
 why it could be re-taken on `optical-compressor` although none of its three
