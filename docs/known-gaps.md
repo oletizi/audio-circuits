@@ -20050,12 +20050,35 @@ run that came back was not the baseline, and the difference is worth more than
 the baseline was.**
 
 **THE TWO ARMS, ON THE SAME WORKTREE AT THE SAME COMMIT**, the second taken by
-adding one symlink and re-running nothing else:
+adding one symlink and re-running nothing else. **THAT COMMIT IS `3825752`, THE
+POST-DELETION TREE, AND NOT THE PRE-TASK COMMIT THIS ENTRY'S OPENING NARRATIVE
+IMPLIES** - the finding was noticed while taking the Task 19 baseline, but the
+two arms that measure it were run afterwards, on the tree that no longer has
+`tests/cli/schematic-stub.test.ts`:
 
 | arm | `bun test` summary | `testsuite` elements in the junit report | testcases registered |
 | --- | --- | --- | --- |
 | `.tools/` **absent** | `3546 pass / 78 fail / 1 error`, `Ran 3624 tests across 344 files` | **523** | **3623** |
 | `.tools/` **linked** (the control) | `3671 pass / 0 fail`, `Ran 3671 tests across 344 files` | **524** | **3671** |
+
+**WHAT THE PROVENANCE COSTS, STATED SO NOBODY HAS TO WORK IT OUT: NOTHING THAT
+MATTERS, AND THE 48 IS UNAFFECTED.** At `8813c6c` the complete run is
+`3677 pass / 0 fail` across **345 files** - `[RAN]` by this writer when taking the
+Task 19 baseline - which differs from the linked arm above by exactly this task's
+own deletion of a six-test file. **RELAYED from the Task 19 review, not re-run
+here**: at `8813c6c` the junit report carries **525** `testsuite` elements and
+the no-`.tools` arm registers **3629** testcases, so the gap re-derives as
+`3677 − 3629 = 48` with the same **22 / 12 / 11 / 6** decomposition. **The
+finding stands on either tree; only its provenance was wrong.**
+
+**AND ONE OFF-BY-ONE A READER WILL OTHERWISE FIND FOR THEMSELVES AND DISTRUST
+THE WHOLE ENTRY OVER.** The table above uses the junit **testcases registered**
+column, and the gap it gives is 48. A reader working from bun's own summary line
+instead subtracts `3671 − 3624` and gets **47**. `[RAN]` both: `Ran 3624 tests`
+against `tests="3623"` in the same run, a difference of **1**. **bun's `Ran`
+under-reports the gap by one, because the unhandled error is counted there and
+registers no testcase.** 47 is what the visible numbers say; **48 is the number
+of tests, and it is the one this entry means.**
 
 **MOST OF IT IS LOUD, AND THAT PART IS WORKING AS INTENDED.** 78 failures, and
 `[RAN]` `grep -c` finds the refusal text **99** times: *"no veroroute binary
@@ -20121,7 +20144,7 @@ that has nothing to do with the change being measured.** The Task 19 baseline
 would have been wrong by exactly that if the first arm had been believed.
 
 - **Found** 2026-10-21, Task 19 Step 7, incidentally.
-- **Evidence** the two arms above are the same `git worktree` at the same commit,
+- **Evidence** the two arms above are the same `git worktree` at **`3825752`**,
   differing by one symlink, with `SCHGEN_SOURCE` set in both. **The control is
   the second arm and it could have answered differently**: had the 78 failures
   been caused by the worktree rather than by the missing binary - a plausible
@@ -20130,8 +20153,15 @@ would have been wrong by exactly that if the first arm had been believed.
   name-level `comm` over `bun test --reporter=junit` output from both arms; the
   three `(unnamed)` placeholders are visible in the diff's other direction and
   are why the one-sided count reads 51 where the header difference reads 48.
-- **Verified** CONFIRMED - this writer ran both arms, diffed the two junit
-  reports and read the unhandled-error stanza in the text log.
+- **Verified** **CONFIRMED** for both arms, the per-file table, the three
+  counting methods and the `Ran`-versus-registered difference - this writer ran
+  them, diffed the two junit reports and read the unhandled-error stanza in the
+  text log. **CONFIRMED** for `8813c6c`'s complete run at `3677 pass` across 345
+  files, taken by this writer for the Task 19 baseline. **RELAYED, and not
+  re-run here**, for `8813c6c`'s **525** `testsuite` elements and **3629**
+  registered testcases: those are the Task 19 review's figures, and the
+  controller's instruction was to correct the provenance rather than re-run the
+  measurement.
 - **Why it is open** nothing was attempted. The fix is in a test file this task
   has no business editing, and whether `seed-geometry.test.ts` should resolve the
   binary inside a `test()` or inside a `beforeAll` is a decision for whoever owns
