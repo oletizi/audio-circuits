@@ -18369,17 +18369,20 @@ drawings would be a false defect report.
   and **G237**'s remedies - a discipline with no mechanism - and the same doubt
   applies.
 - **What would settle it** nothing for the signature-comparison deletion; it is
-  done and the review confirmed it. **FOR THE REFINEMENT, RESTORED UNDER R57,
-  THERE IS AN OPEN QUESTION AND IT IS NOT MINE TO CLOSE: the review's measurement
-  and this writer's disagree about the same function.** **CRITERION: one
-  construction, written down, on which the refinement converts a budget
-  exhaustion into a stated topology difference.** The review has one and its
-  description did not reproduce here; four constructions were tried and none did.
-  **MECHANISM, untried and it is the controller's to direct:** the review's probe,
-  committed or quoted, run on this build - which settles it either way in one run.
-  Until then the refinement is kept as a cheap invariant that cannot cause a false
-  pass, and **G242**'s discriminator rests on a threshold this writer measures at
-  120 nodes and the review measures at 14.
+  done and the review confirmed it. **AND NOTHING FOR THE REFINEMENT EITHER - THAT
+  QUESTION IS CLOSED, which this clause said otherwise for one round.** It read
+  that there was *"an open question and it is not mine to close"*, that the
+  review's construction *"did not reproduce here"*, that *"four constructions were
+  tried and none did"*, and that the discriminator *"rests on a threshold this
+  writer measures at 120 nodes and the review measures at 14"*. **Every clause of
+  that is now false** and it is quoted rather than deleted because **this is the
+  clause a later agent reads to find out what to do next, and it was telling them
+  a settled dispute was live** - the exact failure the clause set exists to
+  prevent. What closed it: the construction was written down, **reproduced here
+  exactly**, and is committed as a test; its 14-node urgency is **withdrawn by its
+  author**; and **120 nodes is the figure of record**. The R57/R61 block above has
+  the figures. **The refinement is kept, is guarded, and nothing is waiting on
+  anybody.**
   **CRITERION for item three: a perturbation reported as leaving a check green
   has been shown to be the only way that check could have caught the defect** -
   i.e. a symmetric check is perturbed on both sides, and a discriminating probe
