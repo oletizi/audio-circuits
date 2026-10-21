@@ -60,8 +60,22 @@ export const GATE_ORDER: readonly { readonly gate: string; readonly absentWhen: 
   { gate: GATES.upToDate, absentWhen: "never: gate 1 always runs" },
   { gate: GATES.netlist, absentWhen: "never: gate 3 always registers, and reports NOT_RUN when gate 1 refused" },
   { gate: GATES.pinIdentity, absentWhen: "never: gate 6 always registers, and reports NOT_RUN when gate 1 refused" },
-  { gate: GATES.checklist, absentWhen: "the design's `checklist` is null, so there is no checklist to trace to" },
-  { gate: GATES.oscar, absentWhen: "the design's `oscar` is null, so there is no reference board to compare against" },
+  { gate: GATES.checklist, absentWhen: "the design's `checklist` is null, so there is no checklist to trace to (gate 7 PORTS WHOLE and has never seen a real circuit: docs/known-gaps.md G171)" },
+  // **THE PRINTED ROW SAYS WHAT THE FILE HEADER SAYS - item E of Task 18's review.** "the
+  // design's `oscar` is null" is true and is not the whole of it: a reader of the OUTPUT learned
+  // only that this design declares no reference, and had to open this file to learn that NO design
+  // here does and that the comparison has therefore never run against a generated drawing. The
+  // reviewer is explicit that "DID NOT RUN" cannot be read as a pass, so this is legibility rather
+  // than a defect - and legibility is the whole reason this census is a tool and not a paragraph.
+  {
+    gate: GATES.oscar,
+    absentWhen:
+      "the design's `oscar` is null, so there is no reference board to compare against - and NO " +
+      "design in this repository declares one, so gate 8's M1 comparison is exercised only by " +
+      "tests/schgen/gates/reference-graph.kicad.test.ts and has NEVER run against a generated " +
+      "schematic (docs/known-gaps.md G238 measures why: generate refuses both hand-arranged " +
+      "references at gate 1; G240 records the gap with its price)",
+  },
 ]
 
 export interface CircuitGates {
