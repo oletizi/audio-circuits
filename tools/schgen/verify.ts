@@ -1,6 +1,7 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/verify.ts` and DIVERGED from it by Task 11
- * of the M1 schematic-authoring plan.
+ * of the M1 schematic-authoring plan, and **DIVERGED FURTHER BY TASK 16**: every `GateResult`
+ * carries the derivation it ran against (divergence 3 below).
  *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, and re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**.
@@ -11,7 +12,13 @@
  * 4 (pin map) and 5 (BOM) are not this file's. A refusal never throws out of `runGates`: a
  * gate's thrown error becomes that gate's problems.
  *
- * **THE TWO DIVERGENCES, both forced and both narrow.**
+ * **THE THREE DIVERGENCES, all forced and the first two narrow.** This count is the file's own
+ * census of itself, and a reader reconciling it against the code must find no discrepancy: the
+ * rule `tests/schgen/port-fidelity.test.ts` enforces between the manifest's lists - *a root is
+ * either enumerated completely or not at all* - applies to a file's list of its own divergences
+ * too. It read **two** for a whole round after Task 16 added the third, and nothing failed,
+ * because R18's test only checks that `task` and `why` are non-empty
+ * (`docs/known-gaps.md` records it).
  *
  * 1. **ONE NETLIST READER.** Pedals exports `kicadxml` and reads it with `connectivityFromXml`
  *    over `fast-xml-parser`. This repository reads the s-expression export with
@@ -32,6 +39,18 @@
  *    graph-free halves and are KEPT, tested, and waiting for Task 18 to wire them - deleting
  *    them would make Task 18 re-transcribe them from a source this file no longer re-derives
  *    from.
+ *
+ * 3. **EVERY GATE ROW NAMES THE DERIVATION IT RAN AGAINST - about a hundred lines Task 16 added,
+ *    and the widest of the three.** Pedals' `GateResult` is `{ gate, problems }`. Here it carries
+ *    a third field, `manifest`, and three new members build it: `manifestState` reads the
+ *    `MANIFEST.json` committed in `outDir` and compares its input hashes against what this run
+ *    read (`staleManifestInputs`), `baselineCensus` reads the readability-baseline registry and
+ *    reports the count it holds, and `runGates` attaches the pair's problems to the rows that
+ *    would otherwise read as a pass and only those. `runGate` takes the citation as a third
+ *    parameter defaulting to `MANIFEST_UNREAD`. **It is not a tidy-up: spec §2.1's criterion is
+ *    that a gate reporting a pass names the manifest it passed against**, and there is no way to
+ *    meet that in a two-field row. The cost is that this is now the largest divergence in the
+ *    file and the one a later port has to re-apply by hand.
  */
 import fs from "node:fs";
 import os from "node:os";
