@@ -156,8 +156,14 @@ describe("checkReferenceGraph with an EMPTY permitted delta", () => {
    * **NO SYMMETRY MODEL, AND THE GATE IS THEREFORE STRICTER rather than more lenient.** Upstream
    * treats an allow-listed non-polarised two-pin symbol's pins as interchangeable; here pins match
    * by number, so a capacitor wired the other way round is a difference. `graph-match.ts`'s header
-   * and `docs/known-gaps.md` record it, and the right response to one is a defect report rather
-   * than a permitted delta.
+   * and `docs/known-gaps.md` **G242** record it.
+   *
+   * **THIS CASE IS A PIN AND NOT A WISH: it exists so that the day a symmetry model lands, it goes
+   * RED and has to be rewritten deliberately.** And the rule it carries, from ruling R54: **a
+   * difference of this shape is DIAGNOSED, NEVER DECLARED.** Pin symmetry is a missing MODEL, not
+   * a permitted electrical change; **no transformation produces a pad swap**, so a delta entered
+   * for one would have to invent its `from` - the breach `declared-delta.ts`'s header forbids.
+   * Anyone reaching for a permitted delta here is doing the thing gate 8 exists to prevent.
    */
   it("reports a non-polarised capacitor's pads wired the other way round, having no symmetry model", () => {
     const flipped: ImportedNetlist = { ...DIVIDER, nets: { ...DIVIDER.nets, MID: ["C1.2", "R1.2", "R2.1", "U1.3"], GND: ["C1.1", "R2.2", "U1.4"] } }

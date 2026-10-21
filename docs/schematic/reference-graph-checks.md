@@ -169,7 +169,16 @@ What this check does NOT cover
   treats an allow-listed non-polarised two-pin symbol's pads as interchangeable;
   here pins match by number, so a capacitor wired the other way round from the
   reference is a difference. **G242** records that and what porting the
-  allow-list would need.
+  allow-list would need. **WHEN YOU SEE ONE OF THOSE, IT IS DIAGNOSED AND NEVER
+  DECLARED:** pin symmetry is a missing MODEL, not a permitted electrical
+  change, **no transformation produces a pad swap** - nothing here transforms
+  either drawing, which is why M1's delta is empty - so a delta entered for one
+  would have to invent its `from`, which is the breach `declared-delta.ts`
+  forbids and **G104** records the withdrawal of. **It is the first thing to
+  check when the gate first runs against a generated side**: a non-empty
+  `undeclared` list whose entries are all two-pin passives with transposed pins
+  is this gap; anything else in it is a generator defect until a declared
+  transformation accounts for it.
 - **It compares the libsource PART name, not a full `Library:Part` id.**
   `importNetlist` exposes `libsource`'s `part` and not its `lib`, so two symbols
   with one part name in different libraries would compare equal. **G242** records

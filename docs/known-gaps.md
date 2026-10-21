@@ -18210,12 +18210,34 @@ reported as an undeclared difference.**
 
 **IT ERRS TOWARD FAILING AND NEVER TOWARD PASSING, which is why it was shipped
 this way rather than guessed at.** `CLAUDE.md`: *an empty whitelist that refuses
-loudly beats a general rule that quietly accepts a guess.* And the response to
-one of these differences is a DEFECT REPORT, not a permitted delta: the gate's
-whole rule is that a difference found by looking at output is a defect report
-until a declared transformation accounts for it. **A pad swap on a non-polarised
-part is electrically nothing and is still a difference between the two drawings**
-- which is a real finding about the generator's pin assignment, not noise.
+loudly beats a general rule that quietly accepts a guess.*
+
+> **THE DANGER HERE IS NOT THE FALSE POSITIVE. IT IS THE FIX SOMEBODY WILL REACH
+> FOR, AND RULING R54 REQUIRES THIS ENTRY TO FORBID IT IN ADVANCE.** The
+> controller, verbatim: *"The danger is the next agent who sees a non-polarised
+> capacitor wired pad-for-pad the other way round, recognises it as harmless, and
+> **ADDS A PERMITTED DELTA FOR IT.** That is the provenance violation this gate
+> exists to prevent, arriving through the gate's own escape hatch, and it would
+> look reasonable at the time."*
+>
+> **SO: A DIFFERENCE OF THIS SHAPE IS DIAGNOSED, NEVER DECLARED.** Pin symmetry
+> is a **missing MODEL**, not a permitted electrical change. **No transformation
+> produces a pad swap** - nothing in this repository transforms either drawing,
+> which is exactly why M1's permitted delta is `{ kind: "empty" }` - so there is
+> no `from` to name, and a delta entered for one would have to invent its
+> `from`. That is the breach `lib/schgen/gates/declared-delta.ts`'s module
+> comment forbids and **G104** records the withdrawal of: *"a generator defect
+> could be retrospectively classified as an intended change."* A pad swap is
+> electrically nothing and is still a difference between the two drawings, and
+> whether it is a generator defect or a missing symmetry model is a question to
+> ANSWER, not to route around.
+>
+> **IT IS ALSO THE FIRST THING TO CHECK WHEN THE GATE FIRST RUNS AGAINST A
+> GENERATED SIDE** (**G240**'s criterion). A non-empty `undeclared` list whose
+> entries are all two-pin passives with their pins transposed is this entry, not
+> a generator defect; anything else in that list is a generator defect until a
+> declared transformation accounts for it. **Read the list before reading it as
+> either.**
 
 **WHAT PORTING IT WOULD NEED, so the next agent does not re-derive it:** the
 allow-list is keyed by exact library id and validated against each component's
@@ -18286,20 +18308,33 @@ has used may not be the shape M2 wants, and the committed corpus in
   claim is this writer's reading of the two committed netlists and is NOT
   asserted by any check**, so it is true of those two files today and would not
   fail if a third reference broke it.
-- **Why it is open** both are open: neither is fixed, and the first will produce
-  differences that look like noise to somebody who has not read this entry.
+- **Why it is open** **ALL THREE ARE OPEN BY RULING R54, WHICH IS A DECISION
+  RATHER THAN AN OMISSION.** The controller: *"Do NOT add `libsource`'s `lib` to
+  `importNetlist`."* Three reasons, his: **the collateral surface is wide and
+  shared** - the round trip, `tests/circuits/*` and the stripboard importers all
+  read `ImportedComponent`, which is the shape **G235** warns about; **the gate
+  has never run against a generated side (G240), so the false positive cannot
+  occur yet**; and **the fix is two changes bundled** - pin symmetry and the
+  `libId` spelling - *"which deserve separating"*. The mechanism below is
+  therefore recorded as the path and **not** as licence to take it now. The first
+  item will also produce differences that look like noise to somebody who has not
+  read the blockquote above.
 - **What would settle it** **CRITERION for ONE: a non-polarised two-pin symbol
   declared symmetric has its pads compared either way round, and a symbol NOT so
   declared does not** - the declaration being external to the comparison, as the
   acceptance-criteria invariant requires. **CRITERION for TWO: two symbols with
   the same part name in different libraries compare as different components.**
   **CRITERION for THREE: one edit vocabulary, or a check that the two agree.**
-  **MECHANISMS, all untried, and ONE's is the prerequisite for TWO's:**
-  `importNetlist` carries `libsource`'s `lib` beside its `part`, which is a few
-  lines in one reader and makes `libId` a full `Library:Part`; then the pedals
-  allow-list can be ported keyed on that. **Watch for collateral change (G235) if
-  you take it**: `ImportedComponent` is read by the round trip, by
-  `tests/circuits/*` and by the stripboard importers, and a field added there
-  reaches all of them. For THREE, the cheap half is a test asserting the two
-  unions' kind lists are equal - which does not unify them but makes a divergence
-  loud - and the real settlement is M2 choosing one provenance channel.
+  **MECHANISMS, all untried, AND R54 DEFERS THEM - taking one is a decision
+  somebody makes, not a gap to close on sight.** `importNetlist` carrying
+  `libsource`'s `lib` beside its `part` is a few lines in one reader and makes
+  `libId` a full `Library:Part`; the pedals allow-list can then be ported keyed on
+  that, which is why TWO's mechanism is ONE's prerequisite. **Watch for
+  collateral change (G235) if you take it**: `ImportedComponent` is read by the
+  round trip, by `tests/circuits/*` and by the stripboard importers, and a field
+  added there reaches all of them. **And separate the two** - R54 is explicit
+  that bundling pin symmetry with the `libId` spelling is part of why it waits.
+  For THREE, the cheap half is a test asserting the two unions' kind lists are
+  equal - which does not unify them but makes a divergence loud - and the real
+  settlement is M2 choosing one provenance channel. **What is NOT a mechanism for
+  any of the three: a permitted delta.** See the blockquote under item ONE.
