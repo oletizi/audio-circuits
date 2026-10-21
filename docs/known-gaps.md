@@ -18897,6 +18897,23 @@ file"*, so changing the rule was outside the frame the decision was made in.
 **A port's edit rule can quietly bound what a decision is allowed to consider**,
 and that is worth more than the fix.
 
+**AND THE PORT'S EDIT RULE WAS NOT THE ONLY THING FRAMING IT - THE BRIEF ITSELF
+OFFERED A BINARY WHOSE BOTH HALVES ACCEPT THE GATE**, which this writer owes
+back to the controller as a correction to its own reading. `[RAN]`
+`docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md`, Task 9 Step 4,
+verbatim: *"**`BomFields` has no source in this model**: `BOM_EXEMPT_PREFIXES`
+covers `TP`/`H`/`FID` and nothing else, so **either the authoring file declares
+them or `bomFields` refuses** - do not default them to empty strings and do not
+widen the exemption list silently. Decide, implement, and record which."* Both
+branches of *"either … or"* are about what the CIRCUIT supplies, and the two
+things it forbids are the two ways of making the rule stop asking - so an
+implementer obeying the brief exactly could not reach *"the rule is in the wrong
+place"* without going outside it. **The register entry and the comment are
+therefore not where the frame was set**, and the generalisable version is:
+**when a brief states the options, the option it omits is invisible to a task
+doing what it was told**, and that is a cost of a well-specified brief rather
+than a defect in one.
+
 **THE MEASUREMENT, PER CIRCUIT.** `[RAN]` a scratch script over
 `circuitSpecFrom` + `buildCircuit`, calling both compositions:
 
