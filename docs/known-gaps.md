@@ -19154,22 +19154,59 @@ the right place for it.
   **true** for `ir/validateParts.ts`, which is the control proving the rule file
   is untouched.
 
-  **AND ONE PROBE OF THIS TASK's OWN HAD A FALSE NEGATIVE THAT NEARLY COST FOUR
-  SITES, recorded because it is a reusable way to be wrong and it is G244's
-  family** - a claim about one's own search that is better than the search.
-  Ruling **R70** required sweeping for the stale CLAIM rather than visiting the
-  sites it named. The first sweep excluded the register with `grep -v
-  known-gaps.md` applied to the GREP OUTPUT, which drops **every line that CITES
-  the register** rather than the register FILE - and the four unvisited sites
-  (`docs/superpowers/plans/2026-10-19-schematic-authoring-m1.md` at the two R56
-  amendments, and the design spec at two) each cite `docs/known-gaps.md` **G238**
-  on the same line, so all four were invisible to it. Re-run with
-  `--exclude=known-gaps.md` they appeared immediately. **The control is in the
-  script and it discriminates**: the same pattern with the register included
-  prints 22 lines against 15, so it was not matching everything. **The shape to
-  remember: a filter written to exclude a FILE, applied to a LINE, silently
-  excludes every line that mentions the file** - and the lines that mention the
-  register are exactly the evidentiary ones.
+  **AND ONE PROBE OF THIS TASK's OWN HAD A FALSE NEGATIVE, recorded because it is
+  a reusable way to be wrong - and the FIRST VERSION OF THIS PARAGRAPH THEN
+  OVERSTATED IT, which is G244's class committed inside the entry recording it.**
+  Both the mechanism and the overstatement are below, measured, because the
+  second is the more interesting of the two.
+
+  **THE MECHANISM, AND IT IS REAL.** Ruling **R70** required sweeping for the
+  stale CLAIM rather than visiting the sites it named. The first sweep excluded
+  the register with `grep -v known-gaps.md` applied to the GREP OUTPUT. `grep -rn`
+  prints `file:line:text`, so that filter drops a line when the register is named
+  anywhere in that string - **two different drops at once**: the register's own
+  lines, because the PATH matches, which is what made the filter look like it
+  worked; and, in every other file, **every line that CITES the register**.
+  `[RAN]` `bun run tools/schgen/claim-sweep.ts`, which reconstructs the pinned
+  commit `34c3412` - the tree the sweep actually ran on - and applies the claim
+  over `docs`, `lib`, `tools`, `tests`, `circuits`:
+
+  | form | what the exclusion is applied to | hits |
+  | --- | --- | --- |
+  | `broken` | the output LINE (`grep -v` after a pipe) | **6** |
+  | `excludeFile` | the register FILE (`--exclude`), which is what was meant | **9** |
+  | `none` | nothing - **the control, which must be the largest** | **12** |
+
+  **THE THREE LINES THE BROKEN FORM HID ARE NAMED BY THE TOOL**, and all three
+  cite `docs/known-gaps.md` **G238** inline:
+  `plans/2026-10-19-schematic-authoring-m1.md:1706`, the same file's `:1967`, and
+  `specs/2026-10-19-schematic-authoring-design.md:1904`.
+
+  **THE OVERSTATEMENT, AND IT IS THE PART THAT WOULD HAVE MISLED THE NEXT AGENT.**
+  This paragraph said *"the four unvisited sites … each cite `docs/known-gaps.md`
+  G238 on the same line, so all four were invisible to it"*. **That is false for
+  two of them, and the mechanism explains THREE lines rather than four sites.**
+  `[RAN]`, same tool: `specs/…-design.md:1192` and `:1926` are hard-wrapped quote
+  continuations carrying neither `known-gaps` nor `G238`, and the broken form
+  **KEPT both** - they were in its output and were amended from it.
+
+  **WHAT HID THOSE TWO IS DETERMINED, NOT UNDETERMINED, AND THE ANSWER IS
+  NOTHING.** They were never hidden. The real error is one level up: **the entry
+  described the sweep's coverage from the set of sites that ended up being
+  amended, rather than from what the sweep printed** - so two sites the broken
+  form found were written up as sites it missed. That is exactly **G244**'s class
+  - *a true conclusion reached by a search described more thoroughly than it was
+  performed* - and the conclusion was true: four sites did need amending, and all
+  four were amended. **This is the second time on this branch that an entry has
+  exhibited its own pattern inside itself** (**G235** is the first: its author put
+  the pattern in a hand-back message and did not write it down, *"one message
+  after writing G234, the entry about exactly that failure"*).
+
+  **THE SHAPE TO REMEMBER IS THEREFORE TWO SHAPES.** (1) **A filter written to
+  exclude a FILE, applied to a LINE, excludes every line that mentions the file**
+  - and the lines that mention the register are exactly the evidentiary ones.
+  (2) **A claim about what a sweep missed is a claim about the sweep's OUTPUT, so
+  it is checked against that output and not against what was eventually fixed.**
 - **Verified** CONFIRMED - this writer made every edit, ran every probe and read
   every output quoted here. **The `G232` field-placement defect is RELAYED**
   from that entry and from **G238**'s block table; what is confirmed here is
