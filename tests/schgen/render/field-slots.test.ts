@@ -20,12 +20,21 @@
  * `4 x GRID`. **A small two-pin passive therefore has six usable candidates and not eleven, all
  * six of them outside the body, where the route can reach them.**
  *
- * **THE SECOND TEST IS THE ONE WITH TEETH.** It blocks only the SIX OUTSIDE candidates and asserts
- * the unit still refuses - so the five inside slots are shown to add nothing, by a check that goes
- * RED the day one of them starts working. `tests/schgen/render/text-clearance.test.ts` already has
- * a `placeFields` refusal case; it blocks the whole neighbourhood with forty-one wires, which
- * proves the refusal arm exists and cannot distinguish an inside slot that would have worked from
- * one that could not.
+ * **WHICH CASE PINS WHAT, measured, because the first version of this comment had them crossed**
+ * (`docs/known-gaps.md` **G239**, corrected under ruling R59):
+ *
+ * - **CASE ONE PINS THE ARITHMETIC.** `[RAN]` with `MARGIN` set to zero so the pair is `3 x GRID`:
+ *   case one goes RED, `Expected: 5080  Received: 3810`, and the others stay green.
+ * - **CASE THREE PINS THE SIZE OF THE USABLE CANDIDATE SET, not the reason the inside five are
+ *   unusable.** It blocks only the SIX OUTSIDE candidates and the unit still refuses; `[RAN]`
+ *   blocking only five leaves it placed and the case goes red. **But `[RAN]` removing the
+ *   inside-containment arm from `field-placement.ts` leaves all three cases GREEN**, because the
+ *   inside slots are independently blocked by the symbol's own interior graphics - so case three
+ *   is not evidence about containment.
+ *
+ * `tests/schgen/render/text-clearance.test.ts` already has a `placeFields` refusal case; it blocks
+ * the whole neighbourhood with forty-one wires, which proves the refusal arm exists and cannot
+ * distinguish an inside slot that would have worked from one that could not.
  *
  * Nothing here is a fix and nothing here is an acceptance criterion for a fix: G232's criterion
  * stands as written and this is an input to the scope decision R46 carries.

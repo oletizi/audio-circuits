@@ -154,8 +154,11 @@ const POINTERS: readonly Pointer[] = [
     citedBy: "docs/known-gaps.md",
     citation: "`tests/schgen/render/field-slots.test.ts`, three cases",
     test: "tests/schgen/render/field-slots.test.ts",
-    marker: "the five inside slots rescue nothing",
-    why: "G239's Evidence for the five-of-eleven finding and for the only-six-blocked case that gives it teeth.",
+    // The marker is CASE ONE's title, not case three's: ruling R59 established that case one is
+    // what pins G239's 5080-into-2032 arithmetic (RED at Expected 5080, Received 3810), and that
+    // case three is not sensitive to the inside-containment arm at all.
+    marker: "asks for 4 x GRID of height at every inside slot",
+    why: "G239's Evidence for the five-of-eleven arithmetic - the case that goes red when the number moves.",
   },
   // TASK 18: gate 8's M1 half. G240 says the comparison has run on two real drawings and no
   // generated one, and the figures it quotes are asserted in the kicad test; G241's deletions rest

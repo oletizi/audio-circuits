@@ -17963,12 +17963,34 @@ diagnostic - the shape **G235** names. It is re-derivable by printing
 `tryPlaceFields` and running `tools/schgen/remeasure-coverage.ts`.
 
 **WHAT IS BACKED BY A COMMITTED CHECK is the five-of-eleven finding**, in
-`tests/schgen/render/field-slots.test.ts`, and its sharpest case is the third:
-**only the SIX OUTSIDE candidates are blocked and the unit still refuses**, so the
-five inside slots are shown to add nothing by an assertion that goes red the day
-one of them starts working. The wires are derived from the candidate geometry
-rather than written as coordinates, so a change to `slotFields` or
-`besidePinFields` moves them with it.
+`tests/schgen/render/field-slots.test.ts`.
+
+> **CORRECTED 2026-10-21 UNDER RULING R59: THIS ENTRY CITED THE WRONG CASE AS ITS
+> SHARPEST, AND THE FINDING IS SOUND ANYWAY.** It said the sharpest case was the
+> THIRD - *"only the SIX OUTSIDE candidates are blocked and the unit still
+> refuses"*. **That case is not sensitive to the 5080-into-2032 arithmetic at
+> all.** `[RAN]`, with a control that passes (**3 pass / 0 fail**): removing the
+> inside-containment check from `field-placement.ts` entirely - the
+> `if (inside && !within(b, p.body))` arm - leaves **all three cases GREEN**,
+> because the inside slots are independently blocked by the symbol's own interior
+> graphics, so the containment arm is never the thing that rejects them.
+>
+> **THE ARITHMETIC IS PINNED BY CASE ONE**, which is this entry's actual evidence.
+> `[RAN]` setting `MARGIN` to zero so the grown pair is `3 x GRID` instead of
+> `4 x GRID`: case one goes **RED**, `Expected: 5080  Received: 3810`, and the two
+> other cases stay green. **So the number this entry publishes has a check that
+> fails when the number moves, and the over-claim was only about which case it
+> is.**
+>
+> **WHAT CASE THREE DOES PIN, stated accurately rather than dropped:** that a
+> refusal needs **all six** outside candidates blocked - `[RAN]` blocking only
+> five leaves the unit placed and the case goes red - so it holds the size of the
+> usable candidate SET. It does not hold the REASON the inside five are unusable.
+> Two different claims, two different cases, and this entry had them crossed.
+
+The wires in case three are derived from the candidate geometry rather than
+written as coordinates, so a change to `slotFields` or `besidePinFields` moves
+them with it.
 
 - **Found** 2026-10-20, Task 18 Step 0, while establishing whether controller
   ruling R49's *"narrowest thing that makes the field placeable"* was obvious. It
