@@ -2236,6 +2236,14 @@ finding about seam B rather than a failure of the measurement.
 
 ### G106 - the ELK drawings already contain 30-187 DUPLICATE wire segments each, so every crossing and length measure taken over them is inflated, and the adapter would inherit them
 
+**READ G218 BEFORE ACTING ON ANY NUMBER IN THIS ENTRY: the difference this entry says nobody has
+measured IS measured, over all twelve declared blocks, and it refutes three of the five expectations
+below** - of *bends, bends per edge, crossings, wire length* and *occupied area*, only **wire
+length** is inflated as this entry predicts (by 2.05 % to 18.16 %); **crossings do not move at all**,
+**bends and bends per edge are UNDER-counted rather than inflated**, and **area is identical by
+construction**. The superseded sentences are left standing on purpose, per G218's own reasoning - the
+disagreement is the point - and this line is here because the disagreement was visible from G218 and
+invisible from here.
 
 **TASK 13 AMENDMENT, 2026-10-20: THE FIGURE ON THIS DRIVER IS MEASURED, AND IT IS NOT THE SPIKES'.**
 The adapter this entry anticipated now exists and counts both defects separately per block
@@ -15499,10 +15507,21 @@ in square grid steps and `wireLength` in grid steps:
 
 The four bias legs are identical on every measure, which is **G185**'s *"the four congruent bias
 legs draw BYTE-IDENTICALLY"* seen from the measure side. The five sum to **14 placements and 224
-grid steps**, which agrees with **G200**'s independently taken table to the micrometre - and that
-agreement is a cross-check rather than a restatement, because G200's figures came from
-`shapeMeasures` over raw `BlockLayout.wires` and these come from `measuresOf` over the canonical
-topology.
+grid steps**, which is the same figure **G200**'s table carries.
+
+**WHAT THAT AGREEMENT ESTABLISHES, AND WHAT IT DOES NOT - ROUND 1 OF THIS ENTRY OVERSTATED IT AND
+SO DID THE TASK 16 LEDGER.** It said G200's table was *"independently taken"* and that the two
+*"agree to the micrometre"*, on the ground that G200's figures came from `shapeMeasures` over raw
+`BlockLayout.wires` while these come from `measuresOf` over the canonical topology. **The second
+half of that is false.** `adaptElkLayoutReported` runs `canonicalTopology` BEFORE it returns
+`layout.wires` - the `pre` pass in `lib/schgen/elk/adapt.ts`, whose `pre.wires` are what
+`snapToGrid` then hands back - so `BlockLayout.wires` is already canonicalised and the two
+summations ran over **the same geometry**. What the agreement establishes is that **two length
+summations in two modules agree to the digit**, which is a real check on the arithmetic and on
+nothing else. What it does NOT establish is that the geometry was read twice: there is no
+cross-check of the subject here, and *"independently taken"* claimed one. **False precision about
+the strength of our own evidence is the worst place for it**, which is why this correction is
+written out rather than applied silently.
 
 **AND THE TWO SHEETS THAT EMIT**, over the only design in the repository that generates:
 
@@ -15569,10 +15588,15 @@ is itself a check rather than a claim.
   a scratch script and were the only number in these entries nobody else could reproduce"*). Checks
   that could have failed, driven: the zero-size claim over the boundary nodes goes red when
   `boundaryNodeOf` is given `netlistsvg`'s 30 by 20 (perturbation P11, restored); the five-block sum
-  is compared against G200's independently computed 14 and 224; and the inertness claims are
+  is compared against G200's 14 and 224 - **two implementations over one geometry, not two readings
+  of the geometry, per the correction above**; and the inertness claims are
   asserted as EQUALITIES, so a corpus that started producing a crossing would turn them red rather
   than quietly making the fixtures redundant.
-- **Verified** CONFIRMED - this writer ran every measurement and every perturbation.
+- **Verified** CONFIRMED - this writer ran every measurement and every perturbation. **The
+  correction to the independence claim is CONFIRMED too, and separately:** the fix-round-1 writer
+  read `adaptElkLayoutReported`'s `pre` pass in `lib/schgen/elk/adapt.ts` and `shapeMeasures` in
+  `lib/schgen/render/compose.ts` directly; the review raised it and the reading is this writer's
+  own.
 - **Why it is open** it is a measurement. **It is also BAIT, and the trap is named here:**
   `bends/edge 0.16` for a template sheet against `1.33` for an ELK block invites the conclusion that
   templates are four to eight times more readable. That is not what the number says. The two are
@@ -15706,6 +15730,20 @@ starts being counted as a node. **So an uncanonicalised bend count is an UNDER-c
 inflation**, and a reader who took G106's sentence at face value would correct it in the wrong
 direction.
 
+**AND THAT UNDER-COUNT IS A PROPERTY OF THIS REPOSITORY'S BEND DEFINITION PLUS ITS
+CONTACT-DIVISION NORMALISATION - NOT OF CANONICALISATION AS SUCH, AND THE CLAUSE ABOVE MUST NOT BE
+READ AS A GENERAL ONE.** `[RELAYED]` The Task 16 review wrote its own naive bend count - a
+degree-two vertex of one net whose two segments are perpendicular, **without `measuresOf`'s
+`dividedAtContacts` normalisation** - and got the **OPPOSITE direction on 11 of the 12 blocks**: its
+raw figures OVER-report. Its naive-raw against this table's canonical column: **31/28, 33/30, 29/27,
+85/83, 9/8 four times, 7/6 twice, 27/24**, and **equal on `oc-power`**. (The counts are the
+reviewer's and are NOT confirmed by this writer; pairing each with a block is read off this entry's
+own canonical column, where 28 is `ob-buffer`, 30 `oc-audio`, 27 `oc-sidechain`, 83 `pt-core`, 8 the
+four congruent `tp-leg` legs, 6 `tp-leg-collector` and `tp-leg-emitter-bypass`, and 24 `tp-stage`.)
+So the direction of the error depends on which bend definition is in use, and anybody carrying *"an
+uncanonicalised bend count under-reports"* to another repository, another frontend or another
+normalisation is carrying a claim this measurement does not support.
+
 **AREA IS IDENTICAL ON 12 OF 12, as it must be**: the bounding box of a point set is unchanged by
 repeating a point. It is recorded because a measure that cannot be wrong in a given way should say
 so rather than borrow the credibility of the ones that can.
@@ -15719,7 +15757,9 @@ so rather than borrow the credibility of the ones that can.
   that canonicalises the input properly (P4b), and that turns the comparison red naming
   `ob-buffer`. The first form is recorded rather than quietly replaced, because a perturbation that
   changes nothing is indistinguishable from a check with no teeth until you find out which it was.
-- **Verified** CONFIRMED - this writer ran every figure and both perturbations.
+- **Verified** CONFIRMED - this writer ran every figure and both perturbations. **The one exception
+  is the naive-bend clause added in Task 16's fix round 1: those figures are RELAYED from the Task
+  16 review, which drove its own count, and this writer did not re-run them.**
 - **Why it is open** G106 is still open on its own terms, and this entry does not close it: what it
   establishes is that **the defect's size is now known and its SHAPE is not what that entry says.**
   The sentences in G106 and in spec §1.4 revision 4 that say all four measures are inflated are
