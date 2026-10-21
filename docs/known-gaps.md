@@ -19174,6 +19174,15 @@ the right place for it.
 
 - **Found** 2026-10-21, Task 20, from a question the owner asked about
   `transistor-preamp`'s refusal count.
+- **How much of the register this change touched, pinned to a commit because the
+  figure moves with every round** (review item 5, which corrected a report that
+  said *"seven others"*). `[RAN]` attributing every added line of
+  `docs/known-gaps.md` to the entry heading it landed under, with the per-entry
+  sum checked against the diff's own total: **at `1340e93`, the reviewed commit,
+  480 lines - ONE NEW ENTRY (this one, 311) and ELEVEN AMENDED**: **G232** 56,
+  **G178** 27, **G238** 22, **G239** 15, **G149** 14, **G240** 14, **G235** 13,
+  **G104** 4, **G171** 2, **G226** 1, **G244** 1. The review round then made it
+  **twelve** amended, **G241** joining with the control-clause row above.
 - **Evidence** every figure above was driven in the same session and its output
   pasted into the task report. **Checks that could have failed, and were each
   driven red once:** putting `bomFields` back into `DRAWING_RULES` fails
