@@ -729,6 +729,7 @@
     "lib/schgen/strict.ts",
     "tools/schgen/anchor-sweep.ts",
     "tools/schgen/authoring-census.ts",
+    "tools/schgen/claim-sweep.ts",
     "tools/schgen/parity-render.ts",
     "tools/schgen/parity.ts",
     "tools/schgen/port-manifest.ts",
