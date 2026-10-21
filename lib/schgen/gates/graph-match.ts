@@ -34,11 +34,17 @@
  * the allow-list needs the `<libpart>` polarity data, which `lib/kicad/netlist.ts`'s
  * `importNetlist` does not expose; `docs/known-gaps.md` records that and what it would cost.
  *
- * **TWO: THE REFINEMENT IS JOINT ACROSS THE TWO GRAPHS.** Colour refinement assigns each node a
- * signature from its neighbourhood, and the signatures are compressed each round because the raw
- * strings double in length. **Compressing the two sides independently would make `c3` on one side
- * unrelated to `c3` on the other** and every comparison downstream meaningless; `refineBoth` below
- * therefore assigns class ids over the UNION of both sides' signatures in each round.
+ * **TWO: THERE IS NO COLOUR REFINEMENT, AND IT WAS REMOVED AFTER BEING MEASURED.** The first
+ * version of this module refined each node's signature from its neighbourhood until the partition
+ * stopped growing, compressing the signatures each round over the union of both sides. It was
+ * **deleted, because three measurements said it earned nothing** (`docs/known-gaps.md` **G241**
+ * records them): the whole loop could be perturbed out of existence and every check in this
+ * repository stayed green; it is a bijection INVARIANT, so it can only ever prune a search that
+ * would have reached the same verdict; and timed against both real references and a fourteen-way
+ * fully symmetric resistor ladder it was **marginally SLOWER** than not having it, because
+ * `consistent` below already prunes on the first bound neighbour. Keeping it would have been sixty
+ * lines of machinery exercised only by its own absence. **What survives is the signature itself**,
+ * `<value>|<libId>|<connected pins>`, as the key that decides which nodes may map to which.
  *
  * **THE SEARCH REFUSES RATHER THAN HANGING.** `MAX_BINDINGS` bounds the backtracking, and
  * exhausting it is reported as a PROBLEM - *"the search did not complete"* - which is a failure of
@@ -46,7 +52,7 @@
  */
 import type { ReferenceGraph } from "./reference-graph.ts"
 
-/** Backtracking budget. A real circuit's refined signatures are almost always distinct, so this is never approached. */
+/** Backtracking budget. A real circuit's component signatures are almost always distinct, so this is never approached. */
 export const MAX_BINDINGS = 2_000_000
 
 /** `<key>.<pin>`, as `ReferenceGraph.adjacency` names an endpoint. */
@@ -109,50 +115,26 @@ function index(g: ReferenceGraph, name: string): Indexed {
   return { base, incident: sorted, edges }
 }
 
-const initialSignatures = (ix: Indexed): Map<string, string> => {
+/**
+ * Each node's signature: `<value>|<libId>|<connected pins>` - which nodes the search may map to
+ * which, and nothing else about a node is allowed to decide that.
+ *
+ * **IT IS A GROUPING KEY AND NOT A CHECK, which was measured rather than assumed.** A comparison
+ * of the two sides' signature multisets stood here and was deleted: perturbing it away left every
+ * check in this repository green, and so did dropping the pin list from the key
+ * (`docs/known-gaps.md` **G241**). It cannot change a verdict either: the component multiset, the
+ * edge count and the connection multiset have already agreed by the time this is built, and an
+ * injective node map that preserves pin numbers over equal edge counts covers every edge on both
+ * sides - so a pin-set difference cannot survive the search even with a coarser key. What the pin
+ * list buys is a smaller candidate list.
+ */
+const signaturesOf = (ix: Indexed): Map<string, string> => {
   const m = new Map<string, string>()
   for (const [k, base] of ix.base) {
     const pins = (ix.incident.get(k) ?? []).map((i) => i.pin)
     m.set(k, `${base}|pins:${[...new Set(pins)].sort().join(",")}`)
   }
   return m
-}
-
-/**
- * Both sides' node signatures, refined together until the partition over their UNION stops
- * growing.
- *
- * Round 0 is `<value>|<libId>` plus the node's own sorted pin numbers. Each later round appends,
- * per incident pin, the previous round's class of the node at the other end and that end's pin
- * number - so two nodes keep one class only while their neighbourhoods agree to the depth reached.
- * It is an invariant of any bijection, which is what licenses comparing the class multisets before
- * searching at all.
- */
-function refineBoth(ia: Indexed, ib: Indexed): { readonly a: ReadonlyMap<string, string>; readonly b: ReadonlyMap<string, string> } {
-  let a: Map<string, string> = initialSignatures(ia)
-  let b: Map<string, string> = initialSignatures(ib)
-  let classes = new Set([...a.values(), ...b.values()]).size
-  const grow = (ix: Indexed, sig: ReadonlyMap<string, string>): Map<string, string> => {
-    const out = new Map<string, string>()
-    for (const [k, s] of sig) {
-      const around = (ix.incident.get(k) ?? []).map((i) => `${i.pin}>${sig.get(i.other) ?? ""}.${i.otherPin}`).sort()
-      out.set(k, `${s}[${around.join(";")}]`)
-    }
-    return out
-  }
-  for (let round = 0; round < Math.max(ia.base.size, ib.base.size); round += 1) {
-    const ga = grow(ia, a)
-    const gb = grow(ib, b)
-    const all = [...new Set([...ga.values(), ...gb.values()])].sort()
-    if (all.length === classes) return { a, b }
-    const idOf = new Map(all.map((s, i): readonly [string, string] => [s, `c${i}`]))
-    const compress = (m: ReadonlyMap<string, string>): Map<string, string> =>
-      new Map([...m].map(([k, s]): readonly [string, string] => [k, idOf.get(s) ?? ""]))
-    a = compress(ga)
-    b = compress(gb)
-    classes = all.length
-  }
-  return { a, b }
 }
 
 /** Elements of xs in excess of ys, as sorted `<item> x<n>`. */
@@ -179,19 +161,6 @@ function connectionSignatures(ix: Indexed): string[] {
   })
 }
 
-/** Per refined class, the distinct component signatures of the nodes in it - so a class id is readable. */
-function classLabels(sig: ReadonlyMap<string, string>, ix: Indexed): ReadonlyMap<string, string> {
-  const members = new Map<string, Set<string>>()
-  for (const [k, c] of sig) {
-    const set = members.get(c) ?? new Set<string>()
-    set.add(ix.base.get(k) ?? "")
-    members.set(c, set)
-  }
-  const out = new Map<string, string>()
-  for (const [c, set] of members) out.set(c, [...set].sort().join(" / "))
-  return out
-}
-
 export interface MatchResult {
   readonly ok: boolean
   readonly problems: readonly string[]
@@ -202,7 +171,17 @@ export interface MatchResult {
  *
  * `names` are how the two sides are spoken of in a problem - e.g. `["generated", "reference"]`.
  */
-export function matchGraphs(a: ReferenceGraph, b: ReferenceGraph, names: readonly [string, string]): MatchResult {
+export function matchGraphs(
+  a: ReferenceGraph,
+  b: ReferenceGraph,
+  names: readonly [string, string],
+  /**
+   * The backtracking budget. It is a parameter ONLY so the refusal below can be driven by a test:
+   * a refusal path no check has ever taken is a refusal nobody knows works, and this one is the
+   * difference between "the gate could not finish" and a pass. Production callers omit it.
+   */
+  maxBindings: number = MAX_BINDINGS,
+): MatchResult {
   const ia = index(a, names[0])
   const ib = index(b, names[1])
 
@@ -220,23 +199,8 @@ export function matchGraphs(a: ReferenceGraph, b: ReferenceGraph, names: readonl
   if (connOnlyB.length > 0) problems.push(`connections only in ${names[1]}: ${connOnlyB.join(", ")}`)
   if (problems.length > 0) return { ok: false, problems }
 
-  const { a: sa, b: sb } = refineBoth(ia, ib)
-  const labels = new Map([...classLabels(sa, ia), ...classLabels(sb, ib)])
-  const countOf = (sig: ReadonlyMap<string, string>): ReadonlyMap<string, number> => {
-    const n = new Map<string, number>()
-    for (const c of sig.values()) n.set(c, (n.get(c) ?? 0) + 1)
-    return n
-  }
-  const ca = countOf(sa)
-  const cb = countOf(sb)
-  const classMismatch = [...new Set([...ca.keys(), ...cb.keys()])]
-    .filter((c) => (ca.get(c) ?? 0) !== (cb.get(c) ?? 0))
-    .map((c) => `${labels.get(c) ?? c}: x${ca.get(c) ?? 0} in ${names[0]}, x${cb.get(c) ?? 0} in ${names[1]}`)
-    .sort()
-  if (classMismatch.length > 0) {
-    return { ok: false, problems: [`topology differs: the refined neighbourhood classes do not match (${classMismatch.join("; ")})`] }
-  }
-
+  const sa = signaturesOf(ia)
+  const sb = signaturesOf(ib)
   const byClass = new Map<string, string[]>()
   for (const [k, c] of sb) {
     const list = byClass.get(c) ?? []
@@ -267,7 +231,7 @@ export function matchGraphs(a: ReferenceGraph, b: ReferenceGraph, names: readonl
     for (const gb of byClass.get(sa.get(ga) ?? "") ?? []) {
       if (usedB.has(gb)) continue
       steps += 1
-      if (steps > MAX_BINDINGS) return false
+      if (steps > maxBindings) return false
       if (!consistent(ga, gb)) continue
       bound.set(ga, gb)
       usedB.add(gb)
@@ -278,11 +242,11 @@ export function matchGraphs(a: ReferenceGraph, b: ReferenceGraph, names: readonl
     return false
   }
   if (search(0)) return { ok: true, problems: [] }
-  if (steps > MAX_BINDINGS) {
+  if (steps > maxBindings) {
     return {
       ok: false,
       problems: [
-        `the component-for-component match search did not complete within ${MAX_BINDINGS} bindings ` +
+        `the component-for-component match search did not complete within ${maxBindings} bindings ` +
           `(deepest ${deepest} of ${order.length} components). This is NOT a pass and NOT a stated ` +
           "difference: the gate could not finish, and a check that could not run must never read " +
           "like one that agreed. Report it rather than raising the budget blind.",
@@ -294,7 +258,7 @@ export function matchGraphs(a: ReferenceGraph, b: ReferenceGraph, names: readonl
     ok: false,
     problems: [
       "topology differs: no component-for-component match exists although every component, every " +
-        `connection count and every refined neighbourhood class agreed (deepest ${deepest} of ` +
+        `connection count and every component signature agreed (deepest ${deepest} of ` +
         `${order.length}; stuck at ${names[0]} ${stuck === undefined ? "(none)" : `${stuck} (${ia.base.get(stuck) ?? ""})`}). ` +
         "The two drawings hold the same parts wired into different shapes.",
     ],

@@ -12,10 +12,10 @@
  *
  * **AND THE LAST CASE IS THE ONE THE INVARIANTS CANNOT SEE.** Two three-resistor rings against one
  * six-resistor ring hold the same components, the same connection count, the same pin-to-pin
- * signatures and - because every node in a ring has an identical neighbourhood at every depth - the
- * same refined classes. **Only the bijection search can tell them apart**, so that case is what
- * proves the search carries its own weight rather than riding on the cheap invariants in front of
- * it. Without it, deleting the search would leave this file green.
+ * connection signatures and the same per-component signatures. **Only the bijection search can
+ * tell them apart**, so that case is what proves the search carries its own weight rather than
+ * riding on the cheap invariants in front of it, and it asserts the SEARCH's own message rather
+ * than any failure, because three other arms can also report a difference.
  */
 import { describe, expect, it } from "bun:test"
 import type { ImportedNetlist } from "../../../lib/kicad/netlist.ts"
@@ -198,22 +198,127 @@ describe("the bijection search catches what the invariants cannot", () => {
   })
 
   /**
-   * **THE MESSAGE IS ASSERTED, NOT ONLY THE FAILURE, because two different arms say "topology
-   * differs".** One is the refined-class comparison and one is the search; a check that accepted
-   * either would not establish which stage caught it, and the whole claim of this describe is that
-   * the cheap invariants - including the refinement - agree and the SEARCH is what disagrees.
+   * **THE MESSAGE IS ASSERTED, NOT ONLY THE FAILURE.** `matchGraphs` has four arms that can
+   * report a difference and only one of them is the search; a check that accepted any failure would
+   * not establish which stage caught it, and the whole claim of this describe is that the cheap
+   * invariants in front of the search all agree and the search is what disagrees.
    */
   it("reports two three-rings against one six-ring, from the SEARCH and not from an invariant", () => {
     const m = matchGraphs(graphFromNetlist(twoThrees), graphFromNetlist(oneSix), ["two rings of three", "one ring of six"])
     expect(m.ok).toBe(false)
     expect(m.problems).toHaveLength(1)
-    expect(m.problems[0]).toContain("no component-for-component match exists although every component, every connection count and every refined neighbourhood class agreed")
-    expect(m.problems[0]).not.toContain("refined neighbourhood classes do not match")
+    expect(m.problems[0]).toContain("no component-for-component match exists although every component, every connection count and every component signature agreed")
+    expect(m.problems[0]).not.toContain("connected on different pins")
+    expect(m.problems[0]).not.toContain("only in")
   })
 
   it("matches each of the two against itself, so the refusal above is about the shapes", () => {
     expect(matchGraphs(graphFromNetlist(twoThrees), graphFromNetlist(rings(3, 3)), ["a", "b"]).ok).toBe(true)
     expect(matchGraphs(graphFromNetlist(oneSix), graphFromNetlist(rings(6)), ["a", "b"]).ok).toBe(true)
+  })
+})
+
+/**
+ * **MANY INTERCHANGEABLE COMPONENTS: the case the deleted refinement stage existed for.**
+ *
+ * Five identical resistors in a row share one signature - same value, same library id, same
+ * connected pins - so the search has five candidates for each of five positions and is told apart
+ * only by how far each sits from the two different capacitors at the ends. `graph-match.ts` used to
+ * precompute that separation with colour refinement; **`docs/known-gaps.md` G241 records the three
+ * measurements that got the refinement deleted**, one of which is that `consistent` prunes on the
+ * first bound neighbour and makes the search fast here without it.
+ *
+ * These cases are what hold that: the chain matches its own copy (so the search does not give up
+ * on symmetric candidates) and does not match the chain with its two ends' VALUES swapped (so it
+ * does not match them blindly either).
+ */
+describe("a circuit with many interchangeable components", () => {
+  /** C1 - R1 - R2 - R3 - R4 - R5 - C2, with both capacitors' far pins on GND. */
+  function chain(offset: number): ImportedNetlist {
+    const r = (i: number) => `R${offset + i}`
+    const components = [
+      comp(`C${offset}`, "100n", "C"),
+      ...Array.from({ length: 5 }, (_, i) => comp(r(i), "10k", "R")),
+      comp(`C${offset + 1}`, "220n", "C"),
+    ]
+    const nets: Record<string, string[]> = {
+      [`L${offset}`]: [`C${offset}.2`, `${r(0)}.1`].sort(),
+      [`L${offset + 6}`]: [`${r(4)}.2`, `C${offset + 1}.1`].sort(),
+      [`G${offset}`]: [`C${offset}.1`, `C${offset + 1}.2`].sort(),
+    }
+    for (let i = 0; i < 4; i += 1) nets[`L${offset + i + 1}`] = [`${r(i)}.2`, `${r(i + 1)}.1`].sort()
+    return { components, nets }
+  }
+
+  it("has five components one signature cannot tell apart, so the search really has to choose", () => {
+    const g = graphFromNetlist(chain(1))
+    const resistors = g.nodes.filter((n) => n.libId === "R")
+    expect(resistors).toHaveLength(5)
+    // Identical value, library id and pin numbers: whatever separates them comes from the
+    // neighbourhood, and the search is what has to work it out.
+    expect(new Set(resistors.map((n) => `${n.value}|${n.libId}`)).size).toBe(1)
+    const pinsOf = (key: string) => g.adjacency.flatMap((e) => [e.a, e.b]).filter((p) => p.startsWith(`${key}.`)).map((p) => p.split(".")[1]).sort()
+    for (const n of resistors) expect(pinsOf(n.key)).toEqual(["1", "2"])
+  })
+
+  it("matches two copies of the chain under different designators, inventing no difference", () => {
+    const m = matchGraphs(graphFromNetlist(chain(1)), graphFromNetlist(chain(50)), ["one copy", "another copy"])
+    expect(m.problems).toEqual([])
+    expect(m.ok).toBe(true)
+  })
+
+  /**
+   * **A CASE THAT WAS WRITTEN AND DELETED, recorded because the deletion is the finding.** The
+   * third case here claimed the chain rewired into a RING was something "only the search can see".
+   * It is not: joining the two ends moves which capacitor each end resistor touches, so the
+   * CONNECTION multiset catches it and the message says `connections only in`. The claim did not
+   * reproduce when it was driven, so it is gone rather than softened - the shape `two three-rings
+   * against one six-ring` above is the one that genuinely needs the search, and one such case is
+   * enough.
+   */
+  it("does NOT match the chain against the same chain with its two end capacitors swapped", () => {
+    // Every component and every connection count is unchanged by the swap, and the chain is not
+    // symmetric, so the two are different circuits and the search is what has to say so.
+    const reversed = (): ImportedNetlist => {
+      const c = chain(1)
+      return {
+        components: c.components.map((x) => (x.designator === "C1" ? { ...x, value: "220n" } : x.designator === "C2" ? { ...x, value: "100n" } : x)),
+        nets: c.nets,
+      }
+    }
+    // Swapping the two capacitors' VALUES end for end leaves every component and every connection
+    // count alone, and the chain is not symmetric, so the two differ.
+    const m = matchGraphs(graphFromNetlist(reversed()), graphFromNetlist(chain(1)), ["the reversed chain", "the chain"])
+    expect(m.ok).toBe(false)
+  })
+})
+
+/**
+ * **A SEARCH THAT CANNOT FINISH MUST NOT READ LIKE ONE THAT AGREED**, which is why `matchGraphs`
+ * takes its backtracking budget as a parameter: the refusal is reachable from a test. It was not
+ * before - perturbing `if (steps > maxBindings)` to `if (false)` left every check green, so the one
+ * arm that distinguishes *"the gate could not run"* from a pass had never been taken.
+ */
+describe("the search refuses rather than hanging, and the refusal is not a pass", () => {
+  const ring = (size: number, offset: number): ImportedNetlist => {
+    const components = Array.from({ length: size }, (_, i) => comp(`R${offset + i}`, "10k", "R"))
+    const nets: Record<string, string[]> = {}
+    for (let i = 0; i < size; i += 1) nets[`N${offset + i}`] = [`R${offset + i}.2`, `R${offset + ((i + 1) % size)}.1`].sort()
+    return { components, nets }
+  }
+
+  it("reports a budget it could not finish within, as a problem and not as agreement", () => {
+    const a = graphFromNetlist(ring(6, 1))
+    const b = graphFromNetlist(ring(6, 50))
+    // The control: with the real budget the two DO match, so the refusal below is about the budget.
+    expect(matchGraphs(a, b, ["a", "b"]).ok).toBe(true)
+    const m = matchGraphs(a, b, ["a", "b"], 1)
+    expect(m.ok).toBe(false)
+    expect(m.problems).toHaveLength(1)
+    expect(m.problems[0]).toContain("did not complete within 1 bindings")
+    expect(m.problems[0]).toContain("This is NOT a pass")
+    // And it is NOT reported as a difference between the drawings, which would be a false defect.
+    expect(m.problems[0]).not.toContain("topology differs")
   })
 })
 
