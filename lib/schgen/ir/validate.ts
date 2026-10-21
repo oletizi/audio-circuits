@@ -159,8 +159,18 @@ const DRAWING_RULES: readonly Rule[] = [
  * **Nothing in this repository emits such an artifact yet**, so the callers are tests -
  * `tests/schgen/ir/validate.test.ts`'s two V10 cases drive the rule's own behaviour, and
  * `tests/schgen/authoring-complete.test.ts` keeps the four parity circuits' sourcing counts
- * pinned. That is a residual rather than a design: `docs/known-gaps.md` **G245** states it, and
- * the first consumer that emits an artifact for somebody else to source is what settles it.
+ * pinned.
+ *
+ * **THAT IS `docs/known-gaps.md` G226's PATTERN, DECLARED RATHER THAN DISCOVERED** - a mechanism
+ * whose first real use is its first test, which that entry rules acceptable *"when the
+ * precondition for wiring it is NAMED and the price is RECORDED"* and calls the **G201** failure
+ * when it is not. **THE PRECONDITION, in one sentence: something in this repository must emit an
+ * artifact that a third party sources and places** - a fabrication or assembly package, a board
+ * going out for outsourced assembly, an orderable BOM. **THE PRICE: `bomFields` runs in tests and
+ * in no pipeline**, so purchasing data that regressed would be caught by those two files and by no
+ * artifact. **Controller ruling R67: this composition is NOT to be collapsed into its test
+ * callers** - the name is what tells that future consumer what to call. **G245** carries both
+ * halves.
  */
 const SOURCING_RULES: readonly Rule[] = [bomFields];
 

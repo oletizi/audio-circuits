@@ -16781,6 +16781,7 @@ WITH ITS PRICE.** R35: *"the right name is not 'unwired'."*
 | **G215** - `composeBlocks` and `interiorDrift`, Task 15 | deferred by ruling R34, with a named trigger (the first design this repository owns that has a composable sheet) | **YES, and it is the model**: *"§1.9's criterion is checked over two subjects by tests and over NOTHING by the pipeline"* is the deferral's price, and that entry says it is not to be softened |
 | **G201** - `elkBackendFrom`'s stale refusal, Task 13 | unwired AND undeclared: the real pipeline could not emit a single ELK block for five rounds | **NO - this is the failure.** A test asserted `toThrow(/adaptElkLayout/)`, so the one check that would have caught it was pinning it. Nobody could see the gap, because nothing said it was there |
 | **G217** residuals 1 and 2 - `compareMeasures` and `consultedBy`, Task 16 | **CORRECT BY DESIGN** and recorded: the registry ships empty by design, so every lookup is `absent` and a consumer would be code that cannot execute | **YES**, with the precondition named - the owner grants a baseline - and *"nobody is to ask him for one unprompted"* |
+| **G245** - `validateSourcing`, Task 20 | **CORRECT BY DESIGN** and recorded: `bomFields` left `validateCircuit` under the owner's ruling that the BOM requirement belongs to the CONSUMER of an artifact, and this repository has no such consumer yet, so the composition runs in tests and in no pipeline | **YES**, with the precondition named in one sentence - *something here must emit an artifact a third party sources and places* - and the price stated: the rule is checked by two test files and by no artifact a person running `schgen` reaches. Controller ruling **R67** also rules the named composition is **not to be collapsed** into its test callers, because the name is what tells a future fabrication path what to call |
 
 **R35 RULES THAT NO CONSUMER IS TO BE BUILT FOR `compareMeasures` OR `consultedBy`, and that a
 reviewer would refuse one.** That is the ruling to read before "fixing" either.
@@ -19051,7 +19052,42 @@ the right place for it.
   **(a) CRITERION: the first consumer in this repository that emits an artifact
   somebody else sources and places refuses on `validateSourcing` before it
   emits.** **MECHANISM, untried:** whatever produces a fabrication or assembly
-  package calls it the way `generate` calls `validateCircuit`. **(b) CRITERION:
+  package calls it the way `generate` calls `validateCircuit`.
+
+  **THIS IS AN INSTANCE OF G226's PATTERN AND IS DECLARED AS ONE RATHER THAN
+  ARRIVING AS A FRESH CASE FOR SOMEBODY TO REDISCOVER** - controller ruling
+  **R67**, which also rules that `validateSourcing` **STAYS and is not to be
+  collapsed into its two test callers.** **G226**'s claim, adopted there under
+  ruling R35, is that *"a mechanism exercised only by its own tests is a
+  mechanism whose first real use is its first test; that is acceptable when the
+  precondition for wiring it is NAMED and the price is RECORDED, and it is the
+  G201 failure when it is not."* So, both halves, explicitly:
+
+  - **THE PRECONDITION, in one sentence: something in this repository must emit
+    an artifact that a third party sources and places** - a fabrication or
+    assembly package, a board going out for outsourced assembly, an orderable
+    BOM. Nothing does today. When one does, `validateSourcing` is what it calls,
+    and that is the whole of what wires this.
+  - **THE PRICE: `bomFields` runs in tests and in no pipeline.** Until that
+    consumer exists, the rule's four keys are checked on the four parity
+    circuits by `tests/schgen/authoring-complete.test.ts` and on two hand-built
+    cases by `tests/schgen/ir/validate.test.ts`, and by nothing a person running
+    `schgen` would ever reach. **A circuit whose purchasing data silently
+    regressed would be caught by those tests and by no artifact**, which is
+    acceptable precisely because no artifact here needs the data yet - and stops
+    being acceptable the moment one does.
+
+  **WHY THE NAMED COMPOSITION IS LOAD-BEARING AND COLLAPSING IT WOULD COST
+  SOMETHING, which is R67's reasoning rather than this writer's:** folding the
+  rule back into two test call sites would lose the NAME, and **the name is what
+  tells a future fabrication path what to call.** The local half of the argument
+  is **G152**'s own untried mechanism - *"a rule outside `validateCircuit`, run
+  by the consumers that need footprints"* - which is the same shape for the same
+  reason; the durable half is this pattern citation. **G201** is what it costs to
+  leave a precondition unnamed: five rounds in which the real pipeline could not
+  emit a single ELK block, with a test pinning the gap in place.
+
+  **(b) CRITERION:
   `bun tools/schgen/gate-census.ts` reports zero gate-1 problems for a reference
   AND `bun tools/schgen/remeasure-coverage.ts` reports every block of that
   reference as DRAWS** - **G238**'s criterion, unchanged, with the first half now
