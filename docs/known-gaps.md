@@ -14390,6 +14390,30 @@ strings above, and the conclusion the review drew from it is right.
 
 ### G186 - making `generate` asynchronous cost THREE more byte-checked files, and the manifest's three lists are now 80 ported / 48 diverged / 61 hand-written
 
+> **THE THREE COUNTS IN THAT HEADING DO NOT REPRODUCE AT HEAD AND THE ENTRY
+> PUBLISHES NO METHOD BY WHICH TO DECIDE WHETHER THAT IS DRIFT OR A DIFFERENT
+> QUESTION, WHICH IS THE WHOLE POINT OF RECORDING IT** (2026-10-21, whole-branch
+> review finding 5, **re-driven here**). `[RAN]` by list length over
+> `tools/schgen/port-manifest.json` at `e3baa03`: **`files` 77, `diverged` 51,
+> `handWritten` 117** - against the published **80 / 48 / 61**. **The word
+> "now" names no commit**, nothing in the entry says what a "ported file" is
+> counted as, and so **it is NOT DECIDABLE FROM THE ENTRY whether these are the
+> same three questions asked later or three different questions.** The figures
+> are left in the heading rather than overwritten, because replacing them with
+> today's would reproduce the defect one commit on.
+>
+> **AND NOTHING CAN CATCH IT.** `[RAN]` every assertion on those three lists in
+> `tests/schgen/port-fidelity.test.ts` is `toBeGreaterThan(0)` (`:36`, `:188`,
+> `:220`), so the lists are guarded against being EMPTY and against nothing
+> else. **This is the class Task 19 named and that the branch had already
+> recorded once, at Task 16, as G220** - a figure published without the thing it
+> counts - *"and nothing turned it into a rule."* **What would settle THIS
+> entry's half: state what each list counts and against which commit, or stop
+> carrying the figures.** A count pinned in a test would rot on every port, so
+> the mechanism **G236**'s ruling reached for the citation count - compute the
+> population on every run and assert a magnitude rather than a literal - is the
+> one with precedent here. **Untried on this entry.**
+
 Plan decision **D2** puts the ELK layout in an asynchronous pre-pass inside `generate`. Threading
 its result to the place it is used means touching the whole chain
 
@@ -19849,6 +19873,16 @@ stub writer.
   different leg-constant shapes and one board with none, so nothing here
   estimates this as a copy of `lab`'s. **Neither piece is sufficient alone and
   the order matters: (2) is what makes (1) measurable for four of the five.**
+- **AND NOTHING COMMITTED CHECKS THE CENSUS THIS ENTRY RESTS ON - G256, added
+  2026-10-21.** The four-file grep above is prose transcribed from a gitignored
+  probe, and the day a fifth declaration is written **no list grows and no test
+  reddens**: `PARITY_CIRCUITS`, `PARITY_CASES` and the tripwire's `CANDIDATES`
+  are all hand-written literals with no filesystem sweep, and
+  `tests/schgen/authoring-complete.test.ts` pins the list against a literal of
+  itself. **G256** carries the measurement, its control, and why it was recorded
+  rather than fixed. It also corrects a clause of Task 20's closing judgement
+  which said no entry's deletion depends on the four declarations: **this one's
+  does**, by the criterion directly above.
 
 ### G248 - "SUPERSEDE MEANS DELETE" IS DELIBERATELY UNSATISFIED HERE: the stub writer's INVITATION is deleted and the writer itself is KEPT, because it carries this repository's only `kicad-cli` proof that KiCad reads a stub as the circuit means it
 
@@ -20660,3 +20694,328 @@ silently passes is worse than no constraint."* That is `CLAUDE.md`'s rule workin
   wrong*, which is a change to `make/board.mk`'s contract and **an owner decision
   rather than a tidy-up** - the current behaviour is deliberate, and an "expected
   to refuse" list is one edit away from a list that excuses a real failure.
+
+### G253 - MEASURED: SIX findings this branch deliberately parked exist only in gitignored task reports, one of them in the last closing verification written - which is this repository's named cardinal failure recurring in the document whose job was to catch it
+
+**WHY ONE ENTRY AND NOT SIX.** Each of the six is a sentence, and **they share a
+single cause**: an agent measured something, reported it to a human, wrote
+*"parked"* in a report under `.superpowers/`, and committed nothing. This file's
+own preamble says why that does not count - *"`.superpowers/` is gitignored, so
+a ledger entry is invisible to review, absent from the repository's history, and
+destroyed by `git clean -fdx`"* - and **G234** is the register's name for the
+general shape: *"anything interesting that reaches a human before it reaches a
+file."* Recording them in six entries would hide the one fact worth having.
+
+**THE SIX, EACH CHECKED AT HEAD BY GREPPING FOR THE THING AND NOT FOR THE
+WORD.** The last column is this writer's own check, not the report's claim.
+
+| # | the finding | parked in | state at HEAD |
+| --- | --- | --- | --- |
+| 1 | **Task 20's own published line-count figure disagrees with a re-derivation by 9.** The figure published is 567 lines (1 new + 12 amended, G245 at 360); the verification re-derived **576** insertions and G245 at **369** against the commit it took to be the intended HEAD, and said in terms *"Parked rather than pursued further"* | `task-20-closing-verification.md:90-107` | `[RAN]` `grep -c` over this file: `567` **0**, `576 insert` **0**, `G245 at 360` **0**, `369 insert` **0** |
+| 2 | **the mismatch census is blind to an inline-literal refusal.** `tests/schgen/render/templates/mismatch-census.test.ts:208` asserts `0` occurrences of `/ok:\s*false,\s*reason:/`; a hand-written `{ ok: false, mismatch: { kind: ..., reason } }` matches neither that nor the `mismatch(` pattern beside it | `task-8-report.md:856`, *"Still not mine, going to final review"* | `[RAN]` the assertion is still exactly that at HEAD; 0 register hits for the shape |
+| 3 | **`BODIES`'s greedy `" and "` split** | `task-8-report.md:856` | `[RAN]` `grep -c BODIES` over this file = **0**. **CONTROL**: `grep -c PARITY_CIRCUITS` = **1**, so the grep finds identifiers this file does carry |
+| 4 | **`diverged[]`'s cross-category disjointness is keyed on `to` only, so two entries in different categories can still claim one pedals SOURCE.** `[RAN]` `tests/schgen/port-fidelity.test.ts:189` checks `from` uniqueness WITHIN `diverged`; the three-way disjointness test (`:305-317`) builds its sets from `d.to` and `manifest.handWritten` and checks three pairwise overlaps on destination paths only | `task-8-report.md:856` | this file records *"disjointness of the three categories"* (~9905) without saying which key, so **the finding itself is not recorded** |
+| 5 | **`mismatchSites()` matches inside comments** | `task-7-report.md:776` | `[RAN]` `grep -c mismatchSites` over this file = **0** |
+| 6 | **`SETTLED_ARRIVALS`'s 80-character floor is a proxy for prose saying something.** `[RAN]` `tests/schgen/render/obstacle-matrix.test.ts:317`: `expect(finding.trim().length, f).toBeGreaterThan(80)` | `task-7-report.md:776` | this file records the ADJACENT residual (*"the `SETTLED_ARRIVALS` finding is prose beside a test"*, ~9444); **the 80-character floor has 0 hits** |
+
+**ITEM 1 IS THE WORST OF THE SIX AND NOT BECAUSE OF ITS SIZE.** It is a 9-line
+discrepancy in a figure nobody is relying on, in an entry whose own point is
+that the figure is unstable. **What makes it the sharpest is where it happened:
+in the closing verification of the last task on the branch, whose job was to
+catch exactly this class**, written after **G234**, **G235**, **G237**,
+**G244** and **G246** had all recorded it. The verification named its own
+reasons for parking it and they are good ones - *"which exact commit 'HEAD'
+denoted at the moment that sentence was written is not fully determinable from
+the record"* - and **that is a reason not to rank it as a defect, not a reason
+not to commit it.** An undiagnosable observation is recorded undiagnosed; this
+file requires it.
+
+**TWO ITEMS FROM THE SAME SWEEP RESOLVED THEMSELVES AND NEED NO ENTRY**,
+recorded here so nobody re-opens them: `obstacle-matrix.test.ts` is **417**
+lines at HEAD, inside `CLAUDE.md`'s band, and the explicit `toContain` for
+`frames.ts` is present at `obstacle-matrix.test.ts:150-153`. **Ten further
+parked items from the same sweep ARE properly in this file** - G227, G221,
+G232, the bus census's UNDETERMINED handling, G105, `PermittedDelta`'s
+structural-union bypass, G105's duplicated footers, G247, G251 and G250 - so the
+seven-of-seventeen failure rate is the measurement, not an impression.
+
+- **Found** 2026-10-21, the whole-branch review's question 3: a keyword sweep
+  over all 60-odd `task-*.md` files in
+  `.superpowers/sdd/2026-10-19-schematic-authoring-m1/` for *deferred*,
+  *parked*, *reserved*, *not fixed*, *left alone*, *PARTIALLY*, *NOT ADDRESSED*,
+  giving 73 candidate lines, with the intra-plan *"deferred to Task N"* rows
+  discarded because those dependencies closed.
+- **Evidence** the greps in the last column, each run by this writer at HEAD
+  **against the thing rather than the word**, with the control noted in row 3.
+  The parked quotations are read from the reports named; those reports are
+  gitignored and will not survive `git clean -fdx`, which is why the finding is
+  transcribed here rather than cited.
+- **Verified** **CONFIRMED** for every HEAD-state check, for the two assertions
+  quoted at line numbers, and for the two self-resolved items. **RELAYED** for
+  the sweep's design and its 73-candidate frame, which are the review's and
+  were not re-executed, and for item 1's 576 and 369: `[RAN]` `git show
+  --numstat f79bc15 -- docs/known-gaps.md` gives **9** insertions for that
+  commit alone, so the 576 is a cumulative figure against a base the report
+  names and **this writer did not re-derive it.**
+- **Why it is open** nothing is fixed. **Five of the six are findings about
+  code that someone must decide whether to act on**, and the sixth is a
+  measurement discrepancy the writer could not resolve. **What this entry
+  settles is only that they are no longer invisible** - which is the part that
+  was failing.
+- **What would settle it** **CRITERION: each of the six is either fixed, or
+  ruled not a defect, in which case it is deleted from here.** They are
+  independent and need not go together. **MECHANISM for the CLASS, and it is
+  the only thing here with any evidence behind it: the brief for a task's
+  closing round asks, as a deliverable, for the list of everything the task
+  parked, checked against this file by grep.** `[RELAYED]` it was the
+  whole-branch review doing exactly that which found these six, so the method
+  works; what is untried is making it a step rather than a review.
+
+### G254 - Task 1's MINOR FINDINGS ARE ENUMERATED NOWHERE, SO THEY CANNOT BE DISCHARGED BY ANYONE, EVER - a deferral that is open by construction rather than by decision
+
+**THIS IS RECORDED SEPARATELY FROM G253 BECAUSE ITS SETTLEMENT CLAUSE IS
+DIFFERENT IN KIND: there is nothing to check.** The other six parked items name
+a file, a line and a claim. This one names a set and never lists its members.
+
+**WHAT EXISTS.** `task-1-report.md:200`: *"Minor findings deliberately not
+touched (per the coordinator's instruction, deferred to the whole-branch
+review)"*. **That is the whole record.** `[RAN]` the package holds
+`task-1-brief.md` and `task-1-report.md` and **no `task-1-review.md`**, so the
+document that would have enumerated them does not exist; the report defers to a
+review whose findings are not in the package, and the whole-branch review the
+deferral names was unable to recover them either.
+
+**WHY THAT IS WORSE THAN AN UNFIXED DEFECT.** A deferral is a promise that
+somebody will later decide. **Deciding requires knowing what was deferred.**
+Nobody can now say whether Task 1's minors were trivial or serious, whether a
+later task fixed them incidentally, or whether any remain - so the deferral
+**cannot be discharged, cannot be refused, and cannot be measured.** It is open
+forever by construction, and the only honest thing to do with it is say so in a
+committed file rather than leave a reader to discover the gap.
+
+**IT IS ALSO THE STRONGEST ARGUMENT ON THIS BRANCH FOR WHY A PARKED FINDING
+MUST BE ENUMERATED WHERE IT IS PARKED.** G253's six are recoverable because
+each names its subject. This one is not, and the difference is one sentence of
+writing at the time.
+
+- **Found** 2026-10-21, the whole-branch review's question 3, which looked for
+  the enumeration and reported it **unrecoverable**.
+- **Evidence** `[RAN]` a listing of
+  `.superpowers/sdd/2026-10-19-schematic-authoring-m1/` for `task-1*`: two
+  files, brief and report, no review. The quoted sentence is read from
+  `task-1-report.md:200`. **A check that could have failed and did not:** it was
+  the absence of a `task-1-review.md` that was tested, not the absence of the
+  word *"minor"* - had a review file existed with the findings in it, this entry
+  would not.
+- **Verified** **CONFIRMED** - this writer listed the package and read the
+  sentence. **RELAYED** for the review's conclusion that no committed or saved
+  artifact enumerates them, which this writer did not exhaustively re-establish
+  across every report in the package.
+- **Why it is open** **it is not open because a decision is pending; it is open
+  because the information needed to close it does not exist.** No agent can fix
+  this and the owner cannot rule on it either, because nobody knows what the
+  question was.
+- **What would settle it** **CRITERION: nothing can settle this entry as
+  written, and that is the finding.** **The two things that would make it go
+  away, both honest, neither a fix:** (1) somebody who still has Task 1's review
+  reconstructs the list, after which this becomes an ordinary set of findings;
+  or (2) a ruling that an unenumerated deferral is abandoned rather than open,
+  **which is a ruling about this repository's process and not a technical call**,
+  and it is not made here. **Until one of those, the entry stands as the record
+  that a deferral was made and lost.**
+
+### G255 - MEASURED: NINE files on this branch exceed `CLAUDE.md`'s 300-500 line ceiling, up to 705 lines, and nothing recorded any of them - because every per-task verification checked only its own range, which a cap on an accumulating total cannot be checked by
+
+**THE STRUCTURAL POINT IS WORTH MORE THAN THE LIST, so it goes first.**
+`CLAUDE.md`: *"Code files should be no larger than 300-500 lines long. Anything
+larger than that should be refactored."* Task 17's and Task 18's closing
+verifications each measured the files their own range touched and each correctly
+found them inside the band. **Both were right, and nine files are over the cap,
+because a per-range check cannot see an accumulating total.** Nothing on this
+branch ever swept the tree. The register tracks this rule elsewhere - **G20**
+records a 557-line file in the pinned FORK and **G222** records one forced
+deviation - so the absence is not that the rule is untracked; it is that the
+only checks run were scoped to a diff.
+
+**THE SWEEP, DRIVEN AT `e3baa03` OVER EVERY TRACKED `.ts` FILE.** `[RAN]` 846
+tracked `.ts` files, of which **11** exceed 500 lines:
+
+| lines | file | new on this branch? |
+| --- | --- | --- |
+| **705** | `tools/stripboard/materialize-run.ts` | **new** |
+| 739 | `tests/sim/netlist.test.ts` | on `main` at 739 - **pre-existing** |
+| **639** | `lib/schgen/elk/junctions.ts` | **new** |
+| **606** | `tools/stripboard/run-dir.ts` | **new** |
+| **576** | `tests/stripboard/rules.test.ts` | **new** |
+| **576** | `tests/stripboard/materialize-run-perturbed.test.ts` | **new** |
+| **566** | `lib/schgen/render/compose.ts` | **new** |
+| **553** | `lib/schgen/from-network.ts` | **new** |
+| 538 | `tests/cli/perfboard-binary-verbs.test.ts` | on `main` at 538 - **pre-existing** |
+| **530** | `circuits/pultec/physical/parts.ts` | **on `main` at 395, GROWN PAST THE CAP BY THIS BRANCH** |
+| **528** | `tests/schgen/elk/junctions.test.ts` | **new** |
+
+**NINE, NOT EIGHT, AND THE NINTH IS THE ONE A "NEW FILES" METHOD MISSES.**
+The whole-branch review reported eight, counting files absent from `main`.
+`circuits/pultec/physical/parts.ts` **existed on `main` at 395 lines - inside
+the band - and is 530 at HEAD**, so this branch is what put it over. `[RAN]`
+`git show main:<file> | wc -l` against `wc -l` for all three pre-existing
+files: 739→739, 538→538, **395→530**. **The lesson is the same one the
+structural point makes, one level up: a method scoped to new files cannot see a
+cap crossed by growth**, which is exactly how a per-range check cannot see a
+cap crossed by accumulation.
+
+**THE TWO PRE-EXISTING BREACHES ARE RECORDED HERE TOO** - 739 and 538 lines,
+both on `main` before this branch and neither in this file. They are not this
+branch's doing and they are not nothing: a reader who met the nine would
+reasonably infer the rest of the tree complies, and it does not.
+
+**NO FILE IS SPLIT, AND THAT IS DELIBERATE RATHER THAN DEFERRED.** A split has
+rotted pointers twice on this branch - **G233** (seven pointers kept naming the
+file a split had emptied, and the verification they instructed came back
+*"23 pass / 0 fail"*) and **G243** (four pointers stale after a move made in
+the round that recorded G233) - and **G235** names the shape: the split is the
+correct primary effect and the stale pointers are the wrong collateral one.
+**Nine splits in one round is nine chances at that**, with no round after this
+one to catch them.
+
+- **Found** 2026-10-21, the whole-branch review's question 7, as the item its
+  per-task predecessors could not have found. **The ninth file and the two
+  pre-existing breaches are this writer's**, from re-driving the sweep over the
+  whole tree rather than over the review's list.
+- **Evidence** the sweep above: `git ls-files '*.ts'` with `wc -l` per file and
+  a `git cat-file -e main:<file>` test for newness, re-run at `e3baa03`.
+  **CONTROL, which could have answered differently and did**: 846 tracked `.ts`
+  files were measured and **11** came back over 500, so the method is not one
+  that flags everything; and three of the 11 are on `main`, so it is not one
+  that flags only this branch's files either. The three pre-existing files'
+  `main` line counts were read from `git show main:<file>`, which is what
+  separated `parts.ts` from the other two.
+- **Verified** **CONFIRMED** - this writer ran the sweep, the newness test and
+  the three `main` comparisons. The review's eight reproduce exactly, to the
+  line, and the ninth is the difference between the two methods.
+- **Why it is open** **the breach is recorded and not remedied, on purpose.**
+  Splitting is a real change with a measured failure mode on this branch, and
+  this is a single fix round with no further review after it; so the files stay
+  and the fact stops being invisible.
+- **What would settle it** **CRITERION: a check that sweeps the whole tree for
+  the ceiling, so a tenth file cannot accumulate the way these nine did.** It is
+  the ceiling that needs the check, not these nine files - fixing the nine
+  without it leaves the next nine to the same per-range blindness. **MECHANISMS,
+  both UNTRIED, with their costs.** (1) A test that fails over 500 lines: cheap
+  and immediately red on eleven files, so it needs an exceptions list, **and an
+  exceptions list is one edit away from a list that excuses a real breach** -
+  G251's *"expected to refuse"* worry, same shape. (2) The same test asserting
+  the breach SET rather than its absence - the eleven files and their counts
+  pinned, so a twelfth is loud and a split is visible as a shrinking pin - which
+  detects rather than prevents and **rots on every edit to a listed file**,
+  which is the class **G236**'s citation-count ruling exists for. **Neither is
+  proposed as the answer**, and whether a 300-500 ceiling should be mechanised
+  at all is `CLAUDE.md`'s question rather than a test's.
+
+### G256 - MEASURED: the tripwire on the stub-writer deletion obligation CANNOT NOTICE THE EVENT THAT FALSIFIES ITS OWN HEADER, because every list in the chain is a hand-written literal and the one test that checks a list checks it against a literal of itself
+
+**THE EVENT, STATED FIRST, BECAUSE IT IS ONE ACTION BY ONE AGENT.** Somebody
+writes a `SchematicAuthoring` declaration for `buffered`, `feedback`, `loop` or
+`staged` - which is **G247**'s whole subject and the real remaining cost of M1.
+**Then: `PARITY_CIRCUITS` does not grow, `PARITY_CASES` does not grow,
+`CANDIDATES` does not grow, the tripwire stays green, `authoring-complete`
+stays green, the whole suite stays green** - and
+`tests/circuits/stub-writer-tripwire.test.ts`'s header, which asserts as fact
+that *"Four of the five boards have no `SchematicAuthoring` declaration... they
+are absent from `CANDIDATES` below for that reason and not by choice"*, **becomes
+false silently, inside the one file whose job is to notice.**
+
+**THE CHAIN, DRIVEN.** `[RAN]` `grep -n "readdir\|readdirSync\|glob\|Glob"` over
+`tools/schgen/symbol-census.ts`, `tools/schgen/authoring-census.ts`,
+`tests/schgen/authoring-complete.test.ts` and
+`tests/circuits/stub-writer-tripwire.test.ts`: **no filesystem sweep anywhere**
+(the only `fs.` calls are the tripwire's own `mkdtempSync`/`rmSync` scratch
+directory). **CONTROL, which could have answered differently**: the same grep
+shape over `tests/` and `tools/` finds five files that DO sweep the filesystem -
+`tests/cli/perfboard-guide-verb.test.ts`, `tests/cli/schgen.test.ts`,
+`tests/kicad/footprint-library.ts`, `tests/kicad/footprint-sweep.ts`,
+`tests/kicad/lead-span-parts.test.ts` - so a sweep is a thing this suite does
+and these four files do not do it.
+
+- `PARITY_CIRCUITS` (`tools/schgen/symbol-census.ts:49`) is a **hand-written
+  literal of four circuit names**;
+- `PARITY_CASES` (`tools/schgen/authoring-census.ts:51`) is `PARITY_CIRCUITS`
+  mapped against a hand-written `AUTHORING` record. **It refuses loudly when a
+  circuit in the first list has no entry in the second** - *"a parity case that
+  quietly drops out is a check that stopped running without saying so"* - which
+  is exactly the right refusal and **says nothing about a circuit in neither**;
+- `CANDIDATES` (`stub-writer-tripwire.test.ts`) is a **hand-written literal of
+  one entry**, `lab`;
+- `tests/schgen/authoring-complete.test.ts:23-29` asserts
+  `PARITY_CASES.map((c) => c.name)` equals the literal
+  `["opamp-buffer", "optical-compressor", "pt2399-core", "transistor-preamp"]` -
+  **pinning the list against a copy of its own contents rather than against the
+  tree.** Its stated purpose is real (*"so none of the sweeps below iterates
+  nothing"*) and it cannot fail on the event above.
+
+**AND G247's CENSUS IS PROSE TRANSCRIBED FROM A GITIGNORED PROBE, WHICH IS WHAT
+MAKES THIS A GAP RATHER THAN A CURIOSITY.** `[RAN]` here, independently:
+`grep -rln 'SchematicAuthoring = {' circuits/` returns **four** files -
+`opamp-buffer.schematic.ts`, `optical-compressor/schematic/authoring.ts`,
+`pt2399-core/schematic/authoring.ts`, `transistor-preamp/schematic/authoring.ts`
+- which reproduces G247's figure exactly. **Nothing committed checks it.** So
+the fact that four boards lack a declaration is established by a grep somebody
+ran once, written down in prose, in two places that assert it as present-tense
+fact.
+
+**A CORRECTION TO THE CLOSING JUDGEMENT THAT THIS ENTRY IS PART OF, because it
+was wrong in one clause and right in substance.** Task 20's closing judgement
+said there is *"no entry whose deletion depends on"* the four declarations.
+**G247 is such an entry**: its CRITERION is *"`generate` returns a `Generation`
+for all five boards"*, and its MECHANISMS name the four declarations as piece
+(2), with *"Neither piece is sufficient alone and the order matters."* **So the
+clause contradicts the entry it was written about.** What the judgement was
+right about is the substance: **what is absent is not an entry, it is a check
+that FIRES.** The tripwire is honest about this in its own header - *"No check
+can cover that half: a test cannot fire on a file nobody has written"* - and
+that sentence is correct about the tripwire's own criterion, which is the
+controller's (**R72**) and is about ACCEPTANCE by `generate`. **It is the
+HEADER's factual claim about the tree, not the criterion, that nothing checks.**
+
+**NOT FIXED, AND THE REASON IS THE ROUND AND NOT THE DIFFICULTY.** A filesystem
+sweep over `circuits/` is a real change: it has to decide what counts as a
+declaration, what to do with a declaration that exists but is not wired into
+`AUTHORING`, and whether the tripwire's `CANDIDATES` should then grow
+automatically - which would change what the tripwire ATTEMPTS, and the
+tripwire's criterion is not its own to refine (**R72**). That is a design
+question, and this is a single fix round with no review after it.
+
+- **Found** 2026-10-21, the whole-branch review's question 7, as the thing
+  inside the tripwire that the tripwire's own pattern-finding missed.
+  **Independently re-driven here**: the sweep-absence grep with its control, the
+  four-file census, and the pinned literal read at its line numbers.
+- **Evidence** the four declarations above, each read in its own module; the
+  no-sweep grep over four files with a five-file positive control; the
+  `authoring-complete.test.ts` assertion read in full; `grep -rln
+  'SchematicAuthoring = {' circuits/` = 4. **The check that could have failed:**
+  `PARITY_CASES`'s refusal when a parity circuit lacks an `AUTHORING` entry IS a
+  real guard and was read rather than assumed - it is what makes the chain's
+  SECOND link sound, and its soundness is why the first link's being a literal
+  is the whole defect.
+- **Verified** **CONFIRMED** - this writer ran every grep above and read all
+  four files. **RELAYED** for G247's own per-board refusal texts and counts,
+  which are that entry's and were not re-measured here; the four-file census was
+  re-driven and agrees.
+- **Why it is open** a sweep is a design change with a criterion that belongs to
+  the controller, and **the failure mode is latent rather than live**: nobody has
+  written a declaration yet, so nothing is currently false. It is recorded
+  because the day somebody does, every check stays green.
+- **What would settle it** **CRITERION: the day a fifth `SchematicAuthoring`
+  declaration exists in `circuits/`, some committed check fails, naming it.**
+  Checkable by writing one and running the suite - which is the probe the
+  whole-branch review designed and deliberately did not execute, because it
+  would have put an untracked file under `circuits/`. **MECHANISMS, both
+  UNTRIED.** (1) Sweep `circuits/` for the declaration shape and assert the set
+  equals `AUTHORING`'s keys, which makes the first link as loud as the second
+  already is; its cost is that the grep shape `SchematicAuthoring = {` becomes
+  load-bearing, and `CLAUDE.md`'s *"verify names against the thing itself"* says
+  a shape like that is checked against the tree and not remembered. (2) Leave
+  the lists alone and move the tripwire header's factual claim into a committed
+  check of its own, so the header asserts nothing a test does not. **Neither is
+  preferred here, and whether `CANDIDATES` should grow automatically is R72's
+  question rather than this entry's.**
