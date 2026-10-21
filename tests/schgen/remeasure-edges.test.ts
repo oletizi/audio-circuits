@@ -24,6 +24,7 @@ import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { elkInputOf } from "../../lib/schgen/elk/graph.ts"
 import { subgraphOf } from "../../lib/schgen/render/blocks.ts"
 import { PARITY_CASES, parityResolver } from "../../tools/schgen/authoring-census.ts"
+import { blockCircuit, res } from "./__fixtures__/circuits.ts"
 
 let oc: EdgeCensus
 let tp: EdgeCensus
@@ -99,15 +100,24 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
   })
 
   /**
-   * **THE ORDER OF THE PUBLISHED LISTS IS THE DEFAULT `Array.sort()` ORDER - fix round 3, item 3.**
-   * Fix round 2 refactored `crossingNonRailNets` to share a helper and, in doing so, replaced its
-   * `Array.sort()` with a `localeCompare` comparator nothing had asked for. Membership did not
-   * move, so nothing failed; but both lists below are compared with `toEqual`, and the two orders
-   * differ - `["AB", "A_B"]` comes out one way under each. The sort is reverted and this pins it, so
-   * a comparator reintroduced into either function fails here rather than quietly reordering a
-   * published figure.
+   * **THE PUBLISHED LISTS ARE IN DEFAULT `Array.sort()` ORDER - AND THIS ASSERTION CANNOT CATCH A
+   * COMPARATOR, which fix round 3 claimed it could. The claim was false and is withdrawn.**
+   *
+   * `[RAN]` Fix round 5's review put `localeCompare` back into BOTH name-returning functions - where
+   * it has to go to do harm, since the shared helper's two `.sort()` calls erase it - and the whole
+   * suite came back **3593 pass / 0 fail, identical to the clean tree**; this file alone, 14 pass /
+   * 0 fail. **The cause: both published lists are FIXED POINTS of both comparators.**
+   * `expect(x).toEqual([...x].sort())` can only fail when the two orders differ, and divergence
+   * needs a `_` adjacent to an alphanumeric in a particular position. `OUT_PRE, VBIAS, VBIAS_RAW`
+   * and `BASE, BYPASS_CAP, BYPASS_JUMPED, COLLECTOR, EMITTER` have no such pair.
+   *
+   * **IT IS NOT VACUOUS IN GENERAL AND IT IS KEPT FOR WHAT IT DOES CATCH:** a REVERSING comparator
+   * reddens it - `[RAN]` **12 pass / 3 fail** at HEAD, where the review measured 12 pass / 2 fail
+   * before this file gained the fixture check below, which also fails under reversal. **What it does not catch is a collation comparator on
+   * these particular nets**, which is the one it was built for - so the check that catches that is
+   * the next one, over a fixture, and this one is honest about its own reach.
    */
-  it("returns both published lists in default-sort order, not a comparator's", () => {
+  it("returns both published lists in default-sort order - which a REVERSING comparator breaks and a collation one does not", () => {
     expect(oc.crossingNonRail).toEqual([...oc.crossingNonRail].sort())
     expect(tp.crossingNonRail).toEqual([...tp.crossingNonRail].sort())
     const symbols = parityResolver()
@@ -118,6 +128,49 @@ describe("the per-net rule, shown AGREEING with the measurement rather than asse
       const governing = governingNetsOf(circuit, [...circuit.blocks.keys()])
       expect(governing, name).toEqual([...governing].sort())
     }
+  })
+
+  /**
+   * **THE CHECK THAT ACTUALLY CATCHES THE COMPARATOR - fix round 5, item 1.** The assertion above
+   * cannot, because the real nets are fixed points of both orders. This one drives the two
+   * name-returning functions over a FIXTURE whose crossing non-rail nets are a pair the two
+   * comparators order differently, so `localeCompare` in either function reddens it.
+   *
+   * **THE PAIR IS COMPUTED, NOT GUESSED, and the first assertion is that computation.** A sweep
+   * over 216 candidate `NET_NAME`-legal names found 7,740 diverging pairs, all of the same shape: a
+   * `_` adjacent to an alphanumeric, where `_` (0x5F) sorts AFTER letters and digits by code unit
+   * and BEFORE them under ICU collation. `BYPASS_CAP` and `BYPASSED` are two real
+   * `transistor-preamp` net names of exactly that shape, which is why they are the pair. **An
+   * earlier figure on this task was guessed and the test caught it; this one is derived.**
+   *
+   * **THE FIXTURE IS A REAL `Circuit`, NOT A HAND-BUILT OBJECT.** `blockCircuit` goes through
+   * `buildCircuit`, and each `external` net gets a peer resistor in a second block - so both nets
+   * genuinely cross a block boundary and neither is a rail, which is what puts them in the
+   * governing set. **It is test data in test code**, which is what `CLAUDE.md` permits: the real
+   * corpus cannot drive this term because no declared circuit has a diverging pair.
+   */
+  it("REDDENS under a collation comparator, over a fixture whose nets the two orders disagree about", () => {
+    // The computation the pair is chosen by, asserted rather than described.
+    const pair = ["BYPASS_CAP", "BYPASSED"]
+    const byDefault = [...pair].sort()
+    const byCollation = [...pair].sort((a, b) => a.localeCompare(b))
+    expect(byDefault, "default sort puts _ after E, by code unit").toEqual(["BYPASSED", "BYPASS_CAP"])
+    expect(byCollation, "ICU collation puts _ before E").toEqual(["BYPASS_CAP", "BYPASSED"])
+    expect(byDefault, "so this pair discriminates the two comparators").not.toEqual(byCollation)
+
+    const circuit = blockCircuit([res("R1", "BYPASS_CAP", "BYPASSED")], { kind: "auto" }, { external: pair })
+    // Both nets cross from block "B" into the peer block, and neither is a rail, so both are in the
+    // governing set - which is what makes this fixture able to fail.
+    expect(crossingNonRailNets(circuit).length, "the fixture must produce the diverging pair").toBe(2)
+    expect(
+      crossingNonRailNets(circuit),
+      "crossingNonRailNets must use the default Array.sort(): a collation comparator orders this " +
+        "pair the other way, and both of this module's published lists are compared with toEqual.",
+    ).toEqual(["BYPASSED", "BYPASS_CAP"])
+    expect(
+      governingNetsOf(circuit, [...circuit.blocks.keys()]),
+      "governingNetsOf must use the same default sort, for the same reason.",
+    ).toEqual(["BYPASSED", "BYPASS_CAP"])
   })
 
   it("counts a set that is NON-EMPTY, so the rule is not vacuously satisfied", () => {
