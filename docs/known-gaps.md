@@ -18154,6 +18154,30 @@ nothing about the check and everything about the perturbation**, and reading it
 as *"this check has no teeth"* would have deleted a check that does. Both are now
 perturbed in both directions and both go red.
 
+> **THIS IS A DIFFERENT CLASS FROM G236's FOUR, AND THE DISTINCTION IS THE WHOLE
+> POINT OF RECORDING IT - ruling R55's closing instruction.** **G236** and
+> **G237** are about an **ASSERTION THAT CANNOT FAIL**: the check was written,
+> the check was wrong, and running it proved nothing because it compared
+> something against itself. **This is a PERTURBATION THAT CANNOT DETECT.** The
+> assertion was fine. The check had teeth the whole time. What could not fail was
+> the *probe* - and **the probe was the remedy G236 prescribes.**
+>
+> **SO THE REMEDIES ARE DIFFERENT, AND THAT IS WHY THIS IS NOT JUST A FIFTH
+> INSTANCE.** G236's remedy is *drive it red once*, and **that remedy is exactly
+> what produced the false green here**: the drive WAS performed, it came back
+> green, and the green was wrong about the code. A reader who meets only G236
+> will take a green drive as evidence the check is inert and delete a check that
+> works. **The remedy for THIS class is to ask what else could have caught the
+> defect the perturbation introduced** - and for a symmetric check the answer is
+> *its mirror image*, which is why both multisets are now perturbed on both
+> sides. The same question also exposed the probe in **G243** row two's drive,
+> where a `tsc` run whose CONTROL also failed proved nothing about the two cases
+> it was meant to discriminate.
+>
+> **THE END STATE, which is the figure to quote rather than the journey:** `[RAN]`
+> **20 perturbations, 20 red, 0 green**, each restoring the file it edited and
+> asserting the restore byte for byte before continuing.
+
 **FOUR: THE REFUSAL THAT SEPARATES "COULD NOT FINISH" FROM "AGREED" HAD NEVER
 BEEN TAKEN.** `matchGraphs` bounds its backtracking and reports exhaustion as a
 problem. `[RAN]` perturbing that arm to `if (false)`: **22 pass / 0 fail**. The
@@ -18188,11 +18212,18 @@ drawings would be a false defect report.
 - **What would settle it** nothing for the deletions; they are done.
   **CRITERION for item three: a perturbation reported as leaving a check green
   has been shown to be the only way that check could have caught the defect** -
-  i.e. a symmetric check is perturbed on both sides before a green is believed.
-  **MECHANISM, untried:** a harness that refuses a perturbation whose needle
-  appears more than once in the file, which would have flagged both one-sided
-  attempts mechanically; it is untried because the harness is a throwaway and
-  committing one is a larger decision than this task's.
+  i.e. a symmetric check is perturbed on both sides, and a discriminating probe
+  has a CONTROL that passes, before a green is believed. **The control clause is
+  the half this task got wrong twice** (here and in **G243** row two's `tsc`
+  probe), and it is cheap: a probe whose control also fails has measured nothing.
+  **MECHANISMS, both untried:** a harness that refuses a perturbation whose
+  needle appears more than once in the file, which would have flagged both
+  one-sided attempts mechanically; or a harness that requires every perturbation
+  set to carry an unperturbed control run and refuses a set whose control is not
+  green. Neither is built, because the harness is a throwaway and committing one
+  is a larger decision than this task's - **but note that the second mechanism is
+  the one that generalises, since "perturb its mirror image" only applies to a
+  symmetric check while "your control must pass" applies to every probe.**
 
 ### G242 - THREE THINGS GATE 8's COMPARISON DOES NOT DO: two deliberate narrowings that make it STRICTER, one of which could make two different symbols compare equal, and one type declared twice on purpose
 
@@ -18338,3 +18369,47 @@ has used may not be the shape M2 wants, and the committed corpus in
   equal - which does not unify them but makes a divergence loud - and the real
   settlement is M2 choosing one provenance channel. **What is NOT a mechanism for
   any of the three: a permitted delta.** See the blockquote under item ONE.
+
+### G243 - Task 18's deviations from its own brief, each with its reasoning
+
+**Why this entry exists:** the same shape as **G213** (Task 15), **G222**
+(Task 16) and **G231** (Task 17). A deviation recorded only in a `.superpowers/`
+report is invisible to review, absent from the history and destroyed by
+`git clean -fdx`. **Ruling R55 requires the first row specifically**, so that the
+brief's file list does not read as unmet.
+
+| the brief says | what landed | why, and what it cost |
+| --- | --- | --- |
+| modify `lib/schgen/report.ts` | `tools/schgen/gate-census.ts` modified; `report.ts` untouched | **RULING R55.** `report.ts` builds `RENDER-REPORT.md` from `generate`, and gate 8 is a verify-time check with nothing to put in it; the renderer that DROPS a gate's information is the census, which is **G226** member 2's own history. R55: *"that is reading the criterion through the code rather than the file list, which is what I want."* **Cost: the brief's file list is not satisfied literally**, which is why this row exists |
+| `checkReferenceGraph(generated, reference, permitted, manifest)` with `ReferenceGraphResult.reference: string` | `checkReferenceGraph(generated, reference: ReferenceNetlist, permitted, manifest)` | the two cannot both hold: an `ImportedNetlist` carries no source, so nothing in that list can name the drawing, and §2.1 refuses a row that names nothing. **The brief is underspecified and inventing a value to satisfy the shape would have been worse.** The first fix was a fifth `referenceFile: string`, which made a `manifest`/`reference` swap UNDETECTABLE - a provenance error inside a provenance gate, reported as a pass. **RULING R53** closed it with a type. **Cost: one published interface shape differs from the brief's**, and the swap is now a compile error |
+| *(implied)* `ReferenceGraph` compared by a ported `isomorphic` | the match written against `ReferenceGraph` in `lib/schgen/gates/graph-match.ts`; only `canonicalValue` transcribed | pedals' `isomorphic` is written against `Subgraph`/`SubPart`, which carry a subcircuit's anchors, rails and `ext x n` labels - the OSCAR boundary, which M1 does not port. **Cost: a comparison this repository maintains rather than re-derives**, and its header says so and says what it does not claim relative to `isomorphic` |
+| Step 3: *"run the rewriter over `gates/oscar/compare.ts` and `boundary.ts`"* | four `handWritten` manifest entries, `tools/schgen/port.ts` not run | the manifest's declared scope excludes `gates/oscar/*` (unresolvable `@/kicad/components`), and the adaptation is a different interface rather than a transcription, so `rewrite()` could not re-derive it and `port-fidelity.test.ts` must not byte-check it. `boundary.ts` already uses `handWritten` for a transcription. **Cost: four modules nothing byte-checks**, which is **G139**'s price paid four more times |
+| Step 5: *"run the two empty-delta checks and report BOTH FULL OUTPUTS"* | the comparison run on two real drawings and on no generated one | **G238**: `generate` refuses both references at gate 1. The output the brief asks for does not exist, and **G240** records that with its price. **Cost: the most interesting result in M1 was not produced**, and ruling **R51** governs |
+| Step 1's test loop generating from `r.design` | no `DesignSpec` written for either reference | the generated side is unavailable for a reason upstream of any design module (**G238**), and `parityDesign` in `tools/schgen/gate-census.ts` already derives one per parity circuit. **Cost: none** - writing one would have added untried machinery for a path nothing can take |
+| `DeclaredDelta.edit: GraphEdit` with `GraphEdit` undefined | `GraphEdit` declared in `declared-delta.ts` as five kinds, parsed and never applied | the brief names the type and does not define it. The five kinds are `boundary.ts`'s `DeltaEdit` kinds without its CORE-BRIEF fields, and **the two are now one shape declared twice on purpose** - **G242** item three records that with its price |
+| *(not in the brief)* | the colour refinement and the per-component signature comparison DELETED after being written | both could be perturbed out of existence with the whole suite green, and the refinement measured marginally slower than nothing. **G241**. **Cost: none measurable** - and the entry records that the method, not the code, is what stays open |
+| *(not in the brief)* | `matchGraphs` takes its backtracking budget as a parameter | the refusal separating *"the search could not finish"* from a pass had never been taken by any check. **Cost: a parameter that exists only for a test**, which its own comment states |
+| *(not in the brief)* | `tests/schgen/render/field-slots.test.ts` and `tests/schgen/__fixtures__/deltas/` | Step 0's field-slot measurement (**G239**) and the committed declaration corpus the parser refuses from. The corpus exists because provenance is checked BEFORE content, so a malformed declaration in a temp directory can never reach the content checks. **Cost: twelve committed declarations and a README saying why they are files rather than string literals** |
+| *(not in the brief)* | three stale predictions corrected in `lib/schgen/gates/oscar/boundary.ts` and `tests/schgen/port-fidelity.test.ts` | both said Task 18 would replace `boundary.ts` wholesale. **It did not** - the real `boundary.ts` is the SUBCIRCUIT boundary, which is M2's - and `boundary.ts` also said `canonicalValue` is not in this repository, which it now is. **Cost: none, and the predictions are left visible beside what happened** rather than quietly deleted |
+
+- **Found** 2026-10-21, Task 18, as each deviation was made; the first row under
+  ruling **R55** and the second under **R53**.
+- **Evidence** each row names the file that landed, and every one is in this
+  task's nine commits from `3a99626` to the one that carries this entry. **A check that could have
+  failed:** the full suite with `SCHGEN_SOURCE` set is green over all of them,
+  and `tests/schgen/port-fidelity.test.ts`'s completeness test holds the four
+  `handWritten` entries of row four to being on disk and under a declared root -
+  which is how row four's omission of one file was caught in the first place
+  (`tests/schgen/render/field-slots.test.ts` was committed in `3a99626` without
+  its manifest entry, and the completeness test failed on the next run).
+- **Verified** CONFIRMED - this writer made every deviation and read each row
+  against the code that landed. **Rows one and two are the controller's rulings
+  R55 and R53 and are quoted from them**, not characterised.
+- **Why it is open** a deviation record stays while the deviations stand. Rows
+  two, five and six will close when their causes do - the brief's signature is
+  superseded, and the generated side is **G238**'s and **G240**'s.
+- **What would settle it** nothing settles a deviation record; it is the record.
+  **The one row that could become wrong is row five:** if a reference becomes
+  generatable, *"the output the brief asks for does not exist"* stops being true,
+  and the row should be rewritten against what the check then reported rather
+  than deleted - **G240**'s criterion is the trigger.
