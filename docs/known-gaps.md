@@ -2015,7 +2015,7 @@ every side (476.3 um, 61.6%) and `GetTextBox`'s own 17% fudge factor (296.9 um, 
 electing between the quantities (clause 4) must not discount Q3's height as bookkeeping around the
 wrong pen**: at the right pen it is still 59% taller than the model's line.
 
-**(3) TWO SMALL RESIDUALS, UNDIAGNOSED AND NOT SMOOTHED.** The anchor-to-pen-origin offset of a
+**(3) THREE SMALL UNEXPLAINED QUANTITIES, UNDIAGNOSED AND NOT SMOOTHED.** The anchor-to-pen-origin offset of a
 left-justified symbol field measures **111.1 um** where `common/font/font.cpp`'s
 `offset.x += aAttrs.m_StrokeWidth / 1.52` predicts **100.3** at the plotted pen - a 10.8 um gap.
 The PDF export's global-label outline is **0.8 um** longer along its side than
@@ -2023,6 +2023,14 @@ The PDF export's global-label outline is **0.8 um** longer along its side than
 changes any conclusion, and **neither was diagnosed**. They are here because the next agent to
 derive these constants from source will get the source's numbers and should know that the drawing
 does not quite.
+
+The third is larger and matters more: the `textLength` `kicad-cli` declares for a stroked string is
+the glyph advance sum **plus a constant 203.2 um**, measured over 23 strings from one character to
+seventeen with a worst departure of 0.4 um. That constant is `4/3` of the 152.4 um plotted pen,
+which is the same `4/3` the SVG export applies to `font-size`, and **no source was read that says
+why**. It does not need explaining for the check that uses it - a check on the advance table only
+needs the residual to be constant, and it is - but an agent who reads `textLength` as an advance
+will be 203.2 um over on every string.
 
 **(4) THE ELECTION IS NOT MADE, AND IT IS CONSEQUENTIAL RATHER THAN ACADEMIC.** The plan's Step 0
 forbids the producing agent from choosing which quantity governs a collision, because that is an
@@ -2050,10 +2058,19 @@ reader to find in a diff, because the plan's own constraint says no production f
   **Every claim above has a check that could have failed**: the three routes are compared against
   one another and the probe prints the worst disagreement (font-vs-runtime EXACT on `GetTextBox`'s
   width over all 264 strings and 1.5 nanometres of floating-point residue on the stroked outline,
-  0.3 um font-vs-renderer, 0.8 um formula-vs-PDF); clause (1) was produced BY a refusal, not by
-  inspection; and the re-run of the field placer is held to `lib/schgen/render/field-placement.ts`'s
-  own output - block, unit, lib id, rounded cost and every `covers` string - before any measured
-  figure is printed.
+  0.3 um font-vs-renderer, 0.8 um formula-vs-PDF); **a FOURTH reading, KiCad's own declared
+  `textLength`, is the only direct check the glyph advance has and it agrees** - a constant residual
+  over 23 strings against which `length * GRID` departs 14819 times as far; clause (1) was produced
+  BY a refusal, not by inspection; and the re-run of the field placer is held to
+  `lib/schgen/render/field-placement.ts`'s own output - block, unit, lib id, rounded cost and every
+  `covers` string - before any measured figure is printed.
+  **AND THE DOCUMENT IS HELD TO THE RUN**: `tools/schgen/text-metrics/verify-pastes.py` requires
+  every line `docs/schematic/text-handling-research.md` pastes as probe output to appear in a run's
+  log verbatim. It was written because the first round of that section tidied SEVEN pasted blocks
+  without meaning to - a truncated line, a control that lost its parenthetical, two tables re-padded
+  so their columns lined up, a rewrapped claim, and one block left stale after the probe grew a
+  column. None changed a figure; all were edits to evidence, and reading for them by eye did not
+  find them. It is green against the document and was driven RED twice against perturbed copies.
 - **Verified** CONFIRMED - this writer wrote the probe, drove it, read KiCad's source and looked at
   the rendered PDF.
 - **Why it is open** clauses (1), (2) and (3) are measurements and facts about tools, open because
