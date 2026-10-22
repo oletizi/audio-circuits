@@ -2935,6 +2935,18 @@ three `oc-*` blocks are refused by the post-layout gates. `[RAN]`
 | the five blocks, summed | backend-output | 14 | 38 | **0** | **227.60** | - |
 | the five blocks composed by seam B | accepted | 14 | 38 | **0** | **224** | 3.33 |
 
+> **AMENDED 2026-10-21 BY TASK 21: the composed row's ASPECT is now 3.10 and its
+> occupied area 7152 (it was 3.33 and 7038).** `[RAN]`
+> `tools/schgen/remeasure-composed.ts` against `a003fec` in a detached worktree
+> and against the change, same harness, same run. **Every figure in this table
+> is unchanged** - 14 placements, 38 bends, 0 crossings, 224 grid steps - and
+> only the bounding box moved, from 153.0 x 46.0 grid steps to 149.0 x 48.0,
+> because four of the five blocks hold a jumper whose Value is `Jumper_2_Open`
+> and such a Value is now emitted hidden rather than drawn (**G257**). So the
+> crossing and wire-length conclusions this entry draws are untouched; the
+> aspect is a property of the packing, which the removed text changed.
+> `tests/schgen/remeasure.test.ts` carries both new figures.
+
 - **the flat side REFUSES, and that refusal is the result** (R38's own
   instruction). It is refused by spec §1.4 obligation 2: *"net BASE branches at
   (45.72, 48.26) (t-junction) and no junction is emitted"*. So the
@@ -9947,6 +9959,16 @@ exactly, and the eight registered ids are the eight the brief names.
 
 ### G139 - the port manifest has a third category, `diverged`, and **26 of its 90 files now re-derive from nothing** - nine of them ported TESTS, and a tenth the fixture they share
 
+> **THE HEADLINE'S COUNT IS THE ONE TASK 8 TOOK AND IT HAS GROWN SINCE WITHOUT
+> ANYBODY RE-TAKING IT.** `[RAN]` 2026-10-21, Task 21, straight off the
+> manifest: **75 ported, 53 diverged, 119 hand-written** - so **53 of 128**
+> declared pedals files now re-derive from nothing, against the 26 of 90 above.
+> Task 21 itself added two (`render/text-scene.ts` and `render/emit-items.ts`,
+> see **G257**); **every other step between Task 8 and here added the rest and
+> none of them amended this figure**, which is why it is re-driven and recorded
+> rather than quietly corrected. Nothing in this repository asserts the ratio,
+> so it will go stale again.
+
 **What was done.** `tools/schgen/port-manifest.json` gained a `diverged` list
 beside `files` and `handWritten`. An entry is
 `{ from, to, task, why }`: the pedals source it was ported from, where it
@@ -16435,6 +16457,16 @@ written out rather than applied silently.
 | `mini/power` (4 frames) | 3 | **0.30** | 0 | 93 | 4380.00 |
 | `mini/signal` (7 frames) | 5 | **0.16** | 0 | 154 | 19300.00 |
 
+> **AMENDED 2026-10-21 BY TASK 21: `mini/signal`'s occupied area is now
+> 18100.00 (it was 19300.00), and nothing else in this table moved.** `[RAN]`
+> `tests/schgen/readability/measures.test.ts`, which generates the design and
+> recomputes all four measures. A Value that is nothing but its symbol's own
+> part name is emitted hidden and is no longer drawn text, and that sheet
+> carries several (`Conn_01x02`, `OPA1678`, `W25X40CLSS`) - so the sheet's
+> extent lost those boxes. **The contrast this entry is ABOUT - bends per edge,
+> 0.16-0.30 for templates against 1.20-1.33 for ELK - is untouched**, because
+> the change moves no route. **G257**.
+
 **THE CONTRAST IS THE INTERESTING PART AND IT IS A SECOND INDEPENDENT READING OF G200's
 STAIRCASE.** Every `mini` block is drawn by a reviewed TEMPLATE and every block above by ELK, and
 **bends per edge is 0.16-0.30 for the templates against 1.20-1.33 for ELK** - four to eight times
@@ -17466,6 +17498,52 @@ defect in your task... What I need from you is that the number is recorded so
 that decision can be made on evidence instead of on somebody's recollection of a
 report."* **Nothing here is fixed and nothing was attempted.**
 
+> **AMENDED 2026-10-21 BY TASK 21: PART OF THIS DEFECT IS NOW FIXED, THE
+> HEADLINE'S "FOUR" IS NOW THREE, AND "9 OF 12" NEVER MEANT WHAT IT SAID -
+> BECAUSE ONE OF THE FOUR BLOCKS WAS HIDING A SECOND PROBLEM.**
+>
+> **WHAT CHANGED, AND IT CAME FROM A QUESTION RATHER THAN FROM THIS ENTRY'S OWN
+> MECHANISMS.** The owner, on reading the Task 20 amendment below: *"has it
+> occurred to you that extremely long labels are pathological?"* It had not.
+> Three rounds of this branch treated `Jumper_2_Open`'s 13-character Value field
+> as a constraint to route around - this entry measures its 2.8x width and calls
+> it *"a stated decision rather than a defect"*, and **G239** concludes the fix
+> *"is not narrow"*. **Neither considered that the text carries no information a
+> builder needs**: the symbol already draws a two-pin open jumper. So a Value
+> that is nothing but the symbol's own part name is now emitted with its string
+> unchanged and marked `(hide yes)`, and `field-placement.ts` requires a slot for
+> the Reference alone. `lib/kicad/value-notation.ts`'s `valueIsSymbolPartName` is
+> the predicate and **G257** is the change's own entry.
+>
+> **THE MEASURED EFFECT, before and after, driven in one action** (`[RAN]`
+> `tools/schgen/remeasure-coverage.ts` against `a003fec` in a detached worktree
+> and against the change, same harness, same run):
+>
+> | | before | after |
+> | --- | --- | --- |
+> | blocks that draw | **5 of 12** | **5 of 12** |
+> | `field-placement` sole blocker of | **4** (`ob-buffer`, `oc-power`, `pt-core`, `tp-leg-emitter-bypass`) | **3** (`ob-buffer`, `oc-power`, `pt-core`) |
+> | `tp-leg-emitter-bypass` reports | `JP5#1 (Jumper:Jumper_2_Open): no place for its Reference and Value` | `label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)` |
+>
+> **THE JUMPER'S FIELD-PLACEMENT REFUSAL IS GONE AND THE BLOCK STILL DOES NOT
+> DRAW**, because a SECOND defect in it was invisible while the first one stood.
+> `layout-check.ts`'s `textClearanceProblems` returns the field-placement refusal
+> **alone** and never runs `textProblems` - it cannot, because building a text
+> scene places fields - so every text clearance problem of a block whose fields
+> could not be placed was unreported. **So this entry's "on four of the five it
+> is the ONLY problem reported" was true as written and did not mean what it was
+> read to mean**: the word *reported* was load-bearing and nobody, including this
+> entry's author, treated it as such. **G258** records the masking, what it does
+> to the leverage figure, and the two further things it turned up.
+>
+> **WHAT THE LEVERAGE FIGURE IS NOW.** `5 + 3 = 8` is the arithmetic the census
+> now supports, and **it is an upper bound and not a count** for exactly the
+> reason above: each of the three remaining blocks may be hiding a text problem
+> its field-placement refusal is masking, and nothing has looked. The three are
+> all `Device:C`-class capacitors whose values are real electrical parameters that
+> MUST be drawn, so **Task 21's change cannot help any of them** and the
+> mechanisms at the end of this entry still stand for that case.
+
 **THE DEFECT.** `checkLayout` reports *"<part>#<unit> (<libId>): no place for its
 Reference and Value - every pin-free side, every spot inside its body and beside
 its outermost pins is blocked by wires, pins, pin text..."*. It is a
@@ -18420,6 +18498,44 @@ G232's first mechanism - *give `field-placement.ts` more candidate positions* -
 would be starting from, and it is smaller than the code's candidate list makes it
 look.
 
+> **AMENDED 2026-10-21 BY TASK 21: THIS ENTRY'S ARITHMETIC IS INTACT AND ITS
+> CONCLUSION - "THE FIX IS NOT NARROW" - WAS WRONG, because a narrow fix existed
+> outside the two mechanisms this entry and G232 were choosing between.** The
+> owner asked whether an extremely long label is pathological. It is: a Value
+> that is nothing but the symbol's own part name repeats the glyph beside it, so
+> it is now emitted hidden and needs no slot (**G257**). **That is neither *more
+> candidate positions* nor *a routing cost* - it is REQUIRING LESS**, and
+> neither this entry nor **G232** considered it in two rounds of measuring the
+> search space.
+>
+> **WHAT THAT DOES AND DOES NOT DO TO THE FIGURES HERE, driven rather than
+> reasoned** (`[RAN]`, the same inside-slot arithmetic over the installed stock
+> libraries, with the value drawn and with it hidden):
+>
+> | symbol | value | grown pair, drawn | grown pair, hidden | inside slots that fit |
+> | --- | --- | --- | --- | --- |
+> | `Jumper:Jumper_2_Open` (body 5080 x 2286) | `Jumper_2_Open` | 17780 x 5080 | **7620 x 2540** | **0 of 5 either way** |
+> | `Device:C` (body 4064 x 2032) | `100nF` | 7620 x 5080 | 6350 x 2540 | **0 of 5 either way** |
+> | `Device:C_Polarized` (body 4572 x 3810) | `4.7uF` | 7620 x 5080 | 6350 x 2540 | **0 of 5 either way** |
+> | `Audio:PT2399` (body 20320 x 30480) | `PT2399` | 8890 x 5080 | 6350 x 2540 | **5 of 5 either way** - the positive control, and it could have moved |
+>
+> **THE FIVE INSIDE SLOTS ARE STILL UNUSABLE FOR THE JUMPER, HIDDEN VALUE AND
+> ALL**: the Reference box alone is `2 x GRID = 2540 um` tall once grown, against
+> a 2286 um body. **So this entry's five-of-eleven finding survives the fix
+> completely** - what the fix moved is the SIX OUTSIDE candidates, where a slot
+> whose Value row was crossed is now usable because there is no Value row to
+> cross. The capacitor rows are the cases this fix cannot help at all: `100nF`
+> and `4.7uF` are electrical parameters that must be drawn.
+>
+> **AND THE BLOCKER TABLE ABOVE IS NOW PARTLY HISTORICAL.** For
+> `tp-leg-emitter-bypass` `JP5#1` it listed `wire 4 (EMITTER)`, `pin RV6.1
+> text`, `label EMITTER`, `label BYPASS_CAP` - and after the fix that unit
+> PLACES, so at least one of its six outside candidates now has a clear
+> REFERENCE row. **Which of those four obstacles was blocking only the Value row
+> was NOT re-measured**, and this writer is not inferring it: the instrumentation
+> that produced that table was never committed. The two capacitor rows are
+> unaffected and were not re-driven.
+
 **THE ARITHMETIC.** `candidates()` offers eleven slots for a vertical two-pin
 passive: two pin-free sides, five inside the body, four beside the outermost
 pins. `slotFields` stacks the Reference one `GRID` above the slot's centre and
@@ -18574,6 +18690,25 @@ repository declares `oscar`, so `oscarGate`'s comparison is reachable only from
 > **18**. **So this entry's headline is unchanged and its "why" is now two
 > different reasons**, one of which is a single defect rather than authoring
 > work. **G245** carries the measurement and the probe that produced it.
+>
+> **AMENDED AGAIN 2026-10-21 BY TASK 21: THAT SINGLE DEFECT IS FIXED FOR
+> `transistor-preamp` AND THE GATE IS STILL UNREACHABLE - the third amendment
+> in a row to say so, and the reason is different again.** `[RAN]` `generate` on
+> `transistor-preamp-lab`, `initLock: true`, into a fresh `mkdtemp` directory,
+> against `a003fec` and against the change in one action: **both REFUSE**. The
+> refusal moved from *"JP5#1 (Jumper:Jumper_2_Open): no place for its Reference
+> and Value"* to *"label BYPASS_JUMPED at (17.78, 3.81) overlaps label
+> BYPASS_CAP at (12.7, 5.08)"*, in the same block - a defect that had never been
+> reported because a field-placement refusal suppresses the text-clearance pass
+> behind it (**G258**). `tp-stage`'s capacitor is still a field-placement
+> refusal on top of that, so this circuit has **two** blocks to clear and not
+> one.
+>
+> **SO NO GATE-8 ROW WAS TAKEN, THE `undeclared` LIST WAS NOT READ, AND NOTHING
+> WAS POINTED AT THE `mini` FIXTURE TO PRODUCE ONE** (R50). **An empty
+> `undeclared` list is not a result this task has**: the comparison never ran,
+> which is a different state from running and finding nothing, and this entry's
+> criterion says the row has to come from a real census.
 
 **THE PRICE, which is what G226 asks for rather than the fact.** The gate exists
 to catch a defect class the round trip structurally cannot: *a generator that
@@ -21082,3 +21217,238 @@ question, and this is a single fix round with no review after it.
   check of its own, so the header asserts nothing a test does not. **Neither is
   preferred here, and whether `CANDIDATES` should grow automatically is R72's
   question rather than this entry's.**
+
+### G257 - THE OWNER DISSOLVED A DEFECT THREE ROUNDS HAD WALKED PAST: a Value field that only repeats its symbol's own part name is emitted hidden rather than placed - with its deviation, its two new divergences and the two figures it moved
+
+**THE QUESTION IS THE FINDING, AND IT IS BETTER THAN THE FIX.** The owner, on
+reading **G232**'s Task 20 amendment: *"has it occurred to you that extremely
+long labels are pathological?"* It had not occurred to anyone. **G232** measured
+that `Jumper:Jumper_2_Open`'s grown field pair is **17780 um wide against a
+capacitor's 6350** - 2.8x - and wrote that this came *"from a stated decision
+rather than from a defect"*. **G239** measured the candidate slots twice and
+concluded the fix *"is not narrow"*. Both treated 13 characters of text as a
+constraint to route around. **The text is `Jumper_2_Open` and the symbol beside
+it already draws a two-pin open jumper**: it tells a builder nothing, and
+demanding adjacent space for it was the defect.
+
+**WHAT WAS DONE, in three places and one rule.** `lib/kicad/value-notation.ts`
+gains `valueIsSymbolPartName(symbol, value)` - the other half of `valueFor`'s
+last step, which is *"for a part with no electrical parameter... KiCad's value
+field holds the part name"*. Where it answers true:
+
+- `render/emit-items.ts` emits the `Value` property **with its string unchanged
+  and marked `(hide yes)`**;
+- `render/field-placement.ts` sizes a candidate slot from the **Reference
+  alone**;
+- `render/text-scene.ts` contributes **no box** for it, so what the placer
+  places is still exactly what the clearance pass checks - that module's own
+  stated invariant.
+
+**IT IS NOT KEYED ON LENGTH, ON "Jumper", OR ON A WHITELIST OF KINDS**, and the
+tests are built to prove that rather than to assert it:
+`tests/schgen/render/hidden-value-fields.test.ts` drives a ONE-character value,
+`Fix:D`'s own `"D"`, against a one-character control `"X"`, through identical
+geometry and the identical blocking wires. The case places and the control
+refuses.
+
+**THE VALUE STAYS IN THE FILE AND THE NETLIST IS UNMOVED - PROVED WITH THE REAL
+TOOL, NOT ASSUMED.** `valueFor`'s own comment says an empty value field *"would
+reconcile as a value change against every board"*, and gate 8 keys components by
+canonical value. `[RAN]` `tests/schgen/render/hidden-value-netlist.kicad.test.ts`:
+the `mini` design generated, then `kicad-cli sch export netlist` four times over
+the same drawing - as generated, re-printed unchanged, with `(hide yes)` removed,
+and with the value STRING changed. **The un-hidden export is byte-identical to
+the hidden one** (the `design` header excepted, which carries the source path and
+the clock and is removed by a stripper that refuses if it matches nothing), the
+identity control is byte-identical too, and **the string control DIFFERS** - so
+the comparison can tell a value change from a display change. The un-hide edit
+refuses when there is no `hide` to remove, which closes the vacuous-pass path.
+
+**ITS ONE DEVIATION, STATED BECAUSE IT IS REAL AND NOT BECAUSE IT WAS ASKED
+FOR.** The predicate reads the VALUE, not which branch of `valueFor` produced
+it, so **a genuine `mpn` spelled exactly as the symbol's part name answers
+true** - `mpn: "PT2399"` drawn with `Audio:PT2399` is live in this repository and
+`tests/kicad/value-notation.test.ts` asserts that case rather than leaving it in
+prose. What it costs: those two cases cannot be told apart here. What it buys:
+one rule in one place. Carrying the branch instead would mean a new field on
+`PartSpec` and `IrPart` and an edit at every site that builds one - `[RAN]`
+`grep -rn "refPrefix:" lib tools tests circuits | grep -v "readonly refPrefix"`,
+**49 sites across 29 files**. **The field is a verbatim repeat of the symbol
+name under either branch**, which is why hiding it loses nothing a reader needs.
+
+**WHAT IT COST IN PROVENANCE, which is the part a later port pays.** Two more
+ported files have left the byte-check: `render/text-scene.ts` and
+`render/emit-items.ts` are now `diverged[]` entries with their `sourceSha`,
+joining `render/field-placement.ts`, whose entry is widened. **G139** records
+what a divergence costs - nothing compares it against the pedals source again -
+and this adds two files to that total. A `cuts` entry could not express either
+change: both are conditional, not deletions.
+
+**AND ONE IMPRECISION LEFT IN PLACE DELIBERATELY.** The refusal still reads
+*"no place for its Reference and Value"* even for a unit whose Value needs no
+room. The text is asserted verbatim by the ported clearance tests and is the
+marker `remeasure-coverage.ts` classifies on, so changing it would move two
+things this task is not about. **It is wrong for the hidden case and is recorded
+rather than fixed.**
+
+**THE TWO FIGURES IT MOVED, both re-driven before and after in one action**
+(`a003fec` in a detached worktree against the change, same harness):
+
+| figure | before | after | why |
+| --- | --- | --- | --- |
+| composed experiment `occupiedArea` / `aspect` (**G105**, `m1-remeasurement.md`) | 7038 / 3.33 | **7152 / 3.10** | four of the five drawing blocks hold a `Jumper_2_Open`; the composed box went 153.0 x 46.0 -> **149.0 x 48.0** grid steps, so the packer traded width for a row |
+| `mini/signal` sheet `occupiedArea` (**G216**) | 19300.00 | **18100.00** | that sheet carries `Conn_01x02`, `OPA1678` and `W25X40CLSS`, all part names |
+
+**Placements, wires, wire length, bends and crossings are unchanged on both
+subjects**, which is what establishes that no route moved. The area going UP
+while the blocks got smaller is recorded and **not diagnosed**.
+
+**THE POPULATION THIS TOUCHES.** `[RAN]` over the four parity circuits: **31 of
+102 parts** have a Value that is their symbol's own part name - five
+`Jumper_2_Open`, seven `TestPoint`, eight `Conn_01x0n`, three diodes, two
+`2N3904`, `LED`, `PT2399`. So this is not a one-part special case, and both arms
+of the predicate are exercised by the committed fixtures: `cap` is valued
+`"100n"` and `diode` is valued `"D"`, which IS `Fix:D`'s part name.
+
+- **Found** 2026-10-21, Task 21, which exists because of the owner's question.
+- **Evidence** `tests/schgen/render/hidden-value-fields.test.ts` (7 cases:
+  placement, its control, the blocking geometry, the text scene and its control,
+  the emitted property and its control, the fixture population),
+  `tests/schgen/render/hidden-value-netlist.kicad.test.ts` (5 cases through the
+  real `kicad-cli`, failing rather than skipping when it is absent), and six new
+  cases in `tests/kicad/value-notation.test.ts` including the mpn deviation.
+  **Every new assertion was driven RED once against the shipped code before the
+  implementation existed**: `[RAN]` **3 pass / 4 fail**, the four failures being
+  the placement case (*"refused: block B: D1#1 (Fix:D): no place for its
+  Reference and Value"*), the text-scene case (`Value of D1#1` present), and
+  both emit cases (`hidden` false where true was expected), plus the
+  value-notation file erroring on the missing export. The three that passed are
+  the controls and the blocking-geometry case, which is what makes the red
+  meaningful: the fixture really does block all six Value rows and no Reference
+  row.
+- **Verified** CONFIRMED - this writer wrote every test, drove the red, drove
+  the full suite before (**3672 pass / 0 fail**, 345 files) and after (**3690
+  pass / 0 fail**, 347 files - the 18 new tests are 7 field, 5 netlist, 5
+  value-notation and 1 classifier) with `SCHGEN_SOURCE` set, and ran `generate`,
+  the coverage census and the composed experiment against both trees. **Four
+  tests failed on the first post-change run**, all of them measurement
+  expectations that moved - the two area/aspect figures and the two census rows -
+  and each was updated to the measured value with its reason in its own comment.
+- **Why it is open** **it is open as a measurement rather than as a defect**:
+  the deviation above, the two moved figures, the imprecise refusal text and the
+  two new divergences are all live facts a later reader needs, and none of them
+  is a thing to fix in this task. **What it did NOT achieve is in G258**: the
+  board still does not generate and gate 8 still has not run.
+- **What would settle it** nothing settles the measurements; they are true.
+  **For the deviation, CRITERION: a part whose `mpn` is a genuine manufacturer
+  part number is drawn with its value VISIBLE even when that number is spelled
+  exactly as its symbol's part name - or the repository records that it does not
+  care, which is a decision and not a derivation.** **MECHANISM, UNTRIED:**
+  carry the branch `valueFor` took on `PartSpec` and `IrPart` and read it here;
+  its cost is the 49 sites above, and whether that is worth paying is a scope
+  question this writer may not answer for an artifact it produced.
+
+### G258 - MEASURED: THE FIELD-PLACEMENT REFUSAL WAS HIDING A SECOND DEFECT IN THE SAME BLOCK, so "the sole blocker of four blocks" was an artifact of an early return - and the problem it revealed was MISFILED by the classifier that was built to refuse exactly that
+
+**WHAT HAPPENED.** Task 21 fixed the field-placement refusal on
+`tp-leg-emitter-bypass`'s jumper (**G257**). The block did not start drawing. It
+reported a problem no census had ever printed:
+
+```
+label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)
+```
+
+**WHY NOBODY HAD SEEN IT, and it is one line of code.**
+`lib/schgen/render/layout-check.ts`'s `textClearanceProblems` reads:
+
+```ts
+const unplaced = blockFieldProblems(g, layout, blockPowerLibs(g));
+if (unplaced.length > 0) return unplaced;
+```
+
+It CANNOT do otherwise - building a text scene places fields, and the fields do
+not place - so **every text-clearance problem of every block whose fields cannot
+be placed is unreported.** That is not a defect in `layout-check.ts`; it is a
+property a reader of a census has to know.
+
+**WHAT IT DOES TO G232's LEVERAGE FIGURE.** That entry says field placement is
+*"the sole blocker of 4"* and that fixing it takes the repository *"from 5 of 12
+blocks drawing to 9 of 12"*. Its own wording was *"the only problem **reported**"*
+- and the word `reported` was load-bearing in a way nobody, including its
+author, read it as. `[RAN]` `tools/schgen/remeasure-coverage.ts`, `a003fec`
+against the change, one action:
+
+| | before | after |
+| --- | --- | --- |
+| blocks that draw | 5 of 12 | **5 of 12** |
+| `field-placement` sole blocker of | 4 | **3** |
+| `label-label-overlap` sole blocker of | (class did not exist) | **1** (`tp-leg-emitter-bypass`) |
+| `tp-leg-emitter-bypass` | `JP5#1`: no place for its Reference and Value | `label BYPASS_JUMPED ... overlaps label BYPASS_CAP ...` |
+
+**So `5 + 3 = 8` is an UPPER BOUND and not a count**, and the three blocks it
+counts - `ob-buffer`, `oc-power`, `pt-core` - may each be masking a text problem
+exactly as this one was. **Nothing has looked.** The one block where the mask was
+lifted revealed a second defect, which is a sample of one and the only sample
+there is.
+
+**AND THE CLASSIFIER MISFILED IT, which is the second finding and the sharper
+one.** `remeasure-coverage.ts`'s `PROBLEM_CLASSES` keyed `body-label-overlap` on
+the SUBSTRING `"overlaps label"`. A label over a label contains that substring,
+so the first entry matched and the census printed **`body-label-overlap`** for a
+problem in which no body is involved. **The whitelist-that-throws never fired**,
+because the shape was not unmatched - it was matched by the wrong entry, and
+**G232**'s own evidence paragraph cites `classOf` throwing on a new shape as the
+check that keeps the leverage honest. It would not have. Fixed here: the markers
+are anchored patterns, `label-label-overlap` is its own class, and
+`tests/schgen/remeasure.test.ts` asserts both shapes from their real texts plus
+a third (`Reference of C3#1 overlaps body of R6#1`) that still refuses.
+
+**THE TWO DEFECTS ARE NOT THE SAME KIND OF WORK.** A body over a label moves a
+body; two labels over each other is an anchor-placement problem in the ELK
+adapter. Reporting the second as the first would have sent somebody to the wrong
+module.
+
+**WHAT IT MEANS FOR THE CIRCUIT, stated plainly.** `transistor-preamp-lab` still
+does not generate. `[RAN]` `generate` with `initLock: true` into a fresh
+`mkdtemp` directory, before and after: **both refuse**, the refusal moving from
+the field-placement defect to this label-label overlap, in the same block. And
+`tp-stage` - also on that board - still refuses on `C3#1 (Device:C_Polarized)`'s
+field placement plus two body-label overlaps, so the board has **two** blocks to
+clear. The stub-writer tripwire
+(`tests/circuits/stub-writer-tripwire.test.ts`) is therefore still green, and
+**G256**'s finding about what it cannot notice is untouched.
+
+- **Found** 2026-10-21, Task 21, in the first census after the fix - by reading
+  the tool's output rather than its summary, which is how the misfiling surfaced
+  too.
+- **Evidence** `tests/schgen/remeasure.test.ts` asserts the new census rows, the
+  3/1 sole-blocker split, `5 + 3 = 8`, and the three classifier shapes above; the
+  rows recompute on every run, so a block that starts or stops drawing moves
+  them. **A check that could have failed and did:** the four assertions that
+  carried the old figures failed when the census moved, which is the only reason
+  this entry exists in the form it does. **A check that could have failed and
+  still can:** `classOf` refuses an unclassified shape, and the text-over-body
+  case asserts that arm firing.
+- **Verified** CONFIRMED - this writer drove both censuses, both `generate`
+  attempts, and read every raw `checkLayout` problem string in full rather than
+  the classified summary. **The claim that `textClearanceProblems`' early return
+  is the whole mechanism is this writer's reading of that one function**, not a
+  perturbation: no probe was built that forces the text pass to run with unplaced
+  fields, because it cannot be made to.
+- **Why it is open** **the label-label overlap is a real, unfixed defect** and it
+  is now the sole blocker of one block; and the masking means every remaining
+  field-placement count in this register is an upper bound whose true value is
+  unmeasured.
+- **What would settle it** **CRITERION ONE: `tp-leg-emitter-bypass` draws, which
+  requires the two global labels of nets `BYPASS_JUMPED` and `BYPASS_CAP` not to
+  overlap.** **CRITERION TWO, and it is the one that matters for the register's
+  honesty: for each block whose only reported problem is field placement, the
+  text-clearance problems BEHIND that refusal are either measured or declared
+  unmeasured - a census that prints one problem class for a block must not be
+  read as a block one fix away.** **MECHANISMS, both UNTRIED:** for criterion
+  two, a census pass that places fields with the Value requirement relaxed, or
+  with a temporary slot, purely to enumerate what else the block would report -
+  which is a diagnostic and would need to be marked as one, not a change to
+  `layout-check.ts`; for criterion one, nothing is proposed here, because where
+  a label goes is the ELK adapter's business and an agent may not author the
+  criterion for an artifact it would produce.

@@ -198,6 +198,20 @@ describe("step 4: the integrated experiment, on the five blocks that draw", () =
     expect(experiment.flat.refusal).toContain("net BASE branches at (45.72, 48.26) (t-junction) and no junction is emitted")
   })
 
+  /**
+   * **TWO OF THESE SEVEN FIGURES MOVED AT TASK 21 AND FIVE DID NOT, which is what says the ROUTE
+   * did not move.** `occupiedArea` 7038 -> **7152** and `aspect` 3.326 -> **3.104**; placements,
+   * wires, wire length, bends and crossings are all unchanged. Four of the five blocks that draw
+   * hold a jumper valued `Jumper_2_Open` - its symbol's own part name - which is now emitted
+   * hidden and is no longer drawn text, so those blocks' drawn EXTENTS lost the widest text on
+   * them and `packSheet` arranged them differently.
+   *
+   * **THE AREA WENT UP WHILE THE BLOCKS GOT SMALLER, AND THE TWO FIGURES TOGETHER SAY HOW:** the
+   * composed bounding box went from **153.0 x 46.0** grid steps to **149.0 x 48.0** - four
+   * narrower, two taller - so the packer traded width it no longer needed for a row it did. The
+   * area is partly a property of the packing, as this file's `measures.test.ts` sibling says of
+   * the same figure. `docs/known-gaps.md` **G257**.
+   */
   it("has a COMPOSED side that reproduces G200's and G209's own figures", () => {
     expect(experiment.composed.ok).toBe(true)
     if (!experiment.composed.ok) return
@@ -207,8 +221,8 @@ describe("step 4: the integrated experiment, on the five blocks that draw", () =
     expect(f.measures.wireLength).toBe(224)
     expect(f.measures.bends).toBe(38)
     expect(f.measures.crossings).toBe(0)
-    expect(f.measures.occupiedArea).toBe(7038)
-    expect(f.aspect?.toFixed(2)).toBe("3.33")
+    expect(f.measures.occupiedArea).toBe(7152)
+    expect(f.aspect?.toFixed(2)).toBe("3.10")
   })
 
   it("measures seam B adding NO crossing and NO wire, which is G208 re-taken", () => {
@@ -238,10 +252,17 @@ describe("step 4: the integrated experiment, on the five blocks that draw", () =
 
 describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () => {
   /**
-   * **ONE DEFECT IS THE SOLE BLOCKER OF FOUR BLOCKS, AND THAT IS THE LEVERAGE R46 ASKS TO HAVE
-   * RECORDED.** All five blocks that reach `checkLayout` fail on a part with nowhere to put its
-   * Reference and Value, and on four of the five it is the ONLY problem - so fixing it alone takes
-   * this repository from **5 of 12 blocks drawing to 9 of 12**.
+   * **ONE DEFECT WAS THE SOLE BLOCKER OF FOUR BLOCKS; SINCE TASK 21 IT IS THREE, AND THE FOURTH
+   * BLOCK STILL DOES NOT DRAW.** `tp-leg-emitter-bypass`'s field-placement refusal was the jumper
+   * `JP5#1 (Jumper:Jumper_2_Open)`, whose Value is its symbol's own part name; that Value is now
+   * emitted hidden and the fields place. **The block then reported a problem nothing had ever
+   * seen** - `label BYPASS_JUMPED ... overlaps label BYPASS_CAP ...` - because
+   * `layout-check.ts`'s `textClearanceProblems` returns a field-placement refusal ALONE and never
+   * runs the text-clearance pass behind it.
+   *
+   * **SO THE LEVERAGE FIGURE IS AN UPPER BOUND AND NOT A COUNT**, for all three blocks that
+   * remain: `5 + 3 = 8` assumes none of them is masking a second problem the way this one was, and
+   * nothing has looked. `docs/known-gaps.md` **G232**, **G257** and **G258**.
    */
   it("classifies every checkLayout problem of every declared block", () => {
     expect(renderCoverage(coverage)).toEqual([
@@ -255,34 +276,53 @@ describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () =
       "tp-leg-lower-a DRAWS",
       "tp-leg-lower-b DRAWS",
       "tp-leg-collector DRAWS",
-      "tp-leg-emitter-bypass refused at obligation 4: checkLayout problems field-placement",
+      "tp-leg-emitter-bypass refused at obligation 4: checkLayout problems label-label-overlap",
       "tp-stage refused at obligation 4: checkLayout problems body-label-overlap, body-label-overlap, field-placement",
       "5 of 12 declared blocks draw",
       "class body-label-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
-      "class field-placement: sole blocker of 4 block(s) (ob-buffer, oc-power, pt-core, tp-leg-emitter-bypass), partial blocker of 1 (tp-stage)",
+      "class field-placement: sole blocker of 3 block(s) (ob-buffer, oc-power, pt-core), partial blocker of 1 (tp-stage)",
+      "class label-label-overlap: sole blocker of 1 block(s) (tp-leg-emitter-bypass), partial blocker of 0 (none)",
     ])
   })
 
-  it("is ONE defect and not four, and names the four blocks it alone blocks", () => {
+  it("is ONE defect and not three, and names the three blocks it alone blocks", () => {
     const field = leverageOf(coverage).find((l) => l.problemClass === "field-placement")
     expect(field).toBeDefined()
-    expect(field?.soleBlocker).toEqual(["ob-buffer", "oc-power", "pt-core", "tp-leg-emitter-bypass"])
+    expect(field?.soleBlocker).toEqual(["ob-buffer", "oc-power", "pt-core"])
     expect(field?.partialBlocker).toEqual(["tp-stage"])
-    // 5 draw now; the four above would take it to 9. A check that could have failed: the sole/partial
-    // SPLIT is asserted, so a class that blocks nothing by itself cannot be read as leverage -
+    // 5 draw now; the three above would take it to 8 at most - see this describe's comment for why
+    // that is a bound and not a count. A check that could have failed: the sole/partial SPLIT is
+    // asserted, so a class that blocks nothing by itself cannot be read as leverage -
     // body-label-overlap is sole blocker of ZERO and that is asserted too.
     expect(coverage.filter((r) => r.draws).length).toBe(5)
-    // 9 of 12 is exact for a FIELD-LOCAL fix and is a ceiling for the routing-cost mechanism, which
-    // would move geometry and re-open obligations 1, 2, 3 and 5. G232 carries the condition.
-    expect(coverage.filter((r) => r.draws).length + (field?.soleBlocker.length ?? 0)).toBe(9)
+    expect(coverage.filter((r) => r.draws).length + (field?.soleBlocker.length ?? 0)).toBe(8)
     const overlap = leverageOf(coverage).find((l) => l.problemClass === "body-label-overlap")
     expect(overlap?.soleBlocker).toEqual([])
+    // And the class Task 21 uncovered is its own: a label over a label, sole blocker of one block.
+    const labels = leverageOf(coverage).find((l) => l.problemClass === "label-label-overlap")
+    expect(labels?.soleBlocker).toEqual(["tp-leg-emitter-bypass"])
   })
 
   it("refuses a problem whose text names no known class, rather than binning it as other", () => {
     expect(() => classOf("block X: something nobody has classified")).toThrow(/matches no known class/)
     expect(() => classOf("block X: something nobody has classified")).toThrow(/ruling R46/)
     expect(classOf("no place for its Reference and Value")).toBe("field-placement")
+  })
+
+  /**
+   * **THE MISBINNING TASK 21 FOUND, AND IT IS A CHECK THAT COULD NOT FIRE RATHER THAN ONE THAT
+   * FIRED WRONGLY.** `body-label-overlap`'s marker was the SUBSTRING `"overlaps label"`, which a
+   * label-over-label problem also contains, so the first matching entry won and the
+   * whitelist-that-throws never saw an unclassified shape. Both shapes are asserted here, from the
+   * real problem texts (`docs/known-gaps.md` **G258**), and a third shape that is neither still
+   * throws - which is the arm the entry above drives.
+   */
+  it("tells a label over a label apart from a body over a label", () => {
+    expect(classOf("label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)")).toBe("label-label-overlap")
+    expect(classOf("body of Q1#1 overlaps label BYPASS_CAP at (11.43, 11.43)")).toBe("body-label-overlap")
+    // And a text-over-body problem, which `textProblems` can also emit, is NOT silently filed as
+    // either of them: nothing has measured one in this corpus, so it must refuse.
+    expect(() => classOf("Reference of C3#1 overlaps body of R6#1")).toThrow(/matches no known class/)
   })
 
   /**

@@ -372,12 +372,20 @@ describe("the four measures of every sheet that emits", () => {
    * giving one sheet extents of 185.42 x 38.10 mm and 109.22 x 71.12 mm for the same content. The
    * first three are properties of the drawing; the fourth is partly a property of the packing, and
    * the generator's own selection rule decides which packing a sheet gets.
+   *
+   * **THE `signal` SHEET's AREA MOVED FROM 19300 TO 18100 AT TASK 21, and it is the change doing
+   * exactly what it was for.** A Value that is nothing but its symbol's own part name is now
+   * emitted hidden and is no longer drawn text, so it contributes no box to the sheet's extent -
+   * and mini's `signal` sheet carries several (`Conn_01x02`, `OPA1678`, `W25X40CLSS`). Nothing
+   * about the ROUTE changed: bends, bends per edge, crossings and wire length are all unmoved on
+   * both sheets, which is what says this is a text-extent move and not a layout one.
+   * `docs/known-gaps.md` **G257**.
    */
   it("is mini's two sheets, with these four measures each", () => {
     const rows = g.drawings.map((d) => `${d.sheet.id}: ${renderMeasures(sheetMeasuresOf(d))}`)
     expect(rows).toEqual([
       "power: bends 3  bends/edge 0.30  crossings 0  wire length 93 grid steps  occupied area 4380.00 sq grid steps",
-      "signal: bends 5  bends/edge 0.16  crossings 0  wire length 154 grid steps  occupied area 19300.00 sq grid steps",
+      "signal: bends 5  bends/edge 0.16  crossings 0  wire length 154 grid steps  occupied area 18100.00 sq grid steps",
     ])
   })
 

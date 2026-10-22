@@ -66,21 +66,36 @@ export function gateOf(refusal: string): string {
   return found.gate
 }
 
-/** The classes of `checkLayout` problem this corpus produces, each with the text that names it. */
-export const PROBLEM_CLASSES: readonly { readonly marker: string; readonly problemClass: string }[] = [
-  { marker: "no place for its Reference and Value", problemClass: "field-placement" },
-  { marker: "overlaps label", problemClass: "body-label-overlap" },
+/**
+ * The classes of `checkLayout` problem this corpus produces, each with the text that names it.
+ *
+ * **THE MARKERS ARE ANCHORED PATTERNS AND NOT SUBSTRINGS, BECAUSE A SUBSTRING MISFILED A REAL
+ * PROBLEM RATHER THAN THROWING ON IT** (Task 21). `body-label-overlap`'s marker was the substring
+ * `"overlaps label"`, which `"label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at
+ * (12.7, 5.08)"` contains - so a LABEL over a LABEL was counted as a BODY over a label, and the
+ * whitelist-that-throws this module relies on did not fire, because the wrong entry matched first.
+ * That problem is the one Task 21 uncovered in `tp-leg-emitter-bypass` (`docs/known-gaps.md`
+ * **G257**), and it is a different defect from a body over a label: nothing about moving a body
+ * fixes it.
+ *
+ * An anchored pattern per class is what makes the refusal below reachable again - a shape neither
+ * pattern matches is unclassified, which is the state this module is built to refuse.
+ */
+export const PROBLEM_CLASSES: readonly { readonly pattern: RegExp; readonly problemClass: string }[] = [
+  { pattern: /no place for its Reference and Value/, problemClass: "field-placement" },
+  { pattern: /^body of \S+ overlaps label /, problemClass: "body-label-overlap" },
+  { pattern: /^label .* overlaps label /, problemClass: "label-label-overlap" },
 ]
 
 export function classOf(problem: string): string {
-  const found = PROBLEM_CLASSES.find((p) => problem.includes(p.marker))
+  const found = PROBLEM_CLASSES.find((p) => p.pattern.test(problem))
   if (found === undefined) {
     throw new Error(
       `this checkLayout problem matches no known class, so it cannot be counted toward how many ` +
         `blocks one fix would unblock: ${problem.slice(0, 200)}. It is NOT filed under "other": the ` +
         "counts this module produces are the leverage behind a scope decision (ruling R46), and a " +
         "problem binned into the wrong class would misstate it. Add the class to PROBLEM_CLASSES. " +
-        `Known markers: ${PROBLEM_CLASSES.map((p) => p.marker).join(" | ")}.`,
+        `Known patterns: ${PROBLEM_CLASSES.map((p) => p.pattern.source).join(" | ")}.`,
     )
   }
   return found.problemClass

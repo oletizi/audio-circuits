@@ -270,6 +270,15 @@ criterion."*
 | **composed by seam B** | accepted | 14 | 67 | 13 | 38 | 1.31 | **0** | **224** | 7038 | 3.33 |
 | **the crossing RATIO of the two ends** | - | - | - | - | - | - | **NOT TAKEN** | - | - | - |
 
+> **AMENDED 2026-10-21 BY TASK 21, on the `composed by seam B` row only: its
+> occupied area is now 7152 and its aspect 3.10.** Every other figure on every
+> row is unchanged. The composed bounding box went from 153.0 x 46.0 grid steps
+> to 149.0 x 48.0 because four of the five blocks hold a jumper whose Value is
+> `Jumper_2_Open`, and such a Value - one that is nothing but its symbol's own
+> part name - is now emitted hidden rather than drawn
+> (`docs/known-gaps.md` **G257**). The crossing and wire-length readings this
+> section is about are untouched: the change moves no route.
+
 **THE CROSSING RATIO IS A ROW THAT SAYS "NOT TAKEN" RATHER THAN A ROW THAT IS
 MISSING, and the reason is in the table above it: the composed side measures
 ZERO crossings, so there is no denominator.** A ratio there would have had to be

@@ -57,6 +57,20 @@ against a generated drawing is still unreachable, and what stands in the way for
 `transistor-preamp` is now one defect rather than four classes of authoring
 work.
 
+**AMENDED 2026-10-21 BY TASK 21: THAT ONE DEFECT IS FIXED FOR THIS CIRCUIT AND
+GATE 8 IS STILL UNREACHABLE, because the block was hiding a second defect.** A
+Value that is nothing but its symbol's own part name - `Jumper_2_Open` on
+`JP5#1` - is now emitted hidden and needs no room on the sheet, so the
+field-placement refusal above is gone. `[RAN]` `generate` on
+`transistor-preamp-lab` with `initLock` into a fresh temp directory, before and
+after, in one action: both refuse, and the refusal moved to *"label
+BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)"* in
+the **same block**. That problem had never been reported, because
+`layout-check.ts` returns a field-placement refusal alone and never runs the
+text-clearance pass behind it. **So the generated side of gate 8's comparison
+still does not exist, no row was taken, and nothing here was pointed at the
+`mini` fixture to obtain one.** `docs/known-gaps.md` **G257** and **G258**.
+
 This is **the fourth instance in this plan of machinery built and not
 exercised**, and it belongs to the pattern **G226** already records rather than
 being discovered again. That entry's ask is met here and in **G240**: the
