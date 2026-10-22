@@ -33,10 +33,10 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
   it("is these twelve sweep rows", () => {
     expect(renderSweep(sweep)).toEqual([
       "ob-buffer parts=9 placements=11 orders=4 crossings 7, 7, 4, 8 MOVES [gates refuse]",
-      "oc-power parts=8 placements=8 orders=4 crossings 1, 3, 2, 2 MOVES [gates refuse]",
+      "oc-power parts=8 placements=8 orders=4 crossings 1, 3, 2, 2 MOVES",
       "oc-audio parts=12 placements=14 orders=4 crossings 5, 12, 7, 6 MOVES [gates refuse]",
       "oc-sidechain parts=17 placements=19 orders=4 crossings 7, 14, 9, 19 MOVES [gates refuse]",
-      "pt-core parts=24 placements=24 orders=4 crossings 78, 53, 39, 65 MOVES [gates refuse]",
+      "pt-core parts=24 placements=24 orders=4 crossings 78, 53, 39, 65 MOVES",
       "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-feedback parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-a parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
@@ -66,7 +66,7 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
     expect(sizeCoverage(sweep).map((s) => `${s.placements}: ${s.unmeasured ? "unmeasured" : `${s.subjects.length} subject(s), ${s.refusedSubjects} refused`}`)).toEqual([
       "3: 4 subject(s), 0 refused",
       "4: unmeasured",
-      "8: 1 subject(s), 1 refused",
+      "8: 1 subject(s), 0 refused",
       "9: unmeasured",
       "13: unmeasured",
       "17: unmeasured",

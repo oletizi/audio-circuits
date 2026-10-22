@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/layoutCheck.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/layoutCheck.ts`, and DIVERGED from it
+ * by Task 24 of the M1 schematic-authoring plan: `textClearanceProblems` no longer early-returns a
+ * field-placement refusal, because the placer no longer produces one.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139** and **G258**.
  */
 
 /**
@@ -14,7 +18,6 @@ import { unitKey, type PartLabel } from "../ir/types.ts";
 import type { BlockLayout, BlockSubgraph, BlockUnit, Placement } from "./block-types.ts";
 import { clearanceProblems } from "./body-clearance.ts";
 import { assertWireShape, connectedComponents, type ConnComponent, type ConnItem } from "./connectivity.ts";
-import { blockFieldProblems } from "./field-placement.ts";
 import { bodyGlyphProblems, glyphGlyphProblems } from "./glyph-clearance.ts";
 import { assertOnGrid, boxesOverlap, placeBox, type Point } from "./geometry.ts";
 import { anchorsToSymbols, blockPowerLibs, valuesAlong } from "./power-text.ts";
@@ -161,13 +164,18 @@ function anchorProblems(g: BlockSubgraph, layout: BlockLayout): string[] {
 }
 
 /**
- * The block's own text (fields, power values, labels) against its own drawing; a unit whose
- * fields have no clear slot (fieldPlacement) is a problem too. Throws when a power symbol is not
- * one of the block's rails.
+ * The block's own text (fields, power values, labels) against its own drawing. Throws when a power
+ * symbol is not one of the block's rails.
+ *
+ * **IT USED TO RETURN THE FIELD-PLACEMENT REFUSAL AND STOP, WHICH IS HOW ONE DEFECT HID ANOTHER
+ * FOR THE WHOLE OF G232's LIFE** (`docs/known-gaps.md` **G258**): building a text scene places
+ * fields, so a block whose fields did not place had no scene, and every other text-clearance
+ * problem it carried went unreported. `field-placement.ts` no longer refuses, so there is no
+ * refusal to early-return and the full text pass runs on every block. **The mask is gone as a
+ * consequence of Task 24 rather than as a fix aimed at it**, and what it was hiding is now in this
+ * function's own output.
  */
 function textClearanceProblems(g: BlockSubgraph, layout: BlockLayout): string[] {
-  const unplaced = blockFieldProblems(g, layout, blockPowerLibs(g));
-  if (unplaced.length > 0) return unplaced;
   const { powers, labels } = anchorsToSymbols(g,layout.anchors, valuesAlong(g.block.rendering));
   return textProblems(textScene(`block ${g.block.id}`, blockPowerLibs(g), { blocks: [{ g, layout }], powers, labels, texts: [], frames: [] }));
 }

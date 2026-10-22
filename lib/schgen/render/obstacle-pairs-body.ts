@@ -137,7 +137,7 @@ export const BODY_PAIRS: readonly PairCoverage[] = [
       "undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box))`.",
     meaninglessBecause: null,
     asymmetric:
-      "Fields the placer put INSIDE their own body are exempt by `Named.owner`. `tryPlaceFields` " +
+      "Fields the placer put INSIDE their own body are exempt by `Named.owner`. `placeFields` " +
       "(field-placement.ts) is what holds them instead: an inside candidate must satisfy " +
       "`within(b, p.body)` and clear that unit's own `interiorBoxes` and `strokes`, and the block is " +
       "refused when no candidate fits.",
@@ -268,7 +268,7 @@ export const PIN_LINE_PAIRS: readonly PairCoverage[] = [
     b: "field-text",
     checkedBy:
       "textProblems (lib/schgen/render/text-scene.ts): `drawn.pins` go into `segments` and the loop is " +
-      "`for (const s of scene.segments) if (segmentHitsBox(s.a, s.b, t.box))`. `tryPlaceFields` " +
+      "`for (const s of scene.segments) if (segmentHitsBox(s.a, s.b, t.box))`. `placeFields` " +
       "(field-placement.ts) uses the same `p.pins` as segments when choosing a slot, so a field is placed " +
       "clear of them and then checked independently.",
     meaninglessBecause: null,

@@ -108,8 +108,8 @@ export const PIN_NUMBER_PAIRS: readonly PairCoverage[] = [
     a: "pin-number",
     b: "field-text",
     checkedBy:
-      "textProblems (text-scene.ts), the same `texts × pinTexts` loop; AND tryPlaceFields " +
-      "(field-placement.ts), whose `fixed` obstacles open with " +
+      "textProblems (text-scene.ts), the same `texts × pinTexts` loop; AND placeFields " +
+      "(field-placement.ts), whose `fixedMarks` obstacles open with " +
       "`...prepared.flatMap((p) => p.decorations)`, so a field is PLACED clear of every pin number and " +
       "then checked independently. A unit with no clear slot refuses the block.",
     meaninglessBecause: null,
@@ -202,9 +202,9 @@ export const PIN_NAME_PAIRS: readonly PairCoverage[] = [
     a: "pin-name",
     b: "field-text",
     checkedBy:
-      "textProblems (text-scene.ts), the `texts × pinTexts` loop; AND tryPlaceFields " +
+      "textProblems (text-scene.ts), the `texts × pinTexts` loop; AND placeFields " +
       "(field-placement.ts), where an INSIDE field candidate must clear `p.interiorBoxes` " +
-      "(`blockers` carries them when `inside` is true) as well as lie `within` its own body.",
+      "(`obstacles(true)` carries them when the candidate is inside) as well as lie `within` its own body.",
     meaninglessBecause: null,
     asymmetric: null,
   },

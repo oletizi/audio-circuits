@@ -44,6 +44,24 @@ interface Named {
   readonly owner?: string | undefined;
   /** Set on DNP pin-polarity marks, which must also clear every DNP cross. */
   readonly mark?: boolean | undefined;
+  /**
+   * **Set on a unit's Reference and Value when `field-placement.ts` had no clear slot for them and
+   * placed them at the least-covered candidate** (`FieldFallback`).
+   *
+   * `textProblems` does not report its overlaps, and that is deliberate and is the whole risk of
+   * Task 24's change: the placer already decided this text has nowhere clear to go, so reporting
+   * it here would re-refuse the drawing the fallback exists to produce. **It is NOT unreported.**
+   * The placer returns one `FieldFallback` per such unit naming everything it covers, `sheets.ts`
+   * carries them onto the `SheetDrawing`, and `report.ts` prints them per block and per unit in
+   * every generation's `RENDER-REPORT.md`. **A reader of the check sees nothing; a reader of the
+   * drawing's own report sees the count and the names** - which is where a degradation belongs,
+   * and why this flag's name says what it is.
+   *
+   * **The frame-border clause still applies to it.** Crossing a frame border is not an overlap
+   * with something drawn; it is text leaving the block it belongs to, where it can collide with a
+   * block the placer never saw. Nothing about having no clear slot licenses that.
+   */
+  readonly fallback?: boolean | undefined;
 }
 
 export interface TextScene {
@@ -124,14 +142,15 @@ export function textScene(scope: string, symbols: LibLookup, parts: SceneParts, 
       const u = g.units.find((x) => `${x.part.label}#${x.unit}` === t.key);
       if (u === undefined) throw new Error(`${scope}: ${t.key} is not a unit of block ${g.block.id}`);
       const owner = t.inside ? t.key : undefined;
-      texts.push({ what: `Reference of ${t.key}`, box: textBox(t.fields.reference, reservedReference(u.part.refPrefix)), owner });
+      const fallback = t.fallback === null ? undefined : true;
+      texts.push({ what: `Reference of ${t.key}`, box: textBox(t.fields.reference, reservedReference(u.part.refPrefix)), owner, fallback });
       // A Value that is nothing but the symbol's own part name is emitted HIDDEN
       // (`render/emit-items.ts`), so it is not drawn text and has no box here. This is the same
       // rule `render/field-placement.ts` uses to decide what needs a slot, from the same function,
       // so what that places is exactly what this checks - the invariant this module's header
       // states. Task 21; `docs/known-gaps.md` **G232**, **G257**.
       if (!valueIsSymbolPartName(u.symbol.libId, u.part.value)) {
-        texts.push({ what: `Value of ${t.key}`, box: textBox(t.fields.value, u.part.value), owner });
+        texts.push({ what: `Value of ${t.key}`, box: textBox(t.fields.value, u.part.value), owner, fallback });
       }
     }
   }
@@ -151,15 +170,24 @@ export function textScene(scope: string, symbols: LibLookup, parts: SceneParts, 
 const strictlyWithin = (inner: Box, outer: Box): boolean =>
   outer.minX < inner.minX && inner.maxX < outer.maxX && outer.minY < inner.minY && inner.maxY < outer.maxY;
 
-/** Every overlap of a text with something else, one line each naming both. */
+/**
+ * Every overlap of a text with something else, one line each naming both.
+ *
+ * **A FALLBACK FIELD IS PARTY TO NO OVERLAP LINE, and `Named.fallback` is where that is argued.**
+ * It is skipped as the subject and as the object, so a clean text is not reported for being
+ * covered by one either: the placer chose that overlap knowingly, over refusing the drawing, and
+ * the `FieldFallback` it returned is what reports it. The frame-border clause is the exception and
+ * still applies.
+ */
 export function textProblems(scene: TextScene): string[] {
   const out: string[] = [];
   scene.texts.forEach((t, i) => {
-    for (const o of scene.texts.slice(i + 1)) if (boxesOverlap(t.box, o.box)) out.push(`${t.what} overlaps ${o.what}`);
-    for (const s of scene.segments) if (segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
-    for (const b of scene.bodies) if ((t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(`${t.what} overlaps ${b.what}`);
-    for (const p of scene.pinTexts) if (boxesOverlap(t.box, p.box)) out.push(`${t.what} overlaps ${p.what}`);
-    for (const s of scene.strokes) if (segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
+    const chosen = t.fallback === true;
+    for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(`${t.what} overlaps ${o.what}`);
+    for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
+    for (const b of scene.bodies) if (!chosen && (t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(`${t.what} overlaps ${b.what}`);
+    for (const p of scene.pinTexts) if (!chosen && boxesOverlap(t.box, p.box)) out.push(`${t.what} overlaps ${p.what}`);
+    for (const s of scene.strokes) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
     if (t.mark === true) for (const x of scene.crosses) if (boxesOverlap(t.box, x.box)) out.push(`${t.what} lies under ${x.what}`);
     for (const f of scene.frames) {
       if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)) out.push(`${t.what} crosses the border of ${f.what}`);

@@ -23,6 +23,7 @@
  */
 import type { BlockId, Circuit, PartLabel, SheetId } from "./ir/types.ts";
 import type { SheetDrawing } from "./render/sheet-types.ts";
+import type { FieldFallback } from "./render/field-placement.ts";
 import { renderMeasures, sheetMeasuresOf, type SchematicMeasures } from "./readability/measures.ts";
 
 export interface BlockReport {
@@ -67,6 +68,18 @@ export interface RenderReport {
   readonly sheets: readonly SheetCounts[];
   readonly measures: readonly SheetMeasures[];
   readonly ncUnlisted: readonly { part: PartLabel; reason: string; pins: readonly string[] }[];
+  /**
+   * **EVERY REFERENCE/VALUE PAIR THIS GENERATION DREW OVER SOMETHING, per sheet, per block, per
+   * unit** - and this section is the whole reason Task 24's change is not a silent degradation.
+   *
+   * `render/field-placement.ts` used to refuse a block it had no clear slot for, which stopped the
+   * generation. It now takes the least-covered candidate, which means a sheet can be produced with
+   * overlapping text, and `render/text-scene.ts` deliberately does not report those overlaps - the
+   * placer already knew. **So this is the channel.** A reader of `RENDER-REPORT.md` sees the count
+   * and what each one covers; without it, the only visible difference between a clean sheet and a
+   * degraded one would be the drawing itself.
+   */
+  readonly fieldFallbacks: readonly { sheet: SheetId; fallbacks: readonly FieldFallback[] }[];
 }
 
 function blockReports(c: Circuit): BlockReport[] {
@@ -111,6 +124,7 @@ export function buildReport(c: Circuit, drawings: readonly SheetDrawing[]): Rend
     sheets: drawings.map(sheetCounts),
     measures: drawings.map((d) => ({ sheet: d.sheet.id, measures: sheetMeasuresOf(d) })),
     ncUnlisted,
+    fieldFallbacks: drawings.map((d) => ({ sheet: d.sheet.id, fallbacks: d.fieldFallbacks })),
   };
 }
 
@@ -127,6 +141,25 @@ export function renderReport(r: RenderReport): string {
     (s) => `| ${cell(s.sheet)} | ${s.parts} | ${s.units} | ${s.wires} | ${s.labels} | ${s.powerSymbols} | ${s.noConnects} | ${s.junctions} |`,
   );
   const nc = r.ncUnlisted.map((n) => `- ${n.part} (${n.reason}): ${n.pins.length} pins: ${n.pins.join(", ")}`);
+  const fallbacks = r.fieldFallbacks.flatMap((f) => f.fallbacks);
+  const fallbackLines =
+    fallbacks.length === 0
+      ? []
+      : [
+          `**${fallbacks.length} field pair(s) on this generation's sheets are drawn over something.** The`,
+          "placer had no clear slot for them and took the least-covered one rather than refuse the",
+          "drawing. These overlaps are NOT reported by the text-clearance checks - the placer already",
+          "knew - so this list is where they are reported, and a sheet with a row here is not a clean",
+          "sheet.",
+          "",
+          "| Sheet | Block | Unit | Symbol | Covers | Weighted overlap (um^2) |",
+          "|---|---|---|---|---|---|",
+          ...r.fieldFallbacks.flatMap((s) =>
+            s.fallbacks.map(
+              (f) => `| ${cell(s.sheet)} | ${cell(f.block)} | ${cell(f.key)} | ${cell(f.libId)} | ${cell(f.covers.join("; "))} | ${f.cost} |`,
+            ),
+          ),
+        ];
   return [
     "# Render report",
     "",
@@ -140,6 +173,7 @@ export function renderReport(r: RenderReport): string {
         : ["| Sheet | Parts | Units | Wires | Labels | Power symbols | No-connects | Junctions |", "|---|---|---|---|---|---|---|---|", ...sheetRows],
     ),
     ...section("Pins declared not connected in bulk", nc),
+    ...section("Field placements the placer could not keep clear", fallbackLines),
     ...section("Readability measures, per sheet", [
       "Spec 3.3's four measures. There is NO composite score: four numbers moving in different",
       "directions cannot be resolved into a verdict by anything the spec states, so these are",

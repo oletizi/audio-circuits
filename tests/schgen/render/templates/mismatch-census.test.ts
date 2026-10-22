@@ -37,13 +37,23 @@ const TEMPLATE_DIR = path.resolve(import.meta.dir, "../../../../lib/schgen/rende
 type SiteKind = "notApplicable" | "invalidGeometry" | "clearanceViolation" | "backendRaised" | "forward"
 
 /**
- * **THE CLASSIFIED REFUSAL SITES, per module and per kind.** Thirty of them, which is the number
- * spec 1.3 states and Task 7 pinned, and the split is what Task 8 added:
+ * **THE CLASSIFIED REFUSAL SITES, per module and per kind.** Twenty-nine of them, and the number
+ * MOVED in Task 24 from the thirty spec 1.3 states and Task 7 pinned:
  *
  * - **21 direct** - `notApplicable` x18, `invalidGeometry` x2 (both in `regulator.ts`, the two
  *   sites where a template has drawn and the IR contradicts it), `clearanceViolation` x1 (in
  *   `connector-fanout.ts`, the one site that runs `checkLayout` itself);
- * - **9 forwards** of another result type's already-classified mismatch.
+ * - **8 forwards** of another result type's already-classified mismatch.
+ *
+ * **THE SITE THAT WENT WAS `crystal.ts`'s, AND IT WENT BECAUSE THE THING IT FORWARDED CANNOT
+ * HAPPEN ANY MORE.** It forwarded `drawn-extent.ts`'s `Measured` refusal, whose only cause was a
+ * unit whose fields had nowhere to go; `render/field-placement.ts` no longer refuses that - it
+ * takes the least-covered slot and records a `FieldFallback` - so `Measured` is deleted and
+ * `drawnBoxes` returns the boxes. Keeping a forward of a value nothing can build would be a check
+ * that cannot fail (`docs/known-gaps.md` **G236**). `regulator.ts`'s `reachOf` forwarded the same
+ * refusal and is NOT in this count either way: it wrote `: drawn` rather than
+ * `mismatch: drawn.mismatch`, which this file's `forward` pattern never matched - a gap in the
+ * pattern, recorded here because the deletion is what made it visible.
  *
  * `backendRaised` is 0 everywhere, and that is deliberate rather than an omission: no template
  * raises on its own behalf. `render/blocks.ts` builds that kind when a template THROWS, and the
@@ -58,7 +68,7 @@ type SiteKind = "notApplicable" | "invalidGeometry" | "clearanceViolation" | "ba
  */
 const EXPECTED: Readonly<Record<string, Readonly<Partial<Record<SiteKind, number>>>>> = {
   "connector-fanout.ts": { notApplicable: 1, clearanceViolation: 1, forward: 1 },
-  "crystal.ts": { notApplicable: 5, forward: 1 },
+  "crystal.ts": { notApplicable: 5 },
   "divider.ts": { notApplicable: 6 },
   "index.ts": {},
   "opamp-classify.ts": {},
@@ -68,7 +78,7 @@ const EXPECTED: Readonly<Record<string, Readonly<Partial<Record<SiteKind, number
   "regulator.ts": { notApplicable: 3, invalidGeometry: 2, forward: 3 },
 }
 
-const TOTAL = 30
+const TOTAL = 29
 
 /**
  * Source text with comments and string/template literals blanked out, newlines kept so line
@@ -152,7 +162,7 @@ function sites(): readonly Site[] {
 const describeSites = (found: readonly Site[]): string => found.map((s) => `${s.file}:${s.line} ${s.kind}`).join(" ")
 
 describe("the template mismatch census", () => {
-  test("every refusal site in the template set is classified, and there are still thirty", () => {
+  test("every refusal site in the template set is classified, and there are twenty-nine", () => {
     const found = sites()
     expect(found.length, `sites: ${describeSites(found)}`).toBe(TOTAL)
   })
@@ -176,9 +186,10 @@ describe("the template mismatch census", () => {
 
   /**
    * **THE TOTALS BY KIND, which is the sentence spec 1.3 cares about.** Eighteen shape tests, two
-   * pieces of invalid geometry, one clearance violation, nine forwards, and **no site reporting an
-   * undifferentiated string, because `mismatch(reason)` no longer exists**. The last of those is
-   * asserted directly below rather than inferred from the counts.
+   * pieces of invalid geometry, one clearance violation, EIGHT forwards (nine until Task 24
+   * deleted `crystal.ts`'s), and **no site reporting an undifferentiated string, because
+   * `mismatch(reason)` no longer exists**. The last of those is asserted directly below rather
+   * than inferred from the counts.
    */
   test("the four kinds and the forwards add up, and nothing is unclassified", () => {
     const found = sites()
@@ -189,7 +200,7 @@ describe("the template mismatch census", () => {
       clearanceViolation: byKind("clearanceViolation"),
       backendRaised: byKind("backendRaised"),
       forward: byKind("forward"),
-    }).toEqual({ notApplicable: 18, invalidGeometry: 2, clearanceViolation: 1, backendRaised: 0, forward: 9 })
+    }).toEqual({ notApplicable: 18, invalidGeometry: 2, clearanceViolation: 1, backendRaised: 0, forward: 8 })
   })
 
   /**
@@ -224,12 +235,18 @@ describe("the template mismatch census", () => {
   })
 
   /**
-   * **THE FIVE HELPER TYPES THAT FORWARD A REFUSAL.** Task 7 pinned that each had a bare-string
+   * **THE THREE HELPER TYPES THAT FORWARD A REFUSAL.** Task 7 pinned that each had a bare-string
    * false arm, because that was the hole Task 8 had to close; this is the same check inverted.
-   * Each now carries a `Mismatch`, so a refusal keeps its kind across the boundary - and the nine
+   * Each now carries a `Mismatch`, so a refusal keeps its kind across the boundary - and the eight
    * `forward` sites above are where they cross it. The brief named `StagePlanResult` for
    * `opamp-classify.ts`; the exported type is `Planned` (a Produces discrepancy recorded in
    * `docs/known-gaps.md` **G138**), and this uses the name the source has.
+   *
+   * **IT WAS FIVE UNTIL TASK 24 DELETED TWO OF THEM.** `field-placement.ts`'s `FieldsResult` and
+   * `drawn-extent.ts`'s `Measured` are gone: the placer stopped refusing a unit with no clear
+   * slot, so neither union had a false arm any input could reach. A union kept for the shape of it
+   * is **G236**'s check that cannot fail, so the pair was deleted rather than left to be asserted
+   * about here forever.
    */
   test("each helper result type that forwards a refusal carries a Mismatch, not a bare string", () => {
     const RENDER = path.resolve(TEMPLATE_DIR, "..")
@@ -237,10 +254,8 @@ describe("the template mismatch census", () => {
       { file: "templates/rail-row.ts", name: "CommonRailLadder" },
       { file: "templates/opamp-classify.ts", name: "Planned" },
       { file: "fanout-kit.ts", name: "TraceResult" },
-      { file: "drawn-extent.ts", name: "Measured" },
-      { file: "field-placement.ts", name: "FieldsResult" },
     ]
-    expect(types.length, "a helper-type list nothing iterates is a check that cannot fail").toBe(5)
+    expect(types.length, "a helper-type list nothing iterates is a check that cannot fail").toBe(3)
     for (const { file, name } of types) {
       const text = fs.readFileSync(path.join(RENDER, file), "utf8")
       // Up to the first `;` that ENDS a line: the `;` separators inside the union's object

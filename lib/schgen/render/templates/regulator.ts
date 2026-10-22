@@ -30,9 +30,9 @@
  *   against them: this template HAS applied, and what it produced disagrees with a connection the
  *   IR holds. Each names that connection - the pin and the net it is on - because *"the geometry
  *   is wrong"* without saying which connection is a refusal nobody can act on.
- * - **One forward of a `clearance`** mismatch: `reachOf` measures the real drawing through
- *   `drawnBoxes`, and its one failure is a unit whose fields have nowhere to go, which
- *   `tryPlaceFields` has already classified and named the blocker of.
+ * - **`reachOf` NO LONGER FORWARDS ANYTHING** (Task 24): it measures the real drawing through
+ *   `drawnBoxes`, whose one failure was a unit whose fields had nowhere to go, and
+ *   `render/field-placement.ts` no longer refuses that. `drawnBoxes` returns the boxes.
  */
 import type { NetName, PinNumber } from "../../ir/types.ts";
 import { invalidGeometry, notApplicable, type Anchor, type BlockLayout, type BlockSubgraph, type BlockUnit, type Mismatch, type Placement, type RealiseResult, type Template, type Wire } from "../block-types.ts";
@@ -155,8 +155,7 @@ function reachOf(g: BlockSubgraph, base: BlockLayout, buses: readonly BusEnd[]):
       wires.push({ a: t, b: { x, y: t.y }, net: b.net }, { a: { x, y: t.y }, b: { x, y: b.end.y }, net: b.net });
     });
   }
-  const drawn = drawnBoxes(g, { ...base, wires });
-  return drawn.ok ? { ok: true, bounds: boundsOf(drawn.boxes) } : drawn;
+  return { ok: true, bounds: boundsOf(drawnBoxes(g, { ...base, wires })) };
 }
 
 type Banks = { readonly ok: true; readonly in: BlockUnit[]; readonly out: BlockUnit[] } | { readonly ok: false; readonly mismatch: Mismatch };

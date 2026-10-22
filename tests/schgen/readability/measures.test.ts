@@ -162,16 +162,23 @@ describe("the four measures of every block that draws", () => {
   /**
    * **THE FIGURES THE REGISTER QUOTES, PINNED HERE SO A LATER READER CAN RE-RUN THEM.** G209's own
    * lesson: Task 15's first round computed its numbers in a scratch script and *"were the only
-   * number in these entries nobody else could reproduce"*. These five rows are
+   * number in these entries nobody else could reproduce"*. The five leg rows are
    * `docs/known-gaps.md`'s Task 16 entry, and a change in the generator that moved any of them
    * turns this red naming the block.
+   *
+   * **TASK 24 ADDED TWO ROWS AND MOVED NONE.** `oc-power` and `pt-core` draw now, because
+   * `render/field-placement.ts` places a unit with no clear slot at the least-covered candidate
+   * instead of refusing the block. **Every leg figure is byte-identical**, which is the control
+   * that the change moved text and not geometry - a field's position is not a wire's.
    */
-  it("is the five transistor-preamp legs, with these four measures each", () => {
+  it("is the five transistor-preamp legs plus the two Task 24 unblocked, with these four measures each", () => {
     const rows = blocks.map((b) => {
       const m = measuresOf(b.topology, b.pins)
       return `${b.id} cells=${b.cells} bends=${m.bends} perEdge=${m.bendsPerEdge.toFixed(2)} crossings=${m.crossings} len=${m.wireLength} area=${m.occupiedArea}`
     })
     expect(rows).toEqual([
+      "oc-power cells=8 bends=5 perEdge=0.19 crossings=1 len=163 area=1060",
+      "pt-core cells=24 bends=83 perEdge=1.15 crossings=78 len=2472 area=12648",
       "tp-leg-upper cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
       "tp-leg-feedback cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
       "tp-leg-lower-a cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
@@ -181,15 +188,37 @@ describe("the four measures of every block that draws", () => {
   })
 
   it("sums to G200's own figures for the same five blocks, which were taken independently", () => {
-    // G200: 14 placements and 224.0 grid steps of wire over the five blocks that draw. Computed
+    // G200: 14 placements and 224.0 grid steps of wire over the five blocks it measured. Computed
     // here from the canonical topology rather than from the raw wire list, so an agreement is a
     // real cross-check: the two measurements come from different code.
-    expect(blocks.reduce((n, b) => n + b.cells, 0)).toBe(14)
-    expect(blocks.reduce((n, b) => n + measuresOf(b.topology, b.pins).wireLength, 0)).toBe(224)
+    //
+    // **THE FIVE ARE NAMED SINCE TASK 24**, when `oc-power` and `pt-core` started drawing: summing
+    // every drawn block would compare a seven-block total against a five-block table, which is two
+    // different quantities wearing one number (**G220**).
+    const G200_BLOCKS = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+    const five = blocks.filter((b) => G200_BLOCKS.includes(b.id))
+    expect(five.length, "G200's five blocks all still draw").toBe(5)
+    expect(five.reduce((n, b) => n + b.cells, 0)).toBe(14)
+    expect(five.reduce((n, b) => n + measuresOf(b.topology, b.pins).wireLength, 0)).toBe(224)
   })
 
-  it("measures ZERO crossings on every one of them, which is why the fixtures above exist", () => {
-    expect(blocks.map((b) => measuresOf(b.topology, b.pins).crossings)).toEqual([0, 0, 0, 0, 0])
+  /**
+   * **THE FIVE LEGS CROSS NOTHING AND THE TWO NEW BLOCKS DO, which is why the fixtures above
+   * exist and is now visible in the corpus itself.** Until Task 24 every block that drew measured
+   * zero crossings, so a crossing count taken only here ran over a term that could not move; it
+   * can now - `pt-core` draws with **78**.
+   */
+  it("measures ZERO crossings on the five legs, and names the crossings of the two that are not legs", () => {
+    const crossings = new Map(blocks.map((b) => [b.id, measuresOf(b.topology, b.pins).crossings]))
+    expect([...crossings.entries()]).toEqual([
+      ["oc-power", 1],
+      ["pt-core", 78],
+      ["tp-leg-upper", 0],
+      ["tp-leg-feedback", 0],
+      ["tp-leg-lower-a", 0],
+      ["tp-leg-lower-b", 0],
+      ["tp-leg-collector", 0],
+    ])
   })
 
   it("and the pin set enlarges NONE of their areas, which is the other reason", () => {
@@ -346,6 +375,8 @@ describe("D1's report line, per declared ELK block", () => {
   it("classifies each drawn block against the CEILING's shape, and names no floor", async () => {
     const blocks = await drawnBlocks()
     expect(blocks.map((b) => `${b.id} cells=${b.cells} ${baselineScale(b.cells).kind}`)).toEqual([
+      "oc-power cells=8 about-a-serialization",
+      "pt-core cells=24 about-a-serialization",
       "tp-leg-upper cells=3 about-the-circuit",
       "tp-leg-feedback cells=3 about-the-circuit",
       "tp-leg-lower-a cells=3 about-the-circuit",

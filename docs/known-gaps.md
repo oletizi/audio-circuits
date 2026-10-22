@@ -1377,6 +1377,242 @@ made.
   **No agent writes the acceptance criterion for "a schematic the owner
   accepts"**; that is his, and **G240** says so.
 
+> **AMENDED 2026-10-21 BY TASK 24: THE SCHEMATIC ROW IS RE-MEASURED, BOARD BY BOARD, AND THE BOARD
+> FIGURE DID NOT MOVE.**
+>
+> | | at `a5c36e0` | at this commit |
+> | --- | --- | --- |
+> | boards in `boards/` that produce a schematic | **0 of 11** | **0 of 11** |
+> | declared blocks that draw in isolation | 5 of 12 | **7 of 12** |
+>
+> `[RAN]` `tools/schgen/board-sheets.ts`, which is new and committed in this change, over every
+> board directory at both commits. **It is a board-level census and this entry needed one**: the
+> schematic row above was `5 of 12 blocks` beside `0 of 11 boards`, two different subjects in one
+> row, and the owner's test is the board. The tool reads each board's own `perfboard.json` for the
+> circuit and builder it is, matches that builder against the declared `SchematicAuthoring`
+> entries, and reports `generated`, `refused` with the blocker in full, or `no-declaration`.
+>
+> **THE ELEVEN BOARDS, AND WHAT STANDS IN FRONT OF EACH:**
+>
+> | board | outcome | blocker |
+> | --- | --- | --- |
+> | `pt2399-core` | refused | gate 1: **18** `validateCircuit` problems, all net names (`Net-(C10-Pad1)`, `+5V`, … are not UPPER_SNAKE) plus one single-pin net |
+> | `transistor-preamp-lab` | refused | block `tp-leg-emitter-bypass`, obligation 4: `label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)` |
+> | `pultec-hi-boost`, `pultec-hi-cut`, `pultec-low-boost`, `pultec-low-cut`, `pultec-mid` | no declaration | no `SchematicAuthoring` for `pultecHiBoost()` and the other four builders |
+> | `transistor-preamp-buffered`, `-feedback`, `-loop`, `-staged` | no declaration | the same: `circuits/transistor-preamp/` holds five board builders and ONE declaration, written against `transistorPreampLab()` (**G247**) |
+>
+> **SO THE SCHEMATIC CLASS FAILS IN THREE DIFFERENT WAYS AND ONLY ONE OF THEM IS A DRAWING
+> DEFECT.** Nine of eleven boards are not refused by any drawing code - nothing has been offered to
+> it. One is refused before any block is laid out. One is refused by a defect in LABEL placement.
+> **Fixing field placement, which is what this branch's last task did, could not have moved this
+> number**, and this entry's prediction that the schematic is *"the cheapest of the three missing
+> classes"* is unaffected either way.
+>
+> **AND THE REMAINING TEXT DEFECT DOES NOT YIELD TO THE TECHNIQUE THAT FIXED THE FIELD ONE, which
+> is the part a reader would otherwise assume.** A unit's Reference and Value may be put anywhere
+> that reads: their position carries no electrical meaning, which is why a least-covered fallback is
+> available for them. **A global label's position IS a netlist fact** - it connects where it is
+> drawn - so the same mechanism cannot move one off an overlap. What a label does have free is its
+> SIDE (`anchorsToSymbols` picks one; the anchor point is fixed), and a four-candidate least-covered
+> choice over sides is the untried mechanism that most resembles what worked here. **MECHANISM,
+> UNTRIED, NOT A PLAN, and not an acceptance criterion for anything.**
+>
+> **ONE THING THE PIPELINE DOES PRODUCE, recorded because "0 of 11" would otherwise read as "it
+> emits nothing".** `[RAN]` `bun run schgen generate` over the `mini` design fixture: **11 files, 3
+> sheets**, exported to PDF with `kicad-cli` (106,198 bytes, 3 pages) and read. The sheets are
+> legible - framed blocks with titles, symbols with References and Values, global labels with
+> intersheet references, power symbols, a title block carrying the KiCad version and the generating
+> module - and that generation has **0** fallback field placements. **It is a FIXTURE, not a
+> circuit of this repository**, so it is evidence about the emitter and about nothing in the
+> mandate's five classes.
+>
+> - **Evidence** `[RAN]` `tools/schgen/board-sheets.ts` at both commits, with the nine
+>   `no-declaration` rows as the control that answers identically either side and would have moved
+>   had the tool matched boards to circuits by directory instead of by builder;
+>   `tools/schgen/remeasure-coverage.ts` for the block figure; `bun run schgen generate` plus
+>   `kicad-cli sch export pdf` for the fixture.
+> - **Verified** CONFIRMED for every figure in this amendment - this writer ran each and opened the
+>   PDF.
+> - **Why it is open** unchanged, and the shape of the schematic failure is now measured rather
+>   than inferred: **nine of eleven boards have no authoring declaration, which is not a defect in
+>   any drawing code and is the largest single reason this class delivers nothing.**
+> - **What would settle it** unchanged. **CRITERION: each of the five classes produces an artifact
+>   the owner accepts**, and for the schematic class **G240**'s criterion stands - a generated
+>   schematic for at least one board, compared against a drawing the owner trusts by something
+>   other than the producing agent's judgement. **No agent writes that criterion.**
+
+---
+
+### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
+
+Task 24 replaced a refusal with a placement: `lib/schgen/render/field-placement.ts` takes the
+least-covered candidate slot when none is clear. **That converts a loud failure into a quiet
+degradation unless something counts it**, which is this entry's subject and was the whole risk of
+the change.
+
+**WHAT IS NOT REPORTED, STATED FIRST.** `render/text-scene.ts`'s `textProblems` skips a text
+flagged `fallback` as both subject and object, so **no clearance check reports a fallback field's
+overlaps**, and `checkLayout` passes blocks whose text is drawn over a wire. That is deliberate:
+the placer already decided this text has nowhere clear to go, and re-reporting it would re-refuse
+the drawing the fallback exists to produce. The one clause it is NOT exempt from is the frame
+border - text leaving its own block can collide with a block the placer never saw - and
+`tests/schgen/render/field-fallback.test.ts` drives both arms.
+
+**WHAT IS REPORTED, AND WHERE.** The placer returns one `FieldFallback` per such unit, naming the
+block, the unit, its lib id, the weighted overlap area and **every obstacle the placed boxes
+cover**. `render/sheets.ts` carries them onto the `SheetDrawing`; `lib/schgen/report.ts` prints
+them as a table in every generation's `RENDER-REPORT.md` under *"Field placements the placer could
+not keep clear"*, with the sentence *"a sheet with a row here is not a clean sheet"*;
+`tools/schgen/board-sheets.ts` prints a per-board count and a `WARNING` line;
+`tools/schgen/masked-problems.ts` prints them per unit.
+
+**THE POPULATION TODAY.** `[RAN]` `tools/schgen/masked-problems.ts` over the twelve declared
+blocks: **fifteen fallbacks across four blocks** - `ob-buffer` 2, `oc-power` 1, `pt-core` 8,
+`tp-stage` 4 - and **nine of the fifteen are on the two blocks that newly draw**. Every one of them
+covers at least one wire, pin or label; `pt-core`'s `R3#1` covers three wires.
+
+**THE RESIDUAL, AND IT IS THE REASON THIS IS AN ENTRY RATHER THAN A COMMENT: NOTHING AUTOMATED
+READS THE REPORT.** `make check` does not look at `RENDER-REPORT.md`'s fallback section, no gate
+refuses on a count, and no threshold exists for one. A generation that goes from 0 fallbacks to 50
+is green. **The count is visible to a person who opens the file and to nobody else** -
+`CLAUDE.md`'s *"a skipped check must never look like a passing one"* is satisfied only in the sense
+that nothing claims these sheets are clean.
+
+- **Found** 2026-10-21, Task 24, by the agent that made the change - this is the price of its own
+  change, recorded in it.
+- **Evidence** `[RAN]` the per-block counts above; `tests/schgen/render/field-fallback.test.ts`
+  drives the exemption, the frame-border exception, the least-covered choice and the report
+  section, and **all seven of its new assertions were driven RED once against the shipped code**
+  (perturbations: refuse again; never record the fallback; take the first blocked candidate;
+  report a fallback's overlaps; skip the frame clause for a fallback; `MARK_WEIGHT = 1`; delete the
+  report section - 7 of 7 red, files restored and re-hashed).
+- **Verified** CONFIRMED - this writer wrote the code, the tests and the perturbations and read
+  every output.
+- **Why it is open** because *"a sheet with overlapping text is not a clean sheet"* is a sentence
+  in a report and not a check, and because **nobody has said how much overlap is acceptable.**
+  That is not an agent's call: an agent may not author the acceptance criteria for the artifact it
+  produces (**G240**).
+- **What would settle it** **CRITERION: the owner looks at a sheet carrying fallback placements and
+  says whether it is acceptable, and under what count or what kind of overlap it stops being
+  acceptable.** Until then no threshold may be invented. **MECHANISM, UNTRIED and explicitly NOT a
+  plan**: the two obvious shapes are a declared per-sheet budget that `generate` refuses above, and
+  a committed baseline file compared by content so a regression shows in a diff - the second is the
+  shape this repository already uses for readability baselines. **Both need the owner's number
+  first.**
+
+---
+
+### G261 - the weighted-overlap primitive now has ONE home and the build guide imports it from the schematic tree; the schematic's category-to-tier assignment is this writer's reading, not a reviewed decision
+
+`tools/guide/placement.ts` has shipped a scored, preference-ordered placer with a least-cost
+fallback since 2026-09-29 - the four properties `docs/schematic/text-placement-prior-art.md` finds
+the schematic placer lacked. Task 24 reused it rather than writing a second weighting, which is
+what that research recommends and what `CLAUDE.md`'s *"one canonical model"* requires. **Three
+things about how that was done are recorded here because each is a cost or a judgement rather than
+a measurement.**
+
+**(1) THE PRIMITIVE LIVES UNDER `lib/schgen/render/`, AND THE BUILD GUIDE NOW IMPORTS FROM THERE.**
+`createOccupancy`, `leastCovered`, `chooseLeastCovered` and `MARK_WEIGHT` are in
+`lib/schgen/render/occupancy.ts`; `tools/guide/placement.ts` re-exports them and keeps only its own
+categories. **A neutral home (`lib/placement/`) would read better and would be hashed by nothing**:
+`tools/schgen/generate.ts`'s `TEMPLATE_LIBRARY_DIR` is `lib/schgen/render`, and spec §2.1 has the
+generation manifest record the library version that graded a drawing, so a cost function outside
+that tree is a library input that can change with nothing failing. The directory was chosen for the
+hash. **The cost is a build-guide module importing from the schematic generator's render tree**,
+which is backwards as architecture and is the reason this is written down.
+
+**(2) WHICH SCHEMATIC OBSTACLES WEIGH 2 IS A READING OF THE GUIDE'S RULE, NOT A TRANSCRIPTION OF
+IT.** The guide's own sentence is the discriminator - *"Covering a mark (another tag, a cut, a pin)
+is what makes a printout ambiguous; crossing a lead or a body outline under a haloed label is only
+untidy"* - and the numbers 1 and 2 are its, reviewed there. **The assignment of schematic
+categories to those two tiers is this writer's**: pin numbers and names, interior pin text, DNP
+marks, global labels, power-symbol values and fields already placed weigh 2; bodies, power glyphs,
+wires, pin lines and interior strokes weigh 1. The argument is that a schematic's ambiguity is
+text-over-text and the untidiness is text-over-graphics, and KiCad's own autoplacer independently
+treats horizontal wires as its soft tier (`autoplace_fields.cpp`'s `COLLIDE_H_WIRES`). **Nobody has
+reviewed that mapping.** Note that it differs from the guide's own categories in one place: the
+guide puts board WIRES in `marks`, and a schematic's wires are here in the weight-1 tier.
+
+**(3) A LINE HAS NO AREA, SO ONE WAS CHOSEN.** The cost needs an area for a wire, a pin line or an
+interior stroke; `LINE_WIDTH` is 152.4 um, KiCad's 6-mil default wire width, which is also the
+number `render/emit.ts` writes explicitly for the sheet border. **It is a cost parameter and not a
+geometric claim**, and the feasibility test never uses it: whether a candidate is CLEAR is still
+the exact `boxesOverlap`/`segmentHitsBox` predicate, so the area arithmetic only ORDERS the
+candidates that are already blocked. That split is deliberate - a bounding box is not a diagonal
+interior stroke, and letting the approximation decide feasibility would move the slot chosen on
+blocks that draw today.
+
+- **Found** 2026-10-21, Task 24.
+- **Evidence** `[RAN]` `bun test tests/guide` after the move: **175 pass / 0 fail**, which is the
+  control that the guide's own placements did not change (the move is a re-export, so a moved
+  weight would show there). `[RAN]` the `MARK_WEIGHT = 1` perturbation against
+  `tests/schgen/render/field-fallback.test.ts`: RED, so the weight is held by a check. **No
+  evidence is offered for (2) beyond the argument above** - no drawing was graded by a person
+  under either mapping.
+- **Verified** CONFIRMED for (1) and (3) and for the guide suite; **(2) is a judgement this writer
+  made and is marked as such.**
+- **Why it is open** because an agent may not author the criteria for the artifact it produces
+  (**G240**), and a weighting IS a criterion wearing a number: it decides which of two overlaps a
+  reader is asked to tolerate.
+- **What would settle it** **CRITERION for (2): a reviewer who did not write the placer either
+  ratifies the category-to-tier mapping or supplies another**, which is a rule-file or spec
+  decision and not a measurement. For (1): **CRITERION: one home that both callers reach and that
+  the generation manifest hashes.** **MECHANISM, untried**: `moduleTreeDigest` takes its tree as a
+  parameter and the manifest already carries two library digests, so a third over a neutral
+  directory is the obvious shape - its cost is a change to the manifest's contract, which is why it
+  was not done inside a change about text placement.
+
+---
+
+### G262 - MEASURED: with field placement fixed, every remaining text defect in this repository is a GLOBAL LABEL, and the mechanism that fixed the fields cannot move one
+
+`[RAN]` `tools/schgen/remeasure-coverage.ts` at this commit. Of the five declared blocks that do
+not draw, two never reach a layout (`oc-audio`, `oc-sidechain`), and **all three that do are
+refused by text clearance involving a global label or a power symbol's value**:
+
+| block | what refuses it |
+| --- | --- |
+| `tp-leg-emitter-bypass` | `label BYPASS_JUMPED` overlaps `label BYPASS_CAP` |
+| `tp-stage` | two bodies over labels, plus `label BYPASS_CAP` over a wire, a body and pin text, and `label BASE` over a body and two graphics |
+| `ob-buffer` | `value of power symbol GND 0` overlaps `value of power symbol VEE 1` |
+
+**AND IT IS THE BINDING CONSTRAINT ON THE ONE BOARD THAT GETS FURTHEST.**
+`transistor-preamp-lab` is refused by `tp-leg-emitter-bypass`'s label-over-label overlap and by
+nothing else in front of it (**G259**).
+
+**WHY THE FALLBACK TECHNIQUE DOES NOT TRANSFER, which is the part a reader would otherwise assume
+and which this entry exists to state.** A unit's Reference and Value may be drawn anywhere legible:
+their position carries no electrical meaning, which is why the placer may move them and why
+`docs/schematic/text-placement-prior-art.md`'s *"label it even though a label overlap results"* is
+available. **A global label's position is a netlist fact** - KiCad connects it where it is drawn -
+so moving one off an overlap changes the circuit. The free parameter is its SIDE: `anchorsToSymbols`
+chooses one, the anchor point is fixed, and the label's box extends from the anchor in that
+direction. A power symbol's VALUE has a similar freedom (`powerValueBox` places it beyond the glyph
+on one side).
+
+- **Found** 2026-10-21, Task 24, while measuring what the field-placement fix did and did not buy.
+- **Evidence** `[RAN]` the coverage census, whose problem classes are a whitelist that THROWS on an
+  unknown shape, so a mis-filed problem fails rather than being binned (**G258**); the three rows
+  above are its output verbatim. The control is the seven blocks that draw, which report no text
+  problem at all. **The claim that a label's position is a netlist fact is `[CODE]`** -
+  `render/emit-items.ts` emits a `global_label` at its anchor point and `lib/schgen/render/
+  connectivity.ts` treats an anchor as a connectivity item at that point - and is NOT a measurement
+  of KiCad's behaviour.
+- **Verified** CONFIRMED for the census rows and for the code reading. **RELAYED** for nothing.
+- **Why it is open** because it is a defect class nobody has worked on, and because the obvious
+  mechanism is not obviously acceptable: a label drawn on the far side of its anchor reads
+  differently, and that is a legibility judgement rather than a geometric one.
+- **What would settle it** **CRITERION: the three blocks above draw, and the sheets they produce
+  are acceptable to the owner** - **G240**'s criterion, unchanged, and this entry authors no new
+  one. **MECHANISM, UNTRIED and NOT a plan**: a least-covered choice over the four sides of each
+  label's fixed anchor, which is the same formulation `render/occupancy.ts` already carries and a
+  four-candidate fixed-position model of exactly the kind
+  `docs/schematic/text-placement-prior-art.md` §1 describes. **What it would NOT fix is a label
+  that overlaps on every side**, where the literature's remaining escapes are a leader line - which
+  §4 of the pass records as looking like a wire in an orthogonal drawing, with no EDA precedent
+  found - or drawing it overlapping and counting it, which is **G260**'s trade applied to a second
+  text class and carries that entry's unanswered question with it.
+
 ---
 
 ### G104 - gate 8's deferral was argued from the output it was supposed to grade, and THIS ENTRY MADE THAT ARGUMENT. The gate's empty-delta half is M1 work and always was
@@ -18005,6 +18241,77 @@ entry's.
 >   was implemented, no annealing driven, no KiCad built. Every figure in this
 >   amendment about algorithm performance is an author's, on map data.
 
+> **AMENDED 2026-10-21 BY TASK 24: THE DEFECT IS FIXED, THE CEILING THIS ENTRY LAST PUBLISHED WAS
+> EXACTLY RIGHT, AND IT BOUGHT ZERO BOARDS.**
+>
+> `lib/schgen/render/field-placement.ts` no longer refuses a unit it has no clear slot for. It
+> takes the least-covered candidate - cost is overlap AREA weighted by obstacle category, from
+> `render/occupancy.ts`, which is the build guide's reviewed weighting rather than a second one -
+> and records a `FieldFallback` naming what the text is drawn over. The shape is
+> `docs/schematic/text-placement-prior-art.md`'s finding: every greedy placer in that literature
+> terminates with a labelling, and refusing the drawing is the one thing none of them does.
+>
+> **WHAT MOVED** (`[RAN]` `tools/schgen/remeasure-coverage.ts`, at `a5c36e0` and at this commit,
+> same harness, same run):
+>
+> | | before | after |
+> | --- | --- | --- |
+> | blocks that draw | **5 of 12** | **7 of 12** (`oc-power` and `pt-core` joined) |
+> | `field-placement` sole blocker of | 3 (`ob-buffer`, `oc-power`, `pt-core`) | **0 - the class no longer appears in the census at all** |
+> | `ob-buffer` reports | `field-placement` | `power-value-overlap` (the problem Task 22 found masked behind it) |
+> | `tp-stage` reports | 3 problems | **8** - the same two body-label overlaps plus the six label problems its refusal was masking |
+> | boards in `boards/` that produce a schematic | **0 of 11** | **0 of 11** |
+>
+> **`5 + 2 = 7` WAS THE NUMBER AND IT WAS REACHED, which is worth recording because this entry's
+> first two figures were not.** It said four blocks, then three; Task 22 measured the true ceiling
+> at seven once `ob-buffer`'s masked power-value overlap was found. Seven is what the census now
+> reads.
+>
+> **AND THE MASK IS GONE AS A CONSEQUENCE RATHER THAN AS A FIX AIMED AT IT** (**G258**).
+> `layout-check.ts`'s `textClearanceProblems` early-returned the field-placement refusal and never
+> ran the text pass behind it; there is no refusal to return, so the pass runs on every block.
+> **Nothing started overlapping - the census started reporting.** `tp-stage`'s problem list grew
+> from 3 to 8 for that reason alone.
+>
+> **THE LEVERAGE BOUGHT NO SCHEMATIC FOR ANY BOARD, AND THIS ENTRY ALREADY SAID IT WOULD NOT.**
+> `[RAN]` `tools/schgen/board-sheets.ts` (new, committed) over all eleven boards, before and
+> after: **0 of 11 both times.** Two boards can be offered to `generate` at all - `pt2399-core`
+> refuses at gate 1 on 18 `validateCircuit` problems, and `transistor-preamp-lab` refuses at
+> `tp-leg-emitter-bypass`'s label-over-label overlap - and the other nine have no
+> `SchematicAuthoring` declaration (**G247**). **Field placement is no longer the binding
+> constraint on any board, and was not the binding constraint on either offerable board when this
+> was measured.**
+>
+> **THE FIFTEEN FALLBACKS THIS BUYS THE SEVEN-BLOCK FIGURE WITH, which is the price and is
+> recorded beside the result.** `[RAN]` `tools/schgen/masked-problems.ts`: `ob-buffer` 2,
+> `oc-power` 1, `pt-core` **8**, `tp-stage` 4 - fifteen field pairs drawn over a wire, a pin or a
+> label. Both blocks that newly draw do so with text over something: nine of the fifteen are
+> theirs. **G260** records what sees that and what does not.
+>
+> - **Found** 2026-10-21, Task 24, which is the change itself.
+> - **Evidence** `[RAN]` and each could have answered differently: the coverage census over twelve
+>   blocks at both commits; `tools/schgen/board-sheets.ts` over eleven boards at both commits (the
+>   control being the nine `no-declaration` rows, which answer identically before and after and
+>   would have moved had the tool been measuring the wrong thing); `tools/schgen/masked-problems.ts`
+>   for the per-unit figures. Every figure is asserted in `tests/schgen/remeasure.test.ts`,
+>   `tests/schgen/masked-problems.test.ts` and `tests/schgen/readability/measures.test.ts`, and the
+>   new behaviour was driven RED seven ways against the shipped code
+>   (`tests/schgen/render/field-fallback.test.ts`).
+> - **Verified** CONFIRMED - this writer made the change, ran every figure above and read the
+>   output.
+> - **Why it is open** **THE DEFECT IS FIXED AND THIS ENTRY IS A DELETION CANDIDATE, not a closed
+>   one.** `CLAUDE.md`'s rule is that a fixed entry is deleted; what a deletion would take with it,
+>   each of which has to land somewhere first, is: (1) controller ruling **R46**'s record that the
+>   draw-coverage question was an owner-visible scope decision; (2) the history of the leverage
+>   figure moving 9 -> 8 -> 7 and why each move happened, which is what makes **G239** and
+>   **G258** readable; (3) the measured statement that the fix buys no generated schematic by
+>   itself, which is now **G259**'s row rather than a prediction. **It is left standing in this
+>   change because deleting it would also delete the only record of (1), and that is the owner's to
+>   release.**
+> - **What would settle it** **CRITERION: the three things above are recorded elsewhere, and then
+>   this entry is deleted.** Not a measurement - a filing decision, and the next agent to touch
+>   this register may take it.
+
 ### G233 - A PERTURBATION HARNESS THAT NAMES A TEST FILE SILENTLY NO-OPS WHEN THE ASSERTION MOVES, AND REPORTS THE RESULTING GREEN AS A PASSING DRIVE
 
 **MEASURED HERE, TWICE, ONE LAYER APART.** A perturbation is how this repository
@@ -19016,6 +19323,60 @@ them with it.
 >   two-line block**, because the published criterion C8 and this
 >   implementation's geometry disagree, and the 5080 that defeats every inside
 >   slot is a consequence of the block and not of the text.
+
+> **AMENDED 2026-10-21 BY TASK 24: THE ARITHMETIC IS UNTOUCHED AND IT NOW DECIDES SOMETHING ELSE -
+> WHICH SLOT A UNIT IS DRAWN OVER, RATHER THAN WHETHER ITS BLOCK DRAWS AT ALL.**
+>
+> `lib/schgen/render/field-placement.ts` takes the least-covered candidate when none is clear.
+> **Six usable candidates for a small two-pin passive is still the number**, and the five inside
+> slots are still unusable for a body shorter than `4 x GRID` - so unusable that they are no longer
+> offered as candidates at all: a slot that cannot contain its text is not a slot, and the
+> containment test now filters the candidate list rather than reporting the body as an obstacle the
+> text "covers". `tests/schgen/render/field-slots.test.ts` holds the same three cases, with case
+> three asserting the FALLBACK where it asserted the refusal.
+>
+> **THE THIRTEEN UNITS THIS ENTRY COUNTS ARE STILL THIRTEEN, AND THE REAL PLACEMENT ORDER FALLS
+> BACK FIFTEEN TIMES. THE GAP IS THE ORDER-DEPENDENCE THIS ENTRY NAMED AND COULD NOT MEASURE.**
+> `[RAN]` `tools/schgen/masked-problems.ts`, both arms in one run:
+>
+> | block | no clear slot asked FIRST (this entry's probe) | fallbacks in the REAL order | the difference |
+> | --- | --- | --- | --- |
+> | `ob-buffer` | 2 - `C3#1`, `J3#1` | 2 | - |
+> | `oc-power` | 1 - `C3#1` | 1 | - |
+> | `pt-core` | 7 | **8** | `C10#1` |
+> | `tp-stage` | 3 | **4** | `TP1#1` |
+> | total | **13** | **15** | |
+>
+> **`C10#1` and `TP1#1` have a clear slot when asked first and none once an earlier unit's fields
+> have taken it.** That is `tryPlaceFields` accumulating each placed unit's fields as obstacles for
+> the units after it - the sequential dependence `docs/schematic/text-placement-prior-art.md` §7(1)
+> names as *"the structural fact that most changes how this should be approached"* - and **it was
+> unmeasurable until now**, because a placer that stopped at the first failure never reached the
+> later units. Both are asserted by unit name in `tests/schgen/masked-problems.test.ts`, so a change
+> in placement order fails saying which unit moved.
+>
+> **WHAT THIS ENTRY'S CLOSING MECHANISM WAS, AND WHAT WAS DONE INSTEAD.** It recorded, untried, *"a
+> candidate placed further out along a pin-free side, at increasing offsets"* - the slider model -
+> and its own objection to it, that a Reference drifting away from its symbol is ambiguity of
+> association. **Neither was taken. No candidate position was added**: the research finds this
+> implementation's candidate set is already larger than KiCad's four and larger than the standard
+> four- and eight-position models, so widening it is the direction with least evidence behind it.
+> What changed is that there is now an objective function and a behaviour on failure, which is the
+> gap §7 of the pass identifies. **This is a deviation from this entry's own suggested mechanism,
+> recorded as `CLAUDE.md` requires rather than quietly done.**
+>
+> - **Evidence** the table above, `[RAN]` at this commit; `tests/schgen/masked-problems.test.ts`
+>   asserts every cell of it. The six-usable-candidates finding is unchanged and still rests on
+>   `tests/schgen/render/field-slots.test.ts` and the `MARGIN` perturbation this entry records.
+> - **Verified** CONFIRMED - this writer made the change and ran both arms.
+> - **Why it is open** the measurement is true and the thing it sizes is now a cost rather than a
+>   refusal. **It stays open because the rigid two-line block is still a parameter nobody has
+>   ruled on** - the `4 x GRID` that defeats every inside slot is two decisions deep, and the
+>   published criterion C8 (*"Labels consist of single text lines if possible"*) and this
+>   implementation still disagree.
+> - **What would settle it** unchanged, and **this entry still authors no criterion**. What it adds
+>   is a third quantity: **fifteen field pairs on the four blocks are drawn over something**, and
+>   whether that is acceptable on a sheet is the owner's call (**G240**, **G260**).
 
 ### G240 - GATE 8's M1 COMPARISON IS BUILT, DRIVEN AND WIRED, AND HAS NEVER RUN AGAINST A GENERATED DRAWING - the fourth instance of G226's pattern in this plan
 
@@ -21985,3 +22346,44 @@ clear. The stub-writer tripwire
   **For criterion one, nothing is proposed here**, because where a label goes is
   the ELK adapter's business and an agent may not author the criterion for an
   artifact it would produce.
+
+> **AMENDED 2026-10-21 BY TASK 24: THE MASK IS GONE AND CRITERION THREE IS
+> SETTLED BY MEASUREMENT RATHER THAN BY THE MECHANISM IT GUESSED AT.**
+>
+> **THE MASK.** `render/field-placement.ts` no longer refuses, so
+> `textClearanceProblems` has no refusal to early-return and the text pass runs
+> on every block. Everything this entry measured as masked is now published by
+> `checkLayout` itself: `ob-buffer`'s power-value overlap and `tp-stage`'s six
+> label problems. **The "masked" column of the table above is empty on every row
+> by construction**, and `tools/schgen/masked-problems.ts` still computes it
+> rather than hardcoding the zero, so a row that came back non-empty would fail
+> its own control.
+>
+> **CRITERION TWO's RESIDUAL IS GONE TOO, AND A DIFFERENT ONE REPLACED IT.** The
+> text clearance of a field on a block whose fields do not place was unmeasurable;
+> every field places now. What is unreported instead is the overlaps of the
+> fields the placer could not keep CLEAR - `textProblems` skips them by design -
+> and **G260** records that trade, its population (fifteen field pairs on four
+> blocks) and its unanswered question.
+>
+> **CRITERION THREE, SETTLED AS A MEASUREMENT: the thirteen units are a floor and
+> the real floor is fifteen.** This entry's own mechanism - *"that may require
+> field placement to be order-independent"* - was not taken and is not needed to
+> answer it. With the placer running to completion, each block's REAL placement
+> order can be read directly: `pt-core` falls back **8** times where the
+> first-position probe names 7, and `tp-stage` **4** where it names 3. The two
+> extra units are `C10#1` and `TP1#1`, both of which have a clear slot until an
+> earlier unit's fields take it. **So the order-dependence this entry suspected
+> is real, it is two units on this corpus, and it is now measured rather than
+> bounded.** `tests/schgen/masked-problems.test.ts` asserts both arms by unit
+> name; **G239** carries the table.
+>
+> **CRITERION ONE IS UNMET AND IS NOW THE BINDING CONSTRAINT ON A BOARD.**
+> `tp-leg-emitter-bypass`'s two labels still overlap, and with field placement
+> fixed that overlap is the only thing between `transistor-preamp-lab` and a
+> generated schematic (**G259**, **G262**).
+>
+> - **Evidence** `[RAN]` `tools/schgen/masked-problems.ts` and
+>   `tools/schgen/remeasure-coverage.ts` at this commit; every figure is asserted
+>   in `tests/schgen/masked-problems.test.ts` and `tests/schgen/remeasure.test.ts`.
+> - **Verified** CONFIRMED - this writer made the change and ran both.

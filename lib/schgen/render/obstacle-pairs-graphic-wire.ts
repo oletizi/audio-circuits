@@ -95,7 +95,7 @@ export const INTERIOR_GRAPHIC_PAIRS: readonly PairCoverage[] = [
     checkedBy:
       "textProblems (lib/schgen/render/text-scene.ts): `texts × strokes` at segment level, and " +
       "`texts × pinTexts` for the interior text and arc areas (`graphics.blocks`, which `unitText` puts " +
-      "in `interiorBoxes`); AND tryPlaceFields (field-placement.ts), where an INSIDE candidate's " +
+      "in `interiorBoxes`); AND placeFields (field-placement.ts), where an INSIDE candidate's " +
       "`strokes` list is `[...segments, ...p.strokes]` and its blockers carry `p.interiorBoxes`.",
     meaninglessBecause: null,
     asymmetric: null,
@@ -176,7 +176,7 @@ export const WIRE_PAIRS: readonly PairCoverage[] = [
     b: "field-text",
     checkedBy:
       "textProblems (lib/schgen/render/text-scene.ts): `texts × segments` with `segmentHitsBox`; AND " +
-      "tryPlaceFields (field-placement.ts), whose `segments` list opens with " +
+      "placeFields (field-placement.ts), whose `segments` list opens with " +
       "`...scene.wires.map((w, i) => ({ what: `wire ${i} (${w.net})`, a: w.a, b: w.b }))`, so a field is " +
       "placed clear of every wire and then checked independently.",
     meaninglessBecause: null,

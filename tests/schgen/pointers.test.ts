@@ -196,13 +196,15 @@ const POINTERS: readonly Pointer[] = [
   },
   // TASK 22: G258's per-block table of what each refusal hides is the one place the register says
   // how many blocks are genuinely one fix from drawing, and the only thing that stops it going
-  // stale is the test it names.
+  // stale is the test it names. **TASK 24 MOVED THE MARKER** - the table no longer has a masked
+  // column, because there is no field-placement refusal to mask anything behind, and the case is
+  // now titled for what it prints instead. This guard is what caught the rename.
   {
     citedBy: "docs/known-gaps.md",
     citation: "`tests/schgen/masked-problems.test.ts` (8 cases) asserts",
     test: "tests/schgen/masked-problems.test.ts",
-    marker: "prints every problem class of every block, published and masked",
-    why: "G258's Task 22 Evidence: the per-block masked table, the 1/2/2/2 split and the thirteen units.",
+    marker: "prints every problem class of every block, with its fallback field placements",
+    why: "G258's Evidence: the per-block table, the bucket split and the per-unit fallback counts.",
   },
 ]
 

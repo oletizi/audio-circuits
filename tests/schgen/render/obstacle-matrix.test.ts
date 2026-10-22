@@ -336,7 +336,10 @@ describe("the obstacle-category matrix", () => {
   test("every identifier the matrix cites exists under lib/schgen/render, or is classified", () => {
     const sources = renderSources()
     const cited = [...citedIdentifiers()].sort()
-    // 102 cited today. 89 until Task 7 added `anchorExtent` with
+    // **101 cited today, and Task 24 moved it from 102.** `field-placement.ts`'s single `fixed`
+    // obstacle list became `fixedBodies` and `fixedMarks` when the placer gained a weighted cost
+    // (+1), and its per-candidate `blockers` local was replaced by `obstacles(inside)` (-1); the
+    // renamed `tryPlaceFields` -> `placeFields` is a rename and not a count. 89 until Task 7 added `anchorExtent` with
     // NO_FLAG_PRODUCER's second hard-coded site, then 90 -> 91 at round 2 when
     // the `pin-line`/`pwr-flag-glyph` cell said why it is deliberately
     // narrower than that constant and cited `PowerSymbol` by name. **91 -> 102
@@ -348,7 +351,7 @@ describe("the obstacle-category matrix", () => {
     // `clearance`, `layoutSheet`, `sceneClearanceProblems`'s `ClearanceScene`
     // and `AnchorPoint`, and `inner`. Pinned so that narrowing the extraction
     // fails here.
-    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(102)
+    expect(cited.length, `cited identifiers: ${cited.join(" ")}`).toBe(101)
     const unaccounted = cited.filter((id) => !declaredIn(sources, id) && NOT_A_RENDER_DECLARATION[id] === undefined)
     expect(
       unaccounted,

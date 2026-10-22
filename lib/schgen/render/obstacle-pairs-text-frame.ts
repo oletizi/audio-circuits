@@ -31,7 +31,7 @@ export const FIELD_TEXT_PAIRS: readonly PairCoverage[] = [
       "textProblems (lib/schgen/render/text-scene.ts): " +
       "`for (const o of scene.texts.slice(i + 1)) if (boxesOverlap(t.box, o.box))` over every text the " +
       "scene holds — Reference, Value, power values, sheet texts, frame titles and DNP pin marks; AND " +
-      "tryPlaceFields (field-placement.ts), where each field just placed is pushed onto `placed` and " +
+      "placeFields (field-placement.ts), where each field just placed is pushed onto `placed` and " +
       "becomes an obstacle for the next unit, and where each candidate is grown by " +
       "`MARGIN = GRID / 2` first so that two rows of text may not merely abut.",
     meaninglessBecause: null,
@@ -57,7 +57,7 @@ export const FIELD_TEXT_PAIRS: readonly PairCoverage[] = [
       "textProblems (lib/schgen/render/text-scene.ts): `unitText`'s no-connect loop adds a " +
       "`GRID / 2`-radius box at every `noConnectEnds` pin into `decorations`, which `textScene` pushes " +
       "into `pinTexts`, and the loop is `for (const p of scene.pinTexts) if (boxesOverlap(t.box, " +
-      "p.box))`; AND tryPlaceFields (field-placement.ts), whose `fixed` obstacles carry the same " +
+      "p.box))`; AND placeFields (field-placement.ts), whose `fixedMarks` obstacles carry the same " +
       "`decorations`. This is the pedals history's \"J_SWD's reference landed on the X of the stock " +
       "symbol's hidden KEY pin\" defect, and the loop's own comment names it.",
     meaninglessBecause: null,

@@ -30,7 +30,7 @@ import { fmtMm, placeBox, pointKey, type Point, type Um } from "./geometry.ts";
 import type { SymbolResolver } from "./library.ts";
 import { shelfPacking, type SheetPacking } from "../elk/sheet-graph.ts";
 import { assertSheetSafe, sheetItems, type SheetBlock } from "./sheet-check.ts";
-import { blockFields } from "./field-placement.ts";
+import { blockFields, type FieldFallback } from "./field-placement.ts";
 import { anchorsToSymbols, valuesAlong } from "./power-text.ts";
 import { assertTextClear, textScene } from "./text-scene.ts";
 import type { Frame, GlobalLabel, PlacedSymbol, PowerSymbol, SheetDrawing, SheetText } from "./sheet-types.ts";
@@ -88,15 +88,23 @@ function marksOf(g: BlockSubgraph, pl: Placement): PinMark[] {
   return pinMarks(u, pl);
 }
 
-function placedSymbols(g: BlockSubgraph, layout: BlockLayout, symbols: SymbolResolver): PlacedSymbol[] {
+/**
+ * The placed symbols of one block, and the field pairs its placer could not keep clear.
+ *
+ * **BOTH COME OUT OF ONE CALL, which is the point.** `blockFields` is deterministic, so calling it
+ * twice would agree - but then the drawing and its report would be two runs, and a reader comparing
+ * them would be comparing two measurements of one thing. One call, two values.
+ */
+function placedSymbols(g: BlockSubgraph, layout: BlockLayout, symbols: SymbolResolver): { symbols: PlacedSymbol[]; fallbacks: FieldFallback[] } {
   const fields = blockFields(g, layout, symbols);
-  return layout.placements.map((pl, i) => {
+  const placed = layout.placements.map((pl, i) => {
     const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);
     const box = u?.symbol.boxes.get(pl.unit);
     const t = fields[i];
     if (u === undefined || box === undefined || t === undefined) throw new Error(`block ${g.block.id}: no body box for ${pl.part}#${pl.unit}`);
     return { part: pl.part, unit: pl.unit, at: pl.at, rot: pl.rot, box: placeBox(pl.at, pl.rot, box), body: t.body, fields: t.fields };
   });
+  return { symbols: placed, fallbacks: fields.flatMap((f) => (f.fallback === null ? [] : [f.fallback])) };
 }
 
 /** The end of every NC pin of every placed unit that takes an X (unitPins.noConnectEnds), once per point. */
@@ -177,10 +185,12 @@ export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolve
   assertSheetSafe(scene);
   assertTextClear(textScene(`sheet ${sheetId}`, symbols, { blocks: a.blocks, powers: a.powers, labels: a.labels, texts: a.texts, frames: a.frames }));
   const wires: Wire[] = a.blocks.flatMap((b) => b.layout.wires);
+  const placed = a.blocks.map((b) => placedSymbols(b.g, b.layout, symbols));
   return {
     sheet,
     paper,
-    symbols: a.blocks.flatMap((b) => placedSymbols(b.g, b.layout, symbols)),
+    symbols: placed.flatMap((p) => p.symbols),
+    fieldFallbacks: placed.flatMap((p) => p.fallbacks),
     powers: a.powers,
     wires,
     junctions: junctionPoints(sheetItems(scene)),

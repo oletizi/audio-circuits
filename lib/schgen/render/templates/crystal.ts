@@ -23,11 +23,10 @@
  * still `not-applicable` for the reason the kind is defined by: nothing has been drawn when it
  * fires, so there is no geometry disagreeing with the IR and no defect being hidden.
  *
- * **THE SIXTH IS A FORWARD**, of `drawnBoxes`' measurement - a `clearance` mismatch built by
- * `tryPlaceFields` naming the field that has nowhere to go and what blocks it. That one happens
- * AFTER this template has drawn the crystal, its case stubs and its pin lines, which is why it
- * must not arrive as `not-applicable`: a block whose fields do not fit is a defect to report, not
- * an idiom that does not apply.
+ * **THERE WAS A SIXTH AND TASK 24 DELETED IT**: a forward of `drawnBoxes`' measurement, which
+ * refused when a unit's fields had nowhere to go. `render/field-placement.ts` no longer refuses
+ * that - it takes the least-covered slot and records a `FieldFallback` - so `drawnBoxes` returns
+ * the boxes and there is nothing to forward. The five that remain are unchanged.
  */
 import type { NetName } from "../../ir/types.ts";
 import { notApplicable, type Anchor, type BlockSubgraph, type BlockUnit, type Placement, type RealiseResult, type Template, type Wire } from "../block-types.ts";
@@ -124,10 +123,7 @@ function realise(g: BlockSubgraph): RealiseResult {
   // The load capacitors stand beyond everything the crystal draws (its fields, pin text, case
   // grounds and their values), measured with a stub on each pin's line, so its fields keep off it.
   const lines: Wire[] = [{ a: aEnd, b: { x: aEnd.x - STUB, y: yC }, net: A }, { a: bEnd, b: { x: bEnd.x + STUB, y: yC }, net: B }];
-  const drawn = drawnBoxes({ ...g, units: [xtal] }, { placements, wires: [...wires, ...lines], anchors });
-  // A FORWARD of the field-placement measurement: a `clearance` mismatch, after this template drew.
-  if (!drawn.ok) return { ok: false, mismatch: drawn.mismatch };
-  const reach = boundsOf(drawn.boxes);
+  const reach = boundsOf(drawnBoxes({ ...g, units: [xtal] }, { placements, wires: [...wires, ...lines], anchors }));
   const extA = shuntExtent({ units: [capA.unit], node: A, far: capA.ground, side: "down" });
   const extB = shuntExtent({ units: [capB.unit], node: B, far: capB.ground, side: "down" });
   // One distance both sides, so the drawing stays symmetric about the crystal.

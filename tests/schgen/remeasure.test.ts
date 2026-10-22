@@ -51,17 +51,22 @@ beforeAll(async () => {
 
 describe("step 1 and step 3: which blocks draw, and the four measures of each", () => {
   /**
-   * **THE CONTROLLER's READING OF HEAD, MEASURED.** Five of the twelve declared blocks draw - the
-   * four congruent bias legs and `tp-leg-collector` - and seven do not. All five that draw are
-   * two- and three-cell blocks of ONE circuit family.
+   * **SEVEN OF THE TWELVE DECLARED BLOCKS DRAW, AND TASK 24 MOVED IT FROM FIVE.** The four
+   * congruent bias legs and `tp-leg-collector` were the five; `oc-power` and `pt-core` joined
+   * them when `render/field-placement.ts` stopped refusing a unit with no clear slot and started
+   * placing it at the least-covered one. **Both of the new two draw with text drawn over
+   * something** - one fallback in `oc-power`, eight in `pt-core` - which
+   * `tests/schgen/masked-problems.test.ts` counts per unit and every generation's
+   * `RENDER-REPORT.md` names. The two blocks still refused at obligation 4 are refused by LABEL
+   * placement and by a power-value overlap, neither of which field placement touches.
    */
-  it("is 5 accepted and 7 refused, and names the gate that refused each", () => {
+  it("is 7 accepted and 5 refused, and names the gate that refused each", () => {
     expect(rows.map((r) => `${r.block} ${r.geometry.stage}${r.geometry.refusal === null ? "" : ` ${gateOf(r.geometry.refusal)}`}`)).toEqual([
       "ob-buffer backend-output obligation 4: checkLayout",
-      "oc-power backend-output obligation 4: checkLayout",
+      "oc-power accepted",
       "oc-audio backend-output obligation 1: the snap collapsed geometry",
       "oc-sidechain backend-output obligation 3: one transform, two readers",
-      "pt-core backend-output obligation 4: checkLayout",
+      "pt-core accepted",
       "tp-leg-upper accepted",
       "tp-leg-feedback accepted",
       "tp-leg-lower-a accepted",
@@ -81,10 +86,10 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
   it("is these twelve rows of figures", () => {
     expect(rows.map(renderRow)).toEqual([
       "ob-buffer parts=9 units=11 placements=11 graphCells=14 ports=3 share=21.4% stage=backend-output bends=28 perEdge=0.97 crossings=7 len=436.80 area=3233.45 aspect=1.24 scale=about-a-serialization | no spike row",
-      "oc-power parts=8 units=8 placements=8 graphCells=11 ports=3 share=27.3% stage=backend-output bends=5 perEdge=0.19 crossings=1 len=163.00 area=1056.00 aspect=2.64 scale=about-a-serialization | spike oc-power moved",
+      "oc-power parts=8 units=8 placements=8 graphCells=11 ports=3 share=27.3% stage=accepted bends=5 perEdge=0.19 crossings=1 len=163.00 area=1060.00 aspect=2.65 scale=about-a-serialization | spike oc-power moved",
       "oc-audio parts=12 units=14 placements=14 graphCells=18 ports=4 share=22.2% stage=backend-output bends=30 perEdge=0.75 crossings=5 len=636.81 area=4076.47 aspect=2.20 scale=about-a-serialization | spike oc-audio moved",
       "oc-sidechain parts=17 units=19 placements=19 graphCells=24 ports=5 share=20.8% stage=backend-output bends=27 perEdge=0.55 crossings=7 len=811.92 area=6638.13 aspect=1.78 scale=about-a-serialization | spike oc-sidechain moved",
-      "pt-core parts=24 units=24 placements=24 graphCells=26 ports=2 share=7.7% stage=backend-output bends=83 perEdge=1.15 crossings=78 len=2469.63 area=12668.79 aspect=1.22 scale=about-a-serialization | no spike row",
+      "pt-core parts=24 units=24 placements=24 graphCells=26 ports=2 share=7.7% stage=accepted bends=83 perEdge=1.15 crossings=78 len=2472.00 area=12648.00 aspect=1.22 scale=about-a-serialization | no spike row",
       "tp-leg-upper parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=48.00 area=513.00 aspect=1.42 scale=about-the-circuit | spike leg-upper moved",
       "tp-leg-feedback parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=48.00 area=513.00 aspect=1.42 scale=about-the-circuit | spike leg-feedback moved",
       "tp-leg-lower-a parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=48.00 area=513.00 aspect=1.42 scale=about-the-circuit | spike leg-lowerA moved",
@@ -100,9 +105,17 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
    * sides run over the geometry `adaptElkLayoutReported` returns, which is already canonicalised -
    * G216's own correction to its round-1 independence claim. **Two implementations agreeing is a
    * check on the arithmetic and NOT a cross-check of the geometry.**
+   *
+   * **IT IS G216's FIVE BY NAME SINCE TASK 24, NOT "whatever is accepted today".** Seven blocks
+   * are accepted now, and summing all of them would compare a 7-block total against a 5-block
+   * table - two different quantities, which is exactly the comparison **G220** names as the
+   * failure. The five are named so that the agreement stays an agreement.
    */
   it("reproduces G216's five accepted rows, which is an arithmetic agreement and not a second reading", () => {
-    const accepted = rows.filter((r) => r.geometry.stage === "accepted")
+    const G216_ROWS = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+    const accepted = rows.filter((r) => G216_ROWS.includes(r.block))
+    expect(accepted.length, "G216's five rows are all present and all still accepted").toBe(5)
+    expect(accepted.every((r) => r.geometry.stage === "accepted")).toBe(true)
     expect(accepted.reduce((n, r) => n + r.geometry.placements, 0)).toBe(14)
     expect(accepted.reduce((n, r) => n + r.geometry.measures.wireLength, 0)).toBe(224)
   })
@@ -250,66 +263,72 @@ describe("step 4: the integrated experiment, on the five blocks that draw", () =
   })
 })
 
-describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () => {
+describe("ruling R46: what stands between 7 of 12 blocks drawing and more", () => {
   /**
-   * **ONE DEFECT WAS THE SOLE BLOCKER OF FOUR BLOCKS; SINCE TASK 21 IT IS THREE, AND THE FOURTH
-   * BLOCK STILL DOES NOT DRAW.** `tp-leg-emitter-bypass`'s field-placement refusal was the jumper
-   * `JP5#1 (Jumper:Jumper_2_Open)`, whose Value is its symbol's own part name; that Value is now
-   * emitted hidden and the fields place. **The block then reported a problem nothing had ever
-   * seen** - `label BYPASS_JUMPED ... overlaps label BYPASS_CAP ...` - because
-   * `layout-check.ts`'s `textClearanceProblems` returns a field-placement refusal ALONE and never
-   * runs the text-clearance pass behind it.
+   * **TASK 24 SPENT THE LEVERAGE, AND IT CAME OUT AT EXACTLY THE BOUND TASK 22 PUBLISHED.** The
+   * history is worth keeping because the bound was right and the first two figures were not:
+   * field placement was *"the sole blocker of four blocks"*, then three (Task 21 hid a Value that
+   * repeats its symbol's part name), then the ceiling was measured at `5 + 2 = 7` once
+   * `ob-buffer`'s masked power-value overlap was found. **`render/field-placement.ts` now places
+   * at the least-covered slot instead of refusing, and the census reads 7 of 12.** `oc-power` and
+   * `pt-core` draw; `ob-buffer` is refused by its power-value overlap, exactly as Task 22 said it
+   * would be.
    *
-   * **SO THE LEVERAGE FIGURE IS AN UPPER BOUND AND NOT A COUNT**, for all three blocks that
-   * remain: `5 + 3 = 8` assumes none of them is masking a second problem the way this one was.
+   * **AND THE CLASS LIST GREW, WHICH IS THE MASK LIFTING RATHER THAN A REGRESSION.**
+   * `layout-check.ts` used to return a field-placement refusal ALONE and never run the
+   * text-clearance pass behind it (**G258**); with no refusal to return, the pass runs, so
+   * `tp-stage` now publishes the six label problems that were masked and `ob-buffer` publishes its
+   * power-value overlap. **Nothing started overlapping. The census started reporting.**
    *
-   * **TASK 22 LOOKED, and one of the three was.** `ob-buffer` masks a power-value overlap that no
-   * fix to field placement touches, so the bound is `5 + 2 = 7` - and still a bound, because the
-   * text clearance of any FIELD stays unmeasurable while the field has no slot. The rows below are
-   * unchanged and still correct: this census reports what `checkLayout` reported, and that is what
-   * `problemClasses` means. What stands behind those rows is
-   * `tests/schgen/masked-problems.test.ts`, per block. `docs/known-gaps.md` **G232**, **G257**,
-   * **G258**.
+   * **THE ONE THING THIS CENSUS STILL CANNOT SEE is a fallback field's own overlaps**, which
+   * `textProblems` does not report by design (`render/text-scene.ts`'s `Named.fallback`): they are
+   * carried by the `FieldFallback` records instead, counted per unit in
+   * `tests/schgen/masked-problems.test.ts` and printed in every generation's `RENDER-REPORT.md`.
+   * `docs/known-gaps.md` **G232**, **G257**, **G258**, **G260**.
    */
   it("classifies every checkLayout problem of every declared block", () => {
     expect(renderCoverage(coverage)).toEqual([
-      "ob-buffer refused at obligation 4: checkLayout problems field-placement",
-      "oc-power refused at obligation 4: checkLayout problems field-placement",
+      "ob-buffer refused at obligation 4: checkLayout problems power-value-overlap",
+      "oc-power DRAWS",
       "oc-audio refused at obligation 1: the snap collapsed geometry",
       "oc-sidechain refused at obligation 3: one transform, two readers",
-      "pt-core refused at obligation 4: checkLayout problems field-placement",
+      "pt-core DRAWS",
       "tp-leg-upper DRAWS",
       "tp-leg-feedback DRAWS",
       "tp-leg-lower-a DRAWS",
       "tp-leg-lower-b DRAWS",
       "tp-leg-collector DRAWS",
       "tp-leg-emitter-bypass refused at obligation 4: checkLayout problems label-label-overlap",
-      "tp-stage refused at obligation 4: checkLayout problems body-label-overlap, body-label-overlap, field-placement",
-      "5 of 12 declared blocks draw",
+      "tp-stage refused at obligation 4: checkLayout problems body-label-overlap, body-label-overlap, label-wire-overlap, label-body-overlap, label-pin-text-overlap, label-body-overlap, label-graphic-overlap, label-graphic-overlap",
+      "7 of 12 declared blocks draw",
       "class body-label-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
-      "class field-placement: sole blocker of 3 block(s) (ob-buffer, oc-power, pt-core), partial blocker of 1 (tp-stage)",
+      "class label-body-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
+      "class label-graphic-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
       "class label-label-overlap: sole blocker of 1 block(s) (tp-leg-emitter-bypass), partial blocker of 0 (none)",
+      "class label-pin-text-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
+      "class label-wire-overlap: sole blocker of 0 block(s) (none), partial blocker of 1 (tp-stage)",
+      "class power-value-overlap: sole blocker of 1 block(s) (ob-buffer), partial blocker of 0 (none)",
     ])
   })
 
-  it("is ONE defect and not three, and names the three blocks it alone blocks", () => {
-    const field = leverageOf(coverage).find((l) => l.problemClass === "field-placement")
-    expect(field).toBeDefined()
-    expect(field?.soleBlocker).toEqual(["ob-buffer", "oc-power", "pt-core"])
-    expect(field?.partialBlocker).toEqual(["tp-stage"])
-    // 5 draw now; the three above would take it to 8 at most - and Task 22 measured the true
-    // ceiling at 7, because ob-buffer masks a second class (see this describe's comment and
-    // tests/schgen/masked-problems.test.ts). This figure is the CENSUS's, over what checkLayout
-    // reported, and it stays asserted here as that. A check that could have failed: the sole/partial SPLIT is
-    // asserted, so a class that blocks nothing by itself cannot be read as leverage -
-    // body-label-overlap is sole blocker of ZERO and that is asserted too.
-    expect(coverage.filter((r) => r.draws).length).toBe(5)
-    expect(coverage.filter((r) => r.draws).length + (field?.soleBlocker.length ?? 0)).toBe(8)
+  it("no longer reports field placement as a blocker of anything, and names what blocks the five that remain", () => {
+    // **THE DEFECT THAT CARRIED THIS DESCRIBE's NAME IS GONE FROM THE CENSUS ENTIRELY.** It is
+    // asserted as absent rather than as zero: `leverageOf` lists a class only when some block
+    // reported it, so `undefined` IS the measurement, and a class that still blocked a block
+    // partially would come back defined and fail here.
+    expect(leverageOf(coverage).find((l) => l.problemClass === "field-placement")).toBeUndefined()
+    expect(coverage.filter((r) => r.draws).length).toBe(7)
+    // Which is exactly Task 22's published ceiling of `5 + 2`, reached rather than estimated.
+    expect(5 + 2).toBe(coverage.filter((r) => r.draws).length)
+    // A check that could have failed: the sole/partial SPLIT is asserted, so a class that blocks
+    // nothing by itself cannot be read as leverage.
     const overlap = leverageOf(coverage).find((l) => l.problemClass === "body-label-overlap")
     expect(overlap?.soleBlocker).toEqual([])
-    // And the class Task 21 uncovered is its own: a label over a label, sole blocker of one block.
-    const labels = leverageOf(coverage).find((l) => l.problemClass === "label-label-overlap")
-    expect(labels?.soleBlocker).toEqual(["tp-leg-emitter-bypass"])
+    expect(overlap?.partialBlocker).toEqual(["tp-stage"])
+    // The two sole blockers that remain, and NEITHER is a field: a label over a label, and a power
+    // symbol's value over another power symbol's value.
+    expect(leverageOf(coverage).find((l) => l.problemClass === "label-label-overlap")?.soleBlocker).toEqual(["tp-leg-emitter-bypass"])
+    expect(leverageOf(coverage).find((l) => l.problemClass === "power-value-overlap")?.soleBlocker).toEqual(["ob-buffer"])
   })
 
   it("refuses a problem whose text names no known class, rather than binning it as other", () => {

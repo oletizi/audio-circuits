@@ -13,7 +13,7 @@
  *
  * **THE ARITHMETIC, AND IT IS THE WHOLE FINDING.** `slotFields` stacks the Reference one `GRID`
  * above the slot's centre and the Value one `GRID` below it; `textBox` gives each line a height of
- * `GRID`; `tryPlaceFields` grows both by `MARGIN = GRID / 2`. So the grown pair is
+ * `GRID`; `placeFields` grows both by `MARGIN = GRID / 2`. So the grown pair is
  * `4 x GRID = 5.08 mm` tall at every slot, inside or out - and an inside slot is taken only when
  * both grown boxes lie STRICTLY within the unit's own body. **`Fix:C`'s body is 2.032 mm tall**,
  * so no inside slot can hold it, and the same holds for every symbol whose body is shorter than
@@ -26,15 +26,18 @@
  * - **CASE ONE PINS THE ARITHMETIC.** `[RAN]` with `MARGIN` set to zero so the pair is `3 x GRID`:
  *   case one goes RED, `Expected: 5080  Received: 3810`, and the others stay green.
  * - **CASE THREE PINS THE SIZE OF THE USABLE CANDIDATE SET, not the reason the inside five are
- *   unusable.** It blocks only the SIX OUTSIDE candidates and the unit still refuses; `[RAN]`
- *   blocking only five leaves it placed and the case goes red. **But `[RAN]` removing the
- *   inside-containment arm from `field-placement.ts` leaves all three cases GREEN**, because the
- *   inside slots are independently blocked by the symbol's own interior graphics - so case three
- *   is not evidence about containment.
+ *   unusable.** It blocks only the SIX OUTSIDE candidates and the unit still has nowhere CLEAR to
+ *   go; `[RAN]` blocking only five leaves it placed cleanly and the case goes red. **But `[RAN]`
+ *   removing the inside-containment arm from `field-placement.ts` leaves all three cases GREEN**,
+ *   because the inside slots are independently blocked by the symbol's own interior graphics - so
+ *   case three is not evidence about containment.
  *
- * `tests/schgen/render/text-clearance.test.ts` already has a `placeFields` refusal case; it blocks
- * the whole neighbourhood with forty-one wires, which proves the refusal arm exists and cannot
- * distinguish an inside slot that would have worked from one that could not.
+ * **AMENDED BY TASK 24: THE ARITHMETIC IS UNCHANGED AND THE BEHAVIOUR IT LEADS TO IS NOT.** The
+ * placer no longer refuses a unit with no clear slot - it takes the least-covered candidate and
+ * records a `FieldFallback` - so case three asserts the FALLBACK where it used to assert the
+ * refusal text. Nothing about the five inside slots moved: they are not candidates at all for a
+ * body shorter than `4 x GRID`, which is what this file measures.
+ * `tests/schgen/render/field-fallback.test.ts` drives the fallback's own behaviour.
  *
  * Nothing here is a fix and nothing here is an acceptance criterion for a fix: G232's criterion
  * stands as written and this is an input to the scope decision R46 carries.
@@ -42,7 +45,7 @@
 import { describe, expect, it } from "bun:test"
 import { cap, blockCircuit, symbols } from "../__fixtures__/circuits.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
-import { tryPlaceFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
+import { placeFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
 import { GRID, growBox, type Point, type Side } from "../../../lib/schgen/render/geometry.ts"
 import type { Box } from "../../../lib/schgen/render/lib-pins.ts"
 import type { Wire } from "../../../lib/schgen/render/block-types.ts"
@@ -50,10 +53,10 @@ import {
   besidePinFields, INSIDE_SLOTS, OUTSIDE_SLOTS, reservedReference, slotFields, textBox, type Fields,
 } from "../../../lib/schgen/render/text-boxes.ts"
 
-/** `tryPlaceFields`'s clearance around a candidate field: half a text line. Transcribed, not imported - it is private there. */
+/** `placeFields`'s clearance around a candidate field: half a text line. Transcribed, not imported - it is private there. */
 const MARGIN = GRID / 2
 
-/** The reference and value boxes a slot asks for, grown exactly as `tryPlaceFields` grows them. */
+/** The reference and value boxes a slot asks for, grown exactly as `placeFields` grows them. */
 function grownBoxes(f: Fields, refPrefix: string, value: string): readonly Box[] {
   return [textBox(f.reference, reservedReference(refPrefix)), textBox(f.value, value)].map((b) => growBox(b, MARGIN))
 }
@@ -87,10 +90,9 @@ describe("the inside field slots and a small two-pin passive", () => {
   })
 
   it("places its fields on the first pin-free side when nothing is in the way", () => {
-    const r = tryPlaceFields(oneCapScene([]))
-    if (!r.ok) throw new Error(`the unobstructed scene refused: ${r.mismatch.reason}`)
-    const placed = r.placed.find((p) => p.key === "C1#1")
+    const placed = placeFields(oneCapScene([])).find((p) => p.key === "C1#1")
     if (placed === undefined) throw new Error("C1#1 was not placed")
+    expect(placed.fallback, "the unobstructed scene has a clear slot").toBeNull()
     // Outside, on the "right" slot: the pin-free side `OUTSIDE_SLOTS` offers first.
     expect(placed.inside).toBe(false)
     expect(placed.fields).toEqual(slotFields(placed.body, "right"))
@@ -102,10 +104,8 @@ describe("the inside field slots and a small two-pin passive", () => {
    * `slotFields` or `besidePinFields` moves them with it; the five inside slots are left entirely
    * alone, and the unit still has nowhere to go.
    */
-  it("refuses when only its six OUTSIDE candidates are blocked: the five inside slots rescue nothing", () => {
-    const clean = tryPlaceFields(oneCapScene([]))
-    if (!clean.ok) throw new Error("the unobstructed scene refused")
-    const placed = clean.placed.find((p) => p.key === "C1#1")
+  it("falls back when only its six OUTSIDE candidates are blocked: the five inside slots rescue nothing", () => {
+    const placed = placeFields(oneCapScene([])).find((p) => p.key === "C1#1")
     if (placed === undefined) throw new Error("C1#1 was not placed")
     const body = placed.body
     // `Fix:C` is drawn with its pins up and down, so those are the two sides with tips and
@@ -127,9 +127,17 @@ describe("the inside field slots and a small two-pin passive", () => {
       const y = Math.round((b.minY + b.maxY) / 2)
       return { a: { x: b.minX - GRID, y }, b: { x: b.maxX + GRID, y }, net: `BLOCK${i}` }
     })
-    const r = tryPlaceFields(oneCapScene(wires))
-    expect(r.ok).toBe(false)
-    if (r.ok) throw new Error("unreachable: asserted false above")
-    expect(r.mismatch.reason).toContain("C1#1 (Fix:C): no place for its Reference and Value")
+    const u = placeFields(oneCapScene(wires)).find((p) => p.key === "C1#1")
+    if (u === undefined) throw new Error("C1#1 was not placed")
+    // **TASK 24 CHANGED WHAT THIS CASE MEASURES AND NOT WHAT IT ESTABLISHES.** The placer used to
+    // refuse here, and this case asserted the refusal text; it now takes the least-covered
+    // candidate and records a `FieldFallback`. The finding is unchanged - with the six outside
+    // candidates blocked the unit has nowhere CLEAR to go, and the five inside slots do not rescue
+    // it - and `tests/schgen/render/field-fallback.test.ts` is where the fallback's own behaviour
+    // is driven.
+    expect(u.fallback).not.toBeNull()
+    expect(u.fallback?.key).toBe("C1#1")
+    expect(u.fallback?.libId).toBe("Fix:C")
+    expect(u.inside, "and it is still an OUTSIDE slot: no inside slot can hold the pair").toBe(false)
   })
 })

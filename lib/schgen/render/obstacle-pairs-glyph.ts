@@ -68,8 +68,8 @@ export const POWER_GLYPH_PAIRS: readonly PairCoverage[] = [
     a: "power-glyph",
     b: "field-text",
     checkedBy:
-      "textProblems (text-scene.ts), the `texts × bodies` loop; AND tryPlaceFields " +
-      "(field-placement.ts), whose `fixed` obstacles carry both `{ what: `power ${p.net}`, box: t.glyph }` " +
+      "textProblems (text-scene.ts), the `texts × bodies` loop; AND placeFields " +
+      "(field-placement.ts), whose `fixedBodies` and `fixedMarks` obstacles carry both `{ what: `power ${p.net}`, box: t.glyph }` " +
       "and the glyph's own value box, so a field is placed clear of every glyph and then checked " +
       "independently.",
     meaninglessBecause: null,
@@ -141,8 +141,8 @@ export const LABEL_OUTLINE_PAIRS: readonly PairCoverage[] = [
     a: "label-outline",
     b: "field-text",
     checkedBy:
-      "textProblems (text-scene.ts), the `texts × texts` loop; AND tryPlaceFields (field-placement.ts), " +
-      "whose `fixed` obstacles carry `...scene.labels.map((l) => ({ what: `label ${l.net}`, box: " +
+      "textProblems (text-scene.ts), the `texts × texts` loop; AND placeFields (field-placement.ts), " +
+      "whose `fixedMarks` obstacles carry `...scene.labels.map((l) => ({ what: `label ${l.net}`, box: " +
       "labelBox(l) }))`.",
     meaninglessBecause: null,
     asymmetric: null,

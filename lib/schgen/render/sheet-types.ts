@@ -1,12 +1,19 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/sheetTypes.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/sheetTypes.ts`, and DIVERGED from it by
+ * Task 24 of the M1 schematic-authoring plan: `SheetDrawing` carries `fieldFallbacks`.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 import type { BlockId, NetName, PartLabel, SheetSpec } from "../ir/types.ts";
 import type { Wire } from "./block-types.ts";
+// Type-only, and the cycle it closes is type-only too: `field-placement.ts` imports `GlobalLabel`
+// and `PowerSymbol` from here. Both are erased, and `FieldFallback` belongs with the placer that
+// builds it rather than being restated here as a second definition of one record.
+import type { FieldFallback } from "./field-placement.ts";
 import type { Point, Rotation, Side, Um } from "./geometry.ts";
 import type { Box } from "./lib-pins.ts";
 import type { PinMark } from "./pin-marks.ts";
@@ -70,4 +77,13 @@ export interface SheetDrawing {
   /** DNP pin-polarity marks of the placed units (pinMarks.ts), drawn as text. */
   readonly pinMarks: readonly PinMark[];
   readonly frames: readonly Frame[];
+  /**
+   * **Every Reference/Value pair on this sheet that `field-placement.ts` could not keep clear**,
+   * one per unit, with what it covers. Empty on a sheet whose every field sits in a clear slot.
+   *
+   * It is on the drawing rather than computed by a reader, because the drawing is what carries it
+   * into `report.ts`: a sheet produced with overlapping text must not be able to reach
+   * `RENDER-REPORT.md` as a clean sheet.
+   */
+  readonly fieldFallbacks: readonly FieldFallback[];
 }

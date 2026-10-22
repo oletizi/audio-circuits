@@ -178,15 +178,30 @@ describe("segmentHitsBox", () => {
   });
 });
 
-describe("placeFields refusal", () => {
-  it("refuses a unit whose every candidate slot is crossed by wiring, naming it", () => {
+/**
+ * **THIS WAS "placeFields refusal" AND TASK 24 DELETED THE REFUSAL.** The placer takes the
+ * least-covered candidate instead, so what the saturated neighbourhood now produces is a placement
+ * with a `FieldFallback` naming what it is drawn over. The case is kept rather than deleted: it is
+ * the only one in this file that drives the whole-neighbourhood case, and a saturated scene is
+ * exactly where the behaviour changed.
+ */
+describe("placeFields with nowhere clear to go", () => {
+  it("places a unit whose every candidate slot is crossed by wiring, and says what it covers", () => {
     const c = blockCircuit([res("R1", "N1", "N2")], { kind: "bus", groups: [] }, { external: [] });
     const g = subgraphOf(c, "B", symbols);
     // Horizontal wires every 1.27 mm across the whole neighbourhood: no text box can avoid them.
     const wires = Array.from({ length: 41 }, (_, i) => ({ a: { x: -40_000, y: (i - 20) * 1270 }, b: { x: 40_000, y: (i - 20) * 1270 }, net: "N1" }));
-    expect(() =>
-      placeFields({ block: "B", units: g.units, placements: [{ part: "R1", unit: 1, at: { x: 0, y: 0 }, rot: 0 }], wires, powers: [], labels: [], libs: symbols }),
-    ).toThrow(/block B: R1#1 \(Fix:R\): no place for its Reference and Value/);
+    const placed = placeFields({ block: "B", units: g.units, placements: [{ part: "R1", unit: 1, at: { x: 0, y: 0 }, rot: 0 }], wires, powers: [], labels: [], libs: symbols });
+    const u = placed.find((p) => p.key === "R1#1");
+    if (u === undefined) throw new Error("R1#1 was not placed");
+    expect(u.fallback).not.toBeNull();
+    expect(u.fallback?.key).toBe("R1#1");
+    expect(u.fallback?.libId).toBe("Fix:R");
+    expect(u.fallback?.covers.some((cover) => cover.startsWith("wire "))).toBe(true);
+    // CONTROL: the same unit with no wires at all places cleanly, so the fallback above is the
+    // saturation and not a property of this fixture.
+    const clean = placeFields({ block: "B", units: g.units, placements: [{ part: "R1", unit: 1, at: { x: 0, y: 0 }, rot: 0 }], wires: [], powers: [], labels: [], libs: symbols });
+    expect(clean.find((p) => p.key === "R1#1")?.fallback).toBeNull();
   });
 });
 

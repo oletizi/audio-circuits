@@ -31,14 +31,14 @@ import { TEST_BOM } from "../__fixtures__/fixture-lib.ts"
 import type { BlockLayout, Wire } from "../../../lib/schgen/render/block-types.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import { partSymbol, type ItemScope } from "../../../lib/schgen/render/emit-items.ts"
-import { tryPlaceFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
+import { placeFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
 import { GRID, growBox, segmentHitsBox, type Point, type Side } from "../../../lib/schgen/render/geometry.ts"
 import type { Box } from "../../../lib/schgen/render/lib-pins.ts"
 import { print } from "../../../lib/schgen/render/sexpr-write.ts"
 import { besidePinFields, OUTSIDE_SLOTS, slotFields, textBox, type Fields } from "../../../lib/schgen/render/text-boxes.ts"
 import { textScene } from "../../../lib/schgen/render/text-scene.ts"
 
-/** `tryPlaceFields`'s clearance around a candidate field: half a text line. Transcribed, not imported - it is private there. */
+/** `placeFields`'s clearance around a candidate field: half a text line. Transcribed, not imported - it is private there. */
 const MARGIN = GRID / 2
 
 /** The one diode of a single-unit block, placed at the origin upright. */
@@ -92,10 +92,9 @@ function wiresAcrossValueRows(candidates: readonly Fields[], value: string): Wir
 
 /** The placed geometry of the unobstructed scene: its body and its drawn pin segments. */
 function placedDiode(value: string) {
-  const r = tryPlaceFields(diodeScene(value, []))
-  if (!r.ok) throw new Error(`the unobstructed scene refused: ${r.mismatch.reason}`)
-  const placed = r.placed.find((p) => p.key === "D1#1")
+  const placed = placeFields(diodeScene(value, [])).find((p) => p.key === "D1#1")
   if (placed === undefined) throw new Error("D1#1 was not placed")
+  if (placed.fallback !== null) throw new Error(`the unobstructed scene fell back: ${placed.fallback.covers.join("; ")}`)
   return placed
 }
 
@@ -115,18 +114,22 @@ describe("field placement and a value that is the symbol's own part name", () =>
     expect(hits(refBoxes)).toBe(0)
   })
 
-  it("CONTROL: a value that is NOT the part name still needs room, and the unit refuses without it", () => {
-    const r = tryPlaceFields(diodeScene("X", wires))
-    expect(r.ok).toBe(false)
-    if (r.ok) throw new Error("unreachable: asserted false above")
-    expect(r.mismatch.reason).toContain("D1#1 (Fix:D): no place for its Reference and Value")
+  it("CONTROL: a value that is NOT the part name still needs room, and the unit has no clear slot without it", () => {
+    // **TASK 24: THE CONTROL IS THE SAME AND ITS FORM MOVED.** The placer no longer refuses a unit
+    // with no clear slot, so what distinguishes the two arms is the FALLBACK rather than a refusal:
+    // a drawn value needs its own row, every candidate's row is crossed, and the unit is therefore
+    // drawn over a wire. The case below is the one where nothing is.
+    const u = placeFields(diodeScene("X", wires)).find((p) => p.key === "D1#1")
+    if (u === undefined) throw new Error("D1#1 was not placed")
+    expect(u.fallback).not.toBeNull()
+    expect(u.fallback?.key).toBe("D1#1")
+    expect(u.fallback?.covers.some((c) => /^wire \d+ \(BLOCK\d+\)$/.test(c))).toBe(true)
   })
 
-  it("places the unit when its value is the part name, although that value's own row is crossed", () => {
-    const r = tryPlaceFields(diodeScene("D", wires))
-    if (!r.ok) throw new Error(`refused: ${r.mismatch.reason}`)
-    const placed = r.placed.find((p) => p.key === "D1#1")
+  it("places the unit CLEANLY when its value is the part name, although that value's own row is crossed", () => {
+    const placed = placeFields(diodeScene("D", wires)).find((p) => p.key === "D1#1")
     if (placed === undefined) throw new Error("D1#1 was not placed")
+    expect(placed.fallback, "a hidden value needs no row, so the first candidate is CLEAR").toBeNull()
     // The FIRST candidate is taken: only the Reference had to be clear, and it was.
     expect(placed.fields).toEqual(candidates[0])
     // And the value still HAS a spot - it is emitted there, just not drawn - and that spot is

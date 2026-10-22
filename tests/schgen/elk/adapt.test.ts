@@ -308,23 +308,42 @@ test("pre-snapped ELK geometry realises, and the returned layout passes the chec
  * **OBLIGATIONS 2 AND 4, REACHED THROUGH THE PIPELINE: a block that gets as far as the clearance
  * checks is graded BY them and not by a gate in front of them.**
  *
- * `groundOfDegreeSix` pre-snapped reaches `checkLayout` and is refused by it, which makes it the
- * fixture that can tell the gates apart. Perturbation 2 (emit no junctions) makes it refuse at the
- * junction gate instead, so `problems` empties and the reason changes; perturbation 4 (skip
- * `checkLayout`) makes it return `ok` with nothing graded at all.
+ * Perturbation 2 (emit no junctions) makes a refusing block refuse at the junction gate instead, so
+ * `problems` empties and the reason changes; perturbation 4 (skip `checkLayout`) makes it return
+ * `ok` with nothing graded at all.
+ *
+ * **THE SUBJECT IS THE REAL CORPUS AND IT USED TO BE `groundOfDegreeSix`, WHICH TASK 24 MADE
+ * DRAW.** That fixture - five resistors across one rail pair - reached `checkLayout` and was
+ * refused by it for ONE reason: a unit whose Reference and Value had no clear slot.
+ * `render/field-placement.ts` no longer refuses that, so the fixture now passes every clearance
+ * check and could no longer tell the gates apart. **A test whose subject stopped having the
+ * property it is about is not a test**, so the subject is taken from the blocks that still refuse
+ * at the clearance checks, exactly as the canonicalisation-count test above takes its subjects
+ * from the corpus. If none ever does again, this fails on its own denominator rather than passing
+ * over nothing.
  */
 test("a block reaching the clearance checks is graded by them, not by the gates in front of them", async () => {
-  const g = groundOfDegreeSix()
-  const report = adaptElkLayoutReported(g, await gridAlignedOutcome(g))
-  expect(report.result.ok).toBe(false)
-  if (report.result.ok) return
-  // `checkLayout` ran and had something to say: perturbation 4 empties this.
-  expect(report.problems.length).toBeGreaterThan(0)
-  // And the refusal is the CLEARANCE one, so the junction gate in front of it passed: perturbation
-  // 2 turns this into the junction message.
-  expect(report.result.mismatch.reason).toContain("clearance checks that grade template output")
-  expect(report.result.mismatch.kind === "clearance" || report.result.mismatch.kind === "invalid-geometry").toBe(true)
-}, 120_000)
+  const symbols = parityResolver()
+  let graded = 0
+  for (const c of PARITY_CASES) {
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    for (const declaration of c.authoring.blocks) {
+      const g = subgraphOf(circuit, declaration.id, symbols)
+      const input = elkInputOf(g)
+      const outcome = (await layoutBlocks([input])).get(input.blockId)
+      if (outcome === undefined) throw new Error(`no outcome for ${declaration.id}`)
+      const report = adaptElkLayoutReported(g, outcome)
+      if (report.result.ok || !report.result.mismatch.reason.includes("clearance checks that grade template output")) continue
+      graded += 1
+      // `checkLayout` ran and had something to say: perturbation 4 empties this.
+      expect(report.problems.length, `${c.name}/${declaration.id}`).toBeGreaterThan(0)
+      // And the refusal is the CLEARANCE one, so the junction gate in front of it passed:
+      // perturbation 2 turns this into the junction message.
+      expect(report.result.mismatch.kind === "clearance" || report.result.mismatch.kind === "invalid-geometry", `${c.name}/${declaration.id}`).toBe(true)
+    }
+  }
+  expect(graded, "no declared block is refused by the clearance checks any more, so this test graded nothing").toBeGreaterThan(0)
+}, 300_000)
 
 /**
  * **OBLIGATION 3's SUBSTITUTION, MADE OBSERVABLE - and it is NOT observable any other way, which is

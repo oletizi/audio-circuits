@@ -56,7 +56,7 @@ import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { adaptElkLayoutReported } from "../../lib/schgen/elk/adapt.ts"
 import { selectRenderer, subgraphOf } from "../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../lib/schgen/render/templates/index.ts"
-import { blockFieldsResult } from "../../lib/schgen/render/field-placement.ts"
+import { blockFields, type FieldFallback } from "../../lib/schgen/render/field-placement.ts"
 import { anchorsToSymbols, blockPowerLibs, valuesAlong } from "../../lib/schgen/render/power-text.ts"
 import { textProblems, textScene } from "../../lib/schgen/render/text-scene.ts"
 import { elkPrePass } from "./elk/layout.ts"
@@ -103,11 +103,11 @@ export interface UnitSlot {
   readonly key: string
   /**
    * True when this unit has NO clear field slot with the obstacle set at its most permissive: it
-   * searched FIRST, so no other unit's fields were placed yet. A failure here is unconditional -
-   * adding obstacles cannot create a slot - and a success is NOT: once an earlier unit's fields
-   * occupy a slot, this unit may fail where it just succeeded.
+   * searched FIRST, so no other unit's fields were placed yet. A fallback here is unconditional -
+   * adding obstacles cannot create a slot - and a clear slot here is NOT: once an earlier unit's
+   * fields occupy a slot, this unit may fall back where it just placed cleanly.
    */
-  readonly unconditionallyBlocked: boolean
+  readonly fallsBackUnconditionally: boolean
 }
 
 export interface MaskedBlock {
@@ -126,24 +126,31 @@ export interface MaskedBlock {
   readonly publishedProblems: readonly string[]
   /** Problem classes `checkLayout` reported, in its own order. */
   readonly published: readonly string[]
-  /** Whether every unit's fields placed. False means the text pass behind it never ran. */
-  readonly fieldsPlaced: boolean
+  /**
+   * **Every field pair the placer could not keep clear, in the block's REAL placement order.**
+   * This is what replaced the refusal `fieldsPlaced` used to report: the placer takes the
+   * least-covered slot instead of refusing, so what a reader needs is not whether the fields
+   * placed - they always do - but which ones are drawn over something.
+   */
+  readonly fallbacks: readonly FieldFallback[]
   /**
    * The text-clearance problems measured with every unit field OMITTED, verbatim - for every block
-   * that has a layout, whether its fields placed or not.
+   * that has a layout.
    *
-   * **WHERE THE FIELDS PLACED THIS IS A CONTROL, NOT A FINDING**: `checkLayout` ran the full text
-   * pass, so each of these is already in `publishedProblems`, and `maskedCensus` refuses if one is
-   * not. Where they did not place, this IS the masked population.
+   * **IT IS A CONTROL AND NOT A FINDING, on every row since Task 24**: `checkLayout` reaches the
+   * full text pass on every block now, so each of these is already in `publishedProblems`, and
+   * `maskedCensus` refuses if one is not.
    */
   readonly fieldFree: readonly string[]
   /**
-   * Problem classes of the text-clearance pass that `checkLayout` never ran. Empty where nothing
-   * was masked AND where nothing was found - `fieldsPlaced` and `unmeasured` tell the two apart.
+   * Problem classes the field-free pass found and `checkLayout` did not. **Empty on every row by
+   * construction since Task 24**, and still computed: the population it measured was the price of
+   * the field-placement refusal, and that refusal is gone. What is unreported NOW is named in
+   * `unmeasured` and carried by `fallbacks`.
    */
   readonly masked: readonly string[]
-  /** Units with no field slot even in first position; empty when the fields placed. */
-  readonly blockedUnits: readonly string[]
+  /** Units with no CLEAR field slot even in first position, so their fallback is unconditional. */
+  readonly fallbackUnits: readonly string[]
   /** Every check that could not run, with what stopped it. */
   readonly unmeasured: readonly string[]
   /** The distinct classes known to stand between this block and a drawing, published or masked. */
@@ -178,9 +185,9 @@ export function unitSlots(g: BlockSubgraph, layout: BlockLayout): readonly UnitS
   return layout.placements.map((pl) => {
     const key = `${pl.part}#${pl.unit}`
     const first = { ...layout, placements: [pl, ...layout.placements.filter((q) => q !== pl)] }
-    const r = blockFieldsResult(g, first, libs)
-    const blocked = !r.ok && r.mismatch.kind === "clearance" && r.mismatch.obstacles[0] === `Reference and Value of ${key}`
-    return { key, unconditionallyBlocked: blocked }
+    const placed = blockFields(g, first, libs).find((u) => u.key === key)
+    if (placed === undefined) throw new Error(`block ${g.block.id}: ${key} is a placement and the placer returned no unit for it`)
+    return { key, fallsBackUnconditionally: placed.fallback !== null }
   })
 }
 
@@ -233,36 +240,36 @@ export async function maskedCensus(cases: readonly ParityCase[] = PARITY_CASES):
           mismatchKind: report.result.mismatch.kind,
           publishedProblems: report.problems,
           published,
-          fieldsPlaced: false,
+          fallbacks: [],
           fieldFree: [],
           masked: [],
-          blockedUnits: [],
+          fallbackUnits: [],
           unmeasured: [`every clearance check: refused at ${gateOf(report.result.mismatch.reason)}, so there is no grid-legal layout for any of them to run on`],
           blockedBy: [],
         })
         continue
       }
-      const fields = blockFieldsResult(g, layout, blockPowerLibs(g))
+      const fallbacks = blockFields(g, layout, blockPowerLibs(g)).flatMap((u) => (u.fallback === null ? [] : [u.fallback]))
       const fieldFree = maskedTextProblems(g, layout)
-      if (fields.ok) {
-        // THE CONTROL, AND IT RUNS ON EVERY BLOCK WHOSE FIELDS PLACE: nothing was masked here, so
-        // the field-free problems must all be among the published ones. The subset is the whole
-        // soundness claim for the blocks where it CANNOT be checked, so it is checked everywhere it
-        // can be, on real geometry, rather than argued for in a comment.
-        const missing = fieldFree.filter((p) => !report.problems.includes(p))
-        if (missing.length > 0) {
-          throw new Error(
-            `block ${block.id}: its fields placed, so checkLayout ran the full text pass, and yet ` +
-              `the field-free pass found ${missing.length} problem(s) checkLayout did not report: ` +
-              `${missing.join("; ")}. A scene with FEWER texts cannot have MORE problems - every ` +
-              "textProblems comparison is between two things already in the scene - so either that " +
-              "is false or the two scenes are not the same geometry. The masked population measured " +
-              "for every other block rests on exactly this, so it is refused here rather than printed.",
-          )
-        }
+      // **THE CONTROL, AND SINCE TASK 24 IT RUNS ON EVERY BLOCK WITH A LAYOUT.** `checkLayout`
+      // always reaches the full text pass now - the field-placement refusal that used to
+      // early-return it no longer exists - so the field-free problems must all be among the
+      // published ones, on every row rather than on the rows where the fields happened to place.
+      // `masked` is what this leaves over, computed rather than hardcoded to `[]`: the population
+      // is empty by construction, and a check that states its own conclusion is no check.
+      const missing = fieldFree.filter((p) => !report.problems.includes(p))
+      if (missing.length > 0) {
+        throw new Error(
+          `block ${block.id}: checkLayout ran the full text pass, and yet the field-free pass found ` +
+            `${missing.length} problem(s) checkLayout did not report: ${missing.join("; ")}. A scene ` +
+            "with FEWER texts cannot have MORE problems - every textProblems comparison is between " +
+            "two things already in the scene - so either that is false or the two scenes are not the " +
+            "same geometry. This is a defect in render/text-scene.ts or in this tool, not a finding " +
+            "about the block.",
+        )
       }
-      const masked = fields.ok ? [] : fieldFree.map(classOf)
-      const blockedUnits = fields.ok ? [] : unitSlots(g, layout).filter((u) => u.unconditionallyBlocked).map((u) => u.key)
+      const masked = missing.map(classOf)
+      const fallbackUnits = unitSlots(g, layout).filter((u) => u.fallsBackUnconditionally).map((u) => u.key)
       out.push({
         circuit: c.name,
         block: block.id,
@@ -270,16 +277,20 @@ export async function maskedCensus(cases: readonly ParityCase[] = PARITY_CASES):
         mismatchKind: report.result.ok ? "" : report.result.mismatch.kind,
         publishedProblems: report.problems,
         published,
-        fieldsPlaced: fields.ok,
+        fallbacks,
         fieldFree,
         masked,
-        blockedUnits,
-        unmeasured: fields.ok
-          ? []
-          : [
-              "text clearance involving any unit's own Reference or Value: field placement refused, " +
-                "so there is no slot to measure one from",
-            ],
+        fallbackUnits,
+        unmeasured:
+          fallbacks.length === 0
+            ? []
+            : [
+                `text clearance involving the ${fallbacks.length} fallback field pair(s) of ` +
+                  `${fallbacks.map((f) => f.key).join(", ")}: the placer had no clear slot and chose the ` +
+                  "least-covered one, so textProblems does not report their overlaps. They are not " +
+                  "unreported - each FieldFallback names what it covers, and report.ts prints them per " +
+                  "block in RENDER-REPORT.md",
+              ],
         blockedBy: [...new Set([...published, ...masked])].sort(),
       })
     }
@@ -302,8 +313,9 @@ export function renderMasked(rows: readonly MaskedBlock[]): readonly string[] {
       `${r.block}: ${r.draws ? "DRAWS" : `blocked by ${r.blockedBy.join(", ") || "nothing measurable"}`}` +
         `${r.published.length === 0 ? "" : ` published ${r.published.join(", ")}`}` +
         `${r.masked.length === 0 ? "" : ` masked ${r.masked.join(", ")}`}` +
-        `${r.blockedUnits.length === 0 ? "" : ` units with no slot ${r.blockedUnits.join(", ")}`}`,
-      ...r.fieldFree.map((p) => `    ${r.fieldsPlaced ? "control (fields placed, so checkLayout published this too)" : "masked"}: ${p}`),
+        `${r.fallbackUnits.length === 0 ? "" : ` units with no clear slot ${r.fallbackUnits.join(", ")}`}`,
+      ...r.fallbacks.map((f) => `    FALLBACK ${f.key} (${f.libId}): covers ${f.covers.join(", ")}`),
+      ...r.fieldFree.map((p) => `    control (checkLayout published this too): ${p}`),
       ...r.unmeasured.map((u) => `    unmeasured: ${u}`),
     ]),
     `${rows.filter((r) => r.draws).length} of ${rows.length} declared blocks draw`,
