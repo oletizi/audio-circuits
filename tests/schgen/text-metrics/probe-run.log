@@ -1,6 +1,6 @@
 
 == WHAT THIS RUN MEASURED
-repository commit: fff714c1030557ad40261197e9c1b6f4c8538cce (clean tree)
+repository commit: c71e5c9ac1fa71811f221cdc69b6ecae79293f18 (clean tree)
 kicad-cli: /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli version 10.0.5
 font source: /tmp/newstroke_font.cpp pinned at SHA-256 dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9
 font records parsed: 65487
@@ -616,4 +616,4 @@ drawn-text overlaps (labels against labels and against power values), per quanti
   refusal transistor-preamp/tp-leg-emitter-bypass: block tp-leg-emitter-bypass: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)
   refusal transistor-preamp/tp-stage: block tp-stage: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): body of Q1#1 overlaps label BYPASS_CAP at (11.43, 11.43); body of TP1#1 overlaps label BASE at (53.34, 25.4); label BYPASS_CAP at (11.43, 11.43) overlaps wire 12 of tp-stage (COLLECTOR); label BYPASS_CAP at (11.43, 11.43) overlaps body of Q1#1; label BYPASS_CAP at (11.43, 11.43) overlaps pin Q1.2 text; label BASE at (53.34, 25.4) overlaps body of TP1#1; label BASE at (53.34, 25.4) overlaps graphic 2 of TP1#1; label BASE at (53.34, 25.4) overlaps graphic 3 of TP1#1
 
-scratch output under /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/c2d282b5-563b-4925-a635-40baac8284e1/scratchpad/probe-final3
+scratch output under /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/c2d282b5-563b-4925-a635-40baac8284e1/scratchpad/probe-r2-final
