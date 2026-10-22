@@ -21,6 +21,21 @@ and, the turn before:
 
 > *"When I say 'text handling is a solved problem', I mean there has been 50 years of research and development into text handling. You seem to be trying to solve text handling issues from first principles instead of using those 50 years of accumulated knowledge."*
 
+## Third-party review, 2026-10-22, and what it changed
+
+A third-party review of this plan was taken against blob `d82d369`, **which `git rev-parse` confirms is this file** — so it reviewed the text as pushed and not a stale copy. It approved the direction and required revisions to three tasks. **All six of its findings are accepted; one of its supporting claims is not.** Its own stated limit: *"I have reviewed the plan and relevant repository source, but have not executed the proposed experiments or independently verified its numerical baseline."* **So its findings enter as PLAUSIBLE and are to be driven, not inherited** — which is the standard this register applies to every relayed claim.
+
+| its finding | where it landed |
+| --- | --- |
+| Task 1 measured glyph advance, not rendered bounds | Task 1 Step 0: three quantities, measured separately |
+| Task 5 wrongly treated a label's position as a netlist fact | Task 5 preamble: four degrees of freedom, and **G262** is to be corrected |
+| Task 4's conclusion exceeded what four tools can support | Task 4 Steps 3-4: per-tool, three evidence grades, scope stated |
+| An ELK option inventory is not a capability demonstration | Task 2 Step 5: a scratch experiment with two arms |
+| Task 5's control conflated net identity with net naming | Task 5 Step 2: identity and naming tested separately, with the discriminating negative control |
+| Task 7 should rank evidence, not just approaches | Task 7 Step 3: established-elsewhere / demonstrated-here / integration-hypothesis |
+
+**THE ONE CLAIM NOT ACCEPTED, and the reason is this project's own invariant.** The review held that *"for collision detection, the authoritative quantity is the actual rendered geometry"* — that ink bounds govern. **This plan declines to settle that**, for two reasons. First, this repository emits a KiCad file, so a drawing that clears ink bounds while violating KiCad's own text box is a drawing KiCad considers wrong; ink bounds are the more permissive measure and electing them has consequences the review does not establish. Second and decisive: **electing which box governs a collision IS an acceptance criterion for the artifact this generator produces, and `CLAUDE.md` forbids the producing agent from authoring one.** Task 1 characterises all three and reports their disagreements; the owner elects. The review's related assertion that strokes may extend outside their nominal advance is also to be **measured** rather than assumed — for a monoline stroke font it may be false.
+
 ## The state this research is answering
 
 Measured, committed, and each re-derivable from the register:
@@ -73,21 +88,32 @@ One document, built section by section, plus register amendments.
 
 **Interfaces:**
 - Consumes: nothing. First task.
-- Produces: a per-glyph advance table for the glyph set this repository actually emits, and `ERROR TABLE` — for every real Reference and Value string in the eleven boards, the `length × GRID` estimate against the measured advance sum, with the ratio.
+- Produces: `TEXT GEOMETRY` — for the glyph set and the real strings this repository emits, **three separately measured quantities** (see Step 0) — and `ERROR TABLE`, the `length × GRID` estimate against each measured quantity, with ratios and the distribution.
+
+- [ ] **Step 0: THREE QUANTITIES, NOT ONE, AND THE TASK DOES NOT ELECT BETWEEN THEM.** A third-party review of this plan (2026-10-22, against blob `d82d369`, which is this file) found the original Step 2 measured only glyph **advance** and argued that collision detection needs rendered **ink** bounds. **Its distinction is accepted; its election of an authoritative quantity is not, and this task must not make that election either.** Measure all three:
+  1. **Glyph advance** — how far the pen moves. Predicts line width and text progression.
+  2. **Rendered ink bounds** — the area the strokes actually occupy, per complete string as KiCad renders it.
+  3. **KiCad's own text-object bounds** — what `EDA_TEXT`'s bounding box returns, which is what KiCad's own clearance and selection behaviour uses.
+  **Why the election is not this task's:** this repository emits a KiCad file, so a drawing that clears ink bounds while violating KiCad's own box is a drawing KiCad considers wrong — and choosing which box governs is an acceptance criterion for the artifact the generator produces, which `CLAUDE.md` forbids the producing agent from authoring. Report all three and their disagreements; the owner elects.
+  **And verify rather than inherit** the review's supporting claim that strokes may extend outside their nominal advance. For a monoline stroke font that is measurable and may be false. The review states it reviewed the plan and source but **did not execute the experiments or verify the baseline**, so every claim of its own enters here as PLAUSIBLE and is to be driven.
 
 - [ ] **Step 1: Establish the glyph set actually used.** Extract every Reference and Value string and every net name the eleven boards emit, and reduce to the distinct characters. Drive it and paste the output; this bounds the rest of the task.
 
-- [ ] **Step 2: Get KiCad's real advances, by whichever of these three routes works, and say which.**
+- [ ] **Step 2: Get KiCad's real geometry, by whichever of these three routes works, and say which.** Each route must yield as many of Step 0's three quantities as it can, and say which it cannot.
   1. **The font source.** KiCad's stroke font is `newstroke` and lives in its source tree (`libs/kimath/src/geometry/` and `common/newstroke_font.cpp` in recent layouts). Fetch it from the KiCad source repository and extract per-glyph advance widths. `[READ]` only if you open the actual file.
   2. **The installed runtime.** `/Applications/KiCad/KiCad.app/Contents/SharedSupport/scripting` exists. Establish whether KiCad's Python API exposes text extents (`EDA_TEXT::GetTextBox` or equivalent through `pcbnew`/`eeschema` bindings).
   3. **Empirically through `kicad-cli`.** Emit a schematic containing known strings at 1.27 mm, export to SVG, and measure the rendered extents from the SVG geometry. **This route needs a control that could answer differently:** include a string whose width you can predict independently (e.g. ten identical characters) and confirm the measurement scales.
   **If all three fail, say so and stop the task there** — a guessed advance table is worse than none, and the register's own standard is to refuse rather than guess.
 
-- [ ] **Step 3: Build the ERROR TABLE.** For every real Reference and Value string in the eleven boards, and every net name: the current estimate, the measured width, the ratio. Report the distribution, not an average alone — the maximum over-estimate is what manufactures a collision.
+- [ ] **Step 3: Build the ERROR TABLE, with a column per quantity.** For every real Reference and Value string in the eleven boards, and every net name: the current `length × GRID` estimate against the advance sum, against the ink bounds, and against KiCad's own box. Report the distribution, not an average alone — the maximum over-estimate is what manufactures a collision. **Report where the three measured quantities disagree with each other and by how much**, because that disagreement is what decides whether the election in Step 0 matters in practice or is academic.
 
-- [ ] **Step 4: Re-run the repository's own collision measurements against real metrics.** The figures to re-take, each named in the register: `G239`'s five-of-eleven-slots arithmetic for a small two-pin passive; the jumper's Reference box against its body; `G260`'s fifteen fallback placements; and the three boards blocked on global-label overlaps. **Report how many survive real metrics and how many were artefacts of the ruler.** Do this by computing with the measured advances; **do not edit `textWidth`** — this task changes no code.
+  Measure the strings as the generator actually emits them, which means **horizontal and vertical text, each justification the emitter uses, and the rotations it applies.** A width measured only horizontally does not characterise a rotated field. **Control that could answer differently:** include a string whose measurement you can predict from a shorter one (the same character repeated) and confirm it scales; if a quantity does not scale, say so rather than averaging over it.
 
-- [ ] **Step 5: Write §1 and amend the register.** §1 carries the route used, the advance table, the ERROR TABLE and the survivor count. `G239` and `G260` get an amendment saying their arithmetic rests on `length × GRID` and by how much that is wrong, with the old figures left visible per house style.
+  **Global labels get their own rows.** Their box is not text alone — `outlineExtent` adds two grid steps for the arrow-shaped ends, and intersheet references add more. Measure the whole rendered outline, not the text inside it.
+
+- [ ] **Step 4: Re-run the repository's own collision measurements against real geometry, once per quantity.** The figures to re-take, each named in the register: `G239`'s five-of-eleven-slots arithmetic for a small two-pin passive; the jumper's Reference box against its body; `G260`'s fifteen fallback placements; and the three boards blocked on global-label overlaps. **Report how many survive under each of the three quantities** — a collision that survives all three is real, one that survives none was an artefact of the ruler, and one that survives some is exactly what makes Step 0's election consequential. Compute with the measured geometry; **do not edit `textWidth`** — this task changes no code.
+
+- [ ] **Step 5: Write §1 and amend the register.** §1 carries the route used, the three measured quantities, their disagreements, the ERROR TABLE and the per-quantity survivor counts. `G239` and `G260` get an amendment saying their arithmetic rests on `length × GRID` and by how much that is wrong under each quantity, with the old figures left visible per house style. **If the three quantities agree closely enough that the election does not change any survivor count, say that too** — it would mean the review's High finding is real in principle and inert here, which is a result and not a criticism of the finding.
 
 - [ ] **Step 6: Commit.** One commit for the document and README, one for the register.
 
@@ -113,9 +139,13 @@ One document, built section by section, plus register amendments.
 
 - [ ] **Step 4: Establish whether the graph this repository hands ELK contains labels at all.** Read `lib/schgen/elk/graph.ts` and report whether nodes carry `labels` arrays. **If it sends no labels, ELK cannot have reserved room for them, and every downstream collision is between text ELK never knew about** — state that plainly if it is what you find.
 
-- [ ] **Step 5: Write §2.** The inventory, what is set, what ELK would do, and whether the graph carries labels. **State explicitly whether ELK could own any part of this problem**, and if it could not, why — a negative is as useful here as a positive and must be as well evidenced.
+- [ ] **Step 5: RUN IT, because an option inventory is not a capability demonstration.** A third-party review (2026-10-22) made this point and it is accepted: ELK exposing a label option proves nothing about whether it solves this problem, and a KiCad global label attached to a net is not automatically one of ELK's node, port or edge labels.
 
-- [ ] **Step 6: Commit.**
+  In a **scratch program** — no production module changes — take a graph this repository already builds, hand it the same graph twice, once with label geometry and once without, and report: does ELK reserve space, where do the labels land, do they collide, and **can the resulting coordinates be expressed in a `.kicad_sch` at all.** Two arms, and they must be able to answer differently: one case that should succeed, and one constrained tightly enough to force a failure. **If ELK silently drops labels it cannot place, that is the finding** and it is the same failure class this repository has recorded eleven times.
+
+- [ ] **Step 6: Write §2.** The inventory, what is set, what ELK would do, whether the graph carries labels, and what the experiment showed. **State explicitly whether ELK could own any part of this problem**, and if it could not, why — a negative is as useful here as a positive and must be as well evidenced. **Mark the inventory as documentation and the experiment as driven**; they are different grades of evidence and §7 ranks them separately.
+
+- [ ] **Step 7: Commit.**
 
 ---
 
@@ -158,15 +188,32 @@ One document, built section by section, plus register amendments.
 
 - [ ] **Step 2: Commercial tools, from documentation, marked as documentation.** Altium's and OrCAD's designator auto-placement. You will not read their source; say so. What their documentation says about overlap and manual adjustment is still evidence.
 
-- [ ] **Step 3: Answer the failure question directly.** For each tool: drop the label, overlap it, defer to a human, or refuse. **Report the count.** If no tool refuses, that is the finding and it is about this repository.
+- [ ] **Step 3: Answer the failure question per tool, and DO NOT GENERALISE PAST THE TOOLS YOU READ.** A third-party review (2026-10-22) found the original wording invited a universal claim that four open-source tools and two documentation sets cannot support, and that **absence of an obvious refusal in a source read is not proof that no refusal exists** — a renderer may reject geometry earlier, clip, fall back, or quietly overlap, and those are hard to tell apart without running it. Accepted.
 
-- [ ] **Step 4: Write §4, amend G260, and commit.**
+  Classify each tool against this taxonomy, which is the review's and is wider than the four options this plan originally carried: **suppress or clip the text; allow the overlap; adjust the surrounding geometry; request user intervention; refuse to generate.** A tool may do several under different conditions, so record the condition with the behaviour.
+
+  And **grade the evidence three ways, separately: behaviour OBSERVED by running the tool, behaviour DOCUMENTED by its own docs, and behaviour INFERRED from reading source.** Commercial documentation rarely specifies failure semantics at all; where that is so, say that rather than inferring.
+
+- [ ] **Step 4: State the conclusion at the scope the evidence supports.** The honest form is *"of the N tools examined, M refuse and here is how each was established"*, followed by **a separate paragraph on what remains unknown** — which tools were not examined, and which examined tools' failure behaviour could not be settled without running them. **The finding that matters is about this repository**, and it survives at the narrow scope: if none of the tools examined refuses, this generator's refusal is unusual among its closest neighbours, which is a claim four tools can support.
+
+- [ ] **Step 5: Write §4, amend G260, and commit.**
 
 ---
 
 ### Task 5: Global labels are a different problem, and this is the one that blocks us
 
-Three of eleven boards are blocked here and **G262** records that the 2026-10-21 mechanism cannot help: a global label's anchor is a netlist fact, so only the side it leaves from is free. Placing a part's own designator and placing a net's label are different problems and the literature names them differently.
+Three of eleven boards are blocked here. Placing a part's own designator and placing a net's label are different problems and the literature names them differently.
+
+**AND THE PREMISE THIS TASK ORIGINALLY CARRIED IS WRONG — THE REVIEW'S MOST CONSEQUENTIAL FINDING, ACCEPTED.** `docs/known-gaps.md` **G262**, and the first draft of this task, said *a global label's position is a netlist fact, so only the side it leaves from is free.* A third-party review (2026-10-22) answered: **the label's NAME and its electrical CONNECTION are netlist facts; its drawing coordinates are not necessarily fixed by the circuit.** A label can move to another valid point on the same net, and this generator draws the wires, so it can also change the geometry that leaves no room.
+
+So there are **at least three degrees of freedom, where G262 recorded one**:
+1. the label's **orientation** — the side it leaves from;
+2. **relocating its anchor** along an electrically equivalent connection;
+3. **adjusting the surrounding wire geometry** to make room.
+
+A fourth is this generator's own: **which of a net's segments it attaches the label to in the first place.**
+
+**This task must therefore establish which freedoms KiCad permits and which this generator has merely restricted, before framing anything as fixed-anchor labelling** — because framing it that way first would discard the relevant solutions before examining them, and recording one freedom where there are four may already have done so. **G262 is to be corrected, not extended.**
 
 **Files:**
 - Modify: `docs/schematic/text-handling-research.md` (§5)
@@ -178,9 +225,21 @@ Three of eleven boards are blocked here and **G262** records that the 2026-10-21
 
 - [ ] **Step 1: Name the problem correctly.** Establish what the literature calls labelling a feature whose position is fixed and whose label orientation is free — boundary labelling, edge labelling, the one-position-per-side model, or something else. `docs/schematic/text-placement-prior-art.md` reached *mixed labelling* and a slider model; start from its citations and go to the papers.
 
-- [ ] **Step 2: Establish what KiCad does with global label orientation**, from Task 3's source and from the schematic format. A global label in a `.kicad_sch` has a rotation; what chooses it, and can it be changed without changing connectivity? **Drive this**: rotate a global label in a generated sheet, re-export the netlist with `kicad-cli`, and confirm the netlist is identical. **Control:** change the label's net name and confirm the netlist does move.
+- [ ] **Step 2: Drive each of the four freedoms separately, and test NET IDENTITY apart from NET NAMING.** The review found the original control here conflated them, and it was right: **renaming a net changes a string without necessarily changing the partition of connected pins**, and the one case where renaming genuinely does change connectivity is the case the original control failed to construct.
 
-- [ ] **Step 3: Establish how many degrees of freedom we actually have**, per blocked board: for each overlapping global-label pair, which sides are available, and whether any assignment of sides clears the overlap. **This is a measurement, not a fix.** If no assignment clears it, the problem is not side selection and §5 must say so.
+  So compare two properties, separately, on every arm below:
+  - **Identity** — the partition of connected component terminals, as sets, **ignoring names**.
+  - **Naming** — the exported net names.
+
+  Arms, each with the netlist exported by `kicad-cli` before and after:
+  1. **Rotate** a global label in place. Expect identity unchanged and naming unchanged.
+  2. **Slide** its anchor to another point on the same wire. Expect identity unchanged.
+  3. **Move** it to a different segment of the same net. Expect identity unchanged — and if it is not, that freedom does not exist and say so.
+  4. **Reroute** the wire under it. Expect identity unchanged.
+
+  **The negative control, which is the review's and is the one that discriminates:** build two **electrically separate** wire segments connected only through matching global-label names, rename one, and confirm **the connection between those segments disappears from the partition.** That tests electrical semantics rather than observing a changed string, and a control that cannot distinguish identity from naming would have passed on either.
+
+- [ ] **Step 3: Measure the degrees of freedom actually available on the blocked boards**, per overlapping global-label pair: which sides are free, which anchor points on the same net are reachable, and whether any combination clears the overlap. **This is a measurement, not a fix.** Report it per freedom, because *"no side assignment clears it"* and *"nothing clears it"* are different results — the first says side selection is insufficient, the second says the problem is elsewhere, and only the second would justify the fixed-anchor framing this task was originally written around.
 
 - [ ] **Step 4: Write §5, amend G262, and commit.**
 
@@ -221,11 +280,18 @@ Fifty years of typesetting treats text layout as penalty minimisation rather tha
 
 - [ ] **Step 2: Map each approach onto the actual blockers**, board by board, from the eleven-board table in this plan's *state* section. **An approach that fixes nothing on any board is reported as fixing nothing** — the register already records one mechanism that was the direction the research made least promising, and that kind of finding is the point.
 
-- [ ] **Step 3: Name what remains unknown.** A section listing everything the seven tasks did not establish, in the style of `docs/schematic/text-placement-prior-art.md` §9. **This is not a failure section; it is the honest boundary of the survey.**
+- [ ] **Step 3: RANK THE EVIDENCE, not just the approaches.** A third-party review (2026-10-22) made this point and it is accepted: that KiCad's autoplacer exists, that ELK exposes label options, and that published algorithms solve certain formulations are **three facts that prove nothing about whether any of them solves this repository's problem.** Grade every row of the `SOLUTION SPACE` table at one of three levels, in its own column:
+  1. **ESTABLISHED ELSEWHERE** — the capability demonstrably works in its original system. Evidence: source read, or paper read.
+  2. **DEMONSTRATED HERE** — it was run against this repository's own inputs and the result observed. Only Task 1's geometry, Task 2's ELK experiment and Task 5's freedom measurements can reach this level.
+  3. **INTEGRATION HYPOTHESIS** — untested here. **Most rows will be this, and labelling them honestly is the point of the column.**
 
-- [ ] **Step 4: State plainly that this is not a design.** The document ends by naming what the owner would have to decide before any of it is built — including the one question already recorded as his: **how much overlap is acceptable in a drawing** (`G260`), which no agent may answer.
+  This extends the register's existing CONFIRMED-versus-RELAYED distinction by the level it lacks: a thing can be confirmed in its own context and still be a hypothesis in ours.
 
-- [ ] **Step 5: Amend G232 and G259, and commit.**
+- [ ] **Step 4: Name what remains unknown.** A section listing everything the seven tasks did not establish, in the style of `docs/schematic/text-placement-prior-art.md` §9. **This is not a failure section; it is the honest boundary of the survey.**
+
+- [ ] **Step 5: State plainly that this is not a design.** The document ends by naming what the owner would have to decide before any of it is built. Two are already recorded as his and **no agent may answer either**: **how much overlap is acceptable in a drawing** (`G260`), and **which of the three text-geometry quantities governs a collision** (Task 1 Step 0).
+
+- [ ] **Step 6: Amend G232 and G259, and commit.**
 
 ---
 
