@@ -18,6 +18,16 @@ find it.**
 > would have concluded that three of the passes were not indexed material. The
 > counts are fixed below and the three missing profiles are added.
 
+> **A SEVENTH PASS LANDED 2026-10-21, AND THE COUNTS BELOW ARE ABOUT THE SIX
+> RATHER THAN ABOUT THIS DIRECTORY.** `text-placement-prior-art.md` researched
+> **text placement**, which the six passes do not cover at all: they are about
+> GRAPH layout - crossings, bends, angular resolution, annealing over part and
+> wire positions - and a reader looking for where a part's Reference and Value
+> go will find nothing in any of them. It is indexed in both tables below.
+> **The opening's "six" is left as written rather than silently incremented**,
+> because the correction above is the worked example of a count edited while the
+> thing it counts was not: say what changed.
+
 **This index's first job is not to summarise what the six documents say. It is
 to record how much each one can be trusted, because they differ sharply and
 nothing in their file names says so.** A later reader who treats them as equal
@@ -58,6 +68,7 @@ neither.**
 | Document | Evidentiary standing | What that means concretely |
 | --- | --- | --- |
 | [`schgen-development-history.md`](schgen-development-history.md) | **Primary sources, read directly** | Its author read a repository's own git history, its spec at named revisions, its committed verification record, and the session transcripts, streamed and quoted. Every claim is marked **CONFIRMED** (source read and cited) or **INFERRED**, and agent narration is labelled as agent narration. |
+| [`text-placement-prior-art.md`](text-placement-prior-art.md) | **Mixed, and the mix is per-source** - two papers and one implementation read in full, the rest abstracts | Two papers were extracted to text locally and are quoted from their own bodies (`[PAPER-FULL]`); KiCad's `autoplace_fields.cpp` was downloaded and read line by line (`[CODE]`); eight claims about this tree are `[MEASURED-HERE]` commands. Everything else is `[PAPER-ABS]` or `[THIRD-PARTY]` and marked. **It ran no labelling algorithm and did not build KiCad**, so its behavioural claims about KiCad are read off source, not observed. |
 | [`readability-research.md`](readability-research.md) | **Mixed, and the mix is clause-by-clause** | ANSI/ASME Y14.15-1966 and IEEE 315 were read directly and are quoted at clause level. The three **in-force** standards that hold the layout requirements - IPC-2612, IEC 61082-1, ASME Y14.2 - were obtained as **clause and figure titles only**. About a dozen candidate-criteria rows are therefore flagged *title only*, and **no requirement is paraphrased from a title.** |
 
 **Surveyed only.** This one verified nothing.
@@ -249,6 +260,51 @@ withdrew the sentence.**
 
 **Registered from it:** the AEM extension to **G78**, and the ELK half of
 **G90**.
+
+### [`text-placement-prior-art.md`](text-placement-prior-art.md)
+
+2026-10-21, committed with this entry. **The seventh pass, and the only one
+about TEXT.**
+
+**The question it was asked**, and it is the owner's in his own words, after
+three rounds of work on `lib/schgen/render/field-placement.ts` had measured one
+implementation's failure rate and escalated it to him as a scope decision:
+*"Have you stopped to actually think about text placement issues as a general
+problem space and research prior art on the subject. My guess is that your
+approach has been extremely naive and you've given up and made it a me problem
+instead of a you problem."* **He was right.** The problem has a name
+(point-feature label placement), a 1995 empirical comparison, a complexity
+result, a standard three-term objective, a 54-reference survey of the
+leader-line escape, and an open-source reference implementation inside KiCad -
+and none of it had been consulted. **It makes no recommendation and designs
+nothing.**
+
+**What it read directly.** Christensen, Marks & Shieber's *TOG* 14(3) paper and
+Bekos, Niedermann & Nöllenburg's external-labelling survey were extracted to
+text locally and are quoted from their own bodies; KiCad's 794-line
+`eeschema/autoplace_fields.cpp` was downloaded and read. Its §7 and §8 claims
+about this tree are `[MEASURED-HERE]` commands.
+
+**The four findings a planner most needs from it:** the standard objective
+**maximises labels placed** and the three documented things a greedy algorithm
+does when a label will not fit are *drop it, draw it overlapping, or ask a
+person* - **refusing the drawing is a fourth thing no source does** (§2);
+**KiCad's own autoplacer cannot fail** and falls back to placing the text
+overlapping on the least-pinned side (§5); `field-placement.ts` is a **greedy
+sequential first-fit with no backtracking and no fallback**, so one unit's text
+can make a later unit unplaceable (§7); and **this repository already ships a
+scored, weighted, least-cost text placer with leader lines** in
+`tools/guide/placement.ts` and `tools/guide/render-edges.ts`, committed three
+weeks before the schematic placer (§8).
+
+**Its own limits are in §9**, and two matter: it ran **no** labelling algorithm
+and did not build KiCad, so every behavioural claim about KiCad is read off
+source; and the sliding-label literature's central quantity - how many more
+labels a slider model places than a fixed-position one - **was not retrieved.**
+
+**Registered from it:** amendments to `docs/known-gaps.md` **G232** and
+**G239**. It writes no new entry, by instruction, so that the account stays in
+the entries the scope decision is being taken on.
 
 Where the findings bind
 -----------------------
