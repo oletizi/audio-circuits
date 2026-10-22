@@ -38,7 +38,7 @@ import { adaptElkLayoutReported } from "../../lib/schgen/elk/adapt.ts"
 import { selectRenderer, subgraphOf } from "../../lib/schgen/render/blocks.ts"
 import { TEMPLATES } from "../../lib/schgen/render/templates/index.ts"
 import { elkPrePass } from "./elk/layout.ts"
-import { PARITY_CASES, parityResolver, type ParityCase } from "./authoring-census.ts"
+import { PARITY_CASES, caseResolver, type ParityCase } from "./authoring-census.ts"
 import type { BlockId } from "../../lib/schgen/ir/types.ts"
 
 /**
@@ -164,9 +164,15 @@ export interface BlockCoverage {
  * of the three does. See this module's header and `tools/schgen/masked-problems.ts`.
  */
 export async function coverageCensus(cases: readonly ParityCase[] = PARITY_CASES): Promise<readonly BlockCoverage[]> {
-  const symbols = parityResolver()
   const out: BlockCoverage[] = []
   for (const c of cases) {
+    // **ONE RESOLVER PER CASE, NOT ONE OVER ALL OF THEM** - the change Task 25 had to make when
+    // the nine board declarations landed. `parityResolver()` is the four parity circuits'
+    // nicknames, so measuring any other declared case through it refuses with `library nickname
+    // "Switch" is not configured` - a refusal about the HARNESS, not the block. `caseResolver`
+    // takes the case's own nicknames, and one case at a time keeps one board's missing library
+    // from refusing the batch (see tools/schgen/board-sheets.ts for the same move).
+    const symbols = caseResolver([c])
     const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
     const outcomes = await elkPrePass(circuit, symbols)
     for (const block of circuit.blocks.values()) {

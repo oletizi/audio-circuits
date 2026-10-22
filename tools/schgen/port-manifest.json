@@ -861,6 +861,8 @@
     "tests/schgen/gates/graph-match.test.ts",
     "lib/schgen/render/occupancy.ts",
     "tools/schgen/board-sheets.ts",
-    "tests/schgen/render/field-fallback.test.ts"
+    "tests/schgen/render/field-fallback.test.ts",
+    "tools/schgen/board-declarations.ts",
+    "tests/schgen/board-declarations.test.ts"
   ]
 }

@@ -24,6 +24,9 @@
  */
 
 import { negotiablePort } from "../../../lib/schgen/authoring.ts"
+// `legMembers` moved to ./preamp-boards.ts when the four later boards needed it too; the private
+// copy that used to sit below is deleted rather than kept (`CLAUDE.md`: supersede means delete).
+import { legMembers } from "./preamp-boards.ts"
 import { DESIGNATORS, LEGS } from "../lab-board.ts"
 import type { BlockDeclaration, PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
 import type { RailSpec, SheetSpec } from "../../../lib/schgen/ir/types.ts"
@@ -75,15 +78,6 @@ const PORT_DIRECTIONS: Readonly<Record<string, PortDirection>> = {
 }
 
 const CONTEXT = { portDirections: PORT_DIRECTIONS, rails: RAILS }
-
-/** The component ids of one declared leg, in the order `addLeg` adds them. */
-function legMembers(leg: (typeof LEGS)[keyof typeof LEGS]): readonly string[] {
-  const ids: string[] = []
-  if (leg.jumperId !== undefined) ids.push(leg.jumperId)
-  if (leg.floor !== undefined) ids.push(leg.floor.id)
-  ids.push(leg.trimId)
-  return ids
-}
 
 /** Block id and title per declared leg, with the nets its declaration makes cross the boundary. */
 const LEG_BLOCKS: readonly { readonly leg: keyof typeof LEGS; readonly id: string; readonly title: string; readonly interface: readonly string[] }[] = [

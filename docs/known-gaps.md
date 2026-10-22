@@ -1441,6 +1441,66 @@ made.
 >   schematic for at least one board, compared against a drawing the owner trusts by something
 >   other than the producing agent's judgement. **No agent writes that criterion.**
 
+> **AMENDED 2026-10-21 BY TASK 25: THE BOARD FIGURE STILL DID NOT MOVE, AND THE REASON IT DID NOT
+> IS NOW A DIFFERENT REASON - WHICH IS THE WHOLE RESULT.**
+>
+> | | at `a5c36e0` | at `ce58374` (Task 24) | at this commit |
+> | --- | --- | --- | --- |
+> | boards in `boards/` that produce a schematic | 0 of 11 | **0 of 11** | **0 of 11** |
+> | boards with NO authoring declaration | 9 | **9** | **0** |
+> | boards refused by the drawing code or by validation | 2 | **2** | **11** |
+> | declared ELK blocks that draw | 5 of 12 | 7 of 12 | **35 of 52** |
+>
+> `[RAN]` `tools/schgen/board-sheets.ts` over every board directory, and `bun tools/schgen/board-sheets.ts --pdf`:
+> **it produced no `.kicad_sch` and no `.pdf`, because no board generated.** There is nothing to
+> open and nothing to look at, and that is said plainly rather than reported as a clean run.
+>
+> **THE NINE DECLARATIONS ARE WRITTEN** - `circuits/pultec/schematic/` (five, from one shared
+> assembler) and `circuits/transistor-preamp/schematic/{feedback,buffered,loop,staged}-board.ts` -
+> and `tools/schgen/board-declarations.ts` wires them to the census. **G247**'s amendment carries
+> what they are derived from and the one claim of its own they corrected.
+>
+> **SO THE SCHEMATIC CLASS NOW FAILS IN TWO WAYS WHERE IT FAILED IN THREE, and the way that is gone
+> was the largest.** This entry's Task 24 amendment said *"nine of eleven boards are not refused by
+> any drawing code - nothing has been offered to it"* and called that *"the largest single reason
+> this class delivers nothing."* **That reason is discharged.** What is left:
+>
+> | class | boards | where |
+> | --- | --- | --- |
+> | refused at `validateCircuit` (gate 1) on net names, plus one undeclared symbol pin each | **6**: `pt2399-core` and all five Pultec | **G150**'s class; the Pultec specifics are **G264** |
+> | refused at ELK layout | **5**: the four preamp boards and `transistor-preamp-lab` | **G262**'s label class on 2, and three shapes nobody had seen on 3 - **G263** |
+>
+> **AND THE BLOCK FIGURE MOVED A LONG WAY WHILE THE BOARD FIGURE DID NOT, which is the number most
+> likely to be misread.** 35 of 52 declared ELK blocks draw, up from 7 of 12. **That is not progress
+> toward a board**: a board produces a sheet only when EVERY one of its blocks draws and the circuit
+> validates, so 28 of the nine boards' 40 blocks drawing is compatible with 0 of 9 boards drawing,
+> which is exactly the state measured. On three of the four preamp boards the sole refusing block is
+> `tp-stage` - the same eight components on each - so **one block refuses four boards**, and
+> `transistor-preamp-staged` has 7 of its 8 blocks drawing and produces nothing.
+>
+> - **Evidence** `[RAN]` `tools/schgen/board-sheets.ts` (committed) before and after the nine
+>   declarations landed: `9 have no authoring declaration` before, `0` after, `0 of 11 boards
+>   produce a schematic` both times. **THE CONTROL, which could have answered differently and did
+>   not:** `tools/schgen/remeasure-coverage.ts` over the four parity circuits at this commit still
+>   reports `7 of 12 declared blocks draw` with the identical per-block rows, so the resolver change
+>   Task 25 made to that tool moved no existing figure. The 52-block figure is 12 (parity, committed
+>   tool) plus 40 (the nine, a probe - **G263** carries the probe, its control and why the committed
+>   census cannot run on them). `[RAN]` the full suite with
+>   `SCHGEN_SOURCE=/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen` set: **3758
+>   pass / 0 fail across 350 files**, from 3709 / 0 across 349 - the 49 new tests are
+>   `tests/schgen/board-declarations.test.ts`.
+> - **Verified** **CONFIRMED** for every figure in this amendment - this writer ran each, and
+>   confirmed by listing the output directory that no `.kicad_sch` and no `.pdf` exists.
+> - **Why it is open** unchanged, and now narrower: **the schematic class fails for two measured
+>   reasons and no longer for an absence.** Nothing in it is a scoping question about which boards
+>   matter.
+> - **What would settle it** unchanged. **CRITERION: each of the five classes produces an artifact
+>   the owner accepts**, and for the schematic class **G240**'s criterion stands - a generated
+>   schematic for at least one board, compared against a drawing the owner trusts by something other
+>   than the producing agent's judgement. **No agent writes that criterion, and Task 25 wrote none:**
+>   the check it committed asserts that the nine declarations are well formed and agree with their
+>   circuits, and asserts nothing about whether any drawing is good.
+
 ---
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
@@ -1623,6 +1683,251 @@ on one side).
   §4 of the pass records as looking like a wire in an orthogonal drawing, with no EDA precedent
   found - or drawing it overlapping and counting it, which is **G260**'s trade applied to a second
   text class and carries that entry's unanswered question with it.
+
+> **AMENDED 2026-10-21 BY TASK 25: THE HEADER'S "EVERY" WAS MEASURED OVER FOUR CIRCUITS AND IS
+> FALSE OVER ELEVEN BOARDS, IN TWO NEW WAYS.** Nine boards had no authoring declaration when this
+> entry was written, so nothing in the drawing code had ever seen them. With the nine declarations
+> in place, **40 ELK-routed blocks of those boards were graded and 12 refuse** - and two of the
+> refusal shapes are not a global label's position and not a power symbol's value either. One of
+> them is two power symbols on DIFFERENT nets placed 2.54 mm apart with their glyphs touching, and
+> one is an obligation-2 junction disagreement with no text in it at all. **G263** carries both,
+> with the figures and the per-block refusal texts. The rest of this entry stands: the label class
+> is real, it is the largest, and the fallback technique still does not transfer to it.
+
+---
+
+### G263 - MEASURED: offering the nine previously-undeclared boards to the drawing code surfaced THREE refusal shapes nobody had seen, one of which the problem classifier cannot file at all - so `remeasure-coverage.ts` can no longer measure every declared block in the repository
+
+**WHY THESE WERE INVISIBLE UNTIL NOW, WHICH IS THE WHOLE VALUE OF THE FIGURE.** Until Task 25 the
+drawing code had been offered four circuits and twelve declared blocks. **G247** measured that nine
+of the eleven boards in `boards/` had no `SchematicAuthoring` declaration and so had never been
+offered to it at all. Task 25 wrote the nine. `[RAN]` a per-block probe (`coverageCensus` minus
+`classOf` - see below for why it had to be minus): **28 of the nine boards' 40 ELK-routed blocks
+draw, and 12 refuse**, with 15 further blocks claimed by a reviewed template and not graded by that
+probe. Repository-wide that is **35 of 52** declared ELK blocks drawing, against **7 of 12** before.
+
+**THE THREE SHAPES, each with its refusal text verbatim and the blocks it refuses.**
+
+**(1) TWO POWER SYMBOLS ON DIFFERENT NETS, GLYPHS TOUCHING.** This is not a text defect and not a
+near-miss - it is 2.54 mm of separation between a GND glyph and a VCC glyph:
+
+> `the glyph of power symbol GND 0 at (31.75, 27.94) touches the glyph of power symbol VCC 1 at (31.75, 30.48), which is on another net`
+
+Refuses `tp-stage` on **`transistor-preamp-buffered`** and on **`transistor-preamp-staged`**, at the
+identical coordinates on both, which is what one would expect of two boards whose `tp-stage` block
+is the same eight components. **The check that catches it is doing its job**; what is new is that
+the ELK backend places two different rails' glyphs on top of each other at all, and no entry in this
+register describes that. **G262**'s nearest row is `ob-buffer`'s `value of power symbol GND 0
+overlaps value of power symbol VEE 1` - two VALUES, which have placement freedom. **Two GLYPHS do
+not**: a power symbol's glyph sits where its net's pin is.
+
+**(2) A POWER SYMBOL'S VALUE OR GLYPH OVER A GLOBAL LABEL, WHICH `classOf` HAS NO PATTERN FOR.**
+
+> `value of power symbol 0 0 at (31.75, 31.75) overlaps label hi_boost_out at (20.32, 34.29)`
+> `label hi_boost_out at (20.32, 34.29) overlaps glyph of power symbol 0 0 at (31.75, 31.75)`
+
+Refuses the `junction` block of **all five Pultec section boards**, at identical coordinates on all
+five - again as one would expect, since the junction bus is *"fixed and identical on every board"*.
+The same shape appears on `transistor-preamp-buffered`, `-loop` and `-staged` as
+`value of power symbol VCC 1 ... overlaps label BYPASS_CAP ...`.
+
+**AND IT IS WHY `tools/schgen/remeasure-coverage.ts` CANNOT MEASURE THESE BOARDS.** `classOf`
+**throws** on a problem text it has no class for, with the reason spelled out in its own refusal:
+*"the counts this module produces are the leverage behind a scope decision (ruling R46), and a
+problem binned into the wrong class would misstate it."* `PROBLEM_CLASSES` has
+`^value of (power symbol|PWR_FLAG) .* overlaps value of (power symbol|PWR_FLAG)` and nothing for a
+power symbol against a label or a glyph. **So the committed census refuses the nine boards outright
+and the per-block figures above come from a probe** - which is a measurement of this register's own
+tooling and not only of the drawing. `CLAUDE.md`: *"a skipped check must never look like a passing
+one."* **Nothing was added to `PROBLEM_CLASSES`**: what that table counts is the leverage behind
+**R46**, and widening it is a decision about a reserved scope question rather than a transcription.
+
+**(3) AN OBLIGATION-2 JUNCTION DISAGREEMENT, WHICH NO BOARD HAD EVER HIT.** Every previously
+recorded block refusal is at obligation 1, 3 or 4. Two of the nine boards refuse at **obligation 2**:
+
+> `the junctions the sheet emitter would place disagree with the branch points of the canonical topology in 1 place(s). ... net GND branches at (38.1, 44.45) (t-junction) and no junction is emitted there; KiCad joins a branch point only with a junction object, so the drawing would show a connection the netlist does not make`
+
+on **`transistor-preamp-feedback`**'s `tp-stage`, and the same shape on `net lo_boost_in` at
+`(63.5, 45.72)` on **`pultec-low-boost`**'s own-section block. **This is the one of the three that
+is an electrical error in the emitted drawing rather than a legibility one**, and it is also the one
+that leaves `report.problems` EMPTY - so a reader counting `checkLayout` problems sees zero and must
+read the mismatch REASON to learn anything. That asymmetry is **G258**'s pattern recurring: a
+refusal before `checkLayout` has no problem list, and an empty list is not the same as nothing being
+wrong.
+
+**WHICH BOARD IS REFUSED BY WHICH, so a later reader does not have to re-derive it:**
+
+| board | block that refuses first | shape |
+| --- | --- | --- |
+| `transistor-preamp-buffered` | `tp-stage` | (1) + (2) + `label BYPASS_CAP overlaps pin C2.2` |
+| `transistor-preamp-staged` | `tp-stage` | identical to buffered's, same coordinates |
+| `transistor-preamp-feedback` | `tp-stage` | (3), on `GND` |
+| `transistor-preamp-loop` | `tp-follower` | `label BUFFER_BASE overlaps label BUFFER_EMITTER` - **G262**'s class |
+| `pultec-hi-boost` | `pultec-hi-boost-own` | `label hi_boost_out` over three wires - **G262**'s class |
+| `pultec-low-boost` | `pultec-low-boost-own` | (3), on `lo_boost_in` |
+| `pultec-hi-cut`, `-low-cut`, `-mid` | the `junction` block | (2) |
+
+**NOTE THAT SIX OF THE NINE BOARDS ARE REFUSED BY `generate` EARLIER THAN ANY OF THIS** - the five
+Pultec boards at `validateCircuit` (**G264**) and nothing on the preamp four - so these layout
+figures are what the blocks do when the circuit is laid out regardless, which is how
+`coverageCensus` has always measured and is why its numbers and `board-sheets.ts`'s are different
+subjects.
+
+- **Found** 2026-10-21, Task 25, on the first run of the drawing code over the nine new
+  declarations.
+- **Evidence** `[RAN]` `tools/schgen/board-sheets.ts` over all eleven boards (committed; its output
+  is **G259**'s amendment), and a per-block probe that calls the same `elkPrePass`,
+  `subgraphOf`, `selectRenderer` and `adaptElkLayoutReported` `coverageCensus` does, omitting only
+  `classOf`. **THE PROBE'S CONTROL, which could have answered differently and did not:** run over
+  `PARITY_CASES` it reports `7 of 12 declared blocks draw` and the identical per-block rows as the
+  committed `tools/schgen/remeasure-coverage.ts`, including `tp-leg-emitter-bypass`'s and
+  `tp-stage`'s problem texts - so the probe is the census without the classifier and not a different
+  measurement. `[RAN]` the committed census over the four at this commit: still `7 of 12`, so the
+  resolver change Task 25 made to it moved nothing. **The classifier refusal is a check that could
+  have failed and did**: it names the unclassifiable text in full. **The probe is gitignored**
+  (`.superpowers/`), which is why every figure is transcribed here rather than cited.
+- **Verified** **CONFIRMED** - this writer wrote and ran the probe and its control, ran the
+  committed census and `board-sheets.ts`, and read every refusal text above in full. **RELAYED**
+  for nothing.
+- **Why it is open** nothing here was attempted: Task 25's brief is to write declarations and report
+  what they surface, and says in terms *"do not weaken a check, widen a whitelist, or adjust a
+  circuit to make a drawing succeed."* Shape (1) is a placement defect in the ELK backend's power
+  symbols, shape (3) is in the junction emitter, and shape (2) needs a `PROBLEM_CLASSES` decision
+  that belongs with **R46**.
+- **What would settle it** **CRITERION, three of them, each measurable and none of them an
+  acceptance standard for a drawing** (that is **G240**'s and the owner's): (a) no block places two
+  power-symbol glyphs of different nets within clearance of each other; (b) every `checkLayout`
+  problem text these eleven boards produce has a class in `PROBLEM_CLASSES`, so
+  `tools/schgen/remeasure-coverage.ts` measures all 52 declared blocks rather than 12; (c) no block
+  emits a branch point without a junction. **MECHANISMS, ALL UNTRIED.** For (a), nothing is offered:
+  this writer did not read the power-symbol placer. For (b), one pattern per shape, which is a
+  **scope** decision rather than an editorial one because the counts it feeds are R46's. For (c),
+  likewise nothing - the emitter was not read, and *"the mechanism is advice from someone who had
+  not yet tried it"* is a thing this register has been burned by twice.
+
+---
+
+### G264 - MEASURED: a Pultec section board cannot be drawn without declaring THREE things the board's own maps do not hold, and after all three it still refuses at `validateCircuit` on a class this register already knows - with the one cost that reaches the owner's authoritative schematic
+
+**THE SUMMARY FIRST, BECAUSE THE SHAPE MATTERS MORE THAN THE LIST.** Writing the five Pultec
+section boards' schematic authoring declarations was not a transcription job. Three separate things
+the circuit model and the perfboard pipeline between them do not hold had to be DECLARED, each is
+recorded with its reason on the declaration in
+`circuits/pultec/schematic/section-board.ts`, and **two of the three are pure additions while the
+third changes a label the owner's own schematic carries.**
+
+**(1) THE BOARD'S DESIGNATOR MAP IS NOT A KiCad DESIGNATOR MAP, AND ITS OWN COMMENT SAYS THE
+OPPOSITE.** `designatorsFor` in `circuits/pultec/physical/parts.ts` maps every component id to
+ITSELF, annotated *"the reference ids are netlist-derived and already designator-shaped"*. `[RAN]`
+against the IR's `partShapes` rule, whose label pattern is `^[A-Z][A-Z0-9_]*$`: **that claim is true
+of most ids and false of three kinds the five boards actually carry.**
+
+| id | board(s) | why it is not a label |
+| --- | --- | --- |
+| `C2a2`, `C4a2`, `C5a2` | `hi-boost` | lower-case suffix, from the Pultec schematic's own numbering |
+| every `C_MID_*Hz_*` (17 of them) | `mid` | lower-case `z` in `Hz` |
+| `SI_HI_CUT_RV_HI_CUT.ccw-wiper` and five more like it (4 to 6 per board) | all five | a `.` and a `-`, generated by the stand-in reduction when it splits a pot into two resistors |
+| `junction_signals`, `junction_grounds` | all five | lower case throughout, and no reference prefix a reader would recognise |
+
+**Per board, components whose id is not a legal label:** hi-boost **9** of 27, hi-cut **6** of 21,
+low-boost **7** of 19, low-cut **7** of 20, mid **25** of 39.
+
+`pultecDesignator` upper-cases and turns `.` and `-` into `_`, with the two junction rows given
+`J_SIGNALS` and `J_GROUNDS` explicitly, and **it refuses rather than widening** when the
+transformation does not produce a legal label.
+
+**THE COST, AND IT IS THE ONE THING IN THIS ENTRY THAT TOUCHES SOMETHING THE OWNER OWNS.** For the
+Pultec the SCHEMATIC is authoritative and the model is derived from a netlist export (`CLAUDE.md`,
+*"Authority runs in both directions"*), so a generated drawing labelled `C2A2` disagrees with the
+authoritative drawing's `C2a2` by one character, and the same for seventeen capacitors on `mid`.
+**Twenty labels across two boards.** Nothing was changed in any circuit to avoid it - an id is
+semantic and a designator is declared - but a reader comparing a generated Pultec sheet against the
+owner's would find twenty differences that are not electrical.
+
+**(2) THE SELECTORS NEED A DECLARED PIN MAP, AND THE POLE IS NOT PIN 1.** `kind: "switch"` has an
+open pin vocabulary, so `canonicalPinNumbers` tries the model's own pin names as pin numbers and
+refuses: `common` and `t_3kHz` are pin numbers of nothing. `[RAN]` against the installed
+`Switch.kicad_sym`, reading pin positions and numbers together: in `SW_Rotary_1x6_MP` **pins 1-6 are
+the THROWS** (right side, angle 180) **and pin 7 is the pole** (left, angle 0), and in
+`SW_Rotary_1x12` the throws are 1-12 and **pin 13** is the pole. In `SW_SPDT` the pole is **pin 2**
+(named B, on the left) and the throws are 1 and 3. **"Pin 1 is the common" would have been wrong on
+all three**, which is why this was read off disk rather than written from memory (`CLAUDE.md`:
+*"verify names against the thing itself"*).
+
+**ONE PART OF THAT MAP IS A DECLARATION ORDER AND NOT A MEASUREMENT, recorded because nobody should
+later read it as one.** `SW_MID_MODE` names its pins `common`, `boost`, `cut`; the model carries no
+mechanical detent and nobody has measured the fitted switch against a panel, so `boost` takes the
+SPDT's pin 1 and `cut` takes pin 3 **because that is the order the component is written in**.
+Swapping them swaps which way the panel switch must be thrown. **Nothing in the repository states
+which it is.**
+
+**(3) TWO SYMBOL PINS ARE ON NO NET AND THE MODEL HAS NO SLOT TO SAY SO.** The IR's `pinsDeclared`
+rule requires every pin of a part's symbol to be on a net or declared not connected. Two kinds of
+pin cannot be either:
+
+- **the mounting pin `MP`** of `SW_Rotary_1x6_MP`, on the four boards with a six-position selector.
+  It is a mechanical pad, the model's `switch` component has no pin for it, and `Connection`'s `nc`
+  variant is a property of a MODEL pin - so there is no pin to mark;
+- **pin 12 of `SW_Rotary_1x12`** on `mid`. `circuits/pultec/physical/parts.ts` records why the
+  symbol has one throw more than the circuit: the owner chose a twelve-position switch with its stop
+  set to eleven (*"Assume a 1x12"*), so *"twelve detents exist, eleven are wired, the twelfth is
+  unused."* **That decision is sound and the drawing cannot express it.**
+
+Refusal texts, verbatim: `part SW_HI_BOOST: pin MP () is neither on a net nor declared not
+connected` and `part SW_MID: pin 12 (12) is neither on a net nor declared not connected`.
+
+**(4) AND AFTER ALL THREE, EVERY PULTEC BOARD STILL REFUSES AT `validateCircuit` ON NET NAMES, WHICH
+IS G150's CLASS AND NOT NEW.** Every net of every section board is lower case - `in`, `out`,
+`hi_boost_out`, `j8_p1`, `si_hi_cut_j4_p2`, `mid_sel_1k5hz` - and `netNames` requires
+`^[A-Z0-9][A-Z0-9_]*$`. Per board: **hi-boost 19, hi-cut 13, low-boost 13, low-cut 13, mid 27**
+net-name problems, plus the one undeclared symbol pin each, and **nothing else** - `validateCircuit`
+reports no third class on any of the five. **Nothing was renamed.** These names are
+the netlist export's and the stand-in reduction's, the ground net `0` comes from `GROUND_NET` in
+`lib/board/scaffold/flat.ts`, and renaming a net to satisfy a drawing rule is the invention
+**G151** forbids by name.
+
+**SO THE THREE DECLARATIONS WERE NECESSARY AND NOT SUFFICIENT, and that is the useful result**: they
+move the five boards from *"the drawing code has never seen them"* to *"refused at gate 1 on the
+same class as `pt2399-core`"*, which is a class with an entry, a measurement and a reserved owner
+question already attached to it.
+
+- **Found** 2026-10-21, Task 25, while writing the five Pultec declarations.
+- **Evidence** `[RAN]` `tools/schgen/board-sheets.ts`, committed, which prints each board's
+  `validateCircuit` problems in full - the per-board counts above are read off its output.
+  `[RAN]` a probe that builds each board's `Network`, prints every component's id, kind, declared
+  symbol and pin names, and tests each id against the IR's label pattern; the table above is read
+  off that. **ITS CONTROL, which could have answered differently and did:** the same probe over the
+  four transistor-preamp boards finds that **not one** of their 96 components needs a designator
+  transformation - their `DESIGNATORS` maps already say `R1`, `RV1`, `C1`, `Q1`, `J1` - so the
+  Pultec result is a fact about `designatorsFor`'s identity mapping and not about the probe or about
+  the IR's rule being strict. **Note what the control does NOT show**: every preamp component's ID
+  is lower-case and that is correct (`CLAUDE.md`: *"Ids are semantic; designators belong to KiCad"*).
+  The Pultec boards are not worse-named; they are the boards whose designator map is the identity.
+  `[RAN]` an `awk`/`grep` over
+  the installed `/Applications/KiCad/KiCad.app/.../Switch.kicad_sym` pairing each `(at x y angle)`
+  with its `(number "n")`, which is the check that could have failed and did answer against the
+  obvious guess. **The declarations themselves are held to
+  `tests/schgen/board-declarations.test.ts`**, which reports 0 problems from
+  `authoringProblems`, `unblockedComponents`, `blockPrefixDisagreements` and
+  `interfaceDisagreements` over all nine, and which was driven RED three ways before being
+  committed.
+- **Verified** **CONFIRMED** - this writer read the symbol library, ran the probes and the committed
+  census, and read every refusal above. **RELAYED** for **G150**'s and **G151**'s content, which
+  were read and not re-measured.
+- **Why it is open** item (1)'s cost is real and unfixable from this side: a label the IR will not
+  accept cannot be emitted, and changing the Pultec's ids would be editing a circuit whose
+  schematic is authoritative. Items (2) and (3) are recorded rather than acted on because (2) is
+  done and carries a sub-question nobody has answered, and (3) needs a model slot nobody has
+  designed. Item (4) is **G150**'s.
+- **What would settle it** four separate things, and **only the first is a question for the owner**.
+  (1) **OWNER QUESTION, NOT YET PUT TO HIM: is `C2A2` on a generated Pultec sheet acceptable where
+  his schematic says `C2a2`, or should the IR's label rule accept mixed case?** Nobody has asked,
+  and this writer does not answer it. (2) **CRITERION: the repository states which panel position of
+  `SW_MID_MODE` is boost** - a bench observation, not a derivation. (3) **CRITERION: a symbol pin
+  with no corresponding model pin can be declared not connected without inventing a model pin**;
+  **MECHANISM, UNTRIED** - the authoring file is the natural home, since which symbol a part is
+  drawn with is already declared there, but nothing was built or tried. (4) **G150**'s criterion,
+  unchanged.
 
 ---
 
@@ -20804,6 +21109,87 @@ stub writer.
   which said no entry's deletion depends on the four declarations: **this one's
   does**, by the criterion directly above.
 
+**AMENDED 2026-10-21 BY TASK 25: MECHANISM (2) IS DONE - all four declarations exist, and nine do
+in total - AND THE CRITERION IS STILL NOT MET. One sentence of this entry was wrong by one step and
+the correction is the more useful half.**
+
+**WHAT IS DISCHARGED.** `circuits/transistor-preamp/schematic/` now holds `feedback-board.ts`,
+`buffered-board.ts`, `loop-board.ts` and `staged-board.ts` beside the lab board's `authoring.ts`,
+and `circuits/pultec/schematic/` holds five more. `tools/schgen/board-declarations.ts` wires all
+nine to `tools/schgen/board-sheets.ts`, which now reports **`0` boards with no authoring
+declaration**, down from nine. The Step 0 table above - *"NOT RUN: no declaration exists"* on four
+rows - is superseded by the per-board rows in **G259**'s Task 25 amendment.
+
+**WHAT IS NOT.** This entry's **CRITERION is `generate` returns a `Generation` for all five
+boards**, and `[RAN]` `tools/schgen/board-sheets.ts`: **zero of the five do.** Per board, the first
+thing in front of each, which is the figure this entry existed to hold:
+
+| board | `generate` | blocker |
+| --- | --- | --- |
+| `lab` | REFUSED at layout | `tp-leg-emitter-bypass`: `label BYPASS_JUMPED` overlaps `label BYPASS_CAP` - **G262** |
+| `buffered` | REFUSED at layout | `tp-stage`: a GND glyph touching a VCC glyph, a power value over `label BYPASS_CAP`, and that label over `pin C2.2` - **G263** |
+| `feedback` | REFUSED at layout | `tp-stage`: obligation **2** - `net GND branches at (38.1, 44.45)` with no junction emitted - **G263** |
+| `loop` | REFUSED at layout | `tp-follower`: `label BUFFER_BASE` overlaps `label BUFFER_EMITTER` - **G262** |
+| `staged` | REFUSED at layout | `tp-stage`, identical to `buffered`'s at identical coordinates |
+
+**NOTHING ABOUT VALIDATION BLOCKS ANY OF THE FIVE, AND THAT HELD UP.** All five pass
+`validateCircuit` with **0** problems - `[RAN]`, per board - so the net-name prediction above was
+correct and the whole of the remaining cost is in layout. **AND THE PREDICTION THIS ENTRY MADE ABOUT
+`Device:C_Polarized` WAS RIGHT IN SUBSTANCE AND WRONG ABOUT WHERE:** it said *"a refusal is likely
+on all four and its site is unmeasured"*, and four refusals is what happened - but the blocking part
+is not a polarised capacitor's field placement on any of them. Task 24 fixed field placement; what
+refuses now is a label's position, a power symbol's placement, and a junction. **The entry was right
+to refuse to predict the site by the jumper, and the symbol table above turned out not to predict it
+either.**
+
+**THE SENTENCE THAT WAS WRONG BY ONE STEP, kept because the correction is a finding.** This entry
+said the four leg-constant shapes mean *"each of the four needs its own answer to 'what declares
+this board's blocks' ... a decision per board rather than a copy."* The premise is right - `[RAN]`
+the same grep, same four shapes - and **the conclusion overstates it, because three of the four
+boards do not declare a bias network at all.** They call `addFeedbackStage`, which
+`feedback-board.ts` exports and which builds `FEEDBACK_LEGS` on every board that uses it; and
+`buffered-board.ts` exports no leg constant for the same reason it declares no bias network. **So
+the four boards' blocks come from one shared answer plus a per-board addition**, and two of the
+additions are declaration sources plan decision **D1** does not list:
+
+| source | what it declares | boards |
+| --- | --- | --- |
+| `FEEDBACK_LEGS` | the four bias legs of the collector-feedback stage | all four |
+| **a shared builder function run alone** | `addFollower`'s own six components | buffered, loop, staged |
+| **a board's own `DESIGNATORS` keys beyond its parent's** | the thirteen parts `staged` adds; the four `loop` adds | loop, staged |
+| the board's own extra leg constant | `LOOP_LEG`, `CHARACTER_LEG` | loop, staged |
+
+**THE SECOND SOURCE IS A MEASUREMENT AND ITS CONTROL ANSWERED DIFFERENTLY, which is what makes it a
+declaration rather than a guess at a boundary.** `[RAN]` `addFollower(circuit())` followed by
+`done()`: **accepted, 6 components** - `buffer_bias_upper`, `buffer_bias_lower`,
+`buffer_transistor`, `buffer_emitter_resistor`, `buffer_output_cap`, `output_header` - and the
+`output` port. **CONTROL:** `addFeedbackStage(circuit(), "OUT")` then `done()` **REFUSES**:
+*"net \"IN_EXT\" has only one component pin and is not a declared port"*, because each board owns
+its own input header. So the probe distinguishes the two shared functions instead of accepting both,
+and `addFollower` standing alone is a fact about the circuit. **`complementOf` derives the stage-1
+core as what no declared block claims**, exactly as the lab board's declaration derives its seventh
+block, and it is the same eight components on all three boards that have a follower.
+
+**AND ONE BOUNDARY DIFFERS BETWEEN TWO BOARDS THAT CALL THE IDENTICAL FUNCTION**, recorded because
+it is the thing a reader would assume cannot happen: `addFollower` builds the same six components on
+`buffered` and on `loop`, and `BUFFER_EMITTER` crosses the block's boundary on `loop` only, because
+`loop_feedback_cap` taps it from outside. One function, two interfaces. A boundary is a property of
+the board.
+
+**THE PULTEC FIVE ARE THE OPPOSITE CASE AND IT IS CHECKABLE RATHER THAN ASSERTED**, which matters
+because this entry's warning could easily be over-applied: `circuits/pultec/physical/hi-boost.ts`
+and its four siblings are each `sectionBoard("<section>")` and nothing else - one call, the same
+call - so **one shared assembler** (`circuits/pultec/schematic/section-board.ts`) derives all five
+declarations from the board's own two partition sources, `partitionReference()` and
+`allStandIns()`, both of which D1 names. Five copies of it would be five copies of one derivation.
+What those five declarations DID need is in **G264**, and it is not a block-partition problem.
+
+**WHAT THIS DOES TO THE STUB-WRITER QUESTION, which is why this entry stays open.** Its criterion is
+unchanged and unmet, so the five KiCad round-trip tests cannot move onto the generator. **But the
+precondition is back to being a single named thing rather than two**: mechanism (2) is done, and
+what is left is layout - **G262**'s label class, **G263**'s three new shapes, and **G232**'s
+reserved status. **MECHANISM (1), still untried, and now five refusals wide rather than one.**
+
 ### G248 - "SUPERSEDE MEANS DELETE" IS DELIBERATELY UNSATISFIED HERE: the stub writer's INVITATION is deleted and the writer itself is KEPT, because it carries this repository's only `kicad-cli` proof that KiCad reads a stub as the circuit means it
 
 **THE PRICE FIRST, IN THE SENTENCE THE CONTROLLER SAID NOT TO SOFTEN: the
@@ -21951,6 +22337,60 @@ question, and this is a single fix round with no review after it.
   check of its own, so the header asserts nothing a test does not. **Neither is
   preferred here, and whether `CANDIDATES` should grow automatically is R72's
   question rather than this entry's.**
+
+**AMENDED 2026-10-21 BY TASK 25: THIS ENTRY'S CRITERION WAS DRIVEN, BY THE EVENT IT DESCRIBES, AND
+THE ANSWER IS THE ONE IT PREDICTED. The entry stays open, narrower.**
+
+The criterion: *"the day a fifth `SchematicAuthoring` declaration exists in `circuits/`, some
+committed check fails, naming it."* The entry notes that the probe *"would have put an untracked
+file under `circuits/`"* and was deliberately not run.
+
+**IT HAS NOW BEEN RUN, WITH NINE FILES RATHER THAN ONE.** `[RAN]`: the nine declarations were
+written to disk under `circuits/pultec/schematic/` and
+`circuits/transistor-preamp/schematic/`, wired into NO registry and imported by nothing, and then
+`bun run typecheck` and the full suite:
+
+> `tsc --noEmit` clean; **3709 pass, 0 fail, 349 files** - byte-identical counts to `ce58374`.
+
+**NOTHING FAILED. `grep -rln 'SchematicAuthoring = {' circuits/` would now return a different
+number and no check looks.** The chain is exactly as this entry describes it: `PARITY_CIRCUITS` is a
+literal, `PARITY_CASES` maps it, `CANDIDATES` is a literal, `authoring-complete.test.ts` pins its
+list against a copy of itself. **CONTROL, and it could have answered differently:** the same suite
+run after `tools/schgen/board-declarations.ts` and
+`tests/schgen/board-declarations.test.ts` landed goes to **3758 pass, 0 fail, 350 files** - so the
+suite does notice a new file when something imports it, and the silence above is about the sweep and
+not about the runner. **A SECOND control arrived unasked and is worth more than either:**
+`tests/schgen/port-fidelity.test.ts` DID fail on the new `tools/schgen/` and `tests/schgen/` files -
+*"on disk under `tests/schgen/` but in none of `files[]`, `diverged[]` or `handWritten`"* - because
+**that** check sweeps the filesystem. So this repository already has the shape this entry asks for,
+applied to the `schgen` trees and not to `circuits/`.
+
+**WHAT TASK 25 ADDED, AND IT DOES NOT CLOSE THIS ENTRY.**
+`tests/schgen/board-declarations.test.ts` sweeps `boards/` with `boardRefs()` and asserts that every
+board directory's declared builder has a declaration, naming any that does not. That is this entry's
+mechanism (1) applied to the axis the task moved - *"which of the owner's eleven boards can be
+offered to `generate` at all"* - rather than to the `circuits/` tree, deliberately: sweeping
+`circuits/` for the declaration SHAPE makes the string `SchematicAuthoring = {` load-bearing, which
+this entry records as that mechanism's own cost. **It was driven RED before being committed**: with
+`pultec-mid`'s entry removed from `board-declarations.ts`, two assertions fail and the message names
+`pultec-mid (pultecMid() in ../../circuits/pultec/physical/mid.ts)`.
+
+**WHY IT STAYS OPEN.** The new sweep cannot see this entry's actual subject, which is **a
+declaration that exists and is wired into nothing** - a file under `circuits/` that no registry
+imports is invisible to a sweep of `boards/`, and that is precisely the state the nine files were in
+for the duration of the probe above. The failure mode is no longer latent: **it has now happened
+once, for about twenty minutes, and nothing noticed.**
+
+**AND ONE CLAUSE OF THIS ENTRY IS NOW FALSE AND IS CORRECTED RATHER THAN DELETED.** It says
+*"nobody has written a declaration yet, so nothing is currently false."* Nine exist. The
+`stub-writer-tripwire.test.ts` header's factual claim - *"Four of the five boards have no
+`SchematicAuthoring` declaration... they are absent from `CANDIDATES` below for that reason and not
+by choice"* - **is false as of this commit**, in the one file whose job was to notice, and the
+tripwire is still green. **That header was NOT edited here**: the tripwire's criterion is the
+controller's (**R72**), what `CANDIDATES` should attempt is R72's question and not this task's, and
+editing a tripwire's own account of why it is narrow is the kind of change that wants a reviewer who
+is not the agent that made the header false. **It is recorded instead**, which is what this register
+is for, and the correction is now the first thing a reader of either file finds.
 
 ### G257 - THE OWNER DISSOLVED A DEFECT THREE ROUNDS HAD WALKED PAST: a Value field that only repeats its symbol's own part name is emitted hidden rather than placed - with its deviation, its two new divergences and the two figures it moved
 

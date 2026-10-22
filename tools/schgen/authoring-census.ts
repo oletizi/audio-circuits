@@ -62,11 +62,26 @@ export const PARITY_CASES: readonly ParityCase[] = PARITY_CIRCUITS.map((circuit)
   return { name: circuit.name, entry: circuit.entry, network: circuit.build(), authoring }
 })
 
-/** One resolver over exactly the library nicknames the four declarations need. */
-export function parityResolver(): SymbolResolver {
+/**
+ * One resolver over exactly the library nicknames `cases` need.
+ *
+ * **GENERALISED FROM `parityResolver` WHEN THE NINE BOARD DECLARATIONS LANDED** (Task 25), which
+ * are not parity circuits and must not be added to `PARITY_CIRCUITS`: that list is what the M1
+ * plan calls the parity set and nine more entries would silently change the subject of every
+ * measurement that reads it. `./board-declarations.ts` holds them, and `./board-sheets.ts`
+ * resolves ONE case at a time through this - because `symbolLibraries` refuses a whole batch
+ * containing one unresolvable nickname, so a single bad nickname on one board would otherwise
+ * report as a refusal on all eleven.
+ */
+export function caseResolver(cases: readonly ParityCase[]): SymbolResolver {
   const nicknames = new Set<string>()
-  for (const c of PARITY_CASES) for (const n of nicknamesOf(c.network, c.authoring)) nicknames.add(n)
+  for (const c of cases) for (const n of nicknamesOf(c.network, c.authoring)) nicknames.add(n)
   return createResolver(symbolLibraries([...nicknames].sort()))
+}
+
+/** One resolver over exactly the library nicknames the four parity declarations need. */
+export function parityResolver(): SymbolResolver {
+  return caseResolver(PARITY_CASES)
 }
 
 export interface BlockCount {

@@ -119,11 +119,18 @@ So:
   was and to *"expect it to stop being true as the schematic-generation port
   lands"*. **The port landed and the prediction was wrong for a reason nobody
   anticipated, which is worth more than a silent correction.** `lib/schgen/`
-  exists, draws five of this repository's twelve declared blocks, and **refuses
-  every one of its own preamp boards**: `generate` refuses `lab-board` at layout
-  on a field-placement defect, and the other four boards have no authoring
-  declaration for it to read. `docs/known-gaps.md` **G247** measures that per
-  board, **G238** and **G245** are how the blocker got there, and **G248** records
+  exists, draws **35 of this repository's 52 declared ELK blocks**, and
+  **produces a schematic for 0 of the 11 boards in `boards/`**: six are refused
+  at `validateCircuit` on net names and five at ELK layout on text, power-symbol
+  and junction placement. **The "no authoring declaration" half of this sentence
+  is gone and the dates say why it is kept:** until 2026-10-21 nine of the eleven
+  boards had no declaration and had never been offered to the drawing code at
+  all, which was the largest single reason this output class delivered nothing;
+  all nine now exist (`circuits/pultec/schematic/`,
+  `circuits/transistor-preamp/schematic/`) and the board figure did not move.
+  `docs/known-gaps.md` **G259** is the board-by-board scoreboard, **G247**
+  measures the preamp five, **G263** and **G264** carry what offering the nine
+  surfaced, **G238** and **G245** are how the blocker got there, and **G248** records
   why the stub writer is still in the tree - it carries the only `kicad-cli`
   proof that KiCad reads a generated schematic as the circuit means it. **Nothing
   invites you to the stub**: its CLI verb, its script and its instructions are

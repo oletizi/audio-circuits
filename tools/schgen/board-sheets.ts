@@ -33,7 +33,8 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
-import { PARITY_CASES, parityResolver, type ParityCase } from "./authoring-census.ts"
+import { caseResolver, type ParityCase } from "./authoring-census.ts"
+import { ALL_DECLARED_CASES } from "./board-declarations.ts"
 import { parityDesign } from "./gate-census.ts"
 import { generate, writeGeneration, type GenerateEnv } from "./generate.ts"
 import { exportPdf, kicadVersion } from "./kicad-run.ts"
@@ -94,7 +95,7 @@ export function boardRefs(repoRoot: string): readonly BoardRef[] {
  * report four boards as declared that nothing declares, which is the inversion this tool exists to
  * make visible.
  */
-export function declarationFor(board: BoardRef, cases: readonly ParityCase[] = PARITY_CASES): ParityCase | null {
+export function declarationFor(board: BoardRef, cases: readonly ParityCase[] = ALL_DECLARED_CASES): ParityCase | null {
   return cases.find((c) => c.entry === `${board.export}()`) ?? null
 }
 
@@ -133,7 +134,12 @@ export async function boardSheets(board: BoardRef, repoRoot: string, options: Bo
   }
   const outDir = path.join(options.outDir, board.name)
   fs.mkdirSync(outDir, { recursive: true })
-  const design = { ...parityDesign(declared, parityResolver(), repoRoot, outDir) }
+  // **THE RESOLVER IS THIS BOARD'S OWN NICKNAMES AND NOT EVERY DECLARED CASE'S.**
+  // `symbolLibraries` refuses a whole batch containing one unresolvable nickname, which is right
+  // for a drawing and wrong for a census: a batch resolver would turn one board's missing library
+  // into a refusal on all eleven, and this tool's whole job is to say WHICH board is blocked by
+  // WHAT. `tools/schgen/symbol-census.ts` makes the same move for the same reason.
+  const design = { ...parityDesign(declared, caseResolver([declared]), repoRoot, outDir) }
   const env: GenerateEnv = { kicadVersion: kicadVersion(), stockDir: stockSymbolDir(), initLock: true, acceptToolchain: true }
   try {
     const g = await generate(design, env)
