@@ -163,15 +163,45 @@ export function svgPaths(svg: string): readonly SvgPath[] {
 }
 
 /**
- * KiCad's own declared advance per drawn string: the `textLength` of the invisible `<text>` element
- * `kicad-cli` writes beside every stroked string, in um. A FOURTH independent reading of the same
- * geometry, free with the export, and `probe.ts` reports it against the font source's advance sum.
+ * The scale `kicad-cli`'s SVG export writes its `font-size` and `textLength` at.
+ *
+ * **MEASURED, not derived**: 1.27 mm text is written `font-size="1.6933"`, and `1.6933 / 1.27` is
+ * `4/3` to four decimal places. It is used ONLY to select the entries that belong to this
+ * repository's 1.27 mm text - a sheet also carries pin text at 1.3 mm and a title block at 2 mm and
+ * 2.6666 mm - and `advanceResiduals` REFUSES when nothing matches rather than reporting a
+ * comparison over zero strings.
  */
-export function svgTextLengths(svg: string): readonly { readonly text: string; readonly textLength: Um }[] {
-  return [...svg.matchAll(/<text [^>]*?textLength="([\d.]+)"[^>]*>([^<]*)<\/text>/g)].map((m) => ({
-    text: m[2] ?? "",
-    textLength: Number(m[1]) * 1000,
-  }))
+export const SVG_FONT_SCALE = 4 / 3
+
+const XML_ENTITIES: Readonly<Record<string, string>> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }
+
+function decodeXml(s: string): string {
+  return s.replace(/&(\w+);/g, (whole, name: string) => {
+    const hit = XML_ENTITIES[name]
+    if (hit === undefined) throw new Error(`the SVG export wrote the XML entity "&${name};", which this parser does not decode`)
+    return hit
+  })
+}
+
+/**
+ * **KiCad's OWN DECLARED ADVANCE per drawn string**: the `textLength` of the invisible `<text>`
+ * element `kicad-cli` writes beside every stroked string, in um, for the entries at this
+ * repository's text size.
+ *
+ * It is a FOURTH reading of the geometry, independent of the stroke paths in the same file, and it
+ * is the only direct statement of ADVANCE any route produces - routes 2 and 3 otherwise pin the
+ * box and the ink, and leave Q1 confirmed only through the box-width formula. **It is NOT the
+ * advance sum itself**: `probe.ts` measures `textLength - advance sum` to be a CONSTANT, which is
+ * what makes it a check on the advance table rather than a restatement of it.
+ */
+export function svgTextLengths(svg: string): readonly { readonly text: string; readonly textLength: Um; readonly fontSize: Um }[] {
+  return [...svg.matchAll(/<text\b([\s\S]*?)>([^<]*)<\/text>/g)].flatMap((m) => {
+    const attrs = m[0]
+    const tl = /textLength="([\d.]+)"/.exec(attrs)
+    const fs = /font-size="([\d.]+)"/.exec(attrs)
+    if (tl?.[1] === undefined || fs?.[1] === undefined) return []
+    return [{ text: decodeXml(m[2] ?? ""), textLength: Number(tl[1]) * 1000, fontSize: Number(fs[1]) * 1000 }]
+  })
 }
 
 /**
@@ -263,8 +293,14 @@ export function writeProbeSheet(
   return { sch, anchors, rowX: ROW_X }
 }
 
+export interface SvgMeasurement {
+  readonly extents: readonly RowExtent[]
+  /** Every `textLength` the export declared at this repository's text size, by string. */
+  readonly declaredAdvances: ReadonlyMap<string, Um>
+}
+
 /** Write one probe sheet into `dir`, export it to SVG with `kicad-cli`, and measure every row. */
-function measureSheet(rows: readonly RowSpec[], dir: string, symbol: LibSymbol, showRefs: boolean): readonly RowExtent[] {
+function measureSheet(rows: readonly RowSpec[], dir: string, symbol: LibSymbol, showRefs: boolean): SvgMeasurement {
   const { sch, anchors } = writeProbeSheet(rows, dir, showRefs, symbol)
   const svgDir = path.join(dir, "svg")
   fs.mkdirSync(svgDir, { recursive: true })
@@ -272,16 +308,24 @@ function measureSheet(rows: readonly RowSpec[], dir: string, symbol: LibSymbol, 
   if (r.status !== 0) throw new Error(`kicad-cli sch export svg failed (${r.status ?? "signal"}):\n${r.stdout}\n${r.stderr}`)
   const file = path.join(svgDir, "text-metrics-probe.svg")
   if (!fs.existsSync(file)) throw new Error(`kicad-cli wrote no ${file}; it printed:\n${r.stdout}`)
-  return rowExtents(fs.readFileSync(file, "utf8"), anchors)
+  const svg = fs.readFileSync(file, "utf8")
+  const declared = new Map<string, Um>()
+  for (const t of svgTextLengths(svg)) {
+    if (Math.abs(t.fontSize - GRID * SVG_FONT_SCALE) <= 1) declared.set(t.text, t.textLength)
+  }
+  return { extents: rowExtents(svg, anchors), declaredAdvances: declared }
 }
 
 /** Every row measured, in `ROWS_PER_SHEET` chunks so no row's window leaves A0's drawable height. */
-export function measureRows(rows: readonly RowSpec[], dir: string, showIntersheetRefs = true): readonly RowExtent[] {
+export function measureRows(rows: readonly RowSpec[], dir: string, showIntersheetRefs = true): SvgMeasurement {
   const symbol = probeSymbol()
-  const out: RowExtent[] = []
+  const extents: RowExtent[] = []
+  const declaredAdvances = new Map<string, Um>()
   for (let i = 0; i < rows.length; i += ROWS_PER_SHEET) {
     const chunk = rows.slice(i, i + ROWS_PER_SHEET)
-    out.push(...measureSheet(chunk, path.join(dir, `sheet-${i / ROWS_PER_SHEET}`), symbol, showIntersheetRefs))
+    const m = measureSheet(chunk, path.join(dir, `sheet-${i / ROWS_PER_SHEET}`), symbol, showIntersheetRefs)
+    extents.push(...m.extents)
+    for (const [k, v] of m.declaredAdvances) declaredAdvances.set(k, v)
   }
-  return out
+  return { extents, declaredAdvances }
 }

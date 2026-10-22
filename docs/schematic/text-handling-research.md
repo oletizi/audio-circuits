@@ -76,7 +76,7 @@ and each one validates the others.
 | --- | --- | --- |
 | **1. The font source** `[READ]` | worked | **Q1 exactly, and Q2's glyph geometry exactly.** `common/newstroke_font.cpp`, `common/font/stroke_font.cpp`, `common/font/font.cpp`, `common/eda_text.cpp`, `common/gr_text.cpp`, `eeschema/sch_text.cpp`, `eeschema/sch_label.cpp`, `eeschema/default_values.h`, all fetched at tag `10.0.5` and read. **Q3 is computable from it too**, and is |
 | **2. The installed runtime** `[RAN]` | worked | **Q3 directly**, and an independent reading of Q2. `/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9` ships `pcbnew`, which exposes `EDA_TEXT::GetTextBox` and `EDA_TEXT::GetEffectiveTextShape`. KiCad ships **no eeschema bindings**, so the `EDA_TEXT` carrying the text is a `PCB_TEXT`; `GetTextBox` takes its pen from `GetEffectiveTextPenWidth()` with no render settings, so for one line of non-bold 1.27 mm text the number is the number eeschema computes - and that is not assumed, it is checked against routes 1 and 3 |
-| **3. `kicad-cli` SVG and PDF** `[RAN]` | worked, **with one hole** | **Q2 in situ** and the three constants that place a field's ink against its anchor, from an SVG export of items `lib/schgen/render/emit-items.ts` itself emitted. **The SVG export does not draw a global label's outline**, so the label outline comes from the PDF export's own vector coordinates instead |
+| **3. `kicad-cli` SVG and PDF** `[RAN]` | worked, **with one hole** | **Q2 in situ**, the three constants that place a field's ink against its anchor, and - from the invisible `<text>` element the SVG carries beside every stroked string - **KiCad's own declared advance, which is the only direct check Q1 has** (§1.3). All from an export of items `lib/schgen/render/emit-items.ts` itself emitted. **The SVG export does not draw a global label's outline**, so the label outline comes from the PDF export's own vector coordinates instead |
 
 **Route 1 and route 2 agree exactly.** Over all 264 distinct strings the eleven
 boards emit:
@@ -159,6 +159,45 @@ over the whole printable-ASCII range the count is 1: "\\"
 the backslash - and it is not in this repository's corpus.** The claim is
 correct in principle and inert here, which is a result about the font and not a
 criticism of the review.
+
+**Q1 HAS A CHECK OF ITS OWN, AND IT IS THE ONLY DIRECT ONE.** Routes 2 and 3
+pin the box and the ink; the advance sum is otherwise confirmed only through
+`GetTextBox`'s own width formula, which is the same arithmetic again. KiCad's
+SVG export writes an invisible `<text>` element beside every stroked string
+carrying a `textLength`, and that is a statement of advance independent of
+everything else in the file. `[RAN]` over 23 strings - six shaped probes and a
+stride-sampled spread of the real corpus:
+
+```
+23 strings carry a declared textLength at 1270.0 um text
+textLength MINUS the font source's advance sum is a CONSTANT 203.2 um; worst departure from it 0.4 um on "IIIIIIIIII"
+CONTROL (could have answered differently): the same residual against length * GRID is -462.0 um with a departure of 5986.8 um on "IIIIIIIIII" - 14819x wider, so this check discriminates
+  "+5V"                  textLength    4073.7  advance    3870.5  residual   203.2
+  "1.2K"                 textLength    4497.0  advance    4293.8  residual   203.2
+  "100nF"                textLength    6069.3  advance    5866.2  residual   203.1
+  "BYPASS_JUMPED"        textLength   15745.5  advance   15542.4  residual   203.1
+  "I"                    textLength     808.0  advance     604.8  residual   203.2
+  "IIIIIIIIII"           textLength    6251.2  advance    6047.6  residual   203.6
+  "Net-(U1-LPF2-OUT)"    textLength   20523.4  advance   20320.0  residual   203.4
+  "mid_sel_3khz"         textLength   12782.1  advance   12579.0  residual   203.1
+```
+
+**THE FOURTH READING AGREES.** It is not the advance sum itself - it is the
+advance sum plus a constant 203.2 um, which is why it is a check on the table
+rather than a restatement of it: a string's declared length varies with the
+glyphs in it exactly as the table says, from one character to seventeen, with a
+worst departure of **0.4 um**.
+
+**What it would have taken for it to disagree.** The residual is
+`textLength - our advance sum`, so any error in the advance table shows up as a
+residual that is not constant. A single wrong glyph width of `w` moves the
+residual of every string containing that glyph by `w`, and a systematically
+wrong model - the obvious one being the model this whole section is about -
+scatters it: `length * GRID` gives the same comparison a departure of
+**5986.8 um**, about **14819 times** wider. **The constant 203.2 um itself is
+NOT explained here**: it is `4/3` of the 152.4 um plotted pen, which is the same
+`4/3` the export applies to `font-size`, and no source was read that says why.
+It is a constant and the check only needs it to be one.
 
 ### 1.4 Q3, `EDA_TEXT::GetTextBox`, transcribed and then driven
 

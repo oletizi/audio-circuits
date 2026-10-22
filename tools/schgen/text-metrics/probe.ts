@@ -39,6 +39,9 @@ import { measureRows, writeProbeSheet, PAPER_HEIGHT_MM, type RowExtent, type Row
 
 const um = (v: number): string => v.toFixed(1)
 
+/** How many corpus strings the declared-advance check (route 3c) is driven over. */
+const ADVANCE_SAMPLE = 16
+
 function arg(name: string): string | null {
   const i = process.argv.indexOf(`--${name}`)
   return i >= 0 ? (process.argv[i + 1] ?? null) : null
@@ -184,8 +187,15 @@ async function main(): Promise<void> {
     { kind: "field", label: "100nF left rot0", text: "100nF", justify: "left", rot: 0 },
     { kind: "label", label: "VCC right", net: "VCC", side: "right", refs: "[1]" },
     { kind: "label", label: "VCC up", net: "VCC", side: "up", refs: "[1]" },
+    // A spread of the real corpus, so the declared-advance check below is over this repository's
+    // own strings and not over six hand-picked ones. Sampled at a fixed stride rather than taken
+    // from the front: the corpus is sorted, so the first N are all values beginning with a dot.
+    ...Array.from({ length: ADVANCE_SAMPLE }, (_, i): RowSpec => {
+      const text = distinct[Math.floor((i * distinct.length) / ADVANCE_SAMPLE)]!.text
+      return { kind: "field", label: `sample ${i} ${text}`, text, justify: "left", rot: 0 }
+    }),
   ]
-  const measured = measureRows(svgRows, path.join(outDir, "svg"))
+  const { extents: measured, declaredAdvances } = measureRows(svgRows, path.join(outDir, "svg"))
   for (const r of measured) {
     console.log(`${r.label.padEnd(22)} paths=${String(r.paths).padStart(3)} ink x[${um(r.ink.minX)},${um(r.ink.maxX)}] y[${um(r.ink.minY)},${um(r.ink.maxY)}]`)
   }
@@ -217,6 +227,41 @@ async function main(): Promise<void> {
     )
   }
   console.log("FINDING: `kicad-cli sch export svg` 10.0.5 draws a global label's TEXT and not its outline; `export pdf` draws both. The label rows above therefore measure the text alone.")
+
+  head("STEP 2 ROUTE 3c: KiCad's OWN DECLARED ADVANCE, which is the only direct check Q1 has")
+  // Routes 2 and 3 pin the BOX and the INK. The advance sum is otherwise confirmed only through
+  // the box-width formula, which is the same arithmetic - so the `textLength` KiCad writes beside
+  // every stroked string is the one reading of Q1 that is independent of everything else here.
+  if (declaredAdvances.size === 0) {
+    throw new Error(
+      "the SVG export declared no textLength at this repository's text size. Either kicad-cli stopped " +
+        "writing the invisible <text> element or SVG_FONT_SCALE in svg-probe.ts no longer describes " +
+        "how it scales font-size. Refused rather than reporting a comparison over zero strings.",
+    )
+  }
+  const residualsFor = (width: (t: string) => Um): { readonly n: number; readonly median: Um; readonly spread: Um; readonly worst: string } => {
+    const rs = [...declaredAdvances].map(([t, tl]) => ({ t, r: tl - width(t) }))
+    const sorted = [...rs].map((x) => x.r).sort((x, y) => x - y)
+    const median = sorted[Math.floor(sorted.length / 2)] ?? 0
+    let worst = { t: "", d: -1 }
+    for (const x of rs) if (Math.abs(x.r - median) > worst.d) worst = { t: x.t, d: Math.abs(x.r - median) }
+    return { n: rs.length, median, spread: worst.d, worst: worst.t }
+  }
+  const byAdvance = residualsFor((t) => advanceWidth(glyphs, t, TEXT_SIZE))
+  const byEstimate = residualsFor(estimatedWidth)
+  console.log(`${byAdvance.n} strings carry a declared textLength at ${um(TEXT_SIZE)} um text`)
+  console.log(
+    `textLength MINUS the font source's advance sum is a CONSTANT ${um(byAdvance.median)} um; ` +
+      `worst departure from it ${um(byAdvance.spread)} um on ${JSON.stringify(byAdvance.worst)}`,
+  )
+  console.log(
+    `CONTROL (could have answered differently): the same residual against length * GRID is ${um(byEstimate.median)} um ` +
+      `with a departure of ${um(byEstimate.spread)} um on ${JSON.stringify(byEstimate.worst)} - ` +
+      `${(byEstimate.spread / Math.max(byAdvance.spread, 1e-9)).toFixed(0)}x wider, so this check discriminates`,
+  )
+  for (const [t, tl] of [...declaredAdvances].sort((x, y) => (x[0] < y[0] ? -1 : 1))) {
+    console.log(`  ${JSON.stringify(t).padEnd(22)} textLength ${um(tl).padStart(9)}  advance ${um(advanceWidth(glyphs, t, TEXT_SIZE)).padStart(9)}  residual ${um(tl - advanceWidth(glyphs, t, TEXT_SIZE)).padStart(7)}`)
+  }
 
   head("STEP 2 ROUTE 3b: THE GLOBAL-LABEL OUTLINE, from the PDF export's own vector coordinates")
   const labelRows: RowSpec[] = ["A", "ABC", "VCC", "BYPASS_CAP", "BUFFER_EMITTER"].map((net): RowSpec => ({ kind: "label", label: `${net} right`, net, side: "right", refs: "" }))
