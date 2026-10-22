@@ -1991,8 +1991,8 @@ material a later measurement needs and cannot re-derive from a figure.
 
 **(1) `kicad-cli sch export svg` 10.0.5 DOES NOT DRAW A GLOBAL LABEL'S OUTLINE. `export pdf` of the
 same file draws both the outline and the text.** `[RAN]` A label's six-sided body is simply absent
-from the SVG: over a whole probe sheet the only paths with five or more points are the frame
-rectangle and the title block. **An SVG export therefore cannot answer "how much room does a global
+from the SVG: over a whole probe sheet the only paths with five or more points are the sheet's two
+border rectangles and its title block. **An SVG export therefore cannot answer "how much room does a global
 label take"**, and a measurement that reads one will under-report a label's extent by the whole
 outline - 3333.75 um along the label's side and 1270 um either side of it, which is more than two
 grid steps in each direction. It was found by a probe refusal rather than by inspection: a row that

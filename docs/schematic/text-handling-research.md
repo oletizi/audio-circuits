@@ -87,8 +87,9 @@ route 1 vs route 2, stroked-outline width: worst disagreement 0.0 um on "TestPoi
 ```
 
 **Route 1 placed by route 3's constants agrees with route 3 to 0.3 um**, which
-is three ten-thousandths of a grid step and is the SVG export's own coordinate
-resolution.
+is three ten-thousandths of a grid step. The SVG export writes four decimal
+places of a millimetre, so that is three of its own coordinate units; it comes
+from per-glyph nanometre rounding and was not chased further.
 
 ### 1.2 The glyph set the eleven boards actually emit `[RAN]`
 
@@ -106,7 +107,7 @@ boards: 11; strings: 1086; of those, 498 are on boards that pass validateCircuit
   transistor-preamp-loop         99 strings  reaches the drawing
   transistor-preamp-staged      132 strings  reaches the drawing
 distinct characters over all eleven boards (64): "(" ")" "+" "-" "." "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "[" "]" "_" "a" "b" "c" "d" "e" "h" "i" "j" "k" "l" "m" "n" "o" "p" "r" "s" "t" "u" "x" "y" "z"
-distinct characters on boards that reach the drawing (50): "." "0" … "_" "e" "i" "m" "n" "o" "p" "r" "s" "t" "u" "x"
+distinct characters on boards that reach the drawing (50): "." "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "[" "]" "_" "e" "i" "m" "n" "o" "p" "r" "s" "t" "u" "x"
 characters that enter ONLY through a board gate 1 refuses: "(" ")" "+" "-" "a" "b" "c" "d" "h" "j" "k" "l" "y" "z"
 ```
 
@@ -273,9 +274,9 @@ route 1+2 outline formula vs the PDF's own coordinates: worst disagreement 1.5 u
 UNDER-reserves by **835 um** for a one- and three-character net name and
 OVER-reserves by **1040 um** for a fourteen-character one, crossing over at
 about ten characters. The reason is visible in the formula: the real outline is
-`text width + a constant 3333.75 um of arrow ends and margins`, and
-`(n + 2) * GRID` models that constant as two character widths, which is only
-right when a character happens to be a grid step wide. **Across its side the two
+**`GetTextBox`'s width plus a constant 3333.75 um** of arrow ends, margins and
+line width, and `(n + 2) * GRID` models that constant as two character widths -
+which is only right when a character happens to be a grid step wide. **Across its side the two
 agree to 0.8 um** - `halfSize + linewidth` is 1270.0 um, exactly `GRID` - which
 is a coincidence of `0.375 + 0.5` landing on `1 - 1/8`, not a design.
 
