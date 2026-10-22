@@ -377,9 +377,14 @@ async function main(): Promise<void> {
   for (const row of g239Slots(geometries)) {
     const body = row.body
     console.log(`${row.libId.padEnd(24)} body ${um(body.maxX - body.minX)} x ${um(body.maxY - body.minY)} um`)
+    const bodyW = row.body.maxX - row.body.minX
     for (const g of geometries) {
       const p = row.pair.get(g.name)!
-      console.log(`    ${g.name.padEnd(30)} grown pair ${um(p.width)} x ${um(p.height)}   inside slots that fit: ${row.fits.get(g.name)} of 5`)
+      const v = row.value === "" ? null : g.width(row.value)
+      console.log(
+        `    ${g.name.padEnd(30)} grown pair ${um(p.width)} x ${um(p.height)}   inside slots that fit: ${row.fits.get(g.name)} of 5` +
+          (v === null ? "" : `   Value ${JSON.stringify(row.value)} ${um(v)} um = ${(v / bodyW).toFixed(2)}x the body WIDTH ${um(bodyW)} um, ${(v / (row.body.maxY - row.body.minY)).toFixed(2)}x its HEIGHT`),
+      )
     }
   }
 

@@ -48,6 +48,8 @@ export const G239_CASES: readonly { readonly libId: string; readonly value: stri
 
 export interface SlotRow {
   readonly libId: string
+  /** The Value string this symbol was measured at, as **G239**'s own table measured it. */
+  readonly value: string
   readonly body: Box
   /** Per geometry name: how many of the five inside slots hold the grown pair. */
   readonly fits: ReadonlyMap<string, number>
@@ -68,7 +70,7 @@ export function g239Slots(geometries: readonly TextGeometry[]): readonly SlotRow
       fits.set(g.name, insideSlotsThatFit(g, body, c.refPrefix, c.value, c.libId).length)
       pair.set(g.name, grownPairExtent(g, body, "centre", c.refPrefix, c.value, c.libId))
     }
-    return { libId: c.libId, body, fits, pair }
+    return { libId: c.libId, value: c.value, body, fits, pair }
   })
 }
 

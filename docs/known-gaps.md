@@ -19501,9 +19501,18 @@ was built under it with the price of its not having run.
 >
 > **TWO FIGURES THIS ENTRY AND ITS SIBLINGS PUBLISH MOVE, AND ONE MOVES THE WRONG WAY.**
 >
-> - *"the jumper's Value is seven times wider than its body"*: `Jumper_2_Open` is 16510.0 um under
->   the current model and **14364.3** of rendered ink against a 2286 um body, so **7.2x becomes
->   6.3x**. The claim survives; its number is 13% high.
+> - *"the jumper's Value is seven times wider than its body"*. **The "seven times" compares a width
+>   to a HEIGHT**: `Jumper:Jumper_2_Open`'s body is 5080 x 2286 um, and 16510.0 / 2286 is 7.22 while
+>   16510.0 / 5080 is 3.25. `[RAN]` under all four rulers, both ratios:
+>
+>   | | Value width | x the body's height | x the body's width |
+>   | --- | --- | --- | --- |
+>   | `length * GRID` | 16510.0 | **7.22** | 3.25 |
+>   | advance | 14695.7 | **6.43** | 2.89 |
+>   | ink | 14364.3 | **6.28** | 2.83 |
+>   | `GetTextBox` | 14918.0 | **6.53** | 2.94 |
+>
+>   **The claim survives under every quantity; its number is 10-13% high.**
 > - *"5080 um of Reference-and-Value into a 2286 um body"* (the plan's *state* section, from
 >   `Device:C`'s pair): **5080.0 is an UNDER-statement.** The pair is 5232.4 um of ink and 5853.1 um
 >   of KiCad's box - up to 15% more.

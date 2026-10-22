@@ -452,10 +452,20 @@ The PT2399 row is the positive control and it could have moved; it does not.
 
 #### The jumper, and the figures in the plan's *state* section `[RAN]`
 
-- *"the jumper's Value is seven times wider than its body"*: `Jumper_2_Open` is
-  **16510.0** um under the current model and **14364.3** of ink, against a
-  2286 um body - **7.2x becomes 6.3x**. The claim survives; its number moves by
-  13%.
+- *"the jumper's Value is seven times wider than its body"*. `[RAN]`, and the
+  first thing to say is that **the "seven times" compares a width to a HEIGHT**:
+  `Jumper:Jumper_2_Open`'s body is 5080 x 2286 um, and 16510.0 / 2286 is 7.22
+  while 16510.0 / 5080 is 3.25. Against each quantity, with both ratios:
+
+  | | Value width | x the body's height | x the body's width |
+  | --- | --- | --- | --- |
+  | `length * GRID` | 16510.0 | **7.22** | 3.25 |
+  | Q1 advance | 14695.7 | **6.43** | 2.89 |
+  | Q2 ink | 14364.3 | **6.28** | 2.83 |
+  | Q3 `GetTextBox` | 14918.0 | **6.53** | 2.94 |
+
+  **The claim survives under every quantity; its number is 10-13% high**, and
+  the comparison it makes is to the body's shorter dimension.
 - *"5080 um of Reference-and-Value into a 2286 um body"*: for `Device:C` the
   grown pair is 5080.0 um in the model, **5232.4** of ink and **5853.1** of
   KiCad's box. **The figure is an UNDER-statement**, by up to 15%.
