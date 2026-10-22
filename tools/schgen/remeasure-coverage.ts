@@ -17,6 +17,14 @@
  * you to fix it, and do not start."* This module measures and classifies; no template, no rule, no
  * clearance check and no field-placement routine is touched by this task.
  *
+ * **WHAT IT CANNOT SEE, AND WHERE THAT IS MEASURED** (Task 22). A row here holds what
+ * `checkLayout` REPORTED, which is not every problem a block has: `layout-check.ts`'s
+ * `textClearanceProblems` returns a field-placement refusal alone, so the text-clearance pass
+ * behind it never runs, and `field-placement.ts` returns at the first unit it cannot place, so one
+ * refusal line is a floor and not a count. Both are measured per block by
+ * `tools/schgen/masked-problems.ts`, and the leverage below must be read with it: a class that is
+ * a block's sole PUBLISHED blocker is not necessarily its only one. `docs/known-gaps.md` **G258**.
+ *
  * **THE CLASSIFIER IS A WHITELIST THAT THROWS.** A `checkLayout` problem whose text matches no known
  * class refuses rather than being filed under *other*, for the same reason `gateOf` below does: the
  * counts are published as the leverage behind a scope decision, and a problem quietly binned into
@@ -80,11 +88,40 @@ export function gateOf(refusal: string): string {
  *
  * An anchored pattern per class is what makes the refusal below reachable again - a shape neither
  * pattern matches is unclassified, which is the state this module is built to refuse.
+ *
+ * **FIVE CLASSES BELOW ARE MASKED ONES AND NO CENSUS ROW CAN PRINT THEM TODAY** (Task 22). They
+ * come from the population `tools/schgen/masked-problems.ts` measures: the text-clearance problems
+ * `checkLayout` never reports, because `textClearanceProblems` returns a field-placement refusal
+ * alone (`docs/known-gaps.md` **G258**). They live here rather than in that tool because there is
+ * one vocabulary of `checkLayout` problem classes and two tools reading it, and two whitelists
+ * would be two places to keep correct with each other.
+ *
+ * **EVERY ONE OF THEM IS TRANSCRIBED FROM A STRING THAT WAS MEASURED, NEVER FROM A SHAPE SOMEBODY
+ * EXPECTED.** `classOf` refused the first of them on the probe's first run, which is the arm
+ * **G258** said keeps the leverage honest actually firing on real data. The producers' other
+ * obstacle names - `pin name X of K`, `interior text i of K`, `no-connect marker on P`, a bare
+ * `pin P.N` segment (`render/unit-text.ts`) - are deliberately NOT here: nothing has measured a
+ * problem naming one, and a pattern nothing drives is a check that cannot fail.
  */
 export const PROBLEM_CLASSES: readonly { readonly pattern: RegExp; readonly problemClass: string }[] = [
   { pattern: /no place for its Reference and Value/, problemClass: "field-placement" },
   { pattern: /^body of \S+ overlaps label /, problemClass: "body-label-overlap" },
   { pattern: /^label .* overlaps label /, problemClass: "label-label-overlap" },
+  /**
+   * **A LABEL OVER A BODY IS ITS OWN CLASS AND IS NOT FOLDED INTO `body-label-overlap`**, although
+   * on `tp-stage` the two name the same pair from opposite ends. They are two rules over two
+   * boxes: `glyph-clearance.ts`'s `bodyGlyphProblems` tests `graphicsBox(graphics)` placed and
+   * exempts a glyph on the unit's own connection; `text-scene.ts` tests `unitText().body` and has
+   * no such exemption. Whether those two boxes are the same for a given unit is not measured here,
+   * so folding the classes would assert an identity nobody has checked - and a reader counting
+   * distinct classes needs to know the question is open rather than have it answered by a
+   * classifier.
+   */
+  { pattern: /^label .* overlaps body of /, problemClass: "label-body-overlap" },
+  { pattern: /^label .* overlaps wire \d+ of /, problemClass: "label-wire-overlap" },
+  { pattern: /^label .* overlaps pin \S+ text$/, problemClass: "label-pin-text-overlap" },
+  { pattern: /^label .* overlaps graphic \d+ of /, problemClass: "label-graphic-overlap" },
+  { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps value of (power symbol|PWR_FLAG) /, problemClass: "power-value-overlap" },
 ]
 
 export function classOf(problem: string): string {
@@ -121,6 +158,10 @@ export interface BlockCoverage {
  * NONE.** `oc-audio` and `oc-sidechain` are refused at obligations 1 and 3, so `checkLayout` never
  * runs on them and `problemClasses` is empty - `gate` is what says why. Reading an empty list as
  * *"nothing is wrong with its clearances"* would be wrong: nothing has looked.
+ *
+ * **AND A NON-EMPTY LIST IS NOT A COMPLETE ONE EITHER**, which Task 22 measured: a block whose
+ * only class here is `field-placement` may hold text-clearance problems nothing reported, and one
+ * of the three does. See this module's header and `tools/schgen/masked-problems.ts`.
  */
 export async function coverageCensus(cases: readonly ParityCase[] = PARITY_CASES): Promise<readonly BlockCoverage[]> {
   const symbols = parityResolver()

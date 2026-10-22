@@ -17544,6 +17544,37 @@ report."* **Nothing here is fixed and nothing was attempted.**
 > MUST be drawn, so **Task 21's change cannot help any of them** and the
 > mechanisms at the end of this entry still stand for that case.
 
+> **AMENDED 2026-10-21 BY TASK 22: SOMETHING LOOKED, AND ONE OF THE THREE WAS
+> HIDING A SECOND PROBLEM. THE CEILING THIS ENTRY SELLS IS 7 OF 12, NOT 9 AND NOT
+> 8 - AND IT IS STILL A BOUND.**
+>
+> `[RAN]` `tools/schgen/masked-problems.ts`, over all twelve declared blocks, at
+> this commit. **`ob-buffer` masks a text-clearance problem in which no field is
+> involved at all:**
+>
+> ```
+> value of power symbol GND 0 at (99.06, 33.02) overlaps value of power symbol VEE 1 at (99.06, 44.45)
+> ```
+>
+> Two power-symbol VALUES on top of each other. Nothing about field placement
+> touches it, so `ob-buffer` would not draw if this entry's defect were fixed
+> tomorrow. `oc-power` and `pt-core` mask NOTHING measurable, so field placement
+> is the sole *measured* blocker of **two** blocks, and `5 + 2 = 7` is the
+> arithmetic this entry now supports. It remains an upper bound for a reason that
+> cannot be removed by looking harder: **the text clearance of a FIELD cannot be
+> measured while the field has no slot**, which is **G258**'s amendment in full.
+>
+> **AND "ONE DEFECT" IS ONE DEFECT CLASS, NOT ONE REFUSAL TO FIX.**
+> `field-placement.ts` returns at the FIRST unit it cannot place, so each block's
+> single refusal line is a floor. Asked per unit, with each unit moved to the
+> front of the placement order so its search sees the most permissive obstacle set
+> the placer can give it, **thirteen units across the four blocks have no slot** -
+> `ob-buffer` 2, `oc-power` 1, `pt-core` **7**, `tp-stage` 3. A fix to the
+> placement RULE could still clear all thirteen at once, which is why this does
+> not by itself defeat the leverage; a fix aimed at one unit's geometry would clear
+> one of thirteen. Every figure here is asserted in
+> `tests/schgen/masked-problems.test.ts`.
+
 **THE DEFECT.** `checkLayout` reports *"<part>#<unit> (<libId>): no place for its
 Reference and Value - every pin-free side, every spot inside its body and beside
 its outermost pins is blocked by wires, pins, pin text..."*. It is a
@@ -18535,6 +18566,41 @@ look.
 > was NOT re-measured**, and this writer is not inferring it: the instrumentation
 > that produced that table was never committed. The two capacitor rows are
 > unaffected and were not re-driven.
+
+> **AMENDED 2026-10-21 BY TASK 22: "THE THREE UNITS THAT REFUSE IN THIS
+> REPOSITORY" IS THIRTEEN, and the search space this entry sizes has to serve all
+> of them.**
+>
+> `field-placement.ts` returns at the FIRST unit it cannot place, so a block's
+> one refusal line names one unit and says nothing about the rest. `[RAN]`
+> `tools/schgen/masked-problems.ts`, which re-asks each unit with that unit moved
+> to the front of the placement order - the most permissive obstacle set the
+> search can be given, since `tryPlaceFields` accumulates each placed unit's
+> fields as obstacles for the units after it. **Thirteen units have no slot even
+> there**, so their refusals are unconditional and are not artifacts of the order:
+>
+> | block | units with no slot |
+> | --- | --- |
+> | `ob-buffer` | `C3#1`, `J3#1` |
+> | `oc-power` | `C3#1` |
+> | `pt-core` | `C7#1`, `C9#1`, `C11#1`, `C12#1`, `R3#1`, `R4#1`, `R6#1` |
+> | `tp-stage` | `C3#1`, `C4#1`, `J2#1` |
+>
+> By designator prefix that is **eight `C`, three `R` and two `J`** - so this
+> entry's subject, the small two-pin passive, is eleven of the thirteen, and the
+> two `J` keys are a shape it has never measured. **The four units the production
+> refusals name are all capacitors** (`Device:C` three times and
+> `Device:C_Polarized` once, from the refusal text itself); the libIds of the
+> other nine were NOT read, and the prefixes above are what the keys carry rather
+> than a claim about their symbols.
+>
+> **WHAT IT MEANS FOR THIS ENTRY'S ARITHMETIC: nothing is wrong with it, and its
+> scope was understated.** Six usable candidates for a small two-pin passive is
+> still the number; it now has to be enough for eleven such units rather than
+> three. A mechanism tuned until `pt-core`'s `C7#1` places leaves six more units
+> in that one block. **This was not re-measured per unit** - which of the six
+> outside candidates blocks each of the nine newly named units is unknown, and the
+> instrumentation that would say is still not committed.
 
 **THE ARITHMETIC.** `candidates()` offers eleven slots for a vertical two-pin
 passive: two pin-free sides, five inside the body, four beside the outermost
@@ -21310,6 +21376,28 @@ while the blocks got smaller is recorded and **not diagnosed**.
 of the predicate are exercised by the committed fixtures: `cap` is valued
 `"100n"` and `diode` is valued `"D"`, which IS `Fix:D`'s part name.
 
+> **AMENDED 2026-10-21 BY TASK 22, with two things measured about this change
+> rather than about the register.**
+>
+> **ONE: the block this change unblocked is the ONLY one of the twelve that is a
+> single measured problem from drawing.** `[RAN]`
+> `tools/schgen/masked-problems.ts`: of the seven blocks that do not draw,
+> `tp-leg-emitter-bypass` is the one whose every check ran and found exactly one
+> thing - its label-over-label overlap - with nothing unmeasured behind it. Two
+> blocks have one measured class and an unmeasured residual, two have more than
+> one, and two have nothing measured at all. So the state this change left the
+> block in is better than the one it found it in by more than one problem: it is
+> the only block in the corpus whose remaining distance to a drawing is KNOWN.
+>
+> **TWO: the imprecision this entry left in place now has a second reader, and it
+> is not the text.** That imprecision is the refusal still saying *"no place for
+> its Reference and Value"* for a unit whose Value needs no room. Task 22's
+> per-unit probe identifies the refused unit from
+> `Mismatch.obstacles[0]` - `` `Reference and Value of ${key}` `` - which carries
+> the same wrong wording from the same site. **Nothing is newly wrong**; what
+> changed is the cost of fixing it, which was two readers (the ported clearance
+> tests and `remeasure-coverage.ts`'s marker) and is now three.
+
 - **Found** 2026-10-21, Task 21, which exists because of the owner's question.
 - **Evidence** `tests/schgen/render/hidden-value-fields.test.ts` (7 cases:
   placement, its control, the blocking geometry, the text scene and its control,
@@ -21418,9 +21506,143 @@ clear. The stub-writer tripwire
 (`tests/circuits/stub-writer-tripwire.test.ts`) is therefore still green, and
 **G256**'s finding about what it cannot notice is untouched.
 
+> **AMENDED 2026-10-21 BY TASK 22: THE MASKING IS MEASURED, IT GOES ONE LAYER
+> DEEPER THAN THIS ENTRY KNEW, AND "AN UPPER BOUND OF 8" IS A REAL COUNT OF 7
+> WITH A RESIDUAL THAT CANNOT BE REMOVED.** Criterion two below is SETTLED;
+> criterion one is not, and this entry stays open on it and on three new facts.
+>
+> **WHAT MEASURES IT.** `tools/schgen/masked-problems.ts`, hand-written, a
+> DIAGNOSTIC: nothing refuses because of it, and
+> `tests/schgen/masked-problems.test.ts` asserts every figure below so a corpus
+> move turns it red rather than leaving this entry quietly wrong (**G245**,
+> **G250**). It runs the text-clearance pass with **every unit field omitted**
+> (`render/text-scene.ts`'s new opt-in `UnitFieldMode`), reads the layout
+> `checkLayout` was run on off a new `AdaptReport.checked`, and re-asks field
+> placement per unit.
+>
+> **THE PER-BLOCK TABLE, which is what this task was for.** `[RAN]`
+> `bun tools/schgen/masked-problems.ts`:
+>
+> | block | published by `checkLayout` | masked, and now measured | units with no field slot | unmeasurable |
+> | --- | --- | --- | --- | --- |
+> | `ob-buffer` | field-placement | **power-value-overlap** | `C3#1`, `J3#1` | text clearance of any field |
+> | `oc-power` | field-placement | nothing | `C3#1` | text clearance of any field |
+> | `pt-core` | field-placement | nothing | `C7#1`, `C9#1`, `C11#1`, `C12#1`, `R3#1`, `R4#1`, `R6#1` | text clearance of any field |
+> | `tp-stage` | body-label-overlap x2, field-placement | **label-wire**, **label-body** x2, **label-pin-text**, **label-graphic** x2 | `C3#1`, `C4#1`, `J2#1` | text clearance of any field |
+> | `tp-leg-emitter-bypass` | label-label-overlap | - (its fields place, so nothing was masked) | none | nothing |
+> | `oc-audio` | none - refused at obligation 1 | **nothing can be** | unknown | **every clearance check** |
+> | `oc-sidechain` | none - refused at obligation 3 | **nothing can be** | unknown | **every clearance check** |
+> | the five `tp-leg-*` that draw | none | none | none | nothing |
+>
+> **HOW MANY BLOCKS ARE ONE PROBLEM AWAY: ONE.** `tp-leg-emitter-bypass` is the
+> only block of twelve with exactly one measured problem and nothing unmeasured
+> behind it. **Two** - `oc-power`, `pt-core` - have one measured class and an
+> unmeasured residual. **Two** - `ob-buffer`, `tp-stage` - have more than one.
+> **Two** have nothing measured at all. So `field-placement` is the sole MEASURED
+> blocker of two rather than three, and the ceiling **G232** sells is `5 + 2 = 7`.
+>
+> **FINDING ONE: `ob-buffer` WAS NEVER ONE FIX AWAY.** Its masked problem is
+> `value of power symbol GND 0 at (99.06, 33.02) overlaps value of power symbol
+> VEE 1 at (99.06, 44.45)` - two power-symbol values on top of each other, no
+> field involved, and no fix to field placement touches it. The one block where
+> Task 21 lifted the mask revealed a second defect; so does the first block
+> Task 22 looked behind.
+>
+> **FINDING TWO: THERE IS A SECOND MASKING INSIDE FIELD PLACEMENT, AND NOTHING
+> HAD RECORDED IT.** `tryPlaceFields` returns at the FIRST unit it cannot place,
+> so one refusal line is a floor. Asked per unit - each unit moved to the front
+> of the placement order, where `tryPlaceFields` has placed no other fields yet
+> and the obstacle set is therefore the most permissive it can be - **thirteen
+> units across four blocks have no slot**, against four reported. A failure in
+> that position is unconditional, because adding obstacles cannot create a slot;
+> a SUCCESS there is not, so thirteen is itself a floor. `pt-core` alone holds
+> seven.
+>
+> **FINDING THREE: THE CLASSIFIER'S REFUSING ARM FIRED ON REAL DATA, which is
+> what this entry said would keep the leverage honest.** `classOf` threw on the
+> power-value overlap the first time the probe ran, naming the text it could not
+> place. Five classes are added from measured strings - `label-body-overlap`,
+> `label-wire-overlap`, `label-pin-text-overlap`, `label-graphic-overlap`,
+> `power-value-overlap` - and `label-body-overlap` is deliberately NOT folded into
+> `body-label-overlap` although on `tp-stage` they name the same pair from
+> opposite ends: the two rules test different boxes (`graphicsBox` placed, versus
+> `unitText().body`) with different exemptions, and whether those boxes coincide
+> is not measured. **A reader counting `tp-stage`'s distinct classes should know
+> that one of its six may be a duplicate of another.**
+>
+> **WHAT IS UNMEASURABLE, AND IT IS A CLEAN NEGATIVE RATHER THAN A GAP IN THE
+> EFFORT.** Two kinds:
+>
+> 1. **Any text-clearance problem involving a unit's own Reference or Value, on
+>    any block whose field placement refused.** Building a text scene PLACES
+>    fields, so the only way to get one is to choose where the field goes - and
+>    that choice is the thing under question. `[RAN]` the probe with the scene
+>    switched from `"omitted"` to `"placed"`: it dies on the first such block with
+>    `block ob-buffer: C3#1 (Device:C): no place for its Reference and Value`,
+>    which is the trap, demonstrated rather than argued.
+> 2. **Every clearance check on `oc-audio` and `oc-sidechain`.**
+>    `AdaptReport.checked` is `null` for both: obligation 1 refused the snap that
+>    collapsed distinct geometry, obligation 3 refused coordinates that disagree,
+>    and neither leaves a grid-legal layout. Checking one would mean repairing the
+>    collapse or picking one of two disagreeing coordinate sets - deciding what
+>    the drawing IS (**G196**).
+>
+> **WHY THE REPORT WAS NOT SIMPLY WIDENED IN PLACE, which was the preferred shape
+> and was tried first.** `adaptElkLayoutReported` reports a `clearance` mismatch
+> when some problem names an obstacle pair and an `invalid-geometry` one when none
+> does; a field-placement refusal names none, and every `textProblems` line names
+> one. `[RAN]`, over the live pipeline: `ob-buffer`, `oc-power` and `pt-core` all
+> refuse as `invalid-geometry` with zero pairs, and **appending the masked
+> problems gives `ob-buffer` a pair and flips its classified verdict** to
+> `clearance`. **The first draft of that claim said all three and did not
+> reproduce** - `oc-power` and `pt-core` mask nothing, so their verdict would not
+> move today. **That is worse than a uniform change, not better:** the verdict
+> kind would become contingent on the masked population, which varies per block
+> and per corpus, so a review that passed the widening could not say which block
+> flips next. `tp-stage` is the control - it already names two pairs, so no
+> widening can move its kind. Secondary cost: `layout-check.ts` is a byte-checked
+> `files[]` port, so the edit would add a **G139** divergence.
+>
+> **THE MECHANISM THIS ENTRY SUGGESTED WAS NOT TAKEN, and the deviation is the
+> point.** It proposed *"a census pass that places fields with the Value
+> requirement relaxed, or with a temporary slot, purely to enumerate what else the
+> block would report"*. **A temporary slot is a placement nobody chose**, and
+> every clearance result involving it would be an artefact of that choice rather
+> than a fact about the block - the mechanism walks straight into the trap its own
+> criterion was written to avoid. What was done instead omits the field boxes
+> entirely: `textProblems` compares each text against things already in the scene,
+> so dropping a text can only drop the problems that text is party to, and every
+> problem the omitted scene reports therefore survives ANY field placement,
+> including the one a fix would produce. That is sound and incomplete, and the
+> incompleteness is item 1 above.
+>
+> **THE PRICE, stated.** Nothing wires this probe into `make check` (**G226**),
+> and the precondition for ever wiring it is not a bug fix: it is a decision that
+> a field-placement block's refusal MAY carry a `clearance` kind with a pair drawn
+> from the masked population. That decision belongs to a spec or to the owner.
+> `render/text-scene.ts` gains an opt-in parameter and `lib/schgen/elk/adapt.ts` a
+> `checked` field; text-scene was ALREADY a `diverged[]` entry (Task 21) and
+> adapt.ts is hand-written, so **G139**'s divergence count does not move.
+
 - **Found** 2026-10-21, Task 21, in the first census after the fix - by reading
   the tool's output rather than its summary, which is how the misfiling surfaced
-  too.
+  too. **Measured 2026-10-21 by Task 22**, which the owner authorised as a
+  diagnostic and not a fix.
+- **Evidence, Task 22** `tests/schgen/masked-problems.test.ts` (8 cases) asserts
+  the whole per-block table above, the 1/2/2/2 split, the thirteen units, the
+  mismatch kinds and the pair arithmetic; the rows recompute every run.
+  **Perturbations, driven, each reverted in the same session:** removing the
+  per-unit reorder takes `pt-core` from seven blocked units to one and fails two
+  cases; emptying the block out of the field-free scene takes `tp-stage`'s masked
+  problems from six to one and fails two cases; switching that scene from
+  `"omitted"` to `"placed"` makes the whole census die on `ob-buffer`'s field
+  refusal, which is the trap itself. **A check that could have failed and did,
+  twice:** `classOf` threw on the power-value overlap, and the first draft of the
+  mismatch-kind case claimed three blocks would flip and measured one. **A check
+  whose refusing arm is driven rather than left as a tripwire:**
+  `withoutFieldText` refuses a problem naming a unit's own field (**G236**), and
+  the soundness subset is enforced inside the tool on the six blocks whose fields
+  place.
 - **Evidence** `tests/schgen/remeasure.test.ts` asserts the new census rows, the
   3/1 sole-blocker split, `5 + 3 = 8`, and the three classifier shapes above; the
   rows recompute on every run, so a block that starts or stops drawing moves
@@ -21434,21 +21656,36 @@ clear. The stub-writer tripwire
   the classified summary. **The claim that `textClearanceProblems`' early return
   is the whole mechanism is this writer's reading of that one function**, not a
   perturbation: no probe was built that forces the text pass to run with unplaced
-  fields, because it cannot be made to.
+  fields, because it cannot be made to. **Task 22 CONFIRMED the rest the same
+  way** - it wrote and drove the probe, drove the three perturbations above, read
+  the tool's whole output rather than its summary lines, and re-ran
+  `tools/schgen/remeasure-coverage.ts` before and after to establish that its
+  output is byte-identical, so no check's refusal moved. **It did NOT perturb
+  `textClearanceProblems` either**: the reading above stands as a reading, and
+  what Task 22 added is the measurement of what that early return hides.
 - **Why it is open** **the label-label overlap is a real, unfixed defect** and it
-  is now the sole blocker of one block; and the masking means every remaining
-  field-placement count in this register is an upper bound whose true value is
-  unmeasured.
-- **What would settle it** **CRITERION ONE: `tp-leg-emitter-bypass` draws, which
-  requires the two global labels of nets `BYPASS_JUMPED` and `BYPASS_CAP` not to
-  overlap.** **CRITERION TWO, and it is the one that matters for the register's
-  honesty: for each block whose only reported problem is field placement, the
-  text-clearance problems BEHIND that refusal are either measured or declared
-  unmeasured - a census that prints one problem class for a block must not be
-  read as a block one fix away.** **MECHANISMS, both UNTRIED:** for criterion
-  two, a census pass that places fields with the Value requirement relaxed, or
-  with a temporary slot, purely to enumerate what else the block would report -
-  which is a diagnostic and would need to be marked as one, not a change to
-  `layout-check.ts`; for criterion one, nothing is proposed here, because where
-  a label goes is the ELK adapter's business and an agent may not author the
-  criterion for an artifact it would produce.
+  is now the sole blocker of one block; **`ob-buffer`'s power-value overlap is a
+  second real, unfixed defect**, found by Task 22 and not fixed by it (the owner
+  authorised a diagnostic); and the residual in item 1 above - the text clearance
+  of any field on a block whose fields do not place - **cannot be measured at
+  all** while the field placement refuses, so `5 + 2 = 7` is a count of what is
+  measurable and a bound on what is true.
+- **What would settle it** **CRITERION ONE, UNMET: `tp-leg-emitter-bypass` draws,
+  which requires the two global labels of nets `BYPASS_JUMPED` and `BYPASS_CAP`
+  not to overlap.** **CRITERION TWO, MET by Task 22: for each block whose only
+  reported problem is field placement, the text-clearance problems BEHIND that
+  refusal are either measured or declared unmeasured** - measured for all five
+  blocks that reach `checkLayout`, declared unmeasurable for the two that do not
+  and for every field-involving problem, with the reason in each case and the
+  figures asserted in a committed test. **ITS MECHANISM WAS WRONG AND THE
+  DEVIATION IS RECORDED ABOVE:** the suggested *"temporary slot"* would have
+  reported the probe's own choice of placement as a property of the block, which
+  is what criterion two exists to prevent. **CRITERION THREE, NEW AND UNMET: the
+  thirteen units with no field slot are a floor, because a unit that places in
+  first position may still fail in its real one.** Settling it means a per-unit
+  answer that does not depend on the placement order - and **MECHANISM, UNTRIED
+  and this writer has not thought it through:** that may require field placement
+  to be order-independent, which is a change to a rule and not a measurement.
+  **For criterion one, nothing is proposed here**, because where a label goes is
+  the ELK adapter's business and an agent may not author the criterion for an
+  artifact it would produce.

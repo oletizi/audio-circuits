@@ -194,6 +194,16 @@ const POINTERS: readonly Pointer[] = [
     marker: "pin-to-pin pairs, built from a real kicad-cli export",
     why: "The document's own re-run instructions for the table a reader checks the figures against.",
   },
+  // TASK 22: G258's per-block table of what each refusal hides is the one place the register says
+  // how many blocks are genuinely one fix from drawing, and the only thing that stops it going
+  // stale is the test it names.
+  {
+    citedBy: "docs/known-gaps.md",
+    citation: "`tests/schgen/masked-problems.test.ts` (8 cases) asserts",
+    test: "tests/schgen/masked-problems.test.ts",
+    marker: "prints every problem class of every block, published and masked",
+    why: "G258's Task 22 Evidence: the per-block masked table, the 1/2/2/2 split and the thirteen units.",
+  },
 ]
 
 /**
@@ -239,10 +249,10 @@ describe("the guard is a SAMPLE of the citation population, and says so", () => 
     // And the breakdown G233 publishes, which is composition rather than a count: 12 register rows,
     // 2 module comments, 2 document lines, plus R62's row for the moved hub test - 13 register rows
     // since Task 18 added G239's, G240's, G241's and the R61 guard's, and the reference-graph
-    // document's.
+    // document's, and 14 since Task 22 added G258's masked-problems table.
     const byFile = new Map<string, number>()
     for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
-    expect(byFile.get("docs/known-gaps.md")).toBe(13)
+    expect(byFile.get("docs/known-gaps.md")).toBe(14)
     expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
     expect(byFile.get("docs/schematic/reference-graph-checks.md")).toBe(1)
     // THE THIRD CLAUSE COUNTS THE MODULE COMMENTS RATHER THAN SUBTRACTING FROM THE TOTAL. The

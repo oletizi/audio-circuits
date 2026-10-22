@@ -150,6 +150,24 @@ export interface AdaptReport {
   readonly pairs: readonly ProblemObstacles[]
   /** Every `checkLayout` problem, so a measurement can read the ones that name no pair. */
   readonly problems: readonly string[]
+  /**
+   * **THE GEOMETRY `checkLayout` WAS RUN ON, or `null` when the pipeline refused before it got
+   * there** - added by Task 22 so that a measurement can run a FURTHER pass over the same drawing.
+   *
+   * `problems` carries what `checkLayout` reported, and that is not enough to measure what it did
+   * NOT report: `lib/schgen/render/layout-check.ts`'s `textClearanceProblems` returns a field
+   * placement refusal alone, so every text-clearance problem of a block whose fields do not place
+   * is absent from `problems` and nothing downstream could look for it without the layout
+   * (`docs/known-gaps.md` **G258**). Returning it is the alternative to a diagnostic rebuilding
+   * the canonicalise-snap-canonicalise chain, which would be a second reader of the same
+   * geometry - the thing obligation 3 exists to forbid.
+   *
+   * **`null` IS NOT "NOTHING WAS WRONG WITH ITS CLEARANCES"**, in exactly the sense
+   * `tools/schgen/remeasure-coverage.ts` states for an empty `problemClasses`: a block refused at
+   * obligations 1, 2 or 3 has no grid-legal layout at all, so no clearance check ran on it and
+   * none can be made to without inventing geometry the pipeline declined to produce.
+   */
+  readonly checked: BlockLayout | null
 }
 
 const connectionOf = (g: BlockSubgraph, what: string): string => `${g.block.id}: ${what}`
@@ -164,7 +182,7 @@ const connectionOf = (g: BlockSubgraph, what: string): string => `${g.block.id}:
  * A caller that only wants the layout calls `adaptElkLayout`.
  */
 export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): AdaptReport {
-  if (!outcome.ok) return { result: { ok: false, mismatch: outcome.mismatch }, counts: null, pairs: [], problems: [] }
+  if (!outcome.ok) return { result: { ok: false, mismatch: outcome.mismatch }, counts: null, pairs: [], problems: [], checked: null }
 
   const built = readElkGraph(g, outcome.graph)
 
@@ -195,6 +213,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       })(),
       pairs: [],
       problems: [],
+      checked: null,
     }
   }
 
@@ -215,6 +234,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       counts: countsOf(built.wires, [pre], built.wires.length - pre.collapsed - pre.zeroLength - pre.contained),
       pairs: [],
       problems: [],
+      checked: null,
     }
   }
   // Provisional: it carries the pre-snap pass only, for the arms that refuse before the second
@@ -234,6 +254,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       counts,
       pairs: [],
       problems: [],
+      checked: null,
     }
   }
 
@@ -252,6 +273,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       counts,
       pairs: [],
       problems: [],
+      checked: null,
     }
   }
   if (post.collapsed > 0 || post.zeroLength > 0) {
@@ -306,13 +328,14 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       counts: bothPasses,
       pairs: [],
       problems: [],
+      checked: null,
     }
   }
 
   // LAST, and the geometry is never touched after it: obligation 5's criterion.
   const problems = checkLayout(g, layout)
   const pairs = clearancePairs(problems)
-  if (problems.length === 0) return { result: { ok: true, layout }, counts: bothPasses, pairs, problems }
+  if (problems.length === 0) return { result: { ok: true, layout }, counts: bothPasses, pairs, problems, checked: layout }
 
   const reason =
     `block ${g.block.id}: the ELK route does not pass the clearance checks that grade template ` +
@@ -328,9 +351,16 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
       counts: bothPasses,
       pairs,
       problems,
+      checked: layout,
     }
   }
-  return { result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason), counts: bothPasses, pairs, problems }
+  return {
+    result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason),
+    counts: bothPasses,
+    pairs,
+    problems,
+    checked: layout,
+  }
 }
 
 /** Spec §5.3: *"an ELK backend implements the same `realise(g: BlockSubgraph): RealiseResult`."* */

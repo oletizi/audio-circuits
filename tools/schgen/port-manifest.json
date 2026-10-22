@@ -531,8 +531,8 @@
       "from": "render/textScene.ts",
       "to": "lib/schgen/render/text-scene.ts",
       "sourceSha": "4347ca57a0b87bb7934800f6aa664206067d5352e529d143061427ceb164fc2c",
-      "task": "Task 21",
-      "why": "A part Value that is nothing but its symbol's own part name is emitted hidden (render/emit-items.ts), so it is not drawn text and contributes no box to the scene. It is the same rule render/field-placement.ts uses to decide what needs a slot, from the same function, so what the placer places is still exactly what this module checks - the invariant this file's own header states. A cut cannot express it: the Value box is pushed conditionally, not deleted. docs/known-gaps.md G232, G257."
+      "task": "Task 21; widened by Task 22",
+      "why": "A part Value that is nothing but its symbol's own part name is emitted hidden (render/emit-items.ts), so it is not drawn text and contributes no box to the scene. It is the same rule render/field-placement.ts uses to decide what needs a slot, from the same function, so what the placer places is still exactly what this module checks - the invariant this file's own header states. A cut cannot express it: the Value box is pushed conditionally, not deleted. docs/known-gaps.md G232, G257. TASK 22 adds UnitFieldMode: an opt-in fourth argument to textScene that builds the same scene with no unit field box at all, which tools/schgen/masked-problems.ts needs to measure a block whose field placement refused - building a scene PLACES fields and throws when one has no slot, so that block has no scene (G258). The default is unchanged and no check passes the other mode, so nothing about what this module's callers refuse moves; the omitted scene is a strict subset and is sound in one direction only, which UnitFieldMode states. A cut cannot express an added parameter either."
     },
     {
       "from": "render/emitItems.ts",
@@ -843,6 +843,8 @@
     "tests/schgen/render/field-slots.test.ts",
     "tests/schgen/render/hidden-value-fields.test.ts",
     "tests/schgen/render/hidden-value-netlist.kicad.test.ts",
+    "tools/schgen/masked-problems.ts",
+    "tests/schgen/masked-problems.test.ts",
     "lib/schgen/gates/canonical-value.ts",
     "lib/schgen/gates/graph-match.ts",
     "lib/schgen/gates/declared-delta.ts",

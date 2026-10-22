@@ -3,6 +3,12 @@
  * Task 21 of the M1 schematic-authoring plan: a part Value that is nothing but its symbol's own
  * part name is emitted HIDDEN, so it is not drawn text and contributes no box to the scene.
  *
+ * **WIDENED BY TASK 22** with `UnitFieldMode`: `textScene` takes an opt-in fourth argument that
+ * builds the same scene with NO unit field boxes, for the one diagnostic that has to measure a
+ * block whose field placement refused (`tools/schgen/masked-problems.ts`). Every check takes the
+ * default and nothing about what they refuse changes; see `UnitFieldMode` for why the omitted
+ * scene is sound in one direction only.
+ *
  * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
@@ -65,7 +71,35 @@ export interface SceneParts {
   readonly frames: readonly Frame[];
 }
 
-export function textScene(scope: string, symbols: LibLookup, parts: SceneParts): TextScene {
+/**
+ * **WHETHER A SCENE CARRIES THE UNITS' OWN FIELDS - `"placed"` for every check, `"omitted"` for
+ * one diagnostic, and the asymmetry between them is the whole point** (Task 22).
+ *
+ * Building a scene PLACES fields, which throws when a unit has no clear slot, so a block whose
+ * field placement refuses has no scene at all and `layout-check.ts` cannot run this pass on it -
+ * which is how one defect hid another for the whole of **G232**'s life (`docs/known-gaps.md`
+ * **G258**).
+ *
+ * `"omitted"` builds the same scene with no unit Reference or Value box in it. It is a STRICT
+ * SUBSET of the `"placed"` scene and it is sound in one direction only:
+ *
+ * - **what it reports is true of the block whatever the fields do.** `textProblems` tests each
+ *   text against the texts AFTER it, the segments, the bodies, the pin texts, the strokes, the
+ *   crosses and the frames - every one of those comparisons is between two things that are already
+ *   in the scene, so dropping a text can only drop the problems that text is party to, never alter
+ *   another pair's answer. A problem between two labels, or a label and a wire, therefore survives
+ *   ANY field placement, including the one a fix to field placement would produce;
+ * - **what it does NOT report is unmeasured, not absent.** No problem involving a field can appear,
+ *   and for the block that refused, where its fields would go is the question under dispute. A
+ *   diagnostic that chose a placement to answer it would be reporting its own choice.
+ *
+ * **NO CHECK PASSES `"omitted"`, and that is a property to keep.** `layout-check.ts` and
+ * `sheets.ts` take the default, so this parameter changes nothing about what anything refuses; the
+ * one caller is `tools/schgen/masked-problems.ts`, which reports and never decides.
+ */
+export type UnitFieldMode = "placed" | "omitted";
+
+export function textScene(scope: string, symbols: LibLookup, parts: SceneParts, unitFields: UnitFieldMode = "placed"): TextScene {
   const texts: Named[] = [];
   const segments: Segment[] = [];
   const bodies: Named[] = [];
@@ -86,7 +120,7 @@ export function textScene(scope: string, symbols: LibLookup, parts: SceneParts):
       const cross = dnpCross(u, pl);
       if (cross !== null) crosses.push({ what: `DNP cross of ${drawn.key}`, box: cross });
     }
-    for (const t of blockFields(g, layout, symbols)) {
+    for (const t of unitFields === "omitted" ? [] : blockFields(g, layout, symbols)) {
       const u = g.units.find((x) => `${x.part.label}#${x.unit}` === t.key);
       if (u === undefined) throw new Error(`${scope}: ${t.key} is not a unit of block ${g.block.id}`);
       const owner = t.inside ? t.key : undefined;

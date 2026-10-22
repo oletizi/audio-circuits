@@ -261,8 +261,15 @@ describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () =
    * runs the text-clearance pass behind it.
    *
    * **SO THE LEVERAGE FIGURE IS AN UPPER BOUND AND NOT A COUNT**, for all three blocks that
-   * remain: `5 + 3 = 8` assumes none of them is masking a second problem the way this one was, and
-   * nothing has looked. `docs/known-gaps.md` **G232**, **G257** and **G258**.
+   * remain: `5 + 3 = 8` assumes none of them is masking a second problem the way this one was.
+   *
+   * **TASK 22 LOOKED, and one of the three was.** `ob-buffer` masks a power-value overlap that no
+   * fix to field placement touches, so the bound is `5 + 2 = 7` - and still a bound, because the
+   * text clearance of any FIELD stays unmeasurable while the field has no slot. The rows below are
+   * unchanged and still correct: this census reports what `checkLayout` reported, and that is what
+   * `problemClasses` means. What stands behind those rows is
+   * `tests/schgen/masked-problems.test.ts`, per block. `docs/known-gaps.md` **G232**, **G257**,
+   * **G258**.
    */
   it("classifies every checkLayout problem of every declared block", () => {
     expect(renderCoverage(coverage)).toEqual([
@@ -290,8 +297,10 @@ describe("ruling R46: what stands between 5 of 12 blocks drawing and more", () =
     expect(field).toBeDefined()
     expect(field?.soleBlocker).toEqual(["ob-buffer", "oc-power", "pt-core"])
     expect(field?.partialBlocker).toEqual(["tp-stage"])
-    // 5 draw now; the three above would take it to 8 at most - see this describe's comment for why
-    // that is a bound and not a count. A check that could have failed: the sole/partial SPLIT is
+    // 5 draw now; the three above would take it to 8 at most - and Task 22 measured the true
+    // ceiling at 7, because ob-buffer masks a second class (see this describe's comment and
+    // tests/schgen/masked-problems.test.ts). This figure is the CENSUS's, over what checkLayout
+    // reported, and it stays asserted here as that. A check that could have failed: the sole/partial SPLIT is
     // asserted, so a class that blocks nothing by itself cannot be read as leverage -
     // body-label-overlap is sole blocker of ZERO and that is asserted too.
     expect(coverage.filter((r) => r.draws).length).toBe(5)
