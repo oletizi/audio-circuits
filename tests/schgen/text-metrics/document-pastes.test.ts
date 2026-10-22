@@ -26,7 +26,7 @@ import { describe, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { moduleRepoRoot } from "../../../tools/perfboard/repo-root.ts"
-import { DOCUMENT, OUTPUT_FENCE, parseBlocks, verify } from "../../../tools/schgen/text-metrics/verify-pastes.ts"
+import { DOCUMENT, MIN_OUTPUT_LINES, OUTPUT_FENCE, parseBlocks, parseSections, verify } from "../../../tools/schgen/text-metrics/verify-pastes.ts"
 
 const repoRoot = moduleRepoRoot()
 const LOG = path.join(repoRoot, "tests/schgen/text-metrics/probe-run.log")
@@ -35,6 +35,20 @@ const log = fs.readFileSync(LOG, "utf8")
 
 /** A line of the log that is genuine, and belongs to a DIFFERENT block than the one it is moved into. */
 const LINE_FROM_ELSEWHERE = "ORDERING ink < advance < box: 0 violation(s) over 264 strings"
+
+/** The one-line block this document used to carry, and the lines it now carries instead. */
+const CONTROL_LINE =
+  "CONTROL PASSED: over 10 laid-out blocks the parallel search reproduces lib/schgen/render/field-placement.ts exactly, block, unit, lib id, cost and covers."
+
+/** The block that line now lives in: the five SKIPPED lines above it, and the line itself. */
+const CONTROL_BLOCK = [
+  "  SKIPPED opamp-buffer: validateCircuit reports 3 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them",
+  "  SKIPPED optical-compressor: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them",
+  "  SKIPPED optical-compressor/oc-audio: refused before checkLayout, so there is no grid-legal geometry to measure",
+  "  SKIPPED optical-compressor/oc-sidechain: refused before checkLayout, so there is no grid-legal geometry to measure",
+  "  SKIPPED pt2399-core: validateCircuit reports 18 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them",
+  CONTROL_LINE,
+]
 
 /** The first line of a `run` block, used as the anchor for the fabrication attack. */
 const RATIO_BLOCK_FIRST =
@@ -92,8 +106,9 @@ describe("the research document's pasted output", () => {
    * real output so that it is no longer declared as output, and it leaves the checked population.
    */
   test("RED: a block carrying real output is relabelled out of being declared output", () => {
-    const block = blockStartingWith(RATIO_BLOCK_FIRST)
-    const relabelled = doc.replace("```" + OUTPUT_FENCE + "\n" + block[0], "```\n" + block[0])
+    const owner = parseBlocks(doc).find((b) => b.lines[0] === RATIO_BLOCK_FIRST)
+    expect(owner?.info.split(/\s+/)[0]).toBe(OUTPUT_FENCE)
+    const relabelled = doc.replace("```" + (owner?.info ?? "") + "\n" + RATIO_BLOCK_FIRST, "```\n" + RATIO_BLOCK_FIRST)
     expect(relabelled).not.toBe(doc)
     const v = verify(relabelled, log)
     expect(v.failures.length).toBe(1)
@@ -118,11 +133,88 @@ describe("the research document's pasted output", () => {
     expect(log).toContain("pinned at SHA-256 dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9")
     expect(log).toContain("CONTROL PASSED: over 10 laid-out blocks the parallel search reproduces")
   })
+
+  /**
+   * **THE n=1 HOLE, which survived its own fix.** Contiguity collapses to flat membership at
+   * length one, so the version before this one let the document's single-line block be swapped for
+   * any unrelated genuine log line. The document no longer has a one-line block; this builds one.
+   */
+  test("RED: a run block shrunk to a single line, with and without a swap", () => {
+    const shrunk = doc.replace(CONTROL_BLOCK.join("\n"), CONTROL_LINE)
+    expect(shrunk).not.toBe(doc)
+    for (const [name, text] of [
+      ["shrunk", shrunk],
+      ["shrunk and swapped for a genuine line from another section", shrunk.replace(CONTROL_LINE, LINE_FROM_ELSEWHERE)],
+    ] as const) {
+      const v = verify(text, log)
+      expect(`${name}: ${v.failures.length}`).toBe(`${name}: 1`)
+      expect(v.failures[0]).toContain(`carries 1 non-blank line(s); at fewer than ${MIN_OUTPUT_LINES}`)
+    }
+  })
+
+  /**
+   * The general form of the n=1 attack: substitute a WHOLE genuine contiguous slice taken from
+   * another section. Length does not save a block from this; the section anchor does.
+   */
+  test("RED: a whole genuine slice of another section, substituted for a block", () => {
+    const victim = parseBlocks(doc).find((b) => b.info.startsWith(`${OUTPUT_FENCE} STEP 2 ROUTE 2`))
+    const donor = parseBlocks(doc).find((b) => b.info.startsWith(`${OUTPUT_FENCE} STEP 3b`))
+    expect(victim?.lines.length).toBe(donor?.lines.length)
+    const v = verify(doc.replace((victim?.lines ?? []).join("\n"), (donor?.lines ?? []).join("\n")), log)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("is not a contiguous slice of section")
+  })
+
+  /** Padding a short block to length with a line that is NOT its neighbour. */
+  test("RED: a one-line block padded to two with a non-neighbouring genuine line", () => {
+    const shrunk = doc.replace(CONTROL_BLOCK.join("\n"), `${LINE_FROM_ELSEWHERE}\n${CONTROL_LINE}`)
+    const v = verify(shrunk, log)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("is not a contiguous slice of section")
+  })
+
+  /** Blank lines are not content: two of them must not satisfy the minimum. */
+  test("RED: a block padded with blank lines rather than output", () => {
+    const v = verify(doc.replace(`\`\`\`${OUTPUT_FENCE} STEP 3b:\n`, `\`\`\`${OUTPUT_FENCE} STEP 3b:\n\n\n`), log)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("is not a contiguous slice of section")
+  })
+
+  /** An anchor that names no section, or two, is a failure rather than a block anchored to nothing. */
+  test("RED: a section renamed in the log, and a section duplicated in it", () => {
+    const renamed = verify(doc, log.replace("== STEP 4b: G260", "== STEP 4z: G260"))
+    expect(renamed.failures.length).toBeGreaterThan(0)
+    expect(renamed.failures[0]).toContain("matches 0 of the log's")
+    const duplicated = verify(doc, log.replace("== STEP 3b: WHERE", "== STEP 3b: WHERE THE THREE QUANTITIES DISAGREE WITH EACH OTHER\n== STEP 3b: WHERE"))
+    expect(duplicated.failures.length).toBe(1)
+    expect(duplicated.failures[0]).toContain("matches 2 of the log's")
+  })
+
+  /** Two blocks quoting the same output: how the same line came to appear twice once already. */
+  test("RED: two blocks claiming the same slice of the log", () => {
+    const donor = parseBlocks(doc).find((b) => b.info.startsWith(`${OUTPUT_FENCE} STEP 3b`))
+    const victim = parseBlocks(doc).find((b) => b.info.startsWith(`${OUTPUT_FENCE} STEP 2 ROUTE 2`))
+    const dup = doc
+      .replace(`\`\`\`${OUTPUT_FENCE} STEP 2 ROUTE 2:`, `\`\`\`${OUTPUT_FENCE} STEP 3b:`)
+      .replace((victim?.lines ?? []).join("\n"), (donor?.lines ?? []).join("\n"))
+    const v = verify(dup, log)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("already quotes")
+  })
+
+  test("the log's sections are the anchors the document names, and there are more than one", () => {
+    const sections = parseSections(log.split("\n"))
+    expect(sections.length).toBeGreaterThan(1)
+    for (const b of parseBlocks(doc).filter((x) => x.info.split(/\s+/)[0] === OUTPUT_FENCE)) {
+      const prefix = b.info.slice(OUTPUT_FENCE.length).trim()
+      expect(`${prefix} matches ${sections.filter((sx) => sx.title.startsWith(prefix)).length}`).toBe(`${prefix} matches 1`)
+    }
+  })
 })
 
 /** The body of the one ```run block whose first line is `first`. */
 function blockStartingWith(first: string): string[] {
-  const hits = parseBlocks(doc).filter((b) => b.info === OUTPUT_FENCE && b.lines[0] === first)
+  const hits = parseBlocks(doc).filter((b) => b.info.split(/\s+/)[0] === OUTPUT_FENCE && b.lines[0] === first)
   if (hits.length !== 1) throw new Error(`expected exactly one \`\`\`${OUTPUT_FENCE} block starting ${JSON.stringify(first)}; found ${hits.length}`)
   return [...(hits[0]?.lines ?? [])]
 }
