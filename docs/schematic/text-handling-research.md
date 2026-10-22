@@ -51,8 +51,16 @@ from an unknown font. Re-drive it with:
 ```
 curl -sSL -o /tmp/newstroke_font.cpp \
   https://gitlab.com/kicad/code/kicad/-/raw/10.0.5/common/newstroke_font.cpp
-bun run tools/schgen/text-metrics/probe.ts --font /tmp/newstroke_font.cpp
+bun run tools/schgen/text-metrics/probe.ts --font /tmp/newstroke_font.cpp > run.log
+python3 tools/schgen/text-metrics/verify-pastes.py run.log
 ```
+
+**The second command checks this document against that run**: every line §1
+pastes as probe output must appear in the log verbatim. It exists because the
+first round of this section tidied seven pasted blocks without meaning to - a
+truncated line, a control that lost its parenthetical, two tables re-padded so
+their columns lined up, a claim rewrapped, and a block left stale after the
+probe grew a column. None changed a figure; all were edits to evidence.
 
 ### 1.0 The three quantities, and why this section elects between none of them
 
@@ -160,7 +168,7 @@ width fields rather than measuring it from the points, so the claim is
 structurally possible - and for this glyph set it is false:
 
 ```
-CLAIM DRIVEN AND NOT REPRODUCED: no glyph of this corpus has a stroke outside [0, advance].
+CLAIM DRIVEN AND NOT REPRODUCED: no glyph of this corpus has a stroke outside [0, advance]. The third-party review's supporting claim that strokes may extend outside their nominal advance is FALSE for this glyph set.
 over the whole printable-ASCII range the count is 1: "\\"
 ```
 
@@ -270,7 +278,7 @@ R100 left rot90        paths= 56 ink x[337.3,4844.0] y[-766.8,655.6]
 R100 left rot180       paths= 56 ink x[337.3,4844.0] y[-766.8,655.6]
 R100 left rot270       paths= 56 ink x[337.3,4844.0] y[-766.7,655.7]
 drawn pen 152.4 um; anchor to pen origin 111.1 um; anchor to baseline 519.0 um
-route 1 placed by route 3's constants vs route 3's own measurement: worst edge disagreement 0.3 um
+route 1 placed by route 3's constants vs route 3's own measurement: worst edge disagreement 0.3 um (IIIIIIIIII left rot0)
 ```
 
 **A SYMBOL FIELD IS NEVER DRAWN VERTICALLY, AT ANY SYMBOL ROTATION.** All four
@@ -288,7 +296,7 @@ short above and 20.7 um generous below for a capitals-and-digits string.
 **Three controls, each of which could have answered differently:**
 
 ```
-CONTROL: ten 'I' measured 5595.6 um, predicted from one 'I' plus nine advances 5595.3 um, difference 0.3 um
+CONTROL (could have answered differently): ten 'I' measured 5595.6 um, predicted from one 'I' plus nine advances 5595.3 um, difference 0.3 um
 CONTROL: the same string right-justified is 4506.7 um wide against 4506.7 um left-justified
 CONTROL: an 'up' label's box is the 'right' label's box transposed - up 1966.7 x 9556.5, right 9556.5 x 1966.7
 ```
@@ -350,12 +358,11 @@ is a coincidence of `0.375 + 0.5` landing on `1 - 1/8`, not a design.
 is in the probe's output; here are its shape and its extremes.
 
 ```
-estimate / glyph advance sum:   n=264 min 0.955 p25 1.037 median 1.091 p75 1.200 max 1.448; the estimate is SMALLER than this quantity for 11 of 264 strings
-estimate / rendered ink:        n=264 min 1.005 p25 1.119 median 1.182 p75 1.238 max 1.865; the estimate is SMALLER than this quantity for  0 of 264 strings
+estimate / glyph advance sum: n=264 min 0.955 p25 1.037 median 1.091 p75 1.200 max 1.448; the estimate is SMALLER than this quantity for 11 of 264 strings
+estimate / rendered ink: n=264 min 1.005 p25 1.119 median 1.182 p75 1.238 max 1.865; the estimate is SMALLER than this quantity for 0 of 264 strings
 estimate / EDA_TEXT::GetTextBox: n=264 min 0.881 p25 0.992 median 1.051 p75 1.159 max 1.303; the estimate is SMALLER than this quantity for 70 of 264 strings
-
-estimate minus glyph advance sum:    widest OVER-estimate 5019.5 um (3.95 grid steps) on "si_hi_boost_j20_p3"; widest UNDER-estimate 302.4 um (0.24 grid steps) on "100mH"
-estimate minus rendered ink:         widest OVER-estimate 5350.9 um (4.21 grid steps) on "si_hi_boost_j20_p3"; the estimate is never smaller - its narrowest margin is 29.0 um on "200mH"
+estimate minus glyph advance sum: widest OVER-estimate 5019.5 um (3.95 grid steps) on "si_hi_boost_j20_p3"; widest UNDER-estimate 302.4 um (0.24 grid steps) on "100mH"
+estimate minus rendered ink: widest OVER-estimate 5350.9 um (4.21 grid steps) on "si_hi_boost_j20_p3"; the estimate is never smaller - its narrowest margin is 29.0 um on "200mH"
 estimate minus EDA_TEXT::GetTextBox: widest OVER-estimate 4797.3 um (3.78 grid steps) on "si_hi_boost_j20_p3"; widest UNDER-estimate 524.6 um (0.41 grid steps) on "100mH"
 ```
 
@@ -417,8 +424,7 @@ function returns a text box. Under the current ruler it must reproduce
 `lib/schgen/render/field-placement.ts` exactly. `[RAN]`:
 
 ```
-CONTROL PASSED: over 10 laid-out blocks the parallel search reproduces
-lib/schgen/render/field-placement.ts exactly, block, unit, lib id, cost and covers.
+CONTROL PASSED: over 10 laid-out blocks the parallel search reproduces lib/schgen/render/field-placement.ts exactly, block, unit, lib id, cost and covers.
 ```
 
 That control can fail: it compares two independent code paths over the same
@@ -432,25 +438,25 @@ code path of a number that had one.
 
 ```
 Jumper:Jumper_2_Open     body 5080.0 x 2286.0 um
-    length x GRID (current model)  grown pair 7620.0 x 2540.0   inside slots that fit: 0 of 5
-    glyph advance sum              grown pair 7136.2 x 2540.0   inside slots that fit: 0 of 5
-    rendered ink                   grown pair 6865.3 x 2692.4   inside slots that fit: 0 of 5
-    EDA_TEXT::GetTextBox           grown pair 7358.4 x 3313.1   inside slots that fit: 0 of 5
+    length x GRID (current model)  grown pair 7620.0 x 2540.0   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 16510.0 um = 3.25x the body WIDTH 5080.0 um, 7.22x its HEIGHT
+    glyph advance sum              grown pair 7136.2 x 2540.0   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 14695.7 um = 2.89x the body WIDTH 5080.0 um, 6.43x its HEIGHT
+    rendered ink                   grown pair 6865.3 x 2692.4   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 14364.3 um = 2.83x the body WIDTH 5080.0 um, 6.28x its HEIGHT
+    EDA_TEXT::GetTextBox           grown pair 7358.4 x 3313.1   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 14918.0 um = 2.94x the body WIDTH 5080.0 um, 6.53x its HEIGHT
 Device:C                 body 4064.0 x 2032.0 um
-    length x GRID (current model)  grown pair 7620.0 x 5080.0   inside slots that fit: 0 of 5
-    glyph advance sum              grown pair 7136.2 x 5080.0   inside slots that fit: 0 of 5
-    rendered ink                   grown pair 6865.3 x 5232.4   inside slots that fit: 0 of 5
-    EDA_TEXT::GetTextBox           grown pair 7358.4 x 5853.1   inside slots that fit: 0 of 5
+    length x GRID (current model)  grown pair 7620.0 x 5080.0   inside slots that fit: 0 of 5   Value "100nF" 6350.0 um = 1.56x the body WIDTH 4064.0 um, 3.13x its HEIGHT
+    glyph advance sum              grown pair 7136.2 x 5080.0   inside slots that fit: 0 of 5   Value "100nF" 5866.2 um = 1.44x the body WIDTH 4064.0 um, 2.89x its HEIGHT
+    rendered ink                   grown pair 6865.3 x 5232.4   inside slots that fit: 0 of 5   Value "100nF" 5595.3 um = 1.38x the body WIDTH 4064.0 um, 2.75x its HEIGHT
+    EDA_TEXT::GetTextBox           grown pair 7358.4 x 5853.1   inside slots that fit: 0 of 5   Value "100nF" 6088.4 um = 1.50x the body WIDTH 4064.0 um, 3.00x its HEIGHT
 Device:C_Polarized       body 4572.0 x 3810.0 um
-    length x GRID (current model)  grown pair 7620.0 x 5080.0   inside slots that fit: 0 of 5
-    glyph advance sum              grown pair 6531.4 x 5080.0   inside slots that fit: 0 of 5
-    rendered ink                   grown pair 6260.5 x 5232.4   inside slots that fit: 0 of 5
-    EDA_TEXT::GetTextBox           grown pair 6753.7 x 5853.1   inside slots that fit: 0 of 5
+    length x GRID (current model)  grown pair 7620.0 x 5080.0   inside slots that fit: 0 of 5   Value "4.7uF" 6350.0 um = 1.39x the body WIDTH 4572.0 um, 1.67x its HEIGHT
+    glyph advance sum              grown pair 6531.4 x 5080.0   inside slots that fit: 0 of 5   Value "4.7uF" 5261.4 um = 1.15x the body WIDTH 4572.0 um, 1.38x its HEIGHT
+    rendered ink                   grown pair 6260.5 x 5232.4   inside slots that fit: 0 of 5   Value "4.7uF" 4990.5 um = 1.09x the body WIDTH 4572.0 um, 1.31x its HEIGHT
+    EDA_TEXT::GetTextBox           grown pair 6753.7 x 5853.1   inside slots that fit: 0 of 5   Value "4.7uF" 5483.7 um = 1.20x the body WIDTH 4572.0 um, 1.44x its HEIGHT
 Audio:PT2399             body 20320.0 x 30480.0 um
-    length x GRID (current model)  grown pair 6350.0 x 2540.0   inside slots that fit: 5 of 5
-    glyph advance sum              grown pair 6229.0 x 2540.0   inside slots that fit: 5 of 5
-    rendered ink                   grown pair 5837.2 x 2692.4   inside slots that fit: 5 of 5
-    EDA_TEXT::GetTextBox           grown pair 6451.3 x 3313.1   inside slots that fit: 5 of 5
+    length x GRID (current model)  grown pair 6350.0 x 2540.0   inside slots that fit: 5 of 5   Value "PT2399" 7620.0 um = 0.38x the body WIDTH 20320.0 um, 0.25x its HEIGHT
+    glyph advance sum              grown pair 6229.0 x 2540.0   inside slots that fit: 5 of 5   Value "PT2399" 7075.7 um = 0.35x the body WIDTH 20320.0 um, 0.23x its HEIGHT
+    rendered ink                   grown pair 5837.2 x 2692.4   inside slots that fit: 5 of 5   Value "PT2399" 6683.8 um = 0.33x the body WIDTH 20320.0 um, 0.22x its HEIGHT
+    EDA_TEXT::GetTextBox           grown pair 6451.3 x 3313.1   inside slots that fit: 5 of 5   Value "PT2399" 7298.0 um = 0.36x the body WIDTH 20320.0 um, 0.24x its HEIGHT
 ```
 
 **G239's finding survives all three quantities, and gets stronger under two of
@@ -493,7 +499,7 @@ transistor-preamp/tp-leg-feedback           0          0          0          0
 transistor-preamp/tp-leg-lower-a            0          0          0          0
 transistor-preamp/tp-leg-lower-b            0          0          0          0
 transistor-preamp/tp-leg-collector          0          0          0          0
-transistor-preamp/tp-leg-emitter-bypass     0          0          0          0
+transistor-preamp/tp-leg-emitter-bypass          0          0          0          0
 transistor-preamp/tp-stage                  4          4          6          6
 TOTAL                                      15         13         20         24
 
