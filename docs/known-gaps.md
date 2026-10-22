@@ -2048,7 +2048,8 @@ reader to find in a diff, because the plan's own constraint says no production f
   `common/font/font.cpp`, `common/eda_text.cpp`, `common/gr_text.cpp`, `eeschema/sch_text.cpp`,
   `eeschema/sch_label.cpp` and `eeschema/default_values.h` at tag `10.0.5`.
   **Every claim above has a check that could have failed**: the three routes are compared against
-  one another and the probe prints the worst disagreement (0.0 um font-vs-runtime over 264 strings,
+  one another and the probe prints the worst disagreement (font-vs-runtime EXACT on `GetTextBox`'s
+  width over all 264 strings and 1.5 nanometres of floating-point residue on the stroked outline,
   0.3 um font-vs-renderer, 0.8 um formula-vs-PDF); clause (1) was produced BY a refusal, not by
   inspection; and the re-run of the field placer is held to `lib/schgen/render/field-placement.ts`'s
   own output - block, unit, lib id, rounded cost and every `covers` string - before any measured

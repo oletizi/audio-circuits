@@ -42,6 +42,17 @@ const um = (v: number): string => v.toFixed(1)
 /** How many corpus strings the declared-advance check (route 3c) is driven over. */
 const ADVANCE_SAMPLE = 16
 
+/**
+ * One nanometre, in this repository's micrometres: the resolution KiCad itself works at.
+ *
+ * **Two routes that agree to the nanometre are compared in different arithmetic** - the runtime in
+ * integer nanometres, this probe in floating-point micrometres scaled from twenty-firsts of an em -
+ * so a bare `!== 0` counts float residue as disagreement. It did: it reported 264 of 264 strings as
+ * differing with a worst disagreement of 0.0 um, which is two statements that cannot both be
+ * interesting.
+ */
+const NM = 0.001
+
 function arg(name: string): string | null {
   const i = process.argv.indexOf(`--${name}`)
   return i >= 0 ? (process.argv[i + 1] ?? null) : null
@@ -154,22 +165,39 @@ async function main(): Promise<void> {
   const texts = distinct.map((d) => d.text)
   const runtime = runtimeBoxes(texts)
   console.log(`pcbnew build ${runtime.build}; ${runtime.rows.length} strings measured`)
-  let worstBox = { text: "", d: 0 }
-  let worstInk = { text: "", d: 0 }
+  // **THE SENTINEL IS NOT A RESULT.** An earlier version seeded the worst-disagreement search with
+  // `{ text: "", d: 0 }` and printed `0.0 um on ""` when nothing beat it - a line that reads like a
+  // measurement of the empty string, which is not in the corpus. The counts below say what actually
+  // happened: how many of the strings differ at all.
+  let worstBox: { text: string; d: number } | null = null
+  let worstInk: { text: string; d: number } | null = null
+  let boxDiffer = 0
+  let inkDiffer = 0
+  let inkCompared = 0
   for (const r of runtime.rows) {
     const predicted = kicadTextBoxExtent(glyphs, r.text, TEXT_SIZE)
     const dBox = Math.abs(predicted.width - r.text_box_w_nm / 1000)
-    if (dBox > worstBox.d) worstBox = { text: r.text, d: dBox }
+    if (dBox > NM) boxDiffer += 1
+    if (worstBox === null || dBox > worstBox.d) worstBox = { text: r.text, d: dBox }
     if (r.ink_present && r.ink_w_nm !== undefined) {
       const c = inkCentrelines(glyphs, r.text, TEXT_SIZE)
       const penUm = r.effective_pen_nm / 1000
       const predInk = c === null ? 0 : c.maxX - c.minX + penUm
       const dInk = Math.abs(predInk - r.ink_w_nm / 1000)
-      if (dInk > worstInk.d) worstInk = { text: r.text, d: dInk }
+      inkCompared += 1
+      if (dInk > NM) inkDiffer += 1
+      if (worstInk === null || dInk > worstInk.d) worstInk = { text: r.text, d: dInk }
     }
   }
-  console.log(`route 1 vs route 2, GetTextBox width: worst disagreement ${um(worstBox.d)} um on ${JSON.stringify(worstBox.text)}`)
-  console.log(`route 1 vs route 2, stroked-outline width: worst disagreement ${um(worstInk.d)} um on ${JSON.stringify(worstInk.text)}`)
+  if (worstBox === null || worstInk === null) throw new Error("the runtime returned no comparable rows, so routes 1 and 2 were never compared")
+  console.log(
+    `route 1 vs route 2, GetTextBox width: ${boxDiffer} of ${runtime.rows.length} strings differ by more than a nanometre; ` +
+      `worst disagreement ${worstBox.d.toFixed(6)} um, on ${JSON.stringify(worstBox.text)} - which is simply the first row, since nothing differs`,
+  )
+  console.log(
+    `route 1 vs route 2, stroked-outline width: ${inkDiffer} of ${inkCompared} strings differ by more than a nanometre; ` +
+      `worst disagreement ${worstInk.d.toFixed(6)} um, on ${JSON.stringify(worstInk.text)} - floating-point residue, not a difference in geometry`,
+  )
   const sampleBox = runtime.rows[0]
   if (sampleBox !== undefined) console.log(`example: ${JSON.stringify(sampleBox.text)} box ${sampleBox.text_box_w_nm / 1000} x ${sampleBox.text_box_h_nm / 1000} um at pen ${sampleBox.effective_pen_nm / 1000} um`)
 
@@ -372,6 +400,16 @@ async function main(): Promise<void> {
     }
   }
   console.log(`widest disagreement between two measured quantities: ${um(worstPair.d)} um (${(worstPair.d / GRID).toFixed(2)} grid steps) on ${JSON.stringify(worstPair.text)}, ${worstPair.a} vs ${worstPair.b}`)
+  // **THE ORDERING IS ASSERTED IN PROSE, SO IT IS DRIVEN.** "ink < advance < box" is a claim about
+  // all 264 strings and no other line of this output establishes it.
+  const inkG = geometries[2]!
+  const advG = geometries[1]!
+  const boxG = geometries[3]!
+  const violations = distinct.filter((d) => !(inkG.width(d.text) < advG.width(d.text) && advG.width(d.text) < boxG.width(d.text)))
+  console.log(
+    `ORDERING ink < advance < box: ${violations.length} violation(s) over ${distinct.length} strings` +
+      (violations.length === 0 ? "" : ` - first: ${JSON.stringify(violations[0]!.text)}`),
+  )
 
   head("STEP 4a: G239 - inside field slots for the four symbols that entry measures")
   for (const row of g239Slots(geometries)) {

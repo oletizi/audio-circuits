@@ -78,13 +78,22 @@ and each one validates the others.
 | **2. The installed runtime** `[RAN]` | worked | **Q3 directly**, and an independent reading of Q2. `/Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9` ships `pcbnew`, which exposes `EDA_TEXT::GetTextBox` and `EDA_TEXT::GetEffectiveTextShape`. KiCad ships **no eeschema bindings**, so the `EDA_TEXT` carrying the text is a `PCB_TEXT`; `GetTextBox` takes its pen from `GetEffectiveTextPenWidth()` with no render settings, so for one line of non-bold 1.27 mm text the number is the number eeschema computes - and that is not assumed, it is checked against routes 1 and 3 |
 | **3. `kicad-cli` SVG and PDF** `[RAN]` | worked, **with one hole** | **Q2 in situ**, the three constants that place a field's ink against its anchor, and - from the invisible `<text>` element the SVG carries beside every stroked string - **KiCad's own declared advance, which is the only direct check Q1 has** (§1.3). All from an export of items `lib/schgen/render/emit-items.ts` itself emitted. **The SVG export does not draw a global label's outline**, so the label outline comes from the PDF export's own vector coordinates instead |
 
-**Route 1 and route 2 agree exactly.** Over all 264 distinct strings the eleven
-boards emit:
+**Route 1 and route 2 agree exactly on KiCad's own box.** Over all 264 distinct
+strings the eleven boards emit:
 
 ```
-route 1 vs route 2, GetTextBox width: worst disagreement 0.0 um on ""
-route 1 vs route 2, stroked-outline width: worst disagreement 0.0 um on "TestPoint"
+route 1 vs route 2, GetTextBox width: 0 of 264 strings differ by more than a nanometre; worst disagreement 0.000000 um, on "+5V" - which is simply the first row, since nothing differs
+route 1 vs route 2, stroked-outline width: 40 of 264 strings differ by more than a nanometre; worst disagreement 0.001524 um, on "TestPoint" - floating-point residue, not a difference in geometry
 ```
+
+**The two lines are not the same claim and the wording matters.** The box width
+is computed in integer nanometres on both sides and is **exactly** equal on all
+264. The stroked-outline width is not: this probe scales twenty-firsts of an em
+in floating point where the runtime works in integers, so 40 of the 264 land
+**1.5 nanometres** apart. That is arithmetic residue, not geometry - and it is
+reported at six decimal places rather than rounded to `0.0 um`, because
+*"nothing differs"* and *"everything differs by less than a rounding step"* read
+identically at one decimal place and are different statements.
 
 **Route 1 placed by route 3's constants agrees with route 3 to 0.3 um**, which
 is three ten-thousandths of a grid step. The SVG export writes four decimal
@@ -390,10 +399,12 @@ calls it *"conservative"*.
 
 ```
 widest disagreement between two measured quantities: 795.6 um (0.63 grid steps) on "[2]", rendered ink vs EDA_TEXT::GetTextBox
+ORDERING ink < advance < box: 0 violation(s) over 264 strings
 ```
 
 In width the three are within **0.63 grid steps** of each other over the whole
-corpus, and the ordering is always the same: ink < advance < box. **In height
+corpus, and **the ordering is always the same - ink < advance < box, with zero
+violations over all 264 strings**, which is driven rather than asserted. **In height
 they are not close**: 1422.4 (ink) against 2043.1 (box) is a **44% difference**,
 and that is what makes Step 0's election consequential rather than academic -
 see §1.9, where the height is what changes the survivor counts.
