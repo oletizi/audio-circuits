@@ -15,6 +15,51 @@ state called "done".
 buildable.** That is its purpose, and almost every structural decision follows
 from it.
 
+**THE MANDATE IS WIDER THAN ONE CIRCUIT AND WIDER THAN ONE OUTPUT.** The owner,
+2026-10-21, saying what "something buildable" means:
+
+> *"For the **many** audio circuits we plan to develop in this repository, we
+> will need topologies, schematics, bench-buildable perfboard layouts, tht pcb
+> layouts we can send to pcbway or similar, and smd pcb layouts we can send to
+> pcbway or similar for manufacture and assembly."*
+
+**Five output classes, for many circuits:** topologies; schematics;
+bench-buildable perfboard; THT PCB fit to send out for fabrication; and SMD PCB
+fit to send out for fabrication **and assembly**.
+
+**THE BOARDS IN `boards/` ARE THE PROVING GROUND, NOT THE CONSUMERS.** His
+question is the test, and it is the one to apply to any capability claim here:
+
+> *"If you can't deliver at least the schematics for the circuits we are
+> currently building, how can you hope to deliver on the larger mandate?"*
+
+A capability that cannot produce an output for the circuits already in hand has
+not been demonstrated, whatever its tests say. **An agent that finds itself
+arguing that some output does not matter for the current boards is reasoning
+from the wrong end** - the current boards are how you discover whether the thing
+works for the next hundred.
+
+**WHERE A FULLY SPECIFIED BOM BINDS, which follows from the five classes rather
+than from any tool's convenience.** The owner, 2026-10-21:
+
+> *"the gate you describe **is** important for pcb layout intended for outsourced
+> manufacture—but a fully specified BOM isn't needed for schematics, stripboard
+> layout, and, in many cases, tht pcbs."*
+
+**A fully specified BOM is a property of the CONSUMER of an artifact, not of the
+circuit**: it binds when someone else sources and places the parts. So it binds
+for SMD assembly, often not for THT, and never for a schematic or a hand-built
+stripboard layout. `docs/known-gaps.md` **G245** records the gate this corrected
+and the measurement behind it.
+
+**This section is longer than the sentence it replaces because the narrow
+reading cost a day.** Until 2026-10-21 it said only that the repository exists
+to carry *a* circuit to *something* buildable. An agent read that as the eleven
+boards in `boards/`, found that those boards are already hand-drawn, and
+concluded that generating schematics did not matter for them - **the exact
+inversion the mandate above forbids**, reached from a true sentence that was too
+narrow to forbid it.
+
 ## Who does what, and why
 
 **Agents do the placing and routing, of schematics and of board layouts both.**

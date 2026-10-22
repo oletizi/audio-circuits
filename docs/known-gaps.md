@@ -1320,6 +1320,65 @@ raised.
 Open: a fix would settle these
 ------------------------------
 
+### G259 - MEASURED AGAINST THE MANDATE AS NOW WRITTEN: of the five output classes `CLAUDE.md` names, ONE works for every board, ONE partly, and THREE do not exist here - and the one this branch spent twenty-three tasks on produces nothing for any board in the repository
+
+`CLAUDE.md`'s **What this project is** now names five output classes, because
+until 2026-10-21 it named none and the narrow reading cost a day. This entry is
+the measurement against it, taken the day the mandate was written down so that
+nobody has to re-derive where the pipeline actually stood when the claim was
+made.
+
+| output class the mandate names | state at `673` commits on `feature/schematics-tooling` |
+| --- | --- |
+| topologies | **works** - models for every circuit, validated, with the drawing and sourcing rule sets separated (**G245**) |
+| schematics | **`schgen` exists and draws 0 of 11 boards.** Five of twelve declared blocks draw in isolation; no board produces a sheet |
+| bench-buildable perfboard | **works, 11 of 11** - every board in `boards/` has a committed layout and the owner has built from them |
+| THT PCB fit to send for fabrication | **does not exist** |
+| SMD PCB fit to send for fabrication AND assembly | **does not exist**, and additionally depends on the sourcing path, which reaches 2 of 11 boards |
+
+- **Found** 2026-10-21, after the owner asked *"what do you think this
+  repository is for?"* and then *"If you can't deliver at least the schematics
+  for the circuits we are currently building, how can you hope to deliver on the
+  larger mandate?"* The measurement follows from his question; the question is
+  not a finding of this writer's.
+- **Evidence** `[RAN]` and each could have answered differently. `ls -d boards/*/`
+  gives **11**; `ls boards/*/*.vrt` gives **11**; `ls boards/*/bom.json` gives
+  **2**. For PCB: `ls lib/pcb lib/kicad/pcb tools/pcb` finds nothing, and
+  `git grep -lir "kicad_pcb\|place-and-route\|autoroute"` over `lib/` and
+  `tools/` returns **no files** - the control being that the same grep over the
+  repository as a whole does hit documents, so the pattern works and the absence
+  is in the code. `tools/` holds `bom cli guide kicad perfboard pultec schgen
+  stripboard suppliers tascam-38` and no PCB verb. The 0-of-11 schematic figure
+  is **G240**'s and **G247**'s, re-stated here rather than re-measured, and is
+  marked RELAYED.
+- **Verified** **CONFIRMED** for the board, layout, BOM and PCB counts - this
+  writer ran each. **RELAYED** for 0 of 11 schematics and 5 of 12 blocks, which
+  are G240's and G247's figures.
+- **Why it is open** because four of the five classes are not delivered, and
+  because the shape of the failure is the part that matters: **the schematic is
+  the cheapest of the three missing classes and the same pipeline shape as the
+  two expensive ones** - place, route, annotate, grade. A pipeline that cannot
+  put two text labels beside a jumper on a twelve-block sheet has not
+  demonstrated that it will place and route a board fit to send out for assembly.
+  **The schematic's failure is evidence about the PCB claim, not a scoping
+  question about five preamp boards**, and this entry exists so that the next
+  agent does not make the inversion `CLAUDE.md` now forbids.
+- **What would settle it** **CRITERION: each of the five classes produces an
+  artifact the owner accepts, for the circuits in this repository**, and until
+  then this entry carries which ones do. The nearest term is the schematic
+  class, whose own criterion is **G240**'s: a generated schematic for at least
+  one board, compared against a drawing the owner trusts by something other than
+  the producing agent's judgement. **MECHANISM, UNTRIED and NOT a plan**: the
+  text-placement research (`docs/schematic/text-placement-prior-art.md`) finds
+  that this repository already ships the shape the literature prescribes, in
+  `tools/guide/placement.ts` - candidates in preference order, cost as overlap
+  area, weighted obstacle categories, and a least-cost fallback instead of a
+  refusal - written three weeks before the schematic placer that lacks all four.
+  **No agent writes the acceptance criterion for "a schematic the owner
+  accepts"**; that is his, and **G240** says so.
+
+---
+
 ### G104 - gate 8's deferral was argued from the output it was supposed to grade, and THIS ENTRY MADE THAT ARGUMENT. The gate's empty-delta half is M1 work and always was
 
 > **REWRITTEN 2026-10-19, THE DAY AFTER IT WAS WRITTEN, BECAUSE A SECOND
