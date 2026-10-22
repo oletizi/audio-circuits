@@ -25,9 +25,13 @@
  *   `" crosses the border of "` are all in `problem-obstacles.ts`'s `RELATIONS` - so for a block
  *   that masks one, appending it makes `pairs[0]` defined and flips the verdict to a
  *   **`clearance`** mismatch with a named constraint and obstacle pair;
- * - `Mismatch.kind` is the classified decision `RealiseResult`'s false arm carries (Task 8), which
- *   `tests/schgen/render/templates/mismatch-census.test.ts` and the clearance-versus-geometry
- *   distinction both read. Flipping it is a change of verdict, not of report.
+ * - `Mismatch.kind` is the classified decision `RealiseResult`'s false arm carries (Task 8).
+ *   `render/blocks.ts` branches on it, and `tools/schgen/anchor-sweep.ts`,
+ *   `tools/schgen/parity.ts` and `tools/schgen/parity-render.ts` all PRINT it, so a flip changes
+ *   output those tools publish. Flipping it is a change of verdict, not of report. **And nothing
+ *   would catch it:** `tests/schgen/render/templates/mismatch-census.test.ts` counts the
+ *   CONSTRUCTION SITES in the template modules by regex over their source, not the kind any block
+ *   refuses with, so it is green either way - a citation this header carried until it was checked.
  *
  * **IT IS ONE BLOCK OF THE TWELVE TODAY, AND THE FIRST DRAFT OF THIS HEADER SAID THREE.** The test
  * below drives the pair arithmetic on the real strings and the claim did not reproduce: `oc-power`

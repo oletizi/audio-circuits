@@ -18586,9 +18586,10 @@ look.
 > | `pt-core` | `C7#1`, `C9#1`, `C11#1`, `C12#1`, `R3#1`, `R4#1`, `R6#1` |
 > | `tp-stage` | `C3#1`, `C4#1`, `J2#1` |
 >
-> By designator prefix that is **eight `C`, three `R` and two `J`** - so this
-> entry's subject, the small two-pin passive, is eleven of the thirteen, and the
-> two `J` keys are a shape it has never measured. **The four units the production
+> By designator prefix that is **eight `C`, three `R` and two `J`** - so eleven
+> of the thirteen carry a passive's designator, which is this entry's subject IF
+> their symbols are what their prefixes say, and the two `J` keys are a shape it
+> has never measured either way. **The four units the production
 > refusals name are all capacitors** (`Device:C` three times and
 > `Device:C_Polarized` once, from the refusal text itself); the libIds of the
 > other nine were NOT read, and the prefixes above are what the keys carry rather
