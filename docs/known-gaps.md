@@ -1505,6 +1505,56 @@ made.
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
 
+> **AMENDED 2026-10-22 BY TASK 1 OF THE TEXT-HANDLING RESEARCH PLAN: THE FIFTEEN ARE REPRODUCED BY
+> A SECOND CODE PATH, AND ALL OF THEM REST ON A RULER THAT IS WRONG BY UP TO 4.2 GRID STEPS PER
+> STRING. THE FIGURE BELOW IS LEFT AS WRITTEN.**
+>
+> **THIS ENTRY'S ARITHMETIC IS DOWNSTREAM OF `lib/schgen/render/text-boxes.ts`'s
+> `textWidth(text) = text.length * GRID`**, which gives every character the same width and a line
+> the same height as a character. `docs/schematic/text-handling-research.md` §1 measures the error
+> in that against KiCad's real geometry, by three routes that agree to 0.0 um, 0.3 um and 1.5 um.
+> Over the 264 distinct strings the eleven boards emit:
+>
+> | | vs the glyph advance | vs the rendered ink | vs `EDA_TEXT::GetTextBox` |
+> | --- | --- | --- | --- |
+> | median estimate / measured | 1.091 | 1.182 | 1.051 |
+> | widest OVER-estimate | 5019.5 um (3.95 grid steps) | 5350.9 um (4.21) | 4797.3 um (3.78) |
+> | strings where the estimate is TOO SMALL | 11 of 264 | 0 of 264 | **70 of 264** |
+> | line HEIGHT, against the model's 1270.0 um | not a height quantity | **1422.4 um** | **2043.1 um** |
+>
+> **WHAT THAT DOES TO THE FIFTEEN** `[RAN]`, the same search with the text boxes swapped and
+> everything else - the obstacle set, the clear/covered predicate, the weighted area, the candidate
+> list, the least-covered choice - imported from the production module:
+>
+> | | current model | advance | ink | `GetTextBox` |
+> | --- | --- | --- | --- | --- |
+> | `ob-buffer` | 2 | 2 | 2 | 3 |
+> | `oc-power` | 1 | 1 | 1 | 2 |
+> | `pt-core` | 8 | 6 | 11 | 13 |
+> | `tp-stage` | 4 | 4 | 6 | 6 |
+> | **total** | **15** | **13** | **20** | **24** |
+> | of the fifteen, still a fallback | - | 13 | 14 | **15** |
+> | new under this quantity | - | 0 | 6 | 9 |
+>
+> **SO THIS ENTRY'S POPULATION IS NOT AN ARTEFACT OF THE RULER.** Thirteen of the fifteen are
+> fallbacks under every quantity measured, and under KiCad's own box every one of them is and nine
+> more appear. **The direction is the opposite of what "conservative" predicts**: the quantity that
+> shrinks the count is the one that changes WIDTH only, and both quantities that also change HEIGHT
+> grow it, because `textBox` gives a line 1270 um where the ink is 1422.4 and KiCad's own box is
+> 2043.1.
+>
+> **THE CONTROL, which could have failed and is the reason the rest is reported at all.** The
+> re-run uses a parallel copy of `placeFields`, and under the CURRENT ruler it must reproduce
+> `lib/schgen/render/field-placement.ts` exactly - block, unit, lib id, the rounded weighted cost
+> and every `covers` string - over ten laid-out blocks. It does. It also reproduces this entry's
+> own per-block distribution, `ob-buffer` 2 / `oc-power` 1 / `pt-core` 8 / `tp-stage` 4, from a
+> second code path.
+>
+> **WHAT THIS AMENDMENT DOES NOT DO.** It does not elect a quantity - that is the owner's
+> (**G265** clause 4) - and **it changes no code**: `textWidth` is untouched, by the research
+> plan's own constraint. It also does not re-take this entry's other subject, which is that nothing
+> automated reads the fallback report; that is unchanged and still open below.
+
 Task 24 replaced a refusal with a placement: `lib/schgen/render/field-placement.ts` takes the
 least-covered candidate slot when none is clear. **That converts a loud failure into a quiet
 degradation unless something counts it**, which is this entry's subject and was the whole risk of
@@ -1928,6 +1978,85 @@ question already attached to it.
   **MECHANISM, UNTRIED** - the authoring file is the natural home, since which symbol a part is
   drawn with is already declared there, but nothing was built or tried. (4) **G150**'s criterion,
   unchanged.
+
+---
+
+### G265 - MEASURED: KiCad's real text geometry, by three routes that agree exactly - and FOUR things a later measurement needs that are not in any figure, including an SVG export that silently omits a global label's outline
+
+Task 1 of the text-handling research plan measured three text-geometry quantities against
+`lib/schgen/render/text-boxes.ts`'s `textWidth(text) = text.length * GRID`. **The figures are in
+`docs/schematic/text-handling-research.md` §1 and are NOT repeated here**; the amendments to
+**G239** and **G260** carry what those entries' own arithmetic becomes. What is here is the
+material a later measurement needs and cannot re-derive from a figure.
+
+**(1) `kicad-cli sch export svg` 10.0.5 DOES NOT DRAW A GLOBAL LABEL'S OUTLINE. `export pdf` of the
+same file draws both the outline and the text.** `[RAN]` A label's six-sided body is simply absent
+from the SVG: over a whole probe sheet the only paths with five or more points are the frame
+rectangle and the title block. **An SVG export therefore cannot answer "how much room does a global
+label take"**, and a measurement that reads one will under-report a label's extent by the whole
+outline - 3333.75 um along the label's side and 1270 um either side of it, which is more than two
+grid steps in each direction. It was found by a probe refusal rather than by inspection: a row that
+should have been 2.7 mm across measured 1.27, which is the text's cap height. **A reader must not
+take the SVG's silence for a label that takes no room.**
+
+**(2) KiCad SIZES A TEXT BOX WITH A PEN IT DOES NOT DRAW WITH.** `EDA_TEXT::GetTextBox` takes its
+thickness from `GetEffectiveTextPenWidth()` called with **no** render settings, which for non-bold
+1.27 mm text is `GetPenSizeForNormal(size) = size/8 = 158.75 um` (`common/gr_text.cpp`). The pen
+eeschema actually plots schematic text with is **152.4 um** (6 mil), measured off the SVG export's
+own `stroke-width`. The two differ by 6.35 um and both are correct in their own place. **Recorded
+so the next person who finds the two numbers does not take one for a transcription error** and does
+not "reconcile" them.
+
+**(3) TWO SMALL RESIDUALS, UNDIAGNOSED AND NOT SMOOTHED.** The anchor-to-pen-origin offset of a
+left-justified symbol field measures **111.1 um** where `common/font/font.cpp`'s
+`offset.x += aAttrs.m_StrokeWidth / 1.52` predicts **100.3** at the plotted pen - a 10.8 um gap.
+The PDF export's global-label outline is **1.5 um** longer along its side than
+`eeschema/sch_label.cpp`'s `CreateGraphicShape` predicts. Both are under 1% of a grid step, neither
+changes any conclusion, and **neither was diagnosed**. They are here because the next agent to
+derive these constants from source will get the source's numbers and should know that the drawing
+does not quite.
+
+**(4) THE ELECTION IS NOT MADE, AND IT IS CONSEQUENTIAL RATHER THAN ACADEMIC.** The plan's Step 0
+forbids the producing agent from choosing which quantity governs a collision, because that is an
+acceptance criterion for the artifact this generator produces (**G240**). It is open. **What the
+measurement adds is that the choice MATTERS**: the same recorded population of fallback field
+placements is 13 under the advance, 15 under the current model, 20 under the rendered ink and 24
+under `EDA_TEXT::GetTextBox`. **The three measured quantities are within 0.63 grid steps of each
+other in WIDTH and 44% apart in HEIGHT**, and it is the height that moves the counts.
+
+**(5) ONE PRODUCTION FILE CHANGED, AND IT IS A MANIFEST RATHER THAN CODE.** The plan forbids
+touching `lib/`, `tools/` or any check. Committing the probe under `tools/schgen/text-metrics/`
+nevertheless turned `tests/schgen/port-fidelity.test.ts` red - *"every .ts file under `lib/schgen/`,
+`tests/schgen/` and `tools/schgen/` is ported, diverged, or declared hand-written"* - so the nine
+probe modules are appended to `tools/schgen/port-manifest.json`'s `handWritten` list. **That is a
+declaration about provenance and changes no behaviour**, and it is recorded rather than left for a
+reader to find in a diff, because the plan's own constraint says no production file changes.
+
+- **Found** 2026-10-22, Task 1 of `docs/superpowers/plans/2026-10-22-text-handling-research.md`.
+- **Evidence** `[RAN]` `tools/schgen/text-metrics/probe.ts` at commit `757c4dd` with a clean tree,
+  `kicad-cli` and `pcbnew` 10.0.5, `newstroke_font.cpp` pinned by SHA-256
+  `dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9` - **the probe refuses any
+  other blob**. `[READ]` `common/newstroke_font.cpp`, `common/font/stroke_font.cpp`,
+  `common/font/font.cpp`, `common/eda_text.cpp`, `common/gr_text.cpp`, `eeschema/sch_text.cpp`,
+  `eeschema/sch_label.cpp` and `eeschema/default_values.h` at tag `10.0.5`.
+  **Every claim above has a check that could have failed**: the three routes are compared against
+  one another and the probe prints the worst disagreement (0.0 um font-vs-runtime over 264 strings,
+  0.3 um font-vs-renderer, 1.5 um formula-vs-PDF); clause (1) was produced BY a refusal, not by
+  inspection; and the re-run of the field placer is held to `lib/schgen/render/field-placement.ts`'s
+  own output - block, unit, lib id, rounded cost and every `covers` string - before any measured
+  figure is printed.
+- **Verified** CONFIRMED - this writer wrote the probe, drove it, read KiCad's source and looked at
+  the rendered PDF.
+- **Why it is open** clauses (1), (2) and (3) are measurements and facts about tools, open because
+  nothing acts on them yet. Clause (4) is an owner decision and **no agent may make it**. Clause (5)
+  is a disclosure.
+- **What would settle it** (1) **CRITERION: a global-label extent measured from an export that
+  draws the outline.** The PDF does; **MECHANISM, UNTRIED beyond this probe** - whether upstream
+  considers the SVG behaviour a defect was not investigated, and no KiCad issue was searched for.
+  (2) and (3) nothing settles them; they are true. (4) **CRITERION: the owner says which box
+  governs a collision** - ink, advance, or KiCad's own - having seen that the population is 13, 20
+  or 24. Until he does, no agent may pick one, and **a mechanism that quietly adopts one by writing
+  a new `textWidth` has made the election**. (5) nothing; it is recorded, not open.
 
 ---
 
@@ -19337,6 +19466,44 @@ was built under it with the price of its not having run.
   first half already met for it.
 
 ### G239 - MEASURED: FIVE of the eleven candidate field slots can NEVER serve a small two-pin passive, so G232's "give it more candidate positions" mechanism starts from six usable slots and not eleven
+
+> **AMENDED 2026-10-22 BY TASK 1 OF THE TEXT-HANDLING RESEARCH PLAN: THIS ENTRY'S ARITHMETIC RESTS
+> ON `text.length * GRID`, THAT RULER IS WRONG, AND THE FINDING SURVIVES EVERY WAY OF BEING WRONG
+> IT WAS MEASURED AGAINST. The figures below are left as written.**
+>
+> `docs/schematic/text-handling-research.md` §1 measures KiCad's real text geometry by three routes
+> that agree to 0.0 um, 0.3 um and 1.5 um, and **the quantity this entry turns on is HEIGHT**:
+> *"5080 does not fit in 2032"*. `textBox` gives a line `GRID = 1270` um. **The rendered ink of a
+> capitals-and-digits line is 1422.4 um, and `EDA_TEXT::GetTextBox` returns 2043.1 um.** Real
+> geometry makes the pair TALLER, not shorter.
+>
+> `[RAN]` the same inside-slot arithmetic under each quantity, over the four symbols this entry's
+> own 2026-10-21 table measures:
+>
+> | symbol | body | grown pair, current model | advance | ink | `GetTextBox` | inside slots that fit |
+> | --- | --- | --- | --- | --- | --- | --- |
+> | `Jumper:Jumper_2_Open` | 5080 x 2286 | 7620.0 x 2540.0 | 7136.2 x 2540.0 | 6865.3 x **2692.4** | 7358.4 x **3313.1** | **0 of 5 under all four** |
+> | `Device:C` | 4064 x 2032 | 7620.0 x 5080.0 | 7136.2 x 5080.0 | 6865.3 x **5232.4** | 7358.4 x **5853.1** | **0 of 5 under all four** |
+> | `Device:C_Polarized` | 4572 x 3810 | 7620.0 x 5080.0 | 6531.4 x 5080.0 | 6260.5 x **5232.4** | 6753.7 x **5853.1** | **0 of 5 under all four** |
+> | `Audio:PT2399` | 20320 x 30480 | 6350.0 x 2540.0 | 6229.0 x 2540.0 | 5837.2 x 2692.4 | 6451.3 x 3313.1 | **5 of 5 under all four** - the positive control, and it could have moved |
+>
+> **THE FIVE-OF-ELEVEN FINDING IS THEREFORE INDEPENDENT OF THE RULER**, and the headroom it was
+> short by is larger than this entry says: the grown pair needs 2692.4 um of a 2286 um jumper body
+> under the ink and 3313.1 under KiCad's own box, against the 2540.0 this entry computes.
+>
+> **TWO FIGURES THIS ENTRY AND ITS SIBLINGS PUBLISH MOVE, AND ONE MOVES THE WRONG WAY.**
+>
+> - *"the jumper's Value is seven times wider than its body"*: `Jumper_2_Open` is 16510.0 um under
+>   the current model and **14364.3** of rendered ink against a 2286 um body, so **7.2x becomes
+>   6.3x**. The claim survives; its number is 13% high.
+> - *"5080 um of Reference-and-Value into a 2286 um body"* (the plan's *state* section, from
+>   `Device:C`'s pair): **5080.0 is an UNDER-statement.** The pair is 5232.4 um of ink and 5853.1 um
+>   of KiCad's box - up to 15% more.
+>
+> **WHAT THIS AMENDMENT DOES NOT DO.** It does not elect which quantity governs a collision; that
+> is the owner's (**G265** clause 4). It changes no code - `textWidth` is untouched by the research
+> plan's own constraint - and it does not touch this entry's open question, which is **G232**'s
+> criterion, unchanged.
 
 **THIS ANSWERS HALF OF WHAT G232 LEFT OPEN AND NOT THE WHOLE QUESTION.** That
 entry says: *"It is plausible that what is wrong is the ROUTE that leaves no room
