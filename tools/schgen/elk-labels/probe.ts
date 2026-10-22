@@ -79,7 +79,15 @@ function pinned(repoRoot: string): string {
 async function main(): Promise<void> {
   const repoRoot = moduleRepoRoot()
 
-  head("WHAT THIS RUN MEASURED")
+  // **THE SECTION NAMES OF THIS LOG MUST NOT COLLIDE WITH TASK 1's, AND THIS ONE DID.**
+  // `tools/schgen/text-metrics/verify-pastes.ts` fails the research document when a block NOT
+  // declared as §1's probe output shares ANY line with §1's log - that is the relabel dodge it was
+  // built to close. §2's pasted blocks are necessarily not §1's output, so the first version of
+  // this header, "WHAT THIS RUN MEASURED", turned the document red by naming §1's own first section
+  // header. It is renamed rather than trimmed out of §2's paste: trimming the evidence to satisfy a
+  // checker is the failure that checker exists to catch. A later probe adding a section to any log
+  // this document quotes must keep its names distinct for the same reason.
+  head("WHAT THIS ELK LABEL RUN MEASURED")
   const sha = spawnSync("git", ["-C", repoRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim()
   const dirty = spawnSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" }).stdout.trim()
   console.log(`repository commit: ${sha}${dirty === "" ? " (clean tree)" : ` (DIRTY TREE, ${dirty.split("\n").length} path(s))`}`)
