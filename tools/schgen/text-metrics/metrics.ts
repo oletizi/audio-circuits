@@ -139,8 +139,12 @@ export function kicadTextBoxExtent(glyphs: readonly Glyph[], text: string, size:
  * **It exists for ONE counterfactual and is not an invitation to pick a pen.** `GetTextBox` sizes
  * its box with `GetPenSizeForNormal(size)` while eeschema PLOTS with 152.4 um, and a reader
  * deciding which quantity governs a collision needs to know how much of the box's height that
- * disagreement accounts for. `probe.ts` drives both and reports the share; nothing else calls it
- * with anything but `boxPenWidth`.
+ * disagreement accounts for. `probe.ts` drives both and reports the share.
+ *
+ * **NOTHING ELSE CALLS IT WITH ANYTHING BUT `boxPenWidth`, AND THAT IS CHECKED** -
+ * `tests/schgen/text-metrics/pen-call-sites.test.ts` names the one loose call site and goes red on
+ * a second. It was an unenforced sentence here until that test existed, which is the same shape as
+ * a cross-check described and never performed.
  */
 export function kicadTextBoxExtentAtPen(glyphs: readonly Glyph[], text: string, pen: Um, size: Um = TEXT_SIZE): Extent {
   const inflateNm = kiRound(kiRound(pen * 1000) * 1.5)
