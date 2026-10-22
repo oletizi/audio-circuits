@@ -2064,7 +2064,7 @@ reader to find in a diff, because the plan's own constraint says no production f
   BY a refusal, not by inspection; and the re-run of the field placer is held to
   `lib/schgen/render/field-placement.ts`'s own output - block, unit, lib id, rounded cost and every
   `covers` string - before any measured figure is printed.
-  **AND THE DOCUMENT IS HELD TO THE RUN**: `tools/schgen/text-metrics/verify-pastes.py` requires
+  **AND THE DOCUMENT IS HELD TO THE RUN**: `tools/schgen/text-metrics/verify-pastes.ts` requires
   every line `docs/schematic/text-handling-research.md` pastes as probe output to appear in a run's
   log verbatim. It was written because the first round of that section tidied SEVEN pasted blocks
   without meaning to - a truncated line, a control that lost its parenthetical, two tables re-padded

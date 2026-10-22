@@ -872,6 +872,7 @@
     "tools/schgen/text-metrics/placement.ts",
     "tools/schgen/text-metrics/probe.ts",
     "tools/schgen/text-metrics/step4.ts",
-    "tools/schgen/text-metrics/svg-probe.ts"
+    "tools/schgen/text-metrics/svg-probe.ts",
+    "tools/schgen/text-metrics/verify-pastes.ts"
   ]
 }

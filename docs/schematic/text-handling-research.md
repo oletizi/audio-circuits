@@ -50,19 +50,29 @@ KiCad tag `10.0.5`, SHA-256
 refuses a font blob with any other hash**, so a figure here cannot have come
 from an unknown font. Re-drive it with:
 
-```
+```sh
 curl -sSL -o /tmp/newstroke_font.cpp \
   https://gitlab.com/kicad/code/kicad/-/raw/10.0.5/common/newstroke_font.cpp
 bun run tools/schgen/text-metrics/probe.ts --font /tmp/newstroke_font.cpp > run.log
-python3 tools/schgen/text-metrics/verify-pastes.py run.log
+bun run tools/schgen/text-metrics/verify-pastes.ts run.log
 ```
 
-**The second command checks this document against that run**: every line §1
-pastes as probe output must appear in the log verbatim. It exists because the
-first round of this section tidied seven pasted blocks without meaning to - a
-truncated line, a control that lost its parenthetical, two tables re-padded so
-their columns lined up, a claim rewrapped, and a block left stale after the
-probe grew a column. None changed a figure; all were edits to evidence.
+**The second command checks this document against that run**, and
+`tests/schgen/text-metrics/document-pastes.test.ts` runs it on every `bun test`.
+**Every fenced block tagged ` ```run ` must equal a CONTIGUOUS slice of the log,
+in order**; every block tagged otherwise must share no line with it, and is
+listed by name as not checked. It exists because the first round of this section
+tidied seven pasted blocks without meaning to - a truncated line, a control that
+lost its parenthetical, two tables re-padded so their columns lined up, a claim
+rewrapped, and a block left stale after the probe grew a column. None changed a
+figure; all were edits to evidence.
+
+**Contiguity costs this document something, and the cost is paid rather than
+discounted.** Two blocks were EXCERPTS - eight of the twenty-three declared
+advances, and six of the twenty-seven measured rows - and an excerpt cannot be
+told from a tidy by any rule that does not read minds. Both now paste their
+listing in full, which is why §1.3 and §1.5 are longer than a reader needs. **No
+other block in the document was an excerpt**, so contiguity broke nothing else.
 
 ### 1.0 The three quantities, and why this section elects between none of them
 
@@ -91,7 +101,7 @@ and each one validates the others.
 **Route 1 and route 2 agree exactly on KiCad's own box.** Over all 264 distinct
 strings the eleven boards emit:
 
-```
+```run
 route 1 vs route 2, GetTextBox width: 0 of 264 strings differ by more than a nanometre; worst disagreement 0.000000 um, on "+5V" - which is simply the first row, since nothing differs
 route 1 vs route 2, stroked-outline width: 40 of 264 strings differ by more than a nanometre; worst disagreement 0.001524 um, on "TestPoint" - floating-point residue, not a difference in geometry
 ```
@@ -112,7 +122,7 @@ from per-glyph nanometre rounding and was not chased further.
 
 ### 1.2 The glyph set the eleven boards actually emit `[RAN]`
 
-```
+```run
 boards: 11; strings: 1086; of those, 498 are on boards that pass validateCircuit
   pt2399-core                    95 strings  refused at gate 1 (18 problems)
   pultec-hi-boost               106 strings  refused at gate 1 (20 problems)
@@ -169,7 +179,7 @@ work. `buildGlyphBoundingBox` imposes the x range `[0, glyphWidth]` from the
 width fields rather than measuring it from the points, so the claim is
 structurally possible - and for this glyph set it is false:
 
-```
+```run
 CLAIM DRIVEN AND NOT REPRODUCED: no glyph of this corpus has a stroke outside [0, advance]. The third-party review's supporting claim that strokes may extend outside their nominal advance is FALSE for this glyph set.
 over the whole printable-ASCII range the count is 1: "\\"
 ```
@@ -187,18 +197,33 @@ carrying a `textLength`, and that is a statement of advance independent of
 everything else in the file. `[RAN]` over 23 strings - six shaped probes and a
 stride-sampled spread of the real corpus:
 
-```
+```run
 23 strings carry a declared textLength at 1270.0 um text
 textLength MINUS the font source's advance sum is a CONSTANT 203.2 um; worst departure from it 0.4 um on "IIIIIIIIII"
 CONTROL (could have answered differently): the same residual against length * GRID is -462.0 um with a departure of 5986.8 um on "IIIIIIIIII" - 14819x wider, so this check discriminates
   "+5V"                  textLength    4073.7  advance    3870.5  residual   203.2
   "1.2K"                 textLength    4497.0  advance    4293.8  residual   203.2
   "100nF"                textLength    6069.3  advance    5866.2  residual   203.1
+  "2200pF"               textLength    7278.8  advance    7075.7  residual   203.1
+  "4700pF"               textLength    7278.8  advance    7075.7  residual   203.1
   "BYPASS_JUMPED"        textLength   15745.5  advance   15542.4  residual   203.1
+  "C7"                   textLength    2682.7  advance    2479.5  residual   203.2
   "I"                    textLength     808.0  advance     604.8  residual   203.2
   "IIIIIIIIII"           textLength    6251.2  advance    6047.6  residual   203.6
+  "IN_SOURCE"            textLength   10665.6  advance   10462.4  residual   203.2
+  "L4"                   textLength    2440.8  advance    2237.6  residual   203.2
   "Net-(U1-LPF2-OUT)"    textLength   20523.4  advance   20320.0  residual   203.4
+  "R000"                 textLength    5101.7  advance    4898.6  residual   203.1
+  "R100"                 textLength    5101.7  advance    4898.6  residual   203.1
+  "RV4"                  textLength    3771.3  advance    3568.1  residual   203.2
+  "SW2"                  textLength    4073.6  advance    3870.5  residual   203.1
+  "UPPER_FLOOR"          textLength   13508.0  advance   13304.8  residual   203.2
+  "VCC"                  textLength    3831.8  advance    3628.6  residual   203.2
+  "[1]"                  textLength    3106.1  advance    2902.9  residual   203.2
+  "j12_p4"               textLength    6553.1  advance    6350.0  residual   203.1
+  "j5_p6"                textLength    5343.6  advance    5140.5  residual   203.1
   "mid_sel_3khz"         textLength   12782.1  advance   12579.0  residual   203.1
+  "parked"               textLength    6553.1  advance    6350.0  residual   203.1
 ```
 
 **THE FOURTH READING AGREES.** It is not the advance sum itself - it is the
@@ -222,7 +247,7 @@ It is a constant and the check only needs it to be one.
 
 `[READ]`, composed in the source's own order:
 
-```
+```cpp
 FONT::StringBoundaryLimits -> drawMarkup -> GetTextAsGlyphs sets the box end to
   ( cursor.x - KiROUND( size.x * INTER_CHAR ), cursor.y - size.y ),  INTER_CHAR = 0.2
 StringBoundaryLimits then inflates a STROKE font's box by KiROUND( thickness * 1.5 ) on every side
@@ -253,7 +278,7 @@ not take one for a transcription error.
 **AND IT ACCOUNTS FOR ALMOST NONE OF WHY THE BOX IS TALL, which matters because
 the owner elects between these quantities.** `[RAN]` the counterfactual:
 
-```
+```run
 line HEIGHT: current model 1270.0 um; rendered ink 1422.4 um for "R100"; EDA_TEXT::GetTextBox 2043.1 um (height does not depend on the string for a single line without descenders)
   of that 773.1 um excess over the model: 2 x KiROUND(1.5 x pen) = 476.3 um (61.6%) and KiROUND(0.17 x extents.y) = 296.9 um (38.4%)
   COUNTERFACTUAL: recomputed at the PLOTTED pen 152.4 um instead of the box pen 158.8 um, GetTextBox would return 2020.8 um - so the pen disagreement accounts for 22.3 um, 2.9% of the excess
@@ -272,13 +297,34 @@ Route 3 emitted real `partSymbol` and `globalLabel` nodes - **built by
 `lib/schgen/render/emit-items.ts`, not hand-written** - exported them with
 `kicad-cli sch export svg`, and measured the stroke geometry. `[RAN]`:
 
-```
+```run
 R100 left rot0         paths= 56 ink x[337.3,4844.0] y[-766.7,655.7]
 R100 right rot0        paths= 56 ink x[-4783.6,-276.9] y[-766.7,655.7]
 R100 center rot0       paths= 56 ink x[-2223.1,2283.6] y[-766.7,655.7]
 R100 left rot90        paths= 56 ink x[337.3,4844.0] y[-766.8,655.6]
 R100 left rot180       paths= 56 ink x[337.3,4844.0] y[-766.8,655.6]
 R100 left rot270       paths= 56 ink x[337.3,4844.0] y[-766.7,655.7]
+I left rot0            paths=  1 ink x[337.3,489.7] y[-766.7,655.7]
+IIIIIIIIII left rot0   paths= 10 ink x[337.3,5932.9] y[-766.7,655.7]
+100nF left rot0        paths= 55 ink x[276.9,5872.0] y[-766.7,655.7]
+VCC right              paths= 43 ink x[1573.7,11130.2] y[-796.8,1169.9]
+VCC up                 paths= 43 ink x[-796.8,1169.9] y[-11130.3,-1573.8]
+sample 0 +5V           paths= 19 ink x[337.3,3936.9] y[-766.7,655.7]
+sample 1 1.2K          paths= 23 ink x[276.9,4239.2] y[-766.7,655.7]
+sample 2 2200pF        paths= 75 ink x[216.4,7081.5] y[-766.7,1079.1]
+sample 3 4700pF        paths= 60 ink x[276.9,7081.5] y[-827.1,1079.1]
+sample 4 BYPASS_JUMPED paths=117 ink x[337.3,15487.7] y[-766.7,776.7]
+sample 5 C7            paths= 17 ink x[276.9,2485.4] y[-766.7,655.7]
+sample 6 IN_SOURCE     paths= 79 ink x[337.3,10407.9] y[-766.7,776.7]
+sample 7 L4            paths=  5 ink x[337.3,2243.5] y[-827.1,655.7]
+sample 8 Net-(U1-LPF2-OUT) paths=111 ink x[337.3,20205.1] y[-948.1,1139.5]
+sample 9 R000          paths= 71 ink x[337.3,4844.0] y[-766.7,655.7]
+sample 10 RV4          paths= 16 ink x[337.3,3574.0] y[-827.1,655.7]
+sample 11 SW2          paths= 33 ink x[276.9,3815.9] y[-766.7,655.7]
+sample 12 UPPER_FLOOR  paths= 93 ink x[337.3,13250.2] y[-766.7,776.7]
+sample 13 j12_p4       paths= 40 ink x[95.4,6355.8] y[-827.1,1079.1]
+sample 14 j5_p6        paths= 58 ink x[95.4,5085.9] y[-766.7,1079.1]
+sample 15 mid_sel_3khz paths= 89 ink x[337.3,12584.8] y[-766.7,776.7]
 drawn pen 152.4 um; anchor to pen origin 111.1 um; anchor to baseline 519.0 um
 route 1 placed by route 3's constants vs route 3's own measurement: worst edge disagreement 0.3 um (IIIIIIIIII left rot0)
 ```
@@ -297,7 +343,7 @@ short above and 20.7 um generous below for a capitals-and-digits string.
 
 **Three controls, each of which could have answered differently:**
 
-```
+```run
 CONTROL (could have answered differently): ten 'I' measured 5595.6 um, predicted from one 'I' plus nine advances 5595.3 um, difference 0.3 um
 CONTROL: the same string right-justified is 4506.7 um wide against 4506.7 um left-justified
 CONTROL: an 'up' label's box is the 'right' label's box transposed - up 1966.7 x 9556.5, right 9556.5 x 1966.7
@@ -322,7 +368,7 @@ stream's own vector operands, which is exact rather than rastered.
 
 `[READ]` `eeschema/sch_label.cpp`'s `SCH_GLOBALLABEL::CreateGraphicShape`:
 
-```
+```cpp
 margin    = KiROUND( m_LabelSizeRatio * GetTextSize().y )     // DEFAULT_LABEL_SIZE_RATIO 0.375
 halfSize  = GetTextHeight() / 2 + margin
 linewidth = GetPenWidth()                                     // SCH_TEXT: GetEffectiveTextPenWidth()
@@ -334,7 +380,7 @@ and for `L_BIDI`, the shape `emit-items.ts` writes, the outline runs
 `x + 2 * halfSize` along the label's side and `y` either side of it. `[RAN]`
 against the PDF's own coordinates:
 
-```
+```run
 A                PDF outline along 4645.3 across 2540.8 um; sch_label.cpp predicts along 4644.6 across 2540.0; (net.length + 2) * GRID predicts along 3810.0 across 2540.0
 ABC              PDF outline along 7185.3 across 2540.8 um; sch_label.cpp predicts along 7184.6 across 2540.0; (net.length + 2) * GRID predicts along 6350.0 across 2540.0
 VCC              PDF outline along 7185.3 across 2540.8 um; sch_label.cpp predicts along 7184.6 across 2540.0; (net.length + 2) * GRID predicts along 6350.0 across 2540.0
@@ -359,7 +405,7 @@ is a coincidence of `0.375 + 0.5` landing on `1 - 1/8`, not a design.
 264 distinct strings, each measured under all three quantities. The whole table
 is in the probe's output; here are its shape and its extremes.
 
-```
+```run
 estimate / glyph advance sum: n=264 min 0.955 p25 1.037 median 1.091 p75 1.200 max 1.448; the estimate is SMALLER than this quantity for 11 of 264 strings
 estimate / rendered ink: n=264 min 1.005 p25 1.119 median 1.182 p75 1.238 max 1.865; the estimate is SMALLER than this quantity for 0 of 264 strings
 estimate / EDA_TEXT::GetTextBox: n=264 min 0.881 p25 0.992 median 1.051 p75 1.159 max 1.303; the estimate is SMALLER than this quantity for 70 of 264 strings
@@ -406,7 +452,7 @@ calls it *"conservative"*.
 
 ### 1.8 Where the three measured quantities disagree with each other
 
-```
+```run
 widest disagreement between two measured quantities: 795.6 um (0.63 grid steps) on "[2]", rendered ink vs EDA_TEXT::GetTextBox
 ORDERING ink < advance < box: 0 violation(s) over 264 strings
 ```
@@ -425,7 +471,7 @@ probe runs a parallel copy of `placeFields` whose only difference is which
 function returns a text box. Under the current ruler it must reproduce
 `lib/schgen/render/field-placement.ts` exactly. `[RAN]`:
 
-```
+```run
 CONTROL PASSED: over 10 laid-out blocks the parallel search reproduces lib/schgen/render/field-placement.ts exactly, block, unit, lib id, cost and covers.
 ```
 
@@ -438,7 +484,7 @@ code path of a number that had one.
 
 #### G239's five-of-eleven slots `[RAN]`
 
-```
+```run
 Jumper:Jumper_2_Open     body 5080.0 x 2286.0 um
     length x GRID (current model)  grown pair 7620.0 x 2540.0   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 16510.0 um = 3.25x the body WIDTH 5080.0 um, 7.22x its HEIGHT
     glyph advance sum              grown pair 7136.2 x 2540.0   inside slots that fit: 0 of 5   Value "Jumper_2_Open" 14695.7 um = 2.89x the body WIDTH 5080.0 um, 6.43x its HEIGHT
@@ -491,7 +537,7 @@ The PT2399 row is the positive control and it could have moved; it does not.
 
 #### G260's fifteen fallback placements `[RAN]`
 
-```
+```run
 block                               length x   glyph adv  rendered   EDA_TEXT:
 opamp-buffer/ob-buffer                      2          2          2          3
 optical-compressor/oc-power                 1          1          1          2
@@ -529,7 +575,7 @@ block's label and power-value boxes under each quantity and tests them against
 the production geometry of bodies, pin text, interior graphics, pin marks and
 wires:
 
-```
+```run
 SURVIVORS: drawn-text overlaps
   glyph advance sum              survived 4; vanished 4; NEW under this quantity 0
   rendered ink                   survived 4; vanished 4; NEW under this quantity 5
