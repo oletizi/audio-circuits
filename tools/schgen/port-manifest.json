@@ -874,6 +874,9 @@
     "tools/schgen/text-metrics/step4.ts",
     "tools/schgen/text-metrics/svg-probe.ts",
     "tools/schgen/text-metrics/verify-pastes.ts",
+    "tools/schgen/elk-labels/arms.ts",
+    "tools/schgen/elk-labels/corpus.ts",
+    "tools/schgen/elk-labels/probe.ts",
     "tests/schgen/text-metrics/document-pastes.test.ts",
     "tests/schgen/text-metrics/pen-call-sites.test.ts"
   ]
