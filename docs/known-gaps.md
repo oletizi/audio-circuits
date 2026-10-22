@@ -2075,15 +2075,30 @@ on every `bun test`; neither touches `lib/` or any gate.
   meaning to - a truncated line, a control that lost its parenthetical, two tables re-padded so
   their columns lined up, a rewrapped claim, and one block left stale after the probe grew a column.
   None changed a figure; all were edits to evidence, and reading for them by eye did not find them.
-  **ITS FIRST VERSION HAD TWO HOLES AND A REVIEWER WENT THROUGH BOTH**, recorded here because the
-  second is this register's own cardinal failure wearing a remedy's clothes: membership was flat
-  over the whole log, so a genuine line moved into the wrong block PASSED; and a block with fewer
-  than half its lines in the log was SILENTLY EXCLUDED, so fabricating four of six lines and leaving
-  two genuine anchors produced a green run. **A block edited enough stopped being checked.** Both
-  holes came from the checker inferring what a block was, and it no longer infers: the document
-  declares each block, and an undeclared block that shares lines with the log fails rather than
-  being skipped. Green on the document; RED on three perturbed copies - the two attacks and the
-  relabel dodge the fix would otherwise open.
+  **THREE VERSIONS OF THAT CHECKER HAVE BEEN DEFEATED, AND THE SEQUENCE IS THE ENTRY** - recorded
+  because each failure is a different general shape and a later reader will meet all three.
+  **(i) Flat membership with a 50% gate.** A genuine line moved into the wrong block PASSED; and a
+  block with fewer than half its lines in the log was SILENTLY EXCLUDED, so fabricating four of six
+  lines and leaving two genuine anchors produced a green run. **A block edited enough stopped being
+  checked** - this register's own cardinal failure, wearing a remedy's clothes.
+  **(ii) Contiguity.** It closed both, and **CONTIGUITY IS VACUOUS AT LENGTH 1**: a one-line block
+  collapses *"a contiguous slice of the log"* back to *"this line is in the log somewhere"*, which
+  is hole (i). The document's one single-line block was swapped for an unrelated genuine log line
+  and the checker exited 0. **A rule strictly stronger for n >= 2 was strictly EQUAL at n = 1.**
+  **Generalising a rule does not generalise its boundary, and nobody checks the boundary of a rule
+  they have just strengthened** - that is the transferable lesson, not the bug.
+  **(iii) The relabel dodge**, which is the attack surface the fix for (i) OPENED rather than
+  failed to close, and is a different thing worth a reader's time: once "is this block output?" is
+  the whole question, declaring a block as *not* output is the way out. Closed by requiring a
+  non-output block to share no line with the log.
+  **The version in the tree** requires a `run` block to be a contiguous, UNIQUE slice of a NAMED
+  section of the log, with at least two non-blank lines, not overlapping another block. Green on
+  the document; RED on eight perturbed copies, the document and the log unchanged by hash.
+  **AND THE SEQUENCE SAYS NOTHING ABOUT THE FIGURES, which is worth stating plainly because three
+  rounds on one file invite the opposite conclusion.** The measurement has been re-driven at every
+  round and is byte-identical every time, the only differing lines being the commit hash and the
+  scratch path. **What kept failing is the machinery that proves the EVIDENCE was pasted as it
+  came**, not the evidence.
   **IT NOW RUNS WHERE IT CAN FAIL** (controller ruling R12):
   `tests/schgen/text-metrics/document-pastes.test.ts` drives it on every `bun test` against a
   committed run log, and **couples the log to the document** - the document names the commit its
@@ -2091,10 +2106,13 @@ on every `bun test`; neither touches `lib/` or any gate.
   agree. **What nothing here establishes is that the log is a CURRENT run**: re-driving the probe
   needs `kicad-cli`, the KiCad Python bindings and a 2.9 MB font blob fetched outside the
   repository, so a reader wanting that re-drives it.
-  **CONTIGUITY COST THE DOCUMENT TWO EXCERPTS**, which is a fact about the document rather than the
-  checker: §1.3 pasted eight of twenty-three declared advances and §1.5 six of twenty-seven measured
-  rows, and an excerpt cannot be told from a tidy by any rule that does not read minds. Both now
-  paste in full. No other block was an excerpt.
+  **CONTIGUITY COST THE DOCUMENT TWO EXCERPTS AND ONE SINGLE-LINE PASTE**, which are facts about
+  the document rather than the checker: §1.3 pasted eight of twenty-three declared advances and §1.5
+  six of twenty-seven measured rows, and an excerpt cannot be told from a tidy by any rule that does
+  not read minds; §1.9 pasted one line, which no anchor can hold. All three now paste in full, which
+  is why those sections are longer than a reader needs. **The log must also hold exactly one run**
+  and a two-run log is refused by name (ruling R15) - dormant rather than absent, since the section
+  rule already refused one, illegibly.
 - **Verified** CONFIRMED - this writer wrote the probe, drove it, read KiCad's source and looked at
   the rendered PDF.
 - **Why it is open** clauses (1), (2) and (3) are measurements and facts about tools, open because
