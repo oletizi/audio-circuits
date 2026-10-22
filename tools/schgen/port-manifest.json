@@ -863,6 +863,15 @@
     "tools/schgen/board-sheets.ts",
     "tests/schgen/render/field-fallback.test.ts",
     "tools/schgen/board-declarations.ts",
-    "tests/schgen/board-declarations.test.ts"
+    "tests/schgen/board-declarations.test.ts",
+    "tools/schgen/text-metrics/corpus.ts",
+    "tools/schgen/text-metrics/geometry.ts",
+    "tools/schgen/text-metrics/metrics.ts",
+    "tools/schgen/text-metrics/newstroke.ts",
+    "tools/schgen/text-metrics/pdf-probe.ts",
+    "tools/schgen/text-metrics/placement.ts",
+    "tools/schgen/text-metrics/probe.ts",
+    "tools/schgen/text-metrics/step4.ts",
+    "tools/schgen/text-metrics/svg-probe.ts"
   ]
 }

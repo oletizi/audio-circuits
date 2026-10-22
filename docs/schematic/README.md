@@ -18,6 +18,14 @@ find it.**
 > would have concluded that three of the passes were not indexed material. The
 > counts are fixed below and the three missing profiles are added.
 
+> **AN EIGHTH PASS IS LANDING FROM 2026-10-22, SECTION BY SECTION, AND IT IS
+> NOT FINISHED.** `text-handling-research.md` is the deliverable of
+> [`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md),
+> which is seven tasks each ending in one committed section. **A reader arriving
+> before the last task will find sections missing, and that is the plan's shape
+> rather than an omission** - the document's own header says which plan it
+> serves, and every section states what it did not establish. §1 is committed.
+
 > **A SEVENTH PASS LANDED 2026-10-21, AND THE COUNTS BELOW ARE ABOUT THE SIX
 > RATHER THAN ABOUT THIS DIRECTORY.** `text-placement-prior-art.md` researched
 > **text placement**, which the six passes do not cover at all: they are about
@@ -59,6 +67,7 @@ neither.**
 
 | Document | Evidentiary standing | What that means concretely |
 | --- | --- | --- |
+| [`text-handling-research.md`](text-handling-research.md) §1 | **Measured by three independent routes that agree exactly, with controls, from a COMMITTED probe that pins its input** | Every figure comes from one run of `tools/schgen/text-metrics/probe.ts` at a named commit with a clean tree, against a `newstroke_font.cpp` blob the probe refuses unless its SHA-256 matches. KiCad's font source, the installed `pcbnew` bindings and eeschema's own SVG and PDF exports measure the same quantities and agree to **0.0 um**, **0.3 um** and **1.5 um** respectively. Its re-run of the field placer is held to production's own output by a control that could fail. **It elects nothing**: three text-geometry quantities are measured and the choice between them is left to the owner |
 | [`generation-prior-art-circuit-families.md`](generation-prior-art-circuit-families.md) | **Strongest methodology of any pass - it ran a CONTROL** | Ran two tools against the four non-Pultec circuit families. Its central claim - that net degree and not circuit family or part count defeats a router - is established with a control that separates the variables: 15 parts in a series chain routed 15/15 while 15 parts on one degree-15 net routed 1/5. It also reports its own harness's bugs separately from the tools' failures, and proves one of its guards by mutating it. |
 | [`generation-prior-art-second-pass.md`](generation-prior-art-second-pass.md) | **Measured, no controls** | Cloned five repositories, ran four, rendered schematics and looked at them. Marks every finding `[RAN]`, `[CODE]` or `[RELAYED]`. Its scope was **the Pultec alone**, which is the circuit those tools are worst at - the error the circuit-families pass above corrects. Read the two together or the first will mislead you. |
 | [`generation-prior-art-third-pass.md`](generation-prior-art-third-pass.md) | **Mixed - ran one tool, read one key source, surveyed the rest** | Ran `netlistsvg`/ELK against the probes that defeated other tools (10/10, byte-identical across 30 runs) and read the AEM formula directly from an open-access preprint. Its forty-year literature survey is citation work, not measurement, and should be read as such. **Do not read its ELK result as "ELK draws good audio schematics"**: its own §3.5 measures the 25-part Pultec-shaped probe as *"not a good audio schematic"* - 15 inter-net crossings, 1.72 bends per edge. Routing success and determinism are what it establishes. |
@@ -96,6 +105,46 @@ Two things that follow, and both have bitten already:
 
 The documents
 -------------
+
+### [`text-handling-research.md`](text-handling-research.md)
+
+From 2026-10-22, **one section per task of
+[`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md)
+and NOT FINISHED.** §1 is committed; §2-§7 are not yet written.
+
+**The question it was asked**, and it is the owner's in his own words, after the
+seventh pass had surveyed the labelling literature and the generator still drew
+0 of 11 boards: *"I meant that you aren't fully researching the solution space.
+I want you to use superpowers to develop a plan to research actual solutions to
+the text handling issues instead of reasoning about text from first principles."*
+**It designs nothing and recommends nothing**, by the plan's own constraint; the
+design that follows it is a separate exercise the owner reviews.
+
+**What §1 establishes.** `lib/schgen/render/text-boxes.ts`'s
+`textWidth(text) = text.length * GRID` is the ruler every collision figure in
+`../known-gaps.md` is downstream of, and its own comment calls it
+*"conservative"*. Measured against KiCad's real geometry over the 264 distinct
+strings the eleven boards emit: against the rendered ink it over-reserves by a
+median of 18% and a maximum of 87%; **against KiCad's own `EDA_TEXT::GetTextBox`
+it is too SMALL for 70 of the 264**; and in HEIGHT it is too small under both
+measured quantities always - 1270 um against 1422.4 of ink and 2043.1 of KiCad's
+box. **Of the fifteen fallback field placements `../known-gaps.md` **G260**
+records, thirteen survive under every quantity, and under KiCad's own box all
+fifteen survive and nine more appear.**
+
+**Two findings about the tooling rather than about this repository**, both
+driven: `kicad-cli sch export svg` 10.0.5 draws a global label's text and not
+its outline, where `export pdf` draws both; and the third-party review's claim
+that strokes may extend outside their nominal advance is **false for this glyph
+set** - exactly one printable-ASCII glyph overhangs, and it is the backslash.
+
+**The decision it refuses to take, and names as the owner's:** which of the
+three text-geometry quantities governs a collision. §1.9 measures that the
+choice changes the recorded population from 13 to 24, so it is consequential
+rather than academic.
+
+**Registered from it:** amendments to `../known-gaps.md` **G239** and **G260**,
+and a new entry for the `kicad-cli` SVG hole.
 
 ### [`schgen-development-history.md`](schgen-development-history.md)
 
