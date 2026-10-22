@@ -41,7 +41,9 @@ global label. Every collision figure the register publishes is downstream of
 that function, and nobody had measured the error in it.
 
 **Everything below comes from one run of `tools/schgen/text-metrics/probe.ts`**,
-committed, at repository commit `757c4dd` with a clean tree, against
+committed, at repository commit **`fff714c`** with a clean tree - **the commit
+immediately before the one that writes this sentence**, which is as close as a
+document can get to pinning the tree it was measured on - against
 `kicad-cli` **10.0.5**, `pcbnew` build **10.0.5**, and `newstroke_font.cpp` at
 KiCad tag `10.0.5`, SHA-256
 `dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9`. **The probe
