@@ -74,7 +74,12 @@ export interface FieldFallback {
   /** `<part>#<unit>` */
   readonly key: string;
   readonly libId: string;
-  /** The weighted overlap area accepted, in um^2. Comparable only within one run of one placer. */
+  /**
+   * The weighted overlap area accepted, in whole um^2. Comparable only within one run of one
+   * placer, and ROUNDED: the arithmetic is floating point over micron coordinates, so an exact
+   * value carries fifteen digits of which the last eight are noise, and a report is a thing a
+   * person reads.
+   */
   readonly cost: number;
   /** What the placed boxes cover, named as the drawing names it. Never empty. */
   readonly covers: readonly string[];
@@ -265,7 +270,7 @@ export function placeFields(scene: FieldScene): PlacedUnit[] {
             "render/field-placement.ts, not a layout problem.",
         );
       }
-      fallback = { block: scene.block, key: p.key, libId: p.u.symbol.libId, cost: area(cand), covers };
+      fallback = { block: scene.block, key: p.key, libId: p.u.symbol.libId, cost: Math.round(area(cand)), covers };
     }
     for (const [i, b] of texts(cand.fields).entries()) placed.push({ what: `${i === 0 ? "Reference" : "Value"} of ${p.key}`, box: b });
     out.push({ key: p.key, body: p.body, fields: cand.fields, inside: cand.inside, pins: p.pins, fallback });

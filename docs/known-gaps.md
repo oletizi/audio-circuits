@@ -1471,6 +1471,17 @@ blocks: **fifteen fallbacks across four blocks** - `ob-buffer` 2, `oc-power` 1, 
 `tp-stage` 4 - and **nine of the fifteen are on the two blocks that newly draw**. Every one of them
 covers at least one wire, pin or label; `pt-core`'s `R3#1` covers three wires.
 
+**WHAT THEY COVER, which is the part the weighting was supposed to decide and which was then
+looked at.** **Fourteen of the fifteen cover only wires or a pin end; exactly one covers another
+piece of text** - `tp-stage`'s `TP1#1` covers `label EMITTER`. That is the two-tier weighting doing
+what its source says it is for: a mark weighs twice a graphic, so the search spends its overlap on
+wires before it spends it on text. **AND IT WAS READ OFF A DRAWING, not only off the counts.**
+`[RAN]` a scratch probe (NOT committed, NOT a tool) that renders `pt2399-core`'s sheet with gate 1
+skipped and exports it to PDF, for the single purpose of looking at what a fallback does: on that
+sheet's eight fallbacks every designator and value is still legible, each crossed by one green wire
+rather than sitting under another string. **The probe skips a gate, so what it produces is NOT a
+generated schematic and is evidence about legibility and nothing else.**
+
 **THE RESIDUAL, AND IT IS THE REASON THIS IS AN ENTRY RATHER THAN A COMMENT: NOTHING AUTOMATED
 READS THE REPORT.** `make check` does not look at `RENDER-REPORT.md`'s fallback section, no gate
 refuses on a count, and no threshold exists for one. A generation that goes from 0 fallbacks to 50
