@@ -228,9 +228,24 @@ runtime **exactly** (0.0 um worst disagreement, §1.1). For 1.27 mm text:
 `GetTextBox` sizes its box with is `size/8 = 158.75 um`; **the pen eeschema
 PLOTS with is 152.4 um** (6 mil), which route 3 measured off the SVG's own
 `stroke-width`. So KiCad's own bounding box is computed with a pen KiCad does
-not draw with. The difference is 6.35 um and reaches no conclusion here; it is
-recorded so the next person who finds the two numbers does not take one for a
-transcription error.
+not draw with. It is recorded so the next person who finds the two numbers does
+not take one for a transcription error.
+
+**AND IT ACCOUNTS FOR ALMOST NONE OF WHY THE BOX IS TALL, which matters because
+the owner elects between these quantities.** `[RAN]` the counterfactual:
+
+```
+line HEIGHT: current model 1270.0 um; rendered ink 1422.4 um for "R100"; EDA_TEXT::GetTextBox 2043.1 um (height does not depend on the string for a single line without descenders)
+  of that 773.1 um excess over the model: 2 x KiROUND(1.5 x pen) = 476.3 um (61.6%) and KiROUND(0.17 x extents.y) = 296.9 um (38.4%)
+  COUNTERFACTUAL: recomputed at the PLOTTED pen 152.4 um instead of the box pen 158.8 um, GetTextBox would return 2020.8 um - so the pen disagreement accounts for 22.3 um, 2.9% of the excess
+```
+
+**The 773.1 um by which KiCad's box exceeds this repository's line is 61.6%
+the `1.5 x pen` inflation, 38.4% the 17% fudge factor, and 2.9% the pen
+disagreement.** A reader deciding whether to discount Q3's height as a
+bookkeeping artefact of a pen KiCad does not plot with would be discounting
+**22.3 um of 773.1**: at the plotted pen the box is still 2020.8 um, 59% taller
+than the model's line.
 
 ### 1.5 Q2, the rendered ink, and the three constants that place it
 

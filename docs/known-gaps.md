@@ -2007,6 +2007,14 @@ own `stroke-width`. The two differ by 6.35 um and both are correct in their own 
 so the next person who finds the two numbers does not take one for a transcription error** and does
 not "reconcile" them.
 
+**AND IT IS NOT WHY `GetTextBox` IS TALL, which is the reading that would actually mislead.** `[RAN]`
+the counterfactual: at the plotted 152.4 um pen the box would be **2020.8 um** instead of 2043.1, so
+the pen disagreement is **22.3 um of the 773.1 um** by which the box exceeds this repository's
+1270 um line - **2.9%**. The rest is `StringBoundaryLimits`'s `KiROUND(thickness * 1.5)` inflation on
+every side (476.3 um, 61.6%) and `GetTextBox`'s own 17% fudge factor (296.9 um, 38.4%). **A reader
+electing between the quantities (clause 4) must not discount Q3's height as bookkeeping around the
+wrong pen**: at the right pen it is still 59% taller than the model's line.
+
 **(3) TWO SMALL RESIDUALS, UNDIAGNOSED AND NOT SMOOTHED.** The anchor-to-pen-origin offset of a
 left-justified symbol field measures **111.1 um** where `common/font/font.cpp`'s
 `offset.x += aAttrs.m_StrokeWidth / 1.52` predicts **100.3** at the plotted pen - a 10.8 um gap.

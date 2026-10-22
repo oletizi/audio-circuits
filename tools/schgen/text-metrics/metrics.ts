@@ -47,12 +47,20 @@ const kiRound = (v: number): number => (v < 0 ? -Math.round(-v) : Math.round(v))
 /** All schematic text this repository emits is 1.27 mm (`render/emit-items.ts`'s `font()`). */
 export const TEXT_SIZE: Um = GRID
 
-/** `common/gr_text.cpp`: `GetPenSizeForNormal( aTextSize ) { return KiROUND( aTextSize / 8.0 ); }` */
-export const boxPenWidth = (size: Um = TEXT_SIZE): Um => kiRound(size / 8)
+/**
+ * `common/gr_text.cpp`: `GetPenSizeForNormal( aTextSize ) { return KiROUND( aTextSize / 8.0 ); }`.
+ * Rounded at NANOMETRES, which is where KiCad rounds it: for 1.27 mm text the answer is 158.75 um,
+ * and rounding at micrometres would give 159 and move every box by half a micrometre.
+ */
+export const boxPenWidth = (size: Um = TEXT_SIZE): Um => kiRound((size * 1000) / 8) / 1000
 
 export interface Extent {
   readonly width: Um
   readonly height: Um
+  /** `StringBoundaryLimits`'s `KiROUND( thickness * 1.5 )`, added on every side. */
+  readonly inflate?: Um
+  /** `GetTextBox`'s `fudgeFactor`, `KiROUND( extents.y * 0.17 )`, added to the height only. */
+  readonly fudge?: Um
 }
 
 /** A box relative to the text anchor, x positive right and y positive down, as KiCad lays out. */
@@ -122,11 +130,23 @@ export function inkExtent(glyphs: readonly Glyph[], text: string, drawnPen: Um, 
 
 /** Q3: `EDA_TEXT::GetTextBox`'s width and height, for single-line non-bold non-italic stroke text. */
 export function kicadTextBoxExtent(glyphs: readonly Glyph[], text: string, size: Um = TEXT_SIZE): Extent {
-  const penNm = kiRound((size * 1000) / 8)
-  const inflateNm = kiRound(penNm * 1.5)
+  return kicadTextBoxExtentAtPen(glyphs, text, boxPenWidth(size), size)
+}
+
+/**
+ * The same box computed with a pen of the caller's choosing.
+ *
+ * **It exists for ONE counterfactual and is not an invitation to pick a pen.** `GetTextBox` sizes
+ * its box with `GetPenSizeForNormal(size)` while eeschema PLOTS with 152.4 um, and a reader
+ * deciding which quantity governs a collision needs to know how much of the box's height that
+ * disagreement accounts for. `probe.ts` drives both and reports the share; nothing else calls it
+ * with anything but `boxPenWidth`.
+ */
+export function kicadTextBoxExtentAtPen(glyphs: readonly Glyph[], text: string, pen: Um, size: Um = TEXT_SIZE): Extent {
+  const inflateNm = kiRound(kiRound(pen * 1000) * 1.5)
   const widthNm = advanceWidthNm(glyphs, text, size) - kiRound(size * 1000 * INTER_CHAR) + 2 * inflateNm
   const extentsYNm = size * 1000 + 2 * inflateNm
-  return { width: widthNm / 1000, height: (extentsYNm + kiRound(extentsYNm * 0.17)) / 1000 }
+  return { width: widthNm / 1000, height: (extentsYNm + kiRound(extentsYNm * 0.17)) / 1000, inflate: inflateNm / 1000, fudge: kiRound(extentsYNm * 0.17) / 1000 }
 }
 
 /** The current model: `lib/schgen/render/text-boxes.ts:35`, `text.length * GRID`. */

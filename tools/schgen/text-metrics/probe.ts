@@ -30,7 +30,7 @@ import { kicadVersion } from "../kicad-run.ts"
 import { moduleRepoRoot } from "../../perfboard/repo-root.ts"
 import { distinctStrings, glyphSet, wholeCorpus, type StringRow } from "./corpus.ts"
 import { advanceGeometry, estimateGeometry, inkGeometry, kicadBoxGeometry, labelOutlineExtent, type Measured } from "./geometry.ts"
-import { advanceWidth, estimatedWidth, inkCentrelines, kicadTextBoxExtent, TEXT_SIZE } from "./metrics.ts"
+import { advanceWidth, boxPenWidth, estimatedWidth, inkCentrelines, kicadTextBoxExtent, kicadTextBoxExtentAtPen, TEXT_SIZE } from "./metrics.ts"
 import { inkOutsideAdvance, loadGlyphs, FONT_SOURCE_SHA256, type Glyph } from "./newstroke.ts"
 import type { TextGeometry } from "./placement.ts"
 import { labelOutlineNear, pdfPathsOf } from "./pdf-probe.ts"
@@ -329,6 +329,23 @@ async function main(): Promise<void> {
   }
   console.log("")
   console.log(`line HEIGHT: current model ${um(GRID)} um; rendered ink ${um(ink.height("R100"))} um for "R100"; EDA_TEXT::GetTextBox ${um(kicadTextBoxExtent(glyphs, "R100", TEXT_SIZE).height)} um (height does not depend on the string for a single line without descenders)`)
+  // **WHERE GetTextBox'S HEIGHT ACTUALLY COMES FROM**, driven rather than left for a reader to
+  // derive from the formula in the document. The owner elects between these quantities, and
+  // without this he could discount the box's height as bookkeeping around a pen KiCad does not
+  // plot with - a suspicion these three numbers refute.
+  const atBoxPen = kicadTextBoxExtentAtPen(glyphs, "R100", boxPenWidth(), TEXT_SIZE)
+  const atPlotPen = kicadTextBoxExtentAtPen(glyphs, "R100", m.drawnPen, TEXT_SIZE)
+  const excess = atBoxPen.height - GRID
+  console.log(
+    `  of that ${um(excess)} um excess over the model: 2 x KiROUND(1.5 x pen) = ${um(2 * (atBoxPen.inflate ?? 0))} um ` +
+      `(${((200 * (atBoxPen.inflate ?? 0)) / excess).toFixed(1)}%) and KiROUND(0.17 x extents.y) = ${um(atBoxPen.fudge ?? 0)} um ` +
+      `(${((100 * (atBoxPen.fudge ?? 0)) / excess).toFixed(1)}%)`,
+  )
+  console.log(
+    `  COUNTERFACTUAL: recomputed at the PLOTTED pen ${um(m.drawnPen)} um instead of the box pen ${um(boxPenWidth())} um, ` +
+      `GetTextBox would return ${um(atPlotPen.height)} um - so the pen disagreement accounts for ` +
+      `${um(atBoxPen.height - atPlotPen.height)} um, ${((100 * (atBoxPen.height - atPlotPen.height)) / excess).toFixed(1)}% of the excess`,
+  )
   const desc = distinct.map((d) => d.text).find((t) => /[gjpqy]/.test(t))
   if (desc !== undefined) console.log(`a string with a descender, ${JSON.stringify(desc)}: ink height ${um(ink.height(desc))} um`)
 
