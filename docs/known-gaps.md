@@ -17810,6 +17810,142 @@ entry's.
   second moves geometry and re-opens four other obligations. **A scope decision
   taken on 9 of 12 is taking it on the field-local mechanism.**
 
+> **AMENDED 2026-10-21 BY TASK 23: THE PROBLEM SPACE THIS ENTRY HAS BEEN
+> MEASURING FOR FOUR ROUNDS WAS NEVER RESEARCHED, THE OWNER IDENTIFIED THAT, AND
+> THE TWO MECHANISMS ABOVE ARE BOTH NARROWER THAN THE STANDARD FORMULATION - ONE
+> OF THEM IN THE DIRECTION THE LITERATURE SAYS HELPS LEAST.** Nothing is fixed
+> and nothing was attempted; ruling R46 still reserves the scope decision.
+>
+> **HOW IT CAME UP.** The owner, on reading the Task 22 round: *"Have you
+> stopped to actually think about text placement issues as a general problem
+> space and research prior art on the subject. My guess is that your approach
+> has been extremely naive and you've given up and made it a me problem instead
+> of a you problem."* **He was right.** `docs/schematic/` held four prior-art
+> passes on schematic generation, all about GRAPH layout - crossings, bends,
+> angular resolution, annealing over part and wire positions - and **text
+> placement appeared in none of them.** `[MEASURED-HERE]` a grep for *label
+> placement*, *point-feature* and *point feature* over every `.md` and `.ts` in
+> the tree returned **4** hits, none about this. The pass is
+> `docs/schematic/text-placement-prior-art.md`.
+>
+> **THE PROBLEM HAS A NAME AND A STANDARD OBJECTIVE, AND THE OBJECTIVE IS NOT A
+> FEASIBILITY TEST.** `[PAPER-FULL]` Christensen, Marks & Shieber, *"An
+> Empirical Study of Algorithms for Point-Feature Label Placement"*, *ACM TOG*
+> 14(3):203-232, 1995, read in full: point-feature label placement, NP-hard
+> (the *admissible-labeling* decision problem is NP-complete, established
+> independently three times), objective after Yoeli (1972) with three terms -
+> overlap amount, a priori position preference, and the number of features left
+> unlabelled. Its metric throughout is *"the fraction of labels placed without
+> overplots."*
+>
+> **AND IT ENUMERATES WHAT A GREEDY PLACER DOES WHEN A LABEL WILL NOT FIT -
+> THREE OPTIONS, AND THIS ENTRY'S DEFECT IS A FOURTH THAT NO SOURCE DOES:**
+> *"any point whose label cannot be placed can be treated summarily: the point
+> can be left out if point selection is allowed..., or it can be labeled even
+> though a label overlap or feature obscuration results. (A third option, that
+> of appealing to a human oracle for assistance, is noted by Yoeli (1972) as a
+> practical alternative.)"* Drop it, draw it overlapping, or ask a person.
+> **`field-placement.ts` refuses to produce the drawing, and nothing in the
+> literature or in KiCad does that.**
+>
+> **KiCad's OWN FIELD AUTOPLACER CANNOT FAIL, read in source rather than
+> relayed.** `[CODE]` `eeschema/autoplace_fields.cpp` at `master`, 794 lines,
+> downloaded 2026-10-21. `chooseSideForFields` keeps, in `sel`, the colliding
+> side with the fewest pins while erasing every colliding side from its
+> candidate list; when all four collide it returns `sel`, **and the fields are
+> placed there overlapping.** It also grades collisions in two tiers -
+> `COLLIDE_OBJECTS` beats `COLLIDE_H_WIRES`, so a side conflicting only with
+> horizontal wires is preferred - and has a local-repair step
+> (`fitFieldsBetweenWires`) that shifts the box onto a 100-mil grid to slot text
+> between wires rather than giving up.
+>
+> **WHAT THAT DOES TO THIS ENTRY'S TWO MECHANISMS.** Neither is wrong, and
+> **both are narrower than what the formulation asks for, which is a third
+> thing: an objective function and a defined behaviour on failure.** More
+> specifically:
+>
+> - **mechanism one - *give `field-placement.ts` more candidate positions* - is
+>   the one the research makes least promising, and this is the correction worth
+>   having.** Its candidate set is **already larger than KiCad's four sides and
+>   larger than the standard four- and eight-position models**, and it already
+>   includes five internal slots the standard point-feature model does not have
+>   at all. **G239** sizes that set at eleven for a two-pin passive and six
+>   usable; KiCad works with four and never refuses. **So the candidate count is
+>   not what distinguishes this implementation from anything that works.** What
+>   distinguishes it is that `blockerOf` returns a boolean and the search takes
+>   the first zero - there is no cost to minimise, and no answer when every
+>   candidate costs something.
+> - **mechanism two - *treat "no room for the fields" as a routing cost* - is in
+>   the literature's direction but is the expensive half of it.** No source
+>   found moves the features to suit the labels; they all take the features as
+>   given and optimise the labelling. The cheap half is an objective over the
+>   candidate set that already exists.
+>
+> **ONE MEASURED FACT ABOUT THIS IMPLEMENTATION THAT NEITHER THIS ENTRY NOR
+> G239 STATES, AND IT IS WHY "THIRTEEN UNITS" IS A FLOOR IN A SECOND WAY.**
+> `[CODE]` `tryPlaceFields` pushes each placed unit's text boxes onto `placed`,
+> which is in the `blockers` list for every **later** unit, and never
+> reconsiders an earlier choice. **It is a greedy sequential first-fit with no
+> backtracking**, so a unit can be unplaceable because of where an earlier
+> unit's text went. In Christensen et al.'s taxonomy that is *greedy depth-first
+> placement* with the backtracking removed and no fallback - the algorithm their
+> Figure 10 scores at **341** conflicted labels of 750 against simulated
+> annealing's **75** on the same instance and the same candidate model. The Task
+> 22 amendment above already worked around this (*"with each unit moved to the
+> front of the placement order so its search sees the most permissive obstacle
+> set"*) without naming it, which is why its thirteen are unconditional and say
+> nothing about how many more are order-dependent.
+>
+> **AND THIS REPOSITORY ALREADY SHIPS THE SHAPE THE LITERATURE PRESCRIBES, FOR A
+> DIFFERENT ARTIFACT, COMMITTED THREE WEEKS EARLIER.** `[CODE]`
+> `tools/guide/placement.ts` (88 lines, `aaaf22d`, 2026-09-29) has candidates in
+> preference order, a cost that is **overlap AREA** rather than a boolean,
+> **weighted obstacle categories** (`MARK_WEIGHT = 2`, argued in its own source:
+> *"[c]overing a mark ... is what makes a printout ambiguous; crossing a lead or
+> a body outline under a haloed label is only untidy"* - KiCad's two-tier
+> severity, arrived at independently here), and a **least-cost fallback instead
+> of a refusal**: *"The first candidate that covers nothing already drawn, or -
+> when every candidate covers something, as on a crowded board - the one that
+> covers least."* `field-placement.ts` landed at `af19271`, 2026-10-19.
+>
+> **WHAT THIS DOES AND DOES NOT DO TO THIS ENTRY'S CRITERION.** The criterion -
+> *"a declared block whose parts are placed and whose route is legal has
+> somewhere to print every designator and value, or the refusal names which of
+> the two it attributes the failure to"* - **is intact and is still what
+> binds.** The research does not supply a threshold and does not choose a
+> mechanism. **What it adds is that the criterion as written assumes a refusal
+> is the only alternative to success, and the standard formulation has three
+> others**, each of which would satisfy *"has somewhere to print every
+> designator and value"* differently. **That is an owner-visible question and
+> this amendment does not answer it**: whether a schematic may print a value
+> overlapping something, hide a value it cannot place, or leader-line it, is a
+> decision about the artifact. Cartographic practice prefers the overlap
+> (`[PAPER-FULL]`, Christensen et al. relaying Ebinger and Goulette 1990: *"In
+> many types of production-quality maps, overplots are preferred to exercising
+> point selection"*); **Task 21 already took the hide option once**, for a Value
+> carrying no information (**G257**), and the owner ruled on that case and no
+> other.
+>
+> - **Evidence** the prior-art document, with every claim marked by retrieval
+>   standing. **Checks that could have failed:** the `do_not_autoplace` claim
+>   this pass was handed was driven rather than accepted and **came back wrong**
+>   - 1208 occurrences, all `no`, but `loop-board.kicad_sch` carries it on 40 of
+>   140 properties and **both Pultec schematics carry none**, against a brief
+>   that said *"every property"*; the *"one leader-line occurrence"* claim was
+>   driven and **came back wrong** - five, three of them a working leader-line
+>   placer in `tools/guide/`; and six clauses of the brief's reading of
+>   `field-placement.ts` were confirmed rather than assumed, with four found
+>   wrong.
+> - **Verified** CONFIRMED for everything marked `[CODE]` or `[MEASURED-HERE]` -
+>   this writer downloaded and read `autoplace_fields.cpp`, extracted both papers
+>   to text, and ran every grep. **RELAYED** for every `[PAPER-ABS]` citation,
+>   and the prior-art document's §9 names what was not retrieved - including
+>   van Kreveld/Strijk/Wolff on sliding labels, so **"how many more labels a
+>   continuous model places than a fixed-position one" is unknown.**
+> - **NOTHING WAS RUN AGAINST THIS REPOSITORY'S BLOCKS.** No labelling algorithm
+>   was implemented, no annealing driven, no KiCad built. Every figure in this
+>   amendment about algorithm performance is an author's, on map data.
+
 ### G233 - A PERTURBATION HARNESS THAT NAMES A TEST FILE SILENTLY NO-OPS WHEN THE ASSERTION MOVES, AND REPORTS THE RESULTING GREEN AS A PASSING DRIVE
 
 **MEASURED HERE, TWICE, ONE LAYER APART.** A perturbation is how this repository
@@ -18721,6 +18857,106 @@ them with it.
   the smallest new KIND of position - and it is not obviously acceptable, because
   a Reference that drifts away from its symbol is the *"text where a reader does
   not expect it"* cost G232 already names.
+
+> **AMENDED 2026-10-21 BY TASK 23: THIS ENTRY'S ARITHMETIC IS INTACT, AND ALL
+> THREE OF THE THINGS IT RECORDS AS OPEN JUDGEMENT CALLS HAVE PUBLISHED NAMES
+> AND A PUBLISHED LITERATURE.** `docs/schematic/text-placement-prior-art.md` is
+> the pass; **G232**'s amendment of the same date carries the general account
+> and is not repeated here. Nothing is fixed.
+>
+> **(1) THE SEARCH SPACE THIS ENTRY SIZES IS A *FIXED-POSITION MODEL*, WHICH THE
+> LITERATURE TREATS AS ONE OF TWO CHOICES - AND THIS ENTRY'S CLOSING MECHANISM
+> IS THE OTHER ONE.** *"[A] candidate placed further out along a pin-free side,
+> at increasing offsets"* is a **slider model**: `[PAPER-FULL]` Christensen,
+> Marks & Shieber contrast *"an explicitly enumerated set"* of positions with
+> *"a continuous placement model"*, and the slider models have standard names
+> (**1SH, 2SH, 1SV, 2SV, 4S**, by which edges of the label the anchor may slide
+> along) from van Kreveld, Strijk & Wolff, *"Point labeling with sliding
+> labels"*, *Comp. Geom.* 1999. **So the mechanism this entry invented in its
+> last paragraph is the field's other standard placement model**, and it was
+> reached by reasoning about one capacitor rather than by reading anything.
+>
+> **AND THE QUANTITY THAT WOULD JUSTIFY IT IS EXACTLY WHAT COULD NOT BE
+> RETRIEVED.** That paper's claim - relayed from search extracts and
+> **`[PAPER-ABS]`, NOT ESTABLISHED** - is that *"continuously sliding labels
+> allow more points to be labeled both in theory and in practice."* **How many
+> more is unknown**; a factor-4 figure appeared in an extract and could not be
+> confirmed as a labelling-count ratio rather than an approximation factor. Two
+> fetches of the paper failed (`connect ECONNREFUSED` to the Würzburg mirror).
+> **Christensen et al. note the same gap from the other side** and did not close
+> it either: a fairer comparison *"could be obtained by running the discrete
+> algorithms with a 16- or 20-position placement model, as opposed to the
+> four-position model used in the experiments"*, which **they did not run.**
+>
+> **(2) THIS ENTRY'S OWN OBJECTION TO ITS MECHANISM IS A PUBLISHED CRITERION,
+> AND THE LITERATURE'S ANSWER TO IT IS A LEADER LINE.** *"[A] Reference that
+> drifts away from its symbol"* is **ambiguity of association**: Imhof's rule
+> that names *"should be easily associated with the features they describe"*
+> (`[PAPER-ABS]`, quoted from a secondary source - Imhof 1975 was not
+> retrieved), and criteria **C1**, **C2** and **C7** of
+> `[PAPER-FULL]` Bekos, Niedermann & Nöllenburg's external-labelling survey
+> (*CGF* 38(3), 2019), which reduce *"visual clutter and ambiguities"* and *"ease
+> association between label and feature"*. **The standard escape once a label is
+> too far from its feature to be read off it is to draw a leader line**, and
+> that has its own taxonomy (§4 of the pass: s-, po-, opo-, do- and pd-leaders;
+> boundary, contour and excentric labelling).
+>
+> **AND THE FORMULATION THAT MATCHES THIS CASE EXACTLY IS CALLED *MIXED
+> LABELING*:** `[PAPER-FULL]`, survey §4.2.2.2, *"in which each site can be
+> labeled either with an internal label that is located directly to its
+> top-right or with an external label through an opo-leader"* - with the
+> objective **maximising the number of INTERNAL labels**, i.e. place as many
+> beside their part as possible and leader-line the rest. Named results:
+> `O(n log n)` for one side, quasi-polynomial plus a 2-approximation and an ILP
+> for the harder side.
+>
+> **THE OBSTACLE TO ADOPTING IT HERE IS ALSO IN THE LITERATURE AND IS NOT
+> SMALL.** `[PAPER-FULL]`, survey §3.1, relaying Wu et al.: *"in illustrations
+> with many straight lines of regular slopes (e.g., floorplans), curved leaders
+> or straight and polyline leaders with non-aligned slopes should be
+> considered"*, because *"[o]ne must ensure that lines in the background layer
+> and leader lines can be easily differentiated."* **A schematic is orthogonal
+> wires on a 1.27 mm grid, so an orthogonal leader in one looks like a wire.**
+> `[MEASURED-HERE]`/**NEGATIVE RESULT, recorded as a search that found nothing
+> rather than as an absence: I looked for any EDA tool that places a reference
+> designator or value with a leader line and found none.** The precedent is
+> cartography, anatomy and technical illustration - **and `tools/guide/`**, which
+> already draws leader-lined edge labels with a white halo and obstacle-aware
+> routing (**G232**'s amendment; `render-edges.ts`, `render-board.ts`).
+>
+> **(3) ONE PIECE OF GEOMETRY BEHIND THIS ENTRY'S ARITHMETIC IS A CHOICE NOBODY
+> HAS RECORDED AS ONE, AND IT IS WHERE THE 5080 COMES FROM.** `[CODE]`
+> `slotFields` puts the Reference at `y - GRID` and the Value at `y + GRID`
+> about every slot's centre, at the same `x` and justification; so does
+> `besidePinFields`. **The Reference and Value are a RIGID PAIR that can never
+> be placed independently or split**, which is why the grown pair is
+> `4 x GRID = 5080 um` tall *at every slot* - this entry's own sentence - and
+> why a 2032 um body cannot hold it. **The literature's preference runs the
+> other way:** survey criterion **C8**, *"Labels consist of single text lines if
+> possible."* KiCad shares the rigid-pair convention (one `m_fbox_size` spanning
+> all visible fields, `[CODE]` `autoplace_fields.cpp`), so this is inherited and
+> not an oversight - **but it is a parameter of the arithmetic, not a constant of
+> nature, and no entry in this register had said so.** Nothing here proposes
+> splitting them; what is recorded is that the 5080 is two decisions deep.
+>
+> - **Evidence** the prior-art document, marked per retrieval standing. **This
+>   amendment re-measures none of this entry's figures** and does not need to:
+>   the five-of-eleven finding is backed by
+>   `tests/schgen/render/field-slots.test.ts` and pinned by the `MARGIN`
+>   perturbation this entry already records.
+> - **Verified** CONFIRMED for `[CODE]` and `[MEASURED-HERE]` - this writer read
+>   `slotFields`, `besidePinFields` and `autoplace_fields.cpp`, and ran the
+>   EDA-leader-line search. **RELAYED** for every `[PAPER-ABS]` claim, and the
+>   sliding-label quantity in (1) is **explicitly not established.**
+> - **Why it is open** unchanged: the measurement is true, and the defect behind
+>   it is **G232**'s scope decision under R46.
+> - **What would settle it** unchanged, and **this entry still authors no
+>   criterion** - the same agent would be producing the fix. **What this adds to
+>   G232's criterion is a second quantity a mechanism has to answer to, beyond
+>   the six-slot count: whether the thing being placed is one label or a rigid
+>   two-line block**, because the published criterion C8 and this
+>   implementation's geometry disagree, and the 5080 that defeats every inside
+>   slot is a consequence of the block and not of the text.
 
 ### G240 - GATE 8's M1 COMPARISON IS BUILT, DRIVEN AND WIRED, AND HAS NEVER RUN AGAINST A GENERATED DRAWING - the fourth instance of G226's pattern in this plan
 
