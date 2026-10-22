@@ -268,6 +268,7 @@ async function main(): Promise<void> {
   const sheet = writeProbeSheet(labelRows, path.join(outDir, "pdf"), false)
   const paths = pdfPathsOf(sheet.sch, path.join(outDir, "pdf"), PAPER_HEIGHT_MM)
   let worstOutline = { net: "", d: 0 }
+  const outlineConstants: { net: string; measured: Um; predicted: Um }[] = []
   for (const [i, a] of sheet.anchors.entries()) {
     const net = labelRows[i]!.kind === "label" ? (labelRows[i] as { net: string }).net : ""
     const outline = labelOutlineNear(paths, { x: sheet.rowX, y: a.y }, 40 * GRID)
@@ -278,12 +279,23 @@ async function main(): Promise<void> {
     const predicted = labelOutlineExtent(glyphs, net)
     const d = Math.max(Math.abs(along - predicted.along), Math.abs(across - 2 * predicted.across))
     if (d > worstOutline.d) worstOutline = { net, d }
+    const boxW = kicadTextBoxExtent(glyphs, net, TEXT_SIZE).width
+    outlineConstants.push({ net, measured: along - boxW, predicted: predicted.constant })
     console.log(
       `${net.padEnd(16)} PDF outline along ${um(along)} across ${um(across)} um; sch_label.cpp predicts along ${um(predicted.along)} across ${um(2 * predicted.across)}; ` +
         `(net.length + 2) * GRID predicts along ${um((net.length + 2) * GRID)} across ${um(2 * GRID)}`,
     )
   }
   console.log(`route 1+2 outline formula vs the PDF's own coordinates: worst disagreement ${um(worstOutline.d)} um`)
+  // **THE OUTLINE'S FIXED PART, DRIVEN.** The document quotes it as the amount an SVG export loses
+  // and as the reason `(n + 2) * GRID` is wrong in both directions, so it is printed rather than
+  // derived by hand: `sch_label.cpp`'s own arithmetic, and what the PDF measures it to be.
+  const measuredConsts = outlineConstants.map((o) => o.measured)
+  console.log(
+    `the outline's fixed part - what it adds to GetTextBox's width, independent of the net name - ` +
+      `is ${um(outlineConstants[0]?.predicted ?? 0)} um by sch_label.cpp's arithmetic and ` +
+      `${um(Math.min(...measuredConsts))} to ${um(Math.max(...measuredConsts))} um as the PDF measures it over ${measuredConsts.length} nets`,
+  )
 
   head("STEP 3: THE ERROR TABLE")
   const geometries: TextGeometry[] = [estimateGeometry, advanceGeometry(glyphs), ink, kicadBoxGeometry(glyphs)]

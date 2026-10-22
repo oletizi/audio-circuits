@@ -116,17 +116,27 @@ const merge = (a: Box, b: Box): Box => ({
 })
 
 /** Q3's global-label outline: `SCH_GLOBALLABEL::CreateGraphicShape` for `L_BIDI`, in um. */
-export function labelOutlineExtent(glyphs: readonly Glyph[], net: string): { readonly along: Um; readonly across: Um } {
-  const margin = kiRound(LABEL_SIZE_RATIO * TEXT_SIZE)
-  const halfSize = Math.trunc(TEXT_SIZE / 2) + margin
+export function labelOutlineExtent(glyphs: readonly Glyph[], net: string): { readonly along: Um; readonly across: Um; readonly constant: Um } {
+  // **ALL OF IT IN NANOMETRES, because that is where KiCad rounds.** An earlier version of this
+  // function rounded at micrometres and put the outline's fixed part at 3333.003 um where KiCad's
+  // own arithmetic puts it at 3333.753 - three quarters of a micrometre, immaterial to every
+  // conclusion and still a number no run could have produced.
+  const sizeNm = TEXT_SIZE * 1000
+  const marginNm = kiRound(LABEL_SIZE_RATIO * sizeNm)
+  const halfSizeNm = Math.trunc(sizeNm / 2) + marginNm
   // GetPenWidth() for a SCH_TEXT is GetEffectiveTextPenWidth() with no settings (sch_text.cpp:280),
   // which is KiROUND(size/8) - NOT the pen the plotter draws with. The difference is recorded.
-  const linewidth = kiRound(TEXT_SIZE / 8)
-  const symbLen = kicadTextBoxExtent(glyphs, net, TEXT_SIZE).width + 2 * margin
-  // `+ 3` is three nanometres in KiCad's units: 0.003 um here, carried so the transcription is exact.
-  const x = symbLen + linewidth + 0.003
-  const y = halfSize + linewidth + 0.003
-  return { along: x + 2 * halfSize, across: y }
+  const linewidthNm = kiRound(sizeNm / 8)
+  const symbLenNm = kicadTextBoxExtent(glyphs, net, TEXT_SIZE).width * 1000 + 2 * marginNm
+  // `+ 3` is CreateGraphicShape's own three nanometres, carried so the transcription is exact.
+  const xNm = symbLenNm + linewidthNm + 3
+  const yNm = halfSizeNm + linewidthNm + 3
+  return {
+    along: (xNm + 2 * halfSizeNm) / 1000,
+    across: yNm / 1000,
+    /** What the outline adds to `GetTextBox`'s width: the part that does not depend on the string. */
+    constant: (2 * marginNm + linewidthNm + 3 + 2 * halfSizeNm) / 1000,
+  }
 }
 
 /** Q3: `EDA_TEXT::GetTextBox`, and the label outline KiCad builds from it. */

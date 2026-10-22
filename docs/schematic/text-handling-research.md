@@ -316,20 +316,21 @@ and for `L_BIDI`, the shape `emit-items.ts` writes, the outline runs
 against the PDF's own coordinates:
 
 ```
-A                PDF outline along  4645.3 across 2540.8 um; sch_label.cpp predicts along  4643.8 across 2540.0; (net.length + 2) * GRID predicts along  3810.0 across 2540.0
-ABC              PDF outline along  7185.3 across 2540.8 um; sch_label.cpp predicts along  7183.8 across 2540.0; (net.length + 2) * GRID predicts along  6350.0 across 2540.0
-VCC              PDF outline along  7185.3 across 2540.8 um; sch_label.cpp predicts along  7183.8 across 2540.0; (net.length + 2) * GRID predicts along  6350.0 across 2540.0
-BYPASS_CAP       PDF outline along 15289.1 across 2540.8 um; sch_label.cpp predicts along 15287.6 across 2540.0; (net.length + 2) * GRID predicts along 15240.0 across 2540.0
-BUFFER_EMITTER   PDF outline along 19280.4 across 2540.8 um; sch_label.cpp predicts along 19279.1 across 2540.0; (net.length + 2) * GRID predicts along 20320.0 across 2540.0
-route 1+2 outline formula vs the PDF's own coordinates: worst disagreement 1.5 um
+A                PDF outline along 4645.3 across 2540.8 um; sch_label.cpp predicts along 4644.6 across 2540.0; (net.length + 2) * GRID predicts along 3810.0 across 2540.0
+ABC              PDF outline along 7185.3 across 2540.8 um; sch_label.cpp predicts along 7184.6 across 2540.0; (net.length + 2) * GRID predicts along 6350.0 across 2540.0
+VCC              PDF outline along 7185.3 across 2540.8 um; sch_label.cpp predicts along 7184.6 across 2540.0; (net.length + 2) * GRID predicts along 6350.0 across 2540.0
+BYPASS_CAP       PDF outline along 15289.1 across 2540.8 um; sch_label.cpp predicts along 15288.4 across 2540.0; (net.length + 2) * GRID predicts along 15240.0 across 2540.0
+BUFFER_EMITTER   PDF outline along 19280.4 across 2540.8 um; sch_label.cpp predicts along 19279.8 across 2540.0; (net.length + 2) * GRID predicts along 20320.0 across 2540.0
+route 1+2 outline formula vs the PDF's own coordinates: worst disagreement 0.8 um
+the outline's fixed part - what it adds to GetTextBox's width, independent of the net name - is 3333.8 um by sch_label.cpp's arithmetic and 3334.3 to 3334.5 um as the PDF measures it over 5 nets
 ```
 
 **`outlineExtent` is not conservative; it is wrong in both directions.** It
 UNDER-reserves by **835 um** for a one- and three-character net name and
 OVER-reserves by **1040 um** for a fourteen-character one, crossing over at
 about ten characters. The reason is visible in the formula: the real outline is
-**`GetTextBox`'s width plus a constant 3333.75 um** of arrow ends, margins and
-line width, and `(n + 2) * GRID` models that constant as two character widths -
+**`GetTextBox`'s width plus a constant 3333.8 um** of arrow ends, margins and
+line width (the PDF measures that constant at 3334.3 to 3334.5), and `(n + 2) * GRID` models that constant as two character widths -
 which is only right when a character happens to be a grid step wide. **Across its side the two
 agree to 0.8 um** - `halfSize + linewidth` is 1270.0 um, exactly `GRID` - which
 is a coincidence of `0.375 + 0.5` landing on `1 - 1/8`, not a design.
@@ -526,7 +527,7 @@ Per quantity, **the blocking pair of each of the three blocks survives**:
 `label BYPASS_CAP overlaps body of Q1#1`. They vanish because `labelExtent`
 over-reserves for a label that carries intersheet references: the model reserves
 `(n+2)*GRID + GRID/2 + length*GRID` where the drawing uses
-`text width + 3333.75 + GRID/2 + text width`. **So four of this repository's
+`text width + 3333.8 + GRID/2 + text width`. **So four of this repository's
 eight recorded drawn-text overlaps are artefacts of the ruler, and four are
 real.** New ones appear in their place under the two larger quantities.
 
@@ -544,7 +545,7 @@ real.** New ones appear in their place under the two larger quantities.
 - **It does not explain two small residuals**, both recorded rather than
   smoothed: the anchor-to-pen-origin offset measures **111.1 um** where
   `font.cpp`'s `offset.x += m_StrokeWidth / 1.52` predicts 100.3, a 10.8 um
-  difference; and the PDF's label outline is **1.5 um** longer than
+  difference; and the PDF's label outline is **0.8 um** longer than
   `sch_label.cpp` predicts. Both are under 1% of a grid step and neither was
   diagnosed.
 - **It does not establish what KiCad's eeschema `SCH_FIELD::GetBoundingBox`

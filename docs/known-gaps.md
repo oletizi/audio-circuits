@@ -1512,7 +1512,7 @@ made.
 > **THIS ENTRY'S ARITHMETIC IS DOWNSTREAM OF `lib/schgen/render/text-boxes.ts`'s
 > `textWidth(text) = text.length * GRID`**, which gives every character the same width and a line
 > the same height as a character. `docs/schematic/text-handling-research.md` §1 measures the error
-> in that against KiCad's real geometry, by three routes that agree to 0.0 um, 0.3 um and 1.5 um.
+> in that against KiCad's real geometry, by three routes that agree to 0.0 um, 0.3 um and 0.8 um.
 > Over the 264 distinct strings the eleven boards emit:
 >
 > | | vs the glyph advance | vs the rendered ink | vs `EDA_TEXT::GetTextBox` |
@@ -1994,7 +1994,7 @@ same file draws both the outline and the text.** `[RAN]` A label's six-sided bod
 from the SVG: over a whole probe sheet the only paths with five or more points are the sheet's two
 border rectangles and its title block. **An SVG export therefore cannot answer "how much room does a global
 label take"**, and a measurement that reads one will under-report a label's extent by the whole
-outline - 3333.75 um along the label's side and 1270 um either side of it, which is more than two
+outline - 3333.8 um along the label's side and 1270 um either side of it, which is more than two
 grid steps in each direction. It was found by a probe refusal rather than by inspection: a row that
 should have been 2.7 mm across measured 1.27, which is the text's cap height. **A reader must not
 take the SVG's silence for a label that takes no room.**
@@ -2018,7 +2018,7 @@ wrong pen**: at the right pen it is still 59% taller than the model's line.
 **(3) TWO SMALL RESIDUALS, UNDIAGNOSED AND NOT SMOOTHED.** The anchor-to-pen-origin offset of a
 left-justified symbol field measures **111.1 um** where `common/font/font.cpp`'s
 `offset.x += aAttrs.m_StrokeWidth / 1.52` predicts **100.3** at the plotted pen - a 10.8 um gap.
-The PDF export's global-label outline is **1.5 um** longer along its side than
+The PDF export's global-label outline is **0.8 um** longer along its side than
 `eeschema/sch_label.cpp`'s `CreateGraphicShape` predicts. Both are under 1% of a grid step, neither
 changes any conclusion, and **neither was diagnosed**. They are here because the next agent to
 derive these constants from source will get the source's numbers and should know that the drawing
@@ -2049,7 +2049,7 @@ reader to find in a diff, because the plan's own constraint says no production f
   `eeschema/sch_label.cpp` and `eeschema/default_values.h` at tag `10.0.5`.
   **Every claim above has a check that could have failed**: the three routes are compared against
   one another and the probe prints the worst disagreement (0.0 um font-vs-runtime over 264 strings,
-  0.3 um font-vs-renderer, 1.5 um formula-vs-PDF); clause (1) was produced BY a refusal, not by
+  0.3 um font-vs-renderer, 0.8 um formula-vs-PDF); clause (1) was produced BY a refusal, not by
   inspection; and the re-run of the field placer is held to `lib/schgen/render/field-placement.ts`'s
   own output - block, unit, lib id, rounded cost and every `covers` string - before any measured
   figure is printed.
@@ -19480,7 +19480,7 @@ was built under it with the price of its not having run.
 > IT WAS MEASURED AGAINST. The figures below are left as written.**
 >
 > `docs/schematic/text-handling-research.md` §1 measures KiCad's real text geometry by three routes
-> that agree to 0.0 um, 0.3 um and 1.5 um, and **the quantity this entry turns on is HEIGHT**:
+> that agree to 0.0 um, 0.3 um and 0.8 um, and **the quantity this entry turns on is HEIGHT**:
 > *"5080 does not fit in 2032"*. `textBox` gives a line `GRID = 1270` um. **The rendered ink of a
 > capitals-and-digits line is 1422.4 um, and `EDA_TEXT::GetTextBox` returns 2043.1 um.** Real
 > geometry makes the pair TALLER, not shorter.
