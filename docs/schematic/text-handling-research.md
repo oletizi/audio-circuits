@@ -678,6 +678,12 @@ them.
   three by name on every run, because *"not checked"* must never be
   indistinguishable from *"checked and clean"*.
 
+**The log must hold exactly one run**, and a log holding two is refused by name.
+Two runs give every section header a twin, so *"which section is this block
+from"* stops having an answer, and this document pins one commit, which a
+two-run log cannot carry. Handling multiples would need the document to declare
+which run as well as which section; that was costed and declined.
+
 **The costs this has imposed on the document, paid rather than discounted.**
 Two blocks were EXCERPTS - eight of the twenty-three declared advances, six of
 the twenty-seven measured rows - and an excerpt cannot be told from a tidy by

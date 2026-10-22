@@ -38,6 +38,15 @@
  *   anchor ambiguous - and `run` blocks may not overlap each other, which catches the same slice
  *   being pasted twice (that happened once, by hand, and was caught by eye rather than by this).
  *
+ * **ONE RUN PER LOG, REFUSED LOUDLY AND BY NAME** (controller ruling R15). A log holding two runs
+ * gives every section header a twin, so *"which section is this block from"* stops being a question
+ * with an answer - and the document pins ONE commit, which a two-run log cannot carry. **The
+ * section rule alone already refuses such a log**, with one "matches 2 of the log's headers"
+ * failure per block; what the explicit check adds is a reader who can tell WHY, instead of fourteen
+ * confusing failures and no cause. Handling multiples was costed and declined: it would need the
+ * document to declare which run as well as which section, which is more machinery than anything
+ * here needs. **The log is constrained instead, and the refusal says what to do about it.**
+ *
  * **WHAT NO VERSION OF THIS CAN CHECK, stated rather than left to be discovered.** A block could be
  * replaced by a DIFFERENT genuine, contiguous, unique slice of the SAME declared section, and this
  * would pass. Closing that needs the checker to know which output belongs under which prose, and it
@@ -54,6 +63,9 @@ export const OUTPUT_FENCE = "run"
 
 /** Fewest non-blank lines a `run` block may carry. At one, contiguity says nothing. */
 export const MIN_OUTPUT_LINES = 2
+
+/** The probe's first section header. A log carrying two of these carries two runs. */
+export const RUN_MARKER = "== WHAT THIS RUN MEASURED"
 
 export interface Block {
   readonly info: string
@@ -136,6 +148,14 @@ export function verify(doc: string, logText: string): Verdict {
   if (blocks.length === 0) throw new Error(`${DOCUMENT} has no fenced blocks; either the document moved or this parser is wrong`)
   const failures: string[] = []
   const notOutput: string[] = []
+  const runs = log.filter((l) => l === RUN_MARKER).length
+  if (runs !== 1) {
+    failures.push(
+      `the log holds ${runs} run(s) - it must hold exactly one, recognised by the line ${JSON.stringify(RUN_MARKER)}. ` +
+        'Every section header would otherwise have a twin, so "which section is this block from" stops having an answer, ' +
+        "and the document pins ONE commit, which a multi-run log cannot carry. Split the log or re-drive the probe.",
+    )
+  }
   /** Log spans already claimed by a `run` block, so the same slice cannot be pasted twice. */
   const claimed: { readonly at: number; readonly end: number; readonly by: number }[] = []
   let verified = 0

@@ -26,7 +26,7 @@ import { describe, expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { moduleRepoRoot } from "../../../tools/perfboard/repo-root.ts"
-import { DOCUMENT, MIN_OUTPUT_LINES, OUTPUT_FENCE, parseBlocks, parseSections, verify } from "../../../tools/schgen/text-metrics/verify-pastes.ts"
+import { DOCUMENT, MIN_OUTPUT_LINES, OUTPUT_FENCE, RUN_MARKER, parseBlocks, parseSections, verify } from "../../../tools/schgen/text-metrics/verify-pastes.ts"
 
 const repoRoot = moduleRepoRoot()
 const LOG = path.join(repoRoot, "tests/schgen/text-metrics/probe-run.log")
@@ -200,6 +200,25 @@ describe("the research document's pasted output", () => {
     const v = verify(dup, log)
     expect(v.failures.length).toBe(1)
     expect(v.failures[0]).toContain("already quotes")
+  })
+
+  /**
+   * **RULING R15, and the reason it is an explicit check rather than a consequence.** A two-run log
+   * is already refused by the section rule, once per block; without this the reader gets fourteen
+   * "matches 2 of the log's headers" failures and no cause.
+   */
+  test("RED: a log holding two runs is refused by name, before any block is judged", () => {
+    const v = verify(doc, `${log}\n${log}`)
+    expect(v.failures[0]).toContain("the log holds 2 run(s)")
+    expect(v.failures[0]).toContain("Split the log or re-drive the probe")
+    // The consequence is still visible, which is what makes the named refusal worth having.
+    expect(v.failures.length).toBeGreaterThan(1)
+    expect(v.verified).toBe(0)
+  })
+
+  test("a log holding NO run is refused too, so the marker is load-bearing in both directions", () => {
+    const v = verify(doc, log.replace(RUN_MARKER, "== SOMETHING ELSE ENTIRELY"))
+    expect(v.failures[0]).toContain("the log holds 0 run(s)")
   })
 
   test("the log's sections are the anchors the document names, and there are more than one", () => {
