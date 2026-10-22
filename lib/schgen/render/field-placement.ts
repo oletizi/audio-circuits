@@ -21,6 +21,7 @@
  * body clear of its own pin names and interior graphics and text. When no candidate fits, the
  * block is refused.
  */
+import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
 import { describeMismatch, type BlockLayout, type BlockSubgraph, type BlockUnit, type Mismatch, type Placement, type Wire } from "./block-types.ts";
 import type { BlockId } from "../ir/types.ts";
 import { boxesOverlap, GRID, growBox, segmentHitsBox, type Side } from "./geometry.ts";
@@ -133,7 +134,26 @@ export function tryPlaceFields(scene: FieldScene): FieldsResult {
   const out: PlacedUnit[] = [];
   for (const p of prepared) {
     const others = prepared.filter((q) => q !== p).map((q) => ({ what: `body of ${q.key}`, box: q.body }));
-    const texts = (f: Fields): Box[] => [textBox(f.reference, reservedReference(p.u.part.refPrefix)), textBox(f.value, p.u.part.value)];
+    /**
+     * **THE BOXES THIS UNIT'S FIELDS MUST FIT - the Reference always, the Value only when it is
+     * DRAWN** (Task 21).
+     *
+     * A Value that is nothing but the symbol's own part name is emitted hidden
+     * (`render/emit-items.ts`), so it occupies no room on the sheet and requiring a slot wide
+     * enough for it refused blocks over text nobody sees: `Jumper:Jumper_2_Open`'s Value field is
+     * thirteen characters against a 5080 um body, and it is the sole blocker of
+     * `transistor-preamp`'s generation (`docs/known-gaps.md` **G232**). `render/text-scene.ts`
+     * drops the same box from the same rule, so what is checked here is still exactly what is
+     * drawn there.
+     *
+     * **IT CHANGES NOTHING FOR A VALUE THAT CARRIES INFORMATION.** `100nF` on a capacitor is an
+     * electrical parameter, it must be drawn, and it is still sized and placed - which is why
+     * **G239**'s arithmetic over a small two-pin passive survives this change intact.
+     */
+    const texts = (f: Fields): Box[] => [
+      textBox(f.reference, reservedReference(p.u.part.refPrefix)),
+      ...(valueIsSymbolPartName(p.u.symbol.libId, p.u.part.value) ? [] : [textBox(f.value, p.u.part.value)]),
+    ];
     /**
      * **What blocks this candidate, named as the drawing names it, or null when it is clear.**
      * This was `clear(): boolean`, and it is widened for one reason: Task 8's `clearance` mismatch

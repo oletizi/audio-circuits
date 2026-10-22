@@ -1,14 +1,20 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/emitItems.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/emitItems.ts`, and DIVERGED from it by
+ * Task 21 of the M1 schematic-authoring plan: a part Value that is nothing but its symbol's own
+ * part name is emitted with its string unchanged and marked `(hide yes)`, so `field` takes the
+ * hidden flag the pedals source always passed as `false`.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
  * One builder per KiCad 10 schematic item kind. Each returns the item's node and the stable key
  * its UUID v5 is derived from; emit.ts orders items by those keys so output depends only on content.
  */
+import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
 import type { BomFields, NetName, SheetId } from "../ir/types.ts";
 import type { Wire } from "./block-types.ts";
 import { pointKey, type Point, type Rotation, type Side } from "./geometry.ts";
@@ -52,9 +58,9 @@ export function fieldOrientation(rot: Rotation, vertical: boolean, j: HJustify):
   return { angle, justify: justifyOf(justify) };
 }
 
-function field(name: string, value: string, spot: { at: Point; justify: HJustify }, rot: Rotation, vertical: boolean): SListNode {
+function field(name: string, value: string, spot: { at: Point; justify: HJustify }, rot: Rotation, vertical: boolean, hidden: boolean): SListNode {
   const o = fieldOrientation(rot, vertical, spot.justify);
-  return property(name, value, spot.at, false, o.justify, o.angle);
+  return property(name, value, spot.at, hidden, o.justify, o.angle);
 }
 
 export function property(name: string, value: string, p: Point, hidden: boolean, justify: string | null = null, angle = 0): SListNode {
@@ -127,9 +133,23 @@ export function partSymbol(scope: ItemScope, p: PartItem): Keyed {
     ["SupplierPart", p.bom.SupplierPart],
     ["AbsMaxV", p.bom.AbsMaxV],
   ];
+  /**
+   * **A VALUE THAT IS NOTHING BUT THE SYMBOL'S OWN PART NAME IS EMITTED, UNCHANGED, AND MARKED
+   * HIDDEN** (Task 21; `docs/known-gaps.md` **G232**, **G257**).
+   *
+   * **The string stays in the file and that is not optional.** `lib/kicad/value-notation.ts` says
+   * an empty value field *"would reconcile as a value change against every board"*, and gate 8
+   * compares components by canonical VALUE, so a missing value would be a netlist difference.
+   * Hiding is display-only - `tests/schgen/render/hidden-value-netlist.kicad.test.ts` proves that
+   * through the real `kicad-cli`, with a control that moves the netlist when the STRING changes.
+   *
+   * What it buys is that `render/field-placement.ts` no longer has to find adjacent room for text
+   * that repeats the glyph beside it, which is the sole blocker of four declared blocks.
+   */
+  const valueHidden = valueIsSymbolPartName(p.lib.libId, p.value);
   const properties = [
-    field("Reference", p.reference, p.fields.reference, p.rot, false),
-    field("Value", p.value, p.fields.value, p.rot, false),
+    field("Reference", p.reference, p.fields.reference, p.rot, false, false),
+    field("Value", p.value, p.fields.value, p.rot, false, valueHidden),
     property("Footprint", p.footprint, p.at, true),
     property("Datasheet", "", p.at, true),
     ...bomProps.flatMap(([name, v]) => (v === null ? [] : [property(name, v, p.at, true)])),
@@ -156,7 +176,9 @@ export function powerSymbol(scope: ItemScope, p: PowerItem): Keyed {
   if (!p.lib.isPower) throw new Error(`sheet ${scope.sheet}: ${p.lib.libId} is not a power symbol`);
   const properties = [
     property("Reference", p.reference, p.at, true),
-    field("Value", p.value, p.valueAt, p.rot, p.valueAt.vertical),
+    // A power symbol's Value is the rail name, which is the only thing the glyph does NOT say, so
+    // it is always drawn. `valueIsSymbolPartName` is not consulted here on purpose.
+    field("Value", p.value, p.valueAt, p.rot, p.valueAt.vertical, false),
     property("Footprint", "", p.at, true),
     property("Datasheet", "", p.at, true),
   ];

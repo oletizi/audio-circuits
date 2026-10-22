@@ -1,8 +1,12 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/textScene.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/textScene.ts`, and DIVERGED from it by
+ * Task 21 of the M1 schematic-authoring plan: a part Value that is nothing but its symbol's own
+ * part name is emitted HIDDEN, so it is not drawn text and contributes no box to the scene.
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
 /**
@@ -15,6 +19,7 @@
  * notes, power flags, and blocks side by side). Building a scene places fields, which throws
  * when a unit has no clear slot (fieldPlacement.placeFields).
  */
+import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { fmtPoint } from "./connectivity.ts";
 import { blockFields } from "./field-placement.ts";
@@ -86,7 +91,14 @@ export function textScene(scope: string, symbols: LibLookup, parts: SceneParts):
       if (u === undefined) throw new Error(`${scope}: ${t.key} is not a unit of block ${g.block.id}`);
       const owner = t.inside ? t.key : undefined;
       texts.push({ what: `Reference of ${t.key}`, box: textBox(t.fields.reference, reservedReference(u.part.refPrefix)), owner });
-      texts.push({ what: `Value of ${t.key}`, box: textBox(t.fields.value, u.part.value), owner });
+      // A Value that is nothing but the symbol's own part name is emitted HIDDEN
+      // (`render/emit-items.ts`), so it is not drawn text and has no box here. This is the same
+      // rule `render/field-placement.ts` uses to decide what needs a slot, from the same function,
+      // so what that places is exactly what this checks - the invariant this module's header
+      // states. Task 21; `docs/known-gaps.md` **G232**, **G257**.
+      if (!valueIsSymbolPartName(u.symbol.libId, u.part.value)) {
+        texts.push({ what: `Value of ${t.key}`, box: textBox(t.fields.value, u.part.value), owner });
+      }
     }
   }
   parts.powers.forEach((p, i) => {

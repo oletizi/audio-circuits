@@ -153,10 +153,6 @@
       "to": "lib/schgen/render/glyph-clearance.ts"
     },
     {
-      "from": "render/textScene.ts",
-      "to": "lib/schgen/render/text-scene.ts"
-    },
-    {
       "from": "render/symbolSelfText.ts",
       "to": "lib/schgen/render/symbol-self-text.ts"
     },
@@ -171,10 +167,6 @@
     {
       "from": "render/wireSafety.test.ts",
       "to": "tests/schgen/render/wire-safety.test.ts"
-    },
-    {
-      "from": "render/emitItems.ts",
-      "to": "lib/schgen/render/emit-items.ts"
     },
     {
       "from": "render/pageRefs.ts",
@@ -532,8 +524,22 @@
       "from": "render/fieldPlacement.ts",
       "to": "lib/schgen/render/field-placement.ts",
       "sourceSha": "3bd672dd0e41fe07782da55a8c6459791f64402c20bde5beb053e36e7f45dca5",
-      "task": "Task 8",
-      "why": "`FieldsResult`'s false arm carries a `clearance` Mismatch, which needs two things the ported code did not keep: the obstacle that blocks the preferred slot (`clear` became `blockerOf`) and the block's id (`FieldScene.scope` became `FieldScene.block`, with the prose derived from it so every message is unchanged). `blockFieldsResult` is new, for the caller that forwards the mismatch."
+      "task": "Task 8, widened by Task 21",
+      "why": "`FieldsResult`'s false arm carries a `clearance` Mismatch, which needs two things the ported code did not keep: the obstacle that blocks the preferred slot (`clear` became `blockerOf`) and the block's id (`FieldScene.scope` became `FieldScene.block`, with the prose derived from it so every message is unchanged). `blockFieldsResult` is new, for the caller that forwards the mismatch. Task 21: a candidate slot must fit the Reference alone when the unit's Value is nothing but its symbol's own part name, because such a Value is emitted hidden (render/emit-items.ts) and is not drawn - docs/known-gaps.md G232, G257."
+    },
+    {
+      "from": "render/textScene.ts",
+      "to": "lib/schgen/render/text-scene.ts",
+      "sourceSha": "4347ca57a0b87bb7934800f6aa664206067d5352e529d143061427ceb164fc2c",
+      "task": "Task 21",
+      "why": "A part Value that is nothing but its symbol's own part name is emitted hidden (render/emit-items.ts), so it is not drawn text and contributes no box to the scene. It is the same rule render/field-placement.ts uses to decide what needs a slot, from the same function, so what the placer places is still exactly what this module checks - the invariant this file's own header states. A cut cannot express it: the Value box is pushed conditionally, not deleted. docs/known-gaps.md G232, G257."
+    },
+    {
+      "from": "render/emitItems.ts",
+      "to": "lib/schgen/render/emit-items.ts",
+      "sourceSha": "3c6b747e638115ee550c59bb65ef222492a5d58007ec8a2ee46d5190b52088dd",
+      "task": "Task 21",
+      "why": "A part Value that is nothing but its symbol's own part name is emitted with its string unchanged and marked `(hide yes)`, so the local `field` helper takes a hidden flag the pedals source always passed as false. The string must stay in the file: lib/kicad/value-notation.ts records that an empty value field reconciles as a value change against every board, and gate 8 compares components by canonical value. docs/known-gaps.md G232, G257."
     },
     {
       "from": "render/templates/railRow.ts",
@@ -835,6 +841,8 @@
     "tests/schgen/remeasure-ceiling.test.ts",
     "tests/schgen/pointers.test.ts",
     "tests/schgen/render/field-slots.test.ts",
+    "tests/schgen/render/hidden-value-fields.test.ts",
+    "tests/schgen/render/hidden-value-netlist.kicad.test.ts",
     "lib/schgen/gates/canonical-value.ts",
     "lib/schgen/gates/graph-match.ts",
     "lib/schgen/gates/declared-delta.ts",
