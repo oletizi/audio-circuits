@@ -1545,6 +1545,16 @@ made.
 > than this paragraph knew. **Task 5 owns that question**, and this entry pre-closed it in the place
 > an agent looks first.
 >
+> > **THE "MAY BE WIDER THAN FOUR" HEDGE IS DISCHARGED, 2026-10-22, BY TASK 5, AND IT IS WIDER.**
+> > `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `3275bde`, over **all 95 label anchors of
+> > the 48 blocks that lay out**: counting (grid points on the label's own net) x (4 sides), the
+> > candidate set is **min 20, median 80, max 1000**, and **95 of 95 are larger than four**. Not one
+> > anchor in the repository has as few as four places to go. The figure is a lower bound - it counts
+> > at grid resolution along existing wires only, with no wire moved. **The mechanism is still untried
+> > and still not a plan**; what has changed is that its premise is now measured false rather than
+> > suspected. **G262**'s 2026-10-22 Task 5 amendment carries the per-freedom scoreboard and
+> > `docs/schematic/text-handling-research.md` §5.6 the run.
+>
 > **WHAT TASK 2 MEASURED, since it is adjacent and is NOT this correction.** `[RAN]` ELK will accept
 > a label on a boundary node and return a coordinate for it, but `[READ]`
 > `lib/schgen/render/emit-items.ts:227-241` emits a `global_label` with exactly one coordinate,
@@ -1816,7 +1826,7 @@ blocks that draw today.
 
 ---
 
-### G262 - MEASURED: with field placement fixed, every remaining text defect in this repository is a GLOBAL LABEL, and the mechanism that fixed the fields cannot move one
+### G262 - MEASURED: with field placement fixed, the largest remaining text defect class in this repository is the GLOBAL LABEL - and this entry's own explanation of why, "a global label's position is a netlist fact", HAS BEEN DRIVEN AGAINST KiCad AND IS FALSE
 
 `[RAN]` `tools/schgen/remeasure-coverage.ts` at this commit. Of the five declared blocks that do
 not draw, two never reach a layout (`oc-audio`, `oc-sidechain`), and **all three that do are
@@ -1836,11 +1846,20 @@ nothing else in front of it (**G259**).
 and which this entry exists to state.** A unit's Reference and Value may be drawn anywhere legible:
 their position carries no electrical meaning, which is why the placer may move them and why
 `docs/schematic/text-placement-prior-art.md`'s *"label it even though a label overlap results"* is
-available. **A global label's position is a netlist fact** - KiCad connects it where it is drawn -
-so moving one off an overlap changes the circuit. The free parameter is its SIDE: `anchorsToSymbols`
-chooses one, the anchor point is fixed, and the label's box extends from the anchor in that
-direction. A power symbol's VALUE has a similar freedom (`powerValueBox` places it beyond the glyph
-on one side).
+available.
+
+> **THE PARAGRAPH THAT STOOD HERE IS WRONG AND IS KEPT VERBATIM, because it was cited for a day and
+> a reader who met the citation needs to recognise it.** It said: *"**A global label's position is a
+> netlist fact** - KiCad connects it where it is drawn - so moving one off an overlap changes the
+> circuit. The free parameter is its SIDE: `anchorsToSymbols` chooses one, the anchor point is fixed,
+> and the label's box extends from the anchor in that direction."* **The first sentence is false and
+> the second is a consequence of it.** Task 5 of the text-handling research plan drove all four
+> degrees of freedom against `kicad-cli` 10.0.5 and the exported netlist does not move under any of
+> them; the amendment of 2026-10-22 below carries the figures and
+> `docs/schematic/text-handling-research.md` §5.3 the fixtures. **What IS a netlist fact is the
+> label's NAME and its electrical CONNECTION**, and §5.4 is the control that separates the two.
+> A power symbol's VALUE has a one-sided freedom of its own (`powerValueBox` places it beyond the
+> glyph on one side) and **that half of this entry has not been re-driven** - §5.11 says so.
 
 - **Found** 2026-10-21, Task 24, while measuring what the field-placement fix did and did not buy.
 - **Evidence** `[RAN]` the coverage census, whose problem classes are a whitelist that THROWS on an
@@ -1864,6 +1883,16 @@ on one side).
   §4 of the pass records as looking like a wire in an orthogonal drawing, with no EDA precedent
   found - or drawing it overlapping and counting it, which is **G260**'s trade applied to a second
   text class and carries that entry's unanswered question with it.
+
+  > **THE MECHANISM ABOVE HAS NOW BEEN MEASURED AND IT IS STILL UNTRIED, which are two different
+  > things and the distinction is the point.** `[RAN]` Task 5 swept it exhaustively - every
+  > assignment of the four sides to every label anchor of every blocked block, re-graded by
+  > `checkLayout` - and **it clears 5 of the 12 blocks outright and 0 of the other 7**, including
+  > none of the three named in this entry's own table. **Its "what it would NOT fix" clause was
+  > right and understated it**: on `tp-leg-emitter-bypass` all 64 side assignments leave the overlap
+  > exactly where the layout already has it. **And the four-candidate framing itself rests on the
+  > corrected premise** - with the anchor movable the candidate set is a median of **80** positions,
+  > never four (**G259**'s pointer, discharged). The criterion is unchanged; no new one is authored.
 
 > **AMENDED 2026-10-21 BY TASK 25: THE HEADER'S "EVERY" WAS MEASURED OVER FOUR CIRCUITS AND IS
 > FALSE OVER ELEVEN BOARDS, IN TWO NEW WAYS.** Nine boards had no authoring declaration when this
@@ -1910,6 +1939,76 @@ on one side).
 > degree n into n-1 edges, so an edge label is per SEGMENT and a three-terminal net would be
 > labelled twice. §2.7 and §2.8 of `docs/schematic/text-handling-research.md` carry it, and **G266**
 > holds what a later agent needs. This entry's criterion is unchanged and no new one is authored.
+
+> **AMENDED 2026-10-22 BY TASK 5 OF THE TEXT-HANDLING RESEARCH PLAN: THE NETLIST-FACT PREMISE IS
+> MEASURED FALSE ON ALL FOUR FREEDOMS, THE CLASS IS FOUR TIMES LARGER THAN THIS ENTRY'S TABLE, AND
+> SIDE SELECTION ALONE DRAWS FIVE OF THE TWELVE BLOCKS.** The amendment above left the live question
+> to Task 5; this discharges it. Every figure is `[RAN]` from
+> `tools/schgen/label-freedom/probe-run.log`, committed, at commit `3275bde` on a clean tree, and
+> `docs/schematic/text-handling-research.md` §5 carries it in full.
+>
+> **(a) THE FOUR FREEDOMS, driven against `kicad-cli` 10.0.5 on nine committed fixture schematics,
+> each its base plus ONE edit.** Net IDENTITY - the partition of connected terminals with names
+> ignored - and net NAMING are read out of each export separately, because a control that cannot
+> tell them apart would have passed whichever the arm changed.
+>
+> | freedom | what the arm did | identity | naming |
+> | --- | --- | --- | --- |
+> | 1, orientation | a label rotated in place, 180 to 0 | **unchanged** | unchanged |
+> | 2, the anchor slid | from its wire's END into its INTERIOR, 6.35 mm | **unchanged** | unchanged |
+> | 3, the wire rerouted | one straight segment became a three-segment dogleg under a stationary anchor | **unchanged** | unchanged |
+> | 4, another segment | the anchor moved to the interior of a different stub of the same net, 63.5 mm across the sheet and 5.08 mm down | **unchanged** | unchanged |
+>
+> **The negative control, which is what makes those four mean anything**, is a PAIR: renaming the
+> label on a WIRE-held net changes naming and leaves identity alone, and renaming one of two
+> matching labels bridging two otherwise unconnected wire runs changes BOTH - the group
+> `{R1.1,R2.1}` *disappears from the partition* and `{R1.1}` and `{R2.1}` arrive. **The same edit
+> answers differently on the two fixtures**, so the probe measures electrical semantics and not a
+> changed string. All nine arms matched a prediction the probe printed before exporting anything.
+>
+> **(b) THE CLASS IS 12 BLOCKS OF 48, NOT 3.** The 2026-10-21 amendment above already said *"every"*
+> was false over eleven boards; the figure with all thirteen declared cases offered is **12 of 48
+> laid-out blocks refusing on a problem that names a global label**. Five of the twelve are the same
+> `*-junction` block declared by five Pultec boards, so there are eight distinct block
+> declarations behind the twelve rows.
+>
+> **(c) PER FREEDOM, MEASURED BY PERTURBING THE LAID-OUT GEOMETRY AND RE-GRADING IT WITH
+> `checkLayout` ITSELF** - so every relation the production pass grades is graded, and an
+> electrically illegal perturbation is reported rather than silently clearing an overlap. The control
+> is that re-grading the UNPERTURBED layout reproduces the ELK adapter's own verdict on all 48
+> blocks; it passes.
+>
+> | freedom, swept | blocks it clears entirely, of 12 |
+> | --- | --- |
+> | 1 alone, exhaustively over 4^n side assignments | **5** - every Pultec `*-junction`, at `hi_boost_out:down` |
+> | 2 alone, every grid point of the anchor's own segment | **0** |
+> | 4 alone, every grid point of the net's other segments | **0** |
+> | 3 alone, the anchor's stub lengthened 1-8 steps | **7** |
+> | any of them, including a joint sweep over each overlapping pair | **7** |
+>
+> **So "no side assignment clears it" is FALSE for five blocks**, which is the opposite of what this
+> task was written expecting, and **"nothing clears it" is true for five** - of which **three have
+> every LABEL problem cleared by some freedom and refuse on a defect with no label in it**: two on
+> **G263**'s power-glyph class and one on **G269**'s dangling end. **Only two blocks keep a label
+> problem under every freedom tried**, `transistor-preamp/tp-stage` and
+> `transistor-preamp-loop/tp-stage`, the two with the most text in the repository.
+>
+> **(d) A RESULT THAT MAKES SOMEONE WANT TO ACT, recorded beside the measurement because this file
+> requires it.** On `tp-leg-emitter-bypass` - the block that refuses `transistor-preamp-lab` and the
+> only thing in front of it - lengthening `BYPASS_CAP`'s stub by **two grid steps** and putting its
+> label on `down` produces a layout `checkLayout` grades with **ZERO problems**. 2.54 mm of wire.
+> **It was NOT done**: the plan is research-only, nothing here says the resulting sheet is legible,
+> and legibility is the owner's judgement (this entry's own *"why it is open"*). **MECHANISM,
+> UNTRIED.**
+>
+> **(e) WHAT IS NOT MEASURED, so nobody reads more into (c) than it says.** Every Step 3 figure is
+> under the production ruler, `length x GRID`. §1 found 13 of 15 field fallbacks and 4 of 8
+> drawn-text overlaps surviving all three measured quantities, so **a per-freedom verdict is expected
+> to move under a different ruler and was not re-taken**, because the three quantities need a font
+> blob fetched outside the repository and **the election between them is the owner's**, **G265**
+> clause 4. A candidate that clears by one grid step here may not clear under KiCad's own box. Also
+> unmeasured: the joint space over more than two labels, a power symbol's orientation or its value's
+> side, and anything cross-sheet. This entry's criterion is unchanged and no new one is authored.
 
 ---
 
@@ -23952,3 +24051,128 @@ anything. In particular:
   eight counting KiCad - with M still at ZERO**, because *place what you can and
   log the rest* is not a refusal. **M is the figure that would not move, and that
   asymmetry is why the lead is recorded rather than counted.**
+
+---
+
+### G269 - MEASURED: this repository refuses an anchor relocation that KiCad accepts, through its OWN dangling-wire-end rule, and TWO of the twelve label-blocked blocks reduce to exactly that one problem
+
+**This is not a defect in `danglingWireEnds` and this entry does not say it is.** It is a
+constraint on a change the owner's generator would have to make, and the next agent to try
+relocating a global label's anchor will hit it immediately.
+
+**WHAT WAS MEASURED.** `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `3275bde` with a
+clean tree, `kicad-cli` 10.0.5. Two facts, from two different grades of evidence, that do not agree:
+
+- **KiCad does not mind.** Sliding a global label's anchor from a wire's END into its INTERIOR, or
+  onto a different segment of the same net, leaves the exported netlist's partition of connected
+  terminals **unchanged** - driven on committed fixture schematics, with net identity and net naming
+  read out separately (**G262**'s Task 5 amendment, table (a)).
+- **`checkLayout` refuses it anyway.** Doing the same thing inside a laid-out block strands the wire
+  end the anchor vacated, and `lib/schgen/render/wire-safety.ts`'s `danglingWireEnds` reports it:
+  *"wire 1 of pultec-hi-boost-own (net hi_boost_out) ends at (34.29, 64.77) touching nothing; end it
+  on a pin, a label, a power symbol or another wire end."*
+
+**THE FIGURE THAT MAKES IT MATTER.** Of the 12 blocks whose refusal names a global label, **2 reduce
+to that single problem** under their best single-label anchor relocation - `transistor-preamp/
+tp-leg-emitter-bypass` and `pultec-hi-boost/pultec-hi-boost-own`. On `pultec-hi-boost-own`, sliding
+`hi_boost_out`'s anchor 8.89 mm along its own wire and turning the label to `left` **clears all three
+of its label-over-wire overlaps** and leaves nothing but the stranded end.
+
+**WHY IT IS A CONSTRAINT AND NOT A BUG.** A wire that goes nowhere is a drawing defect, and the rule
+is right to refuse it. What the measurement establishes is narrower and more useful: **the obstacle
+to freedom 2 here is a generator rule, not the file format**, which is the distinction the Task 5
+brief asked for in the words *"which freedoms KiCad permits and which this generator has merely
+restricted."* A sweep that moves anchors without moving wires therefore cannot reach the answer, and
+the Task 5 sweep is exactly such a sweep - which is why its *"some freedom clears it"* figure is 7
+of 12 and not higher.
+
+- **Found** 2026-10-22, Task 5 of `docs/superpowers/plans/2026-10-22-text-handling-research.md`,
+  while measuring freedom 2 on the blocked boards. **It was found by a reporting change, not by
+  looking for it**: the first version of the sweep printed how many problems a candidate still had
+  and not WHICH, and the count hid this entirely.
+- **Evidence** `[RAN]` the committed run `tools/schgen/label-freedom/probe-run.log`, whose STEP 3
+  summary line counts the blocks whose best relocation leaves only *"ends at ... touching nothing"*,
+  and whose per-label detail prints the problem text. The KiCad half is the nine fixture arms of
+  STEP 2, each its base plus one edit, with the one-difference property asserted by
+  `tests/schgen/label-freedom/fixtures.test.ts`. **The check that could have failed** is the
+  re-grading control: re-grading every UNPERTURBED layout with `checkLayout` must reproduce the ELK
+  adapter's own verdict on all 48 blocks, and it does - so the perturbed grades are being compared
+  against the production refusal and not against a copy of part of it.
+  `docs/schematic/text-handling-research.md` §5.9 carries it.
+- **Verified** CONFIRMED - this writer drove both halves and read both outputs. **RELAYED** for
+  nothing.
+- **Why it is open** because nothing has tried the move, and because the combination that would
+  settle it was not swept: the sweep moves anchors and the fix moves a wire.
+- **What would settle it** **CRITERION: a sweep that relocates a global label's anchor AND retracts
+  the wire it left, re-graded by `checkLayout`, reports how many of the 12 label-blocked blocks it
+  clears - and that figure is compared with the 7 of 12 the anchor-only and stub-lengthening sweeps
+  reach.** That is a measurement, not a fix, and it settles whether the dangling-end rule is the
+  binding constraint on freedom 2 or merely the first one met. **MECHANISM, UNTRIED and NOT a plan**:
+  carry the wire's endpoint to the new anchor point in the same perturbation, which is freedom 2 and
+  freedom 3 applied together. **It is a guess by someone who has not run it**, and it would also have
+  to keep `checkWireSafety`'s other rules satisfied - a retracted wire may uncover a different
+  problem, and the two blocks above are the only ones whose residue is known to be this one.
+  **This entry authors no acceptance criterion for the resulting drawing**; **G240**'s stands.
+
+---
+
+### G270 - MEASURED: the prior-art pass covers point-feature and external labelling and NEVER REACHES LINE-FEATURE LABELLING, which is the family a global label belongs to - so its "the formulation that matches this problem exactly" does not cover the text class that blocks twelve blocks
+
+**A reader who goes to `docs/schematic/text-placement-prior-art.md` for a global label will not
+find out that it does not cover global labels**, which is the only reason this entry exists.
+
+**WHAT WAS MEASURED.** `[RAN]` a grep of that document's 939 lines for `global label`, `line
+feature`, `line labeling` and `line labelling`, case-insensitive: **zero matches for all four**,
+against a control term run through the same grep that matches five times (`slider`), so the grep
+could have matched and did not. Its
+§4 heading reads *"Mixed labelling - the formulation that matches this problem exactly"*, and for
+the problem that document is about - a unit's Reference and Value, which are point-feature labels
+with a fixed site - that is right.
+
+**WHY IT IS THE WRONG FAMILY FOR A GLOBAL LABEL.** `[READ]` Bekos, Niedermann & Nöllenburg,
+*External Labeling Techniques: A Taxonomy and Survey*, arXiv `1902.01454v2` (SHA-256
+`d33b8472f4ccfb1baac025daa05de1098a7c6a24a31bf70fa67349a3898b3877`, fetched 2026-10-22), §2.1:
+*"If σ is restricted to be any point of a pre-defined curve in f, then σ is a **sliding site**"*, and
+two lines later, *"Note that the site of a point feature is always fixed, in fact the site and the
+feature coincide."* **A global label's feature is a NET, which is a polyline, so its site slides** -
+and that is the one sentence that diagnoses **G262**'s error, in the field's own terms. The
+formulation that fits is **internal labelling of a line feature**: `[READ]` Alexander Wolff,
+*Automated Label Placement in Theory and Practice*, FU Berlin, disputation 1999, Chapter 5 *"Line
+Labeling"* (SHA-256 `a71845d734851c696bd400f529d0fbed80e196d3d2cf0eda1349475e7dda29b4`), which
+labels *"polygonal chains, such as rivers or streets"* with a **candidate strip along the polyline**,
+under hard constraints including *"(H3) The label must neither intersect itself nor the polyline"* -
+which is `pultec-hi-boost-own`'s refusal word for word. And for the question of WHICH segment of a
+net carries the label, the same chapter relays Imhof: *"label a polyline at regular intervals,
+especially between junctions with other polylines"*, implemented as *"view each river segment as a
+separate feature."*
+
+**NO POINTER WAS ADDED TO THE PRIOR-ART DOCUMENT, DELIBERATELY.** The research plan's file table
+says that document is *"Read, never rewritten"* and that a pointer goes in where the research
+**contradicts** it. This does not contradict it: it extends it to a text class that document never
+considered. **The omission is recorded here instead**, which is the only place a reader of the
+register will meet it.
+
+- **Found** 2026-10-22, Task 5 of `docs/superpowers/plans/2026-10-22-text-handling-research.md`,
+  Step 1.
+- **Evidence** `[RAN]` the grep, which could have matched and did not; `[READ]` the two primary
+  sources above, both fetched and pinned by the SHA-256 of the file actually read, with the
+  quotations transcribed from the extracted text rather than from a summary.
+  `docs/schematic/text-handling-research.md` §5.1 carries the mapping from this plan's four freedoms
+  to the literature's names, including the one freedom - **adjusting the surrounding wire geometry -
+  that has NO counterpart in either source**, because in both the illustration is an input.
+- **Verified** CONFIRMED for the grep and for both readings. **RELAYED**: Imhof's rules
+  (`[Imh62]`, `[Imh75]`) are `[NOT RETRIEVED]` and reach this entry only through Wolff's Chapter 5,
+  exactly as they reach the prior-art document.
+- **Why it is open** because it is an omission in a document this repository is forbidden to
+  rewrite, so it cannot be closed there; and because the line-labelling literature was read for its
+  formulation and not for its algorithms - Chapter 5's strip construction, its three evaluation
+  functions and the `O(n^2)` bound were read as prose and **not assessed for applicability to an
+  orthogonal 1.27 mm grid**.
+- **What would settle it** **CRITERION: a later pass states, in whatever document it writes, which
+  labelling family each of this repository's text classes belongs to - point feature with a fixed
+  site for a unit's fields, line feature with a sliding site for a global label - and cites a primary
+  source for each.** That is a statement about classification, not about what should be built.
+  **MECHANISM, UNTRIED**: the strip construction of Wolff Chapter 5, discretised to the grid, is the
+  literature's own answer to the case where no discrete candidate works; nobody has tried it here and
+  its annular segments have no obvious meaning on an orthogonal grid. **This entry authors no
+  acceptance criterion.**

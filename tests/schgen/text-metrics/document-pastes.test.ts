@@ -63,10 +63,19 @@ describe("the research document's pasted output", () => {
     expect(v.verified + v.notOutput.length + v.failures.length).toBe(v.blocks)
   })
 
+  /**
+   * **THE PATTERN WAS LOOSENED BY ONE CHARACTER WHEN §5 LANDED, AND THE REASON IS WORTH THE
+   * SENTENCE.** It required a non-space immediately after `line N: `, which held only while every
+   * block's first line happened to start in column one. §5 pastes per-label detail whose every line
+   * is indented under its block's header, so the first line of two of its blocks begins with
+   * spaces. **The intent of this case is that nothing leaves the population unnamed**, so the
+   * pattern now requires the name to carry some non-whitespace rather than to start with it. A block
+   * whose first line were blank or all spaces still fails.
+   */
   test("the blocks that are NOT checked are reported by name, never silently dropped", () => {
     const v = verify(doc, log)
     expect(v.notOutput.length).toBeGreaterThan(0)
-    for (const n of v.notOutput) expect(n).toMatch(/^line \d+: \S/)
+    for (const n of v.notOutput) expect(n).toMatch(/^line \d+: .*\S/)
   })
 
   /**
@@ -355,6 +364,132 @@ describe("section 2's pasted output, against section 2's own log", () => {
 })
 
 /**
+ * **§5 IS HELD TO §5's OWN LOG BY A THIRD CALL, FOR THE REASON R17 GAVE FOR THE SECOND.**
+ *
+ * §5 is a third probe with a third log (`tools/schgen/label-freedom/probe-run.log`), and the
+ * arrangement is §2's exactly: the document fences §5's blocks ` ```label-run ` so they stay out of
+ * §1's and §2's output namespaces, this file maps the fence word - and only the fence word, at a
+ * line start - and hands §5's slice to the same checker with §5's own log and §5's own run marker.
+ *
+ * **THE THREE LOGS MUST SHARE NO LINE, and the last case here is the direct statement of it.** The
+ * whole-document call already enforces it indirectly for §1, and §2's call for §2: a block not
+ * declared as THAT log's output which shares any line with it is the relabel dodge `verify` refuses.
+ * **It cost a rename to satisfy.** §5's probe reuses Task 1's `laidOutBlocks`, whose skip lines are
+ * word for word §1's log's `  SKIPPED ...` lines, so §5's probe prints `NOT MEASURED HERE: ...`
+ * instead. §2's probe hit the same wall on its first section header.
+ *
+ * **WHAT THIS CAN AND CANNOT SEE** is §2's case list, unchanged: a figure edited in §5's prose, a
+ * block truncated, re-padded, rewrapped, left stale or filled from another section of the same log.
+ * It cannot see a block replaced by a different genuine, contiguous, unique slice of the SAME
+ * declared section. Unlike §1's, **§5's probe can be re-driven from a clean checkout** - `kicad-cli`
+ * is its only external dependency - so the staleness this coupling cannot see is cheaper to settle
+ * there than in §1.
+ */
+const LABEL_LOG = path.join(repoRoot, "tools/schgen/label-freedom/probe-run.log")
+const labelLog = fs.readFileSync(LABEL_LOG, "utf8")
+
+/** §5's probe's own first section header: the line that marks one run of THAT probe. */
+const LABEL_RUN_MARKER = "== WHAT THIS LABEL-FREEDOM RUN MEASURED"
+
+/** The document's heading for §5, which is where its slice begins and runs to the end of the file. */
+const SECTION_5_HEADING = "§5 A global label's coordinates, and the four freedoms it actually has"
+
+/** How many blocks §5 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
+const SECTION_5_BLOCKS = 12
+
+/** §5's text with its fence word mapped into the checker's output namespace, and nothing else. */
+function sectionFiveAsOutput(d: string): string {
+  const at = d.indexOf(SECTION_5_HEADING)
+  if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_5_HEADING)}, so §5's slice cannot be found`)
+  return d.slice(at).replace(/^```label-run /gm, `\`\`\`${OUTPUT_FENCE} `)
+}
+
+describe("section 5's pasted output, against section 5's own log", () => {
+  test("the mapping changes fence words and nothing else", () => {
+    const slice = doc.slice(doc.indexOf(SECTION_5_HEADING))
+    const mapped = sectionFiveAsOutput(doc)
+    expect((slice.match(/^```label-run /gm) ?? []).length).toBe(SECTION_5_BLOCKS)
+    expect((mapped.match(/^```label-run /gm) ?? []).length).toBe(0)
+    expect(slice.length - mapped.length).toBe("label-".length * SECTION_5_BLOCKS)
+    const before = parseBlocks(slice).map((b) => b.lines.join("\n"))
+    const after = parseBlocks(mapped).map((b) => b.lines.join("\n"))
+    expect(after).toEqual(before)
+  })
+
+  test("every block section 5 pastes is a contiguous slice of section 5's committed log", () => {
+    const v = verify(sectionFiveAsOutput(doc), labelLog, LABEL_RUN_MARKER)
+    expect(v.failures).toEqual([])
+    expect(v.verified).toBe(SECTION_5_BLOCKS)
+    expect(v.verified + v.notOutput.length + v.failures.length).toBe(v.blocks)
+  })
+
+  /**
+   * RED: one digit of the figure §5's whole Step 3 verdict rests on.
+   *
+   * **The victim line is taken from the log rather than written here**, the way §2's is, because a
+   * hard-coded literal goes red when the probe gains a column - which is the test's own literal
+   * drifting, not the document's. The line it picks is the TOTALS line, which carries "F1 alone
+   * clears 5" - the figure that refutes this task's original premise.
+   */
+  test("RED: a single digit edited in the Step 3 totals", () => {
+    const victim = labelLog.split("\n").find((l) => l.startsWith("TOTALS over "))
+    if (victim === undefined) throw new Error("section 5's log has no TOTALS line, so the per-freedom scoreboard has moved and §5.7 needs re-reading")
+    expect(doc.split(victim).length - 1).toBe(1)
+    const perturbed = victim.replace("F1 alone clears 5", "F1 alone clears 6")
+    expect(perturbed).not.toBe(victim)
+    const v = verify(sectionFiveAsOutput(doc.replace(victim, perturbed)), labelLog, LABEL_RUN_MARKER)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("not a contiguous slice")
+  })
+
+  /**
+   * RED: a whole genuine slice of a DIFFERENT section of the same log, substituted. §5 pastes four
+   * blocks from `STEP 3 FREEDOMS` alone, so the section anchor is doing more work here than in §2.
+   */
+  test("RED: a genuine slice of another section of section 5's log", () => {
+    const mapped = sectionFiveAsOutput(doc)
+    const victim = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} STEP 2 ARMS`)
+    const donor = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} STEP 3 POPULATION`)
+    expect(victim?.lines.length).toBeGreaterThan(1)
+    expect(donor?.lines.length).toBeGreaterThan(1)
+    const v = verify(mapped.replace((victim?.lines ?? []).join("\n"), (donor?.lines ?? []).join("\n")), labelLog, LABEL_RUN_MARKER)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("is not a contiguous slice of section")
+  })
+
+  /** The same staleness coupling §1 and §2 have: the document names the commit §5's log was taken at. */
+  test("the commit section 5 pins is the commit section 5's log was taken at, on a clean tree", () => {
+    const fromLog = /^label-freedom repository commit: ([0-9a-f]{40}) \(clean tree\)$/m.exec(labelLog)
+    expect(fromLog?.[1]).toBeDefined()
+    expect(doc).toContain(`at repository commit\n**\`${(fromLog?.[1] ?? "").slice(0, 7)}\`** with a clean tree`)
+  })
+
+  test("section 5's log is a probe run and not a hand-written fixture", () => {
+    expect(labelLog).toContain(LABEL_RUN_MARKER)
+    expect(labelLog).toContain("kicad-cli resolved to ")
+    expect(labelLog).toContain("DISCRIMINATION ESTABLISHED: the same edit - renaming one global label - leaves the partition alone on one fixture")
+    expect(labelLog).toContain("CONTROL PASSED: over 48 laid-out blocks, re-grading the unperturbed layout with checkLayout")
+    expect(labelLog).toContain("arms whose measured result did not match the prediction published above: 0")
+  })
+
+  /**
+   * **THE THREE LOGS SHARE NO LINE.** Asserted pairwise, because the indirect enforcement is one
+   * call per log and a shared line is only visible from the other call.
+   */
+  test("the three logs this document quotes are pairwise line-disjoint", () => {
+    const nonBlank = (t: string): Set<string> => new Set(t.split("\n").filter((l) => l.trim() !== ""))
+    const one = nonBlank(log)
+    const two = nonBlank(elkLog)
+    const five = nonBlank(labelLog)
+    expect([...five].filter((l) => one.has(l))).toEqual([])
+    expect([...five].filter((l) => two.has(l))).toEqual([])
+    // And neither of the other markers is readable in §5's log, which is how `verify` counts runs.
+    expect(labelLog.split("\n").filter((l) => l === LABEL_RUN_MARKER).length).toBe(1)
+    expect(labelLog.split("\n").filter((l) => l === RUN_MARKER || l === ELK_RUN_MARKER).length).toBe(0)
+  })
+})
+
+/**
  * **§4's BLOCK ACCOUNTING IS A GUARDED ASSERTION RATHER THAN A SENTENCE - CONTROLLER RULING, fix
  * round 1 of Task 4.**
  *
@@ -389,11 +524,22 @@ const SECTION_4_BLOCKS = 8
  */
 const NO_SUCH_SECTION = "SECTION 4 HAS NO SECTION IN THIS LOG"
 
-/** §4's slice of the document, which runs to the end of the file. */
+/**
+ * §4's slice of the document: from §4's heading to §5's.
+ *
+ * **IT USED TO RUN TO THE END OF THE FILE, which was correct only while §4 was the last section.**
+ * Appending §5 put twelve more blocks inside this slice, and the pinned count below would have gone
+ * red with a message about §4 that was really about §5. It refuses rather than falling back to the
+ * end of the file when §5's heading is missing, because a silent fallback would make the pinned
+ * count mean one thing in one tree and another in the next.
+ */
 function sectionFour(d: string): string {
   const at = d.indexOf(SECTION_4_HEADING)
   if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_4_HEADING)}, so §4's slice cannot be found`)
-  return d.slice(at)
+  const end = d.indexOf(SECTION_5_HEADING)
+  if (end < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_5_HEADING)}, so §4's slice has no end and would swallow every later section`)
+  if (end < at) throw new Error(`${DOCUMENT} carries §5's heading before §4's, so the section order has changed and these slices are wrong`)
+  return d.slice(at, end)
 }
 
 describe("section 4's blocks are accounted for, although none of them can be checked against a log", () => {
@@ -414,8 +560,14 @@ describe("section 4's blocks are accounted for, although none of them can be che
 
   test("the whole-document verdict reports all eight as NOT CHECKED, by line, after §4's heading", () => {
     const headingLine = doc.slice(0, doc.indexOf(SECTION_4_HEADING)).split("\n").length
+    // Bounded above by §5's heading for the same reason `sectionFour` is: without it §5's twelve
+    // blocks join this count and the assertion fails with a message about §4.
+    const endLine = doc.slice(0, doc.indexOf(SECTION_5_HEADING)).split("\n").length
     const v = verify(doc, log)
-    const inFour = v.notOutput.filter((n) => Number(/^line (\d+):/.exec(n)?.[1] ?? 0) >= headingLine)
+    const inFour = v.notOutput.filter((n) => {
+      const at = Number(/^line (\d+):/.exec(n)?.[1] ?? 0)
+      return at >= headingLine && at < endLine
+    })
     expect(inFour.length).toBe(SECTION_4_BLOCKS)
     // Each contributes one `expect()` to the by-name case above, which is the whole of §4.12's
     // arithmetic. If this number and SECTION_4_BLOCKS ever disagree, a §4 block has left the
