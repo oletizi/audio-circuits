@@ -2614,6 +2614,57 @@ why**. It does not need explaining for the check that uses it - a check on the a
 needs the residual to be constant, and it is - but an agent who reads `textLength` as an advance
 will be 203.2 um over on every string.
 
+> **THE ELECTION IS MADE, 2026-10-23. `EDA_TEXT::GetTextBox` GOVERNS. Clause (4)
+> below is answered and its wording stands as written.** The owner, verbatim, in
+> answer to the three quantities being put to him with their populations:
+>
+> > *"default to kicad as prior art"*
+>
+> **His reason is the one that commissioned the whole pass**, and it is recorded
+> because it generalises past this clause: prefer the thing that already exists
+> and is in use over a quantity this project would have to argue for. KiCad's
+> box is also the only one of the three that **agrees with the tool that will
+> render and edit the file**, so a person nudging text in eeschema is fighting
+> the same rectangle the generator used.
+>
+> **WHAT IT COSTS, STATED PLAINLY BECAUSE HE CHOSE THE STRICTEST OF THE THREE.**
+> The recorded population of fallback field placements goes from **15 to 24** -
+> all fifteen survive and **nine more appear** - and the governing box is **2043.1
+> µm** tall against the **1270 µm** the current model assumes, so the model
+> **under-reserves height for 70 of the 264 strings** the eleven boards emit. In
+> WIDTH it goes the other way: the current model **over-reserves** by a median
+> 18% and a maximum 87%, so electing this box **narrows** text as well as
+> heightening it, and some present collisions may clear while new ones appear.
+> **Nothing here re-measures that** - the 24 is §1's figure under this box, not a
+> re-grading of the boards under the pair of changes together.
+>
+> **AND HIS TWO DECISIONS COMPOSE WELL, WHICH IS WORTH SAYING BECAUSE EITHER
+> ALONE WOULD HAVE BEEN AWKWARD.** Electing the strictest ruler under a refusal
+> regime would have made **more** boards refuse. Under his **G260** directive to
+> minimise rather than gate, a stricter ruler simply means the number starts
+> higher and has further to fall. **A threshold would have made this election
+> painful; a minimisation makes it cheap.**
+>
+> **TWO TRAPS THIS ELECTION INHERITS, both measured in this entry and now
+> load-bearing rather than incidental.** Clause (2) records that `GetTextBox`
+> sizes with a **158.75 µm pen it does not plot with**, and that at the plotted
+> pen the box would be 2020.8 µm - so **the governing box is 22.3 µm taller than
+> the ink it describes, by KiCad's own arithmetic**, and clause (2)'s warning not
+> to discount that height as bookkeeping is now the warning about the elected
+> quantity. Clause (1) records that `kicad-cli sch export svg` **omits a global
+> label's outline**, under-reporting a label by 3333.75 µm. **Any future
+> measurement of the elected box taken through SVG is therefore wrong**, and the
+> PDF route or the font arithmetic is the one to use.
+>
+> **WHAT IT DOES NOT SETTLE.** The measure of overlap is **G260**'s, chosen and
+> delegated there; this election fixes the rectangle both of its areas are
+> computed from, so **G260**'s scalar is now fully specified. **One reserved
+> decision remains and no agent may make it:** whether anything is hard-illegal
+> rather than merely costly - the infinite-versus-finite badness split, §6.3 and
+> §6.11 of the research document. **Nothing is built here**, and a mechanism that
+> adopts this box by writing a new `textWidth` is an implementation requiring a
+> written design he reviews.
+
 **(4) THE ELECTION IS NOT MADE, AND IT IS CONSEQUENTIAL RATHER THAN ACADEMIC.** The plan's Step 0
 forbids the producing agent from choosing which quantity governs a collision, because that is an
 acceptance criterion for the artifact this generator produces (**G240**). It is open. **What the
@@ -2707,6 +2758,15 @@ on every `bun test`; neither touches `lib/` or any gate.
   governs a collision** - ink, advance, or KiCad's own - having seen that the population is 13, 20
   or 24. Until he does, no agent may pick one, and **a mechanism that quietly adopts one by writing
   a new `textWidth` has made the election**. (5) nothing; it is recorded, not open.
+
+> **CLAUSE (4) IS SETTLED, 2026-10-23: `EDA_TEXT::GetTextBox`, population 24.**
+> The criterion above is met and is **deleted rather than amended** - it asked
+> the owner to say which box governs, and he has (*"default to kicad as prior
+> art"*, the amendment at the head of this entry). **The prohibition on an agent
+> picking one is discharged for the choice and KEPT for the implementation:**
+> writing a new `textWidth` is still the act that makes an election real, and it
+> now has to match this one. Clauses (1), (2) and (3) are unaffected, and (2) and
+> (1) are the two traps the elected box inherits.
 
 ---
 

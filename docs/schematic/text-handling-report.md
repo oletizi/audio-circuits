@@ -172,8 +172,9 @@ same pipeline shape as the two expensive ones — place, route, annotate, grade.
 ## 5. What is yours to decide
 
 Three questions were reserved to the owner and the research deliberately stopped
-short of each. **No agent answered any of them. He has now answered the first
-himself, and declined the form it was asked in.**
+short of each. **No agent answered any of them. He has now answered two himself
+— declining the form the first was asked in, and electing on the second — and
+delegated one design decision that followed. One remains open.**
 
 1. ~~**How much overlap is acceptable in a drawing?**~~ **ANSWERED 2026-10-23,
    `G260`.** His words: *"I would rather give guidance to minimize overlap
@@ -187,12 +188,34 @@ himself, and declined the form it was asked in.**
    none of seven tools refuses, and it is the framing §6 found transfers from the
    typesetting literature — badness as a continuous quantity, a penalty attached
    to a choice, non-refusal on failure. He arrived at it independently of both.
-2. **Which of the three measured text-geometry quantities governs a collision?**
-   (`G265` clause 4) The four-row table of what each quantity changes — 15, 13,
-   20 and 24 refusals — is there for the decision.
-3. **Should the two grades of badness be declared explicitly?** (§6.11) The
-   generator already has both an infinite and a finite grade, implicitly and
-   globally, and declares neither.
+   **AND THE MEASURE THAT FOLLOWED IT WAS DELEGATED:** *"re: the measure—take
+   the least dumb choice."* Chosen and recorded in `G260`: **the sum, over every
+   text item, of its obscured area divided by its own area** — scale-free, zero
+   when clean, one fully-buried item contributing 1.0. Not a pair count, which
+   has no gradient; not raw area, which prefers burying one label to nicking
+   three. **No weights are invented** (`G71` says none are published), so the
+   per-obstacle-class breakdown is reported beside the scalar rather than folded
+   into it.
+2. ~~**Which of the three measured text-geometry quantities governs a
+   collision?**~~ **ANSWERED 2026-10-23, `G265` clause 4.** His words: *"default
+   to kicad as prior art"* — so **`EDA_TEXT::GetTextBox` governs**, the strictest
+   of the three, taking the recorded population from **15 to 24**. It is the only
+   one of the three that agrees with the tool that will render and edit the file.
+   **His two answers compose well:** electing the strictest ruler would have made
+   *more* boards refuse under a gate, and merely means the number starts higher
+   under a minimisation. It also fixes the rectangle both of `G260`'s areas are
+   computed from, so **the overlap measure is now fully specified.** Two traps
+   come with it, both already measured: the elected box is sized with a pen KiCad
+   does not plot with, and any future measurement of it taken through SVG export
+   is wrong, because SVG omits a global label's outline.
+3. **Should the two grades of badness be declared explicitly?** (§6.11) **STILL
+   OPEN AND STILL YOURS.** The generator already has both an infinite and a
+   finite grade, implicitly and globally, and declares neither. Your `G260`
+   answer set the finite grade's direction — minimise — and said nothing about
+   whether an infinite grade survives. It matters because §2 measured a label
+   overlapping a **pin**, which can misrepresent connectivity rather than merely
+   look bad: *"minimise everything"* and *"some things are never drawn"* are not
+   the same policy.
 
 A fourth is not a research question but needs your call: **commit `fc71fcc`
 carries a `Co-Authored-By: Claude` trailer and a session link**, against the

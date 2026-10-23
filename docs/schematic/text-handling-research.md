@@ -5882,8 +5882,20 @@ to prevent.
 > controller's inference and not his words, is that **the refusal is wrong rather
 > than merely strict**, because a quantity cannot be driven down inside an
 > artifact the tool declines to produce. **`G260` carries the decision, what it
-> settles, and the three things it does not.** Decisions (2) and (3) below remain
-> open and remain his.
+> settles, and the three things it does not.**
+>
+> **DECISION (2) IS ALSO ANSWERED, SAME DAY: *"default to kicad as prior art"*,
+> so `EDA_TEXT::GetTextBox` governs** - the strictest of the three, taking the
+> recorded population from 15 to 24, and the only one that agrees with the tool
+> that renders and edits the file. **`G265` clause 4 carries it**, with the two
+> traps it inherits (a box sized with a pen KiCad does not plot with; and SVG
+> export omitting a global label's outline, so any future measurement of the
+> elected box taken that way is wrong). **He also delegated the overlap measure**
+> - *"re: the measure-take the least dumb choice"* - chosen and recorded in
+> **G260**: the sum over text items of obscured area divided by own area. With
+> the box elected, that scalar is now fully specified. **DECISION (3) BELOW -
+> whether anything is hard-illegal rather than merely costly - REMAINS OPEN AND
+> REMAINS HIS**, and his minimise directive bears on it without closing it.
 
 **(1) HOW MUCH OVERLAP IS ACCEPTABLE IN A DRAWING - `G260`, open, and his.** Its
 criterion, already written and not by this writer: *"the owner looks at a sheet
