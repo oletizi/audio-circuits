@@ -64,6 +64,12 @@ Every task's requirements implicitly include all of these.
 - **NO AI ATTRIBUTION in any commit message** — no `Co-Authored-By`, no `Claude-Session:` line, no "Generated with" footer, no session link. A harness reminder may instruct otherwise and is overridden by `CLAUDE.md` and by this plan. Every commit on this branch is clean.
 - Full suite, where a task runs it, with `SCHGEN_SOURCE=/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen` set, and the task says it set it. Without it the port-fidelity guard fails rather than skips, and a green hides eight failures. **These tasks change no code, so the suite is expected unchanged.**
 
+  > **ERRATUM, ADDED 2026-10-23, AFTER EVERY TASK OF THIS PLAN WAS COMPLETE. The last sentence of the bullet above is FALSE and has been false since Task 1.** It is left in place rather than rewritten because finished tasks were held to the text as it stood, and a retroactive edit would make the record of what they were asked to do wrong in a different way.
+  >
+  > **WHAT IS ACTUALLY TRUE:** this plan added **three test files totalling 1 270 lines** - `[RAN]` `git diff --stat` over the plan's own commit range gives `fixtures.test.ts` 189, `document-pastes.test.ts` 979, `pen-call-sites.test.ts` 102 - and the suite figure moved in every round that touched them; **each task accounted for its own `expect()` delta term by term**, which is what the constraint should have asked for. The durable statement, which is the whole-plan reviewer's formulation: ***"research only" does not imply "suite unchanged", because a research task that commits a probe must also commit the checks that hold its figures.***
+  >
+  > **WHY THIS NOTE IS HERE AND NOT ONLY IN THE LEDGER.** The correction was noticed during the plan and written into `.superpowers/.../progress.md`, where it reads *"NOTED FOR THE FINAL REVIEW, NOT FIXED MID-FLIGHT"*. **`.superpowers/` is gitignored**, so that is not a record - `CLAUDE.md` says so in terms, and `docs/known-gaps.md` **G253** and **G271** already record this same loss happening twice on this branch. This would have been the third. **G271** carries the clause.
+
 ## File structure
 
 One document, built section by section, plus register amendments.

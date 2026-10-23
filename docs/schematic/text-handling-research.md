@@ -64,8 +64,8 @@ board-by-board table.
 A RATIO BETWEEN THEM MEANS NOTHING.** §1's row says **15** and §6's row says
 **53**. The 15 are over the **10** laid-out blocks of the four parity circuits
 (**G260**'s published population); the 53 are over the **48** laid-out blocks of
-all eleven boards. **§1's "13 of 15 survive all three quantities" has NOT been
-re-taken over the 48**, so how many of the 53 the ruler accounts for is **unknown**
+all eleven boards. **§1's 13-of-15 finding has NOT been re-taken over the 48**,
+so how many of the 53 the ruler accounts for is **unknown**
 - dividing one figure by the other produces a number nobody has measured. §7.4
 and **G274** clause 5 carry this; it is stated here because a reader who reads only
 this table would otherwise meet the two numbers eight lines apart and the warning
@@ -4928,7 +4928,7 @@ mere process, and §6.1's p.1129 transcription is why it is not even available.
 | **Badness** `100\|r\|^3`, infinite below `r = -1` | `[READ]` Knuth-Plass p.1127 | an **elasticity model**: per item, a natural size plus how far it may stretch and shrink, so that `r` is defined | **No.** A candidate slot here is a discrete position, not an elastic one. §5 established that a global label has four degrees of freedom, which is the precondition for ever declaring an elasticity; nothing declares one. |
 | **Demerits** `(1 + badness + penalty)^2 + alpha` | `[READ]` Knuth-Plass p.1129 | a penalty per **choice**, and a pair term for two consecutive flagged choices | **No.** Nothing in the repository prices a choice. `allCandidates`'s array order is the only preference statement and is unjustified. |
 | **Weighted overlap area** | `[READ]` this tree, `occupancy.ts`; shape attributed there to Christensen, Marks & Shieber 1995 after Yoeli 1972 | an obstacle set and a weighting | **Yes - it already does**, per candidate and per fallback. Declared non-comparable across runs (§6.6). |
-| **Count / fraction of labels placed without overplot** | `[PAPER-FULL]` via `text-placement-prior-art.md` §6, Christensen et al.'s own metric | geometry alone | **Yes, today, with no new machinery.** `FieldFallback` gives the count directly: **15 of 75 unit placements** on this corpus (§6.5). Nothing aggregates or publishes it as a measure. |
+| **Count / fraction of labels placed without overplot** | `[PAPER-FULL]` via `text-placement-prior-art.md` §6, Christensen et al.'s own metric | geometry alone | **Yes, today, with no new machinery.** `FieldFallback` gives the count directly: **53 of 255 unit placements** on this corpus (§6.5). Nothing aggregates or publishes it as a measure. |
 | **Yoeli's three-term objective** - overlap amount + position-preference penalty + unlabelled count | `[PAPER-FULL]` for the shape as restated by Christensen et al.; **Yoeli 1972 `[NOT RETRIEVED]`** and not retrieved by this task either | the three terms, plus **weights** | **The first and third terms, yes. The middle term and all three weights, no** - the weights are not in the restatement and the original was not read. |
 | **Human task performance** - response time and error rate on label-to-feature association | `[PAPER-FULL]` for the survey's statement, `[PAPER-ABS]` for the studies | people | **No**, and no source found gives a geometric proxy for it. |
 
@@ -5265,7 +5265,7 @@ executed, and never offered one of this repository's blocks.**
 **AND THAT IS NOT A GRADE OF ROWS 3 AND 4, WHICH ARE ESTABLISHED ELSEWHERE - IT IS
 WHAT ESTABLISHED ELSEWHERE MEANS.** The first version of this paragraph said the
 autoplacer *"is exactly an INTEGRATION HYPOTHESIS in ours"*, which reads as a
-grade and contradicts the two cells that carry it. **Level 1 and level 3 are both
+grade and contradicts the two entries that carry it. **Level 1 and level 3 are both
 untested here**, and they differ only in whether the capability has been shown to
 work somewhere: level 1 has a source read or a paper read behind it, level 3 does
 not. **So ten of the eighteen rows are untested here** - the six level-1 rows and
@@ -5283,7 +5283,7 @@ The definition is the criterion; the three-task list is a prediction made before
 Task 6 ran, and the plan's Task 6 brief asked for no measurement campaign - its
 Step 3 asked only to *"connect it to the measures this repository already has"*.
 **So row 13 is graded DEMONSTRATED HERE and marked †.** A reviewer who reads the
-enumeration as binding changes that one cell to INTEGRATION HYPOTHESIS and
+enumeration as binding changes that one grade to INTEGRATION HYPOTHESIS and
 nothing else in the table moves. **G275** carries the deviation.
 
 ### 7.1 THE SOLUTION SPACE
@@ -5293,26 +5293,347 @@ eleven boards and the blocks they are made of, never about an abstract
 capability. **An approach that fixes nothing is written as fixing nothing**, and
 four rows below are that.
 
-| # | approach | what it would fix | what it would NOT fix | what it depends on | evidence | LEVEL |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | **Ask ELK to place the global label and read the coordinate back** | **Nothing.** ELK places it and returns an offset from the anchor; `lib/schgen/render/emit-items.ts:227-241` emits a `global_label` with exactly one coordinate, so **an offset has no representation in this emitter's output vocabulary** | everything: no board, no block, no overlap | nothing - it is not an available move in the emitted form | §2.7, §2.8 | **DEMONSTRATED HERE** (negative) |
-| 2 | **Tell ELK about text BEFORE it places nodes** (outside node labels, fixed size - arm **e**) | Over this repository's own 48 graphs, 398 labels placed, **0 ran into any body**, and the drawing grew in both dimensions to make room. This repository places all of its text AFTER a layout computed as if no text existed | **266 label-over-wire crossings** appeared in the same arm, by this repository's own predicate, **undiagnosed**; label-to-label separation across elements is not in ELK's option vocabulary at all; **no `.kicad_sch` was written and no board was drawn** | an emitter change nobody has designed, for a label whose only emitted coordinate is its anchor (row 1); and a diagnosis of the 266 | §2.5 arm **e**, §2.8, §2.9 | **DEMONSTRATED HERE** (capability only) |
-| 3 | **Port KiCad's field autoplacer wholesale** | Nothing identified. Its rigid field stack is already here (`slotFields`); its four sides are **fewer** than this repository's eleven candidates; and its non-refusal is already here since **G232**'s Task 24 change | the label problems - it is a FIELD autoplacer and §5.11 could find no label autoplacer in KiCad at all; and it carries a **confirmed defect**, picking a side it has graded as colliding while a clear side remains | nothing worth depending on: **any design reasoning "KiCad manages with four sides, so the candidate set is not the problem" is reasoning from an algorithm that does not reliably take the clear side it has found** | §3.1-§3.3, §3.13 | **ESTABLISHED ELSEWHERE** |
-| 4 | **Port `fitFieldsBetweenWires`, its one local repair** | **The one idea §3 found that this repository does not have**: a local shift of a chosen candidate, along one axis, into a free gap between parallel obstacles. This repository has **no perturbation of any kind** | unmeasured - whether it would help depends on whether this repository's fallbacks are blocked by **wires** in particular, and nobody has asked | re-reading **G260**'s fifteen fallbacks by obstacle class, which §3.13 names and did not do | §3.5, §3.13, §4.8 | **ESTABLISHED ELSEWHERE** |
-| 5 | **Fix the text metric and keep the current search** | The over-reservation: a median 18% and a maximum 87% of excess width against the rendered ink, worst case 4.2 grid steps - more than three characters of room claimed and not used. And the HEIGHT under-reservation, which is where the model is wrong under every measured quantity | **THE BLOCKERS. 13 of 15 field fallbacks survive all three measured quantities; under KiCad's own box all 15 survive and 9 MORE appear (24), under the ink 20.** Of 8 drawn-text overlaps, 4 are artefacts of the ruler and 4 are real - and **the blocking pair of each of the three blocked blocks survives under every quantity** | the owner's election among the three quantities (**G265** clause 4), which **changes the recorded population from 13 to 24** | §1.7, §1.9 | **DEMONSTRATED HERE** |
-| 6 | **Side selection for global labels: search freedom 1** (4ⁿ over a block's anchors, graded by `checkLayout`) | **5 of the 12 label-blocked blocks outright, under the production ruler** - all five Pultec `*-junction` blocks, at `hi_boost_out:down`. Cost: 4⁴ = **256** `checkLayout` calls on each of those five, which carry four label anchors apiece; the widest F1 space in the repository is 4⁶ = **4096**. The side is currently never searched: `read-graph.ts:244-272` reads it off the direction of the last route segment | the other 7. **And no board**: all five blocks it clears are on Pultec boards refused at `validateCircuit` before any text is placed (§7.2) | the production ruler - **every clearing count in §5 is at `length × GRID` and is expected to move under another** | §5.7, §5.9, §5.10 item 1 | **DEMONSTRATED HERE** |
-| 7 | **Freedom 2: slide the anchor along the segment it already sits on** | **0 of 12 blocks.** Its best totals never reach zero - 1, 2, 3, 6 and 10. All 46 anchors had candidates (516 grid points summed), so no verdict here is vacuous | everything it was hoped to. And on three blocks it **creates** a problem: the wire end the anchor left is refused by this repository's own `danglingWireEnds` - **a generator rule, not the file format; KiCad does not share it** (**G269**) | the ruler; and the dangling-end rule, which §5.9 says is **not wrong** and is the reason the compatible form of this move is row 10 | §5.3, §5.7, §5.9 | **DEMONSTRATED HERE** |
-| 8 | **Freedom 4: another segment of the same net** | **0 of 12 blocks**, and on several it makes things worse by stranding the wire end the anchor left. **6 of the 46 anchors have an EMPTY candidate set** - their net has only one segment | everything. The generator's own exposure here is two positions in a chain decided by a layer constraint (`graph.ts:240-252`), out of n+1 insertion points | the ruler; and Imhof's per-segment framing, which reaches this document through Wolff Ch. 5 only | §5.7, §5.9 | **DEMONSTRATED HERE** |
-| 9 | **Freedom 3: lengthen the label's stub 1-8 grid steps, over all four sides** | **7 of 12 blocks - the widest of the four freedoms**, and the only one that clears `tp-leg-emitter-bypass` and `tp-follower`. On `tp-leg-emitter-bypass`, `BYPASS_CAP` stub `+2` steps to `(15.24, 5.08)` side `down` gives a layout `checkLayout` grades at **ZERO problems**, for 2.54 mm of wire | 5 blocks. **The bound on the sweep is deliberate**: *adjust the surrounding geometry* is unbounded in general, and an unbounded search would be a placement algorithm, which no research task may produce | the ruler. **And the measurement is of one block's geometry, not a rule** - nothing says the same move helps elsewhere, and §5.7 shows 7 of 12 and not 12 of 12 | §5.7, §5.8, §5.10 item 2 | **DEMONSTRATED HERE** |
-| 10 | **Freedom 2 TOGETHER WITH the wire retraction it implies** - move the anchor off a wire end and shorten the wire after it | Unknown, and **§5.9 names it the single most likely thing to widen "some freedom clears it" above 7 of 12**, because three blocks reduce to the dangling-end problem alone | nothing is known either way. **It was not swept**, and the sweep that was performed could not reach it: it moves anchors and not wires | a sweep nobody has run; and the ruler, once it is | §5.9, §5.10 item 3 | **INTEGRATION HYPOTHESIS** |
-| 11 | **A candidate STRIP along the net's polyline** (continuous line labelling: Wolff Ch. 5, with each inter-junction segment a feature of its own after Imhof) | **It is the formulation that actually fits** - internal labelling of a line feature with a sliding site - and this repository's own H3 refusal (*"label `hi_boost_out` overlaps wire 33"*) is the literature's hard constraint, independently arrived at. §5.6's 95 anchors at min 20 / median 80 / max 1000 are what it would be searching | nothing is measured, and **how many more labels a continuous model places than a fixed-position one is still UNKNOWN here.** §5.1 read Wolff Ch. 3 **for Definitions 3.1 and 3.2 only and states that its approximation results were not read**, which is where that comparison would be; **G232**'s Task 23 amendment records the same question open from the other side. Imhof reaches this document only through Wolff's transcription, `[NOT RETRIEVED]` | a reading nobody has made of the results §5.1 left, and an implementation nobody has written | §5.1, §5.6, §5.10 item 4; **G270** | **ESTABLISHED ELSEWHERE** |
-| 12 | **A penalty model over the sheet** - badness as a continuous quantity, two declared grades of it, a feasibility threshold separate from the ranking, a penalty attached to a choice | **TWO of those four are already here, and §6.3 calls one of them convergent rather than borrowed**: overlap area is continuous in `occupancy.ts`, and `field-placement.ts`'s own header says *"THE COST RANKS; IT NEVER DECIDES FEASIBILITY."* | **nothing, by itself - and the two that are missing are missing differently.** The **two grades** exist here *implicitly and globally* - every obstacle is infinite until no candidate is clear, at which moment every obstacle becomes finite at once - and §6.3 calls declaring them *"the part this repository most lacks as a declared thing"*; **the declaration IS an acceptance criterion and is the owner's** (§7.5). A **penalty on a choice** this repository has *"in principle; nothing here has one"* - `allCandidates`'s array order is its only preference statement and the prior-art document records it as *"unjustified anywhere"*. And the SEARCH does not transfer: the authors name contiguity as its only rescue and label placement has none | the owner's split; and **not** on the literature's numbers - **Knuth and Plass call both their published formulae *"quite arbitrary"***, so adopting their cost function is not a move that exists | §6.1-§6.3, §6.7, §6.11 item 2 | **ESTABLISHED ELSEWHERE** |
-| 13 | **Re-walk the field placement order and keep the best** † | Measured, over all 48 declared blocks and 255 unit placements: **production 53 fallbacks, order-wise best 51.** 3 units change fallback status under some order and 21 change slot, so the sequential dependence is live and not theoretical | **IT IS NOT FREE, AND AN EARLIER DRAFT SAID IT WAS.** The order-wise **worst is 54** - an order chosen without an objective can cost a fallback as easily as save one. **All 53 fallbacks live on the 12 blocks too large to exhaust**, sampled at 200 orders out of between 40 320 and 3.05e29, so **51 is an upper bound on the achievable minimum and not an optimum**; the 36 blocks driven exhaustively have **zero** fallbacks, so their order-invariance is proven and uninformative. **4 fallbacks cover other text and 3 of the 4 are not reachable by reordering at all** | an objective to be best BY, which is row 16's problem and ultimately **G260**'s | §6.5, §6.10, §6.11 item 3 | **DEMONSTRATED HERE** † |
-| 14 | **Place what you can and log what you could not - for LABELS, as the field placer already does for fields** | **It is the only approach in this table that could move the board count at all**, because it replaces a refusal with a drawing rather than moving text. **Zero of eight comparable systems refuse** - six tools in §4, KiCad in §3, TeX in §6.8 - so refusing is this generator's peculiarity among its closest neighbours | **it fixes no overlap**: the text is still drawn over something, and what changes is that a sheet exists. **AND HOW MANY BOARDS IT WOULD DRAW IS NOT KNOWN AND IS NOT GUESSED HERE.** The six `validateCircuit` boards never reach a text pass. Of the five that do, **three are refused on a first problem with no label in it** - one junction, two power-symbol glyph touches - which a label placer does not absorb; and the two refused on a label each have a second block behind them, `tp-stage`, whose problem list is 8 of 8 naming a label on `-lab` and **15 of 21 on `-loop`** (§5.7). **Nothing was re-graded under a non-refusing label pass**, so the board figure under this row is unmeasured | **ENTIRELY on G260, which is the owner's**: *"how much overlap is acceptable, and under what count or what kind of overlap it stops being acceptable."* Nothing here answers that or may be read as implying an answer | §4.9, §6.8, **G260**, **G268**; the field precedent is **G232**'s Task 24 change, `[RELAYED]` | **INTEGRATION HYPOTHESIS** |
-| 15 | **Make the fallback as LOUD as an overfull box** | Nothing about a drawing. TeX errors on the user's terminal on the run that produced the overset line; this repository writes a `FieldFallback` row into `RENDER-REPORT.md` that **nothing automated reads**, so a generation going from 0 fallbacks to 50 is green | no overlap, no block, no board. It is a reporting change | **G260**'s open residual verbatim, waiting on the owner's number. It is not a new proposal and must not be written up as one | §6.8; **G260**'s residual | **ESTABLISHED ELSEWHERE** |
-| 16 | **Publish the conflict count as a MEASURE** - the fraction of items placed without overplot | Computable today from `FieldFallback` with no new geometry. **It would be the first number about TEXT in a repository whose five readability numbers are all computed over WIRES** - and §6.6 found text entering exactly one of the five, as a point with no extent | nothing. It measures; it does not place | **it is a MEASURE and not a gate, and no threshold may accompany it** without the owner (**G71**, **G260**). A weighting or a budget invented here would be **G71**'s failure exactly | §6.6, §6.11 item 1; **G272** | **INTEGRATION HYPOTHESIS** |
-| 17 | **Shorten the text** - ELK's `labelManager`, or any abbreviation of a net name | Unknown. It is the one label option `layered` does not list, and §2 **did not drive it** | nothing is measured | **an owner decision in any case** - whether an abbreviated net name on a schematic is acceptable is not an agent's call | §2.1, §2.9 | **INTEGRATION HYPOTHESIS** |
-| 18 | **Suppress the text** | **WHAT THE LEVEL GRADES IS xschem**, `[READ]` at a pinned commit: it suppresses text below ~3 device pixels at the current zoom, on screen. **The one instance here is a HERE-RESULT and is NOT what the level grades**, and it is `[RELAYED]` from **G257**: a Value field that merely repeats its symbol's part name is emitted `(hide yes)`, which removed `tp-leg-emitter-bypass`'s field-placement refusal. **That instance was the owner's own dissolution, not an agent's**, which is why it is not a mechanism this row proposes | **it does not generalise, and G232's Task 21 amendment says why in its own words**: the three `Device:C`-class blockers carry *"values that are real electrical parameters that MUST be drawn"*, so **"Task 21's change cannot help any of them"** - and §1.9 measures those capacitors at **0 of 5 inside slots under all four quantities**. xschem's own guard is keyed on zoom, **never on what else is at that coordinate**, and both its exporters' copies are commented out | which text carries information a builder needs - the owner dissolved one case and there is no rule | §4.3, §4.8; **G257**, `[RELAYED]` | **ESTABLISHED ELSEWHERE** |
+**THE FORM OF THIS SUBSECTION WAS CHANGED ON 2026-10-23, AND THE REASON IS THIS
+REPOSITORY'S OWN CARDINAL PRACTICE.** Rounds 0 and 1 carried all of this as a
+**seven-column table**: 18 rows at a median of **761.5 characters / 765 bytes**
+and a maximum of **1465 characters**, with **ten cells over 300** and a longest
+cell of **740**. **IT WAS NEVER RENDERED, AND RENDERING IT IS WHAT SETTLES IT.**
+`[RAN]` pandoc GFM to HTML, viewed in a 1100 px browser: the table laid out
+**6300 px tall** and **1195 px wide inside a 1100 px page**, so the last three
+columns - *what it depends on*, *evidence* and **LEVEL** - run off the right edge
+and are **clipped, not scrollable** (`document.scrollWidth` is 1100). **The
+column the whole section is organised around could not be read at all.** That is
+`CLAUDE.md`'s *"a document can be generated and useless. Render it, print it,
+read it"* going unapplied to the one subsection of this document a reader is most
+likely to open first. The same eighteen rows are now a **three-column index**
+plus **one labelled block per row**: the index renders **822 px tall** and **838
+px right edge**, nothing clipped. **No row, no grade, no figure and no citation
+is changed by the re-presentation** - five quotations across §7 and the head
+table were corrected in the same change, **three of them here**, and all five are
+listed in §7.7(3); everything else is the previous table's text,
+cell for cell, and the move was checked that way (108 cell comparisons, all
+present).
+
+| # | approach | LEVEL |
+| --- | --- | --- |
+| 1 | **Ask ELK to place the global label and read the coordinate back** | **DEMONSTRATED HERE** (negative) |
+| 2 | **Tell ELK about text BEFORE it places nodes** | **DEMONSTRATED HERE** (capability only) |
+| 3 | **Port KiCad's field autoplacer wholesale** | **ESTABLISHED ELSEWHERE** |
+| 4 | **Port `fitFieldsBetweenWires`, its one local repair** | **ESTABLISHED ELSEWHERE** |
+| 5 | **Fix the text metric and keep the current search** | **DEMONSTRATED HERE** |
+| 6 | **Side selection for global labels: search freedom 1** | **DEMONSTRATED HERE** |
+| 7 | **Freedom 2: slide the anchor along the segment it already sits on** | **DEMONSTRATED HERE** |
+| 8 | **Freedom 4: another segment of the same net** | **DEMONSTRATED HERE** |
+| 9 | **Freedom 3: lengthen the label's stub 1-8 grid steps, over all four sides** | **DEMONSTRATED HERE** |
+| 10 | **Freedom 2 TOGETHER WITH the wire retraction it implies** | **INTEGRATION HYPOTHESIS** |
+| 11 | **A candidate STRIP along the net's polyline** | **ESTABLISHED ELSEWHERE** |
+| 12 | **A penalty model over the sheet** | **ESTABLISHED ELSEWHERE** |
+| 13 | **Re-walk the field placement order and keep the best** † | **DEMONSTRATED HERE** † |
+| 14 | **Place what you can and log what you could not - for LABELS, as the field placer already does for fields** | **INTEGRATION HYPOTHESIS** |
+| 15 | **Make the fallback as LOUD as an overfull box** | **ESTABLISHED ELSEWHERE** |
+| 16 | **Publish the conflict count as a MEASURE** | **INTEGRATION HYPOTHESIS** |
+| 17 | **Shorten the text** | **INTEGRATION HYPOTHESIS** |
+| 18 | **Suppress the text** | **ESTABLISHED ELSEWHERE** |
+
+**THE EIGHTEEN, ONE AT A TIME.** Each block below is one row of that index, with
+the four things the row has to say kept apart and labelled. **Nothing here is new**
+relative to the index above it; it is the same eighteen rows in a form a renderer
+can show.
+
+**1.** **Ask ELK to place the global label and read the coordinate back** —
+**DEMONSTRATED HERE** (negative)
+
+- **WHAT IT WOULD FIX** **Nothing.** ELK places it and returns an offset from
+  the anchor; `lib/schgen/render/emit-items.ts:227-241` emits a `global_label`
+  with exactly one coordinate, so **an offset has no representation in this
+  emitter's output vocabulary**
+- **WHAT IT WOULD NOT FIX** everything: no board, no block, no overlap
+- **WHAT IT DEPENDS ON** nothing - it is not an available move in the emitted
+  form
+- **EVIDENCE** §2.7, §2.8
+
+**2.** **Tell ELK about text BEFORE it places nodes** (outside node labels,
+fixed size - arm **e**) — **DEMONSTRATED HERE** (capability only)
+
+- **WHAT IT WOULD FIX** Over this repository's own 48 graphs, 398 labels
+  placed, **0 ran into any body**, and the drawing grew in both dimensions to
+  make room. This repository places all of its text AFTER a layout computed as
+  if no text existed
+- **WHAT IT WOULD NOT FIX** **266 label-over-wire crossings** appeared in the
+  same arm, by this repository's own predicate, **undiagnosed**;
+  label-to-label separation across elements is not in ELK's option vocabulary
+  at all; **no `.kicad_sch` was written and no board was drawn**
+- **WHAT IT DEPENDS ON** an emitter change nobody has designed, for a label
+  whose only emitted coordinate is its anchor (row 1); and a diagnosis of the
+  266
+- **EVIDENCE** §2.5 arm **e**, §2.8, §2.9
+
+**3.** **Port KiCad's field autoplacer wholesale** — **ESTABLISHED ELSEWHERE**
+
+- **WHAT IT WOULD FIX** Nothing identified. Its rigid field stack is already
+  here (`slotFields`); its four sides are **fewer** than this repository's
+  eleven candidates; and its non-refusal is already here since **G232**'s Task
+  24 change
+- **WHAT IT WOULD NOT FIX** the label problems - it is a FIELD autoplacer and
+  §5.11 could find no label autoplacer in KiCad at all; and it carries a
+  **confirmed defect**, picking a side it has graded as colliding while a
+  clear side remains
+- **WHAT IT DEPENDS ON** nothing worth depending on: **any design reasoning
+  "KiCad manages with four sides, so the candidate set is not the problem" is
+  reasoning from an algorithm that does not reliably take the clear side it
+  has found**
+- **EVIDENCE** §3.1-§3.3, §3.13
+
+**4.** **Port `fitFieldsBetweenWires`, its one local repair** — **ESTABLISHED
+ELSEWHERE**
+
+- **WHAT IT WOULD FIX** **The one idea §3 found that this repository does not
+  have**: a local shift of a chosen candidate, along one axis, into a free gap
+  between parallel obstacles. This repository has **no perturbation of any
+  kind**
+- **WHAT IT WOULD NOT FIX** unmeasured - whether it would help depends on
+  whether this repository's fallbacks are blocked by **wires** in particular,
+  and nobody has asked
+- **WHAT IT DEPENDS ON** re-reading **G260**'s fifteen fallbacks by obstacle
+  class, which §3.13 names and did not do
+- **EVIDENCE** §3.5, §3.13, §4.8
+
+**5.** **Fix the text metric and keep the current search** — **DEMONSTRATED
+HERE**
+
+- **WHAT IT WOULD FIX** The over-reservation: a median 18% and a maximum 87%
+  of excess width against the rendered ink, worst case 4.2 grid steps - more
+  than three characters of room claimed and not used. And the HEIGHT
+  under-reservation, which is where the model is wrong under every measured
+  quantity
+- **WHAT IT WOULD NOT FIX** **THE BLOCKERS. 13 of 15 field fallbacks survive
+  all three measured quantities; under KiCad's own box all 15 survive and 9
+  MORE appear (24), under the ink 20.** Of 8 drawn-text overlaps, 4 are
+  artefacts of the ruler and 4 are real - and **the blocking pair of each of
+  the three blocked blocks survives under every quantity**
+- **WHAT IT DEPENDS ON** the owner's election among the three quantities
+  (**G265** clause 4), which **changes the recorded population from 13 to 24**
+- **EVIDENCE** §1.7, §1.9
+
+**6.** **Side selection for global labels: search freedom 1** (4ⁿ over a
+block's anchors, graded by `checkLayout`) — **DEMONSTRATED HERE**
+
+- **WHAT IT WOULD FIX** **5 of the 12 label-blocked blocks outright, under the
+  production ruler** - all five Pultec `*-junction` blocks, at
+  `hi_boost_out:down`. Cost: 4⁴ = **256** `checkLayout` calls on each of those
+  five, which carry four label anchors apiece; the widest F1 space in the
+  repository is 4⁶ = **4096**. The side is currently never searched:
+  `read-graph.ts:244-272` reads it off the direction of the last route segment
+- **WHAT IT WOULD NOT FIX** the other 7. **And no board**: all five blocks it
+  clears are on Pultec boards refused at `validateCircuit` before any text is
+  placed (§7.2)
+- **WHAT IT DEPENDS ON** the production ruler - **every clearing count in §5
+  is at `length × GRID` and is expected to move under another**
+- **EVIDENCE** §5.7, §5.9, §5.10 item 1
+
+**7.** **Freedom 2: slide the anchor along the segment it already sits on** —
+**DEMONSTRATED HERE**
+
+- **WHAT IT WOULD FIX** **0 of 12 blocks.** Its best totals never reach zero -
+  1, 2, 3, 6 and 10. All 46 anchors had candidates (516 grid points summed),
+  so no verdict here is vacuous
+- **WHAT IT WOULD NOT FIX** everything it was hoped to. And on three blocks it
+  **creates** a problem: the wire end the anchor left is refused by this
+  repository's own `danglingWireEnds` - **a generator rule, not the file
+  format; KiCad does not share it** (**G269**)
+- **WHAT IT DEPENDS ON** the ruler; and the dangling-end rule, which §5.9 says
+  is **not wrong** and is the reason the compatible form of this move is row
+  10
+- **EVIDENCE** §5.3, §5.7, §5.9
+
+**8.** **Freedom 4: another segment of the same net** — **DEMONSTRATED HERE**
+
+- **WHAT IT WOULD FIX** **0 of 12 blocks**, and on several it makes things
+  worse by stranding the wire end the anchor left. **6 of the 46 anchors have
+  an EMPTY candidate set** - their net has only one segment
+- **WHAT IT WOULD NOT FIX** everything. The generator's own exposure here is
+  two positions in a chain decided by a layer constraint (`graph.ts:240-252`),
+  out of n+1 insertion points
+- **WHAT IT DEPENDS ON** the ruler; and Imhof's per-segment framing, which
+  reaches this document through Wolff Ch. 5 only
+- **EVIDENCE** §5.7, §5.9
+
+**9.** **Freedom 3: lengthen the label's stub 1-8 grid steps, over all four
+sides** — **DEMONSTRATED HERE**
+
+- **WHAT IT WOULD FIX** **7 of 12 blocks - the widest of the four freedoms**,
+  and the only one that clears `tp-leg-emitter-bypass` and `tp-follower`. On
+  `tp-leg-emitter-bypass`, `BYPASS_CAP` stub `+2` steps to `(15.24, 5.08)`
+  side `down` gives a layout `checkLayout` grades at **ZERO problems**, for
+  2.54 mm of wire
+- **WHAT IT WOULD NOT FIX** 5 blocks. **The bound on the sweep is
+  deliberate**: *adjust the surrounding geometry* is unbounded in general, and
+  an unbounded search would be a placement algorithm, which no research task
+  may produce
+- **WHAT IT DEPENDS ON** the ruler. **And the measurement is of one block's
+  geometry, not a rule** - nothing says the same move helps elsewhere, and
+  §5.7 shows 7 of 12 and not 12 of 12
+- **EVIDENCE** §5.7, §5.8, §5.10 item 2
+
+**10.** **Freedom 2 TOGETHER WITH the wire retraction it implies** - move the
+anchor off a wire end and shorten the wire after it — **INTEGRATION
+HYPOTHESIS**
+
+- **WHAT IT WOULD FIX** Unknown, and **§5.9 names it the single most likely
+  thing to widen "some freedom clears it" above 7 of 12**, because three
+  blocks reduce to the dangling-end problem alone
+- **WHAT IT WOULD NOT FIX** nothing is known either way. **It was not swept**,
+  and the sweep that was performed could not reach it: it moves anchors and
+  not wires
+- **WHAT IT DEPENDS ON** a sweep nobody has run; and the ruler, once it is
+- **EVIDENCE** §5.9, §5.10 item 3
+
+**11.** **A candidate STRIP along the net's polyline** (continuous line
+labelling: Wolff Ch. 5, with each inter-junction segment a feature of its own
+after Imhof) — **ESTABLISHED ELSEWHERE**
+
+- **WHAT IT WOULD FIX** **It is the formulation that actually fits** -
+  internal labelling of a line feature with a sliding site - and this
+  repository's own H3 refusal (`label hi_boost_out` *"overlaps wire 33"*) is
+  the literature's hard constraint, independently arrived at. §5.6's 95
+  anchors at min 20 / median 80 / max 1000 are what it would be searching
+- **WHAT IT WOULD NOT FIX** nothing is measured, and **how many more labels a
+  continuous model places than a fixed-position one is still UNKNOWN here.**
+  §5.1 read Wolff Ch. 3 **for Definitions 3.1 and 3.2 only and states that its
+  approximation results were not read**, which is where that comparison would
+  be; **G232**'s Task 23 amendment records the same question open from the
+  other side. Imhof reaches this document only through Wolff's transcription,
+  `[NOT RETRIEVED]`
+- **WHAT IT DEPENDS ON** a reading nobody has made of the results §5.1 left,
+  and an implementation nobody has written
+- **EVIDENCE** §5.1, §5.6, §5.10 item 4; **G270**
+
+**12.** **A penalty model over the sheet** - badness as a continuous quantity,
+two declared grades of it, a feasibility threshold separate from the ranking,
+a penalty attached to a choice — **ESTABLISHED ELSEWHERE**
+
+- **WHAT IT WOULD FIX** **TWO of those four are already here, and §6.3 calls
+  one of them convergent rather than borrowed**: overlap area is continuous in
+  `occupancy.ts`, and `field-placement.ts`'s own header says *"THE COST RANKS;
+  IT NEVER DECIDES FEASIBILITY."*
+- **WHAT IT WOULD NOT FIX** **nothing, by itself - and the two that are
+  missing are missing differently.** The **two grades** exist here *implicitly
+  and globally* - every obstacle is infinite until no candidate is clear, at
+  which moment every obstacle becomes finite at once - and §6.3 calls
+  declaring them *"the part this repository most lacks as a declared thing"*;
+  **the declaration IS an acceptance criterion and is the owner's** (§7.5). A
+  **penalty on a choice** this repository has *"in principle; nothing here has
+  one"* - `allCandidates`'s array order is its only preference statement and
+  the prior-art document records it as *"unjustified anywhere"*. And the
+  SEARCH does not transfer: the authors name contiguity as its only rescue and
+  label placement has none
+- **WHAT IT DEPENDS ON** the owner's split; and **not** on the literature's
+  numbers - **Knuth and Plass call both their published formulae *"quite
+  arbitrary"***, so adopting their cost function is not a move that exists
+- **EVIDENCE** §6.1-§6.3, §6.7, §6.11 item 2
+
+**13.** **Re-walk the field placement order and keep the best** † —
+**DEMONSTRATED HERE** †
+
+- **WHAT IT WOULD FIX** Measured, over all 48 declared blocks and 255 unit
+  placements: **production 53 fallbacks, order-wise best 51.** 3 units change
+  fallback status under some order and 21 change slot, so the sequential
+  dependence is live and not theoretical
+- **WHAT IT WOULD NOT FIX** **IT IS NOT FREE, AND AN EARLIER DRAFT SAID IT
+  WAS.** The order-wise **worst is 54** - an order chosen without an objective
+  can cost a fallback as easily as save one. **All 53 fallbacks live on the 12
+  blocks too large to exhaust**, sampled at 200 orders out of between 40 320
+  and 3.05e29, so **51 is an upper bound on the achievable minimum and not an
+  optimum**; the 36 blocks driven exhaustively have **zero** fallbacks, so
+  their order-invariance is proven and uninformative. **4 fallbacks cover
+  other text and 3 of the 4 are not reachable by reordering at all**
+- **WHAT IT DEPENDS ON** an objective to be best BY, which is row 16's problem
+  and ultimately **G260**'s
+- **EVIDENCE** §6.5, §6.10, §6.11 item 3
+
+**14.** **Place what you can and log what you could not - for LABELS, as the
+field placer already does for fields** — **INTEGRATION HYPOTHESIS**
+
+- **WHAT IT WOULD FIX** **It is the only approach in this table that could
+  move the board count at all**, because it replaces a refusal with a drawing
+  rather than moving text. **Zero of eight comparable systems refuse** - six
+  tools in §4, KiCad in §3, TeX in §6.8 - so refusing is this generator's
+  peculiarity among its closest neighbours
+- **WHAT IT WOULD NOT FIX** **it fixes no overlap**: the text is still drawn
+  over something, and what changes is that a sheet exists. **AND HOW MANY
+  BOARDS IT WOULD DRAW IS NOT KNOWN AND IS NOT GUESSED HERE.** The six
+  `validateCircuit` boards never reach a text pass. Of the five that do,
+  **three are refused on a first problem with no label in it** - one junction,
+  two power-symbol glyph touches - which a label placer does not absorb; and
+  the two refused on a label each have a second block behind them, `tp-stage`,
+  whose problem list is 8 of 8 naming a label on `-lab` and **15 of 21 on
+  `-loop`** (§5.7). **Nothing was re-graded under a non-refusing label pass**,
+  so the board figure under this row is unmeasured
+- **WHAT IT DEPENDS ON** **ENTIRELY on G260, which is the owner's.** Its
+  criterion, quoted here as §7.5(1) quotes it and contiguous in the entry:
+  *"the owner looks at a sheet carrying fallback placements and says whether
+  it is acceptable, and under what count or what kind of overlap it stops
+  being acceptable."* Nothing here answers that or may be read as implying an
+  answer
+- **EVIDENCE** §4.9, §6.8, **G260**, **G268**; the field precedent is
+  **G232**'s Task 24 change, `[RELAYED]`
+
+**15.** **Make the fallback as LOUD as an overfull box** — **ESTABLISHED
+ELSEWHERE**
+
+- **WHAT IT WOULD FIX** Nothing about a drawing. TeX errors on the user's
+  terminal on the run that produced the overset line; this repository writes a
+  `FieldFallback` row into `RENDER-REPORT.md` that **nothing automated
+  reads**, so a generation going from 0 fallbacks to 50 is green
+- **WHAT IT WOULD NOT FIX** no overlap, no block, no board. It is a reporting
+  change
+- **WHAT IT DEPENDS ON** **G260**'s open residual verbatim, waiting on the
+  owner's number. It is not a new proposal and must not be written up as one
+- **EVIDENCE** §6.8; **G260**'s residual
+
+**16.** **Publish the conflict count as a MEASURE** - the fraction of items
+placed without overplot — **INTEGRATION HYPOTHESIS**
+
+- **WHAT IT WOULD FIX** Computable today from `FieldFallback` with no new
+  geometry. **It would be the first number about TEXT in a repository whose
+  five readability numbers are all computed over WIRES** - and §6.6 found text
+  entering exactly one of the five, as a point with no extent
+- **WHAT IT WOULD NOT FIX** nothing. It measures; it does not place
+- **WHAT IT DEPENDS ON** **it is a MEASURE and not a gate, and no threshold
+  may accompany it** without the owner (**G71**, **G260**). A weighting or a
+  budget invented here would be **G71**'s failure exactly
+- **EVIDENCE** §6.6, §6.11 item 1; **G272**
+
+**17.** **Shorten the text** - ELK's `labelManager`, or any abbreviation of a
+net name — **INTEGRATION HYPOTHESIS**
+
+- **WHAT IT WOULD FIX** Unknown. It is the one label option `layered` does not
+  list, and §2 **did not drive it**
+- **WHAT IT WOULD NOT FIX** nothing is measured
+- **WHAT IT DEPENDS ON** **an owner decision in any case** - whether an
+  abbreviated net name on a schematic is acceptable is not an agent's call
+- **EVIDENCE** §2.1, §2.9
+
+**18.** **Suppress the text** — **ESTABLISHED ELSEWHERE**
+
+- **WHAT IT WOULD FIX** **WHAT THE LEVEL GRADES IS xschem**, `[READ]` at a
+  pinned commit: it suppresses text below ~3 device pixels at the current
+  zoom, on screen. **The one instance here is a HERE-RESULT and is NOT what
+  the level grades**, and it is `[RELAYED]` from **G257**: a Value field that
+  merely repeats its symbol's part name is emitted `(hide yes)`, which removed
+  `tp-leg-emitter-bypass`'s field-placement refusal. **That instance was the
+  owner's own dissolution, not an agent's**, which is why it is not a
+  mechanism this row proposes
+- **WHAT IT WOULD NOT FIX** **it does not generalise, and G232's Task 21
+  amendment says why in its own words**: the three `Device:C`-class blockers
+  carry values that *"are real electrical parameters that MUST be drawn"*, so
+  **"Task 21's change cannot help any of them"** - and §1.9 measures those
+  capacitors at **0 of 5 inside slots under all four quantities**. xschem's
+  own guard is keyed on zoom, **never on what else is at that coordinate**,
+  and both its exporters' copies are commented out
+- **WHAT IT DEPENDS ON** which text carries information a builder needs - the
+  owner dissolved one case and there is no rule
+- **EVIDENCE** §4.3, §4.8; **G257**, `[RELAYED]`
 
 **THE COUNTS, so a reader can see the shape without counting:** 18 rows -
 **6 ESTABLISHED ELSEWHERE** (3, 4, 11, 12, 15, 18), **8 DEMONSTRATED HERE**
@@ -5465,7 +5786,7 @@ becomes visible once all six are read together.
   seven tasks changed no file under `lib/`, `circuits/`, `boards/` or the
   `Makefile`. **0 of 11 boards produced a schematic before this plan and 0 do
   after it**, and the plan's own constraint is why.
-- **NO APPROACH IN §7.1 WAS IMPLEMENTED, so every *fixes* cell above is either a
+- **NO APPROACH IN §7.1 WAS IMPLEMENTED, so every *what it would fix* entry above is either a
   sweep's verdict or an estimate, never an outcome.** The sweeps in §5 grade
   candidate geometries with `checkLayout`; they do not emit a `.kicad_sch`, run
   `kicad-cli` on it, or show the result to anybody.
@@ -5553,7 +5874,7 @@ to what he would be looking at:
   decision.
 - **Row 14 is the only approach in §7.1 that could move the board count**, and it
   moves it by drawing overlapping text rather than by moving any. **How many boards
-  it would draw is unmeasured** (§7.1's own cell says so), and it depends on this
+  it would draw is unmeasured** (§7.1's own entry says so), and it depends on this
   decision entirely.
 - **THERE IS NO SHEET TO LOOK AT, AND NOTHING HAD SAID SO.** `[RAN, CONFIRMED]`
   **0 of 11 boards generate**; `[RELAYED]` all four parity circuits refuse at
@@ -5664,7 +5985,7 @@ each carry their own coupling, and about the one figure §7 drove, which is
 re-drivable in one command and is pinned to nothing. §1.11's standing caveat
 applies unchanged and is not improved here.
 
-### 7.7 Two deviations, recorded where a later reader would look for them
+### 7.7 Three deviations, recorded where a later reader would look for them
 
 **(1) THE SYNTHESIS IS IN THIS DOCUMENT AND NOT IN ITS OWN, AND THAT REVERSES A
 RULING.** During Task 3 the controller ruled that the synthesis would get its own
@@ -5711,6 +6032,31 @@ controls confirm the removal is not over-reaching - **taking out only one of the
 two pointers does NOT reproduce the parent hash**, in either direction. The
 pointers add **1721 bytes** between them and nothing else moved.
 
+**AND THE 2026-10-23 FIX DISPATCH MOVED IT AGAIN, WITH EXACTLY ONE AUTHORISED
+EXCEPTION INSIDE §1-§6 - WHICH IS THE FORM WORKING AS INTENDED RATHER THAN
+BREAKING.** That dispatch corrected **one figure in §6.7**: the superseded
+round-0 *"15 of 75 unit placements"* became the live **"53 of 255"**, the
+population §6.5 actually measures. **It is the only byte of §1-§6 that moved**,
+and this is the check, re-derived here by the method this subsection describes
+rather than relayed:
+
+| slice | SHA-256 | size |
+| --- | --- | --- |
+| parent `96a534c`, `[§1 heading .. §7 heading]` | `f7fcde37f305331163a4d29cacb75d6f3a459586a6889702e6c2ddbf0f48eeff` | 354 369 bytes / 353 839 chars |
+| this round, the same slice | `9effe64a98a3edb906269cd0b1025f95dacb75d547cff761aff1760c00a754f6` | 354 370 bytes / 353 840 chars |
+| **the same, with the one authorised figure put back** | **`f7fcde37…f0f48eeff` - the parent's, exactly** | **354 369 bytes / 353 839 chars** |
+
+**The controls, each of which could have answered differently.** The un-reverted
+child does **not** match the parent hash, so the check is not vacuous. **Exactly
+one line of the whole slice differs**, counted independently of the hash, so no
+second edit is hiding behind the first; the byte delta is **+1**, which is
+`15 of 75` (8 characters) becoming `53 of 255` (9). And the **parent row above
+reproduces fix round 1's published `f7fcde37…` exactly** from this subsection's
+stated convention and nothing else - **that is the real test of the convention**,
+because a boundary rule that did not reproduce the previous round's hash would be
+a different rule wearing the same words. The preamble is byte-identical again
+(`110ffcf2…`, 1696 bytes / 1695 characters).
+
 **THE BINDING EVIDENCE IS A HASH, AND THE LENGTHS ARE CONTEXT.** The boundary
 convention, stated because round 0 did not state it and a length cannot be
 re-derived without one: the slice begins at the first byte of `§1`'s heading text
@@ -5719,6 +6065,15 @@ preamble is everything before the first byte of the inserted head table's own
 line, **1696 bytes / 1695 characters**, byte-identical in parent and child. The
 slice holds **511 non-ASCII characters** - 413 of them `§` - for a byte-minus-
 character gap of **523**, which is why the unit has to be said.
+
+**AND THOSE TWO NUMBERS BELONG TO THE `b9fd12dd…` SLICE, NOT TO EVERY SLICE -
+WHICH IS WORTH A SENTENCE BECAUSE THE NEXT READER WILL RE-TAKE THEM AND GET
+DIFFERENT ONES.** `[RAN]` 2026-10-23: **511 non-ASCII / 413 `§` / gap 523** are
+exactly right for `5ca6f2d`'s `[§1 .. EOF]`, and the slice measured from fix
+round 1 onward holds **518 non-ASCII / 420 `§` / gap 530** - the seven extra `§`
+are in the two authorised §5 pointer blocks. **Both are correct and they are
+figures about different slices**, which is the same disease as a length without
+its unit: a figure stated without the material it is over cannot be re-derived.
 
 **THE INSERTED HEAD TABLE'S LENGTH IS DELIBERATELY NOT PUBLISHED AS A FIGURE AT
 HEAD, AND THE REASON IS THE THIRD INSTANCE OF A PATTERN THIS BRANCH SHOULD STOP
@@ -5749,15 +6104,50 @@ is what the two paragraphs above now do. **Units are half of it**: three of roun
 with 511 non-ASCII characters in the measured slice alone.
 
 **AND THIS ROUND DEMONSTRATED THE SAME SHAPE A FOURTH TIME, FROM AN AUTHORISED
-CHANGE RATHER THAN AN ERROR, WHICH IS THE SHARPEST VERSION OF IT.** Round 0's
-`b9fd12dd…` was described as *"invariant under every later edit outside §1-§6"* -
-and fix round 1 was then authorised to edit **inside** §1-§6, so the hash moved to
+CHANGE RATHER THAN AN ERROR, WHICH IS THE SHARPEST VERSION OF IT.** Round 0
+published `b9fd12dd…` under the claim *"Not one word of §1-§6 is edited"*, with
+the figures offered *"so a later reader can re-take the same check"* - and fix
+round 1 was then authorised to edit **inside** §1-§6, so the hash moved to
 `f7fcde37…` and round 0's sentence became false without anybody making a mistake.
 **A hash is only invariant over material nobody is later permitted to touch**, and
 the durable form is the one the table above now uses: **the parent's hash, plus
 the enumerated exceptions, plus a check that removing exactly those exceptions
 reproduces it.** That form survives the next authorised edit; a bare hash and a
-bare length do not. **G276** carries the pattern and all four demonstrations.
+bare length do not. **G276** carries the pattern and all four demonstrations, and
+its 2026-10-23 amendment carries the **one-byte off-by-one** two independent
+implementations of this check hit from the same cause - §5.10's pointer
+blockquote is preceded by **two** newlines, not one.
+
+**(3) THE 2026-10-23 FIX DISPATCH NARROWED THE CLOSED-SECTION RULE A SECOND TIME,
+AND CORRECTED FIVE QUOTATIONS - TWO OF WHICH PUT WORDS IN SOMEBODY'S MOUTH.** It
+is recorded here for the same reason (2) is: the rule it narrows was stated in
+this subsection, and the next reader checking whether §1-§6 is confined needs the
+exceptions enumerated rather than discovered.
+
+**THE AUTHORISED EDIT INSIDE §1-§6 WAS ONE FIGURE**, §6.7's, and the table in (2)
+above is the check. **THE FIVE QUOTATION CORRECTIONS**, all in §7 or the head
+table, each verified against its source after the change:
+
+| where | what it said | what the source says |
+| --- | --- | --- |
+| **§7.1 row 14** | **G260** quoted as *"how much overlap is acceptable, and under what count or what kind of overlap it stops being acceptable"* | **that string is in no entry.** It spliced the head of one **G260** clause to the tail of its criterion, **160 lines apart, with no elision marked**. The row now quotes the criterion as §7.5(1) does, contiguous and in full |
+| **§7.7 (2)** | round 0's hash described as *"invariant under every later edit outside §1-§6"* | **round 0 wrote no such sentence** - `[RAN]` zero matches at `7951a9d` and at `d855a5d`. What it wrote is *"Not one word of §1-§6 is edited"*, which is what the paragraph now quotes. **G276**'s instance-4 row carried the same invented string and is corrected with it |
+| **§7.1 row 18** | **G232**'s Task 21 amendment quoted as *"values that are real electrical parameters that MUST be drawn"* | the entry reads *"capacitors whose values **are** real electrical parameters that MUST be drawn"* - one word altered inside the quotation marks. The quoted span now starts at *"are"* |
+| **§7.1 row 11** | the H3 refusal quoted as *"label `hi_boost_out` overlaps wire 33"* | the log line is *"label hi_boost_out **at (34.29, 64.77)** overlaps wire 33 of …"* - an unmarked elision. Now quoted as §5.1 quotes it, *"overlaps wire 33"*, with the label named outside the quotation marks |
+| **head table** | §1's finding quoted as *"13 of 15 survive all three quantities"* | §1's row says *"13 of 15 recorded field fallbacks survive all three measured quantities"*. It is now a paraphrase without quotation marks |
+
+**THE SWEEP THAT FOUND THEM, AND ITS LIMIT.** `[RAN]` every double-quoted span of
+eight characters or more in the head table and in §7 - **46 spans** - was
+normalised for soft wraps and emphasis and searched for in `docs/known-gaps.md`,
+`CLAUDE.md`, this document, both prior-art documents, the plan, and the four
+source files §7 cites. **Five did not reproduce and are the table above; the
+other forty-one did**, including every quotation of the register, of `CLAUDE.md`
+and of the owner. **The limit is that a quotation whose source is not in the tree
+cannot be checked this way**: the head table's third-party review quotation and
+§7.0's quotation of an uncommitted earlier draft of its own paragraph were both
+read by hand and left as they are, the first because its one alteration is
+bracketed and the second because it quotes a working tree that was never
+committed and says so.
 
 ### 7.8 What §7 did NOT establish
 
@@ -5770,7 +6160,7 @@ bare length do not. **G276** carries the pattern and all four demonstrations.
   with the same tool and §7 agrees with it - **but the per-board `validateCircuit`
   counts in §7.2's table were tallied from the run here for the first time**, and
   `pt2399-core`'s 18 is the one of the six that an earlier entry had published.
-- **It drove no approach in §7.1.** Every *fixes* cell is a relayed sweep verdict
+- **It drove no approach in §7.1.** Every *what it would fix* entry is a relayed sweep verdict
   or an explicit unknown. **The four INTEGRATION HYPOTHESIS rows are not equally
   empty**, and an earlier draft said they had *"no figure of any kind"* behind
   them, which is false of two: **row 14 carries zero-of-eight on refusal** and the
@@ -5786,7 +6176,7 @@ bare length do not. **G276** carries the pattern and all four demonstrations.
   (worst 54 against production 53) and *"the corpus's only text-over-text overlap
   is an artefact of the walk"* is a quarter right (four cover text, one moves
   under reordering, three do not). **Row 13 is written against the superseding
-  figures and says in its own cell that re-walking is not free.**
+  figures and says in its own entry that re-walking is not free.**
 - **IT OPENED NONE OF THE PRIMARY SOURCES §1-§6 READ.** Not `autoplace_fields.cpp`,
   not `newstroke_font.cpp`, not Knuth and Plass, not Wolff, not lepton-eda or
   xschem, not the Altium or OrCAD pages. **§7's grades of those sections' evidence

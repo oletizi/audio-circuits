@@ -24599,6 +24599,49 @@ not the probe's output.
   prediction, where §5 already demonstrates it working, and the suite figure may need a different
   home.
 
+> **AMENDED 2026-10-23 BY THE TEXT-HANDLING RESEARCH PLAN'S FINAL FIX DISPATCH: A THIRD THING THE
+> LEDGER WAS CARRYING THAT NOBODY COMMITTED - AND THIS ONE IS A FALSE SENTENCE IN THE PLAN ITSELF,
+> NOT A MISSING PREDICTION.**
+>
+> **THE FACT.** `docs/superpowers/plans/2026-10-22-text-handling-research.md`'s Global Constraints
+> end with *"These tasks change no code, so the suite is expected unchanged."* **That has been false
+> since Task 1.** `[RAN]` `git diff --stat` over the plan's own commit range: the plan added three
+> test files totalling **1 270 lines** - `tests/schgen/label-freedom/fixtures.test.ts` 189,
+> `tests/schgen/text-metrics/document-pastes.test.ts` 979,
+> `tests/schgen/text-metrics/pen-call-sites.test.ts` 102 - and every task from Task 1 onward
+> accounted for its own `expect()` delta term by term, which is the thing the constraint should have
+> asked for and did not.
+>
+> **THE DURABLE STATEMENT, which is the whole-plan reviewer's formulation and better than the one
+> the controller had:** ***"research only" does not imply "suite unchanged", because a research task
+> that commits a probe must also commit the checks that hold its figures.***
+>
+> **WHY IT BELONGS ON THIS ENTRY.** The correction was noticed during the plan and written down -
+> **in `.superpowers/.../progress.md`, which is gitignored**, where it reads *"NOTED FOR THE FINAL
+> REVIEW, NOT FIXED MID-FLIGHT"* and defers the erratum to the final review. That is the shape this
+> entry is about: a
+> device introduced to keep the record straight, instituted into a directory `git clean -fdx`
+> destroys. **This register has now recorded the same loss three times on this branch** - **G253**'s
+> six parked findings, this entry's prediction practice, and now the plan's own erratum - and the
+> third one was the controller's, who had been enforcing the rule on seven implementers while
+> parking this in the ledger.
+>
+> **WHAT WAS DONE ABOUT IT, so the next reader is not left to guess.** The plan file now carries a
+> **dated erratum note beside the constraint**, marked as added after every task completed, with the
+> original sentence left standing: finished tasks were held to the text as it stood, and rewriting
+> it would make the record of what they were asked to do wrong in a different way. **This clause is
+> the second committed place.**
+>
+> - **Evidence** `[RAN, CONFIRMED]` the `git diff --stat` above, whose three line counts sum to
+>   exactly 1 270 - a check that could have failed and would have if the plan had in fact changed no
+>   test. `[RAN]` `git check-ignore -v` on the progress file still names `.gitignore:33`, unchanged
+>   from this entry's body.
+> - **Verified** **CONFIRMED** for the file list, the line counts and the gitignore status, each
+>   driven here. **RELAYED** for the reviewer's formulation of the durable statement, which is quoted
+>   from the fix brief and not this writer's own sentence.
+> - **It does not change this entry's criterion**, which is about where a prediction lives and is
+>   met by exactly the same move.
+
 ---
 
 ### G272 - MEASURED over all 48 declared blocks: the field placer is first-fit AND best-fit on two different paths, so BOTH published characterisations of it are half-right - and the walk order moves 3 fallbacks and 21 slots, in BOTH directions
@@ -25064,7 +25107,7 @@ re-run the check, get the right answer, and then make one more edit.
 | 1 | a stale count in a register clause | later clauses were added to the same entry in the same change |
 | 2 | **§6.4's grep control** | the commit that published the control's hit count also changed the tree the grep ran over |
 | 3 | **§7.7's `4643`-byte head-table insertion** (and `352 125` for the slice) | **the same commit that published the number edited the head table**, moving it from 4645 bytes at `7951a9d` to 4662 at `d855a5d`; fix round 1 edited the table a third time |
-| 4 | **§7.7's own sentence that the §1-§6 hash is *"invariant under every later edit to this document outside §1-§6"*** | **fix round 1 was authorised to edit INSIDE §1-§6** - the two §5 pointers - so the hash moved from `b9fd12dd…` to `f7fcde37…` and the sentence became false **with nobody making a mistake.** This is the sharpest form of the pattern: an invariant is only invariant over material nobody is later permitted to touch |
+| 4 | **§7.7's own claim that §1-§6 was untouched** - round 0's words, *"Not one word of §1-§6 is edited"*, published beside `b9fd12dd…` *"so a later reader can re-take the same check"* | **fix round 1 was authorised to edit INSIDE §1-§6** - the two §5 pointers - so the hash moved from `b9fd12dd…` to `f7fcde37…` and the sentence became false **with nobody making a mistake.** This is the sharpest form of the pattern: an invariant is only invariant over material nobody is later permitted to touch |
 
 **AND INSTANCE 3 CARRIES A SECOND DEFECT WITH THE SAME CAUSE AS NEITHER: THE
 UNIT.** Three of round 0's five published lengths were **UTF-16 character counts
@@ -25136,4 +25179,56 @@ opposite of what the clause establishes.
   costed; or a convention that self-measured lengths are never published and only
   hashes are, which is cheaper and loses the context a reader uses to sanity-check
   a hash **and which instance 4 shows is insufficient on its own**. **Neither has
-  been tried, and this entry proposes neither.**
+  been tried, and this entry proposes neither.
+
+> **AMENDED 2026-10-23 BY THE FINAL FIX DISPATCH: A TRAP IN THE CHECK THIS ENTRY RECOMMENDS - A
+> ONE-BYTE OFF-BY-ONE THAT TWO INDEPENDENT IMPLEMENTATIONS HIT FROM THE SAME CAUSE - AND A
+> CORRECTION TO THE QUOTATION IN INSTANCE 4 OF THE TABLE ABOVE. It is not a sixth instance of the
+> pattern; it is a defect in the remedy.**
+>
+> **THE OFF-BY-ONE, BECAUSE IT COST TWO PEOPLE THE SAME HOUR.** The check this entry recommends -
+> remove the enumerated exceptions from the child and confirm the parent's hash comes back - needs
+> the exception's **byte span**, and both Task 7's implementer and the whole-plan reviewer's
+> independent script computed that span **one byte short**. The cause is the same in both: **§5.10's
+> pointer blockquote is preceded by TWO newlines, not one.** It is nested inside list item 2
+> (indented three spaces) and there is a **blank line** between the item's last text line and the
+> `>` that opens the quote, while there is **no blank line after it** - item 3 follows immediately.
+> So a removal written as `text.replace("\n" + block, "")` leaves a stray newline and misses the
+> parent hash by one byte, and the symptom is a hash mismatch with a length delta of exactly 1,
+> which reads like a real residue in §1-§6 and is not one. **The two blockquotes are not
+> symmetrical and neither is the rule for finding them.** It affected no committed figure in either
+> case; it is recorded because the next person hand-rolling a byte-offset check over this document
+> will write the same line.
+>
+> **THE SHAPE, GENERALISED:** a span-removal check must take the span from the **document**, by
+> locating both boundaries in it, and never from arithmetic over line lengths or from an assumed
+> single separator. The 2026-10-23 derivation avoided it by slicing on `indexOf` of the two heading
+> strings and replacing the one changed line by its exact text, so no newline was ever counted by
+> hand - and its control was that **exactly one line of the slice differs**, which would have caught
+> an over- or under-reaching removal independently of the hash.
+>
+> **AND INSTANCE 4'S QUOTATION WAS NOT A QUOTATION.** The row above used to attribute to round 0 the
+> words *"invariant under every later edit to this document outside §1-§6"*. `[RAN]` that string has
+> **zero matches** at `7951a9d` and at `d855a5d`, the two commits where round 0's text lives: round 0
+> wrote *"Not one word of §1-§6 is edited"* and offered its figures *"so a later reader can re-take
+> the same check"*. **The row's finding is unchanged** - the claim round 0 made was falsified by an
+> authorised later edit, which is the whole point of instance 4 - and only the quoted words are
+> corrected, here and in §7.7. It is the same defect class the same dispatch corrected in §7.1's row
+> 14, and §7.7(3) carries all five corrections with their sources.
+>
+> - **Evidence** `[RAN, CONFIRMED]` the 2026-10-23 derivation and its controls: the parent slice at
+>   `96a534c` reproduces fix round 1's published `f7fcde37…` from the stated convention, the child
+>   with the one authorised exception put back reproduces it again, the un-reverted child does not,
+>   and exactly one line of the slice differs with a byte delta of +1. **The round-1 hash
+>   reproducing is the control that could have failed**, and a boundary convention that did not
+>   reproduce it would have been a different rule wearing the same words. `[RAN]` `grep` for the
+>   invented sentence at both round-0 commits returns nothing, which is a check that could have
+>   matched and did not.
+> - **Verified** **CONFIRMED** for the derivation, the controls, the zero-match grep and the §5.10
+>   blockquote's two-newline shape, each driven or read here. **RELAYED** for the reviewer's script
+>   having hit the identical off-by-one, which is the fix brief's report and was not re-driven.
+> - **This does not change the entry's criterion**, which the 2026-10-23 derivation satisfies rather
+>   than challenges: its figures are form (b) - a hash over named material with its one permitted
+>   exception enumerated and a check that removing exactly it reproduces the baseline. **What the
+>   off-by-one adds is that form (b) has a sharp edge**, and an entry that recommends a mechanism
+>   owes the next implementer the edge as well as the mechanism.**
