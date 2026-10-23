@@ -441,7 +441,19 @@ const labelLog = fs.readFileSync(LABEL_LOG, "utf8")
 /** §5's probe's own first section header: the line that marks one run of THAT probe. */
 const LABEL_RUN_MARKER = "== WHAT THIS LABEL-FREEDOM RUN MEASURED"
 
-/** The document's heading for §5, which is where its slice begins and runs to the end of the file. */
+/**
+ * The document's heading for §5, which is where its slice begins and runs to the end of the file.
+ *
+ * **SINCE §6 WAS APPENDED, THAT SLICE CONTAINS §6, AND EVERY CASE BELOW STILL MEANS §5 FOR ONE
+ * REASON: THEY COUNT ` ```label-run ` FENCES SPECIFICALLY RATHER THAN ALL FENCES.** §4 hit the
+ * other version of this when §5 was appended - its slice ran to the end of the file and its pinned
+ * count silently became a count of §4 plus §5 - and `sectionFour` now refuses without §5's heading
+ * as an upper bound. §5 needs no such bound while its fence word is its own: §6's blocks are fenced
+ * ` ```field-order-run `, so they are invisible to the mapping and to the pinned count, and they
+ * reach §5's `verify` call as NOT CHECKED, which `verified + notOutput + failures = blocks` already
+ * accounts for. **The dependence is on fence-word specificity, and it is written here so that
+ * appending §7 is a decision rather than an accident.**
+ */
 const SECTION_5_HEADING = "§5 A global label's coordinates, and the four freedoms it actually has"
 
 /** How many blocks §5 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
@@ -536,6 +548,161 @@ describe("section 5's pasted output, against section 5's own log", () => {
     // And neither of the other markers is readable in §5's log, which is how `verify` counts runs.
     expect(labelLog.split("\n").filter((l) => l === LABEL_RUN_MARKER).length).toBe(1)
     expect(labelLog.split("\n").filter((l) => l === RUN_MARKER || l === ELK_RUN_MARKER).length).toBe(0)
+  })
+})
+
+/**
+ * **§6's PASTED OUTPUT, AGAINST §6's OWN LOG - THE FOURTH CALL TO THE SAME CHECKER.**
+ *
+ * The arrangement is §2's and §5's exactly: the document fences §6's blocks ` ```field-order-run `
+ * so they stay out of §1's, §2's and §5's output namespaces, this file maps the fence word - and
+ * only the fence word, at a line start - and hands §6's slice to the same checker with §6's own log
+ * and §6's own run marker.
+ *
+ * **THE ONE PLACE §6 DIFFERS FROM §5, stated rather than left to be noticed: there is no commit
+ * coupling.** §1's log is pinned to a commit because §1's probe cannot be re-driven without
+ * `kicad-cli`, KiCad's Python bindings and a font blob fetched from outside the repository. §6's
+ * probe needs **nothing external at all** - `bun run tools/schgen/field-order/probe.ts` from a
+ * clean checkout re-drives every figure §6.5 pastes - so a reader who doubts a number re-takes it
+ * instead of trusting a pin. That is why the case list below carries no commit case and §5's does.
+ *
+ * **§6's SEVEN `kp-src` BLOCKS ARE NOT CHECKED BY ANYTHING AND CANNOT BE.** They are transcriptions
+ * of a 1981 journal scan, so there is no log they could be a contiguous slice of. They are declared
+ * NOT CHECKED by name, the way §4's eight are, and the last case here pins their count so that one
+ * appearing or vanishing is a deliberate edit in this file.
+ */
+const FIELD_ORDER_LOG = path.join(repoRoot, "tools/schgen/field-order/probe-run.log")
+const fieldOrderLog = fs.readFileSync(FIELD_ORDER_LOG, "utf8")
+
+/** §6's probe's own first section header: the line that marks one run of THAT probe. */
+const FIELD_ORDER_RUN_MARKER = "== WHAT THIS FIELD-ORDER RUN MEASURED"
+
+/** The document's heading for §6, which is where its slice begins and runs to the end of the file. */
+const SECTION_6_HEADING = "§6 Typesetting's penalty model, and the one condition its author puts on it"
+
+/** How many blocks §6 pastes from its own log. Pinned, so adding or dropping one is deliberate. */
+const SECTION_6_BLOCKS = 5
+
+/** How many source transcriptions §6 pastes that no log can check. Pinned for the same reason. */
+const SECTION_6_SOURCE_BLOCKS = 7
+
+/** §6's text with its fence word mapped into the checker's output namespace, and nothing else. */
+function sectionSixAsOutput(d: string): string {
+  const at = d.indexOf(SECTION_6_HEADING)
+  if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_6_HEADING)}, so §6's slice cannot be found`)
+  return d.slice(at).replace(/^```field-order-run /gm, `\`\`\`${OUTPUT_FENCE} `)
+}
+
+describe("section 6's pasted output, against section 6's own log", () => {
+  test("the mapping changes fence words and nothing else", () => {
+    const slice = doc.slice(doc.indexOf(SECTION_6_HEADING))
+    const mapped = sectionSixAsOutput(doc)
+    expect((slice.match(/^```field-order-run /gm) ?? []).length).toBe(SECTION_6_BLOCKS)
+    expect((mapped.match(/^```field-order-run /gm) ?? []).length).toBe(0)
+    expect(slice.length - mapped.length).toBe("field-order-".length * SECTION_6_BLOCKS)
+    const before = parseBlocks(slice).map((b) => b.lines.join("\n"))
+    const after = parseBlocks(mapped).map((b) => b.lines.join("\n"))
+    expect(after).toEqual(before)
+  })
+
+  test("every block section 6 pastes is a contiguous slice of section 6's committed log", () => {
+    const v = verify(sectionSixAsOutput(doc), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
+    expect(v.failures).toEqual([])
+    expect(v.verified).toBe(SECTION_6_BLOCKS)
+    expect(v.verified + v.notOutput.length + v.failures.length).toBe(v.blocks)
+  })
+
+  /**
+   * RED: one digit of the figure §6.5's whole finding rests on.
+   *
+   * **The victim line is taken from the log rather than written here**, the way §2's and §5's are,
+   * because a hard-coded literal goes red when the probe gains a column - which is this file's own
+   * literal drifting, not the document's. The line it picks is the one carrying `production 15,
+   * arm-wise best 13`, which is the gap the whole section is about.
+   */
+  test("RED: a single digit edited in the field-order summary totals", () => {
+    const victim = fieldOrderLog.split("\n").find((l) => l.includes("fallbacks summed over measured blocks:"))
+    if (victim === undefined) throw new Error("section 6's log has no summed-fallbacks line, so the probe's summary has moved and §6.5 needs re-reading")
+    expect(doc.split(victim).length - 1).toBe(1)
+    const perturbed = victim.replace("production 15", "production 16")
+    expect(perturbed).not.toBe(victim)
+    const v = verify(sectionSixAsOutput(doc.replace(victim, perturbed)), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
+    // **ASSERTED ON THE MESSAGE AND NOT ON A COUNT.** `verify` has several refusal paths and each
+    // produces exactly one failure, so a count alone would establish only that something broke.
+    expect(v.failures.join("\n")).toContain("not a contiguous slice")
+  })
+
+  /**
+   * RED: a whole genuine slice of a DIFFERENT section of the same log, substituted. This is the
+   * attack a per-line membership test cannot see at all, and the section anchor is what refuses it.
+   */
+  test("RED: a genuine slice of another section of section 6's log", () => {
+    const mapped = sectionSixAsOutput(doc)
+    const victim = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} CONTROLS`)
+    const donor = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} VERDICT`)
+    expect(victim?.lines.length).toBeGreaterThan(1)
+    expect(donor?.lines.length).toBeGreaterThan(1)
+    const v = verify(mapped.replace((victim?.lines ?? []).join("\n"), (donor?.lines ?? []).join("\n")), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
+    expect(v.failures.join("\n")).toContain("is not a contiguous slice of section")
+  })
+
+  test("section 6's log is a probe run and not a hand-written fixture", () => {
+    expect(fieldOrderLog).toContain(FIELD_ORDER_RUN_MARKER)
+    /**
+     * The predictions are printed BEFORE anything is measured, which is the whole of **G271**'s
+     * corrected practice: the ordering is a property of the program, so the log carries it.
+     *
+     * **BOTH INDICES ARE ASSERTED PRESENT BEFORE THEY ARE COMPARED, and that is not pedantry - the
+     * first version of this case went red on `-1 < -1` because both headers carried a trailing
+     * ` ==` the log does not.** A missing header gives `-1`, and `-1 < <some index>` is TRUE for
+     * every real index, so an ordering case written on bare `indexOf` passes when the earlier
+     * header has vanished. That is the un-failable assertion this whole file exists to refuse.
+     */
+    const predictionsAt = fieldOrderLog.indexOf("== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT")
+    const measurementAt = fieldOrderLog.indexOf("== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS")
+    expect(predictionsAt).toBeGreaterThan(-1)
+    expect(measurementAt).toBeGreaterThan(-1)
+    expect(predictionsAt).toBeLessThan(measurementAt)
+    expect(fieldOrderLog).toContain("  P1 HELD")
+    expect(fieldOrderLog).toContain("arms min 7 median 8 max 8")
+    expect(fieldOrderLog).toContain("production 15, arm-wise best 13, arm-wise worst 15")
+  })
+
+  /**
+   * **§6's LOG IS LINE-DISJOINT FROM THE OTHER THREE**, asserted here rather than by widening the
+   * three-log case above, which stays exactly as it was. A shared line would turn the document red
+   * at the OTHER log's call - a block not declared as that log's output sharing a line with it is
+   * the relabel dodge `verify` refuses - so this states directly what the other calls enforce only
+   * from one side.
+   */
+  test("section 6's log shares no line with the three logs this document already quotes", () => {
+    const nonBlank = (t: string): Set<string> => new Set(t.split("\n").filter((l) => l.trim() !== ""))
+    const six = nonBlank(fieldOrderLog)
+    expect([...six].filter((l) => nonBlank(log).has(l))).toEqual([])
+    expect([...six].filter((l) => nonBlank(elkLog).has(l))).toEqual([])
+    expect([...six].filter((l) => nonBlank(labelLog).has(l))).toEqual([])
+    expect(fieldOrderLog.split("\n").filter((l) => l === FIELD_ORDER_RUN_MARKER).length).toBe(1)
+    expect(fieldOrderLog.split("\n").filter((l) => l === RUN_MARKER || l === ELK_RUN_MARKER || l === LABEL_RUN_MARKER).length).toBe(0)
+  })
+
+  /**
+   * §6's source transcriptions are accounted for the way §4's blocks are: declared NOT CHECKED, by
+   * name, with their count pinned. **They are the highest-risk material in the section** - a
+   * quotation from a scan nobody can diff against anything - so what is checkable about them is
+   * checked: that they exist, that there are exactly as many as §6.12 says, and that not one of
+   * them has been relabelled into a checked namespace where it would resolve against a log section
+   * and look verified.
+   */
+  test("section 6's source transcriptions are declared, counted, and in no log's namespace", () => {
+    const slice = doc.slice(doc.indexOf(SECTION_6_HEADING))
+    const sources = parseBlocks(slice).filter((b) => b.info.split(/\s+/)[0] === "kp-src")
+    expect(sources.length).toBe(SECTION_6_SOURCE_BLOCKS)
+    for (const b of sources) expect([OUTPUT_FENCE, "elk-run", "label-run", "field-order-run"]).not.toContain(b.info.split(/\s+/)[0])
+    // Each carries the journal page it was transcribed from, which is the only provenance a reader
+    // can act on: without it the hash in §6.1 pins a 66-page PDF and nothing narrower.
+    for (const b of sources) expect(b.info).toMatch(/^kp-src p\.11\d\d /)
+    const v = verify(sectionSixAsOutput(doc), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
+    expect(v.notOutput.length).toBeGreaterThanOrEqual(SECTION_6_SOURCE_BLOCKS)
   })
 })
 

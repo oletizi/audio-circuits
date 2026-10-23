@@ -4207,3 +4207,686 @@ paths fired. Driving the first of them caught a wrong line number in this
 writer's own expected literal, which is what asserting on the message is for.
 
 ---
+
+§6 Typesetting's penalty model, and the one condition its author puts on it
+---------------------------------------------------------------------------
+
+**THE QUESTION IS WHETHER THE MODEL TRANSFERS, AND THE ANSWER IS PARTLY - WITH
+THE BOUNDARY DRAWN BY THE PAPER ITSELF RATHER THAN BY THIS DOCUMENT.** Knuth and
+Plass state the condition under which their algorithm works, in the sentence
+that introduces it: the line-breaking problem *"sounds suspiciously like the
+infamous bin-packing problem, which is well known to be NP complete"*, and what
+rescues it is that *"each line is to consist of contiguous information from the
+paragraph"*. **Label placement has no contiguity.** The algorithm therefore does
+not transfer, and the authors say why before anyone else has to. What does
+transfer is everything the paper says that is not about the search: the
+two-grade badness (an outcome may be infinitely bad, or finitely bad and drawn
+anyway), the measured gap between first-fit, best-fit and optimum-fit, and the
+non-refusal on failure.
+
+**THE PLAN'S OWN PHRASE DID NOT SURVIVE A READING, AND BOTH CORRECTIONS OF IT
+ARE INCOMPLETE.** The plan describes this repository as using *"a per-part
+first-fit placement search"*. `git grep -i "first.fit"` over `lib/schgen/`
+returns nothing (§6.4's control). The correction handed to this task - *"eleven
+discrete candidate slots with an area-weighted cost, best-of-N by cost, not
+first-fit"* - is also not what the file does. **It is BOTH, on two different
+paths, and which path runs is decided by a boolean.** §6.4 reads it line by
+line, and §6.5 measures which path actually decides each of 75 unit placements
+in this repository: **first-fit decides 60 of them and the cost decides 15.**
+
+**AND §6 INVENTS NO COST FUNCTION**, for a reason this section can now state
+from a primary source rather than from process. `docs/known-gaps.md` **G71**
+records that no published source states an acceptable number of crossings, bends
+or wire length, so a threshold in a readability rubric would be *"this project's
+invention wearing a citation"*. §6.7 finds the same thing one level deeper:
+**the canonical penalty-minimisation paper declares its own cost function
+arbitrary.** There is no published cost to adopt. Choosing one is an acceptance
+criterion, and `CLAUDE.md` forbids the producing agent from authoring one.
+
+**Everything marked `[RAN]` below comes from one run of
+`tools/schgen/field-order/probe.ts`**, committed beside the probe as
+`tools/schgen/field-order/probe-run.log`, and
+`tests/schgen/text-metrics/document-pastes.test.ts` holds every block this
+section pastes to it on every `bun test` (§6.12) by a fourth call to the same
+checker. Unlike §1's probe it needs nothing external at all:
+
+```sh
+bun run tools/schgen/field-order/probe.ts
+```
+
+re-drives every figure in §6.5 from a clean checkout.
+
+### 6.0 Three grades of evidence, kept apart
+
+| grade | what it covers here |
+| --- | --- |
+| **primary source** `[READ]` | Knuth and Plass 1981, retrieved in full, hashed, and the quoted regions verified against rendered page images rather than against the scan's OCR layer (§6.1) |
+| **this repository's source** `[READ]` | `lib/schgen/render/field-placement.ts`, `occupancy.ts`, `text-boxes.ts` and `lib/schgen/readability/measures.ts`, read at commit `3657509` (§6.4, §6.6) |
+| **driven here** `[RAN]` | 33 placement orders over every declared ELK block with a grid-legal layout, with three controls (§6.5) |
+
+**A fourth grade is deliberately absent: nothing here is `[THIRD-PARTY]`.** No
+secondary account of Knuth-Plass is relied on, and where this section disagrees
+with `docs/schematic/text-placement-prior-art.md` (§6.9) the disagreement is
+against that document's own quoted source reading, not against a summary of it.
+
+### 6.1 Step 1: the paper, retrieved in full and pinned
+
+Donald E. Knuth and Michael F. Plass, **Breaking Paragraphs into Lines**,
+*Software - Practice and Experience*, Vol. 11, 1119-1184 (1981). Received
+25 December 1980, revised 6 February 1981.
+
+| | |
+| --- | --- |
+| retrieval | `[READ]` - **full text, 66 pages**, 2026-10-22 |
+| from | `https://gwern.net/doc/design/typography/tex/1981-knuth.pdf`, HTTP 200, `application/pdf`, 4 828 786 bytes |
+| SHA-256 of the file read | `ecc2354ce16693d9152803d56e930fb1b553783eec837a55ab32803ef41d9895` |
+| what it is | a **scan** - 66 CCITT-fax page images with an OCR text layer over them |
+| SHA-256 of the extracted text | `5e15d58c923d0f6f72ff99dd876603a69f4e4dea24af661896d001eb0b32b7a9` (`pdftotext -layout`) |
+| page mapping | journal page *n* is PDF page *n* - 1118; 1119-1184 is 66 pages, which is the page count |
+
+**EVERY QUOTATION BELOW WAS VERIFIED AGAINST THE RENDERED PAGE IMAGE, NOT
+AGAINST THE OCR LAYER, AND THAT IS NOT A FORMALITY.** The OCR of this scan
+mangles exactly the material a reader would most want to quote: page 1121's
+`NP complete.3` comes out of `pdftotext` as `NP ~ o m p l e t e . ~`, and
+`dynamic programming4,5` as `dynamic p r ~ g r a m m i n g ~ . this~`. A
+quotation copied from the text layer would have been silently wrong in its
+punctuation and its footnote marks. Pages 1119, 1121, 1127, 1129, 1149 and 1162
+were opened as images and read; the blocks below are transcribed from those
+images.
+
+**They are transcriptions of a third-party source and are NOT this repository's
+probe output**, so §1.11's contract makes each one a block declared NOT CHECKED
+by name. §6.12 accounts for them.
+
+```kp-src p.1119 SUMMARY
+This paper discusses a new approach to the problem of dividing the text of a
+paragraph into lines of approximately equal length. Instead of simply making
+decisions one line at a time, the method considers the paragraph as a whole, so
+that the final appearance of a given line might be influenced by the text on
+succeeding lines.
+```
+
+```kp-src p.1121 INTRODUCTION
+But how is the computer to solve such a problem efficiently? When a given
+paragraph has n optional breakpoints, there are 2^n ways to break it into lines,
+and even the fastest conceivable computers could not run through all such
+possibilities in a reasonable amount of time. In fact, the job of breaking a
+paragraph as nicely as possible into equal-size lines sounds suspiciously like
+the infamous bin-packing problem, which is well known to be NP complete.
+Fortunately, however, each line is to consist of contiguous information from the
+paragraph, so the line-breaking problem is amenable to the techniques of
+discrete dynamic programming; this means there is a reasonably efficient way to
+attack it.
+```
+
+*(The superscript footnote marks 3, 4 and 5 are dropped from the transcription
+above; they sit after "NP complete", "programming" and nowhere else, and the
+sentence is otherwise verbatim.)*
+
+```kp-src p.1127 BADNESS
+Thus, for example, the individual lines of Figure 1 have badness ratings that
+are approximately equal to 0, 7, 68, 18, 5, 0, 69, 72, 90, 49, 0, respectively.
+Note that a line is considered to be 'infinitely bad' if r_j < -1; this means
+that glue will never be shrunk to less than w_i - z_i. However, values of
+r_j > 1 are only finitely bad, so they will be permitted if there is no better
+alternative.
+```
+
+```kp-src p.1127 FIRST-FIT AND BEST-FIT
+Once again each line has been broken without looking ahead to the end of the
+paragraph and without going back to reconsider previous choices, but this time
+each break was chosen so as to minimize the 'badness plus penalty' of that line.
+...
+The method that produces Figure 1 might be called the 'first-fit' algorithm, and
+the corresponding method for Figure 2 might be called the 'best-fit' algorithm.
+```
+
+```kp-src p.1129 THE COST FUNCTION
+The above formula for delta_j is quite arbitrary, like our formula for beta_j,
+but it works well in practice because it has the following desirable properties:
+(a) Minimizing the sum of squares of badnesses not only tends to minimize the
+maximum badness per line, it also provides secondary optimization; for example,
+when one particularly bad line is inevitable, the other line breaks will also be
+optimized.
+```
+
+```kp-src p.1149 THE SEARCH
+The object of the algorithm is to compute the shortest path from the top of
+Figure 13 to the bottom, using the demerit numbers as the 'distances'
+corresponding to individual parts of the path. In this sense, the job of optimal
+line breaking is essentially a special case of the problem of finding shortest
+paths in an acyclic network; the line-breaking algorithm is slightly more
+complex only because it must construct the network at the same time as it is
+finding the shortest path.
+Notice that the best-fit algorithm can be described very easily in terms of a
+network like Figure 13: it is the algorithm that simply chooses the shortest
+continuation at every step.
+```
+
+```kp-src p.1162 WHEN NOTHING FITS
+When both passes fail, TEX continues by reactivating the node that was most
+recently deactivated and treats it as if it were a feasible break leading to b.
+...
+The net result is to produce an 'overfull box' that sticks out into the right
+margin, whenever no feasible sequence of line breaks is possible. As discussed
+above, some kind of error indication is necessary, since the user is assumed to
+have set rho to a value such that further stretching is intolerable and requires
+manual intervention.
+```
+
+**ONE TERM IN THE BRIEF IS NOT THE PAPER'S.** The brief and the plan both say
+*"total-fit"*. **The paper never uses that phrase.** A case-insensitive search of
+the extracted text for `total[ -]fit` returns **0 hits**; `optimum[ -]fit`
+returns **27** and `adjustment ratio` returns **26**, so the search can match and
+did. Knuth and Plass name three methods and call them **first-fit**, **best-fit**
+and **optimum-fit**. "Total fit" is later TeX-community usage. The distinction
+matters here only because §6.4 shows this repository implements two of those
+three under their own names, and quoting the right names is what makes that
+mapping checkable rather than evocative.
+
+### 6.2 The model, in its own terms
+
+Four parts, separable, and the separability is what lets §6.3 answer "partly".
+
+1. **The item algebra.** A paragraph is a sequence of **boxes** (fixed width),
+   **glue** (natural width with stretchability and shrinkability) and
+   **penalties** (a legal break with a cost). Everything the system can express
+   it expresses in these three.
+2. **Badness.** Per line, from the **adjustment ratio** `r` - how far the glue
+   had to stretch or shrink relative to how far it is allowed to. The badness is
+   `100|r|^3`, and it is **infinite when `r < -1`**. Two grades, and the paper
+   is explicit about why: a line that cannot be shrunk is refused outright,
+   while a line that is too loose is *"only finitely bad, so [it] will be
+   permitted if there is no better alternative"* (§6.1, p.1127).
+3. **Demerits.** Per line, `(1 + badness + penalty)^2` plus a flagged-pair term,
+   summed over the paragraph. This is the objective.
+4. **The search.** Shortest path over an acyclic network of feasible
+   breakpoints, built as it is searched. **First-fit** takes the leftmost legal
+   branch; **best-fit** *"simply chooses the shortest continuation at every
+   step"*; **optimum-fit** minimises the total.
+
+**The demerit tables are the part of the paper that is a measurement rather than
+a design**, and they are what §6.5 is modelled on. For one paragraph at one
+column width: first fit **26304**, best fit **10491**, optimum fit **7063**. For
+the same text at a different width: **13218**, **10143**, **4030**. `[READ]`
+p.1129, both tables verified against the page image.
+
+**Those magnitudes do not transfer and are not offered as a target.** They are
+in units of a cost function its own author calls arbitrary (§6.7). What
+transfers is the SHAPE of the result: deciding each item in order is
+measurably worse than optimising the assignment, and the authors establish it by
+running the three methods on the same input rather than by arguing it - *"a
+single example is not sufficient to decide which method is preferable"*, so they
+ran 300 (`[READ]` p.1127).
+
+### 6.3 Step 2: what transfers, and what does not
+
+**The difference is not a detail of the algorithm; it is the hypothesis the
+algorithm is built on.** Line breaking optimises over a **sequence**: a break is
+a point in a total order, a line is an interval between two of them, and the
+cost of an interval depends only on its two endpoints. Label placement optimises
+over a **set with pairwise conflicts**: any label may conflict with any other,
+there is no order, and the conflict relation is symmetric and arbitrary. That is
+the point-feature labelling problem, and
+`docs/schematic/text-placement-prior-art.md` already establishes its complexity
+from Christensen, Marks & Shieber 1995 read in full - the feasibility question
+is NP-complete and *"any complete search algorithm"* for the general case is
+NP-hard.
+
+**Knuth and Plass name this same boundary from the other side**, which is the
+finding of this step: they identify bin packing as what the problem would be,
+and contiguity as the only thing that saves it (§6.1, p.1121). Remove
+contiguity and their own sentence says you are back in the NP-complete family.
+**So the two literatures agree on where the line is, and the agreement is in the
+primary sources rather than in this document's reading of them.**
+
+| part of the model | transfers? | why |
+| --- | --- | --- |
+| **The shortest-path / dynamic-programming search** | **No** | It requires that an item's cost depend only on an interval of a total order. Field pairs and labels on a sheet have no total order and the conflict relation is not interval-shaped. The paper's own condition (*"each line is to consist of contiguous information"*) is exactly what is absent. |
+| **Badness as a continuous quantity instead of a yes/no test** | **Yes, directly** | The paper's own motivation is a quantity *"nearly zero when r_j is small but grows rapidly"* in place of *"the yes/no tests"*. Overlap area is already such a quantity here, and `occupancy.ts` already computes it. |
+| **TWO GRADES of badness - infinite and finite** | **Yes, and it is the part this repository most lacks as a declared thing** | `r < -1` is infinite and refused; `r > 1` is finite and drawn. This repository's placer has the same two grades **implicitly and globally**: every obstacle is infinite until no candidate is clear, at which moment every obstacle becomes finite at once (§6.4). Nothing declares which obstacles may never be overlapped and which may be, at a cost. **What that split should be is an acceptance criterion and is the owner's.** |
+| **Penalties attached to a CHOICE rather than to a geometric outcome** | **In principle; nothing here has one** | `penalty` prices hyphenating, breaking at a display, two flagged lines in a row. The analogue would be pricing a slot: an inside slot against an outside one, a left slot against the conventional right. `allCandidates`'s array order is the only preference statement in the repository and `text-placement-prior-art.md` §7 records that it is *"unjustified anywhere"*. |
+| **A feasibility THRESHOLD separate from the cost** | **Yes in shape** | TeX's tolerance `rho` decides what is feasible; demerits only rank what is. This repository already separates them, and `field-placement.ts` says so in its own header: *"THE COST RANKS; IT NEVER DECIDES FEASIBILITY."* **This is convergent, not borrowed** - the file cites the labelling literature, not Knuth. |
+| **Total-assignment optimisation beating item-at-a-time** | **Yes as an INSIGHT, no as a method** | The insight is that the greedy walk is measurably worse; §6.5 measures that it is, here, by 2 of 15. The method that captures the gain in the paper is dynamic programming, which the row above rules out. The labelling literature's answer to the same insight is annealing, gradient descent or integer programming - and `text-placement-prior-art.md` already carries the empirical comparison. |
+| **Non-refusal on failure** | **Yes, and it is already implemented** | §6.8. |
+| **The demerit magnitudes** | **No** | Units of an arbitrary function (§6.7). |
+
+**So "does the model transfer" has a three-part answer.** The ALGEBRA (a
+continuous cost, two grades of badness, a penalty on a choice, a feasibility
+threshold distinct from the ranking) transfers whole. The INSIGHT (greedy is
+worse than global, and by how much is a measurable question) transfers, and §6.5
+takes the measurement. The ALGORITHM does not transfer, on the authors' own
+stated condition. **An answer that stops at "penalty minimisation applies" has
+skipped the second and third rows of that table, which are the ones that decide
+what anyone could do next.**
+
+### 6.4 What the placer actually does, read rather than inherited
+
+`[READ]` `lib/schgen/render/field-placement.ts` (294 lines),
+`lib/schgen/render/occupancy.ts` and `lib/schgen/render/text-boxes.ts`, at commit
+`3657509`.
+
+**The control on the plan's phrase.** `git grep -i "first.fit"` over `lib/` and
+over `tools/schgen/` returns **nothing**. The same pattern over the whole
+repository returns **eleven hits**, every one of them in `tools/stripboard/` or
+`tests/stripboard/` about the pinned VeroRoute fork's `AddComponent` sweep. **The
+grep can match and does** - it just never matches the schematic placer, which has
+never used the phrase about itself.
+
+**Here is the search, in order:**
+
+1. **The candidate set** (`allCandidates`): the outside slots on each side **no
+   pin leaves**, in the fixed order `right, up, left, down`; then **five inside
+   slots** (body centre and the four quarter-centres); then, for each side that
+   **does** have pins, **two** slots just beyond its outermost pins. For a
+   vertical two-pin passive that is `2 + 5 + 4 = 11`; for a symbol with pins on
+   all four sides it is `0 + 5 + 8 = 13`. An inside candidate is then **dropped
+   outright** unless both grown text boxes lie strictly within the body.
+2. **The feasibility pass** - `cands.find((c) => covered(c).length === 0)`.
+   `covered` is a **boolean** predicate over `boxesOverlap` and `segmentHitsBox`,
+   and `Array.prototype.find` returns the **first** candidate that satisfies it.
+   **This is first-fit in the candidate order, and the cost is not consulted on
+   this path at all.** The file says so itself: *"The first clear candidate is
+   taken, exactly as before."*
+3. **The fallback pass** - `clear ?? chooseLeastCovered(cands, area).candidate`,
+   reached only when **no** candidate is clear. `area` is the **weighted overlap
+   area** of both grown text boxes against two occupancy sets: weight **1** for
+   symbol bodies, graphics and lines, weight **2** (`MARK_WEIGHT`) for anything a
+   reader could misread under another string - other text, pin numbers and names,
+   labels, power values, and fields already placed. **This is best-of-N by cost.**
+4. **The sequential step.** After each unit, `placed.push(...)` adds that unit's
+   two text boxes to the obstacle set for **every later unit**. There is no
+   backtracking and no reconsideration. The walk order is `scene.placements`.
+5. **The record.** A unit placed at step 3 carries a `FieldFallback` naming the
+   block, the unit, its lib id, the rounded weighted cost and **every obstacle
+   the placed boxes cover**.
+
+**So the one-line answer, in Knuth and Plass's own vocabulary:** it is
+**first-fit over candidates on the feasible path, best-fit over candidates on the
+infeasible path, and greedy sequential over units at both** - with no
+reconsideration at either level, and nothing anywhere that is optimum-fit.
+
+| | the plan's phrase | the correction handed to this task | what the file does |
+| --- | --- | --- | --- |
+| which search | *"first-fit"* | *"best-of-N by cost, not first-fit"* | **both**, on two paths, selected by a boolean |
+| when the cost runs | n/a | implied: always | **only when no candidate is clear** - 15 of 75 unit placements (§6.5) |
+| granularity | *"per-part"* | n/a | **per UNIT**; a dual op-amp's two units place independently (`text-placement-prior-art.md` §7(3)) |
+| what is placed | implied: a label | n/a | **a rigid two-line block** - Reference and Value at a fixed offset, never placed separately (`text-placement-prior-art.md` §7(7)) |
+
+**Both prior characterisations are partly right and neither is usable as it
+stands**, which is why this step exists. The plan's word names the dominant path
+and was written against a source that predates the cost (§6.9); the correction
+names the path that was added and overstates its reach.
+
+### 6.5 The greedy gap, measured on this repository's own blocks `[RAN]`
+
+**Knuth and Plass measured their gap rather than arguing it**, over 300 runs at
+300 column widths, and that is the method this step copies - not the algorithm.
+`tools/schgen/field-order/probe.ts` permutes `layout.placements` over **33 arms**
+(production, identity, reverse, and 30 seeded Fisher-Yates shuffles) and changes
+**nothing else**: geometry, wires and anchors are the pipeline's own. That is the
+same soundness argument `tools/schgen/masked-problems.ts`'s `unitSlots` makes for
+its one arm, and the probe cross-checks against it.
+
+**The predictions are printed by the probe BEFORE it measures anything**, in the
+run's own output, so the ordering is a property of the program.
+`docs/known-gaps.md` **G271** records why that is now required: a prediction that
+lives only in a per-task report lives under `.superpowers/`, which is gitignored.
+
+```field-order-run PREDICTIONS
+  P1 (CONTROL) the identity arm reproduces production exactly - same slot and same fallback status for every unit of every block. REFUTED BY: any difference, which would mean this probe's plumbing is not the production path and nothing below is about the shipped placer.
+  P2 at least one block's fallback COUNT differs between production order and some other arm. REFUTED BY: every arm of every block agreeing with production, which would mean the sequential dependence costs nothing here and the first-fit/total-fit distinction is academic for this corpus.
+  P3 for at least one block the MINIMUM fallback count over the arms is strictly below production's. REFUTED BY: production already being the arm-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any of these.
+  P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back in EVERY arm. REFUTED BY: any such unit placing clear under some permutation, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
+  P5 (CONTROL) the placed body box of every unit is identical across every arm. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
+```
+
+```field-order-run PER BLOCK
+opamp-buffer/ob-buffer: 11 unit(s), production 2 fallback(s), arms min 2 median 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
+optical-compressor/oc-power: 8 unit(s), production 1 fallback(s), arms min 1 median 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
+optical-compressor/oc-audio: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
+optical-compressor/oc-sidechain: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
+pt2399-core/pt-core: 24 unit(s), production 8 fallback(s), arms min 7 median 8 max 8 | slot changed for 3, fallback status changed for 1, unconditional 7
+    STATUS MOVERS: C10#1
+    SLOT MOVERS: C10#1, C11#1, C9#1
+transistor-preamp/tp-leg-upper: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-feedback: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-a: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-b: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-collector: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-emitter-bypass: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-stage: 16 unit(s), production 4 fallback(s), arms min 3 median 4 max 4 | slot changed for 4, fallback status changed for 2, unconditional 3
+    STATUS MOVERS: C2#1, TP1#1
+    SLOT MOVERS: C2#1, C3#1, J3#1, TP1#1
+```
+
+```field-order-run CONTROLS
+  P1 identity reproduces production: 0 violation(s)
+  P4 unconditional units fall back on every arm: 0 violation(s)
+  P5 geometry is invariant across arms: 0 violation(s)
+```
+
+```field-order-run VERDICT
+  P1 HELD
+  P2 HELD - at least one block's fallback count differs between arms
+  P3 HELD - at least one block has an arm below production's count
+  P4 HELD
+  P5 HELD
+```
+
+```field-order-run SUMMARY
+  10 block(s) measured, 2 skipped for having no grid-legal layout
+  fallbacks summed over measured blocks: production 15, arm-wise best 13, arm-wise worst 15
+  units whose slot moves under some arm: 7
+  units whose fallback status moves under some arm: 3
+  NOTE: the arm-wise best is a MEASUREMENT of spread and NOT a target. Nothing here says fewer fallbacks is the objective,
+  what a fallback costs, or how many are acceptable - that is the owner's (docs/known-gaps.md G260).
+```
+
+**What it establishes.**
+
+- **The sequential dependence is live, not theoretical.** Two of the fifteen
+  fallbacks are artefacts of the walk order: `pt-core`'s `C10#1` and
+  `tp-stage`'s `TP1#1` place clear under some permutation and fall back under
+  production's. **P2 and P3 were the two arms of this that could have gone the
+  other way**, and the honest alternative was live - seven of the ten measured
+  blocks move not one unit under any of the 33 orders.
+- **It is the only text-over-text overlap in the corpus, and it is an artefact.**
+  `tools/schgen/masked-problems.ts` reports that of the fifteen fallbacks,
+  fourteen cover only wires or a pin end and **exactly one covers another piece
+  of text** - `tp-stage`'s `TP1#1`, covering `label EMITTER`. `TP1#1` is one of
+  the two status movers. So the single worst-graded overlap in the whole
+  population exists because of the order the placer happened to walk, not because
+  the geometry forced it.
+- **The first-fit path decides four placements in five.** 11 + 8 + 24 + 3 + 3 + 3
+  + 3 + 2 + 2 + 16 = **75 unit placements** over the ten measured blocks, of which
+  **15** reach the cost and **60** are settled by the first clear candidate. That
+  is the arithmetic behind §6.4's table row.
+- **No permutation made any block worse by count** - every block's arm-wise
+  maximum equals its production count. **But the identity of the fallbacks moves
+  even where the count does not**: `tp-stage`'s `C2#1` is NOT a fallback under
+  production and IS one under some arm, while its count stays at 4. A count is
+  not a sufficient description of what the order changes.
+- **Seven units change which slot they take** without necessarily changing
+  whether they are clear. Order affects the drawing more widely than it affects
+  the failure count.
+
+**Three controls, each able to fail, and two of them cross-check figures other
+documents rest on.** P1 would expose a probe that is not driving the shipped
+path. P4 re-drives `unitSlots`'s *"first position is the most permissive the
+search can be"* argument against 33 orders rather than one - **G239**'s Task 22
+amendment rests on it. P5 would expose a permutation that moved geometry.
+
+**WHAT IT DOES NOT ESTABLISH, stated here rather than left to §6.10.** 33 orders
+out of up to 24! is a sample, so **"arm-wise best 13" is an upper bound on the
+achievable minimum and not an optimum**. And nothing here says 13 is better than
+15: that needs somebody to have said what a fallback costs, which **G260**
+records nobody has.
+
+### 6.6 Step 3: the measures this repository has, verified against the tree
+
+The brief states that four readability measures exist for wires and none for
+text. **Verified, and it is stronger than stated.**
+
+`[READ]` `lib/schgen/readability/measures.ts` and
+`lib/schgen/readability/baseline-model.ts` at `3657509`:
+
+- `SchematicMeasures` has **five** numeric fields - `bends`, `bendsPerEdge`,
+  `crossings`, `wireLength`, `occupiedArea`. `MEASURE_KEYS` lists the same five.
+  The module header calls them *"SPEC §3.3's FOUR MEASURES"* and separately says
+  `renderMeasures` *"emits exactly five numbers"*, so "four measures, five
+  numbers" is the tree's own accounting and not a discrepancy.
+- **All five are computed by one function over wires.** `measuresOfWires(wires,
+  extent, inter)`: bends and the edge denominator from the wire graph, crossings
+  from `crossings(t)`, `wireLength` from the wires, `occupiedArea` from `extent`.
+- **Text enters exactly one of the five, and only as a point with no extent.** In
+  `measuresOf` (per block) the extent is wire ends plus pin positions, and text
+  does not appear at all. In `sheetMeasuresOf` the extent additionally includes
+  `d.labels.map((l) => l.at)` and `d.texts.map((x) => x.at)` - **anchor
+  coordinates**. A label's or a text's own box is never built, so a string's
+  length, its height and everything it overlaps are invisible to every one of the
+  five.
+
+**A check that could have failed, with a control that answers differently.**
+Eight identifiers that any text-aware measure would have to reach - `textBox`,
+`labelBox`, `FieldFallback`, `placeFields`, `blockFields`, `textWidth`,
+`fieldsWidth`, `drawnText` - greped over `lib/schgen/readability/` and over
+`lib/schgen/render/`:
+
+| identifier | files under `readability/` | files under `render/` |
+| --- | --- | --- |
+| `textBox` | 0 | 6 |
+| `labelBox` | 0 | 10 |
+| `FieldFallback` | 0 | 6 |
+| `placeFields` | 0 | 7 |
+| `blockFields` | 0 | 3 |
+| `textWidth` | 0 | 6 |
+| `fieldsWidth` | 0 | 4 |
+| `drawnText` | 0 | 1 |
+
+**Every pattern matches somewhere and none matches in the readability tree.**
+
+**The one numeric quantity about text that DOES exist is not a measure and says
+so.** `FieldFallback.cost` is the weighted overlap area a fallback accepted, and
+its own documentation states it is *"[c]omparable only within one run of one
+placer"*. It is a ranking key for `chooseLeastCovered`, published in
+`RENDER-REPORT.md` so a degradation is visible, and explicitly not a figure that
+can be compared across drawings. **So the brief's "none for text" is correct for
+measures and the nuance is worth carrying: there is a per-unit text cost, it is
+reported, and it is declared non-comparable.**
+
+### 6.7 What the literature's costs ARE, and whether this repository could measure them
+
+**This section names no cost function and chooses none.** G71 is why that is not
+mere process, and §6.1's p.1129 transcription is why it is not even available.
+
+| cost | source and retrieval | what it needs | could this repository measure it today? |
+| --- | --- | --- | --- |
+| **Badness** `100\|r\|^3`, infinite below `r = -1` | `[READ]` Knuth-Plass p.1127 | an **elasticity model**: per item, a natural size plus how far it may stretch and shrink, so that `r` is defined | **No.** A candidate slot here is a discrete position, not an elastic one. §5 established that a global label has four degrees of freedom, which is the precondition for ever declaring an elasticity; nothing declares one. |
+| **Demerits** `(1 + badness + penalty)^2 + alpha` | `[READ]` Knuth-Plass p.1129 | a penalty per **choice**, and a pair term for two consecutive flagged choices | **No.** Nothing in the repository prices a choice. `allCandidates`'s array order is the only preference statement and is unjustified. |
+| **Weighted overlap area** | `[READ]` this tree, `occupancy.ts`; shape attributed there to Christensen, Marks & Shieber 1995 after Yoeli 1972 | an obstacle set and a weighting | **Yes - it already does**, per candidate and per fallback. Declared non-comparable across runs (§6.6). |
+| **Count / fraction of labels placed without overplot** | `[PAPER-FULL]` via `text-placement-prior-art.md` §6, Christensen et al.'s own metric | geometry alone | **Yes, today, with no new machinery.** `FieldFallback` gives the count directly: **15 of 75 unit placements** on this corpus (§6.5). Nothing aggregates or publishes it as a measure. |
+| **Yoeli's three-term objective** - overlap amount + position-preference penalty + unlabelled count | `[PAPER-FULL]` for the shape as restated by Christensen et al.; **Yoeli 1972 `[NOT RETRIEVED]`** and not retrieved by this task either | the three terms, plus **weights** | **The first and third terms, yes. The middle term and all three weights, no** - the weights are not in the restatement and the original was not read. |
+| **Human task performance** - response time and error rate on label-to-feature association | `[PAPER-FULL]` for the survey's statement, `[PAPER-ABS]` for the studies | people | **No**, and no source found gives a geometric proxy for it. |
+
+**AND HERE IS THE FINDING THAT CHANGES WHAT G71 MEANS.** G71 records that no
+published source states an acceptable threshold, so inventing one would be *"this
+project's invention wearing a citation"*. §6.1's p.1129 transcription says
+something one level stronger about the most-cited penalty model there is:
+
+> *"The above formula for delta_j is quite arbitrary, like our formula for
+> beta_j, but it works well in practice..."*
+
+**Both of the paper's formulae - the badness and the demerits - are declared
+arbitrary by their authors, and justified by practice rather than by derivation.**
+And the paper states the cost of tuning them: *"So many parameters are present,
+it is impossible for anyone actually to experiment with a large fraction of the
+possibilities"* (`[READ]` p.1162, verified against the page image).
+
+So **"adopt the literature's cost function" is not a move that exists.** The
+literature supplies a SHAPE (a continuous cost, squared so one bad item does not
+hide behind many mediocre ones, with an infinite grade for the inadmissible) and
+an honest statement that the coefficients were chosen. Importing the shape is
+importing a shape; importing the numbers would be importing somebody else's
+tuning for somebody else's problem while appearing to cite it. **That is G71's
+failure mode with the citation's own consent, which is worse rather than better.**
+
+**The criterion/mechanism split G71 draws therefore survives contact with the
+best primary source available**, and this section adds nothing to it except
+evidence. Choosing what to minimise remains an acceptance criterion for an
+artifact this repository's agents produce; `CLAUDE.md` forbids the producing
+agent from authoring one; nobody has been asked.
+
+### 6.8 TeX is the eighth tool, and it does not refuse either
+
+§4's `TOOL BEHAVIOUR TABLE` found that **of seven tools examined, none refuses to
+draw because text will not fit**. Knuth and Plass describe TeX's behaviour when
+no feasible sequence of breaks exists, and it is the same answer:
+
+- the active list is *"forcibly prevented from becoming empty"* by declaring a
+  breakpoint feasible when it would otherwise empty it;
+- the result is an **overfull box** that *"sticks out into the right margin"*;
+- and *"some kind of error indication is necessary"*, so the user is told.
+
+`[READ]` p.1162, verified against the page image. **This is TeX's behaviour as
+the 1981 paper describes it**; `tex.web` was not retrieved and this task did not
+read it (§6.10).
+
+**Zero of eight.** And the shape is not merely similar to what this repository
+now does - it is the same two-part answer: **place it anyway, and make the
+degradation loud.** `field-placement.ts` takes the least-covered candidate and
+returns a `FieldFallback`; `report.ts` prints them in `RENDER-REPORT.md` under
+*"Field placements the placer could not keep clear"* with the sentence *"a sheet
+with a row here is not a clean sheet"*.
+
+**The difference is in the loudness, and it is G260's open residual.** TeX's
+overfull box is an error on the user's terminal on the run that produced it. This
+repository's fallback is a table in a generated report that **nothing automated
+reads** - no gate refuses on a count and none exists. A generation that goes from
+0 fallbacks to 50 is green. That is recorded, open, and awaiting the owner's
+number; §6 adds only that the tool this behaviour was borrowed from pairs it with
+a diagnostic the user cannot miss.
+
+### 6.9 A correction to `text-placement-prior-art.md` §7, recorded here because that document is read and never rewritten
+
+`docs/schematic/text-placement-prior-art.md` §7 reads `field-placement.ts` at
+commit `8e601b4` and tabulates it against the standard formulation. **Four of its
+rows are stale at HEAD, and the reason is chronology rather than error.** That
+document was committed at `d02ad3d`; the placer's behaviour changed at `46fe129`
+(*"The field placer stops refusing and starts choosing"*), which is **not an
+ancestor of `d02ad3d`** - verified with `git merge-base --is-ancestor`. The
+document was right about the tree it read.
+
+| §7 row | what it says | what HEAD does |
+| --- | --- | --- |
+| search | *"greedy sequential first-fit, no backtracking, no fallback"* | greedy sequential, no backtracking, **and a least-covered fallback** |
+| objective | *"none - a boolean per candidate"* | boolean on the feasible path, **weighted overlap area on the infeasible one** |
+| on failure | *"refuse to produce the drawing"* | **place at the least-covered candidate and record a `FieldFallback`** |
+| reported quantity | *"first blocked unit's first candidate's first blocker"* | **one `FieldFallback` per unit**, with its cost and everything it covers |
+
+**Its §8 predicted this**, and that is worth recording as a thing that came
+true: it found `tools/guide/placement.ts` already shipping *"a scored,
+preference-ordered placer with a least-cost fallback"* and named it as what the
+schematic placer lacked. Task 24 imported that module rather than writing a
+second weighting (**G261**).
+
+**Its §7(1) sequential-dependence finding is NOT stale and is now measured.** It
+argued that *"a unit can be unplaceable because of where an EARLIER unit's text
+went, and nothing ever reconsiders the earlier choice"*, and marked it as the
+structural fact that most changes how this should be approached. §6.5 is the
+measurement of it: three units change fallback status and seven change slot under
+permutation, on a corpus of 75 unit placements.
+
+**One row of §7 becomes MORE right rather than less.** Its last paragraph says
+*"A first-fit search over eleven candidates with no cost function and no fallback
+is the one combination the literature does not contain"*. The combination no
+longer exists in this tree; what replaced it is a combination the literature does
+contain, which is the change that paragraph was arguing for.
+
+### 6.10 What §6 did NOT establish
+
+- **It did not read `tex.web` or TeX82.** §6.8's account of TeX's failure
+  behaviour is the 1981 paper's description of a system the same authors wrote,
+  which is a primary source about the algorithm and a second-hand source about
+  the shipped program. The paper itself notes that *"the algorithm in TEX is even
+  more complex than the one we have described"*.
+- **It did not retrieve Yoeli 1972, Imhof, or Zoraster.** Their objectives reach
+  this document through `text-placement-prior-art.md`'s reading of Christensen,
+  Marks & Shieber, exactly as that document marks them. `[NOT RETRIEVED]` here
+  too.
+- **It did not read Knuth-Plass's appendix or its history section in detail.**
+  The appendix's simplified algorithm and the paper's history of line-breaking
+  methods were skimmed in the extracted text and are not relied on anywhere
+  above.
+- **It did not establish that fewer fallbacks is better.** §6.5 measures a
+  spread. Whether 13 is preferable to 15, and by how much, needs the owner's
+  statement of what a fallback costs - **G260**, open.
+- **It did not sweep the permutation space.** 33 orders of up to 24! is a sample;
+  the arm-wise best is an upper bound on the minimum.
+- **It did not measure global labels or power values.** `placeFields` places unit
+  Reference/Value pairs only. §5 is the section about label coordinates, and
+  nothing in §6 re-measures or contradicts it.
+- **It did not re-take any count under another text box.** §6.5's fallback counts
+  are at the production ruler, `length x GRID` (`text-boxes.ts`), and §1 found 13
+  of 15 field fallbacks surviving all three of its measured quantities. **The
+  election among the three is the owner's (G265 clause 4) and nothing here makes
+  it.**
+- **It did not establish that `occupiedArea` ought to include text.** It records
+  that it does not, and that a text's anchor point reaches it while its box never
+  does.
+
+### 6.11 Mechanisms this reading suggests. Every one UNTRIED, none a plan, none a criterion
+
+**Each needs a decision that is not an agent's**, and that is stated per
+mechanism rather than once at the end.
+
+1. **Publish the conflict count as a measure.** Christensen et al.'s standard
+   metric - the fraction of items placed without overplot - is computable here
+   today from `FieldFallback` with no new geometry. **UNTRIED.** It would be the
+   first number about text in a repository that has five about wires. It is a
+   MEASURE and not a gate: **no threshold may accompany it** without the owner
+   (G71, G260).
+2. **Declare the two grades of badness instead of inferring them.** Knuth-Plass
+   has an explicit infinite grade (`r < -1`) and an explicit finite one. This
+   placer's grades are implicit and global - everything is infinite until nothing
+   is clear, then everything is finite. A declared split would say which
+   obstacles may never be overlapped and which may be at a cost. **UNTRIED, and
+   the split itself is an acceptance criterion**, so it is the owner's and not a
+   mechanism an agent may choose.
+3. **Re-walk under a bounded set of orders and keep the best.** §6.5 measures
+   that this is worth 2 of 15 fallbacks on the current corpus and that no arm is
+   worse by count. **UNTRIED as a change to anything.** It needs an objective,
+   and choosing the objective is item 1's problem; and the probe's own output
+   says the arm-wise best is a measurement and not a target.
+4. **Price the candidate order.** The preference order is an array literal and
+   nothing justifies it. The literature's analogue (Imhof/Yoeli position
+   preference) is cited in `text-placement-prior-art.md` but its weights were
+   never published and Yoeli was never retrieved. **UNTRIED**, and a weighting
+   invented here would be G71's failure exactly.
+5. **Make a fallback as loud as an overfull box.** TeX errors on the run that
+   produced it; this repository writes a report line nothing reads. **UNTRIED**,
+   and it is **G260**'s open residual verbatim, waiting on the owner's number -
+   not a new proposal.
+
+**None of these is proposed. They are what a later reader would otherwise
+re-derive**, and the register requires that to be written down rather than
+re-discovered.
+
+### 6.12 How this section's evidence is checked
+
+**§6's pasted probe output is held to §6's own log by a FOURTH call to the same
+checker**, the way §2's and §5's are - `tests/schgen/text-metrics/document-pastes.test.ts`,
+on every `bun test`. The blocks are fenced ` ```field-order-run ` so they stay out
+of §1's, §2's and §5's output namespaces, and the test maps that fence word, and
+only that fence word, before handing §6's slice to `verify` with
+`tools/schgen/field-order/probe-run.log` and that log's own run marker.
+
+**The seven `kp-src` blocks are NOT checked against anything and are declared by
+name.** They are transcriptions of a 1981 scan, so there is no log they could be
+a slice of; `verify` reports each as NOT CHECKED with its line number, and the
+independent re-derivation in the test must agree entry for entry. **What a reader
+should know about them is §6.1's paragraph on the OCR**: they were transcribed
+from rendered page images because this scan's text layer corrupts exactly the
+punctuation and footnote marks a quotation turns on. A reader who wants to check
+one needs the PDF at the hash §6.1 pins and the page number each block carries.
+
+**APPENDING §6 PUT BLOCKS INSIDE §5's SLICE, and that was checked rather than
+assumed.** §5's slice runs from its heading to the end of the file - the exact
+trap §4 hit when §5 was appended, and which §4's slice now refuses by requiring
+§5's heading as an upper bound. §5's case survives because it counts
+` ```label-run ` fences specifically rather than all fences, so §6's blocks are
+invisible to it; they appear in §5's `verify` call as NOT CHECKED, which is what
+`verified + notOutput + failures = blocks` already accounts for. **§6 adds no
+upper bound to §5's slice**, because doing so would be an edit to a closed
+section's guard; the property §6 relies on is §5's fence-word specificity, and
+the test now states that dependence where a reader of §5 will see it.
+
+**What this does NOT establish** is §1.11's list unchanged, plus one thing
+specific to §6: **§6's log is not coupled to a commit.** §1's is, because its
+probe cannot be re-driven without `kicad-cli`, KiCad's Python bindings and an
+external font blob. §6's probe needs **nothing external** - one `bun run` from a
+clean checkout re-drives every figure in §6.5 - so a reader who doubts a number
+re-takes it rather than trusting a pin. That is a deliberate difference and not
+an omission.
+
+---

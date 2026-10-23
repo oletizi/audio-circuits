@@ -225,18 +225,18 @@ const median = (xs: readonly number[]): number => {
 }
 
 async function main(): Promise<void> {
-  console.log("== WHAT THIS FIELD-ORDER RUN MEASURED ==")
+  console.log("== WHAT THIS FIELD-ORDER RUN MEASURED")
   console.log(`arms: production, identity, reverse, and ${SHUFFLES} seeded Fisher-Yates shuffles (seeds 1..${SHUFFLES}, LCG 1664525/1013904223)`)
   console.log("subject: lib/schgen/render/field-placement.ts placeFields, over every declared ELK block with a grid-legal layout")
   console.log("what varies: the ORDER of layout.placements. Nothing else. Geometry, wires and anchors are the pipeline's own.")
   console.log("")
-  console.log("== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT ==")
+  console.log("== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT")
   for (const p of PREDICTIONS) console.log(`  ${p}`)
   console.log("")
 
   const results = await measure()
 
-  console.log("== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS ==")
+  console.log("== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS")
   let anyCountDiffers = false
   let anyBelowProduction = false
   for (const r of results) {
@@ -259,7 +259,7 @@ async function main(): Promise<void> {
   }
   console.log("")
 
-  console.log("== CONTROLS ==")
+  console.log("== CONTROLS")
   const violations = results.flatMap((r) => r.violations.filter((v) => !v.startsWith("NO LAYOUT")))
   console.log(`  P1 identity reproduces production: ${violations.filter((v) => v.startsWith("P1")).length} violation(s)`)
   console.log(`  P4 unconditional units fall back on every arm: ${violations.filter((v) => v.startsWith("P4")).length} violation(s)`)
@@ -267,7 +267,7 @@ async function main(): Promise<void> {
   for (const v of violations) console.log(`    VIOLATION ${v}`)
   console.log("")
 
-  console.log("== VERDICT ON EACH PREDICTION ==")
+  console.log("== VERDICT ON EACH PREDICTION")
   console.log(`  P1 ${violations.some((v) => v.startsWith("P1")) ? "REFUTED" : "HELD"}`)
   console.log(`  P2 ${anyCountDiffers ? "HELD" : "REFUTED"} - at least one block's fallback count differs between arms`)
   console.log(`  P3 ${anyBelowProduction ? "HELD" : "REFUTED"} - at least one block has an arm below production's count`)
@@ -280,7 +280,7 @@ async function main(): Promise<void> {
   const prodTotal = measured.reduce((s, r) => s + (r.counts.get("production") ?? 0), 0)
   const bestTotal = measured.reduce((s, r) => s + Math.min(...r.counts.values()), 0)
   const worstTotal = measured.reduce((s, r) => s + Math.max(...r.counts.values()), 0)
-  console.log("== SUMMARY ==")
+  console.log("== SUMMARY")
   console.log(`  ${measured.length} block(s) measured, ${skipped.length} skipped for having no grid-legal layout`)
   console.log(`  fallbacks summed over measured blocks: production ${prodTotal}, arm-wise best ${bestTotal}, arm-wise worst ${worstTotal}`)
   console.log(`  units whose slot moves under some arm: ${measured.reduce((s, r) => s + r.slotMovers.length, 0)}`)

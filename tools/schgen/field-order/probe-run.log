@@ -1,16 +1,16 @@
-== WHAT THIS FIELD-ORDER RUN MEASURED ==
+== WHAT THIS FIELD-ORDER RUN MEASURED
 arms: production, identity, reverse, and 30 seeded Fisher-Yates shuffles (seeds 1..30, LCG 1664525/1013904223)
 subject: lib/schgen/render/field-placement.ts placeFields, over every declared ELK block with a grid-legal layout
 what varies: the ORDER of layout.placements. Nothing else. Geometry, wires and anchors are the pipeline's own.
 
-== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT ==
+== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT
   P1 (CONTROL) the identity arm reproduces production exactly - same slot and same fallback status for every unit of every block. REFUTED BY: any difference, which would mean this probe's plumbing is not the production path and nothing below is about the shipped placer.
   P2 at least one block's fallback COUNT differs between production order and some other arm. REFUTED BY: every arm of every block agreeing with production, which would mean the sequential dependence costs nothing here and the first-fit/total-fit distinction is academic for this corpus.
   P3 for at least one block the MINIMUM fallback count over the arms is strictly below production's. REFUTED BY: production already being the arm-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any of these.
   P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back in EVERY arm. REFUTED BY: any such unit placing clear under some permutation, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
   P5 (CONTROL) the placed body box of every unit is identical across every arm. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
 
-== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS ==
+== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS
 opamp-buffer/ob-buffer: 11 unit(s), production 2 fallback(s), arms min 2 median 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
 optical-compressor/oc-power: 8 unit(s), production 1 fallback(s), arms min 1 median 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
 optical-compressor/oc-audio: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
@@ -28,19 +28,19 @@ transistor-preamp/tp-stage: 16 unit(s), production 4 fallback(s), arms min 3 med
     STATUS MOVERS: C2#1, TP1#1
     SLOT MOVERS: C2#1, C3#1, J3#1, TP1#1
 
-== CONTROLS ==
+== CONTROLS
   P1 identity reproduces production: 0 violation(s)
   P4 unconditional units fall back on every arm: 0 violation(s)
   P5 geometry is invariant across arms: 0 violation(s)
 
-== VERDICT ON EACH PREDICTION ==
+== VERDICT ON EACH PREDICTION
   P1 HELD
   P2 HELD - at least one block's fallback count differs between arms
   P3 HELD - at least one block has an arm below production's count
   P4 HELD
   P5 HELD
 
-== SUMMARY ==
+== SUMMARY
   10 block(s) measured, 2 skipped for having no grid-legal layout
   fallbacks summed over measured blocks: production 15, arm-wise best 13, arm-wise worst 15
   units whose slot moves under some arm: 7
