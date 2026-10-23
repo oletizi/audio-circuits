@@ -50,6 +50,34 @@ escaping and the round-trip comparison needs to know; or KiCad rejects them, and
 those nets need renaming — which is a different and larger change than this
 design, and would come back for review.
 
+**A SECOND, SEPARATE QUESTION, added 2026-10-23 on third-party review, and it is
+the best thing the review raised: do these nets need to be LABELS at all?**
+*"`Net-(C10-Pad1)`"* is a name **KiCad generated** for an otherwise unnamed net.
+Whether KiCad accepts it as a label is a syntax question; whether the generator
+should *display* a label for every net is an **authoring-policy** question, and a
+valid schematic connects parts with wires without labelling internal nets. If the
+electrical partition survives without rendering synthetic names, that is
+preferable to drawing `unconnected-(U1-CLK_O-Pad5)` on a sheet.
+
+**Three corrections to how the review framed it, each driven:**
+
+- **The generator does not label every net.** `[READ]` labels come from
+  `anchorsToSymbols`, which `render/cross-sheet.ts:29` records as emitting for a
+  block's **boundary** — so internal nets already go unlabelled, and the policy
+  the review asks for is substantially the one in force.
+- **It would clear none of the measured blockers.** The collisions refusing
+  boards are on **authored** names — `BYPASS_JUMPED`/`BYPASS_CAP` and
+  `BUFFER_BASE`/`BUFFER_EMITTER` — not synthetic ones. The review hedged to *"may
+  eliminate some geometry problems"*, which is fair, but the measured count it
+  eliminates is **zero**.
+- **On `pt2399-core` it is already handled by part 3.** The synthetic name
+  becomes a label *only because of the fake port*, since ports are boundary nets.
+  Deleting the port removes the label.
+
+**So the residual is a measurement rather than a policy change: does any
+synthetic net name cross a block boundary on any board?** If none does, the
+question is closed by the architecture and the probe can say so.
+
 ### 2. Remove the casing demand
 
 `NET_NAME` is defined at `lib/schgen/ir/types.ts:55` as `/^[A-Z0-9][A-Z0-9_]*$/`
@@ -67,6 +95,20 @@ checks in one condition. The **type** check must stay. Only the **format** check
 goes, or is replaced by whatever part 1 establishes is actually required. A gate
 is a guard, and this repository's standing practice is that weakening one to make
 code pass is the defect, not the fix.
+
+**AND THE REPLACEMENT PREDICATE MUST BE WRITTEN DOWN, not left as "drop the
+regex" — added 2026-10-23 on third-party review, which caught this precisely.**
+Reducing the condition to `typeof net !== "string"` **admits the empty string.**
+The canonical model's own `net()` helper refuses an empty name, so a gate that
+accepted one would be **weaker than the contract it exists to guard** — the exact
+shape of defect this section warns about, in the change meant to avoid it.
+**Minimum replacement: a non-empty string, plus whatever part 1 establishes KiCad
+requires.** *Removing a naming convention is not removing input validation.*
+
+**The tests must separate the four cases** so a future loosening cannot pass
+unnoticed: a lowercase name (accepted), a KiCad synthetic name (accepted or
+refused per the measurement), an **empty string** (refused), and a non-string
+(refused).
 
 **Tests that assert the casing refusal go with the rule.** Deleting a test
 because it asserts a rule being deliberately removed is correct. **Deleting or
@@ -93,9 +135,39 @@ gets done wrong:
 
 - **`lib/schgen/ir/validate.ts:72`** — *"pin N is neither on a net nor declared
   not connected"*. Fires on the **five Pultec boards**, one pin each: the rotary
-  switches' **mounting pin** (`MP` on four, pin `12` on `SW_MID`). That is the
-  mechanical lug that bolts the switch to the panel. It connects to nothing, and
-  declaring `NC` says exactly that.
+  switches' **mounting pin** (`MP` on four, pin `12` on `SW_MID`).
+
+  > **REVISED 2026-10-23 ON THIRD-PARTY REVIEW. The first version of this
+  > paragraph said the pin *"is the mechanical lug that bolts the switch to the
+  > panel. It connects to nothing, and declaring `NC` says exactly that."* **That
+  > inferred electrical isolation from the pin's NAME**, which is precisely what
+  > `CLAUDE.md`'s *"verify names against the thing itself"* forbids, and the
+  > review was right to stop it. **A mounting terminal may be isolated, or may be
+  > bonded to chassis, shield or switch frame** — and if it is bonded, `NC` is a
+  > false declaration that would hide a real connection.
+  >
+  > **The tell was in front of me: four switches call this pin `MP` and one calls
+  > it `12`.** Two different names is a reason to check whether they are two
+  > different things, not to batch them.
+  >
+  > **REQUIREMENT: each of the five pins is classified from the symbol's own pin
+  > definition and the switch's documentation, individually, before any `NC` is
+  > authored.** Where a terminal is bonded to chassis or shield, that connection
+  > is represented explicitly rather than declared absent. Five pins may not come
+  > out the same way.
+  >
+  > **AND THE REVIEW'S RECOMMENDED MECHANISM IS DECLINED, with the deviation
+  > recorded as this repository's criterion-versus-mechanism rule requires.** It
+  > proposed using *"the existing mechanical-pin authority, `PinTable.mechanicalPads`,
+  > which supports explicit `net` and `nc` declarations."* `[READ]` that is a
+  > **footprint-pad** concept, not a schematic-pin one: `lib/schgen/from-network.ts:29`
+  > states *"`PartSpec.pads` in the model maps a canonical pin to a footprint
+  > pad"*, `from-network.ts:359` sets `mechanicalPads: []` so it is **always empty
+  > on the network-derived path this generator uses**, and `lib/schgen/gates/pin-identity.ts`
+  > consumes it to compare pads against a pin table. **It carries no authority on
+  > whether a schematic symbol pin is electrically isolated.** The criterion —
+  > classify from verified semantics, never from "currently floating" — is
+  > adopted; the mechanism is not.
 - **`lib/schgen/ir/validate-nets.ts:17`** — *"net X has only one pin; connect it
   or declare the pin not connected"*. Fires on **`pt2399-core`**, whose PT2399
   pin 5 (`CLK_O`) is unused.
@@ -129,6 +201,56 @@ It also **does not work**: the port satisfies `lib/model`'s own validation
 says the true thing instead of the false thing with an explanation. This is the
 one piece with a real consequence and it is the first decision for review.
 
+### 3b. `NC` IS AN ELECTRICAL ASSERTION, NOT A VALIDATOR BYPASS — the transformation contract
+
+**Added 2026-10-23 on third-party review**, which was right that the first
+version treated the consequence of `NC` as an adjustment to netlist comparison
+when it is more than that. **`NC` must survive every stage, and each stage
+represents it differently:**
+
+| stage | representation |
+| --- | --- |
+| canonical model | `Connection` tagged `{ kind: "nc" }` — `lib/model/types.ts:42` |
+| schematic IR | `IrPin.net === null` — *"Null means explicitly not connected"*, `ir/types.ts:247` |
+| emitted `.kicad_sch` | a **`no_connect` marker** at the pin endpoint |
+| exported netlist | KiCad may assign a synthetic name to the pin; the comparison must expect that |
+
+**Four states must stay distinguishable**, and conflating any two is the defect:
+a pin **deliberately** declared `NC`; a pin **accidentally omitted** from the
+model; a pin marked no-connect **in the KiCad schematic**; and a pin that merely
+**has no wire attached**. Omitting a wire is not equivalent to documenting an
+intentional no-connect — KiCad's own ERC treats a bare dangling pin as a defect
+and a marked one as intent.
+
+**The capability already exists in code, so this is a contract to state and wire
+rather than emitter work to build** — a correction to the review's framing, which
+read as though the marker might be missing. `[READ]`: `render/emit-items.ts:215`
+defines `noConnect()`, `render/emit.ts:169` emits `d.noConnects`, and
+`lib/kicad/schematic.ts:186` writes the `(no_connect …)` form. **The inverse
+guard also already exists:** `ir/validate-nets.ts:47` refuses *"pin X is a
+no_connect pin but is on net Y"*, so one of the four confusions is enforced
+against today.
+
+> **TWO CORRECTIONS TO AN EARLIER DRAFT OF THIS PARAGRAPH, and the first is the
+> kind of error this repository has shipped twice.** It cited
+> **`noConnectEnds.test.ts`** as already testing the marker. **No such file
+> exists.** The test is `tests/schgen/render/no-connect-ends.test.ts` —
+> kebab-case — and the camelCase name was **copied out of
+> `lib/schgen/README.md:303` rather than checked against the tree**, which is
+> exactly what `CLAUDE.md`'s *"verify names against the thing itself"* forbids and
+> why that rule exists. **The README's name is stale and is a separate small
+> defect.**
+>
+> Second: the draft said the capability was *tested*. What is verified is that a
+> test exists at that path exercising no-connect ends. **`lib/schgen/README.md`
+> separately lists `emit-items.ts` among the modules nothing runs**, so how much
+> of `noConnect()` is actually covered is **unmeasured**, and the implementation
+> should establish it rather than inherit this sentence.
+
+**Required gate, not a serialization detail:** an end-to-end test proving
+`pt2399-core` pin 5's `NC` status survives generation **and** round-trip
+verification.
+
 ---
 
 ## Decisions for review
@@ -140,6 +262,19 @@ the model's net set would no longer mirror the netlist export exactly, and a
 verification test compares the two — so that test has to learn that *a KiCad
 placeholder net maps to `NC`* is an expected difference rather than a drift. The
 schematic stays authoritative; the derivation gains one documented rule.
+
+> **AND THAT ALLOWANCE MUST BE PIN-SPECIFIC — added 2026-10-23 on third-party
+> review, which identified this as the single biggest risk of weakening the
+> round-trip gate, and I agree without qualification.** A broad rule of the form
+> *"a single-pin net corresponds to an intentional `NC`"* would **hide a genuine
+> connectivity mistake**: a resistor terminal accidentally dropped during model
+> transformation also appears as a single-pin net, and the gate exists to catch
+> exactly that.
+>
+> **Only a pin explicitly declared `NC` in the authoritative model may be matched
+> to an unconnected pin or a synthetic placeholder in KiCad's export.** Every
+> other missing connection stays refused. The allowance is a named exception for
+> one declared pin, never a class of shapes the comparison tolerates.
 
 Relaxing the rule instead is the other reading, and it has a real argument:
 **KiCad itself generates `unconnected-(...)` nets for floating pins**, so a rule
@@ -183,6 +318,31 @@ of work.
   anything else weakened in the same diff is not.
 - **The round-trip contract.** Both part 1's outcome and decision (1) can move
   what the generated netlist is compared against.
+
+## Third-party review, 2026-10-23 — verdict and disposition
+
+Reviewed at git blob `3717848`: **"Approve the direction, request revisions
+before implementation."** Two High, three Medium. **All five are accepted on
+their criteria; two had their mechanism or framing corrected, each driven against
+the tree rather than argued.**
+
+| finding | verdict | what changed |
+| --- | --- | --- |
+| **1 High** — `NC` must survive the whole transformation, with a real no-connect marker | **accepted, scope corrected** | the contract is now §3b. **The capability already exists** (`emit-items.ts:215`, `emit.ts:169`, `kicad/schematic.ts:186`, `noConnectEnds.test.ts`) and one of the four confusions is already guarded (`validate-nets.ts:47`), so this is contract work, not emitter work |
+| **2 High** — mechanical pins must not be classified `NC` by default | **criterion accepted, mechanism declined** | my paragraph inferred isolation from the pin's **name**, against `CLAUDE.md`'s own rule — corrected in place. But `PinTable.mechanicalPads` is a **footprint-pad** concept, **always empty** on this path (`from-network.ts:29`, `:359`), and carries no authority over schematic-pin isolation |
+| **3 Medium** — synthetic names are exporter artifacts, not necessarily labels | **accepted, three corrections** | the best finding in the review. But labels are already **per boundary anchor**, not per net (`cross-sheet.ts:29`); it clears **zero** measured blockers, which are on authored names; and on `pt2399-core` deleting the fake port already removes the label |
+| **4 Medium** — the gate needs an explicit replacement predicate | **accepted, no caveat** | `typeof net !== "string"` alone admits the empty string, which `net()` refuses — the gate would end up weaker than the contract it guards |
+| **5 Medium** — `NC` round-trip equivalence must be pin-specific | **accepted, no caveat** | the biggest risk of weakening the gate. A blanket single-pin-net rule would hide a dropped resistor terminal |
+
+**What the review endorsed and this design keeps unchanged:** remove the casing
+requirement; measure KiCad before touching the emitter; delete the fake `CLK_O`
+port; keep strict pin validation; keep text placement out of scope; promise no
+drawn schematics.
+
+**Its acceptance-test table is adopted**, with one row re-labelled: *"Pultec
+mechanical pins — classified from verified mechanical-pin semantics"* stands as a
+criterion, but the authority is the symbol pin definition and the switch
+documentation, not `mechanicalPads`.
 
 ## Verification
 
