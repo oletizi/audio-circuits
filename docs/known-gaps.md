@@ -1623,6 +1623,56 @@ made.
 >   this amendment is marking as resting on a corrected premise, and replacing it with a guess at a
 >   wider one would repeat the error in a new size.
 
+> **AMENDED 2026-10-23 BY TASK 7 OF THE TEXT-HANDLING RESEARCH PLAN: THE SCHEMATIC ROW IS RE-DRIVEN
+> AND STILL READS 0 OF 11 - AND THE FAILURE IS NOW SORTED BY WHETHER THERE IS TEXT IN IT, WHICH IS
+> THE CUT NO EARLIER AMENDMENT MADE. SIX OF THE ELEVEN BOARDS REFUSE BEFORE ANY TEXT IS PLACED.**
+>
+> `[RAN, CONFIRMED]` `bun tools/schgen/board-sheets.ts` at this commit: **`0 of 11 boards produce a
+> schematic`, `11 refused; 0 have no authoring declaration`.** Unchanged from the Task 25 amendment
+> above, as a research-only plan requires. What is new is the cut:
+>
+> | what refuses it | boards | is there text in the blocker? |
+> | --- | --- | --- |
+> | `validateCircuit`, net names not UPPER_SNAKE | **6** - `pt2399-core`, all five Pultec | **no** |
+> | `tp-stage`'s GND/VCC glyph touch (**G263**), ahead of two label problems | **2** - `-buffered`, `-staged` | **the first problem has none** |
+> | a t-junction with no junction emitted | **1** - `-feedback` | **none at all** |
+> | a label over a label | **2** - `-lab`, `-loop` | **yes** |
+>
+> **THE SEVEN SECTIONS SURVEYED EIGHTEEN APPROACHES TO TEXT AND NOT ONE OF THEM DRAWS A BOARD** -
+> not one, and not all of them together (§7.1, §7.2; **G274**). Six boards are refused upstream of
+> every one of them; on the five that reach layout the residue is either a non-text defect or
+> `tp-stage`, which §5.7 measures as keeping a label problem under **every** freedom swept. **This
+> entry's own framing survives it**: the schematic class fails in two ways, neither of which is a
+> scoping question about which boards matter.
+>
+> **AND THIS ENTRY'S OWN SURVIVING MECHANISM NOW HAS A MEASURED YIELD, which is the part that was
+> an open hedge.** The Task 24 paragraph's *"four-candidate least-covered choice over sides"* was
+> corrected twice above - first as resting on a premise the plan records as wrong, then as a
+> candidate set measured **wider than four at 95 of 95 anchors**. `[RELAYED]` §5.7: **searching the
+> four sides exhaustively, graded by `checkLayout`, clears 5 of the 12 label-blocked blocks outright
+> under the production ruler** - all five Pultec `*-junction` blocks, at `hi_boost_out:down`. **And
+> it draws no board**, because all five sit behind `validateCircuit` net-name refusals. **So the
+> mechanism works and is not the binding constraint**, which is a different answer from either "it
+> rests on a wrong premise" or "it is the one that most resembles what worked". Every count is at
+> `length x GRID` and is expected to move under another ruler (**G265** clause 4, the owner's).
+>
+> - **Evidence** `[RAN, CONFIRMED]` the board census at this commit, read in full, with the same
+>   three controls the Task 24 and Task 25 amendments name - the `0 have no authoring declaration`
+>   line, the per-board `circuit is invalid` detail naming specific nets, and the summary count.
+>   **RELAYED** for §5's and §7's figures, which are in `docs/schematic/text-handling-research.md`
+>   with their own controls.
+> - **Verified** **CONFIRMED** for the census and the board table - this writer ran it and read the
+>   whole output, including the six validation blocks. **RELAYED** for the 5-of-12 side-search yield
+>   and the 12-block population, which are Task 5's.
+> - **Why it is open** unchanged. **The schematic class still delivers nothing for any board**, and
+>   the research establishes that the text work this branch has spent two plans on is not what
+>   stands in front of six of the eleven.
+> - **What would settle it** unchanged. **CRITERION: each of the five classes produces an artifact
+>   the owner accepts**, and for the schematic class **G240**'s criterion stands - a generated
+>   schematic for at least one board, judged by something other than the producing agent.
+>   **Task 7 authored no criterion, elected no text quantity, and recommended nothing**; the three
+>   decisions it names at §7.5 are all recorded as the owner's elsewhere in this file.
+
 ---
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
@@ -1854,6 +1904,38 @@ that nothing claims these sheets are clean.
   a committed baseline file compared by content so a regression shows in a diff - the second is the
   shape this repository already uses for readability baselines. **Both need the owner's number
   first.**
+
+> **AMENDED 2026-10-23 BY TASK 7 OF THE TEXT-HANDLING RESEARCH PLAN: THE ARTIFACT THIS ENTRY'S
+> CRITERION ASKS HIM TO LOOK AT DOES NOT EXIST, AND NOTHING HAS SAID SO. THE CRITERION IS NOT
+> CHANGED.**
+>
+> The criterion is *"the owner looks at a sheet carrying fallback placements."* **There is no such
+> sheet.** `[RAN, CONFIRMED]` `bun tools/schgen/board-sheets.ts` at this commit: **0 of 11 boards
+> produce a schematic, 11 refused, 0 undeclared.** `[RELAYED]` the four parity circuits all refuse
+> at `validateCircuit` before any block is laid out (**G238**; §1.9's own `SKIPPED` lines record
+> `opamp-buffer` at 3 problems, `optical-compressor` at 14, `pt2399-core` at 18, and **G232**'s Task
+> 20 amendment records `transistor-preamp` refusing at layout). **The only thing in this repository
+> that generates a sheet is the `mini` design FIXTURE, and G259 records it generating with ZERO
+> fallback placements** - so even that sheet is not the artifact.
+>
+> **SO THE 53 FALLBACK PLACEMENTS §6.5 COUNTS ARE COUNTED ON BLOCKS, NOT ON SHEETS**, and this
+> entry's own fifteen were counted on blocks too. **A block that lays out is not a drawing anybody
+> can look at.** That is not a defect in this entry and it is not an argument for relaxing anything;
+> it is the gap between the criterion and its own evidence, stated so that the next agent does not
+> report "we asked him and he has not answered" when nobody could have shown him anything.
+>
+> - **Evidence** `[RAN, CONFIRMED]` the board census, read in full; and
+>   `bun tools/schgen/board-sheets.ts --pdf` is recorded in **G259**'s Task 25 amendment as
+>   producing **no `.kicad_sch` and no `.pdf`**. `[RELAYED]` the parity circuits' gate-1 refusals and
+>   the `mini` fixture's zero fallbacks.
+> - **Verified** **CONFIRMED** for the census only; **RELAYED** for everything else above.
+> - **Why it is open** unchanged, and now with one reason it could not have closed: **the question
+>   is answerable only against an artifact that does not exist yet.**
+> - **What would settle it** **UNCHANGED AND NOT WIDENED.** The criterion stands as written. What
+>   this amendment adds is a precondition it never stated: **a sheet has to exist first**, which is
+>   **G240**'s and **G259**'s criterion and not a new one. **No threshold, no budget and no mechanism
+>   is proposed here**, and §7.5 of the research document states the same thing with no
+>   recommendation attached.
 
 ---
 
@@ -19828,6 +19910,49 @@ entry's.
 >   this entry is deleted.** Not a measurement - a filing decision, and the next agent to touch
 >   this register may take it.
 
+> **AMENDED 2026-10-23 BY TASK 7 OF THE TEXT-HANDLING RESEARCH PLAN: THE PRICE THIS ENTRY PAID IS
+> NOT AN ARTEFACT OF THE RULER, THE POPULATION IT PUBLISHED IS A QUARTER OF THE REAL ONE, AND THE
+> TWO MECHANISMS IT STILL CARRIES NOW HAVE MEASURED CEILINGS. THE SCOREBOARD ROWS ARE UNTOUCHED
+> AND THE CRITERION IS UNCHANGED.**
+>
+> The seven sections of `docs/schematic/text-handling-research.md` bear on this entry in four ways,
+> all `[RELAYED]` here with their subsection, none of them a new measurement by this writer.
+>
+> | what this entry says | what the research measured |
+> | --- | --- |
+> | the fifteen fallbacks are the price of 7 of 12 blocks drawing | **13 of the 15 survive all three measured text quantities; under `EDA_TEXT::GetTextBox` all 15 survive and 9 MORE appear, under the rendered ink 20.** So the price is real geometry and not a ruler artefact - and it may be **24** rather than 15, depending on the owner's election (§1.9, **G265** clause 4) |
+> | *"fifteen field pairs drawn over a wire, a pin or a label"*, over the 10 laid-out blocks of the four parity circuits | **53 over the 48 laid-out blocks of all eleven boards** (§6.5). The two are DIFFERENT POPULATIONS and must not be compared; §1's 13-of-15 ratio **has not been re-taken over the 48**, so how many of the 53 the ruler accounts for is unknown (**G274** clause 5) |
+> | **MECHANISM**: give the placer more candidate positions, as KiCad's four-side autoplacer does | **§3 read that algorithm in full and there is nothing left to borrow.** Its rigid field stack is already here; its four candidates are FEWER than this repository's eleven; its non-refusal is already here by this entry's own Task 24 change; and it carries a **confirmed defect** - it can pick a side it has just graded as colliding while a clear side remains, departing from the specification in its own file header, in a function upstream's own test file never calls (§3.3, §3.13, **G267**) |
+> | - | **The ONE idea §3 found that this repository does not have is `fitFieldsBetweenWires`**, a local shift of a chosen candidate along one axis into a free gap between parallel obstacles. **Whether it would help here is unmeasured**: it depends on whether these fifteen are blocked by *wires* in particular, and §3.13 names re-reading them by obstacle class as the thing it did not do. **UNTRIED** (§3.5, §3.13) |
+>
+> **AND THE WALK-ORDER CEILING, which is the nearest thing to a free improvement and is not one.**
+> `[RELAYED]` §6.5, **G272**: over all 48 blocks and 255 unit placements, **production 53,
+> order-wise best 51, order-wise worst 54.** An order chosen without an objective can cost a
+> fallback as easily as save one; **all 53 live on the 12 blocks too large to exhaust**, so 51 is an
+> upper bound and not an optimum; and the 36 blocks driven exhaustively have **zero** fallbacks, so
+> their order-invariance is proven and uninformative. **Nothing says 51 is better than 53** - that
+> needs **G260**'s number.
+>
+> **THE FIELD-PLACEMENT CLASS IS STILL ABSENT FROM THE BOARD CENSUS, RE-DRIVEN.** `[RAN, CONFIRMED]`
+> `bun tools/schgen/board-sheets.ts` at this commit: **0 of 11 boards produce a schematic, 11
+> refused, 0 undeclared**, and **field placement is named by none of the eleven blockers** - six are
+> `validateCircuit` net-name refusals, two a power-symbol glyph touch, one a missing junction, two a
+> label over a label (**G274** clause 2). **This entry's Task 24 amendment predicted the leverage
+> would buy no board and it still has not**, two plans later.
+>
+> - **Evidence** `[RAN, CONFIRMED]` the board census, read in full. **RELAYED** for every figure
+>   above from §1, §3 and §6, each of which is in the research document with its own control and, for
+>   §1 and §6, asserted against a committed probe log on every `bun test`.
+> - **Verified** **CONFIRMED** for the census only. **RELAYED** for the rest - this writer
+>   re-measured nothing of §1's, §3's or §6's.
+> - **Why it is open** unchanged, and this amendment does not change the deletion-candidate status:
+>   the three things a deletion would take with it are still the three things, and **two of them are
+>   now larger** - the leverage history 9 -> 8 -> 7 is what makes **G239** and **G258** readable, and
+>   the measured statement that the fix buys no generated schematic is now re-driven twice.
+> - **What would settle it** unchanged. **This amendment authors no criterion**, elects no text
+>   quantity, and proposes nothing: `fitFieldsBetweenWires` is marked UNTRIED and the re-read it
+>   depends on has not been done.
+
 ### G233 - A PERTURBATION HARNESS THAT NAMES A TEST FILE SILENTLY NO-OPS WHEN THE ASSERTION MOVES, AND REPORTS THE RESULTING GREEN AS A PASSING DRIVE
 
 **MEASURED HERE, TWICE, ONE LAYER APART.** A perturbation is how this repository
@@ -24169,6 +24294,65 @@ anything. In particular:
   log the rest* is not a refusal. **M is the figure that would not move, and that
   asymmetry is why the lead is recorded rather than counted.**
 
+> **AMENDED 2026-10-23 BY TASK 7 OF THE TEXT-HANDLING RESEARCH PLAN: THE BEHAVIOUR NOW HAS A 1981
+> PRIMARY SOURCE. THE TOOL STILL HAS NONE, AND THIS ENTRY'S CRITERION IS UNCHANGED.**
+>
+> **WHAT THIS SETTLES.** *Place what you can and log what you could not* is no longer a shape known
+> here only from a search summary. **It is described, in a primary source, by the authors of the
+> system that implements it.** `[READ]` Knuth and Plass, *Breaking Paragraphs into Lines* (1981),
+> **p.1150**, read on the rendered page image and confirmed by two reviewers: when no feasible
+> sequence of breaks exists TeX's active list is *"forcibly prevented from becoming empty by simply
+> declaring a breakpoint to be feasible if it would otherwise leave the active list empty"*, and the
+> next sentence is
+>
+> > *"This results in an overset line and an error message that encourages the user to take
+> > corrective action."*
+>
+> **Place what you can; log what you could not.** `docs/schematic/text-handling-research.md` §6.8
+> carries it with its retrieval, and records that **round 0 of §6 put that first quotation on
+> p.1162** - a mis-citation corrected there, which is why the page number is stated twice here.
+>
+> **WHAT THIS DOES NOT SETTLE, AND IT IS THIS ENTRY'S WHOLE SUBJECT.** **TeX is not Allegro.** This
+> entry's criterion asks for *"a quotable primary source for the behaviour - the Allegro or OrCAD
+> PCB Editor command reference for the silkscreen auto-placement command, retrieved and quoted with
+> a date - or a run of the tool"*, and **none of the three doors has opened.** The criterion is
+> intact, word for word, and **this amendment must not be read as meeting it**: a second source for
+> a *behaviour shape* is not a source for a *tool*, and conflating the two is exactly what the
+> entry's UNRETRIEVED heading exists to prevent.
+>
+> **WHAT MOVES IN §4.8, WHICH IS NOTHING YET.** §4.8's five rows are the third-party review's and
+> are not this document's to widen. §4.10 names this lead as *"the one gap whose closing could
+> change a row"*, and that is still a statement about Allegro. **TeX is counted in §4's conclusion
+> as the EIGHTH tool that does not refuse** (§6.8) and is **not** counted as an instance of the
+> place-and-log row, because §4.8 has no such row and §6 correctly did not add one.
+>
+> **AND THE ASYMMETRY THIS ENTRY ENDS ON IS NOW VISIBLE FROM A SECOND DIRECTION.** The entry says
+> that confirming the lead would move **N** from six to seven with **M still at ZERO**. TeX is the
+> same shape from the typesetting side: it places anyway and it does not refuse. **So two
+> independent literatures now put *place what you can* and *do not refuse* in the same system**, and
+> the thing this repository is missing against both is not the placement - **G232**'s Task 24 change
+> gave it that for fields - but the loudness, which is **G260**'s open residual and the owner's
+> number.
+>
+> - **Evidence** `[READ]` the 1981 paper at the hash
+>   `docs/schematic/text-handling-research.md` §6.1 pins, p.1150, transcribed from the rendered page
+>   image because that scan's text layer corrupts the punctuation a quotation turns on. **The check
+>   that could have failed:** §6's own paste checker holds its seven `kp-src` blocks' page numbers
+>   against §6.1's pages-read list on every `bun test`, and the round-0 mis-citation to p.1162 is
+>   what that case was added for. **No grep for a paraphrase was performed** - the words above are
+>   the page's.
+> - **Verified** **RELAYED**, and the grade matters here: **this writer did not open the PDF.** The
+>   quotation reaches this entry through §6.8, whose writer read the page image and whose two
+>   reviewers confirmed it. **The described Allegro behaviour is still NOT confirmed and is still
+>   relayed from a search summary** - unchanged from the entry above.
+> - **Why it is open** unchanged: the two sources that would settle it are a 403 and a login wall,
+>   and no attempt has been made to obtain the software. **The behaviour having a primary source
+>   elsewhere does not open a door to this one.**
+> - **What would settle it** **UNCHANGED, VERBATIM, AND DELIBERATELY NOT WIDENED.** A quotable
+>   primary source for *that tool*, or a run of it. **MECHANISMS, UNTRIED**, unchanged and still
+>   each a guess by someone who has not got past the doors. **This amendment adds no mechanism and
+>   relaxes no criterion.**
+
 ---
 
 ### G269 - MEASURED: this repository refuses an anchor relocation that KiCad accepts, through its OWN dangling-wire-end rule, and THREE of the twelve label-blocked blocks reduce to exactly that one problem - a count that is itself at ONE text box
@@ -24619,3 +24803,210 @@ contain"* - that combination no longer exists in this tree.
   describes. The first is an edit to a document the plan protects and is the
   owner's or the controller's call; the second is machinery nobody has costed.
   Neither has been tried.
+
+---
+
+### G274 - MEASURED: the board census names the FIRST refusing block and not the only one, so "`tp-leg-emitter-bypass` is the only thing refusing `transistor-preamp-lab`" is FALSE - and across all eleven boards NOT ONE is unblocked by the whole eighteen-row solution space
+
+**Found** 2026-10-23, Task 7 of
+`docs/superpowers/plans/2026-10-22-text-handling-research.md`, while mapping
+eighteen candidate approaches onto the eleven boards' real blockers
+(`docs/schematic/text-handling-research.md` §7.2). **Nothing is fixed and nothing
+was attempted** - the plan is research-only.
+
+**(1) THE CENSUS PRINTS ONE BLOCK PER REFUSED BOARD, BECAUSE `generate` STOPS AT
+THE FIRST, AND TWO SITES READ THAT AS "THE ONLY ONE".** `[RAN, CONFIRMED]`
+`bun tools/schgen/board-sheets.ts` at this commit prints exactly one blocker line
+per refused board. **G262** records `tp-leg-emitter-bypass` as refusing
+`transistor-preamp-lab` *"and by nothing else in front of it"*, which is true and
+precise - *in front of* is load-bearing. **Two sites compress it and lose that
+word:**
+
+| site | what it says | what §5.5a of the same document measures |
+| --- | --- | --- |
+| §5.8's heading | *"`tp-leg-emitter-bypass`, the binding constraint on `transistor-preamp-lab`"* | that board is `LABEL-BLOCKED via tp-leg-emitter-bypass, tp-stage` |
+| §5.10 mechanism 2 | *"that block is the only thing refusing `transistor-preamp-lab`"* | the same row |
+
+**THE CONSEQUENCE IS A WRONG EXPECTATION AND NOT A WRONG NUMBER.** §5.10
+mechanism 2 offers a measured move - lengthen `BYPASS_CAP`'s stub by two grid
+steps and put its label on `down`, giving that block **zero** problems - and an
+implementer who took it expecting a sheet would get `tp-stage`, which §5.7
+measures as keeping a label problem under **every** freedom swept. **The move is
+still worth what §5 says it is worth; what it is not is a board.**
+
+**§5 IS NOT EDITED.** An agent does not rewrite a closed section's measured text
+to match a later reading, and §5.5a already carries the correcting measurement
+four subsections above the claim. §7.2's point (2) carries the correction where a
+reader of the synthesis will meet it.
+
+**(2) ALL ELEVEN BOARDS, AND WHAT STANDS IN FRONT OF EACH - with the point that
+no earlier entry states.** `[RAN, CONFIRMED]`, same run: **`0 of 11 boards
+produce a schematic`, `11 refused; 0 have no authoring declaration`.**
+
+| what refuses it | boards | is there text in it? |
+| --- | --- | --- |
+| `validateCircuit`, net names not UPPER_SNAKE (plus a single-pin net or an undeclared pin) | **6** - `pt2399-core` and all five Pultec | **no** |
+| `tp-stage`'s GND/VCC glyph touch (**G263**'s class), ahead of two label problems | **2** - `transistor-preamp-buffered`, `-staged` | **the first problem has none** |
+| a t-junction with no junction emitted | **1** - `transistor-preamp-feedback` | **none at all** |
+| a label over a label | **2** - `transistor-preamp-lab` (`tp-leg-emitter-bypass`), `transistor-preamp-loop` (`tp-follower`) | **yes** |
+
+**SO THE BLOCKER THE CENSUS NAMES INVOLVES TEXT ON TWO OF ELEVEN BOARDS, AND SIX
+BOARDS REFUSE BEFORE ANY TEXT IS PLACED AT ALL.** **NOT ONE of the eighteen
+approaches in §7.1 draws a board - not one of them, and not all of them
+together.** Six are refused upstream of every one of them; on the five that reach
+layout the residue is either a non-text defect or `tp-stage`.
+
+**(3) THE NEAREST THING TO A BOARD IS TWO BOARDS AND IT NEEDS A NON-TEXT FIX
+FIRST. THIS IS BAIT AND IT IS RECORDED BESIDE THE TRAP.** On
+`transistor-preamp-buffered` and `-staged` the only label-blocked block is
+`tp-stage`; §5.7 records **every label problem on those two instances as cleared
+by some freedom**; and the residue is the GND/VCC glyph touch, which has no text
+in it. **They are candidates and not a count**, for the reason **G232** records
+about its own leverage figure: a non-text fix moves geometry, moved geometry
+re-enters the other obligations, and **nothing re-graded either block after a
+hypothetical glyph fix.**
+
+**(4) `tp-stage` IS THE BINDING CONSTRAINT ON FOUR BOARDS AND THE SOLUTION SPACE
+MEASURED HERE DOES NOT REACH IT.** `-buffered`, `-lab`, `-loop` and `-staged` all
+carry it. **G259**'s Task 25 amendment already recorded that one block refuses
+four boards; what §5 and §7 add is that its two largest instances (8 and 21
+problems) are **the only two blocks where no freedom tried clears a label
+problem**, and that no sweep here moved three labels at once, which those
+instances have the anchors for.
+
+**(5) THE TWO FALLBACK POPULATIONS IN THE RESEARCH DOCUMENT ARE DIFFERENT
+POPULATIONS AND A READER WILL DIVIDE ONE BY THE OTHER.** §1's **15** fallbacks
+are over the **10** laid-out blocks of the four parity circuits, which is
+**G260**'s published population. §6.5's **53** are over the **48** laid-out blocks
+of all eleven boards. §6.10 states that §1's 13-of-15 survival ratio **has not
+been re-taken over the 48**, so **how many of the 53 are artefacts of the
+production ruler is UNKNOWN.** Nothing anywhere states the two corpora side by
+side; §7.4 now does.
+
+**(6) TWO PROCEDURAL THINGS A LATER READER CANNOT RE-DERIVE, recorded because
+they were decisions and not consequences.** First, **§7 pastes no fenced block,
+deliberately**: §5's and §6's checker slices both run to end-of-file, and §6's
+pinned fence tally over *every* block in its slice would have gone red with a
+message about §6 that was really about §7. The alternatives - bounding two closed
+sections' slices, or widening §6's pinned tally - were costed and declined, and
+three new cases in `tests/schgen/text-metrics/document-pastes.test.ts` make the
+emptiness and its reason checkable, one of them a RED drive that inserts a block
+and asserts the tally disagrees naming the fence word. §7.6 is the statement.
+Second, **the confinement of §1-§6 is verified by heading anchor and no longer by
+the first-N-lines hash every round since Task 3 used**: the head table is an
+insertion above §1, which breaks that hash by construction. §7.7 states the
+replacement, and the check run was a SHA-256 comparison of parent `[§1 heading ..
+EOF]` against child `[§1 heading .. §7 heading]`, which matched at
+`b9fd12dd...64d13f9a` over 352 125 bytes.
+
+- **Evidence** `[RAN, CONFIRMED]` `bun tools/schgen/board-sheets.ts` at this
+  commit, read in full. **The controls that could have answered differently and
+  did not:** the `0 have no authoring declaration` line, which would have moved
+  had the builder-to-board resolver regressed (**G247**); the six
+  `circuit is invalid` blocks, which name the specific nets rather than a count;
+  and the summary line `0 of 11 boards produce a schematic`, which agrees with
+  **G259**'s Task 25 amendment taken by the same tool. **The first-versus-only
+  finding is established by a check that could have failed**: the census was read
+  for `transistor-preamp-lab` and prints `tp-leg-emitter-bypass` alone, against
+  §5.5a's committed probe output for the same board naming two blocks - **two
+  independent tools over the same board disagreeing in a way that is explained by
+  `generate` stopping at the first block.** `[READ]` §5.5a, §5.7, §5.8 and §5.10
+  of `docs/schematic/text-handling-research.md`, and **G262**'s own wording.
+  Clause 6's hash comparison is a second script over `git show HEAD:<doc>` and the
+  working tree, and it would have failed on any edit inside §1-§6.
+- **Verified** **CONFIRMED** for the census, the board table, the
+  first-versus-only disagreement and clause 6's hash - this writer ran each and
+  read the output. **RELAYED** for every §5 and §6 figure quoted above (the
+  12-block and 9-of-11 populations, the per-freedom clearing counts, the 53/51/54
+  spread, the 13-of-15 survival ratio): §7 re-measured none of them, and each is
+  in the research document with its own control.
+- **Why it is open** **clause 1 is a correction to two sentences in a closed
+  section and is open because no agent rewrites a closed section's measured
+  text.** Clauses 2-5 are measurements and are open because nothing is fixed:
+  **six boards need their net names and one needs a junction before any text work
+  reaches them**, which is **G150**'s and **G263**'s ground rather than this
+  plan's. Clause 3 is open because the re-grade it names has not been run. Clause
+  5 is open because the ratio has not been re-taken over the 48 and doing so needs
+  the external font blob §1 depends on.
+- **What would settle it** **CRITERION for clause 1: a reader of §5.10 mechanism
+  2 can tell, from somewhere, that clearing `tp-leg-emitter-bypass` does not
+  produce a sheet for `transistor-preamp-lab`.** §7.2's point (2) and this entry
+  satisfy that for a reader who finds either; neither satisfies it for a reader
+  who opens only §5. **MECHANISM, UNTRIED:** a dated pointer at §5.10, which is an
+  edit to a closed section and is the controller's call, not this writer's.
+  **CRITERION for clauses 2-4: a board produces a sheet**, which is **G240**'s
+  criterion and **G259**'s, unchanged and not authored here. **CRITERION for
+  clause 5: §1's survivor ratio is re-taken over the 48-block corpus**, which
+  would say how many of the 53 are the ruler's. **MECHANISM, UNTRIED:** run §1's
+  probe over §5's population function rather than `remeasure-coverage.ts`'s ten
+  blocks - it needs `kicad-cli`, KiCad's Python bindings and the 2.9 MB pinned
+  font blob, so it is not re-drivable from a clean checkout and that is why §1
+  took it on ten. **This entry authors no acceptance criterion** and names no
+  threshold.
+
+---
+
+### G275 - METHODOLOGICAL: the plan's list of which tasks may reach DEMONSTRATED HERE is a MECHANISM that its own Task 6 falsified, and §7 follows the definition instead - one cell, reversible
+
+**Found** 2026-10-23, Task 7 of the text-handling research plan, while filling
+the evidence-level column a third-party review required.
+
+**WHAT THE PLAN SAYS.** Task 7 Step 3 defines three evidence levels and is
+explicit that they are the review's and are ACCEPTED, so **they are not the
+producing agent's to re-grade** (`CLAUDE.md`). Level 2 reads:
+
+> *"**DEMONSTRATED HERE** - it was run against this repository's own inputs and
+> the result observed. Only Task 1's geometry, Task 2's ELK experiment and Task
+> 5's freedom measurements can reach this level."*
+
+**WHAT HAPPENED.** **Task 6 drove `placeFields` over all 48 declared blocks and
+255 unit placements** (`docs/schematic/text-handling-research.md` §6.5; **G272**),
+which meets the first sentence word for word and is not in the second sentence's
+list. **The plan's own Task 6 brief asked for no measurement campaign** - its
+Step 3 asked only to *"connect it to the measures this repository already has"* -
+so the enumeration was accurate when it was written and was overtaken by the
+task it describes.
+
+**WHY THE DEVIATION IS THE DEFINITION AND NOT THE LIST**, in this repository's own
+words: *"A 'what would settle it' often carries TWO things, and only one of them
+binds. The CRITERION is what was measured. The MECHANISM is the writer's guess at
+how to meet it... take the criterion, test against it, and record the deviation
+when the mechanism turns out to be wrong."* The criterion here is *"run against
+this repository's own inputs and the result observed"*; the three-task list is a
+prediction by someone who had not yet seen Task 6's run. **Grading a measured
+sweep as untested would be a false statement about the evidence, which is the one
+thing the column exists to prevent.**
+
+**WHAT WAS DONE.** §7.1's row 13 - *re-walk the field placement order and keep the
+best* - is graded **DEMONSTRATED HERE** and marked **†**, and §7.0 carries the
+deviation in full beside the levels. **It is one cell**: a reviewer who reads the
+enumeration as binding changes row 13 to INTEGRATION HYPOTHESIS and nothing else
+in the table moves. No level was re-graded, merged, renamed or added.
+
+**AND THE ROW IS NOT A PROMOTION.** Row 13's *does not fix* cell is the longest in
+the table: the order-wise **worst is 54** against production's **53**, so re-walking
+is not free; **all 53 fallbacks live on the 12 blocks too large to exhaust**, so
+`51` is an upper bound and not an optimum; and the 36 blocks driven exhaustively
+have **zero** fallbacks, so their order-invariance is proven and uninformative.
+**The level says where it was measured; the cells say what it bought.**
+
+- **Evidence** `[READ]` the plan's Task 7 Step 3 and Task 6 Step 3 at this
+  commit, and §6.5 of the research document. **The check that could have failed:**
+  §6.5's own `SUMMARY` block was read for whether its figures are a drive against
+  this repository's blocks or a reading of code - it reports
+  `48 block(s) measured`, `unit placements over the measured blocks: 255` and
+  `production 53, order-wise best 51, order-wise worst 54`, which is a run, and
+  **had it been a reading the deviation would not exist.**
+- **Verified** **CONFIRMED** - this writer read both brief steps, read §6.5, and
+  made the grading decision. **RELAYED**: §6.5's figures themselves, which are
+  Task 6's and are asserted against Task 6's committed log on every `bun test`.
+- **Why it is open** because **it is a deviation from an ACCEPTED criterion's
+  enumeration and only the controller or a reviewer may ratify it.** It is
+  recorded rather than argued, and the reversal is one cell.
+- **What would settle it** **CRITERION: a reviewer or the controller states
+  whether level 2's definition or its three-task enumeration binds.** If the
+  enumeration binds, row 13's LEVEL cell becomes INTEGRATION HYPOTHESIS, §7.0's
+  deviation paragraph and the row's **†** are deleted, and the counts in §7.1
+  become 6 / 7 / 5. **MECHANISM: none is offered** - the writer of a deviation
+  does not also ratify it, which is the whole shape of the rule it is a deviation
+  from.
