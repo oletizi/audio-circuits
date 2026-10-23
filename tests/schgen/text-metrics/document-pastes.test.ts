@@ -354,6 +354,81 @@ describe("section 2's pasted output, against section 2's own log", () => {
   })
 })
 
+/**
+ * **§4's BLOCK ACCOUNTING IS A GUARDED ASSERTION RATHER THAN A SENTENCE - CONTROLLER RULING, fix
+ * round 1 of Task 4.**
+ *
+ * §4 pastes eight blocks and **not one of them can be checked against a committed log**: they are
+ * runs of third-party tools installed outside this repository, and transcriptions of a third-party
+ * source tree. The research plan forbids the task that wrote them from adding a tool or a log to
+ * the tree, so the coupling §1 and §2 have is not available to §4 and will not become available.
+ *
+ * **WHAT WAS THERE INSTEAD, AND WHY IT WAS NOT ENOUGH.** §4.12 stated the block count and the
+ * `expect()` figure it predicts in prose. Prose that names a number is falsifiable by a reader who
+ * checks it and by nobody else; the figure had already been wrong once, between round 0 and round
+ * 1, because a block was added and the sentence was not. **The count is now pinned here**, so
+ * adding or dropping a §4 block is a deliberate edit in this file - which is exactly how
+ * `SECTION_2_BLOCKS` pins §2.
+ *
+ * **WHAT THIS CAN AND CANNOT SEE.** It can see a block appearing or vanishing, and it can see a §4
+ * block relabelled into the checked namespace. **It cannot see a §4 block whose contents were
+ * edited after the fact**, because there is no log to compare them with, and nothing in this
+ * repository could see that. §4.12 says so in those words rather than leaving a reader to assume
+ * the coupling is the same as §1's.
+ */
+const SECTION_4_HEADING = "§4 What comparable tools do when text will not fit"
+
+/** How many blocks §4 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
+const SECTION_4_BLOCKS = 8
+
+/** §4's slice of the document, which runs to the end of the file. */
+function sectionFour(d: string): string {
+  const at = d.indexOf(SECTION_4_HEADING)
+  if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_4_HEADING)}, so §4's slice cannot be found`)
+  return d.slice(at)
+}
+
+describe("section 4's blocks are accounted for, although none of them can be checked against a log", () => {
+  test("§4 pastes exactly the pinned number of blocks", () => {
+    expect(parseBlocks(sectionFour(doc)).length).toBe(SECTION_4_BLOCKS)
+  })
+
+  test("every one of them declares itself as something other than probe output", () => {
+    const tags = parseBlocks(sectionFour(doc)).map((b) => b.info.split(/\s+/)[0])
+    expect(tags.length).toBe(SECTION_4_BLOCKS)
+    // Neither §1's fence word nor §2's: a §4 block in either namespace would be anchored to a log
+    // that has no section for it, and the whole-document case above would fail with a confusing
+    // message about a missing header rather than a clear one about §4.
+    for (const t of tags) expect([OUTPUT_FENCE, "elk-run"]).not.toContain(t)
+  })
+
+  test("the whole-document verdict reports all eight as NOT CHECKED, by line, after §4's heading", () => {
+    const headingLine = doc.slice(0, doc.indexOf(SECTION_4_HEADING)).split("\n").length
+    const v = verify(doc, log)
+    const inFour = v.notOutput.filter((n) => Number(/^line (\d+):/.exec(n)?.[1] ?? 0) >= headingLine)
+    expect(inFour.length).toBe(SECTION_4_BLOCKS)
+    // Each contributes one `expect()` to the by-name case above, which is the whole of §4.12's
+    // arithmetic. If this number and SECTION_4_BLOCKS ever disagree, a §4 block has left the
+    // population and §4.12's figure is stale.
+    expect(v.notOutput.length).toBeGreaterThanOrEqual(SECTION_4_BLOCKS)
+  })
+
+  /**
+   * RED: a §4 block relabelled into §1's namespace. This is the one failure mode the pinned count
+   * alone would not catch - the count is unchanged, and the block silently leaves the NOT CHECKED
+   * population.
+   */
+  test("RED: a section 4 block relabelled into the checked namespace fails rather than being skipped", () => {
+    const first = parseBlocks(sectionFour(doc))[0]
+    expect(first?.info).toBeDefined()
+    const relabelled = doc.replace("```" + (first?.info ?? ""), `\`\`\`${OUTPUT_FENCE} STEP 4b`)
+    expect(relabelled).not.toBe(doc)
+    const v = verify(relabelled, log)
+    expect(v.failures.length).toBe(1)
+    expect(v.notOutput.length).toBe(verify(doc, log).notOutput.length - 1)
+  })
+})
+
 /** The body of the one ```run block whose first line is `first`. */
 function blockStartingWith(first: string): string[] {
   const hits = parseBlocks(doc).filter((b) => b.info.split(/\s+/)[0] === OUTPUT_FENCE && b.lines[0] === first)

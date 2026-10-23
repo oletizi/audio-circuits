@@ -602,6 +602,26 @@ difficulty of the problem, not a licence to leave it.
 
 ### Other EDA tools
 
+> **POINTER, ADDED 2026-10-22 - THIS SUBSECTION'S ALTIUM CLAIM WAS RE-RETRIEVED
+> FROM THE PAGES THEMSELVES AND IS WRONG IN ONE PLACE.** This document is read and
+> never rewritten, so the paragraph below is left exactly as it was and the
+> correction lives in
+> [`text-handling-research.md`](text-handling-research.md) **§4.6**, which quotes
+> all three Altium pages by URL with a retrieval date.
+>
+> **The substance holds** - nine fixed positions, no overlap avoidance documented
+> - and **two things do not.** (1) The exact sentence is *"all of which are
+> classed as"*, not *"all classed as"*; the elision below is marked, so this is a
+> shortening rather than a misquotation. (2) **The nine styles are the PCB
+> editor's `Position Component Text` command, not a schematic designator
+> feature**; on the schematic side `Autoposition` is a checkbox, and the page says
+> the "automatic" in that phrase means *the text follows the component through
+> rotation* - which is not a claim about clearance. §4.6 also establishes that
+> Altium's schematic documentation **describes overlap as a normal state** managed
+> by z-order commands, which is stronger than "no avoidance documented", and §4.7
+> replaces *"I found nothing about ... OrCAD's designator auto-positioning"* with a
+> retrieved manual in which the term returns zero hits over 31,433 lines.
+
 `[THIRD-PARTY]`, vendor documentation read as search extracts and **not
 verified by running anything.** Altium Designer offers *"[n]ine positional
 styles ... all classed as 'automatic positions'"* for designator text, with an

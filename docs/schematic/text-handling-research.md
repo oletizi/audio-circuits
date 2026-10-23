@@ -2376,8 +2376,8 @@ for it to be worth anything.
 **The question is narrow and it is about this repository.** This generator
 **refuses to emit a sheet when text would collide** - six of the eleven boards are
 refused at `validateCircuit` and five at ELK layout, so it produces a drawing for
-none of them (`CLAUDE.md`; **G259**). §3 established that the closest neighbour of
-all, KiCad's own `autoplace_fields.cpp`, **has no refusal path**: four candidate
+none of them (`CLAUDE.md`; **G259**). §3 established `[RELAYED]` that the closest
+neighbour of all, KiCad's own `autoplace_fields.cpp`, **has no refusal path**: four candidate
 sides, a two-tier collision grading, one local repair, and when every side
 collides it places the fields overlapping anyway. **This section asks whether that
 generalises to the other tools in the class, and it answers at the scope the
@@ -2415,6 +2415,7 @@ are not interchangeable.**
 | OBSERVED | `[RAN]` | the tool was installed in a scratchpad outside this repository, executed over a fixture, and its output measured. Two of the six were run. |
 | INFERRED | `[READ]` | the named source file was opened at the stated commit and the behaviour is read off it. Nothing was executed; a path not taken in the source is not a path proven not to exist elsewhere in the program. |
 | DOCUMENTED | `[DOCS]` | the vendor's own page or manual was retrieved on the stated date and quoted from the bytes of the page, not from a search extract. Where the documentation is silent, this section says it is silent rather than inferring. |
+| borrowed | `[RELAYED]` | a figure from another section, or from a reviewer, restated here and **not re-driven by this writer**. §4 uses it for exactly two things: §3's reading of KiCad, in three places all named in §4.9 - §3's own disclosure travels with it, the autoplacer was never executed there either - and one reviewer reproduction in §4.7. **A reviewer finding that this writer DID re-drive is credited and not marked `[RELAYED]`**, which is the case for §4.3's `psprint.c` guard. |
 
 **`[DOCS]` is declared here because §4 needs a mark the document's header does not
 define**, exactly as §3 declared `[ISSUE-READ]` for the same reason. It is weaker
@@ -2447,6 +2448,7 @@ the four trees was read end to end.**
 | lepton-eda `lepton-eda/scheme/conf/schematic/deprecated.scm` (213 lines) | `5e83760e12d31cd85d9c0eb22583a956bc2379406c3db7bb5387f7b41cacbb8e` |
 | xschem `src/draw.c` (7129 lines) | `7e2e1176fc9c9e703fc497cebacba97a057122b3e2af4b2eb6833f7ce1fffd67` |
 | xschem `src/svgdraw.c` (1241 lines) | `53dccaec654b52d987f8f899c4bd88bd5f4bbb0ee70929caebf559f4791f8a47` |
+| xschem `src/psprint.c` (1702 lines) - **opened by a REVIEWER, confirmed here** (§4.3) | `fe878c711ad0163c836ef74b978446ad6241decfa10eac55570b5e9132a481f7` |
 | xschem `src/netlist.c` | `f70be7a3be3abb8a4d38f4b7b2f8d8e846ca06f599c78ee7243d17ca501a2594` |
 | xschem `src/spice_netlist.c` | `07794a0d3cf7a57aeb02602259916959da5252523cca5b788049658f8f24d839` |
 | xschem `xschem_library/devices/res.sym` | `59fa408b3bc0354839a226ec911db7840b40450903d5627b2b93a46ae99193ba` |
@@ -2546,7 +2548,7 @@ room`, `does not fit` and `refus` over every `.c`, `.h` and `.scm` in the tree
 returns four hits, all of them unrelated (two test comments about configuration
 loops, two GTK comments about drawing state).
 
-**TWO THINGS THE DEFAULT CONFIGURATION DOES THAT CHANGE WHAT THIS MEANS.**
+**THREE THINGS THE DEFAULT CONFIGURATION DOES THAT CHANGE WHAT THIS MEANS.**
 `scheme/conf/schematic/deprecated.scm` is where the hooks live, and in it:
 
 - **the `refdes`/`value` autoplacer is commented out.** All four hooks that would
@@ -2556,11 +2558,22 @@ loops, two GTK comments about drawing state).
   component designator is placed by the person, and the table above is reached
   only by a user who edits their configuration.** The file's name says the rest.
 - **the `netname` autoplacer is live**, through
-  `(add-hook! add-objects-hook place-netname-attribute-handler)`. And its four
-  table rows carry an **empty** movement direction, and `get-object-pins` returns
-  the empty list for anything that is not a component, so `pins-bounds` is null
-  for a net and **the collision adjustment is a no-op for the one text class
-  lepton-eda autoplaces by default.**
+  `(add-hook! add-objects-hook place-netname-attribute-handler)`, and its four
+  table rows carry an **empty** movement direction.
+- **the PIN-ATTRIBUTE autoplacer is live too**, through
+  `(add-hook! add-pin-hook (lambda (pin) (autoplace-pin-attributes pin )) #t)` -
+  the only one of the three `*-pin-hook` registrations left uncommented. Its eight
+  table rows, four `pinlabel` and four `pinnumber`, also carry an **empty**
+  movement direction and a spacing of `0`.
+
+**AND THE COLLISION ADJUSTMENT IS A NO-OP FOR BOTH OF THE TWO CLASSES IT
+AUTOPLACES BY DEFAULT**, for the same reason in both cases: `get-object-pins`
+returns the empty list for anything that is not a component, so `pins-bounds` is
+null for a net **and for a pin**, and the whole two-pass loop finds nothing to
+avoid. **This correction - two classes rather than one - was a reviewer's, and it
+strengthens the point rather than weakening it:** the first version of this
+sentence named only `netname`, which understated how much of lepton-eda's live
+autoplacement runs with its one good idea switched off.
 
 **TWO INCIDENTAL SOURCE FINDINGS, recorded because a later reader cannot
 re-derive them and neither bears on the refusal question.** Both are `[READ]`;
@@ -2635,9 +2648,14 @@ set.**
 
 **The check that could have found otherwise.** A case-insensitive grep for
 `autoplace`, `auto_place`, `overlap`, `collid` and `collision` over every `.c`,
-`.h` and `.tcl` under `src/` returns `warning_overlapped_symbols` and its call
-sites, plus two comments about hash-function collisions and one about arrow
-coordinates. **Nothing in xschem tests one piece of text against another.**
+`.h` and `.tcl` under `src/` returns `warning_overlapped_symbols`, its call sites
+and its Tcl menu entry, **and exactly two other lines: `src/actions.c:36-37`, a
+comment about hash-function collision resistance.** **Nothing in xschem tests one
+piece of text against another.** The first version of this sentence also credited
+the grep with a comment about arrow coordinates; **that comment is schemdraw's
+`elements/twoterm.py:842` and belongs to §4.5's grep, not this one** - the
+correction is a reviewer's, and the mis-attribution had drifted into this document
+from a correct note elsewhere.
 
 **It does suppress text, and the condition is not a collision.** Both
 implementations of `draw_string` return early when the text is too small to be
@@ -2648,9 +2666,20 @@ the non-cairo build at `src/draw.c:489` with
 the text's bounding box wholly outside the viewport. **Those are a screen
 optimisation and a viewport cull.** They belong in the taxonomy's first row and
 they are keyed on magnification, not on what else is at that coordinate.
-**The SVG exporter has the same guard and it is commented out**
-(`src/svgdraw.c:881`, `/* if(xscale*FONTWIDTH* xctx->mooz<1) continue; */`), so an
-exported file is not subject to the suppression a screen redraw is.
+**BOTH EXPORTERS CARRY THE SAME GUARD AND IN BOTH IT IS COMMENTED OUT** - the SVG
+writer at `src/svgdraw.c:881` and the PostScript writer at `src/psprint.c:1185`,
+each `/* if(xscale*FONTWIDTH* xctx->mooz<1) continue; */` - so **an exported file
+is not subject to the suppression a screen redraw is, in SVG and in PS/PDF
+alike.**
+
+**THE PS HALF OF THAT SENTENCE IS A REVIEWER'S EVIDENCE AND NOT THIS SECTION'S.**
+The first version read only `svgdraw.c` and listed the PDF and PS path as an open
+unknown in §4.10: *whether the suppression threshold has any effect on an exported
+PDF*. A reviewer opened `src/psprint.c` (SHA-256
+`fe878c711ad0163c836ef74b978446ad6241decfa10eac55570b5e9132a481f7`, 1702 lines) and
+found the identical commented-out line, which **settles that unknown** and is
+recorded here as theirs. This writer confirmed the line at that offset in the same
+blob; the finding is the reviewer's, the confirmation is this writer's.
 
 **The one refusal-shaped behaviour xschem has, stated precisely because it is
 easy to mistake for an answer to this section's question.**
@@ -2700,11 +2729,69 @@ every coordinate is absolute - accumulated through the nested `translate()` grou
 because the first version of the measurement compared template-local coordinates
 and found two "overlaps" that were in different groups.
 
+**THE FIXTURE, PASTED, BECAUSE THE RUN IS WORTHLESS WITHOUT IT.** All four arms
+are built from **one committed upstream file** - `test/analog/resistor_divider.json`
+in the pinned clone, SHA-256 `98d766f37a43546de5f0579d894cae88f8682bdb7887494ba399adf3c762098a` -
+by the script below, which is the script that was run. **A re-drive that cannot
+reproduce the fixture cannot tell a wrong claim from a different fixture**, and
+the first version of §4 pasted the output and not the input.
+
+```nsvg-fixture
+// Builds all four netlistsvg arms from ONE committed upstream file,
+// test/analog/resistor_divider.json in the pinned clone. Run as:
+//   node fixtures.js <that file> <output directory>
+// Arms: baseline is the upstream file copied unchanged; long renames the two
+// resistors and gives each a value; parallel adds a capacitor across the lower
+// resistor so the two symbols land in different layout columns; parallel-short
+// is parallel with short keys and no value, which is the control for it.
+const fs = require('fs')
+const [base, out] = process.argv.slice(2)
+const read = () => JSON.parse(fs.readFileSync(base, 'utf8'))
+const write = (name, doc) => fs.writeFileSync(`${out}/${name}.json`, JSON.stringify(doc, null, 2))
+const R_UP = 'R_FEEDBACK_UPPER_DIVIDER'
+const R_LO = 'R_FEEDBACK_LOWER_DIVIDER'
+const C_PAR = 'C_FILTER_ACROSS_LOWER'
+
+function renamed(doc, map, attrs) {
+  const m = doc.modules.resistor_divider
+  const cells = {}
+  for (const [k, v] of Object.entries(m.cells)) {
+    if (map[k] !== undefined && attrs !== null) v.attributes = { value: attrs }
+    else if (map[k] !== undefined) delete v.attributes
+    cells[map[k] ?? k] = v
+  }
+  m.cells = cells
+  return doc
+}
+
+fs.copyFileSync(base, `${out}/baseline.json`)
+write('long', renamed(read(), { r1: R_UP, r2: R_LO }, '4k7_METAL_FILM_1PCT'))
+
+const parallel = renamed(read(), { r1: R_UP, r2: R_LO }, '4k7_METAL_FILM_1PCT')
+parallel.modules.resistor_divider.cells[C_PAR] = {
+  type: 'c_v',
+  port_directions: { A: 'input', B: 'output' },
+  connections: { A: [3], B: [4] },
+  attributes: { value: '100nF_X7R' },
+}
+write('parallel', parallel)
+
+const short = JSON.parse(JSON.stringify(parallel))
+write('parallel-short', renamed(short, { [R_UP]: 'r1', [R_LO]: 'r2', [C_PAR]: 'c1' }, null))
+```
+
+**Consolidating the three ad-hoc mutation scripts of the first version into this
+one changed no figure.** The log below is byte-identical to the earlier run except
+for the two lines the script added, which is what `diff` between the two logs
+reports.
+
 ```nsvg-run
 clone commit: d3518f1b5c996a876b72a1a984bb39d3572c47dc
 clone declares version: 1.0.2
 committed built/ modified by this session: 0 file(s)
 edge-label code present in the committed built/drawModule.js: 8 hit(s)
+upstream fixture SHA-256: 98d766f37a43546de5f0579d894cae88f8682bdb7887494ba399adf3c762098a
+baseline arm is that file unchanged: yes
 == ARM baseline (analog skin)
 exit code: 0
 stderr bytes: 0
@@ -2818,7 +2905,8 @@ and `collision` over every `.py` in the tree returns two comments in
 `elements/twoterm.py`, one about an arrow offset and one about fill ordering.
 
 **It does measure text properly, and uses the measurement only to size the
-canvas.** `SegmentText.get_bbox` (`schemdraw/segments.py:102-132`) calls
+canvas.** `SegmentText.get_bbox` (`schemdraw/segments.py:351`, in the class that
+begins at `:250`) calls
 `backends/svg.py:text_size`, whose docstring says the size *"will be exact
 bounding box if ziamath installed and using path text mode. Otherwise size will be
 estimated based on character widths."* Either way it is a per-glyph quantity, not
@@ -2831,6 +2919,32 @@ Two resistors one above the other, each labelled at the default `'top'`. The
 control places them 1.2 units apart with `R1`/`R2`; the treatment places them 0.5
 apart with two-line labels. Boxes are schemdraw's own `SegmentText.get_bbox`,
 pushed through each element's transform into drawing coordinates.
+
+**THE FIXTURE, PASTED FOR THE SAME REASON AS §4.4's.** A reviewer re-drove this
+probe and reproduced the two text-box **widths** (`0.484` and `4.062`) and not the
+coordinates, **because the geometry was described in prose and not recorded** -
+which is precisely the state in which a re-drive cannot distinguish a wrong claim
+from a different fixture. This is the function the run used, and the arm table
+beside it:
+
+```sd-fixture
+def fixture(gap, lbl1, lbl2):
+    """THE FIXTURE, and the only thing that differs between the two arms."""
+    d = schemdraw.Drawing(show=False)
+    d.config(unit=1.2)
+    d += elm.Resistor().right().label(lbl1)
+    d.here = (0, -gap)
+    d += elm.Resistor().right().label(lbl2)
+    return d
+
+
+ARMS = (('control', 1.2, 'R1', 'R2'),
+        ('collide', 0.5, 'R_FEEDBACK_UPPER\n4k7 1%', 'R_FEEDBACK_LOWER\n4k7 1%'))
+```
+
+**Lifting the geometry out of the arm function into that one place changed no
+figure**: the re-driven log is byte-identical to the earlier one, which `diff`
+between the two reports as no difference at all.
 
 ```sd-run
 schemdraw 0.23
@@ -2877,6 +2991,24 @@ not move; the overlap stands.
 `[DOCS]` **retrieved 2026-10-22**, pages saved and quoted from their own bytes. No
 Altium source was read and no Altium product was run.
 
+**ALL THREE URLs, GIVEN IN FULL, because the first version gave one and a reviewer
+had to search for the other two.** Each was fetched with `curl -sSL` and a browser
+user agent; the byte count is of the saved HTML at retrieval.
+
+| page | URL | bytes saved |
+| --- | --- | --- |
+| *Working with Placed Components* | `https://www.altium.com/documentation/altium-designer/schematic/placed-components` | 216,946 |
+| *PCB Placement & Editing Techniques* | `https://www.altium.com/documentation/altium-designer/pcb-cmd-autopositioncomponenttextsautopositioncomponenttexts-ad?version=22` | 211,126 |
+| *Schematic Placement & Editing Techniques* | `https://www.altium.com/documentation/altium-designer/schematic-placement-editing-techniques` | 185,815 |
+
+**How each quotation was taken, since this is the surface the brief called the
+worst available failure.** The saved HTML had `script` and `style` elements
+stripped, remaining tags replaced by newlines, entities unescaped, and the lines
+containing the search term printed. **Every quotation below is a line of that
+output**, not a reconstruction of one. A page's byte count is a weak pin - these
+are living pages - so the URLs and the retrieval date are what a later reader
+re-checks against.
+
 **The schematic side: `Autoposition` is a boolean about rotation, not about
 collisions.** From *Working with Placed Components*
 (`https://www.altium.com/documentation/altium-designer/schematic/placed-components`):
@@ -2908,7 +3040,13 @@ reached by dragging the text.
 
 **TWO CORRECTIONS TO [`text-placement-prior-art.md`](text-placement-prior-art.md)
 §7, recorded here because that document is read and never rewritten.** Its claim
-was marked `[THIRD-PARTY]` from a search extract, and it substantially holds:
+was marked `[THIRD-PARTY]` from a search extract, and it substantially holds.
+**A POINTER TO THESE TWO CORRECTIONS NOW SITS IN THAT DOCUMENT, at the head of its
+*Other EDA tools* subsection**, and it was not there in the first version of §4:
+**a correction that lives only in the correcting document leaves the wrong claim
+standing in the place a reader meets it first**, which is a reviewer's finding and
+is accepted. The plan's file table allows that document a pointer and forbids an
+edit, so the original paragraph is untouched beneath it.
 
 1. Its quotation is *"[n]ine positional styles ... all classed as 'automatic
    positions'"*. **The page says "all of which are classed as"**. The elision is
@@ -2946,9 +3084,21 @@ specified at all** - which is stated here rather than inferred.
 
 `[DOCS]` **retrieved 2026-10-22.** The *OrCAD Capture User Guide*, Product Version
 16.6, October 2012, Cadence Design Systems - the vendor's own manual, retrieved as
-a PDF from a third-party mirror (5,487,028 bytes, SHA-256
-`d1a6dd3b722c130834471f3e3090f86de5636e213ec10fa189c2a80e25e83bc9`) and converted
-with `pdftotext -layout` to **31,433 lines**.
+a PDF from a third-party mirror and converted with `pdftotext -layout` to
+**31,433 lines**. **The mirror URL, which the first version omitted**:
+
+| document | URL | bytes | SHA-256 |
+| --- | --- | --- | --- |
+| *OrCAD Capture User Guide* 16.6 | `https://www.i-t.com/wp-content/uploads/2019/05/cap_ug.pdf` | 5,487,028 | `d1a6dd3b722c130834471f3e3090f86de5636e213ec10fa189c2a80e25e83bc9` |
+| *Quickstart OrCAD Capture* 17.4 (FlowCAD, third party, cross check only) | `https://www.flowcad.de/AN/Capture_Quickstart_EN.pdf` | 2,240,613 | - |
+
+**A PDF is a strong pin where a web page is a weak one**, and a reviewer used it.
+`[RELAYED]` A review of this section reports that an independent retrieval of that
+URL reproduced **the exact byte count and the exact SHA-256 above, 31,433 lines,
+and all eleven grep counts in the table below**. **This writer did not re-drive
+their retrieval**, so the mark is on their figure rather than on mine; what is
+`[DOCS]` here is the original retrieval and the counts, and the hash is what makes
+the two comparable at all.
 
 **Searches over that text that could have matched, and did not:**
 
@@ -2979,6 +3129,16 @@ not resolve in DNS. **A search-engine summary described the behaviour and an
 an unverified lead and is NOT evidence and is NOT counted in §4.9.** Settling it
 needs the Allegro/OrCAD PCB Editor manual, which was not obtained.
 
+**AND IT NOW HAS A REGISTER HEADING OF ITS OWN: `docs/known-gaps.md` G268.** This
+section's first version left it here and inside **G260**'s amendment, on the
+precedent that §1-§3 amended existing entries and created none - **and that
+precedent does not survive this case, which is a reviewer's ruling and is
+accepted.** Those sections each had an entry to amend; this finding has no home,
+so a later agent scanning register headings would find nothing and re-hit the same
+403, the same login wall and the same dead DNS. **The refusal to count it in N or M
+stands unchanged**: recording a lead and counting a tool are different
+obligations, and G268 says so in its own words.
+
 ### 4.8 The taxonomy, filled in, with the condition recorded beside each behaviour
 
 **The five rows are the review's and are not altered.** A tool appears in several
@@ -2987,12 +3147,29 @@ stated with the behaviour.
 
 | behaviour | which tools, under which condition | grade |
 | --- | --- | --- |
-| **suppress or clip the text** | **xschem**, on screen only, when the text is below ~3 device pixels at the current zoom or its box is wholly outside the viewport - **keyed on magnification, never on what else is at that coordinate**, and the SVG exporter's copy of the guard is commented out. **netlistsvg**, in the weak sense that the drawn text extends past the canvas the generator declares, so an SVG consumer clips at the viewport - **a clip by the canvas, not a decision by the tool.** | `[READ]`; `[RAN]` |
+| **suppress or clip the text** | **xschem**, on screen only, when the text is below ~3 device pixels at the current zoom or its box is wholly outside the viewport - **keyed on magnification, never on what else is at that coordinate**, and both exporters' copies of the guard are commented out. **netlistsvg**, in the weak sense that the drawn text extends past the canvas the generator declares, so an SVG consumer clips at the viewport - **a clip by the canvas, not a decision by the tool.** | `[READ]`; `[RAN]` |
 | **allow the overlap** | **all four open-source tools**, and **Altium** by its own documentation. For lepton-eda after its one unverified translate; for xschem and schemdraw because nothing is tested at all; for netlistsvg within a cell, where the label's position is a template constant. | `[READ]`; `[RAN]` for netlistsvg and schemdraw; `[DOCS]` for Altium |
-| **adjust the surrounding geometry** | **netlistsvg**, observed: one node moved 96 units when its label grew, with five others unmoved - **but only across layout columns**, because ELK cannot move a label whose position the renderer takes from a template. **This is the row this repository is emptiest on** (§3's note: KiCad has one local repair, this repository has no perturbation of any kind). **Nothing else examined does it.** | `[RAN]` |
-| **grow the canvas around the text** | **schemdraw** (figure bbox 1.2 wide to `-1.494 .. 2.694`) and **netlistsvg** (74 to 173). **THIS IS NOT ONE OF THE FIVE ROWS and it is not being added as one.** It is accommodation, not avoidance: the overlap is unchanged and the drawing is still produced. It is listed because two of the four tools do it and a reader who filed it under *adjust the surrounding geometry* would be recording a repair that did not happen. | `[RAN]` |
+| **adjust the surrounding geometry** | **netlistsvg**, observed: one node moved 96 units when its label grew, with five others unmoved - **but only across layout columns**, because ELK cannot move a label whose position the renderer takes from a template. **This is the row this repository is emptiest on** (`[RELAYED]` from §3: KiCad has one local repair, `fitFieldsBetweenWires`; this repository has no perturbation of any kind). **Nothing else examined does it.** | `[RAN]`; `[RELAYED]` for the KiCad clause |
 | **request user intervention** | **Nothing examined asks a person because it could not place text.** The three nearest things are all something else: lepton-eda's component autoplacer is **hook-only and commented out by default**, so the person does the work because the tool never offers to; Altium's nine styles and `Manual` style are a user choice offered up front; and xschem's forced ERC window is about coincident symbol instances and fires after the netlist is written. | `[READ]`; `[DOCS]` |
 | **refuse to generate** | **None of the six.** Established per tool in §4.9. | - |
+
+**ONE BEHAVIOUR DOES NOT FIT ANY OF THE FIVE ROWS, AND IT IS KEPT OUT OF THE
+TABLE ABOVE RATHER THAN GIVEN A ROW IN IT.** `[RAN]` **Growing the canvas around
+the text**: schemdraw's figure bounding box goes from 1.2 units wide to
+`-1.494 .. 2.694`, and netlistsvg's declared canvas from 74 to 173. **It is
+accommodation, not avoidance** - the overlap is unchanged and the drawing is still
+produced - so it is neither *adjust the surrounding geometry* nor any other row.
+The first version of this section put it in the table as a sixth row with that
+disclaimer inside the cell, **which is exactly how a reader concludes the taxonomy
+was widened**, and the taxonomy is not this section's to widen (§4's opening). It
+is recorded at all because two of the four tools do it and a reader who filed it
+under *adjust the surrounding geometry* would be recording a repair that did not
+happen.
+
+**A second behaviour does not fit either, and it is recorded in §4.4 where it was
+found**: netlistsvg draws a `fill: white` rect behind a bus-width edge label, so
+the overlap is allowed and then **hidden by occluding what is underneath.** The
+taxonomy has no row for masking the obstacle instead of moving the text.
 
 ### 4.9 The conclusion, at the scope the evidence supports
 
@@ -3015,9 +3192,15 @@ not fit.** How each was established, one line each, with the grade:
    auto-placement and no failure semantics, so there is no documented refusal to
    find.
 
-**Adding §3's KiCad makes it zero of seven**, and KiCad is the one that matters
-most, because it is the program `make check` runs on this repository's output on
-every run.
+**Adding §3's KiCad makes it zero of seven** `[RELAYED]`, and KiCad is the one
+that matters most, because it is the program `make check` runs on this
+repository's output on every run. **The mark is there because that seventh figure
+is not §4's** - it is §3's reading of `autoplace_fields.cpp` at tag `10.0.5`,
+restated here and not re-driven, and §3 itself records that the autoplacer was
+never executed. **The N of six in the sentence above excludes it**, and every
+other `[RELAYED]` use in §4 is this same figure: the opening paragraph's summary of
+§3, §4.8's *adjust the surrounding geometry* row where it cites
+`fitFieldsBetweenWires`, and this line.
 
 **THE FINDING THAT MATTERS SURVIVES AT THIS SCOPE, and it is about this
 repository.** None of the tools examined - including the two that were run and the
@@ -3038,8 +3221,10 @@ else, or quietly overlap, and **a source read cannot tell those apart.** For
 lepton-eda the specific hole is that only `autoplace.scm` and the hook
 configuration were read; `libleptongui` and `liblepton` were greped but not read,
 so a refusal elsewhere in the rendering or export path would have been missed. For
-xschem the specific hole is that `draw.c` and `svgdraw.c` were read only at the
-text functions, and the Tcl layer was greped rather than read.
+xschem the specific hole is that `draw.c`, `svgdraw.c` and `psprint.c` were read
+only at the text functions, and the Tcl layer was greped rather than read.
+**`psprint.c` was absent from this list in the first version**, which is how its
+guard went unnoticed; see the last paragraph of this subsection.
 
 **Four tools were not examined at all.** Eagle/Fusion, KiCad's own `pcbnew`
 silkscreen side, LibrePCB and Horizon EDA were not opened; the plan named four
@@ -3059,11 +3244,19 @@ closing could change a row of §4.8**, because the behaviour described in the
 unverified summary - place what you can, log what you could not - is a sixth shape
 that none of the six tools examined exhibits.
 
-**Three things no run here settled.** The exact arithmetic of netlistsvg's 3-unit
+**Two things no run here settled.** The exact arithmetic of netlistsvg's 3-unit
 canvas shortfall. Whether lepton-eda's stray `2` has ever changed a placement in
-practice, and when it entered. Whether the suppression threshold xschem applies on
-screen has any effect on an exported PDF, since only the SVG exporter's guard was
-located.
+practice, and when it entered.
+
+**A THIRD WAS LISTED HERE AND IS NOW SETTLED, BY A REVIEWER RATHER THAN BY THIS
+SECTION.** The first version asked *whether the suppression threshold xschem
+applies on screen has any effect on an exported PDF, since only the SVG exporter's
+guard was located.* It does not: `src/psprint.c:1185` carries the identical
+commented-out guard, so the PS and PDF path behaves as the SVG path does. **That
+file was missing from the unread-paths list above as well as from this one**, and
+both omissions came from the same cause - §4.3 read `svgdraw.c` and inferred
+nothing about the other exporter rather than naming it as unread. `psprint.c` is
+now in §4.0's table, credited.
 
 ### 4.11 What §4 did NOT establish
 
@@ -3090,23 +3283,64 @@ located.
 
 ### 4.12 How this section's blocks are accounted for under §1.11's contract
 
-**§4 adds six fenced blocks and none of them is probe output**, so each is
+**§4 pastes EIGHT fenced blocks and none of them is probe output**, so each is
 declared not-output and is listed by name by
 `tests/schgen/text-metrics/document-pastes.test.ts`, one `expect()` each, exactly
-as §3's seven are - **which is the whole of the suite's move from 43489 to 43495
-`expect()` calls**, with the pass count and the file count unchanged. They cannot
-be checked against a committed log, because the logs are scratchpad runs of
-third-party tools installed outside this repository and the plan forbids this task
-from adding a tool, a test or a log to the tree. **A reader who wants to re-drive
-them has §4.0's commits, versions, install methods and hashes, and that is the
-whole of the coupling available.**
+as §3's seven are. **They cannot be checked against a committed log**: the logs are
+scratchpad runs of third-party tools installed outside this repository, the two
+`lepton-src` blocks are a third-party source tree, and the plan forbids this task
+from adding a tool or a log to the tree. **A reader who wants to re-drive them has
+§4.0's commits, versions, install methods and hashes, §4.4's fixture script and
+§4.5's fixture function**, which is the whole of the coupling available and is
+more than the first version offered.
 
-**What stands in for the checker, stated so nobody mistakes it for one.** All six
-blocks were verified to be contiguous, non-overlapping slices of their sources -
-the two run logs and `autoplace.scm` - by a scratchpad script that is **not
-committed and is therefore not a check**: it found the stale header the second
-transform block carried after its log was re-driven, which is exactly the drift
-§1.11's contract exists to catch, and it has no way to run again.
+**THE COUNT IS NOW A GUARDED ASSERTION AND NOT THIS SENTENCE.** `SECTION_4_BLOCKS`
+in `document-pastes.test.ts` pins it at **8** the way `SECTION_2_BLOCKS` pins §2 at
+8, and three cases turn on it: §4's block count equals the constant, every §4 block
+declares a fence word that is neither §1's `run` nor §2's `elk-run`, and the
+whole-document verdict reports exactly that many NOT CHECKED blocks at line numbers
+after §4's heading. A fourth drives RED - a §4 block relabelled into §1's namespace
+fails rather than silently leaving the population, which is the one failure the
+pinned count alone would not see. **All four were driven red once**, by setting the
+constant to 7 (three reds) and by the relabel case itself.
+
+**Why the guard exists at all, which is the honest version.** The first version of
+this subsection stated the count and the `expect()` figure in prose, and **the
+figure was already wrong once** - round 0 said five blocks and the sixth was added
+in the same round. Prose that names a number is checked by a reader or by nobody.
+
+**THE ARITHMETIC, DECOMPOSED, AND THE FIRST ATTEMPT AT THIS PARAGRAPH GOT IT
+WRONG IN THE FLATTERING DIRECTION.** From **43489** `expect()` calls at the branch
+base the suite reaches **43513**, and it is two additions and not one:
+
+| term | calls | why |
+| --- | --- | --- |
+| §4's eight declared blocks | **+8** | one per block, from the by-name `notOutput` loop in the whole-document case |
+| the four new §4 cases | **+16** | 1 for the pinned count; 1 + 8 for the fence-word case, whose loop runs once per block; 2 for the NOT-CHECKED-by-line case; 4 for the relabel RED |
+| **total** | **+24** | 43489 + 24 = **43513**, and the suite prints 43513 |
+
+**The first version of this table said +8 and asserted that the four new cases
+contributed nothing of their own**, which was wrong by sixteen and wrong in the
+direction that makes the accounting look tidier than it is. It was caught by
+running the suite against the predicted figure - which is the only reason to write
+a predicted figure down. The pass count moves from 3785 to **3789**, four new
+tests, and the file count stays at **352**.
+
+**WHAT THE GUARD CANNOT SEE, stated rather than left to be discovered.** It sees a
+block appearing, vanishing, or being relabelled into the checked namespace. **It
+cannot see a §4 block whose CONTENTS were edited after the fact**, because there is
+no committed log to compare them with, and nothing in this repository could see
+that. §1's blocks have that property and §4's do not; the difference is a property
+of where the evidence came from and it does not go away by being described.
+
+**What stood in for it while §4 was written, and it is not a check either.** All
+eight blocks were verified to be contiguous, non-overlapping slices of their four
+sources - the two run logs, `fixtures.js`, `probe.py` and `autoplace.scm` - by a
+scratchpad script that is **not committed**. It earned its keep twice: it caught
+the stale header the second transform block carried after its log was re-driven,
+and it caught the first version of this round's fixture blocks before they were
+declared. **It has no way to run again**, which is the limitation the paragraph
+above describes.
 
 **Two blocks are transcriptions of Scheme source and both are declared altered.**
 Each line of the two `lepton-src` blocks is prefixed with its line number in
@@ -3117,8 +3351,9 @@ dedented by one space; this section numbers the lines instead, because the stray
 `2` in §4.2 is a claim about column 1 and a dedent would have destroyed the
 evidence for it.
 
-**The two logs share no line with either committed probe log**, checked by
-comparing the 96 distinct non-blank lines of the two runs against the 712 of
+**None of the four sources shares a line with either committed probe log**,
+checked by comparing the 209 distinct non-blank lines of the two logs and the two
+fixture files against the 712 of
 `tests/schgen/text-metrics/probe-run.log` and `tools/schgen/elk-labels/probe-run.log`
 together: zero in common. That matters because a non-`run` block sharing a line
 with a checked log is the relabel dodge the checker refuses by name.

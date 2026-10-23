@@ -1667,6 +1667,12 @@ made.
 > summary is not a page anyone opened, so this is an unverified lead and is NOT evidence.** What
 > would settle it is the Allegro/OrCAD PCB Editor manual, which was not obtained.
 >
+> **THAT LEAD NOW HAS ITS OWN HEADING, G268** - with the three doors, the specific failure for
+> each, and its criterion. This clause is a cross-reference and G268 is where a later agent should
+> look, because **a lead that lives only inside another entry's amendment is invisible to anyone
+> scanning register headings**, which is the failure a reviewer named: the next agent to want it
+> finds nothing and re-hits the same 403, login wall and dead DNS.
+>
 > - **Verified** CONFIRMED by the writer of §4 for the four open-source tools and the two
 >   documentation sets - the commits were cloned and hashed, the two runs were driven here, and
 >   every vendor quotation was taken from the saved bytes of the page rather than from a search
@@ -23863,3 +23869,86 @@ clear. The stub-writer tripwire
 >   `tools/schgen/remeasure-coverage.ts` at this commit; every figure is asserted
 >   in `tests/schgen/masked-problems.test.ts` and `tests/schgen/remeasure.test.ts`.
 > - **Verified** CONFIRMED - this writer made the change and ran both.
+
+---
+
+### G268 - UNRETRIEVED: a PCB tool is reported to PLACE WHAT IT CAN AND LOG WHAT IT COULD NOT - a behaviour shape NONE of the seven tools examined exhibits, and the only one whose confirmation would change a row of the comparison - and three doors closed on retrieving it
+
+**This is not a defect and it is not a measurement. It is a lead, recorded because
+it is bait and bait belongs beside the trap**, and because the next agent to want
+it will otherwise re-hit the same three closed doors.
+
+**WHAT WAS SOUGHT.** Task 4 of the text-handling research plan classified six
+tools - plus **G267**'s KiCad, seven in all - against the behaviour taxonomy in
+`docs/schematic/text-handling-research.md` §4.8, and **every one of the seven
+either draws the text overlapping or suppresses it; none refuses, and none places
+what it can and reports the rest.** Search results describe a seventh shape that
+is none of those: **Cadence's Allegro / OrCAD PCB Editor silkscreen
+auto-placement is reported to place the reference designators it can place
+legally - clear of pads, vias and component bodies - write the drawing anyway, and
+list the ones it could not place in a log named `autosilk.log`.**
+
+**WHY IT MATTERS HERE, AND IT IS NOT AN ACADEMIC INTEREST.** *Place what you can
+and report the rest* is **the direct third alternative to the two this repository
+has had.** Before Task 24 the schematic generator refused the drawing; after Task
+24 it places the least-covered candidate and records a `FieldFallback` that
+**G260** says nothing automated reads. A tool that does the same thing and whose
+failure log is a first-class artifact is the nearest published precedent for the
+half of **G260** that is still open - not for the owner's question about how much
+overlap is acceptable, which this entry does not touch, but for the mechanical
+question of what a generator does with the list.
+
+**THE THREE DOORS, each with the specific failure, so nobody repeats the
+sequence** (all attempted 2026-10-22):
+
+| door | URL | what happened |
+| --- | --- | --- |
+| Cadence community blog | `https://community.cadence.com/cadence_blogs_8/b/pcb/posts/managing-silkscreen-data-using-allegro-3d-canvas` | **HTTP 403** to `curl -sSL` with a browser user agent; 5,693 bytes of challenge page returned |
+| Cadence support portal | `https://support.cadence.com/` | **HTTP 200 and 539 bytes** - a login redirect. The product manuals are behind authentication. |
+| EMA Design Automation training | `http://education.ema-eda.com/iTrain/PCBEditor163/lesson_13a.html` | **DNS does not resolve** - `curl: (6) Could not resolve host`. The host appears in search results and is gone. |
+
+**WHAT IS NOT EVIDENCE, STATED AS PLAINLY AS THE ENTRY CAN STATE IT.** The
+description above comes from a **search-engine summary** of pages that could not
+be opened. **A summary is not a page anyone read.** It is recorded here so the
+lead is not lost and so its status is unambiguous, and it is **NOT** evidence for
+anything. In particular:
+
+- **It was NOT counted in the N or the M of §4.9's conclusion**, which is six
+  tools examined and zero refusing. Counting a tool requires a source read, a run,
+  or vendor documentation retrieved and quoted; this has none of the three.
+  **Recording a lead and counting a tool are separate obligations, and keeping
+  them separate is why the conclusion holds at its stated scope.**
+- **It changes no row of §4.8 today.** §4.10 names it as the one gap whose closing
+  could change one, which is a statement about what confirmation would do, not
+  about what is known.
+- **The product's behaviour is not asserted here.** What is asserted is that a
+  search summary describes it and that three retrieval attempts failed.
+
+- **Found** 2026-10-22, Task 4 of the text-handling research plan, while answering
+  **G260**'s factual half. Its own report flagged it and declined to open an entry
+  on §1-§3's amend-only precedent; **a reviewer ruled that the precedent does not
+  reach a finding with no entry to amend**, and this entry is that ruling carried
+  out.
+- **Evidence** the three HTTP/DNS outcomes in the table, each a fetch that could
+  have returned a page and did not. `docs/schematic/text-handling-research.md`
+  §4.7 carries the same three with the sentence they support.
+- **Verified** CONFIRMED for the three failures - this writer ran all three
+  fetches and read their results. **The described behaviour is NOT confirmed and
+  is NOT relayed from any agent's reading**; it is relayed from a search summary,
+  which is the weakest grade this register admits and is why the entry's heading
+  begins with UNRETRIEVED.
+- **Why it is open** because the two sources that would settle it are a 403 and a
+  login wall, and because no attempt was made to obtain the software.
+- **What would settle it** **CRITERION: a quotable primary source for the
+  behaviour - the Allegro or OrCAD PCB Editor command reference for the silkscreen
+  auto-placement command, retrieved and quoted with a date - or a run of the tool
+  that produces the log.** Either settles it; a second search summary settles
+  nothing and must not be written up as though it did. **MECHANISMS, UNTRIED, and
+  each is a guess by someone who has not got past the doors:** a Cadence support
+  login, which this repository does not have; the printed or PDF command reference
+  if a copy is reachable; an OrCAD X trial, which would make it a `[RAN]` finding
+  and is far more effort than the lead is worth today. **If the criterion is met
+  and the behaviour holds, §4.8 gains a row and §4.9's N moves from six to seven -
+  eight counting KiCad - with M still at ZERO**, because *place what you can and
+  log the rest* is not a refusal. **M is the figure that would not move, and that
+  asymmetry is why the lead is recorded rather than counted.**
