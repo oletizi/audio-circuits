@@ -199,6 +199,34 @@ It covers:
 ledger: `.superpowers/` is gitignored, so an entry there is invisible to review,
 absent from the history, and destroyed by `git clean -fdx`.
 
+**AND THE REMEDY IS NOT ONLY TO COPY FINDINGS OUT — IT IS TO COMMIT THE
+EXECUTION RECORD TOO, which this file did not say until 2026-10-23.** The rule
+above sends findings to the register, correctly. But a plan also produces two
+things the register has no place for, because they are not findings: **the
+decision record** - what was ruled, why, and what it would cost if wrong - and
+**the audit trail** that makes the register's own *"CONFIRMED by this writer"*
+claims checkable. The execution skill's default is to delete a plan's workspace
+once its final review is clean. **That default is right when the diff IS the
+record and wrong when the plan's product is knowledge**, and following it would
+have destroyed 77 rulings and 19 reviews. So: a research plan's record is
+committed beside the plan, at
+`docs/superpowers/plans/<plan-name>-execution/`, with a README saying plainly
+that it is not findings and that the register is what binds. The review-package
+diffs are not committed - they regenerate from `git diff`. The worked example is
+`docs/superpowers/plans/2026-10-22-text-handling-research-execution/`.
+
+**The owner, 2026-10-23, on being shown the workspace left as scratch:** *"why
+wouldn't you keep the hard-won data as a durable part of the repo?"* He asked in
+the same breath whether the investigation was *"fully documented in a
+human-readable report durably in the repo"*, and it was not: the findings were
+committed in a 5,800-line document written for an adversarial reader, and the one
+artifact meant to summarise them was **unreadable when rendered** - its grade
+column clipped off the edge of the page, read as source by six reviewers and a
+controller without anyone noticing. **A research pass is not delivered until a
+person can read what it found**, which is what
+`docs/schematic/text-handling-report.md` is and why
+`docs/schematic/README.md` now points at it ahead of everything else.
+
 **This rule has been broken twice by the agent that wrote it**, both times the
 same way: measuring something, reporting it in the session, and moving on. The
 owner, 2026-10-16: *"Telling me is not the same as recording them durably and

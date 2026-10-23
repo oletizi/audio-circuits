@@ -18,13 +18,20 @@ find it.**
 > would have concluded that three of the passes were not indexed material. The
 > counts are fixed below and the three missing profiles are added.
 
-> **AN EIGHTH PASS IS LANDING FROM 2026-10-22, SECTION BY SECTION, AND IT IS
-> NOT FINISHED.** `text-handling-research.md` is the deliverable of
+> **THE EIGHTH PASS FINISHED 2026-10-23, AND THE NOTE THAT STOOD HERE SAID IT
+> HAD NOT.** It read: *"AN EIGHTH PASS IS LANDING FROM 2026-10-22, SECTION BY
+> SECTION, AND IT IS NOT FINISHED ... §1 is committed."* That was true when
+> written and false from the moment §7 landed, which is this index's own worked
+> example happening a third time: **a count, or a status, edited into a document
+> while the thing it describes keeps moving.** All seven sections of
+> `text-handling-research.md` are committed, the plan is
 > [`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md),
-> which is seven tasks each ending in one committed section. **A reader arriving
-> before the last task will find sections missing, and that is the plan's shape
-> rather than an omission** - the document's own header says which plan it
-> serves, and every section states what it did not establish. §1 is committed.
+> and **three documents came out of it that are not research passes** and are
+> indexed at the end of this file rather than in the tables above:
+> [`text-handling-report.md`](text-handling-report.md) - **start there, not
+> here, if you want the findings** - [`false-greens.md`](false-greens.md), and
+> the execution record at
+> [`../superpowers/plans/2026-10-22-text-handling-research-execution/`](../superpowers/plans/2026-10-22-text-handling-research-execution/).
 
 > **A SEVENTH PASS LANDED 2026-10-21, AND THE COUNTS BELOW ARE ABOUT THE SIX
 > RATHER THAN ABOUT THIS DIRECTORY.** `text-placement-prior-art.md` researched
@@ -109,8 +116,28 @@ The documents
 ### [`text-handling-research.md`](text-handling-research.md)
 
 From 2026-10-22, **one section per task of
-[`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md)
-and NOT FINISHED.** §1 is committed; §2-§7 are not yet written.
+[`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md).
+FINISHED 2026-10-23; all seven sections are committed.** This paragraph said
+*"NOT FINISHED. §1 is committed; §2-§7 are not yet written"* until the pass
+ended, and the trust table above still grades **§1 only** - deliberately, because
+the sections do not share a standing and a single grade for 5,800 lines would be
+the blurring this index exists to prevent:
+
+| section | what it did | standing |
+| --- | --- | --- |
+| §1 | real text metrics, three routes | **measured, three agreeing routes, controls, committed probe** |
+| §2 | what ELK offers for labels | **measured** - nine arms driven against this repository's own graphs |
+| §3 | KiCad's field autoplacer | **primary source read in full** at a pinned tag, nine blobs hash-pinned; nothing executed |
+| §4 | six other EDA tools | **mixed per tool** - two RUN, two source-read, two vendor documentation |
+| §5 | the four label freedoms | **measured** - driven against `kicad-cli` on nine committed fixtures, with a negative control that discriminates |
+| §6 | typesetting as optimisation | **primary source read in full**, quotations transcribed from rendered page images because the scan's OCR mangles them; one measurement of this generator's own placer |
+| §7 | the synthesis | **relays §1-§6 by design** and says so; one measurement of its own, the board census |
+
+**Do not read §7's table as eighteen available options.** Its own grading column
+puts six rows at *established elsewhere*, eight at *demonstrated here* - **of
+which six demonstrate a LIMIT rather than a capability** - and four at
+*integration hypothesis*. By the document's own strongest criterion, a drawn
+board, **not one of the eighteen has been shown to draw one.**
 
 **The question it was asked**, and it is the owner's in his own words, after the
 seventh pass had surveyed the labelling literature and the generator still drew
@@ -379,10 +406,24 @@ and both are outside all six files:
 What this index does NOT cover
 ------------------------------
 
-**It indexes the six research passes and nothing else, and five later documents
-in this directory are not in it.** Stated here rather than left for a reader to
-notice, because this index's own opening says *"committed is not durable if
-nobody can find it"*:
+**It indexes the six research passes and nothing else, and SEVEN later documents
+in this directory are not in it.** It said *"five"* until 2026-10-23, when the
+eighth pass added two; the number is corrected rather than the sentence rewritten,
+for the reason the inventory note at the top of this file gives. Stated here
+rather than left for a reader to notice, because this index's own opening says
+*"committed is not durable if nobody can find it"*:
+
+**The first two rows are the eighth pass's, and the first of them is where a
+reader should start** - ahead of this index, ahead of the research document, and
+ahead of the register:
+
+| document | what it is | how much it can be trusted |
+| --- | --- | --- |
+| [`text-handling-report.md`](text-handling-report.md) | **the human-facing report on the eighth pass** - what was asked, what was found in order of consequence, what it means for the mandate's five output classes, what is reserved to the owner, and what was not established | **Relays almost everything and says so in its own header**; its own work is a re-drive of the board census that CONFIRMS `../known-gaps.md` **G274** clause (2) rather than discovering it, plus one inference marked where it appears. It exists because the research document is written for an adversarial reader rather than a human one. **Its §2 leads with G274(2)'s finding rather than §1's: text placement is the sole cited cause of refusal on TWO of the eleven boards, and six refuse before any text is placed** |
+| [`false-greens.md`](false-greens.md) | the sixteen distinct mechanisms by which a check on this branch looked green and established nothing, each with its instance, how it was caught, and the general form | **Each instance verified against its source**, which a catalogue of false greens had better be. Its closing section separates what a test suite can catch from what only an adversarial reader can |
+
+**The remaining five predate the eighth pass** and are the spikes and parity
+measurements:
 
 | document | what it is | how much it can be trusted |
 | --- | --- | --- |
