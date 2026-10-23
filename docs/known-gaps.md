@@ -2009,6 +2009,51 @@ that nothing claims these sheets are clean.
 >   **MECHANISM: none offered here.** The measure, the search and the reporting
 >   are a design exercise he reviews, and this entry is not it.
 
+> **THE MEASURE, DELEGATED AND CHOSEN, 2026-10-23.** Clause (a) above recorded
+> the measure as undetermined. The owner delegated it: **"re: the measure—take
+> the least dumb choice."** **The channel matters and is recorded for a later
+> reviewer: an agent choosing its own measure would be the invariant
+> `CLAUDE.md` names, and this one is the owner's to delegate and delegated in
+> those words.**
+>
+> **THE CHOICE: the sum, over every text item, of that item's obscured area
+> divided by its own area.** Dimensionless. Zero when nothing overlaps; one
+> fully-buried item contributes **1.0**, so the unit is *one text item's worth of
+> illegibility*.
+>
+> **Why, and what each alternative gets wrong.**
+> - **Not a count of overlapping pairs: it has no gradient.** A 1 µm² nick and a
+>   completely buried label score identically, so a minimiser has nothing to
+>   descend and cannot tell *nearly clear* from *hopeless*. It is also close to
+>   what the present refusal already does, so it would barely be a change.
+> - **Not raw total area: it prefers burying one item to nicking three.**
+>   Dividing by each item's own area makes it scale-free, which matches what
+>   actually breaks — the same absolute overlap that is harmless on a long net
+>   name destroys `C1`.
+> - **Area rather than any new currency, because the currency already exists.**
+>   `chooseLeastCovered(cands, area)` in `lib/schgen/render/field-placement.ts`
+>   already minimises covered **area** locally (§6's measurement of the two
+>   paths). A global objective in a different unit would be incommensurable with
+>   the local one already shipped.
+>
+> **WHAT IT DELIBERATELY DOES NOT DO: it invents no weights.** **G71** records
+> that no published source supplies them and §6 records Knuth and Plass calling
+> **both their own formulae** *"quite arbitrary"*. So **every weight is 1**, and
+> the per-obstacle-class breakdown is **reported beside the scalar rather than
+> folded into it** — the eleven classes `render/` already distinguishes are
+> exactly the data a weighting would need, so keeping the vector means a
+> weighting can be chosen later **without re-measuring**. Equally the scalar is
+> computed under whichever of §1's three text boxes is elected (**G265** clause
+> 4, still his): absolute counts move under a change of ruler, but an **ordering
+> between two arrangements** survives it far more often, which is what a
+> minimiser consumes.
+>
+> **NOTHING IS BUILT.** This is a measure, not an implementation, and
+> `CLAUDE.md` requires a written design reviewed before implementation. The
+> search that drives the number down, where the number is reported, and whether
+> an infinite grade survives beside it (§6.3/§6.11, still his) are not settled
+> here.
+
 ---
 
 ### G261 - the weighted-overlap primitive now has ONE home and the build guide imports it from the schematic tree; the schematic's category-to-tier assignment is this writer's reading, not a reviewed decision
