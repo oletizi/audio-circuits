@@ -29,7 +29,7 @@
 | --- | --- |
 | `tools/schgen/label-syntax/probe.ts` | **new.** Drives `kicad-cli` against a sheet carrying a punctuated global label; censuses whether synthetic names cross block boundaries |
 | `tools/schgen/label-syntax/probe-run.log` | **new.** The probe's committed output |
-| `tools/schgen/port-manifest.json` | declares the two new `.ts` files `handWritten` |
+| `tools/schgen/port-manifest.json` | declares the **one** new `.ts` file `handWritten` — **corrected 2026-10-23: this row said "two", and it was wrong.** `probe-run.log` is not a `.ts` path, and declaring it turns `port-fidelity.test.ts`'s completeness check red on `accountedButMissing`, because that check compares the manifest union against `listTsFiles`. Driven by Task 1; recorded as **G277** clause 6 |
 | `tests/schgen/ir/nc-end-to-end.test.ts` | **new.** Drives model `NC` through `fromNetwork` to the IR and the emitted sheet |
 | `lib/schgen/ir/types.ts:55` | `NET_NAME` — definition changes or is deleted per Task 1's finding |
 | `lib/schgen/ir/validate.ts:50` | the `netNames` rule — removed |

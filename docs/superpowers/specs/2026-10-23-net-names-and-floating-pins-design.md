@@ -74,6 +74,22 @@ preferable to drawing `unconnected-(U1-CLK_O-Pad5)` on a sheet.
   becomes a label *only because of the fake port*, since ports are boundary nets.
   Deleting the port removes the label.
 
+  > **THAT MECHANISM IS REFUTED, 2026-10-23, BY THIS PLAN'S OWN TASK 1, AND THE
+  > WORDING ABOVE STANDS AS WRITTEN.** `[RAN]` **a declared port does NOT make a
+  > net a label.** `lib/schgen/ir/build.ts:152` sets `offSheet` **empty
+  > unconditionally**, so `labelledNets` labels only a rail, a net spanning two
+  > blocks, or a net touching a `bus` block — and `pt2399-core` is one block.
+  > **The conclusion survives and is stronger than this bullet claimed: the label
+  > was never there to remove.** The boundary census is **zero** — 16 synthetic
+  > names exist, all on `pt2399-core`, and none reaches a global label. See
+  > **G277**.
+  >
+  > **Anyone reading this bullet rather than the register would reason from a
+  > false premise**, which is why the correction sits here rather than only in
+  > `G277`. The criterion was right and the mechanism was mine and wrong — the
+  > fourth time on this branch that pairing has come up, which is the whole point
+  > of this repository keeping them distinct.
+
 **So the residual is a measurement rather than a policy change: does any
 synthetic net name cross a block boundary on any board?** If none does, the
 question is closed by the architecture and the probe can say so.
