@@ -866,6 +866,95 @@ describe("section 4's blocks are accounted for, although none of them can be che
   })
 })
 
+/**
+ * **§7 PASTES NO FENCED BLOCK, AND THAT IS A DECISION THIS FILE MAKES CHECKABLE.**
+ *
+ * §5's slice runs to the end of the file and §6's does too. §5 survives §6's append only because
+ * its cases count ` ```label-run ` fences specifically; **§6's accounting is stricter** - the case
+ * above tallies the fence word of EVERY block in §6's slice against `SECTION_6_FENCES`. So any
+ * fenced block appended to the document after §6 lands inside §6's slice and breaks that tally,
+ * with a message about §6 that is really about the later section. That is the trap §4's slice hit
+ * when §5 was appended, and §6.12 documented the dependence beside `SECTION_5_HEADING` expressly
+ * so that the next append would be a decision rather than an accident.
+ *
+ * **THE DECISION TAKEN BY §7 is to paste nothing**, rather than to bound two closed sections'
+ * slices or widen §6's pinned tally for a block §7 does not need. §7.6 of the document states it
+ * and states the alternatives. **These two cases are what make it a check instead of a paragraph:**
+ * the first asserts the emptiness, and the second DRIVES the hazard - it inserts a fenced block
+ * into a copy of §7 in memory and asserts that §6's tally then disagrees, naming the word.
+ *
+ * Neither case loosens anything: §6's own tally case is untouched, and this one adds an upper bound
+ * nobody had, on a section that has no blocks to bound.
+ */
+const SECTION_7_HEADING = "§7 The solution space, and what it costs"
+
+/** The fence word the hazard case inserts. It is in no log's namespace, which is the point. */
+const SECTION_7_PROBE_FENCE = "solution-space"
+
+describe("section 7 pastes no fenced block, so it adds nothing to any log's namespace", () => {
+  test("§7's slice holds zero fenced blocks", () => {
+    const at = doc.indexOf(SECTION_7_HEADING)
+    if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_7_HEADING)}, so §7's slice cannot be found`)
+    expect(doc.indexOf(SECTION_7_HEADING, at + 1)).toBe(-1)
+    expect(parseBlocks(doc.slice(at)).map((b) => b.info)).toEqual([])
+  })
+
+  /**
+   * **THE HAZARD, DRIVEN.** Without this, "a §7 block would break §6's tally" is a sentence in a
+   * document. The assertion is on the TALLY and names the fence word, not on a failure count:
+   * `verify` is not even reached here, and a count would establish only that something moved.
+   */
+  test("RED: a fenced block inserted into §7 breaks §6's pinned fence tally, naming the word", () => {
+    const at = doc.indexOf(SECTION_7_HEADING)
+    if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_7_HEADING)}, so §7's slice cannot be found`)
+    const perturbed = `${doc}\n\`\`\`${SECTION_7_PROBE_FENCE} STEP 1\nthis line is not in any log\nand neither is this one\n\`\`\`\n`
+    expect(perturbed).not.toBe(doc)
+    const tally: Record<string, number> = {}
+    for (const b of parseBlocks(perturbed.slice(perturbed.indexOf(SECTION_6_HEADING)))) {
+      const word = b.info.split(/\s+/)[0] ?? "(no info string)"
+      tally[word] = (tally[word] ?? 0) + 1
+    }
+    // §6's own case asserts `toEqual({ ...SECTION_6_FENCES })` over exactly this slice. With a §7
+    // block present the tally carries an extra key, so that case would fail - which is the whole
+    // reason §7 pastes nothing.
+    expect(tally).toEqual({ ...SECTION_6_FENCES, [SECTION_7_PROBE_FENCE]: 1 })
+    expect(tally).not.toEqual({ ...SECTION_6_FENCES })
+    // The control: unperturbed, the same tally over the same slice IS §6's pinned map. Without it
+    // the case above would pass for a scanner that always reported an extra key.
+    const clean: Record<string, number> = {}
+    for (const b of parseBlocks(doc.slice(doc.indexOf(SECTION_6_HEADING)))) {
+      const word = b.info.split(/\s+/)[0] ?? "(no info string)"
+      clean[word] = (clean[word] ?? 0) + 1
+    }
+    expect(clean).toEqual({ ...SECTION_6_FENCES })
+  })
+
+  /**
+   * **THE HEAD TABLE IS AN INSERTION ABOVE §1 AND BREAKS A FIRST-N-LINES HASH BY CONSTRUCTION**
+   * (§7.7). What is still checkable without pinning a hash that every later insertion invalidates:
+   * that the head table sits ABOVE §1's heading, so it is the first thing a reader meets, and that
+   * the ordering of all seven section anchors is the ordering the slices above assume.
+   */
+  test("the head table precedes §1, and the seven section anchors are in order", () => {
+    const order = [
+      "WHAT THE SEVEN SECTIONS FOUND",
+      "§1 Real text metrics, and how wrong the current ruler is",
+      SECTION_2_HEADING,
+      "§3 KiCad's own field autoplacer, read as an algorithm",
+      SECTION_4_HEADING,
+      SECTION_5_HEADING,
+      SECTION_6_HEADING,
+      SECTION_7_HEADING,
+    ]
+    const at = order.map((h) => doc.indexOf(h))
+    // Every anchor present, asserted BEFORE they are compared: a missing anchor gives -1, and
+    // -1 < <any real index> is true, so an ordering case on bare indexOf passes when an earlier
+    // heading has vanished. That is the un-failable assertion this file exists to refuse.
+    expect(order.filter((h, i) => at[i] === -1)).toEqual([])
+    expect([...at].sort((a, b) => a - b)).toEqual(at)
+  })
+})
+
 /** The body of the one ```run block whose first line is `first`. */
 function blockStartingWith(first: string): string[] {
   const hits = parseBlocks(doc).filter((b) => b.info.split(/\s+/)[0] === OUTPUT_FENCE && b.lines[0] === first)
