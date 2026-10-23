@@ -24834,10 +24834,18 @@ implementer who took it expecting a sheet would get `tp-stage`, which §5.7
 measures as keeping a label problem under **every** freedom swept. **The move is
 still worth what §5 says it is worth; what it is not is a board.**
 
-**§5 IS NOT EDITED.** An agent does not rewrite a closed section's measured text
-to match a later reading, and §5.5a already carries the correcting measurement
-four subsections above the claim. §7.2's point (2) carries the correction where a
-reader of the synthesis will meet it.
+**§5 NOW CARRIES A POINTER AT EACH SITE, BY THE CONTROLLER'S NARROWED
+INSTRUCTION - 2026-10-23, fix round 1.** Round 0 recorded this here and left §5
+alone, which was right under the instruction then in force. **The instruction was
+narrowed because a falsified claim left where readers meet it, with the correction
+filed only in the register, is the recording rule running backwards** - and §5.10
+mechanism 2 is the line an implementer acts on. So §5.8 and §5.10 each now carry a
+blockquote immediately at the site: **the original wording stands, no figure is
+touched, and nothing of §5's findings is rewritten.** The correction is carried in
+full at §7.2 point (2) and here. **This is the single authorised exception to the
+closed-section rule in this plan**, and it is a pointer and not a revision;
+§5.5a's own block four subsections above the §5.8 site was already the correcting
+measurement and is unchanged.
 
 **(2) ALL ELEVEN BOARDS, AND WHAT STANDS IN FRONT OF EACH - with the point that
 no earlier entry states.** `[RAN, CONFIRMED]`, same run: **`0 of 11 boards
@@ -24901,9 +24909,23 @@ the first-N-lines hash every round since Task 3 used**: the head table is an
 insertion above §1, which breaks that hash by construction. §7.7 states the
 replacement, and the check run was a SHA-256 comparison of parent `[§1 heading ..
 EOF]` against child `[§1 heading .. §7 heading]`, which matched at
-`b9fd12dd7cb770807766d44d521441259fe146000b1774ce5fa049ea64d13f9a` over
-**352 125 bytes**, against parent `5ca6f2d`; the 1695 bytes above §1's heading are
-byte-identical in both and the inserted head table is **4643** bytes between them.
+`b9fd12dd7cb770807766d44d521441259fe146000b1774ce5fa049ea64d13f9a` against parent
+`5ca6f2d`, at **352 648 bytes of UTF-8 / 352 125 characters**, with the preamble
+above §1 at **1696 bytes / 1695 characters** byte-identical in both.
+
+**THAT HASH NO LONGER MATCHES THE SLICE AS COMMITTED, BECAUSE FIX ROUND 1 WAS
+AUTHORISED TO EDIT INSIDE §1-§6** (the two §5 pointers above). The slice is now
+`f7fcde37f305331163a4d29cacb75d6f3a459586a6889702e6c2ddbf0f48eeff` at 354 369
+bytes, and **the check is that removing exactly the two authorised pointer blocks
+reproduces `b9fd12dd…` to the byte** - which it does, with both single-pointer
+controls failing, so nothing else in §1-§6 moved. The pointers add 1721 bytes.
+
+**AND THE ROUND-0 VERSION OF THIS CLAUSE PUBLISHED 352 125 AND 4 643 AS BYTE
+COUNTS AND BOTH WERE CHARACTER COUNTS**; the inserted head table's length is now
+pinned to a named commit rather than published at HEAD, because the commit that
+publishes it edits it. **G276** is that pattern, named, with its four
+demonstrations - the fourth being round 0's own *"invariant under every later
+edit"* sentence, falsified by the authorised edit above rather than by any error.
 
 - **Evidence** `[RAN, CONFIRMED]` `bun tools/schgen/board-sheets.ts` at this
   commit, read in full. **The controls that could have answered differently and
@@ -25019,3 +25041,99 @@ have **zero** fallbacks, so their order-invariance is proven and uninformative.
   become 6 / 7 / 5. **MECHANISM: none is offered** - the writer of a deviation
   does not also ratify it, which is the whole shape of the rule it is a deviation
   from.
+
+---
+
+### G276 - THE PATTERN, NAMED AT ITS THIRD INSTANCE AND DEMONSTRATED A FOURTH TIME IN THE ROUND THAT NAMED IT: a figure a task publishes ABOUT ITS OWN ARTIFACT is invalidated by that task's own later edits - and the fourth instance needed no error at all, only a later AUTHORISED edit
+
+**Found** 2026-10-23, fix round 1 of Task 7 of the text-handling research plan,
+when a reviewer re-derived §7.7's confinement figures. **It is named here rather
+than left as three unrelated corrections because the next agent publishing a
+self-measurement will do it again otherwise.**
+
+**THE SHAPE.** A task measures something about the artifact it is producing - a
+byte length, a grep count, a register tally - and publishes the figure **inside
+the change that is still editing the thing measured.** The figure is correct when
+taken and wrong when committed. **It is not a care failure**: the writer may
+re-run the check, get the right answer, and then make one more edit.
+
+**THE THREE INSTANCES ON THIS BRANCH.**
+
+| # | what was published | what invalidated it |
+| --- | --- | --- |
+| 1 | a stale count in a register clause | later clauses were added to the same entry in the same change |
+| 2 | **§6.4's grep control** | the commit that published the control's hit count also changed the tree the grep ran over |
+| 3 | **§7.7's `4643`-byte head-table insertion** (and `352 125` for the slice) | **the same commit that published the number edited the head table**, moving it from 4645 bytes at `7951a9d` to 4662 at `d855a5d`; fix round 1 edited the table a third time |
+| 4 | **§7.7's own sentence that the §1-§6 hash is *"invariant under every later edit to this document outside §1-§6"*** | **fix round 1 was authorised to edit INSIDE §1-§6** - the two §5 pointers - so the hash moved from `b9fd12dd…` to `f7fcde37…` and the sentence became false **with nobody making a mistake.** This is the sharpest form of the pattern: an invariant is only invariant over material nobody is later permitted to touch |
+
+**AND INSTANCE 3 CARRIES A SECOND DEFECT WITH THE SAME CAUSE AS NEITHER: THE
+UNIT.** Three of round 0's five published lengths were **UTF-16 character counts
+labelled as bytes.** The measured §1-§6 slice holds **511 non-ASCII characters**
+(413 `§`, 44 `µ`, 16 `×`, 12 `°`, and a tail of Greek and superscripts) for a
+byte-minus-character gap of **523**, so the slice is **352 648 bytes / 352 125
+characters** and the insertion was **4 662 bytes / 4 643 characters** at
+`d855a5d`. **A length published without its unit is not re-derivable**, and in a
+document this full of `§` the two units differ by enough to look like a real
+change.
+
+**WHAT ACTUALLY ESTABLISHED THE CLAIM, WHICH IS THE USEFUL PART.** §7.7's
+conclusion - that §1-§6 are byte-identical across the change - **was correct and
+was corroborated by the reviewer**; the hash matched and there were zero
+cumulative deletions. **The hash was doing the work and the lengths were
+decoration**, and the lengths are what broke. A hash over material the change does
+not touch is invariant under the change; a length over material the change edits
+is not.
+
+**AND INSTANCE 4 SAYS THE HALF-LESSON IS NOT ENOUGH.** "Publish the hash, not the
+length" is what instance 3 teaches, and **instance 4 broke the hash**: a later
+round was authorised to edit §5, so the figure held up as the invariant moved. **A
+hash is invariant only over material nobody is later PERMITTED to touch**, and
+"nobody is permitted" is a policy that can be narrowed by the person who set it.
+**The durable form, which §7.7 now uses, is three parts**: the parent's hash; the
+enumerated exceptions; and a check that removing exactly those exceptions
+reproduces the parent's hash, with a control per exception that fails when it is
+left in. That survives the next authorised edit because the exceptions are named
+rather than assumed absent.
+
+**THE FAILURE MODE IS A READER WHO TAKES THE INVITATION.** §7.7 invites a reader
+to re-take the check. With the round-0 figures they would have got the right hash
+and two wrong lengths, and the natural conclusion is that §1-§6 moved - the exact
+opposite of what the clause establishes.
+
+- **Evidence** `[RAN, CONFIRMED]` a script over `git show` at `5ca6f2d`,
+  `7951a9d`, `d855a5d` and the working tree, printing the slice and insertion in
+  **both** characters and bytes with the SHA-256 beside each. **The control that
+  could have answered differently and did not:** the §1-§6 hash is identical at
+  `5ca6f2d`, `7951a9d` and `d855a5d`, so the insertion lengths moved while the
+  measured content did not - which isolates the defect to the arithmetic rather
+  than to the claim. The non-ASCII tally is from the same run and accounts for the
+  whole 523-byte gap, so the unit diagnosis is arithmetic rather than a hypothesis.
+  **Instance 4 is established by a second script with its own controls**: the
+  round-1 slice hashes to `f7fcde37…`, removing the two authorised §5 pointer
+  blocks reproduces `b9fd12dd…` to the byte, and **removing only one of the two
+  does not** - in either direction, which is what proves the removal is not
+  over-reaching and the residue is nil. `[RELAYED]` instances 1 and 2 are the
+  reviewer's, named in the fix-round brief.
+- **Verified** **CONFIRMED** for instances 3 and 4, the unit diagnosis and the
+  corrected figures - this writer ran both scripts and read their output.
+  **RELAYED** for instances 1 and 2, which are a reviewer's report and were not
+  re-driven here.
+- **Why it is open** because **it is a practice defect with no committed guard.**
+  Nothing in this repository checks that a published self-measurement is still
+  true at the commit that publishes it, and §7.7's own fix is prose discipline -
+  state the unit, pin the length to a named commit, and rest the claim on an
+  invariant - rather than a check. **A fourth instance would not go red anywhere.**
+- **What would settle it** **CRITERION: a figure a change publishes about its own
+  artifact is either (a) pinned to a named commit with its unit stated, or (b) a
+  hash over named material WITH its permitted exceptions enumerated and a check
+  that removing exactly those reproduces the baseline.** Instance 4 is why (b) is
+  not just "publish a hash": an unqualified invariant claim is falsified by the
+  next authorised edit. §7.7 and **G274** clause 6 now meet this; **nothing else on
+  this branch has been audited against it.** **MECHANISMS, UNTRIED, and each a
+  guess by someone who has not built it:** a check that re-derives any length a
+  document publishes about itself and compares it at HEAD, which needs the document
+  to declare which of its numbers are self-measurements and is machinery nobody has
+  costed; or a convention that self-measured lengths are never published and only
+  hashes are, which is cheaper and loses the context a reader uses to sanity-check
+  a hash **and which instance 4 shows is insufficient on its own**. **Neither has
+  been tried, and this entry proposes neither.**

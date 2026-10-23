@@ -903,8 +903,14 @@ describe("section 7 pastes no fenced block, so it adds nothing to any log's name
    * **THE HAZARD, DRIVEN.** Without this, "a §7 block would break §6's tally" is a sentence in a
    * document. The assertion is on the TALLY and names the fence word, not on a failure count:
    * `verify` is not even reached here, and a count would establish only that something moved.
+   *
+   * **WHAT IT ACTUALLY DOES, since the name used to overstate it:** it APPENDS a fenced block to
+   * the end of the document, which is the end of §7 and therefore inside §6's slice-to-EOF. That
+   * is the position a later editor adding output to §7 would most likely use, and it is the
+   * position §6's tally cannot tolerate. It does not insert into the middle of §7, and a block
+   * placed there would be caught the same way - by this slice, because §6's runs to EOF too.
    */
-  test("RED: a fenced block inserted into §7 breaks §6's pinned fence tally, naming the word", () => {
+  test("RED: a fenced block appended at the end of §7 breaks §6's pinned fence tally, naming the word", () => {
     const at = doc.indexOf(SECTION_7_HEADING)
     if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_7_HEADING)}, so §7's slice cannot be found`)
     const perturbed = `${doc}\n\`\`\`${SECTION_7_PROBE_FENCE} STEP 1\nthis line is not in any log\nand neither is this one\n\`\`\`\n`
@@ -934,6 +940,16 @@ describe("section 7 pastes no fenced block, so it adds nothing to any log's name
    * (§7.7). What is still checkable without pinning a hash that every later insertion invalidates:
    * that the head table sits ABOVE §1's heading, so it is the first thing a reader meets, and that
    * the ordering of all seven section anchors is the ordering the slices above assume.
+   *
+   * **THE PRESENCE ASSERTION IS NOT BELT-AND-BRACES: IT IS THE ONLY THING THAT CATCHES A MISSING
+   * ANCHOR, AND THE ORDERING ASSERTION ALONE WOULD PASS.** Driven, with the head-table anchor
+   * removed: `indexOf` returns `-1`, and **`-1` SORTS FIRST**, so the sorted copy equals the
+   * original and `expect(sorted).toEqual(at)` is TRUE. The whole case would have gone green with
+   * the head table deleted - which is the exact shape of this branch's recorded `indexOf` defect
+   * (§6.12, where an ordering case written on bare `indexOf` passed because a header had vanished
+   * and `-1 < anyRealIndex`). **This case is the FIX for that defect, not another instance of it**,
+   * and the next person editing it needs to know that deleting the presence line silently removes
+   * the only teeth here.
    */
   test("the head table precedes §1, and the seven section anchors are in order", () => {
     const order = [
