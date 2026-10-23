@@ -25607,3 +25607,127 @@ opposite of what the clause establishes.
 >   exception enumerated and a check that removing exactly it reproduces the baseline. **What the
 >   off-by-one adds is that form (b) has a sharp edge**, and an entry that recommends a mechanism
 >   owes the next implementer the edge as well as the mechanism.**
+
+### G277 - MEASURED: KiCad 10.0.5 accepts a parenthesised net name in a global label with no escaping and no rename - and the BOUNDARY CENSUS IS ZERO, which refutes the spec's own mechanism and closes the punctuation question by architecture rather than by `kicad-cli`
+
+**Found** 2026-10-23, Task 1 of
+`docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`. The probe is
+`tools/schgen/label-syntax/probe.ts`, its four candidate sheets are committed
+beside it under `sheets/`, and the run this entry reports is
+`tools/schgen/label-syntax/probe-run.log` at commit `95db940` on a clean tree.
+**Nothing in `lib/` reads any of it and no gate calls it.**
+
+**(1) ALL FOUR CANDIDATES PARSE, ROUND-TRIP BYTE-IDENTICAL AND DRAW A
+FULL-LENGTH OUTLINE.** `SIGNAL` (the control), `hi_boost_out`
+(`circuits/pultec/electrical/mid.ts:28`), `Net-(C10-Pad1)`
+(`circuits/pt2399-core/pt2399-core.ts:128`) and
+`unconnected-(U1-CLK_O-Pad5)` (`:147`) each exported a netlist at exit 0, came
+back from `kicad-cli sch export netlist --format kicadsexpr` as the same bytes
+the sheet carried, and produced a PDF whose seven-point label outline grows
+strictly with the name - 10088.2, 15470.2, 20006.2 and 35125.1 um for 6, 12, 14
+and 27 characters. **KiCad neither re-quoted nor renamed anything**, so the
+third of the spec's three outcomes for part 1 (*"KiCad rejects them, and those
+nets need renaming"*) is off the table and the second (*"accepts but re-quotes"*)
+did not occur either.
+
+**THE WRITER ESCAPES NOTHING, AND THAT IS THE PRODUCTION WRITER'S ANSWER RATHER
+THAN THE PROBE'S.** The name enters the sheet through `lib/kicad/sexpr.ts`'s
+`quoteString`, which is what `lib/schgen/render/sexpr-write.ts`'s `str()` calls
+and therefore what `lib/schgen/render/emit-items.ts`'s `globalLabel` would emit.
+`quoteString` escapes only `\` and `"`; no candidate holds either, so all four
+are written verbatim between quotes. `str()` adds one check `quoteString` does
+not - it refuses a control character - and **no candidate holds one of those
+either**, so that guard was never exercised by this run.
+
+**MEASURED THROUGH PDF AND THE NETLIST, NEVER THROUGH SVG**, because **G265**
+clause 1 records that `sch export svg` at 10.0.5 omits a global label's outline
+entirely.
+
+**(2) THE BOUNDARY CENSUS IS ZERO, OVER ALL ELEVEN BOARDS.** Sixteen synthetic
+net names exist in the models - all sixteen on `pt2399-core` - and **none of
+them reaches a global label.** The complete set of net names that can become a
+label on a sheet is a block's `external` set: `lib/schgen/render/emit.ts:171` is
+the only `globalLabel` call site in the repository, its `labels` come from
+`render/sheets.ts:77`'s `anchorsToSymbols`, and `power-text.ts`'s `labelRefsOf`
+**throws** for an anchor net that is not in the block's `labelRefs` - which
+`render/blocks.ts`'s `subgraphOf` builds from `external` alone. So this is a
+census and not a sample.
+
+**(3) THE PREDICTION WAS NON-ZERO AND IT WAS THE SPEC'S OWN, AND THE MECHANISM
+BEHIND IT IS WRONG.** The spec's part 1 says of `pt2399-core` that *"the
+synthetic name becomes a label only because of the fake port, since ports are
+boundary nets"*. **A declared port does not make a net a label.**
+`buildCircuit` sets `offSheet: new Set<NetName>()` unconditionally
+(`lib/schgen/ir/build.ts:152`; the field's own comment at
+`lib/schgen/ir/types.ts:300-305` says only a sheet subset ever has any), so
+`ir/classify.ts`'s `labelledNets` labels a net only when it is a rail, touches
+more than one block, or touches a `bus` block. **`pt2399-core` is ONE block**
+(`pt-core`, rendering `auto`), so none of its sixteen synthetic names is
+labelled with or without the fake `clk_o_unused` port. The spec's
+**conclusion** for that circuit survives and is stronger than it claimed; its
+**reason** does not. The prediction is printed in the committed log ahead of the
+result and is left standing there as written.
+
+**(4) WHAT ZERO DOES AND DOES NOT LICENCE, because the zero is bait.** It means
+the punctuation half of the `netNames` refusal blocks **no board in this
+repository today**, so Task 3 does not need to wait on KiCad - clause 1 is a
+standing answer rather than a precondition. It does **NOT** mean the names are
+harmless: they are still in the model, still reach the netlist comparison, and
+**would reach a label the first time a block boundary fell between two pins of
+one of them**, which is a layout decision nobody has made rather than an
+invariant. A gate relaxed on the strength of a zero census would be relaxed on
+the strength of today's block partitions.
+
+**(5) ADJUNCT, AND IT IS WHERE THE CASING RULE ACTUALLY COSTS SOMETHING: 20
+LABELLED NETS ACROSS THE FIVE PULTEC BOARDS FAIL `NET_NAME`, and ZERO on the
+other six boards.** Each Pultec board draws exactly `hi_boost_out`, `in`,
+`lo_boost_in` and `out` as global labels; `pt2399-core` and the five
+transistor-preamp boards draw none that `NET_NAME` refuses. So the rule's two
+halves split cleanly over the corpus: the **case** half binds on 20 real labels
+and the **punctuation** half binds on none. This is not Task 1's question and is
+recorded because the next reader will want the figure and cannot re-derive it
+from any published number.
+
+**(6) A CORRECTION TO THE PLAN AND THE BRIEF, which an implementer following
+them literally would have turned a check red with.** Both say the **two** new
+`.ts` paths must be declared `handWritten` in `tools/schgen/port-manifest.json`.
+Only `probe.ts` is a `.ts` path; `probe-run.log` is not, and
+`tests/schgen/port-fidelity.test.ts`'s completeness check compares the manifest's
+union against `listTsFiles`, which enumerates `.ts` only - so declaring the log
+fails `accountedButMissing` naming it. **One entry was added, not two**, and the
+committed sheets under `sheets/` need none because they are not `.ts` either.
+
+- **Evidence** `[RAN, CONFIRMED]` `bun run tools/schgen/label-syntax/probe.ts`
+  at `95db940`, clean tree, `kicad-cli` 10.0.5 resolved at
+  `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` through
+  `lib/kicad/netlist.ts`'s `KICAD_CLI`; the whole run is the committed log.
+  **The control is the check that could have failed**: `SIGNAL` - the one
+  candidate `NET_NAME` already accepts - had to parse, round-trip and draw, and
+  a failure there would have made every other row a fact about the probe's sheet
+  rather than about a net name. **The outline-growth test is the second one**: the
+  PDF carries stroked glyph paths and no readable string, so a truncated or
+  mangled name would show as an outline that stopped growing, and all four grow
+  strictly. The probe **refuses** rather than skipping when `KICAD_CLI` is not on
+  disk.
+- **Verified** **CONFIRMED** for every figure in clauses 1, 2, 5 and 6: each was
+  driven here, in this repository, in the committed run, and clause 6 was driven
+  by reading `port-fidelity.test.ts`'s own comparison. **CONFIRMED** for clause
+  3's mechanism, read off `build.ts:152` and `classify.ts` rather than relayed.
+  Nothing in this entry is another agent's report.
+- **What would settle it.** **CRITERION for clause 1:** nothing - it is a
+  measurement and it is settled; it is deleted only if a later KiCad version
+  answers differently, which would be a new measurement and a new entry.
+  **CRITERION for clause 2 and 4:** the census is a property of the current
+  block partitions, so it is re-taken, not trusted. **It is settled by
+  `tools/schgen/label-syntax/probe.ts`'s census section printing zero at the
+  commit being reviewed**, and it stops being true the moment any circuit's
+  blocks are repartitioned so that a `Net-(…)` or `unconnected-(…)` net spans
+  two of them. **MECHANISM, UNTRIED:** a test that fails when the census is
+  non-zero would make the re-take automatic, and nothing like it was written -
+  `CLAUDE.md` forbids an agent authoring the acceptance criterion for its own
+  artifact, and whether a non-zero census should REFUSE or merely report is a
+  decision for a spec or for the owner. **CRITERION for clause 3:** the spec's
+  sentence is wrong as written and is corrected by this entry; it is settled by
+  the spec being amended or by Task 6 recording that it was not. **CRITERION for
+  clause 5:** the 20 is re-derived by the same probe run; it moves if a Pultec
+  board's declared ports or block partition change.
