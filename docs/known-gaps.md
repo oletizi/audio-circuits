@@ -1417,6 +1417,12 @@ made.
 > choice over sides is the untried mechanism that most resembles what worked here. **MECHANISM,
 > UNTRIED, NOT A PLAN, and not an acceptance criterion for anything.**
 >
+> > **THIS PARAGRAPH IS CORRECTED AT THE END OF THIS ENTRY (2026-10-22, Task 2 of the text-handling
+> > research plan).** *"A global label's position IS a netlist fact"* and *"the anchor point is
+> > fixed"* are the premise the plan records as WRONG at line 207; the four-candidate side search
+> > rests on it. The paragraph is left as written, with the pointer here, because a reader of this
+> > scoreboard may never reach the amendment - and nothing above it changes.
+>
 > **ONE THING THE PIPELINE DOES PRODUCE, recorded because "0 of 11" would otherwise read as "it
 > emits nothing".** `[RAN]` `bun run schgen generate` over the `mini` design fixture: **11 files, 3
 > sheets**, exported to PDF with `kicad-cli` (106,198 bytes, 3 pages) and read. The sheets are
@@ -1500,6 +1506,67 @@ made.
 >   than the producing agent's judgement. **No agent writes that criterion, and Task 25 wrote none:**
 >   the check it committed asserts that the nine declarations are well formed and agree with their
 >   circuits, and asserts nothing about whether any drawing is good.
+
+> **AMENDED 2026-10-22 BY TASK 2 OF THE TEXT-HANDLING RESEARCH PLAN: THIS ENTRY'S ONE PARAGRAPH
+> ABOUT THE LABEL DEFECT RESTS ON A PREMISE THE PLAN RECORDS AS WRONG, AND IT IS THE LAST SITE IN
+> THIS FILE STILL CARRYING IT UNHEDGED.** The scoreboard rows are untouched, every figure above
+> stands, and this entry's criterion is unchanged - what is corrected is one paragraph of reasoning
+> and the mechanism it suggests.
+>
+> **WHAT IT SAYS**, in the Task 24 amendment above, under *"AND THE REMAINING TEXT DEFECT DOES NOT
+> YIELD TO THE TECHNIQUE THAT FIXED THE FIELD ONE"*:
+>
+> > *"**A global label's position IS a netlist fact** - it connects where it is drawn - so the same
+> > mechanism cannot move one off an overlap. What a label does have free is its SIDE
+> > (`anchorsToSymbols` picks one; **the anchor point is fixed**), and a four-candidate
+> > least-covered choice over sides is the untried mechanism that most resembles what worked here."*
+>
+> **WHAT CORRECTS IT.** `docs/superpowers/plans/2026-10-22-text-handling-research.md` **line 207**,
+> inside Task 5, marked **ACCEPTED** and called the third-party review's most consequential
+> finding:
+>
+> > *"the label's NAME and its electrical CONNECTION are netlist facts; its drawing coordinates are
+> > not necessarily fixed by the circuit. A label can move to another valid point on the same net,
+> > and this generator draws the wires, so it can also change the geometry that leaves no room."*
+>
+> So the plan names **at least three** degrees of freedom where this paragraph names one -
+> orientation, **relocating the anchor** along an electrically equivalent connection, and
+> **adjusting the wire geometry** - plus a fourth that is the generator's own, which of a net's
+> segments it attaches the label to. **This paragraph states the corrected claim with no hedge at
+> all**, where **G262** at least marks its version as a `[CODE]` reading and not a measurement of
+> KiCad's behaviour, and **G262**'s own amendment now closes it.
+>
+> **AND THE SIDES MECHANISM RESTS ON THE CORRECTED PREMISE, which is why this amendment exists
+> rather than a pointer.** *"The anchor point is fixed"* is the premise, and *"a four-candidate
+> least-covered choice over sides"* is what follows from it. **With the anchor movable the candidate
+> set may be wider than four**, and it may not be a choice over sides at all. The mechanism is still
+> **UNTRIED and NOT A PLAN** - it was that before and it is that now - but it is no longer the
+> mechanism that most resembles what worked, because the search space it is drawn from is larger
+> than this paragraph knew. **Task 5 owns that question**, and this entry pre-closed it in the place
+> an agent looks first.
+>
+> **WHAT TASK 2 MEASURED, since it is adjacent and is NOT this correction.** `[RAN]` ELK will accept
+> a label on a boundary node and return a coordinate for it, but `[READ]`
+> `lib/schgen/render/emit-items.ts:227-241` emits a `global_label` with exactly one coordinate,
+> `(at l.at angle)` - **so an ELK offset from the anchor has no representation in this emitter's
+> output vocabulary.** That is a fact about the emitted form and says nothing about where the anchor
+> may be put. §2.7 of `docs/schematic/text-handling-research.md` and **G266** carry it.
+>
+> - **Evidence** `[READ]` the plan at line 207, this entry's own paragraph above, and
+>   `lib/schgen/render/emit-items.ts`. The check that could have failed is the one that found this:
+>   a grep of this file for the netlist-fact framing returned six sites, and reading each established
+>   that four are **G262**'s body-plus-amendment pair or the correction itself, leaving this as the
+>   only one a reader could take as current.
+> - **Verified** CONFIRMED by reading. **RELAYED**: the review's finding reaches here through the
+>   plan, which marks it ACCEPTED; nobody has driven a KiCad file with a relocated anchor.
+> - **Why it is open** because Task 5 has not run. The correction is recorded; the freedom it opens
+>   is unexplored.
+> - **What would settle it** this entry's criterion is **unchanged** and **authors no new one**. The
+>   open question belongs to Task 5: **CRITERION, ALREADY WRITTEN AND NOT BY THIS WRITER - G240's**,
+>   a generated schematic for at least one board judged by something other than the producing agent.
+>   **MECHANISM: there is none here on purpose.** The four-candidate side search is the mechanism
+>   this amendment is marking as resting on a corrected premise, and replacing it with a guess at a
+>   wider one would repeat the error in a new size.
 
 ---
 
