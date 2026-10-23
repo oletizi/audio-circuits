@@ -710,14 +710,20 @@ it in one paragraph.
 
 **Everything marked `[RAN]` below comes from one run of
 `tools/schgen/elk-labels/probe.ts`**, committed, at repository commit
-**`36e02e8`** with a clean tree, against `elkjs` **0.9.3** with
-`elk-worker.min.js` pinned by SHA-256 - **the probe refuses any other bundle**.
-That run is committed beside the probe as
-`tools/schgen/elk-labels/probe-run.log`. **It was driven twice, at two commits,
-and the two logs differ in exactly two lines** - the section header renamed by
-§2.10's fix and the commit hash itself - so every figure below is reproducible
-rather than merely recorded. Unlike §1's probe this one needs no external
-download and no installed application:
+**`053dfb2`** with a clean tree, against `elkjs` **0.9.3**, with **the bundle the
+run LOADS hashed by SHA-256 and any other refused** - §2.1 says what that does
+and does not establish, because the first version of that pin hashed the wrong
+file. That run is committed beside the probe as
+`tools/schgen/elk-labels/probe-run.log`, and
+`tests/schgen/text-metrics/document-pastes.test.ts` **holds every block this
+section pastes to it on every `bun test`** (§2.10).
+
+**IT HAS BEEN DRIVEN TWICE AND THE EARLIER ARTIFACT IS IN THE HISTORY, not in
+anybody's scratch directory.** The run committed at `cb35fe0` carried nine arms,
+this one carries eleven, and **every row of arms a-i is identical between them**;
+`git show cb35fe0:tools/schgen/elk-labels/probe-run.log` is the earlier log and
+the comparison is a `diff`. Unlike §1's probe this one needs no external download
+and no installed application:
 
 ```sh
 bun run tools/schgen/elk-labels/probe.ts
@@ -733,7 +739,7 @@ The plan's Step 6 requires it and a third-party review of the plan is why:
 | grade | what it covers here |
 | --- | --- |
 | **documentation** `[READ]` | ELK's own option reference at `eclipse.dev/elk` - the ids, their types, their targets and their **stated defaults** (§2.3) |
-| **driven** `[RAN]` | what `elkjs` reports about itself, and what nine arms get back when they hand ELK the graphs this repository already builds (§2.1, §2.2, §2.4-§2.7) |
+| **driven** `[RAN]` | what `elkjs` reports about itself, and what eleven arms get back when they hand ELK the graphs this repository already builds (§2.1, §2.2, §2.4-§2.7) |
 
 **A default is driven here and not merely read**, because `docs/known-gaps.md`
 **G187** measured that `elkjs` ignores an option id it does not recognise with no
@@ -743,17 +749,15 @@ in exactly one option and are compared on the laid-out geometry.
 
 ### 2.1 THE ELK LABEL INVENTORY `[RAN]`
 
-```elk-run
-== WHAT THIS ELK LABEL RUN MEASURED
-repository commit: 36e02e812a1360dbf0acde8e5403bb004fb7af9e (clean tree)
-elkjs 0.9.3; elk-worker.min.js pinned at SHA-256 114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538
+```elk-run WHAT THIS ELK LABEL RUN MEASURED
+repository commit: 053dfb2cc5efd51a4f102fd3c6ac1b93f4ce24cf (clean tree)
+elkjs 0.9.3; the bundle this run LOADS, hashed: SHA-256 114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538
 elkjs resolved from: file:///Users/orion/work/audio-circuits-work/pultec-modularize/node_modules/elkjs/package.json
 knownLayoutOptions(): 224 ids; knownLayoutAlgorithms(): 12; layered knownOptions: 140
 layered supportedFeatures: SELF_LOOPS, INSIDE_SELF_LOOPS, MULTI_EDGES, EDGE_LABELS, PORTS, COMPOUND, CLUSTERS
 ```
 
-```elk-run
-== STEP 1: EVERY LABEL-RELATED OPTION elkjs EXPOSES
+```elk-run STEP 1
 option ids containing "label": 15 of 224
   org.eclipse.elk.labelManager                                   OBJECT   targets=PARENTS|LABELS layered DOES NOT list it
   org.eclipse.elk.spacing.edgeLabel                              DOUBLE   targets=PARENTS      layered supports it
@@ -813,15 +817,29 @@ and a near-published paragraph had the test's comment wrong by eleven. The cause
 is in the fourth line of the block above: `import.meta.resolve` is relative to
 the file that calls it, so a script **outside** the repository does not resolve
 `elkjs` through `package.json`'s pin at all. Bun auto-installed **0.12.0** into
-`~/.bun/install/cache` and served that. The committed probe prints the install it
-resolved and refuses a bundle whose hash is not the pinned one; that is what
-turned a plausible finding into a diagnosed artefact. **Controller ruling R4 -
-commit the probe and pin its input - paid for itself here on the first use.**
+`~/.bun/install/cache` and served that. **Controller ruling R4 - commit the probe
+and pin its input - is what turned a plausible finding into a diagnosed
+artefact**, because a committed probe resolves `elkjs` inside the repository and
+prints the install it used.
+
+**AND THE HASH THIS SECTION CREDITED WITH CATCHING IT COULD NOT HAVE, which a
+reviewer drove, and a false guarantee is worse than none.** The pin originally
+hashed `moduleRepoRoot()/node_modules/elkjs/lib/elk-worker.min.js` - a path
+derived from the probe module's OWN location - while the worker was constructed
+from `import.meta.resolve`, which resolves against the importer. Driven from a
+scratch location: **the old pin PASSES on the committed 0.9.3 bundle while the
+caller loads 0.12.0**, so it was green in precisely the scenario it was credited
+for. **It now hashes the file behind the same URL it hands `workerFactory`**, and
+refuses a URL that is not a local file, so the file checked is the file loaded;
+the same drive makes the new pin refuse. **What was doing the real work all along
+is WHERE the probe is committed** - inside the repository whose `node_modules`
+holds 0.9.3 - and the hash is now a second lock rather than a stand-in for the
+first. `docs/known-gaps.md` **G266** clause 3 said the hash caught the drift and
+is corrected there too.
 
 ### 2.2 What this repository sets of that inventory: none of it `[RAN]`
 
-```elk-run
-== STEP 2: WHICH OF THEM THIS REPOSITORY SETS
+```elk-run STEP 2
 scanned 9 file(s) under lib/schgen/elk: adapt.ts graph.ts junctions.ts options.ts read-graph.ts self-loop.ts serialize.ts sheet-graph.ts snap.ts
 label-related options this repository sets: 0 of 22
   CONTROL elk.spacing.nodeNode: found by the same scan = true
@@ -890,8 +908,7 @@ day one**, for five more options.
 
 Driven, each option against its own absence on one real block:
 
-```elk-run
-== STEP 3: WHAT layered DOES WITH A LABEL IT IS GIVEN - EACH OPTION DRIVEN AGAINST ITS ABSENCE
+```elk-run STEP 3
 on pt2399-core/pt-core; label options layered lists: 14 of 15
 the ones it does not list: org.eclipse.elk.labelManager
   nodeLabels.placement [H_CENTER,V_TOP,OUTSIDE]  with: 195580.0x151786.9  without: 195580.0x133354.0  geometry DIFFERS; label coordinates DIFFER
@@ -908,8 +925,7 @@ sizes fixed.
 
 ### 2.4 The graph this repository hands ELK carries no labels at all `[RAN]`
 
-```elk-run
-== STEP 4: WHETHER THE GRAPH THIS REPOSITORY HANDS ELK CARRIES LABELS AT ALL
+```elk-run STEP 4
 48 ELK blocks over 11 boards: 398 nodes, 620 ports, 494 edges
 elements carrying a non-empty labels array: 0
 CONTROL, so that zero is a finding and not a broken walk: nodes carrying a non-empty layoutOptions record: 398 of 398
@@ -937,12 +953,21 @@ having any.** `lib/schgen/elk/serialize.ts`'s `refuseUndeclared` throws on any
 element carrying a non-empty `labels` array, because the serialized bytes are the
 generation manifest's key and a field left out of them would let two different
 inputs hash the same (**G95**). That refusal is driven above, with its own
-control: the same graph without the label serializes to 12345 bytes. **It means
-no label can reach ELK from this repository by accident** - and that any future
-use of ELK labels is a deliberate edit to that file, which is where its message
-says to make it.
+control: the same graph without the label serializes to 12345 bytes.
 
-### 2.5 The experiment: nine arms over the same 48 graphs `[RAN]`
+**WHAT THAT REFUSAL COVERS, narrowed to what the guard actually refuses.** It
+fires **when a graph is serialized**, and `elkInputOf` serializes every graph it
+builds, so **a labelled graph cannot be constructed through this repository's own
+path without the throw** - and that path is production's, not a test's. **It is
+not a guarantee that no label can ever reach ELK**: the graph is a plain
+`ElkNode`, and a caller that mutated it after `elkInputOf` returned would hand
+`elk.layout` a label the serializer never saw. That is exactly what the arms below
+do, deliberately. An earlier draft said *"no label can reach ELK by accident"*,
+which is wider than the guard. What the guard does buy is that any future use of
+ELK labels **in the built graph** is a deliberate edit to that file, which is
+where its message says to make it.
+
+### 2.5 The experiment: eleven arms over the same 48 graphs `[RAN]`
 
 A third-party review of the plan required this and the plan accepted it: an
 option inventory proves nothing about whether ELK solves this problem. So each
@@ -956,8 +981,26 @@ the ruler §1 measured; the **height** is §1.4's `GetTextBox` figure of 2043.1 
 would actually draw: a unit's Value, a boundary node's or an edge's net name, a
 port's pin number.
 
-```elk-run
-== STEP 5: NINE ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT
+**ARMS b-i ARE NOT MINIMAL PAIRS WITH THE BASELINE, AND ARMS j AND k ARE WHY THAT
+MATTERS.** Each labelled arm differs from arm **a** in **two** things: the label,
+and the `layoutOption` that tells ELK what to do with one. So a graph that grew
+could have grown from either, and the probe did not separate them until this
+round - a reviewer of this section's first version made that point and it is
+accepted. Arms **j** and **k** set the options and send **no label at all**:
+
+- **Arm j, the control for arms d-g**, matches the baseline on **0 of 48 blocks
+  moved**. So in that family - which is where §2.6's two decisive arms live - the
+  growth is attributable to the label.
+- **Arm k, the control for arms b-c, DOES NOT match the baseline**: 254 nodes
+  resized, worst **33020.0 µm**, 48 of 48 blocks moved, and `pt-core`'s `C1:1`
+  collapses to **0 × 0**. **So b's and c's figures are the option AND the label
+  together, and nothing here separates them.** The plain reading - this writer's
+  reading, not a measurement - is that `nodeSize.constraints = [NODE_LABELS]` means
+  *"size the node to fit its labels"*, so a node with no labels wants no size.
+  **It is reported rather than left out, because an uncontrolled arm nobody flags
+  gets read as a controlled one.**
+
+```elk-run STEP 5
 line height 2043.1 um (RELAYED from section 1.4); label widths from lib/schgen/render/text-boxes.ts textWidth
 arm                                     sent/back  unplaced  resized(worst um)  blocks moved  lbl-lbl  lbl-other-body  lbl-own-body  lbl-wire  on-grid
   a baseline, no labels                     0/0           0        0 (0.0)         0/48        0               0             0         0  0/0
@@ -969,6 +1012,8 @@ arm                                     sent/back  unplaced  resized(worst um)  
   g node labels, NO placement, unseeded   398/398         0        0 (0.0)        48/48        0               0           254         9  136/398
   h port labels (pin text)                620/620         0        0 (0.0)        48/48        0               0             0         0  0/620
   i edge labels (net names)               494/494         0        0 (0.0)        48/48        5               0             0        24  4/494
+  j e's options, NO label                   0/0           0        0 (0.0)         0/48        0               0             0         0  0/0
+  k b's options, NO label                   0/0           0      254 (33020.0)        48/48        0               0             0         0  0/0
   a baseline, no labels: the control: the graph exactly as lib/schgen/elk/graph.ts builds it today
   b node labels, size free: SizeConstraint NODE_LABELS alone - ELK may resize a node to fit its label
   c node labels, size free + minimum: NODE_LABELS with the symbol's own box as nodeSize.minimum - the nearest thing to a schematic
@@ -978,6 +1023,8 @@ arm                                     sent/back  unplaced  resized(worst um)  
   g node labels, NO placement, unseeded: the same arm without the sentinel, so the space ELK reserves for a label it never places shows
   h port labels (pin text): a pin number as an ELK port label, at layered's default PortLabelPlacement.outside()
   i edge labels (net names): a NET NAME as an ELK edge label - the one label class layered declares as a supported feature
+  j e's options, NO label: the control for arms d-g: fixed size plus an outside placement hint, and no label at all
+  k b's options, NO label: the control for arms b-c: SizeConstraint NODE_LABELS and an inside hint, and no label at all
   lib/schgen/elk/read-graph.ts       mentions "width" 0 time(s) and "height" 0 time(s)
   lib/schgen/elk/adapt.ts            mentions "width" 0 time(s) and "height" 0 time(s)
   lib/schgen/elk/graph.ts            mentions "width" 3 time(s) and "height" 3 time(s)
@@ -988,8 +1035,7 @@ One block, in detail, so those aggregates are readable. Arms **h** and **i** put
 their labels on ports and on edges, so the node and boundary columns are empty
 for them by construction:
 
-```elk-run
-== STEP 5k: ONE BLOCK IN DETAIL, SO THE AGGREGATES ABOVE ARE READABLE
+```elk-run STEP 7
 pt2399-core/pt-core: 26 nodes, 46 edges
   a baseline, no labels                  graph 162306.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
   b node labels, size free               graph 177950.0 x 87548.8; node C1:1 5090.0x2053.1 label ".1uF" 5080.0x2043.1 at (5.0, 5.0); boundary port:+5V 3820.0x2053.1 label at (5.0, 5.0)
@@ -1000,6 +1046,8 @@ pt2399-core/pt-core: 26 nodes, 46 edges
   g node labels, NO placement, unseeded  graph 195580.0 x 133354.0; node C1:1 4064.0x7620.0 label ".1uF" 5080.0x2043.1 at (0.0, 0.0); boundary port:+5V 0.0x0.0 label at (0.0, 0.0)
   h port labels (pin text)               graph 167644.0 x 172473.1; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
   i edge labels (net names)              graph 445010.0 x 141411.2; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  j e's options, NO label                graph 162306.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  k b's options, NO label                graph 107188.0 x 71124.0; node C1:1 0.0x0.0 label (none); boundary port:+5V 0.0x0.0 label (none)
 ```
 
 **The arithmetic in those coordinates is checkable from the numbers themselves,
@@ -1055,10 +1103,17 @@ symbol.** Arm **b** lets ELK size nodes to fit their labels and **all 398 nodes
 come back a different size**, the worst by **30966.9 µm - more than 24 grid
 steps**; `C1:1`'s body goes from 4064 × 7620 to 5090 × **2053.1**, which is no
 longer the capacitor's symbol. Arm **c** pins the symbol's own box as
-`nodeSize.minimum` and still resizes **362 of 398**, worst **17790.0 µm**,
-because ELK grows a node whose label is wider than its body - and it gives the
-**zero-size boundary nodes a body**, 3820 × 2053.1, which is the thing the graph
-module says is decided at draw time and not here.
+`nodeSize.minimum` and still resizes **362 of 398**, worst **17790.0 µm** - and it
+gives the **zero-size boundary nodes a body**, 3820 × 2053.1, which is the thing
+the graph module says is decided at draw time and not here.
+
+**AND THESE TWO ARE THE UNCONTROLLED ARMS, so what they show is "this option
+family destroys the symbol" and not "the label does".** Arm **k** sets the same
+option with no label and already resizes 254 nodes, worst 33020.0 µm, collapsing
+`C1:1` to 0 × 0 (§2.5). **A design that wanted ELK to reserve inside-label room
+would have to deal with both effects**, and nothing in §2 separates them. What
+survives is the conclusion arm **j** controls: in the fixed-size family the node
+box comes back untouched - **0 nodes resized in arms d through g.**
 
 **AND THAT OPENS A HAZARD IN CODE THAT IS LIVE TODAY**, hunted because ruling R13
 says to hunt what your own construction opens. `lib/schgen/elk/read-graph.ts`
@@ -1082,9 +1137,13 @@ KiCad `(property "Reference" ...)` carries its own `(at x y angle)`, so any
 coordinate is expressible. But `lib/schgen/render/field-placement.ts` chooses
 among **eleven discrete candidate slots** with an area-weighted cost, and an
 arbitrary ELK offset is not one of them - so adopting ELK's answer would mean
-replacing that search, not configuring it. And ELK's answers are off-grid:
-**only 12 of the 398** placed labels in arm **e** have a corner on a whole grid
-step, so 386 of them would have to be snapped or accepted off-grid.
+replacing that search, not configuring it. And ELK's answers are off-grid: of the
+398 placed labels in arm **e**, the number whose corner lands on a whole grid step
+is **46 at the current model's 1270 µm line, 43 at the rendered ink's 1422.4 µm,
+and 12 at `GetTextBox`'s 2043.1 µm** - so between **352 and 386 of 398** would
+have to be snapped or accepted off-grid. **All three are given because this cell
+is one of the six that move with the line height**, and an earlier draft quoted
+the 12 alone as if it did not.
 
 **A GLOBAL LABEL: not as an offset, which is what ELK returns.** `[READ]`
 `lib/schgen/render/emit-items.ts:227-241`: a `global_label` is emitted as
@@ -1146,25 +1205,41 @@ as measured.
 **None of this depends on which text box governs**, which matters because §1 is
 forbidden from electing one:
 
-```elk-run
-== STEP 5j: THE SAME EXPERIMENT AT ALL THREE OF SECTION 1's LINE HEIGHTS
+```elk-run STEP 6
 Section 1 is forbidden from electing one quantity, so no conclusion here may depend on which is elected.
-  current model 1270.0   a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 168 on-grid 109  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 46  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 0 on-grid 187  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 0 own-body 0 wire 24 on-grid 4
-  rendered ink 1422.4    a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 95  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 43  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 4 on-grid 146  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4
-  GetTextBox 2043.1      a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 66  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 12  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 9 on-grid 136  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4
+  current model 1270.0   a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 168 on-grid 109  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 46  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 0 on-grid 187  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 0 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
+  rendered ink 1422.4    a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 95  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 43  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 4 on-grid 146  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
+  GetTextBox 2043.1      a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 66  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 12  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 9 on-grid 136  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
+cells (arm x metric): 55; INVARIANT across the three heights: 49; VARYING: 6
+  VARIES d/wire = 168 / 178 / 178
+  VARIES d/on-grid = 109 / 95 / 66
+  VARIES e/on-grid = 46 / 43 / 12
+  VARIES g/wire = 0 / 4 / 9
+  VARIES g/on-grid = 187 / 146 / 136
+  VARIES i/lbl-lbl = 0 / 5 / 5
 ```
 
-**Every structural answer holds at all three heights** - 398 unplaced in arm
-**f**, 254 own-body overlaps in **d** and **g**, 266 wire crossings in **e**.
-**What moves is the counts that should move, and all four are named rather than
-only the convenient ones**: grid legality in arm **d** (109 / 95 / 66) and in arm
-**g** (187 / 146 / 136); arm **d**'s wire crossings (168 / 178 / 178) and arm
-**g**'s (0 / 4 / 9); and **the edge-label overlap pairs, which are 0 at the
-model's 1270 µm line and 5 at both measured heights.** **That last one is the one
-conclusion in this section that WOULD have depended on the election** - *"ELK
-does not keep two different edges' labels apart"* is a measured fact at both
-measured heights and is NOT visible at the height the current ruler implies - so
-it is reported as such rather than taken at whichever height suits it.
+**THE COMPLETENESS OF THAT LIST IS COMPUTED BY THE PROBE, NOT TALLIED BY EYE, AND
+THE FIRST VERSION OF THIS PARAGRAPH GOT IT WRONG.** It said *"all four are named"*
+while listing five, and the one it omitted was **arm e's on-grid count** - the
+very arm the symbol-field paragraph above quotes. **A completeness claim is what
+licenses a later task to quote a figure without naming its ruler**, so the probe
+now enumerates every arm-by-metric cell: **55 cells, 49 invariant across the three
+heights, 6 varying**, each varying cell printed with its three values in the block
+above. The six are arm **d**'s wire crossings and on-grid count, arm **e**'s
+on-grid count, arm **g**'s wire crossings and on-grid count, and arm **i**'s
+label-label overlaps. **Nothing else moves.**
+
+**So every structural answer holds at all three heights** - 398 unplaced in arm
+**f**, 254 own-body overlaps in **d** and **g**, 266 wire crossings in **e**, 0
+nodes resized in **d** through **g** - and what moves is grid legality, two wire
+counts, and the edge-label overlap pairs.
+
+**ONE CONCLUSION IN THIS SECTION WOULD HAVE DEPENDED ON THE ELECTION**, and it is
+arm **i**'s: *"ELK does not keep two different edges' labels apart"* rests on 5
+overlapping pairs, which is what both **measured** heights give and **0** at the
+height the current ruler implies. It is reported as such rather than taken at
+whichever height suits it.
 
 ### 2.8 Could ELK own any part of this problem? The direct answer
 
@@ -1252,47 +1327,60 @@ answer and must not.
   implements differently would have been caught only where §2.3 drove it.
 - **It did not diagnose the 266 label-over-wire crossings.** Whether ELK's
   label-aware node margins can be made to bind the edge router is unknown.
+- **It did not separate the option's effect from the label's in arms b and c**
+  (§2.5). Arm **k** shows that option family resizing nodes with no label present,
+  so those two rows are a joint effect. Separating them needs a third arm - the
+  same option with a zero-size label - and no conclusion here rests on it.
+- **It says nothing about whether a global label's ANCHOR may move**, which is
+  §2.7's correction and Task 5's subject. What it measured is that ELK's answer is
+  an offset and the emitted form has no place for one.
 - **It elects nothing**, and no figure here is an acceptance criterion.
 
-### 2.10 How this section's evidence is checked - and it is NOT, by §1's checker
+### 2.10 How this section's evidence is checked, by a second call with §2's own log
 
-**§1's paste checker cannot see this section, and that is stated here rather than
-left to be discovered.** `tools/schgen/text-metrics/verify-pastes.ts` holds every
-block tagged ` ```run <section> ` to a named section of **§1's** probe log, and
-requires every block tagged otherwise to share **no** line with that log. §2's
-blocks come from a different probe and a different log, so they are tagged
-` ```elk-run ` and the checker lists all eight **by name as NOT CHECKED**, beside
-the shell command at this section's head - which is the behaviour §1.11 describes
-and the reason *"not checked"* can never look like *"checked and clean"* there.
+**EVERY BLOCK §2 PASTES IS HELD TO §2's OWN COMMITTED RUN ON EVERY `bun test`**,
+by a second invocation of the same checker §1 uses -
+`tools/schgen/text-metrics/verify-pastes.ts`, driven from
+`tests/schgen/text-metrics/document-pastes.test.ts`. **That is controller ruling
+R17, and it corrects a reading of R15 rather than R15 itself.** R15 made the
+checker single-log, and that stands: a log holding two runs gives every section
+header a twin. **It does not say one log per repository**, which is how it was
+read, and the consequence was this section's first version - eight blocks of
+measured output held to nothing, in a document four later tasks read.
 
-**They were not re-tagged to fit.** Tagging them ` ```run ` would assert they are
-slices of §1's log, which they are not, and the checker would fail - correctly.
-**Tidying a block to satisfy a contract it does not belong to is the exact
-failure that checker exists to prevent**, found seven times in §1.
+**WHAT THE SECOND CALL NEEDED, and it is one parameter.** §2's blocks are tagged
+` ```elk-run <section> ` rather than ` ```run <section> ` because §1's
+whole-document call must keep refusing them as output: §1's log has no section
+called `STEP 6`, and a block claiming otherwise should fail. So the test maps the
+**fence word only, at a line start**, before handing §2's own text to the checker
+with §2's own log - and asserts that the mapping changed exactly eight fences,
+exactly four characters each, and no block body at all. The checker itself gained
+an optional **run-marker** parameter, because the line that marks the start of a
+run belongs to the probe that wrote the log, and §2's probe deliberately writes a
+different one. Every existing call is unchanged.
 
-**WHY IT CANNOT SIMPLY BE POINTED AT §2's LOG EITHER.** `verify-pastes.ts` takes
-a log and a document, so it can be run against §2's log - but then §1's fourteen
-` ```run ` blocks name sections that log does not have and fail. **The checker is
-single-log by construction**, and deliberately so: ruling R15 refused a log
-holding two runs because *"which section is this block from"* stops having an
-answer. Holding two sections of one document to two logs needs the document to
-declare which log as well as which section. **That is machinery this task may not
-build** - the plan forbids changing any check - and it is **G266**'s criterion.
+**WHAT THE SECOND CALL ESTABLISHES, and what it still cannot.** It establishes
+that each block is a **contiguous, unique slice of the named section** of §2's log,
+with its lines in the order and spacing the run printed them, and that **the
+commit §2 pins is the commit that log was taken at on a clean tree** - so a log
+refreshed without re-pinning the document, or the reverse, goes red. **It cannot
+tell whether the right output sits under the right prose**, which is §1.11's own
+standing caveat and is not improved here. Two RED cases keep it honest: a single
+digit changed in a §2 block fails, and a genuine slice of a different section of
+the same log, substituted whole, fails.
 
-**What stands in for it here**, and it is weaker in one way and stronger in
-another:
+**§2 PASTES THE WHOLE RUN, and the accounting is in lines rather than bytes
+because an earlier draft published a byte figure that was eight bytes low.** The
+log is **117 lines**: **100** are quoted by the eight blocks, **8** are the `== `
+section headers, which now live in the fence info strings rather than in the
+block bodies, and **9** are blank - the eight separators between sections and the
+file's trailing newline. **Nothing is excerpted**, so there is nothing an excerpt
+could be hiding; §1.11 records paying the same cost in length for the same reason.
 
-- weaker: **nothing automatic compares these blocks to the log**. A reader who
-  wants that diffs them against `tools/schgen/elk-labels/probe-run.log`, which is
-  committed for exactly that purpose. **What makes that diff cheap is that §2
-  pastes the WHOLE run**: the eight blocks cover 12396 of the log's 12412 bytes,
-  the remainder being the blank lines between its sections. There is no excerpt
-  here, so there is nothing an excerpt could be hiding - which is the cost §1.11
-  says §1.3, §1.5 and §1.9 paid in length for the same reason.
-- stronger: **§2's run is fully re-drivable.** §1's figures cannot be re-taken
-  without `kicad-cli`, KiCad's Python bindings and a 2.9 MB font blob fetched
-  from outside the repository; §2's need `bun run` and nothing else, against an
-  `elkjs` bundle the probe refuses to proceed without.
+**§2's run is also fully re-drivable**, which §1's is not: §1's figures need
+`kicad-cli`, KiCad's Python bindings and a 2.9 MB font blob fetched from outside
+the repository, where §2's need `bun run` and nothing else, against a bundle the
+probe refuses to proceed without.
 
 **AND §2 OPENED A NEW WAY FOR §1's CHECKER TO FAIL - PREDICTED, THEN FIRED ON THE
 FIRST ATTEMPT** (ruling R13: hunt the attack surface your own construction
@@ -1310,7 +1398,13 @@ line out of the block would have been a tidy** - §1 paid for seven of those - a
 it would have left the collision in place for the next section to meet.
 `tools/schgen/elk-labels/probe.ts` carries the reason at the renamed line.
 
-**What a later editor must know**: the two logs now share **no** line, and a §2
-block shortened to something generic enough to collide will turn §1's document
-red with a message about §1's rule. The fix is to re-pin the colliding probe's
-section name, never to edit the paste.
+**What a later editor must know**: the two logs now share **no** line - a case
+asserts it directly, as well as the two run markers being absent from each other's
+log - and a §2 block shortened to something generic enough to collide will turn
+§1's document red with a message about §1's rule. The fix is to re-pin the
+colliding probe's section name, never to edit the paste.
+
+**AND THE RENAME IS WHAT MADE THE SECOND CALL POSSIBLE AT ALL**, which was not
+foreseen when it was made. R15 counts a log's runs by one header line; two logs
+sharing that line could not be told apart by the checker in either direction. The
+collision that cost one red run bought the property the second invocation needs.

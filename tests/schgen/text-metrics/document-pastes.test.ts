@@ -231,6 +231,120 @@ describe("the research document's pasted output", () => {
   })
 })
 
+/**
+ * **§2 IS HELD TO §2's OWN LOG BY A SECOND CALL - CONTROLLER RULING R17.**
+ *
+ * R15 made the checker single-log, and that stands: a log holding two runs gives every section
+ * header a twin. **It was read as one log per REPOSITORY, which it never said**, and the
+ * consequence was that §2 of the document - a different probe, a different log - was held to
+ * nothing: the case above checks §1 against §1's log and treats §2's blocks only as "declared not
+ * output, sharing no line with §1's log". A figure edited in §2's prose, or a block edited after
+ * the fact, failed nothing.
+ *
+ * **WHY §2's BLOCKS ARE TAGGED ` ```elk-run ` IN THE DOCUMENT AND RE-TAGGED HERE.** Tagging them
+ * ` ```run ` would make the whole-document case above fail, correctly: §1's log has no section
+ * called `STEP 6`. So the document keeps them out of §1's output namespace, and this file maps the
+ * fence word - and only the fence word, at a line start - before handing §2's own text to the same
+ * checker with §2's own log. **The block bodies are untouched**, which the first case below
+ * asserts by counting what the mapping changed.
+ *
+ * **THE ONE THING THE CHECKER GAINED is an optional run-marker parameter**, because the line that
+ * marks the start of a run is a property of the probe that wrote the log and §2's probe writes a
+ * different one - deliberately, since a shared line between the two logs is exactly the relabel
+ * dodge the whole-document case refuses. Every existing call is unchanged.
+ */
+const ELK_LOG = path.join(repoRoot, "tools/schgen/elk-labels/probe-run.log")
+const elkLog = fs.readFileSync(ELK_LOG, "utf8")
+
+/** §2's probe's own first section header: the line that marks one run of THAT probe. */
+const ELK_RUN_MARKER = "== WHAT THIS ELK LABEL RUN MEASURED"
+
+/** The document's heading for §2, which is where its slice begins. */
+const SECTION_2_HEADING = "§2 What ELK already offers for labels"
+
+/** How many blocks §2 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
+const SECTION_2_BLOCKS = 8
+
+/** §2's text with its fence word mapped into the checker's output namespace, and nothing else. */
+function sectionTwoAsOutput(d: string): string {
+  const at = d.indexOf(SECTION_2_HEADING)
+  if (at < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_2_HEADING)}, so §2's slice cannot be found`)
+  return d.slice(at).replace(/^```elk-run /gm, `\`\`\`${OUTPUT_FENCE} `)
+}
+
+describe("section 2's pasted output, against section 2's own log", () => {
+  test("the mapping changes fence words and nothing else", () => {
+    const slice = doc.slice(doc.indexOf(SECTION_2_HEADING))
+    const mapped = sectionTwoAsOutput(doc)
+    expect((slice.match(/^```elk-run /gm) ?? []).length).toBe(SECTION_2_BLOCKS)
+    expect((mapped.match(/^```elk-run /gm) ?? []).length).toBe(0)
+    expect(slice.length - mapped.length).toBe("elk-".length * SECTION_2_BLOCKS)
+    // The bodies are identical block for block: only the info strings moved.
+    const before = parseBlocks(slice).map((b) => b.lines.join("\n"))
+    const after = parseBlocks(mapped).map((b) => b.lines.join("\n"))
+    expect(after).toEqual(before)
+  })
+
+  test("every block section 2 pastes is a contiguous slice of section 2's committed log", () => {
+    const v = verify(sectionTwoAsOutput(doc), elkLog, ELK_RUN_MARKER)
+    expect(v.failures).toEqual([])
+    expect(v.verified).toBe(SECTION_2_BLOCKS)
+    expect(v.verified + v.notOutput.length + v.failures.length).toBe(v.blocks)
+  })
+
+  /** RED: one digit of one figure, which is the drift this invocation exists to catch. */
+  test("RED: a single digit edited in a section 2 block", () => {
+    const victim = "cells (arm x metric): 55; INVARIANT across the three heights: 49; VARYING: 6"
+    expect(doc.split(victim).length - 1).toBe(1)
+    expect(elkLog).toContain(victim)
+    const v = verify(sectionTwoAsOutput(doc.replace(victim, victim.replace("VARYING: 6", "VARYING: 5"))), elkLog, ELK_RUN_MARKER)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("not a contiguous slice")
+  })
+
+  /** RED: a whole genuine slice of a DIFFERENT section of the same log, substituted. */
+  test("RED: a genuine slice of another section of section 2's log", () => {
+    const mapped = sectionTwoAsOutput(doc)
+    const victim = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} STEP 2`)
+    const donor = parseBlocks(mapped).find((b) => b.info === `${OUTPUT_FENCE} STEP 3`)
+    expect(victim?.lines.length).toBeGreaterThan(1)
+    expect(donor?.lines.length).toBeGreaterThan(1)
+    const v = verify(mapped.replace((victim?.lines ?? []).join("\n"), (donor?.lines ?? []).join("\n")), elkLog, ELK_RUN_MARKER)
+    expect(v.failures.length).toBe(1)
+    expect(v.failures[0]).toContain("is not a contiguous slice of section")
+  })
+
+  /**
+   * **THE TWO LOGS MUST SHARE NO LINE, and this is the direct statement of it.** The
+   * whole-document case already enforces it indirectly - a non-`run` block sharing a line with
+   * §1's log is the relabel dodge - and that is how the collision was found: §2's probe originally
+   * named its first section `== WHAT THIS RUN MEASURED`, §1's own header and the line R15 counts
+   * runs by.
+   */
+  test("the two logs share no line, so neither marker can be read in the other's log", () => {
+    const sectionOne = new Set(log.split("\n").filter((l) => l.trim() !== ""))
+    const shared = elkLog.split("\n").filter((l) => l.trim() !== "" && sectionOne.has(l))
+    expect(shared).toEqual([])
+    expect(elkLog.split("\n").filter((l) => l === ELK_RUN_MARKER).length).toBe(1)
+    expect(elkLog.split("\n").filter((l) => l === RUN_MARKER).length).toBe(0)
+    expect(log.split("\n").filter((l) => l === ELK_RUN_MARKER).length).toBe(0)
+  })
+
+  /** The same staleness coupling §1 has: the document names the commit §2's log was taken at. */
+  test("the commit section 2 pins is the commit section 2's log was taken at, on a clean tree", () => {
+    const fromLog = /^repository commit: ([0-9a-f]{40}) \(clean tree\)$/m.exec(elkLog)
+    expect(fromLog?.[1]).toBeDefined()
+    expect(doc).toContain(`at repository commit\n**\`${(fromLog?.[1] ?? "").slice(0, 7)}\`** with a clean tree`)
+  })
+
+  test("section 2's log is a probe run and not a hand-written fixture", () => {
+    expect(elkLog).toContain(ELK_RUN_MARKER)
+    expect(elkLog).toContain("the bundle this run LOADS, hashed: SHA-256 ")
+    expect(elkLog).toContain("CONTROL PASSED: serializeElkInput REFUSES a graph carrying an ELK label")
+    expect(elkLog).toContain("arms that raised: 0")
+  })
+})
+
 /** The body of the one ```run block whose first line is `first`. */
 function blockStartingWith(first: string): string[] {
   const hits = parseBlocks(doc).filter((b) => b.info.split(/\s+/)[0] === OUTPUT_FENCE && b.lines[0] === first)

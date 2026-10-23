@@ -2209,11 +2209,26 @@ option ids, **11** algorithms and **153** `layered` options where the pinned
 0.9.3 in `node_modules` reports **224**, **12** and **140**. **A paragraph
 claiming `tests/schgen/elk/options.elk.test.ts`'s comment was stale by eleven was
 written and nearly published**; the comment is correct and the probe was wrong.
-Caught by committing the probe and pinning the bundle by SHA-256 (ruling R4), on
-its first use. **The committed probe prints the install it resolved**, and refuses
-a bundle whose hash is not the pinned one. **The trap is general**: any `bun run`
-of a file outside the repository silently substitutes an auto-installed dependency
-for the pinned one.
+Caught by **committing the probe** (ruling R4), on its first use: a committed
+probe resolves `elkjs` inside the repository, and it prints the install it used.
+**The trap is general**: any `bun run` of a file outside the repository silently
+substitutes an auto-installed dependency for the pinned one.
+
+**AND THE SHA-256 PIN THIS CLAUSE ORIGINALLY CREDITED COULD NOT HAVE CAUGHT IT -
+A FALSE GUARANTEE, DRIVEN BY A REVIEWER AND CORRECTED IN FIX ROUND 1.** The first
+version of this entry said the probe *"refuses a bundle whose hash is not the
+pinned one"* and let a reader conclude the hash was what closed the hole. It was
+not. The pin hashed `moduleRepoRoot()/node_modules/elkjs/lib/elk-worker.min.js` -
+a path derived from the probe module's own `import.meta.url` - while the worker
+was built from `import.meta.resolve`, which resolves against the importer. `[RAN]`
+From a scratch location: **the old pin PASSES on the committed 0.9.3 bundle while
+the caller loads 0.12.0**, green in exactly the scenario it was credited for.
+**The probe now hashes the file behind the same URL it hands `workerFactory`**, and
+refuses a URL that is not a local file; the same drive makes the new pin refuse.
+**What closes the hole is still WHERE the probe is committed**, and the hash is a
+second lock rather than a stand-in for the first. **The transferable shape: a
+guard whose subject is derived separately from the thing it is meant to guard can
+be green about a file nothing loads.**
 
 **(4) §1's PASTE CHECKER TREATS ANY LINE SHARED BETWEEN TWO PROBES' LOGS AS AN
 ATTACK, AND §2 TRIPPED IT.** `tools/schgen/text-metrics/verify-pastes.ts` fails
@@ -2227,18 +2242,37 @@ block at §1's rule. **Fixed at the probe, by renaming its section**, not by
 trimming the line out of the paste: trimming evidence to satisfy a checker is the
 failure that checker exists to catch. The two logs now share no line, driven.
 
-**(5) WHAT IS NOW UNCHECKED IN THAT DOCUMENT, stated because "not checked" must
-never look like "checked and clean".** §2's eight pasted blocks are listed **by
-name** as NOT CHECKED on every `bun test`, and nothing holds them to a log. The
-checker cannot be pointed at §2's log either: §1's fourteen `run` blocks name
-sections that log does not have, and **it is single-log by construction** -
-ruling R15 refused a two-run log because *"which section is this block from"*
-stops having an answer. Holding two sections of one document to two logs needs the
-document to declare which log as well as which section. **What stands in for it**:
-§2 pastes the WHOLE run - 12396 of the log's 12412 bytes, the rest being blank
-lines - so there is no excerpt to hide anything in; the log is committed; and
-**§2's run is re-drivable with `bun run` and nothing else**, where §1's needs
-`kicad-cli`, KiCad's Python bindings and an external font blob.
+**(5) R15 WAS READ AS "ONE LOG PER REPOSITORY" AND IT SAYS "ONE RUN PER LOG" -
+SO §2's BLOCKS WERE HELD TO NOTHING FOR A WHOLE ROUND.** `verify-pastes.ts` is
+single-log by construction, because a log holding two runs gives every section
+header a twin. The first version of §2 concluded from that that a second log could
+not be checked at all, said so in the document, and left eight blocks of measured
+output listed as NOT CHECKED. **The controller's ruling R17 corrects the reading:
+a SECOND CALL with the second log.** It is in
+`tests/schgen/text-metrics/document-pastes.test.ts` now, and a figure edited in §2
+breaks the suite.
+
+**The one thing the checker gained is an optional run-marker parameter**, because
+the line that marks the start of a run belongs to the probe that wrote the log,
+and §2's probe writes a different one - deliberately, per clause (4). The fence
+word is mapped from ` ```elk-run ` to ` ```run ` in the test, at line starts only,
+with assertions that exactly eight fences and no block body changed; the document
+keeps the distinct fence so §1's whole-document call goes on refusing §2's blocks
+as §1 output. **The deviation from R17's stated mechanism is that one parameter**;
+without it the second call fails on *"the log holds 0 run(s)"*, since it counts
+§1's marker.
+
+**What the second call does NOT establish** is that the right output sits under
+the right prose - §1.11's standing caveat, unimproved. **What it does**: contiguity
+and uniqueness inside the named section, two RED cases (a single digit; a genuine
+slice of another section), and the same commit coupling §1 has.
+
+**§2 also pastes the WHOLE run, and the accounting is in LINES because the byte
+figure published in round 0 was eight bytes low** (it missed the single-newline
+gaps): the log is **117 lines** - **100** quoted by the eight blocks, **8** `== `
+section headers that now live in the fence info strings, **9** blank. Nothing is
+excerpted. And **§2's run is re-drivable with `bun run` and nothing else**, where
+§1's needs `kicad-cli`, KiCad's Python bindings and an external font blob.
 
 **(6) EVERY ELK LABEL SPACING DEFAULT IS A BARE NUMBER IN THE GEOMETRY'S UNIT,
 which is the micrometre here.** `[READ]` ELK's own reference: `nodeLabels.padding`
@@ -2261,16 +2295,54 @@ than taken at a convenient height.** The 5 overlapping edge-label pairs are **0*
 at the current model's 1270 um line and **5** at both measured heights. So *"ELK
 does not keep two different edges' labels apart"* is invisible under today's
 ruler. Every structural finding - 398 labels left unplaced by default, 254
-own-body overlaps, 266 label-over-wire crossings - holds at all three heights.
+own-body overlaps, 266 label-over-wire crossings, 0 nodes resized in the
+fixed-size family - holds at all three heights.
+
+**AND THE COMPLETENESS OF THAT EXCEPTION LIST IS NOW COMPUTED, because round 0's
+was wrong in the way that matters.** It claimed *"all four are named"* while
+listing five, and the cell it omitted was the one the paragraph three above it
+quoted: **arm e's on-grid count, 46 / 43 / 12.** The probe now enumerates every
+arm-by-metric cell - `[RAN]` **55 cells, 49 invariant across the three heights, 6
+varying**, each printed with its three values - so the completeness claim is a
+figure rather than a tally. **A completeness claim is what licenses a later task
+to quote a number without naming its ruler**, which is precisely what round 0's
+*"only 12 of 398"* invited.
+
+**(9) ONE OF THE TWO CONTROLS ADDED IN FIX ROUND 1 PASSES AND THE OTHER FAILS,
+WHICH IS THE POINT OF HAVING THEM.** Round 0's arms differed from the baseline in
+**two** things - the label and the layout option - so a graph that grew was not
+attributable to the label by the probe alone. A reviewer supplied the missing
+control for one family and it passed. Both are arms now, so the log carries them:
+
+- **Arm j** (fixed size plus an outside placement hint, no label) matches the
+  baseline on **0 of 48 blocks moved**. So in arms **d** through **g** - where the
+  two decisive arms live - the growth IS the label's.
+- **Arm k** (`nodeSize.constraints = [NODE_LABELS]` plus an inside hint, no label)
+  **does NOT match**: 254 nodes resized, worst **33020.0 um**, 48 of 48 blocks
+  moved, `pt-core`'s `C1:1` collapsing to **0 x 0**. **So arms b and c measure the
+  option AND the label together and nothing separates them** - that option family
+  destroys the symbol geometry on its own. The plain reading, which is a reading
+  and not a measurement: *"size the node to fit its labels"* over zero labels wants
+  no size.
+
+**A control that lives only in a review is a control nobody can re-drive**, which
+is the `.superpowers/` failure in a different costume; and the control that FAILED
+would never have been written at all if the reviewer's passing one had been taken
+as covering the whole table.
 
 - **Found** 2026-10-22, Task 2 of
   `docs/superpowers/plans/2026-10-22-text-handling-research.md`.
-- **Evidence** `[RAN]` `tools/schgen/elk-labels/probe.ts` at commit `36e02e8`
-  with a clean tree, `elkjs` 0.9.3 with `elk-worker.min.js` pinned by SHA-256
-  `114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538` - **the
-  probe refuses any other bundle** - with the run committed as
-  `tools/schgen/elk-labels/probe-run.log` and **driven twice at two commits,
-  differing in exactly two lines** (the renamed header and the commit hash).
+- **Evidence** `[RAN]` `tools/schgen/elk-labels/probe.ts` at commit `053dfb2`
+  with a clean tree, `elkjs` 0.9.3, with **the bundle the run LOADS hashed to
+  SHA-256 `114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538` and
+  any other refused** - see clause (3) for what that does and does not establish -
+  and the run committed as `tools/schgen/elk-labels/probe-run.log`, **held to §2's
+  pasted blocks on every `bun test`** (clause 5). **It has been driven twice and
+  the earlier artifact is in the HISTORY**: the nine-arm run committed at
+  `cb35fe0` and the eleven-arm run at `053dfb2` agree on every row of arms a-i, and
+  `git show cb35fe0:tools/schgen/elk-labels/probe-run.log` is the earlier log.
+  Round 0 claimed *"driven twice, differing in exactly two lines"* with the second
+  artifact only in a scratch directory, which is unverifiable by anyone else.
   `[READ]` `eclipse.dev/elk` pages `reference/algorithms/org-eclipse-elk-layered`,
   `reference/options/org-eclipse-elk-nodeLabels-placement`,
   `reference/options/org-eclipse-elk-nodeSize-constraints`,
@@ -2288,15 +2360,25 @@ own-body overlaps, 266 label-over-wire crossings - holds at all three heights.
   `layered`'s own empty default **all 398 come back still carrying an impossible
   sentinel coordinate**, which is how "ELK did not place this" was told apart from
   "ELK placed it at the corner" - without that seed the section would have
-  reported the `(0, 0)` it gets back as a placement.
-- **Verified** CONFIRMED - this writer wrote the probe, drove it twice, read
-  ELK's reference pages and this repository's emitter. **RELAYED**: the 2043.1 um
-  line height is §1's measurement, not re-taken here.
-- **Why it is open** (1), (6), (7) and (8) are measurements, open because nothing
-  acts on them. (2) is a defect that cannot fire today and will fire the day
-  anyone makes room for a label - it is recorded rather than fixed because this
-  task may not change `lib/`. (3) and (4) are resolved for this probe and open as
-  traps for the next one. (5) is a gap in a check this task may not edit.
+  reported the `(0, 0)` it gets back as a placement. **A reviewer attacked that
+  sentinel with five seeds, including positive coordinates no legal placement
+  reaches and an asymmetric pair, and all 398 returned the input every time.**
+  **AND TWO OF THE CONTROLS ARE NEW IN FIX ROUND 1 AND ONE OF THEM FAILS** -
+  clause (9) - which is what makes the growth in arms d-g attributable to the
+  label and the growth in arms b-c *not* attributable to anything this probe
+  separates.
+- **Verified** CONFIRMED - this writer wrote the probe, drove it, read ELK's
+  reference pages and this repository's emitter, and re-drove the review's two
+  findings against it (the hash hole reproduces; the arm-j control passes).
+  **RELAYED**: the 2043.1 um line height is §1's measurement, not re-taken here;
+  the board counts in §2.8 are the plan's and **G262**'s.
+- **Why it is open** (1), (6), (7), (8) and (9) are measurements, open because
+  nothing acts on them. (2) is a defect that cannot fire today and will fire the
+  day anyone makes room for a label - it is recorded rather than fixed because
+  this task may not change `lib/`. (3) and (4) are resolved for this probe and
+  open as traps for the next one. **(5) is CLOSED by ruling R17's second
+  invocation** and is kept because the reading it corrects is the instructive
+  part.
 - **What would settle it** (2) **CRITERION: a node whose returned size differs
   from the size `elkInputOf` sent is refused, not read.** **MECHANISM, UNTRIED**:
   a comparison in `read-graph.ts`'s `placementOf` beside the existing
@@ -2304,16 +2386,24 @@ own-body overlaps, 266 label-over-wire crossings - holds at all three heights.
   legitimately grows a node is itself undecided, so the mechanism may be the
   wrong shape.
   (3) **CRITERION: a probe whose numbers reach a document resolves its
-  dependencies through the repository's own `package.json`.** Committing it under
-  `tools/` achieves that; the hash pin is what makes the failure loud.
-  (5) **CRITERION: §2's blocks are held to a run the way §1's are.** **MECHANISM,
-  UNTRIED**: teach the fence info string to name a log as well as a section, so
-  one checker run can hold two sections to two logs - which is more machinery than
-  R15 was willing to carry for a different reason, and that trade has not been
-  re-costed.
+  dependencies through the repository's own `package.json`, and its pin fails when
+  the bundle a caller loads is not the bundle hashed.** Both are met: committing it
+  under `tools/` achieves the first, and hashing the resolved worker URL achieves
+  the second - **driven in both directions**, old pin green and new pin red on the
+  same 0.12.0 resolution.
+  (5) **MET by ruling R17**, with one recorded deviation from its mechanism: *"a
+  second invocation of the existing checker"* also needed one optional parameter,
+  the run marker, or the second call fails counting §1's marker in §2's log. The
+  earlier suggestion here - teach the fence to name a log - was not taken and is
+  more machinery than this needed.
   (7) nothing settles it; it is a property of ELK's option set. (8) **CRITERION:
   the owner elects which text box governs a collision** - **G265**(4), unchanged,
-  and this entry authors no new criterion.
+  and this entry authors no new criterion. (9) **CRITERION: an arm whose figures
+  are quoted differs from its control in ONE thing.** Met for arms d-g by arm j;
+  **NOT met for arms b-c**, and that is recorded rather than fixed - separating
+  the option's effect from the label's there would need a third arm per node
+  (`[NODE_LABELS]` with a zero-size label), which nothing in §2's conclusions
+  depends on.
 
 ---
 

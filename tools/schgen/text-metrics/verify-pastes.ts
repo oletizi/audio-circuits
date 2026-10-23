@@ -67,6 +67,19 @@ export const MIN_OUTPUT_LINES = 2
 /** The probe's first section header. A log carrying two of these carries two runs. */
 export const RUN_MARKER = "== WHAT THIS RUN MEASURED"
 
+/**
+ * **ONE LOG PER CALL, AND SINCE RULING R17 THE CALLER MAY SAY WHICH LOG.**
+ *
+ * Ruling R15 made this checker single-log and the reason stands: a log holding two runs gives every
+ * section header a twin. **What R15 did NOT say is one log per repository**, and reading it that
+ * way left §2 of the document - a different probe, a different log - held to nothing at all, which
+ * is the controller's own recorded defect. The fix is a SECOND CALL with the second log, and the
+ * only thing a second call needs that this file did not expose is the header that marks the start
+ * of a run in THAT log. It is a parameter with the old constant as its default, so every existing
+ * caller is unchanged and no call has become multi-log.
+ */
+export const DEFAULT_RUN_MARKER = RUN_MARKER
+
 export interface Block {
   readonly info: string
   readonly lines: readonly string[]
@@ -140,7 +153,7 @@ function firstStranger(log: ReadonlySet<string>, block: readonly string[]): stri
   return null
 }
 
-export function verify(doc: string, logText: string): Verdict {
+export function verify(doc: string, logText: string, runMarker: string = DEFAULT_RUN_MARKER): Verdict {
   const log = logText.split("\n").map((l) => l.replace(/\s+$/, ""))
   const logSet = new Set(log.filter((l) => l !== ""))
   const sections = parseSections(log)
@@ -148,10 +161,10 @@ export function verify(doc: string, logText: string): Verdict {
   if (blocks.length === 0) throw new Error(`${DOCUMENT} has no fenced blocks; either the document moved or this parser is wrong`)
   const failures: string[] = []
   const notOutput: string[] = []
-  const runs = log.filter((l) => l === RUN_MARKER).length
+  const runs = log.filter((l) => l === runMarker).length
   if (runs !== 1) {
     failures.push(
-      `the log holds ${runs} run(s) - it must hold exactly one, recognised by the line ${JSON.stringify(RUN_MARKER)}. ` +
+      `the log holds ${runs} run(s) - it must hold exactly one, recognised by the line ${JSON.stringify(runMarker)}. ` +
         'Every section header would otherwise have a twin, so "which section is this block from" stops having an answer, ' +
         "and the document pins ONE commit, which a multi-run log cannot carry. Split the log or re-drive the probe.",
     )
@@ -255,8 +268,11 @@ export function report(v: Verdict): string {
 if (import.meta.main) {
   const log = process.argv[2]
   const doc = process.argv[3] ?? DOCUMENT
-  if (log === undefined) throw new Error("usage: bun run tools/schgen/text-metrics/verify-pastes.ts <probe run log> [document]")
-  const v = verify(fs.readFileSync(doc, "utf8"), fs.readFileSync(log, "utf8"))
+  const marker = process.argv[4] ?? DEFAULT_RUN_MARKER
+  if (log === undefined) {
+    throw new Error("usage: bun run tools/schgen/text-metrics/verify-pastes.ts <probe run log> [document] [run marker]")
+  }
+  const v = verify(fs.readFileSync(doc, "utf8"), fs.readFileSync(log, "utf8"), marker)
   console.log(report(v))
   if (v.failures.length > 0) process.exit(1)
 }
