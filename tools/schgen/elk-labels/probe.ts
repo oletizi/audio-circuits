@@ -22,8 +22,8 @@
  * **IT IS AN EXPERIMENT AND NOT AN INVENTORY**, because a third-party review of the plan
  * (2026-10-22) drew that distinction and it was accepted: *"an ELK option inventory is not a
  * capability demonstration"*. STEP 1 asks `elkjs` what label options exist, which is metadata; STEPS
- * 3 and 5 hand ELK the same real graph nine ways and measure what comes back, which is behaviour. §2
- * marks the two differently because Task 7 ranks them differently.
+ * 3 and 5 hand ELK the same real graph twelve ways and measure what comes back, which is behaviour.
+ * §2 marks the two differently because Task 7 ranks them differently.
  *
  * **IT DESIGNS NOTHING AND RECOMMENDS NOTHING.** Whether a label ELK placed is acceptably placed is
  * an acceptance criterion for the artifact this generator produces, and `CLAUDE.md` reserves those
@@ -307,14 +307,20 @@ async function main(): Promise<void> {
     // the same defect as round 1's IMPORTANT 3 in a second dimension**: a completeness claim is what
     // licenses a later task to quote a figure without its ruler. The columns and the swept cells are
     // now the SAME list by construction, so the two cannot drift apart again.
-    const METRICS: readonly { readonly name: string; readonly of: (rows: readonly ArmResult[], b: readonly ArmResult[]) => number }[] = [
+    interface Metric {
+      readonly name: string
+      /** A micrometre quantity prints to one decimal; a count prints as an integer. */
+      readonly micrometres?: boolean
+      of(rows: readonly ArmResult[], b: readonly ArmResult[]): number
+    }
+    const METRICS: readonly Metric[] = [
       { name: "sent", of: (rows) => sum(rows, (r) => r.labelsSent) },
       { name: "back", of: (rows) => sum(rows, (r) => r.labelsBack) },
       { name: "placed", of: (rows) => sum(rows, (r) => r.labelsBack - r.unplaced) },
       { name: "unplaced", of: (rows) => sum(rows, (r) => r.unplaced) },
       { name: "no-coords", of: (rows) => sum(rows, (r) => r.noCoordinates) },
       { name: "resized", of: (rows) => sum(rows, (r) => r.resized) },
-      { name: "worst-um", of: (rows) => Math.max(0, ...rows.map((r) => r.worstResize)) },
+      { name: "worst-um", micrometres: true, of: (rows) => Math.max(0, ...rows.map((r) => r.worstResize)) },
       { name: "moved", of: (rows, b) => rows.filter((r, i) => b[i] !== undefined && (r.width !== b[i]?.width || r.height !== b[i]?.height)).length },
       { name: "lbl-lbl", of: (rows) => sum(rows, (r) => r.labelLabelOverlaps) },
       { name: "other-body", of: (rows) => sum(rows, (r) => r.labelBodyOverlaps) },
@@ -322,11 +328,11 @@ async function main(): Promise<void> {
       { name: "wire", of: (rows) => sum(rows, (r) => r.labelWireHits) },
       { name: "on-grid", of: (rows) => sum(rows, (r) => r.onGrid) },
     ]
-    const cell = (v: number): string => (Number.isInteger(v) ? String(v) : um(v))
+    const cell = (m: Metric, v: number): string => (m.micrometres === true ? um(v) : String(v))
     console.log(`arm${" ".repeat(36)}${METRICS.map((m) => m.name.padStart(11)).join("")}`)
     for (const arm of ARMS) {
       const rows = results.get(arm.name) ?? []
-      console.log(`  ${arm.name.padEnd(37)}${METRICS.map((m) => cell(m.of(rows, base)).padStart(11)).join("")}`)
+      console.log(`  ${arm.name.padEnd(37)}${METRICS.map((m) => cell(m, m.of(rows, base)).padStart(11)).join("")}`)
     }
     console.log(`"moved" counts blocks whose laid-out size differs from arm a's, of ${blocks.length}; "worst-um" is a MAXIMUM and every other column a SUM`)
     for (const arm of ARMS) console.log(`  ${arm.name}: ${arm.what}`)
@@ -363,7 +369,7 @@ async function main(): Promise<void> {
         for (const m of METRICS) per.set(m.name, [...(per.get(m.name) ?? []), m.of(rows, heightBase)])
         sweep.set(arm.name, per)
       }
-      console.log(`  ${h.name.padEnd(22)} ${ARMS.map((arm) => `${arm.name.slice(0, 1)}: ${METRICS.map((m) => `${m.name} ${cell(m.of(perHeight.get(arm.name) ?? [], heightBase))}`).join(" ")}`).join("  |  ")}`)
+      console.log(`  ${h.name.padEnd(22)} ${ARMS.map((arm) => `${arm.name.slice(0, 1)}: ${METRICS.map((m) => `${m.name} ${cell(m, m.of(perHeight.get(arm.name) ?? [], heightBase))}`).join(" ")}`).join("  |  ")}`)
     }
     // **WHICH CELLS MOVE, ENUMERATED BY THE PROBE RATHER THAN BY A READER'S EYE.** Fix round 1's
     // IMPORTANT 3: section 2 claimed a complete list of the height-dependent cells and missed one -
@@ -378,7 +384,7 @@ async function main(): Promise<void> {
         const v = sweep.get(arm.name)?.get(m.name) ?? []
         if (v.length !== LINE_HEIGHTS.length) throw new Error(`the sweep holds ${v.length} height(s) for ${arm.name}/${m.name}, not ${LINE_HEIGHTS.length}`)
         if (v.every((x) => x === v[0])) invariant += 1
-        else varying.push(`${arm.name.slice(0, 1)}/${m.name} = ${v.map(cell).join(" / ")}`)
+        else varying.push(`${arm.name.slice(0, 1)}/${m.name} = ${v.map((x) => cell(m, x)).join(" / ")}`)
       }
     }
     console.log(`cells (arm x metric): ${ARMS.length} x ${METRICS.length} = ${ARMS.length * METRICS.length}; INVARIANT across the three heights: ${invariant}; VARYING: ${varying.length}`)
