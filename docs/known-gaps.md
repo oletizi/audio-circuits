@@ -2539,7 +2539,7 @@ as covering the table it was offered for.**
 
 ---
 
-### G267 - MEASURED: KiCad's field autoplacer can place fields on a side it has just established COLLIDES while a clear side is available; upstream tests NONE of its placement; and the prior-art document's reading of it is wrong in three places
+### G267 - MEASURED: KiCad's field autoplacer can place fields on a side it has just established COLLIDES while a clear side is available, which DEPARTS FROM THE SPECIFICATION IN ITS OWN FILE HEADER; upstream tests NONE of its placement; and the prior-art document's reading of it is wrong in three places
 
 Task 3 of the text-handling research plan read `eeschema/autoplace_fields.cpp` at
 the installed version. **The algorithm is in
@@ -2560,15 +2560,50 @@ because `<=` lets a tie through. The soft wire tier works by the same mechanism,
 so a wire-colliding side is also preferred over a **clear** side with more pins,
 not only over a hard-colliding one.
 
+**AND IT IS A DEPARTURE FROM THE FILE'S OWN WRITTEN SPECIFICATION, WHICH IS A
+DIFFERENT AND STRONGER CLAIM THAN "THIS LOOKS WRONG TO US".** The file's header
+comment, **lines 38-44** `[READ]` at the pinned tag, describes step 2 as *"If in
+manual mode, **sift out** the sides that would cause fields to overlap other
+items"*, then step 3 as *"If any **remaining** sides have zero pins there, choose
+the highest zero-pin side according to preference order"* and step 4 as *"If all
+sides have pins, choose the side with the fewest pins"*. **A sifted-out side is
+gone, and steps 3 and 4 range over the remainder**; the all-four-collide case is
+not described at all. So the code departs from the algorithm its own file states,
+twelve lines from the top - **which is the argument an upstream maintainer acts on,
+and the best available evidence that the seeding is UNINTENDED rather than a
+deliberate trade**, since a deliberate trade would have been written down there.
+**This was added in fix round 1 and is a reviewer's finding, not this writer's.**
+**And `docs/schematic/text-placement-prior-art.md` §5 quotes that specification in
+its own opening block without noticing the disagreement** - both the documented
+algorithm and the actual one are in that section and nothing there compares them.
+
 - **Evidence** `[READ]` `eeschema/autoplace_fields.cpp` at tag `10.0.5`,
   SHA-256 `bfdb8fd1c88bbc607f14daf6cc2db12d22522e0b6ca3f68df7f701915a76ea8d`,
-  799 lines, read in full; the two selection functions were also transcribed into
-  a throwaway script and the six traces in §3.3 driven through it, and the script
-  is **not committed** - the traces are published step by step in §3.3 so a reader
-  can repeat them against the file instead.
-- **Verified** CONFIRMED as a reading of the source by this writer. **NOT verified
+  799 lines, read in full - both the two selection functions and the header comment
+  at lines 38-44. The selection functions were also transcribed into a throwaway
+  script and the six traces in §3.3 driven through it, and the script is **not
+  committed** - the traces are published step by step in §3.3 so a reader can
+  repeat them against the file instead. **A reviewer re-fetched and re-hashed the
+  blob, re-derived the control flow by its own route and hand-traced all six
+  traces; six hold, and it reproduced all six from §3.3's published pseudocode plus
+  the blob without the script**, which is why the script's absence is correct
+  rather than a gap: a committed TypeScript transcription of GPL C++ control flow
+  would be a second implementation that can drift from the source it claims to
+  read.
+- **Verified** CONFIRMED as a reading of the source by this writer, and
+  INDEPENDENTLY CONFIRMED by a reviewer who fetched the blob itself. **NOT verified
   as behaviour**: KiCad was not built, no schematic was loaded into eeschema, and
   the autoplacer was never executed.
+- **NOT EVIDENCED BY UPSTREAM #14127, AND THE FIRST VERSION OF THIS ENTRY SAID IT
+  WAS.** #14127's reproduction is *"Adding a symbol to the schematic"* and its
+  complaints are about 50-mil spacing and grid alignment; **placing a symbol passes
+  `AUTOPLACE_AUTO`** (`sch_drawing_tools.cpp:487` and `:499` `[READ]` at this tag,
+  the first with a `nullptr` screen), so `aAvoidCollisions` is false, the colliding
+  sides are never computed, and the defect cannot fire on that path. **§3's own
+  trace row 6 established that, so the document refuted its own pairing** - the
+  cost of leaving it would have been an upstream report discredited in one line.
+  **#16538 remains sound** and is the one candidate explanation this entry offers,
+  still as a candidate.
 - **What would settle it. CRITERION: a symbol with pins on all four sides, placed
   so that its least-pinned side collides and a clear side with more pins exists,
   has its fields autoplaced (MANUAL) onto the colliding side.** MECHANISM,
@@ -2592,13 +2627,23 @@ snap are untested. **Evidence**: `[READ]` the file; `[READ]` the full
 `qa/tests/eeschema` tree at that tag, **paginated to 122 entries** because the
 API's first page caps at 100 and a single-page listing would have been a truncated
 negative - one filename matches `autoplace`. `[THIRD-PARTY]` corroboration, **and
-a near-miss worth keeping**: a GitHub code search for `AutoplaceFields` over
-`KiCad/kicad-source-mirror` returns 57 hits, exactly one under `qa/`, and that one
+two near-misses worth keeping**: a GitHub code search for `AutoplaceFields` over
+`KiCad/kicad-source-mirror` returns **exactly one result under `qa/`**, and that one
 is `BOOST_FIXTURE_TEST_SUITE( AutoplaceFields, ... )` - the suite's **name**, not a
-call. An earlier narrower query (`path:qa`) returned nothing at all, which would
-have been the right answer by accident. The mirror tracks `master`, not `10.0.5`.
-**Nothing settles this; it is a fact about upstream, recorded so that "KiCad's
-autoplacer is well tested" is never assumed here.**
+call. (a) An earlier narrower query (`path:qa`) returned nothing at all, which
+would have been the right answer by accident. (b) **The TOTAL did not reproduce and
+is withdrawn**: this entry's first version said *"57 hits"*, which was the count of
+printed match LINES from `gh search code ... --limit 100 | wc -l`, not of files; a
+reviewer re-running it got **38 files**. **A search total that moves is evidence
+about the search, not about the tree**, so no total is asserted - and nothing here
+ever depended on one. The one path under `qa/` is the load-bearing half and both
+runs agree on it. The mirror tracks `master`, not `10.0.5`.
+- **Verified** CONFIRMED by this writer for the `[READ]` halves (the test file read
+  in full, the tree paginated); the code-search half is `[THIRD-PARTY]` and its
+  total is withdrawn as RELAYED-AND-NOT-REPRODUCED. **The one-path-under-`qa/`
+  result was independently reproduced by a reviewer.**
+- **Nothing settles this**; it is a fact about upstream, recorded so that *"KiCad's
+  autoplacer is well tested"* is never assumed here.
 
 **(3) THREE CORRECTIONS TO `docs/schematic/text-placement-prior-art.md` §5,
 recorded here with that document left unedited** (the plan requires it: *"[r]ead,
@@ -2611,31 +2656,60 @@ never rewritten"*).
   two: the whole wire-handling half of the algorithm applies only to top and
   bottom.
 - **§5(c) stops at the all-sides-collide fallback.** Clause (1) above is the same
-  seed competing in the ordinary case.
+  seed competing in the ordinary case - **and §5 quotes, three paragraphs above its
+  own (c), the header specification that behaviour departs from, without comparing
+  the two.**
 - **§5 was read at `master` (794 lines) and does not pin a version.** The installed
   version is `10.0.5` (799 lines). **The difference is immaterial and that is a
   result, not a formality**: `diff -u` is 15 lines - licence boilerplate, one
   Doxygen comment, `IsInNetlist()` to `DoNetList()`, and `GetPins()` to
-  `GetGraphicalPins( ALL_UNITS, ALL_BODY_STYLES )` twice. Candidate generation, the
-  tiers, the selection rule and the wire fitting are byte-identical, **so §5's
-  substantive reading stands.** The one behavioural difference the rename hides is
-  that `master` counts pins across all units and body styles where `10.0.5` counts
-  the symbol's own, which would move clause (1)'s pin counts for a multi-unit
-  symbol. **Verified** CONFIRMED, both blobs fetched and diffed by this writer.
+  `GetGraphicalPins( ALL_UNITS, ALL_BODY_STYLES )` twice. **`chooseSideForFields`,
+  `chooseSideFiltered`, `getCollidingSides`, `getPreferredSides`,
+  `computeFBoxSize`, `fieldBoxPlacement` and `fitFieldsBetweenWires` are
+  byte-identical, so §5's substantive reading stands** - but **`pinsOnSide` is
+  NOT**, it is one of the two changed lines, and it feeds the side selection, so
+  the rule's code is unchanged while one of its inputs is. *"The side-selection
+  rule is byte-identical"* was this entry's first wording and it was an
+  overstatement. `master` counts pins across all units and body styles where
+  `10.0.5` counts the symbol's own, which would move clause (1)'s pin counts for a
+  multi-unit symbol; clause (1)'s traces state their pin counts as givens, so none
+  of them depends on it. **Verified** CONFIRMED, both blobs fetched and diffed by
+  this writer.
 
 **(4) THE TWO COMPARATIVE CLAIMS THE PRIOR ART MAKES ABOUT THIS REPOSITORY ARE
-BOTH TRUE, VERIFIED RATHER THAN RELAYED, AND NOW QUANTIFIED.** Our candidate set
-is **9 to 13** per unit (`5 + Σ sides`, each side contributing 1 if pin-free and 2
-if pinned, `lib/schgen/render/field-placement.ts:153`), **11 for a two-terminal
-passive**, against KiCad's **4**; and a candidate here is a pair of positions for
-two named fields where KiCad's is a side for one rigid stack of all of them. Our
-obstacle model is richer on five checkable axes: per-field boxes rather than one
-shared box, a `MARGIN = GRID / 2` clearance where KiCad requires only
-non-intersection, an exact segment test for a wire where KiCad uses the wire's
-bounding box, the symbol's own pin text and interior graphics as obstacles
-(because inside slots exist), and a weighted overlap **area** over every candidate
-where KiCad has two discrete tiers on two of four sides in one of two modes.
-**Evidence** `[READ]` both sources. **Verified** CONFIRMED.
+BOTH TRUE, VERIFIED RATHER THAN RELAYED - INCLUDING THE WORD THE FIRST VERSION OF
+THIS ENTRY DROPPED.** The claim is *"[i]t also models **far** more obstacle
+categories than KiCad does"* (prior art §7); **"far" was omitted, which trimmed
+the claim in the direction that made it easier to confirm**, and that is the one
+direction of trimming that matters. It holds as written: `OBSTACLE_CATEGORIES`
+(`lib/schgen/render/obstacle-matrix.ts`) names **14** and `placeFields` puts **11**
+in front of a candidate (all but `junction`, `frame-border` and `dnp-cross`),
+against the **2** KiCad's algorithm distinguishes - a horizontal `SCH_LINE` on a
+horizontal side, and everything else. **The counterweight that belongs to the same
+clause**: KiCad's *collector* has no type filter at all, so it sees item kinds this
+repository's placer has no category for; ours distinguishes far more categories and
+treats them differently, KiCad's sees every kind and treats all but one the same.
+The claim is about categories and holds; it must not be extended into *"KiCad sees
+less"*.
+
+The candidate-set claim holds too: **9 to 13** per unit (`5 + Σ sides`, each side
+contributing 1 if pin-free and 2 if pinned,
+`lib/schgen/render/field-placement.ts:153`), against KiCad's **4**, and a candidate
+here is a pair of positions for two named fields where KiCad's is a side for one
+rigid stack. **CREDIT WHERE THE FIRST VERSION TOOK IT: the prior art's §7 already
+had the 11 and the 13 with the same decomposition.** What this task added is the
+**9** - all four sides pin-free, which neither of those numbers covers - and the
+formula they are both instances of. The other four axes of the obstacle comparison
+are per-field boxes rather than one shared box, a `MARGIN = GRID / 2` clearance
+where KiCad requires only non-intersection, an exact segment test for a wire where
+KiCad uses the wire's bounding box, and a weighted overlap **area** over every
+candidate where KiCad has two discrete tiers on two of four sides in one of two
+modes.
+
+- **Evidence** `[READ]` both sources, plus `obstacle-matrix.ts`'s category list and
+  `placeFields`'s obstacle construction for the 14-and-11 count.
+- **Verified** CONFIRMED by this writer; the dropped word and the uncredited
+  numbers were a reviewer's findings.
 
 **(5) AND THREE THINGS KICAD DOES THAT THIS REPOSITORY DOES NOT. The first is
 bait, and bait belongs beside the trap.**
@@ -2697,6 +2771,15 @@ uses Q3 is a fact about KiCad, not an argument that this repository should; the
 election is **G265** clause 4 and it is the owner's, and §3 states that where it
 could have been read as a recommendation.
 
+- **Evidence** `[READ]` `autoplace_fields.cpp`'s `computeFBoxSize` and
+  `fieldVPlacement`, and `sch_field.cpp:468-470` for the call chain.
+- **Verified** the call chain and the "exactly two numbers" claim are CONFIRMED by
+  this writer. **The 2043.1 um and 1422.4 um figures are RELAYED from §1.4 and
+  §1.5**, measured by Task 1, and so is the pen-width mismatch; none of them was
+  re-measured here.
+- **Nothing settles this**; it is a reading, and the election it bears on is
+  **G265**(4) and the owner's.
+
 **(9) AN OBSERVATION ABOUT MULTI-LINE FIELDS THAT WAS NOT DIAGNOSED, AND DOES NOT
 REACH THIS REPOSITORY.** `autoplace_fields.cpp` has no multi-line handling at all;
 height comes entirely from the field's bounding box. `EDA_TEXT::GetTextBox` splits
@@ -2725,12 +2808,46 @@ SUBSTRING, NOT A CENSUS, AND #15534 IS THE PROOF**: it is open, it is about this
 algorithm, and it is absent from the 35 because its title says *"Auto-placement"*.
 The hyphenated and spaced variants were not swept. **No comment thread was read,
 no attachment was opened, nothing was reproduced**, so the §3.3 clause-(1) reading
-is a **candidate** explanation for #14127 and #16538 and not a diagnosis of
-either. **The evidence worth carrying**: the obstacle-model cluster has been worked
-upstream - `getDrawableArea` exists because of #19081, labelled `starter` and
-fix-committed - and the candidate-set cluster has not. Widening the candidate set
-is the thing upstream has been asked for and has not done, **which is a fact about
-the cost of the change and not a licence to leave ours.**
+is a **candidate** explanation for **#16538** and not a diagnosis of it - and
+**#14127 is excluded for the reason clause (1) gives.** **The evidence worth
+carrying**: the obstacle-model cluster has been worked upstream -
+`getDrawableArea` exists because of #19081, labelled `starter` and fix-committed -
+and the candidate-set cluster has not. Widening the candidate set is the thing
+upstream has been asked for and has not done, **which is a fact about the cost of
+the change and not a licence to leave ours.**
+
+- **Evidence** `[ISSUE-READ]` - §3.0's own mark, weaker than `[READ]` - sixteen
+  issues' JSON retrieved from the GitLab API and their descriptions read, named in
+  §3.11; the 35-issue listing and its state tally from the same API.
+- **Verified** CONFIRMED by this writer for every retrieval; **a reviewer
+  independently retrieved the issues cited and found none fabricated and none
+  misquoted.** The clause-(1)-to-#16538 link is CONFIRMED only as a candidate -
+  nothing reproduced it.
+- **What would settle the count. CRITERION: a sweep that also matches
+  "auto-placement" and "auto place" in title and description.** MECHANISM, UNTRIED:
+  three more API calls with different `search` terms and `in=title,description`;
+  not done, and the count stands as a lower bound until it is.
+
+**(11) A SECOND UPSTREAM OBSERVATION IN THE SAME FILE, A REVIEWER'S, RECORDED
+UNDIAGNOSED.** `getPreferredSides`'s power-symbol block annotates each orientation
+with the order its swaps produce, and **the `SYM_ORIENT_0` annotation disagrees
+with its own code**: from `sides_init` = RIGHT, TOP, LEFT, BOTTOM, the two swaps
+produce **TOP, BOTTOM, LEFT, RIGHT**, and the comment beneath reads
+`// TOP, BOTTOM, RIGHT, LEFT`. **The other three orientations' comments are
+correct** - 90 gives LEFT, RIGHT, TOP, BOTTOM; 180 gives BOTTOM, TOP, LEFT, RIGHT;
+270 gives RIGHT, LEFT, TOP, BOTTOM, each as annotated. It affects only an
+unrotated power symbol's third and fourth choices, which clause (1) can reach since
+a power symbol's hidden pins are still counted (`pinsOnSide`'s
+`!IsVisible() && !m_is_power_symbol` guard).
+
+- **Evidence** `[READ]` `autoplace_fields.cpp:352-376` at the pinned tag; the
+  orders were re-derived from `sides_init` by hand for all four cases.
+- **Verified** the derivation is CONFIRMED by this writer; **the observation is
+  RELAYED from a reviewer**, who found it, and this writer re-derived it rather
+  than taking it.
+- **What would settle it. CRITERION: whether the comment is stale or the swaps are
+  wrong**, which only an upstream intent can answer. No mechanism is offered and
+  nothing in this repository depends on it.
 
 ---
 
