@@ -1622,6 +1622,64 @@ made.
 > plan's own constraint. It also does not re-take this entry's other subject, which is that nothing
 > automated reads the fallback report; that is unchanged and still open below.
 
+> **AMENDED 2026-10-22 BY TASK 4 OF THE TEXT-HANDLING RESEARCH PLAN: WHAT OTHER TOOLS DO ON
+> FAILURE - THE HALF OF THIS ENTRY'S QUESTION NOBODY HAD FILLED. IT DOES NOT TOUCH THE OWNER'S
+> HALF.**
+>
+> This entry asks two things and only one of them is his. **His is how much overlap is acceptable,
+> and nothing here answers it, bears on it, or may be read as implying it.** The other half is
+> factual - what tools in this class do when a label has nowhere clear to go - and it was answered
+> by `docs/schematic/text-handling-research.md` **§4**.
+>
+> **OF THE SIX TOOLS EXAMINED, ZERO REFUSE TO PRODUCE THE DRAWING BECAUSE TEXT WOULD NOT FIT.**
+> Four open-source tools read at a pinned commit, two of those also run; two commercial tools as
+> vendor documentation only. Adding §3's KiCad - the program `make check` invokes on this
+> repository's output on every run - makes it **zero of seven**.
+>
+> | tool | on failure | how it was established |
+> | --- | --- | --- |
+> | lepton-eda `fd160f0` | draws it overlapping after one unverified translate | `[READ]`; its placement function's only exit returns a position and all nine `error` calls in the file are malformed-input refusals |
+> | xschem `36e0eab` | draws it overlapping; nothing is tested | `[READ]`; no text-collision test exists, and the two early returns in `draw_string` are a zoom threshold and a viewport cull |
+> | netlistsvg `d3518f1` | draws it overlapping, and the layout engine widens node spacing **across layout columns only** | `[RAN]` four arms, every one exit 0 with the SVG written |
+> | schemdraw `0.23` | draws it overlapping and grows the figure's bounding box around it | `[RAN]` a colliding arm that raises nothing and emits both labels whole |
+> | Altium Designer | documents overlap as a NORMAL STATE with z-order commands to manage it | `[DOCS]` 2026-10-22, quoted from the page's bytes; failure semantics are not specified at all |
+> | OrCAD Capture 16.6 | nothing documented | `[DOCS]` 2026-10-22; `auto.?position` and `designator.*position` return 0 hits in 31,433 lines of the manual |
+>
+> **SO THIS REPOSITORY'S PRE-TASK-24 BEHAVIOUR - REFUSE THE DRAWING - IS UNUSUAL AMONG ITS CLOSEST
+> NEIGHBOURS, AND THE TRADE TASK 24 MADE IS THE ONE ALL SIX OF THEM MAKE.** That is a fact about
+> what is conventional and **not an argument that the trade is right here**; §4 explicitly declines
+> to make that argument because it turns on what an acceptable sheet is, which is the question
+> below.
+>
+> **ONE ROW OF THE COMPARISON IS EMPTY FOR THIS REPOSITORY AND IS NOT EMPTY FOR TWO OTHERS.**
+> §4.8's *adjust the surrounding geometry* row: netlistsvg's layout engine moved one node 96 units
+> when its label grew, with five others unmoved, and KiCad has one local repair
+> (`fitFieldsBetweenWires`, §3.5). **This repository has no perturbation of any kind** - the placer
+> chooses among fixed slots and the geometry around them never moves. **That is an observation, not
+> a proposal**; whether it would reduce the fifteen is untried and unmeasured.
+>
+> **AND THE CLOSEST THING TO A SIXTH SHAPE COULD NOT BE RETRIEVED.** OrCAD's and Allegro's PCB
+> silkscreen auto-placer is reported to place what it can and log the designators it could not
+> place legally - *place and report*, which is a different trade from any of the six and the
+> closest published thing to what this entry's residual asks for. **No quotable source was
+> obtained**: `community.cadence.com` returns HTTP 403 to a plain fetch, `support.cadence.com`
+> needs a login, and the training page search pointed at does not resolve. **A search-engine
+> summary is not a page anyone opened, so this is an unverified lead and is NOT evidence.** What
+> would settle it is the Allegro/OrCAD PCB Editor manual, which was not obtained.
+>
+> - **Verified** CONFIRMED by the writer of §4 for the four open-source tools and the two
+>   documentation sets - the commits were cloned and hashed, the two runs were driven here, and
+>   every vendor quotation was taken from the saved bytes of the page rather than from a search
+>   extract. **RELAYED** for §3's KiCad figure and for §4's reuse of this entry's own fifteen.
+> - **Evidence** §4.0's commit and SHA-256 table; §4.4 and §4.5's pasted run logs, each with a
+>   control arm that answers differently from its treatment; §4.6 and §4.7's greps over the
+>   retrieved pages and manual, every one of which could have matched and is reported with its hit
+>   count.
+> - **WHAT THIS AMENDMENT DOES NOT DO.** It does not answer how much overlap is acceptable, propose
+>   a threshold, or rank the six behaviours. It changes no code. **It does not close this entry**:
+>   the residual below - that nothing automated reads the fallback report - is untouched, and so is
+>   the owner's question.
+
 Task 24 replaced a refusal with a placement: `lib/schgen/render/field-placement.ts` takes the
 least-covered candidate slot when none is clear. **That converts a loud failure into a quiet
 degradation unless something counts it**, which is this entry's subject and was the whole risk of

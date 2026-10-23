@@ -2367,3 +2367,709 @@ for it to be worth anything.
   reasoning from an algorithm that does not reliably take the clear side it has.**
   §5 of the prior-art document says *"[t]he gap is not the candidate set"*; this
   reading neither supports nor refutes that for this repository, and says so.
+
+---
+
+§4 What comparable tools do when text will not fit
+--------------------------------------------------
+
+**The question is narrow and it is about this repository.** This generator
+**refuses to emit a sheet when text would collide** - six of the eleven boards are
+refused at `validateCircuit` and five at ELK layout, so it produces a drawing for
+none of them (`CLAUDE.md`; **G259**). §3 established that the closest neighbour of
+all, KiCad's own `autoplace_fields.cpp`, **has no refusal path**: four candidate
+sides, a two-tier collision grading, one local repair, and when every side
+collides it places the fields overlapping anyway. **This section asks whether that
+generalises to the other tools in the class, and it answers at the scope the
+evidence supports and no wider.**
+
+**THE SCOPE DISCIPLINE IS THE TASK, NOT A CAVEAT ON IT.** A third-party review of
+the plan (2026-10-22) found the task's original wording invited a universal claim
+that four open-source tools and two documentation sets cannot support, and that
+**absence of an obvious refusal in a source read is not proof that no refusal
+exists** - a renderer may reject geometry earlier, clip, fall back, or quietly
+overlap, and those are hard to tell apart without running it. Accepted and
+binding. So §4.9 states the conclusion as *"of the N tools examined, M refuse, and
+here is how each was established"*, and §4.10 is a separate paragraph on what
+remains unknown.
+
+**THE TAXONOMY IN §4.8 IS NOT THIS SECTION'S.** Its five behaviours - suppress or
+clip the text; allow the overlap; adjust the surrounding geometry; request user
+intervention; refuse to generate - come from that review and are recorded ACCEPTED
+in the plan. `CLAUDE.md` forbids the producing agent from authoring the acceptance
+criteria for its own artifact, and widening or narrowing that list to fit what was
+found would be exactly that. Where a tool's behaviour does not fit a row, §4.8
+says it does not fit and says what the tool does instead.
+
+**It elects nothing and recommends nothing.** **G260** carries an unanswered
+question about how much overlap is acceptable; that question is the owner's and
+nothing here answers it or is phrased to imply an answer.
+
+### 4.0 What was opened, at which commit, what was run, and the three evidence grades
+
+**Three grades, kept apart, because the plan's Step 3 requires it and because they
+are not interchangeable.**
+
+| grade | mark | what it means here |
+| --- | --- | --- |
+| OBSERVED | `[RAN]` | the tool was installed in a scratchpad outside this repository, executed over a fixture, and its output measured. Two of the six were run. |
+| INFERRED | `[READ]` | the named source file was opened at the stated commit and the behaviour is read off it. Nothing was executed; a path not taken in the source is not a path proven not to exist elsewhere in the program. |
+| DOCUMENTED | `[DOCS]` | the vendor's own page or manual was retrieved on the stated date and quoted from the bytes of the page, not from a search extract. Where the documentation is silent, this section says it is silent rather than inferring. |
+
+**`[DOCS]` is declared here because §4 needs a mark the document's header does not
+define**, exactly as §3 declared `[ISSUE-READ]` for the same reason. It is weaker
+than `[READ]`: a vendor page is a description of a program by its publisher, not a
+primary source for what the program does. **Every `[DOCS]` quotation below was
+taken from the saved bytes of the page**, by extracting the page's plain text and
+printing the lines containing the term - never from a search-result snippet.
+`docs/known-gaps.md` records that this branch once produced a false finding by
+grepping for a paraphrase of the quotation it was looking for, and the two Altium
+sentences in §4.6 were verified against the downloaded HTML for that reason.
+
+**THE FOUR OPEN-SOURCE TOOLS, PINNED TO THE COMMIT THAT WAS READ.** Each was
+cloned into the scratchpad (`git clone --depth 1`) and the per-file SHA-256 is of
+the blob actually opened.
+
+| tool | commit read | declared version | file the claims rest on | SHA-256 of that file |
+| --- | --- | --- | --- | --- |
+| lepton-eda | `fd160f00b83480aee9f5c7d420468115d2065808` | - | `lepton-eda/scheme/lepton/autoplace.scm` (1224 lines) | `7979b8839aeb941447ad070790ee2c3351a8d43f815f3d40ec1455d7739fbaff` |
+| xschem | `36e0eab33b0c7e02e6f99c54b0a39d42231039fb` | `3.4.8RC` (from `devices/res.sym`) | `src/draw.c` (7129 lines) | `7e2e1176fc9c9e703fc497cebacba97a057122b3e2af4b2eb6833f7ce1fffd67` |
+| netlistsvg | `d3518f1b5c996a876b72a1a984bb39d3572c47dc` | `1.0.2` | `lib/Cell.ts`, `lib/drawModule.ts` | `270f1742b4b27565bd8bbf067822a91c0f6c73cb3ab6b57dacebbbfa60590676`, `c0a3481fad85020c7306f0060d31cdcecef0ef574d8beb5af56f1a53c43ad51b` |
+| schemdraw | `e3cb52981f1ef297ddb083c9329ad89a6c8d1db4` | `0.23` | `schemdraw/elements/elements.py`, `schemdraw/segments.py` | `90df8c7d82fad84ea80ec88b4189c72f53b4e25c7e22b557157da96ad7fdf33e`, `27c82f2b1a73746023caabd27192c42b516b3236f990cea2397075364c295eda` |
+
+**The lepton-eda blob was re-fetched by raw URL from GitHub at that commit and
+hashed to the same value**, so the figure is not an artefact of the clone.
+
+**WHAT WAS RUN, AND WHERE THE RUN AND THE READ ARE THE SAME BYTES.** Nothing was
+installed into this repository: no `package.json` entry, no lockfile change, no
+vendored copy. Both runs are in the session scratchpad.
+
+- **netlistsvg** `[RAN]` - dependencies installed with `npm install --legacy-peer-deps`
+  inside the scratchpad clone, and **the clone's own committed `built/` was
+  executed** (`node bin/netlistsvg.js`), so the run is the compiled form of the
+  `lib/` that was read. `git status --porcelain built` reports 0 modified files and
+  the edge-label code appears in `built/drawModule.js`. **It was NOT recompiled**:
+  the pinned TypeScript cannot parse the newer `@types` the install pulled in, so
+  `built/` is trusted as the repository's committed artefact rather than
+  reproduced. **The npm 1.0.2 tarball was tried first and discarded**, because it
+  predates this commit despite declaring the same version - it has neither the
+  bus-width edge labels nor `setAlternateCellType`, so a reading of `master` and a
+  run of the tarball would not have been the same program.
+- **schemdraw** `[RAN]` - `pip install schemdraw==0.23` into a scratchpad venv
+  (Python 3.14.6), `ziamath` NOT installed. `diff -rq` against the clone finds
+  three files differing, all post-release and none of them one a claim here rests
+  on; **the two files the claims do rest on are byte-identical between the clone
+  and the installed wheel**, by the SHA-256 in the table above.
+- **lepton-eda and xschem were NOT run.** Both are C programs with GUI toolchains
+  (GTK, X11/Tcl-Tk), and Guile is not installed here either, so every statement
+  about them is `[READ]`. §4.10 says what that leaves open.
+
+### 4.1 THE TOOL BEHAVIOUR TABLE
+
+**The deliverable the plan asks for.** "Candidate model" is how many positions the
+tool will consider for one designator or net label. "On failure" is what it does
+when the position it has is not clear.
+
+| tool | candidate model for a designator / net label | collision model | on failure | grade |
+| --- | --- | --- | --- | --- |
+| **lepton-eda** | **one** position per match in a 45-row table keyed by attribute name, the set of sides carrying pins, and object type; 3 of the 45 rows also carry a movement direction | **pins and the corridor in front of pins only** - no other text, no wires, no symbol bodies, no page border | **allow the overlap**: one translate along the permitted axis, snapped to a 50-unit grid, applied with **no re-check**, then the text is written | `[READ]` |
+| **xschem** | **none** - the position is a constant authored in the `.sym` file (`T {@name} 15 -18.75 ...`) | **none for text** | **allow the overlap** (nothing is tested); separately **suppresses** text below a device-pixel threshold at the current zoom, which is not a collision response | `[READ]` |
+| **netlistsvg** | **none** for a cell label - the position is the skin template's `x`/`y`; ELK's returned label coordinate is never read for a cell label | ELK is handed a label box of `6 x text.length` by `11`, and that box buys **node spacing** | **allow the overlap**, and **adjust the surrounding geometry** across layout columns; the drawn text can leave the canvas the generator itself declares | `[RAN]` + `[READ]` |
+| **schemdraw** | **one** - `label(loc=...)`, defaulting to `'top'`, plus an offset and optional per-element hints | **none** | **allow the overlap**; the figure's bounding box grows to contain the text and the text does not move | `[RAN]` + `[READ]` |
+| **Altium Designer** | schematic: `Autoposition` is a **boolean** meaning the text follows the component through rotation. PCB: **nine** named styles, all of them "automatic positions" in the same following-the-component sense | **not documented** | **allow the overlap** - documented as a supported state managed by z-order commands, not as a failure | `[DOCS]` |
+| **OrCAD Capture** | **not documented at all** in the manual retrieved | **not documented** | **not documented** | `[DOCS]` |
+
+### 4.2 lepton-eda: the only one of the four with a collision model, and it cannot refuse
+
+**Where designator and net-label positions come from.** `autoplace.scm` holds one
+table, `default-position-of-text-attributes`, of **45 rows**: 4 for `pinlabel`, 4
+for `pinnumber`, 11 each for `refdes`, `value` and `device`, and 4 for `netname`
+on a net or a bus. A row matches on the attribute's name, a string of the pin
+directions the object must have (`"<"`, `"<>"`, `"<>^v"` and so on), and an object
+type; it supplies an x/y offset, a reference corner of the object's bounds, a text
+alignment, an angle, **a movement direction**, a spacing and a colour. So the
+candidate set for one designator is **one position**, selected by the symbol's pin
+geometry rather than searched.
+
+**The collision model, which is narrower than it first looks.**
+`adjust-pos-to-avoid-collision` loops the four pin directions in two passes. Pass
+1 tests `check-overlapping-of-pin-connections` - the attribute against the pin
+bounds **and the empty corridor in front of the pins where a net will later be
+drawn**, which is a genuinely good idea and is a category this repository's
+obstacle set does not have. Pass 2 tests `check-collision-of-bounds` against the
+pins *including their own `pinname`/`pinnumber` text. **That is the whole obstacle
+set**: no other component's text, no wires already drawn, no symbol graphics, no
+sheet border.
+
+**On collision it translates once, along the axis the row permits, and never
+re-checks.** For a vertical pin side the shift is horizontal, for a horizontal pin
+side vertical; the magnitude clears the pin bounds plus the row's spacing and is
+then snapped to the 50-unit grid. The loop proceeds to the next side. **There is no
+verification that the destination is clear of anything**, and the function's only
+exit returns the adjusted bounds.
+
+**And then the text is written, unconditionally.** `set-default-position` takes
+whatever `adjust-pos-to-avoid-collision` returned, derives an x/y offset from it,
+and calls `set-attribute-text-properties!`. **There is no value by which the
+function can report that it failed**, and nothing downstream inspects one.
+
+**The decisive check, which could have answered differently.** `autoplace.scm`
+contains **nine** `error` calls. All nine are malformed-input refusals - an
+unknown point name in `get-point-of-bound`, an unknown coordinate in
+`get-bound-of-pin`, an unknown pin direction in two places, an unknown reference
+string in three places, an odd-length attribute list, and an invalid text
+alignment. **Not one of them is reached because text has nowhere to go.** A
+repository-wide grep for `cannot place`, `could not place`, `unplaceable`, `no
+room`, `does not fit` and `refus` over every `.c`, `.h` and `.scm` in the tree
+returns four hits, all of them unrelated (two test comments about configuration
+loops, two GTK comments about drawing state).
+
+**TWO THINGS THE DEFAULT CONFIGURATION DOES THAT CHANGE WHAT THIS MEANS.**
+`scheme/conf/schematic/deprecated.scm` is where the hooks live, and in it:
+
+- **the `refdes`/`value` autoplacer is commented out.** All four hooks that would
+  call `autoplace-object-attributes` - on adding, rotating or mirroring a
+  component, and on adding an attribute - are commented, as is the
+  `complex-place-list-changed-hook` variant. So in a default lepton-eda **a
+  component designator is placed by the person, and the table above is reached
+  only by a user who edits their configuration.** The file's name says the rest.
+- **the `netname` autoplacer is live**, through
+  `(add-hook! add-objects-hook place-netname-attribute-handler)`. And its four
+  table rows carry an **empty** movement direction, and `get-object-pins` returns
+  the empty list for anything that is not a component, so `pins-bounds` is null
+  for a net and **the collision adjustment is a no-op for the one text class
+  lepton-eda autoplaces by default.**
+
+**TWO INCIDENTAL SOURCE FINDINGS, recorded because a later reader cannot
+re-derive them and neither bears on the refusal question.** Both are `[READ]`;
+lepton-eda was not run, so neither is an observed defect.
+
+- **A stray `2` sits at column 1 of line 782**, inside the leftward-offset
+  expression. Scheme's `-` is variadic, so the expression evaluates as
+  `pins-min-x - 2 - attrib-max-x - spacing` rather than
+  `pins-min-x - attrib-max-x - spacing`:
+
+**Each line below is prefixed with its line number in `autoplace.scm`, and that
+prefix is the only alteration** - see §4.12 for why the lines are numbered rather
+than dedented.
+
+```lepton-src
+777:                                 (if (string-index move-direction #\<)
+778:                                     (set! x_offset
+779:                                           (- (- (get-point-of-bound
+780:                                                  "min-x"
+781:                                                  pins-bounds)
+782:2                                                (get-point-of-bound
+783:                                                  "max-x"
+784:                                                  new-attrib-bounds-adjusted)
+785:                                                 )
+786:                                              spacing )) ;; add spacing
+```
+
+  **Why it is not simply cosmetic:** `snap-coord-to-grid` floors a negative
+  coordinate onto the 50-unit grid, so an offset that would have landed exactly on
+  a multiple of 50 lands one whole step further out. Transcribing that function
+  into a throwaway script (not committed, and not lepton-eda) gives
+  `snap(-100) = -100` against `snap(-102) = -150`. **When it was introduced was
+  not established** - the clone is shallow, so there is no history to blame.
+- **An empty movement direction still moves the text.** The table's own comment
+  says `mov_dir` *"is an empty string if no movement is allowed"*. But when a
+  collision is found and the computed offset is zero - which is what an empty
+  `mov_dir` produces, since neither `<` nor `>` is present - the code falls into a
+  branch that sets the offset to one grid step regardless:
+
+Line-numbered as above and nothing else altered; `move-direction` is `""` for 42
+of the table's 45 rows.
+
+```lepton-src
+798:                                 ; If the offset is zero, there is probably
+799:                                 ; an overlap with pin connections, so add
+800:                                 ; one grid spacing to the offset.
+801:                                 (if (eq? x_offset 0)
+802:                                     (if (string-index move-direction #\<)
+803:                                         (set! x_offset (- 0
+804:                                                           autoplace-attributes-grid))
+805:                                         (set! x_offset
+806:                                               autoplace-attributes-grid))
+807:                                     )
+```
+
+  With `mov_dir` empty the `string-index` test is false, so the else branch fires
+  and the attribute moves **right** (or **up**, in the vertical arm) by 50. For a
+  net this never runs, because a net has no pins; for a component it does, and 10
+  of the 11 `refdes` rows have an empty `mov_dir`. **This is a reading, not an
+  observation**, and it is recorded because an agent who takes the table's comment
+  at face value will model lepton-eda wrongly.
+
+### 4.3 xschem: no candidate model, and its only suppression is a zoom threshold
+
+**Where the text position comes from: the symbol file, as a constant.**
+`xschem_library/devices/res.sym` carries `T {@name} 15 -18.75 0 0 0.2 0.2 {}` and
+`T {@value} 15 -6.25 ...`; a net label symbol carries `T {@lab} 20 -8.75 ...`.
+`translate()` substitutes the instance's name or value into the string at draw
+time and `draw_symbol` rotates the authored offset with the instance. **There is no
+placement computation to collide, and therefore no candidate set and no obstacle
+set.**
+
+**The check that could have found otherwise.** A case-insensitive grep for
+`autoplace`, `auto_place`, `overlap`, `collid` and `collision` over every `.c`,
+`.h` and `.tcl` under `src/` returns `warning_overlapped_symbols` and its call
+sites, plus two comments about hash-function collisions and one about arrow
+coordinates. **Nothing in xschem tests one piece of text against another.**
+
+**It does suppress text, and the condition is not a collision.** Both
+implementations of `draw_string` return early when the text is too small to be
+worth drawing at the current zoom - the cairo build at `src/draw.c:407` with
+`if(size*xctx->mooz<3.0) return; /* too small */` and a companion `>1600` guard,
+the non-cairo build at `src/draw.c:489` with
+`if(xscale*FONTWIDTH*xctx->mooz<1)` - and both return early when `textclip` finds
+the text's bounding box wholly outside the viewport. **Those are a screen
+optimisation and a viewport cull.** They belong in the taxonomy's first row and
+they are keyed on magnification, not on what else is at that coordinate.
+**The SVG exporter has the same guard and it is commented out**
+(`src/svgdraw.c:881`, `/* if(xscale*FONTWIDTH* xctx->mooz<1) continue; */`), so an
+exported file is not subject to the suppression a screen redraw is.
+
+**The one refusal-shaped behaviour xschem has, stated precisely because it is
+easy to mistake for an answer to this section's question.**
+`warning_overlapped_symbols` hashes every instance's bounding box and reports
+`Error: overlapped instance found: ...` for any second instance with **exactly**
+the same box, colouring it and OR-ing into the netlister's `err`.
+`src/spice_netlist.c` calls it **after the netlist file has been written and
+closed**; the top-level path then forces the ERC window open and sets
+`exit_code = err ? 10 : 0`. **So xschem produces the output and flags the
+geometry**, which is a shape worth knowing. It is about coincident symbol
+instances, not about text, and the comparison is offered as a contrast rather than
+as a text-handling behaviour.
+
+### 4.4 netlistsvg: the layout engine buys room between columns, and the generator draws past its own canvas
+
+**Where a cell label's position comes from.** `Cell.addLabels`
+(`lib/Cell.ts:348-378`) walks the skin template for `<text>` nodes carrying an
+`s:attribute`, and pushes an ELK label carrying the template's own `x`/`y`, the
+substituted string, `height: 11` and **`width: (6 * newString.length)`**. That is a
+character-count ruler with a fixed 6 units per glyph - **the same shape of estimate
+as this repository's `text.length * GRID`** (§1), in a second independent
+implementation.
+
+**And the coordinate ELK returns for a cell label is never read.**
+`Cell.render` (`:266-273`) takes each label only to write its **text** into the
+template's own text node through `setTextAttribute`; the rendered position is the
+template's. **A cell label therefore cannot be moved by the layout engine**, which
+is the same shape as §2.4's finding here, arrived at from the other direction: this
+repository hands ELK no labels at all, netlistsvg hands ELK labels and then
+discards the positions.
+
+**Edge labels are the exception, and what they do is not a row in the taxonomy.**
+The bus-width label on an edge **does** use ELK's coordinate, and
+`lib/drawModule.ts:74-92` draws a `fill: white` rectangle of
+`(text.length + 2) * 6 - 2` by `9` **behind** it. The overlap is allowed and then
+hidden by occluding whatever is underneath. It is closest to "allow the overlap",
+but the taxonomy has no row for masking the obstacle instead of moving the text,
+and that is said rather than filed.
+
+**THE RUN: four arms over one fixture, and the control answers differently.**
+`[RAN]` `test/analog/resistor_divider.json` with the `analog` skin. Arms 1 and 2
+differ only in the length of the cell keys and the presence of a `value`
+attribute; arms 3 and 4 add a capacitor in parallel with the lower resistor so the
+two symbols land in **different layout columns**, and differ from each other only
+in label length. Every box below uses netlistsvg's own 6-per-character ruler, and
+every coordinate is absolute - accumulated through the nested `translate()` groups,
+because the first version of the measurement compared template-local coordinates
+and found two "overlaps" that were in different groups.
+
+```nsvg-run
+clone commit: d3518f1b5c996a876b72a1a984bb39d3572c47dc
+clone declares version: 1.0.2
+committed built/ modified by this session: 0 file(s)
+edge-label code present in the committed built/drawModule.js: 8 hit(s)
+== ARM baseline (analog skin)
+exit code: 0
+stderr bytes: 0
+svg bytes: 3055
+canvas: 74 x 249
+text elements with a position and a string: 3
+  text "r1" abs box x 32..44 y 51..62
+  text "vout" abs box x 47..71 y 97..108
+  text "r2" abs box x 32..44 y 141..152
+text-on-text overlapping pairs: 0
+drawn shapes measured (line/path/rect): 13
+text boxes overlapping a drawn shape: 0
+text boxes leaving the declared canvas: 0
+clip-path attributes in the document: 0
+textLength attributes in the document: 0
+== ARM long (analog skin)
+exit code: 0
+stderr bytes: 0
+svg bytes: 3358
+canvas: 173 x 249
+text elements with a position and a string: 5
+  text "R_FEEDBACK_UPPER_DIVIDER" abs box x 32..176 y 51..62
+  text "4k7_METAL_FILM_1PCT" abs box x 32..146 y 66..77
+  text "vout" abs box x 47..71 y 97..108
+  text "R_FEEDBACK_LOWER_DIVIDER" abs box x 32..176 y 141..152
+  text "4k7_METAL_FILM_1PCT" abs box x 32..146 y 156..167
+text-on-text overlapping pairs: 0
+drawn shapes measured (line/path/rect): 13
+text boxes overlapping a drawn shape: 0
+text boxes leaving the declared canvas: 2
+  OUTSIDE "R_FEEDBACK_UPPER_DIVIDER" abs box x 32..176 y 51..62 vs canvas 173 x 249
+  OUTSIDE "R_FEEDBACK_LOWER_DIVIDER" abs box x 32..176 y 141..152 vs canvas 173 x 249
+clip-path attributes in the document: 0
+textLength attributes in the document: 0
+```
+
+**What that pair establishes.** Both arms **exit 0, write the SVG and print
+nothing on stderr**: there is no refusal. There is no clipping either - zero
+`clip-path` attributes, zero `textLength` attributes, and the full strings are in
+the file. **Nothing moved**: all five node transforms are identical between the
+arms. The only thing that changed is the declared canvas, from 74 to 173 wide -
+**and it is still 3 units short of the text it contains**, which is the shape of
+the problem rather than a rounding complaint: netlistsvg draws the label at the
+skin template's offset while the only thing it tells ELK is an estimated box, so
+the position ELK accounted for and the position the generator draws need not
+agree. **The 3-unit shortfall appears in three of the four arms and its exact
+arithmetic was not determined.**
+
+**The second pair is the one that fills the taxonomy's third row.** Same topology
+in both, labels long in one and short in the other:
+
+```nsvg-run
+== NODE TRANSFORMS, parallel-long vs parallel-short
+arm parallel:
+  transform="translate(22,47)" id="cell_R_FEEDBACK_UPPER_DIVIDER"
+  transform="translate(173,152)" id="cell_R_FEEDBACK_LOWER_DIVIDER"
+  transform="translate(17,12)" id="cell_vcc"
+  transform="translate(17,237)" id="cell_gnd"
+  transform="translate(12,152)" id="cell_C_FILTER_ACROSS_LOWER"
+  transform="translate(37,112)" id="cell_vout"
+arm parallel-short:
+  transform="translate(22,47)" id="cell_r1"
+  transform="translate(77,152)" id="cell_r2"
+  transform="translate(17,12)" id="cell_vcc"
+  transform="translate(17,237)" id="cell_gnd"
+  transform="translate(12,152)" id="cell_c1"
+  transform="translate(37,112)" id="cell_vout"
+```
+
+**One node moved 96 units and the other five did not.** The lower resistor goes
+from `translate(77,152)` with short labels to `translate(173,152)` with long ones,
+which is **the layout engine making room for the label width it was given**. That
+is the taxonomy's *adjust the surrounding geometry* row, OBSERVED, **under one
+condition: the two parties have to be in different layout columns.** Inside a
+single cell, where the label's position is the template's constant, no amount of
+label width buys anything. **Neither arm refuses, and neither reports anything.**
+
+### 4.5 schemdraw: one location, no obstacle set, and the canvas grows around the overlap
+
+**Where the label position comes from.** `Element._place_label`
+(`schemdraw/elements/elements.py:648-751`) resolves exactly **one** location:
+`label.loc`, defaulting to the element's `lblloc` and then to `'top'`, mapped
+through a small alias table, flipped for a flipped or reversed element, offset by
+`lblofst` (default `.1`), with alignment derived from the drawing angle and
+optional per-element `_labelhints` filling in anything the caller left unset. The
+anchor is then one of the element's own named anchors or the midpoint of a side of
+its bounding box, and a `SegmentText` is appended. **The only `raise` in the
+function is `ValueError(f'Undefined location {label.loc}')`, for an unrecognised
+location NAME.**
+
+**There is no collision model.** A case-insensitive grep for `overlap`, `collid`
+and `collision` over every `.py` in the tree returns two comments in
+`elements/twoterm.py`, one about an arrow offset and one about fill ordering.
+
+**It does measure text properly, and uses the measurement only to size the
+canvas.** `SegmentText.get_bbox` (`schemdraw/segments.py:102-132`) calls
+`backends/svg.py:text_size`, whose docstring says the size *"will be exact
+bounding box if ziamath installed and using path text mode. Otherwise size will be
+estimated based on character widths."* Either way it is a per-glyph quantity, not
+`len x height`. **So two of the four open-source tools measure text per glyph and
+two use a character count** - netlistsvg's 6-per-character and this repository's
+`text.length * GRID` are the two that do not.
+
+**THE RUN: two arms, identical but for the gap and the label strings.** `[RAN]`
+Two resistors one above the other, each labelled at the default `'top'`. The
+control places them 1.2 units apart with `R1`/`R2`; the treatment places them 0.5
+apart with two-line labels. Boxes are schemdraw's own `SegmentText.get_bbox`,
+pushed through each element's transform into drawing coordinates.
+
+```sd-run
+schemdraw 0.23
+== ARM control
+raised: None
+figure bbox: xmin 0.000 xmax 1.200 ymin -1.450 ymax 0.739
+svg produced: True, bytes: 1115
+text segments: 2
+  text 'R1' box x 0.358..0.842 y 0.35..0.739
+  text 'R2' box x 0.358..0.842 y -0.85..-0.461
+text-on-text overlapping pairs: 0
+  line 'R1' present in the svg verbatim: True
+  line 'R2' present in the svg verbatim: True
+clipPath elements in the svg: 0
+textLength attributes in the svg: 0
+== ARM collide
+raised: None
+figure bbox: xmin -1.494 xmax 2.694 ymin -0.750 ymax 1.128
+svg produced: True, bytes: 1178
+text segments: 2
+  text 'R_FEEDBACK_UPPER\n4k7 1%' box x -1.431..2.631 y 0.35..1.128
+  text 'R_FEEDBACK_LOWER\n4k7 1%' box x -1.494..2.694 y -0.15..0.628
+  OVERLAP 'R_FEEDBACK_UPPER\n4k7 1%' x -1.431..2.631 y 0.35..1.128 vs 'R_FEEDBACK_LOWER\n4k7 1%' x -1.494..2.694 y -0.15..0.628
+text-on-text overlapping pairs: 1
+  line 'R_FEEDBACK_UPPER' present in the svg verbatim: True
+  line '4k7 1%' present in the svg verbatim: True
+  line 'R_FEEDBACK_LOWER' present in the svg verbatim: True
+  line '4k7 1%' present in the svg verbatim: True
+clipPath elements in the svg: 0
+textLength attributes in the svg: 0
+```
+
+**The control answers differently from the treatment**, which is what makes the
+treatment worth reporting: 0 overlapping pairs against 1, by schemdraw's own
+bounding boxes, with everything else held fixed. In the colliding arm **nothing is
+raised**, a 1178-byte SVG is produced, all four text lines are present verbatim,
+and there are zero `clipPath` and zero `textLength` attributes - so no refusal, no
+clip and no truncation. **The figure's bounding box grows from 1.2 units wide to
+`-1.494 .. 2.694`** to contain the text. The canvas accommodates; the text does
+not move; the overlap stands.
+
+### 4.6 Altium Designer, as documentation, with the quotations verified against the page
+
+`[DOCS]` **retrieved 2026-10-22**, pages saved and quoted from their own bytes. No
+Altium source was read and no Altium product was run.
+
+**The schematic side: `Autoposition` is a boolean about rotation, not about
+collisions.** From *Working with Placed Components*
+(`https://www.altium.com/documentation/altium-designer/schematic/placed-components`):
+
+> *"Autoposition – check to enable auto-positioning, meaning that the parameter is
+> positioned automatically every time the associated component is rotated. Disable
+> this option to keep the parameter position to the associated component when it is
+> rotated."*
+
+and
+
+> *"The default behavior of the Designator is to auto-position it as a component is
+> rotated during placement."*
+
+**The words `overlap`, `collid` and `clutter` do not appear anywhere on that
+page** - a grep that could have matched and did not.
+
+**The nine positional styles, which this repository has cited before and which are
+a PCB command rather than a schematic one.** From *PCB Placement & Editing
+Techniques*:
+
+> *"The following nine positional styles are available for the text, all of which
+> are classed as 'automatic positions', meaning the text remains in the chosen
+> position as the component is moved and rotated:"*
+
+followed by `Left-Above`, `Left-Center`, `Left-Below`, `Center-Above`, `Center`,
+`Center-Below`, `Right-Above`, `Right-Center`, `Right-Below`, and a `Manual` style
+reached by dragging the text.
+
+**TWO CORRECTIONS TO [`text-placement-prior-art.md`](text-placement-prior-art.md)
+§7, recorded here because that document is read and never rewritten.** Its claim
+was marked `[THIRD-PARTY]` from a search extract, and it substantially holds:
+
+1. Its quotation is *"[n]ine positional styles ... all classed as 'automatic
+   positions'"*. **The page says "all of which are classed as"**. The elision is
+   marked in the original, so this is a shortening rather than a misquotation, but
+   the exact sentence is now on record.
+2. Its sentence attaches the nine styles to **schematic** designator text. **They
+   are the PCB editor's `Position Component Text` command.** On the schematic side
+   `Autoposition` is a checkbox, not a nine-way choice. Its conclusion -
+   *"[n]ine positions, fixed, with no overlap avoidance documented"* - survives
+   both corrections, and the "automatic" in the quotation is now pinned to what
+   the page says it means: the text follows the component, which is not a claim
+   about clearance.
+
+**And the documentation is explicit that overlap is a NORMAL STATE.** From
+*Schematic Placement & Editing Techniques*:
+
+> *"The schematic editor automatically stacks objects, text and graphics in layers.
+> Each object is on a different layer depending on the creation order and,
+> therefore, it is possible to place objects so that they overlap. The objects
+> created or added recently are always on the top layer."*
+
+and, of the alignment commands:
+
+> *"Objects will be moved regardless of their position with respect to the
+> reference. It is possible to end up with partial or total overlap of objects."*
+
+The page then documents commands for moving an object to the front or back of an
+overlapping stack and a pop-up for choosing among overlapping objects under the
+cursor. **Overlap is something Altium gives the user tools to manage, not
+something it prevents or refuses over.** Nothing retrieved documents suppression,
+clipping or refusal of designator text, and **the failure semantics are not
+specified at all** - which is stated here rather than inferred.
+
+### 4.7 OrCAD, as documentation, and the half of it that could not be retrieved
+
+`[DOCS]` **retrieved 2026-10-22.** The *OrCAD Capture User Guide*, Product Version
+16.6, October 2012, Cadence Design Systems - the vendor's own manual, retrieved as
+a PDF from a third-party mirror (5,487,028 bytes, SHA-256
+`d1a6dd3b722c130834471f3e3090f86de5636e213ec10fa189c2a80e25e83bc9`) and converted
+with `pdftotext -layout` to **31,433 lines**.
+
+**Searches over that text that could have matched, and did not:**
+
+| term | hits | what the hits are |
+| --- | --- | --- |
+| `auto.?position` | 0 | - |
+| `designator.*position` / `position.*designator` | 0 | - |
+| `collision`, `collide`, `clutter`, `legib`, `too long` | 0 each | - |
+| `truncat` | 5 | a wildcard-search note, two notes that fields may wrap or appear truncated **in a third-party program**, and two printing-offset statements that *"No truncation takes place"* |
+| `overlap` | 3 | all three about selecting from among overlapping objects |
+| `reference designator` | 52 | annotation, numbering and locking - never placement of the text |
+
+**So the manual documents no designator auto-placement and no failure semantics
+for designator text at all.** That is a statement about this document, not about
+the product: a feature absent from a 2012 manual may exist in a later release.
+A third-party *OrCAD Capture Quickstart* (FlowCAD, 17.4) was retrieved as a cross
+check and contains zero hits for `autoposition`, `auto position` and `overlap`.
+
+**WHAT COULD NOT BE RETRIEVED, AND IT IS THE INTERESTING HALF.** OrCAD's and
+Allegro's **PCB** side is reported to have a silkscreen auto-placement routine
+that logs the reference designators it could not place legally - which, if true,
+would be the closest thing in this section to a tool that detects an unplaceable
+label and tells a person. **No quotable source for it was obtained**:
+`community.cadence.com` returns HTTP 403 to a plain fetch, `support.cadence.com`
+requires a login, and the EMA training page that search results pointed at does
+not resolve in DNS. **A search-engine summary described the behaviour and an
+`autosilk.log`; a summary is not a page anyone opened, so it is recorded here as
+an unverified lead and is NOT evidence and is NOT counted in §4.9.** Settling it
+needs the Allegro/OrCAD PCB Editor manual, which was not obtained.
+
+### 4.8 The taxonomy, filled in, with the condition recorded beside each behaviour
+
+**The five rows are the review's and are not altered.** A tool appears in several
+rows where it behaves differently under different conditions, and the condition is
+stated with the behaviour.
+
+| behaviour | which tools, under which condition | grade |
+| --- | --- | --- |
+| **suppress or clip the text** | **xschem**, on screen only, when the text is below ~3 device pixels at the current zoom or its box is wholly outside the viewport - **keyed on magnification, never on what else is at that coordinate**, and the SVG exporter's copy of the guard is commented out. **netlistsvg**, in the weak sense that the drawn text extends past the canvas the generator declares, so an SVG consumer clips at the viewport - **a clip by the canvas, not a decision by the tool.** | `[READ]`; `[RAN]` |
+| **allow the overlap** | **all four open-source tools**, and **Altium** by its own documentation. For lepton-eda after its one unverified translate; for xschem and schemdraw because nothing is tested at all; for netlistsvg within a cell, where the label's position is a template constant. | `[READ]`; `[RAN]` for netlistsvg and schemdraw; `[DOCS]` for Altium |
+| **adjust the surrounding geometry** | **netlistsvg**, observed: one node moved 96 units when its label grew, with five others unmoved - **but only across layout columns**, because ELK cannot move a label whose position the renderer takes from a template. **This is the row this repository is emptiest on** (§3's note: KiCad has one local repair, this repository has no perturbation of any kind). **Nothing else examined does it.** | `[RAN]` |
+| **grow the canvas around the text** | **schemdraw** (figure bbox 1.2 wide to `-1.494 .. 2.694`) and **netlistsvg** (74 to 173). **THIS IS NOT ONE OF THE FIVE ROWS and it is not being added as one.** It is accommodation, not avoidance: the overlap is unchanged and the drawing is still produced. It is listed because two of the four tools do it and a reader who filed it under *adjust the surrounding geometry* would be recording a repair that did not happen. | `[RAN]` |
+| **request user intervention** | **Nothing examined asks a person because it could not place text.** The three nearest things are all something else: lepton-eda's component autoplacer is **hook-only and commented out by default**, so the person does the work because the tool never offers to; Altium's nine styles and `Manual` style are a user choice offered up front; and xschem's forced ERC window is about coincident symbol instances and fires after the netlist is written. | `[READ]`; `[DOCS]` |
+| **refuse to generate** | **None of the six.** Established per tool in §4.9. | - |
+
+### 4.9 The conclusion, at the scope the evidence supports
+
+**Of the SIX tools examined, ZERO refuse to produce the drawing because text would
+not fit.** How each was established, one line each, with the grade:
+
+1. **lepton-eda** `[READ]` - the placement function's only exit returns a position,
+   `set-default-position` always writes the text, and all nine `error` calls in
+   the file are malformed-input refusals. Not run.
+2. **xschem** `[READ]` - there is no text-collision test to fail; the two early
+   returns in `draw_string` are a zoom threshold and a viewport cull. Not run.
+3. **netlistsvg** `[RAN]` - four arms, every one exit 0 with the SVG written and
+   stderr empty, including the arm whose text leaves the declared canvas.
+4. **schemdraw** `[RAN]` - the colliding arm raises nothing and produces the SVG
+   with both labels whole and overlapping by its own bounding boxes.
+5. **Altium Designer** `[DOCS]` - overlap is documented as a normal state with
+   z-order commands to manage it; no refusal is documented and no failure
+   semantics are specified.
+6. **OrCAD Capture** `[DOCS]` - the retrieved manual documents no designator
+   auto-placement and no failure semantics, so there is no documented refusal to
+   find.
+
+**Adding §3's KiCad makes it zero of seven**, and KiCad is the one that matters
+most, because it is the program `make check` runs on this repository's output on
+every run.
+
+**THE FINDING THAT MATTERS SURVIVES AT THIS SCOPE, and it is about this
+repository.** None of the tools examined - including the two that were run and the
+one that renders this repository's own files - refuses to produce a drawing because
+text will not fit. **So this generator's refusal is unusual among its closest
+neighbours.** That is a claim six tools can support, and it is all this section
+claims. It is **not** a claim that no tool anywhere refuses, and it is **not** a
+claim that refusing is wrong: whether a refusal is right here depends on what an
+acceptable sheet is, which is the owner's question and is **G260**'s.
+
+### 4.10 What remains unknown, which is a separate paragraph because the plan requires it to be
+
+**Two tools were never executed, and for those two "no refusal in the source" is
+weaker than it reads.** lepton-eda and xschem were read, not run. The review's
+caution applies to them in full: a program may reject geometry earlier than the
+function one is reading, clip in a layer one did not open, fall back somewhere
+else, or quietly overlap, and **a source read cannot tell those apart.** For
+lepton-eda the specific hole is that only `autoplace.scm` and the hook
+configuration were read; `libleptongui` and `liblepton` were greped but not read,
+so a refusal elsewhere in the rendering or export path would have been missed. For
+xschem the specific hole is that `draw.c` and `svgdraw.c` were read only at the
+text functions, and the Tcl layer was greped rather than read.
+
+**Four tools were not examined at all.** Eagle/Fusion, KiCad's own `pcbnew`
+silkscreen side, LibrePCB and Horizon EDA were not opened; the plan named four
+open-source tools and these are not among them. **gschem was not read separately**
+from lepton-eda, on the brief's instruction that lepton-eda is the maintained
+fork.
+
+**The commercial half is thinner than the open-source half and is thin in a
+specific way.** Two vendors were examined and only through documentation. For
+Altium, no source and no running product; what is established is what the pages
+say, and the pages do not specify failure semantics. For OrCAD, the manual
+retrieved is **version 16.6 from 2012** - a later Capture may document something
+this one does not - and **the Allegro/OrCAD PCB silkscreen auto-placer, which is
+the single most relevant commercial behaviour this section identified, could not
+be retrieved from any quotable source** (§4.7). **That is the one gap whose
+closing could change a row of §4.8**, because the behaviour described in the
+unverified summary - place what you can, log what you could not - is a sixth shape
+that none of the six tools examined exhibits.
+
+**Three things no run here settled.** The exact arithmetic of netlistsvg's 3-unit
+canvas shortfall. Whether lepton-eda's stray `2` has ever changed a placement in
+practice, and when it entered. Whether the suppression threshold xschem applies on
+screen has any effect on an exported PDF, since only the SVG exporter's guard was
+located.
+
+### 4.11 What §4 did NOT establish
+
+- **It did not build or run lepton-eda or xschem**, so every statement about them
+  is a reading of source at one commit, and the §4.2 claim about `snap-coord-to-grid`
+  rests on a transcription into a throwaway script rather than on Guile.
+- **It did not read any of the four tools end to end.** The files named in §4.0's
+  table are the files the claims rest on; each tool's tree is far larger and was
+  searched rather than read.
+- **It did not recompile netlistsvg**, so the run exercises the repository's
+  committed `built/` rather than a build of the `lib/` that was read.
+- **It read no commercial source and ran no commercial tool.** Altium and OrCAD
+  enter only as `[DOCS]`, and §4.7 names what could not be retrieved.
+- **It did not measure legibility.** Every overlap figure here is a box
+  intersection computed with the tool's own ruler; whether a human could read the
+  result was not assessed for any tool, and §1's three measured quantities are not
+  applied to any of them.
+- **It did not compare the quality of placements.** Which tool produces a better
+  drawing is not a question this section asked, and none of its figures bears on
+  it.
+- **It elects nothing, recommends nothing, and authors no acceptance criterion.**
+  **G260**'s open question - how much overlap is acceptable - is the owner's, and
+  nothing in §4 answers it or is phrased to imply an answer.
+
+### 4.12 How this section's blocks are accounted for under §1.11's contract
+
+**§4 adds five fenced blocks and none of them is probe output**, so each is
+declared not-output and is listed by name by
+`tests/schgen/text-metrics/document-pastes.test.ts`, one `expect()` each, exactly
+as §3's seven are. They cannot be checked against a committed log, because the
+logs are scratchpad runs of third-party tools installed outside this repository
+and the plan forbids this task from adding a tool, a test or a log to the tree.
+**A reader who wants to re-drive them has §4.0's commits, versions, install
+methods and hashes, and that is the whole of the coupling available.**
+
+**Two blocks are transcriptions of Scheme source and both are declared altered.**
+Each line of the two `lepton-src` blocks is prefixed with its line number in
+`autoplace.scm`, and that prefix is the only alteration. **The reason is the
+contract, not tidiness**: an unchecked block's first non-blank line must not begin
+with whitespace, and indented Scheme does. §3 hit the same red on a C comment and
+dedented by one space; this section numbers the lines instead, because the stray
+`2` in §4.2 is a claim about column 1 and a dedent would have destroyed the
+evidence for it.
+
+**The two logs share no line with either committed probe log**, checked by
+comparing the 84 distinct non-blank lines of the two runs against the 712 of
+`tests/schgen/text-metrics/probe-run.log` and `tools/schgen/elk-labels/probe-run.log`
+together: zero in common. That matters because a non-`run` block sharing a line
+with a checked log is the relabel dodge the checker refuses by name.
