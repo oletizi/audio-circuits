@@ -230,6 +230,14 @@ const bBuilder = builderFor("b-label-bridge")
  * **THE PREDICTIONS ARE PART OF THE ARM** and are printed before the netlists are exported, because
  * a figure asserted after a run is unfalsifiable (the plan's own standard, and Task 4 caught an
  * arithmetic error by publishing a prediction first).
+ *
+ * **`a6-off-wire` IS NOT A FREEDOM AND IS THE MOST INFORMATIVE ARM HERE.** It is a third-party
+ * reviewer's, driven in fix round 1 after the reviewer drove it independently: the label moved to a
+ * point on no wire at all. **Without it, "identity unchanged" on the four freedoms could be read as
+ * a property of this probe rather than of KiCad** - a netlist export that ignored labels entirely
+ * would report the same thing. This arm answers differently on NAMING, so the export demonstrably
+ * carries the attachment, and the four unchanged results are about the circuit rather than about a
+ * blind measurement.
  */
 export const ARMS: readonly Arm[] = [
   {
@@ -287,6 +295,16 @@ export const ARMS: readonly Arm[] = [
     base: "a0-base",
     freedom: "the discriminator's first half: the label RENAMED on a net the wires already hold together",
     items: edit(A_BASE, "sig-label", () => aBuilder.label("sig-label", "SIGNAL_RENAMED", [38.1, 38.1], 180, "right")),
+    predictedIdentity: "unchanged",
+    predictedNaming: "changed",
+  },
+  {
+    name: "a6-off-wire",
+    fixture: "a-wired-net",
+    base: "a0-base",
+    freedom:
+      "NOT a freedom: the label moved OFF the net entirely, to a point on no wire - the arm a third-party reviewer drove to show the other five are not tautological",
+    items: edit(A_BASE, "sig-label", () => aBuilder.label("sig-label", "SIGNAL", [38.1, 25.4], 180, "right")),
     predictedIdentity: "unchanged",
     predictedNaming: "changed",
   },

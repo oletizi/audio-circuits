@@ -152,6 +152,35 @@ export interface SweepResult {
   /** The best candidate's count of problems that name a global label. */
   readonly bestLabel: number
   readonly bestLabelAt: string
+  /**
+   * **THE FEWEST TOTAL PROBLEMS REACHED BY ANY CANDIDATE THAT CLEARS EVERY LABEL PROBLEM**, and that
+   * candidate's remaining problems. `Infinity` and `[]` when no candidate cleared the label problems.
+   *
+   * **This exists because two simpler metrics both answered the question wrongly, in opposite
+   * directions, and the second was found only by driving it.** `G269` asks *"once relocation has
+   * removed the label overlaps, what is left"*:
+   *
+   * - **best by TOTAL under-counts it.** On `tp-follower` the lowest-total candidate is the
+   *   UNPERTURBED layout, so the residue reported is the original overlap rather than anything
+   *   relocation leaves. A reviewer found the entry said two blocks where three was right.
+   * - **best by LABEL COUNT over-counts it**, and that was measured here: many candidates tie at
+   *   zero label problems, the accumulator keeps whichever arrives first, and `anchorAndSide`
+   *   iterates points before sides - so a relocation that strands a wire end beats an in-place side
+   *   change that leaves nothing at all. It reported EIGHT blocks, five of which are the Pultec
+   *   junction blocks that a side change alone draws cleanly.
+   *
+   * **Neither failure is visible in a count**; both are visible in the residue, which is why the
+   * residue is carried rather than the number. This field is tie-free: it minimises TOTAL over the
+   * candidates that clear the labels, so an in-place side change reaching zero always wins.
+   */
+  readonly clearTotal: number
+  readonly clearProblems: readonly string[]
+  /**
+   * The problems the best-by-LABEL-COUNT candidate still has - **kept only so that the metric which
+   * OVER-counted the finding stays driven rather than described.** The summary prints what all three
+   * metrics give, and a number reconstructed in prose after the fact would be unfalsifiable.
+   */
+  readonly bestLabelProblems: readonly string[]
   /** True when some candidate produced an EMPTY problem list - the block draws. */
   readonly clearsBlock: boolean
   /** True when some candidate produced no problem naming a global label. */
@@ -167,6 +196,9 @@ const EMPTY: SweepResult = {
   bestTotalProblems: [],
   bestLabel: Number.POSITIVE_INFINITY,
   bestLabelAt: "(nothing tried)",
+  clearTotal: Number.POSITIVE_INFINITY,
+  clearProblems: [],
+  bestLabelProblems: [],
   clearsBlock: false,
   clearsLabels: false,
   capped: "",
@@ -194,6 +226,9 @@ export function sweep(g: BlockSubgraph, candidates: Iterable<{ readonly what: st
       bestTotalProblems: problems.length < r.bestTotal ? problems : r.bestTotalProblems,
       bestLabel: labels < r.bestLabel ? labels : r.bestLabel,
       bestLabelAt: labels < r.bestLabel ? c.what : r.bestLabelAt,
+      bestLabelProblems: labels < r.bestLabel ? problems : r.bestLabelProblems,
+      clearTotal: labels === 0 && problems.length < r.clearTotal ? problems.length : r.clearTotal,
+      clearProblems: labels === 0 && problems.length < r.clearTotal ? problems : r.clearProblems,
       clearsBlock: r.clearsBlock || problems.length === 0,
       clearsLabels: r.clearsLabels || labels === 0,
     }

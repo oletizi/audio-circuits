@@ -84,17 +84,39 @@ export interface BlockReport {
   readonly f4Best: number
   readonly f3: { readonly clears: boolean; readonly best: number }
   /**
-   * `residuals` holds, per label anchor, what that label's best-by-total relocation STILL has.
+   * `residuals` holds, per label anchor, what remains at the FEWEST-TOTAL candidate that clears
+   * every label problem, with `clearTotals` holding that total. `freedoms.ts`'s `clearTotal` doc
+   * records the two simpler metrics that answered this wrongly in opposite directions.
    *
    * **It is per label rather than one list, because the first version kept only the residual of
    * whichever label happened to reach the block's minimum first** - an arbitrary pick when several
    * tie, and the summary line drawn from it would have been about a label nobody chose.
+   *
+   * `totalResiduals` keeps the best-by-TOTAL residue beside it, because that is the metric the
+   * first version counted and the figure it produced is printed rather than quietly replaced.
    */
-  readonly f124: { readonly clearsBlock: boolean; readonly clearsLabels: boolean; readonly best: number; readonly residuals: readonly (readonly string[])[] }
+  readonly f124: {
+    readonly clearsBlock: boolean
+    readonly clearsLabels: boolean
+    readonly best: number
+    readonly residuals: readonly (readonly string[])[]
+    readonly clearTotals: readonly number[]
+    readonly totalResiduals: readonly (readonly string[])[]
+    readonly labelResiduals: readonly (readonly string[])[]
+  }
   readonly pair: { readonly pairs: number; readonly clearsBlock: boolean; readonly clearsLabels: boolean; readonly best: number; readonly capped: boolean }
   /** Candidate anchor points on the label's own net, summed over the block's label anchors. */
   readonly ownSegmentPoints: number
   readonly otherSegmentPoints: number
+  /**
+   * Per-label sweeps whose candidate set was EMPTY, per freedom.
+   *
+   * **A sweep over an empty set is a recorded false-green shape on this branch** (`docs/known-gaps.md`
+   * records a loop over an empty range), so a block-level *"freedom 4 clears 0"* must disclose where
+   * there was nothing to try. The block verdict is not vacuous as long as some label had candidates;
+   * the figure says how far from vacuous it is.
+   */
+  readonly emptySweeps: { readonly f2: number; readonly f4: number; readonly f3: number }
 }
 
 const min = (a: number, b: number): number => (b < a ? b : a)
@@ -119,6 +141,10 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
   let f3Clears = false
   let f124Best = Number.POSITIVE_INFINITY
   const f124Residuals: (readonly string[])[] = []
+  const f124ClearTotals: number[] = []
+  const f124LabelResiduals: (readonly string[])[] = []
+  const f124TotalResiduals: (readonly string[])[] = []
+  const empty = { f2: 0, f4: 0, f3: 0 }
   let f124ClearsBlock = false
   let f124ClearsLabels = false
   let ownPoints = 0
@@ -160,7 +186,13 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
     f4Best = min(f4Best, f4.bestTotal)
     f3Best = min(f3Best, f3.bestTotal)
     f3Clears = f3Clears || f3.clearsBlock
-    f124Residuals.push(f124.bestTotalProblems)
+    f124Residuals.push(f124.clearProblems)
+    f124ClearTotals.push(f124.clearTotal)
+    f124LabelResiduals.push(f124.bestLabelProblems)
+    f124TotalResiduals.push(f124.bestTotalProblems)
+    if (f2.tried === 0) empty.f2 += 1
+    if (f4.tried === 0) empty.f4 += 1
+    if (f3.tried === 0) empty.f3 += 1
     f124Best = min(f124Best, f124.bestTotal)
     f124ClearsBlock = f124ClearsBlock || f124.clearsBlock
     f124ClearsLabels = f124ClearsLabels || f124.clearsLabels
@@ -214,10 +246,11 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
     f2Best,
     f4Best,
     f3: { clears: f3Clears, best: f3Best },
-    f124: { clearsBlock: f124ClearsBlock, clearsLabels: f124ClearsLabels, best: f124Best, residuals: f124Residuals },
+    f124: { clearsBlock: f124ClearsBlock, clearsLabels: f124ClearsLabels, best: f124Best, residuals: f124Residuals, clearTotals: f124ClearTotals, totalResiduals: f124TotalResiduals, labelResiduals: f124LabelResiduals },
     pair: { pairs, clearsBlock: pairClearsBlock, clearsLabels: pairClearsLabels, best: pairBest, capped: pairCapped },
     ownSegmentPoints: ownPoints,
     otherSegmentPoints: otherPoints,
+    emptySweeps: empty,
   }
 }
 
@@ -247,8 +280,20 @@ export function summaryLines(reports: readonly BlockReport[]): readonly string[]
     )
   }
   const anyClear = (f: (r: BlockReport) => boolean): number => reports.filter(f).length
+  // **EVERY CLEARING COUNT BELOW IS A FIGURE AT ONE TEXT BOX, AND THE LINE SAYS SO IN ITS OWN
+  // WORDS.** The four freedoms existing does not depend on the ruler - STEP 2 measures that against
+  // KiCad's netlister, not against a box - but *how many blocks a freedom clears* is computed from
+  // `lib/schgen/render/text-boxes.ts`'s `length x GRID`. §1 measured three quantities and found 13 of
+  // 15 field fallbacks and 4 of 8 drawn-text overlaps surviving all three, so these counts are
+  // EXPECTED to move under another one. **The election between the three is the owner's**
+  // (`docs/known-gaps.md` G265 clause 4) and nothing here makes it. The qualifier is on the line
+  // rather than in a footnote because a reader who quotes one of these numbers quotes the line.
   out.push(
-    `TOTALS over ${reports.length} label-blocked block(s): F1 alone clears ${anyClear((r) => r.f1.clearsBlock)}; ` +
+    `RULER: every clearing count below is computed with lib/schgen/render/text-boxes.ts's length x GRID estimate, the ruler that produces these refusals. ` +
+      "Section 1 measured three text-box quantities and the election between them is the owner's (G265 clause 4); these counts are expected to move under another and were not re-taken.",
+  )
+  out.push(
+    `TOTALS over ${reports.length} label-blocked block(s), under that ruler: F1 alone clears ${anyClear((r) => r.f1.clearsBlock)}; ` +
       `F3 alone clears ${anyClear((r) => r.f3.clears)}; F1+2+4 on one label clears ${anyClear((r) => r.f124.clearsBlock)}; ` +
       `a joint pair move clears ${anyClear((r) => r.pair.clearsBlock)}; ` +
       `some freedom clears ${anyClear((r) => r.f1.clearsBlock || r.f3.clears || r.f124.clearsBlock || r.pair.clearsBlock)}; ` +
@@ -271,15 +316,36 @@ export function summaryLines(reports: readonly BlockReport[]): readonly string[]
   // does not move. **So part of freedom 2 is restricted here and not by the file format.**
   const onlyDangling = (res: readonly string[]): boolean => res.length > 0 && res.every((p) => p.includes("touching nothing"))
   const dangling = reports.filter((r) => r.f124.residuals.some(onlyDangling))
+  const byTotal = reports.filter((r) => r.f124.totalResiduals.some(onlyDangling))
   const anyResidue = reports.filter((r) => r.f124.residuals.some((res) => res.length > 0))
   out.push(
-    `BEST ANCHOR RELOCATION'S RESIDUE: of ${anyResidue.length} block(s) where some label's best relocation still refuses, ` +
-      `${dangling.length} have a label whose best relocation leaves ONLY "ends at ... touching nothing" - this repository's danglingWireEnds rule, ` +
+    `WHAT IS LEFT ONCE RELOCATION HAS CLEARED THE LABEL PROBLEMS, at the fewest-total candidate that clears them: of ${anyResidue.length} block(s) where that candidate still refuses, ` +
+      `${dangling.length} refuse ONLY on "ends at ... touching nothing" - this repository's danglingWireEnds rule, ` +
       `applied to the wire end the anchor left (${dangling.map((r) => r.name).join(", ") || "none"})`,
+  )
+  // **TWO EARLIER METRICS FOR THAT LINE, BOTH WRONG, BOTH PRINTED RATHER THAN QUIETLY REPLACED.**
+  // Counting over the best-by-TOTAL candidate gave 2: on `tp-follower` that candidate is the
+  // UNPERTURBED layout, so the residue was the original overlap. Counting over the best-by-LABEL
+  // candidate gave 8: many candidates tie at zero label problems and the first encountered won, so a
+  // relocation that strands a wire end beat an in-place side change that leaves nothing - which
+  // swept in the five Pultec junction blocks that a side change alone draws cleanly.
+  out.push(
+    `THE SAME COUNT UNDER THE TWO METRICS THAT GOT IT WRONG: best-by-TOTAL gives ${byTotal.length} ` +
+      `(${byTotal.map((r) => r.name).join(", ") || "none"}) because on a block whose lowest total is the unperturbed layout the residue is the original overlap; ` +
+      `best-by-LABEL-COUNT gives ${reports.filter((r) => r.f124.labelResiduals.some(onlyDangling)).length} because candidates tie at zero label problems and the first encountered wins, so a relocation that strands a wire end beats an in-place side change that leaves nothing.`,
+  )
+  // **M-2: WHERE A SWEEP HAD NOTHING TO TRY.** A sweep over an empty candidate set is a recorded
+  // false-green shape on this branch, so an exhaustive-sweep claim must say where the set was empty.
+  const sumEmpty = (f: (r: BlockReport) => number): number => reports.reduce((s, r) => s + f(r), 0)
+  const anchors = reports.reduce((s, r) => s + r.labels, 0)
+  out.push(
+    `EMPTY CANDIDATE SETS, per label anchor, over ${anchors} anchor(s) of the ${reports.length} blocked block(s): ` +
+      `freedom 2 ${sumEmpty((r) => r.emptySweeps.f2)}, freedom 4 ${sumEmpty((r) => r.emptySweeps.f4)}, freedom 3 ${sumEmpty((r) => r.emptySweeps.f3)}. ` +
+      "A per-label sweep over an empty set decides nothing; the block-level verdicts above are not vacuous because every blocked block has at least one anchor with candidates, which the per-block detail prints.",
   )
   out.push(
     `CANDIDATE ANCHOR POINTS on the labels' own nets, summed: own segment ${reports.reduce((s, r) => s + r.ownSegmentPoints, 0)}, ` +
-      `other segments ${reports.reduce((s, r) => s + r.otherSegmentPoints, 0)}, over ${reports.reduce((s, r) => s + r.labels, 0)} label anchor(s)`,
+      `other segments ${reports.reduce((s, r) => s + r.otherSegmentPoints, 0)}, over ${anchors} label anchor(s)`,
   )
   return out
 }

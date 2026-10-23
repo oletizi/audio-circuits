@@ -9,15 +9,24 @@
  * **WHY IT EXISTS.** `tools/schgen/label-freedom/fixtures/*.kicad_sch` are derived artifacts: the
  * probe writes them so that a reader can open the exact sheet a figure was measured on in KiCad.
  * `CLAUDE.md`: *"Derived artifacts are regenerated every run and compared by content, never by
- * timestamp."* This is the content comparison. A hand-edited fixture, a renamed arm, or a
- * `fixtures.ts` change that was never re-driven fails here.
+ * timestamp."* `fixtureProblems` below is that content comparison. A hand-edited fixture, a renamed
+ * arm, a missing file, a stray file, or a `fixtures.ts` change that was never re-driven fails here.
  *
- * **THE SECOND HALF IS THE LOAD-BEARING ONE.** Every §5 verdict of the form *"rotating a label
+ * **THE COMPARISON IS A FUNCTION OF ITS FILE SYSTEM, AND THAT IS THE WHOLE POINT OF FIX ROUND 1.**
+ * The first version of this file did the comparison inline inside a test, and its "RED" case
+ * therefore **never called the comparison and never touched a file**: it perturbed a string in
+ * memory and asserted the perturbed string differed from the original, which is true by
+ * construction. **So the thing it existed to prove was not proved by it, and weakening the real
+ * comparison would have left that "RED" green** - the exact shape `docs/known-gaps.md` records
+ * eleven-plus times on this branch. The comparison now takes its reader and its lister as
+ * parameters, so a RED case can hand it a corrupted copy and read the refusal it produces. **No
+ * test here writes to disk**: the corruption lives in the injected reader.
+ *
+ * **THE SECOND HALF IS THE OTHER LOAD-BEARING ONE.** Every §5 verdict of the form *"rotating a label
  * leaves net identity alone"* is only about rotation if the rotate arm differs from its base in
- * nothing else. The arms are built as one edit each, and the edit helpers in `fixtures.ts` throw
- * when an arm names no item or two - but a helper that throws does not establish that the RENDERED
- * sheets differ in one place. This asserts the rendered difference, per arm, with the number of
- * differing lines pinned.
+ * nothing else. The edit helpers in `fixtures.ts` throw when an arm names no item or two - but a
+ * helper that throws does not establish that the RENDERED sheets differ in one place. That is
+ * asserted, per arm, with the number of differing lines pinned.
  */
 
 import { describe, expect, test } from "bun:test"
@@ -43,30 +52,99 @@ const EXPECTED_DIFF_LINES: Readonly<Record<string, number>> = {
   "a3-move-segment": 2,
   "a4-reroute": 4,
   "a5-rename-wired": 2,
+  "a6-off-wire": 2,
   "b1-rename-bridge": 2,
   "b2-rotate": 2,
 }
 
 const rendered = new Map(ARMS.map((a) => [a.name, render(a.fixture, a.items)] as const))
 
-function diffLines(base: string, arm: string): readonly string[] {
-  const a = base.split("\n")
-  const b = arm.split("\n")
-  return [...a.filter((l) => !b.includes(l)).map((l) => `- ${l.trim()}`), ...b.filter((l) => !a.includes(l)).map((l) => `+ ${l.trim()}`)]
+/** Reads a fixture file by name, or null when it is absent. */
+type Reader = (file: string) => string | null
+/** Lists the fixture directory. */
+type Lister = () => readonly string[]
+
+const diskReader: Reader = (file) => {
+  const full = path.join(FIXTURE_DIR, file)
+  return fs.existsSync(full) ? fs.readFileSync(full, "utf8") : null
+}
+const diskLister: Lister = () => fs.readdirSync(FIXTURE_DIR).sort()
+
+/**
+ * **THE REAL COMPARISON PATH.** Every way the committed fixtures can disagree with what
+ * `fixtures.ts` builds, one refusal string each; empty means they agree.
+ *
+ * It takes its file system so that a RED case can corrupt a copy. **Each refusal names the arm, the
+ * kind of disagreement and - for a content mismatch - the first line that differs and both of its
+ * sides**, because an assertion on a count establishes only that something broke, and this function
+ * has four distinct refusal paths.
+ */
+function fixtureProblems(read: Reader, list: Lister): readonly string[] {
+  const out: string[] = []
+  for (const arm of ARMS) {
+    const file = `${arm.name}.kicad_sch`
+    const built = rendered.get(arm.name)
+    if (built === undefined) throw new Error(`arm ${arm.name} was not rendered, so there is nothing to compare ${file} with`)
+    const onDisk = read(file)
+    if (onDisk === null) {
+      out.push(`${file} is ABSENT from tools/schgen/label-freedom/fixtures; the probe writes it and the commit must carry it`)
+      continue
+    }
+    if (onDisk === built) continue
+    const a = onDisk.split("\n")
+    const b = built.split("\n")
+    const at = a.findIndex((l, i) => l !== b[i])
+    out.push(
+      `${file} DIFFERS from what fixtures.ts builds, first at line ${at + 1}: on disk ${JSON.stringify(a[at] ?? "(end of file)")}, ` +
+        `built ${JSON.stringify(b[at] ?? "(end of file)")}`,
+    )
+  }
+  const expected = ARMS.map((a) => `${a.name}.kicad_sch`).sort()
+  for (const f of list()) {
+    if (!expected.includes(f)) out.push(`tools/schgen/label-freedom/fixtures holds ${f}, which no arm of fixtures.ts names`)
+  }
+  return out
 }
 
 describe("the committed label-freedom fixtures", () => {
-  test("every arm has a committed sheet whose bytes are what fixtures.ts builds", () => {
-    for (const arm of ARMS) {
-      const file = path.join(FIXTURE_DIR, `${arm.name}.kicad_sch`)
-      expect(`${arm.name} exists: ${fs.existsSync(file)}`).toBe(`${arm.name} exists: true`)
-      expect(`${arm.name}: ${fs.readFileSync(file, "utf8")}`).toBe(`${arm.name}: ${rendered.get(arm.name) ?? ""}`)
-    }
+  test("every arm's committed sheet is byte-identical to what fixtures.ts builds, and nothing else is there", () => {
+    expect(fixtureProblems(diskReader, diskLister)).toEqual([])
+    // The comparison must actually have looked at every arm, or an empty result would mean nothing.
+    expect(diskLister().length).toBe(ARMS.length)
   })
 
-  test("the directory holds exactly the arms and nothing else", () => {
-    const onDisk = fs.readdirSync(FIXTURE_DIR).sort()
-    expect(onDisk).toEqual(ARMS.map((a) => `${a.name}.kicad_sch`).sort())
+  /**
+   * **RED, DRIVEN THROUGH THE REAL COMPARISON.** One digit of one coordinate changed in a copy of a
+   * committed fixture. The assertion is on the REFUSAL TEXT, not on a count: `fixtureProblems` has
+   * four refusal paths and a count-only assertion would establish only that one of them fired.
+   */
+  test("RED: one digit changed in a committed fixture is refused, by name and by line", () => {
+    const victim = "a2-slide.kicad_sch"
+    const original = diskReader(victim)
+    if (original === null) throw new Error(`${victim} is absent, so this case cannot corrupt it`)
+    expect(original).toContain("(at 44.45 38.1 180)")
+    const corrupted: Reader = (file) => (file === victim ? original.replace("(at 44.45 38.1 180)", "(at 45.72 38.1 180)") : diskReader(file))
+    expect(fixtureProblems(corrupted, diskLister)).toEqual([
+      'a2-slide.kicad_sch DIFFERS from what fixtures.ts builds, first at line 56: on disk "\\t(global_label \\"SIGNAL\\" (shape bidirectional) (at 45.72 38.1 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid \\"ae8bad41-f7be-422f-86ed-97137ed3ae31\\"))", built "\\t(global_label \\"SIGNAL\\" (shape bidirectional) (at 44.45 38.1 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid \\"ae8bad41-f7be-422f-86ed-97137ed3ae31\\"))"',
+    ])
+    // And the uncorrupted file system still passes, so the case is the corruption and not the reader.
+    expect(fixtureProblems(diskReader, diskLister)).toEqual([])
+  })
+
+  /** RED: a fixture deleted. A different refusal path, asserted by its own text. */
+  test("RED: a missing fixture is refused by name", () => {
+    const gone: Reader = (file) => (file === "b0-base.kicad_sch" ? null : diskReader(file))
+    expect(fixtureProblems(gone, diskLister)).toEqual([
+      "b0-base.kicad_sch is ABSENT from tools/schgen/label-freedom/fixtures; the probe writes it and the commit must carry it",
+    ])
+  })
+
+  /** RED: a stray file. The fourth refusal path, which the directory listing is there for. */
+  test("RED: a file no arm names is refused by name", () => {
+    const extra: Lister = () => [...diskLister(), "a7-left-over.kicad_sch"].sort()
+    expect(fixtureProblems(diskReader, extra)).toEqual([
+      "tools/schgen/label-freedom/fixtures holds a7-left-over.kicad_sch, which no arm of fixtures.ts names",
+    ])
   })
 
   /**
@@ -79,23 +157,14 @@ describe("the committed label-freedom fixtures", () => {
       if (arm.name === arm.base) continue
       const base = rendered.get(arm.base)
       const mine = rendered.get(arm.name)
-      expect(base).toBeDefined()
-      expect(mine).toBeDefined()
-      const d = diffLines(base ?? "", mine ?? "")
+      if (base === undefined || mine === undefined) throw new Error(`arm ${arm.name} names base ${arm.base}, which was not rendered`)
+      const a = base.split("\n")
+      const b = mine.split("\n")
+      const d = [...a.filter((l) => !b.includes(l)), ...b.filter((l) => !a.includes(l))]
       expect(`${arm.name}: ${d.length}`).toBe(`${arm.name}: ${EXPECTED_DIFF_LINES[arm.name] ?? -1}`)
     }
-  })
-
-  /**
-   * RED: a fixture edited after the fact. The comparison above is byte-for-byte, so this drives the
-   * failure path rather than trusting that it exists - with the file untouched on disk.
-   */
-  test("RED: one digit changed in a committed fixture", () => {
-    const text = rendered.get("a2-slide")
-    expect(text).toContain("(at 44.45 38.1 180)")
-    const perturbed = (text ?? "").replace("(at 44.45 38.1 180)", "(at 45.72 38.1 180)")
-    expect(perturbed).not.toBe(text)
-    expect(perturbed).not.toBe(rendered.get("a0-base"))
+    // Every non-base arm is pinned, so adding an arm without pinning its diff fails here.
+    expect(Object.keys(EXPECTED_DIFF_LINES).sort()).toEqual(ARMS.filter((a) => a.name !== a.base).map((a) => a.name).sort())
   })
 
   /**
@@ -103,13 +172,18 @@ describe("the committed label-freedom fixtures", () => {
    * carries one, so an arm cannot be added without a prediction - which is how a figure becomes
    * unfalsifiable.
    */
-  test("every arm carries a published prediction for both properties", () => {
+  test("every arm carries a published prediction, and only the stated arms predict a changed partition or a changed name", () => {
     for (const arm of ARMS) {
       expect(["unchanged", "changed"]).toContain(arm.predictedIdentity)
       expect(["unchanged", "changed"]).toContain(arm.predictedNaming)
     }
-    // The negative control is the only arm that predicts a CHANGED partition. If another one ever
-    // does, §5's discrimination claim needs re-reading rather than this number updating quietly.
+    // **The negative control is the only arm that predicts a CHANGED partition.** If another one
+    // ever does, §5's discrimination claim needs re-reading rather than this number updating quietly.
     expect(ARMS.filter((a) => a.predictedIdentity === "changed").map((a) => a.name)).toEqual(["b1-rename-bridge"])
+    // **And the two arms that predict a changed NAME are the discriminator's two halves.** They are
+    // what makes "identity unchanged" on the four freedoms a measurement rather than a property of a
+    // probe that ignores labels: `a6-off-wire` moves the label off the net and the exported name
+    // changes, so the export demonstrably carries the attachment.
+    expect(ARMS.filter((a) => a.predictedNaming === "changed").map((a) => a.name)).toEqual(["a5-rename-wired", "a6-off-wire", "b1-rename-bridge"])
   })
 })

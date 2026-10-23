@@ -38,6 +38,7 @@ import { moduleRepoRoot } from "../../perfboard/repo-root.ts"
 import { kicadVersion } from "../kicad-run.ts"
 import { KICAD_CLI } from "../../../lib/kicad/netlist.ts"
 import { ALL_DECLARED_CASES } from "../board-declarations.ts"
+import { boardRefs, declarationFor } from "../board-sheets.ts"
 import { laidOutBlocks } from "../text-metrics/step4.ts"
 import { ARMS, render } from "./fixtures.ts"
 import { connectivityOf, fmtPartition, partitionDelta, samePartition, sameNaming, type Connectivity } from "./partition.ts"
@@ -178,6 +179,37 @@ async function main(): Promise<void> {
   const blocked = labelBlocked(laid)
   log(`blocks whose refusal names a global label: ${blocked.length} of ${laid.length}`)
   for (const b of blocked) log(`  BLOCKED ON A LABEL ${b.circuit}/${b.block}`)
+
+  head("STEP 3 BOARDS: THE SAME POPULATION AT BOARD GRANULARITY, WHICH NO DOCUMENT HAD STATED")
+  // **THE PLAN AND THE REGISTER SAY "THREE OF ELEVEN BOARDS" AND THAT IS G262's BLOCK COUNT WEARING
+  // THE WORD "BOARDS".** A reviewer computed the board figure in fix round 1 and this re-derives it
+  // here so it is driven rather than relayed. The mapping is NOT a name match: `boardRefs` reads
+  // each board's own `perfboard.json` and `declarationFor` matches on the BUILDER, which is the
+  // whole of G247 - `circuits/transistor-preamp/` holds five board builders and one declaration.
+  // **A board that is not label-blocked is NOT thereby fine**, so the row says what else stopped it.
+  const blockedNames = new Set(blocked.map((b) => `${b.circuit}/${b.block}`))
+  const boards = boardRefs(repoRoot)
+  let labelBlockedBoards = 0
+  for (const board of boards) {
+    const decl = declarationFor(board)
+    if (decl === null) {
+      log(`${board.name.padEnd(28)} NO DECLARATION - nothing in the drawing code has seen it`)
+      continue
+    }
+    const mine = laid.filter((l) => l.circuit === decl.name)
+    const hit = mine.filter((l) => blockedNames.has(`${l.circuit}/${l.block}`))
+    const earlier = skipped.filter((s) => s.startsWith(`${decl.name}/`))
+    if (hit.length > 0) labelBlockedBoards += 1
+    log(
+      `${board.name.padEnd(28)} declared by ${decl.entry.padEnd(26)} ${String(mine.length).padStart(2)} laid-out block(s); ` +
+        `${hit.length > 0 ? `LABEL-BLOCKED via ${hit.map((l) => l.block).join(", ")}` : "no label-blocked block"}` +
+        `${earlier.length === 0 ? "" : `; ALSO refused before checkLayout: ${earlier.map((s) => s.split(":")[0] ?? s).join(", ")}`}`,
+    )
+  }
+  log(
+    `boards under boards/: ${boards.length}; boards with at least one label-blocked block: ${labelBlockedBoards}; ` +
+      `boards with none: ${boards.length - labelBlockedBoards}`,
+  )
 
   head("STEP 3 CANDIDATE SET: HOW MANY PLACES A GLOBAL LABEL COULD GO, OVER EVERY DECLARED BLOCK")
   // **G259's pointer is the question here**: its four-candidate-over-sides mechanism rests on the

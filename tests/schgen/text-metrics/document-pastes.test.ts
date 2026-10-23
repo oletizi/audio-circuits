@@ -51,6 +51,36 @@ const CONTROL_BLOCK = [
 ]
 
 /** The first line of a `run` block, used as the anchor for the fabrication attack. */
+/**
+ * **AN INDEPENDENT RE-DERIVATION OF `verify`'s NOT-CHECKED LIST, scanning the raw document rather
+ * than reusing `parseBlocks`.** Shared provenance is the document text and nothing else, so a
+ * disagreement is a real disagreement between two scanners: a wrong line number, a wrong name, or a
+ * dropped entry shows up as a list mismatch.
+ *
+ * It deliberately reimplements the fence walk instead of calling `parseBlocks`, because a check
+ * built on the function it is checking is the shape this whole file exists to refuse.
+ */
+function notCheckedByOwnScan(d: string): readonly string[] {
+  const lines = d.split("\n")
+  const out: string[] = []
+  for (let i = 0; i < lines.length; i += 1) {
+    const open = /^```(.*)$/.exec(lines[i] ?? "")
+    if (open === null) continue
+    const body: string[] = []
+    let j = i + 1
+    while (j < lines.length && !/^```\s*$/.test(lines[j] ?? "")) {
+      body.push((lines[j] ?? "").replace(/\s+$/, ""))
+      j += 1
+    }
+    const info = (open[1] ?? "").trim()
+    // `elk-run` and `label-run` are §2's and §5's namespaces; against §1's log they are NOT output,
+    // which is exactly what this list is of.
+    if ((info.split(/\s+/)[0] ?? "") !== OUTPUT_FENCE) out.push(`line ${i + 1}: ${body.find((l) => l !== "") ?? "(empty block)"}`)
+    i = j
+  }
+  return out
+}
+
 const RATIO_BLOCK_FIRST =
   "estimate / glyph advance sum: n=264 min 0.955 p25 1.037 median 1.091 p75 1.200 max 1.448; the estimate is SMALLER than this quantity for 11 of 264 strings"
 
@@ -64,18 +94,38 @@ describe("the research document's pasted output", () => {
   })
 
   /**
-   * **THE PATTERN WAS LOOSENED BY ONE CHARACTER WHEN §5 LANDED, AND THE REASON IS WORTH THE
-   * SENTENCE.** It required a non-space immediately after `line N: `, which held only while every
-   * block's first line happened to start in column one. §5 pastes per-label detail whose every line
-   * is indented under its block's header, so the first line of two of its blocks begins with
-   * spaces. **The intent of this case is that nothing leaves the population unnamed**, so the
-   * pattern now requires the name to carry some non-whitespace rather than to start with it. A block
-   * whose first line were blank or all spaces still fails.
+   * **THIS CASE WAS A PATTERN MATCH THAT COULD NOT FAIL, AND IT IS NOW A COMPARISON THAT CAN.**
+   *
+   * It used to assert `/^line \d+: \S/` over each entry. §5 pastes per-label detail whose every line
+   * is indented under its block's header, so two of its blocks begin with spaces and the pattern was
+   * loosened to `/^line \d+: .*\S/`. **A reviewer established two things about that.** First, the
+   * loosening does not weaken what the guard refuses: the only input class the old form caught and
+   * the new one did not is *a block whose first content line is indented*, which is a legitimately
+   * named block and not a dodge. Second - and this is the finding - **`parseBlocks` right-trims every
+   * line, so `first` is either guaranteed to contain non-whitespace or is the literal
+   * `(empty block)`: the loosened pattern could not fail for any possible input.** The comment that
+   * stood here named two shapes it supposedly still caught, an all-spaces first line and an all-blank
+   * block, and the reviewer drove both: **both pass under the OLD pattern too.** It stated a fact
+   * that driving refutes, which is worse than the un-failable assertion it was defending.
+   *
+   * **ROUTE TAKEN: keep the loosened form out of the assertion entirely and compare `verify`'s
+   * report against an independent re-derivation from the raw document.** That can fail - if `verify`
+   * mis-numbers an entry, names the wrong line, or drops one, the two lists diverge - and it is a
+   * strictly stronger statement of this case's actual intent, which is that nothing leaves the
+   * checked population unnamed.
+   *
+   * **THE ROUTE NOT TAKEN, and why.** A third route the reviewer names is to change the probe's own
+   * indentation so §5's blocks begin in column one, which would let the original `\S` stand.
+   * Declined on two grounds: the original pattern would then still be refusing a legitimate shape
+   * (an indented first line) for no safety gain, and the probe's per-label lines are indented under
+   * their block header because that is what makes a 489-line log readable. The dedent route the
+   * reviewer checked - dedenting the document's copy - was never available: both blocks' first lines
+   * are verbatim lines of §5's committed log, so dedenting breaks §5's own contiguity check.
    */
   test("the blocks that are NOT checked are reported by name, never silently dropped", () => {
     const v = verify(doc, log)
     expect(v.notOutput.length).toBeGreaterThan(0)
-    for (const n of v.notOutput) expect(n).toMatch(/^line \d+: .*\S/)
+    expect(v.notOutput).toEqual(notCheckedByOwnScan(doc))
   })
 
   /**
@@ -560,9 +610,13 @@ describe("section 4's blocks are accounted for, although none of them can be che
 
   test("the whole-document verdict reports all eight as NOT CHECKED, by line, after §4's heading", () => {
     const headingLine = doc.slice(0, doc.indexOf(SECTION_4_HEADING)).split("\n").length
-    // Bounded above by §5's heading for the same reason `sectionFour` is: without it §5's twelve
-    // blocks join this count and the assertion fails with a message about §4.
-    const endLine = doc.slice(0, doc.indexOf(SECTION_5_HEADING)).split("\n").length
+    // Bounded above by §5's heading for the same reason `sectionFour` is: without it §5's blocks
+    // join this count and the assertion fails with a message about §4. **It refuses rather than
+    // falling back**, so the two bounds read alike: a silent fallback to end-of-file would make the
+    // pinned count mean one thing in one tree and another in the next.
+    const fifth = doc.indexOf(SECTION_5_HEADING)
+    if (fifth < 0) throw new Error(`${DOCUMENT} has no heading ${JSON.stringify(SECTION_5_HEADING)}, so §4's block count has no upper bound and would include every later section`)
+    const endLine = doc.slice(0, fifth).split("\n").length
     const v = verify(doc, log)
     const inFour = v.notOutput.filter((n) => {
       const at = Number(/^line (\d+):/.exec(n)?.[1] ?? 0)
