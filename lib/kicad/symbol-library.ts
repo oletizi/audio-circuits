@@ -1,15 +1,38 @@
 /**
  * KiCad symbol definitions, handled as raw text.
  *
- * A generated schematic embeds a copy of every symbol it uses (`lib_symbols`),
- * so the stub writer needs symbol TEXT it can paste. `parseSexpr` is used to
- * read names and pin geometry, but never to re-serialise: it drops whether an
- * atom was quoted, and KiCad distinguishes `yes` from `"yes"`.
+ * A `.kicad_sch` embeds a copy of every symbol it uses (`lib_symbols`), so a
+ * writer needs symbol TEXT it can paste. `parseSexpr` is used to read names and
+ * pin geometry, but never to re-serialise: it drops whether an atom was quoted,
+ * and KiCad distinguishes `yes` from `"yes"`.
+ *
+ * **IT HAS TWO CONSUMERS NOW AND THEY WANT DIFFERENT THINGS FROM IT.** It was
+ * written for `lib/kicad/schematic.ts`, the stub writer `lib/schgen/` replaced
+ * and `docs/known-gaps.md` **G248** records as kept rather than deleted.
+ * `lib/schgen/render/stock-symbols.ts` is the second: it imports
+ * `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`, `flattenedSymbol`,
+ * `vendoredSymbolFile` and `vendoredSymbolText` to build the nickname map
+ * `createResolver` is handed, with the vendored set authoritative and the
+ * installed stock directory a declared extension (its own header has the
+ * deviation that decision cost). **So "the stub writer" below names the writer
+ * that motivated a given sentence and never the only reader of this module** -
+ * check which consumer a sentence is about before acting on it.
  *
  * The symbols live in `./symbols/<Library>/<Name>.sexpr`, copied from an
- * installed KiCad by `tools/kicad/vendor-symbols.ts`, so a generated schematic
- * never depends on whichever KiCad happens to be installed. See
- * `./symbols/PROVENANCE.md`.
+ * installed KiCad by `tools/kicad/vendor-symbols.ts`. For
+ * `lib/kicad/schematic.ts`, which reads `vendoredSymbolText` and embeds the
+ * result, that means its output never depends on whichever KiCad happens to be
+ * installed, and needs none installed.
+ *
+ * **THERE IS A SECOND CONSUMER SINCE TASK 4 OF THE M1 SCHEMATIC PLAN, AND IT
+ * USES THESE FILES THE OTHER WAY ROUND.** `lib/schgen/render/stock-symbols.ts`
+ * resolves a library nickname to the INSTALLED KiCad's `.kicad_sym` and reads
+ * the files here only to CHECK it, refusing when a vendored symbol and the
+ * installed library's flattened text for the same name disagree. It cannot do
+ * otherwise: `createResolver`'s map is keyed by nickname, so a single-symbol
+ * `.sexpr` is not something it can be handed. So vendoring buys that consumer
+ * a refusal rather than independence, and KiCad is a hard dependency of it.
+ * See `./symbols/PROVENANCE.md` and `docs/known-gaps.md` **G119**.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -145,10 +168,19 @@ export interface SymbolPin {
  * for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
  * here (a De Morgan alternate would be 2 and is skipped, since this
  * repository has none). A unit sub-symbol with no name, or with a unit number
- * greater than 1, refuses: the stub writer always emits a placed symbol's
- * `(unit 1)` and merges every returned pin onto it (lib/kicad/schematic.ts),
- * which silently drops or wrongly combines a genuine multi-unit part's pins
- * rather than being wrong about it loudly.
+ * greater than 1, refuses: the superseded stub writer always emits a placed
+ * symbol's `(unit 1)` and merges every returned pin onto it
+ * (lib/kicad/schematic.ts), which silently drops or wrongly combines a genuine
+ * multi-unit part's pins rather than being wrong about it loudly.
+ *
+ * **THE REFUSAL IS THE STUB WRITER'S LIMIT AND NOT THE REPOSITORY'S.**
+ * `lib/schgen/` handles multi-unit packages - a UNIT is its unit of placement,
+ * `lib/schgen/ir/` keys parts by `unitKey(label, unit)`, and
+ * `tests/schgen/render/templates/opamp-stock.kicad.test.ts` draws a three-unit
+ * op-amp through it. `lib/schgen/render/stock-symbols.ts` does not import this
+ * function (it takes `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`,
+ * `flattenedSymbol`, `vendoredSymbolFile` and `vendoredSymbolText` and nothing
+ * else), so **nothing in the generator's path meets this refusal.**
  */
 export function symbolPins(block: string): readonly SymbolPin[] {
   const root = parseSexpr(block)
@@ -173,7 +205,9 @@ export function symbolPins(block: string): readonly SymbolPin[] {
         `symbol "${name}" has unit ${unitNumber} ("${unitName}"): a multi-unit symbol. ` +
           "lib/kicad/schematic.ts always places a symbol as \"(unit 1)\" and merges every unit's " +
           "pins onto it, which is wrong once there is more than one unit. Multi-unit symbols are " +
-          "not supported by the stub writer.",
+          "not supported by the SUPERSEDED stub writer, this function's only production caller. " +
+          "lib/schgen/ places units separately and draws them; if you reached this refusal, you " +
+          "are on the stub writer's path and docs/known-gaps.md G248 says why it still exists.",
       )
     }
     if (bodyStyle !== "0" && bodyStyle !== "1") continue
@@ -197,10 +231,20 @@ export function symbolPins(block: string): readonly SymbolPin[] {
   return pins
 }
 
+/**
+ * Where the vendored block for `libId` lives, whether or not it is there.
+ * Exported so a caller can NAME the file in its own refusal without
+ * re-deriving the path shape - `lib/schgen/render/stock-symbols.ts` reports
+ * both sides of a vendored-versus-installed disagreement by path.
+ */
+export function vendoredSymbolFile(libId: string): string {
+  const { library, name } = splitLibId(libId)
+  return path.join(VENDORED_DIR, library, `${name}.sexpr`)
+}
+
 /** The vendored, already-flattened block for `libId`. */
 export function vendoredSymbolText(libId: string): string {
-  const { library, name } = splitLibId(libId)
-  const file = path.join(VENDORED_DIR, library, `${name}.sexpr`)
+  const file = vendoredSymbolFile(libId)
   if (!fs.existsSync(file)) {
     throw new Error(
       `no vendored KiCad symbol for "${libId}" (looked for ${file}). Vendored: ` +

@@ -12,15 +12,29 @@
  *
  * `LIBRARY_ROOT` lives here because two of the four are paths under it, and
  * `./pin-pattern.ts` imports it rather than writing a second copy.
+ *
+ * **`LIBRARY_ROOT` MUST STAY EQUAL TO `tests/kicad/footprint-library.ts`'s
+ * `FOOTPRINT_LIBRARY_ROOT`** - `tests/kicad/pin-pattern.test.ts` compares
+ * `pattern.source.file` (built from this constant) against
+ * `readFootprintPads()`'s own `file` (built from that one), pad by pad.
+ * Until `docs/known-gaps.md` **G169** this was two independently hand-written
+ * copies of the SAME macOS literal, so the comparison happened to hold; both
+ * now compute the identical expression - `KICAD_FOOTPRINTS`, else derived
+ * from the resolved `kicad-cli` - so they cannot drift apart on any
+ * platform the resolver covers.
  */
+import { defaultFootprintDir } from "./install.ts"
 import type { DatasheetRef } from "./lead-span-model.ts"
+import { KICAD_CLI } from "./netlist.ts"
 
 /**
- * The install the pads were read from, on 2026-10-10. Each entry's own path
- * under it is written out, so a mistranscribed file name still fails the test
- * that opens it.
+ * The install the pads were read from, on 2026-10-10 - a per-platform
+ * candidate list derived from the resolved `kicad-cli`, not a macOS-only
+ * literal (`docs/known-gaps.md` **G169**). Each entry's own path under it is
+ * written out, so a mistranscribed file name still fails the test that opens
+ * it.
  */
-export const LIBRARY_ROOT = "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints"
+export const LIBRARY_ROOT = process.env["KICAD_FOOTPRINTS"] ?? defaultFootprintDir(KICAD_CLI)
 
 /**
  * KiCad's own footprint for the SAME package with its three leads on the grid.

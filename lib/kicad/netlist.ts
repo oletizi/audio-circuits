@@ -7,6 +7,36 @@
  * caller supplies.
  */
 import { attr, child, children, parseSexpr } from "./sexpr.ts"
+import { defaultKicadCli } from "./install.ts"
+
+/**
+ * THE PATH TO `kicad-cli`, NOT A SPAWNER. Nothing here runs it; this is the
+ * string two different consumers derive a path FROM.
+ *
+ * **Why it lives in this module.** `digital-pedal-platform`'s
+ * `tools/kicad/netlist.ts` - the counterpart this file's name matches - exports
+ * `KICAD_CLI`, and `lib/schgen/render/library.ts`'s ported `stockSymbolDir()`
+ * imports it from there to derive
+ * `dirname(KICAD_CLI)/../SharedSupport/symbols`. `tools/schgen/port-manifest.json`
+ * resolves that `@/kicad/netlist` import to THIS file, so the specifier points
+ * at the module it names rather than at a stand-in. Task 11 of the M1 schematic
+ * plan adapts the rest of pedals' netlist API (`connectivityFromXml`) here; a
+ * ported file that needs it before then fails `bun run typecheck` naming the
+ * missing export.
+ *
+ * **THE DEFAULT IS NOW ONE TypeScript SOURCE OF TRUTH**
+ * (`docs/known-gaps.md` **G169**, discharging **G121**'s point (b)):
+ * `./install.ts`'s `defaultKicadCli()` is a per-platform candidate list, not
+ * a bare macOS literal, and `tests/circuits/kicad-round-trip.ts` and
+ * `tools/pultec/schematic-sync.ts` both now import THIS constant instead of
+ * carrying their own copy. **It still duplicates the `KICAD_CLI ?=` default
+ * in `make/board.mk`**, because Make cannot import TypeScript - that one
+ * remaining duplicate is deliberate (the Makefile's own comment explains why)
+ * and `tests/kicad/install.test.ts` checks the two literals agree rather than
+ * letting them drift silently. An explicitly set `KICAD_CLI` always wins,
+ * here and there.
+ */
+export const KICAD_CLI: string = process.env["KICAD_CLI"] ?? defaultKicadCli()
 
 export interface ImportedComponent {
   readonly designator: string

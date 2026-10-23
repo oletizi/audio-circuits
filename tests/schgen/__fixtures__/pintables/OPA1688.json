@@ -1,0 +1,16 @@
+{
+  "mpn": "OPA1688",
+  "document": { "id": "SBOS724A", "revision": "A", "cited": "fixture copy for tests", "url": null },
+  "symbol": "Amplifier_Operational:OPA1678",
+  "pins": { "1": "OUTA", "2": "-INA", "3": "+INA", "4": "V-", "5": "+INB", "6": "-INB", "7": "OUTB", "8": "V+" },
+  "aliases": {},
+  "pinAliases": {
+    "1": { "symbolName": "", "identity": "OUTA" },
+    "2": { "symbolName": "-", "identity": "-INA" },
+    "3": { "symbolName": "+", "identity": "+INA" },
+    "5": { "symbolName": "+", "identity": "+INB" },
+    "6": { "symbolName": "-", "identity": "-INB" },
+    "7": { "symbolName": "", "identity": "OUTB" }
+  },
+  "mechanicalPads": {}
+}

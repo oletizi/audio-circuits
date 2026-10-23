@@ -12,7 +12,9 @@
     "test": "bun test",
     "check": "bun run typecheck && bun test",
     "perfboard": "bun run tools/cli/perfboard.ts",
-    "schematic-stub": "bun run tools/cli/schematic-stub.ts",
+    "schgen": "bun run tools/cli/schgen.ts",
+    "schgen-parity": "bun run tools/cli/schgen-parity.ts",
+    "schgen-anchors": "bun run tools/cli/schgen-anchors.ts",
     "parts": "bun run tools/cli/parts.ts"
   },
   "devDependencies": {
@@ -20,6 +22,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "eecircuit-engine": "1.5.8"
+    "eecircuit-engine": "1.5.8",
+    "elkjs": "0.9.3"
   }
 }

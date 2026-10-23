@@ -1,0 +1,11 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "fixture transformation: an edit kind nothing declares",
+      "why": "a fixture: the parser must refuse an unknown edit rather than ignore it",
+      "edit": { "kind": "rewireEverything", "part": "R1" }
+    }
+  ]
+}

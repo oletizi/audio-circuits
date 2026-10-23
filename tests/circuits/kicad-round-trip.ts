@@ -16,19 +16,22 @@ import os from "node:os"
 import path from "node:path"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import type { PinNumbers } from "../../lib/kicad/from-network.ts"
-import { importNetlist } from "../../lib/kicad/netlist.ts"
+import { importNetlist, KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
 import { writeSchematicStub } from "../../lib/kicad/schematic.ts"
 import type { Network } from "../../lib/model/types.ts"
 import { defaultKicadCliExists, defaultRunExport } from "../../tools/perfboard/netlist-sync.ts"
 
 /**
- * Duplicates the default `KICAD_CLI ?= ...` line in make/board.mk (the value
- * that recipe's `netlist-agrees` target falls back to) because a shared
- * constant across make and TypeScript is not possible; keep the two in sync
- * by hand if either changes. The `KICAD_CLI` env var overrides both.
+ * `KICAD_CLI` is `lib/kicad/netlist.ts`'s own, which already resolves
+ * `process.env["KICAD_CLI"]` ahead of a per-platform candidate list
+ * (`lib/kicad/install.ts`). This file used to carry its own copy of the
+ * macOS literal that constant falls back to; `docs/known-gaps.md` **G169**
+ * (discharging **G121**'s point (b)) removed that duplicate - importing the
+ * one TypeScript source of truth instead of hand-copying it. `make/board.mk`
+ * still carries its own literal, because Make cannot import TypeScript;
+ * `tests/kicad/install.test.ts` checks the two agree.
  */
-const KICAD_CLI = process.env["KICAD_CLI"] ?? "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 
 export interface BoardUnderTest {
   readonly network: Network

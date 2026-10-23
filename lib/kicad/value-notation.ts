@@ -123,6 +123,44 @@ function symbolPartName(symbol: string): string {
 }
 
 /**
+ * **WHETHER A PART'S VALUE FIELD IS NOTHING BUT ITS SYMBOL'S OWN PART NAME** - the other half of
+ * `valueFor`'s last step, asked by the drawing side.
+ *
+ * **WHY IT EXISTS.** `lib/schgen/render/field-placement.ts` refuses a block when a unit's
+ * Reference AND Value cannot both be printed somewhere adjacent to it, and the `Value` of a part
+ * with no electrical parameter is whatever `valueFor` fell through to - for
+ * `Jumper:Jumper_2_Open` that is the thirteen-character string `Jumper_2_Open`, a text box about
+ * seven times wider than the jumper's own body (`docs/known-gaps.md` **G232**). That text repeats
+ * the symbol: the glyph already draws a two-pin open jumper, so demanding adjacent room for a
+ * second copy of its name is what blocks the drawing, and the value is therefore emitted and
+ * marked hidden rather than placed. The owner's question that dissolved three rounds of routing
+ * around it is quoted in `tests/schgen/render/hidden-value-fields.test.ts`.
+ *
+ * **IT IS DERIVED FROM THE SAME DISTINCTION `valueFor` MAKES AND NOT A SECOND ONE.** That
+ * function's steps are: an electrical formatter per kind, then `part.mpn`, then the part name of
+ * `part.symbol`. This asks whether the string in hand IS that last step's answer - so it is keyed
+ * on the symbol, never on the value's LENGTH, never on a substring like "Jumper", and never on a
+ * whitelist of kinds. Any of those three would be a guess where a real distinction exists.
+ *
+ * **ITS ONE DEVIATION FROM "WHICH BRANCH PRODUCED IT", STATED BECAUSE IT IS REAL.** It reads the
+ * VALUE, not the branch, so a genuine `mpn` spelled exactly as the symbol's part name answers
+ * true - `mpn: "PT2399"` drawn with `Audio:PT2399` is that case and it is live in this repository.
+ * Hiding it loses nothing a reader needs, because the field is a verbatim repeat of the symbol
+ * name either way; what it costs is that the two cases cannot be told apart here. Carrying the
+ * branch instead would mean a new field on `PartSpec` and `IrPart`, and therefore an edit at every
+ * site that builds one - **49 of them across 29 files** (`grep -rn "refPrefix:" lib tools tests
+ * circuits | grep -v "readonly refPrefix"`). `docs/known-gaps.md` **G257** records the choice, the
+ * cost and what would settle it, and `tests/kicad/value-notation.test.ts` asserts the deviation
+ * rather than leaving it as prose.
+ *
+ * `symbol` is the RESOLVED lib id the part is drawn with - the same thing `from-network.ts`'s
+ * `valueOf` hands `valueFor`, so the two see one symbol and cannot disagree.
+ */
+export function valueIsSymbolPartName(symbol: string, value: string): boolean {
+  return value === symbolPartName(symbol)
+}
+
+/**
  * Whether a component's parameters carry a numeric electrical quantity.
  *
  * This replaces a hardcoded list of kinds that had no formatter. A list has to
@@ -167,7 +205,18 @@ export function valueFor(component: Component): string {
     }
     return capacitanceText(farads, component.id)
   }
-  if (component.kind === "resistor" || component.kind === "potentiometer") {
+  // `photoresistor` was added by Task 9 of the M1 schematic-authoring plan, which is the first
+  // consumer to ask: `circuits/optical-compressor/` holds the one photoresistor in the repository
+  // and `circuitSpecFrom` needs a value field for it. This is the deliberate one-line extension
+  // with a test beside it that the refusal below asks for, and it is NOT a silent widening.
+  //
+  // **WHAT THE NUMBER MEANS IS NARROWER THAN "THE PART'S VALUE", AND THAT LIMIT IS REAL.**
+  // `parameters.ohms` on that part is annotated *"1 MOhm is the section 6.2 DARK endpoint"* - one
+  // operating point of a part whose whole function is that its resistance moves - so the field
+  // will read "1M" where a hand-drawn sheet would more likely carry the vactrol's part number.
+  // The model has no mpn for it (spec section 9 names no part), so there is nothing truer to put
+  // there; `docs/known-gaps.md` **G157** records the gap and its criterion.
+  if (component.kind === "resistor" || component.kind === "potentiometer" || component.kind === "photoresistor") {
     const ohms: unknown = Reflect.get(component.parameters, "ohms")
     if (typeof ohms !== "number") {
       throw new Error(`${component.kind} "${component.id}" has no numeric ohms parameter`)

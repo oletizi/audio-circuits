@@ -1,0 +1,122 @@
+
+== WHAT THIS ELK LABEL RUN MEASURED
+repository commit: 31419bea8f413d7c04ff7bebd456d2b5cc79a097 (clean tree)
+elkjs 0.9.3; the bundle this run LOADS, hashed: SHA-256 114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538
+elkjs resolved from: file:///Users/orion/work/audio-circuits-work/pultec-modularize/node_modules/elkjs/package.json
+knownLayoutOptions(): 224 ids; knownLayoutAlgorithms(): 12; layered knownOptions: 140
+layered supportedFeatures: SELF_LOOPS, INSIDE_SELF_LOOPS, MULTI_EDGES, EDGE_LABELS, PORTS, COMPOUND, CLUSTERS
+
+== STEP 1: EVERY LABEL-RELATED OPTION elkjs EXPOSES
+option ids containing "label": 15 of 224
+  org.eclipse.elk.labelManager                                   OBJECT   targets=PARENTS|LABELS layered DOES NOT list it
+  org.eclipse.elk.spacing.edgeLabel                              DOUBLE   targets=PARENTS      layered supports it
+  org.eclipse.elk.spacing.labelLabel                             DOUBLE   targets=PARENTS      layered supports it
+  org.eclipse.elk.spacing.labelNode                              DOUBLE   targets=PARENTS      layered supports it
+  org.eclipse.elk.spacing.labelPortHorizontal                    DOUBLE   targets=PARENTS      layered supports it
+  org.eclipse.elk.spacing.labelPortVertical                      DOUBLE   targets=PARENTS      layered supports it
+  org.eclipse.elk.nodeLabels.padding                             OBJECT   targets=PARENTS      layered supports it
+  org.eclipse.elk.nodeLabels.placement                           ENUMSET  targets=NODES|LABELS layered supports it
+  org.eclipse.elk.edgeLabels.placement                           ENUM     targets=LABELS       layered supports it
+  org.eclipse.elk.edgeLabels.inline                              BOOLEAN  targets=LABELS       layered supports it
+  org.eclipse.elk.portLabels.placement                           ENUMSET  targets=NODES        layered supports it
+  org.eclipse.elk.portLabels.nextToPortIfPossible                BOOLEAN  targets=NODES        layered supports it
+  org.eclipse.elk.portLabels.treatAsGroup                        BOOLEAN  targets=NODES        layered supports it
+  org.eclipse.elk.layered.edgeLabels.sideSelection               ENUM     targets=PARENTS      layered supports it
+  org.eclipse.elk.layered.edgeLabels.centerLabelPlacementStrategy ENUM     targets=PARENTS|LABELS layered supports it
+options whose id does NOT say label but whose name or description does: 7
+  org.eclipse.elk.omitNodeMicroLayout                            BOOLEAN  targets=PARENTS      Omit Node Micro Layout
+  org.eclipse.elk.position                                       OBJECT   targets=NODES|PORTS|LABELS Position
+  org.eclipse.elk.commentBox                                     BOOLEAN  targets=NODES        Comment Box
+  org.eclipse.elk.margins                                        OBJECT   targets=NODES        Margins
+  org.eclipse.elk.scaleFactor                                    DOUBLE   targets=NODES        Scale Factor
+  org.eclipse.elk.font.name                                      STRING   targets=LABELS       Font Name
+  org.eclipse.elk.font.size                                      INT      targets=LABELS       Font Size
+  org.eclipse.elk.spacing.labelLabel: Determines the amount of space to be left between two labels of the same graph element.
+  org.eclipse.elk.nodeLabels.placement: Hints for where node labels are to be placed; if empty, the node label's position is not modified.
+  org.eclipse.elk.nodeSize.constraints: What should be taken into account when calculating a node's size. Empty size constraints specify that a node's size is already fixed and should not be changed.
+tests/schgen/elk/options.elk.test.ts says "all 224 ids" begin org.eclipse.elk; this run counts 224, all 224 of them so prefixed. They AGREE.
+
+== STEP 2: WHICH OF THEM THIS REPOSITORY SETS
+scanned 9 file(s) under lib/schgen/elk: adapt.ts graph.ts junctions.ts options.ts read-graph.ts self-loop.ts serialize.ts sheet-graph.ts snap.ts
+label-related options this repository sets: 0 of 22
+  CONTROL elk.spacing.nodeNode: found by the same scan = true
+  CONTROL elk.spacing.nodeSelfLoop: found by the same scan = true
+  CONTROL elk.portConstraints: found by the same scan = true
+the whole emitted option set (15): elk.algorithm elk.direction elk.edgeRouting elk.layered.layering.layerConstraint elk.layered.spacing.edgeEdgeBetweenLayers elk.layered.spacing.edgeNodeBetweenLayers elk.layered.spacing.nodeNodeBetweenLayers elk.padding elk.port.side elk.portConstraints elk.spacing.edgeEdge elk.spacing.edgeNode elk.spacing.nodeNode elk.spacing.nodeSelfLoop elk.spacing.portPort
+
+== STEP 3: WHAT layered DOES WITH A LABEL IT IS GIVEN - EACH OPTION DRIVEN AGAINST ITS ABSENCE
+on pt2399-core/pt-core; label options layered lists: 14 of 15
+the ones it does not list: org.eclipse.elk.labelManager
+  nodeLabels.placement [H_CENTER,V_TOP,OUTSIDE]  with: 195580.0x151786.9  without: 195580.0x133354.0  geometry DIFFERS; label coordinates DIFFER
+  portLabels.placement [OUTSIDE]                 with: 167644.0x172473.1  without: 167644.0x172473.1  geometry IDENTICAL; label coordinates IDENTICAL
+  nodeSize.constraints [NODE_LABELS] vs [] (fixed) with: 177950.0x87548.8  without: 195580.0x133354.0  geometry DIFFERS; label coordinates DIFFER
+
+== STEP 4: WHETHER THE GRAPH THIS REPOSITORY HANDS ELK CARRIES LABELS AT ALL
+48 ELK blocks over 11 boards: 398 nodes, 620 ports, 494 edges
+elements carrying a non-empty labels array: 0
+CONTROL, so that zero is a finding and not a broken walk: nodes carrying a non-empty layoutOptions record: 398 of 398
+CONTROL, the serializer: an unlabelled graph serializes to 12345 bytes
+CONTROL PASSED: serializeElkInput REFUSES a graph carrying an ELK label - node C1:1 carries ELK labels, and lib/schgen/elk/serialize.ts declares no key order for them
+
+== STEP 5: TWELVE ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT
+line height 2043.1 um (RELAYED from section 1.4); label widths from lib/schgen/render/text-boxes.ts textWidth
+arm                                           sent       back     placed   unplaced  no-coords    resized   worst-um      moved    lbl-lbl other-body   own-body       wire    on-grid
+  a baseline, no labels                          0          0          0          0          0          0        0.0          0          0          0          0          0          0
+  b node labels, size free                     398        398        398          0          0        398    30966.9         48          0          0        398          0          0
+  c node labels, size free + minimum           398        398        398          0          0        362    17790.0         48          0          0        398          0          0
+  d node labels, size FIXED, inside            398        398        398          0          0          0        0.0         48          0          0        254        178         66
+  e node labels, size FIXED, outside           398        398        398          0          0          0        0.0         48          0          0          0        266         12
+  f node labels, NO placement, seeded          398        398          0        398          0          0        0.0         48          0          0          0          0          0
+  g node labels, NO placement, unseeded        398        398        398          0          0          0        0.0         48          0          0        254          9        136
+  h port labels (pin text)                     620        620        620          0          0          0        0.0         48          0          0          0          0          0
+  i edge labels (net names)                    494        494        494          0          0          0        0.0         48          5          0          0         24          4
+  j e's options, NO label                        0          0          0          0          0          0        0.0          0          0          0          0          0          0
+  k b's options, NO label                        0          0          0          0          0        254    33020.0         48          0          0          0          0          0
+  l c's options, NO label                        0          0          0          0          0        144       20.0         46          0          0          0          0          0
+"moved" counts blocks whose laid-out size differs from arm a's, of 48; "worst-um" is a MAXIMUM and every other column a SUM
+  a baseline, no labels: the control: the graph exactly as lib/schgen/elk/graph.ts builds it today
+  b node labels, size free: SizeConstraint NODE_LABELS alone - ELK may resize a node to fit its label
+  c node labels, size free + minimum: NODE_LABELS with the symbol's own box as nodeSize.minimum - the nearest thing to a schematic
+  d node labels, size FIXED, inside: this repository's real constraint - a node IS the symbol's box - with the label inside it
+  e node labels, size FIXED, outside: the same, with the label above the body, which is where this emitter puts a Reference
+  f node labels, NO placement, seeded: layered's own default (NodeLabelPlacement.fixed(), i.e. EMPTY), with a sentinel seeded
+  g node labels, NO placement, unseeded: the same arm without the sentinel, so the space ELK reserves for a label it never places shows
+  h port labels (pin text): a pin number as an ELK port label, at layered's default PortLabelPlacement.outside()
+  i edge labels (net names): a NET NAME as an ELK edge label - the one label class layered declares as a supported feature
+  j e's options, NO label: the control for arms d-g: fixed size plus an outside placement hint, and no label at all
+  k b's options, NO label: the control for arm b: SizeConstraint NODE_LABELS and an inside hint, and no label at all
+  l c's options, NO label: the control arm c lacked: NODE_LABELS plus MINIMUM_SIZE at the symbol's own box, and no label
+  lib/schgen/elk/read-graph.ts       mentions "width" 0 time(s) and "height" 0 time(s)
+  lib/schgen/elk/adapt.ts            mentions "width" 0 time(s) and "height" 0 time(s)
+  lib/schgen/elk/graph.ts            mentions "width" 3 time(s) and "height" 3 time(s)
+arms that raised: 0 - every arm laid out, so every row above is a layout and not a crash
+
+== STEP 6: EVERY COLUMN OF STEP 5, AT ALL THREE OF SECTION 1's LINE HEIGHTS
+Section 1 is forbidden from electing one quantity, so no conclusion here may depend on which is elected.
+the swept quantities ARE the columns above, by construction - sent back placed unplaced no-coords resized worst-um moved lbl-lbl other-body own-body wire on-grid
+  current model 1270.0   a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 31740.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 168 on-grid 109  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 46  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 0 on-grid 187  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+  rendered ink 1422.4    a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 31587.6 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 178 on-grid 95  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 43  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 4 on-grid 146  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 5 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+  GetTextBox 2043.1      a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 30966.9 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 178 on-grid 66  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 12  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 9 on-grid 136  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 5 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+cells (arm x metric): 12 x 13 = 156; INVARIANT across the three heights: 149; VARYING: 7
+  VARIES b/worst-um = 31740.0 / 31587.6 / 30966.9
+  VARIES d/wire = 168 / 178 / 178
+  VARIES d/on-grid = 109 / 95 / 66
+  VARIES e/on-grid = 46 / 43 / 12
+  VARIES g/wire = 0 / 4 / 9
+  VARIES g/on-grid = 187 / 146 / 136
+  VARIES i/lbl-lbl = 0 / 5 / 5
+
+== STEP 7: ONE BLOCK IN DETAIL, SO THE AGGREGATES ABOVE ARE READABLE
+pt2399-core/pt-core: 26 nodes, 46 edges
+  a baseline, no labels                  graph 162306.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  b node labels, size free               graph 177950.0 x 87548.8; node C1:1 5090.0x2053.1 label ".1uF" 5080.0x2043.1 at (5.0, 5.0); boundary port:+5V 3820.0x2053.1 label at (5.0, 5.0)
+  c node labels, size free + minimum     graph 195720.0 x 133354.0; node C1:1 5090.0x7620.0 label ".1uF" 5080.0x2043.1 at (5.0, 2788.4); boundary port:+5V 3820.0x2053.1 label at (5.0, 5.0)
+  d node labels, size FIXED, inside      graph 195580.0 x 133354.0; node C1:1 4064.0x7620.0 label ".1uF" 5080.0x2043.1 at (-508.0, 2788.4); boundary port:+5V 0.0x0.0 label at (-1905.0, -1021.5)
+  e node labels, size FIXED, outside     graph 195580.0 x 151786.9; node C1:1 4064.0x7620.0 label ".1uF" 5080.0x2043.1 at (-508.0, -2048.1); boundary port:+5V 0.0x0.0 label at (-1905.0, -2048.1)
+  f node labels, NO placement, seeded    graph 116828961.0 x 77908587.0; node C1:1 4064.0x7620.0 label ".1uF" 5080.0x2043.1 at (-7777777.0, -7777777.0); boundary port:+5V 0.0x0.0 label at (-7777777.0, -7777777.0)
+  g node labels, NO placement, unseeded  graph 195580.0 x 133354.0; node C1:1 4064.0x7620.0 label ".1uF" 5080.0x2043.1 at (0.0, 0.0); boundary port:+5V 0.0x0.0 label at (0.0, 0.0)
+  h port labels (pin text)               graph 167644.0 x 172473.1; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  i edge labels (net names)              graph 445010.0 x 141411.2; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  j e's options, NO label                graph 162306.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  k b's options, NO label                graph 107188.0 x 71124.0; node C1:1 0.0x0.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  l c's options, NO label                graph 162326.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 20.0x20.0 label (none)

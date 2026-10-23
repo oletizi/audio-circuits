@@ -7,6 +7,17 @@
  * (naming the parts a cut separates, never the net alongside them) is what
  * this file asserts.
  *
+ * **THAT "THE OWNER'S RECOMMENDATION" IS UNSOURCED AND IS NOW AN OPEN
+ * QUESTION - see `docs/known-gaps.md`'s G252.** The deleted G36 said in terms
+ * that the column's content was the owner's choice among three (name the
+ * nets, name the parts, or drop the column) and that *"he has not made it"*;
+ * this sentence and the change it describes arrived in the same commit, which
+ * does not cite him. The only candidate channel is the four build-guide
+ * recommendations he accepted on the same date, of which two are recorded
+ * verbatim and two are not. **Nothing here is reverted and nothing is
+ * re-decided** - what this file asserts is what the artifact does, and G252
+ * holds the question of whether it is what he chose.
+ *
  * The main assertions run the real pipeline against the real, committed
  * `boards/pultec-low-boost` through the real pinned veroroute binary - the
  * same shape `tests/guide/junction-pad-rows.test.ts` uses, and for the same

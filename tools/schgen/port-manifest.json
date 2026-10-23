@@ -1,0 +1,890 @@
+{
+  "sourceEnvVar": "SCHGEN_SOURCE",
+  "sourceRoots": {
+    "pedals-tools": ".."
+  },
+  "externals": {
+    "@/kicad/footprint": "lib/kicad/footprint.ts",
+    "@/kicad/libtable": "lib/kicad/libtable.ts",
+    "@/kicad/netlist": "lib/kicad/netlist.ts",
+    "@/kicad/sexpr": "lib/kicad/sexpr.ts",
+    "@/placement/strict": "lib/schgen/strict.ts",
+    "@/repo": "tools/repo.ts",
+    "@/schgen/gates/oscar/boundary": "lib/schgen/gates/oscar/boundary.ts"
+  },
+  "moduleRenames": {
+    "vitest": "bun:test"
+  },
+  "files": [
+    {
+      "from": "ir/author.ts",
+      "to": "lib/schgen/ir/author.ts"
+    },
+    {
+      "from": "ir/order.ts",
+      "to": "lib/schgen/ir/order.ts"
+    },
+    {
+      "from": "lock/annotate.ts",
+      "to": "lib/schgen/lock/annotate.ts"
+    },
+    {
+      "from": "lock/refmap.ts",
+      "to": "lib/schgen/lock/refmap.ts"
+    },
+    {
+      "from": "lock/versionLock.ts",
+      "to": "lib/schgen/lock/version-lock.ts"
+    },
+    {
+      "from": "render/connectivity.ts",
+      "to": "lib/schgen/render/connectivity.ts"
+    },
+    {
+      "from": "render/drawnText.ts",
+      "to": "lib/schgen/render/drawn-text.ts"
+    },
+    {
+      "from": "render/geometry.ts",
+      "to": "lib/schgen/render/geometry.ts"
+    },
+    {
+      "from": "render/libGraphics.ts",
+      "to": "lib/schgen/render/lib-graphics.ts"
+    },
+    {
+      "from": "render/libPins.ts",
+      "to": "lib/schgen/render/lib-pins.ts"
+    },
+    {
+      "from": "render/pack.ts",
+      "to": "lib/schgen/render/pack.ts"
+    },
+    {
+      "from": "render/sexprWrite.ts",
+      "to": "lib/schgen/render/sexpr-write.ts"
+    },
+    {
+      "from": "render/textBoxes.ts",
+      "to": "lib/schgen/render/text-boxes.ts"
+    },
+    {
+      "from": "render/uuid.ts",
+      "to": "lib/schgen/render/uuid.ts"
+    },
+    {
+      "from": "render/wireSafety.ts",
+      "to": "lib/schgen/render/wire-safety.ts"
+    },
+    {
+      "from": "gates/pintable.ts",
+      "to": "lib/schgen/gates/pin-table.ts"
+    },
+    {
+      "from": "ir/validateNets.ts",
+      "to": "lib/schgen/ir/validate-nets.ts"
+    },
+    {
+      "from": "ir/validateParts.ts",
+      "to": "lib/schgen/ir/validate-parts.ts"
+    },
+    {
+      "from": "ir/validateRule.ts",
+      "to": "lib/schgen/ir/validate-rule.ts"
+    },
+    {
+      "from": "__fixtures__/fixtureLib.ts",
+      "to": "tests/schgen/__fixtures__/fixture-lib.ts"
+    },
+    {
+      "from": "ir/author.test.ts",
+      "to": "tests/schgen/ir/author.test.ts"
+    },
+    {
+      "from": "ir/order.test.ts",
+      "to": "tests/schgen/ir/order.test.ts"
+    },
+    {
+      "from": "render/uuid.test.ts",
+      "to": "tests/schgen/render/uuid.test.ts"
+    },
+    {
+      "from": "render/sexprWrite.test.ts",
+      "to": "tests/schgen/render/sexpr-write.test.ts"
+    },
+    {
+      "from": "render/library.ts",
+      "to": "lib/schgen/render/library.ts"
+    },
+    {
+      "from": "render/library.test.ts",
+      "to": "tests/schgen/render/library.test.ts"
+    },
+    {
+      "from": "render/geometry.test.ts",
+      "to": "tests/schgen/render/geometry.test.ts"
+    },
+    {
+      "from": "render/powerText.ts",
+      "to": "lib/schgen/render/power-text.ts"
+    },
+    {
+      "from": "render/unitPins.ts",
+      "to": "lib/schgen/render/unit-pins.ts"
+    },
+    {
+      "from": "render/bodyClearance.ts",
+      "to": "lib/schgen/render/body-clearance.ts"
+    },
+    {
+      "from": "render/unitText.ts",
+      "to": "lib/schgen/render/unit-text.ts"
+    },
+    {
+      "from": "render/pinMarks.ts",
+      "to": "lib/schgen/render/pin-marks.ts"
+    },
+    {
+      "from": "render/glyphClearance.ts",
+      "to": "lib/schgen/render/glyph-clearance.ts"
+    },
+    {
+      "from": "render/symbolSelfText.ts",
+      "to": "lib/schgen/render/symbol-self-text.ts"
+    },
+    {
+      "from": "render/connectivity.test.ts",
+      "to": "tests/schgen/render/connectivity.test.ts"
+    },
+    {
+      "from": "render/wireSafety.test.ts",
+      "to": "tests/schgen/render/wire-safety.test.ts"
+    },
+    {
+      "from": "render/pageRefs.ts",
+      "to": "lib/schgen/render/page-refs.ts"
+    },
+    {
+      "from": "render/emit.ts",
+      "to": "lib/schgen/render/emit.ts"
+    },
+    {
+      "from": "render/ercExclusions.ts",
+      "to": "lib/schgen/render/erc-exclusions.ts"
+    },
+    {
+      "from": "render/project.ts",
+      "to": "lib/schgen/render/project.ts"
+    },
+    {
+      "from": "render/pack.test.ts",
+      "to": "tests/schgen/render/pack.test.ts"
+    },
+    {
+      "from": "render/project.test.ts",
+      "to": "tests/schgen/render/project.test.ts"
+    },
+    {
+      "from": "lock/annotate.test.ts",
+      "to": "tests/schgen/lock/annotate.test.ts"
+    },
+    {
+      "from": "lock/refmap.test.ts",
+      "to": "tests/schgen/lock/refmap.test.ts"
+    },
+    {
+      "from": "lock/versionLock.test.ts",
+      "to": "tests/schgen/lock/version-lock.test.ts"
+    },
+    {
+      "from": "render/layoutKit.ts",
+      "to": "lib/schgen/render/layout-kit.ts"
+    },
+    {
+      "from": "render/chainKit.ts",
+      "to": "lib/schgen/render/chain-kit.ts"
+    },
+    {
+      "from": "render/fanoutRows.ts",
+      "to": "lib/schgen/render/fanout-rows.ts"
+    },
+    {
+      "from": "render/templates/index.ts",
+      "to": "lib/schgen/render/templates/index.ts"
+    },
+    {
+      "from": "__fixtures__/layoutChecks.ts",
+      "to": "tests/schgen/__fixtures__/layout-checks.ts"
+    },
+    {
+      "from": "__fixtures__/requireTool.ts",
+      "to": "tests/schgen/__fixtures__/require-tool.ts"
+    },
+    {
+      "from": "render/templates/railRow.test.ts",
+      "to": "tests/schgen/render/templates/rail-row.test.ts"
+    },
+    {
+      "from": "render/templates/divider.test.ts",
+      "to": "tests/schgen/render/templates/divider.test.ts"
+    },
+    {
+      "from": "render/templates/crystal.test.ts",
+      "to": "tests/schgen/render/templates/crystal.test.ts"
+    },
+    {
+      "from": "render/templates/regulator.test.ts",
+      "to": "tests/schgen/render/templates/regulator.test.ts"
+    },
+    {
+      "from": "render/templates/opampStage.test.ts",
+      "to": "tests/schgen/render/templates/opamp-stage.test.ts"
+    },
+    {
+      "from": "render/templates/connectorFanout.test.ts",
+      "to": "tests/schgen/render/templates/connector-fanout.test.ts"
+    },
+    {
+      "from": "render/bodyClearance.test.ts",
+      "to": "tests/schgen/render/body-clearance.test.ts"
+    },
+    {
+      "from": "kicad/libtable.ts",
+      "to": "lib/kicad/libtable.ts",
+      "root": "pedals-tools"
+    },
+    {
+      "from": "render/sheetCheck.ts",
+      "to": "lib/schgen/render/sheet-check.ts"
+    },
+    {
+      "from": "render/glyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-clearance.test.ts"
+    },
+    {
+      "from": "render/glyphGlyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-glyph-clearance.test.ts"
+    },
+    {
+      "from": "report.test.ts",
+      "to": "tests/schgen/report.test.ts",
+      "cuts": [
+        {
+          "text": "    expect(md).toContain(\"- B (s): fixture\");\n",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "from": "repo.ts",
+      "to": "tools/repo.ts",
+      "root": "pedals-tools"
+    },
+    {
+      "from": "design.ts",
+      "to": "lib/schgen/design.ts",
+      "cuts": [
+        {
+          "text": "  /** Relative to the design dir. */\n  readonly pinmap: string | null;\n",
+          "occurrences": 1
+        },
+        {
+          "text": "    isObjectOrNull(c[\"mcu\"]) &&\n",
+          "occurrences": 1
+        },
+        {
+          "text": "    isStringOrNull(v[\"pinmap\"]) &&\n",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "from": "kicadConfig.ts",
+      "to": "tools/schgen/kicad-config.ts"
+    },
+    {
+      "from": "kicadRun.ts",
+      "to": "tools/schgen/kicad-run.ts"
+    },
+    {
+      "from": "kicad/footprint.ts",
+      "to": "lib/kicad/footprint.ts",
+      "root": "pedals-tools"
+    },
+    {
+      "from": "gates/pinIdentity.ts",
+      "to": "lib/schgen/gates/pin-identity.ts"
+    },
+    {
+      "from": "gates/traceability.ts",
+      "to": "lib/schgen/gates/traceability.ts"
+    },
+    {
+      "from": "gates/pintable.test.ts",
+      "to": "tests/schgen/gates/pin-table.test.ts"
+    },
+    {
+      "from": "gates/pinIdentity.test.ts",
+      "to": "tests/schgen/gates/pin-identity.test.ts"
+    },
+    {
+      "from": "gates/traceability.test.ts",
+      "to": "tests/schgen/gates/traceability.test.ts",
+      "cuts": [
+        {
+          "text": "import fs from \"node:fs\";\n",
+          "occurrences": 1
+        },
+        {
+          "text": "import path from \"node:path\";\n",
+          "occurrences": 1
+        },
+        {
+          "text": "import { repoRoot } from \"@/repo\";\n",
+          "occurrences": 1
+        },
+        {
+          "text": "\n  it(\"matches the item counts the real checklist states\", () => {\n    const md = fs.readFileSync(path.join(repoRoot(), \"h7-platform\", \"SCHEMATIC-CHECKLIST.md\"), \"utf8\");\n    const stated = /\\*\\*Item count\\*\\*[^:]*:([^\\n]*\\n[^\\n]*)/.exec(md)?.[1];\n    if (stated === undefined) throw new Error(\"SCHEMATIC-CHECKLIST.md has no Item count line\");\n    const perPrefix = new Map([...stated.matchAll(/\\b([A-Z]+) (\\d+)\\b/g)].map((m) => [m[1]!, Number(m[2])]));\n    const ids = checklistIds(md);\n    const actual = new Map<string, number>();\n    for (const id of ids) actual.set(id.split(\"-\")[0]!, (actual.get(id.split(\"-\")[0]!) ?? 0) + 1);\n    expect(actual).toEqual(perPrefix);\n    const schematic = [\"CORE\", \"CODEC\", \"PWR\", \"AIO\", \"CTL\", \"USB\", \"ALL\"];\n    expect(ids.filter((id) => schematic.includes(id.split(\"-\")[0]!))).toHaveLength(Number(/(\\d+) schematic items/.exec(stated)?.[1]));\n    expect(perPrefix.get(\"OWN\")).toBeGreaterThan(0);\n    expect(perPrefix.get(\"BU\")).toBeGreaterThan(0);\n  });\n",
+          "occurrences": 1
+        }
+      ]
+    }
+  ],
+  "diverged": [
+    {
+      "from": "gates/connectivity.ts",
+      "to": "lib/schgen/gates/connectivity.ts",
+      "sourceSha": "54d2cfc339d0be49b5aa8f92a041f625f87cef4491de52b54e760183697ad10e",
+      "task": "Task 11",
+      "why": "ONE NETLIST READER. `compareConnectivity` took pedals' `Connectivity { nets: Map<string,string[]>; references: string[] }`, which `connectivityFromXml` builds from a `kicadxml` export with `fast-xml-parser`. It now takes this repository's `ImportedNetlist`, which `lib/kicad/netlist.ts`'s `importNetlist` builds from the s-expression `.net` export that every other netlist consumer here already reads - so the adaptation REMOVES a dependency rather than adding one, and no XML parser enters the tree. Exactly two reads change (`actual.references` -> `components[].designator`, `actual.nets` -> `Object.entries(actual.nets)`), both marked in the file; `expectedConnectivity`, the three KiCad name conventions (`unconnected-(`, `Net-(`, leaf-matched labelled nets) and every problem string are unchanged. A `cuts` entry cannot express a substitution."
+    },
+    {
+      "from": "gates/connectivity.test.ts",
+      "to": "tests/schgen/gates/connectivity.test.ts",
+      "sourceSha": "f7ac517de551ce3859cef08926aea1229143421eefa7d02b58d6df1ea71ea5a8",
+      "task": "Task 11",
+      "why": "The fixture half of the divergence above: the `actual` helper builds an `ImportedNetlist` (a record of nets, and a `components` list the references come from) instead of pedals' `Connectivity`. NOT ONE ASSERTION CHANGES - every expected problem string is verbatim, which is what ruling R4 requires, and all fourteen tests pass. The record's key order is the fixture array's and `compareConnectivity` reads `Object.entries`, so the three cases that assert an exact problem ORDER still measure what they measured."
+    },
+    {
+      "from": "verify.ts",
+      "to": "tools/schgen/verify.ts",
+      "sourceSha": "d44870078770a4a3e06dd2ba165ecd6b414cddb7b5215434952093b9ea59bf90",
+      "task": "Task 11",
+      "why": "Three divergences, all forced. (1) ONE NETLIST READER, as for gates/connectivity.ts: gate 3 reads the s-expression export with `importNetlist`. The ported `kicad-run.ts`'s `exportNetlist` asks kicad-cli for `kicadxml` and is a `files[]` entry this task may not hand-edit, so `exportSexprNetlist` - the one new function in the file - asks the same hermetic `runKicadCli` for `kicadsexpr`. (2) GATE 8's GRAPH COMPARISON IS NOT PORTED: `gates/oscar/compare.ts` and `graph.ts` are Task 18's (`graph.ts` needs `@/kicad/components`, unresolved). Gate 8 is NOT deferred (spec revision 4; docs/known-gaps.md G104), so `runGates` still registers its row for a design declaring `oscar` and that row carries `OSCAR_NOT_PORTED` - a gate omitted from the census reads exactly like a gate that passed. `oscarGate` and `oscarBoardGraph` are reduced to that refusal plus `symmetricSymbolsProblems`; `annotationProblems` and `symmetricSymbolsProblems` are kept verbatim and tested, because deleting them would make Task 18 re-transcribe them from a source this file no longer re-derives from. AMENDED BY TASK 12: `runGates` is `async`, because `generate` is - decision D2's ELK pre-pass. (3) ADDED BY TASK 16, AND THE WIDEST OF THE THREE - about a hundred lines: EVERY GATE ROW NAMES THE DERIVATION IT RAN AGAINST. Pedals' `GateResult` is `{ gate, problems }`; here it carries a third field, `manifest`, and three new members build it - `manifestState` reads the MANIFEST.json committed in outDir and compares its input hashes against what the run read (`staleManifestInputs`), `baselineCensus` reads schematic/readability-baselines.json and reports the count it holds, and `runGates` attaches the pair's problems to the rows that would otherwise read as a pass and only those (`runGate` takes the citation as a third parameter defaulting to `MANIFEST_UNREAD`). Spec 2.1's criterion is that a gate reporting a pass names the manifest it passed against, and a two-field row cannot meet it. COST: this is the divergence a later port has to re-apply by hand, and it is the one this entry's own count read as absent for a whole round - the `why` and the file header both said TWO until fix round 1, and R18's test only checks that `task` and `why` are non-empty, so nothing failed (docs/known-gaps.md)."
+    },
+    {
+      "from": "verify.test.ts",
+      "to": "tests/schgen/verify.test.ts",
+      "sourceSha": "eb4e33e326cb9bcf3fbd8dc184366f9a232a90fd903110f4b8a3041181695b28",
+      "task": "Task 11",
+      "why": "G112: the fixture `DesignSpec` drops `mcu: null` and `pinmap: null`. D3/G140: its DEC block declared `{ kind: \"labels\", reason: \"t\" }`, and `{ kind: \"bus\", groups: [] }` - the substitute nine other diverged files use - CANNOT serve here, because `realiseBus` refuses a block holding more than one unit and this block holds two capacitors. It becomes `{ kind: \"wired\", template: \"decoupling-bank\", anchor: null }`, which is what the block is and is the template the ported `mini` design gives its own DEC block. The `oscarBoardGraph` describe is deleted with the function (Task 18's `graphFromNetlist`); the `symmetricSymbolsProblems`, `runGate` and `annotationProblems` describes are verbatim. ONE TEST IS ADDED, and it is the claim verify.ts's divergence 2 exists to make: with a generation that succeeds, gate 8 reports `OSCAR_NOT_PORTED` rather than an empty problem list."
+    },
+    {
+      "from": "integration/gates.test.ts",
+      "to": "tests/schgen/gates/gates.kicad.test.ts",
+      "sourceSha": "76f97e89d3c4e5694e76428481d405cc5a3e6994778f5919e24c83b3f4581a4f",
+      "task": "Task 11",
+      "why": "Gates 3 and 6 on a real generated schematic through the real kicad-cli - the only place either gate meets an artifact rather than a fixture. Three substitutions, no deletions, no changed assertion: the generation harness is `miniInScratch()` plus generate/writeGeneration here rather than pedals' `generateMiniInTmp` (not ported - it makes its temp directory inside an object literal, which this repository's static temp-scratch guard counts as an unnamed site), gate 3 reads the s-expression export with `importNetlist`, and the pin-table directory comes off the design's own `pinTables` field instead of being written out a second time. Renamed to `.kicad.test.ts`, this repository's convention for a test that requires the real tool."
+    },
+    {
+      "from": "render/pinMarks.test.ts",
+      "to": "tests/schgen/render/pin-marks.test.ts",
+      "sourceSha": "d81d28b08812fd4e7a7f1a23450c8a74c48854d3070370745615f739097976d9",
+      "task": "Task 6b round 2",
+      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168."
+    },
+    {
+      "from": "render/stockFields.kicad.test.ts",
+      "to": "tests/schgen/render/stock-fields.kicad.test.ts",
+      "sourceSha": "b03ae960ace44a024e8c1010353cd6e7c3421841b4685ac5b7df2300b4765fe8",
+      "task": "Task 6b round 2",
+      "why": "D3. The inert PEER block's `{ kind: \"labels\" }` is `{ kind: \"bus\", groups: [] }` (it sits on sheet \"p\" and is never laid out), and the whole `labels` MODE is DELETED - the `Mode` union member, `stockCircuit`'s ternary branch, the `realiseLabelled` import and the one `it.each` that drove it. That test put every unit of a multi-unit stock symbol in ONE block, which only the labels renderer could draw: `realiseBus` refuses a multi-unit block by design and `{ kind: \"auto\" }` reaches `realiseBlock`'s ELK refusal (Task 12's). Supersede means delete, as Task 8 did for ir/validate.test.ts's V6 label-reason test. The `bare` and `bus` modes - 2 of the 3 it.each rows - are untouched and still run over every H7 stock symbol. MCU removals (G112) applied."
+    },
+    {
+      "from": "render/bus.test.ts",
+      "to": "tests/schgen/render/bus.test.ts",
+      "sourceSha": "9ad18163137cc11acd8dc0f82894230124de7736188bac7b1351a401a17e678a",
+      "task": "Task 6b round 2",
+      "why": "D3, and round 1 was wrong to call this file dead: 9 of its 25 tests drive the LIVE `realiseBus` and 3 more drive `blockFields`. SEVEN PURE DELETIONS remove what the labels renderer owned - the `realiseLabelled` import, its whole `describe` (6 tests), `renderBlock`'s \"dispatches a labels block\" test, the `labels` row of the attribution `it.each`, and `fieldsOf`'s dead labels arm (a type member, a ternary condition and its else branch). Those seven would have been `cuts` and kept the byte-check. What makes it a divergence is ONE SUBSTITUTION: \"refuses a block that is not rendered as a bus\" hands `realiseBus` a `{ kind: \"labels\" }` block and asserts the message quotes it, so the rendering becomes `{ kind: \"auto\" }` and the asserted text becomes `block B is rendered \"auto\"`. That is ruling R4's one permitted edit to a ported test's assertion, declared here rather than smuggled in: the SUBJECT - realiseBus refusing a block rendered as something else - is unchanged, and only the name of the other kind moves, because the kind it named is deleted."
+    },
+    {
+      "from": "__fixtures__/designs/mini/index.ts",
+      "to": "tests/schgen/__fixtures__/designs/mini/index.ts",
+      "sourceSha": "ff79760c45034b1b4a2250e3f182e5ad11e8729130f2df74d25aec43e14ceb47",
+      "task": "Task 6b",
+      "why": "The pedals project's own two-sheet design fixture, ported so that the first schematic this repository emits through its own pipeline is one IT did not arrange - the governing invariant is that an agent never authors the acceptance criteria for what it produces, and that extends to the arrangement being looked at. D3: its AMP_SPARE and AMP_PWR blocks declared `{ kind: \"labels\", reason: ... }`, now `{ kind: \"bus\", groups: [] }`; both hold one unit, so `realiseBus` draws them. G112: `mcu: null` is gone from the CircuitSpec and `pinmap: null` from the DesignSpec, the latter because design.ts's `cuts` remove the field. Its `pinTables` path is unchanged (`../../pintables`); nothing in `generate` reads it, and Task 11 copied the one table it names to tests/schgen/__fixtures__/pintables/OPA1688.json (byte-checked by COPIED_FIXTURES in port-fidelity.test.ts) so that gate 6 can run on this design."
+    },
+    {
+      "from": "render/emit.test.ts",
+      "to": "tests/schgen/render/emit.test.ts",
+      "sourceSha": "cf85544cddd83e9c9a1a4841762806664a9a74cb33d033ba6a0a6ff01f017be4",
+      "task": "Task 6b",
+      "why": "D3: one single-unit LOAD block declared `{ kind: \"labels\", reason: \"fixture\" }`, now `{ kind: \"bus\", groups: [] }`, as in Task 8's ten files. MCU removals (G112) applied here rather than declared as cuts, because a diverged file is not re-derived."
+    },
+    {
+      "from": "render/emitPowerRefs.test.ts",
+      "to": "tests/schgen/render/emit-power-refs.test.ts",
+      "sourceSha": "014961fc69a087e984324b6b5a6e53cde84aabb25e5d7cc953aae3b455d8645b",
+      "task": "Task 6b",
+      "why": "D3: the conditional single-unit LA block declared `{ kind: \"labels\", reason: \"fixture\" }`, now `{ kind: \"bus\", groups: [] }`. MCU removals applied as for emit.test.ts."
+    },
+    {
+      "from": "render/emitRefusals.test.ts",
+      "to": "tests/schgen/render/emit-refusals.test.ts",
+      "sourceSha": "5b1007675f0fc09e38d506bb8db11ee853ebd68ae1eb03176d4c171fc7dddc2c",
+      "task": "Task 6b",
+      "why": "No labels rendering at all: this file diverges ONLY for G112's MCU removals (`mcu: null` in its CircuitSpec and `, pinmap: null` in its BuildContext). It would have been a `cuts` entry and stayed byte-checked, and it is here instead because those two deletions are identical to the ones nine diverged files already carry undeclared, and declaring the same cut in one of the two forms would make the pair of mechanisms harder to read than the loss is worth. The loss is real and docs/known-gaps.md records it."
+    },
+    {
+      "from": "render/ercExclusions.test.ts",
+      "to": "tests/schgen/render/erc-exclusions.test.ts",
+      "sourceSha": "c5ac7c0ddabe6b88f0af5f4e42c8e3444c564c149ca2a160d4f9c8f079d907d0",
+      "task": "Task 6b",
+      "why": "D3: one single-unit LOAD block declared `{ kind: \"labels\", reason: \"fixture\" }`, now `{ kind: \"bus\", groups: [] }`. MCU removals applied as for emit.test.ts."
+    },
+    {
+      "from": "render/pageRefs.test.ts",
+      "to": "tests/schgen/render/page-refs.test.ts",
+      "sourceSha": "8f156d3dde55eafdc4c94e6bf0b8cf07168b74de86e580680b8ef4d2b84c16cb",
+      "task": "Task 6b",
+      "why": "D3: two single-unit blocks (LOAD, MIDL) declared `{ kind: \"labels\", reason: \"fixture\" }`, now `{ kind: \"bus\", groups: [] }`. MCU removals applied as for emit.test.ts."
+    },
+    {
+      "from": "render/frames.test.ts",
+      "to": "tests/schgen/render/frames.test.ts",
+      "sourceSha": "514ec1edda5ae073f5b0499d034a4fc0817bc2578f0823080665e857186b1a05",
+      "task": "Task 6b",
+      "why": "D3: one block spec declared `{ kind: \"labels\", reason: \"fixture\" }`, now `{ kind: \"bus\", groups: [] }` - the same substitution Task 8 made in ten ported files, and the block holds one unit, so `realiseBus` draws it. Its MCU removals (G112's `mcu: null` and `, pinmap: null`) are applied here rather than declared as cuts, because a diverged file is not re-derived."
+    },
+    {
+      "from": "render/sheets.test.ts",
+      "to": "tests/schgen/render/sheets.test.ts",
+      "sourceSha": "f962406fca73e014a30e3eb98879a8644ee210ef57ba469dfca4dc119c805ceb",
+      "task": "Task 6b",
+      "why": "D3, twice over. (1) Three block specs declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`; the LOAD and NCB blocks hold one unit each, so `realiseBus` draws them. (2) The whole `field placement during layout` describe is DELETED, because its vehicle is the deleted renderer: it puts TWO units in one labels block and its comment reads *\"The labels renderer spaces parts 4 pitches apart; a 30-character Value does not fit right of R_LONG\"*. `realiseBus` refuses a two-unit block, and choosing a template for it instead would be picking an arrangement to make a test pass. Same precedent as Task 8's deletion of `ir/validate.test.ts`'s V6 label-reason test - supersede means delete - but this one costs a check that still had a live subject, and docs/known-gaps.md records that. MCU removals applied as for frames.test.ts."
+    },
+    {
+      "from": "render/bus.kicad.test.ts",
+      "to": "tests/schgen/render/bus.kicad.test.ts",
+      "sourceSha": "53eb93a56f44130676cb7b53ed1019bb8799746421aed15e529f3ab95399f30b",
+      "task": "Task 6b",
+      "why": "D3: the PEER block declared `{ kind: \"labels\", reason: \"t\" }`, now `{ kind: \"bus\", groups: [] }`. It holds one resistor per MCU signal net - far more than `realiseBus` would accept - but it is INERT: this file only calls `realiseBus(c, \"B\")` on the MCU block, and PEER exists so every part belongs to a block. MCU removals applied as for frames.test.ts."
+    },
+    {
+      "from": "render/templates/templateStock.kicad.test.ts",
+      "to": "tests/schgen/render/templates/template-stock.kicad.test.ts",
+      "sourceSha": "38a2b4bcc66c950d0fcc3c21a812547b56914116c7be25bb485be82c0fd60f83",
+      "task": "Task 6b",
+      "why": "D3: the conditional PEER block declared `{ kind: \"labels\" as const, reason: \"t\" }`, now `{ kind: \"bus\" as const, groups: [] }`. It is inert in the same way as bus.kicad.test.ts's - it holds the external peers so each net has two pins, and only block B is realised. MCU removals applied as for frames.test.ts. This is the ninth template test G135 counts, returning."
+    },
+    {
+      "from": "render/bus.ts",
+      "to": "lib/schgen/render/bus.ts",
+      "sourceSha": "14f103ad8db9de7606fc48914a7662d450e9cde9b664e926a25f9fb44624b569",
+      "task": "Task 6b",
+      "why": "The labels renderer is deleted with the `labels` rendering (plan decision D3, docs/known-gaps.md G140/G84): `realiseLabelled`, `labelledRotation` and the `\"labels\"` arm of `blockOf`/`attributed` are gone, with `gridCeil` and `PITCH`, their only remaining callers. That much is pure deletion; what makes it a divergence is `renderBlock`'s switch, which must cover Task 8's new `auto` kind - a non-exhaustive switch fails the compiler (TS2366) and covering it is new code, which `cuts` cannot express. `auto` goes to `realiseBlock` with no ELK backend, so an `auto` block no template draws throws naming the block (G146); threading a Backend through renderBlock/blockContent/layoutSheet is Task 12's. AMENDED BY TASK 12, which did exactly that: `renderBlock` now takes `elk: Backend | null = null` as a fourth parameter and passes it to `realiseBlock`."
+    },
+    {
+      "from": "render/blockTypes.ts",
+      "to": "lib/schgen/render/block-types.ts",
+      "sourceSha": "9bfbf391136d21a5966491e99298fe97d57615656d6da49adc527da9db4a6f96",
+      "task": "Task 8",
+      "why": "`RealiseResult`'s false arm carried `reason: string` and now carries a classified `Mismatch` of four kinds; `mismatch(reason)` is deleted so no site can stay unclassified, and `Selection`, `Backend`, the four constructors and `describeMismatch` are new. Spec 1.3 and docs/known-gaps.md G84/G94."
+    },
+    {
+      "from": "render/blocks.ts",
+      "to": "lib/schgen/render/blocks.ts",
+      "sourceSha": "a27fa28db128f1ac46a9b195475e4252f7206c2017c6de3ff6fa23211a252eb4",
+      "task": "Task 8",
+      "why": "`selectRenderer` is new (spec 1.3's rules: a template that applied and failed refuses, and only an auto block whose every template reported not-applicable reaches ELK); `realiseBlock` is rewired around it, takes an ELK backend, checks the layout whoever drew it, and turns a template's thrown error into a `backend-raised` mismatch instead of rethrowing. Task 10's review additionally EXPORTS `runTemplate` so the two measurement tools (`tools/schgen/parity.ts`, `tools/schgen/anchor-sweep.ts`) read a template's own verdict through this wrapping rather than keeping a second copy of the rule that a throw is never not-applicable (G84); the export adds no behaviour and `selectRenderer` is unchanged."
+    },
+    {
+      "from": "render/fanoutKit.ts",
+      "to": "lib/schgen/render/fanout-kit.ts",
+      "sourceSha": "52024e8fdc79bdda7c81aaa2cab05f0f0b739949d48013afbd2225777e820244",
+      "task": "Task 8",
+      "why": "`TraceResult`'s false arm carries a `Mismatch`; all eight of its refusals are shape tests over the subgraph and are `not-applicable`."
+    },
+    {
+      "from": "render/drawnExtent.ts",
+      "to": "lib/schgen/render/drawn-extent.ts",
+      "sourceSha": "79303aaf2838e456c20f3aed141ebb9b52bf79f746f1c234f3f86421c2094a5e",
+      "task": "Task 8",
+      "why": "`Measured`'s false arm carries a `Mismatch`, forwarded from `tryPlaceFields` rather than rebuilt from its string, so the `clearance` classification survives the two templates that measure their own drawing."
+    },
+    {
+      "from": "render/fieldPlacement.ts",
+      "to": "lib/schgen/render/field-placement.ts",
+      "sourceSha": "3bd672dd0e41fe07782da55a8c6459791f64402c20bde5beb053e36e7f45dca5",
+      "task": "Task 8, widened by Task 21",
+      "why": "`FieldsResult`'s false arm carries a `clearance` Mismatch, which needs two things the ported code did not keep: the obstacle that blocks the preferred slot (`clear` became `blockerOf`) and the block's id (`FieldScene.scope` became `FieldScene.block`, with the prose derived from it so every message is unchanged). `blockFieldsResult` is new, for the caller that forwards the mismatch. Task 21: a candidate slot must fit the Reference alone when the unit's Value is nothing but its symbol's own part name, because such a Value is emitted hidden (render/emit-items.ts) and is not drawn - docs/known-gaps.md G232, G257."
+    },
+    {
+      "from": "render/textScene.ts",
+      "to": "lib/schgen/render/text-scene.ts",
+      "sourceSha": "4347ca57a0b87bb7934800f6aa664206067d5352e529d143061427ceb164fc2c",
+      "task": "Task 21; widened by Task 22",
+      "why": "A part Value that is nothing but its symbol's own part name is emitted hidden (render/emit-items.ts), so it is not drawn text and contributes no box to the scene. It is the same rule render/field-placement.ts uses to decide what needs a slot, from the same function, so what the placer places is still exactly what this module checks - the invariant this file's own header states. A cut cannot express it: the Value box is pushed conditionally, not deleted. docs/known-gaps.md G232, G257. TASK 22 adds UnitFieldMode: an opt-in fourth argument to textScene that builds the same scene with no unit field box at all, which tools/schgen/masked-problems.ts needs to measure a block whose field placement refused - building a scene PLACES fields and throws when one has no slot, so that block has no scene (G258). The default is unchanged and no check passes the other mode, so nothing about what this module's callers refuse moves; the omitted scene is a strict subset and is sound in one direction only, which UnitFieldMode states. A cut cannot express an added parameter either."
+    },
+    {
+      "from": "render/emitItems.ts",
+      "to": "lib/schgen/render/emit-items.ts",
+      "sourceSha": "3c6b747e638115ee550c59bb65ef222492a5d58007ec8a2ee46d5190b52088dd",
+      "task": "Task 21",
+      "why": "A part Value that is nothing but its symbol's own part name is emitted with its string unchanged and marked `(hide yes)`, so the local `field` helper takes a hidden flag the pedals source always passed as false. The string must stay in the file: lib/kicad/value-notation.ts records that an empty value field reconciles as a value change against every board, and gate 8 compares components by canonical value. docs/known-gaps.md G232, G257."
+    },
+    {
+      "from": "render/templates/railRow.ts",
+      "to": "lib/schgen/render/templates/rail-row.ts",
+      "sourceSha": "64c56787d0da8c23e3384c8c4560f4e0b4ff421063bda1f1be2c8b2cacbc4c27",
+      "task": "Task 8",
+      "why": "Five refusal sites classified, all `not-applicable`, and `CommonRailLadder` carries a `Mismatch`."
+    },
+    {
+      "from": "render/templates/divider.ts",
+      "to": "lib/schgen/render/templates/divider.ts",
+      "sourceSha": "6098174de5939f8c4e8189d84ed92aa13e6be312361d2d721f341317d925c852",
+      "task": "Task 8",
+      "why": "Six refusal sites classified, all `not-applicable`."
+    },
+    {
+      "from": "render/templates/passiveChain.ts",
+      "to": "lib/schgen/render/templates/passive-chain.ts",
+      "sourceSha": "c96a4cfd9a08570d803118f29d2a317139742c42ef3e1917900dc1169600191b",
+      "task": "Task 8",
+      "why": "One refusal site, a forward; `Classified` carries a `Mismatch` and every `classifyChain` refusal is `not-applicable`."
+    },
+    {
+      "from": "render/templates/crystal.ts",
+      "to": "lib/schgen/render/templates/crystal.ts",
+      "sourceSha": "9873acd1577dad4040e3c307d156e3264ccaaced704aa842b05319e6a64ef481",
+      "task": "Task 8",
+      "why": "Six refusal sites classified: five `not-applicable` shape tests and one forward of the field-placement `clearance` measurement."
+    },
+    {
+      "from": "render/templates/regulator.ts",
+      "to": "lib/schgen/render/templates/regulator.ts",
+      "sourceSha": "f3519760c1fee221d6d6395be41edbc39ab150d11d4cd33f4fb8e82014be59a0",
+      "task": "Task 8",
+      "why": "Eight refusal sites classified, and the only two `invalid-geometry` sites in the template set are here: a bus-net pin on the wrong side of the symbol, and a tied pin whose end is not in the bus column. Each names the IR connection it failed to realise. `Banks` and `reachOf`'s result carry a `Mismatch`."
+    },
+    {
+      "from": "render/templates/opampClassify.ts",
+      "to": "lib/schgen/render/templates/opamp-classify.ts",
+      "sourceSha": "b69b9954246cbe302469302fe784ffc6c6f5d50d432263360b2d8099be0f5e81",
+      "task": "Task 8",
+      "why": "`Planned` and the local `Core` carry a `Mismatch`; every `planStage` refusal is `not-applicable`, and the one reason it rephrases keeps the kind by spreading the mismatch rather than rebuilding it."
+    },
+    {
+      "from": "render/templates/opampStage.ts",
+      "to": "lib/schgen/render/templates/opamp-stage.ts",
+      "sourceSha": "8256e61a84466628ba58f6ec61fba53318ca18b7fc1ca0bd933e3c971581fd91",
+      "task": "Task 8",
+      "why": "One refusal site, a forward of `planStage`'s mismatch."
+    },
+    {
+      "from": "render/templates/connectorFanout.ts",
+      "to": "lib/schgen/render/templates/connector-fanout.ts",
+      "sourceSha": "17cafcb0269f6476bc9b46122c633737dbae2eea0bcddd6adbccb14c29f43b50",
+      "task": "Task 8",
+      "why": "Three refusal sites classified, and the third is the only `clearance` site in the template set: it has drawn all four rotations and `checkLayout` refused every one, so it names the constraint and the obstacle pair of rotation 0's first problem (render/problem-obstacles.ts) and refuses rather than guessing a pair it cannot recover."
+    },
+    {
+      "from": "render/templates/passiveChain.test.ts",
+      "to": "tests/schgen/render/templates/passive-chain.test.ts",
+      "sourceSha": "861d0952b3cd33254f434ddc1694eeee94d1a5c0d0bbde35c4ca423219762756",
+      "task": "Task 8",
+      "why": "Twelve assertions compared a `classifyChain` refusal against `{ ok: false, reason }`. They now assert the KIND as well, which is stronger, not weaker - a site that silently became `invalid-geometry` would fail. This is ruling R4's one permitted edit to a ported test's assertions: the widening requires it, and it is declared here rather than smuggled in."
+    },
+    {
+      "from": "ir/types.ts",
+      "to": "lib/schgen/ir/types.ts",
+      "sourceSha": "ceaffd378c80b54202a65f2c635a23599ea9c5d21b7bc5a9ee78d9cb8e9aad04",
+      "task": "Task 8",
+      "why": "Plan decision D3: `Rendering` loses `{ kind: \"labels\"; reason }` and gains `{ kind: \"auto\" }`. The pedals source has `labels` and keeps it, so no rewrite rule reconciles the two. The MCU `cuts` this entry carried in files[] (G112: PinmapInput, CircuitSpec.mcu, Circuit.mcu, the \"pinmap\" pin origin) were applied before it diverged and the file on disk is that cut form; they are no longer declared anywhere but the git history of this manifest."
+    },
+    {
+      "from": "ir/classify.ts",
+      "to": "lib/schgen/ir/classify.ts",
+      "sourceSha": "8a1ff6d08c409ed507fe3b25699d004149960842e4d0cd438e540187dbae4b39",
+      "task": "Task 8",
+      "why": "D3: `labelledNets` tested `rendering.kind !== \"wired\"`, which with `auto` added would label every net of an ELK-rendered block. It now means not `wired` and not `auto`, i.e. `bus` - a modification, which a cut cannot express."
+    },
+    {
+      "from": "report.ts",
+      "to": "lib/schgen/report.ts",
+      "sourceSha": "6d4f403c179febe08ddab38203d4afca000e0f19b6bef25d02cc706e7f724e2c",
+      "task": "Task 8",
+      "why": "D3: `BlockReport.rendering` was \"wired\" | \"bus\" | \"labels\" and the switch over `Rendering` had a `case \"labels\"` returning its reason. With `labels` deleted and `auto` added, the case is uninhabited and the switch is no longer exhaustive."
+    },
+    {
+      "from": "__fixtures__/circuits.ts",
+      "to": "tests/schgen/__fixtures__/circuits.ts",
+      "sourceSha": "f66bcd173e9ab9ca54db3fe2db9500284a9b6dd02d92c2317516757b35cfa765",
+      "task": "Task 8",
+      "why": "D3: the SPLIT and PEER blocks and `labelsCircuit`'s block B declared `{ kind: \"labels\" }`. SPLIT and block B are `{ kind: \"bus\", groups: [] }` here, which `labelledNets` and `valuesAlong` treat identically (every net labelled, values along their glyphs), so every fixture-backed assertion measures what it did. Its MCU `cuts` (G112) were applied before divergence. **TASK 6b ROUND 2: PEER IS `{ kind: \"auto\" }` INSTEAD, because Task 8's substitution was latently wrong and nothing could see it until `layoutSheet` landed.** PEER holds one peer resistor per declared external, so with two externals it is a MULTI-UNIT bus block, and `realiseBus` refuses more than one unit by design - a refusal nothing reached while no test laid a `blockCircuit` sheet out. `auto` is the declaration that no arrangement is declared, and `selectRenderer` then picks `rail-row` mechanically; no test in this repository chose it. No currently-green assertion moved."
+    },
+    {
+      "from": "ir/build.test.ts",
+      "to": "tests/schgen/ir/build.test.ts",
+      "sourceSha": "277c51f7bb1125e304820b4c7196bb27d63cb4736ae04900c0b40ac38a15d1c5",
+      "task": "Task 8",
+      "why": "D3: three block specs declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its nine MCU `cuts` (G112) were applied before divergence and are no longer declared anywhere but this manifest's history."
+    },
+    {
+      "from": "ir/classify.test.ts",
+      "to": "tests/schgen/ir/classify.test.ts",
+      "sourceSha": "1dc9c5972d7ca8f9cdfe954c6103bbf3f54133b56769f36fc715ece3ed84f72e",
+      "task": "Task 8",
+      "why": "D3: two block specs declared `{ kind: \"labels\" }` and one test was named for it. They are `{ kind: \"bus\", groups: [] }` and the test is renamed; the ASSERTION is unchanged, because `bus` is the non-wired kind whose nets are all labelled now that `auto`'s are not. Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "ir/validate.test.ts",
+      "to": "tests/schgen/ir/validate.test.ts",
+      "sourceSha": "1c2db45219f2b76be3d8fbda0de06310bfd262d0e5cd3d7d536f9faa563b9e3a",
+      "task": "Task 8; diverged further by Task 20",
+      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the removal of that rule from ir/validate.ts is part of that file's own Task 20 divergence entry in this array, and was a declared `cuts` entry in files[] until then). Its MCU `cuts` (G112) were applied before divergence. TASK 20: `validateCircuit` no longer runs `bomFields` (the owner's ruling, in that entry), so the two V10 cases call the new `validateSourcing` instead - every expected problem string verbatim, as ruling R4 requires. The exemption case gained a CONTROL in the same edit: it asserted only that an exempt TP part is NOT refused, which under either composition can pass without the rule running at all, so it now also asserts that the same empty field on a non-exempt part IS refused by name. docs/known-gaps.md G245."
+    },
+    {
+      "from": "render/drawnText.test.ts",
+      "to": "tests/schgen/render/drawn-text.test.ts",
+      "sourceSha": "18a1a4a69002cb30c5b7028e21a11c6ae6c0cd106904cefbfd7e30b55f6bb4fe",
+      "task": "Task 8",
+      "why": "D3: one block spec declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/unitText.test.ts",
+      "to": "tests/schgen/render/unit-text.test.ts",
+      "sourceSha": "f759e73feffb79121a284f22d1a4cc22eb53a0b83b54bfe8aad909a45c3b8cca",
+      "task": "Task 8",
+      "why": "D3: one `blockCircuit` rendering argument declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/textClearance.test.ts",
+      "to": "tests/schgen/render/text-clearance.test.ts",
+      "sourceSha": "8ebb481e069b6333f26891f93d197e706cc9f3186b0bf81d964df67c91e21929",
+      "task": "Task 8",
+      "why": "Two unrelated changes, and the file header points here for both. (1) D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }` - the kind `valuesAlong` still treats as `labels` was treated, so the power values this file measures run the same way. (2) The type widening: the `FieldScene` literal in \"placeFields refusal\" names `block: \"B\"` where it named `scope: \"block B\"`, because `tryPlaceFields` needs the block's id to build the `clearance` mismatch its widened result carries and carrying the id and the prose would be one fact in two places. The asserted message is unchanged."
+    },
+    {
+      "from": "render/noConnectEnds.test.ts",
+      "to": "tests/schgen/render/no-connect-ends.test.ts",
+      "sourceSha": "c15dd2d23c0236d97a51813e502ff69131a23c01ef45a465a7f1ba2a9ae1e69f",
+      "task": "Task 8",
+      "why": "D3: two `blockCircuit` rendering arguments declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`."
+    },
+    {
+      "from": "render/templates/opampStock.kicad.test.ts",
+      "to": "tests/schgen/render/templates/opamp-stock.kicad.test.ts",
+      "sourceSha": "d494c245aa168fd164b3ff7727382ec11e25035bf1b6c400d2f16d4806ef8963",
+      "task": "Task 8",
+      "why": "D3: the SPLIT and PEER blocks declared `{ kind: \"labels\" }`, now `{ kind: \"bus\", groups: [] }`. Its MCU `cuts` (G112) were applied before divergence."
+    },
+    {
+      "from": "render/frames.ts",
+      "to": "lib/schgen/render/frames.ts",
+      "sourceSha": "b577314c5fa88f30cfba27a5457aff4fc4f41f3b6a1e8c13ad8abfef906db28d",
+      "task": "Task 12",
+      "why": "`blockContent` takes the ELK `Backend` and passes it to `renderBlock` - the middle link of the chain generate -> layoutSheet -> blockContent -> renderBlock -> realiseBlock that carries the asynchronous pre-pass's result into the synchronous realise dispatch (plan decision D2). One parameter is the whole divergence, and it defaults to null for G146's reason. docs/known-gaps.md G186."
+    },
+    {
+      "from": "render/sheets.ts",
+      "to": "lib/schgen/render/sheets.ts",
+      "sourceSha": "920d2bb1ba9dc597eed0438f837049623fd5684e608f9066e0f4c50223e731a6",
+      "task": "Task 12; diverged further by Task 15",
+      "why": "`layoutSheet` takes the ELK `Backend` and hands it to `blockContent`. One parameter is the whole divergence, and it defaults to null for G146's reason - an auto block that reaches ELK with no backend refuses, naming the block. docs/known-gaps.md G186. **TASK 15 ADDS A SECOND PARAMETER AND ONE EXTRACTION.** `layoutSheet` takes the `SheetPacking` a sheet-packing pre-pass produced (null = no pre-pass ran, which is every ported caller, and the shelf packer this file always used), and the frame-content construction is extracted into an exported `sheetContents` so the pre-pass packs the same list that gets placed. `packFrames` is reached through `shelfPacking` in lib/schgen/elk/sheet-graph.ts rather than directly, which is what keeps render/pack.ts a byte-checked PORT instead of a second divergence. docs/known-gaps.md G203."
+    },
+    {
+      "from": "generate.ts",
+      "to": "tools/schgen/generate.ts",
+      "sourceSha": "c3c514694ee854cf81b1750b10ed0fe27e3cc3dd5d3f301022199add8da5caf0",
+      "task": "Task 12; diverged further by Task 13 and Task 15",
+      "why": "The ELK pre-pass is threaded through the function that owns the pipeline: `generate` is `async` (decision D2 - elkjs has no synchronous layout entry point, premise verified at Task 12 Step 1), `GenerateEnv` gains `authoring: SchematicAuthoring | null` because `elkInputOf` needs portDirections and rails and the IR has no slot for a port direction, `Generation` gains `elk`, and `layoutSheet` is handed `elkBackendFrom(...)`. The pedals source has no ELK backend and never will, so no rewrite rule reconciles the two. Its MCU pin-map `cuts` (G112) were applied before divergence - they are no longer carried as data and the deletions now live in the file. docs/known-gaps.md G186. **TASK 15 ADDS TWO STEPS TO THE SAME PIPELINE.** `generate` runs a SHEET-packing pre-pass (`sheetPackPrePass`, tools/schgen/elk/sheet-layout.ts) for the same reason it runs the block one - elkjs has no synchronous entry point (D2) and layoutSheet is synchronous - and hands each sheet's SheetPacking to layoutSheet; and it calls `assertCrossSheet` beside `assertRefsMatchDrawings`, because spec \u00a71.6's one-mechanism-per-class rule is a whole-drawing-set check that cannot run inside layoutSheet. docs/known-gaps.md G203 and G213."
+    },
+    {
+      "from": "ir/build.ts",
+      "to": "lib/schgen/ir/build.ts",
+      "sourceSha": "b53b1c7671a3caaf88a0bc13ba50162febf33da02a35aa00704deb8a48238a19",
+      "task": "Task 13",
+      "why": "Ruling R29 (plan, Task 13). `buildCircuit` carries `CircuitSpec`'s two new maps onto the `Circuit` - `orientations` (spec 1.5 step 2's answer per part, derived in `from-network.ts` where the `Network` is; docs/known-gaps.md G182) and `portDirections` (G186's \"only input genuinely missing from the IR\") - and adds `orientationsOf`, which refuses an orientation map that is not TOTAL over the spec's parts in both directions. The totality refusal is the content of the divergence: a missing entry must not read as `null`, because `null` means the rule declined and both states would draw the part in the library frame, so an absence would be invisible in the output. The pedals source has neither field and no layout backend to need them."
+    },
+    {
+      "from": "generateFiles.ts",
+      "to": "tools/schgen/generated-files.ts",
+      "sourceSha": "5a6e2b71594fb458bbd512cb471c474665a6cab089cc469d5496a426a7e75e49",
+      "task": "Task 16",
+      "why": "Task 16 adds MANIFEST.json to the generated file set (spec 2.1's generation manifest), which is a content change `rewrite()` cannot produce and `cuts` cannot express - a cut is deletion-only. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger), and all it retains is the `sourceSha` watch on the other end of the line. WHY IT WAS TAKEN ANYWAY: the alternative was for `generate` to add one entry to the map `generatedFiles` returns, which works end to end because `staleFiles` and `writeGeneration` both read that map - but `generatedFiles`'s contract is THE GENERATED FILE SET, so a second caller of it would then produce a set with no manifest in it. Two places to keep correct, which CLAUDE.md forbids, in exchange for one byte-check. The manifest is added LAST in that function, because it hashes the files produced before it; `manifestInputsOf` in lib/schgen/manifest.ts excludes MANIFEST.json itself, and is the one rule tools/schgen/verify.ts rebuilds the inputs with so the producer and the verifier cannot disagree about what is hashed."
+    },
+    {
+      "from": "ir/validate.ts",
+      "to": "lib/schgen/ir/validate.ts",
+      "sourceSha": "b9e10e418655e63622e80815612d8cfdd8425616c1cfa7b301b00e465d955672",
+      "task": "Task 20",
+      "why": "THE BOM GATE IS A PROPERTY OF THE CONSUMER OF AN ARTIFACT, NOT OF THE CIRCUIT, and that is the owner's ruling. He asked \"why does a schematic need bom-level specificity?\" and then ruled: \"the gate you describe *is* important for pcb layout intended for outsourced manufacture-but a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht pcbs.\" The pedals source runs twelve rules in one `RULES` list, so `bomFields` - Manufacturer, MPN, Supplier and SupplierPart non-empty on every part whose refPrefix is not TP/H/FID - gated the emission of a DRAWING. This file now splits that list: `DRAWING_RULES` (eleven rules) is what `validateCircuit` runs and therefore what `tools/schgen/generate.ts` gates on, and `SOURCING_RULES` ([bomFields]) is what the new `validateSourcing` runs for a consumer that has to source and place the parts. THE RULE ITSELF IS UNTOUCHED: `ir/validateParts.ts` is still byte-checked in files[], the four keys and `BOM_EXEMPT_PREFIXES` are unchanged, and no flag, mode or widened exemption relaxes it in place. A `cuts` entry cannot express this: a cut is deletion-only, and deleting `bomFields` from the list would leave nothing naming the consumer it still binds for, which is the half of the ruling that has to survive. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger) and keeps only the sourceSha watch on the upstream end. IT ALSO SUBSUMES THE `cuts` ENTRY THIS FILE CARRIED IN files[]: plan decision D3 deletes the `labels` rendering, so the line `if (r.kind === \"labels\" && r.reason.trim() === \"\") ...` is absent here, as it was before - that deletion is now part of the divergence rather than a declared cut, and the `ir/validate.test.ts` entry in this array points here for it. WHAT IT UNBLOCKS, measured: docs/known-gaps.md G238 recorded `transistor-preamp` refusing at gate 1 on 101 problems of which 100 were empty purchasing fields; G245 records this change, what each parity circuit validates at now, and that `validateSourcing` has no production caller yet."
+    },
+    {
+      "from": "render/sheetTypes.ts",
+      "to": "lib/schgen/render/sheet-types.ts",
+      "sourceSha": "a497b4f559a9535ff546aa419d9791fe1710c04208b2c37ea6c8abd15fe7296b",
+      "task": "Task 24",
+      "why": "`SheetDrawing` carries `fieldFallbacks`: the Reference/Value pairs `render/field-placement.ts` could not keep clear on that sheet. The placer stopped refusing a block it has no clear slot for and now takes the least-covered one, so a sheet can be produced with overlapping text - and the field is what stops such a sheet reading as a clean one. It is on the DRAWING because the drawing is what reaches `report.ts`, which prints the count per block and per unit into every generation's RENDER-REPORT.md; computing it in the report instead would place the fields a second time and make the report's numbers a different run's. See docs/known-gaps.md G232 and G259."
+    },
+    {
+      "from": "render/layoutCheck.ts",
+      "to": "lib/schgen/render/layout-check.ts",
+      "sourceSha": "9e540ba867a6cf8619e39674526bbbb3ed6a1a19e02f869fba414897b42cea0c",
+      "task": "Task 24",
+      "why": "`textClearanceProblems` no longer early-returns the field-placement refusal, because `render/field-placement.ts` no longer produces one. That early return is how one defect hid another for the whole of G232's life (docs/known-gaps.md G258): building a text scene places fields, so a block whose fields did not place had no scene and every other text-clearance problem it carried went unreported. The full text pass now runs on every block."
+    }
+  ],
+  "handWritten": [
+    "lib/schgen/strict.ts",
+    "tools/schgen/anchor-sweep.ts",
+    "tools/schgen/authoring-census.ts",
+    "tools/schgen/claim-sweep.ts",
+    "tools/schgen/parity-render.ts",
+    "tools/schgen/parity.ts",
+    "tools/schgen/port-manifest.ts",
+    "tools/schgen/port-probe.ts",
+    "tools/schgen/port.ts",
+    "tools/schgen/symbol-census.ts",
+    "tests/schgen/__fixtures__/designs/mini/run.ts",
+    "tests/schgen/emit-byte-stable.test.ts",
+    "lib/schgen/gates/oscar/boundary.ts",
+    "lib/schgen/render/stock-symbols.ts",
+    "lib/schgen/render/problem-obstacles.ts",
+    "lib/schgen/render/obstacle-matrix.ts",
+    "lib/schgen/render/obstacle-pairs-reasons.ts",
+    "lib/schgen/render/obstacle-pairs-body.ts",
+    "lib/schgen/render/obstacle-pairs-pin-text.ts",
+    "lib/schgen/render/obstacle-pairs-graphic-wire.ts",
+    "lib/schgen/render/obstacle-pairs-glyph.ts",
+    "lib/schgen/render/obstacle-pairs-text-frame.ts",
+    "tests/schgen/ir/auto-not-labelled.test.ts",
+    "tests/schgen/ir/no-pin-map.test.ts",
+    "tests/schgen/ir/single-pin-net-guard.test.ts",
+    "tests/schgen/port-fidelity.test.ts",
+    "tests/schgen/render/extends-flattening.test.ts",
+    "tests/schgen/render/obstacle-matrix.test.ts",
+    "tests/schgen/render/problem-obstacles.test.ts",
+    "tests/schgen/render/realise-result.test.ts",
+    "tests/schgen/render/selection.test.ts",
+    "tests/schgen/render/stock-symbols.test.ts",
+    "tests/schgen/render/symbol-self-text.test.ts",
+    "tests/schgen/render/templates/mismatch-census.test.ts",
+    "tests/schgen/render/uuid-stable.test.ts",
+    "tests/schgen/strict.test.ts",
+    "tests/schgen/symbol-census.test.ts",
+    "tests/schgen/parity.test.ts",
+    "tests/schgen/anchor-sweep.test.ts",
+    "lib/schgen/authoring.ts",
+    "lib/schgen/authoring-checks.ts",
+    "lib/schgen/from-network.ts",
+    "lib/schgen/rules/symbols.ts",
+    "lib/schgen/rules/pin-sides.ts",
+    "lib/schgen/rules/orientation.ts",
+    "tests/schgen/authoring-complete.test.ts",
+    "tests/schgen/from-network.test.ts",
+    "tests/schgen/rules/symbols.test.ts",
+    "tests/schgen/rules/pin-sides.test.ts",
+    "tests/schgen/rules/orientation.test.ts",
+    "lib/schgen/gates/round-trip.ts",
+    "tests/schgen/gates/round-trip.kicad.test.ts",
+    "tools/schgen/gate-census.ts",
+    "lib/schgen/elk/options.ts",
+    "lib/schgen/elk/serialize.ts",
+    "lib/schgen/elk/graph.ts",
+    "tools/schgen/elk/layout.ts",
+    "tests/schgen/elk/fixtures.ts",
+    "tests/schgen/elk/graph.test.ts",
+    "tests/schgen/elk/serialize.test.ts",
+    "tests/schgen/elk/layout.elk.test.ts",
+    "tests/schgen/elk/options.elk.test.ts",
+    "tests/schgen/__fixtures__/orientations.ts",
+    "lib/schgen/elk/adapt.ts",
+    "lib/schgen/elk/read-graph.ts",
+    "lib/schgen/elk/snap.ts",
+    "lib/schgen/elk/junctions.ts",
+    "tools/schgen/elk/obstacle-census.ts",
+    "tests/schgen/elk/adapt.test.ts",
+    "tests/schgen/elk/snap.test.ts",
+    "tests/schgen/elk/junctions.test.ts",
+    "tests/schgen/elk/obstacle-census.test.ts",
+    "lib/schgen/elk/self-loop.ts",
+    "tools/schgen/elk/diagnose.ts",
+    "tests/schgen/elk/self-loop.test.ts",
+    "tests/schgen/elk/raised.elk.test.ts",
+    "lib/schgen/elk/sheet-graph.ts",
+    "lib/schgen/render/cross-sheet.ts",
+    "lib/schgen/render/compose.ts",
+    "tools/schgen/elk/sheet-layout.ts",
+    "tests/schgen/__fixtures__/designs/crosssheet.ts",
+    "tests/schgen/render/cross-sheet.kicad.test.ts",
+    "tests/schgen/elk/sheet-graph.test.ts",
+    "tests/schgen/render/compose.test.ts",
+    "tests/schgen/__fixtures__/composed.ts",
+    "lib/schgen/manifest.ts",
+    "lib/schgen/readability/measures.ts",
+    "lib/schgen/readability/baseline-model.ts",
+    "lib/schgen/readability/baseline-read.ts",
+    "lib/schgen/readability/baseline.ts",
+    "lib/schgen/readability/finding.ts",
+    "tests/schgen/manifest.test.ts",
+    "tests/schgen/readability/measures.test.ts",
+    "tests/schgen/readability/baseline.test.ts",
+    "tests/schgen/readability/finding.test.ts",
+    "tests/schgen/generate-digest.test.ts",
+    "tests/schgen/gate-census.test.ts",
+    "tools/schgen/remeasure.ts",
+    "tools/schgen/remeasure-spikes.ts",
+    "tools/schgen/remeasure-ceiling.ts",
+    "tools/schgen/remeasure-composed.ts",
+    "tools/schgen/remeasure-criteria.ts",
+    "tests/schgen/remeasure.test.ts",
+    "tools/schgen/remeasure-coverage.ts",
+    "tools/schgen/remeasure-edges.ts",
+    "tests/schgen/remeasure-edges.test.ts",
+    "tests/schgen/remeasure-ceiling.test.ts",
+    "tests/schgen/pointers.test.ts",
+    "tests/schgen/render/field-slots.test.ts",
+    "tests/schgen/render/hidden-value-fields.test.ts",
+    "tests/schgen/render/hidden-value-netlist.kicad.test.ts",
+    "tools/schgen/masked-problems.ts",
+    "tests/schgen/masked-problems.test.ts",
+    "lib/schgen/gates/canonical-value.ts",
+    "lib/schgen/gates/graph-match.ts",
+    "lib/schgen/gates/declared-delta.ts",
+    "lib/schgen/gates/reference-graph.ts",
+    "tests/schgen/gates/declared-delta.test.ts",
+    "tests/schgen/gates/reference-graph.test.ts",
+    "tests/schgen/gates/reference-graph.kicad.test.ts",
+    "tests/schgen/gates/graph-match.test.ts",
+    "lib/schgen/render/occupancy.ts",
+    "tools/schgen/board-sheets.ts",
+    "tests/schgen/render/field-fallback.test.ts",
+    "tools/schgen/board-declarations.ts",
+    "tests/schgen/board-declarations.test.ts",
+    "tools/schgen/text-metrics/corpus.ts",
+    "tools/schgen/text-metrics/geometry.ts",
+    "tools/schgen/text-metrics/metrics.ts",
+    "tools/schgen/text-metrics/newstroke.ts",
+    "tools/schgen/text-metrics/pdf-probe.ts",
+    "tools/schgen/text-metrics/placement.ts",
+    "tools/schgen/text-metrics/probe.ts",
+    "tools/schgen/text-metrics/step4.ts",
+    "tools/schgen/text-metrics/svg-probe.ts",
+    "tools/schgen/text-metrics/verify-pastes.ts",
+    "tools/schgen/elk-labels/arms.ts",
+    "tools/schgen/elk-labels/corpus.ts",
+    "tools/schgen/elk-labels/probe.ts",
+    "tools/schgen/field-order/probe.ts",
+    "tools/schgen/label-freedom/fixtures.ts",
+    "tools/schgen/label-freedom/freedoms.ts",
+    "tools/schgen/label-freedom/partition.ts",
+    "tools/schgen/label-freedom/probe.ts",
+    "tools/schgen/label-freedom/step3.ts",
+    "tests/schgen/label-freedom/fixtures.test.ts",
+    "tests/schgen/text-metrics/document-pastes.test.ts",
+    "tests/schgen/text-metrics/pen-call-sites.test.ts"
+  ]
+}

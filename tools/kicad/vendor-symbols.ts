@@ -3,7 +3,10 @@
  *
  *   bun tools/kicad/vendor-symbols.ts <kicad-symbols-dir>
  *
- * On macOS the directory is
+ * This tool takes the directory as an argument rather than defaulting it,
+ * so it carries no platform-specific literal of its own to go stale - find
+ * yours with `lib/kicad/install.ts`'s `defaultSymbolDir(KICAD_CLI)`
+ * (`docs/known-gaps.md` **G169**), which on macOS is
  * /Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols. Every symbol in
  * VENDORED_SYMBOLS is flattened (see flattenedSymbol) and written to
  * lib/kicad/symbols/<Library>/<Name>.sexpr. Record the KiCad version in

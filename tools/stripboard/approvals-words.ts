@@ -24,78 +24,28 @@
  * residual and `./approvals-model.ts` carries what the design relies on instead,
  * which is scope and visibility.
  */
-import {
-  FIRST_OR_SECOND_PERSON,
-  SELECTION_NON_ARTIFACTS,
-  SELECTION_SEPARATOR,
-} from "./approvals-model.ts"
-
-/** Whether `word` appears in `text` as a whole word - see `FIRST_OR_SECOND_PERSON`. */
-function saysWord(text: string, word: string): boolean {
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  return new RegExp(`(^|[^\\p{L}'])${escaped}($|[^\\p{L}'])`, "iu").test(text)
-}
+import { FIRST_OR_SECOND_PERSON, SELECTION_SEPARATOR } from "./approvals-model.ts"
+import { subjectNamesFor } from "../../lib/owner-words.ts"
 
 /**
- * THE FIRST ADMISSIBLE SHAPE - a VOICE: somebody is speaking in it.
+ * **THE THREE READINGS MOVED TO `lib/owner-words.ts` IN TASK 16 OF THE M1 SCHEMATIC-AUTHORING
+ * PLAN, AND THIS FILE RE-EXPORTS THEM RATHER THAN HOLDING A SECOND COPY.**
  *
- * Unchanged by the arrival of the second shape, and deliberately so: nothing was
- * widened, nothing was special-cased, and `FIRST_OR_SECOND_PERSON` holds exactly
- * the words it held before.
+ * `schematic/readability-baselines.json` (spec §3.3) is a SECOND owner-judgement registry, and its
+ * loader lives in `lib/schgen/readability/baseline.ts` - which **may not import from `tools/`**
+ * (the M1 plan's global constraint, stated in `lib/schgen/render/blocks.ts`). The readings
+ * therefore had to be reachable from `lib/`, and the only alternative was a fourth reader of the
+ * same shape, which `CLAUDE.md` forbids and which that task's brief forbids by name.
+ *
+ * **NOTHING WAS WIDENED IN THE MOVE.** The four word lists hold exactly the entries they held and
+ * the three predicates behave exactly as they did; `tests/stripboard/approvals-refusals.test.ts`
+ * still drives all three through this module and `loadApprovals`.
+ *
+ * What stays HERE is the two refusal SENTENCES below, which name *an approval* and talk about *a
+ * board*: that is this registry's vocabulary and not a shared one.
  */
-export function isSpokenVoice(joined: string): boolean {
-  return FIRST_OR_SECOND_PERSON.some((word) => saysWord(joined, word))
-}
-
-/**
- * The SUBJECT names one board may be called by in his own words: its full name,
- * and its name with the first hyphen segment dropped.
- *
- * **IT IS TWO SPELLINGS AND NOT A SUFFIX RULE**, which is a deliberate
- * tightening: `pultec-low-cut` is named by `pultec-low-cut` or by `low-cut`,
- * and NOT by `cut`, which would read the same against `pultec-hi-cut` and would
- * make a selection admissible for a board it does not name. He writes the
- * section name - *"low-cut: part-walk-s1"* - and that is the one abbreviation
- * this reading accepts.
- */
-export function subjectNamesFor(board: string): readonly string[] {
-  const at = board.indexOf("-")
-  const names = at === -1 ? [board] : [board, board.slice(at + 1)]
-  return names.map((name) => name.toLowerCase())
-}
-
-/**
- * THE SECOND ADMISSIBLE SHAPE - a SELECTION: some line of the quote pairs a
- * subject naming THIS entry's board with the artifact chosen for it.
- *
- * **BOTH SIDES ARE REQUIRED AND THAT IS THE WHOLE OF THE READING.** A line
- * naming only the board (`low-cut:`) says nothing was chosen; a line naming only
- * an artifact (`part-walk-s1`) says nothing about which board it is for and
- * would admit one utterance against any entry; and a line whose artifact is a
- * bare affirmative (`low-cut: yes`) carries no information an agent did not
- * already have, which is exactly the shape a field gets filled in with.
- *
- * **IT IS CHECKED PER LINE, AND PER ENTRY.** Per line because he answered two
- * boards in one message and each entry is about one of them; per entry because
- * a selection is admissible only for the board it names, so the same two lines
- * pasted against a THIRD board's entry are refused by this reading - which is
- * the one thing `docs/known-gaps.md` G31 says the voice reading cannot do.
- */
-export function isSelectionFor(words: readonly string[], board: string): boolean {
-  const subjects = subjectNamesFor(board)
-  for (const line of words.join("\n").split("\n")) {
-    const at = line.indexOf(SELECTION_SEPARATOR)
-    if (at === -1) continue
-    const subject = line.slice(0, at).trim().toLowerCase()
-    if (!subjects.includes(subject)) continue
-    const artifact = line.slice(at + SELECTION_SEPARATOR.length).trim()
-    if (artifact === "") continue
-    const plain = artifact.toLowerCase().replace(/[.!,;]+$/, "")
-    if (SELECTION_NON_ARTIFACTS.some((word) => word === plain)) continue
-    return true
-  }
-  return false
-}
+export { isSelectionFor, isSpokenVoice } from "../../lib/owner-words.ts"
+export { subjectNamesFor }
 
 /** `approvals-words-narrated`'s sentence: the quote is a report ABOUT him. */
 export function narratedDetail(id: string, joined: string, marker: string): string {

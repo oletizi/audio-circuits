@@ -15,6 +15,51 @@ state called "done".
 buildable.** That is its purpose, and almost every structural decision follows
 from it.
 
+**THE MANDATE IS WIDER THAN ONE CIRCUIT AND WIDER THAN ONE OUTPUT.** The owner,
+2026-10-21, saying what "something buildable" means:
+
+> *"For the **many** audio circuits we plan to develop in this repository, we
+> will need topologies, schematics, bench-buildable perfboard layouts, tht pcb
+> layouts we can send to pcbway or similar, and smd pcb layouts we can send to
+> pcbway or similar for manufacture and assembly."*
+
+**Five output classes, for many circuits:** topologies; schematics;
+bench-buildable perfboard; THT PCB fit to send out for fabrication; and SMD PCB
+fit to send out for fabrication **and assembly**.
+
+**THE BOARDS IN `boards/` ARE THE PROVING GROUND, NOT THE CONSUMERS.** His
+question is the test, and it is the one to apply to any capability claim here:
+
+> *"If you can't deliver at least the schematics for the circuits we are
+> currently building, how can you hope to deliver on the larger mandate?"*
+
+A capability that cannot produce an output for the circuits already in hand has
+not been demonstrated, whatever its tests say. **An agent that finds itself
+arguing that some output does not matter for the current boards is reasoning
+from the wrong end** - the current boards are how you discover whether the thing
+works for the next hundred.
+
+**WHERE A FULLY SPECIFIED BOM BINDS, which follows from the five classes rather
+than from any tool's convenience.** The owner, 2026-10-21:
+
+> *"the gate you describe **is** important for pcb layout intended for outsourced
+> manufacture—but a fully specified BOM isn't needed for schematics, stripboard
+> layout, and, in many cases, tht pcbs."*
+
+**A fully specified BOM is a property of the CONSUMER of an artifact, not of the
+circuit**: it binds when someone else sources and places the parts. So it binds
+for SMD assembly, often not for THT, and never for a schematic or a hand-built
+stripboard layout. `docs/known-gaps.md` **G245** records the gate this corrected
+and the measurement behind it.
+
+**This section is longer than the sentence it replaces because the narrow
+reading cost a day.** Until 2026-10-21 it said only that the repository exists
+to carry *a* circuit to *something* buildable. An agent read that as the eleven
+boards in `boards/`, found that those boards are already hand-drawn, and
+concluded that generating schematics did not matter for them - **the exact
+inversion the mandate above forbids**, reached from a true sentence that was too
+narrow to forbid it.
+
 ## Who does what, and why
 
 **Agents do the placing and routing, of schematics and of board layouts both.**
@@ -69,10 +114,28 @@ So:
   cycles are cheaper than mine" is the governing economics here. A first
   solution that technically works but leaves a person doing fiddly remedial work
   is a failure, not a delivery.
-- **`lib/kicad/schematic.ts` still emits a stub** - a correct netlist with a
-  useless arrangement. That is a statement about the current emitter, not a
-  permanent division of labour: say "stub" when that is what you made, and
-  expect it to stop being true as the schematic-generation port lands.
+- **The schematic generator is `lib/schgen/`, and `lib/kicad/schematic.ts` is the
+  superseded stub it replaced.** This sentence used to say the stub was all there
+  was and to *"expect it to stop being true as the schematic-generation port
+  lands"*. **The port landed and the prediction was wrong for a reason nobody
+  anticipated, which is worth more than a silent correction.** `lib/schgen/`
+  exists, draws **35 of this repository's 52 declared ELK blocks**, and
+  **produces a schematic for 0 of the 11 boards in `boards/`**: six are refused
+  at `validateCircuit` on net names and five at ELK layout on text, power-symbol
+  and junction placement. **The "no authoring declaration" half of this sentence
+  is gone and the dates say why it is kept:** until 2026-10-21 nine of the eleven
+  boards had no declaration and had never been offered to the drawing code at
+  all, which was the largest single reason this output class delivered nothing;
+  all nine now exist (`circuits/pultec/schematic/`,
+  `circuits/transistor-preamp/schematic/`) and the board figure did not move.
+  `docs/known-gaps.md` **G259** is the board-by-board scoreboard, **G247**
+  measures the preamp five, **G263** and **G264** carry what offering the nine
+  surfaced, **G238** and **G245** are how the blocker got there, and **G248** records
+  why the stub writer is still in the tree - it carries the only `kicad-cli`
+  proof that KiCad reads a generated schematic as the circuit means it. **Nothing
+  invites you to the stub**: its CLI verb, its script and its instructions are
+  deleted. Say "stub" when that is what you made, and read **G81** before you
+  reach for `lib/kicad/schematic.ts` for anything.
 - **KiCad and VeroRoute are primary tools here, not optional extras.**
   `make check` invokes `kicad-cli` on every board on every run, and one test
   invokes it directly and fails rather than skips. Treat KiCad the way you would
@@ -135,6 +198,34 @@ It covers:
 **Telling the owner in conversation is not recording it**, and neither is a plan
 ledger: `.superpowers/` is gitignored, so an entry there is invisible to review,
 absent from the history, and destroyed by `git clean -fdx`.
+
+**AND THE REMEDY IS NOT ONLY TO COPY FINDINGS OUT — IT IS TO COMMIT THE
+EXECUTION RECORD TOO, which this file did not say until 2026-10-23.** The rule
+above sends findings to the register, correctly. But a plan also produces two
+things the register has no place for, because they are not findings: **the
+decision record** - what was ruled, why, and what it would cost if wrong - and
+**the audit trail** that makes the register's own *"CONFIRMED by this writer"*
+claims checkable. The execution skill's default is to delete a plan's workspace
+once its final review is clean. **That default is right when the diff IS the
+record and wrong when the plan's product is knowledge**, and following it would
+have destroyed 77 rulings and 19 reviews. So: a research plan's record is
+committed beside the plan, at
+`docs/superpowers/plans/<plan-name>-execution/`, with a README saying plainly
+that it is not findings and that the register is what binds. The review-package
+diffs are not committed - they regenerate from `git diff`. The worked example is
+`docs/superpowers/plans/2026-10-22-text-handling-research-execution/`.
+
+**The owner, 2026-10-23, on being shown the workspace left as scratch:** *"why
+wouldn't you keep the hard-won data as a durable part of the repo?"* He asked in
+the same breath whether the investigation was *"fully documented in a
+human-readable report durably in the repo"*, and it was not: the findings were
+committed in a 5,800-line document written for an adversarial reader, and the one
+artifact meant to summarise them was **unreadable when rendered** - its grade
+column clipped off the edge of the page, read as source by six reviewers and a
+controller without anyone noticing. **A research pass is not delivered until a
+person can read what it found**, which is what
+`docs/schematic/text-handling-report.md` is and why
+`docs/schematic/README.md` now points at it ahead of everything else.
 
 **This rule has been broken twice by the agent that wrote it**, both times the
 same way: measuring something, reporting it in the session, and moving on. The

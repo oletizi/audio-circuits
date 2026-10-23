@@ -21,12 +21,18 @@
  */
 import fs from "node:fs"
 import path from "node:path"
+import { defaultFootprintDir } from "../../lib/kicad/install.ts"
+import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import type { PadPosition } from "../../lib/kicad/pin-pattern-model.ts"
 
-/** Overridable the way KICAD_CLI is, and defaulted to the same install root. */
+/**
+ * Overridable the way `KICAD_CLI` is, and DERIVED from the same resolved
+ * `kicad-cli` rather than a separate hand-written literal
+ * (`docs/known-gaps.md` **G169**, clause a) - a per-platform candidate list,
+ * not a macOS-only default (clause b).
+ */
 export const FOOTPRINT_LIBRARY_ROOT =
-  process.env["KICAD_FOOTPRINTS"] ??
-  "/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints"
+  process.env["KICAD_FOOTPRINTS"] ?? defaultFootprintDir(KICAD_CLI)
 
 /** `<Library>:<Name>` as a netlist spells it, to `<root>/<Library>.pretty/<Name>.kicad_mod`. */
 export function footprintFile(name: string): string {

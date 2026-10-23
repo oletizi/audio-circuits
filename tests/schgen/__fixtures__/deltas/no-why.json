@@ -1,0 +1,11 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "fixture transformation: a delta that states no reason",
+      "why": "",
+      "edit": { "kind": "setValue", "part": "R1", "value": "10k" }
+    }
+  ]
+}

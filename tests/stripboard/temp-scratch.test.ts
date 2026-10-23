@@ -68,6 +68,9 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   "complete-fixtures.ts": ["freshPassDir"],
   "grade-fixtures.ts": ["fixtureDeclaration"],
   "vero-export-fixtures.ts": ["roundTrip"],
+  // Task 6b: the schgen mini design fixture's scratch outDir, so a generation never writes into
+  // the repository and never into a directory a later run reuses.
+  "run.ts": ["miniInScratch"],
   "materialize-low-boost.ts": ["materialisedLowBoost"],
   "run-scratch.ts": ["freshRoot", "registerCreated", "scratchStamp", "registerStampPrefix"],
 }
@@ -87,6 +90,44 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
 const CALLER_REMOVES: Readonly<Record<string, readonly string[]>> = {
   "perfboard-test-helpers.ts": ["tree"],
   "refresh-fixtures.ts": ["tmpCatalogDir"],
+}
+
+/**
+ * Files that DO remove every directory they make, but through a list of their
+ * own rather than through a `rmSync(<the same identifier>)` the site check
+ * below can see - `tempDirs.push(dir)` at the site and
+ * `for (const d of tempDirs.splice(0)) fs.rmSync(d, ...)` in an `afterEach`.
+ *
+ * **THIS IS AN EXEMPTION FROM ONE REGEX, NOT FROM THE RULE**, and the
+ * `still removes` test below is what makes it so: each entry must still have
+ * its `mkdtempSync` site, must still push that identifier onto the named list,
+ * and must still drain that list into `fs.rmSync`. A declared file that stops
+ * doing any of the three fails there, and a declared path that no longer
+ * exists fails too, so this cannot become a hole the size of whatever anybody
+ * chose to list.
+ *
+ * `tests/schgen/render/library.test.ts` is here because it is a PORTED file
+ * (`tools/schgen/port-manifest.json`): its content is byte-identical to
+ * `digital-pedal-platform`'s `tools/schgen/render/library.test.ts` modulo
+ * imports and a header, so it cannot be rewritten to call `freshTempScratch`
+ * without the port-fidelity test failing. See `lib/schgen/README.md`.
+ *
+ * `tests/cli/schgen.test.ts` is here for a different reason, and not because it writes under
+ * `TMPDIR` at all: its directory goes under the gitignored `build/`, because the schematic
+ * generator puts the design's path relative to its own repository root in the title block and
+ * `repoRoot` throws rather than guessing when there is no `.git` ancestor - so a design module in
+ * a temp directory cannot be generated. The sweep above counts every site in the tree whatever
+ * directory it names, which is right, and this is the shape of removal it cannot see.
+ */
+const REMOVES_VIA_OWN_LIST: Readonly<Record<string, { readonly site: string; readonly list: string }>> = {
+  "schgen/render/library.test.ts": { site: "dir", list: "tempDirs" },
+  "cli/schgen.test.ts": { site: "dir", list: "MODULE_DIRS" },
+  // Task 11: a DIVERGED port of `digital-pedal-platform`'s `tools/schgen/verify.test.ts`
+  // (`tools/schgen/port-manifest.json`). Its scratch directories go on the file's own `dirs`
+  // list, drained in an `afterEach`, which is the shape this table exists for. The divergence
+  // is in the fixture `DesignSpec`, not in the temp-directory handling, so rewriting that
+  // handling would be a second, undeclared deviation from the source.
+  "schgen/verify.test.ts": { site: "dir", list: "dirs" },
 }
 
 /**
@@ -186,7 +227,11 @@ test("every mkdtemp site under tests/ either removes its own directory or regist
       (match) => (match[1] === undefined ? [] : [match[1]]),
     )
     if (CALLER_REMOVES[path.basename(file)] !== undefined) continue
-    const unremoved = named.filter((name) => !new RegExp(String.raw`rmSync\(${name}\b`).test(text))
+    const viaOwnList = REMOVES_VIA_OWN_LIST[path.relative(TESTS_ROOT, file)]
+    const unremoved = named.filter(
+      (name) =>
+        name !== viaOwnList?.site && !new RegExp(String.raw`rmSync\(${name}\b`).test(text),
+    )
     if (sites !== named.length) {
       offenders.push(`${path.relative(TESTS_ROOT, file)}: ${sites - named.length} unnamed site(s)`)
     }
@@ -200,6 +245,31 @@ test("every mkdtemp site under tests/ either removes its own directory or regist
       "scope that made it, or call freshTempScratch from ../support/temp-scratch.ts and arm " +
       "afterAll(cleanUpTempScratch) in every test file that reaches it.",
   ).toEqual([])
+})
+
+test("every file exempted as removing through its own list still makes, pushes and removes", () => {
+  // THE TEETH ON REMOVES_VIA_OWN_LIST. Three things must still hold per entry,
+  // each a check that could fail: the site exists, the identifier reaches the
+  // list, and the list is drained into rmSync. Driven: deleting the afterEach
+  // from the ported library.test.ts fails this test and only this test.
+  const declared = Object.entries(REMOVES_VIA_OWN_LIST)
+  expect(declared.length, "an exemption table nothing iterates is a check that cannot fail")
+    .toBeGreaterThan(0)
+  for (const [relative, { site, list }] of declared) {
+    const file = path.join(TESTS_ROOT, relative)
+    expect(fs.existsSync(file), `${relative}: declared here but not in the tree`).toBe(true)
+    const text = fs.readFileSync(file, "utf8")
+    // The expected form is NOT spelled out literally here: this file is itself
+    // swept above, and a message quoting the call would read as a site of its
+    // own - the shape this repository calls a check reporting a finding about
+    // the file doing the looking.
+    expect(text, `${relative}: no mkdtemp site assigned to a const named "${site}"`)
+      .toMatch(new RegExp(String.raw`const ${site} = fs\.mkdtempSync\(`))
+    expect(text, `${relative}: "${site}" never reaches ${list}`)
+      .toMatch(new RegExp(String.raw`${list}\.push\(${site}\)`))
+    expect(text, `${relative}: ${list} is never drained into fs.rmSync`)
+      .toMatch(new RegExp(String.raw`of ${list}\.splice\(0\)\) fs\.rmSync\(`))
+  }
 })
 
 test("every test file that reaches a registering fixture arms the cleanup hook", () => {

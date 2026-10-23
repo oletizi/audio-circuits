@@ -1,0 +1,11 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "fixture transformation: a well-formed declaration, not one this repository runs",
+      "why": "a fixture for the parser and for the M2 refusal; nothing applies a GraphEdit here",
+      "edit": { "kind": "removePart", "part": "R1" }
+    }
+  ]
+}

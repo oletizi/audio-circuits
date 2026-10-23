@@ -1,0 +1,17 @@
+{
+  "kind": "declared",
+  "deltas": [
+    {
+      "id": "D1",
+      "from": "fixture transformation: the first D1",
+      "why": "a fixture: two deltas sharing an id, which the parser must refuse",
+      "edit": { "kind": "removePart", "part": "R1" }
+    },
+    {
+      "id": "D1",
+      "from": "fixture transformation: the second D1",
+      "why": "a fixture: two deltas sharing an id, which the parser must refuse",
+      "edit": { "kind": "removePart", "part": "R2" }
+    }
+  ]
+}

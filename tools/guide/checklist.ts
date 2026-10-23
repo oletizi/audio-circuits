@@ -63,6 +63,13 @@
  * a blank or an invented name for a node this map cannot resolve: `separates`
  * refuses instead, naming the node id and what to fix.
  *
+ * **WHICH OF THREE THINGS THIS COLUMN SHOULD SAY IS AN OPEN OWNER QUESTION -
+ * `docs/known-gaps.md`'s G252.** The now-deleted G36 reserved the choice -
+ * name the nets, name the parts, or drop the column - for the owner, and the
+ * change that wrote the behaviour above picked one and deleted the entry as
+ * fixed. The behaviour here is left exactly as it is; G252 carries the
+ * question so it is not closed by this comment either.
+ *
  * **THE FOUR PART SECTIONS, AND WIRE LINKS, CARRY A `Fit` COLUMN**, computed
  * by `./fit-condition.ts` and appended to each row built here - see that
  * module's comment for why the cell is a condition the builder can act on

@@ -42,3 +42,64 @@ completed, including design and documentation updates, and push the working
 branch after each commit. Do not wait for the entire feature to be finished.
 Run checks appropriate to each change before committing. Clearly identify
 provisional or incomplete work in its documentation and commit description.
+
+## Do not re-ask a question the owner has already answered
+
+**An instruction stands for the work it was given about.** If he has said to
+open a pull request and merge it, do that when the work is complete - do not
+ask again for the same piece of work.
+
+**This is narrower than a standing order, and the distinction is his.** He put
+it as: *"You don't have to open and merge automatically, but don't ask me again
+if I've already told you to open one and merge it."* So an instruction is not a
+blanket policy for every future branch, and neither is it good for one use
+only. Ask when the work is genuinely a new thing he has not ruled on; do not
+ask when you are re-confirming something he settled an hour ago.
+
+**The failure this exists to stop, measured.** In one session he was asked to
+confirm the same thing nine separate times - *"open a pull request and merge"*,
+*"merge the pr when ready"*, *"open a pr and merge it"*, *"merge it"* - and
+answered the same way every time. His attention is the scarcest thing in this
+loop, and spending it on a question he has already answered is a cost with no
+return. The same applies to every settled decision, not only pull requests:
+**his declinations are recorded in `docs/known-gaps.md` precisely so that
+nobody raises them again unprompted.**
+
+The one qualifier he has given on merging: *"i dont want to merge the branch
+until the feature is complete."* Completeness is the condition, not his
+re-confirmation.
+
+**And merging is HIS to initiate, which is narrower than it sounds and was
+stated after the rule above was written.** On 2026-10-19, having been asked
+about merging once too often, he ruled: *"stop worrying about merging. I'll tell
+you when to do that."* So: **commit and push early and often** - that cadence is
+unchanged and is required - but **do not propose a merge, do not ask whether to
+merge, and do not offer it as a next step.** He raises it.
+
+**The two rules are the same discipline pointed at one thing.** Asking again is
+the fault; "shall I merge?" at the end of a report is asking again in a costume,
+and it was asked at the end of four consecutive reports before he stopped it.
+
+## Do the next thing in the same turn you name it
+
+**Announcing an action and then ending the turn is a handoff, not a commitment.**
+It makes the owner the scheduler for work that was already yours, and he has to
+spend a message - usually *"progress?"* - to get it started.
+
+He counted it before it was noticed: *"is there a reason you halt after
+announcing your next action? you've done it many many times."* In the session
+that produced this rule he sent *"progress?"* eight times, and in most of those
+the next action had been named in the previous message and not begun.
+
+**The test is whether the named action needs an answer from him.**
+
+- It does not - writing a register entry the governing documents already require,
+  running a check, committing finished work: **do it in the same turn and report
+  it as done.** "Writing those now" at the end of a message is the fault.
+- It does - a decision only he can make, an irreversible step, something outside
+  the working tree: **ask for the decision and stop.** That is not a halt, it is
+  the gate.
+
+**This is the same failure as the two rules above, in a third costume.** "Shall I
+merge?" hands him a settled question; "doing that next" hands him a settled task.
+Both convert his attention into a scheduler for work that did not need one.

@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import { valueFor } from "../../lib/kicad/value-notation.ts"
+import { valueFor, valueIsSymbolPartName } from "../../lib/kicad/value-notation.ts"
 import { net } from "../../lib/model/types.ts"
 import type { Component } from "../../lib/model/types.ts"
 
@@ -144,6 +144,21 @@ test("a potentiometer is valued by its resistance, not its taper", () => {
   expect(valueFor(pot)).toBe("47K")
 })
 
+test("a photoresistor is valued by its resistance, as the one in the repository is declared", () => {
+  // Added by Task 9 of the M1 schematic-authoring plan, with the formatter branch it proves.
+  // The value is `circuits/optical-compressor/parts/audio-path.ts`'s own number for its vactrol
+  // LDR, which that file annotates as spec section 6.2's DARK endpoint; see G157 for why a
+  // resistance is what the field gets and what is wrong with that.
+  const ldr: Component = {
+    id: "attenuator_photocell",
+    kind: "photoresistor",
+    parameters: { ohms: 1e6 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("GR"), b: net("VBIAS") } }],
+  }
+  expect(valueFor(ldr)).toBe("1M")
+})
+
 test("a switch is valued by its part identity, because it has no quantity", () => {
   const sw: Component = {
     id: "SW1",
@@ -190,4 +205,63 @@ test("a switch with neither an mpn nor a symbol refuses", () => {
     parameters: { positions: ["a"], contacts: { a: [] } },
     pins: {}, units: [],
   })).toThrow(/bare_switch/)
+})
+
+/**
+ * **`valueIsSymbolPartName` IS THE OTHER HALF OF `valueFor`'s LAST STEP, and these cases tie the
+ * two together rather than restating one of them.** Every positive case below composes the two -
+ * `valueIsSymbolPartName(symbol, valueFor(component))` - so the predicate is measured against what
+ * the formatter actually produced for that component and not against a string written here.
+ */
+const JUMPER: Component = {
+  id: "jumper", kind: "switch",
+  parameters: { positions: ["fitted", "removed"], contacts: { fitted: [["1", "2"]], removed: [] } },
+  pins: {}, units: [], part: { symbol: "Jumper:Jumper_2_Open" },
+}
+
+test("a value that came from the symbol's part name is recognised as one", () => {
+  expect(valueIsSymbolPartName("Jumper:Jumper_2_Open", valueFor(JUMPER))).toBe(true)
+  const header: Component = {
+    id: "header", kind: "connector", parameters: {}, pins: {}, units: [],
+    part: { symbol: "Connector_Generic:Conn_01x05" },
+  }
+  expect(valueIsSymbolPartName("Connector_Generic:Conn_01x05", valueFor(header))).toBe(true)
+})
+
+test("a value derived from an electrical parameter is not the symbol's part name", () => {
+  expect(valueIsSymbolPartName("Device:C", valueFor(capacitor(1e-7)))).toBe(false)
+  expect(valueIsSymbolPartName("Device:R", valueFor(resistor(10000)))).toBe(false)
+  // The literal case the predicate must not reach: a capacitor drawn with a symbol whose part
+  // name is "C" still has an electrical value, and ".1uF" is not "C".
+  expect(valueIsSymbolPartName("Fix:C", valueFor(capacitor(1e-7)))).toBe(false)
+})
+
+test("a genuine mpn that differs from the symbol's part name is not the symbol's part name", () => {
+  const amp: Component = {
+    id: "amp", kind: "ic", parameters: {}, pins: {}, units: [],
+    part: { mpn: "OPA1688", symbol: "Amplifier_Operational:OPA1678" },
+  }
+  expect(valueFor(amp)).toBe("OPA1688")
+  expect(valueIsSymbolPartName("Amplifier_Operational:OPA1678", valueFor(amp))).toBe(false)
+})
+
+/**
+ * **THE STATED LIMIT OF THE PREDICATE, asserted rather than written in prose.** It is derived from
+ * the VALUE, not from which branch of `valueFor` produced it, so an mpn spelled exactly as the
+ * symbol's own part name answers true. `docs/known-gaps.md` **G257** records the deviation; the
+ * case is real and already in this file above ("an IC's value is its manufacturer part number",
+ * `mpn: "PT2399"` drawn with `Audio:PT2399`).
+ */
+test("an mpn spelled exactly as the symbol's part name answers TRUE: the predicate reads the value", () => {
+  const pt2399: Component = {
+    id: "delay_ic", kind: "ic", parameters: {}, pins: {}, units: [],
+    part: { mpn: "PT2399", symbol: "Audio:PT2399" },
+  }
+  expect(valueFor(pt2399)).toBe("PT2399")
+  expect(valueIsSymbolPartName("Audio:PT2399", valueFor(pt2399))).toBe(true)
+})
+
+test("an unqualified symbol name has no library prefix to strip", () => {
+  expect(valueIsSymbolPartName("Jumper_2_Open", "Jumper_2_Open")).toBe(true)
+  expect(valueIsSymbolPartName("Jumper_2_Open", "Jumper:Jumper_2_Open")).toBe(false)
 })

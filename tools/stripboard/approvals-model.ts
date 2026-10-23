@@ -286,127 +286,30 @@ export const APPROVAL_EDGES_REQUIRED = 3
 export const APPROVAL_REQUIRED_EDGE_NAMES = ["violationsOf", "candidateSha256"] as const
 
 /**
- * The words that say an utterance is somebody TALKING rather than an agent
- * REPORTING, at least one of which must appear across `ownerWords`.
+ * THE FOUR WORD LISTS THE READINGS OF `ownerWords` RUN OVER - **declared in
+ * `lib/owner-words.ts` since Task 16 of the M1 schematic-authoring plan, and
+ * re-exported here so every existing importer of this module is unaffected.**
  *
- * **IT IS A POSITIVE TEST AND THAT IS DELIBERATE.** A blacklist of paraphrase
- * phrasings is a game of whack-a-mole an agent in a hurry wins by accident -
- * *"approved on the render"* carries no marker of narration at all - whereas a
- * quote of somebody addressing you almost always carries a first- or
- * second-person word. His actual words here do, twice over: *"**I** don't see
- * the problem"*, *"**let's** keep it. It looks fine to **me**"*; so do the words
- * behind `stripboard/exemptions.json`: *"**You** should keep a record of
- * exemptions. **My** ad-built boards..."*.
+ * **WHY THEY MOVED, and nothing about them changed.** `schematic/readability-baselines.json`
+ * (spec §3.3) is a SECOND registry recording the owner's judgement about a
+ * produced artifact, and its loader is `lib/schgen/readability/baseline.ts` -
+ * which may not import from `tools/` (the M1 plan's global constraint). So the
+ * three readings had to be reachable from `lib/`, and the only alternative was
+ * a second copy of these lists: two places to keep correct, which `CLAUDE.md`
+ * forbids, and which that task's brief forbids by name (*"reuse
+ * `tools/stripboard/approvals-read.ts`'s three refusals rather than writing a
+ * fourth reader of the same shape"*).
  *
- * **WHAT IT COSTS, STATED RATHER THAN HIDDEN:** a genuine one-word approval -
- * *"yes"*, *"ship it"* - carries no marker, so this guard refuses a true record
- * in that case. It is checked across the JOINED list rather than per utterance
- * so that a terse line beside a substantive quote passes, and the refusal says
- * what to do: record the fuller quote, or put the case to him rather than
- * widening this list to fit one awkward record.
- *
- * **THEY ARE WHOLE WORDS AND ARE MATCHED ON WORD BOUNDARIES**, which is a
- * correction with a measurement behind it: as bare substrings, `me` is inside
- * *measured*, *some* and *came*, and `us` inside *because*, so the list matched
- * nearly any English sentence and the guard tested nothing. `./approvals-read.ts`
- * builds a `\b...\b` pattern per word.
+ * **NOTHING WAS WIDENED.** Each list holds exactly the entries it held here, and
+ * the reasoning for each - why the voice test is POSITIVE, what it costs, why
+ * the words are matched on boundaries, why `SELECTION_NON_ARTIFACTS` is the one
+ * admissible blacklist - travelled with them verbatim and is in that file.
+ * `tests/stripboard/approvals-refusals.test.ts` still drives all three readings
+ * through `loadApprovals`, so the move is checked rather than asserted.
  */
-export const FIRST_OR_SECOND_PERSON = [
-  "i",
-  "i'm",
-  "i've",
-  "i'd",
-  "me",
-  "my",
-  "mine",
-  "we",
-  "we've",
-  "we're",
-  "us",
-  "our",
-  "let's",
-  "you",
-  "you're",
-  "your",
-] as const
-
-/**
- * The phrasings that say an utterance is an agent's REPORT about the owner
- * rather than the owner's own words, none of which may appear in one.
- *
- * **IT IS THE SECOND, INDEPENDENT READING OF THE SAME QUESTION** - the positive
- * test above asks *is this somebody speaking*, and this asks *is this somebody
- * being spoken about*. Both are cheap, neither subsumes the other, and the one
- * forgery that is actually likely - an agent filling the quote field with the
- * sentence it was about to write in `why` - trips this one.
- *
- * **HE DOES NOT CALL HIMSELF THE OWNER AND HE DOES NOT NARRATE HIS OWN
- * APPROVAL.** If he ever does, this guard refuses a true record; its refusal
- * says so and says that widening the list is a deliberate edit with a test
- * beside it, which is the house rule for every whitelist in this pipeline.
- */
-export const NARRATION_MARKERS = [
-  "the owner",
-  "owner's",
-  "owner approved",
-  "he approved",
-  "he said",
-  "he ruled",
-  "approved by",
-  "the operator",
-] as const
-
-/**
- * The character that separates a SELECTION's subject from the artifact it
- * chose: `low-cut: part-walk-s1`.
- *
- * It is declared rather than written inline so the one shape this reading
- * admits is stated in the model beside the two word lists, and so a reader who
- * finds a refusal can see what form was being looked for.
- */
-export const SELECTION_SEPARATOR = ":"
-
-/**
- * The words that are NOT an artifact, however they are punctuated, so a bare
- * affirmative cannot be dressed up as a selection by putting a subject in front
- * of it.
- *
- * **THIS LIST IS THE WHOLE DIFFERENCE BETWEEN A SELECTION AND A FIELD BEING
- * FILLED IN.** `low-cut: yes` names the subject and says nothing an agent did
- * not already know; `low-cut: part-walk-s1` names one of four renders that were
- * put in front of him, which is information only the person choosing has. The
- * reading admits the second and must refuse the first, and these are the words
- * that keep the two apart.
- *
- * It is a blacklist, which everywhere else in this pipeline is the weaker
- * device - and it is the right one HERE because it is narrowing an admission
- * rather than granting one: a word missing from it lets a vague selection
- * through, where a word missing from `FIRST_OR_SECOND_PERSON` refuses a true
- * record. A reader who finds a vague affirmative that got past this adds it in
- * a deliberate edit with a test beside it, the same house rule.
- */
-export const SELECTION_NON_ARTIFACTS = [
-  "yes",
-  "no",
-  "ok",
-  "okay",
-  "yep",
-  "yeah",
-  "sure",
-  "good",
-  "fine",
-  "great",
-  "done",
-  "go",
-  "agreed",
-  "approved",
-  "approve",
-  "accepted",
-  "lgtm",
-  "ship it",
-  "looks good",
-  "sounds good",
-  "fine by me",
-  "that one",
-  "this one",
-] as const
+export {
+  FIRST_OR_SECOND_PERSON,
+  NARRATION_MARKERS,
+  SELECTION_NON_ARTIFACTS,
+  SELECTION_SEPARATOR,
+} from "../../lib/owner-words.ts"

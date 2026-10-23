@@ -41,12 +41,12 @@ So: terminal name from the model, throw value from `controls.ts`, and `potFuncti
 - Baseline: `bun test` → **2407 pass / 0 fail**; typecheck clean. The count may only go up.
 - Use `bun`, never ts-node. Never `sed` for writes. Never put a `#` inside a bash heredoc or multi-line quoted bash argument — use the Write tool and `git commit -F <file>`.
 - No Claude/AI attribution in commit messages. No git hooks. Supersede means delete.
-- **A finding you are not fixing goes in `docs/known-gaps.md`, committed in the same change.** The register runs through G36 (G36 is since deleted - resolved by the 2026-10-18 "cuts table says what it separates" change, which named the parts a cut separates instead).
+- **A finding you are not fixing goes in `docs/known-gaps.md`, committed in the same change.** The register runs through G36 (G36 is since deleted - the 2026-10-18 "cuts table says what it separates" change named the parts a cut separates instead. **That deletion is since judged to have closed an owner question, and `docs/known-gaps.md`'s G252 reopens the record**: G36 said the column's content was the owner's choice among three, and the change picked one.)
 
 ## Out of scope, with reasons
 
 - **G19** — ground prints as `0` on the junction rows. An owner decision he has not made, and it predates this work: his own hand layout prints the same.
-- **G36** — the cuts table's `Separates` column prints ladder net names. Same shape, same reason. (Resolved by the 2026-10-18 "cuts table says what it separates" change; the entry is deleted from `docs/known-gaps.md`.)
+- **G36** — the cuts table's `Separates` column prints ladder net names. Same shape, same reason. (The 2026-10-18 "cuts table says what it separates" change rewrote the column and the entry was deleted from `docs/known-gaps.md` as fixed. **Not resolved in the sense this line claimed**: the entry reserved the choice among three for the owner, and **G252** now carries the question.)
 - **G2, G17** — label crowding and part labels leaving the outline. Judged on a render; this plan changes what labels SAY, not how they are placed, and the owner should see the new text before anyone moves it.
 
 ---
