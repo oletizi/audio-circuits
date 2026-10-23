@@ -25094,6 +25094,15 @@ when a reviewer re-derived §7.7's confinement figures. **It is named here rathe
 than left as three unrelated corrections because the next agent publishing a
 self-measurement will do it again otherwise.**
 
+**GENERALISED 2026-10-23: `docs/schematic/false-greens.md` collects the twenty-nine
+distinct mechanisms this branch observed by which a check passed while establishing
+nothing, and this entry's pattern is its mechanisms 23 and 24.** That document is a
+catalogue rather than a plan - it authors no criterion and changes nothing here - and it
+is where a reader should go for the other twenty-seven, which include the two shapes this
+entry's own remedy depends on (a control that could have answered differently, and a
+figure published without the unit or convention it was taken under). **This entry remains
+the authority for its own criterion**; the catalogue cites it rather than restating it.
+
 **THE SHAPE.** A task measures something about the artifact it is producing - a
 byte length, a grep count, a register tally - and publishes the figure **inside
 the change that is still editing the thing measured.** The figure is correct when
