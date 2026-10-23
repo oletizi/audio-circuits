@@ -1086,18 +1086,41 @@ replacing that search, not configuring it. And ELK's answers are off-grid:
 **only 12 of the 398** placed labels in arm **e** have a corner on a whole grid
 step, so 386 of them would have to be snapped or accepted off-grid.
 
-**A GLOBAL LABEL: no. This is the finding, and it is the class that blocks the
-boards.** `[READ]` `lib/schgen/render/emit-items.ts:227-241`: a `global_label`
-is emitted as `(global_label <net> (shape bidirectional) (at l.at angle) (effects
-justify) ... (property "Intersheetrefs" ...))`. **Its text has no coordinate of
-its own.** The label's one position is `l.at`, which is the anchor - the point
-the wire ends at - and **G262** records that this is a netlist fact: KiCad
-connects the label where it is drawn. The only free parameters are the side it
-leaves from and the separately positioned `Intersheetrefs` property. ELK's answer
+**A GLOBAL LABEL: not as an offset, which is what ELK returns.** `[READ]`
+`lib/schgen/render/emit-items.ts:227-241`: a `global_label` is emitted as
+`(global_label <net> (shape bidirectional) (at l.at angle) (effects justify) ...
+(property "Intersheetrefs" ...))`. **Its text has no coordinate of its own.** The
+label's one position is `l.at`, the anchor, and the separately positioned
+`Intersheetrefs` property is the only other coordinate in the form. ELK's answer
 for a boundary node's label is an **offset from that anchor** - measured above as
-`(-1905, -2048.1)` for `+5V` - and there is nowhere in the file to put it.
-Honouring it would mean moving the anchor, which moves the wire end, which
-changes the circuit.
+`(-1905, -2048.1)` for `+5V` - and **there is nowhere in the emitted form to put
+it.** That is the measurement, and it is the whole of what §2 establishes about
+this class.
+
+**WHAT DOES NOT FOLLOW, AND §2 SAID IT DID UNTIL THIS CORRECTION.** This
+paragraph previously went on to say that honouring the offset *"would mean moving
+the anchor, which moves the wire end, which changes the circuit"*, citing
+**G262**'s *"a global label's position is a netlist fact"*. **That premise is the
+one the plan records as WRONG** -
+[`../superpowers/plans/2026-10-22-text-handling-research.md` line 207](../superpowers/plans/2026-10-22-text-handling-research.md),
+inside Task 5, marked ACCEPTED and called the third-party review's most
+consequential finding:
+
+> *"the label's NAME and its electrical CONNECTION are netlist facts; its drawing
+> coordinates are not necessarily fixed by the circuit. A label can move to
+> another valid point on the same net, and this generator draws the wires, so it
+> can also change the geometry that leaves no room."*
+
+So the plan names **at least three** degrees of freedom where G262 recorded one -
+orientation, **relocating the anchor** along an electrically equivalent
+connection, and **adjusting the wire geometry** - plus a fourth that is this
+generator's own, which of a net's segments it attaches the label to. **§2 does not
+take any of that away: it is Task 5's subject.** What §2 measured is narrower and
+survives whole - **an offset from the anchor has no representation in this
+emitter's output vocabulary** - and the right reading is that ELK's *answer* is in
+the wrong currency, not that the anchor is immovable. Where to move it to is
+Task 5's question. **Any citation of G262's netlist-fact framing, here or
+anywhere, is a citation of the claim plan line 207 corrects.**
 
 **A NET NAME AS AN EDGE LABEL: the one route that is not closed, with a measured
 structural obstacle.** `layered` declares `EDGE_LABELS` as a supported graph
@@ -1166,10 +1189,14 @@ it is reported as such rather than taken at whichever height suits it.
   **G262**: three of the five boards that reach layout are refused on
   global-label overlaps, and `transistor-preamp-lab` - the board that gets
   furthest - is refused by one of them and nothing else in front of it. §2 did
-  not re-measure those counts. What §2 adds is why ELK cannot take the class
-  over: it will place a label on a boundary node, and a KiCad `global_label` has
-  one coordinate and it is the anchor (§2.7), so the answer has no representation
-  in the file. **This is not configurable - it is the output format.**
+  not re-measure those counts, and **G262's *"a global label's position is a
+  netlist fact"* is the claim the plan corrects at line 207** - cited here only
+  for the board counts. What §2 adds is why ELK's answer cannot be used as it
+  comes: it will place a label on a boundary node, and the emitted
+  `global_label`'s only coordinate is its anchor (§2.7), so **an offset has no
+  representation in this emitter's output vocabulary.** That is a property of the
+  emitted form, not a statement that the anchor cannot move - which is Task 5's
+  question, not this section's.
 - **Label-label separation across elements.** The inventory contains no such
   option, `spacing.labelLabel` is scoped to one element's labels, and the
   edge-label arm produced 5 overlapping pairs.
@@ -1188,10 +1215,14 @@ it is reported as such rather than taken at whichever height suits it.
 **So the hypothesis is answered in the negative, and precisely:** ELK's label
 machinery is a *graph-drawing* facility - where a label is free to go anywhere
 near its element and the element may be resized to suit - and the three things
-this repository is refused on are a label whose position is fixed by the netlist,
-a separation constraint between two elements' labels, and text-over-wire. **The
-first is a property of the `.kicad_sch` format, and the other two are not in
-ELK's option vocabulary at all.**
+this repository is refused on are **a label whose only coordinate in the emitted
+form is its anchor**, a separation constraint between two elements' labels, and
+text-over-wire. **The first is a property of the `.kicad_sch` global-label form,
+and the other two are not in ELK's option vocabulary at all.**
+
+**"Its only coordinate is its anchor" is NOT "its position is fixed by the
+netlist"**, and §2.7 says why at length: the second is G262's framing, the plan
+corrects it at line 207, and this section asserts only the first.
 
 **One narrower claim does survive and is worth Task 7's attention**: this
 repository places all of its text **after** a layout computed as if no text

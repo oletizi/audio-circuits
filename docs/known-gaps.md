@@ -1745,16 +1745,30 @@ on one side).
 > is real, it is the largest, and the fallback technique still does not transfer to it.
 
 > **AMENDED 2026-10-22 BY TASK 2 OF THE TEXT-HANDLING RESEARCH PLAN: ELK CANNOT TAKE THIS CLASS
-> OVER, AND THE REASON SHARPENS THIS ENTRY'S OWN CLAIM RATHER THAN CHANGING IT.** The obvious
-> question - this repository already lays out with ELK, so can ELK place the labels - is answered
-> and the answer is no. `[RAN]` ELK will accept a label on a boundary node and return a coordinate
-> for it (`(-1905, -2048.1)` for `+5V` on `pt-core`), but **`lib/schgen/render/emit-items.ts:227-241`
-> emits a `global_label` with exactly ONE coordinate, `(at l.at angle)` - the anchor.** A label's
-> text has no position of its own in the file, so an offset from the anchor has nowhere to go. **That
-> is a stronger statement than this entry's `[CODE]` reading above**: not merely that moving a label
-> changes the circuit, but that **the file format provides no way to move the text without moving
-> the anchor.** The separately positioned `Intersheetrefs` property is the one exception and it is
-> not the label.
+> OVER AS ELK ANSWERS IT - AND THIS ENTRY'S OWN NETLIST-FACT PREMISE IS THE ONE THE PLAN
+> CORRECTS.** The obvious question - this repository already lays out with ELK, so can ELK place the
+> labels - is answered, and the answer is no in one specific currency. `[RAN]` ELK will accept a
+> label on a boundary node and return a coordinate for it (`(-1905, -2048.1)` for `+5V` on
+> `pt-core`), but **`lib/schgen/render/emit-items.ts:227-241` emits a `global_label` with exactly ONE
+> coordinate, `(at l.at angle)` - the anchor.** A label's text has no position of its own in the
+> file, so **an ELK offset from the anchor has no representation in this emitter's output
+> vocabulary.** The separately positioned `Intersheetrefs` property is the only other coordinate in
+> the form, and it is not the label.
+>
+> **AND THE SENTENCE ABOVE IS ALL OF IT - the first version of this amendment went further and was
+> wrong.** It said the measurement was *"a stronger statement than this entry's `[CODE]` reading:
+> not merely that moving a label changes the circuit, but that the file format provides no way to
+> move the text without moving the anchor"* - which takes *"moving a label changes the circuit"* as
+> given. **It is not given. It is the premise
+> `docs/superpowers/plans/2026-10-22-text-handling-research.md` line 207 records as WRONG**, marked
+> ACCEPTED and called the third-party review's most consequential finding: *"the label's NAME and
+> its electrical CONNECTION are netlist facts; its drawing coordinates are not necessarily fixed by
+> the circuit. A label can move to another valid point on the same net, and this generator draws the
+> wires, so it can also change the geometry that leaves no room."* The plan names **three degrees of
+> freedom where this entry records one**, plus a fourth of the generator's own. **Nothing Task 2
+> measured bears on them**: "an offset has nowhere to go in the emitted form" is a fact about the
+> file format and says nothing about where the anchor may be put. **Anyone citing this entry's
+> netlist-fact framing is citing the corrected claim**, and the live question belongs to Task 5.
 >
 > **AND THE LABEL-OVER-LABEL RELATION HAS NO ELK OPTION EITHER.** `[RAN]` Of the 22 label-related
 > options `elkjs` 0.9.3 exposes, the only label-to-label spacing is `spacing.labelLabel`, whose own
@@ -2159,9 +2173,19 @@ is here is the material a later agent needs and cannot re-derive from a figure.
 
 **(1) THE ANSWER, in one line, because a later reader will want it before the
 section:** ELK places node, port and edge labels and will reserve room for them,
-**but not for the class that blocks this repository** - a `global_label`, whose
-only coordinate in a `.kicad_sch` is its anchor - **and it places nothing at all
-under `layered`'s own defaults.** §2.8 is the evidenced form.
+**but its answer for the class that blocks this repository is in the wrong
+currency** - it returns an OFFSET, and a `global_label`'s only coordinate in a
+`.kicad_sch` is its anchor - **and it places nothing at all under `layered`'s own
+defaults.** §2.8 is the evidenced form.
+
+**That is a fact about the emitted form and NOT about whether a label may move.**
+`docs/superpowers/plans/2026-10-22-text-handling-research.md` line 207 records
+**G262**'s *"a global label's position is a netlist fact"* as WRONG - the name and
+the connection are netlist facts, the drawing coordinates are not necessarily
+fixed, and this generator draws the wires. **Nothing in §2 bears on those degrees
+of freedom**, which are Task 5's. §2.7 and G262's amendment both say so, because
+the first version of this section inferred past its own measurement and a review
+caught it.
 
 **(2) A LIVE TRIPWIRE WITH NO WIRE, in code nothing exercises today.**
 `lib/schgen/elk/read-graph.ts` recovers a symbol's placement as `node.x` less the
