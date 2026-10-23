@@ -2430,12 +2430,34 @@ sentences in §4.6 were verified against the downloaded HTML for that reason.
 cloned into the scratchpad (`git clone --depth 1`) and the per-file SHA-256 is of
 the blob actually opened.
 
-| tool | commit read | declared version | file the claims rest on | SHA-256 of that file |
-| --- | --- | --- | --- | --- |
-| lepton-eda | `fd160f00b83480aee9f5c7d420468115d2065808` | - | `lepton-eda/scheme/lepton/autoplace.scm` (1224 lines) | `7979b8839aeb941447ad070790ee2c3351a8d43f815f3d40ec1455d7739fbaff` |
-| xschem | `36e0eab33b0c7e02e6f99c54b0a39d42231039fb` | `3.4.8RC` (from `devices/res.sym`) | `src/draw.c` (7129 lines) | `7e2e1176fc9c9e703fc497cebacba97a057122b3e2af4b2eb6833f7ce1fffd67` |
-| netlistsvg | `d3518f1b5c996a876b72a1a984bb39d3572c47dc` | `1.0.2` | `lib/Cell.ts`, `lib/drawModule.ts` | `270f1742b4b27565bd8bbf067822a91c0f6c73cb3ab6b57dacebbbfa60590676`, `c0a3481fad85020c7306f0060d31cdcecef0ef574d8beb5af56f1a53c43ad51b` |
-| schemdraw | `e3cb52981f1ef297ddb083c9329ad89a6c8d1db4` | `0.23` | `schemdraw/elements/elements.py`, `schemdraw/segments.py` | `90df8c7d82fad84ea80ec88b4189c72f53b4e25c7e22b557157da96ad7fdf33e`, `27c82f2b1a73746023caabd27192c42b516b3236f990cea2397075364c295eda` |
+| tool | commit read | declared version |
+| --- | --- | --- |
+| lepton-eda | `fd160f00b83480aee9f5c7d420468115d2065808` | - (the repository's tags are inherited gEDA release tags) |
+| xschem | `36e0eab33b0c7e02e6f99c54b0a39d42231039fb` | `3.4.8RC`, from the header of `xschem_library/devices/res.sym` |
+| netlistsvg | `d3518f1b5c996a876b72a1a984bb39d3572c47dc` | `1.0.2` - **and this commit is AHEAD of the published 1.0.2, which declares the same string** |
+| schemdraw | `e3cb52981f1ef297ddb083c9329ad89a6c8d1db4` | `0.23` |
+
+**Every file a claim in §4 rests on, hashed.** `[READ]` here means this file was
+opened at the commit above, at the functions and call sites §4 names; **none of
+the four trees was read end to end.**
+
+| file | SHA-256 of the blob opened |
+| --- | --- |
+| lepton-eda `lepton-eda/scheme/lepton/autoplace.scm` (1224 lines) | `7979b8839aeb941447ad070790ee2c3351a8d43f815f3d40ec1455d7739fbaff` |
+| lepton-eda `lepton-eda/scheme/conf/schematic/deprecated.scm` (213 lines) | `5e83760e12d31cd85d9c0eb22583a956bc2379406c3db7bb5387f7b41cacbb8e` |
+| xschem `src/draw.c` (7129 lines) | `7e2e1176fc9c9e703fc497cebacba97a057122b3e2af4b2eb6833f7ce1fffd67` |
+| xschem `src/svgdraw.c` (1241 lines) | `53dccaec654b52d987f8f899c4bd88bd5f4bbb0ee70929caebf559f4791f8a47` |
+| xschem `src/netlist.c` | `f70be7a3be3abb8a4d38f4b7b2f8d8e846ca06f599c78ee7243d17ca501a2594` |
+| xschem `src/spice_netlist.c` | `07794a0d3cf7a57aeb02602259916959da5252523cca5b788049658f8f24d839` |
+| xschem `xschem_library/devices/res.sym` | `59fa408b3bc0354839a226ec911db7840b40450903d5627b2b93a46ae99193ba` |
+| xschem `xschem_library/devices/opin.sym` | `042b26648214b7e2e31335819c2f0961941a9ba3f08385cff093719337bca2c4` |
+| netlistsvg `lib/Cell.ts` | `270f1742b4b27565bd8bbf067822a91c0f6c73cb3ab6b57dacebbbfa60590676` |
+| netlistsvg `lib/drawModule.ts` | `c0a3481fad85020c7306f0060d31cdcecef0ef574d8beb5af56f1a53c43ad51b` |
+| netlistsvg `lib/analog.svg` (the skin the run uses) | `c40e2682841ead6decd6fa41442e0168888010403bdd7404da0213d82c1ddab8` |
+| schemdraw `schemdraw/elements/elements.py` | `90df8c7d82fad84ea80ec88b4189c72f53b4e25c7e22b557157da96ad7fdf33e` |
+| schemdraw `schemdraw/segments.py` | `27c82f2b1a73746023caabd27192c42b516b3236f990cea2397075364c295eda` |
+| schemdraw `schemdraw/backends/svg.py` | `54195b00281d1488b6e631db8eead571ddcf8140cbf61c81f3a3ca3a483df81f` |
+| schemdraw `schemdraw/elements/twoterm.py` (the two hits the collision grep found) | `a140d7e7d4a87ba185126f025bf0910f60437bb739f230cdb5be00dc9f83c29c` |
 
 **The lepton-eda blob was re-fetched by raw URL from GitHub at that commit and
 hashed to the same value**, so the figure is not an artefact of the clone.
@@ -2722,8 +2744,26 @@ textLength attributes in the document: 0
 **What that pair establishes.** Both arms **exit 0, write the SVG and print
 nothing on stderr**: there is no refusal. There is no clipping either - zero
 `clip-path` attributes, zero `textLength` attributes, and the full strings are in
-the file. **Nothing moved**: all five node transforms are identical between the
-arms. The only thing that changed is the declared canvas, from 74 to 173 wide -
+the file. **Nothing moved** - all five node transforms are identical between the
+arms, which is driven rather than asserted:
+
+```nsvg-run
+== NODE TRANSFORMS, baseline vs long (one column)
+arm baseline:
+  transform="translate(17,47)" id="cell_r1"
+  transform="translate(17,137)" id="cell_r2"
+  transform="translate(12,12)" id="cell_vcc"
+  transform="translate(12,207)" id="cell_gnd"
+  transform="translate(32,112)" id="cell_vout"
+arm long:
+  transform="translate(17,47)" id="cell_R_FEEDBACK_UPPER_DIVIDER"
+  transform="translate(17,137)" id="cell_R_FEEDBACK_LOWER_DIVIDER"
+  transform="translate(12,12)" id="cell_vcc"
+  transform="translate(12,207)" id="cell_gnd"
+  transform="translate(32,112)" id="cell_vout"
+```
+
+The only thing that changed is the declared canvas, from 74 to 173 wide -
 **and it is still 3 units short of the text it contains**, which is the shape of
 the problem rather than a rounding complaint: netlistsvg draws the label at the
 skin template's offset while the only thing it tells ELK is an estimated box, so
@@ -2735,7 +2775,7 @@ arithmetic was not determined.**
 in both, labels long in one and short in the other:
 
 ```nsvg-run
-== NODE TRANSFORMS, parallel-long vs parallel-short
+== NODE TRANSFORMS, parallel-long vs parallel-short (two columns)
 arm parallel:
   transform="translate(22,47)" id="cell_R_FEEDBACK_UPPER_DIVIDER"
   transform="translate(173,152)" id="cell_R_FEEDBACK_LOWER_DIVIDER"
@@ -3050,14 +3090,23 @@ located.
 
 ### 4.12 How this section's blocks are accounted for under §1.11's contract
 
-**§4 adds five fenced blocks and none of them is probe output**, so each is
+**§4 adds six fenced blocks and none of them is probe output**, so each is
 declared not-output and is listed by name by
 `tests/schgen/text-metrics/document-pastes.test.ts`, one `expect()` each, exactly
-as §3's seven are. They cannot be checked against a committed log, because the
-logs are scratchpad runs of third-party tools installed outside this repository
-and the plan forbids this task from adding a tool, a test or a log to the tree.
-**A reader who wants to re-drive them has §4.0's commits, versions, install
-methods and hashes, and that is the whole of the coupling available.**
+as §3's seven are - **which is the whole of the suite's move from 43489 to 43495
+`expect()` calls**, with the pass count and the file count unchanged. They cannot
+be checked against a committed log, because the logs are scratchpad runs of
+third-party tools installed outside this repository and the plan forbids this task
+from adding a tool, a test or a log to the tree. **A reader who wants to re-drive
+them has §4.0's commits, versions, install methods and hashes, and that is the
+whole of the coupling available.**
+
+**What stands in for the checker, stated so nobody mistakes it for one.** All six
+blocks were verified to be contiguous, non-overlapping slices of their sources -
+the two run logs and `autoplace.scm` - by a scratchpad script that is **not
+committed and is therefore not a check**: it found the stale header the second
+transform block carried after its log was re-driven, which is exactly the drift
+§1.11's contract exists to catch, and it has no way to run again.
 
 **Two blocks are transcriptions of Scheme source and both are declared altered.**
 Each line of the two `lepton-src` blocks is prefixed with its line number in
@@ -3069,7 +3118,7 @@ dedented by one space; this section numbers the lines instead, because the stray
 evidence for it.
 
 **The two logs share no line with either committed probe log**, checked by
-comparing the 84 distinct non-blank lines of the two runs against the 712 of
+comparing the 96 distinct non-blank lines of the two runs against the 712 of
 `tests/schgen/text-metrics/probe-run.log` and `tools/schgen/elk-labels/probe-run.log`
 together: zero in common. That matters because a non-`run` block sharing a line
 with a checked log is the relabel dodge the checker refuses by name.
