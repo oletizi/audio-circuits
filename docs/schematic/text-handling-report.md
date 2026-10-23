@@ -172,9 +172,15 @@ same pipeline shape as the two expensive ones — place, route, annotate, grade.
 ## 5. What is yours to decide
 
 Three questions were reserved to the owner and the research deliberately stopped
-short of each. **No agent answered any of them. He has now answered two himself
-— declining the form the first was asked in, and electing on the second — and
-delegated one design decision that followed. One remains open.**
+short of each. **No agent answered any of them. He answered all three himself on
+2026-10-23** — declining the form the first was asked in, electing on the second,
+and answering the third in a formulation none of its three options offered — and
+**delegated one design decision that followed.**
+
+**Taken together his three answers are one policy:** draw the sheet, measure the
+overlap, drive it down under KiCad's own geometry, and where it cannot be driven
+to zero, say so on the drawing. **Production beats legibility and the cost is
+disclosed.** None of it is built.
 
 1. ~~**How much overlap is acceptable in a drawing?**~~ **ANSWERED 2026-10-23,
    `G260`.** His words: *"I would rather give guidance to minimize overlap
@@ -208,14 +214,25 @@ delegated one design decision that followed. One remains open.**
    come with it, both already measured: the elected box is sized with a pen KiCad
    does not plot with, and any future measurement of it taken through SVG export
    is wrong, because SVG omits a global label's outline.
-3. **Should the two grades of badness be declared explicitly?** (§6.11) **STILL
-   OPEN AND STILL YOURS.** The generator already has both an infinite and a
-   finite grade, implicitly and globally, and declares neither. Your `G260`
-   answer set the finite grade's direction — minimise — and said nothing about
-   whether an infinite grade survives. It matters because §2 measured a label
-   overlapping a **pin**, which can misrepresent connectivity rather than merely
-   look bad: *"minimise everything"* and *"some things are never drawn"* are not
-   the same policy.
+3. ~~**Should the two grades of badness be declared explicitly?**~~ **ANSWERED
+   2026-10-23, `G260`** — and in a form none of the three options put to him.
+   His words: *"Complete failure is worse than sub-optimal schematic layout. One
+   option is to add a note to the drawing to explain the collision if there
+   really is no way to solve the problem."* So **the prohibition is not on the
+   geometry, it is on the SILENCE**: nothing is never-drawn, but some things are
+   never drawn *undisclosed*. A veto is permitted only where it does not stop a
+   schematic being produced, and where no placement avoids a collision the escape
+   is to draw it and say so on the sheet. **This unblocks the one approach of the
+   eighteen that could move the board count** — §7.1 row 14, whose yield §7.1
+   recorded as unmeasured on purpose *because its precondition was this
+   decision*. The yield is still unmeasured. **Not covered** (the controller's
+   reading, for correction): the six boards whose *circuit* fails validation, and
+   the missing-junction class — a missing junction makes the drawing **wrong
+   about the circuit** rather than crowded, and a note saying so would be a
+   drawing documenting its own incorrectness.
+
+**All three are now answered, and nothing is built.** The refusal he overruled is
+still in `checkLayout`; nothing minimises; nothing annotates.
 
 A fourth is not a research question but needs your call: **commit `fc71fcc`
 carries a `Co-Authored-By: Claude` trailer and a session link**, against the

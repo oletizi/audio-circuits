@@ -5893,9 +5893,22 @@ to prevent.
 > elected box taken that way is wrong). **He also delegated the overlap measure**
 > - *"re: the measure-take the least dumb choice"* - chosen and recorded in
 > **G260**: the sum over text items of obscured area divided by own area. With
-> the box elected, that scalar is now fully specified. **DECISION (3) BELOW -
-> whether anything is hard-illegal rather than merely costly - REMAINS OPEN AND
-> REMAINS HIS**, and his minimise directive bears on it without closing it.
+> the box elected, that scalar is now fully specified.
+>
+> **DECISION (3) IS ALSO ANSWERED, SAME DAY, AND IN A FORM NONE OF ITS THREE
+> OPTIONS OFFERED.** *"Complete failure is worse than sub-optimal schematic
+> layout. One option is to add a note to the drawing to explain the collision if
+> there really is no way to solve the problem."* **The prohibition is not on the
+> geometry but on the SILENCE** - nothing is never-drawn, some things are never
+> drawn undisclosed. **This is the precondition §7.1 row 14 records itself as
+> waiting on**, so the one approach of the eighteen that could move the board
+> count is unblocked; its yield remains unmeasured and is not guessed at here.
+> **G260** carries the decision and the scoping, including that the
+> six validation-refused boards and the missing-junction class are NOT covered by
+> the annotation escape - a missing junction makes a drawing wrong about the
+> circuit rather than crowded. **ALL THREE RESERVED DECISIONS ARE NOW ANSWERED
+> AND NONE OF IT IS BUILT.** §7.5's premise - that three decisions are open -
+> is history, and the section is left as written.
 
 **(1) HOW MUCH OVERLAP IS ACCEPTABLE IN A DRAWING - `G260`, open, and his.** Its
 criterion, already written and not by this writer: *"the owner looks at a sheet

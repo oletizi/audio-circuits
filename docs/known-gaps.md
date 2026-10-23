@@ -2054,6 +2054,75 @@ that nothing claims these sheets are clean.
 > an infinite grade survives beside it (§6.3/§6.11, still his) are not settled
 > here.
 
+> **THE INFINITE GRADE IS ANSWERED, 2026-10-23, AND IT IS THE THIRD AND LAST
+> RESERVED DECISION. His words, verbatim:**
+>
+> > *"It depends. If it completely halts progress on creating schematics, then we
+> > need to come up with a suitable workaround. Complete failure is worse than
+> > sub-optimal schematic layout. One option is to add a note to the drawing to
+> > explain the collision if there really is no way to solve the problem"*
+>
+> **THE FORMULATION HE CHOSE WAS NOT ONE OF THE THREE PUT TO HIM, AND IT IS
+> SHARPER THAN ALL OF THEM.** He was offered *everything is a cost*, *some
+> overlaps are vetoes*, or *show me a sheet and I will say*. His answer is none
+> of these: **a veto is permitted only where it does not stop a schematic being
+> produced, and where no placement avoids the defect the escape is to DRAW IT AND
+> SAY SO ON THE DRAWING.** So the prohibition does not sit on the geometry. **It
+> sits on the SILENCE.** Nothing is never-drawn; some things are never drawn
+> *undisclosed*.
+>
+> **THE GOVERNING ORDER, IN HIS WORDS: "Complete failure is worse than
+> sub-optimal schematic layout."** That is a general ranking rather than a rule
+> about pins, and it settles the class of question this entry has been circling:
+> **where legibility and production conflict, production wins and the cost is
+> disclosed.**
+>
+> **AND IT UNBLOCKS THE ONE APPROACH THE SYNTHESIS SAID COULD MOVE THE BOARD
+> COUNT.** §7.1's **row 14** - place what you can and report what you could not,
+> for labels - was the only row of eighteen that could change how many boards
+> draw, and §7.1 recorded its yield as **unmeasured on purpose** because *"its
+> precondition is G260, the owner's."* **This is that precondition, met.** Its
+> yield is still unmeasured and nothing here guesses at it.
+>
+> **HE ARRIVED INDEPENDENTLY AT THE BEHAVIOUR THE RESEARCH FOUND, FOR THE THIRD
+> TIME.** **G268** records *place what you can and log what you could not* as a
+> sixth behaviour shape that **none of the seven surveyed tools exhibits**, found
+> only as an unretrievable commercial lead; §6.8 records TeX doing it - *"an
+> overset line and an error message that encourages the user to take corrective
+> action"*. **His version is stronger than TeX's in one respect worth recording:
+> TeX puts the message in a LOG, and he puts the note ON THE DRAWING.** A log is
+> separable from the artifact and gets lost; a sheet carries its own disclosure
+> wherever it travels.
+>
+> **WHAT THIS DOES NOT LICENSE, and this is the controller's reading for him to
+> correct rather than his words.** He said *"the collision"*, and
+> **sub-optimal LAYOUT** is what he ranked above complete failure. **Two of this
+> repository's refusal classes are not collisions and not layout quality**, and
+> the escape is NOT extended to them here: a board whose **circuit fails
+> validation** (six of eleven), and a drawing with **a branch point and no
+> junction**, which **G262**'s obligation records as *"a connection KiCad does not
+> make"*. The second is the sharp case - **a missing junction makes the drawing
+> WRONG about the circuit rather than merely crowded**, and a note saying so
+> would be a drawing that documents its own incorrectness. **Annotating a
+> legibility defect and annotating a connectivity defect are different acts**, and
+> only the first is covered.
+>
+> - **Found** 2026-10-23, from the owner, answering §6.3/§6.11 as put to him in
+>   the research report's §5. Recorded verbatim per `CLAUDE.md`.
+> - **Evidence** `[OWNER]` his words above, quoted in full. A directive; no
+>   measurement supports or could support it.
+> - **Verified** **CONFIRMED** as his words. **The row-14 and G268 consequences
+>   are the controller's inference**, as is the scoping paragraph above.
+> - **Why it is open** because all three reserved decisions are now answered and
+>   **not one line of it is built**: nothing minimises, nothing annotates, and the
+>   refusal he has overruled is still in `checkLayout`.
+> - **What would settle it** **CRITERION: a sheet is produced for every board the
+>   circuit model admits, carrying its own note wherever a collision could not be
+>   placed away, and no board produces nothing because of a collision.**
+>   **MECHANISM: none offered.** The note's form, its placement, whether the note
+>   itself may collide - it is text, so it can - and whether an annotated defect
+>   still counts toward the minimisation are a design exercise he reviews.
+
 ---
 
 ### G261 - the weighted-overlap primitive now has ONE home and the build guide imports it from the schematic tree; the schematic's category-to-tier assignment is this writer's reading, not a reviewed decision
@@ -24548,6 +24617,42 @@ anything. In particular:
 >   primary source for *that tool*, or a run of it. **MECHANISMS, UNTRIED**, unchanged and still
 >   each a guess by someone who has not got past the doors. **This amendment adds no mechanism and
 >   relaxes no criterion.**
+
+> **THE BEHAVIOUR THIS ENTRY COULD NOT SOURCE IS NOW THIS REPOSITORY'S POLICY,
+> 2026-10-23, AND THE ENTRY'S CRITERION IS STILL UNMET.** Keeping those two facts
+> apart is the whole point of this amendment. The owner, verbatim:
+>
+> > *"Complete failure is worse than sub-optimal schematic layout. One option is
+> > to add a note to the drawing to explain the collision if there really is no
+> > way to solve the problem"*
+>
+> **WHAT CHANGES: the shape stops being a curiosity.** This entry recorded *place
+> what you can and report what you could not* as a sixth behaviour **none of the
+> seven examined tools exhibits**, knowable only from an unretrievable summary.
+> The owner has now adopted it as the directive for this generator, **arrived at
+> independently of this entry** and of §6.8's TeX quotation. **G260** carries the
+> decision and its consequences.
+>
+> **WHAT DOES NOT CHANGE: this entry's criterion, which asks for a primary source
+> for ALLEGRO.** It is still unmet; all three doors are still shut. **An owner
+> directive is not evidence about a third-party tool**, and reading it as though
+> it closed this entry would be the error this entry has guarded against twice
+> already. The lead remains uncounted in §4.9's N and M.
+>
+> **ONE DIFFERENCE WORTH RECORDING, because it makes the policy stronger than
+> either precedent.** The reported Allegro behaviour **logs**, and §6.8's TeX
+> *"error message"* goes to a log too. **He put the note ON THE DRAWING.** A log
+> is separable from the artifact and is lost the moment the sheet is mailed to a
+> fabricator or handed to a person; a note on the sheet travels with it. So the
+> shape this entry could not source is not quite the shape now adopted, and the
+> adopted one is the better of the two.
+>
+> - **Found** 2026-10-23, from the owner. **Verified CONFIRMED** as his words;
+>   the comparison to the log-based precedents is this writer's.
+> - **Why it is open** unchanged - the Allegro behaviour is still unsourced -
+>   **and now additionally because the policy it resembles is unbuilt.**
+> - **What would settle it** **UNCHANGED AND NOT RELAXED.** A quotable primary
+>   source for that tool, or a run of it. **This amendment adds no mechanism.**
 
 ---
 
