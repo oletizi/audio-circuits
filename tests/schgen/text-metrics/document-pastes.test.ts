@@ -381,6 +381,14 @@ const SECTION_4_HEADING = "§4 What comparable tools do when text will not fit"
 /** How many blocks §4 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
 const SECTION_4_BLOCKS = 8
 
+/**
+ * The section name the relabel case below anchors a §4 block to. **It must match NO section of
+ * §1's log**, because the path that case exists to exercise is `verify`'s refusal of a `run` block
+ * whose declared section does not resolve. The case asserts that zero-match, and a precondition in
+ * it refuses to run if the prefix ever stops colliding with nothing.
+ */
+const NO_SUCH_SECTION = "SECTION 4 HAS NO SECTION IN THIS LOG"
+
 /** §4's slice of the document, which runs to the end of the file. */
 function sectionFour(d: string): string {
   const at = d.indexOf(SECTION_4_HEADING)
@@ -396,9 +404,11 @@ describe("section 4's blocks are accounted for, although none of them can be che
   test("every one of them declares itself as something other than probe output", () => {
     const tags = parseBlocks(sectionFour(doc)).map((b) => b.info.split(/\s+/)[0])
     expect(tags.length).toBe(SECTION_4_BLOCKS)
-    // Neither §1's fence word nor §2's: a §4 block in either namespace would be anchored to a log
-    // that has no section for it, and the whole-document case above would fail with a confusing
-    // message about a missing header rather than a clear one about §4.
+    // Neither §1's fence word nor §2's: a §4 block in either namespace would be anchored to a
+    // section name that log does not have, so the whole-document case above would fail on SECTION
+    // RESOLUTION - "matches 0 of the log's 11 headers" - which is a confusing message about a
+    // missing header rather than a clear one about §4. The last case in this describe drives
+    // exactly that path.
     for (const t of tags) expect([OUTPUT_FENCE, "elk-run"]).not.toContain(t)
   })
 
@@ -417,14 +427,41 @@ describe("section 4's blocks are accounted for, although none of them can be che
    * RED: a §4 block relabelled into §1's namespace. This is the one failure mode the pinned count
    * alone would not catch - the count is unchanged, and the block silently leaves the NOT CHECKED
    * population.
+   *
+   * **THE PREFIX IS CHOSEN TO MATCH NO SECTION OF §1's LOG, AND THAT IS THE WHOLE POINT OF THIS
+   * ROUND'S FIX.** The path this case documents, and that the fence-word case above describes, is
+   * the SECTION-RESOLUTION path: a §4 block in §1's namespace is anchored to a section name §1's
+   * log does not have, so `verify` refuses it with *"matches 0 of the log's 11 headers"*. The
+   * first version relabelled to `STEP 4b` - **which is a real section of that log** - so the block
+   * resolved to a section and then failed one step later, on contiguity. **It went red for a
+   * reason it did not document.** A reviewer drove it against `verify` directly and read the
+   * actual message, which is the only way that is visible.
+   *
+   * `CLAUDE.md`: *"a skipped check must never look like a passing one."* A check that fires
+   * through a different path than the one it names is the near neighbour of that - it passes, so
+   * nothing complains, and a later reader believes a path is exercised that is not.
+   *
+   * **The assertion is on the MESSAGE and not only on the count**, because the count alone is what
+   * let the wrong path masquerade as the right one. It is one `expect` rather than two so that
+   * this round changes no `expect()` total.
    */
-  test("RED: a section 4 block relabelled into the checked namespace fails rather than being skipped", () => {
+  test("RED: a section 4 block relabelled into the checked namespace fails on SECTION RESOLUTION", () => {
+    // PRECONDITION, not an assertion, so this round changes no `expect()` total: if the prefix
+    // ever BECAME a section of §1's log, this case would silently go back to testing contiguity -
+    // which is the defect being fixed. A throw here says so loudly instead.
+    const collisions = parseSections(log.split("\n")).filter((s) => s.title.startsWith(NO_SUCH_SECTION))
+    if (collisions.length !== 0) {
+      throw new Error(
+        `${NO_SUCH_SECTION} now matches ${collisions.length} section(s) of §1's log, so this case would no longer ` +
+          "exercise the section-resolution path it documents. Choose a prefix that matches none.",
+      )
+    }
     const first = parseBlocks(sectionFour(doc))[0]
     expect(first?.info).toBeDefined()
-    const relabelled = doc.replace("```" + (first?.info ?? ""), `\`\`\`${OUTPUT_FENCE} STEP 4b`)
+    const relabelled = doc.replace("```" + (first?.info ?? ""), `\`\`\`${OUTPUT_FENCE} ${NO_SUCH_SECTION}`)
     expect(relabelled).not.toBe(doc)
     const v = verify(relabelled, log)
-    expect(v.failures.length).toBe(1)
+    expect(v.failures).toEqual([expect.stringContaining(`names section ${JSON.stringify(NO_SUCH_SECTION)}, which matches 0 of the log's`)])
     expect(v.notOutput.length).toBe(verify(doc, log).notOutput.length - 1)
   })
 })

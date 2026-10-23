@@ -3300,9 +3300,39 @@ in `document-pastes.test.ts` pins it at **8** the way `SECTION_2_BLOCKS` pins §
 declares a fence word that is neither §1's `run` nor §2's `elk-run`, and the
 whole-document verdict reports exactly that many NOT CHECKED blocks at line numbers
 after §4's heading. A fourth drives RED - a §4 block relabelled into §1's namespace
-fails rather than silently leaving the population, which is the one failure the
-pinned count alone would not see. **All four were driven red once**, by setting the
-constant to 7 (three reds) and by the relabel case itself.
+fails **on section resolution** rather than silently leaving the population, which
+is the one failure the pinned count alone would not see. **All four were driven red
+once**, by setting the constant to 7 (three reds) and by the relabel case itself.
+
+**AND THE FOURTH CASE WENT RED FOR THE WRONG REASON FOR ONE ROUND, WHICH IS WORTH
+MORE THAN A SILENT FIX.** It relabelled the block to ` ```run STEP 4b `, and
+**`STEP 4b` is a real section of §1's log** - so the block resolved to a section and
+then failed one step later, on contiguity, instead of through the
+section-resolution path that the case and the fence-word case both describe. It was
+red either way, so nothing complained. A reviewer drove it against `verify`
+directly and read the message, which is the only way the difference is visible:
+
+| prefix | sections matched | the refusal that actually fired |
+| --- | --- | --- |
+| `STEP 4b`, round 1 | 1 of 11 | *"is not a contiguous slice of section \"STEP 4b: G260 - the fallback field placements, and the blocked blocks' text overlaps\""* |
+| `SECTION 4 HAS NO SECTION IN THIS LOG`, now | **0 of 11** | *"names section \"SECTION 4 HAS NO SECTION IN THIS LOG\", which matches 0 of the log's 11 headers. It must match exactly one"* |
+
+**`CLAUDE.md`: *"a skipped check must never look like a passing one."* A check that
+fires through a different path than the one it names is the near neighbour of
+that** - it passes, so nobody looks, and a later reader believes a path is
+exercised that is not.
+
+**THE GENERAL LESSON, which is the part a later reader cannot re-derive from the
+fix.** `verify` has **five** refusal paths - no section named; a prefix matching
+zero or several headers; fewer than two non-blank lines; not a contiguous slice; two
+blocks claiming the same slice - **and every one of them produces exactly one
+failure.** So `expect(v.failures.length).toBe(1)` asserts only that *something*
+broke and cannot tell them apart. This case now asserts on the **message**, and a
+precondition in it throws rather than running if that prefix ever stops matching
+zero sections - because if it ever collided, the case would quietly go back to
+testing contiguity. **§1's and §2's own RED cases were checked against this and
+every one of them already asserts on message content**, so §4's was the only one
+with the hole.
 
 **Why the guard exists at all, which is the honest version.** The first version of
 this subsection stated the count and the `expect()` figure in prose, and **the
