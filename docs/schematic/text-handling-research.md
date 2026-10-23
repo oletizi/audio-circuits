@@ -786,10 +786,13 @@ tests/schgen/elk/options.elk.test.ts says "all 224 ids" begin org.eclipse.elk; t
 
 **Fifteen options carry `label` in the id** - five spacings, two for node labels,
 three for port labels, four for edge labels, and one label-shortening hook -
-**and seven more reach labels without saying so**, of which `font.name` and
-`font.size` are the two that would matter here, since they are how a caller tells
-ELK what a label's text costs. `layered` lists fourteen of the fifteen. The one
-it does not is
+**and seven more reach labels without saying so**, including `font.name` and
+`font.size`, which apply to a LABEL. **This experiment set neither**: it gives
+every label an explicit width and height, from §1's measured ruler, which is the
+geometry ELK's label placement then works with. **What ELK does with the two font
+options - whether it would size a label that carries no width - was not
+established** (§2.9). `layered` lists fourteen of the fifteen label-named ids.
+The one it does not is
 `labelManager`, ELK's hook for a tool that can *shorten* a label on request -
 which is the one mechanism in the inventory that is about the text itself rather
 than about where the text goes.
@@ -1201,6 +1204,11 @@ answer and must not.
 - **It did not drive `labelManager`**, ELK's label-shortening hook - the one
   label option `layered` does not list. Whether abbreviating a net name is
   acceptable is an owner decision in any case.
+- **It did not drive `font.name` or `font.size`.** Every label here carries an
+  explicit width and height taken from §1's measured ruler, so whether ELK would
+  size a label from a font declaration instead - and with what metrics - is
+  unknown. It matters only to a design that wanted ELK to measure the text, which
+  would be putting the ruler §1 measured behind a second one.
 - **It did not build an edge-label route end to end.** §2.7 measures the obstacle
   (494 edges for 48 blocks, a net of degree n being n-1 edges) and stops; no
   emitter change was made or designed, which the plan forbids.
