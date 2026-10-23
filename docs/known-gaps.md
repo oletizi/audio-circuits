@@ -21417,6 +21417,25 @@ perturbed in both directions and both go red.
 > > green on this branch; that count is its own and was not re-derived here, and
 > > what is confirmed here is the row.
 >
+> > **THE AMENDMENT ABOVE SAYS "THE TABLE NOW CARRIES FIVE" AND IT IS THE CHANGE
+> > THAT MADE IT SIX. Corrected here 2026-10-23; the wording above stands.**
+> > `[READ]` the probe table has **six** data rows, counted off its own row
+> > prefixes, the sixth being the `implementer, Task 20` row this amendment added.
+> > Two sites undercount it: this heading, which also calls the new row *"The
+> > fifth row"*, and the **CRITERION for item three** below, which says *"The
+> > control clause has FIVE instances across two authors"* and then enumerates
+> > five, **omitting the Task 20 row** - so the table and the enumeration can be
+> > compared term by term, which is the control that could have answered
+> > differently and is why this is a count and not an impression.
+> > **The clause's conclusion is untouched and a sixth instance strengthens it.**
+> > Found while assembling `docs/schematic/false-greens.md`, which catalogues
+> > this as a fifth demonstration of **G276**'s pattern - *a figure invalidated by
+> > the task's own artifact* - and is the only shape of it recorded nowhere else.
+> > **CONFIRMED** by this writer, who re-counted the rows and read both prose
+> > sites, after a first attempt mis-parsed the table as empty by matching only
+> > lines beginning `|` when every row here begins `> |`: **mechanism 20's own
+> > trap, sprung on the entry that records its ancestor.**
+>
 > **THAT IS THIS BRANCH's FIRST ARGUMENT FROM MECHANISM RATHER THAN FROM
 > EXHORTATION FOR WHY A CONTROL BEATS A DISCIPLINE.** A control that passes is
 > what separates *"my probe discriminates"* from *"my probe emits output"*, and it
