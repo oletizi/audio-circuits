@@ -24233,3 +24233,98 @@ register will meet it.
   literature's own answer to the case where no discrete candidate works; nobody has tried it here and
   its annular segments have no obvious meaning on an orthogonal grid. **This entry authors no
   acceptance criterion.**
+
+---
+
+### G271 - METHODOLOGICAL: "the figure was predicted before the run" is NOT VERIFIABLE from the committed tree, because the practice the controller instituted gives the prediction nowhere to live but a gitignored report - and the instruction has been in force since Task 4
+
+**This is not a defect in any task's output and it changes no verdict.** It is a defect in a
+PRACTICE this register already relies on, recorded because the practice is still in force, it binds
+every remaining task of the text-handling research plan, and the next implementer told to *"write
+the predicted figure down before the run"* will be given the same place to write it.
+
+**THE PRACTICE AND THE HOLE IN IT.** `docs/superpowers/plans/2026-10-22-text-handling-research.md`
+requires every number to be driven in the same action with its output pasted, and from Task 4 onward
+the controller has additionally instructed implementers to publish the predicted figure BEFORE the
+run, on the ground that *"the same number asserted afterwards would have been unfalsifiable."* The
+brief for each task names the report as where to write it. **`.superpowers/` is gitignored**
+(`.gitignore` line 33), so the report is untracked - which is why the plan's own practices section
+says *"telling me is not recording it, and neither is a plan ledger: `.superpowers/` is gitignored,
+so an entry there is invisible to review, absent from the history, and destroyed by
+`git clean -fdx`."* **The prediction practice was instituted into exactly that directory.** So the
+device introduced to make a figure falsifiable is itself unfalsifiable by construction: a reviewer
+reading the committed tree cannot tell a prediction from a post-hoc assertion.
+
+**IT IS SYSTEMATIC AND NOT ONE TASK'S SLIP, and the controller says so in his own words**
+(2026-10-22, Task 5 fix round 2): *"It is my practice defect, not yours... I have been instructing
+implementers since Task 4 to write the predicted figure down before the run, and the only place my
+instruction gave you to write it was the report. So the practice I introduced to make a figure
+falsifiable is unfalsifiable by construction. Task 4 got it right by accident, because its
+arithmetic table ended up in §4.12, which is committed."*
+
+**WHAT IT TOUCHES HERE, AND IT IS NARROWER THAN IT FIRST READS - THIS CLAUSE IS THIS WRITER'S
+ADDITION TO THE FINDING AND IS DRIVEN.** Three things must be kept apart, because a later reader who
+conflates them will over-read the gap:
+
+| claim | verifiable from the committed tree? |
+| --- | --- |
+| the suite FIGURES themselves - 3801/0/43614/353 at round 0, 3802/0/43551/353 at round 1 | **YES.** Both are in their rounds' commit messages (`3c36884`, `af19ae5`), with the term-by-term decomposition, and a commit message is history |
+| the DECOMPOSITION being right | **YES**, and it was independently re-derived: a reviewer drove both halves per directory and accounted all 63 lost `expect()` calls |
+| the ordering - that the prediction PRECEDED the run | **NO. Nothing committed carries it.** A commit message is written after the run, so it cannot establish ordering either |
+
+**So the unverifiable claim is the ORDERING, not the arithmetic.** Nobody need take round 1's figure
+on trust; what nobody can check is whether it was published before or after the run that produced
+it. **That is still a recorded false-green shape** - this register names "a figure asserted
+afterwards" as one - and it is worth an entry precisely because the arithmetic being sound makes the
+hole easy to leave open.
+
+**AND THE PLAN ALREADY CONTAINS A WORKING COUNTER-EXAMPLE, which is what makes the mechanism below
+credible without anyone having tried it on the suite figure.** §5's MEASUREMENT predictions do not
+have this problem: `tools/schgen/label-freedom/fixtures.ts` carries each arm's predicted identity and
+naming as a field, `probe.ts` prints all ten `PREDICTION ...` lines **before it exports a single
+netlist**, the committed run carries them (`tools/schgen/label-freedom/probe-run.log` line 43
+onward), §5 pastes them, and `tests/schgen/text-metrics/document-pastes.test.ts` holds the paste to
+the log on every `bun test`. **The ordering there is a property of the program, not of a writer's
+good faith.** The same arrangement was never available for the suite figure, because the suite is
+not the probe's output.
+
+- **Found** 2026-10-22, by the third-party reviewer of Task 5 fix round 1, which could not verify the
+  round's *"predicted term by term before the run"* claim from the committed tree. Relayed to this
+  writer by the controller with the ruling that the entry is the implementer's to write because the
+  gap binds Tasks 6 and 7.
+- **Evidence** `[RAN]` `git ls-files --error-unmatch` on the report returns *"Did you forget to 'git
+  add'?"* and `git check-ignore -v` names `.gitignore:33`, so the file is untracked and ignored -
+  a check that could have failed and would have, had the report been committed. `[RAN]` `git log`
+  on `3c36884` and `af19ae5` finds both suite figures and both decompositions in the messages, which
+  is what bounds the gap to the ordering. `[RAN]` `grep` finds `PREDICTION a0-base` in both the
+  committed log and the committed document, which establishes the counter-example. `[READ]` §4.12 of
+  `docs/schematic/text-handling-research.md`, whose committed arithmetic table exists because *"the
+  first version of this subsection stated the count and the `expect()` figure in prose, and the
+  figure was already wrong once"* - Task 4's accidental compliance, and the reason the practice was
+  instituted.
+- **Verified** **CONFIRMED** by this writer for every clause of the gap's mechanism: the gitignore
+  status, the commit-message contents, the `PREDICTION` lines, and §4.12's table were each driven or
+  read here. **RELAYED** for the reviewer's inability to verify the ordering claim, which is its
+  report and not this writer's observation, and for the reviewer's re-derivation of the 63-call
+  decomposition, which this writer did not re-drive in that form. **The narrowing clause - that the
+  figures and the decomposition ARE committed and only the ordering is not - is this writer's own
+  and is driven above.**
+- **Why it is open** because the practice is still in force and the next brief will say the same
+  thing, and because closing it is a change to how a task reports rather than to anything in this
+  repository's code. **It is NOT open on the question of whether round 1's figures are right**; they
+  are committed and were independently re-derived.
+- **What would settle it** **CRITERION: a prediction a task publishes to make a figure falsifiable
+  lives in a COMMITTED artifact - the probe's own output, or the document - and not only in a report
+  under `.superpowers/`, so that a reviewer reading the tree can order the prediction against the
+  result.** That is the settlement, and it is a criterion about where evidence lives, which this
+  register already applies to every other kind of evidence; it authors no standard for what a task
+  must predict. **MECHANISM, THE CONTROLLER'S, UNTRIED, AND EXPLICITLY NOT IMPLEMENTED HERE** (his
+  instruction for this round was *"record it as such and do not implement it... Do not restructure
+  your probe for this. One entry."*): *"have the probe print its prediction and its result in the
+  same run, so the pasted log carries both and the paste checker holds them together."* **It is a
+  guess by someone who has not run it, and one obstacle is visible from here**: a probe cannot print
+  the suite's `expect()` total, because the suite is what runs the probe's own tests, so a probe-side
+  prediction would have to be of the probe's own figures rather than of `bun test`'s - which is a
+  different quantity from the one the practice is about. The mechanism is sound for a measurement
+  prediction, where §5 already demonstrates it working, and the suite figure may need a different
+  home.
