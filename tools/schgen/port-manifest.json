@@ -877,6 +877,12 @@
     "tools/schgen/elk-labels/arms.ts",
     "tools/schgen/elk-labels/corpus.ts",
     "tools/schgen/elk-labels/probe.ts",
+    "tools/schgen/label-freedom/fixtures.ts",
+    "tools/schgen/label-freedom/freedoms.ts",
+    "tools/schgen/label-freedom/partition.ts",
+    "tools/schgen/label-freedom/probe.ts",
+    "tools/schgen/label-freedom/step3.ts",
+    "tests/schgen/label-freedom/fixtures.test.ts",
     "tests/schgen/text-metrics/document-pastes.test.ts",
     "tests/schgen/text-metrics/pen-call-sites.test.ts"
   ]
