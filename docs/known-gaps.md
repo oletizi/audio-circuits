@@ -13138,6 +13138,71 @@ than fixed.
   itself quotes differently, and nobody has checked what KiCad does with
   `Net-(U1-REF)` as a global label). The criterion is what binds.
 
+> **THE OWNER KILLED THE CASE DEMAND, 2026-10-23. His words, verbatim:**
+>
+> > *"i absolutely do not care about the letter case of net names. That's a silly
+> > quibble."*
+>
+> **THIS IS THE THIRD TIME THIS REPOSITORY HAS ACCEPTED A TOOL'S DEMAND AND
+> ARGUED ABOUT HOW TO SATISFY IT RATHER THAN ASKING WHETHER THE DEMAND WAS
+> RIGHT**, and all three were caught by him rather than by any agent or review.
+> The first two are the BOM gate (**G245**) and the over-long `Value` label.
+> **This entry is the worked example in its purest form:** it measured the
+> violation precisely, counted 31 nets, and offered three mechanisms for
+> *complying* - normalise, rename, or relax - **without once asking what the rule
+> was for.** `lib/schgen/ir/validate.ts:49` states no reason, and there is none
+> to state: **letter case carries no information a schematic needs.**
+>
+> **WHAT IT SETTLES.** The case half of `NET_NAME` goes. `hi_boost_out`, `in` and
+> `j15_p1` are valid net names and nothing may refuse a drawing for their case.
+>
+> **WHAT IT DOES NOT SETTLE, AND THE RULE HID THIS BEHIND THE QUIBBLE.** The same
+> regex rejected two different things with one message. `hi_boost_out` fails on
+> **case alone**, and case is the silly part. **`Net-(C10-Pad1)` fails on case AND
+> on parentheses and hyphens**, which is not a case question at all - it is
+> whether those characters are legal in a KiCad global label and how the
+> s-expression writer must quote them. **This entry already flagged that nobody
+> had checked**, in the relax mechanism above: *"nobody has checked what KiCad
+> does with `Net-(U1-REF)` as a global label."* That question survives his
+> decision untouched, and it is **a measurement rather than a decision** - drive
+> `kicad-cli` against a label carrying those characters and read what comes back.
+> **So the silly quibble was hiding a real question, which is the specific cost
+> of conflating two demands in one rule.**
+>
+> **AND IT UNBLOCKS NO BOARD ON ITS OWN.** `[RAN]` **G274** clause (2) and
+> re-driven 2026-10-23: each of the six boards refused at `validateCircuit`
+> carries its net-name violations **plus exactly one other problem** -
+> `pt2399-core` a single-pin net, and each of the five Pultec boards **a switch
+> mounting pin neither on a net nor declared not-connected.** Removing the case
+> demand leaves six boards still refusing, on one thing each.
+>
+> **THOSE TWO REMAINING DEMANDS ARE NOT OF THE SAME CHARACTER, which is why they
+> are not assumed to fall with this one.** A case rule asks a circuit to conform
+> to a convention that carries no information. *"Declare the pin not connected"*
+> asks the author to **say that they meant to leave it floating**, which is
+> information the drawing and the netlist both use. The second is defensible in a
+> way the first is not, and the cheap honest path is probably to make the six
+> declarations rather than to argue - but **that is not his decision and is not
+> taken here.**
+>
+> - **Found** 2026-10-23, from the owner, on being shown that six of eleven
+>   boards never reach geometry. Recorded verbatim per `CLAUDE.md`.
+> - **Evidence** `[OWNER]` his words above. The six-boards-plus-one-problem
+>   figure is `[RAN]` and re-driven; the rule's lack of a stated reason is
+>   `[READ]` at `lib/schgen/ir/validate.ts:49`.
+> - **Verified** **CONFIRMED** as his words and for the re-driven census. **The
+>   third-instance claim and the conflation argument are this writer's.**
+> - **Why it is open** because the rule is still in the code, the punctuation
+>   question is unmeasured, and the six boards still refuse.
+> - **What would settle it** **CRITERION, REPLACING THE ONE ABOVE: no circuit is
+>   refused for the CASE of a net name, and what KiCad does with a label carrying
+>   parentheses and hyphens is measured rather than guessed.** The old criterion
+>   asked that every net reaching a label satisfy a rule somebody writes; he has
+>   said the case part of that rule is not to exist. **MECHANISM: none offered.
+>   A written design he reviews**, and note that `partShapes` in the same file
+>   carries a separate UPPER_SNAKE demand on part labels which **his decision does
+>   not mention and which this entry does not extend it to.**
+
 ### G151 - a symbol pin the model says nothing about reaches a `CircuitSpec` neither on a net nor declared not-connected, and `ncUnlisted` needs a reason the model cannot hold
 
 `circuits/opamp-buffer.ts` wires one section of a TL072 and says so in its own

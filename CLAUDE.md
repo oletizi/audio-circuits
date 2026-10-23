@@ -160,6 +160,34 @@ useless. Render it, print it, read it.
 why it is not defaulted. A message that only says something went wrong is
 incomplete.
 
+**AND A REFUSAL WHOSE REASON CANNOT BE STATED SHOULD NOT EXIST. ASK WHAT A
+DEMAND IS FOR BEFORE WORKING OUT HOW TO SATISFY IT.** This repository has now
+done the opposite **three times, and the owner caught all three** - no agent and
+no review did:
+
+- the **BOM gate**, which blocked drawings on purchasing data (**G245**);
+- the over-long **`Value` label**, argued about rather than questioned;
+- the **`UPPER_SNAKE` net-name rule** (**G150**), 2026-10-23: *"i absolutely do
+  not care about the letter case of net names. That's a silly quibble."*
+
+**The third is the purest form and the one to recognise.** `G150` measured the
+violation exactly, counted the 31 offending nets, and offered three mechanisms
+for *complying* - normalise, rename, or relax - **without once asking what the
+rule was for.** `lib/schgen/ir/validate.ts` states no reason for it, and there
+is none to state: letter case carries no information a schematic needs.
+
+**The tell is a rule that refuses with a restatement of itself** - *"net `in` is
+not UPPER_SNAKE"* says what the rule is, not why it exists. Where you cannot
+write the "why it is not defaulted" clause this section already requires, **you
+have found a demand to question rather than a refusal to satisfy.**
+
+**AND A SILLY DEMAND CAN HIDE A REAL ONE, which is the second cost.** That same
+regex rejected `hi_boost_out` on case alone - the silly part - and
+`Net-(C10-Pad1)` on case **plus parentheses and hyphens**, which is a genuine
+unanswered question about what KiCad accepts in a label. One message, two
+demands, and the real one invisible behind the quibble. **Split a rule that
+refuses two different things.**
+
 **Refuse rather than guess.** Value ranges, footprint families and part
 geometries are proven with tests over the range they claim. Extending one is a
 deliberate edit with a test beside it, never a silent widening. An empty
