@@ -5871,6 +5871,20 @@ is stated with the figures it needs and **with no recommendation attached**,
 because a recommendation from the producing agent is the failure the rule exists
 to prevent.
 
+> **ANSWERED 2026-10-23, AFTER THIS SECTION WAS WRITTEN. Decision (1) below is
+> no longer open, and the wording stands as written rather than being revised.**
+> The owner, verbatim: *"I would rather give guidance to minimize overlap rather
+> than give a hard threshold."* **He declined the form the criterion asked for**,
+> so the paragraph below is reporting a live question that is closed, and in
+> particular its last bullet - *"this decision is answerable only against an
+> artifact that does not exist yet"* - **is dissolved rather than satisfied**: a
+> directive to minimise needs no sheet. The consequence, which is the
+> controller's inference and not his words, is that **the refusal is wrong rather
+> than merely strict**, because a quantity cannot be driven down inside an
+> artifact the tool declines to produce. **`G260` carries the decision, what it
+> settles, and the three things it does not.** Decisions (2) and (3) below remain
+> open and remain his.
+
 **(1) HOW MUCH OVERLAP IS ACCEPTABLE IN A DRAWING - `G260`, open, and his.** Its
 criterion, already written and not by this writer: *"the owner looks at a sheet
 carrying fallback placements and says whether it is acceptable, and under what

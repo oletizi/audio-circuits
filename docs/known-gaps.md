@@ -1937,6 +1937,78 @@ that nothing claims these sheets are clean.
 >   is proposed here**, and §7.5 of the research document states the same thing with no
 >   recommendation attached.
 
+> **THE OWNER ANSWERED THE OWNER'S HALF, 2026-10-23, AND DECLINED THE FORM THE
+> CRITERION ASKED FOR. HIS WORDS, VERBATIM:**
+>
+> > *"I would rather give guidance to minimize overlap rather than give a hard
+> > threshold."*
+>
+> **WHAT THIS SETTLES.** This entry asked *"how much overlap is acceptable, and
+> under what count or what kind of overlap it stops being acceptable"*, and held
+> that **until he answered, no threshold may be invented.** He has declined to
+> set one — not deferred it, declined the shape of the question — and replaced
+> it with a directive: **overlap is a quantity to be driven down, not a gate to
+> be passed.** So the prohibition stands permanently rather than provisionally:
+> **no agent may invent a threshold, now or later, because there is not going to
+> be one.**
+>
+> **AND IT DISSOLVES THE PRECONDITION THE AMENDMENT ABOVE ADDED.** That clause
+> recorded that the criterion was *"answerable only against an artifact that does
+> not exist yet"* — a sheet he could look at. **A directive to minimise needs no
+> sheet**, so the one blocker this entry had on its own question is gone, and it
+> was gone the moment he said so rather than when the first sheet is drawn.
+>
+> **WHAT IT COSTS, AND THIS IS THE PART A LATER AGENT ACTS ON.** `checkLayout`
+> currently **refuses a sheet** when text overlaps. *Minimise* and *refuse* are
+> incompatible: **a quantity cannot be driven down inside an artifact the tool
+> declines to produce**, and a refusal reports one bit where a cost reports an
+> ordering. So his answer makes the refusal wrong, not merely strict. It is also
+> the only reading consistent with **§4**'s measurement that **none of seven
+> comparable tools refuses because text will not fit**, and with **§6**'s finding
+> that what transfers from the typesetting literature is *badness as a continuous
+> quantity, a penalty attached to a choice, and non-refusal on failure* — the
+> framing he has now chosen, arrived at independently.
+>
+> **IT ALSO MAKES G71'S PROBLEM MOOT FOR THIS QUANTITY.** **G71** records that no
+> published source states an acceptable number of crossings, bends or wire
+> length, so a threshold here *"would be this project's invention wearing a
+> citation"*. **A minimisation needs no published number.** It needs a measure
+> and a direction, and he has given the direction.
+>
+> **WHAT IT DOES NOT SETTLE, and neither is re-asked here.** **(a)** The
+> *measure* — whether overlap is counted as pairs, as area, or as something else
+> — is undetermined, and choosing it is a design decision rather than a question
+> for him. **(b)** Whether anything remains **hard-illegal** is the third reserved
+> decision, §6.3/§6.11's infinite-versus-finite badness split, and his answer
+> bears on it without closing it: he has set the *finite* grade's direction and
+> said nothing about whether an infinite grade survives. That matters because
+> §2 measured a label overlapping a **pin** — a relation that can misrepresent
+> connectivity rather than merely look bad — so "minimise everything" and "some
+> things are never drawn" are not the same policy. **(c)** **G265** clause 4, the
+> text-geometry election, is untouched and still his — though it is **cheaper
+> under his answer than under a threshold**, because an ordering between two
+> arrangements survives a change of ruler far more often than a verdict against
+> a fixed line does.
+>
+> - **Found** 2026-10-23, from the owner directly, in answer to the research
+>   report's §5. Recorded here because `CLAUDE.md` requires an owner decision and
+>   an owner declination to be carried **with his words verbatim**.
+> - **Evidence** `[OWNER]` his sentence above, quoted in full and not
+>   paraphrased. No measurement supports or could support it; it is a directive.
+> - **Verified** **CONFIRMED** as his words. The consequences drawn above are
+>   this writer's reasoning from them and are marked as such — **the directive is
+>   his, the inference that the refusal must go is mine.**
+> - **Why it is open** because the owner's half is answered and **this entry's
+>   own residual is not**: the fifteen fallback placements are still reported in
+>   a document rather than counted by a check, and nothing yet minimises
+>   anything.
+> - **What would settle it** **CRITERION, REPLACING THE THRESHOLD CLAUSE ABOVE
+>   BY HIS INSTRUCTION: overlap is a measured cost that the generator drives
+>   down and reports, and no sheet is refused for it.** The threshold criterion
+>   is **deleted, not amended** — it asked for something he has declined to give.
+>   **MECHANISM: none offered here.** The measure, the search and the reporting
+>   are a design exercise he reviews, and this entry is not it.
+
 ---
 
 ### G261 - the weighted-overlap primitive now has ONE home and the build guide imports it from the schematic tree; the schematic's category-to-tier assignment is this writer's reading, not a reviewed decision

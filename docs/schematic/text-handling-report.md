@@ -171,12 +171,22 @@ same pipeline shape as the two expensive ones — place, route, annotate, grade.
 
 ## 5. What is yours to decide
 
-Three questions are reserved to the owner. **No agent has answered any of them**,
-and the research deliberately stops short of each:
+Three questions were reserved to the owner and the research deliberately stopped
+short of each. **No agent answered any of them. He has now answered the first
+himself, and declined the form it was asked in.**
 
-1. **How much overlap is acceptable in a drawing?** (`G260`) Every tool examined
-   allows some. There is currently no sheet to look at, which `G260` says
-   plainly.
+1. ~~**How much overlap is acceptable in a drawing?**~~ **ANSWERED 2026-10-23,
+   `G260`.** His words: *"I would rather give guidance to minimize overlap
+   rather than give a hard threshold."* **There is not going to be a threshold**,
+   so the entry's prohibition on inventing one is now permanent rather than
+   provisional — and the precondition `G260` had added, that a sheet must exist
+   before he could judge one, is dissolved, because a directive to minimise needs
+   no sheet. **The consequence is that the refusal is wrong, not merely strict:**
+   a quantity cannot be driven down inside an artifact the tool declines to
+   produce. That is also the only reading consistent with §3's measurement that
+   none of seven tools refuses, and it is the framing §6 found transfers from the
+   typesetting literature — badness as a continuous quantity, a penalty attached
+   to a choice, non-refusal on failure. He arrived at it independently of both.
 2. **Which of the three measured text-geometry quantities governs a collision?**
    (`G265` clause 4) The four-row table of what each quantity changes — 15, 13,
    20 and 24 refusals — is there for the decision.
