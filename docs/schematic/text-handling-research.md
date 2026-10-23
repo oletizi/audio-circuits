@@ -5298,16 +5298,29 @@ REPOSITORY'S OWN CARDINAL PRACTICE.** Rounds 0 and 1 carried all of this as a
 **seven-column table**: 18 rows at a median of **761.5 characters / 765 bytes**
 and a maximum of **1465 characters**, with **ten cells over 300** and a longest
 cell of **740**. **IT WAS NEVER RENDERED, AND RENDERING IT IS WHAT SETTLES IT.**
-`[RAN]` pandoc GFM to HTML, viewed in a 1100 px browser: the table laid out
-**6300 px tall** and **1195 px wide inside a 1100 px page**, so the last three
-columns - *what it depends on*, *evidence* and **LEVEL** - run off the right edge
-and are **clipped, not scrollable** (`document.scrollWidth` is 1100). **The
-column the whole section is organised around could not be read at all.** That is
-`CLAUDE.md`'s *"a document can be generated and useless. Render it, print it,
-read it"* going unapplied to the one subsection of this document a reader is most
-likely to open first. The same eighteen rows are now a **three-column index**
-plus **one labelled block per row**: the index renders **822 px tall** and **838
-px right edge**, nothing clipped. **No row, no grade, no figure and no citation
+**EVERY PIXEL FIGURE BELOW WAS TAKEN UNDER ONE NAMED CONFIGURATION AND IS A
+PROPERTY OF THAT CONFIGURATION AND OF THIS DOCUMENT TOGETHER**, which is said
+because a reviewer reproduced one of them and not the others: `[RAN]` **pandoc
+3.10.1, `-f gfm -t html -s`, its default HTML5 template and that template's
+default CSS, in headless Chromium at a 1100 x 900 CSS-pixel viewport.** Under it
+the seven-column table laid out **6300 px tall** - and that height **reproduced
+independently** - while its columns ran to **x = 1195 inside a 1100 px page**
+whose `document.scrollWidth` stayed at **1100**, so the last three - *what it
+depends on*, *evidence* and **LEVEL** - were off the right edge and **clipped
+rather than scrollable**. **THAT CLIPPING GEOMETRY IS RENDERER-DEPENDENT AND
+SHOULD NOT BE READ AS A FIGURE ABOUT THE DOCUMENT:** a reviewer trying three
+other CSS configurations got table layouts that auto-fit or shrank instead, so a
+reader who measures something else has a different stylesheet, not a wrong
+number. **What does not depend on the renderer is the finding**, which held under
+every configuration either of us tried and needs no pixel to stand: **a
+seven-column table whose median row is 761.5 characters cannot be shown to a
+reader**, and the column the whole section is organised around is the one that
+pays. That is `CLAUDE.md`'s *"a document can be generated and useless. Render it,
+print it, read it"* going unapplied to the one subsection of this document a
+reader is most likely to open first. The same eighteen rows are now a
+**three-column index** plus **one labelled block per row**: under the same named
+configuration the index renders **822 px tall** with a right edge at **838 px**,
+nothing clipped. **No row, no grade, no figure and no citation
 is changed by the re-presentation** - five quotations across §7 and the head
 table were corrected in the same change, **three of them here**, and all five are
 listed in §7.7(3); everything else is the previous table's text,
