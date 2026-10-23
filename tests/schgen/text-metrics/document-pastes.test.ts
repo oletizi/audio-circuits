@@ -581,10 +581,23 @@ const FIELD_ORDER_RUN_MARKER = "== WHAT THIS FIELD-ORDER RUN MEASURED"
 const SECTION_6_HEADING = "§6 Typesetting's penalty model, and the one condition its author puts on it"
 
 /** How many blocks §6 pastes from its own log. Pinned, so adding or dropping one is deliberate. */
-const SECTION_6_BLOCKS = 5
+const SECTION_6_BLOCKS = 7
 
 /** How many source transcriptions §6 pastes that no log can check. Pinned for the same reason. */
 const SECTION_6_SOURCE_BLOCKS = 7
+
+/**
+ * **EVERY FENCE WORD §6 USES, WITH ITS COUNT - WHICH IS WHAT REPLACED A TAUTOLOGY.**
+ *
+ * The case below used to assert, for each block already filtered to `kp-src`, that its fence word
+ * was not one of the four checked namespaces. That is `"kp-src" is not in [...]`, seven times, and
+ * **it could not fail** - in the file whose whole subject is assertions that cannot fail
+ * (§1.11's version 2: a rule strictly stronger in general and vacuous on the population it is
+ * applied to). A tally over ALL of §6's blocks can fail three ways that matter: a block appears, a
+ * block vanishes, or a block is relabelled into a namespace where it would resolve against a log
+ * section and look verified.
+ */
+const SECTION_6_FENCES: Readonly<Record<string, number>> = { "field-order-run": SECTION_6_BLOCKS, "kp-src": SECTION_6_SOURCE_BLOCKS, sh: 1 }
 
 /** §6's text with its fence word mapped into the checker's output namespace, and nothing else. */
 function sectionSixAsOutput(d: string): string {
@@ -624,7 +637,7 @@ describe("section 6's pasted output, against section 6's own log", () => {
     const victim = fieldOrderLog.split("\n").find((l) => l.includes("fallbacks summed over measured blocks:"))
     if (victim === undefined) throw new Error("section 6's log has no summed-fallbacks line, so the probe's summary has moved and §6.5 needs re-reading")
     expect(doc.split(victim).length - 1).toBe(1)
-    const perturbed = victim.replace("production 15", "production 16")
+    const perturbed = victim.replace("production 53", "production 54")
     expect(perturbed).not.toBe(victim)
     const v = verify(sectionSixAsOutput(doc.replace(victim, perturbed)), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
     // **ASSERTED ON THE MESSAGE AND NOT ON A COUNT.** `verify` has several refusal paths and each
@@ -659,13 +672,15 @@ describe("section 6's pasted output, against section 6's own log", () => {
      * header has vanished. That is the un-failable assertion this whole file exists to refuse.
      */
     const predictionsAt = fieldOrderLog.indexOf("== PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT")
-    const measurementAt = fieldOrderLog.indexOf("== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS")
+    const measurementAt = fieldOrderLog.indexOf("== PER BLOCK: FALLBACK COUNT ACROSS THE ORDERS")
     expect(predictionsAt).toBeGreaterThan(-1)
     expect(measurementAt).toBeGreaterThan(-1)
     expect(predictionsAt).toBeLessThan(measurementAt)
     expect(fieldOrderLog).toContain("  P1 HELD")
-    expect(fieldOrderLog).toContain("arms min 7 median 8 max 8")
-    expect(fieldOrderLog).toContain("production 15, arm-wise best 13, arm-wise worst 15")
+    // The corpus control and the no-silent-truncation control, both of which round 0 lacked.
+    expect(fieldOrderLog).toContain("blocks with grid-legal geometry: 48")
+    expect(fieldOrderLog).toContain("EXHAUSTIVE 720 of 720 order(s)")
+    expect(fieldOrderLog).toContain("production 53, order-wise best 51, order-wise worst 54")
   })
 
   /**
@@ -695,12 +710,24 @@ describe("section 6's pasted output, against section 6's own log", () => {
    */
   test("section 6's source transcriptions are declared, counted, and in no log's namespace", () => {
     const slice = doc.slice(doc.indexOf(SECTION_6_HEADING))
+    const tally: Record<string, number> = {}
+    for (const b of parseBlocks(slice)) {
+      const word = b.info.split(/\s+/)[0] ?? "(no info string)"
+      tally[word] = (tally[word] ?? 0) + 1
+    }
+    // The tally over EVERY block in §6, against the pinned map. This is the case that replaced a
+    // `"kp-src" is not in [...]` assertion over a list already filtered to `kp-src`.
+    expect(tally).toEqual({ ...SECTION_6_FENCES })
     const sources = parseBlocks(slice).filter((b) => b.info.split(/\s+/)[0] === "kp-src")
     expect(sources.length).toBe(SECTION_6_SOURCE_BLOCKS)
-    for (const b of sources) expect([OUTPUT_FENCE, "elk-run", "label-run", "field-order-run"]).not.toContain(b.info.split(/\s+/)[0])
     // Each carries the journal page it was transcribed from, which is the only provenance a reader
     // can act on: without it the hash in §6.1 pins a 66-page PDF and nothing narrower.
     for (const b of sources) expect(b.info).toMatch(/^kp-src p\.11\d\d /)
+    // And every page a `kp-src` block names is one §6.1 says was opened as an image - the fix for
+    // round 1's mis-citation, which put a p.1150 quotation on p.1162.
+    const pagesRead = /\*\*Pages ([0-9,\s]+and\s+[0-9]+) were opened as images and read\*\*/.exec(doc)?.[1]
+    if (pagesRead === undefined) throw new Error("§6.1 no longer states which pages were opened as images, so a block's page cannot be checked against it")
+    for (const b of sources) expect(pagesRead).toContain(/p\.(\d+)/.exec(b.info)?.[1] ?? "")
     const v = verify(sectionSixAsOutput(doc), fieldOrderLog, FIELD_ORDER_RUN_MARKER)
     expect(v.notOutput.length).toBeGreaterThanOrEqual(SECTION_6_SOURCE_BLOCKS)
   })

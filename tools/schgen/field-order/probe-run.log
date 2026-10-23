@@ -1,49 +1,120 @@
 == WHAT THIS FIELD-ORDER RUN MEASURED
-arms: production, identity, reverse, and 30 seeded Fisher-Yates shuffles (seeds 1..30, LCG 1664525/1013904223)
 subject: lib/schgen/render/field-placement.ts placeFields, over every declared ELK block with a grid-legal layout
+corpus: ALL_DECLARED_CASES through text-metrics/step4.ts laidOutBlocks - the same population function section 5 uses
+orders: EVERY permutation where n! <= 5040; otherwise up to 200 DEDUPLICATED orders, with n! printed as the bound
 what varies: the ORDER of layout.placements. Nothing else. Geometry, wires and anchors are the pipeline's own.
 
 == PREDICTIONS, PRINTED BEFORE ANY MEASUREMENT
-  P1 (CONTROL) the identity arm reproduces production exactly - same slot and same fallback status for every unit of every block. REFUTED BY: any difference, which would mean this probe's plumbing is not the production path and nothing below is about the shipped placer.
-  P2 at least one block's fallback COUNT differs between production order and some other arm. REFUTED BY: every arm of every block agreeing with production, which would mean the sequential dependence costs nothing here and the first-fit/total-fit distinction is academic for this corpus.
-  P3 for at least one block the MINIMUM fallback count over the arms is strictly below production's. REFUTED BY: production already being the arm-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any of these.
-  P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back in EVERY arm. REFUTED BY: any such unit placing clear under some permutation, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
-  P5 (CONTROL) the placed body box of every unit is identical across every arm. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
+  P1 (CONTROL, DETERMINISM - NOT FIDELITY) the identity order reproduces the production order exactly, slot and fallback status, for every unit of every block. It tests that placeFields is a pure function of its input and that this probe carries no state between orders; it CANNOT test that the probe reaches the shipped path, because both arms are the same order. REFUTED BY: any difference, which would mean one of those two things is false.
+  P2 at least one block's fallback COUNT differs between the production order and some other order. REFUTED BY: every order of every block agreeing with production, which would mean the sequential dependence costs nothing on this corpus and the first-fit-versus-optimum-fit distinction is academic here.
+  P3 for at least one block the MINIMUM fallback count over the driven orders is strictly below production's. REFUTED BY: production already being the order-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any driven.
+  P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back under EVERY driven order. REFUTED BY: any such unit placing clear under some order, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
+  P5 (CONTROL) the placed body box of every unit is identical under every driven order. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
+  P6 (CONTROL, CORPUS) this run's grid-legal block count equals the figure section 5 of the research document pastes for the same population function, 48. REFUTED BY: a different count, which would mean two sections of one document measure different corpora while both say 'every declared block' - which is exactly what round 0 of this probe did.
+  P7 (CONTROL, NO SILENT TRUNCATION) every block reported EXHAUSTIVE was driven over exactly n! orders, and every block reported BOUNDED was driven over strictly fewer than n! DISTINCT orders. REFUTED BY: any block whose driven count and its bound disagree with its own label, which is the shape round 0 shipped - thirty arms that were not thirty orders.
 
-== PER BLOCK: FALLBACK COUNT ACROSS THE ARMS
-opamp-buffer/ob-buffer: 11 unit(s), production 2 fallback(s), arms min 2 median 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
-optical-compressor/oc-power: 8 unit(s), production 1 fallback(s), arms min 1 median 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
-optical-compressor/oc-audio: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
-optical-compressor/oc-sidechain: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
-pt2399-core/pt-core: 24 unit(s), production 8 fallback(s), arms min 7 median 8 max 8 | slot changed for 3, fallback status changed for 1, unconditional 7
+== THE CORPUS
+declared cases offered to the probe: 13; blocks with grid-legal geometry: 48
+  NOT PERMUTED HERE: opamp-buffer: validateCircuit reports 3 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: optical-compressor: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: optical-compressor/oc-audio: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: optical-compressor/oc-sidechain: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: pt2399-core: validateCircuit reports 18 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-hi-boost: validateCircuit reports 20 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-hi-cut: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-low-boost: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-low-boost/pultec-low-boost-own: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: pultec-low-cut: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-mid: validateCircuit reports 28 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: transistor-preamp-feedback/tp-stage: refused before checkLayout, so there is no grid-legal geometry to measure
+
+== PER BLOCK: FALLBACK COUNT ACROSS THE ORDERS
+opamp-buffer/ob-buffer: 11 unit(s), BOUNDED 200 of 39916800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
+optical-compressor/oc-power: 8 unit(s), BOUNDED 200 of 40320 order(s), production 1 fallback(s), min 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
+pt2399-core/pt-core: 24 unit(s), BOUNDED 200 of 6.204484017332394e+23 order(s), production 8 fallback(s), min 7 max 8 | slot changed for 3, fallback status changed for 1, unconditional 7
     STATUS MOVERS: C10#1
     SLOT MOVERS: C10#1, C11#1, C9#1
-transistor-preamp/tp-leg-upper: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-feedback: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-lower-a: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-lower-b: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-collector: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-emitter-bypass: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-stage: 16 unit(s), production 4 fallback(s), arms min 3 median 4 max 4 | slot changed for 4, fallback status changed for 2, unconditional 3
+transistor-preamp/tp-leg-upper: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-feedback: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-a: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-b: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-emitter-bypass: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-stage: 16 unit(s), BOUNDED 200 of 20922789888000 order(s), production 4 fallback(s), min 3 max 5 | slot changed for 5, fallback status changed for 2, unconditional 3
     STATUS MOVERS: C2#1, TP1#1
-    SLOT MOVERS: C2#1, C3#1, J3#1, TP1#1
+    SLOT MOVERS: C2#1, C3#1, C4#1, J3#1, TP1#1
+pultec-hi-boost/pultec-hi-boost-own: 17 unit(s), BOUNDED 200 of 355687428096000 order(s), production 5 fallback(s), min 5 max 5 | slot changed for 4, fallback status changed for 0, unconditional 5
+    SLOT MOVERS: C35#1, C5A2#1, L_HI_BOOST_200MH#1, L_HI_BOOST_300MH#1
+pultec-hi-boost/pultec-hi-boost-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-hi-boost/pultec-hi-boost-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-hi-cut/pultec-hi-cut-own: 13 unit(s), BOUNDED 200 of 6227020800 order(s), production 5 fallback(s), min 5 max 5 | slot changed for 0, fallback status changed for 0, unconditional 5
+pultec-hi-cut/pultec-hi-cut-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-boost/pultec-low-boost-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-boost/pultec-low-boost-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-cut/pultec-low-cut-own: 9 unit(s), BOUNDED 200 of 362880 order(s), production 8 fallback(s), min 8 max 8 | slot changed for 7, fallback status changed for 0, unconditional 8
+    SLOT MOVERS: C2#1, C3#1, C4#1, C5#1, C6#1, C7#1, RV_LO_CUT#1
+pultec-low-cut/pultec-low-cut-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-cut/pultec-low-cut-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-mid/pultec-mid-own: 28 unit(s), BOUNDED 200 of 3.0488834461171384e+29 order(s), production 8 fallback(s), min 8 max 8 | slot changed for 0, fallback status changed for 0, unconditional 8
+pultec-mid/pultec-mid-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-mid/pultec-mid-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-stage: 8 unit(s), BOUNDED 200 of 40320 order(s), production 4 fallback(s), min 4 max 4 | slot changed for 0, fallback status changed for 0, unconditional 4
+transistor-preamp-feedback/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-loop: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-stage: 10 unit(s), BOUNDED 200 of 3628800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
+transistor-preamp-staged/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-character: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-second-stage: 11 unit(s), BOUNDED 200 of 39916800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 2, fallback status changed for 0, unconditional 2
+    SLOT MOVERS: R11#1, R8#1
+transistor-preamp-staged/tp-stage: 8 unit(s), BOUNDED 200 of 40320 order(s), production 4 fallback(s), min 4 max 4 | slot changed for 0, fallback status changed for 0, unconditional 4
+
+== WHAT THE PRODUCTION ORDER'S FALLBACKS ARE DRAWN OVER
+fallbacks covering at least one piece of TEXT: 4
+  TEXT: transistor-preamp/tp-stage TP1#1 covers label EMITTER
+  TEXT: pultec-low-cut/pultec-low-cut-own RV_LO_CUT#1 covers pin RV_LO_CUT.2 text
+  TEXT: transistor-preamp-buffered/tp-stage C2#1 covers label BYPASS_CAP
+  TEXT: transistor-preamp-staged/tp-stage C2#1 covers label BYPASS_CAP
+cover strings this probe's whitelist does not recognise: 0
 
 == CONTROLS
-  P1 identity reproduces production: 0 violation(s)
-  P4 unconditional units fall back on every arm: 0 violation(s)
-  P5 geometry is invariant across arms: 0 violation(s)
+  P1 identity reproduces production (determinism, not fidelity): 0 violation(s)
+  P4 unconditional units fall back under every order: 0 violation(s)
+  P5 geometry is invariant across orders: 0 violation(s)
+  P6 grid-legal block count against section 5's committed 48: measured 48
+  P7 every EXHAUSTIVE label matches n! and every BOUNDED label is below it: 0 violation(s)
 
 == VERDICT ON EACH PREDICTION
   P1 HELD
-  P2 HELD - at least one block's fallback count differs between arms
-  P3 HELD - at least one block has an arm below production's count
+  P2 HELD - at least one block's fallback count differs between orders
+  P3 HELD - at least one block has an order below production's count
   P4 HELD
   P5 HELD
+  P6 HELD
+  P7 HELD
 
 == SUMMARY
-  10 block(s) measured, 2 skipped for having no grid-legal layout
-  fallbacks summed over measured blocks: production 15, arm-wise best 13, arm-wise worst 15
-  units whose slot moves under some arm: 7
-  units whose fallback status moves under some arm: 3
-  NOTE: the arm-wise best is a MEASUREMENT of spread and NOT a target. Nothing here says fewer fallbacks is the objective,
+  48 block(s) measured, 12 not permuted; 36 block(s) driven EXHAUSTIVELY, 12 BOUNDED
+  unit placements over the measured blocks: 255
+  fallbacks summed over measured blocks: production 53, order-wise best 51, order-wise worst 54
+  units whose slot moves under some order: 21
+  units whose fallback status moves under some order: 3
+  NOTE: the order-wise best is a MEASUREMENT of spread and NOT a target. Nothing here says fewer fallbacks is the objective,
   what a fallback costs, or how many are acceptable - that is the owner's (docs/known-gaps.md G260).
+  NOTE: the order-wise best is EXACT for a block marked EXHAUSTIVE and an UPPER BOUND on the minimum for one marked BOUNDED.

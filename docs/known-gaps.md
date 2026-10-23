@@ -1748,9 +1748,15 @@ made.
 > Task 4's amendment above makes it zero of seven. Knuth and Plass 1981, read in full by Task 6
 > (`docs/schematic/text-handling-research.md` §6.1, SHA-256 pinned, quotations verified against the
 > rendered page images rather than the scan's OCR layer), describe what TeX does when **no feasible
-> sequence of line breaks exists**: the active list is *"forcibly prevented from becoming empty"*,
-> and *"[t]he net result is to produce an 'overfull box' that sticks out into the right margin...
-> some kind of error indication is necessary"* (`[READ]` p.1162). **Zero of eight.**
+> sequence of line breaks exists**: the active list is *"forcibly prevented from becoming empty by
+> simply declaring a breakpoint to be feasible if it would otherwise leave the active list empty.
+> This results in an overset line and an error message that encourages the user to take corrective
+> action"* (`[READ]` **p.1150**), and at the level of the implementation *"[t]he net result is to
+> produce an 'overfull box' that sticks out into the right margin... some kind of error indication
+> is necessary"* (`[READ]` **p.1162**). **Zero of eight.** *(Round 1 correction: the first of those
+> two quotations was cited to p.1162 when this amendment was first written. It is on p.1150, where
+> the behaviour is introduced; the words were verbatim and the page was wrong, and in a claim whose
+> evidence is its quotations a page that does not resolve is worth fixing loudly.)*
 >
 > **The shape is this entry's own, independently reached**: place it anyway, and make the
 > degradation visible. `field-placement.ts` takes the least-covered candidate and returns a
@@ -1763,10 +1769,17 @@ made.
 > automated reads**. The tool whose behaviour this most resembles pairs the placement with a
 > diagnostic the user cannot miss, and that half was not carried across.
 >
-> **AND 2 OF THE FIFTEEN ARE ARTEFACTS OF THE PLACER'S WALK ORDER**, including `tp-stage`'s `TP1#1`
-> - the one fallback of the fifteen that covers TEXT rather than a wire or a pin. **G272** is the
-> measurement and the three reasons that is not yet an invitation to act; this entry's population
-> figure is unchanged and is not re-stated there.
+> **AND THE PLACER'S WALK ORDER MOVES SOME OF THEM**, including `tp-stage`'s `TP1#1` - the one
+> fallback of **this entry's fifteen** that covers TEXT rather than a wire or a pin. **G272** is
+> that measurement and the four reasons it is not yet an invitation to act.
+>
+> **THIS ENTRY'S FIGURES ARE ABOUT ITS OWN TWELVE DECLARED BLOCKS AND STAY THAT WAY; G272 NOW
+> MEASURES THE SAME QUESTIONS OVER ALL 48.** The two populations must not be mixed, and one reading
+> changes materially between them: *"exactly one covers another piece of text"* is true of the
+> twelve and **false of the repository** - over the 48 declared ELK blocks with a grid-legal layout
+> there are 53 fallbacks and **four** cover text, three of them on boards this entry's population
+> does not contain. Nothing above is revised; the scope is stated so nobody reads a twelve-block
+> figure as a repository-wide one.
 >
 > - **Verified** CONFIRMED by the writer of §6 for the TeX quotation, which was read on the page
 >   image, and for the loudness comparison, which is a reading of this repository's own
@@ -24404,11 +24417,20 @@ not the probe's output.
 
 ---
 
-### G272 - MEASURED: the field placer is first-fit AND best-fit on two different paths, so BOTH published characterisations of it are half-right - and 2 of its 15 fallbacks are artefacts of the order it happens to walk the units in
+### G272 - MEASURED over all 48 declared blocks: the field placer is first-fit AND best-fit on two different paths, so BOTH published characterisations of it are half-right - and the walk order moves 3 fallbacks and 21 slots, in BOTH directions
 
 Task 6 of the text-handling research plan, `docs/schematic/text-handling-research.md`
 §6.4 and §6.5. **Two things, recorded together because the second is only
 interesting once the first is right.**
+
+**THIS ENTRY WAS WRITTEN AT A TEN-BLOCK CORPUS AND EVERY FIGURE IN IT HAS BEEN
+REPLACED.** Round 0 of §6.5 walked `PARITY_CASES` - four circuits, ten blocks,
+75 unit placements, **no Pultec board** - and published the result as *"every
+declared ELK block with a grid-legal layout"*. The figures below are at
+`ALL_DECLARED_CASES`, 48 blocks and 255 unit placements, through the same
+population function §5 uses. The old figures are superseded rather than carried
+alongside; where a round-0 conclusion was **falsified** rather than merely
+refined, it is named as such.
 
 **(1) WHAT THE PLACER IS.** `lib/schgen/render/field-placement.ts`'s `placeFields`
 runs two passes over the same candidate list:
@@ -24433,60 +24455,92 @@ predates the cost pass (**G273**). The correction handed to Task 6 says
 *"eleven discrete candidate slots with an area-weighted cost - best-of-N by
 cost, not first-fit"*: right about the pass that was added, and it overstates
 its reach, because the cost never runs while a clear candidate exists.
-**Measured: over the ten declared ELK blocks with a grid-legal layout there are
-75 unit placements, of which 60 are settled by the first clear candidate and 15
-reach the cost.**
+**Measured over the 48 declared ELK blocks with a grid-legal layout there are
+255 unit placements, of which 202 are settled by the first clear candidate and
+53 reach the cost.**
 
-**(2) THE WALK ORDER IS WORTH TWO FALLBACKS, AND THE ONE THAT MATTERS MOST IS
-ONE OF THEM.** `tools/schgen/field-order/probe.ts` permutes `layout.placements`
-over 33 arms - production, identity, reverse and 30 seeded Fisher-Yates
-shuffles - changing nothing else, which is the same soundness argument
+**(2) THE WALK ORDER MOVES THINGS, AND NOT ONLY DOWNWARDS.**
+`tools/schgen/field-order/probe.ts` permutes `layout.placements` - **every order
+for the 36 blocks of 7 units or fewer, 200 deduplicated orders for the 12
+larger** - changing nothing else, which is the same soundness argument
 `masked-problems.ts`'s `unitSlots` makes for its one arm.
 
-- production order gives **15** fallbacks over those ten blocks; the **arm-wise
-  best is 13**; no arm is worse by count;
-- **three units change fallback status** under some permutation - `pt-core`'s
-  `C10#1`, `tp-stage`'s `C2#1` and `tp-stage`'s `TP1#1` - and **seven change
+- summed over the 48 blocks: production **53** fallbacks, order-wise best **51**,
+  order-wise **worst 54**;
+- **three units change fallback status** - `pt2399-core`'s `C10#1` and
+  `transistor-preamp`'s `tp-stage` `C2#1` and `TP1#1` - and **twenty-one change
   which slot they take**;
-- **`TP1#1` is the single fallback in the entire corpus that covers TEXT rather
-  than a wire or a pin** (**G260**: fourteen of the fifteen cover only wires or a
-  pin end, and exactly one covers `label EMITTER`). It clears under some orders.
-  **So the corpus's only text-over-text overlap is an artefact of the walk, not
-  a geometric necessity;**
-- **and the movement is not one-directional.** `tp-stage`'s `C2#1` is NOT a
-  fallback under production and IS one under some arm, while that block's count
-  stays at 4. **A count is not a sufficient description of what the order
-  changes** - which is why the probe reports slot movers separately.
+- **A PERMUTATION CAN MAKE A BLOCK WORSE, AND ROUND 0 OF THIS ENTRY SAID IT
+  COULD NOT.** *"No arm is worse by count"* was written on ten blocks and a
+  sample whose arms were not distinct; `transistor-preamp/tp-stage` runs 3 to 5
+  around a production value of 4. **This is the falsification that matters most**,
+  because "no arm is worse" is what made *re-walk and keep the best* look free;
+- **FOUR fallbacks are drawn over other TEXT, not one.** `transistor-preamp/tp-stage`'s
+  `TP1#1` over `label EMITTER`; `pultec-low-cut`'s `RV_LO_CUT#1` over `pin
+  RV_LO_CUT.2 text`; and `C2#1` over `label BYPASS_CAP` on **both**
+  `transistor-preamp-buffered`'s and `transistor-preamp-staged`'s `tp-stage`.
+  Round 0 said there was exactly one and that it was an artefact of the walk;
+  **the count was an artefact of the corpus.** Of the four, only `TP1#1` is a
+  status mover, so **one is reachable by reordering and three are not** - the
+  other three are on blocks with no status movers and are marked unconditional
+  by `unitSlots`. **Two of the three are on boards round 0's corpus did not
+  contain at all.**
 
-**THE BAIT, STATED BESIDE THE TRAP.** *"Thirteen instead of fifteen, for free,
-by re-walking"* is exactly the sentence that makes somebody want to act, and
-three things stand in front of it. 33 orders out of up to 24! is a **sample**,
-so 13 is an upper bound on the achievable minimum and not an optimum. Keeping
-the best of several walks needs an **objective**, and **G260** records that
-nobody has said what a fallback costs, so there is nothing to be best by. And
-`C2#1` shows that a count-only objective would be choosing, silently, which unit
-gets drawn over.
+**THE LIMITATION THAT INVERTS WHAT THE HEADLINE COUNT SOUNDS LIKE.** 36 of the
+48 blocks were driven over **every** order - and **all 36 have zero fallbacks**.
+They are exactly the blocks of 7 units or fewer; every field places clear under
+every order, so their order-invariance is proven and uninformative. **All 53
+fallbacks live on the 12 blocks of 8 units or more**, which are exactly the
+blocks too large to exhaust, driven over 200 orders out of between 40 320 and
+3.05e29. **So the order-wise best is EXACT where there is nothing to measure and
+an UPPER BOUND on the minimum everywhere it matters.**
 
-- **Found** 2026-10-23, Task 6, by the writer of §6, who wrote the probe and read
-  the placer line by line.
+**THE BAIT, STATED BESIDE THE TRAP, AND WEAKER THAN ROUND 0 MADE IT.**
+*"Fifty-one instead of fifty-three, for free, by re-walking"* is the sentence
+somebody will act on, and four things stand in front of it. The 12 blocks where
+everything moves are **sampled**, so 51 is an upper bound and not an optimum.
+Keeping the best of several walks needs an **objective**, and **G260** records
+that nobody has said what a fallback costs. The order-wise worst of 54 means a
+walk chosen without an objective **can cost a fallback as easily as save one**.
+And the gain on offer is 2 placements in 255.
+
+- **Found** 2026-10-22, Task 6, at a ten-block corpus. **Re-measured 2026-10-23,
+  Task 6 fix round 1, over all 48**, after a reviewer established that the
+  published population was four parity circuits and contained no Pultec board -
+  which is the inversion `CLAUDE.md` names in as many words.
 - **Evidence** `[READ]` `lib/schgen/render/field-placement.ts`, `occupancy.ts`
-  and `text-boxes.ts` at `3657509`. `[RAN]` `tools/schgen/field-order/probe.ts`,
-  committed with its log; §6.5 pastes five blocks of that log and
+  and `text-boxes.ts`. `[RAN]` `tools/schgen/field-order/probe.ts`, committed
+  with its log; §6.5 pastes seven blocks of that log and
   `tests/schgen/text-metrics/document-pastes.test.ts` holds them to it on every
-  `bun test` by a fourth call to the paste checker. **Three controls, each able
-  to fail**: the identity arm reproduces production slot-for-slot (0
-  violations); every unit `unitSlots` marks `fallsBackUnconditionally` falls back
-  on all 33 arms (0), which re-drives **G239**'s Task 22 first-position argument
-  against 33 orders rather than one; no arm moves any placed body box (0). The
-  probe prints all five predictions BEFORE it measures anything, which is
-  **G271**'s corrected practice, and a test asserts that ordering in the log.
-  The *"first-fit does not appear"* claim is a grep that can match: `first.fit`
-  returns nothing under `lib/` or `tools/schgen/` and **eleven hits** elsewhere,
-  all about the VeroRoute fork's `AddComponent` sweep.
+  `bun test` by a fourth call to the paste checker. **Five controls, each able to
+  fail**: P1, the identity order reproduces production slot-for-slot, which tests
+  that `placeFields` is a pure function of its input and **not** that the probe
+  reaches the shipped path (round 0 claimed the latter and could not test it);
+  P4, every unit `unitSlots` marks `fallsBackUnconditionally` falls back under
+  every driven order, which re-drives **G239**'s Task 22 first-position argument
+  across 48 blocks rather than one arm; P5, no order moves any placed body box;
+  **P6, this run's grid-legal block count equals the 48 §5 pastes for the same
+  population function - the control that would have caught round 0's defect**;
+  P7, a block labelled EXHAUSTIVE was driven over exactly `n!` orders and one
+  labelled BOUNDED over strictly fewer DISTINCT orders, which refuses the silent
+  truncation round 0 shipped. All seven predictions held and are printed by the
+  probe before it measures anything (**G271**). The text classification is a
+  whitelist of obstacle-name prefixes with an **UNCLASSIFIED** bucket that
+  prints rather than guesses; it is empty, which is a check that could have
+  failed.
+- **THE GREP CONTROL IS AT HEAD AND ROUND 0's WAS NOT.** `git grep -i
+  "first.fit"` returns **0** under `lib/`, **2** under `tools/schgen/` - this
+  section's own probe and its log, in prediction P2's text - and **13** over
+  `lib` + `tools` + `tests`, the other 11 being the VeroRoute fork's
+  `AddComponent` sweep in `tools/stripboard/` and `tests/stripboard/`. Round 0
+  wrote 0 and eleven; both were true when written and false when committed,
+  **because this task's own probe wrote the phrase into the tree it was
+  grepping**. That is a general hazard worth the sentence: a control whose
+  population includes the artifact the task is producing is invalidated by
+  producing it.
 - **Verified** **CONFIRMED** for every figure above; this writer drove them and
-  read the output. **RELAYED** for **G260**'s *"fourteen of fifteen cover only
-  wires, exactly one covers text"*, which is that entry's measurement re-read
-  here and not re-taken.
+  read the output. **G260**'s own fifteen-fallback figure is that entry's, over
+  its own twelve-block population, and is not restated or revised here.
 - **Why it is open** because the count that would make any of this actionable is
   an acceptance criterion and is the owner's (**G260**, **G240**), and because
   two committed documents still describe the placer in ways this entry corrects.
@@ -24495,12 +24549,12 @@ gets drawn over.
   cost-ranked without saying that the cost runs only when nothing is clear.**
   That is settled by the descriptions, not by a change to the code.
   **CRITERION (2): the question "is the walk order worth acting on" is settled
-  by the owner saying what a fallback costs**, after which 15-versus-13 either
-  means something or does not. Until then it is a measured spread.
+  by the owner saying what a fallback costs**, after which 53-versus-51-versus-54
+  either means something or does not. Until then it is a measured spread.
   **MECHANISM, UNTRIED, AND NOT A PLAN:** re-walking under a bounded set of
   orders and keeping the best is the obvious shape and §6.11 lists it with the
-  three obstacles above; nobody has tried it, nothing here proposes it, and the
-  probe's own summary says the arm-wise best is a measurement and not a target.
+  four obstacles above; nobody has tried it, nothing here proposes it, and the
+  probe's own summary says the order-wise best is a measurement and not a target.
 
 ---
 
@@ -24532,10 +24586,12 @@ back as a reason to build something that is already built.**
 
 **Two parts of §7 are NOT stale and both matter.** Its §7(1) - *"a unit can be
 unplaceable because of where an EARLIER unit's text went, and nothing ever
-reconsiders the earlier choice"* - is still true and is now **measured**
-(**G272**). Its §8 - that `tools/guide/placement.ts` already shipped the scored,
-preference-ordered, least-cost-fallback placer the schematic one lacked - is the
-prediction Task 24 acted on (**G261**). **Its closing sentence becomes MORE right
+reconsiders the earlier choice"* - is still true and is now **measured** over all
+48 declared blocks: three units change fallback status and twenty-one change
+slot under permutation, over 255 unit placements (**G272**). Its §8 - which found
+`tools/guide/placement.ts` already shipping *"[a] scored, weighted,
+preference-ordered text placer with a least-cost fallback"* - is the prediction
+Task 24 acted on (**G261**). **Its closing sentence becomes MORE right
 rather than less**: *"A first-fit search over eleven candidates with no cost
 function and no fallback is the one combination the literature does not
 contain"* - that combination no longer exists in this tree.

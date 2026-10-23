@@ -4231,8 +4231,23 @@ returns nothing (§6.4's control). The correction handed to this task - *"eleven
 discrete candidate slots with an area-weighted cost, best-of-N by cost, not
 first-fit"* - is also not what the file does. **It is BOTH, on two different
 paths, and which path runs is decided by a boolean.** §6.4 reads it line by
-line, and §6.5 measures which path actually decides each of 75 unit placements
-in this repository: **first-fit decides 60 of them and the cost decides 15.**
+line, and §6.5 measures which path actually decides each of **255** unit
+placements in this repository: **first-fit decides 202 of them and the cost
+decides 53.**
+
+**ROUND 0 OF THIS SECTION MEASURED TEN BLOCKS AND CALLED THEM "EVERY", AND THE
+CORRECTION IS LARGE ENOUGH TO BE STATED AT THE TOP RATHER THAN IN A FOOTNOTE.**
+The first version of §6.5's probe walked `PARITY_CASES` - four circuits, ten
+blocks, 75 unit placements - and published the result as *"every declared ELK
+block with a grid-legal layout"*. **That corpus excludes every Pultec board**,
+which is the inversion `CLAUDE.md` names in as many words: *"An agent that finds
+itself arguing that some output does not matter for the current boards is
+reasoning from the wrong end."* §6.5 now walks `ALL_DECLARED_CASES` through the
+same population function §5 uses - **48 blocks, 255 unit placements**, with a
+control requiring the two sections' block counts to agree. **Every figure round 0
+published has been superseded rather than annotated**, and §6.5 says which of its
+conclusions survived the widening and which did not. One did not, and it was the
+headline.
 
 **AND §6 INVENTS NO COST FUNCTION**, for a reason this section can now state
 from a primary source rather than from process. `docs/known-gaps.md` **G71**
@@ -4262,7 +4277,7 @@ re-drives every figure in §6.5 from a clean checkout.
 | --- | --- |
 | **primary source** `[READ]` | Knuth and Plass 1981, retrieved in full, hashed, and the quoted regions verified against rendered page images rather than against the scan's OCR layer (§6.1) |
 | **this repository's source** `[READ]` | `lib/schgen/render/field-placement.ts`, `occupancy.ts`, `text-boxes.ts` and `lib/schgen/readability/measures.ts`, read at commit `3657509` (§6.4, §6.6) |
-| **driven here** `[RAN]` | 33 placement orders over every declared ELK block with a grid-legal layout, with three controls (§6.5) |
+| **driven here** `[RAN]` | every placement order of 36 blocks and 200 deduplicated orders of 12 more - **48 blocks, every declared ELK block with a grid-legal layout** - with five controls (§6.5) |
 
 **A fourth grade is deliberately absent: nothing here is `[THIRD-PARTY]`.** No
 secondary account of Knuth-Plass is relied on, and where this section disagrees
@@ -4284,15 +4299,28 @@ Donald E. Knuth and Michael F. Plass, **Breaking Paragraphs into Lines**,
 | SHA-256 of the extracted text | `5e15d58c923d0f6f72ff99dd876603a69f4e4dea24af661896d001eb0b32b7a9` (`pdftotext -layout`) |
 | page mapping | journal page *n* is PDF page *n* - 1118; 1119-1184 is 66 pages, which is the page count |
 
-**EVERY QUOTATION BELOW WAS VERIFIED AGAINST THE RENDERED PAGE IMAGE, NOT
-AGAINST THE OCR LAYER, AND THAT IS NOT A FORMALITY.** The OCR of this scan
-mangles exactly the material a reader would most want to quote: page 1121's
+**THE SEVEN BLOCKS BELOW WERE TRANSCRIBED FROM THE RENDERED PAGE IMAGES, NOT
+FROM THE OCR LAYER, AND THAT IS NOT A FORMALITY.** The OCR of this scan mangles
+exactly the material a reader would most want to quote: page 1121's
 `NP complete.3` comes out of `pdftotext` as `NP ~ o m p l e t e . ~`, and
 `dynamic programming4,5` as `dynamic p r ~ g r a m m i n g ~ . this~`. A
 quotation copied from the text layer would have been silently wrong in its
-punctuation and its footnote marks. Pages 1119, 1121, 1127, 1129, 1149 and 1162
-were opened as images and read; the blocks below are transcribed from those
-images.
+punctuation and its footnote marks. **Pages 1119, 1121, 1127, 1129, 1149, 1150
+and 1162 were opened as images and read**, and every page a quotation anywhere
+in §6 comes from is in that list.
+
+**ROUND 0 OF THIS SECTION SAID "EVERY QUOTATION", AND THAT WAS TRUE OF THE SEVEN
+BLOCKS AND NOT OF THE SHORT FRAGMENTS QUOTED IN PROSE.** The claim is narrowed
+here because it was caught being wrong: §6.3's *"nearly zero when |r_j| is small
+but grows rapidly"* was taken from the extracted text, which **drops the
+absolute-value bars** because the scan renders them as separate marks, and it
+reached round 0 without them. It has been re-checked against the page image and
+restored. **Every in-prose fragment in §6 has now been re-read on the image**;
+that one was the only casualty, and one more - *"forcibly prevented from
+becoming empty"* in §6.8 - was on the right text and the wrong page (1150, not
+1162). **The general lesson is the one §1.11 already teaches**: a transcription
+route that is right for the material you were careful about is not thereby right
+for the material you were not.
 
 **They are transcriptions of a third-party source and are NOT this repository's
 probe output**, so §1.11's contract makes each one a block declared NOT CHECKED
@@ -4396,7 +4424,7 @@ Four parts, separable, and the separability is what lets §6.3 answer "partly".
    had to stretch or shrink relative to how far it is allowed to. The badness is
    `100|r|^3`, and it is **infinite when `r < -1`**. Two grades, and the paper
    is explicit about why: a line that cannot be shrunk is refused outright,
-   while a line that is too loose is *"only finitely bad, so [it] will be
+   while a line that is too loose is *"only finitely bad, so they will be
    permitted if there is no better alternative"* (§6.1, p.1127).
 3. **Demerits.** Per line, `(1 + badness + penalty)^2` plus a flagged-pair term,
    summed over the paragraph. This is the objective.
@@ -4443,7 +4471,7 @@ primary sources rather than in this document's reading of them.**
 | part of the model | transfers? | why |
 | --- | --- | --- |
 | **The shortest-path / dynamic-programming search** | **No** | It requires that an item's cost depend only on an interval of a total order. Field pairs and labels on a sheet have no total order and the conflict relation is not interval-shaped. The paper's own condition (*"each line is to consist of contiguous information"*) is exactly what is absent. |
-| **Badness as a continuous quantity instead of a yes/no test** | **Yes, directly** | The paper's own motivation is a quantity *"nearly zero when r_j is small but grows rapidly"* in place of *"the yes/no tests"*. Overlap area is already such a quantity here, and `occupancy.ts` already computes it. |
+| **Badness as a continuous quantity instead of a yes/no test** | **Yes, directly** | The paper's own motivation is a quantity *"nearly zero when \|r_j\| is small but grows rapidly"* in place of *"the yes/no tests"*. Overlap area is already such a quantity here, and `occupancy.ts` already computes it. |
 | **TWO GRADES of badness - infinite and finite** | **Yes, and it is the part this repository most lacks as a declared thing** | `r < -1` is infinite and refused; `r > 1` is finite and drawn. This repository's placer has the same two grades **implicitly and globally**: every obstacle is infinite until no candidate is clear, at which moment every obstacle becomes finite at once (§6.4). Nothing declares which obstacles may never be overlapped and which may be, at a cost. **What that split should be is an acceptance criterion and is the owner's.** |
 | **Penalties attached to a CHOICE rather than to a geometric outcome** | **In principle; nothing here has one** | `penalty` prices hyphenating, breaking at a display, two flagged lines in a row. The analogue would be pricing a slot: an inside slot against an outside one, a left slot against the conventional right. `allCandidates`'s array order is the only preference statement in the repository and `text-placement-prior-art.md` §7 records that it is *"unjustified anywhere"*. |
 | **A feasibility THRESHOLD separate from the cost** | **Yes in shape** | TeX's tolerance `rho` decides what is feasible; demerits only rank what is. This repository already separates them, and `field-placement.ts` says so in its own header: *"THE COST RANKS; IT NEVER DECIDES FEASIBILITY."* **This is convergent, not borrowed** - the file cites the labelling literature, not Knuth. |
@@ -4466,12 +4494,29 @@ what anyone could do next.**
 `lib/schgen/render/occupancy.ts` and `lib/schgen/render/text-boxes.ts`, at commit
 `3657509`.
 
-**The control on the plan's phrase.** `git grep -i "first.fit"` over `lib/` and
-over `tools/schgen/` returns **nothing**. The same pattern over the whole
-repository returns **eleven hits**, every one of them in `tools/stripboard/` or
-`tests/stripboard/` about the pinned VeroRoute fork's `AddComponent` sweep. **The
-grep can match and does** - it just never matches the schematic placer, which has
-never used the phrase about itself.
+**The control on the plan's phrase, STATED AT HEAD AND NOT AT THE COMMIT THAT
+MADE IT TRUE.** `git grep -i "first.fit"`:
+
+| scope | hits | what they are |
+| --- | --- | --- |
+| `lib/` | **0** | - |
+| `tools/schgen/` | **2** | §6.5's own probe and its log, in prediction P2's text |
+| `lib` + `tools` + `tests` | **13** | the 2 above, plus **11** in `tools/stripboard/` and `tests/stripboard/` about the pinned VeroRoute fork's `AddComponent` sweep |
+
+**The grep can match and does** - it just never matches the schematic placer,
+which has never used the phrase about itself.
+
+**ROUND 0 WROTE THAT `tools/schgen/` RETURNS NOTHING AND THAT THE NON-DOC TREE
+RETURNS ELEVEN, AND BOTH WERE TRUE WHEN WRITTEN AND FALSE BY THE TIME THEY WERE
+COMMITTED - BECAUSE THIS SECTION'S OWN PROBE WROTE THE PHRASE INTO THE TREE IT
+WAS GREPPING.** That is worth a sentence beyond the correction, because it is a
+general hazard rather than a slip: **a control whose population includes the
+artifact the task is producing is invalidated by producing it.** A reader
+re-driving the round-0 figure would have got 2 where 0 was claimed and had no way
+to tell a stale figure from a wrong one. Where that cannot be avoided - and here
+it cannot, because the probe must be allowed to name the thing it measures - the
+figure is taken at HEAD with the self-reference named, which is what the table
+above does.
 
 **Here is the search, in order:**
 
@@ -4511,7 +4556,7 @@ committed documents describe it otherwise.
 | | the plan's phrase | the correction handed to this task | what the file does |
 | --- | --- | --- | --- |
 | which search | *"first-fit"* | *"best-of-N by cost, not first-fit"* | **both**, on two paths, selected by a boolean |
-| when the cost runs | n/a | implied: always | **only when no candidate is clear** - 15 of 75 unit placements (§6.5) |
+| when the cost runs | n/a | implied: always | **only when no candidate is clear** - 53 of 255 unit placements (§6.5) |
 | granularity | *"per-part"* | n/a | **per UNIT**; a dual op-amp's two units place independently (`text-placement-prior-art.md` §7(3)) |
 | what is placed | implied: a label | n/a | **a rigid two-line block** - Reference and Value at a fixed offset, never placed separately (`text-placement-prior-art.md` §7(7)) |
 
@@ -4520,110 +4565,232 @@ stands**, which is why this step exists. The plan's word names the dominant path
 and was written against a source that predates the cost (§6.9); the correction
 names the path that was added and overstates its reach.
 
-### 6.5 The greedy gap, measured on this repository's own blocks `[RAN]`
+### 6.5 The greedy gap, measured over every declared block `[RAN]`
 
 **Knuth and Plass measured their gap rather than arguing it**, over 300 runs at
 300 column widths, and that is the method this step copies - not the algorithm.
-`tools/schgen/field-order/probe.ts` permutes `layout.placements` over **33 arms**
-(production, identity, reverse, and 30 seeded Fisher-Yates shuffles) and changes
+`tools/schgen/field-order/probe.ts` permutes `layout.placements` and changes
 **nothing else**: geometry, wires and anchors are the pipeline's own. That is the
 same soundness argument `tools/schgen/masked-problems.ts`'s `unitSlots` makes for
 its one arm, and the probe cross-checks against it.
 
+**ROUND 0 OF THIS SUBSECTION MEASURED THE WRONG POPULATION AND SAMPLED IT
+BADLY, AND BOTH DEFECTS ARE SUPERSEDED RATHER THAN ANNOTATED.**
+
+| | round 0 | here |
+| --- | --- | --- |
+| corpus | `PARITY_CASES` - 4 circuits, **10** blocks, 75 unit placements, **no Pultec board** | `ALL_DECLARED_CASES` through the population function §5 uses - **48** blocks, **255** unit placements |
+| orders per block | 30 seeded shuffles plus `reverse`, called "33 arms" | **every** order where `n! <= 5040`; otherwise **200 deduplicated** orders with `n!` printed as the bound |
+| what the sample actually was | the LCG's first draw for seeds 1..30 is always about 0.24, so **all thirty made the same first swap**; a two-unit block's thirty shuffles were thirty copies of `reverse` | distinct by construction - the orders are deduplicated by key and the count printed is the count of **distinct** orders |
+
+**The corpus defect is the serious one.** A result published as *"every declared
+ELK block"* over a population that contains no Pultec board is the inversion
+`CLAUDE.md` names: the boards in `boards/` are the proving ground, and a figure
+that silently excludes them is reasoning from the wrong end. **P6 below is the
+control that would now catch it** - it requires this run's grid-legal block count
+to equal the figure §5 pastes for the same function, and it is in the probe so
+that the next widening of the corpus breaks something rather than nothing.
+
 **The predictions are printed by the probe BEFORE it measures anything**, in the
 run's own output, so the ordering is a property of the program.
-`docs/known-gaps.md` **G271** records why that is now required: a prediction that
+`docs/known-gaps.md` **G271** records why that is required: a prediction that
 lives only in a per-task report lives under `.superpowers/`, which is gitignored.
+**P1 to P5 were authored at round 0** and are in the history at commit `3657509`,
+before this corpus existed; **P6 and P7 are this round's** and were authored
+before the widened run. **P1 is restated rather than repeated:** round 0 claimed
+it tested that the probe reaches the shipped path, and it cannot - `identity` is
+the production order copied into a new array, so what it tests is that
+`placeFields` is a pure function of its input and that the probe carries no state
+between orders.
 
 ```field-order-run PREDICTIONS
-  P1 (CONTROL) the identity arm reproduces production exactly - same slot and same fallback status for every unit of every block. REFUTED BY: any difference, which would mean this probe's plumbing is not the production path and nothing below is about the shipped placer.
-  P2 at least one block's fallback COUNT differs between production order and some other arm. REFUTED BY: every arm of every block agreeing with production, which would mean the sequential dependence costs nothing here and the first-fit/total-fit distinction is academic for this corpus.
-  P3 for at least one block the MINIMUM fallback count over the arms is strictly below production's. REFUTED BY: production already being the arm-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any of these.
-  P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back in EVERY arm. REFUTED BY: any such unit placing clear under some permutation, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
-  P5 (CONTROL) the placed body box of every unit is identical across every arm. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
+  P1 (CONTROL, DETERMINISM - NOT FIDELITY) the identity order reproduces the production order exactly, slot and fallback status, for every unit of every block. It tests that placeFields is a pure function of its input and that this probe carries no state between orders; it CANNOT test that the probe reaches the shipped path, because both arms are the same order. REFUTED BY: any difference, which would mean one of those two things is false.
+  P2 at least one block's fallback COUNT differs between the production order and some other order. REFUTED BY: every order of every block agreeing with production, which would mean the sequential dependence costs nothing on this corpus and the first-fit-versus-optimum-fit distinction is academic here.
+  P3 for at least one block the MINIMUM fallback count over the driven orders is strictly below production's. REFUTED BY: production already being the order-wise minimum everywhere, which is a stronger result than P2's negation and would say the walk order is already as good as any driven.
+  P4 (CONTROL) every unit that masked-problems.ts marks `fallsBackUnconditionally` falls back under EVERY driven order. REFUTED BY: any such unit placing clear under some order, which would mean `unitSlots`'s first-position argument is wrong and G239's Task 22 amendment rests on it.
+  P5 (CONTROL) the placed body box of every unit is identical under every driven order. REFUTED BY: any difference, which would mean permuting the placement list moved geometry and not just the walk, so every figure here would be about a drawing nobody produced.
+  P6 (CONTROL, CORPUS) this run's grid-legal block count equals the figure section 5 of the research document pastes for the same population function, 48. REFUTED BY: a different count, which would mean two sections of one document measure different corpora while both say 'every declared block' - which is exactly what round 0 of this probe did.
+  P7 (CONTROL, NO SILENT TRUNCATION) every block reported EXHAUSTIVE was driven over exactly n! orders, and every block reported BOUNDED was driven over strictly fewer than n! DISTINCT orders. REFUTED BY: any block whose driven count and its bound disagree with its own label, which is the shape round 0 shipped - thirty arms that were not thirty orders.
 ```
 
+**The corpus, with every block it could not permute named.** `pultec-low-boost`'s
+own block and `transistor-preamp-feedback`'s stage refuse before a grid-legal
+geometry exists, so there is nothing to permute; the `validateCircuit` lines are
+the same gate-1 note §5 and `masked-problems.ts` carry, and the blocks behind
+them are measured anyway.
+
+```field-order-run THE CORPUS
+declared cases offered to the probe: 13; blocks with grid-legal geometry: 48
+  NOT PERMUTED HERE: opamp-buffer: validateCircuit reports 3 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: optical-compressor: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: optical-compressor/oc-audio: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: optical-compressor/oc-sidechain: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: pt2399-core: validateCircuit reports 18 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-hi-boost: validateCircuit reports 20 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-hi-cut: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-low-boost: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-low-boost/pultec-low-boost-own: refused before checkLayout, so there is no grid-legal geometry to measure
+  NOT PERMUTED HERE: pultec-low-cut: validateCircuit reports 14 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: pultec-mid: validateCircuit reports 28 problem(s) - its blocks are measured anyway, as masked-problems.ts measures them
+  NOT PERMUTED HERE: transistor-preamp-feedback/tp-stage: refused before checkLayout, so there is no grid-legal geometry to measure
+```
 ```field-order-run PER BLOCK
-opamp-buffer/ob-buffer: 11 unit(s), production 2 fallback(s), arms min 2 median 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
-optical-compressor/oc-power: 8 unit(s), production 1 fallback(s), arms min 1 median 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
-optical-compressor/oc-audio: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
-optical-compressor/oc-sidechain: NO LAYOUT: refused before a grid-legal geometry existed, so there is nothing to permute
-pt2399-core/pt-core: 24 unit(s), production 8 fallback(s), arms min 7 median 8 max 8 | slot changed for 3, fallback status changed for 1, unconditional 7
+opamp-buffer/ob-buffer: 11 unit(s), BOUNDED 200 of 39916800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
+optical-compressor/oc-power: 8 unit(s), BOUNDED 200 of 40320 order(s), production 1 fallback(s), min 1 max 1 | slot changed for 0, fallback status changed for 0, unconditional 1
+pt2399-core/pt-core: 24 unit(s), BOUNDED 200 of 6.204484017332394e+23 order(s), production 8 fallback(s), min 7 max 8 | slot changed for 3, fallback status changed for 1, unconditional 7
     STATUS MOVERS: C10#1
     SLOT MOVERS: C10#1, C11#1, C9#1
-transistor-preamp/tp-leg-upper: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-feedback: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-lower-a: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-lower-b: 3 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-collector: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-leg-emitter-bypass: 2 unit(s), production 0 fallback(s), arms min 0 median 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
-transistor-preamp/tp-stage: 16 unit(s), production 4 fallback(s), arms min 3 median 4 max 4 | slot changed for 4, fallback status changed for 2, unconditional 3
+transistor-preamp/tp-leg-upper: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-feedback: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-a: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-lower-b: 3 unit(s), EXHAUSTIVE 6 of 6 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-leg-emitter-bypass: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp/tp-stage: 16 unit(s), BOUNDED 200 of 20922789888000 order(s), production 4 fallback(s), min 3 max 5 | slot changed for 5, fallback status changed for 2, unconditional 3
     STATUS MOVERS: C2#1, TP1#1
-    SLOT MOVERS: C2#1, C3#1, J3#1, TP1#1
+    SLOT MOVERS: C2#1, C3#1, C4#1, J3#1, TP1#1
+pultec-hi-boost/pultec-hi-boost-own: 17 unit(s), BOUNDED 200 of 355687428096000 order(s), production 5 fallback(s), min 5 max 5 | slot changed for 4, fallback status changed for 0, unconditional 5
+    SLOT MOVERS: C35#1, C5A2#1, L_HI_BOOST_200MH#1, L_HI_BOOST_300MH#1
+pultec-hi-boost/pultec-hi-boost-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-hi-boost/pultec-hi-boost-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-hi-cut/pultec-hi-cut-own: 13 unit(s), BOUNDED 200 of 6227020800 order(s), production 5 fallback(s), min 5 max 5 | slot changed for 0, fallback status changed for 0, unconditional 5
+pultec-hi-cut/pultec-hi-cut-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-boost/pultec-low-boost-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-boost/pultec-low-boost-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-cut/pultec-low-cut-own: 9 unit(s), BOUNDED 200 of 362880 order(s), production 8 fallback(s), min 8 max 8 | slot changed for 7, fallback status changed for 0, unconditional 8
+    SLOT MOVERS: C2#1, C3#1, C4#1, C5#1, C6#1, C7#1, RV_LO_CUT#1
+pultec-low-cut/pultec-low-cut-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-low-cut/pultec-low-cut-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-mid/pultec-mid-own: 28 unit(s), BOUNDED 200 of 3.0488834461171384e+29 order(s), production 8 fallback(s), min 8 max 8 | slot changed for 0, fallback status changed for 0, unconditional 8
+pultec-mid/pultec-mid-standin-hi-cut: 4 unit(s), EXHAUSTIVE 24 of 24 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+pultec-mid/pultec-mid-junction: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-buffered/tp-stage: 8 unit(s), BOUNDED 200 of 40320 order(s), production 4 fallback(s), min 4 max 4 | slot changed for 0, fallback status changed for 0, unconditional 4
+transistor-preamp-feedback/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-feedback/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-leg-loop: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-loop/tp-stage: 10 unit(s), BOUNDED 200 of 3628800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 0, fallback status changed for 0, unconditional 2
+transistor-preamp-staged/tp-leg-feedback: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-base-ground: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-collector: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-emitter-bypass: 1 unit(s), EXHAUSTIVE 1 of 1 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-leg-character: 2 unit(s), EXHAUSTIVE 2 of 2 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-follower: 6 unit(s), EXHAUSTIVE 720 of 720 order(s), production 0 fallback(s), min 0 max 0 | slot changed for 0, fallback status changed for 0, unconditional 0
+transistor-preamp-staged/tp-second-stage: 11 unit(s), BOUNDED 200 of 39916800 order(s), production 2 fallback(s), min 2 max 2 | slot changed for 2, fallback status changed for 0, unconditional 2
+    SLOT MOVERS: R11#1, R8#1
+transistor-preamp-staged/tp-stage: 8 unit(s), BOUNDED 200 of 40320 order(s), production 4 fallback(s), min 4 max 4 | slot changed for 0, fallback status changed for 0, unconditional 4
 ```
 
+**What the fallbacks are drawn over, which round 0 relayed from `masked-problems.ts`
+over ten blocks and is now measured over all forty-eight.** The classification is
+a whitelist of the obstacle-name prefixes `field-placement.ts` emits, and
+**anything matching none of them is printed as UNCLASSIFIED rather than counted
+as not-text** - so an empty UNCLASSIFIED list is a check that could have failed.
+
+```field-order-run WHAT THE PRODUCTION
+fallbacks covering at least one piece of TEXT: 4
+  TEXT: transistor-preamp/tp-stage TP1#1 covers label EMITTER
+  TEXT: pultec-low-cut/pultec-low-cut-own RV_LO_CUT#1 covers pin RV_LO_CUT.2 text
+  TEXT: transistor-preamp-buffered/tp-stage C2#1 covers label BYPASS_CAP
+  TEXT: transistor-preamp-staged/tp-stage C2#1 covers label BYPASS_CAP
+cover strings this probe's whitelist does not recognise: 0
+```
 ```field-order-run CONTROLS
-  P1 identity reproduces production: 0 violation(s)
-  P4 unconditional units fall back on every arm: 0 violation(s)
-  P5 geometry is invariant across arms: 0 violation(s)
+  P1 identity reproduces production (determinism, not fidelity): 0 violation(s)
+  P4 unconditional units fall back under every order: 0 violation(s)
+  P5 geometry is invariant across orders: 0 violation(s)
+  P6 grid-legal block count against section 5's committed 48: measured 48
+  P7 every EXHAUSTIVE label matches n! and every BOUNDED label is below it: 0 violation(s)
 ```
-
 ```field-order-run VERDICT
   P1 HELD
-  P2 HELD - at least one block's fallback count differs between arms
-  P3 HELD - at least one block has an arm below production's count
+  P2 HELD - at least one block's fallback count differs between orders
+  P3 HELD - at least one block has an order below production's count
   P4 HELD
   P5 HELD
+  P6 HELD
+  P7 HELD
 ```
-
 ```field-order-run SUMMARY
-  10 block(s) measured, 2 skipped for having no grid-legal layout
-  fallbacks summed over measured blocks: production 15, arm-wise best 13, arm-wise worst 15
-  units whose slot moves under some arm: 7
-  units whose fallback status moves under some arm: 3
-  NOTE: the arm-wise best is a MEASUREMENT of spread and NOT a target. Nothing here says fewer fallbacks is the objective,
+  48 block(s) measured, 12 not permuted; 36 block(s) driven EXHAUSTIVELY, 12 BOUNDED
+  unit placements over the measured blocks: 255
+  fallbacks summed over measured blocks: production 53, order-wise best 51, order-wise worst 54
+  units whose slot moves under some order: 21
+  units whose fallback status moves under some order: 3
+  NOTE: the order-wise best is a MEASUREMENT of spread and NOT a target. Nothing here says fewer fallbacks is the objective,
   what a fallback costs, or how many are acceptable - that is the owner's (docs/known-gaps.md G260).
 ```
 
 **What it establishes.**
 
-- **The sequential dependence is live, not theoretical.** Two of the fifteen
-  fallbacks are artefacts of the walk order: `pt-core`'s `C10#1` and
-  `tp-stage`'s `TP1#1` place clear under some permutation and fall back under
-  production's. **P2 and P3 were the two arms of this that could have gone the
-  other way**, and the honest alternative was live - seven of the ten measured
-  blocks move not one unit under any of the 33 orders.
-- **It is the only text-over-text overlap in the corpus, and it is an artefact.**
-  `tools/schgen/masked-problems.ts` reports that of the fifteen fallbacks,
-  fourteen cover only wires or a pin end and **exactly one covers another piece
-  of text** - `tp-stage`'s `TP1#1`, covering `label EMITTER`. `TP1#1` is one of
-  the two status movers. So the single worst-graded overlap in the whole
-  population exists because of the order the placer happened to walk, not because
-  the geometry forced it.
-- **The first-fit path decides four placements in five.** 11 + 8 + 24 + 3 + 3 + 3
-  + 3 + 2 + 2 + 16 = **75 unit placements** over the ten measured blocks, of which
-  **15** reach the cost and **60** are settled by the first clear candidate. That
-  is the arithmetic behind §6.4's table row.
-- **No permutation made any block worse by count** - every block's arm-wise
-  maximum equals its production count. **But the identity of the fallbacks moves
-  even where the count does not**: `tp-stage`'s `C2#1` is NOT a fallback under
-  production and IS one under some arm, while its count stays at 4. A count is
-  not a sufficient description of what the order changes.
-- **Seven units change which slot they take** without necessarily changing
-  whether they are clear. Order affects the drawing more widely than it affects
-  the failure count.
+- **The sequential dependence is live, not theoretical.** Three units change
+  fallback status under some order - `pt2399-core`'s `C10#1`, and
+  `transistor-preamp`'s `tp-stage` `C2#1` and `TP1#1` - and **twenty-one change
+  which slot they take**. P2 and P3 were the two arms of this that could have
+  gone the other way.
+- **THE WALK CAN MAKE A BLOCK WORSE, AND ROUND 0 SAID IT COULD NOT.** Summed over
+  the measured blocks: production **53**, order-wise best **51**, order-wise
+  **worst 54**. `transistor-preamp/tp-stage` runs 3 to 5 around a production
+  value of 4. Round 0 wrote *"no arm is worse by count"* on ten blocks and a
+  sample whose arms were not distinct; **at the full corpus that is false**, and
+  it matters because it is the sentence that made "re-walk and keep the best"
+  look free. It is not free: an order chosen without an objective can cost a
+  fallback as easily as save one.
+- **ALL 53 FALLBACKS ARE ON THE 12 BLOCKS THE PROBE COULD NOT EXHAUST, AND THE 36
+  IT COULD EXHAUST HAVE NONE.** This is the limitation to carry away, and it is
+  the opposite of what "36 of 48 driven exhaustively" sounds like. The 36 are
+  exactly the blocks of 7 units or fewer; every one of them places every field
+  clear under **every** order, so their order-invariance is **proven and
+  uninformative**. Every figure that moves lives in the 12 larger blocks, where
+  200 orders out of between 40 320 and 3.05e29 is a sample. **So the
+  order-wise best is EXACT where there is nothing to measure and an UPPER BOUND
+  on the minimum everywhere it matters**, and the probe's own summary says so.
+- **FOUR fallbacks cover other text, not one.** `transistor-preamp/tp-stage`'s
+  `TP1#1` over `label EMITTER`; `pultec-low-cut`'s `RV_LO_CUT#1` over
+  `pin RV_LO_CUT.2 text`; and `C2#1` over `label BYPASS_CAP` on **both**
+  `transistor-preamp-buffered`'s and `transistor-preamp-staged`'s `tp-stage`.
+  **Round 0 said there was exactly one and that it was an artefact of the walk.**
+  The count was an artefact of the corpus. Of the four, **one** - `TP1#1` - is a
+  status mover and clears under some order; the other three are on blocks with no
+  status movers at all and are marked unconditional by `unitSlots`, so **three of
+  the four are not reachable by reordering**. Two of those three are on Pultec and
+  buffered/staged preamp boards that round 0's corpus did not contain.
+- **The first-fit path decides four placements in five.** 255 unit placements over
+  the 48 measured blocks, of which **53** reach the cost and **202** are settled
+  by the first clear candidate. That is the arithmetic behind §6.4's table row.
+- **No block's unconditional set was ever contradicted.** P4 drives
+  `unitSlots`'s *"first position is the most permissive the search can be"*
+  argument against every order this probe ran rather than against one, over 48
+  blocks. **G239**'s Task 22 amendment rests on that argument.
 
-**Three controls, each able to fail, and two of them cross-check figures other
-documents rest on.** P1 would expose a probe that is not driving the shipped
-path. P4 re-drives `unitSlots`'s *"first position is the most permissive the
-search can be"* argument against 33 orders rather than one - **G239**'s Task 22
-amendment rests on it. P5 would expose a permutation that moved geometry.
+**Five controls, each able to fail, and three of them cross-check figures other
+documents rest on.** P1 would expose a `placeFields` that is not a pure function
+of its input, or a probe carrying state between orders. P4 is G239's argument,
+re-driven. P5 would expose a permutation that moved geometry. **P6 would expose
+exactly the defect round 0 shipped** - it compares this run's block count against
+§5's committed 48 for the same population function. **P7 refuses silent
+truncation**: a block labelled EXHAUSTIVE must have been driven over exactly `n!`
+orders and a block labelled BOUNDED over strictly fewer **distinct** orders, so
+the label and the count cannot drift apart the way round 0's thirty arms drifted
+from thirty orders.
 
-**WHAT IT DOES NOT ESTABLISH, stated here rather than left to §6.10.** 33 orders
-out of up to 24! is a sample, so **"arm-wise best 13" is an upper bound on the
-achievable minimum and not an optimum**. And nothing here says 13 is better than
-15: that needs somebody to have said what a fallback costs, which **G260**
-records nobody has.
+**WHAT IT DOES NOT ESTABLISH, stated here rather than left to §6.10.** The 12
+blocks where every moving figure lives are **sampled**, so `51` is an upper bound
+on the achievable minimum and not an optimum. And nothing here says 51 is better
+than 53: that needs somebody to have said what a fallback costs, which **G260**
+records nobody has - and the order-wise worst of 54 is the reason that is not a
+formality.
 
 ### 6.6 Step 3: the measures this repository has, verified against the tree
 
@@ -4726,14 +4893,26 @@ agent from authoring one; nobody has been asked.
 draw because text will not fit**. Knuth and Plass describe TeX's behaviour when
 no feasible sequence of breaks exists, and it is the same answer:
 
-- the active list is *"forcibly prevented from becoming empty"* by declaring a
-  breakpoint feasible when it would otherwise empty it;
-- the result is an **overfull box** that *"sticks out into the right margin"*;
-- and *"some kind of error indication is necessary"*, so the user is told.
+- the active list is *"forcibly prevented from becoming empty by simply declaring
+  a breakpoint to be feasible if it would otherwise leave the active list
+  empty"* - `[READ]` **p.1150**;
+- *"This results in an overset line and an error message that encourages the user
+  to take corrective action"* - `[READ]` **p.1150**, the next sentence;
+- and at the level of the implementation, the same thing: the result is an
+  **overfull box** that *"sticks out into the right margin"*, because *"some kind
+  of error indication is necessary"* - `[READ]` **p.1162**.
 
-`[READ]` p.1162, verified against the page image. **This is TeX's behaviour as
-the 1981 paper describes it**; `tex.web` was not retrieved and this task did not
-read it (§6.10).
+Each verified against its own rendered page image. **ROUND 0 PUT THE FIRST OF
+THESE ON p.1162**, where the other two are; it is on p.1150, in the paragraph
+that introduces the behaviour the p.1162 code implements. A mis-citation rather
+than a fabrication, and corrected here because **in a subsection whose
+quotations are its entire evidence, a page number that does not resolve costs
+more than it looks**: a reader who turns to 1162 and cannot find the words has no
+way to tell a wrong page from a wrong quotation. §6.1's pages-read list now
+carries 1150.
+
+**This is TeX's behaviour as the 1981 paper describes it**; `tex.web` was not
+retrieved and this task did not read it (§6.10).
 
 **Zero of eight.** And the shape is not merely similar to what this repository
 now does - it is the same two-part answer: **place it anyway, and make the
@@ -4771,17 +4950,21 @@ document was right about the tree it read.
 | reported quantity | *"first blocked unit's first candidate's first blocker"* | **one `FieldFallback` per unit**, with its cost and everything it covers |
 
 **Its §8 predicted this**, and that is worth recording as a thing that came
-true: it found `tools/guide/placement.ts` already shipping *"a scored,
-preference-ordered placer with a least-cost fallback"* and named it as what the
-schematic placer lacked. Task 24 imported that module rather than writing a
-second weighting (**G261**).
+true: it found `tools/guide/placement.ts` already shipping *"[a] scored,
+weighted, preference-ordered text placer with a least-cost fallback"* and named
+it as what the schematic placer lacked. Task 24 imported that module rather than
+writing a second weighting (**G261**). *(Round 0 of this subsection quoted that
+sentence with "weighted," and "text" dropped and no elision marked. Corrected,
+and said rather than silently fixed: **the exact-quotation standard does not
+relax for this repository's own prose**, and a quotation of in-repo text is
+easier to check than any other kind, so getting one wrong is worse.)*
 
 **Its §7(1) sequential-dependence finding is NOT stale and is now measured.** It
 argued that *"a unit can be unplaceable because of where an EARLIER unit's text
 went, and nothing ever reconsiders the earlier choice"*, and marked it as the
 structural fact that most changes how this should be approached. §6.5 is the
-measurement of it: three units change fallback status and seven change slot under
-permutation, on a corpus of 75 unit placements.
+measurement of it: **three units change fallback status and twenty-one change
+slot under permutation, over 255 unit placements on 48 blocks.**
 
 **One row of §7 becomes MORE right rather than less.** Its last paragraph says
 *"A first-fit search over eleven candidates with no cost function and no fallback
@@ -4805,18 +4988,34 @@ contain, which is the change that paragraph was arguing for.
   methods were skimmed in the extracted text and are not relied on anywhere
   above.
 - **It did not establish that fewer fallbacks is better.** §6.5 measures a
-  spread. Whether 13 is preferable to 15, and by how much, needs the owner's
-  statement of what a fallback costs - **G260**, open.
-- **It did not sweep the permutation space.** 33 orders of up to 24! is a sample;
-  the arm-wise best is an upper bound on the minimum.
+  spread. Whether 51 is preferable to 53, and by how much, needs the owner's
+  statement of what a fallback costs - **G260**, open. The order-wise **worst**
+  of 54 is why that is not a formality.
+- **IT DID NOT SWEEP THE PERMUTATION SPACE WHERE THE SPACE MATTERS.** 36 of the
+  48 blocks were driven over every order and **all 36 have zero fallbacks**, so
+  their exhaustiveness proves order-invariance on blocks that had nothing to
+  move. All 53 fallbacks live on the 12 blocks of 8 units or more, and those were
+  driven over 200 deduplicated orders out of between 40 320 and 3.05e29.
+  **`51` is an upper bound on the achievable minimum, not an optimum**, and the
+  probe's own summary carries that sentence so a reader who quotes the number
+  quotes the bound with it.
 - **It did not measure global labels or power values.** `placeFields` places unit
   Reference/Value pairs only. §5 is the section about label coordinates, and
   nothing in §6 re-measures or contradicts it.
 - **It did not re-take any count under another text box.** §6.5's fallback counts
   are at the production ruler, `length x GRID` (`text-boxes.ts`), and §1 found 13
-  of 15 field fallbacks surviving all three of its measured quantities. **The
+  of 15 field fallbacks surviving all three of its measured quantities - **at the
+  ten-block corpus; §1's ratio has not been re-taken over the 48.** **The
   election among the three is the owner's (G265 clause 4) and nothing here makes
   it.**
+- **IT DID NOT RE-DRIVE ROUND 0's FIGURES; IT REPLACED THEM.** Every quantity
+  §6.5 published at the ten-block corpus is superseded, not annotated, and the
+  table at the head of §6.5 names both populations so nobody has to guess which
+  corpus a figure in an earlier draft belonged to. One round-0 conclusion was
+  **falsified** by the widening - *"no arm is worse by count"* - and one was
+  **narrowed from a finding to a quarter of one**: the single text-over-text
+  overlap turned out to be four, of which one and not all is reachable by
+  reordering.
 - **It did not establish that `occupiedArea` ought to include text.** It records
   that it does not, and that a text's anchor point reaches it while its box never
   does.
@@ -4840,10 +5039,14 @@ mechanism rather than once at the end.
    the split itself is an acceptance criterion**, so it is the owner's and not a
    mechanism an agent may choose.
 3. **Re-walk under a bounded set of orders and keep the best.** §6.5 measures
-   that this is worth 2 of 15 fallbacks on the current corpus and that no arm is
-   worse by count. **UNTRIED as a change to anything.** It needs an objective,
-   and choosing the objective is item 1's problem; and the probe's own output
-   says the arm-wise best is a measurement and not a target.
+   that the spread is **53 production, 51 best, 54 worst** over 48 blocks.
+   **UNTRIED as a change to anything, and WEAKER than round 0 of this list made
+   it sound.** Round 0 said no order is worse by count; at the full corpus an
+   order can be, so "keep the best" is not a free improvement but a choice that
+   needs an objective to be best by - which is item 1's problem - and the gain it
+   could capture is 2 placements in 255. The probe's own output says the
+   order-wise best is a measurement and not a target, and an upper bound rather
+   than an optimum on every block where anything moves.
 4. **Price the candidate order.** The preference order is an array literal and
    nothing justifies it. The literature's analogue (Imhof/Yoeli position
    preference) is cited in `text-placement-prior-art.md` but its weights were
@@ -4868,12 +5071,24 @@ entry's own open residual).
 
 ### 6.12 How this section's evidence is checked
 
-**§6's pasted probe output is held to §6's own log by a FOURTH call to the same
-checker**, the way §2's and §5's are - `tests/schgen/text-metrics/document-pastes.test.ts`,
+**§6's seven pasted probe blocks are held to §6's own log by a FOURTH call to the
+same checker**, the way §2's and §5's are - `tests/schgen/text-metrics/document-pastes.test.ts`,
 on every `bun test`. The blocks are fenced ` ```field-order-run ` so they stay out
 of §1's, §2's and §5's output namespaces, and the test maps that fence word, and
 only that fence word, before handing §6's slice to `verify` with
 `tools/schgen/field-order/probe-run.log` and that log's own run marker.
+
+**ONE OF THIS SECTION'S OWN NEW ASSERTIONS COULD NOT FAIL, IN THE FILE THAT
+EXISTS TO REFUSE EXACTLY THAT, AND IT RAN SEVEN TIMES.** Round 0 asserted, for
+each `kp-src` block, that its fence word was not one of the four checked
+namespaces - over a list that had already been **filtered to `kp-src`**, so the
+test was `"kp-src" is not in [...]` seven times over. It has been replaced by a
+comparison that can fail: the fence words of **every** block in §6's slice are
+tallied and the tally is compared against a pinned map, so a block appearing,
+vanishing, or being relabelled into a checked namespace all show up as a tally
+mismatch naming the word. **The round-0 form is the exact failure §1.11's version
+2 records** - a rule that is strictly stronger in general and vacuous on the
+population it is actually applied to.
 
 **The seven `kp-src` blocks are NOT checked against anything and are declared by
 name.** They are transcriptions of a 1981 scan, so there is no log they could be
