@@ -139,6 +139,16 @@ export interface SweepResult {
   /** The best candidate's total problem count, and its description. */
   readonly bestTotal: number
   readonly bestTotalAt: string
+  /**
+   * The problems the best-by-total candidate still has.
+   *
+   * **It is reported because the first version of this probe reported only the count, and the count
+   * hid the most consequential thing it found**: on several blocks the best anchor relocation clears
+   * every label overlap and leaves ONE problem, and that problem is `danglingWireEnds` complaining
+   * that the wire the anchor left has an end touching nothing. That is a rule of THIS repository,
+   * not of KiCad, and a count could not say so.
+   */
+  readonly bestTotalProblems: readonly string[]
   /** The best candidate's count of problems that name a global label. */
   readonly bestLabel: number
   readonly bestLabelAt: string
@@ -154,6 +164,7 @@ const EMPTY: SweepResult = {
   tried: 0,
   bestTotal: Number.POSITIVE_INFINITY,
   bestTotalAt: "(nothing tried)",
+  bestTotalProblems: [],
   bestLabel: Number.POSITIVE_INFINITY,
   bestLabelAt: "(nothing tried)",
   clearsBlock: false,
@@ -180,6 +191,7 @@ export function sweep(g: BlockSubgraph, candidates: Iterable<{ readonly what: st
       ...next,
       bestTotal: problems.length < r.bestTotal ? problems.length : r.bestTotal,
       bestTotalAt: problems.length < r.bestTotal ? c.what : r.bestTotalAt,
+      bestTotalProblems: problems.length < r.bestTotal ? problems : r.bestTotalProblems,
       bestLabel: labels < r.bestLabel ? labels : r.bestLabel,
       bestLabelAt: labels < r.bestLabel ? c.what : r.bestLabelAt,
       clearsBlock: r.clearsBlock || problems.length === 0,

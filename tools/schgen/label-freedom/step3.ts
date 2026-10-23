@@ -39,7 +39,8 @@ const PAIR_CAP = 60000
 
 const verdict = (r: SweepResult): string =>
   `${r.tried} candidate(s); clears the whole block: ${r.clearsBlock ? "YES" : "NO"}; clears every label problem: ${r.clearsLabels ? "YES" : "NO"}; ` +
-  `best total ${r.bestTotal === Number.POSITIVE_INFINITY ? "n/a" : r.bestTotal} at [${r.bestTotalAt}]; best label-problem count ${r.bestLabel === Number.POSITIVE_INFINITY ? "n/a" : r.bestLabel} at [${r.bestLabelAt}]${r.capped === "" ? "" : `; ${r.capped}`}`
+  `best total ${r.bestTotal === Number.POSITIVE_INFINITY ? "n/a" : r.bestTotal} at [${r.bestTotalAt}]; best label-problem count ${r.bestLabel === Number.POSITIVE_INFINITY ? "n/a" : r.bestLabel} at [${r.bestLabelAt}]${r.capped === "" ? "" : `; ${r.capped}`}` +
+  `${r.bestTotalProblems.length === 0 ? "" : `; what the best candidate STILL has: ${r.bestTotalProblems.join(" ; ")}`}`
 
 /**
  * THE CONTROL, and it can fail in both directions.
@@ -82,7 +83,14 @@ export interface BlockReport {
   readonly f2Best: number
   readonly f4Best: number
   readonly f3: { readonly clears: boolean; readonly best: number }
-  readonly f124: { readonly clearsBlock: boolean; readonly clearsLabels: boolean; readonly best: number }
+  /**
+   * `residuals` holds, per label anchor, what that label's best-by-total relocation STILL has.
+   *
+   * **It is per label rather than one list, because the first version kept only the residual of
+   * whichever label happened to reach the block's minimum first** - an arbitrary pick when several
+   * tie, and the summary line drawn from it would have been about a label nobody chose.
+   */
+  readonly f124: { readonly clearsBlock: boolean; readonly clearsLabels: boolean; readonly best: number; readonly residuals: readonly (readonly string[])[] }
   readonly pair: { readonly pairs: number; readonly clearsBlock: boolean; readonly clearsLabels: boolean; readonly best: number; readonly capped: boolean }
   /** Candidate anchor points on the label's own net, summed over the block's label anchors. */
   readonly ownSegmentPoints: number
@@ -110,6 +118,7 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
   let f3Best = Number.POSITIVE_INFINITY
   let f3Clears = false
   let f124Best = Number.POSITIVE_INFINITY
+  const f124Residuals: (readonly string[])[] = []
   let f124ClearsBlock = false
   let f124ClearsLabels = false
   let ownPoints = 0
@@ -151,6 +160,7 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
     f4Best = min(f4Best, f4.bestTotal)
     f3Best = min(f3Best, f3.bestTotal)
     f3Clears = f3Clears || f3.clearsBlock
+    f124Residuals.push(f124.bestTotalProblems)
     f124Best = min(f124Best, f124.bestTotal)
     f124ClearsBlock = f124ClearsBlock || f124.clearsBlock
     f124ClearsLabels = f124ClearsLabels || f124.clearsLabels
@@ -204,7 +214,7 @@ export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
     f2Best,
     f4Best,
     f3: { clears: f3Clears, best: f3Best },
-    f124: { clearsBlock: f124ClearsBlock, clearsLabels: f124ClearsLabels, best: f124Best },
+    f124: { clearsBlock: f124ClearsBlock, clearsLabels: f124ClearsLabels, best: f124Best, residuals: f124Residuals },
     pair: { pairs, clearsBlock: pairClearsBlock, clearsLabels: pairClearsLabels, best: pairBest, capped: pairCapped },
     ownSegmentPoints: ownPoints,
     otherSegmentPoints: otherPoints,
@@ -253,6 +263,19 @@ export function summaryLines(reports: readonly BlockReport[]): readonly string[]
     `OF THE ${stuck.length} THAT NOTHING CLEARS: ${stuck.filter(clearsLabels).length} have every LABEL problem cleared by some freedom and refuse on a problem with no label in it ` +
       `(${stuck.filter(clearsLabels).map((r) => r.name).join(", ") || "none"}); ${stuck.filter((r) => !clearsLabels(r)).length} keep at least one label problem under every freedom tried ` +
       `(${stuck.filter((r) => !clearsLabels(r)).map((r) => r.name).join(", ") || "none"})`,
+  )
+  // **WHAT STOPS THE BEST ANCHOR RELOCATION, COUNTED.** On the blocks where moving one label's
+  // anchor clears every label overlap and the block still refuses, the residue is this repository's
+  // own `danglingWireEnds` rule - the wire the anchor left now has an end touching nothing. KiCad
+  // treats such an end as unconnected, not as a different circuit; STEP 2's arms show the netlist
+  // does not move. **So part of freedom 2 is restricted here and not by the file format.**
+  const onlyDangling = (res: readonly string[]): boolean => res.length > 0 && res.every((p) => p.includes("touching nothing"))
+  const dangling = reports.filter((r) => r.f124.residuals.some(onlyDangling))
+  const anyResidue = reports.filter((r) => r.f124.residuals.some((res) => res.length > 0))
+  out.push(
+    `BEST ANCHOR RELOCATION'S RESIDUE: of ${anyResidue.length} block(s) where some label's best relocation still refuses, ` +
+      `${dangling.length} have a label whose best relocation leaves ONLY "ends at ... touching nothing" - this repository's danglingWireEnds rule, ` +
+      `applied to the wire end the anchor left (${dangling.map((r) => r.name).join(", ") || "none"})`,
   )
   out.push(
     `CANDIDATE ANCHOR POINTS on the labels' own nets, summed: own segment ${reports.reduce((s, r) => s + r.ownSegmentPoints, 0)}, ` +
