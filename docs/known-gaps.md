@@ -2539,6 +2539,201 @@ as covering the table it was offered for.**
 
 ---
 
+### G267 - MEASURED: KiCad's field autoplacer can place fields on a side it has just established COLLIDES while a clear side is available; upstream tests NONE of its placement; and the prior-art document's reading of it is wrong in three places
+
+Task 3 of the text-handling research plan read `eeschema/autoplace_fields.cpp` at
+the installed version. **The algorithm is in
+`docs/schematic/text-handling-research.md` §3 and is NOT repeated here.** What is
+here is what a later agent needs and cannot re-derive from that section.
+
+**(1) THE FINDING, because a later reader will want it before the section.**
+`chooseSideForFields` seeds its running selection from the **colliding** sides -
+`chooseSideFiltered` records each side it erases when `it->pins <= sel.pins` - and
+then carries that seed into the fewest-pins loop that ranks the **surviving**
+sides. So once any colliding side holds the global minimum pin count strictly, no
+clear side can displace it, **and the algorithm places the stack on a side it has
+just graded as colliding while a clear side was available.** The zero-pin loop
+that runs first is what normally hides this; it cannot help when every surviving
+side carries at least one pin. Traced: pins RIGHT 4 / TOP 1 / LEFT 4 / BOTTOM 2
+with TOP colliding returns TOP; the same with BOTTOM at 1 pin returns BOTTOM,
+because `<=` lets a tie through. The soft wire tier works by the same mechanism,
+so a wire-colliding side is also preferred over a **clear** side with more pins,
+not only over a hard-colliding one.
+
+- **Evidence** `[READ]` `eeschema/autoplace_fields.cpp` at tag `10.0.5`,
+  SHA-256 `bfdb8fd1c88bbc607f14daf6cc2db12d22522e0b6ca3f68df7f701915a76ea8d`,
+  799 lines, read in full; the two selection functions were also transcribed into
+  a throwaway script and the six traces in §3.3 driven through it, and the script
+  is **not committed** - the traces are published step by step in §3.3 so a reader
+  can repeat them against the file instead.
+- **Verified** CONFIRMED as a reading of the source by this writer. **NOT verified
+  as behaviour**: KiCad was not built, no schematic was loaded into eeschema, and
+  the autoplacer was never executed.
+- **What would settle it. CRITERION: a symbol with pins on all four sides, placed
+  so that its least-pinned side collides and a clear side with more pins exists,
+  has its fields autoplaced (MANUAL) onto the colliding side.** MECHANISM,
+  UNTRIED: build KiCad's `qa` eeschema suite and call `AutoplaceFields` directly
+  on a fixture; that is a build this repository has never done and the mechanism is
+  a guess at the cheapest route, not a requirement.
+- **It is NOT this repository's defect to fix.** It is recorded because §3.13
+  draws a warning from it: an argument of the form *"KiCad manages with four
+  candidates, so the candidate set is not the problem"* is reasoning from an
+  algorithm that does not reliably take the clear candidate it has already found.
+
+**(2) UPSTREAM HAS A TEST FILE FOR THIS AND IT TESTS NONE OF THE PLACEMENT.**
+`qa/tests/eeschema/test_autoplace_fields.cpp` at `10.0.5` (338 lines, SHA-256
+`42667c1fa712fb80c7cda3cf8823d9d3d9cbe57d77e8b9737a43ac920ff0bff0`, read in full)
+has five cases and **not one calls `AutoplaceFields`**. All five load the same
+`issue16538` fixture, set a field's text angle by hand and assert on
+`SCH_FIELD::GetBoundingBox()` or `GetDrawRotation()` - the *input* to
+`computeFBoxSize`, under rotation. Candidate selection, the collision tiers,
+`getDrawableArea`, `fitFieldsBetweenWires`, the overlapping fallback and the grid
+snap are untested. **Evidence**: `[READ]` the file; `[READ]` the full
+`qa/tests/eeschema` tree at that tag, **paginated to 122 entries** because the
+API's first page caps at 100 and a single-page listing would have been a truncated
+negative - one filename matches `autoplace`. `[THIRD-PARTY]` corroboration, **and
+a near-miss worth keeping**: a GitHub code search for `AutoplaceFields` over
+`KiCad/kicad-source-mirror` returns 57 hits, exactly one under `qa/`, and that one
+is `BOOST_FIXTURE_TEST_SUITE( AutoplaceFields, ... )` - the suite's **name**, not a
+call. An earlier narrower query (`path:qa`) returned nothing at all, which would
+have been the right answer by accident. The mirror tracks `master`, not `10.0.5`.
+**Nothing settles this; it is a fact about upstream, recorded so that "KiCad's
+autoplacer is well tested" is never assumed here.**
+
+**(3) THREE CORRECTIONS TO `docs/schematic/text-placement-prior-art.md` §5,
+recorded here with that document left unedited** (the plan requires it: *"[r]ead,
+never rewritten"*).
+
+- **§5(d) says the soft wire tier fires on "a vertical side".** It fires on
+  `!side.x`, which selects `SIDE_TOP(0,-1)` and `SIDE_BOTTOM(0,1)` - the sides
+  **above and below** the symbol. The wording inverts which two sides have the soft
+  tier, and it matters because `fitFieldsBetweenWires` is restricted to the same
+  two: the whole wire-handling half of the algorithm applies only to top and
+  bottom.
+- **§5(c) stops at the all-sides-collide fallback.** Clause (1) above is the same
+  seed competing in the ordinary case.
+- **§5 was read at `master` (794 lines) and does not pin a version.** The installed
+  version is `10.0.5` (799 lines). **The difference is immaterial and that is a
+  result, not a formality**: `diff -u` is 15 lines - licence boilerplate, one
+  Doxygen comment, `IsInNetlist()` to `DoNetList()`, and `GetPins()` to
+  `GetGraphicalPins( ALL_UNITS, ALL_BODY_STYLES )` twice. Candidate generation, the
+  tiers, the selection rule and the wire fitting are byte-identical, **so §5's
+  substantive reading stands.** The one behavioural difference the rename hides is
+  that `master` counts pins across all units and body styles where `10.0.5` counts
+  the symbol's own, which would move clause (1)'s pin counts for a multi-unit
+  symbol. **Verified** CONFIRMED, both blobs fetched and diffed by this writer.
+
+**(4) THE TWO COMPARATIVE CLAIMS THE PRIOR ART MAKES ABOUT THIS REPOSITORY ARE
+BOTH TRUE, VERIFIED RATHER THAN RELAYED, AND NOW QUANTIFIED.** Our candidate set
+is **9 to 13** per unit (`5 + Σ sides`, each side contributing 1 if pin-free and 2
+if pinned, `lib/schgen/render/field-placement.ts:153`), **11 for a two-terminal
+passive**, against KiCad's **4**; and a candidate here is a pair of positions for
+two named fields where KiCad's is a side for one rigid stack of all of them. Our
+obstacle model is richer on five checkable axes: per-field boxes rather than one
+shared box, a `MARGIN = GRID / 2` clearance where KiCad requires only
+non-intersection, an exact segment test for a wire where KiCad uses the wire's
+bounding box, the symbol's own pin text and interior graphics as obstacles
+(because inside slots exist), and a weighted overlap **area** over every candidate
+where KiCad has two discrete tiers on two of four sides in one of two modes.
+**Evidence** `[READ]` both sources. **Verified** CONFIRMED.
+
+**(5) AND THREE THINGS KICAD DOES THAT THIS REPOSITORY DOES NOT. The first is
+bait, and bait belongs beside the trap.**
+
+- **`fitFieldsBetweenWires` is a LOCAL REPAIR: it moves the chosen box to fit
+  between wire rows.** This repository's placer has no perturbation of any kind -
+  the candidate list is a fixed discrete set, `chooseLeastCovered` picks one, and
+  nothing shifts afterwards. **MECHANISM, UNTRIED**, and the thing that would make
+  it worth anything is a measurement nobody has taken: **G260**'s fifteen
+  fallbacks could be re-read for how many are blocked by *wires* in particular, and
+  §3 did not do it.
+- **Pin COUNT as a preference**, where this repository has only pin-free versus
+  pinned. Unevaluated; it would interact with the inside slots KiCad has none of.
+- **The page as an obstacle at SELECTION time** (`getDrawableArea`). This
+  repository's placer has no page or frame obstacle at all; containment is decided
+  downstream by `textProblems` in `render/text-scene.ts`. **This is a difference in
+  where the constraint lives, not a missing check**: a KiCad page is fixed, and a
+  frame here is DERIVED - `blockContent` in `render/frames.ts` unions `drawnBoxes`,
+  which includes `scene.texts`, so a field that lands far out enlarges its frame,
+  and `packFrames` is what refuses when the paper runs out. What is true is that
+  nothing steers slot choice away from a frame edge. **Verified** CONFIRMED by
+  reading both modules.
+
+**(6) TWO THINGS MEASURED IN `fitFieldsBetweenWires` THAT A LATER READER SHOULD
+NOT HAVE TO RE-DERIVE, one of them undiagnosed.**
+
+- **`offset` is computed, compared across colliders, and then never read.** After
+  the loop the function rounds the box's `y` to `WIRE_V_SPACING` without reference
+  to it, so the three `this_offset` lines are a consistency test on the colliders
+  and nothing more. **Verified** CONFIRMED as a reading. **Whether that is the
+  intent or a bug is NOT established** - recorded undiagnosed rather than omitted.
+  **CRITERION to settle: a case where the intended placement differs from
+  `round_n( pos.y, WIRE_V_SPACING, side == BOTTOM )`**; no mechanism is offered.
+- **It recomputes `m_fbox_size` and then calls `SetOrigin`, which keeps the box's
+  old size, so `field_box` in `DoAutoplace` carries the dynamic height while the
+  fields are laid out with fixed wire spacing. This is HARMLESS**: only the box's
+  top and horizontal edges are read afterwards, and the non-dynamic recompute
+  cannot change `max_field_width`. **A measurement that found nothing wrong, and it
+  is in the register because that is the rule.**
+
+**(7) THE TWO SPACING MODES COINCIDE AT THIS REPOSITORY'S TEXT SIZE, which is why
+the recompute in (6) is invisible.** With `m_align_to_grid` on - the constructor's
+default - a field's dynamic height is `round_n( h, 50 mil, true )`, and §1 measures
+`EDA_TEXT::GetTextBox` at **2043.1 um** for a 1270 um line, which rounds to
+**2540 um** = `WIRE_V_SPACING`. So for single-line fields the dynamic and
+fixed-spacing boxes are identical, and they diverge only when a field's box height
+leaves (1270, 2540] um. **Verified** the 2043.1 um figure is RELAYED from §1.4,
+measured by Task 1, not re-measured here; the arithmetic and the code reading are
+CONFIRMED.
+
+**(8) WHAT THE ALGORITHM DEPENDS ON REAL TEXT EXTENTS FOR IS EXACTLY TWO NUMBERS,
+AND BOTH ARE KICAD'S OWN TEXT BOX.** `bbox.GetWidth()` and `bbox.GetHeight()` from
+`SCH_FIELD::GetBoundingBox()`, which is `EDA_TEXT::GetTextBox( nullptr )`
+transformed (`sch_field.cpp:468`). It never consults glyph advances or rendered
+ink. **So KiCad places with §1's Q3** - the quantity §1 measured at 2043.1 um tall
+against 1422.4 um of ink - **and inherits the pen-width mismatch §1 found**, since
+the call passes `nullptr` for render settings. **THIS ELECTS NOTHING.** That KiCad
+uses Q3 is a fact about KiCad, not an argument that this repository should; the
+election is **G265** clause 4 and it is the owner's, and §3 states that where it
+could have been read as a recommendation.
+
+**(9) AN OBSERVATION ABOUT MULTI-LINE FIELDS THAT WAS NOT DIAGNOSED, AND DOES NOT
+REACH THIS REPOSITORY.** `autoplace_fields.cpp` has no multi-line handling at all;
+height comes entirely from the field's bounding box. `EDA_TEXT::GetTextBox` splits
+on `\n` and merges per-line rectangles **when `IsMultilineAllowed()`**, whose
+`TEXT_ATTRIBUTES` default is `true` (`common/font/text_attributes.cpp:37`) and
+which `SCH_FIELD` never sets - while `SCH_FIELD::Plot` forces
+`attrs.m_Multiline = false` immediately before plotting (`sch_field.cpp:1380`).
+**So a field containing a newline would be MEASURED as a tall stack and DRAWN as
+one long line.** NOT driven, and three things were not established: whether a
+`.kicad_sch` field can carry a newline, what the on-screen painter does, and
+whether the setter-call-site enumeration (a `[THIRD-PARTY]` code search over the
+mirror at `master`) is complete at `10.0.5`. **It does not reach this repository
+either way**: §1.2's glyph set over all 1086 strings the eleven boards emit is 64
+printable ASCII characters with no newline. Recorded undiagnosed rather than
+omitted.
+
+**(10) THE ISSUE EVIDENCE, AND WHY ITS COUNT IS A LOWER BOUND.** The GitLab issues
+API, unauthenticated, for `search=autoplace&in=title` returns **35 issues**, oldest
+2018-08-27, newest 2026-08-01, **4 open and 31 closed**; sixteen descriptions were
+read and every quotation in §3.11 comes from those sixteen. **#15868 - the request
+to widen the candidate set, which the prior-art document recorded as a fetched
+summary - was retrieved in full**: open since 2023-10-12, three upvotes, zero
+comments, and it names exactly this shape of problem (*"Labels are overlapping the
+other symbols"*, *"Fields get placed on top of wires"*). **THE COUNT IS A
+SUBSTRING, NOT A CENSUS, AND #15534 IS THE PROOF**: it is open, it is about this
+algorithm, and it is absent from the 35 because its title says *"Auto-placement"*.
+The hyphenated and spaced variants were not swept. **No comment thread was read,
+no attachment was opened, nothing was reproduced**, so the §3.3 clause-(1) reading
+is a **candidate** explanation for #14127 and #16538 and not a diagnosis of
+either. **The evidence worth carrying**: the obstacle-model cluster has been worked
+upstream - `getDrawableArea` exists because of #19081, labelled `starter` and
+fix-committed - and the candidate-set cluster has not. Widening the candidate set
+is the thing upstream has been asked for and has not done, **which is a fact about
+the cost of the change and not a licence to leave ours.**
+
+---
+
 ### G104 - gate 8's deferral was argued from the output it was supposed to grade, and THIS ENTRY MADE THAT ARGUMENT. The gate's empty-delta half is M1 work and always was
 
 > **REWRITTEN 2026-10-19, THE DAY AFTER IT WAS WRITTEN, BECAUSE A SECOND
