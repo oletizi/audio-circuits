@@ -554,6 +554,44 @@ the mechanisms are templates and clearance refusals, which are machine-checkable
 that means "legible" would be building something that project deliberately did
 not build.
 
+**EXTENSION, 2026-10-23, FROM A PRIMARY SOURCE THIS ENTRY HAD NOT READ: THE
+MOST-CITED PENALTY MODEL IN COMPUTING DECLARES ITS OWN COST FUNCTION ARBITRARY,
+WHICH MEANS "ADOPT THE LITERATURE'S COST" IS NOT A MOVE THAT EXISTS.** This
+entry's standing worry is that a threshold invented here would be *"this
+project's invention wearing a citation"*. Task 6 of the text-handling research
+plan read Knuth and Plass, *Breaking Paragraphs into Lines* (1981), in full -
+`docs/schematic/text-handling-research.md` §6.1 pins the file by SHA-256 and
+verifies every quotation against the rendered page image rather than the scan's
+OCR layer - and found the authors saying it of themselves, of **both** of their
+formulae:
+
+> *"The above formula for delta_j is quite arbitrary, like our formula for
+> beta_j, but it works well in practice because it has the following desirable
+> properties..."* (`[READ]` p.1129)
+
+They also state the cost of tuning it: *"So many parameters are present, it is
+impossible for anyone actually to experiment with a large fraction of the
+possibilities"* (`[READ]` p.1162).
+
+**What this changes about this entry is the shape of the available move, not its
+verdict.** The literature supplies a SHAPE - a continuous cost rather than a
+yes/no test, squared so one bad item cannot hide behind many mediocre ones, with
+an **infinite** grade for the inadmissible beside a **finite** one for the merely
+bad (*"values of r_j > 1 are only finitely bad, so they will be permitted if
+there is no better alternative"*, `[READ]` p.1127). It does not supply numbers
+anybody could import. **Importing the shape is importing a shape; importing the
+coefficients would be this entry's failure mode with the citation's own
+consent**, which is worse rather than better, because the borrowed authority is
+explicitly disclaimed at the source.
+
+- **Verified** CONFIRMED by the writer of §6 for the retrieval, the hash and the
+  three quotations, each read on the page image. Nothing here was taken from a
+  secondary account of the paper.
+- **It authors no criterion and changes nothing.** The criterion/mechanism split
+  below is unchanged, and §6.7 of the research document names what the
+  literature's costs ARE and whether this repository could measure each - it
+  chooses none, for this entry's reason.
+
 - **Found** 2026-10-19, by the standards research pass committed at `51f8362`,
   read in full by this writer. **The extension** was added the same day from §4
   and §10 (candidate 2) of `docs/schematic/schgen-development-history.md`
@@ -1702,6 +1740,41 @@ made.
 >   a threshold, or rank the six behaviours. It changes no code. **It does not close this entry**:
 >   the residual below - that nothing automated reads the fallback report - is untouched, and so is
 >   the owner's question.
+
+> **AMENDED 2026-10-23 BY TASK 6 OF THE SAME PLAN: TeX IS THE EIGHTH TOOL AND IT DOES NOT REFUSE
+> EITHER - AND THE DIFFERENCE FROM THIS REPOSITORY IS NOT THE PLACEMENT, IT IS THE LOUDNESS, WHICH
+> IS THIS ENTRY'S OWN RESIDUAL. It does not touch the owner's half.**
+>
+> Task 4's amendment above makes it zero of seven. Knuth and Plass 1981, read in full by Task 6
+> (`docs/schematic/text-handling-research.md` §6.1, SHA-256 pinned, quotations verified against the
+> rendered page images rather than the scan's OCR layer), describe what TeX does when **no feasible
+> sequence of line breaks exists**: the active list is *"forcibly prevented from becoming empty"*,
+> and *"[t]he net result is to produce an 'overfull box' that sticks out into the right margin...
+> some kind of error indication is necessary"* (`[READ]` p.1162). **Zero of eight.**
+>
+> **The shape is this entry's own, independently reached**: place it anyway, and make the
+> degradation visible. `field-placement.ts` takes the least-covered candidate and returns a
+> `FieldFallback`; `report.ts` prints them under *"Field placements the placer could not keep
+> clear"*.
+>
+> **THE DIFFERENCE IS EXACTLY THE RESIDUAL BELOW, and that is why this is worth an amendment rather
+> than a footnote.** TeX's overfull box is an error on the user's terminal **on the run that
+> produced it**. This repository's fallback is a table in a generated report **that nothing
+> automated reads**. The tool whose behaviour this most resembles pairs the placement with a
+> diagnostic the user cannot miss, and that half was not carried across.
+>
+> **AND 2 OF THE FIFTEEN ARE ARTEFACTS OF THE PLACER'S WALK ORDER**, including `tp-stage`'s `TP1#1`
+> - the one fallback of the fifteen that covers TEXT rather than a wire or a pin. **G272** is the
+> measurement and the three reasons that is not yet an invitation to act; this entry's population
+> figure is unchanged and is not re-stated there.
+>
+> - **Verified** CONFIRMED by the writer of §6 for the TeX quotation, which was read on the page
+>   image, and for the loudness comparison, which is a reading of this repository's own
+>   `report.ts`. **The TeX claim is about the 1981 paper's description of TeX**, not about
+>   `tex.web`, which was not retrieved (§6.10).
+> - **WHAT THIS AMENDMENT DOES NOT DO.** It does not say how loud a fallback should be, propose a
+>   gate, or answer how much overlap is acceptable. **It does not close this entry**: the residual
+>   is untouched and so is the owner's question.
 
 Task 24 replaced a refusal with a placement: `lib/schgen/render/field-placement.ts` takes the
 least-covered candidate slot when none is clear. **That converts a loud failure into a quiet
@@ -24328,3 +24401,165 @@ not the probe's output.
   different quantity from the one the practice is about. The mechanism is sound for a measurement
   prediction, where §5 already demonstrates it working, and the suite figure may need a different
   home.
+
+---
+
+### G272 - MEASURED: the field placer is first-fit AND best-fit on two different paths, so BOTH published characterisations of it are half-right - and 2 of its 15 fallbacks are artefacts of the order it happens to walk the units in
+
+Task 6 of the text-handling research plan, `docs/schematic/text-handling-research.md`
+§6.4 and §6.5. **Two things, recorded together because the second is only
+interesting once the first is right.**
+
+**(1) WHAT THE PLACER IS.** `lib/schgen/render/field-placement.ts`'s `placeFields`
+runs two passes over the same candidate list:
+
+- `cands.find((c) => covered(c).length === 0)` - **first-fit** in a fixed
+  candidate order, by a BOOLEAN predicate (`boxesOverlap`, `segmentHitsBox`).
+  The cost is not consulted on this path at all;
+- `clear ?? chooseLeastCovered(cands, area).candidate` - **best-of-N by weighted
+  overlap area**, reached only when no candidate is clear;
+- and across units, `placed.push(...)` after each one, so every unit's choice is
+  an obstacle for every later unit, with **no backtracking at either level**.
+
+**In Knuth and Plass's own vocabulary both names are theirs**: *"The method that
+produces Figure 1 might be called the 'first-fit' algorithm, and the
+corresponding method for Figure 2 might be called the 'best-fit' algorithm"*
+(1981, p.1127). Nothing here is optimum-fit.
+
+**THE TWO CHARACTERISATIONS IN CIRCULATION ARE EACH HALF.** The research plan
+says *"a per-part first-fit placement search"*: right about the dominant path,
+wrong about granularity (it is per UNIT), and written against a source that
+predates the cost pass (**G273**). The correction handed to Task 6 says
+*"eleven discrete candidate slots with an area-weighted cost - best-of-N by
+cost, not first-fit"*: right about the pass that was added, and it overstates
+its reach, because the cost never runs while a clear candidate exists.
+**Measured: over the ten declared ELK blocks with a grid-legal layout there are
+75 unit placements, of which 60 are settled by the first clear candidate and 15
+reach the cost.**
+
+**(2) THE WALK ORDER IS WORTH TWO FALLBACKS, AND THE ONE THAT MATTERS MOST IS
+ONE OF THEM.** `tools/schgen/field-order/probe.ts` permutes `layout.placements`
+over 33 arms - production, identity, reverse and 30 seeded Fisher-Yates
+shuffles - changing nothing else, which is the same soundness argument
+`masked-problems.ts`'s `unitSlots` makes for its one arm.
+
+- production order gives **15** fallbacks over those ten blocks; the **arm-wise
+  best is 13**; no arm is worse by count;
+- **three units change fallback status** under some permutation - `pt-core`'s
+  `C10#1`, `tp-stage`'s `C2#1` and `tp-stage`'s `TP1#1` - and **seven change
+  which slot they take**;
+- **`TP1#1` is the single fallback in the entire corpus that covers TEXT rather
+  than a wire or a pin** (**G260**: fourteen of the fifteen cover only wires or a
+  pin end, and exactly one covers `label EMITTER`). It clears under some orders.
+  **So the corpus's only text-over-text overlap is an artefact of the walk, not
+  a geometric necessity;**
+- **and the movement is not one-directional.** `tp-stage`'s `C2#1` is NOT a
+  fallback under production and IS one under some arm, while that block's count
+  stays at 4. **A count is not a sufficient description of what the order
+  changes** - which is why the probe reports slot movers separately.
+
+**THE BAIT, STATED BESIDE THE TRAP.** *"Thirteen instead of fifteen, for free,
+by re-walking"* is exactly the sentence that makes somebody want to act, and
+three things stand in front of it. 33 orders out of up to 24! is a **sample**,
+so 13 is an upper bound on the achievable minimum and not an optimum. Keeping
+the best of several walks needs an **objective**, and **G260** records that
+nobody has said what a fallback costs, so there is nothing to be best by. And
+`C2#1` shows that a count-only objective would be choosing, silently, which unit
+gets drawn over.
+
+- **Found** 2026-10-23, Task 6, by the writer of §6, who wrote the probe and read
+  the placer line by line.
+- **Evidence** `[READ]` `lib/schgen/render/field-placement.ts`, `occupancy.ts`
+  and `text-boxes.ts` at `3657509`. `[RAN]` `tools/schgen/field-order/probe.ts`,
+  committed with its log; §6.5 pastes five blocks of that log and
+  `tests/schgen/text-metrics/document-pastes.test.ts` holds them to it on every
+  `bun test` by a fourth call to the paste checker. **Three controls, each able
+  to fail**: the identity arm reproduces production slot-for-slot (0
+  violations); every unit `unitSlots` marks `fallsBackUnconditionally` falls back
+  on all 33 arms (0), which re-drives **G239**'s Task 22 first-position argument
+  against 33 orders rather than one; no arm moves any placed body box (0). The
+  probe prints all five predictions BEFORE it measures anything, which is
+  **G271**'s corrected practice, and a test asserts that ordering in the log.
+  The *"first-fit does not appear"* claim is a grep that can match: `first.fit`
+  returns nothing under `lib/` or `tools/schgen/` and **eleven hits** elsewhere,
+  all about the VeroRoute fork's `AddComponent` sweep.
+- **Verified** **CONFIRMED** for every figure above; this writer drove them and
+  read the output. **RELAYED** for **G260**'s *"fourteen of fifteen cover only
+  wires, exactly one covers text"*, which is that entry's measurement re-read
+  here and not re-taken.
+- **Why it is open** because the count that would make any of this actionable is
+  an acceptance criterion and is the owner's (**G260**, **G240**), and because
+  two committed documents still describe the placer in ways this entry corrects.
+- **What would settle it** **CRITERION (1): no document in this repository
+  describes `field-placement.ts` as first-fit without saying which path, or as
+  cost-ranked without saying that the cost runs only when nothing is clear.**
+  That is settled by the descriptions, not by a change to the code.
+  **CRITERION (2): the question "is the walk order worth acting on" is settled
+  by the owner saying what a fallback costs**, after which 15-versus-13 either
+  means something or does not. Until then it is a measured spread.
+  **MECHANISM, UNTRIED, AND NOT A PLAN:** re-walking under a bounded set of
+  orders and keeping the best is the obvious shape and §6.11 lists it with the
+  three obstacles above; nobody has tried it, nothing here proposes it, and the
+  probe's own summary says the arm-wise best is a measurement and not a target.
+
+---
+
+### G273 - `docs/schematic/text-placement-prior-art.md` §7's comparison table is STALE IN FOUR ROWS at HEAD, by chronology rather than by error - and that document is read and never rewritten, so nothing inside it will ever say so
+
+**The document was right about the tree it read.** It states that it read
+`lib/schgen/render/field-placement.ts` at `8e601b4`, and it was committed at
+`d02ad3d`. The placer's behaviour changed at `46fe129` (*"The field placer stops
+refusing and starts choosing"*), and `git merge-base --is-ancestor 46fe129
+d02ad3d` answers **no** - the change is not an ancestor of the document. So the
+four rows below went stale within hours of being written, and the plan that
+governs that file forbids rewriting it: *"Read, never rewritten. Where this
+research contradicts it, the contradiction is recorded in the new document and
+the old document gets a pointer, not an edit."*
+
+| §7 row | what it says | what HEAD does |
+| --- | --- | --- |
+| search | *"greedy sequential first-fit, no backtracking, no fallback"* | greedy sequential, no backtracking, **and a least-covered fallback** |
+| objective | *"none - a boolean per candidate"* | boolean on the feasible path, **weighted overlap area on the infeasible one** |
+| on failure | *"refuse to produce the drawing"* | **place at the least-covered candidate and record a `FieldFallback`** |
+| reported quantity | *"first blocked unit's first candidate's first blocker"* | **one `FieldFallback` per unit**, with its cost and every obstacle it covers |
+
+**WHY THIS IS AN ENTRY AND NOT A SHRUG.** That document is the repository's only
+written account of the point-feature labelling literature, it is cited by
+`CLAUDE.md`-adjacent material and by **G261**, and a reader who opens it for the
+literature will read the table on the way past. **A stale row that describes a
+refusal which no longer exists is exactly the kind of thing that gets quoted
+back as a reason to build something that is already built.**
+
+**Two parts of §7 are NOT stale and both matter.** Its §7(1) - *"a unit can be
+unplaceable because of where an EARLIER unit's text went, and nothing ever
+reconsiders the earlier choice"* - is still true and is now **measured**
+(**G272**). Its §8 - that `tools/guide/placement.ts` already shipped the scored,
+preference-ordered, least-cost-fallback placer the schematic one lacked - is the
+prediction Task 24 acted on (**G261**). **Its closing sentence becomes MORE right
+rather than less**: *"A first-fit search over eleven candidates with no cost
+function and no fallback is the one combination the literature does not
+contain"* - that combination no longer exists in this tree.
+
+- **Found** 2026-10-23, Task 6, while establishing what the placer does rather
+  than inheriting it.
+- **Evidence** a check that could have failed: `git merge-base --is-ancestor
+  46fe129 d02ad3d` returns non-zero, and `git show
+  8e601b4:lib/schgen/render/field-placement.ts` still carries `tryPlaceFields`,
+  `blockerOf` and the refusing arm that HEAD's file deletes. `[READ]` both
+  versions of the file and §7 of the document at HEAD.
+- **Verified** **CONFIRMED** - this writer ran the ancestry check and read both
+  file versions and the document.
+- **Why it is open** because the fix is not an edit to that file: the plan that
+  produced it forbids rewriting it, and §6.9 of
+  `docs/schematic/text-handling-research.md` is the pointer it is supposed to get
+  instead. **Whether a pointer inside the stale document is wanted is a decision
+  nobody has made**, and making one would be an edit to a closed document.
+- **What would settle it** **CRITERION: a reader of
+  `text-placement-prior-art.md` §7 can tell from somewhere that its four rows
+  describe `8e601b4` and not HEAD.** §6.9 satisfies that for a reader who finds
+  it; it does not satisfy it for a reader who opens only that file.
+  **MECHANISM, UNTRIED:** either a one-line dated pointer at the head of §7, or a
+  committed check that the document's pinned commit is still the behaviour it
+  describes. The first is an edit to a document the plan protects and is the
+  owner's or the controller's call; the second is machinery nobody has costed.
+  Neither has been tried.

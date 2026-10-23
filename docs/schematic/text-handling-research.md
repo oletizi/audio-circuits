@@ -4505,6 +4505,8 @@ never used the phrase about itself.
 **first-fit over candidates on the feasible path, best-fit over candidates on the
 infeasible path, and greedy sequential over units at both** - with no
 reconsideration at either level, and nothing anywhere that is optimum-fit.
+**Recorded as `docs/known-gaps.md` G272**, with §6.5's measurement, because two
+committed documents describe it otherwise.
 
 | | the plan's phrase | the correction handed to this task | what the file does |
 | --- | --- | --- | --- |
@@ -4713,7 +4715,8 @@ failure mode with the citation's own consent, which is worse rather than better.
 
 **The criterion/mechanism split G71 draws therefore survives contact with the
 best primary source available**, and this section adds nothing to it except
-evidence. Choosing what to minimise remains an acceptance criterion for an
+evidence - which is recorded as an extension to **G71** itself rather than as a
+parallel entry. Choosing what to minimise remains an acceptance criterion for an
 artifact this repository's agents produce; `CLAUDE.md` forbids the producing
 agent from authoring one; nobody has been asked.
 
@@ -4748,6 +4751,9 @@ number; §6 adds only that the tool this behaviour was borrowed from pairs it wi
 a diagnostic the user cannot miss.
 
 ### 6.9 A correction to `text-placement-prior-art.md` §7, recorded here because that document is read and never rewritten
+
+**Recorded in the register as `docs/known-gaps.md` G273**, because a reader who
+opens only that document will never reach this paragraph.
 
 `docs/schematic/text-placement-prior-art.md` §7 reads `field-placement.ts` at
 commit `8e601b4` and tabulates it against the standard formulation. **Four of its
@@ -4850,7 +4856,15 @@ mechanism rather than once at the end.
 
 **None of these is proposed. They are what a later reader would otherwise
 re-derive**, and the register requires that to be written down rather than
-re-discovered.
+re-discovered. Items 1, 2 and 3 are carried in **G272**; item 5 is **G260**'s
+residual verbatim and is not restated there.
+
+**Where §6's findings live in the register:** **G272** (what the placer is, and
+the walk-order measurement), **G273** (`text-placement-prior-art.md` §7's four
+stale rows), an extension to **G71** (the literature's cost function is declared
+arbitrary by its own authors), and an amendment to **G260** (TeX is the eighth
+tool that does not refuse, and the difference is the loudness, which is that
+entry's own open residual).
 
 ### 6.12 How this section's evidence is checked
 
