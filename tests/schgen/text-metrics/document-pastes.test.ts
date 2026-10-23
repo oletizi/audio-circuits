@@ -292,12 +292,21 @@ describe("section 2's pasted output, against section 2's own log", () => {
     expect(v.verified + v.notOutput.length + v.failures.length).toBe(v.blocks)
   })
 
-  /** RED: one digit of one figure, which is the drift this invocation exists to catch. */
+  /**
+   * RED: one digit of one figure, which is the drift this invocation exists to catch.
+   *
+   * **The victim line is taken from the log rather than written here**, because the first version
+   * hard-coded it and went red when the probe gained a column - a failure that was the coupling
+   * working, but on the test's own literal rather than on the document. The line it picks is the
+   * cell-count line, which is the one the completeness claim in §2.7 rests on.
+   */
   test("RED: a single digit edited in a section 2 block", () => {
-    const victim = "cells (arm x metric): 55; INVARIANT across the three heights: 49; VARYING: 6"
+    const victim = elkLog.split("\n").find((l) => l.startsWith("cells (arm x metric)"))
+    if (victim === undefined) throw new Error("section 2's log has no cell-count line, so the completeness figure has moved and §2.7 needs re-reading")
     expect(doc.split(victim).length - 1).toBe(1)
-    expect(elkLog).toContain(victim)
-    const v = verify(sectionTwoAsOutput(doc.replace(victim, victim.replace("VARYING: 6", "VARYING: 5"))), elkLog, ELK_RUN_MARKER)
+    const perturbed = victim.replace(/(\d+)$/, (n) => String(Number(n) + 1))
+    expect(perturbed).not.toBe(victim)
+    const v = verify(sectionTwoAsOutput(doc.replace(victim, perturbed)), elkLog, ELK_RUN_MARKER)
     expect(v.failures.length).toBe(1)
     expect(v.failures[0]).toContain("not a contiguous slice")
   })

@@ -2262,11 +2262,21 @@ corner of the box `elkInputOf` **sent**. `[RAN]` **`read-graph.ts` and
 ELK returns to the size it was given.** That is harmless today because nothing
 sets a node-size constraint - and **making room for a node label is exactly what
 would set one.** `[RAN]` With `nodeSize.constraints = [NODE_LABELS]`, **398 of 398
-nodes come back a different size, the worst by 30966.9 um - over 24 grid steps**;
-with the symbol's own box pinned as `nodeSize.minimum`, still **362 of 398**,
-worst 17790.0 um, and the **zero-size boundary nodes acquire a body** of
-3820 x 2053.1 um. Every grown node would place its symbol at the grown box's
-corner while its pins were computed from the ungrown one.
+nodes come back a different size**, the worst by **31740.0 um at the current
+model's 1270 um line, 31587.6 um at the rendered ink's 1422.4 um and 30966.9 um at
+`EDA_TEXT::GetTextBox`'s 2043.1 um** - 25.0, 24.9 and 24.4 grid steps. With the
+symbol's own box pinned as `nodeSize.minimum`, still **362 of 398**, worst
+**17790.0 um at all three heights**, and the **zero-size boundary nodes acquire a
+body** of 3820 x 2053.1 um. Every grown node would place its symbol at the grown
+box's corner while its pins were computed from the ungrown one.
+
+**THE THREE HEIGHTS ARE GIVEN BECAUSE THIS FIGURE MOVES AND ROUND 1 PUBLISHED IT
+BARE** - *"the worst by 30966.9 um - over 24 grid steps"* - which was the
+`GetTextBox` row quoted as though it were height-independent, **and "over 24" is
+false at the current model's line, where it is exactly 25.0 grid steps.** It was
+found by the re-review sweeping the four arm-table columns clause (8)'s
+enumeration did not cover. See clause (8): the enumeration now covers every column
+the table publishes, by construction.
 
 **(3) `elkjs` IS RESOLVED RELATIVE TO THE FILE THAT IMPORTS IT, SO A PROBE KEPT
 OUTSIDE THE REPOSITORY MEASURES A DIFFERENT ELK.** `[RAN]` A scratch copy of this
@@ -2316,8 +2326,29 @@ header a twin. The first version of §2 concluded from that that a second log co
 not be checked at all, said so in the document, and left eight blocks of measured
 output listed as NOT CHECKED. **The controller's ruling R17 corrects the reading:
 a SECOND CALL with the second log.** It is in
-`tests/schgen/text-metrics/document-pastes.test.ts` now, and a figure edited in §2
-breaks the suite.
+`tests/schgen/text-metrics/document-pastes.test.ts` now.
+
+**WHAT THAT GUARD COVERS IS FENCED BLOCKS, AND THE FIRST VERSION OF THIS CLAUSE
+SAID "a figure edited in §2 breaks the suite", WHICH IS WIDER THAN THE GUARD.**
+`[RAN]` A re-reviewer edited a **prose** figure in §2 from 46 to 99 and **nothing
+went red.** The guard reads fenced ` ```elk-run ` blocks; every number in the
+surrounding prose is unguarded - both the ones the prose quotes from a block by
+hand and the ones it derives (*"25.0, 24.9 and 24.4 grid steps"* appear nowhere in
+the log). **This is clause (3)'s shape again - crediting a guard with reach it does
+not have - and the controller relayed the wide version to the owner, so it is
+corrected here and there.** §2.10 was honest about the limit; this entry was not,
+and the register is what outlives the session.
+
+**OPEN, as a gap rather than a fix, by instruction**: extending the guard to prose
+figures is a larger change than fix round 3 was asked for and was deliberately not
+made. **CRITERION: a figure in §2's prose that disagrees with §2's log fails the
+suite.** **MECHANISM, UNTRIED and probably the wrong shape**: requiring every
+decimal-bearing number in §2's prose to appear in the log would reject *"25.0 grid
+steps"*, a correct derivation that is not in the log, so the rule would have to
+tell a quotation from an arithmetic result - which is the *"checker reads prose"*
+problem §1.11 already records as out of reach. **What a reader should take from
+this is narrower and reliable**: a pasted block cannot drift from the log, and a
+prose figure beside it can.
 
 **The one thing the checker gained is an optional run-marker parameter**, because
 the line that marks the start of a run belongs to the probe that wrote the log,
@@ -2336,7 +2367,7 @@ slice of another section), and the same commit coupling §1 has.
 
 **§2 also pastes the WHOLE run, and the accounting is in LINES because the byte
 figure published in round 0 was eight bytes low** (it missed the single-newline
-gaps): the log is **117 lines** - **100** quoted by the eight blocks, **8** `== `
+gaps): the log is **123 lines** - **106** quoted by the eight blocks, **8** `== `
 section headers that now live in the fence info strings, **9** blank. Nothing is
 excerpted. And **§2's run is re-drivable with `bun run` and nothing else**, where
 §1's needs `kicad-cli`, KiCad's Python bindings and an external font blob.
@@ -2365,51 +2396,81 @@ ruler. Every structural finding - 398 labels left unplaced by default, 254
 own-body overlaps, 266 label-over-wire crossings, 0 nodes resized in the
 fixed-size family - holds at all three heights.
 
-**AND THE COMPLETENESS OF THAT EXCEPTION LIST IS NOW COMPUTED, because round 0's
-was wrong in the way that matters.** It claimed *"all four are named"* while
-listing five, and the cell it omitted was the one the paragraph three above it
-quoted: **arm e's on-grid count, 46 / 43 / 12.** The probe now enumerates every
-arm-by-metric cell - `[RAN]` **55 cells, 49 invariant across the three heights, 6
-varying**, each printed with its three values - so the completeness claim is a
-figure rather than a tally. **A completeness claim is what licenses a later task
-to quote a number without naming its ruler**, which is precisely what round 0's
-*"only 12 of 398"* invited.
+**AND THE COMPLETENESS OF THAT EXCEPTION LIST TOOK TWO CORRECTIONS, WHICH IS THE
+INSTRUCTIVE PART: THE SAME DEFECT ONCE PER DIMENSION.** Round 0 claimed *"all four
+are named"* while listing five, and the cell it omitted was the one the paragraph
+three above it quoted - **arm e's on-grid count, 46 / 43 / 12.** Round 1 replaced
+the tally with a computed enumeration, and **computed it over five of the nine
+columns the arm table published**, so *"nothing else moves"* was still a claim
+over a subset. The re-review swept the other four and found one moving: **arm b's
+worst resize, 31740.0 / 31587.6 / 30966.9 um** - clause (2)'s figure, published
+bare. **Generalising a claim does not generalise its scope, and nobody checks the
+scope of a claim they have just computed.**
 
-**(9) ONE OF THE TWO CONTROLS ADDED IN FIX ROUND 1 PASSES AND THE OTHER FAILS,
-WHICH IS THE POINT OF HAVING THEM.** Round 0's arms differed from the baseline in
-**two** things - the label and the layout option - so a graph that grew was not
-attributable to the label by the probe alone. A reviewer supplied the missing
-control for one family and it passed. Both are arms now, so the log carries them:
+**The fix is structural rather than another list.** The probe's column list and its
+swept cells are now ONE list, used to print the arm table and to sweep it, so
+*"complete over every column STEP 5 publishes"* is true by construction.
+`[RAN]` **12 arms x 13 quantities = 156 cells, 149 invariant across the three
+heights, 7 varying**, each printed with its three values. **A completeness claim
+is what licenses a later task to quote a number without naming its ruler**, which
+is what round 0's *"only 12 of 398"* and round 1's bare *"30966.9"* each invited.
+
+**(9) THREE OPTION FAMILIES, THREE CONTROLS, AND THEY ANSWER DIFFERENTLY - WHICH IS
+THE POINT OF HAVING THEM, AND IT TOOK TWO REVIEWS TO GET ONE PER FAMILY.** Round
+0's arms differed from the baseline in **two** things - the label and the layout
+option - so a graph that grew was not attributable to the label by the probe
+alone. A reviewer supplied the missing control for one family and it passed; fix
+round 1 made that an arm and added a second; **the re-review then pointed out that
+the second carried arm b's option set and arm c still had none.** All three are
+arms now, so the log carries them and anyone can re-drive them:
 
 - **Arm j** (fixed size plus an outside placement hint, no label) matches the
   baseline on **0 of 48 blocks moved**. So in arms **d** through **g** - where the
   two decisive arms live - the growth IS the label's.
-- **Arm k** (`nodeSize.constraints = [NODE_LABELS]` plus an inside hint, no label)
+- **Arm k**, arm **b**'s control (`[NODE_LABELS]` plus an inside hint, no label),
   **does NOT match**: 254 nodes resized, worst **33020.0 um**, 48 of 48 blocks
-  moved, `pt-core`'s `C1:1` collapsing to **0 x 0**. **So arms b and c measure the
-  option AND the label together and nothing separates them** - that option family
-  destroys the symbol geometry on its own. The plain reading, which is a reading
-  and not a measurement: *"size the node to fit its labels"* over zero labels wants
-  no size.
+  moved, `pt-core`'s `C1:1` collapsing to **0 x 0** with no label present. **So
+  arm b's figures are the option AND the label together.** The plain reading,
+  which is a reading and not a measurement: *"size the node to fit its labels"*
+  over zero labels wants no size.
+- **Arm l**, arm **c**'s control (`[NODE_LABELS, MINIMUM_SIZE]` with the symbol's
+  own box as the minimum, no label), **fails too but is BOUNDED, and the bound is
+  the finding**: `[RAN]` **144 nodes resized, worst 20.0 um, 46 of 48 blocks
+  moved**, with `C1:1` returned **unchanged at 4064 x 7620** and the boundary node
+  `port:+5V` going from 0 x 0 to **20 x 20**. `MINIMUM_SIZE` preserves every node
+  that HAS a box and gives only the zero-size boundary nodes a 20 um body. **144 is
+  exactly the boundary-node count**, which cross-checks the 254 unit nodes clause
+  (8) relies on: 254 + 144 = 398.
+- **So arm c's 362 resizes are two effects of very different size** - 144 boundary
+  nodes at 20 um, the option's own, and 218 unit nodes widened by their labels -
+  **and the probe does not attribute them individually.** What the control
+  establishes is that the option's contribution there is bounded at 20 um and
+  confined to nodes with no geometry to lose, so arm c's 17790.0 um worst is the
+  label's.
 
-**A control that lives only in a review is a control nobody can re-drive**, which
-is the `.superpowers/` failure in a different costume; and the control that FAILED
-would never have been written at all if the reviewer's passing one had been taken
-as covering the whole table.
+**Arm l's figures were reported by the re-reviewer first - 144, 20.0 um, 46 of 48 -
+and this run reproduces them to the digit**, so they are CONFIRMED here and not
+relayed. **A control that lives only in a review is a control nobody can
+re-drive**, which is the `.superpowers/` failure in a different costume - and that
+applies to the control that FINDS the gap as much as to the one it replaces.
+**Neither failing control would have been written if a passing one had been taken
+as covering the table it was offered for.**
 
 - **Found** 2026-10-22, Task 2 of
   `docs/superpowers/plans/2026-10-22-text-handling-research.md`.
-- **Evidence** `[RAN]` `tools/schgen/elk-labels/probe.ts` at commit `053dfb2`
+- **Evidence** `[RAN]` `tools/schgen/elk-labels/probe.ts` at commit `31419be`
   with a clean tree, `elkjs` 0.9.3, with **the bundle the run LOADS hashed to
   SHA-256 `114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538` and
   any other refused** - see clause (3) for what that does and does not establish -
   and the run committed as `tools/schgen/elk-labels/probe-run.log`, **held to §2's
-  pasted blocks on every `bun test`** (clause 5). **It has been driven twice and
-  the earlier artifact is in the HISTORY**: the nine-arm run committed at
-  `cb35fe0` and the eleven-arm run at `053dfb2` agree on every row of arms a-i, and
-  `git show cb35fe0:tools/schgen/elk-labels/probe-run.log` is the earlier log.
-  Round 0 claimed *"driven twice, differing in exactly two lines"* with the second
-  artifact only in a scratch directory, which is unverifiable by anyone else.
+  pasted blocks on every `bun test`** (clause 5). **It has been driven three times
+  and both earlier artifacts are in the HISTORY**: the nine-arm run committed at
+  `cb35fe0`, the eleven-arm run at `b6876c7` and this twelve-arm run agree on
+  **every figure for arms a-i**, which `[RAN]` a field-by-field comparison of the
+  two committed logs confirms; `git show <sha>:tools/schgen/elk-labels/probe-run.log`
+  recovers either. Round 0 claimed *"driven twice, differing in exactly two
+  lines"* with the second artifact only in a scratch directory, which is
+  unverifiable by anyone else.
   `[READ]` `eclipse.dev/elk` pages `reference/algorithms/org-eclipse-elk-layered`,
   `reference/options/org-eclipse-elk-nodeLabels-placement`,
   `reference/options/org-eclipse-elk-nodeSize-constraints`,
@@ -2443,9 +2504,10 @@ as covering the whole table.
   nothing acts on them. (2) is a defect that cannot fire today and will fire the
   day anyone makes room for a label - it is recorded rather than fixed because
   this task may not change `lib/`. (3) and (4) are resolved for this probe and
-  open as traps for the next one. **(5) is CLOSED by ruling R17's second
-  invocation** and is kept because the reading it corrects is the instructive
-  part.
+  open as traps for the next one. **(5)'s FENCED-BLOCK half is CLOSED by ruling
+  R17's second invocation** - kept because the reading it corrects is the
+  instructive part - **and its PROSE half is open**, by instruction, with its own
+  criterion below.
 - **What would settle it** (2) **CRITERION: a node whose returned size differs
   from the size `elkInputOf` sent is refused, not read.** **MECHANISM, UNTRIED**:
   a comparison in `read-graph.ts`'s `placementOf` beside the existing
@@ -2466,11 +2528,14 @@ as covering the whole table.
   (7) nothing settles it; it is a property of ELK's option set. (8) **CRITERION:
   the owner elects which text box governs a collision** - **G265**(4), unchanged,
   and this entry authors no new criterion. (9) **CRITERION: an arm whose figures
-  are quoted differs from its control in ONE thing.** Met for arms d-g by arm j;
-  **NOT met for arms b-c**, and that is recorded rather than fixed - separating
-  the option's effect from the label's there would need a third arm per node
-  (`[NODE_LABELS]` with a zero-size label), which nothing in §2's conclusions
-  depends on.
+  are quoted has a control that differs from it in ONE thing.** **MET for every
+  arm**: j for d-g, k for b, l for c. Two of the three controls FAIL, which is a
+  result and not a gap - it says those two arms measure a joint effect, and arm l
+  bounds its half at 20 um. **What is still not separated is arm b's**, where the
+  option alone collapses a node to 0 x 0; separating it would need a further arm
+  (`[NODE_LABELS]` with a zero-size label) and **nothing in §2's conclusions
+  depends on arm b's magnitude.** Clause (5)'s prose-figure gap carries its own
+  criterion and mechanism.
 
 ---
 

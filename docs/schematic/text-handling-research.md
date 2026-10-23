@@ -710,7 +710,7 @@ it in one paragraph.
 
 **Everything marked `[RAN]` below comes from one run of
 `tools/schgen/elk-labels/probe.ts`**, committed, at repository commit
-**`053dfb2`** with a clean tree, against `elkjs` **0.9.3**, with **the bundle the
+**`31419be`** with a clean tree, against `elkjs` **0.9.3**, with **the bundle the
 run LOADS hashed by SHA-256 and any other refused** - §2.1 says what that does
 and does not establish, because the first version of that pin hashed the wrong
 file. That run is committed beside the probe as
@@ -718,12 +718,13 @@ file. That run is committed beside the probe as
 `tests/schgen/text-metrics/document-pastes.test.ts` **holds every block this
 section pastes to it on every `bun test`** (§2.10).
 
-**IT HAS BEEN DRIVEN TWICE AND THE EARLIER ARTIFACT IS IN THE HISTORY, not in
-anybody's scratch directory.** The run committed at `cb35fe0` carried nine arms,
-this one carries eleven, and **every row of arms a-i is identical between them**;
-`git show cb35fe0:tools/schgen/elk-labels/probe-run.log` is the earlier log and
-the comparison is a `diff`. Unlike §1's probe this one needs no external download
-and no installed application:
+**IT HAS BEEN DRIVEN THREE TIMES AND BOTH EARLIER ARTIFACTS ARE IN THE HISTORY,
+not in anybody's scratch directory.** The run committed at `cb35fe0` carried nine
+arms and the one at `b6876c7` eleven; this one carries twelve, and **every figure
+for arms a-i is identical across all three**. `git show
+cb35fe0:tools/schgen/elk-labels/probe-run.log` and the same for `b6876c7` are the
+earlier logs and the comparison is a `diff`. Unlike §1's probe this one needs no
+external download and no installed application:
 
 ```sh
 bun run tools/schgen/elk-labels/probe.ts
@@ -739,7 +740,7 @@ The plan's Step 6 requires it and a third-party review of the plan is why:
 | grade | what it covers here |
 | --- | --- |
 | **documentation** `[READ]` | ELK's own option reference at `eclipse.dev/elk` - the ids, their types, their targets and their **stated defaults** (§2.3) |
-| **driven** `[RAN]` | what `elkjs` reports about itself, and what eleven arms get back when they hand ELK the graphs this repository already builds (§2.1, §2.2, §2.4-§2.7) |
+| **driven** `[RAN]` | what `elkjs` reports about itself, and what twelve arms get back when they hand ELK the graphs this repository already builds (§2.1, §2.2, §2.4-§2.7) |
 
 **A default is driven here and not merely read**, because `docs/known-gaps.md`
 **G187** measured that `elkjs` ignores an option id it does not recognise with no
@@ -750,7 +751,7 @@ in exactly one option and are compared on the laid-out geometry.
 ### 2.1 THE ELK LABEL INVENTORY `[RAN]`
 
 ```elk-run WHAT THIS ELK LABEL RUN MEASURED
-repository commit: 053dfb2cc5efd51a4f102fd3c6ac1b93f4ce24cf (clean tree)
+repository commit: 31419bea8f413d7c04ff7bebd456d2b5cc79a097 (clean tree)
 elkjs 0.9.3; the bundle this run LOADS, hashed: SHA-256 114c4f17aea4b297a2d3dd6c86bdfccb45e12040da964ea8f9766345fce4f538
 elkjs resolved from: file:///Users/orion/work/audio-circuits-work/pultec-modularize/node_modules/elkjs/package.json
 knownLayoutOptions(): 224 ids; knownLayoutAlgorithms(): 12; layered knownOptions: 140
@@ -967,7 +968,7 @@ which is wider than the guard. What the guard does buy is that any future use of
 ELK labels **in the built graph** is a deliberate edit to that file, which is
 where its message says to make it.
 
-### 2.5 The experiment: eleven arms over the same 48 graphs `[RAN]`
+### 2.5 The experiment: twelve arms over the same 48 graphs `[RAN]`
 
 A third-party review of the plan required this and the plan accepted it: an
 option inventory proves nothing about whether ELK solves this problem. So each
@@ -981,39 +982,63 @@ the ruler §1 measured; the **height** is §1.4's `GetTextBox` figure of 2043.1 
 would actually draw: a unit's Value, a boundary node's or an edge's net name, a
 port's pin number.
 
-**ARMS b-i ARE NOT MINIMAL PAIRS WITH THE BASELINE, AND ARMS j AND k ARE WHY THAT
-MATTERS.** Each labelled arm differs from arm **a** in **two** things: the label,
-and the `layoutOption` that tells ELK what to do with one. So a graph that grew
-could have grown from either, and the probe did not separate them until this
-round - a reviewer of this section's first version made that point and it is
-accepted. Arms **j** and **k** set the options and send **no label at all**:
+**ARMS b-i ARE NOT MINIMAL PAIRS WITH THE BASELINE, AND ARMS j, k AND l ARE WHY
+THAT MATTERS.** Each labelled arm differs from arm **a** in **two** things: the
+label, and the `layoutOption` that tells ELK what to do with one. So a graph that
+grew could have grown from either, and the probe did not separate them until a
+reviewer of this section's first version made the point. **Each of the three
+option families now has its own control, setting the options and sending no label
+at all** - and the three answer differently, which is what controls are for:
 
 - **Arm j, the control for arms d-g**, matches the baseline on **0 of 48 blocks
   moved**. So in that family - which is where §2.6's two decisive arms live - the
   growth is attributable to the label.
-- **Arm k, the control for arms b-c, DOES NOT match the baseline**: 254 nodes
-  resized, worst **33020.0 µm**, 48 of 48 blocks moved, and `pt-core`'s `C1:1`
-  collapses to **0 × 0**. **So b's and c's figures are the option AND the label
-  together, and nothing here separates them.** The plain reading - this writer's
-  reading, not a measurement - is that `nodeSize.constraints = [NODE_LABELS]` means
-  *"size the node to fit its labels"*, so a node with no labels wants no size.
-  **It is reported rather than left out, because an uncontrolled arm nobody flags
-  gets read as a controlled one.**
+- **Arm k, arm b's control, DOES NOT match**: 254 nodes resized, worst
+  **33020.0 µm**, 48 of 48 blocks moved, and `pt-core`'s `C1:1` collapsing to
+  **0 × 0** with no label present. **So arm b's figures are the option AND the
+  label together.** The plain reading - this writer's reading, not a measurement -
+  is that `nodeSize.constraints = [NODE_LABELS]` means *"size the node to fit its
+  labels"*, so a node with no labels wants no size.
+- **Arm l, arm c's control, fails too but by a bounded amount, and the bound is
+  the finding.** `[RAN]` **144 nodes resized, worst 20.0 µm, 46 of 48 blocks
+  moved** - and `pt-core`'s `C1:1` comes back **unchanged at 4064 × 7620** while
+  the boundary node `port:+5V` goes from 0 × 0 to **20 × 20**. So
+  `MINIMUM_SIZE` with the symbol's own box as the minimum **preserves every node
+  that has a box** and gives only the **zero-size** boundary nodes a 20 µm body.
+  **144 is exactly the number of boundary nodes**, which also cross-checks §2.6's
+  254 unit nodes: 254 + 144 = 398.
+- **So arm c's 362 resizes split into two effects of very different size**: 144
+  boundary nodes at 20 µm, which is the option's own, and 218 unit nodes widened
+  by their labels, which is the label's. **The probe does not attribute them
+  individually and §2 does not claim it does**; what the control establishes is
+  that the option's contribution is bounded at 20 µm and confined to nodes with no
+  geometry to lose.
+
+**ARM l IS THE RE-REVIEWER'S CONTROL, AND IT IS AN ARM HERE FOR THE REASON ROUND 1
+GAVE FOR THE OTHER TWO.** Fix round 1 added arm **k** and called it *"the control
+for arms b-c"*; **k carries arm b's option set and arm c adds `MINIMUM_SIZE`**, so
+arm c still had none. The re-reviewer drove the missing one and reported 144
+resized, worst 20.0 µm, 46 of 48 moved. **Those are the figures this run
+reproduces, to the digit** - so they are CONFIRMED here rather than relayed, and
+*"a control that lives only in a review is a control nobody can re-drive"* applies
+to the control that found the gap as much as to the one it replaced.
 
 ```elk-run STEP 5
 line height 2043.1 um (RELAYED from section 1.4); label widths from lib/schgen/render/text-boxes.ts textWidth
-arm                                     sent/back  unplaced  resized(worst um)  blocks moved  lbl-lbl  lbl-other-body  lbl-own-body  lbl-wire  on-grid
-  a baseline, no labels                     0/0           0        0 (0.0)         0/48        0               0             0         0  0/0
-  b node labels, size free                398/398         0      398 (30966.9)        48/48        0               0           398         0  0/398
-  c node labels, size free + minimum      398/398         0      362 (17790.0)        48/48        0               0           398         0  0/398
-  d node labels, size FIXED, inside       398/398         0        0 (0.0)        48/48        0               0           254       178  66/398
-  e node labels, size FIXED, outside      398/398         0        0 (0.0)        48/48        0               0             0       266  12/398
-  f node labels, NO placement, seeded     398/398       398        0 (0.0)        48/48        0               0             0         0  0/0
-  g node labels, NO placement, unseeded   398/398         0        0 (0.0)        48/48        0               0           254         9  136/398
-  h port labels (pin text)                620/620         0        0 (0.0)        48/48        0               0             0         0  0/620
-  i edge labels (net names)               494/494         0        0 (0.0)        48/48        5               0             0        24  4/494
-  j e's options, NO label                   0/0           0        0 (0.0)         0/48        0               0             0         0  0/0
-  k b's options, NO label                   0/0           0      254 (33020.0)        48/48        0               0             0         0  0/0
+arm                                           sent       back     placed   unplaced  no-coords    resized   worst-um      moved    lbl-lbl other-body   own-body       wire    on-grid
+  a baseline, no labels                          0          0          0          0          0          0        0.0          0          0          0          0          0          0
+  b node labels, size free                     398        398        398          0          0        398    30966.9         48          0          0        398          0          0
+  c node labels, size free + minimum           398        398        398          0          0        362    17790.0         48          0          0        398          0          0
+  d node labels, size FIXED, inside            398        398        398          0          0          0        0.0         48          0          0        254        178         66
+  e node labels, size FIXED, outside           398        398        398          0          0          0        0.0         48          0          0          0        266         12
+  f node labels, NO placement, seeded          398        398          0        398          0          0        0.0         48          0          0          0          0          0
+  g node labels, NO placement, unseeded        398        398        398          0          0          0        0.0         48          0          0        254          9        136
+  h port labels (pin text)                     620        620        620          0          0          0        0.0         48          0          0          0          0          0
+  i edge labels (net names)                    494        494        494          0          0          0        0.0         48          5          0          0         24          4
+  j e's options, NO label                        0          0          0          0          0          0        0.0          0          0          0          0          0          0
+  k b's options, NO label                        0          0          0          0          0        254    33020.0         48          0          0          0          0          0
+  l c's options, NO label                        0          0          0          0          0        144       20.0         46          0          0          0          0          0
+"moved" counts blocks whose laid-out size differs from arm a's, of 48; "worst-um" is a MAXIMUM and every other column a SUM
   a baseline, no labels: the control: the graph exactly as lib/schgen/elk/graph.ts builds it today
   b node labels, size free: SizeConstraint NODE_LABELS alone - ELK may resize a node to fit its label
   c node labels, size free + minimum: NODE_LABELS with the symbol's own box as nodeSize.minimum - the nearest thing to a schematic
@@ -1024,7 +1049,8 @@ arm                                     sent/back  unplaced  resized(worst um)  
   h port labels (pin text): a pin number as an ELK port label, at layered's default PortLabelPlacement.outside()
   i edge labels (net names): a NET NAME as an ELK edge label - the one label class layered declares as a supported feature
   j e's options, NO label: the control for arms d-g: fixed size plus an outside placement hint, and no label at all
-  k b's options, NO label: the control for arms b-c: SizeConstraint NODE_LABELS and an inside hint, and no label at all
+  k b's options, NO label: the control for arm b: SizeConstraint NODE_LABELS and an inside hint, and no label at all
+  l c's options, NO label: the control arm c lacked: NODE_LABELS plus MINIMUM_SIZE at the symbol's own box, and no label
   lib/schgen/elk/read-graph.ts       mentions "width" 0 time(s) and "height" 0 time(s)
   lib/schgen/elk/adapt.ts            mentions "width" 0 time(s) and "height" 0 time(s)
   lib/schgen/elk/graph.ts            mentions "width" 3 time(s) and "height" 3 time(s)
@@ -1048,6 +1074,7 @@ pt2399-core/pt-core: 26 nodes, 46 edges
   i edge labels (net names)              graph 445010.0 x 141411.2; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
   j e's options, NO label                graph 162306.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 0.0x0.0 label (none)
   k b's options, NO label                graph 107188.0 x 71124.0; node C1:1 0.0x0.0 label (none); boundary port:+5V 0.0x0.0 label (none)
+  l c's options, NO label                graph 162326.0 x 133354.0; node C1:1 4064.0x7620.0 label (none); boundary port:+5V 20.0x20.0 label (none)
 ```
 
 **The arithmetic in those coordinates is checkable from the numbers themselves,
@@ -1100,20 +1127,29 @@ moved the layout and the baseline **a** would have matched everything.
 
 **THE TWO FREE-SIZE ARMS SHOW WHAT THE PRICE OF RESERVED SPACE IS, and it is the
 symbol.** Arm **b** lets ELK size nodes to fit their labels and **all 398 nodes
-come back a different size**, the worst by **30966.9 µm - more than 24 grid
-steps**; `C1:1`'s body goes from 4064 × 7620 to 5090 × **2053.1**, which is no
-longer the capacitor's symbol. Arm **c** pins the symbol's own box as
-`nodeSize.minimum` and still resizes **362 of 398**, worst **17790.0 µm** - and it
+come back a different size**, the worst by **31740.0 µm at the current model's
+1270 µm line, 31587.6 µm at the rendered ink's 1422.4 µm and 30966.9 µm at
+`GetTextBox`'s 2043.1 µm** - 25.0, 24.9 and 24.4 grid steps respectively.
+`C1:1`'s body goes from 4064 × 7620 to 5090 × **2053.1**, which is no longer the
+capacitor's symbol. Arm **c** pins the symbol's own box as `nodeSize.minimum` and
+still resizes **362 of 398**, worst **17790.0 µm at all three heights** - and it
 gives the **zero-size boundary nodes a body**, 3820 × 2053.1, which is the thing
 the graph module says is decided at draw time and not here.
 
-**AND THESE TWO ARE THE UNCONTROLLED ARMS, so what they show is "this option
-family destroys the symbol" and not "the label does".** Arm **k** sets the same
-option with no label and already resizes 254 nodes, worst 33020.0 µm, collapsing
-`C1:1` to 0 × 0 (§2.5). **A design that wanted ELK to reserve inside-label room
-would have to deal with both effects**, and nothing in §2 separates them. What
-survives is the conclusion arm **j** controls: in the fixed-size family the node
-box comes back untouched - **0 nodes resized in arms d through g.**
+**ARM b's WORST RESIZE IS THE ONE FIGURE IN §2 THAT MOVES WITH THE LINE HEIGHT
+AND WAS PUBLISHED WITHOUT IT**, which §2.7 records; it is quoted with all three
+values here and everywhere else it appears. Arm **c**'s does not move, and that is
+stated rather than left to be inferred from its absence.
+
+**AND BOTH ARE CONTROLLED NOW, DIFFERENTLY (§2.5).** Arm **k**, arm b's control,
+resizes 254 nodes by up to 33020.0 µm with **no label at all**, collapsing `C1:1`
+to 0 × 0 - so arm b's figures are the option and the label together. Arm **l**,
+arm c's, resizes 144 by up to **20.0 µm** and leaves every node that has a box
+untouched - so arm c's 17790.0 µm worst is the **label's**, and the option's own
+contribution there is 20 µm on the boundary nodes. **A design that wanted ELK to
+reserve inside-label room would meet both effects.** What survives untouched is
+the conclusion arm **j** controls: in the fixed-size family the node box comes
+back unchanged - **0 nodes resized in arms d through g.**
 
 **AND THAT OPENS A HAZARD IN CODE THAT IS LIVE TODAY**, hunted because ruling R13
 says to hunt what your own construction opens. `lib/schgen/elk/read-graph.ts`
@@ -1207,10 +1243,12 @@ forbidden from electing one:
 
 ```elk-run STEP 6
 Section 1 is forbidden from electing one quantity, so no conclusion here may depend on which is elected.
-  current model 1270.0   a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 168 on-grid 109  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 46  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 0 on-grid 187  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 0 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
-  rendered ink 1422.4    a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 95  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 43  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 4 on-grid 146  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
-  GetTextBox 2043.1      a: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  b: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  c: unplaced 0 lbl-lbl 0 own-body 398 wire 0 on-grid 0  |  d: unplaced 0 lbl-lbl 0 own-body 254 wire 178 on-grid 66  |  e: unplaced 0 lbl-lbl 0 own-body 0 wire 266 on-grid 12  |  f: unplaced 398 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  g: unplaced 0 lbl-lbl 0 own-body 254 wire 9 on-grid 136  |  h: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  i: unplaced 0 lbl-lbl 5 own-body 0 wire 24 on-grid 4  |  j: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0  |  k: unplaced 0 lbl-lbl 0 own-body 0 wire 0 on-grid 0
-cells (arm x metric): 55; INVARIANT across the three heights: 49; VARYING: 6
+the swept quantities ARE the columns above, by construction - sent back placed unplaced no-coords resized worst-um moved lbl-lbl other-body own-body wire on-grid
+  current model 1270.0   a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 31740.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 168 on-grid 109  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 46  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 0 on-grid 187  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+  rendered ink 1422.4    a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 31587.6 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 178 on-grid 95  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 43  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 4 on-grid 146  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 5 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+  GetTextBox 2043.1      a: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  b: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 398 worst-um 30966.9 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  c: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 362 worst-um 17790.0 moved 48 lbl-lbl 0 other-body 0 own-body 398 wire 0 on-grid 0  |  d: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 178 on-grid 66  |  e: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 266 on-grid 12  |  f: sent 398 back 398 placed 0 unplaced 398 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  g: sent 398 back 398 placed 398 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 254 wire 9 on-grid 136  |  h: sent 620 back 620 placed 620 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  i: sent 494 back 494 placed 494 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 48 lbl-lbl 5 other-body 0 own-body 0 wire 24 on-grid 4  |  j: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 0 worst-um 0.0 moved 0 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  k: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 254 worst-um 33020.0 moved 48 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0  |  l: sent 0 back 0 placed 0 unplaced 0 no-coords 0 resized 144 worst-um 20.0 moved 46 lbl-lbl 0 other-body 0 own-body 0 wire 0 on-grid 0
+cells (arm x metric): 12 x 13 = 156; INVARIANT across the three heights: 149; VARYING: 7
+  VARIES b/worst-um = 31740.0 / 31587.6 / 30966.9
   VARIES d/wire = 168 / 178 / 178
   VARIES d/on-grid = 109 / 95 / 66
   VARIES e/on-grid = 46 / 43 / 12
@@ -1219,21 +1257,30 @@ cells (arm x metric): 55; INVARIANT across the three heights: 49; VARYING: 6
   VARIES i/lbl-lbl = 0 / 5 / 5
 ```
 
-**THE COMPLETENESS OF THAT LIST IS COMPUTED BY THE PROBE, NOT TALLIED BY EYE, AND
-THE FIRST VERSION OF THIS PARAGRAPH GOT IT WRONG.** It said *"all four are named"*
-while listing five, and the one it omitted was **arm e's on-grid count** - the
-very arm the symbol-field paragraph above quotes. **A completeness claim is what
-licenses a later task to quote a figure without naming its ruler**, so the probe
-now enumerates every arm-by-metric cell: **55 cells, 49 invariant across the three
-heights, 6 varying**, each varying cell printed with its three values in the block
-above. The six are arm **d**'s wire crossings and on-grid count, arm **e**'s
-on-grid count, arm **g**'s wire crossings and on-grid count, and arm **i**'s
-label-label overlaps. **Nothing else moves.**
+**THE COMPLETENESS OF THAT LIST IS COMPUTED BY THE PROBE, AND IT TOOK TWO
+CORRECTIONS TO GET THE SCOPE OF THE WORD "COMPLETE" RIGHT.** Round 0 said *"all
+four are named"* while listing five, omitting **arm e's on-grid count** - the very
+arm the symbol-field paragraph above quotes. Round 1 computed the enumeration but
+**over five of the nine columns the arm table published**, so *"nothing else
+moves"* was still a claim over a subset - and one of the four unswept columns does
+move: **arm b's worst resize, 31740.0 / 31587.6 / 30966.9 µm**, which round 1
+published as a bare 30966.9. **That is the same defect twice in two dimensions, so
+the fix is structural**: the probe's column list and its swept cells are now **one
+list**, used to print the table and to sweep it, so they cannot drift apart again.
+
+**The enumeration, driven: 12 arms × 13 quantities = 156 cells, 149 invariant
+across the three heights, 7 varying**, each printed above with its three values.
+The seven are arm **b**'s worst resize, arm **d**'s wire crossings and on-grid
+count, arm **e**'s on-grid count, arm **g**'s wire crossings and on-grid count,
+and arm **i**'s label-label overlaps. **Nothing else in those 156 cells moves** -
+and that sentence is now exactly as wide as the table above it, which is the whole
+point of the restructure.
 
 **So every structural answer holds at all three heights** - 398 unplaced in arm
 **f**, 254 own-body overlaps in **d** and **g**, 266 wire crossings in **e**, 0
-nodes resized in **d** through **g** - and what moves is grid legality, two wire
-counts, and the edge-label overlap pairs.
+nodes resized in **d** through **g**, 362 and 144 resized in **c** and its control
+**l** - and what moves is grid legality, two wire counts, one worst-resize
+magnitude, and the edge-label overlap pairs.
 
 **ONE CONCLUSION IN THIS SECTION WOULD HAVE DEPENDED ON THE ELECTION**, and it is
 arm **i**'s: *"ELK does not keep two different edges' labels apart"* rests on 5
@@ -1371,7 +1418,7 @@ the same log, substituted whole, fails.
 
 **§2 PASTES THE WHOLE RUN, and the accounting is in lines rather than bytes
 because an earlier draft published a byte figure that was eight bytes low.** The
-log is **117 lines**: **100** are quoted by the eight blocks, **8** are the `== `
+log is **123 lines**: **106** are quoted by the eight blocks, **8** are the `== `
 section headers, which now live in the fence info strings rather than in the
 block bodies, and **9** are blank - the eight separators between sections and the
 file's trailing newline. **Nothing is excerpted**, so there is nothing an excerpt
