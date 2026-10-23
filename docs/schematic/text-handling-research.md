@@ -2316,9 +2316,19 @@ this repository to leave its own.
   explanation and nothing more. **#14127 is NOT offered as evidence for it**, and
   §3.3 states the two reasons it cannot be - this bullet's first version named both
   issues, which is the pairing §3's own row 6 refutes.
-- **It did not read the whole of the eight supporting files**, only the functions
-  named. A behaviour that depends on something elsewhere in `eda_text.cpp` or
-  `sch_field.cpp` would have been missed.
+- **It did not read the whole of the TEN supporting files** - §3.0's table lists
+  twelve and only the first two were read end to end - only the functions and call
+  sites named. A behaviour that depends on something elsewhere in any of the ten
+  would have been missed: `sch_field.cpp`, `sch_field.h`, `eda_text.cpp`,
+  `eda_text.h`, `text_attributes.h`, `text_attributes.cpp`, `sch_edit_tool.cpp`,
+  `sch_drawing_tools.cpp`, **`symbol_editor_control.cpp` and
+  `symbol_preview_widget.cpp`**. The ten are listed rather than counted because
+  the count is what went wrong here: **this bullet said "seven" in round 0 and
+  "eight" after fix round 1 added three files to §3.0's table**, so for one round
+  the document contradicted its own table and under-reported the partial-read risk
+  by two - and the two it hid were the last two, whose partial reading is the least
+  obvious precisely because they arrived last. Fixed in round 2; the names cannot
+  drift out of step with the table the way a numeral did.
 - **It did not establish whether a `.kicad_sch` field can hold a newline**, so
   §3.7's measurement-versus-drawing disagreement is an observation about two code
   paths, not a demonstrated defect.
