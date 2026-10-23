@@ -24845,16 +24845,20 @@ produce a schematic`, `11 refused; 0 have no authoring declaration`.**
 
 | what refuses it | boards | is there text in it? |
 | --- | --- | --- |
-| `validateCircuit`, net names not UPPER_SNAKE (plus a single-pin net or an undeclared pin) | **6** - `pt2399-core` and all five Pultec | **no** |
+| `validateCircuit`, net names not UPPER_SNAKE, plus one single-pin net on `pt2399-core` and one undeclared pin on each Pultec. **Problem counts tallied from this run: 18, 20, 14, 14, 14, 28** | **6** - `pt2399-core` and all five Pultec | **no** |
 | `tp-stage`'s GND/VCC glyph touch (**G263**'s class), ahead of two label problems | **2** - `transistor-preamp-buffered`, `-staged` | **the first problem has none** |
 | a t-junction with no junction emitted | **1** - `transistor-preamp-feedback` | **none at all** |
 | a label over a label | **2** - `transistor-preamp-lab` (`tp-leg-emitter-bypass`), `transistor-preamp-loop` (`tp-follower`) | **yes** |
 
 **SO THE BLOCKER THE CENSUS NAMES INVOLVES TEXT ON TWO OF ELEVEN BOARDS, AND SIX
 BOARDS REFUSE BEFORE ANY TEXT IS PLACED AT ALL.** **NOT ONE of the eighteen
-approaches in §7.1 draws a board - not one of them, and not all of them
-together.** Six are refused upstream of every one of them; on the five that reach
-layout the residue is either a non-text defect or `tp-stage`.
+approaches in §7.1 has been shown to draw a board**, and no combination of the
+ones that MOVE text has. Six are refused upstream of every one of them; on the
+five that reach layout the residue is either a non-text defect or `tp-stage`.
+**The one row that could move the count is §7.1's row 14 - place what you can and
+log what you could not, for labels - which does not move text at all and whose
+yield is UNMEASURED and deliberately not guessed at.** Its precondition is
+**G260**, the owner's.
 
 **(3) THE NEAREST THING TO A BOARD IS TWO BOARDS AND IT NEEDS A NON-TEXT FIX
 FIRST. THIS IS BAIT AND IT IS RECORDED BESIDE THE TRAP.** On
@@ -24897,7 +24901,9 @@ the first-N-lines hash every round since Task 3 used**: the head table is an
 insertion above §1, which breaks that hash by construction. §7.7 states the
 replacement, and the check run was a SHA-256 comparison of parent `[§1 heading ..
 EOF]` against child `[§1 heading .. §7 heading]`, which matched at
-`b9fd12dd...64d13f9a` over 352 125 bytes.
+`b9fd12dd7cb770807766d44d521441259fe146000b1774ce5fa049ea64d13f9a` over
+**352 125 bytes**, against parent `5ca6f2d`; the 1695 bytes above §1's heading are
+byte-identical in both and the inserted head table is **4643** bytes between them.
 
 - **Evidence** `[RAN, CONFIRMED]` `bun tools/schgen/board-sheets.ts` at this
   commit, read in full. **The controls that could have answered differently and
@@ -24955,9 +24961,12 @@ the evidence-level column a third-party review required.
 explicit that they are the review's and are ACCEPTED, so **they are not the
 producing agent's to re-grade** (`CLAUDE.md`). Level 2 reads:
 
-> *"**DEMONSTRATED HERE** - it was run against this repository's own inputs and
+> *"**DEMONSTRATED HERE** — it was run against this repository's own inputs and
 > the result observed. Only Task 1's geometry, Task 2's ELK experiment and Task
 > 5's freedom measurements can reach this level."*
+
+**The em dash above is the plan's own**, reproduced rather than normalised to this
+file's hyphen, because the sentence it separates is the one this entry turns on.
 
 **WHAT HAPPENED.** **Task 6 drove `placeFields` over all 48 declared blocks and
 255 unit placements** (`docs/schematic/text-handling-research.md` §6.5; **G272**),
