@@ -123,10 +123,30 @@ export const ARMS: readonly Arm[] = [
   },
   {
     name: "k b's options, NO label",
-    what: "the control for arms b-c: SizeConstraint NODE_LABELS and an inside hint, and no label at all",
+    what: "the control for arm b: SizeConstraint NODE_LABELS and an inside hint, and no label at all",
     decorate(g: ElkNode): void {
       for (const c of g.children ?? []) {
         c.layoutOptions = { ...c.layoutOptions, "elk.nodeSize.constraints": "[NODE_LABELS]", "elk.nodeLabels.placement": "[H_CENTER, V_CENTER, INSIDE]" }
+      }
+    },
+  },
+  // **ARM c's OWN CONTROL, WHICH ARM k IS NOT.** Fix round 1 added k and called it "the control for
+  // arms b-c"; k carries arm **b**'s option set, and arm **c** adds `MINIMUM_SIZE` with the
+  // symbol's own box as the minimum, which is a different arm. The re-reviewer ran the missing one
+  // and reported 144 nodes resized, worst 20.0 um, 46 of 48 blocks moved. **It is an arm here so
+  // the log carries it and anyone can re-drive it** - a control that lives only in a review is a
+  // control nobody can re-drive, which is this probe's own recorded lesson.
+  {
+    name: "l c's options, NO label",
+    what: "the control arm c lacked: NODE_LABELS plus MINIMUM_SIZE at the symbol's own box, and no label",
+    decorate(g: ElkNode): void {
+      for (const c of g.children ?? []) {
+        c.layoutOptions = {
+          ...c.layoutOptions,
+          "elk.nodeSize.constraints": "[NODE_LABELS, MINIMUM_SIZE]",
+          "elk.nodeSize.minimum": `(${c.width ?? 0},${c.height ?? 0})`,
+          "elk.nodeLabels.placement": "[H_CENTER, V_CENTER, INSIDE]",
+        }
       }
     },
   },

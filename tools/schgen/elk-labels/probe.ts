@@ -291,7 +291,7 @@ async function main(): Promise<void> {
       console.log(`CONTROL PASSED: serializeElkInput REFUSES a graph carrying an ELK label - ${(e instanceof Error ? e.message : String(e)).split(". ")[0]}`)
     }
 
-    head("STEP 5: ELEVEN ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT")
+    head("STEP 5: TWELVE ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT")
     console.log(`line height ${um(LINE_HEIGHT)} um (RELAYED from section 1.4); label widths from lib/schgen/render/text-boxes.ts textWidth`)
     const results = new Map<string, readonly ArmResult[]>()
     for (const arm of ARMS) {
@@ -300,22 +300,35 @@ async function main(): Promise<void> {
       results.set(arm.name, rows)
     }
     const base = results.get(ARMS[0]!.name) ?? []
-    console.log("arm                                     sent/back  unplaced  resized(worst um)  blocks moved  lbl-lbl  lbl-other-body  lbl-own-body  lbl-wire  on-grid")
+    // **ONE LIST FEEDS BOTH THE TABLE AND THE HEIGHT SWEEP, which is fix round 3's IMPORTANT 1.**
+    // Round 2's sweep covered 5 of the 9 columns the table published, so "nothing else moves" was a
+    // completeness claim over a subset - and `resized`'s worst figure DOES move with the height
+    // (31740.0 / 31587.6 / 30966.9 um on arm b), which round 2 published as a bare number. **That is
+    // the same defect as round 1's IMPORTANT 3 in a second dimension**: a completeness claim is what
+    // licenses a later task to quote a figure without its ruler. The columns and the swept cells are
+    // now the SAME list by construction, so the two cannot drift apart again.
+    const METRICS: readonly { readonly name: string; readonly of: (rows: readonly ArmResult[], b: readonly ArmResult[]) => number }[] = [
+      { name: "sent", of: (rows) => sum(rows, (r) => r.labelsSent) },
+      { name: "back", of: (rows) => sum(rows, (r) => r.labelsBack) },
+      { name: "placed", of: (rows) => sum(rows, (r) => r.labelsBack - r.unplaced) },
+      { name: "unplaced", of: (rows) => sum(rows, (r) => r.unplaced) },
+      { name: "no-coords", of: (rows) => sum(rows, (r) => r.noCoordinates) },
+      { name: "resized", of: (rows) => sum(rows, (r) => r.resized) },
+      { name: "worst-um", of: (rows) => Math.max(0, ...rows.map((r) => r.worstResize)) },
+      { name: "moved", of: (rows, b) => rows.filter((r, i) => b[i] !== undefined && (r.width !== b[i]?.width || r.height !== b[i]?.height)).length },
+      { name: "lbl-lbl", of: (rows) => sum(rows, (r) => r.labelLabelOverlaps) },
+      { name: "other-body", of: (rows) => sum(rows, (r) => r.labelBodyOverlaps) },
+      { name: "own-body", of: (rows) => sum(rows, (r) => r.labelOwnBodyOverlaps) },
+      { name: "wire", of: (rows) => sum(rows, (r) => r.labelWireHits) },
+      { name: "on-grid", of: (rows) => sum(rows, (r) => r.onGrid) },
+    ]
+    const cell = (v: number): string => (Number.isInteger(v) ? String(v) : um(v))
+    console.log(`arm${" ".repeat(36)}${METRICS.map((m) => m.name.padStart(11)).join("")}`)
     for (const arm of ARMS) {
       const rows = results.get(arm.name) ?? []
-      let changed = 0
-      rows.forEach((r, i) => {
-        const b = base[i]
-        if (b !== undefined && (r.width !== b.width || r.height !== b.height)) changed += 1
-      })
-      console.log(
-        `  ${arm.name.padEnd(38)} ${String(sum(rows, (r) => r.labelsSent)).padStart(4)}/${String(sum(rows, (r) => r.labelsBack)).padEnd(4)} ` +
-          `${String(sum(rows, (r) => r.unplaced)).padStart(8)}  ${String(sum(rows, (r) => r.resized)).padStart(7)} (${um(Math.max(0, ...rows.map((r) => r.worstResize)))})  ` +
-          `${String(changed).padStart(8)}/${blocks.length}  ${String(sum(rows, (r) => r.labelLabelOverlaps)).padStart(7)}  ` +
-          `${String(sum(rows, (r) => r.labelBodyOverlaps)).padStart(14)}  ${String(sum(rows, (r) => r.labelOwnBodyOverlaps)).padStart(12)}  ` +
-          `${String(sum(rows, (r) => r.labelWireHits)).padStart(8)}  ${String(sum(rows, (r) => r.onGrid))}/${sum(rows, (r) => r.labelsBack - r.unplaced)}`,
-      )
+      console.log(`  ${arm.name.padEnd(37)}${METRICS.map((m) => cell(m.of(rows, base)).padStart(11)).join("")}`)
     }
+    console.log(`"moved" counts blocks whose laid-out size differs from arm a's, of ${blocks.length}; "worst-um" is a MAXIMUM and every other column a SUM`)
     for (const arm of ARMS) console.log(`  ${arm.name}: ${arm.what}`)
     // **THE HAZARD ARMS b AND c OPEN, DRIVEN RATHER THAN ASSERTED** (controller ruling R13: hunt the
     // attack surface your own construction creates). Both arms get a node back at a size ELK chose.
@@ -331,34 +344,33 @@ async function main(): Promise<void> {
     console.log(`arms that raised: ${raises.length}${raises.length === 0 ? " - every arm laid out, so every row above is a layout and not a crash" : ""}`)
     for (const r of raises) console.log(`  ${r}`)
 
-    head("STEP 6: THE SAME EXPERIMENT AT ALL THREE OF SECTION 1's LINE HEIGHTS")
+    head("STEP 6: EVERY COLUMN OF STEP 5, AT ALL THREE OF SECTION 1's LINE HEIGHTS")
     console.log("Section 1 is forbidden from electing one quantity, so no conclusion here may depend on which is elected.")
-    // **THE METRICS THIS SWEEP COMPARES, named once so the cell count below is not a hand tally.**
-    const METRICS: readonly { readonly name: string; readonly of: (r: ArmResult) => number }[] = [
-      { name: "unplaced", of: (r) => r.unplaced },
-      { name: "lbl-lbl", of: (r) => r.labelLabelOverlaps },
-      { name: "own-body", of: (r) => r.labelOwnBodyOverlaps },
-      { name: "wire", of: (r) => r.labelWireHits },
-      { name: "on-grid", of: (r) => r.onGrid },
-    ]
+    console.log(`the swept quantities ARE the columns above, by construction - ${METRICS.map((m) => m.name).join(" ")}`)
     /** arm name -> metric name -> the three heights' totals, in LINE_HEIGHTS order. */
     const sweep = new Map<string, Map<string, number[]>>()
     for (const h of LINE_HEIGHTS) {
-      const line: string[] = []
+      const perHeight = new Map<string, readonly ArmResult[]>()
       for (const arm of ARMS) {
         const rows: ArmResult[] = []
         for (const b of blocks) rows.push(await runArm(elk, arm, b, h.um))
-        const per = sweep.get(arm.name) ?? new Map<string, number[]>()
-        for (const m of METRICS) per.set(m.name, [...(per.get(m.name) ?? []), sum(rows, m.of)])
-        sweep.set(arm.name, per)
-        line.push(`${arm.name.slice(0, 1)}: ${METRICS.map((m) => `${m.name} ${sum(rows, m.of)}`).join(" ")}`)
+        perHeight.set(arm.name, rows)
       }
-      console.log(`  ${h.name.padEnd(22)} ${line.join("  |  ")}`)
+      const heightBase = perHeight.get(ARMS[0]!.name) ?? []
+      for (const arm of ARMS) {
+        const rows = perHeight.get(arm.name) ?? []
+        const per = sweep.get(arm.name) ?? new Map<string, number[]>()
+        for (const m of METRICS) per.set(m.name, [...(per.get(m.name) ?? []), m.of(rows, heightBase)])
+        sweep.set(arm.name, per)
+      }
+      console.log(`  ${h.name.padEnd(22)} ${ARMS.map((arm) => `${arm.name.slice(0, 1)}: ${METRICS.map((m) => `${m.name} ${cell(m.of(perHeight.get(arm.name) ?? [], heightBase))}`).join(" ")}`).join("  |  ")}`)
     }
     // **WHICH CELLS MOVE, ENUMERATED BY THE PROBE RATHER THAN BY A READER'S EYE.** Fix round 1's
     // IMPORTANT 3: section 2 claimed a complete list of the height-dependent cells and missed one -
-    // the very arm the paragraph three above it quoted. A completeness claim is what licenses a
-    // later task to quote a figure without its ruler, so the completeness is computed here.
+    // the very arm the paragraph three above it quoted. Fix round 3's IMPORTANT 1: the enumeration
+    // itself was over 5 of 9 columns, so it missed `worst-um`, which moves. A completeness claim is
+    // what licenses a later task to quote a figure without its ruler, so it is computed here and
+    // computed over exactly what STEP 5 publishes.
     let invariant = 0
     const varying: string[] = []
     for (const arm of ARMS) {
@@ -366,10 +378,10 @@ async function main(): Promise<void> {
         const v = sweep.get(arm.name)?.get(m.name) ?? []
         if (v.length !== LINE_HEIGHTS.length) throw new Error(`the sweep holds ${v.length} height(s) for ${arm.name}/${m.name}, not ${LINE_HEIGHTS.length}`)
         if (v.every((x) => x === v[0])) invariant += 1
-        else varying.push(`${arm.name.slice(0, 1)}/${m.name} = ${v.join(" / ")}`)
+        else varying.push(`${arm.name.slice(0, 1)}/${m.name} = ${v.map(cell).join(" / ")}`)
       }
     }
-    console.log(`cells (arm x metric): ${ARMS.length * METRICS.length}; INVARIANT across the three heights: ${invariant}; VARYING: ${varying.length}`)
+    console.log(`cells (arm x metric): ${ARMS.length} x ${METRICS.length} = ${ARMS.length * METRICS.length}; INVARIANT across the three heights: ${invariant}; VARYING: ${varying.length}`)
     for (const v of varying) console.log(`  VARIES ${v}`)
 
     head("STEP 7: ONE BLOCK IN DETAIL, SO THE AGGREGATES ABOVE ARE READABLE")
