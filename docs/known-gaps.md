@@ -1546,7 +1546,7 @@ made.
 > an agent looks first.
 >
 > > **THE "MAY BE WIDER THAN FOUR" HEDGE IS DISCHARGED, 2026-10-22, BY TASK 5, AND IT IS WIDER.**
-> > `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `3275bde`, over **all 95 label anchors of
+> > `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `75a9bb8`, over **all 95 label anchors of
 > > the 48 blocks that lay out**: counting (grid points on the label's own net) x (4 sides), the
 > > candidate set is **min 20, median 80, max 1000**, and **95 of 95 are larger than four**. Not one
 > > anchor in the repository has as few as four places to go. The figure is a lower bound - it counts
@@ -1568,9 +1568,16 @@ made.
 >   that four are **G262**'s body-plus-amendment pair or the correction itself, leaving this as the
 >   only one a reader could take as current.
 > - **Verified** CONFIRMED by reading. **RELAYED**: the review's finding reaches here through the
->   plan, which marks it ACCEPTED; nobody has driven a KiCad file with a relocated anchor.
-> - **Why it is open** because Task 5 has not run. The correction is recorded; the freedom it opens
->   is unexplored.
+>   plan, which marks it ACCEPTED. **"Nobody has driven a KiCad file with a relocated anchor" was
+>   true when this was written and is DISCHARGED as of 2026-10-22**: Task 5 drove exactly that -
+>   `tools/schgen/label-freedom/fixtures/a2-slide.kicad_sch` and `a3-move-segment.kicad_sch` are
+>   committed sheets with the anchor relocated, exported by `kicad-cli` 10.0.5, and the partition of
+>   connected terminals is unchanged in both.
+> - **Why it is open** - **it is not open on this count any more.** The sentence here was *"because
+>   Task 5 has not run"*; **Task 5 has run.** What remains open is **G262**'s criterion, unchanged:
+>   the blocks draw and the sheets are acceptable to the owner. The freedom this amendment opened is
+>   no longer unexplored - it is measured, per freedom, in `docs/schematic/text-handling-research.md`
+>   §5.7 and in **G262**'s Task 5 amendment - and no mechanism has been tried.
 > - **What would settle it** this entry's criterion is **unchanged** and **authors no new one**. The
 >   open question belongs to Task 5: **CRITERION, ALREADY WRITTEN AND NOT BY THIS WRITER - G240's**,
 >   a generated schematic for at least one board judged by something other than the producing agent.
@@ -1865,10 +1872,14 @@ available.
 - **Evidence** `[RAN]` the coverage census, whose problem classes are a whitelist that THROWS on an
   unknown shape, so a mis-filed problem fails rather than being binned (**G258**); the three rows
   above are its output verbatim. The control is the seven blocks that draw, which report no text
-  problem at all. **The claim that a label's position is a netlist fact is `[CODE]`** -
-  `render/emit-items.ts` emits a `global_label` at its anchor point and `lib/schgen/render/
-  connectivity.ts` treats an anchor as a connectivity item at that point - and is NOT a measurement
-  of KiCad's behaviour.
+  problem at all. **The claim that a label's position is a netlist fact was `[CODE]` WHEN THIS
+  BULLET WAS WRITTEN AND IS NOW MEASURED, AND MEASURED FALSE** - the code reading was
+  `render/emit-items.ts` emitting a `global_label` at its anchor point and `lib/schgen/render/
+  connectivity.ts` treating an anchor as a connectivity item at that point, and the bullet correctly
+  said it was NOT a measurement of KiCad's behaviour. **It is one now**: the 2026-10-22 Task 5
+  amendment below drives all four freedoms against `kicad-cli` 10.0.5 on committed fixtures and the
+  exported partition does not move under any of them. The sentence is kept in its original form
+  because it is the honest record of what this bullet claimed and did not claim.
 - **Verified** CONFIRMED for the census rows and for the code reading. **RELAYED** for nothing.
 - **Why it is open** because it is a defect class nobody has worked on, and because the obvious
   mechanism is not obviously acceptable: a label drawn on the far side of its anchor reads
@@ -1944,7 +1955,7 @@ available.
 > MEASURED FALSE ON ALL FOUR FREEDOMS, THE CLASS IS FOUR TIMES LARGER THAN THIS ENTRY'S TABLE, AND
 > SIDE SELECTION ALONE DRAWS FIVE OF THE TWELVE BLOCKS.** The amendment above left the live question
 > to Task 5; this discharges it. Every figure is `[RAN]` from
-> `tools/schgen/label-freedom/probe-run.log`, committed, at commit `3275bde` on a clean tree, and
+> `tools/schgen/label-freedom/probe-run.log`, committed, at commit `75a9bb8` on a clean tree, and
 > `docs/schematic/text-handling-research.md` §5 carries it in full.
 >
 > **(a) THE FOUR FREEDOMS, driven against `kicad-cli` 10.0.5 on nine committed fixture schematics,
@@ -1966,11 +1977,24 @@ available.
 > answers differently on the two fixtures**, so the probe measures electrical semantics and not a
 > changed string. All nine arms matched a prediction the probe printed before exporting anything.
 >
-> **(b) THE CLASS IS 12 BLOCKS OF 48, NOT 3.** The 2026-10-21 amendment above already said *"every"*
-> was false over eleven boards; the figure with all thirteen declared cases offered is **12 of 48
-> laid-out blocks refusing on a problem that names a global label**. Five of the twelve are the same
-> `*-junction` block declared by five Pultec boards, so there are eight distinct block
-> declarations behind the twelve rows.
+> **(b) THE CLASS IS 12 BLOCKS OF 48, NOT 3 - AND AT BOARD GRANULARITY IT IS NINE OF ELEVEN.** The
+> 2026-10-21 amendment above already said *"every"* was false over eleven boards; the figure with all
+> thirteen declared cases offered is **12 of 48 laid-out blocks refusing on a problem that names a
+> global label**. Five of the twelve are the same `*-junction` block declared by five Pultec boards,
+> so there are eight distinct block declarations behind the twelve rows.
+>
+> **AND THE "THREE OF ELEVEN BOARDS" IN THE RESEARCH PLAN IS THIS ENTRY'S BLOCK COUNT WEARING THE
+> WORD "BOARDS".** Three blocks is what this entry measured, over four circuits, before nine of the
+> eleven boards had an authoring declaration at all. **No document stated the board figure until now**,
+> and the direction of the error matters: *three of eleven* reads as a corner case. `[RAN]`
+> **NINE of the eleven boards under `boards/` have at least one block that refuses on a problem
+> naming a global label** - every board except `pt2399-core` and `transistor-preamp-feedback`. The
+> mapping is each board's own `perfboard.json` through `boardRefs`, matched on the BUILDER by
+> `declarationFor` (**G247**), not on a directory name. **Neither of the two is thereby fine**:
+> `transistor-preamp-feedback`'s `tp-stage` is refused BEFORE `checkLayout` and never reaches a text
+> pass, and `pt2399-core` is the one board whose single laid-out block carries no label problem.
+> **The board figure is a reviewer's**, computed in fix round 1; it is re-derived here and the two
+> agree. §5.5a of `docs/schematic/text-handling-research.md` carries the per-board rows.
 >
 > **(c) PER FREEDOM, MEASURED BY PERTURBING THE LAID-OUT GEOMETRY AND RE-GRADING IT WITH
 > `checkLayout` ITSELF** - so every relation the production pass grades is graded, and an
@@ -1978,7 +2002,13 @@ available.
 > is that re-grading the UNPERTURBED layout reproduces the ELK adapter's own verdict on all 48
 > blocks; it passes.
 >
-> | freedom, swept | blocks it clears entirely, of 12 |
+> **Every row of this table is a count at ONE text box** - `length x GRID`, the ruler that produces
+> these refusals. §1 found 13 of 15 field fallbacks and 4 of 8 drawn-text overlaps surviving all
+> three measured quantities, so **these counts are expected to move under another and were not
+> re-taken**; clause (e) says why, and the election is the owner's. **Table (a) above is NOT a count
+> and does not depend on the ruler.**
+>
+> | freedom, swept | blocks it clears entirely, of 12, UNDER THAT RULER |
 > | --- | --- |
 > | 1 alone, exhaustively over 4^n side assignments | **5** - every Pultec `*-junction`, at `hi_boost_out:down` |
 > | 2 alone, every grid point of the anchor's own segment | **0** |
@@ -1986,17 +2016,18 @@ available.
 > | 3 alone, the anchor's stub lengthened 1-8 steps | **7** |
 > | any of them, including a joint sweep over each overlapping pair | **7** |
 >
-> **So "no side assignment clears it" is FALSE for five blocks**, which is the opposite of what this
-> task was written expecting, and **"nothing clears it" is true for five** - of which **three have
-> every LABEL problem cleared by some freedom and refuse on a defect with no label in it**: two on
-> **G263**'s power-glyph class and one on **G269**'s dangling end. **Only two blocks keep a label
+> **So "no side assignment clears it" is FALSE for five blocks, at this ruler**, which is the
+> opposite of what this task was written expecting, and **"nothing clears it" is true for five** - of
+> which **three have every LABEL problem cleared by some freedom and refuse on a defect with no label
+> in it**: two on **G263**'s power-glyph class and one on **G269**'s dangling end. **Only two blocks keep a label
 > problem under every freedom tried**, `transistor-preamp/tp-stage` and
 > `transistor-preamp-loop/tp-stage`, the two with the most text in the repository.
 >
 > **(d) A RESULT THAT MAKES SOMEONE WANT TO ACT, recorded beside the measurement because this file
 > requires it.** On `tp-leg-emitter-bypass` - the block that refuses `transistor-preamp-lab` and the
 > only thing in front of it - lengthening `BYPASS_CAP`'s stub by **two grid steps** and putting its
-> label on `down` produces a layout `checkLayout` grades with **ZERO problems**. 2.54 mm of wire.
+> label on `down` produces a layout `checkLayout` grades with **ZERO problems at this ruler**.
+> 2.54 mm of wire.
 > **It was NOT done**: the plan is research-only, nothing here says the resulting sheet is legible,
 > and legibility is the owner's judgement (this entry's own *"why it is open"*). **MECHANISM,
 > UNTRIED.**
@@ -24054,13 +24085,13 @@ anything. In particular:
 
 ---
 
-### G269 - MEASURED: this repository refuses an anchor relocation that KiCad accepts, through its OWN dangling-wire-end rule, and TWO of the twelve label-blocked blocks reduce to exactly that one problem
+### G269 - MEASURED: this repository refuses an anchor relocation that KiCad accepts, through its OWN dangling-wire-end rule, and THREE of the twelve label-blocked blocks reduce to exactly that one problem - a count that is itself at ONE text box
 
 **This is not a defect in `danglingWireEnds` and this entry does not say it is.** It is a
 constraint on a change the owner's generator would have to make, and the next agent to try
 relocating a global label's anchor will hit it immediately.
 
-**WHAT WAS MEASURED.** `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `3275bde` with a
+**WHAT WAS MEASURED.** `[RAN]` `tools/schgen/label-freedom/probe.ts` at commit `75a9bb8` with a
 clean tree, `kicad-cli` 10.0.5. Two facts, from two different grades of evidence, that do not agree:
 
 - **KiCad does not mind.** Sliding a global label's anchor from a wire's END into its INTERIOR, or
@@ -24072,11 +24103,33 @@ clean tree, `kicad-cli` 10.0.5. Two facts, from two different grades of evidence
   *"wire 1 of pultec-hi-boost-own (net hi_boost_out) ends at (34.29, 64.77) touching nothing; end it
   on a pin, a label, a power symbol or another wire end."*
 
-**THE FIGURE THAT MAKES IT MATTER.** Of the 12 blocks whose refusal names a global label, **2 reduce
-to that single problem** under their best single-label anchor relocation - `transistor-preamp/
-tp-leg-emitter-bypass` and `pultec-hi-boost/pultec-hi-boost-own`. On `pultec-hi-boost-own`, sliding
-`hi_boost_out`'s anchor 8.89 mm along its own wire and turning the label to `left` **clears all three
-of its label-over-wire overlaps** and leaves nothing but the stranded end.
+**THE FIGURE THAT MAKES IT MATTER, AND THE RULER IT IS AT.** Of the 12 blocks whose refusal names a
+global label, **3 reduce to that single problem** once relocation has cleared their label problems -
+`transistor-preamp/tp-leg-emitter-bypass`, `pultec-hi-boost/pultec-hi-boost-own` and
+`transistor-preamp-loop/tp-follower`. On `pultec-hi-boost-own`, sliding `hi_boost_out`'s anchor
+8.89 mm along its own wire and turning the label to `left` **clears all three of its
+label-over-wire overlaps** and leaves nothing but the stranded end.
+
+**EVERY COUNT IN THIS ENTRY IS A FIGURE AT ONE TEXT BOX AND IS NOT TRANSFERABLE TO ANOTHER.** The
+overlaps these relocations clear are computed with `lib/schgen/render/text-boxes.ts`'s
+`length x GRID`, the ruler that produces the refusals. **G265** records three measured text-box
+quantities and **the election between them is the owner's, clause 4**; §1 found 13 of 15 field
+fallbacks and 4 of 8 drawn-text overlaps surviving all three, so **3 of 12 is expected to move under
+another quantity and was not re-taken** - the three need a font blob fetched outside the repository,
+so a figure under them would not be re-drivable. **What does NOT depend on the ruler is this entry's
+actual claim**: that KiCad accepts a relocated anchor and that `danglingWireEnds` refuses it. The
+first is measured against the netlister and the second is a rule with no text box in it.
+
+**THE COUNT WAS 2 IN ROUND 0 AND THE METRIC IS WHY, which is recorded rather than silently
+corrected.** It was taken over each label's lowest-TOTAL candidate; on `tp-follower` that candidate
+is the **unperturbed** layout, so the residue reported was the original overlap rather than anything
+relocation leaves, and a reviewer found the third block. Taking it over the lowest-LABEL-COUNT
+candidate over-counts in the other direction and gives **8**, because candidates tie at zero label
+problems and the first encountered wins - so a relocation that strands a wire end beats an in-place
+side change that leaves nothing, sweeping in the five Pultec junction blocks that a side change alone
+draws cleanly. **The figure above is the tie-free metric**: the fewest-total candidate among those
+that clear every label problem. All three numbers are printed in the committed run, so the two that
+were wrong stay driven rather than described.
 
 **WHY IT IS A CONSTRAINT AND NOT A BUG.** A wire that goes nowhere is a drawing defect, and the rule
 is right to refuse it. What the measurement establishes is narrower and more useful: **the obstacle
@@ -24091,8 +24144,9 @@ of 12 and not higher.
   looking for it**: the first version of the sweep printed how many problems a candidate still had
   and not WHICH, and the count hid this entirely.
 - **Evidence** `[RAN]` the committed run `tools/schgen/label-freedom/probe-run.log`, whose STEP 3
-  summary line counts the blocks whose best relocation leaves only *"ends at ... touching nothing"*,
-  and whose per-label detail prints the problem text. The KiCad half is the nine fixture arms of
+  summary line counts the blocks whose relocation leaves only *"ends at ... touching nothing"*, and
+  whose per-label detail prints the problem text; the same line prints what the two metrics that got
+  the count wrong give, so neither is a number this entry asserts without a drive. The KiCad half is the nine fixture arms of
   STEP 2, each its base plus one edit, with the one-difference property asserted by
   `tests/schgen/label-freedom/fixtures.test.ts`. **The check that could have failed** is the
   re-grading control: re-grading every UNPERTURBED layout with `checkLayout` must reproduce the ELK
@@ -24102,11 +24156,14 @@ of 12 and not higher.
 - **Verified** CONFIRMED - this writer drove both halves and read both outputs. **RELAYED** for
   nothing.
 - **Why it is open** because nothing has tried the move, and because the combination that would
-  settle it was not swept: the sweep moves anchors and the fix moves a wire.
+  settle it was not swept: the sweep moves anchors and the fix moves a wire. **And because the
+  count is at one ruler**: it is not known how many blocks reduce to a dangling end under either of
+  the other two text-box quantities **G265** records.
 - **What would settle it** **CRITERION: a sweep that relocates a global label's anchor AND retracts
   the wire it left, re-graded by `checkLayout`, reports how many of the 12 label-blocked blocks it
   clears - and that figure is compared with the 7 of 12 the anchor-only and stub-lengthening sweeps
-  reach.** That is a measurement, not a fix, and it settles whether the dangling-end rule is the
+  reach, AT THE SAME RULER, since comparing counts taken at two different text boxes compares
+  nothing.** That is a measurement, not a fix, and it settles whether the dangling-end rule is the
   binding constraint on freedom 2 or merely the first one met. **MECHANISM, UNTRIED and NOT a plan**:
   carry the wire's endpoint to the new anchor point in the same perturbation, which is freedom 2 and
   freedom 3 applied together. **It is a guess by someone who has not run it**, and it would also have
@@ -24121,10 +24178,10 @@ of 12 and not higher.
 **A reader who goes to `docs/schematic/text-placement-prior-art.md` for a global label will not
 find out that it does not cover global labels**, which is the only reason this entry exists.
 
-**WHAT WAS MEASURED.** `[RAN]` a grep of that document's 939 lines for `global label`, `line
-feature`, `line labeling` and `line labelling`, case-insensitive: **zero matches for all four**,
-against a control term run through the same grep that matches five times (`slider`), so the grep
-could have matched and did not. Its
+**WHAT WAS MEASURED.** `[RAN]` a grep of that document's 939 lines for FOUR terms - `global label`,
+`line feature`, `line labeling` and `line labelling` - case-insensitive: **zero matches for all
+four**, against a control term run through the same grep that matches five times (`slider`), so the
+grep could have matched and did not. §5.1 states the same four terms and the same control. Its
 §4 heading reads *"Mixed labelling - the formulation that matches this problem exactly"*, and for
 the problem that document is about - a unit's Reference and Value, which are point-feature labels
 with a fixed site - that is right.

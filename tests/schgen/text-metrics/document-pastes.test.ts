@@ -445,7 +445,7 @@ const LABEL_RUN_MARKER = "== WHAT THIS LABEL-FREEDOM RUN MEASURED"
 const SECTION_5_HEADING = "§5 A global label's coordinates, and the four freedoms it actually has"
 
 /** How many blocks §5 pastes. Pinned, so adding or dropping one is a deliberate edit here. */
-const SECTION_5_BLOCKS = 12
+const SECTION_5_BLOCKS = 13
 
 /** §5's text with its fence word mapped into the checker's output namespace, and nothing else. */
 function sectionFiveAsOutput(d: string): string {
