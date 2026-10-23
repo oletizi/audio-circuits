@@ -34,6 +34,7 @@ import { spawnSync } from "node:child_process"
 import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 import ELK from "elkjs/lib/elk-api.js"
 import { BLOCK_OPTIONS, NODE_OPTIONS } from "../../../lib/schgen/elk/options.ts"
 import { serializeElkInput } from "../../../lib/schgen/elk/serialize.ts"
@@ -59,18 +60,46 @@ function head(title: string): void {
   console.log(`== ${title}`)
 }
 
-function pinned(repoRoot: string): string {
-  const workerPath = path.join(repoRoot, "node_modules/elkjs/lib/elk-worker.min.js")
+/**
+ * The URL the worker is actually constructed from. **One expression, used twice**: hashed by
+ * `pinned()` and handed to `workerFactory`, so the file that is checked is the file that is loaded.
+ */
+const WORKER_URL = import.meta.resolve("elkjs/lib/elk-worker.min.js")
+
+/**
+ * The bundle behind `WORKER_URL`, hashed, with its package version beside it.
+ *
+ * **THIS HASHED THE WRONG FILE UNTIL FIX ROUND 1, AND THE WRONG FILE PASSED.** It used to hash
+ * `moduleRepoRoot()/node_modules/elkjs/...` - a path derived from THIS MODULE's own
+ * `import.meta.url` - while the worker was constructed from `import.meta.resolve`, which resolves
+ * against the importer. A reviewer drove the gap: **the pin went green on the committed 0.9.3
+ * bundle while the caller loaded 0.12.0.** A guard that cannot fail in the scenario it is credited
+ * for is worse than no guard, so it now hashes the resolved URL itself and refuses a URL that is
+ * not a local file.
+ */
+function pinned(): string {
+  if (!WORKER_URL.startsWith("file:")) {
+    throw new Error(
+      `elkjs's worker resolves to ${WORKER_URL}, which is not a file: URL, so this probe cannot ` +
+        "hash the bundle it is about to load. Every count in STEP 1 and every coordinate in STEP 5 " +
+        "is a property of ONE build of ELK (controller ruling R4), and a figure taken against an " +
+        "unhashable bundle is a figure about something unknown. It refuses rather than reporting " +
+        "one.",
+    )
+  }
+  const workerPath = fileURLToPath(WORKER_URL)
   const workerSha = crypto.createHash("sha256").update(fs.readFileSync(workerPath)).digest("hex")
-  const installed = JSON.parse(fs.readFileSync(path.join(repoRoot, "node_modules/elkjs/package.json"), "utf8")) as { version?: unknown }
+  const pkg = fileURLToPath(import.meta.resolve("elkjs/package.json"))
+  const installed = JSON.parse(fs.readFileSync(pkg, "utf8")) as { version?: unknown }
   if (installed.version !== ELKJS_VERSION || workerSha !== ELK_WORKER_SHA256) {
     throw new Error(
       `this probe is pinned to elkjs ${ELKJS_VERSION} with elk-worker.min.js at SHA-256 ` +
-        `${ELK_WORKER_SHA256}, and the installed bundle is version ${String(installed.version)} at ` +
-        `${workerSha}. Every count in STEP 1 and every coordinate in STEP 5 is a property of ONE ` +
-        "build of ELK, so it refuses rather than reporting an inventory of something else under the " +
-        "pinned version's name (controller ruling R4). Re-pin both constants here in the same change " +
-        "that re-takes the figures in docs/schematic/text-handling-research.md section 2.",
+        `${ELK_WORKER_SHA256}. The bundle it would LOAD is ${workerPath}, version ` +
+        `${String(installed.version)}, at ${workerSha}. Every count in STEP 1 and every coordinate ` +
+        "in STEP 5 is a property of ONE build of ELK, so it refuses rather than reporting an " +
+        "inventory of something else under the pinned version's name (controller ruling R4). Re-pin " +
+        "both constants here in the same change that re-takes the figures in " +
+        "docs/schematic/text-handling-research.md section 2.",
     )
   }
   return workerSha
@@ -91,16 +120,17 @@ async function main(): Promise<void> {
   const sha = spawnSync("git", ["-C", repoRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).stdout.trim()
   const dirty = spawnSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" }).stdout.trim()
   console.log(`repository commit: ${sha}${dirty === "" ? " (clean tree)" : ` (DIRTY TREE, ${dirty.split("\n").length} path(s))`}`)
-  console.log(`elkjs ${ELKJS_VERSION}; elk-worker.min.js pinned at SHA-256 ${pinned(repoRoot)}`)
+  console.log(`elkjs ${ELKJS_VERSION}; the bundle this run LOADS, hashed: SHA-256 ${pinned()}`)
   // **WHICH INSTALL OF `elkjs` THE WORKER CAME FROM, PRINTED RATHER THAN ASSUMED.**
   // `import.meta.resolve` is relative to THIS file, so a copy of this probe kept outside the
   // repository resolves `elkjs` through Bun's auto-install cache instead of `package.json`'s pin -
-  // a different version of ELK, with a different option vocabulary, under the same import.
+  // a different version of ELK, with a different option vocabulary, under the same import. That is
+  // what the hash above is now taken over, rather than over a path derived from this module.
   console.log(`elkjs resolved from: ${import.meta.resolve("elkjs/package.json")}`)
 
   const elk = new ELK({
-    workerUrl: import.meta.resolve("elkjs/lib/elk-worker.min.js"),
-    workerFactory: (url?: string) => new Worker(url ?? import.meta.resolve("elkjs/lib/elk-worker.min.js")),
+    workerUrl: WORKER_URL,
+    workerFactory: (url?: string) => new Worker(url ?? WORKER_URL),
   })
 
   try {
@@ -261,7 +291,7 @@ async function main(): Promise<void> {
       console.log(`CONTROL PASSED: serializeElkInput REFUSES a graph carrying an ELK label - ${(e instanceof Error ? e.message : String(e)).split(". ")[0]}`)
     }
 
-    head("STEP 5: NINE ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT")
+    head("STEP 5: ELEVEN ARMS OVER THE SAME GRAPHS, AT THE GetTextBox LINE HEIGHT")
     console.log(`line height ${um(LINE_HEIGHT)} um (RELAYED from section 1.4); label widths from lib/schgen/render/text-boxes.ts textWidth`)
     const results = new Map<string, readonly ArmResult[]>()
     for (const arm of ARMS) {
@@ -301,22 +331,48 @@ async function main(): Promise<void> {
     console.log(`arms that raised: ${raises.length}${raises.length === 0 ? " - every arm laid out, so every row above is a layout and not a crash" : ""}`)
     for (const r of raises) console.log(`  ${r}`)
 
-    head("STEP 5j: THE SAME EXPERIMENT AT ALL THREE OF SECTION 1's LINE HEIGHTS")
+    head("STEP 6: THE SAME EXPERIMENT AT ALL THREE OF SECTION 1's LINE HEIGHTS")
     console.log("Section 1 is forbidden from electing one quantity, so no conclusion here may depend on which is elected.")
+    // **THE METRICS THIS SWEEP COMPARES, named once so the cell count below is not a hand tally.**
+    const METRICS: readonly { readonly name: string; readonly of: (r: ArmResult) => number }[] = [
+      { name: "unplaced", of: (r) => r.unplaced },
+      { name: "lbl-lbl", of: (r) => r.labelLabelOverlaps },
+      { name: "own-body", of: (r) => r.labelOwnBodyOverlaps },
+      { name: "wire", of: (r) => r.labelWireHits },
+      { name: "on-grid", of: (r) => r.onGrid },
+    ]
+    /** arm name -> metric name -> the three heights' totals, in LINE_HEIGHTS order. */
+    const sweep = new Map<string, Map<string, number[]>>()
     for (const h of LINE_HEIGHTS) {
       const line: string[] = []
       for (const arm of ARMS) {
         const rows: ArmResult[] = []
         for (const b of blocks) rows.push(await runArm(elk, arm, b, h.um))
-        line.push(
-          `${arm.name.slice(0, 1)}: unplaced ${sum(rows, (r) => r.unplaced)} lbl-lbl ${sum(rows, (r) => r.labelLabelOverlaps)} ` +
-            `own-body ${sum(rows, (r) => r.labelOwnBodyOverlaps)} wire ${sum(rows, (r) => r.labelWireHits)} on-grid ${sum(rows, (r) => r.onGrid)}`,
-        )
+        const per = sweep.get(arm.name) ?? new Map<string, number[]>()
+        for (const m of METRICS) per.set(m.name, [...(per.get(m.name) ?? []), sum(rows, m.of)])
+        sweep.set(arm.name, per)
+        line.push(`${arm.name.slice(0, 1)}: ${METRICS.map((m) => `${m.name} ${sum(rows, m.of)}`).join(" ")}`)
       }
       console.log(`  ${h.name.padEnd(22)} ${line.join("  |  ")}`)
     }
+    // **WHICH CELLS MOVE, ENUMERATED BY THE PROBE RATHER THAN BY A READER'S EYE.** Fix round 1's
+    // IMPORTANT 3: section 2 claimed a complete list of the height-dependent cells and missed one -
+    // the very arm the paragraph three above it quoted. A completeness claim is what licenses a
+    // later task to quote a figure without its ruler, so the completeness is computed here.
+    let invariant = 0
+    const varying: string[] = []
+    for (const arm of ARMS) {
+      for (const m of METRICS) {
+        const v = sweep.get(arm.name)?.get(m.name) ?? []
+        if (v.length !== LINE_HEIGHTS.length) throw new Error(`the sweep holds ${v.length} height(s) for ${arm.name}/${m.name}, not ${LINE_HEIGHTS.length}`)
+        if (v.every((x) => x === v[0])) invariant += 1
+        else varying.push(`${arm.name.slice(0, 1)}/${m.name} = ${v.join(" / ")}`)
+      }
+    }
+    console.log(`cells (arm x metric): ${ARMS.length * METRICS.length}; INVARIANT across the three heights: ${invariant}; VARYING: ${varying.length}`)
+    for (const v of varying) console.log(`  VARIES ${v}`)
 
-    head("STEP 5k: ONE BLOCK IN DETAIL, SO THE AGGREGATES ABOVE ARE READABLE")
+    head("STEP 7: ONE BLOCK IN DETAIL, SO THE AGGREGATES ABOVE ARE READABLE")
     const detail = blocks.find((b) => b.block === "pt-core") ?? blocks[0]!
     console.log(`${detail.board}/${detail.block}: ${(detail.graph.children ?? []).length} nodes, ${(detail.graph.edges ?? []).length} edges`)
     for (const arm of ARMS) {

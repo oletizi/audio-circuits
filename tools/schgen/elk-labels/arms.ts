@@ -103,6 +103,33 @@ export const ARMS: readonly Arm[] = [
       for (const e of g.edges ?? []) e.labels = [labelFor(e.id, b, height, false)]
     },
   },
+  // **THE TWO ARMS THAT MAKE THE OTHERS MINIMAL PAIRS, and they were missing.** A reviewer of fix
+  // round 0 pointed out that arms b-i differ from the baseline in the LAYOUT OPTION as well as in
+  // the label, so a graph that grew could have grown because of either. These two set the option and
+  // send NO label. If they match the baseline on every block, the growth in b-i is attributable to
+  // the label; if one of them moved a layout by itself, every "blocks moved" figure above would be
+  // confounded and the table would have to be re-read. **The reviewer drove the first of them and it
+  // matched on 48 of 48 - but a control that lives in a review is a control nobody can re-drive**,
+  // which is the `.superpowers/` failure in a different costume, so both are arms here and the log
+  // carries them.
+  {
+    name: "j e's options, NO label",
+    what: "the control for arms d-g: fixed size plus an outside placement hint, and no label at all",
+    decorate(g: ElkNode): void {
+      for (const c of g.children ?? []) {
+        c.layoutOptions = { ...c.layoutOptions, "elk.nodeSize.constraints": "[]", "elk.nodeLabels.placement": "[H_CENTER, V_TOP, OUTSIDE]" }
+      }
+    },
+  },
+  {
+    name: "k b's options, NO label",
+    what: "the control for arms b-c: SizeConstraint NODE_LABELS and an inside hint, and no label at all",
+    decorate(g: ElkNode): void {
+      for (const c of g.children ?? []) {
+        c.layoutOptions = { ...c.layoutOptions, "elk.nodeSize.constraints": "[NODE_LABELS]", "elk.nodeLabels.placement": "[H_CENTER, V_CENTER, INSIDE]" }
+      }
+    },
+  },
 ]
 
 interface Placed {
