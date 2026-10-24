@@ -886,6 +886,7 @@
     "tests/schgen/label-freedom/fixtures.test.ts",
     "tests/schgen/text-metrics/document-pastes.test.ts",
     "tests/schgen/text-metrics/pen-call-sites.test.ts",
+    "tools/schgen/label-syntax/fixtures.ts",
     "tools/schgen/label-syntax/probe.ts"
   ]
 }

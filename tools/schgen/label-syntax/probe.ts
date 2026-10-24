@@ -7,6 +7,8 @@
  * Research probe for Task 1 of `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`.
  * **It changes no production code, nothing in `lib/` reads it, and no gate calls it.** The
  * committed `probe-run.log` beside this file is one run of it, produced by the command above.
+ * `./fixtures.ts` holds what is measured and the sheet it goes on; this file holds the `kicad-cli`
+ * drives, the census and all the reporting.
  *
  * **WHY IT EXISTS, AND IT IS THE ORDER THAT MATTERS.** `lib/schgen/ir/validate.ts`'s `netNames`
  * rule refuses two different things with one message. `hi_boost_out` fails on **letter case
@@ -21,30 +23,20 @@
  * under-reporting the label by the whole 3333.75 um, so any measurement of a label through SVG is
  * wrong and this probe takes none.
  *
- * **THE NAME ATOM'S BYTES ARE PRODUCTION'S; THE FORM AROUND THEM IS NOT.** The candidate goes into
- * the sheet through `lib/kicad/sexpr.ts`'s `quoteString`, which is what
- * `lib/schgen/render/sexpr-write.ts`'s `str()` calls and therefore what
- * `lib/schgen/render/emit-items.ts`'s `globalLabel` would emit for a net name - so the "exact bytes
- * the writer emitted" below are the emitter's own answer. **The surrounding `(global_label …)` form
- * is hand-written by `render` below**: it does not pass through `str()` (so `str()`'s
- * control-character refusal at `sexpr-write.ts:32-33` is not in this path) and it omits the
- * `(property "Intersheetrefs" …)` node production always emits. Neither affects what KiCad does
- * with the NAME, which is all that is measured - but these sheets are not emitter output.
+ * **IT HAS BOTH CONTROLS, WHICH IT DID NOT UNTIL ROUND 2.** `SIGNAL` is the positive control and
+ * proves the probe can report a pass. `./fixtures.ts`'s `CONTROLS` are the negative ones and prove
+ * it can report a FAILURE - loudly for a raw newline, and **silently for a carriage return and a
+ * NUL, which KiCad accepts at exit 0 and hands back under a different name.** Round 1 of this task
+ * asserted that a failing arm would halt the run, declined to commit one on that basis, and **was
+ * wrong**: the netlist-export arm returns a full failure row and the run reaches its summary. The
+ * review's instruction is the general rule and is recorded here because the error was mine: **a
+ * measurement with a positive control and no negative control is an incomplete instrument, not a
+ * design choice**, and a stated reason for leaving one out is itself a thing to drive.
  *
- * **SO "THE WRITER ESCAPES NOTHING" IS A FACT ABOUT THESE FOUR NAMES, NOT ABOUT THE WRITER.**
- * `quoteString` does escape `\` and `"`; these four hold neither, and none holds a control
- * character. **A round-1 review drove the three candidates that exercise the other arms and none of
- * them is in `CANDIDATES` below**, so this probe does not cover them: `BAD"QUOTE` and `BACK\SLASH`
- * escape, and a RAW NEWLINE makes `kicad-cli` exit 3. `docs/known-gaps.md` **G277** clause 7
- * carries that, marked relayed, and it is what Task 3's replacement predicate must answer.
- *
- * **THE SHEETS ARE BUILT HERE AND COMMITTED, so the run re-drives from a clean checkout.** It needs
+ * **THE SHEETS ARE BUILT AND COMMITTED, so the run re-drives from a clean checkout.** It needs
  * `kicad-cli`, which `make check` already requires on every run, and nothing else: no download, no
- * font blob, no Python. UUIDs are derived from the sheet and item name rather than generated, so the
- * probe always writes the same bytes and the sheets compare by content rather than by timestamp.
- * `tools/schgen/label-freedom/fixtures.ts` does the same with an FNV hash and a richer arm model;
- * its builder is unexported and its arms are pinned by another task's test, so the two-symbol sheet
- * below is this probe's own rather than a coupling to it.
+ * font blob, no Python. UUIDs are derived rather than generated, so the probe always writes the
+ * same bytes and the sheets compare by content rather than by timestamp.
  *
  * **IT ASKS A SECOND QUESTION THAT CAN CLOSE THE FIRST ONE WITHOUT KiCad'S HELP.** A punctuated
  * net name only matters if it is ever DRAWN. Labels are emitted per **boundary anchor**, not per
@@ -86,6 +78,7 @@ import { NET_NAME } from "../../../lib/schgen/ir/types.ts"
 import { caseResolver } from "../authoring-census.ts"
 import { ALL_DECLARED_CASES } from "../board-declarations.ts"
 import { boardRefs, declarationFor } from "../board-sheets.ts"
+import { ARM_ANCHOR, CANDIDATES, CONTROLS, PAPER_HEIGHT_MM, RETURN_ANCHOR, render, type Arm } from "./fixtures.ts"
 
 const log = (s: string): void => {
   console.log(s)
@@ -101,131 +94,6 @@ const hex = (text: string): string => Buffer.from(text, "utf8").toString("hex")
 
 /** The net names matching this are KiCad exporter artifacts rather than authored names. */
 const SYNTHETIC = /^(Net|unconnected)-/
-
-/** A4 landscape, which `render` below writes as the sheet's paper. PDF y is measured against it. */
-const PAPER_HEIGHT_MM = 210
-
-interface Candidate {
-  /** A filesystem-safe id. The net NAME carries parentheses, which a file name must not. */
-  readonly slug: string
-  readonly net: string
-  /** Where this exact string occurs in the tree, so the candidate is transcribed and not invented. */
-  readonly provenance: string
-  /** What the brief predicts, printed before any `kicad-cli` call. */
-  readonly prediction: string
-}
-
-/**
- * The four candidates, each transcribed from a file in this repository.
- *
- * **`SIGNAL` IS THE CONTROL AND ITS JOB IS TO BE ABLE TO FAIL**: had it not parsed, round-tripped
- * and rendered, nothing below would be about the punctuation. The other three are the two classes
- * `netNames` refuses with one message - case alone, and case plus punctuation - the second
- * represented by both shapes `pt2399-core` holds.
- */
-const CANDIDATES: readonly Candidate[] = [
-  {
-    slug: "control-upper-snake",
-    net: "SIGNAL",
-    provenance: "tools/schgen/label-freedom/fixtures.ts fixtureA's own net; the one name here that NET_NAME already accepts",
-    prediction: "parses, round-trips byte-identical, renders",
-  },
-  {
-    slug: "lowercase-authored",
-    net: "hi_boost_out",
-    provenance: "circuits/pultec/electrical/mid.ts:28, MID_TAP_POINT - and a LABELLED net on all five Pultec boards, per the census below",
-    prediction: "parses, round-trips byte-identical, renders",
-  },
-  {
-    slug: "synthetic-net-paren",
-    net: "Net-(C10-Pad1)",
-    provenance: "circuits/pt2399-core/pt2399-core.ts:128, output_mix_resistor's a pin",
-    prediction: "UNKNOWN - this is the measurement",
-  },
-  {
-    slug: "synthetic-unconnected",
-    net: "unconnected-(U1-CLK_O-Pad5)",
-    provenance: "circuits/pt2399-core/pt2399-core.ts:147, U1 pin 5's net, and :190's clk_o_unused port",
-    prediction: "UNKNOWN - this is the measurement",
-  },
-]
-
-/**
- * UUIDs derived from the sheet and item name, never generated: a random one would make every
- * written sheet differ from the committed one on every run, so the derived-artifact comparison
- * could only ever be by timestamp - which `CLAUDE.md` forbids.
- */
-function derivedUuid(sheet: string, id: string): string {
-  const h = sha256(`label-syntax/${sheet}/${id}`)
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`
-}
-
-const E = "(effects (font (size 1.27 1.27)))"
-
-/**
- * The probe's own two-pin symbol, embedded so no library is resolved and no stock symbol path is
- * assumed. Transcribed from `tools/schgen/label-freedom/fixtures.ts`'s `Fixture:R2`, which took its
- * geometry from the `Device:R` entry embedded in `circuits/transistor-preamp/loop-board.kicad_sch`:
- * a 2.54 mm body box with passive pins at +/-3.81 mm. Nothing else was carried across.
- */
-const PROBE_SYMBOL = `\t\t(symbol "LabelSyntax:R2"
-\t\t\t(pin_numbers (hide yes))
-\t\t\t(pin_names (offset 0))
-\t\t\t(exclude_from_sim no)
-\t\t\t(in_bom yes)
-\t\t\t(on_board yes)
-\t\t\t(property "Reference" "R" (at 2.032 0 90) ${E})
-\t\t\t(property "Value" "R2" (at 0 0 90) ${E})
-\t\t\t(property "Footprint" "" (at 0 0 0) (hide yes) ${E})
-\t\t\t(property "Datasheet" "" (at 0 0 0) (hide yes) ${E})
-\t\t\t(symbol "R2_0_1"
-\t\t\t\t(rectangle (start -1.016 -2.54) (end 1.016 2.54) (stroke (width 0.254) (type default)) (fill (type none)))
-\t\t\t)
-\t\t\t(symbol "R2_1_1"
-\t\t\t\t(pin passive line (at 0 3.81 270) (length 1.27) (name "" ${E}) (number "1" ${E}))
-\t\t\t\t(pin passive line (at 0 -3.81 90) (length 1.27) (name "" ${E}) (number "2" ${E}))
-\t\t\t)
-\t\t)`
-
-/** Where the candidate's label sits, in mm. Its outline grows leftwards from here. */
-const CANDIDATE_ANCHOR = { x: 38.1, y: 38.1 } as const
-/** Where the control net's label sits. Far enough in y that one outline is never taken for the other. */
-const RETURN_ANCHOR = { x: 50.8, y: 63.5 } as const
-
-/**
- * One sheet: one resistor, two wires per terminal, and two global labels - the candidate on pin 1's
- * net and `RETURN` on pin 2's. **THE CANDIDATE'S NAME IS THE ONLY THING THAT VARIES BETWEEN THE
- * FOUR SHEETS**, which is what makes a difference in the result attributable to the name, and
- * `RETURN` is on every sheet as a second known-good label to read each export against.
- */
-function render(c: Candidate): string {
-  const u = (id: string): string => derivedUuid(c.slug, id)
-  return `(kicad_sch
-\t(version 20260306)
-\t(generator "label-syntax-probe")
-\t(generator_version "10.0")
-\t(uuid "${u("sheet")}")
-\t(paper "A4")
-\t(lib_symbols
-${PROBE_SYMBOL}
-\t)
-\t(symbol (lib_id "LabelSyntax:R2") (at 50.8 50.8 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "${u("sym-R1")}")
-\t\t(property "Reference" "R1" (at 55.88 49.53 0) ${E})
-\t\t(property "Value" "1k" (at 55.88 52.07 0) ${E})
-\t\t(pin "1" (uuid "${u("sym-R1:pin1")}"))
-\t\t(pin "2" (uuid "${u("sym-R1:pin2")}"))
-\t\t(instances (project "${c.slug}" (path "/${u("sheet")}" (reference "R1") (unit 1))))
-\t)
-\t(wire (pts (xy 50.8 46.99) (xy 50.8 38.1)) (stroke (width 0) (type default)) (uuid "${u("cand-stub")}"))
-\t(wire (pts (xy 38.1 38.1) (xy 50.8 38.1)) (stroke (width 0) (type default)) (uuid "${u("cand-tail")}"))
-\t(global_label ${quoteString(c.net)} (shape bidirectional) (at ${CANDIDATE_ANCHOR.x} ${CANDIDATE_ANCHOR.y} 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "${u("cand-label")}"))
-\t(wire (pts (xy 50.8 54.61) (xy 50.8 63.5)) (stroke (width 0) (type default)) (uuid "${u("ret-stub")}"))
-\t(global_label "RETURN" (shape bidirectional) (at ${RETURN_ANCHOR.x} ${RETURN_ANCHOR.y} 270) (effects (font (size 1.27 1.27)) (justify right)) (uuid "${u("ret-label")}"))
-\t(sheet_instances (path "/" (page "1")))
-\t(embedded_fonts no)
-)
-`
-}
 
 /** The `(name <atom>)` atoms of the exported netlist's `(nets ...)` section, as RAW bytes. */
 function rawNetNameAtoms(netlist: string): readonly string[] {
@@ -252,9 +120,7 @@ function outlineHolding(paths: readonly PdfPath[], at: { readonly x: number; rea
     return Math.min(...xs) - tol <= x && x <= Math.max(...xs) + tol && Math.min(...ys) - tol <= y && y <= Math.max(...ys) + tol
   })
   if (hits.length !== 1) {
-    throw new Error(
-      `expected exactly one seven-point label outline whose box holds (${at.x}, ${at.y}) mm within ${tol} um; found ${hits.length}`,
-    )
+    throw new Error(`expected exactly one seven-point label outline whose box holds (${at.x}, ${at.y}) mm within ${tol} um; found ${hits.length}`)
   }
   return hits[0] as PdfPath
 }
@@ -267,66 +133,127 @@ const extentOf = (p: PdfPath): { readonly along: number; readonly across: number
 
 interface Verdict {
   readonly slug: string
+  readonly escaped: boolean
   readonly parsed: boolean
   readonly roundTripped: boolean
   /**
-   * **FALSE ONLY WHEN NO PDF FILE APPEARED. IT DOES NOT COVER A MANGLED LABEL**: no outline at the
-   * anchor, or two of them, makes `outlineHolding` THROW, so the run ends and this table is never
-   * printed - deliberately loud, rather than a column a reader could take for a clean result. What
-   * separates a drawn name from a TRUNCATED one is `along`, through the growth test in the summary.
+   * **FALSE WHEN NO PDF FILE APPEARED - WHICH INCLUDES `exportPdf` THROWING, as it does for a sheet
+   * KiCad will not load. IT DOES NOT COVER A MANGLED LABEL**: an export that succeeded but put no
+   * outline at the anchor, or two, makes `outlineHolding` THROW and the run ends - deliberately
+   * loud, rather than a column a reader could take for a clean result. What separates a drawn name
+   * from a TRUNCATED one is `along`, through the growth test in the candidate summary.
    */
   readonly rendered: boolean
   readonly along: number
 }
 
-function measureCandidate(c: Candidate, sheetFile: string, tmp: string): Verdict {
-  const quoted = quoteString(c.net)
-  log(`${c.slug}  net ${JSON.stringify(c.net)}`)
-  log(`    writer bytes for the name: ${quoted}`)
+/**
+ * Drive one arm: write nothing, export a netlist and a PDF, and report four things with the exit
+ * status. **A failing arm produces a ROW, never a halt** - which is what makes the negative
+ * controls possible, and which round 1 got wrong by assertion rather than by driving.
+ */
+function measureArm(a: Arm, sheetFile: string, tmp: string, repoRoot: string): Verdict {
+  const quoted = quoteString(a.net)
+  const escaped = quoted !== `"${a.net}"`
+  log(`${a.slug}  net ${JSON.stringify(a.net)}`)
+  log(`    writer bytes for the name: ${JSON.stringify(quoted)}`)
   log(`    writer bytes as hex      : ${hex(quoted)}`)
-  log(
-    `    quoteString escaped anything: ${quoted === `"${c.net}"` ? "NO - the name is between quotes verbatim" : "YES - the name is not verbatim between quotes"}`,
-  )
+  log(`    quoteString escaped anything: ${escaped ? "YES - the name is not verbatim between quotes" : "NO - the name is between quotes verbatim"}`)
 
-  const netOut = path.join(tmp, `${c.slug}.net`)
+  const netOut = path.join(tmp, `${a.slug}.net`)
   const r = runKicadCli(["sch", "export", "netlist", "--format", "kicadsexpr", "-o", netOut, sheetFile])
   log(`    kicad-cli sch export netlist: exit ${r.status}`)
-  if (r.status !== 0) {
-    log(`    PARSED: NO. stderr: ${r.stderr.trim().split("\n").join(" | ")}`)
-    return { slug: c.slug, parsed: false, roundTripped: false, rendered: false, along: 0 }
+  let parsed = r.status === 0
+  let roundTripped = false
+  if (!parsed) {
+    const why = r.stderr.trim().split("\n").filter((l) => !/^Fontconfig /.test(l)).join(" | ")
+    log(`    PARSED: NO. stderr: ${why === "" ? "(nothing but benign lines)" : why}`)
+  } else {
+    const netlist = fs.readFileSync(netOut, "utf8")
+    const raw = rawNetNameAtoms(netlist)
+    log(`    kicad wrote these net-name atoms, raw: ${raw.map((x) => JSON.stringify(x)).join(" ")}`)
+    const rawHit = raw.includes(quoted)
+    const parsedNames = Object.keys(importNetlist(netlist).nets)
+    log(`    importNetlist read these net names: ${parsedNames.map((n) => JSON.stringify(n)).join(" ")}`)
+    // **WHAT THIS ESTABLISHES, AND NOT MORE.** Both routes compare against the ARM'S OWN CONSTANT
+    // rather than against each other, so neither can agree with itself: `rawHit` is KiCad's atom
+    // bytes against the writer's, `byteHit` is `importNetlist`'s decoded name against `a.net`. The
+    // `Buffer.equals` is a UTF-8 octet comparison and for an ASCII name it is **no stronger than
+    // `===`**; it is written this way so a non-ASCII or differently-normalised arm would still be
+    // compared as octets. It establishes nothing about normalisation that `===` would miss.
+    const byteHit = parsedNames.some((n) => Buffer.from(n, "utf8").equals(Buffer.from(a.net, "utf8")))
+    log(`    raw atom identical to the writer's bytes: ${rawHit ? "YES" : "NO"}; parsed name identical to the arm's constant, octet for octet: ${byteHit ? "YES" : "NO"}`)
+    if (!rawHit || !byteHit) log(`    THE NAME DID NOT SURVIVE. KiCad's atoms as hex: ${raw.map((x) => hex(x)).join(" ")}`)
+    roundTripped = rawHit && byteHit
   }
-  const netlist = fs.readFileSync(netOut, "utf8")
-  const raw = rawNetNameAtoms(netlist)
-  log(`    kicad wrote these net-name atoms, raw: ${raw.join(" ")}`)
-  const rawHit = raw.includes(quoted)
-  const parsedNames = Object.keys(importNetlist(netlist).nets)
-  log(`    importNetlist read these net names: ${parsedNames.map((n) => JSON.stringify(n)).join(" ")}`)
-  // **WHAT THIS ESTABLISHES, AND NOT MORE.** Both routes compare against the CANDIDATE CONSTANT
-  // rather than against each other, so neither can agree with itself: `rawHit` is KiCad's atom
-  // bytes against the writer's, `byteHit` is `importNetlist`'s decoded name against `c.net`. The
-  // `Buffer.equals` is a UTF-8 octet comparison and for these four ASCII names it is **no stronger
-  // than `===`**; it is written this way so a non-ASCII or differently-normalised candidate would
-  // still be compared as octets. It establishes nothing about normalisation that `===` would miss.
-  const byteHit = parsedNames.some((n) => Buffer.from(n, "utf8").equals(Buffer.from(c.net, "utf8")))
-  log(`    raw atom identical to the writer's bytes: ${rawHit ? "YES" : "NO"}; parsed name identical to the candidate constant, octet for octet: ${byteHit ? "YES" : "NO"}`)
-  if (!rawHit) log(`    the atom KiCad wrote, as hex: ${raw.map((a) => hex(a)).join(" ")}`)
 
-  const pdf = path.join(tmp, `${c.slug}.pdf`)
-  exportPdf(sheetFile, pdf)
-  const produced = fs.existsSync(pdf)
-  log(`    kicad-cli sch export pdf: ${produced ? `produced ${fs.statSync(pdf).size} bytes` : "produced NOTHING"}`)
-  if (!produced) return { slug: c.slug, parsed: true, roundTripped: rawHit && byteHit, rendered: false, along: 0 }
+  // The PDF is attempted even for an arm whose netlist export failed, so the log records BOTH
+  // exits rather than leaving a reader to infer the second from the first.
+  const pdf = path.join(tmp, `${a.slug}.pdf`)
+  let produced = false
+  try {
+    exportPdf(sheetFile, pdf)
+    produced = fs.existsSync(pdf)
+    log(`    kicad-cli sch export pdf: ${produced ? `produced ${fs.statSync(pdf).size} bytes` : "produced NOTHING"}`)
+  } catch (e) {
+    // **THE REPO ROOT IS STRIPPED SO THE COMMITTED LOG IS PATH-INDEPENDENT.** `exportPdf`'s refusal
+    // names the sheet by absolute path, and a committed log carrying one checkout's path cannot be
+    // compared against another's - which is the whole re-drivability property this probe claims.
+    const why = (e as Error).message
+      .split("\n")
+      .filter((l) => !/^Fontconfig /.test(l) && l.trim() !== "")
+      .join(" | ")
+      .split(`${repoRoot}/`)
+      .join("<repo>/")
+    log(`    kicad-cli sch export pdf REFUSED: ${why}`)
+  }
+  if (!produced) return { slug: a.slug, escaped, parsed, roundTripped, rendered: false, along: 0 }
+
   const paths = pdfPaths(pdf, PAPER_HEIGHT_MM)
-  const outline = outlineHolding(paths, CANDIDATE_ANCHOR)
+  const outline = outlineHolding(paths, ARM_ANCHOR)
   const control = outlineHolding(paths, RETURN_ANCHOR)
   const e = extentOf(outline)
   const ce = extentOf(control)
   log(`    PDF stroked paths: ${paths.length}; seven-point outlines: ${paths.filter((p) => p.points.length === 7).length}`)
-  log(`    candidate label outline: ${e.along.toFixed(1)} um along x by ${e.across.toFixed(1)} um across`)
+  log(`    arm label outline: ${e.along.toFixed(1)} um along x by ${e.across.toFixed(1)} um across`)
   log(`    the RETURN control outline on the same page: ${ce.along.toFixed(1)} um along x by ${ce.across.toFixed(1)} um across`)
-  log(`    um of outline per character of the name (${c.net.length} characters): ${(e.along / c.net.length).toFixed(1)}`)
+  log(`    um of outline per character of the name (${a.net.length} characters): ${(e.along / a.net.length).toFixed(1)}`)
+  return { slug: a.slug, escaped, parsed, roundTripped, rendered: true, along: e.along }
+}
 
-  return { slug: c.slug, parsed: true, roundTripped: rawHit && byteHit, rendered: true, along: e.along }
+/** Write every arm's sheet, reporting content-comparison rather than timestamps. */
+function writeSheets(dir: string, arms: readonly Arm[]): Map<string, string> {
+  const files = new Map<string, string>()
+  for (const a of arms) {
+    const text = render(a)
+    const file = path.join(dir, `${a.slug}.kicad_sch`)
+    const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""
+    fs.writeFileSync(file, text)
+    files.set(a.slug, file)
+    const state = before === text ? "unchanged on disk" : before === "" ? "WRITTEN (was absent)" : "REWRITTEN (content moved)"
+    log(`${a.slug}: ${text.split("\n").length} lines, SHA-256 ${sha256(text)}, ${state}`)
+    log(`    net: ${JSON.stringify(a.net)} (${a.net.length} characters), hex ${hex(a.net)}`)
+    log(`    ${a.why}`)
+  }
+  return files
+}
+
+function driveArms(arms: readonly Arm[], files: Map<string, string>, tmp: string, repoRoot: string): Verdict[] {
+  const out: Verdict[] = []
+  for (const a of arms) {
+    const file = files.get(a.slug)
+    if (file === undefined) throw new Error(`arm ${a.slug} was not written`)
+    out.push(measureArm(a, file, tmp, repoRoot))
+  }
+  return out
+}
+
+function verdictLine(a: Arm, v: Verdict, against: string): string {
+  return (
+    `${a.slug.padEnd(24)} escaped ${v.escaped ? "YES" : "NO "}  parsed ${v.parsed ? "YES" : "NO "}  ` +
+    `round-trip ${v.roundTripped ? "YES" : "NO "}  PDF outline ${v.rendered ? "YES" : "NO "}  ` +
+    `outline ${v.along.toFixed(1)} um  - ${against}`
+  )
 }
 
 function main(): void {
@@ -351,80 +278,89 @@ function main(): void {
   log("every label measurement below is taken from the PDF export and the netlist export, NEVER from SVG: docs/known-gaps.md G265 clause 1")
 
   head("PREDICTIONS FOR LABEL SYNTAX, PRINTED BEFORE ANY kicad-cli CALL")
-  log("PROVENANCE OF THESE PREDICTIONS, because the ordering is only worth something if they were not back-filled (docs/known-gaps.md G271):")
-  log("  the four candidate predictions are the task brief's own and the boundary-census prediction is the SPEC's, from part 1's third correction; both predate this file.")
+  log("PROVENANCE, because the ordering is only worth something if these were not back-filled (docs/known-gaps.md G271):")
+  log("  the four CANDIDATE predictions are the task brief's own and the boundary-census prediction is the SPEC's, from part 1's third correction; both predate this file.")
   log("  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work. NO PREDICTION WAS REVISED AFTER IT.")
-  log("  one of them is refuted below and is left standing as it was written.")
-  for (const c of CANDIDATES) log(`PREDICTION ${c.net}: ${c.prediction}`)
+  log("  the six CONTROL expectations are NOT predictions and are not presented as any: each was established by a scratch drive while writing round 2 and is PINNED, so this run CHECKS it.")
+  log("  one prediction is refuted below and is left standing as it was written.")
+  for (const c of CANDIDATES) log(`PREDICTION ${c.net}: ${c.expect}`)
+  for (const c of CONTROLS) log(`EXPECTATION ${c.slug} ${JSON.stringify(c.net)}: ${c.expect}`)
   log(
     "PREDICTION boundary census: NON-ZERO. The spec says of pt2399-core that \"the synthetic name becomes a label " +
       "*only because of the fake port*, since ports are boundary nets\", so at least `unconnected-(U1-CLK_O-Pad5)` " +
       "is expected to reach a label. REFUTED BY: a census of zero, which would mean a declared port does not make a " +
       "net a label and the punctuation question is closed by the architecture rather than by kicad-cli.",
   )
-  log("PREDICTION control: SIGNAL parses, round-trips and renders. REFUTED BY: any failure, which would make every row below about this probe's sheet rather than about a net name.")
+  log("PREDICTION positive control: SIGNAL parses, round-trips and renders. REFUTED BY: any failure, which would make every candidate row about this probe's sheet rather than about a net name.")
+  log("PREDICTION negative controls: at least one arm reports parsed NO, and at least one reports parsed YES with round-trip NO. REFUTED BY: every arm passing, which would mean this probe has never been shown able to report a failure at all.")
 
-  head("LABEL SYNTAX SHEETS: ONE PER CANDIDATE, WRITTEN BY THE PRODUCTION STRING WRITER")
+  head("LABEL SYNTAX SHEETS: ONE PER ARM, THE NAME ATOM WRITTEN BY THE PRODUCTION STRING WRITER")
   const sheetDir = path.join(repoRoot, "tools/schgen/label-syntax/sheets")
   fs.mkdirSync(sheetDir, { recursive: true })
-  const files = new Map<string, string>()
-  for (const c of CANDIDATES) {
-    const text = render(c)
-    const file = path.join(sheetDir, `${c.slug}.kicad_sch`)
-    const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""
-    fs.writeFileSync(file, text)
-    files.set(c.slug, file)
-    log(
-      `${c.slug}: ${text.split("\n").length} lines, SHA-256 ${sha256(text)}, ` +
-        `${before === text ? "unchanged on disk" : before === "" ? "WRITTEN (was absent)" : "REWRITTEN (content moved)"}`,
-    )
-    log(`    net: ${JSON.stringify(c.net)} (${c.net.length} characters), from ${c.provenance}`)
-  }
+  const files = writeSheets(sheetDir, [...CANDIDATES, ...CONTROLS])
 
-  head("LABEL SYNTAX: WHAT kicad-cli DID WITH EACH CANDIDATE")
-  const verdicts: Verdict[] = []
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "label-syntax-"))
+  let candidates: Verdict[] = []
+  let controls: Verdict[] = []
   try {
-    for (const c of CANDIDATES) {
-      const file = files.get(c.slug)
-      if (file === undefined) throw new Error(`candidate ${c.slug} was not written`)
-      verdicts.push(measureCandidate(c, file, tmp))
-    }
+    head("LABEL SYNTAX: WHAT kicad-cli DID WITH EACH CANDIDATE")
+    candidates = driveArms(CANDIDATES, files, tmp, repoRoot)
+    head("LABEL SYNTAX: WHAT kicad-cli DID WITH EACH CONTROL ARM")
+    controls = driveArms(CONTROLS, files, tmp, repoRoot)
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true })
   }
 
-  head("LABEL SYNTAX VERDICTS: THE FOUR ANSWERS PER CANDIDATE, AGAINST THE PREDICTION")
+  head("LABEL SYNTAX CANDIDATE VERDICTS: THE FOUR ANSWERS PER CANDIDATE, AGAINST THE PREDICTION")
   for (const c of CANDIDATES) {
-    const v = verdicts.find((x) => x.slug === c.slug)
+    const v = candidates.find((x) => x.slug === c.slug)
     if (v === undefined) throw new Error(`candidate ${c.slug} produced no verdict`)
     const all = v.parsed && v.roundTripped && v.rendered
-    const against = c.prediction.startsWith("UNKNOWN")
-      ? "NO PREDICTION TO COMPARE - this row IS the measurement"
-      : all
-        ? "AS PREDICTED"
-        : "NOT AS PREDICTED"
-    log(
-      `${c.net.padEnd(28)} parsed ${v.parsed ? "YES" : "NO "}  round-trip byte-identical ${v.roundTripped ? "YES" : "NO "}  ` +
-        `PDF outline drawn ${v.rendered ? "YES" : "NO "}  outline ${v.along.toFixed(1)} um  (predicted: ${c.prediction}) - ${against}`,
-    )
+    const against = c.expect.startsWith("UNKNOWN") ? "NO PREDICTION TO COMPARE - this row IS the measurement" : all ? "AS PREDICTED" : "NOT AS PREDICTED"
+    log(verdictLine(c, v, against))
   }
-  const control = verdicts.find((v) => v.slug === "control-upper-snake")
-  if (control === undefined) throw new Error("the control produced no verdict")
+  const positive = candidates.find((v) => v.slug === "control-upper-snake")
+  if (positive === undefined) throw new Error("the positive control produced no verdict")
   log(
-    control.parsed && control.roundTripped && control.rendered
-      ? "CONTROL PASSED: the UPPER_SNAKE name parses, round-trips byte-identical and draws an outline, so a failure on another row would be about that row's name."
-      : "CONTROL FAILED: the UPPER_SNAKE name did not pass, so every row above is about this probe's sheet rather than about a net name, and nothing here may be read as a fact about KiCad.",
+    positive.parsed && positive.roundTripped && positive.rendered
+      ? "POSITIVE CONTROL PASSED: the UPPER_SNAKE name parses, round-trips and draws an outline, so a failure on another candidate row would be about that row's name."
+      : "POSITIVE CONTROL FAILED: the UPPER_SNAKE name did not pass, so every candidate row is about this probe's sheet rather than about a net name, and nothing here is a fact about KiCad.",
   )
-  const alongs = CANDIDATES.map((c) => {
-    const v = verdicts.find((x) => x.slug === c.slug)
-    return { chars: c.net.length, along: v?.along ?? 0 }
-  }).sort((a, b) => a.chars - b.chars)
+  const alongs = CANDIDATES.map((c) => ({ chars: c.net.length, along: candidates.find((x) => x.slug === c.slug)?.along ?? 0 })).sort((a, b) => a.chars - b.chars)
   log(`outline extent against character count, shortest name first: ${alongs.map((a) => `${a.chars}ch=${a.along.toFixed(0)}um`).join(" ")}`)
   log(
     alongs.every((a, i) => i === 0 || a.along > (alongs[i - 1]?.along ?? 0))
       ? "THE OUTLINE GROWS STRICTLY WITH THE NAME, so the whole string is being drawn rather than a truncation of it. This is the evidence that \"renders\" means the name and not merely a box: the PDF carries stroked glyph paths and no readable string, so the outline's extent is the only thing that can distinguish a drawn name from a mangled one."
       : "THE OUTLINE DOES NOT GROW STRICTLY WITH THE NAME, so at least one name is not drawn at its full length and \"renders\" cannot be read as \"the whole name is on the sheet\".",
+  )
+
+  head("LABEL SYNTAX CONTROL VERDICTS: WHAT EACH PINNED ARM DID, AND WHETHER THE PIN HELD")
+  log("an arm here failing is the INTENDED result and is not a regression. The pin is what a regression would move.")
+  for (const c of CONTROLS) {
+    const v = controls.find((x) => x.slug === c.slug)
+    if (v === undefined) throw new Error(`control ${c.slug} produced no verdict`)
+    log(verdictLine(c, v, `pinned: ${c.expect}`))
+  }
+  const loud = controls.filter((v) => !v.parsed)
+  const silent = controls.filter((v) => v.parsed && !v.roundTripped)
+  const passing = controls.filter((v) => v.parsed && v.roundTripped && v.rendered)
+  const escaping = controls.filter((v) => v.escaped)
+  log(`control arms: ${controls.length}; refused by kicad-cli (LOUD failure): ${loud.length}; parsed and silently renamed (SILENT failure): ${silent.length}; fully passing: ${passing.length}; exercising the escaping path: ${escaping.length}`)
+  log(
+    loud.length > 0 && silent.length > 0 && passing.length > 0
+      ? "NEGATIVE CONTROL ESTABLISHED: in one committed run this probe reports a PASS, a LOUD FAILURE and a SILENT RENAME, so every column above has been seen to take both values and a passing candidate row is a result rather than a property of the instrument."
+      : "NEGATIVE CONTROL NOT ESTABLISHED: this run did not produce a pass, a loud failure and a silent rename together, so at least one column has never been seen to take both values and every candidate verdict above is suspect.",
+  )
+  log(
+    silent.length > 0
+      ? `THE SILENT ARMS ARE THE FINDING, NOT THE LOUD ONE: ${silent.map((v) => v.slug).join(" ")} each exported at exit 0 and handed back a DIFFERENT net name than the sheet carried. A validator that only asked whether kicad-cli succeeded would pass them.`
+      : "no arm parsed and then came back renamed in this run.",
+  )
+  const tab = controls.find((v) => v.slug === "ctl-tab")
+  log(
+    tab !== undefined && tab.parsed && tab.roundTripped
+      ? "THE DISCRIMINATOR HELD: a TAB is a control character that KiCad takes verbatim, so the three failures above are NOT explained by \"a control character\" - they are what a newline does to the s-expression's line structure, and what CR and NUL do to KiCad's string reader. str()'s blanket refusal of [\\u0000-\\u001f] is therefore WIDER than KiCad requires, which is the safe direction and is not a recommendation to narrow it."
+      : "THE DISCRIMINATOR DID NOT HOLD: the tab arm did not parse and round-trip, so the failures above may be about the control-character class after all and this run cannot separate the two explanations.",
   )
 
   head("BOUNDARY CENSUS: EVERY DECLARED BLOCK OF EVERY BOARD, AND WHICH NET NAMES REACH A LABEL")
@@ -453,8 +389,7 @@ function main(): void {
     }
     const syntheticLabelled = [...labelNets].filter((n) => SYNTHETIC.test(n)).sort()
     syntheticLabels += syntheticLabelled.length
-    const bad = [...labelNets].filter((n) => !NET_NAME.test(n)).sort()
-    failing.set(board.name, bad)
+    failing.set(board.name, [...labelNets].filter((n) => !NET_NAME.test(n)).sort())
     log(
       `${board.name.padEnd(28)} declared by ${decl.entry.padEnd(28)} ${String(circuit.blocks.size).padStart(2)} block(s), ` +
         `${String(circuit.nets.size).padStart(2)} net(s), ${String(synthetic.length).padStart(2)} synthetic net name(s), ` +
@@ -490,9 +425,11 @@ function main(): void {
   log(`labelled nets failing NET_NAME, over every board with a declaration: ${failingTotal}`)
 
   head("LABEL SYNTAX SUMMARY")
-  log(`candidates driven: ${verdicts.length}; parsed: ${verdicts.filter((v) => v.parsed).length}; round-tripped byte-identical: ${verdicts.filter((v) => v.roundTripped).length}; drew an outline: ${verdicts.filter((v) => v.rendered).length}`)
+  log(`candidates driven: ${candidates.length}; parsed: ${candidates.filter((v) => v.parsed).length}; round-tripped: ${candidates.filter((v) => v.roundTripped).length}; drew an outline: ${candidates.filter((v) => v.rendered).length}`)
+  log(`control arms driven: ${controls.length}; loud failures: ${loud.length}; silent renames: ${silent.length}; passing: ${passing.length}`)
   log(`synthetic net names reaching a global label, over all ${boards.length} boards: ${syntheticLabels}`)
   log(`labelled nets refused by NET_NAME today, over all ${boards.length} boards: ${failingTotal}`)
+  log(`declared cases the census could have ranged over: ${ALL_DECLARED_CASES.length}; boards it did range over: ${boards.length}`)
 }
 
 main()
