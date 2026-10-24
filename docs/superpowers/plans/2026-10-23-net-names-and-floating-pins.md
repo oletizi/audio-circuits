@@ -114,7 +114,13 @@ Write the message to a file and `git commit -F`. Record the findings in `docs/kn
 - Consumes: nothing from Task 1.
 - Produces: `NC PATH` — whether a model `NC` connection reaches the IR as `net: null`, whether `pinsDeclared` accepts it, and whether the pin appears in `d.noConnects` and so in the emitted sheet.
 
-**Why this is a measurement and not an assumption.** `NC` is exported at `lib/model/types.ts:42`, **no circuit imports it**, and the path appears already wired: `lib/schgen/from-network.ts:222` and `:233` read `connection.kind === "net" ? { net, identity } : { nc: true, identity }` — the NC case is the **unnamed else branch** — and `:468` maps a connection with no `net` key to **`null`**. So the plumbing exists and has never carried anything. **Find out what it does before changing it.**
+**Why this is a measurement and not an assumption.** `NC` is exported at `lib/model/types.ts:42`, **no circuit imports it**, and the path appears already wired: `lib/schgen/from-network.ts:222` and `:233` read `connection.kind === "net" ? { net, identity } : { nc: true, identity }` — the NC case is the **unnamed else branch**. So the plumbing exists and no *circuit* has carried anything through it. **Find out what it does before changing it.**
+
+> **TWO CORRECTIONS, 2026-10-23, FROM TASK 2's OWN MEASUREMENT. Both were mine and the second is the kind that misleads.**
+>
+> **(1) The line citation was wrong.** This paragraph said `from-network.ts:468` maps a connection with no `net` key to `null`. **It does — but it is the wrong code path:** `:468` is inside `orientationsOfParts`, building a `pinNets` map for choosing a symbol's orientation. **The IR's `null` comes from `connectedNet` at `lib/schgen/ir/types.ts:62`** (`return "net" in c ? c.net : null`), reached from **`lib/schgen/ir/build.ts:46`**. A citation that is *locally true and structurally irrelevant* is worse than a typo, because it reads as evidence.
+>
+> **(2) "Has never carried anything" was too wide.** `[RAN]` **five test files import `NC`**, and `tests/kicad/schematic.test.ts` **already drove a model `NC` through to a `(no_connect)`** — via the superseded stub writer. **Zero *circuits* import it, which is the true claim.** The real gap was narrower and this task closed exactly it: **no test drove a model `NC` through `circuitSpecFrom`.** A true narrow measurement stated as a universal is the third instance of that shape on this plan.
 
 - [ ] **Step 1: Write the failing test — a minimal circuit with one NC pin**
 

@@ -254,14 +254,37 @@ against today.
 > kebab-case — and the camelCase name was **copied out of
 > `lib/schgen/README.md:303` rather than checked against the tree**, which is
 > exactly what `CLAUDE.md`'s *"verify names against the thing itself"* forbids and
-> why that rule exists. **The README's name is stale and is a separate small
-> defect.**
+> why that rule exists.
 >
-> Second: the draft said the capability was *tested*. What is verified is that a
-> test exists at that path exercising no-connect ends. **`lib/schgen/README.md`
-> separately lists `emit-items.ts` among the modules nothing runs**, so how much
-> of `noConnect()` is actually covered is **unmeasured**, and the implementation
-> should establish it rather than inherit this sentence.
+> > **AND THE SENTENCE THAT STOOD HERE BLAMED THE README, WRONGLY. Corrected
+> > 2026-10-23 by this plan's Task 2.** It read: *"The README's name is stale and
+> > is a separate small defect."* **It is not stale and it is not a defect.**
+> > `[READ]` `lib/schgen/README.md:303` names those four files inside a sentence
+> > about what **Task 7 PORTED**, and all four exist **upstream** in camelCase —
+> > `bodyClearance.test.ts`, `textClearance.test.ts`, `unitText.test.ts`,
+> > `noConnectEnds.test.ts`, verified in the sibling repository — while all four
+> > local equivalents are kebab-case. The README is correctly naming the source
+> > files. **My original error stands (I cited a local path that does not exist);
+> > what was wrong was blaming another document for it, which I asserted without
+> > reading the context it was written in.** That is a worse error than the first,
+> > because it put a false defect claim about a correct document into an approved
+> > spec.
+>
+> Second: the draft said the capability was *tested*, and softened that to a test
+> merely existing because `lib/schgen/README.md` lists `emit-items.ts` among the
+> modules nothing runs.
+>
+> > **BOTH HALVES OF THAT ARE NOW SUPERSEDED BY MEASUREMENT, 2026-10-23, Task 2.**
+> > `[RAN]` full-suite lcov at a clean tree: `lib/schgen/render/emit-items.ts` is
+> > **LF=137, LH=137 — no uncovered lines** — and **no module under
+> > `lib/schgen/` has zero coverage.** `noConnect()`'s body is exercised by six of
+> > the seventeen emitter-reaching test files, and generating the `mini` fixture
+> > writes **three `(no_connect …)` items**, one of which `round-trip.kicad.test.ts`
+> > exports with real `kicad-cli` — **so KiCad already reads a
+> > generator-emitted no-connect.** The README sentence I leaned on is **dated
+> > narrative that the README itself reverses a hundred lines later**, and even the
+> > reversal is now stale. **Measuring it was the instruction; the instruction was
+> > right and the premise behind it was not.** See **G278**.
 
 **Required gate, not a serialization detail:** an end-to-end test proving
 `pt2399-core` pin 5's `NC` status survives generation **and** round-trip
