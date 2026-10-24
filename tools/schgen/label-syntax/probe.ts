@@ -4,10 +4,9 @@
  *
  *   bun run tools/schgen/label-syntax/probe.ts > tools/schgen/label-syntax/probe-run.log
  *
- * Research probe for Task 1 of
- * `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`. **It changes no production
- * code, nothing in `lib/` reads it, and no gate calls it.** The committed `probe-run.log` beside
- * this file is one run of it, produced by the command above.
+ * Research probe for Task 1 of `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`.
+ * **It changes no production code, nothing in `lib/` reads it, and no gate calls it.** The
+ * committed `probe-run.log` beside this file is one run of it, produced by the command above.
  *
  * **WHY IT EXISTS, AND IT IS THE ORDER THAT MATTERS.** `lib/schgen/ir/validate.ts`'s `netNames`
  * rule refuses two different things with one message. `hi_boost_out` fails on **letter case
@@ -17,35 +16,53 @@
  * second kind into the emitter, and until this probe ran **nobody had checked whether KiCad accepts
  * those characters in a global label at all** - G150's own relax mechanism flagged exactly that.
  *
- * **IT MEASURES THROUGH PDF AND THE NETLIST, NEVER THROUGH SVG.** `docs/known-gaps.md` **G265**
- * clause 1 records that `kicad-cli sch export svg` at 10.0.5 does not draw a global label's
- * outline at all, under-reporting the label by the whole 3333.75 um outline. Any measurement of a
- * label taken through SVG is wrong, so this probe takes none.
+ * **IT MEASURES THROUGH PDF AND THE NETLIST, NEVER THROUGH SVG**: `docs/known-gaps.md` **G265**
+ * clause 1 records that `sch export svg` at 10.0.5 does not draw a global label's outline at all,
+ * under-reporting the label by the whole 3333.75 um, so any measurement of a label through SVG is
+ * wrong and this probe takes none.
  *
- * **THE NAME IS WRITTEN BY THE PRODUCTION STRING WRITER AND NOT BY THIS FILE.** The candidate goes
- * into the sheet through `lib/kicad/sexpr.ts`'s `quoteString`, which is what
+ * **THE NAME ATOM'S BYTES ARE PRODUCTION'S; THE FORM AROUND THEM IS NOT.** The candidate goes into
+ * the sheet through `lib/kicad/sexpr.ts`'s `quoteString`, which is what
  * `lib/schgen/render/sexpr-write.ts`'s `str()` calls and therefore what
- * `lib/schgen/render/emit-items.ts`'s `globalLabel` would emit for a net name. So the "exact bytes
- * the writer emitted" below are the emitter's own answer, not this probe's imitation of it.
- * `str()` adds one check `quoteString` does not - it refuses a control character - and none of the
- * four candidates contains one.
+ * `lib/schgen/render/emit-items.ts`'s `globalLabel` would emit for a net name - so the "exact bytes
+ * the writer emitted" below are the emitter's own answer. **The surrounding `(global_label …)` form
+ * is hand-written by `render` below**: it does not pass through `str()` (so `str()`'s
+ * control-character refusal at `sexpr-write.ts:32-33` is not in this path) and it omits the
+ * `(property "Intersheetrefs" …)` node production always emits. Neither affects what KiCad does
+ * with the NAME, which is all that is measured - but these sheets are not emitter output.
  *
- * **THE SHEETS ARE BUILT HERE AND COMMITTED, so the run re-drives from a clean checkout.** It
- * needs `kicad-cli`, which `make check` already requires on every run, and nothing else: no
- * download, no font blob, no Python. UUIDs are derived from the sheet and item name rather than
- * generated, so the same probe always writes the same bytes and the sheets are compared by content
- * rather than by timestamp. `tools/schgen/label-freedom/fixtures.ts` does the same thing with an
- * FNV hash and a richer arm model; its builder is not exported and its arms are pinned by another
- * task's test, so the two-symbol sheet below is this probe's own rather than a coupling to it.
+ * **SO "THE WRITER ESCAPES NOTHING" IS A FACT ABOUT THESE FOUR NAMES, NOT ABOUT THE WRITER.**
+ * `quoteString` does escape `\` and `"`; these four hold neither, and none holds a control
+ * character. **A round-1 review drove the three candidates that exercise the other arms and none of
+ * them is in `CANDIDATES` below**, so this probe does not cover them: `BAD"QUOTE` and `BACK\SLASH`
+ * escape, and a RAW NEWLINE makes `kicad-cli` exit 3. `docs/known-gaps.md` **G277** clause 7
+ * carries that, marked relayed, and it is what Task 3's replacement predicate must answer.
+ *
+ * **THE SHEETS ARE BUILT HERE AND COMMITTED, so the run re-drives from a clean checkout.** It needs
+ * `kicad-cli`, which `make check` already requires on every run, and nothing else: no download, no
+ * font blob, no Python. UUIDs are derived from the sheet and item name rather than generated, so the
+ * probe always writes the same bytes and the sheets compare by content rather than by timestamp.
+ * `tools/schgen/label-freedom/fixtures.ts` does the same with an FNV hash and a richer arm model;
+ * its builder is unexported and its arms are pinned by another task's test, so the two-symbol sheet
+ * below is this probe's own rather than a coupling to it.
  *
  * **IT ASKS A SECOND QUESTION THAT CAN CLOSE THE FIRST ONE WITHOUT KiCad'S HELP.** A punctuated
  * net name only matters if it is ever DRAWN. Labels are emitted per **boundary anchor**, not per
  * net: `lib/schgen/render/cross-sheet.ts` records that `anchorsToSymbols` emits exactly a power
  * symbol or a global label for a block's boundary anchors, `lib/schgen/render/sheets.ts:77` is the
- * only caller that reaches a sheet drawing, and `lib/schgen/render/emit.ts:171` is the only
- * `globalLabel` call site in the repository. The anchor's net is therefore always in the block's
- * `rails` or its `external` - `labelRefsOf` throws for anything else - so counting `external` over
- * every declared block is the complete census and not a sample of one.
+ * only caller that reaches a sheet drawing, and `lib/schgen/render/emit.ts:171` is **the only
+ * `globalLabel` call site under `lib/`, and the only one anywhere that takes its nets from a
+ * board's `SheetDrawing.labels`**. The anchor's net is therefore always in the block's `rails` or
+ * its `external` - `labelRefsOf` throws for anything else - so counting `external` over every
+ * declared block is the complete census and not a sample of one.
+ *
+ * **THAT NARROWING IS A ROUND-1 CORRECTION OF "the only call site in the repository", WHICH IS
+ * FALSE.** `grep` finds **three**: this one, `tools/schgen/text-metrics/svg-probe.ts:123` and
+ * `tests/schgen/render/emit-refusals.test.ts:91`. Neither of the other two can carry a board's net
+ * - each passes a literal of its own (`row.net` from that probe's corpus, and `"SIG"`) and neither
+ * consumes a `SheetDrawing` - so the census is unaffected and only the claim moved. **It is
+ * corrected because it is the first link of the argument**: a later agent who greps, finds three
+ * and takes the old sentence at its word would discard a correct zero.
  *
  * **IT DESIGNS NOTHING AND DECIDES NOTHING.** Whether the `netNames` rule comes out, and what
  * replaces the format half of `lib/schgen/gates/pin-table.ts`'s guard, are Task 3's and are
@@ -101,10 +118,10 @@ interface Candidate {
 /**
  * The four candidates, each transcribed from a file in this repository.
  *
- * **`SIGNAL` IS THE CONTROL AND ITS JOB IS TO BE ABLE TO FAIL.** If it did not parse, round-trip
- * and render, nothing below would be about the punctuation: it would be about the sheet this probe
- * writes. The other three are the two classes `netNames` refuses with one message - case alone, and
- * case plus punctuation - with the second class represented by both shapes `pt2399-core` holds.
+ * **`SIGNAL` IS THE CONTROL AND ITS JOB IS TO BE ABLE TO FAIL**: had it not parsed, round-tripped
+ * and rendered, nothing below would be about the punctuation. The other three are the two classes
+ * `netNames` refuses with one message - case alone, and case plus punctuation - the second
+ * represented by both shapes `pt2399-core` holds.
  */
 const CANDIDATES: readonly Candidate[] = [
   {
@@ -134,10 +151,9 @@ const CANDIDATES: readonly Candidate[] = [
 ]
 
 /**
- * UUIDs derived from the sheet and item name, never generated.
- *
- * A random UUID would make every written sheet differ from the committed one on every run, so the
- * derived-artifact comparison could only ever be by timestamp - which `CLAUDE.md` forbids.
+ * UUIDs derived from the sheet and item name, never generated: a random one would make every
+ * written sheet differ from the committed one on every run, so the derived-artifact comparison
+ * could only ever be by timestamp - which `CLAUDE.md` forbids.
  */
 function derivedUuid(sheet: string, id: string): string {
   const h = sha256(`label-syntax/${sheet}/${id}`)
@@ -177,12 +193,10 @@ const CANDIDATE_ANCHOR = { x: 38.1, y: 38.1 } as const
 const RETURN_ANCHOR = { x: 50.8, y: 63.5 } as const
 
 /**
- * One sheet carrying one resistor, two wires per terminal, and two global labels: the candidate on
- * pin 1's net and `RETURN` on pin 2's.
- *
- * **THE CANDIDATE'S NAME IS THE ONLY THING THAT VARIES BETWEEN THE FOUR SHEETS**, which is what
- * makes a difference in the result attributable to the name. `RETURN` is on every sheet so that
- * each export has a second, known-good label to be read against.
+ * One sheet: one resistor, two wires per terminal, and two global labels - the candidate on pin 1's
+ * net and `RETURN` on pin 2's. **THE CANDIDATE'S NAME IS THE ONLY THING THAT VARIES BETWEEN THE
+ * FOUR SHEETS**, which is what makes a difference in the result attributable to the name, and
+ * `RETURN` is on every sheet as a second known-good label to read each export against.
  */
 function render(c: Candidate): string {
   const u = (id: string): string => derivedUuid(c.slug, id)
@@ -221,12 +235,11 @@ function rawNetNameAtoms(netlist: string): readonly string[] {
 }
 
 /**
- * The one closed seven-point outline whose box holds `at` - a global label's body.
- *
- * It refuses on none and on more than one rather than taking the first: a measurement of the wrong
- * label reads exactly like a measurement of the right one. It is not
- * `text-metrics/pdf-probe.ts`'s `labelOutlineNear`, which needs every point of the path within one
- * radius of the anchor - a 27-character name's outline is wider than the two labels here are apart.
+ * The one closed seven-point outline whose box holds `at` - a global label's body. It refuses on
+ * none and on more than one rather than taking the first: a measurement of the wrong label reads
+ * exactly like a measurement of the right one. It is not `text-metrics/pdf-probe.ts`'s
+ * `labelOutlineNear`, which needs every point within one radius of the anchor - a 27-character
+ * name's outline is wider than the two labels here are apart.
  */
 function outlineHolding(paths: readonly PdfPath[], at: { readonly x: number; readonly y: number }): PdfPath {
   const tol = 500
@@ -256,6 +269,12 @@ interface Verdict {
   readonly slug: string
   readonly parsed: boolean
   readonly roundTripped: boolean
+  /**
+   * **FALSE ONLY WHEN NO PDF FILE APPEARED. IT DOES NOT COVER A MANGLED LABEL**: no outline at the
+   * anchor, or two of them, makes `outlineHolding` THROW, so the run ends and this table is never
+   * printed - deliberately loud, rather than a column a reader could take for a clean result. What
+   * separates a drawn name from a TRUNCATED one is `along`, through the growth test in the summary.
+   */
   readonly rendered: boolean
   readonly along: number
 }
@@ -282,8 +301,14 @@ function measureCandidate(c: Candidate, sheetFile: string, tmp: string): Verdict
   const rawHit = raw.includes(quoted)
   const parsedNames = Object.keys(importNetlist(netlist).nets)
   log(`    importNetlist read these net names: ${parsedNames.map((n) => JSON.stringify(n)).join(" ")}`)
+  // **WHAT THIS ESTABLISHES, AND NOT MORE.** Both routes compare against the CANDIDATE CONSTANT
+  // rather than against each other, so neither can agree with itself: `rawHit` is KiCad's atom
+  // bytes against the writer's, `byteHit` is `importNetlist`'s decoded name against `c.net`. The
+  // `Buffer.equals` is a UTF-8 octet comparison and for these four ASCII names it is **no stronger
+  // than `===`**; it is written this way so a non-ASCII or differently-normalised candidate would
+  // still be compared as octets. It establishes nothing about normalisation that `===` would miss.
   const byteHit = parsedNames.some((n) => Buffer.from(n, "utf8").equals(Buffer.from(c.net, "utf8")))
-  log(`    raw atom identical to the writer's bytes: ${rawHit ? "YES" : "NO"}; parsed name byte-identical to the input: ${byteHit ? "YES" : "NO"}`)
+  log(`    raw atom identical to the writer's bytes: ${rawHit ? "YES" : "NO"}; parsed name identical to the candidate constant, octet for octet: ${byteHit ? "YES" : "NO"}`)
   if (!rawHit) log(`    the atom KiCad wrote, as hex: ${raw.map((a) => hex(a)).join(" ")}`)
 
   const pdf = path.join(tmp, `${c.slug}.pdf`)
@@ -317,10 +342,9 @@ function main(): void {
   // workflow exists to prevent.
   if (!fs.existsSync(KICAD_CLI)) {
     throw new Error(
-      `kicad-cli is not at ${KICAD_CLI}, so nothing below could be measured. lib/kicad/install.ts ` +
-        "holds the per-platform candidate list and an explicitly set KICAD_CLI always wins. This " +
-        "probe refuses rather than reporting an empty run: a skipped measurement must never look " +
-        "like a passing one.",
+      `kicad-cli is not at ${KICAD_CLI}, so nothing below could be measured. lib/kicad/install.ts holds the ` +
+        "per-platform candidate list and an explicitly set KICAD_CLI always wins. This probe refuses rather " +
+        "than reporting an empty run: a skipped measurement must never look like a passing one.",
     )
   }
   log(`kicad-cli resolved to ${KICAD_CLI}, version ${kicadVersion()}`)
@@ -328,10 +352,9 @@ function main(): void {
 
   head("PREDICTIONS FOR LABEL SYNTAX, PRINTED BEFORE ANY kicad-cli CALL")
   log("PROVENANCE OF THESE PREDICTIONS, because the ordering is only worth something if they were not back-filled (docs/known-gaps.md G271):")
-  log("  the four candidate predictions are the task brief's own, written before this file existed;")
-  log("  the boundary-census prediction is the SPEC's, from part 1's third correction, also written before this file existed;")
-  log("  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work.")
-  log("  NO PREDICTION WAS REVISED AFTER THAT PROTOTYPE. One of them is refuted below and is left standing as it was written.")
+  log("  the four candidate predictions are the task brief's own and the boundary-census prediction is the SPEC's, from part 1's third correction; both predate this file.")
+  log("  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work. NO PREDICTION WAS REVISED AFTER IT.")
+  log("  one of them is refuted below and is left standing as it was written.")
   for (const c of CANDIDATES) log(`PREDICTION ${c.net}: ${c.prediction}`)
   log(
     "PREDICTION boundary census: NON-ZERO. The spec says of pt2399-core that \"the synthetic name becomes a label " +
@@ -397,9 +420,7 @@ function main(): void {
     const v = verdicts.find((x) => x.slug === c.slug)
     return { chars: c.net.length, along: v?.along ?? 0 }
   }).sort((a, b) => a.chars - b.chars)
-  log(
-    `outline extent against character count, shortest name first: ${alongs.map((a) => `${a.chars}ch=${a.along.toFixed(0)}um`).join(" ")}`,
-  )
+  log(`outline extent against character count, shortest name first: ${alongs.map((a) => `${a.chars}ch=${a.along.toFixed(0)}um`).join(" ")}`)
   log(
     alongs.every((a, i) => i === 0 || a.along > (alongs[i - 1]?.along ?? 0))
       ? "THE OUTLINE GROWS STRICTLY WITH THE NAME, so the whole string is being drawn rather than a truncation of it. This is the evidence that \"renders\" means the name and not merely a box: the PDF carries stroked glyph paths and no readable string, so the outline's extent is the only thing that can distinguish a drawn name from a mangled one."
@@ -443,10 +464,7 @@ function main(): void {
     log(`    reaches a label: ${[...labelNets].sort().map((n) => JSON.stringify(n)).join(" ") || "(none)"}`)
     if (synthetic.length > 0) log(`    its synthetic net names, none of which need be labelled: ${synthetic.join(" ")}`)
   }
-  log(
-    `BOUNDARY CENSUS: over ${boards.length} boards, ${syntheticNetsTotal} synthetic net name(s) exist in the models and ` +
-      `${syntheticLabels} of them reach a global label.`,
-  )
+  log(`BOUNDARY CENSUS: over ${boards.length} boards, ${syntheticNetsTotal} synthetic net name(s) exist in the models and ${syntheticLabels} of them reach a global label.`)
   log(
     syntheticLabels === 0
       ? "THE BOUNDARY-CENSUS PREDICTION PUBLISHED ABOVE IS REFUTED: it predicted non-zero, on the spec's own mechanism that a declared port makes a net a boundary net. It does not. `buildCircuit` leaves `Circuit.offSheet` empty unconditionally (lib/schgen/ir/build.ts:152, and the field's own comment in lib/schgen/ir/types.ts says only a sheet subset ever has any), so `labelledNets` labels a net only when it is a rail, touches more than one block, or touches a `bus` block. `pt2399-core` is ONE block, so none of its 16 synthetic names is labelled, with or without the fake `clk_o_unused` port."

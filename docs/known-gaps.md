@@ -25647,11 +25647,24 @@ entirely.
 net names exist in the models - all sixteen on `pt2399-core` - and **none of
 them reaches a global label.** The complete set of net names that can become a
 label on a sheet is a block's `external` set: `lib/schgen/render/emit.ts:171` is
-the only `globalLabel` call site in the repository, its `labels` come from
+**the only `globalLabel` call site under `lib/`, and the only one anywhere that
+takes its nets from a board's `SheetDrawing.labels`**, its `labels` come from
 `render/sheets.ts:77`'s `anchorsToSymbols`, and `power-text.ts`'s `labelRefsOf`
 **throws** for an anchor net that is not in the block's `labelRefs` - which
 `render/blocks.ts`'s `subgraphOf` builds from `external` alone. So this is a
 census and not a sample.
+
+**THAT SENTENCE READ "the only `globalLabel` call site in the repository" UNTIL
+ROUND 1 AND THAT WAS FALSE.** `[RAN]` `grep` finds **three**: `emit.ts:171`,
+`tools/schgen/text-metrics/svg-probe.ts:123` and
+`tests/schgen/render/emit-refusals.test.ts:91`. **The zero is untouched** -
+neither of the other two can carry a board's net, because each passes a literal
+of its own (`row.net` from that probe's own corpus, and `"SIG"`) and neither
+consumes a `SheetDrawing`. **It is corrected anyway, and the reason is the
+failure mode rather than the arithmetic**: this is the FIRST LINK of the argument
+that makes the census complete, so a later agent who greps, finds three and takes
+the old sentence at its word would discard a correct zero. The same sentence is
+corrected in `tools/schgen/label-syntax/probe.ts`'s header.
 
 **(3) THE PREDICTION WAS NON-ZERO AND IT WAS THE SPEC'S OWN, AND THE MECHANISM
 BEHIND IT IS WRONG.** The spec's part 1 says of `pt2399-core` that *"the
@@ -25697,6 +25710,51 @@ union against `listTsFiles`, which enumerates `.ts` only - so declaring the log
 fails `accountedButMissing` naming it. **One entry was added, not two**, and the
 committed sheets under `sheets/` need none because they are not `.ts` either.
 
+**(7) ADDED ON ROUND-1 REVIEW, AND IT IS THE CLAUSE TASK 3 NEEDS MOST: A RAW
+NEWLINE IN A NET NAME MAKES `kicad-cli` EXIT 3, AND TODAY NOTHING BUT `str()`
+STOPS IT - AT EMIT RATHER THAN AT `validateCircuit`.** The reviewer perturbed
+`CANDIDATES` with three of its own and re-ran the committed probe:
+
+| perturbation | what happened |
+| --- | --- |
+| `BAD"QUOTE` | `quoteString` reports **escaped YES** with the escaped hex shown; parses and round-trips |
+| `BACK\SLASH` | **escaped YES**, same |
+| a name containing a RAW NEWLINE | `kicad-cli` **exit 3**, *"Failed to load schematic"* - parsed **NO**, round-trip **NO**, PDF **NO**, outline **0.0**, and the growth invariant taking its negative branch |
+
+**THIS REFUTES A SENTENCE I PUT IN THE TASK REPORT** - that the replacement
+predicate *"reduces to a non-empty string on the evidence here"*. **A raw newline
+is non-empty and KiCad refuses the sheet.** The only thing in the tree that
+currently stops one reaching a `.kicad_sch` is `lib/schgen/render/sexpr-write.ts`'s
+`str()` (declared at `:31`, its control-character guard at `:32-33`, which throws
+on anything in `[ -]`) - and that is at **EMIT**,
+far downstream of the validator the owner's ruling is about. **So the minimum
+replacement predicate is a non-empty string AND free of control characters**, or
+`str()` named explicitly as the clause that carries it. The plan was corrected on
+this point by the controller before this clause was written; it is recorded here so
+Task 3 takes it from the register rather than from a task report.
+
+**It also means clause 1's "escapes nothing" is a fact about those four names and
+not about the writer**: `quoteString` does escape, and the perturbation shows the
+log reporting it correctly when there is something to escape. The four candidates
+simply hold no `\` and no `"`.
+
+**(8) ADDED ON ROUND-1 REVIEW: THE ZERO WAS MADE TO COUNT, AND RE-DERIVED BY A
+SECOND ROUTE.** Two independent attacks on clause 2, both the reviewer's:
+
+- **the counter was made to count.** Splitting `pt-core` into two blocks moved the
+  census from 0 to **1**, named `Net-(C10-Pad1)`, fired the CONFIRMED branch of the
+  prediction line instead of the REFUTED one, and moved clause 5's **20 to 21**. So
+  the zero is a measured zero and not a counter that cannot increment;
+- **the figure was re-derived by a different route.** `labelledNets` from
+  `lib/schgen/ir/classify.ts`, read directly rather than through
+  `subgraphOf`'s `external`, gives **0 and 20** with the per-board sets identical
+  name for name.
+
+**AND IT FOUND AN EMPIRICAL PROOF OF CLAUSE 3 THAT I ARGUED FROM SOURCE ONLY:**
+`pt2399-core` declares **six** negotiable ports and the census still prints
+`reaches a label: (none)`. A declared port does not make a net a label, driven
+rather than read.
+
 - **Evidence** `[RAN, CONFIRMED]` `bun run tools/schgen/label-syntax/probe.ts`
   at `95db940`, clean tree, `kicad-cli` 10.0.5 resolved at
   `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` through
@@ -25713,21 +25771,44 @@ committed sheets under `sheets/` need none because they are not `.ts` either.
   driven here, in this repository, in the committed run, and clause 6 was driven
   by reading `port-fidelity.test.ts`'s own comparison. **CONFIRMED** for clause
   3's mechanism, read off `build.ts:152` and `classify.ts` rather than relayed.
-  Nothing in this entry is another agent's report.
+  **CONFIRMED** for clause 2's call-site correction: `[RAN]` the `grep` returning
+  three sites was driven here, and both other sites read to see what net they
+  pass. **RELAYED** for the whole of clauses 7 and 8 - the three perturbed
+  candidates, the exit-3 newline, the block split that moved the census to 1 and
+  the adjunct to 21, the `classify.ts` re-derivation and the six negotiable ports
+  are the round-1 reviewer's runs, reported to me and **not re-driven here**. They
+  are recorded because they are the strongest evidence this entry has and because
+  the reviewer's perturbations are not in the committed tree: **a later agent
+  wanting them must re-make them.**
 - **What would settle it.** **CRITERION for clause 1:** nothing - it is a
   measurement and it is settled; it is deleted only if a later KiCad version
   answers differently, which would be a new measurement and a new entry.
   **CRITERION for clause 2 and 4:** the census is a property of the current
   block partitions, so it is re-taken, not trusted. **It is settled by
   `tools/schgen/label-syntax/probe.ts`'s census section printing zero at the
-  commit being reviewed**, and it stops being true the moment any circuit's
-  blocks are repartitioned so that a `Net-(…)` or `unconnected-(…)` net spans
-  two of them. **MECHANISM, UNTRIED:** a test that fails when the census is
+  commit being reviewed, AND - the stronger half, added on round 1 - by the
+  independent route agreeing: `labelledNets` from `lib/schgen/ir/classify.ts`,
+  minus the rails, over every declared case.** Two routes through different code
+  reaching the same per-board sets is what makes the zero a fact about the
+  repository rather than about `subgraphOf`. It stops being true the moment any
+  circuit's blocks are repartitioned so that a `Net-(…)` or `unconnected-(…)` net
+  spans two of them. **MECHANISM, UNTRIED:** a test that fails when the census is
   non-zero would make the re-take automatic, and nothing like it was written -
   `CLAUDE.md` forbids an agent authoring the acceptance criterion for its own
   artifact, and whether a non-zero census should REFUSE or merely report is a
   decision for a spec or for the owner. **CRITERION for clause 3:** the spec's
   sentence is wrong as written and is corrected by this entry; it is settled by
   the spec being amended or by Task 6 recording that it was not. **CRITERION for
-  clause 5:** the 20 is re-derived by the same probe run; it moves if a Pultec
-  board's declared ports or block partition change.
+  clause 5:** the 20 is re-derived two ways - by the probe run, and by
+  `labelledNets` from `lib/schgen/ir/classify.ts` minus the rails, filtered on
+  `NET_NAME`, which round 1 drove independently to the same 20 with the per-board
+  sets matching name for name. **The classify.ts route is the settlement**, since
+  it does not go through the artifact this entry is about; the probe run is the
+  convenient one. It moves if a Pultec board's declared ports or block partition
+  change. **CRITERION for clause 7:** a net name holding a control character is
+  refused before it can reach a sheet, named at the clause that refuses it - and
+  `str()` at `lib/schgen/render/sexpr-write.ts:31-33` is NOT that clause for this
+  purpose, because it fires at emit rather than at validation. It is settled by
+  Task 3's replacement predicate, whose required shape is in the plan. **CRITERION
+  for clause 8:** nothing - it is a control that passed, and it is deleted only
+  with clause 2.
