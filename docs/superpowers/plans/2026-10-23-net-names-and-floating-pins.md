@@ -242,7 +242,7 @@ if (typeof net !== "string" || net.length === 0) throw fail();
 > untouched**, still reading `typeof net !== "string" || !NET_NAME.test(net)`.
 > The type check is verbatim, the empty string is still refused, a control
 > character is **newly** refused, and **no file left the byte-check.** The
-> predicate is `/^[^ -]+$/` — non-empty, and excluding exactly the
+> predicate is `/^[^\x00-\x1f]+$/` — non-empty, and excluding exactly the
 > class `str()` refuses at **`lib/schgen/render/sexpr-write.ts:31`**, which is
 > also the correct path for a citation this plan gave as the nonexistent
 > `lib/kicad/sexpr-write.ts:32`.

@@ -26443,3 +26443,228 @@ before Task 3 and Task 3 did not change it.
   splitting `fail()` into per-cause messages.** It is a real cost (one more file
   off the byte-check, **G139**) against a real gain, and it is **not this task's
   to decide** - the plan's scope was the predicate, not the gate's diagnostics.
+
+### G282 - MOUNTING PIN CLASSIFICATION, five switches read one at a time: the five are TWO different things and FOUR of them cannot be classified at all - and the fifth is classified, is `NC`, and HAS NO MODEL SLOT THAT CAN CARRY IT, measured two ways
+
+**THE TELL WAS THE TWO NAMES AND IT PAID OFF.** Four of the five Pultec boards
+refuse at `validateCircuit` on a pin called `MP`; one - `pultec-mid` - refuses on
+a pin called `12`. The spec's first draft said all five were *"the mechanical lug
+that bolts the switch to the panel"* and could be declared `NC` together. **That
+was wrong about one of the five outright and unestablished about the other four.**
+Refusal texts at `f02fc67`, `[RAN]` `SCHGEN_SOURCE=… bun tools/schgen/board-sheets.ts`:
+
+> `part SW_HI_BOOST: pin MP () is neither on a net nor declared not connected`
+> `part SW_HI_CUT: pin MP () is neither on a net nor declared not connected`
+> `part SW_LO_BOOST: pin MP () is neither on a net nor declared not connected`
+> `part SW_LO_CUT: pin MP () is neither on a net nor declared not connected`
+> `part SW_MID: pin 12 (12) is neither on a net nor declared not connected`
+
+**THE REGISTER. One row per switch, and the two groups do not share a verdict.**
+
+| switch | board | symbol | symbol pin | part number on record | verdict |
+| --- | --- | --- | --- | --- | --- |
+| `SW_HI_BOOST` | `pultec-hi-boost` | `Switch:SW_Rotary_1x6_MP` | `MP`, name `""`, type `passive` | **NONE** | **UNDETERMINED - nothing declared** |
+| `SW_HI_CUT` | `pultec-hi-cut` | `Switch:SW_Rotary_1x6_MP` | `MP`, name `""`, type `passive` | **NONE** | **UNDETERMINED - nothing declared** |
+| `SW_LO_BOOST` | `pultec-low-boost` | `Switch:SW_Rotary_1x6_MP` | `MP`, name `""`, type `passive` | **NONE** | **UNDETERMINED - nothing declared** |
+| `SW_LO_CUT` | `pultec-low-cut` | `Switch:SW_Rotary_1x6_MP` | `MP`, name `""`, type `passive` | **NONE** | **UNDETERMINED - nothing declared** |
+| `SW_MID` | `pultec-mid` | `Switch:SW_Rotary_1x12` | `12`, name `"12"`, type `passive` | **NONE**, but the symbol cites a datasheet | **NOT A MOUNTING PIN AT ALL: the unwired twelfth THROW. `NC` is true of it, and no model slot can say so** |
+
+**(1) `SW_MID`'s PIN 12 IS A THROW, NOT A MOUNT POINT, AND THAT IS THE RESULT
+THAT JUSTIFIES NOT BATCHING.** `[RAN]` every pin of `Switch:SW_Rotary_1x12` out
+of the installed
+`/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Switch.kicad_sym`:
+pins `1`..`12` sit at `x = +15.24`, angle 180, the throw column; pin `13` sits at
+`x = -15.24`, angle 0, which is the pole `POLE_PIN` in
+`circuits/pultec/schematic/section-board.ts` already records. **The symbol has no
+`MP` pin and no mount point of any kind.** `circuits/pultec/physical/parts.ts`
+already carries why the symbol has one throw more than the circuit - the owner
+chose a twelve-position switch for an eleven-position selector (**verbatim:
+_"Assume a 1x12"_**), so *"twelve detents exist, eleven are wired, the twelfth is
+unused."* `MID_POSITIONS` in `circuits/pultec/electrical/mid.ts` has **eleven**
+entries, and `switchOverride` maps `common` to 13 and the eleven throws to 1..11,
+leaving 12. **So the classification does not depend on identifying the physical
+part**: the question is not whether a frame is bonded, it is whether the circuit
+wires the twelfth throw, and the repository's own recorded decision says it does
+not. A throw terminal no conductor reaches is exactly what `NC` asserts.
+
+**The symbol's own cited datasheet corroborates the family and was read, not
+assumed.** `Switch:SW_Rotary_1x12` carries
+`Datasheet = http://cdn-reichelt.de/documents/datenblatt/C200/DS-Serie%23LOR.pdf`;
+`[RAN]` fetched and `pdftotext -layout`. It is Reichelt's **Serie CK
+Drehschalter**, and the four rotary symbols in that library with no `_MP` variant
+(`1x12`, `2x6`, `3x4`, `4x3`) are exactly that sheet's four configurations.
+Relevant lines, verbatim: **`1-polig, 12 Positionen`** with type numbers
+`CK-1039`/`CK-1029` (solder tab) and `CK-1059`/`CK-1049` (solder pin), each in a
+`mit Endanschlag` and an `ohne Endanschlag` form; **`Gehäusematerial:
+glasfaserverstärktes Nylon`** - the body is glass-filled nylon, an insulator; and
+a terminal drawing showing positions `1`..`12` around the circle with **no
+separate chassis, frame or mounting terminal**. **What it does NOT say:** it does
+not say the end stop is settable to an arbitrary position - it distinguishes only
+`mit`/`ohne Endanschlag` - so `parts.ts`' *"stop set to eleven"* remains that
+writer's reasoning and not a datasheet fact, which `parts.ts` itself already
+flags (*"Everything else in this comment is the reasoning, not his"*).
+
+**(2) NOTHING WAS DECLARED FOR `SW_MID` ANYWAY, AND THE REASON IS A MEASURED
+MODEL GAP RATHER THAN AN UNFINISHED CLASSIFICATION.** The brief's mechanism is a
+model pin carrying `NC` in the switch's pin map. **Both slots the model has were
+driven, and both refuse:**
+
+- **A UNIT pin.** `[RAN]` added `t_unused_12: NC` to `SW_MID`'s `MAIN` unit in
+  `circuits/pultec/electrical/three-band.ts`. `bun run typecheck` clean, and
+  `pultec-mid` **cleared `validateCircuit` completely** - the census moved it off
+  gate 1 to an ELK text-placement refusal (clause 3). **But
+  `make -C boards/pultec-mid check` went from exit 0 to `FAIL`, naming
+  `SW_MID retyped PADS12 -> PADS13`.** A switch's unit pins ARE its board
+  landings on this path: `padOrderFor` (`circuits/pultec/physical/parts.ts:464`)
+  sends `kind: "switch"` to `rotaryPadOrder` (`:246`), which reads
+  `units[0].pins`, and `padOrderFor`'s own words are *"an off-board part's pads
+  are the wire landings a builder solders to."* **A landing for a terminal no
+  wire reaches is wrong for the board**, so the committed layout is right to
+  disagree. `G251` records `pultec-mid` at exit 0 before this, so that is a
+  regression and not a pre-existing red. Reverted; the tree is clean and the
+  board is back at exit 0.
+  **One thing that did NOT refuse, against this writer's prediction:**
+  `tools/guide/pad-label.ts`'s `pad-label-unselected-throw` refusal was expected
+  to fire on a throw closing at zero positions and did not - the regenerated
+  `boards/pultec-mid/wiring.md` printed `| 13 | t_unused_12 | — | no connection |`
+  and carried on. The blocker is the pad COUNT, not the pad LABEL.
+- **A PACKAGE pin.** `[RAN]` `pins: { "12": NC }` on the component instead, which
+  `padOrderFor` does not read at all. **The model's own validator refuses it
+  outright**, before any board check:
+  `component "SW_MID": package pin "12" is not in the switch vocabulary []` -
+  `checkVocabulary`, `lib/model/validate.ts:96-101`. `PACKAGE_PINS.switch` is
+  `[]` in `lib/model/kinds.ts:45` and the package check is a strict whitelist,
+  unlike `from-network.ts`' `vocabulary.length > 0 &&` guard. So this route is
+  closed by the model and not merely by taste - which is just as well, because
+  `Component.pins` is documented *"Package pins shared across units: supply,
+  shield, substrate"* and across the whole repository its only non-empty use is
+  an op-amp's `v+`/`v-`. Reverted.
+
+**SO THE GAP, STATED ONCE: one model field serves two consumers with different
+needs.** The schematic needs the symbol's FULL terminal set, including a terminal
+the circuit does not wire. The board needs only the WIRED subset. `units[0].pins`
+is both. **`G264` already said *"the model's `switch` component has no pin for it, and
+`Connection`'s `nc` variant is a property of a MODEL pin - so there is no pin to
+mark"*. That is now measured rather than inferred, and CORRECTED: there IS a pin
+to mark, and marking it breaks a board.**
+
+**(3) WHAT `pultec-mid` DOES ONCE THE PIN IS DECLARED, because it is the most
+valuable thing this task measured and it is not visible anywhere else.** With the
+unit pin in place, `validateCircuit` passes and the census refusal becomes, in
+full:
+
+> `block pultec-mid-junction: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): value of power symbol 0 0 at (31.75, 31.75) overlaps label hi_boost_out at (20.32, 34.29); label hi_boost_out at (20.32, 34.29) overlaps label out at (36.83, 33.02); label hi_boost_out at (20.32, 34.29) overlaps glyph of power symbol 0 0 at (31.75, 31.75)`
+
+**That is `G260`/`G265`'s text-placement class, which the plan's Global
+Constraints put out of scope**, and it is the FIRST time a Pultec board has been
+seen past gate 1. **`G274` predicted exactly this** - the census names the first
+refusing problem, not the only one - and the prediction held.
+
+**(4) THE FOUR `MP` PINS CANNOT BE CLASSIFIED FROM ANYTHING ON DISK, and the
+four separate facts that establish that.**
+
+- **The symbol does not assert isolation.** `[RAN]` the `MP` pin of
+  `Switch:SW_Rotary_1x6_MP`, verbatim from the installed library:
+  `(pin passive line (at -7.62 -5.08 0) (length 2.54) (name "") (number "MP"))`.
+  Its inner end lands at `(-5.08, -5.08)`, on the body rectangle
+  `(-5.08, 8.89)..(5.08, -6.35)`, and **no polyline in the symbol joins it** -
+  the pole (pin 7) by contrast ends at `(-5.08, 0)` and joins
+  `(-5.08 0) -> (-3.81 0)` to the wiper. So the symbol says "a terminal on the
+  body, not internally connected to the contacts" and nothing more.
+- **`passive` is a CHOICE in this library and not the only option.** `[RAN]`
+  `grep -o '(pin [a-z_]* ' Switch.kicad_sym | sort | uniq -c`: **451 `passive`,
+  3 `no_connect`, 2 `input`, 2 `power_in`.** The three `no_connect` pins are on
+  `SW_SP3T_NR01103` and `SW_SP4T_NR01104` - **MPN-named symbols in the same
+  file.** Where these authors knew a pin was electrically unconnected they typed
+  it `no_connect`; on `MP` they typed `passive`. **A check that could have
+  failed: if the library had no `no_connect` pins at all, the choice would carry
+  no information. It has three.**
+- **There is no part to consult.** `Switch:SW_Rotary_1x6_MP` carries
+  `Footprint ""`, `Datasheet ""` and no `ki_fp_filters` - `[RAN]`, all six of its
+  properties listed. Every `_MP` variant is the same; only the non-`MP` family
+  cites the CK sheet. And the repository records no part either: nothing in
+  `circuits/pultec/` sets `part.mpn` on any switch (`offBoardPart` adds only
+  `symbol`), `parts/` has no rotary-switch catalog entry, and
+  `boards/pultec-*/` carry no `bom.json` at all - only `pt2399-core` and
+  `transistor-preamp-staged` have one.
+- **And there is no net to bond it to even if it were bonded.** The Pultec model
+  has no chassis, shield or earth net: `JUNCTION_NETS`
+  (`circuits/pultec/physical/parts.ts:403`) is
+  `["in", "hi_boost_out", "lo_boost_in", "out", "0"]`, and the *"chassis ground"*
+  `parts.ts:516` mentions is net `"0"`, from `GROUND_NET` in
+  `lib/board/scaffold/flat.ts`. **Declaring `MP` on `"0"` would put the panel
+  switch's mount lug on circuit ground and print a wire for it in five generated
+  build guides.** That is a build instruction, and nothing on disk authorises it.
+
+**A real rotary's mount point is usually continuous with its frame, and a frame
+bolted to a grounded metal panel is at chassis potential whether or not a wire is
+soldered to the lug.** So `NC` here is not the safe default it looks like: it
+would be a false electrical assertion on four boards if the fitted part's lug is
+bonded. **Nothing was declared. The four boards still refuse on the same pin, and
+that is this task's correct outcome rather than its failure.**
+
+**(5) THE REVIEW'S RECOMMENDED MECHANISM WAS NOT USED, and the spec's reason for
+declining it is confirmed against the tree.** Finding 2 proposed
+`PinTable.mechanicalPads`. `[READ]` `lib/schgen/from-network.ts:29-31` -
+*"`PartSpec.pads` in the model maps a canonical pin to a footprint pad, which is
+the opposite thing"* - and `:359` sets `mechanicalPads: []` unconditionally on
+the network-derived path, which is the only path these five boards use.
+`lib/schgen/gates/pin-identity.ts` consumes it to compare pads against a pin
+table. It is a footprint-pad concept and carries no authority over whether a
+schematic symbol pin is electrically isolated. **The criterion - classify from
+verified semantics, never from "currently floating" - is what was followed.**
+
+**(6) INCIDENTAL, FOUND WHILE DOING THIS AND FIXED IN THIS CHANGE.**
+`docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` contained the
+character-class bounds of `/^[^\x00-\x1f]+$/` as **raw bytes** `0x00` and `0x1f`
+rather than as the escape text. `file` reported the plan as `data` and **`grep`
+without `-a` matched nothing in any of its 463 lines**, so an agent grepping this
+plan for its own task got silence that looked like absence - the exact failure
+`CLAUDE.md`'s control-byte rule was added for, in the plan that rule's own task
+was written against. Repaired to the escape text by a script building the bytes
+with `chr()`, `+6` bytes, and the file now reports `UTF-8 text` with **0**
+control bytes other than tab/newline/CR. **CRITERION: `file <plan>` says text and
+`grep -c "Global Constraints" <plan>` is 1** - both were false before and are
+true after.
+
+- **Verified** **CONFIRMED for every clause.** This writer read every symbol pin
+  out of the installed `Switch.kicad_sym` rather than from any document, fetched
+  and extracted the CK datasheet, drove both model slots and reverted both, ran
+  `make -C boards/pultec-mid check` before, during and after, and re-drove the
+  census. **One sub-claim is this writer's prediction that was REFUTED and is
+  recorded as such**: `pad-label.ts` was expected to refuse the unwired throw and
+  did not, and `G264`'s *"there is no pin to mark"* which this corrects.
+  **Nothing here is relayed from another agent.**
+- **Why it is open** four of the five pins are unclassified and four boards
+  therefore still refuse at gate 1; the fifth is classified and undeclarable. Both
+  halves need something this task is not allowed to decide.
+- **What would settle it, and the two halves settle differently.**
+  **FOR THE FOUR `MP` PINS this is an OWNER QUESTION, not a measurement** -
+  nothing further can be read off disk. The two things only he can say: **which
+  rotary switch is fitted** (no MPN is recorded for any Pultec selector), and
+  **whether its mount lug is to be wired to net `"0"`**. **MECHANISM, UNTRIED:**
+  with an answer of "isolated", `MP: NC` in each selector's unit pin map - but
+  **note that this is the mechanism clause 2 measured and found breaks the board**,
+  so it would hit `PADS7 -> PADS8` on all four boards exactly as `SW_MID` hit
+  `PADS12 -> PADS13`, and the four `MP` pins are therefore blocked behind the
+  same model gap even once the owner answers. **Nobody asks him again unprompted.**
+  **FOR `SW_MID` the CRITERION is measurable and already stated:**
+  `validateCircuit` accepts `pultec-mid` AND `make -C boards/pultec-mid check`
+  stays at exit 0 - the second half is what both measured mechanisms failed, and
+  it is the settlement. **MECHANISM, UNTRIED:** let the model carry a terminal
+  the circuit does not wire, and have the BOARD derivation drop it - a
+  `Connection`-aware filter in `padOrderFor` so a landing is only made for a
+  wired terminal, while `rotaryPadOrder` keeps the full detent order the symbol
+  numbering needs. **It was not attempted and it is not small.** `padOrderFor` is
+  called *"the single source of truth"* by `tests/guide/pad-terminal.test.ts:5`
+  and *"THE RULE, AND NOTHING ELSE DECIDES IT"* by `tools/guide/pad-terminal.ts:5`, a
+  pad's number is a 1-based index into it, and `switchOverride`
+  (`circuits/pultec/schematic/section-board.ts:228`) derives symbol pin numbers
+  from `rotaryPadOrder` - so making the two lists differ in length puts a throw's
+  pad number and its symbol pin number out of step, which is the hazard
+  `switchOverride` already refuses over (*"a throw numbered one position out is a
+  wrong connection in a drawing that looks right"*). Three tests
+  (`tests/guide/pad-terminal.test.ts`, `tests/guide/pad-label.test.ts`,
+  `tests/guide/pad-label-second-pole.test.ts`) and `lib/kicad/from-network.ts`'
+  own `padOrderFor` are on that surface. **It needs a brief and a reviewer who did
+  not write it, which is why this task stopped at the measurement.**
