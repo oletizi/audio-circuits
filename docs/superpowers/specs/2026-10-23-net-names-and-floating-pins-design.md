@@ -278,6 +278,31 @@ against today.
 > > `[RAN]` full-suite lcov at a clean tree: `lib/schgen/render/emit-items.ts` is
 > > **LF=137, LH=137 — no uncovered lines** — and **no module under
 > > `lib/schgen/` has zero coverage.** `noConnect()`'s body is exercised by six of
+>
+> > > **THE SECOND HALF OF THAT SENTENCE IS FALSE AND I PUT IT HERE. Corrected
+> > > 2026-10-23 by Task 2's review; the wording stands.** *"No module under
+> > > `lib/schgen/` has zero coverage"* does not follow from the lcov report,
+> > > **because bun's lcov OMITS MODULES IT NEVER LOADED.** `[RAN]` 105 `.ts`
+> > > files under `lib/schgen/` against **102 lcov records**. The missing one that
+> > > matters is **`lib/schgen/gates/oscar/boundary.ts`** — a hand-written forward
+> > > declaration whose `oscarParts` throws, which **`lib/schgen/README.md:409`
+> > > names in terms** as one of the two modules nothing runs.
+> > >
+> > > **The supportable conclusion was that the two became one**, `gates/pin-table.ts`
+> > > now being covered. **I read absence from a report as absence of the thing**,
+> > > which is the same error as my naive greps earlier today and is catalogued in
+> > > `docs/schematic/false-greens.md`. Exposure is nil — `boundary.ts` is a
+> > > documented throwing stub (**G242**) — and **the `emit-items.ts` overturning
+> > > above is solid and independently re-derived.**
+> > >
+> > > **And the lcov caveat does not cover as much as it claims.** The report said
+> > > only zero/non-zero was relied on; the reviewer found `DA:217` —
+> > > `noConnect()`'s only working line — reporting **1 in four runs where the
+> > > function was never called.** So `LH=137` is not "every line executed". **The
+> > > settlement is the marker count in the bytes**, not the instrumentation:
+> > > generating the `mini` fixture writes **three `(no_connect …)` items**, and
+> > > `round-trip.kicad.test.ts` exports that sheet with real `kicad-cli`. **G278**'s
+> > > own criterion already says so, and it is right.
 > > the seventeen emitter-reaching test files, and generating the `mini` fixture
 > > writes **three `(no_connect …)` items**, one of which `round-trip.kicad.test.ts`
 > > exports with real `kicad-cli` — **so KiCad already reads a
