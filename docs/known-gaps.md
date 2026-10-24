@@ -1696,14 +1696,23 @@ made.
 > and deleted the fake port that had been standing in for it (**G283**). **That revealed a second
 > blocker nothing had ever seen** - the declaration named its sole sheet `pt2399-core.kicad_sch`,
 > which collides with the hierarchical root `tools/schgen/generated-files.ts` always writes, and
-> **all twelve other declared designs have the same collision waiting** (**G284**). **G274**'s
-> amendment carries the three-state census that establishes the order.
+> **ten of the twelve other declared designs have the same collision waiting** (**G284**;
+> `transistor-preamp` escapes by an accident of naming, and the `all twelve` in this sentence's
+> first version was corrected in fix round 1 along with G284's own figure). **G274**'s amendment
+> carries the three-state census that establishes the order.
 >
 > **AND THE SECOND COLUMN IS WHY `1 of 11` MUST NOT BE QUOTED ALONE.** The sheet carries eight
-> fallback field placements - a reference designator drawn over a wire in eight places, one of them
-> over a pin - and **nobody has opened the PDF.** **G285** names all eight, block by block, and says
-> plainly what was and was not confirmed. **This entry's criterion is NOT met by this row**: a board
-> that produces a sheet is not a board whose sheet anyone trusts.
+> fallback field placements. **G285** names all eight, block by block. **This entry's criterion is
+> NOT met by this row**: a board that produces a sheet is not a board whose sheet anyone trusts.
+>
+> > **AND THE PDF HAS NOW BEEN OPENED, fix round 1, WHICH STRIKES THE OFFER THIS AMENDMENT MADE
+> > BELOW.** The eight fallbacks are the least of what is wrong: the sheet carries **not one net
+> > label**, its signal flow is not followable, `C13` and `C14` cannot be told apart, page 1 of 2
+> > is blank but for a sheet symbol, and - the finding that matters - **the generated reference
+> > designators are a PERMUTATION of the built board's, 19 of 24 differing**, so the sheet's `R3`
+> > is a 10K part where the board's `R3` is 15K. **G285** carries all of it with the measurement.
+> > **Nothing here should be sent to the owner**: he would find nineteen part names disagreeing
+> > with the board in his hand. The sentence below offering him an artifact is struck.
 >
 > - **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` three times across the change - the
 >   before run is this entry's `0 of 11` reproduced, the after run is `1 of 11 boards produce a
@@ -1720,9 +1729,13 @@ made.
 > - **What would settle it** unchanged, and **Task 5 authored no criterion.** **CRITERION: each of
 >   the five classes produces an artifact the owner accepts**, and for the schematic class
 >   **G240**'s stands - a generated schematic for at least one board, compared against a drawing the
->   owner trusts by something other than the producing agent's judgement. **There is now, for the
->   first time, an artifact to put in front of him**, which is a precondition for that criterion and
->   not a step toward meeting it.
+>   owner trusts by something other than the producing agent's judgement. **THE SENTENCE THAT STOOD
+>   HERE IS STRUCK, fix round 1.** It read: *"There is now, for the first time, an artifact to put in
+>   front of him, which is a precondition for that criterion and not a step toward meeting it."*
+>   **Even hedged, it offered this sheet to the owner, and the sheet is not fit to be offered** - its
+>   reference designators permute the board's in 19 of 24 places (**G285**). What there is now, for
+>   the first time, is **a pipeline that runs end to end on a real circuit**. That is worth having
+>   and it is not an artifact for him.
 
 ---
 
@@ -25340,10 +25353,13 @@ produce a schematic`, `11 refused; 0 have no authoring declaration`.**
 > | the sheet file renamed too | `generated (1 sheet(s), 8 fallback field placement(s))` |
 >
 > **The second row is a problem no census had ever printed for any board, at a step none had ever
-> reached**, and it is not `pt2399-core`'s alone: all thirteen declared designs name their sole
-> sheet after their project and collide with the generator's root file the same way. **G284** is
-> the census and the criterion. **G285** carries the board figure moving to `1 of 11` and the eight
-> fallback field placements that came with it.
+> reached**, and it is not `pt2399-core`'s alone: **eleven of the thirteen** declared designs name
+> their sole sheet so that it collides with the generator's root file the same way. **G284** is the
+> census and the criterion. **(This sentence said `all thirteen` when it was written and was
+> corrected in fix round 1 - the original read the declaration's `project:` field, which never
+> names a generated file; `parityDesign` uses the case name.)** **G285** carries the board figure
+> moving to `1 of 11`, what the sheet actually looks like, and the 19-of-24 designator permutation
+> nobody had noticed.
 >
 > **WHAT THIS ENTRY NOW HAS THAT IT DID NOT: evidence that "the first problem is not the only one"
 > is not a one-step correction.** Resolving the named blocker revealed a second blocker, and
@@ -26736,6 +26752,15 @@ moment's artifact; both are left intact.** The probe's own prose at
 left for the same one. **No test compares `probe-run.log` to a re-run**, which is
 what makes this safe and is also why nothing would have caught the desync.
 
+> **A THIRD OPTION EXISTED AND THIS WRITER DID NOT SEE IT - fix round 1.** The choice was framed as
+> *edit the fixture and desync the log* versus *leave a stale line number*. **There is a third:
+> keep the `why` string byte-identical so the committed log still corresponds to it, and add a
+> DATED note on the line beside it** saying that `:190` was deleted on 2026-10-24 and what the net
+> was. That costs nothing, breaks no correspondence, and leaves the next reader a pointer instead
+> of a puzzle. **It is not done here** - this entry is the record either way, and changing the
+> decision now would be a second edit to another task's artifact for no measured gain - but the
+> framing above was a false dichotomy and should not be copied.
+
 - **Found** 2026-10-24, Task 5 of the net-names-and-floating-pins plan, writing
   the allowance the spec's decision (1) requires.
 - **Evidence** `[RAN]` `bun test tests/circuits/pt2399-core.test.ts
@@ -26759,7 +26784,7 @@ what makes this safe and is also why nothing would have caught the desync.
   or a synthetic placeholder in the export, and the discriminating arm must fail
   when the key is widened to the net's shape.**
 
-### G284 - MEASURED, AND IT BLOCKS GENERATION FOR EVERY DECLARED DESIGN IN THE REPOSITORY: all thirteen name their sole sheet `<project>.kicad_sch`, which collides with the hierarchical ROOT file the generator always writes - invisible until a circuit passed validation
+### G284 - MEASURED: ELEVEN of the thirteen declared designs name their sole sheet so that it collides with the hierarchical ROOT file the generator always writes, and generation throws before writing anything - invisible until a circuit passed validation
 
 `tools/schgen/generated-files.ts:98` emits the project's hierarchical root as
 `${project}.kicad_sch` and then adds one file per declared sheet; its `add`
@@ -26769,22 +26794,47 @@ refuses a repeated name:
 generate: two generated files are named pt2399-core.kicad_sch
 ```
 
-**Every declared design names its sole sheet after its project**, so every one
-of them hits this the moment its circuit validates:
+> **THE FIGURE IN THIS ENTRY'S FIRST VERSION WAS `all thirteen` AND IT IS WRONG, CORRECTED
+> 2026-10-24 IN FIX ROUND 1. The correct figure is ELEVEN of thirteen (twelve before this task's
+> fix), and the error is worth more than the number.** This writer read the `project:` field off
+> each `SchematicAuthoring` declaration and matched it against the sheet's `file`. **`generate`
+> never reads that field for this purpose.** `tools/schgen/gate-census.ts:119`'s `parityDesign`
+> builds the `DesignSpec` with `project: c.name` - the CASE name from
+> `tools/schgen/board-declarations.ts` - and `generatedFiles` names the root from the `DesignSpec`.
+> `[READ]` every use of `SchematicAuthoring.project` in the tree: `lib/schgen/authoring.ts:263`
+> (a blank check), `:380`, `authoring-checks.ts:143`, `from-network.ts:68` and `:245` - **all five
+> are error-message text. It never names a file.** So the column this writer compared was not the
+> one that decides the collision. **The commit message that landed this entry carries the wrong
+> figure and cannot be rewritten; this block is the correction of record.**
+>
+> `[RAN]` the census over `ALL_DECLARED_CASES`, comparing each case's `${c.name}.kicad_sch`
+> against its declared sheet files: **11 of 13 collide.** The two that do not are `pt2399-core`
+> (fixed by this task) and **`transistor-preamp`, which escapes by accident**: its case name is
+> `transistor-preamp` while its authoring project is `transistor-preamp-lab` and its sheet is
+> `transistor-preamp-lab.kicad_sch`, so the root is `transistor-preamp.kicad_sch` and nothing
+> collides. **That escape is a mismatch between two names somebody would reasonably align**, and
+> aligning them would start the collision. It is not a design.
+
+**Eleven of the thirteen name their sole sheet so that it collides**, and they
+hit this the moment their circuit validates. The `project` column below is the
+`DesignSpec`'s - the case name, which is what `generatedFiles` uses - and NOT the
+declaration's own `project:` field:
 
 | declaration | project | sheet file |
 | --- | --- | --- |
-| `circuits/pt2399-core/schematic/authoring.ts` | `pt2399-core` | **FIXED 2026-10-24**: now `core.kicad_sch` |
-| `circuits/optical-compressor/schematic/authoring.ts` | `optical-compressor` | `optical-compressor.kicad_sch` |
-| `circuits/transistor-preamp/schematic/authoring.ts` | `transistor-preamp-lab` | `transistor-preamp-lab.kicad_sch` |
-| `circuits/opamp-buffer.schematic.ts` | `opamp-buffer` | `opamp-buffer.kicad_sch` |
-| `circuits/transistor-preamp/schematic/{feedback,buffered,loop,staged}-board.ts` | `transistor-preamp-<n>` | `transistor-preamp-<n>.kicad_sch` |
-| `circuits/pultec/schematic/section-board.ts` (five boards, one assembler) | `pultec-<owner>` | `pultec-<owner>.kicad_sch` |
+| declaration | case name = root stem | sheet file | collides? |
+| --- | --- | --- | --- |
+| `circuits/pt2399-core/schematic/authoring.ts` | `pt2399-core` | **`core.kicad_sch`** | **no - FIXED 2026-10-24** |
+| `circuits/transistor-preamp/schematic/authoring.ts` | `transistor-preamp` | `transistor-preamp-lab.kicad_sch` | **no - by accident, see above** |
+| `circuits/optical-compressor/schematic/authoring.ts` | `optical-compressor` | `optical-compressor.kicad_sch` | yes |
+| `circuits/opamp-buffer.schematic.ts` | `opamp-buffer` | `opamp-buffer.kicad_sch` | yes |
+| `circuits/transistor-preamp/schematic/{feedback,buffered,loop,staged}-board.ts` | `transistor-preamp-<n>` | `transistor-preamp-<n>.kicad_sch` | yes, 4 |
+| `circuits/pultec/schematic/section-board.ts` (five boards, one assembler) | `pultec-<owner>` | `pultec-<owner>.kicad_sch` | yes, 5 |
 
-The ported `mini` fixture is the only design that does not collide, and the
-reason is instructive: it declares TWO sheets, `power` and `signal`, so neither
-could be named after the project. **Nothing in this repository had ever generated
-a single-sheet design**, which is why a defect in twelve files went unseen.
+The ported `mini` fixture does not collide either, and its reason is the
+instructive one: it declares TWO sheets, `power` and `signal`, so neither could
+be named after the project. **Nothing in this repository had ever generated a
+single-sheet design**, which is why the collision went unseen.
 
 **IT IS `G274`'S PHENOMENON ONE LAYER FURTHER IN, and that is the general lesson
 rather than this particular collision.** The board census reports the FIRST
@@ -26802,14 +26852,16 @@ produces the artifact**, and the only way to find out is to run it again.
   after renaming the sheet file (`pt2399-core: generated (1 sheet(s))`).
   `[READ]` `tools/schgen/generated-files.ts:93-99` for `add` and the root's
   name, and the `file:`/`project:` pair in each declaration listed above.
-- **Verified** **CONFIRMED** for `pt2399-core` end to end. **The other twelve
-  rows are read off their declarations and `generated-files.ts`, NOT run** - each
-  is blocked by an earlier refusal, so none of them can reach this throw today
-  and this writer could not drive it on them. That is a prediction, labelled.
-- **Why it is open** only the board the task reached is fixed. Renaming twelve
-  sheet files is a mechanical change in twelve files that nothing currently
-  exercises, and each one would land in a board that still refuses earlier for
-  its own recorded reason - so it would be an unverifiable edit.
+- **Verified** **CONFIRMED** for `pt2399-core` end to end, and **CONFIRMED by
+  census for which cases collide** - fix round 1 drove the name comparison over
+  all thirteen rather than reading a field by eye, which is what caught the
+  `all thirteen` error. **The ten remaining rows are still a PREDICTION about what
+  `generate` would do**: each is blocked by an earlier refusal, so none can reach
+  this throw today and this writer could not drive it on them. Labelled as one.
+- **Why it is open** only the board the task reached is fixed. Renaming ten sheet
+  files is a mechanical change that nothing currently exercises, and each one
+  would land in a board that still refuses earlier for its own recorded reason -
+  so it would be an unverifiable edit.
 - **What would settle it** **CRITERION: no declared design names a sheet file
   the generator also writes as the project root, and a check says so rather than
   each design being inspected.** **MECHANISMS, UNTRIED, and they are not
@@ -26817,7 +26869,9 @@ produces the artifact**, and the only way to find out is to run it again.
   and leaves the trap for the next declaration somebody writes; (b) have
   `lib/schgen/authoring.ts`'s `authoringProblems` refuse a `SheetSpec` whose
   `file` is `${project}.kicad_sch`, which moves the refusal to the declaration
-  where it can be read, and is the only one of the three that is a check; (c)
+  where it can be read, is the only one of the three that is a check, **and is
+  the only one that would also catch `transistor-preamp`'s accidental escape
+  closing**; (c)
   have `generatedFiles` emit no separate root for a single-sheet design, which is
   a change to what KiCad hierarchy the generator produces and needs someone who
   knows what a one-sheet KiCad project should look like. **(b) is this writer's
@@ -26854,14 +26908,68 @@ the least-covered candidate slot when no slot is clear, rather than refusing the
 drawing. So **a reference designator sits on top of a wire in eight places**, and
 one of them (`C9#1`) sits on a pin.
 
-**WHAT THIS ENTRY IS FOR: nobody has looked at the sheet.** `CLAUDE.md` is
-explicit that netlist-level assertions are necessary and not sufficient, that a
-schematic can be correct and unreadable, and that a sheet with overlapping text
-must not read as a clean sheet. **This writer did not open the PDF**, and the
-figure `1 of 11` is the kind of number that gets quoted without its second
-column. **G240**'s criterion - a generated schematic compared against a drawing
-the owner trusts, by something other than the producing agent's judgement - is
-untouched by this and is the thing that matters.
+> **THE SHEET HAS NOW BEEN OPENED, 2026-10-24, fix round 1 - FIRST BY THE REVIEWER AND THEN BY
+> THIS WRITER - AND THE EIGHT FALLBACKS ARE NOT WHAT IS WRONG WITH IT. The heading above is too
+> kind and the paragraph this replaces offered the sheet to the owner. Both are corrected here.**
+>
+> `[RAN]` `exportPdf` on the generated root and read both pages as images. **What the eight
+> fallbacks actually are:** all eight are a Reference or Value drawn over a WIRE, none over other
+> text, and only the `C13`/`C14` pair is seriously misleading. **They are the least of it.**
+>
+> | what is wrong | state |
+> | --- | --- |
+> | net labels on the sheet | **NONE. Not one.** Every net is drawn as wire; the only text ports are `+5V` and `GND` at J1 |
+> | signal flow | **not followable.** Nets leave the block and return as long orthogonal rings in near-parallel bundles; input to output cannot be traced |
+> | `C13` / `C14` | **unresolvable.** Two identical capacitor symbols with one label above and one below, between them - nothing says which is which |
+> | page 1 of 2 | **blank but for one sheet symbol** in the top-left corner and the title block |
+> | page 2, bottom third of A4 | **empty**; the drawing crowds into the upper two thirds |
+>
+> **AND THE ZERO LABELS ARE DIAGNOSABLE RATHER THAN MYSTERIOUS**, which makes them a lead instead
+> of a complaint: Task 1 of this plan measured that `labelledNets` labels a net only when it is a
+> rail, spans more than one block, or touches a `bus` block (**G277**). `pt2399-core` is declared
+> as ONE block with `rendering: { kind: "auto" }`, so **no interior net can be labelled, by
+> construction.** The sheet is the faithful output of a one-block declaration.
+>
+> **THE REFERENCE DESIGNATORS ON THE GENERATED SHEET ARE A PERMUTATION OF THE BUILT BOARD'S, AND
+> NOTHING SAID SO UNTIL THE REVIEWER LOOKED. This is the finding that would have cost the most.**
+> `[RAN]` the generation's own `annotation.refs` against `DESIGNATORS` in
+> `circuits/pt2399-core/pt2399-core.ts`: **19 of 24 differ.** Only `C1`, `C2`, `C3`, `U1` and `J1`
+> keep their names.
+>
+> ```
+> board R1 (lpf1_input_resistor,  10K) is drawn as R3
+> board R3 (input_mix_resistor,   15K) is drawn as R2
+> board C9 (output_node_filter_cap)    is drawn as C13
+> ... 19 of 24
+> ```
+>
+> **So the sheet's `R3` is a 10K part where the board's `R3` is 15K**, and the same holds for
+> eighteen others. The drawing is SELF-consistent - `roundTrip` agrees on all five comparisons,
+> and **G177** already records that it compares the designator SET and never the binding of a
+> designator to the part the board calls by that name - so no check in this repository fails on
+> this. The `.vrt`, the BOM and the build guide all use the board's designators.
+>
+> **THE FRAMING THIS PARAGRAPH REPLACES WAS THE REAL DEFECT.** It said `1 of 11` is *"the kind of
+> number that gets quoted without its second column"* and then, with the **G259** amendment,
+> offered the sheet as *"an artifact to put in front of him"*. **Had that happened, the owner would
+> have found nineteen part names disagreeing with the board in his hand and concluded the generator
+> was broken.** Both offers are struck. **This sheet is evidence that the pipeline runs end to end.
+> It is not a candidate for G240 and must not be sent to him as one.**
+>
+> **AND `1 of 11` IS FRAGILE.** `[RAN]` six one-line perturbations, each declaring ONE more U1 pin
+> `NC` on a net that keeps two or more members: **three of the six flip the board straight back to
+> refused**, and not all the same way - pin 1 fails ELK's clearance checks, pins 15 and 16 fail
+> because *"snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry"*. Pins 3, 4 and 13
+> still generate, and pin 13 does so with **10** fallbacks rather than 8. The reviewer ran its own
+> six and got four of six refusing. **The figure differs with the pin set; the phenomenon does
+> not.** The board sits one small change away from refusing, and `1 of 11` is not a plateau.
+
+**WHAT THIS ENTRY IS FOR: it is NOT that nobody has looked at the sheet - somebody has, and the
+corrected account is in the block above.** `CLAUDE.md` is explicit that netlist-level assertions
+are necessary and not sufficient, that a schematic can be correct and unreadable, and that a sheet
+with overlapping text must not read as a clean sheet. **G240**'s criterion - a generated schematic
+compared against a drawing the owner trusts, by something other than the producing agent's
+judgement - is untouched by this, and the sheet described above does not approach it.
 
 - **Found** 2026-10-24, Task 5, which resolved `pt2399-core`'s validation
   refusal (its brief) and its sheet-name collision (**G284**).
@@ -26872,19 +26980,34 @@ untouched by this and is the thing that matters.
   either direction unnoticed - fewer is a result worth seeing and more is a
   regression.
 - **Verified** **CONFIRMED** for every figure - this writer ran both censuses and
-  read the full output. **NOT CONFIRMED, and not claimed: that the sheet is
-  legible.** No PDF was exported and no drawing was looked at.
+  read the full output. **The sheet's qualitative state, the 19-of-24 permutation
+  and the fragility are CONFIRMED TOO, as of fix round 1:** this writer exported
+  the PDF, read both pages as images, drove the designator comparison, and ran the
+  six perturbations. **RELAYED, and not re-driven: the reviewer's own four-of-six
+  perturbation figure**, which used a different pin set from the six above.
 - **Why it is open** the text placement class is explicitly out of scope for the
   plan that produced the board (the owner's overlap decisions in **G260** and
   **G265** are separate), and fixing a placer is not a task that starts from one
   board's eight fallbacks.
-- **What would settle it** **CRITERION, and it is two separate things that must
-  not be collapsed:** (1) **G240**'s - a generated schematic for at least one
-  board compared against a drawing the owner trusts, by a reviewer that is not
-  the agent that produced it; and (2) zero fallback field placements on this
-  sheet, or a stated decision that eight is acceptable. **MECHANISM, UNTRIED:**
-  export the PDF (`bun tools/schgen/board-sheets.ts --pdf` already does it) and
-  put it in front of the owner, which is a step, not a settlement.
+- **What would settle it** **CRITERION, and it is now THREE separate things that
+  must not be collapsed:** (1) **the generated reference designators agree with
+  the board's, or the disagreement is declared** - this is the one that blocks
+  everything else, because a sheet whose part names permute the board's cannot be
+  checked against the board by anyone; (2) **G240**'s - a generated schematic for
+  at least one board compared against a drawing the owner trusts, by a reviewer
+  that is not the agent that produced it; and (3) the drawing is followable - net
+  labels where a reader needs them, no unresolvable symbol/label pairing, and
+  fallback field placements at zero or declared acceptable. **MECHANISM, UNTRIED,
+  for (1) only:** `annotate` assigns references in part order and nothing tells it
+  that this circuit's part LABELS already ARE the built board's designators, which
+  `circuits/pt2399-core/pt2399-core.ts` exports as `DESIGNATORS` precisely because
+  they are a fact about the built unit. **The mechanism for (3) is NOT guessed at
+  here** - `labelledNets`' one-block rule (**G277**) is the proximate cause of the
+  zero labels and whether the answer is a multi-block declaration or a change to
+  that rule is not this writer's to decide. **THE PREVIOUS MECHANISM HERE IS
+  STRUCK:** it said to export the PDF and put it in front of the owner. The PDF is
+  exported; putting THIS sheet in front of him would waste his time and mislead
+  him, for the reason the block above gives.
 
 ### G286 - the TWO derivations of "this model as a netlist" disagree about how to spell `NC`: `lib/kicad/from-network.ts` OMITS the pin, `lib/schgen/gates/round-trip.ts` gives it a one-member set "because that is how the export carries it" - and the first cannot adopt the second's spelling
 
@@ -26906,10 +27029,33 @@ the hazard `from-network.ts` is exposed to**, and it is not hypothetical:
 export against `toImportedNetlist`'s output by partition, so a board with an
 `NC` pin run through it would compare a 20-net model against a 21-net export.
 
-**EXPOSURE TODAY IS NIL AND THAT IS LUCK RATHER THAN DESIGN.** `pt2399-core` is
-the only circuit in `circuits/` that declares `NC`, and it is not one of the five
-boards `kicad-round-trip.ts` serves (those are the transistor-preamp boards).
-The next circuit to declare one is the one that finds this.
+> **"EXPOSURE TODAY IS NIL" IS WRONG, CORRECTED 2026-10-24 IN FIX ROUND 1, AND THE PATH IT MISSED
+> IS THE ONE THIS VERY BOARD RUNS ON EVERY `make check`.** The paragraph below named only
+> `tests/circuits/kicad-round-trip.ts` and concluded `pt2399-core` was not exposed because it is
+> not one of the boards that file serves. **`tools/perfboard/check.ts:266` also lowers through
+> `toImportedNetlist`** - `const lowered = toImportedNetlist(network, designators, pinNumbers,
+> offBoard, padOrder)` - and that is the netlist `make -C boards/pt2399-core check` compares
+> against the committed `.vrt`. **So U1 lowers to FIFTEEN pins on the board-check path today.**
+>
+> **AND IT PASSES SILENTLY, which is the part that makes this a trap rather than a bug.** `[READ]`
+> `lib/kicad/from-network.ts:49-62`: `assertPinCount` throws only when a referenced pin number is
+> **greater than** the footprint's declared count. A pin that is simply ABSENT is never counted and
+> never refused - the same asymmetry `from-network.ts:123`'s own comment already describes for the
+> pad-order case (*"that only refuses a number GREATER than the declared count"*). Sixteen declared,
+> fifteen emitted, nothing says a word.
+>
+> **THE SCENARIO, so the next reader recognises it:** **G251** gets fixed, `make -C
+> boards/pt2399-core check` starts actually comparing, and VeroRoute reports a disagreement with
+> the `.vrt` over a missing pad on U1. **The obvious suspect will be whatever change unblocked
+> G251**, and the cause will be a line in `from-network.ts` that has been dropping pin 5 since this
+> circuit declared it `NC`. It is written here so that search takes minutes rather than a session.
+
+**EXPOSURE IS NOT NIL, AND THE PARAGRAPH BELOW SAYING SO IS SUPERSEDED BY THE
+BLOCK ABOVE; it is kept because the reasoning it used is the reasoning to avoid.**
+`pt2399-core` is the only circuit in `circuits/` that declares `NC`, and it is not
+one of the five boards `kicad-round-trip.ts` serves (those are the
+transistor-preamp boards) - **but that was never the only consumer, and this
+writer established "nil" by checking one caller instead of all of them.**
 
 **THE OBVIOUS FIX DOES NOT WORK, which is why this is a recorded gap rather than
 a one-line change.** KiCad's placeholder name embeds the **symbol pin name** -
@@ -26924,19 +27070,26 @@ than as a pass.
 
 - **Found** 2026-10-24, Task 5, when declaring `pt2399-core` pin 5 `NC` turned
   three assertions in `tests/kicad/legacy-netlist.test.ts` red.
-- **Evidence** `[READ]` `lib/kicad/from-network.ts:190` and
-  `lib/schgen/gates/round-trip.ts`'s `modelPartition` with its comment. `[RAN]`
+- **Evidence** `[READ]` `lib/kicad/from-network.ts:190`, `:49-62` (`assertPinCount`),
+  `tools/perfboard/check.ts:266`, and `lib/schgen/gates/round-trip.ts`'s
+  `modelPartition` with its comment. `[RAN]`
   `bun test tests/kicad/legacy-netlist.test.ts` at the point the model changed
   and nothing else had: three failures, each a missing
   `unconnected-(U1-CLK_O-Pad5)` / `U1.5` on the FIXTURE side - the net map
   comparison, the written-text comparison, and the names-discarded membership
   comparison. `[RAN]` the generated project through real `kicad-cli` for the
   export's own spelling.
-- **Verified** **CONFIRMED** - this writer read both sources and ran both.
+- **Verified** **CONFIRMED** - this writer read both sources and ran both. **The
+  corrected exposure is CONFIRMED by reading too**, in fix round 1: the
+  `check.ts:266` call site and `assertPinCount`'s one-sided test were both read at
+  the line, not relayed. **NOT driven: the failure itself**, because **G251** stops
+  `make -C boards/pt2399-core check` before the comparison it would show up in -
+  which is exactly why it is latent.
 - **Why it is open** it is a change to a shared lowering that five boards'
-  round-trip tests depend on, it cannot reproduce KiCad's net NAME, and the
-  three assertions it would need to move are the ones that currently carry the
-  carve-out. It is not Task 5's, whose subject is one pin of one circuit.
+  round-trip tests depend on **and that the perfboard check runs on every board**,
+  it cannot reproduce KiCad's net NAME, and the three assertions it would need to
+  move are the ones that currently carry the carve-out. It is not Task 5's, whose
+  subject is one pin of one circuit.
 - **What would settle it** **CRITERION: `toImportedNetlist`'s partition over a
   model with a declared-`NC` pin equals the partition KiCad exports from that
   model's schematic - established by running both, not by reading either.** The
@@ -27010,10 +27163,42 @@ and warns to **check what the deletion takes with it**. Task 5 deleted **G159**
 and then asked the obvious next question: how many pointers did that break, and
 is this file already full of them?
 
+> **BOTH TOTALS IN THE SENTENCE BELOW ARE WRONG, CORRECTED 2026-10-24 IN FIX ROUND 1, AND THIS IS
+> `docs/schematic/false-greens.md` MECHANISM 23 - *"a figure published about the artifact the
+> change is still editing"* - OCCURRING INSIDE THE ENTRY WRITTEN TO CATCH A NEIGHBOURING FAILURE.**
+> The figures at the time of that measurement were **262 entries defined and 213 distinct numbers
+> referenced** (the reference count has since drifted - see below), and the two errors have
+> different causes:
+>
+> - **`277` was never a reference count.** The script scanned the WHOLE file for `G<n>`, so every
+>   `### G283 - ...` heading counted as a reference to itself; `277` is the union of the headings
+>   and the real references. Excluding heading lines gives **213**.
+> - **`261` was right when it was printed and was falsified by printing it.** The script ran before
+>   this entry was appended; appending the entry made it 262. **The entry moved the number it was
+>   reporting.**
+>
+> **AND IT HAPPENED A SECOND TIME WHILE WRITING THIS CORRECTION, which settles how the figure
+> should be stated.** The corrected reference total was measured at **213**, then the fix round's
+> own cross-references in the entries around it took it to **215** before the round was finished.
+> **The reference total is VOLATILE - any prose that cites an entry moves it** - so it is not a
+> figure to publish and then defend. **The stable, load-bearing result is the dangling SET**, which
+> has been identical across every run: the sixteen numbers listed below, differing from the parent
+> commit by exactly `G159`. The totals are reported only to show the shape of the census, and a
+> reader who finds them off by a few has found drift, not a defect.
+>
+> **WHAT SURVIVES INTACT, AND IT IS THE PART THAT MATTERS:** the dangling SET reproduces exactly,
+> and the *"fifteen predate this task"* claim is now established directly rather than inferred.
+> `[RAN]` the same census against the parent commit `4be4815`: **PARENT dangling 15**, and
+> `set(now) - set(parent)` is **`[159]`** - precisely the one this task deleted. **The conclusion
+> was sound and the arithmetic under it was not**, which is the distinction this file exists to
+> keep.
+
 `[RAN]` a script collecting every `^### G<n>` heading and every `G<n>`
 reference in the body (excluding `CRITERIA G<n>`, which is a different
-namespace this file's own header warns about): **261 entries defined, 277
-numbers referenced, 16 of them defined nowhere.**
+namespace this file's own header warns about): **262 entries defined, and 16
+referenced numbers defined nowhere.** The count of distinct references is
+deliberately not pinned here; it moves whenever any entry cites another, and the
+block above records it doing exactly that twice.
 
 ```
 G3 G4 G7 G8 G18 G25 G26 G36 G37 G41 G42 G46 G113 G159 G194 G198
@@ -27045,9 +27230,26 @@ the resolution, with the reason written at both sites.
   this file's own header warns about exactly that collision, which is how the
   error was caught rather than published.
 - **Verified** **CONFIRMED** - this writer wrote and ran the script and read the
-  sixteen sites. **NOT established: whether any of the fifteen older ones is
-  load-bearing** (a pointer a reader would act on) rather than a dated table
-  cell. That was not audited and is not claimed either way.
+  sixteen sites, and re-drove all of it in fix round 1 including against the
+  parent commit.
+  **AND THE "NOT ESTABLISHED" HEDGE THAT STOOD HERE IS NOW PARTLY RESOLVED, in
+  both directions, by reading the sites:**
+  - **`G113` IS load-bearing.** `docs/known-gaps.md:14297` says a file was
+    *"hand-written, on **G113**'s pattern"* and `:14314` announces *"A DEVIATION
+    FROM THE MINIMUM G113 MEASURED"*. Both tell a reader to go and read a
+    measurement that is not there. **That is a real broken pointer, not a dated
+    table cell.**
+  - **`G4` is a FALSE POSITIVE and should never have been in the list.** Its only
+    two occurrences are this file's own header warning about the CRITERIA
+    collision - *"a reference reading plain `G4` was a CRITERIA clause"*. The
+    script counted the warning about the trap as an instance of the trap.
+  - **`G3`, `G7`, `G8`, `G26`, `G46` are historical narrative**, and `:6143`
+    names four of them in one breath - *"deleting G7, G8, G26 and G46 as it
+    settled them"* - so they are deliberate references to entries known to be
+    gone.
+  **The remaining eight were not individually read and no claim is made about
+  them.** So "16 dangling references" is an upper bound containing at least one
+  false positive and at least one genuine defect.
 - **Why it is open** auditing fifteen references across a 26,000-line register
   is not Task 5's, whose subject is one pin of one circuit, and the right
   treatment differs per site - a dated table cell stays, a live pointer moves.
@@ -27058,4 +27260,7 @@ the resolution, with the reason written at both sites.
   a dangling pointer outside a dated block - which needs a way to mark a dated
   block, and inventing one is a convention this writer should not author alone.
   **The sixteen are listed above so the audit does not have to start by finding
-  them.**
+  them** - though note that listing them put the sixteen numbers INTO the file,
+  so the entry now contributes to its own census. A future check must exclude
+  this entry's own list, which is mechanism 23 one more time and is the reason
+  the criterion above is written about pointers rather than about a count.
