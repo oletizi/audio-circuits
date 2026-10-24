@@ -1,15 +1,14 @@
 
 == WHAT THIS LABEL-SYNTAX RUN MEASURED
-label-syntax repository commit: 95db940acedd301bf6f27587c5cf87cfab646988 (clean tree)
+label-syntax repository commit: 863ef9ca963b077c41663b9b1e9c529d9e13e6aa (clean tree)
 kicad-cli resolved to /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli, version 10.0.5
 every label measurement below is taken from the PDF export and the netlist export, NEVER from SVG: docs/known-gaps.md G265 clause 1
 
 == PREDICTIONS FOR LABEL SYNTAX, PRINTED BEFORE ANY kicad-cli CALL
 PROVENANCE OF THESE PREDICTIONS, because the ordering is only worth something if they were not back-filled (docs/known-gaps.md G271):
-  the four candidate predictions are the task brief's own, written before this file existed;
-  the boundary-census prediction is the SPEC's, from part 1's third correction, also written before this file existed;
-  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work.
-  NO PREDICTION WAS REVISED AFTER THAT PROTOTYPE. One of them is refuted below and is left standing as it was written.
+  the four candidate predictions are the task brief's own and the boundary-census prediction is the SPEC's, from part 1's third correction; both predate this file.
+  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work. NO PREDICTION WAS REVISED AFTER IT.
+  one of them is refuted below and is left standing as it was written.
 PREDICTION SIGNAL: parses, round-trips byte-identical, renders
 PREDICTION hi_boost_out: parses, round-trips byte-identical, renders
 PREDICTION Net-(C10-Pad1): UNKNOWN - this is the measurement
@@ -35,7 +34,7 @@ control-upper-snake  net "SIGNAL"
     kicad-cli sch export netlist: exit 0
     kicad wrote these net-name atoms, raw: "RETURN" "SIGNAL"
     importNetlist read these net names: "RETURN" "SIGNAL"
-    raw atom identical to the writer's bytes: YES; parsed name byte-identical to the input: YES
+    raw atom identical to the writer's bytes: YES; parsed name identical to the candidate constant, octet for octet: YES
     kicad-cli sch export pdf: produced 30418 bytes
     PDF stroked paths: 32; seven-point outlines: 2
     candidate label outline: 10088.2 um along x by 2540.8 um across
@@ -48,7 +47,7 @@ lowercase-authored  net "hi_boost_out"
     kicad-cli sch export netlist: exit 0
     kicad wrote these net-name atoms, raw: "RETURN" "hi_boost_out"
     importNetlist read these net names: "RETURN" "hi_boost_out"
-    raw atom identical to the writer's bytes: YES; parsed name byte-identical to the input: YES
+    raw atom identical to the writer's bytes: YES; parsed name identical to the candidate constant, octet for octet: YES
     kicad-cli sch export pdf: produced 31010 bytes
     PDF stroked paths: 32; seven-point outlines: 2
     candidate label outline: 15470.2 um along x by 2540.8 um across
@@ -61,7 +60,7 @@ synthetic-net-paren  net "Net-(C10-Pad1)"
     kicad-cli sch export netlist: exit 0
     kicad wrote these net-name atoms, raw: "Net-(C10-Pad1)" "RETURN"
     importNetlist read these net names: "Net-(C10-Pad1)" "RETURN"
-    raw atom identical to the writer's bytes: YES; parsed name byte-identical to the input: YES
+    raw atom identical to the writer's bytes: YES; parsed name identical to the candidate constant, octet for octet: YES
     kicad-cli sch export pdf: produced 31814 bytes
     PDF stroked paths: 32; seven-point outlines: 2
     candidate label outline: 20006.2 um along x by 2540.8 um across
@@ -74,7 +73,7 @@ synthetic-unconnected  net "unconnected-(U1-CLK_O-Pad5)"
     kicad-cli sch export netlist: exit 0
     kicad wrote these net-name atoms, raw: "RETURN" "unconnected-(U1-CLK_O-Pad5)"
     importNetlist read these net names: "RETURN" "unconnected-(U1-CLK_O-Pad5)"
-    raw atom identical to the writer's bytes: YES; parsed name byte-identical to the input: YES
+    raw atom identical to the writer's bytes: YES; parsed name identical to the candidate constant, octet for octet: YES
     kicad-cli sch export pdf: produced 34236 bytes
     PDF stroked paths: 32; seven-point outlines: 2
     candidate label outline: 35125.1 um along x by 2540.8 um across
