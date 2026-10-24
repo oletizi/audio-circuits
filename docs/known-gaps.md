@@ -25910,3 +25910,163 @@ so no measurement moved.
   quiet. **MECHANISM, UNTRIED:** nothing in `make check` or the suite looks for a
   stray control byte in a committed text file, so this will recur; a repo-wide
   byte scan would catch it and is not written.
+
+### G278 - MEASURED: the model-`NC`-to-emitted-`no_connect` path WORKS UNCHANGED on its first end-to-end exercise, and three of the claims the plan sent the measurement in with were wrong - `NC` already had importers, `emit-items.ts` is already fully covered, and the README name the spec called stale is correct
+
+**Found** 2026-10-23, Task 2 of
+`docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`. Everything
+below was **confirmed by the writer** by running it, not relayed. The check is
+`tests/schgen/ir/nc-end-to-end.test.ts`, which is new, hand-written, and
+declared in `tools/schgen/port-manifest.json`'s `handWritten`. **No file under
+`lib/` changed**, which is the headline.
+
+**(1) OUTCOME 1 OF THE BRIEF'S THREE: the path carries `NC` end to end with no
+code change.** A `Network` whose `ic` declares one pin `NC` goes through
+`circuitSpecFrom` then `buildCircuit`, and the pin arrives as an `IrPin` with
+`net: null`, `origin: "circuit"` and its model identity intact; `validateCircuit`
+returns **zero** problems over all eleven drawing rules; the pin is on **no** net
+of `Circuit.nets`; and `layoutSheet` then `emitSheet` puts **one `(no_connect
+...)` item at that pin's end**, whose `(at x y)` equals
+`SheetDrawing.noConnects[0]` through `fmtMm`. Neither of the brief's other two
+outcomes occurred: the IR does carry `null`, and `pinsDeclared` does count a
+null-net pin as declared, because it tests membership in `c.pins` by pin NUMBER
+and an `NC` pin is in `c.pins`. **So Task 4 and Task 5 are authoring work, not
+plumbing work.**
+
+**(2) THE FOUR STATES OF SPEC 3b ARE EACH REFUSED OR ACCEPTED BY A DIFFERENT
+RULE, asserted on the message and pinned to exactly one message each.** On one
+fixture, varying one pin: a deliberate `NC` is accepted with `[]`; the same pin
+**omitted** from the model gives exactly `part U1: pin 7 (NC) is neither on a net
+nor declared not connected` (`ir/validate.ts`'s `pinsDeclared`); the same pin **on
+a net** while the library types it `no_connect` gives exactly `part U1: pin 7 is
+a no_connect pin but is on net IN` (`ir/validate-nets.ts`'s `pinSemantics`); and a
+different pin alone on a one-pin net gives exactly `net SPARE has only one pin
+(U1.6); connect it or declare the pin not connected` (`singlePinNets`). The
+fourth arm is **the `pt2399-core` shape reproduced**: the one-pin net passes
+`lib/model`'s own `done()` only because a port is declared for it, and the IR
+refuses it anyway - which is the spec's *"one workaround, two validators, and it
+only ever satisfied one of them"*, now a test rather than a board.
+
+**(3) `NC` WAS NOT UNIMPORTED, AND THE BRIEF AND THE SPEC BOTH SAY IT WAS.**
+`[RAN]` `git grep` at `HEAD`: four files import `NC` from `lib/model` -
+`tests/kicad/schematic.test.ts`, `tests/model/builder.test.ts`,
+`tests/model/include.test.ts`, `tests/model/validate.test.ts`. The spec's
+sentence is true only of `circuits/`. **One of those four already drove a model
+`NC` to a `(no_connect)`**: `tests/kicad/schematic.test.ts`'s *"a deliberately
+unconnected pin gets a no-connect flag, not a label"* authors
+`.connector("header", { "1": "A", "2": NC }, HEADER)` and asserts one
+`no_connect` child - through the **superseded stub writer**
+`lib/kicad/schematic.ts:186`, which is why it never helped the real generator.
+**What had genuinely never been exercised is the `lib/schgen` chain**: no test
+drove a model `NC` through `circuitSpecFrom` at all. That narrower statement is
+the one to carry forward.
+
+**(4) `noConnect()`'s COVERAGE, MEASURED RATHER THAN INHERITED: it was ALREADY
+fully exercised before this task.** `[RAN]` `bun test --coverage
+--coverage-reporter=lcov` over the whole suite at a clean tree:
+`lib/schgen/render/emit-items.ts` reports **LF=137 LH=137, no uncovered lines**,
+and **no module under `lib/schgen/` has zero line coverage**. Per-file probes of
+the seventeen test files that reach the emitter show `noConnect()`'s body
+covered by **six** of them - `tests/cli/schgen.test.ts`,
+`tests/schgen/emit-byte-stable.test.ts`, `tests/schgen/gates/gates.kicad.test.ts`,
+`tests/schgen/gates/round-trip.kicad.test.ts`,
+`tests/schgen/readability/measures.test.ts`,
+`tests/schgen/render/hidden-value-netlist.kicad.test.ts` - and **uncovered** in
+`tests/schgen/render/emit.test.ts`, `emit-refusals.test.ts`,
+`emit-power-refs.test.ts` and `pin-marks.test.ts`. What reaches it is the ported
+`mini` fixture design, whose `__fixtures__/designs/mini/index.ts` authors
+`{ nc: true }` at the **IR** level: `[RAN]` generating it writes **3
+`(no_connect ...)` items on `signal.kicad_sch`** and 0 on the other two sheets,
+matching `SheetDrawing.noConnects` of 3 and 0. Since
+`tests/schgen/gates/round-trip.kicad.test.ts` exports that very schematic's
+netlist with the real `kicad-cli`, **KiCad has already read a
+generator-emitted `(no_connect)` without complaint.**
+
+**NOTE ON THE COVERAGE NUMBERS THEMSELVES:** bun 1.3.8's lcov `DA:` counts for
+this file are **not usable as execution counts** - the same line reports 43 in a
+run of one test file and in a run of 353 - so only the **zero / non-zero**
+distinction was relied on, and every non-zero was corroborated by generating the
+`mini` sheets and counting markers in the bytes.
+
+**(5) THE SPEC'S "the README's name is stale and is a separate small defect" IS
+ITSELF WRONG, and it is the same error it was correcting.**
+`lib/schgen/README.md:303` names `noConnectEnds.test.ts` in a paragraph about
+**what Task 7 ported**, and `[RAN]` `ls` of
+`/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen/render/`
+shows all four names in that sentence existing upstream in camelCase
+(`bodyClearance.test.ts`, `textClearance.test.ts`, `unitText.test.ts`,
+`noConnectEnds.test.ts`). It is the **source** filename, correctly spelled; the
+local file is kebab-case because the port renames. **No README change is needed
+and none was made.**
+
+**(6) THE README'S "modules nothing runs" SENTENCE IS DATED NARRATIVE THE README
+ITSELF REVERSES, and the spec quoted the earlier half.** The paragraph at
+`lib/schgen/README.md:306` lists `emit-items.ts` among five modules nothing ran
+**as of Task 6**; the paragraph at `:409` says *"the five modules nothing ran ...
+are now two"* and names the two. Measurement (4) shows even that is now stale -
+`gates/pin-table.ts` reports LF=78 LH=78. **Nothing was edited**: those are dated
+records of what was true at a task, not current claims. A reader taking a
+coverage sentence out of that README should re-measure, which is what this clause
+is for.
+
+**(7) THREE FIXTURE-CONSTRUCTION REFUSALS A SUCCESSOR BUILDING A NETWORK-LEVEL
+schgen FIXTURE WILL HIT, in the order they fire.** None is a defect; each cost a
+run. `authoringProblems` refuses `portDirections` naming a net no pin of the
+network is on, so a per-arm fixture needs a per-arm direction map.
+`lib/schgen/render/bus.ts` refuses a `bus` block holding more than one unit
+(*"bus block B must hold exactly one unit (holds 3)"*), so a three-part fixture
+needs three blocks, not one. And a bare `(at x y)` comparison must use `fmtMm`
+from `render/geometry.ts`: the emitter writes 48.26, not 48.260.
+
+**(8) TWO REPO-WIDE SWEEPS FIRE ON A NEW schgen FIXTURE, AND ONE NEEDED A NEW
+EXEMPTION.** `tests/kicad/symbol-names.test.ts` sweeps every `.ts` file for a
+part spec's quoted `symbol` field and demands it resolve in an installed KiCad
+library; the fixture needs a symbol whose library types a pin `no_connect`, and
+`Fix:BIG8` (pin 7) is the only verified one in the tree, so `Fix:BIG8` joins
+`NOT_A_KICAD_SYMBOL` beside `Fix:R`, `Fix:C`, `Fix:OPAMP2` and the rest - held to
+the same four teeth that list already applies (still swept, fails exactly as
+recorded, reason over 60 characters, declared only under `tests/schgen/`). **It
+is the first HAND-WRITTEN rather than ported file to need one.**
+`tests/kicad/footprint-names.test.ts` fired on a `dip8` footprint the fixture
+briefly carried; **the fixture now declares no footprint at all**, which
+`from-network.ts`'s header already documents as the faithful transcription of a
+model that declares none, rather than adding a bare name the repository would
+then have to account for.
+
+**(9) SUITE MOVE, TERM BY TERM.** 3812 pass / 43602 `expect()` / 353 files
+becomes **3822 pass / 0 fail / 43622 `expect()` / 354 files**: **+10 tests and
++1 file**, all `tests/schgen/ir/nc-end-to-end.test.ts`, which runs 10 tests and
+16 `expect()` alone; **+4 further `expect()`** from the one new
+`NOT_A_KICAD_SYMBOL` entry, because that list's teeth test asserts four times per
+entry. 16 + 4 = 20. `bun run typecheck` clean. `make check` is `typecheck` plus
+three board-agreement targets and touches none of this.
+
+**WHAT THIS DOES NOT ESTABLISH.** No `kicad-cli` ran on a sheet whose
+`no_connect` came from a **model** `NC`: the fixture here is a single sheet, not
+a project, and the existing `kicad-cli` proof is the `mini` design's IR-level
+`{ nc: true }`. Nor does anything here say whether a given switch mounting pin
+or `CLK_O` SHOULD be `NC` - spec 3's requirement that each of the five Pultec
+pins be classified individually from the symbol's own pin definition is
+untouched by this task, and **a passing NC path is not permission to batch
+them.**
+
+**CRITERION for clauses 1, 2 and 7:** `tests/schgen/ir/nc-end-to-end.test.ts`
+passes at 10/10, and it is already the settlement - it is the regression. It
+moves if `from-network.ts`'s pin assembly, `connectedNet`, `pinsDeclared`,
+`pinSemantics`, `singlePinNets` or `noConnectEnds` changes. **CRITERION for
+clause 3:** `git grep -n "NC" -- tests lib circuits tools` names the four
+importers; settled, and corrected here rather than in the spec, which is Task 6's
+to amend if it wants the sentence fixed at source. **CRITERION for clause 4:**
+re-run the coverage sweep and the `mini` marker count; the marker count is the
+settlement, because it does not depend on bun's instrumentation. **MECHANISM,
+UNTRIED:** a test asserting `emit-items.ts` coverage stays non-zero would make
+the re-take automatic and was not written - whether coverage should GATE is an
+acceptance criterion, which `CLAUDE.md` reserves away from the agent that
+produced the artifact. **CRITERION for clauses 5 and 6:** the upstream directory
+listing and the two README paragraphs; both are settled by reading them, and
+clause 6 is settled only by re-measuring, never by quoting. **CRITERION for
+clause 8:** `tests/kicad/symbol-names.test.ts` and
+`tests/kicad/footprint-names.test.ts` both green with the entry present and the
+footprint absent. **CRITERION for "what this does not establish":** a
+`kicad-cli` netlist export of a project whose `no_connect` originates in a model
+`NC`, which is spec 3b's required gate and lands with Task 5.

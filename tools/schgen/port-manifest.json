@@ -761,6 +761,7 @@
     "lib/schgen/render/obstacle-pairs-glyph.ts",
     "lib/schgen/render/obstacle-pairs-text-frame.ts",
     "tests/schgen/ir/auto-not-labelled.test.ts",
+    "tests/schgen/ir/nc-end-to-end.test.ts",
     "tests/schgen/ir/no-pin-map.test.ts",
     "tests/schgen/ir/single-pin-net-guard.test.ts",
     "tests/schgen/port-fidelity.test.ts",
