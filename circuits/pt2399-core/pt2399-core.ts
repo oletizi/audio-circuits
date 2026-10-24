@@ -28,14 +28,33 @@
  * verification test can compare the two.
  *
  * Net names are copied verbatim from the netlist, including KiCad's
- * auto-generated "Net-(...)" names and the "unconnected-(...)" placeholder
- * net KiCad assigns to a floating symbol pin (U1 pin 5 / CLK_O here). That
- * placeholder net has exactly one member, so - like every other net that
- * leaves the board - it needs a declared port to satisfy validation; the
- * port does not imply the pin does anything off-board, only that the
- * netlist shows it on a net rather than showing no connection at all.
+ * auto-generated "Net-(...)" names.
+ *
+ * ONE CONNECTION IS DELIBERATELY NOT TRANSCRIBED, and this is the whole of
+ * it: U1 pin 5 (CLK_O) is unused, and the netlist shows it on
+ * "unconnected-(U1-CLK_O-Pad5)" - the placeholder name KiCad's exporter
+ * gives a symbol pin with nothing on it. That name is the exporter saying
+ * "no connection", so this model says the same thing the way the model has
+ * for saying it: the pin is declared NC. There is no net to carry and no
+ * port to declare.
+ *
+ * **IT WAS A PORT UNTIL 2026-10-24, and what the port claimed was false.** A
+ * port in this model means a net that leaves the board; CLK_O leaves
+ * nothing. The port existed so that the placeholder's one-member net would
+ * satisfy validation, and the comment that stood here said in terms that it
+ * "does not imply the pin does anything off-board" - a false declaration
+ * with its falsehood documented beside it. It also only ever satisfied one
+ * of the two validators: lib/schgen/ir/validate-nets.ts refused the board on
+ * that net all the same. Both are gone.
+ *
+ * **SO THE MODEL'S NET SET IS NO LONGER THE EXPORT'S NET SET, by exactly one
+ * net, and the comparison that checks them against each other knows about
+ * that one pin and nothing wider.** tests/circuits/pt2399-core.test.ts keys
+ * its tolerance on the pins THIS FILE declares NC - never on the shape of a
+ * one-member net, which is also what a connection dropped by accident looks
+ * like. docs/known-gaps.md G283 records the tolerance and what it refuses.
  */
-import { circuit } from "../../lib/model/index.ts"
+import { circuit, NC } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/index.ts"
 
 /** Semantic id -> the built unit's reference designator. */
@@ -144,7 +163,9 @@ export function pt2399Core(): Network {
         "2": "Net-(U1-REF)",
         "3": "GND",
         "4": "GND",
-        "5": "unconnected-(U1-CLK_O-Pad5)",
+        // Unused. The netlist shows it on KiCad's "unconnected-(...)"
+        // placeholder, which is the exporter's way of writing this.
+        "5": NC,
         "6": "VCO",
         "7": "Net-(U1-CC1)",
         "8": "Net-(U1-CC0)",
@@ -179,15 +200,12 @@ export function pt2399Core(): Network {
       { symbol: "Connector_Generic:Conn_01x05", footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" },
     )
 
-    // Ports: every net that leaves the board, plus the floating CLK_O pin's
-    // placeholder net (a single-pin net needs one to satisfy validation - see
-    // the module comment above).
+    // Ports: every net that leaves the board. Five, which is J1's pin count.
     .port("vcc", "+5V")
     .port("gnd", "GND")
     .port("vco", "VCO")
     .port("output", "OUTPUT")
     .port("input", "INPUT")
-    .port("clk_o_unused", "unconnected-(U1-CLK_O-Pad5)")
 
     .done()
 }

@@ -1679,6 +1679,51 @@ made.
 >   **Task 7 authored no criterion, elected no text quantity, and recommended nothing**; the three
 >   decisions it names at §7.5 are all recorded as the owner's elsewhere in this file.
 
+> **AMENDED 2026-10-24 BY TASK 5 OF THE NET-NAMES-AND-FLOATING-PINS PLAN: THE BOARD FIGURE HAS
+> MOVED FOR THE FIRST TIME SINCE THIS ENTRY WAS WRITTEN - `1 of 11` - AND THE SHEET IT PRODUCED
+> CARRIES EIGHT FIELD PLACEMENTS THE PLACER COULD NOT KEEP CLEAR. Every figure in every amendment
+> above stands as measured; this one adds a row, and its second column.**
+>
+> | | at `a5c36e0` | at `ce58374` (Task 24) | at Task 25 | at this commit |
+> | --- | --- | --- | --- | --- |
+> | boards in `boards/` that produce a schematic | 0 of 11 | **0 of 11** | **0 of 11** | **1 of 11** |
+> | boards with NO authoring declaration | 9 | **9** | **0** | **0** |
+> | boards refused by the drawing code or by validation | 2 | **2** | **11** | **10** |
+> | fallback field placements on the sheets produced | n/a - none produced | n/a | n/a | **8, on one sheet** |
+>
+> **THE BOARD IS `pt2399-core`, AND IT TOOK TWO FIXES RATHER THAN THE ONE THE CENSUS NAMED.** Its
+> blocker was the single-pin net KiCad's placeholder gave U1 pin 5; Task 5 declared the pin `NC`
+> and deleted the fake port that had been standing in for it (**G283**). **That revealed a second
+> blocker nothing had ever seen** - the declaration named its sole sheet `pt2399-core.kicad_sch`,
+> which collides with the hierarchical root `tools/schgen/generated-files.ts` always writes, and
+> **all twelve other declared designs have the same collision waiting** (**G284**). **G274**'s
+> amendment carries the three-state census that establishes the order.
+>
+> **AND THE SECOND COLUMN IS WHY `1 of 11` MUST NOT BE QUOTED ALONE.** The sheet carries eight
+> fallback field placements - a reference designator drawn over a wire in eight places, one of them
+> over a pin - and **nobody has opened the PDF.** **G285** names all eight, block by block, and says
+> plainly what was and was not confirmed. **This entry's criterion is NOT met by this row**: a board
+> that produces a sheet is not a board whose sheet anyone trusts.
+>
+> - **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` three times across the change - the
+>   before run is this entry's `0 of 11` reproduced, the after run is `1 of 11 boards produce a
+>   schematic` / `10 refused; 0 have no authoring declaration` with the eight `FALLBACK` lines and
+>   the four written files named. **THE CONTROLS, which could have answered differently:** the ten
+>   remaining refusals are the same ten blockers with the same messages as the before run, so
+>   nothing else moved; and `[RAN]` the full suite at **3845 pass / 0 fail / 43698 `expect()` across
+>   356 files** from **3838 / 0 / 43688 / 355**, accounted for term by term in the task report.
+> - **Verified** **CONFIRMED** for every figure here - this writer ran each census and read the
+>   whole output. **NOT CONFIRMED and NOT CLAIMED: that the produced sheet is legible or correct as
+>   a drawing.** No PDF was exported and no drawing was looked at.
+> - **Why it is open** unchanged, and now narrower by one board. The schematic class produces an
+>   artifact for one of eleven boards and **G240**'s criterion is untouched by that.
+> - **What would settle it** unchanged, and **Task 5 authored no criterion.** **CRITERION: each of
+>   the five classes produces an artifact the owner accepts**, and for the schematic class
+>   **G240**'s stands - a generated schematic for at least one board, compared against a drawing the
+>   owner trusts by something other than the producing agent's judgement. **There is now, for the
+>   first time, an artifact to put in front of him**, which is a precondition for that criterion and
+>   not a step toward meeting it.
+
 ---
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
@@ -13748,76 +13793,6 @@ recorded.
   which `createResolver` does and `tools/kicad/vendor-symbols.ts` must also do
   for the vendored copy to compare equal.
 
-### G159 - `pt2399-core`'s authoring file DECLARES the CLK_O placeholder net a port with a careful reason, and the IR's `singlePinNets` rule refuses it - the declaration and the IR disagree about the same net
-
-`circuits/pt2399-core/pt2399-core.ts` records why that net exists, in its own
-header: KiCad assigns `unconnected-(U1-CLK_O-Pad5)` to a floating symbol pin, it
-is transcribed verbatim because the netlist of a built unit is the authority,
-and *"that placeholder net has exactly one member, so - like every other net
-that leaves the board - it needs a declared port to satisfy validation; the port
-does not imply the pin does anything off-board, only that the netlist shows it on
-a net rather than showing no connection at all."*
-
-Task 9's declaration follows that, deliberately and twice: `portDirections`
-gives the net `"out"` (CLK_O is an output pin and the symbol names it so, and the
-reason is written out beside the entry), and `pt-core` declares it an interface
-port. **And `validateCircuit` refuses it:**
-
-```
-net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5); connect it or declare the pin not connected
-```
-
-**So two parts of this repository disagree about one net and both are
-defensible.** The model says a single-pin net needs a port, and
-`lib/model/validate.ts` accepts it on that basis. The IR says a single-pin net is
-an error whatever a port says, because a schematic with a net of one pin is a
-wire going nowhere. **Nothing recorded the disagreement until now**, and Task 9's
-own report listed three refusing rules when there are four - this is the fourth
-and the sharpest, because the other three refuse things nobody declared while
-this one refuses something declared on purpose.
-
-The IR's own instruction - *"connect it or declare the pin not connected"* - is
-the second arm of **G151**: declaring pin 5 not-connected needs an `ncUnlisted`
-reason the circuit model has nowhere to hold. So the two entries settle together
-or not at all.
-
-- **Found** 2026-10-20, Task 9 review, round 1, item I4, by running
-  `validateCircuit` on all four parity circuits - which Task 9 had reasoned
-  about but not run.
-- **Evidence** `tests/schgen/authoring-complete.test.ts` now runs
-  `buildCircuit` + `validateCircuit` over all four and asserts the exact refusal
-  counts per rule class: `opamp-buffer` 39 (netNames 0 / pinsDeclared 3 /
-  singlePinNets 0 / bomFields 36), `optical-compressor` 162 (14 / 0 / 0 / 148),
-  **`pt2399-core` 114 (17 / 0 / 1 / 96)**, `transistor-preamp` 100 (0 / 0 / 0 /
-  100). A second test names this net specifically and asserts that the
-  declaration still declares what the IR refuses - the port direction `"out"`
-  and the interface port - so the disagreement cannot be silently resolved by
-  deleting one side. **Checks that could have failed:** the suite also asserts
-  that NO refusal falls outside those four classes, so a fifth deferral appears
-  as a named failure rather than as a number drifting; and every `bomFields`
-  count is exactly four times the circuit's non-exempt part count, which is what
-  **G149**'s decision predicts and what `BOM_EXEMPT_PREFIXES` covering
-  `transistor-preamp`'s seven `TP` parts produces (25 parts, not 32).
-- **Verified** CONFIRMED - this writer ran `validateCircuit` on all four, read
-  the full problem lists, and wrote both tests.
-- **Why it is open** it needs a ruling about which layer is right, and that is
-  not an agent's to make: either the IR's rule is too strong for a transcribed
-  board (a netlist really does show that pin on a net), or the model's
-  single-pin-net-plus-port is a fiction the IR is right to reject and the
-  circuit should declare the pin not connected instead - which **G151** says it
-  cannot yet do.
-- **What would settle it** **CRITERION: a net that one layer declares legal and
-  another refuses is recorded as a disagreement, or one layer changes - never
-  left as two silent opinions.** The first half is met by this entry and the
-  tests. **MECHANISMS, untried, and they disagree:** teach `singlePinNets` that
-  a net the circuit declares a port for is not an error (which makes the IR read
-  a model concept it currently has no notion of); or give the model somewhere to
-  hold an `ncUnlisted` reason so the pin can be declared not connected (the
-  **G151** mechanism, and the one that removes the net rather than excusing it);
-  or leave it refusing and treat this circuit as not-emittable, which is the
-  status quo and which nobody has decided. **The criterion is what binds, not
-  these.**
-
 ### G160 - measured, in TWO COLUMNS: **as declared** the ported templates draw 0 of this repository's 12 blocks, but **with an anchor probed mechanically `connector-fanout` draws 2 of them** - and only **30 of the 96 verdicts** are statements about a template's fit at all
 
 **ROUND 2 REWRITES THIS ENTRY, AND THE CORRECTION IS THE POINT.** Round 1 reported
@@ -25352,6 +25327,29 @@ produce a schematic`, `11 refused; 0 have no authoring declaration`.**
 | a t-junction with no junction emitted | **1** - `transistor-preamp-feedback` | **none at all** |
 | a label over a label | **2** - `transistor-preamp-lab` (`tp-leg-emitter-bypass`), `transistor-preamp-loop` (`tp-follower`) | **yes** |
 
+> **AMENDED 2026-10-24 BY TASK 5 OF THE NET-NAMES-AND-FLOATING-PINS PLAN, WHICH IS THIS ENTRY'S
+> FIRST WORKED EXAMPLE AND WENT TWO LAYERS DEEP, NOT ONE. Every figure above stands as measured.**
+> `pt2399-core`'s row said *"`validateCircuit`, net names not UPPER_SNAKE, plus one single-pin
+> net"*. Task 3 deleted the case demand, leaving the single-pin net alone; Task 5 resolved that by
+> declaring U1 pin 5 `NC`. **`[RAN]` the census after each step:**
+>
+> | state of the tree | what `pt2399-core` does |
+> | --- | --- |
+> | before | `refused - circuit is invalid: net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5)` |
+> | the `NC` declaration, alone | `refused - generate: two generated files are named pt2399-core.kicad_sch` |
+> | the sheet file renamed too | `generated (1 sheet(s), 8 fallback field placement(s))` |
+>
+> **The second row is a problem no census had ever printed for any board, at a step none had ever
+> reached**, and it is not `pt2399-core`'s alone: all thirteen declared designs name their sole
+> sheet after their project and collide with the generator's root file the same way. **G284** is
+> the census and the criterion. **G285** carries the board figure moving to `1 of 11` and the eight
+> fallback field placements that came with it.
+>
+> **WHAT THIS ENTRY NOW HAS THAT IT DID NOT: evidence that "the first problem is not the only one"
+> is not a one-step correction.** Resolving the named blocker revealed a second blocker, and
+> resolving that produced an artifact with a third problem in it (the text). **Anyone reading a
+> census row as a work estimate is reading it wrong in a way this measurement makes concrete.**
+
 **SO THE BLOCKER THE CENSUS NAMES INVOLVES TEXT ON TWO OF ELEVEN BOARDS, AND SIX
 BOARDS REFUSE BEFORE ANY TEXT IS PLACED AT ALL.** **NOT ONE of the eighteen
 approaches in §7.1 has been shown to draw a board**, and no combination of the
@@ -26668,3 +26666,396 @@ true after.
   `tests/guide/pad-label-second-pole.test.ts`) and `lib/kicad/from-network.ts`'
   own `padOrderFor` are on that surface. **It needs a brief and a reviewer who did
   not write it, which is why this task stopped at the measurement.**
+
+### G283 - THE `NC` ROUND-TRIP ALLOWANCE, STATED AS ONE NAMED PIN: what each of the TWO model-versus-netlist comparisons now tolerates for `pt2399-core`, and the perturbation proving the easy version of the rule would have hidden a dropped resistor terminal
+
+`circuits/pt2399-core/pt2399-core.ts` declares U1 pin 5 (CLK_O) `NC` since
+2026-10-24. The schematic is authoritative for this circuit and the model is
+derived from its netlist export, so **the model's net set is no longer the
+export's net set** - KiCad spells "no connection" as a one-member placeholder
+net, `unconnected-(U1-CLK_O-Pad5)`, and the model spells it as a declaration.
+Two tests compare the two, and **this entry is the record of exactly what each
+one tolerates**, because a tolerance nobody wrote down is a hole.
+
+**THERE ARE TWO COMPARISON SITES, NOT ONE, AND THE PLAN'S BRIEF NAMED ONE.** The
+brief said *"whichever test compares the model's nets to the netlist export;
+`tests/circuits/pt2399-core.test.ts` is the candidate"*. It is a site and it is
+not the only one: `tests/kicad/legacy-netlist.test.ts` compares the same model
+against the same fixture through `writeLegacyNetlist`'s TEXT, three times over.
+Both are carved out, both carve-outs are keyed on the same rule, and the rule is
+written once in `tests/support/declared-nc.ts`.
+
+**WHAT IS TOLERATED, AS A PIN:**
+
+| site | tolerance |
+| --- | --- |
+| `tests/circuits/pt2399-core.test.ts` | an exported net ABSENT from the model whose **sole member** is a node the model declares `NC`. In this circuit that is `U1.5` and nothing else |
+| `tests/kicad/legacy-netlist.test.ts` | the fixture's placeholder net for a node the model declares `NC` is dropped from the FIXTURE side before comparing - after asserting the fixture has it and our derivation has none |
+
+**WHAT IS NOT TOLERATED.** It does not pattern-match `unconnected-*`. It does not
+treat one-member nets as a class. It does not excuse a declared-`NC` node the
+export shows WIRED to something - such a net has two members, so the allowance
+never reaches it, and `tests/circuits/pt2399-core.test.ts` has an arm that
+drives exactly that. Every other difference is still refused, by name.
+
+**THE PERTURBATION IS THE WHOLE VALUE OF THIS ENTRY, because the easy rule looks
+identical from the outside.** The spec's third-party review said a blanket *"a
+single-pin net corresponds to an intentional `NC`"* would hide a resistor
+terminal dropped during model transformation. `[RAN]` that, written out: with
+`declaredNc.has(only)` in `agreeOnNets` replaced by `true`, the arm named *"a
+terminal NOT declared NC, on its own placeholder net, is still refused"* FAILS
+and reports the blanket rule excusing **two** nets instead of one -
+`unconnected-(U1-CLK_O-Pad5)` (`U1.5`) and `unconnected-(R3-Pad2)` (`R3.2`) -
+while **every other test in the file still passes.** The review was right and
+the failure is reproducible in one line.
+
+**AND THE ARM THAT DISCRIMINATES IS NOT THE ARM THE BRIEF SKETCHED, which is
+worth knowing before writing the next one of these.** The brief's sketch was *"the
+same model with one resistor terminal dropped"* compared against an untouched
+export. That IS refused - but it is refused by comparing MEMBERS of a net both
+sides have, so it is refused under the blanket rule too and establishes nothing
+about the allowance. The discriminating shape needs the export to carry the
+dropped terminal on **its own placeholder net**, which is what KiCad actually
+produces for an unwired pin: then the two sides agree everywhere else and the
+declaration is the only thing left standing between a dropped connection and a
+green comparison. Both arms are in the file, and the comment on the second says
+in terms that it is not evidence about the allowance.
+
+**ONE CITATION ELSEWHERE IS NOW STALE AND IS DELIBERATELY LEFT, which is a
+decision rather than an oversight.** `tools/schgen/label-syntax/fixtures.ts:83`
+explains why `unconnected-(U1-CLK_O-Pad5)` was chosen as a probe fixture:
+*"circuits/pt2399-core/pt2399-core.ts:147, U1 pin 5's net, and :190's
+clk_o_unused port"*. **Line 190's port no longer exists.** That string is echoed
+verbatim into `tools/schgen/label-syntax/probe-run.log` line 39 - Task 1's
+committed `kicad-cli` measurement - so editing the fixture would leave the
+committed log not corresponding to the code that produced it, and re-running the
+probe to fix that would rewrite another task's measurement. **The `why` is a
+statement about the tree at the moment the probe ran, and the log is that
+moment's artifact; both are left intact.** The probe's own prose at
+`probe.ts:306` and `:421` discusses the fake port for the same reason and is
+left for the same one. **No test compares `probe-run.log` to a re-run**, which is
+what makes this safe and is also why nothing would have caught the desync.
+
+- **Found** 2026-10-24, Task 5 of the net-names-and-floating-pins plan, writing
+  the allowance the spec's decision (1) requires.
+- **Evidence** `[RAN]` `bun test tests/circuits/pt2399-core.test.ts
+  tests/kicad/legacy-netlist.test.ts`: 31 pass / 0 fail / 103 `expect()`.
+  `[RAN]` the one-line perturbation above and read the failure, which names both
+  excused nets; restored and re-ran green. The allowance is asserted to have
+  FIRED - `expect(allowed).toEqual([{ net: "unconnected-(U1-CLK_O-Pad5)", node:
+  "U1.5" }])` - rather than only to have permitted something, because an
+  allowance nothing exercises reads exactly like a comparison that passed.
+- **Verified** **CONFIRMED** - this writer wrote all three arms, drove the
+  perturbation, and read the output.
+- **Why it is open** it is not a defect; it is a tolerance in a gate, and
+  `CLAUDE.md` requires a measurement a later reader cannot re-derive to be
+  recorded whether or not anything is wrong. **A reader who finds these
+  carve-outs and cannot find this entry would reasonably widen them.**
+- **What would settle it** nothing to settle - **it is DELETED when the model
+  stops declaring any pin `NC`, or when `lib/kicad/from-network.ts` starts
+  spelling `NC` the way KiCad does (G286), which removes the second site's
+  carve-out entirely.** **CRITERION for any future edit to either site: only a
+  pin explicitly declared `NC` in the model may be matched to an unconnected pin
+  or a synthetic placeholder in the export, and the discriminating arm must fail
+  when the key is widened to the net's shape.**
+
+### G284 - MEASURED, AND IT BLOCKS GENERATION FOR EVERY DECLARED DESIGN IN THE REPOSITORY: all thirteen name their sole sheet `<project>.kicad_sch`, which collides with the hierarchical ROOT file the generator always writes - invisible until a circuit passed validation
+
+`tools/schgen/generated-files.ts:98` emits the project's hierarchical root as
+`${project}.kicad_sch` and then adds one file per declared sheet; its `add`
+refuses a repeated name:
+
+```
+generate: two generated files are named pt2399-core.kicad_sch
+```
+
+**Every declared design names its sole sheet after its project**, so every one
+of them hits this the moment its circuit validates:
+
+| declaration | project | sheet file |
+| --- | --- | --- |
+| `circuits/pt2399-core/schematic/authoring.ts` | `pt2399-core` | **FIXED 2026-10-24**: now `core.kicad_sch` |
+| `circuits/optical-compressor/schematic/authoring.ts` | `optical-compressor` | `optical-compressor.kicad_sch` |
+| `circuits/transistor-preamp/schematic/authoring.ts` | `transistor-preamp-lab` | `transistor-preamp-lab.kicad_sch` |
+| `circuits/opamp-buffer.schematic.ts` | `opamp-buffer` | `opamp-buffer.kicad_sch` |
+| `circuits/transistor-preamp/schematic/{feedback,buffered,loop,staged}-board.ts` | `transistor-preamp-<n>` | `transistor-preamp-<n>.kicad_sch` |
+| `circuits/pultec/schematic/section-board.ts` (five boards, one assembler) | `pultec-<owner>` | `pultec-<owner>.kicad_sch` |
+
+The ported `mini` fixture is the only design that does not collide, and the
+reason is instructive: it declares TWO sheets, `power` and `signal`, so neither
+could be named after the project. **Nothing in this repository had ever generated
+a single-sheet design**, which is why a defect in twelve files went unseen.
+
+**IT IS `G274`'S PHENOMENON ONE LAYER FURTHER IN, and that is the general lesson
+rather than this particular collision.** The board census reports the FIRST
+refusal per board. `pt2399-core` refused at `validateCircuit` on one single-pin
+net; with that resolved it refused here, at a step the census had never reached
+on any board. **A fix that resolves the reported blocker is not a fix that
+produces the artifact**, and the only way to find out is to run it again.
+
+- **Found** 2026-10-24, Task 5, immediately after `pt2399-core` started passing
+  `validateCircuit`.
+- **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` at three states of the
+  tree: before the `NC` change (`pt2399-core: refused - circuit is invalid: net
+  unconnected-(U1-CLK_O-Pad5) has only one pin`), after it (`pt2399-core:
+  refused - generate: two generated files are named pt2399-core.kicad_sch`), and
+  after renaming the sheet file (`pt2399-core: generated (1 sheet(s))`).
+  `[READ]` `tools/schgen/generated-files.ts:93-99` for `add` and the root's
+  name, and the `file:`/`project:` pair in each declaration listed above.
+- **Verified** **CONFIRMED** for `pt2399-core` end to end. **The other twelve
+  rows are read off their declarations and `generated-files.ts`, NOT run** - each
+  is blocked by an earlier refusal, so none of them can reach this throw today
+  and this writer could not drive it on them. That is a prediction, labelled.
+- **Why it is open** only the board the task reached is fixed. Renaming twelve
+  sheet files is a mechanical change in twelve files that nothing currently
+  exercises, and each one would land in a board that still refuses earlier for
+  its own recorded reason - so it would be an unverifiable edit.
+- **What would settle it** **CRITERION: no declared design names a sheet file
+  the generator also writes as the project root, and a check says so rather than
+  each design being inspected.** **MECHANISMS, UNTRIED, and they are not
+  equivalent:** (a) rename the twelve sheet files, which is the smallest change
+  and leaves the trap for the next declaration somebody writes; (b) have
+  `lib/schgen/authoring.ts`'s `authoringProblems` refuse a `SheetSpec` whose
+  `file` is `${project}.kicad_sch`, which moves the refusal to the declaration
+  where it can be read, and is the only one of the three that is a check; (c)
+  have `generatedFiles` emit no separate root for a single-sheet design, which is
+  a change to what KiCad hierarchy the generator produces and needs someone who
+  knows what a one-sheet KiCad project should look like. **(b) is this writer's
+  preference and was not attempted.**
+
+### G285 - `pt2399-core` IS THE FIRST BOARD IN THIS REPOSITORY TO PRODUCE A SCHEMATIC - 1 of 11, up from 0 of 11 - AND ITS SHEET CARRIES EIGHT FIELD PLACEMENTS THE PLACER COULD NOT KEEP CLEAR, so it is not a drawing anyone has said is good
+
+**G259**'s board scoreboard has read `0 of 11` at every measurement since it was
+written. `[RAN]` `bun tools/schgen/board-sheets.ts` at this commit:
+
+```
+pt2399-core: generated (1 sheet(s), 8 fallback field placement(s))
+1 of 11 boards produce a schematic
+10 refused; 0 have no authoring declaration
+WARNING: 8 fallback field placement(s) across 1 board(s).
+```
+
+**THE EIGHT ARE THE PRICE OF THE FIRST, AND THEY ARE NAMED SO THE TWO NUMBERS
+CANNOT BE READ AS ONE RESULT:**
+
+| unit | covers |
+| --- | --- |
+| `C7#1` | wire 77 (`Net-(C8-Pad2)`) |
+| `C9#1` | wire 146 (`OUTPUT`), wire 147 (`OUTPUT`), pin `C10.2` |
+| `C10#1` | wire 53 (`Net-(C10-Pad1)`) |
+| `C11#1` | wire 24 (`GND`) |
+| `C12#1` | wire 106 (`Net-(U1-LPF2-IN)`), wire 148 (`OUTPUT`) |
+| `R3#1` | wire 30 (`GND`), wire 36 (`GND`), wire 153 (`VCO`) |
+| `R4#1` | wire 136 (`Net-(U1-OP2-OUT)`) |
+| `R6#1` | wire 98 (`Net-(U1-LPF1-OUT)`) |
+
+`lib/schgen/render/field-placement.ts` places a unit's Reference and Value at
+the least-covered candidate slot when no slot is clear, rather than refusing the
+drawing. So **a reference designator sits on top of a wire in eight places**, and
+one of them (`C9#1`) sits on a pin.
+
+**WHAT THIS ENTRY IS FOR: nobody has looked at the sheet.** `CLAUDE.md` is
+explicit that netlist-level assertions are necessary and not sufficient, that a
+schematic can be correct and unreadable, and that a sheet with overlapping text
+must not read as a clean sheet. **This writer did not open the PDF**, and the
+figure `1 of 11` is the kind of number that gets quoted without its second
+column. **G240**'s criterion - a generated schematic compared against a drawing
+the owner trusts, by something other than the producing agent's judgement - is
+untouched by this and is the thing that matters.
+
+- **Found** 2026-10-24, Task 5, which resolved `pt2399-core`'s validation
+  refusal (its brief) and its sheet-name collision (**G284**).
+- **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` before and after; the
+  before run is `0 of 11` with `pt2399-core: refused`, the after run is the text
+  quoted above with the eight rows. The count is also asserted in
+  `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts`, so it cannot drift in
+  either direction unnoticed - fewer is a result worth seeing and more is a
+  regression.
+- **Verified** **CONFIRMED** for every figure - this writer ran both censuses and
+  read the full output. **NOT CONFIRMED, and not claimed: that the sheet is
+  legible.** No PDF was exported and no drawing was looked at.
+- **Why it is open** the text placement class is explicitly out of scope for the
+  plan that produced the board (the owner's overlap decisions in **G260** and
+  **G265** are separate), and fixing a placer is not a task that starts from one
+  board's eight fallbacks.
+- **What would settle it** **CRITERION, and it is two separate things that must
+  not be collapsed:** (1) **G240**'s - a generated schematic for at least one
+  board compared against a drawing the owner trusts, by a reviewer that is not
+  the agent that produced it; and (2) zero fallback field placements on this
+  sheet, or a stated decision that eight is acceptable. **MECHANISM, UNTRIED:**
+  export the PDF (`bun tools/schgen/board-sheets.ts --pdf` already does it) and
+  put it in front of the owner, which is a step, not a settlement.
+
+### G286 - the TWO derivations of "this model as a netlist" disagree about how to spell `NC`: `lib/kicad/from-network.ts` OMITS the pin, `lib/schgen/gates/round-trip.ts` gives it a one-member set "because that is how the export carries it" - and the first cannot adopt the second's spelling
+
+`lib/kicad/from-network.ts:190` is `if (connection.kind === "nc") continue` - a
+declared-`NC` pin is dropped from the netlist that function lowers. KiCad does
+the opposite: `[RAN]` a real `kicad-cli sch export netlist` of the generated
+`pt2399-core` project gives pin 5 a net of its own,
+`unconnected-(U1-CLK_O-Pad5)`, with `U1.5` as the single member - the same
+spelling the committed fixture of the authored schematic carries.
+
+`lib/schgen/gates/round-trip.ts`'s `modelPartition` already states the right
+rule and says why, in terms: *"A NOT-CONNECTED PIN IS A ONE-MEMBER SET, not an
+omission, because that is how the export carries it. Were they dropped from this
+side only, a pin the model declares not connected and the schematic wires to a
+rail would change the export's partition and not the model's, and the comparison
+would report it as a stray net instead of as the wrong thing."* **That is exactly
+the hazard `from-network.ts` is exposed to**, and it is not hypothetical:
+`tests/circuits/kicad-round-trip.ts`'s `expectSameCircuit` compares a KiCad
+export against `toImportedNetlist`'s output by partition, so a board with an
+`NC` pin run through it would compare a 20-net model against a 21-net export.
+
+**EXPOSURE TODAY IS NIL AND THAT IS LUCK RATHER THAN DESIGN.** `pt2399-core` is
+the only circuit in `circuits/` that declares `NC`, and it is not one of the five
+boards `kicad-round-trip.ts` serves (those are the transistor-preamp boards).
+The next circuit to declare one is the one that finds this.
+
+**THE OBVIOUS FIX DOES NOT WORK, which is why this is a recorded gap rather than
+a one-line change.** KiCad's placeholder name embeds the **symbol pin name** -
+`CLK_O` in `unconnected-(U1-CLK_O-Pad5)` - and the model carries pin NUMBERS,
+not symbol pin names (`circuits/pt2399-core/pt2399-core.ts`'s `ic` pin map is
+keyed `"1"`..`"16"`). So `from-network.ts` can produce a one-member set but
+cannot produce KiCad's name for it, and a derivation that emitted
+`unconnected-(U1-Pad5)` would agree with the export on SHAPE and disagree on
+NAME - which the two name-keyed comparisons in
+`tests/kicad/legacy-netlist.test.ts` would report as a different failure rather
+than as a pass.
+
+- **Found** 2026-10-24, Task 5, when declaring `pt2399-core` pin 5 `NC` turned
+  three assertions in `tests/kicad/legacy-netlist.test.ts` red.
+- **Evidence** `[READ]` `lib/kicad/from-network.ts:190` and
+  `lib/schgen/gates/round-trip.ts`'s `modelPartition` with its comment. `[RAN]`
+  `bun test tests/kicad/legacy-netlist.test.ts` at the point the model changed
+  and nothing else had: three failures, each a missing
+  `unconnected-(U1-CLK_O-Pad5)` / `U1.5` on the FIXTURE side - the net map
+  comparison, the written-text comparison, and the names-discarded membership
+  comparison. `[RAN]` the generated project through real `kicad-cli` for the
+  export's own spelling.
+- **Verified** **CONFIRMED** - this writer read both sources and ran both.
+- **Why it is open** it is a change to a shared lowering that five boards'
+  round-trip tests depend on, it cannot reproduce KiCad's net NAME, and the
+  three assertions it would need to move are the ones that currently carry the
+  carve-out. It is not Task 5's, whose subject is one pin of one circuit.
+- **What would settle it** **CRITERION: `toImportedNetlist`'s partition over a
+  model with a declared-`NC` pin equals the partition KiCad exports from that
+  model's schematic - established by running both, not by reading either.** The
+  `tests/kicad/legacy-netlist.test.ts` carve-outs and this entry are DELETED
+  together when it holds. **MECHANISMS, UNTRIED, and the first is incomplete by
+  construction:** (a) emit a one-member net named `unconnected-(<REF>-Pad<N>)`,
+  which meets the partition criterion and NOT a name comparison, so the
+  name-keyed assertions would have to become partition comparisons - a real
+  weakening that needs its own argument; (b) carry symbol pin names into the
+  model so the exact name can be derived, which is a model change with a far
+  wider blast radius than this; (c) leave the two spellings and make the
+  difference explicit at every comparison site, which is the status quo plus
+  this entry.
+
+### G287 - MEASURED, and it bounds what every netlist-level `NC` check can establish: with the `no_connect` marker DELETED from the emitter, `kicad-cli` still gives the pin its placeholder net and the round trip still agrees on all five comparisons
+
+Spec §3b requires four states to stay distinguishable, two of them being *"a pin
+marked no-connect in the KiCad schematic"* and *"a pin that merely has no wire
+attached"*, on the grounds that KiCad's own ERC treats a bare dangling pin as a
+defect and a marked one as intent. **The netlist does not carry that
+distinction at all**, and this is the measurement.
+
+`[RAN]` with `lib/schgen/render/emit.ts:169`'s `d.noConnects.map(...)` replaced
+by `[].map(...)` - the marker gone from the emitted sheet, everything else
+untouched - and `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts` re-run
+against a real `kicad-cli`:
+
+| assertion | under the perturbation |
+| --- | --- |
+| the sheet carries one `(no_connect` | **FAILED**: expected 1, received 0 |
+| `kicad-cli` puts `U1.5` alone on `unconnected-(U1-CLK_O-Pad5)` | **passed** |
+| `roundTrip` agrees on all five comparisons | **passed** |
+| the eight fallback field placements | **passed** |
+
+**So three of that file's four tests cannot see a deleted no-connect marker, and
+the one that can is the one that reads the SHEET.** A netlist comparison -
+including `lib/schgen/gates/round-trip.ts`, the strongest one here - is blind to
+it by construction: KiCad assigns the placeholder net because the pin is on no
+wire, which is true with or without the marker.
+
+**WHY THIS MATTERS BEYOND THIS FILE.** A later agent wiring an `NC` check is
+likely to reach for the round trip, because it is the thorough-looking one. It
+would be a check that cannot fail on the thing being checked. **The marker's only
+guard is an assertion on the emitted sheet's bytes**, which is also what **G278**
+concluded for a different reason (*"the settlement is the marker count in the
+bytes, not the instrumentation"*) - two tasks arriving at the same place from
+different directions.
+
+- **Found** 2026-10-24, Task 5, perturbing its own new end-to-end test to check
+  it could fail.
+- **Evidence** the perturbation above, run against real `kicad-cli`, with the
+  edit restored afterwards and `git diff lib/schgen/render/emit.ts` confirmed
+  empty before re-running green. The failure message is quoted in full in the
+  task report.
+- **Verified** **CONFIRMED** - this writer made the edit, ran it, read which
+  three tests passed, and restored it.
+- **Why it is open** it is not a defect; it is a limit on what a class of checks
+  can establish, and it is exactly the kind of thing a later reader cannot
+  re-derive without doing this perturbation again.
+- **What would settle it** nothing - **it is a standing caveat, and it is DELETED
+  only if KiCad's netlist export starts distinguishing a marked no-connect from
+  an unwired pin.** **CRITERION for any future `NC` check: it asserts on the
+  emitted sheet, or it is accompanied by a statement of what it cannot see.** A
+  check that establishes `NC` survived only through a netlist comparison does not
+  meet it.
+
+### G288 - MEASURED while deleting a resolved entry: SIXTEEN `G<n>` references in this file point at entries that no longer exist, deletions have always left them, and nothing checks
+
+`CLAUDE.md` requires a resolved entry to be DELETED rather than marked closed,
+and warns to **check what the deletion takes with it**. Task 5 deleted **G159**
+and then asked the obvious next question: how many pointers did that break, and
+is this file already full of them?
+
+`[RAN]` a script collecting every `^### G<n>` heading and every `G<n>`
+reference in the body (excluding `CRITERIA G<n>`, which is a different
+namespace this file's own header warns about): **261 entries defined, 277
+numbers referenced, 16 of them defined nowhere.**
+
+```
+G3 G4 G7 G8 G18 G25 G26 G36 G37 G41 G42 G46 G113 G159 G194 G198
+```
+
+**FIFTEEN OF THE SIXTEEN PREDATE THIS TASK.** `G159` is the one this task
+added, and the other fifteen establish that every deletion in this file's
+history has left its inbound pointers behind. **So this is a property of the
+practice, not of one change** - and a reader meeting a bare `G4` cannot tell a
+resolved entry from a typo from a CRITERIA clause.
+
+**WHAT IS NOT WRONG, said so the entry is not read as wider than it is.** Most
+of these sites are DATED measurement tables - census rows with `(G159)` as a
+column label, recording what a rule's register entry was at the time of the
+measurement. Those are historical records and rewriting them would falsify a
+dated figure. **The live ones are different, and Task 5 fixed the live one it
+created:** `tools/schgen/gate-census.ts` PRINTS `singlePinNets (G159): ...` as a
+classification label in tool output, and `tests/schgen/gate-census.test.ts`
+asserts that string. A tool emitting a pointer at a deleted entry is a false
+citation in produced output, so both moved to **G283**, the entry that carries
+the resolution, with the reason written at both sites.
+
+- **Found** 2026-10-24, Task 5 of the net-names-and-floating-pins plan, as a
+  direct consequence of `CLAUDE.md`'s instruction to check what a deletion takes
+  with it.
+- **Evidence** the script above, over this file at this commit. **A check that
+  could have failed, and nearly did:** the naive version of it counted
+  `CRITERIA G<n>` references as dangling and reported a much larger number -
+  this file's own header warns about exactly that collision, which is how the
+  error was caught rather than published.
+- **Verified** **CONFIRMED** - this writer wrote and ran the script and read the
+  sixteen sites. **NOT established: whether any of the fifteen older ones is
+  load-bearing** (a pointer a reader would act on) rather than a dated table
+  cell. That was not audited and is not claimed either way.
+- **Why it is open** auditing fifteen references across a 26,000-line register
+  is not Task 5's, whose subject is one pin of one circuit, and the right
+  treatment differs per site - a dated table cell stays, a live pointer moves.
+- **What would settle it** **CRITERION: no `G<n>` reference in this file or in
+  committed tool output points at an entry this file does not define, OR each
+  surviving one is in a block marked as a dated measurement.** **MECHANISM,
+  UNTRIED:** a test that parses this file's headings and references and fails on
+  a dangling pointer outside a dated block - which needs a way to mark a dated
+  block, and inventing one is a convention this writer should not author alone.
+  **The sixteen are listed above so the audit does not have to start by finding
+  them.**

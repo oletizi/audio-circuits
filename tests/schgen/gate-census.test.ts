@@ -91,7 +91,10 @@ describe("the rendered gate census", () => {
   it("still prints the problem count, the classified labels and the gates that did not run", () => {
     const text = renderGateCensus(CENSUS, false)
     expect(text, "the count").toContain("1 problem(s)")
-    expect(text, "the classification").toContain("singlePinNets (G159): net has only one pin")
+    // The register pointer moved from G159 to G283 on 2026-10-24: G159 was DELETED when Task 5
+    // resolved it (pt2399-core declares U1 pin 5 NC), and a tool printing a pointer at an entry
+    // that no longer exists is a false citation. gate-census.ts's own comment carries the reason.
+    expect(text, "the classification").toContain("singlePinNets (G283): net has only one pin")
     expect(text, "and a gate that never registered is named, never omitted").toContain(
       `DID NOT RUN ${GATES.oscar}`,
     )

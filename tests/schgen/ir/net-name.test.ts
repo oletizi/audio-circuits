@@ -261,6 +261,15 @@ describe("validateCircuit refuses a net name that is empty or carries a control 
  * the other 197 nets would not reach it. The mechanism the old comment actually named - the
  * refusal count - did **not** fire.
  *
+ * > **THAT TABLE IS A DATED MEASUREMENT AND ITS SECOND ROW NO LONGER NAMES A TEST, 2026-10-24,
+ * > Task 5. The rows stand as measured; what follows is what changed under them.** `pt2399-core`
+ * > declares U1 pin 5 `NC`, so `unconnected-(U1-CLK_O-Pad5)` does not exist, the refusal that
+ * > quoted it is gone, and the `authoring-complete.test.ts` assertion that spelled it out is
+ * > replaced by one about the pin. **So the "one assertion does still catch this normaliser"
+ * > above is now ZERO assertions, and the sweep below is the whole of the guard** - which is the
+ * > conclusion the paragraph after the table already draws. Nothing was weakened to get here: the
+ * > incidental catch was a literal net name, and the net stopped existing.
+ *
  * **WHY THIS IS STRONGER THAN WHAT IT REPLACES.** The old count noticed a normaliser only because
  * normalising would have made names PASS a rule they were failing. It was blind to a case-folder
  * on an already-upper-case name, to a truncator, and to any rename between two names the rule

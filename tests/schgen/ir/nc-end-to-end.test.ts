@@ -33,6 +33,22 @@
  *
  * **NOTHING HERE AUTHORS `NC` IN A CIRCUIT.** `circuits/` is Task 4's and Task 5's; this file
  * builds its own network so that the measurement does not depend on a board.
+ *
+ * **AND THIS FILE'S OWN RESERVATION IS DISCHARGED ELSEWHERE, 2026-10-24, Task 5.** What it
+ * reserved is that its subject is ONE SHEET on a hand-built fixture network and that it runs no
+ * `kicad-cli` - so a green run here was never evidence that the marker survives a whole project
+ * or that KiCad reads it. **`tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts` supplies both
+ * halves on a real board:** `circuits/pt2399-core/` declares U1 pin 5 `NC`, the generator writes
+ * the project, and the real `kicad-cli` exports a netlist that `lib/schgen/gates/round-trip.ts`
+ * agrees with on all five comparisons. **Neither file subsumes the other** - the four states stay
+ * separable here, on a network built to separate them, and the board proves the path there.
+ *
+ * **ONE THING THAT FILE MEASURED BELONGS HERE, because it bounds what state 1 above establishes:**
+ * `[RAN]` with the emitter's `noConnects` output replaced by an empty list, `kicad-cli` STILL gave
+ * pin 5 its own `unconnected-(U1-CLK_O-Pad5)` net and the round trip STILL agreed on all five
+ * comparisons. **So no netlist comparison can tell a marked no-connect from a merely unwired pin**
+ * - states 1 and 4 of the four above are indistinguishable downstream of the netlist, and only an
+ * assertion on the SHEET sees the difference. `docs/known-gaps.md` **G287** records it.
  */
 
 import { describe, expect, test } from "bun:test"

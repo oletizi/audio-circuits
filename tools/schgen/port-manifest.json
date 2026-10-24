@@ -808,6 +808,7 @@
     "tests/schgen/rules/orientation.test.ts",
     "lib/schgen/gates/round-trip.ts",
     "tests/schgen/gates/round-trip.kicad.test.ts",
+    "tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts",
     "tools/schgen/gate-census.ts",
     "lib/schgen/elk/options.ts",
     "lib/schgen/elk/serialize.ts",

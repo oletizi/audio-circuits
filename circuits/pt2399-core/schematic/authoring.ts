@@ -25,8 +25,25 @@ import type { RailSpec, SheetSpec } from "../../../lib/schgen/ir/types.ts"
 
 const SHEET = "core"
 
+/**
+ * **`file` IS THE SHEET ID AND NOT THE PROJECT NAME, AND THAT IS A DERIVED FACT RATHER THAN A
+ * PREFERENCE.** `tools/schgen/generated-files.ts:98` emits the hierarchical ROOT schematic as
+ * `${project}.kicad_sch` and then adds one file per sheet; `add` refuses a repeated name. This
+ * sheet's file was `pt2399-core.kicad_sch` until 2026-10-24 - the project name - so generation
+ * threw *"generate: two generated files are named pt2399-core.kicad_sch"* before it wrote
+ * anything.
+ *
+ * **THE COLLISION WAS INVISIBLE UNTIL THIS CIRCUIT PASSED VALIDATION, which is `docs/known-gaps.md`
+ * G274's phenomenon one layer further in**, and it is not this circuit's alone: all twelve of the
+ * repository's other declared designs name their sole sheet after their project in the same way.
+ * **G284** is the census and the criterion; only this one is fixed here, by the task that reached
+ * it.
+ *
+ * It also means no generated file can ever be confused with `../pt2399-core.kicad_sch`, the
+ * AUTHORED schematic this circuit was transcribed from.
+ */
 const SHEETS: readonly SheetSpec[] = [
-  { id: SHEET, title: "PT2399 delay core", file: "pt2399-core.kicad_sch", paper: "A4", notes: [] },
+  { id: SHEET, title: "PT2399 delay core", file: `${SHEET}.kicad_sch`, paper: "A4", notes: [] },
 ]
 
 /**
@@ -45,19 +62,18 @@ const RAILS: readonly RailSpec[] = [
 /**
  * Per net, which way it crosses the board's edge - G99's fifth invention, declared.
  *
- * Every one of these is a pin of J1, the five-pin power-and-signal header, except the last.
- * `VCO` is `in` because PT2399 pin 6 is the delay-time control node and the header brings an
- * external control voltage to it; `GND` is `bidirectional` for the reason
+ * Every one of these is a pin of J1, the five-pin power-and-signal header, and there are no
+ * others. `VCO` is `in` because PT2399 pin 6 is the delay-time control node and the header brings
+ * an external control voltage to it; `GND` is `bidirectional` for the reason
  * `circuits/opamp-buffer.schematic.ts` gives.
  *
- * **`unconnected-(U1-CLK_O-Pad5)` IS DECLARED `out`, AND THE DECLARATION IS NARROWER THAN IT
- * LOOKS.** `../pt2399-core.ts` records that this is KiCad's placeholder net for a floating symbol
- * pin and that *"the port does not imply the pin does anything off-board, only that the netlist
- * shows it on a net rather than showing no connection at all"*. `out` says which way CLK_O would
- * drive if anything were on it - the symbol names the pin CLK_O - and says nothing about whether
- * anything is. The alternative was to leave it undeclared, which `authoringProblems` refuses
- * because the network declares a port for it, and that refusal is right: a backend that found no
- * direction here is exactly the backend G99 measured inventing one.
+ * **THERE WAS A SIXTH ENTRY UNTIL 2026-10-24 - `unconnected-(U1-CLK_O-Pad5)`, declared `out` -
+ * AND IT IS GONE WITH THE PORT IT EXISTED FOR.** That net was KiCad's placeholder for U1 pin 5,
+ * which is unused; `../pt2399-core.ts` now declares the pin `NC` instead of carrying the
+ * placeholder, so no pin of this network is on such a net and `authoringProblems` would refuse a
+ * direction for it (*"portDirections names net X, which no pin of this network is on"*). The
+ * entry's own comment argued that `out` was narrower than it looked because it said only which way
+ * CLK_O WOULD drive - a careful reading of a direction for a net that should never have existed.
  */
 const PORT_DIRECTIONS: Readonly<Record<string, PortDirection>> = {
   "+5V": "in",
@@ -65,7 +81,6 @@ const PORT_DIRECTIONS: Readonly<Record<string, PortDirection>> = {
   VCO: "in",
   OUTPUT: "out",
   INPUT: "in",
-  "unconnected-(U1-CLK_O-Pad5)": "out",
 }
 
 const CONTEXT = { portDirections: PORT_DIRECTIONS, rails: RAILS }
@@ -96,7 +111,6 @@ const BLOCKS: readonly BlockDeclaration[] = [
       negotiablePort("INPUT", CONTEXT),
       negotiablePort("OUTPUT", CONTEXT),
       negotiablePort("VCO", CONTEXT),
-      negotiablePort("unconnected-(U1-CLK_O-Pad5)", CONTEXT),
     ],
     prefixes: { prefixes: [], why: null },
   },

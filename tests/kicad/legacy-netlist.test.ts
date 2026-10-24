@@ -2,7 +2,70 @@ import { test, expect } from "bun:test"
 import { importLegacyNetlist, writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
 import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
+import { declaredNcNodes } from "../support/declared-nc.ts"
 import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
+
+/**
+ * **THE SECOND ASSERTED, EXPLAINED DIVERGENCE FROM `FIXTURE`, ADDED 2026-10-24, AND IT IS A
+ * MEASUREMENT RATHER THAN AN EXCUSE.**
+ *
+ * `circuits/pt2399-core/pt2399-core.ts` declares U1 pin 5 (CLK_O) `NC`, where `FIXTURE` - KiCad's
+ * own export of the schematic the built board was laid out from - spells "no connection" as a
+ * one-member placeholder net, `unconnected-(U1-CLK_O-Pad5)`. **The two derivations of "this model
+ * as a netlist" disagree about how to spell `NC`:** `lib/kicad/from-network.ts:190` represents it
+ * by OMITTING the pin, while `lib/schgen/gates/round-trip.ts`'s `modelPartition` represents it as
+ * a one-member set *"because that is how the export carries it"*. That disagreement is
+ * `docs/known-gaps.md` **G286**, with a criterion; it is not resolved here, and the writer cannot
+ * resolve it by reproducing KiCad's name, which embeds the SYMBOL PIN NAME (`CLK_O`) that the
+ * model does not carry.
+ *
+ * **SO THIS FILE NAMES THE DIVERGENCE INSTEAD OF WIDENING THE COMPARISON, in both directions:**
+ * every assertion below checks that `FIXTURE` HAS the placeholder and that our derivation does
+ * NOT, then drops it before comparing. A `from-network.ts` that starts emitting the pin therefore
+ * FAILS here rather than passing quietly, and the fix is to delete **G286** and these carve-outs
+ * together.
+ *
+ * **IT IS KEYED ON THE MODEL'S DECLARATION, NOT ON THE NET'S NAME OR SHAPE** - the same rule
+ * `tests/circuits/pt2399-core.test.ts` uses, stated once in `tests/support/declared-nc.ts`,
+ * because a connection dropped by accident also appears as a one-member net and that is what these
+ * comparisons exist to catch.
+ */
+const NC_NODES = declaredNcNodes(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
+
+/** Net names in `netlist` whose SOLE member is a node the model declares `NC`. Nothing else. */
+function placeholderNetsFor(netlist: ImportedNetlist): readonly string[] {
+  return Object.entries(netlist.nets)
+    .filter(([, members]) => members.length === 1 && NC_NODES.has(members[0] ?? ""))
+    .map(([name]) => name)
+    .sort()
+}
+
+/** `netlist` without the named nets. */
+function dropNets(netlist: ImportedNetlist, names: readonly string[]): ImportedNetlist {
+  return {
+    components: netlist.components,
+    nets: Object.fromEntries(Object.entries(netlist.nets).filter(([name]) => !names.includes(name))),
+  }
+}
+
+/**
+ * Asserts the fixture carries a placeholder net for every pin the model declares `NC`, that our
+ * derivation carries none, and returns the fixture's names so a caller can drop them.
+ */
+function ncDivergence(fixture: ImportedNetlist, ours: ImportedNetlist): readonly string[] {
+  expect(NC_NODES, "the model declares exactly the one NC pin this carve-out is written for")
+    .toEqual(new Set(["U1.5"]))
+  const inFixture = placeholderNetsFor(fixture)
+  expect(inFixture, "the fixture no longer carries the placeholder; delete this carve-out")
+    .toEqual(["unconnected-(U1-CLK_O-Pad5)"])
+  expect(
+    placeholderNetsFor(ours),
+    "our derivation now emits the placeholder: G286 is resolved, so delete it and these carve-outs",
+  ).toEqual([])
+  // And the node is nowhere else either, which is what makes dropping the net safe.
+  expect(Object.values(ours.nets).flat().filter((m) => m === "U1.5")).toEqual([])
+  return inFixture
+}
 
 const SAMPLE = `( { EESchema Netlist Version 1.1 created  2026-09-15T21:32:09 }
  ( /04737d7e-1324-4a9b-8c05-3227c13a478c CAP_CERAMIC1  C12 5600pF
@@ -152,11 +215,15 @@ test("the full chain reproduces the netlist the built board was laid out from, e
   const oursC2 = ours.components.find((c) => c.designator === "C2")
   if (fixtureC2 === undefined) throw new Error("C2 missing from the fixture")
   if (oursC2 === undefined) throw new Error("C2 missing from our derivation")
-  // The one asserted, explained divergence: see the doc comment above.
+  // The first asserted, explained divergence: see the doc comment above.
   expect(fixtureC2.footprint).toBe("CAP_ELECTRO_300")
   expect(oursC2.footprint).toBe("CAP_ELECTRO_200")
 
-  expect(normalize(dropComponent(ours, "C2"))).toEqual(normalize(dropComponent(fixture, "C2")))
+  // The second: U1 pin 5's NC, asserted in both directions before being dropped. See NC_NODES.
+  const nc = ncDivergence(fixture, ours)
+
+  expect(normalize(dropComponent(ours, "C2")))
+    .toEqual(normalize(dropComponent(dropNets(fixture, nc), "C2")))
 })
 
 /**
@@ -187,9 +254,18 @@ function blockDesignator(block: string[]): string {
  * divergence from this pre-correction fixture (see the doc comment on
  * dropComponent above).
  */
-function normalizeNetlistText(text: string, excludeDesignators: readonly string[] = []): string {
+function normalizeNetlistText(
+  text: string,
+  excludeDesignators: readonly string[] = [],
+  excludeNets: readonly string[] = [],
+): string {
   const uuidNormalized = text.replace(/\( \/\S+/g, "( /UUID")
-  const lines = uuidNormalized.split("\n")
+  // excludeNets drops individual PIN LINES naming one of those nets, which is what the NC
+  // divergence needs: the pin sits inside U1's block, and dropping the whole block would stop
+  // comparing the sixteen-pin IC this fixture exists to compare.
+  const lines = uuidNormalized
+    .split("\n")
+    .filter((line) => !excludeNets.some((n) => line.trimEnd().endsWith(` ${n} )`)))
   const header = lines[0]
   const blocks: string[][] = []
   let current: string[] | null = null
@@ -223,11 +299,20 @@ test("the written netlist's text matches the fixture, modulo uuid and block orde
   const lowered = toImportedNetlist(pt2399Core(), DESIGNATORS, PIN_NUMBERS)
   const writtenText = writeLegacyNetlist(lowered, { createdAt: CREATED_AT })
 
-  // The one asserted, explained divergence: see dropComponent's doc comment above.
+  // The first asserted, explained divergence: see dropComponent's doc comment above.
   expect(fixtureText).toContain("CAP_ELECTRO_300  C2")
   expect(writtenText).toContain("CAP_ELECTRO_200  C2")
 
-  expect(normalizeNetlistText(writtenText, ["C2"])).toBe(normalizeNetlistText(fixtureText, ["C2"]))
+  // The second, asserted in both directions in the TEXT: see NC_NODES.
+  const nc = ncDivergence(
+    importLegacyNetlist(fixtureText),
+    importLegacyNetlist(writtenText),
+  )
+  expect(fixtureText).toContain("unconnected-(U1-CLK_O-Pad5) )")
+  expect(writtenText).not.toContain("unconnected-")
+
+  expect(normalizeNetlistText(writtenText, ["C2"], nc))
+    .toBe(normalizeNetlistText(fixtureText, ["C2"], nc))
 })
 
 test("renaming a net without changing its membership is not an electrical change", async () => {
@@ -255,7 +340,11 @@ test("renaming a net without changing its membership is not an electrical change
 
   const viaRenamed = importLegacyNetlist(writeLegacyNetlist(renamed, { createdAt: CREATED_AT }))
   const fixture = importLegacyNetlist(await Bun.file(FIXTURE).text())
-  expect(membership(viaRenamed)).toEqual(membership(fixture))
+  // The NC divergence again, and here it is a MEMBERSHIP claim rather than a naming one: the
+  // fixture carries U1.5 as a set of its own and our derivation carries it nowhere. Asserted in
+  // both directions by ncDivergence before the net is dropped. See NC_NODES.
+  const nc = ncDivergence(fixture, viaRenamed)
+  expect(membership(viaRenamed)).toEqual(membership(dropNets(fixture, nc)))
 })
 
 test("net names containing parentheses survive a write/read round trip", () => {
