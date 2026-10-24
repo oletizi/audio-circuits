@@ -222,6 +222,31 @@ Replace the format half only:
 if (typeof net !== "string" || net.length === 0) throw fail();
 ```
 
+> **THAT MECHANISM IS WRONG TWICE OVER AND TASK 3 DECLINED IT. Corrected
+> 2026-10-23; the wording stands.** Both faults were mine and three documents
+> carried it past review.
+>
+> **(1) It would have admitted the very input this task exists to refuse.**
+> `"RAW\rCR"` has a non-zero length, so `net.length === 0` passes it — and Task 1
+> measured that a carriage return in a net name exports at **exit 0**, draws a
+> label, and comes back **renamed**. The prescribed predicate would have let the
+> silent rename through.
+>
+> **(2) It would have permanently removed two files from a byte-check.**
+> `lib/schgen/gates/pin-table.ts` **and its test are byte-checked ports**;
+> hand-editing that line fails `port-fidelity.test.ts` and needs two new
+> `diverged[]` entries, each one off the byte-check for good (**G139**).
+>
+> **What Task 3 did instead, and it is better:** moved `NET_NAME`'s *definition*
+> — `lib/schgen/ir/types.ts` is already diverged — so **the gate's line is
+> untouched**, still reading `typeof net !== "string" || !NET_NAME.test(net)`.
+> The type check is verbatim, the empty string is still refused, a control
+> character is **newly** refused, and **no file left the byte-check.** The
+> predicate is `/^[^ -]+$/` — non-empty, and excluding exactly the
+> class `str()` refuses at **`lib/schgen/render/sexpr-write.ts:31`**, which is
+> also the correct path for a citation this plan gave as the nonexistent
+> `lib/kicad/sexpr-write.ts:32`.
+
 **This is the step most likely to weaken a guard.** `lib/model/types.ts:45` shows the model's own `net()` throwing `"net name must not be empty"`, so a gate accepting `""` would be **weaker than the contract it guards.**
 
 > **CORRECTED 2026-10-23 BY TASK 1's REVIEW, AND "NON-EMPTY" IS NOT ENOUGH.**
