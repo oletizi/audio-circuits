@@ -290,10 +290,19 @@ decision record** - what was ruled, why, and what it would cost if wrong - and
 claims checkable. The execution skill's default is to delete a plan's workspace
 once its final review is clean. **That default is right when the diff IS the
 record and wrong when the plan's product is knowledge**, and following it would
-have destroyed 77 rulings and 19 reviews. So: a research plan's record is
-committed beside the plan, at
-`docs/superpowers/plans/<plan-name>-execution/`, with a README saying plainly
-that it is not findings and that the register is what binds. The review-package
+have destroyed 77 rulings and 19 reviews. So: **a plan's record is committed
+beside the plan**, at `docs/superpowers/plans/<plan-name>-execution/`, with a
+README saying plainly that it is not findings and that the register is what
+binds.
+
+> **This said "a RESEARCH plan's record" until 2026-10-24, and the narrower
+> wording did not survive its first implementation plan.** The reasoning above
+> turns on a plan producing a decision record and an audit trail that the
+> register has no home for — **which has nothing to do with whether the plan
+> wrote code.** The net-names plan changed production code and still produced
+> ~31 rulings, six reviews and seven reports, including ten refuted controller
+> claims and the seven-incident control-byte arc. Generalised rather than
+> re-argued each time. The review-package
 diffs are not committed - they regenerate from `git diff`. The worked example is
 `docs/superpowers/plans/2026-10-22-text-handling-research-execution/`.
 
