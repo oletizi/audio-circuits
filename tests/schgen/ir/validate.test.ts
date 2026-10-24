@@ -55,8 +55,8 @@ describe("validateCircuit", () => {
   });
 
   /**
-   * **V1 WAS HERE AND IS DELETED WITH THE RULE IT TESTED** - Task 3 of the
-   * net-names-and-floating-pins plan. It read
+   * **V1 WAS HERE AND IS DELETED WITH THE DEMAND IT TESTED - the DEMAND, not the rule** - Task 3
+   * of the net-names-and-floating-pins plan. It read
    *
    * ```ts
    * it("V1: rejects a net that is not UPPER_SNAKE", () => {
@@ -65,15 +65,20 @@ describe("validateCircuit", () => {
    * ```
    *
    * The owner ruled the demand out: *"i absolutely do not care about the letter case of net names.
-   * That's a silly quibble."* Deleting a test because it asserts a rule being deliberately removed
-   * is correct; **deleting or loosening any other assertion in the same change is not**, and
-   * nothing else here moved. `docs/known-gaps.md` **G150**.
+   * That's a silly quibble."* Deleting a test because it asserts a demand being deliberately
+   * removed is correct; **deleting or loosening any other assertion in the same change is not**,
+   * and nothing else here moved. `docs/known-gaps.md` **G150**.
    *
-   * **The predicate that survived - non-empty, no control character - is tested in
-   * `tests/schgen/ir/net-name.test.ts`**, which also drives `validateCircuit` on a lower-case net
-   * to assert it is no longer refused. That positive control is the thing this deletion could
-   * otherwise have hidden: a rule removed and a rule that stopped running look identical from
-   * here.
+   * **THE RULE IS STILL THERE AND V1'S DELETION IS NOT EVIDENCE OTHERWISE.** `netNames` is
+   * narrowed to *non-empty, no control character* and still runs first in `DRAWING_RULES`. Round 0
+   * of this task deleted the whole rule and the coordinator reversed that; the rule's own comment
+   * in `lib/schgen/ir/validate.ts` says why.
+   *
+   * **The surviving predicate is tested in `tests/schgen/ir/net-name.test.ts`**, which drives the
+   * rule red five ways on the message it throws, and drives `validateCircuit` on a lower-case net
+   * and a synthetic name to assert neither is refused. Those positive controls are what this
+   * deletion could otherwise have hidden: a demand removed and a rule that stopped running look
+   * identical from here.
    */
   it("V2: every part names its source; an empty or blank source is refused", () => {
     for (const source of ["", "   "]) {

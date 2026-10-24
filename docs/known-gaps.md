@@ -13270,19 +13270,23 @@ than fixed.
 >   **RELAYED** for the `kicad-cli` measurements.
 > - **Why it is STILL open** three things outlive the decision. **(1)** The six
 >   boards still refuse, on one problem each, which is Tasks 4 and 5. **(2)** The
->   deletion relocated the control-character refusal for an IR net name from
->   `validateCircuit` to emit time and took with it the only check that would have
->   caught a generator renaming nets - **G279**, which also carries this entry's
->   surviving *"stated once and is reversible"* concern, since that concern was
->   never about letter case. **(3)** `partShapes` in the same file still demands
+>   deletion of the WHOLE rule in round 0 relocated the control-character refusal for an
+>   IR net name to emit time and took with it the refusal-count tripwire against a
+>   generator renaming nets. **Both were closed in round 1 and the entry that held
+>   them is deleted:** `netNames` is back in `lib/schgen/ir/validate.ts`, narrowed to
+>   non-empty and control-character-free and refusing by name before any geometry; and
+>   `tests/schgen/ir/net-name.test.ts` compares the model's net set against the IR's
+>   over all 13 declared cases, which states this entry's surviving *"stated once and
+>   is reversible"* concern directly rather than through a refusal count. That concern
+>   was never about letter case, which is why it outlived his decision. **(3)** `partShapes` in the same file still demands
 >   UPPER_SNAKE of part LABELS; his decision names net names and nothing here
 >   extends it.
 > - **What would settle it** **CRITERION, unchanged from the one his decision
 >   installed and now half met: no circuit is refused for the CASE of a net name
 >   (MET - re-drive the board census and read the refusals), and what KiCad does
 >   with a label carrying parentheses and hyphens is measured rather than guessed
->   (MET - G277).** What remains is not this entry's: **G279** for the relocated
->   refusal, **G264** and the Pultec switch pins for the six boards.
+>   (MET - G277).** What remains is not this entry's: **G264** and the Pultec switch
+>   pins for the six boards, which are Tasks 4 and 5.
 
 ### G151 - a symbol pin the model says nothing about reaches a `CircuitSpec` neither on a net nor declared not-connected, and `ncUnlisted` needs a reason the model cannot hold
 
@@ -26249,85 +26253,6 @@ see the clause. **CRITERION for "what this does not establish":** a
 `kicad-cli` netlist export of a project whose `no_connect` originates in a model
 `NC`, which is spec 3b's required gate and lands with Task 5.
 
-### G279 - MEASURED, and it is what deleting a rule COST rather than what it bought: an IR net name is now validated by NOTHING, so the control-character refusal moved from `validateCircuit` to EMIT time - and the one check that would have caught a generator renaming nets went with the rule
-
-Task 3 of the net-names-and-floating-pins plan deleted `lib/schgen/ir/validate.ts`'s
-`netNames` rule on the owner's decision (**G150**). **That is the whole of the
-decision and it is not in question here.** What this entry records is the two
-things the deletion took with it, both of which a later reader needs and neither
-of which is re-derivable from the diff.
-
-**(1) THE CONTROL-CHARACTER REFUSAL FOR AN IR NET NAME IS NOW AT EMIT TIME.**
-The deleted regex was `/^[A-Z0-9][A-Z0-9_]*$/`, which refused a control
-character as a side effect of refusing everything that was not UPPER_SNAKE. With
-the rule gone, `validateCircuit` has **no rule of any kind over
-`Circuit.nets`'s keys**, so a net name carrying a carriage return or a NUL
-passes validation, passes every geometry check, and is refused only when
-`str()` (`lib/schgen/render/sexpr-write.ts:31`) writes it as an s-expression
-atom: *"string ... contains a control character; emit one text item per line"*.
-
-**WHY THAT MATTERS, and it is measured rather than argued.** Task 1 round 2
-drove six control arms through a real global label against `kicad-cli` 10.0.5
-(**G277**, `tools/schgen/label-syntax/probe-run.log`). A **tab** is accepted
-**verbatim**; a **newline** fails loudly at exit 3; and a **carriage return**
-and a **NUL** both export at **exit 0, draw a label outline, and come back as a
-different net name** - `RAWCR`, and `RAW` truncated. So the hazard is not that
-KiCad rejects a control character - for four of the six arms it does not. **The
-hazard is that two of them succeed silently and rename the net**, which is this
-repository's cardinal failure mode in the one place a net name becomes a label.
-A refusal at emit still catches it; a refusal at validation would catch it
-earlier, against the circuit rather than against a sheet, and with a message
-naming the net.
-
-**THE RELOCATION IS DELIBERATE AND NOT A DISCOVERY AFTER THE FACT.** The task
-brief required it to be *"stated where the rule used to be"* or not taken, and
-the comment standing in the deleted rule's place in `validate.ts` says it. This
-entry is the durable half.
-
-**(2) THE RENAME TRIPWIRE IS GONE AND NOTHING REPLACES IT.**
-`tests/schgen/authoring-complete.test.ts`'s own comment said, before Task 3,
-that it was *"the check that catches a later task 'fixing' one of them the
-forbidden way: a generator that normalised net names would drop `netNames` to 0
-and fail the counts here, which is what G150's criterion (the mapping is stated
-once and is reversible) requires someone to notice."* **With the rule deleted,
-that class left the table and a generator that renamed every net now changes no
-figure in that file.** G150's round-trip concern did not go away with the case
-demand: spec §2's round trip compares the exported netlist's net names against
-the model's, so a silent rename anywhere between a `Network` and a `.kicad_sch`
-is still a defect, and nothing in the suite is now positioned to notice one
-introduced deliberately.
-
-- **Found** 2026-10-23, Task 3, while deleting the rule - both halves were
-  visible in the files being edited, not discovered later.
-- **Evidence** `[READ]` `lib/schgen/ir/validate.ts`'s `DRAWING_RULES` at HEAD,
-  which has ten rules and no rule reading `c.nets`' keys; `[READ]` `str()` at
-  `lib/schgen/render/sexpr-write.ts:31`, whose class is `[\u0000-\u001f]`;
-  `[READ]` the pre-Task-3 text of `authoring-complete.test.ts`'s comment, quoted
-  above, in this change's own diff. **A check that could have failed for the
-  emit-time claim:** `tests/schgen/ir/net-name.test.ts` asserts
-  `validateCircuit` reports `[]` - an empty problem list, not merely no
-  net-name problem - for a circuit whose nets are `x` and `Net-(C10-Pad1)`,
-  which would fail if any rule still read net names.
-- **Verified** **CONFIRMED** for both halves by this writer, who made the
-  deletion. The `kicad-cli` control-arm figures are **RELAYED** from Task 1's
-  committed probe log and were not re-driven here.
-- **Why it is open** because the relocation is a real weakening of a refusal's
-  position that the plan accepted rather than fixed, and because the second half
-  is a deleted check with no replacement.
-- **What would settle it** **CRITERION (1): a `Circuit` whose net name carries a
-  carriage return or a NUL is refused by `validateCircuit`, by name, before any
-  geometry runs.** That is what is measurable; it is false at HEAD and a test
-  asserting it would fail. **MECHANISM, UNTRIED: a narrow rule over `c.nets`'s
-  keys applying `NET_NAME` - which already means non-empty and control-free - in
-  the place the deleted rule occupied.** It is five lines and it would refuse
-  nothing on any of the eleven boards, which is exactly why it was not taken as
-  part of a task whose instruction was to delete the rule; **the criterion
-  binds, this mechanism does not.** **CRITERION (2): a change that renames a net
-  between a `Network` and an emitted sheet fails at least one check in the
-  suite.** **MECHANISM, UNTRIED:** assert the IR's net-name set equals the
-  model's for each parity circuit, which is a stronger and more direct statement
-  of G150's *"stated once and reversible"* than a refusal count ever was.
-
 ### G280 - MEASURED as a BOUNDARY rather than a defect: `NET_NAME` and `str()` both refuse exactly `[\u0000-\u001f]`, so DEL and the C1 range are refused by NEITHER and were never driven through `kicad-cli`
 
 Task 3 defined `NET_NAME` (`lib/schgen/ir/types.ts`) as
@@ -26343,8 +26268,9 @@ Task 1's six arms were a double quote, a backslash, a tab, a newline, a carriage
 return and a NUL, all of them C0 or ASCII punctuation (**G277**).
 
 **IT IS NOT ASSUMED HARMLESS AND IT IS NOT ASSUMED HARMFUL.** The reason the C0
-class is refused at all is that two of its members **succeed and rename the
-net** (**G279**). That failure mode is invisible to a check that asks only
+class is refused at all is that two of its members **succeed and rename the net**
+(**G277**, and `netNames`' own comment in `lib/schgen/ir/validate.ts` carries it as
+the refusal's stated reason). That failure mode is invisible to a check that asks only
 whether `kicad-cli` exited 0, so *"DEL is probably fine"* is precisely the
 inference Task 1's measurement showed to be unsafe for the C0 range. Widening
 the class without measuring would be the silent widening `CLAUDE.md` forbids;
@@ -26453,6 +26379,42 @@ expects to 52. **It is a dynamic count, so the suite's `expect()` total is not a
 static property of the tree** - a later reader reconciling a move in this file
 needs to know that at least one test's count follows a refusal list.
 
+**ROUND 1 CONFIRMED THAT TERM FROM THE OTHER DIRECTION, which is the stronger
+check.** Restoring the `netNames` rule - narrowed - took the suite to **3838 pass /
+0 fail / 43688 `expect()` across 355 files**, a move of **+8 tests and +20 expects,
+all of them in `tests/schgen/ir/net-name.test.ts`** (12 tests / 60 expects to 20 /
+80). **`verify.test.ts` stayed at 52**, which is the point: the restored rule refuses
+nothing in the `mini` design, because what it demands is a property of the characters
+in a name and not a convention. Had it gone back to 53, the restored rule would have
+been refusing something the casing rule used to refuse, and that would have been a
+defect in the predicate rather than a restored guard.
+
+**ROUND 1 SUBSUMED THE RESIDUAL THIS ENTRY WAS LEFT OPEN FOR, and the reason is
+worth more than the fix.** This entry's cost clause said the gate *"does not name
+the control-character reason"*, and offered diverging the file as the only way to
+fix it. **Neither was the real problem.** Round 0 had also deleted the `netNames`
+rule, which left the GATE as the only production application of `NET_NAME` - and a
+gate over a pin table's `mechanicalPads` net is not where a net name becomes a
+label. The coordinator reversed that deletion: *"The owner removed the CASING
+demand, not all net-name validation."*
+
+**SO THE GATE IS A BACKSTOP ON A DIFFERENT INPUT, not the guard that has to
+explain itself.** `lib/schgen/ir/validate.ts`'s `netNames` rule now applies the same
+predicate to every net of the IR, fires FIRST (gate 1, before any geometry), names
+WHICH net, and states the measured reason in full - *"Two of these are ACCEPTED by
+kicad-cli 10.0.5 at exit 0 and DRAW the label, and then come back from the netlist as
+a DIFFERENT net name ... and no exit code reports it."* **The lumped gate message
+costs nothing it did not already cost**, because the input it guards - a hand-written
+pin-table JSON - reaches no label, and `PinTable.mechanicalPads` is empty on this
+path anyway (the spec's review finding 2). **The byte-check was never worth trading
+for a message on that input.**
+
+**WHAT IS STILL TRUE OF THE GATE, so the criterion below stays honest:** its
+`fail()` still lumps five failure modes into *"mechanicalPads.9 must be
+{"net": "<NAME>"} or {"nc": true}"* - not a record, wrong key count, not a string,
+bad format, `nc` not `true` - and it names no reason for any of them. That was true
+before Task 3 and Task 3 did not change it.
+
 - **Found** 2026-10-23, Task 3 Step 3, on reading
   `lib/schgen/gates/pin-table.ts`'s own header before editing it.
 - **Evidence** `[READ]` that file's provenance header (*"Edit the pedals source
@@ -26466,10 +26428,15 @@ needs to know that at least one test's count follows a refusal list.
   the two `validateCircuit` controls - so the new tests are not vacuous.
 - **Verified** **CONFIRMED** - this writer read the header, the manifest entry
   and the fidelity test, ran the porter, and ran the suite.
-- **Why it is open** it is a recorded deviation rather than a defect, and it
-  stays open only for the residual: the gate's message does not carry its
-  reason.
-- **What would settle it** **CRITERION: the gate's refusal names which of its
+- **Why it is open** it is a recorded DEVIATION rather than a defect, and it is kept
+  because three documents carried the refuted mechanism past review and a later
+  reader editing this gate needs to know the file is byte-checked. **The residual it
+  was left open for is gone** - see the round 1 clause: the validation-time rule
+  explains itself, so the gate does not have to.
+- **What would settle it** this entry is a RECORD and needs no fix; delete it when
+  `lib/schgen/gates/pin-table.ts` is next touched for any reason, since whoever does
+  that will have read the header. **The one measurable thing left in it, which is NOT
+  a blocker: CRITERION: the gate's refusal names which of its
   five failure modes fired, and the control-character case says that two control
   characters are accepted by KiCad and rename the net.** **MECHANISM, UNTRIED:
   a `diverged[]` entry for `lib/schgen/gates/pin-table.ts` with its `sourceSha`,

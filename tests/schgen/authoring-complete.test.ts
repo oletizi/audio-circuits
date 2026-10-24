@@ -95,44 +95,56 @@ describe.each(PARITY_CASES.map((c) => [c.name, c] as const))("%s", (_name, c) =>
 })
 
 /**
- * **WHICH RULES REFUSE, AND THAT IT IS ONLY THESE THREE** - Task 9 review, round 1, item I4.
+ * **WHICH RULES REFUSE, AND THAT IT IS ONLY THESE FOUR** - Task 9 review, round 1, item I4.
  *
- * **IT WAS FOUR UNTIL TASK 3 OF THE NET-NAMES-AND-FLOATING-PINS PLAN, which DELETED the
- * `netNames` rule on the owner's decision** (*"i absolutely do not care about the letter case of
- * net names. That's a silly quibble."*). The class is gone from this table rather than pinned at
- * zero, because `validateCircuit` cannot produce it at all any more and a zero row here would
- * read as a measurement where it would really be a tautology. **The visible form of the decision
- * is in `tools/schgen/gate-census.ts`**, whose `PROBLEM_CLASSES` keeps an empty `netNames` row for
- * a reader of refusal classes, on the precedent that file states for `bomFields`.
+ * **TASK 3 OF THE NET-NAMES-AND-FLOATING-PINS PLAN NARROWED `netNames` AND, FOR ONE ROUND,
+ * DELETED IT.** The owner took the CASE demand out - *"i absolutely do not care about the letter
+ * case of net names. That's a silly quibble."* - and round 0 of that task deleted the whole rule
+ * on the brief's instruction, which took this class out of the table. **The coordinator reversed
+ * that: "The owner removed the CASING demand, not all net-name validation."** The rule is back,
+ * narrowed to *non-empty, no control character*, and the class is back with it.
+ *
+ * **ITS ROW IS ZERO ON ALL FOUR CIRCUITS AND THAT IS A MEASUREMENT, NOT A TAUTOLOGY.** The rule
+ * runs and can fire; what it demands is a property of the characters in a name rather than a
+ * convention, and no parity circuit violates it. `tests/schgen/ir/net-name.test.ts` drives the
+ * rule red directly, five ways, so nothing here rests on this zero to show the rule works.
+ * **The class is in the list for the `unclassified` arm below**: a net-name refusal arriving in
+ * this table would otherwise be reported as *"a reason none of the register entries covers"*,
+ * which is exactly the misdiagnosis that arm exists to prevent.
  *
  * `circuitSpecFrom`'s output does NOT validate clean, and that is the consequence of obeying
  * G99's criterion rather than a violation of it: making `validateCircuit` pass would need an
  * invented no-connect reason, and making `validateSourcing` pass would need invented BOM fields -
  * two of the exact inventions the criterion forbids, split across the two compositions rather than
  * gating a drawing together (Task 20, **G245**). Each refusing rule has a register entry -
- * `pinsDeclared` **G151**, `singlePinNets` **G159**, `bomFields` **G149** - and this test locks all
- * three deferrals at once. **The fourth, `netNames` **G150**, is no longer a deferral: the demand
- * was withdrawn rather than satisfied, which is why its row left this table instead of dropping to
- * zero.**
+ * `netNames` **G150**, `pinsDeclared` **G151**, `singlePinNets` **G159**, `bomFields` **G149**.
+ * **`netNames` is no longer a DEFERRAL though it is still a class:** its demand was withdrawn
+ * rather than satisfied, so its zero means "nothing left to defer" where the other rows mean
+ * "deferred and counted".
  *
- * **SINCE TASK 20 THE REMAINING THREE ARE SPLIT ACROSS TWO COMPOSITIONS, and the split is the
- * owner's ruling rather than a reorganisation.** The BOM requirement is a property of the CONSUMER
- * of an artifact and not of the circuit, so `validateCircuit` - what `generate` gates a DRAWING on
- * - runs the first two, and `validateSourcing` runs `bomFields` for a consumer that has to source
- * and place the parts. `lib/schgen/ir/validate.ts`'s header carries his words; `docs/known-gaps.md`
- * **G245** carries the decision and this table's figures. **Both halves are pinned here**: the
- * sourcing counts are the same 36 / 148 / 96 / 100 this test asserted before the split, so the
- * rule is still measured on all four circuits and a later task that quietly stopped running it
- * fails here rather than going green.
+ * **SINCE TASK 20 THE FOUR ARE SPLIT ACROSS TWO COMPOSITIONS, and the split is the owner's ruling
+ * rather than a reorganisation.** The BOM requirement is a property of the CONSUMER of an artifact
+ * and not of the circuit, so `validateCircuit` - what `generate` gates a DRAWING on - runs the
+ * first three, and `validateSourcing` runs `bomFields` for a consumer that has to source and place
+ * the parts. `lib/schgen/ir/validate.ts`'s header carries his words; `docs/known-gaps.md` **G245**
+ * carries the decision and this table's figures. **Both halves are pinned here**: the sourcing
+ * counts are the same 36 / 148 / 96 / 100 this test asserted before the split, so the rule is
+ * still measured on all four circuits and a later task that quietly stopped running it fails here
+ * rather than going green.
  *
- * **It is the check that catches a later task "fixing" one of them the forbidden way**, and the
- * example this comment used to give is the one Task 3 removed: a generator that normalised net
- * names would have dropped `netNames` to 0 and failed the counts here. **That tripwire is gone
- * with the rule, and nothing replaces it** - a generator that renamed nets now changes no figure
- * in this file. `docs/known-gaps.md` **G279** records the loss, because the round-trip concern
- * behind G150's *"stated once and is reversible"* did not go away with the case demand.
+ * **THE "GENERATOR THAT NORMALISED NET NAMES" TRIPWIRE THIS COMMENT USED TO CLAIM IS NOT HERE ANY
+ * MORE, and the replacement is better.** The old claim was that such a generator *"would drop
+ * `netNames` to 0 and fail the counts here"*. That worked only while the rule demanded UPPER_SNAKE,
+ * and the row is legitimately 0 now, so the counts below cannot carry it. `[RAN]` with the
+ * generator perturbed to case-fold every net name: **the counts below PASSED.** One assertion in
+ * this file did fail - *"the one single-pin net is pt2399-core's CLK_O placeholder"*, which spells
+ * a net name out in full - but incidentally, on one net of one circuit. **The pass-through
+ * invariant is `tests/schgen/ir/net-name.test.ts`'s sweep**, which compares the model's net set
+ * against the IR's over all 13 declared cases and catches a case-folder, a truncator and any
+ * rename between two acceptable names.
  */
 const RULE_CLASSES = [
+  { name: "netNames", matches: (p: string): boolean => p.includes("is not a usable net name") },
   { name: "pinsDeclared", matches: (p: string): boolean => p.includes("is neither on a net nor declared not connected") },
   { name: "singlePinNets", matches: (p: string): boolean => p.includes("has only one pin") },
 ] as const
@@ -141,19 +153,20 @@ const RULE_CLASSES = [
 const BOM_CLASS = { name: "bomFields", matches: (p: string): boolean => p.includes("BOM field") } as const
 
 /**
- * Per circuit: total DRAWING problems, then pinsDeclared / singlePinNets.
+ * Per circuit: total DRAWING problems, then netNames / pinsDeclared / singlePinNets.
  *
  * **TASK 3 re-drove every row.** `optical-compressor` went 14 -> 0 and `pt2399-core` 18 -> 1,
- * which is the whole of what deleting the case demand bought on the parity set: its 14 refusals
- * were all net names, and 17 of `pt2399-core`'s 18 were.
+ * which is the whole of what taking the case demand out bought on the parity set: its 14
+ * refusals were all net names, and 17 of `pt2399-core`'s 18 were. **The netNames column is now
+ * 0 on all four and the rule still runs** - see the block above for why that is a measurement.
  */
-const EXPECTED_REFUSALS: Readonly<Record<string, readonly [number, number, number]>> = {
-  "opamp-buffer": [3, 3, 0],
-  "optical-compressor": [0, 0, 0],
-  "pt2399-core": [1, 0, 1],
+const EXPECTED_REFUSALS: Readonly<Record<string, readonly [number, number, number, number]>> = {
+  "opamp-buffer": [3, 0, 3, 0],
+  "optical-compressor": [0, 0, 0, 0],
+  "pt2399-core": [1, 0, 0, 1],
   // TASK 20: zero. This circuit's 100 gate-1 problems were ALL empty purchasing fields, and
   // nothing else was wrong with it - G238 measured that and G245 records what it unblocked.
-  "transistor-preamp": [0, 0, 0],
+  "transistor-preamp": [0, 0, 0, 0],
 }
 
 /** Per circuit: `validateSourcing` problems, every one of them a `bomFields` refusal. */
@@ -164,13 +177,13 @@ const EXPECTED_SOURCING: Readonly<Record<string, number>> = {
   "transistor-preamp": 100,
 }
 
-test("validateCircuit refuses each parity circuit with exactly two drawing rule classes and no others", () => {
+test("validateCircuit refuses each parity circuit with exactly three drawing rule classes and no others", () => {
   expect(Object.keys(EXPECTED_REFUSALS).length).toBe(PARITY_CASES.length)
   for (const c of PARITY_CASES) {
     const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
     const problems = validateCircuit(circuit, symbols)
     // The BOM arm is asserted FIRST so that a re-added `bomFields` names itself here rather than
-    // arriving as the generic "a reason none of the two classes covers", which is what it looked
+    // arriving as the generic "a reason none of the three classes covers", which is what it looked
     // like when this perturbation was driven in the other order.
     expect(
       problems.filter((p) => BOM_CLASS.matches(p)),
@@ -181,8 +194,8 @@ test("validateCircuit refuses each parity circuit with exactly two drawing rule 
     const unclassified = problems.filter((p) => !RULE_CLASSES.some((r) => r.matches(p)))
     expect(
       unclassified,
-      `${c.name}: validateCircuit refused for a reason none of the two register entries covers. ` +
-        "Either the spec regressed or a third deferral needs recording.",
+      `${c.name}: validateCircuit refused for a reason none of the three register entries covers. ` +
+        "Either the spec regressed or a fourth deferral needs recording.",
     ).toEqual([])
     const counts = RULE_CLASSES.map((r) => problems.filter((p) => r.matches(p)).length)
     expect([problems.length, ...counts], c.name).toEqual([...(EXPECTED_REFUSALS[c.name] ?? [])])

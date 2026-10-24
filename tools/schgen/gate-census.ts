@@ -181,18 +181,21 @@ export async function gateCensus(repoRoot: string): Promise<readonly CircuitGate
  * the thing with teeth is the unmatched arm, which prints an unknown problem in full, and
  * `tests/schgen/authoring-complete.test.ts` is where a BOM refusal reaching the drawing path fails.
  *
- * **THE `netNames` LABEL IS KEPT ON THE SAME GROUND AND FOR A STRONGER REASON** (Task 3 of the
- * net-names-and-floating-pins plan). The rule is not merely out of the drawing path - it is
- * **deleted**, on the owner's decision that *"i absolutely do not care about the letter case of net
- * names. That's a silly quibble."* So nothing can produce this row again. It stays for the same
- * reason the `bomFields` row does: a reader uses this list as the inventory of refusal classes,
- * and an **empty** `netNames` row is the visible form of that decision, where a missing row would
- * leave 20 labelled Pultec nets and 17 of `pt2399-core`'s having stopped being refused with
- * nothing here saying so. `docs/known-gaps.md` **G150**.
+ * **THE `netNames` LABEL IS NOT IN THE `bomFields` CASE, and round 0 of Task 3 said it was.**
+ * That round deleted the rule and wrote here that *"nothing can produce this row again"*. **The
+ * coordinator reversed the deletion** - *"The owner removed the CASING demand, not all net-name
+ * validation"* - so the rule runs, and this row **can** fire. Its label and matcher therefore moved
+ * off the deleted message: `netNames` no longer refuses UPPER_SNAKE, it refuses a net name that is
+ * **empty or carries a control character**, and the match is on the surviving message's own words.
+ *
+ * **WHAT THE OWNER'S DECISION ACTUALLY TOOK OUT OF THIS ROW** - *"i absolutely do not care about
+ * the letter case of net names. That's a silly quibble."* - is 20 labelled nets across the five
+ * Pultec boards and 17 of `pt2399-core`'s, which this row used to count and now does not.
+ * `docs/known-gaps.md` **G150**.
  */
 const PROBLEM_CLASSES: readonly { readonly label: string; readonly match: (p: string) => boolean }[] = [
   { label: "header", match: (p) => p === "circuit is invalid:" },
-  { label: "netNames (G150): net is not UPPER_SNAKE", match: (p) => p.includes("is not UPPER_SNAKE") },
+  { label: "netNames (G150): net name is empty or carries a control character", match: (p) => p.includes("is not a usable net name") },
   { label: "pinsDeclared (G151): pin neither on a net nor declared nc", match: (p) => p.includes("is neither on a net nor declared not connected") },
   { label: "singlePinNets (G159): net has only one pin", match: (p) => p.includes("has only one pin") },
   { label: "bomFields (G149): BOM field is empty", match: (p) => p.includes("BOM field") },

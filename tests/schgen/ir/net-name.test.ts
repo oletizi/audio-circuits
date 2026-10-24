@@ -6,6 +6,10 @@ import { NET_NAME, type CircuitSpec, type PartSpec, type Rendering } from "../..
 import { validateCircuit } from "../../../lib/schgen/ir/validate.ts"
 import { parsePinTable } from "../../../lib/schgen/gates/pin-table.ts"
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts"
+import { circuitSpecFrom } from "../../../lib/schgen/from-network.ts"
+import { netsOf } from "../../../lib/schgen/authoring.ts"
+import { caseResolver } from "../../../tools/schgen/authoring-census.ts"
+import { ALL_DECLARED_CASES } from "../../../tools/schgen/board-declarations.ts"
 
 /**
  * **WHAT A NET NAME MAY BE AFTER THE CASE DEMAND CAME OUT** - Task 3 of the
@@ -13,9 +17,9 @@ import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/or
  *
  * Hand-written, not ported, and it exists because the change it covers is spread across three
  * files the pedals source will never have this shape of: `NET_NAME`'s definition
- * (`lib/schgen/ir/types.ts`), the `netNames` rule's DELETION from `lib/schgen/ir/validate.ts`, and
- * the pin-table gate that still applies the predicate (`lib/schgen/gates/pin-table.ts`, which is a
- * byte-checked PORT and is deliberately not edited).
+ * (`lib/schgen/ir/types.ts`), the NARROWED `netNames` rule in `lib/schgen/ir/validate.ts`, and the
+ * pin-table gate that applies the same predicate as a **backstop on a different input**
+ * (`lib/schgen/gates/pin-table.ts`, which is a byte-checked PORT and is deliberately not edited).
  *
  * **THE FOUR CASES ARE SEPARATED ON PURPOSE** and the spec requires it, *"so a future loosening
  * cannot pass unnoticed"*: a lower-case name (accepted), a KiCad synthetic name (accepted), the
@@ -30,8 +34,9 @@ import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/or
  * would admit `""`, which `lib/model/types.ts:45`'s own `net()` refuses - the gate would end up
  * weaker than the contract it guards, in the change meant to remove a demand rather than a check.
  *
- * `docs/known-gaps.md` **G150** carries the owner's decision, **G279** the one refusal this change
- * relocated, and **G280** what the control-character class does NOT cover.
+ * `docs/known-gaps.md` **G150** carries the owner's decision, **G277** the `kicad-cli`
+ * measurement, **G280** what the control-character class does NOT cover, and **G281** why the
+ * gate's own file was not edited.
  */
 
 const symbols = fixtureResolver()
@@ -145,13 +150,159 @@ describe("the pin-table gate still refuses what it must", () => {
 
 describe("validateCircuit no longer refuses a drawing for a net name's case", () => {
   it("validates a circuit whose nets are all lower case", () => {
-    // THE POSITIVE CONTROL FOR THE DELETION. A rule removed and a rule that stopped running look
-    // identical from inside `validate.ts`; this is driven through the real composition.
+    // THE POSITIVE CONTROL FOR THE RULE'S NARROWING. A rule removed and a rule that stopped
+    // running look identical from inside `validate.ts`; this is driven through the real
+    // composition.
     expect(problems(base([res("R_A", "x", "GND"), res("R_B", "x", "GND")]))).toEqual([])
   })
 
   it("reports no net-name problem of any kind for a synthetic name", () => {
     const reported = problems(base([res("R_A", "Net-(C10-Pad1)", "GND"), res("R_B", "Net-(C10-Pad1)", "GND")]))
     expect(reported).toEqual([])
+  })
+})
+
+/**
+ * **THE REFUSAL IS AT VALIDATION TIME AND NOT ONLY AT EMIT TIME** - Task 3 fix round 1.
+ *
+ * Round 0 deleted the `netNames` rule outright because the brief said to, which left `str()`
+ * (`lib/schgen/render/sexpr-write.ts:31`) as the only thing refusing a control character in a net
+ * name - **a refusal at EMIT time, reported against a sheet rather than against a circuit.** The
+ * coordinator closed that rather than parking it: *"The owner removed the CASING demand, not all
+ * net-name validation."* `lib/schgen/ir/validate.ts`'s `netNames` rule is back, carrying the new
+ * predicate and a message that names the measured reason.
+ *
+ * **THESE ASSERT THE MESSAGE, NEVER A COUNT**, and they assert the NET IS NAMED - the point of a
+ * validation-time refusal over an emit-time one is that it says which net, before any geometry
+ * runs.
+ */
+describe("validateCircuit refuses a net name that is empty or carries a control character", () => {
+  // Built with fromCharCode rather than written as an escape. Twice on this plan, a control
+  // escape typed into a file became a real control BYTE on disk - once making a regex
+  // un-parseable, once splitting a doc comment across lines. There is no escape to mangle here.
+  const CR = String.fromCharCode(0x0d)
+  const NUL = String.fromCharCode(0x00)
+
+  it("refuses a carriage return, and the reason it gives is the SILENT RENAME", () => {
+    const reported = problems(base([res("R_A", `RAW${CR}CR`, "GND"), res("R_B", `RAW${CR}CR`, "GND")]))
+    expect(reported.length, `expected exactly one problem, got ${JSON.stringify(reported)}`).toBe(1)
+    const only = reported[0] ?? ""
+    expect(only).toContain('net "RAW\\rCR" is not a usable net name')
+    expect(only, "it names which character").toContain("control character (U+000D)")
+    expect(only, "the reason is the rename and not rejection").toContain("come back from the netlist as a DIFFERENT net name")
+    expect(only, "it says why it is not defaulted away").toContain("no exit code reports")
+    expect(only, "it cites the measurement").toContain("tools/schgen/label-syntax/probe-run.log")
+  })
+
+  it("refuses a NUL and names it", () => {
+    const reported = problems(base([res("R_A", `RAW${NUL}NUL`, "GND"), res("R_B", `RAW${NUL}NUL`, "GND")]))
+    expect(reported.length, JSON.stringify(reported)).toBe(1)
+    expect(reported[0] ?? "").toContain("control character (U+0000)")
+  })
+
+  it("refuses a tab, although kicad-cli accepts a tab verbatim", () => {
+    // The arm that keeps the reason honest: a tab does NOT break anything in KiCad, so a message
+    // claiming KiCad rejects it would be false. It is refused because the class is refused.
+    const reported = problems(base([res("R_A", `RAW${String.fromCharCode(0x09)}TAB`, "GND"), res("R_B", `RAW${String.fromCharCode(0x09)}TAB`, "GND")]))
+    expect(reported.length, JSON.stringify(reported)).toBe(1)
+    expect(reported[0] ?? "").toContain("control character (U+0009)")
+  })
+
+  it("refuses an empty net name, citing the model's own contract", () => {
+    const reported = problems(base([res("R_A", "", "GND"), res("R_B", "", "GND")]))
+    expect(reported.length, JSON.stringify(reported)).toBe(1)
+    const only = reported[0] ?? ""
+    expect(only).toContain('net "" is not a usable net name')
+    expect(only).toContain("it is empty")
+    expect(only, "it cites the contract the gate must not be weaker than").toContain("net name must not be empty")
+  })
+
+  it("names EVERY offending character, so one message is not read as one defect", () => {
+    const net = `A${CR}B${NUL}C`
+    const reported = problems(base([res("R_A", net, "GND"), res("R_B", net, "GND")]))
+    expect(reported.length, JSON.stringify(reported)).toBe(1)
+    expect(reported[0] ?? "").toContain("control character (U+000D, U+0000)")
+  })
+
+  it("produces no problem containing a newline, which verify.test.ts:156 requires of gate 1", () => {
+    // tests/schgen/verify.test.ts asserts one expect per gate-1 problem that the problem has no
+    // newline in it. A multi-line refusal here would break that file rather than this one.
+    const reported = problems(base([res("R_A", `RAW${CR}CR`, "GND"), res("R_B", `RAW${CR}CR`, "GND")]))
+    for (const p of reported) expect(p, p).not.toContain(String.fromCharCode(0x0a))
+  })
+})
+
+/**
+ * **THE GENERATOR PASSES NET NAMES THROUGH UNCHANGED** - Task 3 fix round 1, item two, and it is
+ * a BETTER tripwire than the one it replaces.
+ *
+ * **WHAT WAS LOST AND WHY IT HAD TO BE REPLACED.** `tests/schgen/authoring-complete.test.ts`'s
+ * own comment named itself the guard against *"a later task 'fixing' one of them the forbidden
+ * way: a generator that normalised net names would drop `netNames` to 0 and fail the counts
+ * here"*. That worked only as a **side effect** of asserting UPPER_SNAKE - the refusal count was
+ * the tripwire - so it died with the casing rule.
+ *
+ * **"AND NOTHING NOW NOTICES A NORMALISER" WAS THIS WRITER'S CLAIM IN ROUND 0 AND IT IS TOO
+ * STRONG - driven, not reasoned.** `[RAN]` with the generator perturbed in place to
+ * `connection.net.toUpperCase()` at both pin-assembly sites in `lib/schgen/from-network.ts`
+ * (restored afterwards):
+ *
+ * | | under a case-folding generator |
+ * | --- | --- |
+ * | `authoring-complete.test.ts`'s refusal COUNTS - the mechanism its comment named | **passed** |
+ * | `authoring-complete.test.ts`'s *"the one single-pin net is pt2399-core's CLK_O placeholder"* | **failed** |
+ * | `tests/schgen/ir/validate.test.ts` | **passed, 17 of 17** |
+ * | the sweep below | **failed, naming the circuit and the net** |
+ *
+ * So one assertion does still catch *this* normaliser, and it catches it **incidentally**: it
+ * asserts the string `net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5)` verbatim, so a
+ * rename shows up as a changed message. **That is a literal name on one net of one circuit, not a
+ * pass-through invariant** - a rename that left that net alone, a truncator, or a rename on any of
+ * the other 197 nets would not reach it. The mechanism the old comment actually named - the
+ * refusal count - did **not** fire.
+ *
+ * **WHY THIS IS STRONGER THAN WHAT IT REPLACES.** The old count noticed a normaliser only because
+ * normalising would have made names PASS a rule they were failing. It was blind to a case-folder
+ * on an already-upper-case name, to a truncator, and to any rename between two names the rule
+ * accepted. **Comparing the sets catches all of those, over every declared case**, and it states
+ * **G150**'s criterion directly - *"the mapping from the model's name to that name is stated once
+ * and is reversible"* - rather than through a refusal count.
+ *
+ * **WHAT IT COVERS AND WHAT IT DOES NOT.** This is the `Network` -> `CircuitSpec` -> `Circuit`
+ * arm, which is where a generator would rename. The `Circuit` -> emitted `.kicad_sch` -> exported
+ * netlist arm is gate 3's (`tools/schgen/verify.ts`, *"netlist equals IR"*), and nothing here
+ * duplicates it.
+ */
+describe("net names reach the IR unchanged", () => {
+  const caseSymbols = caseResolver(ALL_DECLARED_CASES)
+
+  it("ranges over every declared case, so the sweep below is not empty", () => {
+    expect(ALL_DECLARED_CASES.length, "a sweep over nothing is a check that cannot fail").toBe(13)
+  })
+
+  it("the IR's net set is the model's net set, exactly, for all 13 declared cases", () => {
+    const disagreements: string[] = []
+    let netsCompared = 0
+    for (const c of ALL_DECLARED_CASES) {
+      const model = [...netsOf(c.network)].sort()
+      const ir = [...buildCircuit(circuitSpecFrom(c.network, c.authoring, caseSymbols), { symbols: caseSymbols }).nets.keys()].sort()
+      netsCompared += model.length
+      const lost = model.filter((n) => !ir.includes(n))
+      const invented = ir.filter((n) => !model.includes(n))
+      if (lost.length > 0) disagreements.push(`${c.name}: in the model and not in the IR: ${JSON.stringify(lost)}`)
+      if (invented.length > 0) disagreements.push(`${c.name}: in the IR and not in the model: ${JSON.stringify(invented)}`)
+    }
+    expect(
+      netsCompared,
+      "the comparison must actually have nets to compare; 198 was the figure when this was written",
+    ).toBeGreaterThan(150)
+    expect(
+      disagreements,
+      "A net name changed between the circuit model and the IR. G150's criterion is that the " +
+        "mapping is stated once and is REVERSIBLE, because spec section 2's round trip compares " +
+        "the exported netlist's net names against the model's. A normaliser, a case-folder or a " +
+        "truncator in the generator lands here. If a rename is genuinely wanted, it is a declared " +
+        "map with an owner decision behind it, not a silent transformation.",
+    ).toEqual([])
   })
 })

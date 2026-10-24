@@ -98,10 +98,17 @@ export type TemplateId = (typeof TEMPLATE_IDS)[number];
  * and `lib/kicad/sexpr.ts`'s `quoteString` escapes nothing for either - it escapes only `\` and
  * `"`, both of which were measured too and both of which round-trip.
  *
- * **ITS ONE PRODUCTION CALLER IS `lib/schgen/gates/pin-table.ts`'s `mechanical()`**, where it
- * carries the type-plus-format check that gate has always made. The `netNames` rule that used to
- * apply it to every IR net name is deleted; `lib/schgen/ir/validate.ts` says where it was what
- * now carries what.
+ * **TWO PRODUCTION CALLERS, and they are not interchangeable.**
+ * `lib/schgen/ir/validate.ts`'s `netNames` rule applies it to every net of the IR at gate 1,
+ * before any geometry, and reports WHICH net with the reason above spelled out - that is the
+ * guard. `lib/schgen/gates/pin-table.ts`'s `mechanical()` applies it to a pin table's
+ * `mechanicalPads` net as the type-plus-format check that gate has always made - a **BACKSTOP on a
+ * different input**, whose message is lumped across five failure modes and names no reason.
+ *
+ * **ROUND 0 OF TASK 3 DELETED THE RULE AND LEFT ONLY THE GATE**, which put the only application of
+ * this constant on an input that never becomes a label and moved the real refusal to emit time in
+ * `str()`. The coordinator reversed it: *"The owner removed the CASING demand, not all net-name
+ * validation."* `validate.ts`'s own comment carries that history; **do not delete the rule again.**
  */
 export const NET_NAME = /^[^\u0000-\u001f]+$/;
 
