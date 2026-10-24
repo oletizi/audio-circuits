@@ -197,6 +197,26 @@ whitelist that refuses loudly beats a general rule that quietly accepts a guess.
 the libraries are on disk. Do not write one from memory; this repository has
 twice shipped a footprint that does not exist.
 
+**NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER. BUILD IT IN
+CODE.** A ` ` or `\r` written into an edit string, a search pattern or a
+document arrives as the **real byte**, not as the four characters you typed, and
+the result is invisible in a rendered diff. Build them with
+`String.fromCharCode` or `chr()`, and **check the file by counting bytes rather
+than by reading it.**
+
+This cost three incidents on one plan in one day: a raw NUL written into
+`docs/known-gaps.md`, which **made `grep` treat all 25,000 lines as binary and
+suppress every match** - and grepping that file is how every agent here
+navigates it; a repair attempt broken because Python's text mode translates
+`\r` on **read**; and two silently failed edits in a review, where the escape
+became bytes and stopped matching the file. The first was caught only because
+someone counted.
+
+**The general form, which is why this sits beside the rule above:** a tool that
+reports success while the thing you asked about became unreadable is the failure
+mode this whole section exists to prevent. `docs/schematic/false-greens.md`
+catalogues it with the other twenty-eight.
+
 **A skipped check must never look like a passing one.** If a guard cannot run,
 say so loudly. Silence that resembles success is the failure mode the whole
 workflow exists to prevent.
