@@ -216,7 +216,32 @@ Replace the format half only:
 if (typeof net !== "string" || net.length === 0) throw fail();
 ```
 
-**This is the step most likely to weaken a guard.** `lib/model/types.ts:45` shows the model's own `net()` throwing `"net name must not be empty"`, so a gate accepting `""` would be **weaker than the contract it guards.** If Task 1 found characters KiCad rejects, add that refusal here too.
+**This is the step most likely to weaken a guard.** `lib/model/types.ts:45` shows the model's own `net()` throwing `"net name must not be empty"`, so a gate accepting `""` would be **weaker than the contract it guards.**
+
+> **CORRECTED 2026-10-23 BY TASK 1's REVIEW, AND "NON-EMPTY" IS NOT ENOUGH.**
+> This step originally ended *"If Task 1 found characters KiCad rejects, add that
+> refusal here too"*, which left the predicate at non-empty and deferred the rest.
+> **Task 1's reviewer drove a candidate that refutes it:** a net name containing a
+> **raw newline** is a non-empty string, and `kicad-cli sch export netlist`
+> **exits 3 with `Failed to load schematic`.** So a predicate of merely
+> *non-empty* admits a name that breaks KiCad.
+>
+> **Today the only thing stopping it is `str()` at `lib/kicad/sexpr-write.ts:32`,
+> and it throws at EMIT rather than at `validateCircuit`.** That is a real
+> relocation of a refusal, not a gap: deleting `NET_NAME` down to *non-empty*
+> would move the control-character refusal from validation time to emit time
+> **silently**, which is exactly the shape this repository refuses.
+>
+> **Required: state the predicate as non-empty AND free of control characters, or
+> name `str()` explicitly as the clause that carries it and say so where the rule
+> used to be.** Either settles it; leaving the predicate at *non-empty* with no
+> note does not. Task 1's log carries the newline measurement; cite it.
+>
+> **Note what is NOT required:** punctuation. Task 1 measured `Net-(C10-Pad1)` and
+> `unconnected-(U1-CLK_O-Pad5)` parsing, round-tripping byte-identical and
+> rendering, and the writer escaping nothing because `quoteString` escapes only
+> `\` and `"`. **Parentheses and hyphens need no refusal**, and the boundary
+> census of **zero** means no board draws such a label anyway.
 
 - [ ] **Step 4: Remove the `netNames` rule and the census helper**
 
