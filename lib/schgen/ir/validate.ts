@@ -37,6 +37,7 @@
  */
 
 import { pinsOfUnit } from "./classify.ts";
+import { mechanicalPinsOf } from "./mechanical-pins.ts";
 import { NET_NAME, TEMPLATE_IDS, unitKey, type Circuit, type IrBlock, type NetName } from "./types.ts";
 import { bomFields, mechanicalPads, sheetFiles } from "./validate-parts.ts";
 import { pinSemantics, rails, singlePinNets } from "./validate-nets.ts";
@@ -148,11 +149,45 @@ const partShapes: Rule = (c, symbols) => {
   return out;
 };
 
+/**
+ * Every pin of a part's symbol is on a net or declared not connected - EXCEPT a pin the symbol
+ * declares as a mechanical mount point, which the electrical model is not required to carry.
+ *
+ * **THE EXEMPTION IS ALLOW-OMITTED, NOT SKIP-IF-PRESENT**, and the distinction is the one a
+ * third-party review asked about on 2026-10-24. This rule's only refusal is guarded by the pin
+ * being MISSING, so skipping a mechanical pin cannot hide anything about a pin that IS
+ * declared: a mount lug deliberately bonded to a net stays subject to `singlePinNets` and
+ * `pinSemantics` (`./validate-nets.ts`), neither of which consults `MECHANICAL_PINS`. So an
+ * intentional bond is representable AND validated; only the requirement to say something is
+ * lifted. `tests/schgen/ir/mechanical-pins.test.ts` pins that down so a later refactor cannot
+ * turn it into a blanket skip.
+ *
+ * **THE STALE-TABLE CHECK CANNOT LIVE IN THE PIN LOOP**, which is the trap the spec's first
+ * sketch fell into: a stale entry names a pin the symbol does NOT have, so a loop over the
+ * symbol's pins never reaches it and the guard could never fire. It iterates the ENTRIES
+ * against the symbol's pin set instead, before the pin loop. A guard that cannot fail is the
+ * failure mode this repository's whole workflow exists to prevent.
+ *
+ * `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`, `docs/known-gaps.md` **G282**
+ * (why the four Pultec boards refused, and why an MPN was never the question) and **G290** (why
+ * the classification is a whitelist rather than inferred from the symbol's drawing).
+ */
 const pinsDeclared: Rule = (c, symbols) => {
   const out: string[] = [];
   for (const p of c.parts.values()) {
+    const sym = symbols.resolve(p.libId);
+    const mechanical = mechanicalPinsOf(p.libId);
+    const numbers = new Set(sym.pins.map((lp) => lp.number));
+    for (const m of mechanical) {
+      if (!numbers.has(m))
+        out.push(
+          `part ${p.label}: MECHANICAL_PINS lists pin "${m}" for ${p.libId}, which has no such pin; ` +
+            `the table is stale - re-verify it against the installed library (lib/schgen/ir/mechanical-pins.ts)`,
+        );
+    }
     const have = new Set(c.pins.filter((q) => q.part === p.label).map((q) => q.pin));
-    for (const lp of symbols.resolve(p.libId).pins) {
+    for (const lp of sym.pins) {
+      if (mechanical.has(lp.number)) continue;
       if (!have.has(lp.number)) out.push(`part ${p.label}: pin ${lp.number} (${lp.name}) is neither on a net nor declared not connected`);
     }
   }

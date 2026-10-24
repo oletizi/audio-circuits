@@ -124,18 +124,52 @@ guess."*
 ### 3.2 Why a table and not geometry inference
 
 The tempting alternative is to derive it: a pin is mechanical when no graphic
-stroke leads inward from its body-side end. **It was investigated and
-rejected.** `UnitGraphics.segments` (`lib/schgen/render/lib-graphics.ts`)
-flattens *rectangle edges and polyline legs into the same list*, and `MP`'s
-inner end at `(-5.08, -5.08)` sits **on** the body rectangle
-`(-5.08, 8.89)..(5.08, -6.35)` — as does the pole pin 7's inner end at
-`(-5.08, 0)`. A naive "does a stroke touch it" test says yes for both. The real
-discriminator is directional (pin 7 joins a polyline running inward to the
-wiper; `MP` joins nothing), which is implementable and is exactly the *"general
-rule that quietly accepts a guess"* the whitelist is preferred over.
+stroke endpoint lands on its body-side end. **It was investigated, and the
+first version of this section rejected it for a reason that is WRONG. The
+reason is replaced by a measurement, and the wrong one is shown rather than
+edited away** — `CLAUDE.md`'s rule that a mechanism is advice from someone who
+had not yet tried it.
 
-Recorded here so the next reader does not re-derive the idea and mistake its
-rejection for an oversight.
+> ~~`UnitGraphics.segments` flattens rectangle edges and polyline legs into the
+> same list, and `MP`'s inner end sits **on** the body rectangle — as does the
+> pole pin 7's. A naive "does a stroke touch it" test says yes for both.~~
+
+**It discriminates perfectly on this symbol, which is exactly why it is a trap.**
+`[RAN]` the resolver over `Switch:SW_Rotary_1x6_MP`: counting stroke
+**endpoints** at each pin's body-side end gives **1 for all seven electrical
+pins** (throws 1–6 and pole 7) and **0 for `MP`**. Point-on-segment *touch*
+counts are 2 against 1. So the rule I claimed could not tell them apart tells
+them apart cleanly.
+
+**AND THEN IT FAILS CATASTROPHICALLY ON ORDINARY SYMBOLS, in the dangerous
+direction.** `[RAN]` the same test over nine symbols this repository uses,
+counting electrical pins it would misclassify as mechanical:
+
+| symbol | pins | would be flagged mechanical |
+| --- | --- | --- |
+| `Switch:SW_Rotary_1x6_MP` | 8 | **1** — `MP`, correct |
+| `Switch:SW_Rotary_1x12` | 13 | 0 |
+| `Transistor_BJT:2N3904` | 3 | 0 |
+| `Device:R` | 2 | **2 — both terminals** |
+| `Device:C` | 2 | **2 — both terminals** |
+| `Device:R_Potentiometer` | 3 | **2** |
+| `Switch:SW_SPDT` | 3 | **3 — all of them** |
+| `Connector_Generic:Conn_01x02` | 2 | **2** |
+| `Amplifier_Operational:TL072` | 8 | **6** — `-`, `+`, `V-`, `+`, `-`, `V+` |
+
+A symbol's body graphic frequently just **abuts** its pins with no stroke
+endpoint at the junction, so the rule would exempt most pins in the repository
+and **disable `pinsDeclared` almost entirely** — silently, while every test
+that does not happen to cover a flagged pin keeps passing. **A false positive
+here exempts a genuinely undeclared electrical pin, which is the exact defect
+the gate exists to catch.**
+
+**So the whitelist is right, and now for a measured reason instead of a guessed
+one:** a general rule validated on the single symbol that motivated it is
+`CLAUDE.md`'s *"general rule that quietly accepts a guess"*, and this one is
+wrong on 17 of the 35 pins of eight other symbols. `docs/known-gaps.md`
+**G290** carries the measurement, because the idea looks clean on the one
+symbol a reader will try it on.
 
 ### 3.3 The validator change
 

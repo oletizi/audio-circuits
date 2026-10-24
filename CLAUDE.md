@@ -136,12 +136,21 @@ So:
   power-symbol and junction placement.
   **THE FOUR `MP` BOARDS STOOD HERE AS AN "OPEN OWNER QUESTION and not work",
   and that was WRONG - struck 2026-10-24 after he asked what the demand was
-  for.** They are our own validator's defect, not a question for him: a mount
-  lug is mechanical, `pinsDeclared` has no notion of a mechanical pin, and
+  for.** They were our own validator's defect, not a question for him: a mount
+  lug is mechanical, `pinsDeclared` had no notion of a mechanical pin, and
   nothing about the fitted part can change what `NC` asserts. **G282** carries
-  the struck clause and the three questions that took it apart;
-  `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md` is the change.
-  Four boards are blocked on code, not on him.
+  the struck clause and the three questions that took it apart.
+  **FIXED THE SAME DAY**, so the "four Pultec boards on `pin MP`" above is
+  itself now superseded: `lib/schgen/ir/mechanical-pins.ts` whitelists the pin
+  per symbol and the four boards cleared `validateCircuit`. **What refuses
+  today is ONE board at `validateCircuit`** - `pultec-mid`, on `pin 12` - and
+  **NINE at ELK layout**, the four Pultec boards having joined the five
+  `transistor-preamp` ones in the `G260`/`G265` text-placement and junction
+  class. **The board count did not move and was never promised to**: still
+  **1 of 11**. **G290** records why the classification is a whitelist rather
+  than inferred from the symbol's drawing - the geometric rule is perfect on
+  the one symbol that motivates it and misclassifies both terminals of
+  `Device:R` and six of eight pins on a TL072.
   **AND `1 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it
   stand in this file, or anywhere else, without one.** The one sheet that
   generates **cannot be read as a drawing**: not one net label, signal flow not

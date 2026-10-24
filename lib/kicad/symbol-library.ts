@@ -48,6 +48,13 @@ export const VENDORED_SYMBOLS: readonly string[] = [
   "Connector_Generic:Conn_01x02",
   "Connector:TestPoint",
   "Jumper:Jumper_2_Open",
+  // Vendored for DRIFT DETECTION rather than for embedding: `lib/schgen/ir/mechanical-pins.ts`
+  // exempts this symbol's `MP` pin from `pinsDeclared`, and that exemption is only as good as
+  // the claim that `MP` is still the mount lug. Vendoring puts the symbol under
+  // `lib/schgen/render/stock-symbols.ts`' byte-exact refusal, so a KiCad that moves the pin
+  // fails loudly instead of silently exempting whatever ends up with that number.
+  // `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md` section 3.5.
+  "Switch:SW_Rotary_1x6_MP",
 ]
 
 const VENDORED_DIR = path.join(import.meta.dir, "symbols")

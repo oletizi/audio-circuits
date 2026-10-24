@@ -27085,6 +27085,28 @@ true after.
   **THE ONE THING STILL HIS, and it is not blocking:** whether those mount lugs
   get a wire to ground on the BUILT units. That changes the build guide, not the
   schematic. **Nobody asks him unprompted.**
+
+  **THE FOUR-`MP` HALF IS NOW RESOLVED AND MEASURED, same day.**
+  `lib/schgen/ir/mechanical-pins.ts` whitelists `MP` for
+  `Switch:SW_Rotary_1x6_MP` and `pinsDeclared` skips it, with a second refusal
+  for a stale entry. `[RAN]` `bun tools/schgen/board-sheets.ts`: **all four
+  boards cleared `validateCircuit`** and now refuse at ELK layout -
+  `pultec-hi-cut` and `pultec-low-cut` on the power-symbol-value-over-label
+  overlap, `pultec-hi-boost` on a label over three wires, and
+  **`pultec-low-boost` on a MISSING JUNCTION rather than a clearance**, which is
+  a different sub-class and was not predicted. Gate-1 refusals went **5 boards
+  to 1** (`pultec-mid` only) and gate-1 problems **5 to 1**. **The board count
+  did not move - still 1 of 11 - and the spec promised it would not**, citing
+  **G274**: the census names the first refusing problem, not the only one.
+  `make check` stayed at exit 0 on all five `pultec-*` boards and every
+  `boards/*/*.perfboard.vrt` is byte-identical, so a schematic-validator change
+  had no physical consequence. Suite 3859 pass / 0 fail / 43,737 `expect()`
+  across 358 files, accounted term by term: +8 tests and +20 `expect()` from
+  `tests/schgen/ir/mechanical-pins.test.ts`, and **+6 `expect()` from three
+  existing tests that scale with `VENDORED_SYMBOLS`** - `stock-symbols.test.ts`
+  +3, `symbol-library.test.ts` +2, `symbol-census.test.ts` +1 - because the
+  symbol is now vendored for drift detection. **What remains open in this entry
+  is the `SW_MID` pin-12 half only.**
   **FOR `SW_MID` the CRITERION is measurable and already stated:**
   `validateCircuit` accepts `pultec-mid` AND `make -C boards/pultec-mid check`
   stays at exit 0 - the second half is what both measured mechanisms failed, and
@@ -27826,3 +27848,93 @@ document-only scope would never find the seventh either.
   writer offers no mechanism for it**: the only places that could refuse the escape
   before it lands are outside this repository, and `CLAUDE.md` forbids a git hook
   outright.
+
+### G290 - MEASURED, AND IT IS BAIT BESIDE A TRAP: inferring "this symbol pin is MECHANICAL" from stroke geometry discriminates PERFECTLY on the one symbol that motivates it and misclassifies 17 of 35 electrical pins on eight others, including BOTH terminals of `Device:R` and SIX of eight pins on a TL072
+
+**WHY THIS IS RECORDED RATHER THAN JUST DECIDED.** `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`
+exempts a rotary switch's mounting pin `MP` from `pinsDeclared`
+(`lib/schgen/ir/validate.ts`) using a per-symbol whitelist. **The obvious
+alternative is to derive the classification from the symbol's own drawing** -
+a pin is mechanical when no graphic stroke endpoint lands on its body-side end -
+and that idea is attractive, needs no table, and **works on the symbol anybody
+would test it on.** It is a trap, and the next agent to reach for it needs the
+measurement rather than the conclusion.
+
+**CLAUSE 1: IT IS PERFECT ON `Switch:SW_Rotary_1x6_MP`.** `[RAN]` the resolver
+(`createResolver(symbolLibraries(["Switch"]))`) and, for each pin, computed the
+body-side end as `(x + length*cos(angle), y + length*sin(angle))` and counted
+`UnitGraphics.segments` endpoints landing on it:
+
+| pin | type | body-side end (um) | stroke ENDPOINTS at it | strokes TOUCHING it |
+| --- | --- | --- | --- | --- |
+| `1`..`6` (throws) | `passive` | `(5080, 7620)` .. `(5080, -5080)` | **1** each | 2 each |
+| `7` (pole) | `passive` | `(-5080, 0)` | **1** | 2 |
+| `MP` | `passive` | `(-5080, -5080)` | **0** | 1 |
+
+So endpoints give a clean **1 against 0** and the touch count a clean **2
+against 1**. **An earlier draft of that spec claimed the body rectangle defeats
+the test because `MP`'s inner end and the pole's both sit ON it. That claim was
+WRONG** - the rectangle's corners are at `(-5080, 8890)` and `(-5080, -6350)`,
+so neither pin end is a rectangle *endpoint*, and the discriminator survives.
+The spec's section 3.2 carries the struck text.
+
+**CLAUSE 2: AND IT COLLAPSES ON ORDINARY SYMBOLS, IN THE DANGEROUS DIRECTION.**
+`[RAN]` the same test over nine symbols this repository uses, counting
+ELECTRICAL pins it would misclassify as mechanical:
+
+| symbol | pins | flagged mechanical | which |
+| --- | --- | --- | --- |
+| `Switch:SW_Rotary_1x6_MP` | 8 | **1** | `MP` - correct |
+| `Switch:SW_Rotary_1x12` | 13 | 0 | - |
+| `Transistor_BJT:2N3904` | 3 | 0 | - |
+| `Device:R` | 2 | **2** | both terminals |
+| `Device:C` | 2 | **2** | both terminals |
+| `Device:R_Potentiometer` | 3 | **2** | `1`, `3` |
+| `Switch:SW_SPDT` | 3 | **3** | `A`, `B`, `C` - all |
+| `Connector_Generic:Conn_01x02` | 2 | **2** | `Pin_1`, `Pin_2` |
+| `Amplifier_Operational:TL072` | 8 | **6** | `-`, `+`, `V-`, `+`, `-`, `V+` |
+
+**17 of the 35 pins across the eight non-`MP` symbols**, and the two symbols
+that score 0 are not the common case - they are a 12-throw rotary and a BJT.
+The cause is that a symbol's body graphic commonly **abuts** its pins rather
+than meeting them at a stroke endpoint, which is a drawing convention and
+carries no electrical meaning at all.
+
+**THE FAILURE DIRECTION IS WHAT MAKES THIS WORTH AN ENTRY.** A false positive
+**exempts a genuinely undeclared electrical pin** - precisely the defect
+`pinsDeclared` exists to catch - and it does so **silently**: every test that
+does not happen to cover a flagged pin keeps passing, so the gate would be
+mostly disabled while looking green. That is the class
+`docs/schematic/false-greens.md` catalogues.
+
+**WHAT THIS DOES NOT SAY.** It does not say geometry is useless here. Clause 1
+is a sharp, cheap assertion **about one symbol**, and the spec's arm 1 uses it
+as committed evidence that the whitelist entry's claim is true. The distinction
+that matters: **a specific assertion in a test may use geometry; a general
+runtime rule may not**, because the first fails loudly on the one symbol it
+names and the second fails quietly on symbols nobody checked.
+
+- **Verified** **CONFIRMED by this writer.** Both probes were run against the
+  installed KiCad 10.0.5 symbol libraries through this repository's own
+  `createResolver`, not read off symbol text by eye - which matters, because the
+  struck claim in clause 1 came from reading the text by eye and was wrong.
+  **Nothing here is relayed from another agent.** The probe scripts were
+  scratch and are not committed; the table is reproducible from the formula and
+  the symbol names above, and the spec's arm 1 commits the clause-1 half as a
+  test.
+- **Why it is open** it is not a defect and nothing is broken. It stays because
+  **the attractive wrong idea is invisible from the code that rejected it**: the
+  whitelist in `lib/schgen/ir/mechanical-pins.ts` looks like an unexamined
+  shortcut, and a reader who probes the rotary symbol will find geometry works
+  and conclude the table was laziness.
+- **What would settle it** nothing - it is a recorded measurement. **It becomes
+  actionable only if someone proposes the geometric rule again**, in which case
+  the CRITERION is: *a candidate mechanical-pin test flags zero electrical pins
+  across at least the nine symbols tabulated above*, with `Device:R`,
+  `Switch:SW_SPDT` and `Amplifier_Operational:TL072` as the discriminating
+  cases. **MECHANISM, UNTRIED and offered without confidence:** a test
+  combining "no stroke endpoint at the body-side end" with "the pin's own
+  `name` is empty AND the symbol's library id ends in `_MP`" would pass the nine,
+  but it leans on a NAME, which `CLAUDE.md` forbids reasoning from - *"verify
+  names against the thing itself"* - and `G282` is the entry that cost a day to
+  learning that lesson on this very pin.
