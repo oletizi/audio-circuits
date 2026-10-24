@@ -1737,6 +1737,78 @@ made.
 >   the first time, is **a pipeline that runs end to end on a real circuit**. That is worth having
 >   and it is not an artifact for him.
 
+> **AMENDED 2026-10-24 BY TASK 6, THE LAST TASK OF THE NET-NAMES-AND-FLOATING-PINS PLAN: THE
+> SCOREBOARD RE-DRIVEN AT A CLEAN TREE, AND WHERE THE WHOLE PLAN LANDED. `1 of 11` HOLDS AND MUST
+> NOT BE QUOTED ALONE.** Every figure in every amendment above stands as measured.
+>
+> | | at `a5c36e0` | at `ce58374` (Task 24) | at Task 25 | at Task 5 | at this commit |
+> | --- | --- | --- | --- | --- | --- |
+> | boards in `boards/` that produce a schematic | 0 of 11 | **0 of 11** | **0 of 11** | **1 of 11** | **1 of 11** |
+> | boards with NO authoring declaration | 9 | **9** | **0** | **0** | **0** |
+> | boards refused by the drawing code or by validation | 2 | **2** | **11** | **10** | **10** |
+> | the six gate-1 boards' problem counts, tallied | n/a | n/a | **18, 20, 14, 14, 14, 28** | n/a | **0, 1, 1, 1, 1, 1** |
+> | fallback field placements on the sheets produced | n/a | n/a | n/a | **8, on one sheet** | **8, on one sheet** |
+> | net labels on the sheets produced | n/a | n/a | n/a | not measured | **ZERO** (**G285**) |
+> | generated reference designators agreeing with the built board's | n/a | n/a | n/a | not measured | **5 of 24** (**G285**) |
+>
+> **WHAT THE PLAN BOUGHT, MEASURED AND NOT CHARACTERISED.** The schematic row moved from `0 of 11`
+> to `1 of 11`, and the six gate-1 boards went from **108 problems between them to 5**. The five
+> remaining gate-1 refusals are each **one** problem, and in every case the same kind of problem: a
+> switch pin neither on a net nor declared not connected. **That is a real reduction and it is not
+> four more boards.**
+>
+> **WHAT THE PLAN DID NOT BUY, AND THE LAST TWO ROWS OF THAT TABLE ARE THE ANSWER.** The one sheet
+> that generates **cannot be read as a drawing**: not one net label, signal flow not followable,
+> `C13` and `C14` unresolvable, page 1 of 2 blank but for a sheet symbol - and its reference
+> designators are a **permutation of the built board's, 19 of 24 differing**, so its `R3` is a 10K
+> part where the board's `R3` is 15K. **G285** carries all of it and ends *"must not be sent to him
+> as one"*. **The eight fallback placements are the least of what is wrong with it**, and are text
+> over wire rather than text over text. **This entry's criterion is not met by any row above.**
+>
+> **AND THE ZERO LABELS ARE A PROPERTY OF THE DECLARATION, NOT OF THE PLACER - CONFIRMED HERE BY A
+> SECOND READER.** `[READ]` `lib/schgen/ir/classify.ts:36-48`: `labelledNets` admits a net only when
+> it is a rail, spans more than one block, is in a `bus` block, or is in `c.offSheet`. `[READ]`
+> `lib/schgen/ir/build.ts:152` sets `offSheet: new Set<NetName>()` **unconditionally**. `[READ]`
+> `circuits/pt2399-core/schematic/authoring.ts:100-117` declares **ONE** block, `pt-core`, with
+> `rendering: { kind: "auto" }`. **So no interior net of that board can be labelled by
+> construction**, and the two text ports on the sheet are the `+5V` and `GND` rails. Whether the
+> answer is a multi-block declaration or a change to that rule is **not this writer's to decide**
+> and no mechanism is offered.
+>
+> **THE THREE REMAINING BLOCKERS, AND TWO OF THEM ARE WAITING ON THE OWNER RATHER THAN ON WORK.**
+> The four Pultec `MP` pins cannot be classified from anything on disk - no MPN is recorded
+> anywhere and `NC` would be a false assertion if the lug is bonded to chassis (**G282**).
+> `SW_MID`'s pin 12 is not a mounting pin at all but the unwired twelfth throw, and **no model slot
+> can carry it**: as a unit pin it breaks the board check, as a package pin the model's whitelist
+> refuses it (**G282**). Only the five `transistor-preamp` boards' ELK refusals are unblocked work,
+> and **G274** clause 4 records that one block, `tp-stage`, refuses four of them.
+>
+> - **Evidence** `[RAN, CONFIRMED]` `SCHGEN_SOURCE=… bun tools/schgen/board-sheets.ts` at a clean
+>   tree (`git status --short` empty), output read in full; **G274**'s Task 6 amendment carries the
+>   board-by-board table. `[RAN]` the full suite at **3851 pass / 0 fail / 43711 `expect()` across
+>   357 files**, from **3845 / 0 / 43698 / 356** - **+6 cases, +13 assertions and +1 file, all of
+>   them `tests/document-control-bytes.test.ts`**, and no existing test's assertion count moved
+>   (which it could have: `tests/schgen/verify.test.ts` carries one `expect` per gate-1 problem, so
+>   the total is not a static property of the tree and would have shifted had this task changed any
+>   circuit - it changed none).
+>   `[RAN]` `bun run typecheck` clean. **THE CONTROLS:** the `0 have no authoring declaration` line;
+>   the five ELK refusal strings compared character for character against the committed 2026-10-21
+>   reading, all five identical; and the `8 fallback field placement(s)` figure, which
+>   `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts` also pins so it cannot drift in either
+>   direction unnoticed.
+> - **Verified** **CONFIRMED** for the census, the suite, the typecheck, and the three `[READ]`
+>   citations in the zero-labels paragraph - this writer ran and read each. **RELAYED, and not
+>   re-driven here:** **G285**'s PDF reading, its 19-of-24 designator permutation and its six
+>   perturbations; **G282**'s pin classification; **G284**'s sheet-name collision census.
+> - **Why it is open** unchanged. **Four of the five output classes are not delivered**, and the
+>   schematic class delivers, for one board, a sheet **G285** says must not be shown to the owner.
+> - **What would settle it** unchanged, and **Task 6 authored no criterion and offered no mechanism
+>   for any of the three remaining blockers.** **CRITERION: each of the five classes produces an
+>   artifact the owner accepts**, and for the schematic class **G240**'s stands - a generated
+>   schematic for at least one board, compared against a drawing the owner trusts by something other
+>   than the producing agent's judgement. **The sheet this plan produced is not a candidate**, and
+>   the Task 5 amendment above already struck the sentence that offered it.
+
 ---
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
@@ -13326,8 +13398,11 @@ than fixed.
 >   **RELAYED** from **G277**'s committed probe log and were not re-driven here.
 > - **Verified** **CONFIRMED** for everything this writer changed and ran;
 >   **RELAYED** for the `kicad-cli` measurements.
-> - **Why it is STILL open** three things outlive the decision. **(1)** The six
->   boards still refuse, on one problem each, which is Tasks 4 and 5. **(2)** The
+> - **Why it is STILL open** three things outlive the decision. **(1)** **FIVE**
+>   boards still refuse, on one problem each - the five Pultec, which are Task 4's
+>   and Task 5's ground. The figure here read `six` and is **replaced rather than
+>   annotated**: `pt2399-core` was the sixth and generates as of 2026-10-24, which
+>   Task 6's block at the end of this entry re-drives. **(2)** The
 >   deletion of the WHOLE rule in round 0 relocated the control-character refusal for an
 >   IR net name to emit time and took with it the refusal-count tripwire against a
 >   generator renaming nets. **Both were closed in round 1 and the entry that held
@@ -13344,7 +13419,45 @@ than fixed.
 >   (MET - re-drive the board census and read the refusals), and what KiCad does
 >   with a label carrying parentheses and hyphens is measured rather than guessed
 >   (MET - G277).** What remains is not this entry's: **G264** and the Pultec switch
->   pins for the six boards, which are Tasks 4 and 5.
+>   pins for the **five** Pultec boards, which are Task 4's and Task 5's ground.
+>   `six` stood here and is replaced rather than annotated, for the reason clause
+>   (1) above gives.
+
+> **THE CASE HALF OF THIS ENTRY'S CRITERION IS RE-DRIVEN AND MET BY READING, NOT BY COUNTING -
+> 2026-10-24, TASK 6 OF THE NET-NAMES-AND-FLOATING-PINS PLAN.** The criterion above says *"no
+> circuit is refused for the CASE of a net name (MET - re-drive the board census and read the
+> refusals)"*, and it names the check rather than a number. `[RAN, CONFIRMED]`
+> `SCHGEN_SOURCE=… bun tools/schgen/board-sheets.ts` at a clean tree and read all eleven refusal
+> blocks in full: **not one of the eleven boards mentions a net name, a case, or `UPPER_SNAKE` in
+> what refuses it.** The five Pultec boards name a switch pin; the five `transistor-preamp` boards
+> name ELK geometry; `pt2399-core` names nothing, because it generates.
+>
+> **THE CONTROL, AND IT COULD HAVE ANSWERED DIFFERENTLY.** The five ELK refusals are not merely
+> "still there" - they are the **same blocks at the same coordinates** as the readings taken before
+> any of this plan's work, which is what rules out the net-name deletions having moved geometry
+> somewhere nobody was looking. `transistor-preamp-lab` still refuses at
+> `label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)`, character for
+> character what **G259**'s Task 24 amendment recorded on 2026-10-21; `-buffered` and `-staged`
+> still touch `GND 0 at (31.75, 27.94)` against `VCC 1 at (31.75, 30.48)`; `-feedback` still
+> branches `GND at (38.1, 44.45)` with no junction; `-loop` still overlaps `BUFFER_BASE at (29.21,
+> 17.78)` with `BUFFER_EMITTER at (46.99, 19.05)`. **Four of the eleven boards therefore act as a
+> no-change control on a change that touched net naming repo-wide.**
+>
+> **WHAT THIS DOES NOT DO, SAID BEFORE SOMEBODY INFERS IT.** It does not close this entry.
+> `partShapes` in `lib/schgen/ir/validate.ts` still demands UPPER_SNAKE of part LABELS and the
+> owner's decision names net names only, which is clause (3) above and is untouched.
+>
+> - **Found** 2026-10-24, Task 6, re-driving this entry's own named check.
+> - **Evidence** `[RAN, CONFIRMED]` the committed census `tools/schgen/board-sheets.ts`, read in
+>   full rather than summarised. `[READ]` **G259**'s Task 24 amendment for the 2026-10-21
+>   coordinates compared against.
+> - **Verified** **CONFIRMED** - this writer ran the census and read every refusal block, and
+>   compared the four ELK coordinate strings against the committed earlier reading by eye,
+>   character for character.
+> - **Why it is STILL open** clause (3) above, unchanged: the part-label casing demand.
+> - **What would settle it** **unchanged, and Task 6 authored nothing.** The case half is MET by
+>   this re-drive; the punctuation half is MET by **G277**; what is left is the part-label demand,
+>   which needs the owner.
 
 ### G151 - a symbol pin the model says nothing about reaches a `CircuitSpec` neither on a net nor declared not-connected, and `ncUnlisted` needs a reason the model cannot hold
 
@@ -25366,8 +25479,11 @@ produce a schematic`, `11 refused; 0 have no authoring declaration`.**
 > resolving that produced an artifact with a third problem in it (the text). **Anyone reading a
 > census row as a work estimate is reading it wrong in a way this measurement makes concrete.**
 
-**SO THE BLOCKER THE CENSUS NAMES INVOLVES TEXT ON TWO OF ELEVEN BOARDS, AND SIX
-BOARDS REFUSE BEFORE ANY TEXT IS PLACED AT ALL.** **NOT ONE of the eighteen
+**SO THE BLOCKER THE CENSUS NAMES INVOLVES TEXT ON TWO OF ELEVEN BOARDS, AND
+**FIVE** BOARDS REFUSE BEFORE ANY TEXT IS PLACED AT ALL.** `SIX` stood here and is
+**replaced rather than annotated** - `pt2399-core` was the sixth and generates as
+of 2026-10-24; the Task 6 block immediately below re-drives the whole census.
+**NOT ONE of the eighteen
 approaches in §7.1 has been shown to draw a board**, and no combination of the
 ones that MOVE text has. Six are refused upstream of every one of them; on the
 five that reach layout the residue is either a non-text defect or `tp-stage`.
@@ -25375,6 +25491,77 @@ five that reach layout the residue is either a non-text defect or `tp-stage`.
 log what you could not, for labels - which does not move text at all and whose
 yield is UNMEASURED and deliberately not guessed at.** Its precondition is
 **G260**, the owner's.
+
+> **AMENDED 2026-10-24 BY TASK 6, THE PLAN'S LAST TASK: CLAUSE 2's CENSUS RE-DRIVEN AT A CLEAN
+> TREE, BOARD BY BOARD - AND THE ANSWER TO THIS ENTRY'S OWN QUESTION IS THAT **NOTHING NEW REFUSED
+> AT THIS COMMIT**, which is a smaller result than the plan hoped for and is the honest one.**
+>
+> `[RAN, CONFIRMED]` `SCHGEN_SOURCE=/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen bun tools/schgen/board-sheets.ts`
+> at a clean tree, output read in full. **`1 of 11 boards produce a schematic`; `10 refused; 0 have
+> no authoring declaration`; `WARNING: 8 fallback field placement(s) across 1 board(s)`.**
+>
+> | board | outcome at this commit | what refuses it, verbatim | is there text in it? |
+> | --- | --- | --- | --- |
+> | `pt2399-core` | **generated**, 1 sheet, **8** fallback field placements | nothing | n/a - and **G285** records that the sheet carries NOT ONE net label and permutes 19 of 24 of the board's reference designators |
+> | `pultec-hi-boost` | refused, gate 1, **1** problem | `part SW_HI_BOOST: pin MP () is neither on a net nor declared not connected` | no |
+> | `pultec-hi-cut` | refused, gate 1, **1** problem | `part SW_HI_CUT: pin MP ()` - same | no |
+> | `pultec-low-boost` | refused, gate 1, **1** problem | `part SW_LO_BOOST: pin MP ()` - same | no |
+> | `pultec-low-cut` | refused, gate 1, **1** problem | `part SW_LO_CUT: pin MP ()` - same | no |
+> | `pultec-mid` | refused, gate 1, **1** problem | `part SW_MID: pin 12 (12) is neither on a net nor declared not connected` - **a different pin from the other four** | no |
+> | `transistor-preamp-buffered` | refused at ELK | `tp-stage`: `GND 0 at (31.75, 27.94)` touches `VCC 1 at (31.75, 30.48)`, then two label problems | the first problem has none |
+> | `transistor-preamp-feedback` | refused at ELK | `tp-stage`: `net GND branches at (38.1, 44.45) (t-junction) and no junction is emitted there` | none at all |
+> | `transistor-preamp-lab` | refused at ELK | `tp-leg-emitter-bypass`: `label BYPASS_JUMPED at (17.78, 3.81) overlaps label BYPASS_CAP at (12.7, 5.08)` | yes |
+> | `transistor-preamp-loop` | refused at ELK | `tp-follower`: `label BUFFER_BASE at (29.21, 17.78) overlaps label BUFFER_EMITTER at (46.99, 19.05)` | yes |
+> | `transistor-preamp-staged` | refused at ELK | `tp-stage`: the identical glyph touch as `-buffered`, same coordinates | the first problem has none |
+>
+> **THE DIFF AGAINST CLAUSE 2's TABLE, TERM BY TERM.** Clause 2 tallied the six gate-1 boards at
+> **18, 20, 14, 14, 14, 28** problems. Task 3 deleted the case demand and Task 5 declared
+> `pt2399-core`'s U1 pin 5 `NC` and renamed its sheet. **The six are now one board generating and
+> five at exactly one problem each, and that one problem is in every case the switch pin** - 108
+> problems down to 5. The five ELK rows are **unchanged, and unchanged at the coordinate**: every
+> block name and every millimetre figure above matches what **G259**'s Task 24 amendment and clause
+> 2 recorded, so they are a no-change control over a plan that edited net naming repo-wide.
+>
+> **AND THE QUESTION THIS ENTRY EXISTS TO ASK - "is the first problem the only one?" - GOT ITS
+> ANSWER FROM TASKS 4 AND 5 AND NOT FROM THIS RE-DRIVE.** The plan's brief for this task said that
+> a board refusing on something nobody had seen would be its most valuable result. **At this commit
+> no board does**: the ten refusals are ten previously-recorded blockers. The two instances where a
+> board DID reach a new problem were both reached by going past gate 1 earlier in the plan, and both
+> are already recorded with their measurements:
+>
+> | how a new problem was reached | what appeared | where it is recorded |
+> | --- | --- | --- |
+> | `pt2399-core`'s pin 5 declared `NC` | `generate: two generated files are named pt2399-core.kicad_sch` - a sheet-name collision **eleven of the thirteen declared designs have waiting** | **G284**, and **G274**'s own Task 5 amendment above |
+> | `pultec-mid`'s pin 12 declared, in an experiment that was REVERTED | `block pultec-mid-junction: … value of power symbol 0 0 at (31.75, 31.75) overlaps label hi_boost_out at (20.32, 34.29)` - the text-placement class, and the first time a Pultec board had been seen past gate 1 | **G282** clause 3 |
+>
+> **SO THE PREDICTION HELD TWICE AND NEITHER TIME FROM A CENSUS RUN.** It held from somebody
+> resolving the named blocker and looking at what was behind it. **A census re-drive cannot
+> falsify this entry and cannot confirm it** - that is a property of the tool, which stops at the
+> first refusing block by design, and it is worth stating because this task was briefed to look for
+> a new refusal in a census and a census is not where one can appear.
+>
+> - **Found** 2026-10-24, Task 6, re-driving clause 2.
+> - **Evidence** `[RAN, CONFIRMED]` the committed census at a clean tree
+>   (`git status --short` empty before the run), read in full - the whole output is in the task
+>   report at `.superpowers/sdd/2026-10-23-net-names-and-floating-pins/task-6-report.md`, which is
+>   **gitignored and therefore not evidence anybody else can reach**; everything load-bearing is in
+>   the table above instead. **THE CONTROLS, which could have answered differently:** the
+>   `0 have no authoring declaration` line, which would have moved had the builder-to-board
+>   resolver regressed (**G247**); the five ELK coordinate strings, compared character for
+>   character against the committed 2026-10-21 reading; and the per-board `circuit is invalid`
+>   blocks, which name a specific part and pin rather than a count - `pultec-mid` naming `pin 12`
+>   where the other four name `pin MP` is a distinction a count would have hidden.
+> - **Verified** **CONFIRMED** for every figure in this amendment - this writer ran the census and
+>   read every line of it. **RELAYED** for **G284**'s eleven-of-thirteen figure and **G282** clause
+>   3's `pultec-mid` refusal string, neither re-driven here.
+> - **Why it is open** clause 2 is a measurement and nothing in it is fixed. **Ten of eleven boards
+>   still produce nothing**, and the one that produces something produces a sheet **G285** says must
+>   not be shown to the owner.
+> - **What would settle it** **unchanged, and Task 6 authored no criterion.** Clause 2's criterion
+>   is **G240**'s and **G259**'s - a board produces a sheet somebody other than its producer
+>   accepts. **MECHANISM: none offered, deliberately.** The thing this amendment learned is that
+>   the useful move is to resolve a named blocker and look at what is behind it, and naming which
+>   blocker to resolve next is a scoping decision rather than a measurement.
 
 **(3) THE NEAREST THING TO A BOARD IS TWO BOARDS AND IT NEEDS A NON-TEXT FIX
 FIRST. THIS IS BAIT AND IT IS RECORDED BESIDE THE TRAP.** On
@@ -26006,9 +26193,90 @@ so no measurement moved.
   below 0x20 other than tab, CR and LF. It is checkable in one line over the bytes
   and **must be checked that way rather than by reading**, because the failure is
   invisible in a rendered diff and makes the tool you would check it with go
-  quiet. **MECHANISM, UNTRIED:** nothing in `make check` or the suite looks for a
-  stray control byte in a committed text file, so this will recur; a repo-wide
-  byte scan would catch it and is not written.
+  quiet. **THIS CRITERION IS NOW MET AND CHECKED AUTOMATICALLY** - both files it
+  names are in `tests/document-control-bytes.test.ts`'s scope, `docs/known-gaps.md`
+  through its document arm and `tools/schgen/label-syntax/fixtures.ts` through its
+  source arm. **THE MECHANISM THAT STOOD HERE IS REPLACED RATHER THAN ANNOTATED,
+  BECAUSE IT WAS WRONG ON THE MERITS.** It read: *"nothing in `make check` or the
+  suite looks for a stray control byte in a committed text file, so this will
+  recur; a repo-wide byte scan would catch it and is not written."* The first half
+  was true and the prediction held - see the sixth incident in **G289**. **The
+  repo-wide scan is the part that was wrong:** `[RAN]` it over all **1304** tracked
+  files and **26 of them hold a C0 byte** - 13 `.vrt` perfboard layouts, 9 `.png`,
+  3 `.pdf` and one deliberate fixture sheet - so a repo-wide scan is red by
+  construction and red on the one output class that works for 11 of 11 boards.
+  What is written instead is scoped by **extension**, which is the detail that
+  makes it green: `docs/**/*.md` plus `CLAUDE.md` and `AGENTS.md`, and every `.ts`
+  under `lib/`, `tools/`, `tests/` and `circuits/`. See the 2026-10-24 block at the
+  end of this entry.
+
+> **AMENDED 2026-10-24 BY TASK 6: CLAUSE 10's PREDICTION IS DISCHARGED BY A COMMITTED CHECK, AND
+> THE SHAPE OF THE CHECK IS NOT THE SHAPE CLAUSE 10 SUGGESTED. Nothing measured anywhere in this
+> entry moves.**
+>
+> `tests/document-control-bytes.test.ts` refuses any byte below 0x20 other than tab, CR and LF.
+> **Six cases, thirteen assertions, two populations and three CONTROL arms**, and every control is
+> a case that would fail if the scan stopped working:
+>
+> | case | what it establishes |
+> | --- | --- |
+> | the scope is not empty and holds the three documents the incidents landed in | an empty glob would make the scan pass by reading nothing - `CLAUDE.md`, `AGENTS.md` and `docs/known-gaps.md` must each be in the list |
+> | no committed text document carries a control byte | **156 files**: `docs/**/*.md`, `CLAUDE.md`, `AGENTS.md` |
+> | no TypeScript source carries one either | **895 files** under `lib/`, `tools/`, `tests/`, `circuits/` - the arm **G289** caused |
+> | CONTROL: the scan names the file and the byte offset of a NUL | the empty results above count, because the same function reports a planted NUL as `AGENTS.md byte 6: 0x00` |
+> | CONTROL: tab, CR and LF are accepted | the scan is not refusing every document it reads |
+> | CONTROL: a byte at the top of the C0 range is caught too | `0x1f`, the second byte `od -c` found in the register in incident 1, not just NUL |
+>
+> **IT WAS DRIVEN RED FOUR WAYS BEFORE IT WAS TRUSTED, which clause 10's own criterion demands -
+> "checkable in one line over the bytes and MUST be checked that way rather than by reading".**
+> `[RAN]` a 55-byte scratch document under `docs/`: red at `docs/zz-task6-red-drive-scratch.md byte
+> 52: 0x00`. `[RAN]` a **1 883 942-byte copy of the real register** with a NUL appended, placed under
+> `docs/`: red at `byte 1883940`, which answers "would it have caught incident 1" against the
+> register's actual bytes rather than against a toy. `[RAN]` a scratch `.ts` under `tests/`: red at
+> `tests/zz-task6-red-drive-source.ts byte 20: 0x00`. The two in-tree CONTROL cases are the fourth
+> and they stay red-capable on every run. **Every NUL was built with `String.fromCharCode(0)` and
+> none was typed**, which is the rule this guard exists to enforce and which makes typing one here
+> the way to become the next incident.
+>
+> **WHY BY EXTENSION AND NOT BY DIRECTORY - the question the task was told to answer out loud.**
+> `docs/` is not a text-only tree. It holds `docs/pultec/P3bandDoc.pdf` and two PDFs under
+> `docs/tascam-38/sources/`, three `.csv` and three `.net.xml`. A PDF is binary by construction, so
+> a directory-scoped scan is red on its first run for a reason that is not a defect at all.
+> Scoping to `*.md` and `*.ts` also excludes, **without having to name them**, the two populations
+> that legitimately hold a control byte: `tools/schgen/label-syntax/sheets/ctl-nul.kicad_sch`,
+> which carries one deliberate NUL to drive clause 9's control arm, and
+> `tools/schgen/label-syntax/probe-run.log`, which records what `kicad-cli` emitted. **A scope
+> that has to list its exceptions is a scope that will acquire more**; one that follows from the
+> extension does not.
+>
+> **AND A CORRECTION TO THE TASK BRIEF, which described those fixtures as carrying "a NUL and a
+> lone CR" as though both needed excluding.** CR is in the ALLOWED set - this scan's business is
+> the C0 range MINUS tab, CR and LF - so `ctl-carriage-return.kicad_sch` holds nothing this guard
+> would refuse even in scope. `[RAN]` a byte count over all ten fixture sheets: **one** offending
+> byte across the ten, in `ctl-nul.kicad_sch`. The exclusion that matters is one file, not two.
+>
+> **WHAT IS STILL NOT COVERED, SAID PLAINLY.** 26 tracked files hold a C0 byte and all 26 are out
+> of scope by extension: 13 `.vrt`, 9 `.png`, 3 `.pdf`, 1 `.kicad_sch`. **And 82 tracked `.json`
+> files are measured clean and are NOT scanned** - no incident has ever landed in one, and adding
+> the arm would cost nothing today. That is a measurement and an invitation, not a plan.
+>
+> - **Found** 2026-10-24, Task 6, writing the guard clause 10 asked for.
+> - **Evidence** `[RAN]` the guard green at HEAD and red under four separate plants, each naming
+>   the file and the byte offset; `[RAN]` a byte scan over all **1304** tracked files
+>   (`git ls-files -z`, read as bytes, not as text - incident 2 was a repair broken by Python
+>   translating CR on READ) giving the 26/13/9/3/1 split and `894 .ts / 168 .md / 82 .json` all
+>   clean; `[RAN]` a byte count over the ten `label-syntax` fixture sheets. **THE CONTROL that
+>   could have answered differently:** the guard was green before the red drives and green again
+>   after each restore, with `git status --short` confirming the tree clean, so each red is the
+>   plant and not a pre-existing offender.
+> - **Verified** **CONFIRMED** for everything in this amendment - this writer wrote the check, drove
+>   each red, read each message, and ran each scan.
+> - **Why it is open** clause 10 is not, on its own terms. The entry stays open on its other
+>   clauses. **The one thing this amendment leaves open is coverage**, stated above: `.json`,
+>   `.vrt`, `.png`, `.pdf` and `.kicad_sch` are unscanned, three of those five for a good reason.
+> - **What would settle it** **clause 10's criterion is MET and now checked by something that could
+>   fail.** It authors no new criterion. **MECHANISM for the `.json` gap, UNTRIED and NOT A PLAN:**
+>   add `"**/*.json"` to `SOURCE_SCOPE`; it is green at HEAD today and nobody has asked for it.
 
 ### G278 - MEASURED: the model-`NC`-to-emitted-`no_connect` path WORKS UNCHANGED on its first end-to-end exercise, and three of the claims the plan sent the measurement in with were wrong - `NC` already had importers, `noConnect()` was already exercised, and the README name the spec called stale is correct
 
@@ -27264,3 +27532,91 @@ the resolution, with the reason written at both sites.
   so the entry now contributes to its own census. A future check must exclude
   this entry's own list, which is mechanism 23 one more time and is the reason
   the criterion above is written about pointers rather than about a count.
+
+### G289 - MEASURED, AND IT IS THE SIXTH INCIDENT OF THE SAME CLASS IN THREE DAYS: a raw NUL byte in a committed TypeScript test made `grep -c pinSetKey` return NOTHING for an identifier defined three lines below it
+
+`tests/stripboard/materialize-net-names.test.ts` held one raw NUL at byte 2804,
+in a `.join()` separator typed as the real byte instead of built in code.
+**`grep` therefore treated the whole file as binary and suppressed every match in
+it.**
+
+`[RAN]`, and this is the whole finding:
+
+```
+$ grep -c "pinSetKey" tests/stripboard/materialize-net-names.test.ts
+$ echo $?
+1
+$ grep -rn "pinSetKey" tests/
+$
+```
+
+`pinSetKey` is **defined in that file**, at line 48, three lines below the byte.
+A repo-wide grep for it returned nothing at all. **An agent looking for that
+helper would conclude it does not exist.**
+
+**WHY THIS IS AN ENTRY AND NOT A TYPO.** **G277** clause 10 recorded the same
+failure in `docs/known-gaps.md` and predicted that *"this will recur, because
+nothing in the suite or `make check` scans for it"*. `CLAUDE.md` carries the rule
+against typing a control-character escape into a tool parameter, with the
+incidents behind it. **This is the sixth, and the first one found in source rather
+than in prose:**
+
+| | where | how it was found |
+| --- | --- | --- |
+| 1 | `docs/known-gaps.md` | `od -c` after `grep -c` returned nothing over the whole 25,000-line register |
+| 2 | the repair of (1) | broken because Python's text mode translates CR on **read** |
+| 3 | two `Edit` calls in a review | they silently failed to match, because the escape became bytes |
+| 4 | `CLAUDE.md`, inside the commit that added the rule against it (`f02fc67`) | counting bytes immediately after committing |
+| 5 | the plan's own file | another task noticed that plain `grep` matched none of its 463 lines |
+| 6 | `tests/stripboard/materialize-net-names.test.ts` | **a repo-wide byte scan run to decide the SCOPE of the guard in G277's amendment** |
+
+**THE WAY IT WAS FOUND IS THE REUSABLE PART.** It was not found by reading the
+file, by a test, or by anything failing. It was found because deciding whether
+**G277** clause 10's suggested *"repo-wide byte scan"* would be green required
+running one, and the run named a `.ts` file nobody was looking at. **The
+measurement taken to size a guard found a live instance of the defect the guard
+was for**, and the guard as briefed - documents only - would not have covered it.
+
+**FIXED IN THIS CHANGE, AND THE SCOPE OF THE GUARD WAS WIDENED BECAUSE OF IT.**
+The byte is now `String.fromCharCode(0)`, bound to a named `NUL` constant whose
+comment carries the `grep` evidence above, and the file is 6185 bytes before and
+after - the separator's behaviour is byte-identical. `tests/document-control-bytes.test.ts`
+gained a second arm over **895** `.ts` files under `lib/`, `tools/`, `tests/` and
+`circuits/`, **which is a deliberate deviation from the scope this task was
+briefed with** (`docs/**/*.md`, `CLAUDE.md`, `AGENTS.md` - "the documents a human
+edits"). The deviation is recorded rather than silently taken, per `CLAUDE.md`,
+and the reason is one line: the sixth incident was in a `.ts` file and a
+document-only scope would never find the seventh either.
+
+- **Found** 2026-10-24, Task 6 of
+  `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`, while sizing
+  the control-byte guard that task was asked to write.
+- **Evidence** `[RAN, CONFIRMED]` the `grep -c` and `grep -rn` above, both before
+  the repair, and both again after it - **after the repair `grep -c pinSetKey`
+  returns `6` and the repo-wide grep over `tests/` names 7 lines**, so the
+  blindness was the byte and not the pattern. (Four of the six are the original
+  code and two are the repair's own comment, which quotes the identifier.) `[RAN]` a byte scan over all **1304** tracked files
+  which named this file as the only `.ts` offender in the tree. `[RAN]` the file's
+  own two tests green after the repair, and `bun run typecheck` clean. **THE
+  CONTROL that could have answered differently:** the repair script refused unless
+  it found **exactly one** offending byte and **exactly one** `.join(<NUL>)` site,
+  so a second control byte or a second call site would have stopped it rather than
+  being silently rewritten.
+- **Verified** **CONFIRMED** - this writer ran the greps, the scan and the repair,
+  and counted the bytes before and after rather than reading the diff. Incidents 1
+  to 5 in the table are **RELAYED** from **G277** clause 10, `CLAUDE.md` and the
+  commit messages of `ffc3c9a` and `f02fc67`; only row 6 is this writer's.
+- **Why it is open** **the instance is fixed and the class is not.** The guard
+  covers `.md` and `.ts`; `.json`, `.vrt`, `.png`, `.pdf` and `.kicad_sch` are
+  unscanned, and three of those five must stay that way. **More to the point: no
+  check anywhere stops an agent from typing the escape in the first place** - the
+  guard catches it after the fact, in the suite, which is strictly better than
+  nothing and is not prevention.
+- **What would settle it** **CRITERION: no file in a scanned population holds a
+  byte below 0x20 other than tab, CR and LF, and the scan that establishes it has
+  been driven red.** Both halves are MET as of this change - the guard is green
+  over 156 documents and 895 sources, and was driven red four ways, each naming
+  the file and the byte offset. **What is NOT settled is prevention, and this
+  writer offers no mechanism for it**: the only places that could refuse the escape
+  before it lands are outside this repository, and `CLAUDE.md` forbids a git hook
+  outright.
