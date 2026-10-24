@@ -237,6 +237,28 @@ if (typeof net !== "string" || net.length === 0) throw fail();
 > used to be.** Either settles it; leaving the predicate at *non-empty* with no
 > note does not. Task 1's log carries the newline measurement; cite it.
 >
+> **AND THE REASON IS NOT THE ONE STATED ABOVE — Task 1 round 2 measured six
+> control arms and the danger is the opposite of rejection.** `[RAN]`, committed:
+>
+> | arm | `kicad-cli` | the name that came back |
+> | --- | --- | --- |
+> | tab | **exit 0, parsed** | **verbatim** |
+> | newline | exit 3, nothing produced | — |
+> | **carriage return** | **exit 0, drew an outline** | **`RAWCR` — a different name** |
+> | **NUL** | **exit 0, drew an outline** | **`RAW` — truncated** |
+>
+> **So "a control character breaks a net name" is FALSE** — tab is accepted
+> verbatim, and only the newline is refused. **The real hazard is that CR and NUL
+> succeed and corrupt**: exit 0, a drawn label, and a net name in the netlist that
+> is not the one the sheet carried. **A check asking only whether `kicad-cli`
+> succeeded would pass both**, which is this repository's cardinal failure mode
+> occurring in the one place a net name becomes a label.
+>
+> **Write the refusal with THAT as its reason.** `CLAUDE.md` requires a `throw` to
+> name why a thing is not defaulted, and *"KiCad rejects it"* would be a false
+> reason for four of the six arms. The true one: *two control characters are
+> silently accepted and rename the net.*
+>
 > **Note what is NOT required:** punctuation. Task 1 measured `Net-(C10-Pad1)` and
 > `unconnected-(U1-CLK_O-Pad5)` parsing, round-tripping byte-identical and
 > rendering, and the writer escaping nothing because `quoteString` escapes only
@@ -373,6 +395,29 @@ State per board what it now does. **If a board now refuses on a problem nobody h
 - [ ] **Step 3: Amend the register and commit**
 
 Every figure that moved, with what moved it. **Delete superseded figures rather than annotating them.** Mark CONFIRMED versus RELAYED, keep CRITERION distinct from MECHANISM, mark every mechanism untried.
+
+- [ ] **Step 4: Guard the register against a stray control byte**
+
+**Added 2026-10-23, because Task 1 round 1 put a raw NUL into `docs/known-gaps.md` and nobody noticed.** The escape for the C0 range arrived as two literal bytes. The consequence: **`grep` treats the whole 25,000-line register as binary and suppresses every match in it** — and grepping that file is how every agent on this branch navigates it. A piped `git show` over the file produced no output at all. **G277** clause 10 records it, with the criterion that **it will recur, because nothing in the suite or `make check` scans for it.**
+
+This step closes that. Five tasks of this plan write to that file, so the guard belongs here.
+
+```ts
+test("no committed text document carries a control byte outside tab, CR and LF", () => {
+  const offenders: string[] = []
+  for (const f of textDocuments()) {
+    const bytes = readFileSync(f)
+    for (const [i, b] of bytes.entries()) {
+      if (b < 0x20 && b !== 0x09 && b !== 0x0a && b !== 0x0d) offenders.push(`${f} byte ${i}: 0x${b.toString(16)}`)
+    }
+  }
+  expect(offenders).toEqual([])
+})
+```
+
+**Drive it red before trusting it.** Write a NUL into a scratch copy, confirm the test names the file and the byte offset, then restore. **The failure is invisible in a rendered diff**, which is why it must be checked by counting bytes rather than by reading — and why a test is the only thing that will catch the next one.
+
+Scope it to the documents a human edits: `docs/**/*.md`, `CLAUDE.md`, `AGENTS.md`. **Do not scope it to committed probe logs** — a log legitimately records what a tool emitted, and Task 1's own fixture sheets deliberately carry a NUL and a lone CR to exercise the control arms.
 
 ---
 
