@@ -198,7 +198,7 @@ the libraries are on disk. Do not write one from memory; this repository has
 twice shipped a footprint that does not exist.
 
 **NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER. BUILD IT IN
-CODE.** A ` ` or `\r` written into an edit string, a search pattern or a
+CODE.** A `\u0000` or `\r` written into an edit string, a search pattern or a
 document arrives as the **real byte**, not as the four characters you typed, and
 the result is invisible in a rendered diff. Build them with
 `String.fromCharCode` or `chr()`, and **check the file by counting bytes rather
@@ -211,6 +211,15 @@ navigates it; a repair attempt broken because Python's text mode translates
 `\r` on **read**; and two silently failed edits in a review, where the escape
 became bytes and stopped matching the file. The first was caught only because
 someone counted.
+
+**AND THE COMMIT THAT ADDED THIS RULE BROKE THIS FILE WITH IT - the fourth
+incident, in the governance change prohibiting the third.** The example above
+was typed as an escape into an edit, arrived as a **real NUL**, and `grep`
+returned nothing on `CLAUDE.md` until it was counted and repaired. **The file
+every agent reads for its instructions was unsearchable, and the rendered diff
+looked correct.** Left recorded rather than amended away, because the rule's own
+example breaking the rule's own file is the most useful evidence it has: there
+is no care level at which typing the escape is safe. Build it in code.
 
 **The general form, which is why this sits beside the rule above:** a tool that
 reports success while the thing you asked about became unreadable is the failure
