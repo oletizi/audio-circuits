@@ -1514,6 +1514,12 @@ made.
 > | refused at `validateCircuit` (gate 1) on net names, plus one undeclared symbol pin each | **6**: `pt2399-core` and all five Pultec | **G150**'s class; the Pultec specifics are **G264** |
 > | refused at ELK layout | **5**: the four preamp boards and `transistor-preamp-lab` | **G262**'s label class on 2, and three shapes nobody had seen on 3 - **G263** |
 >
+> **THE FIRST ROW'S "on net names, plus" IS TRUE ONLY UP TO 2026-10-23 and is left standing as
+> measured.** Task 3 deleted the case demand, and `[RAN]` the same census afterwards: **those six
+> boards now refuse on ONE problem each** - `pt2399-core` on its single-pin net, each Pultec board
+> on its switch mounting pin. **The board figure did not move: still 0 of 11.** **G150**'s Task 3
+> block carries the before-and-after table.
+>
 > **AND THE BLOCK FIGURE MOVED A LONG WAY WHILE THE BOARD FIGURE DID NOT, which is the number most
 > likely to be misread.** 35 of 52 declared ELK blocks draw, up from 7 of 12. **That is not progress
 > toward a board**: a board produces a sheet only when EVERY one of its blocks draws and the circuit
@@ -13114,11 +13120,20 @@ passes every net name through verbatim**, which is why this is recorded rather
 than fixed.
 
 - **Found** 2026-10-20, Task 9, while measuring the four circuits.
-- **Evidence** `netsNotUpperSnake` in `lib/schgen/authoring.ts`, which tests
-  every net of a `Network` against the IR's own `NET_NAME` and is printed per
+- **Evidence** `netsNotUpperSnake` in `lib/schgen/authoring.ts`, which tested
+  every net of a `Network` against the IR's own `NET_NAME` and was printed per
   circuit by `bun tools/schgen/authoring-census.ts` (the figures above are that
   output on 2026-10-20). A check that could have failed: two of the four
-  circuits report 0, so the function is not simply reporting everything.
+  circuits reported 0, so the function was not simply reporting everything.
+  **THAT FUNCTION AND ITS CENSUS LINE ARE DELETED, by Task 3 on 2026-10-23, with
+  the rule they measured** - *"supersede means delete"*, and the figures above
+  are therefore a 2026-10-20 reading that nothing in the tree now reproduces.
+  **What re-derives, and it is a different and smaller number:**
+  `tools/schgen/label-syntax/probe.ts` carries the pre-Task-3 casing regex as a
+  frozen constant and reports **20 labelled nets** failing it across the eleven
+  BOARDS (`probe-run.log`); the 31 above is over the four PARITY CIRCUITS and
+  counts every net, labelled or not. Do not read one as a correction of the
+  other.
 - **Verified** CONFIRMED - this writer wrote the measurement, ran it, and read
   the full list of 31 names.
 - **Why it is open** it is a real gap in the chain and it is nobody's in the
@@ -13202,6 +13217,72 @@ than fixed.
 >   A written design he reviews**, and note that `partShapes` in the same file
 >   carries a separate UPPER_SNAKE demand on part labels which **his decision does
 >   not mention and which this entry does not extend it to.**
+>
+> **DONE, 2026-10-23, TASK 3 - AND THE ENTRY STAYS OPEN, because what it is open
+> ON has changed.** The case demand is out of the code. `lib/schgen/ir/validate.ts`'s
+> `netNames` rule is **deleted** and `DRAWING_RULES` is ten rules; `NET_NAME` in
+> `lib/schgen/ir/types.ts` is `/^[^\u0000-\u001f]+$/` - non-empty, no control
+> character - and no longer mentions case; the census helper this entry cited is
+> deleted with the measurement it served; `tests/schgen/ir/validate.test.ts`'s V1
+> and two assertions in ported test files go with the rule, the latter as declared
+> `cuts` so both files stay byte-checked against the pedals source.
+>
+> **WHAT IT MEASURABLY BOUGHT, re-driven rather than asserted.** `[RAN]`
+> `bun tools/schgen/board-sheets.ts`, before and after, same command, same
+> machine, 2026-10-23:
+>
+> | | before | after |
+> | --- | --- | --- |
+> | boards producing a schematic | **0 of 11** | **0 of 11** |
+> | `pt2399-core`'s refusals | **18** (17 net names + 1 single-pin net) | **1** (the single-pin net) |
+> | each Pultec board's refusals | **13 to 27** (net names + 1 undeclared pin) | **1** (the undeclared switch pin) |
+> | the five `transistor-preamp` boards | unchanged - ELK geometry, never net names | unchanged |
+>
+> **SO THE OUTCOME IS "six boards now refuse on ONE problem each", NOT "six
+> boards fixed"**, and the distinction is the one **G274** exists to protect: the
+> census names the FIRST refusing problem per board, so a board with one problem
+> left may still have another behind it. On the parity set the same deletion took
+> `optical-compressor` from 14 drawing refusals to **0** and `pt2399-core` from 18
+> to **1**, re-pinned in `tests/schgen/authoring-complete.test.ts`.
+>
+> **WHAT THE PUNCTUATION HALF OF THIS ENTRY TURNED OUT TO BE.** This entry's
+> relax mechanism warned that *"nobody has checked what KiCad does with
+> `Net-(U1-REF)` as a global label"*. Somebody has: **G277**. `kicad-cli` 10.0.5
+> parses `Net-(C10-Pad1)` and `unconnected-(U1-CLK_O-Pad5)`, round-trips both
+> byte-identical and renders both, and `quoteString` escapes nothing for them -
+> **and the boundary census is zero**, so no board would draw such a label today
+> anyway. **Punctuation needed no rule and none was written.**
+>
+> **WHAT REPLACED THE CASE HALF IS NOT NOTHING, and the reason is not the obvious
+> one.** The same run drove six CONTROL arms: a tab is accepted **verbatim**, a
+> newline fails at exit 3, and a **carriage return and a NUL both export at exit
+> 0, draw a label, and come back as a DIFFERENT net name** (`RAWCR`, and `RAW`
+> truncated). So *"a control character breaks a net name"* is false; the hazard is
+> that two of them **silently rename the net**, and that is the reason `NET_NAME`
+> still refuses the class.
+>
+> - **Found** 2026-10-23, Task 3, implementing the owner's decision above.
+> - **Evidence** `[RAN]` the board census before and after, output in both
+>   directions; `[RAN]` `SCHGEN_SOURCE=... bun test` green across the change;
+>   `[READ]` `DRAWING_RULES` at HEAD. The control-arm and punctuation figures are
+>   **RELAYED** from **G277**'s committed probe log and were not re-driven here.
+> - **Verified** **CONFIRMED** for everything this writer changed and ran;
+>   **RELAYED** for the `kicad-cli` measurements.
+> - **Why it is STILL open** three things outlive the decision. **(1)** The six
+>   boards still refuse, on one problem each, which is Tasks 4 and 5. **(2)** The
+>   deletion relocated the control-character refusal for an IR net name from
+>   `validateCircuit` to emit time and took with it the only check that would have
+>   caught a generator renaming nets - **G279**, which also carries this entry's
+>   surviving *"stated once and is reversible"* concern, since that concern was
+>   never about letter case. **(3)** `partShapes` in the same file still demands
+>   UPPER_SNAKE of part LABELS; his decision names net names and nothing here
+>   extends it.
+> - **What would settle it** **CRITERION, unchanged from the one his decision
+>   installed and now half met: no circuit is refused for the CASE of a net name
+>   (MET - re-drive the board census and read the refusals), and what KiCad does
+>   with a label carrying parentheses and hyphens is measured rather than guessed
+>   (MET - G277).** What remains is not this entry's: **G279** for the relocated
+>   refusal, **G264** and the Pultec switch pins for the six boards.
 
 ### G151 - a symbol pin the model says nothing about reaches a `CircuitSpec` neither on a net nor declared not-connected, and `ncUnlisted` needs a reason the model cannot hold
 
@@ -26167,3 +26248,231 @@ rather than from `layoutSheet`. **It is RELAYED, not confirmed by this writer** 
 see the clause. **CRITERION for "what this does not establish":** a
 `kicad-cli` netlist export of a project whose `no_connect` originates in a model
 `NC`, which is spec 3b's required gate and lands with Task 5.
+
+### G279 - MEASURED, and it is what deleting a rule COST rather than what it bought: an IR net name is now validated by NOTHING, so the control-character refusal moved from `validateCircuit` to EMIT time - and the one check that would have caught a generator renaming nets went with the rule
+
+Task 3 of the net-names-and-floating-pins plan deleted `lib/schgen/ir/validate.ts`'s
+`netNames` rule on the owner's decision (**G150**). **That is the whole of the
+decision and it is not in question here.** What this entry records is the two
+things the deletion took with it, both of which a later reader needs and neither
+of which is re-derivable from the diff.
+
+**(1) THE CONTROL-CHARACTER REFUSAL FOR AN IR NET NAME IS NOW AT EMIT TIME.**
+The deleted regex was `/^[A-Z0-9][A-Z0-9_]*$/`, which refused a control
+character as a side effect of refusing everything that was not UPPER_SNAKE. With
+the rule gone, `validateCircuit` has **no rule of any kind over
+`Circuit.nets`'s keys**, so a net name carrying a carriage return or a NUL
+passes validation, passes every geometry check, and is refused only when
+`str()` (`lib/schgen/render/sexpr-write.ts:31`) writes it as an s-expression
+atom: *"string ... contains a control character; emit one text item per line"*.
+
+**WHY THAT MATTERS, and it is measured rather than argued.** Task 1 round 2
+drove six control arms through a real global label against `kicad-cli` 10.0.5
+(**G277**, `tools/schgen/label-syntax/probe-run.log`). A **tab** is accepted
+**verbatim**; a **newline** fails loudly at exit 3; and a **carriage return**
+and a **NUL** both export at **exit 0, draw a label outline, and come back as a
+different net name** - `RAWCR`, and `RAW` truncated. So the hazard is not that
+KiCad rejects a control character - for four of the six arms it does not. **The
+hazard is that two of them succeed silently and rename the net**, which is this
+repository's cardinal failure mode in the one place a net name becomes a label.
+A refusal at emit still catches it; a refusal at validation would catch it
+earlier, against the circuit rather than against a sheet, and with a message
+naming the net.
+
+**THE RELOCATION IS DELIBERATE AND NOT A DISCOVERY AFTER THE FACT.** The task
+brief required it to be *"stated where the rule used to be"* or not taken, and
+the comment standing in the deleted rule's place in `validate.ts` says it. This
+entry is the durable half.
+
+**(2) THE RENAME TRIPWIRE IS GONE AND NOTHING REPLACES IT.**
+`tests/schgen/authoring-complete.test.ts`'s own comment said, before Task 3,
+that it was *"the check that catches a later task 'fixing' one of them the
+forbidden way: a generator that normalised net names would drop `netNames` to 0
+and fail the counts here, which is what G150's criterion (the mapping is stated
+once and is reversible) requires someone to notice."* **With the rule deleted,
+that class left the table and a generator that renamed every net now changes no
+figure in that file.** G150's round-trip concern did not go away with the case
+demand: spec §2's round trip compares the exported netlist's net names against
+the model's, so a silent rename anywhere between a `Network` and a `.kicad_sch`
+is still a defect, and nothing in the suite is now positioned to notice one
+introduced deliberately.
+
+- **Found** 2026-10-23, Task 3, while deleting the rule - both halves were
+  visible in the files being edited, not discovered later.
+- **Evidence** `[READ]` `lib/schgen/ir/validate.ts`'s `DRAWING_RULES` at HEAD,
+  which has ten rules and no rule reading `c.nets`' keys; `[READ]` `str()` at
+  `lib/schgen/render/sexpr-write.ts:31`, whose class is `[\u0000-\u001f]`;
+  `[READ]` the pre-Task-3 text of `authoring-complete.test.ts`'s comment, quoted
+  above, in this change's own diff. **A check that could have failed for the
+  emit-time claim:** `tests/schgen/ir/net-name.test.ts` asserts
+  `validateCircuit` reports `[]` - an empty problem list, not merely no
+  net-name problem - for a circuit whose nets are `x` and `Net-(C10-Pad1)`,
+  which would fail if any rule still read net names.
+- **Verified** **CONFIRMED** for both halves by this writer, who made the
+  deletion. The `kicad-cli` control-arm figures are **RELAYED** from Task 1's
+  committed probe log and were not re-driven here.
+- **Why it is open** because the relocation is a real weakening of a refusal's
+  position that the plan accepted rather than fixed, and because the second half
+  is a deleted check with no replacement.
+- **What would settle it** **CRITERION (1): a `Circuit` whose net name carries a
+  carriage return or a NUL is refused by `validateCircuit`, by name, before any
+  geometry runs.** That is what is measurable; it is false at HEAD and a test
+  asserting it would fail. **MECHANISM, UNTRIED: a narrow rule over `c.nets`'s
+  keys applying `NET_NAME` - which already means non-empty and control-free - in
+  the place the deleted rule occupied.** It is five lines and it would refuse
+  nothing on any of the eleven boards, which is exactly why it was not taken as
+  part of a task whose instruction was to delete the rule; **the criterion
+  binds, this mechanism does not.** **CRITERION (2): a change that renames a net
+  between a `Network` and an emitted sheet fails at least one check in the
+  suite.** **MECHANISM, UNTRIED:** assert the IR's net-name set equals the
+  model's for each parity circuit, which is a stronger and more direct statement
+  of G150's *"stated once and reversible"* than a refusal count ever was.
+
+### G280 - MEASURED as a BOUNDARY rather than a defect: `NET_NAME` and `str()` both refuse exactly `[\u0000-\u001f]`, so DEL and the C1 range are refused by NEITHER and were never driven through `kicad-cli`
+
+Task 3 defined `NET_NAME` (`lib/schgen/ir/types.ts`) as
+`/^[^\u0000-\u001f]+$/` and said in its comment that the class is **exactly**
+the one `str()` refuses (`lib/schgen/render/sexpr-write.ts:31`), deliberately,
+so that the writer and the validator draw the same line.
+
+**THE CONSEQUENCE, which is a constraint on a later change rather than a bug:**
+**DEL (`\u007f`) and the C1 controls (`\u0080`-`\u009f`) are in neither class.**
+A net name carrying one is accepted by `NET_NAME`, accepted by `str()`, written
+into a `.kicad_sch`, and **nobody has ever driven one through `kicad-cli`** -
+Task 1's six arms were a double quote, a backslash, a tab, a newline, a carriage
+return and a NUL, all of them C0 or ASCII punctuation (**G277**).
+
+**IT IS NOT ASSUMED HARMLESS AND IT IS NOT ASSUMED HARMFUL.** The reason the C0
+class is refused at all is that two of its members **succeed and rename the
+net** (**G279**). That failure mode is invisible to a check that asks only
+whether `kicad-cli` exited 0, so *"DEL is probably fine"* is precisely the
+inference Task 1's measurement showed to be unsafe for the C0 range. Widening
+the class without measuring would be the silent widening `CLAUDE.md` forbids;
+leaving it unmeasured and unrecorded would hide a hole in a rule whose comment
+claims to be exact.
+
+`tests/schgen/ir/net-name.test.ts` asserts the boundary explicitly - DEL
+accepted, every C0 member refused - so the gap is **visible in a test rather
+than implied by a regex**, and a later widening has to change an assertion that
+cites this entry.
+
+- **Found** 2026-10-23, Task 3, on choosing the replacement predicate's class.
+- **Evidence** `[READ]` `NET_NAME` at `lib/schgen/ir/types.ts` and `str()` at
+  `lib/schgen/render/sexpr-write.ts:31`, whose classes are the same six
+  characters of source text; `[READ]` the arm list in
+  `tools/schgen/label-syntax/fixtures.ts`, which has no DEL or C1 arm. **A check
+  that could have failed:** the C0 sweep in `tests/schgen/ir/net-name.test.ts`
+  iterates `0x00`-`0x1f` and would fail if the class were narrower than the
+  comment claims.
+- **Verified** **CONFIRMED** - this writer wrote the predicate, read both
+  classes, and read the arm list.
+- **Why it is open** because it is unmeasured, and because it is the kind of
+  hole somebody closes by widening a regex rather than by driving the tool.
+- **What would settle it** **CRITERION: for each of DEL and at least one C1
+  character, what `kicad-cli sch export netlist` does with a global label
+  carrying it is recorded - exit code, whether a label is drawn, and whether the
+  name comes back octet for octet** - because a silent rename at exit 0 is the
+  outcome that matters and no exit code reports it. **MECHANISM, UNTRIED: two
+  more arms in `tools/schgen/label-syntax/fixtures.ts` and a re-run of that
+  probe.** Note that a re-run rewrites `probe-run.log` wholesale, including its
+  commit stamp, so the re-run replaces Task 1's committed measurement rather
+  than adding to it; whether that is acceptable is a decision, not a detail.
+
+### G281 - DEVIATION, and the mechanism was wrong for a reason three documents could not have seen: the task brief's own replacement predicate would have HAND-EDITED a byte-checked ported file, which `port-fidelity.test.ts` refuses
+
+Task 3's brief, the spec's part 2 and the plan's file table all say the same
+thing about the gate at `lib/schgen/gates/pin-table.ts`: narrow it, keeping the
+type check. The brief gives the edit literally -
+
+```ts
+if (typeof net !== "string" || net.length === 0) throw fail();
+```
+
+- replacing `!NET_NAME.test(net)` in place.
+
+**THAT FILE IS A BYTE-CHECKED PORT.** Its `files[]` entry in
+`tools/schgen/port-manifest.json` carries no `cuts`, so
+`tests/schgen/port-fidelity.test.ts` asserts it equals
+`rewrite(<pedals source>, entry, manifest)` on every run. Hand-editing it fails
+that test, naming the file. The same is true of
+`tests/schgen/gates/pin-table.test.ts`. Reaching the brief's shape therefore
+needed **two new `diverged[]` entries**, and `DivergedEntry`'s own
+documentation sizes what that costs: *"Nothing compares a diverged file against
+its source again ... a drift between the two is invisible to every check in this
+repository"* (**G139** carries the running total).
+
+**WHAT WAS DONE INSTEAD, and it meets the brief's CRITERION exactly.**
+`NET_NAME`'s **definition** moved, in `lib/schgen/ir/types.ts`, which is already
+a declared divergence. The gate's line is untouched and still reads
+`typeof net !== "string" || !NET_NAME.test(net)`, so:
+
+- the **type check survives verbatim** - the thing the brief and the spec's
+  review finding 4 both single out;
+- the **empty string is still refused**, because the new predicate is `+`-quantified -
+  which is what keeps the gate from becoming weaker than `lib/model/types.ts:45`'s
+  own *"net name must not be empty"*;
+- a **control character is refused**, which the brief's own edit would NOT have
+  done, since `net.length === 0` admits `"RAW\u000dCR"`;
+- **no file left the byte-check.** The only edits to the two ported files are
+  declared `cuts` - pure deletions of the two assertions that asserted the case
+  demand - so both re-derive from the pedals source and `bun tools/schgen/port.ts`
+  regenerates them.
+
+**THE COST OF THE DEVIATION, stated rather than hidden:** the gate's refusal
+message is unchanged and still lumps five failure modes into
+*"mechanicalPads.9 must be {"net": "<NAME>"} or {"nc": true}"*, so **the gate
+itself does not name the control-character reason.** `CLAUDE.md` wants a `throw`
+to say why a thing is not defaulted; here that reason lives on `NET_NAME`'s
+definition, which the gate's one call site reads, rather than in the thrown
+string. Naming it in the message is available only by diverging the file.
+
+**ONE MORE THING THIS CHANGE HAD TO DO, and a reader would not guess it.**
+`tools/schgen/label-syntax/probe.ts` imported `NET_NAME` for the adjunct census
+that produced `probe-run.log`'s figure of **20 labelled nets refused**.
+Redefining `NET_NAME` would have made that tool report **0** on its next run -
+a committed measurement irreproducible from its own source. The probe now holds
+the pre-Task-3 regex as a **frozen local constant**, so the log's figure
+re-derives. **The log's WORDING is one commit behind on purpose:** it says
+*"NET_NAME REFUSES TODAY"* where the probe now prints *"the pre-Task-3 casing
+rule"*, because re-running the probe to refresh the wording would rewrite the
+whole log, including its commit stamp, and replace Task 1's measurement.
+
+**AND THE SUITE MOVE HAS A FOURTH TERM NOBODY WOULD PREDICT, which is recorded
+because the plan requires the move accounted for term by term and three of the
+four terms are obvious.** The suite went **3822 pass / 43622 `expect()` / 354
+files** to **3830 / 43668 / 355**. Tests: -2 (the deleted `describe("NET_NAME")`
+in `tests/schgen/ir/author.test.ts`), -1 (the `it.each` row in
+`tests/schgen/gates/pin-table.test.ts`), -1 (V1 in
+`tests/schgen/ir/validate.test.ts`), +12 (the new
+`tests/schgen/ir/net-name.test.ts`) = **+8**. `expect()`: -11, -1, -1, +60 =
++47, **which is one more than the +46 observed.** The missing one is
+**`tests/schgen/verify.test.ts:156`**: `for (const p of gate1?.problems ?? [])
+expect(p).not.toContain(...)` is **one expect per gate-1 problem**, and the
+ported `mini` design had exactly one net-name refusal, so that file went 53
+expects to 52. **It is a dynamic count, so the suite's `expect()` total is not a
+static property of the tree** - a later reader reconciling a move in this file
+needs to know that at least one test's count follows a refusal list.
+
+- **Found** 2026-10-23, Task 3 Step 3, on reading
+  `lib/schgen/gates/pin-table.ts`'s own header before editing it.
+- **Evidence** `[READ]` that file's provenance header (*"Edit the pedals source
+  and re-run the port rather than hand-editing this file"*); `[READ]` its
+  `files[]` entry in `tools/schgen/port-manifest.json` and the first test in
+  `tests/schgen/port-fidelity.test.ts`, which compares `rewrite()`'s output to
+  the file on disk for every `files[]` entry. **A check that could have failed,
+  and did:** the perturbation run recorded in `.superpowers/sdd/`'s Task 3
+  report drove `tests/schgen/ir/net-name.test.ts` against the pre-change
+  predicate and got **6 of 12 red**, including the gate's lower-case case and
+  the two `validateCircuit` controls - so the new tests are not vacuous.
+- **Verified** **CONFIRMED** - this writer read the header, the manifest entry
+  and the fidelity test, ran the porter, and ran the suite.
+- **Why it is open** it is a recorded deviation rather than a defect, and it
+  stays open only for the residual: the gate's message does not carry its
+  reason.
+- **What would settle it** **CRITERION: the gate's refusal names which of its
+  five failure modes fired, and the control-character case says that two control
+  characters are accepted by KiCad and rename the net.** **MECHANISM, UNTRIED:
+  a `diverged[]` entry for `lib/schgen/gates/pin-table.ts` with its `sourceSha`,
+  splitting `fail()` into per-cause messages.** It is a real cost (one more file
+  off the byte-check, **G139**) against a real gain, and it is **not this task's
+  to decide** - the plan's scope was the predicate, not the gate's diagnostics.

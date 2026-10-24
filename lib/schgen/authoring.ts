@@ -33,7 +33,7 @@
  * `docs/known-gaps.md` **G148** and **G149**; the short forms are on the fields themselves.
  */
 
-import { NET_NAME, PORT_DIRECTIONS, type BlockId, type BomFields, type NetName, type RailSpec, type SheetSpec } from "./ir/types.ts"
+import { PORT_DIRECTIONS, type BlockId, type BomFields, type NetName, type RailSpec, type SheetSpec } from "./ir/types.ts"
 import type { PortDirection, Rendering, TemplateAnchor } from "./ir/types.ts"
 import { isPinSide } from "./rules/pin-sides.ts"
 import type { PinSide } from "./rules/pin-sides.ts"
@@ -380,11 +380,6 @@ export function assertAuthoring(authoring: SchematicAuthoring, network: Network)
     `the schematic authoring declaration for "${authoring.project}" has ` +
       `${problems.length} problem(s):\n  ${problems.join("\n  ")}`,
   )
-}
-
-/** Exported for the net-name measurement G150 records; `NET_NAME` is the IR's own rule. */
-export function netsNotUpperSnake(network: Network): readonly NetName[] {
-  return [...netsOf(network)].filter((n) => !NET_NAME.test(n)).sort()
 }
 
 /**

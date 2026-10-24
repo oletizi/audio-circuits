@@ -1,6 +1,7 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/gates/pintable.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
+ * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
+ * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
  */
@@ -84,7 +85,6 @@ describe("parsePinTable", () => {
     ["pinAlias identity empty", (t) => { t.pinAliases = { "1": { symbolName: "", identity: "" } }; }, /pin table X: pinAliases.1.identity must be a non-empty string/],
     ["pinAlias unknown key", (t) => { t.pinAliases = { "1": { symbolName: "", identity: "OUT", note: "x" } }; }, /pin table X: pinAliases.1: unknown key "note"/],
     ["mechanicalPads not an object", (t) => { t.mechanicalPads = "GND"; }, /pin table X: mechanicalPads must be an object/],
-    ["mechanical net not UPPER_SNAKE", (t) => { t.mechanicalPads = { "9": { net: "gnd" } }; }, /pin table X: mechanicalPads.9 must be/],
     ["mechanical nc false", (t) => { t.mechanicalPads = { "9": { nc: false } }; }, /pin table X: mechanicalPads.9 must be/],
     ["mechanical net and nc", (t) => { t.mechanicalPads = { "9": { net: "GND", nc: true } }; }, /pin table X: mechanicalPads.9 must be/],
   ];

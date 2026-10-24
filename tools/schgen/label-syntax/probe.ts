@@ -74,7 +74,6 @@ import { pdfPaths, type PdfPath } from "../text-metrics/pdf-probe.ts"
 import { circuitSpecFrom } from "../../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
-import { NET_NAME } from "../../../lib/schgen/ir/types.ts"
 import { caseResolver } from "../authoring-census.ts"
 import { ALL_DECLARED_CASES } from "../board-declarations.ts"
 import { boardRefs, declarationFor } from "../board-sheets.ts"
@@ -94,6 +93,23 @@ const hex = (text: string): string => Buffer.from(text, "utf8").toString("hex")
 
 /** The net names matching this are KiCad exporter artifacts rather than authored names. */
 const SYNTHETIC = /^(Net|unconnected)-/
+
+/**
+ * **THE CASING RULE AS IT STOOD WHEN THIS PROBE RAN, held here rather than imported.**
+ *
+ * This was `lib/schgen/ir/types.ts`'s `NET_NAME` - `/^[A-Z0-9][A-Z0-9_]*$/` - and the adjunct
+ * census below sizes what it cost on names that really are drawn. **Task 3 of the
+ * net-names-and-floating-pins plan redefined `NET_NAME`** (non-empty, no control character) on the
+ * owner's decision that the case demand is *"a silly quibble"*, so importing it would silently
+ * change what this probe measures and make `probe-run.log`'s committed figure of **20** report as
+ * 0 on the next run - a measurement irreproducible from its own tool, which is the shape
+ * `CLAUDE.md` names when it says a derived artifact is compared by content and never by a
+ * timestamp. Copied here so the run that produced that log can be re-driven.
+ *
+ * It is a FROZEN TRANSCRIPTION of a rule that no longer exists, not a rule this repository
+ * enforces. Nothing but the adjunct below may read it.
+ */
+const CASING_RULE_BEFORE_TASK_3 = /^[A-Z0-9][A-Z0-9_]*$/
 
 /** The `(name <atom>)` atoms of the exported netlist's `(nets ...)` section, as RAW bytes. */
 function rawNetNameAtoms(netlist: string): readonly string[] {
@@ -389,7 +405,7 @@ function main(): void {
     }
     const syntheticLabelled = [...labelNets].filter((n) => SYNTHETIC.test(n)).sort()
     syntheticLabels += syntheticLabelled.length
-    failing.set(board.name, [...labelNets].filter((n) => !NET_NAME.test(n)).sort())
+    failing.set(board.name, [...labelNets].filter((n) => !CASING_RULE_BEFORE_TASK_3.test(n)).sort())
     log(
       `${board.name.padEnd(28)} declared by ${decl.entry.padEnd(28)} ${String(circuit.blocks.size).padStart(2)} block(s), ` +
         `${String(circuit.nets.size).padStart(2)} net(s), ${String(synthetic.length).padStart(2)} synthetic net name(s), ` +
@@ -415,20 +431,21 @@ function main(): void {
       : `THE CENSUS IS ${syntheticLabels}, so punctuated names DO reach a sheet and the kicad-cli rows above are a precondition rather than a standing answer.`,
   )
 
-  head("BOUNDARY CENSUS ADJUNCT: THE LABELLED NETS THAT NET_NAME REFUSES TODAY, PER BOARD")
+  head("BOUNDARY CENSUS ADJUNCT: THE LABELLED NETS THE PRE-TASK-3 CASING RULE REFUSED, PER BOARD")
   log("this is the other half of the same question and it is NOT the task's own: it sizes what the casing rule costs on names that really are drawn.")
+  log("the rule is /^[A-Z0-9][A-Z0-9_]*$/, frozen in this file: Task 3 deleted it from lib/schgen/ir/validate.ts and redefined NET_NAME, so these figures are re-derivable and are no longer a statement about NET_NAME.")
   let failingTotal = 0
   for (const [board, bad] of failing) {
     failingTotal += bad.length
-    log(`${board.padEnd(28)} ${String(bad.length).padStart(2)} labelled net(s) fail NET_NAME: ${bad.map((n) => JSON.stringify(n)).join(" ") || "(none)"}`)
+    log(`${board.padEnd(28)} ${String(bad.length).padStart(2)} labelled net(s) fail the casing rule: ${bad.map((n) => JSON.stringify(n)).join(" ") || "(none)"}`)
   }
-  log(`labelled nets failing NET_NAME, over every board with a declaration: ${failingTotal}`)
+  log(`labelled nets failing the pre-Task-3 casing rule, over every board with a declaration: ${failingTotal}`)
 
   head("LABEL SYNTAX SUMMARY")
   log(`candidates driven: ${candidates.length}; parsed: ${candidates.filter((v) => v.parsed).length}; round-tripped: ${candidates.filter((v) => v.roundTripped).length}; drew an outline: ${candidates.filter((v) => v.rendered).length}`)
   log(`control arms driven: ${controls.length}; loud failures: ${loud.length}; silent renames: ${silent.length}; passing: ${passing.length}`)
   log(`synthetic net names reaching a global label, over all ${boards.length} boards: ${syntheticLabels}`)
-  log(`labelled nets refused by NET_NAME today, over all ${boards.length} boards: ${failingTotal}`)
+  log(`labelled nets refused by the pre-Task-3 casing rule, over all ${boards.length} boards: ${failingTotal}`)
   log(`declared cases the census could have ranged over: ${ALL_DECLARED_CASES.length}; boards it did range over: ${boards.length}`)
 }
 

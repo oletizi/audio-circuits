@@ -37,7 +37,7 @@
  */
 
 import { pinsOfUnit } from "./classify.ts";
-import { NET_NAME, TEMPLATE_IDS, unitKey, type Circuit, type IrBlock, type NetName } from "./types.ts";
+import { TEMPLATE_IDS, unitKey, type Circuit, type IrBlock, type NetName } from "./types.ts";
 import { bomFields, mechanicalPads, sheetFiles } from "./validate-parts.ts";
 import { pinSemantics, rails, singlePinNets } from "./validate-nets.ts";
 import type { Rule } from "./validate-rule.ts";
@@ -46,9 +46,47 @@ import type { SymbolResolver } from "../render/library.ts";
 const LABEL = /^[A-Z][A-Z0-9_]*$/;
 const PREFIX = /^[A-Z]+$/;
 
-const netNames: Rule = (c) =>
-  [...c.nets.keys()].filter((n) => !NET_NAME.test(n)).map((n) => `net "${n}" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)`);
-
+/**
+ * **THE `netNames` RULE WAS HERE AND IS DELETED - the owner's decision, 2026-10-23, Task 3 of the
+ * net-names-and-floating-pins plan.** It read
+ *
+ * ```ts
+ * const netNames: Rule = (c) =>
+ *   [...c.nets.keys()].filter((n) => !NET_NAME.test(n)).map((n) => `net "${n}" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)`);
+ * ```
+ *
+ * and it was the first entry of `DRAWING_RULES`, so it gated every drawing this repository can
+ * emit. His words, verbatim: *"i absolutely do not care about the letter case of net names. That's
+ * a silly quibble."* It stated no reason, and `docs/known-gaps.md` **G150** records that there was
+ * none to state - letter case carries no information a schematic needs. **It refused 20 labelled
+ * nets across the five Pultec boards and 17 of `pt2399-core`'s.**
+ *
+ * **WHAT STILL CARRIES THE OTHER HALF OF THAT RULE, because the regex refused two different
+ * things with one message and only the case half was silly.** Stated here rather than left for a
+ * reader to find, because deleting a rule and letting its surviving clause turn up somewhere else
+ * is a refusal relocated silently:
+ *
+ * - **`NET_NAME` itself still exists** (`./types.ts`) and is now *non-empty, no control
+ *   character*. Its comment carries the `kicad-cli` measurement behind the control-character
+ *   clause - **two control characters are accepted at exit 0, draw a label, and come back as a
+ *   DIFFERENT net name** - and names the one production caller that still applies it:
+ *   `../gates/pin-table.ts`'s `mechanical()`, on a pin table's `mechanicalPads` net.
+ * - **For an IR net name, nothing validates it here any more**, and the clause that catches a
+ *   control character is `str()` at `../render/sexpr-write.ts:31`, which refuses
+ *   `[\u0000-\u001f]` when the name is written as an s-expression atom. **That is a refusal at
+ *   EMIT time rather than at `validateCircuit`**, which is strictly later and reports against a
+ *   sheet rather than against a circuit. `docs/known-gaps.md` **G279** records the relocation,
+ *   its criterion, and the untried mechanism for undoing it; it is not a gap discovered after the
+ *   fact.
+ *
+ * **Punctuation needs no rule at all** and that is measured, not conceded:
+ * `tools/schgen/label-syntax/probe-run.log` has `Net-(C10-Pad1)` and
+ * `unconnected-(U1-CLK_O-Pad5)` parsing, round-tripping byte-identical and rendering, with the
+ * writer escaping nothing for either.
+ *
+ * **`partShapes` below carries a SEPARATE UPPER_SNAKE demand on part LABELS, and his decision does
+ * not reach it.** It names net names. Do not delete that one on the strength of this comment.
+ */
 const partShapes: Rule = (c, symbols) => {
   const out: string[] = [];
   for (const p of c.parts.values()) {
@@ -143,11 +181,13 @@ const renderings: Rule = (c) => {
 
 /**
  * **THE RULES A DRAWING DEPENDS ON, AND ONLY THOSE**, because this is the list `generate` runs
- * before it emits one. Eleven of the twelve ported rules; the header says why `bomFields` is not
- * among them and why putting it back is a defect rather than a tidy-up.
+ * before it emits one. **Ten rules: the twelve ported ones less `bomFields`, which the header says
+ * is not among them and why putting it back is a defect rather than a tidy-up, and less `netNames`,
+ * which Task 3 DELETED on the owner's decision - the comment where it stood says what still
+ * carries the half of it that was not a case quibble.**
  */
 const DRAWING_RULES: readonly Rule[] = [
-  netNames, partShapes, pinsDeclared, unitsPlaced, sheetsAndBlocks, renderings,
+  partShapes, pinsDeclared, unitsPlaced, sheetsAndBlocks, renderings,
   singlePinNets, rails, pinSemantics, sheetFiles, mechanicalPads,
 ];
 

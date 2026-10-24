@@ -51,8 +51,59 @@ export const TEMPLATE_IDS = [
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
-/** UPPER_SNAKE, may start with a digit (3V3_D), never contains "/". */
-export const NET_NAME = /^[A-Z0-9][A-Z0-9_]*$/;
+/**
+ * WHAT A NET NAME MAY BE. **The CASE half is gone by the owner's decision, 2026-10-23**, and this
+ * is the whole of what replaced it.
+ *
+ * It was `/^[A-Z0-9][A-Z0-9_]*$/` - UPPER_SNAKE - until Task 3 of the net-names-and-floating-pins
+ * plan. The owner, verbatim: *"i absolutely do not care about the letter case of net names. That's
+ * a silly quibble."* `docs/known-gaps.md` **G150** carries the decision and what it unblocked; it
+ * also records that the one regex refused two different things with one message, of which the case
+ * half was the silly one.
+ *
+ * **WHAT REPLACED IT: non-empty, and no control character.** Both halves have a reason and
+ * neither is a convention.
+ *
+ * **NON-EMPTY**, because `lib/model/types.ts`'s own `net()` refuses an empty name
+ * (*"net name must not be empty"*). A rule here that accepted `""` would be weaker than the
+ * contract it guards, which is the defect the change removing the case demand was most likely to
+ * introduce.
+ *
+ * **NO CONTROL CHARACTER - AND THE REASON IS NOT THAT KICAD REJECTS ONE.** `[RAN]`
+ * `tools/schgen/label-syntax/probe-run.log`, `kicad-cli` 10.0.5, six control arms through a real
+ * global label:
+ *
+ * | arm | `kicad-cli sch export netlist` | the name that came back |
+ * | --- | --- | --- |
+ * | tab (`\u0009`) | exit 0, parsed | the tab, **verbatim** |
+ * | newline (`\u000a`) | exit 3, nothing produced | - |
+ * | carriage return (`\u000d`) | **exit 0, label drawn** | **`RAWCR` - a DIFFERENT net name** |
+ * | NUL (`\u0000`) | **exit 0, label drawn** | **`RAW` - truncated** |
+ *
+ * So *"a control character breaks a net name"* is **false**: a tab is accepted verbatim and only
+ * the newline is refused. **The hazard is the opposite of rejection - two of them SUCCEED and
+ * RENAME the net**: exit 0, a drawn label, and a net name in the exported netlist that is not the
+ * one the sheet carried. A check asking only whether `kicad-cli` succeeded would pass both, which
+ * is this repository's cardinal failure mode landing in the one place a net name becomes a label.
+ * That silent rename is why this is refused rather than defaulted.
+ *
+ * **The class is EXACTLY the one `str()` refuses** (`lib/schgen/render/sexpr-write.ts:31`,
+ * `[\u0000-\u001f]`), deliberately: the writer and this rule then draw the same line, so a net
+ * name that passes here cannot fail at emit for a reason this rule did not state. **DEL
+ * (`\u007f`) and the C1 range are in NEITHER class and were never measured** -
+ * `docs/known-gaps.md` **G280**.
+ *
+ * **PUNCTUATION IS NOT REFUSED, and that is measured rather than conceded.** Same run:
+ * `Net-(C10-Pad1)` and `unconnected-(U1-CLK_O-Pad5)` parse, round-trip byte-identical and render,
+ * and `lib/kicad/sexpr.ts`'s `quoteString` escapes nothing for either - it escapes only `\` and
+ * `"`, both of which were measured too and both of which round-trip.
+ *
+ * **ITS ONE PRODUCTION CALLER IS `lib/schgen/gates/pin-table.ts`'s `mechanical()`**, where it
+ * carries the type-plus-format check that gate has always made. The `netNames` rule that used to
+ * apply it to every IR net name is deleted; `lib/schgen/ir/validate.ts` says where it was what
+ * now carries what.
+ */
+export const NET_NAME = /^[^\u0000-\u001f]+$/;
 
 /** A pin is on a named net, or explicitly not connected. "NC" is a type, never a net name. */
 export type PinConnection =

@@ -54,10 +54,27 @@ describe("validateCircuit", () => {
     expect(problems(base([res("R_A", "X", "GND"), res("R_B", "X", "GND")]))).toEqual([]);
   });
 
-  it("V1: rejects a net that is not UPPER_SNAKE", () => {
-    expect(problems(base([res("R_A", "x", "GND"), res("R_B", "x", "GND")]))).toContain('net "x" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)');
-  });
-
+  /**
+   * **V1 WAS HERE AND IS DELETED WITH THE RULE IT TESTED** - Task 3 of the
+   * net-names-and-floating-pins plan. It read
+   *
+   * ```ts
+   * it("V1: rejects a net that is not UPPER_SNAKE", () => {
+   *   expect(problems(base([res("R_A", "x", "GND"), res("R_B", "x", "GND")]))).toContain('net "x" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)');
+   * });
+   * ```
+   *
+   * The owner ruled the demand out: *"i absolutely do not care about the letter case of net names.
+   * That's a silly quibble."* Deleting a test because it asserts a rule being deliberately removed
+   * is correct; **deleting or loosening any other assertion in the same change is not**, and
+   * nothing else here moved. `docs/known-gaps.md` **G150**.
+   *
+   * **The predicate that survived - non-empty, no control character - is tested in
+   * `tests/schgen/ir/net-name.test.ts`**, which also drives `validateCircuit` on a lower-case net
+   * to assert it is no longer refused. That positive control is the thing this deletion could
+   * otherwise have hidden: a rule removed and a rule that stopped running look identical from
+   * here.
+   */
   it("V2: every part names its source; an empty or blank source is refused", () => {
     for (const source of ["", "   "]) {
       const p = problems(base([{ ...res("R_A", "X", "GND"), source }, res("R_B", "X", "GND")]));

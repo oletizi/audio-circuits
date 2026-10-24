@@ -21,7 +21,6 @@
 
 import { PARITY_CIRCUITS } from "./symbol-census.ts"
 import { crossingNets } from "../../lib/schgen/authoring-checks.ts"
-import { netsNotUpperSnake } from "../../lib/schgen/authoring.ts"
 import { mpnSymbolDisagreements, nicknamesOf, schematicParts, symbolOriginCounts, preferredOrientationsOf } from "../../lib/schgen/from-network.ts"
 import { createResolver } from "../../lib/schgen/render/library.ts"
 import { symbolLibraries } from "../../lib/schgen/render/stock-symbols.ts"
@@ -109,7 +108,6 @@ export interface CircuitCensus {
   readonly pinsSidedByOverride: number
   readonly orientationPreferred: number
   readonly orientationOpen: number
-  readonly netsNotUpperSnake: readonly string[]
   /** Components whose part.mpn differs from the part name of the symbol they are drawn with. */
   readonly mpnDisagreements: readonly string[]
   readonly blocks: readonly BlockCount[]
@@ -142,7 +140,6 @@ export function authoringCensus(): readonly CircuitCensus[] {
       pinsSidedByOverride: byOverride,
       orientationPreferred: orientations.filter((r) => r !== null).length,
       orientationOpen: orientations.filter((r) => r === null).length,
-      netsNotUpperSnake: netsNotUpperSnake(c.network),
       mpnDisagreements: mpnSymbolDisagreements(parts).map((d) => `${d.component}: ${d.mpn} drawn as ${d.libId}`),
       blocks: c.authoring.blocks.map((block): BlockCount => ({
         id: block.id,
@@ -172,7 +169,6 @@ export function renderCensus(census: readonly CircuitCensus[]): string {
       `  orientation: preferred by the rule library ${c.orientationPreferred}, ` +
         `left open for the backend ${c.orientationOpen}`,
     )
-    lines.push(`  nets not UPPER_SNAKE: ${c.netsNotUpperSnake.length}`)
     lines.push(`  mpn differs from the symbol's part name: ${c.mpnDisagreements.length}`)
     for (const d of c.mpnDisagreements) lines.push(`      ${d}`)
     for (const b of c.blocks) {

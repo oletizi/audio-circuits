@@ -180,6 +180,15 @@ export async function gateCensus(repoRoot: string): Promise<readonly CircuitGate
  * somewhere new is better labelled than binned under `other`. **It is a LABEL and not a check** -
  * the thing with teeth is the unmatched arm, which prints an unknown problem in full, and
  * `tests/schgen/authoring-complete.test.ts` is where a BOM refusal reaching the drawing path fails.
+ *
+ * **THE `netNames` LABEL IS KEPT ON THE SAME GROUND AND FOR A STRONGER REASON** (Task 3 of the
+ * net-names-and-floating-pins plan). The rule is not merely out of the drawing path - it is
+ * **deleted**, on the owner's decision that *"i absolutely do not care about the letter case of net
+ * names. That's a silly quibble."* So nothing can produce this row again. It stays for the same
+ * reason the `bomFields` row does: a reader uses this list as the inventory of refusal classes,
+ * and an **empty** `netNames` row is the visible form of that decision, where a missing row would
+ * leave 20 labelled Pultec nets and 17 of `pt2399-core`'s having stopped being refused with
+ * nothing here saying so. `docs/known-gaps.md` **G150**.
  */
 const PROBLEM_CLASSES: readonly { readonly label: string; readonly match: (p: string) => boolean }[] = [
   { label: "header", match: (p) => p === "circuit is invalid:" },

@@ -62,7 +62,7 @@ export const CANDIDATES: readonly Arm[] = [
   {
     slug: "control-upper-snake",
     net: "SIGNAL",
-    why: "tools/schgen/label-freedom/fixtures.ts fixtureA's own net; the one name here that NET_NAME already accepts",
+    why: "tools/schgen/label-freedom/fixtures.ts fixtureA's own net; the one name here that the casing rule Task 3 deleted already accepted",
     expect: "parses, round-trips byte-identical, renders",
   },
   {
