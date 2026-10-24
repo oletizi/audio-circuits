@@ -130,12 +130,18 @@ So:
   That's a silly quibble."* - and **G150**'s re-drive reads all eleven refusal
   blocks and finds that **not one mentions a net name, a case, or
   `UPPER_SNAKE`**. What refuses today is **five** boards at `validateCircuit`,
-  **one problem each**: four Pultec boards on a switch MOUNTING pin (`pin MP`),
-  which is an **OPEN OWNER QUESTION and not work** - **G282** names the two
-  things only he can answer and closes *"Nobody asks him again unprompted"* -
+  **one problem each**: four Pultec boards on a switch MOUNTING pin (`pin MP`)
   and `pultec-mid` on a switch throw (`pin 12`) that **no slot in the model can
   carry**; plus **five** `transistor-preamp` boards at ELK layout on text,
   power-symbol and junction placement.
+  **THE FOUR `MP` BOARDS STOOD HERE AS AN "OPEN OWNER QUESTION and not work",
+  and that was WRONG - struck 2026-10-24 after he asked what the demand was
+  for.** They are our own validator's defect, not a question for him: a mount
+  lug is mechanical, `pinsDeclared` has no notion of a mechanical pin, and
+  nothing about the fitted part can change what `NC` asserts. **G282** carries
+  the struck clause and the three questions that took it apart;
+  `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md` is the change.
+  Four boards are blocked on code, not on him.
   **AND `1 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it
   stand in this file, or anywhere else, without one.** The one sheet that
   generates **cannot be read as a drawing**: not one net label, signal flow not
@@ -187,13 +193,22 @@ incomplete.
 
 **AND A REFUSAL WHOSE REASON CANNOT BE STATED SHOULD NOT EXIST. ASK WHAT A
 DEMAND IS FOR BEFORE WORKING OUT HOW TO SATISFY IT.** This repository has now
-done the opposite **three times, and the owner caught all three** - no agent and
+done the opposite **four times, and the owner caught all four** - no agent and
 no review did:
 
 - the **BOM gate**, which blocked drawings on purchasing data (**G245**);
 - the over-long **`Value` label**, argued about rather than questioned;
 - the **`UPPER_SNAKE` net-name rule** (**G150**), 2026-10-23: *"i absolutely do
   not care about the letter case of net names. That's a silly quibble."*
+- the **switch MOUNTING-PIN demand** (**G282**), 2026-10-24, which is the worst
+  of the four because it **re-erected the first one under a new
+  justification**. `pinsDeclared` refuses a mechanical mount lug for want of a
+  net; the agent concluded it needed to know **which rotary switch is fitted**
+  and raised an owner question for an MPN - the very gate `G245` had already
+  struck. His three questions, in the order he asked them, each removed a
+  layer: *"why do you need to know which rotary switch is fitted?"*, *"why do
+  you need the specific part number of a component in a schematic?"*, *"why do
+  you need to specify a mechanical part in the schematic?"*
 
 **The third is the purest form and the one to recognise.** `G150` measured the
 violation exactly, counted the 31 offending nets, and offered three mechanisms
@@ -205,6 +220,16 @@ is none to state: letter case carries no information a schematic needs.
 not UPPER_SNAKE"* says what the rule is, not why it exists. Where you cannot
 write the "why it is not defaulted" clause this section already requires, **you
 have found a demand to question rather than a refusal to satisfy.**
+
+**AND BEFORE YOU RAISE AN OWNER QUESTION, SEARCH FOR WHETHER THIS REPOSITORY
+ALREADY ANSWERS IT.** The fourth instance was answered in a code comment written
+before the task began - `circuits/pultec/schematic/section-board.ts:162`:
+*"a mounting pin `MP`, which is a mechanical pad and is on no net in the
+model."* The agent measured the symbol, reached that same conclusion, recorded
+it in **G282** clause 4, **and then asked him anyway.** An owner question costs
+him attention and stalls the boards behind it, so it is the last resort and not
+the first: a question he could not answer from the circuit is a question that
+was never his.
 
 **AND A SILLY DEMAND CAN HIDE A REAL ONE, which is the second cost.** That same
 regex rejected `hi_boost_out` on case alone - the silly part - and

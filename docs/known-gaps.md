@@ -26817,6 +26817,17 @@ before Task 3 and Task 3 did not change it.
 
 ### G282 - MOUNTING PIN CLASSIFICATION, five switches read one at a time: the five are TWO different things and FOUR of them cannot be classified at all - and the fifth is classified, is `NC`, and HAS NO MODEL SLOT THAT CAN CARRY IT, measured two ways
 
+**CORRECTED 2026-10-24, AND THE TITLE'S "FOUR OF THEM CANNOT BE CLASSIFIED AT
+ALL" IS SUPERSEDED. The four `MP` pins were classifiable the whole time, and
+the owner needed to answer nothing.** He asked three questions in order - *"why
+do you need to know which rotary switch is fitted?"*, *"why do you need the
+specific part number of a component in a schematic?"*, *"why do you need to
+specify a mechanical part in the schematic?"* - and each one removed a layer of
+this entry's reasoning. See the struck settlement clause below and
+`docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`. **Everything
+MEASURED in this entry stands**; what was wrong was the inference drawn from the
+absent MPN.
+
 **THE TELL WAS THE TWO NAMES AND IT PAID OFF.** Four of the five Pultec boards
 refuse at `validateCircuit` on a pin called `MP`; one - `pultec-mid` - refuses on
 a pin called `12`. The spec's first draft said all five were *"the mechanical lug
@@ -27006,19 +27017,74 @@ true after.
   recorded as such**: `pad-label.ts` was expected to refuse the unwired throw and
   did not, and `G264`'s *"there is no pin to mark"* which this corrects.
   **Nothing here is relayed from another agent.**
-- **Why it is open** four of the five pins are unclassified and four boards
-  therefore still refuse at gate 1; the fifth is classified and undeclarable. Both
-  halves need something this task is not allowed to decide.
-- **What would settle it, and the two halves settle differently.**
-  **FOR THE FOUR `MP` PINS this is an OWNER QUESTION, not a measurement** -
-  nothing further can be read off disk. The two things only he can say: **which
-  rotary switch is fitted** (no MPN is recorded for any Pultec selector), and
-  **whether its mount lug is to be wired to net `"0"`**. **MECHANISM, UNTRIED:**
-  with an answer of "isolated", `MP: NC` in each selector's unit pin map - but
-  **note that this is the mechanism clause 2 measured and found breaks the board**,
-  so it would hit `PADS7 -> PADS8` on all four boards exactly as `SW_MID` hit
-  `PADS12 -> PADS13`, and the four `MP` pins are therefore blocked behind the
-  same model gap even once the owner answers. **Nobody asks him again unprompted.**
+- **Why it is open** `SW_MID`'s pin 12 is classified and undeclarable, and
+  `pultec-mid` still refuses at gate 1 behind the model gap clause 2 measured.
+  **The four `MP` pins are no longer part of why this is open** - see the struck
+  clause below.
+- **What would settle it. THE FOUR-`MP` HALF IS STRUCK, and it is kept rather
+  than deleted because the reasoning that produced it is the finding.**
+
+  > ~~**FOR THE FOUR `MP` PINS this is an OWNER QUESTION, not a measurement** -
+  > nothing further can be read off disk. The two things only he can say:
+  > **which rotary switch is fitted** (no MPN is recorded for any Pultec
+  > selector), and **whether its mount lug is to be wired to net `"0"`**.
+  > **MECHANISM, UNTRIED:** with an answer of "isolated", `MP: NC` in each
+  > selector's unit pin map - but **note that this is the mechanism clause 2
+  > measured and found breaks the board**, so it would hit `PADS7 -> PADS8` on
+  > all four boards exactly as `SW_MID` hit `PADS12 -> PADS13`, and the four
+  > `MP` pins are therefore blocked behind the same model gap even once the
+  > owner answers. **Nobody asks him again unprompted.**~~
+
+  **WHY IT IS WRONG, IN THE ORDER HE TOOK IT APART. Three questions, three
+  layers, and every layer was something this repository had already written
+  down and this writer argued past.**
+
+  1. **An MPN cannot make `NC` false.** `NC` on a schematic pin asserts *no
+     conductor in this circuit reaches this terminal*. It says nothing about
+     the physical world, and **the panel is not in the circuit model at all** -
+     `JUNCTION_NETS` has no chassis, shield or earth net. So "the fitted
+     switch's lug may be bonded to a grounded panel" cannot contradict `NC`;
+     it is a fact about an installation, not about a netlist. **This entry's
+     own clause 4 already carried the whole electrical truth** - the symbol
+     shows `MP` as a terminal on the body that no polyline joins to the wiper
+     or any throw - and then declined to act on it.
+  2. **A schematic never needs an MPN, and `CLAUDE.md` says so in the owner's
+     own earlier words.** **G245**: *"a fully specified BOM isn't needed for
+     schematics, stripboard layout, and, in many cases, tht pcbs."* A BOM binds
+     the CONSUMER that sources and places parts. This entry invented a fresh
+     reason to need one before drawing - **the same gate he had already struck
+     once, re-erected under a different justification.**
+  3. **The mechanical pin is not specified by this design at all; it is forced
+     by the library.** `[RAN]` every rotary symbol in the installed
+     `Switch.kicad_sym`: the single-pole family is `SW_Rotary_1x3_MP` through
+     `1x9_MP`, **`_MP` only** - there is no non-`MP` six-position symbol. The
+     non-`MP` rotaries are `1x12`, `2x6`, `3x4`, `4x3`. **Ten symbols in that
+     library carry an `MP` pin** (the seven rotaries plus `SW_SP3T_NR01103`,
+     `SW_SP4T_NR01104`, `SW_SP5T_NR01105`), so this is a library-wide shape and
+     not a Pultec quirk. The mount pin rides along with the only symbol that
+     draws the selector.
+
+  **AND THE ANSWER WAS IN A CODE COMMENT BEFORE THE TASK STARTED.**
+  `circuits/pultec/schematic/section-board.ts:162`, verbatim: *"`SW_Rotary_1x6_MP`
+  also carries a mounting pin `MP`, **which is a mechanical pad and is on no net
+  in the model**"*.
+
+  **THE REAL CRITERION, which is ours and not his:** `pinsDeclared`
+  (`lib/schgen/ir/validate.ts:151`) demands that **every** library pin be on a
+  net or declared `NC`, and has no notion of a pin that is mechanical. That is
+  the fourth instance of `CLAUDE.md`'s *"a refusal whose reason cannot be
+  stated"* - and like the other three, **the owner caught it and no agent or
+  review did.** `MECHANISM:` a per-symbol `MECHANICAL_PINS` whitelist that
+  `pinsDeclared` skips, keeping the pin out of the model entirely so clause 2's
+  `PADS7 -> PADS8` board breakage is never incurred. Specced at
+  `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`, **UNTRIED at
+  the time of writing**, and that spec records the geometry-inference
+  alternative it rejected and why, so the idea is not re-derived as an
+  oversight.
+
+  **THE ONE THING STILL HIS, and it is not blocking:** whether those mount lugs
+  get a wire to ground on the BUILT units. That changes the build guide, not the
+  schematic. **Nobody asks him unprompted.**
   **FOR `SW_MID` the CRITERION is measurable and already stated:**
   `validateCircuit` accepts `pultec-mid` AND `make -C boards/pultec-mid check`
   stays at exit 0 - the second half is what both measured mechanisms failed, and
