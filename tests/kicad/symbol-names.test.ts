@@ -238,11 +238,16 @@ const NOT_A_KICAD_SYMBOL: ReadonlyMap<
         "file rather than a ported one: Task 2 of the 2026-10-23 net-names-and-floating-pins " +
         "plan drives a model NC pin to an emitted (no_connect ...) in " +
         "tests/schgen/ir/nc-end-to-end.test.ts, and one of the four states that test keeps " +
-        "distinguishable is a pin the LIBRARY types no_connect sitting on a net. BIG8's pin 7 is " +
-        "typed no_connect in Fix.kicad_sym; no symbol in any installed KiCad library was " +
-        "verified to have one, and CLAUDE.md forbids writing a symbol name from memory to find " +
-        "out. No KICAD_SYMBOLS root holds a Fix.kicad_sym, so the library half is what fails, " +
-        "exactly as for Fix:R.",
+        "distinguishable is a pin the LIBRARY types no_connect sitting on a net - which needs a " +
+        "symbol whose pin 7 is typed no_connect, as BIG8's and BIG8C's both are. THE REASON IS " +
+        "HERMETICITY, NOT SCARCITY: installed KiCad libraries hold 4513 such pins across 139 of " +
+        "223 libraries (measured 2026-10-23), so a real name exists, but SYMBOL_LIBRARY_ROOT in " +
+        "./symbol-library-disk.ts is KICAD_SYMBOLS or a derived install path, and the test reads " +
+        "its symbols through fixtureResolver(), which is bound to Fix and Pwr. Naming an " +
+        "installed symbol would make a validator test depend on an env-overridable install " +
+        "without reading it through that install. No KICAD_SYMBOLS root holds a Fix.kicad_sym, " +
+        "so the library half is what fails, exactly as for Fix:R. docs/known-gaps.md G278 clause " +
+        "8 carries the measurement and the reason this replaced.",
     },
   ],
   [

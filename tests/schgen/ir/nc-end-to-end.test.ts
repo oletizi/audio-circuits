@@ -183,6 +183,16 @@ describe("state 1: a pin deliberately declared NC", () => {
     expect(sheet).toContain("(no_connect")
   })
 
+  /**
+   * **WHAT THIS ESTABLISHES, AND WHAT IT DOES NOT.** It establishes that the EMITTER writes the
+   * marker at the coordinate the layout reported for it - so nothing between `SheetDrawing` and
+   * the bytes relocates, duplicates or drops it, and the `mm` formatting agrees with `fmtMm`. It
+   * does **not** independently establish that the layout's point is pin 7's end: both sides come
+   * from `layoutSheet`, so a wrong pin end would agree with itself here. That half was settled
+   * separately - round 1's reviewer derived the point from `Fix.kicad_sym`'s pin 7 at
+   * (10.16, 2.54), U1's emitted placement and KiCad's y inversion, and landed on this marker's
+   * (48.26, 35.56). `docs/known-gaps.md` **G278** clause 11 records that as a relayed result.
+   */
   test("the marker sits at the pin end the layout reports, to three decimals", () => {
     const c = probeCircuit({ pin7: "nc" })
     const drawing = layoutSheet(c, "s", symbols, "Pwr:PWR_FLAG")

@@ -25911,11 +25911,17 @@ so no measurement moved.
   stray control byte in a committed text file, so this will recur; a repo-wide
   byte scan would catch it and is not written.
 
-### G278 - MEASURED: the model-`NC`-to-emitted-`no_connect` path WORKS UNCHANGED on its first end-to-end exercise, and three of the claims the plan sent the measurement in with were wrong - `NC` already had importers, `emit-items.ts` is already fully covered, and the README name the spec called stale is correct
+### G278 - MEASURED: the model-`NC`-to-emitted-`no_connect` path WORKS UNCHANGED on its first end-to-end exercise, and three of the claims the plan sent the measurement in with were wrong - `NC` already had importers, `noConnect()` was already exercised, and the README name the spec called stale is correct
 
 **Found** 2026-10-23, Task 2 of
-`docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`. Everything
-below was **confirmed by the writer** by running it, not relayed. The check is
+`docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`.
+**CORRECTED IN ROUND 1 ON REVIEW**, and the corrections are marked in the
+clauses they belong to rather than appended: clause 4's lcov caveat did not cover
+what it claimed, clause 6 read a missing coverage record as a covered module,
+clause 7 misquoted a block id, clause 8's recorded reason rested on a search
+nobody ran, and clause 3's figure was invalidated by this entry's own artifact.
+Clause 11 is new and is the only RELAYED clause; everything else below was
+**confirmed by this writer** by running it. The check is
 `tests/schgen/ir/nc-end-to-end.test.ts`, which is new, hand-written, and
 declared in `tools/schgen/port-manifest.json`'s `handWritten`. **No file under
 `lib/` changed**, which is the headline.
@@ -25962,11 +25968,9 @@ drove a model `NC` through `circuitSpecFrom` at all. That narrower statement is
 the one to carry forward.
 
 **(4) `noConnect()`'s COVERAGE, MEASURED RATHER THAN INHERITED: it was ALREADY
-fully exercised before this task.** `[RAN]` `bun test --coverage
---coverage-reporter=lcov` over the whole suite at a clean tree:
-`lib/schgen/render/emit-items.ts` reports **LF=137 LH=137, no uncovered lines**,
-and **no module under `lib/schgen/` has zero line coverage**. Per-file probes of
-the seventeen test files that reach the emitter show `noConnect()`'s body
+exercised before this task.** `[RAN]` `bun test --coverage
+--coverage-reporter=lcov` over the whole suite at a clean tree. Per-file probes
+of the seventeen test files that reach the emitter show `noConnect()`'s body
 covered by **six** of them - `tests/cli/schgen.test.ts`,
 `tests/schgen/emit-byte-stable.test.ts`, `tests/schgen/gates/gates.kicad.test.ts`,
 `tests/schgen/gates/round-trip.kicad.test.ts`,
@@ -25982,11 +25986,33 @@ matching `SheetDrawing.noConnects` of 3 and 0. Since
 netlist with the real `kicad-cli`, **KiCad has already read a
 generator-emitted `(no_connect)` without complaint.**
 
-**NOTE ON THE COVERAGE NUMBERS THEMSELVES:** bun 1.3.8's lcov `DA:` counts for
-this file are **not usable as execution counts** - the same line reports 43 in a
-run of one test file and in a run of 353 - so only the **zero / non-zero**
-distinction was relied on, and every non-zero was corroborated by generating the
-`mini` sheets and counting markers in the bytes.
+**WHAT bun 1.3.8's lcov DOES AND DOES NOT ESTABLISH - CORRECTED IN ROUND 1, AND
+THE FIRST VERSION OF THIS PARAGRAPH DID NOT COVER WHAT IT CLAIMED.** It said only
+the zero / non-zero distinction was relied on, which was true of the per-file
+split and NOT true of the two aggregate sentences it sat under. `[RAN]` the
+per-file probe over the four files the split calls uncovered:
+**`DA:217` reads 1 in all four**, and line 217 is
+`return { key, node: list("no_connect", …) }` - `noConnect()`'s only working
+line - in runs where the function is never called. `DA:215` and `DA:216` read 0
+in those four and 19 and 43 in a run that does call it.
+
+So: **`LF=137 LH=137` with "no uncovered lines" is NOT evidence that every line
+executed**, and the first version of this clause quoted it as if it were. The
+usable signal is `DA:215`/`DA:216` zero-versus-non-zero **within one run**, and
+every non-zero was corroborated against a signal that does not pass through the
+instrumentation at all - generating the `mini` sheets and counting `(no_connect`
+in the bytes. **The counts themselves are not execution counts either**: the same
+line reports 43 in a one-file run and in a 353-file run.
+
+**AND "no module under `lib/schgen/` has zero line coverage" WAS FALSE, for a
+second and independent reason.** `[RAN]` bun's lcov emits **102 `SF:` records for
+the 105 `.ts` files** under `lib/schgen/`: it omits a module it never loads
+rather than recording it at zero. The three omitted are
+`lib/schgen/ir/validate-rule.ts` and `lib/schgen/render/sheet-types.ts`, which
+export only types and so have no runtime module to load, and
+**`lib/schgen/gates/oscar/boundary.ts`, which is the one that matters** - see
+clause 6. **A coverage report read for absence must be checked against the file
+list first**; this one was not.
 
 **(5) THE SPEC'S "the README's name is stale and is a separate small defect" IS
 ITSELF WRONG, and it is the same error it was correcting.**
@@ -26000,33 +26026,74 @@ local file is kebab-case because the port renames. **No README change is needed
 and none was made.**
 
 **(6) THE README'S "modules nothing runs" SENTENCE IS DATED NARRATIVE THE README
-ITSELF REVERSES, and the spec quoted the earlier half.** The paragraph at
-`lib/schgen/README.md:306` lists `emit-items.ts` among five modules nothing ran
-**as of Task 6**; the paragraph at `:409` says *"the five modules nothing ran ...
-are now two"* and names the two. Measurement (4) shows even that is now stale -
-`gates/pin-table.ts` reports LF=78 LH=78. **Nothing was edited**: those are dated
-records of what was true at a task, not current claims. A reader taking a
-coverage sentence out of that README should re-measure, which is what this clause
-is for.
+ITSELF REVERSES, and the spec quoted the earlier half - BUT THE OVERCLAIM IN THE
+FIRST VERSION OF THIS CLAUSE WAS MINE AND IS CORRECTED IN ROUND 1.** The
+paragraph at `lib/schgen/README.md:306` lists `emit-items.ts` among five modules
+nothing ran **as of Task 6**; the paragraph at `:409` says *"the five modules
+nothing ran ... are now two"* and names them as `gates/pin-table.ts` and
+`gates/oscar/boundary.ts`.
+
+**THE SUPPORTABLE CONCLUSION IS THAT THE TWO BECAME ONE, NOT ZERO.**
+`gates/pin-table.ts` has an lcov record at LF=78 LH=78, so it is loaded and run
+and `:409` is out of date about it. **`gates/oscar/boundary.ts` has NO lcov
+record at all** (clause 4: 102 records for 105 files), which is bun saying
+nothing loaded it - so `:409` still stands for that one. The first version of
+this clause said *"even that is now stale"* on the strength of `pin-table.ts`
+alone and read the absence of a zero-coverage record as the absence of a
+zero-coverage module. **That is the same shape as the defect it was reporting**,
+and the coordinator's approved spec carried the sentence it came from, corrected
+there in the same round.
+
+**Nothing in the README was edited**: those paragraphs are dated records of what
+was true at a task, not current claims. A reader taking a coverage sentence out
+of that README should re-measure - **against the file list, not only against the
+report** - which is what this clause is for.
 
 **(7) THREE FIXTURE-CONSTRUCTION REFUSALS A SUCCESSOR BUILDING A NETWORK-LEVEL
 schgen FIXTURE WILL HIT, in the order they fire.** None is a defect; each cost a
 run. `authoringProblems` refuses `portDirections` naming a net no pin of the
 network is on, so a per-arm fixture needs a per-arm direction map.
-`lib/schgen/render/bus.ts` refuses a `bus` block holding more than one unit
-(*"bus block B must hold exactly one unit (holds 3)"*), so a three-part fixture
-needs three blocks, not one. And a bare `(at x y)` comparison must use `fmtMm`
-from `render/geometry.ts`: the emitter writes 48.26, not 48.260.
+`lib/schgen/render/bus.ts` refuses a `bus` block holding more than one unit -
+the message this fixture got, verbatim, is **`block PROBE: bus rendering failed:
+bus block PROBE must hold exactly one unit (holds 3)`**, and the first version of
+this clause misquoted the block as `B` - so a three-part fixture needs three
+blocks, not one. And a bare `(at x y)` comparison must use `fmtMm` from
+`render/geometry.ts`: the emitter writes 48.26, not 48.260.
 
 **(8) TWO REPO-WIDE SWEEPS FIRE ON A NEW schgen FIXTURE, AND ONE NEEDED A NEW
-EXEMPTION.** `tests/kicad/symbol-names.test.ts` sweeps every `.ts` file for a
-part spec's quoted `symbol` field and demands it resolve in an installed KiCad
-library; the fixture needs a symbol whose library types a pin `no_connect`, and
-`Fix:BIG8` (pin 7) is the only verified one in the tree, so `Fix:BIG8` joins
-`NOT_A_KICAD_SYMBOL` beside `Fix:R`, `Fix:C`, `Fix:OPAMP2` and the rest - held to
-the same four teeth that list already applies (still swept, fails exactly as
-recorded, reason over 60 characters, declared only under `tests/schgen/`). **It
+EXEMPTION - WHOSE RECORDED REASON WAS WRONG AND IS REPLACED IN ROUND 1.**
+`tests/kicad/symbol-names.test.ts` sweeps every `.ts` file for a part spec's
+quoted `symbol` field and demands it resolve in an installed KiCad library. The
+fixture needs a symbol whose LIBRARY types a pin `no_connect`, so `Fix:BIG8`
+joins `NOT_A_KICAD_SYMBOL` beside `Fix:R`, `Fix:C`, `Fix:OPAMP2` and the rest -
+held to the same four teeth that list already applies (still swept, fails exactly
+as recorded, reason over 60 characters, declared only under `tests/schgen/`). **It
 is the first HAND-WRITTEN rather than ported file to need one.**
+
+**THE REASON I FIRST RECORDED RESTED ON A SEARCH NOBODY RAN.** It said that no
+symbol in any installed KiCad library was *verified* to have a `no_connect` pin
+and that `CLAUDE.md` forbids writing a name from memory to find out. `[RAN]`
+2026-10-23 over `/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols`:
+**4513 `(pin no_connect` declarations across 139 of 223 installed libraries.** A
+real name exists in abundance. **`CLAUDE.md`'s "verify names against the thing
+itself" MANDATES the disk check; using it as a reason not to look inverts the
+rule**, and the libraries were on disk the whole time - this file's own
+`symbolExistsOnDisk` reads them.
+
+**THE REAL REASON, now recorded in the entry itself, IS HERMETICITY.** The test
+resolves symbols through `fixtureResolver()`, which is bound to `Fix` and `Pwr`;
+`SYMBOL_LIBRARY_ROOT` in `tests/kicad/symbol-library-disk.ts:39` is
+`process.env["KICAD_SYMBOLS"] ?? defaultSymbolDir(KICAD_CLI)`. Naming an
+installed symbol would make a validator test's fixture depend on an
+env-overridable install **without reading it through that install**, which is
+worse than an exemption, not better. The decision stands; only its justification
+changed.
+
+**AND `Fix:BIG8` IS NOT THE ONLY CANDIDATE EVEN IN THE FIXTURE LIBRARY.** `[RAN]`
+`Fix.kicad_sym` holds exactly two symbols with a `no_connect` pin - `BIG8` and
+`BIG8C`, pin 7 in both - and they differ only in where the power pins sit.
+`BIG8C` would have served identically and needed the same new entry; the choice
+between them is arbitrary and is recorded as arbitrary rather than dressed up.
 `tests/kicad/footprint-names.test.ts` fired on a `dip8` footprint the fixture
 briefly carried; **the fixture now declares no footprint at all**, which
 `from-network.ts`'s header already documents as the faithful transcription of a
@@ -26041,6 +26108,22 @@ becomes **3822 pass / 0 fail / 43622 `expect()` / 354 files**: **+10 tests and
 entry. 16 + 4 = 20. `bun run typecheck` clean. `make check` is `typecheck` plus
 three board-agreement targets and touches none of this.
 
+**(11) THE CHECK WAS DRIVEN RED FIVE WAYS AND THE MARKER COORDINATE WAS DERIVED
+WITHOUT `layoutSheet` - RELAYED FROM ROUND 1'S REVIEWER, NOT CONFIRMED BY THIS
+WRITER.** Breaking `noConnectEnds`'s filter, disabling each of the three
+validator pushes, and making `connectedNet` return `"IN"` instead of `null` each
+killed exactly the tests they should, the last killing six. Its controls:
+**`NC` changed to an ordinary net gives 0 `no_connect`s, the pin removed gives 0,
+`NC` gives 1** - so the marker appears if and only if the model declares `NC`.
+And the marker's position was re-derived from `Fix.kicad_sym`'s pin 7 at
+(10.16, 2.54), U1's emitted placement and KiCad's y inversion, landing on
+**(48.26, 35.56)**, which is this fixture's marker. **That second half matters
+because the test itself cannot establish it**: both sides of its `(at x y)`
+assertion come from `layoutSheet`, so a wrong pin end would agree with itself -
+what the test establishes is that the emitter does not relocate, duplicate or
+drop the marker, and that its `mm` formatting agrees with `fmtMm`. The test now
+says so in its own comment.
+
 **WHAT THIS DOES NOT ESTABLISH.** No `kicad-cli` ran on a sheet whose
 `no_connect` came from a **model** `NC`: the fixture here is a single sheet, not
 a project, and the existing `kicad-cli` proof is the `mini` design's IR-level
@@ -26054,19 +26137,33 @@ them.**
 passes at 10/10, and it is already the settlement - it is the regression. It
 moves if `from-network.ts`'s pin assembly, `connectedNet`, `pinsDeclared`,
 `pinSemantics`, `singlePinNets` or `noConnectEnds` changes. **CRITERION for
-clause 3:** `git grep -n "NC" -- tests lib circuits tools` names the four
-importers; settled, and corrected here rather than in the spec, which is Task 6's
-to amend if it wants the sentence fixed at source. **CRITERION for clause 4:**
-re-run the coverage sweep and the `mini` marker count; the marker count is the
-settlement, because it does not depend on bun's instrumentation. **MECHANISM,
-UNTRIED:** a test asserting `emit-items.ts` coverage stays non-zero would make
-the re-take automatic and was not written - whether coverage should GATE is an
-acceptance criterion, which `CLAUDE.md` reserves away from the agent that
-produced the artifact. **CRITERION for clauses 5 and 6:** the upstream directory
-listing and the two README paragraphs; both are settled by reading them, and
-clause 6 is settled only by re-measuring, never by quoting. **CRITERION for
-clause 8:** `tests/kicad/symbol-names.test.ts` and
+clause 3:** `git grep -n "NC" -- tests lib circuits tools` names the importers.
+**THE COUNT IS NOW FIVE, NOT THE FOUR THE CLAUSE STATES, and this entry's own
+artifact is the fifth** - `tests/schgen/ir/nc-end-to-end.test.ts` imports `NC`
+too. That is **G276**'s pattern again, found in the very entry that reports a
+figure: the number was true of `HEAD` before the commit that carries it and
+false of the commit itself. **The clause's claim is unaffected** - it is that
+`NC` had importers, not how many - and the figure is FOUR AT `HEAD` AS OF
+`15696e0`, FIVE FROM `b207b68`. Settled, and corrected here rather than in the
+spec, which is Task 6's to amend if it wants the sentence fixed at source.
+**CRITERION for clause 4:** the `mini` marker count, re-derived by generating the
+design and counting `(no_connect` in the bytes - **that is the settlement, and
+the lcov is not**, for the reasons the clause now spells out. A re-run of the
+coverage sweep is the convenient check and must be read against the file list,
+because bun omits a module it never loaded. **MECHANISM, UNTRIED:** a test
+asserting `emit-items.ts` coverage stays non-zero would make the re-take
+automatic and was not written - whether coverage should GATE is an acceptance
+criterion, which `CLAUDE.md` reserves away from the agent that produced the
+artifact. **CRITERION for clauses 5 and 6:** the upstream directory listing and
+the two README paragraphs; both are settled by reading them, and clause 6's
+coverage half is settled only by re-measuring **against the file list**, never by
+quoting. **CRITERION for clause 8:** `tests/kicad/symbol-names.test.ts` and
 `tests/kicad/footprint-names.test.ts` both green with the entry present and the
-footprint absent. **CRITERION for "what this does not establish":** a
+footprint absent; the 4513 figure is re-derived by counting `(pin no_connect`
+over `SYMBOL_LIBRARY_ROOT` and moves with the installed KiCad. **CRITERION for
+clause 11:** the five mutations each killing the tests named and nothing else,
+and the coordinate derivation reproducing (48.26, 35.56) from the symbol file
+rather than from `layoutSheet`. **It is RELAYED, not confirmed by this writer** -
+see the clause. **CRITERION for "what this does not establish":** a
 `kicad-cli` netlist export of a project whose `no_connect` originates in a model
 `NC`, which is spec 3b's required gate and lands with Task 5.
