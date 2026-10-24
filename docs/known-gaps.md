@@ -25710,10 +25710,10 @@ union against `listTsFiles`, which enumerates `.ts` only - so declaring the log
 fails `accountedButMissing` naming it. **One entry was added, not two**, and the
 committed sheets under `sheets/` need none because they are not `.ts` either.
 
-**(7) ADDED ON ROUND-1 REVIEW, AND IT IS THE CLAUSE TASK 3 NEEDS MOST: A RAW
-NEWLINE IN A NET NAME MAKES `kicad-cli` EXIT 3, AND TODAY NOTHING BUT `str()`
-STOPS IT - AT EMIT RATHER THAN AT `validateCircuit`.** The reviewer perturbed
-`CANDIDATES` with three of its own and re-ran the committed probe:
+**(7) ADDED ON ROUND-1 REVIEW, SUPERSEDED IN ITS REASONING BY CLAUSE 9 AND KEPT
+FOR ITS CONSEQUENCE: A RAW NEWLINE IN A NET NAME MAKES `kicad-cli` EXIT 3, AND
+TODAY NOTHING BUT `str()` STOPS IT - AT EMIT RATHER THAN AT `validateCircuit`.**
+The reviewer perturbed `CANDIDATES` with three of its own and re-ran the probe:
 
 | perturbation | what happened |
 | --- | --- |
@@ -25721,12 +25721,17 @@ STOPS IT - AT EMIT RATHER THAN AT `validateCircuit`.** The reviewer perturbed
 | `BACK\SLASH` | **escaped YES**, same |
 | a name containing a RAW NEWLINE | `kicad-cli` **exit 3**, *"Failed to load schematic"* - parsed **NO**, round-trip **NO**, PDF **NO**, outline **0.0**, and the growth invariant taking its negative branch |
 
+**ALL THREE ARE NOW COMMITTED ARMS OF THE PROBE AND DRIVEN BY ME** (clause 9), so
+this clause is no longer relayed and its evidence is no longer outside the tree.
+**And clause 9 shows the newline is the LEAST dangerous of the characters here**,
+which is why the reasoning below is superseded while the consequence stands.
+
 **THIS REFUTES A SENTENCE I PUT IN THE TASK REPORT** - that the replacement
 predicate *"reduces to a non-empty string on the evidence here"*. **A raw newline
 is non-empty and KiCad refuses the sheet.** The only thing in the tree that
 currently stops one reaching a `.kicad_sch` is `lib/schgen/render/sexpr-write.ts`'s
 `str()` (declared at `:31`, its control-character guard at `:32-33`, which throws
-on anything in `[ -]`) - and that is at **EMIT**,
+on any codepoint from 0 to 31, the whole C0 range) - and that is at **EMIT**,
 far downstream of the validator the owner's ruling is about. **So the minimum
 replacement predicate is a non-empty string AND free of control characters**, or
 `str()` named explicitly as the clause that carries it. The plan was corrected on
@@ -25755,6 +25760,79 @@ SECOND ROUTE.** Two independent attacks on clause 2, both the reviewer's:
 `reaches a label: (none)`. A declared port does not make a net a label, driven
 rather than read.
 
+**(9) ADDED ON ROUND-2 REVIEW, DRIVEN BY ME, AND IT IS THE BEST THING IN THIS
+ENTRY: KiCad ACCEPTS A CARRIAGE RETURN AND A NUL IN A NET NAME AT EXIT 0 AND
+HANDS BACK A DIFFERENT NAME. The newline's loud exit 3 is the least dangerous of
+the three.** The probe now carries **six committed control arms** beside the four
+candidates, all in `tools/schgen/label-syntax/fixtures.ts`'s `CONTROLS`, all in
+the committed log:
+
+| arm | net | parsed | round trip | what KiCad did |
+| --- | --- | --- | --- | --- |
+| `ctl-double-quote` | `BAD"QUOTE` | YES | YES | escaped on both sides, name intact |
+| `ctl-backslash` | `BACK\SLASH` | YES | YES | escaped on both sides, name intact |
+| `ctl-tab` | `RAW<TAB>TAB` | YES | YES | **tab taken verbatim and written back verbatim** |
+| `ctl-newline` | `RAW<LF>NEWLINE` | **NO** | NO | exit 3, *"Failed to load schematic"*, no netlist and no PDF |
+| `ctl-carriage-return` | `RAW<CR>CR` | YES | **NO** | **exit 0, and the name comes back `RAWCR`** - the CR is silently DROPPED |
+| `ctl-nul` | `RAW<NUL>NUL` | YES | **NO** | **exit 0, and the name comes back `RAW`** - the name is silently TRUNCATED |
+
+**THE TWO SILENT ARMS ARE THE FINDING.** `CLAUDE.md` names silence that resembles
+success as the failure mode the whole workflow exists to prevent, and this is that,
+in the one place a net name becomes a label: `kicad-cli` succeeds, a label is drawn,
+and **the net is not the net the model named.** A check that asked only whether the
+export succeeded would pass both. The PDF for each still draws an outline - 10995.3
+um for the CR arm and 7366.7 um for the NUL arm - so the drawing looks fine too.
+
+**`ctl-tab` IS THE DISCRIMINATOR AND IT IS WHY THE OTHER THREE ARE ATTRIBUTABLE.**
+A tab is codepoint 9, squarely inside the class `str()` refuses, and KiCad takes it
+verbatim. So **"a control character breaks a net name" is FALSE**: the newline
+breaks the s-expression's line structure, and CR and NUL break KiCad's string
+reader. `str()`'s blanket refusal of the whole C0 range is therefore **wider than
+KiCad requires** - which is the safe direction, and **is not a recommendation to
+narrow it.** It is the same move as `tools/schgen/label-freedom/fixtures.ts`'s
+`a6-off-wire` arm.
+
+**IT SHARPENS CLAUSE 7's REASON FOR TASK 3.** The predicate must refuse control
+characters **not because KiCad rejects them - it mostly does not - but because
+KiCad silently accepts two of them and corrupts the name.** That is a stronger
+argument for the same requirement, and it is the one to put in a refusal message.
+
+**AND IT CORRECTS A ROUND-1 CLAIM OF MINE THAT WAS WRONG BY ASSERTION.** I said a
+failing arm *"ends the run on a `kicad-cli` exit 3"* and declined to commit one on
+that basis. **Driven: it does not halt.** The netlist arm returns a full failure
+row, the PDF attempt is caught and its exit reported, and the run reaches its
+summary. **The general rule is the reviewer's and is recorded because the error was
+mine: a measurement with a positive control and no negative control is an
+incomplete instrument, not a design choice - and a stated reason for leaving one
+out is itself a thing to drive.** The arms are `CONTROLS` and not `CANDIDATES` so
+an expected failure in the committed log is never read as a regression, each
+carries a **PINNED** expectation rather than a prediction - they were established
+by a scratch drive and the log says so, because dressing a pinned result up as
+foresight is what **G271** exists to prevent - and a summary line asserts that one
+run produced a pass, a loud failure and a silent rename together.
+
+**(10) ADDED ON ROUND-2 REVIEW, METHODOLOGICAL, AND I CAUSED IT: A RAW NUL BYTE
+LANDED IN THIS REGISTER IN ROUND 1, WHICH MADE `grep` TREAT THE WHOLE FILE AS
+BINARY AND SUPPRESS EVERY MATCH IN IT.** Clause 7 was written with the C0 range
+spelled as a bracketed escape pair; **the escape did not survive as text and
+arrived as the two literal bytes.** `[RAN]` `od -c docs/known-gaps.md` found one
+NUL and one `0x1f`; `grep -c` over the file returned nothing at all, and a piped
+`git show -- docs/known-gaps.md | grep` produced no output.
+
+**WHY THIS MATTERS MORE THAN A TYPO.** This repository's practice is to find things
+in this file **by grepping it** - `CLAUDE.md` requires every agent on every task to
+read and append to it, and a bare `G<n>` is how entries cross-reference. A single
+NUL byte silently turns that off for the whole register. **It is the exact shape of
+defect this file exists to record**: a tool reporting success while the thing it
+was asked about became unreadable.
+
+Fixed in the same round: the register says *"any codepoint from 0 to 31, the whole
+C0 range"* in prose, and `fixtures.ts` builds its NUL from
+`String.fromCharCode(0)` with a comment saying why, so **neither committed text
+file holds a raw control byte outside tab, CR and LF** - checked by counting bytes,
+not by reading. `[RAN]` the probe's log is byte-identical before and after the fix,
+so no measurement moved.
+
 - **Evidence** `[RAN, CONFIRMED]` `bun run tools/schgen/label-syntax/probe.ts`
   at `95db940`, clean tree, `kicad-cli` 10.0.5 resolved at
   `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` through
@@ -25773,13 +25851,18 @@ rather than read.
   3's mechanism, read off `build.ts:152` and `classify.ts` rather than relayed.
   **CONFIRMED** for clause 2's call-site correction: `[RAN]` the `grep` returning
   three sites was driven here, and both other sites read to see what net they
-  pass. **RELAYED** for the whole of clauses 7 and 8 - the three perturbed
-  candidates, the exit-3 newline, the block split that moved the census to 1 and
-  the adjunct to 21, the `classify.ts` re-derivation and the six negotiable ports
-  are the round-1 reviewer's runs, reported to me and **not re-driven here**. They
-  are recorded because they are the strongest evidence this entry has and because
-  the reviewer's perturbations are not in the committed tree: **a later agent
-  wanting them must re-make them.**
+  pass. **CONFIRMED** for the whole of clauses 9 and 10, driven by me in round 2:
+  the six control arms are committed in `tools/schgen/label-syntax/fixtures.ts`
+  and every row of clause 9's table is in the committed `probe-run.log`, so
+  **clause 7's three perturbations stopped being relayed and became arms**. Clause
+  10's two byte counts and the before/after identity of the log were driven here
+  too. **RELAYED, still** for clause 8 - the block split that moved the census to
+  1 and the adjunct to 21, the `classify.ts` re-derivation and the six negotiable
+  ports are the round-1 reviewer's runs, reported to me and **not re-driven
+  here**, and they are **not in the committed tree**: a later agent wanting them
+  must re-make them. **That asymmetry is the honest state of this entry**: the
+  syntax half now has both controls committed and the census half has its
+  strongest check living outside the repository.
 - **What would settle it.** **CRITERION for clause 1:** nothing - it is a
   measurement and it is settled; it is deleted only if a later KiCad version
   answers differently, which would be a new measurement and a new entry.
@@ -25811,4 +25894,19 @@ rather than read.
   purpose, because it fires at emit rather than at validation. It is settled by
   Task 3's replacement predicate, whose required shape is in the plan. **CRITERION
   for clause 8:** nothing - it is a control that passed, and it is deleted only
-  with clause 2.
+  with clause 2. **CRITERION for clause 9:** the six pins hold. **It is settled by
+  the probe's own control-verdict section printing one loud failure, two silent
+  renames and three passes, and by its `NEGATIVE CONTROL ESTABLISHED` line**, at
+  the commit being reviewed. A pin that moves is either a KiCad behaviour change
+  or a defect in the probe, and the log says which arm. **MECHANISM, UNTRIED:** a
+  test asserting the pins would make the check automatic; it was not written for
+  the same reason clause 2's was not - whether a moved pin should REFUSE or merely
+  report is an acceptance criterion, and `CLAUDE.md` reserves those away from the
+  agent that produced the artifact. **CRITERION for clause 10:** neither
+  `docs/known-gaps.md` nor `tools/schgen/label-syntax/fixtures.ts` contains a byte
+  below 0x20 other than tab, CR and LF. It is checkable in one line over the bytes
+  and **must be checked that way rather than by reading**, because the failure is
+  invisible in a rendered diff and makes the tool you would check it with go
+  quiet. **MECHANISM, UNTRIED:** nothing in `make check` or the suite looks for a
+  stray control byte in a committed text file, so this will recur; a repo-wide
+  byte scan would catch it and is not written.
