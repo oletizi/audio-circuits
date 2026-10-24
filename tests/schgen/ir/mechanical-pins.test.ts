@@ -23,10 +23,11 @@
 import { describe, expect, it } from "bun:test";
 import { twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
+import { expectedConnectivity } from "../../../lib/schgen/gates/connectivity.ts";
 import { MECHANICAL_PINS, mechanicalPinsOf } from "../../../lib/schgen/ir/mechanical-pins.ts";
 import type { CircuitSpec, PartSpec, PinConnection, PinNumber, Rendering } from "../../../lib/schgen/ir/types.ts";
 import { validateCircuit } from "../../../lib/schgen/ir/validate.ts";
-import { createResolver, type SymbolResolver } from "../../../lib/schgen/render/library.ts";
+import { createResolver, type LibPin, type LibSymbol, type SymbolResolver } from "../../../lib/schgen/render/library.ts";
 import { symbolLibraries } from "../../../lib/schgen/render/stock-symbols.ts";
 import { TEST_BOM } from "../__fixtures__/fixture-lib.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
@@ -110,28 +111,54 @@ function withoutMp(): SymbolResolver {
   };
 }
 
+/** How many graphic stroke ENDPOINTS land on a pin's body-side end. Zero means no conductor
+ *  inside the symbol reaches it; `docs/known-gaps.md` G290 has why this is an assertion about one
+ *  symbol and never a general rule. */
+function endpointsAt(sym: LibSymbol, pin: LibPin): number {
+  const rad = (pin.angle * Math.PI) / 180;
+  const ix = pin.x + pin.length * Math.round(Math.cos(rad));
+  const iy = pin.y + pin.length * Math.round(Math.sin(rad));
+  const g = sym.graphics.get(pin.unit) ?? sym.graphics.get(1);
+  return (g?.segments ?? []).filter(([a, b]) => (a[0] === ix && a[1] === iy) || (b[0] === ix && b[1] === iy)).length;
+}
+
 describe("MECHANICAL_PINS", () => {
-  it("arm 1: every listed pin exists on the installed symbol, and NO stroke endpoint lands on its body-side end while every electrical pin has exactly one", () => {
+  /**
+   * **THIS ARM IS GENERIC OVER THE TABLE, not written against today's single entry**, which is
+   * what makes "every entry is a deliberate edit with a test beside it" enforceable rather than
+   * aspirational. A review found the first version hardcoded `ROTARY`, so the tenth `_MP` symbol
+   * would have been added with no check at all. It also closes the typo'd-KEY hole:
+   * `pinsDeclared`'s stale-table refusal catches a bad PIN on a good symbol, but a misspelled
+   * SYMBOL key is a silent no-op there, and `tests/kicad/symbol-names.test.ts` cannot see a map
+   * literal (its own header says so).
+   */
+  it("arm 1: every TABLE ENTRY names a resolvable symbol, and every pin it lists exists on that symbol with NO stroke endpoint at its body-side end", () => {
+    const entries = Object.entries(MECHANICAL_PINS);
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const [libId, pins] of entries) {
+      const sym = symbols.resolve(libId); // throws if the key is a typo - that IS the assertion
+      const numbers = new Set(sym.pins.map((p) => p.number));
+      expect(pins.length).toBeGreaterThan(0);
+      for (const number of pins) {
+        expect(numbers.has(number), `${libId} has no pin ${number}`).toBe(true);
+        const pin = sym.pins.find((p) => p.number === number);
+        expect(endpointsAt(sym, pin!), `${libId} pin ${number} is reached by a stroke, so it is not isolated`).toBe(0);
+      }
+      expect(pins.length).toBeLessThan(sym.pins.length);
+    }
+  });
+
+  it("arm 1b: on the rotary specifically, all seven ELECTRICAL pins are reached by exactly one stroke endpoint - the contrast that makes MP's zero mean something", () => {
     const sym = symbols.resolve(ROTARY);
     const listed = mechanicalPinsOf(ROTARY);
     expect([...listed]).toEqual(["MP"]);
-
-    const endpointsAt = (pin: (typeof sym.pins)[number]): number => {
-      const rad = (pin.angle * Math.PI) / 180;
-      const ix = pin.x + pin.length * Math.round(Math.cos(rad));
-      const iy = pin.y + pin.length * Math.round(Math.sin(rad));
-      const g = sym.graphics.get(pin.unit) ?? sym.graphics.get(1);
-      return (g?.segments ?? []).filter(([a, b]) => (a[0] === ix && a[1] === iy) || (b[0] === ix && b[1] === iy)).length;
-    };
-
     const mp = sym.pins.find((p) => p.number === "MP");
-    expect(mp).toBeDefined();
     expect(mp?.name).toBe("");
-    expect(endpointsAt(mp!)).toBe(0);
 
     const electrical = sym.pins.filter((p) => !listed.has(p.number));
     expect(electrical.map((p) => p.number)).toEqual(["1", "2", "3", "4", "5", "6", "7"]);
-    for (const p of electrical) expect(endpointsAt(p)).toBe(1);
+    for (const p of electrical) expect(endpointsAt(sym, p)).toBe(1);
   });
 
   it("arm 2: a circuit that omits the mechanical pin validates clean", () => {
@@ -140,7 +167,7 @@ describe("MECHANICAL_PINS", () => {
 
   it("arm 3 (NEGATIVE CONTROL): an undeclared THROW on the same symbol is still refused", () => {
     const { "3": _dropped, ...withoutThrow3 } = THROWS_AND_POLE;
-    expect(problems(spec(rotary(withoutThrow3)))).toContain("part SW_SEL: pin 3 () is neither on a net nor declared not connected");
+    expect(problems(spec(rotary(withoutThrow3)))).toContain("part SW_SEL: pin 3 () is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts");
   });
 
   it("arm 4: a stale table entry is refused, naming the pin and the table", () => {
@@ -156,7 +183,7 @@ describe("MECHANICAL_PINS", () => {
     const half: PartSpec = { ...bridge, pins: { "1": { net: "T", identity: "" } } };
     const parts = [rotary(THROWS_AND_POLE), half];
     const s: CircuitSpec = { ...spec(rotary(THROWS_AND_POLE)), parts, orientations: noOrientationPreferences(parts) };
-    expect(problems(s)).toContain("part R_BRIDGE: pin 2 () is neither on a net nor declared not connected");
+    expect(problems(s)).toContain("part R_BRIDGE: pin 2 () is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts");
   });
 
   it("arm 6: an EXPLICITLY declared mechanical pin is still validated - the exemption is allow-omitted, not skip-if-present", () => {
@@ -171,5 +198,41 @@ describe("MECHANICAL_PINS", () => {
 
   it("the table carries only entries this repository has verified", () => {
     expect(Object.keys(MECHANICAL_PINS)).toEqual([ROTARY]);
+  });
+
+  /**
+   * **GATE 3 WOULD HAVE REFUSED THE ARTIFACT THIS EXEMPTION UNBLOCKS, with a message that is
+   * false twice over**, and a review found it before any board got far enough to hit it. The
+   * spec's "nothing else is relaxed" survey listed validation RULES and missed the GATES, which
+   * rebuild the pin set from `c.pins`.
+   *
+   * `kicad-cli` gives every unconnected pin its own `unconnected-(REF-PadN)` net - marker or no
+   * marker - so the export always reports the mount lug while the IR, by design, has no pin for
+   * it. Un-fixed, `compareConnectivity` says *"pin SW1.MP is unconnected in the schematic but the
+   * IR puts it on a net"*: the IR does not put it on a net, and has no such pin.
+   *
+   * These two arms are the ones that fail if `mechanicalNodes` (`../../../lib/schgen/gates/
+   * connectivity.ts`) or `modelPartition`'s equivalent in `round-trip.ts` is removed.
+   */
+  it("arm 7: gate 3's expected-connectivity treats an omitted mechanical pin as EXPECTED unconnected, matching what kicad-cli exports", () => {
+    const c = buildCircuit(spec(rotary(THROWS_AND_POLE)), { symbols });
+    const refs = new Map([
+      ["SW_SEL", "SW1"],
+      ["R_BRIDGE", "R1"],
+    ]);
+    const e = expectedConnectivity(c, refs);
+    expect(e.problems).toEqual([]);
+    expect(e.nc).toContain("SW1.MP");
+  });
+
+  it("arm 7b (CONTROL): a pin that is neither declared nor mechanical is NOT in the expected-unconnected set, so arm 7 is not just asserting that everything lands there", () => {
+    const c = buildCircuit(spec(rotary(THROWS_AND_POLE)), { symbols });
+    const refs = new Map([
+      ["SW_SEL", "SW1"],
+      ["R_BRIDGE", "R1"],
+    ]);
+    const e = expectedConnectivity(c, refs);
+    expect(e.nc).toEqual(["SW1.MP"]);
+    for (const n of ["SW1.1", "SW1.7", "R1.1", "R1.2"]) expect(e.nc).not.toContain(n);
   });
 });

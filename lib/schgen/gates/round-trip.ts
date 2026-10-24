@@ -56,6 +56,7 @@
  */
 
 import type { ImportedNetlist } from "../../kicad/netlist.ts"
+import { mechanicalPinsOf } from "../ir/mechanical-pins.ts"
 import type { Circuit, IrPart, PartLabel } from "../ir/types.ts"
 
 /** Spec §2's complete contract, as five separately reported comparisons. */
@@ -101,6 +102,18 @@ function modelPartition(c: Circuit, refs: ReadonlyMap<PartLabel, string>): strin
     const node = `${ref}.${pin.pin}`
     if (pin.net === null) unconnected.push([node])
     else byNet.set(pin.net, [...(byNet.get(pin.net) ?? []), node])
+  }
+  // A MECHANICAL pin is absent from the IR by design (`../ir/mechanical-pins.ts`,
+  // `docs/known-gaps.md` G282) and present in the export, because kicad-cli gives every
+  // unconnected pin its own `unconnected-(REF-PadN)` net whether or not a no_connect marker
+  // is on it. Omitting it here only would make the two partitions differ and be reported as a
+  // stray net - the same false refusal `../gates/connectivity.ts`' `mechanicalNodes` prevents,
+  // in the other gate. One-member set, for the reason the header above gives.
+  for (const part of c.parts.values()) {
+    const ref = refs.get(part.label)
+    if (ref === undefined) continue
+    const declared = new Set(c.pins.filter((q) => q.part === part.label).map((q) => q.pin))
+    for (const pin of mechanicalPinsOf(part.libId)) if (!declared.has(pin)) unconnected.push([`${ref}.${pin}`])
   }
   return partitionOf([...byNet.values(), ...unconnected])
 }

@@ -167,7 +167,7 @@ the gate exists to catch.**
 **So the whitelist is right, and now for a measured reason instead of a guessed
 one:** a general rule validated on the single symbol that motivated it is
 `CLAUDE.md`'s *"general rule that quietly accepts a guess"*, and this one is
-wrong on 17 of the 35 pins of eight other symbols. `docs/known-gaps.md`
+wrong on 17 of the 36 pins of eight other symbols. `docs/known-gaps.md`
 **G290** carries the measurement, because the idea looks clean on the one
 symbol a reader will try it on.
 

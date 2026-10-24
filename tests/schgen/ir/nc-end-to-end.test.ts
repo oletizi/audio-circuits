@@ -226,7 +226,7 @@ describe("state 1: a pin deliberately declared NC", () => {
 describe("state 2: a pin omitted from the model entirely", () => {
   test("is still refused by pinsDeclared, naming the pin and its library name", () => {
     expect(problems({ pin7: "omitted" })).toEqual([
-      "part U1: pin 7 (NC) is neither on a net nor declared not connected",
+      "part U1: pin 7 (NC) is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts",
     ])
   })
 

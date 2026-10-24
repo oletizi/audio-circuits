@@ -188,7 +188,11 @@ const pinsDeclared: Rule = (c, symbols) => {
     const have = new Set(c.pins.filter((q) => q.part === p.label).map((q) => q.pin));
     for (const lp of sym.pins) {
       if (mechanical.has(lp.number)) continue;
-      if (!have.has(lp.number)) out.push(`part ${p.label}: pin ${lp.number} (${lp.name}) is neither on a net nor declared not connected`);
+      if (!have.has(lp.number))
+        out.push(
+          `part ${p.label}: pin ${lp.number} (${lp.name}) is neither on a net nor declared not connected, ` +
+            `nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts`,
+        );
     }
   }
   return out;

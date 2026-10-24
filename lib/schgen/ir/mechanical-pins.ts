@@ -19,7 +19,7 @@
  * reader of this file will ask, and the answer is measured rather than asserted.** Inferring
  * "mechanical" from stroke geometry - no graphic stroke endpoint at the pin's body-side end -
  * discriminates PERFECTLY on `Switch:SW_Rotary_1x6_MP` (one endpoint on each of the seven
- * electrical pins, zero on `MP`) and then flags **17 of the 35 pins across eight other symbols
+ * electrical pins, zero on `MP`) and then flags **17 of the 36 pins across eight other symbols
  * this repository uses**, including BOTH terminals of `Device:R`, all three pins of
  * `Switch:SW_SPDT` and SIX of eight on a TL072 - because a symbol body commonly ABUTS its pins
  * rather than meeting them at a stroke endpoint, which is a drawing convention carrying no
@@ -59,5 +59,9 @@ export const MECHANICAL_PINS: Readonly<Record<string, readonly string[]>> = {
  * the common case - absence means "every pin of this symbol is electrical", never "unknown".
  */
 export function mechanicalPinsOf(libId: string): ReadonlySet<string> {
-  return new Set(MECHANICAL_PINS[libId] ?? []);
+  // `Object.hasOwn` rather than a bare lookup, which is this repository's idiom for a
+  // string-keyed record (`../gates/pin-identity.ts`' `own()`): a libId colliding with an
+  // Object.prototype member would otherwise return a function and exempt nonsense. Unreachable
+  // with today's `Nickname:Symbol` keys, and not a reason to spell it the fragile way.
+  return new Set(Object.hasOwn(MECHANICAL_PINS, libId) ? MECHANICAL_PINS[libId] : []);
 }

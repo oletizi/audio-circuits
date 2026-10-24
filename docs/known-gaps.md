@@ -2704,7 +2704,13 @@ pin cannot be either:
 
 - **the mounting pin `MP`** of `SW_Rotary_1x6_MP`, on the four boards with a six-position selector.
   It is a mechanical pad, the model's `switch` component has no pin for it, and `Connection`'s `nc`
-  variant is a property of a MODEL pin - so there is no pin to mark;
+  variant is a property of a MODEL pin - so there is no pin to mark. **RESOLVED 2026-10-24 and the
+  framing here was the wrong half: the problem was never that the MODEL lacks a pin to mark, it was
+  that `pinsDeclared` ASKED.** This clause correctly identified `MP` as *"a mechanical pad"* and then
+  treated the missing model pin as the thing to fix; `lib/schgen/ir/mechanical-pins.ts` keeps the pin
+  out of the model deliberately and stops the validator demanding it, and all four boards cleared
+  `validateCircuit`. **G282** (struck owner question), **G290** (why a whitelist). The `pin 12`
+  bullet below is NOT resolved - it is a throw, not a mount point;
 - **pin 12 of `SW_Rotary_1x12`** on `mid`. `circuits/pultec/physical/parts.ts` records why the
   symbol has one throw more than the circuit: the owner chose a twelve-position switch with its stop
   set to eleven (*"Assume a 1x12"*), so *"twelve detents exist, eleven are wired, the twelfth is
@@ -25709,10 +25715,16 @@ edit"* sentence, falsified by the authorised edit above rather than by any error
   `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` deleted the
   casing demand on the owner's instruction, and **G150**'s Task-6 re-drive reads
   all eleven refusal blocks and finds not one mentioning a net name, a case or
-  `UPPER_SNAKE`. The five at `validateCircuit` are four Pultec boards on `pin MP`
-  - an **OPEN OWNER QUESTION**, **G282** - and `pultec-mid` on `pin 12`, which no
-  model slot can carry. Clause 3 is open because the re-grade it names has not
-  been run. Clause
+  `UPPER_SNAKE`. ~~The five at `validateCircuit` are four Pultec boards on `pin
+  MP` - an **OPEN OWNER QUESTION**, **G282** - and `pultec-mid` on `pin 12`,
+  which no model slot can carry.~~ **SUPERSEDED LATER THE SAME DAY, and this
+  entry's own staleness rule is why it is struck here rather than edited away:
+  the four `MP` boards were never an owner question**, the demand was ours, and
+  `lib/schgen/ir/mechanical-pins.ts` removed it. **ONE board now refuses at
+  `validateCircuit`** - `pultec-mid` on `pin 12` - and the four `MP` boards
+  refuse at ELK layout instead. **G282** carries the struck owner question and
+  **G290** why the fix is a whitelist. Clause 3 is open because the re-grade it
+  names has not been run. Clause
   5 is open because the ratio has not been re-taken over the 48 and doing so needs
   the external font blob §1 depends on.
 - **What would settle it** **CRITERION for clause 1: a reader of §5.10 mechanism
@@ -27849,7 +27861,7 @@ document-only scope would never find the seventh either.
   before it lands are outside this repository, and `CLAUDE.md` forbids a git hook
   outright.
 
-### G290 - MEASURED, AND IT IS BAIT BESIDE A TRAP: inferring "this symbol pin is MECHANICAL" from stroke geometry discriminates PERFECTLY on the one symbol that motivates it and misclassifies 17 of 35 electrical pins on eight others, including BOTH terminals of `Device:R` and SIX of eight pins on a TL072
+### G290 - MEASURED, AND IT IS BAIT BESIDE A TRAP: inferring "this symbol pin is MECHANICAL" from stroke geometry discriminates PERFECTLY on the one symbol that motivates it and misclassifies 17 of 36 electrical pins on eight others, including BOTH terminals of `Device:R` and SIX of eight pins on a TL072
 
 **WHY THIS IS RECORDED RATHER THAN JUST DECIDED.** `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`
 exempts a rotary switch's mounting pin `MP` from `pinsDeclared`
@@ -27894,7 +27906,7 @@ ELECTRICAL pins it would misclassify as mechanical:
 | `Connector_Generic:Conn_01x02` | 2 | **2** | `Pin_1`, `Pin_2` |
 | `Amplifier_Operational:TL072` | 8 | **6** | `-`, `+`, `V-`, `+`, `-`, `V+` |
 
-**17 of the 35 pins across the eight non-`MP` symbols**, and the two symbols
+**17 of the 36 pins across the eight non-`MP` symbols**, and the two symbols
 that score 0 are not the common case - they are a 12-throw rotary and a BJT.
 The cause is that a symbol's body graphic commonly **abuts** its pins rather
 than meeting them at a stroke endpoint, which is a drawing convention and

@@ -89,7 +89,9 @@ describe("validateCircuit", () => {
 
   it("V3: reports an undeclared symbol pin", () => {
     const half: PartSpec = { ...res("R_A", "X", "GND"), pins: { "1": { net: "X", identity: "" } } };
-    expect(problems(base([half, res("R_B", "X", "GND")]))).toContain("part R_A: pin 2 () is neither on a net nor declared not connected");
+    expect(problems(base([half, res("R_B", "X", "GND")]))).toContain(
+      "part R_A: pin 2 () is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts",
+    );
   });
 
   it("V4: reports a unit no block places", () => {
