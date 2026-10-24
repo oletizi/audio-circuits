@@ -6,13 +6,26 @@
  * Research probe for Task 1 of `docs/superpowers/plans/2026-10-22-text-handling-research.md`.
  * **Nothing in `lib/` or any check calls it.**
  *
- * **IT TAKES THE STRINGS FROM `buildCircuit`, WHICH IS UPSTREAM OF THE GATE THAT REFUSES SIX OF THE
- * ELEVEN BOARDS**, and that is deliberate and is reported rather than hidden: `generate` runs
- * `validateCircuit` after `buildCircuit`, and six boards refuse there on lower-case net names
- * (`tools/schgen/board-sheets.ts` prints the refusals). Those names are therefore strings the
- * drawing code is OFFERED and never emits. `StringRow.reachesTheDrawing` marks which rows survive
- * validation, so a character that enters the glyph set only through a refused net can be counted
- * separately instead of silently widening the alphabet.
+ * **IT TAKES THE STRINGS FROM `buildCircuit`, WHICH IS UPSTREAM OF THE GATE THAT REFUSES FIVE OF
+ * THE ELEVEN BOARDS**, and that is deliberate and is reported rather than hidden: `generate` runs
+ * `validateCircuit` after `buildCircuit`, and five boards refuse there - four Pultec boards on an
+ * undeclared switch MOUNTING pin (`pin MP`) and `pultec-mid` on `pin 12`
+ * (`tools/schgen/board-sheets.ts` prints the refusals). Every string of a refused board is
+ * therefore OFFERED to the drawing code and never emitted. `StringRow.reachesTheDrawing` is
+ * `validationProblems.length === 0` and is a property of the **BOARD**, so a character that enters
+ * the glyph set only through a board that does not draw can be counted separately instead of
+ * silently widening the alphabet.
+ *
+ * **THIS PARAGRAPH SAID `SIX ... ON LOWER-CASE NET NAMES` AND BOTH HALVES WERE WRONG BY 2026-10-24
+ * - the count AND the cause, and the cause is the worse of the two because it explained the field
+ * above with a rule that no longer exists.** Task 3 of
+ * `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` deleted the net-name CASING
+ * demand on the owner's instruction (*"i absolutely do not care about the letter case of net
+ * names. That's a silly quibble."*). **No board refuses on a net name at all**, and no row is
+ * excluded for CASING - the old wording also implied a refused NET, where the field has always
+ * been per board. `docs/known-gaps.md` **G150** carries the deletion and the re-drive, **G282**
+ * the switch-pin refusals, and **G285** the one board that does draw. The CODE was always right:
+ * `reachesTheDrawing` calls `validateCircuit`, so it tracked reality while this prose did not.
  *
  * **A REFERENCE HAS TWO STRINGS AND BOTH ARE HERE.** `render/field-placement.ts` reserves room for
  * `reservedReference(prefix)` - the prefix plus three digits, `R000` - while the drawing prints the

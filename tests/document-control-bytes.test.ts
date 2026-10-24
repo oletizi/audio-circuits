@@ -72,12 +72,28 @@ const SCOPE: readonly string[] = ["docs/**/*.md", "CLAUDE.md", "AGENTS.md"]
  * measurement found a **sixth** incident of the same class **in a TypeScript source**:
  * `tests/stripboard/materialize-net-names.test.ts` held a raw NUL in a `.join()` separator, and
  * `grep -c pinSetKey` over that file returned **nothing, at exit 1**, for an identifier defined
- * three lines below the byte. A document-only scope would never have found it and would never
+ * **one line above the byte** (`function pinSetKey` at line 48, the NUL at line 49 column 32,
+ * byte offset 2811). A document-only scope would never have found it and would never
  * find the next one. **G289** carries the measurement, the repair and this deviation.
  *
- * `[RAN]` a byte count over every tracked file at the commit that fixed it: **all 894 `.ts`, all
- * 168 `.md` and all 82 `.json` files are clean.** The 26 tracked files that do hold a C0 byte are
- * 13 `.vrt` perfboard layouts, 9 `.png`, 3 `.pdf` and the one deliberate fixture sheet - which is
+ * **`three lines below the byte` STOOD HERE AND THE DIRECTION WAS INVERTED** - three lines below
+ * is where `pinSetKey` sits in the REPAIRED file, relative to its `NUL` constant. **G289** carries
+ * that correction and the offset one (`byte 2804` stood there; the byte is at **2811**).
+ *
+ * `[RAN]` a byte count over every tracked file, **and WHICH TREE is part of the figure** - the
+ * pair below was once published as `26 of 1304`, which is true of **no commit**: it was measured
+ * on the working tree after the repair and before this file was `git add`ed. Both trees, measured
+ * 2026-10-24 by `git ls-tree -r` read as BYTES:
+ *
+ * - **at the parent `391f028`**: 1304 tracked, **27** offenders, 894 `.ts` of which **one is the
+ *   offender above**, 168 `.md` and 82 `.json` clean.
+ * - **at `118737f`, the commit that fixed it**: 1305 tracked, **26** offenders, and **all 895
+ *   `.ts`, all 168 `.md` and all 82 `.json` are clean.**
+ *
+ * The 26 are 13 `.vrt`, 9 `.png`, 3 `.pdf` and the one deliberate fixture sheet - and the 13 are
+ * **eleven** perfboard layouts under `boards/` plus **two** test fixtures
+ * (`tests/fixtures/pultec-low-boost-c19-floated.vrt`,
+ * `tests/fixtures/stripboard/pultec-low-boost-frozen.vrt`). Which is
  * why the scan is scoped by EXTENSION and not by directory, and why **G277** clause 10's suggested
  * "repo-wide byte scan" is not what got written.
  */

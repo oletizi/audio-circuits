@@ -118,7 +118,9 @@ Write the message to a file and `git commit -F`. Record the findings in `docs/kn
 
 > **TWO CORRECTIONS, 2026-10-23, FROM TASK 2's OWN MEASUREMENT. Both were mine and the second is the kind that misleads.**
 >
-> **(1) The line citation was wrong.** This paragraph said `from-network.ts:468` maps a connection with no `net` key to `null`. **It does — but it is the wrong code path:** `:468` is inside `orientationsOfParts`, building a `pinNets` map for choosing a symbol's orientation. **The IR's `null` comes from `connectedNet` at `lib/schgen/ir/types.ts:62`** (`return "net" in c ? c.net : null`), reached from **`lib/schgen/ir/build.ts:46`**. A citation that is *locally true and structurally irrelevant* is worse than a typo, because it reads as evidence.
+> **(1) The line citation was wrong.** This paragraph said `from-network.ts:468` maps a connection with no `net` key to `null`. **It does — but it is the wrong code path:** `:468` is inside `orientationsOfParts`, building a `pinNets` map for choosing a symbol's orientation. **The IR's `null` comes from the exported `connectedNet` in `lib/schgen/ir/types.ts`** (`return "net" in c ? c.net : null`), reached from the `declared.set(...)` call in **`lib/schgen/ir/build.ts`**. A citation that is *locally true and structurally irrelevant* is worse than a typo, because it reads as evidence.
+>
+> > **AND THIS CORRECTION'S OWN CITATION WENT STALE INSIDE THIS PLAN, which is the lesson the block above did not draw. Corrected 2026-10-24 by the plan's final review.** It read *"`connectedNet` at `lib/schgen/ir/types.ts:62`"* and *"`lib/schgen/ir/build.ts:46`"*, both true when written at `1c0ade7`. **Task 3 of this same plan grew the `NET_NAME` doc comment and moved them.** Measured across the range: `connectedNet` was at `types.ts:62` at `2758137` and `1c0ade7`, **`:113`** at `257817e`, and **`:120`** at HEAD; the `build.ts` call site is **`:47`** at HEAD, not `:46`. **SO BOTH NOW CITE THE SYMBOL AND THE FILE AND NOT THE LINE** — a line number in a plan is a claim about one commit, and this plan's own later tasks falsified it. Where a line number is the point, state the commit it is true at.
 >
 > **(2) "Has never carried anything" was too wide.** `[RAN]` **five test files import `NC`**, and `tests/kicad/schematic.test.ts` **already drove a model `NC` through to a `(no_connect)`** — via the superseded stub writer. **Zero *circuits* import it, which is the true claim.** The real gap was narrower and this task closed exactly it: **no test drove a model `NC` through `circuitSpecFrom`.** A true narrow measurement stated as a universal is the third instance of that shape on this plan.
 
@@ -257,8 +259,16 @@ if (typeof net !== "string" || net.length === 0) throw fail();
 > **exits 3 with `Failed to load schematic`.** So a predicate of merely
 > *non-empty* admits a name that breaks KiCad.
 >
-> **Today the only thing stopping it is `str()` at `lib/kicad/sexpr-write.ts:32`,
-> and it throws at EMIT rather than at `validateCircuit`.** That is a real
+> **Today the only thing stopping it is `str()` at `lib/schgen/render/sexpr-write.ts:31-33`,
+> and it throws at EMIT rather than at `validateCircuit`.** **`lib/kicad/sexpr-write.ts:32`
+> STOOD HERE AND THAT FILE DOES NOT EXIST** - `lib/kicad/` has `sexpr.ts` and no
+> `sexpr-write.ts`, `[RAN, CONFIRMED]` 2026-10-24 - and `str()` is at
+> `lib/schgen/render/sexpr-write.ts:31` with the control-character throw at `:32-33`. The
+> correction block thirteen lines EARLIER in this file already names `lib/kicad/sexpr-write.ts:32`
+> as *"the nonexistent"* path. **Leaving it unflagged here was the worse half of that pair:** a
+> reader meeting this block first got a nonexistent path with nothing beside it, in the same file
+> that elsewhere calls it nonexistent. The *"the wording stands"* convention covers a dated
+> judgement; it does not cover a path that resolves to nothing. That is a real
 > relocation of a refusal, not a gap: deleting `NET_NAME` down to *non-empty*
 > would move the control-character refusal from validation time to emit time
 > **silently**, which is exactly the shape this repository refuses.

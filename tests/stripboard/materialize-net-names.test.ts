@@ -49,9 +49,15 @@ function materialise(): Promise<MaterialisedLowBoost> {
  *
  * **IT IS BUILT IN CODE BECAUSE IT WAS A RAW NUL IN THIS FILE UNTIL 2026-10-24, AND THAT MADE THE
  * WHOLE FILE INVISIBLE TO `grep`.** `grep -c pinSetKey` over this file returned nothing and exit
- * 1, for an identifier defined three lines below, because one NUL makes `grep` treat the file as
- * binary and suppress every match in it. `CLAUDE.md` forbids typing a control-character escape
- * into a tool parameter for exactly this reason - the escape arrives as the real byte and the
+ * 1, for an identifier defined **one line ABOVE the byte** - in the old file `function pinSetKey`
+ * was at line 48 and the NUL at line 49, column 32, byte offset **2811** - because one NUL makes
+ * `grep` treat the file as binary and suppress every match in it.
+ * (*"three lines below"* and *"byte 2804"* stood here and
+ * in **G289**; three lines below is the geometry of THIS repaired file - the `NUL` constant
+ * immediately below, then `pinSetKey` three lines after it - and it was never the geometry of the
+ * file that held the byte. **G289** carries both corrections.) `CLAUDE.md` forbids typing a
+ * control-character escape into a tool parameter for exactly this reason - the escape arrives as
+ * the real byte and the
  * result is invisible in a rendered diff. `docs/known-gaps.md` **G277** clause 10 is the class and
  * **G289** is this instance, the sixth.
  */

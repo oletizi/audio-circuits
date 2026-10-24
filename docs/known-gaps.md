@@ -13350,7 +13350,19 @@ than fixed.
 >
 > **DONE, 2026-10-23, TASK 3 - AND THE ENTRY STAYS OPEN, because what it is open
 > ON has changed.** The case demand is out of the code. `lib/schgen/ir/validate.ts`'s
-> `netNames` rule is **deleted** and `DRAWING_RULES` is ten rules; `NET_NAME` in
+> `netNames` rule is **deleted** and `DRAWING_RULES` is ten rules **- WHICH WAS
+> TRUE OF ROUND 0 ONLY AND IS NOT TRUE OF HEAD.** `ten` is replaced rather than
+> annotated because a reader counting the list today gets a different number:
+> fix round 1 RESTORED `netNames` with a narrowed predicate on the coordinator's
+> reversal (*"The owner removed the CASING demand, not all net-name
+> validation."*), so **`DRAWING_RULES` is ELEVEN rules at HEAD** - `[RAN,
+> CONFIRMED]` 2026-10-24, counted off `lib/schgen/ir/validate.ts:236`:
+> `netNames, partShapes, pinsDeclared, unitsPlaced, sheetsAndBlocks, renderings,
+> singlePinNets, rails, pinSemantics, sheetFiles, mechanicalPads`, which is
+> `tools/schgen/port-manifest.json:739`'s figure and the twelve ported rules less
+> `bomFields`. The restore is recorded in a later bullet of this entry; the figure
+> in THIS block was not corrected with it, and that is what is fixed here.
+> `NET_NAME` in
 > `lib/schgen/ir/types.ts` is `/^[^\u0000-\u001f]+$/` - non-empty, no control
 > character - and no longer mentions case; the census helper this entry cited is
 > deleted with the measurement it served; `tests/schgen/ir/validate.test.ts`'s V1
@@ -13365,11 +13377,22 @@ than fixed.
 > | --- | --- | --- |
 > | boards producing a schematic | **0 of 11** | **0 of 11** |
 > | `pt2399-core`'s refusals | **18** (17 net names + 1 single-pin net) | **1** (the single-pin net) |
-> | each Pultec board's refusals | **13 to 27** (net names + 1 undeclared pin) | **1** (the undeclared switch pin) |
+> | each Pultec board's NET-NAME refusals | **13 to 27** | **0** |
+> | each Pultec board's TOTAL refusals | **14 to 28**, per board **20, 14, 14, 14, 28** (**G259**, **G274** clause 2) | **1** (the undeclared switch pin) |
 > | the five `transistor-preamp` boards | unchanged - ELK geometry, never net names | unchanged |
 >
+> **THE PULTEC ROW WAS ONE ROW READING `13 to 27` (net names + 1 undeclared pin)
+> AND IS NOW TWO, because the parenthetical changed the UNIT without saying so**
+> (false-greens mechanism 25). `13 to 27` counts net-name violations only; the
+> per-board TOTALS are `20, 14, 14, 14, 28`, which is what **G259**'s scoreboard
+> and **G274** clause 2 publish, and the two figures are reconcilable only by a
+> reader who notices the shift. Both units are now stated, so neither has to be
+> inferred.
+>
 > **SO THE OUTCOME IS "six boards now refuse on ONE problem each", NOT "six
-> boards fixed"**, and the distinction is the one **G274** exists to protect: the
+> boards fixed"** - **and `six` is the 2026-10-23 reading, kept as a dated column:
+> it is FIVE from 2026-10-24, because `pt2399-core` stopped refusing and
+> generates (**G285**). The distinction is the one **G274** exists to protect: the
 > census names the FIRST refusing problem per board, so a board with one problem
 > left may still have another behind it. On the parity set the same deletion took
 > `optical-compressor` from 14 drawing refusals to **0** and `pt2399-core` from 18
@@ -13440,8 +13463,33 @@ than fixed.
 > character what **G259**'s Task 24 amendment recorded on 2026-10-21; `-buffered` and `-staged`
 > still touch `GND 0 at (31.75, 27.94)` against `VCC 1 at (31.75, 30.48)`; `-feedback` still
 > branches `GND at (38.1, 44.45)` with no junction; `-loop` still overlaps `BUFFER_BASE at (29.21,
-> 17.78)` with `BUFFER_EMITTER at (46.99, 19.05)`. **Four of the eleven boards therefore act as a
-> no-change control on a change that touched net naming repo-wide.**
+> 17.78)` with `BUFFER_EMITTER at (46.99, 19.05)`. **FIVE boards therefore act as a
+> no-change control on a change that touched net naming repo-wide, across FOUR distinct refusal
+> strings** - `-buffered` and `-staged` share one, which is what one expects of two boards whose
+> `tp-stage` block is the same eight components.
+>
+> > **THE CITATION ABOVE WAS WRONG AND IS CORRECTED HERE, 2026-10-24, BY THE PLAN'S FINAL REVIEW.
+> > The comparison holds - the reviewer re-drove all five strings and every one reproduces
+> > character for character - but THREE OF THE FOUR BASELINES ARE NOT WHERE THIS BLOCK SAID THEY
+> > ARE.** **G259**'s Task 24 amendment records coordinates for **`transistor-preamp-lab` only**;
+> > the other four preamp boards appear in it as *"no declaration"*, because the nine declarations
+> > landed later the same day. **Where each pre-plan baseline actually is, re-driven and confirmed
+> > by the final reviewer and again by this writer:**
+> >
+> > | board | the pre-plan record |
+> > | --- | --- |
+> > | `-lab` | **G259**'s Task 24 amendment, as cited - correct |
+> > | `-buffered`, `-staged` | **G263**, shape (1), `docs/known-gaps.md:2551` |
+> > | `-feedback` | **G263**, shape (3), `docs/known-gaps.md:2585` |
+> > | `-loop` | `tools/schgen/label-freedom/probe-run.log:399` - a COMMITTED probe log, and the ONLY pre-plan record of `BUFFER_BASE at (29.21, 17.78)` anywhere in this repository, in no register entry at all |
+> >
+> > **THIS IS FALSE-GREENS MECHANISM 27** - a check credited in the register with reach it does not
+> > have - and the citation was written from where the writer expected the figures to be rather
+> > than from where they are. **The result is sound and the paper trail was not.** A later agent
+> > opening only the cited amendment would find four of the five boards marked *"no declaration"*,
+> > no coordinates at all, and would be entitled to conclude the control was never driven - which
+> > is how a sound result gets discarded. **Four** also stood where **FIVE** now stands above: four
+> > is the count of distinct refusal STRINGS, five the count of BOARDS, and the unit was never said.
 >
 > **WHAT THIS DOES NOT DO, SAID BEFORE SOMEBODY INFERS IT.** It does not close this entry.
 > `partShapes` in `lib/schgen/ir/validate.ts` still demands UPPER_SNAKE of part LABELS and the
@@ -13449,11 +13497,16 @@ than fixed.
 >
 > - **Found** 2026-10-24, Task 6, re-driving this entry's own named check.
 > - **Evidence** `[RAN, CONFIRMED]` the committed census `tools/schgen/board-sheets.ts`, read in
->   full rather than summarised. `[READ]` **G259**'s Task 24 amendment for the 2026-10-21
->   coordinates compared against.
+>   full rather than summarised. `[READ]` the four pre-plan baselines named in the correction
+>   block above: **G259**'s Task 24 amendment (`-lab` only), **G263** at `:2551` and `:2585`, and
+>   `tools/schgen/label-freedom/probe-run.log:399`. **THIS BULLET ONCE CITED G259's Task 24
+>   amendment ALONE for all four and that amendment cannot bear three of them**, which is the
+>   correction above.
 > - **Verified** **CONFIRMED** - this writer ran the census and read every refusal block, and
->   compared the four ELK coordinate strings against the committed earlier reading by eye,
->   character for character.
+>   compared the four ELK coordinate strings against the committed earlier readings by eye,
+>   character for character. **RELAYED, then CONFIRMED a second time:** the plan's final reviewer
+>   re-drove all five strings independently and the 2026-10-24 fix dispatch located each baseline
+>   in place before rewriting the citation.
 > - **Why it is STILL open** clause (3) above, unchanged: the part-label casing demand.
 > - **What would settle it** **unchanged, and Task 6 authored nothing.** The case half is MET by
 >   this re-drive; the punctuation half is MET by **G277**; what is left is the part-label demand,
@@ -25646,9 +25699,20 @@ edit"* sentence, falsified by the authorised edit above rather than by any error
 - **Why it is open** **clause 1 is a correction to two sentences in a closed
   section and is open because no agent rewrites a closed section's measured
   text.** Clauses 2-5 are measurements and are open because nothing is fixed:
-  **six boards need their net names and one needs a junction before any text work
-  reaches them**, which is **G150**'s and **G263**'s ground rather than this
-  plan's. Clause 3 is open because the re-grade it names has not been run. Clause
+  **FIVE BOARDS NEED A SWITCH-PIN DECLARATION and one needs a junction before any
+  text work reaches them**, which is **G150**'s, **G263**'s and **G282**'s ground
+  rather than this plan's. **`six boards need their net names` STOOD HERE AND IS
+  REPLACED RATHER THAN ANNOTATED, because it is this field - the one a reader
+  checks to decide whether the entry still binds - and both halves of it are
+  gone: the count AND the cause.** `[RAN, CONFIRMED]` the board census at
+  2026-10-24: **ZERO boards need their net names.** Task 3 of
+  `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` deleted the
+  casing demand on the owner's instruction, and **G150**'s Task-6 re-drive reads
+  all eleven refusal blocks and finds not one mentioning a net name, a case or
+  `UPPER_SNAKE`. The five at `validateCircuit` are four Pultec boards on `pin MP`
+  - an **OPEN OWNER QUESTION**, **G282** - and `pultec-mid` on `pin 12`, which no
+  model slot can carry. Clause 3 is open because the re-grade it names has not
+  been run. Clause
   5 is open because the ratio has not been re-taken over the 48 and doing so needs
   the external font blob §1 depends on.
 - **What would settle it** **CRITERION for clause 1: a reader of §5.10 mechanism
@@ -26201,10 +26265,16 @@ so no measurement moved.
   suite looks for a stray control byte in a committed text file, so this will
   recur; a repo-wide byte scan would catch it and is not written."* The first half
   was true and the prediction held - see the sixth incident in **G289**. **The
-  repo-wide scan is the part that was wrong:** `[RAN]` it over all **1304** tracked
-  files and **26 of them hold a C0 byte** - 13 `.vrt` perfboard layouts, 9 `.png`,
-  3 `.pdf` and one deliberate fixture sheet - so a repo-wide scan is red by
+  repo-wide scan is the part that was wrong:** `[RAN]` it over every tracked file
+  and **26 hold a C0 byte** - 13 `.vrt`, 9 `.png`, 3 `.pdf` and one deliberate
+  fixture sheet - so a repo-wide scan is red by
   construction and red on the one output class that works for 11 of 11 boards.
+  (**`26 of 1304` STOOD HERE AND THAT PAIR IS TRUE OF NO COMMIT.** Re-measured
+  2026-10-24: at `391f028`, **1304** tracked and **27** offenders; at `118737f`,
+  **1305** tracked and **26**. The pair came off the working tree between the two.
+  **The conclusion is untouched** - a repo-wide scan is red either way - and the
+  13 `.vrt` are **eleven** board layouts under `boards/` plus **two** test
+  fixtures. **G289** carries the full reconciliation.)
   What is written instead is scoped by **extension**, which is the detail that
   makes it green: `docs/**/*.md` plus `CLAUDE.md` and `AGENTS.md`, and every `.ts`
   under `lib/`, `tools/`, `tests/` and `circuits/`. See the 2026-10-24 block at the
@@ -26230,10 +26300,22 @@ so no measurement moved.
 > **IT WAS DRIVEN RED FOUR WAYS BEFORE IT WAS TRUSTED, which clause 10's own criterion demands -
 > "checkable in one line over the bytes and MUST be checked that way rather than by reading".**
 > `[RAN]` a 55-byte scratch document under `docs/`: red at `docs/zz-task6-red-drive-scratch.md byte
-> 52: 0x00`. `[RAN]` a **1 883 942-byte copy of the real register** with a NUL appended, placed under
-> `docs/`: red at `byte 1883940`, which answers "would it have caught incident 1" against the
-> register's actual bytes rather than against a toy. `[RAN]` a scratch `.ts` under `tests/`: red at
-> `tests/zz-task6-red-drive-source.ts byte 20: 0x00`. The two in-tree CONTROL cases are the fourth
+> 52: 0x00`. `[RAN]` a copy of the real register with a NUL appended, placed under
+> `docs/`: red at the appended byte, which answers "would it have caught incident 1" against the
+> register's actual bytes rather than against a toy. **THE SIZE IS DELIBERATELY NOT GIVEN:** this
+> drive was published as *"a **1 883 942-byte** copy … red at `byte 1883940`"*, and the register
+> grew past that during Task 6's own amendments, so the drive could not be re-taken against the
+> figure that described it. The register's size moves whenever anybody writes an entry, so it is
+> not a figure to publish and defend - **G288**'s call, applied here. **What is re-drivable is the
+> drive**: append one NUL to a copy of `docs/known-gaps.md`, place it under `docs/`, and the guard
+> names it at the appended offset, whatever that offset is today. The plan's final reviewer did
+> exactly that at the then-current size and it was red.
+> `[RAN]` a scratch `.ts` under `tests/`: red at
+> `tests/zz-task6-red-drive-source.ts byte 20: 0x00`. **The THREE in-tree CONTROL cases are the
+> fourth** - *"two"* stood here and contradicted this amendment's own table five lines above it and
+> the guard itself, which has three (`[RAN, CONFIRMED]` 2026-10-24: the `CONTROL:` cases in
+> `tests/document-control-bytes.test.ts` are the byte-offset one, the tab/CR/LF one and the
+> top-of-C0 one) -
 > and they stay red-capable on every run. **Every NUL was built with `String.fromCharCode(0)` and
 > none was typed**, which is the rule this guard exists to enforce and which makes typing one here
 > the way to become the next incident.
@@ -26262,10 +26344,17 @@ so no measurement moved.
 >
 > - **Found** 2026-10-24, Task 6, writing the guard clause 10 asked for.
 > - **Evidence** `[RAN]` the guard green at HEAD and red under four separate plants, each naming
->   the file and the byte offset; `[RAN]` a byte scan over all **1304** tracked files
+>   the file and the byte offset; `[RAN]` a byte scan over every tracked file
 >   (`git ls-files -z`, read as bytes, not as text - incident 2 was a repair broken by Python
->   translating CR on READ) giving the 26/13/9/3/1 split and `894 .ts / 168 .md / 82 .json` all
->   clean; `[RAN]` a byte count over the ten `label-syntax` fixture sheets. **THE CONTROL that
+>   translating CR on READ) **giving the 26/13/9/3/1 split, and `895 .ts / 168 .md / 82 .json` all
+>   clean AT `118737f`, which is 1305 tracked files**. *"all **1304** tracked files"* and
+>   *"`894 .ts`"* stood here: they are the PARENT `391f028`'s populations, where one of the 894 was
+>   the offender this amendment's own guard exists for, and pairing them with the post-repair split
+>   describes the uncommitted tree in between. `[RAN, CONFIRMED]` 2026-10-24, both trees, by
+>   `git ls-tree -r` read as bytes. **The table above this bullet said 895 and this bullet said 894,
+>   42 lines apart in the same block**; the table was right about the population and this bullet was
+>   right about the tree it scanned, and neither said which tree.
+>   `[RAN]` a byte count over the ten `label-syntax` fixture sheets. **THE CONTROL that
 >   could have answered differently:** the guard was green before the red drives and green again
 >   after each restore, with `git status --short` confirming the tree clean, so each red is the
 >   plant and not a pre-existing offender.
@@ -27533,12 +27622,40 @@ the resolution, with the reason written at both sites.
   this entry's own list, which is mechanism 23 one more time and is the reason
   the criterion above is written about pointers rather than about a count.
 
-### G289 - MEASURED, AND IT IS THE SIXTH INCIDENT OF THE SAME CLASS IN THREE DAYS: a raw NUL byte in a committed TypeScript test made `grep -c pinSetKey` return NOTHING for an identifier defined three lines below it
+### G289 - MEASURED, AND IT IS THE SIXTH INCIDENT OF THE SAME CLASS IN THREE DAYS: a raw NUL byte in a committed TypeScript test made `grep -c pinSetKey` return NOTHING for an identifier defined one line above it
 
-`tests/stripboard/materialize-net-names.test.ts` held one raw NUL at byte 2804,
+`tests/stripboard/materialize-net-names.test.ts` held one raw NUL at byte 2811,
 in a `.join()` separator typed as the real byte instead of built in code.
 **`grep` therefore treated the whole file as binary and suppressed every match in
 it.**
+
+**TWO FIGURES IN THIS ENTRY WERE WRONG AND ARE REPLACED RATHER THAN ANNOTATED,
+2026-10-24, BY THE PLAN'S FINAL REVIEW AND RE-DRIVEN BY THE FIX DISPATCH.** They
+are replaced because this entry's whole value is that a later reader can
+re-derive it against the historical blob, and neither figure survives that.
+
+- **`byte 2804` STOOD HERE AND THE BYTE IS AT 2811.** `[RAN, CONFIRMED]`
+  `git show 391f028:tests/stripboard/materialize-net-names.test.ts` read as
+  BYTES: 6185 bytes, exactly one offending byte, at offset **2811**, line 49,
+  column 32. **2804 is the offset of the `.` in `.join`** - the start of the
+  call, not the byte. **It is not a unit confusion:** the whole blob is pure
+  ASCII (6185 bytes, 6185 characters), so byte, codepoint and UTF-16 offsets are
+  all 2811. The guard reports offsets in the form `<path> byte <offset>`, so the
+  two numbers were directly comparable and still disagreed.
+- **`three lines below the byte` STOOD HERE AND THE DIRECTION IS INVERTED.**
+  `function pinSetKey` was at line **48** and the NUL at line **49**, so the
+  identifier was **ONE LINE ABOVE** the byte. The sentence is true of the
+  **REPAIRED** file, where `function pinSetKey` sits three lines after the `NUL`
+  constant - **stated as a RELATION and not as two line numbers, because the
+  corrections themselves move those lines** - and false of the **HISTORICAL** one
+  it describes. It appeared in FOUR places and
+  all four are corrected: this header, the body below,
+  `tests/document-control-bytes.test.ts` and
+  `tests/stripboard/materialize-net-names.test.ts`.
+
+**NEITHER ERROR TOUCHES THE FINDING.** The NUL was there, `grep` was blind to the
+whole file, and the repair and the guard are unaffected. What was wrong was the
+*where*.
 
 `[RAN]`, and this is the whole finding:
 
@@ -27550,7 +27667,10 @@ $ grep -rn "pinSetKey" tests/
 $
 ```
 
-`pinSetKey` is **defined in that file**, at line 48, three lines below the byte.
+`pinSetKey` is **defined in that file**, at line 48 - **one line ABOVE the byte**,
+which sat at line 49, column 32. (*"three lines below the byte"* stood here; see
+the correction at the top of this entry. Three lines below is where `pinSetKey`
+sits relative to the REPAIRED file's `NUL` constant - three lines after it.)
 A repo-wide grep for it returned nothing at all. **An agent looking for that
 helper would conclude it does not exist.**
 
@@ -27579,8 +27699,16 @@ was for**, and the guard as briefed - documents only - would not have covered it
 
 **FIXED IN THIS CHANGE, AND THE SCOPE OF THE GUARD WAS WIDENED BECAUSE OF IT.**
 The byte is now `String.fromCharCode(0)`, bound to a named `NUL` constant whose
-comment carries the `grep` evidence above, and the file is 6185 bytes before and
-after - the separator's behaviour is byte-identical. `tests/document-control-bytes.test.ts`
+comment carries the `grep` evidence above. **THE SEPARATOR IS ONE BYTE BEFORE AND
+AFTER and the separator's behaviour is byte-identical; THE FILE IS NOT.**
+*"the file is 6185 bytes before and after"* stood here and is wrong about the
+change that published it: 6185 is the historical blob, the committed file at
+`118737f` is **6925** bytes, and `git diff`'s own header says `Bin 6185 -> 6925`.
+The 740 bytes are the comment that explains the byte. (The file grew again on
+2026-10-24 when this entry's own corrections were written into that comment, so
+the figure to re-derive against is the one at the commit, not at HEAD - which is
+why only the separator's invariance is stated as a claim here.)
+`tests/document-control-bytes.test.ts`
 gained a second arm over **895** `.ts` files under `lib/`, `tools/`, `tests/` and
 `circuits/`, **which is a deliberate deviation from the scope this task was
 briefed with** (`docs/**/*.md`, `CLAUDE.md`, `AGENTS.md` - "the documents a human
@@ -27592,11 +27720,23 @@ document-only scope would never find the seventh either.
   `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md`, while sizing
   the control-byte guard that task was asked to write.
 - **Evidence** `[RAN, CONFIRMED]` the `grep -c` and `grep -rn` above, both before
-  the repair, and both again after it - **after the repair `grep -c pinSetKey`
-  returns `6` and the repo-wide grep over `tests/` names 7 lines**, so the
-  blindness was the byte and not the pattern. (Four of the six are the original
-  code and two are the repair's own comment, which quotes the identifier.) `[RAN]` a byte scan over all **1304** tracked files
-  which named this file as the only `.ts` offender in the tree. `[RAN]` the file's
+  the repair, and both again after it - **before the repair both returned nothing
+  at exit 1; after it `grep -c pinSetKey` returns a non-zero count and the
+  repo-wide grep over `tests/` names every occurrence**, so the blindness was the
+  byte and not the pattern. **THE COUNTS ARE DELIBERATELY NOT THE CLAIM:** at
+  `118737f` they were **6** and **7** (four code, two the repair's own comment);
+  at 2026-10-24, after this entry's corrections were written into that comment
+  and into the guard's, they are **8** and **11**. A figure that moves whenever
+  anybody writes the identifier down is not a figure to publish and defend -
+  **G288**'s call, applied here - so the invariant is published instead: **`grep`
+  finds the identifier at all, which it could not before.** `[RAN]` a byte scan
+  over every tracked file, **with the tree named**, because the pair `26 of 1304`
+  was published for this and is true of no commit: at the parent `391f028`,
+  **1304** tracked and **27** offenders, this file being the only `.ts` one; at
+  `118737f`, **1305** tracked and **26** offenders with all 895 `.ts` clean. The
+  published pair measured the working tree after the repair and before the guard
+  file was `git add`ed - a legitimate thing to measure, named now instead of
+  inferred (false-greens mechanisms **23** and **25**). `[RAN]` the file's
   own two tests green after the repair, and `bun run typecheck` clean. **THE
   CONTROL that could have answered differently:** the repair script refused unless
   it found **exactly one** offending byte and **exactly one** `.join(<NUL>)` site,
