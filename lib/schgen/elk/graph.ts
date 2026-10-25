@@ -41,8 +41,10 @@
  *   emitter see"*, and `lib/schgen/elk/adapt.ts` reads the same `u.rot`.
  */
 
-import { pinEnd, placeBox, type Point } from "../render/geometry.ts"
-import { sideOfPin } from "../rules/pin-sides.ts"
+import { pinEnd, placeBox, unionBox, type Point, type Side } from "../render/geometry.ts"
+import { labelBox, powerRotation, powerValueBox } from "../render/text-boxes.ts"
+import { blockPowerLibs, labelRefsOf, powerText } from "../render/power-text.ts"
+import { GEOMETRY_SIDE, sideOfPin } from "../rules/pin-sides.ts"
 import { negotiablePort } from "../authoring.ts"
 import { BLOCK_OPTIONS, ELK_SIDE, LAYER_CONSTRAINT_KEY, NODE_OPTIONS, PORT_SIDE_KEY, layerConstraintFor } from "./options.ts"
 import { serializeElkInput } from "./serialize.ts"
@@ -202,14 +204,57 @@ function boundaryNets(g: BlockSubgraph): readonly NetName[] {
 }
 
 /**
- * A boundary net as an ELK node of ZERO size, pinned to a layer when the reviewed rule gives it a
- * single horizontal side.
+ * The box a boundary net will actually occupy when it is drawn, at the origin, over every side
+ * `negotiablePort` leaves open - **computed with the same functions the clearance checker uses**,
+ * so the space ELK reserves and the space the checker measures cannot drift apart.
  *
- * **Zero size is the measured difference from both spikes, not an omission.** G101's floor - *"a
- * 1-part block's drawing is two-thirds boundary"* - was *"ENTIRELY the skin's"*: a port became a
- * drawn cell only because `netlistsvg` emits a 30x20 `inputExt` glyph for it. This backend emits
- * no port glyph. What a rail's power symbol or a label's outline occupies is decided when it is
- * drawn (seam B, **D9**), not here.
+ * A labelled net is drawn as a global label (`labelBox`); a rail is drawn as a power symbol glyph
+ * plus its value text (`powerText` + `powerValueBox`), at the rotation `powerRotation` gives for
+ * that side. Where more than one side is still open the union is taken, because the node must
+ * hold whichever side the layout eventually picks.
+ *
+ * `valueAlong` is taken as BOTH, unioned, for the same reason: it is the block's rendering mode
+ * (`valuesAlong`), which this function deliberately does not read - a size that depended on it
+ * would be a second place for the rendering mode to be correct in.
+ */
+function boundaryBox(net: NetName, g: BlockSubgraph, sides: readonly Side[]): Box {
+  const rail = g.railSpecs.get(net)
+  const libs = blockPowerLibs(g)
+  const boxes = sides.flatMap((side): Box[] => {
+    if (rail === undefined) return [labelBox({ net, at: ORIGIN, side, refs: labelRefsOf(g, net) })]
+    return [true, false].map((valueAlong) => {
+      const t = powerText(libs, { net, libId: rail.symbol, at: ORIGIN, rot: powerRotation(rail.kind, side), flag: false, valueAlong })
+      return unionBox(t.glyph, powerValueBox(t.value, t.text))
+    })
+  })
+  const first = boxes[0]
+  if (first === undefined) throw new Error(`boundary net ${net}: negotiablePort left no side open, so no drawn box can be computed`)
+  return boxes.reduce(unionBox, first)
+}
+
+/**
+ * A boundary net as an ELK node SIZED BY WHAT WILL BE DRAWN AT IT, pinned to a layer when the
+ * reviewed rule gives it a single horizontal side.
+ *
+ * **THIS RETURNED `width: 0, height: 0` UNTIL 2026-10-24, AND THAT IS WHY GENERATED SHEETS WERE
+ * CRAMPED.** The old comment called zero size *"the measured difference from both spikes, not an
+ * omission"* and deferred the geometry: *"What a rail's power symbol or a label's outline occupies
+ * is decided when it is drawn (seam B, D9), not here."* Deferring the DRAWING is right; deferring
+ * the SIZE told ELK the text was dimensionless, so it packed the circuit around points and the
+ * text was drawn afterwards into space that had never been reserved for it. The clearance checks
+ * then refused the block - **blaming the text for not fitting a space allocated on the assumption
+ * that it was not there.**
+ *
+ * **The owner saw it in a drawing before anyone saw it in this file**, 2026-10-24: *"There's no
+ * good reason to cram everything so tightly and then complain there's no room for the text."*
+ * `docs/known-gaps.md` **G291** has his words in full, the cause, and the measurement - sizing
+ * these nodes drew `transistor-preamp-lab` for the first time and cleared
+ * `transistor-preamp-loop`'s collisions outright, **with no clearance check relaxed**.
+ *
+ * **G101's floor is not contradicted.** That finding - *"a 1-part block's drawing is two-thirds
+ * boundary"* - was about `netlistsvg` emitting a 30x20 `inputExt` GLYPH for a port, which this
+ * backend still does not do. A port here has no glyph of its own; what it has is a label or a
+ * power symbol that this repository draws and measures, and that is what is reserved.
  *
  * The side comes from `negotiablePort`, which is the reviewed rule already in the tree; this only
  * turns it into D4's flow through `layerConstraintFor`. **Both of its inputs are the subgraph's
@@ -218,10 +263,11 @@ function boundaryNets(g: BlockSubgraph): readonly NetName[] {
 function boundaryNodeOf(net: NetName, g: BlockSubgraph): ElkNode {
   const port = negotiablePort(net, { portDirections: g.portDirections, rails: [...g.railSpecs.values()] })
   const constraint = layerConstraintFor(port.sides)
+  const box = boundaryBox(net, g, port.sides.map((s) => GEOMETRY_SIDE[s]))
   return {
     id: boundaryNodeId(net),
-    width: 0,
-    height: 0,
+    width: box.maxX - box.minX,
+    height: box.maxY - box.minY,
     layoutOptions:
       constraint === null ? { ...NODE_OPTIONS } : { ...NODE_OPTIONS, [LAYER_CONSTRAINT_KEY]: constraint },
   }
