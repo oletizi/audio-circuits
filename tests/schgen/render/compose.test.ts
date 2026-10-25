@@ -78,9 +78,27 @@ function declaredPositionsOf(subject: ComposedSubject, at: readonly Point[], blo
     .sort()
 }
 
-test("the five ELK-drawn legs REFUSE on three anchors, and that is G193's disagreement in ink", async () => {
-  expect(legs.drew.length).toBe(5)
-  expect(legs.refused.map((r) => r.id).sort()).toEqual(["tp-leg-emitter-bypass", "tp-stage"])
+/**
+ * **ALL SEVEN OF `transistor-preamp`'s BLOCKS DRAW SINCE 2026-10-25, so this subject is not "the
+ * five legs" any more and the probe is not a five-block subset of a sheet.** Boundary-node sizing
+ * (`docs/known-gaps.md` **G291**) drew `tp-leg-emitter-bypass` and `tp-stage`; `drawnBlocks`
+ * refuses nothing.
+ *
+ * **THE THREE ORIGINAL DISAGREEMENTS ARE UNCHANGED, WHICH IS THE CONTROL.** `tp-leg-feedback`'s
+ * `COLLECTOR` and the two `-lower` legs' `BASE` still declare `left, right` and still come out at
+ * the top - same ports, same edge, same sentence. The eight that are new all belong to `tp-stage`,
+ * the block that did not previously reach this comparison at all, so **nothing that was already
+ * being measured moved.**
+ *
+ * **AND TWO OF THE EIGHT ARE A CLASS THAT HAD NEVER FIRED ON REAL DATA.** `tp-stage` declares
+ * `IN_EXT` and `OUT` and its layout draws no anchor for either, which is the *"draws no anchor for
+ * it"* arm. Until now that arm was driven only by adding a synthetic port to mini's `XTAL` (see
+ * the test that does exactly that, below); it is now reachable from a declaration this repository
+ * actually ships.
+ */
+test("all seven ELK-drawn blocks REFUSE on eleven anchors, and that is G193's disagreement in ink", async () => {
+  expect(legs.drew.length).toBe(7)
+  expect(legs.refused.map((r) => r.id).sort()).toEqual([])
   const composed = await composeBlocks(legs.circuit, legs.contents, legs.paper, {
     interfaces: legs.interfaces, pack: packSheet,
   })
@@ -88,22 +106,50 @@ test("the five ELK-drawn legs REFUSE on three anchors, and that is G193's disagr
   // `Anchor.side` - which docs/known-gaps.md G193 records is taken from `negotiablePort`'s own
   // rule and NOT from ELK's route - against the declaration that same rule produced, so the rule
   // was authoring both sides of the comparison. Comparing the anchor's POSITION against the
-  // block's own extent asks ELK where it actually put the net, and three of the ten disagree.
+  // block's own extent asks ELK where it actually put the net, and eleven of the 23 disagree.
   expect(composed.ok).toBe(false)
   if (composed.ok) return
-  expect(composed.unsatisfiable.length).toBe(3)
-  expect(composed.unsatisfiable.map((u) => u.slice(0, u.indexOf(" ("))).sort()).toEqual([
+  const ports = composed.unsatisfiable.map((u) => u.slice(0, u.indexOf(" ("))).sort()
+  expect(ports).toEqual([
     "block tp-leg-feedback: interface port COLLECTOR",
     "block tp-leg-lower-a: interface port BASE",
     "block tp-leg-lower-b: interface port BASE",
+    "block tp-stage: interface port BASE",
+    "block tp-stage: interface port BYPASS_JUMPED",
+    "block tp-stage: interface port COLLECTOR",
+    "block tp-stage: interface port EMITTER",
+    "block tp-stage: interface port GND",
+    "block tp-stage: interface port IN_EXT",
+    "block tp-stage: interface port OUT",
+    "block tp-stage: interface port VCC",
   ])
-  // EACH ONE IS A CROSSING NET THE DECLARATION PUTS ON A HORIZONTAL EDGE (decision D4 pins flow
-  // left-to-right) AND ELK BRINGS OUT AT THE TOP. These blocks are `auto` and declare no template,
-  // so negotiablePort's rule is in scope and the DECLARATION is the authority - the opposite of
-  // mini's FLASH, where a reviewed template arrangement wins. Spec §1.5's authority order gives
-  // both answers.
-  expect(composed.unsatisfiable.every((u) => u.includes("declares sides left, right"))).toBe(true)
-  expect(composed.unsatisfiable.every((u) => u.includes("anchor on the top edge"))).toBe(true)
+  // ELEVEN OF TWENTY-THREE, and the denominator is the declared ports: 2 each on the five legs,
+  // 4 on tp-leg-emitter-bypass and 9 on tp-stage. So twelve declarations ARE satisfied and this is
+  // not a blanket refusal - tp-stage's own BYPASS_CAP is one of them.
+  const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
+  expect(declared).toBe(23)
+  // THE WRONG-EDGE CLASS: a crossing net the declaration puts on a horizontal edge (decision D4
+  // pins flow left-to-right) and ELK brings out at the top. These blocks are `auto` and declare no
+  // template, so negotiablePort's rule is in scope and the DECLARATION is the authority - the
+  // opposite of mini's FLASH, where a reviewed template arrangement wins. Spec §1.5's authority
+  // order gives both answers.
+  const legRefusals = composed.unsatisfiable.filter((u) => u.startsWith("block tp-leg-"))
+  expect(legRefusals.length).toBe(3)
+  expect(legRefusals.every((u) => u.includes("declares sides left, right"))).toBe(true)
+  expect(legRefusals.every((u) => u.includes("anchor on the top edge"))).toBe(true)
+  // THE NO-ANCHOR CLASS, on real data for the first time.
+  const noAnchor = composed.unsatisfiable.filter((u) => u.includes("draws no anchor for it"))
+  expect(noAnchor.map((u) => u.slice(0, u.indexOf(" (")))).toEqual([
+    "block tp-stage: interface port IN_EXT",
+    "block tp-stage: interface port OUT",
+  ])
+  // AND EVERY REFUSAL IS ONE OF THE TWO CLASSES: a third kind appearing here would be unexamined.
+  for (const u of composed.unsatisfiable) {
+    expect(
+      u.includes("draws no anchor for it") || u.includes("the block's own drawn extent puts its anchor on the"),
+      u,
+    ).toBe(true)
+  }
 })
 
 test("a fixed interface position is honoured, not relocated", async () => {
@@ -169,7 +215,7 @@ test("composition never alters a block's interior, under either packer", async (
     expect(packing.ok).toBe(true)
     if (!packing.ok) continue
     const { before, after, offsets } = layoutsAround(legs, packing.at)
-    expect(before.length).toBe(5)
+    expect(before.length).toBe(7)
     expect(interiorDrift(before, after, offsets)).toEqual([])
   }
 })
@@ -223,8 +269,8 @@ test("interiorDrift sees a re-routed wire, a changed rotation, a moved anchor an
 
 test("an interface that cannot be connected within shared clearance REFUSES, and does not redraw the block", async () => {
   // A5 landscape, which no SheetSpec may declare: PAPER holds A4 through A1, so this is the paper
-  // the five legs cannot be composed on, and the refusal must name the interface rather than only
-  // the paper.
+  // the seven blocks cannot be composed on, and the refusal must name the interface rather than
+  // only the paper.
   const A5 = { w: 210_000, h: 148_000 }
   const composed = await composeBlocks(legs.circuit, legs.contents, A5, {
     interfaces: legs.interfaces, pack: packSheet,
@@ -232,7 +278,12 @@ test("an interface that cannot be connected within shared clearance REFUSES, and
   expect(composed.ok).toBe(false)
   if (composed.ok) return
   expect(composed.unsatisfiable.join(" ")).toContain("interface")
-  expect(composed.unsatisfiable.length).toBe(10)
+  // EVERY declared port of every block, because no frame has a placed boundary at all when the
+  // packing fails: 2 each on the five legs, 4 on tp-leg-emitter-bypass and 9 on tp-stage = 23.
+  // It was 10 while only the five legs drew, and the arithmetic is the same arithmetic.
+  const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
+  expect(declared).toBe(23)
+  expect(composed.unsatisfiable.length).toBe(declared)
   expect(composed.unsatisfiable.join(" ")).toContain("cannot be connected")
   // AND THE BLOCKS ARE UNTOUCHED: the refusal returns no placement at all, so there is nothing
   // for a caller to emit, and the realised layouts are the same objects they were.
@@ -254,10 +305,13 @@ test("a declared side the block's extent does not put its anchor on REFUSES, nam
       expect(composed.ok).toBe(false)
       if (composed.ok) return
       expect(composed.unsatisfiable.join(" ")).toContain("the block's own drawn extent puts its anchor on the")
-      // Five of the ten: the other five anchors ARE on their block's top edge, so forcing every
-      // declaration to [top] does not refuse everything - which is what makes this a check and
-      // not a blanket.
-      expect(composed.unsatisfiable.length).toBe(5)
+      // FOURTEEN OF THE TWENTY-THREE: the other nine anchors ARE on their block's top edge, so
+      // forcing every declaration to [top] does not refuse everything - which is what makes this a
+      // check and not a blanket. It was 5 of 10 while only the five legs drew.
+      const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
+      expect(declared).toBe(23)
+      expect(composed.unsatisfiable.length).toBe(14)
+      expect(composed.unsatisfiable.length).toBeLessThan(declared)
     })
 })
 
@@ -434,8 +488,33 @@ test("G209's figures are re-runnable: composition leaves G200's two measures unc
   if (!shelf.ok || !elk.ok) throw new Error("a packer refused the legs probe")
   const realised = legs.contents.flatMap((f) => (f.block === null ? [] : [f.block.layout]))
   const before = shapeMeasures(realised)
-  // docs/known-gaps.md G200's table, over the five blocks that draw.
-  expect(before).toEqual({ placements: 14, distinctX: 14, wiredNets: 19, reversing: 9, segments: 67, wire: 284_480 })
+  /**
+   * **docs/known-gaps.md G200's table, over the SEVEN blocks that draw - it was five until
+   * 2026-10-25 (G291).** Every one of the six figures is a per-block SUM, so each is re-derived
+   * from the blocks rather than read off the output:
+   *
+   * | block | placements | distinctX | wiredNets | reversing | segments | wire |
+   * | --- | --- | --- | --- | --- | --- | --- |
+   * | `tp-leg-upper` | 3 | 3 | 4 | 2 | 14 | 69 850 |
+   * | `tp-leg-feedback` | 3 | 3 | 4 | 2 | 14 | 97 790 |
+   * | `tp-leg-lower-a` | 3 | 3 | 4 | 2 | 14 | 85 090 |
+   * | `tp-leg-lower-b` | 3 | 3 | 4 | 2 | 14 | 85 090 |
+   * | `tp-leg-collector` | 2 | 2 | 3 | 1 | 11 | 40 640 |
+   * | `tp-leg-emitter-bypass` | 2 | 2 | 4 | 2 | 12 | 63 500 |
+   * | `tp-stage` | 16 | 10 | 9 | 4 | 63 | 591 820 |
+   * | **sum** | **32** | **26** | **32** | **15** | **142** | **1 033 780** |
+   *
+   * **AND THE FIVE LEGS' OWN SUBTOTALS ARE THE CONTROL: FIVE OF THE SIX DID NOT MOVE.** Over the
+   * five that drew before - placements 14, distinctX 14, wiredNets 19, reversing 9, segments 67 -
+   * every figure is what it was. Only `wire` moved, 284 480 to 378 460, which is the shape of what
+   * boundary-node sizing does: it gives the labels room, so the wires that reach them are longer,
+   * and it changes neither the number of parts, nor how many share an x, nor how many nets reverse
+   * direction, nor how many segments the router emits.
+   */
+  expect(before).toEqual({ placements: 32, distinctX: 26, wiredNets: 32, reversing: 15, segments: 142, wire: 1_033_780 })
+  const fiveLegs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+  const legsOnly = shapeMeasures(legs.contents.flatMap((f) => (f.block === null || !fiveLegs.includes(f.blockId ?? "") ? [] : [f.block.layout])))
+  expect(legsOnly).toEqual({ placements: 14, distinctX: 14, wiredNets: 19, reversing: 9, segments: 67, wire: 378_460 })
   for (const packing of [shelf, elk]) {
     const { after } = layoutsAround(legs, packing.at)
     expect(shapeMeasures(after.map((b) => b.layout))).toEqual(before)

@@ -17,7 +17,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test"
 import ELK from "elkjs/lib/elk-api.js"
 import { cleanUpTempScratch } from "../../support/temp-scratch.ts"
-import { miniSheet, drawnBlocks, type ComposedSubject } from "../__fixtures__/composed.ts"
+import { miniSheet, drawnBlocks, type ComposedSubject, type DrawnBlocks } from "../__fixtures__/composed.ts"
 import {
   frameBoxOverlaps, frameIndexOf, frameNodeId, framePlacements, interFrameEdgeCount,
   interFrameNets, packingMeasures, readSheetPacking, sheetGraphOf, sheetOptions, shelfPacking,
@@ -36,7 +36,9 @@ const FULL_ID = (key: string): string => key.replace(/^elk\./, "org.eclipse.elk.
 
 let power: ComposedSubject
 let signal: ComposedSubject
-let legs: ComposedSubject
+// `DrawnBlocks` rather than `ComposedSubject`: the fixture guard below asserts `refused` is empty,
+// which is the half of "7 of 7 draw" that a dropped frame could otherwise hide.
+let legs: DrawnBlocks
 let known: readonly ElkLayoutOptionDescription[] = []
 
 beforeAll(async () => {
@@ -55,8 +57,11 @@ beforeAll(async () => {
 test("the fixtures are what the measurements below assume, so an empty result is not a pass", () => {
   expect(power.contents.length).toBe(4)
   expect(signal.contents.length).toBe(7)
-  // docs/known-gaps.md G200: 5 of transistor-preamp's 7 blocks draw.
-  expect(legs.contents.length).toBe(5)
+  // docs/known-gaps.md G291: 7 of transistor-preamp's 7 blocks draw since 2026-10-25, where G200
+  // measured 5 of 7. `drawnBlocks` refuses nothing, which is asserted rather than inferred from
+  // the count - a probe that silently dropped two frames would also report 5.
+  expect(legs.contents.length).toBe(7)
+  expect(legs.refused).toEqual([])
   expect(known.length).toBeGreaterThan(100)
 })
 
@@ -246,9 +251,39 @@ test("BOTH packings are measured and NEITHER is preferred here", async () => {
   expect(b.overlaps).toEqual([])
 })
 
-test("the five ELK-drawn legs have four inter-frame edges over two nets, so ELK packs them", () => {
+/**
+ * **SEVEN FRAMES, FIVE SHARED NETS, NINE EDGES - it was five frames, two nets and four edges until
+ * 2026-10-25.** `tp-leg-emitter-bypass` and `tp-stage` draw now (`docs/known-gaps.md` **G291**),
+ * and they are the two frames that carry `BYPASS_CAP`, `BYPASS_JUMPED` and `EMITTER`.
+ *
+ * **THE EDGE COUNT IS DERIVED FROM THE FRAME LISTS, NOT READ OFF THE GRAPH**: `edgesForNet` chains
+ * a net's frames into a spanning path, so `n` frames give `n - 1` edges, and
+ * `interFrameNets` reports which frames each net is on. The frame indices are `drawnBlocks`'
+ * declaration order - upper 0, feedback 1, lower-a 2, lower-b 3, collector 4, emitter-bypass 5,
+ * stage 6:
+ *
+ * | net | frames | edges |
+ * | --- | --- | --- |
+ * | `BASE` | 0, 1, 2, 3, 6 | 4 |
+ * | `BYPASS_CAP` | 5, 6 | 1 |
+ * | `BYPASS_JUMPED` | 5, 6 | 1 |
+ * | `COLLECTOR` | 1, 4, 6 | 2 |
+ * | `EMITTER` | 5, 6 | 1 |
+ * | | | **9** |
+ */
+test("the seven ELK-drawn blocks have nine inter-frame edges over five nets, so ELK packs them", () => {
   const nets = [...interFrameNets(legs.contents)]
-  expect(nets.map(([net]) => net)).toEqual(["BASE", "COLLECTOR"])
-  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(4)
+  expect(nets.map(([net]) => net)).toEqual(["BASE", "BYPASS_CAP", "BYPASS_JUMPED", "COLLECTOR", "EMITTER"])
+  // The frame lists, so the edge count below is an arithmetic consequence rather than a second
+  // reading of the same graph.
+  expect(nets.map(([net, on]) => `${net} on ${on.join(",")}`)).toEqual([
+    "BASE on 0,1,2,3,6",
+    "BYPASS_CAP on 5,6",
+    "BYPASS_JUMPED on 5,6",
+    "COLLECTOR on 1,4,6",
+    "EMITTER on 5,6",
+  ])
+  expect(nets.reduce((n, [, on]) => n + on.length - 1, 0)).toBe(9)
+  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(9)
   expect(sheetPackerFor(legs.contents, legs.paper).by).toBe("elk")
 })
