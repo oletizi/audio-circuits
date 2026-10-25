@@ -28044,8 +28044,62 @@ repository would have shipped notes about a problem it had chosen not to fix.
   probe scripts were scratch and are not committed; the one-line change is quoted
   above in full and the tool is a committed entry point, so the measurement is
   reproducible without them. **Nothing here is relayed from another agent.**
-- **Why it is open** nothing is built. `boundaryNodeOf` still returns zero-size
-  nodes on `main` and on `feature/schematics-tooling`.
+**BUILT 2026-10-25 AND MEASURED AGAIN, with the real geometry rather than the
+probe's label-shaped approximation.** `boundaryNodeOf` now sizes the node by the
+union, over every side `negotiablePort` leaves open, of the box the thing will
+actually occupy - `labelBox` for a labelled net, `powerText`'s glyph unioned with
+`powerValueBox` for a rail - computed with the same functions the clearance
+checker uses, so the reservation and the check cannot drift apart.
+
+`[RAN]` `bun tools/schgen/board-sheets.ts`, every clearance check in force:
+
+| board | before | after |
+| --- | --- | --- |
+| `transistor-preamp-lab` | refused, body over label | **GENERATED** |
+| `pultec-hi-boost` | refused, clearance | clearance **GONE**; now **G284** |
+| `pultec-low-cut` | refused, clearance | clearance **GONE**; now **G284** |
+| `transistor-preamp-loop` | refused, clearance | clearance **GONE**; now **G284** |
+| `pultec-hi-cut` | refused, clearance | clearance **GONE**; now *"blocks do not fit on A3 … needed at least 427.99 x 297 mm"* |
+| `transistor-preamp-buffered`, `-staged` | refused, glyph touch | **unchanged** |
+
+**FIVE of the seven clearance boards resolved.** The two that did not are exactly
+the GND-glyph-touches-VCC-glyph pair the spec reserved to the owner as possibly a
+CORRECTNESS class rather than a crowding one, so the residue lines up with the
+open question rather than cutting across it. **`pultec-hi-cut`'s new refusal is
+the shape this work was for**: it says the drawing needs bigger paper and names
+the size, instead of blaming the text for not fitting.
+
+**THE STRONGEST SINGLE SIGNAL CAME FROM A TEST FAILING.**
+`tests/schgen/remeasure.test.ts` went to zero passes, and the refusal is correct
+and is not a regression:
+
+> *"transistor-preamp: 7 of its 7 blocks draw. This experiment is specified for a
+> circuit where SOME blocks draw (controller ruling R38): with none there is no
+> composed side, and with all of them the flat side would be a whole circuit and
+> the sub-circuit caveat this module prints would be false."*
+
+**Every block of `transistor-preamp` now lays out.** A guard built for a
+partially-drawing circuit declined to report a comparison that had become
+meaningless. That is the behaviour `CLAUDE.md` asks for - a skipped check must
+never look like a passing one - working in this change's favour.
+
+**COST, TRIAGED IN FULL AND NOT ONE OF THEM A BROKEN GUARANTEE.** 24 tests across
+8 files: one asserts *"each boundary net is one zero-size node"* and encodes the
+defect as a requirement; one is a byte-pinned ELK serialisation whose key ORDER
+is unchanged and whose fixture embeds the two old numbers (`0,0` to
+`3810,6985`); one is the re-scoping above; and **21 are recorded measurements
+that moved because more blocks now lay out** - five drawn legs became seven,
+interface counts 10 to 23. Figures cited in **G101**, **G193**, **G200** and
+**G209** are among them and need re-driving with those entries amended.
+
+**That re-driving is deliberately a separate pass with a reviewer who did not
+write the change**, because changing 24 expectations to match output the same
+agent just produced is the invariant `CLAUDE.md` names. Committed red at
+`599a54e` on the owner's instruction - *"commit now. i don't want to lose your
+work"* - and explicitly marked not-finished in that commit message.
+
+- **Why it is open** the change is built and committed; **the suite is red at 24
+  tests** and the register figures above are not yet re-driven.
 - **What would settle it.** **CRITERION:** a boundary node's size is the geometry
   of the thing that will be drawn at it - `labelExtent` for a labelled net,
   `powerValueBox`'s geometry for a rail - and the board census does not regress.
