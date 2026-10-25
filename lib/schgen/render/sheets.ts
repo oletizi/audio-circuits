@@ -13,7 +13,9 @@
 
 /**
  * Sheet arrangement: every block of a sheet realised, framed and titled, frames shelf-packed on the
- * sheet's declared paper (never a larger one), anchors turned into power symbols (rails) or global
+ * sheet's declared paper **or the smallest larger one they fit on** - this said *"never a larger
+ * one"* until 2026-10-25, and `fittingPaper` below says why that changed and whose decision it
+ * was - anchors turned into power symbols (rails) or global
  * labels (everything else), NC pins marked, then a sheet-wide wire-safety and body-clearance
  * backstop. Junction dots are cosmetic: exactly the junctionPoints() of the sheet's items.
  */
@@ -29,6 +31,12 @@ import {
 import { fmtMm, placeBox, pointKey, type Point, type Um } from "./geometry.ts";
 import type { SymbolResolver } from "./library.ts";
 import { shelfPacking, type SheetPacking } from "../elk/sheet-graph.ts";
+
+/** What a sheet-packing pre-pass hands in: the packing AND the paper it is on. */
+export interface PrePacked {
+  readonly paper: Paper;
+  readonly packing: SheetPacking;
+}
 import { assertSheetSafe, sheetItems, type SheetBlock } from "./sheet-check.ts";
 import { blockFields, type FieldFallback } from "./field-placement.ts";
 import { anchorsToSymbols, valuesAlong } from "./power-text.ts";
@@ -162,14 +170,79 @@ export function sheetContents(c: Circuit, sheetId: SheetId, symbols: SymbolResol
   ];
 }
 
-export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null = null, packing: SheetPacking | null = null): SheetDrawing {
+/**
+ * Paper sizes smallest first, which is the order `fittingPaper` walks. Declared here rather than
+ * read off `PAPER`'s key order, because an object's key order is not a stated sequence and this
+ * one is load-bearing: it decides which sheet a drawing lands on.
+ */
+export const PAPER_LADDER: readonly Paper[] = ["A4", "A3", "A2", "A1"];
+
+/**
+ * The papers a sheet declaring `declared` may be drawn on, smallest first - `declared` and every
+ * larger one. **Exported because the sheet-packing PRE-PASS must walk the same sequence with its
+ * own packer** (`tools/schgen/elk/sheet-layout.ts`): the pre-pass packs with ELK and this module
+ * packs with the shelf packer, so the two cannot share a walk, but they must not disagree about
+ * the ladder. One stated sequence, two users.
+ */
+export function papersFrom(declared: Paper): readonly Paper[] {
+  const i = PAPER_LADDER.indexOf(declared);
+  if (i === -1) throw new Error(`paper ${declared} is not in PAPER_LADDER, which must name every Paper`);
+  return PAPER_LADDER.slice(i);
+}
+
+/**
+ * The smallest paper from `declared` upwards that `contents` fit on, with whether it grew.
+ *
+ * **THE DECLARED PAPER IS A FLOOR, NOT A CEILING, AND THAT IS A CHANGE.** This used to refuse -
+ * *"blocks do not fit on A3; give the sheet a larger paper in its SheetSpec"* - which made a
+ * person do arithmetic the tool had already done: the refusal named the size needed, so the
+ * answer was derivable from the message that withheld it. `CLAUDE.md`: *"A first solution that
+ * technically works but leaves a person doing fiddly remedial work is a failure, not a
+ * delivery."*
+ *
+ * **The owner, 2026-10-25, asked for this directly.** Told that two boards needed more than A3
+ * and asked which way he wanted it resolved, his reply was *"why are you asking?"* - a paper
+ * size large enough to hold a drawing is a measurement, not a preference, and standard paper is
+ * a known ladder. `docs/known-gaps.md` **G292** records the exchange.
+ *
+ * **It still refuses when NOTHING fits**, because then there is a real decision to make and no
+ * ladder step to take. And it never SHRINKS below the declaration: a sheet declared A3 that
+ * would fit on A4 stays A3, because the declared size is somebody's statement about the artifact
+ * and only the overflow is this function's business.
+ */
+function fittingPaper(
+  declared: Paper,
+  contents: readonly FrameContent[],
+): { readonly paper: Paper; readonly packed: SheetPacking; readonly grewFrom: Paper | null } {
+  let last: SheetPacking | null = null;
+  for (const paper of papersFrom(declared)) {
+    const packed = shelfPacking(contents, PAPER[paper]);
+    last = packed;
+    if (packed.ok) return { paper, packed, grewFrom: paper === declared ? null : declared };
+  }
+  const needed = last !== null && !last.ok ? last.needed : null;
+  throw new Error(
+    `sheet contents do not fit on any paper size up to ${PAPER_LADDER[PAPER_LADDER.length - 1]}` +
+      (needed === null ? "" : ` (needed at least ${fmtMm(needed.w)} × ${fmtMm(needed.h)} mm)`) +
+      "; the drawing has to get smaller, which is not something this function can do",
+  );
+}
+
+export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolver, flagLibId: string, elk: Backend | null = null, packing: PrePacked | null = null): SheetDrawing {
   const sheet = sheetOf(c, sheetId);
-  const paper = PAPER[sheet.paper];
   const contents = sheetContents(c, sheetId, symbols, flagLibId, elk);
-  const packed = packing ?? shelfPacking(contents, paper);
+  // A pre-pass has already walked the ladder with its own packer and says which paper it landed
+  // on; without one, walk it here with the shelf packer. Either way the paper used is the paper
+  // the frames were packed against, which is the thing that must not drift.
+  const fitted =
+    packing === null
+      ? fittingPaper(sheet.paper, contents)
+      : { paper: packing.paper, packed: packing.packing, grewFrom: packing.paper === sheet.paper ? null : sheet.paper };
+  const paper = PAPER[fitted.paper];
+  const packed = fitted.packed;
   if (!packed.ok) {
     throw new Error(
-      `sheet ${sheetId}: blocks do not fit on ${sheet.paper}; give the sheet a larger paper in its SheetSpec ` +
+      `sheet ${sheetId}: blocks do not fit on ${fitted.paper}; give the sheet a larger paper in its SheetSpec ` +
         `(needed at least ${fmtMm(packed.needed.w)} × ${fmtMm(packed.needed.h)} mm)`,
     );
   }

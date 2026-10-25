@@ -25,7 +25,7 @@ import { contentOffset, frameAt, translateLayout } from "../../../lib/schgen/ren
 import { GRID } from "../../../lib/schgen/render/geometry.ts"
 import { shelfPacking, type SheetPacking } from "../../../lib/schgen/elk/sheet-graph.ts"
 import { packSheet } from "../../../tools/schgen/elk/sheet-layout.ts"
-import { layoutSheet } from "../../../lib/schgen/render/sheets.ts"
+import { layoutSheet, sheetOf } from "../../../lib/schgen/render/sheets.ts"
 import { FLAG_LIB_ID } from "../../../tools/schgen/generate.ts"
 import type { BlockLayout } from "../../../lib/schgen/render/block-types.ts"
 import type { InterfacePort } from "../../../lib/schgen/authoring.ts"
@@ -465,7 +465,7 @@ test("spec §3.4 on a composed sheet: no frame overlap, no non-member containmen
   const packing = await packSheet(signal.contents, signal.paper)
   expect(packing.ok).toBe(true)
   if (!packing.ok) return
-  const drawing = layoutSheet(signal.circuit, "signal", signal.symbols, FLAG_LIB_ID, signal.elk, packing)
+  const drawing = layoutSheet(signal.circuit, "signal", signal.symbols, FLAG_LIB_ID, signal.elk, { paper: sheetOf(signal.circuit, "signal").paper, packing })
   expect(nonMemberContainments(signal.circuit, drawing)).toEqual([])
   // A CHECK THAT COULD HAVE FAILED: the same count over a frame deliberately grown to swallow the
   // whole sheet reports every symbol that is not its own block's.

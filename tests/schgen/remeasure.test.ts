@@ -25,7 +25,7 @@ import { comparabilityOf, SPIKE_BLOCKS, SPIKE_CROSSING_RATIO, spikeRowFor } from
 import { integratedExperiment, type IntegratedExperiment } from "../../tools/schgen/remeasure-composed.ts"
 import { disjointness, legShapes, skinIdWidth, type Disjointness, type LegShape } from "../../tools/schgen/remeasure-criteria.ts"
 import { nonMemberContainments } from "../../lib/schgen/render/compose.ts"
-import { layoutSheet } from "../../lib/schgen/render/sheets.ts"
+import { layoutSheet, sheetOf } from "../../lib/schgen/render/sheets.ts"
 import { packSheet } from "../../tools/schgen/elk/sheet-layout.ts"
 import { FLAG_LIB_ID } from "../../tools/schgen/generate.ts"
 
@@ -603,7 +603,7 @@ describe("step 7: disjointness at sheet level, over Task 15's packing", () => {
     const packing = await packSheet(signal.contents, signal.paper)
     expect(packing.ok).toBe(true)
     if (!packing.ok) return
-    const drawing = layoutSheet(signal.circuit, "signal", signal.symbols, FLAG_LIB_ID, signal.elk, packing)
+    const drawing = layoutSheet(signal.circuit, "signal", signal.symbols, FLAG_LIB_ID, signal.elk, { paper: sheetOf(signal.circuit, "signal").paper, packing })
     expect(nonMemberContainments(signal.circuit, drawing)).toEqual([])
     const huge = {
       ...drawing,

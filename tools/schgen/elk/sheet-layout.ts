@@ -34,11 +34,11 @@ import ELK from "elkjs/lib/elk-api.js"
 import {
   interFrameEdgeCount, readSheetPacking, sheetGraphOf, shelfPacking, type SheetPacking,
 } from "../../../lib/schgen/elk/sheet-graph.ts"
-import { PAPER, sheetContents } from "../../../lib/schgen/render/sheets.ts"
+import { PAPER, papersFrom, sheetContents } from "../../../lib/schgen/render/sheets.ts"
 import type { FrameContent } from "../../../lib/schgen/render/frames.ts"
 import type { Size } from "../../../lib/schgen/render/pack.ts"
 import type { Backend } from "../../../lib/schgen/render/block-types.ts"
-import type { Circuit, SheetId } from "../../../lib/schgen/ir/types.ts"
+import type { Circuit, Paper, SheetId } from "../../../lib/schgen/ir/types.ts"
 import type { SymbolResolver } from "../../../lib/schgen/render/library.ts"
 import type { ELK as ElkApi } from "elkjs/lib/elk-api.js"
 
@@ -120,16 +120,39 @@ export async function packSheet(contents: readonly FrameContent[], paper: Size):
  * the entry here would make the sheet silently fall back to the shelf packer, which is the
  * substitution spec §1.3 forbids.
  */
+export interface SheetPacked {
+  /** The paper the packing is ON - the declared one, or the smallest larger one that fit. */
+  readonly paper: Paper
+  readonly packing: SheetPacking
+}
+
 export async function sheetPackPrePass(
   c: Circuit,
   symbols: SymbolResolver,
   flagLibId: string,
   elk: Backend | null,
-): Promise<ReadonlyMap<SheetId, SheetPacking>> {
-  const out = new Map<SheetId, SheetPacking>()
+): Promise<ReadonlyMap<SheetId, SheetPacked>> {
+  const out = new Map<SheetId, SheetPacked>()
   for (const sheet of c.sheets) {
     const contents = sheetContents(c, sheet.id, symbols, flagLibId, elk)
-    out.set(sheet.id, await packSheet(contents, PAPER[sheet.paper]))
+    // THE SAME LADDER `layoutSheet`'s `fittingPaper` WALKS, from the one stated sequence
+    // (`papersFrom`). Two packers cannot share a walk - this one is async and ELK-backed, that
+    // one is the synchronous shelf packer - but they must not disagree about the order, so
+    // neither spells the sequence out.
+    let last: SheetPacking | null = null
+    let chosen: SheetPacked | null = null
+    for (const paper of papersFrom(sheet.paper)) {
+      const packing = await packSheet(contents, PAPER[paper])
+      last = packing
+      if (packing.ok) {
+        chosen = { paper, packing }
+        break
+      }
+    }
+    // A sheet that fits on NOTHING is still returned with its refusal, for the reason the header
+    // above gives: `layoutSheet` is what turns it into the message naming the size needed, and
+    // dropping the entry would make the sheet silently fall back to the shelf packer.
+    out.set(sheet.id, chosen ?? { paper: sheet.paper, packing: last ?? (await packSheet(contents, PAPER[sheet.paper])) })
   }
   return out
 }
