@@ -17,7 +17,16 @@
  *
  * **`null` IS A REAL ANSWER AND IT MEANS STEP 3, NOT "ROTATION 0".** A rule library that returned
  * a rotation for everything would silently take the backend's half of §1.5 away. So the library
- * holds exactly one entry, and everything else returns `null`.
+ * holds few entries and everything else returns `null`.
+ *
+ * **IT HELD EXACTLY ONE UNTIL 2026-10-25 AND NOW HOLDS TWO**, and the second exists only because
+ * the owner supplied its criterion - *"signal flows left to right"* (`docs/known-gaps.md`
+ * **G292**). `signalAxis` below has his words and the reasoning. **The two are ORDERED, not
+ * merged**: the rail entry runs first and wins, so a grounded end still goes to the bottom; the
+ * signal axis answers only where no rail constraint exists, which is the case §1.5 step 3 used to
+ * take and which resolved in practice to rotation 0 - a VERTICAL axis, across the reading
+ * direction. *"Left open"* was in practice *"drawn the way that reads worst"*, and nobody had said
+ * otherwise until he did.
  *
  * **THE ONE ENTRY, AND WHERE IT COMES FROM RATHER THAN FROM THIS AGENT'S TASTE.** `RailSpec` in
  * `lib/schgen/ir/types.ts` states the convention already, in the tree, as the documented meaning
@@ -40,6 +49,7 @@
 
 import { ROTATIONS, type Rotation } from "../render/geometry.ts"
 import { sideOfPin, type PinSide } from "./pin-sides.ts"
+import { comparePinNumbers } from "../ir/order.ts"
 import type { LibSymbol } from "../render/library.ts"
 import type { NetName, RailSpec } from "../ir/types.ts"
 import type { ComponentKind } from "../../model/types.ts"
@@ -70,6 +80,52 @@ const SIDE_FOR_RAIL: Readonly<Record<RailSpec["kind"], PinSide>> = {
 }
 
 /**
+ * THE OWNER'S LEFT-TO-RIGHT DIRECTIVE, for a two-terminal part with NO rail end: lay its axis
+ * along the signal, which means both pins on the left and right sides rather than top and bottom.
+ *
+ * **IT IS HIS CRITERION AND NOT THIS MODULE'S.** Reviewing the first `pultec-hi-boost` sheet this
+ * repository generated, 2026-10-25:
+ *
+ * > *"It would, however, be easier to read if the capacitors in the capacitor bank were rotated 90
+ * > degrees and not fanned out to the top and bottom of the switch symbol, but arranged to the
+ * > right of the switch symbol. signal flows left to right."*
+ *
+ * `docs/known-gaps.md` **G292** has it in full. Readability is exactly the class `CLAUDE.md`
+ * reserves from the agent producing the artifact, and **G71** holds that a readability rule
+ * invented here would be this project's invention wearing a citation - so this entry exists
+ * because he supplied one, and it would not otherwise.
+ *
+ * **WHY THESE KINDS AND NO OTHERS: the same reasoning `RAIL_END_KINDS` already carries.** A part
+ * whose glyph draws its own direction - a diode - has "which way round" decided by what the part
+ * does, and turning it to suit a reading direction would be a rule about current dressed up as a
+ * rule about layout. So this shares that list rather than widening it. **The probe that measured
+ * this directive's value rotated EVERY non-rail part and is not what shipped**; G292 says so.
+ *
+ * **THE TIE-BREAK IS DETERMINISTIC AND IS NOT A CLAIM ABOUT SIGNAL DIRECTION.** Two rotations put
+ * a two-pin part's ends left and right, differing only in which end is which. Choosing between
+ * them properly needs the signal's direction through that net, and **the IR cannot express it**:
+ * `portDirections` carries direction for boundary nets only, and G292 records that
+ * `edgesForNet` currently directs every interior edge by declaration order. So the lower-numbered
+ * pin goes left, stated as an arbitrary stable choice rather than dressed up as semantics. When
+ * interior signal direction exists, this is the place that should consult it.
+ */
+function signalAxis(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
+  if (!RAIL_END_KINDS.includes(kind)) return null
+  const pins = symbol.pins.filter((p) => p.unit === 1 || p.unit === 0)
+  if (pins.length !== 2) return null
+  const [a, b] = pins
+  if (a === undefined || b === undefined) return null
+  const horizontal = ROTATIONS.filter((rot) => {
+    const sides = [sideOfPin(rot, a), sideOfPin(rot, b)]
+    return sides.includes("left") && sides.includes("right")
+  })
+  if (horizontal.length === 0) return null
+  const lowerFirst = [...pins].sort((p, q) => comparePinNumbers(p.number, q.number))[0]
+  const chosen = horizontal.find((rot) => sideOfPin(rot, lowerFirst!) === "left")
+  return chosen ?? horizontal[0] ?? null
+}
+
+/**
  * The preferred rotation for a part of `kind` in `context`, or `null` for "the rules leave this
  * open" - which under spec §1.5 hands it to the backend and is not a synonym for 0.
  *
@@ -87,7 +143,7 @@ export function preferredOrientation(kind: ComponentKind, context: OrientationCo
     if (rail === undefined) continue
     constraints.push({ pin, side: SIDE_FOR_RAIL[rail.kind] })
   }
-  if (constraints.length === 0) return null
+  if (constraints.length === 0) return signalAxis(kind, context.symbol)
   const satisfying = ROTATIONS.filter((rot) =>
     constraints.every(({ pin, side }) => {
       const libPin = context.symbol.pins.find((p) => p.number === pin)

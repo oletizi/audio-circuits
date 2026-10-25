@@ -44,8 +44,33 @@ test("a decoupling capacitor across a supply and a ground satisfies both constra
   expect(preferredOrientation("capacitor", context("Device:C", { "1": "GND", "2": "VCC" }))).toBe(180)
 })
 
-test("a part on no rail at all is left open for the backend", () => {
-  expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBeNull()
+/**
+ * **THE DEMAND HERE REVERSED ON 2026-10-25 and the deleted assertion was
+ * `...toBeNull()`** - *"a part on no rail at all is left open for the backend"*. The owner,
+ * reviewing the first generated `pultec-hi-boost` sheet: *"signal flows left to right"*, with
+ * the capacitor bank *"rotated 90 degrees"*. `docs/known-gaps.md` **G292**.
+ *
+ * `null` meant step 3, and step 3 resolves to 0, which for `Device:R` and `Device:C` is a
+ * VERTICAL axis - across the reading direction. So "left open" was in practice "drawn the way
+ * that reads worst", and nobody had said otherwise until he did.
+ */
+test("a part on no rail at all is laid along the signal, because signal flows left to right", () => {
+  expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
+})
+
+test("the rail constraint still WINS over the signal axis, so a grounded end goes to the bottom", () => {
+  // The control for the test above: if the signal-axis entry had been added ahead of the rail
+  // entry rather than behind it, every one of these would now be 90 and the rail convention -
+  // RailSpec's own documented sentence - would have been silently overridden.
+  expect(preferredOrientation("capacitor", context("Device:C", { "1": "VCC", "2": "GND" }))).toBe(0)
+  expect(preferredOrientation("capacitor", context("Device:C", { "1": "GND", "2": "VCC" }))).toBe(180)
+  expect(preferredOrientation("resistor", context("Device:R", { "1": null, "2": "GND" }))).toBe(0)
+})
+
+test("a kind whose glyph draws its own direction is still left open, signal axis or not", () => {
+  // Same reasoning RAIL_END_KINDS already carries for the rail entry: turning a diode to suit a
+  // reading direction would be a rule about current dressed up as a rule about layout.
+  expect(preferredOrientation("diode", context("Device:R", { "1": "IN", "2": "OUT" }))).toBeNull()
 })
 
 test("a part with BOTH ends on ground rails is left open, because the constraints do not choose", () => {
