@@ -39,7 +39,8 @@ test("elkInputOf's own `serialized` is that same string", () => {
 /**
  * **THE CONTRACT, BYTE FOR BYTE.** One resistor between a supply rail and a ground rail: a unit
  * node sized from `Fix:R`'s own unit box, its two pins as fixed-position ports on the sides the
- * symbol's pin angles put them, and a zero-size boundary node per rail.
+ * symbol's pin angles put them, and a boundary node per rail sized by the power symbol and value
+ * text that will be drawn at it.
  *
  * If this string changes, every hash in the generation manifest and every baseline taken against
  * it changes with it. That is a deliberate act, not a refactor: update it here, in the same change
@@ -51,6 +52,17 @@ test("elkInputOf's own `serialized` is that same string", () => {
  * measures. **Every manifest key moves with this string.** Tasks 16 and 17 are unrun, so no
  * baseline exists yet to invalidate; this was the cheapest moment the change would ever have, and
  * that is why it was made now rather than deferred.
+ *
+ * **IT CHANGED AGAIN ON 2026-10-25, IN TWO NUMBERS AND NOTHING ELSE.** `boundaryNodeOf` stopped
+ * handing every rail and label to ELK as a dimensionless point (`docs/known-gaps.md` **G291**), so
+ * each `port:` node's `width` and `height` went from `0,0` to `3810,6985`. **The declared KEY ORDER
+ * did not move** - `width` and `height` were already emitted on these nodes, carrying `0` - which
+ * is checkable against this file's own history and is the half of this test that is the contract.
+ * Both numbers are derived from the symbol and the text rules in
+ * `tests/schgen/elk/graph.test.ts`'s own doc comment rather than read off the serializer: a
+ * 3-character value text is 3 GRID steps = 3810 wide, and the glyph plus the value running along
+ * it is 5.5 GRID steps = 6985 tall. **Every manifest key moves with this string**, and Tasks 16
+ * and 17 are still unrun, so there is still no baseline to invalidate.
  */
 const ONE_RESISTOR =
   '{"id":"B","layoutOptions":{"elk.algorithm":"layered","elk.direction":"RIGHT",' +
@@ -64,8 +76,8 @@ const ONE_RESISTOR =
   '"layoutOptions":{"elk.portConstraints":"FIXED_POS"},"ports":[{"id":"R_A:1#1","x":1016,"y":0,' +
   '"width":0,"height":0,"layoutOptions":{"elk.port.side":"NORTH"}},{"id":"R_A:1#2","x":1016,' +
   '"y":7620,"width":0,"height":0,"layoutOptions":{"elk.port.side":"SOUTH"}}]},' +
-  '{"id":"port:3V3","width":0,"height":0,"layoutOptions":{"elk.portConstraints":"FIXED_POS"}},' +
-  '{"id":"port:GND","width":0,"height":0,"layoutOptions":{"elk.portConstraints":"FIXED_POS"}}],' +
+  '{"id":"port:3V3","width":3810,"height":6985,"layoutOptions":{"elk.portConstraints":"FIXED_POS"}},' +
+  '{"id":"port:GND","width":3810,"height":6985,"layoutOptions":{"elk.portConstraints":"FIXED_POS"}}],' +
   '"edges":[{"id":"3V3:0","sources":["R_A:1#1"],"targets":["port:3V3"]},' +
   '{"id":"GND:0","sources":["R_A:1#2"],"targets":["port:GND"]}]}'
 
