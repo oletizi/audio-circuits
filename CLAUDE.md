@@ -120,54 +120,45 @@ So:
   lands"*. **The port landed and the prediction was wrong for a reason nobody
   anticipated, which is worth more than a silent correction.** `lib/schgen/`
   exists, draws **46 of this repository's 52 declared ELK blocks**, and
-  **produces a schematic for 2 of the 11 boards in `boards/`** - `pt2399-core`
-  since 2026-10-24 and `transistor-preamp-lab` since 2026-10-25, when
-  boundary-node sizing stopped handing ELK a dimensionless point for every global
-  label and power symbol (`docs/known-gaps.md` **G291**). **`35 of 52` and
-  `1 of 11` both stood here and are SUPERSEDED**, and the board figure's second
-  column below binds the new one identically. **`0 of 11` STOOD HERE, and beside it "six are refused at
-  `validateCircuit` on net names". The count is SUPERSEDED and the cause is
-  REFUTED, which is the worse of the two: a stale count misleads about
-  progress, a stale cause sends you after a rule that is not there.** No board
-  refuses on a net name at all. The casing demand is gone, on the owner's
-  instruction - *"i absolutely do not care about the letter case of net names.
-  That's a silly quibble."* - and **G150**'s re-drive reads all eleven refusal
-  blocks and finds that **not one mentions a net name, a case, or
-  `UPPER_SNAKE`**. What refuses today is **five** boards at `validateCircuit`,
-  **one problem each**: four Pultec boards on a switch MOUNTING pin (`pin MP`)
-  and `pultec-mid` on a switch throw (`pin 12`) that **no slot in the model can
-  carry**; plus **five** `transistor-preamp` boards at ELK layout on text,
-  power-symbol and junction placement.
-  **THE FOUR `MP` BOARDS STOOD HERE AS AN "OPEN OWNER QUESTION and not work",
-  and that was WRONG - struck 2026-10-24 after he asked what the demand was
-  for.** They were our own validator's defect, not a question for him: a mount
-  lug is mechanical, `pinsDeclared` had no notion of a mechanical pin, and
-  nothing about the fitted part can change what `NC` asserts. **G282** carries
-  the struck clause and the three questions that took it apart.
-  **FIXED THE SAME DAY**, so the "four Pultec boards on `pin MP`" above is
-  itself now superseded: `lib/schgen/ir/mechanical-pins.ts` whitelists the pin
-  per symbol and the four boards cleared `validateCircuit`. **What refuses
-  today is ONE board at `validateCircuit`** - `pultec-mid`, on `pin 12` - and
-  **NINE at ELK layout**, the four Pultec boards having joined the five
-  `transistor-preamp` ones in the `G260`/`G265` text-placement and junction
-  class. **The board count did not move and was never promised to**: still
-  **1 of 11**. **G290** records why the classification is a whitelist rather
-  than inferred from the symbol's drawing - the geometric rule is perfect on
-  the one symbol that motivates it and misclassifies both terminals of
-  `Device:R` and six of eight pins on a TL072.
-  **AND `2 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it
-  stand in this file, or anywhere else, without one.** The `pt2399-core` sheet
-  **cannot be read as a drawing**: not one net label, signal flow not
-  followable, `C13` and `C14` unresolvable, page 1 of 2 blank but for a sheet
-  symbol, and **19 of its 24 reference designators disagree with the built
-  board's** - the sheet's `R3` is a 10K part where the board's `R3` is 15K.
+  **produces a schematic for 5 of the 11 boards in `boards/`** - `pt2399-core`,
+  `transistor-preamp-lab`, `transistor-preamp-loop`, `pultec-hi-boost` and
+  `pultec-low-cut`, all since 2026-10-24.
+
+  **THE FIGURE HAS BEEN `0`, `1` AND `2` IN THIS PARAGRAPH INSIDE FOUR DAYS, and
+  the lesson that outlives each of them is about the CAUSE rather than the
+  count.** `0 of 11` once stood here beside *"six are refused at
+  `validateCircuit` on net names"*. The count was merely stale; **the cause was
+  refuted**, and that is the worse of the two - a stale count misleads about
+  progress, a stale cause sends the next agent after a rule that is not there.
+  No board has ever refused on a net name: the casing demand is gone on the
+  owner's instruction (*"i absolutely do not care about the letter case of net
+  names. That's a silly quibble."*) and **G150**'s re-drive reads all eleven
+  refusal blocks and finds **not one** mentioning a net name, a case or
+  `UPPER_SNAKE`.
+
+  **What refuses today is SIX boards, in four different classes**, which is the
+  shape to check rather than the number: `pultec-mid` at `validateCircuit` on a
+  switch throw (`pin 12`) that no slot in the model can carry; `pultec-hi-cut`
+  because **the drawing legitimately needs paper larger than A3** and the
+  refusal names the size; `pultec-low-boost` and `transistor-preamp-feedback` on
+  a **missing junction**, which makes a drawing WRONG ABOUT THE CIRCUIT and is
+  therefore the one class that must keep refusing; and
+  `transistor-preamp-buffered` and `-staged` on a power-symbol **value**
+  overlap, which is ordinary crowding. `docs/known-gaps.md` **G291** carries the
+  measurement and **G290** why the mechanical-pin classification is a whitelist
+  rather than inferred from a symbol's drawing.
+
+  **AND `5 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it stand
+  in this file, or anywhere else, without one. A board that generates is not a
+  board whose drawing anyone has read.** The only sheet anyone HAS read closely
+  is `pt2399-core`'s, and it **cannot be read as a drawing**: not one net label,
+  signal flow not followable, `C13` and `C14` unresolvable, page 1 of 2 blank but
+  for a sheet symbol, and **19 of its 24 reference designators disagree with the
+  built board's** - the sheet's `R3` is a 10K part where the board's `R3` is 15K.
   **G285** carries that table and ends, verbatim: *"It is not a candidate for
-  G240 and must not be sent to him as one."* **The same reading has NOT been
-  taken on `transistor-preamp-lab`**, which is the second board and is newer than
-  G285; what is known about it is that its generation reports **13 fallback field
-  placements** - text the placer could not keep clear - across it and
-  `pt2399-core`. **A board that generates is not a board whose drawing anyone has
-  read.**
+  G240 and must not be sent to him as one."* **The other four have had no such
+  reading**, and their generations report **26 fallback field placements**
+  between them - text the placer could not keep clear.
   **The "no authoring declaration" half of this sentence is gone and the dates
   say why it is kept:** until 2026-10-21 nine of the eleven
   boards had no declaration and had never been offered to the drawing code at
@@ -176,7 +167,8 @@ So:
   `circuits/transistor-preamp/schematic/`) and **the board figure did not move
   then** - it moved three days later, and for an unrelated reason: Task 5 of
   `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` resolved
-  `pt2399-core`'s validation refusal and its sheet-name collision (**G284**).
+  `pt2399-core`'s validation refusal and its sheet-name collision (then **G284**, now
+  resolved for every design and guarded by `tests/schgen/sheet-file-collision.test.ts`).
   `docs/known-gaps.md` **G259** is the board-by-board scoreboard, **G247**
   measures the preamp five, **G263** and **G264** carry what offering the nine
   surfaced, **G238** and **G245** are how the blocker got there, and **G248** records

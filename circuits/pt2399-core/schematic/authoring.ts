@@ -36,7 +36,8 @@ const SHEET = "core"
  * **THE COLLISION WAS INVISIBLE UNTIL THIS CIRCUIT PASSED VALIDATION, which is `docs/known-gaps.md`
  * G274's phenomenon one layer further in**, and it is not this circuit's alone: all twelve of the
  * repository's other declared designs name their sole sheet after their project in the same way.
- * **G284** is the census and the criterion; only this one is fixed here, by the task that reached
+ * `tests/schgen/sheet-file-collision.test.ts` is the census and the check (G284, deleted with
+ * its resolution 2026-10-25); only this one was fixed here, by the task that reached
  * it.
  *
  * It also means no generated file can ever be confused with `../pt2399-core.kicad_sch`, the

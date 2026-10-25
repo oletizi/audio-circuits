@@ -30,7 +30,7 @@ const SHEET = "compressor"
 
 /** `file` is relative to the generator's output directory; see the note in the transistor-preamp file. */
 const SHEETS: readonly SheetSpec[] = [
-  { id: SHEET, title: "Optical compressor", file: "optical-compressor.kicad_sch", paper: "A3", notes: [] },
+  { id: SHEET, title: "Optical compressor", file: "compressor.kicad_sch", paper: "A3", notes: [] },
 ]
 
 /**

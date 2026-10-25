@@ -301,7 +301,7 @@ export function sectionAuthoring(section: string): SchematicAuthoring {
     {
       id: sheet,
       title: `Pultec ${owner} section board`,
-      file: `pultec-${owner}.kicad_sch`,
+      file: `${owner}.kicad_sch`,
       // A3 rather than A4 because mid carries 39 components and the five boards share this
       // assembler; a per-board paper size would be a size chosen here for a drawing nobody has
       // looked at yet.

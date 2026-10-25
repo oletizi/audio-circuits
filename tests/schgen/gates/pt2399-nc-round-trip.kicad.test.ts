@@ -97,7 +97,8 @@ beforeAll(async () => {
   writeGeneration(design, generation)
   // The SHEET file, which is where the marker is drawn. It is named after the sheet id and not
   // after the project, because generated-files.ts writes `<project>.kicad_sch` as the hierarchical
-  // root and refuses two files with one name - see the declaration's own comment and G284.
+  // root and refuses two files with one name - see the declaration's own comment and
+  // tests/schgen/sheet-file-collision.test.ts, which is the check that G284 asked for.
   // Read off the DRAWING, which is the same `drawing.sheet.file` generated-files.ts writes it
   // under, so this cannot name a file the generator did not produce.
   const sheetFile = generation.drawings[0]?.sheet.file

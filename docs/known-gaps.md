@@ -27482,99 +27482,6 @@ what makes this safe and is also why nothing would have caught the desync.
   or a synthetic placeholder in the export, and the discriminating arm must fail
   when the key is widened to the net's shape.**
 
-### G284 - MEASURED: ELEVEN of the thirteen declared designs name their sole sheet so that it collides with the hierarchical ROOT file the generator always writes, and generation throws before writing anything - invisible until a circuit passed validation
-
-`tools/schgen/generated-files.ts:98` emits the project's hierarchical root as
-`${project}.kicad_sch` and then adds one file per declared sheet; its `add`
-refuses a repeated name:
-
-```
-generate: two generated files are named pt2399-core.kicad_sch
-```
-
-> **THE FIGURE IN THIS ENTRY'S FIRST VERSION WAS `all thirteen` AND IT IS WRONG, CORRECTED
-> 2026-10-24 IN FIX ROUND 1. The correct figure is ELEVEN of thirteen (twelve before this task's
-> fix), and the error is worth more than the number.** This writer read the `project:` field off
-> each `SchematicAuthoring` declaration and matched it against the sheet's `file`. **`generate`
-> never reads that field for this purpose.** `tools/schgen/gate-census.ts:119`'s `parityDesign`
-> builds the `DesignSpec` with `project: c.name` - the CASE name from
-> `tools/schgen/board-declarations.ts` - and `generatedFiles` names the root from the `DesignSpec`.
-> `[READ]` every use of `SchematicAuthoring.project` in the tree: `lib/schgen/authoring.ts:263`
-> (a blank check), `:380`, `authoring-checks.ts:143`, `from-network.ts:68` and `:245` - **all five
-> are error-message text. It never names a file.** So the column this writer compared was not the
-> one that decides the collision. **The commit message that landed this entry carries the wrong
-> figure and cannot be rewritten; this block is the correction of record.**
->
-> `[RAN]` the census over `ALL_DECLARED_CASES`, comparing each case's `${c.name}.kicad_sch`
-> against its declared sheet files: **11 of 13 collide.** The two that do not are `pt2399-core`
-> (fixed by this task) and **`transistor-preamp`, which escapes by accident**: its case name is
-> `transistor-preamp` while its authoring project is `transistor-preamp-lab` and its sheet is
-> `transistor-preamp-lab.kicad_sch`, so the root is `transistor-preamp.kicad_sch` and nothing
-> collides. **That escape is a mismatch between two names somebody would reasonably align**, and
-> aligning them would start the collision. It is not a design.
-
-**Eleven of the thirteen name their sole sheet so that it collides**, and they
-hit this the moment their circuit validates. The `project` column below is the
-`DesignSpec`'s - the case name, which is what `generatedFiles` uses - and NOT the
-declaration's own `project:` field:
-
-| declaration | project | sheet file |
-| --- | --- | --- |
-| declaration | case name = root stem | sheet file | collides? |
-| --- | --- | --- | --- |
-| `circuits/pt2399-core/schematic/authoring.ts` | `pt2399-core` | **`core.kicad_sch`** | **no - FIXED 2026-10-24** |
-| `circuits/transistor-preamp/schematic/authoring.ts` | `transistor-preamp` | `transistor-preamp-lab.kicad_sch` | **no - by accident, see above** |
-| `circuits/optical-compressor/schematic/authoring.ts` | `optical-compressor` | `optical-compressor.kicad_sch` | yes |
-| `circuits/opamp-buffer.schematic.ts` | `opamp-buffer` | `opamp-buffer.kicad_sch` | yes |
-| `circuits/transistor-preamp/schematic/{feedback,buffered,loop,staged}-board.ts` | `transistor-preamp-<n>` | `transistor-preamp-<n>.kicad_sch` | yes, 4 |
-| `circuits/pultec/schematic/section-board.ts` (five boards, one assembler) | `pultec-<owner>` | `pultec-<owner>.kicad_sch` | yes, 5 |
-
-The ported `mini` fixture does not collide either, and its reason is the
-instructive one: it declares TWO sheets, `power` and `signal`, so neither could
-be named after the project. **Nothing in this repository had ever generated a
-single-sheet design**, which is why the collision went unseen.
-
-**IT IS `G274`'S PHENOMENON ONE LAYER FURTHER IN, and that is the general lesson
-rather than this particular collision.** The board census reports the FIRST
-refusal per board. `pt2399-core` refused at `validateCircuit` on one single-pin
-net; with that resolved it refused here, at a step the census had never reached
-on any board. **A fix that resolves the reported blocker is not a fix that
-produces the artifact**, and the only way to find out is to run it again.
-
-- **Found** 2026-10-24, Task 5, immediately after `pt2399-core` started passing
-  `validateCircuit`.
-- **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` at three states of the
-  tree: before the `NC` change (`pt2399-core: refused - circuit is invalid: net
-  unconnected-(U1-CLK_O-Pad5) has only one pin`), after it (`pt2399-core:
-  refused - generate: two generated files are named pt2399-core.kicad_sch`), and
-  after renaming the sheet file (`pt2399-core: generated (1 sheet(s))`).
-  `[READ]` `tools/schgen/generated-files.ts:93-99` for `add` and the root's
-  name, and the `file:`/`project:` pair in each declaration listed above.
-- **Verified** **CONFIRMED** for `pt2399-core` end to end, and **CONFIRMED by
-  census for which cases collide** - fix round 1 drove the name comparison over
-  all thirteen rather than reading a field by eye, which is what caught the
-  `all thirteen` error. **The ten remaining rows are still a PREDICTION about what
-  `generate` would do**: each is blocked by an earlier refusal, so none can reach
-  this throw today and this writer could not drive it on them. Labelled as one.
-- **Why it is open** only the board the task reached is fixed. Renaming ten sheet
-  files is a mechanical change that nothing currently exercises, and each one
-  would land in a board that still refuses earlier for its own recorded reason -
-  so it would be an unverifiable edit.
-- **What would settle it** **CRITERION: no declared design names a sheet file
-  the generator also writes as the project root, and a check says so rather than
-  each design being inspected.** **MECHANISMS, UNTRIED, and they are not
-  equivalent:** (a) rename the twelve sheet files, which is the smallest change
-  and leaves the trap for the next declaration somebody writes; (b) have
-  `lib/schgen/authoring.ts`'s `authoringProblems` refuse a `SheetSpec` whose
-  `file` is `${project}.kicad_sch`, which moves the refusal to the declaration
-  where it can be read, is the only one of the three that is a check, **and is
-  the only one that would also catch `transistor-preamp`'s accidental escape
-  closing**; (c)
-  have `generatedFiles` emit no separate root for a single-sheet design, which is
-  a change to what KiCad hierarchy the generator produces and needs someone who
-  knows what a one-sheet KiCad project should look like. **(b) is this writer's
-  preference and was not attempted.**
-
 ### G285 - `pt2399-core` IS THE FIRST BOARD IN THIS REPOSITORY TO PRODUCE A SCHEMATIC - 1 of 11, up from 0 of 11 - AND ITS SHEET CARRIES EIGHT FIELD PLACEMENTS THE PLACER COULD NOT KEEP CLEAR, so it is not a drawing anyone has said is good
 
 **G259**'s board scoreboard has read `0 of 11` at every measurement since it was
@@ -27670,7 +27577,8 @@ compared against a drawing the owner trusts, by something other than the produci
 judgement - is untouched by this, and the sheet described above does not approach it.
 
 - **Found** 2026-10-24, Task 5, which resolved `pt2399-core`'s validation
-  refusal (its brief) and its sheet-name collision (**G284**).
+  refusal (its brief) and its sheet-name collision (resolved 2026-10-25, then **G284**; the check is now
+  `tests/schgen/sheet-file-collision.test.ts`).
 - **Evidence** `[RAN]` `bun tools/schgen/board-sheets.ts` before and after; the
   before run is `0 of 11` with `pt2399-core: refused`, the after run is the text
   quoted above with the eight rows. The count is also asserted in
@@ -28488,6 +28396,17 @@ must stay at exit 0"* described a state this branch was not in: the four FAILs a
 pre-existing and none is on the schematic path, and no module under
 `tools/perfboard/`, `lib/kicad/`, `lib/stripboard/` or `tools/bom/` imports
 `lib/schgen/` at all.
+
+**THE `G284` ROWS IN THE TABLES ABOVE NAME AN ENTRY THAT NO LONGER EXISTS, and
+that is deliberate rather than rot.** They record what each board refused on
+**when the measurement was taken**, which is what a measurement table is for.
+The sheet-name collision was resolved on 2026-10-25 for every declared design -
+eleven of thirteen named their sole sheet after the project - and
+`tests/schgen/sheet-file-collision.test.ts` is the check that replaced the
+entry, holding its census, its method lesson and the deviation from its
+preferred mechanism. **The board count moved 2 of 11 to 5 of 11 on that
+change**: `pultec-hi-boost`, `pultec-low-cut` and `transistor-preamp-loop`
+drew, which is exactly the set these tables predicted.
 
 - **Why it is open** the sizing is built and the suite is green; **three things
   stay open.** (1) `ob-buffer` and `oc-sidechain` still refuse, and the two

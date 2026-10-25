@@ -97,7 +97,7 @@ export const TRANSISTOR_PREAMP_BUFFERED_SCHEMATIC: SchematicAuthoring = {
   project: "transistor-preamp-buffered",
   designators: DESIGNATORS,
   blocks: [...LEG_BLOCKS, FOLLOWER, CORE],
-  sheets: sheetFor(SHEET, "Transistor preamp buffered board", "transistor-preamp-buffered.kicad_sch"),
+  sheets: sheetFor(SHEET, "Transistor preamp buffered board", "buffered.kicad_sch"),
   rails: RAILS,
   portDirections: PORT_DIRECTIONS,
   overrides: OVERRIDES,
