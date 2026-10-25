@@ -7,9 +7,12 @@
  * **CRITERION: no block's internal geometry is altered after that block passed its own clearance
  * check.**
  *
- * **THE TWO SUBJECTS ARE IN `../__fixtures__/composed.ts`, AND WHY THEY ARE THOSE TWO IS A
- * FINDING**: not one of the four parity circuits has a sheet that composes, because each declares
- * one sheet and every one of them holds a block that refuses to draw.
+ * **THE TWO SUBJECTS ARE IN `../__fixtures__/composed.ts`, AND THE REASON THEY ARE THOSE TWO IS
+ * NOW HALF SUPERSEDED**: it was that not one of the four parity circuits had a sheet that
+ * composes, because each declares one sheet and every one of them held a block that refused to
+ * draw. **`transistor-preamp`'s `lab` sheet lays out since 2026-10-25** (`docs/known-gaps.md`
+ * **G291**); `mini` is kept because its arrangement is one this repository did not choose, which
+ * is a property no circuit of ours supplies. That module's header carries the correction.
  */
 import { afterAll, beforeAll, expect, test } from "bun:test"
 import { cleanUpTempScratch } from "../../support/temp-scratch.ts"

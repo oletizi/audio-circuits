@@ -92,7 +92,11 @@ const POINTERS: readonly Pointer[] = [
     citedBy: "docs/known-gaps.md",
     citation: "`tests/schgen/remeasure.test.ts` pins both ends",
     test: "tests/schgen/remeasure.test.ts",
-    marker: "has a FLAT side that refuses, at the junction obligation",
+    // G105's experiment moved subject on 2026-10-25 (G291): all seven transistor-preamp blocks
+    // draw, the R38 guard refuses that case, and the subject is optical-compressor, whose flat
+    // side is ACCEPTED. The marker follows the assertion rather than the assertion being kept
+    // alive for the marker.
+    marker: "has a FLAT side that is ACCEPTED",
     why: "G105's Evidence for the integrated experiment's two ends.",
   },
   {
@@ -111,16 +115,22 @@ const POINTERS: readonly Pointer[] = [
   },
   {
     citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure.test.ts` asserts the four legs' placement lists",
+    citation: "`tests/schgen/remeasure.test.ts` asserts the legs' placement lists",
     test: "tests/schgen/remeasure.test.ts",
-    marker: "gives the four legs identical placements and identical anchor positions",
+    // The four legs stopped drawing identically on 2026-10-25 (G291): a boundary node is sized by
+    // the text drawn at it and the four legs' boundary nets differ, so only the two -lower legs
+    // still coincide. G97 carries the refutation and the derivation.
+    marker: "gives the two -lower legs identical placements",
     why: "G97's Evidence for the congruence re-take.",
   },
   {
     citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure.test.ts` including the coordinate and the net name",
-    test: "tests/schgen/remeasure.test.ts",
-    marker: "has a FLAT side that refuses, at the junction obligation",
+    citation: "`tests/schgen/remeasure-edges.test.ts` including the coordinate and the net",
+    test: "tests/schgen/remeasure-edges.test.ts",
+    // RE-HOMED 2026-10-25. The integrated experiment no longer reaches the five-leg flat probe, so
+    // G229's refusal is re-driven directly in the file that already builds flat subgraphs. The
+    // refusal text, the net and the coordinate are unchanged; only the file holding them moved.
+    marker: "refuses the five-leg flat probe at the junction obligation",
     why: "G229's Evidence for the obligation-2 refusal, quoted verbatim in that entry.",
   },
   {

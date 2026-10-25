@@ -22,6 +22,9 @@ import { crossingNonRailNets, edgeCensus, flatSubgraphOf, governingNetsOf, rende
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { elkInputOf } from "../../lib/schgen/elk/graph.ts"
+import { adaptElkLayoutReported } from "../../lib/schgen/elk/adapt.ts"
+import { describeMismatch } from "../../lib/schgen/render/block-types.ts"
+import { layoutBlocks } from "../../tools/schgen/elk/layout.ts"
 import { subgraphOf } from "../../lib/schgen/render/blocks.ts"
 import { PARITY_CASES, parityResolver } from "../../tools/schgen/authoring-census.ts"
 import { blockCircuit, res } from "./__fixtures__/circuits.ts"
@@ -328,6 +331,73 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
     expect(blockedEdges).toBe(24)
     expect(blockedEdges - flatEdges).toBe(0)
   })
+})
+
+/**
+ * **G229's REFUSAL, RE-HOMED HERE 2026-10-25 BECAUSE THE EXPERIMENT STOPPED CARRYING IT.**
+ *
+ * `docs/known-gaps.md` **G229** records that `transistor-preamp`'s five drawing blocks, drawn as
+ * ONE flat graph, are refused by spec §1.4 obligation 2 - the junction obligation - with the net
+ * and the coordinate in the refusal text. Its stated evidence was
+ * `tests/schgen/remeasure.test.ts`'s *"has a FLAT side that refuses, at the junction obligation"*,
+ * and **that test is gone**: boundary-node sizing made all seven `transistor-preamp` blocks draw
+ * (**G291**), `integratedExperiment`'s guard refuses a circuit where every block draws, and the
+ * experiment's subject moved to `optical-compressor`, whose flat side is ACCEPTED.
+ *
+ * **SO THE MEASUREMENT WAS ABOUT TO BECOME AN ENTRY WITH NO LIVE CHECK BEHIND IT**, which
+ * `tests/schgen/pointers.test.ts` caught by name. It is re-driven here, over the same five blocks
+ * and the same `flatSubgraphOf` this file already uses, so G229 keeps evidence that can fail.
+ *
+ * `[RAN]` **the refusal is byte-for-byte the one G229 quotes** - same net, same coordinate - after
+ * a change that moved wire length or occupied area on ten of the twelve declared blocks. That is
+ * not luck: the branch point is a property of where the three legs' `BASE` pins meet in the flat
+ * graph, and sizing a boundary node moves the boundary rather than the branch.
+ */
+describe("G229's junction-obligation refusal, which the integrated experiment no longer reaches", () => {
+  it("refuses the five-leg flat probe at the junction obligation, naming the net and the point", async () => {
+    const symbols = parityResolver()
+    const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
+    if (c === undefined) throw new Error("transistor-preamp is not a parity case")
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    const legs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+    const g = flatSubgraphOf(circuit, legs, symbols)
+    expect(g.units.length, "the five legs hold fourteen units between them").toBe(14)
+    const outcomes = await layoutBlocks([elkInputOf(g)])
+    const outcome = outcomes.get(g.block.id)
+    expect(outcome?.ok, "the flat graph LAYS OUT, and is refused after it").toBe(true)
+    if (outcome === undefined || !outcome.ok) return
+    const report = adaptElkLayoutReported(g, outcome)
+    expect(report.result.ok).toBe(false)
+    if (report.result.ok) return
+    const refusal = describeMismatch(report.result.mismatch)
+    expect(refusal).toContain("the junctions the sheet emitter would place disagree")
+    expect(refusal).toContain("net BASE branches at (45.72, 48.26) (t-junction) and no junction is emitted")
+  }, 300_000)
+
+  /**
+   * **AND THE SEVEN-BLOCK FLAT PROBE IS REFUSED SOMEWHERE ELSE, which is why the five are still
+   * the subject.** All seven blocks draw now, so a reader might reasonably take the union of the
+   * seven as the natural flat subject. It refuses at **obligation 1** - the snap collapse - on a
+   * `VCC` wire 10 nanometres long, not at obligation 2, so it is a measurement of a different
+   * thing and is NOT a successor to G229's figure.
+   */
+  it("refuses the seven-block flat probe at the SNAP, which is a different obligation", async () => {
+    const symbols = parityResolver()
+    const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
+    if (c === undefined) throw new Error("transistor-preamp is not a parity case")
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    const g = flatSubgraphOf(circuit, [...circuit.blocks.keys()], symbols)
+    expect(g.units.length, "all seven blocks hold thirty-two units between them").toBe(32)
+    const outcomes = await layoutBlocks([elkInputOf(g)])
+    const outcome = outcomes.get(g.block.id)
+    if (outcome === undefined || !outcome.ok) throw new Error("the seven-block flat probe did not lay out")
+    const report = adaptElkLayoutReported(g, outcome)
+    expect(report.result.ok).toBe(false)
+    if (report.result.ok) return
+    const refusal = describeMismatch(report.result.mismatch)
+    expect(refusal).toContain("snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry")
+    expect(refusal).not.toContain("the junctions the sheet emitter would place disagree")
+  }, 300_000)
 })
 
 describe("the report line", () => {

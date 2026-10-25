@@ -321,6 +321,14 @@ test("pre-snapped ELK geometry realises, and the returned layout passes the chec
  * at the clearance checks, exactly as the canonicalisation-count test above takes its subjects
  * from the corpus. If none ever does again, this fails on its own denominator rather than passing
  * over nothing.
+ *
+ * **AND THE DENOMINATOR IS DOWN TO ONE SINCE 2026-10-25, WHICH IS WORTH SAYING BEFORE IT IS
+ * ZERO.** Boundary-node sizing (`docs/known-gaps.md` **G291**) drew `tp-leg-emitter-bypass` and
+ * `tp-stage`, so this loop grades **`ob-buffer` alone** where it graded three blocks. The guard
+ * below still has teeth and the test still passes for the right reason, but **one subject is one
+ * fix away from this test grading nothing** - and the thing it would then stop checking is that a
+ * block reaching the clearance checks is graded BY them rather than by a gate in front of them.
+ * `tests/schgen/masked-problems.test.ts` records the same thinning on the same cause.
  */
 test("a block reaching the clearance checks is graded by them, not by the gates in front of them", async () => {
   const symbols = parityResolver()

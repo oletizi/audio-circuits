@@ -2543,6 +2543,29 @@ offered to it at all. Task 25 wrote the nine. `[RAN]` a per-block probe (`covera
 draw, and 12 refuse**, with 15 further blocks claimed by a reviewed template and not graded by that
 probe. Repository-wide that is **35 of 52** declared ELK blocks drawing, against **7 of 12** before.
 
+> **RE-MEASURED 2026-10-25: 46 of 52, against 10 of 12 for the four parity
+> circuits** - boundary-node sizing, **G291**. `[RAN]` a probe over
+> `ALL_DECLARED_CASES` calling the same `elkPrePass`, `subgraphOf`,
+> `selectRenderer` and `adaptElkLayoutReported` this entry's probe called, with
+> `caseResolver([c])` per case so a board's own library nicknames resolve. **The
+> six that still refuse, each named:** `opamp-buffer/ob-buffer` and
+> `transistor-preamp-buffered/tp-stage` and `transistor-preamp-staged/tp-stage`
+> at the clearance checks, `optical-compressor/oc-sidechain` at the
+> port-coordinate comparison, and `transistor-preamp-feedback/tp-stage` and
+> `pultec-low-boost/pultec-low-boost-own` at the junction obligation.
+>
+> **ONE FIGURE DID NOT RECONCILE AND IS RECORDED UNDIAGNOSED.** This entry reports
+> 15 blocks claimed by a reviewed template; the re-measure counts **16**. The ELK
+> total of 52 agrees exactly, so the discrepancy is one block classified as
+> template by one probe and not the other, and this writer did not find which.
+> Both probes are scratch, which is itself the reason: **the template count has
+> no committed tool behind it.**
+>
+> **`CLAUDE.md` QUOTES THE OLD FIGURE** - *"draws 35 of this repository's 52
+> declared ELK blocks"* - and it reads 46 of 52. The BOARD count is a different
+> subject and has not moved on this measurement; `board-sheets.ts` is what
+> answers that one.
+
 **THE THREE SHAPES, each with its refusal text verbatim and the blocks it refuses.**
 
 **(1) TWO POWER SYMBOLS ON DIFFERENT NETS, GLYPHS TOUCHING.** This is not a text defect and not a
@@ -4359,8 +4382,35 @@ that draw, composed onto one A3 by seam B:
 
 | block | members | its own extent | of the usable canvas | non-members inside it |
 | --- | --- | --- | --- | --- |
-| each of the four bias legs | 3 | 27 x 19 grid steps | **0.90 %** | **0** |
+| `tp-leg-upper` | 3 | 29 x 24 grid steps | **1.22 %** | **0** |
+| `tp-leg-feedback` | 3 | 55 x 20 | **1.93 %** | **0** |
+| `tp-leg-lower-a` | 3 | 45 x 20 | **1.58 %** | **0** |
+| `tp-leg-lower-b` | 3 | 45 x 20 | **1.58 %** | **0** |
 | `tp-leg-collector` | 2 | 13 x 17 | **0.39 %** | **0** |
+| `tp-leg-emitter-bypass` | 2 | 13 x 15 | **0.34 %** | **0** |
+| `tp-stage` | 16 | 71 x 52 | **6.46 %** | **0** |
+
+> **THE FOUR BIAS LEGS SHARED ONE ROW UNTIL 2026-10-25 - `3 members, 27 x 19
+> grid steps, 0.90 %` - AND THEY NO LONGER DO.** Two of the seven rows above are
+> also new: all seven of `transistor-preamp`'s blocks draw since boundary-node
+> sizing (**G291**), where five did.
+>
+> **THE CONGRUENCE HALF OF THIS ENTRY IS REFUTED AND THE CAUSE IS DERIVABLE.** A
+> boundary node is now sized by the label or power symbol drawn at it, and the
+> four legs differ in exactly that text: `tp-leg-upper` has a `VCC` power symbol
+> and a `BASE` label, `tp-leg-feedback` a `COLLECTOR` label and a `BASE` label,
+> and the two `-lower` legs a `GND` power symbol and a `BASE` label. `COLLECTOR`
+> reserves `(9 + 2) * GRID` of outline where `BASE` reserves `(4 + 2)`, and
+> `VCC`'s glyph is not `GND`'s although both names are three characters. **So
+> the only pair with the same two boundary nets is the only pair that still
+> draws alike** - which is the evidence that the separator is the boundary text
+> and not the circuit, because those two legs hold DIFFERENT parts.
+>
+> **WHAT THIS DOES TO THE ENTRY'S OWN QUESTION:** congruence at block scale was
+> this entry's one "yes" on this backend, and it is now a "yes for two of four".
+> `tests/schgen/remeasure.test.ts` carries the per-leg geometry and names the
+> surviving pair; `tests/schgen/remeasure-ceiling.test.ts` carries the topology
+> count at the ceiling's own size, which went from one to three.
 
 Frame-box overlaps are **0 under both packers**, and `nonMemberContainments` -
 the frame-box reading of the same criterion - is **empty on `mini`'s signal
@@ -4380,14 +4430,28 @@ different subject and are not a before-and-after against those.
   block scale, offsets between cell top-left corners on four separately
   generated drawings, plus the id-width prediction, which could have missed on
   any of the four and missed on none. **For the re-take:**
-  `tests/schgen/remeasure.test.ts` asserts the four legs' placement lists
-  identical **by role** - the part labels differ by construction, so they are
-  normalised to `jumper`, `floor` and `trim` from the designator prefix and an
-  unknown prefix refuses - plus the glyph table above as a `toEqual`, so a leg
-  that stopped getting its own glyph fails naming it. A check that could have
-  failed in either direction: the formula's four predictions are asserted
-  DISTINCT and the four measured offsets asserted IDENTICAL, so the finding is
-  that two things disagree rather than that one number came out.
+  `tests/schgen/remeasure.test.ts` asserts the legs' placement lists **by
+  role** - the part labels differ by construction, so they are normalised to
+  `jumper`, `floor` and `trim` from the designator prefix and an unknown prefix
+  refuses - plus the glyph table above as a `toEqual`, so a leg that stopped
+  getting its own glyph fails naming it.
+  **THE CHECK'S SHAPE CHANGED WITH THE FINDING, 2026-10-25.** It used to assert
+  the formula's four predictions DISTINCT and the four measured offsets
+  IDENTICAL, which made the finding *"two things disagree"* rather than *"one
+  number came out"*. The measured offsets are now **16, 42, 32 and 32** grid
+  steps where all four were 14, so that form of the check is unavailable and
+  what replaces it is weaker and says so: the measured spread is asserted to be
+  three distinct values, and asserted NOT to be a scaling of the prediction -
+  from `-upper` to `-lower` the formula moves 12 and the measurement 16, from
+  `-lower` to `-feedback` the formula moves 6 and the measurement 10, and
+  16/12 is not 10/6.
+  **AND THE TWO CAUSES CAN NO LONGER BE SEPARATED ON THIS SUBJECT, which is left
+  open rather than resolved.** The four legs' jumper-id lengths and their
+  boundary-net lengths happen to vary together, and the two ORDERINGS now agree.
+  That agreement is not evidence for the skin's formula and the test does not
+  treat it as evidence against it: separating them needs a subject where part-id
+  length and boundary-net length vary independently, and this repository
+  declares none.
 - **Verified** RELAYED for both of the spikes' halves. **CONFIRMED for the Task
   17 re-take** - this writer ran it and read the per-leg geometry.
 - **Why it is open** these are the two criteria a template is load-bearing for,
@@ -4956,9 +5020,20 @@ size where invariance was MEASURED rather than the largest where it might hold.
 Of the spike's seven sweep sizes, **five have no declared subject in this
 repository at all** and ruling **R40** forbids constructing one.
 
-**THE FLOOR IS UNMEASURED BECAUSE THE QUANTITY DOES NOT EXIST ON THIS BACKEND.**
-`[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and
-height 0.** The worst port-glyph share is `tp-leg-emitter-bypass` at **66.7 %**
+**THE FLOOR WAS UNMEASURED BECAUSE THE QUANTITY DID NOT EXIST ON THIS
+BACKEND, AND THAT REASON IS REFUTED - 2026-10-25, G291.** This paragraph read
+`[RAN]` *"All 38 boundary nodes of all 12 declared ELK blocks have width 0 and
+height 0"*. **`floorEvidence` now measures 38 of 38 NON-zero**, because
+`boundaryNodeOf` sizes each node by the box the label or power symbol drawn at it
+will occupy. `BLOCK_SIZE.floor` is still `"unmeasured"` and is deliberately NOT
+re-derived: a floor is a spec section 1.8 claim, and measuring one in the tool
+that produces the drawings would make it the producing agent's own criterion.
+**So the status is unchanged and its basis is gone**, which is the worse of the
+two to leave stale. The sizes are a closed form - a rail is `textWidth(net)`
+wide and glyph plus `GRID/2` plus `textWidth(net)` tall, 3810 x 6985 for a
+three-character net; a label is `labelExtent(net, refs)` along its side and
+2540 across - and `tests/schgen/remeasure-ceiling.test.ts` checks both arms over
+all 38. The worst port-glyph share is `tp-leg-emitter-bypass` at **66.7 %**
 of graph cells. **That falls inside the spikes' published 10-67 %, and a RANGE
 OVERLAP is all that is: no per-block share was compared against any spike row, so
 nothing here is a reproduction verdict.** The spike's own per-block shares are for
@@ -4966,8 +5041,11 @@ blocks this repository does not declare - `standin-mid` at 0.67, `pultec-low-cut
 at 0.18, `pultec-mid` at 0.10 - so there is no row-to-row comparison to make. What
 the overlap does establish is that the share is the same ORDER of quantity on both
 frontends;
-**but a block whose cells are two-thirds boundary has a drawing with no boundary
-AREA at all.** The share is the interface cost's size in the graph ELK solves,
+**and a block whose cells are two-thirds boundary USED to have a drawing with no
+boundary AREA at all - it no longer does** (G291, 2026-10-25). The share is a
+COUNT ratio either way: `ports / cells`, with no size in it, which is why the
+twelve rows of it are byte-identical across the change. The share is the
+interface cost's size in the graph ELK solves,
 which is the relationship §1.8 revision 4 says to name, and **nothing measured
 here finds a floor.** The earlier *"a floor exists however the boundary is
 drawn"* remains an argument rather than a measurement.
@@ -5013,7 +5091,13 @@ them.
   and says which cost it is paying** - above the ceiling the measured quality is
   not a property of the circuit, below the floor most of the drawing is boundary.
   **THAT CRITERION IS NOW MET**: `BLOCK_SIZE` names a measured ceiling of 3, a
-  floor of `"unmeasured"`, and the ceiling's cost on 7 of 12 blocks.
+  floor of `"unmeasured"`, and the ceiling's cost on **6** of 12 blocks.
+  **THE "7 of 12" THAT STOOD HERE WAS AN ARITHMETIC ERROR, not a figure that
+  moved**: `blocksOutside` returns six blocks, `BLOCK_SIZE.costPaid` named the
+  same six, and the count in front of them said seven. Corrected 2026-10-25 in
+  both places. The figure that DID move in the same change is a different one -
+  the blocks that DRAW went 7 of 12 to 10 of 12 (G291) - and the two being equal
+  at 7 on the day this was written is how the error survived review.
   **CAVEAT THAT MUST TRAVEL WITH THE FIGURE, now in both directions.** The
   spikes' ~9 came from 18 blocks out of TWO unusual parents - a 76-part passive
   EQ and a 37-part compressor with two dual op-amps - and nothing above 28 parts
@@ -5204,17 +5288,38 @@ edge per block rather than saving one.
 > subject. **The refutation of the spike's mechanism is unchanged in substance
 > and stronger in direction.**
 
-**2. The experiment this entry asks for was run on five blocks of one circuit
-family, not on `optical-compressor`** - controller ruling **R38**, because all
-three `oc-*` blocks are refused by the post-layout gates. `[RAN]`
-`tools/schgen/remeasure-composed.ts`:
+**2. THE EXPERIMENT RUNS ON `optical-compressor` AGAIN SINCE 2026-10-25, WHICH
+IS THIS ENTRY'S OWN NAMED SUBJECT.** It was run on five blocks of one circuit
+family - controller ruling **R38**, because all three `oc-*` blocks were then
+refused by the post-layout gates. **Boundary-node sizing (G291) inverted both
+halves of that:** all seven `transistor-preamp` blocks draw, which
+`integratedExperiment`'s guard refuses as a subject (with every block drawing the
+flat side is a whole circuit and the module's sub-circuit caveat would be false),
+and `optical-compressor` draws **2 of its 3** - `oc-power` and `oc-audio` yes,
+`oc-sidechain` no. **The guard was not relaxed; the subject moved, and the guard
+going red is what found it.** `[RAN]` `tools/schgen/remeasure-composed.ts`:
 
 | | stage | placements | bends | crossings | wire length | aspect |
 | --- | --- | --- | --- | --- | --- | --- |
-| the five legs as ONE graph | accepted | **REFUSED** | - | - | - | - |
-| the five legs as ONE graph | backend-output | 14 | 38 | **1** | **360.20** | 1.15 |
-| the five blocks, summed | backend-output | 14 | 38 | **0** | **227.60** | - |
-| the five blocks composed by seam B | accepted | 14 | 38 | **0** | **224** | 3.33 |
+| `oc-power` + `oc-audio` as ONE graph | accepted | 22 | 31 | **6** | **1040** | 2.91 |
+| `oc-power` + `oc-audio` as ONE graph | backend-output | 22 | 31 | **6** | **1039.00** | 2.93 |
+| the two blocks, summed | backend-output | 22 | 34 | **6** | **864.11** | - |
+| the two blocks composed by seam B | accepted | 22 | 34 | **6** | **862** | 4.41 |
+
+> **THE SUPERSEDED TABLE, kept because the reading below was drawn from it.**
+> Over `transistor-preamp`'s five drawing legs: the five as one graph REFUSED at
+> the accepted stage, and at `backend-output` 14 placements / 38 bends / **1**
+> crossing / **360.20** wire / 1.15 aspect; the five blocks summed 14 / 38 /
+> **0** / **227.60**; the five composed by seam B 14 / 38 / **0** / **224** /
+> 3.33 (aspect 3.10 and area 7152 after Task 21).
+>
+> **AND THE RE-SCOPE BOUGHT WHAT R38 COULD NOT GET: A TWO-SIDED ACCEPTED-STAGE
+> COMPARISON.** On the five legs the flat probe was refused by the junction
+> obligation, so the accepted column held a composed drawing and a refusal
+> (**G229**). On `optical-compressor` the flat probe is ACCEPTED, so this entry's
+> criterion - *"reports the four measures against the FLAT whole-circuit
+> baseline"* - has figures on both sides at the stage a drawing is emitted from,
+> for the first time.
 
 > **AMENDED 2026-10-21 BY TASK 21: the composed row's ASPECT is now 3.10 and its
 > occupied area 7152 (it was 3.33 and 7038).** `[RAN]`
@@ -5228,18 +5333,20 @@ three `oc-*` blocks are refused by the post-layout gates. `[RAN]`
 > aspect is a property of the packing, which the removed text changed.
 > `tests/schgen/remeasure.test.ts` carries both new figures.
 
-- **the flat side REFUSES, and that refusal is the result** (R38's own
-  instruction). It is refused by spec §1.4 obligation 2: *"net BASE branches at
-  (45.72, 48.26) (t-junction) and no junction is emitted"*. So the
-  accepted-stage comparison has only one side, and **G229** records the finding;
-- **the crossing ratio is NOT TAKEN because the composed side measures ZERO
-  crossings.** There is no denominator. That is a result about this subject -
-  decomposition removes the single crossing the flat graph has - and not a figure
-  that was left out;
-- **at the one stage where both sides have a figure, decomposition removes 1
-  crossing and 1.58x of the wire, and seam B spends none of it back**: 0
+- **the flat side is ACCEPTED on this subject**, which is new. On the previous
+  subject it was refused by spec §1.4 obligation 2 - *"net BASE branches at
+  (45.72, 48.26) (t-junction) and no junction is emitted"* - and **G229** records
+  that, re-driven in `tests/schgen/remeasure-edges.test.ts` now that the
+  experiment no longer reaches it;
+- **the crossing ratio IS taken on this subject, at 1.00x.** It had no
+  denominator on the five legs, which measured ZERO crossings composed. Here flat
+  crosses 6 and composed crosses 6, so the ratio exists and says that
+  decomposition removed no crossing at all on this subject;
+- **decomposition SHORTENS the wire and spends none of it back**: 1039.00 grid
+  steps flat against 864.11 summed over the two blocks at the same stage, and 0
   inter-block crossings, 0 inter-block wire, 0 frame overlaps (**G208**
-  re-confirmed);
+  re-confirmed). The previous subject gave 1 crossing removed and 1.58x of the
+  wire;
 - **the 6.1x is reported NOT-COMPARABLE.** It was not approximated, not scaled,
   and no *"fraction of 6.1x survived"* was computed against this subject.
 
@@ -5256,9 +5363,15 @@ three `oc-*` blocks are refused by the post-layout gates. `[RAN]`
   result rather than a decomposition one. **And that is exactly what the re-take
   found on this backend**, which is the same check failing in the other
   direction. For the experiment: `tests/schgen/remeasure.test.ts` pins both ends,
-  the refusal text, the stage-matched figures and the null ratio; the composed
-  row is asserted against **G200**'s own 14 placements, 67 segments and 224 grid
-  steps, so a divergence between the seam-B path and the block path fails there.
+  the stage-matched figures and the 1.00x ratio, and asserts the composed
+  crossing count equals the two blocks' own 1 and 5. **The cross-check against
+  G200's table moved with the subject**: it used to assert the composed row
+  against G200's own 14 placements, 67 segments and 224 grid steps. G200's five
+  legs are no longer the experiment's subject, so that agreement is now carried
+  where the five legs still are - `tests/schgen/readability/measures.test.ts`
+  sums them from the canonical topology at **298** grid steps and
+  `tests/schgen/render/compose.test.ts` sums them from the realised layouts at
+  **378 460 um** through a different function, and 378 460 / 1270 = 298 exactly.
 - **Verified** CONFIRMED - the controller read §4's table and §11's limitation
   list in the spike, and quoted §11 rather than paraphrasing it. **The Task 17
   experiment and the edge census are CONFIRMED by their writer**, who ran both.
@@ -17648,6 +17761,17 @@ boundary, OPEN below it"* reaching the drawing.
   stated convention and on the 18/38 measurement, both of which are independent of that picture.
 - **Evidence** the 38-anchor sweep above, run over every ELK-selecting block of the four parity
   circuits, comparing `negotiablePort`'s answer against the route-derived one per anchor.
+- **RE-DRIVEN 2026-10-25 AND THE FIGURE DID NOT MOVE, which is a measurement worth recording
+  because it was expected to.** Boundary-node sizing (**G291**) re-packed every block and moved
+  wire length or area on ten of the twelve, and the hand-off for that work named this entry as one
+  whose figures had moved. **They have not.** `[RAN]` the same sweep over all twelve
+  ELK-selecting blocks of the four parity circuits at HEAD: **38 anchors, 4 agree, 18 disagree, 16
+  the rule leaves open** - identical to the row above, and the eighteen are the same eighteen, each
+  still a rail declared `up` or `down` whose route arrives from the right. The reason is structural
+  rather than lucky: under `elk.direction = RIGHT` a boundary node sits in a LAYER and is reached
+  sideways whatever size it is, so giving it a size changes where it is and not which way the route
+  comes in. **CONFIRMED by this writer**, who wrote and ran the re-drive; the probe was scratch and
+  the three bucket counts are transcribed here because of it.
 - **Verified** CONFIRMED - this writer ran the sweep and made the change.
 - **Why it is open** the 16 anchors the rule leaves open are decided by geometry, and nothing has
   reviewed whether that is the right answer for them; it is recorded rather than defended.
@@ -17929,8 +18053,20 @@ draw:
 | **parts sharing an x-coordinate** | **0** |
 | nets | 19 |
 | segments | 67 (**3.53 per net**) |
-| total wire | 224.0 grid steps |
+| total wire | **298.0** grid steps |
 | **nets whose route REVERSES direction on an axis** | **9 of 19 (47%)** |
+
+> **ONE FIGURE IN THIS TABLE MOVED ON 2026-10-25 AND FIVE DID NOT: total wire was
+> 224.0 grid steps.** Boundary-node sizing (**G291**) reserves the room a global
+> label and a power symbol occupy, so the wires that reach them are longer -
+> 298.0 grid steps over the same five blocks. **Placements, distinct x, parts
+> sharing an x, nets and segments are all unchanged**, which is what says the
+> staircase and the 47 % reversal rate below are untouched: the router found a
+> different PLACEMENT of the same topology. Re-driven in
+> `tests/schgen/render/compose.test.ts`, which asserts the five legs' subtotal
+> separately from the seven-block total so the two cannot be confused, and
+> cross-checked against `tests/schgen/readability/measures.test.ts`'s independent
+> 298.
 
 **THE STAIRCASE.** **No two parts share an x-coordinate - 14 of 14.** Every block is a diagonal
 cascade: a horizontal run, down through a part, a step right, down through the next. A
@@ -18429,8 +18565,24 @@ to them.
 
 **IT DOES NOTHING TO EITHER, AND THE REASON IS A THEOREM RATHER THAN LUCK.** `[RAN]` Over the same
 five blocks, composed onto one A3 by the shelf packer and by the ELK packer: **14 placements, 14
-distinct x, 19 wired nets, 9 reversing, 67 segments, 284.48 mm of wire - under both packers, and
-identical to G200's table.** Composition translates each block by one rigid grid-multiple offset
+distinct x, 19 wired nets, 9 reversing, 67 segments, 378.46 mm of wire - under both packers, and
+identical to G200's table.**
+
+> **THE WIRE FIGURE WAS 284.48 mm UNTIL 2026-10-25 AND IS 378.46 mm**, because
+> boundary-node sizing (**G291**) lengthened the wires that reach the labels.
+> **Five of the six figures did not move** - 14 placements, 14 distinct x, 19
+> wired nets, 9 reversing, 67 segments - and the INVARIANCE this entry is about
+> did not move at all: the composed figures still equal the per-block ones under
+> both packers, to the micrometre. 378 460 um is 298.0 grid steps, which is
+> G200's amended total, so the two tables still agree.
+>
+> **AND THE SUBJECT GREW AROUND IT.** All seven `transistor-preamp` blocks draw
+> now, so `shapeMeasures` over the probe reads **32 placements, 26 distinct x, 32
+> wired nets, 15 reversing, 142 segments, 1 033 780 um**. Every one of those six
+> is a per-block SUM and `tests/schgen/render/compose.test.ts` carries the
+> seven-row table they add up from, beside the five-leg subtotal above - because
+> comparing a seven-block total against a five-block table is the mistake
+> **G220** names. Composition translates each block by one rigid grid-multiple offset
 (`translateLayout`), `interiorDrift` is empty, and **every quantity G200 measures is invariant under
 translation**: a shared x stays shared, a reversal stays a reversal, a segment keeps its length.
 
@@ -18451,9 +18603,9 @@ property of a block's interior and only of that.**
   both halves: `mini`'s eleven template-drawn parts occupy **5** distinct x in their own frames
   and **11** once the frames are placed. A check that could have
   failed: `tests/schgen/render/compose.test.ts`'s *"composition never alters a block's interior,
-  under either packer"* asserts `interiorDrift` is empty over five blocks under both packings, and
-  the Step 7 perturbation that nudges one part by one grid step turns it red naming every block and
-  part - so the invariance is checked, not asserted.
+  under either packer"* asserts `interiorDrift` is empty over **seven** blocks under both packings
+  (five until 2026-10-25), and the Step 7 perturbation that nudges one part by one grid step turns
+  it red naming every block and part - so the invariance is checked, not asserted.
 - **Verified** CONFIRMED - this writer ran all of it.
 - **Why it is open** it is a measurement, and it corrects a thing a later task would plausibly do:
   re-take G200's baseline on a composed sheet and read an unchanged number as progress or a
@@ -18530,7 +18682,14 @@ comparison had `negotiablePort`'s rule on both sides of it. Asking where ELK act
 | `tp-leg-lower-a` | `BASE` | `[left, right]` | **top** |
 | `tp-leg-lower-b` | `BASE` | `[left, right]` | **top** |
 
-**Three of the ten.** These blocks are `{ kind: "auto" }` and declare no template, so
+**Three of the ten - ELEVEN OF TWENTY-THREE SINCE 2026-10-25, AND THE THREE ABOVE ARE UNCHANGED
+AMONG THEM.** All seven `transistor-preamp` blocks draw (**G291**), so the probe offers 23 declared
+ports rather than 10: 2 on each of the five legs, 4 on `tp-leg-emitter-bypass` and 9 on `tp-stage`.
+**The three rows above refuse with the same ports, the same edge and the same sentence**, and the
+eight new refusals all belong to `tp-stage` - six of the wrong-edge kind and **two of a kind that
+had never fired on real data**: `IN_EXT` and `OUT` are declared and the block's layout draws no
+anchor for either, which until now was reachable only by adding a synthetic port to mini's `XTAL`.
+`tp-leg-emitter-bypass` refuses none. These blocks are `{ kind: "auto" }` and declare no template, so
 `negotiablePort`'s rule IS in scope and **the declaration is the authority**: decision **D4** pins
 flow left-to-right, a crossing net arrives left or leaves right, and the backend brought three of
 them out at the top. Seam B is right to refuse, and the disagreement is G193's, now visible in a
@@ -18544,7 +18703,9 @@ order gives the template the say where one is declared and the rule the say wher
   **29** attachments for **25** declared ports (a net with several anchors attaches several times)
   and refusing exactly **2** when `FLASH`'s hand-declared port is replaced by the helper's rule; the
   legs probe refusing exactly the three ports named above; and forcing every declaration to `[top]`
-  refusing **5 of 10** rather than all ten, so the check is not a blanket.
+  refusing **14 of 23** rather than all of them, so the check is not a blanket. **It was 5 of 10
+  until 2026-10-25** and the denominator is now computed in the test from the declarations rather
+  than written as a literal, so the two cannot drift apart again.
 - **Verified** CONFIRMED for both re-measurements - this writer ran them. **RELAYED for the
   discovery**, which is the round-2 review's, including the expected residue of one port.
 - **Why it is open** the three ELK refusals are real and unfixed, and they are **G193**'s open
@@ -18559,6 +18720,24 @@ order gives the template the say where one is declared and the rule the say wher
   criterion is the declaration.
 
 ### G211 - NOT ONE of the four parity circuits has a sheet that can be composed, so seam B's whole measured record rests on a ported fixture and a five-block probe
+
+> **REFUTED FOR ONE OF THE FOUR, 2026-10-25: `transistor-preamp`'s `lab` sheet
+> COMPOSES.** All seven of its declared blocks draw since boundary-node sizing
+> (**G291**), and `layoutSheet(circuit, "lab", ...)` returns a drawing on the
+> sheet's own declared A3 - **7 frames, 142 wires, `nonMemberContainments` empty**,
+> with the control that a frame grown to swallow the page reports 29 symbols that
+> are not its own block's. `tests/schgen/remeasure.test.ts` asserts it; the test
+> that asserted `layoutSheet` THROWS for this circuit is gone, and its name said
+> *"cannot take the same reading"*.
+>
+> **WHAT IS NOT REFUTED is the rest of the headline.** Three of the four circuits
+> still hold a block that does not draw - `opamp-buffer`'s only block and
+> `optical-compressor`'s `oc-sidechain` - so three of the four sheets still cannot
+> be composed, and seam B's record still rests mostly on the ported `mini`
+> fixture. **The one thing `mini` supplies that no circuit of ours can is an
+> arrangement this repository did not choose**, which is why the fixture is kept
+> rather than replaced; `tests/schgen/__fixtures__/composed.ts`'s header carries
+> that reasoning and the correction to its own superseded sentence.
 
 Task 15's brief says *"your material is five blocks of one circuit family"*. It is narrower than
 that, and the reason is worth stating once.
@@ -18940,7 +19119,11 @@ and against the interface cost."*
 | `tp-stage` | 16 | 23 | 7 | 30.4 % |
 
 **7.7 % to 66.7 %, against the spikes' 10-67 % - and the number means something different here.**
-`[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and height 0.** G101's
+`[RAN]` **All 38 boundary nodes of all 12 declared ELK blocks have width 0 and height 0.**
+**THAT IS SUPERSEDED - 2026-10-25, G291: all 38 now have a NON-zero size**, each the box the label
+or power symbol drawn at it will occupy, and `tests/schgen/remeasure-ceiling.test.ts` checks both
+closed forms over all 38. **The port-glyph SHARE below is unmoved row for row**, because it is
+`ports / cells` and no size enters it. G101's
 floor rested on `netlistsvg` emitting a 30 by 20 `inputExt` glyph per declared port, so *"a 1-part
 block's drawing was two-thirds boundary"*; here a block whose CELLS are two-thirds boundary has a
 drawing with **no boundary area at all**. So the share is the interface cost's size in the graph ELK
@@ -19155,7 +19338,18 @@ so rather than borrow the credibility of the ones that can.
   crossing figures were taken over uncanonicalised geometry through a different frontend. The two
   are not the same quantity.
 
-### G219 - MEASURED: EVERY ONE of the 82 duplicate wire segments ELK emits is DIRECTION-REVERSED, so a deduplication keyed on `(a, b)` in order would collapse NONE of them
+### G219 - MEASURED: EVERY ONE of the 83 duplicate wire segments ELK emits is DIRECTION-REVERSED, so a deduplication keyed on `(a, b)` in order would collapse NONE of them
+
+**THE COUNT WAS 82 UNTIL 2026-10-25 AND IS 83, AND THE CONCLUSION IS UNTOUCHED.**
+Boundary-node sizing (**G291**) re-routed `oc-audio`, whose canonical wire count went 70 to 69
+against an unchanged raw 82, so that block contributes 13 duplicates where it contributed 12.
+Nothing else moved: the per-block duplicate counts are `ob-buffer` 8, `oc-power` 11, `oc-audio`
+13, `oc-sidechain` 15, `pt-core` 24, `tp-stage` 12, and the same **six of twelve** blocks have
+duplicates at all. Re-driven in `tests/schgen/readability/measures.test.ts`, whose twelve-row
+table carries the raw and canonical counts side by side. **The claim that every duplicate is
+direction-reversed is not re-measured here** and the count below is the one that moved; the
+reversal claim's own evidence is the `geometryKey` sort test in that same file, which still
+passes.
 
 `[RAN]` Over all twelve declared ELK blocks of the four parity circuits, counting duplicates in the
 raw pre-snap wire list two ways:
@@ -19781,10 +19975,36 @@ declared block goes through. The 14-placement graph lays out, and then:
 > no junction is emitted"*
 
 **THE CONSEQUENCE FOR TASK 17 STEP 4 IS THE WHOLE REASON THIS IS AN ENTRY.** The
-integrated experiment's accepted-stage comparison therefore has **one side**: a
-composed drawing, and a refusal. The experiment reports the flat side at the
+integrated experiment's accepted-stage comparison therefore had **one side**: a
+composed drawing, and a refusal. The experiment reported the flat side at the
 `backend-output` stage instead - 1 crossing, 360.20 grid steps of wire, 38 bends -
-and takes **no ratio** between stages. **G105** carries the figures.
+and took **no ratio** between stages. **G105** carries the figures.
+
+**THE EXPERIMENT NO LONGER REACHES THIS REFUSAL, AND THE REFUSAL IS UNCHANGED -
+2026-10-25.** Two separate facts, and keeping them apart is the point:
+
+- **the measurement stands.** `[RAN]` the same five blocks through
+  `flatSubgraphOf` at HEAD: the 14-placement graph lays out and is refused with
+  the identical text, the identical net and the identical coordinate - `BASE` at
+  `(45.72, 48.26)` - after a change that moved wire length or occupied area on
+  ten of the twelve declared blocks. That is not luck: the branch point is where
+  three legs' `BASE` pins meet in the flat graph, and sizing a boundary node
+  moves the boundary rather than the branch;
+- **the experiment's subject moved off it.** Boundary-node sizing (**G291**) made
+  all seven `transistor-preamp` blocks draw, `integratedExperiment`'s guard
+  refuses a circuit where every block draws, and the subject is
+  `optical-compressor` again - whose flat side is ACCEPTED. **So this entry's
+  stated evidence stopped existing**, and `tests/schgen/pointers.test.ts` caught
+  it by name rather than letting the citation rot. It is re-driven in
+  `tests/schgen/remeasure-edges.test.ts`, which also records that the SEVEN-block
+  flat probe refuses at obligation 1 (a snapped-to-zero `VCC` wire) and is
+  therefore a different measurement rather than a successor to this one.
+
+**AND THE "ONLY SUBJECT" CLAIM BELOW IS SUPERSEDED BY THE BOARD DECLARATIONS.**
+Two declared board blocks are refused at obligation 2 today -
+`transistor-preamp-feedback/tp-stage` and `pultec-low-boost/pultec-low-boost-own`
+(**G263**'s re-measure) - so the arm is reached by real circuits and not only by
+this probe.
 
 **WHAT IT IS AND IS NOT EVIDENCE OF.** It is NOT evidence that a 14-placement
 block cannot be drawn: `tp-stage` has 16 placements and is refused by a different
@@ -19807,11 +20027,14 @@ rather than an authored criterion."*
 - **Found** 2026-10-20, Task 17 Step 4, the first time a flat multi-block graph
   was put through the realization contract.
 - **Evidence** the refusal above, verbatim, asserted in
-  `tests/schgen/remeasure.test.ts` including the coordinate and the net name, so
-  a change that moved the branch point or fixed the junction turns it red naming
-  the figure. A check that could have failed: the same test asserts the
-  `backend-output` stage of the same probe DOES produce figures, so the refusal is
-  located at obligation 2 and not at the layout.
+  `tests/schgen/remeasure-edges.test.ts` including the coordinate and the net
+  name, so a change that moved the branch point or fixed the junction turns it
+  red naming the figure. **It was `tests/schgen/remeasure.test.ts` until
+  2026-10-25**, where the integrated experiment carried it; see the amendment
+  above for why it moved. A check that could have failed: the same test asserts
+  the flat graph LAYS OUT before it is refused, so the refusal is located at
+  obligation 2 and not at the layout, and a second test asserts the seven-block
+  probe is refused at a DIFFERENT obligation and explicitly not at this one.
 - **Verified** CONFIRMED - this writer built the probe, ran it and read the
   refusal.
 - **Why it is open** nothing is fixed. A flat graph of five real blocks cannot be
@@ -19842,7 +20065,7 @@ different counts:
 | where | the word | what it counts | `tp-leg-upper` |
 | --- | --- | --- | --- |
 | G216's block-scale table | `cells` | units PLACED | **3** |
-| G216's D1 report line | `cells` | ELK graph CHILDREN: placed units plus zero-size boundary nodes | **5** |
+| G216's D1 report line | `cells` | ELK graph CHILDREN: placed units plus boundary nodes | **5** |
 | G216's D1 report line | `parts` | units, NOT distinct parts | 3, and `ob-buffer` **11** |
 | `docs/schematic/template-parity.md` | `parts` | DISTINCT parts | `ob-buffer` **9** |
 
@@ -19939,6 +20162,24 @@ costed with this case in hand.
   stated rule or by a fix-round item and need nothing.**
 
 ### G232 - MEASURED: ONE defect is the SOLE blocker of FOUR declared blocks, so fixing it alone takes this repository from 5 of 12 blocks drawing to 9 of 12
+
+> **THE CENSUS READS 10 OF 12 SINCE 2026-10-25, AND THIS ENTRY'S ARITHMETIC IS
+> NOT WHAT GOT IT THERE.** The headline's `5 -> 9` became `5 + 2 = 7` once
+> `ob-buffer`'s masked power-value overlap was found (**G258**), and 7 is what
+> field placement delivered. **Boundary-node sizing (G291) then drew three more
+> blocks** - `oc-audio`, `tp-leg-emitter-bypass` and `tp-stage` - from outside
+> this entry's subject entirely: they were refused by a snap collapse and by
+> LABEL and power-symbol clearance, none of which field placement touches.
+>
+> **THE LESSON WORTH KEEPING IS THE SHAPE OF THE ERROR, NOT THE NUMBER: a
+> correct bound on ONE mechanism is not a bound on the drawing.** `5 + 2` was
+> right about field placement and was read as a ceiling on how many blocks could
+> draw. **Six of the seven problem classes this entry's census reported are now
+> absent from it altogether** - `body-label-overlap`, `label-body-overlap`,
+> `label-graphic-overlap`, `label-label-overlap`, `label-pin-text-overlap` and
+> `label-wire-overlap` - and `power-value-overlap` on `ob-buffer` is the only
+> one left in the corpus. `tests/schgen/remeasure.test.ts` asserts the six as
+> absent BY NAME, so one coming back fails saying which.
 
 **RECORDED UNDER CONTROLLER RULING R46, which is explicit that it is a scope
 input and not a defect report against the task that found it:** *"whether M1
@@ -28069,6 +28310,40 @@ open question rather than cutting across it. **`pultec-hi-cut`'s new refusal is
 the shape this work was for**: it says the drawing needs bigger paper and names
 the size, instead of blaming the text for not fitting.
 
+> **THE LAST ROW OF THAT TABLE IS WRONG AND THE RE-DRIVE FOUND IT, 2026-10-25.**
+> `[RAN]` `bun tools/schgen/board-sheets.ts` at `e7408d9`:
+> **`transistor-preamp-buffered` and `-staged` are NOT refused on a glyph touch
+> any more.** Both now refuse on
+>
+> > `value of power symbol GND 0 at (62.23, 27.94) overlaps value of power symbol VCC 1 at (62.23, 38.1)`
+>
+> which is a VALUE overlap, not a glyph touch - and the distinction is the whole
+> of why the row mattered. **A glyph sits where its net's pin is and has no
+> placement freedom; a value has some**, which is exactly the ground on which the
+> spec reserved the glyph case to the owner as possibly a correctness class. So
+> the residue is no longer *"the pair the open question is about"*: it is a
+> crowding case of the kind the clearance checks were built for, and the open
+> question about touching glyphs has no subject in the board census at all.
+> **Reported as a correction rather than amended away, because "unchanged" was
+> this entry's own claim about its own measurement.**
+>
+> **TWO MORE ROWS THE TABLE DID NOT HAVE.** `transistor-preamp-feedback` and
+> `pultec-low-boost` are refused at the **junction obligation** - `net GND
+> branches at (68.58, 48.26)` and `net lo_boost_in branches at (63.5, 45.72)`,
+> each a t-junction with no junction object emitted. Neither was listed before;
+> obligation 2 is therefore reached by two real declared boards and not only by
+> the five-leg flat probe (**G229**).
+>
+> **THE BOARD FIGURE IS 2 OF 11, AND ITS SECOND COLUMN IS REQUIRED.** The census
+> reads `2 of 11 boards produce a schematic` - `pt2399-core` and
+> `transistor-preamp-lab` - with `9 refused; 0 have no authoring declaration`,
+> and a warning that 13 fallback field placements across the two of them carry
+> text the placer could not keep clear. **`CLAUDE.md`'s rule that `1 of 11` is
+> not quotable without its second column binds this figure identically**, and
+> **G285**'s table - no net labels, signal flow not followable, 19 of 24
+> reference designators disagreeing with the built board - has not been re-taken
+> on either sheet. **Nothing here says a board's drawing is readable.**
+
 **THE STRONGEST SINGLE SIGNAL CAME FROM A TEST FAILING.**
 `tests/schgen/remeasure.test.ts` went to zero passes, and the refusal is correct
 and is not a regression:
@@ -28098,16 +28373,143 @@ agent just produced is the invariant `CLAUDE.md` names. Committed red at
 `599a54e` on the owner's instruction - *"commit now. i don't want to lose your
 work"* - and explicitly marked not-finished in that commit message.
 
-- **Why it is open** the change is built and committed; **the suite is red at 24
-  tests** and the register figures above are not yet re-driven.
-- **What would settle it.** **CRITERION:** a boundary node's size is the geometry
-  of the thing that will be drawn at it - `labelExtent` for a labelled net,
-  `powerValueBox`'s geometry for a rail - and the board census does not regress.
-  **MECHANISM, PARTLY TRIED:** the label half is measured above and works; **the
-  power-symbol half is untried** and is the one the surviving refusals need.
-  **A SECOND, SEPARATE QUESTION this does not settle:** whether
-  `NODE_SEPARATION` and `LAYER_SEPARATION` should also rise above their minima
-  now that the owner has supplied the justification `options.ts` says was
-  missing. That is **G180**/**G188**'s open question and it should be driven
-  AFTER the sizing, because sizing may remove the need for it and a spacing
-  increase taken first would mask what sizing alone achieves.
+**THE RE-DRIVE IS DONE, 2026-10-25, AND "24 TESTS ACROSS 8 FILES" UNDERSTATED IT
+BY FOURTEEN - WHICH IS THE MOST USEFUL THING IT FOUND.** The triage above was
+taken from a red suite, and a red suite does not report tests that never
+registered. **`tests/schgen/remeasure.test.ts`'s `beforeAll` threw**, so bun
+reported ONE unnamed failure for the whole file and silently did not run its
+other 23 tests - which is why the suite showed `3839 tests` against a baseline of
+`3862`, a gap of exactly 23 nobody accounted for. Fixing the `beforeAll` turned
+**14 of those 23 red**, every one a stale figure. **Total re-driven: 38 tests
+across 9 files**, the ninth being `tests/schgen/pointers.test.ts`, whose own
+guard then caught three register citations naming test titles this work had
+renamed (**G97**, **G105**, **G229**).
+
+**THE LESSON IS THE FAILURE MODE, NOT THE ARITHMETIC:** a count of failing tests
+is not a count of stale expectations, because a throwing `beforeAll` hides every
+assertion behind it. The term-by-term check that would have caught it was
+available and not taken - **the TEST TOTAL, not the failure total.**
+
+**WHAT MOVED AND WHAT DID NOT, OVER THE FOUR PARITY CIRCUITS' TWELVE BLOCKS:**
+
+| | before | after |
+| --- | --- | --- |
+| declared ELK blocks that draw (4 parity circuits) | 7 of 12 | **10 of 12** |
+| declared ELK blocks that draw (whole repository) | 35 of 52 | **46 of 52** |
+| boards that produce a schematic | 1 of 11 | **2 of 11** |
+| boundary nodes at zero size | 38 of 38 | **0 of 38** |
+| `bends`, `bendsPerEdge`, `crossings` per block | - | **moved on ONE of the ten that draw** |
+| `len`, `area`, `aspect` per block | - | **moved on TEN of the twelve** |
+| crossing counts in the 4-order sweep | - | **all 40 unchanged** |
+| the five legs' wire total | 224.0 grid steps | **298.0** |
+| the five legs' placements, distinct x, nets, reversals, segments | 14 / 14 / 19 / 9 / 67 | **unchanged** |
+| the four bias legs' congruence (**G185**) | byte-identical | **three distinct topologies** |
+| `transistor-preamp`'s `lab` sheet (**G211**) | cannot be laid out | **7 frames, 142 wires** |
+| G193's 18-of-38 anchor disagreement | 4 / 18 / 16 | **unchanged** |
+| duplicate ELK segments (**G219**) | 82 | **83** |
+| problem classes in the corpus (**G232**) | 7 | **1** |
+
+**THE THREE BLOCKS THAT STARTED DRAWING** are `oc-audio` (was refused at the snap
+collapse), `tp-leg-emitter-bypass` (label over label) and `tp-stage` (six label
+problems). **The two that still refuse** are `ob-buffer`, on a power symbol's
+value over another's, and `oc-sidechain`, on a port coordinate that disagrees with
+the pin end recomputed from its placement - neither a text-clearance case.
+
+**AND TASK 22's `5 + 2 = 7` CEILING IS SUPERSEDED FROM OUTSIDE ITS OWN SUBJECT**,
+which is worth more than the number: it was a correct bound on what FIELD
+PLACEMENT could unblock, and three blocks drew past it by a different mechanism.
+**A correct bound on one mechanism is not a bound on the drawing.** **G232**
+carries that.
+
+**WHAT THE RE-SCOPING TURNED INTO**, since the entry above only predicted it. The
+integrated experiment's subject went back to **`optical-compressor`** - the one
+**G105**'s own brief named, displaced by ruling **R38** only because all three
+`oc-*` blocks were then refused. Two of its three draw, which is the SOME the
+guard requires; the guard was NOT relaxed; and the re-scope bought a thing R38
+could not get - **the flat side is ACCEPTED, so the experiment has figures on
+both sides at the accepted stage for the first time.** `transistor-preamp` is now
+INELIGIBLE, because all seven of its blocks draw and the guard refuses that.
+
+**THREE THINGS THIS COST, each recorded where it binds rather than only here:**
+
+1. **`G185`'s congruence is broken.** A boundary node is as big as the text drawn
+   at it, and the four bias legs' boundary nets differ - `VCC` power plus `BASE`
+   label, `COLLECTOR` label plus `BASE` label, `GND` power plus `BASE` label
+   twice - so only the two `-lower` legs still coincide. At the ceiling's own size
+   that is three distinct topologies where there was one, which is BETTER support
+   for the ceiling (**G97**, **G101**);
+2. **the skin's `6 * len(id) + 5` prediction can no longer be cleanly refuted.**
+   Its refutation was a predicted spread against a measured ZERO; the measured
+   spread is now 16, 42, 32, 32 grid steps. It is asserted not to be a scaling of
+   the prediction - 16/12 against 10/6 - but the four legs' id lengths and
+   boundary-net lengths vary together and the orderings now agree. **Separating
+   the two causes needs a subject where they vary independently and this
+   repository declares none** (**G97**);
+3. **THREE clearance controls lost subjects, and this is the cost to watch.**
+   `tests/schgen/masked-problems.test.ts`'s non-vacuity control rested on
+   `tp-leg-emitter-bypass`'s and `tp-stage`'s label problems and now rests on
+   `ob-buffer`'s alone; its mismatch-kind loop has two subjects where it had
+   more. **And `tests/schgen/elk/adapt.test.ts`'s *"a block reaching the
+   clearance checks is graded by them"* grades ONE block where it graded three** -
+   that one is `ob-buffer` as well. All three are asserted as counts so the
+   thinness is visible rather than inferred, and all three now hang on the SAME
+   block: **fixing `ob-buffer` would leave three controls with no subject at
+   all**, and each would then fail on its own denominator rather than pass over
+   nothing, which is the behaviour to keep and not to relax.
+
+**THE SUITE, ACCOUNTED TERM BY TERM.** Baseline at `d369784`: **3862 pass / 0
+fail / 43 747 expect() across 358 files**. At `e7408d9` plus this pass: **3865
+pass / 0 fail / 43 893 expect() across 358 files**. `[RAN]` both, and the per-file
+counts of all 114 `tests/schgen` files in both trees, so every term is placed:
+
+- **files 358 to 358.** No test file added or removed;
+- **tests +3**, all additions and each named: one in
+  `tests/schgen/elk/graph.test.ts` (a labelled boundary node's width differs by
+  one grid step per character, which a constant size of ANY value fails) and two
+  in `tests/schgen/remeasure-edges.test.ts` (**G229**'s refusal re-homed, plus
+  the seven-block flat probe refusing at a DIFFERENT obligation);
+- **expect() +146**, and all 146 are inside `tests/schgen`: graph +9, adapt +2,
+  sheet-graph +3, masked-problems +4, measures +8, remeasure-ceiling +65,
+  remeasure-edges +9, remeasure +29, compose +17. **`adapt.test.ts`'s +2 is the
+  only one no edit of this pass caused**: it holds two data-driven loops, one
+  making two assertions per block that DRAWS (7 to 10, so +6) and one per block
+  the clearance checks REFUSE (3 to 1, so -4). Net +2, and the -4 is the thinned
+  control in clause 3 above;
+- **fail 0 to 0.**
+
+**THE BOARD PATH IS UNTOUCHED, CHECKED RATHER THAN ARGUED.** `[RAN]` `make check`
+at `d369784` and at `e7408d9`: **byte-identical output but for six timing lines**,
+the same four FAILs (`pt2399-core` on a missing `bomConditions` export;
+`transistor-preamp-lab`, `-loop` and `-staged` on HC8 and an unrecorded lead
+span) and the same seven `ok`s, **including all five `boards/pultec-*`**. Every
+`boards/*/*.perfboard.vrt` is byte-identical by `md5` and `git status boards/` is
+clean. **`make check` exits 2 on BOTH commits**, so the hand-off's *"make check
+must stay at exit 0"* described a state this branch was not in: the four FAILs are
+pre-existing and none is on the schematic path, and no module under
+`tools/perfboard/`, `lib/kicad/`, `lib/stripboard/` or `tools/bom/` imports
+`lib/schgen/` at all.
+
+- **Why it is open** the sizing is built and the suite is green; **three things
+  stay open.** (1) `ob-buffer` and `oc-sidechain` still refuse, and the two
+  `tp-stage` boards refuse on a power-VALUE overlap that the clearance work has
+  not addressed. (2) **The FLOOR's stated basis is gone and nothing replaced
+  it** - `BLOCK_SIZE.floor` is still `"unmeasured"` and was deliberately not
+  re-derived here, because measuring a floor in the tool that produces the
+  drawings would make it the producing agent's own criterion. (3) The id-formula
+  question in clause 2 above.
+- **What would settle it.** **CRITERION, MET:** a boundary node's size is the
+  geometry of the thing that will be drawn at it, computed with the same
+  functions the clearance checker uses, and the board census does not regress -
+  it improved, 1 of 11 to 2 of 11, with `make check` and every `.vrt`
+  unchanged. **THE MECHANISM'S "power-symbol half is untried" IS NOW TRIED and
+  is what the built change does** (`powerText`'s glyph unioned with
+  `powerValueBox`, at `powerRotation` for the side), so that clause is spent.
+  **FOR THE FLOOR, CRITERION: spec §1.8 states whether a floor is a bound on the
+  drawing's area or on the graph's cells, and a tool that is not the generator
+  measures it.** Not met and not attempted. **A SECOND, SEPARATE QUESTION this
+  does not settle:** whether `NODE_SEPARATION` and `LAYER_SEPARATION` should also
+  rise above their minima now that the owner has supplied the justification
+  `options.ts` says was missing. That is **G180**/**G188**'s open question, and
+  the case for driving it has WEAKENED rather than strengthened - sizing alone
+  removed six of the seven problem classes, so a spacing increase taken now would
+  be chasing one remaining defect on one block.

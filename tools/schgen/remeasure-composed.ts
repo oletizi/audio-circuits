@@ -11,40 +11,63 @@
  * reports the four measures against the FLAT whole-circuit baseline - so what survives of the bound
  * is a number rather than an assumption."*
  *
- * **THE SUBJECT IS NOT THE ONE THE BRIEF NAMES, AND THE SUBSTITUTION IS CONTROLLER RULING R38.**
+ * **THE SUBJECT IS THE ONE THE BRIEF NAMES AGAIN, AND THE RE-SCOPE IS DELIBERATE - 2026-10-25.**
  * The brief's mechanism is `optical-compressor`, *"because both ends of the comparison already
  * exist"* - whole gave 293 crossings / 3.18 bends per edge / 4.05:1 / 159 967 and its three
- * declared blocks gave 48 / 2.70 / 3.11:1 / 35 070. **That mechanism is unavailable: all three
- * `oc-*` blocks are among the seven the post-layout gates refuse**, so there is no composed side to
- * measure. R38: *"the subject becomes the sub-circuit induced by the blocks that actually draw - at
- * HEAD, the five transistor-preamp legs. Measure BOTH ENDS HERE."*
+ * declared blocks gave 48 / 2.70 / 3.11:1 / 35 070.
+ *
+ * **IT WAS `transistor-preamp` FROM TASK 17 UNTIL 2026-10-25, AND WHY IT WAS SAYS WHY IT IS NOT
+ * ANY MORE.** Controller ruling R38 substituted it because the brief's mechanism was
+ * *"unavailable: all three `oc-*` blocks are among the seven the post-layout gates refuse, so
+ * there is no composed side to measure"*, and directed *"the subject becomes the sub-circuit
+ * induced by the blocks that actually draw - at HEAD, the five transistor-preamp legs."*
+ *
+ * **BOTH HALVES OF THAT HAVE CHANGED, in opposite directions, and the change is boundary-node
+ * sizing (`docs/known-gaps.md` **G291**):**
+ *
+ * - `transistor-preamp` is no longer a subject this experiment MAY use. **All seven of its blocks
+ *   draw**, and the guard below refuses that case - correctly: with every block drawing, the flat
+ *   side would be a whole circuit and the sub-circuit caveat this header prints would be false.
+ *   The guard is NOT relaxed; the subject moved.
+ * - `optical-compressor` is a subject it may use again. **`oc-power` and `oc-audio` draw and
+ *   `oc-sidechain` does not** - 2 of 3, which is exactly the SOME the ruling's own reasoning asks
+ *   for - so the brief's named mechanism is available for the first time since Task 17.
+ *
+ * **AND THE RE-SCOPE BOUGHT SOMETHING R38 COULD NOT GET: A TWO-SIDED ACCEPTED-STAGE COMPARISON.**
+ * On `transistor-preamp` the flat probe was refused by the junction gate, so *"the accepted column
+ * holds a composed drawing and a refusal"* and the only stage-matched comparison was at
+ * `backend-output`. On `optical-compressor` the flat probe is ACCEPTED, so G105's criterion -
+ * *"reports the four measures against the FLAT whole-circuit baseline"* - has figures on both
+ * sides of it at the stage the drawing is actually emitted from.
  *
  * **FOUR THINGS THAT TRAVEL WITH EVERY FIGURE THIS MODULE PRODUCES, per R38:**
  *
- * 1. **the spike's 6.1x is NOT RE-DERIVABLE on this subject and is reported NOT-COMPARABLE.** It is
- *    not approximated, not scaled, and no *"fraction of 6.1x survived"* is computed against a
- *    different circuit. The ratio below is the one measured here, on this subject, named as that;
- * 2. **the flat side is a SUB-CIRCUIT and not a whole circuit.** The five legs are five of
- *    `transistor-preamp`'s seven declared blocks; `tp-leg-emitter-bypass` and `tp-stage` are on the
- *    same declared sheet and are left out because they do not draw. **A composed-against-flat ratio
- *    over a five-block subset of one circuit family is a much narrower claim than the brief
- *    anticipated**, and the narrowness is printed beside the number;
+ * 1. **the spike's 6.1x is NOT RE-DERIVABLE here and is still reported NOT-COMPARABLE.** The
+ *    subject now MATCHES the spike's subject, which is new and is not the same thing as the
+ *    figures being comparable: the spike's numbers came from a different frontend, with different
+ *    node sizes and different port constraints, and G101's own caveat applies. Nothing is
+ *    approximated, nothing is scaled, and no *"fraction of 6.1x survived"* is computed. The ratio
+ *    below is the one measured here, named as that;
+ * 2. **the flat side is a SUB-CIRCUIT and not a whole circuit.** Two of `optical-compressor`'s
+ *    three declared blocks; `oc-sidechain` is on the same declared sheet and is left out because
+ *    it does not draw. **A composed-against-flat ratio over a two-block subset is a narrower claim
+ *    than the brief anticipated**, and the narrowness is printed beside the number;
  * 3. **there is NO template in this comparison.** G105's criterion asks for *"both template-drawn
  *    and ELK-drawn blocks"*; the ported templates draw 0 of this repository's 12 blocks as declared
- *    (**G160**), so the composed side is five ELK blocks. That half of the criterion is NOT met and
+ *    (**G160**), so the composed side is two ELK blocks. That half of the criterion is NOT met and
  *    saying so is the result;
  * 4. **a ratio below 1x is a legitimate outcome** and is reported as one - a finding about seam B,
  *    not a failure of the measurement.
  *
  * **THE FLAT SIDE IS A PROBE AND DECLARES NOTHING.** `flatSubgraphOf` - now in `./remeasure-edges.ts`,
  * where fix round 1 corrected it to rebuild `Circuit.unitBlock` - builds one `BlockSubgraph`
- * whose members are the union of five declared blocks' members, hands it to the same
+ * whose members are the union of the drawing blocks' members, hands it to the same
  * `elkInputOf` -> `layoutBlocks` -> `adaptElkLayoutReported` chain every block goes through, and
  * writes no file, no declaration and no authoring entry. It is the same posture
  * `tools/schgen/anchor-sweep.ts` takes and **G160** states for it: a brute-forced subject *"chooses
  * no arrangement, writes no declaration and emits nothing, so it is a measurement rather than an
- * authored criterion."* **Nothing in this repository declares a five-leg block and this module does
- * not propose one.**
+ * authored criterion."* **Nothing in this repository declares a two-block `oc-power`-plus-
+ * `oc-audio` block and this module does not propose one.**
  *
  * **AND THE COMPARISON IS TAKEN OVER BLOCK GEOMETRY ON BOTH SIDES, NEVER OVER FRAMES.** G208's own
  * caution for this step: *"the comparison against the flat baseline must compare like with like,
@@ -78,8 +101,14 @@ import type { FrameContent } from "../../lib/schgen/render/frames.ts"
 import type { BlockId } from "../../lib/schgen/ir/types.ts"
 import type { PlacedPin } from "../../lib/schgen/render/unit-pins.ts"
 
-/** The circuit the experiment's subject comes from: the one with blocks that draw. */
-export const SUBJECT_CIRCUIT = "transistor-preamp"
+/**
+ * The circuit the experiment's subject comes from: the one where SOME blocks draw.
+ *
+ * **IT IS `optical-compressor` SINCE 2026-10-25 AND WAS `transistor-preamp` BEFORE** - see this
+ * module's header. `transistor-preamp` now draws all seven of its blocks, which the guard in
+ * `integratedExperiment` refuses, and `optical-compressor` draws two of its three.
+ */
+export const SUBJECT_CIRCUIT = "optical-compressor"
 
 export interface SideMeasures {
   readonly measures: SchematicMeasures
@@ -119,7 +148,7 @@ export interface IntegratedExperiment {
   readonly circuit: string
   readonly blocks: readonly BlockId[]
   readonly notDrawn: readonly { readonly id: BlockId; readonly reason: string }[]
-  /** The five legs as ONE graph through the same backend. */
+  /** The drawing blocks as ONE graph through the same backend. */
   readonly flat: Side
   /**
    * The flat probe's figures at the `backend-output` stage - the PRE-SNAP canonical topology of
@@ -127,12 +156,12 @@ export interface IntegratedExperiment {
    *
    * **IT IS A DIFFERENT STAGE FROM `composed` AND NO RATIO IS TAKEN BETWEEN THE TWO.** It is
    * reported because a refusal with no figure beside it tells a later reader nothing about the
-   * graph, and because it is exactly the stage `./remeasure.ts` reports for the seven declared
+   * graph, and because it is exactly the stage `./remeasure.ts` reports for the two declared
    * blocks the gates refuse - so the flat probe sits in that table's own column rather than in a
    * column of its own.
    */
   readonly flatBackendOutput: Side
-  /** The same five drawn as blocks, translated into their packed frames: the composed geometry. */
+  /** The same blocks drawn separately, translated into their packed frames: the composed geometry. */
   readonly composed: Side
   /** Each block's own geometry before composition, so intra-block crossings can be separated. */
   readonly perBlock: readonly { readonly id: BlockId; readonly figures: SideMeasures }[]
@@ -286,7 +315,7 @@ function flatSide(g: BlockSubgraph, outcome: ElkOutcome | undefined): Side {
   const report = adaptElkLayoutReported(g, outcome)
   if (!report.result.ok) {
     // R38: "If the flat side REFUSES, that refusal is the result." The measures are still taken over
-    // the router's own output, which is the same stage ./remeasure.ts reports for the seven blocks
+    // the router's own output, which is the same stage ./remeasure.ts reports for the two blocks
     // the gates refuse - so the comparison has a figure and the figure says which stage it is from.
     return { ok: false, gate: "lib/schgen/elk/adapt.ts (spec 1.4's realization contract)", refusal: describeMismatch(report.result.mismatch) }
   }

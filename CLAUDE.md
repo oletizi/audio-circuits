@@ -119,9 +119,13 @@ So:
   was and to *"expect it to stop being true as the schematic-generation port
   lands"*. **The port landed and the prediction was wrong for a reason nobody
   anticipated, which is worth more than a silent correction.** `lib/schgen/`
-  exists, draws **35 of this repository's 52 declared ELK blocks**, and
-  **produces a schematic for 1 of the 11 boards in `boards/`** - `pt2399-core`,
-  since 2026-10-24. **`0 of 11` STOOD HERE, and beside it "six are refused at
+  exists, draws **46 of this repository's 52 declared ELK blocks**, and
+  **produces a schematic for 2 of the 11 boards in `boards/`** - `pt2399-core`
+  since 2026-10-24 and `transistor-preamp-lab` since 2026-10-25, when
+  boundary-node sizing stopped handing ELK a dimensionless point for every global
+  label and power symbol (`docs/known-gaps.md` **G291**). **`35 of 52` and
+  `1 of 11` both stood here and are SUPERSEDED**, and the board figure's second
+  column below binds the new one identically. **`0 of 11` STOOD HERE, and beside it "six are refused at
   `validateCircuit` on net names". The count is SUPERSEDED and the cause is
   REFUTED, which is the worse of the two: a stale count misleads about
   progress, a stale cause sends you after a rule that is not there.** No board
@@ -151,14 +155,19 @@ So:
   than inferred from the symbol's drawing - the geometric rule is perfect on
   the one symbol that motivates it and misclassifies both terminals of
   `Device:R` and six of eight pins on a TL072.
-  **AND `1 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it
-  stand in this file, or anywhere else, without one.** The one sheet that
-  generates **cannot be read as a drawing**: not one net label, signal flow not
+  **AND `2 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it
+  stand in this file, or anywhere else, without one.** The `pt2399-core` sheet
+  **cannot be read as a drawing**: not one net label, signal flow not
   followable, `C13` and `C14` unresolvable, page 1 of 2 blank but for a sheet
   symbol, and **19 of its 24 reference designators disagree with the built
   board's** - the sheet's `R3` is a 10K part where the board's `R3` is 15K.
   **G285** carries that table and ends, verbatim: *"It is not a candidate for
-  G240 and must not be sent to him as one."*
+  G240 and must not be sent to him as one."* **The same reading has NOT been
+  taken on `transistor-preamp-lab`**, which is the second board and is newer than
+  G285; what is known about it is that its generation reports **13 fallback field
+  placements** - text the placer could not keep clear - across it and
+  `pt2399-core`. **A board that generates is not a board whose drawing anyone has
+  read.**
   **The "no authoring declaration" half of this sentence is gone and the dates
   say why it is kept:** until 2026-10-21 nine of the eleven
   boards had no declaration and had never been offered to the drawing code at
