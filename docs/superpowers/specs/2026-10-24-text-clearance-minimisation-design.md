@@ -79,6 +79,46 @@ that does not is a correctness refusal.
 `clearancePairs` seam, promoted from a message-formatting detail to the thing
 that decides refuse-versus-disclose.**
 
+## 3a. THE ORDER OF THIS SPEC IS WRONG AND IS CORRECTED HERE, by the owner looking at a drawing
+
+**Everything below was written on the assumption that the geometry is fixed and
+the question is where to put the text.** Shown the first `transistor-preamp-lab`
+sheet, 2026-10-24, he said:
+
+> *"what's immediately striking is that the drawing layout is generally good, but
+> where there is text overlap, the circuit diagram is crammed really tightly
+> together. There's no good reason to cram everything so tightly and then
+> complain there's no room for the text."*
+
+**He is right, and `docs/known-gaps.md` G291 has the cause and the
+measurement.** `boundaryNodeOf` (`lib/schgen/elk/graph.ts`) hands **every global
+label and power symbol to ELK as a node of `width: 0, height: 0`.** The layout
+engine packs the circuit believing the text is dimensionless; the text is then
+drawn at up to 2043.1 µm tall and lands on things. **The refusal blames the text
+for not fitting a space allocated on the assumption that it was not there.**
+
+`[RAN]` one line changed, **no gate touched**: `transistor-preamp-lab` **drew for
+the first time**, and `transistor-preamp-loop`'s clearance problems **disappeared
+entirely**. 1 of 11 became 2 of 11 with every clearance check in full force.
+
+**SO THE PROGRAMME INVERTS:**
+
+| | was | is |
+| --- | --- | --- |
+| **first** | stop refusing, measure, disclose | **size the boundary nodes correctly** |
+| **then** | widen the label search | reconsider the minimum spacings (**G180**/**G188**) |
+| **last** | — | minimise-and-disclose, as the safety net for what genuinely cannot be solved |
+
+**His G260 policy is not weakened — it is re-ordered.** A disclosure mechanism
+built first would have disclosed collisions that a correct node size removes
+outright, and this repository would have shipped notes about a problem it had
+chosen not to fix. The report's own §3 had the sentence and under-weighted it:
+*"this generator has no perturbation of any kind."*
+
+**§4 and §5 below are retained as written** because the minimise-and-disclose
+half is still needed and still his decision; **§5's yield table is superseded**
+by G291's and by the `G284` finding in §5a.
+
 ## 4. The design
 
 ### 4.1 `checkLayout` returns two lists, not one
@@ -183,6 +223,31 @@ that do not draw:
 
 **So the honest claim is 5 boards, or 7 if he rules glyph-glyph gradeable.** Not
 nine, and not ten.
+
+## 5a. THAT TABLE IS SUPERSEDED, and the correction is the third instance of G274's lesson on this branch
+
+**`[RAN]` a throwaway probe suppressing the clearance refusals only.** The yield
+is **not** five boards. It is **one** — `transistor-preamp-lab`. **Six more
+immediately hit a different blocker:**
+
+> `generate: two generated files are named pultec-hi-boost.kicad_sch`
+
+That is **G284**'s sheet-name collision, already recorded, and `CLAUDE.md`
+already warned it *"will bite whoever unblocks the next board."* It bit six at
+once. The true state behind the clearance gate:
+
+| blocker | boards |
+| --- | --- |
+| drawn | **2** (`pt2399-core`, `transistor-preamp-lab`) |
+| **G284** sheet-name collision | **6** |
+| missing junction — correctness, stays refused | 2 |
+| `pultec-mid` `pin 12` | 1 |
+
+**So the sequence is three small changes, not one:** size the boundary nodes
+(§3a), fix **G284**, and keep minimise-and-disclose as the net. Together those
+plausibly take the count from 1 to 8. **This is the third time on this branch
+that fixing the named problem revealed the next one** — `G274`'s standing
+lesson, and the reason no figure here is offered as a promise.
 
 **IT PROMISES NO READABLE DRAWING.** The research is explicit: *"Nothing here
 claims any candidate placement is legible. The measurements are of overlap, not

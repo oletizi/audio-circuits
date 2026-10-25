@@ -27950,3 +27950,110 @@ names and the second fails quietly on symbols nobody checked.
   but it leans on a NAME, which `CLAUDE.md` forbids reasoning from - *"verify
   names against the thing itself"* - and `G282` is the entry that cost a day to
   learning that lesson on this very pin.
+
+### G291 - MEASURED, AND IT INVERTS THE TEXT-PLACEMENT PROGRAMME: every global label and power symbol is handed to ELK as a node of WIDTH 0, HEIGHT 0, so the layout engine packs the circuit believing the text is dimensionless - and sizing them by hand, with no gate touched, drew a board that had never drawn and cleared another board's collisions outright
+
+**THE OWNER SAW IT IN THE DRAWING BEFORE ANY AGENT SAW IT IN THE CODE**, which is
+why his words lead this entry. Shown the first `transistor-preamp-lab` sheet ever
+produced, 2026-10-24:
+
+> *"what's immediately striking is that the drawing layout is generally good, but
+> where there is text overlap, the circuit diagram is crammed really tightly
+> together. There's no good reason to cram everything so tightly and then
+> complain there's no room for the text."*
+
+**THE CAUSE IS IN A DOC COMMENT THAT STATES IT PLAINLY AND DOES NOT TREAT IT AS A
+PROBLEM.** `lib/schgen/elk/graph.ts`, `boundaryNodeOf`:
+
+> *"A boundary net as an ELK node of **ZERO size**, pinned to a layer when the
+> reviewed rule gives it a single horizontal side. **Zero size is the measured
+> difference from both spikes, not an omission.** … This backend emits no port
+> glyph. What a rail's power symbol or a label's outline occupies is decided when
+> it is drawn (seam B, **D9**), **not here**."*
+
+`width: 0, height: 0`. **Every labelled net and every rail** reaches the layout
+engine as a dimensionless point. ELK packs the circuit around points, the labels
+and power symbols are drawn afterwards at their real size - up to 2043.1 um tall
+by KiCad's own text box (**G265**) - and they land on each other and on the
+wires. **The refusal that follows blames the text for not fitting in a space that
+was allocated on the assumption that it was not there.**
+
+**AND THE SPACINGS COMPOUND IT, by an explicit and well-reasoned choice.**
+`lib/schgen/elk/options.ts` sets `NODE_SEPARATION = STUB` and
+`LAYER_SEPARATION = PITCH` and says of its other spacings:
+
+> *"`GRID` is chosen as **the smallest value that satisfies the criterion** - one
+> whole grid step - which is a stated rule rather than a preference: it is the
+> minimum of the set the spec admits, so **no smaller legal value exists and no
+> larger one is justified by anything**."*
+
+That reasoning is sound on its own terms and it is why the drawing is as tight as
+the grid permits. **The owner's observation is the justification that sentence
+says does not exist.** The same comment already anticipates this: *"Which
+reviewed constant should feed which option remains an open question (**G180**,
+**G188**), and a later task with an answer should change these."*
+
+**THE MEASUREMENT. One line changed, NO gate touched, `[RAN]`
+`bun tools/schgen/board-sheets.ts`.** `boundaryNodeOf`'s `width: 0, height: 0`
+replaced with `width: labelExtent(net, ""), height: 2 * GRID`:
+
+| board | production | with boundary nodes sized |
+| --- | --- | --- |
+| `pt2399-core` | generated | generated |
+| **`transistor-preamp-lab`** | **refused** (body over label, 2 places) | **GENERATED** |
+| **`transistor-preamp-loop`** | **refused** (label over label) | **clearance CLEARED**; now refuses on **G284**'s sheet-name collision |
+| `transistor-preamp-buffered` | refused (glyph touch) | refused, still glyph touch |
+| `transistor-preamp-staged` | refused (glyph touch) | refused, still glyph touch |
+| the four `pultec-*` with geometry | refused | refused |
+| `pultec-mid` | refused at `validateCircuit` | unchanged - never reaches geometry |
+
+**1 of 11 became 2 of 11 with the clearance checks fully in force.** This is the
+first board in this repository to pass the real gates other than `pt2399-core`.
+
+**WHY THE REMAINING ONES DID NOT MOVE, and it is a defect in the PROBE rather
+than a limit on the approach.** A boundary node is a global label **or a power
+symbol**, and the probe sized every one of them with `labelExtent`, which is a
+label's geometry. The surviving refusals are **precisely the power-symbol
+collisions** - `tp-stage`'s *"glyph of power symbol GND 0 … touches the glyph of
+power symbol VCC 1 … which is on another net"*. Their separation did widen under
+the probe (2.54 mm to 5.08 mm between the two glyph anchors) and did not widen
+enough, because the number fed in was the wrong shape for the object.
+`powerValueBox` in `lib/schgen/render/text-boxes.ts` is the geometry that case
+needs. **No conclusion may be drawn from this table about power symbols.**
+
+**WHAT THIS DOES TO THE TEXT-PLACEMENT PROGRAMME, which is the reason this entry
+is long.** `docs/schematic/text-handling-report.md` framed the subject as label
+PLACEMENT: given the geometry, find somewhere for the text. Eighteen approaches
+were surveyed under that framing, and the report's own §3 recorded the alternative
+in one sentence it did not then pursue - *"One tool (netlistsvg) adjusts the
+surrounding geometry to make room; **this generator has no perturbation of any
+kind**."* **That sentence is the finding, and it was written down and
+under-weighted.** The cheapest fix is not to search harder for places to put text;
+it is to stop lying to the layout engine about how much room the text needs.
+
+**It also bears on `G260`'s minimise-and-disclose policy without contradicting
+it.** The owner's policy stands and remains the right safety net for what cannot
+be solved. **What changes is the ORDER:** a disclosure mechanism built first would
+have disclosed collisions that a correct node size removes entirely, and the
+repository would have shipped notes about a problem it had chosen not to fix.
+
+- **Verified** **CONFIRMED by this writer.** Both probes were run in this
+  repository against the installed KiCad 10.0.5, each restoring the production
+  files in a `finally` block with `git status lib/` checked clean afterwards. The
+  census figures are read off the committed tool's own output, not inferred. The
+  probe scripts were scratch and are not committed; the one-line change is quoted
+  above in full and the tool is a committed entry point, so the measurement is
+  reproducible without them. **Nothing here is relayed from another agent.**
+- **Why it is open** nothing is built. `boundaryNodeOf` still returns zero-size
+  nodes on `main` and on `feature/schematics-tooling`.
+- **What would settle it.** **CRITERION:** a boundary node's size is the geometry
+  of the thing that will be drawn at it - `labelExtent` for a labelled net,
+  `powerValueBox`'s geometry for a rail - and the board census does not regress.
+  **MECHANISM, PARTLY TRIED:** the label half is measured above and works; **the
+  power-symbol half is untried** and is the one the surviving refusals need.
+  **A SECOND, SEPARATE QUESTION this does not settle:** whether
+  `NODE_SEPARATION` and `LAYER_SEPARATION` should also rise above their minima
+  now that the owner has supplied the justification `options.ts` says was
+  missing. That is **G180**/**G188**'s open question and it should be driven
+  AFTER the sizing, because sizing may remove the need for it and a spacing
+  increase taken first would mask what sizing alone achieves.
