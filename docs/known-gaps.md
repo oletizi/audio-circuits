@@ -28432,3 +28432,117 @@ drew, which is exactly the set these tables predicted.
   the case for driving it has WEAKENED rather than strengthened - sizing alone
   removed six of the seven problem classes, so a spacing increase taken now would
   be chasing one remaining defect on one block.
+
+### G292 - OWNER DIRECTIVE on how a generated schematic should read, with his words verbatim - and MEASURED: the ROTATION half is available and cuts text collisions by a third, while the ARRANGEMENT half is a DIFFERENT defect, because `edgesForNet` directs every edge by DECLARATION ORDER and ELK lays out by edge direction
+
+**THE DIRECTIVE, 2026-10-25, reviewing the first `pultec-hi-boost` sheet this
+repository ever generated.** His words, verbatim and complete:
+
+> *"just reviewed the high boost. It's definitely serviceable. It would, however,
+> be easier to read if the capacitors in the capacitor bank were rotated 90
+> degrees and not fanned out to the top and bottom of the switch symbol, but
+> arranged to the right of the switch symbol. signal flows left to right."*
+
+**IT IS A DIRECTIVE AND NOT A PREFERENCE TO WEIGH.** `CLAUDE.md` reserves the
+criteria a generated artifact is judged by to someone other than the agent
+producing it, and readability is exactly that class - **G71** holds that a
+readability threshold invented here would be this project's invention wearing a
+citation. This is the owner supplying one. *"Signal flows left to right"* is the
+general principle; the capacitor bank is the instance he happened to be looking
+at.
+
+**IT HAS TWO HALVES AND THEY ARE DIFFERENT PROBLEMS**, which is the finding.
+
+**(1) WHY THE CAPACITORS ARE DRAWN VERTICALLY: no rule answers for them.**
+`preferredOrientation` (`lib/schgen/rules/orientation.ts:81`) returns a rotation
+only for a part with a RAIL end - its `constraints` come from
+`context.rails`, and `if (constraints.length === 0) return null`. The hi-boost
+bank sits between signal nodes and touches no rail, so every one of its
+capacitors falls through to `null`, which spec §1.5 resolves to **0: the
+orientation the symbol library itself draws the part in**. `Device:C` at
+rotation 0 has its pins top and bottom, so the plates are horizontal and the
+part's axis is vertical. Nothing chose that; it is the default of a rule that
+declines to answer.
+
+**(2) ROTATION IS AVAILABLE AND IT MEASURABLY IMPROVES THE DRAWINGS.** `[RAN]` a
+throwaway probe making a part with no rail constraint prefer 90 instead of
+falling through, then re-rendering every board:
+
+| | production | probe |
+| --- | --- | --- |
+| boards producing a schematic | 5 of 11 | 5 of 11, **a different five** |
+| **fallback field placements** | **26 across 5 boards** | **17 across 5 boards** |
+| `pt2399-core` fallbacks | 8 | **4** |
+| `transistor-preamp-lab` fallbacks | 5 | **2** |
+| `pultec-low-boost` | refused, **missing junction** | **GENERATED** |
+| `pultec-hi-boost` | generated | refused: *"blocks do not fit on A3 … needed at least 431.8 x 297 mm"* |
+| `pultec-hi-cut` | refused, needs 427.99 mm | refused, needs **457.2 mm** |
+
+**A third fewer text collisions**, and a board whose missing-junction refusal
+cleared. **The two it costs are PAPER-SIZE refusals, not collisions**: a
+left-to-right layout is wider and shorter, so A3's 420 mm runs out. That is the
+directive working as intended and running into a sheet-size decision, not a
+defect in it. **The probe is NOT the design** - it rotates every non-rail
+two-terminal part in the repository with no account of what the part does - and
+no rule should be written from it without its own criteria.
+
+**(3) THE ARRANGEMENT HALF IS NOT DELIVERED BY ROTATION, and the cause is
+elsewhere.** `[RAN]` the probe and read the generated `pultec-low-cut` sheet:
+the capacitors are rotated as asked **and are placed to the LEFT of `SW1`**,
+which is the opposite of the directive. **Rotation and placement are
+independent here.**
+
+**THE CAUSE, and it is general rather than about capacitors.**
+`edgesForNet` (`lib/schgen/elk/graph.ts:286`) turns a net of degree n into n-1
+edges by chaining the terminal list in LIST ORDER:
+
+```ts
+const from = terminals[i - 1]
+const to = terminals[i]
+out.push({ id: `${net}:${i - 1}`, sources: [from], targets: [to] })
+```
+
+The list is built as parts are walked, so **the direction of every edge in the
+layout graph is an artefact of declaration order.** ELK is run with
+`elk.direction = RIGHT` (plan decision **D4**) and `layered` assigns layers from
+edge direction - so **what ends up left and what ends up right is decided by the
+order somebody wrote the components in**, not by where the signal goes. The
+switch landing downstream of its own capacitor bank is one visible instance of
+that.
+
+**This is why the directive's second half cannot be met by an orientation rule.**
+Nothing in the IR currently carries signal direction for an INTERIOR net.
+`portDirections` carries it for boundary nets only (`negotiablePort`), and that
+is the input **G186** called *"the only input genuinely missing from the IR"*
+before ruling **R29** added it - for boundary nets.
+
+- **Verified** **CONFIRMED by this writer.** The directive is quoted from the
+  owner's message of 2026-10-25 and is complete, not excerpted. The probe was run
+  in this repository against installed KiCad 10.0.5, restored its one patched
+  file in a `finally` block, and `git status lib/` was checked clean afterwards;
+  the figures are read off `bun tools/schgen/board-sheets.ts`' own output. The
+  left-of-switch placement was read off the rendered PDF rather than inferred.
+  `edgesForNet` was read, not remembered. **Nothing here is relayed from another
+  agent.**
+- **Why it is open** nothing is built. Production still falls through to rotation
+  0 for every non-rail part, and still directs every edge by declaration order.
+- **What would settle it, and the two halves settle separately.**
+  **FOR ROTATION, CRITERION:** a two-terminal signal-path part is drawn with its
+  axis along the signal direction, and the board census does not lose a board
+  except to a paper-size refusal that names the size needed. **MECHANISM,
+  PARTLY TRIED:** extend `preferredOrientation` past its rail-end scope - but the
+  probe's blanket 90 is not it, because `RAIL_END_KINDS` exists to name the
+  kinds the rule speaks for and widening it to "everything else" would be the
+  taste judgement that file forbids. **AND IT FORCES A PAPER DECISION:** two
+  boards need more than A3's 420 mm, so either the `SheetSpec` paper is raised or
+  the layout is made narrower, and which of those is right is **an owner question
+  that has not been put to him.**
+  **FOR ARRANGEMENT, CRITERION:** a part's position along the sheet's x axis
+  follows the signal path rather than the declaration order, measurable as: for
+  a net with a declared input port, no terminal is laid out upstream of the port
+  it is fed from. **MECHANISM, UNTRIED:** direct each net's edges by a
+  topological walk seeded from the block's declared input ports instead of by
+  list order in `edgesForNet`, leaving the chaining itself alone. **It is not
+  small** - it changes the layout graph of every block, and `edgesForNet`'s
+  chaining is what **G188**'s `nodeSelfLoop` finding is about, so the two
+  interact.
