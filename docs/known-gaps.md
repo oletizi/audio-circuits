@@ -29275,3 +29275,110 @@ blanket.
   offered for it here**, because inventing a direction for such a block is the
   taste judgement spec 1.5 forbids - which is the same reason `df272a7` gave for
   leaving it alone, and it is the right one.
+
+### G293 - MEASURED, AND IT IS THE REASON GENERATED PULTEC SHEETS LOOK WRONG: `edgesForNet` turns a net of degree n into a CHAIN of n-1 edges, so a PARALLEL bank of capacitors is handed to ELK as a SERIES string and drawn as a staircase - ten capacitors at ten distinct x positions, one ELK layer each, 12.7 mm apart
+
+**THE OWNER SAW IT AND NAMED THE FIX BEFORE ANY MEASUREMENT.** 2026-10-25, reviewing
+the generated `pultec-hi-boost` sheet, verbatim:
+
+> *"my guess is that stacking all the capacitors in the same column would
+> eliminate hairpins and make the signal flows left much more obvious. Hairpins
+> are very hard to trace"*
+
+and, of the same drawings:
+
+> *"It's better, but it's still pretty goofy. Also, the complaints about not
+> having enough room is insane. There is **plenty** of room on the page."*
+
+**HE IS RIGHT ON BOTH, AND THE SECOND ONE IS A DEFECT THIS WRITER BUILT A FIX
+FOR WITHOUT DIAGNOSING.** Measured on the generated `hi-cut` sheet at `df272a7`:
+content bounding box **445.1 x 177.2 mm on a 420 x 297 mm page** - it overflows
+the page horizontally while leaving **45% of the height unused**, and **9 points
+lie outside the page** (out to x = 437.5), which no check refuses. The paper
+escalation of `f754a37` answered *"which paper is big enough"* when the question
+was *"why is a 177 mm-tall drawing 445 mm wide"*.
+
+**CLAUSE 1: THE MEASUREMENT.** `[RAN]` symbol positions read out of the generated
+sheets:
+
+| board | capacitors | distinct x positions | spacing |
+| --- | --- | --- | --- |
+| `pultec-hi-cut` | **10** | **10** - 24.1, 36.8, 49.5, 62.2, 74.9, 87.6, 100.3, 113.0, 125.7, 138.4 | **uniform 12.7 mm** |
+| `pultec-hi-boost` | 9 | 4 - 61.0, 127.0, 139.7, 152.4 | - |
+
+**Every capacitor of `hi-cut` is in its own column, marching one grid step at a
+time across the sheet, with `SW1` at the far right (x = 154.94).** They are a
+PARALLEL bank selected by a rotary switch. Uniform one-step spacing is the
+signature of one ELK layer per node.
+
+**CLAUSE 2: THE CAUSE, which is in a function whose own comment states the
+behaviour as a virtue.** `edgesForNet` (`lib/schgen/elk/graph.ts`):
+
+```ts
+const from = terminals[i - 1]
+const to = terminals[i]
+out.push({ id: `${net}:${i - 1}`, sources: [from], targets: [to] })
+```
+
+> *"A net's terminals, chained into a spanning path: **a net of degree n becomes
+> n - 1 edges**, which is a tree and is what KiCad draws - a net is wire segments
+> plus a junction at every branch, never a hyperedge."*
+
+The reasoning is about **drawing wires** and it is sound there. **But the same
+edges are what ELK LAYS OUT FROM**, and a chain `C1 -> C2 -> ... -> C10` is, to a
+layered algorithm, a series string ten layers deep. So the common node every
+capacitor in the bank shares tells ELK the bank is in series. **The drawing is a
+faithful rendering of a graph that says the wrong thing about the circuit.**
+
+**This is a DIFFERENT defect from the declaration-order one in G292**, and larger.
+That one decided which side of the sheet a part landed on; this one decides
+whether a parallel group is drawn as a group at all, and it applies to every
+multi-terminal net in every circuit - a supply rail, a ground, a bus - not only
+to capacitor banks.
+
+**CLAUSE 3: WHAT THE OWNER'S FIX IS, IN THESE TERMS.** *"Stacking all the
+capacitors in the same column"* is: hand ELK a graph that says PARALLEL where the
+circuit is parallel. Nodes at equal depth land in one layer, which is one column.
+Two mechanisms exist and they are not equivalent:
+
+- **A STAR** from the net's upstream terminal to every other - `n - 1` edges
+  still, still a tree, still drawable with a junction at the branch, but every
+  sibling is one hop from the source instead of `i` hops. **This is the smaller
+  change and it keeps `read-graph.ts`'s one-section-per-edge contract.**
+- **A HYPEREDGE** (`sources: [a], targets: [b, c, d]`), which elkjs accepts.
+  **`read-graph.ts` REFUSES an edge returning more than one section** - *"edge
+  came back with N sections"* - so this needs that reader changed too.
+
+**NEITHER IS TRIED AND THE CHAIN IS NOT MERELY REPLACEABLE:** the drawn wires come
+from these same edge routes, so changing the graph changes the drawing's wire
+topology, and the junction checks (`G292`'s *"a branch point with no junction is a
+connection KiCad does not make"*) must still agree afterwards. **Two boards
+currently refuse on exactly that check**, so it is live, not theoretical.
+
+**CLAUSE 4: THE HAIRPIN METRIC, offered because his criterion deserves a number
+and because it did NOT say what this writer expected.** Backtracking per net =
+sum of horizontal wire travel divided by the net's horizontal extent; 1.0 is a
+clean monotonic run. `[RAN]` over the seven generated sheets: overall **1.07 to
+1.26**, with between 0 and 3 nets per board at **>= 1.5x** and a worst of **1.8x**
+on four boards. **So hairpins measured this way are real but modest, and they are
+NOT the dominant cost** - the staircase in clause 1 is, and it is a placement
+defect rather than a routing one. **The metric is kept because it is his
+criterion made countable, and recorded as not having confirmed the mechanism he
+guessed at**: he is right that the bank should be one column, and the reason is
+layering rather than hairpins.
+
+- **Verified** **CONFIRMED by this writer.** Symbol positions and the page
+  overflow were read out of the generated `.kicad_sch` files, not inferred from
+  the census; the backtracking figures come from the committed sheets. `[READ]`
+  `edgesForNet` and `read-graph.ts`'s section refusal. The elkjs bundle was
+  searched for the grouping options named above and `org.eclipse.elk.partitioning.activate`,
+  `.partition` and `org.eclipse.elk.layered.layering.layerChoiceConstraint`
+  exist in it. **Nothing here is relayed from another agent.**
+- **Why it is open** nothing is built. `edgesForNet` still chains.
+- **What would settle it.** **CRITERION, and it is the owner's:** the members of
+  a parallel group share one column - measurable as *the capacitors of a
+  switch-selected bank have one distinct x position, not ten* - and no board is
+  lost from the census. **MECHANISM: the star, UNTRIED**, with the hyperedge as
+  the fallback if the star still layers them apart. **A SECOND CRITERION, from
+  the same review and separately measurable:** no point of a generated sheet lies
+  outside its own page, which 9 points currently do and nothing refuses.
