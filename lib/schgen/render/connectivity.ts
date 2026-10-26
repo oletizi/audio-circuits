@@ -116,8 +116,32 @@ export function junctionPoints(items: readonly ConnItem[]): Point[] {
       else c.n += 1;
     }
   }
-  return [...counts.values()]
-    .filter((c) => c.n >= 3)
-    .map((c) => c.p)
-    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const out = new Map<string, Point>();
+  for (const c of counts.values()) if (c.n >= 3) out.set(pointKey(c.p), c.p);
+
+  // **T-JUNCTIONS, which counting ends alone cannot see.** Three ends meeting is one way a net
+  // branches; the other is a wire ENDING part-way along another wire, and there only ONE end sits
+  // at the branch, so the count above never reaches 3 and no junction is emitted. KiCad joins a
+  // branch point only with a junction object, so the drawing would show a connection the netlist
+  // does not make - which is why `lib/schgen/elk/adapt.ts` refuses on exactly this disagreement.
+  //
+  // It went unseen while `edgesForNet` chained a net's terminals, because a chain's routes meet
+  // end to end. `docs/known-gaps.md` **G293**: the chain was replaced by a STAR so that a parallel
+  // bank is laid out as a column rather than a staircase, and a star's routes leave one hub and
+  // land part-way along their neighbours. The gap was always here; the star is what walked into it.
+  //
+  // SAME NET ONLY. Two wires of DIFFERENT nets crossing is not a connection and must never take a
+  // junction - that would draw a short. Crossing is checked elsewhere; this only ever joins wire
+  // of one net to wire of the same net.
+  const wires = items.filter((i): i is Extract<ConnItem, { kind: "wire" }> => i.kind === "wire");
+  for (const item of items) {
+    if (item.kind === "anchor") continue;
+    const net = item.net;
+    if (net === null) continue;
+    for (const p of endPoints(item)) {
+      if (out.has(pointKey(p))) continue;
+      if (wires.some((w) => w !== item && w.net === net && strictlyInside(p, w.a, w.b))) out.set(pointKey(p), p);
+    }
+  }
+  return [...out.values()].sort((a, b) => a.y - b.y || a.x - b.x);
 }

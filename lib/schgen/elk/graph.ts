@@ -274,9 +274,29 @@ function boundaryNodeOf(net: NetName, g: BlockSubgraph): ElkNode {
 }
 
 /**
- * A net's terminals, chained into a spanning path: **a net of degree n becomes n - 1 edges**,
- * which is a tree and is what KiCad draws - a net is wire segments plus a junction at every
- * branch, never a hyperedge.
+ * A net's terminals as a STAR from its upstream terminal: **a net of degree n becomes n - 1
+ * edges**, which is a tree and is what KiCad draws - a net is wire segments plus a junction at
+ * every branch, never a hyperedge.
+ *
+ * **IT WAS A CHAIN UNTIL 2026-10-25 - `terminals[i-1] -> terminals[i]` - AND THE CHAIN WAS WHY A
+ * PARALLEL BANK CAME OUT AS A STAIRCASE.** The sentence above is about DRAWING and is sound
+ * there; the mistake was that **the same edges are what ELK LAYS OUT FROM**, and to a layered
+ * algorithm `C1 -> C2 -> ... -> C10` is a series string ten layers deep. `docs/known-gaps.md`
+ * **G293** has the measurement: `pultec-hi-cut`'s ten capacitors - a parallel bank selected by a
+ * rotary switch - were placed at **ten distinct x positions, uniformly 12.7 mm apart**, one grid
+ * step per layer. The drawing was a faithful rendering of a graph that said the wrong thing about
+ * the circuit.
+ *
+ * The owner saw it in the picture before anyone measured it: *"my guess is that stacking all the
+ * capacitors in the same column would eliminate hairpins and make the signal flows left much more
+ * obvious."* A star puts every sibling ONE hop from the source instead of `i` hops, so siblings
+ * share a depth, and nodes of equal depth share a layer, which is a column.
+ *
+ * **IT IS STILL A TREE AND STILL n - 1 EDGES**, so `../render/read-graph.ts`'s one-section-per-edge
+ * contract is untouched and a hyperedge is still never emitted. What changes is where the branch
+ * sits: at the source terminal rather than strung along the chain. **The junction checks must
+ * therefore still agree** - a branch point with no junction is a connection KiCad does not make -
+ * and G293 records that two boards refuse on exactly that check, so it is live.
  *
  * The boundary terminal goes FIRST when its layer constraint is `FIRST_SEPARATE` and LAST
  * otherwise, so an inbound net's edges run with the flow and every other boundary net is a sink.
@@ -341,15 +361,33 @@ function downstreamDepth(
   return depth
 }
 
+/** A boundary terminal is the whole node (`port:<net>`); a unit's is `<part>:<unit>#<pin>`. */
+const isBoundaryTerminal = (t: string): boolean => !t.includes("#")
+
 function edgesForNet(net: NetName, terminals: readonly string[]): ElkExtendedEdge[] {
   const out: ElkExtendedEdge[] = []
-  for (let i = 1; i < terminals.length; i += 1) {
-    const from = terminals[i - 1]
-    const to = terminals[i]
-    if (from === undefined || to === undefined) {
-      throw new Error(`net ${net}: terminal ${i - 1} or ${i} is missing from a list of ${terminals.length}`)
-    }
-    out.push({ id: `${net}:${i - 1}`, sources: [from], targets: [to] })
+  if (terminals.length < 2) return out
+  // THE HUB IS A UNIT TERMINAL WHEREVER ONE EXISTS, AND THAT IS NOT A PREFERENCE.
+  // `../elk/read-graph.ts` refuses a boundary node that two edges reach - the anchor's side is
+  // read off the single route arriving, and with two it would be *"read off whichever edge came
+  // first in the list"*. A star hubbed on a boundary would give it degree n-1 and trip exactly
+  // that guard, which is correct about an anchor and has nothing to do with the layering this
+  // star is for. Hubbing on a unit keeps every boundary at degree one AND still puts every
+  // sibling one hop from the hub, so they share a depth and therefore a column.
+  const hubIndex = terminals.findIndex((t) => !isBoundaryTerminal(t))
+  const hub = terminals[hubIndex === -1 ? 0 : hubIndex]
+  if (hub === undefined) return out
+  let n = 0
+  for (let i = 0; i < terminals.length; i += 1) {
+    const t = terminals[i]
+    if (t === undefined) throw new Error(`net ${net}: terminal ${i} is missing from a list of ${terminals.length}`)
+    if (t === hub) continue
+    // An INBOUND boundary sits first in the list (`FIRST_SEPARATE`); it is upstream of the hub,
+    // so the edge runs into the hub. Everything else is downstream and runs out of it. That is
+    // D4's direction applied to `negotiablePort`'s own answer, exactly as the chain applied it.
+    const upstream = i < hubIndex && isBoundaryTerminal(t)
+    out.push(upstream ? { id: `${net}:${n}`, sources: [t], targets: [hub] } : { id: `${net}:${n}`, sources: [hub], targets: [t] })
+    n += 1
   }
   return out
 }
