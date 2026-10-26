@@ -37,27 +37,48 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
    * is a measurement in its own right.** Boundary-node sizing (`docs/known-gaps.md` **G291**)
    * drew `oc-audio`, `tp-leg-emitter-bypass` and `tp-stage` for the first time, so `gatesRefuse` -
    * which is a property of the UNPERMUTED block's production geometry - is now false for them.
-   * **Every one of the 40 crossing counts in this table is byte-identical to the pre-change run**,
-   * although wire length or occupied area moved on TEN of the twelve blocks - only `pt-core` and
-   * `tp-leg-collector` came out unmoved in every figure (`tools/schgen/remeasure.ts`'s own table,
-   * re-driven in the same change). So the change moved where the wires go and moved no
-   * block across the INVARIANT/MOVES line - which is what makes the ceiling below unmoved rather
-   * than coincidentally re-derived at the same number.
+   * **Every one of the 40 crossing counts in this table was byte-identical through that change**,
+   * although wire length or occupied area moved on TEN of the twelve blocks.
+   *
+   * **THE SIGNAL-ORDER CHANGE MOVED 18 OF THE 40 AND MOVED NO BLOCK ACROSS THE INVARIANT/MOVES
+   * LINE, and the contrast with the paragraph above is the finding** (`docs/known-gaps.md`
+   * **G292**). Node sizing re-packed one graph; ordering a net's ELK edges by downstream depth
+   * builds a different graph, and a sweep over DECLARATION orders is exactly the quantity that
+   * notices. Which moved, term by term: all four on `ob-buffer`, `oc-sidechain` and `pt-core`,
+   * three of four on `oc-audio` and on `tp-stage`, **none at all on `oc-power` or on any of the
+   * six legs**. `oc-power`'s unmoved `1, 3, 2, 2` is load-bearing: it is the single subject
+   * `SCALE_UNSTABLE_FROM` rests on, and the test below derives that constant from this row.
+   *
+   * **THE CLASSIFICATION COLUMN IS THE CLAIM AND IT IS UNMOVED ON ALL TWELVE** - six INVARIANT,
+   * six MOVES, same blocks - which is what makes the ceiling below unmoved rather than
+   * coincidentally re-derived at the same number. **The counts themselves are a record**: nothing
+   * here is a crossing budget, and the two that fell (`pt-core` 78 to 71, `tp-stage` 7 to 6) are
+   * reported, not claimed as a goal.
+   *
+   * Each row's FIRST count is declaration order, and the test immediately below ties it per block
+   * to `tools/schgen/remeasure.ts`'s own figure for the unsuffixed block - so no row here can
+   * drift from the per-block table without one of the two going red.
    */
   it("is these twelve sweep rows", () => {
     expect(renderSweep(sweep)).toEqual([
-      "ob-buffer parts=9 placements=11 orders=4 crossings 7, 7, 4, 8 MOVES [gates refuse]",
+      "ob-buffer parts=9 placements=11 orders=4 crossings 6, 5, 5, 6 MOVES [gates refuse]",
       "oc-power parts=8 placements=8 orders=4 crossings 1, 3, 2, 2 MOVES",
-      "oc-audio parts=12 placements=14 orders=4 crossings 5, 12, 7, 6 MOVES",
-      "oc-sidechain parts=17 placements=19 orders=4 crossings 7, 14, 9, 19 MOVES [gates refuse]",
-      "pt-core parts=24 placements=24 orders=4 crossings 78, 53, 39, 65 MOVES",
+      "oc-audio parts=12 placements=14 orders=4 crossings 5, 6, 6, 4 MOVES",
+      "oc-sidechain parts=17 placements=19 orders=4 crossings 8, 10, 5, 13 MOVES [gates refuse]",
+      "pt-core parts=24 placements=24 orders=4 crossings 71, 61, 42, 79 MOVES",
       "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-feedback parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-a parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-b parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-collector parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
       "tp-leg-emitter-bypass parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
-      "tp-stage parts=16 placements=16 orders=4 crossings 7, 4, 5, 6 MOVES",
+      "tp-stage parts=16 placements=16 orders=4 crossings 6, 6, 8, 6 MOVES",
+    ])
+    // The classification column, asserted as a column so it cannot move behind the counts.
+    expect(sweep.map((r) => (r.invariant ? "INVARIANT" : "MOVES"))).toEqual([
+      "MOVES", "MOVES", "MOVES", "MOVES", "MOVES",
+      "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT",
+      "MOVES",
     ])
   })
 

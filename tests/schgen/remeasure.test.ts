@@ -96,35 +96,48 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
   /**
    * The twelve rows `docs/schematic/m1-remeasurement.md` prints, to the digit.
    *
-   * **WHAT MOVED ON 2026-10-25 AND WHAT DID NOT, TERM BY TERM** (`docs/known-gaps.md` **G291**).
-   * `parts`, `units`, `placements`, `graphCells`, `ports`, `share` and `scale` are counts of what
-   * the circuit declares and are **identical on all twelve rows**; `stage` moved on the three
-   * blocks that started drawing. Of the five geometric figures:
+   * **WHAT MOVED ON 2026-10-25 AND WHAT DID NOT, TERM BY TERM - AND THE TWO CHANGES THAT DAY MOVED
+   * DIFFERENT KINDS OF THING, which is the finding worth more than either table.**
    *
-   * - `bends`, `perEdge` and `crossings` moved on **one row** - `oc-audio`, 30/0.75 to 29/0.72,
-   *   and that one moved because its STAGE moved from `backend-output` to `accepted` and the
-   *   accepted geometry is the snapped one. No block's crossing count moved at all;
-   * - at least one of `len`, `area` and `aspect` moved on **ten of the twelve**. `pt-core` and
-   *   `tp-leg-collector` came out byte-identical in every figure, and `ob-buffer` moved in `len`
-   *   alone - 436.80 to 442.30 grid steps with its area and aspect unchanged to the digit.
+   * **Boundary-node sizing** (`docs/known-gaps.md` **G291**) moved `stage` on three blocks and at
+   * least one of `len`, `area`, `aspect` on ten of twelve, and **did not move a single topological
+   * count**: *"the signature of a layout that was re-packed rather than re-routed."*
    *
-   * So the change moved where the wires go and did not move a single topological count, which is
-   * the signature of a layout that was re-packed rather than re-routed.
+   * **The signal-order change** (**G292**) moved the GRAPH. `edgesForNet` directs a net's edges by
+   * downstream depth from the block's inbound boundary nets instead of by declaration order, so
+   * `layered` assigns different layers, and `bends`, `perEdge` and `crossings` move with the rest:
+   *
+   * - `crossings` moved on **four of the twelve** - `ob-buffer` 7 to 6, `oc-sidechain` 7 to 8,
+   *   `pt-core` 78 to 71, `tp-stage` 7 to 6. Three down, one up, and none of them is a threshold;
+   * - `bends` moved on **eight of the twelve**. `oc-power`, `tp-leg-collector` and
+   *   `tp-leg-emitter-bypass` are unmoved in every figure, and those three are the control that
+   *   the re-direction is a no-op where it has nothing to re-direct;
+   * - `parts`, `units`, `placements`, `graphCells`, `ports`, `share`, `scale` and `stage` are
+   *   **identical on all twelve rows**: nothing started or stopped drawing.
+   *
+   * **EVERY `bends` AND `crossings` FIGURE HERE IS CROSS-CHECKED, which is what keeps this table a
+   * measurement.** `tests/schgen/readability/measures.test.ts` takes both quantities through a
+   * different driver - `readElkGraph` plus `canonicalTopology` for the pre-snap column, and
+   * `measuresOf` over the accepted topology for the ten blocks that draw - and agrees on all
+   * twelve: `ob-buffer` 21/6, `oc-sidechain` 30/8 pre-snap; `oc-power` 5/1, `oc-audio` 30/5,
+   * `pt-core` 74/71, `tp-stage` 21/6 and 6/0 on every leg accepted. Each block's `len` and `area`
+   * are checked there too, against `shapeMeasures` in micrometres and `anchorExtent` in grid
+   * steps.
    */
   it("is these twelve rows of figures", () => {
     expect(rows.map(renderRow)).toEqual([
-      "ob-buffer parts=9 units=11 placements=11 graphCells=14 ports=3 share=21.4% stage=backend-output bends=28 perEdge=0.97 crossings=7 len=442.30 area=3233.45 aspect=1.24 scale=about-a-serialization | no spike row",
+      "ob-buffer parts=9 units=11 placements=11 graphCells=14 ports=3 share=21.4% stage=backend-output bends=21 perEdge=0.72 crossings=6 len=439.57 area=3008.38 aspect=1.62 scale=about-a-serialization | no spike row",
       "oc-power parts=8 units=8 placements=8 graphCells=11 ports=3 share=27.3% stage=accepted bends=5 perEdge=0.19 crossings=1 len=221.00 area=1856.00 aspect=2.21 scale=about-a-serialization | spike oc-power moved",
-      "oc-audio parts=12 units=14 placements=14 graphCells=18 ports=4 share=22.2% stage=accepted bends=29 perEdge=0.72 crossings=5 len=641.00 area=4708.00 aspect=2.43 scale=about-a-serialization | spike oc-audio moved",
-      "oc-sidechain parts=17 units=19 placements=19 graphCells=24 ports=5 share=20.8% stage=backend-output bends=27 perEdge=0.55 crossings=7 len=1021.12 area=10112.00 aspect=2.16 scale=about-a-serialization | spike oc-sidechain moved",
-      "pt-core parts=24 units=24 placements=24 graphCells=26 ports=2 share=7.7% stage=accepted bends=83 perEdge=1.15 crossings=78 len=2472.00 area=12648.00 aspect=1.22 scale=about-a-serialization | no spike row",
-      "tp-leg-upper parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=55.00 area=696.00 aspect=1.21 scale=about-the-circuit | spike leg-upper moved",
-      "tp-leg-feedback parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=77.00 area=1100.00 aspect=2.75 scale=about-the-circuit | spike leg-feedback moved",
-      "tp-leg-lower-a parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=67.00 area=900.00 aspect=2.25 scale=about-the-circuit | spike leg-lowerA moved",
-      "tp-leg-lower-b parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=8 perEdge=1.33 crossings=0 len=67.00 area=900.00 aspect=2.25 scale=about-the-circuit | spike leg-lowerB moved",
+      "oc-audio parts=12 units=14 placements=14 graphCells=18 ports=4 share=22.2% stage=accepted bends=30 perEdge=0.75 crossings=5 len=757.00 area=4716.00 aspect=3.64 scale=about-a-serialization | spike oc-audio moved",
+      "oc-sidechain parts=17 units=19 placements=19 graphCells=24 ports=5 share=20.8% stage=backend-output bends=30 perEdge=0.61 crossings=8 len=1016.63 area=7690.71 aspect=3.34 scale=about-a-serialization | spike oc-sidechain moved",
+      "pt-core parts=24 units=24 placements=24 graphCells=26 ports=2 share=7.7% stage=accepted bends=74 perEdge=1.03 crossings=71 len=2161.00 area=9520.00 aspect=2.06 scale=about-a-serialization | no spike row",
+      "tp-leg-upper parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=6 perEdge=1.00 crossings=0 len=51.00 area=544.00 aspect=1.88 scale=about-the-circuit | spike leg-upper moved",
+      "tp-leg-feedback parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=6 perEdge=1.00 crossings=0 len=71.00 area=770.00 aspect=3.93 scale=about-the-circuit | spike leg-feedback moved",
+      "tp-leg-lower-a parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=6 perEdge=1.00 crossings=0 len=61.00 area=630.00 aspect=3.21 scale=about-the-circuit | spike leg-lowerA moved",
+      "tp-leg-lower-b parts=3 units=3 placements=3 graphCells=5 ports=2 share=40.0% stage=accepted bends=6 perEdge=1.00 crossings=0 len=61.00 area=630.00 aspect=3.21 scale=about-the-circuit | spike leg-lowerB moved",
       "tp-leg-collector parts=2 units=2 placements=2 graphCells=4 ports=2 share=50.0% stage=accepted bends=6 perEdge=1.20 crossings=0 len=32.00 area=221.00 aspect=0.76 scale=about-the-circuit | spike leg-collector moved",
       "tp-leg-emitter-bypass parts=2 units=2 placements=2 graphCells=6 ports=4 share=66.7% stage=accepted bends=6 perEdge=1.00 crossings=0 len=50.00 area=195.00 aspect=0.87 scale=about-the-circuit | no spike row",
-      "tp-stage parts=16 units=16 placements=16 graphCells=23 ports=7 share=30.4% stage=accepted bends=24 perEdge=0.62 crossings=7 len=466.00 area=3692.00 aspect=1.37 scale=about-a-serialization | no spike row",
+      "tp-stage parts=16 units=16 placements=16 graphCells=23 ports=7 share=30.4% stage=accepted bends=21 perEdge=0.54 crossings=6 len=505.00 area=3700.00 aspect=1.48 scale=about-a-serialization | no spike row",
     ])
   })
 
@@ -139,12 +152,17 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
    * table - two different quantities, which is exactly the comparison **G220** names as the
    * failure. The five are named so that the agreement stays an agreement.
    *
-   * **G216's 14 PLACEMENTS STAND AND ITS 224 GRID STEPS DO NOT - 298 since 2026-10-25** (**G291**).
-   * The wires that reach the labels are longer because the labels now have room reserved for them,
-   * and no part moved between blocks. 298 is cross-checked rather than copied:
-   * `tests/schgen/readability/measures.test.ts` takes it over the same five blocks from the
-   * canonical topology, and `tests/schgen/render/compose.test.ts` takes it from the REALISED
-   * layouts in micrometres through `shapeMeasures` and gets 378 460 = 298 x 1270.
+   * **G216's 14 PLACEMENTS STAND AND ITS WIRE TOTAL HAS NOW MOVED TWICE: 224, then 298, now 276**
+   * (**G291**, **G292**). Node sizing lengthened the wires that reach the labels; ordering the ELK
+   * edges by downstream depth shortened them again, past where they started on three of the five
+   * legs. **The 14 stands through both** because neither change moves a part between blocks, and
+   * that is what the two figures put side by side are for: a part count that moved with the wire
+   * would say the subject had changed rather than the layout.
+   *
+   * 276 is cross-checked rather than copied: `tests/schgen/readability/measures.test.ts` takes it
+   * over the same five blocks from the canonical topology, and
+   * `tests/schgen/render/compose.test.ts` takes it from the REALISED layouts in micrometres
+   * through `shapeMeasures` and gets 350 520 = 276 x 1270.
    */
   it("reproduces G216's five accepted rows, which is an arithmetic agreement and not a second reading", () => {
     const G216_ROWS = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
@@ -152,7 +170,9 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
     expect(accepted.length, "G216's five rows are all present and all still accepted").toBe(5)
     expect(accepted.every((r) => r.geometry.stage === "accepted")).toBe(true)
     expect(accepted.reduce((n, r) => n + r.geometry.placements, 0)).toBe(14)
-    expect(accepted.reduce((n, r) => n + r.geometry.measures.wireLength, 0)).toBe(298)
+    expect(accepted.reduce((n, r) => n + r.geometry.measures.wireLength, 0)).toBe(276)
+    // The total against its own terms, which are the five `len` figures in the table above.
+    expect(51 + 71 + 61 + 61 + 32).toBe(276)
   })
 })
 
@@ -252,14 +272,22 @@ describe("step 2: a block is compared against ITS spike row or against none", ()
  * - **`optical-compressor` draws 2 of its 3** - `oc-power` and `oc-audio` yes, `oc-sidechain` no -
  *   so the brief's named mechanism is available for the first time since Task 17.
  *
- * **AND THE RE-SCOPE BOUGHT WHAT R38 COULD NOT: BOTH SIDES MEASURE.** On the five legs the flat
- * probe was refused by the junction gate, so the accepted column held *"a composed drawing and a
- * refusal"* and the only stage-matched comparison was at `backend-output`. Here the flat probe is
- * ACCEPTED, so G105's criterion - *"reports the four measures against the FLAT whole-circuit
- * baseline"* - has figures on both sides at the stage a drawing is actually emitted from.
+ * **THE RE-SCOPE BOUGHT A MEASURING FLAT SIDE FOR ONE DAY AND THE SIGNAL-ORDER CHANGE TOOK IT
+ * AWAY AGAIN, which is the live state and is recorded rather than engineered around**
+ * (`docs/known-gaps.md` **G292**). On the five legs the flat probe was refused by the junction
+ * gate, so the accepted column held *"a composed drawing and a refusal"*. On
+ * `optical-compressor` the flat probe was ACCEPTED, and G105's criterion - *"reports the four
+ * measures against the FLAT whole-circuit baseline"* - had figures on both sides at the stage a
+ * drawing is emitted from. **Since the edges are directed by downstream depth the flat probe is
+ * refused at obligation 1**, the snap collapse, so the accepted-stage comparison has one side
+ * again and the stage-matched one at `backend-output` is the only one with two.
+ *
+ * **R38's THIRD CLAUSE IS WHAT THIS FILE DOES ABOUT IT, verbatim: *"If the flat side REFUSES,
+ * that refusal is the result."*** So the refusal is asserted with its gate and its reason, and
+ * nothing here relaxes a gate to recover a figure.
  */
 describe("step 4: the integrated experiment, on optical-compressor's two blocks that draw", () => {
-  it("has a FLAT side that is ACCEPTED, which it was not on the previous subject", () => {
+  it("has a FLAT side that REFUSES at the snap, and R38 makes that refusal the result", () => {
     expect(experiment.circuit).toBe("optical-compressor")
     expect(experiment.blocks).toEqual(["oc-power", "oc-audio"])
     expect(experiment.notDrawn.map((n) => n.id)).toEqual(["oc-sidechain"])
@@ -267,52 +295,65 @@ describe("step 4: the integrated experiment, on optical-compressor's two blocks 
     // condition `transistor-preamp` no longer meets.
     expect(experiment.blocks.length).toBeGreaterThan(0)
     expect(experiment.notDrawn.length).toBeGreaterThan(0)
-    expect(experiment.flat.ok).toBe(true)
-    if (!experiment.flat.ok) return
-    const f = experiment.flat.figures
-    // 22 placements: oc-power's 8 and oc-audio's 14, which is the flat probe holding exactly the
-    // union of the two blocks' members and nothing else.
-    expect(f.placements).toBe(22)
-    expect(f.wires).toBe(99)
-    expect(f.nets).toBe(12)
-    expect(f.measures.bends).toBe(31)
-    expect(f.measures.crossings).toBe(6)
-    expect(f.measures.wireLength).toBe(1040)
-    expect(f.measures.occupiedArea).toBe(12_672)
-    expect(f.aspect?.toFixed(2)).toBe("2.91")
+    // THE REFUSAL, NAMED AT ITS GATE AND ITS OBLIGATION. It is obligation 1 - a wire that was
+    // 0.635 mm long before the snap and zero after it - which is the class `CLAUDE.md` calls the
+    // one that must keep refusing, because the drawing would assert a connection the route did
+    // not. `oc-power` and `oc-audio` each lay out and pass every gate on their own; it is the
+    // UNION as one graph that the snap collapses.
+    expect(experiment.flat.ok).toBe(false)
+    if (experiment.flat.ok) return
+    expect(experiment.flat.gate).toBe("lib/schgen/elk/adapt.ts (spec 1.4's realization contract)")
+    expect(experiment.flat.refusal).toContain("snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry")
+    expect(experiment.flat.refusal).toContain("wire 34 (net GND)")
+    expect(experiment.flat.refusal).toContain("snapped to zero length at (224.79, 30.48)")
+    // AND THE PER-BLOCK SIDE IS NOT REFUSED, which is what makes the line above a statement about
+    // the flat graph rather than about this subject being undrawable.
+    expect(experiment.composed.ok).toBe(true)
+    expect(experiment.flatBackendOutput.ok, "the pre-gate figures are still taken").toBe(true)
   })
 
   /**
-   * **THE COMPOSED SIDE, AND THE ONE FIGURE WORTH READING TWICE IS `crossings`.** The two blocks
-   * cross 1 and 5 between them, the composed drawing crosses 6, and seam B therefore adds none -
-   * which is the next test, taken as a difference rather than asserted.
+   * **THE COMPOSED SIDE, AND EVERY COUNT ON IT IS NOW THE TERMWISE SUM OF THE TWO BLOCKS.** The
+   * two blocks cross 1 and 5, run 221 and 757 grid steps, bend 5 and 30, emit 31 and 70 segments
+   * and hold 8 and 14 placements; the composed drawing reports 6, 978, 35, 101 and 22. Seam B
+   * therefore adds no crossing and no wire - which is the next test, taken as a difference rather
+   * than asserted.
    *
-   * `placements` and `nets` agree with the flat side exactly, because both sides hold the same
-   * 22 parts on the same 12 wired nets; `wires` differs by one (100 against 99) because the two
-   * blocks are routed independently and their segment lists do not have to agree with a single
-   * graph's. `wireLength` is LOWER composed than flat - 862 against 1040 grid steps - and
-   * `occupiedArea` likewise, 8536 against 12 672. **A composed drawing that is tighter than the
-   * flat one is a legitimate outcome and is reported as one** (R38's fourth clause), not as a
-   * failure of the measurement.
+   * **`wires` USED TO BE THE ONE FIGURE THAT DID NOT ADD UP AND NOW IT DOES**, which is a small
+   * result about the comparison rather than about the circuit: the composed side was 100 against
+   * a flat 99, *"because the two blocks are routed independently and their segment lists do not
+   * have to agree with a single graph's"*. The flat side is refused now, so there is nothing to
+   * disagree with; against the blocks themselves it is 101 = 31 + 70 exactly.
+   *
+   * **`occupiedArea` IS THE ONE FIGURE THAT IS NOT A SUM, and that is by construction**: it is the
+   * bounding box of the composition, 7992 against the blocks' own 1856 + 4716 = 6572, because the
+   * packer leaves a gap between the two frames. `aspect` is a ratio of that box and is not a sum
+   * either. Both are reported as what they are.
    */
   it("has a COMPOSED side whose crossings are exactly the blocks' own", () => {
     expect(experiment.composed.ok).toBe(true)
     if (!experiment.composed.ok) return
     const f = experiment.composed.figures
     expect(f.placements).toBe(22)
-    expect(f.wires).toBe(100)
+    expect(f.wires).toBe(101)
     expect(f.nets).toBe(12)
-    expect(f.measures.wireLength).toBe(862)
-    expect(f.measures.bends).toBe(34)
+    expect(f.measures.wireLength).toBe(978)
+    expect(f.measures.bends).toBe(35)
     expect(f.measures.crossings).toBe(6)
-    expect(f.measures.occupiedArea).toBe(8536)
-    expect(f.aspect?.toFixed(2)).toBe("4.41")
-    // The per-block figures the composed total is made of, named so the sum below is checkable.
-    expect(experiment.perBlock.map((b) => `${b.id} crossings=${b.figures.measures.crossings} len=${b.figures.measures.wireLength}`)).toEqual([
-      "oc-power crossings=1 len=221",
-      "oc-audio crossings=5 len=641",
+    expect(f.measures.occupiedArea).toBe(7992)
+    expect(f.aspect?.toFixed(2)).toBe("5.84")
+    // The per-block figures the composed total is made of, named so the sums below are checkable.
+    expect(experiment.perBlock.map((b) => `${b.id} crossings=${b.figures.measures.crossings} len=${b.figures.measures.wireLength} bends=${b.figures.measures.bends} wires=${b.figures.wires} placements=${b.figures.placements}`)).toEqual([
+      "oc-power crossings=1 len=221 bends=5 wires=31 placements=8",
+      "oc-audio crossings=5 len=757 bends=30 wires=70 placements=14",
     ])
     expect(1 + 5).toBe(f.measures.crossings)
+    expect(221 + 757).toBe(f.measures.wireLength)
+    expect(5 + 30).toBe(f.measures.bends)
+    expect(31 + 70).toBe(f.wires)
+    expect(8 + 14).toBe(f.placements)
+    // The one that is NOT a sum, asserted as not one so the pattern above cannot be over-read.
+    expect(1856 + 4716).not.toBe(f.measures.occupiedArea)
   })
 
   it("measures seam B adding NO crossing and NO wire, which is G208 re-taken", () => {
@@ -322,34 +363,45 @@ describe("step 4: the integrated experiment, on optical-compressor's two blocks 
   })
 
   /**
-   * **THE STAGE-MATCHED COMPARISON, AND THE RATIO IS TAKEN NOW - AT 1.00x.** Both sides here are
-   * the pre-snap canonical topology of what `elkjs` emitted, so their difference is attributable
-   * to the decomposition rather than to the stage.
+   * **THE STAGE-MATCHED COMPARISON, AND IT HAS REVERSED SIGN: 4 crossings FLAT against 6 in the
+   * BLOCKS.** Both sides here are the pre-snap canonical topology of what `elkjs` emitted, so
+   * their difference is attributable to the decomposition rather than to the stage. It read 6
+   * against 6 until the signal-order change (`docs/known-gaps.md` **G292**); on this subject
+   * **decomposition now COSTS two crossings rather than being free**, and 1087.90 grid steps flat
+   * against 977.60 summed says it buys 110 grid steps of wire for them.
    *
-   * **ON THE PREVIOUS SUBJECT THE RATIO HAD NO DENOMINATOR** - the five legs measured ZERO
-   * crossings composed, which was *"a result about this subject and not a missing figure"*. On
-   * `optical-compressor` the composed side crosses 6, so the ratio exists: **6 / 6 = 1.00x.**
+   * **THAT IS THE OPPOSITE DIRECTION FROM THE SPIKE'S CLAIM AND IS REPORTED AS A MEASUREMENT, NOT
+   * AS A REFUTATION OF IT.** The spike's 6.1x says the flat whole-circuit drawing crosses far MORE
+   * than its blocks do; here the flat graph crosses fewer. `comparabilityOf` still calls three of
+   * the five measures not-comparable, the spike's figures came from a different frontend with
+   * different node sizes and port constraints, and nothing scales one into the other - so this is
+   * one subject disagreeing with the spike's direction, which is a finding about this subject.
    *
-   * **1.00x IS NOT THE SPIKE'S 6.1x AND IS NOT A FRACTION OF IT.** The spike's paired control is
-   * on the same CIRCUIT now, which is new - whole 293 against blocks 48 on `optical-compressor` -
-   * and that makes the subject match, not the figures. The spike's numbers came from a different
-   * frontend with different node sizes and port constraints, `comparabilityOf` still calls three
-   * of the five measures not-comparable, and nothing here scales one into the other. **The flat
-   * and composed sides of this experiment produce the same crossing count on this subject, and
-   * that is the whole of what 1.00x says.**
+   * **AND `crossingRatio` IS `null`, WHICH IS THE PRICE OF THE FLAT REFUSAL and is asserted as
+   * null rather than recomputed from the backend-output figures.** `integratedExperiment` forms
+   * the ratio from the ACCEPTED flat side, and that side refuses. Taking 4/6 from this test's own
+   * numbers instead would publish a ratio the module does not compute, at a stage the ratio was
+   * never defined for. **On the previous subject the ratio had no DENOMINATOR; on this one it has
+   * no NUMERATOR**, and the symmetry is worth keeping: a ratio with a missing side is a missing
+   * figure both times.
    */
-  it("is 6 crossings flat against 6 in blocks, and 1039.00 grid steps against 864.11", () => {
+  it("is 4 crossings flat against 6 in blocks, and 1087.90 grid steps against 977.60", () => {
     expect(experiment.flatBackendOutput.ok).toBe(true)
     if (!experiment.flatBackendOutput.ok) return
-    expect(experiment.flatBackendOutput.figures.measures.crossings).toBe(6)
-    expect(experiment.flatBackendOutput.figures.measures.wireLength.toFixed(2)).toBe("1039.00")
-    expect(experiment.flatBackendOutput.figures.measures.bends).toBe(31)
+    expect(experiment.flatBackendOutput.figures.measures.crossings).toBe(4)
+    expect(experiment.flatBackendOutput.figures.measures.wireLength.toFixed(2)).toBe("1087.90")
+    expect(experiment.flatBackendOutput.figures.measures.bends).toBe(29)
     expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.crossings, 0)).toBe(6)
-    expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.wireLength, 0).toFixed(2)).toBe("864.11")
-    expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.bends, 0)).toBe(34)
-    // The ratio exists on this subject and is reported as measured here, never as the spike's.
-    expect(experiment.crossingRatio).toBe(1)
-    expect(SPIKE_CROSSING_RATIO).not.toBe(experiment.crossingRatio)
+    expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.wireLength, 0).toFixed(2)).toBe("977.60")
+    expect(experiment.perBlockBackendOutput.reduce((n, b) => n + b.figures.measures.bends, 0)).toBe(35)
+    // The blocks' side of this comparison is the SAME crossing total the accepted stage reports -
+    // 1 + 5 - so the pre-snap and post-snap readings of the decomposed side agree, and the whole
+    // of the disagreement above is on the flat side.
+    expect(experiment.perBlockBackendOutput.map((b) => b.figures.measures.crossings)).toEqual([1, 5])
+    // The ratio has no numerator while the flat side refuses, and that is reported as null rather
+    // than substituted from the figures above.
+    expect(experiment.crossingRatio).toBeNull()
+    expect(SPIKE_CROSSING_RATIO).not.toBeNull()
     // And the three not-comparable measures are still not-comparable: a matching subject does not
     // make a matching frontend.
     expect(comparabilityOf("bends")).toBe("not-comparable")
@@ -505,9 +557,17 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
   it("gives the two -lower legs identical placements and the other two their own", () => {
     const [upper, feedback, lowerA, lowerB] = legs
     expect(upper).toBeDefined()
-    expect(upper?.placements).toEqual(["jumper#1@7620,10160@0", "floor#1@20320,15240@0", "trim#1@27940,25400@0"])
-    expect(feedback?.placements).toEqual(["jumper#1@7620,5080@0", "floor#1@36830,10160@0", "trim#1@60960,20320@0"])
-    expect(lowerA?.placements).toEqual(["jumper#1@7620,5080@0", "floor#1@30480,10160@0", "trim#1@48260,20320@0"])
+    // **EVERY `floor` IS NOW AT ROTATION 90 AND NO OTHER PART IS, which is the orientation half of
+    // the owner's directive visible in one line** (`docs/known-gaps.md` **G292**). `floor` is the
+    // only two-terminal passive in these legs with NO rail end - the jumper is a jumper and the
+    // trim's wiper side carries the rail - so it is the only part `signalAxis` answers for, and it
+    // answers 90: pins left and right, axis along the reading direction. The jumpers and trims keep
+    // rotation 0 because a different rule or no rule reaches them.
+    expect(legs.map((l) => l.placements.filter((p) => p.endsWith("@90")).length), "one rotated part per leg").toEqual([1, 1, 1, 1])
+    expect(legs.every((l) => l.placements.some((p) => p.startsWith("floor#1@") && p.endsWith("@90"))), "and it is floor").toBe(true)
+    expect(upper?.placements).toEqual(["jumper#1@7620,11430@0", "floor#1@21590,11430@90", "trim#1@31750,16510@0"])
+    expect(feedback?.placements).toEqual(["jumper#1@7620,7620@0", "floor#1@36830,7620@90", "trim#1@60960,12700@0"])
+    expect(lowerA?.placements).toEqual(["jumper#1@7620,7620@0", "floor#1@30480,7620@90", "trim#1@48260,12700@0"])
     // THE SURVIVING CONGRUENCE, and it is a pair of DIFFERENT parts drawing alike.
     expect(lowerB?.placements, "the two -lower legs").toEqual(lowerA?.placements)
     // The other two differ from it, asserted so "congruent" cannot quietly come back meaning three.
@@ -520,17 +580,21 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
       leg.anchors.map((a) => a.slice(a.indexOf("@") + 1).split("/")[0] ?? "").sort()
     expect(legs.every((l) => positions(l).includes("17780,1270")), "the first-layer anchor").toBe(true)
     expect(legs.map((l) => positions(l).filter((p) => p !== "17780,1270").join(""))).toEqual([
-      "38100,31750", "71120,26670", "58420,26670", "58420,26670",
+      "41910,22860", "71120,19050", "58420,19050", "58420,19050",
     ])
   })
 
   it("gives three of the four a rail glyph and one of them NONE, which is G97's breaking condition", () => {
+    // The rail-glyph pattern is the CLAIM here and it is unmoved by the signal-order change
+    // (`docs/known-gaps.md` **G292**) - three `powers`, one `none`, same three nets, same sides.
+    // The second anchor's position moved on all four, which is the layout and is a record.
     expect(legs.map((l) => `${l.block} powers=${l.powers.join("|") || "none"} labels=${l.labels.join("|")}`)).toEqual([
-      "tp-leg-upper powers=VCC/power:VCC@17780,1270@0 labels=BASE@38100,31750/right",
-      "tp-leg-feedback powers=none labels=COLLECTOR@17780,1270/right|BASE@71120,26670/right",
-      "tp-leg-lower-a powers=GND/power:GND@58420,26670@0 labels=BASE@17780,1270/right",
-      "tp-leg-lower-b powers=GND/power:GND@58420,26670@0 labels=BASE@17780,1270/right",
+      "tp-leg-upper powers=VCC/power:VCC@17780,1270@0 labels=BASE@41910,22860/right",
+      "tp-leg-feedback powers=none labels=COLLECTOR@17780,1270/right|BASE@71120,19050/right",
+      "tp-leg-lower-a powers=GND/power:GND@58420,19050@0 labels=BASE@17780,1270/right",
+      "tp-leg-lower-b powers=GND/power:GND@58420,19050@0 labels=BASE@17780,1270/right",
     ])
+    expect(legs.filter((l) => l.powers.length === 0).map((l) => l.block)).toEqual(["tp-leg-feedback"])
   })
 
   /**
@@ -541,13 +605,19 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
    * the four jumpers' semantic ids, so it predicts the four x offsets DIFFER, **and all four
    * measured 14 grid steps.** A predicted spread against a measured zero.
    *
-   * Since 2026-10-25 the four measure **16, 42, 32 and 32** grid steps (`docs/known-gaps.md`
-   * **G291**). So what is asserted now is weaker and is stated as weaker:
+   * Node sizing made the four measure **16, 42, 32 and 32** grid steps (`docs/known-gaps.md`
+   * **G291**) and the signal-order change made them **19, 42, 32 and 32** (**G292**) - only
+   * `-upper`'s moved, and the `dy` went from 12 to **4** on all four, because `floor` is now laid
+   * horizontally and the three parts sit nearly on one row. So what is asserted now is weaker
+   * than the old clean refutation and is stated as weaker:
    *
    * - the measured displacements are NOT a scaling of the prediction. From `-upper` to `-lower`
-   *   the formula moves 12 px and the measurement moves 16 grid steps; from `-lower` to
-   *   `-feedback` the formula moves 6 px and the measurement moves 10. **16/12 is not 10/6**, so
-   *   no single factor carries one into the other;
+   *   the formula moves 12 px and the measurement moves 13 grid steps; from `-lower` to
+   *   `-feedback` the formula moves 6 px and the measurement moves 10. **13/12 is not 10/6**, so
+   *   no single factor carries one into the other. The margin is NARROWER than it was at 16/12
+   *   against 10/6, and saying so matters: a change that moved `-upper`'s displacement two steps
+   *   further would make the two ratios agree and this refutation would stop being available on
+   *   this subject;
    * - the spread that IS there is the boundary text's, by the evidence in this describe's own
    *   header: the only pair that still coincides is the only pair with the same boundary nets.
    *
@@ -563,34 +633,60 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
     expect(skinIdWidth("upper_bias_jumper")).toBe(107)
     expect(skinIdWidth("feedback_bias_jumper")).toBe(125)
     expect(legs.map((l) => l.jumperToTrim)).toEqual([
-      { dx: 16, dy: 12 }, { dx: 42, dy: 12 }, { dx: 32, dy: 12 }, { dx: 32, dy: 12 },
+      { dx: 19, dy: 4 }, { dx: 42, dy: 4 }, { dx: 32, dy: 4 }, { dx: 32, dy: 4 },
     ])
     expect(new Set(legs.map((l) => l.predictedX)).size).toBeGreaterThan(1)
     // The spread is real now - three distinct displacements where there was one.
     expect(new Set(legs.map((l) => l.jumperToTrim?.dx)).size).toBe(3)
+    // The VERTICAL displacement is the same on all four, and it is asserted as a shared value
+    // rather than left in the table: the three parts of every leg now sit four grid steps apart in
+    // y, which is what laying `floor` along the signal did to these blocks.
+    expect(new Set(legs.map((l) => l.jumperToTrim?.dy)).size).toBe(1)
     // AND IT IS NOT THE FORMULA'S SPREAD: the two step ratios disagree, so no single scale factor
-    // maps the prediction onto the measurement. 16/12 = 1.33 against 10/6 = 1.67.
+    // maps the prediction onto the measurement. 13/12 = 1.08 against 10/6 = 1.67.
     const [upper, feedback, lowerA] = legs
     const predictedStep = (lowerA?.predictedX ?? 0) - (upper?.predictedX ?? 0)
     const measuredStep = (lowerA?.jumperToTrim?.dx ?? 0) - (upper?.jumperToTrim?.dx ?? 0)
     const predictedStep2 = (feedback?.predictedX ?? 0) - (lowerA?.predictedX ?? 0)
     const measuredStep2 = (feedback?.jumperToTrim?.dx ?? 0) - (lowerA?.jumperToTrim?.dx ?? 0)
-    expect([predictedStep, measuredStep, predictedStep2, measuredStep2]).toEqual([12, 16, 6, 10])
+    expect([predictedStep, measuredStep, predictedStep2, measuredStep2]).toEqual([12, 13, 6, 10])
     expect(measuredStep / predictedStep).not.toBe(measuredStep2 / predictedStep2)
   })
 })
 
 describe("step 7: disjointness at sheet level, over Task 15's packing", () => {
+  /**
+   * **THE CRITERION IS `inside=0` ON EVERY ROW AND IT IS UNMOVED; THE BOXES MOVED.** The
+   * signal-order change (`docs/known-gaps.md` **G292**) re-places every block, so five of the
+   * seven boxes are different - `tp-leg-upper` 29x24 to 32x17, `-feedback` 55x20 to 55x14, both
+   * `-lower` legs 45x20 to 45x14, `tp-stage` 71x52 to 74x50. Four of the five got SHORTER, which
+   * is what laying a signal-path part along the signal does to a block's height.
+   *
+   * **EACH BOX IS CROSS-CHECKED AGAINST A DIFFERENT FUNCTION, so these are not seven numbers read
+   * off one output.** `w * h` is exactly the `occupiedArea`
+   * `tests/schgen/readability/measures.test.ts` takes through `measuresOf` for the same block -
+   * 544, 770, 630, 630, 221, 195, 3700 - and the two are computed by `anchorExtent` and by
+   * `measuresOf` respectively.
+   *
+   * **AND THE PERCENTAGE IS DERIVED, NOT MEASURED.** It is the box's area over A3's USABLE area,
+   * which is `(420 - 2*12.7) x (297 - 2*12.7 - 38.1)` mm = 310.709 x 183.858 grid steps =
+   * 57 126.36 sq. So 544 / 57 126.36 = 0.95%, 770 -> 1.35%, 630 -> 1.10%, 221 -> 0.39%,
+   * 195 -> 0.34%, 3700 -> 6.48%, every one to the printed digit. The denominator did not move.
+   */
   it("puts no non-member inside any block's own extent, and overlaps no frame under either packer", () => {
     expect(groups.blocks.map((b) => `${b.block} ${b.members} members ${b.box.w}x${b.box.h} ${(100 * b.ofCanvas).toFixed(2)}% inside=${b.nonMembersInside.length}`)).toEqual([
-      "tp-leg-upper 3 members 29x24 1.22% inside=0",
-      "tp-leg-feedback 3 members 55x20 1.93% inside=0",
-      "tp-leg-lower-a 3 members 45x20 1.58% inside=0",
-      "tp-leg-lower-b 3 members 45x20 1.58% inside=0",
+      "tp-leg-upper 3 members 32x17 0.95% inside=0",
+      "tp-leg-feedback 3 members 55x14 1.35% inside=0",
+      "tp-leg-lower-a 3 members 45x14 1.10% inside=0",
+      "tp-leg-lower-b 3 members 45x14 1.10% inside=0",
       "tp-leg-collector 2 members 13x17 0.39% inside=0",
       "tp-leg-emitter-bypass 2 members 13x15 0.34% inside=0",
-      "tp-stage 16 members 71x52 6.46% inside=0",
+      "tp-stage 16 members 74x50 6.48% inside=0",
     ])
+    // The criterion, asserted as the criterion rather than only inside the strings above.
+    expect(groups.blocks.every((b) => b.nonMembersInside.length === 0)).toBe(true)
+    // Each box's area against the figure measures.test.ts takes by a different function.
+    expect(groups.blocks.map((b) => b.box.w * b.box.h)).toEqual([544, 770, 630, 630, 221, 195, 3700])
     expect(groups.frameOverlapsElk).toEqual([])
     expect(groups.frameOverlapsShelf).toEqual([])
   })
@@ -628,10 +724,15 @@ describe("step 7: disjointness at sheet level, over Task 15's packing", () => {
     expect(probe.drew.length).toBe(7)
     expect(probe.refused.map((r) => r.id).sort()).toEqual([])
     const drawing = layoutSheet(probe.circuit, "lab", probe.symbols, FLAG_LIB_ID, probe.elk)
-    // Seven frames on the sheet's own declared paper, and 142 wires - which is `shapeMeasures`'
-    // `segments` total over the same seven blocks in `tests/schgen/render/compose.test.ts`.
+    // Seven frames on the sheet's own declared paper, and 131 wires - which is `shapeMeasures`'
+    // `segments` total over the same seven blocks in `tests/schgen/render/compose.test.ts`, where
+    // it is also decomposed per block (12, 12, 12, 12, 11, 12, 60). **It was 142 until the
+    // signal-order change** (`docs/known-gaps.md` **G292**): the router emits ELEVEN FEWER
+    // segments carrying MORE wire, 1 055 370 um against 1 033 780, which is the straighter-runs
+    // signature that change leaves everywhere in this file.
     expect(drawing.frames.length).toBe(7)
-    expect(drawing.wires.length).toBe(142)
+    expect(drawing.wires.length).toBe(131)
+    expect(12 + 12 + 12 + 12 + 11 + 12 + 60, "the per-block segment counts").toBe(drawing.wires.length)
     expect(nonMemberContainments(probe.circuit, drawing)).toEqual([])
     // NOT VACUOUS, by the same control the mini reading uses: a frame grown to swallow the sheet
     // reports every symbol that is not its own block's.

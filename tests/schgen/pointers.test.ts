@@ -93,10 +93,12 @@ const POINTERS: readonly Pointer[] = [
     citation: "`tests/schgen/remeasure.test.ts` pins both ends",
     test: "tests/schgen/remeasure.test.ts",
     // G105's experiment moved subject on 2026-10-25 (G291): all seven transistor-preamp blocks
-    // draw, the R38 guard refuses that case, and the subject is optical-compressor, whose flat
-    // side is ACCEPTED. The marker follows the assertion rather than the assertion being kept
-    // alive for the marker.
-    marker: "has a FLAT side that is ACCEPTED",
+    // draw, the R38 guard refuses that case, and the subject is optical-compressor. Its flat side
+    // was ACCEPTED for a day and is refused at obligation 1 since the signal-order change (G292),
+    // so this marker moved with the assertion's name. The marker follows the assertion rather
+    // than the assertion being kept alive for the marker - which is the whole point of this file,
+    // and is why a renamed test turns it red instead of leaving the entry citing nothing.
+    marker: "has a FLAT side that REFUSES at the snap",
     why: "G105's Evidence for the integrated experiment's two ends.",
   },
   {

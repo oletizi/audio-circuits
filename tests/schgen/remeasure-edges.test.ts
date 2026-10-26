@@ -342,16 +342,27 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
  * `tests/schgen/remeasure.test.ts`'s *"has a FLAT side that refuses, at the junction obligation"*,
  * and **that test is gone**: boundary-node sizing made all seven `transistor-preamp` blocks draw
  * (**G291**), `integratedExperiment`'s guard refuses a circuit where every block draws, and the
- * experiment's subject moved to `optical-compressor`, whose flat side is ACCEPTED.
+ * experiment's subject moved to `optical-compressor`. That subject's flat side was ACCEPTED for a
+ * day and **is refused at obligation 1 since the signal-order change** (**G292**) - so the
+ * experiment carries a flat refusal again, but it is the SNAP rather than the junction, on a
+ * different circuit. **It is still not G229's figure**, which is why this file keeps it.
  *
  * **SO THE MEASUREMENT WAS ABOUT TO BECOME AN ENTRY WITH NO LIVE CHECK BEHIND IT**, which
  * `tests/schgen/pointers.test.ts` caught by name. It is re-driven here, over the same five blocks
  * and the same `flatSubgraphOf` this file already uses, so G229 keeps evidence that can fail.
  *
- * `[RAN]` **the refusal is byte-for-byte the one G229 quotes** - same net, same coordinate - after
- * a change that moved wire length or occupied area on ten of the twelve declared blocks. That is
- * not luck: the branch point is a property of where the three legs' `BASE` pins meet in the flat
- * graph, and sizing a boundary node moves the boundary rather than the branch.
+ * `[RAN]` **the refusal survived G291's node sizing byte-for-byte - same net, same coordinate -
+ * and the signal-order change (G292) MOVED THE COORDINATE, which is the sharper of the two
+ * results.** Node sizing moved the boundary rather than the branch, so `(45.72, 48.26)` held
+ * through a change that moved wire length or occupied area on ten of twelve blocks. Ordering a
+ * net's ELK edges by downstream depth moves where the three legs' `BASE` pins MEET, so the branch
+ * point itself moved, to **`(46.99, 43.18)`**.
+ *
+ * **WHAT IS UNMOVED IS THE WHOLE OF WHAT G229 IS ABOUT**: the obligation (2, the junction
+ * obligation), the net (`BASE`), the kind (`t-junction`) and the count (one place). The coordinate
+ * is a record. G229 carries both coordinates, the old one marked superseded, because its text
+ * quotes a refusal verbatim and a reader who greps for the old string needs to find out why it is
+ * gone rather than find nothing.
  */
 describe("G229's junction-obligation refusal, which the integrated experiment no longer reaches", () => {
   it("refuses the five-leg flat probe at the junction obligation, naming the net and the point", async () => {
@@ -371,17 +382,32 @@ describe("G229's junction-obligation refusal, which the integrated experiment no
     if (report.result.ok) return
     const refusal = describeMismatch(report.result.mismatch)
     expect(refusal).toContain("the junctions the sheet emitter would place disagree")
-    expect(refusal).toContain("net BASE branches at (45.72, 48.26) (t-junction) and no junction is emitted")
+    // ONE place, asserted as the count, because that is the half of G229's figure the coordinate is
+    // not: a second branch point appearing here would be a different measurement.
+    expect(refusal).toContain("disagree with the branch points of the canonical topology in 1 place(s)")
+    expect(refusal).toContain("net BASE branches at (46.99, 43.18) (t-junction) and no junction is emitted")
+    // The coordinate G229 quoted until 2026-10-25, asserted ABSENT rather than dropped, so this
+    // test says which string went away and the entry's old quote cannot look live.
+    expect(refusal).not.toContain("(45.72, 48.26)")
   }, 300_000)
 
   /**
-   * **AND THE SEVEN-BLOCK FLAT PROBE IS REFUSED SOMEWHERE ELSE, which is why the five are still
-   * the subject.** All seven blocks draw now, so a reader might reasonably take the union of the
-   * seven as the natural flat subject. It refuses at **obligation 1** - the snap collapse - on a
-   * `VCC` wire 10 nanometres long, not at obligation 2, so it is a measurement of a different
-   * thing and is NOT a successor to G229's figure.
+   * **AND THE SEVEN-BLOCK FLAT PROBE REFUSES AT THE SAME OBLIGATION NOW, WHICH REFUTES THIS
+   * TEST'S OWN PREVIOUS REASON FOR EXISTING.** This test was `refuses the seven-block flat probe
+   * at the SNAP, which is a different obligation`, and its comment said the seven-block union
+   * *"refuses at obligation 1 - the snap collapse - on a `VCC` wire 10 nanometres long, not at
+   * obligation 2, so it is a measurement of a different thing"*. **Since the signal-order change
+   * (`docs/known-gaps.md` **G292**) it refuses at obligation 2** - the junction obligation - and
+   * the snap no longer collapses anything on it at all.
+   *
+   * **SO "a different obligation" IS NO LONGER WHY THE FIVE ARE STILL THE SUBJECT.** What is still
+   * true, and is what this test now asserts: the seven-block probe refuses on **two** branch
+   * points, on `COLLECTOR` and `GND`, where G229's figure is **one**, on `BASE`. A different net,
+   * a different count and a different coordinate is still not a successor to that figure - but it
+   * is a weaker separation than an obligation apart, and the weakening is recorded rather than
+   * papered over.
    */
-  it("refuses the seven-block flat probe at the SNAP, which is a different obligation", async () => {
+  it("refuses the seven-block flat probe on TWO branch points, not on G229's one", async () => {
     const symbols = parityResolver()
     const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
     if (c === undefined) throw new Error("transistor-preamp is not a parity case")
@@ -395,8 +421,17 @@ describe("G229's junction-obligation refusal, which the integrated experiment no
     expect(report.result.ok).toBe(false)
     if (report.result.ok) return
     const refusal = describeMismatch(report.result.mismatch)
-    expect(refusal).toContain("snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry")
-    expect(refusal).not.toContain("the junctions the sheet emitter would place disagree")
+    expect(refusal).toContain("the junctions the sheet emitter would place disagree")
+    expect(refusal).toContain("disagree with the branch points of the canonical topology in 2 place(s)")
+    expect(refusal).toContain("net COLLECTOR branches at (41.91, 74.93) (t-junction)")
+    expect(refusal).toContain("net GND branches at (111.76, 62.23) (t-junction)")
+    // THE SNAP IS CLEAN ON THIS PROBE NOW, asserted as absent: the `VCC` wire 10 nanometres long
+    // that this test used to be named after is gone, and saying so is what stops a later reader
+    // taking the obligation-1 claim as still live.
+    expect(refusal).not.toContain("snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry")
+    // AND IT IS NOT G229's FIGURE: a different net and a different count, on the same obligation.
+    expect(refusal).not.toContain("net BASE branches")
+    expect(refusal).not.toContain("in 1 place(s)")
   }, 300_000)
 })
 

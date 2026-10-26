@@ -23,9 +23,10 @@
  * model it was drawn from. The link that checks the MODEL against the AUTHORED schematic is
  * `tests/circuits/pt2399-core.test.ts`'s committed-netlist comparison, which is where the
  * pin-specific `NC` allowance lives (**G283**). And a passing round trip says nothing about
- * whether the sheet is LEGIBLE: this generation carries eight fallback field placements, recorded
- * in **G285**, and the assertion below pins that count rather than letting it read as a clean
- * drawing.
+ * whether the sheet is LEGIBLE: this generation carries four fallback field placements - it was
+ * eight until 2026-10-25, and **G285** carries that eight while **G292** carries the change that
+ * halved it - and the assertion below pins the count and the four units rather than letting it
+ * read as a clean drawing.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from "bun:test"
@@ -151,10 +152,23 @@ describe("pt2399-core's declared NC pin, through generation and back from kicad-
 
   it("produces a sheet whose text the placer could NOT keep clear, and the count is pinned", () => {
     // **A GREEN ROUND TRIP IS NOT A LEGIBLE DRAWING, and this repository has been caught reading
-    // one as the other.** Eight of this sheet's field placements are fallbacks - the placer put a
+    // one as the other.** Four of this sheet's field placements are fallbacks - the placer put a
     // Reference or Value at the least-covered candidate slot because no slot was clear. The count
     // is asserted so that it cannot drift silently in either direction: fewer is a result worth
-    // noticing and more is a regression. G285 carries the eight, block by block.
-    expect(generated().fallbacks).toHaveLength(8)
+    // noticing and more is a regression.
+    //
+    // **IT WAS EIGHT UNTIL 2026-10-25 AND G285 CARRIES THE EIGHT; the signal-order change
+    // (`docs/known-gaps.md` **G292**) halved it, and four is a RESULT and not a clean sheet.**
+    // Laying the block out by downstream depth instead of declaration order left the placer four
+    // clear slots it did not have, which is the same direction the owner's left-to-right directive
+    // moved the whole corpus in. The other four of the eight are gone because the geometry under
+    // them moved, not because the placer was relaxed.
+    //
+    // **THE UNITS ARE NAMED, which is what makes this a cross-check rather than a count.** This
+    // generation runs `pt2399-core` through `generate`; `tests/schgen/masked-problems.test.ts`
+    // reaches the same circuit as the `pt-core` parity block through `maskedCensus`, a different
+    // driver, and reports the same four keys in the same order.
+    expect(generated().fallbacks.map((f) => f.key)).toEqual(["C6#1", "C14#1", "R1#1", "R8#1"])
+    expect(generated().fallbacks).toHaveLength(4)
   })
 })
