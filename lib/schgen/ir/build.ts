@@ -142,7 +142,7 @@ export function buildCircuit(spec: CircuitSpec, ctx: BuildContext): Circuit {
         members.push({ part: label, unit });
       }
     }
-    blocks.set(b.id, { id: b.id, sheet: b.sheet, title: b.title, members, checklist: b.checklist, rendering: b.rendering, order });
+    blocks.set(b.id, { id: b.id, sheet: b.sheet, title: b.title, members, checklist: b.checklist, rendering: b.rendering, readsFrom: b.readsFrom ?? null, order });
   });
 
   const rails = new Map<NetName, RailSpec>(spec.rails.map((r) => [r.net, r]));

@@ -263,11 +263,32 @@ function interfaceOf(members: readonly Component[]): BlockDeclaration["interface
   return Object.keys(portsOn(members)).map((net) => negotiablePort(net, CONTEXT))
 }
 
+/**
+ * Which net each section's DRAWING reads from. See `BlockSpec.readsFrom`: a statement about the
+ * picture, never about the circuit, and `docs/known-gaps.md` **G294** for why it is not
+ * `portDirections`.
+ *
+ * `LADDER_ORDER` (`lib/board/scaffold/supplier.ts`) is *"the sections in their position along the
+ * ladder ... the one order this circuit's own documentation states"*: hi-boost, hi-cut, low-cut,
+ * low-boost, mid. So each section reads from the net the section before it leaves on.
+ *
+ * **`mid` IS DELIBERATELY ABSENT.** `electrical/mid.ts` says it *"hangs off `hi_boost_out` as a
+ * variable-depth shunt rather than sitting in series with the signal"*, so it has no upstream side
+ * to read from and this file will not invent one.
+ */
+const READS_FROM: Readonly<Record<string, string>> = {
+  "hi-boost": "in",
+  "hi-cut": "hi_boost_out",
+  "low-cut": "hi_boost_out",
+  "low-boost": "lo_boost_in",
+}
+
 function block(
   id: string,
   sheet: string,
   title: string,
   members: readonly Component[],
+  readsFrom: string | null = null,
 ): BlockDeclaration {
   return {
     id,
@@ -275,6 +296,10 @@ function block(
     title,
     members: members.map((c) => c.id),
     rendering: { kind: "auto" },
+    // See `BlockSpec.readsFrom`: a statement about the PICTURE, not about the circuit. Left null
+    // for every block whose reading side nobody has established - `docs/known-gaps.md` **G294**
+    // and `tests/schgen/direction-seed.test.ts`, which counts them rather than defaulting.
+    readsFrom,
     anchor: null,
     interface: interfaceOf(members),
     // Uncomposed: a Pultec section board uses no `include()`. The stand-in groups carry an id
@@ -310,7 +335,17 @@ export function sectionAuthoring(section: string): SchematicAuthoring {
     },
   ]
   const blocks: BlockDeclaration[] = [
-    block(`pultec-${owner}-own`, sheet, `${owner} section`, ownComponents(owner)),
+    // `readsFrom` for the hi-boost section ONLY, and the evidence is three things that agree:
+    // `LADDER_ORDER` in lib/board/scaffold/supplier.ts puts "hi-boost" first - "the sections in
+    // their position along the ladder ... the one order this circuit's own documentation states";
+    // `circuits/pultec/electrical/three-band.ts` declares the reference network's port
+    // `{ input: "in" }`; and the generated sheet shows `in` arriving at this block. The other four
+    // sections are deliberately LEFT NULL: the ladder's five sections do not map one-to-one onto
+    // the four signal nets, and `mid` is not in series at all - electrical/mid.ts says it "hangs
+    // off `hi_boost_out` as a variable-depth shunt" - so which net each of them reads from is a
+    // fact about this circuit that nobody has stated and this file will not invent.
+    // `docs/known-gaps.md` **G294**.
+    block(`pultec-${owner}-own`, sheet, `${owner} section`, ownComponents(owner), READS_FROM[owner] ?? null),
   ]
   for (const absent of groupsOn(owner, new Set([owner]))) {
     blocks.push(

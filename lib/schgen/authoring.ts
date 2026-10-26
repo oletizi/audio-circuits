@@ -110,6 +110,13 @@ export interface BlockDeclaration {
   /** Component ids, exactly as the `Network` names them. Never a prefix pattern. */
   readonly members: readonly string[]
   readonly rendering: Rendering
+  /**
+   * The net this block's DRAWING reads from - see `BlockSpec.readsFrom` in `./ir/types.ts` for why
+   * this is a separate field from `portDirections` rather than a value in it. Optional; absent
+   * means nothing states one, and `tests/schgen/direction-seed.test.ts` counts every block in that
+   * state rather than letting it pass silently.
+   */
+  readonly readsFrom?: NetName | null
   readonly anchor: TemplateAnchor | null
   /** Spec §1.9's contract. Declared here per D9; read only by seam B (Task 15). */
   readonly interface: readonly InterfacePort[]

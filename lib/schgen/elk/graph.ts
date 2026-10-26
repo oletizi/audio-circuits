@@ -448,7 +448,11 @@ export function elkInputOf(g: BlockSubgraph): ElkBlockInput {
   // Boundary nodes after the units, so a unit's own ports are numbered before any boundary.
   // `inboundNets` is collected here rather than re-derived: `FIRST_SEPARATE` is already this
   // repository's statement that a net ENTERS the block, and `downstreamDepth` seeds from it.
+  // `readsFrom` is the block's own statement about its DRAWING and outranks the electrical
+  // declaration, because a net can be a true `bidirectional` and the picture still have a side it
+  // reads from - `docs/known-gaps.md` **G294**. Absent, the seed is `FIRST_SEPARATE` as before.
   const inboundNets = new Set<NetName>()
+  if (g.block.readsFrom !== null) inboundNets.add(g.block.readsFrom)
   for (const net of boundaryNets(g)) {
     const node = boundaryNodeOf(net, g)
     claim(node.id, `the boundary of net ${net}`)

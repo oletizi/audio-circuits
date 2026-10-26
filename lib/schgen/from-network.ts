@@ -401,7 +401,7 @@ export function circuitSpecFrom(
       block.rendering.kind === "wired"
         ? { kind: "wired" as const, template: block.rendering.template, anchor: block.anchor }
         : block.rendering
-    return { id: block.id, sheet: block.sheet, title: block.title, members, checklist: [], rendering }
+    return { id: block.id, sheet: block.sheet, title: block.title, members, checklist: [], rendering, readsFrom: block.readsFrom ?? null }
   })
   return {
     parts: parts.map((p) => p.spec),

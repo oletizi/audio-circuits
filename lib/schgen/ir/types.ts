@@ -210,6 +210,31 @@ export interface BlockSpec {
   readonly members: readonly BlockMember[];
   readonly checklist: readonly string[];
   readonly rendering: Rendering;
+  /**
+   * The net this block's DRAWING reads from - its left edge under decision D4's left-to-right
+   * flow - or `null` for "nothing states one".
+   *
+   * **IT IS A STATEMENT ABOUT THE PICTURE AND NOT ABOUT THE CIRCUIT, which is the whole reason it
+   * is not `portDirections`.** `docs/known-gaps.md` **G294**: the Pultec section boards declare
+   * `hi_boost_out` and `lo_boost_in` `bidirectional`, and that is CORRECT - `hi_boost_out` is
+   * *"the node between the hi boost pot's output and the lo cut pot's input"* and the mid section
+   * *"hangs off it as a variable-depth shunt"*, so three things meet there and no arrow is true of
+   * it. An agent (this one) proposed overwriting those declarations with `in`/`out` to make the
+   * layout read correctly, which would have put a false electrical claim in the model to buy a
+   * drawing property.
+   *
+   * So the two questions get two fields. `portDirections` answers *which way does this net cross
+   * the boundary, electrically* and is `bidirectional` when nothing does. This answers *which side
+   * of the page does this block's drawing start from*, which a human may state about a picture
+   * even where the circuit has no direction.
+   *
+   * **OPTIONAL, AND ITS ABSENCE IS NOT A SILENT DEFAULT.** Omitting it means `null`, which means
+   * *"nothing states one"* - and `tests/schgen/direction-seed.test.ts` counts every block in that
+   * state, prints the figure on every run and refuses a NEW one. That is the difference between
+   * this and the `bidirectional` that caused the bug: `bidirectional` was indistinguishable from a
+   * considered answer, and `null` is both distinguishable and counted.
+   */
+  readonly readsFrom?: NetName | null;
 }
 
 /** Text placed on a sheet, e.g. a layout note. Each line becomes one text item. */
@@ -337,6 +362,8 @@ export interface IrBlock {
   readonly members: readonly IrUnitRef[];
   readonly checklist: readonly string[];
   readonly rendering: Rendering;
+  /** See `BlockSpec.readsFrom`: the net the drawing starts from, or null. */
+  readonly readsFrom: NetName | null;
   readonly order: number;
 }
 

@@ -30,8 +30,9 @@
  * names: a check that did not run, looking exactly like one that passed. The suite was green at
  * 3873 tests over drawings whose signal ran the wrong way.
  *
- * **WHAT THIS GATE DOES, AND WHY IT IS A RATCHET RATHER THAN A REFUSAL.** **53 of 68** declared
- * blocks supply no direction seed today - only **15** state which way signal enters. Refusing them all would stop every board generating and
+ * **WHAT THIS GATE DOES, AND WHY IT IS A RATCHET RATHER THAN A REFUSAL.** **50 of 68** declared
+ * blocks supply no direction seed today - only **18** state which way signal enters. It was
+ * 53/15 before three Pultec section blocks declared `readsFrom`. Refusing them all would stop every board generating and
  * would be a worse artifact than the one it is protecting. Some blocks also legitimately have no
  * inbound signal - a ground-only stand-in group has nothing flowing through it. So this pins the
  * CURRENT set by name: a block that acquires a seed may be removed from the list, and **a NEW
@@ -41,7 +42,7 @@
  * **IT ALSO PRINTS THE COUNT ON EVERY RUN.** The thing that made this invisible was that nobody
  * had ever seen the figure. **It is not the `7 of 52` an earlier pass reported either** - that
  * counted only blocks ELK draws, and this counts every declared block, which is the population
- * the defect lives in. `15 of 68` existed nowhere until the owner asked the question.
+ * the defect lives in. `15 of 68` existed nowhere until the owner asked the question; it is `18 of 68` now.
  */
 
 import { describe, expect, it } from "bun:test";
@@ -65,7 +66,10 @@ function seedlessBlocks(): { readonly seedless: readonly string[]; readonly tota
       total += 1;
       const g = subgraphOf(circuit, block.id, symbols);
       const boundary = [...g.rails, ...g.external];
-      const hasSeed = boundary.some((net) => {
+      // `readsFrom` seeds the layout directly (`lib/schgen/elk/graph.ts`), so it counts here. A
+      // gate that measured only the OLD definition of a seed would report a figure that no longer
+      // matches what drives the drawing - which is the same shape of defect it exists to catch.
+      const hasSeed = block.readsFrom !== null || boundary.some((net) => {
         const port = negotiablePort(net, { portDirections: g.portDirections, rails: [...g.railSpecs.values()] });
         return layerConstraintFor(port.sides) === "FIRST_SEPARATE";
       });
@@ -92,13 +96,10 @@ const KNOWN_SEEDLESS: readonly string[] = [
   "pultec-hi-boost/pultec-hi-boost-standin-hi-cut",
   "pultec-hi-boost/pultec-hi-boost-standin-low-boost",
   "pultec-hi-boost/pultec-hi-boost-standin-low-cut",
-  "pultec-hi-cut/pultec-hi-cut-own",
   "pultec-hi-cut/pultec-hi-cut-standin-low-boost",
   "pultec-hi-cut/pultec-hi-cut-standin-low-cut",
-  "pultec-low-boost/pultec-low-boost-own",
   "pultec-low-boost/pultec-low-boost-standin-hi-cut",
   "pultec-low-boost/pultec-low-boost-standin-low-cut",
-  "pultec-low-cut/pultec-low-cut-own",
   "pultec-low-cut/pultec-low-cut-standin-hi-cut",
   "pultec-low-cut/pultec-low-cut-standin-low-boost",
   "pultec-mid/pultec-mid-standin-hi-cut",

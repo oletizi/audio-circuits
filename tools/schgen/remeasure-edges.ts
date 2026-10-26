@@ -158,7 +158,7 @@ export function flatSubgraphOf(
     title: `flat probe over ${ids.join(", ")}`,
     members: blocks.flatMap((b) => b.members),
     checklist: [],
-    rendering: { kind: "auto" },
+    rendering: { kind: "auto" }, readsFrom: null,
     order: first.order,
   }
   const unitBlock = new Map(c.unitBlock)
