@@ -1,8 +1,9 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/connectivity.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/connectivity.ts` and DIVERGED from it
+ * on 2026-10-26: `junctionPoints` also finds a same-net T. The reason, the cost and the
+ * `sourceSha` are in `tools/schgen/port-manifest.json`'s `diverged[]` entry, and
+ * `docs/known-gaps.md` **G296** has the measurement. **Nothing compares this file against its
+ * pedals source any more**, so a re-port has to re-apply the addition by hand.
  */
 
 /**

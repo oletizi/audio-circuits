@@ -37,10 +37,6 @@
       "to": "lib/schgen/lock/version-lock.ts"
     },
     {
-      "from": "render/connectivity.ts",
-      "to": "lib/schgen/render/connectivity.ts"
-    },
-    {
       "from": "render/drawnText.ts",
       "to": "lib/schgen/render/drawn-text.ts"
     },
@@ -161,10 +157,6 @@
     {
       "from": "render/symbolSelfText.ts",
       "to": "lib/schgen/render/symbol-self-text.ts"
-    },
-    {
-      "from": "render/connectivity.test.ts",
-      "to": "tests/schgen/render/connectivity.test.ts"
     },
     {
       "from": "render/wireSafety.test.ts",
@@ -751,6 +743,20 @@
       "sourceSha": "9e540ba867a6cf8619e39674526bbbb3ed6a1a19e02f869fba414897b42cea0c",
       "task": "Task 24",
       "why": "`textClearanceProblems` no longer early-returns the field-placement refusal, because `render/field-placement.ts` no longer produces one. That early return is how one defect hid another for the whole of G232's life (docs/known-gaps.md G258): building a text scene places fields, so a block whose fields did not place had no scene and every other text-clearance problem it carried went unreported. The full text pass now runs on every block."
+    },
+    {
+      "from": "render/connectivity.ts",
+      "to": "lib/schgen/render/connectivity.ts",
+      "sourceSha": "683f52511532af3ad40c39c2ebab9bd08ff176dad80670668c411b9afa09b631",
+      "task": "the T-junction change of 2026-10-26",
+      "why": "T-JUNCTIONS IN `junctionPoints`, AND THE DIVERGENCE IS AN ADDITION THAT NO `cuts` ENTRY CAN EXPRESS. Counting coincident wire ENDS finds a branch where three or more ends meet; it cannot find the other kind, a wire ENDING part-way along another wire of the same net, because only ONE end sits at that point. KiCad joins a branch point only with a junction object - which this repository MEASURED, and the measurement is in the ported test beside this file: `connectedComponents (KiCad 10 as observed)` asserts \"does not join an unsplit T (KiCad needs a junction there)\" on the identical two wires. So without the addition the emitter omits the one object that makes the connection, and `lib/schgen/elk/adapt.ts` refuses on exactly that disagreement (spec 1.4 obligation 2). SAME NET ONLY: two wires of different nets crossing is not a connection and a junction there would draw a short, which is driven as its own assertion. The gap was always in this function; `docs/known-gaps.md` G293 records what walked into it - a CHAIN's routes meet end to end, so no T existed until `edgesForNet` became a STAR and routes began landing part-way along their neighbours. Nothing else in the file changes: the >= 3 count, `onSegment`, `strictlyInside`, `connectedComponents` and the sort order are untouched, and the function still returns points in the same (y, x) order. COST: this is now one of the files a later port has to re-apply by hand, and the sibling repository is read-only from here, so the addition cannot go upstream instead. docs/known-gaps.md G296."
+    },
+    {
+      "from": "render/connectivity.test.ts",
+      "to": "tests/schgen/render/connectivity.test.ts",
+      "sourceSha": "5d43f33f3bcf5924309f06f51c3b65fd306c4d428c631c374fcf6a15afbf7c07",
+      "task": "the T-junction change of 2026-10-26",
+      "why": "The demand half of the divergence above, and it is a CHANGED DEMAND rather than a moved measurement. One assertion in `junctionPoints (cosmetic)` required `[]` for the unsplit T - the same geometry the `connectedComponents (KiCad 10 as observed)` describe in this same file calls \"does not join an unsplit T (KiCad needs a junction there)\". The two assertions contradicted each other and the connectivity one is the measured one, so the junction assertion changes to `[{ x: 2540, y: 0 }]` and the describe is renamed to say that junctionPoints is cosmetic for a TEMPLATE and not for an ELK route. TWO ASSERTIONS ARE ADDED, both controls: a CORNER still takes no junction (both ends terminate, so neither is strictly inside the other), and a T of two DIFFERENT nets takes none. No other assertion in the file changes and every other test is verbatim. docs/known-gaps.md G296."
     }
   ],
   "handWritten": [
