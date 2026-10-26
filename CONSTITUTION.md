@@ -192,6 +192,63 @@ horizontally, and the question never asked was *why is a 177 mm-tall drawing
 interrogating — four, every one caught by the owner and none by an agent or a
 review.
 
+## Principle 8 — A template is drawn, judged, measured, then reused unchanged
+
+Principle 2 says where judgement enters. This says how a template comes to
+exist, and it is the working method the whole effort now rests on.
+
+**A construct is identified from the circuits in hand**, not chosen from a
+catalogue of constructs someone else's circuits needed.
+
+**A template is developed by DRAWING, not by specifying.** A candidate
+arrangement is rendered, looked at (Principle 5), and changed; the loop is
+render, look, adjust, repeat. **A template written as prose and never drawn is
+an algorithm for an ambiguous problem**, which Principle 3 forbids one level up.
+
+**Acceptance is the owner looking at the rendered construct, once.** Not a
+metric (Principle 1), not a reading of the code, not a passing gate.
+
+**Transfer is measured before generality is claimed.** For a template set
+arriving from elsewhere, or a template leaving the circuit that motivated it:
+which blocks it realises, which it refuses, and what had to change — recorded
+whichever way it comes out.
+
+**Reuse is mechanical, and per-instance tuning is forbidden** (Principle 2). A
+circuit that nearly fits either **generalises the template**, with the owner's
+judgement re-entering for the generalised form, or **gets its own construct**.
+It never becomes a special case inside an existing template.
+
+**A template that stops fitting says so** (Principle 4), by name, in the output.
+
+**Earned 2026-10-08 and 2026-10-26, and this is the sharpest case in the
+document because the project wrote the warning itself and then walked into it.**
+The program design of 2026-10-08 states:
+
+> *"The seven templates this program proposes to port were **sized by a dense
+> digital mainboard**, not by a discrete audio circuit … nothing is known about
+> their pass rate on a circuit that is mostly passive chains, dividers and
+> op-amp stages, which is what the Pultec is … **"It worked on the H7" is not
+> evidence about the Pultec in either direction.**"*
+
+It named the settling measurement too, as **G87**:
+
+> *"the ported template set is measured against the circuits already in this
+> repository — which blocks it realises, which it refuses, and what had to
+> change — **before** any claim that the tooling is general, and the result is
+> recorded whichever way it comes out."*
+
+**That measurement was never run.** The answer, computed on 2026-10-26 because
+the owner asked why the pedals repository had succeeded where this one had not:
+**0 of 9 templates realise any block, and 68 of 68 blocks are drawn by the
+fallback.** Eighteen days of work proceeded as though the question had been
+settled. The templates were specified in prose, against the instances that
+motivated them, and never drawn.
+
+**The honest state of this principle: its reuse half has never been exercised.**
+No template in this repository has ever drawn a block, so "reuse is mechanical"
+is a commitment rather than a finding, and the first construct developed under
+this method is the test of it.
+
 ## Governance
 
 This document binds every agent and every change in this repository. It is
@@ -217,8 +274,8 @@ amendment takes here.
 because the thing that produced it is gone, is removed with the evidence that it
 is gone — not left standing as a courtesy.
 
-**This document is not complete.** Seven principles are what this project has
-paid for. An eighth added without a failure behind it would be the thing
+**This document is not complete.** Eight principles are what this project has
+paid for. A ninth added without a failure behind it would be the thing
 Principle 2 forbids.
 
-**Version**: 1.1.0 | **Ratified**: pending owner review | **Last amended**: 2026-10-26 (Principle 5 gained the owner's looking corollary)
+**Version**: 1.2.0 | **Ratified**: pending owner review | **Last amended**: 2026-10-26 (Principle 8, the template method, added)
