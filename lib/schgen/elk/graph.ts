@@ -283,6 +283,64 @@ function boundaryNodeOf(net: NetName, g: BlockSubgraph): ElkNode {
  * That is D4's direction applied to `negotiablePort`'s own answer; it is not a choice about the
  * circuit.
  */
+/**
+ * THE OWNER'S *"signal flows left to right"*, made expressible: how far downstream each node is,
+ * by breadth-first search from the block's INBOUND boundary nets.
+ *
+ * **WITHOUT THIS, WHAT ENDS UP LEFT AND WHAT ENDS UP RIGHT IS DECIDED BY THE ORDER SOMEBODY WROTE
+ * THE COMPONENTS IN.** `edgesForNet` chains a net's terminals in list order, the list is built as
+ * `g.units` is walked, and `layered` assigns layers from edge direction - so declaration order
+ * became reading order. `docs/known-gaps.md` **G292** measured the visible consequence on
+ * `pultec-hi-boost`: its rotary switch's throws feed a capacitor bank laid out UPSTREAM of the
+ * switch, so every throw wire leaves rightward, turns, and runs back left. The owner's words for
+ * it were *"fanned out to the top and bottom of the switch symbol"*.
+ *
+ * **THE SEED IS NOT INVENTED - it is the same fact `layerConstraintFor` already acts on.** A
+ * boundary net whose only horizontal side is `left` gets `FIRST_SEPARATE`, which is this
+ * repository's existing statement that the net enters here. Those are depth 0. Everything else
+ * takes its depth from the search.
+ *
+ * **A NET NOT REACHED KEEPS ITS LIST ORDER**, deliberately: a block with no declared inbound net
+ * has nothing to flow from, and inventing a direction for it would be choosing an arrangement by
+ * taste - which is what §1.5 and `CLAUDE.md` forbid. Such a block lays out exactly as it did
+ * before this function existed.
+ */
+function downstreamDepth(
+  seeds: ReadonlySet<NetName>,
+  terminals: ReadonlyMap<NetName, readonly string[]>,
+  nodeOfTerminal: (t: string) => string,
+): ReadonlyMap<string, number> {
+  const netsOfNode = new Map<string, Set<NetName>>()
+  for (const [net, on] of terminals) {
+    for (const t of on) {
+      const node = nodeOfTerminal(t)
+      const nets = netsOfNode.get(node) ?? new Set<NetName>()
+      nets.add(net)
+      netsOfNode.set(node, nets)
+    }
+  }
+  const depth = new Map<string, number>()
+  const seenNets = new Set<NetName>()
+  let frontier = [...seeds].filter((n) => terminals.has(n)).sort()
+  for (const n of frontier) seenNets.add(n)
+  for (let d = 0; frontier.length > 0; d += 1) {
+    const next: NetName[] = []
+    for (const net of frontier) {
+      for (const t of terminals.get(net) ?? []) {
+        const node = nodeOfTerminal(t)
+        if (!depth.has(node)) depth.set(node, d)
+        for (const other of netsOfNode.get(node) ?? []) {
+          if (seenNets.has(other)) continue
+          seenNets.add(other)
+          next.push(other)
+        }
+      }
+    }
+    frontier = next.sort()
+  }
+  return depth
+}
+
 function edgesForNet(net: NetName, terminals: readonly string[]): ElkExtendedEdge[] {
   const out: ElkExtendedEdge[] = []
   for (let i = 1; i < terminals.length; i += 1) {
@@ -350,21 +408,39 @@ export function elkInputOf(g: BlockSubgraph): ElkBlockInput {
   }
 
   // Boundary nodes after the units, so a unit's own ports are numbered before any boundary.
+  // `inboundNets` is collected here rather than re-derived: `FIRST_SEPARATE` is already this
+  // repository's statement that a net ENTERS the block, and `downstreamDepth` seeds from it.
+  const inboundNets = new Set<NetName>()
   for (const net of boundaryNets(g)) {
     const node = boundaryNodeOf(net, g)
     claim(node.id, `the boundary of net ${net}`)
     children.push(node)
     const first = node.layoutOptions?.[LAYER_CONSTRAINT_KEY] === "FIRST_SEPARATE"
+    if (first) inboundNets.add(net)
     const on = terminals.get(net) ?? []
     terminals.set(net, first ? [node.id, ...on] : [...on, node.id])
   }
+
+  // THE SIGNAL ORDER, before any edge is made. `downstreamDepth`'s header says why this exists
+  // and why a net it does not reach is left exactly as it was.
+  const nodeOfTerminal = (t: string): string => {
+    const hash = t.lastIndexOf("#")
+    return hash === -1 ? t : t.slice(0, hash)
+  }
+  const depth = downstreamDepth(inboundNets, terminals, nodeOfTerminal)
 
   // Nets in the IR's own order, which `Circuit.nets` sorts by name: one iteration order, stated.
   const edges: ElkExtendedEdge[] = []
   for (const net of [...terminals.keys()].sort()) {
     const on = terminals.get(net)
     if (on === undefined) throw new Error(`net ${net} vanished from the terminal map of block ${g.block.id}`)
-    edges.push(...edgesForNet(net, on))
+    // A STABLE sort by how far downstream each terminal's node is, so the chain runs with the
+    // signal. Equal depths keep their existing order, which is what leaves an unreached net
+    // byte-identical to what this produced before.
+    const ordered = on.every((t) => depth.has(nodeOfTerminal(t)))
+      ? [...on].sort((a, b) => (depth.get(nodeOfTerminal(a)) ?? 0) - (depth.get(nodeOfTerminal(b)) ?? 0))
+      : on
+    edges.push(...edgesForNet(net, ordered))
   }
 
   const graph: ElkNode = { id: g.block.id, layoutOptions: { ...BLOCK_OPTIONS }, children, edges }
