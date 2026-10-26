@@ -64,83 +64,119 @@ describe("what every declared block's refusal is hiding", () => {
    * **AND THE ORIENTATION RULE CUT THE FALLBACK POPULATION FROM 18 TO 11 WITHOUT MOVING THE
    * BUCKETS** (`docs/known-gaps.md` **G292**). Laying a two-terminal passive with no rail end
    * along the signal re-places every block, so the slots the field placer is offered move with it.
-   * Term by term: `pt-core` 8 fallbacks to **4**, `tp-stage` 4 to **1**,
-   * `oc-audio` 3 to 3 **on different units**, `ob-buffer` 1 to 1 on a different unit,
-   * `oc-power` 1 to 1 **byte-identical**, `tp-leg-emitter-bypass` 1 to 1 byte-identical.
-   * **`pt-core`'s four are cross-checked by a different driver**:
-   * `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts` generates that circuit through
-   * `generate` and reports the same four keys in the same order.
    *
-   * **ONE FIGURE HERE IS A REGRESSION AND IS NOT PRESENTED AS AN IMPROVEMENT.** `ob-buffer`'s
-   * fallback covers FOUR things where it used to cover one - `pin J2.2 text` and three `GND`
-   * wires, against `wire 49 (VEE)` - and its published power-value overlap is a different pair
-   * (`GND`/`VCC` where it was `GND`/`VEE`). The block still does not draw, and the text it draws
-   * over got worse rather than better.
+   * **THE CENSUS READS 8 OF 12 SINCE 2026-10-26 AND THE FALLBACK POPULATION WENT 11 TO 20 - BOTH
+   * THE WRONG WAY, AND NEITHER IS PRESENTED AS ANYTHING ELSE** (**G296**). `edgesForNet`'s star
+   * and the two 180 rules re-place every block again:
+   *
+   * | block | fallbacks before | now |
+   * | --- | --- | --- |
+   * | `pt-core` | 4 | **15** |
+   * | `oc-audio` | 3 | 3, on different units |
+   * | `tp-stage` | 1 | **2** |
+   * | `ob-buffer` | 1 | **0** - it DRAWS with every field clear |
+   * | `oc-power` | 1 | 0 - it no longer draws at all |
+   * | `tp-leg-emitter-bypass` | 1 | **0** |
+   *
+   * **`pt-core`'s FIFTEEN ARE CROSS-CHECKED BY A DIFFERENT DRIVER, which is what makes the figure
+   * a measurement rather than this module's opinion of itself**:
+   * `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts` generates that circuit through
+   * `generate` - a different entry point, with the real `kicad-cli` behind it - and reports the
+   * same fifteen keys in the same order.
+   *
+   * **ALL FIFTEEN of pt-core's fallbacks cover a WIRE, and five of them cover the SAME wire**
+   * (`wire 76 (Net-(C8-Pad2))`). A field placed over five different capacitors' worth of the one
+   * net's wire is the shape **G260** trades away by design; the count is here so the trade is
+   * visible, and nothing in this file refuses it.
    */
   it("prints every problem class of every block, with its fallback field placements", () => {
     expect(renderMasked(rows)).toEqual([
-      "ob-buffer: blocked by power-value-overlap published power-value-overlap units with no clear slot J1#1",
-      "    FALLBACK J1#1 (Connector_Generic:Conn_01x02): covers pin J2.2 text, wire 18 (GND), wire 19 (GND), wire 21 (GND)",
-      "    control (checkLayout published this too): value of power symbol GND 0 at (105.41, 1.27) overlaps value of power symbol VCC 2 at (105.41, 11.43)",
-      unmeasuredFallbacks(["J1#1"]),
-      "oc-power: DRAWS",
-      "    FALLBACK C3#1 (Device:C): covers wire 20 (GND)",
-      unmeasuredFallbacks(["C3#1"]),
-      "oc-audio: DRAWS units with no clear slot J2#1, U1#1, R7#1",
-      "    FALLBACK J2#1 (Connector_Generic:Conn_01x02): covers body of R7#1",
-      "    FALLBACK U1#1 (Amplifier_Operational:TL072): covers wire 62 (audio_GR)",
-      "    FALLBACK R7#1 (Device:R): covers wire 35 (OUT)",
-      unmeasuredFallbacks(["J2#1", "U1#1", "R7#1"]),
+      "ob-buffer: DRAWS",
+      "oc-power: blocked by power-value-body-overlap, power-value-graphic-overlap, power-value-wire-overlap published power-value-wire-overlap, power-value-body-overlap, power-value-body-overlap, power-value-graphic-overlap, power-value-graphic-overlap, power-value-graphic-overlap, power-value-graphic-overlap",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps wire 0 of oc-power (+9V_PROTECTED)",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps body of C1#1",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps body of C3#1",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 0 of C1#1",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 1 of C1#1",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 0 of C3#1",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 1 of C3#1",
+      "oc-audio: blocked by power-value-wire-overlap published power-value-wire-overlap, power-value-wire-overlap units with no clear slot R3#1, U1#1, U1#2",
+      "    FALLBACK R3#1 (Device:R): covers wire 33 (OUT)",
+      "    FALLBACK U1#1 (Amplifier_Operational:TL072): covers pin U1.1 text",
+      "    FALLBACK U1#2 (Amplifier_Operational:TL072): covers wire 63 (audio_GR)",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 2 of oc-audio (+9V_PROTECTED)",
+      "    control (checkLayout published this too): value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 12 of oc-audio (GND)",
+      unmeasuredFallbacks(["R3#1", "U1#1", "U1#2"]),
       "oc-sidechain: blocked by nothing measurable",
       "    unmeasured: every clearance check: refused at obligation 3: one transform, two readers, so there is no grid-legal layout for any of them to run on",
-      "pt-core: DRAWS units with no clear slot C6#1, C14#1, R1#1, R8#1",
-      "    FALLBACK C6#1 (Device:C): covers body of R5#1",
-      "    FALLBACK C14#1 (Device:C): covers wire 119 (Net-(U1-OP1-OUT)), wire 94 (Net-(U1-LPF1-OUT))",
-      "    FALLBACK R1#1 (Device:R): covers wire 72 (Net-(C8-Pad2))",
-      "    FALLBACK R8#1 (Device:R): covers wire 131 (Net-(U1-OP2-OUT)), wire 3 (+5V)",
-      unmeasuredFallbacks(["C6#1", "C14#1", "R1#1", "R8#1"]),
-      "tp-leg-upper: DRAWS",
+      "pt-core: DRAWS units with no clear slot C1#1, C2#1, C3#1, C4#1, C5#1, C7#1, C8#1, C9#1, C11#1, C12#1, C14#1, R1#1, R3#1, R5#1, R7#1",
+      "    FALLBACK C1#1 (Device:C): covers wire 42 (GND), wire 151 (VCO)",
+      "    FALLBACK C2#1 (Device:C): covers wire 76 (Net-(C8-Pad2)), wire 114 (Net-(U1-LPF2-OUT))",
+      "    FALLBACK C3#1 (Device:C): covers wire 76 (Net-(C8-Pad2))",
+      "    FALLBACK C4#1 (Device:C): covers wire 76 (Net-(C8-Pad2))",
+      "    FALLBACK C5#1 (Device:C): covers wire 76 (Net-(C8-Pad2))",
+      "    FALLBACK C7#1 (Device:C): covers wire 48 (INPUT)",
+      "    FALLBACK C8#1 (Device:C): covers wire 72 (Net-(C8-Pad2))",
+      "    FALLBACK C9#1 (Device:C): covers wire 53 (Net-(C10-Pad1))",
+      "    FALLBACK C11#1 (Device:C): covers wire 76 (Net-(C8-Pad2)), wire 116 (Net-(U1-LPF2-OUT))",
+      "    FALLBACK C12#1 (Device:C): covers wire 62 (Net-(C12-Pad1)), wire 72 (Net-(C8-Pad2))",
+      "    FALLBACK C14#1 (Device:C): covers wire 126 (Net-(U1-OP1-OUT))",
+      "    FALLBACK R1#1 (Device:R): covers wire 105 (Net-(U1-LPF2-IN)), pin R7.2",
+      "    FALLBACK R3#1 (Device:R): covers wire 143 (OUTPUT), pin C10.2",
+      "    FALLBACK R5#1 (Device:R): covers wire 111 (Net-(U1-LPF2-OUT))",
+      "    FALLBACK R7#1 (Device:R): covers wire 72 (Net-(C8-Pad2)), wire 73 (Net-(C8-Pad2)), pin R1.1",
+      unmeasuredFallbacks(["C1#1", "C2#1", "C3#1", "C4#1", "C5#1", "C7#1", "C8#1", "C9#1", "C11#1", "C12#1", "C14#1", "R1#1", "R3#1", "R5#1", "R7#1"]),
+      "tp-leg-upper: blocked by power-value-pin-overlap, power-value-wire-overlap published power-value-wire-overlap, power-value-pin-overlap",
+      "    control (checkLayout published this too): value of power symbol VCC 0 at (17.78, 6.35) overlaps wire 9 of tp-leg-upper (UPPER_JUMPED)",
+      "    control (checkLayout published this too): value of power symbol VCC 0 at (17.78, 6.35) overlaps pin R1.1",
       "tp-leg-feedback: DRAWS",
       "tp-leg-lower-a: DRAWS",
       "tp-leg-lower-b: DRAWS",
       "tp-leg-collector: DRAWS",
-      "tp-leg-emitter-bypass: DRAWS units with no clear slot JP5#1",
-      "    FALLBACK JP5#1 (Jumper:Jumper_2_Open): covers wire 0 (BYPASS_CAP), wire 1 (BYPASS_CAP)",
-      unmeasuredFallbacks(["JP5#1"]),
-      "tp-stage: DRAWS",
-      "    FALLBACK C4#1 (Device:C_Polarized): covers wire 25 (GND)",
-      unmeasuredFallbacks(["C4#1"]),
-      "10 of 12 declared blocks draw",
+      "tp-leg-emitter-bypass: DRAWS",
+      "tp-stage: DRAWS units with no clear slot R6#1, C3#1",
+      "    FALLBACK R6#1 (Device:R): covers wire 25 (EMITTER)",
+      "    FALLBACK C3#1 (Device:C_Polarized): covers wire 15 (COLLECTOR)",
+      unmeasuredFallbacks(["R6#1", "C3#1"]),
+      "8 of 12 declared blocks draw",
       "0 of 12 are ONE measured problem from drawing with nothing unmeasured behind it (none)",
-      "1 have ONE measured problem and an unmeasured residual: ob-buffer",
-      "0 have more than one: none",
+      "1 have ONE measured problem and an unmeasured residual: oc-audio",
+      "2 have more than one: oc-power, tp-leg-upper",
       "1 are unmeasurable, nothing looked at them: oc-sidechain",
     ])
   })
 
   /**
-   * **THREE OF THE FOUR BUCKETS ARE NOW EMPTY, AND THAT IS THE MEASUREMENT RATHER THAN A WEAKENING
-   * OF THE TEST.** After Task 24 the buckets held `tp-leg-emitter-bypass` (one problem, nothing
-   * behind it), `ob-buffer` (one problem plus a residual), `tp-stage` (more than one) and
-   * `oc-audio`/`oc-sidechain` (unmeasurable). Boundary-node sizing (**G291**) drew
-   * `tp-leg-emitter-bypass`, `tp-stage` and `oc-audio`, so **ten of the twelve draw and `ob-buffer`
-   * is the only block left with a measured problem at all.**
+   * **THREE OF THE FOUR BUCKETS WERE EMPTY AND NOW TWO ARE, SO THIS TEST CAN FAIL IN MORE WAYS
+   * THAN IT COULD YESTERDAY - which is the one improvement in this whole file.** After Task 24
+   * the buckets held `tp-leg-emitter-bypass` (one problem, nothing behind it), `ob-buffer` (one
+   * problem plus a residual), `tp-stage` (more than one) and `oc-audio`/`oc-sidechain`
+   * (unmeasurable); boundary-node sizing (**G291**) drew three of them and left `ob-buffer` as the
+   * only block with a measured problem at all.
    *
-   * **THE EMPTINESS IS ASSERTED AS EMPTINESS AND THE REMAINING SUBJECT IS NAMED**, because an
-   * all-empty set of buckets is exactly the shape in which a classification test stops being able
-   * to fail. `oneProblemAway` is empty because the one block it held now draws - NOT because
-   * nothing is blocked: `ob-buffer` is still blocked, with a residual behind it, which is what
-   * keeps the three-way separation observable.
+   * **THE STAR AND THE TWO 180 RULES REFILLED TWO BUCKETS** (**G296**): `oc-audio` is the
+   * one-problem-plus-residual block now, and `oc-power` and `tp-leg-upper` are a
+   * more-than-one bucket that had NO members since Task 24. `ob-buffer` left the table entirely by
+   * drawing.
+   *
+   * **`oneProblemAway` IS STILL EMPTY AND THAT IS STILL A MEASUREMENT RATHER THAN AN ABSENCE OF
+   * ONE.** No block in the corpus has exactly one measured problem with nothing unmeasured behind
+   * it: `oc-audio` has one class but three fallback fields behind it, and the other two have more
+   * than one class. An empty bucket next to three populated ones is a reading; four empty buckets
+   * would have been the shape in which this test stopped being able to fail.
    */
   it("separates one-problem-away from one-problem-plus-residual from unmeasurable", () => {
     expect(rows.filter(oneProblemAway).map((r) => r.block)).toEqual([])
-    expect(rows.filter((r) => r.blockedBy.length === 1 && r.unmeasured.length > 0).map((r) => r.block)).toEqual(["ob-buffer"])
-    expect(rows.filter((r) => r.blockedBy.length > 1).map((r) => r.block)).toEqual([])
+    expect(rows.filter((r) => r.blockedBy.length === 1 && r.unmeasured.length > 0).map((r) => r.block)).toEqual(["oc-audio"])
+    expect(rows.filter((r) => r.blockedBy.length > 1).map((r) => r.block)).toEqual(["oc-power", "tp-leg-upper"])
     expect(rows.filter((r) => !r.draws && r.blockedBy.length === 0).map((r) => r.block)).toEqual(["oc-sidechain"])
-    // 10 of 12 draw, and the two that do not are named - so "every bucket is empty" cannot be read
+    // 8 of 12 draw, and the four that do not are named - so "a bucket is empty" cannot be read
     // as "nothing is blocked".
-    expect(rows.filter((r) => r.draws).length).toBe(10)
-    expect(rows.filter((r) => !r.draws).map((r) => r.block)).toEqual(["ob-buffer", "oc-sidechain"])
+    expect(rows.filter((r) => r.draws).length).toBe(8)
+    expect(rows.filter((r) => !r.draws).map((r) => r.block)).toEqual(["oc-power", "oc-audio", "oc-sidechain", "tp-leg-upper"])
+    // The four non-drawing blocks are exactly the four buckets' members plus nothing, which is the
+    // arithmetic that says the classification is total: 1 + 2 + 1 = 4.
+    expect(1 + 2 + 1).toBe(rows.filter((r) => !r.draws).length)
     // And field placement blocks NOTHING any more - asserted as an empty list rather than a count,
     // so a block that still carried the class would fail here naming itself.
     expect(rows.filter((r) => r.blockedBy.includes("field-placement")).map((r) => r.block)).toEqual([])
@@ -153,45 +189,45 @@ describe("what every declared block's refusal is hiding", () => {
    * four lists below are the same four G239's Task 22 amendment recorded, with "no slot" now
    * meaning "no CLEAR slot, so the unit is drawn over something".
    *
-   * **AND THE REAL PLACEMENT ORDER FALLS BACK MORE OFTEN THAN THE PROBE DOES, which is new and is
-   * only measurable now.** That claim has been carried by three different blocks in three days,
-   * which is itself the finding: it is a property of the PLACER, and which block exhibits it is a
-   * property of a geometry that keeps moving.
+   * **AND THE "REAL PLACEMENT ORDER FALLS BACK MORE OFTEN THAN THE PROBE DOES" MEASUREMENT HAS NO
+   * CARRIER AT ALL SINCE 2026-10-26, WHICH IS A LOST SUBJECT AND IS STATED AS ONE** (**G296**).
+   * The claim is about the PLACER - `placeFields` walks units in placement order, so an earlier
+   * unit's fields become an obstacle for a later one - and which block exhibits it is a property
+   * of a geometry that keeps moving. It has now moved onto and off four different blocks:
    *
-   * - Task 22: `pt-core`, seven units asked first against EIGHT fallbacks in its own order - the
-   *   extra `C10#1` had a clear slot until an earlier unit's fields took it;
-   * - G291's node sizing: `oc-power` joined it at ZERO against ONE, the cleanest form, and
-   *   `tp-stage`'s gap closed at four and four;
-   * - **G292's orientation rule: `pt-core`'s gap CLOSED at four and four and `tp-stage` opened one
-   *   at ZERO against ONE.** So the two carriers are now `oc-power` and `tp-stage`, both at 0 against
-   *   1, and `pt-core` is the control that a closed gap is a real reading rather than an absent
-   *   one.
-   *
-   * Both carriers are asserted, and the direction is asserted per block rather than in aggregate,
-   * because an aggregate would survive every one of these three re-shufflings without noticing.
+   * - Task 22: `pt-core`, seven units asked first against EIGHT fallbacks in its own order;
+   * - G291's node sizing: `oc-power` at ZERO against ONE, `tp-stage`'s gap closed at four/four;
+   * - G292's orientation rule: `pt-core` closed at four/four, `tp-stage` opened at ZERO/ONE;
+   * - **the star and the two 180 rules: EVERY block's two lists now AGREE** - `pt-core` 15/15,
+   *   `oc-audio` 3/3, `tp-stage` 2/2, and nothing else has a fallback. **So the sequential
+   *   dependence is unobservable on this corpus at this geometry.** It is asserted below as an
+   *   agreement on all three, which is a real reading; it is NOT asserted that the placer stopped
+   *   being order-dependent, which would be reading an absent subject as a result.
    */
-  it("counts the units with no clear field slot, and the real order falls back more often than that", () => {
-    expect(row("pt-core").fallbackUnits).toEqual(["C6#1", "C14#1", "R1#1", "R8#1"])
-    expect(row("ob-buffer").fallbackUnits).toEqual(["J1#1"])
-    expect(row("tp-stage").fallbackUnits).toEqual([])
+  it("counts the units with no clear field slot, and the two measurements agree on every block", () => {
+    expect(row("pt-core").fallbackUnits).toEqual([
+      "C1#1", "C2#1", "C3#1", "C4#1", "C5#1", "C7#1", "C8#1", "C9#1", "C11#1", "C12#1", "C14#1", "R1#1", "R3#1", "R5#1", "R7#1",
+    ])
+    expect(row("ob-buffer").fallbackUnits).toEqual([])
+    expect(row("tp-stage").fallbackUnits).toEqual(["R6#1", "C3#1"])
     expect(row("oc-power").fallbackUnits).toEqual([])
-    expect(row("oc-audio").fallbackUnits).toEqual(["J2#1", "U1#1", "R7#1"])
+    expect(row("oc-audio").fallbackUnits).toEqual(["R3#1", "U1#1", "U1#2"])
     // CONTROL: a block whose every field has a clear slot has none, in both measurements. A probe
     // that reported a fallback here would be measuring itself.
     expect(row("tp-leg-upper").fallbackUnits).toEqual([])
     expect(row("tp-leg-upper").fallbacks).toEqual([])
     expect(row("tp-leg-collector").fallbackUnits).toEqual([])
     expect(row("tp-leg-collector").fallbacks).toEqual([])
-    // The order-dependent extras, named rather than counted, so a change in placement order fails
-    // here saying which unit moved. `pt-core`'s two lists AGREE now - four and the same four -
-    // which is asserted as an agreement rather than dropped, because a block that stopped
-    // exhibiting the sequential dependence is a reading and not an absence.
-    expect(row("pt-core").fallbacks.map((f) => f.key)).toEqual(["C6#1", "C14#1", "R1#1", "R8#1"])
+    // THE TWO LISTS AGREE ON EVERY BLOCK THAT HAS ONE, asserted per block and by name so a change
+    // in placement order fails here saying which unit moved - not as an aggregate, which would
+    // survive a re-shuffle. The agreement is the reading; the absent dependence is not.
     expect(row("pt-core").fallbacks.map((f) => f.key)).toEqual([...row("pt-core").fallbackUnits])
-    // The probe names nothing for oc-power or tp-stage and the real order falls back on one unit
-    // each: 0 against 1 twice, the sequential dependence at its clearest.
-    expect(row("oc-power").fallbacks.map((f) => f.key)).toEqual(["C3#1"])
-    expect(row("tp-stage").fallbacks.map((f) => f.key)).toEqual(["C4#1"])
+    expect(row("oc-audio").fallbacks.map((f) => f.key)).toEqual([...row("oc-audio").fallbackUnits])
+    expect(row("tp-stage").fallbacks.map((f) => f.key)).toEqual([...row("tp-stage").fallbackUnits])
+    expect(rows.filter((r) => r.fallbacks.length !== r.fallbackUnits.length).map((r) => r.block)).toEqual([])
+    // The whole population, so the 20 in this test's own header is checkable here: 15 + 3 + 2.
+    expect(rows.reduce((n, r) => n + r.fallbacks.length, 0)).toBe(20)
+    expect(15 + 3 + 2).toBe(20)
     /**
      * **EVERY UNIT THE FIRST-POSITION PROBE NAMES ALSO FALLS BACK IN THE REAL ORDER, which is two
      * measurements agreeing and is not a tautology.** The probe asks each unit with no other
@@ -230,13 +266,16 @@ describe("what every declared block's refusal is hiding", () => {
   it("changes the mismatch KIND of no block, because the widening it was about has happened", () => {
     // **THE QUESTION THIS ANSWERED IS SETTLED, AND THE ANSWER IS THAT THE FLIP ALREADY HAPPENED.**
     // `ob-buffer` refused as `invalid-geometry` because its only published problem - the
-    // field-placement refusal - named no obstacle pair. With that refusal gone its power-value
-    // overlap IS published, that problem DOES name a pair, and its kind is `clearance`. So the
-    // contingency this test warned about is not hypothetical any more: it fired, on the one block
-    // the previous round predicted it would fire on.
-    const buffer = row("ob-buffer")
-    expect(buffer.mismatchKind).toBe("clearance")
-    expect(clearancePairs(buffer.publishedProblems)).toHaveLength(1)
+    // field-placement refusal - named no obstacle pair; with that refusal gone its power-value
+    // overlap was published, that problem DID name a pair, and its kind became `clearance`.
+    //
+    // **`ob-buffer` NOW DRAWS AND HAS NO KIND AT ALL, so the settled answer is carried by THREE
+    // other blocks instead of one** (**G296**). `oc-power`, `oc-audio` and `tp-leg-upper` are each
+    // refused at obligation 4 on a power symbol's value, every one of those problems names an
+    // obstacle pair, and all three are classified `clearance`. The subject changed; the answer
+    // did not.
+    expect(row("ob-buffer").mismatchKind).toBe("")
+    expect(row("ob-buffer").draws).toBe(true)
     // And there is nothing left to widen: the field-free pass finds nothing checkLayout did not
     // publish, on every block, so the pair set a widening could add to is EMPTY. The comparison is
     // over the problems the widening would ADD - `fieldFree` repeats what is already published, so
@@ -246,23 +285,26 @@ describe("what every declared block's refusal is hiding", () => {
       expect(added, r.block).toEqual([])
       expect(clearancePairs(added).length, r.block).toBe(0)
     }
-    // **THE LOOP ABOVE NOW HAS EXACTLY TWO SUBJECTS, AND THAT IS ASSERTED RATHER THAN LEFT TO BE
-    // DISCOVERED.** Ten of the twelve blocks draw since G291's node sizing, so they have no
-    // mismatch kind at all; `tp-stage`, which used to be this test's `clearance` control with more
-    // than two pairs, is one of them. A loop over an unstated subject set is how a check comes to
-    // run over nothing and still pass.
+    // **THE LOOP ABOVE HAS EXACTLY FOUR SUBJECTS, AND THAT IS ASSERTED RATHER THAN LEFT TO BE
+    // DISCOVERED.** Eight of the twelve blocks draw, so they have no mismatch kind at all. A loop
+    // over an unstated subject set is how a check comes to run over nothing and still pass.
     const kinded = rows.filter((r) => r.mismatchKind !== "")
     expect(kinded.map((r) => `${r.block} ${r.mismatchKind}`)).toEqual([
-      "ob-buffer clearance",
+      "oc-power clearance",
+      "oc-audio clearance",
       "oc-sidechain invalid-geometry",
+      "tp-leg-upper clearance",
     ])
-    // CONTROL: the two kinds are different, and they are different for the stated reason - one
-    // block's published problem names an obstacle pair and the other reaches no layout at all, so
+    // CONTROL: the two kinds are different, and they are different for the stated reason - three
+    // blocks' published problems name an obstacle pair and the fourth reaches no layout at all, so
     // it publishes nothing. A set where every answer was the same would pass the loop and say
-    // nothing.
-    expect(clearancePairs(row("ob-buffer").publishedProblems).length).toBe(1)
+    // nothing. The pair COUNTS are asserted per block, so a block whose problems stopped naming a
+    // pair would fail here rather than silently keep its kind.
+    expect(kinded.map((r) => `${r.block} ${clearancePairs(r.publishedProblems).length}`)).toEqual([
+      "oc-power 7", "oc-audio 2", "oc-sidechain 0", "tp-leg-upper 2",
+    ])
     expect(row("oc-sidechain").publishedProblems).toEqual([])
-    expect(rows.filter((r) => r.draws).length).toBe(10)
+    expect(rows.filter((r) => r.draws).length).toBe(8)
   })
 
   /**
@@ -272,13 +314,13 @@ describe("what every declared block's refusal is hiding", () => {
    * pass on all eleven, so the field-free pass must find nothing it did not report.
    * `maskedCensus` refuses when it does.
    *
-   * **THE NON-VACUITY CONTROL CHANGED SUBJECT, WHICH IS WORTH SAYING PLAINLY.** It used to rest on
-   * `tp-leg-emitter-bypass`'s label-label overlap and `tp-stage`'s six label problems - and both of
-   * those problems are GONE, because the room the labels needed is now reserved before the layout
-   * is packed. The one problem left anywhere in the corpus is `ob-buffer`'s power-value overlap,
-   * and the field-free pass finds that one, so the control stands on a single subject. **One
-   * subject is weaker than two and the weakening is recorded rather than hidden**; `docs/known-gaps.md`
-   * **G291** carries it.
+   * **THE NON-VACUITY CONTROL HAS CHANGED SUBJECT TWICE AND IS STRONGER NOW THAN AT EITHER
+   * EARLIER STATE, which is worth saying plainly because every other figure in this file went the
+   * other way.** It rested on `tp-leg-emitter-bypass`'s label-label overlap and `tp-stage`'s six
+   * label problems; node sizing removed both and left it standing on `ob-buffer` alone, which
+   * **G291** recorded as a weakening. `ob-buffer` draws now, and the control rests on **three**
+   * blocks - `oc-power` with seven problems, `oc-audio` with two and `tp-leg-upper` with two.
+   * Three subjects is more than one and more than two (**G296**).
    */
   it("finds the same problem with no fields in the scene as checkLayout finds with them", () => {
     const withLayout = rows.filter((r) => r.unmeasured.every((u) => !u.startsWith("every clearance check")))
@@ -287,20 +329,37 @@ describe("what every declared block's refusal is hiding", () => {
       "tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector", "tp-leg-emitter-bypass", "tp-stage",
     ])
     for (const r of withLayout) expect(r.fieldFree.filter((p) => !r.publishedProblems.includes(p)), r.block).toEqual([])
-    // NOT VACUOUS: one of the eleven has a problem to find, and the field-free pass finds it.
-    // **THE PAIR AND THE POINTS MOVED ON 2026-10-25 AND THE CLASS DID NOT** (`docs/known-gaps.md`
-    // **G292**): it was `GND 0` over `VEE 1` at (99.06, 33.02)/(99.06, 44.45), and laying this
-    // block's two capacitors along the signal re-placed its power symbols, so it is now `GND 0`
-    // over `VCC 2`. It is still one `power-value-overlap` and `ob-buffer` is still the one block in the
-    // corpus that has one, which is what this control needs; the coordinates are a record.
-    expect(row("ob-buffer").fieldFree).toEqual([
-      "value of power symbol GND 0 at (105.41, 1.27) overlaps value of power symbol VCC 2 at (105.41, 11.43)",
+    // NOT VACUOUS: three of the eleven have problems to find, and the field-free pass finds all of
+    // them. **EVERY ONE IS A POWER SYMBOL'S VALUE AND THERE ARE THREE TEXTS BEHIND ELEVEN
+    // PROBLEMS** - `oc-power`'s one text accounts for seven of them. The coordinates are a record;
+    // what the control needs is that the field-free pass reproduces the published list exactly.
+    expect(row("oc-power").fieldFree).toEqual([
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps wire 0 of oc-power (+9V_PROTECTED)",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps body of C1#1",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps body of C3#1",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 0 of C1#1",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 1 of C1#1",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 0 of C3#1",
+      "value of power symbol +9V_PROTECTED 1 at (33.02, 52.07) overlaps graphic 1 of C3#1",
     ])
+    expect(row("oc-audio").fieldFree).toEqual([
+      "value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 2 of oc-audio (+9V_PROTECTED)",
+      "value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 12 of oc-audio (GND)",
+    ])
+    expect(row("tp-leg-upper").fieldFree).toEqual([
+      "value of power symbol VCC 0 at (17.78, 6.35) overlaps wire 9 of tp-leg-upper (UPPER_JUMPED)",
+      "value of power symbol VCC 0 at (17.78, 6.35) overlaps pin R1.1",
+    ])
+    // THREE TEXTS, ELEVEN PROBLEMS, derived rather than restated: the distinct text on the left of
+    // every problem in the corpus, counted.
+    const texts = new Set(withLayout.flatMap((r) => r.fieldFree.map((p) => p.slice(0, p.indexOf(" overlaps ")))))
+    expect(texts.size).toBe(3)
+    expect(withLayout.reduce((n, r) => n + r.fieldFree.length, 0)).toBe(11)
     // And the ones that no longer have a problem to find are named, so "empty" reads as a result.
+    expect(row("ob-buffer").fieldFree).toEqual([])
     expect(row("tp-leg-emitter-bypass").fieldFree).toEqual([])
     expect(row("tp-stage").fieldFree).toEqual([])
-    expect(row("tp-leg-upper").fieldFree).toEqual([])
-    expect(withLayout.filter((r) => r.fieldFree.length > 0).map((r) => r.block)).toEqual(["ob-buffer"])
+    expect(withLayout.filter((r) => r.fieldFree.length > 0).map((r) => r.block)).toEqual(["oc-power", "oc-audio", "tp-leg-upper"])
   })
 
   /**
