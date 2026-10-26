@@ -82,35 +82,35 @@ function declaredPositionsOf(subject: ComposedSubject, at: readonly Point[], blo
 }
 
 /**
- * **ALL SEVEN OF `transistor-preamp`'s BLOCKS DRAW SINCE 2026-10-25, so this subject is not "the
- * five legs" any more and the probe is not a five-block subset of a sheet.** Boundary-node sizing
- * (`docs/known-gaps.md` **G291**) drew `tp-leg-emitter-bypass` and `tp-stage`; `drawnBlocks`
- * refuses nothing.
+ * **SIX OF `transistor-preamp`'s SEVEN BLOCKS DRAW SINCE 2026-10-26**, `tp-leg-upper` having
+ * stopped (`docs/known-gaps.md` **G296**). It was five until boundary-node sizing (**G291**) drew
+ * `tp-leg-emitter-bypass` and `tp-stage`, and seven from then until the star landed.
  *
- * **THE THREE ORIGINAL DISAGREEMENTS ARE UNCHANGED, WHICH IS THE CONTROL.** `tp-leg-feedback`'s
- * `COLLECTOR` and the two `-lower` legs' `BASE` still declare `left, right` and still come out at
- * the top - same ports, same edge, same sentence. The nine that are new all belong to `tp-stage`,
- * the block that did not previously reach this comparison at all, so **nothing that was already
- * being measured moved.**
+ * **THE DISAGREEMENT IS 14 OF 21 AND BOTH TERMS MOVED FOR DIFFERENT REASONS, which is why they are
+ * asserted separately.** The denominator fell from 23 to 21 because `tp-leg-upper`'s two
+ * declarations left the subject; the numerator rose from 12 to 14 because TWO NEW ports disagree -
+ * `tp-leg-lower-a`'s and `tp-leg-lower-b`'s `GND`, which declare side `bottom` and now come out
+ * on the RIGHT edge. So the satisfied count went 11 to **7**, and only one of those three terms is
+ * about a block leaving.
  *
- * **AND TWO OF THE NINE ARE A CLASS THAT HAD NEVER FIRED ON REAL DATA.** `tp-stage` declares
- * `IN_EXT` and `OUT` and its layout draws no anchor for either, which is the *"draws no anchor for
- * it"* arm. Until now that arm was driven only by adding a synthetic port to mini's `XTAL` (see
- * the test that does exactly that, below); it is now reachable from a declaration this repository
- * actually ships.
+ * **A SECOND REFUSAL SHAPE IS ON REAL DATA FOR THE FIRST TIME, which is the one thing here that
+ * got better.** Until now every leg refusal said *"declares sides left, right ... anchor on the
+ * top edge"*; the two `GND` ports say *"declares sides bottom ... anchor on the right edge"*. The
+ * comparison was previously driven by one direction of disagreement on the legs and now has two,
+ * so a rule that only ever mishandled horizontal declarations would no longer pass it.
  *
- * **IT WAS ELEVEN UNTIL THE ORIENTATION RULE AND IS TWELVE NOW, AND THE ONE THAT MOVED IS
- * `tp-stage`'s `BYPASS_CAP`** (`docs/known-gaps.md` **G292**). It was the satisfied `tp-stage`
- * declaration this comment used to name as proof the refusal was not a blanket; laying the block's
- * capacitors along the signal brought that anchor out on the TOP edge where it used to
- * reach a horizontal one. **So all NINE of `tp-stage`'s declared ports now disagree**, and the
- * eleven that are satisfied are all on other blocks - seven leg ports and all four of
- * `tp-leg-emitter-bypass`'s. The three leg refusals and the two no-anchor refusals are the same
- * five they were, which is what says the move is `tp-stage`'s and not the comparison's.
+ * **AND TWO OF `tp-stage`'s NINE ARE A CLASS THAT HAD NEVER FIRED ON REAL DATA.** `tp-stage`
+ * declares `IN_EXT` and `OUT` and its layout draws no anchor for either, which is the *"draws no
+ * anchor for it"* arm. Until G291 that arm was driven only by adding a synthetic port to mini's
+ * `XTAL` (see the test that does exactly that, below).
+ *
+ * **ALL NINE OF `tp-stage`'s DECLARED PORTS STILL DISAGREE**, and the seven that are satisfied are
+ * `tp-leg-feedback`'s `BASE`, both of `tp-leg-collector`'s and all four of
+ * `tp-leg-emitter-bypass`'s - which is what says this is not a blanket refusal.
  */
-test("all seven ELK-drawn blocks REFUSE on twelve anchors, and that is G193's disagreement in ink", async () => {
-  expect(legs.drew.length).toBe(7)
-  expect(legs.refused.map((r) => r.id).sort()).toEqual([])
+test("the six ELK-drawn blocks REFUSE on fourteen anchors of twenty-one, and that is G193's disagreement in ink", async () => {
+  expect(legs.drew.length).toBe(6)
+  expect(legs.refused.map((r) => r.id).sort()).toEqual(["tp-leg-upper"])
   const composed = await composeBlocks(legs.circuit, legs.contents, legs.paper, {
     interfaces: legs.interfaces, pack: packSheet,
   })
@@ -118,14 +118,16 @@ test("all seven ELK-drawn blocks REFUSE on twelve anchors, and that is G193's di
   // `Anchor.side` - which docs/known-gaps.md G193 records is taken from `negotiablePort`'s own
   // rule and NOT from ELK's route - against the declaration that same rule produced, so the rule
   // was authoring both sides of the comparison. Comparing the anchor's POSITION against the
-  // block's own extent asks ELK where it actually put the net, and twelve of the 23 disagree.
+  // block's own extent asks ELK where it actually put the net, and fourteen of the 21 disagree.
   expect(composed.ok).toBe(false)
   if (composed.ok) return
   const ports = composed.unsatisfiable.map((u) => u.slice(0, u.indexOf(" ("))).sort()
   expect(ports).toEqual([
     "block tp-leg-feedback: interface port COLLECTOR",
     "block tp-leg-lower-a: interface port BASE",
+    "block tp-leg-lower-a: interface port GND",
     "block tp-leg-lower-b: interface port BASE",
+    "block tp-leg-lower-b: interface port GND",
     "block tp-stage: interface port BASE",
     "block tp-stage: interface port BYPASS_CAP",
     "block tp-stage: interface port BYPASS_JUMPED",
@@ -136,27 +138,30 @@ test("all seven ELK-drawn blocks REFUSE on twelve anchors, and that is G193's di
     "block tp-stage: interface port OUT",
     "block tp-stage: interface port VCC",
   ])
-  // TWELVE OF TWENTY-THREE, and the denominator is the declared ports: 2 each on the five legs,
-  // 4 on tp-leg-emitter-bypass and 9 on tp-stage. So eleven declarations ARE satisfied and this is
-  // not a blanket refusal - every one of tp-leg-emitter-bypass's four is among them, and so are
-  // seven of the ten leg ports. It is `tp-stage` that now disagrees on ALL NINE of its own, which
-  // is asserted below rather than left in this comment.
+  // FOURTEEN OF TWENTY-ONE, and the denominator is the declared ports of the blocks that DRAW:
+  // 2 each on the four legs that still draw, 4 on tp-leg-emitter-bypass and 9 on tp-stage. So
+  // seven declarations ARE satisfied and this is not a blanket refusal - every one of
+  // tp-leg-emitter-bypass's four is among them, and so are three of the eight leg ports. It is
+  // `tp-stage` that disagrees on ALL NINE of its own, asserted below rather than left in prose.
   const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
-  expect(declared).toBe(23)
-  expect(composed.unsatisfiable.length).toBe(12)
-  expect(declared - composed.unsatisfiable.length, "the satisfied declarations").toBe(11)
+  expect(declared).toBe(21)
+  expect(composed.unsatisfiable.length).toBe(14)
+  expect(declared - composed.unsatisfiable.length, "the satisfied declarations").toBe(7)
   expect(ports.filter((p) => p.startsWith("block tp-stage:")).length, "every tp-stage declaration")
     .toBe(legs.interfaces.get("tp-stage")?.length ?? 0)
   expect(ports.some((p) => p.startsWith("block tp-leg-emitter-bypass:")), "none of this block's four").toBe(false)
-  // THE WRONG-EDGE CLASS: a crossing net the declaration puts on a horizontal edge (decision D4
-  // pins flow left-to-right) and ELK brings out at the top. These blocks are `auto` and declare no
-  // template, so negotiablePort's rule is in scope and the DECLARATION is the authority - the
-  // opposite of mini's FLASH, where a reviewed template arrangement wins. Spec §1.5's authority
-  // order gives both answers.
+  // THE WRONG-EDGE CLASS, AND IT NOW HAS TWO DIRECTIONS ON THE LEGS rather than one. These blocks
+  // are `auto` and declare no template, so negotiablePort's rule is in scope and the DECLARATION is
+  // the authority - the opposite of mini's FLASH, where a reviewed template arrangement wins. Spec
+  // §1.5's authority order gives both answers.
   const legRefusals = composed.unsatisfiable.filter((u) => u.startsWith("block tp-leg-"))
-  expect(legRefusals.length).toBe(3)
-  expect(legRefusals.every((u) => u.includes("declares sides left, right"))).toBe(true)
-  expect(legRefusals.every((u) => u.includes("anchor on the top edge"))).toBe(true)
+  expect(legRefusals.length).toBe(5)
+  // THREE say a horizontal declaration came out on top; TWO say a `bottom` declaration came out on
+  // the right. Both are asserted, because the second shape is new on real data and a check driven
+  // by only the first would not notice a rule that mishandled only vertical declarations.
+  expect(legRefusals.filter((u) => u.includes("declares sides left, right") && u.includes("anchor on the top edge")).length).toBe(3)
+  expect(legRefusals.filter((u) => u.includes("declares sides bottom") && u.includes("anchor on the right edge")).length).toBe(2)
+  expect(3 + 2, "every leg refusal is one of the two shapes").toBe(legRefusals.length)
   // THE NO-ANCHOR CLASS, on real data for the first time.
   const noAnchor = composed.unsatisfiable.filter((u) => u.includes("draws no anchor for it"))
   expect(noAnchor.map((u) => u.slice(0, u.indexOf(" (")))).toEqual([
@@ -235,7 +240,10 @@ test("composition never alters a block's interior, under either packer", async (
     expect(packing.ok).toBe(true)
     if (!packing.ok) continue
     const { before, after, offsets } = layoutsAround(legs, packing.at)
-    expect(before.length).toBe(7)
+    // SIX, not seven: `tp-leg-upper` no longer draws (`docs/known-gaps.md` **G296**). The count is
+    // asserted so a probe that silently shrank further would fail here rather than make this loop
+    // run over fewer blocks and still pass.
+    expect(before.length).toBe(6)
     expect(interiorDrift(before, after, offsets)).toEqual([])
   }
 })
@@ -289,7 +297,7 @@ test("interiorDrift sees a re-routed wire, a changed rotation, a moved anchor an
 
 test("an interface that cannot be connected within shared clearance REFUSES, and does not redraw the block", async () => {
   // A5 landscape, which no SheetSpec may declare: PAPER holds A4 through A1, so this is the paper
-  // the seven blocks cannot be composed on, and the refusal must name the interface rather than
+  // the six blocks cannot be composed on, and the refusal must name the interface rather than
   // only the paper.
   const A5 = { w: 210_000, h: 148_000 }
   const composed = await composeBlocks(legs.circuit, legs.contents, A5, {
@@ -298,11 +306,12 @@ test("an interface that cannot be connected within shared clearance REFUSES, and
   expect(composed.ok).toBe(false)
   if (composed.ok) return
   expect(composed.unsatisfiable.join(" ")).toContain("interface")
-  // EVERY declared port of every block, because no frame has a placed boundary at all when the
-  // packing fails: 2 each on the five legs, 4 on tp-leg-emitter-bypass and 9 on tp-stage = 23.
-  // It was 10 while only the five legs drew, and the arithmetic is the same arithmetic.
+  // EVERY declared port of every block that DRAWS, because no frame has a placed boundary at all
+  // when the packing fails: 2 each on the four legs that still draw, 4 on tp-leg-emitter-bypass and
+  // 9 on tp-stage = 21. It was 10 while only the five legs drew and 23 while all seven did, and the
+  // arithmetic is the same arithmetic each time - this term follows the SUBJECT, not the geometry.
   const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
-  expect(declared).toBe(23)
+  expect(declared).toBe(21)
   expect(composed.unsatisfiable.length).toBe(declared)
   expect(composed.unsatisfiable.join(" ")).toContain("cannot be connected")
   // AND THE BLOCKS ARE UNTOUCHED: the refusal returns no placement at all, so there is nothing
@@ -325,29 +334,34 @@ test("a declared side the block's extent does not put its anchor on REFUSES, nam
       expect(composed.ok).toBe(false)
       if (composed.ok) return
       expect(composed.unsatisfiable.join(" ")).toContain("the block's own drawn extent puts its anchor on the")
-      // TWELVE OF THE TWENTY-THREE: the other eleven anchors ARE on their block's top edge, so
+      // THIRTEEN OF THE TWENTY-ONE: the other eight anchors ARE on their block's top edge, so
       // forcing every declaration to [top] does not refuse everything - which is what makes this a
-      // check and not a blanket. It was 5 of 10 while only the five legs drew, then 14 of 23, and
-      // the orientation rule (`docs/known-gaps.md` **G292**) took it to 12 - two more anchors
-      // come out on a top edge than did before. WHICH two is not derivable from this run, and is
-      // not claimed: it would need the previous run's list, which nothing kept.
+      // check and not a blanket. The series is 5 of 10 while only the five legs drew, 14 of 23,
+      // 12 of 23, and now **13 of 21**.
       //
-      // **TWELVE HERE AND TWELVE IN THE TEST ABOVE ARE NOT THE SAME TWELVE, and the coincidence is
-      // worth saying out loud rather than letting a reader join them.** That test leaves each
-      // declaration as the circuit wrote it and asks which disagree; this one overwrites every
-      // declaration with `[top]`. **The two sets share only four members** - `tp-stage`'s `GND`,
-      // `IN_EXT`, `OUT` and `VCC`. `tp-leg-upper`'s `BASE`, `tp-leg-collector`'s `COLLECTOR` and
-      // three of `tp-leg-emitter-bypass`'s four refuse here and are satisfied there; five of
-      // `tp-stage`'s nine are the other way round.
+      // **THIRTEEN HERE AND FOURTEEN IN THE TEST ABOVE ARE DIFFERENT SETS, and the two counts being
+      // close is a coincidence rather than a relationship.** That test leaves each declaration as
+      // the circuit wrote it and asks which disagree; this one overwrites every declaration with
+      // `[top]`. **The two sets now share EIGHT members** - both `-lower` legs' `GND` and six of
+      // `tp-stage`'s nine (`BASE`, `COLLECTOR`, `GND`, `IN_EXT`, `OUT`, `VCC`). They shared four
+      // before, and the overlap grew because the two `GND` ports joined BOTH sets at once: they
+      // come out on a right edge, which agrees with neither `bottom` nor `[top]`.
+      //
+      // The members that are in exactly one set are what keep the two tests distinct:
+      // `tp-leg-collector`'s `COLLECTOR`, `tp-leg-feedback`'s `BASE` and three of
+      // `tp-leg-emitter-bypass`'s four refuse HERE and are satisfied THERE; `tp-leg-feedback`'s
+      // `COLLECTOR`, both `-lower` legs' `BASE` and three of `tp-stage`'s nine are the other way
+      // round.
       const declared = legs.contents.reduce((n, f) => n + (legs.interfaces.get(f.blockId ?? "")?.length ?? 0), 0)
-      expect(declared).toBe(23)
-      expect(composed.unsatisfiable.length).toBe(12)
+      expect(declared).toBe(21)
+      expect(composed.unsatisfiable.length).toBe(13)
       expect(composed.unsatisfiable.length).toBeLessThan(declared)
-      // The two sets are different sets, asserted so the equal counts cannot be read as one
-      // quantity: this one refuses three `tp-leg-emitter-bypass` ports and the other refuses none.
+      // The two sets are different sets, asserted so the near-equal counts cannot be read as one
+      // quantity: this one refuses three `tp-leg-emitter-bypass` ports and the other refuses none,
+      // and this one refuses six of `tp-stage`'s nine where the other refuses all nine.
       expect(composed.unsatisfiable.filter((u) => u.startsWith("block tp-leg-emitter-bypass:")).length).toBe(3)
-      expect(composed.unsatisfiable.filter((u) => u.startsWith("block tp-leg-upper:")).length).toBe(1)
-      expect(composed.unsatisfiable.filter((u) => u.startsWith("block tp-stage:")).length).toBe(4)
+      expect(composed.unsatisfiable.filter((u) => u.startsWith("block tp-leg-collector:")).length).toBe(1)
+      expect(composed.unsatisfiable.filter((u) => u.startsWith("block tp-stage:")).length).toBe(6)
     })
 })
 
@@ -525,53 +539,65 @@ test("G209's figures are re-runnable: composition leaves G200's two measures unc
   const realised = legs.contents.flatMap((f) => (f.block === null ? [] : [f.block.layout]))
   const before = shapeMeasures(realised)
   /**
-   * **docs/known-gaps.md G200's table, over the SEVEN blocks that draw - it was five until
-   * 2026-10-25 (G291).** Every one of the six figures is a per-block SUM, so each is re-derived
-   * from the blocks rather than read off the output:
+   * **docs/known-gaps.md G200's table, over the SIX blocks that draw - five until 2026-10-25
+   * (G291), seven until 2026-10-26, six since (G296).** Every one of the six figures is a per-block
+   * SUM, so each is re-derived from the blocks rather than read off the output:
    *
    * | block | placements | distinctX | wiredNets | reversing | segments | wire |
    * | --- | --- | --- | --- | --- | --- | --- |
-   * | `tp-leg-upper` | 3 | 3 | 4 | 2 | 12 | 64 770 |
-   * | `tp-leg-feedback` | 3 | 3 | 4 | 2 | 12 | 90 170 |
-   * | `tp-leg-lower-a` | 3 | 3 | 4 | 2 | 12 | 77 470 |
-   * | `tp-leg-lower-b` | 3 | 3 | 4 | 2 | 12 | 77 470 |
-   * | `tp-leg-collector` | 2 | 2 | 3 | 1 | 11 | 40 640 |
-   * | `tp-leg-emitter-bypass` | 2 | 2 | 4 | 2 | 12 | 63 500 |
-   * | `tp-stage` | 16 | 10 | 9 | 4 | 60 | 641 350 |
-   * | **sum** | **32** | **26** | **32** | **15** | **131** | **1 055 370** |
+   * | `tp-leg-feedback` | 3 | 3 | 4 | 2 | 11 | 81 280 |
+   * | `tp-leg-lower-a` | 3 | 3 | 4 | 2 | 11 | 68 580 |
+   * | `tp-leg-lower-b` | 3 | 3 | 4 | 2 | 11 | 68 580 |
+   * | `tp-leg-collector` | 2 | 2 | 3 | 1 | 10 | 34 290 |
+   * | `tp-leg-emitter-bypass` | 2 | 2 | 4 | 2 | 11 | 57 150 |
+   * | `tp-stage` | 16 | 6 | 9 | 8 | 67 | 650 240 |
+   * | **sum** | **29** | **19** | **28** | **17** | **121** | **960 120** |
    *
-   * **THE ORIENTATION RULE MOVED TWO OF THE SIX COLUMNS AND LEFT FOUR ALONE**
-   * (`docs/known-gaps.md` **G292**). `segments` 142 to 131 and `wire` 1 033 780 to 1 055 370;
-   * `placements`, `distinctX`, `wiredNets` and `reversing` are byte-identical. **Fewer segments
-   * carrying MORE wire is the signature to read here**: laying each signal-path passive along the
-   * signal gives the router longer, straighter runs rather than more of them.
+   * **`tp-leg-upper`'s ROW IS GONE RATHER THAN ZERO, so this total is not comparable with the
+   * 1 055 370 it replaces** - subtracting that block's old 64 770 from the old total gives 990 600,
+   * which is not 960 120, so the six surviving blocks did move as well. What IS comparable is term
+   * by term, and every block moved: `-feedback` 90 170 to 81 280, both `-lower` legs 77 470 to
+   * 68 580, `-collector` 40 640 to 34 290, `-emitter-bypass` 63 500 to 57 150 - **five blocks
+   * shorter** - and `tp-stage` 641 350 to **650 240**, longer.
+   *
+   * **`tp-stage`'s `distinctX` FELL FROM 10 TO 6 WHILE ITS `reversing` ROSE FROM 4 TO 8**, and that
+   * pair is the star doing exactly what **G293** asked for and charging for it: siblings of a net
+   * share a hub, so they share a layer and a column - four fewer distinct columns for sixteen
+   * placements - and the wires that reach them leave one point and double back, which is what
+   * `reversing` counts. **The owner's column criterion and his hairpin criterion pull opposite
+   * ways under this mechanism**, which is the finding `e652d98` recorded and this row measures.
    *
    * **EVERY FIGURE IS CROSS-CHECKED BY A SECOND FUNCTION rather than read off this one.** Each
    * block's `wire / 1270` is exactly the `len` that
-   * `tests/schgen/readability/measures.test.ts` takes from the canonical topology - 51, 71, 61,
-   * 61, 32, 50, 505 - and each block's `segments` is exactly that file's canonical wire count -
-   * 12, 12, 12, 12, 11, 12, 60. The sum 1 055 370 is 831 grid steps, which is those seven `len`
-   * figures added up.
+   * `tests/schgen/readability/measures.test.ts` takes from the canonical topology - 64, 54, 54,
+   * 27, 45, 512 - and each block's `segments` is exactly that file's canonical wire count -
+   * 11, 11, 11, 10, 11, 67. The sum 960 120 is 756 grid steps, which is those six `len` figures
+   * added up AND is the composed `wireLength` `tests/schgen/remeasure.test.ts`'s integrated
+   * experiment reports through a third driver.
    *
-   * **AND THE FIVE LEGS' OWN SUBTOTALS ARE THE CONTROL: FOUR OF THE SIX DID NOT MOVE.** Over the
-   * five that drew before - placements 14, distinctX 14, wiredNets 19, reversing 9 - every figure
-   * is what it was through both changes. `wire` ran 284 480 to 378 460 to **350 520**, and
-   * `segments` 67 to **59**, the first time that column has moved at all: boundary-node sizing
-   * gave the labels room without changing what the router emitted, and edge direction changed what
-   * it emitted.
+   * **AND G200's FIVE-LEG SUBTOTAL IS NOW A FOUR-LEG ONE, named as such.** `tp-leg-upper` was one
+   * of the five, so `placements` 14 to **11** and `wire` 350 520 to **252 730** are a smaller
+   * subject rather than a smaller geometry. 252 730 / 1270 = 199, which is the figure
+   * `tests/schgen/remeasure.test.ts` sums over the same four blocks from the canonical topology.
    */
-  expect(before).toEqual({ placements: 32, distinctX: 26, wiredNets: 32, reversing: 15, segments: 131, wire: 1_055_370 })
+  expect(before).toEqual({ placements: 29, distinctX: 19, wiredNets: 28, reversing: 17, segments: 121, wire: 960_120 })
   // The sum is asserted against its own terms, so a per-block figure cannot move behind the total.
-  expect(12 + 12 + 12 + 12 + 11 + 12 + 60).toBe(before.segments)
-  expect(64_770 + 90_170 + 77_470 + 77_470 + 40_640 + 63_500 + 641_350).toBe(before.wire)
+  expect(11 + 11 + 11 + 10 + 11 + 67).toBe(before.segments)
+  expect(81_280 + 68_580 + 68_580 + 34_290 + 57_150 + 650_240).toBe(before.wire)
   // And the total in grid steps is the per-block `len` figures measures.test.ts takes elsewhere.
-  expect(before.wire / GRID).toBe(51 + 71 + 61 + 61 + 32 + 50 + 505)
-  const fiveLegs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
-  const legsOnly = shapeMeasures(legs.contents.flatMap((f) => (f.block === null || !fiveLegs.includes(f.blockId ?? "") ? [] : [f.block.layout])))
-  expect(legsOnly).toEqual({ placements: 14, distinctX: 14, wiredNets: 19, reversing: 9, segments: 59, wire: 350_520 })
-  // 350 520 um is 276.0 grid steps, which is the figure measures.test.ts sums from the canonical
-  // topology over the same five blocks by a different function. Neither can drift alone.
-  expect(legsOnly.wire / GRID).toBe(276)
+  expect(before.wire / GRID).toBe(64 + 54 + 54 + 27 + 45 + 512)
+  // The two columns that moved in opposite directions on tp-stage, asserted per block so the
+  // trade the comment above describes cannot be hidden inside the totals.
+  const stage = shapeMeasures(legs.contents.flatMap((f) => (f.block === null || f.blockId !== "tp-stage" ? [] : [f.block.layout])))
+  expect([stage.placements, stage.distinctX, stage.reversing]).toEqual([16, 6, 8])
+  const g200Legs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+  const legsOnly = shapeMeasures(legs.contents.flatMap((f) => (f.block === null || !g200Legs.includes(f.blockId ?? "") ? [] : [f.block.layout])))
+  expect(legsOnly).toEqual({ placements: 11, distinctX: 11, wiredNets: 15, reversing: 7, segments: 43, wire: 252_730 })
+  // 252 730 um is 199.0 grid steps, which is the figure measures.test.ts sums from the canonical
+  // topology over the same FOUR of G200's five blocks by a different function. Neither can drift
+  // alone, and the subject is named rather than counted so a fifth leg rejoining fails loudly.
+  expect(legsOnly.wire / GRID).toBe(199)
+  expect(legs.contents.filter((f) => g200Legs.includes(f.blockId ?? "") && f.block !== null).length, "four of G200's five draw").toBe(4)
   for (const packing of [shelf, elk]) {
     const { after } = layoutsAround(legs, packing.at)
     expect(shapeMeasures(after.map((b) => b.layout))).toEqual(before)
