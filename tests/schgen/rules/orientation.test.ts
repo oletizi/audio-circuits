@@ -16,7 +16,7 @@ import { symbolLibraries } from "../../../lib/schgen/render/stock-symbols.ts"
 import type { OrientationContext } from "../../../lib/schgen/rules/orientation.ts"
 import type { NetName, RailSpec } from "../../../lib/schgen/ir/types.ts"
 
-const resolver = createResolver(symbolLibraries(["Device", "power", "Transistor_BJT"]))
+const resolver = createResolver(symbolLibraries(["Device", "power", "Transistor_BJT", "Switch", "Connector_Generic"]))
 
 const RAILS: readonly RailSpec[] = [
   { net: "GND", symbol: "power:GND", kind: "ground", pwrFlag: null },
@@ -98,14 +98,16 @@ test("a kind outside the reviewed set is left open even when it sits on a rail",
  * and reverses the throws' order. `docs/known-gaps.md` **G295**.
  */
 test("a switch is turned so its throws face the bank that feeds them", () => {
-  expect(preferredOrientation("switch", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(180)
+  // A REAL selector. This passed with `Device:R` until 2026-10-26, which meant it exercised the
+  // KIND and never a switch - and so could not have caught the rule firing on two-pin jumpers.
+  expect(preferredOrientation("switch", context("Switch:SW_Rotary_1x6_MP", { "7": "IN", "1": "OUT" }))).toBe(180)
 })
 
 test("the switch rule OUTRANKS the rail entry, which is the ordering that makes it work at all", () => {
   // A selector with a grounded end would otherwise be pulled upright by the rail rule and its
   // throws would face away from the bank again. The control: change the order in orientation.ts
   // and this goes to 0 or 180-by-accident rather than 180-by-rule.
-  expect(preferredOrientation("switch", context("Device:C", { "1": "GND", "2": "VCC" }))).toBe(180)
+  expect(preferredOrientation("switch", context("Switch:SW_Rotary_1x6_MP", { "7": "GND", "1": "VCC" }))).toBe(180)
 })
 
 test("CONTROL: the rule is about switches only, so a passive on no rail still takes the signal axis", () => {
@@ -115,7 +117,7 @@ test("CONTROL: the rule is about switches only, so a passive on no rail still ta
 test("a connector is turned so its pins face the circuit, not away from it", () => {
   // Conn_01x05 draws all five pins LEFT at rotation 0; the junction bus feeds things to its
   // right, so every wire wrapped around the header. docs/known-gaps.md G295.
-  expect(preferredOrientation("connector", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(180)
+  expect(preferredOrientation("connector", context("Connector_Generic:Conn_01x05", { "1": "IN", "2": "OUT" }))).toBe(180)
 })
 
 test("CONTROL: the turn applies to switch and connector ONLY, not to every kind", () => {
@@ -123,3 +125,14 @@ test("CONTROL: the turn applies to switch and connector ONLY, not to every kind"
   expect(preferredOrientation("diode", context("Device:R", { "1": "IN", "2": "OUT" }))).toBeNull()
   expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
 })
+
+/**
+ * **FOUND BY REVIEW, 2026-10-26.** `jumper()` in `circuits/transistor-preamp/parts.ts` returns
+ * `kind: "switch"`, so the kind covers a rotary selector AND a two-pin header. The turn was
+ * written about selectors and was silently turning every jumper. A two-pin switch has no throws
+ * and no bank; it takes the signal axis like any other two-terminal part.
+ */
+test("a TWO-PIN switch is a jumper: it takes the signal axis, not the selector turn", () => {
+  expect(preferredOrientation("switch", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
+})
+

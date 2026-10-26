@@ -110,7 +110,9 @@ const SIDE_FOR_RAIL: Readonly<Record<RailSpec["kind"], PinSide>> = {
  * interior signal direction exists, this is the place that should consult it.
  */
 function signalAxis(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
-  if (!RAIL_END_KINDS.includes(kind)) return null
+  // `switch` is here for the two-pin jumper that `switchFacesItsBank` declines; a selector has
+  // more than two pins and never reaches this.
+  if (!RAIL_END_KINDS.includes(kind) && kind !== "switch") return null
   const pins = symbol.pins.filter((p) => p.unit === 1 || p.unit === 0)
   if (pins.length !== 2) return null
   const [a, b] = pins
@@ -160,8 +162,19 @@ function signalAxis(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
  * a part the signal arrives on; when reflection lands, this should be replaced by a rule that asks
  * that question rather than assuming the answer.
  */
-function switchFacesItsBank(kind: ComponentKind): Rotation | null {
-  return TURNED_TO_FACE_THE_CIRCUIT.includes(kind) ? 180 : null
+function switchFacesItsBank(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
+  if (!TURNED_TO_FACE_THE_CIRCUIT.includes(kind)) return null
+  // A TWO-PIN "switch" IS A JUMPER AND THIS RULE MEANS NOTHING FOR IT - found by review,
+  // 2026-10-26, and the rule's own warning had missed it. `jumper()` in
+  // `circuits/transistor-preamp/parts.ts` returns `kind: "switch"` with `Jumper:Jumper_2_Open`,
+  // so the kind covers both a rotary selector with a pole and six throws AND a two-pin header
+  // that shorts or does not. "Its throws face the bank that feeds them" is not merely wrong for
+  // the second, it is meaningless: it has no throws and no bank. Left in, every jumper in the
+  // repository was being turned 180 by a rule written about selectors.
+  //
+  // A two-pin switch falls through to `signalAxis` and is laid along the signal like any other
+  // two-terminal part, which is what an inline jumper wants.
+  return symbol.pins.filter((pin) => pin.unit === 1 || pin.unit === 0).length > 2 ? 180 : null
 }
 
 /**
@@ -192,9 +205,13 @@ function switchFacesItsBank(kind: ComponentKind): Rotation | null {
 const TURNED_TO_FACE_THE_CIRCUIT: readonly ComponentKind[] = ["switch", "connector"]
 
 export function preferredOrientation(kind: ComponentKind, context: OrientationContext): Rotation | null {
-  const turned = switchFacesItsBank(kind)
+  const turned = switchFacesItsBank(kind, context.symbol)
   if (turned !== null) return turned
-  if (!RAIL_END_KINDS.includes(kind)) return null
+  // `switch` continues past this guard ONLY as the two-pin jumper `switchFacesItsBank` declined;
+  // a selector was answered above and never reaches here. Without this the jumper falls out with
+  // `null` - step 3, which resolves to rotation 0, which for `Jumper:Jumper_2_Open` is across the
+  // reading direction - and the fix for the jumper would have been no fix at all.
+  if (!RAIL_END_KINDS.includes(kind) && kind !== "switch") return null
   const constraints: { readonly pin: string; readonly side: PinSide }[] = []
   for (const [pin, net] of context.pinNets) {
     if (net === null) continue
