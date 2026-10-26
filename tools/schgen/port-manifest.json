@@ -777,6 +777,7 @@
     "lib/schgen/render/obstacle-pairs-glyph.ts",
     "lib/schgen/render/obstacle-pairs-text-frame.ts",
     "lib/schgen/ir/mechanical-pins.ts",
+    "tests/schgen/direction-seed.test.ts",
     "tests/schgen/sheet-file-collision.test.ts",
     "tests/schgen/ir/auto-not-labelled.test.ts",
     "tests/schgen/ir/mechanical-pins.test.ts",
