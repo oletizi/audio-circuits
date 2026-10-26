@@ -29759,6 +29759,34 @@ because the same mistake has now been made twice in a row about this same range 
 paper refusal among the 22 red tests and find none, and an agent told the edge ordering was in range
 would attribute the block losses to it** - which is the inverse of what clause 1 measures.
 
+**CLAUSE 9: THE SHEET WAS LOOKED AT, which `CONSTITUTION.md` Principle 5's corollary requires and
+which no figure above satisfies.** `[READ]` the rendered `pultec-hi-cut.pdf`, page 2 of 2. What is
+VISIBLE, stated as observation and not as a verdict - **the verdict is the owner's**:
+
+- **the bank is two tight columns of capacitors immediately LEFT of `SW1`, and the switch's throws
+  1 to 6 face LEFT into it.** The throw wires are short stubs. The wrap-around `feae895` was built
+  to remove is not in the picture;
+- **the drawing fills the top-left of the A3 sheet and the bottom-right 45 per cent is EMPTY.** The
+  owner's *"the complaints about not having enough room is insane. There is plenty of room on the
+  page"* is now visibly true of the result as well as of the refusal;
+- the bank's left ends gather on one vertical bus and run to the switch as ten long parallel
+  horizontal rails, so the section reads as a ladder;
+- the four stand-in groups and the junction bus are scattered across the middle of the page with
+  large gaps between them.
+
+**NOTHING ABOVE IS A READABILITY CLAIM** - Principle 1 and **G71** reserve that - and nothing in
+this entry's figures was derived from looking. The looking is recorded because a judgement formed
+any other way is a reading of a proxy, and because the rendered PDFs are the deliverable: regenerate
+them with `bun tools/schgen/board-sheets.ts --out <dir> --pdf`.
+
+**CLAUSE 10: PROVENANCE, because this entry was not committed by the session that wrote it.** A
+second session was committing in the same working tree while this re-drive ran, and its `git add -A`
+swept this entry and the twenty-one amendments it points at into `8d8a238` and the
+`tests/schgen/pointers.test.ts` marker fix into `093d6cb` - two commits whose messages are about
+`CONSTITUTION.md` and say nothing about any of it. **The content is intact and pushed; only the
+attribution is wrong**, and it is recorded here rather than repaired, because rewriting a pushed
+branch another session is actively committing to would cost more than a wrong commit message.
+
 - **Found** 2026-10-26, taking the suite from 22 red to green after the four changes above.
 - **Evidence** `[RAN]` in this repository against installed KiCad: the four-tree block census with
   the both-rolled-back control reproducing the f04fde1 ten by name; the three-tree leg-shape probe;
