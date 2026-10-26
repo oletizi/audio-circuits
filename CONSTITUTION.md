@@ -128,6 +128,29 @@ without that output attached.**
 The sheets had been rendered and examined, then summarised into ratios that —
 per Principle 1 — pointed the wrong way.
 
+**Corollary, the owner's, 2026-10-26, and it is the stronger half of this
+principle:**
+
+> *"You can't reason about or judge a schematic without LOOKING at it. There are
+> other ways to assess certain qualities of a schematic mathematically, but
+> there's no real substitute for actually LOOKING at it."*
+
+**This binds the FORMING of a view, not only the reporting of one.** The
+principle as first written was an obligation about what ships with a claim —
+attach the drawing. That is the weaker reading and it is satisfiable by someone
+who never looked: render, attach, and write the summary from the numbers. The
+corollary closes that. A judgement about a schematic that was not arrived at by
+looking at the schematic is not a judgement; it is a reading of a proxy, and
+Principle 1 is the record of where proxies lead.
+
+**It also fixes the boundary Principle 1 leaves loose.** *"Other ways to assess
+certain qualities … mathematically"* is a real and permitted thing: net
+connectivity, whether content falls outside the page, whether a branch has a
+junction, whether two glyphs of different nets touch. Those are properties with
+closed forms and measuring them is correct. What has no closed form is whether
+the drawing reads — and that is the only thing the invented proxies were ever
+reaching for.
+
 ## Principle 6 — Read what the project already knows before adding to it
 
 **Before work begins in an area, the `docs/known-gaps.md` entries naming that
@@ -198,4 +221,4 @@ is gone — not left standing as a courtesy.
 paid for. An eighth added without a failure behind it would be the thing
 Principle 2 forbids.
 
-**Version**: 1.0.0 | **Ratified**: pending owner review | **Last amended**: 2026-10-26
+**Version**: 1.1.0 | **Ratified**: pending owner review | **Last amended**: 2026-10-26 (Principle 5 gained the owner's looking corollary)

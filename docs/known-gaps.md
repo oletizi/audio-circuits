@@ -1360,6 +1360,13 @@ Open: a fix would settle these
 
 ### G259 - MEASURED AGAINST THE MANDATE AS NOW WRITTEN: of the five output classes `CLAUDE.md` names, ONE works for every board, ONE partly, and THREE do not exist here - and the one this branch spent twenty-three tasks on produces nothing for any board in the repository
 
+> **AMENDED 2026-10-26 (G296): the board scoreboard is 6 of 11, superseding 7 of 11.**
+> `transistor-preamp-lab` refuses, on `tp-leg-upper`'s `VCC` value text over `wire 9` and
+> `pin R1.1`. The five that refuse are `pultec-mid` (the switch throw no slot can carry),
+> `transistor-preamp-buffered`, `-lab`, `-loop` and `-staged`, the last four all on a power symbol's
+> value text. **And the second column still binds**: of the six that generate, `pt2399-core` now
+> carries **15** fallback field placements where **G285** recorded 8 and then 4.
+
 `CLAUDE.md`'s **What this project is** now names five output classes, because
 until 2026-10-21 it named none and the narrow reading cost a day. This entry is
 the measurement against it, taken the day the mandate was written down so that
@@ -1898,6 +1905,11 @@ made.
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
 
+> **AMENDED 2026-10-26 (G296): the drawn-over population is 20 field pairs across the parity corpus
+> and 31 across the boards**, superseding fifteen. `pt-core` alone carries 15, all over a wire and
+> five over the same wire. **Nothing refuses a sheet for it, which is this entry's whole subject**,
+> and this is the largest bill that trade has presented.
+
 > **AMENDED 2026-10-22 BY TASK 1 OF THE TEXT-HANDLING RESEARCH PLAN: THE FIFTEEN ARE REPRODUCED BY
 > A SECOND CODE PATH, AND ALL OF THEM REST ON A RULER THAT IS WRONG BY UP TO 4.2 GRID STEPS PER
 > STRING. THE FIGURE BELOW IS LEFT AS WRITTEN.**
@@ -2409,6 +2421,15 @@ blocks that draw today.
 ---
 
 ### G262 - MEASURED: with field placement fixed, the largest remaining text defect class in this repository is the GLOBAL LABEL - and this entry's own explanation of why, "a global label's position is a netlist fact", HAS BEEN DRIVEN AGAINST KiCad AND IS FALSE
+
+> **AMENDED 2026-10-26 (G296): THE TABLE'S SUBJECTS HAVE CHANGED AND THE POWER-SYMBOL HALF THIS
+> ENTRY SAYS HAS NEVER BEEN RE-DRIVEN IS NOW THE WHOLE OF WHAT REFUSES.** `ob-buffer` DRAWS. The
+> blocked rows are `oc-power`, `oc-audio` and `tp-leg-upper`, and every one is **a power symbol's
+> VALUE text over the block's own ink** rather than over another value: seven problems from
+> `oc-power`'s one `+9V_PROTECTED 1 at (33.02, 52.07)` against a wire, two capacitor bodies and four
+> graphics; two from `oc-audio`'s against two wires; two from `tp-leg-upper`'s against a wire and a
+> pin. **Eleven problems, three texts.** So the leverage this entry measures now sits entirely in
+> `powerValueBox`'s one-sided freedom, and the sweep recorded here covered LABEL sides only.
 
 `[RAN]` `tools/schgen/remeasure-coverage.ts` at this commit. Of the five declared blocks that do
 not draw, two never reach a layout (`oc-audio`, `oc-sidechain`), and **all three that do are
@@ -4395,6 +4416,14 @@ spec §5.6 asks for.
 
 ### G97 - a declared functional group does not draw disjointly, and a repeated sub-circuit does not draw congruently
 
+> **AMENDED 2026-10-26 (G296): THIS ENTRY'S FORMULA REFUTATION HAS LOST A LEG AND NOT ONE OF ITS
+> NUMBERS MOVED.** `tp-leg-upper` stopped drawing, so the three distinct jumper-to-trim
+> displacements the two-step comparison needed are two. `[RAN]` three trees: `dx` is **19, 42, 32,
+> 32 on all of them** - invariant under the jumper's 180-degree turn and under the star - while `dy`
+> went 4, then 9, then 1. **So the refutation lost its SUBJECT, not its agreement.** With two
+> distinct predicted values an AFFINE relation cannot be refuted and that claim is GONE, not
+> narrowed; a pure PROPORTIONALITY still can be, 42/125 = 0.336 against 32/119 = 0.269.
+
 The schematic-authoring spec's §3.4 names three criteria this repository can make
 **objective** where they are judgement calls elsewhere. `[RAN]` Two were measured
 and **both answer no.**
@@ -5324,6 +5353,18 @@ diodes with zero diagonals.
   patch.
 
 ### G105 - the 6.1x block-decomposition gain is an UPPER BOUND, because 43 of the 139 edges became block-interface connections that nothing has drawn yet
+
+> **AMENDED 2026-10-26 (G296): THE EXPERIMENT'S SUBJECT HAS MOVED BACK TO `transistor-preamp`, THE
+> SECOND MOVE BETWEEN THE SAME TWO CIRCUITS IN TWO DAYS.** `optical-compressor` draws **NONE** of
+> its three blocks, so R38's guard refuses it; `transistor-preamp` draws 6 of 7. **What the two
+> moves show is that "the circuit where SOME blocks draw" is not a property of a CIRCUIT** - it is a
+> property of the current geometry, so every geometry change can take it off whichever circuit holds
+> it. Superseded figures, old then new: the flat side's refusal **obligation 1 (the snap) to
+> obligation 2 (`COLLECTOR` branches at (39.37, 111.76), a t-junction)**; stage-matched crossings
+> **4 against 6 to 26 against 11**; stage-matched wire **1087.90 against 977.60 to 1287.22 against
+> 751.40**; composed figures **22/101/12/978/35/6/7992 to 29/121/16/756/55/11/15 748**. **The SIGN
+> of the stage-matched comparison has now changed on all three subjects - free, then costing two,
+> now saving fifteen - so nothing concludes a direction for decomposition in general.**
 
 **The number this program's schematic architecture rests on hardest is
 `docs/schematic/elk-block-spike.md` §4's paired control, registered as G100:**
@@ -10986,6 +11027,12 @@ figure is thirteen newly ported modules, twelve of them unexercised.
     (round 2: 3159 pass / 0 fail across 309 files).
 
 ### G125 - the obstacle-category matrix is enumerated and filled, and **95 of its 105 cells rest on reading the source rather than on a test that could have failed**
+
+> **AMENDED 2026-10-26 (G296): THREE MORE CELLS HAVE REAL ELK GEOMETRY BEHIND THEM.** The firing set
+> went from ONE pair on one block to **FOUR pairs over THREE blocks** - `body|field-text`,
+> `field-text|interior-graphic`, `field-text|pin-line`, `field-text|wire` - and every one is a cell
+> `PAIR_COVERAGE` records a CHECK for rather than a reason. Two `NAME_RULES` were missing and a
+> third's citation was wrong, which is why those cells could not fire before; G296 clause 2 has both.
 
 
 **ROUND 5 CORRECTION TO THE AMENDMENT BELOW: ON THE LANDED CONFIGURATION IT IS ONE CELL, NOT TWO.**
@@ -17835,6 +17882,13 @@ still attaches at the recomputed pin end.
 
 ### G191 - Step 6's obstacle-pair result is EMPTY, and the reason is that nothing reaches the clearance checks
 
+> **AMENDED 2026-10-26 (G296): THE EMPTY RESULT IS NO LONGER EMPTY AND THE "exactly ONE pair across
+> the whole corpus" FIGURE IS SUPERSEDED.** It is **FOUR pairs over THREE blocks**, every one a
+> `checked` cell. And the census that measures it was running over `PARITY_CASES[0]` alone *"for run
+> time"*: `ob-buffer` started drawing, so **nothing in the subject reached the clearance checks** and
+> the non-vacuity guard fired. All four cases take **1.6 seconds**, so the run-time reason never
+> held, and one case had also made the `unclassified` assertion vacuous invisibly.
+
 Spec §1.4 requires the clearance checks to be **re-validated** against ELK geometry, because the
 ~160 refusals *"were grown against template-produced geometry"* one pair at a time and *"pointing a
 pairwise-accreted check set at a new geometry source is exactly the condition that creates a fresh
@@ -18338,6 +18392,15 @@ connected** - the expensive direction, because it stops a drawing rather than sh
   the call site - which is where the guard that had to be deleted was written.
 
 ### G200 - the first evidence for spec §1.7's "one visual language": ELK draws a STAIRCASE where a template draws a column, and 47% of nets double back
+
+> **AMENDED 2026-10-26 (G296): THE SHAPE MEASURES ARE RE-TAKEN OVER SIX FRAMES, NOT SEVEN, AND THE
+> TWO TOTALS ARE NOT COMPARABLE.** `tp-leg-upper` stopped drawing. Superseded, old then new:
+> **32 / 26 / 32 / 15 / 131 / 1 055 370 um to 29 / 19 / 28 / 17 / 121 / 960 120 um**; the five-leg
+> subtotal **14 placements and 350 520 um to 11 and 252 730 um over FOUR of the five**. **Subtracting
+> the missing row gives the wrong answer and would have hidden the rest**: 1 055 370 - 64 770 =
+> 990 600, not 960 120, because five of the six surviving blocks got shorter and `tp-stage` got
+> longer. **`tp-stage`'s `distinctX` FELL 10 TO 6 WHILE ITS `reversing` ROSE 4 TO 8** - the owner's
+> column criterion and his hairpin criterion pulling opposite ways inside one block.
 
 **Step 7 is done.** A block that **selects** the ELK backend and **draws** was emitted through the
 real `generate`, exported with `kicad-cli` and read. Until round 6 it could not be: `elkBackendFrom`
@@ -18878,6 +18941,10 @@ drawing already. **The cost that remains is page area and eye-travel, not ink.**
 
 ### G209 - composition leaves G200's two numbers EXACTLY unchanged, and the staircase measure is vacuous at sheet scale - so it must keep being taken per block
 
+> **AMENDED 2026-10-26 (G296): composition still leaves the two numbers unchanged and THE NUMBERS
+> THEMSELVES MOVED.** See G200's amendment for the full table; the subject is six frames where it
+> was seven, and `interiorDrift` is still empty under both packers.
+
 **G200** measures, over the five blocks that draw, **14 placements with 14 distinct x-coordinates
 (0 parts sharing an x)** and **9 of 19 nets reversing direction on an axis (47 %)**, and records
 them as *"the baseline any attempt is measured against"*. Task 15's brief asks what composition does
@@ -19050,6 +19117,14 @@ order gives the template the say where one is declared and the rule the say wher
   criterion is the declaration.
 
 ### G211 - NOT ONE of the four parity circuits has a sheet that can be composed, so seam B's whole measured record rests on a ported fixture and a five-block probe
+
+> **AMENDED 2026-10-26 (G296): THIS ENTRY'S REFUTATION IS ITSELF REFUTED AND THE HEADLINE IS TRUE
+> AGAIN.** `transistor-preamp`'s `lab` sheet composed for one day (**G291**) - 7 frames, 131 wires,
+> 29 non-members under a grown frame - and `sheetContents` refuses it again **for this entry's own
+> reason**, with ONE block that does not draw instead of two. **So not one parity circuit has a
+> composable declared sheet.** The board census agrees by a different driver: `transistor-preamp-lab`
+> is one of the five boards that refuse. The 131 and the 29 are kept in G296 because they are what a
+> fix to `tp-leg-upper` should bring back.
 
 > **REFUTED FOR ONE OF THE FOUR, 2026-10-25: `transistor-preamp`'s `lab` sheet
 > COMPOSES.** All seven of its declared blocks draw since boundary-node sizing
@@ -19386,6 +19461,13 @@ pipeline.
 
 ### G216 - MEASURED: spec §3.3's four measures for every block that draws and every sheet that emits, with D1's line beside each - and two of the four are ZERO or INERT on the whole corpus
 
+> **AMENDED 2026-10-26 (G296): the accepted wire total is 199 grid steps over FOUR of the five
+> blocks, not 276 over five.** `tp-leg-upper` stopped drawing. **Both terms moved and for different
+> reasons**: `placements` **14 to 11** is the subject shrinking by a 3-placement block and is the
+> first time that figure has ever moved; `wireLength` **276 to 199** is the subject AND the geometry,
+> since 276 - 51 = 225 and not 199 - the four that remain fell too, 71 to 64, 61 to 54 twice, 32 to
+> 27. Cross-checked as before: 252 730 um / 1270 = 199 through `shapeMeasures`.
+
 `[RAN]` Over the canonical topology (Task 13's `canonicalTopology`), per block, with `occupiedArea`
 in square grid steps and `wireLength` in grid steps:
 
@@ -19637,6 +19719,11 @@ passed it, so the cost of the narrowing is measured rather than assumed.
 
 ### G218 - MEASURED: the size of G106's canonicalisation defect on this driver, over all twelve blocks - and it CORRECTS that entry's own expectation in three of five numbers
 
+> **AMENDED 2026-10-26 (G296): the inflation range is 1.57-32.63 per cent**, superseding
+> 1.42-21.20 (and 1.30-21.20, and 2.05-18.16). **All four conclusions still hold on 12 of 12
+> blocks** - crossings equal, area equal, length strictly inflated, bends under-reported - which is
+> what each re-drive establishes and is why the range is a record rather than the claim.
+
 **G106** says *"every one of the four measures the spec requires - bends, bends per edge, crossings,
 wire length - is then inflated by an unknown amount"*, and that *"that difference is the size of this
 defect and nobody has measured it yet."* It is measured now. `[RAN]` Pre-snap on both sides, so the
@@ -19747,6 +19834,14 @@ so rather than borrow the credibility of the ones that can.
   are not the same quantity.
 
 ### G219 - MEASURED: EVERY ONE of the 83 duplicate wire segments ELK emits is DIRECTION-REVERSED, so a deduplication keyed on `(a, b)` in order would collapse NONE of them
+
+> **AMENDED 2026-10-26 (G296): the duplicate-segment population is 104, superseding 83 and 64.**
+> Per block: `ob-buffer` 11, `oc-power` 11, `oc-audio` 10, `oc-sidechain` 17, `pt-core` **36**,
+> `tp-stage` 19, and **zero on every leg** - the same six blocks that ever had any, so the star did
+> not give a small block duplicates, it gave the big ones more. `pt-core` alone went 18 to 36. **The
+> 0-of-N versus N-of-N result about `geometryKey`'s sort is what is unmoved.** The population is now
+> derived from `tests/schgen/readability/measures.test.ts`'s own `wires X->Y` column rather than
+> measured separately, so it cannot drift from that table.
 
 **THE COUNT WAS 82 UNTIL 2026-10-25 AND IS 83, AND THE CONCLUSION IS UNTOUCHED.**
 Boundary-node sizing (**G291**) re-routed `oc-audio`, whose canonical wire count went 70 to 69
@@ -20370,6 +20465,21 @@ a file with that name is the threat model, **the digest is the wrong place to fi
 
 ### G229 - MEASURED: the five blocks that draw, drawn as ONE flat graph, are REFUSED by the junction obligation - so the integrated experiment's flat side has no accepted drawing at all
 
+> **AMENDED 2026-10-26 (G296): THIS REFUSAL HAS NO LIVE CHECK ANYWHERE AND THE FIGURE CANNOT BE
+> RE-TAKEN. THAT IS A LOSS AND IT IS THE FIRST THING THIS ENTRY NOW SAYS.** The five-leg flat probe
+> gets **PAST** the junction obligation - `adaptElkLayoutReported` runs obligation 2 before
+> obligation 4, so its obligation-4 refusal is a statement that 1, 3 and 2 all passed - and is
+> refused on `VCC`'s value text instead. **Both coordinates this entry has quoted are superseded by
+> an absence**: `net BASE … (t-junction)` at `(45.72, 48.26)` and then at `(46.99, 43.18)` is gone
+> from the geometry. **It is NOT the T-junction change that did it**, which was measured rather than
+> assumed: `[RAN]` with that detection rolled back, both flat probes refuse byte-identically.
+>
+> **AND THE SEVEN-BLOCK PROBE'S SEPARATION FROM THIS FIGURE HAS WEAKENED TWICE.** It refused at
+> obligation 1 (an obligation apart), then at obligation 2 on TWO branch points, and now at
+> obligation 2 on **ONE**, `GND` at `(55.88, 46.99)`. **The count no longer separates them**; only
+> the net, the coordinate and the probe's size do. **What would settle it: a subject whose junction
+> obligation refuses with one branch point on `BASE`, and this repository has none.**
+
 `[RAN]` `tools/schgen/remeasure-composed.ts`'s flat probe puts the members of
 `transistor-preamp`'s five drawing blocks into one `BlockSubgraph` and hands it to
 the same `elkInputOf` -> `layoutBlocks` -> `adaptElkLayoutReported` chain every
@@ -20614,6 +20724,11 @@ costed with this case in hand.
   stated rule or by a fix-round item and need nothing.**
 
 ### G232 - MEASURED: ONE defect is the SOLE blocker of FOUR declared blocks, so fixing it alone takes this repository from 5 of 12 blocks drawing to 9 of 12
+
+> **AMENDED 2026-10-26 (G296): the census is 8 of 12, down from 10.** `5 + 2 = 7` is still exceeded
+> and now by one block rather than three. Four blocks refuse: `oc-power`, `oc-audio` and
+> `tp-leg-upper` at `checkLayout` on ONE power symbol's VALUE text each, and `oc-sidechain` at
+> obligation 3. **Field placement blocks nothing, which is unmoved.**
 
 > **THE CENSUS READS 10 OF 12 SINCE 2026-10-25, AND THIS ENTRY'S ARITHMETIC IS
 > NOT WHAT GOT IT THERE.** The headline's `5 -> 9` became `5 + 2 = 7` once
@@ -21911,6 +22026,14 @@ was built under it with the price of its not having run.
   first half already met for it.
 
 ### G239 - MEASURED: FIVE of the eleven candidate field slots can NEVER serve a small two-pin passive, so G232's "give it more candidate positions" mechanism starts from six usable slots and not eleven
+
+> **AMENDED 2026-10-26 (G296): the fallback field population is 20, superseding 11 and 18.**
+> `pt-core` **4 to 15**, `tp-stage` 1 to 2, `oc-audio` 3 to 3 on different units, `ob-buffer` 1 to
+> **0** (it draws with every field clear), `oc-power` 1 to 0 (it does not draw at all),
+> `tp-leg-emitter-bypass` 1 to 0. **All fifteen of `pt-core`'s cover a WIRE and five cover the SAME
+> wire.** And *"the real placement order falls back more often than the first-position probe does"*
+> **has no carrier at all**: every block's two lists agree, 15/15, 3/3, 2/2. The agreement is a
+> reading; that the placer stopped being order-dependent is NOT claimed.
 
 > **AMENDED 2026-10-22 BY TASK 1 OF THE TEXT-HANDLING RESEARCH PLAN: THIS ENTRY'S ARITHMETIC RESTS
 > ON `text.length * GRID`, THAT RULER IS WRONG, AND THE FINDING SURVIVES EVERY WAY OF BEING WRONG
@@ -25214,6 +25337,14 @@ of the predicate are exercised by the committed fixtures: `cap` is valued
 
 ### G258 - MEASURED: THE FIELD-PLACEMENT REFUSAL WAS HIDING A SECOND DEFECT IN THE SAME BLOCK, so "the sole blocker of four blocks" was an artifact of an early return - and the problem it revealed was MISFILED by the classifier that was built to refuse exactly that
 
+> **AMENDED 2026-10-26 (G296): the per-block table is re-taken at 8 of 12 drawing, and TWO BUCKETS
+> REFILLED.** `oc-audio` is the one-measured-problem-plus-residual block where `ob-buffer` was, and
+> `oc-power` and `tp-leg-upper` populate the more-than-one bucket, which had no members since Task
+> 24. `ob-buffer` left the table by DRAWING. **`oneProblemAway` is still empty and is still a
+> reading**: no block has exactly one problem with nothing unmeasured behind it. Two controls this
+> entry's neighbours recorded as weakened are stronger - the non-vacuity control stands on three
+> blocks where **G291** left it on one, and the mismatch-kind loop has four subjects where it had two.
+
 **WHAT HAPPENED.** Task 21 fixed the field-placement refusal on
 `tp-leg-emitter-bypass`'s jumper (**G257**). The block did not start drawing. It
 reported a problem no census had ever printed:
@@ -27982,6 +28113,12 @@ what makes this safe and is also why nothing would have caught the desync.
 
 ### G285 - `pt2399-core` IS THE FIRST BOARD IN THIS REPOSITORY TO PRODUCE A SCHEMATIC - 1 of 11, up from 0 of 11 - AND ITS SHEET CARRIES EIGHT FIELD PLACEMENTS THE PLACER COULD NOT KEEP CLEAR, so it is not a drawing anyone has said is good
 
+> **AMENDED 2026-10-26 (G296): `pt2399-core`'s fallback count is 15, superseding 8 and then 4.**
+> Fifteen of that sheet's twenty-four units carry a Reference or Value the placer could not keep
+> clear - **all fifteen over a wire and five over the same wire** (`wire 76 (Net-(C8-Pad2))`). The
+> count is cross-checked by two drivers, one through the real `kicad-cli`. **This entry's point
+> stands and is sharper: the sheet generates and is less readable than when nobody had read it.**
+
 **G259**'s board scoreboard has read `0 of 11` at every measurement since it was
 written. `[RAN]` `bun tools/schgen/board-sheets.ts` at this commit:
 
@@ -28633,6 +28770,14 @@ names and the second fails quietly on symbols nobody checked.
 
 ### G291 - MEASURED, AND IT INVERTS THE TEXT-PLACEMENT PROGRAMME: every global label and power symbol is handed to ELK as a node of WIDTH 0, HEIGHT 0, so the layout engine packs the circuit believing the text is dimensionless - and sizing them by hand, with no gate touched, drew a board that had never drawn and cleared another board's collisions outright
 
+> **AMENDED 2026-10-26 (G296): THE TWO FIGURES THIS ENTRY IS BEST KNOWN FOR ARE BOTH SUPERSEDED.**
+> Blocks that draw **10 of 12 to 8 of 12**; boards that generate **7 of 11 to 6 of 11**. Node sizing
+> is not what moved them - `edgesForNet`'s star and the two 180-degree orientation rules are, and
+> G296's four-tree census shows **neither is an improvement on its own** and that the two INTERACT,
+> so no block's loss is attributable to one. `oc-audio`, `tp-leg-emitter-bypass` and `tp-stage` are
+> the three this entry drew; `tp-stage` and `tp-leg-emitter-bypass` still draw and `oc-audio` does
+> not.
+
 **THE OWNER SAW IT IN THE DRAWING BEFORE ANY AGENT SAW IT IN THE CODE**, which is
 why his words lead this entry. Shown the first `transistor-preamp-lab` sheet ever
 produced, 2026-10-24:
@@ -29019,6 +29164,15 @@ drew, which is exactly the set these tables predicted.
 
 ### G292 - OWNER DIRECTIVE on how a generated schematic should read, with his words verbatim - and MEASURED: the ROTATION half is available and cuts text collisions by a third, while the ARRANGEMENT half is a DIFFERENT defect, because `edgesForNet` directs every edge by DECLARATION ORDER and ELK lays out by edge direction
 
+> **AMENDED 2026-10-26 (G296): THE LIST OF ENTRIES THIS RULE MOVED IS NOW ALSO THE LIST A SECOND
+> CHANGE MOVED AGAIN, and the attribution problem this entry corrected has recurred in a new
+> form.** G292 established that the orientation rule moved all 24 red tests and the edge-order change
+> moved none. The star plus the two 180-degree rules then left 22 red, and **this time the two
+> changes INTERACT**: the block census is 10 with neither, 8 with the 180 rules alone, 7 with the
+> star alone and 8 with both, so `pt-core` is lost by either alone and drawn by both together.
+> **"Which change moved this figure" has no answer for most of them**, which is a stronger statement
+> than G292's and is measured the same way, over four trees with a control.
+
 **THE DIRECTIVE, 2026-10-25, reviewing the first `pultec-hi-boost` sheet this
 repository ever generated.** His words, verbatim and complete:
 
@@ -29278,6 +29432,26 @@ blanket.
 
 ### G293 - MEASURED, AND IT IS THE REASON GENERATED PULTEC SHEETS LOOK WRONG: `edgesForNet` turns a net of degree n into a CHAIN of n-1 edges, so a PARALLEL bank of capacitors is handed to ELK as a SERIES string and drawn as a staircase - ten capacitors at ten distinct x positions, one ELK layer each, 12.7 mm apart
 
+> **AMENDED 2026-10-26 (G296): THE STAR IS BUILT AND BOTH OF THIS ENTRY'S CRITERIA ARE RE-DRIVEN,
+> WITH DIFFERENT ANSWERS.** *"The capacitors of a switch-selected bank have one distinct x position,
+> not ten"* is **SUBSTANTIALLY MET AND NOT LITERALLY**: `pultec-hi-cut`'s ten capacitors sit at
+> **TWO** distinct x (six at 58.42, four at 90.17) and `pultec-hi-boost`'s at **THREE**. *"No point
+> of a generated sheet lies outside its own page"* is **MET**: 0 outside, of 2272 sheet coordinates
+> across the twelve generated files, where 9 were outside. *"And no board is lost from the census"*
+> is met at the BOARD level (6 of 11) and **NOT at the block level** (10 to 8), which the criterion
+> did not distinguish.
+>
+> **THE ARRANGEMENT THE OWNER ASKED FOR IS STILL NOT THERE.** He asked for the bank *"arranged to
+> the right of the switch symbol"*; on `pultec-hi-cut` both columns are LEFT of `SW1` and on
+> `pultec-hi-boost` nine of ten are. What the switch's 180-degree turn bought is that its throws
+> FACE the bank, which he accepted after seeing it rendered - *"rotation is ok"*.
+>
+> **AND THE HYPEREDGE FALLBACK IS STILL UNTRIED, while the star's own cost is now measured**: the
+> hairpin metric this entry built is worse on every board, `tp-stage`'s `reversing` rose 4 to 8 as
+> its `distinctX` fell 10 to 6, and the fallback field population went 11 to 20. **G296** has all of
+> it, including that `e652d98` said *"DO NOT BUILD ON THIS"* before any of it was measured and that
+> four commits were built on it anyway.
+
 **THE OWNER SAW IT AND NAMED THE FIX BEFORE ANY MEASUREMENT.** 2026-10-25, reviewing
 the generated `pultec-hi-boost` sheet, verbatim:
 
@@ -29382,3 +29556,253 @@ layering rather than hairpins.
   the fallback if the star still layers them apart. **A SECOND CRITERION, from
   the same review and separately measurable:** no point of a generated sheet lies
   outside its own page, which 9 points currently do and nothing refuses.
+
+### G296 - MEASURED OVER FOUR TREES: the STAR and the two 180-degree rules each cost blocks ON THEIR OWN, they INTERACT so no loss is attributable to one, and the T-junction change that shipped with them has NO measured effect anywhere in this repository
+
+**WHAT THIS ENTRY IS.** `edgesForNet`'s chain became a STAR (**G293**), `junctionPoints` learned
+to find a T, `readsFrom` was declared, and `preferredOrientation` learned to turn a `switch` and a
+`connector` 180 degrees. Those four changes left the suite red at 22 and this is the re-drive of
+every figure they moved, with the attribution measured rather than assumed - which **G292** records
+as the thing the previous round of this work got wrong.
+
+**CLAUSE 1: THE BLOCK CENSUS IS 8 OF 12, DOWN FROM 10, AND NEITHER CHANGE IS AN IMPROVEMENT ON ITS
+OWN.** `[RAN]` the parity-corpus census on four trees, one change rolled back at a time, with the
+both-rolled-back tree as the control that the probe reproduces the last green state exactly:
+
+| tree | draws | the set |
+| --- | --- | --- |
+| chain, no 180 (CONTROL) | **10 of 12** | the ten the register carried until 2026-10-26 |
+| chain + the two 180 rules | **8 of 12** | loses `pt-core` and `tp-stage` |
+| star + no 180 | **7 of 12** | loses `oc-audio`, `pt-core`, `tp-leg-upper` |
+| star + the two 180 rules (HEAD) | **8 of 12** | loses `oc-power`, `oc-audio`, `tp-leg-upper`; gains `ob-buffer` |
+
+**THE TWO INTERACT AND THAT IS THE FINDING.** `pt-core` is lost by EITHER change alone and drawn by
+both together. `oc-power` is lost by NEITHER alone and by both together. **So no row of this census
+can be attributed to one change, and nothing here attributes one.** The control tree reproduces the
+f04fde1 ten by name, which is what makes the other three rows readings rather than artefacts.
+
+**`readsFrom` MOVES NO PARITY BLOCK AT ALL**, measured separately: the star-only tree and the
+whole-`graph.ts`-rolled-back tree give the same eight by name. `downstreamDepth` seeds from
+`readsFrom` or from a `FIRST_SEPARATE` boundary net, and no parity block has either - the blocks
+that do are Pultec board blocks, which is **G292**'s own 7-of-52 finding holding.
+
+**CLAUSE 2: ALL FOUR REFUSALS ARE ONE DEFECT CLASS AND IT IS NOT NEW.** `oc-power`, `oc-audio` and
+`tp-leg-upper` each refuse at `checkLayout` on ONE power symbol's VALUE text drawn over their own
+block's ink; `oc-sidechain` refuses at obligation 3 as it has throughout. **Eleven problems in the
+corpus are THREE TEXTS**, and `oc-power`'s `+9V_PROTECTED 1 at (33.02, 52.07)` is party to seven of
+them - against `wire 0`, two capacitor BODIES and four GRAPHICS. This is **G262**'s class, and it is
+exactly the half of G262 that entry records as *"that half of this entry has not been re-driven"*.
+
+**FOUR NEW `checkLayout` PROBLEM CLASSES AND TWO NEW OBSTACLE NAMES HAD TO BE ADDED, and both
+whitelists-that-throw fired on real data, which is what they are for.**
+`tools/schgen/remeasure-coverage.ts` gained `power-value-wire-overlap`,
+`power-value-body-overlap`, `power-value-graphic-overlap` and `power-value-pin-overlap`;
+`tools/schgen/elk/obstacle-census.ts` gained `graphic \d+ of ` and `pin <PART>.<PIN>`. **The
+pin-stroke shape is the first problem anything here has ever measured naming one**, which that
+module's header listed among the names deliberately absent because *"a pattern nothing drives is a
+check that cannot fail"*.
+
+**AND A CITATION IN THAT MODULE WAS WRONG, which is `G132`'s `NOT_IN_THIS_TREE` failure in a
+citation rather than in a pattern.** The `^interior ` rule claimed to be written by *"unitText
+(render/unit-text.ts), strokes and interiorBoxes"*. `unitText` writes `interior text ${i} of ${key}`
+for `graphics.blocks` and `graphic ${i} of ${key}` for `graphics.segments`, so that rule only ever
+reached the BOXES and the strokes were unclassified for as long as the rule has existed. Corrected.
+
+**CLAUSE 3: THE OBSTACLE CENSUS WAS RUNNING OVER A SUBJECT THAT HAD STOPPED REFUSING ANYTHING, and
+its own non-vacuity guard is what found it.** `tests/schgen/elk/obstacle-census.test.ts` ran over
+`PARITY_CASES[0]` - `opamp-buffer` - *"for run time"*. `ob-buffer` draws now, so **nothing in the
+subject reached the clearance checks** and `reachedClearance > 0` went red. One case also made the
+`unclassified` assertion vacuous invisibly: a block that refuses nothing classifies nothing.
+`[RAN]` all four cases: **1.6 seconds**, so the run-time reason never held. Over all four the
+census refused FIVE names, which is what found the two missing rules above.
+
+**AND THE FIRING SET GOT SHARPER, which is the one figure in this whole re-drive that improved.**
+**G191** recorded *"exactly ONE pair is classified across the whole corpus"* (`body`/`label-outline`,
+on one block). It is now **FOUR pairs over THREE blocks** - `body|field-text`,
+`field-text|interior-graphic`, `field-text|pin-line`, `field-text|wire` - and **every one is a cell
+`PAIR_COVERAGE` records a CHECK for** rather than a reason. **G125**'s *"95 of 105 cells rest on
+reading the source"* has three more cells with real ELK geometry behind them.
+
+**CLAUSE 4: THE T-JUNCTION CHANGE HAS NO MEASURED EFFECT ANYWHERE, AND IT IS A DECLARED DIVERGENCE
+WITH A PERMANENT COST. THIS IS THE CLAUSE TO READ IF YOU ARE DECIDING WHETHER TO KEEP IT.** `[RAN]`
+with `junctionPoints` rolled back to the chain-era version that counts endpoints only:
+
+| measurement | with T detection | rolled back |
+| --- | --- | --- |
+| parity block census | 8 of 12, same set | **identical** |
+| five-leg flat probe refusal | obligation 4, clearance | **byte-identical** |
+| seven-block flat probe refusal | obligation 2, `GND` at (55.88, 46.99) | **byte-identical** |
+| board census | 6 of 11 | **identical, same five boards** |
+| per-board fallback fields | 15, 8, 2, 5, 1, 0 | **identical** |
+
+**ITS ONLY DEMONSTRATED EFFECT IS THE UNIT TEST IT CHANGED.** It is nonetheless CORRECT, and the
+evidence is nine lines above the assertion it changed: `tests/schgen/render/connectivity.test.ts`'s
+`connectedComponents (KiCad 10 as observed)` asserts *"does not join an unsplit T (KiCad needs a
+junction there)"* **on the identical two wires** the `junctionPoints` assertion demanded no junction
+for. The two assertions contradicted each other and the connectivity one is the measured one. **So
+the old demand was that the emitter omit the only object that makes a connection the netlist
+asserts** - which is a changed demand, not a moved number, and that is why
+`lib/schgen/render/connectivity.ts` and its test are now `diverged[]` entries in
+`tools/schgen/port-manifest.json` rather than edited `files[]` ones.
+
+**THE COST IS NOT SMALL AND IS NOW VISIBLE WHERE IT WAS NOT WHEN THE DIVERGENCE WAS DECLARED:**
+71 ported files and 57 diverged, and **nothing byte-checks either of those two files against the
+read-only sibling repository again**. A later re-port must re-apply the addition by hand.
+
+**AND THE DETECTION IS INCOMPLETE, not redundant.** The seven-block flat probe still refuses at
+obligation 2 on net `GND` at `(55.88, 46.99)`, which the canonical topology labels a `t-junction`,
+**with the detection in place**. So a branch the topology calls a T and the emitter still misses
+exists; what distinguishes it from the T's the rule does find has not been diagnosed.
+
+**CLAUSE 5: FOUR MEASUREMENTS HAVE LOST THEIR SUBJECT. EACH IS A LOSS AND NONE IS PAPERED OVER.**
+
+**(a) `G229`'s JUNCTION REFUSAL HAS NO LIVE CHECK ANYWHERE.** The five-leg flat probe gets PAST the
+junction obligation - `adaptElkLayoutReported` runs obligation 2 before obligation 4, so its
+obligation-4 refusal is a statement that 1, 3 and 2 all passed - and is refused on `VCC`'s value
+text instead. **It is not the T change** (clause 4). The branch point that refused for three days,
+`net BASE ... (t-junction)` at `(45.72, 48.26)` and then `(46.99, 43.18)`, is gone from the
+geometry. **What G229 needs is a subject whose junction obligation refuses with ONE branch point on
+`BASE`, and this repository has none.**
+
+**AND THE SEVEN-BLOCK PROBE'S SEPARATION FROM G229's FIGURE HAS WEAKENED TWICE.** It refused at
+obligation 1 originally - an obligation apart; then at obligation 2 on TWO branch points
+(`COLLECTOR` at `(41.91, 74.93)`, `GND` at `(111.76, 62.23)`); now at obligation 2 on **ONE**, `GND`
+at `(55.88, 46.99)`. **The count no longer separates them either**; only the net and the coordinate
+do, plus the fact that one probe is 14 units and the other 32.
+
+**(b) `G211`'s REFUTATION IS ITSELF REFUTED: not one parity circuit has a composable declared sheet
+again.** `transistor-preamp`'s `lab` sheet composed for one day (**G291**) - 7 frames, 131 wires, 29
+non-members under a grown frame - and `sheetContents` refuses it again for G211's own reason, with
+ONE block that does not draw instead of two. The board census agrees by a different driver:
+`transistor-preamp-lab` is one of the five boards that refuse. **The 131 and the 29 are recorded
+here because they are what a fix to `tp-leg-upper` should bring back.**
+
+**(c) `G97`'s FORMULA REFUTATION HAS LOST A LEG, AND NOT ONE OF ITS NUMBERS MOVED - which is the
+distinction that matters.** The refutation needed THREE distinct jumper-to-trim displacements so
+two consecutive steps could be compared: 13/12 against 10/6, *"so no single factor carries one into
+the other"*. `[RAN]` the three trees: `jumperToTrim.dx` is **19, 42, 32, 32 on all of them** -
+invariant under the jumper's 180 and under the star. The `dy` moved (4, then 9, then 1) and the dx
+did not. **So the refutation did not weaken; `tp-leg-upper` stopped DRAWING and took the 13/12 term
+with it.** With two distinct predicted values and two measured, an AFFINE relation cannot be
+refuted - that claim is **gone, not narrowed**. A pure PROPORTIONALITY still can be and is:
+42/125 = 0.336 against 32/119 = 0.269.
+
+**(d) AND THE PLACER'S ORDER-DEPENDENCE HAS NO CARRIER.** *"The real placement order falls back more
+often than the first-position probe does"* has moved onto and off four blocks in four days; today
+**every block's two lists agree** - `pt-core` 15/15, `oc-audio` 3/3, `tp-stage` 2/2, nothing else.
+The agreement is asserted, which is a reading. It is NOT asserted that the placer stopped being
+order-dependent, which would be reading an absent subject as a result.
+
+**CLAUSE 6: THE FIGURES THAT MOVED, with the entry that carries each. Old shown superseded.**
+
+| entry | figure | was | is |
+| --- | --- | --- | --- |
+| **G105** | the integrated experiment's subject | `optical-compressor`, 2 of 3 | `transistor-preamp`, 6 of 7 - **second move between the same two circuits** |
+| **G105** | stage-matched crossings, flat against blocks | 4 against 6 | **26 against 11** - third subject, third sign |
+| **G105** | stage-matched wire | 1087.90 against 977.60 | **1287.22 against 751.40** |
+| **G105** | the flat side's refusal | obligation 1, the snap | **obligation 2, `COLLECTOR` at (39.37, 111.76)** |
+| **G200/G209** | `shapeMeasures` over the drawing blocks | 32 / 26 / 32 / 15 / 131 / 1 055 370 | **29 / 19 / 28 / 17 / 121 / 960 120** over SIX frames, not seven |
+| **G200/G209** | the G200 leg subtotal | 14 placements, 350 520 um | **11 placements, 252 730 um** over FOUR of the five |
+| **G216** | G216's accepted wire total | 276 grid steps over five | **199 over four**; 276 - 51 = 225, so the four moved too |
+| **G218** | the raw-versus-canonical inflation range | 1.42-21.20 % | **1.57-32.63 %** |
+| **G219** | the duplicate-segment population | 64 | **104** - `ob-buffer` 11, `oc-power` 11, `oc-audio` 10, `oc-sidechain` 17, `pt-core` 36, `tp-stage` 19, zero on every leg. `pt-core` alone 18 to 36 |
+| **G229** | the five-leg junction refusal | obligation 2, `BASE`, one place | **gone - obligation 4, clearance** (clause 5a) |
+| **G239/G258/G260** | fallback field placements, parity corpus | 11 | **20** - `pt-core` 4 to **15**, `tp-stage` 1 to 2, `oc-audio` 3 on different units, `ob-buffer` and `tp-leg-emitter-bypass` to 0 |
+| **G258** | the masked-problem buckets | one-plus-residual `ob-buffer`, more-than-one empty | **one-plus-residual `oc-audio`, more-than-one `oc-power` + `tp-leg-upper`** |
+| **G262** | the blocked-by-text table | `ob-buffer`, value over value | **`oc-power`, `oc-audio`, `tp-leg-upper`, all value over the block's own ink** |
+| **G285** | `pt2399-core`'s fallback count | 8, then 4 | **15 of its 24 units**, all fifteen over a wire, five over the same wire |
+| **G291** | the board census | 7 of 11 | **6 of 11** (`transistor-preamp-lab` refuses) |
+| **G291** | blocks that draw | 10 of 12 | **8 of 12** (clause 1) |
+| **G191/G125** | pairs firing on ELK geometry | 1 pair, 1 block | **4 pairs, 3 blocks, all `checked` cells** |
+
+**ONE COLUMN SPLITS THE CORPUS EXACTLY IN TWO BY SIZE AND IS WORTH ITS OWN LINE: `aspect`**, which
+is `box.w / box.h`. It **FELL on all six blocks holding more than three placements** - `ob-buffer`
+1.62 to 0.75, `oc-power` 2.21 to 0.64, `oc-audio` 3.64 to 0.91, `oc-sidechain` 3.34 to 0.79,
+`pt-core` 2.06 to 0.46, `tp-stage` 1.48 to 0.77 - and **ROSE on all six holding three or fewer**.
+Six and six, with the cut exactly at the placement count. **Every one of the six that fell went
+from wider-than-tall to taller-than-wide, so the six biggest blocks all stopped reading left to
+right** - which is the opposite of what **G292**'s directive asked for.
+
+**AND `tp-stage` CARRIES THE TRADE IN ONE BLOCK: its `distinctX` FELL 10 TO 6 WHILE ITS `reversing`
+ROSE 4 TO 8.** Siblings of a net share a hub, so they share a layer and a column - four fewer
+columns for sixteen placements, which is exactly the owner's *"stacking all the capacitors in the
+same column"* - and the wires that reach them leave one point and double back, which is what
+`reversing` counts and what he called a hairpin. **His column criterion and his hairpin criterion
+pull opposite ways under this mechanism**, which `e652d98` found and this row measures.
+
+**CLAUSE 7: THE SWITCH RULE REACHES EVERY `kind: "switch"`, AND IN THIS REPOSITORY THAT INCLUDES
+SIX TWO-PIN JUMPERS. `feae895`'s message does not mention them.** That commit's stated assumption is
+*"that a switch's THROWS are its input side"*, true of a selector whose bank feeds it, and its
+stated risk is a routing SPDT. **But `circuits/transistor-preamp/parts.ts`'s `jumper()` declares
+`kind: "switch"`** - a two-pin header with a shunt, modelled as a switch because that is what it
+electrically is - so every bias leg's jumper is turned 180. A two-pin jumper has **no throws and no
+bank**, so the rule's own reasoning says nothing at all about it. `[RAN]`: the jumpers are at
+rotation 180 on the chain tree as well as at HEAD, and turning them moved the legs' `dy` from 4 to 9
+and moved no leg's draw outcome. Recorded because the rule's warning is in the wrong terms for the
+parts it actually reaches.
+
+**CLAUSE 8: TWO CLAIMS IN THE INSTRUCTIONS FOR THIS RE-DRIVE WERE FALSE AND ARE RECORDED AS SUCH,
+because the same mistake has now been made twice in a row about this same range of commits.**
+
+- *"`lib/schgen/render/sheets.ts` + `tools/schgen/elk/sheet-layout.ts`: a sheet's declared paper is
+  a FLOOR"* was given as part of what changed since the last green state. **It is not.** Paper-as-a-
+  floor landed in `f754a37`, which is an ancestor of `f04fde1`; neither file is in
+  `git diff f04fde1..HEAD` at all.
+- *"`lib/schgen/rules/orientation.ts`: two new entries, a two-terminal passive with NO rail end …
+  and `switch`/`connector` turned 180"* and *"`graph.ts`: THREE changes … edges ordered by
+  breadth-first downstream depth … boundary nodes sized by the box drawn at them"*. **The
+  no-rail-end entry landed in `22ca29b`, the edge ordering in `df272a7` and the boundary-node sizing
+  before both** - all ancestors of `f04fde1`. The only changes in range are the STAR, `readsFrom`'s
+  seed, and the two 180-degree entries.
+
+**This matters beyond pedantry: an agent told that paper-as-a-floor was in range would look for a
+paper refusal among the 22 red tests and find none, and an agent told the edge ordering was in range
+would attribute the block losses to it** - which is the inverse of what clause 1 measures.
+
+- **Found** 2026-10-26, taking the suite from 22 red to green after the four changes above.
+- **Evidence** `[RAN]` in this repository against installed KiCad: the four-tree block census with
+  the both-rolled-back control reproducing the f04fde1 ten by name; the three-tree leg-shape probe;
+  the T-detection rollback over both flat probes AND the board census; `bun tools/schgen/
+  board-sheets.ts`; the full suite at **3880 pass / 2 fail / Ran 3882** before the register was
+  amended, with pass + fail = Ran checked on every run. **Every rolled-back file was restored from
+  a saved copy and `git status lib/` checked clean after each probe.** The per-figure cross-checks
+  are in the tests themselves: each `shapeMeasures` wire over 1270 against the canonical `len`, each
+  `segments` against the canonical wire count, each `box.w * box.h` against `occupiedArea`,
+  `pt-core`'s fifteen fallback keys through `generate` as well as through `maskedCensus`.
+- **Verified** **CONFIRMED by this writer** for everything above. **Nothing is relayed from another
+  agent**, and the two refuted claims in clause 8 are refutations of this writer's own instructions.
+- **Why it is open** **the suite is green and the drawings are worse.** Eight blocks draw where ten
+  did, twenty field placements are drawn over ink where eleven were, `pt-core` carries fifteen of
+  them, and the six largest blocks have all stopped reading left to right. **None of that is a
+  defect in the tests; it is what the star costs, and `e652d98` said so before any of it was
+  measured** - *"DO NOT BUILD ON THIS … On the owner's criterion it FAILS"* - and four commits were
+  built on it anyway.
+- **What would settle it.** **CRITERION, and it is the owner's, not this writer's:** he looks at the
+  sheets and says whether what the star bought is worth what clauses 1 to 5 cost. **G293**'s two
+  criteria are re-driven here and they come out differently from each other:
+  - *"the capacitors of a switch-selected bank have one distinct x position, not ten"* -
+    **SUBSTANTIALLY MET AND NOT LITERALLY.** `[RAN]` symbol positions read out of the generated
+    sheets: `pultec-hi-cut`'s ten capacitors sit at **TWO** distinct x (six at 58.42, four at
+    90.17) where they sat at ten 12.7 mm apart, and `pultec-hi-boost`'s at **THREE** (five at
+    48.26, four at 60.96, one at 128.27). Two is not one, and one was the criterion's word.
+  - *"no point of a generated sheet lies outside its own page, which 9 points currently do and
+    nothing refuses"* - **MET.** `[RAN]` over all twelve generated `.kicad_sch` files of the six
+    boards that produce one, with each symbol library's own local geometry excluded: **0 points
+    outside the page, of 2272 sheet coordinates.**
+  - **AND THE ARRANGEMENT HALF IS STILL UNMET, which `1fb837f` already reported and this re-drive
+    confirms.** The owner asked for the bank *"arranged to the right of the switch symbol"*. On
+    `pultec-hi-cut` both capacitor columns (58.42, 90.17) are LEFT of `SW1` (93.98); on
+    `pultec-hi-boost` nine of the ten are left of it (77.47). What the switch's 180-degree turn
+    bought is that its throws now FACE the bank rather than away from it, which he accepted after
+    seeing it rendered - *"rotation is ok"* - and which is a different thing from the bank moving.
+
+  Its *"and no board is lost from the census"* clause is met at the BOARD level (6 of 11 either
+  way) and **not at the block level** (10 to 8), which that criterion did not distinguish.
+  **MECHANISM, UNTRIED and NOT proposed here:** `e652d98` names it - *"those are different graphs
+  and the code has one"*; ELK is given the star and `read-graph.ts` reads the drawn wires out of
+  the same routes, so a chain for the drawing and a star for the layout needs a routing step this
+  repository does not have.
+  **AND A NARROWER ONE THIS WRITER CAN STATE:** three of the four refusals are one power symbol's
+  value text, and **G262**'s power-symbol half has never been re-driven. If that text could move,
+  `oc-power`, `oc-audio` and `tp-leg-upper` would draw and the census would be 11 of 12 - which is
+  higher than it has ever been. That is a measurement of leverage, not a plan.
