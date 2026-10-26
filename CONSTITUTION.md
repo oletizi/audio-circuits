@@ -1,5 +1,41 @@
 # Constitution
 
+> **DEFECTIVE AS WRITTEN. DO NOT CITE IT AS AUTHORITY UNTIL IT IS CORRECTED.**
+> An independent review on 2026-10-26 found **46 findings: 16 errors, 14 gaps,
+> 9 over-reaches, 7 problems with the amendment procedure.** Three are verified
+> by a second reader and are disqualifying on their own:
+>
+> 1. **Principle 8's headline claim is false.** It says `G87`'s settling
+>    measurement *"was never run"*. It was run, and recorded as **`G160`**,
+>    whose own heading is *"measured, in TWO COLUMNS"* and whose second column
+>    reads **2 of 12 blocks, 1 of 8 templates**. G160 says in bold: **"Quote
+>    both or neither."** Three principles here quote one column.
+> 2. **Principle 6's corollary asserts a sentence `G160` deleted as FALSE.**
+>    *"They are the wrong construct family"* is the same claim as G160's deleted
+>    *"the idioms do not overlap"*; `connector-fanout` draws two
+>    transistor-preamp legs with a probed anchor.
+> 3. **Principle 1's evidence table is wrong.** The star row says the metric
+>    pointed the wrong way; the commit that landed it (`e652d98`) is titled *"a
+>    REGRESSION … On the owner's criterion it FAILS"* - the metric pointed the
+>    RIGHT way. And *"14 to 18 and was the session's biggest readability win"*
+>    appears in no committed source but this file, and is a readability verdict
+>    authored by the agent, which Principle 1 itself forbids.
+>
+> **The self-refutation is exact: Principle 6 says read the register before
+> building in an area, and this document was written without reading the
+> register entry that governs its own subject.** The count "9 templates" was
+> taken from `ls` rather than `TEMPLATE_IDS`, which has 8.
+>
+> The review also finds the omissions are not random - nothing on a check that
+> cannot fail, on the project's self-named cardinal failure, on scope, or on the
+> seven control-byte incidents - and that the amendment procedure was violated by
+> the very next commit after ratification was marked pending.
+>
+> Review: `scratchpad/governance-review.md` (1,049 lines). A spec to correct
+> this document is the next piece of work. **Until then this file is a record of
+> an attempt, not a governing document.**
+
+
 The non-negotiable principles of this project. Everything else — the generator,
 the gates, the templates, the register — is an implementation detail in service
 of these. **When a design decision conflicts with this document, this document
@@ -278,4 +314,4 @@ is gone — not left standing as a courtesy.
 paid for. A ninth added without a failure behind it would be the thing
 Principle 2 forbids.
 
-**Version**: 1.2.0 | **Ratified**: pending owner review | **Last amended**: 2026-10-26 (Principle 8, the template method, added)
+**Version**: 1.2.0 | **Ratified**: NO - defective, see the banner | **Last amended**: 2026-10-26
