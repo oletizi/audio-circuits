@@ -94,7 +94,7 @@ const POINTERS: readonly Pointer[] = [
     test: "tests/schgen/remeasure.test.ts",
     // G105's experiment moved subject on 2026-10-25 (G291): all seven transistor-preamp blocks
     // draw, the R38 guard refuses that case, and the subject is optical-compressor. Its flat side
-    // was ACCEPTED for a day and is refused at obligation 1 since the signal-order change (G292),
+    // was ACCEPTED for a day and is refused at obligation 1 since the orientation rule (G292),
     // so this marker moved with the assertion's name. The marker follows the assertion rather
     // than the assertion being kept alive for the marker - which is the whole point of this file,
     // and is why a renamed test turns it red instead of leaving the entry citing nothing.

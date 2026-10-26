@@ -184,15 +184,25 @@ describe("the four measures of every block that draws", () => {
    * the labels and power symbols need - so a leg figure that did NOT move would be the suspicious
    * result here.
    *
-   * **AND THEN THE SIGNAL-ORDER CHANGE MOVED A TOPOLOGICAL COUNT, WHICH NODE SIZING NEVER DID -
+   * **AND THEN THE ORIENTATION RULE MOVED A TOPOLOGICAL COUNT, WHICH NODE SIZING NEVER DID -
    * that difference is the finding and it is why these rows were re-taken rather than adjusted**
    * (`docs/known-gaps.md` **G292**). Node sizing moved `len` and `area` and left `bends`,
    * `perEdge` and `crossings` alone on all ten, *"which says the router found a different
-   * PLACEMENT of the same topology"*. **Ordering a net's ELK edges by downstream depth instead of
-   * by declaration order changes the GRAPH, not just the packing**, so `bends` moved on eight of
-   * the ten and `crossings` moved on two: `pt-core` 78 to **71** and `tp-stage` 7 to **6**. Four
-   * blocks' `bends` are unmoved (`oc-power` 5, `tp-leg-collector` 6, `tp-leg-emitter-bypass` 6 -
-   * and `tp-stage`'s per-edge ratio moved with its edge count).
+   * PLACEMENT of the same topology"*. **Laying a two-terminal passive with no rail end along the
+   * signal changes the GRAPH, not just the packing**: the part's node box goes from tall to wide
+   * AND its two pin ports move from `NORTH`/`SOUTH` to `EAST`/`WEST`, so `layered` is given a
+   * different problem. `bends` moved on eight of the ten and `crossings` moved on two: `pt-core`
+   * 78 to **71** and `tp-stage` 7 to **6**. Four blocks' `bends` are unmoved (`oc-power` 5,
+   * `tp-leg-collector` 6, `tp-leg-emitter-bypass` 6 - and `tp-stage`'s per-edge ratio moved with
+   * its edge count).
+   *
+   * **THE OTHER HALF OF G292 - ORDERING A NET'S ELK EDGES BY DOWNSTREAM DEPTH - MOVED NOT ONE
+   * FIGURE IN THIS FILE, AND ITS COMMIT MESSAGE SAYS OTHERWISE.** `[RAN]` the seven affected test
+   * files with `lib/schgen/elk/graph.ts` rolled back to the orientation-only commit and these
+   * expectations in place: **97 pass, 0 fail**. The reason is structural: `downstreamDepth` seeds
+   * from a boundary net that `layerConstraintFor` gives `FIRST_SEPARATE`, and **not one of the
+   * twelve parity blocks has one** - all seven blocks in the repository that do are Pultec board
+   * blocks. `docs/known-gaps.md` **G292** carries the measurement and the refuted claim.
    *
    * **THE LEGS STAY NON-CONGRUENT IN THE SAME PATTERN, which is the control that this change did
    * not re-converge them**: 51/544, 71/770, 61/630, 61/630, so `-lower-a` and `-lower-b` remain
@@ -231,11 +241,11 @@ describe("the four measures of every block that draws", () => {
 
   it("sums to G209's independently-taken figures for the same five blocks", () => {
     // G200 published 14 placements and 224.0 grid steps of wire over the five blocks it measured.
-    // Boundary-node sizing took the wire total to 298.0 and left the 14 alone; the signal-order
-    // change (**G292**) took it to **276.0** and left the 14 alone again. **Both wire figures are
+    // Boundary-node sizing took the wire total to 298.0 and left the 14 alone; the orientation
+    // rule (**G292**) took it to **276.0** and left the 14 alone again. **Both wire figures are
     // SUPERSEDED and the 14 is not**: neither change moved a part count, because neither changed
-    // what the blocks hold - one reserved room for the boundary text and the other re-DIRECTED the
-    // layout graph's edges.
+    // what the blocks hold - one reserved room for the boundary text and the other turned a
+    // signal-path part's axis through 90 degrees.
     //
     // **THE CROSS-CHECK IS WHAT MAKES 276 A MEASUREMENT RATHER THAN AN OUTPUT, and it is the same
     // cross-check that made 298 one.** It is computed here from the canonical topology in grid
@@ -267,11 +277,12 @@ describe("the four measures of every block that draws", () => {
    * `oc-power` with 1. **The ZERO on the six legs is the claim this test's name makes and it is
    * unmoved**; the four other figures are a record.
    *
-   * **NOT ONE CROSSING COUNT MOVED AT G291's NODE SIZING AND TWO MOVED AT G292's SIGNAL ORDER**,
-   * which is the same contrast the row table above records: node sizing re-packed one topology,
-   * edge direction built a different one. `pt-core` 78 to 71 and `tp-stage` 7 to 6 - **both
-   * DOWN**, which is the direction the owner's left-to-right directive would be expected to move
-   * them in and is reported rather than claimed as a goal: nothing here is a threshold.
+   * **NOT ONE CROSSING COUNT MOVED AT G291's NODE SIZING AND TWO MOVED AT G292's ORIENTATION
+   * RULE**, which is the same contrast the row table above records: node sizing re-packed one
+   * topology, a 90-degree turn of every non-rail passive built a different one. `pt-core` 78 to 71
+   * and `tp-stage` 7 to 6 - **both DOWN**, which is the direction the owner's left-to-right
+   * directive would be expected to move them in and is reported rather than claimed as a goal:
+   * nothing here is a threshold.
    *
    * Each of these four figures is the count the sweep in
    * `tests/schgen/remeasure-ceiling.test.ts` reports for the block's order 0, which is declaration
@@ -338,7 +349,7 @@ describe("the four measures of every block that draws", () => {
  *
  * **EVERY INFLATION FIGURE MOVED TWICE ON 2026-10-25 AND THE FOUR CONCLUSIONS DID NOT, which is
  * what each re-drive establishes.** Boundary-node sizing (`docs/known-gaps.md` **G291**) and then
- * the signal-order change (**G292**) both move where ELK puts the wires, so the duplicate-segment
+ * the orientation rule (**G292**) both move where ELK puts the wires, so the duplicate-segment
  * population moves with them: the range ran 2.05-18.16 per cent, then 1.30-21.20, and now
  * **1.42-21.20**. **The per-block assertions above are the claim** - crossings equal, area equal,
  * length strictly inflated, bends under-reported - and all four still hold on 12 of 12 blocks. The
@@ -360,10 +371,10 @@ describe("the deduplication the raw-versus-canonical comparison rests on", () =>
    * b)` in order would collapse none of them. That is how perturbation P4 came to change nothing.
    *
    * **THE POPULATION WAS 82 UNTIL 2026-10-25 AND IS 64 NOW; the 0-versus-all result is what is
-   * unmoved** (`docs/known-gaps.md` **G292**). Signal-ordered edges leave the router fewer
-   * reversed duplicates to emit - per block 9, 11, 6, 11, 16 and 11 on the six that have any, and
-   * **it is the same six blocks**. Re-measured here rather than carried over, because a `[RAN]`
-   * figure that nothing re-takes is exactly what G209's lesson is about.
+   * unmoved** (`docs/known-gaps.md` **G292**). A signal-path part laid along the signal leaves the
+   * router fewer reversed duplicates to emit - per block 9, 11, 6, 11, 16 and 11 on the six that
+   * have any, and **it is the same six blocks**. Re-measured here rather than carried over,
+   * because a `[RAN]` figure that nothing re-takes is exactly what G209's lesson is about.
    *
    * This check is here rather than in `tests/schgen/elk/junctions.test.ts` because it is what the
    * comparison below rests on: if the sort went away, the raw and canonical columns would agree on

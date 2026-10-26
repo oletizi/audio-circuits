@@ -119,14 +119,14 @@ So:
   was and to *"expect it to stop being true as the schematic-generation port
   lands"*. **The port landed and the prediction was wrong for a reason nobody
   anticipated, which is worth more than a silent correction.** `lib/schgen/`
-  exists, draws **46 of this repository's 52 declared ELK blocks**, and
-  **produces a schematic for 5 of the 11 boards in `boards/`** - `pt2399-core`,
-  `transistor-preamp-lab`, `transistor-preamp-loop`, `pultec-hi-boost` and
-  `pultec-low-cut`, all since 2026-10-24.
+  exists, draws **47 of this repository's 52 declared ELK blocks**, and
+  **produces a schematic for 7 of the 11 boards in `boards/`** - `pt2399-core`,
+  `pultec-hi-boost`, `pultec-hi-cut`, `pultec-low-boost`, `pultec-low-cut`,
+  `transistor-preamp-lab` and `transistor-preamp-loop`, all since 2026-10-24.
 
-  **THE FIGURE HAS BEEN `0`, `1` AND `2` IN THIS PARAGRAPH INSIDE FOUR DAYS, and
-  the lesson that outlives each of them is about the CAUSE rather than the
-  count.** `0 of 11` once stood here beside *"six are refused at
+  **THE FIGURE HAS BEEN `0`, `1`, `2`, `5`, `6` AND `7` IN THIS PARAGRAPH INSIDE
+  FIVE DAYS, and the lesson that outlives each of them is about the CAUSE rather
+  than the count.** `0 of 11` once stood here beside *"six are refused at
   `validateCircuit` on net names"*. The count was merely stale; **the cause was
   refuted**, and that is the worse of the two - a stale count misleads about
   progress, a stale cause sends the next agent after a rule that is not there.
@@ -136,19 +136,32 @@ So:
   refusal blocks and finds **not one** mentioning a net name, a case or
   `UPPER_SNAKE`.
 
-  **What refuses today is SIX boards, in four different classes**, which is the
-  shape to check rather than the number: `pultec-mid` at `validateCircuit` on a
-  switch throw (`pin 12`) that no slot in the model can carry; `pultec-hi-cut`
-  because **the drawing legitimately needs paper larger than A3** and the
-  refusal names the size; `pultec-low-boost` and `transistor-preamp-feedback` on
-  a **missing junction**, which makes a drawing WRONG ABOUT THE CIRCUIT and is
-  therefore the one class that must keep refusing; and
-  `transistor-preamp-buffered` and `-staged` on a power-symbol **value**
-  overlap, which is ordinary crowding. `docs/known-gaps.md` **G291** carries the
-  measurement and **G290** why the mechanical-pin classification is a whitelist
-  rather than inferred from a symbol's drawing.
+  **AND THE SECOND LESSON IS THAT THREE FILES CARRIED THREE DIFFERENT VALUES OF
+  THIS NUMBER AT THE SAME TIME.** On 2026-10-25 this paragraph said `5 of 11`,
+  `docs/known-gaps.md` **G291**'s own table said `2 of 11`, and **G259** - the
+  board-by-board scoreboard both of them cite - still said `1 of 11`. Three
+  changes that day moved it and not one of them amended the scoreboard.
+  **`bun tools/schgen/board-sheets.ts` is the only thing that answers this
+  question**; a figure in prose, including this one, is a transcription with a
+  date on it.
 
-  **AND `5 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it stand
+  **What refuses today is FOUR boards, in two classes**, which is the shape to
+  check rather than the number: `pultec-mid` at `validateCircuit` on a switch
+  throw (`pin 12`) that no slot in the model can carry; and `tp-stage` on each of
+  `transistor-preamp-buffered`, `-feedback` and `-staged`, all three at the
+  clearance checks on a power-symbol **value** overlap, which is ordinary
+  crowding - **one block refuses three boards.** **Two classes have left
+  entirely, and by opposite routes.** The **missing junction** - the one class
+  that must keep refusing, because it makes a drawing WRONG ABOUT THE CIRCUIT -
+  is gone because the geometry moved, not because anything was relaxed. The
+  **paper** class is gone because a sheet's declared paper is now a FLOOR rather
+  than a ceiling: a drawing that needs more than A3 is drawn on the next
+  standard size up, and only contents that fit on nothing still refuse.
+  `docs/known-gaps.md` **G292** carries the measurement and **G290** why the
+  mechanical-pin classification is a whitelist rather than inferred from a
+  symbol's drawing.
+
+  **AND `7 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it stand
   in this file, or anywhere else, without one. A board that generates is not a
   board whose drawing anyone has read.** The only sheet anyone HAS read closely
   is `pt2399-core`'s, and it **cannot be read as a drawing**: not one net label,
@@ -156,9 +169,12 @@ So:
   for a sheet symbol, and **19 of its 24 reference designators disagree with the
   built board's** - the sheet's `R3` is a 10K part where the board's `R3` is 15K.
   **G285** carries that table and ends, verbatim: *"It is not a candidate for
-  G240 and must not be sent to him as one."* **The other four have had no such
-  reading**, and their generations report **26 fallback field placements**
-  between them - text the placer could not keep clear.
+  G240 and must not be sent to him as one."* **The other six have had no such
+  reading**, and their generations report **19 fallback field placements**
+  between them - text the placer could not keep clear - against 4 on
+  `pt2399-core`'s own sheet, 23 in all. **`pt2399-core`'s fell from 8 to 4 and
+  that is not a step toward G240's criterion**: the eight were never what was
+  wrong with that sheet.
   **The "no authoring declaration" half of this sentence is gone and the dates
   say why it is kept:** until 2026-10-21 nine of the eleven
   boards had no declaration and had never been offered to the drawing code at

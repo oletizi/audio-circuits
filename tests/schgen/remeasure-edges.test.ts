@@ -343,7 +343,7 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
  * and **that test is gone**: boundary-node sizing made all seven `transistor-preamp` blocks draw
  * (**G291**), `integratedExperiment`'s guard refuses a circuit where every block draws, and the
  * experiment's subject moved to `optical-compressor`. That subject's flat side was ACCEPTED for a
- * day and **is refused at obligation 1 since the signal-order change** (**G292**) - so the
+ * day and **is refused at obligation 1 since the orientation rule** (**G292**) - so the
  * experiment carries a flat refusal again, but it is the SNAP rather than the junction, on a
  * different circuit. **It is still not G229's figure**, which is why this file keeps it.
  *
@@ -352,11 +352,11 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
  * and the same `flatSubgraphOf` this file already uses, so G229 keeps evidence that can fail.
  *
  * `[RAN]` **the refusal survived G291's node sizing byte-for-byte - same net, same coordinate -
- * and the signal-order change (G292) MOVED THE COORDINATE, which is the sharper of the two
+ * and the ORIENTATION RULE (G292) MOVED THE COORDINATE, which is the sharper of the two
  * results.** Node sizing moved the boundary rather than the branch, so `(45.72, 48.26)` held
- * through a change that moved wire length or occupied area on ten of twelve blocks. Ordering a
- * net's ELK edges by downstream depth moves where the three legs' `BASE` pins MEET, so the branch
- * point itself moved, to **`(46.99, 43.18)`**.
+ * through a change that moved wire length or occupied area on ten of twelve blocks. Laying each
+ * leg's floor resistor along the signal moves where the three legs' `BASE` pins MEET, so the
+ * branch point itself moved, to **`(46.99, 43.18)`**.
  *
  * **WHAT IS UNMOVED IS THE WHOLE OF WHAT G229 IS ABOUT**: the obligation (2, the junction
  * obligation), the net (`BASE`), the kind (`t-junction`) and the count (one place). The coordinate
@@ -396,7 +396,7 @@ describe("G229's junction-obligation refusal, which the integrated experiment no
    * TEST'S OWN PREVIOUS REASON FOR EXISTING.** This test was `refuses the seven-block flat probe
    * at the SNAP, which is a different obligation`, and its comment said the seven-block union
    * *"refuses at obligation 1 - the snap collapse - on a `VCC` wire 10 nanometres long, not at
-   * obligation 2, so it is a measurement of a different thing"*. **Since the signal-order change
+   * obligation 2, so it is a measurement of a different thing"*. **Since the orientation rule
    * (`docs/known-gaps.md` **G292**) it refuses at obligation 2** - the junction obligation - and
    * the snap no longer collapses anything on it at all.
    *

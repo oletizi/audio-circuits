@@ -99,10 +99,10 @@ function declaredPositionsOf(subject: ComposedSubject, at: readonly Point[], blo
  * the test that does exactly that, below); it is now reachable from a declaration this repository
  * actually ships.
  *
- * **IT WAS ELEVEN UNTIL THE SIGNAL-ORDER CHANGE AND IS TWELVE NOW, AND THE ONE THAT MOVED IS
+ * **IT WAS ELEVEN UNTIL THE ORIENTATION RULE AND IS TWELVE NOW, AND THE ONE THAT MOVED IS
  * `tp-stage`'s `BYPASS_CAP`** (`docs/known-gaps.md` **G292**). It was the satisfied `tp-stage`
- * declaration this comment used to name as proof the refusal was not a blanket; ordering the
- * block's ELK edges by downstream depth brought that anchor out on the TOP edge where it used to
+ * declaration this comment used to name as proof the refusal was not a blanket; laying the block's
+ * capacitors along the signal brought that anchor out on the TOP edge where it used to
  * reach a horizontal one. **So all NINE of `tp-stage`'s declared ports now disagree**, and the
  * eleven that are satisfied are all on other blocks - seven leg ports and all four of
  * `tp-leg-emitter-bypass`'s. The three leg refusals and the two no-anchor refusals are the same
@@ -328,7 +328,7 @@ test("a declared side the block's extent does not put its anchor on REFUSES, nam
       // TWELVE OF THE TWENTY-THREE: the other eleven anchors ARE on their block's top edge, so
       // forcing every declaration to [top] does not refuse everything - which is what makes this a
       // check and not a blanket. It was 5 of 10 while only the five legs drew, then 14 of 23, and
-      // the signal-order change (`docs/known-gaps.md` **G292**) took it to 12 - two more anchors
+      // the orientation rule (`docs/known-gaps.md` **G292**) took it to 12 - two more anchors
       // come out on a top edge than did before. WHICH two is not derivable from this run, and is
       // not claimed: it would need the previous run's list, which nothing kept.
       //
@@ -540,11 +540,11 @@ test("G209's figures are re-runnable: composition leaves G200's two measures unc
    * | `tp-stage` | 16 | 10 | 9 | 4 | 60 | 641 350 |
    * | **sum** | **32** | **26** | **32** | **15** | **131** | **1 055 370** |
    *
-   * **THE SIGNAL-ORDER CHANGE MOVED TWO OF THE SIX COLUMNS AND LEFT FOUR ALONE**
+   * **THE ORIENTATION RULE MOVED TWO OF THE SIX COLUMNS AND LEFT FOUR ALONE**
    * (`docs/known-gaps.md` **G292**). `segments` 142 to 131 and `wire` 1 033 780 to 1 055 370;
    * `placements`, `distinctX`, `wiredNets` and `reversing` are byte-identical. **Fewer segments
-   * carrying MORE wire is the signature to read here**: re-directing a net's edges by downstream
-   * depth gives the router longer, straighter runs rather than more of them.
+   * carrying MORE wire is the signature to read here**: laying each signal-path passive along the
+   * signal gives the router longer, straighter runs rather than more of them.
    *
    * **EVERY FIGURE IS CROSS-CHECKED BY A SECOND FUNCTION rather than read off this one.** Each
    * block's `wire / 1270` is exactly the `len` that

@@ -103,17 +103,25 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
    * least one of `len`, `area`, `aspect` on ten of twelve, and **did not move a single topological
    * count**: *"the signature of a layout that was re-packed rather than re-routed."*
    *
-   * **The signal-order change** (**G292**) moved the GRAPH. `edgesForNet` directs a net's edges by
-   * downstream depth from the block's inbound boundary nets instead of by declaration order, so
-   * `layered` assigns different layers, and `bends`, `perEdge` and `crossings` move with the rest:
+   * **The ORIENTATION rule** (**G292**) moved the GRAPH. A two-terminal passive with no rail end
+   * is now laid along the signal, so its node box goes from tall to wide and its two pin ports
+   * move from `NORTH`/`SOUTH` to `EAST`/`WEST`; `layered` is given a different problem, and
+   * `bends`, `perEdge` and `crossings` move with the rest:
    *
    * - `crossings` moved on **four of the twelve** - `ob-buffer` 7 to 6, `oc-sidechain` 7 to 8,
    *   `pt-core` 78 to 71, `tp-stage` 7 to 6. Three down, one up, and none of them is a threshold;
    * - `bends` moved on **eight of the twelve**. `oc-power`, `tp-leg-collector` and
    *   `tp-leg-emitter-bypass` are unmoved in every figure, and those three are the control that
-   *   the re-direction is a no-op where it has nothing to re-direct;
+   *   the rule is a no-op where it has nothing to turn;
    * - `parts`, `units`, `placements`, `graphCells`, `ports`, `share`, `scale` and `stage` are
    *   **identical on all twelve rows**: nothing started or stopped drawing.
+   *
+   * **G292's OTHER HALF - EDGES ORDERED BY DOWNSTREAM DEPTH - MOVED NOT ONE FIGURE IN THIS FILE,
+   * AND THE COMMIT THAT LANDED IT SAYS IT MOVED 24 TESTS.** `[RAN]` the seven affected files with
+   * `lib/schgen/elk/graph.ts` rolled back to the orientation-only commit and these expectations in
+   * place: **97 pass, 0 fail.** `downstreamDepth` seeds from a boundary net with the
+   * `FIRST_SEPARATE` layer constraint, and **no parity block has one** - the seven blocks in the
+   * repository that do are all Pultec board blocks. `docs/known-gaps.md` **G292** carries it.
    *
    * **EVERY `bends` AND `crossings` FIGURE HERE IS CROSS-CHECKED, which is what keeps this table a
    * measurement.** `tests/schgen/readability/measures.test.ts` takes both quantities through a
@@ -153,9 +161,10 @@ describe("step 1 and step 3: which blocks draw, and the four measures of each", 
    * failure. The five are named so that the agreement stays an agreement.
    *
    * **G216's 14 PLACEMENTS STAND AND ITS WIRE TOTAL HAS NOW MOVED TWICE: 224, then 298, now 276**
-   * (**G291**, **G292**). Node sizing lengthened the wires that reach the labels; ordering the ELK
-   * edges by downstream depth shortened them again, past where they started on three of the five
-   * legs. **The 14 stands through both** because neither change moves a part between blocks, and
+   * (**G291**, **G292**). Node sizing lengthened the wires that reach the labels; laying each
+   * leg's floor resistor along the signal shortened them again, past where they started on three
+   * of the five legs. **The 14 stands through both** because neither change moves a part between
+   * blocks, and
    * that is what the two figures put side by side are for: a part count that moved with the wire
    * would say the subject had changed rather than the layout.
    *
@@ -272,15 +281,15 @@ describe("step 2: a block is compared against ITS spike row or against none", ()
  * - **`optical-compressor` draws 2 of its 3** - `oc-power` and `oc-audio` yes, `oc-sidechain` no -
  *   so the brief's named mechanism is available for the first time since Task 17.
  *
- * **THE RE-SCOPE BOUGHT A MEASURING FLAT SIDE FOR ONE DAY AND THE SIGNAL-ORDER CHANGE TOOK IT
+ * **THE RE-SCOPE BOUGHT A MEASURING FLAT SIDE FOR ONE DAY AND THE ORIENTATION RULE TOOK IT
  * AWAY AGAIN, which is the live state and is recorded rather than engineered around**
  * (`docs/known-gaps.md` **G292**). On the five legs the flat probe was refused by the junction
  * gate, so the accepted column held *"a composed drawing and a refusal"*. On
  * `optical-compressor` the flat probe was ACCEPTED, and G105's criterion - *"reports the four
  * measures against the FLAT whole-circuit baseline"* - had figures on both sides at the stage a
- * drawing is emitted from. **Since the edges are directed by downstream depth the flat probe is
- * refused at obligation 1**, the snap collapse, so the accepted-stage comparison has one side
- * again and the stage-matched one at `backend-output` is the only one with two.
+ * drawing is emitted from. **Since a non-rail two-terminal passive is laid along the signal the
+ * flat probe is refused at obligation 1**, the snap collapse, so the accepted-stage comparison has
+ * one side again and the stage-matched one at `backend-output` is the only one with two.
  *
  * **R38's THIRD CLAUSE IS WHAT THIS FILE DOES ABOUT IT, verbatim: *"If the flat side REFUSES,
  * that refusal is the result."*** So the refusal is asserted with its gate and its reason, and
@@ -366,7 +375,7 @@ describe("step 4: the integrated experiment, on optical-compressor's two blocks 
    * **THE STAGE-MATCHED COMPARISON, AND IT HAS REVERSED SIGN: 4 crossings FLAT against 6 in the
    * BLOCKS.** Both sides here are the pre-snap canonical topology of what `elkjs` emitted, so
    * their difference is attributable to the decomposition rather than to the stage. It read 6
-   * against 6 until the signal-order change (`docs/known-gaps.md` **G292**); on this subject
+   * against 6 until the orientation rule (`docs/known-gaps.md` **G292**); on this subject
    * **decomposition now COSTS two crossings rather than being free**, and 1087.90 grid steps flat
    * against 977.60 summed says it buys 110 grid steps of wire for them.
    *
@@ -585,7 +594,7 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
   })
 
   it("gives three of the four a rail glyph and one of them NONE, which is G97's breaking condition", () => {
-    // The rail-glyph pattern is the CLAIM here and it is unmoved by the signal-order change
+    // The rail-glyph pattern is the CLAIM here and it is unmoved by the orientation rule
     // (`docs/known-gaps.md` **G292**) - three `powers`, one `none`, same three nets, same sides.
     // The second anchor's position moved on all four, which is the layout and is a record.
     expect(legs.map((l) => `${l.block} powers=${l.powers.join("|") || "none"} labels=${l.labels.join("|")}`)).toEqual([
@@ -606,7 +615,7 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
    * measured 14 grid steps.** A predicted spread against a measured zero.
    *
    * Node sizing made the four measure **16, 42, 32 and 32** grid steps (`docs/known-gaps.md`
-   * **G291**) and the signal-order change made them **19, 42, 32 and 32** (**G292**) - only
+   * **G291**) and the orientation rule made them **19, 42, 32 and 32** (**G292**) - only
    * `-upper`'s moved, and the `dy` went from 12 to **4** on all four, because `floor` is now laid
    * horizontally and the three parts sit nearly on one row. So what is asserted now is weaker
    * than the old clean refutation and is stated as weaker:
@@ -657,7 +666,7 @@ describe("step 6: congruence, WITH the rail glyphs the instances actually get", 
 describe("step 7: disjointness at sheet level, over Task 15's packing", () => {
   /**
    * **THE CRITERION IS `inside=0` ON EVERY ROW AND IT IS UNMOVED; THE BOXES MOVED.** The
-   * signal-order change (`docs/known-gaps.md` **G292**) re-places every block, so five of the
+   * orientation rule (`docs/known-gaps.md` **G292**) re-places every block, so five of the
    * seven boxes are different - `tp-leg-upper` 29x24 to 32x17, `-feedback` 55x20 to 55x14, both
    * `-lower` legs 45x20 to 45x14, `tp-stage` 71x52 to 74x50. Four of the five got SHORTER, which
    * is what laying a signal-path part along the signal does to a block's height.
@@ -727,7 +736,7 @@ describe("step 7: disjointness at sheet level, over Task 15's packing", () => {
     // Seven frames on the sheet's own declared paper, and 131 wires - which is `shapeMeasures`'
     // `segments` total over the same seven blocks in `tests/schgen/render/compose.test.ts`, where
     // it is also decomposed per block (12, 12, 12, 12, 11, 12, 60). **It was 142 until the
-    // signal-order change** (`docs/known-gaps.md` **G292**): the router emits ELEVEN FEWER
+    // orientation rule** (`docs/known-gaps.md` **G292**): the router emits ELEVEN FEWER
     // segments carrying MORE wire, 1 055 370 um against 1 033 780, which is the straighter-runs
     // signature that change leaves everywhere in this file.
     expect(drawing.frames.length).toBe(7)

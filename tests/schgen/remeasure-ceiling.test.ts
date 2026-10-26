@@ -40,11 +40,14 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
    * **Every one of the 40 crossing counts in this table was byte-identical through that change**,
    * although wire length or occupied area moved on TEN of the twelve blocks.
    *
-   * **THE SIGNAL-ORDER CHANGE MOVED 18 OF THE 40 AND MOVED NO BLOCK ACROSS THE INVARIANT/MOVES
+   * **THE ORIENTATION RULE MOVED 18 OF THE 40 AND MOVED NO BLOCK ACROSS THE INVARIANT/MOVES
    * LINE, and the contrast with the paragraph above is the finding** (`docs/known-gaps.md`
-   * **G292**). Node sizing re-packed one graph; ordering a net's ELK edges by downstream depth
-   * builds a different graph, and a sweep over DECLARATION orders is exactly the quantity that
-   * notices. Which moved, term by term: all four on `ob-buffer`, `oc-sidechain` and `pt-core`,
+   * **G292**). Node sizing re-packed one graph; turning every non-rail two-terminal passive
+   * through 90 degrees changes its node box AND its two pin ports' sides, which builds a different
+   * graph, and a sweep over DECLARATION orders is exactly the quantity that notices. **G292's
+   * other half - edges ordered by downstream depth - moved not one of the 40**, because
+   * `downstreamDepth` seeds from a `FIRST_SEPARATE` boundary net and no parity block has one.
+   * Which moved, term by term: all four on `ob-buffer`, `oc-sidechain` and `pt-core`,
    * three of four on `oc-audio` and on `tp-stage`, **none at all on `oc-power` or on any of the
    * six legs**. `oc-power`'s unmoved `1, 3, 2, 2` is load-bearing: it is the single subject
    * `SCALE_UNSTABLE_FROM` rests on, and the test below derives that constant from this row.

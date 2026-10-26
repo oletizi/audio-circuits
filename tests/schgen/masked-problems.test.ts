@@ -61,10 +61,10 @@ describe("what every declared block's refusal is hiding", () => {
    * refused by LABEL and power-symbol clearance, which is a different population and is what
    * node sizing addressed.
    *
-   * **AND THE SIGNAL-ORDER CHANGE CUT THE FALLBACK POPULATION FROM 18 TO 11 WITHOUT MOVING THE
-   * BUCKETS** (`docs/known-gaps.md` **G292**). Ordering a net's ELK edges by downstream depth
-   * instead of by declaration order re-places every block, so the slots the field placer is
-   * offered move with it. Term by term: `pt-core` 8 fallbacks to **4**, `tp-stage` 4 to **1**,
+   * **AND THE ORIENTATION RULE CUT THE FALLBACK POPULATION FROM 18 TO 11 WITHOUT MOVING THE
+   * BUCKETS** (`docs/known-gaps.md` **G292**). Laying a two-terminal passive with no rail end
+   * along the signal re-places every block, so the slots the field placer is offered move with it.
+   * Term by term: `pt-core` 8 fallbacks to **4**, `tp-stage` 4 to **1**,
    * `oc-audio` 3 to 3 **on different units**, `ob-buffer` 1 to 1 on a different unit,
    * `oc-power` 1 to 1 **byte-identical**, `tp-leg-emitter-bypass` 1 to 1 byte-identical.
    * **`pt-core`'s four are cross-checked by a different driver**:
@@ -162,8 +162,8 @@ describe("what every declared block's refusal is hiding", () => {
    *   extra `C10#1` had a clear slot until an earlier unit's fields took it;
    * - G291's node sizing: `oc-power` joined it at ZERO against ONE, the cleanest form, and
    *   `tp-stage`'s gap closed at four and four;
-   * - **G292's signal order: `pt-core`'s gap CLOSED at four and four and `tp-stage` opened one at
-   *   ZERO against ONE.** So the two carriers are now `oc-power` and `tp-stage`, both at 0 against
+   * - **G292's orientation rule: `pt-core`'s gap CLOSED at four and four and `tp-stage` opened one
+   *   at ZERO against ONE.** So the two carriers are now `oc-power` and `tp-stage`, both at 0 against
    *   1, and `pt-core` is the control that a closed gap is a real reading rather than an absent
    *   one.
    *
@@ -289,9 +289,9 @@ describe("what every declared block's refusal is hiding", () => {
     for (const r of withLayout) expect(r.fieldFree.filter((p) => !r.publishedProblems.includes(p)), r.block).toEqual([])
     // NOT VACUOUS: one of the eleven has a problem to find, and the field-free pass finds it.
     // **THE PAIR AND THE POINTS MOVED ON 2026-10-25 AND THE CLASS DID NOT** (`docs/known-gaps.md`
-    // **G292**): it was `GND 0` over `VEE 1` at (99.06, 33.02)/(99.06, 44.45), and ordering the
-    // block's ELK edges by downstream depth re-placed its power symbols, so it is now `GND 0` over
-    // `VCC 2`. It is still one `power-value-overlap` and `ob-buffer` is still the one block in the
+    // **G292**): it was `GND 0` over `VEE 1` at (99.06, 33.02)/(99.06, 44.45), and laying this
+    // block's two capacitors along the signal re-placed its power symbols, so it is now `GND 0`
+    // over `VCC 2`. It is still one `power-value-overlap` and `ob-buffer` is still the one block in the
     // corpus that has one, which is what this control needs; the coordinates are a record.
     expect(row("ob-buffer").fieldFree).toEqual([
       "value of power symbol GND 0 at (105.41, 1.27) overlaps value of power symbol VCC 2 at (105.41, 11.43)",

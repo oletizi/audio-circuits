@@ -1809,6 +1809,91 @@ made.
 >   than the producing agent's judgement. **The sheet this plan produced is not a candidate**, and
 >   the Task 5 amendment above already struck the sentence that offered it.
 
+> **AMENDED 2026-10-25 EVENING: THE BOARD ROW IS `7 of 11`, AND IT MOVED FOUR
+> TIMES IN ONE DAY WHILE THIS SCOREBOARD SAID `1 of 11` THROUGH ALL FOUR. THE
+> STALENESS IS THE PROCESS FINDING AND IT COMES FIRST.** This entry is the
+> board-by-board scoreboard other entries and `CLAUDE.md` cite. Three changes
+> landed on 2026-10-25 and moved its headline row, and **not one of them amended
+> it**: `G291`'s own table recorded `2 of 11` while this row said `1 of 11`, and
+> `CLAUDE.md` separately said `5 of 11`. **Three committed files carried three
+> different values of one number at the same time.** Found by looking for figures
+> the 2026-10-25 changes had moved, not by anything that was checking.
+>
+> | | at Task 6 (2026-10-24) | node sizing (**G291**) | paper as a floor | orientation (**G292**) | edge order (**G292**) |
+> | --- | --- | --- | --- | --- | --- |
+> | boards in `boards/` that produce a schematic | 1 of 11 | **2 of 11** | **6 of 11** | **7 of 11** | **7 of 11** |
+> | boards with NO authoring declaration | 0 | 0 | 0 | 0 | **0** |
+> | boards refused | 10 | 9 | 5 | 4 | **4** |
+> | fallback field placements, total | 8 on one sheet | 26 on five | not separately taken | 28 on seven | **23 on seven** |
+> | declared ELK blocks that draw (whole repository) | not taken | 46 of 52 | not separately taken | not separately taken | **47 of 52** |
+>
+> **WHAT MOVED EACH STEP, named so the four are not read as one effort.** Node
+> sizing drew `transistor-preamp-lab`. **Paper as a floor** took it from 2 to 6: a
+> sheet's declared paper became a FLOOR rather than a ceiling, so a drawing that
+> overflows is drawn on the smallest larger standard size it fits - `pultec-hi-cut`
+> escalated to A2 and drew, and the escalation carried three more with it. **The
+> orientation rule** took it to 7 by clearing
+> `pultec-low-boost/pultec-low-boost-own`'s missing-junction refusal, which is the
+> move **G292**'s own rotation probe predicted. **The edge-order change moved no
+> board** and cut the text collisions from 28 to 23.
+>
+> **THE FOUR THAT STILL REFUSE, and two of them are owner questions rather than
+> work:** `pultec-mid` at `validateCircuit` on `SW_MID` pin 12, which no slot in
+> the model can carry (**G282**); and `tp-stage` on each of
+> `transistor-preamp-buffered`, `-feedback` and `-staged`, all three at the
+> clearance checks - *"value of power symbol GND 0 … overlaps value of power
+> symbol VCC 1"* on two of them and *"value of power symbol VCC 1 … overlaps wire
+> 18 of tp-stage (GND)"* on the third. **One block refuses three boards**, which
+> is **G274** clause 4 still holding with one board fewer.
+>
+> **`7 of 11` MUST NOT BE QUOTED ALONE AND THE SECOND COLUMN IS WORSE THAN A
+> FALLBACK COUNT.** The seven sheets carry **23** field placements the placer
+> could not keep clear. More to the point, **only ONE of the seven has ever been
+> read as a drawing** - `pt2399-core`'s, and **G285** records that it cannot be
+> read as one: no net labels, flow not followable, and 19 of its 24 reference
+> designators disagreeing with the built board's. **The other six have had no such
+> reading at all.** This entry's criterion is not met by any row in the table
+> above, and `pt2399-core`'s halving from 8 fallbacks to 4 does not approach it.
+>
+> - **Evidence** `[RAN]` `SCHGEN_SOURCE=… bun tools/schgen/board-sheets.ts` at a
+>   clean tree, output read in full: `7 of 11 boards produce a schematic`,
+>   `4 refused; 0 have no authoring declaration`, `WARNING: 23 fallback field
+>   placement(s) across 7 board(s)`, with the per-board counts 4, 4, 2, 6, 3, 2, 2
+>   adding to 23. **THE CONTROLS, which could have answered differently:**
+>   `make -C boards/<board> check` is exit 0 on all five `boards/pultec-*`, and
+>   `shasum -a 256 boards/*/*.perfboard.vrt` is byte-identical over all eleven
+>   before and after - so a schematic change did not reach the board path. The
+>   52-block probe over `ALL_DECLARED_CASES` names each of the five refusing
+>   blocks rather than reporting a count.
+> - **Verified** **CONFIRMED by this writer** for the FINAL column of that table
+>   and for everything in the two paragraphs above it: the census, the per-board
+>   fallback counts, the four refusal texts, the 47-of-52 probe, the five `make
+>   check` runs and the eleven checksums - each run in this repository at HEAD.
+>   **RELAYED, and the two middle columns are the ones to treat with care:** the
+>   `6 of 11` after paper-as-a-floor and the `7 of 11` / `28 fallbacks` after the
+>   orientation rule are read off those commits' own messages (`f754a37`:
+>   *"pultec-hi-cut escalated to A2 and drew. 6 of 11 boards now produce a
+>   schematic"*; `22ca29b`: *"7 of 11 boards produce a schematic, up from 6"* and
+>   *"Text collisions 28 to 23 overall"*). **This writer did not re-run the census
+>   at either intermediate commit**, so the attribution of each step to each change
+>   is that author's and not re-derived here. The endpoints - 2 of 11 from
+>   **G291** and 7 of 11 at HEAD - are both measured. **Also RELAYED:**
+>   **G285**'s PDF reading of `pt2399-core`'s sheet, which this writer did not
+>   re-open; the claim that the other six sheets have had no reading rests on no
+>   entry in this register recording one, which is an absence of evidence and is
+>   stated as that.
+> - **Why it is open** unchanged. **Four of the five output classes are not
+>   delivered**, and the schematic class now delivers seven sheets of which six
+>   have never been looked at and one is recorded as unfit to show him.
+> - **What would settle it** unchanged, and **this writer authored no criterion.**
+>   **CRITERION: each of the five classes produces an artifact the owner accepts**,
+>   and for the schematic class **G240**'s stands - a generated schematic for at
+>   least one board, compared against a drawing the owner trusts by something other
+>   than the producing agent's judgement. **MECHANISM, newly available and
+>   untried:** six sheets nobody has opened is a cheaper first move than it has
+>   ever been, and `bun tools/schgen/board-sheets.ts --out <dir> --pdf` renders
+>   them. **Which of them, if any, is fit to show him is not this writer's call.**
+
 ---
 
 ### G260 - MEASURED: fifteen field pairs are now DRAWN OVER something, no check refuses a sheet for it by design, and the only artifact that says so is a report nothing reads automatically
@@ -2565,6 +2650,18 @@ probe. Repository-wide that is **35 of 52** declared ELK blocks drawing, against
 > declared ELK blocks"* - and it reads 46 of 52. The BOARD count is a different
 > subject and has not moved on this measurement; `board-sheets.ts` is what
 > answers that one.
+>
+> **RE-MEASURED AGAIN 2026-10-25 EVENING: 47 of 52**, because the orientation rule
+> (**G292**) cleared `pultec-low-boost/pultec-low-boost-own`'s junction refusal -
+> the one move G292's own probe predicted. The five that still refuse are
+> `opamp-buffer/ob-buffer`, `optical-compressor/oc-sidechain`, and `tp-stage` on
+> `transistor-preamp-buffered`, `-feedback` and `-staged`. **The junction class is
+> gone from the repository.** The template count reads 16 on this probe too, which
+> is the second of two readings against this entry's 15 and still settles nothing
+> for want of a committed tool. **`CLAUDE.md` was amended to 47 of 52 and 7 of 11
+> in the same change**, so the governance file is no longer the stale quoter this
+> paragraph names it as. **CONFIRMED by this writer**, who ran the probe over
+> `ALL_DECLARED_CASES` with `caseResolver([c])` per case.
 
 **THE THREE SHAPES, each with its refusal text verbatim and the blocks it refuses.**
 
@@ -4234,16 +4331,29 @@ publish, **two are the same quantity as this generator's and three are not**:
 | axis | comparable? | what the re-take found |
 | --- | --- | --- |
 | **bends per edge** | **NO - G220** | the spike divides ELK's `bendPoints` by ELK's own spanning-chain edge count and this repository divides bends by maximal POLYLINES. **So "0 of 14 beat the probe" and "6 of 18 beat it" have no successor figure**, and this generator's 0.19 to 1.33 must NOT be set beside 1.72 |
-| **inter-net crossings** | yes, in kind | 0 on the six blocks of 3 placements or fewer, then 1 at 8 parts, 7 at 9, 5 at 12, 7 at 16, 7 at 17 and 78 at 24. **The spike's *"zero on every block of 8 parts or fewer"* FAILS on `oc-power`**, the same 8-part block, at 1 crossing |
-| **aspect** | yes - a ratio is unit-free | 0.76 to 2.64 over the twelve, against the spikes' 0.87 to 6.63. **No block of this repository draws a 4.70:1 or 6.63:1 ribbon**, and the two blocks that did are not declared here |
+| **inter-net crossings** | yes, in kind | 0 on the six blocks of 3 placements or fewer, then 1 at 8 parts, 6 at 9, 5 at 12, 6 at 16, 8 at 17 and 71 at 24. **The spike's *"zero on every block of 8 parts or fewer"* FAILS on `oc-power`**, the same 8-part block, at 1 crossing |
+| **aspect** | yes - a ratio is unit-free | 0.76 to 3.93 over the twelve, against the spikes' 0.87 to 6.63. **No block of this repository draws a 4.70:1 or 6.63:1 ribbon**, and the two blocks that did are not declared here |
 | wire length | **NO** | the skin's pixel against the 1.27 mm grid step |
 | canvas / occupied area | **NO** | the spikes published a canvas in pixels and no area |
 
+> **THE CROSSING AND ASPECT ROWS WERE RE-TAKEN 2026-10-25 EVENING AND BOTH
+> COMPARABILITY VERDICTS ARE UNMOVED, which is all this entry turns on.** The
+> orientation rule (**G292**) moved four of the twelve crossing counts: at 9
+> parts **7 to 6**, at 16 **7 to 6**, at 17 **7 to 8**, at 24 **78 to 71** - three
+> down, one up. 1 at 8 parts and 0 on the six small blocks are unmoved, so the
+> `oc-power` failure above still has its subject. Aspect widened from
+> **0.76-2.64** to **0.76-3.93**, and the *"no 4.70:1 or 6.63:1 ribbon"* claim
+> still holds with margin. Bends per edge, which this table calls NOT comparable
+> anyway, narrowed from 0.19-1.33 to **0.19-1.20**.
+
 **AND CROSSINGS DO NOT GROW MONOTONICALLY IN PARTS HERE, which is the other half
 of this entry's size finding.** *"Crossings grow faster than linearly in parts"*
-does not reproduce: 9 parts gives 7 and 12 parts gives 5. The 24-part `pt-core`
-at 78 is far above everything else, so the general shape - more parts, more
-crossings - survives while the ordering does not.
+does not reproduce: 9 parts gives 6 and 12 parts gives 5, and 16 parts gives 6
+against 17 parts' 8. The 24-part `pt-core` at 71 is far above everything else, so
+the general shape - more parts, more crossings - survives while the ordering does
+not. **That conclusion is unmoved by the 2026-10-25 re-take**, which is worth
+saying because every figure in it moved: 9 against 12 parts was 7 against 5 and
+is 6 against 5, so the non-monotonicity is narrower and still there.
 
 **THE CAUTION THIS ENTRY ENDS ON IS STILL TRUE AND THAT IS THE RE-TAKE'S MOST
 IMPORTANT RESULT.** *"Neither spike had a template in the loop."* **Neither did
@@ -5299,12 +5409,58 @@ and `optical-compressor` draws **2 of its 3** - `oc-power` and `oc-audio` yes,
 `oc-sidechain` no. **The guard was not relaxed; the subject moved, and the guard
 going red is what found it.** `[RAN]` `tools/schgen/remeasure-composed.ts`:
 
+**3. AND SINCE THE SIGNAL-ORDER CHANGE (G292) THE FLAT SIDE REFUSES AGAIN AND THE
+COMPARISON HAS REVERSED SIGN.** `[RAN]`
+`tools/schgen/remeasure-composed.ts`, 2026-10-25, after
+`preferredOrientation` began laying a two-terminal passive with NO rail end along the
+signal - pins left and right instead of top and bottom:
+
 | | stage | placements | bends | crossings | wire length | aspect |
 | --- | --- | --- | --- | --- | --- | --- |
-| `oc-power` + `oc-audio` as ONE graph | accepted | 22 | 31 | **6** | **1040** | 2.91 |
-| `oc-power` + `oc-audio` as ONE graph | backend-output | 22 | 31 | **6** | **1039.00** | 2.93 |
-| the two blocks, summed | backend-output | 22 | 34 | **6** | **864.11** | - |
-| the two blocks composed by seam B | accepted | 22 | 34 | **6** | **862** | 4.41 |
+| `oc-power` + `oc-audio` as ONE graph | accepted | **REFUSED at obligation 1** - wire 34 (net `GND`), 0.635 mm before the snap and zero after it | | | |
+| `oc-power` + `oc-audio` as ONE graph | backend-output | 22 | 29 | **4** | **1087.90** | 4.41 |
+| the two blocks, summed | backend-output | 22 | 35 | **6** | **977.60** | - |
+| the two blocks composed by seam B | accepted | 22 | 35 | **6** | **978** | 5.84 |
+
+**WHAT THAT TABLE SAYS, and the second line is the one worth reading twice:**
+
+- **the ACCEPTED-stage comparison is one-sided again.** R38's third clause -
+  *"If the flat side REFUSES, that refusal is the result"* - is what this entry
+  does about it. The refusal is spec §1.4 obligation 1, the snap collapse, which
+  is the class that must keep refusing because the drawing would assert a
+  connection the route did not make. `oc-power` and `oc-audio` each pass every
+  gate on their own; it is the UNION as one graph that collapses;
+- **`crossingRatio` is `null`, not 4/6.** `integratedExperiment` forms the ratio
+  from the ACCEPTED flat side. **On the five legs it had no DENOMINATOR; here it
+  has no NUMERATOR.** Taking 4/6 from the backend-output row instead would
+  publish a ratio the module does not compute, at a stage it was never defined
+  for;
+- **decomposition now COSTS two crossings and buys 110 grid steps of wire for
+  them** - 4 flat against 6 summed, 1087.90 against 977.60, same stage. **It read
+  6 against 6, and the sign is reversed**: the spike's 6.1x says the flat drawing
+  crosses far MORE than its blocks, and on this subject at this stage it crosses
+  FEWER. That is one subject disagreeing with the spike's DIRECTION, recorded as
+  a measurement; `comparabilityOf` still calls three of the five measures
+  not-comparable and nothing here scales one figure into the other;
+- **every count on the composed side is now the termwise sum of the two blocks** -
+  crossings 1 + 5, wire 221 + 757, bends 5 + 30, segments 31 + 70, placements
+  8 + 14. `wires` used to be the one figure that did not add up (100 composed
+  against 99 flat); the flat side refuses, so there is nothing for it to disagree
+  with. `occupiedArea` is still not a sum by construction - 7992 against the
+  blocks' 1856 + 4716 = 6572 - because the packer leaves a gap between frames;
+- **0 inter-block crossings, 0 inter-block wire, 0 frame overlaps** (**G208**)
+  re-confirmed through the change.
+
+> **THE 2026-10-25-MORNING TABLE, SUPERSEDED BY THE ONE ABOVE and kept because
+> this entry's own "the flat side is ACCEPTED on this subject" bullet below was
+> drawn from it.** Same subject, same harness, before the orientation rule:
+>
+> | | stage | placements | bends | crossings | wire length | aspect |
+> | --- | --- | --- | --- | --- | --- | --- |
+> | `oc-power` + `oc-audio` as ONE graph | accepted | 22 | 31 | **6** | **1040** | 2.91 |
+> | `oc-power` + `oc-audio` as ONE graph | backend-output | 22 | 31 | **6** | **1039.00** | 2.93 |
+> | the two blocks, summed | backend-output | 22 | 34 | **6** | **864.11** | - |
+> | the two blocks composed by seam B | accepted | 22 | 34 | **6** | **862** | 4.41 |
 
 > **THE SUPERSEDED TABLE, kept because the reading below was drawn from it.**
 > Over `transistor-preamp`'s five drawing legs: the five as one graph REFUSED at
@@ -5333,6 +5489,12 @@ going red is what found it.** `[RAN]` `tools/schgen/remeasure-composed.ts`:
 > aspect is a property of the packing, which the removed text changed.
 > `tests/schgen/remeasure.test.ts` carries both new figures.
 
+> **THE THREE BULLETS BELOW ARE THE 2026-10-25-MORNING READING. THE FIRST TWO
+> ARE SUPERSEDED BY CLAUSE 3 ABOVE - the flat side is refused and the ratio is
+> null - and the third is REVERSED. They are kept verbatim rather than edited
+> because clause 3 is a correction OF them and a reader needs to see what was
+> corrected.**
+
 - **the flat side is ACCEPTED on this subject**, which is new. On the previous
   subject it was refused by spec §1.4 obligation 2 - *"net BASE branches at
   (45.72, 48.26) (t-junction) and no junction is emitted"* - and **G229** records
@@ -5348,7 +5510,10 @@ going red is what found it.** `[RAN]` `tools/schgen/remeasure-composed.ts`:
   re-confirmed). The previous subject gave 1 crossing removed and 1.58x of the
   wire;
 - **the 6.1x is reported NOT-COMPARABLE.** It was not approximated, not scaled,
-  and no *"fraction of 6.1x survived"* was computed against this subject.
+  and no *"fraction of 6.1x survived"* was computed against this subject. **This
+  one bullet survives clause 3 unchanged**, and it is the one that matters most:
+  the sign reversal above is not reported as a refutation of 6.1x for exactly
+  this reason.
 
 - **Found** 2026-10-19, in a second third-party review of
   `docs/superpowers/specs/2026-10-19-schematic-authoring-design.md`, recorded as
@@ -5362,19 +5527,27 @@ going red is what found it.** `[RAN]` `tools/schgen/remeasure-composed.ts`:
   question would have had no subject and the 6.1x would have been a routing
   result rather than a decomposition one. **And that is exactly what the re-take
   found on this backend**, which is the same check failing in the other
-  direction. For the experiment: `tests/schgen/remeasure.test.ts` pins both ends,
-  the stage-matched figures and the 1.00x ratio, and asserts the composed
-  crossing count equals the two blocks' own 1 and 5. **The cross-check against
-  G200's table moved with the subject**: it used to assert the composed row
-  against G200's own 14 placements, 67 segments and 224 grid steps. G200's five
-  legs are no longer the experiment's subject, so that agreement is now carried
-  where the five legs still are - `tests/schgen/readability/measures.test.ts`
-  sums them from the canonical topology at **298** grid steps and
+  direction. For the experiment: `tests/schgen/remeasure.test.ts` pins both ends
+  and the stage-matched figures, asserts the flat side's REFUSAL at its gate with
+  its reason, asserts `crossingRatio` is null rather than recomputing it, and
+  asserts every composed count against the two blocks' own 1 and 5, 221 and 757,
+  5 and 30, 31 and 70, 8 and 14. **The cross-check against G200's table moved
+  with the subject**: it used to assert the composed row against G200's own 14
+  placements, 67 segments and 224 grid steps. G200's five legs are no longer the
+  experiment's subject, so that agreement is now carried where the five legs
+  still are - `tests/schgen/readability/measures.test.ts` sums them from the
+  canonical topology at **276** grid steps and
   `tests/schgen/render/compose.test.ts` sums them from the realised layouts at
-  **378 460 um** through a different function, and 378 460 / 1270 = 298 exactly.
+  **350 520 um** through a different function, and 350 520 / 1270 = 276 exactly.
+  **That pair read 298 and 378 460 until 2026-10-25 and 224 before that**; the
+  identity is the check, and the figure is a record.
 - **Verified** CONFIRMED - the controller read §4's table and §11's limitation
   list in the spike, and quoted §11 rather than paraphrasing it. **The Task 17
   experiment and the edge census are CONFIRMED by their writer**, who ran both.
+  **Clause 3 and its table are CONFIRMED by this writer**, who ran
+  `integratedExperiment` directly in this repository and read the refusal text
+  off the `flat.gate`/`flat.refusal` fields rather than inferring it from a
+  census line. Nothing in clause 3 is relayed.
 - **Why it is open** **the criterion below is NOT met**, in two stated ways. The
   measurement covers a five-block SUB-CIRCUIT of one family rather than one
   complete circuit, and **no template is in it** - as declared the ported
@@ -16903,25 +17076,57 @@ writer, which moves both sides together exactly as the byte-identity test does.
   arguably correct (a moved baseline should be visible) and arguably noise. Deciding that is Task
   16's, which owns the manifest.
 
-### G185 - measured on this driver: 12 of 12 declared blocks lay out, 0 raise, and the four congruent bias legs draw BYTE-IDENTICALLY - which is G97's remaining x difference, gone
+### G185 - measured on this driver: 12 of 12 declared blocks lay out and 0 raise - and the headline's second half, "the four congruent bias legs draw BYTE-IDENTICALLY", is REFUTED
+
+> **THE TITLE'S SECOND CLAUSE IS FALSE AND IS LEFT IN THE TITLE, struck, rather
+> than edited out.** Two of the four bias legs still draw alike; `tp-leg-upper`
+> and `tp-leg-feedback` have their own geometry. The cause is boundary-node
+> sizing (**G291**, 2026-10-25) making a boundary node as big as the text drawn
+> at it while the four legs' boundary nets differ, and the congruence section
+> below is amended with the measurement. **`12 of 12 lay out and 0 raise` is
+> unmoved** and is the half other entries cite.
+>
+> **THE STALENESS PRE-DATES THE CHANGE THAT FOUND IT, WHICH IS THE PROCESS
+> FINDING.** G291's pass amended `G216`'s sum, `G200`'s wire total, `G209`,
+> `G211` and this register's board scoreboard, and **did not amend this entry at
+> all** - so the sentence that NAMES the congruence as a result sat unqualified
+> while four entries citing it carried its refutation. It was found by the
+> 2026-10-25-evening re-drive looking for figures the day's three changes had
+> moved, not by anything that was checking.
 
 `[RAN]` Every declared block of the four parity circuits, through `elkInputOf` and the pinned
 `elkjs@0.9.3`, at `GRAPH_ROTATION = 0` and `elk.direction = RIGHT`:
 
 | circuit | block | units | nodes | edges | outcome |
 | --- | --- | --- | --- | --- | --- |
-| opamp-buffer | ob-buffer | 11 | 14 | 18 | laid out 95314 x 47156 |
-| optical-compressor | oc-power | 8 | 11 | 15 | laid out 65820 x 20394 |
-| optical-compressor | oc-audio | 14 | 18 | 25 | laid out 118672 x 40776 |
-| optical-compressor | oc-sidechain | 19 | 24 | 32 | laid out 133186 x 61116 |
-| pt2399-core | pt-core | 24 | 26 | 46 | laid out 149640 x 107051 |
-| transistor-preamp | tp-leg-upper | 3 | 5 | 5 | laid out 32302 x 17102 |
-| transistor-preamp | tp-leg-feedback | 3 | 5 | 5 | laid out 32302 x 17102 |
-| transistor-preamp | tp-leg-lower-a | 3 | 5 | 5 | laid out 32302 x 17102 |
-| transistor-preamp | tp-leg-lower-b | 3 | 5 | 5 | laid out 32302 x 17102 |
-| transistor-preamp | tp-leg-collector | 2 | 4 | 4 | laid out 17052 x 15314 |
-| transistor-preamp | tp-leg-emitter-bypass | 2 | 6 | 5 | laid out 15274 x 10742 |
-| transistor-preamp | tp-stage | 16 | 23 | 24 | laid out 70174 x 32698 |
+| opamp-buffer | ob-buffer | 11 | 14 | 18 | laid out 110256 x 57277 |
+| optical-compressor | oc-power | 8 | 11 | 15 | laid out 120904 x 40640 |
+| optical-compressor | oc-audio | 14 | 18 | 25 | laid out 185039 x 52579 |
+| optical-compressor | oc-sidechain | 19 | 24 | 32 | laid out 221895 x 65787 |
+| pt2399-core | pt-core | 24 | 26 | 46 | laid out 187198 x 90684 |
+| transistor-preamp | tp-leg-upper | 3 | 5 | 5 | laid out 67056 x 27051 |
+| transistor-preamp | tp-leg-feedback | 3 | 5 | 5 | laid out 96266 x 22606 |
+| transistor-preamp | tp-leg-lower-a | 3 | 5 | 5 | laid out 63246 x 27051 |
+| transistor-preamp | tp-leg-lower-b | 3 | 5 | 5 | laid out 63246 x 27051 |
+| transistor-preamp | tp-leg-collector | 2 | 4 | 4 | laid out 57658 x 26670 |
+| transistor-preamp | tp-leg-emitter-bypass | 2 | 6 | 5 | laid out 66040 x 28595 |
+| transistor-preamp | tp-stage | 16 | 23 | 24 | laid out 100356 x 70505 |
+
+> **EVERY CANVAS SIZE IN THAT TABLE HAS BEEN RE-TAKEN, 2026-10-25 EVENING, AND
+> THE FOUR COLUMNS THAT MATTER DID NOT MOVE.** `units`, `nodes`, `edges` and
+> *laid out* against *raised* are identical on all twelve rows through both
+> changes - boundary-node sizing (**G291**) and the orientation rule
+> (**G292**). The sizes are a record and they all grew: most blocks are wider and
+> shorter, which is what laying the signal left to right does. The superseded
+> sizes, in the same row order:
+> `95314 x 47156`, `65820 x 20394`, `118672 x 40776`, `133186 x 61116`,
+> `149640 x 107051`, `32302 x 17102` four times, `17052 x 15314`,
+> `15274 x 10742`, `70174 x 32698`.
+>
+> **AND THE FOUR LEGS' SIZES NO LONGER AGREE, which is the refutation visible in
+> this table rather than only in the congruence section**: `-upper` 67056 x 27051,
+> `-feedback` 96266 x 22606, the two `-lower` legs 63246 x 27051. Three distinct
+> canvases over four structurally identical blocks.
 
 **`selectRenderer` returns `{kind:"elk"}` for all twelve**, which is **G160**'s and **G141**'s
 result re-confirmed on the derived arm.
@@ -16942,6 +17147,33 @@ circuits) have both pins on the **same** side, WEST/WEST. So the run was not pur
 already contained horizontal two-terminal parts - which makes the zero-raise result **stronger**
 evidence than the sentence it replaces claimed, not weaker. It still does not test G94's condition,
 because none of those horizontals is a passive on a self-loop net.
+
+> **THE RUN IS NOW MOSTLY HORIZONTAL, AND THAT CHANGES HOW MUCH THE ZERO-RAISE
+> RESULT IS WORTH - IN THE DIRECTION THIS PARAGRAPH ALREADY ARGUES.** `[RAN]`
+> 2026-10-25, after `preferredOrientation` began laying a two-terminal passive
+> with NO rail end along the signal (**G292**): of the same **82** two-port nodes,
+> **32 are a NORTH/SOUTH pair, 42 are EAST/WEST and 8 are same-side WEST/WEST**.
+> So **50 of 82 are not vertical, against 16 before** - and the 26 that flipped
+> are the resistors and capacitors this paragraph's superseded sentence was about.
+> Per-block pin ports are **40 NORTH, 47 SOUTH, 61 EAST, 91 WEST**.
+>
+> **`tp-leg-collector`'s `R5` IS THE ONE THAT DID NOT FLIP, and it is the control
+> for the rule being about rail ends rather than about kinds**: it stays
+> 2032 x 7620 where `R1`-`R4` became 7620 x 2032.
+>
+> **THIS STILL DOES NOT TEST G94's CONDITION.** G94 needs *"at least two
+> horizontal passives"* on a net **with a self-loop**, and nothing here puts one
+> there. What it does say is that the twelve blocks now lay out with half their
+> two-terminal parts horizontal and **0 raises**, which is a materially stronger
+> instance of the arm this paragraph claims than the 16-of-82 run was.
+>
+> **ONE FIGURE IS UNDIAGNOSED AND IS RECORDED UNDIAGNOSED.** The port total is
+> **239** today against this paragraph's **240**, and one pin port is therefore
+> unaccounted for. It is NOT explained by the orientation change, which moves a
+> port's side and never its existence, and the probe excludes boundary nodes on
+> both readings (they carry no ports at all). Whether 240 was a mis-count or a
+> port has genuinely gone is unresolved; **what would settle it:** re-take the
+> census at the commit G185 was written against and diff the per-node port lists.
 
 **AND THE HORIZONTAL ARM IS NOW TRIED AND CLEAN, by the Task 12 review rather than by this
 writer.** It turned every vertical two-port node horizontal across all twelve blocks and flattened
@@ -16972,6 +17204,43 @@ G97's second qualification is answered in the same run rather than left open:** 
 `tp-leg-upper` runs from `VCC`, `tp-leg-lower-a` from `GND`, and under `netlistsvg`'s `v-rails`
 that broke the congruence. Here a boundary net is a **zero-size node with no glyph**, so the two
 still draw alike.
+
+> **THE BLOCK ABOVE IS SUPERSEDED AND G97's SECOND QUALIFICATION TURNS OUT TO BE
+> RIGHT.** `[RAN]` 2026-10-25, same probe:
+>
+> ```
+> tp-leg-upper          JP1:1@(2540,10033) 10160x2286  R1:1@(17780,10795) 7620x2032  RV1:1@(30480,13081) 4826x7620
+> tp-leg-feedback       JP2:1@(2540,5588)  10160x2286  R2:1@(32385,6350)  7620x2032  RV2:1@(59690,8636) 4826x7620
+> tp-leg-lower-a        JP3:1@(2540,5588)  10160x2286  R3:1@(26035,6350)  7620x2032  RV3:1@(46990,8636) 4826x7620
+> tp-leg-lower-b        JP4:1@(2540,5588)  10160x2286  R4:1@(26035,6350)  7620x2032  RV4:1@(46990,8636) 4826x7620
+> ```
+>
+> **ONLY THE TWO `-lower` LEGS COINCIDE.** `-lower-a` and `-lower-b` are
+> identical to the micrometre - **different parts with different semantic ids
+> drawing alike, which is the congruence claim surviving on the pair it can** -
+> while `-upper` and `-feedback` each have their own.
+>
+> **AND THE CAUSE IS EXACTLY WHAT G97 WARNED ABOUT, by the clause this entry
+> dismissed.** *"Here a boundary net is a zero-size node with no glyph"* is the
+> premise, and **G291** removed it: a boundary node is now as big as the label or
+> power symbol drawn at it. `-upper` is entered by a `VCC` power symbol and
+> `-feedback` by a nine-character `COLLECTOR` label where the two `-lower` legs
+> are both entered by a four-character `BASE` label and leave at a `GND` power
+> symbol. **The only pair with the same boundary nets is the only pair that still
+> coincides**, and the two `-lower` legs holding different parts is what makes
+> that evidence rather than a coincidence.
+>
+> **THE SIGNAL-ORDER CHANGE (G292) MOVED ALL FOUR AGAIN AND DID NOT RE-CONVERGE
+> THEM**, which is a separate result: `R1`-`R4` are now `7620x2032` rather than
+> `2032x7620` - laid along the signal - and the pattern of three distinct
+> geometries over four legs is unchanged.
+>
+> `tests/schgen/remeasure.test.ts` asserts the four legs' placement lists, their
+> anchor positions and their jumper-to-trim displacements, with the pair equality
+> and the two inequalities asserted separately so "congruent" cannot quietly come
+> back meaning three. `tests/schgen/remeasure-ceiling.test.ts` asserts the count
+> of distinct topologies at the ceiling's own size, so it cannot drift back to one
+> silently either.
 
 **WHAT THAT IS NOT.** It is **not** G97's re-measurement, for two reasons the entry itself gives:
 no template is in the loop, and these blocks are drawn in ISOLATION rather than in sheet context.
@@ -17326,6 +17595,23 @@ that carried the residual sub-grid segments:
 | `pt-core` | 1 | `GND` on `U1:1` |
 | the six `tp-leg-*` | 1 each | `BASE`/`GND`/`COLLECTOR` on `RV1`..`RV6` |
 | `tp-stage` | **0** | - |
+
+> **RE-DRIVEN 2026-10-25 AND THE CENSUS DOES NOT MOVE, which was NOT a safe
+> assumption and is why it was measured.** **G292** names this interaction
+> explicitly: *"`edgesForNet`'s chaining is what G188's `nodeSelfLoop` finding is
+> about, so the two interact"*, and that day's edge-order change reorders a net's
+> terminals - which is exactly what decides whether two CONSECUTIVE terminals
+> share a node and therefore make a self-loop. `[RAN]` the same census at HEAD:
+> **11 self-loops across 10 of the 12 blocks, the same nets on the same nodes**,
+> and `oc-power` and `tp-stage` still at zero.
+>
+> **THE REASON IT DID NOT MOVE IS THE EDGE-ORDER CHANGE'S OWN SCOPE, not luck.**
+> `downstreamDepth` seeds from a boundary net carrying the `FIRST_SEPARATE` layer
+> constraint, and **not one of these twelve blocks has one** - the seven blocks in
+> the repository that do are all Pultec board blocks, which this census does not
+> cover. **So this table is unmoved and is NOT evidence that the interaction is
+> benign**; nothing has measured the self-loop count on a block the re-ordering
+> actually reaches. **CONFIRMED by this writer**, who ran the census.
 
 **The clincher: `oc-power` and `tp-stage` have zero self-loops, and they are precisely the two
 blocks that cleared the snap gate before this option was set.** Not node size, not port position,
@@ -17772,6 +18058,27 @@ boundary, OPEN below it"* reaching the drawing.
   sideways whatever size it is, so giving it a size changes where it is and not which way the route
   comes in. **CONFIRMED by this writer**, who wrote and ran the re-drive; the probe was scratch and
   the three bucket counts are transcribed here because of it.
+- **RE-DRIVEN AGAIN 2026-10-25 EVENING, AFTER THE ORIENTATION AND SIGNAL-ORDER
+  CHANGES (G292), AND IT STILL DOES NOT MOVE: 38 anchors, 4 agree, 18 disagree,
+  16 the rule leaves open.** Those changes turned half the two-terminal parts
+  horizontal, so this was the third time
+  the figure was expected to move and the second time it did not. The structural
+  reason holds under both: `elk.direction = RIGHT` puts a boundary node in a
+  LAYER, so **all 22 decided anchors are reached on a HORIZONTAL axis** - which
+  is why the 18 whose declaration says `top` or `bottom` disagree and the 4 whose
+  declaration says `right` agree. **CONFIRMED by this writer.**
+
+  **AND THE FIRST ATTEMPT AT THIS RE-DRIVE WAS INVALID IN THE EXACT WAY THIS
+  ENTRY'S OWN HISTORY WARNS ABOUT, which is why it is recorded rather than
+  dropped.** It compared `negotiablePort`'s answer against `Anchor.side` - and
+  `Anchor.side` IS `negotiablePort`'s answer since this entry's fix, so it
+  compared the rule with itself and reported **38 anchors, 22 agree, 0
+  disagree**, a clean green that means nothing. That is the same shape as
+  **G193**'s round-1 defect in `tests/schgen/render/compose.test.ts`, where *"the
+  rule was authoring both sides of the comparison"*. The valid probe recovers the
+  route from the wire SEGMENTS that touch the anchor point and compares their
+  axis against the declared side's axis, because the route-derived side no longer
+  exists anywhere in the code to be read.
 - **Verified** CONFIRMED - this writer ran the sweep and made the change.
 - **Why it is open** the 16 anchors the rule leaves open are decided by geometry, and nothing has
   reviewed whether that is the right answer for them; it is recorded rather than defended.
@@ -18052,21 +18359,34 @@ draw:
 | **distinct x-coordinates** | **14** |
 | **parts sharing an x-coordinate** | **0** |
 | nets | 19 |
-| segments | 67 (**3.53 per net**) |
-| total wire | **298.0** grid steps |
+| segments | **59** (**3.11 per net**) |
+| total wire | **276.0** grid steps |
 | **nets whose route REVERSES direction on an axis** | **9 of 19 (47%)** |
 
-> **ONE FIGURE IN THIS TABLE MOVED ON 2026-10-25 AND FIVE DID NOT: total wire was
-> 224.0 grid steps.** Boundary-node sizing (**G291**) reserves the room a global
-> label and a power symbol occupy, so the wires that reach them are longer -
-> 298.0 grid steps over the same five blocks. **Placements, distinct x, parts
-> sharing an x, nets and segments are all unchanged**, which is what says the
-> staircase and the 47 % reversal rate below are untouched: the router found a
-> different PLACEMENT of the same topology. Re-driven in
-> `tests/schgen/render/compose.test.ts`, which asserts the five legs' subtotal
-> separately from the seven-block total so the two cannot be confused, and
+> **TWO FIGURES IN THIS TABLE HAVE NOW MOVED AND FOUR HAVE NOT, and WHICH two
+> moved is the whole content of the two changes being different in kind.**
+>
+> **Boundary-node sizing (G291), 2026-10-25:** total wire 224.0 to **298.0**,
+> because reserving the room a global label and a power symbol occupy lengthens
+> the wires that reach them. **Segments did not move**, which is what said the
+> router had found a different PLACEMENT of the same topology.
+>
+> **The orientation rule (G292), the same day:** total wire 298.0 to
+> **276.0** and **segments 67 to 59 - the first time that column has moved at
+> all.** Laying a two-terminal passive with no rail end along the signal changes its
+> node box from tall to wide AND moves its two pin ports from `NORTH`/`SOUTH` to
+> `EAST`/`WEST`, so `layered` is given a different GRAPH: the router emits FEWER
+> segments and they are shorter. `placements`, `distinct x`, `parts sharing an x` and `nets` are
+> unchanged through both, which is what keeps the staircase and the 47 %
+> reversal rate below untouched - **and the staircase surviving a change that turned
+> every non-rail passive through 90 degrees is a result in its own right**: it is 14
+> of 14 still, so the diagonal cascade is not an artefact of part orientation either.
+>
+> Re-driven in `tests/schgen/render/compose.test.ts`, which asserts the five
+> legs' subtotal separately from the seven-block total so the two cannot be
+> confused, asserts each total against its own per-block terms, and is
 > cross-checked against `tests/schgen/readability/measures.test.ts`'s independent
-> 298.
+> 276 (350 520 um / 1270).
 
 **THE STAIRCASE.** **No two parts share an x-coordinate - 14 of 14.** Every block is a diagonal
 cascade: a horizontal run, down through a part, a step right, down through the next. A
@@ -18565,23 +18885,29 @@ to them.
 
 **IT DOES NOTHING TO EITHER, AND THE REASON IS A THEOREM RATHER THAN LUCK.** `[RAN]` Over the same
 five blocks, composed onto one A3 by the shelf packer and by the ELK packer: **14 placements, 14
-distinct x, 19 wired nets, 9 reversing, 67 segments, 378.46 mm of wire - under both packers, and
+distinct x, 19 wired nets, 9 reversing, 59 segments, 350.52 mm of wire - under both packers, and
 identical to G200's table.**
 
-> **THE WIRE FIGURE WAS 284.48 mm UNTIL 2026-10-25 AND IS 378.46 mm**, because
-> boundary-node sizing (**G291**) lengthened the wires that reach the labels.
-> **Five of the six figures did not move** - 14 placements, 14 distinct x, 19
-> wired nets, 9 reversing, 67 segments - and the INVARIANCE this entry is about
-> did not move at all: the composed figures still equal the per-block ones under
-> both packers, to the micrometre. 378 460 um is 298.0 grid steps, which is
-> G200's amended total, so the two tables still agree.
+> **THE WIRE FIGURE HAS NOW MOVED TWICE AND SEGMENTS ONCE; THE INVARIANCE THIS
+> ENTRY IS ABOUT HAS NOT MOVED AT ALL.** 284.48 mm, then **378.46 mm** when
+> boundary-node sizing (**G291**) lengthened the wires that reach the labels, then
+> **350.52 mm** when the orientation rule (**G292**) turned every non-rail
+> two-terminal passive through 90 degrees. Segments stood at 67 through the first and went to **59** at the
+> second - the first time that column has moved, because the second change builds
+> a different graph rather than re-packing one. 350 520 um is 276.0 grid steps,
+> which is G200's amended total, so the two tables still agree; and **the composed
+> figures still equal the per-block ones under both packers, to the
+> micrometre**, which is the whole claim.
 >
 > **AND THE SUBJECT GREW AROUND IT.** All seven `transistor-preamp` blocks draw
 > now, so `shapeMeasures` over the probe reads **32 placements, 26 distinct x, 32
-> wired nets, 15 reversing, 142 segments, 1 033 780 um**. Every one of those six
-> is a per-block SUM and `tests/schgen/render/compose.test.ts` carries the
-> seven-row table they add up from, beside the five-leg subtotal above - because
-> comparing a seven-block total against a five-block table is the mistake
+> wired nets, 15 reversing, 131 segments, 1 055 370 um** (142 segments and
+> 1 033 780 um before G292 - **fewer segments carrying MORE wire**, which is the
+> straighter-runs signature that change leaves on every block that moved). Every
+> one of those six is a per-block SUM and `tests/schgen/render/compose.test.ts`
+> carries the seven-row table they add up from, asserts each total against its own
+> terms, and keeps it beside the five-leg subtotal above - because comparing a
+> seven-block total against a five-block table is the mistake
 > **G220** names. Composition translates each block by one rigid grid-multiple offset
 (`translateLayout`), `interiorDrift` is empty, and **every quantity G200 measures is invariant under
 translation**: a shared x stays shared, a reversal stays a reversal, a segment keeps its length.
@@ -18605,7 +18931,11 @@ property of a block's interior and only of that.**
   failed: `tests/schgen/render/compose.test.ts`'s *"composition never alters a block's interior,
   under either packer"* asserts `interiorDrift` is empty over **seven** blocks under both packings
   (five until 2026-10-25), and the Step 7 perturbation that nudges one part by one grid step turns
-  it red naming every block and part - so the invariance is checked, not asserted.
+  it red naming every block and part - so the invariance is checked, not asserted. **A second
+  check that could have failed, added 2026-10-25:** the seven-block and five-block totals are each
+  asserted against their own per-block terms (`12 + 12 + 12 + 12 + 11 + 12 + 60 = 131` and
+  `64 770 + 90 170 + 77 470 + 77 470 + 40 640 + 63 500 + 641 350 = 1 055 370`), so a per-block
+  figure cannot move behind the sum the way it could when only the sum was pinned.
 - **Verified** CONFIRMED - this writer ran all of it.
 - **Why it is open** it is a measurement, and it corrects a thing a later task would plausibly do:
   re-take G200's baseline on a composed sheet and read an unchanged number as progress or a
@@ -18724,11 +19054,18 @@ order gives the template the say where one is declared and the rule the say wher
 > **REFUTED FOR ONE OF THE FOUR, 2026-10-25: `transistor-preamp`'s `lab` sheet
 > COMPOSES.** All seven of its declared blocks draw since boundary-node sizing
 > (**G291**), and `layoutSheet(circuit, "lab", ...)` returns a drawing on the
-> sheet's own declared A3 - **7 frames, 142 wires, `nonMemberContainments` empty**,
+> sheet's own declared A3 - **7 frames, 131 wires, `nonMemberContainments` empty**,
 > with the control that a frame grown to swallow the page reports 29 symbols that
 > are not its own block's. `tests/schgen/remeasure.test.ts` asserts it; the test
 > that asserted `layoutSheet` THROWS for this circuit is gone, and its name said
 > *"cannot take the same reading"*.
+>
+> **THE WIRE COUNT WAS 142 ON THE DAY THIS REFUTATION WAS WRITTEN AND IS 131**,
+> because the orientation rule (**G292**) made the router emit eleven fewer
+> segments on this sheet. **The refutation itself does not depend on the count** -
+> the sheet lays out either way - and the count is cross-checked against the
+> seven per-block `segments` figures `tests/schgen/render/compose.test.ts`
+> carries. 7 frames and the empty containment list are unmoved.
 >
 > **WHAT IS NOT REFUTED is the rest of the headline.** Three of the four circuits
 > still hold a block that does not draw - `opamp-buffer`'s only block and
@@ -19054,15 +19391,42 @@ in square grid steps and `wireLength` in grid steps:
 
 | block | cells | bends | bends/edge | crossings | wire length | occupied area | block scale (G95) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `tp-leg-upper` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
-| `tp-leg-feedback` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
-| `tp-leg-lower-a` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
-| `tp-leg-lower-b` | 3 | 8 | 1.33 | **0** | 48 | 513 | about-the-circuit |
+| `tp-leg-upper` | 3 | **6** | **1.00** | **0** | **51** | **544** | about-the-circuit |
+| `tp-leg-feedback` | 3 | **6** | **1.00** | **0** | **71** | **770** | about-the-circuit |
+| `tp-leg-lower-a` | 3 | **6** | **1.00** | **0** | **61** | **630** | about-the-circuit |
+| `tp-leg-lower-b` | 3 | **6** | **1.00** | **0** | **61** | **630** | about-the-circuit |
 | `tp-leg-collector` | 2 | 6 | 1.20 | **0** | 32 | 221 | about-the-circuit |
 
-The four bias legs are identical on every measure, which is **G185**'s *"the four congruent bias
-legs draw BYTE-IDENTICALLY"* seen from the measure side. The five sum to **14 placements and 224
-grid steps**, which is the same figure **G200**'s table carries.
+The five sum to **14 placements and 276 grid steps**, which is the same figure **G200**'s table
+carries.
+
+> **THE TABLE ABOVE IS THE 2026-10-25-EVENING RE-TAKE AND THE ORIGINAL IS BELOW,
+> SUPERSEDED. ONE SENTENCE OF THIS ENTRY IS REFUTED RATHER THAN MOVED, which is
+> the part to read:** it said *"The four bias legs are identical on every
+> measure, which is **G185**'s 'the four congruent bias legs draw
+> BYTE-IDENTICALLY' seen from the measure side."* **They are not.** Only the two
+> `-lower` legs still coincide; `-upper` and `-feedback` have their own geometry,
+> and the cause is boundary-node sizing making a boundary node as big as the text
+> drawn at it while the four legs' boundary nets differ. **G185** carries the
+> refutation and **G291** the derivation.
+>
+> | block | cells | bends | bends/edge | crossings | wire length | occupied area | when |
+> | --- | --- | --- | --- | --- | --- | --- | --- |
+> | all four bias legs | 3 | 8 | 1.33 | 0 | 48 | 513 | until **G291**, 2026-10-25 |
+> | `tp-leg-upper` | 3 | 8 | 1.33 | 0 | 55 | 696 | **G291** to **G292**, same day |
+> | `tp-leg-feedback` | 3 | 8 | 1.33 | 0 | 77 | 1100 | **G291** to **G292** |
+> | `tp-leg-lower-a` / `-b` | 3 | 8 | 1.33 | 0 | 67 | 900 | **G291** to **G292** |
+> | `tp-leg-collector` | 2 | 6 | 1.20 | 0 | 32 | 221 | unmoved through both |
+>
+> The five-leg wire sum ran **224 -> 298 -> 276** grid steps across the two
+> changes and the **14 placements never moved**, because neither change moves a
+> part between blocks. **`bends/edge` fell from 1.33 to 1.00 on the four legs at
+> G292**, which matters to this entry more than the lengths do: see the contrast
+> this entry is about, below.
+>
+> `tp-leg-collector` is the control: 2 placements, 6 bends, 1.20 per edge, 32 grid
+> steps and 221 square grid steps through node sizing AND through edge
+> re-direction. A block small enough has nothing to re-order.
 
 **WHAT THAT AGREEMENT ESTABLISHES, AND WHAT IT DOES NOT - ROUND 1 OF THIS ENTRY OVERSTATED IT AND
 SO DID THE TASK 16 LEDGER.** It said G200's table was *"independently taken"* and that the two
@@ -19097,10 +19461,21 @@ written out rather than applied silently.
 
 **THE CONTRAST IS THE INTERESTING PART AND IT IS A SECOND INDEPENDENT READING OF G200's
 STAIRCASE.** Every `mini` block is drawn by a reviewed TEMPLATE and every block above by ELK, and
-**bends per edge is 0.16-0.30 for the templates against 1.20-1.33 for ELK** - four to eight times
+**bends per edge is 0.16-0.30 for the templates against 1.00-1.20 for ELK** - three to seven times
 as many corners per polyline. G200 read the same difference qualitatively (*"ELK draws a STAIRCASE
 where a template draws a column"*); this is it as a number, and it is the term the one user study in
 evidence blames for unreadability.
+
+> **THE ELK SIDE OF THAT RANGE WAS 1.20-1.33 UNTIL 2026-10-25 AND IS 1.00-1.20,
+> so the multiple fell from "four to eight times" to "three to seven".** The
+> orientation rule (**G292**) took the four bias legs from 1.33 to 1.00 and
+> left `tp-leg-collector` at 1.20, which is now the worst of the five. **The
+> CONTRAST this entry is about survives and narrowed**, and that is worth stating
+> both ways: a change made for the owner's left-to-right directive moved a term
+> the readability literature cares about, in the right direction, by a third -
+> and the gap to a reviewed template is still at least threefold, so nothing here
+> says ELK now draws the same visual language. The criterion below is unchanged
+> and still open.
 
 **D1's REPORT LINE, per declared ELK block** - plan decision **D1**: *"Task 16's report prints, per
 block, its part count, its port-glyph share of cells, and where it sits against the ceiling's shape
@@ -19270,18 +19645,49 @@ emitted it and once through `canonicalTopology`:
 
 | block | wires raw -> canonical | bends raw / canonical | crossings raw / canonical | wire length inflation | area |
 | --- | --- | --- | --- | --- | --- |
-| `ob-buffer` | 65 -> 57 | **26 / 28** | 7 / 7 | **+10.30 %** | identical |
-| `oc-power` | 42 -> 31 | **4 / 5** | 1 / 1 | **+18.16 %** | identical |
-| `oc-audio` | 82 -> 70 | **28 / 30** | 5 / 5 | **+14.54 %** | identical |
-| `oc-sidechain` | 91 -> 76 | **26 / 27** | 7 / 7 | **+13.99 %** | identical |
-| `pt-core` | 179 -> 155 | **81 / 83** | 78 / 78 | **+11.14 %** | identical |
-| `tp-leg-upper` / `-feedback` / `-lower-a` / `-lower-b` | 14 -> 14 | 8 / 8 | 0 / 0 | **+2.05 %** | identical |
+| `ob-buffer` | **59 -> 50** | **19 / 21** | **6 / 6** | **+9.18 %** | identical |
+| `oc-power` | 42 -> 31 | **4 / 5** | 1 / 1 | **+21.20 %** | identical |
+| `oc-audio` | **76 -> 70** | **28 / 30** | 5 / 5 | **+5.93 %** | identical |
+| `oc-sidechain` | **90 -> 79** | **29 / 30** | **8 / 8** | **+9.20 %** | identical |
+| `pt-core` | **164 -> 146** | **70 / 74** | **71 / 71** | **+9.01 %** | identical |
+| `tp-leg-upper` | **12 -> 12** | **6 / 6** | 0 / 0 | **+1.96 %** | identical |
+| `tp-leg-feedback` | **12 -> 12** | **6 / 6** | 0 / 0 | **+1.42 %** | identical |
+| `tp-leg-lower-a` / `-lower-b` | **12 -> 12** | **6 / 6** | 0 / 0 | **+1.65 %** | identical |
 | `tp-leg-collector` | 11 -> 11 | 6 / 6 | 0 / 0 | **+3.09 %** | identical |
-| `tp-leg-emitter-bypass` | 12 -> 12 | 6 / 6 | 0 / 0 | **+2.07 %** | identical |
-| `tp-stage` | 75 -> 63 | **21 / 24** | 7 / 7 | **+13.05 %** | identical |
+| `tp-leg-emitter-bypass` | 12 -> 12 | 6 / 6 | 0 / 0 | **+2.00 %** | identical |
+| `tp-stage` | **71 -> 60** | **20 / 21** | **6 / 6** | **+14.20 %** | identical |
 
-**WIRE LENGTH IS THE ONE MEASURE G106 GOT RIGHT: inflated on 12 of 12, by 2.05 % to 18.16 %.** That
+**WIRE LENGTH IS THE ONE MEASURE G106 GOT RIGHT: inflated on 12 of 12, by 1.42 % to 21.20 %.** That
 range is the size of the defect on this driver.
+
+> **THE TABLE ABOVE HAS BEEN RE-TAKEN TWICE ON 2026-10-25 AND NONE OF THIS
+> ENTRY'S FOUR CONCLUSIONS HAS MOVED, which is what the re-drives establish.**
+> Inflated on 12 of 12, crossings equal on 12 of 12, area identical on 12 of 12,
+> bends under-reported wherever they differ at all - through boundary-node sizing
+> (**G291**) and through the orientation rule (**G292**). Only the MAGNITUDES
+> moved. The inflation range ran **2.05-18.16 %**, then **1.30-21.20 %**, now
+> **1.42-21.20 %**, and the four `tp-leg` bias legs stopped sharing one row
+> because they stopped drawing alike (**G185**).
+>
+> **WHAT G292's ORIENTATION RULE DID TO THIS MEASUREMENT SPECIFICALLY: it shrank the
+> population the defect lives in.** Duplicate segments went from 82 to **64** across the twelve
+> blocks, on the same six blocks that had any - 9, 11, 6, 11, 16 and 11 on
+> `ob-buffer`, `oc-power`, `oc-audio`, `oc-sidechain`, `pt-core` and `tp-stage`.
+> **G219**'s 0-versus-all result is unmoved: **0 of 64** are duplicates under
+> exact endpoint order and **64 of 64** once the ends are sorted.
+>
+> **ONE FIGURE IN THE RELAYED NAIVE-BEND CLAUSE BELOW IS NOW UNPAIRABLE and the
+> clause is left standing rather than repaired.** It pairs the reviewer's naive
+> counts to blocks by reading this entry's canonical column - *"28 is
+> `ob-buffer`, 30 `oc-audio`, 27 `oc-sidechain`, 83 `pt-core`, 8 the four
+> congruent `tp-leg` legs..."* - and those canonical values have all moved, so
+> the pairing no longer resolves against the live table. **The clause's
+> conclusion does not depend on the pairing** (it is that the direction of the
+> error depends on which bend definition is in use), the figures are the
+> reviewer's and were never confirmed here, and re-running them would mean
+> re-implementing a naive count this repository does not have. **Recorded as
+> unpairable rather than deleted**, because deleting it would take the only
+> record of a measurement that contradicts this entry's own direction.
 
 **CROSSINGS DO NOT MOVE ON ANY OF THE TWELVE, which contradicts the spike sentence the whole
 entry rests on.** `docs/schematic/elk-spike.md` §7: *"any measure that does not collapse them
@@ -19292,7 +19698,9 @@ many copies there are. **The spike's claim was about a measure that counts conta
 pair; this one counts points.**
 
 **BENDS AND BENDS PER EDGE MOVE THE OTHER WAY - the raw list reports FEWER, on 6 of 12 blocks.**
-26 against 28, 4 against 5, 28 against 30, 26 against 27, 81 against 83, 21 against 24. The cause is
+19 against 21, 4 against 5, 28 against 30, 29 against 30, 70 against 74, 20 against 21 - **the same
+six blocks as before the 2026-10-25 re-drives, which are exactly the six that have a duplicate
+segment at all.** The cause is
 in the definition: a bend is a vertex of degree two whose two segments are perpendicular, and a
 duplicate segment raises that vertex's degree, so the corner stops being counted as a bend and
 starts being counted as a node. **So an uncanonicalised bend count is an UNDER-count, not an
@@ -19971,8 +20379,17 @@ declared block goes through. The 14-placement graph lays out, and then:
 > disagree with the branch points of the canonical topology in 1 place(s). For
 > template geometry `junctionPoints` is cosmetic; for ELK geometry it is not,
 > because a branch point with no junction is a connection KiCad does not make
-> (spec 1.4 obligation 2). net BASE branches at (45.72, 48.26) (t-junction) and
+> (spec 1.4 obligation 2). net BASE branches at (46.99, 43.18) (t-junction) and
 > no junction is emitted"*
+
+**THE COORDINATE IN THAT QUOTE READ `(45.72, 48.26)` UNTIL 2026-10-25 AND NOW
+READS `(46.99, 43.18)`.** Everything else about the refusal is unmoved - the
+block id, the obligation, the net, the junction kind and the count of one place -
+and the coordinate is the only part of it that is a record rather than the
+finding. The old string is asserted ABSENT in the test as well as the new one
+asserted present, so a reader who greps this register for `(45.72, 48.26)` finds
+this sentence rather than nothing. The amendment below says which change moved
+it and why it had not moved before.
 
 **THE CONSEQUENCE FOR TASK 17 STEP 4 IS THE WHOLE REASON THIS IS AN ENTRY.** The
 integrated experiment's accepted-stage comparison therefore had **one side**: a
@@ -19999,6 +20416,35 @@ and took **no ratio** between stages. **G105** carries the figures.
   `tests/schgen/remeasure-edges.test.ts`, which also records that the SEVEN-block
   flat probe refuses at obligation 1 (a snapped-to-zero `VCC` wire) and is
   therefore a different measurement rather than a successor to this one.
+
+**AND BOTH OF THOSE TWO FACTS WERE AMENDED AGAIN THE SAME EVENING BY THE
+SIGNAL-ORDER CHANGE (G292), WHICH IS WHY THEY ARE LEFT ABOVE RATHER THAN
+EDITED.** `lib/schgen/elk/graph.ts` now orders a net's ELK edges by downstream
+depth from the block's inbound boundary nets instead of by declaration order.
+`[RAN]` the same probe:
+
+- **THE COORDINATE MOVED, and the first bullet's reasoning is what predicted it
+  would not.** That bullet says the branch point is *"where three legs' `BASE`
+  pins meet in the flat graph, and sizing a boundary node moves the boundary
+  rather than the branch"* - which was right, and is exactly why re-DIRECTING the
+  parts moves it: a part's node box and its two pin ports' sides decide which layer
+  it lands in and where its pins are, so turning it moves where the `BASE` pins meet. `BASE` now branches at
+  **`(46.99, 43.18)`**. The obligation, the net, the kind and the count of one
+  place are unmoved;
+- **THE SEVEN-BLOCK PROBE NO LONGER REFUSES AT A DIFFERENT OBLIGATION, so the
+  second bullet's last clause is REFUTED.** It refuses at obligation **2**, the
+  same one, on **two** branch points - `COLLECTOR` at `(41.91, 74.93)` and `GND`
+  at `(111.76, 62.23)` - and **the snap collapse that used to refuse it is
+  gone**: the `VCC` wire 10 nanometres long is not there any more. **So "a
+  different obligation" is no longer why the five-leg figure keeps its own
+  subject.** What separates them now is a different net, a different count and a
+  different coordinate, which is a weaker separation than an obligation apart,
+  and the test is renamed to say what it measures rather than keeping the old
+  name alive;
+- **the experiment's flat side is refused again too**, at obligation 1 on
+  `optical-compressor` - so "whose flat side is ACCEPTED" above held for about
+  forty minutes. **G105** clause 3 carries it. That does NOT make the experiment
+  a successor to this entry either: different circuit, different obligation.
 
 **AND THE "ONLY SUBJECT" CLAIM BELOW IS SUPERSEDED BY THE BOARD DECLARATIONS.**
 Two declared board blocks are refused at obligation 2 today -
@@ -20034,9 +20480,15 @@ rather than an authored criterion."*
   above for why it moved. A check that could have failed: the same test asserts
   the flat graph LAYS OUT before it is refused, so the refusal is located at
   obligation 2 and not at the layout, and a second test asserts the seven-block
-  probe is refused at a DIFFERENT obligation and explicitly not at this one.
+  probe is refused on a DIFFERENT net and a different number of branch points,
+  explicitly not on this one's `BASE` and not at a count of one. **That second
+  test asserted a different OBLIGATION until 2026-10-25**; see the G292 amendment
+  above for why it cannot.
 - **Verified** CONFIRMED - this writer built the probe, ran it and read the
-  refusal.
+  refusal. **The G292 amendment is CONFIRMED by this writer**, who ran both
+  probes in this repository and read both refusal texts off
+  `describeMismatch(report.result.mismatch)` rather than inferring them. Nothing
+  in it is relayed.
 - **Why it is open** nothing is fixed. A flat graph of five real blocks cannot be
   drawn by this pipeline, and whether that is a defect in `junctionProblems`, in
   `junctionPoints`, or in the route itself is undiagnosed: **this writer did not
@@ -21572,6 +22024,34 @@ look.
 > | `oc-power` | `C3#1` |
 > | `pt-core` | `C7#1`, `C9#1`, `C11#1`, `C12#1`, `R3#1`, `R4#1`, `R6#1` |
 > | `tp-stage` | `C3#1`, `C4#1`, `J2#1` |
+>
+> > **THE THIRTEEN ARE EIGHT, ON DIFFERENT UNITS, SINCE 2026-10-25 - and the
+> > arithmetic paragraph below this table is what survives, not the names.**
+> > Boundary-node sizing (**G291**) and then the orientation rule (**G292**)
+> > re-placed every block, so the slots the probe is offered moved with them.
+> > `[RAN]` `maskedCensus` at HEAD:
+> >
+> > | block | units with no clear slot |
+> > | --- | --- |
+> > | `ob-buffer` | `J1#1` |
+> > | `oc-power` | **none** |
+> > | `oc-audio` | `J2#1`, `U1#1`, `R7#1` |
+> > | `pt-core` | `C6#1`, `C14#1`, `R1#1`, `R8#1` |
+> > | `tp-stage` | **none** |
+> >
+> > **"no slot" NOW MEANS "no CLEAR slot"**, because `field-placement.ts` places
+> > at the least-covered candidate instead of refusing (Task 24) - so these are
+> > units drawn over something rather than units that stop a drawing.
+> > **By designator prefix: three `C`, three `R`, one `J` and one `U`** - and the
+> > `U` is new, an `Amplifier_Operational:TL072`, which is NOT a small two-pin
+> > passive and is therefore outside this entry's arithmetic altogether rather
+> > than another instance of it.
+> > **`pt-core`'s count fell 7 to 4 and `tp-stage`'s 3 to 0, and `oc-audio`
+> > appeared with 3** - so the population moves with the geometry and this entry's
+> > *"it now has to be enough for eleven such units rather than three"* is a
+> > statement about a geometry that no longer exists. **The six-usable-candidates
+> > figure below is a property of the SLOT GEOMETRY and is untouched by any of
+> > this.** **CONFIRMED by this writer**, who ran the census and read the output.
 >
 > By designator prefix that is **eight `C`, three `R` and two `J`** - so eleven
 > of the thirteen carry a passive's designator, which is this entry's subject IF
@@ -25017,6 +25497,24 @@ clear. The stub-writer tripwire
 > bounded.** `tests/schgen/masked-problems.test.ts` asserts both arms by unit
 > name; **G239** carries the table.
 >
+> > **THE ORDER-DEPENDENCE HAS NOW BEEN CARRIED BY THREE DIFFERENT BLOCKS IN THREE
+> > DAYS, AND THAT IS A PROPERTY OF THE PLACER REPORTED THROUGH A GEOMETRY THAT
+> > KEEPS MOVING.** This paragraph's two instances are both gone. `[RAN]`
+> > `maskedCensus` at HEAD, after boundary-node sizing (**G291**) and the
+> > orientation rule (**G292**): **`pt-core`'s gap CLOSED** - the probe names four
+> > units (`C6#1`, `C14#1`, `R1#1`, `R8#1`) and the real order falls back on the
+> > same four - and **`tp-stage`'s closed and then re-opened the other way round**,
+> > at ZERO named against ONE fallback (`C4#1`). `oc-power` joined at 0 against 1
+> > at G291 and is still there.
+> >
+> > **SO THE SETTLEMENT STANDS AND ITS SUBJECT DOES NOT: the order-dependence is
+> > real and is carried by `oc-power` and `tp-stage`, each at 0 against 1.**
+> > `pt-core`, this paragraph's original and clearest subject, is now the CONTROL
+> > that a closed gap is a reading rather than an absent measurement.
+> > `tests/schgen/masked-problems.test.ts` asserts the equality on `pt-core` and
+> > the inequality on both carriers, so neither can drift unnoticed. **CONFIRMED
+> > by this writer.**
+>
 > **CRITERION ONE IS UNMET AND IS NOW THE BINDING CONSTRAINT ON A BOARD.**
 > `tp-leg-emitter-bypass`'s two labels still overlap, and with field placement
 > fixed that overlap is the only thing between `transistor-preamp-lab` and a
@@ -27513,6 +28011,39 @@ the least-covered candidate slot when no slot is clear, rather than refusing the
 drawing. So **a reference designator sits on top of a wire in eight places**, and
 one of them (`C9#1`) sits on a pin.
 
+> **THE EIGHT ARE FOUR SINCE 2026-10-25, AND NEITHER THE EIGHT NOR THE FOUR IS
+> WHAT IS WRONG WITH THIS SHEET - see the opened-sheet block below, which still
+> binds in full.** `[RAN]` `bun tools/schgen/board-sheets.ts` after the
+> orientation rule (**G292**): `pt2399-core: generated (1 sheet(s), 4 fallback
+> field placement(s))`. The table above is superseded by:
+>
+> | unit | covers |
+> | --- | --- |
+> | `C6#1` | body of `R5#1` |
+> | `C14#1` | wire 119 (`Net-(U1-OP1-OUT)`), wire 94 (`Net-(U1-LPF1-OUT)`) |
+> | `R1#1` | wire 72 (`Net-(C8-Pad2)`) |
+> | `R8#1` | wire 131 (`Net-(U1-OP2-OUT)`), wire 3 (`+5V`) |
+>
+> **ONE OF THE FOUR IS A WORSE KIND THAN ANY OF THE EIGHT.** The eight were all
+> *"a Reference or Value drawn over a WIRE, none over other text"*; `C6#1` now
+> covers the **body** of `R5#1`. Halving the count has put one field on a part
+> symbol rather than on a wire, and that is reported beside the halving rather
+> than under it.
+>
+> **CROSS-CHECKED BY TWO DRIVERS.** The four units and their order are asserted in
+> `tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts`, which reaches them
+> through `generate` on the board declaration, and in
+> `tests/schgen/masked-problems.test.ts`, which reaches the same circuit as the
+> `pt-core` parity block through `maskedCensus`. Both name `C6#1`, `C14#1`,
+> `R1#1`, `R8#1`.
+>
+> **AND `pt-core`'s TWO FALLBACK MEASURES NOW AGREE, which retires one instance of
+> a claim G239 carries.** The first-position probe named seven units and the real
+> placement order fell back on eight; both now say four, the same four. The
+> sequential dependence G239 is about has not gone - `oc-power` and `tp-stage`
+> carry it at 0 against 1 each - but `pt-core`, which was its original and
+> clearest subject, no longer exhibits it.
+
 > **THE SHEET HAS NOW BEEN OPENED, 2026-10-24, fix round 1 - FIRST BY THE REVIEWER AND THEN BY
 > THIS WRITER - AND THE EIGHT FALLBACKS ARE NOT WHAT IS WRONG WITH IT. The heading above is too
 > kind and the paragraph this replaces offered the sheet to the owner. Both are corrected here.**
@@ -28317,6 +28848,59 @@ available and not taken - **the TEST TOTAL, not the failure total.**
 | duplicate ELK segments (**G219**) | 82 | **83** |
 | problem classes in the corpus (**G232**) | 7 | **1** |
 
+> **SIX ROWS OF THAT TABLE WERE SUPERSEDED THE SAME DAY, by the paper-as-floor,
+> orientation and edge-order changes the owner's review asked for (**G292**),
+> and the "after" column is kept because this entry is the record of what NODE
+> SIZING did.** Re-driven 2026-10-25 evening, `[RAN]` the suite and
+> `bun tools/schgen/board-sheets.ts`:
+>
+> | | this table's "after" | now | what moved it |
+> | --- | --- | --- | --- |
+> | boards that produce a schematic | 2 of 11 | **7 of 11** | paper-as-floor took it to 6 (`pultec-hi-cut` escalated to A2), the orientation rule to 7 (`pultec-low-boost`'s missing-junction refusal cleared) |
+> | `bends`, `bendsPerEdge`, `crossings` per block | moved on ONE of ten | **`bends` moved on EIGHT of ten, `crossings` on FOUR of twelve** | the orientation rule changes the GRAPH, not the packing: a part's node box goes tall to wide and its pin ports `NORTH`/`SOUTH` to `EAST`/`WEST` |
+> | crossing counts in the 4-order sweep | all 40 unchanged | **18 of 40 moved**, classification unmoved on all 12 | the same |
+> | the five legs' wire total | 298.0 | **276.0** grid steps | the same |
+> | the five legs' ... segments | unchanged at 67 | **59** - placements, distinct x, nets and reversals still unchanged | the same; this is the first time the segment column has moved |
+> | `transistor-preamp`'s `lab` sheet | 7 frames, 142 wires | 7 frames, **131 wires** | the same |
+> | declared ELK blocks that draw (whole repository) | 46 of 52 | **47 of 52** | the orientation rule cleared `pultec-low-boost/pultec-low-boost-own`'s junction refusal |
+>
+> **THE 47th IS `pultec-low-boost/pultec-low-boost-own`, and it is the one block
+> this register predicted would move.** **G292**'s rotation probe measured
+> *"`pultec-low-boost` refused, missing junction -> GENERATED"*, and that is what
+> landed. The five that still refuse are `opamp-buffer/ob-buffer`,
+> `optical-compressor/oc-sidechain` and `tp-stage` on each of
+> `transistor-preamp-buffered`, `-feedback` and `-staged` - so the junction class
+> has left the repository entirely and what remains is clearance and the
+> port-coordinate comparison.
+>
+> **AND THE UNDIAGNOSED TEMPLATE COUNT GETS A SECOND READING: 16, not 15.** This
+> entry records that one probe said 15 template-claimed blocks and another 16,
+> with the ELK total of 52 agreeing exactly, and that nobody found which block
+> moved. A third scratch probe, written independently for this re-drive, also
+> counts **16**. That is two readings against one and still no committed tool;
+> **what would settle it** is unchanged - a committed census that reports both
+> halves.
+>
+> **AND ONE ROW OF THIS TABLE DISAGREES WITH ANOTHER FILE AND BOTH ARE NOW
+> SUPERSEDED, which is worth recording as a measurement discipline point.** This
+> table says duplicate ELK segments went 82 to **83**;
+> `tests/schgen/readability/measures.test.ts`'s own `[RAN]` comment said **82**
+> after the same change. Nothing reconciled them. The figure re-measured
+> 2026-10-25 evening is **64**, on the same six blocks that have any, so the
+> disagreement is moot - but it stood in two committed files at once, and
+> **neither figure was asserted by a test**, which is why it could.
+> **G219**'s actual result - 0 of them duplicate under ordered keys, all of them
+> under sorted keys - is unmoved at 64.
+>
+> **THE FIVE ROWS NOT LISTED ABOVE ARE UNMOVED, and one of them was re-driven
+> because it was expected to move and did not:** 0 of 38 boundary nodes are
+> zero-sized, 10 of 12 parity blocks draw, **G193's 4/18/16 anchor split**,
+> G232's one problem class, and the four bias legs' three distinct topologies.
+> G193's split is the re-drive worth naming: the orientation change turned half
+> the two-terminal parts horizontal and it still reads 4 agree / 18 disagree / 16
+> open, because all 22 decided anchors are still reached on a horizontal axis.
+> **G193** carries that, and carries the invalid first attempt at it.
+
 **THE THREE BLOCKS THAT STARTED DRAWING** are `oc-audio` (was refused at the snap
 collapse), `tp-leg-emitter-bypass` (label over label) and `tp-stage` (six label
 problems). **The two that still refuse** are `ob-buffer`, on a power symbol's
@@ -28546,3 +29130,148 @@ before ruling **R29** added it - for boundary nets.
   small** - it changes the layout graph of every block, and `edgesForNet`'s
   chaining is what **G188**'s `nodeSelfLoop` finding is about, so the two
   interact.
+
+**BOTH HALVES ARE BUILT AS OF 2026-10-25, AND THE MEASUREMENT RE-DRIVE REFUTES
+THE ATTRIBUTION BOTH COMMITS CLAIM. THAT COMES FIRST, because every figure in
+this register that moved that day was moved by ONE of the two changes and the
+commits say otherwise.**
+
+**WHAT LANDED, in three commits.**
+
+1. `f754a37` **paper as a FLOOR** - a sheet's declared paper is the smallest size
+   it may be drawn on, not the largest; contents that overflow are drawn on the
+   smallest larger standard size they fit, and only *nothing fits* still refuses.
+   This is what the *"AND IT FORCES A PAPER DECISION"* clause below called an
+   owner question, and he declined to answer it (see the DECLINATION below).
+2. `22ca29b` **the orientation half** - `preferredOrientation` answers for a
+   two-terminal part with NO rail end by laying its axis along the signal, pins
+   left and right. The rail entry still runs first and wins. The kind list is
+   `RAIL_END_KINDS` shared rather than widened, so a diode is untouched; the
+   blanket-90 probe below is NOT what shipped. The tie-break between the two
+   horizontal rotations is the lower-numbered pin to the left, stated as
+   arbitrary.
+3. `df272a7` **the arrangement half** - `edgesForNet`'s terminal list is stably
+   sorted by a breadth-first `downstreamDepth` from the block's inbound boundary
+   nets, seeded from the `FIRST_SEPARATE` layer constraint that already means
+   *"this net enters here"*. A net the search does not reach keeps its list order.
+
+**THE ATTRIBUTION, MEASURED - AND `df272a7` MOVED NOTHING IN THE SUITE.** `[RAN]`
+the seven test files that carry the moved measurements, three times: at HEAD;
+with `lib/schgen/elk/graph.ts` alone rolled back to `22ca29b`; and with
+`lib/schgen/rules/orientation.ts` also rolled back to `f754a37`:
+
+| tree | result over the seven files |
+| --- | --- |
+| HEAD, both halves | **97 pass / 0 fail** |
+| edge order rolled back, orientation kept | **97 pass / 0 fail** |
+| both rolled back | **73 pass / 24 fail** |
+
+**So the ORIENTATION rule moved all 24 and the EDGE-ORDER change moved none.**
+`[RAN]` the full suite with the old expectations and `graph.ts` rolled back -
+i.e. the tree exactly as `22ca29b` left it: **3849 pass / 24 fail / Ran 3873**,
+and the 24 failing test NAMES are identical to the 24 at `df272a7`.
+
+**TWO CLAIMS IN THOSE COMMIT MESSAGES ARE THEREFORE FALSE:**
+
+- `22ca29b` says *"WIP, SUITE IS RED at 25"* and *"Suite … 25"*. **It was red at
+  24.** No run produces 25.
+- `df272a7` says *"RED: 24 tests in the same measurement families the two
+  previous geometry changes moved"*, which reads as this commit having moved
+  them. **It moved none of them**; the same 24, by name, were already red.
+
+**AND THE CAUSE IS STRUCTURAL RATHER THAN A FLUKE, which makes it a scope
+finding about the arrangement half.** `downstreamDepth` seeds only from a
+boundary net that `layerConstraintFor` gives `FIRST_SEPARATE`. `[RAN]` over
+`ALL_DECLARED_CASES`: **7 of the repository's 52 ELK-selecting blocks have one**,
+and all seven are Pultec board blocks - `pultec-hi-boost-own`,
+`pultec-hi-boost-junction`, `pultec-hi-cut-junction`,
+`pultec-low-boost-junction`, `pultec-low-cut-junction`, `pultec-mid-own`,
+`pultec-mid-junction`, each on net `in`. **Not one of the twelve parity blocks
+has one**, and the parity blocks are what every pinned measurement in this
+register is taken over. **So the arrangement half reaches 7 blocks of 52, and
+45 of 52 lay out byte-identically to before it** - which is what that commit's
+own *"A NET THE SEARCH DOES NOT REACH KEEPS ITS LIST ORDER"* paragraph says,
+without noticing that this is almost every block.
+
+**THE ARRANGEMENT CRITERION THIS ENTRY SET IS MET, AND ITS SUBJECT IS THOSE SEVEN
+BLOCKS.** The criterion: *"for a net with a declared input port, no terminal is
+laid out upstream of the port it is fed from."* `[RAN]` over every ELK-selecting
+block of every declared case, on the laid-out ELK graph: **7 blocks with a
+declared inbound boundary net, 7 inbound nets, 0 terminals laid out left of their
+port.** The criterion is met with **zero** violations and over **7 of 52 blocks**,
+and both halves of that sentence bind.
+
+**THE ROTATION CRITERION IS MET TOO, and its paper clause was discharged rather
+than waived.** The criterion: *"a two-terminal signal-path part is drawn with its
+axis along the signal direction, and the board census does not lose a board
+except to a paper-size refusal that names the size needed."* `[RAN]`
+`bun tools/schgen/board-sheets.ts`: **7 of 11 boards produce a schematic, 4
+refused, no board lost.** `pultec-hi-cut`'s *"needed at least 427.99 x 297 mm"*
+was answered by raising the paper rather than by leaving the refusal standing,
+and the four that refuse do so for reasons this entry's mechanism does not touch.
+`[RAN]` the port-side census: of the 82 two-port nodes, **42 are now EAST/WEST
+where 16 were not NORTH/SOUTH before** - the rule reaches 26 parts across the
+parity corpus.
+
+**THE OWNER DECLINED THE PAPER QUESTION, AND HIS WORDS ARE NOT RECORDED
+VERBATIM ANYWHERE, WHICH IS A GAP IN THIS ENTRY AND IS STATED AS ONE.** The
+clause below raised *"an owner question that has not been put to him"*. It was
+put to him, and `f754a37`'s message reports his answer as *"Asked which way he
+wanted two boards resolved that needed more than A3, he said: why are you
+asking? The refusal already named the size needed … so the answer was derivable
+from the message that withheld it."* **That is a PARAPHRASE in a commit message,
+not his words.** `CLAUDE.md` requires an owner decision or declination to be
+recorded with his words verbatim, and this one is not - so **what would settle
+it: his message, quoted.** The substance of the declination is nonetheless
+recorded here, because a question he declined is not a closed question and
+nobody asks him again unprompted.
+
+**WHAT THE ORIENTATION RULE MOVED, since it is the change that moved everything.**
+Each figure is recorded in the entry that carries it and the list is here so a
+reader has one place to start: `G96` (crossings by size, aspect range), `G105`
+(the integrated experiment - its flat side now REFUSES at the snap and its
+stage-matched comparison reversed sign), `G185` (the twelve canvas sizes, the
+port-side census, the four legs' node positions), `G188` (self-loops re-driven,
+UNMOVED), `G193` (the 4/18/16 anchor split re-driven, UNMOVED), `G200` (wire
+total and, for the first time, segment count), `G209`, `G211` (the `lab` sheet's
+wire count), `G216` (the five legs' rows and the bends-per-edge contrast),
+`G218` (the whole inflation table and the duplicate population, 82 to 64),
+`G219` (0-of-64 under ordered keys), `G229` (the junction coordinate, and the
+seven-block probe's obligation), `G239` and `G258` (the field-fallback
+populations), `G259` (the board scoreboard, 1 to 7 of 11), `G285`
+(`pt2399-core`'s eight fallbacks to four), `G291` (six rows of its own table).
+
+**AND TWO THINGS GOT WORSE, reported beside the rest rather than under it.**
+`ob-buffer`'s one fallback field now covers FOUR things where it covered one, and
+one of the four is a part's BODY rather than a wire. **All NINE of `tp-stage`'s
+declared interface ports now disagree with where its layout brings them out**,
+where eight did - its `BYPASS_CAP` was the satisfied one
+`tests/schgen/render/compose.test.ts` cited as proof the refusal was not a
+blanket.
+
+- **Verified** **CONFIRMED by this writer** for everything in this amendment: the
+  three-tree attribution runs, the full-suite run at the `22ca29b` tree, the
+  52-block and 7-block seed censuses, the arrangement-criterion probe, the
+  port-side census, the board census, and the five `make -C boards/pultec-* check`
+  runs plus the eleven `perfboard.vrt` checksums that establish the board path is
+  untouched. **RELAYED:** the per-step board figures `6 of 11` and `7 of 11`
+  attributed to `f754a37` and `22ca29b` individually, which are read off those
+  commits' own messages; this writer measured only the endpoints.
+- **Why it is open** the directive is implemented and **nobody has read the
+  result**. Seven boards generate; `G285` records that the one sheet anyone has
+  read cannot be read as a drawing, and the other six have had no such reading.
+  The owner asked for a capacitor bank *"arranged to the right of the switch
+  symbol"* on `pultec-hi-boost`, and `df272a7` reports that it now is - **that is
+  the producing agent's own reading of its own output**, which is the one class of
+  judgement `CLAUDE.md` reserves from it.
+- **What would settle it** **CRITERION, and it is the owner's to apply:** he looks
+  at the `pultec-hi-boost` sheet again and says whether it reads as he asked.
+  **MECHANISM:** `bun tools/schgen/board-sheets.ts --out <dir> --pdf` renders all
+  seven. **AND A SECOND, NARROWER CRITERION THIS WRITER CAN STATE WITHOUT
+  AUTHORING A READABILITY BAR:** the arrangement half currently reaches 7 of 52
+  blocks because `FIRST_SEPARATE` is the only seed it has. Whether a block with no
+  declared inbound net should have a seed at all is a DECLARATION question, not a
+  layout one, and `G99`'s open fifth input is where it belongs. **No mechanism is
+  offered for it here**, because inventing a direction for such a block is the
+  taste judgement spec 1.5 forbids - which is the same reason `df272a7` gave for
+  leaving it alone, and it is the right one.

@@ -157,12 +157,16 @@ describe("pt2399-core's declared NC pin, through generation and back from kicad-
     // is asserted so that it cannot drift silently in either direction: fewer is a result worth
     // noticing and more is a regression.
     //
-    // **IT WAS EIGHT UNTIL 2026-10-25 AND G285 CARRIES THE EIGHT; the signal-order change
+    // **IT WAS EIGHT UNTIL 2026-10-25 AND G285 CARRIES THE EIGHT; the ORIENTATION RULE
     // (`docs/known-gaps.md` **G292**) halved it, and four is a RESULT and not a clean sheet.**
-    // Laying the block out by downstream depth instead of declaration order left the placer four
-    // clear slots it did not have, which is the same direction the owner's left-to-right directive
-    // moved the whole corpus in. The other four of the eight are gone because the geometry under
-    // them moved, not because the placer was relaxed.
+    // Laying this block's thirteen non-rail resistors and capacitors along the signal left the
+    // placer four clear slots it did not have, which is the same direction the owner's
+    // left-to-right directive moved the whole corpus in. The other four of the eight are gone
+    // because the geometry under them moved, not because the placer was relaxed.
+    //
+    // **G292's OTHER HALF did NOT do this.** `pt-core` has no boundary net with the
+    // `FIRST_SEPARATE` layer constraint, so `downstreamDepth` reaches nothing in it and every
+    // net keeps its list order; this test passes identically with that change rolled back.
     //
     // **THE UNITS ARE NAMED, which is what makes this a cross-check rather than a count.** This
     // generation runs `pt2399-core` through `generate`; `tests/schgen/masked-problems.test.ts`
