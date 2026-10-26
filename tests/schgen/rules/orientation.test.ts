@@ -91,3 +91,23 @@ test("a kind outside the reviewed set is left open even when it sits on a rail",
     preferredOrientation("bjt", context("Transistor_BJT:2N3904", { "1": "GND", "2": "BASE", "3": "VCC" })),
   ).toBeNull()
 })
+
+/**
+ * **THE SWITCH RULE IS A HACK AND ITS TEST SAYS SO.** It stands in for a reflection across the
+ * vertical axis, which the generator cannot express; 180 reaches the same left-right arrangement
+ * and reverses the throws' order. `docs/known-gaps.md` **G295**.
+ */
+test("a switch is turned so its throws face the bank that feeds them", () => {
+  expect(preferredOrientation("switch", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(180)
+})
+
+test("the switch rule OUTRANKS the rail entry, which is the ordering that makes it work at all", () => {
+  // A selector with a grounded end would otherwise be pulled upright by the rail rule and its
+  // throws would face away from the bank again. The control: change the order in orientation.ts
+  // and this goes to 0 or 180-by-accident rather than 180-by-rule.
+  expect(preferredOrientation("switch", context("Device:C", { "1": "GND", "2": "VCC" }))).toBe(180)
+})
+
+test("CONTROL: the rule is about switches only, so a passive on no rail still takes the signal axis", () => {
+  expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
+})

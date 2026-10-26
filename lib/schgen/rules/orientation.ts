@@ -134,7 +134,39 @@ function signalAxis(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
  * capacitor with both ends on ground rails, say) and one satisfying rotation is the answer; none
  * means the constraints contradict each other, and both of those are `null` rather than a pick.
  */
+/**
+ * A SWITCH IS TURNED 180 SO ITS THROWS FACE THE PARTS THAT FEED THEM - **and this is a HACK
+ * standing in for reflection, which this generator cannot do.**
+ *
+ * The owner, 2026-10-26, on the generated Pultec sheets: *"the switch symbol should be reflected
+ * across its vertical axis so the input connections point left instead of right. That should fix
+ * the primary remaining goofiness."* He is right, and it did: `Switch:SW_Rotary_1x6_MP` draws its
+ * throws on the right and its pole on the left, so a bank of capacitors feeding the throws from
+ * upstream had every throw wire leave the symbol rightward, turn, and wrap back. Turning the
+ * symbol puts the throws on the left, facing the bank, and those wires become short stubs.
+ *
+ * **180 IS NOT WHAT HE ASKED FOR AND THE DIFFERENCE IS VISIBLE.** A reflection across the vertical
+ * axis swaps left for right and keeps the throws reading 1..6 down the symbol. A 180 rotation
+ * reaches the same left-right arrangement and **reverses them to 6..1**. He accepted that -
+ * *"rotation is ok"* - after seeing it rendered, and asked for reflection to be built properly
+ * afterwards. `docs/known-gaps.md` **G295** carries both, and the estimate this writer inflated
+ * when asked about the cost.
+ *
+ * **WHAT THIS ASSUMES, STATED SO IT CAN BE FOUND WHEN IT IS WRONG: that a switch's THROWS are its
+ * input side.** That holds for a selector whose bank feeds it, which is every switch in the Pultec
+ * sections. It is FALSE for a switch whose pole is fed and whose throws drive downstream - a
+ * routing SPDT - and such a switch would be turned the wrong way by this rule. No circuit here
+ * has one. Nothing detects the difference, because the rule library has no notion of which side of
+ * a part the signal arrives on; when reflection lands, this should be replaced by a rule that asks
+ * that question rather than assuming the answer.
+ */
+function switchFacesItsBank(kind: ComponentKind): Rotation | null {
+  return kind === "switch" ? 180 : null
+}
+
 export function preferredOrientation(kind: ComponentKind, context: OrientationContext): Rotation | null {
+  const turned = switchFacesItsBank(kind)
+  if (turned !== null) return turned
   if (!RAIL_END_KINDS.includes(kind)) return null
   const constraints: { readonly pin: string; readonly side: PinSide }[] = []
   for (const [pin, net] of context.pinNets) {
