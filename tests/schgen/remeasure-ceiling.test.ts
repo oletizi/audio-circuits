@@ -44,19 +44,29 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
    * LINE, and the contrast with the paragraph above is the finding** (`docs/known-gaps.md`
    * **G292**). Node sizing re-packed one graph; turning every non-rail two-terminal passive
    * through 90 degrees changes its node box AND its two pin ports' sides, which builds a different
-   * graph, and a sweep over DECLARATION orders is exactly the quantity that notices. **G292's
-   * other half - edges ordered by downstream depth - moved not one of the 40**, because
-   * `downstreamDepth` seeds from a `FIRST_SEPARATE` boundary net and no parity block has one.
-   * Which moved, term by term: all four on `ob-buffer`, `oc-sidechain` and `pt-core`,
-   * three of four on `oc-audio` and on `tp-stage`, **none at all on `oc-power` or on any of the
-   * six legs**. `oc-power`'s unmoved `1, 3, 2, 2` is load-bearing: it is the single subject
-   * `SCALE_UNSTABLE_FROM` rests on, and the test below derives that constant from this row.
+   * graph, and a sweep over DECLARATION orders is exactly the quantity that notices.
+   *
+   * **THE STAR AND THE TWO 180 RULES MOVED 21 OF THE 40, MOVED THREE `[gates refuse]` TAGS ON AND
+   * ONE OFF, AND AGAIN MOVED NO BLOCK ACROSS THE INVARIANT/MOVES LINE** (**G296**). Which moved,
+   * term by term: **all four** on `oc-power`, `oc-sidechain` and `pt-core`; **three of four** on
+   * `ob-buffer` (its declaration order held at 6), on `oc-audio` (its third order held at 6) and
+   * on `tp-stage` (its fourth held at 6); **none at all on any of the six legs**. 4+4+4+3+3+3 = 21.
+   * The tags are the other half: `oc-power`, `oc-audio` and `tp-leg-upper` acquire one
+   * because their production geometry is now refused, and `ob-buffer` loses one because its is
+   * accepted. **`gatesRefuse` is a property of the UNPERMUTED block, so a tag moving is the block
+   * census showing up in this table and not a sweep result.**
+   *
+   * **`oc-power`'s ROW MOVED FOR THE FIRST TIME AND IT IS LOAD-BEARING.** Its unmoved
+   * `1, 3, 2, 2` was the single subject `SCALE_UNSTABLE_FROM` rests on; it now reads
+   * `2, 8, 1, 3`. The constant is unchanged, because what the test below derives from this row is
+   * that the counts DIFFER across orders at 8 placements, and they still do - over a wider spread
+   * (1 to 8 where it was 1 to 3). **The derivation survives; the figures behind it do not.**
    *
    * **THE CLASSIFICATION COLUMN IS THE CLAIM AND IT IS UNMOVED ON ALL TWELVE** - six INVARIANT,
    * six MOVES, same blocks - which is what makes the ceiling below unmoved rather than
    * coincidentally re-derived at the same number. **The counts themselves are a record**: nothing
-   * here is a crossing budget, and the two that fell (`pt-core` 78 to 71, `tp-stage` 7 to 6) are
-   * reported, not claimed as a goal.
+   * here is a crossing budget, and the one that fell a long way (`pt-core` 71 to 54 in declaration
+   * order) is reported beside `tp-stage`'s 6 to 11, not netted against it.
    *
    * Each row's FIRST count is declaration order, and the test immediately below ties it per block
    * to `tools/schgen/remeasure.ts`'s own figure for the unsuffixed block - so no row here can
@@ -64,18 +74,24 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
    */
   it("is these twelve sweep rows", () => {
     expect(renderSweep(sweep)).toEqual([
-      "ob-buffer parts=9 placements=11 orders=4 crossings 6, 5, 5, 6 MOVES [gates refuse]",
-      "oc-power parts=8 placements=8 orders=4 crossings 1, 3, 2, 2 MOVES",
-      "oc-audio parts=12 placements=14 orders=4 crossings 5, 6, 6, 4 MOVES",
-      "oc-sidechain parts=17 placements=19 orders=4 crossings 8, 10, 5, 13 MOVES [gates refuse]",
-      "pt-core parts=24 placements=24 orders=4 crossings 71, 61, 42, 79 MOVES",
-      "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
+      "ob-buffer parts=9 placements=11 orders=4 crossings 6, 7, 7, 8 MOVES",
+      "oc-power parts=8 placements=8 orders=4 crossings 2, 8, 1, 3 MOVES [gates refuse]",
+      "oc-audio parts=12 placements=14 orders=4 crossings 9, 11, 6, 8 MOVES [gates refuse]",
+      "oc-sidechain parts=17 placements=19 orders=4 crossings 13, 4, 13, 24 MOVES [gates refuse]",
+      "pt-core parts=24 placements=24 orders=4 crossings 54, 39, 74, 75 MOVES",
+      "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT [gates refuse]",
       "tp-leg-feedback parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-a parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-b parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-collector parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
       "tp-leg-emitter-bypass parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
-      "tp-stage parts=16 placements=16 orders=4 crossings 6, 6, 8, 6 MOVES",
+      "tp-stage parts=16 placements=16 orders=4 crossings 11, 3, 5, 6 MOVES",
+    ])
+    // THE TAG COLUMN, asserted as a column so a tag cannot move behind a count: the four blocks
+    // whose production geometry the gates refuse are exactly the four `tools/schgen/remeasure.ts`
+    // reports at the `backend-output` stage.
+    expect(sweep.filter((r) => r.gatesRefuse).map((r) => r.block)).toEqual([
+      "oc-power", "oc-audio", "oc-sidechain", "tp-leg-upper",
     ])
     // The classification column, asserted as a column so it cannot move behind the counts.
     expect(sweep.map((r) => (r.invariant ? "INVARIANT" : "MOVES"))).toEqual([
@@ -102,9 +118,9 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
   /** Ruling R40: per size, with the subject count and how many are geometry the gates refuse. */
   it("covers 2 of the spike's 7 sweep sizes and says the other 5 are unmeasured", () => {
     expect(sizeCoverage(sweep).map((s) => `${s.placements}: ${s.unmeasured ? "unmeasured" : `${s.subjects.length} subject(s), ${s.refusedSubjects} refused`}`)).toEqual([
-      "3: 4 subject(s), 0 refused",
+      "3: 4 subject(s), 1 refused",
       "4: unmeasured",
-      "8: 1 subject(s), 0 refused",
+      "8: 1 subject(s), 1 refused",
       "9: unmeasured",
       "13: unmeasured",
       "17: unmeasured",

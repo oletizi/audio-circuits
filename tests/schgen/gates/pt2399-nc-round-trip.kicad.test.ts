@@ -157,22 +157,26 @@ describe("pt2399-core's declared NC pin, through generation and back from kicad-
     // is asserted so that it cannot drift silently in either direction: fewer is a result worth
     // noticing and more is a regression.
     //
-    // **IT WAS EIGHT UNTIL 2026-10-25 AND G285 CARRIES THE EIGHT; the ORIENTATION RULE
-    // (`docs/known-gaps.md` **G292**) halved it, and four is a RESULT and not a clean sheet.**
-    // Laying this block's thirteen non-rail resistors and capacitors along the signal left the
-    // placer four clear slots it did not have, which is the same direction the owner's
-    // left-to-right directive moved the whole corpus in. The other four of the eight are gone
-    // because the geometry under them moved, not because the placer was relaxed.
+    // **THE SERIES IS EIGHT, FOUR, FIFTEEN, AND THE LAST STEP IS THE WORST READING THIS SHEET HAS
+    // EVER TAKEN.** **G285** carries the eight; the orientation rule (`docs/known-gaps.md`
+    // **G292**) halved it to four; `edgesForNet`'s star with the two 180-degree rules
+    // (**G296**) takes it to **FIFTEEN of this sheet's twenty-four units**. A fallback is a
+    // Reference or Value drawn OVER something because no slot was clear, so this is a sheet with
+    // fifteen pieces of text on top of its own ink.
     //
-    // **G292's OTHER HALF did NOT do this.** `pt-core` has no boundary net with the
-    // `FIRST_SEPARATE` layer constraint, so `downstreamDepth` reaches nothing in it and every
-    // net keeps its list order; this test passes identically with that change rolled back.
+    // **IT IS NOT A RELAXATION AND THAT IS WHY IT IS HERE.** Nothing about the placer changed; the
+    // geometry under it did, and `tools/schgen/masked-problems.ts` reports that ALL FIFTEEN cover
+    // a WIRE and five of them cover the SAME wire. **G260** is the trade that lets a
+    // sheet emit at all with text over ink, and this is the largest bill it has presented.
     //
     // **THE UNITS ARE NAMED, which is what makes this a cross-check rather than a count.** This
-    // generation runs `pt2399-core` through `generate`; `tests/schgen/masked-problems.test.ts`
-    // reaches the same circuit as the `pt-core` parity block through `maskedCensus`, a different
-    // driver, and reports the same four keys in the same order.
-    expect(generated().fallbacks.map((f) => f.key)).toEqual(["C6#1", "C14#1", "R1#1", "R8#1"])
-    expect(generated().fallbacks).toHaveLength(4)
+    // generation runs `pt2399-core` through `generate` with the real `kicad-cli` behind it;
+    // `tests/schgen/masked-problems.test.ts` reaches the same circuit as the `pt-core` parity
+    // block through `maskedCensus`, a different driver, and reports the same fifteen keys in the
+    // same order.
+    expect(generated().fallbacks.map((f) => f.key)).toEqual([
+      "C1#1", "C2#1", "C3#1", "C4#1", "C5#1", "C7#1", "C8#1", "C9#1", "C11#1", "C12#1", "C14#1", "R1#1", "R3#1", "R5#1", "R7#1",
+    ])
+    expect(generated().fallbacks).toHaveLength(15)
   })
 })

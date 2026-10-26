@@ -352,20 +352,30 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
  * and the same `flatSubgraphOf` this file already uses, so G229 keeps evidence that can fail.
  *
  * `[RAN]` **the refusal survived G291's node sizing byte-for-byte - same net, same coordinate -
- * and the ORIENTATION RULE (G292) MOVED THE COORDINATE, which is the sharper of the two
- * results.** Node sizing moved the boundary rather than the branch, so `(45.72, 48.26)` held
- * through a change that moved wire length or occupied area on ten of twelve blocks. Laying each
- * leg's floor resistor along the signal moves where the three legs' `BASE` pins MEET, so the
- * branch point itself moved, to **`(46.99, 43.18)`**.
+ * and the ORIENTATION RULE (G292) MOVED THE COORDINATE**, from `(45.72, 48.26)` to
+ * `(46.99, 43.18)`, with the obligation, the net, the kind and the count all unmoved.
  *
- * **WHAT IS UNMOVED IS THE WHOLE OF WHAT G229 IS ABOUT**: the obligation (2, the junction
- * obligation), the net (`BASE`), the kind (`t-junction`) and the count (one place). The coordinate
- * is a record. G229 carries both coordinates, the old one marked superseded, because its text
- * quotes a refusal verbatim and a reader who greps for the old string needs to find out why it is
- * gone rather than find nothing.
+ * **AND SINCE 2026-10-26 THE FIVE-LEG PROBE HAS NO JUNCTION DISAGREEMENT AT ALL, so G229's figure
+ * HAS NO LIVE CHECK ANYWHERE. That is a LOSS and it is the first thing this describe says**
+ * (`docs/known-gaps.md` **G296**). The probe is refused at obligation 4 instead - a clearance
+ * problem on `VCC`'s value text - and `adaptElkLayoutReported` runs obligation 2 BEFORE obligation
+ * 4, so **the junction obligation PASSES on it**. The branch point that refused for three days is
+ * gone from the geometry.
+ *
+ * **IT IS NOT THE T-JUNCTION CHANGE THAT DID IT, WHICH WAS MEASURED RATHER THAN ASSUMED.** `[RAN]`
+ * both probes with `junctionPoints`' T detection rolled back to the chain-era version: **both
+ * refusals are byte-identical**. So the five-leg probe's junction obligation passes because the
+ * star and the two 180-degree rules moved where the three legs' `BASE` pins meet, not because the
+ * emitter learned to place a junction at a T.
+ *
+ * **WHAT G229 NEEDS NOW is a subject whose junction obligation refuses with ONE branch point on
+ * `BASE`, and this repository has none.** The seven-block probe below refuses on `GND`; the
+ * integrated experiment's six-block flat side refuses on `COLLECTOR` and one more. G229 carries
+ * all three coordinates with the superseded ones marked, because its text quotes a refusal
+ * verbatim and a reader who greps for an old string needs to find out why it is gone.
  */
-describe("G229's junction-obligation refusal, which the integrated experiment no longer reaches", () => {
-  it("refuses the five-leg flat probe at the junction obligation, naming the net and the point", async () => {
+describe("G229's junction-obligation refusal, which no probe in this repository still reaches", () => {
+  it("gets the five-leg flat probe PAST the junction obligation and refuses it at clearance instead", async () => {
     const symbols = parityResolver()
     const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
     if (c === undefined) throw new Error("transistor-preamp is not a parity case")
@@ -381,33 +391,45 @@ describe("G229's junction-obligation refusal, which the integrated experiment no
     expect(report.result.ok).toBe(false)
     if (report.result.ok) return
     const refusal = describeMismatch(report.result.mismatch)
-    expect(refusal).toContain("the junctions the sheet emitter would place disagree")
-    // ONE place, asserted as the count, because that is the half of G229's figure the coordinate is
-    // not: a second branch point appearing here would be a different measurement.
-    expect(refusal).toContain("disagree with the branch points of the canonical topology in 1 place(s)")
-    expect(refusal).toContain("net BASE branches at (46.99, 43.18) (t-junction) and no junction is emitted")
-    // The coordinate G229 quoted until 2026-10-25, asserted ABSENT rather than dropped, so this
-    // test says which string went away and the entry's old quote cannot look live.
+    // **THE JUNCTION OBLIGATION PASSES, asserted as an ABSENCE and derived rather than assumed.**
+    // `adaptElkLayoutReported` checks obligation 2 before obligation 4, so a refusal that names
+    // obligation 4 is a statement that obligations 1, 3 and 2 all passed on this geometry.
+    expect(refusal).toContain("spec 1.4 obligation 4")
+    expect(refusal).not.toContain("the junctions the sheet emitter would place disagree")
+    // AND THE REFUSAL IT DOES CARRY, pinned so this probe's subject cannot drift silently: the
+    // same power-symbol-value class that refuses three of the twelve declared blocks.
+    expect(refusal).toContain("value of power symbol VCC 0 at (19.05, 22.86) overlaps wire 32 of tp-drawing-legs~flat (FEEDBACK_JUMPED)")
+    expect(refusal).toContain("value of power symbol VCC 0 at (19.05, 22.86) overlaps pin JP2.2")
+    // BOTH COORDINATES G229 HAS QUOTED, asserted ABSENT rather than dropped, so this test says
+    // which strings went away and the entry's old quotes cannot look live.
     expect(refusal).not.toContain("(45.72, 48.26)")
+    expect(refusal).not.toContain("(46.99, 43.18)")
+    expect(refusal).not.toContain("net BASE branches")
   }, 300_000)
 
   /**
-   * **AND THE SEVEN-BLOCK FLAT PROBE REFUSES AT THE SAME OBLIGATION NOW, WHICH REFUTES THIS
-   * TEST'S OWN PREVIOUS REASON FOR EXISTING.** This test was `refuses the seven-block flat probe
-   * at the SNAP, which is a different obligation`, and its comment said the seven-block union
-   * *"refuses at obligation 1 - the snap collapse - on a `VCC` wire 10 nanometres long, not at
-   * obligation 2, so it is a measurement of a different thing"*. **Since the orientation rule
-   * (`docs/known-gaps.md` **G292**) it refuses at obligation 2** - the junction obligation - and
-   * the snap no longer collapses anything on it at all.
+   * **THE SEVEN-BLOCK FLAT PROBE IS THE ONLY JUNCTION-OBLIGATION REFUSAL LEFT IN THIS FILE, AND IT
+   * IS DOWN TO ONE BRANCH POINT - WHICH IS NOW THE SAME COUNT AS G229's AND STILL NOT ITS
+   * FIGURE.** The history, because the separation has weakened twice:
    *
-   * **SO "a different obligation" IS NO LONGER WHY THE FIVE ARE STILL THE SUBJECT.** What is still
-   * true, and is what this test now asserts: the seven-block probe refuses on **two** branch
-   * points, on `COLLECTOR` and `GND`, where G229's figure is **one**, on `BASE`. A different net,
-   * a different count and a different coordinate is still not a successor to that figure - but it
-   * is a weaker separation than an obligation apart, and the weakening is recorded rather than
-   * papered over.
+   * 1. originally this probe refused at obligation 1, the snap collapse, *"on a `VCC` wire 10
+   *    nanometres long"* - **an obligation apart** from G229's;
+   * 2. the orientation rule (`docs/known-gaps.md` **G292**) moved it to obligation 2 on **two**
+   *    branch points, `COLLECTOR` and `GND` - a different net and a different count;
+   * 3. the star and the two 180-degree rules (**G296**) leave it on **ONE** branch point, `GND` at
+   *    `(55.88, 46.99)`. **So the count no longer separates it from G229's figure either**, and
+   *    the only thing that does is the NET and the COORDINATE.
+   *
+   * **THAT IS A WEAK SEPARATION AND IT IS SAID RATHER THAN IMPLIED.** This probe is a 32-unit
+   * union of all seven blocks and G229's is a 14-unit union of five, so they are not the same
+   * measurement whatever the counts agree on - but a reader comparing the two refusal texts now
+   * has one net name between them, where three days ago there was a different obligation.
+   *
+   * **THE T-JUNCTION CHANGE DID NOT MOVE THIS EITHER.** `[RAN]` with `junctionPoints`' T detection
+   * rolled back: byte-identical refusal. The remaining `GND` branch is a T the emitter still does
+   * not place a junction at, which is a residual in that change and is recorded in **G296**.
    */
-  it("refuses the seven-block flat probe on TWO branch points, not on G229's one", async () => {
+  it("refuses the seven-block flat probe on ONE branch point, on GND rather than G229's BASE", async () => {
     const symbols = parityResolver()
     const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
     if (c === undefined) throw new Error("transistor-preamp is not a parity case")
@@ -422,16 +444,19 @@ describe("G229's junction-obligation refusal, which the integrated experiment no
     if (report.result.ok) return
     const refusal = describeMismatch(report.result.mismatch)
     expect(refusal).toContain("the junctions the sheet emitter would place disagree")
-    expect(refusal).toContain("disagree with the branch points of the canonical topology in 2 place(s)")
-    expect(refusal).toContain("net COLLECTOR branches at (41.91, 74.93) (t-junction)")
-    expect(refusal).toContain("net GND branches at (111.76, 62.23) (t-junction)")
-    // THE SNAP IS CLEAN ON THIS PROBE NOW, asserted as absent: the `VCC` wire 10 nanometres long
-    // that this test used to be named after is gone, and saying so is what stops a later reader
-    // taking the obligation-1 claim as still live.
+    expect(refusal).toContain("disagree with the branch points of the canonical topology in 1 place(s)")
+    expect(refusal).toContain("net GND branches at (55.88, 46.99) (t-junction)")
+    // THE TWO BRANCH POINTS THIS PROBE CARRIED UNTIL 2026-10-26, asserted ABSENT rather than
+    // dropped, so the superseded coordinates cannot look live in G229 or G296.
+    expect(refusal).not.toContain("(41.91, 74.93)")
+    expect(refusal).not.toContain("(111.76, 62.23)")
+    expect(refusal).not.toContain("net COLLECTOR branches")
+    // THE SNAP IS CLEAN ON THIS PROBE, asserted as absent: the `VCC` wire 10 nanometres long that
+    // this test was once named after is gone, and saying so is what stops a later reader taking
+    // the obligation-1 claim as still live.
     expect(refusal).not.toContain("snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry")
-    // AND IT IS NOT G229's FIGURE: a different net and a different count, on the same obligation.
+    // AND IT IS NOT G229's FIGURE: the same count now, but a different net.
     expect(refusal).not.toContain("net BASE branches")
-    expect(refusal).not.toContain("in 1 place(s)")
   }, 300_000)
 })
 

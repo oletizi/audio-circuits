@@ -64,7 +64,28 @@ const NAME_RULES: readonly NameRule[] = [
   { form: /^pin number /, category: "pin-number", writtenBy: "unitText (render/unit-text.ts), decorations" },
   { form: /^pin end \S+\.\S+/, category: "pin-line", writtenBy: "layoutItems (render/layout-check.ts), the pin list" },
   { form: /^junction /, category: "junction", writtenBy: "junctionPoints (render/connectivity.ts)" },
-  { form: /^interior /, category: "interior-graphic", writtenBy: "unitText (render/unit-text.ts), strokes and interiorBoxes" },
+  /**
+   * **THIS CITATION SAID "strokes and interiorBoxes" AND THE STROKES ARE NOT IN THIS FORM**, which
+   * is the `NOT_IN_THIS_TREE` failure **G132** names, found by a name this census could not read
+   * (`docs/known-gaps.md` **G296**). `unitText` writes `interior text ${i} of ${key}` for
+   * `graphics.blocks` and `graphic ${i} of ${key}` for `graphics.segments`, so `^interior ` only
+   * ever reached the BOXES. The citation is corrected and the strokes get their own rule below.
+   */
+  { form: /^interior /, category: "interior-graphic", writtenBy: "unitText (render/unit-text.ts), interiorBoxes via graphics.blocks" },
+  /**
+   * `unitText`'s `strokes`, measured for the first time on 2026-10-26: `oc-power`'s
+   * `+9V_PROTECTED` value text lands on `graphic 0 of C1#1` and three more like it. Same category
+   * as the interior boxes above - both are the unit's drawn interior graphics - and a separate
+   * rule because the two producers write two forms.
+   */
+  { form: /^graphic \d+ of /, category: "interior-graphic", writtenBy: "unitText (render/unit-text.ts), strokes via graphics.segments" },
+  /**
+   * `unitText`'s `pins` segment list, also first measured on 2026-10-26: `tp-leg-upper`'s `VCC`
+   * value text lands on `pin R1.1`. It is NOT `^pin end \S+\.\S+` - that is `layoutItems`' own pin
+   * list in `render/layout-check.ts` - and it is not the bare `<PART>.<PIN>` rule below, which has
+   * no `pin ` prefix. The category is `pin-line` either way: all three name a pin's drawn stroke.
+   */
+  { form: /^pin [A-Za-z0-9_]+\.[A-Za-z0-9_]+$/, category: "pin-line", writtenBy: "unitText (render/unit-text.ts), the pins list" },
   // Bare `<PART>.<PIN>`, which `layoutItems` writes for a pin and several relations print unprefixed.
   { form: /^[A-Za-z0-9_]+\.[A-Za-z0-9_]+( at \(|$)/, category: "pin-line", writtenBy: "layoutItems (render/layout-check.ts), the pin list" },
 ]
