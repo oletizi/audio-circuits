@@ -104,11 +104,22 @@ import type { PlacedPin } from "../../lib/schgen/render/unit-pins.ts"
 /**
  * The circuit the experiment's subject comes from: the one where SOME blocks draw.
  *
- * **IT IS `optical-compressor` SINCE 2026-10-25 AND WAS `transistor-preamp` BEFORE** - see this
- * module's header. `transistor-preamp` now draws all seven of its blocks, which the guard in
- * `integratedExperiment` refuses, and `optical-compressor` draws two of its three.
+ * **IT IS `transistor-preamp` SINCE 2026-10-26 AND THIS IS THE SECOND TIME THE SUBJECT HAS MOVED
+ * BETWEEN THE SAME TWO CIRCUITS, WHICH IS THE FINDING AND NOT AN ANNOYANCE.** It was
+ * `transistor-preamp` until 2026-10-25, when all seven of its blocks drew and the guard below
+ * refused it; the subject moved to `optical-compressor`, which drew two of its three. **It moves
+ * back now because `optical-compressor` draws NONE of its three** - `edgesForNet`'s star re-placed
+ * every block and `oc-power` and `oc-audio` both land one power symbol's VALUE text on their own
+ * parts and wires (`docs/known-gaps.md` **G296**), while `oc-sidechain` has been refused at
+ * obligation 3 throughout. `transistor-preamp` draws six of its seven, `tp-leg-upper` being the
+ * one refused, so it is the `SOME` the ruling's reasoning asks for.
+ *
+ * **THE GUARD IS NOT RELAXED EITHER TIME.** What the two moves show is that *"the circuit where
+ * SOME blocks draw"* is not a property of a circuit at all - it is a property of the current
+ * geometry, and every geometry change can take it away from whichever circuit holds it. Nothing
+ * here fixes that; the subject is named in one place so that a move is one edit and a loud one.
  */
-export const SUBJECT_CIRCUIT = "optical-compressor"
+export const SUBJECT_CIRCUIT = "transistor-preamp"
 
 export interface SideMeasures {
   readonly measures: SchematicMeasures

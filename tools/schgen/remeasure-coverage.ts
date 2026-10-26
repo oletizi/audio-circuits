@@ -122,6 +122,45 @@ export const PROBLEM_CLASSES: readonly { readonly pattern: RegExp; readonly prob
   { pattern: /^label .* overlaps pin \S+ text$/, problemClass: "label-pin-text-overlap" },
   { pattern: /^label .* overlaps graphic \d+ of /, problemClass: "label-graphic-overlap" },
   { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps value of (power symbol|PWR_FLAG) /, problemClass: "power-value-overlap" },
+  /**
+   * **A POWER SYMBOL'S VALUE OVER A WIRE, AND IT IS A DIFFERENT CLASS FROM BOTH ITS NEIGHBOURS
+   * ABOVE AND BESIDE IT.** Measured on `oc-power` after `edgesForNet` became a STAR
+   * (`docs/known-gaps.md` **G296**): *"value of power symbol +9V_PROTECTED 1 at (33.02, 52.07)
+   * overlaps wire 0 of oc-power (+9V_PROTECTED)"*. `classOf` refused it, which is the arm that
+   * keeps this whitelist honest actually firing on real data for the second time.
+   *
+   * It is NOT `label-wire-overlap`: that class is a global label's own text, placed by
+   * `label-placement.ts`, and the fix for it is a label slot. This is the VALUE FIELD of a power
+   * symbol, whose position comes from the symbol's own field offsets, and no label slot moves it.
+   * It is NOT `power-value-overlap` either: that pair is two texts of two symbols, and moving
+   * either one fixes it, where here the obstacle is a routed wire.
+   *
+   * **WHY THE STAR PRODUCED IT.** A star hubs every sibling of a net on one terminal, so a rail's
+   * wires leave that hub and fan past the power symbols drawn on the same rail - the segment now
+   * crossing `+9V_PROTECTED`'s value box is `wire 0` OF THAT SAME NET. The chain routed neighbour
+   * to neighbour and never passed back over the symbol it had just left.
+   */
+  { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps wire \d+ of /, problemClass: "power-value-wire-overlap" },
+  /**
+   * **THE OTHER THREE OBSTACLES THE SAME TEXT HIT, each its own class for the same reason the
+   * label classes above are four and not one: the fix is different in each.** All four were
+   * measured in one pass over the parity corpus after the star landed (**G296**), and every
+   * pattern here is transcribed from a string that run produced:
+   *
+   * - `oc-power`, SEVEN problems and ONE text - `+9V_PROTECTED 1 at (33.02, 52.07)` against
+   *   `wire 0`, `body of C1#1`, `body of C3#1` and `graphic 0`/`graphic 1` of each capacitor;
+   * - `tp-leg-upper`, two problems and one text - `VCC 0 at (17.78, 6.35)` against
+   *   `wire 9 (UPPER_JUMPED)` and `pin R1.1`.
+   *
+   * **`pin R1.1` IS THE FIRST PROBLEM ANYTHING HERE HAS MEASURED NAMING A PIN STROKE**, which this
+   * module's header listed among the obstacle names deliberately absent because *"a pattern nothing
+   * drives is a check that cannot fail"*. Something drives it now. It is NOT
+   * `label-pin-text-overlap`: that pattern ends in `text` and names the pin's NAME/NUMBER text,
+   * where this is the pin's own stroke from `render/unit-text.ts`.
+   */
+  { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps body of /, problemClass: "power-value-body-overlap" },
+  { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps graphic \d+ of /, problemClass: "power-value-graphic-overlap" },
+  { pattern: /^value of (power symbol|PWR_FLAG) .* overlaps pin \S+$/, problemClass: "power-value-pin-overlap" },
 ]
 
 export function classOf(problem: string): string {

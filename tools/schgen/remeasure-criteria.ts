@@ -108,6 +108,18 @@ export interface LegShape {
   readonly predictedX: number
 }
 
+/** A congruent leg this measurement could not take, with the refusal verbatim. */
+export interface RefusedLeg {
+  readonly block: BlockId
+  readonly refusal: string
+}
+
+/** The congruence measurement: the legs it could take, and the legs it could not. */
+export interface LegShapes {
+  readonly shapes: readonly LegShape[]
+  readonly refused: readonly RefusedLeg[]
+}
+
 /**
  * The SHAPE of each congruent leg, with the glyphs its own declaration gives it.
  *
@@ -117,18 +129,40 @@ export interface LegShape {
  * label with its ROLE (`jumper`, `floor`, `trim`), and two legs that draw alike then produce
  * identical arrays that `toEqual` can compare and a report can print. A positional comparison of
  * numbers would hide which element moved.
+ *
+ * **A LEG THAT DOES NOT DRAW IS REPORTED, NOT THROWN ON - AND THAT CHANGE WAS FORCED BY ONE**
+ * (`docs/known-gaps.md` **G296**). `blockContent` applies the §1.4 gates, so a leg the clearance
+ * check refuses has no accepted geometry at all; until 2026-10-26 this function let that throw,
+ * which took the whole of `tests/schgen/remeasure.test.ts` down with it and reported ONE unnamed
+ * failure for twenty-four tests - the exact masking `CLAUDE.md` names and the exact masking
+ * `05c6849` had already paid for once. `tp-leg-upper` is the leg: `edgesForNet`'s star put its
+ * `VCC` power symbol's VALUE text on `wire 9` and on `pin R1.1`.
+ *
+ * **IT IS NOT MEASURED AT THE `backend-output` STAGE INSTEAD, deliberately.** `./remeasure.ts`
+ * keeps the two stages in separate columns and takes no ratio between them, because the accepted
+ * geometry is snapped and the backend's is not. Congruence is an EQUALITY between legs, so one leg
+ * read at a different stage would be the one comparison in this repository that crosses the
+ * stages - and it would look like a measurement rather than like the mixture it is.
  */
-export async function legShapes(cases: readonly ParityCase[] = PARITY_CASES): Promise<readonly LegShape[]> {
+export async function legShapes(cases: readonly ParityCase[] = PARITY_CASES): Promise<LegShapes> {
   const found = cases.find((c) => c.name === "transistor-preamp")
   if (found === undefined) throw new Error("the congruence re-take needs the transistor-preamp parity case and it is absent")
   const symbols = parityResolver()
   const circuit = buildCircuit(circuitSpecFrom(found.network, found.authoring, symbols), { symbols })
   const elk = elkBackendFrom(await elkPrePass(circuit, symbols))
-  return CONGRUENT_LEGS.map((id) => {
+  const shapes: LegShape[] = []
+  const refused: RefusedLeg[] = []
+  for (const id of CONGRUENT_LEGS) {
     const block = circuit.blocks.get(id)
     if (block === undefined) throw new Error(`transistor-preamp has no block ${id}; the four congruent legs are ${CONGRUENT_LEGS.join(", ")}`)
     const g = subgraphOf(circuit, id, symbols)
-    const content = blockContent(circuit, id, symbols, elk)
+    let content: FrameContent
+    try {
+      content = blockContent(circuit, id, symbols, elk)
+    } catch (e) {
+      refused.push({ block: id, refusal: e instanceof Error ? e.message : String(e) })
+      continue
+    }
     if (content.block === null) {
       throw new Error(
         `block ${id} produced a frame with no block layout, so there is no geometry to compare for ` +
@@ -150,7 +184,7 @@ export async function legShapes(cases: readonly ParityCase[] = PARITY_CASES): Pr
           "over the MODEL's id and a designator would give a different length and a wrong prediction.",
       )
     }
-    return {
+    shapes.push({
       block: id,
       placements: layout.placements.map((p) => `${name(p.part)}#${p.unit}@${p.at.x},${p.at.y}@${p.rot}`),
       wires: layout.wires.map((w) => `${netRole(w.net, id)}:${w.a.x},${w.a.y}-${w.b.x},${w.b.y}`),
@@ -162,8 +196,9 @@ export async function legShapes(cases: readonly ParityCase[] = PARITY_CASES): Pr
           ? null
           : { dx: (trim.at.x - jumper.at.x) / GRID, dy: (trim.at.y - jumper.at.y) / GRID },
       predictedX: skinIdWidth(jumperId),
-    }
-  })
+    })
+  }
+  return { shapes, refused }
 }
 
 /** A leg's three parts by ROLE, read off the designator prefix rather than off a hard-coded list. */
@@ -265,7 +300,9 @@ const within = (p: { readonly x: number; readonly y: number }, b: Box): boolean 
   p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY
 
 if (import.meta.main) {
-  for (const leg of await legShapes()) {
+  const measured = await legShapes()
+  for (const leg of measured.refused) console.log(`${leg.block}: NOT MEASURED - ${leg.refusal}`)
+  for (const leg of measured.shapes) {
     console.log(
       `${leg.block}: jumper->trim ${leg.jumperToTrim === null ? "not taken" : `(${leg.jumperToTrim.dx}, ${leg.jumperToTrim.dy})`} ` +
         `grid steps, skin predicted x ${leg.predictedX} px; powers ${leg.powers.join(" ") || "none"}; labels ${leg.labels.join(" ") || "none"}`,
