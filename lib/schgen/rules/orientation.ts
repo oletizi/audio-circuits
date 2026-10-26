@@ -161,8 +161,35 @@ function signalAxis(kind: ComponentKind, symbol: LibSymbol): Rotation | null {
  * that question rather than assuming the answer.
  */
 function switchFacesItsBank(kind: ComponentKind): Rotation | null {
-  return kind === "switch" ? 180 : null
+  return TURNED_TO_FACE_THE_CIRCUIT.includes(kind) ? 180 : null
 }
+
+/**
+ * Kinds drawn at 180 so their pins face the circuit rather than away from it.
+ *
+ * **`switch`** - the owner's note above: a selector's throws face the bank that feeds them.
+ *
+ * **`connector`** - the same defect, found by looking for it after he asked whether the other
+ * orientation problems had been addressed. `Connector_Generic:Conn_01x05` draws **all five pins
+ * facing LEFT** at rotation 0, and the Pultec junction bus places both its headers at 0 with
+ * everything they feed - the global labels, the board's `out` - to their RIGHT, so every wire
+ * left a header leftward and wrapped around it.
+ *
+ * `[RAN]` turning connectors: **the junction bus becomes a tight adjacent pair with `in` entering
+ * left and the labels fanning right**, `pt2399-core` and `transistor-preamp-feedback` BOTH start
+ * generating - each had been refusing on a junction disagreement - and `feedback` comes out with
+ * **zero** fallback field placements, the first board in this repository to manage that. The
+ * board census goes 5 of 11 to 6 of 11. **It costs `transistor-preamp-loop`**, which moves to a
+ * text-clearance refusal: that is the minimise-and-disclose class (**G260**) rather than a
+ * correctness one, and it is recorded rather than traded away silently.
+ *
+ * **THE SAME ASSUMPTION AS THE SWITCH, AND THE SAME WARNING.** This says a connector's pins face
+ * INTO the circuit, which is true of a board-edge header feeding what is drawn to its right and
+ * false of one that receives from the right. Nothing detects the difference. When reflection
+ * lands, both entries here should be replaced by a rule that asks which side the signal arrives
+ * on instead of assuming it.
+ */
+const TURNED_TO_FACE_THE_CIRCUIT: readonly ComponentKind[] = ["switch", "connector"]
 
 export function preferredOrientation(kind: ComponentKind, context: OrientationContext): Rotation | null {
   const turned = switchFacesItsBank(kind)

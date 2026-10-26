@@ -111,3 +111,15 @@ test("the switch rule OUTRANKS the rail entry, which is the ordering that makes 
 test("CONTROL: the rule is about switches only, so a passive on no rail still takes the signal axis", () => {
   expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
 })
+
+test("a connector is turned so its pins face the circuit, not away from it", () => {
+  // Conn_01x05 draws all five pins LEFT at rotation 0; the junction bus feeds things to its
+  // right, so every wire wrapped around the header. docs/known-gaps.md G295.
+  expect(preferredOrientation("connector", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(180)
+})
+
+test("CONTROL: the turn applies to switch and connector ONLY, not to every kind", () => {
+  // Without this the rule could be widened to everything and the two tests above would still pass.
+  expect(preferredOrientation("diode", context("Device:R", { "1": "IN", "2": "OUT" }))).toBeNull()
+  expect(preferredOrientation("resistor", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
+})
