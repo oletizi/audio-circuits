@@ -1,5 +1,15 @@
 # Audio Circuits - Project Instructions
 
+**`CONSTITUTION.md` outranks this file.** It holds the small set of principles
+this project does not revisit - judgement is relocated rather than automated, an
+arrangement is reviewed once per construct, an algorithm is for the understood
+problem and a loop for the ambiguous one, a fallback is loud or it does not
+exist, the artifact is the deliverable, read what the project already knows
+before adding to it, and a cause or a demand is a claim that needs testing. Each
+names the failure that earned it. Nothing below may be read as permission to
+depart from them; a departure is an amendment, by the procedure the constitution
+states.
+
 Follow the shared project rules in `AGENTS.md`, including committing and pushing
 small, coherent changes early and often.
 

@@ -1,6 +1,13 @@
 # Project rules
 
-**Read `CLAUDE.md` before doing anything here.** It opens with what this project
+**Read `CONSTITUTION.md` first, then `CLAUDE.md`.** The constitution holds the
+few principles this project does not revisit case by case - what may be
+automated and what may not, when an algorithm is the wrong tool, what a fallback
+owes you, and that a claim about a drawing ships with the drawing. It binds every
+change here and is amended only by the procedure it states. `CLAUDE.md` holds the
+practices, which are revised freely as the work teaches.
+
+**Read `CLAUDE.md` before doing anything else here.** It opens with what this project
 is and who does what, and that frame decides most questions you will have.
 
 The short version, so you are not working from the wrong model of the work:
