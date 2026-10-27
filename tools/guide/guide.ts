@@ -24,20 +24,32 @@
  * stapler - a skipped step that looks like a passing one.
  *
  * **`kind: "withheld"` IS A DIFFERENT CLAIM FROM `"none"` AND PRINTS A
- * DIFFERENT NOTICE.** `none` says this board declares no schematic at all.
- * `withheld` says `schgen` generated one from the board's own declaration and
- * it was judged unfit to build from - refused outright, or drawn with text
- * the placer could not keep clear. The owner's own words are why this is a
+ * DIFFERENT NOTICE, AND IT IS ITSELF NOT ONE CLAIM BUT TWO.** `none` says
+ * this board declares no schematic at all. `withheld` says `schgen` was
+ * offered the board's own declaration and the result was judged unfit to
+ * build from - and which of two things that means is `GuideSchematic`'s
+ * `drawn` field, carried through from `tools/guide/schematic-source.ts`: a
+ * sheet was actually drawn and withheld for what is on it (`drawn: true`),
+ * or nothing was drawn at all - a refusal, or a generation that drew zero
+ * sheets (`drawn: false`). The owner's own words are why `withheld` is a
  * gate rather than a softer warning: *"if the schematics are wonky, it's
  * worse than having nothing at all."* `kind: "generated"` is the fourth
  * state, printed as a schematic page like `"printed"` is, plus one line
  * saying the sheet came from `schgen` rather than a hand-drawn source.
+ *
+ * `GuideSchematic` itself, the header row and both notices live in
+ * `./schematic-notice.ts` - split out to keep this file under the project's
+ * 300-500 line ceiling, the same way `resolveSchematic` lives in
+ * `./schematic-source.ts` rather than in `./packet.ts`.
  */
 import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import type { ChecklistSection } from "./checklist.ts"
 import type { PowerUpChecks } from "./power-up.ts"
+import { generatedNote, header, noSchematicNotice, withheldSchematicNotice, type GuideSchematic } from "./schematic-notice.ts"
 import { standInSection, type StandInGroupBlock, type StandInSection } from "./stand-in-section.ts"
 import { escapeXml } from "./svg.ts"
+
+export type { GuideSchematic } from "./schematic-notice.ts"
 
 export interface GuideImages {
   readonly designators: string
@@ -58,45 +70,6 @@ export interface GuideImages {
    */
   readonly clusters: string | undefined
 }
-
-/**
- * The packet's schematic: the repository-relative path of the one it printed,
- * a generated one `schgen` drew from the board's own declaration, or the
- * paths the notice needs when there is none to print or none fit to print.
- *
- * Both members of `"none"` are REQUIRED and neither is defaulted. The notice
- * has to send a reader somewhere - to the file that would declare a schematic,
- * and to the model the printed pages were actually checked against - and a
- * notice that merely announced an absence would be the silence this union
- * exists to break.
- *
- * **`"withheld"` is a FOURTH variant, never collapsed into `"none"`.** `none`
- * means this board declares no schematic at all. `withheld` means a schematic
- * WAS generated from the board's declaration and judged unfit to build from -
- * refused outright, or drawn with text the placer could not keep clear. Those
- * are two different claims about two different situations, and printing one
- * notice for both would be exactly the silent skip this file's own module
- * comment names as the failure to avoid.
- */
-export type GuideSchematic =
-  | { readonly kind: "printed"; readonly path: string }
-  | { readonly kind: "generated"; readonly path: string }
-  | {
-      readonly kind: "withheld"
-      /** Repository-relative perfboard.json. */
-      readonly declarationPath: string
-      /** Repository-relative circuit module: what the pages WERE checked against. */
-      readonly circuitPath: string
-      /** Why it was withheld, in the words the gate used. Never empty. */
-      readonly reason: string
-    }
-  | {
-      readonly kind: "none"
-      /** Repository-relative perfboard.json: the only place a board names its schematic. */
-      readonly declarationPath: string
-      /** Repository-relative circuit module: what the layout and checklist were checked against. */
-      readonly circuitPath: string
-    }
 
 export interface GuideInput {
   readonly boardName: string
@@ -171,120 +144,6 @@ p.parts { margin: 0 0 5pt; }
 `
 
 const CHECKBOX = '<td class="tick"><span class="box" aria-label="to do"></span></td>'
-
-/** The one-line Schematic entry in the header: the path, or a pointer to the notice. */
-function schematicRow(schematic: GuideSchematic): string {
-  const text =
-    schematic.kind === "printed" || schematic.kind === "generated"
-      ? schematic.path
-      : schematic.kind === "withheld"
-        ? 'withheld - see "Schematic withheld" below'
-        : 'none - see "No schematic in this packet" below'
-  return `<dt>Schematic</dt><dd>${escapeXml(text)}</dd>`
-}
-
-/**
- * The one line that distinguishes a `schgen`-drawn sheet from a hand-authored
- * one, printed right after the header on a `"generated"` packet and nowhere
- * else: a reader holding a generated sheet is looking at a different kind of
- * artifact than a hand-drawn schematic, even though this packet treats both
- * as fit to build from.
- */
-function generatedNote(schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind !== "generated") return []
-  return [
-    '<p class="note">This schematic was generated by <code>schgen</code> from the board\'s own ' +
-      "authoring declaration; it is not hand-drawn.</p>",
-  ]
-}
-
-/**
- * The one-line Wiring guide entry: only present when the board has a
- * `wiring.md` on disk. It names the file and says plainly that this packet
- * does not replace it, because the checklist and images here cover the
- * board itself - not the off-board terminals, stand-in groups and builds
- * `wiring.md` describes.
- */
-function wiringRow(wiringPath: string): string {
-  return (
-    `<dt>Wiring guide</dt><dd>${escapeXml(wiringPath)} - this packet does not replace it, ` +
-    "read it alongside this one</dd>"
-  )
-}
-
-function header(input: GuideInput): string {
-  return [
-    `<h1>${escapeXml(input.boardName)} - build guide</h1>`,
-    '<dl class="meta">',
-    `<dt>Generated</dt><dd>${escapeXml(input.generated)}</dd>`,
-    `<dt>Layout</dt><dd>${escapeXml(input.layoutPath)}</dd>`,
-    schematicRow(input.schematic),
-    ...(input.wiringPath === undefined ? [] : [wiringRow(input.wiringPath)]),
-    "</dl>",
-  ].join("\n")
-}
-
-/**
- * The printed statement that stands where the schematic page would be.
- *
- * It is a page-one block, between the header and the first image, so it
- * cannot be mistaken for a page that fell out of the stapler: a reader sees
- * it before any layout. No lines at all when a schematic WAS printed - the
- * notice must never appear on a complete packet, where it would be a false
- * alarm.
- */
-function noSchematicNotice(boardName: string, schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind !== "none") return []
-  const code = (text: string): string => `<code>${escapeXml(text)}</code>`
-  return [
-    '<section class="notice">',
-    "<h2>No schematic in this packet</h2>",
-    `<p><strong>This packet prints no schematic, and no schematic page has gone missing from it: ` +
-      `there is no schematic for ${escapeXml(boardName)} to print.</strong></p>`,
-    `<p>A board names its schematic in its own ${code("perfboard.json")}, and ` +
-      `${code(schematic.declarationPath)} names none - so no file in this repository claims to be ` +
-      `this board's schematic. What these pages were built from and checked against instead is the ` +
-      `circuit model in ${code(schematic.circuitPath)}: every part, value, lead and connection in ` +
-      `the checklist comes from that model, and this packet refuses to build at all if the layout ` +
-      `and the model disagree about any part.</p>`,
-    `<p>What would put a schematic page here: declare this board's schematic in ` +
-      `${code(schematic.declarationPath)} as an ${code('"sch"')} / ${code('"netlist"')} pair, then ` +
-      `run ${code("make guide")} again. The packet prints the schematic on every board that ` +
-      `declares one.</p>`,
-    "</section>",
-  ]
-}
-
-/**
- * The printed statement that stands where a `schgen`-generated schematic was
- * withheld: a DIFFERENT claim from `noSchematicNotice` above, and printed only
- * for `"withheld"`.
- *
- * **`withheld` means a schematic WAS generated from this board's own
- * declaration and judged unfit to build from** - either `schgen` refused
- * outright, or it drew a sheet carrying text the placer could not keep clear.
- * Collapsing this into the no-schematic notice would read as the quieter of
- * the two claims: "this board has none" instead of "one was drawn and is not
- * good enough to build from," which is the worse of the two things CLAUDE.md
- * says about this packet - *"if the schematics are wonky, it's worse than
- * having nothing at all."*
- */
-function withheldSchematicNotice(boardName: string, schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind !== "withheld") return []
-  const code = (text: string): string => `<code>${escapeXml(text)}</code>`
-  return [
-    '<section class="notice">',
-    "<h2>Schematic withheld</h2>",
-    `<p><strong>This packet prints no schematic for ${escapeXml(boardName)}: schgen generated one ` +
-      "from this board's own declaration and it was withheld as not fit to build from.</strong></p>",
-    `<p>Declared in ${code(schematic.declarationPath)}. What these pages were checked against instead ` +
-      `is the circuit model in ${code(schematic.circuitPath)}: every part, value, lead and connection ` +
-      "in the checklist comes from that model, independently of whatever the generated sheet drew.</p>",
-    `<p>Withheld because: ${escapeXml(schematic.reason)}</p>`,
-    `<p>Reproduce this measurement with ${code("bun run tools/schgen/board-geometry.ts")}.</p>`,
-    "</section>",
-  ]
-}
 
 function image(title: string, svg: string, pageBreak: boolean): string {
   const cls = pageBreak ? "layout page" : "layout"

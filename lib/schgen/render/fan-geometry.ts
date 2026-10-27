@@ -101,10 +101,12 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
 
   const netWires = new Map<string, Wire[]>();
   for (const w of wires) {
-    if (!netWires.has(w.net)) {
-      netWires.set(w.net, []);
+    const list = netWires.get(w.net);
+    if (list === undefined) {
+      netWires.set(w.net, [w]);
+    } else {
+      list.push(w);
     }
-    netWires.get(w.net)!.push(w);
   }
 
   for (const wireList of netWires.values()) {

@@ -44,16 +44,21 @@ export interface SchematicResolution {
  *   - `kind: "none"`, exactly today's behaviour for a board that genuinely
  *   has none.
  * - `boardSheets` reports `"refused"` - `kind: "withheld"`, naming the
- *   blocker in full.
+ *   blocker in full, `drawn: false`: nothing was drawn before the refusal.
  * - `boardSheets` reports `"generated"` but the gate does not clear - either
  *   zero sheets were drawn (nothing to examine, so this is NOT the same
  *   claim as a clean generation - `board-sheets.ts`'s own census makes the
- *   same distinction for its "fallback field placements" line) or some sheet
- *   carries a fallback field placement, text the placer could not keep
- *   clear - `kind: "withheld"` naming which of the two it was. **This is the
+ *   same distinction for its "fallback field placements" line, and `drawn`
+ *   is `false` here too, for the same reason) or some sheet carries a
+ *   fallback field placement, text the placer could not keep clear
+ *   (`drawn: true`: a sheet WAS drawn here, and is withheld for what is on
+ *   it) - `kind: "withheld"` naming which of the two it was. **This is the
  *   gate**: a generated sheet is not thereby a sheet fit to build from, and
  *   the owner's own words are why it is a gate rather than a softer warning -
  *   "if the schematics are wonky, it's worse than having nothing at all."
+ *   **`drawn` is the field that keeps these two sub-cases from printing as
+ *   one claim on the guide page** - see `GuideSchematic` in
+ *   `./schematic-notice.ts`.
  * - `boardSheets` reports `"generated"`, at least one sheet was drawn, and
  *   every sheet is clean - `kind: "generated"`, and the caller still has to
  *   export its PDF into the staging directory before this resolution's
@@ -121,8 +126,10 @@ export async function resolveSchematic(
       return { schematic: none, schematicRoot: undefined, tempDir }
     }
     if (result.outcome === "refused") {
+      // `drawn: false` - schgen refused before drawing anything, so there is no sheet to have
+      // withheld "over something". See `GuideSchematic`'s doc in `./schematic-notice.ts`.
       return {
-        schematic: { kind: "withheld", declarationPath, circuitPath, reason: result.blocker },
+        schematic: { kind: "withheld", declarationPath, circuitPath, reason: result.blocker, drawn: false },
         schematicRoot: undefined,
         tempDir,
       }
@@ -133,6 +140,10 @@ export async function resolveSchematic(
     // makes the same distinction for its own zero (`renderBoardSheets`'s "NOT MEASURED" line), and
     // this withholds for the same reason rather than reading an empty generation as a clean one.
     if (result.drawings.length === 0) {
+      // `drawn: false` - a "generated" outcome that drew zero sheets is not a drawing anybody can
+      // call withheld "over something": there is nothing to examine, the same distinction
+      // `board-sheets.ts`'s own census makes for this zero. See `GuideSchematic`'s doc in
+      // `./schematic-notice.ts`.
       return {
         schematic: {
           kind: "withheld",
@@ -141,13 +152,16 @@ export async function resolveSchematic(
           reason:
             "generated 0 sheets: NOT MEASURED - no sheet was drawn, so there is no placed text to " +
             "confirm clear, and that is not the same claim as a clean generation",
+          drawn: false,
         },
         schematicRoot: undefined,
         tempDir,
       }
     }
     // A fallback field placement is text the placer could not keep clear, drawn over something -
-    // worse than printing nothing - so ANY fallback on ANY sheet withholds the page.
+    // worse than printing nothing - so ANY fallback on ANY sheet withholds the page. `drawn: true`:
+    // unlike the two arms above, a real sheet WAS drawn here, and it is being withheld for what is
+    // on it rather than because nothing exists to show.
     const clean = result.drawings.every((d) => d.fieldFallbacks.length === 0)
     if (!clean) {
       return {
@@ -156,6 +170,7 @@ export async function resolveSchematic(
           declarationPath,
           circuitPath,
           reason: `${result.fallbacks.length} fallback field placement(s): text the placer could not keep clear`,
+          drawn: true,
         },
         schematicRoot: undefined,
         tempDir,

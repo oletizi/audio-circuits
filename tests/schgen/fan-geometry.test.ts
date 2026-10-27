@@ -73,7 +73,7 @@ describe("wireGeometry counts what a reader's eye has to resolve", () => {
   it("throws on diagonal wire, naming net and endpoints", () => {
     expect(() => {
       wireGeometry([w(0, 0, 10, 10, "A")])
-    }).toThrow(/Diagonal wire on net '(A|[^']+)'.*from.*\(0,0\).*to.*\(10,10\)/)
+    }).toThrow(/Diagonal wire on net 'A'.*from.*\(0,0\).*to.*\(10,10\)/)
   })
 
   it("throws on zero-length wire", () => {
