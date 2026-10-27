@@ -14,7 +14,8 @@
 
 ## Global Constraints
 
-- **Suite baseline `Ran 3887`, 0 fail**, with `SCHGEN_SOURCE=/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen`. Account for every change term by term; `pass + fail == Ran` does not catch a throwing `beforeAll`.
+- **Suite baseline `Ran 3889`, 0 fail**, with `SCHGEN_SOURCE=/Users/orion/work/pedals-work/digital-pedal-platform/tools/schgen`. Account for every change term by term; `pass + fail == Ran` does not catch a throwing `beforeAll`.
+  > **This said `3887` and was stale by two, caught by Task 1's implementer MEASURING it rather than trusting it** - it reverted its own files, re-ran against `da8c6e3`, got 3889, and reported both numbers instead of forcing a match. The two came from `23ef67a`, the previous plan's final fix wave, after this writer last measured. **A test count in prose is a transcription with a date on it, in the very section that says to account for it term by term.**
 - **`tests/schgen/decomposition-probe.test.ts` is a load-dependent timeout flake.** If only it fails, re-run it alone. Not yours to fix.
 - **A new `.ts` under `lib/schgen/`, `tests/schgen/` or `tools/schgen/` must be declared in `tools/schgen/port-manifest.json`'s `handWritten`** or `tests/schgen/port-fidelity.test.ts` fails.
 - **NEVER bypass typing.** No `any`, `as T`, `as unknown`, `@ts-ignore`, `!`.
@@ -126,7 +127,7 @@ describe("a refusal declares its class", () => {
 - [ ] **Step 3: Implement.** `classOf` must be exhaustive over `FindingKind` with no `default` arm, so adding a kind without a class is a compile error. State that in the doc comment as the mechanism, not as a style choice.
 - [ ] **Step 4:** tests pass; `bun run typecheck` exit 0.
 - [ ] **Step 5:** add both new files to `handWritten` in `tools/schgen/port-manifest.json`, sorted.
-- [ ] **Step 6:** full suite — expect `Ran 3887 + <your test count>`. Report the number you get.
+- [ ] **Step 6:** full suite — expect `Ran 3889 + <your test count>`. Report the number you get.
 - [ ] **Step 7:** commit.
 
 ---
