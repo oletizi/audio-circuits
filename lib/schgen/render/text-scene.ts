@@ -14,7 +14,7 @@
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  *
- * **DIVERGED FURTHER BY TASK 2 of `docs/superpowers/sdd/2026-10-27-gates-classify`:** `textProblems`
+ * **DIVERGED FURTHER BY TASK 2 of `docs/superpowers/plans/2026-10-27-gates-classify.md`:** `textProblems`
  * returns `readonly Finding[]` rather than `string[]`, every `kind` is `"text-clearance"` (this
  * whole module is that one check), `where` is the scene's own `scope`, and `Finding.what` is
  * byte-identical to the string this function used to return at that position. `assertTextClear`
@@ -34,7 +34,7 @@
  * when a unit has no clear slot (fieldPlacement.placeFields).
  */
 import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
-import { SchgenRefusal, type Finding } from "../findings.ts";
+import { finding, SchgenRefusal, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { fmtPoint } from "./connectivity.ts";
 import { blockFields } from "./field-placement.ts";
@@ -189,10 +189,12 @@ const strictlyWithin = (inner: Box, outer: Box): boolean =>
  * still applies.
  */
 export function textProblems(scene: TextScene): readonly Finding[] {
-  const where = scene.scope;
-  const text = (what: string): Finding => ({ kind: "text-clearance", what, where });
   const out: Finding[] = [];
   scene.texts.forEach((t, i) => {
+    // `where` is `t.what` - the drawn text each line below is actually ABOUT - not `scene.scope`,
+    // so ten findings on one block's text pass are distinguishable by `where` rather than all
+    // landing in one bucket named after the block.
+    const text = (what: string): Finding => finding("text-clearance", what, t.what);
     const chosen = t.fallback === true;
     for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(text(`${t.what} overlaps ${o.what}`));
     for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(text(`${t.what} overlaps ${s.what}`));

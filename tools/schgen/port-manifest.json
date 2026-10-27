@@ -383,7 +383,7 @@
       "to": "tests/schgen/render/pin-marks.test.ts",
       "sourceSha": "d81d28b08812fd4e7a7f1a23450c8a74c48854d3070370745615f739097976d9",
       "task": "Task 6b round 2",
-      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168. ADDED TO BY Task 2 of docs/superpowers/sdd/2026-10-27-gates-classify (source unchanged, same sourceSha): `textProblems` now returns `readonly Finding[]` rather than `string[]`, so the two `toContain`/`not.toContain` assertions against it now map the result to `.what` first; no assertion's meaning changed."
+      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168. ADDED TO BY Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md (source unchanged, same sourceSha): `textProblems` now returns `readonly Finding[]` rather than `string[]`, so the two `toContain`/`not.toContain` assertions against it now map the result to `.what` first; no assertion's meaning changed."
     },
     {
       "from": "render/stockFields.kicad.test.ts",
@@ -746,28 +746,28 @@
       "from": "render/sheetCheck.ts",
       "to": "lib/schgen/render/sheet-check.ts",
       "sourceSha": "d1a5e265762667101f1d47e2cc39c8cad99beb914cc724f997958005a6cf2e98",
-      "task": "Task 2 of docs/superpowers/sdd/2026-10-27-gates-classify",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
       "why": "`assertSheetSafe` wraps the string arrays `checkWireSafety`, `danglingWireEnds`, `bodyOverlaps`, `clearance`, `bodyGlyphProblems` and `glyphGlyphProblems` return into `Finding[]` (kind `\"short\"`, `\"dangling-end\"`, `\"body-clearance\"` x2, `\"glyph-clearance\"` x2 respectively) and throws `SchgenRefusal(findings, message)` in place of a plain `Error`, with the thrown message text byte-identical. This plan's Task 2 converts every checker it names from `string[]` to `readonly Finding[]` so a later task can classify a refusal without reading a class off a sentence; the owner's existing wire-safety/body-clearance split, already present in this function, is preserved as kinds rather than re-derived. No refusal text changed - proved by a before/after diff of `tools/schgen/board-sheets.ts`'s census output."
     },
     {
       "from": "render/bodyClearance.test.ts",
       "to": "tests/schgen/render/body-clearance.test.ts",
       "sourceSha": "478090c4265ed51ef544f4951308e2e3c36be6832471e994d3f22a43c323f42a",
-      "task": "Task 2 of docs/superpowers/sdd/2026-10-27-gates-classify",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
       "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]` (see the `render/sheetCheck.ts` entry above for the plan). Three regex assertions that tested an array element `l` directly now test `l.what`; no assertion's meaning changed."
     },
     {
       "from": "render/glyphClearance.test.ts",
       "to": "tests/schgen/render/glyph-clearance.test.ts",
       "sourceSha": "dc2b00d36d4f97f366ba1a8cb0a8b21e401181f375d71a3379b7495e00bb9d50",
-      "task": "Task 2 of docs/superpowers/sdd/2026-10-27-gates-classify",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
       "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]`. Two assertions that compared or searched the array directly now map it to `.what` first; no assertion's meaning changed."
     },
     {
       "from": "render/glyphGlyphClearance.test.ts",
       "to": "tests/schgen/render/glyph-glyph-clearance.test.ts",
       "sourceSha": "6d2a2627397c97d5449e271cef7802ccc090951f48717ec6187ec42dd6e07639",
-      "task": "Task 2 of docs/superpowers/sdd/2026-10-27-gates-classify",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
       "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]`. The file's local `glyphLines` helper still takes `string[]`, so both call sites map the result to `.what` before filtering; no assertion's meaning changed."
     }
   ],

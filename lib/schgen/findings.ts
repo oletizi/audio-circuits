@@ -1,5 +1,5 @@
 /**
- * The vocabulary a gate refusal is classified by, for `docs/superpowers/sdd/2026-10-27-gates-classify`.
+ * The vocabulary a gate refusal is classified by, for `docs/superpowers/plans/2026-10-27-gates-classify.md`.
  *
  * Hand-written for Task 1 of that plan. A later task uses this vocabulary to classify every
  * refusal a gate raises; this file only states the classes, the kinds, and the one mapping
@@ -36,6 +36,16 @@ export interface Finding {
   readonly kind: FindingKind
   readonly what: string
   readonly where: string
+}
+
+/**
+ * Builds one `Finding`. **Hoisted here by Task 2's review round 1** so every producer states its
+ * `kind` next to the text it covers through the one constructor, rather than each file carrying
+ * its own verbatim copy - `layout-check.ts`, `sheet-check.ts` and `text-scene.ts` all did, and a
+ * later task converting another producer would otherwise have written a fourth.
+ */
+export function finding(kind: FindingKind, what: string, where: string): Finding {
+  return { kind, what, where }
 }
 
 /**

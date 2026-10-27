@@ -4,15 +4,24 @@
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
  *
- * **DIVERGED BY TASK 2 of `docs/superpowers/sdd/2026-10-27-gates-classify`:** `assertSheetSafe`
+ * **DIVERGED BY TASK 2 of `docs/superpowers/plans/2026-10-27-gates-classify.md`:** `assertSheetSafe`
  * throws `SchgenRefusal(findings, message)` rather than a plain `Error`, with the thrown message
  * text unchanged. The function already split its own two throw sites into `"wire safety"`
  * (`checkWireSafety`, `danglingWireEnds`) and `"body clearance"` (`bodyOverlaps`, `clearance`,
  * `bodyGlyphProblems`, `glyphGlyphProblems`) - the owner's line, already present here - and that
  * split is preserved as `kind`s rather than re-derived: wire safety's batches are tagged
- * `"short"` and `"dangling-end"`; body clearance's are tagged `"body-clearance"` (the overlap and
- * margin checks) and `"glyph-clearance"` (the glyph checks), matching the dedicated kinds those
- * two concerns already have in `findings.ts`.
+ * `"missing-junction"` and `"dangling-end"`; body clearance's are tagged `"body-clearance"` (the
+ * overlap and margin checks) and `"glyph-clearance"` (the glyph checks), matching the dedicated
+ * kinds those two concerns already have in `findings.ts`.
+ *
+ * **`"missing-junction"`, NOT `"short"`, FOR THE SAME REASON `layout-check.ts` GIVES AT ITS OWN
+ * USE OF THIS BATCH:** `checkWireSafety`'s messages are predominantly "split the wire there"
+ * mid-wire junction cases, which `CLAUDE.md` names by this name as the class that must keep
+ * refusing. **One branch this tag still gets wrong:** `wireOverWires`'s collinear-overlap case
+ * (rule 2) runs with no net test, and a SAME-NET collinear overlap is "redundant geometry" per
+ * its own docstring - correct about the circuit, merely ugly, which is `"usable"`. Tagging it
+ * `"missing-junction"` (or `"short"`) withholds an ugly-but-correct drawing rather than shipping
+ * it. Not fixed here: that needs `wireOverWires` itself to say which branch produced a line.
  */
 
 /**
@@ -24,7 +33,7 @@
  * touches nothing once every block's pins, power symbols and labels are on the sheet.
  */
 import { unitKey, type SheetId } from "../ir/types.ts";
-import { SchgenRefusal, type Finding } from "../findings.ts";
+import { finding, SchgenRefusal, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { placedPins } from "./blocks.ts";
 import { sceneClearanceProblems } from "./body-clearance.ts";
@@ -52,11 +61,6 @@ export interface SheetScene {
 
 const powerWhat = (p: PowerSymbol, i: number): string => (p.flag ? `PWR_FLAG ${p.net} ${i}` : `power ${p.net} ${i}`);
 
-/** Builds one `Finding`, so every conversion below states its `kind` next to the text it covers. */
-function finding(kind: Finding["kind"], what: string, where: string): Finding {
-  return { kind, what, where };
-}
-
 /** Wires, placed pin ends, power symbol pins (on their rail) and label anchors of the whole sheet. */
 export function sheetItems(scene: SheetScene): ConnItem[] {
   const wires: ConnItem[] = scene.blocks.flatMap(({ g, layout }) =>
@@ -71,7 +75,6 @@ export function sheetItems(scene: SheetScene): ConnItem[] {
 }
 
 function bodyOverlaps(scene: SheetScene): Finding[] {
-  const where = `sheet ${scene.sheet}`;
   const placed = scene.blocks.flatMap(({ g, layout }) =>
     layout.placements.map((pl) => {
       const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);
@@ -82,10 +85,17 @@ function bodyOverlaps(scene: SheetScene): Finding[] {
     }),
   );
   return placed.flatMap((p, i) =>
-    placed.slice(i + 1).flatMap((q) => (boxesOverlap(p.box, q.box) ? [finding("body-clearance", `bodies of ${p.key} and ${q.key} overlap`, where)] : [])),
+    placed.slice(i + 1).flatMap((q) =>
+      boxesOverlap(p.box, q.box) ? [finding("body-clearance", `bodies of ${p.key} and ${q.key} overlap`, `${p.key} & ${q.key}`)] : [],
+    ),
   );
 }
 
+/**
+ * `where` stays sheet-level: `sceneClearanceProblems` (`body-clearance.ts`) returns plain strings
+ * with no per-item structure to read without parsing the text - restructuring that file is out of
+ * this task's scope.
+ */
 function clearance(scene: SheetScene): Finding[] {
   const where = `sheet ${scene.sheet}`;
   const problems = sceneClearanceProblems({
@@ -100,12 +110,18 @@ function clearance(scene: SheetScene): Finding[] {
 
 const lines = (findings: readonly Finding[]): string => findings.map((f) => `\n  - ${f.what}`).join("");
 
-/** Throws `sheet <id>: wire safety:` or `sheet <id>: body clearance:` with one line per problem. */
+/**
+ * Throws `sheet <id>: wire safety:` or `sheet <id>: body clearance:` with one line per problem.
+ * `where` on the wire-safety and glyph batches stays sheet-level, same reason as `clearance`
+ * above: `checkWireSafety`, `danglingWireEnds` (`wire-safety.ts`) and `bodyGlyphProblems`/
+ * `glyphGlyphProblems` (`glyph-clearance.ts`) return plain strings with no item to read out
+ * without parsing text.
+ */
 export function assertSheetSafe(scene: SheetScene): void {
   const where = `sheet ${scene.sheet}`;
   const items = sheetItems(scene);
   const safety: Finding[] = [
-    ...checkWireSafety(items).map((what) => finding("short", what, where)),
+    ...checkWireSafety(items).map((what) => finding("missing-junction", what, where)),
     ...danglingWireEnds(items).map((what) => finding("dangling-end", what, where)),
   ];
   if (safety.length > 0) throw new SchgenRefusal(safety, `sheet ${scene.sheet}: wire safety:${lines(safety)}`);
