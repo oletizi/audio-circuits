@@ -80,10 +80,23 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
     }
   }
 
-  const vertexPoints = new Set<string>();
+  interface VertexInfo {
+    net: string;
+    x: number;
+    y: number;
+  }
+  const vertexPoints = new Map<string, VertexInfo>();
+
+  const addVertex = (net: string, x: number, y: number): void => {
+    const key = `${net},${x},${y}`;
+    if (!vertexPoints.has(key)) {
+      vertexPoints.set(key, { net, x, y });
+    }
+  };
+
   for (const w of wires) {
-    vertexPoints.add(`${w.net},${w.a.x},${w.a.y}`);
-    vertexPoints.add(`${w.net},${w.b.x},${w.b.y}`);
+    addVertex(w.net, w.a.x, w.a.y);
+    addVertex(w.net, w.b.x, w.b.y);
   }
 
   const netWires = new Map<string, Wire[]>();
@@ -110,7 +123,7 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
           const vMinY = Math.min(vWire.a.y, vWire.b.y);
           const vMaxY = Math.max(vWire.a.y, vWire.b.y);
           if (x >= hMinX && x <= hMaxX && y >= vMinY && y <= vMaxY) {
-            vertexPoints.add(`${w1.net},${x},${y}`);
+            addVertex(w1.net, x, y);
           }
         } else if (vertical(w1) && horizontal(w2)) {
           const vWire = w1;
@@ -122,7 +135,7 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
           const vMinY = Math.min(vWire.a.y, vWire.b.y);
           const vMaxY = Math.max(vWire.a.y, vWire.b.y);
           if (x >= hMinX && x <= hMaxX && y >= vMinY && y <= vMaxY) {
-            vertexPoints.add(`${vWire.net},${x},${y}`);
+            addVertex(vWire.net, x, y);
           }
         }
       }
@@ -130,22 +143,17 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
   }
 
   let corners = 0;
-  for (const vertexKey of vertexPoints) {
-    const parts = vertexKey.split(",");
-    const net = parts[0]!;
-    const x = parseInt(parts[1]!, 10);
-    const y = parseInt(parts[2]!, 10);
-
+  for (const vertex of vertexPoints.values()) {
     let hasHorizontal = false;
     let hasVertical = false;
 
     for (const w of wires) {
-      if (w.net !== net) continue;
+      if (w.net !== vertex.net) continue;
 
       if (horizontal(w)) {
         const minX = Math.min(w.a.x, w.b.x);
         const maxX = Math.max(w.a.x, w.b.x);
-        if (y === w.a.y && x >= minX && x <= maxX) {
+        if (vertex.y === w.a.y && vertex.x >= minX && vertex.x <= maxX) {
           hasHorizontal = true;
         }
       }
@@ -153,7 +161,7 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
       if (vertical(w)) {
         const minY = Math.min(w.a.y, w.b.y);
         const maxY = Math.max(w.a.y, w.b.y);
-        if (x === w.a.x && y >= minY && y <= maxY) {
+        if (vertex.x === w.a.x && vertex.y >= minY && vertex.y <= maxY) {
           hasVertical = true;
         }
       }

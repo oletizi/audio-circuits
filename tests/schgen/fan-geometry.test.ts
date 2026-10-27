@@ -81,4 +81,9 @@ describe("wireGeometry counts what a reader's eye has to resolve", () => {
       wireGeometry([w(5, 5, 5, 5, "A")])
     }).toThrow(/Zero-length wire/)
   })
+
+  it("counts a corner at a fractional coordinate where one net turns", () => {
+    const g = wireGeometry([w(0, 0, 12.5, 0, "A"), w(12.5, 0, 12.5, 10, "A")])
+    expect(g.corners).toBe(1)
+  })
 })
