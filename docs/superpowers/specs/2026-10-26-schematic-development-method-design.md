@@ -87,12 +87,39 @@ internally as not worth showing, and skipped - that judgement is the thing the
 agent has repeatedly got wrong, and withholding a bad iteration hides the
 direction of travel, which is what he is steering by.
 
-**STEERING IS NOT ACCEPTANCE, and the distinction matters.** He sees every
-iteration and may redirect at any point; acceptance remains the single act of
-Step 6. Showing the work continuously does not make the agent's running
-commentary a verdict, and does not spend the once-per-construct judgement
-Principle 2 is protecting - it spends far less of his attention than iterating
-three steps in a direction he would have rejected at the first.
+**STEERING IS NOT ACCEPTANCE.** He sees every iteration and may redirect at any
+point; acceptance remains the single act of Step 6.
+
+**AND THE AGENT PUSHES BACK ON THIS INSTRUCTION IN TWO PLACES, because he asked
+it to rather than follow advice blindly.**
+
+**First, a sentence that was here and is struck.** It read: *"it spends far less
+of his attention than iterating three steps in a direction he would have rejected
+at the first."* **There is no evidence for that.** It was written to make his
+instruction sit comfortably beside Principle 2, which it does not entirely, and
+smoothing a tension with an invented comparison is the behaviour this whole
+document exists to constrain.
+
+**Second, the real tension, stated rather than smoothed.** Principle 2 exists to
+make the owner's judgement enter **once per construct** - that is the entire
+economic argument for the effort, and it is what he was testing when he asked
+whether this is quixotic. *"Show me every iteration"* is per-iteration attention,
+which is the cost model Principle 2 replaces. Both cannot be the standing rule.
+
+**So this is scoped, and the scoping is the agent's proposal, not his
+instruction:** every iteration is sent **while a construct is being developed**,
+and that stops when the construct is accepted. A frozen template then applies to
+new circuits **without review**. If per-iteration review becomes permanent, the
+amortisation argument for the whole programme is gone and we are hand-drawing
+through an interpreter.
+
+**There is a second risk and it is the agent's, not his.** The failure that ran
+through this entire session was not looking - substituting counts for the page.
+*"Send everything"* makes it possible to stop forming a judgement at all and let
+him do the judging, which deepens exactly the dependency this is meant to reduce.
+**So Step 4 is not relaxed by Step 5:** the agent states what it sees in each
+iteration and what it intends to change next, before his reply. An iteration sent
+without an assessment is Step 4 skipped, however many pages are attached.
 
 ### Step 6 — The owner judges, once, on the drawing
 
