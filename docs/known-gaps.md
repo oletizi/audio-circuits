@@ -3982,6 +3982,57 @@ legibility was the constant; he made safety the constant and legibility the thin
 enough that nobody could mistake the sheet for a build document, and light enough that the geometry
 underneath can still be examined - which is the whole point of not hiding it.
 
+**THE LINE BETWEEN DEFECTIVE AND MERELY UGLY, decided 2026-10-27, and it REFINES G300's "wonky"
+ruling rather than reversing it.** Asked whether a value label printed over a wire makes a drawing
+defective - the consequence being that 6 of the 7 drawings this repository produces would be
+watermarked, leaving one clean:
+
+> *"it's ugly but usable. I want to preserve the warning watermark for schematics that are
+> incorrect or otherwise should not be trusted or used"*
+
+**So the watermark is for CORRECTNESS, not legibility.** A drawing that is wrong about the circuit
+must not be built from. A drawing that is correct and hard to read is a drawing, and it ships.
+
+**G300 recorded him as saying *"if the schematics are wonky, it's worse than having nothing at
+all"*, and the gate built on it (`f42c129`) withholds a sheet carrying ANY fallback field
+placement. That gate is now too strict and is amended by this.** *Wonky* meant **do not trust
+it**, not **hard to read**. Recorded as a refinement because the earlier ruling is not withdrawn -
+a drawing that cannot be trusted still must not reach the bench - and because this repository's
+practice is to show a narrowing rather than edit it away.
+
+**THE REPOSITORY HAD ALREADY HALF-DRAWN THIS LINE AND NEVER FINISHED IT.** `CLAUDE.md` says of the
+missing-junction class that it is *"the one class that must keep refusing, because it makes a
+drawing WRONG ABOUT THE CIRCUIT"*, and **G291** records the spec reserving the touching-glyph case
+to the owner as *"possibly a CORRECTNESS class rather than a crowding one"*. The distinction
+existed in two places as an aside. This makes it the organising principle.
+
+**MEASURED, AND IT IS THE LARGER HALF OF THIS DECISION.** `[RAN]` `bun tools/schgen/board-sheets.ts`:
+the four boards that refuse today split across exactly this line.
+
+| board | refuses on | class |
+| --- | --- | --- |
+| `pultec-mid` | `circuit is invalid` - `SW_MID` pin 12 | **not drawable** - no geometry exists |
+| `transistor-preamp-buffered` | clearance: power-symbol value overlaps pin text | **ugly, usable** |
+| `transistor-preamp-loop` | clearance: power-symbol value overlaps pin text | **ugly, usable** |
+| `transistor-preamp-staged` | clearance: value overlaps a label | **ugly, usable** |
+
+**THREE OF THE FOUR REFUSE ON LEGIBILITY AND SHOULD DRAW.** The census goes from `7 of 11` to
+`10 of 11`, one not-drawable, and - today - **zero defective**: no board currently fails a
+correctness check, so the watermark has no subjects. That is the right state for a safety mark and
+not evidence it is unnecessary; the junction check fired on this writer's `DOWN` probe within the
+hour.
+
+**AND IT REACHES THE TWO BOARDS HE IS BUILDING NOW.** `pultec-low-cut` (1 fallback) and
+`pultec-low-boost` (5) become usable, so their build guides carry a schematic page **before** any
+arrangement work, rather than after it. The drawings remain hard to read and that work still
+matters; what changes is that he has something at the bench in the meantime.
+
+**THE THREE STATUSES, as this decision leaves them:**
+
+- **not drawable** - no geometry exists, and the reason is printed. There is no picture to show.
+- **defective** - the drawing is wrong about the circuit. Watermarked, and it does not ship.
+- **usable** - the drawing is correct. It may be ugly. It ships, and its findings travel with it.
+
 - **Found** the drawing loop, 2026-10-27, on the first layout change attempted.
 - **Evidence** his three messages above, quoted complete; the four-gate bypass sequence, each
   refusal text read from the tool's own output; the 351-site count, `[RAN]` in this tree.
