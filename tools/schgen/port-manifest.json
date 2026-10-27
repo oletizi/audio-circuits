@@ -920,6 +920,8 @@
     "tests/schgen/text-metrics/document-pastes.test.ts",
     "tests/schgen/text-metrics/pen-call-sites.test.ts",
     "tools/schgen/label-syntax/fixtures.ts",
-    "tools/schgen/label-syntax/probe.ts"
+    "tools/schgen/label-syntax/probe.ts",
+    "lib/schgen/findings.ts",
+    "tests/schgen/findings.test.ts"
   ]
 }
