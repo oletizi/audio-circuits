@@ -47,8 +47,17 @@ assumed (method spec, step 7).
 
 ## Findings this session established, each with its evidence
 
-Recorded in full in `docs/known-gaps.md`; summarised here because the design
-rests on them.
+**THIS SECTION IS NOW THE RECORD, not a summary of one.** It said *"recorded in
+full in `docs/known-gaps.md`; summarised here"* until the register was frozen and
+cut from 273 entries to 31 on 2026-10-27 (`1ef454a`). **F1 and F3 were written as
+`G299` and `G301` and went in that cut**; `G300` and `G302`, which carry the
+owner's decisions, survive. The full text of the cut entries is at
+`git show a4b66de:docs/known-gaps.md`.
+
+**That is the new rule working rather than a loss**: a finding belongs next to
+the thing it is about, and the thing F1 is about is this design. What follows is
+therefore load-bearing - **do not read it as a convenience copy of something
+authoritative elsewhere.**
 
 ### F1 - the generated schematics do not reach the bench at all
 
