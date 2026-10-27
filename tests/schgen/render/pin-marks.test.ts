@@ -59,8 +59,8 @@ describe("pinMarks", () => {
     const scene = textScene("t", symbols, { blocks: [{ g, layout }], powers: [], labels: [], texts: [], frames: [] });
     const cross = scene.crosses[0]!;
     const box = { minX: cross.box.minX + 10, minY: cross.box.minY + 10, maxX: cross.box.minX + 20, maxY: cross.box.minY + 20 };
-    expect(textProblems({ ...scene, texts: [{ what: "stray mark", box, mark: true }] })).toContain("stray mark lies under DNP cross of D_Z#1");
-    expect(textProblems({ ...scene, texts: [{ what: "own field", box }] })).not.toContain("own field lies under DNP cross of D_Z#1");
+    expect(textProblems({ ...scene, texts: [{ what: "stray mark", box, mark: true }] }).map((f) => f.what)).toContain("stray mark lies under DNP cross of D_Z#1");
+    expect(textProblems({ ...scene, texts: [{ what: "own field", box }] }).map((f) => f.what)).not.toContain("own field lies under DNP cross of D_Z#1");
   });
 
   it("marks nothing on a fitted diode, or on a DNP part whose pins carry no polarity", () => {

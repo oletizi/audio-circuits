@@ -53,7 +53,7 @@ const verdict = (r: SweepResult): string =>
 export function regradeControl(laid: readonly Laid[]): readonly string[] {
   const out: string[] = []
   for (const l of laid) {
-    const problems = checkLayout(l.g, l.layout)
+    const problems = checkLayout(l.g, l.layout).map((f) => f.what)
     if (l.refusal === "") {
       if (problems.length > 0) out.push(`${l.circuit}/${l.block}: the adapter accepted this layout and a re-grade finds ${problems.length} problem(s): ${problems.join(" ; ")}`)
       continue
@@ -68,7 +68,8 @@ export function regradeControl(laid: readonly Laid[]): readonly string[] {
 }
 
 /** Blocks that refuse, and whose refusal names at least one global label. */
-export const labelBlocked = (laid: readonly Laid[]): readonly Laid[] => laid.filter((l) => l.refusal !== "" && labelProblems(checkLayout(l.g, l.layout)).length > 0)
+export const labelBlocked = (laid: readonly Laid[]): readonly Laid[] =>
+  laid.filter((l) => l.refusal !== "" && labelProblems(checkLayout(l.g, l.layout).map((f) => f.what)).length > 0)
 
 /** The sides the laid-out anchors already have, so the base assignment can be named in the log. */
 const baseSides = (l: Laid, idx: readonly number[]): string => idx.map((i) => `${l.layout.anchors[i]?.net ?? "?"}:${l.layout.anchors[i]?.side ?? "?"}`).join(" ")
@@ -122,7 +123,7 @@ export interface BlockReport {
 const min = (a: number, b: number): number => (b < a ? b : a)
 
 export function reportBlock(l: Laid, log: (s: string) => void): BlockReport {
-  const problems = checkLayout(l.g, l.layout)
+  const problems = checkLayout(l.g, l.layout).map((f) => f.what)
   const idx = labelAnchorIndices(l.g, l.layout)
   log("")
   log(`${l.circuit}/${l.block}: ${problems.length} problem(s), ${labelProblems(problems).length} naming a global label; ${idx.length} label anchor(s); ${l.layout.wires.length} wire(s)`)

@@ -77,12 +77,12 @@ const glyphLines = (lines: readonly string[]): string[] => lines.filter((l) => /
 
 describe("checkLayout: no two power glyphs of a block meet across nets", () => {
   it("refuses GND and VSSA symbols on neighbouring pins one pitch apart", () => {
-    expect(glyphLines(checkLayout(g, pair(2 * GRID)))).toEqual([
+    expect(glyphLines(checkLayout(g, pair(2 * GRID)).map((f) => f.what))).toEqual([
       "the glyph of power symbol GND 1 at (0, 3.81) touches the glyph of power symbol VSSA 3 at (2.54, 3.81), which is on another net",
     ]);
   });
 
-  it("accepts them three grid steps apart", () => expect(glyphLines(checkLayout(g, pair(3 * GRID)))).toEqual([]));
+  it("accepts them three grid steps apart", () => expect(glyphLines(checkLayout(g, pair(3 * GRID)).map((f) => f.what))).toEqual([]));
 });
 
 describe("assertSheetSafe: no two power glyphs on a sheet meet across nets", () => {

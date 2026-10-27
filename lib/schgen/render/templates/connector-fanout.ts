@@ -43,7 +43,7 @@ function realise(g: BlockSubgraph): RealiseResult {
     const layout = fanout(g, unit, rot, traced.paths);
     const problems = checkLayout(g, layout);
     if (problems.length === 0) return { ok: true, layout };
-    if (firstProblems.length === 0) firstProblems.push(...problems);
+    if (firstProblems.length === 0) firstProblems.push(...problems.map((p) => p.what));
   }
   const reason = `connector-fanout found no rotation without collisions (rotation 0: ${firstProblems.join("; ")})`;
   const first = firstProblems[0];

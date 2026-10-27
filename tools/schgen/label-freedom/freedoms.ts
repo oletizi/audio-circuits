@@ -211,7 +211,7 @@ export function sweep(g: BlockSubgraph, candidates: Iterable<{ readonly what: st
     if (r.tried >= cap) return { ...r, capped: `stopped at the cap of ${cap} candidates` }
     let problems: readonly string[]
     try {
-      problems = checkLayout(g, c.layout)
+      problems = checkLayout(g, c.layout).map((f) => f.what)
     } catch (e) {
       // A perturbation the grader cannot even grade is recorded as such rather than skipped: a
       // candidate that vanishes quietly would make a clearance look more reachable than it is.

@@ -13,6 +13,14 @@
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
+ *
+ * **DIVERGED FURTHER BY TASK 2 of `docs/superpowers/sdd/2026-10-27-gates-classify`:** `textProblems`
+ * returns `readonly Finding[]` rather than `string[]`, every `kind` is `"text-clearance"` (this
+ * whole module is that one check), `where` is the scene's own `scope`, and `Finding.what` is
+ * byte-identical to the string this function used to return at that position. `assertTextClear`
+ * throws `SchgenRefusal(problems, message)` in place of a plain `Error`, with the thrown message
+ * text unchanged, so the findings that caused a refusal travel with it rather than being
+ * discarded at the point they are turned into a thrown message.
  */
 
 /**
@@ -26,6 +34,7 @@
  * when a unit has no clear slot (fieldPlacement.placeFields).
  */
 import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
+import { SchgenRefusal, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { fmtPoint } from "./connectivity.ts";
 import { blockFields } from "./field-placement.ts";
@@ -179,18 +188,20 @@ const strictlyWithin = (inner: Box, outer: Box): boolean =>
  * the `FieldFallback` it returned is what reports it. The frame-border clause is the exception and
  * still applies.
  */
-export function textProblems(scene: TextScene): string[] {
-  const out: string[] = [];
+export function textProblems(scene: TextScene): readonly Finding[] {
+  const where = scene.scope;
+  const text = (what: string): Finding => ({ kind: "text-clearance", what, where });
+  const out: Finding[] = [];
   scene.texts.forEach((t, i) => {
     const chosen = t.fallback === true;
-    for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(`${t.what} overlaps ${o.what}`);
-    for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
-    for (const b of scene.bodies) if (!chosen && (t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(`${t.what} overlaps ${b.what}`);
-    for (const p of scene.pinTexts) if (!chosen && boxesOverlap(t.box, p.box)) out.push(`${t.what} overlaps ${p.what}`);
-    for (const s of scene.strokes) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
-    if (t.mark === true) for (const x of scene.crosses) if (boxesOverlap(t.box, x.box)) out.push(`${t.what} lies under ${x.what}`);
+    for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(text(`${t.what} overlaps ${o.what}`));
+    for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(text(`${t.what} overlaps ${s.what}`));
+    for (const b of scene.bodies) if (!chosen && (t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(text(`${t.what} overlaps ${b.what}`));
+    for (const p of scene.pinTexts) if (!chosen && boxesOverlap(t.box, p.box)) out.push(text(`${t.what} overlaps ${p.what}`));
+    for (const s of scene.strokes) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(text(`${t.what} overlaps ${s.what}`));
+    if (t.mark === true) for (const x of scene.crosses) if (boxesOverlap(t.box, x.box)) out.push(text(`${t.what} lies under ${x.what}`));
     for (const f of scene.frames) {
-      if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)) out.push(`${t.what} crosses the border of ${f.what}`);
+      if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)) out.push(text(`${t.what} crosses the border of ${f.what}`));
     }
   });
   return out;
@@ -198,5 +209,7 @@ export function textProblems(scene: TextScene): string[] {
 
 export function assertTextClear(scene: TextScene): void {
   const problems = textProblems(scene);
-  if (problems.length > 0) throw new Error(`${scene.scope}: text clearance:${problems.map((p) => `\n  - ${p}`).join("")}`);
+  if (problems.length > 0) {
+    throw new SchgenRefusal(problems, `${scene.scope}: text clearance:${problems.map((p) => `\n  - ${p.what}`).join("")}`);
+  }
 }

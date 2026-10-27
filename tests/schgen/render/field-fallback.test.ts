@@ -161,7 +161,7 @@ describe("text clearance and a fallback field", () => {
   })
 
   it("CONTROL: two texts neither of which is a fallback DO overlap", () => {
-    expect(textProblems(scene([a, b]))).toEqual(["Reference of C1#1 overlaps label NET at (0, 0)"])
+    expect(textProblems(scene([a, b])).map((f) => f.what)).toEqual(["Reference of C1#1 overlaps label NET at (0, 0)"])
   })
 
   it("reports nothing when the first is a fallback, and nothing when the second is", () => {
@@ -171,7 +171,7 @@ describe("text clearance and a fallback field", () => {
 
   it("still reports a fallback field that crosses a frame border", () => {
     const frames = [{ what: 'frame "F"', box: { minX: 5, minY: 5, maxX: 100, maxY: 100 } }]
-    expect(textProblems(scene([{ ...a, fallback: true }], frames))).toEqual([
+    expect(textProblems(scene([{ ...a, fallback: true }], frames)).map((f) => f.what)).toEqual([
       'Reference of C1#1 crosses the border of frame "F"',
     ])
   })

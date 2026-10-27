@@ -333,7 +333,14 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
   }
 
   // LAST, and the geometry is never touched after it: obligation 5's criterion.
-  const problems = checkLayout(g, layout)
+  //
+  // **FLATTENED TO `string[]` HERE, NOT WIDENED TO `Finding[]`.** `checkLayout` (Task 2 of
+  // `docs/superpowers/sdd/2026-10-27-gates-classify`) now returns `readonly Finding[]`; this
+  // module's own `AdaptReport.problems` field, `clearancePairs` and every downstream reader of it
+  // (measurement tools under `tools/schgen/`) are string-based and are not this task's to
+  // restructure - that is Task 3's "the geometry survives". Mapping to `.what` here keeps every
+  // one of those readers working on byte-identical text, unchanged.
+  const problems = checkLayout(g, layout).map((f) => f.what)
   const pairs = clearancePairs(problems)
   if (problems.length === 0) return { result: { ok: true, layout }, counts: bothPasses, pairs, problems, checked: layout }
 

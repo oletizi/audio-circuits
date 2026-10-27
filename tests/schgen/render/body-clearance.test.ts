@@ -26,19 +26,19 @@ describe("checkLayout body clearance", () => {
   it("refuses an anchor on a pin's line and inside a body", () => {
     const bad = { ...good, anchors: [...good.anchors, { net: "GND", at: onPin, side: "left" as const }] };
     const p = checkLayout(g, bad);
-    expect(p.some((l) => /^anchor GND \d+ at .* lies on the line of pin C1#1\.\d$/.test(l))).toBe(true);
-    expect(p.some((l) => /^anchor GND \d+ at .* lies inside the body of C1#1$/.test(l))).toBe(true);
+    expect(p.some((l) => /^anchor GND \d+ at .* lies on the line of pin C1#1\.\d$/.test(l.what))).toBe(true);
+    expect(p.some((l) => /^anchor GND \d+ at .* lies inside the body of C1#1$/.test(l.what))).toBe(true);
   });
 
   it("refuses a wire end on a pin's line", () => {
     const stray = { a: { x: c1.at.x - 5080, y: onPin.y }, b: onPin, net: "GND" };
     const p = checkLayout(g, { ...good, wires: [...good.wires, stray] });
-    expect(p.some((l) => /^wire \d+ of B \(GND\) end at .* lies on the line of pin C1#1\.\d$/.test(l))).toBe(true);
+    expect(p.some((l) => /^wire \d+ of B \(GND\) end at .* lies on the line of pin C1#1\.\d$/.test(l.what))).toBe(true);
   });
 
   it("refuses a wire through a body it does not attach to", () => {
     const through = { a: { x: c1.at.x - 2540, y: c1.at.y }, b: { x: c1.at.x + 2540, y: c1.at.y }, net: "GND" };
     const p = checkLayout(g, { ...good, wires: [...good.wires, through] });
-    expect(p.some((l) => /^wire \d+ of B \(GND\) from .* passes through the body of C1#1$/.test(l))).toBe(true);
+    expect(p.some((l) => /^wire \d+ of B \(GND\) from .* passes through the body of C1#1$/.test(l.what))).toBe(true);
   });
 });

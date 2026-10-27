@@ -3,6 +3,16 @@
  * rewritten by `tools/schgen/port.ts` (imports only, per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ *
+ * **DIVERGED BY TASK 2 of `docs/superpowers/sdd/2026-10-27-gates-classify`:** `assertSheetSafe`
+ * throws `SchgenRefusal(findings, message)` rather than a plain `Error`, with the thrown message
+ * text unchanged. The function already split its own two throw sites into `"wire safety"`
+ * (`checkWireSafety`, `danglingWireEnds`) and `"body clearance"` (`bodyOverlaps`, `clearance`,
+ * `bodyGlyphProblems`, `glyphGlyphProblems`) - the owner's line, already present here - and that
+ * split is preserved as `kind`s rather than re-derived: wire safety's batches are tagged
+ * `"short"` and `"dangling-end"`; body clearance's are tagged `"body-clearance"` (the overlap and
+ * margin checks) and `"glyph-clearance"` (the glyph checks), matching the dedicated kinds those
+ * two concerns already have in `findings.ts`.
  */
 
 /**
@@ -14,6 +24,7 @@
  * touches nothing once every block's pins, power symbols and labels are on the sheet.
  */
 import { unitKey, type SheetId } from "../ir/types.ts";
+import { SchgenRefusal, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { placedPins } from "./blocks.ts";
 import { sceneClearanceProblems } from "./body-clearance.ts";
@@ -41,6 +52,11 @@ export interface SheetScene {
 
 const powerWhat = (p: PowerSymbol, i: number): string => (p.flag ? `PWR_FLAG ${p.net} ${i}` : `power ${p.net} ${i}`);
 
+/** Builds one `Finding`, so every conversion below states its `kind` next to the text it covers. */
+function finding(kind: Finding["kind"], what: string, where: string): Finding {
+  return { kind, what, where };
+}
+
 /** Wires, placed pin ends, power symbol pins (on their rail) and label anchors of the whole sheet. */
 export function sheetItems(scene: SheetScene): ConnItem[] {
   const wires: ConnItem[] = scene.blocks.flatMap(({ g, layout }) =>
@@ -54,7 +70,8 @@ export function sheetItems(scene: SheetScene): ConnItem[] {
   return [...wires, ...pins, ...powers, ...labels];
 }
 
-function bodyOverlaps(scene: SheetScene): string[] {
+function bodyOverlaps(scene: SheetScene): Finding[] {
+  const where = `sheet ${scene.sheet}`;
   const placed = scene.blocks.flatMap(({ g, layout }) =>
     layout.placements.map((pl) => {
       const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);
@@ -64,26 +81,39 @@ function bodyOverlaps(scene: SheetScene): string[] {
       return { key: unitKey(pl.part, pl.unit), box: placeBox(pl.at, pl.rot, box) };
     }),
   );
-  return placed.flatMap((p, i) => placed.slice(i + 1).flatMap((q) => (boxesOverlap(p.box, q.box) ? [`bodies of ${p.key} and ${q.key} overlap`] : [])));
+  return placed.flatMap((p, i) =>
+    placed.slice(i + 1).flatMap((q) => (boxesOverlap(p.box, q.box) ? [finding("body-clearance", `bodies of ${p.key} and ${q.key} overlap`, where)] : [])),
+  );
 }
 
-function clearance(scene: SheetScene): string[] {
-  return sceneClearanceProblems({
+function clearance(scene: SheetScene): Finding[] {
+  const where = `sheet ${scene.sheet}`;
+  const problems = sceneClearanceProblems({
     scope: `sheet ${scene.sheet}`,
     units: scene.blocks.flatMap((b) => b.g.units),
     placements: scene.blocks.flatMap((b) => b.layout.placements),
     wires: scene.blocks.flatMap((b) => b.layout.wires),
     anchors: [...scene.powers, ...scene.labels],
   });
+  return problems.map((what) => finding("body-clearance", what, where));
 }
 
-const lines = (problems: readonly string[]): string => problems.map((p) => `\n  - ${p}`).join("");
+const lines = (findings: readonly Finding[]): string => findings.map((f) => `\n  - ${f.what}`).join("");
 
 /** Throws `sheet <id>: wire safety:` or `sheet <id>: body clearance:` with one line per problem. */
 export function assertSheetSafe(scene: SheetScene): void {
+  const where = `sheet ${scene.sheet}`;
   const items = sheetItems(scene);
-  const safety = [...checkWireSafety(items), ...danglingWireEnds(items)];
-  if (safety.length > 0) throw new Error(`sheet ${scene.sheet}: wire safety:${lines(safety)}`);
-  const bodies = [...bodyOverlaps(scene), ...clearance(scene), ...bodyGlyphProblems(scene), ...glyphGlyphProblems(scene)];
-  if (bodies.length > 0) throw new Error(`sheet ${scene.sheet}: body clearance:${lines(bodies)}`);
+  const safety: Finding[] = [
+    ...checkWireSafety(items).map((what) => finding("short", what, where)),
+    ...danglingWireEnds(items).map((what) => finding("dangling-end", what, where)),
+  ];
+  if (safety.length > 0) throw new SchgenRefusal(safety, `sheet ${scene.sheet}: wire safety:${lines(safety)}`);
+  const bodies: Finding[] = [
+    ...bodyOverlaps(scene),
+    ...clearance(scene),
+    ...bodyGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
+    ...glyphGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
+  ];
+  if (bodies.length > 0) throw new SchgenRefusal(bodies, `sheet ${scene.sheet}: body clearance:${lines(bodies)}`);
 }

@@ -27,6 +27,7 @@
  * the divergence note above.)
  */
 import type { BlockId, Circuit, NetName } from "../ir/types.ts";
+import { SchgenRefusal } from "../findings.ts";
 import type { Anchor, Backend, BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
 import { checkLayout, realiseBlock, subgraphOf } from "./blocks.ts";
 import { fmtPoint } from "./connectivity.ts";
@@ -134,7 +135,7 @@ function blockOf(c: Circuit, id: BlockId, kind: "bus") {
 function verified(c: Circuit, id: BlockId, symbols: SymbolResolver, layout: BlockLayout, who: string): BlockLayout {
   const problems = checkLayout(subgraphOf(c, id, symbols), layout);
   if (problems.length > 0) {
-    throw new Error(`block ${id}: ${who} produced an invalid layout:${problems.map((p) => `\n  - ${p}`).join("")}`);
+    throw new SchgenRefusal(problems, `block ${id}: ${who} produced an invalid layout:${problems.map((p) => `\n  - ${p.what}`).join("")}`);
   }
   return layout;
 }

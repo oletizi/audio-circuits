@@ -17,6 +17,7 @@
  * subgraph, or that produces a layout whose geometry disagrees with the IR, is a generation error.
  */
 import { labelledNets, pinsOfUnit } from "../ir/classify.ts";
+import { SchgenRefusal } from "../findings.ts";
 import { drawnRotation } from "../rules/orientation.ts";
 import type { Rotation } from "./geometry.ts";
 import type { BlockId, Circuit, IrPart, NetName, RailSpec, Rendering, TemplateId } from "../ir/types.ts";
@@ -262,7 +263,7 @@ export function realiseBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, e
   // is the same generation error as a template's, and one gate is one place to keep correct.
   const problems = attributed(id, chosen, () => checkLayout(g, layout));
   if (problems.length > 0) {
-    throw new Error(`block ${id}: ${drawnBy(chosen)} produced an invalid layout:${problems.map((p) => `\n  - ${p}`).join("")}`);
+    throw new SchgenRefusal(problems, `block ${id}: ${drawnBy(chosen)} produced an invalid layout:${problems.map((p) => `\n  - ${p.what}`).join("")}`);
   }
   return layout;
 }

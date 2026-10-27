@@ -162,7 +162,7 @@ function maskedTextProblems(g: BlockSubgraph, layout: BlockLayout): readonly str
   const libs = blockPowerLibs(g)
   const { powers, labels } = anchorsToSymbols(g, layout.anchors, valuesAlong(g.block.rendering))
   const scene = textScene(`block ${g.block.id}`, libs, { blocks: [{ g, layout }], powers, labels, texts: [], frames: [] }, "omitted")
-  return withoutFieldText(g.block.id, textProblems(scene))
+  return withoutFieldText(g.block.id, textProblems(scene).map((f) => f.what))
 }
 
 /**
