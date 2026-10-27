@@ -30184,9 +30184,37 @@ their own 'other' nets"* and a selector bank is exactly that. What is left over
 in all four measurable sections is **the rotary switch plus its potentiometer**,
 and in three of four one resistor with them.
 
-**SO THE CONSTRUCT WITH NO TEMPLATE IS THE SELECTOR, NOT THE BANK**, and it is
+~~**SO THE CONSTRUCT WITH NO TEMPLATE IS THE SELECTOR, NOT THE BANK**, and it is
 two or three parts rather than thirteen. The name `selectorBank` in the spec and
-in the plan is now misleading about its own subject.
+in the plan is now misleading about its own subject.~~
+
+**STRUCK WITHIN THE HOUR, AND THE CORRECTION IS WORTH MORE THAN THE
+MEASUREMENT.** `selectorBank` was never "the bank". Its specification,
+`docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md:592`, reads:
+
+> *"the dominant Pultec idiom: **a rotary switch fanning out to a capacitor
+> bank**, each capacitor returning to a common node. Five banks - four of six
+> throws, one of eleven"*
+
+**The switch was in it from the start**, and the same table specifies
+`potNetwork` - *"a potentiometer as rheostat (wiper tied to one end) or as
+divider"* - as a separate new idiom. **So this probe's residue, switch plus pot
+plus sometimes a resistor, maps exactly onto two idioms that table already lists
+as needed.** The measurement did not move the target. It **confirmed the
+specification's own list** and refined it in one respect worth keeping: the
+capacitor half of `selectorBank` is already drawable by `rail-row`, so what the
+new template must actually supply is narrower than its specification implies.
+
+**HOW THE ERROR GOT IN, because it is a failure of the method written the same
+day.** The name `selectorBank` was taken from a REGISTER ENTRY CRITICISING the
+specification, its subject was inferred from the word "bank", and **the
+specification itself was never opened**. The token is real, so every `grep`
+succeeded and nothing flagged it: an invented MEANING around a real name
+survives every check an invented name would fail.
+
+**The method spec's step 1 did not prevent this and has been amended.** It said
+*"the register entries naming the area are read first"*, which was done - and
+reading an entry ABOUT a document is not reading the document.
 
 - **Verified** **CONFIRMED by this writer.** The probe is committed and named
   above; its figures are its own output at `000293b`'s tree, re-run after being

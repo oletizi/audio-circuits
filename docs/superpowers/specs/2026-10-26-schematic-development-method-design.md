@@ -30,9 +30,24 @@ steps cannot be verified by someone who did not run them.
 
 ### Step 1 — Read before building, and name what was read
 
-The register entries naming the area are read first and the commit names them.
+The register entries naming the area are read first **and so are the documents
+those entries are about**, and the commit names both.
 
-**Produces:** a commit message listing the entries read.
+**AMENDED 2026-10-26, HOURS AFTER BEING WRITTEN, BY THE FAILURE IT DID NOT
+PREVENT.** This step originally stopped at the register. An entry criticising the
+`selectorBank` specification was read; **the specification was not**, and its
+subject was inferred from the word "bank" in its name. It had always been *"a
+rotary switch fanning out to a capacitor bank"* - the switch was in it - and a
+plan, a pre-registration and a probe were built on the inference.
+`docs/known-gaps.md` **G298** carries it.
+
+**A register entry is a secondary source.** It exists to say something IS wrong
+with a document, which is not the same as saying what the document says. Reading
+one and stopping is how a real name acquires an invented meaning - and a real
+name passes every `grep` an invented one would fail.
+
+**Produces:** a commit message listing the entries read **and the primary
+documents read behind them**.
 **Earned by:** two days spent reconstructing `selectorBank` while `G160` held
 the measurement that governed it. Running this step once already changed the
 plan — `G84` records that the method that worked resolved *"no template fits"*
