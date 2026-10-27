@@ -30143,3 +30143,63 @@ this entry was derived from looking. Regenerate with
   zero-fallback sheet and at `pt-core`'s fifteen, and says whether the connector turn and the star
   are worth what they cost. **G293**'s arrangement criterion - the bank *"arranged to the right of
   the switch symbol"* - is untouched by anything here.
+
+### G298 - MEASURED, and it moves the target: a Pultec section does NOT decompose across the four templates an `auto` block can reach, and the residue is the SAME SHAPE in every section - the switch and its potentiometer, never the capacitors
+
+**STEP 2 OF THE METHOD SPEC, AND IT CHANGED THE PLAN BEFORE ANY DESIGN EXISTED**,
+which is what that step is for.
+`docs/superpowers/specs/2026-10-26-schematic-development-method-design.md` puts a
+measurement ahead of designing; the plan it was measuring
+(`2026-10-26-schematic-recovery-plan.md`, item C) assumed the missing construct
+was **the capacitor bank** and called it `selectorBank`. It is not.
+
+**WHY A NEW MEASUREMENT WAS POSSIBLE AT ALL.** Every previous template-applicability
+figure - **G160**'s two columns, the anchor sweep - offered a template a **whole
+declared block**, and every Pultec section is one `auto` block holding the entire
+module: thirteen parts for hi-cut, seventeen for hi-boost. **G84** records that
+the method which worked resolved *"no template fits"* by *"decomposing the block
+across existing templates, not writing a new one"* and calls decomposition *"the
+primary tool"*. Nobody had offered these templates a SUBSET.
+
+**THE PROBE.** `tests/schgen/decomposition-probe.test.ts`, run by
+`bun test tests/schgen/decomposition-probe.test.ts`. It holds a section's parts,
+pins and nets fixed, swaps only the block's membership over every subset of two
+or more members, and asks each of the four templates an `auto` block can reach
+(**G141**: `rail-row`, `decoupling-bank`, `divider`, `passive-chain`; the other
+four refuse *"needs an anchor"* that only a `wired` block carries). It then
+searches for an exact PARTITION - every member in one group, every group drawn.
+
+| section | members | probes | subsets a template draws | partitions? |
+| --- | --- | --- | --- | --- |
+| `pultec-hi-boost` | 17 | 524,216 | 183 | **no** - leaves `RV_HI_BOOST RV_HI_Q SW_HI_BOOST` |
+| `pultec-hi-cut` | 13 | 32,712 | 1,096 | **no** - leaves `R1 RV_HI_CUT SW_HI_CUT` |
+| `pultec-low-boost` | 9 | 2,008 | 57 | **no** - leaves `R2 RV_LO_BOOST SW_LO_BOOST` |
+| `pultec-low-cut` | 9 | 2,008 | 146 | **no** - leaves `RV_LO_CUT SW_LO_CUT` |
+| `pultec-mid` | 28 | - | - | not enumerated, 2^28 subsets |
+
+**THE CAPACITORS ALWAYS DECOMPOSE AND THE SELECTOR NEVER DOES.** `rail-row` and
+`passive-chain` both draw groups of the bank's capacitors - unsurprising once
+stated, since `rail-row` is *"two-terminal parts hung between one common net and
+their own 'other' nets"* and a selector bank is exactly that. What is left over
+in all four measurable sections is **the rotary switch plus its potentiometer**,
+and in three of four one resistor with them.
+
+**SO THE CONSTRUCT WITH NO TEMPLATE IS THE SELECTOR, NOT THE BANK**, and it is
+two or three parts rather than thirteen. The name `selectorBank` in the spec and
+in the plan is now misleading about its own subject.
+
+- **Verified** **CONFIRMED by this writer.** The probe is committed and named
+  above; its figures are its own output at `000293b`'s tree, re-run after being
+  moved into `tests/` and reproducing identically. **Nothing is relayed.**
+- **Why it is open** nothing is built, and two things are unmeasured: `pultec-mid`
+  (28 members, not enumerable by this method), and **whether a decomposed section
+  READS better than the single block it replaces** - the probe measures only
+  whether a template will draw a group, which is drawability and not readability.
+  Six throws crossing a block boundary become six labels, and whether that reads
+  better than six wires is a question only the owner looking at both can settle.
+- **What would settle it** **CRITERION for the remaining construct:** a template
+  draws the switch-plus-pot group on all four measurable sections, and the
+  owner, looking at a rendered section drawn as a decomposition, prefers it to
+  the same section drawn as one block. **MECHANISM, UNTRIED**, and deliberately
+  not specified here: the method spec's steps 3 to 6 say the arrangement is
+  drawn and iterated rather than written down in advance.
