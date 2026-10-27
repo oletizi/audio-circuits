@@ -272,7 +272,40 @@ git commit -m "The geometry baseline is a tool, so the number cannot go stale in
 
 ### Baseline
 
-_(Task 2 Step 3 pastes the table here, with the command and the commit it was taken at.)_
+Reproduce with, at commit `395f01de01c4c3c91243d90df92e919c619803a2` (the commit that added
+`tools/schgen/board-geometry.ts`):
+
+```
+bun run tools/schgen/board-geometry.ts
+```
+
+```
+pt2399-core: generated (segments 153, crossings 54, corners 107, fallbacks 15)
+pultec-hi-boost: generated (segments 130, crossings 12, corners 79, fallbacks 8)
+pultec-hi-cut: generated (segments 94, crossings 10, corners 50, fallbacks 2)
+pultec-low-boost: generated (segments 111, crossings 4, corners 70, fallbacks 5)
+pultec-low-cut: generated (segments 103, crossings 8, corners 61, fallbacks 1)
+pultec-mid: refused
+    circuit is invalid:
+      - part SW_MID: pin 12 (12) is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts
+transistor-preamp-buffered: refused
+    block tp-stage: the ELK backend cannot realise its subgraph: block tp-stage: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): value of power symbol VCC 1 at (34.29, 48.26) overlaps pin Q1.2 text [clearance: overlaps between value of power symbol VCC 1 at (34.29, 48.26) and pin Q1.2 text in block tp-stage]
+transistor-preamp-feedback: generated (segments 79, crossings 4, corners 48, fallbacks 0)
+transistor-preamp-lab: generated (segments 132, crossings 11, corners 79, fallbacks 3)
+transistor-preamp-loop: refused
+    block tp-stage: the ELK backend cannot realise its subgraph: block tp-stage: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): value of power symbol VCC 1 at (34.29, 55.88) overlaps pin Q1.2 text [clearance: overlaps between value of power symbol VCC 1 at (34.29, 55.88) and pin Q1.2 text in block tp-stage]
+transistor-preamp-staged: refused
+    block tp-second-stage: the ELK backend cannot realise its subgraph: block tp-second-stage: the ELK route does not pass the clearance checks that grade template output (spec 1.4 obligation 4): value of power symbol VCC 0 at (29.21, 8.89) overlaps label BUFFER_BASE at (29.21, 1.27); value of power symbol VCC 0 at (29.21, 8.89) overlaps wire 6 of tp-second-stage (DRIVE_WIPER) [clearance: overlaps between value of power symbol VCC 0 at (29.21, 8.89) and label BUFFER_BASE at (29.21, 1.27) in block tp-second-stage]
+
+totals over 7 of 11 board(s) that generated: 802 segments, 103 crossings, 494 corners, 34 fallback field placement(s)
+4 of 11 board(s) did not produce a sheet (refused or no authoring declaration)
+```
+
+Cross-checked against `bun tools/schgen/board-sheets.ts 2>&1 | grep -E "fallback field placement\(s\)\)$"`
+at the same commit: `pultec-low-cut` shows 1 fallback and `pultec-low-boost` 5 in both tools, and
+every generated board's fallback count and outcome (`generated`/`refused`) agrees between the two
+tools - see `.superpowers/sdd/2026-10-27-schematic-in-the-build-guide/task-2-report.md` for both
+full outputs side by side.
 
 ---
 
