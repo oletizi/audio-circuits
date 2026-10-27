@@ -191,8 +191,9 @@ function drawnWith(net: NetName, drawings: readonly SheetDrawing[]): ReadonlySet
  * Both are recorded as deviations in `docs/known-gaps.md` **G203**.
  *
  * **IT IS A `string[]` AND NOT A THROW**, like `authoringProblems` and `staleFiles`: one call
- * reports everything wrong rather than the first thing, and `assertCrossSheet` below is the
- * refusal.
+ * reports everything wrong rather than the first thing, and `tools/schgen/generate.ts` is what
+ * classifies what it finds (the throwing wrapper that used to sit below is deleted - see the note
+ * at the foot of this file).
  */
 export function crossSheetProblems(c: Circuit, drawings: readonly SheetDrawing[]): readonly string[] {
   const out: string[] = [
@@ -248,12 +249,15 @@ export function crossSheetProblems(c: Circuit, drawings: readonly SheetDrawing[]
   return out
 }
 
-/** `crossSheetProblems`, as a refusal. */
-export function assertCrossSheet(c: Circuit, drawings: readonly SheetDrawing[]): void {
-  const problems = crossSheetProblems(c, drawings)
-  if (problems.length === 0) return
-  throw new Error(
-    `the cross-sheet mechanism is ambiguous on ${problems.length} net(s) or class(es); spec §1.6 ` +
-      `allows one authoritative mechanism per class of connection:\n  ${problems.join("\n  ")}`,
-  )
-}
+/**
+ * **`assertCrossSheet` IS DELETED HERE** - Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`, fix round 1, Item 3.
+ *
+ * It was `crossSheetProblems` plus a throw. `tools/schgen/generate.ts` now reads the problems and
+ * tags each one `cross-sheet-disagreement`, which `findings.ts` classes `defective`: a net joined
+ * across sheets by nothing is a drawing WRONG ABOUT THE CIRCUIT, so it is marked rather than
+ * withheld. **The wrapper was left with NO caller at all** - every test in
+ * `tests/schgen/render/cross-sheet.kicad.test.ts` already called `crossSheetProblems` directly -
+ * so keeping it would have been a refusal nothing could reach. `CLAUDE.md`: *supersede means
+ * delete*, and a stub for somebody to find and trust is exactly what it forbids.
+ */

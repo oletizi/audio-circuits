@@ -326,10 +326,22 @@ export function realiseBlockReported(c: Circuit, id: BlockId, symbols: SymbolRes
   return { layout: drawn.layout, findings, refusal };
 }
 
-/** `a`, then every finding of `b` whose text `a` does not already carry. */
+/**
+ * `a`, then every finding of `b` that `a` does not already carry.
+ *
+ * **KEYED ON `kind` AND `what` TOGETHER, not on `what` alone** (fix round 1, Item 4). Two producers
+ * can write the same sentence about the same geometry and classify it differently - the `kind` is
+ * the whole point of a `Finding` - and deduplicating on the text would have silently dropped the
+ * second classification. `where` is deliberately NOT in the key: it names the subject, and the same
+ * problem reached through a block and through its sheet is one problem.
+ */
 function merged(a: readonly Finding[], b: readonly Finding[]): readonly Finding[] {
-  const seen = new Set(a.map((f) => f.what));
-  return [...a, ...b.filter((f) => !seen.has(f.what))];
+  // The separator is printable on purpose. A kind is a lowercase-hyphen identifier from a closed
+  // union, so " :: " cannot appear in one and no escape is needed - `CLAUDE.md` forbids typing a
+  // control-character escape into a tool parameter, and a key nobody can read buys nothing here.
+  const key = (f: Finding): string => `${f.kind} :: ${f.what}`;
+  const seen = new Set(a.map(key));
+  return [...a, ...b.filter((f) => !seen.has(key(f)))];
 }
 
 /** What the chosen renderer drew, with its own complaint when it had one. */
@@ -338,8 +350,14 @@ function drawnBlock(g: BlockSubgraph, id: BlockId, r: Rendering, chosen: Selecti
   if (chosen.kind === "elk") return elkRealisation(g, id, elk);
   const findings = mismatchFindings(`block ${id}`, chosen.mismatch, chosen.findings);
   const refusal = refusalText(id, r, chosen.mismatch);
-  if (chosen.layout === undefined) throw new SchgenRefusal(findings, refusal);
-  return { layout: chosen.layout, findings, refusal };
+  // **THROUGH `refusedLayout`, so that reading is stated in ONE place** (fix round 1, Item 5). This
+  // tested `chosen.layout === undefined` directly, which agreed with the accessor but made the
+  // report's "single place" claim false - two readings of the same optional field is two chances for
+  // them to diverge. `Selection`'s refused arm and `RealiseResult`'s false arm carry the same pair,
+  // so the same accessor answers for both.
+  const layout = refusedLayout({ ok: false, mismatch: chosen.mismatch, layout: chosen.layout, findings: chosen.findings });
+  if (layout === null) throw new SchgenRefusal(findings, refusal);
+  return { layout, findings, refusal };
 }
 
 /** What drew this layout, for a message: the template's id, or the backend. */

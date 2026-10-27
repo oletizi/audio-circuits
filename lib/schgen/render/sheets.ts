@@ -262,12 +262,26 @@ export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolve
   // block was realised, and `textProblems` re-checks the very power-value-over-pin-text overlaps
   // the three transistor-preamp boards refuse on at block level. Preserving the block geometry and
   // leaving these two throwing would have moved each refusal a dozen lines later and changed
-  // nothing a person can look at. Both still RUN, unweakened; what they find lands on the drawing.
-  const findings: Finding[] = [
-    ...contents.flatMap((f) => f.findings),
-    ...sheetSafety(scene).findings,
-    ...textProblems(textScene(`sheet ${sheetId}`, symbols, { blocks: a.blocks, powers: a.powers, labels: a.labels, texts: a.texts, frames: a.frames })),
-  ];
+  // nothing a person can look at. Neither check is weakened: each still runs on the same geometry
+  // and reports the same text, and what it finds lands on the drawing instead of being thrown.
+  //
+  // **THE WIRE-SAFETY SHORT CIRCUIT IS AT THIS CALL SITE AND NOT ONLY INSIDE `sheetSafety`, AND
+  // ROUND 1 OF THIS TASK LOST IT HERE** (fix round 1, Item 2). `assertSheetSafe` threw on wire
+  // safety, so the text pass never ran on a sheet whose connectivity was already rejected; an array
+  // literal evaluates both unconditionally, which defeated the ordering `sheet-check.ts` is careful
+  // to preserve internally - the call site undoing what the function below it protects. The
+  // concrete loss: a sheet with a dangling wire end AND a placement that is not a unit of its block
+  // used to give a classified wire-safety refusal, and instead `textScene` -> `blockFields` ->
+  // `field-placement.ts` throws a PLAIN `Error`, which `layoutSheets` rethrows unchanged and the
+  // next task's totality rule reads as a `generator-defect` that fails the run. **A classified
+  // refusal must not be overtaken by an unclassified one**, so the text pass is gated exactly as
+  // `sheetSafety` gates its own body-clearance batch, and for the same reason.
+  const safety = sheetSafety(scene);
+  const text =
+    safety.findings.length > 0
+      ? []
+      : textProblems(textScene(`sheet ${sheetId}`, symbols, { blocks: a.blocks, powers: a.powers, labels: a.labels, texts: a.texts, frames: a.frames }));
+  const findings: Finding[] = [...contents.flatMap((f) => f.findings), ...safety.findings, ...text];
   const wires: Wire[] = a.blocks.flatMap((b) => b.layout.wires);
   const placed = a.blocks.map((b) => placedSymbols(b.g, b.layout, symbols));
   return {

@@ -937,6 +937,7 @@
     "tools/schgen/label-syntax/fixtures.ts",
     "tools/schgen/label-syntax/probe.ts",
     "lib/schgen/findings.ts",
-    "tests/schgen/findings.test.ts"
+    "tests/schgen/findings.test.ts",
+    "tests/schgen/gates/geometry-survives.test.ts"
   ]
 }
