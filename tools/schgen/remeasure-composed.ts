@@ -1,5 +1,5 @@
 /**
- * **THE INTEGRATED EXPERIMENT: one sub-circuit drawn FLAT against the same blocks drawn separately
+ * **THE INTEGRATED EXPERIMENT: one circuit drawn FLAT against the same blocks drawn separately
  * and composed by seam B, on the same four measures.**
  *
  *   bun tools/schgen/remeasure-composed.ts
@@ -11,50 +11,45 @@
  * reports the four measures against the FLAT whole-circuit baseline - so what survives of the bound
  * is a number rather than an assumption."*
  *
- * **THE SUBJECT IS THE ONE THE BRIEF NAMES AGAIN, AND THE RE-SCOPE IS DELIBERATE - 2026-10-25.**
- * The brief's mechanism is `optical-compressor`, *"because both ends of the comparison already
- * exist"* - whole gave 293 crossings / 3.18 bends per edge / 4.05:1 / 159 967 and its three
- * declared blocks gave 48 / 2.70 / 3.11:1 / 35 070.
+ * **THE SUBJECT IS `transistor-preamp`, AS A WHOLE CIRCUIT, SINCE 2026-10-26 - AND IT HAS MOVED
+ * THREE TIMES. `docs/known-gaps.md` **G297** CARRIES THE HISTORY AND `SUBJECT_CIRCUIT` BELOW
+ * CARRIES THE REASONING.** The brief's own mechanism was `optical-compressor`, *"because both ends
+ * of the comparison already exist"* - whole gave 293 crossings / 3.18 bends per edge / 4.05:1 /
+ * 159 967 and its three declared blocks gave 48 / 2.70 / 3.11:1 / 35 070. That circuit draws NONE
+ * of its three blocks today (**G296**), so it is not available.
  *
- * **IT WAS `transistor-preamp` FROM TASK 17 UNTIL 2026-10-25, AND WHY IT WAS SAYS WHY IT IS NOT
- * ANY MORE.** Controller ruling R38 substituted it because the brief's mechanism was
- * *"unavailable: all three `oc-*` blocks are among the seven the post-layout gates refuse, so
- * there is no composed side to measure"*, and directed *"the subject becomes the sub-circuit
- * induced by the blocks that actually draw - at HEAD, the five transistor-preamp legs."*
+ * **CONTROLLER RULING R38's SUB-CIRCUIT WAS A SUBSTITUTION AND IS NO LONGER NEEDED, WHICH IS THE
+ * ONE THING TO UNDERSTAND BEFORE READING ANY FIGURE BELOW.** R38 substituted `transistor-preamp`
+ * for the brief's subject because the brief's was *"unavailable: all three `oc-*` blocks are among
+ * the seven the post-layout gates refuse, so there is no composed side to measure"*, and directed
+ * *"the subject becomes the sub-circuit induced by the blocks that actually draw - at HEAD, the
+ * five transistor-preamp legs."* **All seven of `transistor-preamp`'s blocks draw now, so the flat
+ * side is the WHOLE circuit** - which is G105's criterion as written rather than a workaround for
+ * it, and the guard that used to refuse this case is split in `integratedExperiment` below.
  *
- * **BOTH HALVES OF THAT HAVE CHANGED, in opposite directions, and the change is boundary-node
- * sizing (`docs/known-gaps.md` **G291**):**
- *
- * - `transistor-preamp` is no longer a subject this experiment MAY use. **All seven of its blocks
- *   draw**, and the guard below refuses that case - correctly: with every block drawing, the flat
- *   side would be a whole circuit and the sub-circuit caveat this header prints would be false.
- *   The guard is NOT relaxed; the subject moved.
- * - `optical-compressor` is a subject it may use again. **`oc-power` and `oc-audio` draw and
- *   `oc-sidechain` does not** - 2 of 3, which is exactly the SOME the ruling's own reasoning asks
- *   for - so the brief's named mechanism is available for the first time since Task 17.
- *
- * **AND THE RE-SCOPE BOUGHT SOMETHING R38 COULD NOT GET: A TWO-SIDED ACCEPTED-STAGE COMPARISON.**
- * On `transistor-preamp` the flat probe was refused by the junction gate, so *"the accepted column
- * holds a composed drawing and a refusal"* and the only stage-matched comparison was at
- * `backend-output`. On `optical-compressor` the flat probe is ACCEPTED, so G105's criterion -
- * *"reports the four measures against the FLAT whole-circuit baseline"* - has figures on both
- * sides of it at the stage the drawing is actually emitted from.
+ * **AND THE WHOLE-CIRCUIT SUBJECT BUYS WHAT R38's COULD NOT: A TWO-SIDED ACCEPTED-STAGE
+ * COMPARISON.** On the five legs and on the six the flat probe was refused by the junction gate, so
+ * *"the accepted column holds a composed drawing and a refusal"* and the only stage-matched
+ * comparison was at `backend-output`. The seven-block flat probe is ACCEPTED, so G105's criterion -
+ * *"reports the four measures against the FLAT whole-circuit baseline"* - has figures on both sides
+ * of it at the stage the drawing is actually emitted from, and `crossingRatio` has a numerator for
+ * the first time.
  *
  * **FOUR THINGS THAT TRAVEL WITH EVERY FIGURE THIS MODULE PRODUCES, per R38:**
  *
  * 1. **the spike's 6.1x is NOT RE-DERIVABLE here and is still reported NOT-COMPARABLE.** The
- *    subject now MATCHES the spike's subject, which is new and is not the same thing as the
- *    figures being comparable: the spike's numbers came from a different frontend, with different
- *    node sizes and different port constraints, and G101's own caveat applies. Nothing is
- *    approximated, nothing is scaled, and no *"fraction of 6.1x survived"* is computed. The ratio
- *    below is the one measured here, named as that;
- * 2. **the flat side is a SUB-CIRCUIT and not a whole circuit.** Two of `optical-compressor`'s
- *    three declared blocks; `oc-sidechain` is on the same declared sheet and is left out because
- *    it does not draw. **A composed-against-flat ratio over a two-block subset is a narrower claim
- *    than the brief anticipated**, and the narrowness is printed beside the number;
+ *    spike's numbers came from a different frontend, with different node sizes and different port
+ *    constraints, and G101's own caveat applies - and its subject was `optical-compressor`, which
+ *    is not this one. Nothing is approximated, nothing is scaled, and no *"fraction of 6.1x
+ *    survived"* is computed. The ratio below is the one measured here, named as that;
+ * 2. **whether the flat side is a SUB-CIRCUIT is PRINTED and not assumed either way.** It is the
+ *    whole circuit at the current geometry; `renderExperiment` says so in its own line, and says
+ *    which blocks are left out when any are. **A composed-against-flat ratio over a subset is a
+ *    narrower claim than the brief anticipated**, so the narrowness is printed beside the number
+ *    rather than carried in this comment, which is how it came to be false for a day;
  * 3. **there is NO template in this comparison.** G105's criterion asks for *"both template-drawn
  *    and ELK-drawn blocks"*; the ported templates draw 0 of this repository's 12 blocks as declared
- *    (**G160**), so the composed side is two ELK blocks. That half of the criterion is NOT met and
+ *    (**G160**), so the composed side is seven ELK blocks. That half of the criterion is NOT met and
  *    saying so is the result;
  * 4. **a ratio below 1x is a legitimate outcome** and is reported as one - a finding about seam B,
  *    not a failure of the measurement.
@@ -66,8 +61,8 @@
  * writes no file, no declaration and no authoring entry. It is the same posture
  * `tools/schgen/anchor-sweep.ts` takes and **G160** states for it: a brute-forced subject *"chooses
  * no arrangement, writes no declaration and emits nothing, so it is a measurement rather than an
- * authored criterion."* **Nothing in this repository declares a two-block `oc-power`-plus-
- * `oc-audio` block and this module does not propose one.**
+ * authored criterion."* **Nothing in this repository declares a single block holding all of
+ * `transistor-preamp` and this module does not propose one.**
  *
  * **AND THE COMPARISON IS TAKEN OVER BLOCK GEOMETRY ON BOTH SIDES, NEVER OVER FRAMES.** G208's own
  * caution for this step: *"the comparison against the flat baseline must compare like with like,
@@ -102,22 +97,25 @@ import type { BlockId } from "../../lib/schgen/ir/types.ts"
 import type { PlacedPin } from "../../lib/schgen/render/unit-pins.ts"
 
 /**
- * The circuit the experiment's subject comes from: the one where SOME blocks draw.
+ * The circuit the experiment's subject comes from: the one where AT LEAST ONE block draws.
  *
- * **IT IS `transistor-preamp` SINCE 2026-10-26 AND THIS IS THE SECOND TIME THE SUBJECT HAS MOVED
- * BETWEEN THE SAME TWO CIRCUITS, WHICH IS THE FINDING AND NOT AN ANNOYANCE.** It was
- * `transistor-preamp` until 2026-10-25, when all seven of its blocks drew and the guard below
- * refused it; the subject moved to `optical-compressor`, which drew two of its three. **It moves
- * back now because `optical-compressor` draws NONE of its three** - `edgesForNet`'s star re-placed
- * every block and `oc-power` and `oc-audio` both land one power symbol's VALUE text on their own
- * parts and wires (`docs/known-gaps.md` **G296**), while `oc-sidechain` has been refused at
- * obligation 3 throughout. `transistor-preamp` draws six of its seven, `tp-leg-upper` being the
- * one refused, so it is the `SOME` the ruling's reasoning asks for.
+ * **IT IS `transistor-preamp`, AND SINCE 2026-10-26 IT IS THE WHOLE CIRCUIT RATHER THAN A
+ * SUB-CIRCUIT. THE SUBJECT HAS MOVED THREE TIMES AND THAT IS THE FINDING, NOT AN ANNOYANCE**
+ * (`docs/known-gaps.md` **G297**). It was `transistor-preamp` until 2026-10-25, when all seven of
+ * its blocks drew and the guard below refused that case; the subject moved to `optical-compressor`,
+ * which drew two of its three. It moved back when `optical-compressor` came to draw NONE of its
+ * three - `edgesForNet`'s star re-placed every block and `oc-power` and `oc-audio` both land one
+ * power symbol's VALUE text on their own parts and wires (**G296**), while `oc-sidechain` has been
+ * refused at obligation 3 throughout - at 6 of 7 with `tp-leg-upper` refused. **`tp-leg-upper`
+ * draws again and the subject is now 7 of 7**, which the old guard refused.
  *
- * **THE GUARD IS NOT RELAXED EITHER TIME.** What the two moves show is that *"the circuit where
- * SOME blocks draw"* is not a property of a circuit at all - it is a property of the current
- * geometry, and every geometry change can take it away from whichever circuit holds it. Nothing
- * here fixes that; the subject is named in one place so that a move is one edit and a loud one.
+ * **THE GUARD WAS SPLIT RATHER THAN RELAXED, AND WHAT THE THREE MOVES SHOW IS THAT *"the circuit
+ * where SOME blocks draw"* IS NOT A PROPERTY OF A CIRCUIT AT ALL** - it is a property of the
+ * current geometry, and every geometry change can take it away from whichever circuit holds it.
+ * That is exactly why the "all draw" half had to go: it made a WORKAROUND's precondition into a
+ * requirement, so the one state satisfying G105's own criterion was the one state refused. The
+ * "none draw" half stands, and the subject is named in one place so that a move is one edit and a
+ * loud one.
  */
 export const SUBJECT_CIRCUIT = "transistor-preamp"
 
@@ -202,10 +200,11 @@ export interface IntegratedExperiment {
 /**
  * THE EXPERIMENT: both ends, measured here, on the blocks that draw.
  *
- * **IT REFUSES TO RUN ON A CIRCUIT WHOSE BLOCKS ALL DRAW OR NONE DRAW** - neither is a state this
- * repository is in, and both would make the comparison something other than what R38 directs. A
- * circuit with no drawing block has no composed side; one where every block draws would make the
- * flat side a whole circuit and the caveat in this module's header wrong.
+ * **IT REFUSES TO RUN ON A CIRCUIT WHERE NO BLOCK DRAWS**, because there is then no composed side
+ * to compare the flat probe against. **It does NOT refuse the all-drawing case**: that is G105's
+ * own *"one COMPLETE CIRCUIT … against the FLAT WHOLE-CIRCUIT baseline"*, and the guard inside
+ * explains why reading it as a refusal inverted the criterion. `renderExperiment` states which case
+ * a run is in, so no sub-circuit caveat is ever printed falsely.
  */
 export async function integratedExperiment(name: string = SUBJECT_CIRCUIT, cases: readonly ParityCase[] = PARITY_CASES): Promise<IntegratedExperiment> {
   const found = cases.find((c) => c.name === name)
@@ -228,13 +227,29 @@ export async function integratedExperiment(name: string = SUBJECT_CIRCUIT, cases
       notDrawn.push({ id: block.id, reason: e instanceof Error ? e.message : String(e) })
     }
   }
-  if (drew.length === 0 || notDrawn.length === 0) {
+  // **THIS GUARD REFUSED TWO DIFFERENT THINGS UNDER ONE MESSAGE AND HAS BEEN SPLIT, 2026-10-26.**
+  // It read `drew.length === 0 || notDrawn.length === 0` and said the experiment "is specified for
+  // a circuit where SOME blocks draw". The two halves are not the same claim:
+  //
+  // - **none drawing is a real refusal and stays.** There is no composed side at all, so there is
+  //   nothing to compare the flat probe against.
+  // - **all drawing is NOT a refusal, and reading it as one inverted G105's criterion.** That
+  //   criterion, quoted in this module's header, asks for *"an integrated measurement [that] draws
+  //   one COMPLETE CIRCUIT ... and reports the four measures against the FLAT WHOLE-CIRCUIT
+  //   baseline"*. R38's sub-circuit subject was a SUBSTITUTION, taken because *"all three `oc-*`
+  //   blocks are among the seven the post-layout gates refuse, so there is no composed side to
+  //   measure"* - a workaround for an unavailable whole circuit, not a demand for a partial one.
+  //   The old guard therefore refused the one state that satisfies the brief as written.
+  //
+  // What the second half was really protecting was a PRINTED CLAIM: the header's caveat that the
+  // flat side is a sub-circuit would be false where nothing is left out. That is fixed by not
+  // printing a false caveat - `renderExperiment` below states which case the run is in - rather
+  // than by refusing the measurement. `docs/known-gaps.md` **G297**.
+  if (drew.length === 0) {
     throw new Error(
-      `${name}: ${drew.length} of its ${drew.length + notDrawn.length} blocks draw. This experiment ` +
-        "is specified for a circuit where SOME blocks draw (controller ruling R38): with none there " +
-        "is no composed side, and with all of them the flat side would be a whole circuit and the " +
-        "sub-circuit caveat this module prints would be false. Re-scope the experiment deliberately " +
-        "rather than letting it report a claim it was not set up for.",
+      `${name}: none of its ${notDrawn.length} blocks draw, so there is no composed side to ` +
+        "measure and no comparison to take. The subject is named at SUBJECT_CIRCUIT in this " +
+        "module; move it to a circuit with at least one drawing block rather than relaxing this.",
     )
   }
 
@@ -352,7 +367,11 @@ export function renderExperiment(x: IntegratedExperiment): readonly string[] {
       : `${label}: REFUSED by ${s.gate} - ${s.refusal.slice(0, 400)}`
   return [
     `subject ${x.circuit}, ${x.blocks.length} of ${x.blocks.length + x.notDrawn.length} declared blocks: ${x.blocks.join(", ")}`,
-    `not drawn: ${x.notDrawn.map((n) => n.id).join(", ")}`,
+    x.notDrawn.length === 0
+      ? "not drawn: none - the flat side is the WHOLE circuit, which is G105's criterion as written " +
+        "and not R38's sub-circuit substitution; no sub-circuit caveat applies to these figures"
+      : `not drawn: ${x.notDrawn.map((n) => n.id).join(", ")} - the flat side is a SUB-CIRCUIT and a ` +
+        "composed-against-flat ratio over it is a narrower claim than G105 anticipated",
     side("FLAT (one graph, accepted stage)", x.flat),
     side("FLAT (one graph, backend-output stage)", x.flatBackendOutput),
     side("COMPOSED (seam B)", x.composed),

@@ -65,18 +65,26 @@ describe("what every declared block's refusal is hiding", () => {
    * BUCKETS** (`docs/known-gaps.md` **G292**). Laying a two-terminal passive with no rail end
    * along the signal re-places every block, so the slots the field placer is offered move with it.
    *
-   * **THE CENSUS READS 8 OF 12 SINCE 2026-10-26 AND THE FALLBACK POPULATION WENT 11 TO 20 - BOTH
+   * **THE CENSUS READ 8 OF 12 ON 2026-10-26 AND THE FALLBACK POPULATION WENT 11 TO 20 - BOTH
    * THE WRONG WAY, AND NEITHER IS PRESENTED AS ANYTHING ELSE** (**G296**). `edgesForNet`'s star
    * and the two 180 rules re-place every block again:
    *
-   * | block | fallbacks before | now |
-   * | --- | --- | --- |
-   * | `pt-core` | 4 | **15** |
-   * | `oc-audio` | 3 | 3, on different units |
-   * | `tp-stage` | 1 | **2** |
-   * | `ob-buffer` | 1 | **0** - it DRAWS with every field clear |
-   * | `oc-power` | 1 | 0 - it no longer draws at all |
-   * | `tp-leg-emitter-bypass` | 1 | **0** |
+   * | block | fallbacks before | at G296 | now |
+   * | --- | --- | --- | --- |
+   * | `pt-core` | 4 | **15** | 15 |
+   * | `oc-audio` | 3 | 3, on different units | 3 |
+   * | `tp-stage` | 1 | **2** | 2 |
+   * | `ob-buffer` | 1 | **0** - it DRAWS with every field clear | 0 |
+   * | `oc-power` | 1 | 0 - it no longer draws at all | 0 |
+   * | `tp-leg-emitter-bypass` | 1 | **0** | **1**, on `JP5#1` |
+   *
+   * **THE CENSUS IS 9 OF 12 SINCE THE JUMPER TURN WAS DECLINED, AND THE POPULATION WENT 20 TO 21,
+   * SO ONE FIGURE IMPROVED AND THE OTHER DID NOT** (**G297**). `tp-leg-upper` draws, and the same
+   * change puts one fallback back on `tp-leg-emitter-bypass`: `JP5#1` is a jumper, it is no longer
+   * turned 180, and at its new rotation the placer has no clear slot for its fields and chooses the
+   * least-covered one - over `wire 0` and `wire 1`, both `BYPASS_CAP`. **That is the
+   * minimise-and-disclose trade of G260 and it is the cost of the block census moving**, recorded
+   * here rather than netted off against the block that was gained.
    *
    * **`pt-core`'s FIFTEEN ARE CROSS-CHECKED BY A DIFFERENT DRIVER, which is what makes the figure
    * a measurement rather than this module's opinion of itself**:
@@ -126,22 +134,22 @@ describe("what every declared block's refusal is hiding", () => {
       "    FALLBACK R5#1 (Device:R): covers wire 111 (Net-(U1-LPF2-OUT))",
       "    FALLBACK R7#1 (Device:R): covers wire 72 (Net-(C8-Pad2)), wire 73 (Net-(C8-Pad2)), pin R1.1",
       unmeasuredFallbacks(["C1#1", "C2#1", "C3#1", "C4#1", "C5#1", "C7#1", "C8#1", "C9#1", "C11#1", "C12#1", "C14#1", "R1#1", "R3#1", "R5#1", "R7#1"]),
-      "tp-leg-upper: blocked by power-value-pin-overlap, power-value-wire-overlap published power-value-wire-overlap, power-value-pin-overlap",
-      "    control (checkLayout published this too): value of power symbol VCC 0 at (17.78, 6.35) overlaps wire 9 of tp-leg-upper (UPPER_JUMPED)",
-      "    control (checkLayout published this too): value of power symbol VCC 0 at (17.78, 6.35) overlaps pin R1.1",
+      "tp-leg-upper: DRAWS",
       "tp-leg-feedback: DRAWS",
       "tp-leg-lower-a: DRAWS",
       "tp-leg-lower-b: DRAWS",
       "tp-leg-collector: DRAWS",
-      "tp-leg-emitter-bypass: DRAWS",
+      "tp-leg-emitter-bypass: DRAWS units with no clear slot JP5#1",
+      "    FALLBACK JP5#1 (Jumper:Jumper_2_Open): covers wire 0 (BYPASS_CAP), wire 1 (BYPASS_CAP)",
+      unmeasuredFallbacks(["JP5#1"]),
       "tp-stage: DRAWS units with no clear slot R6#1, C3#1",
       "    FALLBACK R6#1 (Device:R): covers wire 25 (EMITTER)",
       "    FALLBACK C3#1 (Device:C_Polarized): covers wire 15 (COLLECTOR)",
       unmeasuredFallbacks(["R6#1", "C3#1"]),
-      "8 of 12 declared blocks draw",
+      "9 of 12 declared blocks draw",
       "0 of 12 are ONE measured problem from drawing with nothing unmeasured behind it (none)",
       "1 have ONE measured problem and an unmeasured residual: oc-audio",
-      "2 have more than one: oc-power, tp-leg-upper",
+      "1 have more than one: oc-power",
       "1 are unmeasurable, nothing looked at them: oc-sidechain",
     ])
   })
@@ -155,28 +163,34 @@ describe("what every declared block's refusal is hiding", () => {
    * only block with a measured problem at all.
    *
    * **THE STAR AND THE TWO 180 RULES REFILLED TWO BUCKETS** (**G296**): `oc-audio` is the
-   * one-problem-plus-residual block now, and `oc-power` and `tp-leg-upper` are a
+   * one-problem-plus-residual block now, and `oc-power` and `tp-leg-upper` were a
    * more-than-one bucket that had NO members since Task 24. `ob-buffer` left the table entirely by
    * drawing.
    *
+   * **AND THE MORE-THAN-ONE BUCKET IS BACK TO ONE MEMBER SINCE THE JUMPER TURN WAS DECLINED**
+   * (**G297**): `tp-leg-upper` draws, so `oc-power` holds that bucket alone. **Two of the four
+   * buckets are populated and two are empty, which is one fewer way for this test to fail than it
+   * had yesterday, and that is a loss rather than a neutral change** - it is stated here because
+   * the direction of this particular figure is the opposite of the census's.
+   *
    * **`oneProblemAway` IS STILL EMPTY AND THAT IS STILL A MEASUREMENT RATHER THAN AN ABSENCE OF
    * ONE.** No block in the corpus has exactly one measured problem with nothing unmeasured behind
-   * it: `oc-audio` has one class but three fallback fields behind it, and the other two have more
-   * than one class. An empty bucket next to three populated ones is a reading; four empty buckets
+   * it: `oc-audio` has one class but three fallback fields behind it, and `oc-power` has seven
+   * classes. An empty bucket next to two populated ones is a reading; four empty buckets
    * would have been the shape in which this test stopped being able to fail.
    */
   it("separates one-problem-away from one-problem-plus-residual from unmeasurable", () => {
     expect(rows.filter(oneProblemAway).map((r) => r.block)).toEqual([])
     expect(rows.filter((r) => r.blockedBy.length === 1 && r.unmeasured.length > 0).map((r) => r.block)).toEqual(["oc-audio"])
-    expect(rows.filter((r) => r.blockedBy.length > 1).map((r) => r.block)).toEqual(["oc-power", "tp-leg-upper"])
+    expect(rows.filter((r) => r.blockedBy.length > 1).map((r) => r.block)).toEqual(["oc-power"])
     expect(rows.filter((r) => !r.draws && r.blockedBy.length === 0).map((r) => r.block)).toEqual(["oc-sidechain"])
-    // 8 of 12 draw, and the four that do not are named - so "a bucket is empty" cannot be read
+    // 9 of 12 draw, and the three that do not are named - so "a bucket is empty" cannot be read
     // as "nothing is blocked".
-    expect(rows.filter((r) => r.draws).length).toBe(8)
-    expect(rows.filter((r) => !r.draws).map((r) => r.block)).toEqual(["oc-power", "oc-audio", "oc-sidechain", "tp-leg-upper"])
-    // The four non-drawing blocks are exactly the four buckets' members plus nothing, which is the
-    // arithmetic that says the classification is total: 1 + 2 + 1 = 4.
-    expect(1 + 2 + 1).toBe(rows.filter((r) => !r.draws).length)
+    expect(rows.filter((r) => r.draws).length).toBe(9)
+    expect(rows.filter((r) => !r.draws).map((r) => r.block)).toEqual(["oc-power", "oc-audio", "oc-sidechain"])
+    // The three non-drawing blocks are exactly the buckets' members plus nothing, which is the
+    // arithmetic that says the classification is total: 1 + 1 + 1 = 3.
+    expect(1 + 1 + 1).toBe(rows.filter((r) => !r.draws).length)
     // And field placement blocks NOTHING any more - asserted as an empty list rather than a count,
     // so a block that still carried the class would fail here naming itself.
     expect(rows.filter((r) => r.blockedBy.includes("field-placement")).map((r) => r.block)).toEqual([])
@@ -198,11 +212,14 @@ describe("what every declared block's refusal is hiding", () => {
    * - Task 22: `pt-core`, seven units asked first against EIGHT fallbacks in its own order;
    * - G291's node sizing: `oc-power` at ZERO against ONE, `tp-stage`'s gap closed at four/four;
    * - G292's orientation rule: `pt-core` closed at four/four, `tp-stage` opened at ZERO/ONE;
-   * - **the star and the two 180 rules: EVERY block's two lists now AGREE** - `pt-core` 15/15,
-   *   `oc-audio` 3/3, `tp-stage` 2/2, and nothing else has a fallback. **So the sequential
-   *   dependence is unobservable on this corpus at this geometry.** It is asserted below as an
-   *   agreement on all three, which is a real reading; it is NOT asserted that the placer stopped
-   *   being order-dependent, which would be reading an absent subject as a result.
+   * - the star and the two 180 rules: EVERY block's two lists AGREE - `pt-core` 15/15,
+   *   `oc-audio` 3/3, `tp-stage` 2/2, and nothing else has a fallback;
+   * - **the jumper turn declined (**G297**): still every block AGREES, now on four blocks rather
+   *   than three** - `pt-core` 15/15, `oc-audio` 3/3, `tp-stage` 2/2, `tp-leg-emitter-bypass` 1/1.
+   *   **So the sequential dependence is unobservable on this corpus at this geometry**, on one
+   *   more subject than before. It is asserted below as an agreement per block, which is a real
+   *   reading; it is NOT asserted that the placer stopped being order-dependent, which would be
+   *   reading an absent subject as a result.
    */
   it("counts the units with no clear field slot, and the two measurements agree on every block", () => {
     expect(row("pt-core").fallbackUnits).toEqual([
@@ -212,8 +229,13 @@ describe("what every declared block's refusal is hiding", () => {
     expect(row("tp-stage").fallbackUnits).toEqual(["R6#1", "C3#1"])
     expect(row("oc-power").fallbackUnits).toEqual([])
     expect(row("oc-audio").fallbackUnits).toEqual(["R3#1", "U1#1", "U1#2"])
+    // THE ONE THAT ARRIVED WITH THE JUMPER TURN BEING DECLINED (**G297**), and it is a jumper's
+    // own fields: `JP5#1` is `Jumper:Jumper_2_Open` and at its untuned rotation the placer has no
+    // clear slot for it.
+    expect(row("tp-leg-emitter-bypass").fallbackUnits).toEqual(["JP5#1"])
     // CONTROL: a block whose every field has a clear slot has none, in both measurements. A probe
-    // that reported a fallback here would be measuring itself.
+    // that reported a fallback here would be measuring itself. `tp-leg-upper` is one of these
+    // again - it draws AND every field is clear, which is the stronger of the two readings.
     expect(row("tp-leg-upper").fallbackUnits).toEqual([])
     expect(row("tp-leg-upper").fallbacks).toEqual([])
     expect(row("tp-leg-collector").fallbackUnits).toEqual([])
@@ -224,10 +246,11 @@ describe("what every declared block's refusal is hiding", () => {
     expect(row("pt-core").fallbacks.map((f) => f.key)).toEqual([...row("pt-core").fallbackUnits])
     expect(row("oc-audio").fallbacks.map((f) => f.key)).toEqual([...row("oc-audio").fallbackUnits])
     expect(row("tp-stage").fallbacks.map((f) => f.key)).toEqual([...row("tp-stage").fallbackUnits])
+    expect(row("tp-leg-emitter-bypass").fallbacks.map((f) => f.key)).toEqual([...row("tp-leg-emitter-bypass").fallbackUnits])
     expect(rows.filter((r) => r.fallbacks.length !== r.fallbackUnits.length).map((r) => r.block)).toEqual([])
-    // The whole population, so the 20 in this test's own header is checkable here: 15 + 3 + 2.
-    expect(rows.reduce((n, r) => n + r.fallbacks.length, 0)).toBe(20)
-    expect(15 + 3 + 2).toBe(20)
+    // The whole population, so the 21 in this test's own header is checkable here: 15 + 3 + 2 + 1.
+    expect(rows.reduce((n, r) => n + r.fallbacks.length, 0)).toBe(21)
+    expect(15 + 3 + 2 + 1).toBe(21)
     /**
      * **EVERY UNIT THE FIRST-POSITION PROBE NAMES ALSO FALLS BACK IN THE REAL ORDER, which is two
      * measurements agreeing and is not a tautology.** The probe asks each unit with no other
@@ -269,11 +292,11 @@ describe("what every declared block's refusal is hiding", () => {
     // field-placement refusal - named no obstacle pair; with that refusal gone its power-value
     // overlap was published, that problem DID name a pair, and its kind became `clearance`.
     //
-    // **`ob-buffer` NOW DRAWS AND HAS NO KIND AT ALL, so the settled answer is carried by THREE
-    // other blocks instead of one** (**G296**). `oc-power`, `oc-audio` and `tp-leg-upper` are each
-    // refused at obligation 4 on a power symbol's value, every one of those problems names an
-    // obstacle pair, and all three are classified `clearance`. The subject changed; the answer
-    // did not.
+    // **`ob-buffer` NOW DRAWS AND HAS NO KIND AT ALL, so the settled answer is carried by other
+    // blocks instead of one** (**G296**) - three for a day, and **two since `tp-leg-upper` rejoined
+    // them in drawing** (**G297**). `oc-power` and `oc-audio` are each refused at obligation 4 on a
+    // power symbol's value, both of those problems name an obstacle pair, and both are classified
+    // `clearance`. The subject changed twice; the answer did not.
     expect(row("ob-buffer").mismatchKind).toBe("")
     expect(row("ob-buffer").draws).toBe(true)
     // And there is nothing left to widen: the field-free pass finds nothing checkLayout did not
@@ -285,26 +308,25 @@ describe("what every declared block's refusal is hiding", () => {
       expect(added, r.block).toEqual([])
       expect(clearancePairs(added).length, r.block).toBe(0)
     }
-    // **THE LOOP ABOVE HAS EXACTLY FOUR SUBJECTS, AND THAT IS ASSERTED RATHER THAN LEFT TO BE
-    // DISCOVERED.** Eight of the twelve blocks draw, so they have no mismatch kind at all. A loop
+    // **THE LOOP ABOVE HAS EXACTLY THREE SUBJECTS, AND THAT IS ASSERTED RATHER THAN LEFT TO BE
+    // DISCOVERED.** Nine of the twelve blocks draw, so they have no mismatch kind at all. A loop
     // over an unstated subject set is how a check comes to run over nothing and still pass.
     const kinded = rows.filter((r) => r.mismatchKind !== "")
     expect(kinded.map((r) => `${r.block} ${r.mismatchKind}`)).toEqual([
       "oc-power clearance",
       "oc-audio clearance",
       "oc-sidechain invalid-geometry",
-      "tp-leg-upper clearance",
     ])
-    // CONTROL: the two kinds are different, and they are different for the stated reason - three
-    // blocks' published problems name an obstacle pair and the fourth reaches no layout at all, so
+    // CONTROL: the two kinds are different, and they are different for the stated reason - two
+    // blocks' published problems name an obstacle pair and the third reaches no layout at all, so
     // it publishes nothing. A set where every answer was the same would pass the loop and say
     // nothing. The pair COUNTS are asserted per block, so a block whose problems stopped naming a
     // pair would fail here rather than silently keep its kind.
     expect(kinded.map((r) => `${r.block} ${clearancePairs(r.publishedProblems).length}`)).toEqual([
-      "oc-power 7", "oc-audio 2", "oc-sidechain 0", "tp-leg-upper 2",
+      "oc-power 7", "oc-audio 2", "oc-sidechain 0",
     ])
     expect(row("oc-sidechain").publishedProblems).toEqual([])
-    expect(rows.filter((r) => r.draws).length).toBe(8)
+    expect(rows.filter((r) => r.draws).length).toBe(9)
   })
 
   /**
@@ -318,9 +340,15 @@ describe("what every declared block's refusal is hiding", () => {
    * EARLIER STATE, which is worth saying plainly because every other figure in this file went the
    * other way.** It rested on `tp-leg-emitter-bypass`'s label-label overlap and `tp-stage`'s six
    * label problems; node sizing removed both and left it standing on `ob-buffer` alone, which
-   * **G291** recorded as a weakening. `ob-buffer` draws now, and the control rests on **three**
-   * blocks - `oc-power` with seven problems, `oc-audio` with two and `tp-leg-upper` with two.
-   * Three subjects is more than one and more than two (**G296**).
+   * **G291** recorded as a weakening. `ob-buffer` draws now, and the control rested on **three**
+   * blocks - `oc-power` with seven problems, `oc-audio` with two and `tp-leg-upper` with two
+   * (**G296**).
+   *
+   * **IT IS TWO BLOCKS SINCE `tp-leg-upper` DRAWS, AND THAT IS A WEAKENING, NOT A GAIN** (**G297**).
+   * Nine problems over two texts carry the control where eleven over three carried it yesterday.
+   * **The same change that improved the census weakened this control, and both directions are
+   * stated** - a block that stops refusing takes its problems out of the non-vacuity evidence with
+   * it, which is the standing cost of resting a control on the corpus's defects.
    */
   it("finds the same problem with no fields in the scene as checkLayout finds with them", () => {
     const withLayout = rows.filter((r) => r.unmeasured.every((u) => !u.startsWith("every clearance check")))
@@ -329,8 +357,8 @@ describe("what every declared block's refusal is hiding", () => {
       "tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector", "tp-leg-emitter-bypass", "tp-stage",
     ])
     for (const r of withLayout) expect(r.fieldFree.filter((p) => !r.publishedProblems.includes(p)), r.block).toEqual([])
-    // NOT VACUOUS: three of the eleven have problems to find, and the field-free pass finds all of
-    // them. **EVERY ONE IS A POWER SYMBOL'S VALUE AND THERE ARE THREE TEXTS BEHIND ELEVEN
+    // NOT VACUOUS: two of the eleven have problems to find, and the field-free pass finds all of
+    // them. **EVERY ONE IS A POWER SYMBOL'S VALUE AND THERE ARE TWO TEXTS BEHIND NINE
     // PROBLEMS** - `oc-power`'s one text accounts for seven of them. The coordinates are a record;
     // what the control needs is that the field-free pass reproduces the published list exactly.
     expect(row("oc-power").fieldFree).toEqual([
@@ -346,20 +374,21 @@ describe("what every declared block's refusal is hiding", () => {
       "value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 2 of oc-audio (+9V_PROTECTED)",
       "value of power symbol +9V_PROTECTED 1 at (38.1, 24.13) overlaps wire 12 of oc-audio (GND)",
     ])
-    expect(row("tp-leg-upper").fieldFree).toEqual([
-      "value of power symbol VCC 0 at (17.78, 6.35) overlaps wire 9 of tp-leg-upper (UPPER_JUMPED)",
-      "value of power symbol VCC 0 at (17.78, 6.35) overlaps pin R1.1",
-    ])
-    // THREE TEXTS, ELEVEN PROBLEMS, derived rather than restated: the distinct text on the left of
+    // TWO TEXTS, NINE PROBLEMS, derived rather than restated: the distinct text on the left of
     // every problem in the corpus, counted.
     const texts = new Set(withLayout.flatMap((r) => r.fieldFree.map((p) => p.slice(0, p.indexOf(" overlaps ")))))
-    expect(texts.size).toBe(3)
-    expect(withLayout.reduce((n, r) => n + r.fieldFree.length, 0)).toBe(11)
+    expect(texts.size).toBe(2)
+    expect(withLayout.reduce((n, r) => n + r.fieldFree.length, 0)).toBe(9)
+    expect(7 + 2).toBe(9)
     // And the ones that no longer have a problem to find are named, so "empty" reads as a result.
+    // **`tp-leg-upper` IS THE NEWEST MEMBER OF THIS LIST AND ITS EMPTINESS IS THE FIX**: the two
+    // problems it used to report - its `VCC` value over `wire 9` and over `pin R1.1` - are gone
+    // because `JP1` is no longer turned 180, and the field-free pass finds nothing either.
+    expect(row("tp-leg-upper").fieldFree).toEqual([])
     expect(row("ob-buffer").fieldFree).toEqual([])
     expect(row("tp-leg-emitter-bypass").fieldFree).toEqual([])
     expect(row("tp-stage").fieldFree).toEqual([])
-    expect(withLayout.filter((r) => r.fieldFree.length > 0).map((r) => r.block)).toEqual(["oc-power", "oc-audio", "tp-leg-upper"])
+    expect(withLayout.filter((r) => r.fieldFree.length > 0).map((r) => r.block)).toEqual(["oc-power", "oc-audio"])
   })
 
   /**

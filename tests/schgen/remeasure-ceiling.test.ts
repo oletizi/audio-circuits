@@ -56,6 +56,13 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
    * accepted. **`gatesRefuse` is a property of the UNPERMUTED block, so a tag moving is the block
    * census showing up in this table and not a sweep result.**
    *
+   * **DECLINING THE JUMPER TURN MOVED ONE TAG OFF AND NOT ONE OF THE 40 COUNTS** (**G297**), which
+   * is the cleanest instance of the distinction the paragraph above draws. `tp-leg-upper`'s
+   * production geometry is accepted again, so its tag comes off; its three sweep counts are
+   * `0, 0, 0` as they have been through every change, because a leg with three placements and no
+   * crossing in any declaration order has nothing for a re-placement to move. **A tag moved and
+   * the sweep did not, on the same row, in the same change.**
+   *
    * **`oc-power`'s ROW MOVED FOR THE FIRST TIME AND IT IS LOAD-BEARING.** Its unmoved
    * `1, 3, 2, 2` was the single subject `SCALE_UNSTABLE_FROM` rests on; it now reads
    * `2, 8, 1, 3`. The constant is unchanged, because what the test below derives from this row is
@@ -79,7 +86,7 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
       "oc-audio parts=12 placements=14 orders=4 crossings 9, 11, 6, 8 MOVES [gates refuse]",
       "oc-sidechain parts=17 placements=19 orders=4 crossings 13, 4, 13, 24 MOVES [gates refuse]",
       "pt-core parts=24 placements=24 orders=4 crossings 54, 39, 74, 75 MOVES",
-      "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT [gates refuse]",
+      "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-feedback parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-a parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-b parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
@@ -87,11 +94,11 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
       "tp-leg-emitter-bypass parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
       "tp-stage parts=16 placements=16 orders=4 crossings 11, 3, 5, 6 MOVES",
     ])
-    // THE TAG COLUMN, asserted as a column so a tag cannot move behind a count: the four blocks
-    // whose production geometry the gates refuse are exactly the four `tools/schgen/remeasure.ts`
+    // THE TAG COLUMN, asserted as a column so a tag cannot move behind a count: the three blocks
+    // whose production geometry the gates refuse are exactly the three `tools/schgen/remeasure.ts`
     // reports at the `backend-output` stage.
     expect(sweep.filter((r) => r.gatesRefuse).map((r) => r.block)).toEqual([
-      "oc-power", "oc-audio", "oc-sidechain", "tp-leg-upper",
+      "oc-power", "oc-audio", "oc-sidechain",
     ])
     // The classification column, asserted as a column so it cannot move behind the counts.
     expect(sweep.map((r) => (r.invariant ? "INVARIANT" : "MOVES"))).toEqual([
@@ -118,7 +125,10 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
   /** Ruling R40: per size, with the subject count and how many are geometry the gates refuse. */
   it("covers 2 of the spike's 7 sweep sizes and says the other 5 are unmeasured", () => {
     expect(sizeCoverage(sweep).map((s) => `${s.placements}: ${s.unmeasured ? "unmeasured" : `${s.subjects.length} subject(s), ${s.refusedSubjects} refused`}`)).toEqual([
-      "3: 4 subject(s), 1 refused",
+      // ZERO REFUSED AT SIZE 3 SINCE `tp-leg-upper` DRAWS AGAIN (**G297**). The subject count is
+      // unmoved at 4 - the four bias legs - because `sizeCoverage` counts SUBJECTS swept, not
+      // blocks accepted, and the sweep has always run on all four.
+      "3: 4 subject(s), 0 refused",
       "4: unmeasured",
       "8: 1 subject(s), 1 refused",
       "9: unmeasured",

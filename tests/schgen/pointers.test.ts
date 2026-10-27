@@ -92,15 +92,17 @@ const POINTERS: readonly Pointer[] = [
     citedBy: "docs/known-gaps.md",
     citation: "`tests/schgen/remeasure.test.ts` pins both ends",
     test: "tests/schgen/remeasure.test.ts",
-    // G105's experiment has moved subject TWICE between the same two circuits, and this marker has
-    // followed it both times - which is the whole point of this file. 2026-10-25 (G291): all seven
-    // transistor-preamp blocks drew, the R38 guard refuses that case, and the subject became
-    // optical-compressor, whose flat side refused at obligation 1. 2026-10-26 (G296):
-    // optical-compressor draws NONE of its three, the subject is transistor-preamp again at 6 of 7,
-    // and its flat side refuses at obligation 2 - the junction obligation. The marker follows the
-    // assertion rather than the assertion being kept alive for the marker, and a renamed test turns
-    // this red instead of leaving the entry citing nothing.
-    marker: "has a FLAT side that REFUSES at the junction obligation",
+    // G105's experiment has moved subject THREE times and this marker has followed it each time -
+    // which is the whole point of this file. 2026-10-25 (G291): all seven transistor-preamp blocks
+    // drew, the R38 guard refused that case, and the subject became optical-compressor, whose flat
+    // side refused at obligation 1. 2026-10-26 (G296): optical-compressor drew NONE of its three,
+    // the subject was transistor-preamp again at 6 of 7, and its flat side refused at obligation 2 -
+    // the junction obligation. 2026-10-26 (G297): the guard's "all draw" half is gone, the subject
+    // is transistor-preamp as a WHOLE circuit, and its flat side is ACCEPTED - so G105's ratio has
+    // both terms for the first time and the marker follows the assertion that says so. The marker
+    // follows the assertion rather than the assertion being kept alive for the marker, and a
+    // renamed test turns this red instead of leaving the entry citing nothing.
+    marker: "has a FLAT side that is ACCEPTED",
     why: "G105's Evidence for the integrated experiment's two ends.",
   },
   {
@@ -134,11 +136,13 @@ const POINTERS: readonly Pointer[] = [
     // RE-HOMED 2026-10-25 and the SUBJECT LOST 2026-10-26. The integrated experiment stopped
     // reaching the five-leg flat probe, so G229's refusal was re-driven in the file that already
     // builds flat subgraphs; since the star and the two 180 rules that probe gets PAST the junction
-    // obligation and is refused at clearance instead, so **G229's figure has no live check
-    // anywhere** (G296). The marker follows the assertion to the test that records the loss, which
-    // is the only honest target: a marker pointing at a junction refusal this repository no longer
-    // produces would be a citation to nothing wearing a green.
-    marker: "gets the five-leg flat probe PAST the junction obligation",
+    // obligation and was refused at clearance instead, so **G229's figure has no live check
+    // anywhere** (G296). **Since G297 the probe is ACCEPTED outright** - the clearance refusal went
+    // with the jumper turn - so the marker follows it once more. The marker follows the assertion
+    // to the test that records the loss, which is the only honest target: a marker pointing at a
+    // junction refusal this repository no longer produces would be a citation to nothing wearing a
+    // green.
+    marker: "gets the five-leg flat probe PAST every obligation",
     why: "G229's Evidence for the obligation-2 refusal, quoted verbatim in that entry.",
   },
   {

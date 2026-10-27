@@ -29580,8 +29580,15 @@ to find a T, `readsFrom` was declared, and `preferredOrientation` learned to tur
 every figure they moved, with the attribution measured rather than assumed - which **G292** records
 as the thing the previous round of this work got wrong.
 
+**SUPERSEDED IN PART BY G297, 2026-10-26.** Clause 1's **8 of 12** is now **9 of 12**, clause 4's
+seven-block probe refusal and clause 5a's whole subject are **gone** (both flat probes are
+accepted), clause 5c's *"`jumperToTrim.dx` is invariant"* is **REFUTED**, and clause 7's finding has
+been **acted on**. Each is marked at the point it appears below. The cause in every case is one
+change: `switchFacesItsBank` no longer turns a part whose pin sides 180 cannot move.
+
 **CLAUSE 1: THE BLOCK CENSUS IS 8 OF 12, DOWN FROM 10, AND NEITHER CHANGE IS AN IMPROVEMENT ON ITS
-OWN.** `[RAN]` the parity-corpus census on four trees, one change rolled back at a time, with the
+OWN.** **[SUPERSEDED: 9 of 12 since G297 - `tp-leg-upper` rejoins, with an exact attribution this
+table's own four rows do not have.]** `[RAN]` the parity-corpus census on four trees, one change rolled back at a time, with the
 both-rolled-back tree as the control that the probe reproduces the last green state exactly:
 
 | tree | draws | the set |
@@ -29647,6 +29654,8 @@ with `junctionPoints` rolled back to the chain-era version that counts endpoints
 | parity block census | 8 of 12, same set | **identical** |
 | five-leg flat probe refusal | obligation 4, clearance | **byte-identical** |
 | seven-block flat probe refusal | obligation 2, `GND` at (55.88, 46.99) | **byte-identical** |
+<!-- SUPERSEDED by G297 clause 7: both flat probes are ACCEPTED, so neither row of this table has a
+refusal to compare any more. The rollback measurement stands for the geometry it was taken on. -->
 | board census | 6 of 11 | **identical, same five boards** |
 | per-board fallback fields | 15, 8, 2, 5, 1, 0 | **identical** |
 
@@ -29668,6 +29677,10 @@ read-only sibling repository again**. A later re-port must re-apply the addition
 obligation 2 on net `GND` at `(55.88, 46.99)`, which the canonical topology labels a `t-junction`,
 **with the detection in place**. So a branch the topology calls a T and the emitter still misses
 exists; what distinguishes it from the T's the rule does find has not been diagnosed.
+
+**[SUPERSEDED by G297 clause 7: that probe is now ACCEPTED, so this paragraph's evidence is gone.
+The detection is not shown COMPLETE either - the branch point was a property of one layout, and
+three geometry changes have each moved one off. Do not read "incomplete" here as still measured.]**
 
 **CLAUSE 5: FOUR MEASUREMENTS HAVE LOST THEIR SUBJECT. EACH IS A LOSS AND NONE IS PAPERED OVER.**
 
@@ -29696,7 +29709,10 @@ here because they are what a fix to `tp-leg-upper` should bring back.**
 distinction that matters.** The refutation needed THREE distinct jumper-to-trim displacements so
 two consecutive steps could be compared: 13/12 against 10/6, *"so no single factor carries one into
 the other"*. `[RAN]` the three trees: `jumperToTrim.dx` is **19, 42, 32, 32 on all of them** -
-invariant under the jumper's 180 and under the star. The `dy` moved (4, then 9, then 1) and the dx
+invariant under the jumper's 180 and under the star. **[REFUTED by G297 clause 8: with the turn
+DECLINED it reads 17, 42, 32, 32. `tp-leg-upper`'s dx moves with `JP1`'s rotation, so dx was
+invariant across those three trees and is not invariant in general; the two-step refutation is
+restored at 15/12 against 10/6.]** The `dy` moved (4, then 9, then 1) and the dx
 did not. **So the refutation did not weaken; `tp-leg-upper` stopped DRAWING and took the 13/12 term
 with it.** With two distinct predicted values and two measured, an AFFINE relation cannot be
 refuted - that claim is **gone, not narrowed**. A pure PROPORTIONALITY still can be and is:
@@ -29726,8 +29742,8 @@ order-dependent, which would be reading an absent subject as a result.
 | **G258** | the masked-problem buckets | one-plus-residual `ob-buffer`, more-than-one empty | **one-plus-residual `oc-audio`, more-than-one `oc-power` + `tp-leg-upper`** |
 | **G262** | the blocked-by-text table | `ob-buffer`, value over value | **`oc-power`, `oc-audio`, `tp-leg-upper`, all value over the block's own ink** |
 | **G285** | `pt2399-core`'s fallback count | 8, then 4 | **15 of its 24 units**, all fifteen over a wire, five over the same wire |
-| **G291** | the board census | 7 of 11 | **6 of 11** (`transistor-preamp-lab` refuses) |
-| **G291** | blocks that draw | 10 of 12 | **8 of 12** (clause 1) |
+| **G291** | the board census | 7 of 11 | **6 of 11** (`transistor-preamp-lab` refuses) - *superseded: 7 of 11 again since G297, with a DIFFERENT SET* |
+| **G291** | blocks that draw | 10 of 12 | **8 of 12** (clause 1) - *superseded: 9 of 12 since G297* |
 | **G191/G125** | pairs firing on ELK geometry | 1 pair, 1 block | **4 pairs, 3 blocks, all `checked` cells** |
 
 **ONE COLUMN SPLITS THE CORPUS EXACTLY IN TWO BY SIZE AND IS WORTH ITS OWN LINE: `aspect`**, which
@@ -29746,7 +29762,9 @@ same column"* - and the wires that reach them leave one point and double back, w
 pull opposite ways under this mechanism**, which `e652d98` found and this row measures.
 
 **CLAUSE 7: THE SWITCH RULE REACHES EVERY `kind: "switch"`, AND IN THIS REPOSITORY THAT INCLUDES
-SIX TWO-PIN JUMPERS. `feae895`'s message does not mention them.** That commit's stated assumption is
+SIX TWO-PIN JUMPERS. `feae895`'s message does not mention them.** **[ACTED ON: `d379740` added a
+guard and G297 corrects it - that guard tested PIN COUNT, so it also stopped turning a 2-way
+header.]** That commit's stated assumption is
 *"that a switch's THROWS are its input side"*, true of a selector whose bank feeds it, and its
 stated risk is a routing SPDT. **But `circuits/transistor-preamp/parts.ts`'s `jumper()` declares
 `kind: "switch"`** - a two-pin header with a shunt, modelled as a switch because that is what it
@@ -29849,3 +29867,254 @@ branch another session is actively committing to would cost more than a wrong co
   value text, and **G262**'s power-symbol half has never been re-driven. If that text could move,
   `oc-power`, `oc-audio` and `tp-leg-upper` would draw and the census would be 11 of 12 - which is
   higher than it has ever been. That is a measurement of leverage, not a plan.
+
+### G297 - MEASURED, AND IT IS A FIX THAT LANDED WITH A SECOND DEFECT INSIDE IT: the two-pin guard added to the switch turn was written as a PIN COUNT, so it silently stopped turning a 2-way HEADER as well as a jumper - and two of the three claims the commit made for itself are FALSE on the installed symbol
+
+**WHAT THIS ENTRY IS.** `d379740` found by review that `switchFacesItsBank` was turning every
+two-pin jumper in the repository, which is correct and is **G296** clause 7 being acted on. The
+guard it added tests `pins.length > 2`, and `TURNED_TO_FACE_THE_CIRCUIT` holds `connector` as well
+as `switch`, so it also stopped turning `Connector_Generic:Conn_01x02`. This is the re-drive of
+every figure the corrected rule moves, plus the two refutations the correction turned up.
+
+**CLAUSE 1: PIN COUNT IS NOT THE PROPERTY, AND THE PROPERTY IS STATEABLE AS THE RULE'S OWN
+PURPOSE.** The rule exists to turn a part so its pins face the circuit that feeds them. `[RAN]` the
+installed symbols' pin geometry, read out of the stock libraries rather than remembered:
+
+| symbol | pins at rotation 0 | pins at 180 | does 180 change which side any pin faces? |
+| --- | --- | --- | --- |
+| `Switch:SW_Rotary_1x6_MP` | 1-6 RIGHT, 7 and MP LEFT | 1-6 LEFT, 7 and MP RIGHT | **yes** |
+| `Connector_Generic:Conn_01x05` | all five LEFT | all five RIGHT | **yes** |
+| `Connector_Generic:Conn_01x02` | **both LEFT** | **both RIGHT** | **yes** |
+| `Jumper:Jumper_2_Open` | pin 1 LEFT, pin 2 RIGHT | pin 1 RIGHT, pin 2 LEFT | **no** - same two sides, swapped ends |
+
+So the discriminator is whether the multiset of pin sides is invariant under 180. It declines for
+the jumper, which is what the review found; it applies to the 2-way header, which the pin count
+got wrong. **`circuits/opamp-buffer.schematic.ts` already records the header's geometry in the
+tree** - *"Conn_01x02 puts both pins at angle 0 and the library is the sole source of a side"*,
+called *"a definite answer rather than an ambiguous one"* - so nothing here needed inventing.
+
+**CLAUSE 2: TWO OF `d379740`'s THREE CLAIMS FOR ITSELF ARE FALSE, and the second is the same
+substitution the commit message loudly criticises, made one commit later.**
+
+- **FALSE:** *"step 3, which resolves to rotation 0, which for `Jumper:Jumper_2_Open` is across the
+  reading direction - a fix that fixed nothing."* `Jumper_2_Open` has pin 1 at angle 0 and pin 2 at
+  angle 180, so rotation 0 puts one end LEFT and one end RIGHT, which is **along** the reading
+  direction. `[RAN]` `preferredOrientation("switch", …)` on that symbol with no rail end: **0**,
+  and `signalAxis` returns 0 for it as well. **So for a jumper on no rail, admitting `switch` to
+  the rail entry changes nothing at all**, and the stated reason for that half of the commit does
+  not hold.
+- **FALSE AS A TEST:** the commit's own new case is
+  `preferredOrientation("switch", context("Device:R", …))` asserted at **90**. Its message, three
+  paragraphs earlier: *"AND THE THREE PRE-EXISTING TURN TESTS WERE PASSING A TWO-PIN SYMBOL. They
+  called context with `Device:R` … so they exercised the KIND and never a switch … They could not
+  have caught this."* **The new test exercises the KIND and never a jumper**, and `Device:R` cannot
+  stand in for `Jumper_2_Open` here: the resistor's pins are at angles 270 and 90 (top and bottom)
+  and the jumper's at 0 and 180 (left and right), so the correct answer is 90 for one and **0** for
+  the other. `tests/schgen/rules/orientation.test.ts` now uses the real symbol and asserts 0.
+- **TRUE, and it is the finding the commit is worth:** the turn was firing on jumpers, and *"its
+  throws face the bank that feeds them"* is not merely wrong for a two-pin header, it is
+  meaningless.
+
+**CLAUSE 3: THE GUARD ADMITTING `switch` TO THE RAIL ENTRY IS LOAD-BEARING FOR A REASON THE COMMIT
+DID NOT GIVE, and it is kept on a criterion rather than on its outcome.** `RAIL_END_KINDS` is
+documented as *"two-terminal passives with no drawn polarity of their own"*, with `diode` excluded
+because its glyph draws a direction. **A two-pin jumper is two-terminal and its glyph - two pins
+and a gap - draws no direction, so it satisfies that criterion as written**; it is named in
+`TWO_TERMINAL_BY_GEOMETRY` in `lib/schgen/rules/orientation.ts` with that reasoning. What it
+changes is the RAIL case only: `JP1` on the preamp's upper leg has pin 1 on `VCC`, and pin 1
+reaches the top only at **270**.
+
+`[RAN]` removing that list entirely, with clause 1's discriminator in place: the board census goes
+**7 of 11 to 6 of 11** and `transistor-preamp-lab` moves to a text-clearance refusal. **That is the
+cost of removing it, recorded as a cost and not as the reason it is there** - `CONSTITUTION.md`
+Principle 1 names the board census as one of three proxies this effort has already misused, so a
+rule chosen by it would be the same mistake.
+
+**CLAUSE 4: THE BLOCK CENSUS IS 9 OF 12, UP FROM 8, AND THIS IS THE FIRST ROW OF THAT TABLE WITH AN
+EXACT ATTRIBUTION.** `tp-leg-upper` rejoins. **G296** clause 1's four trees all had interacting
+causes and said so; this one does not, and the reason is the size of the block: it holds exactly
+three parts, `JP1` is one of them, and its refusal was ONE power symbol's value text over `wire 9
+(UPPER_JUMPED)` and `pin R1.1`. At 270 the `VCC` glyph lands at `(8.89, 1.27)` and the overlap is
+gone. **Its topology did not move** - `bends 5`, `perEdge 0.83`, `crossings 0`, the same three
+figures it reported at the backend-output stage - so what moved is the STAGE the row is taken at,
+which is **G291**'s *"re-packed rather than re-routed"* signature.
+
+The three that still refuse are `oc-power` and `oc-audio` at `checkLayout` on one power symbol's
+value each, and `oc-sidechain` at obligation 3 as throughout. **Nine problems in the corpus are TWO
+TEXTS** where eleven were three.
+
+**CLAUSE 5: THE BOARD CENSUS IS 7 OF 11 - THE SAME COUNT AS `d379740` - AND THE MEMBERSHIP IS
+DIFFERENT. THE COUNT ALONE WOULD HAVE HIDDEN THE WHOLE OF THIS.**
+
+| | at `d379740` | now |
+| --- | --- | --- |
+| generating | pt2399-core, four Pultecs, **lab**, **loop** | pt2399-core, four Pultecs, **lab**, **feedback** |
+| `transistor-preamp-feedback` | refused at clearance | **generated, ZERO fallback field placements** |
+| `transistor-preamp-loop` | generated, 2 fallbacks | **refused at clearance** |
+| fallback fields, all boards | 35 over 7 boards | **34 over 6 boards** |
+
+**THE SWAPPED PAIR IS EXACTLY THE TRADE `lib/schgen/rules/orientation.ts` ALREADY RECORDED FOR THE
+CONNECTOR TURN, and `d379740` inverted it while leaving the paragraph asserting the old one.** That
+module's `[RAN]` note, written when the connector entry landed, says `transistor-preamp-feedback`
+*"comes out with zero fallback field placements, the first board in this repository to manage
+that"* and that *"it costs `transistor-preamp-loop`, which moves to a text-clearance refusal"*.
+Under the pin-count guard neither half was true and the note still said both. **A stale `[RAN]`
+paragraph beside live code is the same failure class as a stale figure in this file**, and it is
+recorded here rather than only fixed.
+
+**CLAUSE 6: THE INTEGRATED EXPERIMENT'S GUARD REFUSED TWO DIFFERENT THINGS UNDER ONE MESSAGE, AND
+THE HALF THAT WENT WAS REFUSING `G105`'s OWN CRITERION.** `integratedExperiment` threw on
+`drew.length === 0 || notDrawn.length === 0`, saying the experiment *"is specified for a circuit
+where SOME blocks draw"*. The two halves are not one claim:
+
+- **none drawing is a real refusal and is untouched** - there is no composed side to compare to;
+- **all drawing is not.** **G105**'s criterion, quoted in that module's own header, asks for *"an
+  integrated measurement [that] draws one COMPLETE CIRCUIT … and reports the four measures against
+  the FLAT WHOLE-CIRCUIT baseline"*. R38's sub-circuit subject was a SUBSTITUTION taken because
+  *"all three `oc-*` blocks are among the seven the post-layout gates refuse, so there is no
+  composed side to measure"*. **The guard therefore refused the one state that satisfies the brief
+  as written**, and what its second half was really protecting was a printed CAVEAT - that the flat
+  side is a sub-circuit - which is fixed by not printing a false caveat. `renderExperiment` now
+  states which case the run is in. This is `CLAUDE.md`'s *"split a rule that refuses two different
+  things"*, and the subject had already moved between two circuits three times under the old rule.
+
+**AND THE WHOLE-CIRCUIT SUBJECT BUYS THE THING THREE EARLIER SUBJECTS COULD NOT GET: BOTH SIDES
+ACCEPTED, AT THE STAGE THE DRAWING IS EMITTED FROM.** The seven-block flat probe is ACCEPTED, so
+`crossingRatio` has a numerator for the first time: **1.91x**, which is 21 crossings flat against
+11 composed, both at the accepted stage. On the five legs and on the six it was `null`, because the
+module forms the ratio from the accepted flat side and that side refused.
+
+**CLAUSE 7: BOTH FLAT PROBES ARE NOW ACCEPTED, SO THE JUNCTION OBLIGATION HAS NO REAL-GEOMETRY
+WITNESS ANYWHERE IN THIS SUITE. THIS IS A LOSS AND IT IS THE MOST IMPORTANT CLAUSE HERE.**
+
+**G296** clause 5a recorded that `G229`'s five-leg refusal had no live check; clause 4's table gave
+the seven-block probe's `net GND branches at (55.88, 46.99) (t-junction)` as the one surviving
+obligation-2 refusal, and said the detection was *"INCOMPLETE, not redundant"* on that evidence.
+`[RAN]` both probes now: **both are accepted at every obligation.** The five-leg probe's
+obligation-4 clearance refusal is gone with the jumper turn, and the seven-block probe's `GND`
+branch point is not at a different coordinate - it is not there.
+
+- **`G229` is now an entry whose figure no check in the repository reaches in any form.** Not a
+  moved coordinate, not a different net: no junction refusal exists.
+- **The claim that the T detection is incomplete has lost its evidence.** It was *"a branch the
+  topology calls a T and the emitter still misses"*, and that branch was a property of one layout
+  which three successive geometry changes have now each moved. **It is not refuted - nothing shows
+  the detection complete - but G296's basis for calling it incomplete is gone**, and a later reader
+  must not take that sentence as still measured.
+- **`field-text|pin-line` has left the obstacle census with `tp-leg-upper`.** It was *"the first
+  problem anything here has ever measured naming"* a pin stroke (**G296** clause 3), on that block
+  alone. The firing set is **3 pairs over 2 blocks** where G296 recorded 4 over 3, so **G125**'s
+  *"95 of 105 cells rest on reading the source"* has TWO more cells with real geometry behind them
+  rather than three. The rule stays in `NAME_RULES` and the class stays in `classOf`'s whitelist: a
+  shape nothing currently reports is not a shape that cannot occur, and deleting either would turn
+  the next occurrence into a refusal instead of a row.
+
+**CLAUSE 8: `G296` CLAUSE 5c's INVARIANCE CLAIM IS REFUTED, AND THE REFUTATION IT WAS ABOUT IS
+RESTORED WITH A DIFFERENT THIRD TERM.** That clause reads *"`jumperToTrim.dx` is **19, 42, 32, 32**
+on all of them - invariant under the jumper's 180 and under the star"*. `[RAN]` with the turn
+declined: **17, 42, 32, 32.** `tp-leg-upper`'s dx moved by 2, and it is the one leg whose jumper the
+rail entry answers, so dx was invariant across three trees and is **not invariant in general**.
+
+`G97`'s two-step refutation therefore comes back with **15/12 against 10/6** rather than the 13/12
+that clause recorded: predicted 107, 119, 125 against measured 17, 32, 42. Three points, two
+different slopes, so no affine relation fits and a fortiori no proportional one. **And every leg's
+`dy` went back to 4** - 4 at the last green state, 9 with the jumper turned, 1 with the star, 4
+again - except `-upper`'s, which is 9 alone because its jumper is the vertical one.
+
+**THIS REFUTES A PREDICTION `tests/schgen/remeasure.test.ts` MADE IN WRITING**, which is worth more
+than the numbers: *"the three legs' own figures need no re-derivation when it does, because they did
+not move."* They moved. **The prediction was about one block and the change was about a rule** - no
+jumper in any leg is turned now, not only `JP1`'s.
+
+**CLAUSE 9: THE FALLBACK FIELD POPULATION WENT 20 TO 21, SO THE TWO FIGURES THIS CHANGE MOVES GO
+OPPOSITE WAYS.** `JP5#1` on `tp-leg-emitter-bypass` is a jumper, it is no longer turned, and at its
+new rotation the placer has no clear slot for its fields and takes the least-covered one - over
+`wire 0` and `wire 1`, both `BYPASS_CAP`. That is **G260**'s minimise-and-disclose trade and it is
+the cost of the block census moving, recorded rather than netted off against the block gained.
+
+Two controls weakened the same way and are stated rather than implied: the masked-problem
+more-than-one bucket is back to ONE member (`oc-power`), so that test can fail in fewer ways than
+it could yesterday; and the field-free soundness control now rests on **two** blocks and nine
+problems where it rested on three and eleven. **A block that stops refusing takes its problems out
+of the non-vacuity evidence with it**, which is the standing cost of resting a control on the
+corpus's defects.
+
+**CLAUSE 10: THE FIGURES THAT MOVED, with the entry that carries each. Old shown superseded.**
+
+| entry | figure | was (`d379740`) | is |
+| --- | --- | --- | --- |
+| **G291/G296** | blocks that draw | 8 of 12 | **9 of 12** - `tp-leg-upper` rejoins (clause 4) |
+| **G291/G296** | the board census | 6 of 11, then 7 of 11 | **7 of 11, DIFFERENT SET** (clause 5) |
+| **G105** | the experiment's subject | `transistor-preamp`, 6 of 7 | **`transistor-preamp`, 7 of 7 - the WHOLE circuit** |
+| **G105** | the flat side | refused, obligation 2, `COLLECTOR` at (39.37, 111.76) | **ACCEPTED**: 32 placements, 133 wires, 58 bends, 21 crossings, 1292 len, 8829 area |
+| **G105** | `crossingRatio` | `null`, the flat side refusing | **1.91x**, 21 against 11, accepted on both sides |
+| **G105** | stage-matched crossings, flat against blocks | 26 against 11 | **21 against 11** - fourth reading, third sign |
+| **G105** | stage-matched wire | 1287.22 against 751.40 | **1292.02 against 784.00** |
+| **G105** | stage-matched bends | 61 against 55 | **58 against 60** - the decomposed side now bends MORE |
+| **G200/G209** | `shapeMeasures` over the drawing blocks | 29 / 19 / 28 / 17 / 121 / 960 120 over six frames | **32 / 22 / 32 / 18 / 132 / 1 003 300 over seven** |
+| **G200/G209** | the G200 leg subtotal | 11 placements, 252 730 um over four | **14 placements, 295 910 um over all five** |
+| **G216** | G216's accepted wire total | 199 over four rows | **233 over the five**; comparable with 276 again, and all five terms fell |
+| **G229** | the five-leg probe | refused at obligation 4, clearance | **ACCEPTED** - no refusal of any kind (clause 7) |
+| **G229/G296** | the seven-block probe | obligation 2, `GND` at (55.88, 46.99) | **ACCEPTED** (clause 7) |
+| **G211/G296** | `transistor-preamp`'s `lab` sheet | refused, one block not drawing | **composes**: 7 frames, **132** wires, 29 non-members |
+| **G239/G258/G260** | fallback fields, parity corpus | 20 | **21** - `tp-leg-emitter-bypass` 0 to 1 on `JP5#1` (clause 9) |
+| **G258** | the masked-problem buckets | more-than-one: `oc-power` + `tp-leg-upper` | **more-than-one: `oc-power` alone** |
+| **G262** | the blocked-by-text table | `oc-power`, `oc-audio`, `tp-leg-upper` | **`oc-power`, `oc-audio`** - two texts, nine problems |
+| **G191/G125** | pairs firing on ELK geometry | 4 pairs, 3 blocks | **3 pairs, 2 blocks** - `field-text|pin-line` lost its witness |
+| **G97** | `jumperToTrim.dx`, four legs | 19, 42, 32, 32, *"invariant"* | **17, 42, 32, 32** - REFUTED as invariant (clause 8) |
+| **G97** | the two-step refutation | lost, two points admit an affine fit | **restored: 15/12 against 10/6** |
+| **G296** | `tp-leg-upper`'s row | backend-output, len 40.60, area 254.40, aspect 3.98 | **accepted, len 34.00, area 450.00, aspect 1.39** |
+| **G218** | `tp-leg-upper`'s raw-versus-canonical inflation | 2.46 % | **3.07 %** - one grid step over a smaller denominator |
+
+**CLAUSE 11: THE `pass + fail == Ran` CHECK CANNOT DETECT A `beforeAll` THAT THROWS, AND THIS
+REPOSITORY'S OWN WARNING SAYS IT CAN. `tests/schgen/remeasure.test.ts` WAS DROPPING 24 TESTS AT
+`d379740` AND THE FIGURES WERE INTERNALLY CONSISTENT.** At that commit the suite reported **3835
+pass / 24 fail / Ran 3859**, which is consistent; the file reported **1 fail, Ran 1** and its other
+24 tests were never registered, so they could not appear in any term of that sum. The throw was
+`integratedExperiment`'s guard (clause 6).
+
+**The only check that catches this is comparing `Ran` ACROSS runs, or a per-file expected count.**
+`Ran` went 3859 to 3885 over this change: +24 unmasked in that file, and +2 for two new cases in
+`tests/schgen/rules/orientation.test.ts`. **This is the third time this file has masked its
+own tests** (14, then 40, now 24), and nothing in the suite asserts a per-file count.
+
+**CLAUSE 12: ONE TEST IN THE SUITE IS LOAD-FLAKY AND IS NOT PART OF THIS CHANGE.**
+`tests/guide/print-pdf.test.ts`'s *"the real converter prints a multi-page PDF"* exceeded bun's
+default 5000 ms timeout once during a full 360-file run (5252 ms) and passes in **1443 ms** when the
+file is run alone. It spawns headless Chrome; the timeout is contention, not a defect in the
+converter. **It is recorded undiagnosed rather than fixed**: raising the timeout is a change to a
+file this work has no other business in, and the honest statement is that the suite has one test
+whose result depends on machine load.
+
+- **Found** 2026-10-26, taking the suite from the red `d379740` left to green.
+- **Evidence** `[RAN]` in this repository against installed KiCad, with `SCHGEN_SOURCE` set so the
+  port-fidelity guard runs rather than skips. The symbol geometry in clause 1 was read out of the
+  installed stock libraries through `createResolver`, not remembered. The three rule variants
+  (pin-count guard, side-multiset guard, side-multiset guard without `TWO_TERMINAL_BY_GEOMETRY`)
+  were each run through `bun tools/schgen/board-sheets.ts` and the parity census. Every figure in
+  clause 10 has a second reading in the tests themselves: each `shapeMeasures` wire over 1270
+  against the canonical `len`, each `segments` against the canonical wire count, each `box.w *
+  box.h` against `occupiedArea` (`tp-leg-upper` 25x18 = 450 = its row's `area`, 25/18 = 1.39 = its
+  `aspect`), the seven-block flat probe's six figures through `remeasure-edges.test.ts` as well as
+  through the experiment, and the `lab` sheet's 29 non-members derived as 32 placements less that
+  frame's 3 members. **`make -C boards/pultec-* check` exits 0 on all five and `git diff --stat --
+  boards/` is empty**, so no `.perfboard.vrt` moved. Final suite: **3883 pass / 2 fail / Ran 3885**
+  with the two failures being the pointer markers this entry's own renames broke, then **3885 pass /
+  0 fail / Ran 3885** with them corrected; `pass + fail == Ran` checked on every run.
+- **Verified** **CONFIRMED by this writer** for everything above. **Nothing is relayed from another
+  agent.** The two refutations in clause 2 are of `d379740`'s commit message, the one in clause 8 is
+  of **G296** clause 5c, and clause 11 is a refutation of the instruction this writer was given.
+- **Why it is open** **the junction obligation has no witness (clause 7) and the arrangement half of
+  G292 is still unmet.** Nine of twelve blocks draw and seven of eleven boards produce a sheet,
+  which are the best figures either census has carried, and **neither is a statement that any
+  drawing is good** - `pt-core` still carries fifteen field placements over its own ink and the
+  owner has not looked at a sheet since `G296` clause 9.
+- **What would settle it.** **CRITERION for clause 7**, and it is a measurement rather than an owner
+  decision: a subject whose junction obligation refuses, so that the obligation and the T detection
+  have evidence that can fail. **MECHANISM, UNTRIED:** a synthetic two-wire probe in
+  `tests/schgen/elk/junctions.test.ts` would drive the detection but not the EMITTER's half, which
+  is what every lost refusal was about; a real circuit is what is needed and this writer does not
+  know which one. **CRITERION for the rest:** the owner looks at `transistor-preamp-feedback`'s
+  zero-fallback sheet and at `pt-core`'s fifteen, and says whether the connector turn and the star
+  are worth what they cost. **G293**'s arrangement criterion - the bank *"arranged to the right of
+  the switch symbol"* - is untouched by anything here.

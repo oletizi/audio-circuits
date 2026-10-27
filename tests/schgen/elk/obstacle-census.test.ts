@@ -134,31 +134,42 @@ test("the census runs end to end over every real circuit and accounts for every 
   // reach the clearance checks, their problems are classified, and an obstacle name the census
   // cannot read would now show up here.
   expect(census.unclassified).toEqual([])
-  // **AND THE TEETH ARE NO LONGER THIN, WHICH IS THE ONE FIGURE IN THIS CHANGE THAT IMPROVED.**
-  // Reaching `checkLayout` is what lets a problem be classified at all. It used to be `[RAN]`
-  // **exactly ONE pair across the whole corpus** (`body`/`label-outline`, on one block -
-  // docs/known-gaps.md G191); it is now **FOUR pairs over THREE blocks**, every one of them a cell
-  // the matrix records a CHECK for rather than a reason. So G125's *"95 of 105 cells rest on
-  // reading the source"* has three more cells with real ELK geometry behind them.
+  // **THE TEETH, AND THEY ARE THINNER AGAIN THAN THEY WERE YESTERDAY** (**G297**). Reaching
+  // `checkLayout` is what lets a problem be classified at all. It used to be `[RAN]` **exactly ONE
+  // pair across the whole corpus** (`body`/`label-outline`, on one block - docs/known-gaps.md
+  // G191); it reached **FOUR pairs over THREE blocks** at G296 and is **THREE pairs over TWO
+  // blocks** now, every one of them a cell the matrix records a CHECK for rather than a reason.
+  //
+  // **`field-text|pin-line` IS THE PAIR THAT LEFT, AND IT LEFT WITH `tp-leg-upper`.** That block
+  // was the only one in the corpus whose problems named a pin line - its `VCC` value over
+  // `pin R1.1` - and the same change that made it draw took the pair's only real-geometry witness
+  // out of the census. **So G125's *"95 of 105 cells rest on reading the source"* has TWO more
+  // cells with real ELK geometry behind them rather than three**, and that is a loss recorded
+  // beside the gain it came with: a cell loses its witness when the block that exercised it stops
+  // being refused.
   expect(census.reachedClearance).toEqual([
-    "optical-compressor/oc-power", "optical-compressor/oc-audio", "transistor-preamp/tp-leg-upper",
+    "optical-compressor/oc-power", "optical-compressor/oc-audio",
   ])
   expect(census.fired.map((f) => `${f.key} ${f.coverage}`)).toEqual([
     "body|field-text checked",
     "field-text|interior-graphic checked",
-    "field-text|pin-line checked",
     "field-text|wire checked",
   ])
+  // AND THE PAIR THAT LEFT IS ASSERTED AS ABSENT BY NAME, so its return reads as a result rather
+  // than as a list growing by one.
+  expect(census.fired.map((f) => f.key)).not.toContain("field-text|pin-line")
   // THE BLOCKS BEHIND EACH PAIR, so a pair that stopped firing on a block fails here naming it.
   expect(census.fired.map((f) => f.blocks.join(","))).toEqual([
     "optical-compressor/oc-power",
     "optical-compressor/oc-power",
-    "transistor-preamp/tp-leg-upper",
-    "optical-compressor/oc-audio,optical-compressor/oc-power,transistor-preamp/tp-leg-upper",
+    "optical-compressor/oc-audio,optical-compressor/oc-power",
   ])
   // EVERY FIRED CELL IS ONE THE MATRIX SAYS IS CHECKED - asserted as the property rather than only
   // inside the strings above, because a cell firing with coverage `absent` would be a clearance
   // pair nothing in the matrix claims to handle, which is G125's whole subject.
   expect(census.fired.every((f) => f.coverage === "checked")).toBe(true)
-  expect(census.fired.length).toBe(4)
+  expect(census.fired.length).toBe(3)
+  // AND THE GUARD THAT CAUGHT THE ONE-CASE SUBJECT IS STILL LOADED: something still reaches the
+  // clearance checks, so `unclassified` above is a reading and not an empty set by construction.
+  expect(census.reachedClearance.length).toBeGreaterThan(0)
 }, 120_000)

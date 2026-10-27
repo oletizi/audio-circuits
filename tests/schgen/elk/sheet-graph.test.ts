@@ -57,11 +57,12 @@ beforeAll(async () => {
 test("the fixtures are what the measurements below assume, so an empty result is not a pass", () => {
   expect(power.contents.length).toBe(4)
   expect(signal.contents.length).toBe(7)
-  // docs/known-gaps.md G296: 6 of transistor-preamp's 7 blocks draw since 2026-10-26 - G200
-  // measured 5 of 7 and G291 took it to 7 of 7. The refusal is asserted BY NAME rather than
-  // inferred from the count, because a probe that silently dropped a frame would also report 6.
-  expect(legs.contents.length).toBe(6)
-  expect(legs.refused.map((r) => r.id)).toEqual(["tp-leg-upper"])
+  // docs/known-gaps.md G297: all 7 of transistor-preamp's blocks draw again - G200 measured 5 of
+  // 7, G291 took it to 7, G296 to 6, and declining the jumper turn back to 7. The refusal list is
+  // asserted as EMPTY rather than inferred from the count, because a probe that silently dropped a
+  // frame and gained one elsewhere would also report 7.
+  expect(legs.contents.length).toBe(7)
+  expect(legs.refused.map((r) => r.id)).toEqual([])
   expect(known.length).toBeGreaterThan(100)
 })
 
@@ -252,54 +253,58 @@ test("BOTH packings are measured and NEITHER is preferred here", async () => {
 })
 
 /**
- * **SIX FRAMES, FIVE SHARED NETS, EIGHT EDGES.** The series is five frames / two nets / four edges
- * until 2026-10-25, seven / five / nine at **G291**, and six / five / eight since `tp-leg-upper`
- * stopped drawing (**G296**).
+ * **SEVEN FRAMES, FIVE SHARED NETS, NINE EDGES.** The series is five frames / two nets / four
+ * edges until 2026-10-25, seven / five / nine at **G291**, six / five / eight while `tp-leg-upper`
+ * did not draw (**G296**), and seven / five / nine again (**G297**).
  *
- * **THE ONE EDGE LOST IS `BASE`'s AND NOTHING ELSE MOVED, which is the content of this amendment
- * and is a stronger statement than the new total.** Re-indexing the frames by name rather than by
- * position, the net memberships are IDENTICAL to what they were except that `BASE` no longer
- * reaches `tp-leg-upper`: `COLLECTOR` is still feedback / collector / stage, and `BYPASS_CAP`,
- * `BYPASS_JUMPED` and `EMITTER` are still emitter-bypass / stage. So this table did not move
- * because the geometry changed; it moved because a frame left the sheet.
+ * **THE ONE EDGE THAT LEFT AND CAME BACK IS `BASE`'s AND NOTHING ELSE MOVED EITHER WAY, which is
+ * the content of both amendments and is a stronger statement than either total.** Re-indexing the
+ * frames by name rather than by position, the net memberships are IDENTICAL across all three
+ * states except for whether `BASE` reaches `tp-leg-upper`: `COLLECTOR` is still feedback /
+ * collector / stage, and `BYPASS_CAP`, `BYPASS_JUMPED` and `EMITTER` are still emitter-bypass /
+ * stage. So this table never moved because the geometry changed; it moved because a frame left the
+ * sheet and then rejoined it.
  *
  * **THE EDGE COUNT IS DERIVED FROM THE FRAME LISTS, NOT READ OFF THE GRAPH**: `edgesForNet` makes
  * a net's frames into a spanning tree, so `n` frames give `n - 1` edges, and `interFrameNets`
  * reports which frames each net is on. The frame indices are `drawnBlocks`' declaration order over
- * the blocks that DRAW - feedback 0, lower-a 1, lower-b 2, collector 3, emitter-bypass 4, stage 5:
+ * the blocks that DRAW - upper 0, feedback 1, lower-a 2, lower-b 3, collector 4, emitter-bypass 5,
+ * stage 6. **Every index below moved by one and no membership did**, which is why the list by name
+ * is asserted beside the list by index:
  *
  * | net | frames | by name | edges |
  * | --- | --- | --- | --- |
- * | `BASE` | 0, 1, 2, 5 | feedback, lower-a, lower-b, stage | 3 |
- * | `BYPASS_CAP` | 4, 5 | emitter-bypass, stage | 1 |
- * | `BYPASS_JUMPED` | 4, 5 | emitter-bypass, stage | 1 |
- * | `COLLECTOR` | 0, 3, 5 | feedback, collector, stage | 2 |
- * | `EMITTER` | 4, 5 | emitter-bypass, stage | 1 |
- * | | | | **8** |
+ * | `BASE` | 0, 1, 2, 3, 6 | upper, feedback, lower-a, lower-b, stage | 4 |
+ * | `BYPASS_CAP` | 5, 6 | emitter-bypass, stage | 1 |
+ * | `BYPASS_JUMPED` | 5, 6 | emitter-bypass, stage | 1 |
+ * | `COLLECTOR` | 1, 4, 6 | feedback, collector, stage | 2 |
+ * | `EMITTER` | 5, 6 | emitter-bypass, stage | 1 |
+ * | | | | **9** |
  */
-test("the six ELK-drawn blocks have eight inter-frame edges over five nets, so ELK packs them", () => {
+test("the seven ELK-drawn blocks have nine inter-frame edges over five nets, so ELK packs them", () => {
   const nets = [...interFrameNets(legs.contents)]
   expect(nets.map(([net]) => net)).toEqual(["BASE", "BYPASS_CAP", "BYPASS_JUMPED", "COLLECTOR", "EMITTER"])
   // The frame lists, so the edge count below is an arithmetic consequence rather than a second
   // reading of the same graph.
   expect(nets.map(([net, on]) => `${net} on ${on.join(",")}`)).toEqual([
-    "BASE on 0,1,2,5",
-    "BYPASS_CAP on 4,5",
-    "BYPASS_JUMPED on 4,5",
-    "COLLECTOR on 0,3,5",
-    "EMITTER on 4,5",
+    "BASE on 0,1,2,3,6",
+    "BYPASS_CAP on 5,6",
+    "BYPASS_JUMPED on 5,6",
+    "COLLECTOR on 1,4,6",
+    "EMITTER on 5,6",
   ])
   // THE SAME LISTS BY NAME, which is what makes "only BASE lost a member" checkable rather than a
   // claim about two sets of integers taken under different frame counts.
   const named = nets.map(([net, on]) => `${net} on ${on.map((i) => legs.contents[i]?.blockId ?? "?").join(",")}`)
   expect(named).toEqual([
-    "BASE on tp-leg-feedback,tp-leg-lower-a,tp-leg-lower-b,tp-stage",
+    "BASE on tp-leg-upper,tp-leg-feedback,tp-leg-lower-a,tp-leg-lower-b,tp-stage",
     "BYPASS_CAP on tp-leg-emitter-bypass,tp-stage",
     "BYPASS_JUMPED on tp-leg-emitter-bypass,tp-stage",
     "COLLECTOR on tp-leg-feedback,tp-leg-collector,tp-stage",
     "EMITTER on tp-leg-emitter-bypass,tp-stage",
   ])
-  expect(nets.reduce((n, [, on]) => n + on.length - 1, 0)).toBe(8)
-  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(8)
+  expect(nets.reduce((n, [, on]) => n + on.length - 1, 0)).toBe(9)
+  expect(4 + 1 + 1 + 2 + 1).toBe(9)
+  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(9)
   expect(sheetPackerFor(legs.contents, legs.paper).by).toBe("elk")
 })

@@ -16,7 +16,9 @@ import { symbolLibraries } from "../../../lib/schgen/render/stock-symbols.ts"
 import type { OrientationContext } from "../../../lib/schgen/rules/orientation.ts"
 import type { NetName, RailSpec } from "../../../lib/schgen/ir/types.ts"
 
-const resolver = createResolver(symbolLibraries(["Device", "power", "Transistor_BJT", "Switch", "Connector_Generic"]))
+const resolver = createResolver(
+  symbolLibraries(["Device", "power", "Transistor_BJT", "Switch", "Connector_Generic", "Jumper"]),
+)
 
 const RAILS: readonly RailSpec[] = [
   { net: "GND", symbol: "power:GND", kind: "ground", pwrFlag: null },
@@ -129,10 +131,45 @@ test("CONTROL: the turn applies to switch and connector ONLY, not to every kind"
 /**
  * **FOUND BY REVIEW, 2026-10-26.** `jumper()` in `circuits/transistor-preamp/parts.ts` returns
  * `kind: "switch"`, so the kind covers a rotary selector AND a two-pin header. The turn was
- * written about selectors and was silently turning every jumper. A two-pin switch has no throws
- * and no bank; it takes the signal axis like any other two-terminal part.
+ * written about selectors and was firing on every jumper.
+ *
+ * **THESE USE `Jumper:Jumper_2_Open` AND NOT `Device:R`, AND THE DIFFERENCE IS THE WHOLE POINT.**
+ * `d379740`'s version of this test passed `Device:R` and asserted 90 - the same substitution it
+ * criticised the three turn tests above for, one commit after criticising it. A resistor's two
+ * pins are at angles 270 and 90 (top and bottom); the jumper's are at 0 and 180 (left and right),
+ * so the two symbols cannot stand in for each other here: the jumper is ALREADY along the reading
+ * direction at rotation 0 and the resistor is across it.
  */
-test("a TWO-PIN switch is a jumper: it takes the signal axis, not the selector turn", () => {
-  expect(preferredOrientation("switch", context("Device:R", { "1": "IN", "2": "OUT" }))).toBe(90)
+test("a TWO-PIN switch is a jumper: its ends are already left and right, so it stays at 0", () => {
+  // 0 rather than 90. `Jumper_2_Open` has pin 1 at angle 0 and pin 2 at angle 180, so rotation 0
+  // puts one end left and one right; `signalAxis` picks the rotation with the lower-numbered pin
+  // on the left, which is 0. **`d379740` asserted that rotation 0 for this symbol is "across the
+  // reading direction". It is not, and this is the check that would have caught it.**
+  expect(preferredOrientation("switch", context("Jumper:Jumper_2_Open", { "1": "IN", "2": "OUT" }))).toBe(0)
+})
+
+test("a two-pin jumper with an end on a rail is drawn with that end toward its rail", () => {
+  // THE CONTROL FOR `TWO_TERMINAL_BY_GEOMETRY`, and the only thing admitting `switch` to the rail
+  // entry actually changes: on no rail the jumper is at 0 either way. `JP1` on the transistor
+  // preamp's upper leg is this case - `VCC` and `UPPER_JUMPED` - and removing that list takes
+  // `transistor-preamp-lab` to a clearance refusal and the census to 6 of 11.
+  expect(preferredOrientation("switch", context("Jumper:Jumper_2_Open", { "1": "VCC", "2": "JUMPED" }))).toBe(270)
+  expect(preferredOrientation("switch", context("Jumper:Jumper_2_Open", { "1": "SIG", "2": "GND" }))).toBe(270)
+})
+
+/**
+ * **THE DEFECT `d379740` INTRODUCED WHILE FIXING THE JUMPER, and this test is why the guard is a
+ * side-multiset test rather than a pin count.** It declined the turn for any member of
+ * `TURNED_TO_FACE_THE_CIRCUIT` with two pins, which silently took `Conn_01x02` with it.
+ *
+ * A 2-way header is not a two-terminal inline part. `Connector_Generic:Conn_01x02` puts BOTH pins
+ * at angle 0 - both on the LEFT - exactly as `Conn_01x05` does, so the turn moves both of them to
+ * the side facing the circuit, which is the entire purpose of the rule.
+ *
+ * `[RAN]` without this: `transistor-preamp-feedback` loses its zero-fallback sheet and refuses at
+ * clearance, and `ob-buffer` picks up a fallback field placement on `J1#1`.
+ */
+test("a TWO-PIN connector still turns, because both its pins face one way", () => {
+  expect(preferredOrientation("connector", context("Connector_Generic:Conn_01x02", { "1": "IN", "2": "OUT" }))).toBe(180)
 })
 
