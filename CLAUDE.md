@@ -316,31 +316,62 @@ catalogues it with the other twenty-eight.
 say so loudly. Silence that resembles success is the failure mode the whole
 workflow exists to prevent.
 
-**Anything a later reader would need and cannot re-derive goes in
-`docs/known-gaps.md`, committed, in the change that found it.** This is a
-repo-wide requirement, not a per-plan convention, and it binds every agent on
-every task.
+**Anything a later reader would need and cannot re-derive is recorded, committed,
+in the change that found it. It does NOT go in `docs/known-gaps.md` — that
+register is FROZEN and you may not add to it.**
 
-**It is NOT only defects**, which is how it has been read and how it has failed.
-It covers:
+> **This rule said the opposite until 2026-10-27 and the old wording is shown
+> struck rather than edited away, because what it produced is the argument for
+> the change.** It read: *"Anything a later reader would need and cannot
+> re-derive goes in `docs/known-gaps.md`, committed, in the change that found
+> it. This is a repo-wide requirement, not a per-plan convention, and it binds
+> every agent on every task"* — followed by a list insisting it was **not only
+> defects** but measurements, results, decisions and undiagnosed observations
+> too.
+>
+> **Obeyed faithfully, that rule produced 273 entries over 30,549 lines**, 112
+> lines per entry, 83 amendment banners across 46 of them, and only 29 of 302
+> numbers ever deleted although this same section required deletion on
+> resolution. The owner, 2026-10-27: *"I'm worried that the gaps ledger is
+> silting up with obsolete and misleading information"* and *"cut hard, but
+> don't add to it. It's a nucleation site for misinformation."*
+>
+> **The breadth was the defect, not the discipline.** Sending *measurements* to a
+> prose file is what silted it: a count is true on the day it is written and
+> wrong by the next commit, and this file already records the board figure
+> reading `0`, `1`, `2`, `5`, `6` and `7` inside five days with three files
+> disagreeing at once.
 
-- a defect you are not fixing;
-- **a measurement** - including one that found nothing wrong. *"Removing the
-  junction ground row opens net `0` on every adopted board"* is not a defect;
-  it is a constraint on a change the owner wants, and the next agent to try it
-  needs it;
-- **a result that makes someone want to act** - *"without that row hi-boost is
-  zero cuts, zero wires, zero bridges"* is bait, and bait belongs beside the
-  trap;
-- **an owner decision, and an owner DECLINATION**, with his words verbatim. A
-  question he declined is not a closed question, but nobody asks him again
-  unprompted;
-- **an observation you could not diagnose.** Record it undiagnosed rather than
-  omit it.
+**WHERE IT GOES NOW: next to the thing it is about, in the form that can fail.**
 
-**Telling the owner in conversation is not recording it**, and neither is a plan
-ledger: `.superpowers/` is gitignored, so an entry there is invisible to review,
-absent from the history, and destroyed by `git clean -fdx`.
+- **A measurement goes in a tool or a test that re-runs it**, never in prose. The
+  tool is the answer to the question; a figure written down is a transcription
+  with a date on it. `bun tools/schgen/board-sheets.ts` is the worked example,
+  and this file already says it is *"the only thing that answers this question."*
+- **A defect you are not fixing goes in a comment beside the code**, or in a test
+  marked for the behaviour you are not delivering, or in the refusal message
+  itself. A refusal that names what is missing is worth more than an entry
+  describing it elsewhere.
+- **An observation you could not diagnose goes in the spec for the work in hand**,
+  under what it leaves open.
+- **AN OWNER DECISION OR DECLINATION STILL GOES IN `docs/known-gaps.md`**, with
+  his words verbatim, and that is the ONLY thing that still does — it is what
+  the surviving 31 entries are. **This is an exception to "do not add to it" and
+  the only one.** A decision of his that is lost gets re-asked, re-asking costs
+  him attention and stalls the work behind it, and *"a question he declined is
+  not a closed question, but nobody asks him again unprompted."*
+
+**A `G<n>` reference anywhere in this repository may resolve to nothing, and that
+is expected.** At the cut there were 822 citations across 232 TypeScript files
+and 1,781 across 217 other markdown files; they were deliberately not rewritten,
+because a reference that resolves to nothing is inert and one that resolves to a
+stale claim is the thing the cut was for. The full file is in git at `a4b66de`.
+
+**Telling the owner in conversation is still not recording it**, and neither is a
+plan ledger: `.superpowers/` is gitignored, so an entry there is invisible to
+review, absent from the history, and destroyed by `git clean -fdx`. **That half
+of this rule is untouched** — what changed is where the record goes, not whether
+there is one.
 
 **AND THE REMEDY IS NOT ONLY TO COPY FINDINGS OUT — IT IS TO COMMIT THE
 EXECUTION RECORD TOO, which this file did not say until 2026-10-23.** The rule

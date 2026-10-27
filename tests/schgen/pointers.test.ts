@@ -1,39 +1,35 @@
 /**
  * **A POINTER THAT NAMES A TEST FILE MUST FAIL WHEN IT GOES STALE, RATHER THAN ROT QUIETLY.**
  *
- * Hand-written for Task 17 of the M1 schematic-authoring plan, fix round 2 item A.
+ * **NARROWED 2026-10-27 WHEN `docs/known-gaps.md` WAS FROZEN AND CUT FROM 273 ENTRIES TO 31.**
+ * This guard had **18 rows, 14 of them citations inside the register**, and the register was the
+ * failure it was built for: entries cited test files as the evidence for their figures, and when an
+ * assertion moved the citation kept pointing at the old file and nothing went red. **Those 14 rows
+ * are deleted with the entries that held them** - `CLAUDE.md`: a row citing text that is gone checks
+ * nothing, and supersede means delete.
  *
- * **THE FAILURE THIS EXISTS FOR, MEASURED TWICE IN TWO ROUNDS.** `docs/known-gaps.md` and the
- * modules cite test files as the evidence for their figures - *"`tests/schgen/X.test.ts` pins every
- * figure"*. When an assertion moves to another file the citation keeps pointing at the old one, and
- * **nothing goes red, because the cited file still exists and still passes.** Round 1 split the
- * pinning assertions out of `remeasure.test.ts`; round 2's review then drove the consequence:
- * **perturb `SCALE_UNSTABLE_FROM` to 7 and run the file `G101` and `BLOCK_SIZE.evidence` named, and
- * it is 23 pass / 0 fail.** The register was instructing a reader to verify a pinned constant
- * against a file that does not pin it. The same shape cost a drive run in round 1, when the
- * perturbation harness named the stale file and reported two false greens.
+ * **What is left is the part that was never about the register**: two module comments and two
+ * documents that name a test file as their own re-run instructions. The failure mode is identical -
+ * the cited file still exists and still passes, so a reader following the pointer verifies nothing
+ * and gets a green - and those four citers are still live.
  *
- * **WHAT THIS CHECKS, AND WHAT IT DELIBERATELY DOES NOT.** For each declared pointer it asserts
- * three things: the citing file still contains the citation; the cited test file EXISTS; and the
- * cited file contains a MARKER - a fragment of the assertion's own `it(...)` title. The marker is
- * what makes this more than an existence check: moving an assertion to another file leaves the path
- * valid and the marker absent, which is exactly the case that went green.
+ * **THE ORIGINAL FAILURE, MEASURED TWICE IN TWO ROUNDS, is kept because it is why the remaining
+ * rows are worth having.** Round 1 split the pinning assertions out of `remeasure.test.ts`; round
+ * 2's review then drove the consequence: **perturb `SCALE_UNSTABLE_FROM` to 7 and run the file
+ * `BLOCK_SIZE.evidence` named, and it is 23 pass / 0 fail.** A reader was being instructed to verify
+ * a pinned constant against a file that does not pin it.
  *
- * **IT IS A SAMPLE AND NOT AN INVENTORY, AND THE FRACTION IS STATED BECAUSE A COUNT READ LIKE A
- * POPULATION.** `[RAN]` `docs/known-gaps.md` holds a few hundred test-file citations - **counted by
- * `citationCount` below on every run, so the figure cannot go stale in this comment** - and this
- * file holds **17 rows: 13 register rows, 2 module comments and 2 document lines.** `[RELAYED]` The
- * review puts **roughly 120** of those citations in evidentiary positions; that estimate is the
- * review's and was not measured here, which is why it is not inside the `[RAN]` clause. Round 2 described it as *"the ten
- * pointers that cite a measurement"*, which reads as if ten were all there were.
+ * **WHAT THIS CHECKS.** For each declared pointer it asserts three things: the citing file still
+ * contains the citation; the cited test file EXISTS; and the cited file contains a MARKER - a
+ * fragment of the assertion's own `it(...)` title. The marker is what makes this more than an
+ * existence check: moving an assertion to another file leaves the path valid and the marker absent,
+ * which is exactly the case that went green.
  *
- * **WHAT IT DOES GUARANTEE is narrower and is the part worth having: every pointer fix round 2
- * repaired is under it** - all seven since fix round 3 - and `REPAIRED_AT_ROUND_2` below makes that
- * checkable rather than a claim, so a later repair that forgets a row fails here. A citation to a
- * test that merely exists is not worth a row, and covering all 120 needs a declared marker
- * convention nobody has written - recorded as the mechanism in **G233** rather than built.
- * **`CLAUDE.md`: an empty whitelist that refuses loudly beats a general rule that quietly accepts a
- * guess** - this is the whitelist, and `POINTERS` is where a later task adds to it.
+ * **IT IS STILL A WHITELIST AND NOT AN INVENTORY.** `CLAUDE.md`: *an empty whitelist that refuses
+ * loudly beats a general rule that quietly accepts a guess* - this is the whitelist, and `POINTERS`
+ * is where a later task adds to it. **The sample-fraction assertion this file used to carry is
+ * gone**: it measured the guard's coverage against the register's citation population, and that
+ * population no longer exists.
  */
 import { describe, expect, it } from "bun:test"
 import fs from "node:fs"
@@ -55,7 +51,8 @@ interface Pointer {
 }
 
 /**
- * The pointers whose staleness would make a register entry cite evidence that does not exist.
+ * The pointers whose staleness would make a module comment or a document cite evidence that does
+ * not exist.
  *
  * **THE TWO THAT PIN A CONSTANT ARE FIRST**, because those are the ones the review drove green.
  */
@@ -68,82 +65,11 @@ const POINTERS: readonly Pointer[] = [
     why: "BLOCK_SIZE.evidence tells a reader which file verifies both bounds. Round 2 found it naming a file where a broken SCALE_UNSTABLE_FROM gives 23 pass / 0 fail.",
   },
   {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure-ceiling.test.ts` pins the twelve-row sweep",
+    citedBy: "tools/schgen/remeasure-ceiling.ts",
+    citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts exactly that",
     test: "tests/schgen/remeasure-ceiling.test.ts",
-    marker: "pins both scale constants to the sweep they were measured from",
-    why: "G101's Evidence, which is where the ceiling and floor are asserted to be checked.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts all twelve sweep rows",
-    test: "tests/schgen/remeasure-ceiling.test.ts",
-    marker: "is these twelve sweep rows",
-    why: "G95's Evidence for the re-taken sweep and its order-0 control.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure-edges.test.ts` asserts both circuits' flat and blocked",
-    test: "tests/schgen/remeasure-edges.test.ts",
-    marker: "so the decomposition ADDS 3 edges",
-    why: "G100's Evidence for the corrected edge counts - the entry's headline figure.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure.test.ts` pins both ends",
-    test: "tests/schgen/remeasure.test.ts",
-    // G105's experiment has moved subject THREE times and this marker has followed it each time -
-    // which is the whole point of this file. 2026-10-25 (G291): all seven transistor-preamp blocks
-    // drew, the R38 guard refused that case, and the subject became optical-compressor, whose flat
-    // side refused at obligation 1. 2026-10-26 (G296): optical-compressor drew NONE of its three,
-    // the subject was transistor-preamp again at 6 of 7, and its flat side refused at obligation 2 -
-    // the junction obligation. 2026-10-26 (G297): the guard's "all draw" half is gone, the subject
-    // is transistor-preamp as a WHOLE circuit, and its flat side is ACCEPTED - so G105's ratio has
-    // both terms for the first time and the marker follows the assertion that says so. The marker
-    // follows the assertion rather than the assertion being kept alive for the marker, and a
-    // renamed test turns this red instead of leaving the entry citing nothing.
-    marker: "has a FLAT side that is ACCEPTED",
-    why: "G105's Evidence for the integrated experiment's two ends.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "asserted in `tests/schgen/remeasure.test.ts`; and",
-    test: "tests/schgen/remeasure.test.ts",
-    marker: "is these twelve rows of figures",
-    why: "G230's Evidence for the four separately-named size counts.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure.test.ts`, so it recomputes on every run",
-    test: "tests/schgen/remeasure.test.ts",
-    marker: "classifies every checkLayout problem of every declared block",
-    why: "G232's Evidence for the leverage figure going to the owner.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure.test.ts` asserts the legs' placement lists",
-    test: "tests/schgen/remeasure.test.ts",
-    // The four legs stopped drawing identically on 2026-10-25 (G291): a boundary node is sized by
-    // the text drawn at it and the four legs' boundary nets differ, so only the two -lower legs
-    // still coincide. G97 carries the refutation and the derivation.
-    marker: "gives the two -lower legs identical placements",
-    why: "G97's Evidence for the congruence re-take.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/remeasure-edges.test.ts` including the coordinate and the net",
-    test: "tests/schgen/remeasure-edges.test.ts",
-    // RE-HOMED 2026-10-25 and the SUBJECT LOST 2026-10-26. The integrated experiment stopped
-    // reaching the five-leg flat probe, so G229's refusal was re-driven in the file that already
-    // builds flat subgraphs; since the star and the two 180 rules that probe gets PAST the junction
-    // obligation and was refused at clearance instead, so **G229's figure has no live check
-    // anywhere** (G296). **Since G297 the probe is ACCEPTED outright** - the clearance refusal went
-    // with the jumper turn - so the marker follows it once more. The marker follows the assertion
-    // to the test that records the loss, which is the only honest target: a marker pointing at a
-    // junction refusal this repository no longer produces would be a citation to nothing wearing a
-    // green.
-    marker: "gets the five-leg flat probe PAST every obligation",
-    why: "G229's Evidence for the obligation-2 refusal, quoted verbatim in that entry.",
+    marker: "gives order 0 the same crossing count as the unsuffixed block",
+    why: "orderSweep's doc comment for the per-order block-id control - repaired at fix round 2 item A and uncovered until fix round 3.",
   },
   {
     citedBy: "docs/schematic/m1-remeasurement.md",
@@ -152,63 +78,6 @@ const POINTERS: readonly Pointer[] = [
     marker: "names the ceiling 3 and the floor unmeasured",
     why: "The document's own re-run instructions, which a reader follows to check the bounds.",
   },
-  // THE LAST TWO OF THE SEVEN POINTERS FIX ROUND 2 REPAIRED - added at fix round 3, item 4, because
-  // without them two citations this task had just corrected could rot again at the next split,
-  // which is the specific failure this guard exists for.
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations",
-    test: "tests/schgen/remeasure-ceiling.test.ts",
-    marker: "pins both scale constants to the sweep they were measured from",
-    why: "G231's deviation row for the constant pins - repaired at fix round 2 item A and uncovered until now.",
-  },
-  {
-    citedBy: "tools/schgen/remeasure-ceiling.ts",
-    citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts exactly that",
-    test: "tests/schgen/remeasure-ceiling.test.ts",
-    marker: "gives order 0 the same crossing count as the unsuffixed block",
-    why: "orderSweep's doc comment for the per-order block-id control - repaired at fix round 2 item A and uncovered until now.",
-  },
-  // TASK 18, STEP 0: G239's measurement lives in a file this guard did not cover, and that entry's
-  // sharpest claim - that blocking only the six OUTSIDE candidates still refuses - is exactly the
-  // kind of assertion that moves to another file during a split.
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/render/field-slots.test.ts`, three cases",
-    test: "tests/schgen/render/field-slots.test.ts",
-    // The marker is CASE ONE's title, not case three's: ruling R59 established that case one is
-    // what pins G239's 5080-into-2032 arithmetic (RED at Expected 5080, Received 3810), and that
-    // case three is not sensitive to the inside-containment arm at all.
-    marker: "asks for 4 x GRID of height at every inside slot",
-    why: "G239's Evidence for the five-of-eleven arithmetic - the case that goes red when the number moves.",
-  },
-  // TASK 18: gate 8's M1 half. G240 says the comparison has run on two real drawings and no
-  // generated one, and the figures it quotes are asserted in the kicad test; G241's deletions rest
-  // on two cases in the unit test that would be the first to move in a split.
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/gates/reference-graph.kicad.test.ts` asserts the\n  four figures above for both references",
-    test: "tests/schgen/gates/reference-graph.kicad.test.ts",
-    marker: "pin-to-pin pairs, built from a real kicad-cli export",
-    why: "G240's Evidence for the component and pin-pair counts of both hand-arranged references.",
-  },
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/gates/reference-graph.test.ts`, whose budget-refusal case and",
-    test: "tests/schgen/gates/reference-graph.test.ts",
-    marker: "did not complete within 1 bindings",
-    why: "G241's Evidence: the two cases the deleted matcher stages left standing on.",
-  },
-  // TASK 18, ruling R62: the hub construction that GUARDS the colour refinement moved out of
-  // reference-graph.test.ts when that file crossed the line cap, and four pointers named the old
-  // file for one commit. This row is what makes the next move of it fail here instead.
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/gates/graph-match.test.ts` now holds the hub construction",
-    test: "tests/schgen/gates/graph-match.test.ts",
-    marker: "pinned on a graph inside the matcher's domain",
-    why: "G241's R61 block: the test that stops the refinement being deleted a third time.",
-  },
   {
     citedBy: "docs/schematic/reference-graph-checks.md",
     citation: "bun test tests/schgen/gates/reference-graph.kicad.test.ts   THE FIGURES ABOVE",
@@ -216,75 +85,37 @@ const POINTERS: readonly Pointer[] = [
     marker: "pin-to-pin pairs, built from a real kicad-cli export",
     why: "The document's own re-run instructions for the table a reader checks the figures against.",
   },
-  // TASK 22: G258's per-block table of what each refusal hides is the one place the register says
-  // how many blocks are genuinely one fix from drawing, and the only thing that stops it going
-  // stale is the test it names. **TASK 24 MOVED THE MARKER** - the table no longer has a masked
-  // column, because there is no field-placement refusal to mask anything behind, and the case is
-  // now titled for what it prints instead. This guard is what caught the rename.
-  {
-    citedBy: "docs/known-gaps.md",
-    citation: "`tests/schgen/masked-problems.test.ts` (8 cases) asserts",
-    test: "tests/schgen/masked-problems.test.ts",
-    marker: "prints every problem class of every block, with its fallback field placements",
-    why: "G258's Evidence: the per-block table, the bucket split and the per-unit fallback counts.",
-  },
 ]
 
 /**
- * **EVERY POINTER FIX ROUND 2 REPAIRED IS IN `POINTERS`, and this list is what makes that
- * checkable** rather than a claim in a report. Two of the seven were outside the guard until fix
- * round 3 - G231's row and `remeasure-ceiling.ts`'s order-0 control - so two citations this task had
- * just corrected could have rotted again at the next split.
+ * **THE COVERAGE CLAIM, MADE CHECKABLE - fix round 3, item 4, NARROWED 2026-10-27.** Round 2
+ * repaired seven pointers and put five of them under this guard; the other two could have rotted
+ * again at the next split, which is exactly what the guard is for.
+ *
+ * **Four of the seven were citations inside `docs/known-gaps.md` and went with the register cut.**
+ * The three that survive are the ones in a module comment or a document. The count below is
+ * asserted at three rather than seven, and that is a narrowing of the claim rather than a repair of
+ * it: nothing now guards the four deleted citations, because there is nothing left for them to cite.
  */
 const REPAIRED_AT_ROUND_2: readonly { readonly citedBy: string; readonly citation: string }[] = [
-  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts all twelve sweep rows" },
-  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-edges.test.ts` asserts both circuits' flat and blocked" },
-  { citedBy: "docs/known-gaps.md", citation: "`tests/schgen/remeasure-ceiling.test.ts` pins the twelve-row sweep" },
-  { citedBy: "docs/known-gaps.md", citation: "it lives in `tests/schgen/remeasure-ceiling.test.ts` rather than beside the declarations" },
   { citedBy: "tools/schgen/remeasure-ceiling.ts", citation: "`tests/schgen/remeasure-ceiling.test.ts` asserts exactly that" },
   { citedBy: "tools/schgen/remeasure.ts", citation: "tests/schgen/remeasure-ceiling.test.ts pins every" },
   { citedBy: "docs/schematic/m1-remeasurement.md", citation: "bun test tests/schgen/remeasure-ceiling.test.ts  BOTH BOUNDS" },
 ]
 
-/**
- * **THE CITATION POPULATION, COMPUTED RATHER THAN PUBLISHED - fix round 5, item 6.**
- *
- * **A LITERAL COUNT PUBLISHED IN THE REGISTER ROTS ON EVERY REGISTER EDIT, INCLUDING THE EDIT THAT
- * PUBLISHES IT.** Fix round 3 printed *"269 test-file citations across 262 lines"* in `G233`, and
- * the review measured it **already stale at that commit**: counted before the insertion that
- * published it, which took the register to 270/263. So the figure is computed here on every run and
- * the assertion is on the FRACTION's magnitude, which does not move when the register grows.
- */
-function citationCount(register: string): { readonly citations: number; readonly lines: number } {
-  const lines = register.split("\n").filter((l) => /tests\/[\w/.-]*\.test\.ts/.test(l))
-  const citations = register.match(/tests\/[\w/.-]*\.test\.ts/g) ?? []
-  return { citations: citations.length, lines: lines.length }
-}
-
-describe("the guard is a SAMPLE of the citation population, and says so", () => {
-  it("covers well under a tenth of the register's test-file citations", () => {
-    const { citations, lines } = citationCount(read("docs/known-gaps.md"))
-    // Non-vacuity first: a register that cited no test file would make the fraction below 0/0.
-    expect(citations, "the register must cite test files for this to measure anything").toBeGreaterThan(100)
-    expect(lines).toBeGreaterThan(100)
-    // The CLAIM: a sample, not an inventory. Asserted as a magnitude so it cannot go stale as the
-    // register grows - which is exactly how the published literal went stale at its own commit.
-    expect(POINTERS.length / lines, `${POINTERS.length} rows against ${lines} citing lines`).toBeLessThan(0.1)
-    // And the breakdown G233 publishes, which is composition rather than a count: 12 register rows,
-    // 2 module comments, 2 document lines, plus R62's row for the moved hub test - 13 register rows
-    // since Task 18 added G239's, G240's, G241's and the R61 guard's, and the reference-graph
-    // document's, and 14 since Task 22 added G258's masked-problems table.
+describe("the guard declares what it covers, and covers only live citers", () => {
+  it("is four rows: two module comments and two documents, and no register row", () => {
     const byFile = new Map<string, number>()
     for (const p of POINTERS) byFile.set(p.citedBy, (byFile.get(p.citedBy) ?? 0) + 1)
-    expect(byFile.get("docs/known-gaps.md")).toBe(14)
-    expect(byFile.get("docs/schematic/m1-remeasurement.md")).toBe(1)
-    expect(byFile.get("docs/schematic/reference-graph-checks.md")).toBe(1)
-    // THE THIRD CLAUSE COUNTS THE MODULE COMMENTS RATHER THAN SUBTRACTING FROM THE TOTAL. The
-    // version this replaces was `POINTERS.length - 9 - 1 === 2`, which is arithmetic on literals:
-    // it asserted only that POINTERS has twelve rows, and swapping a module row for a document row
-    // left it green while "2 module comments" became false. Counting the `.ts` citers tests what
-    // the message says.
+    expect(POINTERS.length).toBe(4)
+    // COUNTED RATHER THAN SUBTRACTED FROM THE TOTAL. An earlier version asserted
+    // `POINTERS.length - 9 - 1 === 2`, which is arithmetic on literals: swapping a module row for a
+    // document row left it green while "2 module comments" became false.
     expect(POINTERS.filter((p) => p.citedBy.endsWith(".ts")).length, "2 module comments").toBe(2)
+    expect(POINTERS.filter((p) => p.citedBy.endsWith(".md")).length, "2 documents").toBe(2)
+    // THE REGISTER IS FROZEN AND CARRIES NO MEASUREMENT CITATIONS. A row added back for it would be
+    // a row citing text nobody may write, so this fails rather than letting one in quietly.
+    expect(byFile.get("docs/known-gaps.md"), "the register is frozen - no row may cite it").toBe(undefined)
   })
 })
 
@@ -316,15 +147,9 @@ describe("every pointer that cites a measurement names the file that holds it", 
   }
 })
 
-describe("every pointer fix round 2 repaired is under this guard", () => {
-  /**
-   * **THE COVERAGE CLAIM, MADE CHECKABLE - fix round 3, item 4.** Round 2 repaired seven pointers
-   * and put five of them under this guard. The other two could have rotted again at the next split,
-   * which is exactly what the guard is for. This asserts that all seven are covered, so a later
-   * repair that forgets to add a row fails here.
-   */
-  it("covers all seven, by citation", () => {
-    expect(REPAIRED_AT_ROUND_2.length).toBe(7)
+describe("every surviving pointer fix round 2 repaired is under this guard", () => {
+  it("covers all three, by citation", () => {
+    expect(REPAIRED_AT_ROUND_2.length).toBe(3)
     for (const repaired of REPAIRED_AT_ROUND_2) {
       const covered = POINTERS.some((p) => p.citedBy === repaired.citedBy && p.citation === repaired.citation)
       expect(
@@ -337,26 +162,27 @@ describe("every pointer fix round 2 repaired is under this guard", () => {
   })
 })
 
-describe("the two pointers that pin a constant name the file that actually pins it", () => {
+describe("the pointer that pins a constant names the file that actually pins it", () => {
   /**
-   * **THE NARROWEST STATEMENT OF ROUND 2's ITEM A, as its own check.** Both `BLOCK_SIZE.evidence`
-   * and G101 tell a reader which file verifies the two scale bounds. If either ever names a file
-   * that does not hold `pins both scale constants`, a perturbed constant verified against it comes
-   * back green - which is what happened.
+   * **THE NARROWEST STATEMENT OF ROUND 2's ITEM A, as its own check.** `BLOCK_SIZE.evidence` tells
+   * a reader which file verifies the two scale bounds. If it ever names a file that does not hold
+   * `pins both scale constants`, a perturbed constant verified against it comes back green - which
+   * is what happened.
+   *
+   * **`docs/known-gaps.md` WAS THE SECOND CITER AND IS GONE** with the register cut, so this is one
+   * citer rather than two.
    */
-  it("is remeasure-ceiling.test.ts in both, and that file holds the pin", () => {
+  it("is remeasure-ceiling.test.ts, and that file holds the pin", () => {
     const pin = "pins both scale constants to the sweep they were measured from"
     const ceiling = read("tests/schgen/remeasure-ceiling.test.ts")
     expect(ceiling).toContain(pin)
-    // And the file they used to name does NOT hold it, which is why naming it was a false green.
+    // And the file it used to name does NOT hold it, which is why naming it was a false green.
     expect(read("tests/schgen/remeasure.test.ts")).not.toContain(pin)
-    for (const citing of ["tools/schgen/remeasure.ts", "docs/known-gaps.md"]) {
-      const text = read(citing)
-      const at = text.indexOf("pins the twelve-row sweep") >= 0 ? "pins the twelve-row sweep" : "pins every"
-      const before = text.slice(Math.max(0, text.indexOf(at) - 200), text.indexOf(at))
-      expect(before, `${citing} must name remeasure-ceiling.test.ts beside "${at}"`).toContain(
-        "remeasure-ceiling.test.ts",
-      )
-    }
+    const text = read("tools/schgen/remeasure.ts")
+    const at = "pins every"
+    const before = text.slice(Math.max(0, text.indexOf(at) - 200), text.indexOf(at))
+    expect(before, `tools/schgen/remeasure.ts must name remeasure-ceiling.test.ts beside "${at}"`).toContain(
+      "remeasure-ceiling.test.ts",
+    )
   })
 })
