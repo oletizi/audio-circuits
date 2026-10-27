@@ -38,12 +38,23 @@ describe("worstClass picks the most serious, and an empty list is usable", () =>
   it("is usable for no findings, so a clean drawing needs no special case", () => {
     expect(worstClass([])).toBe("usable")
   })
+
+  it("pins every adjacent pair in the severity order, so swapping any two adjacent classes fails", () => {
+    // generator-defect > defective
+    expect(worstClass([f("short"), f("invariant-violated")])).toBe("generator-defect")
+    // defective > not-drawable - the relation the other tests never exercised. Swapping these
+    // two in SEVERITY must turn this red; it is the fix this test exists to drive.
+    expect(worstClass([f("paper-exhausted"), f("short")])).toBe("defective")
+    // not-drawable > usable
+    expect(worstClass([f("text-clearance"), f("paper-exhausted")])).toBe("not-drawable")
+  })
 })
 
 describe("a refusal declares its class", () => {
-  it("carries its findings and is an Error", () => {
+  it("carries its findings and is an Error, specifically a SchgenRefusal", () => {
     const r = new SchgenRefusal([f("short")], "a short")
     expect(r).toBeInstanceOf(Error)
+    expect(r).toBeInstanceOf(SchgenRefusal)
     expect(r.findings.map((x) => x.kind)).toEqual(["short"])
     expect(worstClass(r.findings)).toBe("defective")
   })
