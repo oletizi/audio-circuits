@@ -36,4 +36,49 @@ describe("wireGeometry counts what a reader's eye has to resolve", () => {
     expect(wireGeometry([]).segments).toBe(0)
     expect(wireGeometry([w(0, 0, 10, 0, "A")]).segments).toBe(1)
   })
+
+  it("counts one corner when three same-net arms meet at one point", () => {
+    const g = wireGeometry([
+      w(0, 0, 20, 0, "A"),
+      w(10, -10, 10, 0, "A"),
+      w(10, 0, 10, 10, "A"),
+    ])
+    expect(g.corners).toBe(1)
+  })
+
+  it("counts one corner for a spine with perpendicular tap", () => {
+    const g = wireGeometry([
+      w(0, 0, 10, 0, "A"),
+      w(10, 0, 20, 0, "A"),
+      w(10, 0, 10, 10, "A"),
+    ])
+    expect(g.corners).toBe(1)
+  })
+
+  it("counts one corner for a four-arm same-net cross junction", () => {
+    const g = wireGeometry([w(0, 0, 20, 0, "A"), w(10, -10, 10, 10, "A")])
+    expect(g.corners).toBe(1)
+  })
+
+  it("counts separate corners at different points", () => {
+    const g = wireGeometry([
+      w(0, 0, 10, 0, "A"),
+      w(10, 0, 10, 10, "A"),
+      w(20, 0, 30, 0, "A"),
+      w(30, 0, 30, 10, "A"),
+    ])
+    expect(g.corners).toBe(2)
+  })
+
+  it("throws on diagonal wire, naming net and endpoints", () => {
+    expect(() => {
+      wireGeometry([w(0, 0, 10, 10, "A")])
+    }).toThrow(/Diagonal wire on net '(A|[^']+)'.*from.*\(0,0\).*to.*\(10,10\)/)
+  })
+
+  it("throws on zero-length wire", () => {
+    expect(() => {
+      wireGeometry([w(5, 5, 5, 5, "A")])
+    }).toThrow(/Zero-length wire/)
+  })
 })
