@@ -48,6 +48,12 @@ function harness(dump: string, initial: Record<string, string> = {}): Harness {
       fs.writeText(pdf, "%PDF-fake")
     },
     loadCircuit: async () => fixtureCircuit(),
+    // `/repo` IS NOT A REAL REPOSITORY, so the real `boardRefs` (a real
+    // `fs.readdirSync` of `/repo/boards`) has nothing to list it against -
+    // every test here that drops `schPath` is testing the plain "this board
+    // declares no schematic" behaviour, not schgen, so there are no boards
+    // for the census to find.
+    boardRefs: () => [],
     fs,
     now: () => new Date("2026-09-29T12:00:00Z"),
     repoRoot: "/repo",
