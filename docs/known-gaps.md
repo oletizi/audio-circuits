@@ -3910,3 +3910,70 @@ the code states plainly about itself.
   else" is the taste judgement `orientation.ts` forbids. **A real mechanism needs
   a signal direction for interior nets, which G292 records the IR as not
   carrying.**
+
+### G303 - OWNER DIRECTIVE, 2026-10-27: a gate may refuse to RATIFY an output; it may not HIDE one. The output is still produced and classified as unratified
+
+**HIS WORDS, verbatim:**
+
+> *"this is a persistent pathology: a gate halts rendering and we never look at the picture so we
+> can't tell if the gate is insane or not"*
+
+and, when asked to proceed:
+
+> *"We need to systematically reform how gates work before moving any further. Gates can still
+> refuse to ratify an output, but they shouldn't **hide** the output. The output should still be
+> available, but clearly classified as unratified"*
+
+**HOW HE CAME TO IT, because the demonstration is the evidence.** Asked to try a layout change on
+`pultec-low-boost`, this writer patched `elk.direction` to `DOWN` and ran the census. It refused.
+Bypassing the junction gate surfaced a clearance gate; bypassing that surfaced an invalid-layout
+throw in `blocks.ts`; bypassing that surfaced a fifth. **Four gates bypassed and no picture ever
+appeared.** He named the pathology while that was happening.
+
+**THE MEASUREMENT.** `[RAN]` `grep -rc "throw new Error"` over `lib/schgen`: **351 throw sites** -
+168 in `render/`, 43 in `gates/`, 36 in `elk/`, 10 in `ir/`. Not all are of this class; a refusal
+about bad INPUT has no drawing to preserve. The class this directive is about is the refusal that
+fires AFTER a drawable geometry exists and discards it.
+
+**WHAT IT COSTS TODAY, and it is not hypothetical.** Four of eleven boards refuse, and **nobody has
+ever seen what any of them would have drawn.** Every census figure this project has quoted -
+`0 of 11`, `1 of 11`, `2 of 11`, `5`, `6`, `7 of 11` - counts boards that PRODUCED a sheet, and the
+remainder are invisible rather than bad. A refusal's text gets read in place of a drawing, which is
+how this repository came to argue about an `UPPER_SNAKE` net-name rule and a BOM gate: `CLAUDE.md`
+records four demands satisfied without anyone asking what they were for, every one caught by him.
+**A gate whose output nobody can see is a demand that cannot be interrogated.**
+
+**THE FIX SHAPE ALREADY EXISTS HERE, ON A DIFFERENT SUBJECT, AND IS THE PRECEDENT TO COPY.**
+`docs/schematic/false-greens.md` mechanism 16 records a classifier whose unclassifiable bucket was
+silently exempt, and the remedy that replaced it:
+
+> *"inference was replaced by declaration plus a totality assertion. A block declares itself; every
+> block is `VERIFIED`, `NOT-OUTPUT` or `FAILED`; and the suite asserts the three sum to the block
+> count - which is exactly the property the hole violated."*
+
+and the reason it prints the unclassifiable ones by name every run:
+
+> *"precisely so that not checked can never be indistinguishable from checked and clean."*
+
+**This directive is that sentence applied to drawings: UNRATIFIED must never be indistinguishable
+from NOT PRODUCED.**
+
+**WHAT IT DOES NOT SAY, so nobody reads it as a relaxation.** It does not weaken a gate. A sheet
+that fails its checks still must not reach a build guide - that behaviour shipped at `f42c129` and
+is correct, and becomes an INSTANCE of this rule rather than an exception to it. The gate governs
+**ratification**, which is what may be shipped and built from. It does not govern **visibility**,
+which is what may be looked at. Conflating the two is the defect.
+
+- **Found** the drawing loop, 2026-10-27, on the first layout change attempted.
+- **Evidence** his two messages above, quoted complete; the four-gate bypass sequence, each
+  refusal text read from the tool's own output; the 351-site count, `[RAN]` in this tree.
+- **Verified** **CONFIRMED by this writer.** The bypasses were run here against the installed
+  KiCad, each restoring its patched files in a trap and `git status lib/` checked clean after every
+  one. **Nothing is relayed.**
+- **Why it is open** nothing is built. A spec is the next piece of work.
+- **What would settle it.** **CRITERION, and it is his:** every board under `boards/` produces a
+  drawing a person can look at, and each is classified ratified or unratified with its findings
+  named - so that no board is invisible merely because it failed a check. **MECHANISM, UNTRIED**
+  and deliberately not specified here: whether refusals become a status carried on the artifact
+  (as `SheetDrawing.fieldFallbacks` already is, which is this pattern working in one place), or a
+  separate emit path, is a design question the spec answers.
