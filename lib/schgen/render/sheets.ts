@@ -19,6 +19,7 @@
  * labels (everything else), NC pins marked, then a sheet-wide wire-safety and body-clearance
  * backstop. Junction dots are cosmetic: exactly the junctionPoints() of the sheet's items.
  */
+import type { Finding } from "../findings.ts";
 import type { Circuit, Paper, SheetId, SheetSpec } from "../ir/types.ts";
 import type { Backend, BlockLayout, BlockSubgraph, Placement, Wire } from "./block-types.ts";
 import { pinMarks, type PinMark } from "./pin-marks.ts";
@@ -37,10 +38,10 @@ export interface PrePacked {
   readonly paper: Paper;
   readonly packing: SheetPacking;
 }
-import { assertSheetSafe, sheetItems, type SheetBlock } from "./sheet-check.ts";
+import { sheetSafety, sheetItems, type SheetBlock } from "./sheet-check.ts";
 import { blockFields, type FieldFallback } from "./field-placement.ts";
 import { anchorsToSymbols, valuesAlong } from "./power-text.ts";
-import { assertTextClear, textScene } from "./text-scene.ts";
+import { textProblems, textScene } from "./text-scene.ts";
 import type { Frame, GlobalLabel, PlacedSymbol, PowerSymbol, SheetDrawing, SheetText } from "./sheet-types.ts";
 
 export { powerRotation } from "./frames.ts";
@@ -255,8 +256,18 @@ export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolve
     assertPowerSymbol(symbols, p.libId, what);
   }
   const scene = { sheet: sheetId, symbols, blocks: a.blocks, powers: a.powers, labels: a.labels };
-  assertSheetSafe(scene);
-  assertTextClear(textScene(`sheet ${sheetId}`, symbols, { blocks: a.blocks, powers: a.powers, labels: a.labels, texts: a.texts, frames: a.frames }));
+  // **THE TWO SHEET-LEVEL GATES CLASSIFY RATHER THAN THROW** - Task 3 of
+  // `docs/superpowers/plans/2026-10-27-gates-classify.md`, and the step without which this whole
+  // change would have been invisible. `assertSheetSafe` and `assertTextClear` ran here, after every
+  // block was realised, and `textProblems` re-checks the very power-value-over-pin-text overlaps
+  // the three transistor-preamp boards refuse on at block level. Preserving the block geometry and
+  // leaving these two throwing would have moved each refusal a dozen lines later and changed
+  // nothing a person can look at. Both still RUN, unweakened; what they find lands on the drawing.
+  const findings: Finding[] = [
+    ...contents.flatMap((f) => f.findings),
+    ...sheetSafety(scene).findings,
+    ...textProblems(textScene(`sheet ${sheetId}`, symbols, { blocks: a.blocks, powers: a.powers, labels: a.labels, texts: a.texts, frames: a.frames })),
+  ];
   const wires: Wire[] = a.blocks.flatMap((b) => b.layout.wires);
   const placed = a.blocks.map((b) => placedSymbols(b.g, b.layout, symbols));
   return {
@@ -272,5 +283,6 @@ export function layoutSheet(c: Circuit, sheetId: SheetId, symbols: SymbolResolve
     texts: a.texts,
     pinMarks: a.blocks.flatMap((b) => b.layout.placements.flatMap((pl) => marksOf(b.g, pl))),
     frames: a.frames,
+    findings,
   };
 }

@@ -25,6 +25,7 @@ export type FindingKind =
   // wrong about the circuit
   | "short" | "split-net" | "missing-junction" | "nc-contact" | "dangling-end"
   | "label-misnames-net" | "cross-sheet-disagreement" | "reference-disagreement"
+  | "geometry-disagrees-with-ir"
   // hard to read
   | "body-clearance" | "glyph-clearance" | "text-clearance" | "field-fallback"
   // no geometry
@@ -71,6 +72,17 @@ export function classOf(kind: FindingKind): RefusalClass {
     case "label-misnames-net":
     case "cross-sheet-disagreement":
     case "reference-disagreement":
+    // **ADDED BY TASK 3, and it is the one kind that `MismatchKind`'s `invalid-geometry` needed and
+    // this union did not have.** Its producers - `lib/schgen/elk/adapt.ts`'s obligation 1, 2 and 3
+    // arms - each refuse because the geometry the emitter would draw asserts something the IR does
+    // not: a port a wire cannot attach to, an overlap with two readings, a branch point with no
+    // junction, a snap that collapsed two distinct segments into one. Every one of those is WRONG
+    // ABOUT THE CIRCUIT, which is the owner's line for `defective`, and none of them is a broken
+    // invariant of this generator - `adapt.ts` says so at each site, and the two places there that
+    // ARE generator defects throw rather than refusing. The eight kinds above it are each a
+    // specific defect; this one is the general "the drawing does not mean the circuit" that the
+    // backend's own geometry contract produces.
+    case "geometry-disagrees-with-ir":
       return "defective"
     // hard to read -> usable: crowding is not incorrectness.
     case "body-clearance":

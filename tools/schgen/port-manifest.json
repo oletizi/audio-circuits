@@ -163,10 +163,6 @@
       "to": "tests/schgen/render/wire-safety.test.ts"
     },
     {
-      "from": "render/pageRefs.ts",
-      "to": "lib/schgen/render/page-refs.ts"
-    },
-    {
       "from": "render/emit.ts",
       "to": "lib/schgen/render/emit.ts"
     },
@@ -691,7 +687,7 @@
       "to": "tools/schgen/generate.ts",
       "sourceSha": "c3c514694ee854cf81b1750b10ed0fe27e3cc3dd5d3f301022199add8da5caf0",
       "task": "Task 12; diverged further by Task 13 and Task 15",
-      "why": "The ELK pre-pass is threaded through the function that owns the pipeline: `generate` is `async` (decision D2 - elkjs has no synchronous layout entry point, premise verified at Task 12 Step 1), `GenerateEnv` gains `authoring: SchematicAuthoring | null` because `elkInputOf` needs portDirections and rails and the IR has no slot for a port direction, `Generation` gains `elk`, and `layoutSheet` is handed `elkBackendFrom(...)`. The pedals source has no ELK backend and never will, so no rewrite rule reconciles the two. Its MCU pin-map `cuts` (G112) were applied before divergence - they are no longer carried as data and the deletions now live in the file. docs/known-gaps.md G186. **TASK 15 ADDS TWO STEPS TO THE SAME PIPELINE.** `generate` runs a SHEET-packing pre-pass (`sheetPackPrePass`, tools/schgen/elk/sheet-layout.ts) for the same reason it runs the block one - elkjs has no synchronous entry point (D2) and layoutSheet is synchronous - and hands each sheet's SheetPacking to layoutSheet; and it calls `assertCrossSheet` beside `assertRefsMatchDrawings`, because spec §1.6's one-mechanism-per-class rule is a whole-drawing-set check that cannot run inside layoutSheet. docs/known-gaps.md G203 and G213."
+      "why": "The ELK pre-pass is threaded through the function that owns the pipeline: `generate` is `async` (decision D2 - elkjs has no synchronous layout entry point, premise verified at Task 12 Step 1), `GenerateEnv` gains `authoring: SchematicAuthoring | null` because `elkInputOf` needs portDirections and rails and the IR has no slot for a port direction, `Generation` gains `elk`, and `layoutSheet` is handed `elkBackendFrom(...)`. The pedals source has no ELK backend and never will, so no rewrite rule reconciles the two. Its MCU pin-map `cuts` (G112) were applied before divergence - they are no longer carried as data and the deletions now live in the file. docs/known-gaps.md G186. **TASK 15 ADDS TWO STEPS TO THE SAME PIPELINE.** `generate` runs a SHEET-packing pre-pass (`sheetPackPrePass`, tools/schgen/elk/sheet-layout.ts) for the same reason it runs the block one - elkjs has no synchronous entry point (D2) and layoutSheet is synchronous - and hands each sheet's SheetPacking to layoutSheet; and it calls `assertCrossSheet` beside `assertRefsMatchDrawings`, because spec \u00a71.6's one-mechanism-per-class rule is a whole-drawing-set check that cannot run inside layoutSheet. docs/known-gaps.md G203 and G213."
     },
     {
       "from": "ir/build.ts",
@@ -769,6 +765,13 @@
       "sourceSha": "6d2a2627397c97d5449e271cef7802ccc090951f48717ec6187ec42dd6e07639",
       "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
       "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]`. The file's local `glyphLines` helper still takes `string[]`, so both call sites map the result to `.what` before filtering; no assertion's meaning changed."
+    },
+    {
+      "from": "render/pageRefs.ts",
+      "to": "lib/schgen/render/page-refs.ts",
+      "sourceSha": "89c29ca26aa14321b8fcd76e79fce11ca43c59e62b2a785b9e8324ff6c86e0bc",
+      "task": "Task 3 (gates-classify)",
+      "why": "Task 3 of docs/superpowers/plans/2026-10-27-gates-classify.md splits the body of `assertRefsMatchDrawings` out into `refsMatchProblems`, which returns the same problem strings instead of throwing them. `tools/schgen/generate.ts` calls the new function and tags each line `reference-disagreement`, so an intersheet-reference disagreement lands on `Generation.findings` and is CLASSIFIED rather than hiding the drawing it is about - the owner's directive that a gate may refuse to ratify an output without hiding it. `assertRefsMatchDrawings` keeps its name, its signature and its thrown message byte for byte and is now that one-line wrapper, so `tests/schgen/render/page-refs.test.ts` and the pedals source's own callers are untouched. Not expressible as a `cuts` entry: extracting a function is new code, not a deletion."
     }
   ],
   "handWritten": [

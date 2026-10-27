@@ -27,9 +27,9 @@
  * the divergence note above.)
  */
 import type { BlockId, Circuit, NetName } from "../ir/types.ts";
-import { SchgenRefusal } from "../findings.ts";
+import { SchgenRefusal, type Finding } from "../findings.ts";
 import type { Anchor, Backend, BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
-import { checkLayout, realiseBlock, subgraphOf } from "./blocks.ts";
+import { checkLayout, realiseBlockReported, subgraphOf } from "./blocks.ts";
 import { fmtPoint } from "./connectivity.ts";
 // `gridCeil` and `PITCH` are gone from these two import lines with `realiseLabelled`, which was
 // their only caller - the deleted labels renderer spaced its units by `gridCeil(width) + 4*PITCH`.
@@ -43,6 +43,18 @@ import type { PowerSymbol } from "./sheet-types.ts";
 export interface BusResult {
   readonly layout: BlockLayout;
   readonly legend: readonly string[];
+  /**
+   * **What a gate found wrong with this layout, empty when it is ratified** - Task 3 of
+   * `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+   *
+   * `renderBlock` is the one door `render/frames.ts` reaches a block's geometry through, so a
+   * finding that does not travel on this record is a finding that cannot reach the sheet, the
+   * generation or the census without being thrown - which is the hiding the spec forbids. The bus
+   * renderer's own `verified` still refuses outright: its layout is a stock symbol's fixed pin
+   * geometry plus stubs, so a `checkLayout` problem on it is not crowding to be looked at but the
+   * stock symbol disagreeing with the IR, and it has no second arrangement to offer.
+   */
+  readonly findings: readonly Finding[];
 }
 
 const ORIGIN: Point = { x: 0, y: 0 };
@@ -154,7 +166,7 @@ export function realiseBus(c: Circuit, id: BlockId, symbols: SymbolResolver): Bu
   // Each group's nets on this unit, in the order the group declares them (pin order scatters a bus
   // such as SDRAM_D0…D15 across the package). V6 refuses a group net on no pin of the block.
   const legend = r.groups.map((grp) => `${grp.name}: ${grp.nets.filter((n) => onUnit.has(n)).join(", ")}`);
-  return { layout: verified(c, id, symbols, layout, "the bus renderer"), legend };
+  return { layout: verified(c, id, symbols, layout, "the bus renderer"), legend, findings: [] };
 }
 
 /**
@@ -191,7 +203,14 @@ export function renderBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, el
   if (block === undefined) throw new Error(`unknown block ${id}`);
   switch (block.rendering.kind) {
     case "wired":
-    case "auto": return { layout: realiseBlock(c, id, symbols, elk), legend: [] };
+    case "auto": {
+      // **THE REPORTED FORM, NOT `realiseBlock`** (Task 3). `realiseBlock` throws on any finding,
+      // which is how three of the eleven boards in `boards/` have never been drawn: the gate was
+      // right that their power-symbol values are crowded and wrong to withhold the picture that
+      // says so. The findings travel on the result and `render/sheets.ts` puts them on the sheet.
+      const r = realiseBlockReported(c, id, symbols, elk);
+      return { layout: r.layout, legend: [], findings: r.findings };
+    }
     case "bus": return attributed(id, "bus", () => realiseBus(c, id, symbols));
   }
 }

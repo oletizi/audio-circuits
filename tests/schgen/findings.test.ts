@@ -6,7 +6,8 @@ const f = (kind: FindingKind): Finding => ({ kind, what: "x", where: "y" })
 describe("the kind to class mapping is the owner's line", () => {
   it("calls wrong-about-the-circuit kinds defective", () => {
     for (const k of ["short", "split-net", "missing-junction", "nc-contact", "dangling-end",
-                     "label-misnames-net", "cross-sheet-disagreement", "reference-disagreement"] as const) {
+                     "label-misnames-net", "cross-sheet-disagreement", "reference-disagreement",
+                     "geometry-disagrees-with-ir"] as const) {
       expect(classOf(k), `${k} is wrong about the circuit`).toBe("defective")
     }
   })

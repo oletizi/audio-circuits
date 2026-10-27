@@ -118,18 +118,48 @@ const lines = (findings: readonly Finding[]): string => findings.map((f) => `\n 
  * without parsing text.
  */
 export function assertSheetSafe(scene: SheetScene): void {
+  const found = sheetSafety(scene);
+  if (found.findings.length > 0) throw new SchgenRefusal(found.findings, found.message);
+}
+
+/**
+ * **`assertSheetSafe` WITHOUT THE THROW** - Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`, and the half of that task without which
+ * nothing visible would have changed.
+ *
+ * The three transistor-preamp boards refuse at the ELK backend's clearance check on a power-symbol
+ * value, and `textProblems` re-checks the same overlaps once the blocks are on a sheet. Carrying
+ * the block-level geometry past the first gate and leaving this one throwing would have moved the
+ * refusal twelve lines later and produced the same nothing: an independent review caught exactly
+ * that reading of an earlier revision of the spec, which is why this function exists.
+ *
+ * **THE WIRE-SAFETY SHORT CIRCUIT IS PRESERVED, DELIBERATELY.** `assertSheetSafe` checked bodies
+ * only when wire safety was clean, and this returns the safety batch alone when it is not. Both
+ * batches would be a longer report, and it would be a report about a sheet whose connectivity is
+ * already wrong - and `bodyOverlaps` throws rather than refusing when a placement is not a unit of
+ * its block, so running it on a sheet the earlier gate rejected can surface a different error than
+ * the one a reader is owed. `message` is empty exactly when `findings` is.
+ */
+export interface SheetSafety {
+  readonly findings: readonly Finding[];
+  /** The sentence `assertSheetSafe` throws: which of the two batches this is, and its lines. */
+  readonly message: string;
+}
+
+export function sheetSafety(scene: SheetScene): SheetSafety {
   const where = `sheet ${scene.sheet}`;
   const items = sheetItems(scene);
   const safety: Finding[] = [
     ...checkWireSafety(items).map((what) => finding("missing-junction", what, where)),
     ...danglingWireEnds(items).map((what) => finding("dangling-end", what, where)),
   ];
-  if (safety.length > 0) throw new SchgenRefusal(safety, `sheet ${scene.sheet}: wire safety:${lines(safety)}`);
+  if (safety.length > 0) return { findings: safety, message: `sheet ${scene.sheet}: wire safety:${lines(safety)}` };
   const bodies: Finding[] = [
     ...bodyOverlaps(scene),
     ...clearance(scene),
     ...bodyGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
     ...glyphGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
   ];
-  if (bodies.length > 0) throw new SchgenRefusal(bodies, `sheet ${scene.sheet}: body clearance:${lines(bodies)}`);
+  if (bodies.length > 0) return { findings: bodies, message: `sheet ${scene.sheet}: body clearance:${lines(bodies)}` };
+  return { findings: [], message: "" };
 }

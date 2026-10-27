@@ -14,6 +14,7 @@
  * PWR_FLAGs. Each content knows its local extent; the sheet packer places the frames and each
  * content is translated by a grid-multiple offset into its frame, below the title band.
  */
+import type { Finding } from "../findings.ts";
 import type { BlockId, Circuit, NetName, RailSpec, SheetId, SheetSpec } from "../ir/types.ts";
 import type { Backend, BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { subgraphOf } from "./blocks.ts";
@@ -42,6 +43,15 @@ export interface FrameContent {
   readonly block: { readonly g: BlockSubgraph; readonly layout: BlockLayout } | null;
   readonly powers: readonly PowerSymbol[];
   readonly texts: readonly SheetText[];
+  /**
+   * **What a gate found wrong with this frame's block, empty for a clean one and for the notes and
+   * power-flag frames** - Task 3 of `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+   *
+   * `layoutSheet` reads the packed contents and never calls `renderBlock` itself, so this field is
+   * the only route a block-level finding has onto the sheet. Without it a crowded drawing had to be
+   * thrown at the block to be reported at all, which is the hiding the spec forbids.
+   */
+  readonly findings: readonly Finding[];
 }
 
 const pointBox = (p: Point): Box => ({ minX: p.x, minY: p.y, maxX: p.x, maxY: p.y });
@@ -72,7 +82,7 @@ export function titleOf(title: string, checklist: readonly string[]): string {
 export function blockContent(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): FrameContent {
   const block = c.blocks.get(id);
   if (block === undefined) throw new Error(`unknown block ${id}`);
-  const { layout, legend } = renderBlock(c, id, symbols, elk);
+  const { layout, legend, findings } = renderBlock(c, id, symbols, elk);
   const g = subgraphOf(c, id, symbols);
   const bodies = layout.placements.map((pl) => {
     const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);
@@ -91,6 +101,7 @@ export function blockContent(c: Circuit, id: BlockId, symbols: SymbolResolver, e
     block: { g, layout },
     powers: [],
     texts: [],
+    findings,
   };
 }
 
@@ -102,7 +113,7 @@ export function notesContent(sheet: SheetSpec): FrameContent | null {
   if (lines.length === 0) return null;
   const texts = lines.map((text, k) => ({ text, at: { x: 0, y: k * LINE } }));
   return {
-    blockId: null, title: "Notes", legend: [], block: null, powers: [], texts,
+    blockId: null, title: "Notes", legend: [], block: null, powers: [], texts, findings: [],
     box: unionAll(texts.map((t) => textBox({ at: t.at, justify: "left" }, t.text)), "notes"),
   };
 }
@@ -124,7 +135,7 @@ export function flagsContent(rails: readonly RailSpec[], sheet: SheetId, flagLib
     ];
   });
   const box = unionAll(drawnBoxes(symbols, { blocks: [], powers, labels: [], texts: [], frames: [] }), "power flags");
-  return { blockId: null, title: "Power flags", legend: [], block: null, powers, texts: [], box };
+  return { blockId: null, title: "Power flags", legend: [], block: null, powers, texts: [], box, findings: [] };
 }
 
 const bandHeight = (f: FrameContent): Um => (1 + f.legend.length) * LINE;

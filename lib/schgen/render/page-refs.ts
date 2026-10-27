@@ -56,6 +56,21 @@ export function intersheetRefs(c: Circuit): ReadonlyMap<NetName, string> {
  * labels are actually drawn on, and every label of the net carrying that text.
  */
 export function assertRefsMatchDrawings(c: Circuit, drawings: readonly SheetDrawing[]): void {
+  const problems = refsMatchProblems(c, drawings);
+  if (problems.length > 0) throw new Error(`intersheet references disagree with the drawing:${problems.map((p) => `\n  - ${p}`).join("")}`);
+}
+
+/**
+ * **`assertRefsMatchDrawings` WITHOUT THE THROW** - Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`. It is a GENERATION-level check: it
+ * quantifies over every sheet's labels at once, so it belongs to no single sheet and its findings
+ * go on `Generation.findings` rather than on a `SheetDrawing`.
+ *
+ * `tools/schgen/generate.ts` tags each line `reference-disagreement`, which `findings.ts` classes
+ * `defective`: a label printing `[3]` on a net whose labels are drawn on pages 2 and 3 tells a
+ * reader the net does not reach page 2, which is the drawing being WRONG ABOUT THE CIRCUIT.
+ */
+export function refsMatchProblems(c: Circuit, drawings: readonly SheetDrawing[]): readonly string[] {
   const drawn = new Map<NetName, Set<number>>();
   const printed = new Map<NetName, Set<string>>();
   for (const d of drawings) {
@@ -70,5 +85,5 @@ export function assertRefsMatchDrawings(c: Circuit, drawings: readonly SheetDraw
     const got = [...(printed.get(net) ?? [])];
     if (got.length !== 1 || got[0] !== want) problems.push(`net ${net}: its labels print ${got.join(" / ")} but are drawn on pages ${want}`);
   }
-  if (problems.length > 0) throw new Error(`intersheet references disagree with the drawing:${problems.map((p) => `\n  - ${p}`).join("")}`);
+  return problems;
 }

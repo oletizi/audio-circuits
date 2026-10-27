@@ -20,7 +20,8 @@
  * byte-identical to the string this function used to return at that position. `assertTextClear`
  * throws `SchgenRefusal(problems, message)` in place of a plain `Error`, with the thrown message
  * text unchanged, so the findings that caused a refusal travel with it rather than being
- * discarded at the point they are turned into a thrown message.
+ * discarded at the point they are turned into a thrown message. **Task 3 then DELETED
+ * `assertTextClear` outright** - see the note where it stood, at the foot of this file.
  */
 
 /**
@@ -34,7 +35,7 @@
  * when a unit has no clear slot (fieldPlacement.placeFields).
  */
 import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
-import { finding, SchgenRefusal, type Finding } from "../findings.ts";
+import { finding, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { fmtPoint } from "./connectivity.ts";
 import { blockFields } from "./field-placement.ts";
@@ -209,9 +210,15 @@ export function textProblems(scene: TextScene): readonly Finding[] {
   return out;
 }
 
-export function assertTextClear(scene: TextScene): void {
-  const problems = textProblems(scene);
-  if (problems.length > 0) {
-    throw new SchgenRefusal(problems, `${scene.scope}: text clearance:${problems.map((p) => `\n  - ${p.what}`).join("")}`);
-  }
-}
+/**
+ * **`assertTextClear` IS DELETED HERE BY TASK 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`, and the deletion is the change rather
+ * than a tidy-up.**
+ *
+ * It was `textProblems` plus a throw, and `render/sheets.ts` was its one caller. A sheet's text
+ * clearance is now REPORTED - the findings land on `SheetDrawing.findings` and the drawing is
+ * produced and classified instead of withheld - which is the owner's directive, and this function
+ * is the mechanism that withheld it. `CLAUDE.md`: *supersede means delete*, so it is removed rather
+ * than left for somebody to find and trust. `textProblems` above is unchanged and still runs on
+ * every sheet and inside `checkLayout` on every block.
+ */

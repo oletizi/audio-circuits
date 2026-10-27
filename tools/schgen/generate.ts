@@ -38,13 +38,15 @@ import { annotate, EMPTY_LOCK, parseRefLock, type Annotation, type RefLock } fro
 import { compareVersionLock, fingerprintLibraries, parseVersionLock, serializeVersionLock, type VersionLock } from "../../lib/schgen/lock/version-lock.ts";
 import { createResolver, splitLibId, type SymbolResolver } from "../../lib/schgen/render/library.ts";
 import { withReferences } from "../../lib/schgen/render/drawn-text.ts";
-import { assertRefsMatchDrawings } from "../../lib/schgen/render/page-refs.ts";
-import { assertCrossSheet } from "../../lib/schgen/render/cross-sheet.ts";
-import { layoutSheet } from "../../lib/schgen/render/sheets.ts";
+import { refsMatchProblems } from "../../lib/schgen/render/page-refs.ts";
+import { crossSheetProblems } from "../../lib/schgen/render/cross-sheet.ts";
+import { layoutSheet, type PrePacked } from "../../lib/schgen/render/sheets.ts";
+import { finding, SchgenRefusal, worstClass, type Finding } from "../../lib/schgen/findings.ts";
 import { elkBackendFrom, elkPrePass, type ElkOutcome } from "./elk/layout.ts";
 import { sheetPackPrePass } from "./elk/sheet-layout.ts";
 import type { BlockId } from "../../lib/schgen/ir/types.ts";
 import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
+import type { Backend } from "../../lib/schgen/render/block-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
 import { generatedFiles, initHint, REFS_LOCK, VERSION_LOCK } from "./generated-files.ts";
 import { canonicalNetworkText, sha256, type ManifestSources } from "../../lib/schgen/manifest.ts";
@@ -79,6 +81,19 @@ export interface Generation {
    * live for them, so comparing it against them would be a tautology; the committed one is not.
    */
   readonly manifestSources: ManifestSources;
+  /**
+   * **EVERY GATE COMPLAINT OF THIS WHOLE GENERATION, empty when it is ratified** - Task 3 of
+   * `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+   *
+   * It is each sheet's own `SheetDrawing.findings` plus the checks that belong to NO single sheet
+   * and so have nowhere else to go: `refsMatchProblems` and `crossSheetProblems` both quantify
+   * over every drawing at once, which is why they run here rather than inside `layoutSheet`.
+   *
+   * `findings.ts`'s `worstClass` reads the generation's class off it. Empty is `usable` and needs
+   * no special case: a clean generation carries no findings, and "no findings" must read as "ship
+   * it" rather than as an unclassified absence.
+   */
+  readonly findings: readonly Finding[];
 }
 
 /** Flag symbol for rails driven only by passive pins; the stock `power` library always loads for it. */
@@ -338,7 +353,20 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
 
   const circuit = buildCircuit(d.spec.circuit, { symbols });
   const problems = validateCircuit(circuit, symbols);
-  if (problems.length > 0) throw new Error(`circuit is invalid:${problems.map((p) => `\n  - ${p}`).join("")}`);
+  if (problems.length > 0) {
+    // **`circuit-invalid`, WHICH `findings.ts` CLASSES `not-drawable` AND NOT `generator-defect`** -
+    // Task 3's addendum, and the distinction decides whether a run FAILS. An invalid circuit is a
+    // fact about the circuit: `pultec-mid` refuses here because `SW_MID` pin 12 is on no net and is
+    // not declared a mechanical mount, which is a board that is not ready rather than a bug in this
+    // tool. Reported as a generator defect it would fail the census on a board that is simply
+    // unfinished. There is no geometry to classify either - nothing has been laid out at this
+    // point - so this is the one refusal the spec's own narrowing says gets a refusal sheet rather
+    // than a drawing.
+    throw new SchgenRefusal(
+      problems.map((p) => finding("circuit-invalid", p, "validateCircuit")),
+      `circuit is invalid:${problems.map((p) => `\n  - ${p}`).join("")}`,
+    );
+  }
   const overlaps = placedSymbolTextOverlaps(circuit.parts.values(), symbols);
   if (overlaps.length > 0) {
     throw new Error(`placed symbols draw pin text over their own pin text; use a corrected copy in the project library:${overlaps.map((p) => `\n  - ${p}`).join("")}`);
@@ -364,18 +392,94 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
     if (p === undefined) throw new Error(`the sheet-packing pre-pass holds no packing for sheet ${id}`);
     return p;
   };
-  const drawings = drawn.sheets.map((s) => layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend, packingOf(s.id)));
-  assertRefsMatchDrawings(drawn, drawings);
+  // **EVERY SHEET IS ATTEMPTED, AND A SHEET THAT REFUSES DOES NOT DISCARD THE ONES ALREADY DRAWN** -
+  // Task 3 Step 4. `drawn.sheets.map(layoutSheet)` stopped at the first sheet to throw, so a
+  // two-sheet design told a reader about one sheet's problems and nothing about the other's.
+  const laid = layoutSheets(drawn, symbols, backend, packingOf);
+  const drawings = laid.drawings;
   // Spec §1.6's rule, Task 15's decision: one authoritative mechanism per CLASS of connection.
   // **IT RUNS HERE AND NOT INSIDE `layoutSheet`, WHICH IS A DEVIATION FROM THE TASK 15 BRIEF'S
   // STEP 3** (*"wire crossSheetProblems into layoutSheet's existing assertSheetSafe
   // neighbourhood"*). A cross-sheet check cannot run per sheet: deciding whether a net crossing a
   // boundary is represented at all needs every sheet's drawing, and inside `layoutSheet` the other
   // sheets do not exist yet - a per-sheet version would report every crossing net of the first
-  // sheet as unrepresented. It sits beside `assertRefsMatchDrawings`, which is the other
+  // sheet as unrepresented. It sits beside `refsMatchProblems`, which is the other
   // whole-drawing-set check, for the same reason. `docs/known-gaps.md` records the deviation.
-  assertCrossSheet(drawn, drawings);
+  const findings: Finding[] = [
+    ...laid.findings,
+    ...drawings.flatMap((s) => s.findings),
+    ...refsMatchProblems(drawn, drawings).map((p) => finding("reference-disagreement", p, "intersheet references")),
+    ...crossSheetProblems(drawn, drawings).map((p) => finding("cross-sheet-disagreement", p, "cross-sheet mechanism")),
+  ];
+  // A sheet that drew nothing has no file, so there is no complete generation to emit. The refusal
+  // carries every finding of every sheet that DID draw, which is the whole of what Step 4 buys at
+  // this point in the plan.
+  if (laid.undrawn.length > 0) {
+    throw new SchgenRefusal(
+      findings,
+      `${laid.undrawn.length} of ${drawn.sheets.length} sheet(s) could not be drawn at all, so there ` +
+        `is no complete generation to emit: ${laid.undrawn.join("; ")}`,
+    );
+  }
   const manifestSources = manifestSourcesOf(d, elk);
   const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings, manifestSources });
-  return { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources };
+  const g: Generation = { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources, findings };
+  // **THIS IS THE ONE PLACE A CLASSIFIED OUTPUT IS STILL WITHHELD, AND IT IS SAID PLAINLY RATHER
+  // THAN LEFT TO BE DISCOVERED.** Task 3's job was to stop the gates throwing at their own sites so
+  // that a drawing survives them: `Generation` above is complete - every sheet, every placed
+  // symbol, every emitted file - and it is built before this line runs. What is not yet built is
+  // the artifact that CARRIES the class: the watermark and the title-block field the spec requires,
+  // and the per-board output directory. Returning an unmarked `Generation` would put an unratified
+  // schematic on disk looking exactly like a ratified one, which is worse than refusing. So the
+  // refusal stays here, typed and carrying every finding, and **Task 4 replaces this throw with
+  // classify-and-emit** - it is a single site, by design.
+  if (g.findings.length > 0) {
+    throw new SchgenRefusal(
+      g.findings,
+      `the generation is UNRATIFIED (${worstClass(g.findings)}): ${g.findings.length} finding(s) ` +
+        `over ${drawings.length} sheet(s). The drawing exists and is not emitted yet - see the ` +
+        `gates-classify spec:${g.findings.map((f) => `\n  - [${f.kind}] ${f.where}: ${f.what}`).join("")}`,
+    );
+  }
+  return g;
+}
+
+/** One sheet that could not be drawn at all, and the findings behind it. */
+interface LaidSheets {
+  readonly drawings: readonly SheetDrawing[];
+  /** Findings of the sheets that refused outright, which have no `SheetDrawing` to sit on. */
+  readonly findings: readonly Finding[];
+  /** `sheet <id>: <reason>` per sheet that produced no drawing. */
+  readonly undrawn: readonly string[];
+}
+
+/**
+ * Every sheet laid out, **each one attempted whatever the ones before it did**.
+ *
+ * A `SchgenRefusal` from `layoutSheet` means that sheet produced no drawing and said why in
+ * classified findings: they are kept and the next sheet is tried. **An untyped `Error` is
+ * rethrown unchanged**, because the spec's totality rule is that an unclassified refusal is a
+ * `generator-defect` that fails the run - absorbing one here would turn a bug in this generator
+ * into an ordinary undrawable sheet, which is the misclassification the whole reform exists to
+ * prevent.
+ */
+function layoutSheets(
+  drawn: Circuit,
+  symbols: SymbolResolver,
+  backend: Backend | null,
+  packingOf: (id: string) => PrePacked | null,
+): LaidSheets {
+  const drawings: SheetDrawing[] = [];
+  const findings: Finding[] = [];
+  const undrawn: string[] = [];
+  for (const s of drawn.sheets) {
+    try {
+      drawings.push(layoutSheet(drawn, s.id, symbols, FLAG_LIB_ID, backend, packingOf(s.id)));
+    } catch (caught) {
+      if (!(caught instanceof SchgenRefusal)) throw caught;
+      findings.push(...caught.findings);
+      undrawn.push(`sheet ${s.id}: ${caught.message}`);
+    }
+  }
+  return { drawings, findings, undrawn };
 }

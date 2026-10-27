@@ -8,6 +8,7 @@
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
+import type { Finding } from "../findings.ts";
 import type { BlockId, NetName, PartLabel, SheetSpec } from "../ir/types.ts";
 import type { Wire } from "./block-types.ts";
 // Type-only, and the cycle it closes is type-only too: `field-placement.ts` imports `GlobalLabel`
@@ -86,4 +87,22 @@ export interface SheetDrawing {
    * `RENDER-REPORT.md` as a clean sheet.
    */
   readonly fieldFallbacks: readonly FieldFallback[];
+  /**
+   * **EVERYTHING A GATE FOUND WRONG WITH THIS SHEET, empty when it is ratified** - Task 3 of
+   * `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+   *
+   * It holds every block-level finding of the blocks on this sheet, plus the sheet-wide wire-safety,
+   * body-clearance and text-clearance findings that only appear once the blocks share a page. The
+   * owner's directive: *"Gates can still refuse to ratify an output, but they shouldn't hide the
+   * output. The output should still be available, but clearly classified as unratified."* This field
+   * is where that classification lives for one sheet; `findings.ts`'s `worstClass` reads the class
+   * off it.
+   *
+   * **A NON-EMPTY `findings` MEANS THE DRAWING IS UNRATIFIED, NOT THAT IT IS ABSENT.** Every other
+   * field of this record is populated exactly as it is for a clean sheet - that is the point.
+   *
+   * It is deliberately NOT the same thing as `fieldFallbacks`: a fallback is a placement the placer
+   * chose knowingly over refusing, and it was already reported. A finding is a gate's complaint.
+   */
+  readonly findings: readonly Finding[];
 }

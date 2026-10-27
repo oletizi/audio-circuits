@@ -40,6 +40,7 @@
  */
 
 import { ELK_RENDERER, clearanceViolation, invalidGeometry } from "../render/block-types.ts"
+import { finding } from "../findings.ts"
 import { junctionPoints, fmtPoint } from "../render/connectivity.ts"
 import { samePoint, type Point } from "../render/geometry.ts"
 import { readElkGraph, type Adapted } from "./read-graph.ts"
@@ -324,23 +325,43 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
           `points of the canonical topology in ${junctionIssues.length} place(s). For template ` +
           "geometry junctionPoints is cosmetic; for ELK geometry it is not, because a branch point " +
           `with no junction is a connection KiCad does not make (spec 1.4 obligation 2). ${junctionIssues.join("; ")}`,
+        // **THE GEOMETRY SURVIVES THIS ARM** (Task 3 of the gates-classify plan). It is grid-legal,
+        // canonical and drawable; what is wrong with it is that the drawing would MEAN something
+        // the circuit does not, which is `defective` and so is marked rather than withheld. The
+        // findings are tagged `missing-junction` and not the arm's generic
+        // `geometry-disagrees-with-ir`, because that is exactly what each line of
+        // `junctionProblems` is about and `CLAUDE.md` names this class by that name.
+        { layout, findings: junctionIssues.map((what) => finding("missing-junction", what, `block ${g.block.id}`)) },
       ),
       counts: bothPasses,
       pairs: [],
       problems: [],
+      // `checked` STAYS `null` HERE, and that is a deviation from Task 3's brief, which said to
+      // pass `layout`. `checked`'s contract is *"the geometry `checkLayout` WAS RUN ON"*, and
+      // `checkLayout` has not run at this point - it runs below, after this arm. Two tools read
+      // the field under that contract: `tools/schgen/text-metrics/step4.ts` skips a block whose
+      // `checked` is null as *"refused before checkLayout"*, which is true here, and
+      // `tools/schgen/masked-problems.ts` compares a further text pass against `problems` and
+      // THROWS a "defect in render/text-scene.ts" error when the further pass finds anything
+      // `problems` does not - which is every text problem of this block, because `problems` is
+      // empty on this arm. The brief's criterion is that the geometry survives the refusal; it
+      // survives on `result.layout` above, which is the field the whole chain reads.
       checked: null,
     }
   }
 
   // LAST, and the geometry is never touched after it: obligation 5's criterion.
   //
-  // **FLATTENED TO `string[]` HERE, NOT WIDENED TO `Finding[]`.** `checkLayout` (Task 2 of
-  // `docs/superpowers/plans/2026-10-27-gates-classify.md`) now returns `readonly Finding[]`; this
-  // module's own `AdaptReport.problems` field, `clearancePairs` and every downstream reader of it
-  // (measurement tools under `tools/schgen/`) are string-based and are not this task's to
-  // restructure - that is Task 3's "the geometry survives". Mapping to `.what` here keeps every
-  // one of those readers working on byte-identical text, unchanged.
-  const problems = checkLayout(g, layout).map((f) => f.what)
+  // **`AdaptReport.problems` IS STILL `string[]` AND THE FINDINGS NOW ALSO TRAVEL** (Task 3 of
+  // `docs/superpowers/plans/2026-10-27-gates-classify.md`). `checkLayout` returns
+  // `readonly Finding[]` since Task 2; this module's own `problems` field, `clearancePairs` and
+  // every downstream reader of them (measurement tools under `tools/schgen/`) are string-based,
+  // so `problems` keeps mapping to `.what` and stays byte-identical for all of them. What Task 3
+  // adds is that `found` itself is handed to the refusal below rather than being discarded at the
+  // point its text was built: **a clearance refusal now carries eleven classified facts where it
+  // used to carry one sentence, and it carries the geometry they were measured on.**
+  const found = checkLayout(g, layout)
+  const problems = found.map((f) => f.what)
   const pairs = clearancePairs(problems)
   if (problems.length === 0) return { result: { ok: true, layout }, counts: bothPasses, pairs, problems, checked: layout }
 
@@ -354,7 +375,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
     // NOT reported as a clearance violation with an invented pair: `problem-obstacles.ts`'s whole
     // contract is that a pair nobody can check is worse than a refusal that says so.
     return {
-      result: invalidGeometry(ELK_RENDERER, connectionOf(g, problems.join("; ")), reason),
+      result: invalidGeometry(ELK_RENDERER, connectionOf(g, problems.join("; ")), reason, { layout, findings: found }),
       counts: bothPasses,
       pairs,
       problems,
@@ -362,7 +383,7 @@ export function adaptElkLayoutReported(g: BlockSubgraph, outcome: ElkOutcome): A
     }
   }
   return {
-    result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason),
+    result: clearanceViolation(g.block.id, first.constraint, first.obstacles, reason, { layout, findings: found }),
     counts: bothPasses,
     pairs,
     problems,
