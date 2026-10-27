@@ -40,6 +40,7 @@ import { generate, writeGeneration, type GenerateEnv } from "./generate.ts"
 import { exportPdf, kicadVersion } from "./kicad-run.ts"
 import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
 import type { FieldFallback } from "../../lib/schgen/render/field-placement.ts"
+import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts"
 
 /** One board directory as `boards/<name>/perfboard.json` declares it. */
 export interface BoardRef {
@@ -110,6 +111,24 @@ export interface BoardSheets {
   readonly fallbacks: readonly FieldFallback[]
   /** The written schematic root, and the PDF when one was exported. */
   readonly files: readonly string[]
+  /**
+   * Every sheet this generation drew, straight off `Generation.drawings`.
+   *
+   * **It is here so a caller can apply its own gate without generating twice.** The guide packet
+   * refuses to print a sheet carrying any `fieldFallbacks` - text the placer could not keep clear -
+   * and re-running `generate` to find that out would double the cost of every guide build.
+   * Empty for `refused` and `no-declaration`, which is not the same as a board that drew a sheet
+   * with no fallbacks: read `outcome` first.
+   */
+  readonly drawings: readonly SheetDrawing[]
+  /**
+   * Absolute path to the written top-level `.kicad_sch`, or `undefined` when nothing was written.
+   *
+   * **Separate from `files` because a caller that wants to export or copy the schematic should not
+   * have to guess which entry of a path list is the root.** It was already computed on the PDF
+   * path; this lifts it out and makes it unconditional.
+   */
+  readonly schematicRoot: string | undefined
 }
 
 export interface BoardSheetsOptions {
@@ -130,6 +149,8 @@ export async function boardSheets(board: BoardRef, repoRoot: string, options: Bo
       sheets: 0,
       fallbacks: [],
       files: [],
+      drawings: [],
+      schematicRoot: undefined,
     }
   }
   const outDir = path.join(options.outDir, board.name)
@@ -145,8 +166,8 @@ export async function boardSheets(board: BoardRef, repoRoot: string, options: Bo
     const g = await generate(design, env)
     const written = writeGeneration(design, g)
     const files = [...written]
+    const root = path.join(outDir, `${design.spec.project}.kicad_sch`)
     if (options.pdf) {
-      const root = path.join(outDir, `${design.spec.project}.kicad_sch`)
       const pdf = path.join(outDir, `${board.name}.pdf`)
       exportPdf(root, pdf)
       files.push(pdf)
@@ -158,6 +179,8 @@ export async function boardSheets(board: BoardRef, repoRoot: string, options: Bo
       sheets: g.drawings.length,
       fallbacks: g.drawings.flatMap((d) => d.fieldFallbacks),
       files,
+      drawings: g.drawings,
+      schematicRoot: root,
     }
   } catch (caught) {
     return {
@@ -167,6 +190,8 @@ export async function boardSheets(board: BoardRef, repoRoot: string, options: Bo
       sheets: 0,
       fallbacks: [],
       files: [],
+      drawings: [],
+      schematicRoot: undefined,
     }
   }
 }
