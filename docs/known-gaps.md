@@ -3964,8 +3964,26 @@ is correct, and becomes an INSTANCE of this rule rather than an exception to it.
 **ratification**, which is what may be shipped and built from. It does not govern **visibility**,
 which is what may be looked at. Conflating the two is the defect.
 
+**HOW AN UNRATIFIED SHEET ANNOUNCES ITSELF, decided by him the same day, with his reasoning
+because the reasoning is the more transferable half.** Asked whether the mark should be a discreet
+title-block field, a watermark across the drawing, or both - the objection to a watermark being
+that it degrades the very drawing someone is trying to read:
+
+> *"Both. A watermark over the drawing that declares the drawing defective is a critical safety
+> signal to NOT USE the drawing at the bench. As such, an unusable schematic doesn't need to be
+> easy to read—it just needs to be possible to read"*
+
+**This resolves the tension by reframing it rather than trading it off.** Readability is what a
+RATIFIED sheet is for. An unratified one has a different job - to be inspectable without being
+mistaken for buildable - and for that job the degradation IS the signal. The objection assumed
+legibility was the constant; he made safety the constant and legibility the thing that gives way.
+
+**It also sets the bar for the watermark precisely: POSSIBLE to read, not easy.** So a mark heavy
+enough that nobody could mistake the sheet for a build document, and light enough that the geometry
+underneath can still be examined - which is the whole point of not hiding it.
+
 - **Found** the drawing loop, 2026-10-27, on the first layout change attempted.
-- **Evidence** his two messages above, quoted complete; the four-gate bypass sequence, each
+- **Evidence** his three messages above, quoted complete; the four-gate bypass sequence, each
   refusal text read from the tool's own output; the 351-site count, `[RAN]` in this tree.
 - **Verified** **CONFIRMED by this writer.** The bypasses were run here against the installed
   KiCad, each restoring its patched files in a trap and `git status lib/` checked clean after every
