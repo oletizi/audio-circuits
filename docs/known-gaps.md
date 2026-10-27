@@ -30086,6 +30086,31 @@ converter. **It is recorded undiagnosed rather than fixed**: raising the timeout
 file this work has no other business in, and the honest statement is that the suite has one test
 whose result depends on machine load.
 
+**CLAUSE 13: THE SHEET WAS LOOKED AT.** `[READ]` the rendered `transistor-preamp-feedback.pdf`,
+page 2 of 2 - the one board this change puts back into the census and the only board in this
+repository that generates with ZERO fallback field placements. What is VISIBLE, stated as
+observation and not as a verdict, **because the verdict is the owner's**:
+
+- **the zero-fallback figure is visible as well as counted.** Not one reference or value is drawn
+  over a wire, a body or another text anywhere on the sheet. Every one of `R1` to `R4`, `RV1` to
+  `RV4`, `C1` to `C4` and `Q1` carries a legible designator and value clear of the ink;
+- **all three headers draw their pins facing INTO the circuit**, with the wires leaving rightward
+  into what they feed and no wire wrapping around a header. That is the connector turn this change
+  restores, visible rather than inferred from a count;
+- **the drawing occupies the top-left quarter of the A3 and roughly the lower two-thirds of the page
+  is EMPTY**, which is the same observation **G296** clause 9 made of `pultec-hi-cut`. The four leg
+  frames sit across the top with large gaps between them;
+- the five frames are each labelled with their block's title and every cross-frame net - `BASE`,
+  `COLLECTOR`, `BYPASS_CAP`, `GND`, `VCC` - is carried by a named label rather than a long wire, so
+  the sheet reads as five boxes and a label vocabulary rather than one circuit;
+- **signal flow is not left to right inside the gain-stage frame.** `J1`, `J2` and `J3` enter at its
+  left, but `Q1` sits centre-right with `C2` and `C3` to its right and two wires running back
+  leftward and down, so the stage reads as a loop rather than a line.
+
+**NOTHING ABOVE IS A READABILITY CLAIM** - Principle 1 and **G71** reserve that - and no figure in
+this entry was derived from looking. Regenerate with
+`bun tools/schgen/board-sheets.ts --out <dir> --pdf`.
+
 - **Found** 2026-10-26, taking the suite from the red `d379740` left to green.
 - **Evidence** `[RAN]` in this repository against installed KiCad, with `SCHGEN_SOURCE` set so the
   port-fidelity guard runs rather than skips. The symbol geometry in clause 1 was read out of the
