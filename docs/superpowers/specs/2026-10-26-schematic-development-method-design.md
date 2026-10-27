@@ -69,14 +69,30 @@ looking.
 three instances: *"You can't reason about or judge a schematic without LOOKING
 at it."*
 
-### Step 5 — Change one thing and re-render
+### Step 5 — Change one thing, re-render, and SEND IT
 
 Iterate. Each iteration names what changed and why, and the next drawing is
 produced before the next claim is made.
 
-**Produces:** a before/after pair.
+**EVERY ITERATION GOES TO THE OWNER, not only the one offered for acceptance.**
+His instruction, 2026-10-26:
+
+> *"I'd like to see each iteration, not just the final iteration - that will let
+> me help steer the development."*
+
+**Produces:** a before/after pair, **both sent**, with one line on what changed.
 **Broken if:** two changes land between two lookings, because then nothing
-attributes the difference.
+attributes the difference. **Also broken if** an iteration is produced, judged
+internally as not worth showing, and skipped - that judgement is the thing the
+agent has repeatedly got wrong, and withholding a bad iteration hides the
+direction of travel, which is what he is steering by.
+
+**STEERING IS NOT ACCEPTANCE, and the distinction matters.** He sees every
+iteration and may redirect at any point; acceptance remains the single act of
+Step 6. Showing the work continuously does not make the agent's running
+commentary a verdict, and does not spend the once-per-construct judgement
+Principle 2 is protecting - it spends far less of his attention than iterating
+three steps in a direction he would have rejected at the first.
 
 ### Step 6 — The owner judges, once, on the drawing
 
@@ -138,6 +154,35 @@ unrelated boards.
 converging** and that is reported rather than iterated through quietly. At that
 point the agent is a slow interpreter for a person drawing eleven schematics,
 and drawing them directly is cheaper and better.
+
+## What is reusable at the end, and the condition under which nothing is
+
+**He asked directly: will a reusable template be a product of this work?** The
+honest answer is that **a reusable artifact is the point, but it may not be a
+template**, and which it turns out to be is Step 2's to answer rather than this
+document's.
+
+Three outcomes, all of which leave something reusable except the last:
+
+1. **A template.** The bank needs an arrangement no existing template draws, it
+   is drawn and accepted, and Step 7 states what it structurally requires. Reused
+   by every circuit of that shape, Pultec or not.
+2. **A decomposition.** `G84` records that the method which worked resolved *"no
+   template fits"* by splitting the block until existing templates fit, and calls
+   decomposition *"the primary tool"*. If a section splits into pieces the four
+   reachable templates already draw, **the reusable product is the decomposition
+   pattern plus the declarations that express it** - and no new template is
+   written. This is the cheaper outcome and the one the precedent favours.
+3. **Neither.** The pieces do not fit existing templates and no arrangement can
+   be stated construct-wise without naming a Pultec circuit in it.
+
+**Outcome 3 is a stopping signal and is reported as one.** If what comes out
+cannot be stated without naming hi-boost, then five drawings were fixed and
+nothing was built - which is the question he raised about whether this effort is
+quixotic, answered in the negative direction. **Step 7 is the test**: a
+specification that names a circuit is not a reusable artifact, and the register
+already records the four existing Pultec template specs failing exactly that
+test.
 
 ## What this spec deliberately leaves open
 
