@@ -138,12 +138,35 @@ page."*
 These are inputs, not this document's inventions. An agent executing this design
 does not get to re-decide them.
 
-- **G292, owner directive, 2026-10-25, verbatim:** *"It would, however, be easier
-  to read if the capacitors in the capacitor bank were rotated 90 degrees and not
-  fanned out to the top and bottom of the switch symbol, but arranged to the
-  right of the switch symbol. signal flows left to right."* **Still unmet**:
-  G293's amendment records that on `pultec-hi-cut` both columns are LEFT of
-  `SW1`. He accepted the switch's turn when shown it - *"rotation is ok"*.
+- **G292's ARRANGEMENT half is MOOT by the owner's ruling, 2026-10-27, and its
+  ORIENTATION half is promoted to the general principle it was always reaching
+  for.** His words:
+
+  > *"when I asserted the capacitor bank should be to the right of the switch its
+  > because the layout was so goofy i couldn't tell signal flow direction. So,
+  > that directive is moot. That entire discussion led us into a boggy quicksand
+  > - except for the part about rotating parts to better comport with signal
+  > flow. The orientation of a component should be in the service of clarity and
+  > signal flow. If a part causes less turbulence when rotated, it should be
+  > rotated. If a part is facing opposite to the direction of signal flow, rotate
+  > or reflect the part. My larger point in that discussion is that part
+  > orientation is a critical factor in reducing turbulence and visual noise -
+  > and the ancien regime **never** looked at or altered part orientation."*
+
+  **So no side of the switch is prescribed**, and the open question this spec
+  carried about left-versus-right is withdrawn rather than answered. **What binds
+  instead is orientation**, and `docs/known-gaps.md` **G302** carries the ruling
+  in full.
+
+  **His last clause is confirmed by a code reading already in the register, not
+  only by his impression of the drawings.** G292 records that
+  `preferredOrientation` (`lib/schgen/rules/orientation.ts:81`) returns a
+  rotation **only** for a part with a RAIL end, and that every other part falls
+  through to `null`, which spec 1.5 resolves to rotation 0 - *"the orientation
+  the symbol library itself draws the part in. Nothing chose that; it is the
+  default of a rule that declines to answer."* **Part orientation is not a thing
+  this generator decides badly; it is a thing it does not decide at all** for any
+  part off a rail.
 - **G293, owner criterion, 2026-10-25:** the members of a parallel group share
   one column. Recorded as **substantially met and not literally** - hi-cut's ten
   capacitors sit at two distinct x, hi-boost's at three.
@@ -260,21 +283,28 @@ stopping signal the method spec describes.
 
 ## Open questions for the owner
 
-Neither blocks the first two pieces, and both are put here rather than asked
-mid-flight.
+**None.** Both questions this document opened were put to him and answered within
+a day, and each answer is recorded as a decision in "What binds" above rather
+than left standing here:
 
-1. **G292's directive says the bank goes to the RIGHT of the switch. The sheets
-   he did not object to today put it to the LEFT.** `pultec-low-cut`, which he
-   was shown on 2026-10-26 and did not criticise, has its bank left of `SW1`;
-   so does his own KiCad layout, and so does Thompson-Bell's drawing. The
-   directive may have been about hi-boost's specific fan-to-both-sides defect
-   rather than a general side. **Not resolved by inference** - that is the exact
-   failure **G298** records, where a specification's subject was guessed from its
-   name.
+- whether the stand-in group boxes belong on a bench reference - **they do; they
+  are optional build content** (2026-10-26);
+- which side of the switch the bank belongs on - **withdrawn, not answered.** The
+  directive that raised it is moot by his ruling of 2026-10-27, and no side is
+  prescribed.
 
-*(The second question - whether the stand-in group boxes belong on a bench
-reference - was asked and answered the same day. It is recorded as a decision in
-"What binds" above rather than left open here.)*
+**The second one is worth keeping visible rather than deleting, because of how it
+resolved.** It was asked as a left-or-right question and came back as *"that
+entire discussion led us into a boggy quicksand"* - the question had a false
+premise, and asking it was still right, because the alternative was inferring an
+answer from drawings he had not objected to. **G298** is the record of what
+inferring costs.
+
+**A new question will arise from piece 4 and is named here so it is expected
+rather than sprung:** the stand-in groups are conditional on the build
+configuration and the page does not say so. A rendered sheet that distinguishes
+them is what puts that question properly, and it is not asked before there is
+one.
 
 ## Out of scope, named so the omissions are not read as oversights
 

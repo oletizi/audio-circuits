@@ -29179,6 +29179,23 @@ drew, which is exactly the set these tables predicted.
 
 ### G292 - OWNER DIRECTIVE on how a generated schematic should read, with his words verbatim - and MEASURED: the ROTATION half is available and cuts text collisions by a third, while the ARRANGEMENT half is a DIFFERENT defect, because `edgesForNet` directs every edge by DECLARATION ORDER and ELK lays out by edge direction
 
+> **AMENDED 2026-10-27 (G302): THE ARRANGEMENT HALF OF THIS DIRECTIVE IS MOOT BY THE OWNER'S
+> RULING, AND THIS ENTRY IS WHY A PASSING REMARK ACQUIRED THE STANDING OF A RULE.** *"arranged to
+> the right of the switch symbol"* is struck, and with it clause (3) below, this entry's arrangement
+> criterion, and G293's amendment counting which columns sit left of `SW1`. His ruling: *"when I
+> asserted the capacitor bank should be to the right of the switch its because the layout was so
+> goofy i couldn't tell signal flow direction. So, that directive is moot."*
+>
+> **IT WAS A SYMPTOM REPORT, QUOTED ACCURATELY AND READ AS A SPECIFICATION.** This entry's own
+> framing - *"IT IS A DIRECTIVE AND NOT A PREFERENCE TO WEIGH"* - is what gave it that standing, and
+> the sentence it quotes contains its own purpose for anyone who read it for one. **A verbatim
+> quotation is evidence of what he said and is not a finding about what he meant.** Nothing here
+> distinguished the two, and two days of measurement were spent on the half that was moot.
+>
+> **THE ROTATION HALF SURVIVES AND IS PROMOTED**: orientation serves clarity and signal flow, which
+> G302 carries in full - including that this entry's own `[READ]` of `orientation.ts` is the
+> evidence for his *"the ancien regime never looked at or altered part orientation."*
+
 > **AMENDED 2026-10-26 (G296): THE LIST OF ENTRIES THIS RULE MOVED IS NOW ALSO THE LIST A SECOND
 > CHANGE MOVED AGAIN, and the attribution problem this entry corrected has recurred in a new
 > form.** G292 established that the orientation rule moved all 24 red tests and the edge-order change
@@ -30438,3 +30455,94 @@ presents, and that difference is unmeasured.
   owner, looking at it, accepts it. **MECHANISM, UNTRIED** and deliberately not
   specified - the method spec's steps 3 to 6 say the arrangement is drawn and
   iterated rather than written down in advance.
+
+### G302 - OWNER RULING, 2026-10-27: G292's "bank to the right of the switch" is MOOT and was a symptom report misread as a layout instruction - and the principle underneath it is that PART ORIENTATION serves signal flow, which this generator does not decide at all for any part off a rail
+
+**HIS WORDS, verbatim and complete**, asked which side of the switch the bank
+belongs on:
+
+> *"when I asserted the capacitor bank should be to the right of the switch its
+> because the layout was so goofy i couldn't tell signal flow direction. So, that
+> directive is moot. That entire discussion led us into a boggy quicksand -
+> except for the part about rotating parts to better comport with signal flow.
+> The orientation of a component should be in the service of clarity and signal
+> flow. If a part causes less turbulence when rotated, it should be rotated. If a
+> part is facing opposite to the direction of signal flow, rotate or reflect the
+> part. My larger point in that discussion is that part orientation is a critical
+> factor in reducing turbulence and visual noise - and the ancien regime **never**
+> looked at or altered part orientation."*
+
+**WHAT IS STRUCK.** G292's arrangement half - *"arranged to the right of the
+switch symbol"* - and with it G293's amendment recording it as still unmet, and
+the whole left-versus-right question. **No side of the switch is prescribed.**
+
+**WHY THIS IS NOT MERELY A DIRECTIVE BEING WITHDRAWN, and it is the most
+transferable thing in this entry.** The sentence was a **symptom report** -
+*"I couldn't tell signal flow direction"* - and it was recorded, quoted and
+re-measured for two days as a **specification of a layout**. G292 built an
+orientation probe and an arrangement criterion from it; G293's amendment counted
+which columns sat left of `SW1`; the pre-registration and this design both
+carried it as binding. **The register's own practice of quoting the owner
+verbatim is what preserved it accurately enough to be re-read correctly, and is
+also what gave a passing remark the standing of a rule.** A quotation is evidence
+of what he said; it is not a finding about what he meant, and nothing in the
+entries distinguished the two.
+
+**CLAUDE.md already holds the general form of this and this is its fifth
+instance**: *"ask what a demand is for before working out how to satisfy it"*, and
+*"the tell is a rule that refuses with a restatement of itself."* The four it
+lists were demands made by this repository's tools. **This one came from the
+owner**, which is why nothing flagged it - an owner directive is the one class of
+demand this project treats as not needing interrogation. It still needed its
+*purpose* read, and the purpose was legible in the sentence itself.
+
+**WHAT REPLACES IT, in his terms:** orientation is in the service of clarity and
+signal flow; a part that causes less turbulence rotated should be rotated; a part
+facing opposite to signal flow should be rotated or reflected.
+
+**"TURBULENCE" IS HIS JUDGEMENT WORD AND MUST NOT BE MADE INTO A NUMBER.**
+**G71** and the constitution's first principle forbid inventing a score for
+whether a drawing reads, and three such proxies in two days each pointed the
+opposite way to his judgement on a specific occasion. **A turbulence metric would
+be the fourth.** What may be measured is the closed-form part: whether a
+two-terminal part's axis lies along its net's signal direction, and whether a
+part's pin order runs against it. Whether the result reads is his, by looking.
+
+**HIS LAST CLAUSE IS CONFIRMED BY A CODE READING ALREADY IN THIS REGISTER, not
+only by his impression of the sheets.** G292 records, from `[READ]`
+`lib/schgen/rules/orientation.ts:81`, that `preferredOrientation` returns a
+rotation **only** for a part with a RAIL end - *"its `constraints` come from
+`context.rails`, and `if (constraints.length === 0) return null`"* - and that
+every other part falls through to `null`, resolved by spec 1.5 to rotation **0**,
+*"the orientation the symbol library itself draws the part in. Nothing chose
+that; it is the default of a rule that declines to answer."*
+
+**So "the ancien regime never looked at or altered part orientation" is literally
+true of the production code for every part not touching a rail**, which is every
+capacitor in every Pultec selector bank. He named a defect from the drawings that
+the code states plainly about itself.
+
+- **Found** the schematic-in-the-build-guide design,
+  `docs/superpowers/specs/2026-10-26-schematic-in-the-build-guide-design.md`,
+  whose open question this answers by withdrawing it.
+- **Evidence** his message of 2026-10-27, quoted complete rather than excerpted;
+  G292's own `[READ]` of `orientation.ts`, re-read in this file rather than
+  remembered.
+- **Verified** **CONFIRMED by this writer** for the quotation and the
+  cross-references. **RELAYED, not re-run:** the `orientation.ts` line number and
+  the rail-constraint behaviour are G292's reading, not this writer's; they are
+  quoted from that entry and have not been re-established against the current
+  tree.
+- **Why it is open** nothing is built. `preferredOrientation` still declines to
+  answer for every non-rail part.
+- **What would settle it.** **CRITERION, and it is his:** a two-terminal part on
+  the signal path is drawn with its axis along the signal direction and is not
+  facing against it, and the owner, looking at the rendered sheet, finds the flow
+  followable. **MECHANISM, PARTLY TRIED AND EXPLICITLY NOT ENDORSED:** G292's
+  probe gave every non-rail two-terminal part a blanket 90 degrees and cut
+  fallback field placements from 26 to 17 across five boards - **but that entry
+  says in terms that the probe is not the design**, because `RAIL_END_KINDS`
+  exists to name the kinds the rule speaks for and widening it to "everything
+  else" is the taste judgement `orientation.ts` forbids. **A real mechanism needs
+  a signal direction for interior nets, which G292 records the IR as not
+  carrying.**
