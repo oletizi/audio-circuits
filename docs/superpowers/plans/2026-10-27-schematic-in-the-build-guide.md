@@ -1,5 +1,24 @@
 # A readable schematic page in the build guide — Implementation Plan
 
+> **EXECUTED 2026-10-27, AND THIS DOCUMENT IS STALE IN THREE PLACES. READ
+> [`2026-10-27-schematic-in-the-build-guide-execution/README.md`](2026-10-27-schematic-in-the-build-guide-execution/README.md)
+> BEFORE FOLLOWING ANYTHING BELOW.** It is kept as written rather than rewritten, because the
+> record of what was actually asked is worth more than a tidy document — but three parts of it
+> would mislead someone who acted on them:
+>
+> 1. **`tools/schgen/generated-sheet.ts` and `generatedSheetFor` do not exist and were never
+>    built.** `boardSheets()` was already the resolver; a new module would have been the second
+>    copy this task existed to prevent. Two fields were added to `BoardSheets` instead.
+> 2. **Tasks 2 and 3 ran in the opposite order**, because the geometry tool needs the `drawings`
+>    the `BoardSheets` change exposes.
+> 3. **TASK 1'S CODE BLOCK IS WRONG AND MUST NOT BE COPIED.** Its corner counter counts per segment
+>    PAIR, so a hub with three arms scores 2 for one vertex — and `edgesForNet` emits a STAR here,
+>    so such a hub is the normal case, not an edge case. It also scores a diagonal wire zero,
+>    silently. What shipped counts per vertex and refuses non-orthogonal and zero-length wires.
+>    The execution record explains how it was caught.
+>
+> Tasks 5 and 6 are an owner-facing drawing loop and are deliberately not implemented.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `boards/pultec-low-cut/guide/guide.pdf` and `boards/pultec-low-boost/guide/guide.pdf` each carry a schematic page the owner has looked at and accepted.
