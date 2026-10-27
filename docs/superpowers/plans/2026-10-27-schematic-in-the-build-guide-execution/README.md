@@ -114,7 +114,15 @@ Nothing here blocks the drawing work.
 
 ## Where the rest of the record is
 
-The working ledger, every dispatch brief, every implementer report and every review package are in
-`.superpowers/sdd/2026-10-27-schematic-in-the-build-guide/` for the life of this worktree, and are
-gitignored. Everything from them that a later reader would need and could not re-derive is in this
-file. The review packages are not copied: they regenerate from `git diff`.
+It is all here, committed, in the shape the two earlier execution records use:
+
+- `rulings.md` - every decision taken on the owner's behalf, including **one that was wrong, kept
+  with a banner on it** rather than deleted;
+- `ledger.md` - the working record, in the order things actually happened;
+- `briefs/` - what each implementer was actually asked, including the two briefs that supersede
+  the plan's own tasks;
+- `reports/` - what each returned, with verbatim command output, which is what makes this file's
+  claims checkable rather than merely asserted.
+
+**The review packages are deliberately not copied: they regenerate from `git diff`.** The scratch
+workspace under `.superpowers/sdd/` was deleted once everything above was committed.
