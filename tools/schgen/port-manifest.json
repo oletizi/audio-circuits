@@ -938,6 +938,9 @@
     "tools/schgen/label-syntax/probe.ts",
     "lib/schgen/findings.ts",
     "tests/schgen/findings.test.ts",
-    "tests/schgen/gates/geometry-survives.test.ts"
+    "tests/schgen/gates/geometry-survives.test.ts",
+    "tools/schgen/board-artifacts.ts",
+    "tools/schgen/library-digest.ts",
+    "tests/schgen/board-status.test.ts"
   ]
 }

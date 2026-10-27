@@ -5,6 +5,16 @@ node_modules/
 dist/
 build/
 
+# The board schematic census (`bun tools/schgen/board-sheets.ts`): one directory
+# per board under boards/, each holding whatever schgen produced for it, a
+# STATUS.md naming its ratification class, and - for a board that produced no
+# drawing - a one-page REFUSAL.kicad_sch naming the reason. Covered by build/
+# above; named here so a reader of this file knows what is in there and why it is
+# not committed. Every file in it is re-derived from committed sources by one run
+# of that tool, and the whole directory is replaced on each run, so a committed
+# copy could only fall out of date with the circuit it claims to draw.
+build/schgen-boards/
+
 # Environment variables
 .env
 .env.local

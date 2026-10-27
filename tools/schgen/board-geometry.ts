@@ -90,6 +90,15 @@ export interface BlockGeometry {
 /** One board's wire geometry, or the blocker in full when it did not generate. */
 export interface BoardGeometry {
   readonly board: string;
+  /**
+   * Whether this tool had geometry to measure, and if not why.
+   *
+   * **IT IS NOT `BoardSheets.outcome` AND MUST NOT BE READ AS A RATIFICATION CLASS.** That field
+   * carries the spec's four classes (`lib/schgen/findings.ts`); this one answers the narrower
+   * question this census asks - *was there a drawing to measure* - so a board whose gates
+   * complained and whose drawing was written anyway reads `generated` here. Read `STATUS.md` in
+   * `build/schgen-boards/<board>/`, or `tools/schgen/board-sheets.ts`, for the class.
+   */
   readonly outcome: "generated" | "refused" | "no-declaration";
   /** The blocker in full for `refused`, the reason for `no-declaration`, empty for `generated`. */
   readonly blocker: string;
@@ -243,10 +252,17 @@ function blockGeometryOf(measured: readonly MeasuredDrawing[]): {
 /** One board's geometry, folded over every sheet it drew. */
 export async function boardGeometry(board: BoardRef, repoRoot: string, outDir: string): Promise<BoardGeometry> {
   const r = await boardSheets(board, repoRoot, { outDir, pdf: false });
-  if (r.outcome !== "generated") {
+  // **THE TEST IS WHETHER A DRAWING EXISTS, NOT WHETHER THE GATES RATIFIED IT**, and the two
+  // stopped being the same thing in Task 4 of the gates-classify plan: `boardSheets` now reports
+  // one of four CLASSES and hands back the drawing of a board whose gates complained. This tool
+  // measures GEOMETRY - segments, crossings, corners - and an unratified drawing has geometry to
+  // measure, so excluding it would be this tool declining to measure exactly the boards the reform
+  // exists to make visible. `boardSheets`'s own `outcome` carries the class; this census keeps its
+  // own three-value vocabulary, which says only whether it had geometry in hand.
+  if (r.drawings.length === 0) {
     return {
       board: r.board,
-      outcome: r.outcome,
+      outcome: r.declared ? "refused" : "no-declaration",
       blocker: r.blocker,
       segments: 0,
       crossings: 0,

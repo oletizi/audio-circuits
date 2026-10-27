@@ -49,10 +49,15 @@ import type { SheetDrawing } from "../../lib/schgen/render/sheet-types.ts";
 import type { Backend } from "../../lib/schgen/render/block-types.ts";
 import { placedSymbolTextOverlaps } from "../../lib/schgen/render/symbol-self-text.ts";
 import { generatedFiles, initHint, REFS_LOCK, VERSION_LOCK } from "./generated-files.ts";
-import { canonicalNetworkText, sha256, type ManifestSources } from "../../lib/schgen/manifest.ts";
+import { canonicalNetworkText, type ManifestSources } from "../../lib/schgen/manifest.ts";
+import { moduleTreeDigest, RULE_LIBRARY_DIR, TEMPLATE_LIBRARY_DIR } from "./library-digest.ts";
 import { moduleRepoRoot } from "../perfboard/repo-root.ts";
 
 export { staleFiles, writeGeneration } from "./generated-files.ts";
+// The manifest's library digests moved WHOLE to `library-digest.ts` when this file reached its
+// size limit (Task 4 of the gates-classify plan). Re-exported so every existing import of them
+// through this module keeps working - no caller had to change, and none did.
+export { DIGEST_EXEMPT, moduleTreeDigest, RULE_LIBRARY_DIR, TEMPLATE_LIBRARY_DIR } from "./library-digest.ts";
 
 export interface GenerateEnv {
   readonly kicadVersion: string;
@@ -159,161 +164,6 @@ function resolveVersions(d: LoadedDesign, env: GenerateEnv, current: VersionLock
   return { versions: locked, text };
 }
 
-/**
- * Spec §2.1's two libraries: the modules a template DRAWS with, and the rules that graded the
- * drawing.
- *
- * **THE TEMPLATE LIBRARY IS THE WHOLE OF `render/` AND NOT `render/templates/`, WHICH
- * OVER-COVERS, AND THAT IS THE CHOICE RATHER THAN AN OVERSIGHT.** Eight of the nine modules in
- * `render/templates/` import their geometry producers from the parent directory -
- * `chain-kit.ts`, `layout-kit.ts`, `fanout-kit.ts`, `geometry.ts`, `drawn-extent.ts`,
- * `power-text.ts`, `text-boxes.ts`, `lib-pins.ts` - so a digest over `templates/` alone **did not
- * move when a template's drawn geometry moved**, which is the exact failure this digest exists to
- * detect. The alternative mechanism was the transitive import closure of the template modules:
- * exact, and it needs an import walker this repository does not have. The directory tree is the
- * cheaper mechanism and its error is in the safe direction - **it will move on an edit anywhere
- * in `render/` that changes no template's geometry at all.**
- *
- * **SO: A READER WHO SEES `templateLibrarySha256` MOVE FOR AN UNRELATED REASON IS LOOKING AT THE
- * DESIGN AND NOT A BUG.** A false-positive staleness costs a regeneration; a false pass certifies
- * a drawing against a library version that did not draw it. Those are not symmetric.
- *
- * **WHAT IS STILL NOT COVERED, SAID HERE RATHER THAN DISCOVERED LATER.** `lib/schgen/rules/*.ts`
- * import `../render/geometry.ts` and `../render/library.ts`, so a geometry edit moves the TEMPLATE
- * digest and not the RULE digest even though it changes what the rules computed. Both fields sit
- * in one manifest and `staleManifestInputs` reports either, so the manifest as a whole still goes
- * stale - the mis-attribution is between two fields of one record, not a blind spot.
- */
-export const TEMPLATE_LIBRARY_DIR = "lib/schgen/render";
-export const RULE_LIBRARY_DIR = "lib/schgen/rules";
-
-/**
- * THE ENTRIES `moduleTreeDigest` PASSES OVER - a NAMED list, one entry, each carrying the committed
- * declaration that already settled it.
- *
- * **A NAMED EXEMPTION LIST IS THE OPPOSITE OF A FALLBACK, AND THE DIFFERENCE IS WHICH WAY THE
- * UNKNOWN CASE GOES.** A fallback substitutes behaviour when something is missing, so an unknown
- * input PASSES. This refuses everything not named, so an unknown input REFUSES. `CLAUDE.md`:
- * *"An empty whitelist that refuses loudly beats a general rule that quietly accepts a guess."*
- * That is the prescribed shape, and it specifies both the default state - empty - and the
- * extension discipline: a deliberate edit with a test beside it, never a silent widening.
- * `tests/schgen/generate-digest.test.ts` asserts the list's length, so growing it cannot be quiet.
- *
- * **THE MATCH IS EXACT EQUALITY ON THE FILE's NAME AND IS NOT A SUFFIX RULE.** `.DS_Store.bak`,
- * `foo.DS_Store` and a DIRECTORY called `.DS_Store` all still refuse. An exemption that drifted
- * into a suffix match would be the general rule this list exists instead of.
- *
- * **CONTROLLER RULING R43, 2026-10-20**, reversing the refuse-everything posture this function
- * shipped with for one round: the project has ALREADY declared `.DS_Store` a non-artifact, at
- * `.gitignore:20`, by the same reasoning it uses at `.gitignore:54` for `*.kicad_prl` - per-user
- * state, never design data. Refusing a generation over it was two parts of this repository
- * disagreeing, and a refusal that says *delete the file your file manager made* teaches nothing
- * about the circuit. **This entry is a reading of an existing decision, not a fresh judgement.**
- *
- * **AND THE RESIDUAL COST OF R43, WHICH IS NOT TO BE SOFTENED: a file named `.DS_Store` that
- * CARRIED GEOMETRY would be neither hashed nor refused.** Nothing else is lost - drawn geometry
- * reaches a template through a `.ts` import and every `.ts` in the tree is hashed, so a
- * geometry-bearing `.json`, a `.ts.bak` or a vendored data file still refuses by name. The one
- * thing this list hides is geometry someone put in a file with that exact name on purpose, and the
- * digest is the wrong place to fight that. `docs/known-gaps.md` **G228** records it.
- */
-export const DIGEST_EXEMPT: readonly { readonly name: string; readonly why: string }[] = [
-  {
-    name: ".DS_Store",
-    why:
-      "macOS Finder metadata. `.gitignore:20` already declares it a non-artifact of this " +
-      "repository, under the same `OS files` heading and by the same reasoning `.gitignore:54` " +
-      "applies to `*.kicad_prl`: per-user state, never design data. A single Finder visit to a " +
-      "library directory creates it, and refusing every generation until it is deleted would " +
-      "contradict a decision this repository has already committed (controller ruling R43).",
-  },
-];
-
-const isDigestExempt = (name: string): boolean => DIGEST_EXEMPT.some((e) => e.name === name);
-
-/**
- * A library's version, as the sha256 of every `.ts` module in its directory TREE, each beside its
- * path relative to that tree's root.
- *
- * **IT HASHES THE SOURCES AND NOT A DECLARED VERSION STRING, and the alternative was measurably
- * worse.** `TEMPLATES` is a registry of ids, so a digest over the ids would not move when a
- * template's GEOMETRY changed - a hash that cannot detect the thing it exists to detect, which is
- * `CLAUDE.md`'s *"a skipped check must never look like a passing one"* in a hash's clothing. The
- * parent's `run.json` records the engine COMMIT for the same reason.
- *
- * The path is included beside each hash, so adding a module moves the digest even if the new
- * module is empty, and the list is sorted so the digest does not depend on directory order.
- *
- * **IT WALKS SUBDIRECTORIES, AND THE FLAT VERSION OF THIS FUNCTION WAS THE SAME FAILURE IN
- * MINIATURE.** `fs.readdirSync` without recursion covers one directory level, so adding a
- * subdirectory under `templates/` or `rules/` silently NARROWED the digest with nothing failing -
- * inside the record whose whole job is to say what graded the output. A subdirectory is now
- * covered rather than dropped.
- *
- * **A FILE THIS DIGEST CANNOT HASH REFUSES BY NAME rather than being filtered out.** The `.ts`
- * filter is the one thing between *covered* and *invisible*, and a filter that quietly drops a
- * `.json` of coordinates sitting beside a template is the skipped check again. The one exception is
- * `DIGEST_EXEMPT` below, which is a NAMED list and not a general rule - see its comment for why
- * those are opposites.
- *
- * **AN EMPTY TREE REFUSES.** A digest over no files is a constant that can never move, which
- * would make the manifest certify a drawing against a library it never read.
- *
- * **`root` IS A PARAMETER AND NOT `moduleRepoRoot()` INSIDE, so the digest can be taken over a
- * COPY of the tree.** That is what lets `tests/schgen/generate-digest.test.ts` mutate a geometry
- * producer's bytes in a scratch copy and assert the digest moved, which is a real perturbation
- * rather than an assertion that a name appears in a list.
- */
-export function moduleTreeDigest(root: string, dir: string): string {
-  const abs = path.join(root, dir);
-  const modules: string[] = [];
-  const unhashed: string[] = [];
-  const walk = (at: string, prefix: string): void => {
-    for (const entry of fs.readdirSync(at, { withFileTypes: true })) {
-      const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
-      if (entry.isDirectory()) {
-        // A DIRECTORY carrying an exempt NAME is not the thing the exemption names, so it is
-        // reported rather than walked past: `DIGEST_EXEMPT` is about one file macOS writes.
-        if (isDigestExempt(entry.name)) unhashed.push(`${rel} (a directory, not the file the exemption names)`);
-        else walk(path.join(at, entry.name), rel);
-        continue;
-      }
-      if (entry.isFile() && entry.name.endsWith(".ts")) modules.push(rel);
-      else if (entry.isFile() && isDigestExempt(entry.name)) continue;
-      else unhashed.push(rel);
-    }
-  };
-  walk(abs, "");
-  if (unhashed.length > 0) {
-    throw new Error(
-      `the library tree at ${dir} holds ${unhashed.length} entr${unhashed.length === 1 ? "y" : "ies"} ` +
-        `this manifest digest does not hash: ${unhashed.sort().join(", ")}. They are NOT filtered ` +
-        "out: spec 2.1 has the manifest record the library version that graded the drawing, and a " +
-        "file the digest skips is a library input that can change with nothing failing - " +
-        'CLAUDE.md\'s "a skipped check must never look like a passing one". Three ways out, in ' +
-        "order of likelihood: delete it, if it is an editor or build artifact that belongs nowhere " +
-        "near a library tree; or hash it deliberately by extending moduleTreeDigest in " +
-        "tools/schgen/generate.ts, if it carries geometry or a rule; or, ONLY if this repository " +
-        "has already declared the file a non-artifact in a committed file, add it to DIGEST_EXEMPT " +
-        "above citing that declaration. Each of the three is a deliberate edit with a test beside " +
-        `it. The exemption list holds ${DIGEST_EXEMPT.length} name${DIGEST_EXEMPT.length === 1 ? "" : "s"} ` +
-        "and is not a suffix rule: " +
-        `${DIGEST_EXEMPT.map((e) => e.name).join(", ")}.`,
-    );
-  }
-  if (modules.length === 0) {
-    throw new Error(
-      `the library tree at ${dir} holds no .ts module, so its manifest digest would be a constant ` +
-        "that can never move - a hash that cannot detect the change it exists to detect. It is not " +
-        "defaulted to an empty digest (spec 2.1: the manifest records the template library version " +
-        "and the rule library version that graded the drawing).",
-    );
-  }
-  return modules
-    .sort()
-    .map((rel) => `${rel} ${sha256(fs.readFileSync(path.join(abs, rel), "utf8"))}`)
-    .join("\n");
-}
 
 /**
  * Spec §2.1's five manifest inputs for one generation.
@@ -345,7 +195,31 @@ function manifestSourcesOf(d: LoadedDesign, elk: ReadonlyMap<BlockId, ElkOutcome
   };
 }
 
-export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
+/**
+ * **THE GENERATION AS IT IS, FINDINGS AND ALL - the non-throwing half of the pair, and the one the
+ * census calls.** Task 4 of `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+ *
+ * The owner, on four boards that refuse and have never been looked at: *"a gate halts rendering
+ * and we never look at the picture so we can't tell if the gate is insane or not"*, and *"gates
+ * can still refuse to ratify an output, but they shouldn't HIDE the output"*. This function is
+ * that directive at the top of the pipeline: a generation whose gates complained comes back
+ * COMPLETE - every sheet, every emitted file - with `findings` carrying what they said, and
+ * `findings.ts`'s `worstClass` reads its class off them.
+ *
+ * **IT STILL THROWS WHEN THERE IS NO COMPLETE GENERATION TO RETURN**, which is a different thing
+ * from a generation the gates would not ratify: an invalid circuit and an undrawable sheet produce
+ * no files at all, so there is nothing to hand back and the typed `SchgenRefusal` carrying their
+ * findings is the whole of the output. The census turns that into the spec's refusal sheet.
+ *
+ * **WHY THE STRICT `generate` BELOW STAYS, rather than every caller moving to this one.** The
+ * marks the spec requires - a watermark in the `.kicad_sch` and a title-block status field - are
+ * Task 5, and until they exist an unratified schematic written into a CIRCUIT directory would look
+ * exactly like a ratified one. `tools/cli/schgen.ts` and `tools/schgen/verify.ts` write there and
+ * keep the strict form; the census writes only into its own gitignored directory, beside a
+ * `STATUS.md` that names the class. The pairing is `realiseBlockReported`/`realiseBlock`'s, for the
+ * same reason and at a different scale.
+ */
+export async function generateReported(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
   if (!isPlainFileName(d.spec.project)) {
     throw new Error(`project name "${d.spec.project}" must be a plain file name (no path separator or ".."); it names files in the output directory`);
   }
@@ -423,22 +297,31 @@ export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Gener
   }
   const manifestSources = manifestSourcesOf(d, elk);
   const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings, manifestSources });
-  const g: Generation = { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources, findings };
-  // **THIS IS THE ONE PLACE A CLASSIFIED OUTPUT IS STILL WITHHELD, AND IT IS SAID PLAINLY RATHER
-  // THAN LEFT TO BE DISCOVERED.** Task 3's job was to stop the gates throwing at their own sites so
-  // that a drawing survives them: `Generation` above is complete - every sheet, every placed
-  // symbol, every emitted file - and it is built before this line runs. What is not yet built is
-  // the artifact that CARRIES the class: the watermark and the title-block field the spec requires,
-  // and the per-board output directory. Returning an unmarked `Generation` would put an unratified
-  // schematic on disk looking exactly like a ratified one, which is worse than refusing. So the
-  // refusal stays here, typed and carrying every finding, and **Task 4 replaces this throw with
-  // classify-and-emit** - it is a single site, by design.
+  return { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources, findings };
+}
+
+/**
+ * **THE RATIFYING FORM: a generation the gates passed, or a typed refusal.**
+ *
+ * It is `generateReported` plus one rule - a non-empty `findings` refuses - and the rule is here
+ * rather than inside it because of WHERE each caller writes. This one's callers write into a
+ * CIRCUIT directory (`tools/cli/schgen.ts`, `tools/schgen/verify.ts`), where an unratified sheet
+ * carrying no mark would be indistinguishable from a ratified one. The marks are Task 5 of the
+ * gates-classify plan; until they exist, refusing is the only honest thing this form can do.
+ *
+ * **It is not the gate that hides the drawing any more**, which is the whole of what changed:
+ * `generateReported` has the same drawing in hand and hands it back, and the census writes it.
+ */
+export async function generate(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
+  const g = await generateReported(d, env);
   if (g.findings.length > 0) {
     throw new SchgenRefusal(
       g.findings,
       `the generation is UNRATIFIED (${worstClass(g.findings)}): ${g.findings.length} finding(s) ` +
-        `over ${drawings.length} sheet(s). The drawing exists and is not emitted yet - see the ` +
-        `gates-classify spec:${g.findings.map((f) => `\n  - [${f.kind}] ${f.where}: ${f.what}`).join("")}`,
+        `over ${g.drawings.length} sheet(s). The drawing EXISTS - generateReported returns it and ` +
+        `tools/schgen/board-sheets.ts writes it, classified. This form refuses because its callers ` +
+        `write into a circuit directory, where an unmarked unratified sheet would look ratified:` +
+        `${g.findings.map((f) => `\n  - [${f.kind}] ${f.where}: ${f.what}`).join("")}`,
     );
   }
   return g;

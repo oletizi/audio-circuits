@@ -37,15 +37,27 @@ export interface SchematicResolution {
  * The packet's second schematic source: a board that declares no `"sch"` is
  * not necessarily a board with no schematic to print - `schgen` may be able
  * to generate the missing per-section sheet from the same declaration the
- * circuit model is built from. Four outcomes, and only one of them earns a
+ * circuit model is built from. FIVE outcomes now - the gates-classify reform
+ * split the old `"refused"` into two, a board that drew nothing and a board
+ * whose drawing the gates would not ratify - and only one of them earns a
  * page:
  *
- * - no `BoardRef` for this board, or `boardSheets` reports `"no-declaration"`
+ * - no `BoardRef` for this board, or `boardSheets` reports `declared: false`
  *   - `kind: "none"`, exactly today's behaviour for a board that genuinely
  *   has none.
- * - `boardSheets` reports `"refused"` - `kind: "withheld"`, naming the
- *   blocker in full, `drawn: false`: nothing was drawn before the refusal.
- * - `boardSheets` reports `"generated"` but the gate does not clear - either
+ * - `boardSheets` wrote no schematic (`schematicRoot === undefined`) -
+ *   `kind: "withheld"`, naming the blocker in full, `drawn: false`: nothing
+ *   was drawn before the refusal.
+ * - `boardSheets` wrote a schematic the gates would not RATIFY, which it
+ *   reports as a non-empty `findings` - `kind: "withheld"`, `drawn: true`,
+ *   naming the blocker. **This arm is where the gates-classify reform lands
+ *   on this file.** Those boards used to arrive here as `"refused"` with no
+ *   drawing at all; now the drawing exists and the census writes it, and the
+ *   BUILD GUIDE still declines to print it, because the guide is the document
+ *   somebody solders from - *"if the schematics are wonky, it's worse than
+ *   having nothing at all."* Looking at an unratified sheet is what
+ *   `build/schgen-boards/` is for; building from one is not.
+ * - a schematic was written with no findings, but the gate does not clear - either
  *   zero sheets were drawn (nothing to examine, so this is NOT the same
  *   claim as a clean generation - `board-sheets.ts`'s own census makes the
  *   same distinction for its "fallback field placements" line, and `drawn`
@@ -59,7 +71,7 @@ export interface SchematicResolution {
  *   **`drawn` is the field that keeps these two sub-cases from printing as
  *   one claim on the guide page** - see `GuideSchematic` in
  *   `./schematic-notice.ts`.
- * - `boardSheets` reports `"generated"`, at least one sheet was drawn, and
+ * - a schematic was written with no findings, at least one sheet was drawn, and
  *   every sheet is clean - `kind: "generated"`, and the caller still has to
  *   export its PDF into the staging directory before this resolution's
  *   `tempDir` is removed.
@@ -122,19 +134,38 @@ export async function resolveSchematic(
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pultec-guide-schgen-"))
   try {
     const result = await boardSheetsFn(ref, repoRoot, { outDir: tempDir, pdf: false })
-    if (result.outcome === "no-declaration") {
+    if (!result.declared) {
       return { schematic: none, schematicRoot: undefined, tempDir }
     }
-    if (result.outcome === "refused") {
-      // `drawn: false` - schgen refused before drawing anything, so there is no sheet to have
-      // withheld "over something". See `GuideSchematic`'s doc in `./schematic-notice.ts`.
+    if (result.schematicRoot === undefined) {
+      // `drawn: false` - schgen produced no sheet at all, so there is no sheet to have withheld
+      // "over something". See `GuideSchematic`'s doc in `./schematic-notice.ts`.
       return {
         schematic: { kind: "withheld", declarationPath, circuitPath, reason: result.blocker, drawn: false },
         schematicRoot: undefined,
         tempDir,
       }
     }
-    // outcome === "generated". THE GATE IS TWO CONDITIONS, NOT ONE: `[].every(...)` is `true`, so a
+    // **A DRAWING THE GATES WOULD NOT RATIFY IS NOT A PAGE FOR A BUILD GUIDE.** `drawn: true`: a
+    // real sheet exists here - the census wrote it, classified, and that is the point of the
+    // gates-classify reform - and it is withheld for what is on it rather than because nothing
+    // exists to show. The spec's own line: a `defective` drawing "never reaches a build guide",
+    // and a `usable` one whose gates still complained is withheld here for the same reason the
+    // fallback gate below withholds, which is the owner's "worse than having nothing at all".
+    if (result.findings.length > 0) {
+      return {
+        schematic: {
+          kind: "withheld",
+          declarationPath,
+          circuitPath,
+          reason: `${result.outcome}: ${result.blocker}`,
+          drawn: true,
+        },
+        schematicRoot: undefined,
+        tempDir,
+      }
+    }
+    // THE GATE IS TWO CONDITIONS, NOT ONE: `[].every(...)` is `true`, so a
     // generation that drew nothing would otherwise pass having examined no text at all - a pass on
     // no evidence, which is this project's cardinal failure shape. `board-sheets.ts`'s own census
     // makes the same distinction for its own zero (`renderBoardSheets`'s "NOT MEASURED" line), and
@@ -176,12 +207,10 @@ export async function resolveSchematic(
         tempDir,
       }
     }
-    if (result.schematicRoot === undefined) {
-      throw new Error(
-        `boardSheets() reported "generated" for ${name} but wrote no schematicRoot; this is a defect ` +
-          "in boardSheets(), not a missing declaration - a generated outcome must carry the root it wrote.",
-      )
-    }
+    // The guard that stood here - *"reported generated but wrote no schematicRoot"* - is DELETED
+    // rather than kept, because the arm above now takes that case first and by name: a row with no
+    // `schematicRoot` is withheld before any of this runs, so the guard could not fire and a guard
+    // that cannot fire is a check somebody would later trust. `CLAUDE.md`: supersede means delete.
     return {
       schematic: { kind: "generated", path: SCHEMATIC_PDF },
       schematicRoot: result.schematicRoot,
