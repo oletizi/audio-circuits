@@ -21,9 +21,20 @@
  * module, so the board is loaded the way `make guide` loads it: the committed
  * `.vrt` through the real pinned veroroute binary and the board's own circuit
  * module, the shape `./junction-pad-rows.test.ts` and `./board-pipeline.ts`
- * use. What is injected is only what would touch the operator's disk or need a
- * browser: the filesystem (`./memory-fs.ts`) and the PDF print. `guide/` on a
- * real board is never written by a test.
+ * use. `guide/` on a real board is never written by a test.
+ *
+ * **NOT ONLY DISK AND THE BROWSER ARE INJECTED ANY MORE.** This board declares
+ * no `"sch"` (`tools/guide/schematic-source.ts`'s `resolveSchematic`), so since
+ * the schematic-in-the-build-guide task this packet also runs a REAL `schgen`
+ * generation for `pultec-low-boost` against `REPO_ROOT` - `boardRefs` and
+ * `boardSheets` are not overridden here, deliberately, the same way the real
+ * veroroute binary is not. Today that generation resolves `"withheld"` (five
+ * fallback field placements - `docs/known-gaps.md`'s schgen entries), so the
+ * throwing `exportSchematicPdf` below is never called; the day the arrangement
+ * work drives that count to zero the board resolves `"generated"` instead, and
+ * this test's `exportSchematicPdf` override is exactly the guard that keeps
+ * that transition from silently spawning a real `kicad-cli` at this harness's
+ * fake path.
  */
 import { test, expect } from "bun:test"
 import path from "node:path"

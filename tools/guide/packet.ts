@@ -41,7 +41,6 @@
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
 import { boardName, type PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
@@ -58,7 +57,7 @@ import {
 import { buildChecklist } from "./checklist.ts"
 import { assertLayoutMatchesCircuit, componentAt, loadBoardCircuit, type BoardCircuit } from "./circuit.ts"
 import { clusterMarking } from "./clusters.ts"
-import { buildGuideHtml, type GuideImages, type GuideSchematic } from "./guide.ts"
+import { buildGuideHtml, type GuideImages } from "./guide.ts"
 import { nodeMembers } from "./node-members.ts"
 import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padLabelOf } from "./pad-label.ts"
@@ -66,7 +65,10 @@ import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
 import { defaultPrintGuidePdf } from "./print-pdf.ts"
 import { renderLayout } from "./render.ts"
+import { resolveSchematic, SCHEMATIC_PDF } from "./schematic-source.ts"
 import { wireLinkRefs } from "./wire-links.ts"
+
+export { SCHEMATIC_PDF } from "./schematic-source.ts"
 
 /** The few filesystem operations the packet writer needs. */
 export interface GuideFs {
@@ -110,7 +112,6 @@ export interface GuideDeps {
   readonly repoRoot?: string
 }
 
-export const SCHEMATIC_PDF = "schematic.pdf"
 export const CLUSTERS_SVG = "layout-clusters.svg"
 export const GUIDE_HTML = "guide.html"
 export const GUIDE_PDF = "guide.pdf"
@@ -185,115 +186,6 @@ function dumpBoard(declaration: PerfboardDeclaration, deps: GuideDeps): string {
 function isoDate(date: Date): string {
   const pad = (n: number): string => String(n).padStart(2, "0")
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-/**
- * What `resolveSchematic` found: the `GuideSchematic` the page prints, the
- * absolute path to a clean generated sheet's `.kicad_sch` root (so the caller
- * can export its PDF once the staging directory exists - `undefined` for
- * every other outcome), and the scratch directory `boardSheets()` wrote into
- * (`undefined` when nothing was generated, because then nothing was written).
- */
-interface SchematicResolution {
-  readonly schematic: GuideSchematic
-  readonly schematicRoot: string | undefined
-  readonly tempDir: string | undefined
-}
-
-/**
- * The packet's second schematic source: a board that declares no `"sch"` is
- * not necessarily a board with no schematic to print - `schgen` may be able
- * to generate the missing per-section sheet from the same declaration the
- * circuit model is built from. Three outcomes, and only one of them earns a
- * page:
- *
- * - no `BoardRef` for this board, or `boardSheets` reports `"no-declaration"`
- *   - `kind: "none"`, exactly today's behaviour for a board that genuinely
- *   has none.
- * - `boardSheets` reports `"refused"` - `kind: "withheld"`, naming the
- *   blocker in full.
- * - `boardSheets` reports `"generated"` but some sheet carries a fallback
- *   field placement - text the placer could not keep clear - `kind:
- *   "withheld"` naming the count. **This is the gate**: a generated sheet is
- *   not thereby a sheet fit to build from, and the owner's own words are why
- *   it is a gate rather than a softer warning - "if the schematics are
- *   wonky, it's worse than having nothing at all."
- * - `boardSheets` reports `"generated"` with every sheet clean - `kind:
- *   "generated"`, and the caller still has to export its PDF into the
- *   staging directory before this resolution's `tempDir` is removed.
- *
- * Writes only under a temp directory this function creates with
- * `fs.mkdtempSync` - never into `boards/` or any circuit directory - and
- * never removes it itself: the caller owns that, because a clean generation's
- * `.kicad_sch` has to still be on disk when the PDF is exported from it.
- *
- * `boardRefsFn`/`boardSheetsFn` default to the real `tools/schgen/board-sheets.ts` functions and
- * exist as parameters for the same reason `loadCircuit` and `exportSchematicPdf` are injected on
- * `GuideDeps`: both do real work against the real `boards/` directory on disk, and a test whose
- * `repoRoot` is not a real repository must be able to replace them instead of finding that out
- * from an `ENOENT`.
- */
-async function resolveSchematic(
-  declaration: PerfboardDeclaration,
-  schPath: string | undefined,
-  repoRoot: string,
-  name: string,
-  boardRefsFn: (repoRoot: string) => readonly BoardRef[],
-  boardSheetsFn: (board: BoardRef, repoRoot: string, options: BoardSheetsOptions) => Promise<BoardSheets>,
-): Promise<SchematicResolution> {
-  if (schPath !== undefined) {
-    return {
-      schematic: { kind: "printed", path: path.relative(repoRoot, schPath) },
-      schematicRoot: undefined,
-      tempDir: undefined,
-    }
-  }
-  const declarationPath = path.relative(repoRoot, declaration.file)
-  const circuitPath = path.relative(repoRoot, declaration.circuitPath)
-  const none: GuideSchematic = { kind: "none", declarationPath, circuitPath }
-  const ref = boardRefsFn(repoRoot).find((r) => r.name === name)
-  if (ref === undefined) {
-    return { schematic: none, schematicRoot: undefined, tempDir: undefined }
-  }
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pultec-guide-schgen-"))
-  const result = await boardSheetsFn(ref, repoRoot, { outDir: tempDir, pdf: false })
-  if (result.outcome === "no-declaration") {
-    return { schematic: none, schematicRoot: undefined, tempDir }
-  }
-  if (result.outcome === "refused") {
-    return {
-      schematic: { kind: "withheld", declarationPath, circuitPath, reason: result.blocker },
-      schematicRoot: undefined,
-      tempDir,
-    }
-  }
-  // outcome === "generated". THE GATE: a fallback field placement is text the
-  // placer could not keep clear, drawn over something - and that is worse
-  // than printing nothing, so ANY fallback on ANY sheet withholds the page.
-  const clean = result.drawings.every((d) => d.fieldFallbacks.length === 0)
-  if (!clean) {
-    return {
-      schematic: {
-        kind: "withheld",
-        declarationPath,
-        circuitPath,
-        reason: `${result.fallbacks.length} fallback field placement(s): text the placer could not keep clear`,
-      },
-      schematicRoot: undefined,
-      tempDir,
-    }
-  }
-  if (result.schematicRoot === undefined) {
-    throw new Error(
-      `boardSheets() reported "generated" for ${name} but wrote no schematicRoot; this is a defect ` +
-        "in boardSheets(), not a missing declaration - a generated outcome must carry the root it wrote.",
-    )
-  }
-  return {
-    schematic: { kind: "generated", path: SCHEMATIC_PDF },
-    schematicRoot: result.schematicRoot,
-    tempDir,
-  }
 }
 
 /**
@@ -456,7 +348,16 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
               "this is a defect in that function, not a missing declaration.",
           )
         }
-        defaultExportSchematicPdf(deps.kicadCli, schematicRoot, path.join(staging, SCHEMATIC_PDF))
+        // THE SAME OVERRIDE THE `schPath` BRANCH ABOVE USES, not `defaultExportSchematicPdf`
+        // directly: both export a `.kicad_sch` to a PDF with the same `kicadCli`, and a caller that
+        // replaces one export path to keep a test (or a future caller) off the real binary expects
+        // to have replaced both. Calling the default unconditionally here defeated exactly that -
+        // `tests/guide/clusters-packet.test.ts` injects a THROWING `exportSchematicPdf` so a stray
+        // export is loud, and it runs the real `pultec-low-boost` through the real `repoRoot`; the
+        // day that board's fallbacks reach zero it resolves `"generated"`, and this line would have
+        // spawned the real `kicad-cli` at that test's fake `/fake/kicad-cli` path instead of tripping
+        // the guard - a trap that arms itself exactly when the project succeeds.
+        ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(deps.kicadCli, schematicRoot, path.join(staging, SCHEMATIC_PDF))
       }
       // THE PRINT IS INSIDE THE STAGING GUARANTEE, not after the swap: a
       // converter that is missing or prints nothing must leave the previous
@@ -491,9 +392,11 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
           : []),
     ].join("\n")
   } finally {
-    // REMOVED HERE, NOT INSIDE `resolveSchematic` - a clean `"generated"` resolution's
-    // `.kicad_sch` has to still be on disk when `defaultExportSchematicPdf` runs above, and this is
-    // the one place that runs on every exit from this function, success or throw.
+    // REMOVED HERE, NOT INSIDE `resolveSchematic` - a clean `"generated"` resolution's `.kicad_sch`
+    // has to still be on disk when the export above (`deps.exportSchematicPdf` or
+    // `defaultExportSchematicPdf`) runs, and this is the one place that runs on every exit from this
+    // function, success or throw. `resolveSchematic` has its own, separate leak guard for the case
+    // where it never returns a `resolution` for this `finally` to read `tempDir` off of.
     if (resolution.tempDir !== undefined) fs.rmSync(resolution.tempDir, { recursive: true, force: true })
   }
 }
