@@ -387,6 +387,38 @@ external plugin could drive both editors' GUIs:
 
 That issue was closed and locked the next day.
 
+### 3.4a The developer mailing list says the same thing, in 2020 — VERIFIED
+
+The brief asked for the developer mailing list, and #2077's thread cites it.
+**Seth Hillbrand, `kicad-developers@lists.launchpad.net`, 2020-10-19**
+(<https://www.mail-archive.com/kicad-developers@lists.launchpad.net/msg39090.html>):
+
+> "I haven't published the api for this yet. **The basic work is bringing
+> eeschema into the plugin architecture** and getting both old and new API to
+> compile and work from the same codebase. I'm not sure who moved the eeschema
+> api to v7 but it shouldn't have."
+
+**Read the phrasing.** In October 2020, three years into the request, the lead
+developer describes the *foundational* task as *bringing eeschema into the
+plugin architecture* — which is a statement that **eeschema was not in it.**
+That is the architectural claim of this section, from the mailing list, five
+years before the maintainer quote in §3.4 and six years before the API landed.
+
+### 3.4b Where it stands as of 2026 — RELAYED
+
+Forum thread **"KiCad Schematic Python API"**, opened 2026-04-06
+(<https://forum.kicad.info/t/kicad-schematic-python-api/68203>). Read through a
+summarising fetch, so RELAYED. A community contributor has a working
+proof-of-concept implementation across forks of both `kicad` and
+`kicad-python`; it is described as working but needing substantial cleanup, and
+Jon Evans had asked that certain **write** API calls not be started yet.
+
+**The detail worth recording is a negative:** the thread contains **no
+discussion of symbol placement or schematic layout.** The interest is in library
+management, selection events, and migrating off SWIG. Even the people building
+the schematic API are not building toward auto-layout — which is consistent
+with §2.1 and is one more reason the hypothesis's inference does not hold.
+
 ### 3.5 Plugin authors asking, over eight years — VERIFIED
 
 #2077's thread is a record of plugin authors hitting this wall. Quoting the
