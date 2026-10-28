@@ -557,9 +557,30 @@ it the same day**, on grounds that have nothing to do with whether it works:
 **So KiCad does not ship a PCB autorouter either** — not because PCB
 autorouting fails (Freerouting is in daily use, and the PCM hosts three more
 autorouters, §5.2) but for a licence dispute and an earlier flat declination.
-And KiCad *did* ship one once: forum participants report (**RELAYED**, from the
-Discourse search index) that *"KiCad previously had a basic autorouter in
-versions 3/4"* that *"was removed as it was not of very good quality"*.
+**And KiCad DID ship one once, which I can date exactly — VERIFIED.** Listing
+`pcbnew/autorouter/` at each release ref:
+
+| ref | contents |
+| --- | --- |
+| **`5.0`** | `autorout.cpp`, `autorout.h`, **`solve.cpp`**, **`routing_matrix.cpp`**, **`cell.h`**, `dist.cpp`, `queue.cpp`, `work.cpp`, `graphpcb.cpp`, `move_and_route_event_functions.cpp`, `rect_placement/`, `auto_place_footprints.cpp`, `spread_footprints.cpp` |
+| **`6.0`** | `ar_autoplacer.*`, `ar_matrix.*`, `autoplace_tool.*`, `spread_footprints.cpp`, `rect_placement/` |
+| **`10.0`** | `ar_autoplacer.*`, `ar_matrix.*`, `autoplace_tool.*`, `spread_footprints.*` |
+
+KiCad 5.x carried a complete grid/maze autorouter — `solve.cpp` +
+`routing_matrix.cpp` + `cell.h` + `queue.cpp` is the classic Lee-algorithm
+skeleton. It is gone by `6.0`. The commit that took it out is
+**`1e9da7f57b9341d08ef237677dc6926e7a547e96`, Jeff Young, 2019-05-29, "Remove
+CurItem() architecture and legacy routers and drawing code."**
+
+**Record the nuance rather than the convenient reading.** That commit bundles
+the router with the retirement of the legacy wxWidgets canvas, so the *stated*
+reason in the history is an architecture migration, not a verdict on the
+router's output. The *"was removed as it was not of very good quality"*
+characterisation is from forum participants (**RELAYED**, Discourse search
+index) and is **not** what the commit says. What the commit does establish
+beyond dispute is that **the capability was shipped, was dropped during a
+refactor, and was never rebuilt** — and that two years later a developer closed
+the request to rebuild it with *"we aren't going to implement it anyway."*
 
 **The inference the hypothesis wants to make — "KiCad does not have it,
 therefore it does not work" — is refuted on a case where the thing demonstrably
