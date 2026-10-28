@@ -155,7 +155,31 @@ So:
   question**; a figure in prose, including this one, is a transcription with a
   date on it.
 
-  **What refuses today is FOUR boards, in two classes**, which is the shape to
+  > **SUPERSEDED 2026-10-27 BY THE GATE REFORM, AND THE NUMBER IN THIS FILE WAS
+  > STALE AGAIN — WHICH IS THE FOURTH TIME, IN THE FILE THAT RECORDS THAT AS THE
+  > GOVERNANCE FAILURE OF RECORD.** The census no longer says *"produces a
+  > schematic"*, because that sentence never answered *may I build from it*:
+  >
+  > ```
+  > 10 of 11 boards produce a drawing: 10 usable, 0 defective
+  > 1 produce none: 1 not-drawable, 0 generator-defect
+  > ```
+  >
+  > **Only `pultec-mid` refuses, in one class.** The three transistor-preamp
+  > boards below were refusing on CROWDING, which the owner ruled is *"ugly but
+  > usable"* — they draw now. `bun tools/schgen/board-sheets.ts` is still the
+  > only thing that answers this, and this block is still a transcription with a
+  > date on it.
+  >
+  > **AND THE FIRST LOOK AT THOSE THREE DRAWINGS FOUND THE GATE REFUSING THE
+  > WRONG THING**: `transistor-preamp-buffered` was hidden over a `VCC` label
+  > brushing a pin number — both legible — while `R4`'s value reads `1●5K`, where
+  > `1.5K` and `15K` are indistinguishable, and that one passes ungated. 39
+  > fallback placements across 9 boards, none gated.
+  > `docs/superpowers/plans/2026-10-27-gates-classify-execution/README.md` carries
+  > it; `docs/known-gaps.md` **G303** is the directive it sits under.
+
+  **What refused before that reform was FOUR boards, in two classes**, which is the shape to
   check rather than the number: `pultec-mid` at `validateCircuit` on a switch
   throw (`pin 12`) that no slot in the model can carry; and `tp-stage` on each of
   `transistor-preamp-buffered`, `-feedback` and `-staged`, all three at the
