@@ -198,6 +198,8 @@ binary. There is no upstream rule file to defer to.
 5. What the evidence says about the practice
 ---------------------------------------------
 
+### 5.1 From the trials
+
 1. **The reviewer must look at the rendered page.** Three defects found in these
    trials - struck-through capacitor values, a falsely-grounded net, and a third
    of a circuit off the paper - were invisible to every check passing at the time.
@@ -211,6 +213,62 @@ binary. There is no upstream rule file to defer to.
    fired on the overflow page, and the only class of defect no netlist or ERC
    check can see.
 
+### 5.2 From the drafting office, which had solved most of this by 1920
+
+The modern survey found no precedent for retaining a reviewer's verdict, and
+concluded the mechanism would have to be invented. It would not. Every item
+below is quoted from a primary source read end to end; see
+`2026-10-28-drafting-office-checking-practice.md`.
+
+6. **The readability judgement is perishable, and that is why the producer
+   cannot make it.** French, 1911 and 1918, quoting Follows' dictionary - so not
+   authored by the checker - puts it at position **1** of the checker's list:
+   *"Put yourself in the position of those who are to read the drawing and find
+   out if it is easy to read and tells a straight story. Always do this before
+   checking any individual features; in other words, before you have had time to
+   become accustomed to the contents."* **The instrument is naivety and the
+   detail passes spend it.** An agent that drafted the sheet cannot make this
+   call, and neither can one that has read the netlist.
+7. **Drawing quality was a separate signature from design correctness.**
+   MIL-STD-100F §40.3.1 carries **DRAWING APPROVAL** - *"drawing format and
+   completeness"* - distinct from DESIGN APPROVAL, *"design technical adequacy"*.
+   Two signatures, two questions.
+8. **The markup was retained by name, in a deletion rule.** Collins, 1918:
+   *"After corrections have been made, the check prints are to be delivered to
+   the file clerk for filing with the record prints"*, and *"Old prints of
+   revised drawings (except record and check prints) shall be destroyed."* The
+   office purged superseded prints and **exempted the checker's marked-up sheet**
+   - a stronger retention guarantee than the drawing copies had.
+9. **The markup was a COVERAGE record, not a defect list.** Correct matter was
+   ticked too, so an *unmarked* feature meant *not reached*. Tick position
+   encoded provenance; a pencilled ring meant *doubtful*, under a quarantine
+   rule that nothing inside it could be used unverified. This answers "what did
+   the reviewer actually look at", which no comment list can.
+10. **The back-check: the correction is the least-checked part of a checked
+    drawing.** Bishop, 1920: *"Unless he 'back-checks' or verifies each
+    correction before making it, certain parts of the drawing are left
+    unchecked, the value being the checker's instead of the detailer's."* **This
+    hole is wider in an agent loop than it ever was on paper, because an agent
+    applies a reviewer's fix perfectly and without resistance - the compliance is
+    what makes it unchecked.** Bishop's enforcement is to withhold the fix and
+    cite *"not the correct values, but the reference numbers to paragraphs which
+    will suggest the nature of the mistakes"* - the rule violated, not the edit
+    to make. That is already the shape `CLAUDE.md` demands of a refusal.
+11. **"Legible enough" was defined by a downstream reproduction.** MIL-D-5480F
+    requires a **fourth-generation** copy to remain legible; NPS-10 judges every
+    original against a half-size print, because *"the contractor may never see
+    the original drawing."* An author-independent, testable criterion.
+12. **Effort was allocated by where an error would ESCAPE.** Do not check what a
+    downstream process catches anyway. `validateCircuit` and `kicad-cli` are the
+    shop; what escapes every tool here is arrangement, crowding, and whether the
+    sheet reads.
+
+**One thing not to inherit: the colour code.** It varied in kind and in
+direction between sources, and Bishop forbids the red Collins mandates, on
+erasability and because red on blueprints *"cause[s] unnecessary eye strain on
+account of an optical illusion."* The colours were chosen by the physics of the
+medium, not by meaning. Carrying a palette into a digital practice is cargo cult.
+
 ---
 
 6. Open
@@ -218,8 +276,12 @@ binary. There is no upstream rule file to defer to.
 
 - **Review tooling** - `kiri`, `plotkicadsch`, `KiDiff`, `KiCad-Prism`,
   `kischvidimer` are being run against two versions of the same sheet. [PENDING]
-- **Drafting-office checking practice** - the checker as a role, the coloured
-  check print, and what happened to the markup. [PENDING]
+- **Not obtained:** ASME Y14.2 / Y14.35 / Y14.100 clause text, which is
+  paywalled - so whether Y14.35 mentions check prints is unknown. Its free DoD
+  predecessor does not; MIL-STD-100F has no check-print clause, no colour code
+  and no markup-retention clause, because the check print was drafting-room
+  *procedure* rather than a standardised deliverable. That is most of why a
+  standards-aimed search found nothing.
 - **Coverage holes.** GitHub search truncates at 1,000 per query against
   `topic:eda`'s 15,776 and `topic:kicad`'s 5,168; GitHub *code* search was never
   run; CTAN was never swept. None is fixable by more queries of the same kind.
@@ -243,3 +305,4 @@ The evidence
 | `2026-10-28-registry-enumeration-kicad-github.md` | the PCM registry and GitHub topics |
 | `2026-10-28-academic-schematic-generation-check.md` | EEschematic, SchGen, CircuitLM, SINA |
 | `2026-10-28-ai-native-eda-platforms.md` | Flux, atopile, JITX, Quilter, diode |
+| `2026-10-28-drafting-office-checking-practice.md` | the checker, the check print, the back-check |
