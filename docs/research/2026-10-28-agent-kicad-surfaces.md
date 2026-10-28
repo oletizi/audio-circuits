@@ -35,6 +35,63 @@ dependencies, and the only project here claiming CI against KiCad 10.
 `kicad-cli` supplies the verification half of a loop and is solid, with one
 sharp caveat: its exit code proves loadability, not fidelity.
 
+**And the most decision-relevant artifact in this survey is a negative result
+published by one of the maintainers** — an A/B showing a 109-tool KiCad MCP
+server losing badly to plain Claude Code with `kicad-cli` and no plugin. It is
+the next section, because it reframes everything after it.
+
+---
+
+## 0. The maintainer who measured his own MCP server and stopped building it
+
+`ProductOfAmerica/mcp-server-kicad` entered **maintenance mode in October 2026**
+and its README says why, with numbers. Quoted verbatim from
+https://github.com/ProductOfAmerica/mcp-server-kicad#why-maintenance-mode:
+
+> "The plugin was built on one idea: KiCad files are large, so an AI assistant
+> should change them through tools instead of editing the text. We tested that
+> idea against plain Claude Code with KiCad installed and no plugin: the same
+> model (Claude Opus 5.5), the same settings and the same tasks, each result
+> judged by KiCad 10 itself (netlist, board, ERC and DRC)."
+>
+> - "**Six single edits** on a public KiCad 10 design (a value change,
+>   do-not-populate, a footprint swap, pads assigned to a net, a footprint
+>   rotation, a net renamed across sheets), three runs each. **Plain Claude Code
+>   got all 18 right. With the plugin, 3 of 18 were right.**"
+> - "**A long session of 20 board edits.** Both got every edit right, and the
+>   plugin's sessions used about **1.8 times as much context**."
+> - "**Why the plugin failed**, from reading every transcript: It had no tool for
+>   some edits (a pad's net, the do-not-populate flag, swapping one footprint).
+>   Its instructions told the model never to edit KiCad files directly, so the
+>   model stopped and asked instead. Its board-sync tool rewrote almost every
+>   footprint on the board, so the model undid its own work."
+> - "**The premise did not hold in these tests.** Plain Claude Code changed a
+>   2 MB board without reading it whole: it searched for the part and edited only
+>   the lines it needed."
+>
+> "**What to use instead:** a coding agent such as Claude Code, with KiCad
+> installed. Ask it to check its changes with `kicad-cli` (netlist export, ERC,
+> DRC) before it finishes."
+
+**Their own caveats, also verbatim:** *"These were small tests on one design, not
+a verdict on every board or every model. They were enough to stop adding tools.
+The test material is not published, because the design it used carries no
+licence."*
+
+**A scope limit they do not draw and this document must.** Five of the six
+single edits and all twenty long-session edits are **modifications to an existing
+design** — a value, a flag, a footprint, a pad net, a rename. **The A/B does not
+test generating a schematic from nothing**, which is the harder half of this
+repo's mandate and the half `lib/schgen/` exists for. So it is strong evidence
+against the MCP-tool layer for *editing*, and silent on authoring.
+
+**Why it matters here anyway.** The configuration that won is the one this repo
+already has: a coding agent, KiCad installed, `kicad-cli` invoked on every board
+on every `make check`, and circuits held as data. The failure modes it names are
+also instructive in their own right — a tool surface with gaps makes a model
+stop and ask rather than act, and a coarse sync tool can undo the model's own
+work. Both are arguments for fine-grained, total coverage or none.
+
 ---
 
 ## 1. KiCad's own IPC API (`kicad-python` / `kipy`) — PCB only, today
@@ -279,7 +336,7 @@ git-tracked repo (reformats everything). Dormant, so expect no fixes.
 
 ---
 
-## 4. `kicad-sch-api` — the maintained Python contender (not run here)
+## 4. `kicad-sch-api` — CONTAMINATED for pin geometry, by its own documentation
 
 - Repo: https://github.com/circuit-synth/kicad-sch-api — 57 stars, 19 forks,
   15 open issues, MIT
@@ -295,16 +352,52 @@ KiCad library integration with "automatic pin position calculation", and
 **"Manhattan-style orthogonal routing" generating "L-shaped wire paths
 automatically"** — the only library surveyed that claims a router.
 
-**UNVERIFIED and the reason to be careful:** its docs state it requires
-"a KiCAD 7 or 8 installation", and the repo description says "KiCAD schematic
-editor". **I did not test it against a KiCad 10 (v20260306) file.** Given that
-it advertises library integration and exact format preservation, a two-major-version
-gap is exactly where both would break. The "automatic pin position calculation"
-claim is the one most worth testing first, because it is what `kicadts` lacks
-and what pin-to-pin wiring needs.
+### The claims are refuted by the project's own `docs/KNOWN_LIMITATIONS.md`
 
-**Next step if pursued:** run the §3 test matrix plus the §5 fidelity diff
-against `pt2399-core.kicad_sch`. That is ~20 minutes and would settle it.
+**This is a correction to an earlier draft of this document, which flagged
+`kicad-sch-api` as "the one most worth testing first" on the strength of those
+claims.** Its own limitations file, quoted verbatim from
+`circuit-synth/kicad-sch-api/docs/KNOWN_LIMITATIONS.md`, says otherwise:
+
+> **2. Symbol Rotation and Position Transformation in Pin Positioning**
+> **File**: `kicad_sch_api/core/types.py:165` (`SchematicSymbol.get_pin_position`)
+> **Issue**: Pin position calculations don't account for component rotation or
+> symbol offset transformations.
+> **Impact**: Pin-to-pin wiring may be slightly inaccurate for rotated
+> components. Affects automated wire routing accuracy.
+> **Priority**: MEDIUM
+
+> **3. Wire Connectivity Analysis**
+> **File**: `kicad_sch_api/core/managers/wire.py:307`
+> **Issue**: Connectivity analysis for nets and wires is simplified.
+> **Impact**: Complex wire junction detection may miss some connections.
+> Affected by very short wire segments or unusual routing patterns.
+
+(Plus limitation 1: bounding-box calculations ignore rotation, priority LOW.)
+All three are "Documented as known limitation" — **unfixed**, in a library whose
+last commit was 2025-12-05.
+
+**Why this is disqualifying rather than merely a caveat.** The "automatic pin
+position calculation" that made it interesting is the exact thing admitted
+broken, and **limitations 2 and 3 compound into silent wrongness**: wrong pin
+coordinates for any rotated part, plus junction detection that misses short
+segments, produces a schematic that can pass a netlist-level assertion and still
+be electrically wrong. "Works for 0° rotation (most common case)" is not a
+property any real schematic has — rotated passives are the norm, and
+`pt2399-core` has a symbol at 270°.
+
+**It is load-bearing for three of the MCP servers in §10** —
+`circuit-synth/mcp-kicad-sch-api`, `blwfish/kicad-mcp`, and the save path of
+`oaslananka/kicad-mcp-pro` — so anything trusting their pin positioning inherits
+this. `kicad-mcp-pro` is the exception: it computes its own rotation- and
+mirror-aware pin geometry and carries a helper whose docstring notes
+"kicad-sch-api does not expose it", i.e. it is working around the library rather
+than trusting it.
+
+**Still UNVERIFIED:** I did not run it against a KiCad 10 (v20260306) file, and
+its docs state it requires "a KiCAD 7 or 8 installation". The format question is
+now moot for adoption, but the above is read from the project's documentation,
+not from a test.
 
 ---
 
@@ -682,6 +775,113 @@ quality.
   `import pcbnew` (SWIG) for the **PCB** tools. Nothing drives a schematic API —
   consistent with §1.
 
+### The two biggest KiCad MCP projects, which I missed on the first pass
+
+Neither appears in the official MCP registry, which is probably why. **Both are
+larger than everything above combined, and both have the schematic *legibility*
+tooling this repo actually wants.** Metadata below is from the GitHub API; where
+a capability is relayed from a delegated source audit rather than my own read, I
+say so.
+
+**`mixelpixx/KiCAD-MCP-Server` — 3,002 stars, 399 forks, MIT, active (pushed
+2026-10-26).** https://github.com/mixelpixx/KiCAD-MCP-Server · ~247 tools, with
+`KICAD_MCP_TOOLBOXES=core` narrowing the default to 37. A TypeScript MCP front
+end spawning a long-lived Python subprocess; schematic work is its own
+`sexpdata`-based editing, PCB work is `pcbnew` SWIG with an experimental `kipy`
+backend.
+
+**I verified `src/tools/schematic-layout.ts` myself** — five real `server.tool(`
+registrations, and they are the most on-point tools found anywhere in this
+survey:
+
+- **`set_schematic_property_position`** — move a Reference or Value field to an
+  absolute (x, y) in mm, with optional angle and visibility. **This is the field
+  positioning that `mcp-server-kicad`, `kicad-skip`-via-MCP and most others lack.**
+- **`batch_set_schematic_property_positions`** — many field moves in one
+  read/write, returning per-item applied/failed with reasons.
+- **`autoplace_schematic_fields`** — repositions every Reference and Value field
+  so it sits outside the component body **and outside any net labels attached to
+  its pins**, avoiding collisions with other components and already-placed
+  fields; net-label-aware, with a `clearance` defaulting to one 1.27 mm grid unit.
+- **`lint_schematic_cosmetic`** — netlist-safe raw-text passes that never move a
+  symbol, pin, wire, junction or label anchor: `hide_pin_names`, and
+  `orient_labels` which sets each label's angle and justify from the sheet-space
+  outward side of the pin it sits on, rotation- and mirror-aware. Has `dryRun`.
+- **`suggest_schematic_declutter`** — re-orients overlapping labels while holding
+  each **anchor fixed** because it is the electrical connection point, changing
+  only orientation and justification; **dry-run by default**, returning proposals
+  plus an overlap score **before and after**.
+
+Caveats: the file is only 174 lines, so these are thin registrations over Python
+implementations I did not read. **Not on npm or PyPI** despite a `package.json`
+naming `kicad-mcp` — install is `git clone` plus a setup script. Four boundaries
+in the call path. And its `docs/KNOWN_ISSUES.md` is honest about real breakage
+(relayed): `get_board_info` broken on KiCad 9 layer enums, SWIG zone-fill
+segfaults, the SWIG backend cannot push to a running UI.
+
+**`mixelpixx/Konnect` — 1,432 stars, AGPL-3.0, and `archived: true` as of
+2026-10-25.** https://github.com/mixelpixx/Konnect · Its successor
+**`Orchis-ai-LLC/Konnect-EDA`** (64 stars, licence `NOASSERTION`) is
+**closed-source commercial**, free during beta, the repo being downloads and an
+issue tracker only. 228 tools over 21 on-demand toolsets. Schematic editing was
+its **own Rust `.kicad_sch` engine** with atomic write and UUID preservation,
+needing no KiCad install; PCB went through the KiCad 10 IPC API. Its README is
+explicit that it deliberately avoided a "third-party schematic library with known
+gaps" — i.e. it rejected both `kicad-skip` and `kicad-sch-api`, which §4 now
+vindicates.
+
+Relayed, **not** verified by me (the Rust `tool!` macros):
+`get_schematic_pin_locations` accounting for rotation and mirroring and returning
+`orientation_degrees` and `length_mm`; `reset_schematic_field_positions`;
+`add_wire` auto-detecting T-junctions and inserting dots; `delete_schematic_wire`
+**pruning the junction dots it leaves unjustified**; `move_connected` stretching
+connected wire stubs while plain `move_schematic_component` explicitly does not;
+`fix_connectivity` snapping near-miss endpoints with `dry_run`;
+`check_schematic_overlaps`, `find_orphan_items`, `find_single_pin_nets`,
+visual-baseline set/compare. It also deprecated its own
+`auto_place_from_schematic` with "autonomous whole-board mutation is retired —
+apply bounded, explicit `move_component` operations instead", which is a finding
+in itself.
+
+**The durable value is its specification, not its code.** The AGPL Rust source is
+frozen; `Konnect-EDA/tool-directory.md` is a 449-line statement of what each
+schematic operation must *mean*. See the recommendation below.
+
+### Three more worth knowing
+
+- **`copperheadhq/copperhead`** — 666 stars, 139 forks, Apache-2.0, pushed
+  2026-10-28, TypeScript. https://github.com/copperheadhq/copperhead · Edits real
+  `.kicad_sch` text and holds **the largest open-source legible-schematic
+  drafting engine found**; I confirmed `src/kicad/` contains `legibility.ts`
+  (34 KB), `score.ts` (21 KB), `populate.ts` (40 KB), `symlib.ts`, `sexp.ts`.
+  **But its MCP server deliberately exposes only five opaque, outcome-level
+  tools**, on an argued security position: "The security boundary is tool
+  granularity… no file-edit tool, no raw KiCad tool, no way to drive one step of
+  the loop." Self-labelled EXPERIMENTAL. **Unusable as a schematic-editing
+  server; the most interesting TypeScript prior art in the ecosystem**, and a
+  direct counter-argument to fine-grained tool surfaces worth reading alongside §0.
+- **`blwfish/kicad-mcp`** — 27 stars, MIT, pushed 2026-10-28 (active). Wraps
+  `kicad-sch-api` (so it inherits §4's rotation defect) but deliberately exposes
+  only **18 tools** — 12 routers with an `operation` parameter — explicitly to
+  stay inside every client's tool limit. Has `add_wire_between_pins` and a
+  `schematic_layout` router. Not on PyPI.
+- **`Huaqiu-Electronics/kicad-mcp`** — 25 stars, MIT, **last commit 2026-04-20**.
+  **Owns the PyPI name `kicad-mcp`** (not `lamaalrajih`). Drives the *running*
+  KiCad editor over an NNG socket, so the document must be open. 26 schematic
+  tools, but no junction, no no-connect, no field positioning.
+- **`belaszalontai/kipilot-mcp`** — 14 stars, Apache-2.0. A near-1:1 `kipy`
+  wrapper whose schematic surface is **generic item CRUD**
+  (`kicad_sch_create_items`/`update_items`/…), so its capability is bounded by
+  whatever KiCad's IPC schematic mutation permits — which §1 shows is
+  approximately nothing in 9/10.
+
+**PyPI name traps** (relayed, consistent with my own finding that
+`mcp-kicad-sch-api` is absent from PyPI): `kicad-mcp` is Huaqiu's,
+`kicad-mcp-server` belongs to an unrelated `bunnyf/pcb-mcp`, and
+`mcp-kicad-sch-api` is not on PyPI at all despite its README's `pip install`
+line. Also `devbisme/kicad-skip` does not exist — `kicad-skip` is
+`psychogenic/kicad-skip` (Pat Deegan); devbisme is SKiDL's author.
+
 ### What this means for this repo
 
 **The §1 constraint still binds and explains the whole field:** no released
@@ -739,11 +939,12 @@ bookkeeping, and `lib_symbols` plumbing, and pin a version.
 **5. Ban `kiutils` outright**, and consider §5 a worked entry for
 `docs/schematic/false-greens.md`.
 
-**6. Test `kicad-sch-api` before building anything** — it is the only library
-claiming automatic orthogonal routing and automatic pin-position calculation,
-which is precisely the work in question. Its "KiCad 7 or 8" requirement is the
-reason to test rather than adopt. `kicad-mcp-pro` depends on it at
-`>=0.5.0,<0.6`, which is evidence it is load-bearing for someone.
+**6. Do not build on `kicad-sch-api`, and treat anything that wraps it as
+suspect for pin geometry.** Its own `KNOWN_LIMITATIONS.md` admits
+`get_pin_position` ignores rotation and that wire connectivity analysis is
+simplified — the two defects compound into a schematic that passes a netlist
+assertion and is still wrong. This reverses an earlier draft of this document,
+which named it the thing to test first.
 
 **7. Read `mcp-server-kicad` before extending `lib/schgen/`, even if it is never
 installed.** It has solved, in a byte-preserving CST, the four things a
@@ -763,6 +964,33 @@ cheapest route from `sch export svg` to an image an agent can look at.
 wires**, because moving a symbol breaks them. Nothing in this survey re-routes.
 Placement and routing are therefore not separable passes unless placement runs
 first and once — which is a constraint on the design, discovered for free.
+Konnect reached the same conclusion from the other direction, deprecating its
+whole-board auto-placer in favour of "bounded, explicit `move_component`
+operations".
+
+**10. The highest-value output of this survey is criteria, not code — and
+`CLAUDE.md` says criteria must not come from the agent producing the artifact.**
+Three independent, externally-authored specifications of what schematic
+legibility operations must *mean* now exist, and they agree with each other:
+
+- `Orchis-ai-LLC/Konnect-EDA/tool-directory.md` — 449 lines on which deletions
+  must prune now-unjustified junction dots, which moves must stretch connected
+  wires and which must not, what a pin location must account for.
+- `mixelpixx/KiCAD-MCP-Server/src/tools/schematic-layout.ts` — field
+  autoplacement must be net-label aware with an explicit clearance; a declutter
+  pass holds each label's anchor fixed because it is the electrical connection
+  point, changes only orientation and justify, is dry-run by default, and reports
+  an overlap score before and after.
+- `copperheadhq/copperhead/src/kicad/legibility.ts` + `score.ts` — a third,
+  TypeScript, scoring-based take.
+
+**These are the right shape for this repo's rule file or spec**, because nobody
+here wrote them to justify an artifact produced here. Reading them costs an hour;
+re-deriving them costs a plan.
+
+**11. Do not adopt an MCP server as the mechanism** — §0 is a maintainer's own
+measured argument against the layer, and §10 shows every server is editing
+s-expressions behind an RPC hop anyway. Borrow the approaches and the criteria.
 
 ---
 
@@ -774,9 +1002,16 @@ first and once — which is a constraint on the design, discovered for free.
    `mcp-server-kicad`'s KiCad 10 CI claim is the project's own README statement;
    I did not inspect its workflow files. `ANamelessDrake/kicad-mcp` was not
    examined at all beyond metadata.
-2. **`kicad-sch-api` against KiCad 10** (§4) — not run. Its routing and
-   pin-position claims are the most load-bearing unverified claims here, and
-   `kicad-mcp-pro` depends on it, so testing it settles two sections at once.
+2. **`kicad-sch-api` against KiCad 10** (§4) — not run. The rotation and
+   connectivity defects are read from the project's own `KNOWN_LIMITATIONS.md`,
+   which is strong evidence but is documentation, not a test.
+2a. **The implementations behind `mixelpixx`'s five layout tools** — I confirmed
+   the registrations in a 174-line TypeScript file; the Python that does the work
+   is unread. Its `KNOWN_ISSUES.md` breakage list is relayed, not verified.
+2b. **Konnect's capabilities are relayed, not verified** — I confirmed the repo
+   is archived and the successor is closed-source, but did not read the Rust.
+2c. **`copperheadhq/copperhead`'s legibility engine** — I confirmed the file
+   sizes exist; I did not read the engine or run it.
 3. **KiCad 11's release date** (§1) — milestone has no due date; Feb 2027 is
    inference from the 12.0 window and prior cadence, not a primary statement.
 4. **Whether `master`-branch `kicad-python` + a KiCad 11 nightly actually
