@@ -23,14 +23,26 @@ schematic auto-layout does not work.** It is evidence about KiCad's internal
 data model and its API ordering. A working engine, had one existed, would have
 had nowhere to plug in.
 
-**The hypothesis also fails on its own premise in a second, independent way.**
-It assumes KiCad ships automation when automation works. KiCad **declines
-PCB autorouting too** — the thing that demonstrably works and that every
-commercial tool ships. A maintainer closed the standing autorouting request
-with *"we aren't going to implement it anyway"* (**§4.3**). The project's
-revealed preference is for **interactive, operator-in-the-loop tools** on both
-sides of the design. Inferring from "KiCad does not ship X" to "X does not
-work" fails on a case where X is known to work.
+**The hypothesis also fails on its own premise in two further, independent
+ways.** It assumes KiCad ships automation when automation works.
+
+- KiCad **declines PCB autorouting too** — the thing that demonstrably works and
+  that every commercial tool ships. A maintainer closed the standing autorouting
+  request with *"we aren't going to implement it anyway"* (**§4.3**), and KiCad
+  shipped a maze router through 5.x and dropped it in a refactor.
+- **Schematic WIRE auto-routing shipped in OrCAD, Altium, Proteus and Virtuoso,
+  is in daily professional use, and KiCad has none of it** (**§6.2**). That is
+  an automation known to work, shipped by four competitors, absent from
+  eeschema.
+
+The project's revealed preference is for **interactive, operator-in-the-loop
+tools** on both sides of the design. Inferring from "KiCad does not ship X" to
+"X does not work" fails twice on cases where X is known to work.
+
+**The separate question — whether anyone has ever made schematic SYMBOL
+placement work — gets a much less comfortable answer, and §6 is where it
+lives.** Three tools shipped something, and all three dodge the problem rather
+than solve it. **Split the two halves before quoting any of this.**
 
 ---
 
@@ -786,11 +798,374 @@ far as I know **plugins only appear in PCBnew**."* **FETCH-QUOTED.** That is
 
 ## 6. Historical note: did any EDA tool ever ship schematic auto-layout?
 
-*A parallel research pass covered the commercial and historical EDA tools
-(OrCAD/Cadence, Altium/Protel, Mentor, Viewlogic, Zuken, and the
-HDL-to-schematic viewers in Vivado/Quartus/Design Vision). Its findings are
-recorded separately and are not duplicated here. The relevant bearing on the
-hypothesis is in §7.*
+**SPLIT THE QUESTION. It is two problems with opposite histories, and every tool
+surveyed answers them differently.**
+
+- **Schematic WIRE auto-routing shipped decades ago, in several major tools, and
+  is in daily use.** OrCAD Capture, Altium Designer, Proteus ISIS and Virtuoso
+  all have it.
+- **Schematic SYMBOL auto-placement essentially never shipped in a mainstream
+  schematic editor.** Three instances exist and **all three dodge the placement
+  problem rather than solving it.**
+
+This section is a parallel pass's work, relayed. Its labels are its own and are
+stricter than this document's: **`[VERIFIED-RAW]`** = it read the raw bytes
+itself (curl + local HTML strip, local `pdftotext`, or a Playwright snapshot
+read off disk); **`[RELAYED-FETCH]`** = the quote came through a summarising
+fetch; **`[RELAYED-SEARCH]`** = from a search-result summary only, weakest. It
+re-verified its two most load-bearing quotes from raw bytes and both held
+exactly. **Everything below is RELAYED by me** — I did not re-read any of these
+sources, and the pass itself says every `[RELAYED-FETCH]` quote should be
+re-read from raw bytes before anyone publishes it.
+
+### 6.1 The three shipped symbol-placement instances, and why each one dodges
+
+**EasyEDA Pro exposes `SCH_Document.autoLayout()` and
+`SCH_Document.autoRouting()` — API-only, beta, and the vendor says not to ship
+on it.** `[VERIFIED-RAW]` from EasyEDA Pro's own Extension API reference. The
+page's own banner, verbatim:
+
+> "This API is provided as a beta preview for developers and may change based on
+> feedback that we receive. **Do not use this API in a production environment.**"
+
+The signature, verbatim:
+
+```
+function autoLayout(props?: {
+  uuids?: Array<string>;
+  netlist?: { component: Record<string, { pinInfoMap: Record<string,
+      { name: string; number: string; net: string; props: { 'Pin Number': string } }> }> };
+  designatorDeviceTypeMap?: Record<string,
+    'resistor'|'capacitor'|'inductive'|'diode'|'triode'|'oscillator'|'chip'|'otherDevice'>;
+}): Promise<any>;
+```
+
+*(<https://prodocs.easyeda.com/en/api/reference/pro-api.sch_document.autolayout.html>)*
+
+**And the pass disconfirmed the obvious misreading, which I had already made in
+an earlier draft of this section and am recording rather than quietly
+fixing.** EasyEDA's *user-facing* "Auto Component Placement" and "Auto Routing"
+(V3.0.x, `Top Menu → Layout → …`) are **PCB-only**. The pass checked the V3.0.x
+release notes and the V3 changelog: the schematic-editor entries there are
+assembly variants, schematic comparison and reusable-module designator
+assignment. **Schematic auto-layout appears nowhere in the release notes or the
+user guide — it is API surface only.** The vendor's hedge quoted for the *PCB*
+feature, verbatim: *"EasyEDA supports simple automatic layout function,
+currently only the experience stage (preview version)… The automatic layout
+will be laid out according to the built-in rules, and **cannot completely
+replace the manual work.**"*
+
+**I had this wrong for one commit, from a transcript extraction that conflated
+the PCB release note with the schematic API.** That is this repository's own
+`false-greens` failure mode in miniature: a search summary that names the right
+feature in the wrong editor, read as confirmation.
+
+**The `designatorDeviceTypeMap` is the most interesting artifact in the whole
+survey for this project.** A shipping tool's schematic placer takes, as optional
+input, a per-designator classification into
+`resistor | capacitor | inductive | diode | triode | oscillator | chip | otherDevice`.
+**That is a placement-intent representation, authored outside the placer, in
+production code** — directly relevant to
+[`2026-10-28-placement-intent-representations.md`](2026-10-28-placement-intent-representations.md),
+whose finding was that fourteen systems carry no reason per placement decision.
+This is not a reason, but it is an authored input to a placer, which is the
+nearest thing found.
+
+It also closes a gap that document's sibling already recorded:
+[`2026-10-28-ai-native-eda-platforms.md`](2026-10-28-ai-native-eda-platforms.md)
+notes EasyEDA Pro's Extension API as a gap whose docs *"were not read."* **They
+are now read, and they contain a schematic `autoLayout`.**
+
+**Cadence Virtuoso Studio IC25.1 — "Place-Like Layout Schematic for Photonics",
+6 Nov 2025.** `[VERIFIED-RAW]` via Playwright. Verbatim:
+
+> "Now, lets switch to the **Place-Like Layout Schematic** view. Instead of a
+> linear, abstract representation, the schematic mirrors the physical layout.
+> The Y-splitters, waveguide arms, and thermal phase shifters are placed in
+> positions that reflect their actual physical arrangement. **Connectivity is
+> auto-routed, and symbols are generated to match the layout components.**"
+
+> "The Place-Like Layout feature operates within a **layout-driven schematic
+> flow**, reversing the traditional schematic-driven layout paradigm."
+
+**It does not compute an arrangement. It borrows one**, from the physical
+layout, and it only works because photonic symbols happen to resemble their
+layout counterparts. Gated behind a `Virtuoso_Photonics_Platform` licence. **A
+placement-intent transfer, not a placement solver.**
+
+**Viewlogic / Innoveda `ViewGen` — the real historical case, and it died with
+its vendor.** `[VERIFIED-RAW]` from the *Innoveda eProduct Designer Interface
+Guide* (Actel/Innoveda, hosted by Microchip), downloaded and `pdftotext`-ed.
+Verbatim, step 7 of "Adding FPGA Express Blocks":
+
+> "7. Invoke ViewGen to generate a symbol. Specify the .wir file generated by
+> the EDIF Netlist Reader as the input. Select 'Generate the top level symbol'
+> and optionally, **'Generate schematic.'**"
+
+**And a practitioner reports actually using it**, which is what the brief asked
+for. `[RELAYED-FETCH]`, comp.arch.fpga, *"Viewlogic schematic from Synplify edif
+output?"*, 2000-06-30 to 2000-07-05. Pete Dudley's opening post says previous
+tools allowed netlist-to-schematic conversion via *"edifneti and viewgen"* to
+get a *"machine generated schematic"*; his closing post reports success after
+updating the Virtex library and the EDIF reader and editing `edifatts.cfg`, then
+running *"Viewgen to produce the final schematic"*, and *"tested it in the
+simulator and it works correctly!"*
+*(<https://groups.google.com/g/comp.arch.fpga/c/a68QJVdcCmw>)*
+
+**The shipped-then-gone evidence is the past tense in that 2000 post** — *"In
+the past, netlists … could be run through edifneti and viewgen"*. Viewlogic →
+Innoveda → absorbed by Mentor Graphics in 2002; the ViewDraw/ViewGen line died
+with it, and **the capability has no successor in any PCB schematic editor.**
+The pass is explicit that the *removal* half is `[RELAYED-SEARCH]`: it found no
+release note saying the Viewlogic interface was dropped, and says so plainly
+rather than implying otherwise.
+
+**One disambiguation it checked so this document does not repeat a common
+conflation:** `[VERIFIED-RAW]` from the *Xilinx Viewlogic Interface Guide 2.1i*
+(bitsavers), *"EDIFNETI reads the EDIF netlist generated by NGD2EDIF and
+produces WIR files to represent the design."* **`EDIFNETI` builds connectivity;
+`ViewGen` is the part that draws.**
+
+### 6.2 The wire routers that DID ship — and what their objective functions are
+
+**This is the part of the answer that is unambiguously positive, and the detail
+is more useful than the fact.**
+
+**OrCAD Capture "Auto Wire", new in SPB 16.3 (2010), still shipping.**
+`[VERIFIED-RAW]` from Cadence's own blog, Jerry Grzenia, 2010-03-03, tagged
+`Design Entry CIS`, `SPB 16.3`, `Auto-wire`:
+
+> "In complex designs containing a large number of parts, the task of wiring the
+> parts together is often a time consuming and tedious task… Capture now
+> includes an Auto-Wiring feature that allows you to wire two or more pins or
+> wires on your schematic page."
+
+Three modes: "Connect two points", "Connect multiple points", "Connect to a
+bus".
+
+**And its documented failure mode is the single most useful quote in this
+section.** `[VERIFIED-RAW]` from FlowCAD's (Cadence's European distributor)
+application note *"Auto Connect command"*, dated 2010-02-17, updated 2013-09-04,
+section 4 **Limitations**, verbatim:
+
+> "If there is not enough space for a new wire, the auto connection fails. You
+> have to move some of the existing wire to make some space for the new one. A
+> zero Pin Length cannot be connected with the auto connect function… In both
+> cases you get a message, which looks similar to: `[AUTOWIRE01] Auto Connection
+> Failed between (2.400000,2.800000) and (2.400000,3.000000)`"
+
+*(<https://www.flowcad.de/AN/FlowCAD_AN_Capture_Auto_Connect.pdf>)*
+
+**Read what that is.** The shipped commercial schematic router is a **pairwise
+connector that refuses when congested and tells the human to make room.** It
+does not reflow, it does not move symbols, and it has no global objective.
+**That is the industrial state of the art, and it hands the layout problem
+back** — which is also, note, exactly the posture this repository's
+`CLAUDE.md` calls a failure: *"A first solution that technically works but
+leaves a person doing fiddly remedial work is a failure, not a delivery."*
+
+**Altium Designer ships an "Auto Wire" mode with a crossing-avoidance weight
+and a compute budget.** `[VERIFIED-RAW]` from Altium's own `Wire` object and
+Point-to-Point Router pages, verbatim:
+
+> "There is also an Auto Wire mode that can be used to route quickly from the
+> previous segment end to the point where the cursor is clicked using the Point
+> to Point Router. The path of the route will be the most efficient possible
+> while avoiding existing placed objects on the sheet."
+
+> "Time Out After (s) — the time out setting prevents spending an indefinite
+> amount of time trying to calculate a path. Enter the desired number of
+> seconds; **the default is 3.**"
+
+> "Avoid cutting wires — use to avoid running new wire over many existing wires.
+> At the L end of the scale, the wire placement will not discriminate against
+> existing wires. At the H end of the scale, the wire placement will avoid
+> existing wires."
+
+The dialog's own documentation slug is `sch-dlg-autowirer-options…` — "AutoWirer",
+Protel heritage.
+
+**That slider is the closest thing in the entire survey to a stated readability
+objective in a shipping tool: a tunable wire-crossing-avoidance weight, with a
+three-second compute budget.** Worth putting beside this repository's own
+crossing counts in `bun run tools/schgen/board-geometry.ts`.
+
+**Proteus ISIS ships a Wire Auto-Router that REFLOWS on symbol moves.**
+`[RELAYED-FETCH]` from Labcenter's own page, verbatim: *"Placing a wire can be
+as simple as clicking on the two pins you want to connect — the Wire Auto-Router
+does the rest"* and *"The Wire Auto-Router also operates when components are
+moved, automatically fixing up the affected wiring."* The page says nothing
+about automatic component placement. **Contrast with OrCAD, whose router
+explicitly does not reflow: Proteus is the one shipped commercial behaviour
+closest to incremental schematic re-layout.**
+
+**Virtuoso Schematic Editor**: `[VERIFIED-RAW]` from the Cadence product page,
+and the claim is only *"Sophisticated wire-routing capabilities further assist
+in connecting devices."* No detail.
+
+### 6.3 The clear negatives, with the searches that found them
+
+**Altium ships NO schematic symbol auto-placement.** Only Align Objects,
+Distribute Horizontally/Vertically, and *"Align to Grid — move selected objects
+to the nearest point on the current snap grid"*, plus designator auto-increment.
+`[RELAYED-FETCH]`, from Altium's *Schematic Placement & Editing Techniques*:
+*"There is no mention of automatic wire routing, automatic component placement,
+or automatic arrangement features."* **Which is the same six-plus-grid feature
+set KiCad 10 has** (§1.1) — the align/distribute/snap triad is the industry
+baseline, and KiCad is one action short of it.
+
+**`Smart Grid Insert` / `Smart Grid Paste` are not placement tools.**
+`[RELAYED-FETCH]` from Altium's own doc: they *"change the value of existing
+objects from pasted tabular data"*, mapping spreadsheet or PDF columns onto
+object properties in the SCH List panel. **No positioning whatsoever.** The
+brief's hypothesis about these two is refuted.
+
+**Altium Device Sheets and Signal Harnesses do not generate schematic
+content.** `[RELAYED-FETCH]`: harnesses are *"manual bundling tools for grouping
+existing nets — they don't auto-generate schematic elements"*; device sheets are
+pre-drawn human sheets reused as blocks.
+
+**EAGLE: no schematic autoplace and no schematic autorouter.**
+`[VERIFIED-RAW]` from the *EAGLE Manual Version 5, 4th Edition*, `pdftotext`-ed
+locally. The Autorouter is a **Layout-only licensed module** (*"You can route
+the airwires automatically if you own the Autorouter module"* — airwires are a
+board concept). And the manual's section literally titled **"Arrange
+Components"** is entirely manual: *"Arrange Components — Drag the various
+components to the desired positions. Use the MOVE command for this purpose."*
+
+**Cadence Capture / Design Entry HDL: no symbol auto-placement found, and a
+forum thread shows the workaround.** `[VERIFIED-RAW]`, Cadence forum, *"Create a
+schematic with a spreadsheet?"*, 18,098 views, now locked. The asker wanted to
+build 15-20 connector-only boards from an Excel pin list. His own accepted
+resolution: *"We ended up making symbols from the spreadsheet so that the
+connections lined up and then just sticking them together."*
+
+**Mentor Graphics / Siemens: UNRESOLVED, leaning negative.** The pass found no
+evidence of schematic auto-arrange in DxDesigner, Design Capture, Xpedition
+Designer or PADS Schematic, **and also found no primary source stating its
+absence.** The authoritative manual (Xpedition Designer User's Guide VX.2.8) is
+Scribd-only and was not obtained. **Design Architect was not examined at all.**
+What it did find, `[RELAYED-SEARCH]`, is an interactive net *route mode* setting
+in DxDesigner (`Setup > Settings > Schematic Editor > Nets routing path`) —
+behaviour while dragging, not auto-layout.
+
+**Zuken: the single best remaining lead, and it is unverified.**
+`[RELAYED-SEARCH]` **only.** A search summary attributes to CR-8000 **2026**
+*"automated schematic routing"*, and to Design Gateway: *"Design Gateway now
+lets engineers establish a logical connection by selecting connection points,
+after which the software generates the visible wire route."* It also attributes
+an *"Arrange Components > Automatic Placement"* function to CADSTAR, **which the
+pass itself suspects is PCB placement rather than schematic.** No Zuken primary
+source was read. Candidate URL:
+<https://www.zuken.com/en/product/cr-8000/whats-new-in-cr-8000-release-2025/>
+
+**Entirely unexamined, stated plainly:** P-CAD, Racal-Redac, Daisy/Dazix, Valid
+Logic SCALD, and Mentor Design Architect. One combined search returned only
+corporate history (P-CAD had over 10,000 users by 1988) and nothing about
+schematic layout. A 1982 Racal-Redac brochure is on archive.org, unread.
+
+### 6.4 The practitioner verdicts, which are the answer to "was it used?"
+
+**The best source the pass found is comp.lang.vhdl, *"VHDL for PCB design?"*,
+2009-09-30 to 2009-10-02** — working engineers, unprompted, on exactly this
+question. `[RELAYED-FETCH]`, pulled twice with different prompts, quotes stable
+across both *(<https://groups.google.com/g/comp.lang.vhdl/c/Iqz-n6WmKhQ>)*:
+
+> **Petter Gustad, 2009-10-02:** "I can do most of these in Emacs expect for the
+> schematic generation… **I've never seen a good automatic schematic drawings
+> (I've seen lots of Synopsys Design Compiler PostScript output which does not
+> look that great).**"
+
+> **Andy, 2009-10-01:** "Until we have board level synthesis, we cannot expect a
+> similar productivity improvement for board level design from utilizing HDL…
+> **Unfortunately we don't have those kinds of tools for board level design.**"
+
+> **Andy, 2009-10-02**, listing what an HDL-entry board flow would need, item 3:
+> "**a tool to generate a (good) schematic drawing of your design (required
+> output for most customers)**"
+
+**And the one that is worth putting on the wall, because it is the clearest
+statement found anywhere of why a generated schematic reads badly** — Andy,
+2009-10-02:
+
+> "**A schematic page uses two dimensions to allow you to place related things
+> nearby, an HDL file has only one dimension.** Reviewing connections by name in
+> an hdl file is like panning around a schematic page with a postage stamp size
+> viewer."
+
+Two more from the same thread. Andy on Cadence specifically — *"Cadence Design
+Entry HDL (FKA Concept-HDL) **creates logical verilog and vhdl netlists from the
+schematic.**"* — i.e. DE-HDL runs schematic→netlist, **not** netlist→schematic.
+And an unresolved shipped-then-died lead: *"Cadence introduced a 'spreadsheet'
+board design entry tool a few years ago, that as far as I know went no-where."*
+The pass searched and **could not identify that tool. UNRESOLVED.**
+
+On the HDL→schematic viewers generally, the pass deferred to this repository's
+own [`../schematic/generation-prior-art-third-pass.md`](../schematic/generation-prior-art-third-pass.md)
+§2.1-2.4, which already establishes that Vivado and Quartus document no layout
+algorithm and that Quartus's readability doctrine is nine elisions plus a
+50-nodes-per-page split. Two additions: `[VERIFIED-RAW]` Concept Engineering's
+**Nlview** claims *"automatic generation of schematic diagrams… gate-level, RTL
+and block-level"* across *"tens of thousands of installed EDA applications"* —
+but **names no OEM customer on the page**, so "used in practice" rests on an
+unnamed installed-base claim. And `[RELAYED-SEARCH]` AMD UG906's own hedge,
+*"The schematic is simpler if you use a single level of hierarchy only."*
+
+### 6.5 Two corrections the pass made to bad secondary claims, and one new lead
+
+**It killed a false academic claim, by downloading the paper.**
+`[VERIFIED-RAW]`: a search summary asserted that Jehng, Chen & Parng, *"ASG:
+Automatic schematic generator"*, *INTEGRATION the VLSI journal* 11 (1991) 11-27,
+*"produces more readable and compact schematics than a well-known commercial
+tool"*. **False.** The pass `pdftotext`-ed the paper and the strings
+`commercial`, `compare`, `comparison`, `OrCAD`, `Mentor`, `Daisy` and
+`Viewlogic` **do not occur anywhere in it.** Its conclusion claims only *"The
+examples show that the proposed system works perfectly."* **Do not cite ASG as a
+commercial comparison.**
+
+**It killed a false Cadence claim the same way.** A search summary asserted that
+in Allegro *"the synthesized netlist is used to automatically generate a
+schematic representation within Allegro"*. The pass could not substantiate it
+from any Cadence source, believes it is a fabrication off a low-quality SEO PDF,
+and says **do not repeat it.** Andy's 2009 description of DE-HDL above is the
+contrary primary-ish evidence.
+
+**What ASG does give is the 1980s bibliography of this exact problem**, and
+several of these papers' introductions are the "no commercial tool does this"
+citations the brief wanted. From its reference list, verbatim:
+
+- Kumar, Arya, Swaminathan & Misra, *"Automatic generation of digital system
+  schematic diagrams"*, IEEE Design & Test of Computers 2 (1986) 58-65.
+- Ahlstrom, Hadden & Stroick, *"An expert system for the generation of
+  schematics"*, ICCAD 1984, 720-725. ASG's own gloss, verbatim: the HAL
+  prototype *"serves as an intelligent interface… to produce a schematic drawing
+  from a hardware description file. **But the knowledge inferences will slow
+  down the overall processing in a general purpose computer.**"*
+- Majewski, Krull, Fuhrman & Ainslie, *"AUTODRAFT: automatic synthesis of
+  circuit schematics"*, ICCAD 1986, 435-438.
+- Chun, Chang & McNamee, *"VISION: VHDL induced schematic imagining on
+  netlists"*, DAC 1987, 436-442.
+- Stok & Koster, *"From network to artwork"*, DAC 1989, 686-689.
+- Lee & McNamee, *"Structure optimization in logic schematic generation"*,
+  ICCAD 1989; Swinkels & Hafer, *"Schematic generation with an expert system"*,
+  IEEE TCAD 9(12) 1990.
+
+**The pass read none of those introductions — the paywalls were not attempted —
+and it names this as the biggest unfilled part of the brief.** So do I.
+
+**And one new lead this repository does not have.** `[RELAYED-FETCH]` **Weave**
+(arXiv 2607.03835, Senol Gulgonul, 2026-07-04) — netlist→LTspice `.asc` via
+Sugiyama layered layout **with a round-trip connectivity certificate**: re-parse
+the drawing, compare net partitions, binary pass/fail. Claims 100% on Schemato's
+117-circuit set against Schemato's 76% compile, and 88.4% on 3,460 ADI LTspice
+demo circuits. **The round-trip certificate is a correctness gate that is
+independent of readability**, which is a different idea from anything in
+[`../schematic/README.md`](../schematic/README.md)'s nine passes, and it is the
+one item here that may deserve its own look.
+
+*(Note: the repository's `2026-10-28-schematic-layout-engines.md` and the
+circuit-families pass already ran a tool called Weave. Whether that is this
+Weave was not established by either pass. **Check before conflating them.**)*
 
 ---
 
@@ -817,14 +1192,37 @@ have it" is FALSE.** Three independent reasons, each sufficient:
    absence measures its preference for interactive tools, not the state of the
    art.
 
+4. **Schematic WIRE routing shipped in four major tools and is in daily use, and
+   KiCad has none of it** (§6.2; RELAYED where the three above are VERIFIED).
+   OrCAD Capture since 2010, Altium with a tunable crossing-avoidance weight and
+   a 3-second budget, Proteus ISIS reflowing on symbol moves, Virtuoso. **This
+   is the cleanest refutation available**: here is an automation that
+   demonstrably works, that four commercial competitors ship, that users use
+   every day — and the eeschema kiface contains no router at all (§1.1, §1.2).
+   The hypothesis predicts the opposite.
+
 **What the pass does NOT establish, and must not be read as establishing.** None
-of this is evidence that schematic auto-layout *does* work. §5.2 is a thin
-field: zero-starred repositories, one dormant 19-star project, nothing mature.
+of this is evidence that schematic SYMBOL auto-placement *does* work. §5.2 is a
+thin field — zero-starred repositories, one dormant 19-star project — and §6.1
+is thinner than it looks: **all three shipped instances dodge the placement
+problem rather than solving it.** Virtuoso copies coordinates from a physical
+layout. EasyEDA's carries its vendor's own *"Do not use this API in a production
+environment"* and appears in no release note or user guide. ViewGen generated
+from a netlist and died with Viewlogic in 2002 with no successor. A practitioner
+in 2009: *"I've never seen a good automatic schematic drawings."*
+
 The honest reading is that **KiCad's silence carries no information either
 way** — and that the question of whether an engine produces readable sheets has
 to be settled by measuring engines on real circuits, which is what
 `docs/schematic/elk-spike.md`, `generation-prior-art*.md` and `m1-remeasurement.md`
 did and what any future pass must do.
+
+**And the one place the field DOES have a settled answer, this project should
+take seriously: wire routing.** Four tools ship it; the objective function they
+ship is thin (avoid obstacles, optionally weight against crossing existing
+wires, time out, and refuse rather than reflow); and **only Proteus reflows when
+a symbol moves.** If this project wants a routing behaviour better than the
+commercial baseline, the baseline is now written down and it is low.
 
 **Three things this pass found that bear directly on the project's own work:**
 
