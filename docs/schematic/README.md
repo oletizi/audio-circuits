@@ -440,16 +440,17 @@ is measured rather than argued: of the five figures the block spike's own table
 publishes per block, **two are the same quantity as this generator's and three
 are not.**
 
-Three surveys landed in `docs/research/` on 2026-10-28, and nothing pointed at them
-======================================================================================
+Four research documents landed in `docs/research/` on 2026-10-28, and nothing pointed at them
+================================================================================================
 
 **Same failure this index exists to prevent, one directory over.** They are
 indexed here rather than in a new index because a reader looking for "what does
-the field already do" looks here first, and because two of the three are partly
+the field already do" looks here first, and because two of the four are partly
 superseded by the eight passes above and need to say so where they are found.
 
 | document | what it is | how much it can be trusted |
 | --- | --- | --- |
+| [`../research/2026-10-28-draughtsmanship-tool-bakeoff.md`](../research/2026-10-28-draughtsmanship-tool-bakeoff.md) | **READ THIS ONE FIRST of the four.** Which external tool to REUSE today for draughtsmanship - how a schematic is drawn and judged, connectivity assumed given. copperhead, `kicad-sch-api`, `kicad-mcp-pro`, `kicad-sch-lint`, and four more | **Everything in it was installed and RUN** against `build/schgen-boards/pultec-low-boost/` and `build/schgen-boards/transistor-preamp-lab/` on KiCad 10.0.5, with a hand-drawn control. Three results bind: copperhead's 13-family checker **is** reusable as a standalone gate on an arbitrary `.kicad_sch` (`score schematic --file`, or `checkLegibility(path)`); `kicad-sch-api` **destroys every `global_label`** on a no-op save and KiCad's own netlist export shows the named nets gone; and `rashuky/kicad-sch-lint` took `transistor-preamp-lab` from 2 errors to **0** with the netlist provably unchanged. It also records that **two external checkers contradict our own `STATUS.md`**, which calls a sheet with nine text-on-wire collisions "No findings" |
 | [`../research/2026-10-28-agent-kicad-surfaces.md`](../research/2026-10-28-agent-kicad-surfaces.md) | what an agent can drive as a **tool** to read, place, move, wire and inspect a `.kicad_sch`, rather than writing its own layout | **Measured, and the strongest of the three.** Every PASS/FAIL was produced by running the thing against `circuits/pt2399-core/pt2399-core.kicad_sch` on KiCad 10.0.5. Its `kiutils` result is a false green worth reading on its own: every check passes, `kicad-cli` exits 0, and **192 `hide` flags and 259 `do_not_autoplace` flags vanish** |
 | [`../research/2026-10-28-schematic-layout-engines.md`](../research/2026-10-28-schematic-layout-engines.md) | whether an off-the-shelf engine could replace this generator | **Its own §0 says the question is largely already answered here and defers to the passes above**, which is the right posture. It gathers evidence and declines to recommend |
 | [`../research/2026-10-28-ai-native-eda-platforms.md`](../research/2026-10-28-ai-native-eda-platforms.md) | the **commercial and agent-surface** picture: Diode, Flux, Koppar, CELUS, Circuit Mind, Quilter, atopile, JITX, ProtoFlow, Coppr, copperhead, AllSpice, and the EDA MCP ecosystem - agent surfaces, pricing, licensing, corporate health, export surfaces | **Mixed, and it grades itself.** It is the only source for the commercial tier, and it carries three things nothing else here does: **`diodeinc/pcb`** (MIT, native `.kicad_sch` with placement AND reconciliation - the closest prior art that exists), **the two MCP retreats** (two teams built EDA MCP servers, measured them against a plain agent plus `kicad-cli`, and withdrew), and the **KiCad-API answer** read off the protos and `kipy` 0.8.0 (`Schematic` is marked `versionadded (KiCad 11)`). It also corrects `../decisions/2026-09-21-why-not-tscircuit.md`. But **it ran nothing against this repository's circuits**, and its own "READ THIS FIRST" hands the `schematizer`, Weave, ELK and netlistsvg questions back to the passes above, which ran them |
