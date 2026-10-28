@@ -1,0 +1,196 @@
+A schematic draughtsmanship practice, assembled from what exists
+================================================================
+
+**Status: design, approved in conversation section by section on 2026-10-28.
+Not implemented. No code follows from this document until the owner has
+reviewed it as written.**
+
+What this is
+------------
+
+A **practice** for drawing, judging and recording schematics: who drafts, what
+tool they drive, what may stop a drawing reaching a reviewer, who may call it
+good, and where that verdict is kept.
+
+**It is a selection and an integration, not an architecture.** Every element
+below is either a tool somebody else maintains, a check this repository already
+has, or a rule the owner stated. Where something has no precedent, this document
+says so rather than presenting it as a choice.
+
+**Scope: schematics only.** The owner, 2026-10-28: *"I will believe you have the
+capability to expand those effort beyond the scope of schematics draftsmanship
+when and if I see real utility in what we create in that regard."* Nothing here
+is designed for the other output classes, and no seam is left for them.
+
+**The practice is the goal; the Pultec boards are the case studies.** The owner:
+*"we are building a general schematic drafting practice with the pultec modular
+circuits as case studies... The set of use cases will expand rapidly."* So
+nothing may assume a Pultec section board. `transistor-preamp-lab` is already in
+the repository and is a different shape.
+
+**Circuit generation is out of scope.** The input is a circuit's connectivity.
+Where it comes from is not this practice's business.
+
+The evidence this rests on is mapped in
+[`../../research/2026-10-28-solution-space-map.md`](../../research/2026-10-28-solution-space-map.md),
+over twelve research documents and five hands-on trials, all dated 2026-10-28.
+
+Decisions
+---------
+
+| Decision | Who | Why |
+| --- | --- | --- |
+| Schematics only; nothing designed for the other output classes | owner | two prior attempts at a drafting practice failed; capability has to be shown before scope is widened |
+| A general practice, with the Pultec boards as cases | owner | the case set will expand rapidly; nothing may assume one board's shape |
+| Reviewer is a ROLE, currently filled by the owner alone | owner | *"don't invent a perverse project-wide rule that I am the only true arbiter. For now, I am the only trusted reviewer"* |
+| Derived drawings are COMMITTED, not gitignored | owner | *"git is a distributed, journaled filesystem... a disciplined set of evolving, agent-driven (and siloed) schematics is absolutely git-worthy"* |
+| Generated drawings are siloed so they can never be mistaken for hand-drawn ones | owner | *"I never want my work thrown away. As such, you must make SURE I dont mistake your generated schematics for ones I can touch"* |
+| Only an ELECTRICAL fault may withhold a drawing from the reviewer | owner | a legibility check is an unqualified review; it may not decide what the reviewer sees |
+| Approval is never derived from a check | owner | *"you can't promote a drawing to approved without showing me"* |
+| Approval status is tracked state | owner | *"you have to track the approval status"* |
+| The record lives in a file in git, never a database | owner | *"postgres is opaque 20th-century nonsense"* |
+| Draft with copperhead, revise with akcli-kicad | agent proposed, owner endorsed | measured: best page, and the only agent-driven surface with a lint loop |
+| No legibility SCORE is adopted | evidence | the only published one ranks the owner's own drawing level with the known-bad board |
+| No placement-intent format of our own | evidence | fourteen systems surveyed, adopt nothing; the one project that built it calls it legacy |
+| No reliance on exit codes | evidence | a page missing a third of its circuit exits 0 from every tool in the chain |
+
+1. The stack
+------------
+
+| Job | Tool | Standing |
+| --- | --- | --- |
+| Draft | **copperhead** (Apache-2.0) | drew `pultec-low-boost` correctly from one command; real rotary with its mechanical lug; title block with a revision |
+| Revise | **akcli-kicad** (PyPI) | the agent places every coordinate; `pins --at X Y --rotation R --json` answers where a pin lands before anything is written; `plan` dry-runs with a net diff; refuses non-axis-aligned endpoints; journal and undo |
+| Render | `kicad-cli` | already a repository dependency; `make check` invokes it |
+| Says the circuit | `lib/schgen/gates/connectivity.ts` | fourteen tests, predates this work, judges any sheet against the model |
+| Named legibility checks | `kicad-sch-lint` codes; copperhead's `out-of-frame` | `out-of-frame` is the only check that caught a page with a third of the circuit off the paper |
+| See what changed | two `kicad-cli sch export pdf` runs, three `magick` calls | as readable as the dedicated diff tools, with no install |
+
+**The two drafting tools compose** because both read and write the same
+`.kicad_sch`. Measured: akcli writing one operation into this repository's own
+generated sheet changed exactly six token families by +1 each, with
+`global_label` 13 to 13 and all fifteen net names intact.
+
+**Two refusals are part of the selection.** No legibility score, for the reason
+in the decisions table. And no driver may test an exit code: `copperhead draft`,
+`--json`, `score`, and `kicad-cli sch erc` all exit 0 on a page missing a third
+of its circuit. Drivers parse JSON.
+
+2. The loop
+-----------
+
+1. **Draft.** Copperhead produces a page from the circuit's connectivity and a
+   grouping.
+2. **Electrical check, and only electrical.** Connectivity against the circuit
+   model, and ERC. A failure here stops the iteration, because the drawing says
+   a different circuit and there is nothing to judge. **Nothing else withholds a
+   drawing.**
+3. **Legibility checks run and never gate.** Their findings are attached to the
+   drawing as a pointer list, for the agent to act on before showing it and for
+   the reviewer to have beside the page. **A finding does not make a drawing
+   bad; no finding does not make it good.**
+4. **Render, and overlay against the last approved revision.**
+5. **Show the reviewer. Always.** Every revision that passes the electrical
+   check is put in front of the reviewer. No agent decides the reviewer does not
+   need to see something.
+6. **The reviewer judges the page, readability first.** Before any detailed
+   check. The source for this is also the reason it matters: that judgement is
+   perishable, and the detailed passes spend it. Nothing that drafted the sheet
+   or read the netlist can make this call.
+7. **The verdict is recorded** against that revision, attached to the region it
+   is about.
+8. **The agent revises with akcli**, driving the lint count down. Measured on
+   this circuit: 22 findings to 13 to 1, with the lint naming every collision a
+   reader found by eye plus five it had missed.
+9. **The back-check.** The reviewer says *what is wrong*, not *what to do about
+   it*. The agent derives the fix. Because an agent applies a correction
+   perfectly and without resistance, the region it just changed is the part of
+   the drawing only one party has considered, so **it is flagged for the
+   reviewer first on the next round.**
+
+**Step 9 is the only step with no tooling behind it.** Everything else is a
+command that was run on 2026-10-28.
+
+3. The record
+-------------
+
+**Committed, in `drafted/<circuit>/<board>/`** - a top-level directory, never
+under `circuits/`, with a README at its root saying these are agent-drafted and
+never hand-edited, and "generated - do not edit" in every title block:
+
+- the `.kicad_sch`
+- the rendered page **as SVG**, so git can diff what changed rather than only
+  that something did
+- a record file carrying:
+  - the content hash of the sheet **and** of the page the reviewer looked at
+  - the status: `drafted` / `submitted` / `revise` / `approved`
+  - the reviewer's verdict, **verbatim**, attached to the region it is about
+  - the legibility findings as they stood, marked as a pointer list
+
+**It is a text file that diffs**, so a verdict is reviewable in a diff rather
+than by querying something. What is settled here is the SUBSTRATE: a file, in
+git, next to the drawing, readable by a person without a tool.
+
+**A structured interface over that file is permitted and preferred if one
+exists.** The owner, 2026-10-28: *"you *can* use a structured interface to manage
+that file, if such a thing exists and is suitable for the task."* The objection
+is to opacity, not to tooling - so a CLI or library that creates, queries and
+advances these records is reuse, provided the stored form stays human-readable
+in a diff. **A tool whose stored form can only be read back through the tool
+fails the same test a database fails.** Whether such a thing exists is under
+investigation; see "What it leaves open".
+
+**Nothing in that file is derived.** The status is only ever what the reviewer
+put there, and it returns to `drafted` the moment either hash changes - so a
+stale approval is unrepresentable rather than merely detectable. The reviewer
+can never be shown a page carrying their signature that is not the page they
+signed.
+
+**A commit is a page that was looked at.** The agent iterates freely in scratch;
+what enters history is a revision that was rendered and shown. Pages nobody
+judged are noise, not history.
+
+What this does not build
+------------------------
+
+- **No legibility metric, score or threshold.** Named checks only.
+- **No placement-intent format.** Whatever the selected tool accepts is what is
+  authored; the repository invents no representation and writes no loader.
+- **No layout algorithm.** The owner, 2026-10-28: *"i want to reuse and glue
+  together agent-driven tooling. i do not want to write software algorithms."*
+  The testable line: code that loops over components doing arithmetic on
+  coordinates is an algorithm and is forbidden; code that invokes a tool, passes
+  a file and records what came back is glue.
+- **No agent reviewer.** The reviewer role is filled by the owner. An agent
+  enters it by demonstrated agreement with the recorded verdicts, not by
+  decision. Published evidence on an adjacent structurally-precise domain reports
+  *"near-zero agreement with human raters"* for model-as-judge, so the naive
+  version is known not to work.
+- **No database.** See the decisions table.
+- **No coverage ledger.** The 1918 check print recorded what the checker
+  *reached*, not only what they objected to, which is better than a comment list.
+  At two boards it is ceremony that would cost the reviewer more attention than
+  it saves. Left out deliberately, and recorded here rather than silently
+  omitted.
+
+What it leaves open
+-------------------
+
+- **Whether copperhead's coarse controls are enough.** Its only real levers are a
+  group per part and the group order. Reordering groups took the test sheet from
+  21% ink to 51% with crossings still at zero, so the lever is real - but symbol
+  orientation is outside the author's reach entirely, and one ordering made a
+  functional block read right to left.
+- **How a region is named**, so a verdict can attach to one. KiCad 10 supports
+  `(group "name" (uuid ...) (members ...))` with member ids sorted for diff
+  stability, and this repository currently emits none.
+- **Whether an existing structured interface fits the record.** Candidates under
+  investigation include `git-bug`, `git-appraise`, `git notes` and GNU
+  `recutils`. The test each must pass: the stored form stays readable in a diff
+  without the tool. If none passes, hand-managed structured text is the honest
+  answer and will be stated as such.
+- **Whether the practice holds on a circuit of a different shape.** Everything
+  measured here is one board. `transistor-preamp-lab` is the first real test.
+- **Three coverage holes in the research**, stated in the map: GitHub search
+  truncates at 1,000 per query against topics holding ~19,000 repositories,
+  GitHub code search was never run, and CTAN was never swept.
