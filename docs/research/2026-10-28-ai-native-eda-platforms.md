@@ -4,6 +4,36 @@ Survey date 2026-10-28. Scope: platforms and libraries that an **agent** could
 drive to produce a **schematic a person can build from at a bench**, with
 attention to KiCad interoperability.
 
+## READ THIS FIRST: on several questions this repository already knows more
+
+**This document is a web survey. It ran no tools against this repository's
+circuits. On the tools that matter most it is therefore the WEAKER source, and
+it was written before its author found the stronger ones.** Recorded here rather
+than quietly reconciled, because the near-miss is the useful part: a survey that
+treats `schematizer` as "the find" is a survey whose author had not read
+`docs/schematic/`.
+
+**Eight research passes and two measured spikes have already run on schematic
+generation**, indexed at [`../schematic/README.md`](../schematic/README.md).
+Where they and this document disagree, **they win** — they installed the tools
+and ran them on this repository's own circuits.
+
+| If you want to know | Read this instead | Not this |
+| --- | --- | --- |
+| Whether `schematizer` can draw a Pultec | [`../schematic/generation-prior-art-second-pass.md`](../schematic/generation-prior-art-second-pass.md) — **0 successes in 9 attempts** | this document's `schematizer` section |
+| Whether Weave can represent this repo's circuits | same, plus [`../schematic/generation-prior-art-circuit-families.md`](../schematic/generation-prior-art-circuit-families.md) — run against **all four** repo circuits | this document's Weave section |
+| What ELK does on these circuits | [`../schematic/elk-spike.md`](../schematic/elk-spike.md), [`../schematic/elk-block-spike.md`](../schematic/elk-block-spike.md) — **15 inputs × 3** | nothing here |
+| netlistsvg's layout mechanism | [`../schematic/generation-prior-art-third-pass.md`](../schematic/generation-prior-art-third-pass.md) — **read in code** | this document's summary |
+| Which library to manipulate a `.kicad_sch` with | [`2026-10-28-agent-kicad-surfaces.md`](2026-10-28-agent-kicad-surfaces.md) — every tool **run against `pt2399-core.kicad_sch` on KiCad 10.0.5** | this document's library table |
+| Whether an off-the-shelf engine can replace `lib/schgen/` | [`2026-10-28-schematic-layout-engines.md`](2026-10-28-schematic-layout-engines.md) | nothing here |
+
+**What this document is still the only source for**, and why it was worth
+writing: the commercial and agent-surface picture — Flux, Koppar, atopile, JITX,
+ProtoFlow, Coppr, copperhead — their MCP servers, pricing, licensing, corporate
+health and export surfaces. None of the prior passes covered those. It also
+settles the KiCad-API question from the protos and corrects this repository's own
+tscircuit decision.
+
 ## How to read this document
 
 Every claim below is tagged:
@@ -38,12 +68,13 @@ at a bench — not a netlist, and not a wall of net labels.
 | --- | --- | --- | --- | --- |
 | **Flux.ai** | **Yes** — real MCP server, `agent` scope, verified at protocol level. But prose delegation only, no construction primitives | Claims to; no public evidence. All first-hand reports (≤ Jun 2026) say placement is unusable | **No.** EDIF netlist only — no geometry. One-way door | Shipping hard, $37M, no free tier, $50/mo entry, in active federal litigation |
 | **tscircuit** | **Yes** — headless CLI + eval, published daily | Partly. Silently degrades failed wire routes to net labels; no error record exists for it | **Yes** — `circuit-json-to-kicad`, but with tscircuit-flavoured `lib_id`s | Very mature and very active. Disqualified here on the degradation, not on maturity |
-| **`schematizer`** | **Yes** — CLI, neutral JSON input | **Yes, and it places and routes** — the only one that does | **Yes**, KiCad 6–10 | **Five weeks old.** Non-deterministic by design. Author: *"the block placement doesn't look great"* |
+| **`schematizer`** | **Yes** — CLI, neutral JSON input | Places and routes — the only one that does — but **failed 9/9 on a Pultec-shaped section** when this repo ran it | **Yes**, KiCad 6–10 | **Five weeks old.** Non-deterministic by design. Author: *"the block placement doesn't look great"* |
 | **Copperhead** | **Yes** — CLI + in-tree MCP server | Yes by design: deterministic engine + a 13-family legibility gate | **Yes** — edits `.kicad_sch` directly | Apache-2.0, 666 stars, active — and *"acceptance tests… have not been observed passing end to end"* |
 | **Koppar** | **Yes** — hosted MCP, 64 tools, `submit_circuit` | Claims to; zero legibility evidence; all claims are about copper | **Yes**, claimed — full KiCad projects | Plugin repo has 2 commits. Server-side, closed. Paid plans launch 2027 |
 | **ProtoFlow** | Vendor claims CLI + MCP; **neither located** | Claims to | Claims KiCad export, ungated | Plausible; heavy SEO-farm signals, unverified logo wall, no team named |
-| **`kicadts`** | n/a — a library | n/a — you draw | **Yes**, read and write, typed | MIT, 229 commits, published 2026-10-27. **The serializer to use** |
-| **Weave** | Partly — browser tool with a Node batch runner | **Yes**, with a round-trip correctness certificate | **No** — LTspice `.asc` | 14 stars, one author, stale 2.5 months. **Read it, don't adopt it** |
+| **`kicadts`** | n/a — a library | n/a — you draw | **Yes**, read and write, typed; **measured PASS on this repo's own KiCad 10 file** | MIT, 229 commits, published 2026-10-27. **The serializer to use** |
+| **`kiutils`** | n/a — a library | n/a | Reads and writes, and **silently drops 192 `hide` flags** while every check passes | **DO NOT USE.** Dormant since 2024, marked Production/Stable |
+| **Weave** | Partly — browser tool with a Node batch runner | **Yes**, with a round-trip certificate — but it **could not represent a rotary selector at all**, invisibly | **No** — LTspice `.asc` | 14 stars, one author, **no LICENSE file in the repo**. Read it, don't adopt it |
 | **netlistsvg** | Yes | No — block-diagram grade, SVG only, you supply orientation | **No** | **Dormant since 2024-01.** SKiDL dropped it 2026-10-16 |
 | **atopile** | Driving `ato build` only — **the MCP server was removed** in 0.15.9 | **No, by stated thesis** — *"Schematics are pictures"*. "Prism" is a viewer with no designators or values | **No.** Writes `.kicad_pcb` directly; the only `.kicad_sch` code is a *reader* | 4k stars, MIT, YC W24 — and the open line is soft-deprecated, the repo 6 months stale, and the build needs an account |
 | **JITX** | **Yes, best in survey** — official Claude Code + Codex skills, headless CLI, `--format json`, `--dry` | **Yes, inside JITX** — multi-page, title blocks, author tables, hierarchical diagrams | **Probably not.** `legacy-kicad` exporter exists; **0 of 443 doc pages mention KiCad**; one weak report says PCB only | Proprietary, license server, active. Free tier **requires your designs be open hardware** |
@@ -1562,11 +1593,51 @@ GitHub REST API, raw file contents, registry JSON, or the arXiv API — and name
 it. Their report distinguished page-fetch summaries from byte-verified reads;
 that distinction is preserved where it changes what you may conclude.
 
-### `schematizer` — the only automatic netlist→`.kicad_sch` placer AND router
+### `schematizer` — the only automatic netlist→`.kicad_sch` placer and router, and it cannot draw a Pultec
 
 `https://github.com/devbisme/schematizer` · PyPI `schematizer`
 
-**This is the find of the survey for this repository's actual problem.** It is
+> **THIS SECTION WAS WRITTEN AS "THE FIND OF THE SURVEY" AND IT IS WRONG FOR
+> THIS REPOSITORY. The correction is shown rather than edited away, because what
+> produced it is the argument for the rule it broke.**
+>
+> **This repository installed `schematizer` and ran it, and the result is in
+> [`../schematic/generation-prior-art-second-pass.md`](../schematic/generation-prior-art-second-pass.md).**
+> A Pultec EQP-1A-shaped passive section — 25 parts, 22 nets, rotary selectors
+> fanning out to capacitor banks, potentiometers strapped as rheostats, an
+> inductor in the HF boost leg — **never routed. 0 successes in 9 attempts**,
+> every one ending in `schematizer.engine.route.RoutingFailure`, taking
+> **26 to 121 seconds to fail**. The failing net varied run to run, which is the
+> randomised placement showing through. `--mode labels` succeeded every time in
+> 0.13 s.
+>
+> **Symbol vocabulary was never the obstacle** — `Switch:SW_Rotary_1x7_MP`,
+> `Switch:SW_Rotary_1x4_MP`, `Device:R_Potentiometer`, `Device:L` and
+> `Device:Transformer_1P_1S` all load from stock KiCad 10 libraries and all
+> serialise into schematizer's netlist JSON. **The router is the obstacle, on
+> precisely this repository's circuit idiom.**
+>
+> **And the non-determinism is worse than this document reported, in a way that
+> matters.** The measured pass diffed whole output directories over three runs
+> per configuration: `--mode labels` is **byte-for-byte reproducible**,
+> `--mode normal` is not — but comparing *geometry only* showed that a `normal`
+> run may differ from its predecessor by a **pure serialization reshuffle** (the
+> same wire, same deterministic UUID, at a different file offset), by a
+> **genuinely different layout**, or by both, **with nothing in the output
+> distinguishing the cases.** Their conclusion, which this document would have
+> got wrong: *"normalising UUIDs and sorting elements would not make the output
+> stable — it would only hide the cases where it was not."*
+>
+> Also measured there: its own test suite gives **126 passed, 13 failed, 22
+> skipped** in that environment, all 13 failures one cause (skidl could not
+> resolve the KiCad symbol libraries), and *"NOT reported as defects"*.
+>
+> **What survives of this section:** the architectural description, the input
+> format, the two modes, and the maturity figures are accurate and useful. The
+> *recommendation* does not survive. Read the paragraphs below as "what the tool
+> is," not "what it would do for us" — that question is already answered, no.
+
+It is
 SKiDL 3.0.0's schematic-generation engine, extracted into a standalone package
 explicitly so that front ends other than SKiDL can use it. From its README
 (VERIFIED, fetched verbatim):
@@ -1765,10 +1836,45 @@ target.** The repository is also messy: eight timestamped multi-megabyte HTML
 snapshots at top level plus a 3.4 MB `index.html`; it is a single-file browser
 tool, not a library. 14 stars, one author, 2.5 months stale.
 
-**Read Weave's pipeline and verifier design; do not adopt the package.** The
+> **Two corrections from this repository's own measured pass**
+> ([`../schematic/generation-prior-art-second-pass.md`](../schematic/generation-prior-art-second-pass.md)),
+> which ran Weave rather than reading it. Both matter.
+>
+> **1. There is no licence.** Measured: *"The `weave` repository contains no
+> `LICENSE` file. `git ls-files` lists 16 files and none is a licence; the GitHub
+> API reports `license=null`."* Its `cli/package.json` declares
+> `"license": "MIT"`, so the intent is evident, but **there is no licence text in
+> the repository.** Anyone proposing to reuse Weave's code should resolve that
+> with the author first. This document's advice to read-don't-adopt happens to
+> be safe; the reason it is safe is not the reason it gave.
+>
+> **2. Weave cannot represent this repository's circuits, and the loss is
+> invisible — which is a sharp limit on round-trip certification generally.**
+> Measured: *"the rotary selector cannot be represented in Weave's input at
+> all."* Weave consumes a SPICE netlist, so *"seven HF capacitors had to be
+> written as permanently connected in parallel."* Weave then drew an accurate
+> picture of **the substituted circuit**, and *"the substitution happens before
+> Weave sees anything and is invisible"* in the output. **Its verifier certifies
+> the netlist it was given, not the circuit you meant.** A round-trip
+> certificate proves *faithfulness*, never *fidelity to intent* — and the step
+> that loses the intent sits upstream of the thing doing the certifying. That
+> caveat transfers directly to the `kicad-cli` round-trip gate recommended in
+> this document's conclusions, and it should be carried with it.
+>
+> Also measured: Weave's drawing *"is tall and stretched"* — its own stated
+> weakness, visible — but it *"at least shows that a bank exists, which is more
+> than schematizer's routed output manages."* And its **88.4% figure on 3,460
+> Analog Devices circuits was not reproduced.** Note also that no renderer ships
+> with Weave's CLI, so the measuring pass had to write one.
+
+**Read Weave's pipeline and verifier design; do not adopt the package** — and
+note which half survived contact with this repository's circuits. The
 pattern-matching-around-a-layered-core idea and the safe-mode ladder port
-directly to TypeScript — `elkjs` is live on npm (`0.12.1`, published
-2026-10-28, VERIFIED).
+directly to TypeScript; `elkjs` is live on npm (`0.12.1`, published 2026-10-28,
+VERIFIED), and this repository has **already run ELK on its own circuits across
+15 inputs** — read [`../schematic/elk-spike.md`](../schematic/elk-spike.md) and
+[`../schematic/elk-block-spike.md`](../schematic/elk-block-spike.md) before
+re-deriving any of it.
 
 ### netlistsvg — real analog support, dormant, and abandoned by its main consumer
 
@@ -1841,14 +1947,64 @@ VERIFIED via the GitHub API and registry JSON by the delegated researcher.
 | **`kicadts`** | **TypeScript** | 9 | **2026-10-27** | npm `0.0.62`, 2026-10-27, 62 versions since 2025-09-29 | **Active** |
 | `rjwalters/kicad-tools` | Python | 74 | **2026-10-28** | — | Active |
 | `kicad-sch-api` | Python | 57 | 2025-12-05 | PyPI `0.5.6`, 2025-11-19 | Semi-active |
-| `kiutils` | Python | 129 | **2024-05-02** | PyPI `1.4.8`, 2024-02-02 | **Stale ~2.5 yr** |
+| `kiutils` | Python | 129 | **2024-05-02** | PyPI `1.4.8`, 2024-02-02 | **DO NOT USE — see below** |
 | `kicad-skip` | Python | 230 | **2024-02-16** | PyPI `0.2.5`, 2024-02-16 | **Stale ~2.7 yr** |
 
 `kiutils` and `kicad-skip` are *manipulation* libraries — typed s-expression
 trees, no placement, no routing — and both have been untouched across KiCad
-8 → 9 → 10. This independently corroborates the `kicadts` recommendation above:
-it is the only maintained option, in the right language, and its weakness is
-that its user base is essentially tscircuit itself.
+8 → 9 → 10.
+
+> **`kiutils` is not merely stale: it destroys data silently on KiCad 10, and
+> this repository measured it.** From
+> [`2026-10-28-agent-kicad-surfaces.md`](2026-10-28-agent-kicad-surfaces.md),
+> run against `circuits/pt2399-core/pt2399-core.kicad_sch`
+> (`version 20260306`, 40 symbols, 72 wires): loading **PASSED**, moving a
+> symbol **PASSED**, creating a wire **PASSED**, and
+> `kicad-cli sch export svg` on the output **PASSED, exit 0**. And the round
+> trip lost whole token classes:
+>
+> | token | before → after |
+> | --- | --- |
+> | `hide` | **192 → 0** |
+> | `do_not_autoplace` | **259 → 0** |
+> | `exclude_from_sim` | 48 → 0 |
+> | `in_pos_files` | 48 → 0 |
+> | `body_style` | 40 → 0 |
+> | `embedded_fonts` | 9 → 0 |
+> | `pin_numbers` | 6 → 0 |
+>
+> plus `generator_version` and `duplicate_pin_numbers_are_jumpers` gone
+> entirely. **Every check passed and 192 `hide` flags vanished** — so a
+> schematic round-tripped through `kiutils` renders, exports and exits zero
+> while every field that was deliberately hidden is now shown. It is marked
+> "Production/Stable" on PyPI and self-scoped to "KiCad 6.0 and up."
+>
+> This is the survey's cleanest specimen of a false green, and it is an
+> instructive one: `kicad-cli` exiting 0 is **not** a correctness gate. It
+> proves the file parses, nothing more. The gate this document's conclusions
+> recommend is `kicad-cli sch export netlist` *compared against the model* —
+> which would also not have caught this, because connectivity was preserved.
+> **Legibility loss and connectivity loss need different checks.**
+
+That corroborates the `kicadts` recommendation from a second direction — and
+`kicadts` was measured on the same file rather than assumed: parsing **PASSED**
+(`{v:20260306, gv:"10.0"}`), counts **PASSED** (40 symbols / 72 wires / 16
+junctions / 6 global labels / 8 libSymbols), reading `libraryId` **PASSED**
+(note the accessor is `libraryId`, **not** `libId`), moving a symbol **PASSED**,
+and reading field positions with their `hide` flags **PASSED**. Its exported
+class list models KiCad 9/10 tokens (`EmbeddedFonts`, `FieldsAutoplaced`,
+`ExcludeFromSim`), not KiCad 6. **It is the only maintained option, in the right
+language, verified against this repository's own file** — and that companion
+document names two sharp edges this one did not look for, so read it before
+depending on the library.
+
+**One point worth stating explicitly rather than letting an org name decide
+it:** `kicadts` is a tscircuit-org package, and tscircuit was removed from this
+project. `kicadts` is a file-format library only — no board, no renderer, no
+JSX, no reactive model, and above all **no router** — so it does not reintroduce
+anything `docs/decisions/2026-09-21-why-not-tscircuit.md` rejected. The thing
+that decision disqualified was a router that disguises failure; this package has
+no router at all.
 
 ### `kicad-schematic-builder` — 0 stars, and its README is the best prose in the survey
 
@@ -2097,10 +2253,26 @@ checked, not only what was.
 7. **`Seeed-Studio/kicad-mcp-server`** was found late and not investigated.
 8. **`tools.koppar.ai`'s netlist→schematic converter** claim could not be
    confirmed from the page.
-9. **No tool in this survey was run.** Everything about output quality is
-   relayed, inferred from code, or absent. Per this repository's own practice —
-   look at the output, not only the tests — the next step for any candidate here
-   is to generate one sheet for one of the boards in `boards/` and read it.
+9. **No tool was run BY THIS SURVEY** — everything here about output quality is
+   relayed, inferred from code, or absent. **But several were run by this
+   repository**, and those results supersede this document wherever they touch:
+   see [READ THIS FIRST](#read-this-first-on-several-questions-this-repository-already-knows-more).
+   What is genuinely unrun anywhere is the **commercial** tier — Koppar,
+   ProtoFlow, Flux, JITX, copperhead. No account was created, no app installed,
+   no generated `.kicad_sch` from any of them has been read.
+10. **The three highest-value unrun experiments**, in order, each cheap:
+    - **`kicad-cli sch export netlist` on a `lib/schgen/` output, compared
+      against the model's netlist.** `make check` already runs `kicad-cli`. This
+      is a gate, not a measurement, and it is the one three independent projects
+      converged on. Carry Weave's caveat with it: a round trip certifies
+      faithfulness to the netlist it was handed, not fidelity to intent.
+    - **`_schDirectLineRoutingEnabled: true` on a tscircuit subcircuit**, to see
+      what `DirectLineRouter` actually draws. One hour, and it settles the
+      amendment this document says `docs/decisions/2026-09-21-why-not-tscircuit.md`
+      needs.
+    - **`circuit-json-to-kicad` fed hand-written Circuit JSON** for one small
+      repo circuit, to test whether it is usable as a pure serializer without
+      tscircuit core. The import graph says yes; nobody has tried.
 
 ---
 
@@ -2180,6 +2352,12 @@ Stated as claims that can be tested, not as advice.
    across regeneration — SKiDL issue #316 asked on 2026-06-23 and has zero
    replies. That gap is not a market nobody noticed; it is a hard problem nobody
    has solved, and it is the one `lib/schgen/` is in.
+   **And this repository has already proved the point empirically rather than
+   by survey:** `schematizer`, the only automatic placer-and-router targeting
+   `.kicad_sch`, **failed 9 times out of 9 on a Pultec-shaped passive section**,
+   with the symbol vocabulary never the obstacle. The routing of a rotary
+   selector fanning into a capacitor bank is the open problem, and no
+   off-the-shelf tool solves it.
 10. **The failure mode this survey kept finding is this repository's own named
     enemy, and it is everywhere.** tscircuit relabelling a failed route;
     tscircuit's `matchAdapt` stacking every component at the origin with *"not
@@ -2191,3 +2369,24 @@ Stated as claims that can be tested, not as advice.
     reporting success while the artifact became wrong or unreadable.
     `docs/schematic/false-greens.md` is not a local curiosity — it is the
     central defect of this entire product category.
+
+    **And the seventh instance is the one to keep, because it was measured here
+    and it defeats the obvious gate.** `kiutils` round-trips a KiCad 10
+    schematic, passes every check including `kicad-cli sch export svg` at exit
+    0, and silently drops **192 `hide` flags and 259 `do_not_autoplace`
+    flags**. Connectivity survives, so a netlist round trip would pass too. The
+    artifact is wrecked and both available gates say fine. **Legibility loss and
+    connectivity loss are different failures and need different checks** — which
+    is the argument for copperhead's legibility checker existing *alongside*
+    Weave's connectivity certificate rather than instead of it.
+
+11. **The strongest thing this survey can say in favour of the current
+    direction is negative, and it should be read that way.** Nothing here is a
+    tool to buy instead of building. The useful imports are a serializer
+    (`kicadts`, measured against this repository's own file), a gate
+    (`kicad-cli sch export netlist`, already a dependency), a layout idea
+    (Weave's signal-chain-plus-patterns), an operation vocabulary (JITX's named
+    schematic operations), a refusal pattern (atopile's `--frozen` diff) and an
+    architecture (copperhead's producer/drawer/gate split). Six borrowings, no
+    platform. **An agent that reads this survey and concludes there is something
+    to adopt has misread it.**

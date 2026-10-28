@@ -439,3 +439,23 @@ weakest about THIS generator**, and `m1-remeasurement.md` is where the differenc
 is measured rather than argued: of the five figures the block spike's own table
 publishes per block, **two are the same quantity as this generator's and three
 are not.**
+
+Three surveys landed in `docs/research/` on 2026-10-28, and nothing pointed at them
+======================================================================================
+
+**Same failure this index exists to prevent, one directory over.** They are
+indexed here rather than in a new index because a reader looking for "what does
+the field already do" looks here first, and because two of the three are partly
+superseded by the eight passes above and need to say so where they are found.
+
+| document | what it is | how much it can be trusted |
+| --- | --- | --- |
+| [`../research/2026-10-28-agent-kicad-surfaces.md`](../research/2026-10-28-agent-kicad-surfaces.md) | what an agent can drive as a **tool** to read, place, move, wire and inspect a `.kicad_sch`, rather than writing its own layout | **Measured, and the strongest of the three.** Every PASS/FAIL was produced by running the thing against `circuits/pt2399-core/pt2399-core.kicad_sch` on KiCad 10.0.5. Its `kiutils` result is a false green worth reading on its own: every check passes, `kicad-cli` exits 0, and **192 `hide` flags and 259 `do_not_autoplace` flags vanish** |
+| [`../research/2026-10-28-schematic-layout-engines.md`](../research/2026-10-28-schematic-layout-engines.md) | whether an off-the-shelf engine could replace this generator | **Its own §0 says the question is largely already answered here and defers to the passes above**, which is the right posture. It gathers evidence and declines to recommend |
+| [`../research/2026-10-28-ai-native-eda-platforms.md`](../research/2026-10-28-ai-native-eda-platforms.md) | the **commercial and agent-surface** picture: Flux, Koppar, atopile, JITX, ProtoFlow, Coppr, copperhead - MCP servers, pricing, licensing, corporate health, export surfaces | **Mixed, and it grades itself.** It is the only source for the commercial tier and for the KiCad-API answer read off the protos, and it corrects `../decisions/2026-09-21-why-not-tscircuit.md`. But **it ran nothing against this repository's circuits**, and its own "READ THIS FIRST" hands the `schematizer`, Weave, ELK and netlistsvg questions back to the passes above, which ran them |
+
+**The correction that document carries is the reason to read it despite the
+above.** `_schDirectLineRoutingEnabled` **does** reach tscircuit's core: zod
+strips it from `_parsedProps`, and the call site reads raw `.props`, which
+`PrimitiveComponent` assigns unparsed. The decision's conclusion survives; its
+stated reasoning does not, and the decision file still says the old thing.
