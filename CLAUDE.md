@@ -125,108 +125,50 @@ So:
   solution that technically works but leaves a person doing fiddly remedial work
   is a failure, not a delivery.
 - **The schematic generator is `lib/schgen/`, and `lib/kicad/schematic.ts` is the
-  superseded stub it replaced.** This sentence used to say the stub was all there
-  was and to *"expect it to stop being true as the schematic-generation port
-  lands"*. **The port landed and the prediction was wrong for a reason nobody
-  anticipated, which is worth more than a silent correction.** `lib/schgen/`
-  exists, draws **47 of this repository's 52 declared ELK blocks**, and
-  **produces a schematic for 7 of the 11 boards in `boards/`** - `pt2399-core`,
-  `pultec-hi-boost`, `pultec-hi-cut`, `pultec-low-boost`, `pultec-low-cut`,
-  `transistor-preamp-lab` and `transistor-preamp-loop`, all since 2026-10-24.
+  superseded stub it replaced.** **Nothing invites you to the stub**: its CLI
+  verb, its script and its instructions are deleted. Say "stub" when that is
+  what you made, and read **G81** before you reach for it for anything.
 
-  **THE FIGURE HAS BEEN `0`, `1`, `2`, `5`, `6` AND `7` IN THIS PARAGRAPH INSIDE
-  FIVE DAYS, and the lesson that outlives each of them is about the CAUSE rather
-  than the count.** `0 of 11` once stood here beside *"six are refused at
-  `validateCircuit` on net names"*. The count was merely stale; **the cause was
-  refuted**, and that is the worse of the two - a stale count misleads about
-  progress, a stale cause sends the next agent after a rule that is not there.
-  No board has ever refused on a net name: the casing demand is gone on the
-  owner's instruction (*"i absolutely do not care about the letter case of net
-  names. That's a silly quibble."*) and **G150**'s re-drive reads all eleven
-  refusal blocks and finds **not one** mentioning a net name, a case or
-  `UPPER_SNAKE`.
+  **NO COUNT OF WHAT DRAWS BELONGS IN THIS FILE. RUN THE TOOL.**
 
-  **AND THE SECOND LESSON IS THAT THREE FILES CARRIED THREE DIFFERENT VALUES OF
-  THIS NUMBER AT THE SAME TIME.** On 2026-10-25 this paragraph said `5 of 11`,
-  `docs/known-gaps.md` **G291**'s own table said `2 of 11`, and **G259** - the
-  board-by-board scoreboard both of them cite - still said `1 of 11`. Three
-  changes that day moved it and not one of them amended the scoreboard.
-  **`bun tools/schgen/board-sheets.ts` is the only thing that answers this
-  question**; a figure in prose, including this one, is a transcription with a
-  date on it.
+  ```
+  bun tools/schgen/board-sheets.ts     which boards draw, and what refuses
+  bun run tools/schgen/board-geometry.ts     crossings, corners, fallbacks
+  ```
 
-  > **SUPERSEDED 2026-10-27 BY THE GATE REFORM, AND THE NUMBER IN THIS FILE WAS
-  > STALE AGAIN — WHICH IS THE FOURTH TIME, IN THE FILE THAT RECORDS THAT AS THE
-  > GOVERNANCE FAILURE OF RECORD.** The census no longer says *"produces a
-  > schematic"*, because that sentence never answered *may I build from it*:
-  >
-  > ```
-  > 10 of 11 boards produce a drawing: 10 usable, 0 defective
-  > 1 produce none: 1 not-drawable, 0 generator-defect
-  > ```
-  >
-  > **Only `pultec-mid` refuses, in one class.** The three transistor-preamp
-  > boards below were refusing on CROWDING, which the owner ruled is *"ugly but
-  > usable"* — they draw now. `bun tools/schgen/board-sheets.ts` is still the
-  > only thing that answers this, and this block is still a transcription with a
-  > date on it.
-  >
-  > **AND THE FIRST LOOK AT THOSE THREE DRAWINGS FOUND THE GATE REFUSING THE
-  > WRONG THING**: `transistor-preamp-buffered` was hidden over a `VCC` label
-  > brushing a pin number — both legible — while `R4`'s value reads `1●5K`, where
-  > `1.5K` and `15K` are indistinguishable, and that one passes ungated. 39
-  > fallback placements across 9 boards, none gated.
-  > `docs/superpowers/plans/2026-10-27-gates-classify-execution/README.md` carries
-  > it; `docs/known-gaps.md` **G303** is the directive it sits under.
+  **This paragraph used to carry the census, and the owner struck it on
+  2026-10-27:** *"why are there entries about specific artifacts and
+  point-in-time statuses in claude.md? That will almost certainly go stale plus
+  claude.md is for governance, not bookkeeping."* It had four stale figures in
+  it at that moment, including one added the same day to correct another.
+  **Ninety lines of bookkeeping were deleted; what follows is the governance
+  that was buried in it, and it is the part that does not go stale.**
 
-  **What refused before that reform was FOUR boards, in two classes**, which is the shape to
-  check rather than the number: `pultec-mid` at `validateCircuit` on a switch
-  throw (`pin 12`) that no slot in the model can carry; and `tp-stage` on each of
-  `transistor-preamp-buffered`, `-feedback` and `-staged`, all three at the
-  clearance checks on a power-symbol **value** overlap, which is ordinary
-  crowding - **one block refuses three boards.** **Two classes have left
-  entirely, and by opposite routes.** The **missing junction** - the one class
-  that must keep refusing, because it makes a drawing WRONG ABOUT THE CIRCUIT -
-  is gone because the geometry moved, not because anything was relaxed. The
-  **paper** class is gone because a sheet's declared paper is now a FLOOR rather
-  than a ceiling: a drawing that needs more than A3 is drawn on the next
-  standard size up, and only contents that fit on nothing still refuse.
-  `docs/known-gaps.md` **G292** carries the measurement and **G290** why the
-  mechanical-pin classification is a whitelist rather than inferred from a
-  symbol's drawing.
+  **A FIGURE IN PROSE IS A TRANSCRIPTION WITH A DATE ON IT.** The board count
+  read `0`, `1`, `2`, `5`, `6`, `7` and `10` in this one paragraph inside nine
+  days. On 2026-10-25 three files carried three different values of it at the
+  same time, and not one of the three changes that moved it amended the
+  scoreboard they all cited.
 
-  **AND `7 of 11` IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. Do not let it stand
-  in this file, or anywhere else, without one. A board that generates is not a
-  board whose drawing anyone has read.** The only sheet anyone HAS read closely
-  is `pt2399-core`'s, and it **cannot be read as a drawing**: not one net label,
-  signal flow not followable, `C13` and `C14` unresolvable, page 1 of 2 blank but
-  for a sheet symbol, and **19 of its 24 reference designators disagree with the
-  built board's** - the sheet's `R3` is a 10K part where the board's `R3` is 15K.
-  **G285** carries that table and ends, verbatim: *"It is not a candidate for
-  G240 and must not be sent to him as one."* **The other six have had no such
-  reading**, and their generations report **19 fallback field placements**
-  between them - text the placer could not keep clear - against 4 on
-  `pt2399-core`'s own sheet, 23 in all. **`pt2399-core`'s fell from 8 to 4 and
-  that is not a step toward G240's criterion**: the eight were never what was
-  wrong with that sheet.
-  **The "no authoring declaration" half of this sentence is gone and the dates
-  say why it is kept:** until 2026-10-21 nine of the eleven
-  boards had no declaration and had never been offered to the drawing code at
-  all, which was the largest single reason this output class delivered nothing;
-  all nine now exist (`circuits/pultec/schematic/`,
-  `circuits/transistor-preamp/schematic/`) and **the board figure did not move
-  then** - it moved three days later, and for an unrelated reason: Task 5 of
-  `docs/superpowers/plans/2026-10-23-net-names-and-floating-pins.md` resolved
-  `pt2399-core`'s validation refusal and its sheet-name collision (then **G284**, now
-  resolved for every design and guarded by `tests/schgen/sheet-file-collision.test.ts`).
-  `docs/known-gaps.md` **G259** is the board-by-board scoreboard, **G247**
-  measures the preamp five, **G263** and **G264** carry what offering the nine
-  surfaced, **G238** and **G245** are how the blocker got there, and **G248** records
-  why the stub writer is still in the tree - it carries the only `kicad-cli`
-  proof that KiCad reads a generated schematic as the circuit means it. **Nothing
-  invites you to the stub**: its CLI verb, its script and its instructions are
-  deleted. Say "stub" when that is what you made, and read **G81** before you
-  reach for `lib/kicad/schematic.ts` for anything.
+  **A STALE CAUSE IS WORSE THAN A STALE COUNT, and that is the lesson that
+  outlives every number.** `0 of 11` once stood here beside *"six are refused at
+  `validateCircuit` on net names"*. The count was merely out of date; **the
+  cause was refuted** - no board ever refused on a net name. A stale count
+  misleads about progress; a stale cause sends the next agent after a rule that
+  is not there.
+
+  **A FIGURE IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. A board that draws is
+  not a board whose drawing anyone has read**, and the two have come apart here
+  before: the one sheet anyone had read closely could not be read as a drawing
+  at all while the census counted it a success. **Quote both or neither.**
+
+  **AND A GATE NOBODY CAN SEE PAST CANNOT BE JUDGED SANE.** The owner, 2026-10-27:
+  *"a gate halts rendering and we never look at the picture so we can't tell if
+  the gate is insane or not"*. `docs/known-gaps.md` **G303** carries the
+  directive that followed, and
+  `docs/superpowers/plans/2026-10-27-gates-classify-execution/README.md` carries
+  what looking at the drawings then found.
+
 - **KiCad and VeroRoute are primary tools here, not optional extras.**
   `make check` invokes `kicad-cli` on every board on every run, and one test
   invokes it directly and fails rather than skips. Treat KiCad the way you would
@@ -380,7 +322,7 @@ register is FROZEN and you may not add to it.**
   under what it leaves open.
 - **AN OWNER DECISION OR DECLINATION STILL GOES IN `docs/known-gaps.md`**, with
   his words verbatim, and that is the ONLY thing that still does — it is what
-  the surviving 31 entries are. **This is an exception to "do not add to it" and
+  the surviving entries are. **This is an exception to "do not add to it" and
   the only one.** A decision of his that is lost gets re-asked, re-asking costs
   him attention and stalls the work behind it, and *"a question he declined is
   not a closed question, but nobody asks him again unprompted."*
