@@ -78,11 +78,22 @@ at a bench — not a netlist, and not a wall of net labels.
 | **netlistsvg** | Yes | No — block-diagram grade, SVG only, you supply orientation | **No** | **Dormant since 2024-01.** SKiDL dropped it 2026-10-16 |
 | **atopile** | Driving `ato build` only — **the MCP server was removed** in 0.15.9 | **No, by stated thesis** — *"Schematics are pictures"*. "Prism" is a viewer with no designators or values | **No.** Writes `.kicad_pcb` directly; the only `.kicad_sch` code is a *reader* | 4k stars, MIT, YC W24 — and the open line is soft-deprecated, the repo 6 months stale, and the build needs an account |
 | **JITX** | **Yes, best in survey** — official Claude Code + Codex skills, headless CLI, `--format json`, `--dry` | **Yes, inside JITX** — multi-page, title blocks, author tables, hierarchical diagrams | **Probably not.** `legacy-kicad` exporter exists; **0 of 443 doc pages mention KiCad**; one weak report says PCB only | Proprietary, license server, active. Free tier **requires your designs be open hardware** |
+| **Diode Computers** | **Yes** — MIT Rust CLI + 5 first-party Claude Code skills. Built an MCP server and **deleted it** | **Yes, and it reconciles** — placement, net symbols, hierarchy, and minimal-edit repair against a sheet a human rearranged | **Yes, natively** — *"`.kicad_sch` files match KiCad 10's output"*. **KiCad only; the "exports to Altium" claim is false** | MIT, 469 stars, **pushed today**, a release every 2–3 days, a16z + YC S24. Docs lag badly |
+| **Quilter.ai** | **No** — no API, CLI, SDK or MCP, and their docs say so | **No, by stated policy** — *"Quilter isn't for you"* for schematic work | Consumes and returns `.kicad_pcb`; you supply outline, footprints and netlist | ~$40M raised, alive. ⚠️ **free-tier inputs may be used for training** |
+| **Circuit Mind** | **No** — nothing public; OIDC wall, 0 repos, 0 packages | **Yes** — multi-sheet with refdes and ports, per a **LANL report**; and **50% complete on an FPGA board after ~80 h manual** | **None at all.** Altium / OrCAD / Xpedition only | $33.4M total, $25M announced the day of this survey. Enterprise sales only |
+| **CELUS** | **Yes** — an **official MCP server**, OAuth, ~20 tool areas | **Yes** — one hierarchical sheet per CUBO, plus a searchable PDF | **Yes** — `.kicad_pro` + `.kicad_sch` + `.kicad_wks`. ⚠️ **single-use browser-bound download links block headless retrieval** | Shipping, NXP embed — but **no funding round since Jul 2022**. Free tier makes **all projects public** |
+| **Zener** | — | — | — | **Not a company.** It is Diode's DSL; `zener.tech` is a for-sale parking page |
 | **Coppr** | **No** — pre-launch | Claims to | Claims KiCad-compatible | Landing page and a waitlist |
-| **Quilter / Diode / CircuitMind / Zener** | see [Not closed](#not-closed) | — | — | Delegated; report pending at time of writing |
+| **KiCad's own IPC API** | **Not yet** — `kipy` 0.8.0 ships a full `Schematic` class marked **`versionadded (KiCad 11)`** | n/a — it *is* KiCad | native, once KiCad 11 lands; and it drives a **running** KiCad, never headless | Official, versioned, 16 releases. **The ceiling, dated** |
 
 **And the one answer that governs all of them:** nothing in this table writes a
-KiCad schematic *through KiCad*. They all write the file.
+KiCad schematic *through KiCad*. They all write the file. KiCad's own API will
+change that, in **KiCad 11**, and even then only against a running instance.
+
+**If you read one row, read Diode Computers. If you read one paragraph, read
+[the two retreats](#the-mcp-ecosystem-and-the-two-retreats-that-matter-more-than-the-ecosystem):
+two independent teams built EDA MCP servers, measured them against a plain
+coding agent with `kicad-cli`, and withdrew.**
 
 ## The finding that reframes the whole survey
 
@@ -104,33 +115,88 @@ returns, in an 82-line file, exactly three commands and their responses:
 | `PlaceSymbolFromLibrary` | **write — the only one** |
 
 By comparison `api/proto/board/board_commands.proto` on the same revision holds
-**60** messages (`grep -c '^message'`). The schematic side of the IPC API can
-place a symbol. It has **no command to draw a wire, place a label, create a
-junction, or add a sheet.** `api/proto/schematic/` exists on both `master` and
-the `10.0` branch — so the protos ship, which is why this writer initially read
-them as the shipped capability.
+**60** messages (`grep -c '^message'`).
 
-**A second measurement narrows it further, and the two together are stronger
-than either.** KiCad's own developer documentation
-(`https://dev-docs.kicad.org/en/apis-and-binding/ipc-api/for-addon-developers/`)
-states: *"KiCad 9 and 10 only support IPC API plugins in the PCB Editor"* and
-*"KiCad 11 adds support for plugins in the Schematic Editor."* (VERIFIED by a
-delegated researcher via page fetch; quoted wording passed through a summarizer,
-so treat the exact phrasing as approximate and the substance as confirmed.)
+> **THE INFERENCE THIS WRITER DREW FROM THAT WAS WRONG, AND THE CORRECTION IS
+> MORE INTERESTING THAN THE ERROR.** This section originally concluded from the
+> 82-line proto that the API *"has no command to draw a wire, place a label,
+> create a junction, or add a sheet."* **False.** A parallel researcher reported
+> the opposite, and chasing the disagreement produced the real answer.
+>
+> **Item CRUD is not in the schematic proto because it is in the SHARED one.**
+> VERIFIED by downloading the `kicad-python` wheel (import name `kipy`) and
+> listing it: `kipy/proto/schematic/schematic_commands_pb2.py` is **907 bytes**,
+> while `kipy/proto/common/commands/editor_commands_pb2.py` is **13,653 bytes**
+> and `board_commands_pb2.py` is 15,858. The generic editor commands —
+> `CreateItems`, `GetItems`, `GetItemsById`, `UpdateItems`, `RemoveItems`, plus
+> commit handling — are **shared between the board and the schematic**. Counting
+> messages in `schematic_commands.proto` measures only what is schematic-
+> *specific*. **Reading one proto file and generalising was the error.**
+>
+> **And the Python surface is complete.** VERIFIED from
+> `kipy/schematic.py` (14,038 bytes) in `kicad-python` **0.8.0, uploaded
+> 2026-08-30**: `class Schematic` exposes `create_items`, `get_items`,
+> `get_items_by_id`, `update_items`, `begin_commit`, `push_commit`,
+> `drop_commit`, `save`, `save_as`, `revert`. And `kipy/schematic_types.py`
+> (51,578 bytes) defines the whole vocabulary — `SchematicLine`, `Junction`,
+> `NoConnectMarker`, `BusEntry`, `LocalLabel`, `GlobalLabel`,
+> `HierarchicalLabel`, `DirectiveLabel`, `SheetPin`, `SheetSymbol`,
+> `SchematicSymbolInstance`, `SchematicPin`, `SchematicText`,
+> `SchematicGraphicShape`, `Group`, `SchematicNet`. **You could draw a wire with
+> this.**
 
-So the honest statement is: **the protos exist, the three commands are defined,
-and the Schematic Editor does not host IPC plugins in 9 or 10 at all.** The
-schematic API is scaffolding, not a surface. Schematic-editor plugin support is
-slated for **KiCad 11**, which secondary sources put at roughly February 2027
-(RELAYED, not confirmed). Either way the conclusion for today is the same and
-the reconciliation matters only so a later reader does not "discover" the proto
-directory and conclude the API is usable.
+**So why does the conclusion stand? Because of one line, and it is the decisive
+evidence in this whole section.** VERIFIED, `kipy/schematic.py:78-81`, the entire
+docstring of the class:
+
+```python
+class Schematic:
+    """
+    .. versionadded:: 0.x.y (KiCad 11)
+    """
+```
+
+**The schematic API is annotated as added in KiCad 11 — and the version number
+is still a placeholder.** `kipy/kicad_api_version.py` reads
+`KICAD_API_VERSION = "10.0.6-0-gcaf7377e9c"`, so these bindings were generated
+against a 10.0.x API that does not yet host what they describe.
+
+Three independent facts, each checkable, now agree:
+
+1. `schematic_commands.proto` carries only reads plus `PlaceSymbolFromLibrary`
+   (VERIFIED, GitLab `master`).
+2. `kipy`'s `Schematic` class is `versionadded (KiCad 11)` with an unassigned
+   version (VERIFIED, wheel contents).
+3. KiCad's dev docs state *"KiCad 9 and 10 only support IPC API plugins in the
+   PCB Editor"* and *"KiCad 11 adds support for plugins in the Schematic
+   Editor"* (RELAYED via page fetch through a summarizer — substance confirmed,
+   exact wording approximate).
+
+**The honest statement: the bindings are ready and the host is not.** The
+Python API for creating schematic items exists, is official, is versioned, and
+**lands with KiCad 11** — which secondary sources put at roughly February 2027
+(RELAYED). Locally, KiCad **10.0.5**'s `kicad-cli` offers only
+`{fp,jobset,pcb,sch,sym,version}` with no `api-server` verb at all (VERIFIED).
+
+**What changes, and what does not.** The conclusion for today is unchanged:
+you cannot write a KiCad schematic through KiCad's API, so every tool that
+generates one writes the file. **What changes is the forecast, and it is a real
+strategic input:** this is a dated, official, already-written API with a full
+item vocabulary, not a vague roadmap item. Anything built now on direct
+s-expression writing should expect an official alternative for *interactive
+repair* within a KiCad major version — and should note that even then it will be
+a **remote-control API against a running KiCad**, over NNG/protobuf sockets, not
+a headless file generator. For CI and for an unattended agent, file generation
+plus `kicad-cli` remains the right path regardless of KiCad 11.
 
 **A trap worth naming, VERIFIED by a delegated researcher via the GitHub API:**
 `github.com/KiCad/kicad-python` is **archived**, `archived: true`, last commit
 2022-01-09 with the message *"Add deprecation notice"*. The current
-`kicad-python` on PyPI is the IPC bindings — a different thing with the same
-name. Do not land on the GitHub repo and conclude the bindings are dead.
+`kicad-python` on PyPI is the IPC bindings, developed on GitLab at
+`kicad/code/kicad-python` — a different thing with the same name. Do not land on
+the GitHub repo and conclude the bindings are dead. VERIFIED from PyPI: 16
+releases, `0.1.0a0` 2024-04-03 through **`0.8.0` 2026-08-30**, actively
+developed.
 
 And the CLI is export-only. VERIFIED on the locally installed KiCad **10.0.5**:
 
@@ -2157,6 +2223,532 @@ speaker, fuse, varistor, zener, schottky, testpoint, ground/vcc/rail variants.
 
 ---
 
+## Diode Computers — the one company shipping, in the open, what this repository is building
+
+`https://www.diode.computer` · docs `https://docs.pcb.new` · code
+`https://github.com/diodeinc/pcb` (**MIT**)
+
+**This is the most relevant find in the survey and it was not in the brief's
+expectations.** It is the only company shipping, openly, a model-to-`.kicad_sch`
+generator with placement, net symbols, hierarchy **and reconciliation**.
+
+Three distinct things, and conflating them is how to get this company wrong
+(all VERIFIED):
+
+1. **`pcb` — an MIT, Rust CLI** compiling **Zener**, a Starlark-based hardware
+   description language, into KiCad schematics and boards; runs ngspice, does
+   DFM, emits manufacturing data. **Free, local, offline, no account.**
+2. **A hosted design service** at `build.diode.computer` — self-serve, "you,
+   with our AI agent."
+3. **An enterprise design shop** — **"From $10,000 per design, plus fab"**,
+   boards assembled in Brooklyn.
+
+**Liveness is not in doubt.** VERIFIED via `gh api`: 469 stars, 61 forks, MIT,
+**pushed 2026-10-28T17:11Z — today**, releases v0.4.94 (10-28), .93 (10-25),
+.92 (10-22), .91 and .90 (10-20) — every two to three days, with a
+Keep-a-Changelog **CHANGELOG of 2,692 lines**.
+
+### The schematic capability, which is the real thing
+
+VERIFIED: a dedicated crate, `crates/pcb-kicad-sch/`, whose source files are
+
+```
+analysis.rs  component_slots.rs  compose.rs  connectivity/  cut.rs
+field_autoplace.rs  hierarchy.rs  identity.rs  kicad.rs  model.rs
+net_symbols.rs  placement.rs  project.rs  reconcile.rs  repair.rs
+root_interface.rs  sheet_placements.rs  source.rs  symbol.rs
+```
+
+The command is **`pcb apply schematic <file.zen>`** — VERIFIED from
+`crates/pcbc/src/apply.rs`: `#[command(about = "Apply a Zener design to its
+linked KiCad project")]`, with `Schematic` and `Layout` subcommands, calling
+`apply_linked_schematic(&design.schematic)` then
+`pcb_kicad::open_eeschema(&result.root_schematic)`.
+
+Selected CHANGELOG entries, verbatim and VERIFIED, because this is where the
+capability becomes legible:
+
+- *"`pcb apply schematic` reconciles a linked KiCad schematic with its design,
+  planning and applying per-issue repairs."*
+- *"**`.kicad_sch` files match KiCad 10's output, so KiCad saves no longer
+  rewrite them.**"* — byte-level fidelity to KiCad's own writer, which is a
+  serious engineering commitment and the thing that makes diffs readable.
+- *"Place generated schematic net symbols outside full component geometry in
+  **deterministic wired staircases**, sharing one symbol only across adjacent
+  same-net pins and reserving the routed staircase during component packing."*
+- *"Improve generated schematic placement and **repair connectivity issues with
+  minimal verified edits instead of regenerating the affected nets**."*
+- *"`pcb apply schematic` grows new sheets up to A0."*
+- *"Interpret KiCad schematic bus connectivity, including vectors, groups,
+  aliases, and hierarchical buses, while preserving buses during `pcb apply`."*
+- *"Preserve sheet graphics and text annotations when updating KiCad
+  schematics."*
+- *"Wire rotated and mirrored schematic symbol pins at KiCad's physical pin
+  anchors."*
+- *"Support KiCad 9 schematics, saving edited pages as KiCad 10."*
+- *"`pcb apply schematic` removes obsolete generated module sheets… **while
+  preserving live and user-organized sheets**."*
+
+**That last cluster is the hard part of the problem**, and it is the one SKiDL
+issue #316 asked about and got no answer to: a human rearranges the generated
+sheet and the generator must not stomp it. **Diode has built the reconciliation
+path, not a one-shot emitter.** On this axis they are ahead of everything else
+in this survey, including this repository.
+
+### Agent surface: a CLI plus Claude Code skills — and they deleted their MCP server
+
+VERIFIED command modules in `crates/pcbc/src/`: `apply`, `bom`, `build`,
+`bundle`, `dfm`, `drc`, `fmt`, `freerouting`, `gerber`, `gltf`, `import`,
+`info`, `inspect`, `ipc2581`, `layout`, `list`, `lsp`, `migrate`, `mod`, `new`,
+`open`, `publish`, `quote`, `release`, `resolve`, `sim`, `step`, `test`,
+`update`, `vendor`.
+
+**Five first-party Claude Code skills ship in the repo** at `skills/`:
+`zener-language`, `importing-kicad-projects`, `librarian`, `registry-search`,
+`spice-sim`. VERIFIED, and worth reading as craft examples — `zener-language/SKILL.md`
+says *"For CLI behavior, use the installed command's `--help`; **do not invent or
+infer subcommands or flags**"* and *"The selected symbol is the authority for its
+footprint, part identity, datasheet, and pins."*
+
+CI auth is documented: `pcb auth login --service-account --stdin <
+credentials.json` with `DIODE_API_URL` / `DIODE_CLIENT_ID` /
+`DIODE_CLIENT_SECRET`, plus a GitHub Action at `diodeinc/pcb-action`.
+
+**A real but undocumented REST API exists.** VERIFIED: `api.diode.computer`
+returns a structured Fastify 404 while `/openapi.json`, `/docs` and
+`/documentation/json` all 404 — a live API with no published reference. Routes
+read from source include `/api/boms/match`, `/api/quotes` and a remote sandbox
+(`/exec`, `/fs/read`, `/fs/write`).
+
+**And they built an MCP server and deleted it.** VERIFIED, CHANGELOG v0.3.72,
+2026-04-27: *"Removed the hidden `pcb mcp` command and deleted the `pcb-mcp` /
+`rquickjs` integration from the workspace."* Earlier entries show it had been
+substantial — `pcb mcp eval`, `execute_tools`, `resolve_datasheet`,
+`search_registry`, `run_layout`, a `zener-docs` resource. All consolidated into
+the CLI and skills. See [the two retreats](#the-mcp-ecosystem-and-the-two-retreats-that-matter-more-than-the-ecosystem) below.
+
+### KiCad interop, precisely — and a widely-repeated claim corrected
+
+**Import is KiCad-only.** VERIFIED from `crates/pcbc/src/import/README.md`:
+`pcb import <design.kicad_sch|project.kicad_pro> <output-directory>`, a
+nine-phase pipeline running ERC, DRC and schematic/PCB **parity** checks,
+mapping KiCad sheets to Zener modules and classifying power/ground nets from
+native power symbols. Notably: *"Connectivity follows the schematic even when
+the PCB is out of sync… Source ERC, DRC, and schematic/PCB parity findings are
+**reported, not import blockers**."*
+
+**Export:** `pcb apply schematic` → `.kicad_sch` + `.kicad_pro`; `pcb layout` →
+`.kicad_pcb`; plus `pcb gerber`, `pcb ipc2581`, `pcb step`, `pcb gltf`, ODB++,
+`pcb bom`, `pcb sim`, and `pcb publish --netlist-dir` for JSON netlists.
+
+**The correction, and it is worth carrying:** multiple roundups state Diode
+"exports to KiCad and Altium" or "KiCad, Altium and Cadence". **VERIFIED false
+from the code** — `crates/pcb-eda/` contains exactly one backend directory,
+`kicad`. The only Altium mention in 2,692 CHANGELOG lines is *"`pcb import`
+handles more KiCad projects, **including Altium conversions**"* — meaning KiCad
+projects that KiCad's own importer already converted. Interchange with
+Altium or Cadence happens, if at all, through **manufacturing** formats. **Do
+not repeat the "exports to Altium" claim.**
+
+**Hard dependency:** **KiCad 10.x is required** for layout (`pcb build` is not).
+Windows is experimental, WSL2 recommended.
+
+### Maturity, funding, and two honest caveats
+
+VERIFIED: YC **Summer 2024**, founded 2024 by Davide Asnaghi and Lenny Khazan,
+Brooklyn Navy Yard, YC status Active, team size 10, hiring. Series A led by
+**Andreessen Horowitz**, announced **2025-07-23**. **The $11.4M figure is
+RELAYED** — neither a16z's own post nor Diode's states an amount.
+
+**The Anthropic partnership is real and narrower than the hype.** VERIFIED that
+Diode's post (2025-12-12) links to Anthropic's own at
+`claude.com/blog/making-claude-a-better-electrical-engineer`, and that it was a
+**training** partnership whose gains went into Claude Sonnet 4.5 and later
+models, **not a product release**. Anthropic states *"Claude Sonnet 4.5's
+reference designs were preferred by Diode's electrical engineers 8 out of 10
+times."* The *"roughly 250 reference designs in two weeks"* claim is
+first-party and **could not be verified** — `zener.diode.computer` is a JS SPA
+and the API exposes no public registry route.
+
+**Docs lag the code badly.** VERIFIED: `docs.pcb.new/llms.txt` lists **four
+pages**, and **there is no documentation page for `pcb apply schematic`** — the
+most interesting command in the tool. The CHANGELOG and `--help` are the real
+reference. Budget for reading source.
+
+### The one place this repository appears to be ahead, and it should keep it
+
+**VERIFIED by grepping all 2,692 CHANGELOG lines for `hairpin`, `crossing`,
+`legib`, `readab`: nothing.** Diode's legibility machinery is a staircase and
+packing heuristic plus `placement.rs: pub fn off_page_warnings` ("one warning
+per page whose symbols extend past its paper"). Their own claim about the
+readable artifact is modest: *"When needed, the code renders directly into
+graphical schematics, so engineers can always see the visual representation they
+expect"* — and there is **no `pcb schematic render` command**; the readable
+artifact is the `.kicad_sch` opened in eeschema.
+
+**So a well-funded, a16z-backed, Anthropic-partnered team shipping every two
+days has no published equivalent of `bun run tools/schgen/board-geometry.ts`
+(crossings, corners, fallbacks) or `board-sheets.ts` (what draws and what
+refuses).** On the evidence, `CLAUDE.md`'s rule that *"a measurement goes in a
+tool or a test that re-runs it"* is not merely hygiene — **it is the one axis
+where this repository has an instrument nobody else in this survey publishes.**
+
+**Read `crates/pcb-kicad-sch/` before extending `lib/schgen/`.** It is MIT, it
+is the closest prior art that exists, and its CHANGELOG is a record of which
+problems in this space are real.
+
+---
+
+## Quilter.ai — a verified negative, by stated policy
+
+`https://www.quilter.ai` · `https://docs.quilter.ai`
+
+The brief asked whether Quilter touches schematics at all. **It does not, and
+that is policy rather than a gap** — the cleanest verified answer in the survey.
+
+VERIFIED, verbatim from `docs.quilter.ai/about-quilter/what-quilter-isnt.md`:
+
+> *"Quilter is a design agent, not a 'copilot'. … **If you're looking for a tool
+> that can generate, review, apply, or discard arbitrary blocks of schematic or
+> layout, Quilter isn't for you.**"*
+
+> *"Quilter is an implementer, not a proofreader. … Quilter doesn't check
+> schematic logic or design intent beyond what you specify."*
+
+And it delegates schematic work back to you: *"we rely on your tool to handle
+tasks like: Updating board files; **Modifying or annotating schematics**…"*
+Also *"Quilter is a submission and review interface, **not a CAD tool**."*
+
+**What it strictly requires as input** (VERIFIED) tells you the division of
+labour: **you** draw the board outline (*"Quilter can't define or resize the
+board outline for you"* — `Edge.cuts` in KiCad), **you** pre-load footprints
+(*"Quilter doesn't manage your component footprints"*), **you** supply a valid
+netlist matching the schematic, and **you** should pre-place connectors, with a
+candid warning that otherwise *"your USB connector [ends] up in the center of
+your board."*
+
+**No agent surface at all.** VERIFIED: no API, CLI, SDK or MCP server. Their own
+GitBook agent-query endpoint answers *"there's no documented, supported
+programmatic path for an autonomous agent to submit a job and retrieve its
+results,"* and the full ~60-page doc index has no API, developer or auth
+section. A nice irony: their docs are unusually agent-*readable* — every page
+has a `.md` twin — so an agent can read Quilter's docs programmatically and
+cannot use Quilter programmatically.
+
+**A trap:** `github.com/api-evangelist/quilter` looks like API documentation and
+is not. Its own README says *"This is not our API… an independent, third-party
+profile"* and it is a stub with zero endpoints.
+
+**Two corrections to the brief's assumptions**, both VERIFIED:
+
+- **Pricing is not per-board credits.** From `quilter.ai/pricing`: *"Pay per
+  Project. Not per Seat"*, and the cost is set by the number of **unrouted pins
+  at upload** — pre-routed sections do not count. **No dollar figures are
+  published anywhere**; the CTAs are "Talk to Sales."
+- **KiCad and Altium are native**; Cadence Allegro and Siemens Xpedition go
+  through **a Quilter-supplied exporter script to IPC-2581**. Layouts come back
+  in the format sent. **Exact file extensions are never published** — their own
+  docs query confirms *"the exact accepted suffix is not listed."*
+
+**The warning worth carrying:** VERIFIED via their docs query — **free-tier
+inputs may be used for training.** *"Quilter's FAQ says those terms permit
+training on users' direct inputs and synthetic training data generated from
+them… paying-customer designs… are not used for training. Don't submit designs
+to the free tier if you need that training exclusion."* A free non-commercial
+tier is self-serve; commercial is enterprise sales-led.
+
+RELAYED funding: $10M Series A Feb 2024 (Benchmark), $25M Series B 2025-10-07
+(Index Ventures), **~$40M total**. One third-party write-up reportedly headlined
+"$25 Billion" — ignore it. A circulating free-tier eligibility figure of "fewer
+than 10 people and under $50K revenue" is **RELAYED and absent from Quilter's
+own docs.**
+
+---
+
+## "Zener" — not a company. A clean negative worth recording
+
+The brief listed Zener as an AI-hardware startup. **There is no such company**,
+and the confusion has a specific cause worth naming.
+
+VERIFIED:
+
+- **Zener is Diode Computers' Starlark-based hardware description language**,
+  named after the diode, MIT-licensed inside `github.com/diodeinc/pcb`, with
+  reference designs at `zener.diode.computer`.
+- `zener.tech` → HTTP 307 → **a GoDaddy for-sale parking page**.
+- `zener.ai` → HTTP 200 with an **empty body**. No product, no EDA content.
+- No AI-hardware or EDA company named Zener appears in YC's directory or in any
+  reachable coverage. Other "Zener" entities are unrelated (RELAYED): a Spanish
+  renewable-energy firm, a Nepalese 3D-printing shop, an Oslo distributor.
+
+**If a source calls Zener an AI EDA startup, it mistook Diode's language for a
+company.** Recorded so the question is not re-asked.
+
+Same category, same treatment: **"Fabrik" does not exist** as an AI hardware
+startup — VERIFIED, four of seven candidate domains are identical 114-byte
+parking stubs. And **PrimisAI is now ChipNexus**; `primisai.com` is listed for
+sale, so anyone citing "PrimisAI" in late 2026 is using a dead name.
+
+---
+
+## Circuit Mind — the best public evidence that generated schematics are buildable-from, and the best public evidence of the ceiling
+
+`https://www.circuitmind.io`
+
+Three products (RELAYED via a delegated researcher): **ACE**, where you author
+an architecture **block diagram in their web app** — not a prompt, not a netlist
+— and it emits schematic, BOM, ICD, derating and power analysis; **AVE**, an
+agentic verification engine reviewing an *existing* schematic against datasheets
+and your own checklists, **launched 2026-10-28, the day of this survey**; and
+**ELIXIR** for library generation. **It does not do PCB layout.**
+
+**No agent surface.** VERIFIED: no REST API, CLI, MCP, SDK or package. The app
+302s to an OIDC wall (Django OAuth Toolkit shape); `/api/schema/` is also behind
+it. **Zero public GitHub repos, zero npm packages.** Enterprise sales only —
+every CTA is "Book a demo", no self-serve, no published pricing.
+
+**No KiCad interoperability whatsoever.** VERIFIED negative: KiCad appears
+nowhere on their site or in their technical material. Every export list names
+only Altium, OrCAD, Siemens Xpedition and System Capture — no `.kicad_sch`, no
+EDIF, IPC-2581, ODB++, Gerber or `.net`. **For this repository that is a hard
+disqualifier.**
+
+### Why it is still the most valuable entry in this section
+
+**The primary source is not Circuit Mind marketing. It is a Los Alamos National
+Laboratory public-release report** — LA-UR-25-30842 Rev.1, *"AI Assisted PCB
+Design to Increase Productivity and Efficiency"*, Love & Mu, issued
+**2025-11-14** (LANL-authored, hosted on Circuit Mind's HubSpot, so it is also a
+marketing asset — weigh accordingly). Verbatim:
+
+> *"Circuit Mind's schematic generation capability enables the design to be
+> organized across multiple schematic pages for improved readability. It
+> connects components through ports and net labels, while ensuring selected
+> components are compatible and meet design requirements. The tool automatically
+> incorporates decoupling capacitors according to component datasheets,
+> specifies no-connects, and adds regulators where needed."*
+
+Its figures show multi-sheet drawings with placed symbols, drawn wires,
+hierarchical sheets (Main / Connectors / Power / RTC / Microcontroller / Memory
+/ Peripherals), inter-sheet ports, net labels and reference designators. **That
+is a schematic an engineer works from — the first such public evidence in this
+survey.**
+
+**And the same document records the failure mode, which is the more useful
+half.** This is the quantified honest ceiling that nothing else in the survey
+provides:
+
+| Design | Setup | Solve | Manual | Total | "Completion" |
+| --- | --- | --- | --- | --- | --- |
+| Medium | 35 min | 8 min | 3.5 h | **4 h 13 min** | **90%** |
+| High (FPGA) | 1 h | 25 min | **~80 h** | **~80 h** | **50%** |
+
+Real defects found in review: *"LED in-series resistor values need to be
+calculated manually"*; *"Micro AB connector 5V rail (VBUS) not connected"*; an
+unconnected exposed pad on a load switch; no magnetics on the Ethernet
+connector; a duplicated 10k pullup; IO expander signals unconnected. Parts
+**outside** their curated database become *"virtual blocks"* that *"only provide
+net names as placeholders and do not include reference designators or pin
+descriptors."* And *"the Circuit Mind platform does not support FPGAs."* The
+high-difficulty figure is described as *"a wall of bus-stub lines"* that reads
+poorly at page scale.
+
+**That is the shape of the entire category, stated in someone else's numbers:
+inside a curated parts database it genuinely draws; outside it, the savings go
+to roughly zero.** A valve EQ with rotary-selected capacitor banks is firmly
+outside any vendor's curated database.
+
+**Alive and funded.** VERIFIED from Companies House: CIRCUIT MIND LIMITED, no.
+11389569, incorporated 2018-05-30, **Active**, latest filing **2026-10-14**
+(share allotment to Circuit Mind Inc., a US-parent flip). 32 staff, 8 open
+roles. RELAYED: **$25M announced 2026-10-28** — $18.5M Series A led by Norwest
+plus a previously unannounced seed; $33.4M total.
+
+---
+
+## CELUS — an official MCP server, `.kicad_sch` export, and a seam that blocks headless use
+
+`https://www.celus.io`
+
+**Name-collision warning first, and it is a real trap.** VERIFIED: `celus.net`
+is a **completely different company** — library e-resource usage statistics —
+and *it* has a public REST API. **If you see "CELUS has a REST API", it is
+almost certainly that one.**
+
+Browser-only SaaS. The flow (RELAYED): a **Design Assistant** turns a prompt or
+sketch into functional blocks on a canvas; **CUBO™** is their unit of reuse —
+*"a well-defined application of an electronic component"*, a parameterised
+sub-circuit with declared interfaces and ports; **Find Solutions** resolves each
+block to a concrete CUBO and MPNs, validating port compatibility; then one
+click gives a wired schematic plus BOM plus an EDA package.
+
+**CUBO is conceptually close to this repository's `include(prefix, network,
+portMap)`** — a reusable sub-circuit with declared ports and no implicit global
+nets. Worth noting as independent convergence on the composition model.
+
+**It has an official MCP server, and this is the only hosted schematic
+generator in the survey that does.** VERIFIED from
+`celus.io/knowledge/claude-connector`:
+
+- Endpoint **`https://app.celus.io/mcp-servers/celus-design-studio/mcp`**, OAuth
+  via CELUS sign-in, account required.
+- Tool areas: requirements management; project create/open/clone; reference-design
+  search; **block-diagram and canvas editing** (add/change/remove blocks and
+  connections); **run Find Solutions**; design-issue identification; **CUBO
+  library search, compare, lock/unlock per block**; component and datasheet
+  lookup; alternates; Design Assistant.
+- Output, verbatim: Claude can *"Generate and read the schematic PDF, the BOM
+  spreadsheet and the CAD project package."*
+- Execution model, and it is the right one: *"Tools that only read… run straight
+  away. Anything that changes a project… asks for your confirmation before it
+  runs."*
+
+**The hard seam, verbatim and VERIFIED:** *"Download links for output files are
+single-use and only work in a browser where you are signed in to CELUS as the
+same user."* **So an agent can drive the design and read the schematic PDF, but
+pulling the `.kicad_sch` ZIP to disk headlessly is blocked.** That is their
+documented limitation, not a measurement — nobody tested it.
+
+**Export, with exact extensions** (VERIFIED from `celus.io/knowledge/output-files`):
+the KiCad package is a ZIP with **`.kicad_pro`**, **`.kicad_sch`** (hierarchical,
+**one sheet per CUBO**, symbols and footprints pre-attached) and
+**`.kicad_wks`** (page layout and title block). Altium gets
+`.PrjPcb`/`.SchDoc`/`.PcbDoc`; Eagle `.sch`; OrCAD X XML in beta. **Explicitly
+absent: `.kicad_pcb`, `.kicad_sym`, `.kicad_mod`, `.net`, Gerber, IPC-2581,
+ODB++, EDIF, STEP.** And **PCB layout is not generated** — verbatim: *"Now it is
+time for you to place components on the PCB board, do the routing and finish the
+layout."*
+
+**An unresolved contradiction, flagged rather than papered over.** Three CELUS
+sources disagree about PCB files: `output-files` lists `.PcbDoc` for Altium but
+**no `.kicad_pcb`**; a 2024 news post says the KiCad integration gives *"a
+complete PCB Project package"*; and the homepage claims designs open *"straight
+in Altium, Cadence, Siemens, Fusion or KiCad"* — **but Cadence and Siemens are
+not in the output list at all.** The homepage over-claims relative to the docs.
+**Test it on a free account rather than trusting either.**
+
+**Two risk signals.** VERIFIED: the free **Community Account** makes **all
+projects and content public**, and CELUS *"reserves the right to… partly or
+fully phase out the Community Account without replacement"* — so **if any work
+must stay private the free tier is unusable.** AI Credits are metered and
+*"shall lapse without compensation"* on termination. And RELAYED: **no disclosed
+funding round since July 2022** (€25M Series A led by Earlybird; formerly named
+**Contunity**) — over four years, which for a venture-backed EDA company is a
+real signal, though release notes through 2026-10-14 and a CELUS platform
+embedded on NXP.com in September 2026 argue against imminent death. **Recorded as
+not-found rather than confirmed-absent.**
+
+**A business-model observation worth internalising:** nearly every 2026 CELUS
+announcement is a **component-manufacturer partnership** (NXP, RECOM, BrainChip,
+Alif, Variscite). They monetise substantially as a **design-in and
+demand-generation channel for chip vendors** — good for free-tier survival,
+**bad for the neutrality of part recommendations.**
+
+---
+
+## AllSpice.io — a real agent surface, and an inconsistency to flag hard
+
+`https://allspice.io`. A Gitea-fork hardware git and review platform — the
+strongest *ops* surface in the survey, and **not a generator**.
+
+RELAYED via a delegated researcher: a REST API, the **`py-allspice` SDK (4.3.0,
+MIT, 2026-09-30)**, GitHub-Actions-compatible CI, and webhooks. Its "DRCY AI"
+review product is shipping (docs updated 2026-10-23) and states it uses Claude
+via AWS Bedrock and *"We do not fine-tune on customer data."* **From
+$34,800/yr**, enterprise only, no commercial free tier.
+
+**The inconsistency, and it decides whether this is useful here:** the Hub
+reportedly parses **`.kicad_sch`, `.kicad_pcb` and `.kicad_sym` as "Stable"** —
+**but the SDK's `SupportedTool` enum contains only ALTIUM, ORCAD,
+SYSTEM_CAPTURE, DEHDL and DXDESIGNER, and `grep -i kicad` across `py-allspice`
+returns zero matches.** So the web product claims KiCad support that the
+programmatic surface does not expose. **Anyone planning to drive AllSpice over
+its API for KiCad work should test that before committing.**
+
+---
+
+## The MCP ecosystem, and the two retreats that matter more than the ecosystem
+
+The brief asked whether EDA MCP servers exist. **They do — more than two dozen,
+and the ecosystem is crowded and young.** But the two most informative entries
+are projects that **withdrew**, and their reasoning is the most strategically
+important finding in this survey.
+
+### Retreat 1: a KiCad MCP server went to maintenance mode after losing to plain Claude Code
+
+**`ProductOfAmerica/mcp-server-kicad`** — 15 stars, GPL-3.0, PyPI v0.21.1,
+**109 tools**, listed in the official MCP registry. It went to **maintenance
+mode in October 2026** and published why. RELAYED via a delegated researcher,
+and the numbers are specific: a head-to-head against plain Claude Code with
+KiCad installed, same model, judged by KiCad 10 itself —
+
+> **"Six single edits… three runs each. Plain Claude Code got all 18 right.
+> With the plugin, 3 of 18 were right."**
+
+A 20-edit session: both correct, but the plugin used about **1.8× the context**.
+Three diagnosed causes: some edits had no corresponding tool; **its own
+instructions forbade direct file edits, so the model stopped and asked**; and
+its board-sync tool rewrote nearly every footprint, so the model **undid its own
+work**. Its recommendation: *"a coding agent such as Claude Code, with KiCad
+installed. Ask it to check its changes with `kicad-cli`."*
+
+**Carry the author's caveats with the number:** *"small tests on one design, not
+a verdict"*, and the test material is unpublished — **n=1 and
+unreproducible.** It is an anecdote with arithmetic, not a study.
+
+### Retreat 2: Diode deleted its MCP server and consolidated into CLI plus skills
+
+Covered above — CHANGELOG v0.3.72, 2026-04-27. **Two independent teams, working
+on the same problem, concluded that wrapping EDA operations in MCP tools did not
+pay, and both ended up recommending the same thing: the agent edits the files
+and verifies with `kicad-cli`.**
+
+**That is what this repository already does.** The convergence is real even
+though neither datum is rigorous, and it is a reason to be skeptical of any
+proposal to wrap `lib/schgen/` in an MCP server. **Read both before anyone
+makes that proposal.**
+
+### Retreat 3: the largest one went closed-source
+
+**`mixelpixx/Konnect`** — 1,432 stars, AGPL, Rust, 217 tools — was
+**archived 2026-10-25**, and its successor `Orchis-ai-LLC/Konnect-EDA` is
+**commercial, closed-source, with zero releases** (created 2026-10-24).
+RELAYED. A third cautionary tale about building on this ecosystem.
+
+### The ecosystem, with the entries that matter here
+
+RELAYED via `gh api` on 2026-10-28 by a delegated researcher; star counts and
+dates are transcriptions and will drift.
+
+| Stars | Repo | Pushed | Licence | Why it matters |
+| --- | --- | --- | --- | --- |
+| 3,002 | `mixelpixx/KiCAD-MCP-Server` | 10-26 | MIT | 247 tools, including **65 schematic tools** "(authoring, batch edits, hierarchy, layout)". **Not in the official registry** |
+| 289 | `salitronic/eda-agent` | 10-28 | Apache-2.0 | Altium-first, ~600 tools over a DelphiScript bridge into a live session. Its own warning: *"Experimental… Some can crash the Altium DelphiScript engine"* |
+| 174 | `Seeed-Studio/kicad-mcp-server` | 10-22 | **none** | Analysis-first; writes are primitive (`add_wire`, `add_label`) with **no placement engine**. **No licence file** — correcting this document's earlier "MIT" relay |
+| 160 | `oaslananka/kicad-mcp-pro` | 10-28 | MIT | **The most rigorous.** PyPI and npm, a Zenodo DOI, OpenSSF badges, a published *"KiCad programmatic parity 85.7%"*, progressive-disclosure profiles. Admirably honest that its SI/PI/EMC/thermal are *"first-order, closed-form estimates… not a substitute for a field solver"*, and its task-outcome evidence *"intentionally reports `insufficient_evidence`"* |
+| 127 | `tangency-labs/pcbcraft` | 10-20 | GPL-3.0 | *"MCP-first Rust EDA"*, 44 tools, stable IDs, revision guards. **Created 2026-10-12 — sixteen days old.** Honest: *"not a KiCad replacement yet"* |
+| 67 | `Cognitohazard/ltspice-mcp` | 10-27 | GPL-3.0 | **Edits LTspice `.asc` schematics** and returns named measurements (cutoff, overshoot, phase margin). One of very few MCP servers touching a real schematic *drawing* format |
+| 56 | `IntelligentElectron/universal-netlist` | 10-28 | Apache-2.0 | **The best cross-vendor schematic reader found**: OrCAD `.DSN` binary, Altium `.SchDoc`, KiCad v6–10 **with no KiCad install**, into an open `.netlist.json` schema |
+| **27** | **`blwfish/kicad-mcp`** | **10-28** | MIT | **Low stars, high quality, and the closest thing to a schematic-placement scorer anyone has published.** 18 tools including **`schematic_layout` ("topology-aware schematic placement")**, `suggest_placement`, and **`analyze_placement_telemetry` ("placement quality scoring")**; 2,000+ tests; Freerouting pinned with measured reasoning |
+
+**`blwfish/kicad-mcp` is the one to look at**, for the same reason Diode's
+changelog gap matters: a **placement quality score** is the instrument this
+whole category lacks, and a 27-star project has one. Unverified beyond the tool
+list — nobody ran it.
+
+Also noted: `lamaalrajih/kicad-mcp` (531 stars) is **stale ~12 months**;
+`circuit-synth/kicad-sch-api` (57) ~11 months idle;
+`Finerestaurant/kicad-mcp-python` (41) ~15 months stale and built on the
+official IPC API. In the official MCP registry: `ProductOfAmerica/mcp-server-kicad`,
+`oaslananka/kicad-mcp-pro`, `embedded-society/altium-designer-mcp`, and
+**`com.pcbeditor/pcbeditor`** (registered 2026-10-28, remote streamable-HTTP at
+`https://mcp.pcbeditor.com/mcp`, 16 tools, claiming parts/schematic/placement/autorouting
+plus KiCad import-export, free account) — a hosted commercial entrant worth one
+look. **The 3,002-star server and Seeed's are not registered**, so the registry
+is not an index of the ecosystem.
+
+---
+
 ## Smaller and adjacent finds
 
 **`tpecar/nl2sch`** — `https://github.com/tpecar/nl2sch`. Python 3.9+, converts
@@ -2231,36 +2823,68 @@ checked, not only what was.
 
 1. **Web-search budget exhausted at 200/200 calls** partway through. Leads below
    were reachable by direct fetch only, and several were not reached at all.
-2. **Quilter, Diode Computers, CircuitMind, Zener, Celus, AllSpice and the
-   broader AI-EDA-startup sweep** were delegated to a researcher whose report
-   had not returned when this file was written. **That section is absent from
-   this document, not a negative finding.** Everything else from the brief —
-   Flux, atopile, JITX, tscircuit, netlistsvg, SKiDL, circuitikz/schemdraw and
-   the LLM literature — is covered above.
-3. **`_schDirectLineRoutingEnabled` was resolved, and against the earlier
+2. **All four delegated reports landed and are folded in.** Every item in the
+   brief is now covered. What is NOT covered is below.
+3. **All three incumbent EDA vendors actively block automated fetching, so
+   their AI features are unassessed.** VERIFIED as blocked: Cadence's
+   Allegro X AI page returns **403** to WebFetch, `curl` *and* a
+   text-extraction proxy; Altium's `/altium-ai`, `/ai`, `/solutions/ai` and
+   `/newsroom` all **404**. Siemens was not attempted. **This needs a browser
+   or a fresh search budget, not more `curl`.** Two tangential verified
+   signals: AllSpice lists Cadence Allegro X schematics and `.brd` as "Stable"
+   parse targets, and JITX green-checks Siemens Xpedition on its Enterprise
+   tier. **DeepPCB** is likewise a gap — it appeared only as a competitor named
+   in Quilter's own comparison blog and in roundups; `deeppcb.ai` was never
+   fetched, so **nothing about it here is verified.** **EasyEDA Pro's Extension
+   API** is a gap too: two MCP servers describe themselves as built on JLCEDA's
+   *"official Run API Gateway"*, which implies a real automation API, but
+   JLCEDA's own docs were not read.
+4. **`_schDirectLineRoutingEnabled` was resolved, and against the earlier
    decision** — see that section. What remains open is the *consequence*:
    nobody has run a circuit with the flag set and looked at the geometry
    `DirectLineRouter` produces on an analog sheet. That is a one-hour
    experiment and the highest-value open item on the tscircuit question.
-4. **Whether `_isChipToChipConnection()` was added to the failure condition
+5. **Whether `_isChipToChipConnection()` was added to the failure condition
    since September** is undetermined — the shallow clone has no history. A full
    clone and `git log -L` on that hunk would settle it.
-5. **`kicadts` format-version currency against KiCad 10** is unverified; its
-   README example shows `version: 20240101`.
-6. **Koppar's and ProtoFlow's schematic output quality** is unverified in both
-   cases. No account was created, no app installed, no generated `.kicad_sch`
-   read. Both are vendor claims.
-7. **`Seeed-Studio/kicad-mcp-server`** was found late and not investigated.
+6. **`kicadts` format-version currency against KiCad 10 is RESOLVED** — a
+   companion pass parsed this repository's own `pt2399-core.kicad_sch`
+   (`version 20260306`, generator `10.0`) with it and every check passed. This
+   document's earlier doubt rested on a README example showing
+   `version: 20240101`, which was the wrong thing to read. What remains open
+   are the **two sharp edges** that companion names and this survey did not
+   look for.
+7. **Koppar's, ProtoFlow's, CELUS's, Flux's and Diode's schematic output
+   quality** is unverified in every case. No account was created, no app
+   installed, no generated `.kicad_sch` from any commercial or hosted tool has
+   been read. **Nobody in any of the four delegated passes verified that any of
+   these tools produces a legible drawing** — which is precisely what
+   `docs/schematic/false-greens.md` exists to catch, and it is wide open across
+   the entire category.
 8. **`tools.koppar.ai`'s netlist→schematic converter** claim could not be
    confirmed from the page.
-9. **No tool was run BY THIS SURVEY** — everything here about output quality is
+9. **Two contradictions between delegated researchers are recorded unresolved
+   rather than adjudicated.** (a) **JITX symbols**: one pass found a Python API
+   for authoring symbols as `Pin(at=…)` plus `Polyline(…)` with Altium power-symbol
+   mapping; another reported that *"All symbols use `BoxSymbol`"* and the
+   schematic viewer is read-only. Both can be true — a custom-symbol API
+   alongside box symbols by default — but **nobody rendered a JITX sheet**, so
+   which one you get is unknown. (b) **Seeed's `kicad-mcp-server` licence**:
+   recorded as MIT from one page fetch and as **no licence file** from a `gh
+   api` check. **Prefer the `gh api` reading** and treat the licence as absent
+   until a `LICENSE` file is seen.
+10. **No tool was run BY THIS SURVEY** — everything here about output quality is
    relayed, inferred from code, or absent. **But several were run by this
    repository**, and those results supersede this document wherever they touch:
    see [READ THIS FIRST](#read-this-first-on-several-questions-this-repository-already-knows-more).
    What is genuinely unrun anywhere is the **commercial** tier — Koppar,
    ProtoFlow, Flux, JITX, copperhead. No account was created, no app installed,
    no generated `.kicad_sch` from any of them has been read.
-10. **The three highest-value unrun experiments**, in order, each cheap:
+11. **The four highest-value unrun experiments**, in order, each cheap:
+    - **Point `pcb import` at one of this repository's existing `.kicad_sch`
+      files and read what comes back.** It is MIT, free, offline, needs no
+      account, and it is the only reconciliation implementation in existence.
+      Reading `crates/pcb-kicad-sch/` costs nothing either.
     - **`kicad-cli sch export netlist` on a `lib/schgen/` output, compared
       against the model's netlist.** `make check` already runs `kicad-cli`. This
       is a gate, not a measurement, and it is the one three independent projects
@@ -2280,12 +2904,21 @@ checked, not only what was.
 
 Stated as claims that can be tested, not as advice.
 
-1. **No platform in this survey can be driven by an agent to produce a legible
-   KiCad schematic with verifiable quality today.** Koppar has the agent surface
-   and no legibility evidence; copperhead has the legibility checker and has
-   never been observed passing end to end; tscircuit has the maturity and the
+1. **One project can be driven by an agent to produce a KiCad schematic today,
+   and it is `diodeinc/pcb`.** MIT, Rust, pushed the day of this survey, with a
+   dedicated `pcb-kicad-sch` crate doing placement, net symbols, hierarchy and
+   **minimal-edit reconciliation against a sheet a human has rearranged** —
+   the problem SKiDL #316 asked about and nobody answered. Everything else
+   fails one of the three tests: Koppar and Flux have the agent surface and no
+   legibility evidence; Circuit Mind has the drawings and no KiCad and no API;
+   CELUS has an MCP server and `.kicad_sch` but browser-bound download links;
+   copperhead has the legibility checker and *"acceptance tests… have not been
+   observed passing end to end"*; tscircuit has the maturity and the
    disqualifying silent degradation; ProtoFlow asserts a CLI and MCP nobody has
-   confirmed.
+   confirmed; Quilter declines schematics by policy. **Nobody has verified that
+   any of them draws a legible sheet, including Diode — and the one tool this
+   repository did measure, `schematizer`, failed 9 times out of 9 on a
+   Pultec.**
 2. **KiCad will not be driven to draw a schematic, so writing s-expressions is
    not a workaround — it is the state of the art.** `lib/schgen/` is on the only
    road there is. That is a stronger position than it looked before this survey.
@@ -2380,13 +3013,46 @@ Stated as claims that can be tested, not as advice.
     is the argument for copperhead's legibility checker existing *alongside*
     Weave's connectivity certificate rather than instead of it.
 
-11. **The strongest thing this survey can say in favour of the current
+11. **Two independent teams built EDA MCP servers, measured them, and withdrew
+    — and both landed on what this repository already does.**
+    `ProductOfAmerica/mcp-server-kicad` (109 tools) went to maintenance mode
+    publishing **18/18 correct for plain Claude Code versus 3/18 with the
+    plugin**, and Diode deleted `pcb mcp` outright. Both now recommend "the
+    agent edits the files and verifies with `kicad-cli`." **Carry the caveat
+    with the number** — n=1, one unpublished design, an anecdote with
+    arithmetic rather than a study. But it is a reason to be skeptical of any
+    proposal to wrap `lib/schgen/` in an MCP server, and to read both write-ups
+    first. A third data point in the same direction: the ecosystem's largest
+    server, Konnect at 1,432 stars, was **archived 2026-10-25** and went
+    closed-source.
+12. **The category has no legibility instrument, and that is where this
+    repository is plausibly ahead of a well-funded team.** Diode ships every
+    two to three days with a16z money and an Anthropic training partnership,
+    and grepping all 2,692 lines of its changelog for `hairpin`, `crossing`,
+    `legib` and `readab` returns **nothing**; its legibility machinery is a
+    packing heuristic plus an off-page warning. The only published
+    placement-quality scorer found anywhere was `blwfish/kicad-mcp`'s
+    `analyze_placement_telemetry`, in a **27-star** repository. Against that,
+    `tools/schgen/board-geometry.ts` and `board-sheets.ts` are instruments
+    nobody else publishes — which makes `CLAUDE.md`'s "a measurement goes in a
+    tool that re-runs it" a competitive position and not merely hygiene.
+13. **Circuit Mind's LANL report is the number to quote when anyone asks how
+    close generated schematics are.** Not vendor marketing: a Los Alamos
+    public-release report measuring their platform at **90% complete on a
+    medium board after 3.5 h of manual work, and 50% complete on an FPGA board
+    after ~80 h** — with parts outside the curated database degrading to
+    *"virtual blocks [that] only provide net names as placeholders"*. **Inside a
+    curated parts database these tools genuinely draw; outside it the savings
+    go to roughly zero.** A valve EQ with rotary-selected capacitor banks is
+    firmly outside every curated database in this survey.
+14. **The strongest thing this survey can say in favour of the current
     direction is negative, and it should be read that way.** Nothing here is a
     tool to buy instead of building. The useful imports are a serializer
     (`kicadts`, measured against this repository's own file), a gate
     (`kicad-cli sch export netlist`, already a dependency), a layout idea
     (Weave's signal-chain-plus-patterns), an operation vocabulary (JITX's named
-    schematic operations), a refusal pattern (atopile's `--frozen` diff) and an
-    architecture (copperhead's producer/drawer/gate split). Six borrowings, no
-    platform. **An agent that reads this survey and concludes there is something
-    to adopt has misread it.**
+    schematic operations), a refusal pattern (atopile's `--frozen` diff), an
+    architecture (copperhead's producer/drawer/gate split) and **a body of
+    prior art to read before extending `lib/schgen/` (`crates/pcb-kicad-sch/`,
+    MIT)**. Seven borrowings, no platform. **An agent that reads this survey and
+    concludes there is a product to adopt has misread it.**
