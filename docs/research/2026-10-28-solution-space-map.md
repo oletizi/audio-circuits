@@ -24,8 +24,8 @@ command, and a second gives an agent the best hands found anywhere.**
 checker is published anywhere. That negative was reached three independent ways
 and is the most consequential finding here.
 
-**For reviewing: a small cluster of real tooling exists** and had never been run
-in this project. [PENDING - the trial is in flight.]
+**For reviewing: five tools exist, four show you a difference, and exactly one
+stores a verdict.** Most of the visual value is reproducible in four commands.
 
 ---
 
@@ -49,7 +49,39 @@ in this project. [PENDING - the trial is in flight.]
 | mege-circuits | overprinted parts | nothing - no overlap detection |
 | `@veriflow/schematic-core` | 19 identical rectangles | the engine |
 
-### 1.2 Tools that CHECK a schematic
+### 1.2 Tools that REVIEW a schematic - show a difference, hold a verdict
+
+All five were installed and run against two versions of our own low-boost sheet
+whose netlists are identical and whose every part moved - the hardest case for a
+diff, and the one a drafting review actually produces. The `git diff` baseline is
+2,354 insertions and 2,995 deletions, which is the bar to beat.
+
+| Tool | Ran | Shows a difference | Stores a verdict |
+| --- | --- | --- | --- |
+| **KiCAD-Prism** | yes, 5 containers, 4.39 GB | **true side-by-side** | **yes - REST, Postgres, exportable** |
+| KiDiff | yes, headless | red/green overlay PDF | no |
+| kiri | yes, needs 5 GNU tools | cyan/red overlay web UI | no - `grep -ci comment` is 0 |
+| kischvidimer | yes, cleanest install | degenerates: 379 coordinates | no - its "Feedback URL" opens a link |
+| plotkicadsch | **cannot read KiCad 10** | 0-byte SVG | - |
+
+**Prism's most useful output is a number nothing else produces:** schematic
+103 added / 148 removed / 77 changed, **BOM 0 / 0 / 0**. A machine-readable
+statement that *the circuit did not change and the drawing did* - which is
+exactly the distinction this practice turns on. Its stored verdict anchors to
+`baseCommit`, `compareCommit`, `selectedSide` and a `designKey` content hash,
+and exports as a commit-pinned `discussion.md`.
+
+**And most of the visual value costs nothing:** two `kicad-cli sch export pdf`
+runs plus three `magick` calls produce a red/blue superimposed page about as
+readable as kiri's or KiDiff's, with no install. What the tools add beyond that
+is semantic grouping, navigation, and - in exactly one case - somewhere to put
+the verdict.
+
+**Trap worth knowing:** same-second commits break date-ordered tools. kiri
+labelled the *parent* revision "Newest". An agent that redraws and recommits
+quickly hits this routinely; order by parentage, not by timestamp.
+
+### 1.3 Tools that CHECK a schematic
 
 `kicad-sch-lint` (19 convention-free codes, built for KiCad 10) and copperhead's
 `legibility.ts` (13 families, deterministic, read-only) are the only two that
@@ -57,7 +89,7 @@ run standalone against an arbitrary `.kicad_sch`. They **agreed exactly** on one
 of our boards and overlapped fully on the other. Neither is maintained as a
 product: one has zero users, the other is a component inside an AI PCB tool.
 
-### 1.3 Tools that REPRESENT placement intent
+### 1.4 Tools that REPRESENT placement intent
 
 Fourteen systems surveyed. **Not one has all four of** a placement statement, a
 grouping construct, a reason attached to a decision, and a machine-readable
@@ -274,8 +306,6 @@ medium, not by meaning. Carrying a palette into a digital practice is cargo cult
 6. Open
 -------
 
-- **Review tooling** - `kiri`, `plotkicadsch`, `KiDiff`, `KiCad-Prism`,
-  `kischvidimer` are being run against two versions of the same sheet. [PENDING]
 - **Not obtained:** ASME Y14.2 / Y14.35 / Y14.100 clause text, which is
   paywalled - so whether Y14.35 mentions check prints is unknown. Its free DoD
   predecessor does not; MIL-STD-100F has no check-print clause, no colour code
@@ -306,3 +336,4 @@ The evidence
 | `2026-10-28-academic-schematic-generation-check.md` | EEschematic, SchGen, CircuitLM, SINA |
 | `2026-10-28-ai-native-eda-platforms.md` | Flux, atopile, JITX, Quilter, diode |
 | `2026-10-28-drafting-office-checking-practice.md` | the checker, the check print, the back-check |
+| `2026-10-28-trial-schematic-review-tools.md` | kiri, KiDiff, Prism, kischvidimer, plotkicadsch |
