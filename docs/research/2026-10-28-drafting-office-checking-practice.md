@@ -11,6 +11,16 @@ passage) or RELAYED (taken from a secondary description).** Where a source could
 the negative is stated with its boundary rather than filled in from memory. §8 is the catalogue
 of what was *not* obtainable and why.
 
+**As it turns out there is nothing RELAYED in this document.** Every quotation was read in the
+source; nothing here is a summary of a summary, and nothing is from memory. That is not a virtue
+of the method so much as a property of the material — pre-1930 drafting manuals are out of
+copyright, fully OCR'd and downloadable as plain text, so the primary source is usually *easier*
+to reach than a description of it. The one exception is the ASME standards, which are the only
+live paywalled documents in the set, and they are correspondingly the only thing in §6 with no
+clause-level content (§6.3).
+
+**Nothing was run.** This is document research. No checker, no render, no repository build.
+
 **The short answer to the question the project actually asked** — *did anyone ever formally
 review a drawing as a drawing?* — **is yes, unambiguously, and it was the FIRST thing the
 checker did.** See §3. It survived into federal standards as a signature line distinct from the
