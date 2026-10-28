@@ -76,8 +76,18 @@ strings -a /Applications/KiCad/KiCad.app/Contents/PlugIns/_eeschema.kiface \
   | grep -Eo '^eeschema\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+$' | sort -u
 ```
 
-**230 `eeschema.*` actions in KiCad 10.0.5.** Of those, the ones that move
-anything automatically are **exactly four**, plus a six-action manual aligner:
+**230 `eeschema.*` actions in KiCad 10.0.5**, plus **one more the regex misses**
+and it happens to be relevant: `eeschema.AlignToGrid` has a *two*-part name
+where every other action has three, an inconsistency in KiCad's own naming.
+It is a real action — `eeschema/tools/sch_actions.cpp:1564`,
+`TOOL_ACTION SCH_ACTIONS::alignToGrid … .Name( "eeschema.AlignToGrid" )
+.FriendlyName( _( "Align Items to Grid" ) )` — so **231**, and it is listed
+below. *(The other nineteen two-part `eeschema.*` strings in the binary are
+tool names, not actions: `eeschema.Align`, `eeschema.EditorControl`, and so on.)*
+
+Of the 231, the ones that move anything **automatically** are **exactly four**.
+The remaining seven that move anything at all are operator-driven, one
+selection at a time:
 
 | Action | What it does | Scope |
 | --- | --- | --- |
@@ -500,7 +510,7 @@ the PCB is writable through an API. There are none going the other way.
 
 | | schematic editor | PCB editor |
 | --- | --- | --- |
-| tool actions (KiCad 10.0.5 binary) | **230** | **371** |
+| tool actions (KiCad 10.0.5 binary) | **231** | **371** |
 | source files (ref `10.0`) | 863 | 1457 |
 | Python module | **none** | `pcbnew.py` + `_pcbnew.so` |
 | action-plugin host | **none** | `ACTION_PLUGIN`, `PYTHON_ACTION_PLUGINS`, prefs panel, toolbar |
@@ -839,7 +849,7 @@ did and what any future pass must do.
 K=/Applications/KiCad/KiCad.app/Contents
 P=kicad%2Fcode%2Fkicad
 
-# §1.1  the complete eeschema action inventory (230)
+# §1.1  the complete eeschema action inventory (230 three-part, +1 two-part)
 strings -a $K/PlugIns/_eeschema.kiface \
   | grep -Eo '^eeschema\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+$' | sort -u
 
