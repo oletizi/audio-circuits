@@ -9,6 +9,59 @@ about what went wrong, because the failures are more useful than the output.
 
 ---
 
+## 0. FIRST ORDER OF BUSINESS NEXT SESSION: fix the process, before any work
+
+**Do not start on a schematic, a gate, a metric or a plan. Regroup on the process first.**
+
+The owner, 2026-10-27, ending this session:
+
+> *"our first order of business next session is to regroup and try to find a repeatable process
+> that doesn't fall into the same traps. This session was the **second** time progress ground to a
+> halt mired in the same pathologies of obsessing over tooling and administrivia and NOT looking at
+> the actual product - the schematic - to assess progress. Fool me once, shame on you; fool me
+> twice, shame on me."*
+
+**THE PATHOLOGY, NAMED:** obsessing over tooling and administrivia, and not looking at the
+schematic to assess progress.
+
+**IT HAS NOW HAPPENED TWICE, AND THE SECOND TIME IS THE INFORMATIVE ONE.** The first occurrence is
+recorded in `CONSTITUTION.md`'s own *"Why this document exists"*: two days that produced three
+invented readability metrics each pointing the opposite way to his judgement, three wrong diagnoses
+of one symptom, a fix built for a refusal nobody had interrogated, and two days reconstructing a
+template the repository had already specified.
+
+**The remedy applied last time was to write a governing document. That document did not prevent
+this session, and writing it was itself an instance of the pathology** - more prose about how to
+work, produced instead of a drawing. This session then added a spec in four revisions, three
+independent reviews, a five-task plan, an execution record, a register freeze, and a governance
+edit to `CLAUDE.md`. All of it defensible one step at a time. **The owner saw two schematics of his
+own boards in the entire session, and neither was better than when it started.**
+
+**So the next remedy must not be another document, and specifically must not be this one.** If the
+first hour back produces a process document, the trap has closed for a third time.
+
+**What the evidence in §5 and §6 suggests the regroup should settle:**
+
+- **What counts as progress, stated so it can be checked at the end of every session.** The
+  candidate: a rendered page of one of his boards, looked at, that is better than the one before
+  it. Nothing else - not a passing suite, not a census figure, not a spec.
+- **A hard ratio or cadence.** Something like: no more than one piece of tooling between two
+  drawings. This session ran roughly twenty tool-and-governance commits against one hairpin
+  removed, and every individual step had a reason.
+- **What to do when a gate or a tool blocks the drawing.** The honest answer this session found is
+  that the blocking thing is usually worth fixing - the gate reform was real and necessary - and
+  that is exactly how the trap is entered. There needs to be a rule for when that work is taken
+  and when it is deferred, decided before it is encountered rather than during.
+- **How the owner stays in the loop cheaply.** He asked *"progress?"* four times and twice had to
+  ask why he was being told about drawings instead of shown them.
+
+**One thing is established and should not be re-litigated:** the gate reform shipped, every board
+now produces an artifact a person can open, and the first look at one found a real defect. The
+capability to judge a drawing exists now. What has not been established is a way of working that
+uses it.
+
+---
+
 ## 1. The goal, which has not moved and has barely been advanced
 
 **Readable schematics for `pultec-low-cut` and `pultec-low-boost`**, which are the two boards the
