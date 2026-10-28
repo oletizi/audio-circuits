@@ -14,11 +14,19 @@ of what was *not* obtainable and why.
 **The short answer to the question the project actually asked** — *did anyone ever formally
 review a drawing as a drawing?* — **is yes, unambiguously, and it was the FIRST thing the
 checker did.** See §3. It survived into federal standards as a signature line distinct from the
-engineering sign-off (§2.3) and as a rejection-and-redraw gate on legibility alone (§3.4).
+engineering sign-off (§2.3) and as a rejection-and-redraw gate on legibility alone (§3.5).
 
 **And the answer to the question the project most needed** — *what became of the markup?* — is
 §5: it was retained, filed with the record prints under signed-receipt custody, and **named by
 exception in the rule that destroyed every other superseded print.**
+
+**There was also a BACK-CHECK, and it is the finding with the most direct bearing on an
+AI-drafts/human-checks workflow.** The draughtsman was required to verify the checker's
+correction *before applying it*, because otherwise *"certain parts of the drawing are left
+unchecked, the value being the checker's instead of the detailer's"* — and some checkers forced
+it by **withholding the correct value** and recording only the numbered defect. An agent applies
+a reviewer's fix perfectly and without resistance, which makes this hole wider here than it ever
+was on paper. §5.4 and §7.5.
 
 ---
 
@@ -39,6 +47,15 @@ exception in the rule that destroyed every other superseded print.**
 | S11 | **NPS-10**, *Drawing Format and Drafting Practices Guideline for Design and Construction Drawings*, US National Park Service, Denver Service Center, Release No. 2, March/May 1986 | archive.org `drawingformatdra00unse` | **VERIFIED**, clause level |
 | S12 | Clute, Eugene, *Drafting Room Practice*, 1928 (architectural) | archive.org `draftingroomprac00clut` | **VERIFIED**, full text |
 | S13 | ASME Y14.2 (2014/R2020), Y14.35 (2025), Y14.100 (2017) | asme.org product pages | **VERIFIED scope statements only — NOT clause level** |
+| **S14** | **Bishop, Carlton T., *Structural Drafting and the Design of Details*, 1920 — Chapter XXIX, "Checking and Correcting Drawings", pp. 179–182, and the glossary** | archive.org `structuraldraft00bishgoog` | **VERIFIED**, full text |
+
+**S14 is the best single source in this list and it was found last.** Bishop devotes a whole
+chapter to checking and it answers **every** sub-question the project asked — the checker's
+role and authority, when a drawing is checked at all, a twelve-point checking order whose
+item 1 is appearance and crowding, the marking grammar, the colour question *with the reasoning
+behind it*, the disposition of the markup, **and the back-check, which this document said was
+unattested until Bishop turned up.** Where Bishop and another source conflict, both are shown;
+§4.2 and §5.4 are where that matters.
 
 **On MIL-STD-100 specifically, which the task flagged as the most gettable of the standards
 set and which a prior agent could not find:** it is on everyspec after all. The prior 404 was a
@@ -310,7 +327,44 @@ as well as a large one *"if it be gone over in some orderly, systematic way"*, v
 establishments *"where the drawings are examined and initialed by every one in sight, from the
 engineer in charge down to the tracer"* — a 1910 jab at signature theatre.
 
-### 3.4 It became normative, with teeth, in the federal standards
+### 3.4 Bishop 1920 — appearance is item (1), and item (8) is an explicit overlap rule
+
+**VERIFIED — S14, Bishop 1920, Chapter XXIX, p. 180.** Bishop gives twelve points *"arranged
+approximately in logical order"*, prefaced by an ordering principle: *"The checker should check
+the most important parts of a drawing first, proceeding logically so that no part will be
+checked until the parts upon which it is dependent are checked."* Of the twelve, two bear
+directly on the project:
+
+> *"**(1) General Appearance:** see that the general arrangement is satisfactory; that the
+> proper views are used to show the member to the best advantage; that all views bear proper
+> relations to one another; **that the proper scale is used so that the drawing is clear and not
+> crowded**; and that not too many different members are combined on the same drawing thus
+> making it too complicated."*
+>
+> *"**(8) Dimensions:** see that interdependent dimensions bear the proper relation to one
+> another; that the distance between any two points is the same when obtained by adding the
+> intervening dimensions on any one of two or more parallel dimension lines; and that **no
+> dimension lines or other lines or points appear to coincide on the drawing unless it is proper
+> that they should coincide.**"*
+
+**Three independent pre-1930 sources now put arrangement and readability at position 1 of the
+checker's list** — French/Follows, Machinery's No. 2, and Bishop. That is no longer a quotation;
+it is a convention.
+
+And **item (8) is the clause the prior survey went looking for and did not find.** Its §359
+records *"no overlapping text, designators or symbols"* as *"not found as a clause; it is the
+thing every checker in the bakeoff actually measures."* Bishop states it, as a checking
+obligation, in 1920: **nothing may appear to coincide unless coincidence is intended.** Note the
+form — it is not "do not overlap", it is *"unless it is proper that they should coincide"*,
+which is the correct shape for a schematic too, where a junction dot and four wire ends are
+*supposed* to coincide and a net label over a symbol pin is not. A rule that cannot express the
+exception would refuse every valid drawing.
+
+Bishop's item (10) also makes notes a checking obligation rather than a courtesy: *"see that all
+notes are given which render the drawing clearer or more definite"* (**VERIFIED**) — the same
+positive duty as Follows' item 12.
+
+### 3.5 It became normative, with teeth, in the federal standards
 
 **VERIFIED — S7, MIL-STD-100F, clause 101.2 *"Line conventions and lettering"*:**
 
@@ -417,6 +471,36 @@ things.
 | **S1 Collins, 1918** (**VERIFIED**) | **yellow = correct matter; red = corrections** | the checker's **verdict** on each feature |
 | **S11 NPS-10, 1986** (**VERIFIED**) | **red = additions; green = deletions; blue = general notation or specific instruction** | the **kind of edit** being requested |
 | **S2 French, 1918**, structural-drawing chapter (**VERIFIED**) | **a dot in red ink under the dimension = checked** | verdict, but *red* means **correct**, and it is marked on the tracing, not a print |
+| **S14 Bishop, 1920**, structural (**VERIFIED**) | blue or soft black pencil on the tracing; black or yellow on a blueprint; **red forbidden outright** | nothing — the colour is chosen by the **medium**, not by meaning |
+
+**VERIFIED — S14, Bishop 1920, p. 181, and this is the passage that explains the whole
+muddle:**
+
+> *"The temporary mark of the checker may be made on the tracing with either blue or soft black
+> pencil. It is easier to maintain a sharper point on the black pencil than on the blue, and
+> hence the figures and notes need not be made so large. The black marks may be removed more
+> readily than the blue. Marks on blueprints may be made satisfactorily with either black or
+> yellow pencils. **Red pencils should not be used on either tracing cloth or blue prints.** The
+> red marks cannot be erased easily from the cloth — in fact it is impossible to remove some of
+> them. **There are certain combinations of red crayon on blue prints which cause unnecessary
+> eye strain on account of an optical illusion which makes it difficult for the eye to focus on
+> the red lines.**"*
+
+**Bishop forbids, with two stated reasons, the exact colour Collins mandates** — and neither
+reason is semantic. They are **erasability** (can this mark be taken off tracing cloth?) and
+**legibility of the mark against its ground** (red line work on a blue-ground blueprint defeats
+the eye's focus — chromatic aberration, described two years before anyone here would have had
+a name for it).
+
+**That is the actual answer to "what was the colour code?", and it is better than a legend.**
+The colour was selected by the *physics of the medium* — what the mark had to sit on, and
+whether it had to come off again. Collins is marking a blueprint and wants the correction to
+*stay*; Bishop is marking tracing cloth and needs it to *go*. Both are right about their own
+medium, and **neither convention carries any information once the medium changes.** A digital
+review surface has no erasability constraint and no blue ground, so **inheriting any of these
+palettes would be cargo-cult.** What transfers is the method: pick the marking so that it is
+unambiguously distinguishable from the artifact and legible against it, and **say which
+property you optimised.**
 
 **VERIFIED — S11, NPS-10 1986, Chapter 3, p. 3, "COLOR CODES", complete:**
 
@@ -438,7 +522,71 @@ structural-steel chapter **red means verified**. Anyone inheriting a legend with
 would invert the whole review. **The lesson for the project is not "adopt yellow/red" — it is
 that the legend is part of the artifact and must travel with it.**
 
-### 4.3 The discipline around it
+### 4.3 The marking grammar — Bishop gives one, and it has three symbols and a propagation rule
+
+**VERIFIED — S14, Bishop 1920, p. 181, "Indicating Mistakes" and "Check Marks":**
+
+> *"A freehand ring or loop drawn around a dimension, a note, or a whole detail usually
+> signifies that **the enclosed portion is incorrect.** A line may be drawn from the ring to a
+> convenient clear space on the drawing where the correct value or other note may be written by
+> the checker **so that it need not be disturbed by the draftsman** when he makes that or any
+> other correction. An inked ring is often drawn around a group of holes with a line leading to
+> a special note, but **in order to avoid ambiguity such a ring should not include figures or
+> notes.** A penciled ring may be drawn around a detail which is likely to be changed; **such a
+> ring should invite suspicion or doubt, and no use should be made of figures or other data
+> taken without verification from within the ring.** Accordingly it is [not] good practice to
+> encircle any dimension or note unless it is **either wrong or doubtful** because of incomplete
+> or revised information."*
+>
+> *"**Check Marks.** In checking a drawing a checker usually places a dot or a v-shaped check
+> mark over each correct dimension or note. **These check marks indicate his progress and make
+> him less liable to overlook parts of the drawing**; they are of special value on complicated
+> drawings. Check marks may be made with a pencil and later erased, or **they may be made
+> permanently in red or blue ink for future record.** If ink is used, some checkers **place the
+> check marks underneath corrected figures to distinguish them from those which were originally
+> correct.**"*
+
+Four things worth lifting whole:
+
+- **Three distinct marks, not two.** A tick = *verified correct*. An inked ring = *wrong*. A
+  **pencilled** ring = *doubtful* — information is incomplete or in flux, which is neither a
+  defect nor a pass. The project has a direct use for the third: a sheet drawn from a circuit
+  with an open owner question is exactly "doubtful, not wrong".
+- **A propagation rule attached to doubt:** *"no use should be made of figures or other data
+  taken without verification from within the ring."* The doubt marker is not decorative; it
+  **quarantines** the value, and anything derived from it inherits the doubt. That is a
+  genuinely sophisticated idea for 1920 and it has no counterpart in any modern review tool
+  found by the prior survey.
+- **The mark means nothing if it is applied loosely** — *"not good practice to encircle any
+  dimension or note unless it is either wrong or doubtful"* — and must not be ambiguous about
+  its own scope (*"such a ring should not include figures or notes"*).
+- **Tick position encodes provenance:** above = originally correct, below = correct *after*
+  correction. So the finished markup distinguishes "this was right" from "this was fixed and is
+  now right", which is precisely the distinction a later reader needs and which a defect list
+  destroys.
+
+### 4.4 Where the markup goes decides whether it survives — and Bishop states the trade-off
+
+**VERIFIED — S14, Bishop 1920, p. 181:**
+
+> *"The checker should indicate all mistakes so that the draftsman will be able to make the
+> necessary changes **without disturbing the checker's notes.** These notes should be preserved
+> until the checker has convinced himself that all changes have been made correctly. **The
+> mistakes may be indicated either on the tracing or on a blueprint.** The former method is more
+> direct and more common; it is also quicker because the checker does not have to wait for a
+> print to be made, and the draftsman does not need to refer to a print before making each
+> change on the tracing. **The blueprint method is used when a permanent record of the checker's
+> marks is desired.**"*
+
+**This is the missing explanation for why Collins' office mandated a check print at all.**
+Marking the tracing directly is faster and needs no print — and it is **ephemeral**, because the
+marks are erased as the drawing is corrected. Marking a print costs a print and a round trip and
+**buys a permanent record.** Collins' office paid that cost deliberately and then filed the
+result (§5.2); Bishop's offices mostly did not. The check print is therefore not "how checking
+was done" — it is **the variant you choose when you want the review to outlive the correction**,
+which is exactly the variant this project needs.
+
+### 4.5 The discipline around it
 
 - **The tick is per-feature, and it is a coverage record.** **VERIFIED — S2, French:** *"As each
   dimension or feature is verified a checkmark should be placed above it or under it."* Combined
@@ -538,15 +686,49 @@ initials — is a claim that *this* change was made and *this* checker accepted 
 check print is the supporting evidence held in the file; the revision line is the assertion on
 the face of the drawing.
 
-### 5.4 Was there a back-check? — NOT ESTABLISHED
+### 5.4 Was there a back-check? — YES, ESTABLISHED, with a definition and a rationale
 
-**No primary source reached in this pass uses the term "back-check", and none describes a
-distinct second pass whose purpose is to verify that the markup was correctly incorporated.**
-This is a bounded negative, not a conclusion that no such practice existed; see §8 for what
-blocked the search (Google Books 429 throughout, HathiTrust and DuckDuckGo Cloudflare-blocked,
-the Giesecke/Jensen-era textbooks paywalled behind archive.org's lending restriction). The
-mechanism the sources *do* exhibit — retained markup plus a re-signed revision line — is
-functionally a back-check's precondition, but the act itself is not attested here.
+> **This section said "NOT ESTABLISHED" until S14 was found, and the correction is left visible
+> rather than edited away**, because the reason the negative was wrong is instructive: the
+> search had been aimed at standards and at general drawing textbooks, and the back-check lives
+> in a *structural* drafting textbook's dedicated checking chapter. A bounded negative is only
+> as good as the shelf it was taken from.
+
+**VERIFIED — S14, Bishop 1920, glossary:**
+
+> *"**Back-check.** To approve or check the corrections of a checker."*
+
+**VERIFIED — S14, Bishop 1920, Chapter XXIX, p. 182:**
+
+> *"**Back-checking.** — A draftsman should never change a drawing according to the checker's
+> notes until he is convinced that such changes should be made. **Unless he 'back-checks' or
+> verifies each correction before making it, certain parts of the drawing are left unchecked,
+> the value being the checker's instead of the detailer's.** No checker is infallible, and every
+> sheet that is supposed to be checked should be completely checked. A checker usually indicates
+> the values which he believes to be correct; this is the simplest method for him to use. It is
+> also the most convenient method for the detailer who back-checks conscientiously. **Some
+> checkers wish to insure back-checking by withholding the correct values until after the
+> draftsman has supplied them.** These checkers indicate mistakes for the draftsman but record
+> the correct values on a blueprint or in a book for their own use in checking the corrected
+> drawing. For convenience in identification they may number the mistakes consecutively."*
+
+**The argument is the valuable part, and it is not the obvious one.** A back-check is not a
+belt-and-braces re-read. Bishop identifies a specific, structural hole: the office's guarantee
+is that *"every drawing should be the product of two minds"* (§6.7), and **the checker's own
+corrections are the one part of the drawing that only one mind has ever seen.** If the
+draughtsman transcribes the checker's suggested value, that value arrives on the drawing
+unchecked — and it arrives precisely at the places already known to be error-prone. **The
+correction is the least-checked region of a checked drawing.**
+
+And the enforcement mechanism is the sharp bit: **withhold the answer.** State the defect,
+number it, keep the correct value in the checker's own book, and make the draughtsman produce
+the value independently — then compare. Compliance is not requested, it is made structurally
+necessary. Bishop reports using the same device on students, substituting *"not the correct
+values, but the reference numbers to paragraphs which will suggest the nature of the
+mistakes"* (**VERIFIED**, p. 182) — a defect class rather than a fix.
+
+This is the most directly transferable finding in the document for a workflow where an agent
+drafts and a human checks. See §7.5.
 
 ### 5.5 The adjacent practice: markup as the as-built record
 
@@ -607,7 +789,7 @@ standalone version** and is the one to read.
 - **Appendix A §40.3.1** — the five-role signature authority table. Quoted in full at §2.3.
   This is the clause-level answer on the checker's role in a US military standard.
 - **Chapter 100 §101.2** — line conventions and lettering shall meet MIL-D-5480 legibility and
-  reproducibility, and ASME Y14.2M. Quoted at §3.4.
+  reproducibility, and ASME Y14.2M. Quoted at §3.5.
 - **Chapter 600 "Revision of Engineering Drawings"**, §§600–608. §601: *"The requirements for
   the revision of drawings shall be in accordance with ASME Y14.35M and the following."*
 - **§602 "Drawing practices"** — **VERIFIED**, and directly relevant to the project:
@@ -665,7 +847,7 @@ is most of why the earlier survey came up empty.
 by MIL-PRF-5480G. 14 pp. Scope: *"the minimum requirements for the production, preparation for
 delivery, and shipment of reproducible and non reproducible copies of drawings, associated
 lists, and related engineering and technical data."* Clauses 3.2.1, 3.2.2, 3.2.2.1(d) and **4.2**
-are quoted at §3.4. **This is the legibility-rejection authority behind MIL-STD-100F §101.2 and
+are quoted at §3.5. **This is the legibility-rejection authority behind MIL-STD-100F §101.2 and
 the best single clause in the corpus for "unreadable is defective".**
 
 ### 6.3 ASME Y14.35, Y14.100, Y14.2 — NOT OBTAINED AT CLAUSE LEVEL
@@ -710,7 +892,7 @@ the markup.
 ### 6.5 NPS-10 Release 2 (1986) — VERIFIED, clause level
 
 The only source reached that documents **both** a check-print colour code **and** normative
-drawing-quality rules **and** a markup lifecycle. Quoted at §3.4, §4.2, §5.5. Also **VERIFIED**,
+drawing-quality rules **and** a markup lifecycle. Quoted at §3.5, §4.2, §5.5. Also **VERIFIED**,
 Chapter 2 "APPROVAL AND REVISION BLOCKS": the revision block carries *"an identifying mark (a
 triangle with a number or letter, used to key the information in the revision block to the part
 of the drawing it pertains to)"*, the affected sheet numbers, a brief description, the date, and
@@ -734,6 +916,67 @@ freely downloadable as plain text. **S12, Clute 1928** is architectural and cont
 second-hand discussion of *"checking lists"* with no colour code (**VERIFIED** by grep: zero
 hits for `crayon`, `check print`); it adds the observation that *"these lists have value in that
 they make for clear thinking right from the beginning"* but nothing procedural.
+
+### 6.7 Bishop 1920, Chapter XXIX — the fullest account, and its policy on when to check at all
+
+Quoted throughout §§2–5 and §7. Collected here are the parts that belong to the **policy**
+rather than to the mechanics, because they are the ones that argue rather than instruct.
+
+**The role, and the authority it carries (VERIFIED, p. 179):**
+
+> *"A checker is a person who 'checks' or approves the correct portions of a drawing and
+> indicates the mistakes for correction. **After these mistakes have been verified and corrected
+> by the detailer, the checker ascertains that all corrections have been made and then signs the
+> drawing to show that he has assumed responsibility for every detail, every figure, and every
+> note, in short for the entire drawing.** The checker is usually a man of greater experience
+> than the detailer, and **no draftsman is allowed to check the work of others until he is able
+> to make drawings which are comparatively free from errors.**"*
+
+Note the ordering: the checker signs **after** verifying the corrections, not when handing the
+markup over. The signature is the terminal act of the whole loop, and it is unlimited in scope —
+*"the entire drawing"*, not "the parts I marked".
+
+**Why check at all, stated as a cost argument rather than an axiom (VERIFIED, p. 179):**
+
+> *"The importance of careful checking depends upon the ability and the skill of the draftsman;
+> it is essential for the drawings made by inexperienced men. The importance increases with the
+> size of a contract and the number of draftsmen engaged upon it, because of greater difficulty
+> in insuring the proper agreement between the drawings of connecting members... The majority of
+> companies have all their drawings checked because they are unwilling to assume the risk of
+> serious mistakes which might be made if only one draftsman were responsible. Since no
+> draftsman is infallible **these companies believe that every drawing should be the product of
+> two minds.** Some companies find that it is economical to have all drawings made by
+> experienced draftsmen whose work is comparatively free from errors without being checked;
+> these companies maintain that occasional mistakes can be rectified at a smaller cost and to
+> better advantage than all drawings can be checked..."*
+
+**And the partial-check proposal, which is the sharpest thing in the chapter (VERIFIED, p. 179):**
+
+> *"Perhaps a better method would be to have the main dimensions, the strength of the
+> connections, and the spacing of all holes for field connections checked, **but not the spacing
+> of the shop rivets or the sizes of component parts which will necessarily be verified in the
+> shop.**"*
+
+**Do not check what a downstream process is going to catch anyway.** Bishop allocates checking
+effort by asking where an error would *escape*, not by coverage. The analogue here is exact and
+it cuts work: a human reviewer should not be spending attention on anything `validateCircuit`,
+the netlist export or `kicad-cli` will refuse — those are the shop. What escapes every tool this
+repository has is **arrangement, crowding and whether the sheet reads**, which is what Bishop
+puts at item (1) and what §7.14 argues is the whole of the human's job.
+
+**The one piece of social advice, which is better than it sounds (VERIFIED, p. 62):**
+
+> *"**The friction should be between the draftsman and the drawing, not between the draftsman
+> and the checker.**"*
+
+With, three paragraphs earlier, the reason it has to be said: a beginner's *"first and often the
+only indication of friction... usually arises because he objects to erasing."* And the criterion
+Bishop judges a draughtsman by (**VERIFIED**, pp. 62 and 180): *"A new man is judged not so much
+by the mistakes he makes, as by the mistakes he makes a second time."* **A repeat defect is the
+signal, not a defect** — which is the same quantity this repository's governance tracks when it
+records that a demand was *"re-erected under a new justification"*, and it is the nearest thing
+in the corpus to the prior survey's §6 item 2 (inducing a rule from accumulated verdicts). Even
+here it is a human noticing a pattern, not a mechanism.
 
 ---
 
@@ -760,7 +1003,7 @@ lives only in a session is a markup that was never captured.
 
 **Source: French/Follows item discipline — *"As each dimension or feature is verified a
 checkmark should be placed above it or under it"*; Collins — *"Correct matter shall be marked
-with yellow crayon."*** (§4.3)
+with yellow crayon."*** (§4.1, §4.3)
 
 This is the insight the project is most likely to miss, and it inverts the obvious design. A
 modern review tool records **findings**. The check print recorded **verifications** — every
@@ -824,7 +1067,80 @@ current render is **not a finding about the current sheet** and must not be pres
 Whether it is void or merely unconfirmed is a design decision; what is not a decision is that
 it must refuse to look current.
 
-### 7.5 Adopt: readability is judged FIRST, by a reader who has not yet learned the drawing
+### 7.5 Adopt, and this is the one with the highest leverage: the back-check, by withholding the fix
+
+**Source: Bishop 1920, p. 182 — *"Unless he 'back-checks' or verifies each correction before
+making it, certain parts of the drawing are left unchecked, the value being the checker's
+instead of the detailer's"*; and the enforcement — *"Some checkers wish to insure back-checking
+by withholding the correct values until after the draftsman has supplied them."*** (§5.4)
+
+**Bishop's hole is wide open in the obvious design of an agent/human review loop, and it is
+wider there than it ever was on paper.** The default workflow is: agent drafts, human marks it
+up with a correction, agent applies the correction. An agent applies a correction *perfectly and
+without resistance*, which is exactly the failure mode — the corrected value has then been
+through **one** mind, the reviewer's, and it sits at the spot already demonstrated to be
+error-prone. A human draughtsman at least occasionally pushed back; an agent will not. **So the
+review's weakest region is the part the reviewer touched, and the compliance of the agent is
+what makes it weak.**
+
+Bishop's remedy inverts the hand-off and needs no new machinery: **the reviewer records the
+DEFECT, numbered, and withholds the FIX.** The agent must then derive the corrected value from
+the circuit model, the rule file, or the spec — independently — and the reviewer compares what
+came back against what they had privately written down. Two minds reach the corrected value or
+the disagreement surfaces. Bishop's classroom variant is the cheaper form and probably the right
+default here: record *"not the correct values, but the reference numbers to paragraphs which
+will suggest the nature of the mistakes"* — i.e. **cite the rule that was violated, not the
+edit to make.**
+
+This also happens to be the shape `CLAUDE.md` already requires of a refusal: *"every `throw`
+names what is missing, where to fix it, and why it is not defaulted"* — a defect class and a
+reason, not a patch. The back-check is that discipline pointed the other way, at the human's
+markup rather than at the tool's errors. And it gives the project something the prior survey's
+§6 item 3 says has no prior art anywhere: **when the agent cannot derive the reviewer's fix from
+any stated rule, that is evidence the rule is missing or wrong** — which is a carrier for *"the
+rule is wrong"* falling out of the mechanism rather than needing to be invented.
+
+### 7.6 Adopt: preserve the markup through the correction, and make damage to it loud
+
+**Source: Bishop 1920, p. 181 and p. 182 — *"so that the draftsman will be able to make the
+necessary changes without disturbing the checker's notes"*; *"These notes should be preserved
+until the checker has convinced himself that all changes have been made correctly"*; and the
+failure signal below.** (§4.4, §5.4)
+
+**VERIFIED — S14, Bishop 1920, p. 182, "Corrections":**
+
+> *"It is important that all changes be made without disturbing the checker's marks. **If any
+> note of the checker is erased accidentally the draftsman should pencil a conspicuous question
+> mark near the corresponding change to draw the attention of the checker to the change.** The
+> checker may simply check the changes and then assume responsibility for the drawing by signing
+> his initials to the sheet. **If his marks were erased he would have to recheck much or all of
+> the drawing** before he could be sure that it was correct."*
+
+Two rules, both mechanical:
+
+1. **The correction must not consume the markup.** The markup has to still be there when the
+   checker returns, or the check has to start over. Bishop's layout convention serves this
+   directly — the correct value is written *"to a convenient clear space"* reached by a leader
+   line, deliberately away from the thing being corrected, so that editing the drawing cannot
+   overwrite the note. For a generated sheet the analogue is already in §7.3: the annotation is
+   a separate layer keyed to semantic ids, and regenerating the sheet must not be able to
+   destroy it.
+2. **Damage to the markup must raise a flag, not pass quietly.** *"a conspicuous question
+   mark"* — if the markup was lost, the artifact says so, loudly, at the place it happened.
+   This is `CLAUDE.md`'s *"a skipped check must never look like a passing one"*, and the
+   file-level version of it this repository has already been bitten by: a markup layer that
+   silently empties on regeneration is indistinguishable from a sheet with no findings.
+
+Bishop also settles what happens to the *draughtsman's* wrong values, and it is the opposite of
+what happens to the markup (**VERIFIED**, p. 182): *"The figures should not be crossed out and
+new ones should not be superimposed... If these figures were retained, the appearance of the
+drawing would be marred, the drawing would be made less distinct, and the draftsman's mistakes
+would be exposed to all who use the drawing."* **The drawing is cleaned; the record is kept
+elsewhere.** The artifact carries the current truth and nothing else; the review history lives
+in the markup and the revision line. That separation is worth holding onto — it is why a
+schematic should not accumulate review scars.
+
+### 7.7 Adopt: readability is judged FIRST, by a reader who has not yet learned the drawing
 
 **Source: Follows item 1 — *"Always do this before checking any individual features; in other
 words, before you have had time to become accustomed to the contents."*** (§3.1)
@@ -840,7 +1156,7 @@ Operationally: the review surface should ask the first-read question first and r
 separately — *does this sheet tell a straight story on first sight?* — and that answer should
 not be revisable after the detailed pass, because by then it is a different question.
 
-### 7.6 Adopt: a separate sign-off for the drawing as a drawing
+### 7.8 Adopt: a separate sign-off for the drawing as a drawing
 
 **Source: MIL-STD-100F §40.3.1(d) vs (e) — *"DRAWING APPROVAL... responsible for drawing format
 and completeness"* against *"DESIGN APPROVAL... responsible for design technical adequacy"*.**
@@ -853,12 +1169,12 @@ tests versus *"look at the output, not only the tests"* — but the standards ma
 **signature**, which is stronger: an artifact cannot be in a released state without both, and
 the absence of one is visible rather than inferred.
 
-### 7.7 Adopt: define "legible enough" by a downstream reproduction, not by the author
+### 7.9 Adopt: define "legible enough" by a downstream reproduction, not by the author
 
 **Source: MIL-D-5480F §3.2.2 (a fourth-generation copy must still be legible); NPS-10 Chapter 3
 (*"must be capable of being reproduced as clear and legible half-size prints"*,
 *"Originals... that cannot be reproduced as clear, legible half-size prints are
-unacceptable"*).** (§3.4)
+unacceptable"*).** (§3.5)
 
 This gives the project an author-independent legibility criterion it can actually test, which is
 what `CLAUDE.md` demands of acceptance criteria. The analogue is immediate and cheap: **render
@@ -870,11 +1186,11 @@ here too: *"the construction contractor or maintenance worker may never see the 
 drawing, only a reproduction of it."* Whoever builds the Pultec from a sheet will be looking at
 a print or a PDF on a bench, not at KiCad.
 
-### 7.8 Adopt: an unchecked artifact is branded unchecked, and the unfinished original is held out of the file
+### 7.10 Adopt: an unchecked artifact is branded unchecked, and the unfinished original is held out of the file
 
 **Source: Collins, "Preliminary Prints" / "Signatures" — *"all such prints should be stamped
 'preliminary'"*; *"Tracings from which preliminary prints have been made should be returned to
-the squad foreman for completion. They must not be filed unless so directed by him."*** (§4.3)
+the squad foreman for completion. They must not be filed unless so directed by him."*** (§4.5)
 
 Already this repository's rule (*"a skipped check must never look like a passing one"*), but
 Collins adds two refinements worth copying: the escape hatch is **narrowed by stated purpose**
@@ -884,7 +1200,7 @@ finished. A generated sheet that has not been reviewed should carry the brand *i
 — in the sheet's own title block, not only in a status file — and should not land where
 reviewed sheets land.
 
-### 7.9 Adopt: a revision must match the graphic style of what it revises
+### 7.11 Adopt: a revision must match the graphic style of what it revises
 
 **Source: MIL-STD-100F §602; NPS-10 Chapter 3 — *"Match line weight when making additions or
 changes."*** (§6.1)
@@ -894,7 +1210,7 @@ correct but visibly in a different hand degrades the drawing, and both standards
 is a checkable property for a generator: the inserted region's line widths, text heights and
 symbol variants must equal the host sheet's.
 
-### 7.10 Adopt: the criteria are written down in advance, outside the drawing, and visible
+### 7.12 Adopt: the criteria are written down in advance, outside the drawing, and visible
 
 **Source: Machinery's No. 2 — *"make a table covering these chances of errors and tack it in
 plain sight on the wall over the desk"*; French crediting Follows' *Dictionary of Mechanical
@@ -908,7 +1224,7 @@ against a published list rather than against whatever the checker thought of tha
 repository's rule files are the wall; what the practice suggests is that the *checklist for a
 schematic sheet* should be one of them, numbered, so a review can report which items were run.
 
-### 7.11 Carry across, but do not adopt the legend: the colour code is local and must travel with the artifact
+### 7.13 Carry across, but do not adopt the legend: the colour code is local and must travel with the artifact
 
 **Source: Collins yellow=correct/red=wrong against NPS-10 red=addition/green=deletion/blue=note
 against French red-dot=verified.** (§4.2)
@@ -924,7 +1240,7 @@ where an agent then *acts* on the markup probably wants **both axes** — a disp
 (`verified` / `defect` / `note`) and, for defects, an edit intent — which neither historical
 code has, because neither had a machine downstream.
 
-### 7.12 Do not adopt: checking as a single sequential human pass over everything
+### 7.14 Do not adopt: checking as a single sequential human pass over everything
 
 Follows' discipline — twelve separate passes, *"allowing nothing to distract the attention"* —
 was the correct answer when the only checking instrument was an attentive person. Items 3, 4, 6,
@@ -937,7 +1253,7 @@ readability), item 11 (the whole-sheet review carrying forward what the detail p
 and item 12 (adding the note that makes the drawing more useful). Those three are the human
 review. The other nine are `make check`.
 
-### 7.13 A caution the sources themselves raise
+### 7.15 A caution the sources themselves raise
 
 **Machinery's No. 2, c.1910, on offices *"where the drawings are examined and initialed by every
 one in sight, from the engineer in charge down to the tracer."*** (§3.3) The author's point is
@@ -956,8 +1272,16 @@ Stated plainly, with boundaries, per the task's instruction.
    standards. Scope statements only (§6.3). **Consequence: I cannot say whether ASME Y14.35
    addresses check prints or markup retention.** MIL-STD-100F Chapter 600 is its DoD
    predecessor and does not, which is suggestive and not dispositive.
-2. **"Back-check" — NO PRIMARY SOURCE.** Term not found in any document read (§5.4). Neither
-   confirmed nor refuted.
+2. ~~**"Back-check" — NO PRIMARY SOURCE.**~~ **WITHDRAWN. The back-check is established** —
+   Bishop 1920 (S14) defines it in a glossary and devotes a section to it, with the reasoning
+   and two enforcement mechanisms (§5.4). **The struck entry is left visible because it was
+   wrong for a reason worth recording**: the search had been aimed at standards and at general
+   drawing textbooks, and both of those are the wrong shelf. The back-check, the marking
+   grammar and the colour reasoning all live in a **structural** drafting textbook's dedicated
+   checking chapter, and it was reached only by a bulk full-text sweep (item 10) rather than by
+   any targeted query. **A bounded negative is bounded by the shelf it was taken from, and
+   naming that shelf is part of stating the negative** — the first version of this entry did
+   not, which is what made it read as stronger than it was.
 3. **Giesecke (*Technical Drawing*) and Jensen (*Engineering Drawing and Design*) checking
    chapters — NOT REACHED.** Present on archive.org but in the lending collection
    (`inlibrary`/`printdisabled`), and the search-inside backend returns **HTTP 403** for those
@@ -985,11 +1309,24 @@ Stated plainly, with boundaries, per the task's instruction.
    failed: the exact phrase `"check print shall be made"` — which I had already read in an
    indexed, fully OCR'd item — returns `numFound: 0`. Nobody should conclude from an
    advancedsearch miss that text is absent from archive.org.
-10. **A broad sweep of 334 open archive.org drawing/drafting items for `crayon` and
-    `check print` was still running when this document was written.** Its two hits at that point
-    were both irrelevant (paper stock and sectioning washes). It is not the basis of any claim
-    here; every colour-code finding above comes from a document read end to end. If it is
-    re-run, note that it is rate-limited to roughly one item every four seconds.
+10. **The broad sweep COMPLETED, and it is the reason S14 exists — so this entry is a method
+    note rather than a limitation.** 334 open archive.org drawing/drafting items were searched
+    inside for `crayon` and `check print`; 21 items returned hits, 51 `crayon` hits in total.
+    Most are the word in its ordinary sense (crayon as a drawing or sectioning medium), and
+    **three were Collins' own duplicate scans, which served as the positive control** — the
+    sweep demonstrably surfaces the passage it was looking for when the passage is there. The
+    one new source it found, **Bishop 1920 (S14), turned out to be the most complete document
+    in the corpus** and overturned this document's own negative on the back-check. Everything
+    quoted above still comes from a document read end to end; the sweep's role was to find the
+    document.
+
+    **One caution for anyone re-running it, because it nearly produced a false negative.** The
+    `fulltext/inside.php` backend **does not honour quoted phrases** — a `q=check print` query
+    returns matches for `check` and for `print` separately, so Collins' *"check prints are to
+    be delivered to the file clerk"* passage was **never surfaced by the `check print` query
+    at all** and was found only through `crayon`. The `check print` channel scored **0 of 334**,
+    and that zero means **nothing whatsoever about whether the phrase is present.** Search on a
+    single distinctive word, never a phrase. (Rate: roughly one item every four seconds.)
 
 ---
 
@@ -1037,7 +1374,15 @@ standard-drafting-circuit-drawings   Bell Labs, Circuit Drawings, 1939
 standard-drafting-wiring-diagrams    Bell Labs, Wiring Diagrams
 drawingformatdra00unse      NPS-10, 1986                               <- the colour code
 nasa-engineering-manual.pdf NASA GSFC X-673-64-1F Rev 001, Dec 1994
+structuraldraft00bishgoog   Bishop, Structural Drafting, 1920          <- the best one, ch. XXIX
 ```
+
+**If you read only one of these, read `structuraldraft00bishgoog` Chapter XXIX** (pp. 179-182 of
+the book; search the `_djvu.txt` for `CHECKING AND CORRECTING DRAWINGS`, which appears twice as
+a running head). It is four pages and it covers the role, the policy on what gets checked, the
+twelve-point order, the marking grammar, the colour reasoning, the back-check and the correction
+hygiene. Collins 1918 is the complement: Bishop says how a checker works, Collins says what the
+office does with the paper afterwards.
 
 ---
 
@@ -1049,9 +1394,13 @@ Recorded here, under the work in hand, per `CLAUDE.md` — not in the frozen gap
    The DoD predecessor does not.
 2. **Does the DoD *Drawing Requirements Manual* standardise the check-print procedure?** The
    most promising unread source (§8 item 4).
-3. **Was there a formal back-check?** Unattested either way (§5.4).
+3. ~~**Was there a formal back-check?**~~ **ANSWERED — yes** (§5.4, §7.5). What is still open is
+   narrower and more useful: **does the withhold-the-fix enforcement appear anywhere other than
+   Bishop?** One source is one source, and §7.5 recommends building on it. Bishop presents it as
+   something *"some checkers"* do, which is an explicit admission that it was not universal even
+   in 1920.
 4. **Is the verdict-marking or the edit-marking schema the right base for this project's markup
-   format** — or, as §7.11 suspects, two orthogonal axes? This is a design decision, not a
+   format** — or, as §7.13 suspects, two orthogonal axes? This is a design decision, not a
    research question, and it should be made in a spec rather than inferred from whichever
    historical legend got copied.
 5. **ASME Y14.42, Digital Approval Systems**, is named by Y14.100 (2017) as incorporated. It is

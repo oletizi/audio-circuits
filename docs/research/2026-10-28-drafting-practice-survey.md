@@ -1376,7 +1376,36 @@ expect it to change §6 items 1 and 9.
 >   for "the rule is wrong" - STAND. Nothing in the drafting-office practice does
 >   either**, which raises rather than lowers this survey's confidence in calling
 >   them unprecedented: a century of mature checking practice did not invent
->   them.
+>   them. The nearest approach is Bishop 1920 judging a draughtsman *"not so much
+>   by the mistakes he makes, as by the mistakes he makes a second time"* - a
+>   repeat-defect criterion, but a human noticing a pattern, not a mechanism.
+>
+> **And §359 of this survey is wrong, which that document also corrects.** It
+> records *"no overlapping text, designators or symbols"* as *"not found as a
+> clause; it is the thing every checker in the bakeoff actually measures."* It is
+> a clause. **Bishop 1920**, checking item (8): *"no dimension lines or other
+> lines or points appear to coincide on the drawing unless it is proper that they
+> should coincide."* Note the form - not "do not overlap" but *"unless it is
+> proper that they should"*, which is the shape a schematic needs, where a
+> junction dot and four wire ends are supposed to coincide and a net label over a
+> pin is not.
+>
+> **The single finding most worth acting on is one neither this survey nor its
+> §7.1 anticipated: the BACK-CHECK.** Bishop requires the draughtsman to verify
+> the checker's correction *before applying it*, because *"unless he 'back-checks'
+> or verifies each correction before making it, certain parts of the drawing are
+> left unchecked, the value being the checker's instead of the detailer's."* The
+> office's guarantee is that a drawing is *"the product of two minds"*, and the
+> checker's own corrections are the one region only **one** mind has seen - sitting
+> exactly where errors were already proven to be. **An agent applies a reviewer's
+> fix perfectly and without resistance, so this hole is wider in an
+> agent-drafts/human-checks loop than it ever was on paper.** Bishop's enforcement
+> is to **withhold the fix**: record the numbered defect, keep the correct value
+> in the checker's own book, and make the draughtsman derive it independently. His
+> classroom variant is cheaper and is probably the right default - cite *"not the
+> correct values, but the reference numbers to paragraphs which will suggest the
+> nature of the mistakes"*, i.e. **the rule that was violated, not the edit to
+> make.**
 >
 > Collins, *Drafting Room Methods* (1918), retains the marked-up
 > check print by name, in a clause that is an exception inside a deletion rule:
