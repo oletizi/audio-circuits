@@ -29,6 +29,8 @@
  * same way, because it satisfies both horizontal and vertical at once.
  */
 import type { Wire } from "./block-types.ts";
+import type { NetName } from "../ir/types.ts";
+import type { Point, Um } from "./geometry.ts";
 
 export interface WireGeometry {
   /** Different-net segment pairs meeting interior to both. */
@@ -173,4 +175,79 @@ export function wireGeometry(wires: readonly Wire[]): WireGeometry {
   }
 
   return { crossings, corners, segments: wires.length };
+}
+
+/**
+ * **A HAIRPIN: a net that travels one way along an axis and then back the other, at a point.**
+ *
+ * The owner, 2026-10-25 and again 2026-10-27: *"Hairpins are very hard to trace"*, and on the
+ * generated `pultec-low-boost` sheet, *"what is odd is R1, which has an unnecessary hairpin to the
+ * out label."* He is right, and the measurement below is what that sentence looks like in numbers:
+ * net `out` leaves `R1` going LEFT for 2 grid cells, drops, and then runs RIGHT for 49.
+ *
+ * **IT IS NOT A READABILITY SCORE AND MAY NOT BECOME ONE.** Whether a drawing reads has no closed
+ * form, and `CLAUDE.md` records three invented proxies that each pointed the opposite way to his
+ * judgement. *"Does this net's path reverse direction on an axis"* has a closed form, like a
+ * crossing or a corner. Nothing here combines, weights, ranks or thresholds it.
+ *
+ * **WHY NOT `ShapeMeasures.reversing`, WHICH ALREADY EXISTS** (`lib/schgen/render/compose.ts`):
+ * that counts NETS, one point if any segment of a net ever runs against any other. A six-way
+ * fan-out scores the same 1 as this hairpin, and two hairpins on one net also score 1. It cannot
+ * find a hairpin, locate it, or say how bad it is - and the register records it condemning the
+ * star topology on an occasion where the owner looked at the drawings and preferred them.
+ *
+ * **IT REPORTS THE SHORT LEG, WHICH IS WHAT MAKES IT ACTIONABLE.** A reversal where the backtrack
+ * is 2 cells and the onward run is 49 is a part facing the wrong way; a reversal where both legs
+ * are long is a route genuinely going somewhere and coming back. The caller gets both lengths and
+ * the point, and decides.
+ */
+export interface Hairpin {
+  readonly net: NetName;
+  /** Where the net turns back on itself. */
+  readonly at: Point;
+  /** The axis it reverses on. */
+  readonly axis: "x" | "y";
+  /** The shorter of the two opposed runs, in micrometres - the backtrack. */
+  readonly backtrack: Um;
+  /** The longer of the two, in micrometres - what it doubles back from. */
+  readonly onward: Um;
+}
+
+/**
+ * Every point where one net's path reverses along an axis.
+ *
+ * A reversal is two segments of ONE net, on the same axis, sharing an endpoint, running in
+ * OPPOSITE directions from it. Two collinear segments continuing the same way are not a reversal,
+ * and a corner (one horizontal, one vertical) is not either - that is `corners`.
+ */
+export function hairpins(wires: readonly Wire[]): readonly Hairpin[] {
+  const out: Hairpin[] = [];
+  const span = (w: Wire, axis: "x" | "y"): readonly [number, number] =>
+    axis === "x" ? [Math.min(w.a.x, w.b.x), Math.max(w.a.x, w.b.x)] : [Math.min(w.a.y, w.b.y), Math.max(w.a.y, w.b.y)];
+  const run = (w: Wire, axis: "x" | "y"): number => (axis === "x" ? w.b.x - w.a.x : w.b.y - w.a.y);
+  for (let i = 0; i < wires.length; i++) {
+    for (let j = i + 1; j < wires.length; j++) {
+      const p = wires[i];
+      const q = wires[j];
+      if (p === undefined || q === undefined || p.net !== q.net) continue;
+      const axis: "x" | "y" | null = horizontal(p) && horizontal(q) ? "x" : vertical(p) && vertical(q) ? "y" : null;
+      if (axis === null) continue;
+      const dp = run(p, axis);
+      const dq = run(q, axis);
+      // SAME direction is a continuation, not a doubling back - including two collinear segments
+      // meeting end to end, which point opposite ways from their shared point and are a straight line.
+      if (dp === 0 || dq === 0 || Math.sign(dp) === Math.sign(dq)) continue;
+      const [p0, p1] = span(p, axis);
+      const [q0, q1] = span(q, axis);
+      const overlap = Math.min(p1, q1) - Math.max(p0, q0);
+      // **THE OVERLAP IS THE WHOLE TEST.** Two opposed runs that merely touch at a point are a
+      // straight line through it; two that cover the same ground twice are the net doubling back.
+      if (overlap <= 0) continue;
+      const a = Math.abs(dp);
+      const b = Math.abs(dq);
+      const at = axis === "x" ? { x: Math.max(p0, q0), y: p.a.y } : { x: p.a.x, y: Math.max(p0, q0) };
+      out.push({ net: p.net, at, axis, backtrack: Math.min(a, b), onward: Math.max(a, b) });
+    }
+  }
+  return out;
 }

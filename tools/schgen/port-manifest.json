@@ -947,6 +947,7 @@
     "tests/schgen/board-status.test.ts",
     "lib/schgen/render/unratified-mark.ts",
     "tools/schgen/defective-fixture.ts",
-    "tests/schgen/watermark.test.ts"
+    "tests/schgen/watermark.test.ts",
+    "tests/schgen/hairpins.test.ts"
   ]
 }
