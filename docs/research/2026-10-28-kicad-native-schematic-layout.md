@@ -200,8 +200,11 @@ GitLab API, `state=all`, titles) for every phrasing I could construct:
 | `autorouter` | 5 | 0 (all PCB) |
 | `distribute` | 16 | **1** — #6769, below |
 
-**In 26,000 issues there is not one request for schematic symbol
-auto-placement or schematic wire auto-routing.** Not one that was granted, and
+**Across the whole tracker there is not one request for schematic symbol
+auto-placement or schematic wire auto-routing.** (Scale, stated honestly: the
+highest issue number this pass observed is **#25905**, dated 2026-10-23;
+GitLab's API omits an `x-total` header on a set this large, so treat ~26,000
+as the issue-number ceiling rather than a count of filed issues.) Not one that was granted, and
 — the part that matters for this hypothesis — **not one that was refused
 either.** There is no maintainer reasoning to quote, because nobody has ever
 asked. That is a very different fact from "it was tried and rejected", and the
@@ -732,7 +735,7 @@ have it" is FALSE.** Three independent reasons, each sufficient:
    symbols."* The request sat nine years. KiCad 11 is the first release where
    such a plugin becomes possible at all.
 
-2. **Nobody ever asked, so nothing was ever refused.** Zero issues in 26,000
+2. **Nobody ever asked, so nothing was ever refused.** Zero issues anywhere in the tracker
    requesting schematic symbol auto-placement or wire auto-routing. The
    hypothesis needs a refusal to draw its inference from. There is none. The
    nearest request is a **six-way align tool**, open since 2020, half-shipped.
