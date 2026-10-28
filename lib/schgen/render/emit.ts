@@ -1,8 +1,15 @@
 /**
- * Ported from digital-pedal-platform's `tools/schgen/render/emit.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
- * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
- * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ * Ported from digital-pedal-platform's `tools/schgen/render/emit.ts`, and DIVERGED from it by
+ * Task 5 of `docs/superpowers/plans/2026-10-27-gates-classify.md`: an `EmitContext` carries the
+ * generation's `RefusalClass`, and a sheet emitted under any class but `usable` carries the two
+ * marks `render/unratified-mark.ts` builds - a watermark across the drawing area and a title-block
+ * comment. The owner: *"A watermark over the drawing that declares the drawing defective is a
+ * critical safety signal to NOT USE the drawing at the bench."*
+ *
+ * It no longer re-derives from the pedals source. `tests/schgen/port-fidelity.test.ts` does not
+ * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
+ * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
+ * `lib/schgen/README.md`.
  */
 
 /**
@@ -10,7 +17,10 @@
  * them. Every UUID is v5 from a stable key and items are ordered by those keys, so regeneration
  * is byte-stable.
  */
-import type { Circuit, PartLabel, SheetId } from "../ir/types.ts";
+import type { RefusalClass } from "../findings.ts";
+import type { Circuit, Paper, PartLabel, SheetId } from "../ir/types.ts";
+import { PAPER } from "./sheets.ts";
+import { markItems, markStatusComment } from "./unratified-mark.ts";
 import {
   frame, globalLabel, junction, noConnect, partSymbol, pinMarkText, powerSymbol, property, text, wire, type ItemScope, type Keyed,
 } from "./emit-items.ts";
@@ -31,6 +41,20 @@ export interface EmitContext {
   readonly rootUuid: string;
   readonly sheetUuids: ReadonlyMap<SheetId, string>;
   readonly titleComments: readonly string[];
+  /**
+   * **WHAT THE GATES SAID ABOUT THE GENERATION THESE SHEETS BELONG TO**, and therefore whether
+   * each sheet is marked.
+   *
+   * It is on the CONTEXT rather than on a `SheetDrawing` because the class is a property of the
+   * whole generation: a two-sheet design with one wrong sheet is a wrong design, and a reader who
+   * opened only the clean sheet of it would otherwise see nothing. `findings.ts`'s `worstClass` is
+   * what the caller reads it off.
+   *
+   * There is **no default**. A caller that does not state the class cannot compile, which is the
+   * point: a silent `usable` would let an unratified generation go out unmarked on the day somebody
+   * adds a caller and forgets, and that is the exact failure the marks exist to prevent.
+   */
+  readonly status: RefusalClass;
 }
 
 export interface PowerRefs {
@@ -60,23 +84,56 @@ export function powerRefs(ordinal: number): PowerRefs {
 
 const MAX_COMMENTS = 9;
 
+/**
+ * **ONE OF KiCad's NINE COMMENT FIELDS IS RESERVED FOR THE CLASS, so a caller gets eight.**
+ *
+ * The spec's second mark is a title-block field, and a field that is only *usually* available is
+ * not a place a safety warning can live: if the reservation were conditional, a generation with
+ * nine comments of its own would quietly have nowhere to put the one that matters. So the budget
+ * is reduced unconditionally, for a ratified generation too, and the refusal below says why rather
+ * than only saying what the limit is.
+ */
+export const MAX_AUTHOR_COMMENTS = MAX_COMMENTS - 1;
+
 export function emitContext(
   project: string,
   circuit: Circuit,
   symbols: SymbolResolver,
   refs: ReadonlyMap<PartLabel, string>,
   titleComments: readonly string[],
+  status: RefusalClass,
 ): EmitContext {
   if (project.trim() === "") throw new Error("emit: project name must not be empty");
-  if (titleComments.length > MAX_COMMENTS) {
-    throw new Error(`emit: KiCad title blocks hold at most ${MAX_COMMENTS} title comments; got ${titleComments.length}`);
+  if (titleComments.length > MAX_AUTHOR_COMMENTS) {
+    throw new Error(
+      `emit: KiCad title blocks hold ${MAX_COMMENTS} title comments and one of them is reserved for the ` +
+        `generation's ratification class (lib/schgen/render/unratified-mark.ts), so a caller may supply at ` +
+        `most ${MAX_AUTHOR_COMMENTS}; got ${titleComments.length}. The slot is reserved whatever the class, ` +
+        "because a warning field that exists only when there is room for it is not a field a reader can rely on.",
+    );
   }
   const sheetUuids = new Map<SheetId, string>();
   for (const s of circuit.sheets) {
     if (sheetUuids.has(s.id)) throw new Error(`emit: duplicate sheet id ${s.id}`);
     sheetUuids.set(s.id, uuidV5(`sheet:${project}:${s.id}`));
   }
-  return { project, circuit, symbols, refs, rootUuid: uuidV5(`root:${project}`), sheetUuids, titleComments };
+  return { project, circuit, symbols, refs, rootUuid: uuidV5(`root:${project}`), sheetUuids, titleComments, status };
+}
+
+/**
+ * The title block's comments: the status comment at `comment 1` when there is one, then the
+ * caller's.
+ *
+ * **`comment 1` IS THE LINE NEAREST THE TITLE, which was checked on a rendered page rather than
+ * assumed.** KiCad stacks the comment fields upward, so comment 1 prints LAST in the block - at the
+ * bottom of the stack, immediately above `Sheet:` and the title - and the two provenance lines sit
+ * above it. That is the position a reader's eye arrives at on its way to the title, which is why
+ * the status takes the slot. The first draft of this comment claimed the opposite ordering; the
+ * export at `build/schgen-defective-fixture/marked.pdf` is what corrected it.
+ */
+function comments(ctx: EmitContext): readonly string[] {
+  const status = markStatusComment(ctx.status);
+  return status === null ? ctx.titleComments : [status, ...ctx.titleComments];
 }
 
 function header(fileUuid: string, paper: string, title: string, comments: readonly string[], libSymbols: readonly SListNode[]): SListNode[] {
@@ -163,6 +220,10 @@ export function emitSheet(d: SheetDrawing, ctx: EmitContext): string {
   const frames = d.frames.map((f) => frame(id, f));
   const parts = partItems(d, ctx, scope);
   const groups: Keyed[][] = [
+    // **THE WATERMARK IS PLACED AGAINST THE PAPER THIS FILE DECLARES, not against `d.paper`.**
+    // They are the same size today. Where they could differ, the page KiCad draws is the one named
+    // in the header, and a warning band that fell off that page would be a warning nobody sees.
+    markItems(`${ctx.project}:${id}`, PAPER[d.sheet.paper], ctx.status),
     [...d.texts.map((t, i) => text(`text:${id}:${i}`, t)), ...d.pinMarks.map((m) => pinMarkText(id, m)), ...frames.map(([, title]) => title)],
     frames.map(([rect]) => rect),
     d.junctions.map((p) => junction(id, p)),
@@ -173,7 +234,7 @@ export function emitSheet(d: SheetDrawing, ctx: EmitContext): string {
     parts,
   ];
   assertUniqueKeys(id, groups);
-  const head = header(uuidV5(`sheetfile:${ctx.project}:${id}`), d.sheet.paper, d.sheet.title, ctx.titleComments, libSymbols(d, ctx));
+  const head = header(uuidV5(`sheetfile:${ctx.project}:${id}`), d.sheet.paper, d.sheet.title, comments(ctx), libSymbols(d, ctx));
   return finish([...head, ...groups.flatMap(sorted)]);
 }
 
@@ -207,8 +268,19 @@ function rootSheet(ctx: EmitContext, i: number): SListNode {
   );
 }
 
+/** The root sheet's paper, named once so the watermark below lands on the page the header declares. */
+const ROOT_PAPER: Paper = "A4";
+
+/**
+ * The hierarchical root.
+ *
+ * **IT CARRIES THE MARKS TOO, although it draws no circuit.** It is the file a person opens first
+ * and the one a tool is pointed at, so a root that looked ratified while its child sheets were
+ * marked would be the crop case the second mark exists for, at the scale of a whole project.
+ */
 export function emitRoot(ctx: EmitContext): string {
   const sheets = ctx.circuit.sheets.map((_, i) => rootSheet(ctx, i));
   const instances = list("sheet_instances", list("path", str("/"), list("page", str("1"))));
-  return finish([...header(ctx.rootUuid, "A4", ctx.project, ctx.titleComments, []), ...sheets, instances]);
+  const marks = markItems(`${ctx.project}:root`, PAPER[ROOT_PAPER], ctx.status).map((k) => k.node);
+  return finish([...header(ctx.rootUuid, ROOT_PAPER, ctx.project, comments(ctx), []), ...marks, ...sheets, instances]);
 }

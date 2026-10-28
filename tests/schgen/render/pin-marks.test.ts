@@ -80,7 +80,7 @@ describe("pinMarks", () => {
     const { c } = unitOf([dnp(diode("D_Z", "N1", "N2"))], "D_Z");
     const d = layoutSheet(c, "s", symbols, "Pwr:PWR_FLAG");
     expect(d.pinMarks.map((m) => m.text)).toEqual(["K", "A"]);
-    const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, ["generated"]);
+    const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, ["generated"], "usable");
     const texts = parse(emitSheet(d, ctx)).lists.filter((l) => l.head === "text").map((t) => t.atoms[1]?.value);
     expect(texts).toEqual(expect.arrayContaining(["K", "A"]));
   });

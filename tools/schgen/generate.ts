@@ -211,13 +211,17 @@ function manifestSourcesOf(d: LoadedDesign, elk: ReadonlyMap<BlockId, ElkOutcome
  * no files at all, so there is nothing to hand back and the typed `SchgenRefusal` carrying their
  * findings is the whole of the output. The census turns that into the spec's refusal sheet.
  *
- * **WHY THE STRICT `generate` BELOW STAYS, rather than every caller moving to this one.** The
- * marks the spec requires - a watermark in the `.kicad_sch` and a title-block status field - are
- * Task 5, and until they exist an unratified schematic written into a CIRCUIT directory would look
- * exactly like a ratified one. `tools/cli/schgen.ts` and `tools/schgen/verify.ts` write there and
- * keep the strict form; the census writes only into its own gitignored directory, beside a
- * `STATUS.md` that names the class. The pairing is `realiseBlockReported`/`realiseBlock`'s, for the
- * same reason and at a different scale.
+ * **WHY THE STRICT `generate` BELOW STAYS, rather than every caller moving to this one.** Until
+ * Task 5 the answer was that the marks did not exist yet, so an unratified schematic written into a
+ * CIRCUIT directory would look exactly like a ratified one. **The marks exist now** - every sheet
+ * this function's output is emitted into carries them - **and that answer has therefore expired.**
+ * The strict form is kept because whether a circuit directory should hold a marked, unratified
+ * drawing is a decision about this repository's committed artifacts and not a consequence of the
+ * marks landing; nothing in Task 5's brief or the spec takes it, so it is not taken here. What
+ * changed is only that the question is now open rather than answered by a missing feature.
+ * `tools/cli/schgen.ts` and `tools/schgen/verify.ts` keep the strict form; the census writes into
+ * its own gitignored directory, beside a `STATUS.md` that names the class. The pairing is
+ * `realiseBlockReported`/`realiseBlock`'s, for the same reason and at a different scale.
  */
 export async function generateReported(d: LoadedDesign, env: GenerateEnv): Promise<Generation> {
   if (!isPlainFileName(d.spec.project)) {
@@ -296,7 +300,12 @@ export async function generateReported(d: LoadedDesign, env: GenerateEnv): Promi
     );
   }
   const manifestSources = manifestSourcesOf(d, elk);
-  const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings, manifestSources });
+  // **THE FINDINGS GO TO THE EMITTER, which is Task 5's whole wiring.** Every sheet this writes is
+  // marked when `worstClass(findings)` is anything but `usable`: a watermark across the drawing area
+  // and a title-block comment naming the class. `lib/schgen/render/unratified-mark.ts` carries the
+  // owner's bar for the weight - *"it doesn't need to be easy to read, it just needs to be possible
+  // to read"* - and the rendered pages it was set from.
+  const files = generatedFiles({ design: d, circuit, symbols, annotation, versions, versionLockText, drawings, manifestSources, findings });
   return { files, circuit, annotation, versions, drawings, symbols, elk, manifestSources, findings };
 }
 
@@ -305,9 +314,12 @@ export async function generateReported(d: LoadedDesign, env: GenerateEnv): Promi
  *
  * It is `generateReported` plus one rule - a non-empty `findings` refuses - and the rule is here
  * rather than inside it because of WHERE each caller writes. This one's callers write into a
- * CIRCUIT directory (`tools/cli/schgen.ts`, `tools/schgen/verify.ts`), where an unratified sheet
- * carrying no mark would be indistinguishable from a ratified one. The marks are Task 5 of the
- * gates-classify plan; until they exist, refusing is the only honest thing this form can do.
+ * CIRCUIT directory (`tools/cli/schgen.ts`, `tools/schgen/verify.ts`). **Its sheets would now be
+ * marked if it emitted them** - Task 5 landed the watermark and the title-block field - so the
+ * sentence that used to stand here, that refusing is the only honest thing this form can do, is no
+ * longer true. It still refuses, deliberately and narrowly: committing a marked unratified drawing
+ * into a circuit directory is a decision nobody has taken, and taking it silently inside a doc
+ * comment is not how this repository changes what it commits.
  *
  * **It is not the gate that hides the drawing any more**, which is the whole of what changed:
  * `generateReported` has the same drawing in hand and hands it back, and the census writes it.

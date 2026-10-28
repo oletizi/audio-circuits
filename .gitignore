@@ -15,6 +15,15 @@ build/
 # copy could only fall out of date with the circuit it claims to draw.
 build/schgen-boards/
 
+# The deliberately defective fixture (`bun tools/schgen/defective-fixture.ts`):
+# one real board's real geometry emitted twice, once as its own gates classified
+# it and once under a fabricated defective finding, so the watermark and the
+# title-block warning an unratified drawing carries are emitted by something. No
+# board under boards/ is defective, so without it the marks would be code no page
+# has ever shown. Covered by build/ above; named here for the same reason as the
+# census directory, and re-derived whole by one run of that tool.
+build/schgen-defective-fixture/
+
 # Environment variables
 .env
 .env.local

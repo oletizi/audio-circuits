@@ -31,6 +31,27 @@
  *    criterion: *"no generated schematic is emitted whose geometry was altered after its last
  *    clearance check."*
  *
+ * **THE ONE EXEMPTION FROM OBLIGATION 5, STATED HERE BECAUSE THIS IS WHERE THE OBLIGATION IS
+ * STATED** - Task 5 of `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+ *
+ * `lib/schgen/render/unratified-mark.ts` adds items to a sheet AFTER step 6 has run and after every
+ * other gate has reported: a watermark across the drawing area and a title-block comment, on a
+ * sheet whose class is anything but `usable`. **They are exempt because they are not circuit
+ * geometry.** A KiCad `text` item carries no net, no pin and no connectivity; the netlist exporter
+ * does not see it; no wire attaches to it; no placement moves because of it. Obligation 5 exists so
+ * that what a clearance check examined is what gets drawn - and a mark that cannot change any
+ * electrical reading of the sheet cannot invalidate a clearance check's conclusion about it.
+ *
+ * **IT IS NOT DEFAULTED AND NOT SILENT, which is why it is written down rather than simply done.**
+ * The alternative shapes were each worse: re-running the clearance checks after marking would let a
+ * crowded band REFUSE the sheet, and **a sheet must never be refused for carrying its own
+ * warning** - that is the gate hiding the output all over again, on the very drawing the owner
+ * asked to be warned about. Marking before the checks would have the same effect by a longer route.
+ * The cost of the exemption is real and is stated too: the bands DO overlap drawn items, by
+ * construction, and the drawing underneath is readable rather than clear. The owner set that bar in
+ * as many words - *"an unusable schematic doesn't need to be easy to read, it just needs to be
+ * possible to read"*.
+ *
  * **OBLIGATION 3 IS WHY THERE IS NO SECOND TRANSFORM HERE.** Every pin end is recomputed as
  * `pinEnd(placement.at, placement.rot, libPin)` at the SAME `u.rot` `graph.ts` fixed the ELK port
  * at (ruling **R29**), and **an ELK port's returned coordinate is never used as a wire attachment
