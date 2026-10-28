@@ -47,7 +47,30 @@ By comparison `api/proto/board/board_commands.proto` on the same revision holds
 **60** messages (`grep -c '^message'`). The schematic side of the IPC API can
 place a symbol. It has **no command to draw a wire, place a label, create a
 junction, or add a sheet.** `api/proto/schematic/` exists on both `master` and
-the `10.0` branch, so this is the shipped state, not a pre-release gap.
+the `10.0` branch — so the protos ship, which is why this writer initially read
+them as the shipped capability.
+
+**A second measurement narrows it further, and the two together are stronger
+than either.** KiCad's own developer documentation
+(`https://dev-docs.kicad.org/en/apis-and-binding/ipc-api/for-addon-developers/`)
+states: *"KiCad 9 and 10 only support IPC API plugins in the PCB Editor"* and
+*"KiCad 11 adds support for plugins in the Schematic Editor."* (VERIFIED by a
+delegated researcher via page fetch; quoted wording passed through a summarizer,
+so treat the exact phrasing as approximate and the substance as confirmed.)
+
+So the honest statement is: **the protos exist, the three commands are defined,
+and the Schematic Editor does not host IPC plugins in 9 or 10 at all.** The
+schematic API is scaffolding, not a surface. Schematic-editor plugin support is
+slated for **KiCad 11**, which secondary sources put at roughly February 2027
+(RELAYED, not confirmed). Either way the conclusion for today is the same and
+the reconciliation matters only so a later reader does not "discover" the proto
+directory and conclude the API is usable.
+
+**A trap worth naming, VERIFIED by a delegated researcher via the GitHub API:**
+`github.com/KiCad/kicad-python` is **archived**, `archived: true`, last commit
+2022-01-09 with the message *"Add deprecation notice"*. The current
+`kicad-python` on PyPI is the IPC bindings — a different thing with the same
+name. Do not land on the GitHub repo and conclude the bindings are dead.
 
 And the CLI is export-only. VERIFIED on the locally installed KiCad **10.0.5**:
 
@@ -58,7 +81,7 @@ Usage: sch export [--help] {bom,dxf,hpgl,netlist,pdf,ps,python-bom,svg}
 
 There is no `sch import`, no `sch generate`, no netlist-to-schematic verb.
 
-**Three independent codebases converge on the same workaround**, which is the
+**Four independent codebases converge on the same workaround**, which is the
 strongest evidence that it is the only one:
 
 - `tscircuit/circuit-json-to-kicad` emits `.kicad_sch` through the `kicadts`
@@ -71,6 +94,11 @@ strongest evidence that it is the only one:
 - `tpecar/nl2sch`'s README says so in as many words: it generates "the
   schematic file directly" because "KiCad's eeschema API wasn't ready"
   (RELAYED — fetched README summary, not read in full).
+- `Seeed-Studio/kicad-mcp-server` — an MCP server written *for* KiCad, by a
+  hardware vendor, with every reason to use the official API if it could — says
+  it outright. Quoted from its README (RELAYED, page fetch): *"Schematic editing
+  is **experimental**. KiCad has no Python API for schematic editing, so tools
+  use manual S-expression manipulation."* See its entry below.
 
 **What this means for this repository.** The question "which platform can we
 drive to get a schematic" has a narrower answer than it looks: *nobody is
@@ -322,6 +350,329 @@ one code path by one agent in this repository.
 `https://docs.tscircuit.com/guides/tscircuit-essentials/automatic-schematic-layout`
 (which still says, verbatim: *"Automatic layout is in beta! We're changing and
 improving the layout algorithms, if it doesn't work for you stay tuned!"*).
+
+---
+
+## Flux.ai — a real MCP server, no KiCad export, and a lawsuit
+
+`https://www.flux.ai` · docs `https://docs.flux.ai` · MCP `https://app.flux.ai/mcp`
+Legal entity **Defy Gravity, Inc.**
+
+Delegated research. The headline is that **the brief's premise was wrong in one
+direction and right in another**: Flux does have a genuine, protocol-correct
+agent surface, and it has no path to a KiCad schematic at all.
+
+### It is no longer a PCB tool with a copilot
+
+VERIFIED from the homepage and a 179-URL docs sitemap: Flux now markets an
+end-to-end "AI hardware engineer" spanning requirements, industrial design,
+parts, electronics, **mechanical CAD**, **firmware**, **wire harnesses**,
+simulation, manufacturing and "launch." "Copilot" as a product name is
+effectively gone — `/reference/copilot` now serves the "Flux agent" page.
+
+Skeptical note worth carrying: that is an enormous surface for a company that
+raised $37M in February 2026, and the October 2026 changelog shows roughly **20
+posts in one month**, a new product category every two days. That rate is not
+consistent with depth in any one of them, and this survey has no way to assess
+depth beyond the docs.
+
+**What the agent claims to do to a schematic** is edit it, not suggest. VERIFIED
+quotes from `docs.flux.ai/reference/flux-agent`: *"Edits the schematic, PCB
+layout, and 3D CAD in the Flux editors"*; and from `/reference/copilot`: *"can
+create and update schematics, arrange and route a PCB, write firmware…"*
+
+Two modes, and the split matters: **Chat** is free, reads the whole project, and
+**cannot edit designs**. **Agent** reads and changes the device, metered in ACUs.
+
+One documented human gate is conspicuous by its asymmetry (VERIFIED): *"Flux
+asks before it changes your copper or rules."* **No equivalent gate is
+documented for schematic edits.** The same asymmetry as tscircuit's error
+records — copper is treated as consequential, drawings are not.
+
+### The MCP server is real, and it was verified at the protocol level
+
+This is the part of the brief's premise that was wrong, and it was established by
+direct HTTP probe rather than from marketing. VERIFIED:
+
+```
+POST https://app.flux.ai/mcp            → 401 + www-authenticate: Bearer realm=…
+GET  /.well-known/oauth-protected-resource   → 200
+GET  /.well-known/oauth-authorization-server → 200, with
+     authorization_endpoint, token_endpoint, registration_endpoint,
+     code_challenge_methods_supported: ["S256"]
+```
+
+A correctly implemented remote MCP server with **OAuth 2.1, PKCE S256 and
+Dynamic Client Registration**. Not a landing page. Setup is
+`claude mcp add -t http flux https://app.flux.ai/mcp`, and documented clients
+include Claude Code, Claude.ai, Cursor, VS Code, Codex, ChatGPT and Notion AI.
+
+**Long-lived API keys with a dedicated `agent` scope exist.** VERIFIED quote from
+`docs.flux.ai/account/flux-mcp-server`: *"Grant project read access to read
+project data, write access to make design changes, and **agent access to ask
+Flux to complete design work**."*
+
+**So: a human clicks once** — to OAuth in or mint a key — and after that the
+surface is headless with no documented per-design click. Flux's own announcement
+describes exactly the autonomous case: *"'Create a Flux project for this, and
+have Flux design the first board.' His agent creates the project and hands Flux
+the design job. Flux plans the board, picks the parts, and draws the schematic."*
+The endpoint and scopes are VERIFIED; **that capability working is Flux's claim,
+untested.**
+
+### But the shape of that surface disqualifies it here, and this is the real finding
+
+**No MCP tool names or schemas are published anywhere** — docs, announcement and
+compare pages all describe capabilities in prose and narrative scenarios, never
+as a tool reference. `tools/list` needs an authenticated account, which the
+researcher did not have. So the exact tool surface is **UNVERIFIED**.
+
+What *is* clear from the docs' own phrasing is the architecture: **delegation,
+not manipulation.** Every capability sentence reads "**ask** Flux to…" or
+"**hand** design jobs to Flux." Your agent does not place a symbol or draw a
+net; it reads project data and posts a natural-language request into a Flux
+thread, then waits for Flux's cloud agent. There is no documented primitive like
+"create component" or "connect pin A to pin B."
+
+Three consequences, stated plainly:
+
+1. You cannot drive deterministic construction from a model you own. You can
+   only ask an opaque remote agent in prose and read back what it did.
+2. Cost and latency are Flux's, metered per structural change.
+3. **Your acceptance criteria cannot reach into the loop.** Flux's agent
+   produces the artifact *and* decides when it is done. That is the exact
+   inversion of this repository's invariant, and it is not a configuration
+   choice — it is the product's architecture.
+
+A fourth item is worth recording because it is this repository's forbidden
+pattern sold as a feature. VERIFIED from `/reference/knowledge-base` and an
+Oct 20 2026 post, "Teach Flux Your Team's Standards": Flux **infers design
+standards from your past work and applies them to future projects**, with a
+human "accept the items that are correct" step. An agent deriving the acceptance
+criteria from artifacts it previously produced, with the agent proposing the
+rules and the accept step the only thing standing between that and a closed
+loop.
+
+**Everything else is absent.** VERIFIED: no REST API (the sitemap lists
+`/reference/api-overview`, which **302s to the docs home** — a dead entry for a
+removed page); no CLI; no SDK; no webhooks (the nearest thing is *outbound* —
+Flux's agent calling *your* APIs with stored secrets). `github.com/flux-ai`
+exists, created 2020-12-14, with **0 public repositories**. A GitHub code search
+for `"app.flux.ai/mcp"` returns **one hit across all of GitHub**, an unrelated
+markdown note — the official server exists and the ecosystem around it is empty.
+
+**A search-pollution warning worth keeping:** almost every query for "flux
+API/SDK/MCP" returns Black Forest Labs' FLUX image model,
+`black-forest-labs/flux-mcp`, RunOnFlux, or `flux.umin.ai`. If anyone reports a
+Flux MCP server on GitHub, check which Flux.
+
+### Export: there is no KiCad path, and schematic export is a netlist with a schematic's name on it
+
+VERIFIED from `docs.flux.ai/reference/data-portability`. Electronics exports:
+Gerbers+drill, BOM, pick & place, **Schematic Netlist as `.edif`**, layout
+netlist `.d356`, IPC-2581C, ODB++, GenCAD, JEP30 `.xml`. Project as `.flx`.
+Mechanical: STEP/BREP/USD/STL/OBJ/3MF/GLB/FBX and DXF/SVG/PDF for 2D.
+
+- **No `.kicad_sch`, no `.kicad_pcb`, no KiCad format anywhere in the export
+  list.**
+- **The asymmetry is total.** Flux documents **import** from Altium, OrCAD,
+  PADS, CADSTAR, **KiCad**, Eagle, Fusion, EasyEDA, DipTrace, Proteus, Upverter
+  and more — about 18 "X-to-Flux" migration guides. There are **zero**
+  "Flux-to-X" guides. The page named `flux-to-altium-migration-doc` is, on
+  inspection, Altium → Flux content.
+- **The EDIF export carries components, connections, properties and hierarchy —
+  and no sheet geometry, symbol placement or wire routes.** For a project whose
+  whole premise is that a schematic is an artifact a person reads, that is not a
+  schematic export. It is a netlist export.
+- **Not round-trippable**, structurally: you cannot reconstruct the drawing from
+  EDIF, and `.flx` re-import is not documented.
+
+**The one community bridge, and what it proves.** `myneral-labs/flux-to-kicad`
+(`https://github.com/myneral-labs/flux-to-kicad`) — Python, 1,016 lines, one
+file, **one commit, 0 stars, 0 forks, no license, a committed `.DS_Store`**. One
+person's one-off. VERIFIED by reading the repo, and it establishes three useful
+facts:
+
+1. **`.flx` is plain JSON**, with `pcbLayoutNodes`, `elements`, `nets[].pins`
+   and `diagram_position` coordinates.
+2. **Flux embeds footprints as base64 `.kicad_mod` assets inside the `.flx`**, so
+   PCB-side extraction to KiCad is tractable and footprints come across
+   losslessly. Flux's PCB geometry is KiCad-format internally.
+3. **Schematic-side extraction is not tractable.** Its README says so: *"The
+   schematic layout is auto-generated and not a 1:1 reproduction of the Flux
+   schematic view."* Its approach is a fixed **5-column grid** plus *"a net label
+   at every pin connection point for all 42 nets"* — a netlist rendered as a wall
+   of labels. It also has to filter out *"virtual elements (Flux net portals)"*,
+   because Flux's connectivity model uses portal pseudo-elements rather than
+   drawn wires in places.
+
+So even with full access to the proprietary project file, the person who did the
+work could not reproduce the drawing. **Flux is a one-way door for schematics.**
+
+### Pricing: there is no free tier, and the entry point is $50/mo
+
+The pricing page injects prices client-side; the researcher rendered it in a
+real browser and read the DOM. All VERIFIED.
+
+| Plan | Monthly | Annual/mo | Included | Overage |
+| --- | --- | --- | --- | --- |
+| Explore | **$50** | $40 | 40 ACUs/mo | — |
+| Build | **$100** | $80 | 120 ACUs/mo | $2/ACU |
+| Pro | **$250** | $200 | 400 ACUs/mo | $2/ACU, plus a $250 card hold |
+| Teams | **$500/mo** or $4,900/yr | — | 600 pooled ACUs, 5 seats; +$100/mo per seat (+60 ACUs) | $2/ACU |
+| Enterprise | contact | — | *"Advanced export formats (JEP30, more coming soon)"*, SOC2, SLA | — |
+
+- **No free tier.** Every individual plan is a **7-day trial** then paid. Teams
+  purchases *"do not include a trial."* The only free thing is Chat mode, which
+  cannot edit designs. If you hold an impression of Flux as free for public
+  projects, it is obsolete — and this is roughly a **10× rise** at the entry
+  point versus the ~$5/mo tier that mid-2026 complaints describe (RELAYED).
+- **How much design work one ACU buys is undocumented.** Nothing on the pricing
+  page, the FAQ, `/reference/copilot-credits` or
+  `/account/how-acus-and-on-demand-charges-work` translates ACUs into
+  schematics, nets or parts. **This is the most important unanswerable cost
+  question**, and it is exactly what the user complaints are about.
+- **Two Flux pages contradict each other** on whether Chat consumes ACUs, and
+  **two more contradict each other on export gating** — `data-portability` lists
+  JEP30 unrestricted while Enterprise advertises "advanced export formats" as a
+  differentiator. **Whether EDIF schematic-netlist export is available on a $50
+  plan could not be confirmed**, and it is the one export that would matter.
+- **Pricing is volatile, and here is the primary-source proof.** Flux's own
+  pricing JS bundle contains a hard-coded enum of **16 grandfathered cohorts**:
+  `from_202410, from_202504, from_202601, from_202602, from_202604, from_202606C,
+  from_202606E, from_202606HA, from_202607, from_202607B, from_202609,
+  from_202609L, from_202609R, from_202609RL, from_202609RS, from_202610`. That
+  is **11 repricings in 2026, five of them in September alone.** Any price here
+  is a snapshot with a short half-life.
+
+### The company is alive, well funded, and in active federal litigation
+
+**Shipping hard.** VERIFIED: ~20 blog/changelog posts in October 2026, the most
+recent dated 2026-10-28. No sign of shutdown, wind-down, stagnation or
+acquisition. There *is* a visible pivot in positioning from "AI copilot for PCB
+design" to "AI hardware engineer for the whole device" — expansion, not retreat.
+
+**Funding: $37M total, disclosed 2026-02-27** (Series B led by 8VC plus a
+previously unannounced $10M with Outsiders Fund and Bain Capital Ventures). CEO
+and founder **Matthias Wagner**. RELAYED with a caveat that matters: **the
+Series B amount is reported as $25M, $27M and $30M by different outlets with
+different named leads.** Only the $37M total is safe to quote.
+
+**Traction figures are company-supplied and unverifiable:** "1 million signups,"
+"nearly 6.5 million devices created," "75% of customers had never designed a
+PCB before." Signups and devices-created are the two softest metrics available
+— neither is paying customers or finished boards.
+
+**Active litigation: *Adafruit Industries, LLC, Limor Fried, Phillip Torrone v.
+Defy Gravity, Inc.*, N.D. Cal. 3:26-cv-05480.** VERIFIED by reading the
+CourtListener docket, found because **`adafruit.com/flux` now 302-redirects to
+it**. Declaratory judgment under 28 U.S.C. §2201, filed **2026-06-05**, before
+Magistrate Judge Laurel D. Beeler.
+
+Sequence from the docket: around 2026-05-22 Flux's counsel (Fenwick & West) sent
+Adafruit a demand letter invoking the **Computer Fraud and Abuse Act** and
+demanding Adafruit not publish an article, *"including statements about Flux's
+intellectual property, commercial traction, and user base"* (RELAYED — the
+letter was not published verbatim). On 2026-06-02 Adafruit went public and
+paused its blog; the story hit Hacker News at **684 points / 283 comments**
+(VERIFIED via the HN API), with both Limor Fried and Phil Torrone commenting.
+Adafruit says it accessed *"only information that Flux's own systems made
+publicly available through a server misconfiguration"* and that its reporting
+was responsible disclosure (RELAYED). Adafruit filed with 16 exhibits; Defy
+Gravity moved to dismiss 2026-08-31; the responsive pleading is due 2026-12-02
+with a case-management conference 2026-11-19. **Status: active and unresolved.**
+
+Why this belongs in a technical survey rather than a gossip column, in three
+specific ways:
+
+1. The demand letter sought to suppress statements about Flux's *"intellectual
+   property, commercial traction, and user base"* — **precisely the three claims
+   this section would otherwise relay from Flux.** Treat them accordingly.
+2. An HN commenter flagged that Flux advertises *"the world's largest
+   community-driven public library of Adafruit products, including footprints,
+   symbols, datasheets, and simulation models"* and could not find licensing
+   information (RELAYED, unverified). Given the parties, **library provenance
+   looks like a live question** — relevant if you ever reused a Flux library
+   part.
+3. **A server misconfiguration exposing user data** is directly relevant if you
+   would be uploading private circuit designs.
+
+### Quality: uniformly bad first-hand reports, all five months stale
+
+VERIFIED via the HN Firebase API, so usernames, timestamps and text are exact.
+All from the 2026-06-02 thread.
+
+The most relevant comment in the entire survey, from `karmicthreat`:
+
+> *"I've used Flux.ai before; it was a pretty bad experience. **After about
+> 50-100$ in tokens a couple of times, I couldn't get more than a couple of
+> simple components on the schematic. And not in sensible positions.** The
+> product just grinds tokens for little return… **I had far better luck wiring
+> together KiCad MCP, SKIDL.** … **Placement is probably the big issue that
+> needs to be solved now.**"*
+
+Note exactly what that says: components land, but **not in sensible positions**.
+It is a *placement* failure, not a correctness failure — the thing `lib/schgen/`
+exists to solve — reported by someone who then went and built this repository's
+approach instead.
+
+Others, same thread: *"an absolutely awful product"* (an EE who tried it
+repeatedly); *"i gave them a $100~ bucks and i got like nothing in return"*;
+*"a total waste of time"*; *"not even able to do a basic TSOP LED driver without
+you needing to spend hundreds of dollars to correct its mistakes."* One
+comparatively positive data point: `joshfee` found Flux *"expensive and
+unimpressive"* but got *"a seemingly functional PCB"* from a competing agentic
+workflow — establishing the task class is not impossible.
+
+**Weigh this carefully, in both directions.**
+
+Reasons to discount it: selection bias is severe — every first-hand report came
+from a thread about Flux sending a legal threat to a beloved open-hardware
+company, which selects hard for people who want to say something bad. And **all
+of it predates 2026-06-02**, since when Flux has shipped the MCP server, Chat
+mode, "Flux Adaptive," slash commands, parallel agent threads and roughly twenty
+more things in October alone.
+
+Reasons to take it seriously anyway: the reports are specific, first-hand and
+**consistent on mechanism** — people spent real money and got almost no
+schematic, with placement quality named. The complaint is **structural rather
+than a bug**: ACU metering means failures cost money, and nothing tells you how
+much work an ACU buys, which no shipped feature changes. And **Flux has published
+no counter-evidence** — this survey found no public example of a complete,
+legible, agent-generated Flux schematic reviewed by an engineer in public; the
+one doc page about legibility describes a self-run check whose criteria Flux
+authors.
+
+**The honest summary: the product was unusable for schematics as of June 2026,
+and there is no data since.** A deliberate search for any first-hand Q3/Q4 2026
+report on schematic output quality found none before the search budget ran out.
+That is the biggest gap in the Flux picture.
+
+### One more thing, because it is pointed at this repository
+
+Flux published **"KiCad + Codex Isn't a Team Workflow"** on **2026-10-26**
+(`https://www.flux.ai/p/blog/kicad-plus-codex-not-a-team-workflow`), by its CEO.
+Its core line: *"KiCad + Codex is the equivalent of bolting an AI agent onto VS
+Code."* VERIFIED. Read it as a statement of what Flux thinks its moat is, not as
+a technical critique: **its arguments are collaboration, supply-chain context
+and tool fragmentation. It does not claim the file-based approach produces worse
+boards, and it names no specific technical failure.**
+
+### Verdict for this repository
+
+Flux is **agent-drivable and useless here**, and both halves matter. The MCP
+server is real and well built; the surface it exposes is prose delegation to an
+opaque remote agent that owns both the arrangement and the judgement of whether
+the arrangement is good. There is no KiCad schematic export and, per the one
+person who tried hardest, no way to reconstruct one from the project file. The
+Pultec's authority model — schematic authoritative, model derived — has nothing
+to attach to.
+
+The one genuinely useful technical datum is narrower and more interesting than
+the platform: **`.flx` is JSON and embeds footprints as base64 `.kicad_mod`,
+so Flux's PCB geometry is KiCad-format internally.** The schematic side is not,
+because its connectivity partly lives in net-portal pseudo-elements rather than
+drawn wires.
 
 ---
 
@@ -645,6 +996,451 @@ there is no evidence beyond the landing page. UNVERIFIED throughout.
 
 ---
 
+## Netlist → schematic: the open-source landscape
+
+Delegated research, returned in full and summarised here. Where this section
+says VERIFIED it means the delegated researcher checked a primary source — the
+GitHub REST API, raw file contents, registry JSON, or the arXiv API — and named
+it. Their report distinguished page-fetch summaries from byte-verified reads;
+that distinction is preserved where it changes what you may conclude.
+
+### `schematizer` — the only automatic netlist→`.kicad_sch` placer AND router
+
+`https://github.com/devbisme/schematizer` · PyPI `schematizer`
+
+**This is the find of the survey for this repository's actual problem.** It is
+SKiDL 3.0.0's schematic-generation engine, extracted into a standalone package
+explicitly so that front ends other than SKiDL can use it. From its README
+(VERIFIED, fetched verbatim):
+
+> `schematizer` does the *graphical* half of EDA: it takes a tool-neutral netlist
+> document and does all the drawing work — component placement, wire routing, and
+> writing either editable `.kicad_sch` files or static, cross-linked `.svg` pages
+> for a selected KiCad version (6–10). It is not tied to any particular front
+> end: **any** tool that emits the netlist format can use it.
+
+> **Self-contained.** … no `.kicad_sym` re-parse, no KiCad library access, and
+> **no runtime dependency on skidl**. The only runtime dependency is `simp_sexp`.
+
+**It is not a stub.** VERIFIED by reading the source tree with file sizes: ~617 KB
+of Python, of which `engine/route.py` is **140,684 bytes** and `engine/place.py`
+is **86,362 bytes**, plus `engine/sexp_schematic.py` (60 KB),
+`engine/gen_schematic.py` (33 KB), `geometry.py` (32 KB), `engine/snap.py`
+(25 KB), `engine/decisions.py` (19 KB), `engine/labels.py` (16 KB), a vendored
+`data/power.kicad_sym` (165 KB), and seven test files. A 140 KB router is an
+implementation.
+
+Placement is **force-directed** in four phases; routing is five phases (coarse
+cells, global Manhattan pathfinding, terminal assignment on cell peripheries,
+greedy detailed switchbox routing, concatenation), shortest nets first.
+
+**The input format is fully specified and emittable from TypeScript.** VERIFIED
+by reading `src/schematizer/loader.py` and `tests/data/flat.json`. It validates
+`format == "skidl-generic-netlist"` and `version == 1` and hard-errors
+otherwise. The document carries `symbols` (keyed by `lib_id`, each with
+`draw_cmds` and per-unit `pins` with `x`, `y`, `orient`, `rotation`, `length`,
+`func`), `components` (`ref`, `lib_id`, `value`, `footprint`, `hiertuple`,
+`symtx`, `orientation_locked`, `fields`, `pins`), `nets` (`name`, `code`,
+`stub`, `stub_explicit`, `netio`, `implicit`, `nc`, `attrs.netclasses`, `nodes`)
+and `netclasses`.
+
+Three structural facts change the integration estimate:
+
+1. **Symbol graphics travel inside the netlist** as `symbols[lib_id].draw_cmds`
+   — flattened KiCad s-expressions handed to the writer as-is. This is why the
+   package needs no KiCad library access, and it is also **the main integration
+   cost**: a TypeScript producer must lift `draw_cmds` and pin geometry out of
+   the on-disk `.kicad_sym` libraries once per symbol. Mechanical, but real.
+2. **Multi-unit parts are first class** — `loader.py` builds a unit per entry
+   when a part has more than one, labelled `uA`, `uB`, … Directly relevant to
+   this repository's documented multi-section-package convention and to a valve
+   triode.
+3. **Layout hints are caller-supplied, not inferred** — `symtx` (mirror/rotate),
+   `orientation_locked`, per-net `stub`/`stub_explicit`/`netio`. So the caller
+   retains the arrangement decisions, which is the right side of this
+   repository's invariant.
+
+Two modes, and the second matters here. Default is placed-and-routed. **`--mode
+labels`** produces *"a schematic whose connectivity is exact by construction …
+Parts are placed unrotated on a plain, deterministic grid. There is no placement
+optimization and no wire routing, so it is fast (about 2 s for a 190-part
+design)"* — every connected pin gets a stub to a power symbol or label, NC pins
+get NC flags, and `.kicad_sch` is the only permitted output. `--flatness`
+controls hierarchy from one page per subcircuit (with hyperlinked, back-linked
+SVG children) to everything on one page.
+
+**The caveat that collides with this repository's settled practice.** VERIFIED,
+README, under *"Randomized layout"*:
+
+> Placement starts parts at random positions and the router breaks ties randomly,
+> so the same netlist produces a different — equally valid — drawing on every
+> run. **There is no way to pin a layout down: if you get one you want to keep,
+> keep the generated files.**
+
+`CLAUDE.md` requires derived artifacts to be regenerated every run and compared
+by content. A generator that draws differently every run cannot be held to that.
+Worse, a stated criterion like "the drawing has at most N crossings" becomes a
+per-run lottery rather than a property of the circuit — which quietly breaks the
+"criteria reach the artifact through a channel the producer did not author"
+invariant, because the criterion is no longer testing anything stable.
+**`--mode labels` is deterministic and is therefore the only mode compatible
+with this repository's regeneration discipline**; the placed-and-routed mode is a
+one-shot you capture. Note also KiCad 5 is rejected with an explanatory error;
+`--tool` accepts `kicad6` through `kicad10`.
+
+**Maturity, stated plainly: five weeks old as a public package.** VERIFIED:
+PyPI `0.1.0` 2026-09-24, `0.2.0` 2026-10-13; repo 4 stars, last commit
+2026-10-12. The engine is older — SKiDL's `HISTORY.md` shows schematic
+generation for KiCad 6–9 arriving in `2.2.2` on **2026-04-03** (before which it
+was KiCad-5-only), so the modern capability is about seven months old.
+
+**Its author's own assessment**, from the SKiDL blog (RELAYED through a page
+summariser, not byte-verified): *"Quite frankly, the block placement doesn't look
+great."* And: *"at this point, it's better than what we had (which was nothing),
+but the quality of the schematics still needs improvement."*
+
+### The cautionary datum, and it is the most useful one in the survey
+
+SKiDL issue #318 (`https://github.com/devbisme/skidl/issues/318`, opened
+2026-07-03, closed 2026-07-28). VERIFIED. `generate_schematic` **dropped all
+wiring of non-first units of multi-unit parts**. The part was a `Valve:ECC83` —
+a three-unit valve triode. The reporter's table, verbatim:
+
+| Netlist source | U1 pins present |
+| --- | --- |
+| skidl `generate_netlist()` | 1,2,3,4,5,6,7,8,9 |
+| `kicad-cli sch export netlist` on the generated `.kicad_sch` | **6,7,8 only** |
+
+Quoted: *"Nets dropped from the schematic include every net whose only symbol
+contact was through unit uB or uC (in our case **6 of 11 nets lost or
+truncated**) … an electrically different circuit, **with no error or warning
+during generation.**"*
+
+Three things to take from it, and they are pointed at this repository
+specifically:
+
+1. **It was a valve in a multi-unit package.** The Pultec is a valve EQ and
+   multi-section packages are a documented convention here. This is this
+   repository's shape of circuit, and it is exactly where the tool silently
+   lied.
+2. **It was caught only by a `kicad-cli sch export netlist` round trip.** The
+   generator reported success. That is `docs/schematic/false-greens.md`
+   material contributed by a stranger.
+3. **It is fixed** — SKiDL `2.3.0` (2026-07-28): *"Fixed multi-unit part
+   reference handling so all units share a single base reference rather than
+   compound references."* The class of bug is not fixed. Read the rest of that
+   changelog entry as a maturity gauge: as of mid-2026 the same generator was
+   also emitting `??` for missing power symbols and question marks for
+   references.
+
+**And nobody has an answer for layout preservation.** SKiDL issue #316
+(`https://github.com/devbisme/skidl/issues/316`), opened **2026-06-23**, still
+open, **zero comments** (VERIFIED against the comments endpoint). Titled *"RFC:
+layout-preserving KiCad schematic regeneration"*, it says: *"generated schematics
+often need manual cleanup in Eeschema before they are readable enough for
+debugging, review, and handoff"*; *"A generated schematic may be electrically
+correct but still hard to debug if symbol placement, wire routing, labels, and
+grouping are poor"*; and *"rerunning schematic generation can overwrite manual
+readability improvements made in KiCad, even when the logical netlist has not
+changed."* Four months open, no maintainer response. **No tool in this survey
+preserves a human's or an agent's schematic layout across regeneration.**
+
+### Weave — deterministic, certified, and the architecture to read
+
+*Weave: Verified Netlist-to-Schematic Conversion via Layered Graph Layout*,
+**arXiv:2607.03835**, submitted 2026-07-04 (VERIFIED via the arXiv API). Code at
+`https://github.com/senolgulgonul/weave` — 14 stars, last commit 2026-08-19,
+described as *"SPICE netlist → LTspice .asc · elkjs layout"*.
+
+**It is JavaScript, it uses elkjs, and it is deterministic with a correctness
+certificate.** From its README (VERIFIED, fetched verbatim) — and the middle
+sentence is the design insight:
+
+> The netlist is parsed into components and nets. Nets are classified as
+> **ground, supply rail, or signal**. Signal components become nodes in a graph
+> that **elkjs** lays out with its **layered (Sugiyama)** algorithm, giving
+> left-to-right signal flow and orthogonal wire routing. **Feedback loops,
+> divider legs, hanging shunts, and supply corners are handled as placement
+> patterns rather than graph nodes, which keeps the main signal chain clean.**
+
+That is the problem netlistsvg never solved. **You do not hand the whole analog
+circuit to a layered layout engine. You extract the signal chain as the graph,
+and handle rails, shunts, dividers and feedback as pattern-matched placements
+around it.**
+
+Two more mechanisms worth naming:
+
+> The part that makes Weave trustworthy is the **round-trip verifier**. After
+> generating the `.asc`, Weave parses its own output back into a netlist and
+> compares the connectivity, net by net, against the original. If every net
+> matches, you get a green badge. If some nets differ, you get an honest count of
+> how many need attention.
+
+> **Safe-mode ladder:** … Rather than fail, Weave climbs a ladder of
+> progressively simpler layout modes, switching patterns off one by one down to
+> pure elkjs, and keeps the first result the verifier accepts. Correctness is
+> guaranteed at every rung by the verifier, so a safe-mode result is never wrong,
+> only plainer.
+
+**Note what the safe-mode ladder is, and what it is not.** It degrades the
+*drawing* and reports the rung — it never degrades *connectivity*, because a
+verifier that could have failed gates every rung. That is the legitimate form of
+the thing tscircuit does illegitimately: tscircuit substitutes a label for a
+wire and says nothing; Weave simplifies the layout, proves the connectivity
+survived, and tells you which rung it landed on.
+
+Reported numbers (RELAYED through the arXiv abstract page): 100% compilation
+success and 100% connectivity verification against **Schemato**'s 76% and 0.35
+graph-edit distance; exact connectivity on **88.4%** of 3,460 netlistable
+circuits from Analog Devices' LTspice demo collection, with the remaining
+failures *"confined to a single, well-characterized class of dense multi-pin
+power modules."*
+
+Element coverage is analog-complete for this repository's purposes (VERIFIED
+from the README): R, L, C, V, I, D, BJT and MOSFET including LTspice's 4-node
+substrate export, **JFET**, subcircuits with parameter tails, dependent sources
+`E`/`G`/`F`/`H`, behavioural `B`, switches `S`/`W`, transmission lines `T`, `K`
+coupling, `A` special-function, with SPICE `+` continuations joined.
+
+**Caveats (VERIFIED): output is LTspice `.asc`, not `.kicad_sch` — the wrong
+target.** The repository is also messy: eight timestamped multi-megabyte HTML
+snapshots at top level plus a 3.4 MB `index.html`; it is a single-file browser
+tool, not a library. 14 stars, one author, 2.5 months stale.
+
+**Read Weave's pipeline and verifier design; do not adopt the package.** The
+pattern-matching-around-a-layered-core idea and the safe-mode ladder port
+directly to TypeScript — `elkjs` is live on npm (`0.12.1`, published
+2026-10-28, VERIFIED).
+
+### netlistsvg — real analog support, dormant, and abandoned by its main consumer
+
+`https://github.com/nturley/netlistsvg`. VERIFIED: 836 stars, 55 open issues,
+**last commit 2024-01-25**, last GitHub release `v1.0.2` 2020-12-12, npm
+`1.0.2` published **2020-12-12** — no npm publish in about six years. A
+modernisation PR (#153, `v2.0.0-alpha.1`) was **closed** 2026-03-16.
+
+**It genuinely does analog.** VERIFIED by reading `lib/analog.svg` and
+extracting its 25 cell types: `resistor_h/v`, `capacitor_h/v`, `inductor_h/v`,
+`diode_h/v`, `diode_led_h/v`, `diode_schottky_h/v`, `transistor_npn`,
+`transistor_pnp`, `opamp`, `transformer_1p_1s`, `xtal`, `voltage_source`,
+`current_source`, `vcc`, `vee`, `gnd`, `inputExt`, `outputExt`, `generic`. Its
+ELK config runs **layered, direction DOWN**, with constants and split/join nodes
+disabled. `test/analog/` holds real fixtures including `resistor_divider.json`
+and `common_emitter_full.json`.
+
+**What the input demands of you is the disqualifier.** VERIFIED by reading
+`common_emitter_full.json` in full:
+
+1. **You choose the symbol orientation, not the tool** — cells are typed `r_v`,
+   `c_h`, `q_npn`. Issue #40, *"WIP: Auto orient analog components"*, has been
+   open since **2018-06-04**.
+2. **Power and ground are pseudo-cells you instantiate per attachment point** —
+   the example literally contains `gnd83`, `gnd85`, `gnd89`, `vcc80`, `vcc86`.
+   There is no "GND is special" concept.
+3. **`port_directions` per pin drives the layering** — every passive declares
+   `{"A":"input","B":"output"}`. You hand-feed signal-flow direction per
+   terminal.
+
+So the caller supplies a large part of the arrangement the tool is supposed to be
+doing — and then it emits **SVG only, never `.kicad_sch`**. The symbol set has
+**no potentiometer, no FET of any kind, no switch, no valve, no multi-tap
+transformer, no photoresistor**, and no unit concept, so a dual op-amp is two
+unrelated `opamp` cells. This repository's circuits need most of what is
+missing.
+
+**The trajectory signal is unambiguous.** VERIFIED from SKiDL's `HISTORY.md` for
+`3.0.0` (2026-10-16): *"`generate_svg()` no longer shells out to `netlistsvg`
+(which is no longer a dependency). It now draws the same placed-and-routed
+schematic that `generate_schematic()` produces."* The most prominent
+programmatic-circuit tool in this space used netlistsvg as its renderer and
+dropped it. Its structural analog issues — #31 *"Better horizontal analog
+flow"* (2018), #52 *"Redundant 'Larry' VCCs"* (2019), #68 *"Nets that should
+stay parallel get tangled up"* (2019) — are all still open.
+
+### Dead ends, recorded so nobody re-checks them
+
+| Tool | Status | Why it does not serve |
+| --- | --- | --- |
+| `schemdraw` | 281 stars, **active**, last commit 2026-10-08 | A *drawing DSL*, not a generator. Requires `.right()`, `.down()`, `.at()` placement directives. No netlist import, no KiCad export. |
+| `lcapy` | 305 stars, active, 2026-08-16 | Netlist → CircuiTikZ, and uniquely can annotate node voltages and branch currents from solving the circuit. But layout is **semi-automatic only** — orientation hints required. **No KiCad output.** |
+| `lt2circuitikz` | 117 stars, **2023-03-27** | LTspice `.asc` → circuitikz. Consumes an already-drawn schematic; does **no layout**. |
+| `f18m/netlist-viewer` | 97 stars, 2026-02-26 | SPICE netlist viewer. No KiCad output. Layout algorithm unverified. |
+| `aidangoettsch/asg` | 31 stars, **2020-10-25** | SPICE netlist → schematic, WOSET 2020. Six years stale. Prior art only. |
+| `xschem` | 506 stars, **last commit 2026-10-28** | Very active, full Tcl command surface, but **no netlist→schematic path and no KiCad output**. Its parametric *generator attribute* — `schematic=schematicgen.tcl(buf,4)` makes xschem run a script and read a schematic from stdout — is a genuinely good idea this repository could copy per functional block. |
+| `lepton-eda` (ex-`gschem`) | 268 stars, active 2026-10-27 | Guile-scriptable, hierarchy-aware, but everything points **schematic→netlist**. Not KiCad's format. **UNDER-RESEARCHED** — the Guile examples wiki was not reached. |
+| Horizon EDA | 1,325 stars, active 2026-10-04 | A Python module exists (docs index lists it) but its docs page **404s** and it is not in-repo. **Unassessed.** Native format is not KiCad's regardless. |
+
+**No netlist → circuitikz tool that performs layout was found.** Searched for
+and not located at all: `circuit_tools`, `SPICED`, `Artisan` — absence of
+evidence, not evidence of absence.
+
+### KiCad file libraries: the Python ones are stale, the TypeScript one is not
+
+VERIFIED via the GitHub API and registry JSON by the delegated researcher.
+
+| Library | Lang | Stars | Last commit | Last release | Status |
+| --- | --- | --- | --- | --- | --- |
+| **`kicadts`** | **TypeScript** | 9 | **2026-10-27** | npm `0.0.62`, 2026-10-27, 62 versions since 2025-09-29 | **Active** |
+| `rjwalters/kicad-tools` | Python | 74 | **2026-10-28** | — | Active |
+| `kicad-sch-api` | Python | 57 | 2025-12-05 | PyPI `0.5.6`, 2025-11-19 | Semi-active |
+| `kiutils` | Python | 129 | **2024-05-02** | PyPI `1.4.8`, 2024-02-02 | **Stale ~2.5 yr** |
+| `kicad-skip` | Python | 230 | **2024-02-16** | PyPI `0.2.5`, 2024-02-16 | **Stale ~2.7 yr** |
+
+`kiutils` and `kicad-skip` are *manipulation* libraries — typed s-expression
+trees, no placement, no routing — and both have been untouched across KiCad
+8 → 9 → 10. This independently corroborates the `kicadts` recommendation above:
+it is the only maintained option, in the right language, and its weakness is
+that its user base is essentially tscircuit itself.
+
+### `kicad-schematic-builder` — 0 stars, and its README is the best prose in the survey
+
+`https://github.com/movray/kicad-schematic-builder`. VERIFIED: 0 stars, last
+commit 2026-10-12. Tiny and brand new. Quote:
+
+> Tools like SKiDL describe a circuit as code, but **their generated schematics
+> are hard to read.** kicad-schematic-builder takes the parts from the netlist and
+> **lets you place symbols, wires, labels and power symbols on a grid yourself,
+> like you would in the schematic editor.** Afterwards it **checks with
+> `kicad-cli` that the drawing connects exactly what the netlist says.**
+
+Its API shape (VERIFIED from README) is `sch.place("U1", 100, 100)`,
+`sch.wire(sch.pin("U1","VDD"), (100,80), sch.pin("C1","1"))`, `sch.power(...)`,
+`sch.label(...)`, `sch.write(...)`, then `verify("board.kicad_sch",
+"board.net")`. Wires split where they touch pins, labels and wire-ends with
+**junction dots added automatically**; coordinates snapped to the **1.27 mm
+grid**; symbols resolved **the way KiCad does it** — project `sym-lib-table`,
+then global, then `${KICAD9_SYMBOL_DIR}` — with `extends` flattened as KiCad
+embeds it. Stated limits, verbatim: *"Single sheet, net labels only (no
+hierarchical or global labels yet). The layout is up to you: there is no
+automatic placement or routing. The output is regenerated on every run, edits
+made in KiCad are overwritten."* Developed on a 16-part, 34-net board.
+
+**This is this repository's architecture, written by someone else, in Python, at
+0 stars.** An agent places and routes; a mechanical gate it did not author
+(`kicad-cli` netlist round trip) decides correctness; the artifact regenerates
+deterministically. Do not depend on it. The shape is the point, and `kicadts`
+gives the same primitives in TypeScript.
+
+### LLM schematic-generation research, 2024–2026
+
+All arXiv metadata VERIFIED through `export.arxiv.org/api/query`.
+
+| Paper | arXiv | Submitted | Generates | Code |
+| --- | --- | --- | --- | --- |
+| **Schemato** | 2411.13899 | 2024-11 (v2) | LTspice `.asc` from SPICE netlist — a *drawn* schematic | dataset `Circuits-LTSpice`, 117 netlists; 76% compilation success (RELAYED) |
+| **EEschematic** | 2510.17002 | 2025-10-19 | Schematic diagrams from SPICE netlists. Multimodal, 6 few-shot analog substructure examples, **Visual Chain-of-Thought** refining placement and wiring for clarity and **symmetry** | not verified |
+| **SchGen** | 2605.30345 | 2026-05-28 | *"the first large language model that generates **editable PCB schematics** from natural-language requests"* | not verified |
+| **Weave** | 2607.03835 | 2026-07-04 | LTspice `.asc`, deterministic, certified | **yes** |
+| **AnalogMaster** | 2604.20916 | 2026-04-22 | Image → netlist → sizing → placement → routing | not verified |
+| **PANDA** | 2606.15052 | 2026-06-13 | Intent → topology → sizing → IC layout (not schematic) | not verified |
+
+**SchGen's representation is the idea worth stealing**, and it is close to
+something this repository already does: **schematic editing primitives with
+relative placement and pin-name-based wiring** instead of absolute geometry. That
+is a schematic IR an agent can author and a renderer resolves to coordinates —
+it decouples *arrangement*, which `CLAUDE.md` assigns to the agent, from
+*coordinates*, which belong to the tool.
+
+**The topology-synthesis line is off the critical path** — these emit netlists
+or topologies, not drawings: **AnalogCoder** (PySpice code), **LaMAGIC**
+(2407.18269) and **LaMAGIC2** (2506.10235), **AnalogGenie** (2503.00205,
+ICLR 2025), **CktGen** (2410.00995), **EXPLORE** (2607.13416),
+**AnalogRetriever** (2604.23195). All RELAYED from search listings.
+
+One title is worth chasing for its own sake: *"Validation and Simulation Catch
+Different Errors: Four Levels of Evaluation for LLM-Generated Circuits"*
+(arXiv 2609.26830) — RELAYED, unread, and squarely on this repository's "look at
+the output, not only the tests" practice. Also RELAYED and unread: a 2025 FITEE
+review, *"A review of automatic schematic generation techniques and their
+application to printed circuit boards"* — probably the single best entry point
+to the classical, non-LLM automatic-schematic-generation literature.
+
+### atopile, from this angle
+
+VERIFIED by the delegated researcher: 4,026 stars, `pushed_at` 2026-10-14 but
+**last commit on the default branch 2026-03-11** — about seven months, a
+discrepancy worth noting, since development may have moved to branches.
+RELAYED: atopile deliberately produces **no readable schematic**; it exports a
+netlist and placement groupings to KiCad, ratsnest only. A third-party fork
+(`just1jak/atopile`, 0 stars, last commit 2026-10-19) claims to save a real
+`.kicad_sch` with symbols and nets derived from PCB pad assignments —
+unverified, a personal fork, noted only to close the loop.
+
+**Conclusion: atopile is not a source of schematic-generation capability.** A
+dedicated researcher was also assigned to atopile and JITX; see
+[Not closed](#not-closed) for whether that report arrived.
+
+### One more detail on `circuit-json-to-kicad` that changes its value here
+
+VERIFIED by the delegated researcher reading
+`lib/schematic/getLibraryId.ts`: `lib_id` resolves against the
+**`schematic-symbols` npm package**, not KiCad's stock libraries.
+
+```ts
+import { symbols } from "schematic-symbols"
+function isBuiltinSymbol(symbolName: string): boolean { return symbolName in symbols }
+if (isBuiltinSymbol(schematicComp.symbol_name)) return `Device:${schematicComp.symbol_name}`
+return `Custom:${schematicComp.symbol_name}`
+```
+
+So the output carries `Device:resistor` — tscircuit's name — **not** `Device:R`,
+KiCad's. And the `lib_symbols` graphics are synthesized from tscircuit's own
+primitives. The `.kicad_sch` is valid, self-contained and legible, but its
+symbols are **tscircuit-flavoured rather than KiCad-canonical**: those `lib_id`s
+correspond to nothing in this repository's symbol libraries. For a project whose
+practice is *"verify names against the thing itself — the libraries are on
+disk,"* that is a real mismatch and it must be weighed before adopting the
+converter wholesale. The pipeline is nonetheless 37 files and **196 tests under
+`tests/sch`** (VERIFIED), which is the best available reference implementation.
+
+**Its symbol coverage is good for analog audio and has one gap that matters
+here.** VERIFIED by enumerating `tscircuit/schematic-symbols`: **437 symbol
+files**, roughly 110 distinct symbols with orientation variants. Present:
+`potentiometer` ×3, `transformer_4_winding`, `opamp_with_power` /
+`opamp_no_power`, NPN/PNP, `darlington_pair_transistor`, N/P JFET, N/P-channel
+depletion and enhancement MOSFETs with eight orientation variants each,
+**`light_dependent_resistor`** (this repository's `photoresistor` kind),
+`phototransistor_optocoupler`, SPST/SPDT/DPST/DPDT switches with
+normally-closed variants, push buttons, crystal, resonator, ferrite bead,
+speaker, fuse, varistor, zener, schottky, testpoint, ground/vcc/rail variants.
+**Absent: any vacuum tube or valve symbol.** For a Pultec that is a gap to fill.
+
+### Direct answer to "what takes a netlist and produces a placed, routed `.kicad_sch`"
+
+**Exactly one tool, and it is five weeks old.**
+
+| | `schematizer` |
+| --- | --- |
+| Input | `skidl-generic-netlist` v1 JSON — fully specified, emittable from TypeScript |
+| Output | `.kicad_sch` (KiCad 6–10), or SVG off the same layout pass |
+| Placement | **Yes** — force-directed, 4 phases, 86 KB |
+| Routing | **Yes** — 5 phases, global + switchbox, 141 KB |
+| Hierarchy | Yes, `--flatness` |
+| Deterministic | **No** by default; **yes** in `--mode labels` (no routing) |
+| Maturity | PyPI 0.1.0 2026-09-24; 4 stars; engine ~7 months old |
+| Author's view | *"the block placement doesn't look great"* |
+| Known hazard | Silently dropped 6 of 11 nets on a `Valve:ECC83` as late as July 2026. Fixed. Round-trip or do not trust it. |
+| Needs KiCad libs | No — symbols travel embedded, so **you extract them yourself** |
+
+**Writes `.kicad_sch` but you supply the placement:** `kicadts` (TS,
+2026-10-27), `circuit-json-to-kicad` (TS, 2026-10-28, non-canonical `lib_id`s),
+`kicad-schematic-builder` (Py, real KiCad libs, auto junctions, 1.27 mm snap),
+`kicad-sch-api` (Py, 2025-12), `kicad-skip` and `kiutils` (Py, 2024).
+
+**Does not exist:**
+
+- A KiCad-native programmatic schematic API (see the headline section).
+- A netlist → circuitikz tool that does layout.
+- **Any tool that preserves a human's or an agent's schematic layout across
+  regeneration.** SKiDL #316 asked on 2026-06-23 and got no reply.
+- **Any analog schematic generator that is simultaneously deterministic and
+  emits `.kicad_sch`.** Weave is deterministic and certified but writes LTspice
+  `.asc`. `schematizer` writes `.kicad_sch` but randomizes, except in a mode
+  that does no routing. **That gap is exactly where this repository sits**, and
+  it is the clearest statement in this survey of why `lib/schgen/` exists.
+
+---
+
 ## Smaller and adjacent finds
 
 **`tpecar/nl2sch`** — `https://github.com/tpecar/nl2sch`. Python 3.9+, converts
@@ -669,11 +1465,37 @@ manual visit precisely because "motif-aware placement from a netlist" is this
 repository's problem statement.
 
 **`Seeed-Studio/kicad-mcp-server`** — `https://github.com/Seeed-Studio/kicad-mcp-server`.
-RELAYED from its description: MCP server for KiCad that analyses schematics and
-PCBs, traces pin-level connections, and *"automate[s] design editing"*, for any
-MCP-compatible AI tool. Not investigated further; **UNVERIFIED** and a priority
-lead, since a KiCad-side MCP server with editing is directly on this
-repository's path.
+MIT, Python. RELAYED from a README fetch: 174 stars, 96 commits, active. This is
+the most directly relevant MCP server found, and the most honest about its
+limits.
+
+It exposes two tiers. **Analysis, read-only and solid:** component and net
+listing, symbol search, hierarchy inspection, footprint and track analysis,
+pin-level connection tracing, ERC/DRC via `kicad-cli`, pin-conflict detection.
+**Editing, explicitly experimental:** `add_component_from_library`, `add_wire`,
+`add_label`, `create_kicad_project`, `setup_pcb_layout`, `export_gerber`.
+
+Its README caveat is the quotable one, and it is the fourth independent
+confirmation of this survey's headline finding: *"Schematic editing is
+**experimental**. KiCad has no Python API for schematic editing, so tools use
+manual S-expression manipulation."* It recommends the GUI for design work and
+itself for analysis.
+
+Architecturally it uses three channels, which is itself informative about what is
+possible: `pcbnew` when installed into KiCad's bundled Python (full PCB
+analysis), `kicad-cli` headless for ERC/DRC, and raw s-expression parsing for
+schematic editing and as a PCB fallback. Without the Python setup it degrades to
+text parsing and *"you get basic data (track counts, net names, widths) but lose
+precise lengths, design rules, and signal integrity analysis"* — a degradation
+the README at least names.
+
+**Why it matters here:** `add_wire` and `add_label` over an MCP interface is the
+nearest thing found to "an agent draws a schematic in KiCad." It is experimental
+and it is s-expression manipulation underneath, so it offers no capability
+`kicadts` does not, and `kicadts` is typed. Its genuine value is the
+**read/analysis half**: an agent-facing way to interrogate an existing
+`.kicad_sch` and run ERC, which is the reviewing side of the loop rather than the
+producing side. Not installed or run — **output quality UNVERIFIED**.
 
 **Named in a third-party 2026 survey**, `https://jlcpcb.com/blog/ai-tools-for-ai-pcb-design`
 (published 2026-09-28, updated 2026-10-19), RELAYED and useful only as a list of
