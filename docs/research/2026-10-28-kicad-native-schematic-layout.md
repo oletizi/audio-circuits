@@ -38,6 +38,10 @@ work" fails on a case where X is known to work.
 
 - **VERIFIED** — I read or ran the primary source myself, on this machine or by
   fetching the file. The source is named.
+- **FETCH-QUOTED** — the quote came back from a summarising fetch of the named
+  URL. I did not read the raw page, so the extraction is the tool's, but the
+  page is the primary source and is cited. Weaker than VERIFIED, stronger than
+  RELAYED.
 - **RELAYED** — a secondary source says it and I did not confirm it
   independently.
 
@@ -709,6 +713,64 @@ to adopt.** (The repository's `docs/schematic/generation-prior-art*.md` and
 netlistsvg — on this project's own circuits. Those documents are the measured
 record; this section is a census of the KiCad-specific tooling around them, and
 it finds the same void from the registry side.)
+
+### 5.3 The forum, which is where the plugins outside the PCM get announced
+
+Searched the official KiCad Discourse forum for plugin announcements and scripts
+touching schematic drawing: `[New Plugin] schematic`, `plugin schematic layout`,
+`script to tidy schematic`, `script to place symbols`, `schematic beautifier`,
+`python script schematic place`, `generate schematic script`. **FETCH-QUOTED**
+below means the quote came back from a summarising fetch of the named thread
+rather than from my reading the raw page — a weaker standard than VERIFIED and a
+stronger one than RELAYED.
+
+**What the forum has, which is the same void from a third direction:** the
+plugins announced for "schematic" are all schematic→PCB
+(`ebenolson/kicad-plugin-arrange-like-schematic`, 2018-07-20;
+`ian-ross/kicad-plugins` "Schematic Positions To Layout", 2020-06-22), plus
+`plotkicadsch` (renders a sheet to SVG and diffs it — a viewer), and
+`kisch — KiCad schema transformation tool` (2026-02-06, external). **Searching
+for a schematic beautifier returns two threads and neither is one.**
+
+**The single most useful practitioner statement found in this whole pass** is
+`bobc` (Bob Cousins, long-time KiCad contributor and author of
+`kicad-symgen`), 2018-10-21, thread *"How to import a KiCad netlist into KiCad
+(EEschema)?"* <https://forum.kicad.info/t/how-to-import-a-kicad-netlist-into-kicad-eeschema/13178>
+— **FETCH-QUOTED**:
+
+> "I have code to read netlists and write schematics, but **getting it to
+> generate even a dumb schematic is not trivial.** For example, you also to need
+> to read in the symbols used, find the location of the pins, allowing for the
+> symbol may have been rotated or mirrored, and then place labels at each of the
+> pins."
+
+**Read what he is and is not saying, because it is a precise and useful
+distinction.** He is not saying the *aesthetics* are hard. He is saying the
+**mechanics** are: resolving a symbol from a library, finding its pin
+coordinates, composing that with the symbol's rotation and mirroring, and
+landing a label on each pin. That is the work a schematic generator has to do
+before any question of layout quality arises — and it is work this repository's
+`lib/schgen/` already does. **An external observer's account of the hard part
+turns out to describe the plumbing, and the plumbing is the part KiCad's
+missing API made expensive.**
+
+And the status question, answered on the forum as recently as last year —
+`eelik` (forum moderator), **2025-03-16**, asked whether a symbol can be placed
+into the open schematic editor from the CLI
+(<https://forum.kicad.info/t/add-place-a-symbol-into-current-eeschema-gui-windows-from-cli/59521>),
+**FETCH-QUOTED**:
+
+> "Short answer: no. That would mean a scripting framework API, and that will
+> come later, maybe in v.10 or 11 for the schematic editor."
+
+Which is §1.4 and §3.3 restated by someone who answers these questions for a
+living, eighteen months before KiCad 11.
+
+One more, for the user-visible shape of the architecture — a user in 2023,
+thread *"Schematic block plugin — How is it meant to work?"*, on finding a
+plugin whose name mentions schematics: *"It's strange that it's called this, as
+far as I know **plugins only appear in PCBnew**."* **FETCH-QUOTED.** That is
+§3.2 as an ordinary user experiences it.
 
 ---
 
