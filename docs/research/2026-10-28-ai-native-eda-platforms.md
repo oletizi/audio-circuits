@@ -24,6 +24,35 @@ are listed in [Not closed](#not-closed) rather than quietly dropped.
 
 ---
 
+## The whole survey on one screen
+
+The brief asked five questions of each candidate. Here they are, answered. The
+long sections below carry the evidence; this table carries none and should not be
+quoted without it.
+
+**"Agent-drivable"** means an agent can invoke it today without a human in the
+loop per run. **"Readable schematic"** means a drawing a person could build from
+at a bench — not a netlist, and not a wall of net labels.
+
+| | Agent-drivable today | Produces a readable schematic | KiCad schematic out | Maturity |
+| --- | --- | --- | --- | --- |
+| **Flux.ai** | **Yes** — real MCP server, `agent` scope, verified at protocol level. But prose delegation only, no construction primitives | Claims to; no public evidence. All first-hand reports (≤ Jun 2026) say placement is unusable | **No.** EDIF netlist only — no geometry. One-way door | Shipping hard, $37M, no free tier, $50/mo entry, in active federal litigation |
+| **tscircuit** | **Yes** — headless CLI + eval, published daily | Partly. Silently degrades failed wire routes to net labels; no error record exists for it | **Yes** — `circuit-json-to-kicad`, but with tscircuit-flavoured `lib_id`s | Very mature and very active. Disqualified here on the degradation, not on maturity |
+| **`schematizer`** | **Yes** — CLI, neutral JSON input | **Yes, and it places and routes** — the only one that does | **Yes**, KiCad 6–10 | **Five weeks old.** Non-deterministic by design. Author: *"the block placement doesn't look great"* |
+| **Copperhead** | **Yes** — CLI + in-tree MCP server | Yes by design: deterministic engine + a 13-family legibility gate | **Yes** — edits `.kicad_sch` directly | Apache-2.0, 666 stars, active — and *"acceptance tests… have not been observed passing end to end"* |
+| **Koppar** | **Yes** — hosted MCP, 64 tools, `submit_circuit` | Claims to; zero legibility evidence; all claims are about copper | **Yes**, claimed — full KiCad projects | Plugin repo has 2 commits. Server-side, closed. Paid plans launch 2027 |
+| **ProtoFlow** | Vendor claims CLI + MCP; **neither located** | Claims to | Claims KiCad export, ungated | Plausible; heavy SEO-farm signals, unverified logo wall, no team named |
+| **`kicadts`** | n/a — a library | n/a — you draw | **Yes**, read and write, typed | MIT, 229 commits, published 2026-10-27. **The serializer to use** |
+| **Weave** | Partly — browser tool with a Node batch runner | **Yes**, with a round-trip correctness certificate | **No** — LTspice `.asc` | 14 stars, one author, stale 2.5 months. **Read it, don't adopt it** |
+| **netlistsvg** | Yes | No — block-diagram grade, SVG only, you supply orientation | **No** | **Dormant since 2024-01.** SKiDL dropped it 2026-10-16 |
+| **atopile** | Driving `ato build` only — **the MCP server was removed** in 0.15.9 | **No, by stated thesis** — *"Schematics are pictures"*. "Prism" is a viewer with no designators or values | **No.** Writes `.kicad_pcb` directly; the only `.kicad_sch` code is a *reader* | 4k stars, MIT, YC W24 — and the open line is soft-deprecated, the repo 6 months stale, and the build needs an account |
+| **JITX** | **Yes, best in survey** — official Claude Code + Codex skills, headless CLI, `--format json`, `--dry` | **Yes, inside JITX** — multi-page, title blocks, author tables, hierarchical diagrams | **Probably not.** `legacy-kicad` exporter exists; **0 of 443 doc pages mention KiCad**; one weak report says PCB only | Proprietary, license server, active. Free tier **requires your designs be open hardware** |
+| **Coppr** | **No** — pre-launch | Claims to | Claims KiCad-compatible | Landing page and a waitlist |
+| **Quilter / Diode / CircuitMind / Zener** | see [Not closed](#not-closed) | — | — | Delegated; report pending at time of writing |
+
+**And the one answer that governs all of them:** nothing in this table writes a
+KiCad schematic *through KiCad*. They all write the file.
+
 ## The finding that reframes the whole survey
 
 **You cannot write a KiCad schematic through KiCad's API. Every tool that
@@ -232,19 +261,103 @@ failure inserts a `schematic_net_label` that is indistinguishable from one the
 author asked for. There is no schematic error record type in the system. The
 tool knows how to be loud; it is loud about copper and quiet about drawings.
 
-`_schDirectLineRoutingEnabled` — the escape hatch the September decision
-identified — is **still unreachable**. VERIFIED: it is read in core
-(`Trace_doInitialSchematicTraceRender.ts:349`, as
-`trace.getSubcircuit().props._schDirectLineRoutingEnabled`) and `grep -rn
-"schDirectLineRouting" props/lib` returns **nothing** at props HEAD. The
-September finding that zod's default `strip` mode removes it before it reaches
-core therefore stands unrefuted; this writer did not re-run it empirically, so
-treat the *mechanism* as RELAYED from the earlier decision and the *absence from
-the schema* as VERIFIED.
+### The September decision's stated MECHANISM is wrong, and the escape hatch is reachable
 
-**Nothing in the September decision has been refuted. The disqualifying property
-is intact, it covers one more connection class, and there is a second instance
-of the same pattern that the decision did not know about.**
+This is the one place where the earlier decision is refuted, and it is recorded
+here rather than quietly corrected because the refutation is useful.
+
+The September decision said of `_schDirectLineRoutingEnabled`: *"it is absent
+from `@tscircuit/props` and props parse in zod `"strip"` mode, so it never
+reaches core."* **The first clause is right, the second is right, and the
+conclusion does not follow.**
+
+Three checks, each of which could have failed:
+
+1. **Absent from the schema.** VERIFIED: `grep -rn "schDirectLineRouting"
+   props/lib` returns nothing at props HEAD.
+2. **Zod does strip it.** VERIFIED empirically, not inferred — installed
+   `@tscircuit/props@0.0.715` and ran `groupProps.parse()` on an input carrying
+   both flags:
+
+   ```
+   keys surviving parse: name, schTraceAutoLabelEnabled, subcircuit
+   _schDirectLineRoutingEnabled present after parse: false
+   schTraceAutoLabelEnabled present after parse: true = true
+   ```
+
+3. **But core does not read the parsed props.** VERIFIED from
+   `core/lib/components/base-components/PrimitiveComponent/PrimitiveComponent.ts:214-219`:
+
+   ```ts
+   constructor(props: z.input<ZodProps>) {
+     super(props)
+     this.children = []
+     this.childrenPendingRemoval = []
+     this.props = props ?? {}              // <- the RAW, unparsed object
+     const zodProps = getConstructionPropsSchema(this.config.zodProps)
+     const parsePropsResult = zodProps.safeParse(props ?? {})
+     if (parsePropsResult.success) {
+       this._parsedProps = parsePropsResult.data   // <- stripping happens HERE only
+   ```
+
+   And the call site reads **`.props`**, not `._parsedProps`
+   (`Trace_doInitialSchematicTraceRender.ts:349`):
+
+   ```ts
+   if (trace.getSubcircuit().props._schDirectLineRoutingEnabled) {
+     Autorouter = DirectLineRouter as any
+     skipOtherTraceInteraction = true
+   }
+   ```
+
+**So the flag reaches core.** Zod's strip removes it from `_parsedProps` and
+leaves `.props` untouched, and `.props` is what this branch consults. The
+September decision inferred unreachability from a stripping behaviour that is
+real but applies to the wrong object.
+
+**What that buys, and why it does not rescue tscircuit.** Selecting
+`DirectLineRouter` happens *before* the routing attempt, and the label branch
+fires only on `results.length === 0`. A direct-line router does not return zero
+results, so **the failure-path label substitution would not fire at all.** With
+`schTraceAutoLabelEnabled` left at its default (off), the complexity-threshold
+substitution does not fire either. You would get wires, always.
+
+They would be straight lines, drawn without obstacle avoidance, through symbol
+bodies where the geometry demands it. That is not "loud" in the sense of an error
+record — but measured against the September decision's own standard it is a
+different and better failure: *"A tool that fails loudly is workable. One that
+disguises failure as a design decision cannot be verified by looking."* **A line
+through a transistor's body is visible on inspection. A plausible net label is
+not.** The disguise is what was disqualifying, and this removes the disguise.
+
+**Four caveats, because this is a code-path reading and not a demonstration:**
+
+- **This writer did not run a tscircuit circuit end to end.** The claim verified
+  is that the flag reaches the branch; that `DirectLineRouter` then produces
+  acceptable geometry on a real analog sheet is **UNVERIFIED** and is the
+  obvious next experiment.
+- `setProps` reassigns `this.props = newProps` from the **parsed** result
+  (`PrimitiveComponent.ts:235`), so the raw key is lost if `setProps` is ever
+  called on that subcircuit. The flag survives construction, not mutation.
+- It is off-schema, so TypeScript rejects it and passing it needs a cast —
+  which `CLAUDE.md` forbids outright ("Never bypass typing: no `any`, no
+  `as Type`"). Depending on an undeclared, underscore-prefixed prop that the
+  vendor's own types disown is depending on an implementation detail.
+- The call site itself already carries `DirectLineRouter as any`, which is a fair
+  indication of how supported this path is.
+
+**The decision's conclusion survives; its reasoning does not.** The
+disqualifying property is intact, it covers one more connection class than
+recorded, there is a second instance of the same pattern the decision did not
+know about, and the escape hatch it believed unreachable is reachable by a route
+this repository's own typing rules forbid. The honest summary is **not** "there
+is no way to make it loud" but: *there is a way to stop it lying, it is
+unsupported and untyped, nobody has run it, and it substitutes visibly-bad
+geometry for invisibly-wrong labels.*
+
+`docs/decisions/2026-09-21-why-not-tscircuit.md` should be amended with this
+correction. It is left to a deliberate edit rather than done here, because
+amending a decision record is not a research task.
 
 ### What a consumer CAN do, which is worth recording
 
@@ -752,6 +865,451 @@ provide.
    unsupported" lib/` returned **nothing**, which means the README has no
    limitations section *and* the code carries no markers — so the honest
    statement is that **its gaps are undocumented**, not that there are none.
+
+---
+
+## atopile — anti-schematic by thesis, and the open-source line is being wound down
+
+`https://atopile.io` · `https://github.com/atopile/atopile` · PyPI `atopile`
+
+Delegated research, which downloaded and grepped the shipped 0.15.9 source
+distribution rather than trusting the docs, **because for atopile the docs, the
+UI, the GitHub repo and the shipped package all disagree.**
+
+### The finding that reframes the rest: the open-source repo is not the product
+
+VERIFIED:
+
+- `github.com/atopile/atopile` default branch HEAD is `619eda7`, dated
+  **2026-03-11**. A query for commits on `main` since 2026-06-01 returns **zero**.
+- GitHub releases stop at `v0.14.1004` (2026-02-12). **There is no `v0.15.*` tag
+  in the repo at all.**
+- PyPI's latest is **0.15.9, uploaded 2026-09-12**. The shipped release is about
+  six months ahead of the public git history.
+
+And they say so themselves, from their blog of 2026-08-06 (VERIFIED by rendering
+the page — it is a client-rendered SPA and `curl` returns an empty shell):
+
+> *"We recently merged our open-source and closed-source code into a single
+> repository to improve development velocity. **As a result, the public
+> repository has become stale, despite us working full-time on the project.**"*
+
+The same post announces the pivot — *"atopile 0.16 now runs the full IDE in your
+browser: app.atopile.io"* — and the wind-down: *"We are **soft-deprecating the
+0.15 line**… it is not a second product line that we will maintain indefinitely.
+We will announce a removal date in the future."* What stays open is *"the
+compiler and graph core"*; what is closed includes *"the browser-based IDE and
+our improved agent harnesses."*
+
+**So the thing you would evaluate — a local CLI writing files into your git
+repo — is the line being deprecated. The investment is in a hosted, login-gated
+browser IDE.**
+
+### Does it generate a readable schematic? No, and that is the product thesis
+
+**VERIFIED by enumerating every `@muster.register(...)` build target in
+`src/atopile/build_steps.py` of the 0.15.9 sdist.** The complete list is
+`resolve-dependencies`, `init-build-context`, `modify-typegraph`,
+`instantiate-app`, `prepare-build`, three `post-instantiation-*` checks,
+`load-pcb`, `picker`, `prepare-nets`, `post-solve-checks`, `update-pcb`,
+`post-pcb-checks`, `build-design`, `bom`, `step`, `glb`, `3d-image`, `2d-image`,
+`mfg-data`, `manifest`, `variable-report`, `pinout`, `power-tree`, `stackup`,
+`datasheets`, `data-interface-layout`, `default`, `all`,
+`collect-manufacturing`.
+
+**There is no schematic target.** The only drawing-shaped artifact in the entire
+build is `power-tree`, which emits a **Mermaid** file. `pinout`, `stackup`,
+`variable-report` and `data-interface-layout` are all JSON.
+
+**And there is a trap here worth recording, because it would fool an evaluator.**
+The only `.kicad_sch` references in shipped non-test code form a *detector*, not
+a writer (`src/atopile/model/manufacturing.py:196`):
+
+```python
+kicad_sch_path = build_dir / f"{target}.kicad_sch"
+if kicad_sch_path.exists():
+    outputs.kicad_sch = str(kicad_sch_path)
+```
+
+It surfaces a `.kicad_sch` for download *if one happens to be sitting in the
+build directory*. Nothing in the build puts one there. Meanwhile the UI's
+file-type table lists `{type: 'kicad_sch', label: 'KiCad Schematic', …,
+available: true}` — **a download affordance for a file the build never
+produces.** Looking only at the UI would have concluded the feature exists.
+
+**The request was filed and closed as stale.** Issue #1472, *"Artifact: Generate
+kicad schematic"*, opened 2025-08-28 by an atopile org member, asking for exactly
+the minimum viable thing:
+
+> *"Generate basic functional kicad schematic that doesn't use wires (just
+> netlabels). Motivation: review; checking low level connections (electrical);
+> **communicating with people outside the team (who don't use ato)**."*
+
+Closed 2026-08-06 with *"Closed stale issue opened by atopile org member."*
+Note a trap: GitHub's `state_reason` field reads `completed`, which is
+misleading — the human comment says stale. An earlier PR, #537 *"KiCAD Schematic
+Generation"* (2024-11-18), described as *"the base of something that needs
+on-going work to produce schematics EEs will be happy with"*, is also closed, and
+nothing of it survives in 0.15.9.
+
+**The 2024-era viewer was removed outright.** The March 2026 snapshot had
+`ato view` and `src/atopile/visualizer/web/` with `GraphScene.tsx`,
+`NodeMesh.tsx`, `EdgeLines.tsx` — a force-directed graph of nodes and edges, no
+symbol library, no wire router, no sheet. In shipped 0.15.9 **both the verb and
+the directory are gone.**
+
+**The new claim is "Prism", and the screenshot was examined rather than
+believed.** VERIFIED by rendering atopile.io today: *"**Prism draws the
+schematic**, power tree, system view and pinout straight from the code."* The
+delegated researcher downloaded the marketing screenshot
+(`atopile.io/prism-schematic-g1v4q5zn.png`, 1812×888) and looked at it, per this
+repository's own rule. The honest assessment:
+
+- It **is** a genuine symbol-and-wire drawing — op-amp triangles with `+`/`−` on
+  the correct pins, zigzag resistors, a capacitor, GND bars, junction dots, a
+  hierarchical signal label, a dot-grid canvas.
+- **But there are no reference designators and no values anywhere.** Op-amp
+  units are labelled by instance path (`front.a`, `front.b`, `back.a`); every
+  resistor and the capacitor is **completely unlabelled** — no `R1`, no `10k`.
+- No title block, no sheet border, no page boundary; the drawing runs off the
+  edges of the frame.
+
+**It is a navigable inspection view of the netlist, not a document you could
+hand someone to stuff a board from**, because it carries neither designators nor
+values. Against the five output classes it does not satisfy "schematic" as a
+deliverable. Whether Prism can export anything at all is **UNVERIFIED** —
+nothing in the open tree implements it and `app.atopile.io` is login-gated.
+
+**They invest in the opposite direction.** VERIFIED: 0.15.9 contains a
+substantial new subsystem absent from the stale GitHub tree —
+`src/faebryk/libs/eda/` with `kicad/convert/schematic/`,
+`altium/convert/schematic/`, `hl/models/schematic.py`, exposing
+`read_kicad_schematic_to_hl(path)` and `convert_schematic_to_netlist`. It
+**reads** `.kicad_sch` and Altium `.SchDoc` into atopile. There is no write path.
+It serves an Altium-import funnel. Their investment is in consuming other
+people's schematics, not producing any.
+
+**And the thesis, stated plainly on their homepage** (VERIFIED):
+
+> *"**Schematics are pictures. AI can't reliably read, check or change them.**"*
+
+with a benchmark table claiming *"Schematic PDF 117k tokens / 5.5 min / 55%
+correct"* against *"Code 14k / 15 s / 100%"*, measured on a 70-component
+battery-management board, five "which pins share a net?" questions, four frontier
+models, two runs each, September 2026.
+
+**This is the answer to the brief's question.** Schematic generation is not a
+roadmap gap; it is the thing atopile's pitch is positioned against. Do not expect
+them to build it.
+
+### KiCad integration, precisely — and the brief's prior was out of date
+
+VERIFIED from source, and it corrects the brief's stated assumption:
+
+- **atopile writes the `.kicad_pcb` directly.** `update-pcb` loads the existing
+  PCB through their Zig s-expression parser, mutates the object graph, and dumps
+  it back.
+- **It does NOT emit a `.net` netlist for pcbnew to import.** `config.py`
+  reserves a path and `set_kicad_netlist_path_in_project()` only writes
+  `project.pcbnew.last_paths.netlist` into the `.kicad_pro` as a GUI
+  convenience. Nothing in the build writes a netlist. **It did once** — issue
+  #824 *"Fix `apply_netlist`"*, Jan 2025 — and that approach was replaced by
+  direct PCB transformation. So "generates a netlist consumed by pcbnew" was
+  true and is no longer how it works.
+- **There is a KiCad plugin**, `src/atopile/kicad_plugin/`, and its job is
+  **layout reuse, not schematic**: the build emits a `.layouts.json` mapping
+  module addresses to reusable `.kicad_pcb` layouts, and a "Pull Group" plugin
+  syncs PCB groups to the module hierarchy so a sub-module is laid out once and
+  replicated. Genuinely clever, and orthogonal to schematics.
+- **Can you open the result in eeschema? No — there is nothing to open.**
+
+### The agent story regressed, which is the opposite of what you would expect
+
+- **There WAS an MCP server.** VERIFIED in the March 2026 tree:
+  `src/atopile/mcp/mcp_server.py`, CLI verb `ato mcp start --no-http`, exposing
+  `build_project`, `search_and_install_jlcpcb_part`, `install_package`,
+  `verify_package`, `inspect_library_module_or_interface`,
+  `get_library_modules_or_interfaces`, `inspect_package`, `find_packages`,
+  `find_project_from_filepath`. The VS Code extension auto-installed it and also
+  wrote a Cursor/Claude-style rules file.
+- **It is GONE in shipped 0.15.9.** VERIFIED: grepping the full sdist for `mcp`,
+  `modelcontextprotocol` and `mcp_server` across `.py/.ts/.tsx/.toml` returns
+  **zero hits**, and `find -iname "*mcp*"` finds nothing. The 0.15.9 verb list is
+  `build`, `inspect`, `sync/add/remove`, `dependencies`, `create`, and hidden
+  `package`/`lsp`/`kicad-ipc`/`dev`, plus `serve`, `auth`, `validate`. No `mcp`,
+  no `view`.
+- **It was replaced by an in-house agent behind their own gateway.** VERIFIED:
+  `src/atopile/agent/gateway.py`'s docstring reads *"Gateway client — single
+  auth point for all requests to **gateway.atopile.io**"*, and it points
+  `AsyncAnthropic` and `AsyncOpenAI` at base URLs resolving under that gateway,
+  with `DEEPPCB_BASE_URL` for autorouting. **Their agent calls Claude and GPT
+  through atopile's proxy, billed against atopile's token allowance, not your
+  key.** Free users get *"a considerable number of agent tokens: comparable to a
+  $20 monthly subscription."*
+
+An external agent driving atopile today drives `ato build` as a subprocess and
+nothing more.
+
+Worth noting for its own sake: the repo is developed with Claude Code — a
+top-level `CLAUDE.md`, an `AGENTS.md`, and **22 skills under `.claude/skills/`**
+(`agent`, `ato-language`, `compiler`, `fabll`, `faebryk`, `graph`, `lsp`,
+`pyzig`, `sexp`, `solver`, `planning`, `code-review`, …).
+
+### The build is not hermetic, and that dependency has already failed hard
+
+This is the strongest cautionary datapoint in the entire survey, and it is
+pointed straight at a practice this repository already holds.
+
+- **`ato build` requires an account.** VERIFIED from
+  `src/faebryk/libs/picker/api/api.py:59` — `get_auth_token()`, and a refusal
+  telling you to `ato auth login`. **You cannot build a board offline or
+  anonymously.**
+- **That dependency broke for 19 days.** VERIFIED, issue #1829 (2026-07-19):
+  `components.atopileapi.com` and `packages.atopileapi.com` went **NXDOMAIN**,
+  and *"the picking stage retries for ~3 minutes, then the build dies — even
+  with `--keep-picked-parts`, and even for boards whose parts were all previously
+  picked."* The reporter noted *"no released version escapes it"*. Four duplicate
+  issues were filed. A maintainer closed it as a false alarm, then reopened it
+  (*"I agree, it's a real issue. Sorry for closing it!"*). A user in-thread,
+  2026-08-03: *"I've been looking into it a little bit and it seems **the
+  project might be dead**… I've got a pile of designs I really don't want to have
+  to draw up old-fashioned schematics for."* atopile's own admission: *"The
+  components service used by older releases was retired before a clear migration
+  path was in place… **that was our mistake**."*
+- **VERIFIED by direct test today, 2026-10-28:** `components.atopileapi.com` and
+  `packages.atopileapi.com` **still do not resolve**. `legacy.atopileapi.com`,
+  the new default in 0.15.9, resolves and returns **HTTP 401**. **Every atopile
+  release at or below 0.15.7 is permanently unbuildable**, three months on.
+
+**Against that, this repository's insistence that KiCad is a local, required,
+compiler-like dependency reads as the correct call rather than a limitation.**
+`CLAUDE.md` says to treat KiCad "the way you would a compiler: required, and not
+something to engineer around." atopile engineered around a local parts library
+and the vendor's DNS took the build with it.
+
+### Maturity, and the community's own objection
+
+VERIFIED: 4,026 stars, 256 forks, 37 contributors, 29 open issues, created
+2023-12-19, MIT, Python+Zig, YC W24, Python pin `>=3.14,<3.15` (aggressive).
+PyPI cadence was brisk through April 2026 (0.15.0–0.15.7 all in one month) then
+**two releases in six months**. No public pricing page (`/pricing` 404s).
+
+Issue-tracker health is a mixed signal. VERIFIED: of the 15 most recently created
+issues the 11 newest are all open, several substantive and unanswered — *"`ato
+build` silently converts blind/micro vias to through vias"* (#1840, zero
+comments); a Windows wheel crashing on import with an illegal instruction
+(#1838, zero comments); duplicate UUIDs across part instances breaking the board
+(#1834, zero comments).
+
+And #1843, filed **two days before this survey**, which is worth quoting because
+it is a user arriving at the same conclusion from the outside:
+
+> *"a few months later, when I actually began working on it I've realized that
+> **CLI is deprecated. Everything is hidden behind an account, repositories are
+> dropped, domains changed. Nothing is open-source about a CLI that talks to a
+> closed-source server.**"*
+
+Unanswered by maintainers as of today.
+
+**Third-party adoption could not be measured credibly, and the researcher said
+so.** A GitHub code search reports 2,320 files named `ato.yaml`, but the listed
+repositories were dominated by false positives (`DataDog/integrations-core`,
+`librenms/librenms`, `prebid/prebid-server`). **Do not quote 2,320.** The only
+unambiguously real atopile projects in the sample were atopile's own —
+`spin-servo-drive` (128 stars, 63 `.ato` files), `hil` (103 files), `nonos`,
+`cell-sim`, `ai-pin`, and `atopile/packages` (1,712 `.ato` files, the first-party
+library).
+
+### One thing worth copying outright
+
+**atopile's `--frozen` build.** VERIFIED from `build_steps.py`: `update_pcb`
+does a `kicad.compare_without_uuid(original, updated)` diff and, under
+`--frozen`, writes `.original.kicad_pcb` / `.updated.kicad_pcb` and **raises with
+a markdown diff table** rather than silently rewriting. That is *"derived
+artifacts are regenerated every run and compared by content, never by
+timestamp"* implemented as a loud refusal, with the UUID noise excluded so the
+diff is readable. It is the right shape for this repository's generated
+artifacts.
+
+---
+
+## JITX — the brief was wrong twice, and the second correction matters
+
+`https://www.jitx.com` · `https://docs.jitx.com` · `https://github.com/JITx-Inc`
+· PyPI `jitx`
+
+### Correction 1: it is not Stanza-based any more
+
+VERIFIED. **JITX's current product is Python.** `pip install jitx` gives
+**4.4.3, uploaded 2026-10-01**, requiring Python ≥3.12. Every active repo in the
+`JITx-Inc` org is Python (`py-jitx-mechanical` pushed 2026-10-27, `jitx-skills`
+2026-10-24, `jitx-examples`, `jitx-pnp`, `jitx-refdes`, `py-jitx-dxf`,
+`jitx-emn-importer`); the `stanzapm` repo — their fork of L.B. Stanza — was last
+pushed **2025-09-16** and sits unmaintained. The current 443-page documentation
+set contains the word "stanza" on **three pages**, all stray leftovers. The
+legacy VS Code extension is still called **"JITX-3"**, frozen at v3.36.1
+(2026-01-20), while the product moved to v4.
+
+**Any Stanza-based evaluation you have read describes a previous product.**
+
+Architecture, VERIFIED: `jitx` (pure Python, 381 KB wheel) is a **thin client**.
+It depends on `jitxcore` (protobuf datastructures) and talks over a **websocket**
+to a separately installed proprietary **"launcher"** binary holding the solver,
+schematic engine, autorouter and CAD exporters. Your Python is translated to
+protobuf (`jitxcore._proto.design_pb2`, `schematic_pb2`) and submitted.
+
+### Correction 2: JITX IS schematic-centric — and probably still cannot give you a `.kicad_sch`
+
+The brief suspected JITX goes code → PCB with schematics secondary. **That is
+wrong about JITX's internals and probably right about its deliverables**, and
+the gap between those two is the finding.
+
+**Schematics are first class inside JITX.** VERIFIED by enumerating the docs TOC:
+there is an entire **Schematic View** section plus **Schematic UI Commands** —
+37 pages — covering Group Change Page, Group Merge, Group Replication, Group
+Split, **Hierarchical Diagram**, Net Merge, Net Split, Organize Ports, Schematic
+Groups, Transforms, and commands including `add-page`, **`edit-sheet-title`**,
+`page`, `pages`, `replicate`, `select-net`, `select-wire`.
+
+**And the Python API has drawing-sheet furniture**, which only exists if you are
+producing an engineering drawing. VERIFIED from
+`docs.jitx.com/en/latest/api/jitx.schematic.html` and confirmed live in the
+shipped wheel (`jitx/_translate/schematic.py` marshalling into
+`schematic_pb2.AuthorCell/AuthorRow/AuthorTable`): `SchematicTemplate`,
+`AuthorTable`, `AuthorRow`, `AuthorCell`, `DataCell`, `TableCell`,
+`SchematicTitlePage`, `SchematicMarking`.
+
+**Symbols are authored with real geometry**, at the level `lib/schgen/` works
+at. VERIFIED, verbatim from their Altium compat docs:
+
+```python
+class MyGroundSymbol(Symbol):
+    gnd = Pin(at=(0, 0), direction=Direction.Up)
+    vertical = Polyline(width=0.1, points=[(0, 0), (0, -1)])
+    horizontals = [ Polyline(width=0.1, points=[(-0.5, -1), (0.5, -1)]), ... ]
+    def __init__(self):
+        AltiumSymbolProperty(AltiumSymbol.PowerGndPower).assign(self)
+```
+
+**The export surface is documented in the package metadata and nowhere else.**
+VERIFIED, verbatim from `jitx-4.4.3.dist-info/METADATA`:
+
+> `jitx design export [DESIGN] --to FORMAT` — Exports a loaded design to a CAD
+> format (`--to {kicad,altium,edx,xml,odb,step}`) via the runtime.
+
+And the KiCad exporter is registered as **`legacy-kicad`** in
+`jitx/_runtime/_legacy_plugins.py`, which sends a websocket message
+`("des", "export-cad", {...})` into the closed runtime — **so the actual file
+writing happens inside the proprietary launcher and cannot be read.**
+
+**Here is the strong negative signal, and it is a check that could have failed.**
+The delegated researcher downloaded the Sphinx `searchindex.js` for the entire
+current documentation set — 443 documents — and searched the full-text term
+index:
+
+| Term | Documents |
+| --- | --- |
+| `kicad` | **0** |
+| `gerber` | **0** |
+| `edx`, `xml`, `dxf`, `emn`, `idf` | **0** |
+| `odb` | 2 (release notes + an architecture doc) |
+| `cad` | 4, none an export guide |
+| `altium` | has a real API page |
+
+**`jitx.com/plans` advertises "KiCad integration" as included even in the free
+tier, and 443 pages of current documentation do not mention KiCad once.** The
+exporter exists in code and is labelled "legacy."
+
+The only external datapoint on what it writes is weak and the researcher flagged
+it as such: a single hobby repo's issue (`ihsinoky/he-piantor-42` #45) claims
+`legacy-kicad` produces **`.kicad_pcb` only**, one-way, no round-trip. RELAYED,
+from one anonymous repo with machine-generated-looking issue titles, read as a
+summary. **It is the only evidence available and it says PCB, not schematic.**
+
+**Verdict: treat "JITX gives me a `.kicad_sch`" as unproven and likely false, and
+"JITX gives me a schematic PDF" as undocumented.** Altium gets first-class
+schematic-symbol support; KiCad gets a legacy exporter nobody documents. If JITX
+is pursued, that is the first question to put to them, and it is the one thing
+443 pages do not answer.
+
+Their own FAQ frames the workflow honestly (RELAYED, and it predates the Python
+rewrite): you get *"a board with routing rules and an initial component
+placement"* that is *"exported back to your existing CAD tool for final place
+and route"*, plus *"a schematic and BoM that has been rigorously checked for
+correctness"*, exporting to *"CAD (KiCAD and Altium right now, we will write
+more exporters)."*
+
+### The agent surface is the best in this survey, and it is skills-over-CLI
+
+- **An official Claude Code plugin marketplace.** VERIFIED:
+  `github.com/JITx-Inc/jitx-skills` (20 stars, created 2026-01-29, pushed
+  2026-10-24). README: *"JITX hardware design automation skills for both Claude
+  Code and Codex/GPT."* Install is `/plugin marketplace add JITx-Inc/jitx-skills`
+  then `/plugin install jitx-skills@jitx`. **Nine skills**: `jitx` (base
+  workflow), `jitx-component-modeler` (*"Generate JITX Python component code
+  from datasheets, KiCad footprints, or user specifications"*),
+  `jitx-circuit-builder`, `jitx-substrate-modeler`, `jitx-physical-layout`,
+  `jitx-interconnect-constraints`, `jitx-pin-assignment`, `jitx-code-review`,
+  `jitx-mechanical`.
+- **The official docs name Claude Code.** VERIFIED: the CLI is *"a good fit for
+  terminal-centric workflows, **headless and CI environments, and designing
+  circuit boards in collaboration with coding agents like Claude Code**."*
+- **Headless and machine-readable.** VERIFIED: `jitx runtime start
+  --background`; `jitx design build --all`; **`--format json` on every
+  subcommand**; and **`--dry`**, which exercises instantiation and translation
+  with no runtime connection — a fast inner loop for an agent.
+- **No MCP server.** VERIFIED: zero hits in docs and wheel. Their bet is skills
+  over a well-documented JSON-emitting CLI, which for this purpose is arguably
+  easier to drive than an MCP server.
+
+### Licensing is the sting, and it is easy to misread
+
+- **The Python packages are proprietary.** VERIFIED: both `jitx` 4.4.3 and
+  `jitxcore` 4.4.0 carry `Classifier: License :: Other/Proprietary License`.
+  **There is no open-source JITX.**
+- **A license server and online sign-in are mandatory.** VERIFIED from
+  `jitx/_auth/login.py`: an RFC 8628 device-authorization flow writing a license
+  JWT and refresh JWT to disk, validated by the launcher, which *"embeds the
+  public key for license verification."*
+- **Two tiers** (VERIFIED, `jitx.com/plans`):
+  - **Free and Open** — *"Free Indefinitely"*, but licensed **CERN
+    OHL-Permissive v2**, "designs only; incompatible with proprietary/GPL
+    designs." **Read that carefully: the open licence applies to the designs you
+    produce, not to the tool. The free tier means your boards must be open
+    hardware.** Includes KiCad and Altium integration and unlimited complexity.
+  - **Enterprise** — contact sales. Proprietary designs, PLM, Siemens
+    Xpedition, air-gapped install.
+- RELAYED and stale: a 2024 HN thread (193 points) repeatedly cites
+  **$1,000/month** commercial pricing. **Treat that as a 2024 figure**; it is the
+  only number anyone has published.
+
+**Alive and shipping:** VERIFIED PyPI releases through 2026 — 4.0.5 (Jan),
+4.2.0 (Jun), 4.4.0 (Aug), 4.4.1 (Sep), 4.4.2/4.4.3 (Oct 1); docs updated
+2026-08-31; repos pushed within the last week. No acquisition or shutdown news
+found, though that search was not exhaustive.
+
+**Adoption evidence is the weakest part of the case, and the researcher said
+so.** VERIFIED: the legacy VS Code extension has 3,825 lifetime installs since
+2021 with an average rating of **2.0 from two ratings** (statistically
+meaningless, but it is what exists). `jitx-skills` has 20 stars;
+`jitx-examples` has 1. Named integrations (Siemens, Altium, Ansys, Keysight) are
+RELAYED from the homepage; **no named customers**. Against atopile's 4,026 stars
+JITX's public footprint is an order of magnitude smaller — consistent with an
+enterprise/defence-shaped business (air-gapped installs, Xpedition, HFSS, PLM)
+rather than a community one, which may mean quieter and more solvent, but it
+means **essentially no public evidence of who ships boards with it.**
+
+### What to take from JITX
+
+**Its schematic data model, not its product.** `SchematicTemplate` /
+`AuthorTable` / `SchematicTitlePage` / `SchematicMarking` alongside
+`Symbol(Pin(at=…), Polyline(…))` is a tidy, hand-overridable decomposition of
+exactly the problem `lib/schgen/` solves. And the fact that JITX exposes
+**"organize ports", "group merge/split", "net merge/split" as *named
+operations*** is a direct answer to the "an agent may never author its own
+acceptance criteria" problem: **those are the knobs, and the criteria live
+outside them.** A named, enumerable operation set is auditable in a way a
+monolithic "lay out the sheet" pass is not.
 
 ---
 
@@ -1355,20 +1913,22 @@ review, *"A review of automatic schematic generation techniques and their
 application to printed circuit boards"* — probably the single best entry point
 to the classical, non-LLM automatic-schematic-generation literature.
 
-### atopile, from this angle
+### atopile, as seen from this angle — and one corroboration
 
-VERIFIED by the delegated researcher: 4,026 stars, `pushed_at` 2026-10-14 but
-**last commit on the default branch 2026-03-11** — about seven months, a
-discrepancy worth noting, since development may have moved to branches.
-RELAYED: atopile deliberately produces **no readable schematic**; it exports a
-netlist and placement groupings to KiCad, ratsnest only. A third-party fork
-(`just1jak/atopile`, 0 stars, last commit 2026-10-19) claims to save a real
-`.kicad_sch` with symbols and nets derived from PCB pad assignments —
-unverified, a personal fork, noted only to close the loop.
+Two researchers reached atopile independently, which is useful because they
+agree on the conclusion and one found something the other did not.
 
-**Conclusion: atopile is not a source of schematic-generation capability.** A
-dedicated researcher was also assigned to atopile and JITX; see
-[Not closed](#not-closed) for whether that report arrived.
+Corroborated: **atopile deliberately produces no readable schematic.** Both
+independently measured the default-branch staleness — 4,026 stars with the last
+`main` commit on **2026-03-11**. See the full
+[atopile section](#atopile--anti-schematic-by-thesis-and-the-open-source-line-is-being-wound-down)
+above for the shipped-package evidence.
+
+One extra item, recorded only to close the loop: a third-party fork
+(`just1jak/atopile`, **0 stars**, last commit 2026-10-19) claims to save a real
+`.kicad_sch` with symbols and nets derived from the PCB's pad assignments.
+Unverified, a personal fork, and deriving a schematic from pad assignments is
+unlikely to yield anything legible. Noted, not recommended.
 
 ### One more detail on `circuit-json-to-kicad` that changes its value here
 
@@ -1515,15 +2075,17 @@ checked, not only what was.
 
 1. **Web-search budget exhausted at 200/200 calls** partway through. Leads below
    were reachable by direct fetch only, and several were not reached at all.
-2. **Flux.ai, atopile, JITX, Quilter, Diode Computers, CircuitMind, Zener,
-   netlistsvg, SKiDL, schemdraw, circuitikz, xschem, Horizon EDA, `kicad-skip`,
-   `kiutils`, and the LLM-schematic-generation literature** were delegated to
-   parallel researchers whose reports had not returned when this file was
-   written. **Their sections are absent from this document, not negative
-   findings.** See the handback summary for whatever arrived.
-3. **`_schDirectLineRoutingEnabled` reachability** was established by its
-   absence from the props schema, not by running a circuit with the prop set.
-   The zod-`strip` mechanism remains relayed from the September decision.
+2. **Quilter, Diode Computers, CircuitMind, Zener, Celus, AllSpice and the
+   broader AI-EDA-startup sweep** were delegated to a researcher whose report
+   had not returned when this file was written. **That section is absent from
+   this document, not a negative finding.** Everything else from the brief —
+   Flux, atopile, JITX, tscircuit, netlistsvg, SKiDL, circuitikz/schemdraw and
+   the LLM literature — is covered above.
+3. **`_schDirectLineRoutingEnabled` was resolved, and against the earlier
+   decision** — see that section. What remains open is the *consequence*:
+   nobody has run a circuit with the flag set and looked at the geometry
+   `DirectLineRouter` produces on an analog sheet. That is a one-hour
+   experiment and the highest-value open item on the tscircuit question.
 4. **Whether `_isChipToChipConnection()` was added to the failure condition
    since September** is undetermined — the shallow clone has no history. A full
    clone and `git log -L` on that hunk would settle it.
@@ -1562,16 +2124,70 @@ Stated as claims that can be tested, not as advice.
    rejected. Copperhead's three-module split — LLM writes the IR, deterministic
    engine draws, deterministic checker gates — is the implementation of an
    invariant `CLAUDE.md` already states.
-4. **The September tscircuit decision is confirmed, widened, and now has a
-   second instance.** The failure-path degradation is intact at HEAD, covers
-   chip-to-chip as well, has no flag, and emits no error record in a system that
+4. **The September tscircuit decision's conclusion is confirmed and widened; its
+   reasoning is refuted.** The failure-path degradation is intact at HEAD and
+   covers chip-to-chip as well, and it emits no error record in a system that
    emits `pcb_autorouting_error` freely for copper. A second degradation fires
    on *successful* routes above a complexity threshold, gated on
-   `schTraceAutoLabelEnabled` and off by default.
+   `schTraceAutoLabelEnabled` and off by default. But
+   `_schDirectLineRoutingEnabled` **does** reach core — zod strips it from
+   `_parsedProps` and the call site reads raw `.props` — so there is an
+   unsupported, untyped way to force wires that nobody has run.
+   `docs/decisions/2026-09-21-why-not-tscircuit.md` needs amending.
 5. **Everyone building this is converging on an intermediate representation that
    an LLM edits and a deterministic tool draws from.** atopile, JITX, Koppar
    (`edit_circuit` patching "your latest script"), Coppr (*"LLMs edit the IR, not
-   the GUI"*), copperhead (`draft/ir.ts`) and this repository (`Network`) are the
-   same bet, made six times independently. The differentiator is not the IR. It
-   is **who holds the acceptance criteria**, and copperhead is the only one of
-   the six found to have written them down as a gate the producer cannot author.
+   the GUI"*), copperhead (`draft/ir.ts`), SchGen (relative placement plus
+   pin-name wiring) and this repository (`Network`) are the same bet, made seven
+   times independently. **The differentiator is not the IR. It is who holds the
+   acceptance criteria** — and only two of the seven were found to have written
+   them down as a gate the producer cannot author: copperhead's 13-family
+   legibility checker, and Weave's net-by-net round-trip certificate.
+6. **The one gate every serious project arrived at independently is a netlist
+   round trip, and this repository is one command away from it.** Weave's binary
+   connectivity certificate, `kicad-schematic-builder`'s `verify()`, and SKiDL
+   issue #318 — where `kicad-cli sch export netlist` was the *only* thing that
+   caught 6 of 11 nets silently vanishing from a valve triode's drawing — are
+   three independent arrivals at the same check. `make check` already invokes
+   `kicad-cli` on every board on every run. **`kicad-cli sch export netlist`
+   compared against the model's netlist is a check that could have failed, is not
+   authored by the producing agent, and is the single highest-value item in this
+   survey.** Weave's framing is worth adopting verbatim: a **binary correctness
+   certificate, not a similarity score.**
+7. **Two architectural ideas are worth stealing, and neither package should be
+   adopted.** Weave's pipeline — classify nets as ground/rail/signal, put only
+   the **signal chain** into a layered ELK layout, handle feedback loops, divider
+   legs, hanging shunts and supply corners as **placement patterns rather than
+   graph nodes**, then climb a **safe-mode ladder** that switches patterns off
+   one at a time and keeps the first result the verifier accepts. And JITX's
+   schematic model, where "organize ports", "group merge/split" and "net
+   merge/split" are **named, enumerable operations** — auditable in a way a
+   monolithic "lay out the sheet" pass is not. `elkjs` is live on npm.
+8. **Two practices this repository already holds were vindicated by someone
+   else's failure.** atopile made its *build* depend on a vendor's live DNS
+   record; `components.atopileapi.com` went NXDOMAIN for 19 days and **every
+   release at or below 0.15.7 is still permanently unbuildable three months
+   later**. Against that, treating KiCad as a local, required, compiler-like
+   dependency is the correct call, not a limitation. And atopile's `--frozen`
+   build — rebuild, diff ignoring UUIDs, **refuse with a markdown table of every
+   changed path** — is *"regenerated every run and compared by content, never by
+   timestamp"* implemented as a loud refusal, and is worth copying outright.
+9. **The clearest statement of where this repository actually sits:** no analog
+   schematic generator exists that is **simultaneously deterministic and emits
+   `.kicad_sch`**. Weave is deterministic and certified and writes LTspice
+   `.asc`. `schematizer` writes `.kicad_sch` and randomizes its layout by
+   design, except in a mode that does no routing. Nobody preserves a layout
+   across regeneration — SKiDL issue #316 asked on 2026-06-23 and has zero
+   replies. That gap is not a market nobody noticed; it is a hard problem nobody
+   has solved, and it is the one `lib/schgen/` is in.
+10. **The failure mode this survey kept finding is this repository's own named
+    enemy, and it is everywhere.** tscircuit relabelling a failed route;
+    tscircuit's `matchAdapt` stacking every component at the origin with *"not
+    an error, not a warning"*; `nl2sch`'s `--skip-missing` dropping a component;
+    SKiDL dropping 6 of 11 nets with *"no error or warning during
+    generation"*; copperhead's own issue #233 reporting `lost=0 gained=0`
+    through a 4× quality regression; atopile shipping a download button for a
+    `.kicad_sch` the build never writes. Six independent instances of a tool
+    reporting success while the artifact became wrong or unreadable.
+    `docs/schematic/false-greens.md` is not a local curiosity — it is the
+    central defect of this entire product category.
