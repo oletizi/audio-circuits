@@ -1340,6 +1340,78 @@ Documents*) and **Y14.100** (*Engineering Drawing Practices*) were not obtained;
 anything usable. **Anyone extending this survey should start here**, and should
 expect it to change §6 items 1 and 9.
 
+> **CLOSED, 2026-10-28, by
+> [`2026-10-28-drafting-office-checking-practice.md`](2026-10-28-drafting-office-checking-practice.md).**
+> Read that document instead of this paragraph; what follows is only why this
+> paragraph was wrong about where to look.
+>
+> **The practice is real and primary-sourced, and it moves three items of §6 -
+> 1, 4 and 9 - which that section expected (*"§7 says where the retrieval was
+> weak enough that an absence might be mine rather than the field's"*). It
+> leaves items 2 and 3 standing.** Taken one at a time:
+>
+> - **Item 1, "no source retains verdicts as a set": OVERTURNED as to
+>   retention, untouched as to queryability.** The 1918 office retains the marked
+>   check prints in a dedicated, access-controlled file, deliberately and by
+>   exception (below). What it does **not** do is make them queryable *across*
+>   drawings, so the corpus exists as an archive and never as a set anyone reads
+>   together.
+> - **Item 4, "nothing exists that a person fills in about a drawing":
+>   OVERTURNED.** French's twelve items (quoting Follows' *Dictionary of
+>   Mechanical Drawing*) and Kepler's sixteen are exactly that, and they are
+>   **drawing-quality rubrics** - line-weight contrast, lettering uniformity,
+>   crowding, and *"is it easy to read and tells a straight story"* as item one.
+>   They are for machine drawings, but the Bell Labs **circuit** and wiring
+>   standards show the same role and hand-off reaching circuit drawings in 1939.
+> - **Item 9, "nothing solves staleness of a verdict when the drawing changes
+>   under it": a real mechanism exists, and it is cheap.** The verdict is bound
+>   to a **revision level**, not to a drawing: every revision line carries the
+>   draughtsman's *and the checker's* initials (Collins), MIL-STD-100F §604 makes
+>   any change advance the revision level, and NASA GSFC 1994 requires the
+>   checker's approval on every revision. A verdict therefore cannot outlive the
+>   state it was made against, because reaching a new state requires a new
+>   signature. That is a weaker guarantee than a content hash and a far stronger
+>   one than OrangeCrab's unreferenced file.
+> - **Items 2 and 3 - inducing a rule from accumulated verdicts, and a carrier
+>   for "the rule is wrong" - STAND. Nothing in the drafting-office practice does
+>   either**, which raises rather than lowers this survey's confidence in calling
+>   them unprecedented: a century of mature checking practice did not invent
+>   them.
+>
+> Collins, *Drafting Room Methods* (1918), retains the marked-up
+> check print by name, in a clause that is an exception inside a deletion rule:
+> *"Old prints of revised drawings (except record and check prints) shall be
+> destroyed by the file clerk."* The markup is filed with the record prints,
+> under signed-receipt custody, **after** the draughtsman has made the
+> corrections. And the markup is a **coverage** record rather than a defect list
+> - correct matter was marked too (*"Correct matter shall be marked with yellow
+> crayon and corrections with red crayon"*), so an unmarked feature meant *not
+> reached*, which is why the sheet had to be kept at all.
+>
+> **This paragraph sent the next reader to the wrong shelf, and that is the part
+> worth keeping.** It named ASME Y14.35 and Y14.100 as the place to look. Those
+> are still not obtained - they are paywalled - but their free DoD predecessor
+> **is** obtained, and **MIL-STD-100F contains none of this**: `check` occurs
+> five times in 190 pages, all in the signature block, and there is no check
+> print clause, no colour code and no markup-retention clause anywhere in it.
+> **The check print was drafting-room procedure, not a standardised
+> deliverable.** A standards search could not have found it at any level of
+> effort; the drafting-room *manuals* carry it, and they are free, full-text and
+> a century old.
+>
+> **`everyspec.com` was also not the failure it is recorded as here.** MIL-STD-100F
+> and 100G download without authentication. The 404 was a wrong directory range -
+> `MIL-STD-0100-0299`, not `MIL-STD-0100-0199`. Exact URLs are in that document's
+> §9 so the mistake is not repeated.
+>
+> One more correction with teeth, against §359 of this survey, which records that
+> *"no overlapping text, designators or symbols"* could **not** be found as a
+> clause in any standard: it is a clause. **NPS-10** (US National Park Service,
+> 1986) says *"Avoid line congestion"* and *"Ensure open spacing of lines and
+> lettering"*, and **MIL-D-5480F §4.2** rejects a drawing and orders it
+> *"retraced, redrawn, or replotted"* on **legibility alone**. Just in federal
+> agency guidelines rather than in ASME.
+
 **7.2 Altium 365 / Altium Designer comment and markup mechanics.** Two
 documentation URLs returned 404 and I could not locate the current address
 without web search. This matters because Altium 365 is the most widely deployed

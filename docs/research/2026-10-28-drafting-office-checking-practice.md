@@ -14,7 +14,11 @@ of what was *not* obtainable and why.
 **The short answer to the question the project actually asked** — *did anyone ever formally
 review a drawing as a drawing?* — **is yes, unambiguously, and it was the FIRST thing the
 checker did.** See §3. It survived into federal standards as a signature line distinct from the
-engineering sign-off (§5.1) and as a rejection-and-redraw gate on legibility alone (§5.3).
+engineering sign-off (§2.3) and as a rejection-and-redraw gate on legibility alone (§3.4).
+
+**And the answer to the question the project most needed** — *what became of the markup?* — is
+§5: it was retained, filed with the record prints under signed-receipt custody, and **named by
+exception in the rule that destroyed every other superseded print.**
 
 ---
 
@@ -634,13 +638,26 @@ standalone version** and is the one to read.
   [deteriorated]..."*, §607.1 *"Redrawn with or without change."* (**VERIFIED** as headings;
   OCR too degraded to quote the body reliably.)
 
-**BOUNDED NEGATIVE, VERIFIED BY A CHECK THAT COULD HAVE FAILED:** I grepped the extracted text
-of MIL-STD-100F (386 KB, 100% of the PDF's text layer) case-insensitively for `check`, `legib`,
-`crowd`, `redline`, `red line`, `marked-up`, `marked up`. **`check` occurs five times in the
-entire standard** — four in the CHECKER signature-block context and once as *"checksum"*. There
-is **no `check print` clause, no colour code, and no markup-retention clause in MIL-STD-100F.**
-The check print was drafting-room procedure, not a standardised deliverable; the standard
-regulates only the **signature** the check produces.
+**BOUNDED NEGATIVE, VERIFIED BY A CHECK THAT COULD HAVE FAILED.** I grepped the extracted text
+of MIL-STD-100F (386 KB) case-insensitively for `check`, `legib`, `crowd`, `redline`,
+`red line`, `marked-up`, `marked up`. **`check` occurs five times in the entire standard** —
+four in the CHECKER signature-block context and once as *"checksum"*. `legib` and `crowd` occur
+zero times. There is **no `check print` clause, no colour code, and no markup-retention clause
+in MIL-STD-100F.**
+
+**The grep had to be shown capable of seeing the whole document before that negative means
+anything** — `CLAUDE.md`'s rule that evidence must be a check that could have failed, and the
+entry it cites that rested on a grep of binary files. So: `pdfinfo` reports **190 pages**, and
+splitting the extracted text on form-feeds yields **190 non-empty text pages out of 190**. The
+text layer covers every page of the standard; nothing was searched past. (It is OCR, with
+visible character errors, so a *single* garbled occurrence of a term could in principle survive
+the grep — but not a clause, a heading, or a table-of-contents entry, which is what a
+standardised check-print procedure would have to be.)
+
+The reading: the check print was **drafting-room procedure, not a standardised deliverable.**
+The standard regulates only the **signature** the check produces — which is also why the
+practice became invisible to anyone searching the standards rather than the office manuals, and
+is most of why the earlier survey came up empty.
 
 ### 6.2 MIL-D-5480F — VERIFIED, clause level
 
@@ -783,7 +800,31 @@ derive coordinates at render time. A mark that cannot find its anchor must then 
 loudly** rather than drop — `CLAUDE.md`'s rule, and the only thing that stops a markup from
 quietly emptying itself across a regeneration.
 
-### 7.4 Adopt: readability is judged FIRST, by a reader who has not yet learned the drawing
+### 7.4 Adopt: bind the verdict to a revision level, and make advancing the level require a new signature
+
+**Source: Collins 1918, "Revisions" — the revision line carries *"draftsman's and checker's
+initials"*; MIL-STD-100F §604 — *"Any change to a drawing... requires advancing the revision
+level"*; NASA GSFC 1994 — an EO-covered change still *"needs approval of the draftsman or person
+incorporating the change, and the checker."*** (§5.3, §6.1)
+
+The prior survey's §6 item 9 records that **nothing it found anywhere solves staleness of a
+review verdict when the drawing changes under it**, and names the failure precisely —
+OrangeCrab's filled checklist is *"a file in a directory with no reference to a commit, a hash,
+or a rendered artifact."* The drafting office solved it, and the solution is structural rather
+than clever: **a verdict is never attached to "the drawing", it is attached to a revision
+level, and you cannot reach the next level without a checker's signature on it.** Staleness
+becomes unrepresentable instead of detectable.
+
+For this repository the translation is direct and needs no new machinery: a review record names
+the **content hash of the rendered sheet it was made against** (the modern equivalent of the
+revision letter, and strictly better than one — this repository already insists that derived
+artifacts are *"compared by content, never by timestamp"*, for exactly the reason that a stale
+record which looks current is the dangerous state). A record whose hash does not match the
+current render is **not a finding about the current sheet** and must not be presented as one.
+Whether it is void or merely unconfirmed is a design decision; what is not a decision is that
+it must refuse to look current.
+
+### 7.5 Adopt: readability is judged FIRST, by a reader who has not yet learned the drawing
 
 **Source: Follows item 1 — *"Always do this before checking any individual features; in other
 words, before you have had time to become accustomed to the contents."*** (§3.1)
@@ -799,7 +840,7 @@ Operationally: the review surface should ask the first-read question first and r
 separately — *does this sheet tell a straight story on first sight?* — and that answer should
 not be revisable after the detailed pass, because by then it is a different question.
 
-### 7.5 Adopt: a separate sign-off for the drawing as a drawing
+### 7.6 Adopt: a separate sign-off for the drawing as a drawing
 
 **Source: MIL-STD-100F §40.3.1(d) vs (e) — *"DRAWING APPROVAL... responsible for drawing format
 and completeness"* against *"DESIGN APPROVAL... responsible for design technical adequacy"*.**
@@ -812,7 +853,7 @@ tests versus *"look at the output, not only the tests"* — but the standards ma
 **signature**, which is stronger: an artifact cannot be in a released state without both, and
 the absence of one is visible rather than inferred.
 
-### 7.6 Adopt: define "legible enough" by a downstream reproduction, not by the author
+### 7.7 Adopt: define "legible enough" by a downstream reproduction, not by the author
 
 **Source: MIL-D-5480F §3.2.2 (a fourth-generation copy must still be legible); NPS-10 Chapter 3
 (*"must be capable of being reproduced as clear and legible half-size prints"*,
@@ -829,7 +870,7 @@ here too: *"the construction contractor or maintenance worker may never see the 
 drawing, only a reproduction of it."* Whoever builds the Pultec from a sheet will be looking at
 a print or a PDF on a bench, not at KiCad.
 
-### 7.7 Adopt: an unchecked artifact is branded unchecked, and the unfinished original is held out of the file
+### 7.8 Adopt: an unchecked artifact is branded unchecked, and the unfinished original is held out of the file
 
 **Source: Collins, "Preliminary Prints" / "Signatures" — *"all such prints should be stamped
 'preliminary'"*; *"Tracings from which preliminary prints have been made should be returned to
@@ -843,7 +884,7 @@ finished. A generated sheet that has not been reviewed should carry the brand *i
 — in the sheet's own title block, not only in a status file — and should not land where
 reviewed sheets land.
 
-### 7.8 Adopt: a revision must match the graphic style of what it revises
+### 7.9 Adopt: a revision must match the graphic style of what it revises
 
 **Source: MIL-STD-100F §602; NPS-10 Chapter 3 — *"Match line weight when making additions or
 changes."*** (§6.1)
@@ -853,7 +894,7 @@ correct but visibly in a different hand degrades the drawing, and both standards
 is a checkable property for a generator: the inserted region's line widths, text heights and
 symbol variants must equal the host sheet's.
 
-### 7.9 Adopt: the criteria are written down in advance, outside the drawing, and visible
+### 7.10 Adopt: the criteria are written down in advance, outside the drawing, and visible
 
 **Source: Machinery's No. 2 — *"make a table covering these chances of errors and tack it in
 plain sight on the wall over the desk"*; French crediting Follows' *Dictionary of Mechanical
@@ -867,7 +908,7 @@ against a published list rather than against whatever the checker thought of tha
 repository's rule files are the wall; what the practice suggests is that the *checklist for a
 schematic sheet* should be one of them, numbered, so a review can report which items were run.
 
-### 7.10 Carry across, but do not adopt the legend: the colour code is local and must travel with the artifact
+### 7.11 Carry across, but do not adopt the legend: the colour code is local and must travel with the artifact
 
 **Source: Collins yellow=correct/red=wrong against NPS-10 red=addition/green=deletion/blue=note
 against French red-dot=verified.** (§4.2)
@@ -883,7 +924,7 @@ where an agent then *acts* on the markup probably wants **both axes** — a disp
 (`verified` / `defect` / `note`) and, for defects, an edit intent — which neither historical
 code has, because neither had a machine downstream.
 
-### 7.11 Do not adopt: checking as a single sequential human pass over everything
+### 7.12 Do not adopt: checking as a single sequential human pass over everything
 
 Follows' discipline — twelve separate passes, *"allowing nothing to distract the attention"* —
 was the correct answer when the only checking instrument was an attentive person. Items 3, 4, 6,
@@ -896,7 +937,7 @@ readability), item 11 (the whole-sheet review carrying forward what the detail p
 and item 12 (adding the note that makes the drawing more useful). Those three are the human
 review. The other nine are `make check`.
 
-### 7.12 A caution the sources themselves raise
+### 7.13 A caution the sources themselves raise
 
 **Machinery's No. 2, c.1910, on offices *"where the drawings are examined and initialed by every
 one in sight, from the engineer in charge down to the tracer."*** (§3.3) The author's point is
@@ -1010,7 +1051,7 @@ Recorded here, under the work in hand, per `CLAUDE.md` — not in the frozen gap
    most promising unread source (§8 item 4).
 3. **Was there a formal back-check?** Unattested either way (§5.4).
 4. **Is the verdict-marking or the edit-marking schema the right base for this project's markup
-   format** — or, as §7.10 suspects, two orthogonal axes? This is a design decision, not a
+   format** — or, as §7.11 suspects, two orthogonal axes? This is a design decision, not a
    research question, and it should be made in a spec rather than inferred from whichever
    historical legend got copied.
 5. **ASME Y14.42, Digital Approval Systems**, is named by Y14.100 (2017) as incorporated. It is
