@@ -290,6 +290,14 @@ this method is the test of it.
 This document binds every agent and every change in this repository. It is
 referenced from `AGENTS.md` and `CLAUDE.md`; neither overrides it.
 
+**`EVALUATING-DRAWINGS.md` is canonical on who may evaluate a drawing and what
+counts as a valid evaluation.** It stands under this document and is cited by
+`CLAUDE.md`. It exists because Principle 1 - judgement is relocated, never
+automated - was broken repeatedly in conversation rather than in code, where no
+code review could catch it: an agent sent the owner rendered pages on six
+occasions in one day, asked for his judgement on none of them, and wrote its own
+readability verdicts into two governance documents.
+
 **Amendment.** A change that contradicts a principle is not a judgement call. It
 amends, and the amendment:
 

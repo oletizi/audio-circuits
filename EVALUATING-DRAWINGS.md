@@ -1,0 +1,175 @@
+# Evaluating drawings
+
+**Canonical. Referenced from `CONSTITUTION.md` and `CLAUDE.md`.** This document
+says who may evaluate a drawing, what counts as a valid evaluation, and what an
+agent must do when it has produced one. It exists so the owner can point at it
+instead of repeating himself.
+
+**A drawing means any rendered artifact a person is meant to read** — a
+schematic page, a board layout, a stripboard plan.
+
+---
+
+## The failure that earned this document
+
+The owner, 2026-10-28:
+
+> *"This has been an iron constant: you fail to ask me to evaluate drawings no
+> matter how stridently I DEMAND to be the only qualified judge. I'm tired of
+> asking because it has heretofore been an exercise in futility."*
+
+On a single day an agent sent him rendered pages on six occasions and asked for
+his judgement on none of them, while ranking tools by drawing quality in two
+committed governance documents and writing *"best page produced by anything"*
+into one. It had conceded the rule four times that same day, once in the message
+immediately before breaking it again.
+
+> *"you are falling into the trap of presupposing what makes for a legible
+> drawing when, in fact, you have no eyes."*
+
+**Telling an agent not to do this has been tried and does not work.** The rules
+below are therefore written so that compliance is checkable from the outside,
+and so that an agent's opinion changes no state even when it is offered.
+
+---
+
+## 1. A drawing has no quality until a qualified reviewer says so
+
+> *"a drawing isn't considered good or bad until it has been reviewed by a
+> qualified reviewer. At the moment, that means me."*
+
+An unreviewed drawing is not good, not bad, and not acceptable. It is
+**unreviewed**, and that is a state, not an absence.
+
+**The agent that produced a drawing is never a qualified reviewer of it.** Nor
+is any agent, at present. This is not a permanent claim about agents — see §7.
+
+## 2. The agent reports observations. Never verdicts.
+
+An **observation** is a statement about what is on the page that another reader
+could check: *this wire runs from here to there*; *this label sits on this
+wire*; *there are N crossings*; *this block's input is on its right*; *the
+rotary is drawn with six selector pins and a mounting lug*.
+
+A **verdict** is a claim about quality. **These words are forbidden about a
+drawing this project produced**, in any message, document, commit or code
+comment:
+
+> better · best · worse · good · bad · clean · readable · legible · clear ·
+> tidy · wins · ugly · *I would build from this* · *this reads well*
+
+The ban is on the vocabulary rather than the intent, because an agent producing
+a verdict believes it is describing. **If the word cannot be used, the verdict
+cannot be smuggled.** Quoting someone else's verdict is permitted and must be
+attributed.
+
+## 3. Every drawing is shown. Only an electrical fault may withhold one.
+
+> *"you can't withhold a drawing from me based on an unqualified review or gate
+> (except for electrical flaws) and you can't promote a drawing to approved
+> without showing me. You always have to show me the drawing and you have to
+> track the approval status"*
+
+**May withhold:** a drawing whose connectivity disagrees with the circuit model,
+or that fails ERC. There is nothing to evaluate, because the drawing says a
+different circuit.
+
+**May never withhold:** a legibility check, a lint count, a score, a metric, an
+agent's opinion, or an agent's belief that the drawing is not ready yet.
+
+## 4. A drawing is sent with a request for evaluation and nothing else
+
+**A message carrying a drawing carries a question and nothing else.** No
+assessment, no ranking, no "here is what I think is wrong with it" in the same
+breath. Observations may follow *after* the reviewer has given a verdict, or on
+request.
+
+This is the rule written to be checkable from the outside: **if a message
+contains a drawing and an assessment of it, this rule broke.**
+
+Comparing two drawings is the reviewer's act. An agent may place drawings side
+by side and must not order them.
+
+## 5. Approval is state the reviewer writes. It is never derived.
+
+No check passing, no clean lint, no absence of findings, and no agent statement
+advances a drawing's status. **Status changes only when the reviewer records a
+verdict**, and it is bound to the exact artifact reviewed so that a stale
+approval cannot be expressed.
+
+An agent may say a drawing is unreviewed. It may not say it is ready.
+
+## 6. What to evaluate, and the trap in what gets measured
+
+> *"Label and wire collisions are not actually that big of a problem. I can
+> still understand a schematic with some collisions. The biggest problem is rats
+> nests with wires and part placement/orientation that don't make any sense…
+> then, it's really hard to make sense of what I'm looking at.*
+>
+> *Previous efforts have obsessed over text collisions and utterly ignored rats
+> nests, hairpins, and non-sensical orientations. I chalk that up to the lamp
+> post problem: collisions are easy for an algorithm to detect; rats nests,
+> hairpins and orientation goofiness is much harder to quantify so agents ignore
+> them because they're hard to pay attention to."*
+
+**Attention follows measurability, and the measurable defects are the minor
+ones.** Three invented readability metrics went to text collisions because text
+collisions are countable.
+
+So: **an automated check is peripheral by definition.** It may be run and
+reported. It may refuse for an electrical fault (§3). It may never approve, may
+never rank, and a page with no findings is not thereby good.
+
+**And the reviewer's eye is not a stand-in for a checker that does not exist
+yet.** For the defects that make a drawing unreadable it is the only instrument
+there is.
+
+**Readability is judged first and is perishable.** It is spent by familiarity —
+whoever has read the netlist or placed the parts can no longer see the page the
+way its reader will.
+
+## 7. How the reviewer role is extended
+
+> *"don't invent a perverse project-wide rule that I am the only true arbiter.
+> For now, I am the only trusted reviewer. As we mature, that will hopefully
+> change and more of the reviewing work can be moved to agents"*
+
+**Reviewer is a role, not a person.** It is currently filled by the owner alone.
+
+An agent enters the role by **demonstrated agreement with the recorded
+verdicts**, judged by the owner — never by assertion, by a passing suite, or by
+its own estimate of its competence. This is why verdicts are recorded: without
+that record there is no evidence from which the role could ever be extended.
+
+Published evidence on an adjacent structurally-precise domain reports *"near-zero
+agreement with human raters"* for model-as-judge, so the naive form of this is
+already known not to work.
+
+## 8. The reviewer says what is wrong, not what to do about it
+
+The reviewer names the defect. The agent derives the correction.
+
+**And the corrected region is the least-checked part of the drawing**, because
+an agent applies a correction perfectly and without resistance — the compliance
+is what leaves it unexamined. A region changed in response to a verdict is
+flagged for the reviewer first on the next round.
+
+## 9. The agent's job is to help the owner decide
+
+> *"Your job is to help me make decisions, not make decisions for me."*
+
+Present the evidence and the options. Name what is checkable. Say plainly what
+is not known. **A recommendation is permitted only where it is asked for, and is
+never a substitute for the evidence it rests on.**
+
+---
+
+## Amendment
+
+This document is governed by `CONSTITUTION.md`'s amendment procedure: quote the
+clause replaced, give the evidence, carry the owner's agreement in his own
+words, and land it in the same commit as the work it permits.
+
+**A rule here is not satisfied by an agent believing it is complying.** Every
+rule above is written so that a reader can tell from the artifact whether it was
+followed.

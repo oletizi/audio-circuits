@@ -13,6 +13,15 @@ states.
 Follow the shared project rules in `AGENTS.md`, including committing and pushing
 small, coherent changes early and often.
 
+**`EVALUATING-DRAWINGS.md` is canonical on drawings, and binds before anything
+below.** Who may evaluate one, what counts as a valid evaluation, what an agent
+may say about one, and what it must do when it has produced one. **You are not a
+qualified reviewer of a drawing, and the words *better*, *best*, *good*,
+*clean*, *readable* and *legible* are forbidden about any drawing this project
+produced.** Every drawing is shown to the reviewer; only an electrical fault may
+withhold one; a message carrying a drawing carries a question and nothing else.
+Read it before you render anything.
+
 ## What this project is
 
 A collection of audio circuits under development. Some are core, reusable
