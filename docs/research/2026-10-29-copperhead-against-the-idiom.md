@@ -333,3 +333,17 @@ Ian Thompson-Bell's drawing as the layout reference, and then preferred a page
 that does not follow it - copperhead structurally cannot. Whether the idiom is
 the target, or whether it was a way of describing what he wanted and the target
 is something else, is his to settle.
+
+## Owner's choice of starting page for the hybrid, 2026-10-29
+
+Shown the four-group page and the single-group page side by side, labelled only
+A and B, and asked which the akcli pass should start from:
+
+> *"A is less goofy and slightly easier to read"*
+
+**A is the four-group page** - `probe-p1-meaningful`, four captioned boxes with
+short meaningful net names, A4. **B was the single-group page** `f4-rev-itb`,
+the configuration that came closest to the Thompson-Bell arrangement over 37
+tries. The arrangement that tracked the reference most closely is NOT the one
+he chose, which is consistent with his instruction that the target is
+readability and not conformance to a reference.
