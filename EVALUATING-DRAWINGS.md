@@ -42,6 +42,15 @@ drawing and how one is handled. The principles say what makes a drawing worth
 reading, and they are general: they are **not** findings about any one page,
 any one circuit or any one tool, and must never be filed as such.
 
+**There are THREE kinds of statement in this document and they bind
+differently** - mistaking one for another is how its worst clauses got written:
+
+| | what it is | how it binds |
+| --- | --- | --- |
+| **The principles** (`P1`-`P4`) | what makes a drawing worth reading | they bind; an agent applies them and may be held to them |
+| **The style preferences** (`S1`-) | conventions that pay off by accumulating across drawings | **followed, never enforced** - no gate, no score, and never a reason to withhold a page |
+| **The numbered rules** (1-9) | who may judge a drawing and how one is handled | they bind absolutely, and several are written to be checkable from outside |
+
 **Every one was stated by the owner while looking at a rendered page, and every
 one is quoted in his words.** None was authored by an agent. The only clause in
 this document an agent did author - *"a hairpin earns its place never"* - was
@@ -179,46 +188,66 @@ attention the hard part needed.**
 The general statement of the lamp-post problem, from which P3 follows. Stated
 in full under rule 6.
 
-## Style, and why it is not a rule
+# The style preferences
 
-**NOTHING IN THIS SECTION IS A RULE, AND IT MUST NOT BE WRITTEN AS ONE.** The
-owner, 2026-10-29, striking the version of this section that was numbered `P5`
-and titled as an imperative:
+**These are codified deliberately and at the owner's instruction**, 2026-10-29:
 
-> *"again, don't codify this as a rule - it's a **style** preference; but,
-> consistent style and a common style convention accumulate to increase
+> *"you can codify this as a **style preference** rather than a rule - especially
+> if you include the motivation for applying consistent style"*
+
+**The motivation is the condition on which they may be written down at all**, so
+it comes first and every entry carries it.
+
+## Why a style preference is worth following, which is the whole of its force
+
+> *"consistent style and a common style convention accumulate to increase
 > readability and comprehension - that's much of what style preferences are
-> for."*
+> for."* - the owner, 2026-10-29
 
-**The title was the codification.** The struck version argued at length against
+**A style preference earns its keep by ACCUMULATION, never by any single
+application.** The argument for following one is not that this drawing needs it,
+because usually it does not - it is that **a reader who has learned where to
+look keeps that knowledge across every drawing, and an inconsistent page spends
+it.** The benefit is paid to the reader of the next drawing and the one after,
+which is exactly why it is invisible in the drawing in front of you.
+
+**This is the same shape as P2, by a different mechanism.** Any one breach is
+minor, which is why each is easy to wave through. P2 is about what littering
+reveals of the *process*; a style preference is about what consistency buys the
+*reader*.
+
+## What a style preference is NOT
+
+**It is not a rule.** The owner, striking an earlier version of this section that
+was numbered `P5` and titled as an imperative:
+
+> *"again, don't codify this as a rule - it's a **style** preference"*
+
+**The title was the codification.** That version argued at length against
 hardening the convention into an ultimatum while stating it as one in its own
-heading, and sat in the numbered series beside principles that do bind. An agent
-reading the heading would never have reached the hedge.
+heading, inside the numbered series beside principles that do bind - so an agent
+reading only the heading would never have reached the hedge. **A heading is the
+part that gets obeyed.**
 
-### Why style is worth following anyway, which is the useful half
+So, operatively:
 
-**A style preference earns its keep by accumulation, not by any single
-application.** That is his reason and it is the one to carry: *"consistent style
-and a common style convention accumulate to increase readability and
-comprehension."* So the argument for following a convention is never that this
-one drawing needs it - usually it does not - but that a reader who has learned
-where to look keeps that knowledge across every drawing, and an inconsistent
-page spends it.
+- **Follow them.** An agent drawing a page applies them without being asked.
+- **Do not enforce them.** No gate, no check that passes or fails, no score, and
+  **never a refusal to produce a page.** Rule 3 already says only an electrical
+  fault may withhold a drawing, and a style departure is not one.
+- **Report a departure as an observation**, in the vocabulary rule 2 allows -
+  where the input enters, where the output leaves, which way each points - never
+  as a finding that something failed.
+- **Do not invent thresholds.** Where the owner has supplied a hedge, the hedge
+  is part of the preference and is not to be resolved into a number.
+- **An agent does not author one.** Same invariant as the principles: these come
+  from the reviewer, looking at a page, in his words.
 
-**This is the same shape as P2** and belongs beside it: any one breach is minor,
-which is exactly why each is easy to wave through, and what they indicate
-collectively is a drawing that was emitted rather than attended to. **The
-difference is the mechanism** - P2 is about what littering reveals of the
-process; style is about what consistency buys the reader.
+## S1. Signal flows left to right and top to bottom; an output points right
 
-**So: follow the conventions. Do not enforce them, do not gate on them, do not
-score a drawing against them, and never refuse to produce a page over one.**
-
-### The conventions recorded so far
-
-**Signal flows left to right and top to bottom, like English text; an input
-enters at the left and an output leaves at the right, pointing right.** The
-owner, 2026-10-29, on the Lo boost stand-in group of the `pultec-hi-boost` page:
+**Like English text.** An input enters at the left, an output leaves at the
+right, pointing right. The owner, 2026-10-29, on the Lo boost stand-in group of
+the `pultec-hi-boost` page:
 
 > *"Another way to look at why the lo boost stand-in section is goofy is that
 > signal usually flows left to right and top to bottom (like english text). This
@@ -227,31 +256,45 @@ owner, 2026-10-29, on the Lo boost stand-in group of the `pultec-hi-boost` page:
 > backwards of convention. In this case, it's not a big deal, since it's such a
 > small network, but it's still goofy and definitely bad style."*
 
-**His own hedge is part of it**: *"not a big deal, since it's such a small
-network, but it's still goofy and definitely bad style."* Worth fixing at any
-size; not equally urgent at any size. **No clause here says signal must always
-flow left to right, and no number says how small a small network is.** Inventing
-either would be the fourth instance of a pattern this document already carries
-three struck examples of - *"a hairpin earns its place never"*, *"when they
-conflict, the wire wins"*, and the defensibility test for labels. Each was a law
-induced from one verdict.
+**HIS OWN HEDGE IS PART OF S1 AND IS NOT TO BE RESOLVED:** *"not a big deal,
+since it's such a small network, but it's still goofy and definitely bad
+style."* Worth fixing at any size; not equally urgent at any size. **No clause
+says signal must always flow left to right, and no number says how small a small
+network is.** Supplying either would be the fourth instance of a pattern this
+document already carries three struck examples of - *"a hairpin earns its place
+never"*, *"when they conflict, the wire wins"*, and the defensibility test for
+labels. Each was a law induced from one verdict.
 
-### Why a style observation can still reach a cause a principle cannot
+**S1 also recovers an item P3 had set aside.** P3 lists *"signal flow"* first
+among what transfers from a reference drawing. S1 is that item in the owner's
+own words rather than inferred from a drawing, which is the difference between a
+preference and a reading of one.
 
-**It did here, which is why this section is not merely advisory decoration.** A
-hairpin in this same group had already been named under P1, and the correction
-derived from P1 alone - re-place the grounded part so its ground symbol stops
-folding back - was a true repair of a real defect that would have **left the
-group's input below its output and its output pointing up.** Looking at the flow
-instead, the hairpin **dissolves as a consequence rather than as a repair.**
+## A style preference can reach a cause a principle cannot
+
+**S1 did, which is why this section is not advisory decoration.** A hairpin in
+that same group had already been named under P1, and the correction derived from
+P1 alone - re-place the grounded part so its ground symbol stops folding back -
+was a true repair of a real defect that would have **left the group's input
+below its output and its output pointing up.** Read against S1 instead, the
+hairpin **dissolves as a consequence rather than as a repair.**
 
 **The test of whether a correction reached the cause is to ask what else it
-fixes.** A repair that fixes exactly the one thing pointed at, and nothing
-adjacent, is usually a patch.
+fixes.** A repair that fixes exactly the one thing pointed at and nothing
+adjacent is usually a patch.
 
-**It also recovers an item P3 had set aside.** P3 lists *"signal flow"* first
-among what transfers from a reference drawing, so this is that item in the
-owner's own words rather than inferred from a drawing.
+## How a style preference is added
+
+The same way a principle is: **the reviewer states it while looking at a
+rendered page, and it is recorded in his words, with the motivation, in the
+change that captured it.** It gets the next `S` number. An agent that believes it
+has noticed a convention has noticed a candidate to put to him, not a preference
+to write down.
+
+**They do not graduate to `CONSTITUTION.md`.** The principles may, on evidence
+across several drawings; a style preference stays here by its nature, because
+what it governs is taste that serves comprehension rather than a failure the
+project refuses to repeat.
 
 ---
 
@@ -388,12 +431,12 @@ reference".
 **For what makes a drawing worth reading, see The principles above** - P1 in
 particular, which governs every device on a page.
 
-**And see Style, which binds differently.** The conventions there are not rules
-and are never gated on, but they reach faults P1 does not: a page can satisfy P1
-completely and still read **"exactly backwards of convention"**, which is where
-the Lo boost stand-in group was after a P1 repair had already been derived for
-it. A convention earns its keep by accumulating across drawings, not by any one
-of them needing it.
+**And see The style preferences, which bind differently.** They are not rules,
+are never gated on and may never withhold a page - but they reach faults P1 does
+not: a page can satisfy P1 completely and still read **"exactly backwards of
+convention"** (`S1`), which is where the Lo boost stand-in group was after a P1
+repair had already been derived for it. A style preference earns its keep by
+accumulating across drawings, not by any one of them needing it.
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the

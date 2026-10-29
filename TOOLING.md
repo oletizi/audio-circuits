@@ -269,13 +269,14 @@ evidence that the set is settling, and it is not evidence that it is closed.
    with its input below its output and its output pointing up - which the owner
    called *"exactly backwards of convention"*.
 
-   **This is a STYLE preference and must not be made a rule, a gate or a score.**
-   The owner, 2026-10-29: *"don't codify this as a rule - it's a **style**
-   preference; but, consistent style and a common style convention accumulate to
-   increase readability and comprehension - that's much of what style preferences
-   are for."* See **Style** in `EVALUATING-DRAWINGS.md` for the conventions and
-   the reason they are worth following. **Nothing here may refuse a page over
-   one.**
+   **This is `S1`, a STYLE PREFERENCE, and it must not be made a rule, a gate or
+   a score.** `EVALUATING-DRAWINGS.md` carries the S-series and the reason it
+   exists; the owner, 2026-10-29: *"consistent style and a common style
+   convention accumulate to increase readability and comprehension - that's much
+   of what style preferences are for."* **A style preference earns its keep by
+   accumulating across drawings, not by any one of them needing it** - which is
+   also why it is invisible in the page in front of you. **Follow it; never
+   enforce it. Nothing here may refuse a page over one.**
 
    **Why it belongs in this list anyway:** a hairpin repair derived without
    looking at the flow can be a correct repair that leaves the group reading
