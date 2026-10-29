@@ -197,6 +197,55 @@ boost rectangle, the netlist identical.
 
 ---
 
+## pultec-hi-cut, hybrid full run
+
+- **Sheet** `docs/research/2026-10-29-hi-cut-full-run/hi-cut-hybrid.kicad_sch`
+- **sha256** `7ccf557c5474222f6850b78f8c3c53ac45b89389f782f4b8c317d483900a76f1`
+- **Produced by** copperhead draft `v4-blocks-mid-late`, then akcli repairs and a
+  field-restating pass. **The Hi cut group is agent-authored**: `lo_boost_in`'s
+  fourteen pins drawn once as a 193.04 mm rail along the top, ten capacitors
+  vertical beneath it in contact order at 15.24 mm, six straight selector runs,
+  ten risers.
+- **Shown** 2026-10-29, as the full page plus before/after crops of the Hi cut
+  group and a crop of the capacitor bank
+- **Verdict, verbatim:**
+
+  > *"looks good. approved"*
+
+**THE PITCH WAS MEASURED FOR THIS PART SET, NOT COPIED**, which is P3 working
+rather than being quoted. 15.24 mm lands on the same number as the hi-boost page,
+and the run established that as a coincidence of both boards carrying
+six-character values: at 12.70 mm a value would sit 1.05 mm from the **next**
+capacitor's plate, at 13.97 mm 2.32 mm. The hi-boost run had already found that
+copying low-cut's 12.70 mm was measurably wrong for a different part set.
+
+**AND CHARACTER COUNT IS NOT A PROXY FOR TEXT WIDTH**, measured off the render at
+600 dpi: `2200pF` draws 6.858 mm and `.047uF` 6.223 mm at the same six
+characters, because the leading `.` is narrow. Anything that reasons about label
+clearance from string length is reasoning about the wrong quantity.
+
+**Four repair classes recurred for the fourth consecutive board** - the five
+stacked grounds on J2, `#FLG01` synthesised on `#PWR01`'s exact coordinates,
+`move_component` carrying field angles (all twenty capacitor fields came out at
+`angle 90` on symbols at rotation 0), and duplicate on-page labels. **The label
+collapse reached a stand-in group nobody had mentioned**, and one label's
+collapse moved a resistor, a ground symbol, a `GND` text and a rectangle.
+
+**Stated to him as not done, and not objected to:**
+
+- the Hi cut arrangement is agent-authored and unreviewed as an arrangement
+- three unoccupied regions inside the Hi cut rectangle not closed
+- `#PWR01` unchanged - **the same symbol all four accepted pages have now put up
+  for overruling, still unruled**
+- `#FLG01` moved rather than deleted; it earns nothing on the drawing
+- the `out` label still against J1's pin-4 number, as on the other accepted pages
+- `2200pF` left 0.63 mm from its own plate, because closing it would narrow the
+  3.18 mm gap to the next capacitor by the same amount
+- one net renamed by label scope; the five pre-existing ERC warnings not
+  suppressed
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
