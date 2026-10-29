@@ -63,7 +63,7 @@ Decisions
 | Revise | **akcli-kicad** (PyPI) | the agent places every coordinate; `pins --at X Y --rotation R --json` answers where a pin lands before anything is written; `plan` dry-runs with a net diff; refuses non-axis-aligned endpoints; journal and undo |
 | Render | `kicad-cli` | already a repository dependency; `make check` invokes it |
 | Says the circuit | `lib/schgen/gates/connectivity.ts` | fourteen tests, predates this work, judges any sheet against the model |
-| Named legibility checks | `kicad-sch-lint` codes; copperhead's `out-of-frame` | `out-of-frame` is the only check that caught a page with a third of the circuit off the paper |
+| Named legibility checks, **peripheral by design** | copperhead's `out-of-frame`; `kicad-sch-lint` codes | they catch the countable minor defects, not the ones that matter - see "The lamp-post problem" |
 | See what changed | two `kicad-cli sch export pdf` runs, three `magick` calls | as readable as the dedicated diff tools, with no install |
 
 **The two drafting tools compose** because both read and write the same
@@ -76,6 +76,51 @@ in the decisions table. And no driver may test an exit code: `copperhead draft`,
 `--json`, `score`, and `kicad-cli sch erc` all exit 0 on a page missing a third
 of its circuit. Drivers parse JSON.
 
+The lamp-post problem
+---------------------
+
+**This is the failure mode that produced the two previous attempts, and it will
+recur unless it is named.** The owner, 2026-10-28:
+
+> *"Label and wire collisions are not actually that big of a problem. I can still
+> understand a schematic with some collisions. The biggest problem is rats nests
+> with wires and part placement/orientation that don't make any sense... then,
+> it's really hard to make sense of what I'm looking at.*
+>
+> *Previous efforts have obsessed over text collisions and utterly ignored rats
+> nests, hairpins, and non-sensical orientations. I chalk that up to the lamp
+> post problem: collisions are easy for an algorithm to detect; rats nests,
+> hairpins and orientation goofiness is much harder to quantify so agents ignore
+> them because they're hard to pay attention to."*
+
+**Attention follows measurability, and the measurable defects are the minor
+ones.** Three invented readability metrics went to text collisions because text
+collisions are countable. The defects that make a drawing unreadable - a rats
+nest, a part facing the wrong way, an arrangement that does not correspond to
+how the circuit works - have no published check anywhere, which the solution-space
+map establishes independently.
+
+**Two consequences bind this design:**
+
+1. **The named checks are peripheral and are labelled so.** They may be run and
+   reported; they may never be the measure of a drawing, and a page with none of
+   their findings is not thereby good. The ranking in the map makes this concrete:
+   the only published legibility score placed a page missing a third of its
+   circuit second of six.
+2. **The reviewer's eye is not a stand-in for a future checker. For the defects
+   that matter it is the only instrument that exists.** That is a stronger
+   footing for the practice than "a human until the tooling catches up", and it
+   sets a real bar for any agent that later wants the reviewer role.
+
+**And a rule on the producing agent, from the same correction:** the owner,
+*"you are falling into the trap of presupposing what makes for a legible drawing
+when, in fact, you have no eyes."* **The drafting agent reports observations and
+never verdicts.** "This wire runs from here to there", "this label sits on this
+wire", "there are N crossings", "this block's input is on its right" are
+observations. "This reads well" and "I would build from this" are verdicts, and
+they belong to the reviewer. The agent that drafted a sheet stating its own page
+is good is the governing invariant failing in conversation rather than in code.
+
 2. The loop
 -----------
 
@@ -85,16 +130,17 @@ of its circuit. Drivers parse JSON.
    model, and ERC. A failure here stops the iteration, because the drawing says
    a different circuit and there is nothing to judge. **Nothing else withholds a
    drawing.**
-3. **Legibility checks run and never gate.** Their findings are attached to the
-   drawing as a pointer list, for the agent to act on before showing it and for
-   the reviewer to have beside the page. **A finding does not make a drawing
-   bad; no finding does not make it good.**
+3. **Legibility checks run, never gate, and are peripheral.** Their findings are
+   attached as a pointer list. **A finding does not make a drawing bad; no
+   finding does not make it good** - and none of them touches the defects that
+   actually make a drawing unreadable. See "The lamp-post problem".
 4. **Render, and overlay against the last approved revision.**
 5. **Show the reviewer. Always.** Every revision that passes the electrical
    check is put in front of the reviewer. No agent decides the reviewer does not
    need to see something.
-6. **The reviewer judges the page, readability first.** Before any detailed
-   check. The source for this is also the reason it matters: that judgement is
+6. **The reviewer judges the page, readability first** - whether it is a rats
+   nest, whether the parts face sensible directions, whether the arrangement
+   corresponds to how the circuit works. Before any detailed check. The source for this is also the reason it matters: that judgement is
    perishable, and the detailed passes spend it. Nothing that drafted the sheet
    or read the netlist can make this call.
 7. **The verdict is recorded** against that revision, attached to the region it
