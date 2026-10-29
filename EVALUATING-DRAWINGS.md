@@ -141,6 +141,23 @@ closely is not thereby acceptable, nor is one that follows none thereby
 unacceptable. The question put to the reviewer is never "does this match the
 reference".
 
+**When a label is legitimate, and when it is noise.** The owner, 2026-10-29,
+on finding one net name printed twice on adjacent parts:
+
+> *"Labels are for off-page references or for distant symbols on a crowded page
+> where the connecting wire would be hard to trace by eye. For parts right next
+> to each other, labels instead of wires creates unnecessary noise and cognitive
+> load. It's also bad style."*
+
+So a label earns its place by **distance or by leaving the page**, never by
+being easier for a tool to emit. Two instances of one net name on parts that
+could be joined by a short wire are a defect, and the remedy is the wire.
+
+**This one is structural in at least one tool and will recur.** copperhead
+emits a label wherever a net spans more than one group or carries more than
+four endpoints, regardless of how close the parts are - so a drafting pass
+behind it has to put the wires back.
+
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the
 way its reader will.
