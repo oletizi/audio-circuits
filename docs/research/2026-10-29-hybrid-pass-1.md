@@ -493,3 +493,29 @@ computes a placement.
 akcli 0.22.0 was installed into a venv under
 `…/scratchpad/hybrid-pass-1/venv-akcli/`; nothing was installed into the
 repository.
+
+---
+
+## Owner's verdict, 2026-10-29
+
+Shown the four changed regions zoomed, then the whole sheet, with no
+commentary, and asked whether the page worked well enough to consider:
+
+> *"the repairs to the drawing make it MUUUUCH better."*
+
+**What this establishes, and only this.** The hybrid he hypothesised - copperhead
+drafts, akcli repairs - produces a page he prefers to copperhead's own, **on one
+board**. Three of the four repairs were instances of copperhead's structural
+behaviour rather than accidents, so the same repairs are expected on every board
+it drafts. Whether the pass generalises is untested; `pultec-low-cut` is the
+next case.
+
+**Still awaiting his ruling, carried forward rather than closed:**
+
+- `#PWR02`, J1's own ground, kept 21.59 mm above the new J2 trunk with a
+  defence stated as the weakest of the five, flagged so it can be overruled
+- the `RV1`/`47K` field text grazed by the ground wire, which survives because
+  akcli has no field-position operation
+- eight single-instance local labels naming fully-drawn wires - naming, not
+  connectivity, and not raised by him
+- the Hi boost group rectangle, now larger than its contents after SI8 moved
