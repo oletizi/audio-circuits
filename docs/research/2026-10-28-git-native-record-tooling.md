@@ -68,6 +68,17 @@ at twenty-five lines of shell. This is not a gap in recutils; **no tool can do
 it, because only we know which file on disk a record is about.** The same gate
 is where any transition rule has to live (5.2a).
 
+**And borrow the record's shape from in-toto rather than inventing it** (8.2).
+Since we are designing the fields anyway, design them as an in-toto Statement:
+a `subject` identified by `digest`, a `predicateType` URI we mint, and our
+status, verbatim verdict and region inside the `predicate`. The spec's central
+guarantee is the one requirement (d) asks for, in its own words — *"subject
+artifacts are matched purely by digest, regardless of content type"* — and it is
+a maintained, independently specified format, so the record stays legible
+without our tooling. This costs nothing and replaces a schema we would otherwise
+have made up. **Adopt the shape, not the toolchain**: the attestation tools
+target OCI registries, not a git register.
+
 ### Why not the two git-native trackers
 
 | | git-bug | git-appraise |
@@ -686,7 +697,193 @@ The distinction that organises this group: **a structured editor applies the
 change you describe; a structured interface refuses the change that violates the
 record's own rules.** Only recutils is the second thing.
 
-## 8. What this pass did not settle
+## 8. Purpose-built review, annotation and sign-off tooling
+
+Surveyed from primary sources — repository contents read through the GitHub API,
+quoted below. **Nothing in this section was installed and run**, so the claims
+are VERIFIED-by-source-reading rather than VERIFIED-by-execution, and marked
+where weaker.
+
+### 8.1 `cargo-crev` — the closest data model found, and package-shaped
+
+**The most structurally relevant thing in this survey.** crev stores signed
+review proofs as YAML in a git repository. A real proof, from its own
+documentation:
+
+```yaml
+-----BEGIN CREV PACKAGE REVIEW-----
+version: -1
+date: "2018-12-19T22:00:24.644210896-08:00"
+from:
+  id-type: crev
+  id: FYlr8YoYGVvDwHQxqEIs89reKKDy-oWisoO0qXXEfHE
+  url: "https://github.com/dpc/crev-proofs"
+package:
+  source: "https://crates.io"
+  name: either
+  version: 1.5.0
+  digest: uBbgCVotv_8z4SEOjremFmvMG4JPhUROC19OLjPPLNE
+review:
+  thoroughness: medium
+  understanding: high
+  rating: strong
+comment: "Simple `Either` type."
+-----BEGIN CREV PACKAGE REVIEW SIGNATURE-----
+```
+
+That is **(a), (b) and (d) in a diffable file in git, cryptographically
+signed.** And its *code review* proof type goes further — from
+`crev-data/src/proof/review/code.rs` (VERIFIED, read via the API):
+
+```rust
+pub struct File {
+    pub path: PathBuf,
+    pub digest: Vec<u8>,
+    #[serde(rename = "digest-type")]
+    pub digest_type: String,
+}
+```
+
+**Per-file content digests** — requirement (d) at exactly our granularity.
+
+**Why it is not the answer.** Three findings, all VERIFIED from source:
+
+- **The rating set is fixed and is not ours.** From
+  `crev-data/src/proof/review/mod.rs:15-22`, `enum Rating` is exactly
+  `Negative`, `Neutral`, `Positive`, `Strong`, serialized lowercase. Same
+  objection as git-bug and git-appraise.
+- **The proof is anchored to a package.** `struct Code` carries
+  `pub package: proof::PackageInfo` as a non-optional field, so even a
+  file-level code review must name a package source, name and version. A
+  schematic sheet is not a crate, and pretending otherwise puts fiction in the
+  record.
+- **The only CLI is `cargo-crev`.** The workspace is `crev-data`, `crev-lib`,
+  `crev-wot`, `crev-common` and `cargo-crev` — library crates plus one
+  cargo-shaped front end that operates on crates.io dependencies. Using crev for
+  drawings means writing our own front end against `crev-lib`.
+
+Licensed Apache-2.0 / MIT / MPL-2.0, and actively maintained. **Worth reading
+before designing our record** — the `{path, digest, digest-type}` triple and the
+signature envelope are both good ideas we could adopt without adopting the tool.
+
+### 8.2 in-toto attestations — the right schema for (d), and no register tool
+
+The in-toto Statement, from the v1 spec:
+
+```json
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    { "name": "<NAME>", "digest": {"<ALGORITHM>": "<HEX_VALUE>"} }
+  ],
+  "predicateType": "<URI>",
+  "predicate": { }
+}
+```
+
+The spec's own sentence is the one that matters: **"Subject artifacts are matched
+purely by digest, regardless of content type"** — and the `name` field
+explicitly *is not* used for matching. That is requirement (d) stated as a
+standard, and it is content-type agnostic, so a rendered schematic sheet is as
+valid a subject as a binary.
+
+**And `predicateType` is a URI we mint, with an arbitrary `predicate` object
+under it.** So our state set, our verbatim verdict and our region all live in
+the predicate, with none of the "the tool's enum is not our enum" problem that
+sank every other candidate.
+
+**What is missing is the tool.** The spec defines a schema and says nothing about
+storage (VERIFIED — the statement spec covers the schema only). The tools that
+produce attestations — `cosign attest`, `witness` — target OCI registries and
+transparency logs, not a git-stored register, and there is no CLI that writes
+attestations into a file in git and queries them as a register. RELAYED on the
+tooling landscape; I did not install either.
+
+**This is nonetheless the most useful finding after recutils**, because it
+resolves the schema question that git-appraise only half-answered: *if we are
+designing the record ourselves anyway, design it as an in-toto Statement.* It is
+a maintained, independently specified format whose central guarantee is the one
+we need, and adopting the shape costs nothing.
+
+### 8.3 ADR tooling — no state machine anywhere
+
+**A clean negative, VERIFIED.** `adr-tools` (npryce) writes a markdown template
+whose status is a literal placeholder:
+
+```
+## Status
+
+STATUS
+```
+
+And superseding is not a transition — `src/_adr_add_link` is an **awk script that
+appends a line of prose** under the `## Status` heading:
+
+```awk
+/^## Status$/ { in_status_section=1 }
+/^##/ {
+    if (in_status_section) {
+        print link_type " [" target_title "](" target ")"
+```
+
+There is no state set, no validation, and nothing that could refuse an invalid
+status. The `src/` tree is eighteen shell scripts; the newest commit on the
+repository is **2020-03-30** (VERIFIED via the commits API), so it is
+unmaintained. ADR tooling satisfies none of (a), (c) or (d), and its status
+field is prose that happens to sit under a heading. **It is the thing to avoid
+becoming**, not a model to follow — and it is worth saying plainly because an
+ADR-style markdown file with a `Status:` line is the obvious thing to reach for
+here and it is exactly the hand-managed prose the owner's question was trying to
+improve on.
+
+### 8.4 The three schematic review tools: all viewers, none a register
+
+VERIFIED from repository metadata and README contents.
+
+- **`kiri`** (leoheck) — MIT, actively maintained (last push 2026-06-22),
+  described by its own repository as *"a visual tool designed for reviewing
+  schematics and layouts of KiCad projects that are version-controlled with
+  Git."* Grepping its README for comment, annotation, review-state or approval
+  returned **nothing**. It renders and diffs; it stores no verdicts.
+- **`kischvidimer`** (dnschneid, a mirror of Micron's GitLab) — Apache-2.0, very
+  actively maintained (pushed 2026-10-28). Its README has exactly one
+  review-related feature, and it is telling: *"**Feedback URL** -- provide a
+  button to click for schematic review feedback."* **It delegates the verdict to
+  an external system by design.** That is a primary-source confirmation that the
+  most actively developed KiCad schematic viewer does not attempt to store
+  review state, and expects something else to.
+- **`KiCad-Prism`** — no repository found by search (VERIFIED: a
+  `kicad prism schematic` repository search returned no matches). Either
+  misnamed in the brief or too obscure to locate; **unresolved, and recorded as
+  unresolved** rather than reported absent.
+
+**None of the three can be backed by a git-stored verdict file, because none of
+them stores verdicts at all.** The register is ours to build regardless of which
+viewer renders the page, which is a liberating finding rather than a
+disappointing one: the choice of viewer does not constrain the choice of record.
+
+### 8.5 The snapshot-approval pattern — the right idea, wrong artifact
+
+RELAYED; not installed or run. `ApprovalTests` (the `.approved.txt` /
+`.received.txt` pair) and Rust's `insta` (`.snap` files) implement precisely the
+mechanic requirement (d) asks for: a human approves a captured artifact by
+promoting the received file to the approved file, and **any subsequent content
+change makes the two differ, which fails the check.** Approval is invalidated by
+content change, structurally, with no hash field to maintain.
+
+Two reasons it is a pattern to borrow rather than a tool to adopt: the approved
+artifact *is* the record, so there is nowhere to put a status from a state set, a
+reviewer identity, a region or verbatim verdict prose; and the mechanism is
+bound to a test runner's lifecycle rather than to a review.
+
+**But the comparison is worth making explicit, because it validates section
+6.1.** A blob-keyed git note is the snapshot-approval pattern expressed in git's
+object model — the approval is reachable only from the exact bytes it approved,
+so staleness is unrepresentable rather than detected. That two unrelated
+traditions arrive at the same mechanic is the strongest evidence this pass found
+that content-addressed approval is the correct shape.
+
+## 9. What this pass did not settle
 
 - **The region coordinate system is still open, and no tool answers it.**
   git-appraise has the only real region schema found (4.2) and its units are
