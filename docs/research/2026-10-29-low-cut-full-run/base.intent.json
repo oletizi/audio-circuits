@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "parts": [
+    { "ref": "J1", "libId": "Connector_Generic:Conn_01x05", "value": "Conn_01x05", "group": "Junction" },
+    { "ref": "J2", "libId": "Connector_Generic:Conn_01x05", "value": "Conn_01x05", "group": "Junction" },
+
+    { "ref": "SI1", "libId": "Device:R", "value": "0R", "group": "Hi boost" },
+    { "ref": "SI2", "libId": "Device:R", "value": "47K", "group": "Hi boost" },
+
+    { "ref": "SI9", "libId": "Device:R", "value": "100K", "group": "Mid" },
+
+    { "ref": "SI3", "libId": "Device:C", "value": ".047uF", "group": "Hi cut" },
+    { "ref": "SI4", "libId": "Device:R", "value": "430R", "group": "Hi cut" },
+    { "ref": "SI5", "libId": "Device:R", "value": "0R", "group": "Hi cut" },
+    { "ref": "SI6", "libId": "Device:R", "value": "4.7K", "group": "Hi cut" },
+
+    { "ref": "SI7", "libId": "Device:R", "value": "56K", "group": "Lo boost" },
+    { "ref": "SI8", "libId": "Device:R", "value": "0R", "group": "Lo boost" },
+
+    { "ref": "RV1", "libId": "Device:R_Potentiometer", "value": "470K", "group": "Lo cut" },
+    { "ref": "SW1", "libId": "Switch:SW_Rotary_1x6_MP", "value": "6-way selector", "group": "Lo cut" },
+    { "ref": "C1", "libId": "Device:C", "value": ".018uF", "group": "Lo cut" },
+    { "ref": "C2", "libId": "Device:C", "value": ".01uF", "group": "Lo cut" },
+    { "ref": "C3", "libId": "Device:C", "value": "4700pF", "group": "Lo cut" },
+    { "ref": "C7", "libId": "Device:C", "value": "1000pF", "group": "Lo cut" },
+    { "ref": "C4", "libId": "Device:C", "value": "3300pF", "group": "Lo cut" },
+    { "ref": "C5", "libId": "Device:C", "value": "2200pF", "group": "Lo cut" },
+    { "ref": "C6", "libId": "Device:C", "value": "1800pF", "group": "Lo cut" }
+  ],
+  "nets": [
+    { "name": "GND", "kind": "ground",
+      "pins": ["J1.5", "J2.1", "J2.2", "J2.3", "J2.4", "J2.5", "SI8.1", "SI9.2"] },
+
+    { "name": "in", "pins": ["J1.1", "SI1.1", "SI9.1"] },
+    { "name": "hi_tap", "pins": ["SI1.2", "SI2.1"] },
+
+    { "name": "hi_boost_out",
+      "pins": ["C1.1", "C2.1", "C3.1", "C4.1", "C5.1", "C6.1", "C7.1",
+               "J1.2", "RV1.1", "SI2.2", "SI5.1"] },
+
+    { "name": "hcut_t1", "pins": ["SI3.2", "SI4.2"] },
+    { "name": "hcut_t2", "pins": ["SI4.1", "SI5.2", "SI6.1"] },
+
+    { "name": "lo_boost_in", "pins": ["J1.3", "SI3.1", "SI6.2", "SI7.2", "SI8.2"] },
+
+    { "name": "c1_sel", "pins": ["C1.2", "SW1.1"] },
+    { "name": "c2_sel", "pins": ["C2.2", "SW1.2"] },
+    { "name": "c3_sel", "pins": ["C3.2", "C7.2", "SW1.3"] },
+    { "name": "c4_sel", "pins": ["C4.2", "SW1.4"] },
+    { "name": "c5_sel", "pins": ["C5.2", "SW1.5"] },
+    { "name": "c6_sel", "pins": ["C6.2", "SW1.6"] },
+
+    { "name": "out", "pins": ["J1.4", "RV1.2", "RV1.3", "SI7.1", "SW1.7"] }
+  ],
+  "noConnect": ["SW1.MP"],
+  "hints": {
+    "groupOrder": ["Junction", "Hi boost", "Mid", "Hi cut", "Lo boost", "Lo cut"],
+    "date": "2026-10-29"
+  }
+}

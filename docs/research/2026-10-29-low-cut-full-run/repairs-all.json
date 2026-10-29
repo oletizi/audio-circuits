@@ -1,0 +1,627 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/low-cut-run/work/pultec-low-cut.kicad_sch",
+  "ops": [
+    {
+      "op": "delete_object",
+      "uuid": "3cab36e6-a26b-5692-802b-e36cf4991acf"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "830825c3-3002-550f-9c41-832a7485ffeb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d8ea5385-550f-5bcf-b32f-8636904a7920"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "9d8a672d-fe00-54be-bcfa-53a19d410ec4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "efbeffcf-f42b-5565-a00d-e87bd43698d7"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ca35ce59-f1da-5f5b-b0e1-f1aa05d952d9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fa17af80-9863-5141-a21b-c4a94aa34217"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "6e766c35-5145-5823-bb32-e03b6ac9693c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8d713da4-1956-5d97-a81d-74aed0e1fd2a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4a526e99-8f04-533b-9b0c-c2d35f5a8214"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1ae947cf-75c6-5fc2-9d43-e994c45e4a29"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b1f0e673-371b-5b65-9ef5-8552f3ee5335"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "71417ed9-cd98-553b-b41a-2fce5560b62a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "688022ee-9f19-529e-a728-fd449c43267f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b37ae58b-d723-5d67-8105-2be4e57d7ba9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3a6e8658-e28d-5d60-a423-474bdf19db24"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "52198682-47d6-5df5-bcea-bd5c37f66e87"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "a24c7c0c-2aa0-571f-b6cb-41e27d3f0ca4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "601957a6-0750-5312-a1db-9c99bdad9999"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2dda0c15-1039-58d5-b101-b922ee686492"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b237c852-5367-526c-8723-b5318a3f68ce"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f6cda378-4b78-5670-bfe4-a3969a02227c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4f75a332-132f-57c9-b657-12c713cb1e6e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "96bf220e-2503-53a7-b267-4b715795d79b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ba1439c2-05f3-5e5d-b9b7-e84e7501f99a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4e5831b4-7f94-5fa2-b3c0-139c24135f3d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "89bf4bb5-0af4-5d1d-adf6-1dbaf75961b1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0f0c310c-482c-5ba2-ba20-6350a3445301"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "79cba049-3bb9-526b-8add-e18532620068"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8d7fe90c-2318-5787-9f49-2238b7492120"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "a02cfc46-1067-5a14-aaef-ad47c2b91946"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "64185d0f-0f90-576e-8a9c-55b6faa9ddbf"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d4210687-255b-5f9b-8995-776df47c0195"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2cb59c92-d9a0-5f73-a5d1-ea3b7ee7b1df"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ac124fb3-30cb-533d-b50f-087827c217b0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4ac11358-23ea-51d2-8ab5-b4a6467f80eb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "51443727-0375-5364-bca2-d5549f4c02da"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0c977078-44c3-518e-9925-b54375d5b36f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "135a1b3b-8e67-5429-abd7-ffe88c3b2ed4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "a4918a02-e6ef-57cc-beb0-10f4916eacc6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "acf65254-78ac-5d94-8f98-85b3e8cc29af"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d374e8a4-f3a1-5370-a304-7251134a7a8c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "30f82201-4759-52c6-96c7-fbcad8537db6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1b232d58-ff0f-5bf9-ab59-720166ae9b90"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "63f74425-de97-5bd1-abae-9dfe97c56554"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2b6c310a-1976-52be-92a6-b030ebd5bc40"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8576d242-baa4-52dd-a648-c5e62142cdcb"
+    },
+    {
+      "op": "move_component",
+      "designator": "C1",
+      "x_mil": 3800,
+      "y_mil": 4800
+    },
+    {
+      "op": "move_component",
+      "designator": "C2",
+      "x_mil": 4300,
+      "y_mil": 4900
+    },
+    {
+      "op": "move_component",
+      "designator": "C3",
+      "x_mil": 4800,
+      "y_mil": 5000
+    },
+    {
+      "op": "move_component",
+      "designator": "C4",
+      "x_mil": 5300,
+      "y_mil": 5100
+    },
+    {
+      "op": "move_component",
+      "designator": "C5",
+      "x_mil": 5800,
+      "y_mil": 5200
+    },
+    {
+      "op": "move_component",
+      "designator": "C6",
+      "x_mil": 6300,
+      "y_mil": 5300
+    },
+    {
+      "op": "move_component",
+      "designator": "C7",
+      "x_mil": 4800,
+      "y_mil": 4700
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.1",
+        "C1.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.2",
+        "C2.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.3",
+        "C3.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.4",
+        "C4.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.5",
+        "C5.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "SW1.6",
+        "C6.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C7.2",
+        "C3.2"
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C1.1",
+        [
+          4050,
+          4800
+        ],
+        [
+          4050,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C2.1",
+        [
+          4550,
+          4900
+        ],
+        [
+          4550,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C3.1",
+        [
+          5050,
+          5000
+        ],
+        [
+          5050,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C7.1",
+        [
+          5050,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C4.1",
+        [
+          5550,
+          5100
+        ],
+        [
+          5550,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C5.1",
+        [
+          6050,
+          5200
+        ],
+        [
+          6050,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "C6.1",
+        [
+          6550,
+          5300
+        ],
+        [
+          6550,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        "RV1.1",
+        [
+          1350,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1350,
+          4400
+        ],
+        [
+          6800,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "hi_boost_out",
+      "at": [
+        6800,
+        4400
+      ],
+      "scope": "global",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c1_sel",
+      "at": [
+        3200,
+        4800
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c2_sel",
+      "at": [
+        3400,
+        4900
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c3_sel",
+      "at": [
+        3600,
+        5000
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c4_sel",
+      "at": [
+        3800,
+        5100
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c5_sel",
+      "at": [
+        4000,
+        5200
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "c6_sel",
+      "at": [
+        4200,
+        5300
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR02"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR03"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR04"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR05"
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1850,
+          3100
+        ],
+        [
+          1850,
+          3500
+        ]
+      ]
+    },
+    {
+      "op": "move_component",
+      "designator": "#FLG01",
+      "x_mil": 1650,
+      "y_mil": 3200
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1850,
+          3200
+        ],
+        [
+          1650,
+          3200
+        ]
+      ]
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SI7",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "eee4f16e-3d7c-5050-9a56-4f583b94901b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "85edc45b-8f09-599f-93f1-8a4c93285d60"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "62e9c110-edd2-54f5-849a-cf8ff1089866"
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9050,
+          2150
+        ],
+        [
+          9750,
+          2150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9400,
+          2150
+        ],
+        [
+          9400,
+          2050
+        ]
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "lo_boost_in",
+      "at": [
+        9400,
+        2050
+      ],
+      "scope": "global",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "out",
+      "at": [
+        9050,
+        2650
+      ],
+      "scope": "global",
+      "rotation": 0
+    }
+  ],
+  "notes": [
+    {
+      "before_op_index": 0,
+      "note": "REPAIR A - Lo cut cap bank: delete every wire of the old bank"
+    },
+    {
+      "before_op_index": 39,
+      "note": "REPAIR A - and both Lo cut hi_boost_out labels and the six c*_sel labels"
+    },
+    {
+      "before_op_index": 47,
+      "note": "REPAIR A - re-place the seven capacitors: one per selector contact, at that contact's own y, x ascending with contact number. Rotation 270 is left untouched, because a capacitor's fields are stored at angle 90 and only render horizontal at 270."
+    },
+    {
+      "before_op_index": 54,
+      "note": "REPAIR A - six straight selector runs, one per contact, no corners"
+    },
+    {
+      "before_op_index": 61,
+      "note": "REPAIR A - one hi_boost_out trunk above the bank, one riser per capacitor"
+    },
+    {
+      "before_op_index": 70,
+      "note": "REPAIR A - one hi_boost_out label on the trunk, replacing two"
+    },
+    {
+      "before_op_index": 71,
+      "note": "REPAIR A - the six selector net names, re-placed on their own runs in a cascade so no two label boxes are adjacent"
+    },
+    {
+      "before_op_index": 77,
+      "note": "REPAIR B - J2's five stacked ground symbols collapse to one terminator on a trunk"
+    },
+    {
+      "before_op_index": 82,
+      "note": "REPAIR C - the PWR_FLAG was coincident with #PWR01 and its diamond was drawn inside the out label; move it onto the new J2 trunk on a stub of its own"
+    },
+    {
+      "before_op_index": 84,
+      "note": "REPAIR D - Lo boost: SI7 turned 180 so its lo_boost_in pin faces the same way as SI8's, and the two labels become one wire"
+    }
+  ]
+}

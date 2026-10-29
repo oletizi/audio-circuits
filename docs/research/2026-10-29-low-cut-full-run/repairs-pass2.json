@@ -1,0 +1,16 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "notes": [
+    {
+      "before_op_index": 0,
+      "note": "akcli's delete_object on a wire leaves the junction dot at its vertex behind. The four below were the tees of copperhead's old hi_boost_out trunk at y=127.00; two of them now sit on the new c3_sel run, where a dot says 'a connection here'. The netlist is identical with or without them, so only looking at the page found this."
+    }
+  ],
+  "ops": [
+    { "op": "delete_object", "uuid": "8b2bc150-a759-5eb9-8b54-042bfd787be6" },
+    { "op": "delete_object", "uuid": "55106219-a693-5935-aab5-9d6cb8c474c3" },
+    { "op": "delete_object", "uuid": "b7084ef1-0f2f-5919-8a6c-c9d8ecd63131" },
+    { "op": "delete_object", "uuid": "62c81c51-83c6-502d-a658-2dc2780ed35b" }
+  ]
+}
