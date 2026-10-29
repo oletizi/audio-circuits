@@ -113,6 +113,42 @@ these are the corrections' origin:
 
 ---
 
+## pultec-hi-boost, hybrid full run
+
+- **Sheet** `docs/research/2026-10-29-hi-boost-full-run/hi-boost-hybrid.kicad_sch`
+- **sha256** `3c2f302b12a8c4c1eb8d1523bc876740d4b509cc8ee47934208471389d3a682c`
+- **Produced by** copperhead draft `v2-blocks-own-last`, then 174 akcli ops and 69
+  literal text edits. **The Hi boost group's arrangement is agent-authored**, not
+  copperhead's: nine capacitors in contact order at 15.24 mm pitch, four
+  tapped-coil sections each above the x-span of the capacitors on its tap, four
+  tap buses, one 113.03 mm `coil_top` rail. copperhead's Q chain was left exactly
+  where it was.
+- **Shown** 2026-10-29, as the full page plus before/after crops of eight regions
+- **Verdict, verbatim:**
+
+  > *"The hi boost drawing is pretty good. Certainly usable."*
+
+**AND HE NAMED A DEFECT IN THE SAME BREATH, with a crop of it:**
+
+> *"There's a goofy hairpin:"*
+
+The crop is the **Lo boost stand-in group**, `SI7` and its ground. Measured from
+the sheet after he pointed at it: `#PWR07` sits at (207.01, 46.99) rotation 0,
+**above** `SI7`, and `copperhead_power:GND` draws its graphic 2.54 mm in the sheet's
++y direction - so **the triangle's apex lands exactly on SI7's top pin at
+(207.01, 49.53) and covers the whole 2.54 mm wire that reaches it.** The wire
+goes up and the symbol comes back down over it. That is the fold.
+
+**It is the third instance of one class**, which is the part worth carrying: the
+low-boost page had it on a pot's ground, `#PWR02` on the same page is still up for
+overruling, and here it is again. The owner's statement of the cause, from the
+first instance: *"Hairpins in general are an indicator of something amiss with
+symbol organization, orientation, and/or placement."* **The structural cause here
+is that the `lo_boost_in` rail runs along the BOTTOM of the group and both parts
+hang upward off it, so every ground in the group is forced to the top.**
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
@@ -121,5 +157,9 @@ which the role could ever be extended, and published results on an adjacent
 structurally-precise domain report *"near-zero agreement with human raters"* for
 model-as-judge - so the naive form is already known not to work.
 
-**Three verdicts is not a basis for anything yet.** Recording that plainly is
-the point: the count is the measurement, and it is small.
+**However many verdicts are above, it is not a basis for anything yet, and the
+count is deliberately not written here** - it would be a transcription with a
+date on it, and this repository has already had one figure read seven different
+values in nine days. Count the `##` headings. Whatever the number, it is small,
+every verdict is from one reviewer, and §7 needs **demonstrated agreement**
+rather than a tally.
