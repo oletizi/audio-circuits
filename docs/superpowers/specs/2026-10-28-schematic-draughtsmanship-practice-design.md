@@ -88,10 +88,22 @@ looked at (`2026-10-29-copperhead-against-the-idiom.md`):
   and **orientation is not an author control**.
 
 **So drawing to a layout reference is not something copperhead can be steered
-to do, and hand placement is not a repair pass on top of it.** Four of the six
-blockers sit under the IR. The two tools address different jobs: copperhead
-drafts without being told an arrangement; the hand-placement pass (section 2a)
-draws to an arrangement someone has already accepted.
+to do.** Four of the six blockers sit under the IR.
+
+**The likely shape is a hybrid, and it is the owner's hypothesis rather than a
+measured result.** 2026-10-29:
+
+> *"copperhead *also* has defects. Both approaches are workable, each with
+> different strengths AND weaknesses. I suspect that we may land on a hybrid
+> approach where we start with copperhead to get the basic shape and flow, the
+> use akcli or similar to fine-tune its idiosyncrasies into something ultimately
+> better than either approach alone."*
+
+**UNTESTED. The combination has never been run.** What is measured is only that
+it is mechanically possible: akcli writing a single operation into this
+repository's own generated sheet changed exactly six token families by +1 each,
+with `global_label` 13 to 13 and all fifteen net names intact. **akcli has not
+been pointed at a copperhead sheet**, and that is the first thing to find out.
 
 **Two refusals are part of the selection.** No legibility score, for the reason
 in the decisions table. And no driver may test an exit code: `copperhead draft`,
