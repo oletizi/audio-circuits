@@ -124,7 +124,11 @@ never hand-edited, and "generated - do not edit" in every title block:
 - a record file carrying:
   - the content hash of the **sheet**, which is the binding; plus the digest of
     the rendered page, which is **evidence and not a binding** - see below
-  - the status: `drafted` / `submitted` / `revise` / `approved`
+  - the status. **The four states named in this document are a placeholder, not
+    a proposal** - an agent may not author the vocabulary its own output is
+    judged in. `cargo-vet` is the one surveyed tool with a properly user-defined
+    state set, carrying an *implies* lattice rather than a flat list, and is
+    worth reading before the owner fixes ours.
   - the reviewer's verdict, **verbatim**, attached to the region it is about
   - the legibility findings as they stood, marked as a pointer list
 
@@ -153,12 +157,20 @@ Measured (`2026-10-28-git-native-record-tooling.md`):
   the reviewer's words survive unaltered.
 - 3.2 MB, system libraries only.
 
-**The sheet is the binding; the rendered page is evidence.** A digest of a
-rendered page is stable only on the same machine with the same renderer version,
-so binding an approval to it would make the approval evaporate on another
-machine and look like a withdrawn signature. The `.kicad_sch` content hash is
-therefore the binding, and the page digest is recorded beside it so that a
-*mismatch* is informative without an *absence* being damning.
+**The sheet binds. The normalised render is a second binding with one untested
+assumption.** Measured on this machine: two SVG exports of the same sheet a
+second apart differ on **exactly one line** - line 11, the title carrying a
+generation timestamp. Strip that line and the render is **byte-identical**, at
+the same digest reached independently by two investigations. So
+`sha256(svg minus the generation-title line)` is a real binding for "the page the
+reviewer read". PDF is not: it embeds `/CreationDate`.
+
+**The untested part is the risk, and it is recorded as a risk rather than
+resolved:** stability is measured on one machine, one KiCad version, one font
+set. A font substitution would change the path data. Cross-machine and
+cross-version stability is **unmeasured**, and measuring it is the first thing
+the implementation plan should do - because if it fails, an approval would
+evaporate on another machine and read as a withdrawn signature.
 
 **It does not do everything, and the gap is ours to close in glue.** recutils
 polices values but not transitions - `approved` to `rejected` to `approved` is
@@ -239,6 +251,12 @@ What this does not build
 What it leaves open
 -------------------
 
+- **Re-review friction, which is the thing most likely to kill the practice.**
+  Strict content hashing makes every redraw a full re-review. For a board revised
+  repeatedly at a bench that cost falls entirely on the one scarce resource, the
+  reviewer's attention. `cargo-vet`'s `delta = "A -> B"` is the existing answer -
+  certify the *change* between two revisions rather than re-certifying the whole
+  artifact - and it is not yet designed in here.
 - **Whether copperhead's coarse controls are enough.** Its only real levers are a
   group per part and the group order. Reordering groups took the test sheet from
   21% ink to 51% with crossings still at zero, so the lever is real - but symbol
@@ -259,6 +277,17 @@ What it leaves open
   - **The symbol uuids themselves**, which this repository's generator already
     emits deterministically - a region as a set of part identities rather than a
     geometry, which survives re-rendering entirely.
+
+  **A region cannot anchor to the picture.** Measured: the exported SVG carries
+  **zero `id=` attributes** and no UUIDs - 180 elements share
+  `class="stroked-text"`. The anchor is the deterministic RFC 4122 v5 UUIDs that
+  `lib/schgen/render/uuid.ts` already emits from semantic names and writes into
+  every generated sheet.
+
+  **And the region reference must stay SEPARATE from the content hash.** A
+  redraw that nudges C10 **must** invalidate the approval and **must not**
+  invalidate the region reference. Collapsing them loses the ability to say "the
+  thing I objected to is still the thing I objected to."
 
   **Whether a region must be machine-checkable at all is a question for whoever
   authors the acceptance criteria, which is never the agent producing the
