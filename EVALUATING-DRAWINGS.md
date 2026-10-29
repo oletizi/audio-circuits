@@ -85,11 +85,26 @@ pair of labels 64 mm apart:
 label for a wire is a rare exception needing a strong case, not a routine
 trade-off available whenever a run gets long.
 
-**This also ORDERS two criteria that can pull against each other.** A long run
-is noise unless it earns its place, and a label is noise unless it earns its
-place - and on a run between parts on the same page these two can point opposite
-ways. **When they conflict, the wire wins.** A long rail is clearer than a pair
-of labels; the length is the price of the clarity and is therefore earned.
+**AND THAT IS AS FAR AS THIS GOES. DO NOT DERIVE FURTHER RULES ABOUT LABELS.**
+The owner, 2026-10-29:
+
+> *"i don't think you should try to derive too many rules about when to use
+> labels on a page. There is a duplicate label that should be collapsed - but
+> *why* I didn't complain is subtle and you shouldn't try to read the tea leaves
+> and invent (bad) algorithms for when it's ok to use on-page labels."*
+
+> **An earlier draft of this clause claimed the two criteria could be ORDERED:**
+> *"When they conflict, the wire wins."* **Struck.** It was an ordering law
+> generalised from a single verdict on a single page, and it is the same error as
+> the struck *"a hairpin earns its place never"* - an observation promoted to a
+> rule that claims more than the evidence carries. **Twice in one day, by the
+> same agent, in the same document.** Left visible because the pattern is the
+> point: a reviewer's verdict on an instance is evidence about that instance, and
+> turning it into an algorithm is the lamp-post problem reaching for the
+> codifiable thing.
+
+**When a label and a wire both seem defensible, that is a question for the
+reviewer, not a calculation.** Ask.
 
 **A repeated ground symbol** earns its place by shortening a run.
 
