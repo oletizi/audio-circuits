@@ -168,6 +168,52 @@ is good is the governing invariant failing in conversation rather than in code.
 **Step 9 is the only step with no tooling behind it.** Everything else is a
 command that was run on 2026-10-28.
 
+2a. The hand-placement pass
+---------------------------
+
+**Kept in the toolkit on the owner's instruction, 2026-10-29**, after it
+produced a page he accepted: *"the work you just did with akcli-kicad is
+promising… this process is worth keeping in the toolkit."*
+
+It is the pass for drawing to a **layout reference** - an arrangement someone
+has already accepted - which copperhead cannot do, because it computes every
+coordinate and exposes no way to say where the spine runs or what hangs off it.
+The worked example is
+`docs/research/2026-10-29-low-boost-in-thompson-bell-idiom.md`, drawing
+`pultec-low-boost` against Ian Thompson-Bell's 2012 drawing.
+
+**The procedure.**
+
+1. **Look at the reference first**, before placing anything.
+2. **Choose every position by judgement and write it as a literal.** Arithmetic
+   done while thinking is fine; a loop that computes placement is the forbidden
+   thing, and it is how the previous attempt went wrong.
+3. **Ask the tool where a pin will land before placing** -
+   `akcli pins <lib_id> --at X Y --rotation R --json` is a pure geometry query
+   against the symbol library that touches no file. Never compute pin positions.
+4. **Dry-run.** `akcli plan` prints a net diff before anything is written.
+5. **Wire.** `connect_and_label` refuses non-axis-aligned endpoints rather than
+   drawing a diagonal.
+6. **Lint, and do not trust it** - see below.
+7. **Render and LOOK at the page.**
+8. **Verify, re-measuring rather than assuming:** netlist pin-set comparison
+   against the circuit model, ERC, and a crossing count.
+
+**Two tool facts that cost a revision each, recorded so they cost nobody else
+one.** `akcli` has **no operation for a symbol field's position** - the library
+default puts Reference and Value hard against the symbol, which drew six
+capacitor values across their own plates. And **a field's stored text angle is
+RELATIVE to its symbol's rotation, not absolute**: angle `0` on a symbol rotated
+`90` renders **vertical**, and `270` renders horizontal.
+
+**The finding that matters most, because it is this document's own lamp-post
+problem happening inside our own process.** On the first attempt
+`akcli check --layout` reported **zero layout findings** on a page that drew all
+six capacitor values across their plates, put the pot's reference and value
+inside its body, and ran the 0V rail through the title block. All three were
+found **by looking at the rendered page**. The lint is worth running and is not
+worth believing.
+
 3. The record
 -------------
 
