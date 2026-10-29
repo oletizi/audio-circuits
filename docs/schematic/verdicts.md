@@ -149,6 +149,54 @@ hang upward off it, so every ground in the group is forced to the top.**
 
 ---
 
+## pultec-hi-boost, after the Lo boost redraw
+
+- **Sheet** `docs/research/2026-10-29-hi-boost-hairpin-fix/hi-boost-hairpin-fixed.kicad_sch`
+- **sha256** `240c61df793611adebf0c4a76a103c31c8b8d8cc2b4b243dba043c5e58f0135a`
+- **Produced by** the accepted hi-boost page with the Lo boost stand-in group
+  redrawn to the `S1` convention: input entering from the left, `SI6` horizontal
+  to `out` on the right pointing right, `SI7` shunting down to a ground below it.
+  **No copperhead** - the first run of this loop with no drafting step at all.
+- **Shown** 2026-10-29, as before/after crops of the group, a close crop of `SI7`
+  and its ground, and the whole page
+- **Verdict, verbatim:**
+
+  > *"approved."*
+
+**THIS IS THE FIRST DRAWING IN THIS RECORD HE HAS USED THAT WORD FOR**, and it is
+recorded as his word rather than normalised into a status - the vocabulary is
+still his to name and this file still has no status field.
+
+**What the correction got right, which is the carried lesson.** He named the
+hairpin, then named its cause - *"the input below the output, which is goofy ...
+output pointing up which is exactly backwards of convention"*. The repair derived
+from P1 alone, which this writer had already specified in coordinates, was to
+move the grounded part below the rail so its ground stopped folding. **That was a
+true repair that would have left the group reading backwards.** Redrawn to the
+convention instead, the hairpin disappeared because two parts moved, not because
+a wire was re-routed.
+
+**Electrically a no-op, verified three ways** - net partition as `REF.PIN` sets,
+net names, and the name-to-pin-set mapping all identical; ERC 0 errors both
+sides, 5 pre-existing `lib_symbol_issues` warnings both sides.
+
+**Confined to the group, verified three ways** - the five other group rectangles'
+content margins byte-identical, the render differing in one band inside the Lo
+boost rectangle, the netlist identical.
+
+**Stated to him as not done, and not objected to:**
+
+- **`Lo boost` was the only inverted group on the page.** The other five all have
+  their input at or above their output, were checked, and were deliberately left
+  alone - `S1` is followed, never enforced, and he scoped the repair to one group.
+- the other three ground symbols' carried Reference offsets, and the four
+  different `GND`-text offsets on the page
+- the scoped/unscoped net-name mix
+- `#PWR01`, J1's ground, still unchanged and still the symbol put up for
+  overruling on the low-boost page
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
