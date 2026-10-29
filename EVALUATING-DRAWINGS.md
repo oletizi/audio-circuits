@@ -116,6 +116,15 @@ An agent may say a drawing is unreviewed. It may not say it is ready.
 ones.** Three invented readability metrics went to text collisions because text
 collisions are countable.
 
+**It is wider than metrics: it produces literalism about any concrete, copyable
+detail.** Given a reference drawing to work from, an agent reproduced its sheet
+size, its full-width spine and its empty regions - the measurable, copyable
+part - from a circuit with a quarter of the content. The owner, 2026-10-29:
+*"Fixating on a very literal detail is a symptom of autistic literalism that you
+have, stemming from the lamp post problem."* **Whenever a task offers something
+concrete to copy or count, expect the concrete thing to absorb the attention the
+hard thing needed.**
+
 So: **an automated check is peripheral by definition.** It may be run and
 reported. It may refuse for an electrical fault (§3). It may never approve, may
 never rank, and a page with no findings is not thereby good.
@@ -125,10 +134,12 @@ yet.** For the defects that make a drawing unreadable it is the only instrument
 there is.
 
 **The target is readability itself, never conformance to a reference.** The
-owner, 2026-10-29: *"I care about readability, not idioms."* A reference
-drawing may be given to an agent as an aid, and a page that follows one closely
-is not thereby acceptable, nor is one that follows none thereby unacceptable.
-The question put to the reviewer is never "does this match the reference".
+owner, 2026-10-29: *"I care about readability, not idioms... The idiom was
+something to give you as a reference, not something I actually care about."* A
+reference may be given to an agent as an aid, and a page that follows one
+closely is not thereby acceptable, nor is one that follows none thereby
+unacceptable. The question put to the reviewer is never "does this match the
+reference".
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the

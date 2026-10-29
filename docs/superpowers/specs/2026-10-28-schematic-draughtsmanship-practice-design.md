@@ -218,8 +218,22 @@ A3, a full-width spine and a 6,500 x 3,000 mil void from a circuit that no
 longer had the parts to fill them. The owner named it: *"i suspect you copied
 the layout of the reference and deleted sections without compacting the
 diagram."* He was right, and the report's own observations had already said so
-without noticing. **Take the principles from a reference - signal flow, a
-ground rail, proximity meaning relatedness - never its proportions.**
+without noticing.
+
+**And the diagnosis is the lamp-post problem again, which is the part worth
+carrying.** The owner, 2026-10-29, correcting an earlier draft of this clause
+that said "never its proportions":
+
+> *"I wouldn't say 'never its proportions'. It's that proportions alone arent
+> what makes an idiom readable, so don't fixate on proportions. Fixating on a
+> very literal detail is a symptom of autistic literalism that you have,
+> stemming from the lamp post problem."*
+
+**So the rule is not a prohibition on proportions - it is that proportions alone
+do not make an arrangement readable, and must not be fixated on.** They were
+fixated on because they are the copyable part. Signal flow, a ground rail and
+proximity meaning relatedness are what the reference is actually teaching, and
+none of them is as easy to read off a page as a measurement is.
 
 The worked example is
 `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom.md`.
