@@ -1,0 +1,43 @@
+=== AFTER - the Lo boost group redrawn
+  sha256                        240c61df793611adebf0c4a76a103c31c8b8d8cc2b4b243dba043c5e58f0135a
+  parenthesis depth (end)       0   lowest reached 0
+  NUL bytes                     0   CR bytes 0   [positive control: LF bytes 2798]
+  netlist nets / components     21 / 27
+  ERC errors                    0
+  ERC warnings                  5   kinds ['lib_symbol_issues']   (kicad-cli --exit-code-violations rc=5)
+  wires                         72
+  total wire length             1181.10 mm
+  longest wire                  142.24 mm
+  true wire crossings           0  []
+  wire-to-wire tees             7   without a dot 0 []
+  pins on a wire interior       6   without a dot 0 []
+  junction dots                 17   orphans 0 []
+  symbols placed                32
+  symbol pin instances          73   lib-resolved pin points 68
+  global labels                 14
+  local labels                  14
+  duplicate labels in a group   0 []
+  group rectangles              6
+  band (171.45, 63.5, 215.9, 80.01) wires 0 pins 0   [positive control: whole-sheet wires 72]
+  nets as sorted REF.PIN sets:
+    /boost_wiper  (2)  RV1.2 RV2.3
+    /coil_top  (5)  L1.2 L2.2 L3.2 L4.2 R1.1
+    /hcut_t1  (2)  SI1.2 SI2.2
+    /qmax_out  (3)  R1.2 RV2.1 RV2.2
+    /sel1  (2)  C1.2 SW1.1
+    /sel2  (3)  C2.2 C5.2 SW1.2
+    /sel3  (2)  C3.2 SW1.3
+    /sel4  (3)  C4.2 C8.2 SW1.4
+    /sel5  (3)  C6.2 C9.2 SW1.5
+    /sel6  (2)  C7.2 SW1.6
+    /tap_100mh  (4)  C6.1 C7.1 C9.1 L1.1
+    /tap_200mh  (3)  C4.1 C8.1 L2.1
+    /tap_300mh  (4)  C2.1 C3.1 C5.1 L3.1
+    /tap_600mh  (2)  C1.1 L4.1
+    GND  (8)  J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 SI7.1 SI8.2
+    hcut_t2  (3)  SI2.1 SI3.2 SI4.1
+    hi_boost_out  (4)  J1.2 RV1.3 SI3.1 SI5.1
+    in  (4)  J1.1 RV1.1 SI8.1 SW1.7
+    lo_boost_in  (5)  J1.3 SI1.1 SI4.2 SI6.2 SI7.2
+    out  (3)  J1.4 SI5.2 SI6.1
+    unconnected-(SW1-PadMP)  (1)  SW1.MP
