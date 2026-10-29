@@ -249,7 +249,7 @@ describe("the declaration's own well-formedness", () => {
     expect(authoringProblems({ ...authoring, overrides: { a_series: { symbol: "Device:R_Small", why: " " } } }, network))
       .toContain("override for a_series: blank why; an override is a claim and carries its reason")
     expect(authoringProblems({ ...authoring, overrides: { a_series: { why: "nothing to say" } } }, network))
-      .toContain("override for a_series: overrides nothing (no symbol, symbolPins or pinSides)")
+      .toContain("override for a_series: overrides nothing (no symbol, symbolPins, pinSides or ncPins)")
     expect(authoringProblems({ ...authoring, overrides: { nobody: { symbol: "Device:R", why: "x" } } }, network))
       .toContain("override for nobody: no component of this network has that id")
   })

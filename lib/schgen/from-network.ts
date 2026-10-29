@@ -14,7 +14,7 @@
  * | `footprint` | `part.footprint`, and `""` where the model declares none - see below |
  * | `bom` | `SchematicAuthoring.declared.bom`, declared (see `BomSource`) |
  * | `source` | `SchematicAuthoring.declared.source`, declared |
- * | `pins` | the model's connections, through `part.symbolPins`, a `symbolPins` override, or `canonicalPinNumbers` |
+ * | `pins` | the model's connections, through `part.symbolPins`, a `symbolPins` override, or `canonicalPinNumbers` - plus an `ncPins` override, which declares a pin of the SYMBOL the circuit does not reach (`applyDeclaredNc`) |
  * | pin sides (on `SchematicPart`, not `PartSpec`) | `rules/pin-sides.ts`, always; a declared `pinSides` is checked against it and never replaces it |
  * | `dnp`, `checklist`, `pinTable`, `mechanicalPads`, `ncUnlisted` | fixed, each for a stated reason |
  *
@@ -177,6 +177,63 @@ function unitPinNumbers(r: PinMapRequest, unitName: string, names: readonly stri
   })
 }
 
+/**
+ * The `ncPins` declaration applied: each named pin of the SYMBOL becomes an explicit no-connect.
+ *
+ * **IT ADDS A DECLARATION AND NEVER AN EXEMPTION**, which is the whole shape of this mechanism.
+ * The pin reaches `PartSpec.pins` as the IR's ordinary `{ nc: true }` connection - the same thing
+ * a model pin tagged `NC` produces - so `./ir/validate.ts`'s `pinsDeclared` is untouched by this
+ * feature and a pin nobody named still refuses. See `ComponentOverride.ncPins` in `./authoring.ts`
+ * for why this is neither `MECHANICAL_PINS` nor `ncUnlisted`.
+ *
+ * **THE STALE-ENTRY CHECK ITERATES THE DECLARATION, NOT THE SYMBOL'S PINS**, and that is not a
+ * stylistic choice: a stale entry names a pin the symbol does NOT have, so a loop over the
+ * symbol's pins can never reach it and the guard could never fire. `pinsDeclared`'s own
+ * `MECHANICAL_PINS` guard records the same lesson in `./ir/validate.ts`, and `CLAUDE.md` calls a
+ * guard that cannot fail the failure mode the whole workflow exists to prevent.
+ *
+ * **AND A PIN DECLARED HERE THAT THE MODEL ALSO PUTS ON A NET REFUSES.** `./ir/validate-nets.ts`'s
+ * `pinSemantics` already refuses a library pin TYPED `no_connect` that is on a net, and that check
+ * does not reach this case: detent 12 of `Switch:SW_Rotary_1x12` is `passive`, like every other
+ * throw, so nothing downstream would notice the contradiction. The two claims cannot both be true
+ * and neither is preferred - `CLAUDE.md`'s *"supersede means delete"* applied to one pin.
+ */
+function applyDeclaredNc(r: PinMapRequest, out: Record<PinNumber, PinConnection>, claimedBy: ReadonlyMap<string, string>): void {
+  const declared = r.override?.ncPins
+  if (declared === undefined) return
+  const names = new Map(r.symbol.pins.map((p) => [p.number, p.name]))
+  const unknown = Object.keys(declared).filter((n) => !names.has(n))
+  if (unknown.length > 0) {
+    throw new Error(
+      `component "${r.component.id}": the ncPins declaration names pin number(s) ` +
+        `[${unknown.join(", ")}], which ${r.symbol.libId} does not have (its pins: ` +
+        `${[...names.keys()].join(", ")}). The declaration is stale, or it names a pin of a ` +
+        "different symbol - re-read the pin numbers off the installed library and fix the " +
+        "ncPins entry in this circuit's authoring file. It is not ignored: an entry that names " +
+        "nothing is the one a reader would have trusted to cover the pin that is now undeclared.",
+    )
+  }
+  for (const number of Object.keys(declared)) {
+    const name = names.get(number)
+    if (name === undefined) throw new Error(`component "${r.component.id}": symbol pin "${number}" vanished`)
+    const prior = claimedBy.get(number)
+    if (prior !== undefined) {
+      const connection = out[number]
+      const carries = connection !== undefined && "net" in connection ? `net "${connection.net}"` : "an explicit no-connect"
+      throw new Error(
+        `component "${r.component.id}": the ncPins declaration says pin "${number}" ` +
+          `(${name}) of ${r.symbol.libId} carries no connection, and the circuit model puts ` +
+          `${carries} on it through ${prior}. Both cannot be true. Delete whichever is wrong: if ` +
+          "the pin is wired, remove it from ncPins; if it is not, remove it from the model's pin " +
+          "map. Nothing is preferred here, because whichever one won silently would be the one a " +
+          "reader did not consult, and a throw declared dead while a net runs to it draws a " +
+          "no-connect marker on a live wire.",
+      )
+    }
+    out[number] = { nc: true, identity: name }
+  }
+}
+
 function pinsOf(r: PinMapRequest): Readonly<Record<PinNumber, PinConnection>> {
   const numbers = new Set(r.symbol.pins.map((p) => p.number))
   const out: Record<PinNumber, PinConnection> = {}
@@ -233,6 +290,9 @@ function pinsOf(r: PinMapRequest): Readonly<Record<PinNumber, PinConnection>> {
       out[number] = connection.kind === "net" ? { net: connection.net, identity: canonical } : { nc: true, identity: canonical }
     }
   }
+  // LAST, so that `claimedBy` already holds every pin the model reaches and a pin claimed twice
+  // is refused rather than overwritten.
+  applyDeclaredNc(r, out, claimedBy)
   return out
 }
 

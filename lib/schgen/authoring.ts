@@ -136,6 +136,48 @@ export interface ComponentOverride {
    * once carried are gone.
    */
   readonly pinSides?: Readonly<Record<string, PinSide>>
+  /**
+   * KiCad pin number -> why THAT pin carries no connection. **Specific pin numbers only, never a
+   * blanket**, and `from-network.ts`'s `pinsOf` turns each one into the IR's ordinary
+   * `{ nc: true }` connection, so the pin reaches `pinsDeclared` DECLARED rather than exempted.
+   *
+   * **WHAT IT IS FOR: A PIN THE CHOSEN SYMBOL HAS AND THE CIRCUIT DOES NOT REACH.** The worked
+   * case is `SW_MID`, the Pultec's eleven-position mid-frequency selector, drawn with
+   * `Switch:SW_Rotary_1x12` because the owner's part choice is a twelve-position switch with its
+   * stop set to eleven (*"Assume a 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` in
+   * `circuits/pultec/physical/parts.ts`). Eleven detents are wired; the twelfth exists on the part
+   * and on the symbol, and nothing reaches it. **That is a property of the SYMBOL CHOSEN TO DRAW
+   * the part, not of the circuit**, which is why the declaration lives here beside `symbolPins`
+   * rather than in the electrical model - the mid section has eleven positions and a fictional
+   * twelfth throw in `circuits/pultec/electrical/` would be a part-choice artifact in a model the
+   * schematic is the authority for (`CLAUDE.md`, *"Authority runs in both directions"*).
+   *
+   * **THREE THINGS IT IS DELIBERATELY NOT, each ruled out for its own reason.**
+   *
+   * - **Not `MECHANICAL_PINS`** (`./ir/mechanical-pins.ts`). That table is for a terminal no
+   *   conductor inside the symbol reaches - a panel mounting lug - and its one entry's claim is
+   *   geometric and asserted against the installed library. Detent 12 is a `passive` throw at the
+   *   same 2.54 mm pitch on the same side as the eleven that ARE wired, reached by a stroke like
+   *   every other throw. Listing it there would exempt a genuinely electrical pin, which is the
+   *   single defect `pinsDeclared` exists to catch.
+   * - **Not `PartSpec.ncUnlisted`** (`./ir/types.ts`). That is the blanket - *"every symbol pin not
+   *   declared in `pins` is a no-connect"* - used for an MCU's unused GPIOs. Here it would also
+   *   excuse any pin a future KiCad adds to this symbol, and every throw a later edit dropped from
+   *   the pin map. `CLAUDE.md`: *"An empty whitelist that refuses loudly beats a general rule that
+   *   quietly accepts a guess."*
+   * - **Not a widening of `pinsDeclared`.** Nothing in `./ir/validate.ts` changes for this: a
+   *   pin named here arrives as a declaration in `PartSpec.pins`, so the rule sees it the same way
+   *   it sees a model pin declared `NC`. A thirteenth unmapped pin on some other part still
+   *   refuses by name.
+   *
+   * **WHAT CHECKS IT, and each check can fail.** `authoringProblems` below refuses a blank reason.
+   * `pinsOf` in `./from-network.ts` refuses an entry naming a pin the symbol does not have - which
+   * it does by iterating THESE ENTRIES against the symbol's pin set, never by looping over the
+   * symbol's pins, because a stale entry names a pin that loop never reaches (the lesson
+   * `pinsDeclared`'s own stale-table guard records) - and it refuses a pin that is declared here
+   * AND put on a net by the model, naming the pin and the net.
+   */
+  readonly ncPins?: Readonly<Record<string, string>>
   /** Never blank: an override is a claim and carries its reason. */
   readonly why: string
 }
@@ -328,8 +370,28 @@ export function authoringProblems(authoring: SchematicAuthoring, network: Networ
   }
   for (const [id, override] of Object.entries(authoring.overrides)) {
     if (BLANK(override.why)) out.push(`override for ${id}: blank why; an override is a claim and carries its reason`)
-    if (override.symbol === undefined && override.symbolPins === undefined && override.pinSides === undefined) {
-      out.push(`override for ${id}: overrides nothing (no symbol, symbolPins or pinSides)`)
+    if (
+      override.symbol === undefined &&
+      override.symbolPins === undefined &&
+      override.pinSides === undefined &&
+      override.ncPins === undefined
+    ) {
+      out.push(`override for ${id}: overrides nothing (no symbol, symbolPins, pinSides or ncPins)`)
+    }
+    // A PER-PIN REASON, not the override's own `why`, and the two are different claims: `why`
+    // says why this component needs an override at all, and this says why THIS pin carries no
+    // connection. A blank one would make `ncPins` the blanket its own field comment says it is
+    // not - a pin number with nothing said about it is an exemption, not a declaration.
+    for (const [number, reason] of Object.entries(override.ncPins ?? {})) {
+      if (BLANK(reason)) {
+        out.push(
+          `override for ${id}: ncPins declares pin "${number}" with a blank reason. Every pin ` +
+            "named there is a claim that the chosen symbol has a pin the circuit does not reach, " +
+            "and the reason is what distinguishes that claim from an exemption - say what the " +
+            "pin is and why nothing connects to it. It is not defaulted because the only honest " +
+            "default would be silence about a pin somebody has to be able to check.",
+        )
+      }
     }
     if (!network.components.some((c) => c.id === id)) {
       out.push(`override for ${id}: no component of this network has that id`)
