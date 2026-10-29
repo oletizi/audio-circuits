@@ -23,8 +23,9 @@ a separate job that was deliberately not attempted.
 4. **Whether it helps is not established.** On a four-part circuit it produced a
    terse program in SchGen's own idiom and fixed two of base's geometry errors.
    On a seven-part circuit **base was better**: base emitted a complete,
-   topologically correct program and the adapter emitted prose that ran out of
-   tokens with the wrong topology. Two prompts, pointing opposite ways.
+   topologically correct program, while the adapter emitted a prose tutorial
+   with a wrong netlist — at a 3000-token cap and again at 6000, so truncation
+   is not the explanation. Two prompts, pointing opposite ways.
 
 ---
 
@@ -453,12 +454,40 @@ Three further problems in what the adapter did emit:
 
 Both answers are verbatim in `~/work/runs4/{base,full}.txt`.
 
+### Truncation was not the cause — it was rerun with `-n 6000`
+
+So that the token cap would not be confounded with the change in register, the
+adapter's step-4 run was repeated at `-c 12288 -n 6000`
+(`~/work/runs4/full-n6000.txt`, wall 318.2 s, peak RSS 12,021,944 kB). **It
+finished, and it is not better.**
+
+It produced a **seven-section numbered tutorial** — "1. What the user wants",
+"2. Layout strategy", … "7. Summary" — with **four separate fenced code blocks**
+rather than one program. Counted over the whole response: 12
+`add_schematic_symbol` calls, 14 `connect_pins` calls and
+`write_out_all_wires` appearing **4 times**. A single executable program is not
+what came back; SchGen's `save_final_python` would have to stitch it together.
+
+And the topology is wrong in a way finishing could not fix. Its own connection
+list includes:
+
+```
+connect_pins("R1", "2", "GND_R1", "1")     # grounds the SERIES resistor
+connect_pins("R1", "1", "C2",     "1")
+connect_pins("C2", "2", "R2",     "1")     # C2 to R2, not C2 to ground
+connect_pins("R2", "2", "GND_R2", "1")
+connect_pins("R2", "1", "J2",     "1")     # R2 in SERIES to the output
+```
+
+R1 is the series element and this shorts it to ground; R2 was asked for as a
+shunt load and is wired in series. Four ground symbols are still present
+(`GND_J1`, `GND_R1`, `GND_R2`, `GND_J2`), none using the `#PWR` convention.
+
 **So the two samples disagree, and they disagree in opposite directions.** On
 the four-part circuit the adapter produced a terse program in SchGen's own
 format and corrected two of base's geometry errors. On the seven-part circuit
-base produced a complete and topologically correct program and the adapter did
-not. A longer `-n` would let the adapter finish, and that is worth running — but
-finishing would not repair the wrong topology or the five ground symbols.
+base produced a complete and topologically correct program and the adapter
+produced a prose tutorial with a wrong netlist — at both token caps.
 
 **The defensible summary is therefore narrow: the adapter is being applied and
 changes the output; no reliable improvement has been demonstrated, and on the
@@ -485,8 +514,10 @@ who has not tried it, and the criterion is what binds.
    base-plus-adapter, the share of responses that are (a) parseable
    five-primitive programs with no prose wrapper and (b) netlist-equivalent to
    the requested topology. **Two samples that disagree is not that set**, and
-   the step-4 result means the adapter cannot be assumed beneficial. Run step 4
-   again with `-n 6000` first, so truncation is not confounded with register.
+   the step-4 result means the adapter cannot be assumed beneficial.
+   **The obvious confound has already been removed**: step 4 was rerun at
+   `-n 6000`, it finished, and it was no better — so the token cap was not the
+   explanation and need not be re-investigated.
 
 3. **Does the stock converter want fixing upstream?**
    *Criterion:* a handler in `conversion/gpt_oss.py` for PEFT
@@ -520,7 +551,9 @@ scripts are reproduction material, listed so the work can be picked up.
 | `~/work/symbol_context.json` | symbol geometry extracted from installed KiCad libraries |
 | `~/work/runs/{base,attn,full,full-MISPACKED}.txt` | step 3, verbatim |
 | `~/work/runs4/{full,base}.txt` | step 4, verbatim |
-| `~/work/{step1,step2,step3-compare,negcontrol,negcontrol2,step4}.log` | run logs |
+| `~/work/runs4/full-n6000.txt` | step 4 rerun at `-n 6000`, verbatim |
+| `~/work/{step1,step2,step3-compare,negcontrol,negcontrol2,step4,step4b}.log` | run logs |
+| `~/work/{step1_base,step2_convert,step2b,step3_load,step3_compare,step3_negcontrol,step4,step4b}.sh` | the run scripts |
 | `~/work/SchGen/`, `~/work/llama.cpp/` | clones |
 
 The comparison scripts skip any run whose output file already carries a
