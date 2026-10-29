@@ -141,22 +141,53 @@ closely is not thereby acceptable, nor is one that follows none thereby
 unacceptable. The question put to the reviewer is never "does this match the
 reference".
 
-**When a label is legitimate, and when it is noise.** The owner, 2026-10-29,
-on finding one net name printed twice on adjacent parts:
+### Noise: a device is noise unless it is earning its place
+
+**Four criteria, stated by the owner on 2026-10-29 and promoted here at his
+instruction: *"these are all criteria worth promoting"*.** They share one
+form - **each device is clarity or noise depending on whether it is doing
+work, and the draughtsman must be able to say what work.** A device that
+cannot be justified is not neutral. In his words: *"that's just littering."*
+
+**A label** earns its place by distance or by leaving the page.
 
 > *"Labels are for off-page references or for distant symbols on a crowded page
 > where the connecting wire would be hard to trace by eye. For parts right next
 > to each other, labels instead of wires creates unnecessary noise and cognitive
 > load. It's also bad style."*
 
-So a label earns its place by **distance or by leaving the page**, never by
-being easier for a tool to emit. Two instances of one net name on parts that
-could be joined by a short wire are a defect, and the remedy is the wire.
+**A repeated ground symbol** earns its place by shortening a run.
 
-**This one is structural in at least one tool and will recur.** copperhead
-emits a label wherever a net spans more than one group or carries more than
-four endpoints, regardless of how close the parts are - so a drafting pass
-behind it has to put the wires back.
+> *"Multiple ground symbols aid clarity when they reduce long wire runs on a
+> crowded page. They are just noise when stacked on top of each other. Also,
+> bad style."*
+
+**A long wire run** earns its place by separating things that are semantically
+apart, or by relieving crowding.
+
+> *"Unnecessarily long wire runs that aren't used for any good reason like
+> reducing crowding are noisy and bad style. It's harder to trace long wire runs
+> than shorter runs - although sometimes part separation for semantic reasons
+> with long runs can aid comprehension. But, long, crooked runs need a *reason*,
+> not just a *shrug*. That's just littering."*
+
+**A hairpin earns its place never.** It is the one device on this list with no
+legitimate case, and it is a symptom rather than a defect in itself:
+
+> *"the hairpin ground is also noisy and bad style - stemming from poor part
+> orientation or placement. Hairpins in general are an indicator of something
+> amiss with symbol organization, orientation, and/or placement."*
+
+**So a hairpin is not repaired where it appears.** It is a report that a part is
+facing the wrong way or sitting in the wrong place, and the remedy is upstream
+of the wire. Straightening the wire and leaving the orientation alone treats the
+symptom and loses the diagnosis.
+
+**Two of these are structural in at least one tool and will recur.** copperhead
+emits a label wherever a net spans more than one group or carries more than four
+endpoints regardless of proximity, and emits one ground symbol per pin on a
+ground-class net with no horizontal-rail primitive at all. A drafting pass
+behind it has to put the wires back and collapse the grounds.
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the
