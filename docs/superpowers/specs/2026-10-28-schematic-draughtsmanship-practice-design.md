@@ -49,7 +49,7 @@ Decisions
 | Approval is never derived from a check | owner | *"you can't promote a drawing to approved without showing me"* |
 | Approval status is tracked state | owner | *"you have to track the approval status"* |
 | The record lives in a file in git, never a database | owner | *"postgres is opaque 20th-century nonsense"* |
-| Draft with copperhead, revise with akcli-kicad | **PROVISIONAL - rests on an agent's unqualified ranking** | copperhead drew the circuit with nothing faked; akcli is the only agent-driven surface with a lint loop. **Which tool draws a better page has not been judged by a qualified reviewer**, so this row is open until it has been |
+| Draft with copperhead, revise with akcli-kicad | **owner, on the drawings** | shown nineteen rendered pages labelled by tool and asked which worked well enough to consider, the owner, 2026-10-28: *"copperhead is the best overall. Circuitkz is my second choice."* akcli is the only agent-driven surface with a lint loop. **Microsoft SchGen was never run and is absent from that comparison** |
 | No legibility SCORE is adopted | evidence | the only published one ranks the owner's own drawing level with the known-bad board |
 | No placement-intent format of our own | evidence | fourteen systems surveyed, adopt nothing; the one project that built it calls it legacy |
 | No reliance on exit codes | evidence | a page missing a third of its circuit exits 0 from every tool in the chain |
@@ -59,7 +59,7 @@ Decisions
 
 | Job | Tool | Standing |
 | --- | --- | --- |
-| Draft | **copperhead** (Apache-2.0) - provisional | drew `pultec-low-boost` with nothing faked, from one command; real rotary with its mechanical lug; title block with a revision. **Not ranked against the alternatives by a qualified reviewer** |
+| Draft | **copperhead** (Apache-2.0) | drew `pultec-low-boost` with nothing faked, from one command; real rotary with its mechanical lug; title block with a revision. Ranked first of nineteen rendered pages by the owner, 2026-10-28 |
 | Revise | **akcli-kicad** (PyPI) | the agent places every coordinate; `pins --at X Y --rotation R --json` answers where a pin lands before anything is written; `plan` dry-runs with a net diff; refuses non-axis-aligned endpoints; journal and undo |
 | Render | `kicad-cli` | already a repository dependency; `make check` invokes it |
 | Says the circuit | `lib/schgen/gates/connectivity.ts` | fourteen tests, predates this work, judges any sheet against the model |

@@ -17,9 +17,11 @@ exists, not by authoring layout algorithms.
 The short answer
 ----------------
 
-**For drawing: several tools drew the circuit.** Which of their pages is any
-good is **not established by this document** - the drawings are collected in
-`gallery/every-drawing.pdf` and the ranking belongs to the reviewer. What is
+**For drawing: several tools drew the circuit, and the owner has ranked their
+pages.** Shown nineteen rendered pages labelled by tool and asked which worked
+well enough to consider, he answered, 2026-10-28: *"copperhead is the best
+overall. Circuitkz is my second choice."* **Microsoft SchGen was never run and
+was absent from that comparison** - a hole he identified, not this document. What is
 established here is which tools faked parts, which reported success while
 emitting something wrong, and which round-trip to a netlist that matches.
 
