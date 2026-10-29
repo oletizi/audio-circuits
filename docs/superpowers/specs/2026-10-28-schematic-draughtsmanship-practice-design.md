@@ -79,6 +79,32 @@ symbol placed above a pin whose body therefore pointed back at the part. **Three
 of the owner's four repairs were instances of this, not accidents.** A drafting
 pass behind copperhead is therefore part of the architecture.
 
+**1a. The structural repair set is not closed.** A second board,
+`pultec-low-cut`, produced **three classes that did not appear on the first**
+(`2026-10-29-low-cut-full-run.md`):
+
+- copperhead placed the synthesized `PWR_FLAG` **at the exact coordinates of a
+  ground symbol**, drawing its diamond inside a label. On the first board the
+  same flag landed 72 mm away on empty trunk, so this was invisible there.
+- copperhead sets **field offsets per part, tuned to the layout it produced**
+  (measured: two capacitors at -5.842/-3.302 mm, a third at -9.652/-7.112, a
+  fourth with both fields below). `move_component` carries them, so re-placing a
+  part inherits text positioned for an arrangement that no longer exists.
+- akcli's `delete_object` on a wire **leaves the junction dot behind** - eleven
+  orphans across four passes, two of them sitting on live wires where a dot
+  asserts a connection. Invisible to the netlist, to ERC, to akcli's own
+  connectivity gate **and** to its layout lint.
+
+**The last two are second-order: they were created by an earlier repair.** Treat
+the list in section 0 as open, and expect the next board to add to it.
+
+**1b. The second pass earns its place on arrangement, not only on tidiness.**
+On the second board copperhead reported **five wire crossings in all nine**
+group configurations tried and could not be steered below five; the repair pass
+took it to **zero**. On the first board it reached zero unaided in all 37. So
+what copperhead can achieve is circuit-dependent, and the pass behind it is
+sometimes doing structural work rather than cleanup.
+
 **2. P1 names the tool gaps that matter.** A gap is worth recording when it
 blocks a repair the principles require. Three are measured in akcli:
 
@@ -87,6 +113,13 @@ blocks a repair the principles require. Three are measured in akcli:
 | no operation for a symbol field's position | moving text off a wire it grazes - the `RV1`/`47K` graze survived for this reason |
 | `add_net_label` has no `shape` | matching the sheet's existing label style; it emits `input` where the sheet uses `passive` |
 | `add_wire` has no stroke parameter | copperhead colours wires **per net** and colour is how a reader follows one; new wires render default green, and rotating a part moved copperhead's own stubs onto other nets while they kept their old colour |
+
+**2a. Field positions are a first-class layout input, and nothing in the stack
+treats them as one.** copperhead sets them per part, akcli cannot touch them, no
+check looks at them. **Every text defect across both boards came from this one
+gap** - a value across its own plate, a reference inside a pot body, two
+capacitors' text landing on each other, a value on a wire. It is the largest
+single hole in the toolchain.
 
 **3. P4 forbids building a metric, and bounds what the lint is for.** The
 lamp-post problem says the measurable defects are the minor ones, and the
@@ -239,9 +272,15 @@ is good is the governing invariant failing in conversation rather than in code.
    or read the netlist can make this call.
 7. **The verdict is recorded** against that revision, attached to the region it
    is about.
-8. **The agent revises with akcli**, driving the lint count down. Measured on
-   this circuit: 22 findings to 13 to 1, with the lint naming every collision a
-   reader found by eye plus five it had missed.
+8. **The agent revises with akcli.** **This is not one step.** Measured over two
+   boards: four repair passes needed **three restyle passes and two junction
+   cleanups** behind them, because akcli emits uncoloured wires where the draft
+   colours per net, and leaves junction dots when it deletes a wire. A pass that
+   reworks wires an earlier pass placed needs another restyle after it.
+8a. **Re-render and re-read every region already changed.** Both second-order
+   defect classes found so far appeared only *after* an earlier repair, and
+   neither was visible to any check. A repair is not finished when it is applied;
+   it is finished when the region has been looked at again.
 9. **The back-check.** The reviewer says *what is wrong*, not *what to do about
    it*. The agent derives the fix. Because an agent applies a correction
    perfectly and without resistance, the region it just changed is the part of
