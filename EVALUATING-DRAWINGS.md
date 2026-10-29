@@ -204,17 +204,29 @@ it comes first and every entry carries it.
 > readability and comprehension - that's much of what style preferences are
 > for."* - the owner, 2026-10-29
 
-**A style preference earns its keep by ACCUMULATION, never by any single
-application.** The argument for following one is not that this drawing needs it,
-because usually it does not - it is that **a reader who has learned where to
-look keeps that knowledge across every drawing, and an inconsistent page spends
-it.** The benefit is paid to the reader of the next drawing and the one after,
-which is exactly why it is invisible in the drawing in front of you.
+**Style preferences have CUMULATIVE value when applied consistently.** A reader
+who has learned where to look keeps that knowledge across drawings, and
+consistency is what lets them keep it. Much of the benefit therefore lands on
+the next drawing and the one after rather than on the page in front of you.
+
+**AND HAVING SAID THAT: do not obsess over them, and do not turn them into
+sacred rules.** The owner, 2026-10-29, softening the paragraph above, which had
+claimed that an individual drawing *"usually does not"* need the convention:
+
+> *"style preferences have cumulative value when applied consistently - but,
+> let's not obsess about them and turn them into sacred rules; **don't make
+> perfect the enemy of the good**"*
+
+**That last clause governs this whole section.** A page that departs from a
+style preference is still a page worth having. Apply the preferences where they
+fit, carry on where they do not, and **never hold up a drawing - or a review, or
+a repair - to perfect its style.**
 
 **This is the same shape as P2, by a different mechanism.** Any one breach is
 minor, which is why each is easy to wave through. P2 is about what littering
 reveals of the *process*; a style preference is about what consistency buys the
-*reader*.
+*reader*. **The mechanisms differ and so does the force: P2 is enforced, these
+are not.**
 
 ## What a style preference is NOT
 
@@ -231,10 +243,14 @@ part that gets obeyed.**
 
 So, operatively:
 
-- **Follow them.** An agent drawing a page applies them without being asked.
+- **Follow them where they fit.** An agent drawing a page applies them without
+  being asked, and moves on where they do not fit rather than forcing them.
 - **Do not enforce them.** No gate, no check that passes or fails, no score, and
   **never a refusal to produce a page.** Rule 3 already says only an electrical
   fault may withhold a drawing, and a style departure is not one.
+- **Do not obsess.** Perfecting a page's style is not a reason to delay it, to
+  re-open an accepted drawing, or to expand the scope of a repair the reviewer
+  asked for. **Don't make perfect the enemy of the good.**
 - **Report a departure as an observation**, in the vocabulary rule 2 allows -
   where the input enters, where the output leaves, which way each points - never
   as a finding that something failed.

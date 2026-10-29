@@ -273,10 +273,12 @@ evidence that the set is settling, and it is not evidence that it is closed.
    a score.** `EVALUATING-DRAWINGS.md` carries the S-series and the reason it
    exists; the owner, 2026-10-29: *"consistent style and a common style
    convention accumulate to increase readability and comprehension - that's much
-   of what style preferences are for."* **A style preference earns its keep by
-   accumulating across drawings, not by any one of them needing it** - which is
-   also why it is invisible in the page in front of you. **Follow it; never
-   enforce it. Nothing here may refuse a page over one.**
+   of what style preferences are for."* **Style preferences have cumulative
+   value when applied consistently**, so much of the benefit lands on the next
+   drawing rather than this one. **Follow it where it fits; never enforce it.
+   Nothing here may refuse a page over one** - and his own limit on it:
+   *"let's not obsess about them and turn them into sacred rules; don't make
+   perfect the enemy of the good."*
 
    **Why it belongs in this list anyway:** a hairpin repair derived without
    looking at the flow can be a correct repair that leaves the group reading
