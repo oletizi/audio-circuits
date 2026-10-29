@@ -209,7 +209,7 @@ they are in parallel. Then:
 - **six selector runs, one per contact, each a single straight horizontal with
   no corner** — 29.21, 41.91, 54.61, 67.31, 80.01 mm and the 16.51 mm `c1_sel`
 - **one `hi_boost_out` trunk** at `y=109.22`, with **one riser per capacitor**
-  offset 2.54 mm clear of the capacitor's own field text, plus RV1's drop
+  offset 2.54 mm away from the capacitor's own field text, plus RV1's drop
 - **C7** joined to C3 by a vertical strap on `c3_sel` and a 2.54 mm stub on the
   trunk riser
 
@@ -227,8 +227,8 @@ a repair of its own.
 ### Repair 5 — the PWR_FLAG drawn inside the `out` label. **NEW CLASS.**
 
 copperhead synthesises one `PWR_FLAG` per power net for ERC. On low-boost it
-landed at `(161.29, 144.78)`, 72 mm from the nearest `GND` symbol, on a clear
-stretch of the cap-bank trunk, and the owner's instruction was to leave it in
+landed at `(161.29, 144.78)`, 72 mm from the nearest `GND` symbol, on a stretch of the cap-bank trunk with
+nothing else on it, and the owner's instruction was to leave it in
 place.
 
 **Here it landed at `(46.99, 67.31)` — the exact coordinates of `#PWR01`.** Two
@@ -246,15 +246,14 @@ moving it instead would have run its wire through the diamond.
 **Why this is a class and not an accident.** The flag is placed on the power net
 with no regard for what is already at that point, and whether it collides
 depends entirely on what the net's geometry happens to be on that board. **It
-will recur, and on a board whose ground net is dense it will recur in a worse
-place.** This one *was* caught by `akcli check --layout`
+will recur, and on a board whose ground net is dense it will recur somewhere that costs more.** This one *was* caught by `akcli check --layout`
 (`LAYOUT_LABEL_OVER_SYMBOL label 'out' … runs over #FLG01`) — the one real
 defect on this page the lint named.
 
 ### Repair 6 — field offsets that were right for the old arrangement. **NEW CLASS, and it is the one worth carrying forward.**
 
 **copperhead does not use one field offset per part kind.** Its placement search
-nudges each symbol's Reference and Value to clear the wires of the layout *it*
+nudges each symbol's Reference and Value away from the wires of the layout *it*
 produced. Measured on this sheet's seven capacitors, as `(y_field − y_symbol)`:
 
 | part | Reference | Value |
@@ -268,7 +267,7 @@ produced. Measured on this sheet's seven capacitors, as `(y_field − y_symbol)`
 tuned to an arrangement that no longer exists**, so after repair 4: C4's
 `3300pF` landed on the `c6_sel` run, and C3's and C7's text landed on each
 other. The effect is invisible to every check in the stack — the netlist is
-identical, ERC is clean, and `akcli check --layout` named none of it. It was
+identical, ERC reports 0 violations, and `akcli check --layout` named none of it. It was
 found by rendering the page and looking at it.
 
 **akcli 0.22.0 has no operation for a symbol field's position** (the gap
@@ -367,7 +366,7 @@ whether a rectangle happens to enclose both ends.
 page**, and it is stated here rather than buried: it is the low-cut network's
 common node — the pot's top terminal and all seven capacitor tops — drawn once as
 a rail instead of as labels. It replaced two labels and a staircase. **If the
-reviewer reads a 138 mm rail as worse than two labels 64 mm apart, that is the
+reviewer would rather have two labels 64 mm apart than a 138 mm rail, that is the
 call to make and this pass does not get to make it.** The six selector runs
 (29–80 mm) are the fan-out of a 1-of-6 selector to a row of seven capacitors —
 the same defence the low-boost pass gave for the same structure, there accepted.
@@ -491,7 +490,8 @@ each are committed beside this document.
 
 1. **Junction, J1** — `zoom-before-junction-j1.png` / `zoom-after-junction-j1.png`.
    The `PWR_FLAG` diamond was drawn inside the word `out`. **Look at:** whether
-   the five J1 labels now read, and whether `out` at pin 4 is clear.
+   the five J1 labels now read, and whether anything still sits over `out` at
+   pin 4.
 2. **Junction, J2** — `zoom-before-junction-j2.png` / `zoom-after-junction-j2.png`.
    Five stacked ground symbols became one on a trunk, and the `PWR_FLAG` moved to
    a stub off that trunk. **Look at:** whether one terminator at the bottom reads
@@ -542,7 +542,7 @@ each are committed beside this document.
 | label where a wire belongs | structural in copperhead | yes (`hi_boost_out`, 27 mm) | **yes (`lo_boost_in`, 21.85 mm; `hi_boost_out`, 63.96 mm)** |
 | ground or part oriented so a wire doubles back | structural in copperhead | yes (RV1) | **class checked, no instance** |
 | part placement forcing a long crooked run | placement | yes (SI8, 1 part) | **yes (the cap bank, 7 parts)** |
-| `PWR_FLAG` placed over another device | **NEW** | no (landed 72 mm clear) | **yes** |
+| `PWR_FLAG` placed over another device | **NEW** | no (landed 72 mm away) | **yes** |
 | field offsets tuned to the superseded layout | **NEW** | not reached | **yes, twice** |
 | orphan junction dots left by a deletion | **NEW — created by akcli** | not reached | **yes, 4 then 7** |
 
