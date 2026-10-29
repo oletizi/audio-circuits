@@ -264,6 +264,16 @@ evidence that the set is settling, and it is not evidence that it is closed.
    owner: *"this ground symbol is folded back on its wire. Ideally, the ground
    terminal of the pot symbol would point down or horizontally so the ground
    wire doesn't hairpin."*
+
+   **AND IT HAS NO SIGNAL-FLOW CONTROL EITHER, WHICH IS THE LARGER HALF OF THE
+   SAME CLASS.** `EVALUATING-DRAWINGS.md` **P5**: signal flows left to right and
+   top to bottom, like English text, and an output points right, horizontally.
+   copperhead will happily place a group with its input below its output and its
+   output pointing up - *"exactly backwards of convention"*. **Check the flow
+   direction of every group before you repair anything else in it**, because a
+   hairpin repair derived without looking at the flow can be a correct repair
+   that leaves the page reading backwards. Report, for each group: where the
+   input enters, where the output leaves, and which way each points.
 4. **`PWR_FLAG` coordinate collisions.**
 
 **akcli:**

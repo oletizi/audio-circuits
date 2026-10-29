@@ -179,6 +179,59 @@ attention the hard part needed.**
 The general statement of the lamp-post problem, from which P3 follows. Stated
 in full under rule 6.
 
+## P5. Signal flows left to right and top to bottom, and an output points right
+
+The owner, 2026-10-29, on the Lo boost stand-in group of the `pultec-hi-boost`
+page, **quoted complete because its last sentence is as much of the principle as
+its first**:
+
+> *"Another way to look at why the lo boost stand-in section is goofy is that
+> signal usually flows left to right and top to bottom (like english text). This
+> had the input below the output, which is goofy. Also, output is usually
+> pointing right, horizontally. You have output pointing up which is exactly
+> backwards of convention. In this case, it's not a big deal, since it's such a
+> small network, but it's still goofy and definitely bad style."*
+
+**Three claims, and they are not the same claim.**
+
+1. **The convention**: signal flows left to right and top to bottom, like
+   English text. An input enters at the left, an output leaves at the right,
+   pointing right.
+2. **The verdict on this instance**: an input below its output is backwards; an
+   output pointing up is *"exactly backwards of convention"*.
+3. **The magnitude**: *"not a big deal, since it's such a small network, but it's
+   still goofy and definitely bad style."*
+
+**HE SUPPLIED THE HEDGE HIMSELF AND IT TRAVELS WITH THE RULE.** The severity of
+a flow violation scales with the size of the network it is in - a two-resistor
+stand-in read backwards costs a reader almost nothing, and the same inversion
+across a signal chain costs a great deal. **This is bad style and worth fixing at
+any size; it is not equally urgent at any size.**
+
+**DO NOT HARDEN THIS INTO AN ULTIMATUM, AND DO NOT INVENT THE THRESHOLD.** No
+clause here says signal must always flow left to right; no number says how small
+*"such a small network"* is. Writing either would be the fourth instance of the
+pattern this document already records three struck examples of - *"a hairpin
+earns its place never"*, *"when they conflict, the wire wins"*, and the
+defensibility test for labels. **Each was a law induced from one verdict, and
+each was struck.** If a drawing seems to need the flow inverted, that is a
+question for the reviewer, not a threshold for an agent to set.
+
+**WHY THIS SITS BESIDE P1 RATHER THAN UNDER IT: it reaches a cause that P1
+cannot.** He had already named a hairpin in this same group, and the correction
+derived from P1 alone was to re-place the grounded part so its ground symbol
+stopped folding back - a true repair of a real defect that would have **left the
+group's input below its output and its output pointing up.** P5 names the
+first-order fault, and **the hairpin dissolves as a consequence of fixing it
+rather than as a repair in its own right.** That is the test of whether a
+correction reached the cause: ask what else it fixes.
+
+**It also recovers something P3 had deliberately set aside.** P3 says to take
+the principles from a reference and never its proportions, and lists *"signal
+flow"* first among what transfers. P5 is that item stated in the owner's own
+words instead of inferred from a drawing - which is the difference between a
+principle and a reading of one.
+
 ---
 
 ## How a principle graduates
@@ -311,8 +364,12 @@ closely is not thereby acceptable, nor is one that follows none thereby
 unacceptable. The question put to the reviewer is never "does this match the
 reference".
 
-**For what makes a drawing worth reading, see The principles above** - P1 in
-particular, which governs every device on a page.
+**For what makes a drawing worth reading, see The principles above** - P1, which
+governs every device on a page, and **P5, which governs the direction the page
+reads in.** The two reach different faults: P1 asks what a device is doing there,
+P5 asks whether the page runs the way a reader's eye does. A page can satisfy
+P1 completely and still be **"exactly backwards of convention"**, which is where
+the Lo boost stand-in group was after a P1 repair had already been derived for it.
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the
