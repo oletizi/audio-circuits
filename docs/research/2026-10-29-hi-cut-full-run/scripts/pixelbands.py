@@ -1,7 +1,7 @@
 """Where two renders differ, as row bands AND the column bands inside each one.
 
 `pixeldiff.py` reports row bands and column bands separately, which is already
-better than a bounding box - but on a page where one changed group spans the
+more localised than a bounding box - but on a page where one group spans the
 full width, the column band is the whole page and says nothing about the small
 row bands. This reports the columns that differ WITHIN each row band, so a 2 mm
 band 200 mm away from the repair is localised rather than absorbed.

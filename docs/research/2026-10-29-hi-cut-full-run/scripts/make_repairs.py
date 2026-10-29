@@ -33,7 +33,7 @@ def mil(v):
 
 # ---------------------------------------------------------------------------
 # 1. What goes. The Hi cut rectangle AS DRAFTED, which is the selection box for
-#    the clear-out; the repaired rectangle is a different, smaller one and is
+#    the removal; the repaired rectangle is a different, smaller one and is
 #    written by scripts/restyle.py.
 # ---------------------------------------------------------------------------
 

@@ -358,7 +358,7 @@
     {
       "op": "move_component",
       "designator": "R1",
-      "x_mil": 2700,
+      "x_mil": 2850,
       "y_mil": 4600,
       "carry_labels": false,
       "carry_wires": false
@@ -372,7 +372,7 @@
     {
       "op": "move_component",
       "designator": "SW1",
-      "x_mil": 3550,
+      "x_mil": 3850,
       "y_mil": 4600,
       "carry_labels": false,
       "carry_wires": false
@@ -386,7 +386,7 @@
     {
       "op": "move_component",
       "designator": "C1",
-      "x_mil": 4300,
+      "x_mil": 4500,
       "y_mil": 4150,
       "carry_labels": false,
       "carry_wires": false
@@ -400,7 +400,7 @@
     {
       "op": "move_component",
       "designator": "C7",
-      "x_mil": 4900,
+      "x_mil": 5100,
       "y_mil": 4150,
       "carry_labels": false,
       "carry_wires": false
@@ -414,7 +414,7 @@
     {
       "op": "move_component",
       "designator": "C2",
-      "x_mil": 5500,
+      "x_mil": 5700,
       "y_mil": 4250,
       "carry_labels": false,
       "carry_wires": false
@@ -428,7 +428,7 @@
     {
       "op": "move_component",
       "designator": "C8",
-      "x_mil": 6100,
+      "x_mil": 6300,
       "y_mil": 4250,
       "carry_labels": false,
       "carry_wires": false
@@ -442,7 +442,7 @@
     {
       "op": "move_component",
       "designator": "C3",
-      "x_mil": 6700,
+      "x_mil": 6900,
       "y_mil": 4350,
       "carry_labels": false,
       "carry_wires": false
@@ -456,7 +456,7 @@
     {
       "op": "move_component",
       "designator": "C4",
-      "x_mil": 7300,
+      "x_mil": 7500,
       "y_mil": 4450,
       "carry_labels": false,
       "carry_wires": false
@@ -470,7 +470,7 @@
     {
       "op": "move_component",
       "designator": "C9",
-      "x_mil": 7900,
+      "x_mil": 8100,
       "y_mil": 4450,
       "carry_labels": false,
       "carry_wires": false
@@ -484,7 +484,7 @@
     {
       "op": "move_component",
       "designator": "C5",
-      "x_mil": 8500,
+      "x_mil": 8700,
       "y_mil": 4550,
       "carry_labels": false,
       "carry_wires": false
@@ -498,7 +498,7 @@
     {
       "op": "move_component",
       "designator": "C10",
-      "x_mil": 9100,
+      "x_mil": 9300,
       "y_mil": 4550,
       "carry_labels": false,
       "carry_wires": false
@@ -512,7 +512,7 @@
     {
       "op": "move_component",
       "designator": "C6",
-      "x_mil": 9700,
+      "x_mil": 9900,
       "y_mil": 4650,
       "carry_labels": false,
       "carry_wires": false
@@ -594,7 +594,7 @@
           4600
         ],
         [
-          2550,
+          2700,
           4600
         ]
       ]
@@ -603,11 +603,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          2850,
+          3000,
           4600
         ],
         [
-          3250,
+          3550,
           4600
         ]
       ]
@@ -616,11 +616,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4300
         ],
         [
-          4900,
+          5100,
           4300
         ]
       ]
@@ -629,11 +629,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4400
         ],
         [
-          6100,
+          6300,
           4400
         ]
       ]
@@ -642,11 +642,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4500
         ],
         [
-          6700,
+          6900,
           4500
         ]
       ]
@@ -655,11 +655,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4600
         ],
         [
-          7900,
+          8100,
           4600
         ]
       ]
@@ -668,11 +668,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4700
         ],
         [
-          9100,
+          9300,
           4700
         ]
       ]
@@ -681,11 +681,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          3850,
+          4150,
           4800
         ],
         [
-          9700,
+          9900,
           4800
         ]
       ]
@@ -694,11 +694,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          4300,
+          4500,
           4000
         ],
         [
-          4300,
+          4500,
           3800
         ]
       ]
@@ -707,11 +707,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          4900,
+          5100,
           4000
         ],
         [
-          4900,
+          5100,
           3800
         ]
       ]
@@ -720,11 +720,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          5500,
+          5700,
           4100
         ],
         [
-          5500,
+          5700,
           3800
         ]
       ]
@@ -733,11 +733,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          6100,
+          6300,
           4100
         ],
         [
-          6100,
+          6300,
           3800
         ]
       ]
@@ -746,11 +746,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          6700,
+          6900,
           4200
         ],
         [
-          6700,
+          6900,
           3800
         ]
       ]
@@ -759,11 +759,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          7300,
+          7500,
           4300
         ],
         [
-          7300,
+          7500,
           3800
         ]
       ]
@@ -772,11 +772,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          7900,
+          8100,
           4300
         ],
         [
-          7900,
+          8100,
           3800
         ]
       ]
@@ -785,11 +785,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          8500,
+          8700,
           4400
         ],
         [
-          8500,
+          8700,
           3800
         ]
       ]
@@ -798,11 +798,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          9100,
+          9300,
           4400
         ],
         [
-          9100,
+          9300,
           3800
         ]
       ]
@@ -811,11 +811,11 @@
       "op": "add_wire",
       "vertices": [
         [
-          9700,
+          9900,
           4500
         ],
         [
-          9700,
+          9900,
           3800
         ]
       ]
@@ -875,98 +875,98 @@
     {
       "op": "add_junction",
       "at": [
-        4300,
+        4500,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        4900,
+        5100,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        5500,
+        5700,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        6100,
+        6300,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        6700,
+        6900,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        7300,
+        7500,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        7900,
+        8100,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        8500,
+        8700,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        9100,
+        9300,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        9700,
+        9900,
         3800
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        4300,
+        4500,
         4300
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        5500,
+        5700,
         4400
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        7300,
+        7500,
         4600
       ]
     },
     {
       "op": "add_junction",
       "at": [
-        8500,
+        8700,
         4700
       ]
     },
@@ -1039,7 +1039,7 @@
       "op": "add_net_label",
       "name": "sel_common",
       "at": [
-        2850,
+        3000,
         4600
       ],
       "scope": "local",
@@ -1049,7 +1049,7 @@
       "op": "add_net_label",
       "name": "sel1",
       "at": [
-        3900,
+        4200,
         4300
       ],
       "scope": "local",
@@ -1059,7 +1059,7 @@
       "op": "add_net_label",
       "name": "sel2",
       "at": [
-        4950,
+        5150,
         4400
       ],
       "scope": "local",
@@ -1069,7 +1069,7 @@
       "op": "add_net_label",
       "name": "sel3",
       "at": [
-        6150,
+        6350,
         4500
       ],
       "scope": "local",
@@ -1079,7 +1079,7 @@
       "op": "add_net_label",
       "name": "sel4",
       "at": [
-        6750,
+        6950,
         4600
       ],
       "scope": "local",
@@ -1089,7 +1089,7 @@
       "op": "add_net_label",
       "name": "sel5",
       "at": [
-        7950,
+        8150,
         4700
       ],
       "scope": "local",
@@ -1099,7 +1099,7 @@
       "op": "add_net_label",
       "name": "sel6",
       "at": [
-        9150,
+        9350,
         4800
       ],
       "scope": "local",

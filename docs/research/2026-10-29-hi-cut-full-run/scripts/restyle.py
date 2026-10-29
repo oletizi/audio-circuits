@@ -86,9 +86,14 @@ GLOBAL_LABELS = [
 # The ten capacitors take their text 6.35 mm to the RIGHT of the symbol,
 # centred, one line above and one below the body's midline - one offset for ten
 # parts instead of copperhead's ten. The 6.35 mm is paired with the 15.24 mm
-# pitch and both are MEASURED for this part set (scripts/textwidth.py): the
-# widest value on this board draws 6.223 mm wide, which leaves 1.11 mm to its
-# own plate and 3.59 mm to the next capacitor's.
+# pitch and both are MEASURED for this part set (scripts/textwidth.py).
+#
+# Measured on the finished render at 600 dpi: `.047uF` draws 6.223 mm wide and
+# ends 0.994 mm from its own plate and 3.451 mm from the next capacitor's.
+# `2200pF` is the WIDEST value on this board at 6.858 mm - six characters like
+# the others, but the leading `.` is a narrow glyph - and its gaps are 0.63 mm
+# and 3.18 mm. Character count is therefore not a proxy for text width, which
+# is the whole reason this is measured rather than computed.
 FIELDS = [
     ("C1", ".047uF", 120.65, 104.14, 120.65, 106.68, 0),
     ("C7", ".033uF", 135.89, 104.14, 135.89, 106.68, 0),
@@ -101,7 +106,7 @@ FIELDS = [
     ("C10", "2200pF", 242.57, 114.30, 242.57, 116.84, 0),
     ("C6", ".015uF", 257.81, 116.84, 257.81, 119.38, 0),
     # The pot, whose carried offset of -4.318 mm put both fields 0.5 mm from
-    # the cut_wiper column. Moved to the clear side.
+    # the cut_wiper column. Moved to the side with nothing on it.
     ("RV1", "4.7K", 66.04, 100.33, 66.04, 102.87, 0),
     # R1 stays at rotation 90, where angle 90 renders horizontal.
     ("R1", "430R", 72.39, 113.03, 72.39, 120.65, 90),

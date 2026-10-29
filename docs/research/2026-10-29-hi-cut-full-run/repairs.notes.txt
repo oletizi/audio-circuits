@@ -84,29 +84,29 @@
 [ 83] set_component_transform    RV1 rotation 180
 [ 84] move_component             RV1 to (60.96, 102.87) mm
 [ 85] set_component_transform    R1 rotation 90
-[ 86] move_component             R1 to (68.58, 116.84) mm
+[ 86] move_component             R1 to (72.39, 116.84) mm
 [ 87] set_component_transform    SW1 rotation 0
-[ 88] move_component             SW1 to (90.17, 116.84) mm
+[ 88] move_component             SW1 to (97.79, 116.84) mm
 [ 89] set_component_transform    C1 rotation 0
-[ 90] move_component             C1 to (109.22, 105.41) mm
+[ 90] move_component             C1 to (114.3, 105.41) mm
 [ 91] set_component_transform    C7 rotation 0
-[ 92] move_component             C7 to (124.46, 105.41) mm
+[ 92] move_component             C7 to (129.54, 105.41) mm
 [ 93] set_component_transform    C2 rotation 0
-[ 94] move_component             C2 to (139.7, 107.95) mm
+[ 94] move_component             C2 to (144.78, 107.95) mm
 [ 95] set_component_transform    C8 rotation 0
-[ 96] move_component             C8 to (154.94, 107.95) mm
+[ 96] move_component             C8 to (160.02, 107.95) mm
 [ 97] set_component_transform    C3 rotation 0
-[ 98] move_component             C3 to (170.18, 110.49) mm
+[ 98] move_component             C3 to (175.26, 110.49) mm
 [ 99] set_component_transform    C4 rotation 0
-[100] move_component             C4 to (185.42, 113.03) mm
+[100] move_component             C4 to (190.5, 113.03) mm
 [101] set_component_transform    C9 rotation 0
-[102] move_component             C9 to (200.66, 113.03) mm
+[102] move_component             C9 to (205.74, 113.03) mm
 [103] set_component_transform    C5 rotation 0
-[104] move_component             C5 to (215.9, 115.57) mm
+[104] move_component             C5 to (220.98, 115.57) mm
 [105] set_component_transform    C10 rotation 0
-[106] move_component             C10 to (231.14, 115.57) mm
+[106] move_component             C10 to (236.22, 115.57) mm
 [107] set_component_transform    C6 rotation 0
-[108] move_component             C6 to (246.38, 118.11) mm
+[108] move_component             C6 to (251.46, 118.11) mm
 [109] set_component_transform    SI5 rotation 180
 [110] move_component             SI5 to (180.34, 55.88) mm
 [111] move_component             #FLG01 to (62.23, 71.12) mm
@@ -114,14 +114,14 @@
 [113] add_wire                   lo_boost_in rail, 193.04 mm
 [114] add_wire                   RV1.3 (cw) up to the rail's west end
 [115] add_wire                   cut_wiper column off RV1.2, 13.97 mm
-[116] add_wire                   cut_wiper to R1.1, 7.62 mm
-[117] add_wire                   sel_common: R1.2 to SW1.7, 10.16 mm
-[118] add_wire                   sel1 run, 26.67 mm
-[119] add_wire                   sel2 run, 57.15 mm
-[120] add_wire                   sel3 run, 72.39 mm
-[121] add_wire                   sel4 run, 102.87 mm
-[122] add_wire                   sel5 run, 133.35 mm
-[123] add_wire                   sel6 run, 148.59 mm
+[116] add_wire                   cut_wiper to R1.1, 11.43 mm
+[117] add_wire                   sel_common: R1.2 to SW1.7, 13.97 mm
+[118] add_wire                   sel1 run, 24.13 mm
+[119] add_wire                   sel2 run, 54.61 mm
+[120] add_wire                   sel3 run, 69.85 mm
+[121] add_wire                   sel4 run, 100.33 mm
+[122] add_wire                   sel5 run, 130.81 mm
+[123] add_wire                   sel6 run, 146.05 mm
 [124] add_wire                   C1.1 riser to the rail, 5.08 mm
 [125] add_wire                   C7.1 riser to the rail, 5.08 mm
 [126] add_wire                   C2.1 riser to the rail, 7.62 mm
