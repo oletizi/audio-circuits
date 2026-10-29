@@ -45,28 +45,46 @@ model-to-sheet generator and is not what draws the pages he has accepted.
 The toolchain
 -------------
 
-| tool | version used | licence | where it comes from |
-| --- | --- | --- | --- |
-| **copperhead** | `0.12.0`, commit `476cc15965f0d1eeda70afb9e806936f6bb15c5c` (2026-10-22) | Apache-2.0 | `github.com/copperheadhq/copperhead` |
-| **akcli-kicad** | `0.22.0` (protocol 2) | MIT | PyPI `akcli-kicad` |
-| **kicad-cli** | `10.0.5` | GPL-3.0 | KiCad install, `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` |
-| **bun** | `1.3.8` | MIT | runs copperhead's TypeScript CLI |
-| **Python** | `3.14.6` | PSF | akcli's venv, and the check scripts |
+| tool | version used | licence | where it comes from | what it does here |
+| --- | --- | --- | --- | --- |
+| **copperhead** | `0.12.0`, commit `476cc15965f0d1eeda70afb9e806936f6bb15c5c` (2026-10-22) | Apache-2.0 | `github.com/copperheadhq/copperhead` | drafts the sheet from the intent |
+| **akcli-kicad** | `0.22.0` (protocol 2) | MIT | PyPI `akcli-kicad`, upstream `github.com/tipoLi5890/akcli` | repairs the sheet; queries pin geometry |
+| **kicad-cli** | `10.0.5` | GPL-3.0 | `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` | renders, exports netlists, runs ERC |
+| **tsx** | `4.23.1` on node `v22.19.0` | MIT | npm, via `npx` | **this is what actually runs copperhead's CLI** |
+| **bun** | `1.3.8` | MIT | bun.sh | runs this repo's own `tools/schgen/*.ts` |
+| **Python** | `3.14.6` | PSF | system / venv | akcli's venv, every check script, direct sheet edits |
+| **ImageMagick** | `7.1.1-47 Q16-HDRI` | ImageMagick | `brew install imagemagick` | **every PDF to PNG conversion and every crop** |
+| **git** | any | GPL-2.0 | system | copperhead **refuses to draft** outside a git repository |
 
 **CONFIRMED by running each one**, not read off a lockfile: every version string
 above came from `--version` or `git rev-parse` on the actual installed artifact.
+
+**Two entries are corrections, and both were found by a third board being drawn
+by an agent that had not drawn the first two:**
+
+- **copperhead is invoked with `npx tsx src/cli.ts`, not `bun src/cli.ts`.** The
+  committed `draft.py` uses tsx, so tsx is the measured path. This file said
+  `bun` until the hi-boost run, and **nothing has ever measured that path.**
+  `bun` is still required, for `bun tools/schgen/board-sheets.ts`, which produces
+  the sheet the intent is verified against.
+- **ImageMagick and git were missing from this table entirely**, and the loop
+  cannot produce a picture anyone can look at without ImageMagick. A toolchain
+  list assembled from what you remember using omits the tools that worked.
 
 Reproducing it:
 
 ```
 git clone https://github.com/copperheadhq/copperhead.git
 git -C copperhead checkout 476cc15965f0d1eeda70afb9e806936f6bb15c5c
-cd copperhead && bun install
+cd copperhead && npm install
 
 python3 -m venv venv-akcli
 ./venv-akcli/bin/pip install 'akcli-kicad==0.22.0'
 ./venv-akcli/bin/akcli doctor
 ```
+
+The checkout used here was **shallow** (`.git/shallow` present, no tags fetched),
+so `git describe --tags` fails on it. The commit hash is the binding, not a tag.
 
 `akcli doctor` prints an environment report over python, kicad-cli, ngspice,
 symbols, config and network with remediation hints, and `--require` gates it for
@@ -121,12 +139,27 @@ finding it after a draft costs a whole pass.
 ### 2. Draft, and draft more than one arrangement
 
 ```
-cd <copperhead-src> && bun src/cli.ts draft schematic --intent <path>
+cd <copperhead-src> && npx tsx src/cli.ts --repo <board-dir> draft schematic --intent <path>
 ```
+
+**The board directory must be a git repository** - `git init -q` is enough.
+copperhead refuses to draft outside one, and no record said so until the third
+board.
 
 `draft` is deterministic: no LLM, no network. **Group assignment is the main
 lever you have**, so try more than one - the low-cut run drafted blocks-by-flow,
-a split cap bank, and a merged stand-in group before one was usable.
+a split cap bank, and a merged stand-in group before one was usable, and the
+hi-boost run drafted nine.
+
+**THERE IS NO STATED CRITERION FOR CHOOSING AMONG THE DRAFTS, and this is the
+largest undocumented decision in the loop.** "Try more than one if the first is
+unusable" does not define unusable. On hi-boost the four variants that split the
+board's own section measured **2 true crossings** against **8** for the five
+that keep it whole - and the 8-crossing variant was taken anyway, because the
+splits turn four tap nets into cross-group label pairs and cut one functional
+section into three headed boxes. **A number from the tool traded against a
+structural property, with nothing written to adjudicate it.** Whoever runs this
+next will make that trade again; record which way you went and why.
 
 ### 3. Render, and LOOK AT THE RENDER
 
@@ -138,6 +171,16 @@ kicad-cli sch export svg -o <dir> <sheet.kicad_sch>
 Export **SVG as well as PDF**: git can diff an SVG, so a later change shows what
 moved rather than only that something did. PDF cannot serve as a binding - it
 embeds `/CreationDate`.
+
+**RENDER BOTH SIDES OF A COMPARISON FROM ONE DIRECTORY.** The render depends on
+the `.kicad_pro` beside the sheet, which no record mentioned until the third
+board: a generated project file setting `intersheets_ref_show: true` drew `[1]`
+beside all fourteen global labels, so **the first before/after pair differed by
+the project file rather than by the sheet.** A copperhead board directory has no
+`.kicad_pro` at all; whatever supplies one is part of what you are comparing.
+
+PDF to PNG, and every crop, goes through ImageMagick (`magick`). There is no
+path from a sheet to a picture a person can look at that does not use it.
 
 **This step is not optional and it is not satisfied by a passing check.** A page
 that overflowed to A5 and was missing a third of its circuit **matched its
@@ -156,10 +199,17 @@ akcli bbox <lib_id> --at X Y --rotation R            bounding boxes, for spacing
 **Dry-run every op-list and read the net diff:**
 
 ```
-akcli plan  <ops.json> <sheet.kicad_sch>     validates, never writes
-akcli draw  <ops.json> <sheet.kicad_sch> --apply
-akcli undo  <sheet.kicad_sch>                rotated backups under .akcli/
+akcli plan  <ops.json> <sheet.kicad_sch>            validates, never writes
+akcli draw  <sheet.kicad_sch> --ops <ops.json> --apply      WRITES
+akcli undo  <sheet.kicad_sch>               rotated backups under .akcli/
 ```
+
+**`--apply` IS NOT OPTIONAL AND ITS ABSENCE IS SILENT.** `akcli draw --ops`
+without `--apply` is a dry run that **exits 0 having written nothing**, and
+there is no `akcli apply` verb. The hi-boost run lost a step to this, and the
+trap is worse than a lost step: **the netlist comparison afterwards reported
+`IDENTICAL` because nothing had been written.** A procedure that checks a repair
+by comparing netlists invites exactly this false green.
 
 `connect_and_label` refuses a non-axis-aligned endpoint, which is a refusal
 worth having. `akcli diff` gives a net-level diff of two schematics and `verify`
@@ -194,9 +244,13 @@ sha256 of the sheet he was shown. **Telling him is not recording it.**
 The repair classes
 ------------------
 
-**Six are known. The set is not closed, and must not be written as if it were** -
-the second board added three that nobody had predicted. Four are copperhead's
-structural output; two are akcli's side effects.
+**Seven are known. The set is not closed, and must not be written as if it
+were** - the second board added three that nobody had predicted. Four are
+copperhead's structural output; three are akcli's side effects.
+
+**On the third board no new class appeared**, and every known one either
+recurred or was ruled absent by measurement. That is one board's worth of
+evidence that the set is settling, and it is not evidence that it is closed.
 
 **copperhead:**
 
@@ -214,13 +268,25 @@ structural output; two are akcli's side effects.
 
 **akcli:**
 
-5. **`move_component` carries per-part field offsets.** A moved part's Reference
-   and Value do not follow sanely; rewrite them as literals keeping
-   symbol-relative offsets. **This class is invisible to every automated check,
-   so the moved part must be looked at in a rendered crop with its neighbours.**
+5. **`move_component` carries per-part field offsets AND the field ANGLE.** A
+   moved part's Reference and Value do not follow sanely; rewrite them as
+   literals keeping symbol-relative offsets. **The angle is the half the first
+   two boards did not record:** a capacitor turned from rotation 270 to 0 keeps
+   `angle 90` on its fields and renders its text vertical - 6 of 9 capacitors
+   and 3 of 4 inductors on hi-boost, 26 fields restated by hand. **This class is
+   invisible to every automated check, so the moved part must be looked at in a
+   rendered crop with its neighbours.**
 6. **`delete_object` orphans junction dots** - 11 across four passes on one
-   board, **invisible to every check that ran.** Count them:
-   `docs/research/2026-10-29-low-cut-full-run/scripts/orphan_junctions.py`.
+   board, **invisible to every check that ran.** Count them with
+   `docs/research/2026-10-29-hi-boost-full-run/scripts/junction_audit.py`.
+
+   **DO NOT USE `scripts/orphan_junctions.py` FROM THE LOW-CUT RUN. It is
+   wrong.** It counts wire endpoints only, so it calls a rail passing through a
+   symbol pin an orphan: it reported **6 orphans on a page that has none.**
+   `junction_audit.py` resolves pin positions from the sheet's own `lib_symbols`,
+   counts pins as well as wires, **and reports the converse that no committed
+   script covered - a wire-to-wire tee carrying no dot**, which is a real
+   connectivity defect rather than a cosmetic one.
 
 ### The label rule has no test in it
 
@@ -260,6 +326,23 @@ fail is worse than no check.** Each of these actually happened in this work:
   `grep -c` counted every line and reported a number that could not have been
   anything else. **Every check needs a positive control** - a value that proves
   the instrument moves.
+
+- **`akcli draw --ops` without `--apply` exits 0 having written nothing**, and
+  the netlist comparison that follows then reports `IDENTICAL` **because nothing
+  changed**. Named in full under step 4 above. The lesson generalises: a check
+  that compares before to after cannot distinguish a clean edit from no edit.
+- **A RECORDED NUMBER THAT DOES NOT REPRODUCE, which is worse than a check that
+  cannot fail.** The low-cut record states `Found 0 violations` on both sides of
+  its ERC run, under a recipe it describes. Run exactly that way, hi-boost
+  reports **9 warnings before and 5 after**, all `lib_symbol_issues` on
+  `copperhead_power` - a symbol copperhead embeds in the sheet and no
+  `sym-lib-table` declares. **The control is what makes this a finding rather
+  than a difference between boards: the same recipe run against the committed,
+  ACCEPTED low-cut page produces the same five warnings.** ERC *errors* are 0
+  everywhere, so nothing electrical is in question - but the recorded zero came
+  from something that run did and did not write down, and **an unreproducible
+  zero is indistinguishable from a check that was never run.** Report ERC as
+  errors and warnings separately, with the exact invocation.
 
 `docs/schematic/false-greens.md` catalogues these with the rest.
 
@@ -341,6 +424,33 @@ decide something this file does not answer:
 - **`tools/draught/gate.ts` is committed and known inadequate.** It matched a
   netlist exactly on the A5-overflowed page. It is structurally incapable of the
   class of defect that matters, and nothing has replaced it.
+- **"DUPLICATE" IS UNDEFINED, AND THE WORKING READING IS NOT A RULE.** On a
+  one-sheet page every label is on-page, and a net that crosses the junction
+  ladder into four groups legitimately carries four labels. Both accepted pages
+  collapsed pairs **inside one group** and kept the cross-group ones, so that is
+  the reading in force and the hi-boost run made it a check that must read zero.
+  **It is a reading of two verdicts, not a rule the owner stated**, and it is
+  flagged as such rather than asserted. **An agent must not promote it**; only he
+  can say whether it is what he meant.
+- **Net naming has no rule, and the names change the layout.** 14 of 21 nets
+  arrived from the export as `Net-(C1-Pad1)`. Meaningful names were read off
+  `circuits/pultec/electrical/from-netlist.ts` and `controls.ts` - **nothing in
+  any record sends you there** - and label length is already known to move
+  copperhead's placement, so this is not cosmetic.
+- **Label scope changes the exported net name.** Making a label local turns
+  `tap_100mh` into `/tap_100mh`, which the verification set asks to match. Three
+  nets were renamed on hi-boost for one consistent label style within a group.
+  Nothing covers what to do when a collapse leaves a net with a single label
+  whose natural scope is local.
+- **Nothing says which repairs go through an akcli op and which through a direct
+  text edit.** Both records use both and neither states a rule. hi-boost ran 174
+  ops and then 69 literal text edits for the three things akcli 0.22.0 cannot do.
+- **An akcli op cannot carry a reason.** Any unrecognised key is rejected
+  op-by-op with `OP_UNSUPPORTED`, so the *why* of a repair has to live in a
+  sidecar keyed by op index (`repairs-pass1.notes.txt` is the worked example).
+- **The loop as written has one revise step; no run has needed only one.** Both
+  the low-cut and hi-boost runs went draft, akcli, text pass, render, look,
+  re-place, re-render. Write the loop you actually ran.
 - **Only Pultec section boards have been through this loop.** Whether it carries
   to `pt2399-core` or the transistor-preamp boards is untested.
 
