@@ -124,6 +124,12 @@ never rank, and a page with no findings is not thereby good.
 yet.** For the defects that make a drawing unreadable it is the only instrument
 there is.
 
+**The target is readability itself, never conformance to a reference.** The
+owner, 2026-10-29: *"I care about readability, not idioms."* A reference
+drawing may be given to an agent as an aid, and a page that follows one closely
+is not thereby acceptable, nor is one that follows none thereby unacceptable.
+The question put to the reviewer is never "does this match the reference".
+
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the
 way its reader will.

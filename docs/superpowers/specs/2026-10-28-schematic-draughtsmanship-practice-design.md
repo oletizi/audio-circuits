@@ -197,12 +197,32 @@ command that was run on 2026-10-28.
 produced a page he accepted: *"the work you just did with akcli-kicad is
 promising… this process is worth keeping in the toolkit."*
 
-It is the pass for drawing to a **layout reference** - an arrangement someone
-has already accepted - which copperhead cannot do, because it computes every
-coordinate and exposes no way to say where the spine runs or what hangs off it.
+**THE TARGET IS READABILITY. AN IDIOM IS A CRUTCH, NOT A REQUIREMENT.** The
+owner, 2026-10-29, after preferring a page that follows no reference at all:
+
+> *"I like the copperhead output irrespective of idiom. The idiom was something
+> to give you as a reference, not something I actually care about... I care
+> about readability, not idioms. If you need an idiom to achieve success, then
+> we'll use idioms with you; clearly, copperhead doesn't require an idiom to
+> follow as autistically literally as you do."*
+
+So this pass exists because an agent placing parts by hand can be given a
+reference to work from, and copperhead cannot. **It is a scaffold for the
+draughtsman, not a specification for the drawing**, and a page is never judged
+by how closely it matches a reference.
+
+**The failure it produced, which is why the distinction is written down.** Given
+Ian Thompson-Bell's 2012 drawing as a reference, the first accepted page kept
+the reference's **geometry** while its content shrank to a quarter - inheriting
+A3, a full-width spine and a 6,500 x 3,000 mil void from a circuit that no
+longer had the parts to fill them. The owner named it: *"i suspect you copied
+the layout of the reference and deleted sections without compacting the
+diagram."* He was right, and the report's own observations had already said so
+without noticing. **Take the principles from a reference - signal flow, a
+ground rail, proximity meaning relatedness - never its proportions.**
+
 The worked example is
-`docs/research/2026-10-29-low-boost-in-thompson-bell-idiom.md`, drawing
-`pultec-low-boost` against Ian Thompson-Bell's 2012 drawing.
+`docs/research/2026-10-29-low-boost-in-thompson-bell-idiom.md`.
 
 **The procedure.**
 
