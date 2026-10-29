@@ -66,56 +66,41 @@ form - **each device is clarity or noise depending on whether it is doing
 work, and the draughtsman must be able to say what work.** A device that
 cannot be justified is not neutral. In his words: *"that's just littering."*
 
-**A label** earns its place by distance or by leaving the page.
+**A label.** **Collapse duplicate on-page labels into a wire. Always, without
+reasoning about it.** The owner, 2026-10-29:
+
+> *"Rather than try to come up with an exquisite line of reasoning about when
+> duplicate on-page labels is good or bad, you should just assume you need to
+> collapse them. I will tell you when I want you to use on-page labels."*
+
+**That is the whole rule.** There is no test to apply, no threshold, and no
+defence to weigh. An on-page label that duplicates another is collapsed; an
+on-page label is used when the reviewer asks for one. Off-page references are
+not what this is about.
+
+The reasoning behind it, in his words, kept as context and not as a procedure:
 
 > *"Labels are for off-page references or for distant symbols on a crowded page
 > where the connecting wire would be hard to trace by eye. For parts right next
 > to each other, labels instead of wires creates unnecessary noise and cognitive
 > load. It's also bad style."*
-
-**And the second of those two cases is rarer than that sentence suggests.** The
-owner, 2026-10-29, ruling on a 138 mm rail that a drafting pass chose over a
-pair of labels 64 mm apart:
-
+>
 > *"the long rail is the right choice. It's much more clear than a pair of
 > labels would have been. On-page labels in place of wires should be used very
 > sparingly. I've almost never seen it used."*
+>
+> *"on-page label duplication is probably an indicator of something wrong."*
 
-**So the default is a wire, including a long one.** Substituting an on-page
-label for a wire is a rare exception needing a strong case, not a routine
-trade-off available whenever a run gets long.
-
-**AND THAT IS AS FAR AS THIS GOES. DO NOT DERIVE FURTHER RULES ABOUT LABELS.**
-The owner, 2026-10-29:
-
-> *"i don't think you should try to derive too many rules about when to use
-> labels on a page. There is a duplicate label that should be collapsed - but
-> *why* I didn't complain is subtle and you shouldn't try to read the tea leaves
-> and invent (bad) algorithms for when it's ok to use on-page labels."*
-
-> **An earlier draft of this clause claimed the two criteria could be ORDERED:**
-> *"When they conflict, the wire wins."* **Struck.** It was an ordering law
-> generalised from a single verdict on a single page, and it is the same error as
-> the struck *"a hairpin earns its place never"* - an observation promoted to a
-> rule that claims more than the evidence carries. **Twice in one day, by the
-> same agent, in the same document.** Left visible because the pattern is the
-> point: a reviewer's verdict on an instance is evidence about that instance, and
-> turning it into an algorithm is the lamp-post problem reaching for the
-> codifiable thing.
-
-**What CAN be said in general, in his words, 2026-10-29:**
-
-> *"on-page label duplication is probably an indicator of something wrong - in
-> general, using on-page label duplication is a bad idea"*
-
-**Note the form, and preserve it.** *Probably an indicator*, and *in general a
-bad idea* - the same shape as the hairpin, and for the same reason: a prior
-against the thing, not a prohibition of it. What it is an indicator OF is not
-stated here, because he did not state it and guessing would be the error this
-section already records twice.
-
-**When a label and a wire both seem defensible, that is a question for the
-reviewer, not a calculation.** Ask.
+> **THREE DRAFTS OF THIS CLAUSE WERE STRUCK IN ONE DAY, ALL BY THE SAME AGENT,
+> AND THE PATTERN IS THE POINT.** The first claimed *"a hairpin earns its place
+> never"* - an absolute from an observation. The second claimed *"when they
+> conflict, the wire wins"* - an ordering law from a single verdict. The third
+> was an elaborate test for when duplication is defensible, which the owner
+> struck as *"over-thinking the rules again"* and *"read[ing] the tea leaves."*
+> Each time a verdict on an instance was promoted into a decision procedure.
+> **The lamp-post problem reaches for the codifiable thing, and a rule is the
+> most codifiable thing there is.** Where the reviewer has given a default,
+> apply the default and stop.
 
 **A repeated ground symbol** earns its place by shortening a run.
 
