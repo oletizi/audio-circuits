@@ -137,8 +137,49 @@ that file, if such a thing exists and is suitable for the task."* The objection
 is to opacity, not to tooling - so a CLI or library that creates, queries and
 advances these records is reuse, provided the stored form stays human-readable
 in a diff. **A tool whose stored form can only be read back through the tool
-fails the same test a database fails.** Whether such a thing exists is under
-investigation; see "What it leaves open".
+fails the same test a database fails.**
+
+**One exists: GNU recutils**, and the record is shaped as an in-toto Statement.
+Measured (`2026-10-28-git-native-record-tooling.md`):
+
+- The state set is **ours and enforced**:
+  `%type: Status enum pending approved approved_with_comment rejected superseded`,
+  and `%type: ArtifactSha256 regexp /^[0-9a-f]{64}$/`. Five refusal cases each
+  exit 1 **with nothing written**.
+- `recfix --check` catches a bad hand-edit with line numbers, so the register
+  itself is gateable in `make check`.
+- A diff is one line per changed field. Multi-line verbatim text round-trips, so
+  the reviewer's words survive unaltered.
+- 3.2 MB, system libraries only.
+
+**It does not do everything, and the gap is ours to close in glue.** recutils
+polices values but not transitions - `approved` to `rejected` to `approved` is
+valid - and it cannot know whether a recorded hash still matches the file on
+disk. Both belong in one staleness check that compares recorded to computed
+digests. **A verdict pointing at an artifact that no longer exists is as stale
+as one pointing at changed bytes**, and that case was found by writing the check
+rather than by reasoning about it.
+
+**Rejected, with the reason recorded because the test did real work:**
+
+- **`git-bug`** - each commit's operations blob *replaces* the previous one, so
+  `git log -p` renders prior operations as deletions when nothing was deleted.
+  **The diff actively lies.** Status is a bare integer legible only against the
+  tool's Go source. A database's opacity relocated into a git object.
+- **`git-appraise`** - better built, with published JSON Schemas worth imitating
+  and the only real region schema found, but its region units are lines and
+  columns in a text file, it keys records to a commit, it reported a stale
+  accepted review as current, and it hardcodes `refs/heads/master`.
+- **`jq` / `yq` / `dasel`** - structured editors with no schema; all accepted a
+  nonsense status at exit 0, and `dasel validate` printed `fail` while **still
+  exiting 0**.
+- **`git notes` keyed on the artifact blob** - the sharpest mechanism found, and
+  declined. Redraw the sheet and the lookup simply fails while the old note stays
+  attached to the bytes it was about, so **a stale approval becomes impossible to
+  express rather than merely detectable**. But a plain clone fetches no notes,
+  and that absence reads identically to "nobody reviewed this". A silent absence
+  that looks like a clean slate is the failure mode `docs/schematic/false-greens.md`
+  exists to catalogue.
 
 **Nothing in that file is derived.** The status is only ever what the reviewer
 put there, and it returns to `drafted` the moment either hash changes - so a
@@ -184,11 +225,12 @@ What it leaves open
 - **How a region is named**, so a verdict can attach to one. KiCad 10 supports
   `(group "name" (uuid ...) (members ...))` with member ids sorted for diff
   stability, and this repository currently emits none.
-- **Whether an existing structured interface fits the record.** Candidates under
-  investigation include `git-bug`, `git-appraise`, `git notes` and GNU
-  `recutils`. The test each must pass: the stored form stays readable in a diff
-  without the tool. If none passes, hand-managed structured text is the honest
-  answer and will be stated as such.
+- **How a region is named so a verdict can attach to it, and in what units.**
+  No surveyed tool answers this: the only real region schema found measures in
+  lines and columns of a text file. The recfile defers it honestly by holding a
+  string. **Whether a region must be machine-checkable is a question for whoever
+  authors the acceptance criteria, which is never the agent producing the
+  drawings** - so it is the owner's to settle, not this document's.
 - **Whether the practice holds on a circuit of a different shape.** Everything
   measured here is one board. `transistor-preamp-lab` is the first real test.
 - **Three coverage holes in the research**, stated in the map: GitHub search
