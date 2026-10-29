@@ -136,6 +136,12 @@ intent's net partition must be identical, **as sets of `REF.PIN` sets**, to the
 netlist exported from the model. A mismatch here is a bug in the intent, and
 finding it after a draft costs a whole pass.
 
+**THE DRAFT STEP IS SKIPPED ENTIRELY WHEN THE STARTING POINT IS AN EXISTING
+PAGE.** A repair to a sheet the reviewer has already seen runs steps 3 to 6 only
+- the hairpin-fix run used no copperhead at all. The loop below describes
+drawing a board from nothing; do not re-draft a page he has accepted in order to
+follow it.
+
 ### 2. Draft, and draft more than one arrangement
 
 ```
@@ -179,6 +185,18 @@ beside all fourteen global labels, so **the first before/after pair differed by
 the project file rather than by the sheet.** A copperhead board directory has no
 `.kicad_pro` at all; whatever supplies one is part of what you are comparing.
 
+**AND THE TITLE BLOCK PRINTS THE SHEET'S FILE NAME**, which defeats the remedy
+above if you apply it literally. Rendering `before.kicad_sch` against
+`pultec-hi-boost.kicad_sch` **in one directory** - what this file said to do -
+put a spurious difference band 125 mm from anything that changed. **The fix is
+the same FILE NAME in two sibling directories with identical project files**,
+not one directory with two names.
+
+**And a bounding box hid it:** the trim box over the real band and the
+title-block band read as one 148 mm-tall region, which looked like a single
+large change. **Report difference BANDS, not a bounding box** - a box over two
+distant changes describes neither.
+
 PDF to PNG, and every crop, goes through ImageMagick (`magick`). There is no
 path from a sheet to a picture a person can look at that does not use it.
 
@@ -192,17 +210,28 @@ looking.
 **Query geometry before placing anything:**
 
 ```
-akcli pins <lib_id> --at X Y --rotation R --json     pin world coordinates
+akcli pins <lib_id> --at X Y --rotation R --json     pin coordinates - SEE BELOW
 akcli bbox <lib_id> --at X Y --rotation R            bounding boxes, for spacing
 ```
+
+**`akcli pins` MIXES UNITS AND ITS ABSOLUTE COORDINATES ARE WRONG.** Given
+`--at 207.01 53.34` in **mm** it returns `y_mil` values of −96.66 and 203.34 -
+the mm figure with a ±150 **mil** offset added to it. **The spacing between the
+two pins is right; the absolute positions are not.** Use it for pitch and
+extent, and **read absolute pin positions out of the sheet's own `lib_symbols`
+block instead.** Found on the third run of this loop, after two runs had used
+the tool without noticing.
 
 **Dry-run every op-list and read the net diff:**
 
 ```
-akcli plan  <ops.json> <sheet.kicad_sch>            validates, never writes
-akcli draw  <sheet.kicad_sch> --ops <ops.json> --apply      WRITES
-akcli undo  <sheet.kicad_sch>               rotated backups under .akcli/
+akcli plan  <sheet.kicad_sch> --ops <ops.json>            validates, never writes
+akcli draw  <sheet.kicad_sch> --ops <ops.json> --apply    WRITES
+akcli undo  <sheet.kicad_sch>                rotated backups under .akcli/
 ```
+
+**`plan` needs `--ops` too** - it rejects the positional form this file gave
+until the hairpin-fix run tried it.
 
 **`--apply` IS NOT OPTIONAL AND ITS ABSENCE IS SILENT.** `akcli draw --ops`
 without `--apply` is a dry run that **exits 0 having written nothing**, and
@@ -293,11 +322,25 @@ evidence that the set is settling, and it is not evidence that it is closed.
 5. **`move_component` carries per-part field offsets AND the field ANGLE.** A
    moved part's Reference and Value do not follow sanely; rewrite them as
    literals keeping symbol-relative offsets. **The angle is the half the first
-   two boards did not record:** a capacitor turned from rotation 270 to 0 keeps
-   `angle 90` on its fields and renders its text vertical - 6 of 9 capacitors
-   and 3 of 4 inductors on hi-boost, 26 fields restated by hand. **This class is
-   invisible to every automated check, so the moved part must be looked at in a
-   rendered crop with its neighbours.**
+   two boards did not record**, and it cost 26 fields restated by hand on
+   hi-boost - 6 of 9 capacitors and 3 of 4 inductors.
+
+   **THE RULE, measured, and it is NOT "set the angle to 0":**
+
+   > a field renders horizontally when **`(symbol rotation + field angle) mod
+   > 180 == 0`**
+
+   This file stated the one-directional form until the hairpin-fix run - *a part
+   turned 270 to 0 keeps `angle 90` and renders vertical* - which reads as "set
+   angle 0" and **is wrong in the other direction**: `SI6` turned **0 to 270**
+   and keeping `angle 0` renders **vertical**. There is a control render for it,
+   `crops/control-si6-field-angle-0.png` in the hairpin-fix directory.
+
+   **The same wrong assumption had silently corrupted a measuring script** by
+   1.43 mm - in the direction that makes a page look tighter than it is.
+
+   **This class is invisible to every automated check, so the moved part must be
+   looked at in a rendered crop with its neighbours.**
 6. **`delete_object` orphans junction dots** - 11 across four passes on one
    board, **invisible to every check that ran.** Count them with
    `docs/research/2026-10-29-hi-boost-full-run/scripts/junction_audit.py`.
@@ -467,6 +510,13 @@ decide something this file does not answer:
 - **Nothing says which repairs go through an akcli op and which through a direct
   text edit.** Both records use both and neither states a rule. hi-boost ran 174
   ops and then 69 literal text edits for the three things akcli 0.22.0 cannot do.
+- **MOVING A LABEL has no akcli op at all**, so it must be a literal edit - and
+  **when that edit runs relative to the ops decides which of akcli's own two
+  self-checks means anything.** Run the label move first and the connectivity
+  check is meaningful while the net diff reports artifacts of the intermediate
+  state; run it last and the reverse. Neither ordering is wrong, and **neither
+  of akcli's self-checks is the binding comparison** - that is a netlist compare
+  of the committed before-sheet against the finished one.
 - **An akcli op cannot carry a reason.** Any unrecognised key is rejected
   op-by-op with `OP_UNSUPPORTED`, so the *why* of a repair has to live in a
   sidecar keyed by op index (`repairs-pass1.notes.txt` is the worked example).
