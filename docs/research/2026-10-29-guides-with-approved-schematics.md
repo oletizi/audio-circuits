@@ -298,6 +298,46 @@ a tree where `bun run typecheck` is clean. While it was broken the board walk wa
 reached instead by running `make -C boards/<board> check` for all eleven, which
 is the same recipe the aggregate walk runs, and it produced the same eleven rows.
 
+### `bun test`, and the one test this change broke
+
+`3984 pass, 13 fail` over 3997 tests in 373 files. **One of the thirteen was
+this change's**, and it is now repaired; the other twelve are not.
+
+**`tests/guide/clusters-packet.test.ts`, two failures, mine.** That file drives
+the real packet writer over the real `boards/pultec-low-boost`, and its stated
+premise was *"this board declares no `"sch"`"* - which this change made false.
+It injected a **throwing** `exportSchematicPdf` so that a stray export would be
+loud, and declaring the page made the export legitimate, so the throw fired.
+
+**Its own module comment predicted the transition and named the wrong arm**,
+which is worth recording: *"the day the arrangement work drives that count to
+zero the board resolves `"generated"` instead, and this test's
+`exportSchematicPdf` override is exactly the guard that keeps that transition
+from silently spawning a real `kicad-cli`."* Right about the mechanism, wrong
+about which branch - the board got a DECLARED page, so `resolveSchematic`
+returns `"printed"` on its first branch and never reaches `schgen` at all.
+
+Repaired by making the override **record instead of throw**, and asserting that
+the export happened **exactly once and from the declared sheet**, which is a
+stronger claim than the throw made. `packetFiles(false, true)` became
+`packetFiles(true, true)`: the packet now has a schematic page. `3 pass, 0 fail`.
+
+**The other eleven, none of them this change's**, each with the reason the run
+itself printed:
+
+| test file | failures | why |
+| --- | --- | --- |
+| `tests/schgen/port-fidelity.test.ts` | 8 | `SCHGEN_SOURCE is not set` - it must point at the pedals repository's `tools/schgen/`, and nothing here sets or unsets it |
+| `tests/schgen/port-fidelity.test.ts` | 1 | `tools/schgen/junction-probe.ts` is on disk but in none of the manifest's lists - the concurrent agent's new file |
+| `tests/schgen/elk/junctions.test.ts` | 1 | `expect(t.split).toBe(2)` got `0`; the file is in the concurrent agent's unstaged diff |
+| `tests/schgen/decomposition-probe.test.ts` | 1 | timed out after 5000 ms on a probe that ran for 23,339 ms |
+
+**And `tests/perfboard/verbs.test.ts` failed once and passed on both reruns** -
+a fake-veroroute binary that `posix_spawn` could not find in a temp directory.
+Recorded as flaky rather than quietly re-run until green. `tests/guide`,
+`tests/perfboard`, `tests/circuits` and `tests/cli` together: **619 pass, 0 fail**,
+twice.
+
 ---
 
 ## 6. Where the existing tooling and the practice spec were insufficient
@@ -365,3 +405,6 @@ Each of these is reported rather than fixed. None of them blocked the work.
 - **The header-row and two-document findings in §6 were not acted on.** They are
   decisions about what the printed document should say, and the brief asked for
   them to be reported.
+- **The twelve test failures that are not this change's were not fixed**, and the
+  flaky `tests/perfboard/verbs.test.ts` was not re-run until it agreed. See the
+  table in §5.
