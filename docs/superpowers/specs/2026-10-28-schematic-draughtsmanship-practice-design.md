@@ -54,6 +54,55 @@ Decisions
 | No placement-intent format of our own | evidence | fourteen systems surveyed, adopt nothing; the one project that built it calls it legacy |
 | No reliance on exit codes | evidence | a page missing a third of its circuit exits 0 from every tool in the chain |
 
+0. What the principles require of the tooling
+--------------------------------------------
+
+**`EVALUATING-DRAWINGS.md` holds the principles, and they drive this design
+rather than merely judging its output.** The owner, 2026-10-29: *"They also need
+to strongly inform our design doc and tooling efforts."* Four consequences
+follow, each measured rather than reasoned.
+
+**1. P1 makes the second pass structural, not optional.** copperhead breaches
+*a device is noise unless it is earning its place* **by construction**, on every
+board it will ever draft:
+
+- it emits a label wherever a net spans more than one group **or** carries more
+  than four endpoints, regardless of how close the parts are
+- it emits **one ground symbol per pin** on a ground-class net, and has no
+  horizontal-rail primitive at all
+- it exposes no orientation control, so a part can face the wrong way and
+  produce a hairpin that no routing fixes
+
+On `pultec-low-boost` that produced a duplicated label 27 mm from its twin
+inside one group rectangle, nine ground symbols where five serve, and a ground
+symbol placed above a pin whose body therefore pointed back at the part. **Three
+of the owner's four repairs were instances of this, not accidents.** A drafting
+pass behind copperhead is therefore part of the architecture.
+
+**2. P1 names the tool gaps that matter.** A gap is worth recording when it
+blocks a repair the principles require. Three are measured in akcli:
+
+| Gap | Repair it blocks |
+| --- | --- |
+| no operation for a symbol field's position | moving text off a wire it grazes - the `RV1`/`47K` graze survived for this reason |
+| `add_net_label` has no `shape` | matching the sheet's existing label style; it emits `input` where the sheet uses `passive` |
+| `add_wire` has no stroke parameter | copperhead colours wires **per net** and colour is how a reader follows one; new wires render default green, and rotating a part moved copperhead's own stubs onto other nets while they kept their old colour |
+
+**3. P4 forbids building a metric, and bounds what the lint is for.** The
+lamp-post problem says the measurable defects are the minor ones, and the
+measurements agree: `akcli check --layout` reported **the same single
+pre-existing finding** before and after four repairs, and did not see the text
+collision found by looking. The published legibility score was calibrated
+against drawings of known quality and ranked the owner's own schematic level
+with a known-bad board. **So: run the lint, report it, never gate on it, and
+never derive a number from it.**
+
+**4. P2 means a page without a drafting pass is not finished.** Littering is
+evidence that a drawing was emitted and not attended to, so a copperhead draft
+is a draft. It is still **shown** - rule 3 of the process document admits no
+exception - it is simply not a candidate for approval until P1 has been applied
+to it.
+
 1. The stack
 ------------
 
