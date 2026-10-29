@@ -103,6 +103,17 @@ The owner, 2026-10-29:
 > turning it into an algorithm is the lamp-post problem reaching for the
 > codifiable thing.
 
+**What CAN be said in general, in his words, 2026-10-29:**
+
+> *"on-page label duplication is probably an indicator of something wrong - in
+> general, using on-page label duplication is a bad idea"*
+
+**Note the form, and preserve it.** *Probably an indicator*, and *in general a
+bad idea* - the same shape as the hairpin, and for the same reason: a prior
+against the thing, not a prohibition of it. What it is an indicator OF is not
+stated here, because he did not state it and guessing would be the error this
+section already records twice.
+
 **When a label and a wire both seem defensible, that is a question for the
 reviewer, not a calculation.** Ask.
 
