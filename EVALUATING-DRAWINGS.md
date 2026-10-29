@@ -179,11 +179,46 @@ attention the hard part needed.**
 The general statement of the lamp-post problem, from which P3 follows. Stated
 in full under rule 6.
 
-## P5. Signal flows left to right and top to bottom, and an output points right
+## Style, and why it is not a rule
 
-The owner, 2026-10-29, on the Lo boost stand-in group of the `pultec-hi-boost`
-page, **quoted complete because its last sentence is as much of the principle as
-its first**:
+**NOTHING IN THIS SECTION IS A RULE, AND IT MUST NOT BE WRITTEN AS ONE.** The
+owner, 2026-10-29, striking the version of this section that was numbered `P5`
+and titled as an imperative:
+
+> *"again, don't codify this as a rule - it's a **style** preference; but,
+> consistent style and a common style convention accumulate to increase
+> readability and comprehension - that's much of what style preferences are
+> for."*
+
+**The title was the codification.** The struck version argued at length against
+hardening the convention into an ultimatum while stating it as one in its own
+heading, and sat in the numbered series beside principles that do bind. An agent
+reading the heading would never have reached the hedge.
+
+### Why style is worth following anyway, which is the useful half
+
+**A style preference earns its keep by accumulation, not by any single
+application.** That is his reason and it is the one to carry: *"consistent style
+and a common style convention accumulate to increase readability and
+comprehension."* So the argument for following a convention is never that this
+one drawing needs it - usually it does not - but that a reader who has learned
+where to look keeps that knowledge across every drawing, and an inconsistent
+page spends it.
+
+**This is the same shape as P2** and belongs beside it: any one breach is minor,
+which is exactly why each is easy to wave through, and what they indicate
+collectively is a drawing that was emitted rather than attended to. **The
+difference is the mechanism** - P2 is about what littering reveals of the
+process; style is about what consistency buys the reader.
+
+**So: follow the conventions. Do not enforce them, do not gate on them, do not
+score a drawing against them, and never refuse to produce a page over one.**
+
+### The conventions recorded so far
+
+**Signal flows left to right and top to bottom, like English text; an input
+enters at the left and an output leaves at the right, pointing right.** The
+owner, 2026-10-29, on the Lo boost stand-in group of the `pultec-hi-boost` page:
 
 > *"Another way to look at why the lo boost stand-in section is goofy is that
 > signal usually flows left to right and top to bottom (like english text). This
@@ -192,45 +227,31 @@ its first**:
 > backwards of convention. In this case, it's not a big deal, since it's such a
 > small network, but it's still goofy and definitely bad style."*
 
-**Three claims, and they are not the same claim.**
+**His own hedge is part of it**: *"not a big deal, since it's such a small
+network, but it's still goofy and definitely bad style."* Worth fixing at any
+size; not equally urgent at any size. **No clause here says signal must always
+flow left to right, and no number says how small a small network is.** Inventing
+either would be the fourth instance of a pattern this document already carries
+three struck examples of - *"a hairpin earns its place never"*, *"when they
+conflict, the wire wins"*, and the defensibility test for labels. Each was a law
+induced from one verdict.
 
-1. **The convention**: signal flows left to right and top to bottom, like
-   English text. An input enters at the left, an output leaves at the right,
-   pointing right.
-2. **The verdict on this instance**: an input below its output is backwards; an
-   output pointing up is *"exactly backwards of convention"*.
-3. **The magnitude**: *"not a big deal, since it's such a small network, but it's
-   still goofy and definitely bad style."*
+### Why a style observation can still reach a cause a principle cannot
 
-**HE SUPPLIED THE HEDGE HIMSELF AND IT TRAVELS WITH THE RULE.** The severity of
-a flow violation scales with the size of the network it is in - a two-resistor
-stand-in read backwards costs a reader almost nothing, and the same inversion
-across a signal chain costs a great deal. **This is bad style and worth fixing at
-any size; it is not equally urgent at any size.**
+**It did here, which is why this section is not merely advisory decoration.** A
+hairpin in this same group had already been named under P1, and the correction
+derived from P1 alone - re-place the grounded part so its ground symbol stops
+folding back - was a true repair of a real defect that would have **left the
+group's input below its output and its output pointing up.** Looking at the flow
+instead, the hairpin **dissolves as a consequence rather than as a repair.**
 
-**DO NOT HARDEN THIS INTO AN ULTIMATUM, AND DO NOT INVENT THE THRESHOLD.** No
-clause here says signal must always flow left to right; no number says how small
-*"such a small network"* is. Writing either would be the fourth instance of the
-pattern this document already records three struck examples of - *"a hairpin
-earns its place never"*, *"when they conflict, the wire wins"*, and the
-defensibility test for labels. **Each was a law induced from one verdict, and
-each was struck.** If a drawing seems to need the flow inverted, that is a
-question for the reviewer, not a threshold for an agent to set.
+**The test of whether a correction reached the cause is to ask what else it
+fixes.** A repair that fixes exactly the one thing pointed at, and nothing
+adjacent, is usually a patch.
 
-**WHY THIS SITS BESIDE P1 RATHER THAN UNDER IT: it reaches a cause that P1
-cannot.** He had already named a hairpin in this same group, and the correction
-derived from P1 alone was to re-place the grounded part so its ground symbol
-stopped folding back - a true repair of a real defect that would have **left the
-group's input below its output and its output pointing up.** P5 names the
-first-order fault, and **the hairpin dissolves as a consequence of fixing it
-rather than as a repair in its own right.** That is the test of whether a
-correction reached the cause: ask what else it fixes.
-
-**It also recovers something P3 had deliberately set aside.** P3 says to take
-the principles from a reference and never its proportions, and lists *"signal
-flow"* first among what transfers. P5 is that item stated in the owner's own
-words instead of inferred from a drawing - which is the difference between a
-principle and a reading of one.
+**It also recovers an item P3 had set aside.** P3 lists *"signal flow"* first
+among what transfers from a reference drawing, so this is that item in the
+owner's own words rather than inferred from a drawing.
 
 ---
 
@@ -364,12 +385,15 @@ closely is not thereby acceptable, nor is one that follows none thereby
 unacceptable. The question put to the reviewer is never "does this match the
 reference".
 
-**For what makes a drawing worth reading, see The principles above** - P1, which
-governs every device on a page, and **P5, which governs the direction the page
-reads in.** The two reach different faults: P1 asks what a device is doing there,
-P5 asks whether the page runs the way a reader's eye does. A page can satisfy
-P1 completely and still be **"exactly backwards of convention"**, which is where
-the Lo boost stand-in group was after a P1 repair had already been derived for it.
+**For what makes a drawing worth reading, see The principles above** - P1 in
+particular, which governs every device on a page.
+
+**And see Style, which binds differently.** The conventions there are not rules
+and are never gated on, but they reach faults P1 does not: a page can satisfy P1
+completely and still read **"exactly backwards of convention"**, which is where
+the Lo boost stand-in group was after a P1 repair had already been derived for
+it. A convention earns its keep by accumulating across drawings, not by any one
+of them needing it.
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the

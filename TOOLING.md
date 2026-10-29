@@ -265,15 +265,24 @@ evidence that the set is settling, and it is not evidence that it is closed.
    terminal of the pot symbol would point down or horizontally so the ground
    wire doesn't hairpin."*
 
-   **AND IT HAS NO SIGNAL-FLOW CONTROL EITHER, WHICH IS THE LARGER HALF OF THE
-   SAME CLASS.** `EVALUATING-DRAWINGS.md` **P5**: signal flows left to right and
-   top to bottom, like English text, and an output points right, horizontally.
-   copperhead will happily place a group with its input below its output and its
-   output pointing up - *"exactly backwards of convention"*. **Check the flow
-   direction of every group before you repair anything else in it**, because a
-   hairpin repair derived without looking at the flow can be a correct repair
-   that leaves the page reading backwards. Report, for each group: where the
-   input enters, where the output leaves, and which way each points.
+   **AND IT HAS NO SIGNAL-FLOW CONTROL EITHER.** copperhead will place a group
+   with its input below its output and its output pointing up - which the owner
+   called *"exactly backwards of convention"*.
+
+   **This is a STYLE preference and must not be made a rule, a gate or a score.**
+   The owner, 2026-10-29: *"don't codify this as a rule - it's a **style**
+   preference; but, consistent style and a common style convention accumulate to
+   increase readability and comprehension - that's much of what style preferences
+   are for."* See **Style** in `EVALUATING-DRAWINGS.md` for the conventions and
+   the reason they are worth following. **Nothing here may refuse a page over
+   one.**
+
+   **Why it belongs in this list anyway:** a hairpin repair derived without
+   looking at the flow can be a correct repair that leaves the group reading
+   backwards - which is what happened on hi-boost. So **look at a group's flow
+   before repairing anything else in it**, and report where the input enters,
+   where the output leaves and which way each points, as an observation rather
+   than a check that passes or fails.
 4. **`PWR_FLAG` coordinate collisions.**
 
 **akcli:**
