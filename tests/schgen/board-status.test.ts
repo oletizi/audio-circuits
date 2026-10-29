@@ -13,12 +13,23 @@
  * **THIS FILE RUNS THE CENSUS, which had exactly one caller before it: its own `import.meta.main`.**
  * A census nothing but a CLI invokes is a measurement that no committed check can disagree with.
  *
- * **WHAT IS COMMITTED HERE AND WHAT IS DELIBERATELY NOT.** `pultec-mid` is `not-drawable`; no board
- * is `generator-defect`; every other board produces a drawing. **The usable/defective split is NOT
+ * **WHAT IS COMMITTED HERE AND WHAT IS DELIBERATELY NOT.** **Every one of the eleven boards
+ * produces a drawing**, and no board is `generator-defect`. **The usable/defective split is NOT
  * asserted**, and that is the spec's instruction rather than an omission: revision 2 of the spec
  * predicted a split and Codex disproved it from a gate its table had missed, so predicting again
  * before the refusal sites were enumerated would be guessing twice. What the run reported on
  * 2026-10-27 is recorded in the task report, not pinned here.
+ *
+ * **THIS SAID `pultec-mid` IS `not-drawable` UNTIL 2026-10-29**, and it was the last board that
+ * was. It refused at `pinsDeclared` because `SW_MID` - the eleven-position mid-frequency selector,
+ * drawn with `Switch:SW_Rotary_1x12` on the owner's part choice of a twelve-position switch with
+ * its stop set to eleven - left pin 12, the unused twelfth detent, neither on a net nor declared.
+ * Declaring that one pin no-connect by number through `ComponentOverride.ncPins` closed it;
+ * `tests/schgen/nc-pins.test.ts` is where that mechanism's arms live, including the negative
+ * controls that prove `pinsDeclared` still refuses an undeclared pin. **`pultec-mid` now draws and
+ * is classified `defective`** on one `missing-junction` finding, which is a different question
+ * from this one and the first time anybody could see it - `CLAUDE.md`'s **G303**: *"a gate halts
+ * rendering and we never look at the picture so we can't tell if the gate is insane or not"*.
  *
  * **AND A PASSING TEST IS NOT EVIDENCE THAT A PAGE IS WORTH LOOKING AT.** Nothing below establishes
  * that any of these drawings is readable. Three of them were rendered to PNG and read by a person
@@ -124,13 +135,22 @@ describe("the census covers boards/ exactly", () => {
 })
 
 describe("the committed expectations, which this run may disagree with", () => {
-  test("pultec-mid is not-drawable: its circuit does not validate, so no geometry exists", () => {
+  test("NO BOARD is not-drawable: every circuit validates, so geometry exists for all eleven", () => {
+    // The last one that did not was `pultec-mid` - see this file's header for the pin and the fix.
+    // Asserted as a LIST rather than a count, because a board that falls back out of drawing is a
+    // thing to read rather than a number to compare.
+    expect(census().filter((r) => r.outcome === "not-drawable").map((r) => r.board)).toEqual([])
+    expect(census().filter((r) => r.findings.some((f) => f.kind === "circuit-invalid")).map((r) => r.board)).toEqual([])
+  })
+
+  test("pultec-mid, the board that was not-drawable, now draws - and its findings are about the DRAWING", () => {
     const r = row("pultec-mid")
-    expect(r.outcome).toBe("not-drawable")
-    expect(r.schematicRoot, "a not-drawable board writes no schematic").toBeUndefined()
-    expect(r.findings.map((f) => f.kind)).toEqual(["circuit-invalid"])
-    // The demand itself, which G282 records as the class of demand to question rather than satisfy.
-    expect(r.blocker).toContain("SW_MID")
+    expect(r.schematicRoot, "pultec-mid produced no drawing; the ncPins declaration for SW_MID pin 12 is what unblocked it").toBeDefined()
+    expect(r.drawings.length).toBeGreaterThan(0)
+    // NOT `circuit-invalid`: the circuit is valid now, and whatever is left is a property of the
+    // geometry. The class itself is deliberately not asserted - see this file's header.
+    expect(r.findings.map((f) => f.kind)).not.toContain("circuit-invalid")
+    expect(["usable", "defective"]).toContain(r.outcome)
   })
 
   test("NO BOARD IS generator-defect; one that is would be a bug report, not a status", () => {
@@ -143,9 +163,8 @@ describe("the committed expectations, which this run may disagree with", () => {
     ).toEqual([])
   })
 
-  test("every board but pultec-mid produces a drawing, classified usable or defective", () => {
+  test("every board produces a drawing, classified usable or defective", () => {
     for (const r of census()) {
-      if (r.board === "pultec-mid") continue
       expect(r.schematicRoot, `${r.board} produced no drawing; a gate was misclassified`).toBeDefined()
       expect(r.drawings.length, `${r.board} wrote a schematic root but drew no sheet`).toBeGreaterThan(0)
       // The split between the two is NOT asserted - see this file's header for why.
@@ -181,6 +200,10 @@ describe("every board has an artifact on disk a person can open", () => {
     }
   })
 
+  // **BOTH HALVES OF THIS STILL FAIL IF THEY ARE WRONG, although no board takes the first branch
+  // today**: every board must be shown to have a drawing on disk AND no refusal page beside it, so
+  // a board that stops drawing is caught here by name. The refusal page's own CONTENT is asserted
+  // against a fabricated status in the test below, for the reason given there.
   test("a board with no drawing gets a one-page refusal sheet; one with a drawing gets none", () => {
     for (const r of census()) {
       const sheet = path.join(OUT_DIR, r.board, "REFUSAL.kicad_sch")
@@ -189,9 +212,23 @@ describe("every board has an artifact on disk a person can open", () => {
     }
   })
 
+  /**
+   * **BUILT BY HAND, because no real board is `not-drawable` any more.** It read `pultec-mid`'s
+   * own `REFUSAL.kicad_sch` until that board began to draw, and the honest replacement is a
+   * fabricated status rather than a deleted test: the refusal page is still the artifact a board
+   * gets when its circuit does not validate, and a page nothing has ever caused to be written is a
+   * page nobody has read. The reason text is the refusal `pinsDeclared` actually produced for
+   * `SW_MID` pin 12, so what it asserts is a shape this generator really emits.
+   */
   test("the refusal sheet names the board and the reason, and draws no circuit", () => {
-    const r = row("pultec-mid")
-    const sheet = fs.readFileSync(path.join(OUT_DIR, r.board, "REFUSAL.kicad_sch"), "utf8")
+    const fabricated: BoardStatus = {
+      board: "pultec-mid",
+      outcome: "not-drawable",
+      blocker: "part SW_MID: pin 12 (12) is neither on a net nor declared not connected",
+      findings: [{ kind: "circuit-invalid", what: "part SW_MID: pin 12 (12) is neither on a net nor declared not connected", where: "pultec-mid" }],
+      schematicRoot: undefined,
+    }
+    const sheet = refusalSheet(fabricated)
     expect(sheet).toContain("pultec-mid")
     expect(sheet).toContain("SW_MID")
     expect(sheet).toContain("not-drawable")

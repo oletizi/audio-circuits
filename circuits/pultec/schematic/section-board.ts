@@ -40,8 +40,8 @@
  * wearing a literal's clothes.
  *
  * **WHAT THIS FILE DECLARES THAT THE MODEL CANNOT HOLD, each with its reason on the declaration:**
- * KiCad designators (`pultecDesignator`), the selectors' pin maps (`switchOverride`), the ground
- * rail and the five port directions.
+ * KiCad designators (`pultecDesignator`), the selectors' pin maps and their unused detents
+ * (`switchOverride`, `THROW_PINS`), the ground rail and the five port directions.
  */
 
 import { negotiablePort } from "../../../lib/schgen/authoring.ts"
@@ -164,9 +164,53 @@ function designatorsFor(network: Network): Readonly<Record<string, string>> {
  * `../physical/parts.ts` keeps eleven throws out of its by-position table and serves them from a
  * separate clause.
  */
-const POLE_PIN: Readonly<Record<string, string>> = {
+export const POLE_PIN: Readonly<Record<string, string>> = {
   "Switch:SW_Rotary_1x6_MP": "7",
   "Switch:SW_Rotary_1x12": "13",
+}
+
+/**
+ * Each selector symbol's THROW pins, in detent order, read off the installed `Switch.kicad_sym`
+ * the same way `POLE_PIN` above was.
+ *
+ * **IT REPLACES AN ASSUMPTION WITH A DATUM, and the assumption was already written down as a
+ * comment.** `switchOverride` used to number the throws `String(index + 1)`, which is correct for
+ * both of these symbols and is a rule nothing checked. The list is now the one statement of that
+ * fact, it drives the pin map, and `tests/schgen/nc-pins.test.ts` asserts every entry against the
+ * installed library - that each pin exists, that it is on the throw side at the throw angle, and
+ * that **`THROW_PINS` plus `POLE_PIN` plus `MECHANICAL_PINS` is EXACTLY the symbol's pin set.**
+ * That last assertion is what makes the unused-detent declaration below specific: a pin a future
+ * KiCad adds to one of these symbols fails the test rather than quietly becoming an unaccounted
+ * pin that stops a board drawing, or - worse - one a blanket silently excused.
+ *
+ * **AND IT IS WHAT LETS A SELECTOR BE DRAWN WITH A SYMBOL CARRYING MORE THROWS THAN THE CIRCUIT
+ * WIRES.** `SW_MID` has eleven positions and `Switch:SW_Rotary_1x12` draws twelve, because the
+ * owner's part choice is a twelve-position switch with its stop set to eleven - *"Assume a
+ * 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` in `../physical/parts.ts`. The detents past the
+ * circuit's last position are then DECLARED no-connect by number, through
+ * `ComponentOverride.ncPins`; nothing is exempted and nothing is inferred from the count.
+ */
+export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
+  "Switch:SW_Rotary_1x6_MP": ["1", "2", "3", "4", "5", "6"],
+  "Switch:SW_Rotary_1x12": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+}
+
+/**
+ * Why one detent of a selector's symbol carries no connection - the per-pin reason
+ * `ComponentOverride.ncPins` requires, composed so it names the part decision rather than
+ * restating the rule.
+ */
+function unusedDetentReason(symbol: string, pin: string, wired: number, total: number): string {
+  return (
+    `pin ${pin} is a detent of ${symbol}, which draws ${total} throws, and this selector has ` +
+    `${wired} positions - so detents ${wired + 1}..${total} exist on the switch and no conductor ` +
+    "in the circuit reaches them. rotarySymbolFor in circuits/pultec/physical/parts.ts records " +
+    "why a selector may be drawn with a symbol carrying more throws than the circuit wires: for " +
+    "the eleven-position mid selector it is the owner's part choice, a 1x12 with its stop set to " +
+    'eleven ("Assume a 1x12", on ELEVEN_THROW_SYMBOL there). It is declared by NUMBER rather ' +
+    "than exempted, because a blanket no-connect would also excuse a throw a later edit dropped " +
+    "from the pin map and any pin a future KiCad adds to this symbol."
+  )
 }
 
 /**
@@ -191,6 +235,12 @@ const SPDT_PINS: Readonly<Record<string, string>> = { common: "2", boost: "1", c
  * `rotaryPadOrder`, which `../physical/parts.ts` already declares as *"the common first, then the
  * throws in detent order"* and derives from the component's own pins so it cannot disagree with
  * the frequency tables the selector was built from.
+ *
+ * **IT ALSO DECLARES THE DETENTS THE CIRCUIT DOES NOT REACH**, through `ComponentOverride.ncPins`
+ * - for `SW_MID`, pin 12 of `Switch:SW_Rotary_1x12`, because the mid selector has eleven
+ * positions and the owner's part is a 1x12 with its stop set to eleven. See `THROW_PINS` for why
+ * that is a property of the symbol chosen to draw the part, and the field's own comment in
+ * `lib/schgen/authoring.ts` for why it is neither a mechanical-pin exemption nor a blanket.
  */
 function switchOverride(component: Component): ComponentOverride | null {
   if (component.kind !== "switch") return null
@@ -223,8 +273,19 @@ function switchOverride(component: Component): ComponentOverride | null {
         "pin 1, which is a THROW in both symbols already recorded.",
     )
   }
+  const detents = THROW_PINS[symbol]
+  if (detents === undefined) {
+    throw new Error(
+      `no throw pins are recorded for the selector symbol "${symbol}" (component ` +
+        `"${component.id}"). THROW_PINS in circuits/pultec/schematic/section-board.ts holds each ` +
+        "rotary symbol's throw pins in detent order, read off the installed Switch.kicad_sym " +
+        "beside POLE_PIN. Add this symbol the same way - do not assume the throws are pins 1..n, " +
+        "which is true of the two symbols recorded there and is a fact about them rather than a " +
+        "KiCad convention.",
+    )
+  }
   // `rotaryPadOrder` puts `common` first and refuses a rotary that has no `common` pin at all,
-  // so the throws are the rest IN detent order and take the symbol's pins 1..n in that order.
+  // so the throws are the rest IN detent order and take the symbol's throw pins in that order.
   const [first, ...throws] = rotaryPadOrder(component)
   if (first !== "common") {
     throw new Error(
@@ -235,16 +296,44 @@ function switchOverride(component: Component): ComponentOverride | null {
         "one position out is a wrong connection in a drawing that looks right.",
     )
   }
+  if (throws.length > detents.length) {
+    throw new Error(
+      `the selector "${component.id}" has ${throws.length} throws and ${symbol} draws only ` +
+        `${detents.length} (THROW_PINS in circuits/pultec/schematic/section-board.ts), so there ` +
+        "is no pin for every position. rotarySymbolFor in circuits/pultec/physical/parts.ts is " +
+        "what chose this symbol: either the selector gained a position without its symbol being " +
+        "re-chosen, or THROW_PINS is stale against the installed library. Fix one of those - a " +
+        "throw silently dropped is a position of the switch that does nothing in a drawing that " +
+        "looks complete.",
+    )
+  }
   const pins: Record<string, string> = { common: pole }
-  for (const [index, pad] of throws.entries()) pins[pad] = String(index + 1)
+  throws.forEach((pad, index) => {
+    const detent = detents[index]
+    if (detent === undefined) throw new Error(`throw ${index} of "${component.id}" has no detent pin, which the length check above should have refused`)
+    pins[pad] = detent
+  })
+  // THE DETENTS PAST THIS SELECTOR'S LAST POSITION, DECLARED BY NUMBER. Empty for every symbol
+  // whose throw count equals the circuit's - the six-position selectors declare nothing here, and
+  // an empty record is left off rather than carried, because a declaration with nothing in it is
+  // not a claim anybody can check.
+  const unused = detents.slice(throws.length)
+  const ncPins = Object.fromEntries(unused.map((pin) => [pin, unusedDetentReason(symbol, pin, throws.length, detents.length)]))
   return {
     symbolPins: { MAIN: pins },
+    ...(unused.length === 0 ? {} : { ncPins }),
     why:
       `a single-pole rotary selector drawn with ${symbol}. Its throws are that symbol's pins ` +
-      `1..n on the right and its pole is pin ${pole} on the left, read off the installed ` +
-      "Switch.kicad_sym (see POLE_PIN); the detent order is rotaryPadOrder's, which " +
+      `${detents[0] ?? "?"}..${detents[detents.length - 1] ?? "?"} on the right and its pole is ` +
+      `pin ${pole} on the left, both read off the installed Switch.kicad_sym (see THROW_PINS and ` +
+      "POLE_PIN); the detent order is rotaryPadOrder's, which " +
       "circuits/pultec/physical/parts.ts derives from the component's own pins. kind " +
-      '"switch" has an open pin vocabulary, so no reviewed rule can map these names.',
+      '"switch" has an open pin vocabulary, so no reviewed rule can map these names.' +
+      (unused.length === 0
+        ? ""
+        : ` The symbol's last ${unused.length} detent(s) (${unused.join(", ")}) are declared ` +
+          "no-connect by number through ncPins: the switch has them and this circuit wires " +
+          `${throws.length} positions.`),
   }
 }
 

@@ -13,13 +13,16 @@
  * **BOTH DIRECTIONS, BECAUSE ONE OF THEM IS THE ONE AN UNCONDITIONAL STAMP WOULD PASS.** A test
  * that only checked that a defective sheet is marked would go green on a generator that marked
  * every sheet it ever wrote, which would make the warning worthless by making it universal. The
- * sweep over the real census is what has teeth here: ten of the eleven boards are `usable` today,
- * and every one of them must come out clean.
+ * sweep over the real census is what has teeth here: every `usable` board must come out clean, and
+ * the run's own split is asserted below rather than restated here.
  *
- * **AND THE OTHER DIRECTION HAS NO REAL BOARD TO STAND ON, WHICH IS WHY THERE IS A FIXTURE.** Zero
- * boards are `defective`, so nothing in `boards/` emits a watermark at all.
- * `tools/schgen/defective-fixture.ts` re-emits one real board's real geometry under one fabricated
- * `defective` finding; without it the mark would be code no test has ever caused to run.
+ * **THE FIXTURE EXISTS BECAUSE THE OTHER DIRECTION ONCE HAD NO REAL BOARD TO STAND ON, AND IT IS
+ * KEPT NOW THAT ONE DOES.** When this file was written zero boards were `defective`, so nothing in
+ * `boards/` emitted a watermark at all and `tools/schgen/defective-fixture.ts` - which re-emits one
+ * real board's real geometry under one fabricated `defective` finding - was the only thing that
+ * ever caused the mark to run. `pultec-mid` is `defective` today, so the real sweep exercises it
+ * too; the fixture stays because it is the only arm that does not depend on a board happening to
+ * be in that state, which is a property of the current circuits rather than of the mark.
  *
  * **A PASSING TEST IS NOT EVIDENCE THAT THE PAGE IS READABLE.** Nothing here establishes the weight
  * the owner set the bar for - only that the marks are present, that they survive `kicad-cli`, and
@@ -261,11 +264,17 @@ describe("both directions over all eleven boards", () => {
     }
   })
 
-  // **THE RECORD OF WHAT THIS RUN FOUND, which is a measurement and not an expectation.** Zero
-  // defective boards is why the fixture above exists; if this ever stops being zero, the sweep
-  // above starts doing real work and this line is how a reader notices.
-  test("no board in boards/ is defective today, so the fixture is the only exercise of the mark", () => {
-    expect(rows().filter((r) => r.outcome === "defective").map((r) => r.board)).toEqual([])
+  // **THE RECORD OF WHAT THIS RUN FOUND, which is a measurement and not an expectation.** It read
+  // ZERO until `pultec-mid` began to draw: that board was `not-drawable` - refused at
+  // `pinsDeclared` on `SW_MID` pin 12, the unused twelfth detent of `Switch:SW_Rotary_1x12` -
+  // and declaring that pin no-connect (`tests/schgen/nc-pins.test.ts`) turned it into a board
+  // that draws and is classified `defective` on a `missing-junction` finding. **So the sweep
+  // above now does real work on a real board rather than only on the fixture**, which is exactly
+  // what the deleted line said would be worth noticing.
+  //
+  // The list is asserted rather than the count, because a board joining it is a thing to read.
+  test("pultec-mid is the one defective board in boards/ today, so the sweep above runs on a real board", () => {
+    expect(rows().filter((r) => r.outcome === "defective").map((r) => r.board)).toEqual(["pultec-mid"])
   })
 
   test("a board with no drawing writes no sheet to mark, only its refusal page", () => {

@@ -808,6 +808,7 @@
     "tests/schgen/ir/auto-not-labelled.test.ts",
     "tests/schgen/ir/mechanical-pins.test.ts",
     "tests/schgen/ir/nc-end-to-end.test.ts",
+    "tests/schgen/nc-pins.test.ts",
     "tests/schgen/ir/net-name.test.ts",
     "tests/schgen/ir/no-pin-map.test.ts",
     "tests/schgen/ir/single-pin-net-guard.test.ts",
