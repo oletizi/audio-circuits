@@ -51,7 +51,8 @@ accident of git's object model rather than by design.
 **What recutils gives, all VERIFIED by running it (section 5):**
 
 - (a) **an enum state set that is enforced**, ours to define, and a write
-  outside it is refused with exit 1 and nothing written;
+  outside it is refused with exit 1 and nothing written — though it enforces the
+  *value set* and not the *transitions*, see 5.2a;
 - (b) multi-line verbatim text with a continuation syntax that survives round-trip;
 - (c) a `Region` field — a plain string, which is all a region on a drawing
   sheet is until we have geometry;
@@ -64,7 +65,8 @@ accident of git's object model rather than by design.
 **What we write: the staleness gate.** Re-hash the artifact, compare to the
 recorded hash, refuse loudly on a mismatch. Demonstrated working in section 5.6
 at twenty-five lines of shell. This is not a gap in recutils; **no tool can do
-it, because only we know which file on disk a record is about.**
+it, because only we know which file on disk a record is about.** The same gate
+is where any transition rule has to live (5.2a).
 
 ### Why not the two git-native trackers
 
@@ -99,6 +101,9 @@ VERIFIED. All into the session scratchpad; nothing into the repository.
 | `git-appraise` | `v0.0.0-20230812010605-be4751005fb4` | `go install github.com/google/git-appraise/git-appraise@latest` | Apache-2.0 |
 | GNU recutils | 1.9 | Homebrew bottle extracted to the scratchpad, run with `DYLD_LIBRARY_PATH` | GPL-3.0-or-later |
 | `git notes` | git 2.39.5 (Apple Git-154) | already present | GPL-2.0 |
+| `yq` | v4.54.1 | `go install github.com/mikefarah/yq/v4@latest` | MIT |
+| `dasel` | v2.8.2 | `go install github.com/tomwright/dasel/v2/cmd/dasel@master` | MIT |
+| `jq` | system | already present | MIT |
 
 `git-bug` is a 31MB static binary; `git-appraise` is 9MB; recutils is 3.2MB over
 nine binaries whose only shared-library dependencies are its own `librec` plus
@@ -385,6 +390,45 @@ the whole file plus the candidate record before touching the file.
 Note `--force` exists and skips the integrity check. That is the escape hatch to
 *not* document in our wrapper.
 
+**`%constraint` bites too**, which is what makes the cross-field rules real
+rather than decorative. VERIFIED on a deliberately failing case —
+`%constraint: Status != 'approved' || Reviewer != ''`, then inserting an
+`approved` record with no reviewer:
+
+```
+cmdli:0: error: %constraint[0] violated in record
+EXIT=1
+```
+
+The same record with a reviewer inserted cleanly, exit 0. So *"an approval must
+name who gave it"* and *"an approval must carry a hash"* are enforceable in the
+file, not in a convention.
+
+### 5.2a What the enum does NOT enforce: the transition
+
+VERIFIED, and it qualifies requirement (a) materially. recutils polices the
+**value set**, not the **edges of the state machine.** A record was walked
+`approved` to `rejected` and straight back to `approved` with no new evidence:
+
+```
+recset to rejected   EXIT=0   ->  rejected
+recset back to approved EXIT=0 ->  approved
+recfix --check        EXIT=0
+```
+
+Both moves legal, the file still valid. So *"a status that can only be advanced
+by a human action"* is only half-delivered: recutils guarantees the status is
+one of ours and that it satisfies the per-record invariants, and guarantees
+nothing about how it got there. A `%constraint` cannot see history, because it
+is an expression over a single record.
+
+**The consequence is that the transition rule lives in the same gate as the
+staleness check** (5.6), or it does not exist. This is the right place for it
+anyway — the gate is the thing that knows the artifact's current hash, and
+*"approved, but the hash moved since"* is exactly the illegal-transition case
+that matters here. A reviewer re-approving a sheet they just rejected is a
+human changing their mind, which is not a thing to refuse.
+
 ### 5.3 The hand-edit guard
 
 VERIFIED. This is what makes the file safe to hand-edit *and* machine-managed,
@@ -610,13 +654,21 @@ VERIFIED where marked.
   read-modify-truncate the caller implements, with the truncation hazard that
   implies. jq is the right tool for reading a record and the wrong tool for
   being the structured interface to one.
-- **`yq` / `dasel`** (not installed; assessed by design). Same shape as jq: path
-  query and mutate over YAML/JSON/TOML, no schema enforcement, no state set, no
-  validator. `dasel` adds multi-format and in-place writes, which makes it a
-  better *mechanism* than jq and leaves the enforcement question exactly where
-  it was. Neither is a structured interface in the sense asked for; they are
-  structured *editors*. RELAYED for the feature lists, VERIFIED for the absence
-  of a schema facility only insofar as neither project claims one.
+- **`yq` v4.54.1** (installed and run; VERIFIED). Better mechanism than jq — it
+  has `-i` for in-place writes, and it **preserved the YAML block scalar** that
+  held the multi-line verdict text exactly, so (b) is safe with it. But
+  `yq -i '.verdicts[0].status = "totally-made-up-state"'` exited 0, and so did
+  setting `artifact_sha256` to `NOT-A-HASH`. **`yq --help` has no `valid` or
+  `schema` verb at all** (VERIFIED by grepping its help output: no matches). It
+  is a structured editor with no opinion about what it writes.
+- **`dasel` v2.8.2** (installed and run; VERIFIED). Same result —
+  `dasel put … '.verdicts.[0].status'` accepted `another-made-up-state`, exit 0.
+  It does have a `validate` verb, which I checked rather than assumed: **it is a
+  parse check, not a schema check.** It printed `pass v.yaml` for the file
+  containing both the nonsense state and the malformed hash. On genuinely broken
+  YAML it printed `fail` and `Error: 1 files failed validation` — **and still
+  exited 0.** A validator that reports failure and exits 0 is the false green
+  this repository catalogues; noted so nobody wires it into a gate.
 - **`sqlite` with a text backend.** Rejected on the question's own terms. SQLite
   has no plain-text storage backend; the file is a binary page store, and a
   committed `.db` is exactly the opacity the owner ruled out. Dumping to
@@ -670,6 +722,8 @@ Scripts, written to the session scratchpad at
 | `t-rec-setup.sh` | recutils extracted from a bottle and running from the scratchpad |
 | `t-rec.sh` | the register, the query language, the diff |
 | `t-rec-exit.sh` | the exit codes on every refusal, and `recfix --check` |
+| `t-constraint.sh` | `%constraint` enforcement, and that transitions are not policed |
+| `t-yqdasel.sh` | yq and dasel accept any value; `dasel validate` is a parse check that exits 0 on failure |
 | `t-final.sh` | `%auto` behaviour, the staleness gate, the jq negative control |
 
 The scratchpad is session-scoped and will not survive. The scripts are short and
