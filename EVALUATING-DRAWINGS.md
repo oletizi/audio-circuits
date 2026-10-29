@@ -73,6 +73,24 @@ cannot be justified is not neutral. In his words: *"that's just littering."*
 > to each other, labels instead of wires creates unnecessary noise and cognitive
 > load. It's also bad style."*
 
+**And the second of those two cases is rarer than that sentence suggests.** The
+owner, 2026-10-29, ruling on a 138 mm rail that a drafting pass chose over a
+pair of labels 64 mm apart:
+
+> *"the long rail is the right choice. It's much more clear than a pair of
+> labels would have been. On-page labels in place of wires should be used very
+> sparingly. I've almost never seen it used."*
+
+**So the default is a wire, including a long one.** Substituting an on-page
+label for a wire is a rare exception needing a strong case, not a routine
+trade-off available whenever a run gets long.
+
+**This also ORDERS two criteria that can pull against each other.** A long run
+is noise unless it earns its place, and a label is noise unless it earns its
+place - and on a run between parts on the same page these two can point opposite
+ways. **When they conflict, the wire wins.** A long rail is clearer than a pair
+of labels; the length is the price of the clarity and is therefore earned.
+
 **A repeated ground symbol** earns its place by shortening a run.
 
 > *"Multiple ground symbols aid clarity when they reduce long wire runs on a
