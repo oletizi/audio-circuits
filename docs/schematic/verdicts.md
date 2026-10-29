@@ -22,6 +22,28 @@ check comparing recorded to computed digests. **None of that is built.** This
 file exists so that verdicts already given are not lost while it is - losing one
 is the failure the rule was written to prevent.
 
+**WHAT COUNTS AS APPROVAL HERE: a ruling, scoped, and NOT a rule.** The owner,
+2026-10-29, asked whether *"serviceable"* and *"MUUUUCH better"* counted as
+approval for the purpose of printing those pages in a build guide:
+
+> *"If I have seen them and said they are acceptable, then that counts as
+> approval (in THIS case - **do not generalize this into a dumb rule**)"*
+
+**So all four of the pages below that carry a positive verdict are approved**, and
+`pultec-low-boost` and `pultec-low-cut` are approved on those words.
+
+**THE PARENTHESIS IS PART OF THE RULING AND BINDS AS HARD AS THE REST OF IT.**
+Nothing here says that a reviewer's approval of a drawing can be inferred from
+warm words in general, and **no clause stating that has been written into
+`EVALUATING-DRAWINGS.md` §5, deliberately.** §5 still reads: approval is state
+the reviewer writes, never derived. He resolved four specific drawings he had
+looked at; he did not hand anyone a test to apply to the next one. **An agent
+that finds itself reasoning about whether some new phrase amounts to approval
+has the answer already - it does not, and the question goes to him.**
+
+This is the fourth time a single verdict of his has invited promotion into a
+decision procedure. The other three were struck.
+
 **The hash is of the sheet, which is the binding.** The render is evidence and
 not a binding, and the one measured render digest that would be a second binding
 - `sha256(svg minus the generation-title line)` - is not recorded here because
