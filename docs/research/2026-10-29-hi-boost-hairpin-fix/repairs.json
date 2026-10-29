@@ -1,0 +1,132 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "pultec-hi-boost.kicad_sch",
+  "ops": [
+    {
+      "op": "delete_object",
+      "uuid": "eede5827-5d5e-5807-a695-0c1850ae5b0c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8209d9db-97d3-54a9-b61f-e6d777c501c3"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "730b2570-81c7-53e0-abbc-4af837af25fc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fb270c63-47a2-589b-b7b4-9703cac2bf13"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "daf916c2-31d3-5b93-8985-ff0f50e06ebb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "a858f21a-903b-555a-8e5f-ad3788ac13d5"
+    },
+    {
+      "op": "move_component",
+      "designator": "SI6",
+      "x_mil": 7900,
+      "y_mil": 1700,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SI6",
+      "rotation": 270,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "SI7",
+      "x_mil": 7550,
+      "y_mil": 1950,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SI7",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "#PWR07",
+      "x_mil": 7550,
+      "y_mil": 2200,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "#PWR07",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7450,
+          1700
+        ],
+        [
+          7750,
+          1700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7550,
+          1700
+        ],
+        [
+          7550,
+          1800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7550,
+          2100
+        ],
+        [
+          7550,
+          2200
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          8050,
+          1700
+        ],
+        [
+          8150,
+          1700
+        ]
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7550,
+        1700
+      ]
+    }
+  ]
+}
