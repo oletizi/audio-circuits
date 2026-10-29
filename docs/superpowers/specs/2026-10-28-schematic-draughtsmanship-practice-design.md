@@ -373,6 +373,15 @@ worth believing.
 3. The record
 -------------
 
+> **NONE OF THIS IS BUILT, AND VERDICTS STARTED ARRIVING BEFORE IT WAS.** Three
+> are now recorded, verbatim and sha-bound, in
+> [`../../schematic/verdicts.md`](../../schematic/verdicts.md) - an interim
+> markdown substrate, not the register below. It was written because losing a
+> verdict is the failure the rule was written to prevent, and two had already
+> been given in conversation with nowhere to go. **It carries no status field**,
+> for the reason this section states: the vocabulary is his to name. Implementing
+> what follows means migrating those three, not starting empty.
+
 **Committed, in `drafted/<circuit>/<board>/`** - a top-level directory, never
 under `circuits/`, with a README at its root saying these are agent-drafted and
 never hand-edited, and "generated - do not edit" in every title block:

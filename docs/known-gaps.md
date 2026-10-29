@@ -4046,3 +4046,69 @@ matters; what changes is that he has something at the bench in the meantime.
   and deliberately not specified here: whether refusals become a status carried on the artifact
   (as `SheetDrawing.fieldFallbacks` already is, which is this pattern working in one place), or a
   separate emit path, is a design question the spec answers.
+
+### G304 - OWNER DECISION, 2026-10-29: Microsoft SchGen is PARKED, not rejected, and the blocker he named is hardware
+
+> *"re schgen, let's park it. I **am** interested in pursuing it later, but it
+> may have to wait until I can build a more capable machine to run it on"*
+
+**This is a declination with a stated intent to return, so it is not a closed
+question - and nobody re-opens it unprompted.** What would change his answer is
+a machine, not an argument.
+
+**What was established before he parked it**, so that a later attempt starts
+from the measurement rather than from scratch - the detail is in
+`docs/research/2026-10-29-schgen-model-running.md` and every artifact named
+there is on `tower.local`:
+
+- The base model **runs** on a 15 GB CPU-only host at ~14 tok/s generation and
+  ~12.0 GB peak RSS, leaning on swap. It is not comfortable and it did not fail.
+- **The adapter is NOT attention-only**, which is what a partial verification had
+  led this writer to brief. `adapter_config.json` carries `target_parameters`
+  naming `mlp.experts.gate_up_proj` and `down_proj` on layers 7, 15 and 23:
+  **73.5% of the trained parameters are on the MoE experts**, and their `lora_B`
+  norms are 9.8-14.3 against 0.45-1.59 for attention, so they are trained rather
+  than left at PEFT's zero init.
+- The **stock `convert_lora_to_gguf.py` cannot convert it**, and the cause is the
+  converter's name table rather than the architecture: llama.cpp's runtime
+  already applies per-expert LoRA through `build_lora_mm_id`.
+- A custom converter produced all **210 tensors**, and three negative controls
+  establish that llama.cpp really binds them: a renamed expert tensor is
+  rejected by name, a stack declaring 16 experts instead of 32 **core dumps**,
+  the real one loads and generates.
+- **Whether the fine-tune helps is NOT established.** On a 4-part RC filter it
+  emitted SchGen's own idioms and fixed two base errors; on a 7-part circuit
+  **the base model produced a correct program and the adapter produced prose
+  with the wrong netlist**, and that held after the token-cap confound was
+  removed by rerunning at `-n 6000`.
+- **No emitted program was ever rendered**, so nothing here says whether any of
+  them draws.
+
+**THE CAUTIONARY ARTIFACT IS KEPT DELIBERATELY.** PEFT packs `lora_A`
+expert-major and `lora_B` rank-major; a converter that slices both the same way
+**converts, loads, runs and produces fluent output while being wrong**. That
+file is on the tower as `schgen-lora-full-MISPACKED.gguf`, and it is the
+standing evidence that a wrong adapter sounds fine - which is why the
+reconstruction is argued from PEFT's source and shape compatibility and is
+**not** checked end-to-end against the authors' merged weights. A bf16 20B merge
+needs far more memory than that machine has, so that check is part of what the
+more capable machine would buy.
+
+**An incidental llama.cpp defect found on the way**, recorded because it is not
+ours to fix and will bite anyone doing this again: load-time LoRA validation
+compares only `ne[0]` and `ne[1]`, never `ne[2]`, so a wrong expert count passes
+validation and segfaults during graph execution instead of refusing.
+
+- **Found** 2026-10-29, running the model on `tower.local` at his instruction.
+- **Evidence** his message above, quoted complete; the safetensors header read
+  directly; the converter traceback at `conversion/base.py:625`; the three
+  negative controls, each of which could have passed and did not.
+- **Verified** **RELAYED.** The measurements are a subagent's, reported in the
+  document named above; this writer confirmed the commits and the document exist
+  and did not re-run the model.
+- **Why it is open** it is his declination, held open by his own words.
+- **What would settle it.** **CRITERION, and it is his:** a machine capable of
+  running it. **MECHANISM, UNTRIED:** whichever of a larger-memory host or a
+  supported GPU he builds - and the first thing to measure on it is the one
+  check this machine could not do, the custom converter's output against the
+  authors' merged weights.

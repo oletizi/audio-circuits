@@ -1,6 +1,15 @@
 Schematic generation and readability: the research record
 =========================================================
 
+> **READ [`verdicts.md`](verdicts.md) FIRST if a drawing is what you are here
+> about.** It is the record `../../EVALUATING-DRAWINGS.md` §5 requires: the
+> reviewer's verdicts on drawings this project produced, **verbatim**, each bound
+> to the sha256 of the sheet he was shown. Everything else in this index is
+> research about how to make a drawing; that file is the only thing that says
+> what he thought of one. It carries **no status vocabulary**, deliberately - he
+> has not named one, and an agent may not author the words its own output is
+> judged in.
+
 **Six research passes** landed on 2026-10-19, ahead of the schematic-generation
 work described in
 [`../superpowers/specs/2026-10-08-agent-authored-boards-design.md`](../superpowers/specs/2026-10-08-agent-authored-boards-design.md)
