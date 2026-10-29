@@ -1,0 +1,18 @@
+total wires on sheet: 46
+
+#FLG01     copperhead_power:PWR_FLAG  at (62.23, 71.12) rot 0
+    Value text 'PWR_FLAG' at (62.23, 71.12)
+    wire (67.31, 71.12) -> (62.23, 71.12)
+#PWR01     copperhead_power:GND       at (67.31, 54.61) rot 0
+    Value text 'GND' at (60.071, 54.61)
+    wire (72.39, 54.61) -> (67.31, 54.61)
+#PWR06     copperhead_power:GND       at (67.31, 76.2) rot 0
+    Value text 'GND' at (63.881, 76.2)
+    wire (72.39, 76.2) -> (67.31, 76.2)
+    wire (67.31, 66.04) -> (67.31, 76.2)
+#PWR07     copperhead_power:GND       at (180.34, 62.23) rot 0
+    Value text 'GND' at (175.26, 62.23)
+    wire (180.34, 59.69) -> (180.34, 62.23)
+#PWR08     copperhead_power:GND       at (208.28, 54.61) rot 0
+    Value text 'GND' at (208.28, 58.166)
+    wire (208.28, 52.07) -> (208.28, 54.61)

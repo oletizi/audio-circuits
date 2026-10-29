@@ -1,0 +1,18 @@
+BEFORE /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-repair/before/pultec-hi-cut.kicad_sch
+       sha256 2bb49cfce8b80dbde4afac44a16fe3c9d19f045d739385daf787b203b00ab876  15 nets
+AFTER  /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-repair/after/pultec-hi-cut.kicad_sch
+       sha256 7ccf557c5474222f6850b78f8c3c53ac45b89389f782f4b8c317d483900a76f1  15 nets
+
+positive control: moved SI5.2 from lo_boost_in to unconnected-(SW1-PadMP) in a copy of BEFORE -> partition differs: True
+
+NET PARTITION (pin sets, ignoring net names): IDENTICAL
+NET NAMES: DIFFER
+  only BEFORE: ['cut_wiper']
+  only AFTER : ['/cut_wiper']
+NAME -> PIN SET MAPPING: DIFFERS
+  /cut_wiper:
+    before None
+    after  ['R1.1', 'RV1.2']
+  cut_wiper:
+    before ['R1.1', 'RV1.2']
+    after  None

@@ -1,0 +1,8 @@
+# metadata
+  passive-pin ratio: 0.9166666666666666
+  No-ERC suppressed: 1
+  unnamed nets: 1
+  frac coords present: False
+  config-waived: 0 (0 demoted)
+# findings (0)
+  (none)
