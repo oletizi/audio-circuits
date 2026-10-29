@@ -9,29 +9,37 @@ rendered with ordinary KiCad symbols and conventions as the owner instructed.
 **Tool:** `akcli-kicad` 0.22.0 from PyPI, installed into a scratchpad venv.
 Nothing was installed into the repository.
 
-**STATUS: UNREVIEWED.** Per `EVALUATING-DRAWINGS.md` §1 and §5, the pages below
-are in the state that document calls **unreviewed**, which it describes as *"a
-state, not an absence"*. Only the owner can change it, and no check run here
-advances it. Everything in the "What is on the page" section is an
-observation a reader can check against the rendered file. No quality claim is
-made or implied anywhere in this document.
+**STATUS: v3 ACCEPTED BY THE OWNER WITH ONE NAMED DEFECT. v4 IS UNREVIEWED.**
+His verdict on v3 is quoted verbatim in "The owner's verdict on v3" below. v4 is
+the response to it and is in the state `EVALUATING-DRAWINGS.md` §1 calls
+**unreviewed**, which it describes as *"a state, not an absence"*. Only the
+owner can change it, and no check run here advances it. Everything in the
+"What is on the page" sections is an observation a reader can check against the
+rendered file. No quality claim is made or implied anywhere in this document.
 
 ## The deliverable
 
 | | |
 | --- | --- |
-| **Final page (PDF)** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v3.pdf` |
-| **Final page (PNG)** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v3.png` |
-| **Final sheet** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v3.kicad_sch` |
-| **First attempt (PDF/PNG/sheet)** | `…/low-boost-itb-v1.pdf`, `…-v1.png`, `…-v1.kicad_sch` |
-| **Op-lists** | `…/ops-v1.json`, `…/ops-v2.json`, `…/ops-v3.json` |
-| **Netlists / ERC reports** | `…/netlist-v{1,2,3}.xml`, `…/erc-v{1,2,3}.rpt` |
-| **Scripts** | `…/scripts/{build.sh,compare.py,crossings.py,place_fields.py}` |
+| **Current page (PDF)** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v4.pdf` |
+| **Current page (PNG)** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v4.png` |
+| **Current sheet** | `docs/research/2026-10-29-low-boost-in-thompson-bell-idiom/low-boost-itb-v4.kicad_sch` |
+| **v3 — the page the owner accepted** | `…/low-boost-itb-v3.pdf`, `…-v3.png`, `…-v3.kicad_sch` |
+| **v1 — the first attempt** | `…/low-boost-itb-v1.pdf`, `…-v1.png`, `…-v1.kicad_sch` |
+| **Op-lists** | `…/ops-v1.json`, `…/ops-v2.json`, `…/ops-v3.json`, `…/ops-v4.json` |
+| **Netlists / ERC reports** | `…/netlist-v{1,2,3,4}.xml`, `…/erc-v{1,2,3,4}.rpt` |
+| **Scripts** | `…/scripts/{build.sh,build4.sh,compare.py,crossings.py,measure.py,place_fields.py,fields-v4.py}` |
 
-Sheet is A3 landscape. Every coordinate in the op-lists is a literal written by
-hand; no code computes a placement. `place_fields.py` carries a literal table of
-field positions and transcribes it — the table is the decision, not an
-algorithm.
+v1 to v3 are A3 landscape; v4 is A4 landscape, for the reason given under
+"The owner's verdict on v3". Every coordinate in the op-lists is a literal
+written by hand; no code computes a placement. `place_fields.py` (v1-v3) and
+`fields-v4.py` carry literal tables of field positions and transcribe them —
+the table is the decision, not an algorithm.
+
+**The document below is in two halves.** The first describes v1 to v3 and is
+left as it was written, because the owner's verdict was given on v3 and the
+reasoning he was responding to has to survive intact. The second half, from
+"Owner's verdict, 2026-10-29 - v3" onward, is v4.
 
 ## The judgement the brief asked for: where the `SI*` stand-ins go
 
@@ -294,36 +302,6 @@ Positions are given relative to the two horizontals so a reader can find them.
 | Density | the page is close to full | one region of about a fifth of the drawing area is empty |
 | Cap bank order | I could not determine it from the scan | ascending capacitance left to right, forced by the no-crossing fan rule |
 
-## Two things learned about `akcli-kicad` that are not in the previous trial
-
-Both were measured here, and both are recorded because the next agent to drive
-this tool will hit them.
-
-1. **There is no op for a symbol field's position.** `place_component` takes
-   `x_mil`, `y_mil`, `rotation`, `mirror`, `value`, `footprint` and
-   `offset_mil`, and `set_component_parameters` takes `value`, `footprint` and a
-   `parameters` map — none of which touches where the Reference or Value text
-   lands. Checked against `akcli schema ops`, which has no field-placement key
-   at all. The library default puts both fields hard against the symbol, which
-   is what drew C6's value across its own plate. `scripts/place_fields.py` is
-   the post-pass, and it holds a literal table rather than a rule.
-
-2. **A field's stored text angle is RELATIVE to its symbol's rotation, not
-   absolute.** Measured: on a symbol placed at `rotation: 90`, a field written
-   with angle `0` renders **vertical**. akcli writes `90` for such symbols, so
-   v1's SI1/SI2/SI7/J2 references and values all read bottom-to-top. Writing
-   `270` renders them horizontal. This is in v3 for the four symbols placed at
-   90°, and `place_fields.py` says so where the table lives.
-
-## What was not done
-
-- **Nothing under `circuits/` or `lib/` was touched.** `circuits/pultec/schematic/low-boost.ts`
-  was dirty at the start and is dirty and unmodified at the end.
-- **No footprints are assigned.** `CLAUDE.md` is explicit that a fully specified
-  BOM binds on the consumer of an artifact, and a schematic is not one of the
-  consumers it binds for.
-- **The drawing has not been evaluated.** See the status note at the top.
-
 ---
 
 ## Owner's verdict, 2026-10-29 — v3
@@ -347,3 +325,188 @@ geometry was kept while its content shrank.
 the remedy is the draughtsman's to derive, per `EVALUATING-DRAWINGS.md` section
 8. Whatever changes in response becomes the least-checked region of the drawing
 and is flagged for him first on the next round.
+
+---
+
+# v4 - the response to the owner's verdict
+
+His verdict is recorded verbatim in **"Owner's verdict, 2026-10-29 - v3"**
+immediately above. v4 is what was done about it.
+
+## How the defect was read, and what was therefore changed
+
+He did not ask for whitespace to be removed — he wrote that it is *"not always
+bad"*. The two things he named are **relationships obscured by spacing** and **a
+long thin wire that has to be scanned across the page**. v4 attacks those two,
+and the whitespace follows.
+
+**1. The sheet is A4 landscape, not A3.** The drawing needs about 10,250 × 5,100
+mil of content. On A3 that is 29% of the sheet; on A4 it is 54%. Nothing about
+the circuit wanted A3 — the sheet size had been inherited from the reference's
+proportions along with everything else. A4's title block is the same physical
+size as A3's and so eats a larger corner (measured on a blank A4 sheet: x >
+6,963 mil, y > 6,533 mil); the 0V rail and the ground symbol are placed above
+and to the left of it, which is why the rail sits at y = 6,150.
+
+**2. The vertical gaps are closed.** Spine to `lo_boost_in` was 3,800 mil and is
+now 2,200. `lo_boost_in` to the 0V rail was 3,500 and is now 2,550. Total height
+from spine to rail: 7,300 → 4,750.
+
+**3. The hi-cut group is re-formed from a three-deep stack into a two-deep
+group.** In v3, SI5, SI4 and SI3 were three resistors/capacitors stacked
+vertically, which is what forced the 3,800-mil gap. In v4 **SI4 is drawn
+horizontal** — which is also how Ian draws that same `430` resistor — so the
+group is SI5 down to a node, SI6 straight on down, and SI4 across to SI3's
+column. The four parts now read as one block rather than a column.
+
+**4. SI7 is moved to mid-span, which is a deliberate departure from Ian's
+order.** In v3 the `hi_boost_out` segment ran 8,450 mil unbroken — **that is the
+long thin wire**. It was long because the only three series parts on the spine
+sat at the far left and far right. SI7 is a stand-in with no neighbours, so its
+position along the spine is free; putting it in the middle breaks the run in
+two. On Ian's page the LO CUT pot sits next to OUT, and this does not.
+
+**5. The capacitor pitch is 700 mil, not 900**, and the switch sits 700 mil from
+the first capacitor rather than 900. The bank is 3,500 mil wide instead of
+4,500.
+
+**6. Everything the owner accepted is unchanged in kind**: one constant-height
+spine with the series elements on it, one 0V rail along the bottom, blocks
+hanging vertically off the two horizontals, the non-self-crossing selector fan
+in the same order, functional names as free text, zero wire crossings.
+
+## Measured, v1 / v3 / v4 — `scripts/measure.py`
+
+```
+                        v1 (A3)      v3 (A3)      v4 (A4)
+sheet                16535x11693  16535x11693   11693x8268
+content bounding box  14400x8000   14400x7800   10250x5100
+  as % of sheet area         60%          58%          54%
+total wire length         106750       98700        72500
+longest untapped run        8450        8450         5800
+  as % of sheet width         51%         51%          50%
+symbols                       20          21           21
+nearest-neighbour gap
+  median / max          1100/3900   1100/3900     950/4650
+```
+
+**The longest unbroken signal-path run is 4,350 mil in v4 against 8,450 in v3** —
+the spine is now broken by SI7 at its midpoint. Total wire length fell 27% and
+the sheet area halved.
+
+**The 5,800-mil figure above is NOT the spine. It is the `lo_boost_in` bus**,
+between the rotary's common at x = 4,200 and RV1 at x = 10,000, and it is the
+longest featureless run left on the page. **It did not get shorter as a fraction
+of the sheet, and here is why it resisted:** the six-capacitor bank occupies that
+whole span below it, and the fan of six selector wires occupies the corridor
+between the switch and the capacitors. RV1 cannot be hung from the middle of the
+bus without its drop crossing the fan, and R1 cannot be moved left without the
+spine ending short and opening a void above the bank instead. **This is the
+thing to look at next, and it is named here rather than left for the reader to
+find.**
+
+## Verification, re-measured on v4 (not assumed)
+
+- **Netlist:** all 14 spec nets match pin-for-pin, exactly as v1/v3. The same
+  two expected differences: the ground net is drawn as `GND` (14 members
+  identical to the spec's `0`), and `unconnected-(SW1-PadMP)` is a 15th
+  one-member net for the mechanical lug.
+- **`kicad-cli sch erc`: 1 violation** — `pin_not_connected` on SW1.MP, which is
+  correct.
+- **`akcli check --layout --erc --nets`: 2 findings**, both the same SW1.MP.
+- **Wire crossings: 0.** 54 segments, 22 junctions.
+
+## What is on the v4 page — observations
+
+- The spine runs at a constant height from `in` at x = 600 to `out` at
+  x = 10,850. On it, left to right: the SI8 tap, SI1, SI2, the hi-cut tap, a
+  4,350-mil run carrying the `hi_boost_out` label, SI7, a 3,850-mil run, the R1
+  tap.
+- The hi-cut group hangs below the spine at x = 2,700–3,500 as a rectangle:
+  SI5 and SI6 on one vertical, SI4 horizontal across the top of the rectangle,
+  SI3 down its right side. Both verticals land on the `lo_boost_in` bus.
+- SI8 is one vertical the full height of the drawing at the far left.
+- The `lo_boost_in` bus runs from x = 2,700 to x = 10,600 with five things on
+  it; its label sits at x = 6,800, in the middle of its longest empty stretch.
+- The rotary, its six-wire fan and the six capacitors occupy the lower middle;
+  each capacitor drops straight to the rail. RV1 is at the right end of the bus
+  with its wiper strapped to its top terminal by a 350-mil bracket; R1 is beyond
+  it at the far right.
+- J1, J2 and the ground symbol are in the lower left. J1's four signal pins carry
+  labels on 600-mil stubs; pin 5 runs right 1,700 mil then down to the rail. J2's
+  five pins drop straight down.
+- **Text overlaps on the whole sheet: one** — J2's five pin numbers are
+  overprinted by their own drops, as in v3. The pin numbers belong to the symbol.
+- The capacitor references and values sit immediately right of each capacitor,
+  nearer their own part than the next one (90 mil to their own plate, 270 to the
+  next drop).
+
+## The regions v4 changed, flagged for the reviewer first
+
+Per `EVALUATING-DRAWINGS.md` §8 — *"the corrected region is the least-checked
+part of the drawing"* — **every region below was changed in response to the
+verdict and has been considered by one party only**:
+
+1. **The sheet itself** (A3 → A4) — affects every clearance on the page.
+2. **The hi-cut group**, x 2,700–3,900 — re-formed, SI4 turned horizontal.
+3. **SI7's position on the spine**, x 6,850 — moved from Ian's order.
+4. **The capacitor bank's pitch and the switch's distance from it**, x 4,200–9,300.
+5. **The lower-left block** (SI8, J1, J2, the ground symbol, PWR_FLAG) — all
+   re-placed, and J1's ground now runs 1,700 mil right before dropping.
+6. **Every reference and value on the page** — all 38 field positions rewritten.
+
+## A third thing learned about `akcli-kicad` / KiCad
+
+**KiCad MIRRORS a field's justification when its symbol is placed at rotation 180
+(or mirrored).** A field written `(justify left)` on such a symbol renders
+RIGHT-justified, so its stored `(at x y)` is the text's **right** edge, not its
+left. Measured on the first v4 render: every capacitor's value was drawn straight
+through its own drop wire, because the anchors had been chosen as if the text ran
+rightwards. The same applies to J1, which is placed with `mirror: y`.
+
+**This is a false-green of the kind `docs/schematic/false-greens.md` catalogues:**
+the lint reported the same two SW1.MP findings before and after the fix, and the
+netlist was identical, while six of the nineteen parts had their values struck
+through. It was found by looking at the page.
+
+## Two things learned about `akcli-kicad` that are not in the previous trial
+
+Both were measured here, and both are recorded because the next agent to drive
+this tool will hit them.
+
+1. **There is no op for a symbol field's position.** `place_component` takes
+   `x_mil`, `y_mil`, `rotation`, `mirror`, `value`, `footprint` and
+   `offset_mil`, and `set_component_parameters` takes `value`, `footprint` and a
+   `parameters` map — none of which touches where the Reference or Value text
+   lands. Checked against `akcli schema ops`, which has no field-placement key
+   at all. The library default puts both fields hard against the symbol, which
+   is what drew C6's value across its own plate. `scripts/place_fields.py` is
+   the post-pass, and it holds a literal table rather than a rule.
+
+2. **A field's stored text angle is RELATIVE to its symbol's rotation, not
+   absolute.** Measured: on a symbol placed at `rotation: 90`, a field written
+   with angle `0` renders **vertical**. akcli writes `90` for such symbols, so
+   v1's SI1/SI2/SI7/J2 references and values all read bottom-to-top. Writing
+   `270` renders them horizontal. This is in v3 and v4 for the four symbols
+   placed at 90°, and the field tables say so where they live.
+
+3. **akcli snaps wire vertices to a 50-mil grid, and will not snap a symbol to
+   match.** v4's first draw was REFUSED with six `DANGLING_ENDPOINT` errors,
+   all on the four symbols whose centres I had put on an odd 25-mil coordinate:
+   a `Device:R` at y = 1975 has pins at 1825 and 2125, the wire meeting it was
+   written to 1825 and arrived at 1800, and the two no longer touched. The
+   refusal named every endpoint with its coordinate and said which end was still
+   connected, which is what made it a two-minute fix. **Put every symbol centre
+   on a 50-mil multiple.**
+
+---
+
+## What was not done
+
+- **Nothing under `circuits/` or `lib/` was touched.** `circuits/pultec/schematic/low-boost.ts`
+  was dirty at the start and is dirty and unmodified at the end.
+- **No footprints are assigned.** `CLAUDE.md` is explicit that a fully specified
+  BOM binds on the consumer of an artifact, and a schematic is not one of the
+  consumers it binds for.
+- **v4 has not been evaluated.** v3 was, and his words are quoted above. See the
+  status note at the top.
