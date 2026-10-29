@@ -315,3 +315,21 @@ Every page renders at `pages/<tag>.png`.
 - Whether a *reviewer* finds the single-group spine worth having at all is not
   settled by anything above, and cannot be: it is the question the pages are
   submitted for.
+
+
+---
+
+## Owner's verdict, 2026-10-29
+
+Shown copperhead's closest page and the akcli hand-placed v4 of the same board,
+each with no commentary, and asked whether they worked well enough to consider:
+
+> *"both are serviceable and have different strengths and weaknesses. But, if I
+> had to pick one, I'd pick the copperhead output. I feel like they are both
+> worth having in the toolkit."*
+
+**Note the tension this leaves open, recorded rather than resolved:** he named
+Ian Thompson-Bell's drawing as the layout reference, and then preferred a page
+that does not follow it - copperhead structurally cannot. Whether the idiom is
+the target, or whether it was a way of describing what he wanted and the target
+is something else, is his to settle.

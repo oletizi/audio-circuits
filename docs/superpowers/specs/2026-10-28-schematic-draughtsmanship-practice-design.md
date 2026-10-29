@@ -49,7 +49,7 @@ Decisions
 | Approval is never derived from a check | owner | *"you can't promote a drawing to approved without showing me"* |
 | Approval status is tracked state | owner | *"you have to track the approval status"* |
 | The record lives in a file in git, never a database | owner | *"postgres is opaque 20th-century nonsense"* |
-| Draft with copperhead, revise with akcli-kicad | **owner, on the drawings** | shown nineteen rendered pages labelled by tool and asked which worked well enough to consider, the owner, 2026-10-28: *"copperhead is the best overall. Circuitkz is my second choice."* akcli is the only agent-driven surface with a lint loop. **Microsoft SchGen was never run and is absent from that comparison** |
+| **Both copperhead and the akcli hand-placement pass are kept** | **owner, on the drawings** | 2026-10-28, over nineteen pages: *"copperhead is the best overall."* 2026-10-29, over copperhead's and akcli's pages of the same board: *"both are serviceable and have different strengths and weaknesses. But, if I had to pick one, I'd pick the copperhead output. I feel like they are both worth having in the toolkit."* They are not interchangeable - see the limit below |
 | No legibility SCORE is adopted | evidence | the only published one ranks the owner's own drawing level with the known-bad board |
 | No placement-intent format of our own | evidence | fourteen systems surveyed, adopt nothing; the one project that built it calls it legacy |
 | No reliance on exit codes | evidence | a page missing a third of its circuit exits 0 from every tool in the chain |
@@ -70,6 +70,28 @@ Decisions
 `.kicad_sch`. Measured: akcli writing one operation into this repository's own
 generated sheet changed exactly six token families by +1 each, with
 `global_label` 13 to 13 and all fifteen net names intact.
+
+**The two drafting tools are not interchangeable, and the boundary is in
+copperhead's source.** Measured over 37 input configurations, each rendered and
+looked at (`2026-10-29-copperhead-against-the-idiom.md`):
+
+- **`engine.ts:1646` - a net whose endpoints span more than one group is NEVER
+  wired; it becomes labels.** So a spine and captioned blocks are the SAME
+  decision, and no configuration buys both: every multi-group run measured a
+  longest wire of 74.9 mm or less, every single-group run 88.9 mm or more.
+- **`MAX_WIRED_ENDPOINTS = 4`**, so on this board `lo_boost_in` (7 pins) and 0V
+  (14 pins) became labels in **all 37** configurations. A single 0V rail is
+  unreachable for this circuit.
+- **`MAX_WIRE_SPAN = 50.8 mm`** caps a wired cluster's reach.
+- **The IR has no free-text object at all** - it is exactly
+  `{version, parts[], nets[], noConnect[], hints{groupOrder, paper, date}}` -
+  and **orientation is not an author control**.
+
+**So drawing to a layout reference is not something copperhead can be steered
+to do, and hand placement is not a repair pass on top of it.** Four of the six
+blockers sit under the IR. The two tools address different jobs: copperhead
+drafts without being told an arrangement; the hand-placement pass (section 2a)
+draws to an arrangement someone has already accepted.
 
 **Two refusals are part of the selection.** No legibility score, for the reason
 in the decisions table. And no driver may test an exit code: `copperhead draft`,
