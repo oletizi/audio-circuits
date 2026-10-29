@@ -17,8 +17,11 @@ exists, not by authoring layout algorithms.
 The short answer
 ----------------
 
-**For drawing: several tools work, one drew our circuit well from a single
-command, and a second gives an agent the best hands found anywhere.**
+**For drawing: several tools drew the circuit.** Which of their pages is any
+good is **not established by this document** - the drawings are collected in
+`gallery/every-drawing.pdf` and the ranking belongs to the reviewer. What is
+established here is which tools faked parts, which reported success while
+emitting something wrong, and which round-trip to a netlist that matches.
 
 **For judging: nothing exists.** No maintained, standalone schematic-legibility
 checker is published anywhere. That negative was reached three independent ways
@@ -36,7 +39,7 @@ stores a verdict.** Most of the visual value is reproducible in four commands.
 
 | Tool | Drew our circuit? | Who decides placement |
 | --- | --- | --- |
-| **copperhead** | **yes, first try, best page** | the engine, entirely |
+| **copperhead** | yes, first try, nothing faked | the engine, entirely |
 | **akcli-kicad** | **yes** | **the agent, every coordinate** |
 | `@schemd/core` | yes | the agent states positions, tool routes |
 | `@wire-lang/core` | yes, one 5:1 row | the engine; grouping unimplemented |
@@ -44,9 +47,9 @@ stores a verdict.** Most of the visual value is reproducible in four commands.
 | circuit_macros / circuitikz / SchemDraw | yes | the author, every coordinate |
 | `@tscircuit/*` | partly - see 3.2 | the engine |
 | netlistsvg / ELK | scrambled the bank | the engine |
-| Penrose | garbage, silently | a constraint solver |
+| Penrose | drew an infeasible circuit at exit 0, omitting a wire | a constraint solver |
 | circuitsmith | **refused at the first resistor** | a closed rule set |
-| mege-circuits | overprinted parts | nothing - no overlap detection |
+| mege-circuits | two parts at one coordinate; rotary impossible | nothing - no overlap detection |
 | `@veriflow/schematic-core` | 19 identical rectangles | the engine |
 
 ### 1.2 Tools that REVIEW a schematic - show a difference, hold a verdict
@@ -103,11 +106,11 @@ round trip. The project that built the closest thing - `diodeinc/pcb`'s
 
 Every page below draws `pultec-low-boost`, the board the owner is building next.
 
-| Page | Netlist | ERC | Verdict by eye |
+| Page | Netlist | ERC | What is on the page |
 | --- | --- | --- | --- |
 | schgen generated | matches | 2 known | **5 of 6 capacitor values struck through by a wire** |
 | agent hand-laid | matches | same 2 | values clear; cost 15 iterations and an algorithm |
-| copperhead | matches | 0 | best page produced by anything; grouped, titled |
+| copperhead | matches | 0 | grouped; title block with revision; real rotary with its lug |
 | copperhead on A5 | **matches exactly** | **0 violations** | **a third of the circuit is off the paper** |
 | akcli-kicad | matches | 1 correct | all six values struck through; RV1 unreadable |
 | `@schemd/core` | 13 of 14 | n/a | everything wired; no title block, no frame |

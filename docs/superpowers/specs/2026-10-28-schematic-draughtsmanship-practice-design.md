@@ -49,7 +49,7 @@ Decisions
 | Approval is never derived from a check | owner | *"you can't promote a drawing to approved without showing me"* |
 | Approval status is tracked state | owner | *"you have to track the approval status"* |
 | The record lives in a file in git, never a database | owner | *"postgres is opaque 20th-century nonsense"* |
-| Draft with copperhead, revise with akcli-kicad | agent proposed, owner endorsed | measured: best page, and the only agent-driven surface with a lint loop |
+| Draft with copperhead, revise with akcli-kicad | **PROVISIONAL - rests on an agent's unqualified ranking** | copperhead drew the circuit with nothing faked; akcli is the only agent-driven surface with a lint loop. **Which tool draws a better page has not been judged by a qualified reviewer**, so this row is open until it has been |
 | No legibility SCORE is adopted | evidence | the only published one ranks the owner's own drawing level with the known-bad board |
 | No placement-intent format of our own | evidence | fourteen systems surveyed, adopt nothing; the one project that built it calls it legacy |
 | No reliance on exit codes | evidence | a page missing a third of its circuit exits 0 from every tool in the chain |
@@ -59,7 +59,7 @@ Decisions
 
 | Job | Tool | Standing |
 | --- | --- | --- |
-| Draft | **copperhead** (Apache-2.0) | drew `pultec-low-boost` correctly from one command; real rotary with its mechanical lug; title block with a revision |
+| Draft | **copperhead** (Apache-2.0) - provisional | drew `pultec-low-boost` with nothing faked, from one command; real rotary with its mechanical lug; title block with a revision. **Not ranked against the alternatives by a qualified reviewer** |
 | Revise | **akcli-kicad** (PyPI) | the agent places every coordinate; `pins --at X Y --rotation R --json` answers where a pin lands before anything is written; `plan` dry-runs with a net diff; refuses non-axis-aligned endpoints; journal and undo |
 | Render | `kicad-cli` | already a repository dependency; `make check` invokes it |
 | Says the circuit | `lib/schgen/gates/connectivity.ts` | fourteen tests, predates this work, judges any sheet against the model |
@@ -111,6 +111,17 @@ map establishes independently.
    that matter it is the only instrument that exists.** That is a stronger
    footing for the practice than "a human until the tooling catches up", and it
    sets a real bar for any agent that later wants the reviewer role.
+
+**This rule was broken in producing this document.** Across six occasions on
+2026-10-28 the agent sent the owner rendered pages and, on five of them, ranked
+them without asking for his judgement - *"the best-drawn region either of us
+produced"*, *"the best page it produced"* - and committed *"best page produced by
+anything"* into the research map. The owner: *"you have confidently reported to
+me that copperhead is 'better' than other tooling... How could you possibly judge
+the quality of the output of the tools you've been evaluating?"* The verdicts
+have been struck from both documents and the stack selection marked provisional.
+**The failure is recorded rather than edited away, because a rule broken while
+being written down is the best evidence it needs to exist.**
 
 **And a rule on the producing agent, from the same correction:** the owner,
 *"you are falling into the trap of presupposing what makes for a legible drawing
