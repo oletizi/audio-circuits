@@ -45,7 +45,23 @@ emits.
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
 
-Read `CLAUDE.md` for the conventions every circuit follows.
+## The documents that govern the work
+
+Read them in this order. Each outranks the ones below it.
+
+| | |
+| --- | --- |
+| [`CONSTITUTION.md`](CONSTITUTION.md) | the few principles this project does not revisit |
+| [`EVALUATING-DRAWINGS.md`](EVALUATING-DRAWINGS.md) | **canonical on drawings** - who may judge one, what counts as a valid evaluation, what an agent may say about one. An agent is not a qualified reviewer, and *better*, *good*, *clean*, *readable* and *legible* are forbidden words about any drawing produced here |
+| [`CLAUDE.md`](CLAUDE.md) | the conventions every circuit follows |
+| [`AGENTS.md`](AGENTS.md) | the shared working rules |
+| [`TOOLING.md`](TOOLING.md) | **how a schematic actually gets drawn** - the toolchain with exact versions, the copperhead-then-akcli loop, the six known repair classes, the checks that must be able to fail, and what the procedure does not yet cover |
+| [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md) | the owner's verdicts on the pages he has seen, verbatim, each bound to the sha256 of the sheet. The defects he named are the only statements of what he wants that carry authority |
+| [`DEVELOPMENT-LOG.md`](DEVELOPMENT-LOG.md) | newest session first - what was done, and what went wrong doing it |
+
+`TOOLING.md` is the procedure and **not** the criteria; `EVALUATING-DRAWINGS.md`
+is the criteria, because an agent may never author the bar its own artifact is
+measured against.
 
 This repository was previously a tscircuit component package. tscircuit has
 been removed entirely — see `docs/decisions/2026-09-21-why-not-tscircuit.md`

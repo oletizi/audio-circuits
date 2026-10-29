@@ -1,0 +1,368 @@
+Tooling: how a schematic gets drawn here
+========================================
+
+**This file is the procedure and the toolchain. It is NOT the criteria.**
+`EVALUATING-DRAWINGS.md` is canonical on what a drawing has to be, who may judge
+one, and what an agent may say about one; it binds before anything in this file,
+and nothing here may be read as permission to depart from it. **An agent may
+never author the acceptance criteria for the artifact it is producing**, so a
+procedure document is the only kind of drawing document an agent can write.
+
+Read in this order before drawing anything:
+
+1. `EVALUATING-DRAWINGS.md` - the criteria, and the principles behind them
+2. `docs/schematic/verdicts.md` - the owner's verdicts on the pages he has seen,
+   verbatim, with the defects he named. **The defects are the useful part**: they
+   are the only statements of what he objects to that carry authority.
+3. this file - the tools and the loop
+4. `docs/superpowers/specs/2026-10-28-schematic-draughtsmanship-practice-design.md`
+   - the design this procedure implements, and what it leaves open
+
+---
+
+The stance: reuse, do not invent
+--------------------------------
+
+> *"i want to reuse and glue together agent-driven tooling. i do not want to
+> write software algorithms."* - the owner, 2026-10-28
+>
+> *"Stop inventing. Start reusing. Your job is not to write software. its to
+> design and develop a solution."*
+
+**Both halves of the loop are third-party tools.** Nothing in this procedure
+computes a coordinate in code written here. What this repository contributes is
+the intent file, the repair op-lists, the checks, and the discipline of looking
+at the render - not a placement algorithm.
+
+**This reverses what the repository tried for two sessions before 2026-10-28**,
+which was to develop readability algorithms in `lib/schgen/`. That work produced
+three invented readability metrics each pointing the opposite way to the owner's
+judgement. `DEVELOPMENT-LOG.md` records it; `lib/schgen/` remains the
+model-to-sheet generator and is not what draws the pages he has accepted.
+
+---
+
+The toolchain
+-------------
+
+| tool | version used | licence | where it comes from |
+| --- | --- | --- | --- |
+| **copperhead** | `0.12.0`, commit `476cc15965f0d1eeda70afb9e806936f6bb15c5c` (2026-10-22) | Apache-2.0 | `github.com/copperheadhq/copperhead` |
+| **akcli-kicad** | `0.22.0` (protocol 2) | MIT | PyPI `akcli-kicad` |
+| **kicad-cli** | `10.0.5` | GPL-3.0 | KiCad install, `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` |
+| **bun** | `1.3.8` | MIT | runs copperhead's TypeScript CLI |
+| **Python** | `3.14.6` | PSF | akcli's venv, and the check scripts |
+
+**CONFIRMED by running each one**, not read off a lockfile: every version string
+above came from `--version` or `git rev-parse` on the actual installed artifact.
+
+Reproducing it:
+
+```
+git clone https://github.com/copperheadhq/copperhead.git
+git -C copperhead checkout 476cc15965f0d1eeda70afb9e806936f6bb15c5c
+cd copperhead && bun install
+
+python3 -m venv venv-akcli
+./venv-akcli/bin/pip install 'akcli-kicad==0.22.0'
+./venv-akcli/bin/akcli doctor
+```
+
+`akcli doctor` prints an environment report over python, kicad-cli, ngspice,
+symbols, config and network with remediation hints, and `--require` gates it for
+CI. **Run it first.** It is the one command that tells you whether the rest of
+this procedure can work on the machine you are on.
+
+### NEITHER TOOL IS PINNED IN THIS REPOSITORY, AND THAT IS A STANDING RISK
+
+Both have so far lived in an agent session's scratchpad, which `git clean -fdx`
+and session rotation destroy. **Three accepted pages depend on tools that no
+committed file installs.** This table is the whole of the pinning: there is no
+lockfile, no submodule, no vendored copy, and no check that the installed
+versions match these.
+
+**What would settle it** is a decision nobody has made: vendor, submodule, pin
+in a manifest, or accept the drift. Until then, **re-record the versions you
+actually used in your run's findings document**, because a procedure that names
+versions it does not enforce is a transcription with a date on it.
+
+---
+
+The loop
+--------
+
+### 0. Establish which direction authority runs
+
+For a circuit an agent designs, the model is authoritative and the drawing is
+derived. For an imported design - the Pultec - **the schematic is authoritative
+and the model was derived from a netlist export.** Work out which case you are
+in before deciding what may edit what. `CLAUDE.md` states the rule; getting it
+backwards means editing the wrong artifact.
+
+### 1. Build the copperhead intent from the repo's own model
+
+A `schematic.intent.json`, version 1, carrying `parts`, `nets`, `noConnect` and
+`hints`. **Nothing in it computes a coordinate.** The author's controls are
+deliberately few: one group per part, `hints.groupOrder`, `paper`, `date`, a
+net's `kind`, `noConnect`, and `libId`. There is **no coordinate and no
+orientation control** - copperhead places, and that is the trade this tool is
+chosen for.
+
+`docs/research/2026-10-29-low-cut-full-run/base.intent.json` is the worked
+example, and `docs/research/2026-10-29-low-cut-full-run/draft.py` beside it shows group assignments written out as
+literals.
+
+**VERIFY THE INTENT BEFORE DRAFTING FROM IT.** Run
+`docs/research/2026-10-29-low-cut-full-run/scripts/intent_vs_model.py`: the
+intent's net partition must be identical, **as sets of `REF.PIN` sets**, to the
+netlist exported from the model. A mismatch here is a bug in the intent, and
+finding it after a draft costs a whole pass.
+
+### 2. Draft, and draft more than one arrangement
+
+```
+cd <copperhead-src> && bun src/cli.ts draft schematic --intent <path>
+```
+
+`draft` is deterministic: no LLM, no network. **Group assignment is the main
+lever you have**, so try more than one - the low-cut run drafted blocks-by-flow,
+a split cap bank, and a merged stand-in group before one was usable.
+
+### 3. Render, and LOOK AT THE RENDER
+
+```
+kicad-cli sch export pdf -o <out.pdf> <sheet.kicad_sch>
+kicad-cli sch export svg -o <dir> <sheet.kicad_sch>
+```
+
+Export **SVG as well as PDF**: git can diff an SVG, so a later change shows what
+moved rather than only that something did. PDF cannot serve as a binding - it
+embeds `/CreationDate`.
+
+**This step is not optional and it is not satisfied by a passing check.** A page
+that overflowed to A5 and was missing a third of its circuit **matched its
+netlist exactly** and passed every gate. The only thing that found it was
+looking.
+
+### 4. Repair with akcli
+
+**Query geometry before placing anything:**
+
+```
+akcli pins <lib_id> --at X Y --rotation R --json     pin world coordinates
+akcli bbox <lib_id> --at X Y --rotation R            bounding boxes, for spacing
+```
+
+**Dry-run every op-list and read the net diff:**
+
+```
+akcli plan  <ops.json> <sheet.kicad_sch>     validates, never writes
+akcli draw  <ops.json> <sheet.kicad_sch> --apply
+akcli undo  <sheet.kicad_sch>                rotated backups under .akcli/
+```
+
+`connect_and_label` refuses a non-axis-aligned endpoint, which is a refusal
+worth having. `akcli diff` gives a net-level diff of two schematics and `verify`
+proves net equivalence - use them rather than trusting that a repair was
+net-neutral.
+
+**akcli was proven non-destructive before it was trusted**, and that check is
+worth repeating on a new board: on low-cut its passes left the sheet **sha256
+byte-identical**; on low-boost, 70 token families went to 70.
+
+### 5. Re-render, look again, iterate
+
+**Driving a measurable cost down is work to automate, not hand back.** Crossings,
+corners, hairpins, total wire length and label count are numbers.
+*"Your cycles are cheaper than mine"* is the governing economics: a first
+solution that technically works but leaves a person doing fiddly remedial work
+is a failure, not a delivery.
+
+### 6. Hand the page to the reviewer
+
+`EVALUATING-DRAWINGS.md` §4 governs this message and is written to be checkable
+from outside: **a message carrying a drawing carries a question and nothing
+else.** *If a message contains a drawing and an assessment of it, that rule
+broke.* Send the page, the crops of every region you changed, and the question.
+**Do not rank, do not recommend, and do not use the forbidden vocabulary.**
+
+Then record the verdict in `docs/schematic/verdicts.md`, verbatim, bound to the
+sha256 of the sheet he was shown. **Telling him is not recording it.**
+
+---
+
+The repair classes
+------------------
+
+**Six are known. The set is not closed, and must not be written as if it were** -
+the second board added three that nobody had predicted. Four are copperhead's
+structural output; two are akcli's side effects.
+
+**copperhead:**
+
+1. **It labels any net spanning groups or exceeding 4 endpoints.** This is the
+   main source of duplicate on-page labels.
+2. **It emits one ground symbol per pin.** The owner: *"we dont need five
+   discrete ground symbols here. one will suffice if all the wires connect."*
+   Stacked grounds are noise; grounds that **shorten long runs on a crowded
+   page** are not.
+3. **It has no orientation control**, which is where hairpins come from. The
+   owner: *"this ground symbol is folded back on its wire. Ideally, the ground
+   terminal of the pot symbol would point down or horizontally so the ground
+   wire doesn't hairpin."*
+4. **`PWR_FLAG` coordinate collisions.**
+
+**akcli:**
+
+5. **`move_component` carries per-part field offsets.** A moved part's Reference
+   and Value do not follow sanely; rewrite them as literals keeping
+   symbol-relative offsets. **This class is invisible to every automated check,
+   so the moved part must be looked at in a rendered crop with its neighbours.**
+6. **`delete_object` orphans junction dots** - 11 across four passes on one
+   board, **invisible to every check that ran.** Count them:
+   `docs/research/2026-10-29-low-cut-full-run/scripts/orphan_junctions.py`.
+
+### The label rule has no test in it
+
+> *"Rather than try to come up with an exquisite line of reasoning about when
+> duplicate on-page labels is good or bad, you should just assume you need to
+> collapse them. I will tell you when I want you to use on-page labels."*
+
+**Collapse duplicate on-page labels into a wire. Always, without reasoning about
+it.** There is no threshold and no defence to weigh. If you find yourself
+building a case for keeping a pair, stop: that reasoning has been struck three
+times, and each time it was an agent inducing a law from a single verdict.
+
+A hairpin is different in kind - it **demands a defence** rather than being
+forbidden. Do not write that hairpins are never acceptable; that ultimatum was
+struck for unearned certainty.
+
+---
+
+Checks that can fail, and four that could not
+---------------------------------------------
+
+**A skipped check must never look like a passing one, and a check that cannot
+fail is worse than no check.** Each of these actually happened in this work:
+
+- **`kicad-cli sch export netlist` exits 0 on a structurally broken sheet.** A
+  parenthesis-depth error left a sheet at depth −1 and the export wrote
+  well-formed XML with `<components/>` and `<nets/>` **empty**, exit code 0, no
+  error. **Put a parenthesis-depth counter in the loop and compare net SETS**,
+  never the exit code.
+- **`akcli check --layout` reported zero layout findings** on a page that drew
+  six capacitor values across their own plates, put a pot's reference and value
+  inside its body, and ran the 0V rail through the title block. All three were
+  found by looking. **Run the lint; do not believe it.**
+- **A netlist match does not mean the page is complete** - the A5 overflow above.
+- **A pattern that collapses to "match everything".** A NUL check written here
+  used `$(printf '\000')`, which the shell strips to an **empty pattern**, so
+  `grep -c` counted every line and reported a number that could not have been
+  anything else. **Every check needs a positive control** - a value that proves
+  the instrument moves.
+
+`docs/schematic/false-greens.md` catalogues these with the rest.
+
+### NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER
+
+A `\u0000` or `\r` written into an edit string, a search pattern or a document
+arrives as the **real byte**, and the result is invisible in a rendered diff. A
+raw NUL in `docs/known-gaps.md` made `grep` treat all 25,000 lines as binary and
+**suppress every match**. Build such bytes in code with `chr()`, and check the
+file by **counting bytes** rather than by reading it.
+
+> **THIS FILE BROKE THIS RULE WHILE STATING IT - the fifth instance, and it is
+> left recorded rather than quietly repaired.** The sentence above was first
+> written with the escape typed directly into the `Write` call. It arrived as
+> **one real NUL byte at offset 12022**, and the rendered text looked exactly
+> right. Interestingly the `\r` in the same sentence survived as two characters
+> while the other did not, so the two escapes are not treated alike and you
+> cannot reason from one to the other. It was caught by a byte count, repaired by
+> building the replacement as `chr(92) + 'u0000'` in code, and verified by
+> counting again - `1` NUL before, `0` after, with the literal present exactly
+> once.
+>
+> `CLAUDE.md` keeps its own version of this incident for the same reason:
+> **there is no level of care at which typing the escape is safe.** A document
+> that warns about it is not thereby protected from it, and neither is the agent
+> writing that warning.
+
+---
+
+The verification set
+--------------------
+
+Report each **before and after**, as a number that could have been different:
+
+| measure | how |
+| --- | --- |
+| netlist pin sets **and net names** identical to the model | `kicad-cli sch export netlist --format kicadxml`, compared as sets |
+| ERC violations | `kicad-cli sch erc`, or `akcli check` |
+| parenthesis depth | counter in the check loop; must be 0 |
+| true wire crossings | distinguish from T-meetings |
+| T-meetings, and whether each carries a junction dot | |
+| orphan junction dots, out of total | `docs/research/2026-10-29-low-cut-full-run/scripts/orphan_junctions.py` |
+| duplicate on-page labels per group | `docs/research/2026-10-29-low-cut-full-run/scripts/label_survey.py`; **zero after the collapse pass** |
+| per-net wire stroke consistency | a net drawn in two colours reads as two nets |
+| symbol count, pin count | should be unchanged by a repair |
+| wire count, total wire length | |
+| sha256 of the sheet | the binding for a verdict |
+
+**None of these is a judgement of the drawing**, and a page with no findings is
+not thereby good. `EVALUATING-DRAWINGS.md` §6: *an automated check is peripheral
+by definition. It may be run and reported. It may never approve, may never rank.*
+
+---
+
+What this procedure does not cover
+----------------------------------
+
+Stated rather than buried, because each is a place the next run will have to
+decide something this file does not answer:
+
+- **Building the intent file is not automated.** There is no committed tool that
+  derives a copperhead intent from a `Network`. Each board's intent has been
+  hand-built and then verified against the model. **This is the obvious
+  candidate for glue**, and it is glue rather than an algorithm - it computes no
+  coordinate.
+- **Group assignment is a judgement with no stated method.** Which parts share a
+  group, and in what order, is the main lever on the output and the records show
+  it being chosen by trying several.
+- **Neither tool is pinned**, as above.
+- **The verdict record substrate is not built.** `docs/schematic/verdicts.md` is
+  interim markdown; the designed form is a `drafted/<circuit>/<board>/` tree with
+  a GNU recutils register and a staleness check. **The status vocabulary is
+  unnamed** and is the owner's to name - an agent may not author the words its
+  own output is judged in.
+- **SVG stability across machines, KiCad versions and font sets is unmeasured.**
+  `sha256(svg minus the generation-title line)` is byte-stable on one machine,
+  measured; whether it survives a font substitution is not known, and an
+  approval bound to it would read as a withdrawn signature if it drifted.
+- **`tools/draught/gate.ts` is committed and known inadequate.** It matched a
+  netlist exactly on the A5-overflowed page. It is structurally incapable of the
+  class of defect that matters, and nothing has replaced it.
+- **Only Pultec section boards have been through this loop.** Whether it carries
+  to `pt2399-core` or the transistor-preamp boards is untested.
+
+---
+
+The failure mode this document exists inside
+--------------------------------------------
+
+**Writing tooling instead of drawings is the pathology that stopped this work
+twice**, and `DEVELOPMENT-LOG.md` §0 records the owner's words on it. A third
+recurrence began the session that produced this procedure: six tools were ranked
+in committed documents with judgement asked on no drawing, and **he caught it -
+no agent and no review did.**
+
+So the rule that governs reading this file: **a drawing is the unit of
+progress.** Tooling earns its place by producing one, and a class of repair earns
+automation once it has been seen on two boards. One sighting is not a pattern.
+
+> *"Fixating on a very literal detail is a symptom of autistic literalism that
+> you have, stemming from the lamp post problem."*
+
+**Whenever a task offers something concrete to copy or count, expect the concrete
+thing to absorb the attention the hard thing needed.** The measurable defects are
+the minor ones; the defects that make a drawing unreadable - rat's nests,
+senseless placement, orientation goofiness - are the ones no check here detects.
