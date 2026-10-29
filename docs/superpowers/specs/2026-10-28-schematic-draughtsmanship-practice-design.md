@@ -122,7 +122,8 @@ never hand-edited, and "generated - do not edit" in every title block:
 - the rendered page **as SVG**, so git can diff what changed rather than only
   that something did
 - a record file carrying:
-  - the content hash of the sheet **and** of the page the reviewer looked at
+  - the content hash of the **sheet**, which is the binding; plus the digest of
+    the rendered page, which is **evidence and not a binding** - see below
   - the status: `drafted` / `submitted` / `revise` / `approved`
   - the reviewer's verdict, **verbatim**, attached to the region it is about
   - the legibility findings as they stood, marked as a pointer list
@@ -152,6 +153,13 @@ Measured (`2026-10-28-git-native-record-tooling.md`):
   the reviewer's words survive unaltered.
 - 3.2 MB, system libraries only.
 
+**The sheet is the binding; the rendered page is evidence.** A digest of a
+rendered page is stable only on the same machine with the same renderer version,
+so binding an approval to it would make the approval evaporate on another
+machine and look like a withdrawn signature. The `.kicad_sch` content hash is
+therefore the binding, and the page digest is recorded beside it so that a
+*mismatch* is informative without an *absence* being damning.
+
 **It does not do everything, and the gap is ours to close in glue.** recutils
 polices values but not transitions - `approved` to `rejected` to `approved` is
 valid - and it cannot know whether a recorded hash still matches the file on
@@ -173,6 +181,20 @@ rather than by reasoning about it.
 - **`jq` / `yq` / `dasel`** - structured editors with no schema; all accepted a
   nonsense status at exit 0, and `dasel validate` printed `fail` while **still
   exiting 0**.
+- **Doorstop** (LGPL, 690 stars, active) - the best-fitting *shape* surveyed:
+  one YAML record per item, multi-line block scalars, the best diffability found,
+  and a real `references[].sha` convention for binding an external artifact.
+  **Rejected on a flaw verified in its source:** `stamp()` re-reads the stored
+  sha out of the YAML and compares it to itself, and `_hash_reference` is called
+  from exactly one place - the act of approving. Edit the drawing, leave the YAML
+  alone, and `reviewed` still returns True; validation only checks the referenced
+  file exists. **It meets the criterion and does not implement the mechanism** -
+  the trap this repository already has written down. Its record shape is worth
+  imitating; its guarantee is not.
+- **StrictDoc** (Apache-2.0) - the only tool found with an **enforced** custom
+  status enum, declared in the document's own grammar as
+  `TYPE: SingleChoice(...)` and checked at parse time. **No content hash at
+  all.** The two leaders fail on opposite sides.
 - **`git notes` keyed on the artifact blob** - the sharpest mechanism found, and
   declined. Redraw the sheet and the lookup simply fails while the old note stays
   attached to the bytes it was about, so **a stale approval becomes impossible to
@@ -226,9 +248,19 @@ What it leaves open
   `(group "name" (uuid ...) (members ...))` with member ids sorted for diff
   stability, and this repository currently emits none.
 - **How a region is named so a verdict can attach to it, and in what units.**
-  No surveyed tool answers this: the only real region schema found measures in
-  lines and columns of a text file. The recfile defers it honestly by holding a
-  string. **Whether a region must be machine-checkable is a question for whoever
+  No surveyed tool solves it, but three existing answers were found and none
+  needs inventing:
+  - **A PDF fragment**, already standardised - the W3C `FragmentSelector`
+    `conformsTo` table cites RFC 3778 with the form
+    `page=10&viewrect=50,50,640,480`. Page plus rectangle in one string.
+  - **KiCad's own groups** - `(group "name" (uuid ...) (members "uuid" ...))`,
+    member ids sorted for diff stability, available in version 10 and emitted by
+    nothing here today.
+  - **The symbol uuids themselves**, which this repository's generator already
+    emits deterministically - a region as a set of part identities rather than a
+    geometry, which survives re-rendering entirely.
+
+  **Whether a region must be machine-checkable at all is a question for whoever
   authors the acceptance criteria, which is never the agent producing the
   drawings** - so it is the owner's to settle, not this document's.
 - **Whether the practice holds on a circuit of a different shape.** Everything
