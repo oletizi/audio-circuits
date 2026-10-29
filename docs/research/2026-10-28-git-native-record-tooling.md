@@ -14,8 +14,25 @@ it**, so that the record is not hand-edited prose pretending to be a database.
 
 **Every claim below is marked VERIFIED (this writer ran it, or read the source
 named) or RELAYED (another agent's report or a secondary source).** Everything
-in sections 2 through 6 was run on this machine against throwaway repositories;
-the transcripts and the scripts are reproducible from Appendix A.
+in sections 2 through 7 was run on this machine against throwaway repositories;
+the transcripts and the scripts are reproducible from Appendix A. Section 8 is
+mostly source-reading rather than execution, and says so. Section 9 was measured
+against boards in this repository.
+
+**Sections 8 and 9 incorporate a parallel survey**, whose findings are marked
+RELAYED unless this writer re-checked them — and the two that decide anything
+were re-checked independently: the render-hash stability of 9.1, which
+reproduced to the same normalized hash, and the absence of element ids in the
+exported SVG in 9.2.
+
+**Two claims in an earlier draft of this document were wrong and are corrected
+in place rather than quietly removed**, because what produced them is worth
+knowing. It recorded `KiCad-Prism` as a repository that does not exist — a
+*name search* missed what a *direct lookup* finds — and it attributed
+`kischvidimer` to Micron, repeating the brief rather than reading the file
+header. **Both errors were negatives**, and a false negative in a survey is the
+dangerous kind: it closes a line of enquiry. The first one hid the single most
+pointed finding here (8.5).
 
 ## The four requirements, stated so they can fail
 
@@ -68,7 +85,27 @@ at twenty-five lines of shell. This is not a gap in recutils; **no tool can do
 it, because only we know which file on disk a record is about.** The same gate
 is where any transition rule has to live (5.2a).
 
-**And borrow the record's shape from in-toto rather than inventing it** (8.2).
+**Hash the source, and record the rendered page's hash beside it** (9.1). The
+rendered SVG *is* byte-stable once one timestamp line is stripped — measured, and
+independently reproduced to the same hash — but only on one machine, one KiCad
+version and one font configuration, and that is the least-tested assumption in
+this document. Hashing the `.kicad_sch` and recording the normalized render hash
+as the traceability link survives a KiCad upgrade; a render-only hash does not.
+
+**Anchor a region to the UUIDs `lib/schgen/` already emits, never to the
+picture** (9.2). The exported SVG has **zero element ids** — there is nothing in
+it to point at — while `uuidV5(\`pin:${part}:${unit}:${pin}\`)` and its siblings
+are deterministic, semantic and already written into every generated sheet. And
+keep that anchor separate from the content hash: a redraw that nudges `C10` must
+invalidate the *approval* and must not invalidate the *region reference* (9.3).
+
+**Consider cargo-vet's `delta` idea before committing to strict hashing** (8.2).
+A content-hash binding as strict as section 6.1's makes every redraw a full
+re-review. For a board revised repeatedly on a bench that friction is what kills
+the practice, and `cargo-vet` is the one surveyed tool that models approving a
+*change* rather than re-approving the whole artifact.
+
+**And borrow the record's shape from in-toto rather than inventing it** (8.3).
 Since we are designing the fields anyway, design them as an in-toto Statement:
 a `subject` identified by `digest`, a `predicateType` URI we mint, and our
 status, verbatim verdict and region inside the `predicate`. The spec's central
@@ -766,7 +803,71 @@ Licensed Apache-2.0 / MIT / MPL-2.0, and actively maintained. **Worth reading
 before designing our record** — the `{path, digest, digest-type}` triple and the
 signature envelope are both good ideas we could adopt without adopting the tool.
 
-### 8.2 in-toto attestations — the right schema for (d), and no register tool
+### 8.2 `cargo-vet` — the one tool with a genuinely custom state set
+
+**This qualifies the claim this document leads with.** Sections 3, 4 and 8.1
+reject git-bug, git-appraise and crev partly because their state sets are theirs
+and not ours. `cargo-vet` does not have that defect, and it is the only surveyed
+tool that does not. RELAYED from the parallel survey, which quoted the
+documentation directly; I did not install it.
+
+Criteria are declared by the user in `supply-chain/config.toml`:
+
+```toml
+[criteria.crypto-reviewed]
+description = '''
+The cryptographic code in this crate has been reviewed for correctness by a
+member of a designated set of cryptography experts within the project.
+'''
+```
+
+And they compose — `implies` makes the criteria **an implication lattice rather
+than a flat enum**: *"An optional string or array of other criteria that are
+subsumed by this entry. Audit entries that are certified with these criteria are
+also implicitly certified with any implied criteria."* Google's published
+`rust-crate-audits` uses it for a graded `ub-risk-0` … `ub-risk-4` scale.
+
+An audit entry:
+
+```toml
+[[audits.adler]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = ["safe-to-run", "does-not-implement-crypto"]
+version = "1.0.2"
+notes = """
+Fast checksum'ing algos like the one implemented by this crate don't qualify as
+crypto. Hence, this crate does-not-implement-crypto.
+"""
+```
+
+TOML in git, one block per verdict, diffable, with `who` auto-populated from the
+git config on `cargo vet certify` — and the documentation is explicit about why:
+*"It emphasizes to the author that they are signing off on having performed the
+audit."*
+
+**It has no content hash.** Binding is `(crate, version)`, delegating
+immutability to the registry — grepping its config documentation for
+`hash|sha256|digest` returns nothing. So it fails (d) and (c) completely, and it
+is not the recommendation. **But three of its ideas are worth taking:**
+
+- **User-defined criteria with an implication graph** — requirement (a), done
+  properly, and the only instance of it found.
+- **`delta = "0.19.0 -> 0.20.0"`**, which *"certifies that the delta between two
+  absolute versions preserves the relevant criteria"*. **This is the idea most
+  likely to matter in practice here.** A board revised repeatedly on a bench
+  will not get re-approved from scratch each time; if wholesale re-approval is
+  the only option, the practice dies of friction. A content-hash binding as
+  strict as section 6.1's makes every redraw a full re-review, and that cost
+  needs to be a deliberate choice rather than a surprise.
+- **`violation` overrides `exemptions`** — *"If a `violation` entry exists for a
+  given crate version, `cargo vet` will reject the dependency even if it's listed
+  in the `exemptions` table"*. A negative assertion that the normal escape hatch
+  cannot silence, which is this project's *"a fallback is loud or it does not
+  exist"* in another vocabulary.
+
+Apache-2.0, v0.10.3 (2026-10-22), actively maintained.
+
+### 8.3 in-toto attestations — the right schema for (d), and no register tool
 
 The in-toto Statement, from the v1 spec:
 
@@ -805,7 +906,7 @@ designing the record ourselves anyway, design it as an in-toto Statement.* It is
 a maintained, independently specified format whose central guarantee is the one
 we need, and adopting the shape costs nothing.
 
-### 8.3 ADR tooling — no state machine anywhere
+### 8.4 ADR tooling — no state machine anywhere
 
 **A clean negative, VERIFIED.** `adr-tools` (npryce) writes a markdown template
 whose status is a literal placeholder:
@@ -836,7 +937,7 @@ ADR-style markdown file with a `Status:` line is the obvious thing to reach for
 here and it is exactly the hand-managed prose the owner's question was trying to
 improve on.
 
-### 8.4 The three schematic review tools: all viewers, none a register
+### 8.5 The three schematic review tools: two store nothing, one stores it in Postgres
 
 VERIFIED from repository metadata and README contents.
 
@@ -845,24 +946,50 @@ VERIFIED from repository metadata and README contents.
   schematics and layouts of KiCad projects that are version-controlled with
   Git."* Grepping its README for comment, annotation, review-state or approval
   returned **nothing**. It renders and diffs; it stores no verdicts.
-- **`kischvidimer`** (dnschneid, a mirror of Micron's GitLab) — Apache-2.0, very
-  actively maintained (pushed 2026-10-28). Its README has exactly one
-  review-related feature, and it is telling: *"**Feedback URL** -- provide a
-  button to click for schematic review feedback."* **It delegates the verdict to
-  an external system by design.** That is a primary-source confirmation that the
-  most actively developed KiCad schematic viewer does not attempt to store
-  review state, and expects something else to.
-- **`KiCad-Prism`** — no repository found by search (VERIFIED: a
-  `kicad prism schematic` repository search returned no matches). Either
-  misnamed in the brief or too obscure to locate; **unresolved, and recorded as
-  unresolved** rather than reported absent.
+- **`kischvidimer`** (canonical home GitLab `dnschneid/kischvidimer`, mirrored to
+  GitHub) — Apache-2.0, very actively maintained (pushed 2026-10-28). Its README
+  has exactly one review-related feature, and it is telling: *"**Feedback URL**
+  -- provide a button to click for schematic review feedback."* **It delegates
+  the verdict to an external system by design** — a primary-source confirmation
+  that a very actively developed KiCad schematic viewer does not attempt to
+  store review state, and expects something else to.
 
-**None of the three can be backed by a git-stored verdict file, because none of
-them stores verdicts at all.** The register is ours to build regardless of which
-viewer renders the page, which is a liberating finding rather than a
-disappointing one: the choice of viewer does not constrain the choice of record.
+  **Attribution corrected:** this is **Rivos Inc., not Micron.** VERIFIED —
+  `kischvidimer/diffui.py` opens
+  `SPDX-FileCopyrightText: (C) 2025 Rivos Inc.` followed by
+  `SPDX-FileCopyrightText: Copyright 2024 Google LLC`. The brief named Micron and
+  an earlier draft of this document repeated it; the source says otherwise.
 
-### 8.5 The snapshot-approval pattern — the right idea, wrong artifact
+- **`KiCad-Prism` — found, and it is the most interesting negative in this
+  document.** An earlier draft of this section recorded it as "no repository
+  found", which was wrong: a repository-name search missed it where a direct
+  lookup finds it. It is `krishna-swaroop/KiCAD-Prism`, Apache-2.0, 303 stars,
+  pushed **2026-10-28** — very active. VERIFIED.
+
+  **It has, by a distance, the richest review features of anything surveyed.**
+  From its README: *"Comment on any sheet, part or area"*, and a Release Studio
+  that *"records DRC/ERC evidence and designer and QA sign-off"*. That is
+  requirements (a), (b) and (c) in a tool built for exactly our artifact.
+
+  **And its own runtime table disqualifies it in one line**:
+
+  ```
+  | `postgres` | workspace, comments, catalog, jobs, audit, and session data |
+  ```
+
+  with the README adding that *"PostgreSQL and both directories are required for
+  complete recovery."* **The one tool that does what we want keeps it in the one
+  store the owner ruled out** — *"use a file in git, not postgres"*. Worth
+  stating plainly rather than burying: this is not a case of nobody having built
+  the thing. Somebody built it, and put the record in a database.
+
+**So none of the three can be backed by a git-stored verdict file** — two store
+no verdict at all, and the third stores it in Postgres. The register is ours to
+build regardless of which viewer renders the page, which is a liberating finding
+rather than a disappointing one: **the choice of viewer does not constrain the
+choice of record.**
+
+### 8.6 The snapshot-approval pattern — the right idea, wrong artifact
 
 RELAYED; not installed or run. `ApprovalTests` (the `.approved.txt` /
 `.received.txt` pair) and Rust's `insta` (`.snap` files) implement precisely the
@@ -883,25 +1010,271 @@ so staleness is unrepresentable rather than detected. That two unrelated
 traditions arrive at the same mechanic is the strongest evidence this pass found
 that content-addressed approval is the correct shape.
 
-## 9. What this pass did not settle
+### 8.7 W3C Web Annotation — solves (c) properly, contributes nothing to (d)
 
-- **The region coordinate system is still open, and no tool answers it.**
-  git-appraise has the only real region schema found (4.2) and its units are
-  lines and columns in a text file. A region of a rendered sheet is a zone
-  (`B3`) or a bounding box in sheet millimetres. The recfile `Region` field is a
-  string, which defers the question rather than answering it — honest, but it
-  means a region is not machine-checkable against the drawing. **Whether a
-  verdict's region should be checkable at all is a question for whoever authors
-  the acceptance criteria, which is not the agent producing the drawings.**
+RELAYED from the parallel survey, which read the specification itself.
+
+**The region model is genuinely right for a drawing**, and better than
+git-appraise's lines and columns:
+
+- **`SvgSelector`** — *"defines an area through the use of the Scalable Vector
+  Graphics [SVG11] standard. This allows the user to select a non-rectangular
+  area of the content, such as a circle or polygon."* An arbitrary polygon over a
+  schematic page is exactly requirement (c).
+- **`FragmentSelector`** for a simple box (`#xywh=…`), and **`refinedBy`** to
+  compose selectors.
+- An **`assessing`** motivation already exists, defined as *"when the user
+  intends to assess the target resource in some way, rather than simply make a
+  comment about it … or provide an assessment of a student's work."*
+
+**And the decisive negative, which is a measurement rather than an impression:
+the specification contains zero occurrences of `checksum`, `digest` or `hash`.**
+Its `state` mechanism is not a content binding — `TimeState` carries a
+`sourceDate` and `HttpRequestState` carries request headers, so both describe
+*how and when to retrieve* the target, not what its bytes were. **The W3C model
+gives (b) and (c) for free and nothing at all for (d).**
+
+`Annotorious` (BSD-3-Clause, active) is the matching browser library and loads
+plain JSON from a file (`anno.loadAnnotations('./annotations.json')`), which
+makes it a plausible "human draws a region" front end. It is a library, not a
+CLI: no query verb, no state machine, no persistence.
+
+**Caution on adopting the selector vocabulary wholesale**: an `SvgSelector`
+polygon is pixel geometry over a rendered page, which 9.2 and 9.3 argue against
+for precisely the reason that it invalidates on re-layout. The `assessing`
+motivation and the `refinedBy` composition idea travel better than the geometry
+does.
+
+### 8.8 Hash-bound invalidation in the wild — one real instance, and instructive failures
+
+RELAYED from the parallel survey. This is the direct answer to *"this pattern
+must exist somewhere"*: **it does, once, and most of the things that look like it
+are not it.**
+
+**`detect-secrets` (Yelp) genuinely binds a human verdict to a hash.** Its
+committed `.secrets.baseline` carries per-finding records with
+`"hashed_secret": "daefe0b4…"`, and the identity rule is the load-bearing part —
+`fields_to_compare = ['filename', 'secret_hash', 'type']`, with the source's own
+comment: *"Note that line numbers aren't included in this, because line numbers
+are subject to change."* The human verdict is tri-state (absent / `false` /
+`true`) from an audit step asking *"Should this string be committed to the
+repository?"*, and carry-forward across runs is hash-keyed, so **a finding whose
+hash no longer matches is simply not found and its verdict is dropped** — the
+same structural invalidation as crev and as section 6.1. Three faults worth
+avoiding: a `generated_at` wall-clock rewritten on every save (a one-line diff
+when nothing changed), a churning `line_number`, and **no headless verb to set a
+verdict** — the audit step is an interactive TUI only.
+
+**Two precedents worth citing if this approach is ever questioned:**
+
+- **GitHub chose content-sensitive dismissal deliberately**, and documents it:
+  *"GitHub records the state of the diff at the point when a pull request is
+  approved. This state represents the set of changes that the reviewer approved.
+  If the diff changes from this state … the approving review is dismissed as
+  stale."* A platform with every commercial incentive to keep approvals sticky
+  made invalidation the safe default.
+- **Gerrit is the best prior art for a custom verdict vocabulary with rules about
+  when a verdict survives a revision.** Labels are entirely user-defined in
+  `project.config`, and `copyCondition` is a queryable expression —
+  `copyCondition = is:MIN OR -change-kind:REWORK`. Note it deliberately
+  *ignores* the hash: `changekind:NO_CHANGE` matches when *"only the patch set
+  SHA-1 is different"*, used to make approvals sticky. The opposite choice from
+  ours, made knowingly.
+
+**The baseline-file family mostly does not do this, despite appearances.**
+`checkov`'s baseline keys on `(resource, check_id)` and ignores the file path
+entirely; `KICS`'s `similarity_id` hashes a *location*, deliberately insensitive
+to the rest of the file; `trivy` keys on CVE id; `semgrep`'s real `code_hash`
+exists but the triage verdict lives in their SaaS, not on disk; `gitleaks` uses
+`commit:path:ruleID:line`. **ESLint 9's suppressions file is the sharpest
+contrast — it stores counts, not hashes**:
+`{ "src/index.js": { "no-console": { "count": 2 } } }`, chosen so that
+refactoring would *not* invalidate suppressions. That is the opposite trade-off
+from the one recommended here, and it is worth saying out loud that we are
+choosing the strict side deliberately rather than by default.
+
+Two ideas to borrow anyway: `trivy`'s `expired_at` (a time-bounded suppression)
+and its `statement` field (*"The reason for ignoring the finding"*).
+
+## 9. Which bytes to hash, and what a region can anchor to
+
+Two questions the earlier sections left open, both measured on this machine
+against boards in this repository. **These matter more than the choice of tool**,
+because requirement (d) is meaningless until "the exact artifact reviewed" names
+a specific byte string, and requirement (c) is meaningless until a region has
+something stable to point at.
+
+### 9.1 The rendered page is not byte-stable, and one line is why
+
+VERIFIED by this writer, KiCad **10.0.5**, `circuits/pultec/pultec-mid-band.kicad_sch`
+exported to SVG twice a second apart:
+
+```
+raw a  ccb635d9e72e993b
+raw b  24f0a070c1ae69aa        <- different
+```
+
+`diff` reports **exactly two differing lines**, which is one line changed, and it
+is line 11:
+
+```
+11c11
+< <title>SVG Image created as pultec-mid-band.svg date 2026-10-28T17:17:20 </title>
+---
+> <title>SVG Image created as pultec-mid-band.svg date 2026-10-28T17:17:21 </title>
+```
+
+Drop that one line and the render is byte-identical:
+
+```
+STABLE   pultec-mid-band.svg  b077167eec816af0
+```
+
+**So `sha256(svg with the generation-title line removed)` is a usable content
+hash for "the page the human read."** A parallel investigation reached the same
+normalized hash `b077167eec816af0` for this board independently, which is as
+good a reproduction as this pass has.
+
+PDF is **not** usable the same way: it embeds `/CreationDate (D:2026:10:28:…)`
+and two exports differ. RELAYED — my own PDF check mis-specified the output path
+and did not run, so take the SVG result as measured and the PDF result as
+reported.
+
+**The honest caveat, and it is the live risk in the whole recommendation.** This
+is one machine, one KiCad version, one font configuration, back to back.
+**Cross-machine and cross-version stability is untested.** A font substitution
+would change the path data and therefore the hash, and `fontconfig` emitted a
+warning on every run here. Before any gate depends on a render hash, it has to
+be tested on a second machine and across a KiCad upgrade.
+
+**The safer structure, RELAYED but well reasoned.** A regulated docs-as-code
+project (`itercharles/MedHarness`, 3 stars, status *Proposed* — read for the
+design, not as a dependency) states the problem and resolves it the other way
+round: *"A document's `hash` is computed over the items it contains, not over the
+rendered file, because rendering is not byte-stable (fonts, timestamps). … The
+rendered file's hash is recorded alongside, so the PDF or HTML an auditor reads
+traces to the signed entry."* **Hash the source, record the render's hash
+beside it.** That survives a KiCad upgrade; a render-only hash does not. Given
+the untested cross-version risk above, this is the structure to prefer.
+
+**And whichever is chosen, write down what the hash covers and test it.**
+`cargo-crev` needed an explicit `cargo_min_ignore_list()` /
+`cargo_full_ignore_list()` for exactly this question and still warns when the two
+disagree (RELAYED). Our version of that list has to name the SVG `<title>` line,
+`.kicad_prl`, and whatever is regenerated. **Explicit, per this repository's own
+rule that an empty whitelist refusing loudly beats a general rule that quietly
+accepts a guess.**
+
+### 9.2 A region cannot anchor to the render, and the right anchor already exists
+
+**The render has nothing to point at.** VERIFIED by this writer on the same
+exported SVG:
+
+```
+id= occurrences:    0
+class= occurrences: 180
+distinct classes:   class="stroked-text"
+uuid occurrences:   0
+```
+
+**Zero element ids, one class, no UUIDs.** So the coordinate-system question
+section 8.3 left open cannot be answered inside the SVG at all. A region
+expressed as pixel coordinates over that page would be invalidated by any
+re-layout, which is the wrong invalidation behaviour for a *region* — a region
+should survive a redraw that moves the part, because it is pointing at the part,
+not at a spot on the paper.
+
+**The anchor already exists in `lib/schgen/`.** VERIFIED by this writer,
+`lib/schgen/render/uuid.ts`:
+
+```ts
+/** Fixed namespace for every schgen UUID. Changing it changes every generated file. */
+export const SCHGEN_NAMESPACE = "3f8b8a2e-6c55-4f0e-9d7a-2b9c4e1d7a60";
+/** RFC 4122 version-5 UUID: SHA-1 of namespace bytes + UTF-8 name. */
+export function uuidV5(name: string, namespace: string = SCHGEN_NAMESPACE): string {
+```
+
+and the call sites key it on **semantic names**, not positions:
+
+```
+emit.ts:118          uuidV5(`sheet:${project}:${s.id}`)
+emit.ts:120          uuidV5(`root:${project}`)
+emit.ts:237          uuidV5(`sheetfile:${ctx.project}:${id}`)
+erc-exclusions.ts:83 uuidV5(`pin:${p.part}:${unit}:${p.pin}`)
+emit-items.ts:107    uuid(s.pinKey(p.number))
+```
+
+These are deterministic, content-independent and already written into every
+generated sheet. **A verdict's region should be one of these keys** — or a
+geometric box the generator itself computed — and not anything read off the
+picture.
+
+**The independent corroboration is worth having**, RELAYED: `kischvidimer`
+implements deep links to components, nets and pages keyed by **UUID path**
+(`database.js`: `export const KEY_PATH = "\x01"; // component path (uuid)`),
+and it built that scheme precisely because KiCad's SVG has no ids. Two
+independent routes to the same conclusion.
+
+### 9.3 The two bindings do two different jobs — keep them separate
+
+This is the design consequence of 9.1 and 9.2 together, and it is easy to get
+wrong by collapsing them.
+
+| | Binds to | Should be invalidated by |
+| --- | --- | --- |
+| **The verdict's content hash** (d) | the artifact's bytes | **any** change to the drawing |
+| **The region anchor** (c) | a semantic UUID / generator-computed geometry | a change to *what the thing is*, not to where it sits |
+
+A redraw that moves `C10` three millimetres must invalidate the **approval** and
+must not invalidate the **region reference**. Keying the region off the artifact
+hash, or off pixel coordinates in the render, breaks that distinction in opposite
+directions.
+
+## 10. What this pass did not settle
+
+- **Cross-machine and cross-version render stability — the live risk, and the
+  one thing to measure next.** 9.1 establishes that a normalized SVG is
+  byte-stable back to back on one machine with one KiCad and one font set.
+  **Nothing here tests a second machine or a KiCad upgrade**, and a font
+  substitution would change the path data and the hash. Until that is measured,
+  prefer hashing the `.kicad_sch` source and recording the render hash alongside
+  (9.1), which is the structure that survives being wrong about this.
+- **No tool was found that satisfies all four requirements, and that is the
+  finding rather than a gap in the search.** The closest on data model is
+  `cargo-crev` (8.1), the only one with a custom state set is `cargo-vet` (8.2),
+  the only right schema for the hash binding is in-toto (8.3), the only real
+  region vocabulary is W3C Web Annotation (8.7), and the only tool built for our
+  actual artifact keeps the record in Postgres (8.5). **The pieces exist and no
+  one has assembled them.**
 - **Who writes the record.** The arrangement above assumes the human's verdict
   reaches `recins` somehow — typed by them, or typed by an agent from their
   words. If an agent transcribes, the verbatim requirement (b) becomes a
   transcription-fidelity problem, which this repository already has a practice
-  for and which no tool in this survey addresses.
-- **Signing.** git-appraise has `review/gpg/signable.go` and can sign a review
-  (noted, not exercised). A recfile record is unsigned. If the question "did the
-  owner really approve this" ever needs a cryptographic answer rather than a
-  git-history answer, nothing recommended here provides it.
+  for and which no tool in this survey addresses. **Upstream has already had to
+  model this**: `crev`'s data model now carries
+  `LlmAgentInfo { model, model_version, human_guided }`, serialized as
+  `llm-agent`, to record that *"the review was conducted by (or with assistance
+  of) an LLM agent"* (RELAYED). If an agent ever touches a verdict here, the
+  record should say so in a field, not in a convention.
+- **Signing is available and cheap, if it is ever wanted.** git-appraise has
+  `review/gpg/signable.go`; crev signs every proof with Ed25519. A recfile record
+  is unsigned. RELAYED but checked on this machine by the parallel survey:
+  `ssh-keygen -Y sign` / `-Y verify` are present in stock macOS OpenSSH, and git
+  already supports `gpg.format = ssh` — so a detached `.sig` beside a readable
+  record is a zero-install option, and it keeps the record itself legible, which
+  DSSE and sigstore bundles do not (8.3). **Not recommended yet**: nothing has
+  established that "did the owner really approve this" needs a cryptographic
+  answer rather than a git-history one.
+- **The verdict vocabulary deserves more thought than this pass gave it.**
+  Section 5.1's five-state enum was authored to demonstrate that recutils
+  enforces *a* state set, not to propose the right one. Two surveyed designs are
+  better reasoned: crev's three orthogonal axes, where `thoroughness: medium` is
+  pinned to a documented effort (*"a standard, focused code review of a decent
+  depth; '~15 minutes per file'"*) rather than to a sentiment; and cargo-vet's
+  user-defined criteria with an `implies` lattice. **Per this repository's own
+  invariant, the agent producing the drawings may not author the criteria those
+  drawings are judged by** — so the state set is explicitly not settled here,
+  and these are inputs for whoever does settle it.
 
 ## Appendix A. Reproduction
 
@@ -921,6 +1294,7 @@ Scripts, written to the session scratchpad at
 | `t-rec-exit.sh` | the exit codes on every refusal, and `recfix --check` |
 | `t-constraint.sh` | `%constraint` enforcement, and that transitions are not policed |
 | `t-yqdasel.sh` | yq and dasel accept any value; `dasel validate` is a parse check that exits 0 on failure |
+| `t-renderhash.sh` | the SVG timestamp line, the normalized hash, and the absence of element ids (section 9) |
 | `t-final.sh` | `%auto` behaviour, the staleness gate, the jq negative control |
 
 The scratchpad is session-scoped and will not survive. The scripts are short and
