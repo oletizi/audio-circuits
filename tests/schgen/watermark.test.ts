@@ -264,17 +264,27 @@ describe("both directions over all eleven boards", () => {
     }
   })
 
-  // **THE RECORD OF WHAT THIS RUN FOUND, which is a measurement and not an expectation.** It read
-  // ZERO until `pultec-mid` began to draw: that board was `not-drawable` - refused at
-  // `pinsDeclared` on `SW_MID` pin 12, the unused twelfth detent of `Switch:SW_Rotary_1x12` -
-  // and declaring that pin no-connect (`tests/schgen/nc-pins.test.ts`) turned it into a board
-  // that draws and is classified `defective` on a `missing-junction` finding. **So the sweep
-  // above now does real work on a real board rather than only on the fixture**, which is exactly
-  // what the deleted line said would be worth noticing.
+  // **THE RECORD OF WHAT THIS RUN FOUND, which is a measurement and not an expectation**, and it
+  // has now read zero, one and zero again inside two days. It read ZERO while `pultec-mid` was
+  // `not-drawable` - refused at `pinsDeclared` on `SW_MID` pin 12, the unused twelfth detent of
+  // `Switch:SW_Rotary_1x12`. Declaring that pin no-connect (`tests/schgen/nc-pins.test.ts`) turned
+  // it into a board that draws, and the drawing came out `defective` on one `missing-junction`
+  // finding: net `mid_tap_2h` crossed itself at a point `splitAtBranches` did not cut, so the two
+  // sides of obligation 2 disagreed there. **R33 now cuts a same-net X**
+  // (`lib/schgen/elk/junctions.ts`, `tests/schgen/elk/junctions.test.ts`), the point carries four
+  // coincident ends and a junction, and no board in `boards/` is `defective`.
   //
-  // The list is asserted rather than the count, because a board joining it is a thing to read.
-  test("pultec-mid is the one defective board in boards/ today, so the sweep above runs on a real board", () => {
-    expect(rows().filter((r) => r.outcome === "defective").map((r) => r.board)).toEqual(["pultec-mid"])
+  // **SO THE DEFECTIVE DIRECTION ABOVE SWEEPS NOTHING REAL AGAIN, AND THIS SAYS SO RATHER THAN
+  // LETTING A GREEN RUN IMPLY OTHERWISE** - `CLAUDE.md`: a skipped check must never look like a
+  // passing one. What exercises the mark is the fabricated-board `describe` above, which builds a
+  // `defective` generation through `tools/schgen/defective-fixture.ts` and checks both marks and
+  // the netlist they must not change. The list is asserted rather than the count, because a board
+  // joining it is a thing to read.
+  test("no board in boards/ is defective today, so the sweep above runs on the fixture alone", () => {
+    expect(rows().filter((r) => r.outcome === "defective").map((r) => r.board)).toEqual([])
+    // Anti-vacuity for the clean direction, which IS the one doing real work now: every board
+    // drew, and every one of them is usable.
+    expect(rows().filter((r) => r.outcome === "usable").length).toBe(11)
   })
 
   test("a board with no drawing writes no sheet to mark, only its refusal page", () => {
