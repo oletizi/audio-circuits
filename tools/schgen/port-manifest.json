@@ -913,6 +913,7 @@
     "lib/schgen/render/occupancy.ts",
     "tools/schgen/board-sheets.ts",
     "tools/schgen/board-geometry.ts",
+    "tools/schgen/junction-probe.ts",
     "tests/schgen/render/field-fallback.test.ts",
     "tools/schgen/board-declarations.ts",
     "tests/schgen/board-declarations.test.ts",
