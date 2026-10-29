@@ -171,17 +171,32 @@ apart, or by relieving crowding.
 > with long runs can aid comprehension. But, long, crooked runs need a *reason*,
 > not just a *shrug*. That's just littering."*
 
-**A hairpin earns its place never.** It is the one device on this list with no
-legitimate case, and it is a symptom rather than a defect in itself:
+**A hairpin earns its place by defence**, and the prior is against it:
 
 > *"the hairpin ground is also noisy and bad style - stemming from poor part
 > orientation or placement. Hairpins in general are an indicator of something
 > amiss with symbol organization, orientation, and/or placement."*
 
-**So a hairpin is not repaired where it appears.** It is a report that a part is
-facing the wrong way or sitting in the wrong place, and the remedy is upstream
-of the wire. Straightening the wire and leaving the orientation alone treats the
-symptom and loses the diagnosis.
+> *"There *may* be instances where hairpins are necessary or *are* a problem
+> with wire placement - though I would wager its more likely caused by careless
+> part organization, organization, or placement. Hairpins demand a defense; they
+> don't get to stay on the drawing 'just because that's where we happened to
+> drop our bag of parts.'"*
+
+**So look upstream of the wire first**, because that is where the cause usually
+is - a part facing the wrong way or sitting in the wrong place. A hairpin
+straightened without touching the orientation that produced it has treated the
+symptom and discarded the diagnosis. But *usually* is not *always*: a hairpin
+whose cause genuinely is the routing, or which is genuinely necessary, may
+stay - **if someone can say why.** What it may not do is stay unexamined.
+
+> **An earlier draft of this clause read "A hairpin earns its place never."**
+> The owner struck it on 2026-10-29: *"be careful with strict ultimata -
+> 'hairpins are never…' is unearned certainty and false precision."* It is shown
+> struck rather than edited away because the error is the one this project keeps
+> making - an agent took an observation that a thing is *usually* a symptom and
+> wrote it down as a law, which is a stronger claim than the evidence carries
+> and than the reviewer made.
 
 **Two of these are structural in at least one tool and will recur.** copperhead
 emits a label wherever a net spans more than one group or carries more than four
