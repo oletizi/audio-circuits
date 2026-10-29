@@ -33,6 +33,147 @@ and so that an agent's opinion changes no state even when it is offered.
 
 ---
 
+---
+
+# The principles
+
+**These sit above the numbered rules below.** The rules say who may judge a
+drawing and how one is handled. The principles say what makes a drawing worth
+reading, and they are general: they are **not** findings about any one page,
+any one circuit or any one tool, and must never be filed as such.
+
+**Every one was stated by the owner while looking at a rendered page, and every
+one is quoted in his words.** None was authored by an agent. The only clause in
+this document an agent did author - *"a hairpin earns its place never"* - was
+struck within the hour as unearned certainty, which is the clearest evidence
+available for why the authorship rule exists.
+
+## P1. A device is noise unless it is earning its place
+
+**And the draughtsman must be able to say what work it is doing.** A device that
+cannot be justified is not neutral. In the owner's words: *"that's just
+littering."*
+
+This is the general form. The four below are instances of it, not separate
+rules, and the list is **open** - a fifth device found tomorrow is judged by P1,
+not by whether it appears here.
+
+### Noise: a device is noise unless it is earning its place
+
+**Four criteria, stated by the owner on 2026-10-29 and promoted here at his
+instruction: *"these are all criteria worth promoting"*.** They share one
+form - **each device is clarity or noise depending on whether it is doing
+work, and the draughtsman must be able to say what work.** A device that
+cannot be justified is not neutral. In his words: *"that's just littering."*
+
+**A label** earns its place by distance or by leaving the page.
+
+> *"Labels are for off-page references or for distant symbols on a crowded page
+> where the connecting wire would be hard to trace by eye. For parts right next
+> to each other, labels instead of wires creates unnecessary noise and cognitive
+> load. It's also bad style."*
+
+**A repeated ground symbol** earns its place by shortening a run.
+
+> *"Multiple ground symbols aid clarity when they reduce long wire runs on a
+> crowded page. They are just noise when stacked on top of each other. Also,
+> bad style."*
+
+**A long wire run** earns its place by separating things that are semantically
+apart, or by relieving crowding.
+
+> *"Unnecessarily long wire runs that aren't used for any good reason like
+> reducing crowding are noisy and bad style. It's harder to trace long wire runs
+> than shorter runs - although sometimes part separation for semantic reasons
+> with long runs can aid comprehension. But, long, crooked runs need a *reason*,
+> not just a *shrug*. That's just littering."*
+
+**A hairpin earns its place by defence**, and the prior is against it:
+
+> *"the hairpin ground is also noisy and bad style - stemming from poor part
+> orientation or placement. Hairpins in general are an indicator of something
+> amiss with symbol organization, orientation, and/or placement."*
+
+> *"There *may* be instances where hairpins are necessary or *are* a problem
+> with wire placement - though I would wager its more likely caused by careless
+> part organization, organization, or placement. Hairpins demand a defense; they
+> don't get to stay on the drawing 'just because that's where we happened to
+> drop our bag of parts.'"*
+
+**So look upstream of the wire first**, because that is where the cause usually
+is - a part facing the wrong way or sitting in the wrong place. A hairpin
+straightened without touching the orientation that produced it has treated the
+symptom and discarded the diagnosis. But *usually* is not *always*: a hairpin
+whose cause genuinely is the routing, or which is genuinely necessary, may
+stay - **if someone can say why.** What it may not do is stay unexamined.
+
+> **An earlier draft of this clause read "A hairpin earns its place never."**
+> The owner struck it on 2026-10-29: *"be careful with strict ultimata -
+> 'hairpins are never…' is unearned certainty and false precision."* It is shown
+> struck rather than edited away because the error is the one this project keeps
+> making - an agent took an observation that a thing is *usually* a symptom and
+> wrote it down as a law, which is a stronger claim than the evidence carries
+> and than the reviewer made.
+
+**And littering is evidence about the process, not only about the page.** The
+owner, 2026-10-29: *"That kind of littering is a sign of carelessness."* Any one
+stray label or stacked ground symbol is minor on its own - which is why they are
+easy to wave through. What they indicate collectively is a drawing that was
+emitted and not attended to. **That is why these criteria are worth enforcing
+even though no single instance of one makes a drawing unreadable.**
+
+**Two of these are structural in at least one tool and will recur.** copperhead
+emits a label wherever a net spans more than one group or carries more than four
+endpoints regardless of proximity, and emits one ground symbol per pin on a
+ground-class net with no horizontal-rail primitive at all. A drafting pass
+behind it has to put the wires back and collapse the grounds.
+
+
+## P2. Littering is evidence about the process, not only about the page
+
+Any one stray label or stacked ground symbol is minor on its own, which is why
+each is easy to wave through. **What they indicate collectively is a drawing
+that was emitted and not attended to.** That is why P1 is enforced even though
+no single breach of it makes a drawing unreadable.
+
+## P3. Take the principles from a reference, never its proportions
+
+A reference drawing is a scaffold for the draughtsman, not a specification for
+the drawing. Signal flow, a ground rail, proximity meaning relatedness - those
+transfer. Sheet size, span and spacing do not, and copying them is the
+lamp-post problem wearing a reference's clothes: **the copyable part absorbs the
+attention the hard part needed.**
+
+## P4. Whenever a task offers something concrete to copy or count, expect the
+## concrete thing to absorb the attention the hard thing needed
+
+The general statement of the lamp-post problem, from which P3 follows. Stated
+in full under rule 6.
+
+---
+
+## How a principle graduates
+
+**A principle here is not yet a commandment, and the difference is evidence.**
+The owner, 2026-10-29: *"I want to make sure that these concepts get honed into
+high order principles and eventually commandments and not lost as only
+applicable to this one drawing."*
+
+`CONSTITUTION.md` holds what this project does not revisit, and every principle
+in it names the failure that earned it. A principle here graduates to there when
+it has been **applied across several drawings and several circuits** and has
+either held or been corrected - not on the strength of the page that prompted
+it. The amendment procedure is the constitution's own: quote the clause,
+give the evidence, carry the owner's agreement in his words, land it with the
+work.
+
+**Until then they bind anyway.** This document is canonical and is cited from
+`CONSTITUTION.md` and `CLAUDE.md`. "Not yet a commandment" is a statement about
+how much evidence stands behind a principle, not about whether an agent may
+ignore it.
+
+---
+
 ## 1. A drawing has no quality until a qualified reviewer says so
 
 > *"a drawing isn't considered good or bad until it has been reviewed by a
@@ -141,75 +282,8 @@ closely is not thereby acceptable, nor is one that follows none thereby
 unacceptable. The question put to the reviewer is never "does this match the
 reference".
 
-### Noise: a device is noise unless it is earning its place
-
-**Four criteria, stated by the owner on 2026-10-29 and promoted here at his
-instruction: *"these are all criteria worth promoting"*.** They share one
-form - **each device is clarity or noise depending on whether it is doing
-work, and the draughtsman must be able to say what work.** A device that
-cannot be justified is not neutral. In his words: *"that's just littering."*
-
-**A label** earns its place by distance or by leaving the page.
-
-> *"Labels are for off-page references or for distant symbols on a crowded page
-> where the connecting wire would be hard to trace by eye. For parts right next
-> to each other, labels instead of wires creates unnecessary noise and cognitive
-> load. It's also bad style."*
-
-**A repeated ground symbol** earns its place by shortening a run.
-
-> *"Multiple ground symbols aid clarity when they reduce long wire runs on a
-> crowded page. They are just noise when stacked on top of each other. Also,
-> bad style."*
-
-**A long wire run** earns its place by separating things that are semantically
-apart, or by relieving crowding.
-
-> *"Unnecessarily long wire runs that aren't used for any good reason like
-> reducing crowding are noisy and bad style. It's harder to trace long wire runs
-> than shorter runs - although sometimes part separation for semantic reasons
-> with long runs can aid comprehension. But, long, crooked runs need a *reason*,
-> not just a *shrug*. That's just littering."*
-
-**A hairpin earns its place by defence**, and the prior is against it:
-
-> *"the hairpin ground is also noisy and bad style - stemming from poor part
-> orientation or placement. Hairpins in general are an indicator of something
-> amiss with symbol organization, orientation, and/or placement."*
-
-> *"There *may* be instances where hairpins are necessary or *are* a problem
-> with wire placement - though I would wager its more likely caused by careless
-> part organization, organization, or placement. Hairpins demand a defense; they
-> don't get to stay on the drawing 'just because that's where we happened to
-> drop our bag of parts.'"*
-
-**So look upstream of the wire first**, because that is where the cause usually
-is - a part facing the wrong way or sitting in the wrong place. A hairpin
-straightened without touching the orientation that produced it has treated the
-symptom and discarded the diagnosis. But *usually* is not *always*: a hairpin
-whose cause genuinely is the routing, or which is genuinely necessary, may
-stay - **if someone can say why.** What it may not do is stay unexamined.
-
-> **An earlier draft of this clause read "A hairpin earns its place never."**
-> The owner struck it on 2026-10-29: *"be careful with strict ultimata -
-> 'hairpins are never…' is unearned certainty and false precision."* It is shown
-> struck rather than edited away because the error is the one this project keeps
-> making - an agent took an observation that a thing is *usually* a symptom and
-> wrote it down as a law, which is a stronger claim than the evidence carries
-> and than the reviewer made.
-
-**And littering is evidence about the process, not only about the page.** The
-owner, 2026-10-29: *"That kind of littering is a sign of carelessness."* Any one
-stray label or stacked ground symbol is minor on its own - which is why they are
-easy to wave through. What they indicate collectively is a drawing that was
-emitted and not attended to. **That is why these criteria are worth enforcing
-even though no single instance of one makes a drawing unreadable.**
-
-**Two of these are structural in at least one tool and will recur.** copperhead
-emits a label wherever a net spans more than one group or carries more than four
-endpoints regardless of proximity, and emits one ground symbol per pin on a
-ground-class net with no horizontal-rail primitive at all. A drafting pass
-behind it has to put the wires back and collapse the grounds.
+**For what makes a drawing worth reading, see The principles above** - P1 in
+particular, which governs every device on a page.
 
 **Readability is judged first and is perishable.** It is spent by familiarity —
 whoever has read the netlist or placed the parts can no longer see the page the
