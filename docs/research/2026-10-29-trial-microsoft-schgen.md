@@ -458,3 +458,15 @@ them (§1).
 - Whether the two `lib_symbol_mismatch` warnings matter.
 - Whether the emitter's output is statement-order dependent in general — the
   one reorder tested changed nothing (§1).
+
+---
+
+## Owner's verdict, 2026-10-29
+
+Shown the rendered page with no commentary and asked whether it worked well
+enough to consider:
+
+> *"it looks like kicad. Its worse than copperwhatsit."*
+
+Recorded as the qualified reviewer's evaluation. This supersedes any description
+of the page elsewhere in this document; nothing here is a quality judgement.
