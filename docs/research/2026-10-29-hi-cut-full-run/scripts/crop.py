@@ -20,7 +20,13 @@ PPMM = DENSITY / 25.4
 # name -> (x1, y1, x2, y2) in sheet millimetres
 CROPS = {
     # The whole re-authored group, which is the largest changed region.
-    "hi-cut-whole": (46, 85, 278, 137),
+    #
+    # The box reaches to y = 156 so that it covers the group as COPPERHEAD drew
+    # it (88.9 to 153.67) as well as the repaired rectangle (88.9 to 132.08).
+    # The first version stopped at 137 and cut 16 mm off the bottom of the
+    # BEFORE side - a crop pair is only a comparison if the box contains both
+    # states of the region, which a box sized to the after state does not.
+    "hi-cut-whole": (46, 85, 278, 156),
     # The capacitor bank in three overlapping close crops. Repair class 5 -
     # a moved part's fields - is invisible to every automated check, so every
     # part whose Reference and Value were rewritten is in one of these.

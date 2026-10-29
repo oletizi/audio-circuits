@@ -79,9 +79,17 @@ git -C copperhead checkout 476cc15965f0d1eeda70afb9e806936f6bb15c5c
 cd copperhead && npm install
 
 python3 -m venv venv-akcli
-./venv-akcli/bin/pip install 'akcli-kicad==0.22.0'
+./venv-akcli/bin/pip install 'akcli-kicad==0.22.0' numpy pillow
 ./venv-akcli/bin/akcli doctor
 ```
+
+**`numpy` and `pillow` go into the SAME venv**, because `pixeldiff.py` and
+every pixel measurement run under `venv-akcli/bin/python`. Only a docstring said
+so, and the fourth board had to install them. **The two committed `run.sh`
+scripts also disagree about where that venv is** - the hi-boost run expects
+`$SCRATCHPAD/hybrid-pass-1/venv-akcli` and the hairpin-fix run
+`$SCRATCHPAD/venv-akcli` - so read the script you are about to run rather than
+assuming.
 
 The checkout used here was **shallow** (`.git/shallow` present, no tags fetched),
 so `git describe --tags` fails on it. The commit hash is the binding, not a tag.
@@ -273,13 +281,17 @@ sha256 of the sheet he was shown. **Telling him is not recording it.**
 The repair classes
 ------------------
 
-**Seven are known. The set is not closed, and must not be written as if it
-were** - the second board added three that nobody had predicted. Four are
-copperhead's structural output; three are akcli's side effects.
+**Eight are known. The set is not closed, and must not be written as if it
+were** - the second board added three that nobody had predicted and the fourth
+added two more to akcli's side. Four are copperhead's structural output; four
+are akcli's.
 
-**On the third board no new class appeared**, and every known one either
-recurred or was ruled absent by measurement. That is one board's worth of
-evidence that the set is settling, and it is not evidence that it is closed.
+**On the third and fourth boards no new COPPERHEAD class appeared**, and every
+known one either recurred or was ruled absent by measurement. That is two
+boards' worth of evidence that the copperhead side is settling, and it is not
+evidence that it is closed. **The akcli side is NOT settling: two of its four
+classes were first seen on the fourth board** (7 and 8 below), both found by
+reading the sheet after the ops rather than by any check.
 
 **copperhead:**
 
@@ -353,6 +365,34 @@ evidence that the set is settling, and it is not evidence that it is closed.
    script covered - a wire-to-wire tee carrying no dot**, which is a real
    connectivity defect rather than a cosmetic one.
 
+   **EXCEPT WHEN TWO COLLINEAR WIRES OVERLAP, and the fourth board found the
+   case.** copperhead sometimes writes a short segment wholly INSIDE a longer
+   collinear one on the same net - on hi-cut,
+   `(161.29,129.54)-(161.29,123.19)` inside `(161.29,139.7)-(161.29,123.19)`.
+   A stub meeting the short one's endpoint is connected by a shared endpoint,
+   with no dot needed, but `junction_audit.py` sees the long wire passing
+   through and calls it a tee without a dot. **It reported 2 on that board's
+   baseline and neither is a connectivity defect.** A tee-without-a-dot report
+   needs a collinear-overlap test before it may be read as a finding - and the
+   overlapping pair is itself a drawing artefact worth knowing copperhead
+   produces.
+
+7. **`add_net_label` emits a GLOBAL label as `(shape input)`, not
+   `(shape passive)`.** copperhead writes every global label it synthesises as
+   `passive`, which KiCad draws as a plain rectangular tag; `input` draws an
+   arrow-pointed one, so a label akcli adds renders with a **different outline
+   shape** from the ones already on the page. akcli also omits
+   `(fields_autoplaced yes)` and the hidden `Intersheetrefs` property every
+   copperhead global label carries. **No check here reports any of it**; the
+   remedy is to rewrite each added global label whole, in copperhead's own form
+   (`docs/research/2026-10-29-hi-cut-full-run/scripts/restyle.py`).
+
+8. **There is no akcli op for a GROUP RECTANGLE.** Re-placing a group's contents
+   almost always changes what its rectangle should enclose, and that is a
+   literal text edit like the fields. The hi-boost run moved one edge and
+   recorded it only inside its own script; the hi-cut run resized two, one of
+   them in a group it had only gone into to collapse a label.
+
 ### The label rule has no test in it
 
 > *"Rather than try to come up with an exquisite line of reasoning about when
@@ -408,6 +448,39 @@ fail is worse than no check.** Each of these actually happened in this work:
   from something that run did and did not write down, and **an unreproducible
   zero is indistinguishable from a check that was never run.** Report ERC as
   errors and warnings separately, with the exact invocation.
+
+- **A WIRE REGEX THAT READS PAST THE STROKE SILENTLY DROPS EVERY WIRE CARRYING A
+  COLOUR.** A sheet holds wires in TWO textual forms - copperhead's
+  pretty-printed block form and akcli's one-liner - and a pattern of the shape
+  `\(wire\s*\(pts …\) \(stroke \(width W\)…\)` matched **54 of the 77 wires** on
+  `pultec-hi-cut`. The 23 it dropped are every grey ground wire, **including all
+  six of J2's pin stubs**, which are exactly the wires a ground repair has to
+  find. It printed 54 and said nothing. **Count `(wire` tokens, parse by block,
+  and refuse when the two disagree** - `scripts/dump_sheet.py` and
+  `scripts/make_repairs.py` in the hi-cut run do. The inherited `verify.py` is
+  safe only because its pattern stops at the `pts`.
+- **`boxgeom.py` NAMES THE WRONG REFERENCE FOR A RECTANGLE'S EXTREME POINTS.**
+  On `pultec-hi-cut` it reports `SW1` as the top-most and bottom-most item
+  inside the **Lo boost** and **Mid** rectangles, where no `SW1` exists - it is
+  50 mm away in another group - and gives Lo boost a bottom margin of **0.00 mm**
+  where the render shows 2.5 mm of space. Its margins for the group that was
+  checked by hand agree to the micrometre, so **the aggregate min/max is usable
+  and the per-point naming is not.** Do not quote a `bottom-most 'REF'` line
+  without checking that the part is in that rectangle.
+- **`pixeldiff.py` REPORTS ROW BANDS AND COLUMN BANDS INDEPENDENTLY**, so when
+  one changed group spans the page the column band is the whole page and the
+  small row bands are left unlocalised - on hi-cut, four row bands against one
+  column band of 50.55-271.91 mm. `scripts/pixelbands.py` reports the columns
+  **within** each row band, which localised two 2 mm bands to a 0.38 mm column
+  at one rectangle's dashed edge (the rectangle's height changed, so its dash
+  phase moved). This is the "report bands, not a bounding box" lesson applied
+  one level further in.
+- **`akcli check --layout` REPORTED ZERO FINDINGS on a page whose label ran over
+  a symbol's own PIN NUMBER.** On hi-cut the first placement put `sel_common`
+  across the selector's `7`; the lint found nothing, a 300 dpi crop found it,
+  and two parts moved 3.81 and 7.62 mm east. The same lint found 8 real-enough
+  findings on the same board's baseline, so it is partial rather than useless -
+  which is the harder thing to remember about it.
 
 `docs/schematic/false-greens.md` catalogues these with the rest.
 
@@ -523,6 +596,42 @@ decide something this file does not answer:
 - **The loop as written has one revise step; no run has needed only one.** Both
   the low-cut and hi-boost runs went draft, akcli, text pass, render, look,
   re-place, re-render. Write the loop you actually ran.
+- **THE DRAFT-CHOICE TRADE IS A PROPERTY OF A BOARD, NOT A STANDING TENSION.**
+  The entry above records hi-boost trading 6 crossings for a structure the
+  repair could work with. On `pultec-hi-cut` the same split measured **11**
+  crossings against **8** for the whole section *and* cut a functional section
+  into two headed boxes, so there was nothing to adjudicate. **Measure both on
+  the board in hand before assuming the trade exists**, and record which way you
+  went either way.
+- **NOTHING SAYS HOW FAR A LABEL COLLAPSE MAY PROPAGATE, OR THAT IT REACHES
+  GROUPS THE REVIEWER HAS NOT COMPLAINED ABOUT.** A duplicate pair inside a
+  stand-in group is as much a duplicate as one in the own section, and the rule
+  admits no test - so it gets collapsed. On hi-cut, collapsing one pair in the
+  **Lo boost** stand-in moved a resistor 7.62 mm, moved its ground symbol,
+  moved a `GND` text that had followed the symbol out of its own rectangle, and
+  grew that rectangle by 5.08 mm. **A one-label rule produced a five-part change
+  in a group that was not the subject of the run.** Record the corrections you
+  did NOT take beside the one you did, so the choice can be disputed.
+- **A GROUP WITH NO SERIES PATH HAS NO "WHERE THE OUTPUT LEAVES".** Repair class
+  3 asks for a group's flow before anything in it is repaired. Four of
+  `pultec-hi-cut`'s six groups have no through-path: a connector has none, and
+  three of its stand-ins and its own section are SHUNTS. The working answer is
+  to report the flow of the **chain** inside the group and say that is what is
+  being reported; nothing better is written.
+- **THE CAPACITOR PITCH NOW HAS A METHOD, AND CHARACTER COUNT IS NOT IT.** This
+  file records hi-boost's 12.7 to 15.24 mm change and the gaps either side, but
+  no way to arrive at a pitch on a new board.
+  `docs/research/2026-10-29-hi-cut-full-run/scripts/textwidth.py` measures the
+  rendered ink of the widest value with a positive control that the measuring
+  window is otherwise empty. **The finding a formula would have missed:
+  `2200pF` draws 6.858 mm while `.047uF` draws 6.223 mm at the same six
+  characters**, because the leading `.` is a narrow glyph - so the widest value
+  on a board can be a digit string, and its gap to its own plate 0.37 mm
+  smaller than the character count predicts.
+- **A CROP PAIR SIZED TO THE AFTER STATE IS NOT A COMPARISON.** The hi-cut run's
+  first `hi-cut-whole` box stopped 16 mm above the bottom of the group **as
+  copperhead had drawn it**, so the BEFORE crop was cut off while the AFTER crop
+  was complete. The box has to contain both states of the region.
 - **Only Pultec section boards have been through this loop.** Whether it carries
   to `pt2399-core` or the transistor-preamp boards is untested.
 
