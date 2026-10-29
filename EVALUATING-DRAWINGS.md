@@ -198,6 +198,13 @@ stay - **if someone can say why.** What it may not do is stay unexamined.
 > wrote it down as a law, which is a stronger claim than the evidence carries
 > and than the reviewer made.
 
+**And littering is evidence about the process, not only about the page.** The
+owner, 2026-10-29: *"That kind of littering is a sign of carelessness."* Any one
+stray label or stacked ground symbol is minor on its own - which is why they are
+easy to wave through. What they indicate collectively is a drawing that was
+emitted and not attended to. **That is why these criteria are worth enforcing
+even though no single instance of one makes a drawing unreadable.**
+
 **Two of these are structural in at least one tool and will recur.** copperhead
 emits a label wherever a net spans more than one group or carries more than four
 endpoints regardless of proximity, and emits one ground symbol per pin on a
