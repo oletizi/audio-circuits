@@ -288,14 +288,18 @@ class Wire:
 class Pin:
     """A library pin's connection point in SYMBOL space, y up."""
 
-    __slots__ = ("sx", "sy", "angle", "length", "kind", "shape", "hidden")
+    __slots__ = ("sx", "sy", "angle", "length", "kind", "shape", "hidden",
+                 "number", "name")
 
-    def __init__(self, sx, sy, angle, length, kind, shape, hidden):
+    def __init__(self, sx, sy, angle, length, kind, shape, hidden,
+                 number=None, name=None):
         self.sx, self.sy, self.angle, self.length = sx, sy, angle, length
         self.kind, self.shape, self.hidden = kind, shape, hidden
+        self.number, self.name = number, name
 
     def __repr__(self):
-        return f"Pin({self.sx}, {self.sy}, {self.angle}deg, len {self.length})"
+        return (f"Pin({self.number}: {self.sx}, {self.sy}, {self.angle}deg, "
+                f"len {self.length})")
 
 
 class Field:
@@ -498,12 +502,16 @@ class Sheet:
                             f"{lib_id}: a pin at offset {p.start} has no (at")
                     ln = p.kid("length")
                     a = nums(at, f"{lib_id}: a pin (at")
+                    num = p.kid("number")
+                    nam = p.kid("name")
                     pins.append(Pin(
                         a[0], a[1], int(a[2]) if len(a) > 2 else 0,
                         nums(ln)[0] if ln else 0.0,
                         p.atoms[0] if p.atoms else None,
                         p.atoms[1] if len(p.atoms) > 1 else None,
-                        "hide" in p.atoms))
+                        "hide" in p.atoms,
+                        num.atoms[0] if num and num.atoms else None,
+                        nam.atoms[0] if nam and nam.atoms else None))
                 require_complete(len(pins), self.src[entry.start:entry.end],
                                  "pin", f"lib_symbols entry {lib_id}")
                 out[lib_id] = pins

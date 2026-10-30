@@ -298,6 +298,42 @@ refuse, and it prints the 64/18 split so the two forms are visible.
 **The control.** The same `D3` pair as §2.3, plus the smoke run: it is executed on
 all ten committed sheets in both forms with no refusal.
 
+### 2.7 Two more found by sweeping for the pattern rather than for the symptom — `pingeom.py` and `label_survey.py`
+
+After the six were fixed, every `.py` under `docs/research/` was swept for a
+regex that pins a KiCad element to a textual layout. That found two more
+measurers, neither of them suspected by any run.
+
+**`pingeom.py` had all three causes at once, and it is the script `TOOLING.md`
+points at as the AUTHORITY on pin positions** — its own docstring says *"`akcli
+pins` MIXES UNITS … The sheet's own `lib_symbols` block is the authority, and
+this script reads it."* It carried the newline-only pin pattern, the
+entry-span search that runs to the end of the file, and the block-form-only
+symbol-instance pattern. Pin positions it printed:
+
+| sheet | printed | actual |
+| --- | --- | --- |
+| `hybrid-pass-1` (low-boost, approved) | 51 | **57** |
+| `hi-cut-hybrid` (approved) | 55 | **60** |
+| `mid-hybrid` (approved) | 97 | **102** |
+
+It printed a short survey that looked complete, with no row for `#PWR010` at all.
+
+**`label_survey.py` feeds the duplicate-label count that must read zero**, and
+both its patterns were layout-pinned: the local-label one required a newline and
+a tab before `(label`, and the global-label one required a `(shape …)` member —
+in a check whose neighbouring finding (hi-cut §9.2) is *about* akcli writing
+global labels differently from copperhead and omitting members copperhead
+includes. **Measured on all seven committed sheets both patterns are complete**,
+so no duplicate-label figure changes. It was converted anyway: it was one omitted
+member away from under-counting the thing it exists to count.
+
+**Both now read through the shared reader.** The sweep that found them is
+reproducible as a grep for a literal newline or tab inside a pattern that names a
+KiCad element; what it leaves are the output templates in `restyle*.py`,
+`collapse_pass.py` and `make_repairs.py`, which legitimately emit text, and the
+dead `2026-10-29-trial-microsoft-schgen/` directory.
+
 ---
 
 ## 3. THE DECISION: ONE SHARED READER, AND THE MEASUREMENT THAT SETTLED IT
@@ -368,17 +404,25 @@ python3 docs/research/lib/selftest.py      10 controls, every one moved or fired
   so.
 - **`docs/schematic/verdicts.md` was not touched.** No verdict, sha256 or entry
   was added or altered.
-- **The `make_repairs.py`, `restyle*.py`, `collapse_pass.py`, `capfields.py`,
-  `label_survey.py`, `netsets.py`, `netcmp.py`, `integrity.py`, `symbols.py`,
-  `pingeom.py`, `project_flags.py`, `pixeldiff.py`, `pixelbands.py`,
-  `textwidth.py`, `intent_vs_model.py` and `groups.py` scripts were not
-  converted.** They were not among the six, and several are writers rather than
-  measurers — `make_repairs.py` already carries the block-form token-count
-  refusal. **They have not been audited for the same class of bug**, and given
-  that four of the six were one bug and three more instances turned up in
-  scripts nobody had suspected, **the prior should be that some of these have it
-  too.** `label_survey.py` and `netsets.py` are the ones to look at first: both
-  feed published counts.
+- **The `restyle*.py`, `collapse_pass.py`, `capfields.py`, `make_repairs.py`,
+  `netsets.py`, `netcmp.py`, `integrity.py`, `symbols.py`, `project_flags.py`,
+  `pixeldiff.py`, `pixelbands.py`, `textwidth.py`, `intent_vs_model.py`,
+  `restyle_fields.py`, `move_labels.py`, `pdfcmp.py`, `crop.py`, `draft.py` and
+  `groups.py` scripts were not converted.** The layout-pinned-pattern sweep (§2.7)
+  clears the ones that parse: what it flags in them are **output templates** —
+  f-strings that emit a `(wire` or a `(property` in block form, which is what a
+  writer is for — plus `make_repairs.py`, which already carries the block-form
+  token-count refusal. **They have not been audited for anything else**, and
+  given that four of the six were one bug and FIVE further instances turned up in
+  scripts nobody had suspected, **the prior should be that some of these have a
+  defect of a different kind.** `netsets.py` and `integrity.py` are the ones to
+  look at first: both feed published counts and neither was examined here beyond
+  the sweep.
+- **The sweep looked for ONE pattern.** It finds a parser pinned to a textual
+  layout. It would not find an off-by-one, a wrong tolerance, a wrong rotation
+  mapping, or a check whose predicate is vacuous. Three of the six were found by
+  a human reading output against a render, and that is still the instrument of
+  record.
 - **The TypeScript suite and `make check` were not isolated against this work by
   a before/after run, because on this branch they cannot be.** What was
   established instead, as a check that could have failed:
