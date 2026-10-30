@@ -78,6 +78,37 @@ export const NICHICON_PS: DatasheetRef = {
   url: "https://www.nichicon.co.jp/english/products/pdf/e-ps.pdf",
 }
 
+/**
+ * **THE TWO FIGURES ON THIS DRAWING ARE TWO DIFFERENT LEADS, AND ONLY THE SHORTER
+ * ONE BINDS.** `14min.` and `3min.` are a dimension CHAIN running away from the
+ * body: the first ends at the end of the SHORT lead, which the drawing marks
+ * with a circled minus, and the second ends at the end of the LONG lead, which it
+ * marks with a circled plus. So the negative lead is 14mm at worst and the
+ * positive one 17mm, and a span both leads have to reach is bounded by the 14.
+ *
+ * It is recorded here because this repository has read `14min.` once before
+ * WITHOUT resolving what it dimensions (`docs/parts/2026-10-10-capacitor-and-inductor-research.md`
+ * §2.2 names both figures and says only that they are "on the lead"), and a
+ * reader who took the chain as one 17mm lead would record a maximum span the
+ * negative lead cannot make.
+ */
+export const PANASONIC_M_A: DatasheetRef = {
+  manufacturer: "Panasonic Industry",
+  document: "Aluminum Electrolytic Capacitors. Radial Lead Type. M-A series",
+  documentId: "ABA0000C1218",
+  revision: "01-Sep-25 (printed in the page footer)",
+  location:
+    "page 1, the \"Dimensions\" box: the straight-lead dimensional drawing, whose chain reads " +
+    "\"L*\" (body), then \"14min.\" ending at the circled-minus (short) lead's end, then " +
+    "\"3min.\" ending at the circled-plus (long) lead's end, with \"* L <= 16 : L+-1.0\", " +
+    "\"oD+-0.5\", \"od+-0.05\" and \"F+-0.5\"; its \"Unit: mm\" table oD 5.0 / 6.3 / 8.0 / 10.0 " +
+    "/ 12.5 / 16.0 / 18.0 against od 0.5 / 0.5 / 0.6 / 0.6 / 0.6 / 0.8 / 0.8 and F 2.0 / 2.5 / " +
+    "3.5 / 5.0 / 5.0 / 7.5 / 7.5; and the \"Characteristics list\", 35 V section, 470 uF row: " +
+    "case size oD x L 10.0 x 16.0, lead dia. (od) 0.6, lead space Straight 5.0 / Taping *B 5.0 " +
+    "/ Taping *i -, part no. ECA1VM471( ), min. packaging 200 straight leads",
+  url: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDF0000/ABA0000C1218.pdf",
+}
+
 export const VEROROUTE_FORK: DatasheetRef = {
   manufacturer: "the pinned VeroRoute fork",
   document: "veroroute-perfboard, Src/CompTypes.h",

@@ -236,7 +236,7 @@ test("every recorded footprint yields a derived body, and none is transcribed", 
     expect(extent.outlineMm.maxXMm, pattern.footprint).toBeGreaterThan(extent.outlineMm.minXMm)
     expect(extent.outlineMm.maxYMm, pattern.footprint).toBeGreaterThan(extent.outlineMm.minYMm)
   }
-  expect(PIN_PATTERNS.size, "all thirteen recorded footprints").toBe(13)
+  expect(PIN_PATTERNS.size, "all fifteen recorded footprints").toBe(15)
 })
 
 test("the footprint origin is pad 1's centre for every recorded footprint", () => {
@@ -279,7 +279,7 @@ test("every as-moulded pattern's pads land inside the holes its body covers", ()
       )
     }
   }
-  expect(checked, "ten of the thirteen recorded patterns are as-moulded").toBe(10)
+  expect(checked, "twelve of the fifteen recorded patterns are as-moulded").toBe(12)
 })
 
 test("outlineMm is the FILE's box, unshifted, even for a formed footprint", () => {

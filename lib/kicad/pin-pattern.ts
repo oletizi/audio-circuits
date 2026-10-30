@@ -239,6 +239,25 @@ const PATTERNS: readonly PinPattern[] = [
       "the leads are formed to one step.",
   },
   {
+    footprint: "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm",
+    pads: [pad("1", 0, 0), pad("2", 5, 0)],
+    source: source("Capacitor_THT.pretty/CP_Radial_D10.0mm_P5.00mm.kicad_mod", 2),
+    classification: {
+      kind: "rows",
+      axis: "x",
+      rows: [["1", "2"]],
+      rowPitchSteps: [],
+      alongRowPitchesMm: [5],
+      alongRowOnGrid: true,
+    },
+    accommodation: AS_MOULDED,
+    basis:
+      `${TWO_TERMINAL_ON_GRID} Here that span is 5.00mm, 0.08mm from two steps and inside the ` +
+      "pitch tolerance, so this can drops in unformed - the same 0.2in-in-rounded-metric pitch " +
+      "the C_Rect films carry, and unlike the 2.00mm and 3.50mm cans above it, whose leads are " +
+      "formed to one step.",
+  },
+  {
     footprint: "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
     pads: [pad("1", 0, 0)],
     source: source(
@@ -277,6 +296,26 @@ const PATTERNS: readonly PinPattern[] = [
     basis:
       "Two pads one 2.54mm step apart, which is two rows of one: the pins land on adjacent " +
       "strips, which is what a header is for, and nothing runs along a row.",
+  },
+  {
+    footprint: "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+    pads: [pad("1", 0, 0), pad("2", 0, 2.54), pad("3", 0, 5.08)],
+    source: source(
+      "Connector_PinHeader_2.54mm.pretty/PinHeader_1x03_P2.54mm_Vertical.kicad_mod",
+      3,
+    ),
+    classification: {
+      kind: "rows",
+      axis: "x",
+      rows: [["1"], ["2"], ["3"]],
+      rowPitchSteps: [1, 1],
+      alongRowPitchesMm: [],
+      alongRowOnGrid: true,
+    },
+    accommodation: AS_MOULDED,
+    basis:
+      "Three pads on the moulded 2.54mm, which is three rows of one at one step each: one pin " +
+      "per strip across three adjacent strips.",
   },
   {
     footprint: "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",

@@ -43,8 +43,17 @@ import { pultecMid } from "../../circuits/pultec/physical/mid.ts"
 import { pt2399Core } from "../../circuits/pt2399-core/pt2399-core.ts"
 import { transistorPreampLab } from "../../circuits/transistor-preamp/lab-board.ts"
 import { transistorPreampFeedback } from "../../circuits/transistor-preamp/feedback-board.ts"
+import { transistorPreampBuffered } from "../../circuits/transistor-preamp/buffered-board.ts"
+import { transistorPreampLoop } from "../../circuits/transistor-preamp/loop-board.ts"
+import { transistorPreampStaged } from "../../circuits/transistor-preamp/staged-board.ts"
 import type { Network } from "../../lib/model/types.ts"
 
+/**
+ * EVERY BOARD WITH A `boards/<name>/perfboard.json`, and only eight of the eleven until
+ * 2026-10-30: the coverage test below passed while `make check` refused to grade
+ * `transistor-preamp-staged`, which places `CP_Radial_D10.0mm_P5.00mm` and
+ * `PinHeader_1x03_P2.54mm_Vertical` and was not in this list. It is only this wide.
+ */
 const BOARDS: readonly (() => Network)[] = [
   pultecLowCut,
   pultecLowBoost,
@@ -54,6 +63,9 @@ const BOARDS: readonly (() => Network)[] = [
   pt2399Core,
   transistorPreampLab,
   transistorPreampFeedback,
+  transistorPreampBuffered,
+  transistorPreampLoop,
+  transistorPreampStaged,
 ]
 
 function placedFootprints(): ReadonlySet<string> {
@@ -269,6 +281,9 @@ test("a rigid family's span is the footprint's own, and is not a reach claim", (
   expect(dip.minSpanHoles).toBe(8)
   const header = leadSpanFor("Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical")
   expect(header.maxSpanHoles).toBe(5)
+  // A header's span IS its pin count, so the 1x03 is three holes, not a reach claim.
+  const panel = leadSpanFor("Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical")
+  expect(panel.maxSpanHoles).toBe(3)
 })
 
 test("the DIN0207's two mountings give two floors, and the recorded one is the looser", () => {
@@ -405,19 +420,29 @@ test("the WIMA FKP2's 4mm lead admits no forming at all", () => {
   expect(entry.maxSpanHoles).toBe(3)
 })
 
-test("the Nichicon electrolytics are lead-limited at eleven holes, below the tool's ceiling", () => {
-  for (const name of [
-    "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm",
-    "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm",
-    "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm",
-  ]) {
+test("the radial electrolytics are lead-limited at eleven holes, below the tool's ceiling", () => {
+  // THE FOURTH REACHES THE SAME ELEVEN FROM A SHORTER LEAD, so the length is asserted per
+  // family and not read as one figure shared by four: the Panasonic's 14.0mm is the SHORT -
+  // negative - one of its two leads, and reading its drawing's chain as a single 17mm lead
+  // would put this maximum a hole past what that lead reaches.
+  for (const [name, leadLengthMm] of [
+    ["Capacitor_THT:CP_Radial_D5.0mm_P2.00mm", 15.0],
+    ["Capacitor_THT:CP_Radial_D6.3mm_P2.50mm", 15.0],
+    ["Capacitor_THT:CP_Radial_D8.0mm_P3.50mm", 15.0],
+    ["Capacitor_THT:CP_Radial_D10.0mm_P5.00mm", 14.0],
+  ] as const) {
     const entry = leadSpanFor(name)
     const geometry = formable(entry)
     if (geometry === null) throw new Error(`${name} must carry formable geometry`)
-    expect(geometry.leadLengthMm).toBe(15.0)
-    expect(entry.maxSpanHoles).toBe(11)
-    expect(entry.maxSpanHoles).toBeLessThan(TOOL_MAX_SPAN_HOLES)
+    expect(geometry.leadLengthMm, name).toBe(leadLengthMm)
+    expect(entry.maxSpanHoles, name).toBe(11)
+    expect(entry.maxSpanHoles, name).toBeLessThan(TOOL_MAX_SPAN_HOLES)
   }
+  const panasonic = formable(leadSpanFor("Capacitor_THT:CP_Radial_D10.0mm_P5.00mm"))
+  if (panasonic === null) throw new Error("the phi10 entry must be formable")
+  expect(panasonic.mpn).toContain("ECA-1VM471")
+  expect(panasonic.source.documentId).toBe("ABA0000C1218")
+  expect(panasonic.leadLengthBasis).toMatch(/SHORT - negative - lead/)
 })
 
 test("the bend rule is IPC-A-610's Table 7-1 and its 0.8mm floor, not a rule of thumb", () => {
