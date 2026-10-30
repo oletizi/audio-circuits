@@ -1,0 +1,145 @@
+================ pultec-hi-boost
+sheet   drafted/pultec/pultec-hi-boost/pultec-hi-boost.generated-do-not-edit.kicad_sch
+paper   USLetter
+
+BODY      x   26.035 ..  253.365  =  227.330 mm wide
+          y   31.750 ..  153.670  =  121.920 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          298 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +14.055  E  +14.012  N  +19.770  S  +50.207 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   26.035 ..  253.365  =  227.330 mm wide
+          y   31.750 ..  153.670  =  121.920 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          668 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +14.055  E  +14.012  N  +19.770  S  +50.207 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 227.330 -> 252.330 with one point 25 mm east: MOVED
+exit=0
+
+================ pultec-hi-cut
+sheet   drafted/pultec/pultec-hi-cut/pultec-hi-cut.generated-do-not-edit.kicad_sch
+paper   USLetter
+
+BODY      x   29.210 ..  250.190  =  220.980 mm wide
+          y   31.750 ..  132.080  =  100.330 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          224 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +17.230  E  +17.187  N  +19.770  S  +71.797 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   29.210 ..  250.190  =  220.980 mm wide
+          y   31.750 ..  132.080  =  100.330 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          510 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +17.230  E  +17.187  N  +19.770  S  +71.797 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 220.980 -> 245.980 with one point 25 mm east: MOVED
+exit=0
+
+================ pultec-low-boost
+sheet   drafted/pultec/pultec-low-boost/pultec-low-boost.generated-do-not-edit.kicad_sch
+paper   USLetter
+
+BODY      x   41.910 ..  237.490  =  195.580 mm wide
+          y   34.290 ..  152.400  =  118.110 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          272 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +29.930  E  +29.887  N  +22.310  S  +51.477 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   41.910 ..  237.490  =  195.580 mm wide
+          y   34.290 ..  152.400  =  118.110 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          548 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +29.930  E  +29.887  N  +22.310  S  +51.477 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 195.580 -> 220.580 with one point 25 mm east: MOVED
+exit=0
+
+================ pultec-low-cut
+sheet   drafted/pultec/pultec-low-cut/pultec-low-cut.generated-do-not-edit.kicad_sch
+paper   USLetter
+
+BODY      x   22.225 ..  257.175  =  234.950 mm wide
+          y   44.450 ..  142.240  =   97.790 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          253 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +10.245  E  +10.202  N  +32.470  S  +61.637 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   22.225 ..  257.175  =  234.950 mm wide
+          y   44.450 ..  142.240  =   97.790 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          529 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W  +10.245  E  +10.202  N  +32.470  S  +61.637 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 234.950 -> 259.950 with one point 25 mm east: MOVED
+exit=0
+
+================ pultec-mid
+sheet   drafted/pultec/pultec-mid/pultec-mid.generated-do-not-edit.kicad_sch
+paper   USLetter
+
+BODY      x   15.240 ..  264.160  =  248.920 mm wide
+          y   15.240 ..  168.910  =  153.670 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          379 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W   +3.260  E   +3.217  N   +3.260  S  +34.967 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   15.240 ..  264.160  =  248.920 mm wide
+          y   15.240 ..  168.910  =  153.670 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          887 points
+          frame 11.980,11.980 .. 267.377,203.877 (255.397 x 191.897 mm usable)
+          slack  W   +3.260  E   +3.217  N   +3.260  S  +34.967 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 248.920 -> 273.920 with one point 25 mm east: MOVED
+exit=0
+

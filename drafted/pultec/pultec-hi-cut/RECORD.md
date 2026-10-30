@@ -8,58 +8,90 @@ register is right and this one is stale.
 | | |
 | --- | --- |
 | Sheet | `pultec-hi-cut.generated-do-not-edit.kicad_sch` |
-| **sha256 of the sheet - THE BINDING** | `7ccf557c5474222f6850b78f8c3c53ac45b89389f782f4b8c317d483900a76f1` |
+| **sha256 of the sheet - THE BINDING** | `e9843e6dbd3f765822e34bf51cd0d3d2659f0a6969c4c9a866e7691727bdf332` |
 | Render | `pultec-hi-cut.generated-do-not-edit.svg` |
-| sha256 of the render, volatile title line dropped - **evidence, not a binding** | `5b77acaad5a939c373758f58bbb4b198e33d1a2b25b9af87a0c3a7640b8b1dda` |
-| Approved page came from | `docs/research/2026-10-29-hi-cut-full-run/hi-cut-hybrid.kicad_sch`, copied byte-for-byte |
-| Produced by | copperhead draft `v4-blocks-mid-late`, then akcli repairs and a field-restating pass |
-| Shown | 2026-10-29, as the full page plus before/after crops of the Hi cut group and a crop of the capacitor bank |
-| Paper | `A4` - **NOT re-papered to US Letter; it does not fit. See below.** |
+| sha256 of the render, volatile title line dropped - **evidence, not a binding** | `102468842317d357d26569168c8a4665ca29fe99302b3bd636e2e60c9a99e65a` |
+| Approved page came from | the centred Letter page shown to him on 2026-10-30, copied byte-for-byte; that page came from `docs/research/2026-10-29-hi-cut-full-run/hi-cut-hybrid.kicad_sch` by a re-paper and one rigid translation |
+| Produced by | copperhead draft `v4-blocks-mid-late`, then akcli repairs and a field-restating pass; then re-papered to `USLetter` and translated 21.59 mm west to centre it |
+| Shown | 2026-10-29 as the A4 page; 2026-10-30 as the Letter page untouched, the A4 page beside it, and the centred Letter page |
+| Paper | `USLetter`, centred on the horizontal axis - **and APPROVED in that state; see below** |
 
-NOT re-papered to US Letter: this page does not fit it
-------------------------------------------------------
+Re-papered, centred, and APPROVED in this state
+-----------------------------------------------
 
-**THIS SHEET IS STILL `A4` WHILE THE OTHER THREE SECTION BOARDS ARE NOW
-`USLetter`, AND THAT IS A DELIBERATE STOP RATHER THAN AN OVERSIGHT.** The owner,
-2026-10-30, asked for all four:
+**THIS IS THE ONE PULTEC PAGE WHOSE VERDICT IS BOUND TO THE BYTES THAT ARE
+HERE.** The sheet in this directory hashes to
+`e9843e6dbd3f765822e34bf51cd0d3d2659f0a6969c4c9a866e7691727bdf332`, and that is
+the digest `../../../docs/schematic/verdicts.md` records his approval against.
+The other four pages in `drafted/pultec/` are **awaiting re-approval**; this one
+is not.
 
-> *"yes, switch the other four boards to us letter"*
+The owner, 2026-10-30, looking at this page on US Letter with nothing moved:
 
-**It was not done here because the drawing would not be inside the frame.** The
-page's **Hi cut group box** spans x 50.800 .. 271.780 mm, and US Letter
-landscape's inner frame line - as this KiCad draws it, measured off a rendered
-empty page and not read from a table - sits at **x 267.377**. The box's east
-edge therefore lands **4.530 mm outside the frame**, measured off the render:
+> *"It's goofy but serviceable. You need to center the content in the horizontal
+> (long) axis."*
 
-| | A4 (as it stands) | US Letter (refused) |
-| --- | --- | --- |
-| inner frame, east edge | 284.988 mm | 267.377 mm |
-| drawing's east reach, from the render | 271.907 mm | 271.907 mm |
-| clearance | **+13.060 mm** | **-4.530 mm** |
-| drawing pixels outside the inner frame | 0 | **15202** |
+and then, on the centred page:
 
-Both figures come from differencing a render of this sheet against a render of
-an empty sheet on the same paper, in colour, with a square stamped outside the
-frame as the control that the test can report a miss at all.
+> *"yes. approved. So are the build guides you've shown me"*
 
-**WHAT WOULD SETTLE IT IS A DECISION, NOT A MEASUREMENT.** Making this page fit
-US Letter means narrowing or re-arranging the Hi cut group - at least 4.53 mm,
-and more to leave any margin - and that is an **arrangement change to a drawing
-the reviewer has already approved**, which no agent may make on its own
-initiative. The three pages that fit were re-papered because the paper change
-moves only the frame; this one cannot be done the same way. It is left on A4,
-still bound to the verdict below, pending his instruction on whether to re-draw
-it (as `pultec-mid` is being re-drawn) or to leave it on A4 and print that one
-page differently.
+**THE SECOND SENTENCE ALSO APPROVES THE BUILD GUIDE DOCUMENTS**, which are a
+separate artifact from any page.
 
-While it stays on A4, this board's build guide keeps printing the
-*"Page 2 is not on this document's paper"* notice, which is the notice doing its
-job: the packet's own pages are US Letter and this schematic is not.
+**WHAT THAT APPROVAL DOES NOT COVER, stated here because the register states it
+too.** He ruled on this page and on the guides. He did **not** rule on the Letter
+pages for `pultec-mid`, `pultec-hi-boost`, `pultec-low-boost` or
+`pultec-low-cut`, and the centring he directed has since changed three of their
+sheets' bytes. Nothing in this file may be read as a verdict on them.
+
+**THE CENTRING WAS ALREADY IN THESE BYTES, AND THE RE-RUN PROVES IT RATHER THAN
+ASSERTING IT.** The centring rule was applied to all five pages on 2026-10-30 by
+one script, `docs/research/2026-10-30-centre-and-promote/scripts/center.py`, so
+that no page is centred by a different definition from its neighbours. Run
+against this sheet it computes an offset of **zero** - `-7.11e-15 mm`, which is
+the float noise of a subtraction and a halving - and the file it writes is
+**byte-identical** to the file it read. That byte-identity is asserted by the
+script and refuses if it fails; the assertion is exercised by
+`docs/research/2026-10-30-centre-and-promote/scripts/zero_offset_control.py`,
+which hands it a sheet whose bytes must change and confirms it refuses. So the
+approved artifact passed through the same rule as the other four and came out
+untouched.
+
+| | |
+| --- | --- |
+| offset applied by the 2026-10-30 centring pass | **0.000 mm** (already centred) |
+| content extent, from the sheet's own coordinates | x 29.210 .. 250.190 mm, 220.980 wide |
+| margin to the inner frame | **west 17.210, east 17.210 mm** |
+
+**THE FRAME, MEASURED TWO WAYS ON THIS KiCad AND NOT READ FROM A TABLE.** US
+Letter landscape renders 279.400 x 215.900 mm, outer border 10.0, **inner border
+12.0**, so the inner frame runs **x 12.0 .. 267.4** - 255.4 mm wide - and the
+title block takes a **corner** from x 159.4, y 171.9. Two measurements agree:
+`frame_svg.py` reads the closed rectangles out of the exported SVG's own vectors
+and gives exactly `12.0 .. 267.4`;
+`../../../docs/research/2026-10-30-mid-letter-redraw/scripts/framegeom.py`
+rasterises a PDF at 600 dpi and finds the full-span dark rows and columns, giving
+`11.980 .. 267.377` - the same lines to within half a stroke width. **Re-derived
+rather than taken, because two earlier runs reported two different figures for
+it.** Both have a positive control: the line detector must find nothing on an
+all-white image, and the vector reader nothing in emptied path data.
+
+Where the drawing sits, from `extent.py` against the rasterised frame
+`11.980 .. 267.377`: slack **W +17.230, E +17.187**, N +19.770, S +71.797 mm,
+nothing outside the frame. The 0.043 mm west-east difference is the gap between
+the two frame measurements above, not an error in the centring - the sheet's own
+coordinates are symmetric to 2.1e-14 mm.
 
 Verdict, verbatim
 -----------------
 
+For the A4 page, 2026-10-29:
+
 > *"looks good. approved"*
+
+And for the centred US Letter page that is in this directory now, 2026-10-30:
+
+> *"yes. approved. So are the build guides you've shown me"*
 
 The Hi cut group is agent-authored: `lo_boost_in`'s fourteen pins drawn once as
 a 193.04 mm rail along the top, ten capacitors vertical beneath it in contact

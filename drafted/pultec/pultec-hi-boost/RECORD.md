@@ -8,10 +8,10 @@ register is right and this one is stale.
 | | |
 | --- | --- |
 | Sheet | `pultec-hi-boost.generated-do-not-edit.kicad_sch` |
-| **sha256 of the sheet - THE BINDING** | `9aa390a420edc4d845b5b0281b00e41efbae5e98dab90cdd847a2f55f38a2278` |
+| **sha256 of the sheet - THE BINDING** | `a1fa415966ad026c2448c25e65a7e267e51554853cb563399f62befc47bf668e` |
 | Render | `pultec-hi-boost.generated-do-not-edit.svg` |
-| sha256 of the render, volatile title line dropped - **evidence, not a binding** | `f694f0e43d5edd82a3bbc8422cbf8072b0bdb8eb1265a8c262eb021175f2ee4c` |
-| Paper | `USLetter`, re-papered from `A4` on 2026-10-30 - **see below, this page is AWAITING RE-APPROVAL** |
+| sha256 of the render, volatile title line dropped - **evidence, not a binding** | `6e16e5cb9a55cd87b7ece10775812c8185aae30f3aa200df7ea86e765bb88ead` |
+| Paper | `USLetter`, re-papered from `A4` on 2026-10-30, then **centred** on the horizontal axis the same day - **see below, this page is AWAITING RE-APPROVAL** |
 | Approved page came from | `docs/research/2026-10-29-hi-boost-hairpin-fix/hi-boost-hairpin-fixed.kicad_sch`, copied byte-for-byte |
 | Produced by | the accepted hi-boost page with the Lo boost stand-in group redrawn to the `S1` convention. **No copperhead** - the first run of this loop with no drafting step at all |
 | Shown | 2026-10-29, as before/after crops of the group, a close crop of `SI7` and its ground, and the whole page |
@@ -21,15 +21,80 @@ Re-papered A4 to US Letter, and AWAITING RE-APPROVAL
 
 **THE VERDICT BELOW IS BOUND TO BYTES THAT NO LONGER EXIST, AND IT DOES NOT
 TRANSFER.** This sheet was `A4` when it was approved and hashed to
-`240c61df793611adebf0c4a76a103c31c8b8d8cc2b4b243dba043c5e58f0135a`. It is now
-`USLetter` and hashes to
-`9aa390a420edc4d845b5b0281b00e41efbae5e98dab90cdd847a2f55f38a2278`. The sheet
+`240c61df793611adebf0c4a76a103c31c8b8d8cc2b4b243dba043c5e58f0135a`. The re-paper
+made it `9aa390a420edc4d845b5b0281b00e41efbae5e98dab90cdd847a2f55f38a2278`, and
+the centring below made it
+`a1fa415966ad026c2448c25e65a7e267e51554853cb563399f62befc47bf668e`. The sheet
 IS the approved artifact only while its bytes still hash to the digest the
 verdict was recorded against, so **this page is awaiting re-approval and must
 not be described as approved anywhere.**
 `../../../docs/schematic/verdicts.md` is deliberately NOT edited: the
 re-approval is the reviewer's to record, and until he has looked there is no
 verdict to record.
+
+Centred on the horizontal axis, 2026-10-30
+------------------------------------------
+
+**AT THE OWNER'S DIRECTIVE, GIVEN LOOKING AT `pultec-hi-cut` AND EXTENDED TO
+THIS PAGE IN THE SAME BREATH.** He said, of the uncentred Letter hi-cut page:
+
+> *"It's goofy but serviceable. You need to center the content in the horizontal
+> (long) axis."*
+
+and, asked whether to centre the other four, answered:
+
+> *"yes. approved. So are the build guides you've shown me"*
+
+**THE WORD "APPROVED" THERE IS ABOUT THE CENTRED hi-cut PAGE AND THE BUILD
+GUIDES, NOT ABOUT THIS PAGE.** He has not seen this page centred. It is
+recorded here as a directive carried out, not as a verdict obtained.
+
+| | |
+| --- | --- |
+| offset applied | **+9.5250 mm east** |
+| content extent before | x 16.510 .. 243.840 mm, 227.330 wide |
+| content extent after | x 26.035 .. 253.365 mm |
+| margin to the inner frame | **west 14.035, east 14.035 mm** |
+
+**THE FRAME, MEASURED TWO WAYS ON THIS KiCad AND NOT READ FROM A TABLE.** US
+Letter landscape renders 279.400 x 215.900 mm, outer border 10.0, **inner border
+12.0**, so the inner frame runs **x 12.0 .. 267.4** - 255.4 mm wide - and the
+title block takes a **corner** from x 159.4, y 171.9.
+`../../../docs/research/2026-10-30-centre-and-promote/scripts/frame_svg.py`
+reads those as closed rectangles out of the exported SVG's own vectors;
+`../../../docs/research/2026-10-30-mid-letter-redraw/scripts/framegeom.py`
+rasterises a PDF at 600 dpi and gives `11.980 .. 267.377`, the same lines to
+within half a stroke width. Each has a control that must find nothing on blank
+input.
+
+**IT IS A RIGID TRANSLATION, PROVED AND NOT ASSERTED** - by
+`../../../docs/research/2026-10-30-centre-and-promote/scripts/translation_proof.py`
+and `.../scripts/netcmp.ts`, each check with its own positive control:
+
+- **367 placed points** - every wire end, symbol origin, junction, label,
+  rectangle corner, text and **every one of the 128 symbol fields** - moved by
+  the same +9.5250 mm in x and 0 in y, worst deviation 2.5e-14 mm. Moving one
+  symbol 1.27 mm in the after-sheet makes that test fail, so it is not blind.
+- counts identical: 72 wires, 32 symbols, 73 pin points, 28 labels, 17
+  junctions, 6 group rectangles, 6 texts. Deleting one wire makes them differ.
+- **total wire length identical at 1181.100 mm** - a stretched wire would change
+  it. Shortening one wire 5 mm makes it differ.
+- every field's angle unchanged. Rotating one field 90 degrees makes them differ.
+- the netlist exported from each and imported through `lib/kicad/netlist.ts`:
+  **27 components, 21 nets**, net names, the pin-set partition and the
+  name-to-pin-set mapping all identical. The control moves one symbol until a
+  pin leaves its net and the comparator reports it; `#FLG01` is already floating
+  so moving it changes nothing, and `#PWR01` is the symbol that discriminates.
+- the sheet's parenthesis depth is counted before each export, because
+  `kicad-cli sch export netlist` **exits 0 on a paren-broken sheet** and writes
+  an empty components and nets section, and two empty netlists compare identical.
+  A zero-component or zero-net import is refused rather than compared.
+
+Where the drawing sits, from `extent.py` against the rasterised frame: slack
+**W +14.055, E +14.012**, N +19.770, S +50.207 mm, nothing outside the frame.
+The 0.043 mm west-east difference is the gap between the two frame measurements
+above, not an error in the centring - the sheet's own coordinates are symmetric
+to 3.2e-14 mm.
 
 Changed at the owner's instruction, 2026-10-30:
 
@@ -61,17 +126,23 @@ The drawing is the same drawing, measured four ways rather than asserted:
   identical: 72 wires totalling 1181.100 mm, 32 symbols, 73 pin points, 28
   labels, 17 junctions, 6 group rectangles, 6 texts
 
-Where the drawing sits on the new paper, measured off the rendered page and not
-computed from the paper's nominal size. US Letter landscape's inner frame, as
-this KiCad draws it, is x 11.980 .. 267.377 and y 11.980 .. 203.877 mm, and its
-title block occupies the corner from x 159.300, y 171.831:
+Where the drawing sat on the new paper **before the centring pass above moved
+it** - kept because it is what the re-paper on its own produced, and the
+asymmetry in it is what the centring was directed to fix. Measured off the
+rendered page and not computed from the paper's nominal size. US Letter
+landscape's inner frame, as this KiCad draws it, is x 11.980 .. 267.377 and
+y 11.980 .. 203.877 mm, and its title block occupies the corner from x 159.300,
+y 171.831:
 
-| | |
+| | **superseded by the centring above** |
 | --- | --- |
 | drawing reach, from the render | x 16.341 .. 243.967, y 31.581 .. 153.797 mm |
 | clearance to the inner frame | W +4.360, **E +23.410**, N +19.600, S +50.080 mm |
 | drawing pixels outside the inner frame | 0 |
 | clearance to the title block's top edge | 18.034 mm |
+
+The **W +4.360 against E +23.410** in that table is the 19.05 mm of asymmetry the
+centring removed; the current figures are in the centring section above.
 
 Reproduce it by differencing a render of this sheet against a render of an empty
 sheet on the same paper, in **colour**: the group boxes are drawn in colour and

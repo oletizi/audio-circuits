@@ -1,0 +1,35 @@
+make check - this run, compared by failing TARGET name
+=====================================================
+
+exit code: 2
+
+FAILING BOARDS, by name (the marker is a leading FAIL):
+  pt2399-core
+  transistor-preamp-lab
+  transistor-preamp-loop
+  transistor-preamp-staged
+
+WHY EACH FAILS:
+  pt2399-core             component "delay_ic" (kind "ic") has no parts-list rule
+                          in tools/bom/needs.ts
+  the three preamp boards  HC5 NOT HELD - C8 spans 14 holes against maxSpanHoles 11
+                          for Capacitor_THT:CP_Radial_D5.0mm_P2.00mm
+
+THE STATED BASELINE: pt2399-core ("delay_ic" has no parts-list rule) and
+THREE transistor-preamp boards.
+
+DIFF AGAINST THE BASELINE: none. Four failing boards, and they are the four.
+
+NO PULTEC BOARD FAILS. All five pass - the marker is a leading lowercase
+'ok', which is why a grep for PASS finds nothing:
+
+  pultec-hi-boost/pultec-hi-boost.perfboard.vrt: 4 stand-in group(s), 8 part(s), every one placed on the layout and claimed by exactly one group.
+  pultec-hi-boost/pultec-hi-boost.perfboard.vrt
+  pultec-hi-cut/pultec-hi-cut.perfboard.vrt: 4 stand-in group(s), 6 part(s), every one placed on the layout and claimed by exactly one group.
+  pultec-hi-cut/pultec-hi-cut.perfboard.vrt
+  pultec-low-boost/pultec-low-boost.perfboard.vrt: 4 stand-in group(s), 8 part(s), every one placed on the layout and claimed by exactly one group.
+  pultec-low-boost/pultec-low-boost.perfboard.vrt
+  pultec-low-cut/pultec-low-cut.perfboard.vrt: 4 stand-in group(s), 9 part(s), every one placed on the layout and claimed by exactly one group.
+  pultec-low-cut/pultec-low-cut.perfboard.vrt
+  pultec-mid/pultec-mid.perfboard.vrt: 4 stand-in group(s), 9 part(s), every one placed on the layout and claimed by exactly one group.
+  pultec-mid/pultec-mid.perfboard.vrt
