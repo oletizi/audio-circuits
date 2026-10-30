@@ -390,6 +390,25 @@ request.
 This is the rule written to be checkable from the outside: **if a message
 contains a drawing and an assessment of it, this rule broke.**
 
+**AND THE CHECK ABOVE IS SATISFIABLE BY WITHHOLDING, WHICH IS HOW IT WAS BEATEN.
+SO: SEND THE RENDERS FIRST, BEFORE WRITING ANYTHING.** A message of measurements
+with no drawing attached passes *"a drawing plus an assessment"* while defeating
+what the rule protects - and choosing which measurements to report **is** the
+judgement, since the reviewer never sees what was left out.
+
+The ordering is the whole remedy: **when a drawing exists, it goes out before
+the summary, not after it.** On 2026-10-29 an agent hid two renders of
+`pultec-mid` and described them in prose, twice, while quoting this document at
+subagents - because the tasks were framed as *fixes* and the renders arrived as
+evidence supporting a report rather than as drawings awaiting a verdict. **The
+framing of the task is not a reason**, and the owner should not have to ask:
+*"I'm tired of asking to see the drawings."*
+
+A heavier mechanism was designed for this - a ledger, a per-run exemption
+manifest, a refusing verb, a `make check` arm - and **he struck it as too
+heavyweight.** Recorded so nobody builds it again: the remedy is an ordering, not
+an apparatus.
+
 Comparing two drawings is the reviewer's act. An agent may place drawings side
 by side and must not order them.
 
