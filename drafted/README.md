@@ -46,15 +46,20 @@ sheet named `<board>.generated-do-not-edit.kicad_sch` prints
 and KiCad's own window title says the same thing to anyone who opens one.
 
 **WHY THE NOTICE IS CARRIED BY THE NAME AND NOT BY A `title_block` FIELD, which
-is a real limitation of the record rather than a preference.** Each of the four
-pages here is bound to a sha256 in `../docs/schematic/verdicts.md` - that hash
-is the binding, and the sheet IS the approved artifact only while its bytes
-still hash to it. Writing *"generated - do not edit"* into a `comment` field
-inside the file would change those bytes and **un-approve the page**. The file
-name is the one channel that puts the notice in the title block at the cost of
-zero bytes. A page drafted from here on should carry the notice in its
-`title_block` as well, emitted by whatever draws it, so that the two agree; for
-these four the bytes are frozen and only the name is available.
+is a real limitation of the record rather than a preference.** **Every** page
+here is bound to a sha256 in `../docs/schematic/verdicts.md` - that hash is the
+binding, and the sheet IS the approved artifact only while its bytes still hash
+to it. Writing *"generated - do not edit"* into a `comment` field inside the
+file would change those bytes and **un-approve the page**. The file name is the
+one channel that puts the notice in the title block at the cost of zero bytes. A
+page drafted from here on should carry the notice in its `title_block` as well,
+emitted by whatever draws it, so that the two agree; for the pages already
+approved the bytes are frozen and only the name is available.
+
+**THIS PARAGRAPH SAID "EACH OF THE FOUR PAGES HERE" UNTIL `pultec-mid` MADE IT
+FIVE**, which is why it now says *every*. `CLAUDE.md`: *"A FIGURE IN PROSE IS A
+TRANSCRIPTION WITH A DATE ON IT."* The count is not a fact this file needs, and
+`ls` answers it without going stale.
 
 What is NOT settled here
 ------------------------
@@ -81,6 +86,14 @@ Who reads these
 `boards/<board>/perfboard.json` declares the page here as its `"sch"`, so
 `make guide` prints it as the build packet's schematic page and
 `make netlist-agrees` re-exports its netlist on every run and compares by
-content. A board that declares none - `pultec-mid` today - gets the printed
-notice `tools/guide/schematic-notice.ts` holds for that case, which is what
-says on the paper that nothing has gone missing.
+content. A board that declares none gets the printed notice
+`tools/guide/schematic-notice.ts` holds for that case, which is what says on the
+paper that nothing has gone missing.
+
+**`pultec-mid` WAS THE EXAMPLE OF THAT CASE AND IS NOT ANY MORE** - it was
+approved on 2026-10-29 and its page is here. Named here only because it is
+pointed at as the undeclared board in several places written before that, and
+because nothing withheld exercises the notice now; `tools/guide/schematic-notice.ts`'s
+own tests are what keep that branch honest. Which boards declare a page is a
+question `grep '"sch"' ../boards/*/perfboard.json` answers, and not one this
+file should be transcribing.
