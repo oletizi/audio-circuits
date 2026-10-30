@@ -15,12 +15,13 @@
  * normalised away on either side: which spelling the model should carry is not this guard's
  * decision to make.
  */
-import { registerDraftedPageTests } from "./drafted-sheet.ts"
+import { registerDraftedPageTests, SELECTOR_PIN_DISAGREEMENT } from "./drafted-sheet.ts"
 
 registerDraftedPageTests({
   board: "pultec-low-boost",
   circuit: "pultec",
   netlist: "tests/fixtures/pultec-low-boost.net",
+  pinDisagreements: [SELECTOR_PIN_DISAGREEMENT],
   valueDisagreements: [
     'C1: the schematic says "0.33uF" and the model says ".33uF"',
     'C2: the schematic says "0.22uF" and the model says ".22uF"',

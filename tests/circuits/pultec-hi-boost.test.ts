@@ -13,11 +13,16 @@
  * the model declares no footprint for has nothing to compare, and reporting it as a pass is the
  * exact reading `lib/schgen/gates/round-trip.ts` keeps separate for that reason.
  */
-import { registerDraftedPageTests, SELECTOR_VALUE_DISAGREEMENT } from "./drafted-sheet.ts"
+import {
+  registerDraftedPageTests,
+  SELECTOR_PIN_DISAGREEMENT,
+  SELECTOR_VALUE_DISAGREEMENT,
+} from "./drafted-sheet.ts"
 
 registerDraftedPageTests({
   board: "pultec-hi-boost",
   circuit: "pultec",
   netlist: "tests/fixtures/pultec-hi-boost.net",
+  pinDisagreements: [SELECTOR_PIN_DISAGREEMENT],
   valueDisagreements: [SELECTOR_VALUE_DISAGREEMENT],
 })

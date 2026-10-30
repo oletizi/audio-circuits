@@ -179,8 +179,9 @@ export function withOnePinMoved(exported: ImportedNetlist): ImportedNetlist {
 }
 
 /**
- * The two disagreements EVERY drafted Pultec page carries, in the exact words `roundTrip` reports
- * them, because they are properties of how these four sheets were drawn rather than of any circuit.
+ * The two disagreements the four SIX-WAY-SELECTOR Pultec pages carry, in the exact words `roundTrip`
+ * reports them, because they are properties of how those sheets were drawn rather than of any
+ * circuit.
  *
  * `SW1` is drawn with the `SW_Rotary_1x6_MP` stock symbol, which carries a mechanical mount lug the
  * model does not - *"a mounting pin `MP`, which is a mechanical pad and is on no net in the
@@ -188,6 +189,15 @@ export function withOnePinMoved(exported: ImportedNetlist): ImportedNetlist {
  * **G282** records - and its `Value` field holds that symbol's name where the model holds the
  * model's own value. Asserted EXACTLY rather than tolerated loosely: a second entry appearing in
  * either list is a new disagreement and must fail.
+ *
+ * **THIS SAID "EVERY DRAFTED PULTEC PAGE" UNTIL `pultec-mid` REFUTED IT, and the wording is
+ * corrected rather than widened.** The mid page is drawn with `Switch:SW_Rotary_1x12`, which has no
+ * `_MP` variant and therefore no mount lug, and its unused twelfth contact is declared
+ * not-connected in the model through `ComponentOverride.ncPins` rather than left to disagree. So
+ * that page's `pinIdentity` is EMPTY, which is why the pin list below is per-board
+ * (`DraftedPageUnderTest.pinDisagreements`) and not a constant the shared body asserts for
+ * everyone. A shared body that hard-codes one board's symbol choice is a check that passes for the
+ * wrong reason the first time a page is drawn with a different symbol.
  */
 export const SELECTOR_PIN_DISAGREEMENT =
   "SW1 pin numbers: model [1, 2, 3, 4, 5, 6, 7] vs schematic [1, 2, 3, 4, 5, 6, 7, MP]"
@@ -203,6 +213,16 @@ export interface DraftedPageUnderTest {
   readonly circuit: string
   /** The committed netlist export, repository-relative, exactly as `perfboard.json` declares it. */
   readonly netlist: string
+  /**
+   * Every `pinIdentity` disagreement this page carries, in `roundTrip`'s own words.
+   *
+   * **PER-BOARD BECAUSE IT IS A FACT ABOUT WHICH SYMBOL THE PAGE WAS DRAWN WITH**, and the five
+   * Pultec pages are not drawn with the same selector: four carry `SW_Rotary_1x6_MP`'s mechanical
+   * mount lug and report `SELECTOR_PIN_DISAGREEMENT`, while `pultec-mid`'s `SW_Rotary_1x12` has no
+   * such lug and reports NOTHING. An EMPTY list here is therefore a real claim - that this page's
+   * pin numbering agrees with the model exactly - and not an absent one.
+   */
+  readonly pinDisagreements: readonly string[]
   /**
    * Every `values` disagreement this page carries, in `roundTrip`'s own words, sorted as it sorts.
    *
@@ -254,8 +274,9 @@ export function registerDraftedPageTests(page: DraftedPageUnderTest): void {
     const model = modelUnderTest(board)
     const problems = roundTrip(model.circuit, model.refs, committedNetlist(netlist))
     // The selector's mechanical mount lug and its Value field: properties of the stock symbol the
-    // page is drawn with, not of any circuit. See the two constants above.
-    expect(problems.pinIdentity).toEqual([SELECTOR_PIN_DISAGREEMENT])
+    // page is drawn with, not of any circuit. See the two constants above - and note that the lug
+    // is NOT universal, which is why this list comes from the board rather than from a constant.
+    expect([...problems.pinIdentity].sort()).toEqual([...page.pinDisagreements].sort())
     expect([...problems.values].sort()).toEqual([...page.valueDisagreements].sort())
     // **THE ONLY FOOTPRINT DISAGREEMENT IS THAT THE PAGE DECLARES NONE.** copperhead and akcli
     // write no `Footprint` field at all, so every entry here must read `"<none>"`; one that names a
