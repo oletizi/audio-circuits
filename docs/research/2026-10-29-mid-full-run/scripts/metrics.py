@@ -12,28 +12,41 @@ outside every rectangle is reported as `-`, which would itself be a finding.
 usage: metrics.py <sheet.kicad_sch> [<sheet.kicad_sch> ...]
 """
 import collections
-import re
+import pathlib
 import sys
 
-TOL = 0.001
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "lib"))
+import kicad_sheet  # noqa: E402
+
+TOL = kicad_sheet.TOL
 
 
 def parse(path):
-    src = open(path).read()
-    wires = [tuple(round(float(g), 3) for g in m.groups()) for m in re.finditer(
-        r'\(wire\s*\(pts \(xy ([-\d.]+) ([-\d.]+)\) \(xy ([-\d.]+) ([-\d.]+)\)\)', src)]
-    rects = [(float(a), float(b), float(c), float(d)) for a, b, c, d in re.findall(
-        r'\(rectangle \(start ([-\d.]+) ([-\d.]+)\) \(end ([-\d.]+) ([-\d.]+)\)', src)]
-    texts = {m.group(1): (float(m.group(2)), float(m.group(3))) for m in re.finditer(
-        r'\(text "([^"]+)" \(at ([-\d.]+) ([-\d.]+) \d+\)', src)}
-    labels = [(m.group(2), float(m.group(3)), float(m.group(4)), m.group(1) == "global_label")
-              for m in re.finditer(
-                  r'\((global_label|label) "([^"]+)"(?: \(shape \w+\))? \(at ([-\d.]+) ([-\d.]+)',
-                  src)]
-    syms = re.findall(r'\(lib_id "([^"]+)"\)\n\t\t\(at ', src)
-    pins = len(re.findall(r'^\t\t\(pin "[^"]*" \(uuid', src, re.M))
-    juncs = re.findall(r'\(junction \(at ([-\d.]+) ([-\d.]+)\)', src)
-    return src, wires, rects, texts, labels, syms, pins, juncs
+    """Read everything this table counts, through the shared sheet reader.
+
+    **THREE OF THESE SIX PATTERNS ONLY UNDERSTOOD ONE OF THE TWO TEXTUAL FORMS A
+    SHEET USES.** The symbol-instance pattern required a newline and two tabs
+    between `(lib_id ...)` and `(at ...)`, so it missed `#PWR010` on the accepted
+    `pultec-low-boost` page, which akcli wrote on one line, and this table
+    reported 24 symbols and 56 pin instances for a page with 25 and 57. The
+    rectangle pattern matched only the one-line form, which here is harmless -
+    it wants the sheet-level group boxes and those are one-line - and was NOT
+    harmless in `boxgeom.py`, where the same pattern removed every symbol body
+    from every margin. The label pattern required a single space before `(at`.
+    `docs/research/lib/kicad_sheet.py` parses by balanced parentheses and refuses
+    when its parse does not account for every token in the source.
+    """
+    sheet = kicad_sheet.read(path)
+    wires = [w.pts for w in sheet.wires()]
+    rects = sheet.rectangles()
+    texts = {t: (x, y) for t, x, y, _ in sheet.texts()}
+    labels = [(t, x, y, k == "global_label")
+              for k, t, x, y, _a, _s, _n in sheet.labels()
+              if k in ("global_label", "label")]
+    syms = [s.lib_id for s in sheet.symbols()]
+    pins = sum(len(s.node.kids("pin")) for s in sheet.symbols())
+    juncs = sheet.junctions()
+    return sheet.src, wires, rects, texts, labels, syms, pins, juncs
 
 
 def group_of(x, y, rects, names):
@@ -52,8 +65,8 @@ def group_of(x, y, rects, names):
 
 def report(path):
     src, wires, rects, texts, labels, syms, pins, juncs = parse(path)
-    # Only the six group rectangles are page-level; symbol-body rectangles in
-    # lib_symbols are small and sit near the origin.
+    # `sheet.rectangles()` already excludes everything inside `lib_symbols` by
+    # extent, so this filter now only drops a small sheet-level rectangle.
     groups = [r for r in rects if r[0] > 5 and (r[2] - r[0]) > 10]
     total = sum(abs(a - c) + abs(b - d) for a, b, c, d in wires)
     longest = max(((abs(a - c) + abs(b - d), (a, b, c, d)) for a, b, c, d in wires),

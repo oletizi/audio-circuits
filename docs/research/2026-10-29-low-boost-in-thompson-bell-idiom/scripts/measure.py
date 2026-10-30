@@ -8,26 +8,43 @@ wires that have to be scanned a long way.
   - median centre-to-centre distance from each symbol to its nearest neighbour,
     which is proximity: how close parts that sit together actually sit
 """
+import pathlib
 import re
 import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "lib"))
+import kicad_sheet  # noqa: E402
 
 MM = 1 / 0.0254
 PAPER = {"A4": (11693, 8268), "A3": (16535, 11693)}
 
 
 def main(path):
-    t = open(path).read()
+    """Read through the shared sheet reader.
+
+    **BOTH OF THIS SCRIPT'S PARSERS UNDERSTOOD ONE TEXTUAL FORM AND NOT THE
+    OTHER, AND THEY DISAGREED ABOUT WHICH.** The wire pattern had a literal
+    space after `(wire`, which matches only the one-line form: 7 of 78 wires on
+    the accepted `pultec-low-boost` page. The symbol pattern required
+    `(symbol (lib_id ...)` on ONE line, so on a block-form sheet it finds NO
+    symbols at all, and the nearest-neighbour median - the proximity number this
+    script exists for - would be computed over an empty list. Both were complete
+    on this run's own three sheets, which are one-line throughout. That is luck.
+    `docs/research/lib/kicad_sheet.py` parses by balanced parentheses and refuses
+    when its parse does not account for every token in the source.
+    """
+    sheet = kicad_sheet.read(path)
+    t = sheet.src
     paper = re.search(r'\(paper "([^"]+)"\)', t).group(1)
     W, H = PAPER[paper]
 
-    segs = []
-    for m in re.finditer(r"\(wire \(pts \(xy ([-\d.]+) ([-\d.]+)\) \(xy ([-\d.]+) ([-\d.]+)\)\)", t):
-        x1, y1, x2, y2 = (round(float(v) * MM) for v in m.groups())
-        segs.append((x1, y1, x2, y2))
-    jn = {(round(float(a) * MM), round(float(b) * MM))
-          for a, b in re.findall(r"\(junction \(at ([-\d.]+) ([-\d.]+)\)", t)}
-    syms = [(round(float(a) * MM), round(float(b) * MM))
-            for a, b in re.findall(r'\(symbol \(lib_id "[^"]+"\) \(at ([-\d.]+) ([-\d.]+)', t)]
+    segs = [tuple(round(v * MM) for v in w.pts) for w in sheet.wires()]
+    jn = {(round(x * MM), round(y * MM)) for x, y, _ in sheet.junctions()}
+    syms = [(round(s.x * MM), round(s.y * MM)) for s in sheet.symbols()]
+    if not syms:
+        raise SystemExit(
+            f"{path}: no symbol instances found, so proximity cannot be "
+            f"measured - this is a refusal rather than a median over nothing")
 
     xs = [v for s in segs for v in (s[0], s[2])]
     ys = [v for s in segs for v in (s[1], s[3])]
