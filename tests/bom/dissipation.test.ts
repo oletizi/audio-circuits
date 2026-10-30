@@ -2,13 +2,13 @@ import { test, expect } from "bun:test"
 import { circuit, net } from "../../lib/model/index.ts"
 import { RESISTOR, transistor2N3904 } from "../../circuits/transistor-preamp/parts.ts"
 import { resistorDissipation } from "../../tools/bom/dissipation.ts"
-import type { BomConditions } from "../../tools/bom/conditions.ts"
+import type { SimulatedBomConditions } from "../../tools/bom/conditions.ts"
 
 /** A minimal, valid `BomConditions`: `source` and `load` both land on a "SRC" net that
  * carries a dummy resistor to ground and touches nothing else in the circuit under
  * test, so attaching the deck's AC source and load never perturbs the network being
  * measured. */
-function conditionsFor(supplyVolts: number): BomConditions {
+function conditionsFor(supplyVolts: number): SimulatedBomConditions {
   return {
     description: "test conditions",
     environment: {
@@ -84,7 +84,7 @@ test("resistorDissipation maps a pot's zero-ohm section (fully ccw) to 0 W, not 
     .port("load", "SRC")
     .done()
 
-  const conditions: BomConditions = {
+  const conditions: SimulatedBomConditions = {
     description: "pot1 fully ccw",
     environment: {
       source: { port: "source", amplitude: 1, seriesOhms: 0 },

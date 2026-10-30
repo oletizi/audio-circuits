@@ -112,6 +112,17 @@ test("at 24 V all three transistors are active and Q3's collector is centred", a
 
 test("resistorDissipation pins R10 and R11 against an independent operating-point run, at START", async () => {
   const conditions = await bomConditions()
+  // THIS BOARD IS SIMULATED, and that is an assertion here rather than an assumption:
+  // `BomConditions` has two arms since 2026-10-30, and a board that declared a rail
+  // bound instead (tools/bom/rail-bound.ts) has no environment to solve. This board can
+  // be simulated, so it must keep being simulated - a declared bound is the narrower
+  // claim for a board that cannot, never a cheaper route for one that can.
+  if (conditions.railBound !== undefined) {
+    throw new Error(
+      "the staged board derives every resistor's dissipation from an operating point, so its " +
+        "bomConditions() must declare environment and not railBound",
+    )
+  }
   const resolved = resolveNetwork(transistorPreampStaged(), conditions.controlState)
   const deck = toSpiceOperatingPointNetlist(resolved, conditions.environment)
   const nodes = ["Q3_COLLECTOR", "Q3_EMITTER"].map(spiceNodeName)
