@@ -687,7 +687,64 @@ process sanctions either way. **Recorded as a deviation, not as a precedent.**
 
 ---
 
-## 12. What this run does NOT establish
+## 12. AND THE SAME INSTRUMENT REFUTES A CONCLUSION RECORDED ABOUT `pultec-hi-cut`
+
+**Found while cross-checking this run's own instrument, and reported because it
+changes somebody else's answer rather than this one's.** A concurrent change on
+this branch re-papered three of the other Pultec boards to US Letter and left
+`pultec-hi-cut` on A4, recording that *"making it fit means narrowing or
+re-arranging a group on a drawing he has already approved"*.
+
+**It does not.** `scripts/extent.py` measures `pultec-hi-cut`'s content at
+**220.980 x 100.330 mm** against the **255.397 x 159.851 mm** usable rectangle -
+**34.4 mm of spare width and 59.5 mm of spare height.** The page does not fit
+because it is sitting **too far EAST**, at x 50.800..271.780, so its east edge
+lands 4.403 mm past the frame line. The whole drawing fits; it is in the wrong
+place on the paper.
+
+**Checked, not argued.** `scripts/translate.py` moved it 20.32 mm west, with no
+other change, and the result:
+
+| | A4, as committed | after a 20.32 mm westward translation |
+| --- | --- | --- |
+| content extent | x 50.800..271.780, y 31.750..132.080 | x 30.480..251.460, y 31.750..132.080 |
+| fits the Letter frame clear of the title block | **NO**, −4.403 mm east | **YES** - slack W +18.500, E +15.917, N +19.770, S +39.751 mm |
+| netlist pin sets / names / mapping | — | **IDENTICAL** all three |
+| ERC errors / warnings | — | **0 / 5**, the same five `lib_symbol_issues` |
+
+**A translation is the cheapest thing this whole procedure can do to a page**: no
+part moves relative to any other, so the arrangement the reviewer approved is
+preserved exactly, which `scripts/bandcheck.py` is built to prove. It needs his
+approval because the bytes change and a verdict is bound to a sha256 - but it is
+not the arrangement change the record says it is, and nobody has to narrow
+anything.
+
+`sh docs/research/2026-10-30-mid-letter-redraw/survey.sh` re-runs the whole
+question over every committed drafted page, so this is a tool rather than a
+figure:
+
+```
+board              paper          width     height east slack south slack  fits
+pultec-hi-boost    USLetter     227.330    121.920    +23.537    +18.161  YES
+pultec-hi-cut      A4           220.980    100.330     -4.403    +39.751  NO
+pultec-low-boost   USLetter     195.580    118.110    +20.997    +19.431  YES
+pultec-low-cut     USLetter     234.950     97.790     +1.947    +29.591  YES
+pultec-mid         A3           377.190    137.160   -132.673    -14.859  NO
+```
+
+**AND IT TURNS UP A SECOND THING NOBODY HAS SAID: `pultec-low-cut` CLEARS THE
+FRAME BY 1.947 mm.** It fits, and it is the tightest of the four re-papered
+pages by a factor of ten. Nothing is wrong with it; it is recorded because a
+page with 1.9 mm of margin is one edit away from not fitting, and the next
+person to touch it should know that before they move anything east.
+
+**This run did not act on either.** `pultec-hi-cut` and `pultec-low-cut` are
+other people's drawings in `drafted/`, which this run is forbidden to modify and
+did not. The measurement is the deliverable here, and the decision is his.
+
+---
+
+## 13. What this run does NOT establish
 
 It does not establish that the page is readable, or that a folded bank reads, or
 that a tier whose contact numbers descend eastward reads. **The page is
