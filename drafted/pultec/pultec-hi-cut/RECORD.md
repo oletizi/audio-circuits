@@ -14,6 +14,47 @@ register is right and this one is stale.
 | Approved page came from | `docs/research/2026-10-29-hi-cut-full-run/hi-cut-hybrid.kicad_sch`, copied byte-for-byte |
 | Produced by | copperhead draft `v4-blocks-mid-late`, then akcli repairs and a field-restating pass |
 | Shown | 2026-10-29, as the full page plus before/after crops of the Hi cut group and a crop of the capacitor bank |
+| Paper | `A4` - **NOT re-papered to US Letter; it does not fit. See below.** |
+
+NOT re-papered to US Letter: this page does not fit it
+------------------------------------------------------
+
+**THIS SHEET IS STILL `A4` WHILE THE OTHER THREE SECTION BOARDS ARE NOW
+`USLetter`, AND THAT IS A DELIBERATE STOP RATHER THAN AN OVERSIGHT.** The owner,
+2026-10-30, asked for all four:
+
+> *"yes, switch the other four boards to us letter"*
+
+**It was not done here because the drawing would not be inside the frame.** The
+page's **Hi cut group box** spans x 50.800 .. 271.780 mm, and US Letter
+landscape's inner frame line - as this KiCad draws it, measured off a rendered
+empty page and not read from a table - sits at **x 267.377**. The box's east
+edge therefore lands **4.530 mm outside the frame**, measured off the render:
+
+| | A4 (as it stands) | US Letter (refused) |
+| --- | --- | --- |
+| inner frame, east edge | 284.988 mm | 267.377 mm |
+| drawing's east reach, from the render | 271.907 mm | 271.907 mm |
+| clearance | **+13.060 mm** | **-4.530 mm** |
+| drawing pixels outside the inner frame | 0 | **15202** |
+
+Both figures come from differencing a render of this sheet against a render of
+an empty sheet on the same paper, in colour, with a square stamped outside the
+frame as the control that the test can report a miss at all.
+
+**WHAT WOULD SETTLE IT IS A DECISION, NOT A MEASUREMENT.** Making this page fit
+US Letter means narrowing or re-arranging the Hi cut group - at least 4.53 mm,
+and more to leave any margin - and that is an **arrangement change to a drawing
+the reviewer has already approved**, which no agent may make on its own
+initiative. The three pages that fit were re-papered because the paper change
+moves only the frame; this one cannot be done the same way. It is left on A4,
+still bound to the verdict below, pending his instruction on whether to re-draw
+it (as `pultec-mid` is being re-drawn) or to leave it on A4 and print that one
+page differently.
+
+While it stays on A4, this board's build guide keeps printing the
+*"Page 2 is not on this document's paper"* notice, which is the notice doing its
+job: the packet's own pages are US Letter and this schematic is not.
 
 Verdict, verbatim
 -----------------

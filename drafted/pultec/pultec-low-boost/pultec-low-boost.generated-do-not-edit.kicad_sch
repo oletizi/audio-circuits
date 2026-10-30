@@ -3,7 +3,7 @@
 	(generator "copperhead-draft")
 	(generator_version "8.0")
 	(uuid "4ebc2648-6372-5c34-be97-c3cb5444c8de")
-	(paper "A4")
+	(paper "USLetter")
 	(title_block
 		(title "pultec-low-boost")
 		(date "2026-10-28")
