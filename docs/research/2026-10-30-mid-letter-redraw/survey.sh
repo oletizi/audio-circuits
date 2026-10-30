@@ -5,7 +5,7 @@
 # figure comes from scripts/extent.py against the frame scripts/framegeom.py
 # measured, so a page that changes changes the answer.
 #
-# The frame is the rectangle inside the inner border AND clear of the title
+# The frame is the rectangle inside the inner border AND away from the title
 # block, which is a CORNER and not a band: 255.397 x 159.851 mm. Pass
 # --frame 11.980 11.980 267.377 203.877 instead to ignore the title block.
 #

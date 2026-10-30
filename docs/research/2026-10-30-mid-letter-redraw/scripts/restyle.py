@@ -12,7 +12,7 @@
    needs and the approved page did not.** akcli writes `justify left bottom`,
    which puts a label's text ABOVE its wire. Tier B's five selector runs each
    have a run 2.54 mm above them that extends FURTHER east, so there is no
-   anchor on a tier-B run that is clear of the run above - the approved page's
+   anchor on a tier-B run that escapes the run above - the approved page's
    own rule for these labels has no solution in a descending tier. `justify
    left top` puts the text BELOW the wire, where the run beneath ends further
    WEST and the same rule works mirrored. Six labels are rewritten for this.
@@ -73,7 +73,7 @@ def fp(v):
 # own plate and 3.452 mm to the next capacitor's.
 #
 # A capacitor's two fields sit on the rows of two neighbouring contacts' runs.
-# They are clear only because those runs end west of the capacitor, which
+# They miss those runs only because each ends west of the capacitor, which
 # `arrangement.assert_text_clear_of_runs()` checks rather than assumes.
 FIELDS = [(r, None,
            fp(A.CAP_X[r] + 6.35), fp(A.CAP_Y[r] - 1.27),
@@ -87,12 +87,12 @@ FIELDS += [(A.COIL_REF[t], None,
             fp(A.COIL_X[t] - 6.35), fp(A.COIL_Y[t] + 1.27), 0)
            for t in A.TAP_ORDER]
 FIELDS += [
-    # The eleven-throw selector: heading above the body, value below it, clear
-    # of the no-connect marker on pin 12.
+    # The eleven-throw selector: heading above the body, value below it,
+    # away from the no-connect marker on pin 12.
     ("SW1", "11-way selector", A.SW1_X, fp(A.SW1_Y - 19.05),
      A.SW1_X, fp(A.SW1_Y + 22.86), 0),
     # The level rheostat, rotation 90 - so a field needs angle 90 to render
-    # horizontally. Both fields go below the body, clear of the wiper tie above.
+    # horizontally. Both fields go below the body, away from the wiper tie above.
     ("RV1", "47K", A.RV1_X, fp(A.SW1_Y + 6.35), A.RV1_X, fp(A.SW1_Y + 8.89), 90),
     # The mode switch. ITS FIELDS ARE SHIFTED 7.62 mm EAST of the approved
     # page's offset: `boost/off/cut` is 13 characters and centred on SW2's own

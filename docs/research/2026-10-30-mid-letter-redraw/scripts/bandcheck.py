@@ -2,7 +2,7 @@
 
 `EVALUATING-DRAWINGS.md` §8: a region changed in response to a verdict is the
 least-examined part of a drawing. The inverse needs proving too - a region this
-run SAYS it did not change had better not have changed. The Junction group and
+run SAYS it did not change had must not have changed. The Junction group and
 the four stand-ins were looked at and accepted on the A3 page; the claim here is
 that the only thing that happened to them is that the page's origin moved.
 

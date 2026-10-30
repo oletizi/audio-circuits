@@ -10,7 +10,7 @@ TWO USABLE RECTANGLES, because the title block takes a CORNER and not a band:
   FULL WIDTH, above the title block   x 11.980 .. 407.966  y 11.980 .. 252.942   (395.986 x 240.961 mm)
   FULL HEIGHT, west of the title block  x 11.980 .. 299.889  y 11.980 .. 284.988   (287.909 x 273.008 mm)
 
-  the conservative rectangle - inside the frame AND clear of the
+  the conservative rectangle - inside the frame AND away from the
   title block on BOTH axes, which is what extent.py is given:
   --frame 11.980 11.980 407.966 252.942   (395.986 x 240.961 mm)
 

@@ -28,14 +28,14 @@ def main():
         ay = A.CONTACT_Y[k]
         boxes.append({"tag": f"sel{k}", "x1": round(ax + 0.3, 3),
                       "y1": round(ay - 3.0, 3), "x2": round(ax + 5.6, 3),
-                      "y2": round(ay + 3.0, 3), "expect": "clear"})
+                      "y2": round(ay + 3.0, 3), "expect": "apart"})
     boxes.append({"tag": "CONTROL empty", "x1": 20.0, "y1": 150.0,
                   "x2": 40.0, "y2": 160.0, "expect": "empty"})
     # THE OVERLAP CONTROL IS NOT A BOX. A first attempt put one over rail A
     # where `coil_return` is anchored, expecting text and wire in shared rows -
     # and the detector correctly reported them 0.212 mm apart, because a local
     # label's text is never in its own wire's rows. A box cannot manufacture an
-    # overlap on a clean page. `labelclear.py --overlap-control` perturbs the
+    # overlap on a page that has none. `labelclear.py --overlap-control` perturbs the
     # sheet instead: it flips one label's justify to `top`, which this run has
     # measured as drawing the wire through the glyphs, and asserts the detector
     # then reports the overlap. A control has to perturb the same kind of object

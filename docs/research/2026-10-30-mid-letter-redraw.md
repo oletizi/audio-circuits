@@ -27,7 +27,7 @@ an observation or a measurement another reader can check.
 
 **`run.sh` is idempotent and that was checked rather than asserted:** run a second
 time from the committed approved page it re-derives the sheet **byte-identically**
-(`cmp` clean), the PNG **pixel-identically** (`magick compare -metric AE` = 0,
+(`cmp` reports no difference), the PNG **pixel-identically** (`magick compare -metric AE` = 0,
 against a control of 3.74e6 differing pixels for the same image against its own
 inverse) and the SVG with **no differing lines**.
 
@@ -103,7 +103,7 @@ the rows and columns that are almost entirely dark:
 | inner frame | x 11.980..267.377, y 11.980..203.877 | x 11.980..407.966, y 11.980..284.988 |
 | **inside the frame** | **255.397 x 191.897 mm** | 395.986 x 273.008 mm |
 | title block | x 159.300..267.250, y 171.831..203.750 | x 299.889..407.839, y 252.942..284.861 |
-| **clear of the title block too** | **255.397 x 159.851 mm** | 395.986 x 240.961 mm |
+| **outside the title block as well** | **255.397 x 159.851 mm** | 395.986 x 240.961 mm |
 
 **The title block is a CORNER, not a band**, 107.950 x 31.919 mm in both paper
 sizes. Content that reaches east of 159.300 must stay north of 171.831; content
@@ -351,7 +351,8 @@ only one written down.
 **Inside the Mid group the chain now reads: west to east through the selector
 and tier A, east down the join, and west again along tier B's windings.** Tier
 B's own contacts read east to west. Both halves of that are stated as
-observations; neither is offered as good or bad.
+observations. Neither is offered as a judgement; this writer is not a
+qualified reviewer of either.
 
 The five stand-in groups' flow rows are **unchanged** from the approved page,
 which the rigid-translation check proves rather than claims.
@@ -371,7 +372,7 @@ by the same KiCad**, with `intersheets_ref_show` forced off on both.
 | … excluding the group rectangles, which is the figure the task quotes | 367.570 x 133.890 mm | 241.840 x 146.590 mm |
 | … including every placed symbol's library graphics and pin stubs | 377.190 x 137.160 mm | 248.920 x 153.670 mm |
 | … placed graphics, excluding the group rectangles | 368.586 x 133.890 mm | 241.840 x 146.590 mm |
-| **fits inside the Letter frame clear of the title block** | **NO** (−92.0 mm east) | **YES** - slack W +3.260, E +3.217, N +3.260, S +2.921 mm |
+| **fits inside the Letter frame and outside the title block** | **NO** (−92.0 mm east) | **YES** - slack W +3.260, E +3.217, N +3.260, S +2.921 mm |
 | netlist nets / components | 29 / 39 | 29 / 39 |
 | netlist net **pin sets** | — | **IDENTICAL**, with a positive control that the comparator fails when one pin is moved |
 | netlist **net names** | — | **IDENTICAL** - all 29, including the seven with a leading `/` |
@@ -546,7 +547,7 @@ is drawn through the glyphs: **six rows of wire ink inside the text's own rows
 for `sel7`…`sel10` and twenty-two for `sel11`**, measured by
 `scripts/labelclear.py`. Nothing on the sheet sees it and `akcli check --layout`
 does not report it. All eleven are `bottom`, and the four in tier B that cannot
-escape the run above are left **0.514 mm** clear of it. `TOOLING.md` records
+escape the run above are left **0.514 mm** from it. `TOOLING.md` records
 label SCOPE as a drawn shape (the mid run's §9.7); **`justify` is a second one
 and nothing had recorded it.**
 
@@ -566,10 +567,10 @@ TOO, AND IT GAINED A FINDING THE PAGE DOES NOT HAVE.** 3 findings before, 4
 after, 0 errors throughout. Of the four:
 
 - `LAYOUT_LABEL_OVER_SYMBOL label 'sel1' … runs over C1` - **measured on the
-  render at 600 dpi there is 0.991 mm of clear space** between the label's east
+  render at 600 dpi there is 0.991 mm of space** between the label's east
   ink and C1's pin line. A false positive, and the only NEW finding.
 - `LAYOUT_LABEL_OVER_SYMBOL label 'hi_tap' … runs over SI2` - in the band, on
-  both sides, the finding the mid run measured as 1.896 mm of clear space.
+  both sides, the finding the mid run measured as 1.896 mm of space.
 - two `LAYOUT_LABEL_OVER_WIRE … it is not attached to` notes, for `sel_common`
   and `cut_return`. **Both wires are on the label's OWN net.** The lint's net
   attribution is wrong, not its geometry - on both sides.
@@ -634,7 +635,7 @@ FIX IS TO STOP ASKING IT TO.** `labelclear.py` first classified both label text
 and wires by colour and could not be made to work: KiCad draws a capacitor's
 Reference and Value in teal `(0,100,100)` and this page draws its tap buses in
 teal `(0,130,120)`. It reported **35 rows of wire ink through `sel11`** where the
-thing in the box was C16's Reference, 2.2 mm clear. It now takes the **wires from
+thing in the box was C16's Reference, 2.2 mm away. It now takes the **wires from
 the sheet** - which knows where they are to the micron - and only the **text
 extent from the render**. Generally: use the render for what the sheet cannot
 say, and nothing more.
@@ -643,7 +644,7 @@ say, and nothing more.
 overlap control was a box over the rail that `coil_return` is anchored to,
 expecting text and wire in shared rows. The detector correctly reported them
 0.212 mm apart: **a local label's text is never in its own wire's rows**, so a
-clean page cannot be made to produce an overlap by choosing a box. The control is
+page with no overlap on it cannot be made to produce one by choosing a box. The control is
 now a **perturbation** - it flips one label's justify to `top`, the very defect
 §11.1 found, re-renders, and asserts the detector fires. This is the mid run's
 §9.5 lesson (*a control has to perturb the same kind of object the check counts*)
@@ -708,7 +709,7 @@ other change, and the result:
 | | A4, as committed | after a 20.32 mm westward translation |
 | --- | --- | --- |
 | content extent | x 50.800..271.780, y 31.750..132.080 | x 30.480..251.460, y 31.750..132.080 |
-| fits the Letter frame clear of the title block | **NO**, −4.403 mm east | **YES** - slack W +18.500, E +15.917, N +19.770, S +39.751 mm |
+| fits the Letter frame and stays outside the title block | **NO**, −4.403 mm east | **YES** - slack W +18.500, E +15.917, N +19.770, S +39.751 mm |
 | netlist pin sets / names / mapping | — | **IDENTICAL** all three |
 | ERC errors / warnings | — | **0 / 5**, the same five `lib_symbol_issues` |
 
@@ -746,7 +747,7 @@ did not. The measurement is the deliverable here, and the decision is his.
 
 ## 13. What this run does NOT establish
 
-It does not establish that the page is readable, or that a folded bank reads, or
+It does not establish how the page reads, or whether a folded bank reads, or
 that a tier whose contact numbers descend eastward reads. **The page is
 unreviewed**, and `EVALUATING-DRAWINGS.md` §5 is explicit that no check passing
 and no absence of findings advances its status. It establishes that the content

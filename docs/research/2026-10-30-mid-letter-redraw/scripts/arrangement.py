@@ -93,7 +93,7 @@ TITLE_BLOCK = (159.300, 171.831, 267.250, 203.750)
 USABLE_FULL_WIDTH = (FRAME[0], FRAME[1], FRAME[2], TITLE_BLOCK[1])
 
 # The task statement's "roughly 265 x 185 mm" is optimistic in both directions:
-# measured, it is 255.397 x 191.897 inside the frame and 255.397 x 159.851 clear
+# measured, it is 255.397 x 191.897 inside the frame and 255.397 x 159.851 apart
 # of the title block. Verified rather than trusted, as it asked.
 
 # ---------------------------------------------------------------------------
@@ -345,12 +345,12 @@ ADD_JUNCTIONS += [
 # ---------------------------------------------------------------------------
 # `justify` is the half of a local label the approved page did not have to think
 # about, and this page does. A local label is written `justify left bottom`,
-# which puts its TEXT ABOVE the wire, 0.339 mm clear of it (measured, 600 dpi).
+# which puts its TEXT ABOVE the wire, 0.339 mm away from it (measured, 600 dpi).
 # In tier A the only other thing in those rows is the run 2.54 mm above, so each
 # label is anchored east of where that run ends - the approved page's own rule.
 #
 # IN TIER B THAT RULE HAS NO SOLUTION: the run above extends FURTHER east than
-# the run the label is on, so no anchor on a tier-B run is clear of it.
+# the run the label is on, so no anchor on a tier-B run is away from it.
 #
 # **`justify left top` WAS TRIED AS THE MIRROR AND THE RENDER REFUTED IT.**
 # It does not put the text below the wire; it puts the text's top 0.46 mm ABOVE
@@ -359,7 +359,7 @@ ADD_JUNCTIONS += [
 # measured by `scripts/labelclear.py`. Nothing on the sheet sees it and
 # `akcli check --layout` does not report it. A local label's text is above its
 # wire whatever you ask for, so all eleven are `bottom` and the four in tier B
-# that cannot escape the run above are left 0.677 mm clear of it, measured and
+# that cannot escape the run above are left 0.677 mm away from it, measured and
 # reported rather than designed away.
 GLOBAL, LOCAL = "global", "local"
 # There is only one usable value, and naming it for what it DOES rather than for
@@ -395,8 +395,8 @@ for _t in TAP_ORDER:
 # Tier B cannot satisfy that rule at all, so it anchors each east of where the
 # run BELOW it ends instead: that keeps the four from piling up in one column
 # and makes the cascade mirror the tier, and it leaves the run 2.54 mm above
-# each of them, measured at 0.677 mm clear of the text. sel1 and sel11 are the
-# two ends of the ladder and have no neighbour of their own to clear.
+# each of them, measured at 0.677 mm from the text. sel1 and sel11 are the
+# two ends of the ladder and have no neighbour of their own to apart.
 SEL_LABEL = {}
 for _k in range(1, 12):
     if _k == 1:
@@ -487,7 +487,7 @@ def assert_no_crossing():
     this is a finite pairwise check over 11 runs and 17 columns and it is run
     rather than argued.
     """
-    bad = []
+    offenders = []
     for k in range(1, 12):
         ry = CONTACT_Y[k]
         for r, c, t in BANK:
@@ -498,10 +498,10 @@ def assert_no_crossing():
                 continue                      # the run ends west of the column
             lo, hi = sorted((CONTACT_Y[c], TAP_Y[t]))
             if lo < ry < hi:
-                bad.append(f"sel{k} at y={ry} crosses {r}'s column "
+                offenders.append(f"sel{k} at y={ry} crosses {r}'s column "
                            f"(x={x}, y {lo}..{hi})")
-    if bad:
-        raise SystemExit("CROSSINGS:\n  " + "\n  ".join(bad))
+    if offenders:
+        raise SystemExit("CROSSINGS:\n  " + "\n  ".join(offenders))
 
 
 def assert_runs_clear_the_buses():
@@ -518,10 +518,10 @@ def assert_runs_clear_the_buses():
 
 def assert_text_clear_of_runs():
     """A capacitor's Reference and Value sit 6.35 mm EAST of it, on the rows of
-    two neighbouring contacts' runs. They are clear only because those runs end
+    two neighbouring contacts' runs. They miss those runs only because each ends
     west of the capacitor - which is true in tier A because x ascends with
     contact and in tier B because it descends. Checked, not assumed."""
-    bad = []
+    offenders = []
     for r, c, _t in BANK:
         fx = g(CAP_X[r] + 6.35)
         for fy in (g(CAP_Y[r] - 1.27), g(CAP_Y[r] + 1.27)):
@@ -529,14 +529,14 @@ def assert_text_clear_of_runs():
                 if CONTACT_Y[k] != fy:
                     continue
                 if RUN_END[k] >= fx - 3.408:      # measured half text width
-                    bad.append(f"{r}'s field at ({fx},{fy}) is on sel{k}, "
+                    offenders.append(f"{r}'s field at ({fx},{fy}) is on sel{k}, "
                                f"which reaches x={RUN_END[k]}")
-    if bad:
-        raise SystemExit("FIELD/RUN COLLISIONS:\n  " + "\n  ".join(bad))
+    if offenders:
+        raise SystemExit("FIELD/RUN COLLISIONS:\n  " + "\n  ".join(offenders))
 
 
 def assert_inside_frame():
-    """Every coordinate this module places is inside the Letter frame and clear
+    """Every coordinate this module places is inside the Letter frame and apart
     of the title block. This is NOT the headline fit check - that is
     `extent.py` on the rendered sheet, which also sees the band and the group
     rectangles - but a wire placed outside the frame should fail here."""

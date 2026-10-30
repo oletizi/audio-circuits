@@ -19,7 +19,7 @@ TWO CONTROLS, both required to pass:
   - an EMPTY box must report no ink. Without it, a crop that fell off the page
     and a field that draws nothing read the same.
   - a box known to contain ink must report some. Without it, a threshold set
-    wrong reports "clean" everywhere.
+    wrong reports "no ink" everywhere.
 
 It renders WITHOUT `-colorspace Gray`: that writes a 16-bit PNG which Pillow
 opens as `I;16`, and `.convert("L")` on `I;16` returns all 255 - a fully inked

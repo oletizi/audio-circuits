@@ -20,7 +20,7 @@ does. The usable rectangle is then:
 POSITIVE CONTROL, and it is not optional: the same detector is run against an
 all-white image of the same size, which must find NO lines. A line-finder with
 its threshold set wrong finds lines everywhere or nowhere, and both look like a
-clean answer.
+confident answer.
 
 AND IT REFUSES ON A RENDER WITH NO INK IN IT, because of this:
 
@@ -174,7 +174,7 @@ def main():
           "   (%.3f x %.3f mm)"
           % (ix1, tb_x1, iy1, iy2, tb_x1 - ix1, iy2 - iy1))
     print()
-    print("  the conservative rectangle - inside the frame AND clear of the")
+    print("  the conservative rectangle - inside the frame AND away from the")
     print("  title block on BOTH axes, which is what extent.py is given:")
     print("  --frame %.3f %.3f %.3f %.3f   (%.3f x %.3f mm)"
           % (ix1, iy1, ix2, tb_y1, ix2 - ix1, tb_y1 - iy1))
