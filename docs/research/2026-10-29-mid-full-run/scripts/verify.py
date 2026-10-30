@@ -17,12 +17,16 @@ rank.
 usage: verify.py <sheet.kicad_sch> [<label>]
 """
 import hashlib
+import pathlib
 import re
 import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "lib"))
+import kicad_sheet  # noqa: E402
 
 KC = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 TOL = 0.001
@@ -114,58 +118,41 @@ def erc(sch):
     return errors, warnings, kinds, r.returncode, txt
 
 
-def lib_pins(src):
-    """lib_id -> [(sx, sy)] connection points in symbol space.
-
-    A SHEET HOLDS LIBRARY PINS IN TWO TEXTUAL FORMS. KiCad writes a pin from
-    the standard libraries over two lines; copperhead writes its own embedded
-    power symbols on ONE. A pattern demanding the newline resolved 0 of the 5
-    power pins here, which turned a junction at a ground symbol's pin into a
-    reported ORPHAN. Count `(pin ` tokens and refuse when they disagree.
-    """
-    out = {}
-    for m in re.finditer(r'^\t\t\(symbol "([^"]+)"\n', src, re.M):
-        lib_id = m.group(1)
-        if ":" not in lib_id:
-            continue
-        start = m.end()
-        nxt = re.search(r'^\t\t\(symbol "[^"]+"\n', src[start:], re.M)
-        end = start + (nxt.start() if nxt else len(src) - start)
-        blk = src[start:end]
-        tok = len(re.findall(r'\(pin \w+ \w+[\s(]', blk))
-        pts = [(float(a), float(b)) for a, b in re.findall(
-            r'\(pin \w+ \w+\s*\(at ([-\d.]+) ([-\d.]+) \d+\)', blk)]
-        if len(pts) != tok:
-            raise SystemExit(f"{lib_id}: parsed {len(pts)} pins but the entry "
-                             f"holds {tok} '(pin ' tokens")
-        out[lib_id] = pts
-    return out
-
-
-def rotate(dx, dy, rot):
-    return {0: (dx, dy), 90: (dy, -dx), 180: (-dx, -dy), 270: (-dy, dx)}[rot]
-
-
 def geometry(path):
-    src = Path(path).read_text()
-    wires = [tuple(round(float(g), 3) for g in m.groups()) for m in re.finditer(
-        r'\(wire\s*\(pts \(xy ([-\d.]+) ([-\d.]+)\) \(xy ([-\d.]+) ([-\d.]+)\)\)', src)]
-    juncs = [(round(float(m.group(1)), 3), round(float(m.group(2)), 3))
-             for m in re.finditer(r'\(junction \(at ([-\d.]+) ([-\d.]+)\)', src)]
-    syms = re.findall(r'\(lib_id "([^"]+)"\)\n\t\t\(at ', src)
-    pin_inst = len(re.findall(r'^\t\t\(pin "[^"]*" \(uuid', src, re.M))
-    glabels = re.findall(r'\(global_label "([^"]+)"', src)
-    llabels = re.findall(r'\n\t\(label "([^"]+)"', src)
+    """Every geometric number in the verification set.
 
-    table = lib_pins(src)
-    pins = []
-    for m in re.finditer(
-            r'^\t\(symbol\n\t\t\(lib_id "([^"]+)"\)\n\t\t\(at ([-\d.]+) ([-\d.]+) (\d+)\)',
-            src, re.M):
-        lib_id, x, y, rot = m.group(1), float(m.group(2)), float(m.group(3)), int(m.group(4))
-        for sx, sy in table.get(lib_id, []):
-            dx, dy = rotate(sx, -sy, rot)
-            pins.append((round(x + dx, 3), round(y + dy, 3)))
+    **THE PARSE IS SHARED NOW, AND IT WAS WRONG TWICE BEFORE IT WAS.**
+
+    This script's own `lib_pins` demanded a newline before a library pin's
+    `(at ...)`, so it resolved 0 of the 5 copperhead power pins on `pultec-mid`
+    and turned a legitimate tee at the shared ground symbol into a reported
+    ORPHAN. The mid run fixed that in ITS copy on 2026-10-29 and left the hi-cut
+    and hairpin-fix copies broken.
+
+    Separately, and nobody had found this one: the symbol-instance pattern
+    required a newline and two tabs between an instance's `(lib_id ...)` and its
+    `(at ...)`, so it missed any instance akcli had written on ONE line.
+    `#PWR010` on the accepted `pultec-low-boost` page is one, so that page was
+    surveyed with 24 symbols and 56 pin instances where it has 25 and 57 - and a
+    GROUND PIN was absent from the pin set the orphan test uses.
+
+    Both are gone. Every element now comes from
+    `docs/research/lib/kicad_sheet.py`, which parses by balanced parentheses and
+    refuses when its parse does not account for every token in the source. The
+    hairpin-fix run recorded the first gap as *"resolves 68 of the sheet's 73 pin
+    instances ... Not fixed, because it is the committed instrument the last
+    run's numbers were taken with"*. It is 73 of 73 now.
+    """
+    sheet = kicad_sheet.read(path)
+    src = sheet.src
+    wires = [w.pts for w in sheet.wires()]
+    juncs = [(x, y) for x, y, _ in sheet.junctions()]
+    syms = [s.lib_id for s in sheet.symbols()]
+    pin_inst = sum(len(s.node.kids("pin")) for s in sheet.symbols())
+    labels = sheet.labels()
+    glabels = [t for k, t, *_ in labels if k == "global_label"]
+    llabels = [t for k, t, *_ in labels if k == "label"]
+    pins = sorted(sheet.pin_points())
 
     horiz = [s for s in wires if abs(s[1] - s[3]) < TOL]
     vert = [s for s in wires if abs(s[0] - s[2]) < TOL]
@@ -209,15 +196,16 @@ def geometry(path):
                 pin_tees.add((px, py))
     pin_tees_nodot = sorted(t for t in pin_tees if t not in dots)
 
-    # Duplicate on-page labels per group rectangle.
-    rects = [(float(a), float(b), float(c), float(d)) for a, b, c, d in re.findall(
-        r'\(rectangle \(start ([-\d.]+) ([-\d.]+)\) \(end ([-\d.]+) ([-\d.]+)\)', src)]
-    groups = [r for r in rects if r[0] > 5 and (r[2] - r[0]) > 10]
-    anchors = []
-    for m in re.finditer(
-            r'\((global_label|label) "([^"]+)"(?: \(shape \w+\))? \(at ([-\d.]+) ([-\d.]+)',
-            src):
-        anchors.append((m.group(2), float(m.group(3)), float(m.group(4))))
+    # Duplicate on-page labels per group rectangle. The rectangles come from the
+    # reader, which excludes everything inside `lib_symbols` by extent rather
+    # than by hoping a symbol body never matches: the one-line
+    # `(rectangle (start ...) (end ...)` pattern this used to carry matched 6 of
+    # the 14 `(rectangle` tokens on `pultec-hi-cut`, and the 8 it dropped were
+    # every symbol BODY, written in block form. That mattered in `boxgeom.py`,
+    # where it silently removed every symbol body from every margin.
+    groups = [r for r in sheet.rectangles() if r[0] > 5 and (r[2] - r[0]) > 10]
+    anchors = [(t, x, y) for k, t, x, y, _a, _s, _n in labels
+               if k in ("global_label", "label")]
     per_group = {}
     for name, x, y in anchors:
         g = "-"
