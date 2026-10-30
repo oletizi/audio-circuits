@@ -328,6 +328,51 @@ only that it reports too few findings.
 
 ---
 
+## pultec-hi-cut on US Letter, centred
+
+- **Sheet** the centred Letter page, sha256
+  `e9843e6dbd3f765822e34bf51cd0d3d2659f0a6969c4c9a866e7691727bdf332`
+- **Produced by** the approved A4 page with `(paper "USLetter")` and **one rigid
+  translation of 21.59 mm west**. No part moved relative to any other; netlist
+  components, net names and net membership all identical to the A4 page, with a
+  control proving the comparator reports a difference when one pin is added.
+  Frame measured from an empty rendered Letter sheet: page 279.4 x 215.9 mm,
+  outer border 10.0, **inner border 12.0**, so content centred between x 12.0 and
+  267.4 sits 17.21 mm clear each side.
+- **Shown** 2026-10-30, as the Letter page untouched, the A4 page beside it, and
+  then the centred page
+- **Verdicts, verbatim, in the order he gave them:**
+
+  On the uncentred Letter page:
+
+  > *"It's goofy but serviceable. You need to center the content in the horizontal
+  > (long) axis."*
+
+  On the centred page:
+
+  > *"yes. approved. So are the build guides you've shown me"*
+
+**THE SECOND SENTENCE APPROVES THE BUILD GUIDE DOCUMENTS**, which is a separate
+artifact from any page: the single-document packet with the schematic merged in
+as page 2, as shown for `pultec-hi-cut`, `pultec-mid`, `pultec-hi-boost`,
+`pultec-low-boost` and `pultec-low-cut`.
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The Letter sheets for `pultec-mid`,
+`pultec-hi-boost`, `pultec-low-boost` and `pultec-low-cut` were shown to him and
+he has not separately ruled on them as pages. He approved the guides he was
+shown and the centred hi-cut page. **Those four are not recorded here as
+approved**, and the centring he directed has not been applied to them yet - so
+their bytes are about to change again in any case. §5 binds: approval is state
+the reviewer writes, never derived, and never widened by an agent reading a
+sentence generously.
+
+**The directive in the first verdict is general and is recorded as such:**
+content is centred on the horizontal axis. He gave it looking at one page and
+applied it to the rest in the same breath by answering *"yes"* to centring the
+other four.
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
