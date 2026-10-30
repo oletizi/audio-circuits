@@ -436,6 +436,60 @@ def control_margin_responds():
 # every sheet parses completely
 # --------------------------------------------------------------------------
 
+def control_extreme_item_belongs():
+    """Every item named as a rectangle's extreme must actually be in it.
+
+    This is the check that would have caught the absorption bug by itself: the
+    hi-cut run noticed `SW1` named inside three rectangles SW1 is not in, and
+    had to notice it by eye. Here it is a number.
+    """
+    name = "D4 every named extreme item is inside the rectangle it is named for"
+    strays = []
+    checked = 0
+    for p in SHEETS:
+        sheet = kicad_sheet.read(p)
+        table = sheet.lib_graphics()
+        by_ref = {s.ref: s for s in sheet.symbols()}
+        rects = [r for r in sheet.rectangles() if r[0] > 5 and (r[2] - r[0]) > 10]
+        for (x1, y1, x2, y2) in rects:
+            pts = []
+            for s in sheet.symbols():
+                for sx, sy in table.get(s.lib_id, []):
+                    dx, dy = kicad_sheet.rotate(sx, -sy, s.rot)
+                    pts.append((round(s.x + dx, 3), round(s.y + dy, 3), s.ref))
+            inside = [q for q in pts
+                      if x1 - 0.01 <= q[0] <= x2 + 0.01 and y1 - 0.01 <= q[1] <= y2 + 0.01]
+            for q in inside:
+                checked += 1
+                s = by_ref[q[2]]
+                # The instance's own anchor has to be within the symbol's own
+                # extent of the rectangle, or the point is mis-attributed.
+                reach = max(max(abs(a), abs(b)) for a, b in table[s.lib_id])
+                if not (x1 - reach - 0.01 <= s.x <= x2 + reach + 0.01
+                        and y1 - reach - 0.01 <= s.y <= y2 + reach + 0.01):
+                    strays.append(f"{p.name}: {s.ref} at ({s.x}, {s.y}) claims a "
+                                  f"point at ({q[0]}, {q[1]}) inside "
+                                  f"({x1}, {y1})-({x2}, {y2}), {reach} mm reach")
+    if strays:
+        return fail(name, f"{len(strays)} mis-attributed points:\n          "
+                          + "\n          ".join(strays[:8]))
+    # The control: reproduce the superseded span and show the number MOVES.
+    sheet = kicad_sheet.read(HICUT)
+    last = list(sheet.lib_entries())[-1]
+    s, e = old_lib_entry_span(sheet.src, last)
+    old_pts = [(float(a), float(b)) for a, b in
+               re.findall(r"\(xy ([-\d.]+) ([-\d.]+)\)", sheet.src[s:e])]
+    sw1 = [x for x in sheet.symbols() if x.ref == "SW1"][0]
+    reach_old = max(max(abs(a), abs(b)) for a, b in old_pts)
+    reach_new = max(max(abs(a), abs(b)) for a, b in sheet.lib_graphics()[last])
+    moved(name, round(reach_old, 2), round(reach_new, 2), [
+        f"{checked} attributed points across {len(SHEETS)} sheets, 0 stray",
+        f"{last}'s symbol-space reach is the first number by the superseded "
+        f"span and the second by the parse - the first is why SW1 at "
+        f"({sw1.x}, {sw1.y}) could claim a point anywhere on the page",
+    ])
+
+
 def control_all_sheets_complete():
     name = "every committed sheet parses completely"
     detail = []
@@ -471,6 +525,7 @@ CONTROLS = [
     control_interior_vs_endpoint,
     control_orphan_count,
     control_lib_entry_span,
+    control_extreme_item_belongs,
     control_margin_responds,
 ]
 

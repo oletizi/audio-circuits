@@ -355,15 +355,20 @@ reading the sheet after the ops rather than by any check.
    looked at in a rendered crop with its neighbours.**
 6. **`delete_object` orphans junction dots** - 11 across four passes on one
    board, **invisible to every check that ran.** Count them with
-   `docs/research/2026-10-29-hi-boost-full-run/scripts/junction_audit.py`.
+   `scripts/junction_audit.py` from any run directory: on 2026-10-30 every copy
+   was converged on `docs/research/lib/kicad_sheet.py`, so they no longer
+   disagree. **Until that day this entry named the hi-boost copy, which was one
+   of the two that still held the two-textual-forms bug** - see trap 11.
 
-   **DO NOT USE `scripts/orphan_junctions.py` FROM THE LOW-CUT RUN. It is
-   wrong.** It counts wire endpoints only, so it calls a rail passing through a
-   symbol pin an orphan: it reported **6 orphans on a page that has none.**
-   `junction_audit.py` resolves pin positions from the sheet's own `lib_symbols`,
-   counts pins as well as wires, **and reports the converse that no committed
-   script covered - a wire-to-wire tee carrying no dot**, which is a real
-   connectivity defect rather than a cosmetic one.
+   **`scripts/orphan_junctions.py` IS DELETED, not deprecated.** It counted wire
+   endpoints only, so it called a rail passing through a symbol pin an orphan and
+   reported **6 orphans on a page that has none**; it remained on disk in two run
+   directories for a day after `junction_audit.py` replaced it, still being copied
+   forward, and this table still named it as the tool to measure orphans with.
+   *Supersede means delete.* `junction_audit.py` resolves pin positions from the
+   sheet's own `lib_symbols`, counts pins as well as wires, **and reports the
+   converse that no committed script covered - a wire-to-wire tee carrying no
+   dot**, which is a real connectivity defect rather than a cosmetic one.
 
    **EXCEPT WHEN TWO COLLINEAR WIRES OVERLAP, and the fourth board found the
    case.** copperhead sometimes writes a short segment wholly INSIDE a longer
@@ -459,14 +464,43 @@ fail is worse than no check.** Each of these actually happened in this work:
   and refuse when the two disagree** - `scripts/dump_sheet.py` and
   `scripts/make_repairs.py` in the hi-cut run do. The inherited `verify.py` is
   safe only because its pattern stops at the `pts`.
-- **`boxgeom.py` NAMES THE WRONG REFERENCE FOR A RECTANGLE'S EXTREME POINTS.**
-  On `pultec-hi-cut` it reports `SW1` as the top-most and bottom-most item
-  inside the **Lo boost** and **Mid** rectangles, where no `SW1` exists - it is
-  50 mm away in another group - and gives Lo boost a bottom margin of **0.00 mm**
-  where the render shows 2.5 mm of space. Its margins for the group that was
-  checked by hand agree to the micrometre, so **the aggregate min/max is usable
-  and the per-point naming is not.** Do not quote a `bottom-most 'REF'` line
-  without checking that the part is in that rectangle.
+- **`boxgeom.py` WAS WRONG IN BOTH DIRECTIONS AND WAS FIXED ON 2026-10-30.** The
+  entry above described the symptom; the diagnosis turned out to be two separate
+  parse bugs, and the second one had gone unnoticed entirely.
+
+  **The absorption bug.** It found a `lib_symbols` entry's end by searching for
+  the next `^\t\t(symbol "` and ran to the END OF THE FILE when there was none.
+  The last entry on `hi-cut-hybrid.kicad_sch` is `Switch:SW_Rotary_1x6_MP`, so
+  its "library geometry" was every coordinate on the page - 45,191 characters
+  where the entry is 7,352, and 26 points wrongly attributed to `SW1` inside the
+  **Lo boost** rectangle alone. That is why it named `SW1` as the extreme item in
+  three rectangles SW1 is not in, and why Lo boost's bottom margin read
+  **0.00 mm** where the render shows 2.5 mm. Repaired, it reads **2.54 mm**.
+
+  **The rectangle-form bug, which nobody had found.** Its one-line
+  `(rectangle (start …) (end …)` pattern matched **6 of the 14 `(rectangle`
+  tokens** on `pultec-hi-cut`: the 6 it matched are the sheet-level group boxes,
+  and the 8 it dropped are every symbol BODY, written in block form inside
+  `lib_symbols`. So no symbol body ever entered a margin. **This is the
+  two-textual-forms bug for a fourth time in a fourth parser**, and it moved
+  nine of twelve margin rows on `pultec-hi-cut`, ten of twelve on `pultec-mid`
+  and eight of twelve on the hairpin page - mostly by 1.02 or 1.27 mm, in the
+  direction that made a page look LOOSER than it draws.
+
+  **`19.05 / 7.62 / 8.89 / 8.89` was published as exact and is not.** The
+  mid run's §9.9 called the Mid group's graphics margins exact; three of the four
+  change, to `19.05 / 6.60 / 7.62 / 7.62`. The hi-cut run's hand-checked Hi cut
+  margins (`6.35 / 17.78 / 7.62 / 8.89`) and the hairpin run's load-bearing
+  `5.08` and `3.43` are UNCHANGED, which is the evidence that the repair is a
+  repair.
+
+  **A TEXT MARGIN FROM A CHARACTER COUNT IS NOW OPT IN** (`--estimate-text`) and
+  every number in it prints with a leading `~`. `0.75 * size * len(text)` gives
+  5.715 mm for six characters at size 1.27 where `textwidth.py` MEASURED 6.223 to
+  6.858 mm of ink, so such a margin reads up to 0.57 mm looser than it draws. The
+  mid run's `1.90 mm` and `0.64 mm` were quoted as this page's two tightest
+  numbers and are estimates; their values do not change, their status does. **To
+  measure a text margin, render and use `scripts/textwidth.py`.**
 - **`pixeldiff.py` REPORTS ROW BANDS AND COLUMN BANDS INDEPENDENTLY**, so when
   one changed group spans the page the column band is the whole page and the
   small row bands are left unlocalised - on hi-cut, four row bands against one
@@ -522,7 +556,7 @@ Report each **before and after**, as a number that could have been different:
 | parenthesis depth | counter in the check loop; must be 0 |
 | true wire crossings | distinguish from T-meetings |
 | T-meetings, and whether each carries a junction dot | |
-| orphan junction dots, out of total | `docs/research/2026-10-29-low-cut-full-run/scripts/orphan_junctions.py` |
+| orphan junction dots, out of total | `scripts/junction_audit.py`, which counts PINS as well as wires. The `orphan_junctions.py` this row named until 2026-10-30 is deleted; it counted wire endpoints only |
 | duplicate on-page labels per group | `docs/research/2026-10-29-low-cut-full-run/scripts/label_survey.py`; **zero after the collapse pass** |
 | per-net wire stroke consistency | a net drawn in two colours reads as two nets |
 | symbol count, pin count | should be unchanged by a repair |
