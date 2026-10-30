@@ -6,30 +6,45 @@
  *   copper-side.svg         mirrored copper side: strips, cuts, bridges
  *   layout-clusters.svg     component side, each stand-in group hatched
  *                           (only on a board that declares stand-in groups)
- *   schematic.pdf           kicad-cli sch export pdf --black-and-white
  *   guide.html              the build guide, embedding the three images
- *   guide.pdf               that page printed, by a headless browser
+ *   guide.pdf               THE document: that page printed, with the
+ *                           schematic merged in as page SCHEMATIC_PAGE
+ *
+ * **`guide.pdf` IS ONE DOCUMENT AND THERE IS NO SECOND PDF.** The owner,
+ * 2026-10-30: *"merge them. I want a single printable document"*. It used to
+ * be two - an eleven-page `guide.pdf` and a one-page `schematic.pdf` beside
+ * it - and **nothing in the packet said there were two**: the guide's header
+ * row named the `.kicad_sch`, which is useless on paper, while the printable
+ * schematic page sat unnamed in the same directory. So the schematic is now a
+ * page of the same PDF (`./merge-pdf.ts`), the header row names that page, and
+ * `schematic.pdf` is an INTERMEDIATE this function removes before it publishes
+ * anything - not a packet file. `SCHEMATIC_PDF` below is that intermediate's
+ * name and nothing more.
  *
  * **`guide.pdf` IS WRITTEN BESIDE `guide.html`, NOT INSTEAD OF IT.** The HTML
- * is what the PDF is rendered from - the page's own `@page`/`@media print`
- * rules are the pagination - and `guide/` is regenerated whole and git-ignored,
- * so keeping both costs nothing and leaves the source of the printed pages
- * sitting next to them. The converter is resolved the way `kicad-cli` is and
- * REFUSES BY NAME when it is missing; see `./print-pdf.ts`.
+ * is what all but one of its pages are rendered from - the page's own
+ * `@page`/`@media print` rules are the pagination - and `guide/` is
+ * regenerated whole and git-ignored, so keeping both costs nothing. The
+ * converter and the merge tool are both resolved the way `kicad-cli` is and
+ * both REFUSE BY NAME when missing; see `./print-pdf.ts` and `./merge-pdf.ts`.
  *
- * Everything is derived from the committed `.vrt`, schematic and circuit,
- * so `guide/` is regenerated whole each run and is git-ignored. It is
- * assembled in a staging directory beside it and swapped in only once every
- * file exists, so a failed run leaves the previous packet as it was rather
- * than half replaced.
+ * **NOTHING HERE SCALES A PAGE.** The schematic page goes in at whatever size
+ * `kicad-cli` exported it, the merge step refuses a merge that resized
+ * anything, and when that size is not the paper the guide prints on the
+ * document SAYS SO on page one (`./schematic-notice.ts`'s
+ * `schematicPaperNotice`). The owner prints US Letter; a drawing silently
+ * shrunk to reach that tray is a drawing nobody approved.
  *
- * **`schematic.pdf` IS THERE IFF THE BOARD DECLARES A SCHEMATIC, AND ITS
+ * Everything is derived from the committed `.vrt`, schematic and circuit. The
+ * packet is assembled in a staging directory beside `guide/` and swapped in
+ * only once every file exists, so a failed run leaves the previous packet as
+ * it was rather than half replaced.
+ *
+ * **THE SCHEMATIC PAGE IS THERE IFF THE BOARD HAS A SCHEMATIC, AND ITS
  * ABSENCE IS PRINTED RATHER THAN SILENT.** A board whose `perfboard.json`
  * declares no `"sch"` used to be refused outright, which put the packet step
- * out of reach of the five Pultec sections: the only schematics in this
- * repository are the whole-EQ ones, and pointing a section at one would pair
- * a whole-EQ netlist against a section's board. So the packet is produced,
- * and `guide.html` carries a bordered notice on page one saying there is no
+ * out of reach of the five Pultec sections. So the packet is produced, and
+ * `guide.html` carries a bordered notice on page one saying there is no
  * schematic, which declaration declares none, what the pages WERE checked
  * against, and what would put a schematic page there (`./guide.ts`'s
  * `GuideSchematic`). The thing being prevented is not the omission - it is a
@@ -39,7 +54,6 @@
  * are injected, as they are for the other verbs, so no test needs any of
  * them.
  */
-import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { boardName, type PerfboardDeclaration } from "../perfboard/declaration.ts"
@@ -63,18 +77,40 @@ import { offBoardLabels, valueLabel } from "./off-board.ts"
 import { padLabelOf } from "./pad-label.ts"
 import { padTerminals } from "./pads.ts"
 import { buildableDump } from "./preflight.ts"
+import {
+  defaultMergeSchematicPage,
+  defaultPdfPageSizes,
+  SCHEMATIC_PAGE,
+} from "./merge-pdf.ts"
+import { describePaper, GUIDE_PAPER, samePaper, type PageSize } from "./paper.ts"
 import { defaultPrintGuidePdf } from "./print-pdf.ts"
 import { renderLayout } from "./render.ts"
-import { resolveSchematic, SCHEMATIC_PDF } from "./schematic-source.ts"
+import { defaultExportSchematicPdf, onePage } from "./schematic-export.ts"
+import { resolveSchematic } from "./schematic-source.ts"
 import { wireLinkRefs } from "./wire-links.ts"
 
-export { SCHEMATIC_PDF } from "./schematic-source.ts"
+export { SCHEMATIC_PAGE } from "./merge-pdf.ts"
+// RE-EXPORTED, not moved back: `defaultExportSchematicPdf` is the default
+// behind `GuideDeps.exportSchematicPdf`, and every caller that overrides it
+// imports the interface from here. It lives in `./schematic-export.ts` because
+// the one-document change pushed this file past the 500-line ceiling.
+export { defaultExportSchematicPdf } from "./schematic-export.ts"
 
 /** The few filesystem operations the packet writer needs. */
 export interface GuideFs {
   readonly makeDir: (dir: string) => void
   /** Removes a directory and everything in it; a missing one is not an error. */
   readonly removeDir: (dir: string) => void
+  /**
+   * Removes ONE file; a missing one is not an error.
+   *
+   * It exists for the two staging INTERMEDIATES - the printed-but-unmerged
+   * guide and the exported schematic page - which are written inside the
+   * staging directory, consumed by the merge, and must not reach the published
+   * packet. Removing the whole directory is not an option: the rest of it is
+   * the packet.
+   */
+  readonly removeFile: (file: string) => void
   readonly writeText: (file: string, text: string) => void
   readonly rename: (from: string, to: string) => void
 }
@@ -88,9 +124,34 @@ export interface GuideDeps {
    * HTML_TO_PDF with its own default and passes it down.
    */
   readonly htmlToPdf: string
+  /**
+   * The tool that merges the schematic page into the printed guide so the
+   * packet is one document; required, never defaulted here, exactly as
+   * `kicadCli` and `htmlToPdf` are - make/board.mk resolves PDF_MERGE with its
+   * own contingent default and passes it down. See `./merge-pdf.ts`.
+   */
+  readonly pdfMerge: string
   readonly runVeroroute?: (args: readonly string[]) => VerbRun
   readonly exportSchematicPdf?: (kicadCli: string, schPath: string, pdfPath: string) => void
   readonly printGuidePdf?: (htmlToPdf: string, htmlPath: string, pdfPath: string) => void
+  /**
+   * Joins the exported schematic page into the printed guide. Optional,
+   * defaulting to the real one, and overridden for the reason
+   * `printGuidePdf` is: a test driving an in-memory `GuideFs` has no real PDF
+   * on disk for a real merge tool to read.
+   */
+  readonly mergeSchematicPage?: (
+    pdfMerge: string,
+    guidePdf: string,
+    schematicPdf: string,
+    outPath: string,
+  ) => void
+  /**
+   * Reads the page sizes of the exported schematic, which is how the printed
+   * page comes to know whether this document can be printed on one paper.
+   * Optional and overridden for the same reason as `mergeSchematicPage`.
+   */
+  readonly pdfPageSizes?: (pdfMerge: string, pdf: string) => readonly PageSize[]
   readonly loadCircuit?: (declaration: PerfboardDeclaration) => Promise<BoardCircuit>
   /**
    * The board census a declaration with no `"sch"` is checked against -
@@ -117,26 +178,41 @@ export const GUIDE_HTML = "guide.html"
 export const GUIDE_PDF = "guide.pdf"
 
 /**
+ * The printed guide before the schematic page is merged into it, and the
+ * exported schematic page itself. **BOTH ARE STAGING INTERMEDIATES, NEITHER
+ * IS A PACKET FILE**: they are written inside the staging directory, consumed
+ * by `./merge-pdf.ts`, and removed before anything is published.
+ *
+ * `SCHEMATIC_PDF` kept its name because that is what the packet's second
+ * document was called until 2026-10-30, and a reader of a `make guide` log or
+ * an older report will look for it. What changed is that it no longer survives
+ * the run: see this module's comment.
+ */
+export const GUIDE_PAGES_PDF = "guide-pages.pdf"
+export const SCHEMATIC_PDF = "schematic.pdf"
+
+/**
  * The files one packet holds, in the order they are written.
  *
- * It takes `hasSchematic` rather than being a constant because the packet has
- * two shapes and a caller must say which one it is checking: a list that
- * always named `schematic.pdf` would make a board with no schematic look like
- * a packet missing a file, which is the confusion this whole path exists to
- * avoid.
+ * **IT NO LONGER TAKES `hasSchematic`.** It did, because the packet had two
+ * shapes - with and without a second `schematic.pdf` - and a caller had to say
+ * which it was checking. The schematic is a PAGE of `guide.pdf` now, so the
+ * file list is the same either way and a parameter distinguishing them would
+ * be a distinction with nothing behind it. What tells a reader whether this
+ * packet carries a schematic is the document itself: the header's `Schematic`
+ * row, and the notice on page one when there is none.
  *
- * `hasClusters` is the same argument for the stand-in-groups image: a board
- * that is not one section of a shared ladder has no groups to hatch
- * (`./clusters.ts`), and naming `layout-clusters.svg` unconditionally would
- * make such a board's packet read as one with an image missing.
+ * `hasClusters` remains, and for the reason it always had: a board that is not
+ * one section of a shared ladder has no groups to hatch (`./clusters.ts`), and
+ * naming `layout-clusters.svg` unconditionally would make such a board's
+ * packet read as one with an image missing.
  */
-export function packetFiles(hasSchematic: boolean, hasClusters: boolean): readonly string[] {
+export function packetFiles(hasClusters: boolean): readonly string[] {
   return [
     "layout-designators.svg",
     "layout-values.svg",
     "copper-side.svg",
     ...(hasClusters ? [CLUSTERS_SVG] : []),
-    ...(hasSchematic ? [SCHEMATIC_PDF] : []),
     GUIDE_HTML,
     GUIDE_PDF,
   ]
@@ -145,31 +221,9 @@ export function packetFiles(hasSchematic: boolean, hasClusters: boolean): readon
 const REAL_FS: GuideFs = {
   makeDir: (dir) => fs.mkdirSync(dir, { recursive: true }),
   removeDir: (dir) => fs.rmSync(dir, { recursive: true, force: true }),
+  removeFile: (file) => fs.rmSync(file, { force: true }),
   writeText: (file, text) => fs.writeFileSync(file, text),
   rename: (from, to) => fs.renameSync(from, to),
-}
-
-export function defaultExportSchematicPdf(kicadCli: string, schPath: string, pdfPath: string): void {
-  const result = spawnSync(
-    kicadCli,
-    ["sch", "export", "pdf", "--black-and-white", "--output", pdfPath, schPath],
-    { encoding: "utf8" },
-  )
-  if (result.error) {
-    throw new Error(
-      `could not run kicad-cli at ${kicadCli}: ${result.error.message}. Install KiCad, or set ` +
-        "KICAD_CLI to your kicad-cli.",
-    )
-  }
-  if (result.status !== 0) {
-    const detail = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim()
-    throw new Error(
-      `kicad-cli exited ${String(result.status)} exporting ${schPath} to PDF` +
-        `${detail === "" ? "" : `: ${detail}`}\n` +
-        `Check that ${schPath} opens in KiCad's schematic editor, and that KICAD_CLI (${kicadCli}) ` +
-        "points at a working kicad-cli; no packet was written.",
-    )
-  }
 }
 
 function dumpBoard(declaration: PerfboardDeclaration, deps: GuideDeps): string {
@@ -306,28 +360,15 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
     // row rather than a dangling name.
     const wiringFile = boardWiringPath(declaration)
     const wiringPath = fs.existsSync(wiringFile) ? path.relative(repoRoot, wiringFile) : undefined
-    const html = buildGuideHtml({
-      boardName: name,
-      generated: isoDate((deps.now ?? (() => new Date()))()),
-      layoutPath: path.relative(repoRoot, declaration.vrtPath),
-      schematic,
-      images,
-      checklist,
-      powerUpChecks: circuit.powerUpChecks,
-      wiringPath,
-      // STRAIGHT OFF THE CIRCUIT, undefined and all: a board that declares no
-      // SCAFFOLD prints the sentence `tools/guide/stand-in-section.ts` holds
-      // for that case, and collapsing undefined into an empty doc here would
-      // make "this board is not a Pultec section" print as "this section has
-      // no groups" - two different claims (`./circuit.ts`'s field comment).
-      scaffold: circuit.scaffold,
-    })
 
     const files = deps.fs ?? REAL_FS
     const guideDir = path.join(declaration.dir, "guide")
     const staging = path.join(declaration.dir, `.guide-staging-${process.pid}`)
+    const schematicPdf = path.join(staging, SCHEMATIC_PDF)
+    const carriesSchematic = schematic.kind === "printed" || schematic.kind === "generated"
     files.removeDir(staging)
     files.makeDir(staging)
+    let schematicPaper: PageSize | undefined
     try {
       files.writeText(path.join(staging, "layout-designators.svg"), images.designators)
       files.writeText(path.join(staging, "layout-values.svg"), images.values)
@@ -335,12 +376,14 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       if (images.clusters !== undefined) {
         files.writeText(path.join(staging, CLUSTERS_SVG), images.clusters)
       }
+      // THE SCHEMATIC IS EXPORTED AND MEASURED BEFORE THE GUIDE IS BUILT, which
+      // reverses the order this function used until 2026-10-30. The page that
+      // announces the schematic now has to say WHERE it is and, when it is not
+      // on this document's paper, what paper it needs - and that size is a
+      // measurement of the exported PDF, not a declaration anybody wrote down.
+      // So the export comes first and `buildGuideHtml` is handed the result.
       if (schPath !== undefined) {
-        ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(
-          deps.kicadCli,
-          schPath,
-          path.join(staging, SCHEMATIC_PDF),
-        )
+        ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(deps.kicadCli, schPath, schematicPdf)
       } else if (schematic.kind === "generated") {
         if (schematicRoot === undefined) {
           throw new Error(
@@ -352,31 +395,83 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
         // directly: both export a `.kicad_sch` to a PDF with the same `kicadCli`, and a caller that
         // replaces one export path to keep a test (or a future caller) off the real binary expects
         // to have replaced both. Calling the default unconditionally here defeated exactly that -
-        // `tests/guide/clusters-packet.test.ts` injects a THROWING `exportSchematicPdf` so a stray
+        // `tests/guide/clusters-packet.test.ts` injects a RECORDING `exportSchematicPdf` so a stray
         // export is loud, and it runs the real `pultec-low-boost` through the real `repoRoot`; the
         // day that board's fallbacks reach zero it resolves `"generated"`, and this line would have
         // spawned the real `kicad-cli` at that test's fake `/fake/kicad-cli` path instead of tripping
         // the guard - a trap that arms itself exactly when the project succeeds.
-        ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(deps.kicadCli, schematicRoot, path.join(staging, SCHEMATIC_PDF))
+        ;(deps.exportSchematicPdf ?? defaultExportSchematicPdf)(deps.kicadCli, schematicRoot, schematicPdf)
       }
-      // THE PRINT IS INSIDE THE STAGING GUARANTEE, not after the swap: a
-      // converter that is missing or prints nothing must leave the previous
-      // packet exactly as it was, the same as a failed kicad-cli does. Printing
-      // after the rename would instead publish a packet whose PDF is absent or,
-      // worse, left over from the last run.
+      if (carriesSchematic) {
+        schematicPaper = onePage(name, (deps.pdfPageSizes ?? defaultPdfPageSizes)(deps.pdfMerge, schematicPdf))
+      }
+      const html = buildGuideHtml({
+        boardName: name,
+        generated: isoDate((deps.now ?? (() => new Date()))()),
+        layoutPath: path.relative(repoRoot, declaration.vrtPath),
+        schematic,
+        images,
+        checklist,
+        powerUpChecks: circuit.powerUpChecks,
+        wiringPath,
+        // STRAIGHT OFF THE CIRCUIT, undefined and all: a board that declares no
+        // SCAFFOLD prints the sentence `tools/guide/stand-in-section.ts` holds
+        // for that case, and collapsing undefined into an empty doc here would
+        // make "this board is not a Pultec section" print as "this section has
+        // no groups" - two different claims (`./circuit.ts`'s field comment).
+        scaffold: circuit.scaffold,
+        schematicPaper,
+      })
+      // THE PRINT AND THE MERGE ARE BOTH INSIDE THE STAGING GUARANTEE, not
+      // after the swap: a converter or a merge tool that is missing, or that
+      // succeeds while producing nothing usable, must leave the previous packet
+      // exactly as it was, the same as a failed kicad-cli does. Printing or
+      // merging after the rename would instead publish a packet whose document
+      // is absent or, worse, left over from the last run.
       const htmlPath = path.join(staging, GUIDE_HTML)
       files.writeText(htmlPath, html)
-      ;(deps.printGuidePdf ?? defaultPrintGuidePdf)(deps.htmlToPdf, htmlPath, path.join(staging, GUIDE_PDF))
+      const guidePdf = path.join(staging, GUIDE_PDF)
+      // PRINTED STRAIGHT TO `guide.pdf` WHEN THERE IS NOTHING TO MERGE, and to
+      // an intermediate when there is. A board with no schematic page needs no
+      // merge tool to produce its one document, and requiring one would refuse
+      // a packet that was already complete.
+      const printed = carriesSchematic ? path.join(staging, GUIDE_PAGES_PDF) : guidePdf
+      ;(deps.printGuidePdf ?? defaultPrintGuidePdf)(deps.htmlToPdf, htmlPath, printed)
+      if (carriesSchematic) {
+        ;(deps.mergeSchematicPage ?? defaultMergeSchematicPage)(deps.pdfMerge, printed, schematicPdf, guidePdf)
+        // THE TWO INTERMEDIATES GO, so the published packet is the file list
+        // `packetFiles` names and nothing else. A `schematic.pdf` left beside
+        // the merged document would be the same printable page twice with
+        // nothing saying which to print - the state the owner asked to end.
+        files.removeFile(printed)
+        files.removeFile(schematicPdf)
+      }
       files.removeDir(guideDir)
       files.rename(staging, guideDir)
     } catch (caught) {
       files.removeDir(staging)
       throw caught
     }
-    const hasSchematic = schematic.kind === "printed" || schematic.kind === "generated"
     return [
       `Wrote the build packet for ${name} to ${guideDir}:`,
-      ...packetFiles(hasSchematic, images.clusters !== undefined).map((file) => `  ${file}`),
+      ...packetFiles(images.clusters !== undefined).map((file) => `  ${file}`),
+      // ONE DOCUMENT, SAID IN THE CONSOLE AS WELL AS ON THE PAGE: the packet
+      // was two PDFs until 2026-10-30 and an operator who remembers that will
+      // look for the second one.
+      ...(carriesSchematic
+        ? [
+            `${GUIDE_PDF} is ONE document: page ${String(SCHEMATIC_PAGE)} is the schematic. There is ` +
+              `no separate ${SCHEMATIC_PDF} any more.`,
+            ...(schematicPaper === undefined || samePaper(schematicPaper, GUIDE_PAPER)
+              ? []
+              : [
+                  `BUT page ${String(SCHEMATIC_PAGE)} is ${describePaper(schematicPaper)}, not ` +
+                    `${describePaper(GUIDE_PAPER)} like the rest of it. Nothing was scaled; ` +
+                    `${GUIDE_HTML} says so on page one. The size comes from the sheet's own ` +
+                    '"(paper ...)" setting, and changing that is a change its reviewer has to approve.',
+                ]),
+          ]
+        : []),
       // SAID IN THE CONSOLE AS WELL AS ON THE PAGE, and the page is the one that
       // matters: someone builds from paper, and a console line scrolls away.
       ...(schematic.kind === "none"

@@ -18,8 +18,6 @@ import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import type { BoardRef, BoardSheets, BoardSheetsOptions } from "../schgen/board-sheets.ts"
 import type { GuideSchematic } from "./guide.ts"
 
-export const SCHEMATIC_PDF = "schematic.pdf"
-
 /**
  * What `resolveSchematic` found: the `GuideSchematic` the page prints, the
  * absolute path to a clean generated sheet's `.kicad_sch` root (so the caller
@@ -212,7 +210,7 @@ export async function resolveSchematic(
     // `schematicRoot` is withheld before any of this runs, so the guard could not fire and a guard
     // that cannot fire is a check somebody would later trust. `CLAUDE.md`: supersede means delete.
     return {
-      schematic: { kind: "generated", path: SCHEMATIC_PDF },
+      schematic: { kind: "generated" },
       schematicRoot: result.schematicRoot,
       tempDir,
     }

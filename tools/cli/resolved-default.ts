@@ -17,15 +17,17 @@
  *
  *   bun tools/cli/resolved-default.ts kicad-cli
  *   bun tools/cli/resolved-default.ts html-to-pdf
+ *   bun tools/cli/resolved-default.ts pdf-merge
  *
  * Only called when the Makefile variable is UNSET (`$(origin)` is
- * `undefined`) - an explicitly set `KICAD_CLI`/`HTML_TO_PDF`, from the
+ * `undefined`) - an explicitly set `KICAD_CLI`/`HTML_TO_PDF`/`PDF_MERGE`, from the
  * environment or a command line `make KICAD_CLI=...`, never reaches this
  * script at all, which is what keeps "an explicit override always wins"
  * true.
  */
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
 import { defaultHtmlToPdf } from "../guide/browser-install.ts"
+import { defaultPdfMerge } from "../guide/pdf-merge-install.ts"
 
 const [name] = process.argv.slice(2)
 
@@ -33,10 +35,12 @@ if (name === "kicad-cli") {
   console.log(defaultKicadCli())
 } else if (name === "html-to-pdf") {
   console.log(defaultHtmlToPdf())
+} else if (name === "pdf-merge") {
+  console.log(defaultPdfMerge())
 } else {
   throw new Error(
-    `resolved-default.ts takes exactly one argument, "kicad-cli" or "html-to-pdf", not ` +
-      `${JSON.stringify(name)}. make/board.mk is this script's only caller; a third name means ` +
-      "a third resolver has shown up and this script needs a third branch.",
+    `resolved-default.ts takes exactly one argument, "kicad-cli", "html-to-pdf" or "pdf-merge", ` +
+      `not ${JSON.stringify(name)}. make/board.mk is this script's only caller; a fourth name ` +
+      "means a fourth resolver has shown up and this script needs a fourth branch.",
   )
 }

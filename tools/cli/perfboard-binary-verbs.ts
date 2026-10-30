@@ -154,12 +154,13 @@ export async function dispatchStripboard(
   }
 }
 
-const GUIDE_TOOL_FLAGS = ["--kicad-cli", "--html-to-pdf"] as const
+const GUIDE_TOOL_FLAGS = ["--kicad-cli", "--html-to-pdf", "--pdf-merge"] as const
 
 const GUIDE_USAGE =
-  "guide takes exactly --kicad-cli <path> --html-to-pdf <path>, in either order: the kicad-cli " +
-  "that exports the schematic PDF, and the headless browser that prints guide.html to guide.pdf " +
-  "(`make guide` passes its KICAD_CLI and HTML_TO_PDF). Neither is defaulted here, so that a " +
+  "guide takes exactly --kicad-cli <path> --html-to-pdf <path> --pdf-merge <path>, in any order: " +
+  "the kicad-cli that exports the schematic page, the headless browser that prints the guide's " +
+  "own pages, and the qpdf-compatible tool that merges the two into the one guide.pdf (`make " +
+  "guide` passes its KICAD_CLI, HTML_TO_PDF and PDF_MERGE). None is defaulted here, so that a " +
   "path lives in one place."
 
 /**
@@ -173,7 +174,7 @@ const GUIDE_USAGE =
 function guideToolPaths(
   args: readonly string[],
   error: (line: string) => void,
-): { kicadCli: string; htmlToPdf: string } | null {
+): { kicadCli: string; htmlToPdf: string; pdfMerge: string } | null {
   const seen = new Map<string, string>()
   for (let i = 0; i < args.length; i += 2) {
     const flag = args[i]
@@ -197,26 +198,27 @@ function guideToolPaths(
   }
   const kicadCli = seen.get("--kicad-cli")
   const htmlToPdf = seen.get("--html-to-pdf")
-  if (kicadCli === undefined || htmlToPdf === undefined) {
+  const pdfMerge = seen.get("--pdf-merge")
+  if (kicadCli === undefined || htmlToPdf === undefined || pdfMerge === undefined) {
     const missing = GUIDE_TOOL_FLAGS.filter((flag) => !seen.has(flag))
     error(`guide is missing ${missing.join(" and ")}. ${GUIDE_USAGE}`)
     return null
   }
-  return { kicadCli, htmlToPdf }
+  return { kicadCli, htmlToPdf, pdfMerge }
 }
 
 /**
  * `guide`: write this board's printable build packet into its `guide/`.
  *
- * Takes `--kicad-cli <path>` and `--html-to-pdf <path>`, as `netlist-sync`
- * takes `--kicad-cli`: make/board.mk resolves KICAD_CLI and HTML_TO_PDF with
- * its own defaults and passes them, so this verb never holds a second default
- * of its own.
+ * Takes `--kicad-cli <path>`, `--html-to-pdf <path>` and `--pdf-merge <path>`,
+ * as `netlist-sync` takes `--kicad-cli`: make/board.mk resolves KICAD_CLI,
+ * HTML_TO_PDF and PDF_MERGE with its own defaults and passes them, so this
+ * verb never holds a second default of its own.
  */
 export async function dispatchGuide(
   cwd: string,
   args: readonly string[],
-  guideDeps: Omit<GuideDeps, "kicadCli" | "htmlToPdf"> | undefined,
+  guideDeps: Omit<GuideDeps, "kicadCli" | "htmlToPdf" | "pdfMerge"> | undefined,
   repoRoot: string | undefined,
   log: (line: string) => void,
   error: (line: string) => void,
@@ -232,6 +234,7 @@ export async function dispatchGuide(
         repoRoot: guideDeps?.repoRoot ?? repoRoot,
         kicadCli: tools.kicadCli,
         htmlToPdf: tools.htmlToPdf,
+        pdfMerge: tools.pdfMerge,
       }),
     )
     return 0

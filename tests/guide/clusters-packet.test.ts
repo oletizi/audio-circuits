@@ -51,6 +51,7 @@ import { loadBoardCircuit } from "../../tools/guide/circuit.ts"
 import {
   writeGuidePacket, packetFiles, CLUSTERS_SVG, GUIDE_HTML, SCHEMATIC_PDF, type GuideDeps,
 } from "../../tools/guide/packet.ts"
+import { fakePdfTools } from "./fake-pdf-tools.ts"
 import { memoryFs } from "./memory-fs.ts"
 
 const REPO_ROOT = moduleRepoRoot()
@@ -79,9 +80,16 @@ interface Packet {
 async function writePacket(): Promise<Packet> {
   const { fs, files } = memoryFs()
   const exports: (readonly [string, string])[] = []
+  // THE MERGE AND THE PAGE-SIZE READ ARE FAKED for the reason the export and
+  // the print are: there is no file on disk here for the real qpdf to read.
+  // What the real merge guarantees is tests/guide/merge-pdf.test.ts's subject.
+  const pdfTools = fakePdfTools((file, text) => fs.writeText(file, text))
   const deps: GuideDeps = {
     kicadCli: "/fake/kicad-cli",
     htmlToPdf: "/fake/html-to-pdf",
+    pdfMerge: "/fake/pdf-merge",
+    mergeSchematicPage: pdfTools.mergeSchematicPage,
+    pdfPageSizes: pdfTools.pdfPageSizes,
     exportSchematicPdf: (_kicadCli, schPath, pdfPath) => {
       exports.push([schPath, pdfPath])
       fs.writeText(pdfPath, "%PDF-fake-schematic")
@@ -102,21 +110,22 @@ test("the premise: pultec-low-boost declares stand-in groups, so its packet has 
   const scaffold = circuit.scaffold
   if (scaffold === undefined) throw new Error(`test: ${BOARD} declares SCAFFOLD; the guide did not load it`)
   expect(scaffold.groups.length, "a group for each of the other four sections").toBe(4)
-  // THE FILE LIST ITSELF, asserted directly: `packetFiles(_, true)` naming the
+  // THE FILE LIST ITSELF, asserted directly: `packetFiles(true)` naming the
   // image is one of the three delivery lines, and a packet whose written set
   // and whose declared set both lost it would otherwise agree with itself.
-  expect(packetFiles(false, true), "the clusters image is one of the packet's files").toContain(CLUSTERS_SVG)
-  expect(packetFiles(false, false), "and only on a board that has groups").not.toContain(CLUSTERS_SVG)
+  expect(packetFiles(true), "the clusters image is one of the packet's files").toContain(CLUSTERS_SVG)
+  expect(packetFiles(false), "and only on a board that has groups").not.toContain(CLUSTERS_SVG)
 })
 
 test("the packet for a board with stand-in groups holds layout-clusters.svg, hatched", async () => {
   const { files, report, exports } = await writePacket()
-  expect([...files.keys()].sort(), "the five-file packet plus the clusters image").toEqual(
-    packetFiles(true, true).map((file) => path.join(GUIDE_DIR, file)).sort(),
+  expect([...files.keys()].sort(), "the packet's files plus the clusters image").toEqual(
+    packetFiles(true).map((file) => path.join(GUIDE_DIR, file)).sort(),
   )
-  // THE EXPORT HAPPENED, ONCE, AND FROM THE DECLARED SHEET. `hasSchematic: true`
-  // above says the packet claims a schematic page; this says the page came from
-  // the file `perfboard.json` names and from nothing else, which is the claim the
+  // THE EXPORT HAPPENED, ONCE, AND FROM THE DECLARED SHEET - and the exported
+  // page is now merged into guide.pdf rather than published beside it, so the
+  // file list above does NOT name it. This says the page came from the file
+  // `perfboard.json` names and from nothing else, which is the claim the
   // throwing override used to make in the negative.
   expect(exports.map(([sch]) => sch), "exactly one export, from the declared sheet").toEqual([
     DECLARATION.schPath ?? "test: the declaration names no sch",

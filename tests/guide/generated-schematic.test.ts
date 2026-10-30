@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test"
 import { buildGuideHtml, type GuideInput, type GuideSchematic } from "../../tools/guide/guide.ts"
+import { SCHEMATIC_PAGE } from "../../tools/guide/merge-pdf.ts"
+import { GUIDE_PAPER } from "../../tools/guide/paper.ts"
 
 const input = (schematic: GuideSchematic): GuideInput => ({
   boardName: "pultec-low-boost",
@@ -11,6 +13,11 @@ const input = (schematic: GuideSchematic): GuideInput => ({
   powerUpChecks: undefined,
   wiringPath: undefined,
   scaffold: undefined,
+  // Tracks `schematic`, because `buildGuideHtml` refuses a packet that claims
+  // a schematic page without knowing its size, and one that knows a size for
+  // a page it does not carry.
+  schematicPaper:
+    schematic.kind === "printed" || schematic.kind === "generated" ? GUIDE_PAPER : undefined,
 })
 
 describe("a withheld schematic is a different claim from an absent one", () => {
@@ -30,8 +37,14 @@ describe("a withheld schematic is a different claim from an absent one", () => {
   })
 
   it("a generated-and-clean schematic prints as a page, like a hand-authored one, and says so", () => {
-    const html = buildGuideHtml(input({ kind: "generated", path: "schematic.pdf" }))
-    expect(html).toContain("schematic.pdf")
+    const html = buildGuideHtml(input({ kind: "generated" }))
+    // THE PAGE IN THIS DOCUMENT, not a second file's name. This assertion read
+    // `toContain("schematic.pdf")` until 2026-10-30, when the schematic became
+    // a page of the one document and that second file stopped existing - so
+    // the string it checked for would have passed on a packet naming a file
+    // that is not there.
+    expect(html).toContain(`page ${String(SCHEMATIC_PAGE)} of this document`)
+    expect(html).not.toContain("schematic.pdf")
     expect(html).not.toContain("withheld")
     // THE LINE THAT DISTINGUISHES A schgen-DRAWN SHEET FROM A HAND-AUTHORED ONE - the only thing on
     // this page that says the schematic is generated rather than hand-drawn, so a test that never

@@ -32,8 +32,14 @@ import os from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
-/** The first bytes of every PDF; what distinguishes a print from a no-op. */
-const PDF_MAGIC = "%PDF"
+/**
+ * The first bytes of every PDF; what distinguishes a print from a no-op.
+ *
+ * EXPORTED, because `./merge-pdf.ts` checks the same four bytes on the file
+ * this step produced, one step later: two copies of this constant would be
+ * two things that could come to mean something else.
+ */
+export const PDF_MAGIC = "%PDF"
 
 /**
  * The flags the converter is invoked with. Named here, and quoted in the

@@ -1,7 +1,8 @@
 /**
- * Checks for `lib/kicad/install.ts` and `tools/guide/browser-install.ts`
- * (`docs/known-gaps.md` **G169**): the resolver is one place that owns the
- * KiCad install root and every default is a per-platform candidate list.
+ * Checks for `lib/kicad/install.ts`, `tools/guide/browser-install.ts` and
+ * `tools/guide/pdf-merge-install.ts` (`docs/known-gaps.md` **G169**): the
+ * resolver is one place that owns the KiCad install root and every default is
+ * a per-platform candidate list.
  *
  * **`docs/known-gaps.md` G170, and why the Makefile checks below run `make`
  * for real rather than pattern-matching this file's text.** `make/board.mk`
@@ -12,7 +13,7 @@
  * It did not: Make exported the literal regardless of platform, which
  * defeated the resolver underneath it on every non-macOS `make check`. The
  * checks below run the real `make print-%` debug target (see
- * `make/board.mk`) with `KICAD_CLI`/`HTML_TO_PDF` genuinely unset, and assert
+ * `make/board.mk`) with `KICAD_CLI`/`HTML_TO_PDF`/`PDF_MERGE` genuinely unset, and assert
  * the OUTPUT against the resolver - a check that would have failed against
  * the Makefile this replaces, and a check an explicit override still passes
  * untouched.
@@ -33,6 +34,7 @@ import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
 import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
 import { defaultHtmlToPdf } from "../../tools/guide/browser-install.ts"
+import { defaultPdfMerge } from "../../tools/guide/pdf-merge-install.ts"
 import { FOOTPRINT_LIBRARY_ROOT } from "./footprint-library.ts"
 
 const REPO_ROOT = path.join(import.meta.dir, "..", "..")
@@ -79,6 +81,15 @@ test("make print-HTML_TO_PDF, with HTML_TO_PDF unset, reaches tools/guide/browse
 test("make print-HTML_TO_PDF honours an explicit override, untouched by the resolver", () => {
   const sentinel = "/tmp/task-10b-round2-html-to-pdf-sentinel"
   expect(makePrint("HTML_TO_PDF", { HTML_TO_PDF: sentinel })).toBe(sentinel)
+})
+
+test("make print-PDF_MERGE, with PDF_MERGE unset, reaches tools/guide/pdf-merge-install.ts's resolver", () => {
+  expect(makePrint("PDF_MERGE", { PDF_MERGE: undefined })).toBe(defaultPdfMerge())
+})
+
+test("make print-PDF_MERGE honours an explicit override, untouched by the resolver", () => {
+  const sentinel = "/tmp/single-document-packet-pdf-merge-sentinel"
+  expect(makePrint("PDF_MERGE", { PDF_MERGE: sentinel })).toBe(sentinel)
 })
 
 test("defaultKicadCli covers darwin, linux and win32 as distinct, justified candidates", () => {

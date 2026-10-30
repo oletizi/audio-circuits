@@ -24,16 +24,19 @@ Designs: `docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md`,
 
 Every board here with a declared layout whose cuts resolve (feedback,
 buffered, loop, staged) has a printable build packet:
-`make -C boards/<board> guide` writes the three layout SVGs, the schematic PDF
-and the guide itself - as `guide.html` and as `guide.pdf` printed from it, with
-a power-up table of expected DC voltages for the staged board - into that
-board's git-ignored `guide/` directory. **`guide.pdf` is the thing you take to
-the bench**, and `guide.html` sits beside it as what the PDF was rendered from;
-printing is part of the build system rather than something done by hand in a
-browser afterwards, so `make guide` resolves a converter through `HTML_TO_PDF`
-(a Chromium-family browser, defaulted the way `KICAD_CLI` is) and refuses by
-name when it is missing rather than writing a packet whose PDF is quietly
-absent. The lab board also declares a layout, but its cuts are unresolved, so
+`make -C boards/<board> guide` writes the three layout SVGs and the guide
+itself - as `guide.html` and as `guide.pdf`, with a power-up table of expected
+DC voltages for the staged board - into that board's git-ignored `guide/`
+directory. **`guide.pdf` is ONE printable document and the thing you take to
+the bench**: the guide's own pages with the board's schematic merged in as
+page 2 where the board has one, so there is no second PDF to print and carry.
+`guide.html` sits beside it as what all but that one page were rendered from.
+Printing and merging are both part of the build system rather than things done
+by hand afterwards, so `make guide` resolves a converter through `HTML_TO_PDF`
+(a Chromium-family browser) and a merge tool through `PDF_MERGE` (a
+qpdf-compatible binary), each defaulted the way `KICAD_CLI` is, and refuses by
+name when either is missing rather than writing a packet whose document is
+quietly absent or left as two files. The lab board also declares a layout, but its cuts are unresolved, so
 `make guide` refuses it with the same explanation `make cuts` gives. See the
 design: `docs/superpowers/specs/2026-09-29-build-guide-design.md`.
 

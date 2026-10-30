@@ -146,9 +146,10 @@ audio-circuits/
   `KICAD_CLI` if yours lives elsewhere.
 - **[Google Chrome](https://www.google.com/chrome/)** (or another
   Chromium-family browser), for printing a build guide. Required by `make
-  guide`, which renders `guide.html` to `guide.pdf` with it - printing is part
-  of this build system rather than a manual step afterwards, so a missing
-  converter **refuses by name** instead of writing a packet with no PDF. It is
+  guide`, which renders `guide.html` to the guide's own pages with it -
+  printing is part of this build system rather than a manual step afterwards,
+  so a missing converter **refuses by name** instead of writing a packet with
+  no PDF. It is
   also required for `bun test`: exactly one test, "the real converter prints a
   multi-page PDF from a page with the guide's print CSS" in
   `tests/guide/print-pdf.test.ts`, invokes it and **fails** (never skips) when
@@ -159,6 +160,18 @@ audio-circuits/
   unregistered (**G250**'s `nochrome` arm). The default assumes a standard macOS install
   (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); override
   `HTML_TO_PDF` if yours lives elsewhere.
+- **[qpdf](https://qpdf.sourceforge.io/)** (`brew install qpdf`), for merging
+  the schematic page into a build guide so a board's packet is one printable
+  document. Required by `make guide`, and by `bun test`:
+  `tests/guide/merge-pdf.test.ts` and `tests/guide/single-document.test.ts`
+  invoke it and **fail rather than skip**, because they are the only proof that
+  the arguments this repository passes still merge, and that the inserted page
+  is neither dropped nor resized. qpdf rather than `pdfunite` or `gs` for two
+  stated reasons: `gs` re-distills the content streams, which is a re-render of
+  an approved drawing, and qpdf is the one that will also report the page count
+  and every page's size, which is what the merge is verified with. The default
+  assumes Homebrew (`/opt/homebrew/bin/qpdf`, then `/usr/local/bin/qpdf`);
+  override `PDF_MERGE` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
   fork the perfboard tooling drives. It is keg-only, which is why the tooling
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
@@ -254,19 +267,32 @@ board, is that workflow's front door - see `make help` for the rest of it.
 `make guide`, run from a declared board's directory (e.g.
 `boards/transistor-preamp-staged`), writes that board's printable build
 packet into `<board>/guide/`: two component-side layout SVGs (by designator
-and by value), a mirrored copper-side SVG of cuts and solder bridges, the
-schematic as a black-and-white PDF (when the board declares one), and a
+and by value), a mirrored copper-side SVG of cuts and solder bridges, and a
 `guide.html` that embeds all three images with a build checklist (in build
 order: ICs and transistors, resistors and trim-pots, capacitors, wire links,
 wire-to-board junctions, solder bridges, cuts) and, where the circuit module
-declares them, a power-up table of expected DC voltages - **plus that page
-printed as `guide.pdf`, which is the file you take to the bench.** Printing
-is part of this build system, not a step done by hand in a browser
-afterwards: the converter is a Chromium-family browser resolved through the
-`HTML_TO_PDF` make variable exactly as `kicad-cli` is through `KICAD_CLI`
-(see `make help`), and a converter that is missing, that fails, or that exits
-0 having printed nothing refuses by name rather than leaving a packet whose
-PDF is quietly absent. `guide/` is regenerated whole on every run, is
+declares them, a power-up table of expected DC voltages - **plus `guide.pdf`,
+which is ONE printable document and the only file you take to the bench.** It
+is that page printed, with the board's black-and-white schematic merged in as
+its **page 2** on every board that has a schematic; the header's `Schematic`
+row names that page. There is no second PDF: the packet used to be an
+eleven-page `guide.pdf` and a one-page `schematic.pdf` beside it with nothing
+saying the stack was two documents, and the owner asked for one
+(2026-10-30: *"merge them. I want a single printable document"*).
+
+Printing and merging are both part of this build system, not steps done by
+hand afterwards: the converter is a Chromium-family browser resolved through
+the `HTML_TO_PDF` make variable and the merge tool is a qpdf-compatible binary
+resolved through `PDF_MERGE`, each exactly as `kicad-cli` is through
+`KICAD_CLI` (see `make help`). A converter or merge tool that is missing, that
+fails, or that exits 0 having produced nothing usable refuses by name rather
+than leaving a packet whose document is quietly absent - and the merge is
+checked against the artifact rather than the exit status, because a merge that
+**drops** the schematic page still writes a valid PDF and still exits 0. The
+page count and every page's size are read back from the merged file, so a
+dropped page or a page the tool **resized** is a refusal. **Nothing is ever
+scaled to fit**: a schematic page on paper other than US Letter goes in at its
+own size and the document says so on page one. `guide/` is regenerated whole on every run, is
 git-ignored, and is never hand-edited; the command refuses to write a packet
 when the layout has unresolved cuts, an unplaced part, or disagrees with the
 circuit it claims to be.
