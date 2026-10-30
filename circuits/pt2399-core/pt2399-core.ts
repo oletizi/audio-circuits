@@ -212,64 +212,88 @@ export function pt2399Core(): Network {
 }
 
 /**
- * **THIS BOARD'S PARTS-LIST CONDITIONS CANNOT BE DECLARED, AND THIS EXPORT SAYS SO
- * RATHER THAN DECLARING ONES NOBODY CAN STAND BEHIND. IT IS A REFUSAL AND NOT A
- * STUB**: there is no partial answer here waiting to be filled in, and the thing
- * that is missing is not in this file.
+ * **THE RAIL VOLTAGE THIS BOARD RUNS AT, declared once and read by both the conditions
+ * below and the test that holds them to the model.** 5 V: the `+5V` net this
+ * transcription carries on J1 pin 1, and the figure the owner's judgement below is a
+ * statement about. `tests/circuits/pt2399-core.test.ts` asserts that the port the
+ * conditions put this rail on is still the port whose net is named `+5V`, so the
+ * declaration cannot drift from the circuit it describes.
+ */
+const RAIL_VOLTS = 5
+
+/** The port the rail sits on. `railBoundResistorWatts` refuses a port this circuit does
+ * not declare, which is what attaches the voltage above to the model rather than
+ * leaving it floating beside it. */
+const RAIL_PORT = "vcc"
+
+/**
+ * **THIS BOARD'S RESISTOR POWER RATING COMES FROM A RAIL BOUND, NOT FROM A SIMULATED
+ * OPERATING POINT, and that is a narrower claim rather than an escape from one.** On a
+ * single 5 V rail the worst case for any resistor is the whole rail across it, so
+ * `P <= V^2 / R` is arithmetic - no source, no load and no SPICE model needed. The
+ * owner, 2026-10-30, supplying the engineering judgement:
  *
- * `make check` refused this board at `declaredBomConditions` with *"no
- * "bomConditions" export. Export `bomConditions(): BomConditions`"*, and the
- * remedy that message names does not work, which is why this exists. Exporting
- * well-formed conditions moves the refusal exactly one step, to
- * `resistorDissipation` - **and `deriveNeeds` requires a dissipation figure for
- * every resistor**, this board has eight, and no operating point can be computed
- * for it. `[RAN 2026-10-30]`, each failure read from the run rather than inferred:
+ * > *"pt2399 is a 5 volt dsp chip. It doesn't need to be above 1/4 watt"*
+ *
+ * `tools/bom/rail-bound.ts` turns that claim into a check that can fail: it computes
+ * the smallest resistance a 1/4 W part covers at the declared rail (200 ohms, which is
+ * `requiredResistorWatts` read backwards rather than a number written down here) and
+ * refuses by name any resistor below it. This board's smallest is `output_mix_resistor`
+ * at 2.7K, 13.5 times the threshold, dissipating at most 9.3 mW. Raise the declared
+ * rail far enough, or add a small resistor, and the declaration stops being true and
+ * starts failing. `docs/research/2026-10-30-rail-bound-power.md` records the reasoning,
+ * the margin, and both refusal arms firing.
+ *
+ * **WHY THE BOUND IS THE ROUTE: the simulation path is genuinely unavailable, not
+ * merely unattempted.** This export REFUSED until 2026-10-30, and the measured
+ * diagnosis behind that refusal is kept here because it is the evidence for the
+ * sentence above. `deriveNeeds` requires a dissipation figure for every resistor - this
+ * board has eight - and `resistorDissipation` supplies it by solving a DC operating
+ * point. `[RAN 2026-10-30]`, each failure read from the run rather than inferred:
  *
  * 1. `resolveNetwork` refuses `Missing ground port: ground`. `GROUND_PORT_KEY` in
- *    `lib/model/net-preference.ts` is the literal `"ground"` and this circuit keys
- *    its reference port `"gnd"` - every other circuit here uses `ground`. That one
- *    IS one word, and it is left alone deliberately: changing it moves the refusal
- *    to (2) without closing anything, and this module's ports are transcription.
+ *    `lib/model/net-preference.ts` is the literal `"ground"` and this circuit keys its
+ *    reference port `"gnd"`. Still left alone, and now it costs nothing: the rail-bound
+ *    path resolves no control state and runs no simulation, so it never asks.
  * 2. With the port renamed, `toSpiceOperatingPointNetlist` refuses
- *    `component "delay_ic" unit "MAIN": kind "ic" has no SPICE emission rule in
- *    this emitter`. **That is the real blocker**: the PT2399 is the only active
- *    device on the board, nothing in `lib/sim/models/` is a PT2399, and the DC
- *    solution every resistor's wattage comes from is a statement about its two
- *    internal op-amps. `docs/schematic/generation-prior-art-circuit-families.md`
- *    found both of these independently, before this.
- * 3. Separately, `environment.source` and `environment.load` have no basis here.
- *    Nothing in this repository records what drives `INPUT` or loads `OUTPUT` on
- *    this board - there is no bench environment for it as there is for the staged
- *    preamp (`circuits/transistor-preamp/staged-environment.ts`) - and both the
- *    series and load resistances land in the deck and move the operating point.
- *    A plausible pair here would be invented data with arithmetic on top.
+ *    `component "delay_ic" unit "MAIN": kind "ic" has no SPICE emission rule in this
+ *    emitter`. **That was and is the real blocker**: the PT2399 is the only active
+ *    device on the board, nothing in `lib/sim/models/` is a PT2399, and the DC solution
+ *    every resistor's wattage would come from is a statement about its two internal
+ *    op-amps. `docs/schematic/generation-prior-art-circuit-families.md` found both of
+ *    these independently, before this.
+ * 3. `environment.source` and `environment.load` have no basis here. Nothing in this
+ *    repository records what drives `INPUT` or loads `OUTPUT` - there is no bench
+ *    environment for it as there is for the staged preamp
+ *    (`circuits/transistor-preamp/staged-environment.ts`) - and both the series and
+ *    load resistances land in the deck and move the operating point. **The rail-bound
+ *    arm carries neither, which is why it is a separate arm and not a flag**: a board
+ *    taking it is never in a position to invent them.
  *
- * The rail is NOT what is missing: it is 5 V, the `+5V` net this transcription
- * carries on J1 pin 1, and `highestRailVolts` is the one consumer that would have
- * been satisfied.
- *
- * **WHAT WOULD SETTLE IT - one of two, and the second is not an agent's to take.**
- * Either a DC model for the PT2399 with the provenance `lib/sim/models/` requires
- * of every model in it, after which (1) and (3) are small; or the owner's decision
- * that this board has no parts list, in which case the thing to delete is
- * `boards/pt2399-core/bom.json` - `checkBoardBom` does not apply to a board without
- * one, and that file is what turned this gate on for a board that cannot satisfy
- * it. Deleting it to make the gate quiet is NOT a call to make from here.
+ * `tests/circuits/pt2399-core.test.ts` re-measures (1) and (2) against the live code,
+ * so the day a PT2399 DC model lands this reasoning fails rather than going stale. At
+ * that point the stronger claim is available and this board should take it: an
+ * operating point is tighter than a rail bound everywhere.
  */
 export const bomConditions: BomConditionsExport = (): BomConditions => {
-  throw new Error(
-    "circuits/pt2399-core/pt2399-core.ts: this board's bomConditions CANNOT be declared " +
-      "truthfully, and this refusal is deliberate - see the comment above this export.\n" +
-      "  The rail is known: 5 V, the \"+5V\" net on J1 pin 1.\n" +
-      "  What is NOT known: (a) the PT2399 has no SPICE emission rule (kind \"ic\", " +
-      "lib/sim/device-lines.ts) and no model in lib/sim/models/, so there is no operating " +
-      "point, so deriveNeeds cannot get the per-resistor dissipation it requires for all " +
-      "eight of this board's resistors; (b) nothing here records what drives INPUT or loads " +
-      "OUTPUT, so environment.source and environment.load would be invented numbers that " +
-      "move the operating point they feed. (A third, smaller one: resolveNetwork wants a " +
-      "port keyed \"ground\" and this circuit keys it \"gnd\".)\n" +
-      "  WHAT WOULD SETTLE IT: a PT2399 DC model with the provenance lib/sim/models/ " +
-      "requires - or the owner's decision that this board has no parts list, which is a " +
-      "decision about boards/pt2399-core/bom.json and not one to take from here.",
-  )
+  return {
+    description:
+      `Supply ${RAIL_VOLTS} V on "+5V" (J1 pin 1); no controls. Resistor power ratings are bounded ` +
+      "by the rail, not simulated.",
+    railBound: {
+      supplies: [{ port: RAIL_PORT, volts: RAIL_VOLTS }],
+      ratedWatts: 0.25,
+      basis:
+        'the owner, 2026-10-30: "pt2399 is a 5 volt dsp chip. It doesn\'t need to be above 1/4 watt"',
+    },
+    controlState: { potPositions: {}, switchPositions: {} },
+  }
+}
+
+/** The rail the parts-list conditions bound this board's resistors by, exported so the
+ * test that checks the declaration against the model reads the same two values the
+ * declaration does rather than retyping them. */
+export const BOM_RAIL: Readonly<{ port: string; volts: number }> = {
+  port: RAIL_PORT,
+  volts: RAIL_VOLTS,
 }

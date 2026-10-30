@@ -2,9 +2,13 @@ import { test, expect } from "bun:test"
 import {
   bomConditions,
   pt2399Core,
+  BOM_RAIL,
   DESIGNATORS,
   PIN_NUMBERS,
 } from "../../circuits/pt2399-core/pt2399-core.ts"
+import { highestRailVolts } from "../../tools/bom/conditions.ts"
+import { railBoundResistorWatts } from "../../tools/bom/rail-bound.ts"
+import { railBoundMinimumOhms, requiredResistorWatts } from "../../tools/bom/ratings.ts"
 import { resolveNetwork } from "../../lib/model/control-state.ts"
 import type { ControlState } from "../../lib/model/control-state.ts"
 import { toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
@@ -342,22 +346,67 @@ test("every component's footprint matches the netlist of the built unit", async 
   }
 })
 
-test("the parts-list conditions REFUSE, and each thing the refusal names is still missing", async () => {
-  // THE REFUSAL IS THE DELIVERABLE HERE, so this test holds it to naming what is
-  // missing - and then CHECKS each of those things, because a refusal nobody
-  // re-measures is the "stale cause" CLAUDE.md warns about: the day a PT2399 model
-  // lands, this test fails and the refusal above it is the thing to delete.
-  expect(bomConditions).toThrow(/CANNOT be declared/)
-  expect(bomConditions).toThrow(/no SPICE emission rule/)
-  expect(bomConditions).toThrow(/invented numbers/)
-  expect(bomConditions).toThrow(/WHAT WOULD SETTLE IT/)
+test("the parts-list conditions declare a RAIL BOUND, on a port this circuit actually has", async () => {
+  const conditions = await bomConditions()
+  // The arm, asserted rather than assumed: this board is NOT simulated, and the two
+  // arms of BomConditions are not interchangeable.
+  if (conditions.railBound === undefined) {
+    throw new Error("pt2399-core bounds its resistor rating by the rail; it declares no environment")
+  }
+  expect(conditions.railBound.ratedWatts).toBe(0.25)
+  // The owner's words are the basis, carried in the declaration and quoted in every
+  // refusal it produces - not paraphrased into a bare number.
+  expect(conditions.railBound.basis).toContain("5 volt dsp chip")
+  expect(conditions.railBound.basis).toContain("1/4 watt")
 
+  // THE DECLARATION IS TIED TO THE MODEL, which is the only sense in which the 5 V is
+  // "read from" it: nothing in the model carries a voltage, but the PORT the rail sits
+  // on is the model's, and the net that port names says what rail it is. Change either
+  // and this fails.
+  expect(conditions.railBound.supplies).toEqual([{ port: BOM_RAIL.port, volts: BOM_RAIL.volts }])
+  expect(pt2399Core().ports[BOM_RAIL.port]).toBe("+5V")
+  expect(BOM_RAIL.volts).toBe(5)
+  expect(highestRailVolts(conditions)).toBe(5)
+})
+
+test("the rail bound covers every resistor on this board, with the margin computed not asserted", async () => {
+  const conditions = await bomConditions()
+  if (conditions.railBound === undefined) throw new Error("pt2399-core declares no railBound")
+  const watts = railBoundResistorWatts(pt2399Core(), conditions.railBound, "pt2399-core")
+
+  // All eight resistors, which is the count deriveNeeds requires a figure for.
+  expect(watts.size).toBe(8)
+
+  const threshold = railBoundMinimumOhms(BOM_RAIL.volts, conditions.railBound.ratedWatts)
+  const resistors = pt2399Core().components.filter((c) => c.kind === "resistor")
+  expect(resistors).toHaveLength(8)
+  for (const resistor of resistors) {
+    const ohms = "ohms" in resistor.parameters ? resistor.parameters.ohms : undefined
+    if (ohms === undefined) throw new Error(`resistor "${resistor.id}" carries no ohms`)
+    expect(ohms).toBeGreaterThan(threshold)
+  }
+
+  // The worst case on the board, and the rating it derives to: 2.7K is the smallest
+  // resistor, 25/2700 = 9.26 mW, and requiredResistorWatts lands on the 1/4 W floor.
+  const worst = Math.max(...watts.values())
+  expect(worst).toBeCloseTo(25 / 2700, 9)
+  expect(worst).toBeLessThan(0.01)
+  expect(requiredResistorWatts(worst)).toBe(0.25)
+})
+
+test("the SIMULATION path is still unavailable for this board, which is why the bound is the route", async () => {
+  // The two blockers the refusing export measured on 2026-10-30, re-measured against
+  // the live code. They are the evidence that the rail bound is a narrower claim taken
+  // because the stronger one cannot be made - not a cheaper route taken because it was
+  // easier. THE DAY A PT2399 MODEL LANDS, (2) FAILS HERE: that is the signal to move
+  // this board onto an operating point, which is tighter than a bound everywhere.
   const state: ControlState = { potPositions: {}, switchPositions: {} }
-  // (1) The resolver wants a port keyed `ground` and this circuit keys it `gnd`.
+
+  // (1) The resolver wants a port keyed `ground` and this circuit keys it `gnd`. The
+  // rail-bound path resolves nothing, so this now costs this board nothing at all.
   expect(() => resolveNetwork(pt2399Core(), state)).toThrow(/Missing ground port: ground/)
 
-  // (2) With that renamed, the emitter refuses the PT2399 itself - the blocker a
-  // declared set of conditions would have run into one step later.
+  // (2) With that renamed, the emitter refuses the PT2399 itself - the real blocker.
   const network = pt2399Core()
   const renamed: Network = { ...network, ports: { ...network.ports, ground: "GND" } }
   const resolved = resolveNetwork(renamed, state)
@@ -370,7 +419,47 @@ test("the parts-list conditions REFUSE, and each thing the refusal names is stil
   expect(() => toSpiceOperatingPointNetlist(resolved, probeEnvironment)).toThrow(
     /kind "ic" has no SPICE emission rule/,
   )
-  // The probe environment above is a STAND-IN living in this test and nowhere else:
-  // the circuit declares no source or load because this repository records none for
-  // it, which is the refusal's clause (b).
+  // (3) The probe environment above is a STAND-IN living in this test and nowhere else:
+  // this repository records nothing that drives INPUT or loads OUTPUT, and the rail-
+  // bound arm the circuit declares carries no source and no load for that reason.
+})
+
+/**
+ * **THE DECLARATION CAN FAIL, AND THIS IS THE ARM THAT PROVES IT ON THIS BOARD'S OWN
+ * CIRCUIT RATHER THAN ON A FIXTURE.** A claimed rating nothing can contradict is a
+ * sentence, not a check. `tests/bom/rail-bound.test.ts` holds the general refusals;
+ * these two put the real pt2399-core network under them.
+ */
+test("a 47 ohm resistor added to THIS circuit is refused by name against the declared bound", async () => {
+  const conditions = await bomConditions()
+  if (conditions.railBound === undefined) throw new Error("pt2399-core declares no railBound")
+  const network = pt2399Core()
+  const withSmallResistor: Network = {
+    ...network,
+    components: [
+      ...network.components,
+      {
+        id: "vco_trim_resistor", kind: "resistor", parameters: { ohms: 47 },
+        pins: {}, units: [{ name: "MAIN", pins: { a: net("VCO"), b: net("GND") } }],
+      },
+    ],
+  }
+  expect(() => railBoundResistorWatts(withSmallResistor, conditions.railBound, "pt2399-core")).toThrow(
+    /resistor "vco_trim_resistor" is 47 ohms, below the 200 ohms a 0\.25 W part covers/,
+  )
+})
+
+test("raising the declared rail moves the threshold past this board's smallest resistor", async () => {
+  const conditions = await bomConditions()
+  if (conditions.railBound === undefined) throw new Error("pt2399-core declares no railBound")
+  // Not a rail this board has - the point is that the bound TRACKS the rail. At 5 V the
+  // threshold is 200 ohms and every resistor clears it; at 20 V it is 3200 ohms, which
+  // is between this board's smallest resistor (2.7K) and its next smallest (10K), so
+  // the refusal names exactly the one part the moved threshold caught.
+  expect(railBoundMinimumOhms(BOM_RAIL.volts, 0.25)).toBeCloseTo(200, 9)
+  const raised = { ...conditions.railBound, supplies: [{ port: BOM_RAIL.port, volts: 20 }] }
+  expect(railBoundMinimumOhms(20, 0.25)).toBeCloseTo(3200, 9)
+  expect(() => railBoundResistorWatts(pt2399Core(), raised, "pt2399-core")).toThrow(
+    /resistor "output_mix_resistor" is 2700 ohms, below the 3200 ohms a 0\.25 W part covers/,
+  )
 })
