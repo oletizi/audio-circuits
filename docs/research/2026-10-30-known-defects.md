@@ -11,6 +11,23 @@ to say what was seen on 2026-10-30 and the re-run is the authority.
 
 ## 1. `pt2399-core` has no `bomConditions` export - REFUSED, and the refusal is the deliverable
 
+> **SUPERSEDED THE SAME DAY, and the refusal this section delivered is GONE from the
+> code - read `docs/research/2026-10-30-rail-bound-power.md` instead.** The owner
+> supplied the engineering judgement this section's "WHAT WOULD SETTLE IT" was waiting
+> on (*"pt2399 is a 5 volt dsp chip. It doesn't need to be above 1/4 watt"*), and the
+> board now declares a RAIL BOUND: on a single rail the worst case is the whole rail
+> across a resistor, so `P <= V^2/R` needs no operating point, no source and no load.
+>
+> **The three blockers measured below are all still true and all still measured** - the
+> rail-bound path simply does not need any of them, and `tests/circuits/pt2399-core.test.ts`
+> re-measures two of them against the live code so the reasoning fails rather than goes
+> stale the day a PT2399 model lands. What this section got WRONG was narrower than its
+> measurements: it treated "a dissipation figure" as the only thing the gate could be
+> satisfied with, when what the gate is FOR is a wattage to order.
+>
+> It is left standing rather than edited away because its measurements are the evidence
+> that the simulation path is genuinely unavailable rather than merely unattempted.
+
 **What the gate asked for:** *"circuits/pt2399-core/pt2399-core.ts: no
 "bomConditions" export. Export `bomConditions(): BomConditions`
 (tools/bom/conditions.ts)."*
