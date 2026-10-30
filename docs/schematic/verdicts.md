@@ -268,6 +268,66 @@ collapse moved a resistor, a ground symbol, a `GND` text and a rectangle.
 
 ---
 
+## pultec-mid, hybrid full run
+
+- **Sheet** `docs/research/2026-10-29-mid-full-run/mid-hybrid.kicad_sch`
+- **sha256** `1f8de32150f322f8f040b2cef1d857df7b16e884bff409a0debd5ec3a7344ff8`
+- **Produced by** copperhead draft `v1-blocks-own-last`, then akcli repairs and a
+  restyle pass. **The Mid group is agent-authored** - 28 of the board's 39 parts:
+  seventeen capacitors in contact order at 15.24 mm staircased to their own
+  contacts, five tap buses at one y, five winding sections above them, one
+  200.66 mm `coil_return` rail, eleven selector runs each a single straight
+  horizontal with no corner.
+- **Shown** 2026-10-29, as the page plus the Mid group before and after, the
+  capacitor bank, the coil row, and the `no_connect` marker
+- **Verdict, verbatim:**
+
+  > *"looks good. approved"*
+
+**THIS IS THE FIFTH AND LAST PULTEC SECTION BOARD**, and the one that produced no
+drawing at all until the same day it was approved. Two fixes stood between those
+states: `SW_MID` pin 12 declared not-connected through `ComponentOverride.ncPins`,
+and the `missing-junction` defect in `splitAtBranches` where R33's split handled
+a T and not an X.
+
+**The no-connect marker measures the same on two tool paths**, which is what
+makes it a property of the symbol rather than of either drawer: 1.355 mm of ink
+and a 0.21 mm closest approach to the `12` glyph on both the `lib/schgen/` page
+and this one, with no row where the two colours share a pixel column. The only
+red it touches is pin 12's own pin line, where KiCad draws the marker by design.
+
+**A new repair class appeared, the ninth overall and the fifth on akcli's side**:
+a global label's tag is a shape KiCad draws the wire *through*, so three of them
+sat over a pin number, a pin stub and their own wire. **Only the render found
+it** - no count on the page saw anything.
+
+**AND FOUR COMMITTED CHECKS WERE WRONG, which is the finding worth carrying past
+this board.** A sheet holds library pins in two textual forms - copperhead writes
+power-symbol pins on one line - and `junction_audit.py` and `verify.py` dropped
+one of the forms, resolving **0 of 5 power pins** and reporting a **false orphan
+junction** at the shared ground symbol. Both are fixed with a token-count
+refusal, **and the earlier runs' orphan figures carried the same blind spot.**
+`akcli check --layout` was wrong here in **both** directions - claiming an
+overlap where the render measures 1.896 mm of clear space, and twice calling a
+label-over-wire collision on the label's own net - where the written process knew
+only that it reports too few findings.
+
+**Stated to him as not done, and not objected to:**
+
+- the 90.5 x 28.5 mm unoccupied region in the Mid box's upper-left is not closed;
+  closing it means moving the return block west or re-laying the group
+- `#PWR01` unchanged - **the symbol all five accepted pages have now put up for
+  overruling, still unruled**
+- `#FLG01` moved rather than deleted; it earns nothing
+- the `out` label still against J1's pin-4 number
+- the Lo cut stand-in's output sits below its input; `S1` is followed, never
+  enforced
+- contacts named `sel1`..`sel11` rather than by frequency; `3300pF` left 0.900 mm
+  from its own plate; values centred rather than left-justified; seven nets gained
+  a leading `/` from label scope; the five pre-existing ERC warnings not suppressed
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
