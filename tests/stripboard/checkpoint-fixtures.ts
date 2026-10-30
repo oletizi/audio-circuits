@@ -13,13 +13,21 @@
  * BOARD FAILED. The plan's table names `pultec-low-boost`,
  * `transistor-preamp-feedback`, `transistor-preamp-staged` and `pt2399-core`.
  *
- *   - `transistor-preamp-staged` is OUT. Its footprint data is being authored
+ *   - `transistor-preamp-staged` is OUT, **and the reason below was overtaken on
+ *     2026-10-30: both footprints are recorded now** (`CP_Radial_D10.0mm_P5.00mm`
+ *     from Panasonic M-A ECA-1VM471's datasheet, and the 1x03 header as a moulded
+ *     pin field), so `PAR2` no longer refuses the board and it is in the
+ *     `./model/cuts-agree.test.ts` and `./model/invariants-agree.test.ts`
+ *     comparisons, which demanded it the moment it started importing. Whether it
+ *     joins THIS fixture set is a separate call nobody has made. What follows is
+ *     the reason it was out, kept because it is why the data was missing:
+ *     its footprint data was being authored
  *     **on another branch**, where the board is active work - it is not retired
  *     and nothing about it is superseded. Two of the footprints it places,
  *     `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` and
- *     `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical`, are in
- *     neither `LEAD_SPANS`, `UNSOURCED` nor `PIN_PATTERNS`, so `PAR2` refuses
- *     the board by name. **This branch neither supplies that data nor guesses
+ *     `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical`, were in
+ *     neither `LEAD_SPANS`, `UNSOURCED` nor `PIN_PATTERNS`, so `PAR2` refused
+ *     the board by name. **That branch neither supplied that data nor guessed
  *     it**: guessing would invent a datasheet value, and supplying it would
  *     collide with the other branch's work on the same tables. Its dump stays a
  *     geometry fixture for `HC8` (`tests/fixtures/stripboard/

@@ -12,10 +12,12 @@
  * refuse, each for a reason that is a finding rather than a defect in this
  * adapter:
  *
- *   - `pt2399-core` and `transistor-preamp-staged` fit parts whose footprints
- *     have no recorded pin pattern at all (`C_Disc_D5.0mm`,
- *     `CP_Radial_D5.0mm_P2.50mm`, `CP_Radial_D10.0mm_P5.00mm`,
- *     `PinHeader_1x03`), so there are no pads to put on holes.
+ *   - `pt2399-core` fits parts whose footprints have no recorded pin pattern at
+ *     all (`C_Disc_D5.0mm`, `CP_Radial_D5.0mm_P2.50mm` - both in `UNSOURCED`, for
+ *     want of a lead length nobody has sourced), so there are no pads to put on
+ *     holes. **`transistor-preamp-staged` was in this bullet until 2026-10-30**
+ *     for `CP_Radial_D10.0mm_P5.00mm` and `PinHeader_1x03`; both are recorded now
+ *     and it imports, which is why the table below says so.
  *   - `pultec-low-boost-frozen` imports its seven parts and all ten of its
  *     `PAD` lines and refuses on `board_terminals`, a Phoenix terminal block
  *     with no recorded pin pattern and no recorded lead span - a part nobody has
@@ -79,7 +81,10 @@ const OUTCOMES: Readonly<Record<string, { readonly key: string; readonly names: 
   "transistor-preamp-buffered": { key: "vero-import-bridge-net-unknown", names: "SOLDER 13,21 14,21" },
   "transistor-preamp-feedback": "imports",
   "transistor-preamp-loop": "imports",
-  "transistor-preamp-staged": { key: "vero-import-no-geometry", names: '"C7"' },
+  // IT REFUSED ON `"C7"` UNTIL 2026-10-30, for want of a lead span and a pin pattern
+  // for `CP_Radial_D10.0mm_P5.00mm`. Both tables record it now (Panasonic M-A
+  // ECA-1VM471), and `PinHeader_1x03_P2.54mm_Vertical` with it, so the board imports.
+  "transistor-preamp-staged": "imports",
 }
 
 function importOf(board: CommittedBoard, dumpText: string = dumpTextOf(board)): Candidate {
