@@ -21,6 +21,11 @@ function physicalText(physical: Physical): string {
       return `${physical.body} axial, ${physical.leadSpacingMm} mm leads`
     case "radial-electrolytic":
       return `radial, <= ${physical.maxDiameterMm} mm dia, ${physical.leadSpacingMm} mm leads`
+    // "non-polarised" rather than "disc": the footprint family is C_Disc, but the part
+    // fitted need not be a literal disc (see tools/bom/types.ts), and what a buyer has
+    // to get right is that it is NOT an electrolytic.
+    case "disc-capacitor":
+      return `non-polarised, <= ${physical.maxDiameterMm} mm dia, ${physical.leadSpacingMm} mm leads`
     case "to92":
       return `TO-92, ${physical.pinOrder.map(pinLetter).join("-")}`
     case "trimmer":
