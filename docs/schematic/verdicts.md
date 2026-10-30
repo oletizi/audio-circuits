@@ -373,6 +373,35 @@ other four.
 
 ---
 
+## A COMPARATIVE VERDICT: the hybrid pages against `lib/schgen/`'s
+
+- **Shown** 2026-10-30, after the layout-withholding gate was deleted: all eleven
+  `lib/schgen/` pages from `bun run tools/schgen/board-sheets.ts --pdf`, ten of
+  which carry the fallback field placements that gate had been withholding
+  build-guide pages for. He had already seen the five build guides.
+- **Verdict, verbatim:**
+
+  > *"the drawings in the build guides are MUCH better than the lib/schgen pages
+  > you just showed me"*
+
+**This is a comparison, which §4 reserves to the reviewer**: *"Comparing two
+drawings is the reviewer's act. An agent may place drawings side by side and must
+not order them."* He ordered them. No agent may restate this as a ranking of its
+own, or extend it to a page he has not seen.
+
+**What it compares.** The build guides print the five hand-drawn Pultec sheets in
+`drafted/pultec/`, produced by the copperhead-then-akcli loop that `TOOLING.md`
+describes. The eleven pages beside them are `lib/schgen/`'s own output, from the
+model, by its templates and layout backend.
+
+**What follows from it is NOT settled here**, and an agent must not settle it:
+`lib/schgen/` is also the census, the netlist round-trip and the gates, and all
+eleven boards now declare an `"sch"`, so its pages reach no build guide today.
+**Whether it should go on producing drawings at all is his question to answer**,
+and it is open.
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
