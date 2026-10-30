@@ -36,14 +36,15 @@
  * **`kind: "withheld"` IS A DIFFERENT CLAIM FROM `"none"` AND PRINTS A
  * DIFFERENT NOTICE, AND IT IS ITSELF NOT ONE CLAIM BUT TWO.** `none` says
  * this board declares no schematic at all. `withheld` says `schgen` was
- * offered the board's own declaration and the result was judged unfit to
- * build from - and which of two things that means is `GuideSchematic`'s
+ * offered the board's own declaration and there is no page to print - and
+ * which of two things that means is `GuideSchematic`'s
  * `drawn` field, carried through from `tools/guide/schematic-source.ts`: a
- * sheet was actually drawn and withheld for what is on it (`drawn: true`),
- * or nothing was drawn at all - a refusal, or a generation that drew zero
- * sheets (`drawn: false`). The owner's own words are why `withheld` is a
- * gate rather than a softer warning: *"if the schematics are wonky, it's
- * worse than having nothing at all."* `kind: "generated"` is the fourth
+ * sheet was drawn and is `defective`, wrong about the circuit (`drawn:
+ * true`), or nothing was drawn at all - a refusal, or a generation that drew
+ * zero sheets (`drawn: false`). **A CROWDED SHEET IS NEITHER, AND IT PRINTS
+ * (2026-10-30).** `lib/schgen/findings.ts` classes crowding `usable`, this
+ * file is not a qualified reviewer of a layout, and the owner is: *"YOU MUST
+ * SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!"* `kind: "generated"` is the fourth
  * state, printed as a schematic page like `"printed"` is, plus one line
  * saying the sheet came from `schgen` rather than a hand-drawn source.
  *

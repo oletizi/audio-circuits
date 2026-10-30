@@ -20,6 +20,23 @@ const input = (schematic: GuideSchematic): GuideInput => ({
     schematic.kind === "printed" || schematic.kind === "generated" ? GUIDE_PAPER : undefined,
 })
 
+/**
+ * **THE `drawn: true` FIXTURES BELOW CARRIED A FALLBACK-FIELD-PLACEMENT REASON UNTIL 2026-10-30,
+ * AND NO SUCH REASON CAN REACH THIS FUNCTION ANY MORE.** `tools/guide/schematic-source.ts` withheld
+ * a page whose sheets carried any `fieldFallbacks`; the owner struck that - *"STOP PASSING
+ * JUDGEMENT ON LAYOUT!!! ... YOU MUST SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!"* - and
+ * `lib/schgen/findings.ts` classes a `field-fallback` `usable`, so a crowded sheet now PRINTS.
+ *
+ * The expectations are MOVED rather than deleted: what `buildGuideHtml` must do with a `"withheld"`
+ * input is unchanged and still worth holding, so the same assertions run against the reason a
+ * `drawn: true` withholding can actually carry now - a `defective` class, the one ground
+ * `EVALUATING-DRAWINGS.md` §3 permits. A fixture carrying a reason the resolver cannot produce
+ * would be a test passing on a situation that no longer exists.
+ */
+const DEFECTIVE_REASON =
+  "defective: the drawing is UNRATIFIED (defective): 1 finding(s) over 1 sheet(s). " +
+  "[short] sheet main: wire 3 of input_stage crosses net HI_BOOST_OUT without a junction"
+
 describe("a withheld schematic is a different claim from an absent one", () => {
   it("names the reason, so nobody reads a withheld sheet as a board with no schematic", () => {
     const html = buildGuideHtml(
@@ -27,11 +44,11 @@ describe("a withheld schematic is a different claim from an absent one", () => {
         kind: "withheld",
         declarationPath: "boards/pultec-low-boost/perfboard.json",
         circuitPath: "circuits/pultec/physical/low-boost.ts",
-        reason: "5 fallback field placement(s): text the placer could not keep clear",
+        reason: DEFECTIVE_REASON,
         drawn: true,
       }),
     )
-    expect(html).toContain("5 fallback field placement")
+    expect(html).toContain("crosses net HI_BOOST_OUT without a junction")
     expect(html).toContain("withheld")
     expect(html).not.toContain("there is no schematic for pultec-low-boost to print")
   })
@@ -93,7 +110,7 @@ describe("a withheld schematic is a different claim from an absent one", () => {
         kind: "withheld",
         declarationPath: "boards/pultec-low-boost/perfboard.json",
         circuitPath: "circuits/pultec/physical/low-boost.ts",
-        reason: "5 fallback field placement(s): text the placer could not keep clear",
+        reason: DEFECTIVE_REASON,
         drawn: true,
       }),
     )

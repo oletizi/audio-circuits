@@ -159,11 +159,17 @@ export interface BoardSheets {
   /**
    * Every sheet this generation drew, straight off `Generation.drawings`.
    *
-   * **It is here so a caller can apply its own gate without generating twice.** The guide packet
-   * refuses to print a sheet carrying any `fieldFallbacks` - text the placer could not keep clear -
-   * and re-running `generate` to find that out would double the cost of every guide build.
-   * Empty when no sheet was drawn at all, which is not the same as a board that drew a sheet with
-   * no fallbacks: read `schematicRoot` first.
+   * **ITS `fieldFallbacks` ARE EVIDENCE FOR A READER, NOT A GATE FOR A CALLER, AND THE SENTENCE
+   * THAT STOOD HERE SAID OTHERWISE.** It read *"it is here so a caller can apply its own gate
+   * without generating twice. The guide packet refuses to print a sheet carrying any
+   * `fieldFallbacks`"* - and that refusal is deleted (2026-10-30, `tools/guide/schematic-source.ts`).
+   * A fallback field placement is a `field-fallback` finding, which `lib/schgen/findings.ts` classes
+   * `usable`; a caller that re-derived a gate from this array would be making the second,
+   * independent layout judgement the owner struck: *"STOP PASSING JUDGEMENT ON LAYOUT!!!"*
+   *
+   * What a caller legitimately reads here is WHETHER ANY SHEET WAS DRAWN. Empty means no sheet at
+   * all, which is not the same as a board that drew a sheet carrying fallbacks: read `schematicRoot`
+   * first.
    */
   readonly drawings: readonly SheetDrawing[]
   /**

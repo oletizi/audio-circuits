@@ -4112,3 +4112,65 @@ validation and segfaults during graph execution instead of refusing.
   supported GPU he builds - and the first thing to measure on it is the one
   check this machine could not do, the custom converter's output against the
   authors' merged weights.
+
+### G305 - OWNER DIRECTIVE, 2026-10-30: a drawing is never withheld for a LAYOUT reason, and the agent holding it is not a qualified reviewer of it
+
+**HIS WORDS, verbatim:**
+
+> *"we need to get rid of this stupid refusal to generate on error. If I can't
+> look at it, I cant decide if the refusal is for dumb reasons. Is the refusal
+> because of an electrical problem or for a dumb invented layout "problem" that
+> agents have no business deciding?"*
+
+and, shouted, after an agent withheld a page over a layout measurement:
+
+> *"STOP PASSING JUDGEMENT ON LAYOUT!!! DO NOT PASS JUDGEMENT ON LAYOUT!!!!! YOU
+> MUST SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!!!!!! YOU ARE NOT A QUALIFIED
+> REVIEWER!!!!!!!!!!!!!!!"*
+
+**WHAT IT RULES ON.** `lib/schgen/findings.ts`'s `classOf` already encodes his
+line: the four crowding kinds are `usable`, the nine wrong-about-the-circuit
+kinds are `defective`, and the mapping is *"the owner's and not this file's to
+revise."* `tools/guide/schematic-source.ts` made the same decision a second
+time, downstream, its own way - it withheld a build-guide page for ANY finding,
+and again for any fallback field placement. Both arms are deleted; what
+withholds now is `worstClass(findings) !== "usable"`, plus the two arms where no
+artifact exists at all.
+
+**THIS WAS ALREADY DECIDED IN G303 AND THE GUIDE DID NOT FOLLOW IT.** That entry,
+2026-10-27, says of the same gate: *"G300 recorded him as saying 'if the
+schematics are wonky, it's worse than having nothing at all', and the gate built
+on it (`f42c129`) withholds a sheet carrying ANY fallback field placement. That
+gate is now too strict and is amended by this."* The same entry also says *"a
+sheet that fails its checks still must not reach a build guide."* **Two
+sentences in one entry, disagreeing, and the code kept the stricter one for
+three days.** The rule that survives is his: the sheet that must not reach a
+build guide is the `defective` one.
+
+**WHAT IT DOES NOT SAY.** It does not open the build guide to a drawing that is
+wrong about the circuit. `EVALUATING-DRAWINGS.md` §3 permits exactly one ground
+for withholding a drawing - an electrical fault - and that ground is kept. Nor
+does it touch the watermark: `markBandText("usable")` returns `null` already, so
+a crowded sheet carries no mark and never did.
+
+- **Found** 2026-10-30, on `feature/schematics-tooling` (PR #20).
+- **Evidence** his messages above, quoted complete; `lib/schgen/findings.ts`'s
+  `classOf`; the two deleted arms, which are in git at the commit this entry
+  lands in; `DEVELOPMENT-LOG.md` §2, where the same gate hid a whole drawing
+  over a label touching a pin number while a value rendering ambiguously passed
+  ungated.
+- **Verified** **CONFIRMED by this writer.** The arms were read in the file, the
+  new behaviour is asserted in both directions by
+  `tests/guide/schematic-class-gate.test.ts`, and the eleven drawings were
+  exported and are on disk under `build/schgen-boards/`.
+- **Why it is open** it is a standing directive, not a defect, and one question
+  under it is still his: `tools/schgen/generate.ts`'s strict `generate()` also
+  refuses on a `usable` finding. It hides no picture - the census writes the
+  same drawing - but it decides whether an unratified drawing may be COMMITTED
+  into a circuit directory, which that file records as *"a decision nobody has
+  taken."*
+- **What would settle the open part.** **CRITERION:** whether a marked,
+  unratified drawing belongs in a committed circuit directory. **MECHANISM,
+  UNTRIED:** one condition in `generate()`, narrowed the way the guide's was.
+  `docs/research/2026-10-30-no-layout-withholding.md` carries the full audit of
+  every gate that can withhold, suppress or mark a drawing.

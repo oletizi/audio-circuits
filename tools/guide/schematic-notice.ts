@@ -26,11 +26,20 @@ import { escapeXml } from "./svg.ts"
  *
  * **`"withheld"` is a FOURTH variant, never collapsed into `"none"`.** `none`
  * means this board declares no schematic at all. `withheld` means `schgen`
- * was offered the board's declaration and the result was judged unfit to
- * build from - refused outright, drawn nothing at all, or drawn with text the
- * placer could not keep clear. Those are different claims about different
- * situations, and printing one notice for all of them would be exactly the
- * silent skip this file's own module comment names as the failure to avoid.
+ * was offered the board's declaration and there is no page to print - it
+ * refused outright, it drew nothing at all, or the drawing it produced is
+ * `defective`: WRONG ABOUT THE CIRCUIT, the one ground
+ * `EVALUATING-DRAWINGS.md` §3 permits for withholding a drawing. Those are
+ * different claims about different situations, and printing one notice for
+ * all of them would be exactly the silent skip this file's own module
+ * comment names as the failure to avoid.
+ *
+ * **"DRAWN WITH TEXT THE PLACER COULD NOT KEEP CLEAR" WAS A FOURTH GROUND
+ * HERE AND IS GONE, 2026-10-30.** The owner: *"STOP PASSING JUDGEMENT ON
+ * LAYOUT!!! ... YOU MUST SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!"* A
+ * crowded page is `usable` to `lib/schgen/findings.ts`'s classifier and now
+ * prints as a page; `tools/guide/schematic-source.ts` carries the deletion
+ * and the reasoning.
  */
 export type GuideSchematic =
   | { readonly kind: "printed"; readonly path: string }
@@ -55,10 +64,13 @@ export type GuideSchematic =
        * Whether `schgen` actually drew a sheet before it was judged unfit to
        * build from. `false` for a refusal or a zero-sheet generation - there
        * is no sheet, so there is nothing drawn "over something" to withhold.
-       * `true` only when a sheet was drawn and carries a field-placement
-       * fallback: text the placer drew over something real. The printed
-       * notice reads this field rather than assuming every `"withheld"` drew
-       * a sheet - see `withheldSchematicNotice` below.
+       * `true` only when a sheet was drawn and its class is not `usable`:
+       * `defective` - the drawing is wrong about the circuit - or its
+       * producer reporting its own breakage. **It was `true` for a
+       * field-placement fallback until 2026-10-30**, and that ground is
+       * deleted: a crowded sheet prints. The printed notice reads this field
+       * rather than assuming every `"withheld"` drew a sheet - see
+       * `withheldSchematicNotice` below.
        */
       readonly drawn: boolean
     }
@@ -234,8 +246,8 @@ export function noSchematicNotice(boardName: string, schematic: GuideSchematic):
  *
  * **`withheld` COVERS TWO DIFFERENT CLAIMS, AND `schematic.drawn` IS WHICH ONE
  * THIS NOTICE MAKES.** `drawn: true` means a sheet WAS generated from this
- * board's own declaration and judged unfit to build from - text the placer
- * could not keep clear, drawn over something. `drawn: false` means `schgen`
+ * board's own declaration and is `defective`: wrong about the circuit, which
+ * is the one ground `EVALUATING-DRAWINGS.md` §3 permits. `drawn: false` means `schgen`
  * never produced a sheet to judge at all - it refused outright, or reported
  * "generated" having drawn zero sheets. Printing the `drawn: true` sentence
  * for a `drawn: false` result would assert a drawing exists when none does,
