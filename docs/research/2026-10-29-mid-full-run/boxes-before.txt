@@ -1,0 +1,36 @@
+=== Junction   rect (55.88, 49.53) -> (90.17, 101.6)   34.29 x 52.07 mm
+  graphics       margins  left  15.24  right   8.89  top  12.70  bottom   5.08
+                          bottom-most '#PWR06' at (72.39, 96.52)   top-most 'wire' at (77.47, 62.23)
+  graphics+text  margins  left   7.84  right   2.86  top   8.26  bottom   3.17
+                          bottom-most 'Conn_01x05' at (87.3125, 98.42500000000001)   top-most 'J1' at (81.5975, 57.785000000000004)
+
+=== Hi boost   rect (95.25, 49.53) -> (135.89, 76.2)   40.64 x 26.67 mm
+  graphics       margins  left   3.81  right  19.05  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (116.84, 72.39)   top-most 'wire' at (116.84, 59.69)
+  graphics+text  margins  left   3.81  right  13.81  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (116.84, 72.39)   top-most 'wire' at (116.84, 59.69)
+
+=== Hi cut   rect (140.97, 49.53) -> (227.33, 77.47)   86.36 x 27.94 mm
+  graphics       margins  left  10.67  right  11.43  top   0.00  bottom   1.27
+                          bottom-most 'SW2' at (194.31, 76.2)   top-most 'SW2' at (194.31, 49.53)
+  graphics+text  margins  left   3.49  right  11.43  top   0.00  bottom   1.27
+                          bottom-most 'SW2' at (194.31, 76.2)   top-most 'SW2' at (194.31, 49.53)
+
+=== Lo cut   rect (232.41, 49.53) -> (255.27, 76.2)   22.86 x 26.67 mm
+  graphics       margins  left   1.27  right   2.54  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (236.22, 72.39)   top-most 'wire' at (236.22, 59.69)
+  graphics+text  margins  left   1.27  right   2.54  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (236.22, 72.39)   top-most 'wire' at (236.22, 59.69)
+
+=== Lo boost   rect (260.35, 49.53) -> (304.8, 81.28)   44.45 x 31.75 mm
+  graphics       margins  left  10.16  right   7.62  top  10.16  bottom   0.00
+                          bottom-most 'SW2' at (270.51, 81.28)   top-most 'wire' at (278.13, 59.69)
+  graphics+text  margins  left  10.16  right   3.65  top  10.16  bottom   0.00
+                          bottom-most 'SW2' at (270.51, 81.28)   top-most 'wire' at (278.13, 59.69)
+
+=== Mid   rect (55.88, 106.68) -> (363.22, 224.79)   307.34 x 118.11 mm
+  graphics       margins  left  16.51  right  13.97  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (120.65, 220.98)   top-most 'wire' at (115.57, 116.84)
+  graphics+text  margins  left  16.51  right   7.15  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (120.65, 220.98)   top-most 'wire' at (115.57, 116.84)
+
