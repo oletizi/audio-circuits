@@ -56,6 +56,7 @@
  */
 import { circuit, NC } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/index.ts"
+import type { BomConditions, BomConditionsExport } from "../../tools/bom/conditions.ts"
 
 /** Semantic id -> the built unit's reference designator. */
 export const DESIGNATORS: Readonly<Record<string, string>> = {
@@ -208,4 +209,67 @@ export function pt2399Core(): Network {
     .port("input", "INPUT")
 
     .done()
+}
+
+/**
+ * **THIS BOARD'S PARTS-LIST CONDITIONS CANNOT BE DECLARED, AND THIS EXPORT SAYS SO
+ * RATHER THAN DECLARING ONES NOBODY CAN STAND BEHIND. IT IS A REFUSAL AND NOT A
+ * STUB**: there is no partial answer here waiting to be filled in, and the thing
+ * that is missing is not in this file.
+ *
+ * `make check` refused this board at `declaredBomConditions` with *"no
+ * "bomConditions" export. Export `bomConditions(): BomConditions`"*, and the
+ * remedy that message names does not work, which is why this exists. Exporting
+ * well-formed conditions moves the refusal exactly one step, to
+ * `resistorDissipation` - **and `deriveNeeds` requires a dissipation figure for
+ * every resistor**, this board has eight, and no operating point can be computed
+ * for it. `[RAN 2026-10-30]`, each failure read from the run rather than inferred:
+ *
+ * 1. `resolveNetwork` refuses `Missing ground port: ground`. `GROUND_PORT_KEY` in
+ *    `lib/model/net-preference.ts` is the literal `"ground"` and this circuit keys
+ *    its reference port `"gnd"` - every other circuit here uses `ground`. That one
+ *    IS one word, and it is left alone deliberately: changing it moves the refusal
+ *    to (2) without closing anything, and this module's ports are transcription.
+ * 2. With the port renamed, `toSpiceOperatingPointNetlist` refuses
+ *    `component "delay_ic" unit "MAIN": kind "ic" has no SPICE emission rule in
+ *    this emitter`. **That is the real blocker**: the PT2399 is the only active
+ *    device on the board, nothing in `lib/sim/models/` is a PT2399, and the DC
+ *    solution every resistor's wattage comes from is a statement about its two
+ *    internal op-amps. `docs/schematic/generation-prior-art-circuit-families.md`
+ *    found both of these independently, before this.
+ * 3. Separately, `environment.source` and `environment.load` have no basis here.
+ *    Nothing in this repository records what drives `INPUT` or loads `OUTPUT` on
+ *    this board - there is no bench environment for it as there is for the staged
+ *    preamp (`circuits/transistor-preamp/staged-environment.ts`) - and both the
+ *    series and load resistances land in the deck and move the operating point.
+ *    A plausible pair here would be invented data with arithmetic on top.
+ *
+ * The rail is NOT what is missing: it is 5 V, the `+5V` net this transcription
+ * carries on J1 pin 1, and `highestRailVolts` is the one consumer that would have
+ * been satisfied.
+ *
+ * **WHAT WOULD SETTLE IT - one of two, and the second is not an agent's to take.**
+ * Either a DC model for the PT2399 with the provenance `lib/sim/models/` requires
+ * of every model in it, after which (1) and (3) are small; or the owner's decision
+ * that this board has no parts list, in which case the thing to delete is
+ * `boards/pt2399-core/bom.json` - `checkBoardBom` does not apply to a board without
+ * one, and that file is what turned this gate on for a board that cannot satisfy
+ * it. Deleting it to make the gate quiet is NOT a call to make from here.
+ */
+export const bomConditions: BomConditionsExport = (): BomConditions => {
+  throw new Error(
+    "circuits/pt2399-core/pt2399-core.ts: this board's bomConditions CANNOT be declared " +
+      "truthfully, and this refusal is deliberate - see the comment above this export.\n" +
+      "  The rail is known: 5 V, the \"+5V\" net on J1 pin 1.\n" +
+      "  What is NOT known: (a) the PT2399 has no SPICE emission rule (kind \"ic\", " +
+      "lib/sim/device-lines.ts) and no model in lib/sim/models/, so there is no operating " +
+      "point, so deriveNeeds cannot get the per-resistor dissipation it requires for all " +
+      "eight of this board's resistors; (b) nothing here records what drives INPUT or loads " +
+      "OUTPUT, so environment.source and environment.load would be invented numbers that " +
+      "move the operating point they feed. (A third, smaller one: resolveNetwork wants a " +
+      "port keyed \"ground\" and this circuit keys it \"gnd\".)\n" +
+      "  WHAT WOULD SETTLE IT: a PT2399 DC model with the provenance lib/sim/models/ " +
+      "requires - or the owner's decision that this board has no parts list, which is a " +
+      "decision about boards/pt2399-core/bom.json and not one to take from here.",
+  )
 }

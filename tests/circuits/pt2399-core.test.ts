@@ -1,5 +1,13 @@
 import { test, expect } from "bun:test"
-import { pt2399Core, DESIGNATORS, PIN_NUMBERS } from "../../circuits/pt2399-core/pt2399-core.ts"
+import {
+  bomConditions,
+  pt2399Core,
+  DESIGNATORS,
+  PIN_NUMBERS,
+} from "../../circuits/pt2399-core/pt2399-core.ts"
+import { resolveNetwork } from "../../lib/model/control-state.ts"
+import type { ControlState } from "../../lib/model/control-state.ts"
+import { toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { importLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { parseValue } from "../../lib/model/units.ts"
@@ -332,4 +340,37 @@ test("every component's footprint matches the netlist of the built unit", async 
     if (expected === undefined) throw new Error(`${designator} is absent from the netlist`)
     expect(component.part?.footprint).toBe(expected)
   }
+})
+
+test("the parts-list conditions REFUSE, and each thing the refusal names is still missing", async () => {
+  // THE REFUSAL IS THE DELIVERABLE HERE, so this test holds it to naming what is
+  // missing - and then CHECKS each of those things, because a refusal nobody
+  // re-measures is the "stale cause" CLAUDE.md warns about: the day a PT2399 model
+  // lands, this test fails and the refusal above it is the thing to delete.
+  expect(bomConditions).toThrow(/CANNOT be declared/)
+  expect(bomConditions).toThrow(/no SPICE emission rule/)
+  expect(bomConditions).toThrow(/invented numbers/)
+  expect(bomConditions).toThrow(/WHAT WOULD SETTLE IT/)
+
+  const state: ControlState = { potPositions: {}, switchPositions: {} }
+  // (1) The resolver wants a port keyed `ground` and this circuit keys it `gnd`.
+  expect(() => resolveNetwork(pt2399Core(), state)).toThrow(/Missing ground port: ground/)
+
+  // (2) With that renamed, the emitter refuses the PT2399 itself - the blocker a
+  // declared set of conditions would have run into one step later.
+  const network = pt2399Core()
+  const renamed: Network = { ...network, ports: { ...network.ports, ground: "GND" } }
+  const resolved = resolveNetwork(renamed, state)
+  const probeEnvironment = {
+    source: { port: "input", amplitude: 0, seriesOhms: 1_000 },
+    load: { port: "output", ohms: 100_000 },
+    supplies: [{ port: "vcc", volts: 5 }],
+    groundPort: "ground",
+  }
+  expect(() => toSpiceOperatingPointNetlist(resolved, probeEnvironment)).toThrow(
+    /kind "ic" has no SPICE emission rule/,
+  )
+  // The probe environment above is a STAND-IN living in this test and nowhere else:
+  // the circuit declares no source or load because this repository records none for
+  // it, which is the refusal's clause (b).
 })
