@@ -1,0 +1,17 @@
+paper A3                 render 9921 x 7016 px at 600 dpi = 419.989 x 297.011 mm
+render mode P, 300242 dark pixels
+horizontal lines (mm from top):  9.991, 11.980, 284.988, 286.999
+vertical lines (mm from left):   9.970, 11.980, 407.966, 409.977
+
+INNER FRAME   x 11.980 .. 407.966   y 11.980 .. 284.988   (395.986 x 273.008 mm)
+TITLE BLOCK   x 299.889 .. 407.839   y 252.942 .. 284.861   (107.950 x 31.919 mm)
+
+TWO USABLE RECTANGLES, because the title block takes a CORNER and not a band:
+  FULL WIDTH, above the title block   x 11.980 .. 407.966  y 11.980 .. 252.942   (395.986 x 240.961 mm)
+  FULL HEIGHT, west of the title block  x 11.980 .. 299.889  y 11.980 .. 284.988   (287.909 x 273.008 mm)
+
+  the conservative rectangle - inside the frame AND clear of the
+  title block on BOTH axes, which is what extent.py is given:
+  --frame 11.980 11.980 407.966 252.942   (395.986 x 240.961 mm)
+
+CONTROL  the same detector on an all-white image of the same size finds 0 rows and 0 columns: DETECTOR DISCRIMINATES

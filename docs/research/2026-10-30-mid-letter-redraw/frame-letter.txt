@@ -1,0 +1,17 @@
+paper USLetter           render 6600 x 5100 px at 600 dpi = 279.400 x 215.900 mm
+render mode P, 233374 dark pixels
+horizontal lines (mm from top):  9.970, 11.980, 203.877, 205.888
+vertical lines (mm from left):   9.970, 11.980, 267.377, 269.388
+
+INNER FRAME   x 11.980 .. 267.377   y 11.980 .. 203.877   (255.397 x 191.897 mm)
+TITLE BLOCK   x 159.300 .. 267.250   y 171.831 .. 203.750   (107.950 x 31.919 mm)
+
+TWO USABLE RECTANGLES, because the title block takes a CORNER and not a band:
+  FULL WIDTH, above the title block   x 11.980 .. 267.377  y 11.980 .. 171.831   (255.397 x 159.851 mm)
+  FULL HEIGHT, west of the title block  x 11.980 .. 159.300  y 11.980 .. 203.877   (147.320 x 191.897 mm)
+
+  the conservative rectangle - inside the frame AND clear of the
+  title block on BOTH axes, which is what extent.py is given:
+  --frame 11.980 11.980 267.377 171.831   (255.397 x 159.851 mm)
+
+CONTROL  the same detector on an all-white image of the same size finds 0 rows and 0 columns: DETECTOR DISCRIMINATES

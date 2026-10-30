@@ -1,0 +1,27 @@
+ERC report (2026-10-30T12:36:32, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+[lib_symbol_issues]: The current configuration does not include the symbol library 'copperhead_power'
+    ; warning
+    @(67.31 mm, 88.90 mm): Symbol #FLG01 [PWR_FLAG]
+[lib_symbol_issues]: The current configuration does not include the symbol library 'copperhead_power'
+    ; warning
+    @(72.39 mm, 72.39 mm): Symbol #PWR01 [GND]
+[lib_symbol_issues]: The current configuration does not include the symbol library 'copperhead_power'
+    ; warning
+    @(72.39 mm, 93.98 mm): Symbol #PWR06 [GND]
+[lib_symbol_issues]: The current configuration does not include the symbol library 'copperhead_power'
+    ; warning
+    @(295.91 mm, 64.77 mm): Symbol #PWR09 [GND]
+[lib_symbol_issues]: The current configuration does not include the symbol library 'copperhead_power'
+    ; warning
+    @(384.81 mm, 130.81 mm): Symbol #PWR07 [GND]
+
+ ** ERC messages: 5  Errors 0  Warnings 5
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

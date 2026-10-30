@@ -1,0 +1,261 @@
+[  0] delete_object              Mid: wire (118.11,83.82)-(318.77,83.82)
+[  1] delete_object              Mid: wire (118.11,86.36)-(118.11,83.82)
+[  2] delete_object              Mid: wire (118.11,93.98)-(118.11,100.33)
+[  3] delete_object              Mid: wire (80.01,100.33)-(140.97,100.33)
+[  4] delete_object              Mid: wire (179.07,86.36)-(179.07,83.82)
+[  5] delete_object              Mid: wire (179.07,93.98)-(179.07,100.33)
+[  6] delete_object              Mid: wire (156.21,100.33)-(186.69,100.33)
+[  7] delete_object              Mid: wire (224.79,86.36)-(224.79,83.82)
+[  8] delete_object              Mid: wire (224.79,93.98)-(224.79,100.33)
+[  9] delete_object              Mid: wire (201.93,100.33)-(247.65,100.33)
+[ 10] delete_object              Mid: wire (285.75,86.36)-(285.75,83.82)
+[ 11] delete_object              Mid: wire (285.75,93.98)-(285.75,100.33)
+[ 12] delete_object              Mid: wire (262.89,100.33)-(293.37,100.33)
+[ 13] delete_object              Mid: wire (316.23,86.36)-(316.23,83.82)
+[ 14] delete_object              Mid: wire (316.23,93.98)-(316.23,100.33)
+[ 15] delete_object              Mid: wire (308.61,100.33)-(323.85,100.33)
+[ 16] delete_object              Mid: wire (80.01,105.41)-(80.01,100.33)
+[ 17] delete_object              Mid: wire (95.25,107.95)-(95.25,100.33)
+[ 18] delete_object              Mid: wire (110.49,110.49)-(110.49,100.33)
+[ 19] delete_object              Mid: wire (125.73,113.03)-(125.73,100.33)
+[ 20] delete_object              Mid: wire (140.97,113.03)-(140.97,100.33)
+[ 21] delete_object              Mid: wire (156.21,115.57)-(156.21,100.33)
+[ 22] delete_object              Mid: wire (171.45,115.57)-(171.45,100.33)
+[ 23] delete_object              Mid: wire (186.69,118.11)-(186.69,100.33)
+[ 24] delete_object              Mid: wire (201.93,123.19)-(201.93,100.33)
+[ 25] delete_object              Mid: wire (217.17,123.19)-(217.17,100.33)
+[ 26] delete_object              Mid: wire (232.41,125.73)-(232.41,100.33)
+[ 27] delete_object              Mid: wire (247.65,125.73)-(247.65,100.33)
+[ 28] delete_object              Mid: wire (262.89,128.27)-(262.89,100.33)
+[ 29] delete_object              Mid: wire (278.13,128.27)-(278.13,100.33)
+[ 30] delete_object              Mid: wire (293.37,130.81)-(293.37,100.33)
+[ 31] delete_object              Mid: wire (308.61,133.35)-(308.61,100.33)
+[ 32] delete_object              Mid: wire (323.85,133.35)-(323.85,100.33)
+[ 33] delete_object              Mid: wire (59.69,113.03)-(80.01,113.03)
+[ 34] delete_object              Mid: wire (59.69,115.57)-(95.25,115.57)
+[ 35] delete_object              Mid: wire (59.69,118.11)-(110.49,118.11)
+[ 36] delete_object              Mid: wire (59.69,120.65)-(140.97,120.65)
+[ 37] delete_object              Mid: wire (59.69,123.19)-(171.45,123.19)
+[ 38] delete_object              Mid: wire (59.69,125.73)-(186.69,125.73)
+[ 39] delete_object              Mid: wire (59.69,130.81)-(217.17,130.81)
+[ 40] delete_object              Mid: wire (59.69,133.35)-(247.65,133.35)
+[ 41] delete_object              Mid: wire (59.69,135.89)-(278.13,135.89)
+[ 42] delete_object              Mid: wire (59.69,138.43)-(293.37,138.43)
+[ 43] delete_object              Mid: wire (59.69,140.97)-(323.85,140.97)
+[ 44] delete_object              Mid: wire (1.27,128.27)-(6.35,128.27)
+[ 45] delete_object              Mid: wire (13.97,128.27)-(29.21,128.27)
+[ 46] delete_object              Mid: wire (10.16,124.46)-(10.16,121.92)
+[ 47] delete_object              Mid: wire (10.16,121.92)-(16.51,121.92)
+[ 48] delete_object              Mid: wire (16.51,121.92)-(16.51,128.27)
+[ 49] delete_object              Mid: wire (328.93,81.28)-(344.17,81.28)
+[ 50] delete_object              Mid: wire (328.93,86.36)-(336.55,86.36)
+[ 51] delete_object              Mid: wire (336.55,86.36)-(336.55,88.9)
+[ 52] delete_object              Mid: wire (351.79,81.28)-(351.79,88.9)
+[ 53] delete_object              Mid: wire (336.55,96.52)-(351.79,96.52)
+[ 54] delete_object              Mid: junction (179.07,83.82)
+[ 55] delete_object              Mid: junction (224.79,83.82)
+[ 56] delete_object              Mid: junction (285.75,83.82)
+[ 57] delete_object              Mid: junction (316.23,83.82)
+[ 58] delete_object              Mid: junction (95.25,100.33)
+[ 59] delete_object              Mid: junction (110.49,100.33)
+[ 60] delete_object              Mid: junction (118.11,100.33)
+[ 61] delete_object              Mid: junction (125.73,100.33)
+[ 62] delete_object              Mid: junction (171.45,100.33)
+[ 63] delete_object              Mid: junction (179.07,100.33)
+[ 64] delete_object              Mid: junction (217.17,100.33)
+[ 65] delete_object              Mid: junction (224.79,100.33)
+[ 66] delete_object              Mid: junction (232.41,100.33)
+[ 67] delete_object              Mid: junction (278.13,100.33)
+[ 68] delete_object              Mid: junction (285.75,100.33)
+[ 69] delete_object              Mid: junction (316.23,100.33)
+[ 70] delete_object              Mid: junction (125.73,120.65)
+[ 71] delete_object              Mid: junction (156.21,123.19)
+[ 72] delete_object              Mid: junction (201.93,130.81)
+[ 73] delete_object              Mid: junction (232.41,133.35)
+[ 74] delete_object              Mid: junction (262.89,135.89)
+[ 75] delete_object              Mid: junction (308.61,140.97)
+[ 76] delete_object              Mid: junction (344.17,96.52)
+[ 77] delete_object              Mid: junction (16.51,128.27)
+[ 78] delete_object              Mid: label sel_common at (10.16,121.92)
+[ 79] delete_object              Mid: label coil_return at (118.11,83.82)
+[ 80] delete_object              Mid: label boost_return at (328.93,81.28)
+[ 81] delete_object              Mid: label cut_return at (328.93,86.36)
+[ 82] delete_object              Mid: label tap_2h at (118.11,97.79)
+[ 83] delete_object              Mid: label tap_1h at (179.07,97.79)
+[ 84] delete_object              Mid: label tap_0r45h at (224.79,97.79)
+[ 85] delete_object              Mid: label tap_0r22h at (285.75,97.79)
+[ 86] delete_object              Mid: label tap_0r1h at (316.23,97.79)
+[ 87] delete_object              Mid: label sel1 at (62.23,113.03)
+[ 88] delete_object              Mid: label sel2 at (82.55,115.57)
+[ 89] delete_object              Mid: label sel3 at (97.79,118.11)
+[ 90] delete_object              Mid: label sel4 at (113.03,120.65)
+[ 91] delete_object              Mid: label sel5 at (143.51,123.19)
+[ 92] delete_object              Mid: label sel6 at (173.99,125.73)
+[ 93] delete_object              Mid: label sel7 at (189.23,130.81)
+[ 94] delete_object              Mid: label sel8 at (219.71,133.35)
+[ 95] delete_object              Mid: label sel9 at (250.19,135.89)
+[ 96] delete_object              Mid: label sel10 at (280.67,138.43)
+[ 97] delete_object              Mid: label sel11 at (295.91,140.97)
+[ 98] delete_object              Mid: global_label hi_boost_out at (1.27,128.27)
+[ 99] delete_object              Mid: global_label in at (351.79,81.28)
+[100] delete_object              Mid: no_connect at (59.69,143.51)
+[101] set_component_transform    L1 rotation 180
+[102] move_component             L1 to (125.73, 83.82) mm
+[103] set_component_transform    L2 rotation 180
+[104] move_component             L2 to (171.45, 83.82) mm
+[105] set_component_transform    L3 rotation 0
+[106] move_component             L3 to (186.69, 157.48) mm
+[107] set_component_transform    L4 rotation 0
+[108] move_component             L4 to (140.97, 157.48) mm
+[109] set_component_transform    L5 rotation 0
+[110] move_component             L5 to (95.25, 157.48) mm
+[111] set_component_transform    C1 rotation 0
+[112] move_component             C1 to (90.17, 102.87) mm
+[113] set_component_transform    C2 rotation 0
+[114] move_component             C2 to (105.41, 105.41) mm
+[115] set_component_transform    C3 rotation 0
+[116] move_component             C3 to (120.65, 107.95) mm
+[117] set_component_transform    C4 rotation 0
+[118] move_component             C4 to (135.89, 110.49) mm
+[119] set_component_transform    C5 rotation 0
+[120] move_component             C5 to (151.13, 110.49) mm
+[121] set_component_transform    C6 rotation 0
+[122] move_component             C6 to (166.37, 113.03) mm
+[123] set_component_transform    C7 rotation 0
+[124] move_component             C7 to (181.61, 113.03) mm
+[125] set_component_transform    C8 rotation 0
+[126] move_component             C8 to (196.85, 115.57) mm
+[127] set_component_transform    C16 rotation 180
+[128] move_component             C16 to (90.17, 138.43) mm
+[129] set_component_transform    C17 rotation 180
+[130] move_component             C17 to (105.41, 138.43) mm
+[131] set_component_transform    C15 rotation 180
+[132] move_component             C15 to (120.65, 135.89) mm
+[133] set_component_transform    C13 rotation 180
+[134] move_component             C13 to (135.89, 133.35) mm
+[135] set_component_transform    C14 rotation 180
+[136] move_component             C14 to (151.13, 133.35) mm
+[137] set_component_transform    C11 rotation 180
+[138] move_component             C11 to (166.37, 130.81) mm
+[139] set_component_transform    C12 rotation 180
+[140] move_component             C12 to (181.61, 130.81) mm
+[141] set_component_transform    C9 rotation 180
+[142] move_component             C9 to (196.85, 128.27) mm
+[143] set_component_transform    C10 rotation 180
+[144] move_component             C10 to (212.09, 128.27) mm
+[145] set_component_transform    SW1 rotation 0
+[146] move_component             SW1 to (67.31, 121.92) mm
+[147] set_component_transform    RV1 rotation 90
+[148] move_component             RV1 to (38.1, 121.92) mm
+[149] set_component_transform    SW2 rotation 0
+[150] move_component             SW2 to (229.87, 121.92) mm
+[151] set_component_transform    R1 rotation 270
+[152] move_component             R1 to (254.0, 119.38) mm
+[153] set_component_transform    R2 rotation 0
+[154] move_component             R2 to (242.57, 130.81) mm
+[155] set_component_transform    R3 rotation 0
+[156] move_component             R3 to (257.81, 130.81) mm
+[157] move_component             #PWR07 to (250.19, 134.62) mm
+[158] add_wire                   [coil_return] rail A, 99.06 mm: L1, L2 and the join
+[159] add_wire                   [coil_return] rail B, 129.54 mm: L5, L4, L3 and the join
+[160] add_wire                   [coil_return] the join, 86.36 mm: one six-pin net drawn once across two tiers, with the mode switch's pole on it
+[161] add_wire                   [coil_return] L1.2 to rail A
+[162] add_wire                   [tap_2h] L1.1 to the tap_2h bus
+[163] add_wire                   [tap_2h] tap_2h bus, 60.96 mm
+[164] add_wire                   [coil_return] L2.2 to rail A
+[165] add_wire                   [tap_1h] L2.1 to the tap_1h bus
+[166] add_wire                   [tap_1h] tap_1h bus, 30.48 mm
+[167] add_wire                   [coil_return] L3.2 to rail B
+[168] add_wire                   [tap_0r45h] L3.1 to the tap_0r45h bus
+[169] add_wire                   [tap_0r45h] tap_0r45h bus, 45.72 mm
+[170] add_wire                   [coil_return] L4.2 to rail B
+[171] add_wire                   [tap_0r22h] L4.1 to the tap_0r22h bus
+[172] add_wire                   [tap_0r22h] tap_0r22h bus, 30.48 mm
+[173] add_wire                   [coil_return] L5.2 to rail B
+[174] add_wire                   [tap_0r1h] L5.1 to the tap_0r1h bus
+[175] add_wire                   [tap_0r1h] tap_0r1h bus, 15.24 mm
+[176] add_wire                   [tap_2h] C1.1 riser to tap_2h, 5.08 mm
+[177] add_wire                   [tap_2h] C2.1 riser to tap_2h, 7.62 mm
+[178] add_wire                   [tap_2h] C3.1 riser to tap_2h, 10.16 mm
+[179] add_wire                   [tap_2h] C4.1 riser to tap_2h, 12.70 mm
+[180] add_wire                   [tap_2h] C5.1 riser to tap_2h, 12.70 mm
+[181] add_wire                   [tap_1h] C6.1 riser to tap_1h, 15.24 mm
+[182] add_wire                   [tap_1h] C7.1 riser to tap_1h, 15.24 mm
+[183] add_wire                   [tap_1h] C8.1 riser to tap_1h, 17.78 mm
+[184] add_wire                   [tap_0r1h] C16.1 riser to tap_0r1h, 5.08 mm
+[185] add_wire                   [tap_0r1h] C17.1 riser to tap_0r1h, 5.08 mm
+[186] add_wire                   [tap_0r22h] C15.1 riser to tap_0r22h, 7.62 mm
+[187] add_wire                   [tap_0r22h] C13.1 riser to tap_0r22h, 10.16 mm
+[188] add_wire                   [tap_0r22h] C14.1 riser to tap_0r22h, 10.16 mm
+[189] add_wire                   [tap_0r45h] C11.1 riser to tap_0r45h, 12.70 mm
+[190] add_wire                   [tap_0r45h] C12.1 riser to tap_0r45h, 12.70 mm
+[191] add_wire                   [tap_0r45h] C9.1 riser to tap_0r45h, 15.24 mm
+[192] add_wire                   [tap_0r45h] C10.1 riser to tap_0r45h, 15.24 mm
+[193] add_wire                   [sel1] sel1 run, 7.62 mm, a single straight horizontal with no corner
+[194] add_wire                   [sel2] sel2 run, 22.86 mm, a single straight horizontal with no corner
+[195] add_wire                   [sel3] sel3 run, 38.10 mm, a single straight horizontal with no corner
+[196] add_wire                   [sel4] sel4 run, 68.58 mm, a single straight horizontal with no corner
+[197] add_wire                   [sel5] sel5 run, 99.06 mm, a single straight horizontal with no corner
+[198] add_wire                   [sel6] sel6 run, 114.30 mm, a single straight horizontal with no corner
+[199] add_wire                   [sel7] sel7 run, 129.54 mm, a single straight horizontal with no corner
+[200] add_wire                   [sel8] sel8 run, 99.06 mm, a single straight horizontal with no corner
+[201] add_wire                   [sel9] sel9 run, 68.58 mm, a single straight horizontal with no corner
+[202] add_wire                   [sel10] sel10 run, 38.10 mm, a single straight horizontal with no corner
+[203] add_wire                   [sel11] sel11 run, 22.86 mm, a single straight horizontal with no corner
+[204] add_wire                   [hi_boost_out] the input label to RV1.1 (ccw), 3.81 mm
+[205] add_wire                   [sel_common] RV1.3 (cw) east to the selector pole, 10.16 mm
+[206] add_wire                   [sel_common] RV1.2 (wiper) up 2.54 mm
+[207] add_wire                   [sel_common] the rheostat tie, east 6.35 mm over the body
+[208] add_wire                   [sel_common] the rheostat tie, down onto the pole wire
+[209] add_wire                   [boost_return] SW2.1 (boost) east to R1.2, 15.24 mm
+[210] add_wire                   [cut_return] SW2.3 (cut) east 7.62 mm
+[211] add_wire                   [cut_return] down to R2.1
+[212] add_wire                   [in] the `in` node down to R3.1, 7.62 mm
+[213] add_wire                   [GND] R2.2 to R3.2: one ground symbol for the two return legs, 15.24 mm
+[214] add_junction               rail A through L2.2
+[215] add_junction               rail B through L3.2
+[216] add_junction               rail B through L4.2
+[217] add_junction               the mode switch's pole on the join's interior
+[218] add_junction               tap_2h bus through C2
+[219] add_junction               tap_2h bus through C3
+[220] add_junction               tap_2h bus through L1
+[221] add_junction               tap_2h bus through C4
+[222] add_junction               tap_1h bus through L2
+[223] add_junction               tap_1h bus through C7
+[224] add_junction               tap_0r45h bus through C12
+[225] add_junction               tap_0r45h bus through L3
+[226] add_junction               tap_0r45h bus through C9
+[227] add_junction               tap_0r22h bus through C13
+[228] add_junction               tap_0r22h bus through L4
+[229] add_junction               tap_0r1h bus through L5
+[230] add_junction               sel4 run through C4.2
+[231] add_junction               sel5 run through C6.2
+[232] add_junction               sel7 run through C9.2
+[233] add_junction               sel8 run through C11.2
+[234] add_junction               sel9 run through C13.2
+[235] add_junction               sel11 run through C16.2
+[236] add_junction               the shared ground symbol on the return legs' link
+[237] add_junction               the rheostat tie onto the pole wire
+[238] add_net_label              global label hi_boost_out: the section's input, west of RV1.1, pointing into the wire
+[239] add_net_label              local label sel_common: the rheostat's output node, on the tie's horizontal
+[240] add_net_label              local label coil_return: rail A's west end - the one label this six-pin net carries
+[241] add_net_label              global label in: the boost leg's return to the input node, pointing right
+[242] add_net_label              local label boost_return: SW2.1 to R1
+[243] add_net_label              local label cut_return: SW2.3 to R2
+[244] add_net_label              local label tap_2h: the tap_2h bus, on L1's drop
+[245] add_net_label              local label tap_1h: the tap_1h bus, on L2's drop
+[246] add_net_label              local label tap_0r45h: the tap_0r45h bus, on L3's riser
+[247] add_net_label              local label tap_0r22h: the tap_0r22h bus, on L4's riser
+[248] add_net_label              local label tap_0r1h: the tap_0r1h bus, on L5's riser
+[249] add_net_label              local label sel1: contact 1
+[250] add_net_label              local label sel2: contact 2
+[251] add_net_label              local label sel3: contact 3
+[252] add_net_label              local label sel4: contact 4
+[253] add_net_label              local label sel5: contact 5
+[254] add_net_label              local label sel6: contact 6
+[255] add_net_label              local label sel7: contact 7
+[256] add_net_label              local label sel8: contact 8
+[257] add_net_label              local label sel9: contact 9
+[258] add_net_label              local label sel10: contact 10
+[259] add_net_label              local label sel11: contact 11
+[260] add_no_connect             the unused twelfth detent of a 1x12 rotary wired for eleven positions; ComponentOverride.ncPins declares it
