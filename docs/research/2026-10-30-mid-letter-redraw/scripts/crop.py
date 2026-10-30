@@ -23,6 +23,13 @@ KC = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 
 # name: (before box on the A3 approved page, after box on the Letter page, dpi)
 # Boxes are (x1, y1, x2, y2) in sheet mm.
+#
+# `coil-row-a` AND `coil-row-b` CARRY THE SAME BEFORE BOX, AND THAT IS NOT A
+# TYPO. On the approved page the five windings and the five tap buses are ONE
+# row; the fold splits them into two. There is no "tier A coil row" on the
+# before side to crop separately, so both after-crops are compared against the
+# single row they came from, and the two before-crops are byte-identical. A
+# reader who finds them identical and suspects the script should find this.
 REGIONS = {
     "page":          ((0, 0, 420, 297),          (0, 0, 279.4, 215.9),   150),
     "mid-whole":     ((20, 104, 403, 189),       (13, 70, 267, 171),     300),
