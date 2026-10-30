@@ -145,4 +145,11 @@ test("the real converter prints a multi-page PDF from a page with the guide's pr
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
-})
+  // AN EXPLICIT TIMEOUT, FOR THE SAME REASON tests/schgen/decomposition-probe.test.ts
+  // HAS ONE. This is the only test here that launches the real browser, and a cold
+  // Chrome start is not a 5s operation on a loaded machine: the whole file runs in
+  // 2.3s alone and this one test was measured at 5.96s inside a full-suite run,
+  // where bun's 5s default failed it as a TIMEOUT - a red that says nothing about
+  // the flags it exists to check, on the machine where it matters most. 60s is what
+  // the other subprocess-driving tests here use (tests/circuits/stub-writer-tripwire.test.ts).
+}, 60_000)

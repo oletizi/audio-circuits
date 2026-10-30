@@ -133,5 +133,15 @@ describe("does a Pultec section decompose across the reachable templates?", () =
       }
     }
     expect(true).toBe(true);
-  });
+  // AN EXPLICIT TIMEOUT, BECAUSE THE WORK IS THE POINT AND bun's DEFAULT IS 5s.
+  // This probe enumerates every subset of each section - 2^n masks against four
+  // templates, for the sections with at most 18 members - which is the question
+  // it is asking rather than a slow way of asking a smaller one. It takes about
+  // 3.7s run alone and took 9.3s and 9.7s inside two full-suite runs, where it
+  // shares the machine with every other file, so the default failed it as a
+  // TIMEOUT: a red that says nothing about any assertion in it. 120s is the
+  // schgen suite's own figure for a test that does real work (./elk/layout.elk.test.ts,
+  // ./elk/obstacle-census.test.ts), and it is wide enough that a failure here is
+  // a hang and not contention.
+  }, 120_000);
 });
