@@ -90,14 +90,22 @@ export interface SheetAgreement {
  * resistor is a resistor; `Device:C` is the non-polarised glyph and `CapacitorParameters` is
  * `{ farads }` and nothing else, so a polarised part is a PART fact that says so itself; likewise
  * a photoresistor; and `Device:D` is a plain diode, where an LED or a Schottky is again a part
- * fact. Every lib id was resolved against the libraries on disk where it was first written.
+ * fact.
+ *
+ * **EVERY LIB ID HERE IS RESOLVED AGAINST THE INSTALLED LIBRARY ON EVERY RUN, BY
+ * `tests/kicad/sheet-agreement-tables.test.ts`** - which is the only form that claim may take.
+ * `CLAUDE.md`: *"a measurement goes in a tool or a test that re-runs it, never in prose"*, and
+ * *"do not write [a KiCad name] from memory; this repository has twice shipped a footprint that
+ * does not exist"* - three times, counting `Switch:SW_Rotary`. That test also asserts the table is
+ * exactly these four kinds, so a fifth cannot arrive unexamined, and it refuses rather than skips
+ * when no library is installed. The table is EXPORTED so it can be read and checked.
  *
  * **EVERY OTHER KIND REFUSES**, because a symbol choice for it is a claim about a PART: which
  * package an op-amp is in, how many ways a connector has, whether a transistor is NPN or PNP,
  * whether a pot is a panel control or a board trimmer, what a `switch` physically is. Those parts
  * declare `part.symbol` on the component, which every off-board Pultec part does.
  */
-const SYMBOL_BY_KIND: Partial<Readonly<Record<Component["kind"], string>>> = {
+export const SYMBOL_BY_KIND: Partial<Readonly<Record<Component["kind"], string>>> = {
   resistor: "Device:R",
   capacitor: "Device:C",
   photoresistor: "Device:R_Photo",
@@ -155,12 +163,18 @@ function intendedSymbol(component: Component): string {
  * model-has-fewer-pins fact belongs and is where it is reported.
  *
  * **AN ENTRY IS A DELIBERATE EDIT WITH A TEST BESIDE IT, never a silent widening.** Ten symbols in
- * KiCad's `Switch` library carry an `MP` pin; they are not added until a board needs one and the
- * claim has been checked against the installed library. An empty table that refuses loudly beats a
- * general rule that quietly accepts a guess - a geometric rule was measured and flagged 17 of 36
- * pins across eight other symbols this repository uses, including both terminals of `Device:R`.
+ * KiCad's `Switch` library carry an `MP` pin; they are not added until a board needs one. An empty
+ * table that refuses loudly beats a general rule that quietly accepts a guess - a geometric rule
+ * was measured and flagged 17 of 36 pins across eight other symbols this repository uses,
+ * including both terminals of `Device:R`.
+ *
+ * **WHAT KEEPS IT FROM ROTTING IS `tests/kicad/sheet-agreement-tables.test.ts`, NOT THIS
+ * COMMENT.** It is generic over the table rather than written against today's single entry: every
+ * KEY is resolved against the installed library on every run, so a typo'd symbol name refuses
+ * there, and every pin a key names is checked to be a pin that symbol actually has. It is
+ * EXPORTED for exactly that reason - a table nothing can read is a table nothing can check.
  */
-const MECHANICAL_PINS: Readonly<Record<string, readonly string[]>> = {
+export const MECHANICAL_PINS: Readonly<Record<string, readonly string[]>> = {
   "Switch:SW_Rotary_1x6_MP": ["MP"],
 }
 
