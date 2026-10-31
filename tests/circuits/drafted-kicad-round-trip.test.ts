@@ -1,14 +1,20 @@
 /**
- * **THE ONLY PROOF THAT KICAD READS AN APPROVED `drafted/` PAGE THE WAY THE CIRCUIT MEANS IT,
+ * **THE ONLY PROOF THAT KICAD READS A COMMITTED `drafted/` PAGE THE WAY THE CIRCUIT MEANS IT,
  * RUNNING INSIDE `bun test`.**
+ *
+ * **"COMMITTED", NOT "APPROVED".** Nothing in this file behaves differently because a page has a
+ * verdict - its subject is the sheet each board declares as its `"sch"`, whatever its status - and
+ * a verdict is bound to the exact bytes reviewed (`EVALUATING-DRAWINGS.md` §5), with
+ * `docs/schematic/verdicts.md` the only authority for one. A heading here claiming an approval
+ * expresses a status this file cannot know and would go stale the next time a page is re-papered.
  *
  * `tests/circuits/kicad-round-trip.ts`'s `kicadRoundTrip` was this proof for `lib/kicad/schematic.ts`'s
  * stub writer: write the stub, export it with the real `kicad-cli`, and compare the export against
  * the circuit. The stub writer is deleted - its own module comment recorded what it emitted as a
  * known failure mode - and with the schematic generator gone too, it would have become
  * the repository's only model-to-schematic writer, carrying that proof for output nobody ships. This
- * file moves the proof onto the five sheets this repository actually ships: the approved pages under
- * `drafted/pultec/`.
+ * file moves the proof onto the five sheets this repository actually ships: the pages committed
+ * under `drafted/pultec/`.
  *
  * **WHY THIS IS NOT THE SAME CHECK `registerDraftedPageTests` ALREADY RUNS, in `./drafted-sheet.ts`.**
  * Those per-board guards compare the model against the COMMITTED `.net` FIXTURE, and
@@ -35,7 +41,7 @@ import { modelForSheet } from "./sheet-model.ts"
 import { committedNetlist, exportDraftedSheet, withOnePinMoved } from "./drafted-sheet.ts"
 
 /**
- * The five boards with an approved page under `drafted/pultec/`, and the committed netlist fixture
+ * The five boards with a page committed under `drafted/pultec/`, and the committed netlist fixture
  * each board's own `tests/circuits/<board>.test.ts` declares. Written down again rather than
  * imported from those five files: each is a `registerDraftedPageTests` CALL, not an exported table,
  * and the pair (board, netlist path) is the one fact of theirs this file needs.

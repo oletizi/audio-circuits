@@ -6,12 +6,18 @@
  * schematic generator's front half - `circuitSpecFrom`, `buildCircuit`, `annotate` - and that
  * whole path is deleted. What a model-versus-drawing comparison actually needs out of it is three
  * things, and none of them needs a generator: the board's `Network`, the KiCad reference each
- * component carries on the approved page, and the KiCad pin number each canonical pin sits on.
+ * component carries on the COMMITTED page, and the KiCad pin number each canonical pin sits on.
  * This module produces those three, from the board's own circuit module and from the pin tables
  * `circuits/pultec/physical/parts.ts` declares.
  *
+ * **"COMMITTED", NOT "APPROVED", THROUGHOUT THIS FILE.** Nothing here reads a page's status: the
+ * subject is whichever sheet a board declares as its `"sch"` under `drafted/pultec/`. A verdict is
+ * bound to the exact bytes reviewed (`EVALUATING-DRAWINGS.md` §5) and `docs/schematic/verdicts.md`
+ * is the only authority for one, so an approval count written into a comment here would be a
+ * transcription with a date on it - and the register, not this file, is where that word belongs.
+ *
  * **`tests/circuits/guard-equivalence.test.ts` IS WHAT SAID IT IS THE SAME COMPARISON**, element
- * for element on all six of `SheetAgreement`'s lists across all five approved pages, against the
+ * for element on all six of `SheetAgreement`'s lists across all five of those pages, against the
  * generator-backed path. Nothing here was to be trusted on the strength of its reasoning; that
  * test was the measurement, it passed on all five pages with controls, and it was deleted with the
  * generator in Task 9 because it existed only while both implementations did. It is in git at
@@ -56,13 +62,13 @@ import type { Component, ComponentKind, Network } from "../../lib/model/types.ts
 /** Everything `compareSheetToModel` takes besides the netlist export itself. */
 export interface SheetModel {
   readonly network: Network
-  /** Component id -> the KiCad reference the approved page carries for it. */
+  /** Component id -> the KiCad reference the committed page carries for it. */
   readonly designators: ReadonlyMap<string, string>
   /** Component id -> (canonical pin name -> KiCad pin number). */
   readonly pinNumbers: ReadonlyMap<string, ReadonlyMap<string, string>>
 }
 
-/** One board whose `"sch"` is an approved page under `drafted/pultec/`. */
+/** One board whose `"sch"` is a page committed under `drafted/pultec/`. */
 interface DraftedBoard {
   readonly board: string
   /** The circuit module, repository-relative, checked against the board's own manifest. */
@@ -106,8 +112,8 @@ function declaredBoard(board: string): DraftedBoard {
   const entry = BOARDS.find((b) => b.board === board)
   if (entry === undefined) {
     throw new Error(
-      `no drafted-page model is declared for the board "${board}". The five boards with an ` +
-        `approved page under drafted/pultec/ are [${BOARDS.map((b) => b.board).join(", ")}], and ` +
+      `no drafted-page model is declared for the board "${board}". The boards with a page ` +
+        `committed under drafted/pultec/ are [${BOARDS.map((b) => b.board).join(", ")}], and ` +
         "each is written down in BOARDS in tests/circuits/sheet-model.ts with its circuit " +
         "module and builder. It is not derived from the name: a board directory says nothing " +
         "about which TypeScript builds it, and guessing would compare a page against whichever " +
@@ -127,7 +133,7 @@ function declaredBoard(board: string): DraftedBoard {
         `BOARDS in tests/circuits/sheet-model.ts imports ${entry.exportName}() from ` +
         `${entry.module}. The manifest is the authority for which circuit a board is, so this ` +
         "table is stale: point it at the module the manifest names. It is not followed " +
-        "automatically, because comparing the approved page against a circuit it was not drawn " +
+        "automatically, because comparing the committed page against a circuit it was not drawn " +
         "from would report the whole board as a disagreement and tell nobody why.",
     )
   }
@@ -138,7 +144,7 @@ function declaredBoard(board: string): DraftedBoard {
  * Kinds whose canonical pin vocabulary IS the symbol's pins 1..n, in the order written here.
  *
  * **IT WAS `lib/schgen/rules/symbols.ts`'s POSITIONAL RULE** - that file is deleted with the
- * generator - **narrowed to the four kinds the five approved pages carry and with each kind's
+ * generator - **narrowed to the four kinds the five committed pages carry and with each kind's
  * vocabulary spelled out rather than read from
  * `lib/model/kinds.ts`.** That rule's `POSITIONAL_KINDS` also covered `photoresistor`, which no
  * Pultec board has; a kind absent here REFUSES, and widening the table is a deliberate edit.
@@ -325,7 +331,7 @@ export function pinNumbersFor(component: Component): ReadonlyMap<string, string>
     throw new Error(
       `no pin numbering is declared for component "${component.id}" of kind ` +
         `"${component.kind}". POSITIONAL_PINS in tests/circuits/sheet-model.ts covers the four ` +
-        "kinds the five approved Pultec pages carry, and the selectors and the junction headers " +
+        "kinds the five committed Pultec pages carry, and the selectors and the junction headers " +
         "are handled above. Add this kind with the canonical order its symbol numbers 1..n, " +
         "read off the installed library. It is not defaulted: a pin number guessed from " +
         "iteration order is a wrong connection in a drawing that looks right.",
@@ -345,7 +351,7 @@ export function pinNumbersFor(component: Component): ReadonlyMap<string, string>
 }
 
 /**
- * **PER BOARD, PER COMPONENT, A PIN MAP THE APPROVED PAGE DECLARES AND NO RULE DERIVES.** It
+ * **PER BOARD, PER COMPONENT, A PIN MAP THE COMMITTED PAGE DECLARES AND NO RULE DERIVES.** It
  * REPLACES the rule's answer for that one component on that one board, and nothing else.
  *
  * **ONE ENTRY, AND IT IS A FACT ABOUT A DRAWING THE OWNER LOOKED AT.** `R2` on `pultec-low-boost`
@@ -364,8 +370,10 @@ export function pinNumbersFor(component: Component): ReadonlyMap<string, string>
  * **IT IS CARRIED HERE BECAUSE THE PAGE IS FROZEN AND ITS DECLARATION'S HOME IS NOT.** The map
  * was declared in `circuits/pultec/schematic/low-boost.ts`, which exists to feed the schematic
  * generator and is deleted with it; the drawn page, its sha256 and its committed export are not
- * going anywhere. Without this entry the guard would report two net disagreements on a page the
- * owner approved - the swap the generator was told to make.
+ * going anywhere. Without this entry the guard would report two net disagreements on the committed
+ * page - the swap the generator was told to make at the owner's instruction, quoted above.
+ * `docs/schematic/verdicts.md` is the authority for what he then thought of the page; this entry
+ * does not depend on that and must not restate it.
  *
  * **AN ENTRY IS COMPLETE OR IT REFUSES**, which is the rule the declaration it replaces also
  * followed: *"A partial map is not completed by a rule here, because a map that covers some pins
@@ -414,7 +422,7 @@ function checkDeclaredPinNumbers(board: string, network: Network): void {
 const REF_PREFIX = /^([A-Z]+)/
 
 /**
- * The KiCad reference every component of `network` carries on its approved page.
+ * The KiCad reference every component of `network` carries on its committed page.
  *
  * `<refPrefix><n>` in network order, counting per prefix from 1, which is what the generator's
  * `lib/schgen/lock/annotate.ts` assigned from an empty references lock with nothing pinned - see

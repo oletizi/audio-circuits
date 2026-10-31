@@ -6,6 +6,13 @@
  * circuit still agrees with the schematic export - that guard is what this declaration exists
  * for."* This module is what the four Pultec section boards' files share.
  *
+ * **"COMMITTED", NOT "APPROVED", THROUGHOUT.** Nothing here reads a page's status: the subject is
+ * the sheet a board declares as its `"sch"`, whatever its status. A verdict is bound to the exact
+ * bytes reviewed (`EVALUATING-DRAWINGS.md` §5) and `docs/schematic/verdicts.md` is the only
+ * authority for one, which is why the digest guard below binds this page to a `RECORD.md` row
+ * rather than restating a status - and why an approval count in a comment here would be a
+ * transcription with a date on it.
+ *
  * **IT IS NOT `expectSameCircuit`, AND THAT IS NOT A SHORTCUT.** `./committed-schematic.ts`'s
  * `expectSameCircuit` compares a
  * KiCad export against `toImportedNetlist(network, DESIGNATORS, PIN_NUMBERS, ...)` - the VEROROUTE
@@ -18,7 +25,7 @@
  *
  * **IT RAN `lib/schgen/gates/round-trip.ts` UNTIL THE SWITCH, and the two were MEASURED to agree
  * before the switch was made** - element for element, in order, on all six lists, on all five
- * approved pages. That measurement was `./guard-equivalence.test.ts`, which existed only while
+ * committed pages. That measurement was `./guard-equivalence.test.ts`, which existed only while
  * both implementations did and was deleted with the generator; it is in git at `f6a4d40^..`.
  * `roundTrip` needed the schematic generator's whole front half to build a model to compare
  * against; `compareSheetToModel` takes a `Network`, a designator map and a pin-number map, which
@@ -75,7 +82,7 @@ export function draftedSheet(circuit: string, board: string): string {
  * Exports `board`'s drafted sheet with the real `kicad-cli`, right now, and imports the result.
  *
  * **THIS IS THE PROOF `./kicad-round-trip.ts`'s `kicadRoundTrip` GAVE THE STUB WRITER, MOVED ONTO
- * THE APPROVED PAGE.** `registerDraftedPageTests`'s other guards compare the model against the
+ * THE COMMITTED PAGE.** `registerDraftedPageTests`'s other guards compare the model against the
  * committed `.net` fixture, and `./sheet-model.ts`'s own module doc says why deliberately: that
  * fixture is reconciled by `make netlist-agrees` outside `bun test`, so a stale fixture passes a
  * `bun test`-only run. This function is what lets a test invoke `kicad-cli` on the committed sheet
@@ -134,7 +141,8 @@ export function sheetDigestInRecord(dir: string): string {
     throw new Error(
       `${file}: expected exactly one row naming the sheet's sha256 as THE BINDING, found ` +
         `${rows.length}. That row is what binds this committed page to the verdict recorded in ` +
-        "docs/schematic/verdicts.md; without it nothing here knows which bytes were approved.",
+        "docs/schematic/verdicts.md; without it nothing here knows which bytes that verdict was " +
+        "given on.",
     )
   }
   return first[1] as string

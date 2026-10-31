@@ -3,7 +3,7 @@
  * STUB WRITER, FOR A BOARD THAT ALREADY HAS A COMMITTED SCHEMATIC AND NEEDS NO STUB.**
  *
  * The five `transistor-preamp` boards each carry a committed, real `.kicad_sch` under
- * `circuits/transistor-preamp/` - not a `drafted/` approved page, but not a throwaway either: it is
+ * `circuits/transistor-preamp/` - not a page committed under `drafted/`, but not a throwaway either: it is
  * the file their own `perfboard.json` declares as `"sch"`, and `make/board.mk`'s `netlist-agrees`
  * re-exports and reconciles it on every `make check` run, the same mechanism the five Pultec pages
  * use. **Nothing about that file or that mechanism depends on `lib/kicad/schematic.ts`'s stub

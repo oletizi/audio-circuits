@@ -24,7 +24,7 @@
  * use. `guide/` on a real board is never written by a test.
  *
  * **THIS BOARD NOW DECLARES AN `"sch"`, AND THAT CHANGED THIS FILE'S PREMISE.**
- * Until `boards/pultec-low-boost/perfboard.json` named the approved page in
+ * Until `boards/pultec-low-boost/perfboard.json` named the committed page in
  * `drafted/pultec/pultec-low-boost/`, it declared none, and the paragraph that
  * stood here said so: `resolveSchematic` offered the board to a REAL `schgen`
  * generation against `REPO_ROOT`, that generation resolved `"withheld"`, and

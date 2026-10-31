@@ -4,12 +4,21 @@
  * and nothing else.
  *
  * It is the standalone replacement for `lib/schgen/gates/round-trip.ts`, written so that the four
- * guards binding the five approved pages under `drafted/pultec/` to their models would survive
+ * guards binding the five pages COMMITTED under `drafted/pultec/` to their models would survive
  * the deletion of `lib/schgen/` - which has now happened. **It reads a `Network`, a designator
  * map, a pin-number map and an imported netlist, all four of which exist without a schematic
  * generator**, and that is the whole point of it. The equivalence of the two implementations was
- * measured on all six lists on all five approved pages before the switch
+ * measured on all six lists on all five of those pages before the switch
  * (`tests/circuits/guard-equivalence.test.ts`, which existed only while both did).
+ *
+ * **"COMMITTED", NOT "APPROVED", AND THE DISTINCTION IS NOT PEDANTRY.** Nothing in this module
+ * behaves differently because a page has a verdict: what it compares is the page a board declares
+ * as its `"sch"`, whatever its status. A verdict is bound to the exact bytes reviewed
+ * (`EVALUATING-DRAWINGS.md` §5, *"so that a stale approval cannot be expressed"*), and
+ * `docs/schematic/verdicts.md` is the only authority for one - so a count of approvals written
+ * into a comment here is a transcription with a date on it that goes stale the next time a page is
+ * re-papered or re-approved. **This module says `drafted/` and leaves the word *approved* to the
+ * register.**
  *
  * ---
  *

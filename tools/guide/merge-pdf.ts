@@ -41,8 +41,16 @@
  * PDF whose pages carry no `/Resources`, it repairs them, says so, writes a
  * correct file and exits 3. That is treated as a refusal rather than waved
  * through, because a warning means one of the two inputs is malformed - and
- * the inputs are this repository's own printed guide and an approved
- * schematic sheet's export, neither of which has any business needing repair.
+ * the inputs are this repository's own printed guide and the export of a
+ * committed schematic sheet, neither of which has any business needing repair.
+ *
+ * **"COMMITTED", NOT "APPROVED".** Nothing in this module reads a page's
+ * status; what it merges is the sheet the board declares. A verdict is bound
+ * to the exact bytes reviewed (`../../EVALUATING-DRAWINGS.md` §5) and
+ * `docs/schematic/verdicts.md` is the only authority for one. The refusals
+ * further down that DO speak of approval are about a RESIZE - a drawing
+ * shrunk to fit is a change to the drawing, which is its reviewer's to
+ * accept - and that is a different claim from a page's status.
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
@@ -134,7 +142,7 @@ function run(pdfMerge: string, args: readonly string[], what: string): string {
         `It was invoked as: ${args.join(" ")}\n` +
         "qpdf exits 3 when it SUCCEEDS WITH WARNINGS - a repaired input - and that is refused here " +
         "too: a warning means one of the inputs is malformed, and the inputs are this repository's " +
-        `own printed guide and an approved sheet's export.\n${POINTER}`,
+        `own printed guide and the export of a committed schematic sheet.\n${POINTER}`,
     )
   }
   return result.stdout ?? ""
