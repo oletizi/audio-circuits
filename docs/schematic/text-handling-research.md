@@ -1,6 +1,31 @@
 Text handling in a generated schematic: the research record
 ===========================================================
 
+> **THE GENERATOR THIS DOCUMENT IS ABOUT IS DELETED, AND THE FOUR PROBES THAT
+> DROVE IT ARE DELETED WITH IT. THE FOUR LOGS AND THE PASTE CHECKER SURVIVE.**
+> `lib/schgen/`, `tools/schgen/` and `tests/schgen/` went in `6085dc5`
+> (`../superpowers/plans/2026-10-30-remove-schgen.md`;
+> [`../research/2026-10-30-schgen-removed.md`](../research/2026-10-30-schgen-removed.md)),
+> so **every `lib/schgen/`, `tools/schgen/` or `tests/schgen/` path below is a
+> path into deleted code** and no `re-drives every figure` sentence in this
+> document can be acted on. The probes are in git at `6085dc5^`.
+>
+> **WHAT THIS DOES NOT WEAKEN, AND IT IS THE POINT.** The four probe runs are
+> committed beside this document under
+> [`text-handling-research-logs/`](text-handling-research-logs/), each named for
+> its probe and each verified byte-identical to the original by sha256; the
+> checker is `tools/text-metrics/verify-pastes.ts` and
+> `tests/text-metrics/document-pastes.test.ts` drives its **44 cases on every
+> `bun test`**. That check never established that a log was a current run - what
+> it couples is **this document to the log it was pasted from** - so losing the
+> probes costs the ability to take a measurement again and costs the coupling
+> nothing. Each section's `[RAN]` marks stand: they were driven, on the commit
+> each section names.
+>
+> **The log paths each section gives are the paths the log was committed at.**
+> They are left as written, because the sentence around them is a dated record
+> of where a figure came from; the current location is the directory above.
+
 **This document is the deliverable of
 [`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md),
 one section per task.** It is research. **It designs nothing, recommends
@@ -797,7 +822,9 @@ external download and no installed application:
 bun run tools/schgen/elk-labels/probe.ts
 ```
 
-re-drives every figure in this section from a clean checkout.
+re-drives every figure in this section from a clean checkout. **DELETED - see
+the notice at the head of this document.** The log is
+[`text-handling-research-logs/elk-labels-probe-run.log`](text-handling-research-logs/elk-labels-probe-run.log).
 
 ### 2.0 Two grades of evidence, kept apart, because Task 7 ranks them differently
 
@@ -3502,7 +3529,8 @@ bun run tools/schgen/label-freedom/probe.ts
 ```
 
 re-drives every figure in this section from a clean checkout, in about thirty
-seconds.
+seconds. **DELETED - see the notice at the head of this document.** The log is
+[`text-handling-research-logs/label-freedom-probe-run.log`](text-handling-research-logs/label-freedom-probe-run.log).
 
 ### 5.0 Three grades of evidence, kept apart
 
@@ -4360,7 +4388,9 @@ checker. Unlike §1's probe it needs nothing external at all:
 bun run tools/schgen/field-order/probe.ts
 ```
 
-re-drives every figure in §6.5 from a clean checkout.
+re-drives every figure in §6.5 from a clean checkout. **DELETED - see the notice
+at the head of this document.** The log is
+[`text-handling-research-logs/field-order-probe-run.log`](text-handling-research-logs/field-order-probe-run.log).
 
 ### 6.0 Three grades of evidence, kept apart
 
