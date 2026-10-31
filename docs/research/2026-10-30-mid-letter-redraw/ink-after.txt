@@ -1,0 +1,33 @@
+sheet /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/after/pultec-mid.kicad_sch
+rendered 6600 x 5100 px at 600 dpi
+
+tag                       ink x1    ink x2    width   height      px  verdict
+hi_boost_out tag          16.995    31.303   14.309    2.794    5769  
+in tag                   257.940   261.157    3.217    2.794    1300  
+SW2 pin1 + boost_return   231.550   252.928   21.378    2.794    6622  
+SW2 pin3 + cut_return    231.550   252.928   21.378    2.794    4437  
+VOID upper-left                -         -        -        -       0  EMPTY as expected
+VOID lower-left                -         -        -        -       0  EMPTY as expected
+VOID lower-right               -         -        -        -       0  EMPTY as expected
+CONTROL ink at SW1        53.310    82.308   28.998   30.014   31831  
+C1 .33uF                  94.051    99.047    4.995    1.439     990  
+C2 .15uF                 109.291   114.287    4.995    1.439     908  
+C3 .047uF                123.896   130.119    6.223    1.482    1126  
+C4 .022uF                139.136   145.359    6.223    1.439    1238  
+C5 3300pF                154.080   160.896    6.816    1.820    1634  
+C6 .022uF                169.616   175.839    6.223    1.439    1238  
+C7 3300pF                184.560   191.376    6.816    1.820    1634  
+C8 .012uF                200.096   206.319    6.223    1.439    1204  
+C9 .012uF                200.096   206.319    6.223    1.439    1204  
+C10 2200pF               215.040   221.856    6.816    1.820    1602  
+C11 4700pF               169.320   176.136    6.816    1.863    1492  
+C12 1500pF               184.560   191.376    6.816    1.820    1590  
+C13 4700pF               138.840   145.656    6.816    1.863    1492  
+C14 2200pF               154.080   160.896    6.816    1.820    1602  
+C15 4700pF               123.600   130.416    6.816    1.863    1492  
+C16 2200pF                93.120    99.936    6.816    1.820    1602  
+C17 1000pF               108.360   115.176    6.816    1.820    1582  
+
+WIDEST: CONTROL ink at SW1 at 28.998 mm
+NARROWEST: in tag at 3.217 mm
+every box matched its expectation (controls included)

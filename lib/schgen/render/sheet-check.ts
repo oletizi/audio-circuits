@@ -3,6 +3,25 @@
  * rewritten by `tools/schgen/port.ts` (imports only, per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
+ *
+ * **DIVERGED BY TASK 2 of `docs/superpowers/plans/2026-10-27-gates-classify.md`:** `assertSheetSafe`
+ * throws `SchgenRefusal(findings, message)` rather than a plain `Error`, with the thrown message
+ * text unchanged. The function already split its own two throw sites into `"wire safety"`
+ * (`checkWireSafety`, `danglingWireEnds`) and `"body clearance"` (`bodyOverlaps`, `clearance`,
+ * `bodyGlyphProblems`, `glyphGlyphProblems`) - the owner's line, already present here - and that
+ * split is preserved as `kind`s rather than re-derived: wire safety's batches are tagged
+ * `"missing-junction"` and `"dangling-end"`; body clearance's are tagged `"body-clearance"` (the
+ * overlap and margin checks) and `"glyph-clearance"` (the glyph checks), matching the dedicated
+ * kinds those two concerns already have in `findings.ts`.
+ *
+ * **`"missing-junction"`, NOT `"short"`, FOR THE SAME REASON `layout-check.ts` GIVES AT ITS OWN
+ * USE OF THIS BATCH:** `checkWireSafety`'s messages are predominantly "split the wire there"
+ * mid-wire junction cases, which `CLAUDE.md` names by this name as the class that must keep
+ * refusing. **One branch this tag still gets wrong:** `wireOverWires`'s collinear-overlap case
+ * (rule 2) runs with no net test, and a SAME-NET collinear overlap is "redundant geometry" per
+ * its own docstring - correct about the circuit, merely ugly, which is `"usable"`. Tagging it
+ * `"missing-junction"` (or `"short"`) withholds an ugly-but-correct drawing rather than shipping
+ * it. Not fixed here: that needs `wireOverWires` itself to say which branch produced a line.
  */
 
 /**
@@ -14,6 +33,7 @@
  * touches nothing once every block's pins, power symbols and labels are on the sheet.
  */
 import { unitKey, type SheetId } from "../ir/types.ts";
+import { finding, SchgenRefusal, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { placedPins } from "./blocks.ts";
 import { sceneClearanceProblems } from "./body-clearance.ts";
@@ -54,7 +74,7 @@ export function sheetItems(scene: SheetScene): ConnItem[] {
   return [...wires, ...pins, ...powers, ...labels];
 }
 
-function bodyOverlaps(scene: SheetScene): string[] {
+function bodyOverlaps(scene: SheetScene): Finding[] {
   const placed = scene.blocks.flatMap(({ g, layout }) =>
     layout.placements.map((pl) => {
       const u = g.units.find((x) => x.part.label === pl.part && x.unit === pl.unit);
@@ -64,26 +84,82 @@ function bodyOverlaps(scene: SheetScene): string[] {
       return { key: unitKey(pl.part, pl.unit), box: placeBox(pl.at, pl.rot, box) };
     }),
   );
-  return placed.flatMap((p, i) => placed.slice(i + 1).flatMap((q) => (boxesOverlap(p.box, q.box) ? [`bodies of ${p.key} and ${q.key} overlap`] : [])));
+  return placed.flatMap((p, i) =>
+    placed.slice(i + 1).flatMap((q) =>
+      boxesOverlap(p.box, q.box) ? [finding("body-clearance", `bodies of ${p.key} and ${q.key} overlap`, `${p.key} & ${q.key}`)] : [],
+    ),
+  );
 }
 
-function clearance(scene: SheetScene): string[] {
-  return sceneClearanceProblems({
+/**
+ * `where` stays sheet-level: `sceneClearanceProblems` (`body-clearance.ts`) returns plain strings
+ * with no per-item structure to read without parsing the text - restructuring that file is out of
+ * this task's scope.
+ */
+function clearance(scene: SheetScene): Finding[] {
+  const where = `sheet ${scene.sheet}`;
+  const problems = sceneClearanceProblems({
     scope: `sheet ${scene.sheet}`,
     units: scene.blocks.flatMap((b) => b.g.units),
     placements: scene.blocks.flatMap((b) => b.layout.placements),
     wires: scene.blocks.flatMap((b) => b.layout.wires),
     anchors: [...scene.powers, ...scene.labels],
   });
+  return problems.map((what) => finding("body-clearance", what, where));
 }
 
-const lines = (problems: readonly string[]): string => problems.map((p) => `\n  - ${p}`).join("");
+const lines = (findings: readonly Finding[]): string => findings.map((f) => `\n  - ${f.what}`).join("");
 
-/** Throws `sheet <id>: wire safety:` or `sheet <id>: body clearance:` with one line per problem. */
+/**
+ * Throws `sheet <id>: wire safety:` or `sheet <id>: body clearance:` with one line per problem.
+ * `where` on the wire-safety and glyph batches stays sheet-level, same reason as `clearance`
+ * above: `checkWireSafety`, `danglingWireEnds` (`wire-safety.ts`) and `bodyGlyphProblems`/
+ * `glyphGlyphProblems` (`glyph-clearance.ts`) return plain strings with no item to read out
+ * without parsing text.
+ */
 export function assertSheetSafe(scene: SheetScene): void {
+  const found = sheetSafety(scene);
+  if (found.findings.length > 0) throw new SchgenRefusal(found.findings, found.message);
+}
+
+/**
+ * **`assertSheetSafe` WITHOUT THE THROW** - Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`, and the half of that task without which
+ * nothing visible would have changed.
+ *
+ * The three transistor-preamp boards refuse at the ELK backend's clearance check on a power-symbol
+ * value, and `textProblems` re-checks the same overlaps once the blocks are on a sheet. Carrying
+ * the block-level geometry past the first gate and leaving this one throwing would have moved the
+ * refusal twelve lines later and produced the same nothing: an independent review caught exactly
+ * that reading of an earlier revision of the spec, which is why this function exists.
+ *
+ * **THE WIRE-SAFETY SHORT CIRCUIT IS PRESERVED, DELIBERATELY.** `assertSheetSafe` checked bodies
+ * only when wire safety was clean, and this returns the safety batch alone when it is not. Both
+ * batches would be a longer report, and it would be a report about a sheet whose connectivity is
+ * already wrong - and `bodyOverlaps` throws rather than refusing when a placement is not a unit of
+ * its block, so running it on a sheet the earlier gate rejected can surface a different error than
+ * the one a reader is owed. `message` is empty exactly when `findings` is.
+ */
+export interface SheetSafety {
+  readonly findings: readonly Finding[];
+  /** The sentence `assertSheetSafe` throws: which of the two batches this is, and its lines. */
+  readonly message: string;
+}
+
+export function sheetSafety(scene: SheetScene): SheetSafety {
+  const where = `sheet ${scene.sheet}`;
   const items = sheetItems(scene);
-  const safety = [...checkWireSafety(items), ...danglingWireEnds(items)];
-  if (safety.length > 0) throw new Error(`sheet ${scene.sheet}: wire safety:${lines(safety)}`);
-  const bodies = [...bodyOverlaps(scene), ...clearance(scene), ...bodyGlyphProblems(scene), ...glyphGlyphProblems(scene)];
-  if (bodies.length > 0) throw new Error(`sheet ${scene.sheet}: body clearance:${lines(bodies)}`);
+  const safety: Finding[] = [
+    ...checkWireSafety(items).map((what) => finding("missing-junction", what, where)),
+    ...danglingWireEnds(items).map((what) => finding("dangling-end", what, where)),
+  ];
+  if (safety.length > 0) return { findings: safety, message: `sheet ${scene.sheet}: wire safety:${lines(safety)}` };
+  const bodies: Finding[] = [
+    ...bodyOverlaps(scene),
+    ...clearance(scene),
+    ...bodyGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
+    ...glyphGlyphProblems(scene).map((what) => finding("glyph-clearance", what, where)),
+  ];
+  if (bodies.length > 0) return { findings: bodies, message: `sheet ${scene.sheet}: body clearance:${lines(bodies)}` };
+  return { findings: [], message: "" };
 }

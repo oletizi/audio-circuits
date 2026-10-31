@@ -24,6 +24,7 @@
  */
 
 import { labelledNets } from "../ir/classify.ts";
+import { mechanicalPinsOf } from "../ir/mechanical-pins.ts";
 import type { Circuit, NetName, PartLabel } from "../ir/types.ts";
 import { stderrProblems } from "../../../tools/schgen/kicad-run.ts";
 import type { ImportedNetlist } from "../../kicad/netlist.ts";
@@ -46,6 +47,38 @@ export interface ExpectedNets {
 /** A hierarchical net name ("/sheet/NET") reduced to its leaf ("NET"). */
 const leaf = (n: string) => n.slice(n.lastIndexOf("/") + 1);
 
+/**
+ * `REF.PIN` for every MECHANICAL pin the IR deliberately omits - a mount lug the electrical model
+ * is not required to carry (`../ir/mechanical-pins.ts`, `docs/known-gaps.md` **G282**).
+ *
+ * **WITHOUT THIS THE EXEMPTION TRADES ONE FALSE REFUSAL FOR ANOTHER, and a worse one**, which a
+ * review found before any board reached this gate. `kicad-cli` gives EVERY unconnected pin its own
+ * `unconnected-(REF-PadN)` net, and it does so whether the pin carries a `no_connect` marker or is
+ * simply dangling - **which this repository has already measured: `docs/known-gaps.md` **G287**
+ * deleted the marker from the emitter and found the pin still got its placeholder net and the
+ * round trip still agreed on all five comparisons.** So the export always reports the mount lug,
+ * while the IR, by design, has no pin for it. The comparison below would then report
+ * *"pin SW_HI_BOOST.MP is unconnected in the schematic but the IR puts it on a net"* - **false
+ * twice over**: the IR does not put it on a net, it has no such pin at all.
+ *
+ * So a mechanical pin is EXPECTED to come back unconnected, and that is what this adds. The
+ * table is trusted here because `pinsDeclared` (`../ir/validate.ts`) refuses a stale entry before
+ * generation can reach a gate, so a listed pin the symbol lacks never arrives.
+ *
+ * **IT DOES NOT MAKE THE PIN UNCHECKABLE.** The opposite direction still refuses: a mechanical pin
+ * the schematic actually connects is reported by the first loop of `compareConnectivity`.
+ */
+function mechanicalNodes(c: Circuit, refs: ReadonlyMap<PartLabel, string>): string[] {
+  const out: string[] = [];
+  for (const part of c.parts.values()) {
+    const ref = refs.get(part.label);
+    if (ref === undefined) continue;
+    const declared = new Set(c.pins.filter((q) => q.part === part.label).map((q) => q.pin));
+    for (const pin of mechanicalPinsOf(part.libId)) if (!declared.has(pin)) out.push(`${ref}.${pin}`);
+  }
+  return out;
+}
+
 export function expectedConnectivity(c: Circuit, refs: ReadonlyMap<PartLabel, string>): ExpectedNets {
   const problems: string[] = [];
   for (const p of c.parts.keys()) if (!refs.has(p)) problems.push(`part ${p} has no reference in refs.lock.json`);
@@ -59,6 +92,7 @@ export function expectedConnectivity(c: Circuit, refs: ReadonlyMap<PartLabel, st
     if (pin.net === null) nc.push(node);
     else byNet.set(pin.net, [...(byNet.get(pin.net) ?? []), node]);
   }
+  for (const node of mechanicalNodes(c, refs)) nc.push(node);
   const labelled = new Map<NetName, string[]>();
   const internal = new Map<NetName, string[]>();
   for (const [net, nodes] of [...byNet.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {

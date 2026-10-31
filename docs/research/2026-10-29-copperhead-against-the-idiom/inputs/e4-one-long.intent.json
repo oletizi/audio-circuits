@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J1",
+      "libId": "Connector_Generic:Conn_01x05",
+      "value": "1x05",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "J2",
+      "libId": "Connector_Generic:Conn_01x05",
+      "value": "1x05",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI1",
+      "libId": "Device:R",
+      "value": "0R",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI2",
+      "libId": "Device:R",
+      "value": "47K",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI3",
+      "libId": "Device:C",
+      "value": "0.047uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI4",
+      "libId": "Device:R",
+      "value": "430R",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI5",
+      "libId": "Device:R",
+      "value": "0R",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI6",
+      "libId": "Device:R",
+      "value": "4.7K",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI7",
+      "libId": "Device:R",
+      "value": "0R",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SI8",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "R1",
+      "libId": "Device:R",
+      "value": "56K",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "RV1",
+      "libId": "Device:R_Potentiometer",
+      "value": "47K",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "SW1",
+      "libId": "Switch:SW_Rotary_1x6_MP",
+      "value": "1x6 rotary",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C1",
+      "libId": "Device:C",
+      "value": "0.33uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C2",
+      "libId": "Device:C",
+      "value": "0.22uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C3",
+      "libId": "Device:C",
+      "value": "0.12uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C4",
+      "libId": "Device:C",
+      "value": "0.068uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C5",
+      "libId": "Device:C",
+      "value": "0.047uF",
+      "group": "Low boost section"
+    },
+    {
+      "ref": "C6",
+      "libId": "Device:C",
+      "value": "0.033uF",
+      "group": "Low boost section"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "pins": [
+        "C1.1",
+        "C2.1",
+        "C3.1",
+        "C4.1",
+        "C5.1",
+        "C6.1",
+        "J1.5",
+        "J2.1",
+        "J2.2",
+        "J2.3",
+        "J2.4",
+        "J2.5",
+        "RV1.1",
+        "SI8.2"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_1",
+      "pins": [
+        "C1.2",
+        "SW1.1"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_2",
+      "pins": [
+        "C2.2",
+        "SW1.2"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_3",
+      "pins": [
+        "C3.2",
+        "SW1.3"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_4",
+      "pins": [
+        "C4.2",
+        "SW1.4"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_5",
+      "pins": [
+        "C5.2",
+        "SW1.5"
+      ]
+    },
+    {
+      "name": "cap_selector_contact_6",
+      "pins": [
+        "C6.2",
+        "SW1.6"
+      ]
+    },
+    {
+      "name": "hi_boost_pot_input",
+      "pins": [
+        "SI1.2",
+        "SI2.1"
+      ]
+    },
+    {
+      "name": "hi_cut_tap_one",
+      "pins": [
+        "SI3.2",
+        "SI4.2"
+      ]
+    },
+    {
+      "name": "hi_cut_tap_two",
+      "pins": [
+        "SI4.1",
+        "SI5.2",
+        "SI6.1"
+      ]
+    },
+    {
+      "name": "hi_boost_pot_output",
+      "pins": [
+        "J1.2",
+        "SI2.2",
+        "SI5.1",
+        "SI7.1"
+      ]
+    },
+    {
+      "name": "eq_section_input",
+      "pins": [
+        "J1.1",
+        "SI1.1",
+        "SI8.1"
+      ]
+    },
+    {
+      "name": "lo_boost_node",
+      "pins": [
+        "J1.3",
+        "R1.1",
+        "RV1.2",
+        "RV1.3",
+        "SI3.1",
+        "SI6.2",
+        "SW1.7"
+      ]
+    },
+    {
+      "name": "eq_section_output",
+      "pins": [
+        "J1.4",
+        "R1.2",
+        "SI7.2"
+      ]
+    }
+  ],
+  "noConnect": [
+    "SW1.MP"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Low boost section"
+    ],
+    "date": "2026-10-28"
+  }
+}

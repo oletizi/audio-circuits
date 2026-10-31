@@ -184,8 +184,18 @@ function contains(outer: Wire, inner: Wire): boolean {
  * segment end - **ruling R33**.
  *
  * **WHAT IT DOES.** A segment is divided wherever another segment of its own net, or a pin of its
- * own net, has an END strictly inside it. A segment from A to C with a branch at B comes out as
- * A-B and B-C.
+ * own net, has an END strictly inside it, **and wherever a perpendicular segment of its own net
+ * crosses its interior with neither of them ending there - a same-net X.** A segment from A to C
+ * with a branch at B comes out as A-B and B-C; an X comes out as four halves meeting at the
+ * crossing.
+ *
+ * **THE X CLAUSE WAS MISSING UNTIL 2026-10-29 AND THE SHAPE IS A BRANCH POINT BY THIS MODULE'S OWN
+ * DEFINITION**, which is what made its absence a defect rather than a choice: `branchesOf` counts a
+ * pass-through as 2, so an X has degree 4, and `interestingPoints` exists in part to find *"an X of
+ * one net whose two segments cross without either ending there"*. Implementing R33 for the T and
+ * not for the X left that point unsplit in the drawn geometry and put the two sides of obligation 2
+ * in permanent disagreement there. The clause itself carries the measurement that found it; see
+ * `tools/schgen/junction-probe.ts`.
  *
  * **WHY THIS IS NOT A REPAIR, WHICH IS THE QUESTION OBLIGATION 5 ASKS AND WHICH R33 ANSWERS.**
  * A segment from A to C with a branch at B is **the same ink** whether it is held as one wire or as
@@ -227,6 +237,40 @@ function splitAtBranches(
       for (const end of [other.wire.a, other.wire.b]) {
         if (strictlyInside(end, t.wire.a, t.wire.b)) inside.set(pointKey(end), end)
       }
+      // **AND AT A SAME-NET X, WHERE NEITHER SEGMENT ENDS AT THE CROSSING.** The clause above cuts
+      // only where the OTHER segment's ENDPOINT lands inside this one, which is a T. Two segments
+      // of one net can also cross interior to interior, and `branchesOf` counts a pass-through as
+      // 2, so that point has degree 4 and IS one of this net's branch points - `interestingPoints`
+      // says so in as many words, naming *"an X of one net whose two segments cross without either
+      // ending there"* as the reason its second half exists. **R33 says every segment is split at
+      // the branch points of its own net, and until 2026-10-29 this function implemented that for
+      // the T and not for the X**, so the X survived into the drawn geometry and the two sides of
+      // obligation 2 disagreed by construction: `branchesOf` read `ends=0, through=2` and required
+      // a junction, while `junctionPoints` counted 0 ends and its G293 T-arm requires an END to lie
+      // inside a wire. Neither function was wrong about its input; the input was never split.
+      //
+      // **IT WAS FOUND ON `pultec-mid`, the eleventh board**, whose `pultec-mid-own` block crosses
+      // net `mid_tap_2h` with itself at (26.67, 93.98) - the one branch point in the whole corpus
+      // with no END at it. `bun tools/schgen/junction-probe.ts --board pultec-mid --branches` is the
+      // census that establishes that, and `--at 26.67,93.98` prints both sides at the point.
+      //
+      // **THE REMEDY IS R33's OWN AND NOT A SECOND ONE.** Emitting a junction into unsplit geometry
+      // is R32, which `checkWireSafety` refused at the same 25 points; and `connectedComponents`
+      // joins a wire to a wire only at coincident ENDS, so before the cut these two segments are
+      // not connected in this generator's own connectivity model either - the net is held together
+      // by a label anchor alone, which is exactly the "connection the netlist does not make"
+      // inverted.
+      //
+      // Only a PERPENDICULAR pair can cross interior to interior: a same-net collinear overlap is
+      // either collapsed by R31 or refused by clause (d) before this function runs, so the two
+      // readings that would make a cut ambiguous are already gone. The crossing point must be
+      // strictly inside THIS segment and anywhere on the other - an endpoint of the other lands in
+      // the clause above and `inside` is keyed by point, so the two clauses cannot double-count.
+      if (isHorizontal(t.wire) === isHorizontal(other.wire)) continue
+      const h = isHorizontal(t.wire) ? t.wire : other.wire
+      const v = isHorizontal(t.wire) ? other.wire : t.wire
+      const cross: Point = { x: v.a.x, y: h.a.y }
+      if (strictlyInside(cross, t.wire.a, t.wire.b) && onSegment(cross, other.wire.a, other.wire.b)) inside.set(pointKey(cross), cross)
     }
     for (const pin of pins) {
       // **A FOREIGN-net pin inside a wire is not split for, and the reason is NOT that splitting

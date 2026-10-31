@@ -526,3 +526,95 @@ test("after the split, junctionPoints and branchJunctions agree and wire-safety 
   const unsplit: ConnItem[] = l.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
   expect(checkWireSafety(unsplit).filter((p) => p.includes("mid-wire")).length).toBe(1)
 })
+
+/**
+ * **R33 OVER THE ONE BRANCH SHAPE IT DID NOT COVER: A SAME-NET X.**
+ *
+ * `branchesOf` counts a segment PASSING THROUGH a point as 2, so two segments of one net whose
+ * interiors cross with neither ending there have degree 4 and are a branch - and
+ * `interestingPoints` says so in as many words, naming *"an X of one net whose two segments cross
+ * without either ending there"* as the reason its second half exists. `splitAtBranches` cut only
+ * where another same-net wire's ENDPOINT or a same-net PIN lay strictly inside a segment, so it cut
+ * nothing here, and the two sides of obligation 2 then disagreed by construction: `branchesOf` read
+ * `ends=0, through=2` and required a junction, while `junctionPoints`' end-count arm saw 0 ends and
+ * its G293 T-arm requires an END to lie inside a wire.
+ *
+ * **The measurement that found it** is `pultec-mid`, the eleventh board, whose `pultec-mid-own`
+ * block crosses net `mid_tap_2h` with itself at (26.67, 93.98). `bun tools/schgen/junction-probe.ts
+ * --board pultec-mid --at 26.67,93.98` prints both sides there; `--branches` over all eleven boards
+ * is what established that 203 of 204 branch points in the corpus have at least one END at the
+ * point and all 203 emit, and that this shape is the only one that does not.
+ *
+ * The remedy is R33's own, not a second one: **split, do not emit into unsplit geometry.** R32 took
+ * the other mechanism and `checkWireSafety` refused it at the same 25 points; and `connectedComponents`
+ * joins a wire to a wire only at coincident ENDS, so before the split these two segments are not
+ * connected in the generator's own connectivity model either - the net is held together only by a
+ * label anchor.
+ */
+test("a segment is SPLIT at a same-net X, where neither segment ends at the crossing", () => {
+  const l = layout([
+    { a: { x: 0, y: G(2) }, b: { x: G(6), y: G(2) }, net: "A" },
+    { a: { x: G(3), y: 0 }, b: { x: G(3), y: G(5) }, net: "A" },
+  ])
+  const t = canonicalTopology(l, NO_PINS)
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  // BOTH segments are cut, so the list grows by two: two wires in, four out, and the same ink.
+  expect(t.split).toBe(2)
+  expect(t.wires.length).toBe(4)
+  const at = { x: G(3), y: G(2) }
+  // Still one branch, and still a t-junction - the split changes the SHAPE, never the topology.
+  expect(branchJunctions(t, NO_PINS)).toEqual([at])
+  expect(t.branches).toEqual([{ net: "A", at, kind: "t-junction" }])
+  // And the two sides of obligation 2 now agree, which is the whole point of the split.
+  const items: ConnItem[] = t.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
+  expect(junctionPoints(items)).toEqual([at])
+  expect(junctionProblems(t, NO_PINS, junctionPoints(items))).toEqual([])
+  // Anti-vacuity: the UNSPLIT geometry is what the two sides disagreed about, so the line above
+  // means something. `junctionPoints` emits NOTHING at a crossing of two uncut interiors.
+  const unsplit: ConnItem[] = l.wires.map((w, i) => ({ kind: "wire", a: w.a, b: w.b, net: w.net, what: `wire ${i}` }))
+  expect(junctionPoints(unsplit)).toEqual([])
+  // No point moved: the four halves cover exactly the two original spans.
+  expect(t.wires.filter((w) => w.a.y === G(2) && w.b.y === G(2)).map((w) => [w.a.x, w.b.x])).toEqual([[0, G(3)], [G(3), G(6)]])
+  expect(t.wires.filter((w) => w.a.x === G(3) && w.b.x === G(3)).map((w) => [w.a.y, w.b.y])).toEqual([[0, G(2)], [G(2), G(5)]])
+  // And nothing ends mid-wire, so wire-safety is silent on the split geometry.
+  expect(checkWireSafety(items).filter((p) => p.includes("mid-wire"))).toEqual([])
+})
+
+/**
+ * **THE ANTI-WEAKENING ARM: a genuine unjoined branch still refuses, by the WHOLE sentence.**
+ *
+ * The test above closes a disagreement by changing the GEOMETRY, and the way to close it by
+ * changing the CHECK would be to stop requiring a junction at a branch point - which is the one
+ * thing obligation 2 exists to require. This asserts the refusal's full text over the same fixture
+ * the test above makes agree, with nothing emitted: a weakening of `junctionProblems`' first arm
+ * fails here, whatever it did to the geometry.
+ */
+test("a branch point with nothing emitted still REFUSES, in the words the refusal uses", () => {
+  const t = canonicalTopology(
+    layout([
+      { a: { x: 0, y: G(2) }, b: { x: G(6), y: G(2) }, net: "A" },
+      { a: { x: G(3), y: 0 }, b: { x: G(3), y: G(5) }, net: "A" },
+    ]),
+    NO_PINS,
+  )
+  expect(t.ok).toBe(true)
+  if (!t.ok) return
+  expect(junctionProblems(t, NO_PINS, [])).toEqual([
+    "net A branches at (3.81, 2.54) (t-junction) and no junction is emitted there; KiCad joins a " +
+      "branch point only with a junction object, so the drawing would show a connection the " +
+      "netlist does not make",
+  ])
+  // The same arm over a branch made of three coincident ENDS, so it is not an X-only guard.
+  const fan = canonicalTopology(fourWayFan(), NO_PINS)
+  expect(fan.ok).toBe(true)
+  if (!fan.ok) return
+  expect(junctionProblems(fan, NO_PINS, [])).toEqual([
+    "net A branches at (2.54, 0) (t-junction) and no junction is emitted there; KiCad joins a " +
+      "branch point only with a junction object, so the drawing would show a connection the " +
+      "netlist does not make",
+    "net A branches at (6.35, 0) (t-junction) and no junction is emitted there; KiCad joins a " +
+      "branch point only with a junction object, so the drawing would show a connection the " +
+      "netlist does not make",
+  ])
+})

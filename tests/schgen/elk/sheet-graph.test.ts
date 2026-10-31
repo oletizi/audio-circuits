@@ -17,7 +17,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test"
 import ELK from "elkjs/lib/elk-api.js"
 import { cleanUpTempScratch } from "../../support/temp-scratch.ts"
-import { miniSheet, drawnBlocks, type ComposedSubject } from "../__fixtures__/composed.ts"
+import { miniSheet, drawnBlocks, type ComposedSubject, type DrawnBlocks } from "../__fixtures__/composed.ts"
 import {
   frameBoxOverlaps, frameIndexOf, frameNodeId, framePlacements, interFrameEdgeCount,
   interFrameNets, packingMeasures, readSheetPacking, sheetGraphOf, sheetOptions, shelfPacking,
@@ -36,7 +36,9 @@ const FULL_ID = (key: string): string => key.replace(/^elk\./, "org.eclipse.elk.
 
 let power: ComposedSubject
 let signal: ComposedSubject
-let legs: ComposedSubject
+// `DrawnBlocks` rather than `ComposedSubject`: the fixture guard below asserts WHICH blocks
+// refused by name, which is the half of "6 of 7 draw" that a dropped frame could otherwise hide.
+let legs: DrawnBlocks
 let known: readonly ElkLayoutOptionDescription[] = []
 
 beforeAll(async () => {
@@ -55,8 +57,12 @@ beforeAll(async () => {
 test("the fixtures are what the measurements below assume, so an empty result is not a pass", () => {
   expect(power.contents.length).toBe(4)
   expect(signal.contents.length).toBe(7)
-  // docs/known-gaps.md G200: 5 of transistor-preamp's 7 blocks draw.
-  expect(legs.contents.length).toBe(5)
+  // docs/known-gaps.md G297: all 7 of transistor-preamp's blocks draw again - G200 measured 5 of
+  // 7, G291 took it to 7, G296 to 6, and declining the jumper turn back to 7. The refusal list is
+  // asserted as EMPTY rather than inferred from the count, because a probe that silently dropped a
+  // frame and gained one elsewhere would also report 7.
+  expect(legs.contents.length).toBe(7)
+  expect(legs.refused.map((r) => r.id)).toEqual([])
   expect(known.length).toBeGreaterThan(100)
 })
 
@@ -246,9 +252,59 @@ test("BOTH packings are measured and NEITHER is preferred here", async () => {
   expect(b.overlaps).toEqual([])
 })
 
-test("the five ELK-drawn legs have four inter-frame edges over two nets, so ELK packs them", () => {
+/**
+ * **SEVEN FRAMES, FIVE SHARED NETS, NINE EDGES.** The series is five frames / two nets / four
+ * edges until 2026-10-25, seven / five / nine at **G291**, six / five / eight while `tp-leg-upper`
+ * did not draw (**G296**), and seven / five / nine again (**G297**).
+ *
+ * **THE ONE EDGE THAT LEFT AND CAME BACK IS `BASE`'s AND NOTHING ELSE MOVED EITHER WAY, which is
+ * the content of both amendments and is a stronger statement than either total.** Re-indexing the
+ * frames by name rather than by position, the net memberships are IDENTICAL across all three
+ * states except for whether `BASE` reaches `tp-leg-upper`: `COLLECTOR` is still feedback /
+ * collector / stage, and `BYPASS_CAP`, `BYPASS_JUMPED` and `EMITTER` are still emitter-bypass /
+ * stage. So this table never moved because the geometry changed; it moved because a frame left the
+ * sheet and then rejoined it.
+ *
+ * **THE EDGE COUNT IS DERIVED FROM THE FRAME LISTS, NOT READ OFF THE GRAPH**: `edgesForNet` makes
+ * a net's frames into a spanning tree, so `n` frames give `n - 1` edges, and `interFrameNets`
+ * reports which frames each net is on. The frame indices are `drawnBlocks`' declaration order over
+ * the blocks that DRAW - upper 0, feedback 1, lower-a 2, lower-b 3, collector 4, emitter-bypass 5,
+ * stage 6. **Every index below moved by one and no membership did**, which is why the list by name
+ * is asserted beside the list by index:
+ *
+ * | net | frames | by name | edges |
+ * | --- | --- | --- | --- |
+ * | `BASE` | 0, 1, 2, 3, 6 | upper, feedback, lower-a, lower-b, stage | 4 |
+ * | `BYPASS_CAP` | 5, 6 | emitter-bypass, stage | 1 |
+ * | `BYPASS_JUMPED` | 5, 6 | emitter-bypass, stage | 1 |
+ * | `COLLECTOR` | 1, 4, 6 | feedback, collector, stage | 2 |
+ * | `EMITTER` | 5, 6 | emitter-bypass, stage | 1 |
+ * | | | | **9** |
+ */
+test("the seven ELK-drawn blocks have nine inter-frame edges over five nets, so ELK packs them", () => {
   const nets = [...interFrameNets(legs.contents)]
-  expect(nets.map(([net]) => net)).toEqual(["BASE", "COLLECTOR"])
-  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(4)
+  expect(nets.map(([net]) => net)).toEqual(["BASE", "BYPASS_CAP", "BYPASS_JUMPED", "COLLECTOR", "EMITTER"])
+  // The frame lists, so the edge count below is an arithmetic consequence rather than a second
+  // reading of the same graph.
+  expect(nets.map(([net, on]) => `${net} on ${on.join(",")}`)).toEqual([
+    "BASE on 0,1,2,3,6",
+    "BYPASS_CAP on 5,6",
+    "BYPASS_JUMPED on 5,6",
+    "COLLECTOR on 1,4,6",
+    "EMITTER on 5,6",
+  ])
+  // THE SAME LISTS BY NAME, which is what makes "only BASE lost a member" checkable rather than a
+  // claim about two sets of integers taken under different frame counts.
+  const named = nets.map(([net, on]) => `${net} on ${on.map((i) => legs.contents[i]?.blockId ?? "?").join(",")}`)
+  expect(named).toEqual([
+    "BASE on tp-leg-upper,tp-leg-feedback,tp-leg-lower-a,tp-leg-lower-b,tp-stage",
+    "BYPASS_CAP on tp-leg-emitter-bypass,tp-stage",
+    "BYPASS_JUMPED on tp-leg-emitter-bypass,tp-stage",
+    "COLLECTOR on tp-leg-feedback,tp-leg-collector,tp-stage",
+    "EMITTER on tp-leg-emitter-bypass,tp-stage",
+  ])
+  expect(nets.reduce((n, [, on]) => n + on.length - 1, 0)).toBe(9)
+  expect(4 + 1 + 1 + 2 + 1).toBe(9)
+  expect(interFrameEdgeCount(sheetGraphOf(legs.contents, legs.paper))).toBe(9)
   expect(sheetPackerFor(legs.contents, legs.paper).by).toBe("elk")
 })

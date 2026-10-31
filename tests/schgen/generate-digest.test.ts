@@ -150,7 +150,7 @@ describe("the digest's named exemption list", () => {
   })
 
   it("is a reading of .gitignore and not a fresh judgement: that file still declares the name", () => {
-    // The entry's reason cites `.gitignore:20`. If that declaration were removed, the exemption
+    // The entry's reason cites `.gitignore`'s own `.DS_Store` entry. If that declaration were removed, the exemption
     // would become this repository's own opinion, which is what R43 says it must not be.
     const ignored = fs
       .readFileSync(path.join(moduleRepoRoot(), ".gitignore"), "utf8")

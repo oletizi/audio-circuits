@@ -10,7 +10,7 @@ import { cap, RAILS, res, symbols } from "../__fixtures__/circuits.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { BlockSpec, CircuitSpec, Paper } from "../../../lib/schgen/ir/types.ts";
 import { boxesOverlap, onGrid, type Side } from "../../../lib/schgen/render/geometry.ts";
-import { layoutSheet, powerRotation } from "../../../lib/schgen/render/sheets.ts";
+import { PAPER, PAPER_LADDER, layoutSheet, powerRotation } from "../../../lib/schgen/render/sheets.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
 const DEC = { kind: "wired" as const, template: "decoupling-bank" as const, anchor: null };
@@ -71,9 +71,40 @@ describe("layoutSheet", () => {
     expect(d.powers.some((p) => !p.flag && p.net === "3V3" && p.at.x === flag?.at.x && p.at.y === flag?.at.y)).toBe(true);
   });
 
-  it("refuses to overflow the paper instead of enlarging it", () => {
-    const big = buildCircuit(spec("A4", 200), { symbols });
-    expect(() => layoutSheet(big, "s", symbols, "Pwr:PWR_FLAG")).toThrow(/sheet s: blocks do not fit on A4; give the sheet a larger paper in its SheetSpec/);
+  /**
+   * **THE DEMAND THIS REPLACED WAS "refuses to overflow the paper instead of enlarging it", and
+   * the owner reversed it on 2026-10-25.** Told that two boards needed more than A3 and asked
+   * which way he wanted it resolved, he answered *"why are you asking?"* - the refusal already
+   * named the size needed, so the answer was derivable from the message that withheld it.
+   * `docs/known-gaps.md` **G292**. The deleted test read:
+   *
+   * ```ts
+   * const big = buildCircuit(spec("A4", 200), { symbols });
+   * expect(() => layoutSheet(big, "s", symbols, "Pwr:PWR_FLAG")).toThrow(/blocks do not fit on A4; give the sheet a larger paper/);
+   * ```
+   *
+   * The DEMAND went; the refusal did NOT - arm 3 below is the same throw, for contents that fit
+   * no paper at all. Deleting a test because its demand was deliberately removed is correct;
+   * losing the refusal with it would not be.
+   */
+  it("grows the paper to the smallest size the contents fit on, rather than refusing", () => {
+    // 30 extra blocks: measured to overflow A4 and fit A3. 20 still fits A4; 90 needs A2.
+    const big = buildCircuit(spec("A4", 30), { symbols });
+    const grown = layoutSheet(big, "s", symbols, "Pwr:PWR_FLAG");
+    // The declared paper is A4; this must have landed on a LARGER one, and on the smallest such.
+    expect(grown.paper.w).toBeGreaterThan(PAPER.A4.w);
+    const smallest = PAPER_LADDER.filter((p) => PAPER[p].w >= grown.paper.w).at(0);
+    expect(grown.paper.w).toBe(PAPER[smallest!].w);
+  });
+
+  it("never SHRINKS below the declared paper, because that size is somebody's statement about the artifact", () => {
+    const small = buildCircuit(spec("A2"), { symbols });
+    expect(layoutSheet(small, "s", symbols, "Pwr:PWR_FLAG").paper).toEqual(PAPER.A2);
+  });
+
+  it("still refuses when the contents fit on NO paper, naming the size needed", () => {
+    const vast = buildCircuit(spec("A4", 400), { symbols });
+    expect(() => layoutSheet(vast, "s", symbols, "Pwr:PWR_FLAG")).toThrow(/do not fit on any paper size up to A1 .*needed at least/);
   });
 });
 

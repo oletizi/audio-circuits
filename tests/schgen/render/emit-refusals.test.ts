@@ -31,17 +31,17 @@ const spec: CircuitSpec = {
 };
 const c = buildCircuit(spec, { symbols });
 const refs = annotate(c, EMPTY_LOCK, new Map()).refs;
-const ctx = emitContext("mini", c, symbols, refs, ["generated"]);
+const ctx = emitContext("mini", c, symbols, refs, ["generated"], "usable");
 const d = layoutSheet(c, "pwr", symbols, "Pwr:PWR_FLAG");
 
 describe("emit refusals", () => {
   it("refuses a placed part with no reference", () => {
-    const noRefs = emitContext("mini", c, symbols, new Map(), []);
+    const noRefs = emitContext("mini", c, symbols, new Map(), [], "usable");
     expect(() => emitSheet(d, noRefs)).toThrow(/C1 has no reference/);
   });
 
   it("refuses a reference longer than the width its fields were laid out for", () => {
-    const long = emitContext("mini", c, symbols, new Map([...refs, ["C1", "C1000"]]), []);
+    const long = emitContext("mini", c, symbols, new Map([...refs, ["C1", "C1000"]]), [], "usable");
     expect(() => emitSheet(d, long)).toThrow(/part C1's reference C1000 is longer than the 4 characters \(C000\)/);
   });
 
@@ -66,18 +66,25 @@ describe("emit refusals", () => {
     expect(() => emitSheet(bad, ctx)).toThrow(/duplicate item key wire:pwr:/);
   });
 
-  it("refuses more title comments than KiCad's nine", () => {
-    const ten = Array.from({ length: 10 }, (_, i) => `c${i}`);
-    expect(() => emitContext("mini", c, symbols, refs, ten)).toThrow(/at most 9 title comments/);
+  // **NINE MINUS THE RESERVED SLOT, which is Task 5 of the gates-classify plan and not a loosened
+  // test.** KiCad still holds nine; one of them is reserved for the ratification class, whatever
+  // that class is, so a caller may supply eight. A ninth caller comment is refused here because the
+  // alternative - take the slot only when the drawing is unratified - would mean the one generation
+  // that most needs the warning is the one with no room for it.
+  it("refuses more title comments than the eight a caller gets, the ninth being reserved for the class", () => {
+    const nine = Array.from({ length: 9 }, (_, i) => `c${i}`);
+    expect(() => emitContext("mini", c, symbols, refs, nine, "usable")).toThrow(/at most 8; got 9/);
+    expect(() => emitContext("mini", c, symbols, refs, nine, "usable")).toThrow(/reserved for the generation's ratification class/);
+    expect(() => emitContext("mini", c, symbols, refs, Array.from({ length: 8 }, (_, i) => `c${i}`), "usable")).not.toThrow();
   });
 
   it("refuses duplicate sheet ids", () => {
     const twice = { ...c, sheets: [...c.sheets, ...c.sheets] };
-    expect(() => emitContext("mini", twice, symbols, refs, [])).toThrow(/duplicate sheet id pwr/);
+    expect(() => emitContext("mini", twice, symbols, refs, [], "usable")).toThrow(/duplicate sheet id pwr/);
   });
 
   it("refuses an empty project name", () => {
-    expect(() => emitContext("", c, symbols, refs, [])).toThrow(/project name/);
+    expect(() => emitContext("", c, symbols, refs, [], "usable")).toThrow(/project name/);
   });
 
   it("refuses a lib id that does not resolve to the drawn power symbol", () => {
@@ -103,7 +110,7 @@ describe("emit refusals", () => {
 describe("emitRoot layout", () => {
   it("wraps sheets every four and numbers pages from 2", () => {
     const sheets = Array.from({ length: 5 }, (_, i) => ({ id: `s${i}`, title: `S${i}`, file: `s${i}.kicad_sch`, paper: "A4" as const, notes: [] }));
-    const many = emitContext("mini", { ...c, sheets }, symbols, refs, []);
+    const many = emitContext("mini", { ...c, sheets }, symbols, refs, [], "usable");
     const text = emitRoot(many);
     expect(text).toContain("(at 25.4 25.4)");
     expect(text).toContain("(at 215.9 25.4)");

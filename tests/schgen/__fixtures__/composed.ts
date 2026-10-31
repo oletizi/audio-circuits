@@ -3,19 +3,26 @@
  *
  * Hand-written for Task 15 of the M1 schematic-authoring plan.
  *
- * **WHY THESE TWO AND NOT THE FOUR PARITY CIRCUITS' OWN SHEETS, which is a finding and not a
- * convenience.** Each of the four circuits declares exactly ONE sheet, and on every one of them at
- * least one block refuses to draw (`docs/known-gaps.md` **G200**: only 5 of 12 blocks draw, and all
- * five are `transistor-preamp` legs). `sheetContents` realises every block of a sheet, so **not one
- * of the four circuits has a sheet that can be composed at all.** So:
+ * **WHY THESE TWO AND NOT THE FOUR PARITY CIRCUITS' OWN SHEETS - IT WAS A FINDING AND IT IS NOW
+ * HALF SUPERSEDED.** This header said: each of the four circuits declares exactly ONE sheet, on
+ * every one of them at least one block refuses to draw (`docs/known-gaps.md` **G200**: only 5 of 12
+ * blocks draw, all five `transistor-preamp` legs), `sheetContents` realises every block of a sheet,
+ * so *"not one of the four circuits has a sheet that can be composed at all."*
+ *
+ * **BOTH FIGURES AND THE CONCLUSION HAVE MOVED** (**G291**, 2026-10-25). **Ten of the twelve
+ * blocks draw**, **all seven of `transistor-preamp`'s draw**, and **its `lab` sheet lays out on its
+ * declared A3** - 7 frames, 142 wires, no non-member containment, asserted in
+ * `tests/schgen/remeasure.test.ts`. So one of the four circuits DOES have a sheet that composes.
+ * The two subjects below are kept anyway, and for stated reasons rather than by inertia:
  *
  * - **`miniSheet`** - the ported pedals `mini` fixture, whose ten blocks are all drawn by reviewed
- *   templates across two sheets. It is the only multi-block sheet in the repository that composes,
- *   and **its arrangement is one this repository did not choose**, which is why `docs/known-gaps.md`
- *   **G165** used it for the same purpose.
- * - **`drawnLegs`** - the five `transistor-preamp` blocks the ELK backend draws, put on one A3.
- *   **This is a probe and NOT that circuit's schematic**: the circuit declares those five beside two
- *   that refuse, all on one sheet. The caveat is G165's own, for the same reason.
+ *   templates across two sheets. **Its arrangement is one this repository did not choose**, which
+ *   is why `docs/known-gaps.md` **G165** used it and is a property no circuit of ours can supply.
+ * - **`drawnBlocks`** - the `transistor-preamp` blocks the ELK backend draws, put on one A3.
+ *   **This is a probe and NOT that circuit's schematic**: the paper is this fixture's choice, not
+ *   the sheet's declaration. It used to be a probe for a second reason - the circuit declared five
+ *   drawing blocks beside two that refused - and that reason is gone; `refused` is empty and tests
+ *   that care assert it is.
  *
  * **THE INTERFACE DECLARATIONS.** `drawnLegs` uses the circuit's own, from its authoring file
  * (`interfacesOf`). `miniSheet` has none to use - `mini` is a `DesignSpec` and carries no
@@ -152,7 +159,9 @@ export async function drawnBlocks(name: string): Promise<DrawnBlocks> {
       drew.push(block.id)
     } catch (e) {
       // A BLOCK THAT DOES NOT DRAW IS RECORDED, NEVER DROPPED SILENTLY: docs/known-gaps.md G200
-      // counts them, and a probe that quietly shrank would make that count unverifiable here.
+      // and G291 count them, and a probe that quietly shrank would make that count unverifiable
+      // here. It matters MORE now that `refused` can be empty: an empty list has to mean "nothing
+      // refused" and never "nothing was looked at".
       refused.push({ id: block.id, reason: e instanceof Error ? e.message : String(e) })
     }
   }

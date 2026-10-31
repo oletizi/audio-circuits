@@ -69,6 +69,21 @@
  * `CLAUDE.md`'s 300-500 line ceiling** - written as one file this is just over 800 lines. The seam
  * is `tools/stripboard/`'s own, not invented here, and the deviation is recorded in
  * `docs/known-gaps.md`.
+ *
+ * **OPEN QUESTION FOR WHOEVER RUNS TASK 9 OF `docs/superpowers/plans/2026-10-30-remove-schgen.md`,
+ * RAISED RATHER THAN ANSWERED IN TASK 7's REPORT.** This module - deleted wholesale with the rest
+ * of `lib/schgen/` in that task - is `schematic/readability-baselines.json`'s only loader, and
+ * nothing outside `lib/schgen/`, `tools/schgen/` and `tests/schgen/` imports it; every current
+ * reader (`tools/schgen/verify.ts`'s `loadBaselines` call, `tools/schgen/remeasure.ts` and several
+ * `tests/schgen/` files importing `baselineScale`) dies in the same task. So Task 9 leaves that JSON
+ * file with no code able to read it, ever again, unless it is ported. Measured, not decided: the
+ * registry today holds zero granted baselines - `git log` shows one commit, Task 16, 2026-10-20,
+ * and no change since - so there is no owner judgement in it to lose, only the empty schema and the
+ * channel for recording a future one. Whether that channel is still wanted is the owner's call,
+ * per `CLAUDE.md`'s rule that an agent may never author the acceptance criteria for the artifact it
+ * is producing - a judgement registry's continued existence is exactly such a criterion. Do not
+ * delete `schematic/readability-baselines.json` on the strength of this file's own deletion without
+ * that answer.
  */
 
 import fs from "node:fs"

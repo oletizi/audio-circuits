@@ -1,0 +1,19 @@
+rendered at 600 dpi, 9921x7016 px, ink threshold grey < 128
+=== marker 100.33 177.8 4 ink 189.75 152.4
+  box (96.33,173.8)-(104.33,181.8) mm, thresholds blue: B>90 and B-R>40 and B-G>40; red: R>90 and R-B>40 and R-G>40
+  marker ink: 348 px, 1.355 x 1.397 mm, x 99.632..100.987, y 177.102..178.499
+  red ink in the same box: 2177 px
+  closest blue-to-red approach: 1 px = 0.042 mm, at y 177.779 mm  (rows where the two colours share a pixel column: 0)
+=== ink 189.75 152.4 5.25 0.7 60 125
+  CONTROL (expected empty): box (54.75,124.30)-(65.25,125.70) mm  NO INK
+  FIELD: box (184.50,151.70)-(195.00,153.10) mm  dark 1638 px  ink x 184.542..194.999 width 10.456 mm  height 1.439 mm
+=== ink 158.5 149.86 4.5 0.7 60 125
+  CONTROL (expected empty): box (55.50,124.30)-(64.50,125.70) mm  NO INK
+  FIELD: box (154.00,149.16)-(163.00,150.56) mm  dark 1075 px  ink x 154.381..160.604 width 6.223 mm  height 1.397 mm
+=== ink 103.5 69.2 4.9 0.8 60 125
+  CONTROL (expected empty): box (55.10,124.20)-(64.90,125.80) mm  NO INK
+  FIELD: box (98.60,68.40)-(108.40,70.00) mm  dark 2814 px  ink x 98.600..108.421 width 9.821 mm  height 1.609 mm
+=== empty 24 110 115 150 empty 23.5
+  region (24.0,110.0)-(115.0,150.0) mm = 91.0 x 40.0 mm: 19047 dark px   [positive control: whole page 1286351 dark px]
+=== empty 23.5 107.5 399 186
+  region (23.5,107.5)-(399.0,186.0) mm = 375.5 x 78.5 mm: 556132 dark px   [positive control: whole page 1286351 dark px]

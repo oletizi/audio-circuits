@@ -1,0 +1,279 @@
+==============================================================================
+/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hicut-letter/letter-centred.kicad_sch
+  body heads (50 distinct):
+    at                         191  MOVED by (at x y [angle])
+    color                       58
+    date                         1
+    diameter                    19
+    dnp                         26
+    effects                    145
+    end                          6  MOVED by (start x y) adjacent to (end x y)
+    exclude_from_sim            26
+    fields_autoplaced           13
+    fill                         6
+    font                       145
+    generator                    1
+    generator_version            1
+    global_label                13
+    in_bom                      26
+    instances                   26
+    junction                    19
+    justify                     28
+    kicad_sch                    1
+    label                        9
+    lib_id                      26
+    no_connect                   1
+    on_board                    26
+    page                         1
+    paper                        1
+    path                        27
+    pin                         60
+    project                     26
+    property                   117
+    pts                         46
+    rectangle                    6
+    reference                   26
+    rev                          1
+    shape                       13
+    sheet_instances              1
+    size                       145
+    start                        6  MOVED by (start x y) adjacent to (end x y)
+    stroke                      52
+    symbol                      26
+    text                         6
+    thickness                   22
+    title                        1
+    title_block                  1
+    type                        58
+    unit                        52
+    uuid                       187
+    version                      1
+    width                       52
+    wire                        46
+    xy                          92  MOVED by (xy x y)
+  lib_symbols heads (40 distinct, NEVER moved): arc, at, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, effects, embedded_fonts, end, exclude_from_sim, fill, font, hide, in_bom, in_pos_files, justify, length, lib_symbols, mid,
+  CONTROL  heads present in lib_symbols and absent from the body: 20 (arc, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, embedded_fonts, hide, in_pos_files, length, lib_symbols, mid, name, number, offset, pin_names, pin_numbers, polyline, power, radius, show_name)
+==============================================================================
+docs/research/2026-10-30-mid-letter-redraw/pultec-mid-letter.kicad_sch
+  body heads (50 distinct):
+    at                         307  MOVED by (at x y [angle])
+    color                      106
+    date                         1
+    diameter                    29
+    dnp                         44
+    effects                    233
+    end                          6  MOVED by (start x y) adjacent to (end x y)
+    exclude_from_sim            44
+    fields_autoplaced           14
+    fill                         6
+    font                       233
+    generator                    1
+    generator_version            1
+    global_label                14
+    in_bom                      44
+    instances                   44
+    junction                    29
+    justify                     43
+    kicad_sch                    1
+    label                       23
+    lib_id                      44
+    no_connect                   1
+    on_board                    44
+    page                         1
+    paper                        1
+    path                        45
+    pin                        102
+    project                     44
+    property                   190
+    pts                         84
+    rectangle                    6
+    reference                   44
+    rev                          1
+    shape                       14
+    sheet_instances              1
+    size                       233
+    start                        6  MOVED by (start x y) adjacent to (end x y)
+    stroke                      90
+    symbol                      44
+    text                         6
+    thickness                   37
+    title                        1
+    title_block                  1
+    type                        96
+    unit                        88
+    uuid                       310
+    version                      1
+    width                       90
+    wire                        84
+    xy                         168  MOVED by (xy x y)
+  lib_symbols heads (40 distinct, NEVER moved): arc, at, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, effects, embedded_fonts, end, exclude_from_sim, fill, font, hide, in_bom, in_pos_files, justify, length, lib_symbols, mid,
+  CONTROL  heads present in lib_symbols and absent from the body: 20 (arc, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, embedded_fonts, hide, in_pos_files, length, lib_symbols, mid, name, number, offset, pin_names, pin_numbers, polyline, power, radius, show_name)
+==============================================================================
+drafted/pultec/pultec-hi-boost/pultec-hi-boost.generated-do-not-edit.kicad_sch
+  body heads (50 distinct):
+    at                         226  MOVED by (at x y [angle])
+    color                       75
+    date                         1
+    diameter                    17
+    dnp                         32
+    effects                    176
+    end                          6  MOVED by (start x y) adjacent to (end x y)
+    exclude_from_sim            32
+    fields_autoplaced           14
+    fill                         6
+    font                       176
+    generator                    1
+    generator_version            1
+    global_label                14
+    in_bom                      32
+    instances                   32
+    junction                    17
+    justify                     34
+    kicad_sch                    1
+    label                       14
+    lib_id                      32
+    no_connect                   1
+    on_board                    32
+    page                         1
+    paper                        1
+    path                        33
+    pin                         73
+    project                     32
+    property                   142
+    pts                         72
+    rectangle                    6
+    reference                   32
+    rev                          1
+    shape                       14
+    sheet_instances              1
+    size                       176
+    start                        6  MOVED by (start x y) adjacent to (end x y)
+    stroke                      78
+    symbol                      32
+    text                         6
+    thickness                   28
+    title                        1
+    title_block                  1
+    type                        84
+    unit                        64
+    uuid                       236
+    version                      1
+    width                       78
+    wire                        72
+    xy                         144  MOVED by (xy x y)
+  lib_symbols heads (40 distinct, NEVER moved): arc, at, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, effects, embedded_fonts, end, exclude_from_sim, fill, font, hide, in_bom, in_pos_files, justify, length, lib_symbols, mid,
+  CONTROL  heads present in lib_symbols and absent from the body: 20 (arc, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, embedded_fonts, hide, in_pos_files, length, lib_symbols, mid, name, number, offset, pin_names, pin_numbers, polyline, power, radius, show_name)
+==============================================================================
+drafted/pultec/pultec-low-boost/pultec-low-boost.generated-do-not-edit.kicad_sch
+  body heads (52 distinct):
+    at                         174  MOVED by (at x y [angle])
+    color                       84
+    date                         1
+    diameter                    14
+    dnp                         24
+    effects                    134
+    end                          4  MOVED by (start x y) adjacent to (end x y)
+    exclude_from_sim            24
+    fields_autoplaced           12
+    fill                         4
+    font                       134
+    generator                    1
+    generator_version            1
+    global_label                12
+    hide                         1
+    in_bom                      24
+    instances                   25
+    junction                    14
+    justify                     24
+    kicad_sch                    1
+    label                        8
+    lib_id                      25
+    mirror                       1
+    no_connect                   1
+    on_board                    24
+    page                         1
+    paper                        1
+    path                        26
+    pin                         57
+    project                     25
+    property                   110
+    pts                         78
+    rectangle                    4
+    reference                   25
+    rev                          1
+    shape                       12
+    sheet_instances              1
+    size                       134
+    start                        4  MOVED by (start x y) adjacent to (end x y)
+    stroke                      82
+    symbol                      25
+    text                         4
+    thickness                   20
+    title                        1
+    title_block                  1
+    type                        86
+    unit                        50
+    uuid                       204
+    version                      1
+    width                       82
+    wire                        78
+    xy                         156  MOVED by (xy x y)
+  lib_symbols heads (40 distinct, NEVER moved): arc, at, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, effects, embedded_fonts, end, exclude_from_sim, fill, font, hide, in_bom, in_pos_files, justify, length, lib_symbols, mid,
+  CONTROL  heads present in lib_symbols and absent from the body: 19 (arc, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, embedded_fonts, in_pos_files, length, lib_symbols, mid, name, number, offset, pin_names, pin_numbers, polyline, power, radius, show_name)
+==============================================================================
+drafted/pultec/pultec-low-cut/pultec-low-cut.generated-do-not-edit.kicad_sch
+  body heads (50 distinct):
+    at                         185  MOVED by (at x y [angle])
+    color                       79
+    date                         1
+    diameter                    17
+    dnp                         25
+    effects                    142
+    end                          6  MOVED by (start x y) adjacent to (end x y)
+    exclude_from_sim            25
+    fields_autoplaced           14
+    fill                         6
+    font                       142
+    generator                    1
+    generator_version            1
+    global_label                14
+    in_bom                      25
+    instances                   25
+    junction                    17
+    justify                     28
+    kicad_sch                    1
+    label                        8
+    lib_id                      25
+    no_connect                   1
+    on_board                    25
+    page                         1
+    paper                        1
+    path                        26
+    pin                         58
+    project                     25
+    property                   114
+    pts                         63
+    rectangle                    6
+    reference                   25
+    rev                          1
+    shape                       14
+    sheet_instances              1
+    size                       142
+    start                        6  MOVED by (start x y) adjacent to (end x y)
+    stroke                      69
+    symbol                      25
+    text                         6
+    thickness                   22
+    title                        1
+    title_block                  1
+    type                        75
+    unit                        50
+    uuid                       199
+    version                      1
+    width                       69
+    wire                        63
+    xy                         126  MOVED by (xy x y)
+  lib_symbols heads (40 distinct, NEVER moved): arc, at, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, effects, embedded_fonts, end, exclude_from_sim, fill, font, hide, in_bom, in_pos_files, justify, length, lib_symbols, mid,
+  CONTROL  heads present in lib_symbols and absent from the body: 20 (arc, center, circle, do_not_autoplace, duplicate_pin_numbers_are_jumpers, embedded_fonts, hide, in_pos_files, length, lib_symbols, mid, name, number, offset, pin_names, pin_numbers, polyline, power, radius, show_name)
+
+Every body head on every sheet is either moved by one of center.py's three textual forms or carries no absolute page x.

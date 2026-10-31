@@ -28,7 +28,7 @@ const spec: CircuitSpec = {
 };
 const c = buildCircuit(spec, { symbols });
 const refs = annotate(c, EMPTY_LOCK, new Map()).refs;
-const ctx = emitContext("mini", c, symbols, refs, ["generated", "kicad 10.0.5"]);
+const ctx = emitContext("mini", c, symbols, refs, ["generated", "kicad 10.0.5"], "usable");
 const text = () => emitSheet(layoutSheet(c, "pwr", symbols, "Pwr:PWR_FLAG"), ctx);
 
 const kids = (l: SList, head: string) => l.lists.filter((x) => x.head === head);
@@ -109,7 +109,7 @@ describe("global labels", () => {
     portDirections: NO_PORT_DIRECTIONS,
   };
   const c2 = buildCircuit(twoSheets, { symbols });
-  const ctx2 = emitContext("mini", c2, symbols, annotate(c2, EMPTY_LOCK, new Map()).refs, ["generated"]);
+  const ctx2 = emitContext("mini", c2, symbols, annotate(c2, EMPTY_LOCK, new Map()).refs, ["generated"], "usable");
 
   it("show their intersheet references beyond the label outline, where the layout reserved room for them", () => {
     const d = layoutSheet(c2, "io", symbols, "Pwr:PWR_FLAG");

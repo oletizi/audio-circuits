@@ -420,30 +420,41 @@ export const BLOCK_SIZE: BlockSizeDecision = {
   ceiling: 3,
   floor: "unmeasured",
   costPaid:
-    "THE CEILING's COST, on 7 of the 12 declared blocks. Above the ceiling the measured quality is " +
+    "THE CEILING's COST, on 6 of the 12 declared blocks - SIX, not the seven this string said " +
+    "until 2026-10-25: `blocksOutside` names six and this sentence named six, and the count in " +
+    "front of them disagreed with both. Above the ceiling the measured quality is " +
     "not a property of the circuit: the crossing count moves with the order the members are " +
     "declared in, by up to 3.0x (oc-power, 1 to 3; the largest absolute swing is pt-core's 39 to 78), so section 3.3's four measures over ob-buffer, " +
     "oc-power, oc-audio, oc-sidechain, pt-core and tp-stage are partly measurements of a " +
-    "serialization. The FLOOR's cost is not being paid and cannot be: this backend emits a " +
-    "zero-size boundary node, so a block whose cells are two-thirds boundary has a drawing with no " +
-    "boundary area at all, and there is no interface-glyph cost for a small block to be dominated " +
-    "by. What a small block does still cost is §1.6's cross-sheet mechanism - one global label or " +
+    "serialization. THE FLOOR's COST HAS NO STATED BASIS ANY MORE, which is a change of status " +
+    "rather than a new figure. This string used to say the cost 'is not being paid and cannot be: " +
+    "this backend emits a zero-size boundary node, so a block whose cells are two-thirds boundary " +
+    "has a drawing with no boundary area at all'. SINCE 2026-10-25 EVERY BOUNDARY NODE HAS A SIZE " +
+    "(docs/known-gaps.md G291) - 38 of 38, measured by remeasure-ceiling.ts's floorEvidence - so " +
+    "that argument is refuted and nothing has replaced it. `floor` is still 'unmeasured', and it " +
+    "stays that way until spec 1.8 says otherwise: measuring a floor here and then grading " +
+    "drawings against it would be this tool authoring its own criterion. What a small block does " +
+    "still cost is §1.6's cross-sheet mechanism - one global label or " +
     "power symbol per crossing net, drawn inside the block's own extent (G208) - and that cost is " +
-    "glyphs and eye-travel rather than ink.",
+    "now reserved in the layout as well as drawn.",
   evidence:
     "bun tools/schgen/remeasure-ceiling.ts, and tests/schgen/remeasure-ceiling.test.ts pins every " +
     "figure - BOTH BOUNDS INCLUDED. That is the pointer a reader has to be able to trust: run " +
     "THAT file. tests/schgen/remeasure.test.ts no longer holds the pins and a constant perturbed " +
     "against it comes back GREEN (fix round 2, item A). " +
     "CONFIRMED by this writer: both bounds were run here, neither is relayed. THE CAVEAT TRAVELS " +
-    "WITH THE FIGURE, AND THE CEILING's OWN SIZE IS THE THIN SPOT: the window comes from 12 " +
-    "declared blocks of 4 circuits, and at size 3 - the ceiling itself - all FOUR subjects are ONE " +
-    "topology, because the four bias legs draw byte-identically (G185), each swept over 3 of its 6 " +
-    "possible permutations. Size 2 is the better-supported size, two distinct topologies swept " +
-    "exhaustively, and size 2 is not the ceiling. The upper end rests on a single refused layout " +
-    "at size 8. Across sizes 2 and 3 together there are three distinct topologies, which is true " +
-    "and conceals both of those. And no declared block in this repository has more than 24 " +
-    "placements, so nothing above that was tested at all. G101's own caveat applies unchanged: " +
+    "WITH THE FIGURE, AND THE CEILING's OWN THIN SPOT MOVED ON 2026-10-25: the window comes from " +
+    "12 declared blocks of 4 circuits, and at size 3 - the ceiling itself - the four subjects are " +
+    "THREE distinct topologies, each swept over 3 of its 6 possible permutations. This string said " +
+    "'all FOUR subjects are ONE topology, because the four bias legs draw byte-identically " +
+    "(G185)', and that is SUPERSEDED: boundary-node sizing (G291) makes a node as big as the text " +
+    "drawn at it, and the four legs' boundary nets differ - VCC+BASE, COLLECTOR+BASE, GND+BASE, " +
+    "GND+BASE - so only tp-leg-lower-a and tp-leg-lower-b still coincide. Across sizes 2 and 3 " +
+    "together there are now FIVE distinct topologies rather than three. That is BETTER support at " +
+    "the ceiling than the old figure, so the thin spot that remains is a different one: size 2 is " +
+    "still the only size swept EXHAUSTIVELY, size 2 is not the ceiling, and the upper end still " +
+    "rests on a single subject at size 8. And no declared block in this repository has more than " +
+    "24 placements, so nothing above that was tested at all. G101's own caveat applies unchanged: " +
     "the spikes' 18 blocks came from two unusual parents, a 76-part passive EQ and a 37-part " +
     "compressor with two dual op-amps.",
 }

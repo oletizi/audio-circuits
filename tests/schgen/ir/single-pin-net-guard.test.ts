@@ -54,7 +54,7 @@ const circuit: Circuit = {
   blocks: new Map([
     [
       "B",
-      { id: "B", sheet: "s", title: "B", members: [{ part: "R_A", unit: 1 }], checklist: [], rendering: { kind: "bus", groups: [] }, order: 0 },
+      { id: "B", sheet: "s", title: "B", members: [{ part: "R_A", unit: 1 }], checklist: [], rendering: { kind: "bus", groups: [] }, readsFrom: null, order: 0 },
     ],
   ]),
   sheets: [{ id: "s", title: "S", file: "s.kicad_sch", paper: "A4", notes: [] }],

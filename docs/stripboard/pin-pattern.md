@@ -8,6 +8,19 @@ test opens those files again and compares pad by pad. Nothing here is recalled.
 The code is the authority for the values; this page is the authority for *why*
 they are those values, and is the thing to read before adding an entry.
 
+> **AMENDED 2026-10-30: there are FIFTEEN entries, and the tables below enumerate
+> thirteen.** `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` (pads at 0 and 5.00 mm, one
+> row of two, **as-moulded** — 5.00 mm is 0.08 mm from two steps, inside the pitch
+> tolerance, so the can drops in unformed) and
+> `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` (pads at 0, 2.54 and
+> 5.08, three rows of one, as-moulded) were added for `transistor-preamp-staged`.
+> **The rows below were not back-filled, deliberately** — `PIN_PATTERNS` is the
+> table, and `bun test tests/kicad/pin-pattern.test.ts` opens every entry's
+> `.kicad_mod` and compares pad by pad, which is the check this page describes. Two
+> counts move with them: twelve of the fifteen patterns are now as-moulded, and both
+> new entries are two-terminal/moulded cases that need no forming.
+> `docs/research/2026-10-30-known-defects.md` section 2 has the evidence.
+
 ---
 
 ## 1. Whose rule this is

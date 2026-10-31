@@ -41,8 +41,10 @@
  *   emitter see"*, and `lib/schgen/elk/adapt.ts` reads the same `u.rot`.
  */
 
-import { pinEnd, placeBox, type Point } from "../render/geometry.ts"
-import { sideOfPin } from "../rules/pin-sides.ts"
+import { pinEnd, placeBox, unionBox, type Point, type Side } from "../render/geometry.ts"
+import { labelBox, powerRotation, powerValueBox } from "../render/text-boxes.ts"
+import { blockPowerLibs, labelRefsOf, powerText } from "../render/power-text.ts"
+import { GEOMETRY_SIDE, sideOfPin } from "../rules/pin-sides.ts"
 import { negotiablePort } from "../authoring.ts"
 import { BLOCK_OPTIONS, ELK_SIDE, LAYER_CONSTRAINT_KEY, NODE_OPTIONS, PORT_SIDE_KEY, layerConstraintFor } from "./options.ts"
 import { serializeElkInput } from "./serialize.ts"
@@ -202,14 +204,57 @@ function boundaryNets(g: BlockSubgraph): readonly NetName[] {
 }
 
 /**
- * A boundary net as an ELK node of ZERO size, pinned to a layer when the reviewed rule gives it a
- * single horizontal side.
+ * The box a boundary net will actually occupy when it is drawn, at the origin, over every side
+ * `negotiablePort` leaves open - **computed with the same functions the clearance checker uses**,
+ * so the space ELK reserves and the space the checker measures cannot drift apart.
  *
- * **Zero size is the measured difference from both spikes, not an omission.** G101's floor - *"a
- * 1-part block's drawing is two-thirds boundary"* - was *"ENTIRELY the skin's"*: a port became a
- * drawn cell only because `netlistsvg` emits a 30x20 `inputExt` glyph for it. This backend emits
- * no port glyph. What a rail's power symbol or a label's outline occupies is decided when it is
- * drawn (seam B, **D9**), not here.
+ * A labelled net is drawn as a global label (`labelBox`); a rail is drawn as a power symbol glyph
+ * plus its value text (`powerText` + `powerValueBox`), at the rotation `powerRotation` gives for
+ * that side. Where more than one side is still open the union is taken, because the node must
+ * hold whichever side the layout eventually picks.
+ *
+ * `valueAlong` is taken as BOTH, unioned, for the same reason: it is the block's rendering mode
+ * (`valuesAlong`), which this function deliberately does not read - a size that depended on it
+ * would be a second place for the rendering mode to be correct in.
+ */
+function boundaryBox(net: NetName, g: BlockSubgraph, sides: readonly Side[]): Box {
+  const rail = g.railSpecs.get(net)
+  const libs = blockPowerLibs(g)
+  const boxes = sides.flatMap((side): Box[] => {
+    if (rail === undefined) return [labelBox({ net, at: ORIGIN, side, refs: labelRefsOf(g, net) })]
+    return [true, false].map((valueAlong) => {
+      const t = powerText(libs, { net, libId: rail.symbol, at: ORIGIN, rot: powerRotation(rail.kind, side), flag: false, valueAlong })
+      return unionBox(t.glyph, powerValueBox(t.value, t.text))
+    })
+  })
+  const first = boxes[0]
+  if (first === undefined) throw new Error(`boundary net ${net}: negotiablePort left no side open, so no drawn box can be computed`)
+  return boxes.reduce(unionBox, first)
+}
+
+/**
+ * A boundary net as an ELK node SIZED BY WHAT WILL BE DRAWN AT IT, pinned to a layer when the
+ * reviewed rule gives it a single horizontal side.
+ *
+ * **THIS RETURNED `width: 0, height: 0` UNTIL 2026-10-24, AND THAT IS WHY GENERATED SHEETS WERE
+ * CRAMPED.** The old comment called zero size *"the measured difference from both spikes, not an
+ * omission"* and deferred the geometry: *"What a rail's power symbol or a label's outline occupies
+ * is decided when it is drawn (seam B, D9), not here."* Deferring the DRAWING is right; deferring
+ * the SIZE told ELK the text was dimensionless, so it packed the circuit around points and the
+ * text was drawn afterwards into space that had never been reserved for it. The clearance checks
+ * then refused the block - **blaming the text for not fitting a space allocated on the assumption
+ * that it was not there.**
+ *
+ * **The owner saw it in a drawing before anyone saw it in this file**, 2026-10-24: *"There's no
+ * good reason to cram everything so tightly and then complain there's no room for the text."*
+ * `docs/known-gaps.md` **G291** has his words in full, the cause, and the measurement - sizing
+ * these nodes drew `transistor-preamp-lab` for the first time and cleared
+ * `transistor-preamp-loop`'s collisions outright, **with no clearance check relaxed**.
+ *
+ * **G101's floor is not contradicted.** That finding - *"a 1-part block's drawing is two-thirds
+ * boundary"* - was about `netlistsvg` emitting a 30x20 `inputExt` GLYPH for a port, which this
+ * backend still does not do. A port here has no glyph of its own; what it has is a label or a
+ * power symbol that this repository draws and measures, and that is what is reserved.
  *
  * The side comes from `negotiablePort`, which is the reviewed rule already in the tree; this only
  * turns it into D4's flow through `layerConstraintFor`. **Both of its inputs are the subgraph's
@@ -218,34 +263,131 @@ function boundaryNets(g: BlockSubgraph): readonly NetName[] {
 function boundaryNodeOf(net: NetName, g: BlockSubgraph): ElkNode {
   const port = negotiablePort(net, { portDirections: g.portDirections, rails: [...g.railSpecs.values()] })
   const constraint = layerConstraintFor(port.sides)
+  const box = boundaryBox(net, g, port.sides.map((s) => GEOMETRY_SIDE[s]))
   return {
     id: boundaryNodeId(net),
-    width: 0,
-    height: 0,
+    width: box.maxX - box.minX,
+    height: box.maxY - box.minY,
     layoutOptions:
       constraint === null ? { ...NODE_OPTIONS } : { ...NODE_OPTIONS, [LAYER_CONSTRAINT_KEY]: constraint },
   }
 }
 
 /**
- * A net's terminals, chained into a spanning path: **a net of degree n becomes n - 1 edges**,
- * which is a tree and is what KiCad draws - a net is wire segments plus a junction at every
- * branch, never a hyperedge.
+ * A net's terminals as a STAR from its upstream terminal: **a net of degree n becomes n - 1
+ * edges**, which is a tree and is what KiCad draws - a net is wire segments plus a junction at
+ * every branch, never a hyperedge.
+ *
+ * **IT WAS A CHAIN UNTIL 2026-10-25 - `terminals[i-1] -> terminals[i]` - AND THE CHAIN WAS WHY A
+ * PARALLEL BANK CAME OUT AS A STAIRCASE.** The sentence above is about DRAWING and is sound
+ * there; the mistake was that **the same edges are what ELK LAYS OUT FROM**, and to a layered
+ * algorithm `C1 -> C2 -> ... -> C10` is a series string ten layers deep. `docs/known-gaps.md`
+ * **G293** has the measurement: `pultec-hi-cut`'s ten capacitors - a parallel bank selected by a
+ * rotary switch - were placed at **ten distinct x positions, uniformly 12.7 mm apart**, one grid
+ * step per layer. The drawing was a faithful rendering of a graph that said the wrong thing about
+ * the circuit.
+ *
+ * The owner saw it in the picture before anyone measured it: *"my guess is that stacking all the
+ * capacitors in the same column would eliminate hairpins and make the signal flows left much more
+ * obvious."* A star puts every sibling ONE hop from the source instead of `i` hops, so siblings
+ * share a depth, and nodes of equal depth share a layer, which is a column.
+ *
+ * **IT IS STILL A TREE AND STILL n - 1 EDGES**, so `../render/read-graph.ts`'s one-section-per-edge
+ * contract is untouched and a hyperedge is still never emitted. What changes is where the branch
+ * sits: at the source terminal rather than strung along the chain. **The junction checks must
+ * therefore still agree** - a branch point with no junction is a connection KiCad does not make -
+ * and G293 records that two boards refuse on exactly that check, so it is live.
  *
  * The boundary terminal goes FIRST when its layer constraint is `FIRST_SEPARATE` and LAST
  * otherwise, so an inbound net's edges run with the flow and every other boundary net is a sink.
  * That is D4's direction applied to `negotiablePort`'s own answer; it is not a choice about the
  * circuit.
  */
+/**
+ * THE OWNER'S *"signal flows left to right"*, made expressible: how far downstream each node is,
+ * by breadth-first search from the block's INBOUND boundary nets.
+ *
+ * **WITHOUT THIS, WHAT ENDS UP LEFT AND WHAT ENDS UP RIGHT IS DECIDED BY THE ORDER SOMEBODY WROTE
+ * THE COMPONENTS IN.** `edgesForNet` chains a net's terminals in list order, the list is built as
+ * `g.units` is walked, and `layered` assigns layers from edge direction - so declaration order
+ * became reading order. `docs/known-gaps.md` **G292** measured the visible consequence on
+ * `pultec-hi-boost`: its rotary switch's throws feed a capacitor bank laid out UPSTREAM of the
+ * switch, so every throw wire leaves rightward, turns, and runs back left. The owner's words for
+ * it were *"fanned out to the top and bottom of the switch symbol"*.
+ *
+ * **THE SEED IS NOT INVENTED - it is the same fact `layerConstraintFor` already acts on.** A
+ * boundary net whose only horizontal side is `left` gets `FIRST_SEPARATE`, which is this
+ * repository's existing statement that the net enters here. Those are depth 0. Everything else
+ * takes its depth from the search.
+ *
+ * **A NET NOT REACHED KEEPS ITS LIST ORDER**, deliberately: a block with no declared inbound net
+ * has nothing to flow from, and inventing a direction for it would be choosing an arrangement by
+ * taste - which is what §1.5 and `CLAUDE.md` forbid. Such a block lays out exactly as it did
+ * before this function existed.
+ */
+function downstreamDepth(
+  seeds: ReadonlySet<NetName>,
+  terminals: ReadonlyMap<NetName, readonly string[]>,
+  nodeOfTerminal: (t: string) => string,
+): ReadonlyMap<string, number> {
+  const netsOfNode = new Map<string, Set<NetName>>()
+  for (const [net, on] of terminals) {
+    for (const t of on) {
+      const node = nodeOfTerminal(t)
+      const nets = netsOfNode.get(node) ?? new Set<NetName>()
+      nets.add(net)
+      netsOfNode.set(node, nets)
+    }
+  }
+  const depth = new Map<string, number>()
+  const seenNets = new Set<NetName>()
+  let frontier = [...seeds].filter((n) => terminals.has(n)).sort()
+  for (const n of frontier) seenNets.add(n)
+  for (let d = 0; frontier.length > 0; d += 1) {
+    const next: NetName[] = []
+    for (const net of frontier) {
+      for (const t of terminals.get(net) ?? []) {
+        const node = nodeOfTerminal(t)
+        if (!depth.has(node)) depth.set(node, d)
+        for (const other of netsOfNode.get(node) ?? []) {
+          if (seenNets.has(other)) continue
+          seenNets.add(other)
+          next.push(other)
+        }
+      }
+    }
+    frontier = next.sort()
+  }
+  return depth
+}
+
+/** A boundary terminal is the whole node (`port:<net>`); a unit's is `<part>:<unit>#<pin>`. */
+const isBoundaryTerminal = (t: string): boolean => !t.includes("#")
+
 function edgesForNet(net: NetName, terminals: readonly string[]): ElkExtendedEdge[] {
   const out: ElkExtendedEdge[] = []
-  for (let i = 1; i < terminals.length; i += 1) {
-    const from = terminals[i - 1]
-    const to = terminals[i]
-    if (from === undefined || to === undefined) {
-      throw new Error(`net ${net}: terminal ${i - 1} or ${i} is missing from a list of ${terminals.length}`)
-    }
-    out.push({ id: `${net}:${i - 1}`, sources: [from], targets: [to] })
+  if (terminals.length < 2) return out
+  // THE HUB IS A UNIT TERMINAL WHEREVER ONE EXISTS, AND THAT IS NOT A PREFERENCE.
+  // `../elk/read-graph.ts` refuses a boundary node that two edges reach - the anchor's side is
+  // read off the single route arriving, and with two it would be *"read off whichever edge came
+  // first in the list"*. A star hubbed on a boundary would give it degree n-1 and trip exactly
+  // that guard, which is correct about an anchor and has nothing to do with the layering this
+  // star is for. Hubbing on a unit keeps every boundary at degree one AND still puts every
+  // sibling one hop from the hub, so they share a depth and therefore a column.
+  const hubIndex = terminals.findIndex((t) => !isBoundaryTerminal(t))
+  const hub = terminals[hubIndex === -1 ? 0 : hubIndex]
+  if (hub === undefined) return out
+  let n = 0
+  for (let i = 0; i < terminals.length; i += 1) {
+    const t = terminals[i]
+    if (t === undefined) throw new Error(`net ${net}: terminal ${i} is missing from a list of ${terminals.length}`)
+    if (t === hub) continue
+    // An INBOUND boundary sits first in the list (`FIRST_SEPARATE`); it is upstream of the hub,
+    // so the edge runs into the hub. Everything else is downstream and runs out of it. That is
+    // D4's direction applied to `negotiablePort`'s own answer, exactly as the chain applied it.
+    const upstream = i < hubIndex && isBoundaryTerminal(t)
+    out.push(upstream ? { id: `${net}:${n}`, sources: [t], targets: [hub] } : { id: `${net}:${n}`, sources: [hub], targets: [t] })
+    n += 1
   }
   return out
 }
@@ -304,21 +446,43 @@ export function elkInputOf(g: BlockSubgraph): ElkBlockInput {
   }
 
   // Boundary nodes after the units, so a unit's own ports are numbered before any boundary.
+  // `inboundNets` is collected here rather than re-derived: `FIRST_SEPARATE` is already this
+  // repository's statement that a net ENTERS the block, and `downstreamDepth` seeds from it.
+  // `readsFrom` is the block's own statement about its DRAWING and outranks the electrical
+  // declaration, because a net can be a true `bidirectional` and the picture still have a side it
+  // reads from - `docs/known-gaps.md` **G294**. Absent, the seed is `FIRST_SEPARATE` as before.
+  const inboundNets = new Set<NetName>()
+  if (g.block.readsFrom !== null) inboundNets.add(g.block.readsFrom)
   for (const net of boundaryNets(g)) {
     const node = boundaryNodeOf(net, g)
     claim(node.id, `the boundary of net ${net}`)
     children.push(node)
     const first = node.layoutOptions?.[LAYER_CONSTRAINT_KEY] === "FIRST_SEPARATE"
+    if (first) inboundNets.add(net)
     const on = terminals.get(net) ?? []
     terminals.set(net, first ? [node.id, ...on] : [...on, node.id])
   }
+
+  // THE SIGNAL ORDER, before any edge is made. `downstreamDepth`'s header says why this exists
+  // and why a net it does not reach is left exactly as it was.
+  const nodeOfTerminal = (t: string): string => {
+    const hash = t.lastIndexOf("#")
+    return hash === -1 ? t : t.slice(0, hash)
+  }
+  const depth = downstreamDepth(inboundNets, terminals, nodeOfTerminal)
 
   // Nets in the IR's own order, which `Circuit.nets` sorts by name: one iteration order, stated.
   const edges: ElkExtendedEdge[] = []
   for (const net of [...terminals.keys()].sort()) {
     const on = terminals.get(net)
     if (on === undefined) throw new Error(`net ${net} vanished from the terminal map of block ${g.block.id}`)
-    edges.push(...edgesForNet(net, on))
+    // A STABLE sort by how far downstream each terminal's node is, so the chain runs with the
+    // signal. Equal depths keep their existing order, which is what leaves an unreached net
+    // byte-identical to what this produced before.
+    const ordered = on.every((t) => depth.has(nodeOfTerminal(t)))
+      ? [...on].sort((a, b) => (depth.get(nodeOfTerminal(a)) ?? 0) - (depth.get(nodeOfTerminal(b)) ?? 0))
+      : on
+    edges.push(...edgesForNet(net, ordered))
   }
 
   const graph: ElkNode = { id: g.block.id, layoutOptions: { ...BLOCK_OPTIONS }, children, edges }

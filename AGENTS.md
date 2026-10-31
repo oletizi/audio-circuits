@@ -1,6 +1,13 @@
 # Project rules
 
-**Read `CLAUDE.md` before doing anything here.** It opens with what this project
+**Read `CONSTITUTION.md` first, then `CLAUDE.md`.** The constitution holds the
+few principles this project does not revisit case by case - what may be
+automated and what may not, when an algorithm is the wrong tool, what a fallback
+owes you, and that a claim about a drawing ships with the drawing. It binds every
+change here and is amended only by the procedure it states. `CLAUDE.md` holds the
+practices, which are revised freely as the work teaches.
+
+**Read `CLAUDE.md` before doing anything else here.** It opens with what this project
 is and who does what, and that frame decides most questions you will have.
 
 The short version, so you are not working from the wrong model of the work:
@@ -18,22 +25,34 @@ crossed.
 
 KiCad is a required tool, not an optional one.
 
-## The gaps register is maintained, by everyone, always
+## The gaps register is FROZEN - do not add to it
 
-**`docs/known-gaps.md` is a repo-wide requirement.** Anything a later reader
-would need and cannot re-derive goes in it, committed in the change that found
-it: a defect you are not fixing, a measurement, a result that would make someone
-want to act, an owner decision or declination in his own words, an observation
-you could not diagnose.
+**`docs/known-gaps.md` holds 31 entries and takes no new ones**, with a single
+exception named below. It held 273 over 30,549 lines until 2026-10-27, and it
+was cut on the owner's instruction: *"cut hard, but don't add to it. It's a
+nucleation site for misinformation."*
+
+**The one exception is an OWNER DECISION or DECLINATION, in his own words.**
+That still goes there, because a decision of his that is lost gets re-asked, and
+re-asking costs him attention and stalls the work behind it.
+
+**Everything else is still recorded - somewhere it can fail.** A measurement goes
+in a tool or a test that re-runs it, never in prose. A defect you are not fixing
+goes in a comment beside the code or in the refusal message itself. An
+observation you could not diagnose goes in the spec for the work in hand.
 
 **Saying it to the owner is not recording it.** Neither is a plan ledger -
 `.superpowers/` is gitignored, so an entry there is invisible to review and one
 `git clean -fdx` from gone. **If you have told him something interesting and not
-written it down, you have already broken this rule.**
+written it down, you have already broken this rule** - that half is unchanged,
+and only the destination moved.
 
-`CLAUDE.md`'s Practices section states it in full, including what each entry
-must carry and why an entry is deleted rather than marked closed when it is
-settled. Read it there before you write one.
+**A `G<n>` reference anywhere in this repository may resolve to nothing.** 822
+citations in TypeScript and 1,781 in other markdown were left pointing at
+deleted entries on purpose: a dead reference is inert, a stale one is not.
+
+`CLAUDE.md`'s Practices section states all of this in full, including the old
+rule shown struck and what obeying it produced. Read it there first.
 
 ## Commit and push cadence
 

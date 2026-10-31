@@ -59,8 +59,8 @@ describe("pinMarks", () => {
     const scene = textScene("t", symbols, { blocks: [{ g, layout }], powers: [], labels: [], texts: [], frames: [] });
     const cross = scene.crosses[0]!;
     const box = { minX: cross.box.minX + 10, minY: cross.box.minY + 10, maxX: cross.box.minX + 20, maxY: cross.box.minY + 20 };
-    expect(textProblems({ ...scene, texts: [{ what: "stray mark", box, mark: true }] })).toContain("stray mark lies under DNP cross of D_Z#1");
-    expect(textProblems({ ...scene, texts: [{ what: "own field", box }] })).not.toContain("own field lies under DNP cross of D_Z#1");
+    expect(textProblems({ ...scene, texts: [{ what: "stray mark", box, mark: true }] }).map((f) => f.what)).toContain("stray mark lies under DNP cross of D_Z#1");
+    expect(textProblems({ ...scene, texts: [{ what: "own field", box }] }).map((f) => f.what)).not.toContain("own field lies under DNP cross of D_Z#1");
   });
 
   it("marks nothing on a fitted diode, or on a DNP part whose pins carry no polarity", () => {
@@ -80,7 +80,7 @@ describe("pinMarks", () => {
     const { c } = unitOf([dnp(diode("D_Z", "N1", "N2"))], "D_Z");
     const d = layoutSheet(c, "s", symbols, "Pwr:PWR_FLAG");
     expect(d.pinMarks.map((m) => m.text)).toEqual(["K", "A"]);
-    const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, ["generated"]);
+    const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, ["generated"], "usable");
     const texts = parse(emitSheet(d, ctx)).lists.filter((l) => l.head === "text").map((t) => t.atoms[1]?.value);
     expect(texts).toEqual(expect.arrayContaining(["K", "A"]));
   });

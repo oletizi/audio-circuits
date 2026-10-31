@@ -66,7 +66,7 @@ nobody declared (`docs/known-gaps.md` **G160**). **Quote both columns or neither
 | optical-compressor | `oc-power` | 8 | 8 | 4 | auto | **elk** - every template not-applicable |
 | optical-compressor | `oc-audio` | 12 | 14 | 7 | auto | **elk** - every template not-applicable |
 | optical-compressor | `oc-sidechain` | 17 | 19 | 6 | auto | **elk** - every template not-applicable |
-| pt2399-core | `pt-core` | 24 | 24 | 6 | auto | **elk** - every template not-applicable |
+| pt2399-core | `pt-core` | 24 | 24 | 5 | auto | **elk** - every template not-applicable |
 | transistor-preamp | `tp-leg-upper` | 3 | 3 | 2 | auto | **elk** - every template not-applicable |
 | transistor-preamp | `tp-leg-feedback` | 3 | 3 | 2 | auto | **elk** - every template not-applicable |
 | transistor-preamp | `tp-leg-lower-a` | 3 | 3 | 2 | auto | **elk** - every template not-applicable |

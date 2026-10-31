@@ -9,7 +9,7 @@ import { describe, expect, it } from "bun:test";
 import { cap, RAILS, res, symbols } from "../__fixtures__/circuits.ts";
 import { buildCircuit } from "../../../lib/schgen/ir/build.ts";
 import type { CircuitSpec } from "../../../lib/schgen/ir/types.ts";
-import { assertRefsMatchDrawings, intersheetRefs, sheetPage } from "../../../lib/schgen/render/page-refs.ts";
+import { intersheetRefs, refsMatchProblems, sheetPage } from "../../../lib/schgen/render/page-refs.ts";
 import { layoutSheet } from "../../../lib/schgen/render/sheets.ts";
 import { NO_PORT_DIRECTIONS, noOrientationPreferences } from "../__fixtures__/orientations.ts";
 
@@ -46,12 +46,19 @@ describe("intersheetRefs", () => {
     expect(refs.get("MID")).toBe("[3]");
   });
 
-  it("agrees with the pages the laid-out sheets actually draw each label on, and refuses a drawing that disagrees", () => {
+  // **AGAINST `refsMatchProblems` AND NOT `assertRefsMatchDrawings`, WHICH IS DELETED.** Task 3 of
+  // `docs/superpowers/plans/2026-10-27-gates-classify.md` made this a GENERATION-level finding -
+  // `tools/schgen/generate.ts` tags each line `reference-disagreement`, which `findings.ts` classes
+  // `defective`, so the drawing is marked rather than withheld. The throwing wrapper was left with
+  // this test as its only caller, which would have kept a refusal path green that production had
+  // abandoned; `CLAUDE.md`'s *supersede means delete*. The assertion is STRONGER as a result: it
+  // compares the exact problem list instead of matching a regex against a thrown message.
+  it("agrees with the pages the laid-out sheets actually draw each label on, and reports a drawing that disagrees", () => {
     const drawings = c.sheets.map((s) => layoutSheet(c, s.id, symbols, "Pwr:PWR_FLAG"));
-    expect(() => assertRefsMatchDrawings(c, drawings)).not.toThrow();
+    expect(refsMatchProblems(c, drawings)).toEqual([]);
     const [pwr, io] = drawings;
     const stray = { ...pwr!, labels: [...pwr!.labels, { net: "MID", at: { x: 0, y: 0 }, side: "left" as const, refs: "[3]" }] };
-    expect(() => assertRefsMatchDrawings(c, [stray, io!])).toThrow(/net MID: its labels print \[3\] but are drawn on pages \[2,3\]/);
+    expect(refsMatchProblems(c, [stray, io!])).toEqual(["net MID: its labels print [3] but are drawn on pages [2,3]"]);
   });
 
   it("gives rails none: they are drawn as power symbols, which carry no page reference", () => {

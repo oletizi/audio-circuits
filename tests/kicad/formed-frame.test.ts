@@ -133,7 +133,7 @@ test("the shift formedFrameOf returns is the midpoint travel, derived from the p
   }
 })
 
-test("every as-moulded pattern's shift is zero, so nothing moved for the other ten", () => {
+test("every as-moulded pattern's shift is zero, so nothing moved for the other twelve", () => {
   let checked = 0
   for (const pattern of PIN_PATTERNS.values()) {
     if (pattern.accommodation.kind !== "as-moulded") continue
@@ -141,7 +141,7 @@ test("every as-moulded pattern's shift is zero, so nothing moved for the other t
     expect(formedFrameOf(pattern).shiftMm, pattern.footprint).toBe(0)
     expect(occupiedAreaFor(pattern.footprint).anchorShiftMm, pattern.footprint).toBe(0)
   }
-  expect(checked, "ten of the thirteen recorded patterns are as-moulded").toBe(10)
+  expect(checked, "twelve of the fifteen recorded patterns are as-moulded").toBe(12)
 })
 
 test("a formed pattern's pads are counted off the prepared pitch, not read off the file", () => {

@@ -20,7 +20,6 @@ import { describe, expect, it } from "bun:test"
 import { blockCircuit, cap, symbols } from "../__fixtures__/circuits.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import { placeFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
-import { createOccupancy, MARK_WEIGHT } from "../../../lib/schgen/render/occupancy.ts"
 import { GRID, type Point, type Side } from "../../../lib/schgen/render/geometry.ts"
 import type { Box } from "../../../lib/schgen/render/lib-pins.ts"
 import type { Wire } from "../../../lib/schgen/render/block-types.ts"
@@ -134,19 +133,6 @@ describe("a unit with no clear field slot", () => {
   })
 })
 
-describe("the weighted overlap cost", () => {
-  it("is area times the category's weight, and a mark weighs twice a body", () => {
-    const box = { minX: 0, minY: 0, maxX: 10, maxY: 4 }
-    const bodies = createOccupancy(1)
-    const marks = createOccupancy(MARK_WEIGHT)
-    bodies.add(box)
-    marks.add(box)
-    expect(bodies.overlap({ minX: 0, minY: 0, maxX: 5, maxY: 4 })).toBe(20)
-    expect(marks.overlap({ minX: 0, minY: 0, maxX: 5, maxY: 4 })).toBe(40)
-    expect(MARK_WEIGHT).toBe(2)
-  })
-})
-
 /**
  * **THE EXEMPTION, AND WHY IT IS NOT A HOLE.** A fallback field's overlaps are not reported by
  * `textProblems`, because the placer already decided this text has nowhere clear to go and
@@ -161,7 +147,7 @@ describe("text clearance and a fallback field", () => {
   })
 
   it("CONTROL: two texts neither of which is a fallback DO overlap", () => {
-    expect(textProblems(scene([a, b]))).toEqual(["Reference of C1#1 overlaps label NET at (0, 0)"])
+    expect(textProblems(scene([a, b])).map((f) => f.what)).toEqual(["Reference of C1#1 overlaps label NET at (0, 0)"])
   })
 
   it("reports nothing when the first is a fallback, and nothing when the second is", () => {
@@ -171,7 +157,7 @@ describe("text clearance and a fallback field", () => {
 
   it("still reports a fallback field that crosses a frame border", () => {
     const frames = [{ what: 'frame "F"', box: { minX: 5, minY: 5, maxX: 100, maxY: 100 } }]
-    expect(textProblems(scene([{ ...a, fallback: true }], frames))).toEqual([
+    expect(textProblems(scene([{ ...a, fallback: true }], frames)).map((f) => f.what)).toEqual([
       'Reference of C1#1 crosses the border of frame "F"',
     ])
   })

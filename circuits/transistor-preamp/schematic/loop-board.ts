@@ -122,7 +122,7 @@ export const TRANSISTOR_PREAMP_LOOP_SCHEMATIC: SchematicAuthoring = {
   project: "transistor-preamp-loop",
   designators: DESIGNATORS,
   blocks: [...CLAIMED, CORE],
-  sheets: sheetFor(SHEET, "Transistor preamp loop board", "transistor-preamp-loop.kicad_sch"),
+  sheets: sheetFor(SHEET, "Transistor preamp loop board", "loop.kicad_sch"),
   rails: RAILS,
   portDirections: PORT_DIRECTIONS,
   overrides: OVERRIDES,

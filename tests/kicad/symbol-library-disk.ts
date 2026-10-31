@@ -28,7 +28,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { defaultSymbolDir } from "../../lib/kicad/install.ts"
 import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
-import { librarySymbols, splitLibId } from "../../lib/kicad/symbol-library.ts"
+import {
+  flattenedSymbol, librarySymbols, splitLibId, strokeEndpointsAt, symbolPins,
+} from "../../lib/kicad/symbol-library.ts"
+import type { SymbolPin } from "../../lib/kicad/symbol-library.ts"
 
 /**
  * Overridable the way `KICAD_FOOTPRINTS` is, and DERIVED from the same
@@ -46,18 +49,20 @@ export function symbolLibraryFile(libId: string): string {
 
 /**
  * Parsing a `.kicad_sym` is not free and `Device.kicad_sym` is read once per
- * symbol in it, so each library's name set is parsed once per process.
+ * symbol in it, so each library is parsed once per process. `PARSED` keeps the
+ * derived NAME set so a sweep over hundreds of symbols does not rebuild it.
  */
+const LIBRARIES = new Map<string, ReadonlyMap<string, string>>()
 const PARSED = new Map<string, ReadonlySet<string>>()
 
 /**
- * Every top-level symbol name in the installed library `libId` names. Throws,
+ * The installed library `libId` names, symbol name -> raw block text. Throws,
  * naming the path and the override, when the library file is not there - this
  * does NOT skip.
  */
-export function installedSymbolNames(libId: string): ReadonlySet<string> {
+function installedLibrary(libId: string): ReadonlyMap<string, string> {
   const file = symbolLibraryFile(libId)
-  const cached = PARSED.get(file)
+  const cached = LIBRARIES.get(file)
   if (cached !== undefined) return cached
   if (!fs.existsSync(file)) {
     throw new Error(
@@ -67,13 +72,23 @@ export function installedSymbolNames(libId: string): ReadonlySet<string> {
         "shipped a KiCad name that does not exist.",
     )
   }
-  const names = new Set(librarySymbols(fs.readFileSync(file, "utf8")).keys())
-  if (names.size === 0) {
+  const library = librarySymbols(fs.readFileSync(file, "utf8"))
+  if (library.size === 0) {
     throw new Error(
       `${file} declares no symbols, which cannot be right - a parsed-but-empty library would ` +
         "make every name checked against it pass for the wrong reason.",
     )
   }
+  LIBRARIES.set(file, library)
+  return library
+}
+
+/** Every top-level symbol name in the installed library `libId` names. Refuses an absent library. */
+export function installedSymbolNames(libId: string): ReadonlySet<string> {
+  const file = symbolLibraryFile(libId)
+  const cached = PARSED.get(file)
+  if (cached !== undefined) return cached
+  const names = new Set(installedLibrary(libId).keys())
   PARSED.set(file, names)
   return names
 }
@@ -82,4 +97,62 @@ export function installedSymbolNames(libId: string): ReadonlySet<string> {
 export function symbolExistsOnDisk(libId: string): boolean {
   const { name } = splitLibId(libId)
   return installedSymbolNames(libId).has(name)
+}
+
+/**
+ * The installed symbol `libId`, flattened through any `(extends)` - the text both
+ * `installedSymbolPins` and a stroke-geometry check need, read and guarded once.
+ *
+ * **IT REFUSES AN ABSENT SYMBOL RATHER THAN RETURNING AN EMPTY LIST**, which is
+ * the whole point of it: a table that names a pin of a symbol nobody can find
+ * would otherwise pass a "does this symbol have this pin" check vacuously,
+ * which is the shape of every false green this repository catalogues. The
+ * absent LIBRARY case refuses one level down, in `installedLibrary`.
+ */
+function installedFlattenedBlock(libId: string): { readonly name: string; readonly block: string } {
+  const { name } = splitLibId(libId)
+  const library = installedLibrary(libId)
+  if (!library.get(name)) {
+    throw new Error(
+      `symbol "${libId}" is not in ${symbolLibraryFile(libId)}, so there are no pins to read ` +
+        "off it. Either the name is a typo or the installed KiCad has moved it; re-verify it " +
+        "against the library rather than relaxing the caller. An empty pin list returned here " +
+        "would make every claim about this symbol's pins pass for the wrong reason.",
+    )
+  }
+  return { name, block: flattenedSymbol(library, name) }
+}
+
+/**
+ * The installed symbol `libId`'s pins, full shape: number, name, electrical type, position and
+ * angle - in library order, flattened through any `(extends)`. Refuses an absent symbol, the
+ * same way `installedSymbolPinNumbers` below does.
+ */
+export function installedSymbolPins(libId: string): readonly SymbolPin[] {
+  return symbolPins(installedFlattenedBlock(libId).block)
+}
+
+/** The PIN NUMBERS the installed symbol `libId` has. See `installedSymbolPins` for the full shape. */
+export function installedSymbolPinNumbers(libId: string): readonly string[] {
+  return installedSymbolPins(libId).map((p) => p.number)
+}
+
+/**
+ * How many of the installed symbol `libId`'s OTHER strokes have an endpoint at pin `pinNumber`'s
+ * body-side connection point - zero means no conductor drawn inside the symbol reaches that pin.
+ * See `strokeEndpointsAt` in `lib/kicad/symbol-library.ts` for what this is porting and why pin
+ * TYPE alone (`passive` on both a mount lug and an ordinary terminal) cannot answer the question.
+ * Refuses a pin number the symbol does not have, rather than silently reading zero strokes for a
+ * typo that could never have been reached.
+ */
+export function installedSymbolStrokeEndpoints(libId: string, pinNumber: string): number {
+  const { block } = installedFlattenedBlock(libId)
+  const pin = symbolPins(block).find((p) => p.number === pinNumber)
+  if (pin === undefined) {
+    throw new Error(
+      `symbol "${libId}" has no pin "${pinNumber}" to check for a stroke endpoint. Its pins: ` +
+        `${symbolPins(block).map((p) => p.number).join(", ")}.`,
+    )
+  }
+  return strokeEndpointsAt(block, pin)
 }

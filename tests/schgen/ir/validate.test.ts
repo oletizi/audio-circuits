@@ -54,10 +54,32 @@ describe("validateCircuit", () => {
     expect(problems(base([res("R_A", "X", "GND"), res("R_B", "X", "GND")]))).toEqual([]);
   });
 
-  it("V1: rejects a net that is not UPPER_SNAKE", () => {
-    expect(problems(base([res("R_A", "x", "GND"), res("R_B", "x", "GND")]))).toContain('net "x" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)');
-  });
-
+  /**
+   * **V1 WAS HERE AND IS DELETED WITH THE DEMAND IT TESTED - the DEMAND, not the rule** - Task 3
+   * of the net-names-and-floating-pins plan. It read
+   *
+   * ```ts
+   * it("V1: rejects a net that is not UPPER_SNAKE", () => {
+   *   expect(problems(base([res("R_A", "x", "GND"), res("R_B", "x", "GND")]))).toContain('net "x" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)');
+   * });
+   * ```
+   *
+   * The owner ruled the demand out: *"i absolutely do not care about the letter case of net names.
+   * That's a silly quibble."* Deleting a test because it asserts a demand being deliberately
+   * removed is correct; **deleting or loosening any other assertion in the same change is not**,
+   * and nothing else here moved. `docs/known-gaps.md` **G150**.
+   *
+   * **THE RULE IS STILL THERE AND V1'S DELETION IS NOT EVIDENCE OTHERWISE.** `netNames` is
+   * narrowed to *non-empty, no control character* and still runs first in `DRAWING_RULES`. Round 0
+   * of this task deleted the whole rule and the coordinator reversed that; the rule's own comment
+   * in `lib/schgen/ir/validate.ts` says why.
+   *
+   * **The surviving predicate is tested in `tests/schgen/ir/net-name.test.ts`**, which drives the
+   * rule red five ways on the message it throws, and drives `validateCircuit` on a lower-case net
+   * and a synthetic name to assert neither is refused. Those positive controls are what this
+   * deletion could otherwise have hidden: a demand removed and a rule that stopped running look
+   * identical from here.
+   */
   it("V2: every part names its source; an empty or blank source is refused", () => {
     for (const source of ["", "   "]) {
       const p = problems(base([{ ...res("R_A", "X", "GND"), source }, res("R_B", "X", "GND")]));
@@ -67,7 +89,9 @@ describe("validateCircuit", () => {
 
   it("V3: reports an undeclared symbol pin", () => {
     const half: PartSpec = { ...res("R_A", "X", "GND"), pins: { "1": { net: "X", identity: "" } } };
-    expect(problems(base([half, res("R_B", "X", "GND")]))).toContain("part R_A: pin 2 () is neither on a net nor declared not connected");
+    expect(problems(base([half, res("R_B", "X", "GND")]))).toContain(
+      "part R_A: pin 2 () is neither on a net nor declared not connected, nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts",
+    );
   });
 
   it("V4: reports a unit no block places", () => {

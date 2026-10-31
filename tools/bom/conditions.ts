@@ -11,18 +11,51 @@
  * refusal rather than letting a malformed value reach the operating-point simulation or
  * the parts-list derivation downstream.
  *
- * Design: docs/superpowers/specs/2026-09-30-bom-design.md
+ * **THERE ARE TWO ARMS, AND A BOARD DECLARES EXACTLY ONE.** Both say what the rail is
+ * and where every control sits; they differ only in where the per-resistor dissipation
+ * figure `deriveNeeds` requires comes FROM.
+ *
+ *   - `environment` - the board is SIMULATED. A full operating-point environment, with
+ *     a source and a load, and `resistorDissipation` solves for the voltage actually
+ *     across each resistor. This is the stronger claim and the default.
+ *   - `railBound` - the board's resistor rating follows from the RAIL, arithmetically:
+ *     the worst case is the whole rail across a resistor, so `P <= V^2/R` with no
+ *     source, no load and no SPICE model needed. Looser everywhere, and available only
+ *     to a board that can state the bound and have it checked
+ *     (tools/bom/rail-bound.ts).
+ *
+ * Declaring both is refused: two bases for one figure is an unanswered question about
+ * which one binds, not a belt-and-braces.
+ *
+ * Design: docs/superpowers/specs/2026-09-30-bom-design.md; the rail-bound arm is
+ * docs/research/2026-10-30-rail-bound-power.md.
  */
 import type { ControlState } from "../../lib/model/control-state.ts"
 import type { LoadModel, OperatingPointEnvironment, SourceModel, SupplyModel } from "../../lib/sim/netlist.ts"
 import { isRecord } from "../perfboard/guards.ts"
+import type { RailBoundPower } from "./rail-bound.ts"
 
-export interface BomConditions {
+/** The arm whose resistor dissipation comes from a solved operating point. */
+export interface SimulatedBomConditions {
   /** One line: rail and control settings, in plain words. */
   readonly description: string
   readonly environment: OperatingPointEnvironment
+  readonly railBound?: undefined
   readonly controlState: ControlState
 }
+
+/** The arm whose resistor rating comes from a declared rail bound. It carries no
+ * `environment`, so a board taking it never has to invent a source or a load. */
+export interface RailBoundBomConditions {
+  /** One line: rail and control settings, in plain words. */
+  readonly description: string
+  readonly environment?: undefined
+  readonly railBound: RailBoundPower
+  readonly controlState: ControlState
+}
+
+/** Discriminated on `railBound`: absent means the operating-point arm. */
+export type BomConditions = SimulatedBomConditions | RailBoundBomConditions
 
 /** The shape of a circuit module's `bomConditions` export. Sync or async: the result
  * is awaited either way, mirroring `PowerUpChecksExport`. */
@@ -116,13 +149,45 @@ function validateControlState(value: unknown, where: string): ControlState {
   }
 }
 
+function validateRailBound(value: unknown, where: string): RailBoundPower {
+  const record = requireRecord(value, "railBound", where)
+  const supplies = record["supplies"]
+  if (!Array.isArray(supplies)) {
+    throw new Error(`${where}: railBound.supplies is a ${typeof supplies}, not an array.`)
+  }
+  return {
+    supplies: supplies.map((supply, index) => validateSupply(supply, index, where)),
+    ratedWatts: requireFiniteNumber(record["ratedWatts"], "railBound.ratedWatts", where),
+    basis: requireNonEmptyString(record["basis"], "railBound.basis", where),
+  }
+}
+
 function validateBomConditions(value: unknown, where: string): BomConditions {
   const record = requireRecord(value, "bomConditions() result", where)
-  return {
-    description: requireNonEmptyString(record["description"], "description", where),
-    environment: validateEnvironment(record["environment"], where),
-    controlState: validateControlState(record["controlState"], where),
+  const description = requireNonEmptyString(record["description"], "description", where)
+  const controlState = validateControlState(record["controlState"], where)
+  const hasEnvironment = record["environment"] !== undefined
+  const hasRailBound = record["railBound"] !== undefined
+  if (hasEnvironment && hasRailBound) {
+    throw new Error(
+      `${where}: bomConditions() declares BOTH "environment" and "railBound". Those are two ` +
+        "different bases for one figure - the per-resistor dissipation deriveNeeds requires - and " +
+        "nothing here decides which binds. Declare exactly one: \"environment\" to solve for it, " +
+        "\"railBound\" to bound it by the rail (tools/bom/rail-bound.ts).",
+    )
   }
+  if (hasRailBound) {
+    return { description, railBound: validateRailBound(record["railBound"], where), controlState }
+  }
+  if (!hasEnvironment) {
+    throw new Error(
+      `${where}: bomConditions() declares neither "environment" nor "railBound", so there is no ` +
+        "basis for the per-resistor dissipation deriveNeeds requires. Declare \"environment\" (an " +
+        "OperatingPointEnvironment, solved by tools/bom/dissipation.ts) or \"railBound\" (a rail " +
+        "and a claimed rating, checked by tools/bom/rail-bound.ts).",
+    )
+  }
+  return { description, environment: validateEnvironment(record["environment"], where), controlState }
 }
 
 /**
@@ -151,15 +216,25 @@ export async function declaredBomConditions(
   return validateBomConditions(result, where)
 }
 
+/** The rails a board declares, from whichever arm declares them. Both arms carry
+ * supplies, because both a simulated deck and a rail bound need to know the rail - and
+ * so does every capacitor's voltage rating, whichever arm the board took. */
+export function declaredSupplies(conditions: BomConditions): readonly SupplyModel[] {
+  return conditions.railBound === undefined
+    ? conditions.environment.supplies
+    : conditions.railBound.supplies
+}
+
 /** The board's highest supply rail, in volts. Throws when the declared conditions have
  * no supplies at all - a capacitor's required voltage rating has nothing to be derived
  * from otherwise. Takes the magnitude of each rail, so a negative (bipolar) supply
  * counts by how far it sits from ground, not by its sign. */
 export function highestRailVolts(conditions: BomConditions): number {
-  const { supplies } = conditions.environment
+  const supplies = declaredSupplies(conditions)
   if (supplies.length === 0) {
+    const arm = conditions.railBound === undefined ? "environment" : "railBound"
     throw new Error(
-      "highestRailVolts: bomConditions().environment declares no supplies, so there is no rail to " +
+      `highestRailVolts: bomConditions().${arm} declares no supplies, so there is no rail to ` +
         "derive a capacitor voltage rating from.",
     )
   }

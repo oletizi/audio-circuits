@@ -1,7 +1,26 @@
 # Audio Circuits - Project Instructions
 
+**`CONSTITUTION.md` outranks this file.** It holds the small set of principles
+this project does not revisit - judgement is relocated rather than automated, an
+arrangement is reviewed once per construct, an algorithm is for the understood
+problem and a loop for the ambiguous one, a fallback is loud or it does not
+exist, the artifact is the deliverable, read what the project already knows
+before adding to it, and a cause or a demand is a claim that needs testing. Each
+names the failure that earned it. Nothing below may be read as permission to
+depart from them; a departure is an amendment, by the procedure the constitution
+states.
+
 Follow the shared project rules in `AGENTS.md`, including committing and pushing
 small, coherent changes early and often.
+
+**`EVALUATING-DRAWINGS.md` is canonical on drawings, and binds before anything
+below.** Who may evaluate one, what counts as a valid evaluation, what an agent
+may say about one, and what it must do when it has produced one. **You are not a
+qualified reviewer of a drawing, and the words *better*, *best*, *good*,
+*clean*, *readable* and *legible* are forbidden about any drawing this project
+produced.** Every drawing is shown to the reviewer; only an electrical fault may
+withhold one; a message carrying a drawing carries a question and nothing else.
+Read it before you render anything.
 
 ## What this project is
 
@@ -115,27 +134,50 @@ So:
   solution that technically works but leaves a person doing fiddly remedial work
   is a failure, not a delivery.
 - **The schematic generator is `lib/schgen/`, and `lib/kicad/schematic.ts` is the
-  superseded stub it replaced.** This sentence used to say the stub was all there
-  was and to *"expect it to stop being true as the schematic-generation port
-  lands"*. **The port landed and the prediction was wrong for a reason nobody
-  anticipated, which is worth more than a silent correction.** `lib/schgen/`
-  exists, draws **35 of this repository's 52 declared ELK blocks**, and
-  **produces a schematic for 0 of the 11 boards in `boards/`**: six are refused
-  at `validateCircuit` on net names and five at ELK layout on text, power-symbol
-  and junction placement. **The "no authoring declaration" half of this sentence
-  is gone and the dates say why it is kept:** until 2026-10-21 nine of the eleven
-  boards had no declaration and had never been offered to the drawing code at
-  all, which was the largest single reason this output class delivered nothing;
-  all nine now exist (`circuits/pultec/schematic/`,
-  `circuits/transistor-preamp/schematic/`) and the board figure did not move.
-  `docs/known-gaps.md` **G259** is the board-by-board scoreboard, **G247**
-  measures the preamp five, **G263** and **G264** carry what offering the nine
-  surfaced, **G238** and **G245** are how the blocker got there, and **G248** records
-  why the stub writer is still in the tree - it carries the only `kicad-cli`
-  proof that KiCad reads a generated schematic as the circuit means it. **Nothing
-  invites you to the stub**: its CLI verb, its script and its instructions are
-  deleted. Say "stub" when that is what you made, and read **G81** before you
-  reach for `lib/kicad/schematic.ts` for anything.
+  superseded stub it replaced.** **Nothing invites you to the stub**: its CLI
+  verb, its script and its instructions are deleted. Say "stub" when that is
+  what you made, and read **G81** before you reach for it for anything.
+
+  **NO COUNT OF WHAT DRAWS BELONGS IN THIS FILE. RUN THE TOOL.**
+
+  ```
+  bun tools/schgen/board-sheets.ts     which boards draw, and what refuses
+  bun run tools/schgen/board-geometry.ts     crossings, corners, fallbacks
+  ```
+
+  **This paragraph used to carry the census, and the owner struck it on
+  2026-10-27:** *"why are there entries about specific artifacts and
+  point-in-time statuses in claude.md? That will almost certainly go stale plus
+  claude.md is for governance, not bookkeeping."* It had four stale figures in
+  it at that moment, including one added the same day to correct another.
+  **Ninety lines of bookkeeping were deleted; what follows is the governance
+  that was buried in it, and it is the part that does not go stale.**
+
+  **A FIGURE IN PROSE IS A TRANSCRIPTION WITH A DATE ON IT.** The board count
+  read `0`, `1`, `2`, `5`, `6`, `7` and `10` in this one paragraph inside nine
+  days. On 2026-10-25 three files carried three different values of it at the
+  same time, and not one of the three changes that moved it amended the
+  scoreboard they all cited.
+
+  **A STALE CAUSE IS WORSE THAN A STALE COUNT, and that is the lesson that
+  outlives every number.** `0 of 11` once stood here beside *"six are refused at
+  `validateCircuit` on net names"*. The count was merely out of date; **the
+  cause was refuted** - no board ever refused on a net name. A stale count
+  misleads about progress; a stale cause sends the next agent after a rule that
+  is not there.
+
+  **A FIGURE IS NOT QUOTABLE WITHOUT ITS SECOND COLUMN. A board that draws is
+  not a board whose drawing anyone has read**, and the two have come apart here
+  before: the one sheet anyone had read closely could not be read as a drawing
+  at all while the census counted it a success. **Quote both or neither.**
+
+  **AND A GATE NOBODY CAN SEE PAST CANNOT BE JUDGED SANE.** The owner, 2026-10-27:
+  *"a gate halts rendering and we never look at the picture so we can't tell if
+  the gate is insane or not"*. `docs/known-gaps.md` **G303** carries the
+  directive that followed, and
+  `docs/superpowers/plans/2026-10-27-gates-classify-execution/README.md` carries
+  what looking at the drawings then found.
+
 - **KiCad and VeroRoute are primary tools here, not optional extras.**
   `make check` invokes `kicad-cli` on every board on every run, and one test
   invokes it directly and fails rather than skips. Treat KiCad the way you would
@@ -160,6 +202,53 @@ useless. Render it, print it, read it.
 why it is not defaulted. A message that only says something went wrong is
 incomplete.
 
+**AND A REFUSAL WHOSE REASON CANNOT BE STATED SHOULD NOT EXIST. ASK WHAT A
+DEMAND IS FOR BEFORE WORKING OUT HOW TO SATISFY IT.** This repository has now
+done the opposite **four times, and the owner caught all four** - no agent and
+no review did:
+
+- the **BOM gate**, which blocked drawings on purchasing data (**G245**);
+- the over-long **`Value` label**, argued about rather than questioned;
+- the **`UPPER_SNAKE` net-name rule** (**G150**), 2026-10-23: *"i absolutely do
+  not care about the letter case of net names. That's a silly quibble."*
+- the **switch MOUNTING-PIN demand** (**G282**), 2026-10-24, which is the worst
+  of the four because it **re-erected the first one under a new
+  justification**. `pinsDeclared` refuses a mechanical mount lug for want of a
+  net; the agent concluded it needed to know **which rotary switch is fitted**
+  and raised an owner question for an MPN - the very gate `G245` had already
+  struck. His three questions, in the order he asked them, each removed a
+  layer: *"why do you need to know which rotary switch is fitted?"*, *"why do
+  you need the specific part number of a component in a schematic?"*, *"why do
+  you need to specify a mechanical part in the schematic?"*
+
+**The third is the purest form and the one to recognise.** `G150` measured the
+violation exactly, counted the 31 offending nets, and offered three mechanisms
+for *complying* - normalise, rename, or relax - **without once asking what the
+rule was for.** `lib/schgen/ir/validate.ts` states no reason for it, and there
+is none to state: letter case carries no information a schematic needs.
+
+**The tell is a rule that refuses with a restatement of itself** - *"net `in` is
+not UPPER_SNAKE"* says what the rule is, not why it exists. Where you cannot
+write the "why it is not defaulted" clause this section already requires, **you
+have found a demand to question rather than a refusal to satisfy.**
+
+**AND BEFORE YOU RAISE AN OWNER QUESTION, SEARCH FOR WHETHER THIS REPOSITORY
+ALREADY ANSWERS IT.** The fourth instance was answered in a code comment written
+before the task began - `circuits/pultec/schematic/section-board.ts:162`:
+*"a mounting pin `MP`, which is a mechanical pad and is on no net in the
+model."* The agent measured the symbol, reached that same conclusion, recorded
+it in **G282** clause 4, **and then asked him anyway.** An owner question costs
+him attention and stalls the boards behind it, so it is the last resort and not
+the first: a question he could not answer from the circuit is a question that
+was never his.
+
+**AND A SILLY DEMAND CAN HIDE A REAL ONE, which is the second cost.** That same
+regex rejected `hi_boost_out` on case alone - the silly part - and
+`Net-(C10-Pad1)` on case **plus parentheses and hyphens**, which is a genuine
+unanswered question about what KiCad accepts in a label. One message, two
+demands, and the real one invisible behind the quibble. **Split a rule that
+refuses two different things.**
+
 **Refuse rather than guess.** Value ranges, footprint families and part
 geometries are proven with tests over the range they claim. Extending one is a
 deliberate edit with a test beside it, never a silent widening. An empty
@@ -169,35 +258,95 @@ whitelist that refuses loudly beats a general rule that quietly accepts a guess.
 the libraries are on disk. Do not write one from memory; this repository has
 twice shipped a footprint that does not exist.
 
+**NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER. BUILD IT IN
+CODE.** A `\u0000` or `\r` written into an edit string, a search pattern or a
+document arrives as the **real byte**, not as the four characters you typed, and
+the result is invisible in a rendered diff. Build them with
+`String.fromCharCode` or `chr()`, and **check the file by counting bytes rather
+than by reading it.**
+
+This cost three incidents on one plan in one day: a raw NUL written into
+`docs/known-gaps.md`, which **made `grep` treat all 25,000 lines as binary and
+suppress every match** - and grepping that file is how every agent here
+navigates it; a repair attempt broken because Python's text mode translates
+`\r` on **read**; and two silently failed edits in a review, where the escape
+became bytes and stopped matching the file. The first was caught only because
+someone counted.
+
+**AND THE COMMIT THAT ADDED THIS RULE BROKE THIS FILE WITH IT - the fourth
+incident, in the governance change prohibiting the third.** The example above
+was typed as an escape into an edit, arrived as a **real NUL**, and `grep`
+returned nothing on `CLAUDE.md` until it was counted and repaired. **The file
+every agent reads for its instructions was unsearchable, and the rendered diff
+looked correct.** Left recorded rather than amended away, because the rule's own
+example breaking the rule's own file is the most useful evidence it has: there
+is no care level at which typing the escape is safe. Build it in code.
+
+**The general form, which is why this sits beside the rule above:** a tool that
+reports success while the thing you asked about became unreadable is the failure
+mode this whole section exists to prevent. `docs/schematic/false-greens.md`
+catalogues it with the other twenty-eight.
+
 **A skipped check must never look like a passing one.** If a guard cannot run,
 say so loudly. Silence that resembles success is the failure mode the whole
 workflow exists to prevent.
 
-**Anything a later reader would need and cannot re-derive goes in
-`docs/known-gaps.md`, committed, in the change that found it.** This is a
-repo-wide requirement, not a per-plan convention, and it binds every agent on
-every task.
+**Anything a later reader would need and cannot re-derive is recorded, committed,
+in the change that found it. It does NOT go in `docs/known-gaps.md` — that
+register is FROZEN and you may not add to it.**
 
-**It is NOT only defects**, which is how it has been read and how it has failed.
-It covers:
+> **This rule said the opposite until 2026-10-27 and the old wording is shown
+> struck rather than edited away, because what it produced is the argument for
+> the change.** It read: *"Anything a later reader would need and cannot
+> re-derive goes in `docs/known-gaps.md`, committed, in the change that found
+> it. This is a repo-wide requirement, not a per-plan convention, and it binds
+> every agent on every task"* — followed by a list insisting it was **not only
+> defects** but measurements, results, decisions and undiagnosed observations
+> too.
+>
+> **Obeyed faithfully, that rule produced 273 entries over 30,549 lines**, 112
+> lines per entry, 83 amendment banners across 46 of them, and only 29 of 302
+> numbers ever deleted although this same section required deletion on
+> resolution. The owner, 2026-10-27: *"I'm worried that the gaps ledger is
+> silting up with obsolete and misleading information"* and *"cut hard, but
+> don't add to it. It's a nucleation site for misinformation."*
+>
+> **The breadth was the defect, not the discipline.** Sending *measurements* to a
+> prose file is what silted it: a count is true on the day it is written and
+> wrong by the next commit, and this file already records the board figure
+> reading `0`, `1`, `2`, `5`, `6` and `7` inside five days with three files
+> disagreeing at once.
 
-- a defect you are not fixing;
-- **a measurement** - including one that found nothing wrong. *"Removing the
-  junction ground row opens net `0` on every adopted board"* is not a defect;
-  it is a constraint on a change the owner wants, and the next agent to try it
-  needs it;
-- **a result that makes someone want to act** - *"without that row hi-boost is
-  zero cuts, zero wires, zero bridges"* is bait, and bait belongs beside the
-  trap;
-- **an owner decision, and an owner DECLINATION**, with his words verbatim. A
-  question he declined is not a closed question, but nobody asks him again
-  unprompted;
-- **an observation you could not diagnose.** Record it undiagnosed rather than
-  omit it.
+**WHERE IT GOES NOW: next to the thing it is about, in the form that can fail.**
 
-**Telling the owner in conversation is not recording it**, and neither is a plan
-ledger: `.superpowers/` is gitignored, so an entry there is invisible to review,
-absent from the history, and destroyed by `git clean -fdx`.
+- **A measurement goes in a tool or a test that re-runs it**, never in prose. The
+  tool is the answer to the question; a figure written down is a transcription
+  with a date on it. `bun tools/schgen/board-sheets.ts` is the worked example,
+  and this file already says it is *"the only thing that answers this question."*
+- **A defect you are not fixing goes in a comment beside the code**, or in a test
+  marked for the behaviour you are not delivering, or in the refusal message
+  itself. A refusal that names what is missing is worth more than an entry
+  describing it elsewhere.
+- **An observation you could not diagnose goes in the spec for the work in hand**,
+  under what it leaves open.
+- **AN OWNER DECISION OR DECLINATION STILL GOES IN `docs/known-gaps.md`**, with
+  his words verbatim, and that is the ONLY thing that still does — it is what
+  the surviving entries are. **This is an exception to "do not add to it" and
+  the only one.** A decision of his that is lost gets re-asked, re-asking costs
+  him attention and stalls the work behind it, and *"a question he declined is
+  not a closed question, but nobody asks him again unprompted."*
+
+**A `G<n>` reference anywhere in this repository may resolve to nothing, and that
+is expected.** At the cut there were 822 citations across 232 TypeScript files
+and 1,781 across 217 other markdown files; they were deliberately not rewritten,
+because a reference that resolves to nothing is inert and one that resolves to a
+stale claim is the thing the cut was for. The full file is in git at `a4b66de`.
+
+**Telling the owner in conversation is still not recording it**, and neither is a
+plan ledger: `.superpowers/` is gitignored, so an entry there is invisible to
+review, absent from the history, and destroyed by `git clean -fdx`. **That half
+of this rule is untouched** — what changed is where the record goes, not whether
+there is one.
 
 **AND THE REMEDY IS NOT ONLY TO COPY FINDINGS OUT — IT IS TO COMMIT THE
 EXECUTION RECORD TOO, which this file did not say until 2026-10-23.** The rule
@@ -208,10 +357,19 @@ decision record** - what was ruled, why, and what it would cost if wrong - and
 claims checkable. The execution skill's default is to delete a plan's workspace
 once its final review is clean. **That default is right when the diff IS the
 record and wrong when the plan's product is knowledge**, and following it would
-have destroyed 77 rulings and 19 reviews. So: a research plan's record is
-committed beside the plan, at
-`docs/superpowers/plans/<plan-name>-execution/`, with a README saying plainly
-that it is not findings and that the register is what binds. The review-package
+have destroyed 77 rulings and 19 reviews. So: **a plan's record is committed
+beside the plan**, at `docs/superpowers/plans/<plan-name>-execution/`, with a
+README saying plainly that it is not findings and that the register is what
+binds.
+
+> **This said "a RESEARCH plan's record" until 2026-10-24, and the narrower
+> wording did not survive its first implementation plan.** The reasoning above
+> turns on a plan producing a decision record and an audit trail that the
+> register has no home for — **which has nothing to do with whether the plan
+> wrote code.** The net-names plan changed production code and still produced
+> ~31 rulings, six reviews and seven reports, including ten refuted controller
+> claims and the seven-incident control-byte arc. Generalised rather than
+> re-argued each time. The review-package
 diffs are not committed - they regenerate from `git diff`. The worked example is
 `docs/superpowers/plans/2026-10-22-text-handling-research-execution/`.
 

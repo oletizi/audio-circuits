@@ -13,6 +13,15 @@
  * byte-check it, re-running `tools/schgen/port.ts` will NOT refresh it: **edit this file**. Its
  * `diverged` entry in `tools/schgen/port-manifest.json` carries the reason; see
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
+ *
+ * **DIVERGED FURTHER BY TASK 2 of `docs/superpowers/plans/2026-10-27-gates-classify.md`:** `textProblems`
+ * returns `readonly Finding[]` rather than `string[]`, every `kind` is `"text-clearance"` (this
+ * whole module is that one check), `where` is the scene's own `scope`, and `Finding.what` is
+ * byte-identical to the string this function used to return at that position. `assertTextClear`
+ * throws `SchgenRefusal(problems, message)` in place of a plain `Error`, with the thrown message
+ * text unchanged, so the findings that caused a refusal travel with it rather than being
+ * discarded at the point they are turned into a thrown message. **Task 3 then DELETED
+ * `assertTextClear` outright** - see the note where it stood, at the foot of this file.
  */
 
 /**
@@ -26,6 +35,7 @@
  * when a unit has no clear slot (fieldPlacement.placeFields).
  */
 import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
+import { finding, type Finding } from "../findings.ts";
 import type { BlockLayout, BlockSubgraph } from "./block-types.ts";
 import { fmtPoint } from "./connectivity.ts";
 import { blockFields } from "./field-placement.ts";
@@ -179,24 +189,36 @@ const strictlyWithin = (inner: Box, outer: Box): boolean =>
  * the `FieldFallback` it returned is what reports it. The frame-border clause is the exception and
  * still applies.
  */
-export function textProblems(scene: TextScene): string[] {
-  const out: string[] = [];
+export function textProblems(scene: TextScene): readonly Finding[] {
+  const out: Finding[] = [];
   scene.texts.forEach((t, i) => {
+    // `where` is `t.what` - the drawn text each line below is actually ABOUT - not `scene.scope`,
+    // so ten findings on one block's text pass are distinguishable by `where` rather than all
+    // landing in one bucket named after the block.
+    const text = (what: string): Finding => finding("text-clearance", what, t.what);
     const chosen = t.fallback === true;
-    for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(`${t.what} overlaps ${o.what}`);
-    for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
-    for (const b of scene.bodies) if (!chosen && (t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(`${t.what} overlaps ${b.what}`);
-    for (const p of scene.pinTexts) if (!chosen && boxesOverlap(t.box, p.box)) out.push(`${t.what} overlaps ${p.what}`);
-    for (const s of scene.strokes) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(`${t.what} overlaps ${s.what}`);
-    if (t.mark === true) for (const x of scene.crosses) if (boxesOverlap(t.box, x.box)) out.push(`${t.what} lies under ${x.what}`);
+    for (const o of scene.texts.slice(i + 1)) if (!chosen && o.fallback !== true && boxesOverlap(t.box, o.box)) out.push(text(`${t.what} overlaps ${o.what}`));
+    for (const s of scene.segments) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(text(`${t.what} overlaps ${s.what}`));
+    for (const b of scene.bodies) if (!chosen && (t.owner === undefined || t.owner !== b.owner) && boxesOverlap(t.box, b.box)) out.push(text(`${t.what} overlaps ${b.what}`));
+    for (const p of scene.pinTexts) if (!chosen && boxesOverlap(t.box, p.box)) out.push(text(`${t.what} overlaps ${p.what}`));
+    for (const s of scene.strokes) if (!chosen && segmentHitsBox(s.a, s.b, t.box)) out.push(text(`${t.what} overlaps ${s.what}`));
+    if (t.mark === true) for (const x of scene.crosses) if (boxesOverlap(t.box, x.box)) out.push(text(`${t.what} lies under ${x.what}`));
     for (const f of scene.frames) {
-      if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)) out.push(`${t.what} crosses the border of ${f.what}`);
+      if (boxesOverlap(t.box, f.box) && !strictlyWithin(t.box, f.box)) out.push(text(`${t.what} crosses the border of ${f.what}`));
     }
   });
   return out;
 }
 
-export function assertTextClear(scene: TextScene): void {
-  const problems = textProblems(scene);
-  if (problems.length > 0) throw new Error(`${scene.scope}: text clearance:${problems.map((p) => `\n  - ${p}`).join("")}`);
-}
+/**
+ * **`assertTextClear` IS DELETED HERE BY TASK 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`, and the deletion is the change rather
+ * than a tidy-up.**
+ *
+ * It was `textProblems` plus a throw, and `render/sheets.ts` was its one caller. A sheet's text
+ * clearance is now REPORTED - the findings land on `SheetDrawing.findings` and the drawing is
+ * produced and classified instead of withheld - which is the owner's directive, and this function
+ * is the mechanism that withheld it. `CLAUDE.md`: *supersede means delete*, so it is removed rather
+ * than left for somebody to find and trust. `textProblems` above is unchanged and still runs on
+ * every sheet and inside `checkLayout` on every block.
+ */

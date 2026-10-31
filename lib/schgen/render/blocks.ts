@@ -17,11 +17,12 @@
  * subgraph, or that produces a layout whose geometry disagrees with the IR, is a generation error.
  */
 import { labelledNets, pinsOfUnit } from "../ir/classify.ts";
+import { SchgenRefusal, type Finding } from "../findings.ts";
 import { drawnRotation } from "../rules/orientation.ts";
 import type { Rotation } from "./geometry.ts";
 import type { BlockId, Circuit, IrPart, NetName, RailSpec, Rendering, TemplateId } from "../ir/types.ts";
 import {
-  backendRaised, describeMismatch,
+  backendRaised, describeMismatch, mismatchFindings, refusedLayout,
   type Backend, type BlockLayout, type BlockSubgraph, type BlockUnit, type Mismatch, type RealiseResult,
   type Selection, type Template,
 } from "./block-types.ts";
@@ -212,7 +213,10 @@ export function selectRenderer(g: BlockSubgraph, templates: ReadonlyMap<Template
   for (const t of candidates) {
     const r = runTemplate(t, g);
     if (r.ok) return { kind: "template", template: t.id, layout: r.layout };
-    if (r.mismatch.kind !== "not-applicable") return { kind: "refused", mismatch: r.mismatch };
+    // Task 3: the geometry and the findings the template carried travel with the refusal. A
+    // `not-applicable` carries neither by construction - nothing was drawn - so the `last` branch
+    // below has nothing to forward.
+    if (r.mismatch.kind !== "not-applicable") return { kind: "refused", mismatch: r.mismatch, layout: r.layout, findings: r.findings };
     last = r.mismatch;
   }
   if (rendering.kind === "auto") return { kind: "elk" };
@@ -235,7 +239,16 @@ function refusalText(id: BlockId, r: Rendering, m: Mismatch): string {
 
 /**
  * The block's layout, drawn by whichever renderer `selectRenderer` chose and checked against the
- * IR before it is returned.
+ * IR before it is returned - **refusing when anything was found wrong with it.**
+ *
+ * **IT IS THE STRICT WRAPPER OVER `realiseBlockReported` SINCE TASK 3, AND THE GENERATION PATH NO
+ * LONGER CALLS IT.** `render/bus.ts`'s `renderBlock` calls the reported form, so a block whose
+ * drawing exists and is merely crowded reaches the sheet instead of being withheld
+ * (`docs/superpowers/specs/2026-10-27-gates-ratify-they-do-not-hide-design.md`). This function is
+ * what a caller uses when it wants geometry or nothing, and the 49 ported call sites **G146**
+ * counts are what keeps it rather than any claim about what each of them asserts. It is the same
+ * split `lib/schgen/elk/adapt.ts` already has between `adaptElkLayout` and
+ * `adaptElkLayoutReported`, for the same reason.
  *
  * **`elk` defaults to null, which is a DEVIATION from the task brief's signature and is recorded**
  * in `docs/known-gaps.md` **G146**. **Nine** ported test files call this with three arguments (49
@@ -250,28 +263,109 @@ function refusalText(id: BlockId, r: Rendering, m: Mismatch): string {
  * is the point: a count in a doc comment is a claim, and this file is the first one Task 12 reads.)
  */
 export function realiseBlock(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): BlockLayout {
+  const r = realiseBlockReported(c, id, symbols, elk);
+  if (r.findings.length > 0) throw new SchgenRefusal(r.findings, r.refusal);
+  return r.layout;
+}
+
+/**
+ * **One block's geometry AND everything a gate found wrong with it - the shape Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md` exists to introduce.**
+ *
+ * The owner, on four boards that refuse and have never been looked at: *"a gate halts rendering
+ * and we never look at the picture so we can't tell if the gate is insane or not"*. The fix is not
+ * to weaken a gate; it is for the gate to hand back the drawing beside its complaint.
+ *
+ * `findings` empty means ratified: there is nothing to classify and the layout is ordinary output.
+ * `findings` non-empty means the drawing exists and is UNRATIFIED - `findings.ts`'s `worstClass`
+ * says whether it is merely ugly (`usable`), wrong about the circuit (`defective`) or a defect in
+ * this generator.
+ *
+ * **IT STILL THROWS WHEN THERE IS NO GEOMETRY AT ALL**, and that is the whole of the distinction
+ * the spec's four classes turn on: a `not-applicable` for a wired block, or a backend that raised,
+ * produced nothing, so there is no picture being hidden and nothing to hand back. Those throws are
+ * `SchgenRefusal`s carrying their findings, so the census classifies them rather than reading them
+ * as an opaque failure.
+ */
+export interface BlockRealisation {
+  readonly layout: BlockLayout;
+  readonly findings: readonly Finding[];
+  /**
+   * The message a caller refusing on these findings throws, built where the refusal was FOUND.
+   * Empty exactly when `findings` is.
+   *
+   * It is carried rather than rebuilt by the thrower because the wording is load-bearing: nine
+   * ported template test files and the board census match these sentences, and *"the ELK backend
+   * cannot realise its subgraph"* and *"produced an invalid layout"* are different findings about
+   * the same geometry. A single rebuilt message would have silently retyped one as the other.
+   */
+  readonly refusal: string;
+}
+
+export function realiseBlockReported(c: Circuit, id: BlockId, symbols: SymbolResolver, elk: Backend | null = null): BlockRealisation {
   const block = c.blocks.get(id);
   if (block === undefined) throw new Error(`unknown block ${id}`);
   const r = block.rendering;
   if (r.kind === "bus") throw new Error(`realiseBlock: block ${id} is rendered "bus"; use the bus renderer`);
   const g = subgraphOf(c, id, symbols);
   const chosen = selectRenderer(g, TEMPLATES);
-  if (chosen.kind === "refused") throw new Error(refusalText(id, r, chosen.mismatch));
-  const layout = chosen.kind === "template" ? chosen.layout : elkLayout(g, id, elk);
+  const drawn = drawnBlock(g, id, r, chosen, elk);
   // Checked for every renderer, not only for templates: a layout from ELK disagreeing with the IR
   // is the same generation error as a template's, and one gate is one place to keep correct.
-  const problems = attributed(id, chosen, () => checkLayout(g, layout));
-  if (problems.length > 0) {
-    throw new Error(`block ${id}: ${drawnBy(chosen)} produced an invalid layout:${problems.map((p) => `\n  - ${p}`).join("")}`);
-  }
-  return layout;
+  const problems = attributed(id, chosen, () => checkLayout(g, drawn.layout));
+  // **MERGED, NOT APPENDED.** On the ELK clearance path `drawn.findings` IS `checkLayout`'s output
+  // on this same geometry - `lib/schgen/elk/adapt.ts` runs it as its last act and now hands it on -
+  // so appending would double-count every overlap. On the junction path it is not: that arm refuses
+  // before `checkLayout` runs, so both sets are real and distinct. One merge covers both.
+  const findings = merged(drawn.findings, problems);
+  if (findings.length === 0) return { layout: drawn.layout, findings, refusal: "" };
+  const refusal =
+    drawn.refusal !== ""
+      ? drawn.refusal
+      : `block ${id}: ${drawnBy(chosen)} produced an invalid layout:${problems.map((p) => `\n  - ${p.what}`).join("")}`;
+  return { layout: drawn.layout, findings, refusal };
+}
+
+/**
+ * `a`, then every finding of `b` that `a` does not already carry.
+ *
+ * **KEYED ON `kind` AND `what` TOGETHER, not on `what` alone** (fix round 1, Item 4). Two producers
+ * can write the same sentence about the same geometry and classify it differently - the `kind` is
+ * the whole point of a `Finding` - and deduplicating on the text would have silently dropped the
+ * second classification. `where` is deliberately NOT in the key: it names the subject, and the same
+ * problem reached through a block and through its sheet is one problem.
+ */
+function merged(a: readonly Finding[], b: readonly Finding[]): readonly Finding[] {
+  // The separator is printable on purpose. A kind is a lowercase-hyphen identifier from a closed
+  // union, so " :: " cannot appear in one and no escape is needed - `CLAUDE.md` forbids typing a
+  // control-character escape into a tool parameter, and a key nobody can read buys nothing here.
+  const key = (f: Finding): string => `${f.kind} :: ${f.what}`;
+  const seen = new Set(a.map(key));
+  return [...a, ...b.filter((f) => !seen.has(key(f)))];
+}
+
+/** What the chosen renderer drew, with its own complaint when it had one. */
+function drawnBlock(g: BlockSubgraph, id: BlockId, r: Rendering, chosen: Selection, elk: Backend | null): BlockRealisation {
+  if (chosen.kind === "template") return { layout: chosen.layout, findings: [], refusal: "" };
+  if (chosen.kind === "elk") return elkRealisation(g, id, elk);
+  const findings = mismatchFindings(`block ${id}`, chosen.mismatch, chosen.findings);
+  const refusal = refusalText(id, r, chosen.mismatch);
+  // **THROUGH `refusedLayout`, so that reading is stated in ONE place** (fix round 1, Item 5). This
+  // tested `chosen.layout === undefined` directly, which agreed with the accessor but made the
+  // report's "single place" claim false - two readings of the same optional field is two chances for
+  // them to diverge. `Selection`'s refused arm and `RealiseResult`'s false arm carry the same pair,
+  // so the same accessor answers for both.
+  const layout = refusedLayout({ ok: false, mismatch: chosen.mismatch, layout: chosen.layout, findings: chosen.findings });
+  if (layout === null) throw new SchgenRefusal(findings, refusal);
+  return { layout, findings, refusal };
 }
 
 /** What drew this layout, for a message: the template's id, or the backend. */
 const drawnBy = (s: Selection): string => (s.kind === "template" ? `template ${s.template}` : "the ELK backend");
 
 /**
- * The ELK backend's layout, or a refusal naming what is missing.
+ * The ELK backend's layout and whatever it found wrong with it, or a refusal naming what is
+ * missing when it drew nothing at all.
  *
  * **Nothing is defaulted here on purpose.** A block every template reported `not-applicable` for
  * has no second-choice drawing in this repository: the whole point of deleting the labels
@@ -291,7 +385,7 @@ const drawnBy = (s: Selection): string => (s.kind === "template" ? `template ${s
  * one thrown message, which is the point: a reader does not have to come to this file, or to
  * `diagnose.ts`, to get from a raise to the graph that produced it.
  */
-function elkLayout(g: BlockSubgraph, id: BlockId, elk: Backend | null): BlockLayout {
+function elkRealisation(g: BlockSubgraph, id: BlockId, elk: Backend | null): BlockRealisation {
   if (elk === null) {
     throw new Error(
       `block ${id}: every template reported "not-applicable", so this block needs the ELK backend, and ` +
@@ -301,8 +395,17 @@ function elkLayout(g: BlockSubgraph, id: BlockId, elk: Backend | null): BlockLay
     );
   }
   const r = elk.realise(g);
-  if (!r.ok) throw new Error(`block ${id}: the ELK backend cannot realise its subgraph: ${describeMismatch(r.mismatch)}`);
-  return r.layout;
+  if (r.ok) return { layout: r.layout, findings: [], refusal: "" };
+  const refusal = `block ${id}: the ELK backend cannot realise its subgraph: ${describeMismatch(r.mismatch)}`;
+  const findings = mismatchFindings(`block ${id}`, r.mismatch, r.findings);
+  const layout = refusedLayout(r);
+  // **NO GEOMETRY MEANS A THROW AND GEOMETRY MEANS A REPORT, which is the one line this whole task
+  // turns on.** `lib/schgen/elk/adapt.ts` carries the snapped, canonical route on the two clearance
+  // arms and the junction arm; it carries nothing on the obligation-1 and obligation-3 arms and on
+  // a raise, because at those points no grid-legal drawing exists. The three transistor-preamp
+  // boards take the first path and reached nobody's eyes for want of these two lines.
+  if (layout === null) throw new SchgenRefusal(findings, refusal);
+  return { layout, findings, refusal };
 }
 
 /** Attribute a thrown error from the layout check to the block and the renderer that drew it. */

@@ -117,7 +117,7 @@ describe("textProblems", () => {
       bodies: [t("BODY", 8, -5, 9, 1)],
       frames: [t("F", 12, 12, 100, 100)],
     };
-    expect(textProblems(scene)).toEqual(["A overlaps B", "A overlaps W", "A overlaps BODY", "B crosses the border of F"]);
+    expect(textProblems(scene).map((f) => f.what)).toEqual(["A overlaps B", "A overlaps W", "A overlaps BODY", "B crosses the border of F"]);
   });
 
   it("allows a wire that only touches a text box's edge and a text strictly inside a frame", () => {
@@ -151,7 +151,7 @@ describe("block-level text clearance (checkLayout)", () => {
       anchors: [],
     };
     // (The fixture's nets are labelled, so checkLayout also reports their missing labels; only text is asserted here.)
-    expect(checkLayout(g, layout).filter((p) => p.includes(" overlaps "))).toEqual([]);
+    expect(checkLayout(g, layout).filter((p) => p.what.includes(" overlaps "))).toEqual([]);
     const r1 = blockFields(g, layout, symbols).find((t) => t.key === "R1#1")!;
     expect(r1.inside).toBe(false);
     expect(r1.fields.reference).toEqual({ at: { x: -1016 - GRID, y: -GRID }, justify: "right" });
@@ -164,7 +164,7 @@ describe("block-level text clearance (checkLayout)", () => {
       wires: [{ a: { x: 0, y: -3810 }, b: { x: 0, y: -6350 }, net: "N1" }],
       anchors: [{ net: "N1", at: { x: 0, y: -6350 }, side: "right" }],
     };
-    expect(checkLayout(g, layout).filter((p) => p.startsWith("label "))).toContain("label N1 at (0, -6.35) overlaps body of R2#1");
+    expect(checkLayout(g, layout).filter((p) => p.what.startsWith("label ")).map((p) => p.what)).toContain("label N1 at (0, -6.35) overlaps body of R2#1");
   });
 });
 
@@ -228,6 +228,6 @@ describe("own-body exemption", () => {
     const field = (owner: string | undefined) => ({ what: "Value of U1#1", box: { minX: 2, minY: 2, maxX: 8, maxY: 4 }, owner });
     const scene = (owner: string | undefined): TextScene => ({ scope: "t", texts: [field(owner)], segments: [], bodies: [body], pinTexts: [], strokes: [], frames: [], crosses: [] });
     expect(textProblems(scene("U1#1"))).toEqual([]);
-    expect(textProblems(scene(undefined))).toEqual(["Value of U1#1 overlaps body of U1#1"]);
+    expect(textProblems(scene(undefined)).map((f) => f.what)).toEqual(["Value of U1#1 overlaps body of U1#1"]);
   });
 });

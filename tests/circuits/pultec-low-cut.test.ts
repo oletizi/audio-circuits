@@ -1,0 +1,25 @@
+/**
+ * `boards/pultec-low-cut/` declares the agent-drafted page in
+ * `drafted/pultec/pultec-low-cut/` as its `"sch"`, so `make/board.mk`'s `netlist-agrees` demands
+ * this file by name: *"Add tests there asserting the circuit still agrees with the schematic
+ * export - that guard is what this declaration exists for."*
+ *
+ * `./drafted-sheet.ts` holds the body, and says why the comparison is
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./kicad-round-trip.ts`'s
+ * `expectSameCircuit`.
+ */
+import {
+  registerDraftedPageTests,
+  SELECTOR_PIN_DISAGREEMENT,
+  SELECTOR_VALUE_DISAGREEMENT,
+} from "./drafted-sheet.ts"
+
+registerDraftedPageTests({
+  board: "pultec-low-cut",
+  circuit: "pultec",
+  netlist: "tests/fixtures/pultec-low-cut.net",
+  pinDisagreements: [SELECTOR_PIN_DISAGREEMENT],
+  valueDisagreements: [SELECTOR_VALUE_DISAGREEMENT],
+  // The cut pot and the selector - this board's two off-board parts and nothing else.
+  footprintlessParts: ["RV_LO_CUT", "SW_LO_CUT"],
+})

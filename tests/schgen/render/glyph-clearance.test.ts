@@ -78,13 +78,13 @@ describe("checkLayout: a part body never covers another connection's power glyph
   });
 
   it("refuses a capacitor body drawn over a neighbouring pin's GND symbol, and nothing else", () => {
-    expect(checkLayout(g, layout(OVER, r1Part("GND"), g))).toEqual(["body of C1#1 overlaps the glyph of power symbol GND 1 at (0, 6.35)"]);
+    expect(checkLayout(g, layout(OVER, r1Part("GND"), g)).map((f) => f.what)).toEqual(["body of C1#1 overlaps the glyph of power symbol GND 1 at (0, 6.35)"]);
   });
 
   it("refuses a body over a global label's outline", () => {
     const tapC = blockCircuit([res("R1", "3V3", "TAP"), cap("C1", "3V3", "GND")], DEC, { external: ["TAP"] });
     const tapG = subgraphOf(tapC, "B", symbols);
-    expect(checkLayout(tapG, layout(OVER, r1Part("TAP"), tapG))).toContain("body of C1#1 overlaps label TAP at (0, 6.35)");
+    expect(checkLayout(tapG, layout(OVER, r1Part("TAP"), tapG)).map((f) => f.what)).toContain("body of C1#1 overlaps label TAP at (0, 6.35)");
   });
 });
 

@@ -1,5 +1,7 @@
 {
+  "sch": "../../drafted/pultec/pultec-mid/pultec-mid.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/pultec/physical/mid.ts",
   "export": "pultecMid",
+  "netlist": "../../tests/fixtures/pultec-mid.net",
   "vrt": "pultec-mid.perfboard.vrt"
 }

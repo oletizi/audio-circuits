@@ -37,6 +37,7 @@
  */
 
 import { pinsOfUnit } from "./classify.ts";
+import { mechanicalPinsOf } from "./mechanical-pins.ts";
 import { NET_NAME, TEMPLATE_IDS, unitKey, type Circuit, type IrBlock, type NetName } from "./types.ts";
 import { bomFields, mechanicalPads, sheetFiles } from "./validate-parts.ts";
 import { pinSemantics, rails, singlePinNets } from "./validate-nets.ts";
@@ -46,8 +47,92 @@ import type { SymbolResolver } from "../render/library.ts";
 const LABEL = /^[A-Z][A-Z0-9_]*$/;
 const PREFIX = /^[A-Z]+$/;
 
+/**
+ * **THE NET-NAME RULE, NARROWED RATHER THAN DELETED - and it was deleted for one round, which is
+ * the mistake this comment exists to stop someone repeating.**
+ *
+ * **WHAT CAME OUT, 2026-10-23, and it is the owner's decision.** It used to read
+ *
+ * ```ts
+ * [...c.nets.keys()].filter((n) => !NET_NAME.test(n)).map((n) => `net "${n}" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)`)
+ * ```
+ *
+ * against `NET_NAME = /^[A-Z0-9][A-Z0-9_]*$/`, and it gated every drawing this repository can
+ * emit. His words, verbatim: *"i absolutely do not care about the letter case of net names. That's
+ * a silly quibble."* The rule stated no reason, and `docs/known-gaps.md` **G150** records that
+ * there was none to state - letter case carries no information a schematic needs. **It refused 20
+ * labelled nets across the five Pultec boards and 17 of `pt2399-core`'s.**
+ *
+ * **WHAT STAYED, because the one regex refused two different things with one message and only the
+ * case half was silly.** `./types.ts`'s `NET_NAME` is now *non-empty, no control character*, and
+ * this rule applies it to every net of the IR with a message that says WHICH net and WHY.
+ *
+ * **THE WHOLE RULE WAS DELETED IN TASK 3 ROUND 0, ON THE BRIEF'S INSTRUCTION, AND THE COORDINATOR
+ * CLOSED THAT RATHER THAN PARKING IT.** For one round nothing validated an IR net name at all, so
+ * the control-character refusal sat in `str()` (`../render/sexpr-write.ts:31`) - **a refusal at
+ * EMIT time, reported against a sheet rather than against a circuit, and strictly later than every
+ * geometry check.** That is the shape this repository refuses, and the plan's own correction had
+ * warned against it. His ruling: *"The owner removed the CASING demand, not all net-name
+ * validation."*
+ *
+ * **SO DO NOT DELETE THIS RULE TO MAKE SOMETHING PASS.** `str()` still refuses the same class, so
+ * removing this one does not let a bad name through - **it moves the refusal later and makes it
+ * mute about which net.** `../gates/pin-table.ts`'s `mechanical()` applies the same `NET_NAME` to
+ * a pin table's `mechanicalPads` net and is a **BACKSTOP on a different input**, not a substitute:
+ * its message is lumped across five failure modes and names no reason.
+ *
+ * **THE REASON THE MESSAGE GIVES IS NOT THE ONE YOU WOULD ASSUME, and `CLAUDE.md` requires a
+ * refusal to say why a thing is not defaulted.** `[RAN]`
+ * `tools/schgen/label-syntax/probe-run.log`, `kicad-cli` 10.0.5, six control arms through a real
+ * global label: a **tab** is accepted **verbatim** at exit 0; a **newline** fails loudly at exit 3;
+ * and a **carriage return** and a **NUL** both export at **exit 0, draw a label, and come back as a
+ * DIFFERENT net name** - `RAWCR`, and `RAW` truncated. **"KiCad rejects a control character" would
+ * therefore be FALSE for four of the six.** The true reason is that two of them succeed and rename
+ * the net, which no exit code reports, so a check asking only whether `kicad-cli` ran would pass
+ * both.
+ *
+ * **Punctuation needs no rule at all** and that is measured, not conceded: the same run has
+ * `Net-(C10-Pad1)` and `unconnected-(U1-CLK_O-Pad5)` parsing, round-tripping byte-identical and
+ * rendering, with the writer escaping nothing for either.
+ *
+ * **`partShapes` below carries a SEPARATE UPPER_SNAKE demand on part LABELS, and his decision does
+ * not reach it.** It names net names. Do not delete that one on the strength of this comment.
+ *
+ * **THE MESSAGE IS ONE LINE, deliberately.** `tests/schgen/verify.test.ts:156` asserts, once per
+ * gate-1 problem, that the problem contains no newline.
+ */
 const netNames: Rule = (c) =>
-  [...c.nets.keys()].filter((n) => !NET_NAME.test(n)).map((n) => `net "${n}" is not UPPER_SNAKE (^[A-Z0-9][A-Z0-9_]*$)`);
+  [...c.nets.keys()].filter((n) => !NET_NAME.test(n)).map((n) => `net ${JSON.stringify(n)} is not a usable net name: ${netNameProblem(n)}`);
+
+/** The `U+XXXX` of every character of `net` that `NET_NAME` refuses, in order, for the message. */
+function controlCodesIn(net: NetName): readonly string[] {
+  const out: string[] = [];
+  for (const ch of net) {
+    const code = ch.codePointAt(0);
+    if (code !== undefined && code <= 0x1f) out.push(`U+${code.toString(16).toUpperCase().padStart(4, "0")}`);
+  }
+  return out;
+}
+
+/** Why one net name is refused, in the terms the measurement establishes. See the rule's comment. */
+function netNameProblem(net: NetName): string {
+  if (net.length === 0) {
+    return (
+      "it is empty. lib/model/types.ts's net() refuses one (\"net name must not be empty\"), so " +
+      "nothing upstream should have produced it, and nothing downstream can draw a label for a net " +
+      "with no name. Name the net in the circuit model."
+    );
+  }
+  return (
+    `it carries a control character (${controlCodesIn(net).join(", ")}). Two of these are ACCEPTED ` +
+    "by kicad-cli 10.0.5 at exit 0 and DRAW the label, and then come back from the netlist as a " +
+    "DIFFERENT net name - U+000D as \"RAWCR\", U+0000 truncated to \"RAW\" - so the net is silently " +
+    "renamed rather than refused, and no exit code reports it. That is why this is refused here " +
+    "rather than defaulted away: the failure mode is a success. A tab is accepted verbatim by " +
+    "KiCad and is refused anyway, so the whole class draws one line. Remove it from the net name " +
+    "in the circuit model. Measured: tools/schgen/label-syntax/probe-run.log"
+  );
+}
 
 const partShapes: Rule = (c, symbols) => {
   const out: string[] = [];
@@ -64,12 +149,50 @@ const partShapes: Rule = (c, symbols) => {
   return out;
 };
 
+/**
+ * Every pin of a part's symbol is on a net or declared not connected - EXCEPT a pin the symbol
+ * declares as a mechanical mount point, which the electrical model is not required to carry.
+ *
+ * **THE EXEMPTION IS ALLOW-OMITTED, NOT SKIP-IF-PRESENT**, and the distinction is the one a
+ * third-party review asked about on 2026-10-24. This rule's only refusal is guarded by the pin
+ * being MISSING, so skipping a mechanical pin cannot hide anything about a pin that IS
+ * declared: a mount lug deliberately bonded to a net stays subject to `singlePinNets` and
+ * `pinSemantics` (`./validate-nets.ts`), neither of which consults `MECHANICAL_PINS`. So an
+ * intentional bond is representable AND validated; only the requirement to say something is
+ * lifted. `tests/schgen/ir/mechanical-pins.test.ts` pins that down so a later refactor cannot
+ * turn it into a blanket skip.
+ *
+ * **THE STALE-TABLE CHECK CANNOT LIVE IN THE PIN LOOP**, which is the trap the spec's first
+ * sketch fell into: a stale entry names a pin the symbol does NOT have, so a loop over the
+ * symbol's pins never reaches it and the guard could never fire. It iterates the ENTRIES
+ * against the symbol's pin set instead, before the pin loop. A guard that cannot fail is the
+ * failure mode this repository's whole workflow exists to prevent.
+ *
+ * `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md`, `docs/known-gaps.md` **G282**
+ * (why the four Pultec boards refused, and why an MPN was never the question) and **G290** (why
+ * the classification is a whitelist rather than inferred from the symbol's drawing).
+ */
 const pinsDeclared: Rule = (c, symbols) => {
   const out: string[] = [];
   for (const p of c.parts.values()) {
+    const sym = symbols.resolve(p.libId);
+    const mechanical = mechanicalPinsOf(p.libId);
+    const numbers = new Set(sym.pins.map((lp) => lp.number));
+    for (const m of mechanical) {
+      if (!numbers.has(m))
+        out.push(
+          `part ${p.label}: MECHANICAL_PINS lists pin "${m}" for ${p.libId}, which has no such pin; ` +
+            `the table is stale - re-verify it against the installed library (lib/schgen/ir/mechanical-pins.ts)`,
+        );
+    }
     const have = new Set(c.pins.filter((q) => q.part === p.label).map((q) => q.pin));
-    for (const lp of symbols.resolve(p.libId).pins) {
-      if (!have.has(lp.number)) out.push(`part ${p.label}: pin ${lp.number} (${lp.name}) is neither on a net nor declared not connected`);
+    for (const lp of sym.pins) {
+      if (mechanical.has(lp.number)) continue;
+      if (!have.has(lp.number))
+        out.push(
+          `part ${p.label}: pin ${lp.number} (${lp.name}) is neither on a net nor declared not connected, ` +
+            `nor a mechanical mount point in lib/schgen/ir/mechanical-pins.ts`,
+        );
     }
   }
   return out;
@@ -143,8 +266,11 @@ const renderings: Rule = (c) => {
 
 /**
  * **THE RULES A DRAWING DEPENDS ON, AND ONLY THOSE**, because this is the list `generate` runs
- * before it emits one. Eleven of the twelve ported rules; the header says why `bomFields` is not
- * among them and why putting it back is a defect rather than a tidy-up.
+ * before it emits one. **Eleven rules: the twelve ported ones less `bomFields`, which the header
+ * says is not among them and why putting it back is a defect rather than a tidy-up.** `netNames`
+ * is still here and still FIRST, NARROWED rather than deleted - Task 3 took the owner's case
+ * demand out of it and deleted the whole rule for one round, which moved a refusal to emit time;
+ * its own comment says why that was reversed and why deleting it again is not a tidy-up either.
  */
 const DRAWING_RULES: readonly Rule[] = [
   netNames, partShapes, pinsDeclared, unitsPlaced, sheetsAndBlocks, renderings,

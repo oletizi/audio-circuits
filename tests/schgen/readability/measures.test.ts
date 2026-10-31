@@ -1,15 +1,22 @@
 /**
- * SPEC §3.3's FOUR MEASURES: the fixture-level claims, the five blocks that draw, and the two
+ * SPEC §3.3's FOUR MEASURES: the fixture-level claims, the ten blocks that draw, and the two
  * sheets that emit.
  *
- * **THE FIXTURES ARE HERE BECAUSE THE REAL CORPUS CANNOT DRIVE THREE OF THE CLAIMS, AND THAT IS A
- * MEASUREMENT RATHER THAN AN EXCUSE.** `[RAN]` Over all five blocks the ELK backend draws,
- * `crossings` is **0, 0, 0, 0, 0** and the pin set extends the drawn extent by **nothing at all** -
- * the wires already span every pin. So a crossing test and an area test taken only over the corpus
- * would both pass over a term that is zero, which is the second of the two failures the Task 13
- * review found in one guard (*"its second ran over a fixture where the term under test was zero"*).
- * The fixtures put a non-zero value under every term; the corpus pins the figures the register
- * quotes.
+ * **THE FIXTURES ARE HERE BECAUSE THE REAL CORPUS COULD NOT DRIVE THREE OF THE CLAIMS, AND THAT IS
+ * A MEASUREMENT RATHER THAN AN EXCUSE.** `[RAN]` Over the five blocks the ELK backend drew when
+ * this file was written, `crossings` was **0, 0, 0, 0, 0** and the pin set extended the drawn
+ * extent by **nothing at all** - the wires already spanned every pin. So a crossing test and an
+ * area test taken only over the corpus would both have passed over a term that was zero, which is
+ * the second of the two failures the Task 13 review found in one guard (*"its second ran over a
+ * fixture where the term under test was zero"*).
+ *
+ * **HALF OF THAT IS NO LONGER TRUE AND HALF OF IT STILL IS, which is why the fixtures stay.** Ten
+ * blocks draw since 2026-10-25 (`docs/known-gaps.md` **G291**) and four of them cross: `oc-power`
+ * 1, `oc-audio` 5, `tp-stage` 6, `pt-core` 71. **The crossing term is live in the corpus now.**
+ * The AREA term is not: the pin set still extends the drawn extent by nothing on all ten, which
+ * the test named *"and the pin set enlarges NONE of their areas"* asserts per block. So the
+ * fixtures are still the only subject that puts a non-zero value under every term, and the corpus
+ * pins the figures the register quotes.
  */
 import { beforeAll, describe, expect, it } from "bun:test"
 import path from "node:path"
@@ -131,7 +138,7 @@ interface DrawnBlock {
   readonly pins: readonly PlacedPin[]
 }
 
-/** Every block of the four parity circuits the ELK backend actually draws (G200: five of twelve). */
+/** Every block of the four parity circuits the ELK backend actually draws (G291: ten of twelve). */
 async function drawnBlocks(): Promise<readonly DrawnBlock[]> {
   const symbols = parityResolver()
   const out: DrawnBlock[] = []
@@ -166,59 +173,168 @@ describe("the four measures of every block that draws", () => {
    * `docs/known-gaps.md`'s Task 16 entry, and a change in the generator that moved any of them
    * turns this red naming the block.
    *
-   * **TASK 24 ADDED TWO ROWS AND MOVED NONE.** `oc-power` and `pt-core` draw now, because
-   * `render/field-placement.ts` places a unit with no clear slot at the least-covered candidate
-   * instead of refusing the block. **Every leg figure is byte-identical**, which is the control
-   * that the change moved text and not geometry - a field's position is not a wire's.
+   * **TASK 24 ADDED TWO ROWS AND MOVED NONE.** `oc-power` and `pt-core` drew for the first time,
+   * because `render/field-placement.ts` places a unit with no clear slot at the least-covered
+   * candidate instead of refusing the block. **Every leg figure was byte-identical**, which was
+   * the control that the change moved text and not geometry - a field's position is not a wire's.
+   *
+   * **2026-10-25 ADDED THREE MORE ROWS AND MOVED SEVEN OF THE SEVEN THAT WERE HERE, AND THAT IS
+   * THE OPPOSITE CONTROL.** Boundary-node sizing (`docs/known-gaps.md` **G291**) drew `oc-audio`,
+   * `tp-leg-emitter-bypass` and `tp-stage`. It is a GEOMETRY change - ELK is told how much room
+   * the labels and power symbols need - so a leg figure that did NOT move would be the suspicious
+   * result here.
+   *
+   * **AND THEN THE ORIENTATION RULE MOVED A TOPOLOGICAL COUNT, WHICH NODE SIZING NEVER DID -
+   * that difference is the finding and it is why these rows were re-taken rather than adjusted**
+   * (`docs/known-gaps.md` **G292**). Node sizing moved `len` and `area` and left `bends`,
+   * `perEdge` and `crossings` alone on all ten, *"which says the router found a different
+   * PLACEMENT of the same topology"*. **Laying a two-terminal passive with no rail end along the
+   * signal changes the GRAPH, not just the packing**: the part's node box goes from tall to wide
+   * AND its two pin ports move from `NORTH`/`SOUTH` to `EAST`/`WEST`, so `layered` is given a
+   * different problem. `bends` moved on eight of the ten and `crossings` moved on two: `pt-core`
+   * 78 to **71** and `tp-stage` 7 to **6**. Four blocks' `bends` are unmoved (`oc-power` 5,
+   * `tp-leg-collector` 6, `tp-leg-emitter-bypass` 6 - and `tp-stage`'s per-edge ratio moved with
+   * its edge count).
+   *
+   * **THE OTHER HALF OF G292 - ORDERING A NET'S ELK EDGES BY DOWNSTREAM DEPTH - MOVED NOT ONE
+   * FIGURE IN THIS FILE, AND ITS COMMIT MESSAGE SAYS OTHERWISE.** `[RAN]` the seven affected test
+   * files with `lib/schgen/elk/graph.ts` rolled back to the orientation-only commit and these
+   * expectations in place: **97 pass, 0 fail**. The reason is structural: `downstreamDepth` seeds
+   * from a boundary net that `layerConstraintFor` gives `FIRST_SEPARATE`, and **not one of the
+   * twelve parity blocks has one** - all seven blocks in the repository that do are Pultec board
+   * blocks. `docs/known-gaps.md` **G292** carries the measurement and the refuted claim.
+   *
+   * **AND ON 2026-10-26 THE TABLE LOST THREE ROWS AND GAINED ONE** (`docs/known-gaps.md`
+   * **G296**). `edgesForNet`'s star and the two 180-degree rules stopped `oc-power`, `oc-audio` and
+   * `tp-leg-upper` drawing - each on ONE power symbol's value text over its own block's ink - and
+   * drew `ob-buffer` for the first time, with every field clear. **Every one of the five rows that
+   * survived moved in every geometric column**, which is what a graph change looks like here:
+   * `bends` fell by one on all five legs, `tp-stage` went 21 to 30 bends and 6 to 11 crossings,
+   * and `pt-core` went 74 to 85 bends and 71 to **54** crossings - the one figure in this table
+   * that improved.
+   *
+   * **`tp-leg-upper` IS BACK, WITH ITS OWN FIGURES RATHER THAN THE ONES IT LEFT WITH** (**G297**).
+   * `switchFacesItsBank` declines a part that 180 cannot move the pin sides of, so `JP1` takes the
+   * rail entry's 270 and the `VCC` value text that refused the block is clear. Its row reads
+   * **5/0.83/0/34/450**, where before any of the 2026-10-26 changes it read 6 bends and 51 len:
+   * the block was re-placed, not restored.
+   *
+   * **THE TWO `-lower` LEGS STILL COINCIDE AND NOTHING ELSE DOES, which is the control that neither
+   * the star nor the jumper correction re-converged the legs**: 34/450, 64/440, 54/360, 54/360 on
+   * `-upper`, feedback and the two `-lower` legs, for the boundary-text reason
+   * `tests/schgen/remeasure-ceiling.test.ts` sets out.
+   *
+   * **EVERY `len` AND `area` IN THIS TABLE IS CROSS-CHECKED BY A DIFFERENT FUNCTION over the seven
+   * `transistor-preamp` rows, which is what makes them measurements rather than output.**
+   * `shapeMeasures` reads the REALISED layouts in micrometres and reports per-block
+   * `wire` = 43 180, 81 280, 68 580, 68 580, 34 290, 57 150, 650 240 um - which is exactly
+   * `len x 1270` on all seven - and `tools/schgen/remeasure-criteria.ts`'s `anchorExtent` reports
+   * per-block boxes 25x18, 55x8, 45x8, 45x8, 13x16, 13x14, 55x71 grid steps, whose products are
+   * exactly the seven `area` figures. `ob-buffer`'s and `pt-core`'s `bends`, `crossings`, `len` and
+   * `area` are `tools/schgen/remeasure.ts`'s own accepted-stage row for the same block
+   * (`tests/schgen/remeasure.test.ts`'s twelve-row table).
    */
-  it("is the five transistor-preamp legs plus the two Task 24 unblocked, with these four measures each", () => {
+  it("is the nine blocks that draw, with these four measures each", () => {
     const rows = blocks.map((b) => {
       const m = measuresOf(b.topology, b.pins)
       return `${b.id} cells=${b.cells} bends=${m.bends} perEdge=${m.bendsPerEdge.toFixed(2)} crossings=${m.crossings} len=${m.wireLength} area=${m.occupiedArea}`
     })
     expect(rows).toEqual([
-      "oc-power cells=8 bends=5 perEdge=0.19 crossings=1 len=163 area=1060",
-      "pt-core cells=24 bends=83 perEdge=1.15 crossings=78 len=2472 area=12648",
-      "tp-leg-upper cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
-      "tp-leg-feedback cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
-      "tp-leg-lower-a cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
-      "tp-leg-lower-b cells=3 bends=8 perEdge=1.33 crossings=0 len=48 area=513",
-      "tp-leg-collector cells=2 bends=6 perEdge=1.20 crossings=0 len=32 area=221",
+      "ob-buffer cells=11 bends=20 perEdge=0.71 crossings=6 len=293 area=2028",
+      "pt-core cells=24 bends=85 perEdge=1.25 crossings=54 len=1978 area=7068",
+      "tp-leg-upper cells=3 bends=5 perEdge=0.83 crossings=0 len=34 area=450",
+      "tp-leg-feedback cells=3 bends=5 perEdge=0.83 crossings=0 len=64 area=440",
+      "tp-leg-lower-a cells=3 bends=5 perEdge=0.83 crossings=0 len=54 area=360",
+      "tp-leg-lower-b cells=3 bends=5 perEdge=0.83 crossings=0 len=54 area=360",
+      "tp-leg-collector cells=2 bends=5 perEdge=1.00 crossings=0 len=27 area=208",
+      "tp-leg-emitter-bypass cells=2 bends=5 perEdge=0.83 crossings=0 len=45 area=182",
+      "tp-stage cells=16 bends=30 perEdge=0.81 crossings=11 len=512 area=3905",
     ])
+    // The two legs with identical boundary nets are the only pair that still measures identically.
+    expect(rows[4]?.replace("tp-leg-lower-a", "X")).toBe(rows[5]?.replace("tp-leg-lower-b", "X"))
+    // EVERY `area` AGAINST ITS OWN BOX, so the products in the comment above are checked here and
+    // not only read: the seven transistor-preamp boxes are 25x18, 55x8, 45x8, 45x8, 13x16, 13x14,
+    // 55x71.
+    expect([25 * 18, 55 * 8, 45 * 8, 45 * 8, 13 * 16, 13 * 14, 55 * 71]).toEqual([450, 440, 360, 360, 208, 182, 3905])
+    // AND EVERY `len` AGAINST THE MICROMETRE FIGURE compose.test.ts takes by a different function.
+    expect([43_180, 81_280, 68_580, 68_580, 34_290, 57_150, 650_240].map((w) => w / GRID)).toEqual([34, 64, 54, 54, 27, 45, 512])
   })
 
-  it("sums to G200's own figures for the same five blocks, which were taken independently", () => {
-    // G200: 14 placements and 224.0 grid steps of wire over the five blocks it measured. Computed
-    // here from the canonical topology rather than from the raw wire list, so an agreement is a
-    // real cross-check: the two measurements come from different code.
+  it("sums to G209's independently-taken figures for ALL FIVE of G200's blocks, which draw again", () => {
+    // G200 published 14 placements and 224.0 grid steps of wire over the five blocks it measured.
+    // Boundary-node sizing took the wire total to 298.0 and left the 14 alone; the orientation
+    // rule (**G292**) took it to 276.0 and left the 14 alone again.
     //
-    // **THE FIVE ARE NAMED SINCE TASK 24**, when `oc-power` and `pt-core` started drawing: summing
-    // every drawn block would compare a seven-block total against a five-block table, which is two
-    // different quantities wearing one number (**G220**).
+    // **FOR ONE DAY ONLY FOUR OF G200's FIVE DREW** (**G296**), and BOTH terms moved, for DIFFERENT
+    // REASONS: `placements` 14 to 11 was the SUBJECT shrinking by `tp-leg-upper`'s 3, and
+    // `wireLength` 276 to 199 was that plus the four survivors falling. 276 - 51 = 225, not 199,
+    // so subtracting the missing row would have given the wrong answer and hidden the other change.
+    //
+    // **ALL FIVE DRAW AGAIN** (**G297**), so `placements` is back to **14** - the same 14, not a
+    // coincidence: no part ever moved between these blocks - and `wireLength` is **233**. 233 is
+    // comparable with 276 because the term set matches again, and **every one of the five terms
+    // fell**: 51 to 34, 71 to 64, 61 to 54 twice, 32 to 27. 199 is comparable with neither.
+    //
+    // **THE CROSS-CHECK IS WHAT MAKES 233 A MEASUREMENT RATHER THAN AN OUTPUT, and it is the same
+    // cross-check that made 276 and 298 ones.** It is computed here from the canonical topology in
+    // grid steps; `tests/schgen/render/compose.test.ts` takes the same quantity over the same five
+    // blocks from the REALISED layouts in micrometres, by a different function (`shapeMeasures`),
+    // and gets 295 910 um. 295 910 / 1270 = 233 exactly. Two code paths, one number.
+    //
+    // It is also the termwise sum of this file's own five leg rows - 34 + 64 + 54 + 54 + 27.
     const G200_BLOCKS = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
     const five = blocks.filter((b) => G200_BLOCKS.includes(b.id))
-    expect(five.length, "G200's five blocks all still draw").toBe(5)
+    // NONE IS MISSING, asserted as an empty list so a leg that stopped drawing is named here
+    // rather than silently reducing the sum to four terms, which is what happened for one day.
+    expect(G200_BLOCKS.filter((id) => !five.some((b) => b.id === id)), "G200's five minus the five that draw").toEqual([])
+    expect(five.length, "all five of G200's blocks draw").toBe(5)
     expect(five.reduce((n, b) => n + b.cells, 0)).toBe(14)
-    expect(five.reduce((n, b) => n + measuresOf(b.topology, b.pins).wireLength, 0)).toBe(224)
+    expect(34 + 64 + 54 + 54 + 27, "the termwise sum of this file's own five leg rows").toBe(233)
+    expect(five.reduce((n, b) => n + measuresOf(b.topology, b.pins).wireLength, 0)).toBe(233)
+    // The identity that ties this figure to compose.test.ts's, so neither can drift alone.
+    expect(233 * GRID).toBe(295_910)
+    // AND THE SUBTRACTION THAT DID NOT WORK, kept so the comment above is checkable: taking
+    // tp-leg-upper's old 51 off the old 276 did not give the four-term 199.
+    expect(276 - 51).not.toBe(199)
   })
 
   /**
-   * **THE FIVE LEGS CROSS NOTHING AND THE TWO NEW BLOCKS DO, which is why the fixtures above
-   * exist and is now visible in the corpus itself.** Until Task 24 every block that drew measured
-   * zero crossings, so a crossing count taken only here ran over a term that could not move; it
-   * can now - `pt-core` draws with **78**.
+   * **THE SIX LEGS THAT DRAW CROSS NOTHING AND THE THREE LARGER BLOCKS DO, which is why the
+   * fixtures above exist and is visible in the corpus itself.** Until Task 24 every block that
+   * drew measured zero crossings, so a crossing count taken only here ran over a term that could
+   * not move. **The ZERO on every leg is the claim this test's name makes and it is unmoved
+   * through all five geometry changes** - `tp-leg-upper` rejoins the legs at 0 as well
+   * (**G297**), which is the sixth; the three other figures are a record.
+   *
+   * **ONE CROSSING COUNT WENT DOWN AND ONE WENT UP, and the one that went down is the largest
+   * block in the corpus** (**G296**): `pt-core` 71 to **54**, `tp-stage` 6 to **11**,
+   * `ob-buffer` drawing for the first time at 6. So the star bought 17 crossings on a 24-part
+   * block and spent 5 on a 16-part one. **Nothing here is a threshold and no net direction is
+   * claimed** - the two blocks are not comparable and the sum of two numbers moving opposite ways
+   * is not a result.
+   *
+   * Each of these figures is the count the sweep in
+   * `tests/schgen/remeasure-ceiling.test.ts` reports for the block's order 0, which is declaration
+   * order; that file's own test ties the two together per block, so neither can drift alone.
    */
-  it("measures ZERO crossings on the five legs, and names the crossings of the two that are not legs", () => {
+  it("measures ZERO crossings on the six legs that draw, and names the crossings of the three that are not legs", () => {
     const crossings = new Map(blocks.map((b) => [b.id, measuresOf(b.topology, b.pins).crossings]))
     expect([...crossings.entries()]).toEqual([
-      ["oc-power", 1],
-      ["pt-core", 78],
+      ["ob-buffer", 6],
+      ["pt-core", 54],
       ["tp-leg-upper", 0],
       ["tp-leg-feedback", 0],
       ["tp-leg-lower-a", 0],
       ["tp-leg-lower-b", 0],
       ["tp-leg-collector", 0],
+      ["tp-leg-emitter-bypass", 0],
+      ["tp-stage", 11],
     ])
+    // THE CLAIM IN THE NAME, asserted as the claim rather than only inside the table: every block
+    // whose id begins `tp-leg-` crosses nothing, and there are six of them.
+    const legs = [...crossings.entries()].filter(([id]) => id.startsWith("tp-leg-"))
+    expect(legs.length).toBe(6)
+    expect(legs.every(([, n]) => n === 0)).toBe(true)
   })
 
   it("and the pin set enlarges NONE of their areas, which is the other reason", () => {
@@ -237,14 +353,19 @@ describe("the four measures of every block that draws", () => {
  * as unmeasured rather than as a bound the block is inside or outside. It is a report line, never a
  * refusal."*
  *
- * **THE PORT-GLYPH SHARE IS A GRAPH SHARE AND NOT A DRAWN-AREA SHARE ON THIS BACKEND, which is
- * §1.8 revision 4's floor withdrawal measured rather than relayed.** G101's floor rested on
- * `netlistsvg` emitting a 30 by 20 `inputExt` glyph per declared port, so *"a 1-part block's
- * drawing was two-thirds boundary"*. Here `boundaryNodeOf` emits a node of ZERO width and height,
- * and the assertion below checks that for every boundary node of every declared ELK block - so a
- * block whose cells are two-thirds boundary has a drawing with no boundary AREA at all. **The share
- * is still reported, because it is the interface cost's size in the graph ELK solves**, and that is
- * the relationship §1.8 says to name. **The floor stays unmeasured.**
+ * **THE PORT-GLYPH SHARE IS A COUNT SHARE AND NOT A DRAWN-AREA SHARE, AND IT IS NOT AN AREA SHARE
+ * IN THE GRAPH EITHER.** G101's floor rested on `netlistsvg` emitting a 30 by 20 `inputExt` glyph
+ * per declared port, so *"a 1-part block's drawing was two-thirds boundary"*. **This comment used
+ * to add that `boundaryNodeOf` emits a node of ZERO width and height, and the assertion below used
+ * to check exactly that - both are superseded** (`docs/known-gaps.md` **G291**): every boundary
+ * node is now sized by the label or power symbol drawn at it. What is asserted instead is that
+ * each one has a NON-zero size, which is the inverse guard: it goes red if the dimensionless point
+ * ever comes back.
+ *
+ * **THE SHARE ITSELF IS UNMOVED, ROW FOR ROW, AND THAT IS THE POINT OF REPORTING IT.** It is
+ * `ports / cells` - two counts - so no size enters it, and the twelve rows below are byte-identical
+ * to the ones taken before the node sizes changed. **The floor stays unmeasured**, and its stated
+ * basis does not: `tests/schgen/remeasure-ceiling.test.ts` carries the refutation.
  */
 /**
  * **THE SIZE OF `docs/known-gaps.md` G106's DEFECT ON THIS DRIVER, which that entry says
@@ -258,14 +379,47 @@ describe("the four measures of every block that draws", () => {
  * driver: wire length IS inflated, on 12 of 12 blocks; crossings do not move on any of them; and
  * bends and bends per edge move the OTHER way - the raw list reports FEWER bends, because a
  * duplicate segment turns a degree-2 corner into a higher-degree node and a node is not a bend.
+ *
+ * **EVERY INFLATION FIGURE HAS NOW MOVED THREE TIMES AND THE FOUR CONCLUSIONS HAVE NOT, which is
+ * what each re-drive establishes.** Boundary-node sizing (`docs/known-gaps.md` **G291**), the
+ * orientation rule (**G292**) and then the star with the two 180 rules (**G296**) all move where
+ * ELK puts the wires, so the duplicate-segment population moves with them: the range ran
+ * 2.05-18.16 per cent, then 1.30-21.20, then 1.42-21.20, and now **1.57-32.63**. **The per-block
+ * assertions above are the claim** - crossings equal, area equal, length strictly inflated, bends
+ * under-reported - and all four still hold on 12 of 12 blocks. The rows below are the magnitudes,
+ * which are a record and not the claim.
+ *
+ * **THE DUPLICATE POPULATION ITSELF IS READ OFF THIS TABLE'S OWN `wires X->Y` COLUMN RATHER THAN
+ * MEASURED SEPARATELY, and it has risen from 64 to 104.** Per block: `ob-buffer` 11, `oc-power`
+ * 11, `oc-audio` 10, `oc-sidechain` 17, `pt-core` 36, `tp-stage` 19, and **zero on every leg** -
+ * the same six blocks that had any before, so the star did not give a small block duplicates, it
+ * gave the big ones more. `pt-core` alone went from 18 to 36. **The 0-of-N versus N-of-N result
+ * about `geometryKey`'s sort is what is unmoved**, and that is what the test below drives.
+ *
+ * **THE CANONICAL COLUMN IS CROSS-CHECKED, which is what keeps these rows from being output.** For
+ * every block the gates accept, the `a` side here - `bends`, `crossings` taken through
+ * `readElkGraph` plus `canonicalTopology` - equals the figure the row table above takes through
+ * `adaptElkLayoutReported`: `ob-buffer` 20/6, `pt-core` 85/54, `tp-stage` 30/11 and 5/0 on every
+ * leg accepted. For the four blocks the gates refuse it equals
+ * `tools/schgen/remeasure.ts`'s backend-output row instead: `oc-power` 23/2, `oc-audio` 30/9,
+ * `oc-sidechain` 46/13. **`tp-leg-upper` moved from that list to the accepted one** (**G297**) and
+ * its 5/0 is unchanged across the move, which is the signature of a block re-packed rather than
+ * re-routed. And `canon.wires` equals `shapeMeasures`' own `segments` on the seven
+ * `transistor-preamp` blocks that draw - 11, 11, 11, 11, 10, 11, 67.
  */
 describe("the deduplication the raw-versus-canonical comparison rests on", () => {
   /**
    * **`geometryKey`'s SORT IS THE WHOLE DEDUPLICATION, AND `docs/known-gaps.md` G219 MEASURED THAT
-   * NOTHING ASSERTED IT.** `[RAN]` Over all twelve declared ELK blocks, **0 of 82** duplicate
-   * segments are duplicates under exact endpoint order and **82 of 82** are once the ends are
+   * NOTHING ASSERTED IT.** `[RAN]` Over all twelve declared ELK blocks, **0 of 64** duplicate
+   * segments are duplicates under exact endpoint order and **64 of 64** are once the ends are
    * sorted - so every exact duplicate ELK emits is direction-reversed, and a key built from `(a,
    * b)` in order would collapse none of them. That is how perturbation P4 came to change nothing.
+   *
+   * **THE POPULATION WAS 82 UNTIL 2026-10-25 AND IS 64 NOW; the 0-versus-all result is what is
+   * unmoved** (`docs/known-gaps.md` **G292**). A signal-path part laid along the signal leaves the
+   * router fewer reversed duplicates to emit - per block 9, 11, 6, 11, 16 and 11 on the six that
+   * have any, and **it is the same six blocks**. Re-measured here rather than carried over,
+   * because a `[RAN]` figure that nothing re-takes is exactly what G209's lesson is about.
    *
    * This check is here rather than in `tests/schgen/elk/junctions.test.ts` because it is what the
    * comparison below rests on: if the sort went away, the raw and canonical columns would agree on
@@ -317,24 +471,46 @@ describe("raw segment list versus canonical topology, over every block that lays
       }
     }
     expect(rows).toEqual([
-      "ob-buffer wires 65->57 bends 26/28 crossings 7/7 lenInflation 10.30%",
-      "oc-power wires 42->31 bends 4/5 crossings 1/1 lenInflation 18.16%",
-      "oc-audio wires 82->70 bends 28/30 crossings 5/5 lenInflation 14.54%",
-      "oc-sidechain wires 91->76 bends 26/27 crossings 7/7 lenInflation 13.99%",
-      "pt-core wires 179->155 bends 81/83 crossings 78/78 lenInflation 11.14%",
-      "tp-leg-upper wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
-      "tp-leg-feedback wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
-      "tp-leg-lower-a wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
-      "tp-leg-lower-b wires 14->14 bends 8/8 crossings 0/0 lenInflation 2.05%",
-      "tp-leg-collector wires 11->11 bends 6/6 crossings 0/0 lenInflation 3.09%",
-      "tp-leg-emitter-bypass wires 12->12 bends 6/6 crossings 0/0 lenInflation 2.07%",
-      "tp-stage wires 75->63 bends 21/24 crossings 7/7 lenInflation 13.05%",
+      "ob-buffer wires 59->48 bends 20/20 crossings 6/6 lenInflation 24.17%",
+      "oc-power wires 58->47 bends 22/23 crossings 2/2 lenInflation 24.12%",
+      "oc-audio wires 78->68 bends 29/30 crossings 9/9 lenInflation 18.29%",
+      "oc-sidechain wires 109->92 bends 43/46 crossings 13/13 lenInflation 32.63%",
+      "pt-core wires 189->153 bends 78/85 crossings 54/54 lenInflation 23.37%",
+      // **2.46% UNTIL 2026-10-26 AND 3.07% NOW, AND THE INFLATION ITSELF DID NOT MOVE** (**G297**).
+      // The raw list exceeds the canonical length by exactly 1.00 grid step in both readings, which
+      // is the collinear overlap the canonicaliser merges; what moved is the DENOMINATOR, this
+      // block's pre-snap length, from 40.60 to 32.60 as `JP1` stopped being turned 180.
+      // 1 / 32.60 = 3.0675%, 1 / 40.60 = 2.4631%, both to the printed digit.
+      "tp-leg-upper wires 11->11 bends 5/5 crossings 0/0 lenInflation 3.07%",
+      "tp-leg-feedback wires 11->11 bends 5/5 crossings 0/0 lenInflation 1.57%",
+      "tp-leg-lower-a wires 11->11 bends 5/5 crossings 0/0 lenInflation 1.87%",
+      "tp-leg-lower-b wires 11->11 bends 5/5 crossings 0/0 lenInflation 1.87%",
+      "tp-leg-collector wires 10->10 bends 5/5 crossings 0/0 lenInflation 3.65%",
+      "tp-leg-emitter-bypass wires 11->11 bends 5/5 crossings 0/0 lenInflation 2.22%",
+      "tp-stage wires 86->67 bends 27/30 crossings 11/11 lenInflation 21.78%",
     ])
+    // **THE DUPLICATE POPULATION, DERIVED FROM THE TABLE ABOVE RATHER THAN RE-MEASURED.** Each
+    // row's `wires X->Y` difference is that block's duplicate count; the total is what the
+    // comment on this describe reports, and the six-blocks-only claim is asserted rather than
+    // stated. A leg that acquired a duplicate would fail here naming itself.
+    const dups = rows.map((r) => {
+      const m = /wires (\d+)->(\d+)/.exec(r)
+      return Number(m?.[1] ?? 0) - Number(m?.[2] ?? 0)
+    })
+    expect(dups).toEqual([11, 11, 10, 17, 36, 0, 0, 0, 0, 0, 0, 19])
+    expect(dups.reduce((a, b) => a + b, 0)).toBe(104)
+    expect(dups.filter((d) => d > 0).length, "the same six blocks that ever had duplicates").toBe(6)
+    // **AND `tp-leg-upper`'s INFLATION IS ONE GRID STEP, DERIVED HERE RATHER THAN READ OFF THE
+    // PERCENTAGE ABOVE** (**G297**): its pre-snap canonical length is 32.60 and 1 / 32.60 rounds to
+    // the 3.07% printed, as 1 / 40.60 rounded to the 2.46% that preceded it. The percentage moved
+    // because the block was re-placed; the overlap the canonicaliser removes did not.
+    expect((100 * (33.6 / 32.6 - 1)).toFixed(2)).toBe("3.07")
+    expect((100 * (41.6 / 40.6 - 1)).toFixed(2)).toBe("2.46")
   })
 })
 
 describe("D1's report line, per declared ELK block", () => {
-  it("prints parts, cells and the port-glyph share, and every port glyph is zero-size", () => {
+  it("prints parts, cells and the port-glyph share, and every port glyph is sized by what is drawn at it", () => {
     const symbols = parityResolver()
     const rows: string[] = []
     let glyphs = 0
@@ -347,15 +523,18 @@ describe("D1's report line, per declared ELK block", () => {
         const boundary = children.filter((n) => n.id.startsWith("port:"))
         glyphs += boundary.length
         for (const node of boundary) {
-          expect(node.width ?? 0, `${block.id} boundary ${node.id} width`).toBe(0)
-          expect(node.height ?? 0, `${block.id} boundary ${node.id} height`).toBe(0)
+          // A label is at least (1 + 2) grid steps along its side and 2 across; a rail's glyph is
+          // 2 grid steps tall before its value text is added. So one whole grid step is below
+          // every form, and anything at or under it is the dimensionless point G291 removed.
+          expect(node.width ?? 0, `${block.id} boundary ${node.id} width`).toBeGreaterThan(GRID)
+          expect(node.height ?? 0, `${block.id} boundary ${node.id} height`).toBeGreaterThan(GRID)
         }
         rows.push(`${block.id} parts=${g.units.length} cells=${children.length} portGlyphs=${boundary.length} share=${((100 * boundary.length) / children.length).toFixed(1)}%`)
       }
     }
-    // A non-zero denominator for the zero-size claim: an empty boundary set would pass the loop
-    // above over nothing, which is the "term under test was zero" failure.
-    expect(glyphs, "no port glyph at all would make the zero-size assertion vacuous").toBe(38)
+    // A non-zero denominator for the size claim: an empty boundary set would pass the loop above
+    // over nothing, which is the "term under test was zero" failure.
+    expect(glyphs, "no port glyph at all would make the size assertion vacuous").toBe(38)
     expect(rows).toEqual([
       "ob-buffer parts=11 cells=14 portGlyphs=3 share=21.4%",
       "oc-power parts=8 cells=11 portGlyphs=3 share=27.3%",
@@ -374,15 +553,30 @@ describe("D1's report line, per declared ELK block", () => {
 
   it("classifies each drawn block against the CEILING's shape, and names no floor", async () => {
     const blocks = await drawnBlocks()
+    // `cells` here is PLACEMENTS, and the classification is `baselineScale`'s cut at the ceiling of
+    // 3. **NO BLOCK'S PLACEMENT COUNT HAS EVER MOVED UNDER A GEOMETRY CHANGE** - not at G291's node
+    // sizing, not at G292's orientation rule, not at the star (**G296**) and not at the jumper
+    // correction (**G297**) - which is what makes the rows that leave and arrive here a question of
+    // WHICH blocks draw and never of how many cells one holds. The rows that left (`oc-power` 8,
+    // `oc-audio` 14) and the ones that arrived (`ob-buffer` 11, `tp-leg-upper` 3 - the same 3 it
+    // left with) carry the placement counts the table above reports for them whether they draw or
+    // not, and all four classify by the same rule.
     expect(blocks.map((b) => `${b.id} cells=${b.cells} ${baselineScale(b.cells).kind}`)).toEqual([
-      "oc-power cells=8 about-a-serialization",
+      "ob-buffer cells=11 about-a-serialization",
       "pt-core cells=24 about-a-serialization",
       "tp-leg-upper cells=3 about-the-circuit",
       "tp-leg-feedback cells=3 about-the-circuit",
       "tp-leg-lower-a cells=3 about-the-circuit",
       "tp-leg-lower-b cells=3 about-the-circuit",
       "tp-leg-collector cells=2 about-the-circuit",
+      "tp-leg-emitter-bypass cells=2 about-the-circuit",
+      "tp-stage cells=16 about-a-serialization",
     ])
+    // BOTH ARMS OF THE CUT ARE DRIVEN, which a table of nine rows could otherwise stop doing if
+    // the small blocks left: SIX blocks are at or under the ceiling of 3 and THREE are over it.
+    expect(blocks.filter((b) => b.cells <= 3).length).toBe(6)
+    expect(blocks.filter((b) => b.cells > 3).length).toBe(3)
+    expect(6 + 3).toBe(blocks.length)
     // The floor is UNMEASURED for this backend (spec 1.8 revision 4), so nothing here reports one:
     // the classification has three arms and none of them is a lower bound.
     for (const b of blocks) expect(baselineScale(b.cells).why).not.toContain("floor")

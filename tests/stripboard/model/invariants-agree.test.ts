@@ -11,16 +11,22 @@
  * `./no-fork.test.ts` enforces that over the whole import closure.**
  *
  * **HOW BIG THIS EVIDENCE IS, SIZED BEFORE IT IS LEANED ON.** Measured
- * 2026-10-14: **two** of the seven committed boards import completely -
- * `transistor-preamp-feedback` and `transistor-preamp-loop`. The other five
- * refuse in the importer, for reasons that belong to part records and to the
- * dump rather than to either invariant, and `./cuts-agree.test.ts` owns the table
- * of their refusal keys. This file asserts only that the reach is still exactly
- * those two, so a board that starts or stops importing fails here rather than
- * quietly joining or leaving the comparison. **Calling this a seven-board
- * cross-check would be false.**
+ * 2026-10-14 and again 2026-10-30: **three** of the seven committed boards import
+ * completely - `transistor-preamp-feedback`, `transistor-preamp-loop` and
+ * `transistor-preamp-staged`. The other four refuse in the importer, for reasons
+ * that belong to part records and to the dump rather than to either invariant,
+ * and `./cuts-agree.test.ts` owns the table of their refusal keys. This file
+ * asserts only that the reach is still exactly those three, so a board that
+ * starts or stops importing fails here rather than quietly joining or leaving the
+ * comparison. **Calling this a seven-board cross-check would be false.**
  *
- * **AND THE TWO BOARDS COVER BOTH ANSWERS, which a set of sound boards could
+ * **THE THIRD ARRIVED THAT WAY, which is the assertion below doing its job.**
+ * `transistor-preamp-staged` refused for want of a lead span and a pin pattern
+ * for `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm`; both were recorded on 2026-10-30
+ * and this file went red until the board was either compared or excluded with a
+ * reason. It is compared, and the two implementations agree on it.
+ *
+ * **AND THE BOARDS COVER BOTH ANSWERS, which a set of sound boards could
  * not.** `feedback` is sound - the owner laid it out and built it. **`loop` is
  * known broken**: `tests/stripboard/agreement.test.ts` records `HC8` reporting
  * 15 opens on it, corroborated by `make check` reporting 15 of its 16 nets
@@ -43,9 +49,9 @@
  * same pair of nets and the same witness hole every time. Stated plainly: those
  * five are a perturbation and not a measurement of a board anybody laid out.
  *
- * **NO DISAGREEMENT WAS FOUND**, on either board, with either cut source, or on
- * any of the five perturbations. Every figure in this comment was printed by a
- * run, not reasoned to.
+ * **NO DISAGREEMENT WAS FOUND**, on any of the three boards, with either cut
+ * source, or on any of the five perturbations. Every figure in this comment was
+ * printed by a run, not reasoned to.
  */
 import { expect, test } from "bun:test"
 import { PIN_PATTERNS } from "../../../lib/kicad/pin-pattern.ts"
@@ -64,7 +70,7 @@ import {
 } from "../vero-import-fixtures.ts"
 
 /** The boards that import completely, and so the boards this comparison reaches. */
-const COMPARED: readonly string[] = ["transistor-preamp-feedback", "transistor-preamp-loop"]
+const COMPARED: readonly string[] = ["transistor-preamp-feedback", "transistor-preamp-loop", "transistor-preamp-staged"]
 
 function candidateOf(board: CommittedBoard): Candidate {
   return candidateFromDump(dumpTextOf(board), referenceOf(board), footprintsOf(board), PIN_PATTERNS)
@@ -132,7 +138,7 @@ const compared: readonly CommittedBoard[] = COMMITTED_BOARDS.filter((board) =>
   COMPARED.includes(board.name),
 )
 
-test("the cross-check reaches exactly two of the seven committed boards", () => {
+test("the cross-check reaches exactly three of the seven committed boards", () => {
   expect(compared.map((board) => board.name)).toEqual([...COMPARED])
   for (const board of COMMITTED_BOARDS) {
     if (COMPARED.includes(board.name)) {

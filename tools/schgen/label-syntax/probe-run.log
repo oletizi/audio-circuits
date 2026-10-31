@@ -1,0 +1,261 @@
+
+== WHAT THIS LABEL-SYNTAX RUN MEASURED
+label-syntax repository commit: 957613a32c9c8603db56d5767403b83bc3eb67cf (clean tree)
+kicad-cli resolved to /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli, version 10.0.5
+every label measurement below is taken from the PDF export and the netlist export, NEVER from SVG: docs/known-gaps.md G265 clause 1
+
+== PREDICTIONS FOR LABEL SYNTAX, PRINTED BEFORE ANY kicad-cli CALL
+PROVENANCE, because the ordering is only worth something if these were not back-filled (docs/known-gaps.md G271):
+  the four CANDIDATE predictions are the task brief's own and the boundary-census prediction is the SPEC's, from part 1's third correction; both predate this file.
+  a prototype of the netlist and census paths was run while writing this probe, to establish that its mechanisms work. NO PREDICTION WAS REVISED AFTER IT.
+  the six CONTROL expectations are NOT predictions and are not presented as any: each was established by a scratch drive while writing round 2 and is PINNED, so this run CHECKS it.
+  one prediction is refuted below and is left standing as it was written.
+PREDICTION SIGNAL: parses, round-trips byte-identical, renders
+PREDICTION hi_boost_out: parses, round-trips byte-identical, renders
+PREDICTION Net-(C10-Pad1): UNKNOWN - this is the measurement
+PREDICTION unconnected-(U1-CLK_O-Pad5): UNKNOWN - this is the measurement
+EXPECTATION ctl-double-quote "BAD\"QUOTE": PINNED: escaped YES, parses, round-trips - the name survives as the escaped form on both sides
+EXPECTATION ctl-backslash "BACK\\SLASH": PINNED: escaped YES, parses, round-trips
+EXPECTATION ctl-tab "RAW\tTAB": PINNED: escaped NO, parses, round-trips with the tab intact
+EXPECTATION ctl-newline "RAW\nNEWLINE": PINNED FAILURE: kicad-cli exits 3 on 'Failed to load schematic'; parsed NO, round-trip NO, PDF NO
+EXPECTATION ctl-carriage-return "RAW\rCR": PINNED FAILURE, SILENT: parses at exit 0, renders - and round-trip NO, because the name comes back as RAWCR
+EXPECTATION ctl-nul "RAW\u0000NUL": PINNED FAILURE, SILENT: parses at exit 0, renders - and round-trip NO, because the name comes back as RAW
+PREDICTION boundary census: NON-ZERO. The spec says of pt2399-core that "the synthetic name becomes a label *only because of the fake port*, since ports are boundary nets", so at least `unconnected-(U1-CLK_O-Pad5)` is expected to reach a label. REFUTED BY: a census of zero, which would mean a declared port does not make a net a label and the punctuation question is closed by the architecture rather than by kicad-cli.
+PREDICTION positive control: SIGNAL parses, round-trips and renders. REFUTED BY: any failure, which would make every candidate row about this probe's sheet rather than about a net name.
+PREDICTION negative controls: at least one arm reports parsed NO, and at least one reports parsed YES with round-trip NO. REFUTED BY: every arm passing, which would mean this probe has never been shown able to report a failure at all.
+
+== LABEL SYNTAX SHEETS: ONE PER ARM, THE NAME ATOM WRITTEN BY THE PRODUCTION STRING WRITER
+control-upper-snake: 42 lines, SHA-256 d2797b3c5935f4d0c3f7bcaef7b6899f0d1c202c7179dc090c081e1a3f4dfb67, unchanged on disk
+    net: "SIGNAL" (6 characters), hex 5349474e414c
+    tools/schgen/label-freedom/fixtures.ts fixtureA's own net; the one name here that NET_NAME already accepts
+lowercase-authored: 42 lines, SHA-256 77a8a3a4870ed4745b4cbd8518e8fe463e4f114159c0cbe716e35f7fca315cd7, unchanged on disk
+    net: "hi_boost_out" (12 characters), hex 68695f626f6f73745f6f7574
+    circuits/pultec/electrical/mid.ts:28, MID_TAP_POINT - and a LABELLED net on all five Pultec boards, per the census
+synthetic-net-paren: 42 lines, SHA-256 1815e914a8932a8239e17445306485ca8cec85ee1447acd8f7875266ca4c9d6c, unchanged on disk
+    net: "Net-(C10-Pad1)" (14 characters), hex 4e65742d284331302d5061643129
+    circuits/pt2399-core/pt2399-core.ts:128, output_mix_resistor's a pin
+synthetic-unconnected: 42 lines, SHA-256 fe07d6c0235bb190e33dc9c554bc73838fc1a3e8668594d33c3ce53ce8665675, unchanged on disk
+    net: "unconnected-(U1-CLK_O-Pad5)" (27 characters), hex 756e636f6e6e65637465642d2855312d434c4b5f4f2d5061643529
+    circuits/pt2399-core/pt2399-core.ts:147, U1 pin 5's net, and :190's clk_o_unused port
+ctl-double-quote: 42 lines, SHA-256 c4ecbc7a89fd2f5ec111afb81d6f760adf674be9082812f0c66864b14a26d72e, unchanged on disk
+    net: "BAD\"QUOTE" (9 characters), hex 4241442251554f5445
+    the escaping path: a double quote is one of exactly two characters lib/kicad/sexpr.ts quoteString escapes
+ctl-backslash: 42 lines, SHA-256 2cd02b1d574fdf946c42cec6d0bcbe676a7cd4ffef4cf5252848380a36176725, unchanged on disk
+    net: "BACK\\SLASH" (10 characters), hex 4241434b5c534c415348
+    the escaping path: a backslash is the other character quoteString escapes
+ctl-tab: 42 lines, SHA-256 d067b73f60cef5ae58869e2edadb6e8d50308589bf787954c16d1ef466116ef5, unchanged on disk
+    net: "RAW\tTAB" (7 characters), hex 52415709544142
+    THE DISCRIMINATOR: a control character (\u0009) that str() refuses and KiCad accepts verbatim, so the three failures below cannot be read as 'a control character'
+ctl-newline: 43 lines, SHA-256 1b6a258d4a42141562bcb297b37e5b081f562894a6fb1e89668a5692924a8620, unchanged on disk
+    net: "RAW\nNEWLINE" (11 characters), hex 5241570a4e45574c494e45
+    THE LOUD NEGATIVE CONTROL: a raw newline (\u000a) breaks the s-expression's line structure
+ctl-carriage-return: 42 lines, SHA-256 e35a76a765be060578754eadc2721fac20f3bbf1e4ddd5cf5b2f42cc973f9edc, unchanged on disk
+    net: "RAW\rCR" (6 characters), hex 5241570d4352
+    THE FIRST SILENT NEGATIVE CONTROL: a carriage return (\u000d) KiCad parses and then DROPS from the name
+ctl-nul: 42 lines, SHA-256 03f72fb37e2ed6d7c637b5b1b338897f13d215815403001de5b549f5ec809c14, unchanged on disk
+    net: "RAW\u0000NUL" (7 characters), hex 524157004e554c
+    THE SECOND SILENT NEGATIVE CONTROL: a NUL (\u0000) KiCad parses and then TRUNCATES the name at
+
+== LABEL SYNTAX: WHAT kicad-cli DID WITH EACH CANDIDATE
+control-upper-snake  net "SIGNAL"
+    writer bytes for the name: "\"SIGNAL\""
+    writer bytes as hex      : 225349474e414c22
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RETURN\"" "\"SIGNAL\""
+    importNetlist read these net names: "RETURN" "SIGNAL"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 30418 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 10088.2 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (6 characters): 1681.4
+lowercase-authored  net "hi_boost_out"
+    writer bytes for the name: "\"hi_boost_out\""
+    writer bytes as hex      : 2268695f626f6f73745f6f757422
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RETURN\"" "\"hi_boost_out\""
+    importNetlist read these net names: "RETURN" "hi_boost_out"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 31010 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 15470.2 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (12 characters): 1289.2
+synthetic-net-paren  net "Net-(C10-Pad1)"
+    writer bytes for the name: "\"Net-(C10-Pad1)\""
+    writer bytes as hex      : 224e65742d284331302d506164312922
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"Net-(C10-Pad1)\"" "\"RETURN\""
+    importNetlist read these net names: "Net-(C10-Pad1)" "RETURN"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 31814 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 20006.2 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (14 characters): 1429.0
+synthetic-unconnected  net "unconnected-(U1-CLK_O-Pad5)"
+    writer bytes for the name: "\"unconnected-(U1-CLK_O-Pad5)\""
+    writer bytes as hex      : 22756e636f6e6e65637465642d2855312d434c4b5f4f2d506164352922
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RETURN\"" "\"unconnected-(U1-CLK_O-Pad5)\""
+    importNetlist read these net names: "RETURN" "unconnected-(U1-CLK_O-Pad5)"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 34236 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 35125.1 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (27 characters): 1300.9
+
+== LABEL SYNTAX: WHAT kicad-cli DID WITH EACH CONTROL ARM
+ctl-double-quote  net "BAD\"QUOTE"
+    writer bytes for the name: "\"BAD\\\"QUOTE\""
+    writer bytes as hex      : 224241445c2251554f544522
+    quoteString escaped anything: YES - the name is not verbatim between quotes
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"BAD\\\"QUOTE\"" "\"RETURN\""
+    importNetlist read these net names: "BAD\"QUOTE" "RETURN"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 30619 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 14261.0 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (9 characters): 1584.6
+ctl-backslash  net "BACK\\SLASH"
+    writer bytes for the name: "\"BACK\\\\SLASH\""
+    writer bytes as hex      : 224241434b5c5c534c41534822
+    quoteString escaped anything: YES - the name is not verbatim between quotes
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"BACK\\\\SLASH\"" "\"RETURN\""
+    importNetlist read these net names: "BACK\\SLASH" "RETURN"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 30088 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 15168.2 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (10 characters): 1516.8
+ctl-tab  net "RAW\tTAB"
+    writer bytes for the name: "\"RAW\tTAB\""
+    writer bytes as hex      : 225241570954414222
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RAW\tTAB\"" "\"RETURN\""
+    importNetlist read these net names: "RAW\tTAB" "RETURN"
+    raw atom identical to the writer's bytes: YES; parsed name identical to the arm's constant, octet for octet: YES
+    kicad-cli sch export pdf: produced 28576 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 11660.5 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (7 characters): 1665.8
+ctl-newline  net "RAW\nNEWLINE"
+    writer bytes for the name: "\"RAW\nNEWLINE\""
+    writer bytes as hex      : 225241570a4e45574c494e4522
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 3
+    PARSED: NO. stderr: Failed to load schematic
+    kicad-cli sch export pdf REFUSED: kicad-cli PDF export failed (3) for <repo>/tools/schgen/label-syntax/sheets/ctl-newline.kicad_sch: | Failed to load schematic
+ctl-carriage-return  net "RAW\rCR"
+    writer bytes for the name: "\"RAW\rCR\""
+    writer bytes as hex      : 225241570d435222
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RAWCR\"" "\"RETURN\""
+    importNetlist read these net names: "RAWCR" "RETURN"
+    raw atom identical to the writer's bytes: NO; parsed name identical to the arm's constant, octet for octet: NO
+    THE NAME DID NOT SURVIVE. KiCad's atoms as hex: 22524157435222 2252455455524e22
+    kicad-cli sch export pdf: produced 29860 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 10995.3 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (6 characters): 1832.6
+ctl-nul  net "RAW\u0000NUL"
+    writer bytes for the name: "\"RAW\u0000NUL\""
+    writer bytes as hex      : 22524157004e554c22
+    quoteString escaped anything: NO - the name is between quotes verbatim
+    kicad-cli sch export netlist: exit 0
+    kicad wrote these net-name atoms, raw: "\"RAW\"" "\"RETURN\""
+    importNetlist read these net names: "RAW" "RETURN"
+    raw atom identical to the writer's bytes: NO; parsed name identical to the arm's constant, octet for octet: NO
+    THE NAME DID NOT SURVIVE. KiCad's atoms as hex: 2252415722 2252455455524e22
+    kicad-cli sch export pdf: produced 28475 bytes
+    PDF stroked paths: 32; seven-point outlines: 2
+    arm label outline: 7366.7 um along x by 2540.8 um across
+    the RETURN control outline on the same page: 2540.8 um along x by 10874.3 um across
+    um of outline per character of the name (7 characters): 1052.4
+
+== LABEL SYNTAX CANDIDATE VERDICTS: THE FOUR ANSWERS PER CANDIDATE, AGAINST THE PREDICTION
+control-upper-snake      escaped NO   parsed YES  round-trip YES  PDF outline YES  outline 10088.2 um  - AS PREDICTED
+lowercase-authored       escaped NO   parsed YES  round-trip YES  PDF outline YES  outline 15470.2 um  - AS PREDICTED
+synthetic-net-paren      escaped NO   parsed YES  round-trip YES  PDF outline YES  outline 20006.2 um  - NO PREDICTION TO COMPARE - this row IS the measurement
+synthetic-unconnected    escaped NO   parsed YES  round-trip YES  PDF outline YES  outline 35125.1 um  - NO PREDICTION TO COMPARE - this row IS the measurement
+POSITIVE CONTROL PASSED: the UPPER_SNAKE name parses, round-trips and draws an outline, so a failure on another candidate row would be about that row's name.
+outline extent against character count, shortest name first: 6ch=10088um 12ch=15470um 14ch=20006um 27ch=35125um
+THE OUTLINE GROWS STRICTLY WITH THE NAME, so the whole string is being drawn rather than a truncation of it. This is the evidence that "renders" means the name and not merely a box: the PDF carries stroked glyph paths and no readable string, so the outline's extent is the only thing that can distinguish a drawn name from a mangled one.
+
+== LABEL SYNTAX CONTROL VERDICTS: WHAT EACH PINNED ARM DID, AND WHETHER THE PIN HELD
+an arm here failing is the INTENDED result and is not a regression. The pin is what a regression would move.
+ctl-double-quote         escaped YES  parsed YES  round-trip YES  PDF outline YES  outline 14261.0 um  - pinned: PINNED: escaped YES, parses, round-trips - the name survives as the escaped form on both sides
+ctl-backslash            escaped YES  parsed YES  round-trip YES  PDF outline YES  outline 15168.2 um  - pinned: PINNED: escaped YES, parses, round-trips
+ctl-tab                  escaped NO   parsed YES  round-trip YES  PDF outline YES  outline 11660.5 um  - pinned: PINNED: escaped NO, parses, round-trips with the tab intact
+ctl-newline              escaped NO   parsed NO   round-trip NO   PDF outline NO   outline 0.0 um  - pinned: PINNED FAILURE: kicad-cli exits 3 on 'Failed to load schematic'; parsed NO, round-trip NO, PDF NO
+ctl-carriage-return      escaped NO   parsed YES  round-trip NO   PDF outline YES  outline 10995.3 um  - pinned: PINNED FAILURE, SILENT: parses at exit 0, renders - and round-trip NO, because the name comes back as RAWCR
+ctl-nul                  escaped NO   parsed YES  round-trip NO   PDF outline YES  outline 7366.7 um  - pinned: PINNED FAILURE, SILENT: parses at exit 0, renders - and round-trip NO, because the name comes back as RAW
+control arms: 6; refused by kicad-cli (LOUD failure): 1; parsed and silently renamed (SILENT failure): 2; fully passing: 3; exercising the escaping path: 2
+NEGATIVE CONTROL ESTABLISHED: in one committed run this probe reports a PASS, a LOUD FAILURE and a SILENT RENAME, so every column above has been seen to take both values and a passing candidate row is a result rather than a property of the instrument.
+THE SILENT ARMS ARE THE FINDING, NOT THE LOUD ONE: ctl-carriage-return ctl-nul each exported at exit 0 and handed back a DIFFERENT net name than the sheet carried. A validator that only asked whether kicad-cli succeeded would pass them.
+THE DISCRIMINATOR HELD: a TAB is a control character that KiCad takes verbatim, so the three failures above are NOT explained by "a control character" - they are what a newline does to the s-expression's line structure, and what CR and NUL do to KiCad's string reader. str()'s blanket refusal of [\u0000-\u001f] is therefore WIDER than KiCad requires, which is the safe direction and is not a recommendation to narrow it.
+
+== BOUNDARY CENSUS: EVERY DECLARED BLOCK OF EVERY BOARD, AND WHICH NET NAMES REACH A LABEL
+a net reaches a global label exactly when it is in a block's `external` set (blocks.ts subgraphOf): labelled, touched by the block, and not a rail.
+a RAIL reaches a POWER SYMBOL instead, never a label (cross-sheet.ts MECHANISM_OF_CLASS), so rails are counted separately below and are not label names.
+pt2399-core                  declared by pt2399Core()                  1 block(s), 21 net(s), 16 synthetic net name(s),  0 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: (none)
+    its synthetic net names, none of which need be labelled: Net-(C10-Pad1) Net-(C12-Pad1) Net-(C7-Pad1) Net-(C8-Pad2) Net-(U1-CC0) Net-(U1-CC1) Net-(U1-LPF1-IN) Net-(U1-LPF1-OUT) Net-(U1-LPF2-IN) Net-(U1-LPF2-OUT) Net-(U1-OP1-IN) Net-(U1-OP1-OUT) Net-(U1-OP2-IN) Net-(U1-OP2-OUT) Net-(U1-REF) unconnected-(U1-CLK_O-Pad5)
+pultec-hi-boost              declared by pultecHiBoost()               6 block(s), 20 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  1 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-hi-cut                declared by pultecHiCut()                 6 block(s), 14 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  1 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-low-boost             declared by pultecLowBoost()              6 block(s), 14 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  1 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-low-cut               declared by pultecLowCut()                6 block(s), 14 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  1 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-mid                   declared by pultecMid()                   6 block(s), 28 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  1 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "hi_boost_out" "in" "lo_boost_in" "out"
+transistor-preamp-buffered   declared by transistorPreampBuffered()    6 block(s), 13 net(s),  0 synthetic net name(s),  4 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "BASE" "BUFFER_BASE" "BYPASS_CAP" "COLLECTOR"
+transistor-preamp-feedback   declared by transistorPreampFeedback()    5 block(s), 11 net(s),  0 synthetic net name(s),  3 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "BASE" "BYPASS_CAP" "COLLECTOR"
+transistor-preamp-lab        declared by transistorPreampLab()         7 block(s), 18 net(s),  0 synthetic net name(s),  5 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "BASE" "BYPASS_CAP" "BYPASS_JUMPED" "COLLECTOR" "EMITTER"
+transistor-preamp-loop       declared by transistorPreampLoop()        7 block(s), 16 net(s),  0 synthetic net name(s),  6 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "BASE" "BUFFER_BASE" "BUFFER_EMITTER" "BYPASS_CAP" "COLLECTOR" "LOOP_CAP"
+transistor-preamp-staged     declared by transistorPreampStaged()      8 block(s), 22 net(s),  0 synthetic net name(s),  6 net(s) reaching a label,  2 rail(s) reaching a power symbol, SYNTHETIC NAMES REACHING A LABEL: 0
+    reaches a label: "BASE" "BUFFER_BASE" "BYPASS_CAP" "CHARACTER_CAP" "COLLECTOR" "DRIVE_TOP"
+BOUNDARY CENSUS: over 11 boards, 16 synthetic net name(s) exist in the models and 0 of them reach a global label.
+THE BOUNDARY-CENSUS PREDICTION PUBLISHED ABOVE IS REFUTED: it predicted non-zero, on the spec's own mechanism that a declared port makes a net a boundary net. It does not. `buildCircuit` leaves `Circuit.offSheet` empty unconditionally (lib/schgen/ir/build.ts:152, and the field's own comment in lib/schgen/ir/types.ts says only a sheet subset ever has any), so `labelledNets` labels a net only when it is a rail, touches more than one block, or touches a `bus` block. `pt2399-core` is ONE block, so none of its 16 synthetic names is labelled, with or without the fake `clk_o_unused` port.
+THE CENSUS IS ZERO, AND WHAT ZERO MEANS: no board in this repository would draw a punctuated net name on a sheet today, so whether KiCad accepts one is NOT a blocker for removing the casing rule - the architecture closes the question and the kicad-cli rows above are a standing answer rather than a precondition. It is NOT a reason to relax a gate: the name still exists in the model, reaches the netlist comparison, and would reach a label the moment a block boundary fell between two pins of one of these nets - which is a layout decision nobody has made yet, not an invariant.
+
+== BOUNDARY CENSUS ADJUNCT: THE LABELLED NETS THAT NET_NAME REFUSES TODAY, PER BOARD
+this is the other half of the same question and it is NOT the task's own: it sizes what the casing rule costs on names that really are drawn.
+pt2399-core                   0 labelled net(s) fail NET_NAME: (none)
+pultec-hi-boost               4 labelled net(s) fail NET_NAME: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-hi-cut                 4 labelled net(s) fail NET_NAME: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-low-boost              4 labelled net(s) fail NET_NAME: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-low-cut                4 labelled net(s) fail NET_NAME: "hi_boost_out" "in" "lo_boost_in" "out"
+pultec-mid                    4 labelled net(s) fail NET_NAME: "hi_boost_out" "in" "lo_boost_in" "out"
+transistor-preamp-buffered    0 labelled net(s) fail NET_NAME: (none)
+transistor-preamp-feedback    0 labelled net(s) fail NET_NAME: (none)
+transistor-preamp-lab         0 labelled net(s) fail NET_NAME: (none)
+transistor-preamp-loop        0 labelled net(s) fail NET_NAME: (none)
+transistor-preamp-staged      0 labelled net(s) fail NET_NAME: (none)
+labelled nets failing NET_NAME, over every board with a declaration: 20
+
+== LABEL SYNTAX SUMMARY
+candidates driven: 4; parsed: 4; round-tripped: 4; drew an outline: 4
+control arms driven: 6; loud failures: 1; silent renames: 2; passing: 3
+synthetic net names reaching a global label, over all 11 boards: 0
+labelled nets refused by NET_NAME today, over all 11 boards: 20
+declared cases the census could have ranged over: 13; boards it did range over: 11

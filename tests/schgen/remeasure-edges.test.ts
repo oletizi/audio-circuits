@@ -22,7 +22,12 @@ import { crossingNonRailNets, edgeCensus, flatSubgraphOf, governingNetsOf, rende
 import { circuitSpecFrom } from "../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { elkInputOf } from "../../lib/schgen/elk/graph.ts"
-import { subgraphOf } from "../../lib/schgen/render/blocks.ts"
+import { adaptElkLayoutReported } from "../../lib/schgen/elk/adapt.ts"
+import { describeMismatch } from "../../lib/schgen/render/block-types.ts"
+import { layoutBlocks } from "../../tools/schgen/elk/layout.ts"
+import { placedPins, subgraphOf } from "../../lib/schgen/render/blocks.ts"
+import { canonicalTopology } from "../../lib/schgen/elk/junctions.ts"
+import { measuresOf } from "../../lib/schgen/readability/measures.ts"
 import { PARITY_CASES, parityResolver } from "../../tools/schgen/authoring-census.ts"
 import { blockCircuit, res } from "./__fixtures__/circuits.ts"
 
@@ -328,6 +333,167 @@ describe("the two flat subjects are DIFFERENT subjects, and only one is a baseli
     expect(blockedEdges).toBe(24)
     expect(blockedEdges - flatEdges).toBe(0)
   })
+})
+
+/**
+ * **G229's REFUSAL, RE-HOMED HERE 2026-10-25 BECAUSE THE EXPERIMENT STOPPED CARRYING IT.**
+ *
+ * `docs/known-gaps.md` **G229** records that `transistor-preamp`'s five drawing blocks, drawn as
+ * ONE flat graph, are refused by spec §1.4 obligation 2 - the junction obligation - with the net
+ * and the coordinate in the refusal text. Its stated evidence was
+ * `tests/schgen/remeasure.test.ts`'s *"has a FLAT side that refuses, at the junction obligation"*,
+ * and **that test is gone**: boundary-node sizing made all seven `transistor-preamp` blocks draw
+ * (**G291**), `integratedExperiment`'s guard refuses a circuit where every block draws, and the
+ * experiment's subject moved to `optical-compressor`. That subject's flat side was ACCEPTED for a
+ * day and **is refused at obligation 1 since the orientation rule** (**G292**) - so the
+ * experiment carries a flat refusal again, but it is the SNAP rather than the junction, on a
+ * different circuit. **It is still not G229's figure**, which is why this file keeps it.
+ *
+ * **SO THE MEASUREMENT WAS ABOUT TO BECOME AN ENTRY WITH NO LIVE CHECK BEHIND IT**, which
+ * `tests/schgen/pointers.test.ts` caught by name. It is re-driven here, over the same five blocks
+ * and the same `flatSubgraphOf` this file already uses, so G229 keeps evidence that can fail.
+ *
+ * `[RAN]` **the refusal survived G291's node sizing byte-for-byte - same net, same coordinate -
+ * and the ORIENTATION RULE (G292) MOVED THE COORDINATE**, from `(45.72, 48.26)` to
+ * `(46.99, 43.18)`, with the obligation, the net, the kind and the count all unmoved.
+ *
+ * **AND SINCE 2026-10-26 THE FIVE-LEG PROBE HAS NO JUNCTION DISAGREEMENT AT ALL, so G229's figure
+ * HAS NO LIVE CHECK ANYWHERE. That is a LOSS and it is the first thing this describe says**
+ * (`docs/known-gaps.md` **G296**). The probe was refused at obligation 4 instead - a clearance
+ * problem on `VCC`'s value text - and `adaptElkLayoutReported` runs obligation 2 BEFORE obligation
+ * 4, so the junction obligation passed on it. The branch point that refused for three days was
+ * gone from the geometry.
+ *
+ * **AND SINCE THE JUMPER TURN WAS DECLINED, BOTH PROBES ARE ACCEPTED OUTRIGHT** (**G297**).
+ * `switchFacesItsBank` no longer turns `Jumper:Jumper_2_Open`, so `JP1`'s `VCC` end goes to the
+ * top under the rail entry; the five-leg probe's obligation-4 clearance problem goes with it and
+ * the seven-block probe's remaining `GND` branch point goes too. **Neither probe refuses at any
+ * obligation, so this describe no longer holds a refusal of ANY kind** - which makes its two tests
+ * acceptance checks rather than refusal checks, and both still fail if a refusal returns.
+ *
+ * **IT IS NOT THE T-JUNCTION CHANGE THAT DID IT, WHICH WAS MEASURED RATHER THAN ASSUMED.** `[RAN]`
+ * both probes with `junctionPoints`' T detection rolled back to the chain-era version: **both
+ * refusals were byte-identical** at G296. So the five-leg probe's junction obligation passed
+ * because the star and the two 180-degree rules moved where the three legs' `BASE` pins meet, not
+ * because the emitter learned to place a junction at a T.
+ *
+ * **WHAT G229 NEEDS NOW is a subject whose junction obligation refuses with ONE branch point on
+ * `BASE`, and this repository has none at all.** It had the seven-block probe's `GND` yesterday
+ * and the integrated experiment's six-block `COLLECTOR`; both are gone. **G229 is now an entry
+ * with no live check behind it anywhere in the suite, which is a finding rather than a tidy-up**,
+ * and it carries every coordinate it has ever quoted with the superseded ones marked, because its
+ * text quotes a refusal verbatim and a reader who greps for an old string needs to find out why it
+ * is gone.
+ */
+describe("G229's junction-obligation refusal, which no probe in this repository still reaches", () => {
+  it("gets the five-leg flat probe PAST every obligation, so it is ACCEPTED and carries no refusal", async () => {
+    const symbols = parityResolver()
+    const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
+    if (c === undefined) throw new Error("transistor-preamp is not a parity case")
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    const legs = ["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b", "tp-leg-collector"]
+    const g = flatSubgraphOf(circuit, legs, symbols)
+    expect(g.units.length, "the five legs hold fourteen units between them").toBe(14)
+    const outcomes = await layoutBlocks([elkInputOf(g)])
+    const outcome = outcomes.get(g.block.id)
+    expect(outcome?.ok, "the flat graph LAYS OUT").toBe(true)
+    if (outcome === undefined || !outcome.ok) return
+    const report = adaptElkLayoutReported(g, outcome)
+    // **ACCEPTED AT EVERY OBLIGATION, which is the strongest form of "the junction obligation
+    // passes" and is a check that fails the moment any refusal returns.** The refusal text is
+    // printed into the assertion message so a red here names the obligation rather than only the
+    // boolean.
+    expect(report.result.ok, report.result.ok ? "accepted" : describeMismatch(report.result.mismatch)).toBe(true)
+    if (!report.result.ok) return
+    // **THE FIGURES, SO "ACCEPTED" IS NOT THE ONLY THING PINNED.** 14 placements is the five legs'
+    // 3 + 3 + 3 + 3 + 2, and `crossings 2` is the first non-zero crossing count any
+    // `transistor-preamp` flat probe has reported - each leg on its own crosses nothing
+    // (`tests/schgen/readability/measures.test.ts`), so both crossings are made by flattening.
+    const layout = report.result.layout
+    const pins = placedPins(g, layout.placements)
+    const t = canonicalTopology(layout, pins)
+    expect(t.ok, "the accepted layout has an unambiguous topology").toBe(true)
+    if (!t.ok) return
+    const m = measuresOf(t, pins)
+    expect(layout.placements.length).toBe(14)
+    expect(3 + 3 + 3 + 3 + 2).toBe(layout.placements.length)
+    expect([m.bends, m.crossings, m.wireLength, m.occupiedArea]).toEqual([30, 2, 477, 5555])
+    // EVERY REFUSAL STRING THIS PROBE HAS EVER CARRIED, asserted ABSENT by name rather than
+    // dropped, so this test says which strings went away and no old quote can look live. They are
+    // checked against the whole report - `report.notes` plus the result - because an accepted
+    // result has no refusal text of its own to search.
+    const everything = JSON.stringify(report)
+    for (const gone of [
+      "(45.72, 48.26)", "(46.99, 43.18)", "net BASE branches",
+      "the junctions the sheet emitter would place disagree",
+      "value of power symbol VCC 0 at (19.05, 22.86)",
+    ]) {
+      expect(everything, gone).not.toContain(gone)
+    }
+  }, 300_000)
+
+  /**
+   * **THE SEVEN-BLOCK FLAT PROBE WAS THE LAST JUNCTION-OBLIGATION REFUSAL IN THIS FILE AND IT IS
+   * GONE. SO THIS FILE HOLDS NO JUNCTION REFUSAL AT ALL.** The history, because the separation
+   * weakened twice and then the subject disappeared:
+   *
+   * 1. originally this probe refused at obligation 1, the snap collapse, *"on a `VCC` wire 10
+   *    nanometres long"* - **an obligation apart** from G229's;
+   * 2. the orientation rule (`docs/known-gaps.md` **G292**) moved it to obligation 2 on **two**
+   *    branch points, `COLLECTOR` and `GND` - a different net and a different count;
+   * 3. the star and the two 180-degree rules (**G296**) left it on **ONE** branch point, `GND` at
+   *    `(55.88, 46.99)`, so the count no longer separated it from G229's figure either;
+   * 4. declining the jumper turn (**G297**) leaves it **ACCEPTED**. The `GND` branch point is not
+   *    at a different coordinate - it is not there.
+   *
+   * **WHAT THAT COSTS IS WORTH MORE THAN WHAT IT BUYS, AND IT IS THE FINDING HERE.** An accepted
+   * seven-block flat probe is the first whole-circuit flat drawing this repository has produced,
+   * and `tests/schgen/remeasure.test.ts`'s integrated experiment now has an accepted figure on
+   * both sides of G105's ratio because of it. **But the junction obligation now has NO
+   * real-geometry witness anywhere in the suite**: every refusal it ever produced here was a
+   * property of one layout, and three successive geometry changes moved each of them off.
+   *
+   * **THE T-JUNCTION CHANGE DID NOT MOVE ANY OF THIS.** `[RAN]` with `junctionPoints`' T detection
+   * rolled back: the G296 refusal was byte-identical. So the T detection was never what these
+   * refusals were measuring, in either direction.
+   */
+  it("gets the seven-block flat probe PAST the junction obligation too, so NO probe here refuses", async () => {
+    const symbols = parityResolver()
+    const c = PARITY_CASES.find((x) => x.name === "transistor-preamp")
+    if (c === undefined) throw new Error("transistor-preamp is not a parity case")
+    const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
+    const g = flatSubgraphOf(circuit, [...circuit.blocks.keys()], symbols)
+    expect(g.units.length, "all seven blocks hold thirty-two units between them").toBe(32)
+    const outcomes = await layoutBlocks([elkInputOf(g)])
+    const outcome = outcomes.get(g.block.id)
+    if (outcome === undefined || !outcome.ok) throw new Error("the seven-block flat probe did not lay out")
+    const report = adaptElkLayoutReported(g, outcome)
+    expect(report.result.ok, report.result.ok ? "accepted" : describeMismatch(report.result.mismatch)).toBe(true)
+    if (!report.result.ok) return
+    // **THE FIGURES, AND THEY ARE THE INTEGRATED EXPERIMENT'S FLAT SIDE TAKEN THROUGH THIS FILE'S
+    // OWN DRIVER.** `tests/schgen/remeasure.test.ts` reports placements 32, wires 133, bends 58,
+    // crossings 21, len 1292 and area 8829 for the accepted flat side of the same subject; this is
+    // the second reading of all six, so neither can drift alone.
+    const layout = report.result.layout
+    const pins = placedPins(g, layout.placements)
+    const t = canonicalTopology(layout, pins)
+    expect(t.ok, "the accepted layout has an unambiguous topology").toBe(true)
+    if (!t.ok) return
+    const m = measuresOf(t, pins)
+    expect([layout.placements.length, layout.wires.length]).toEqual([32, 133])
+    expect([m.bends, m.crossings, m.wireLength, m.occupiedArea]).toEqual([58, 21, 1292, 8829])
+    // EVERY BRANCH POINT AND SNAP REFUSAL THIS PROBE HAS CARRIED, asserted ABSENT by name rather
+    // than dropped, so no superseded coordinate can look live in G229, G296 or G297.
+    const everything = JSON.stringify(report)
+    for (const gone of [
+      "(41.91, 74.93)", "(111.76, 62.23)", "(55.88, 46.99)",
+      "net COLLECTOR branches", "net GND branches", "net BASE branches",
+      "the junctions the sheet emitter would place disagree",
+      "snapping the ELK route onto KiCad's 1.27 mm grid collapsed geometry",
+    ]) {
+      expect(everything, gone).not.toContain(gone)
+    }
+  }, 300_000)
 })
 
 describe("the report line", () => {

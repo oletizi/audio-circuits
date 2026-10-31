@@ -1,13 +1,17 @@
 /**
  * What is already drawn where, by kind, for placing the printed guide's numbers and labels.
  *
- * **THE PRIMITIVE MOVED AND NOTHING IT COMPUTES DID.** `createOccupancy`, `leastCovered` and the
- * `MARK_WEIGHT` of 2 now live in `lib/schgen/render/occupancy.ts` and are re-exported here, so the
- * schematic's field placer and this guide weigh an overlap the same way instead of carrying two
- * weightings. That module's header says why it sits in that directory; this file keeps the
- * categories, which are the guide's own and mean nothing to a schematic.
+ * **THE PRIMITIVE IS BESIDE THIS FILE, AND NOTHING IT COMPUTES HAS CHANGED.** `createOccupancy`,
+ * `leastCovered` and the `MARK_WEIGHT` of 2 are `./occupancy.ts`, in this directory, and are
+ * re-exported here so the guide's own placement helpers reach them through one name. The module
+ * used to sit at `lib/schgen/render/occupancy.ts` so the schematic's field placer could weigh an
+ * overlap the same way under one hashed library directory; it moved back here in Task 7 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`, because `lib/schgen/` is deleted in that
+ * plan's Task 9. `lib/schgen/render/field-placement.ts` still imports it from here for as long as
+ * `lib/schgen/` exists. This file keeps the `Occupied` categories, which are the guide's own and
+ * mean nothing to a schematic.
  */
-import { createOccupancy, leastCovered, MARK_WEIGHT, type Occupancy } from "../../lib/schgen/render/occupancy.ts"
+import { createOccupancy, leastCovered, MARK_WEIGHT, type Occupancy } from "./occupancy.ts"
 
 export { createOccupancy, leastCovered }
 export type { Occupancy }

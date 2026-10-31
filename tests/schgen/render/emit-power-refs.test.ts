@@ -56,7 +56,7 @@ function twoSheets(extra: boolean): CircuitSpec {
 
 function emitted(extra: boolean): Map<string, string> {
   const c = buildCircuit(twoSheets(extra), { symbols });
-  const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, []);
+  const ctx = emitContext("mini", c, symbols, annotate(c, EMPTY_LOCK, new Map()).refs, [], "usable");
   return new Map(c.sheets.map((s) => [s.id, emitSheet(layoutSheet(c, s.id, symbols, "Pwr:PWR_FLAG"), ctx)]));
 }
 

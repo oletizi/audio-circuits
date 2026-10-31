@@ -1,0 +1,112 @@
+37 label(s) on 27 net(s); every label token in the file is accounted for, or this script would have refused
+
+boost_return  (1 label)
+    local   at (234.95, 119.38) rot 0 shape -
+
+coil_return  (1 label)
+    local   at (125.73, 77.47) rot 0 shape -
+
+cut_return  (1 label)
+    local   at (234.95, 124.46) rot 0 shape -
+
+hcut_t1  (1 label)
+    local   at (143.51, 36.83) rot 0 shape -
+
+hcut_t2  (1 label)
+    local   at (139.7, 27.94) rot 0 shape -
+
+hi_boost_out  (5 labels)
+    global  at (34.29, 30.48) rot 180 shape passive
+    global  at (195.58, 25.4) rot 0 shape passive
+    global  at (76.2, 35.56) rot 0 shape passive
+    global  at (118.11, 27.94) rot 180 shape passive
+    global  at (30.48, 121.92) rot 180 shape passive
+    gap (34.29,30.48)-(195.58,25.4): straight 161.37 mm, orthogonal run 166.37 mm
+    gap (34.29,30.48)-(76.2,35.56): straight 42.22 mm, orthogonal run 46.99 mm
+    gap (34.29,30.48)-(118.11,27.94): straight 83.86 mm, orthogonal run 86.36 mm
+    gap (34.29,30.48)-(30.48,121.92): straight 91.52 mm, orthogonal run 95.25 mm
+    gap (195.58,25.4)-(76.2,35.56): straight 119.81 mm, orthogonal run 129.54 mm
+    gap (195.58,25.4)-(118.11,27.94): straight 77.51 mm, orthogonal run 80.01 mm
+    gap (195.58,25.4)-(30.48,121.92): straight 191.24 mm, orthogonal run 261.62 mm
+    gap (76.2,35.56)-(118.11,27.94): straight 42.60 mm, orthogonal run 49.53 mm
+    gap (76.2,35.56)-(30.48,121.92): straight 97.72 mm, orthogonal run 132.08 mm
+    gap (118.11,27.94)-(30.48,121.92): straight 128.50 mm, orthogonal run 181.61 mm
+
+hi_tap  (1 label)
+    local   at (58.42, 35.56) rot 0 shape -
+
+in  (3 labels)
+    global  at (34.29, 27.94) rot 180 shape passive
+    global  at (58.42, 25.4) rot 0 shape passive
+    global  at (257.81, 119.38) rot 0 shape passive
+    gap (34.29,27.94)-(58.42,25.4): straight 24.26 mm, orthogonal run 26.67 mm
+    gap (34.29,27.94)-(257.81,119.38): straight 241.50 mm, orthogonal run 314.96 mm
+    gap (58.42,25.4)-(257.81,119.38): straight 220.43 mm, orthogonal run 293.37 mm
+
+lo_boost_in  (3 labels)
+    global  at (34.29, 33.02) rot 180 shape passive
+    global  at (237.49, 43.18) rot 180 shape passive
+    global  at (160.02, 36.83) rot 0 shape passive
+    gap (34.29,33.02)-(237.49,43.18): straight 203.45 mm, orthogonal run 213.36 mm
+    gap (34.29,33.02)-(160.02,36.83): straight 125.79 mm, orthogonal run 129.54 mm
+    gap (237.49,43.18)-(160.02,36.83): straight 77.73 mm, orthogonal run 83.82 mm
+
+out  (3 labels)
+    global  at (34.29, 35.56) rot 180 shape passive
+    global  at (195.58, 38.1) rot 0 shape passive
+    global  at (237.49, 25.4) rot 0 shape passive
+    gap (34.29,35.56)-(195.58,38.1): straight 161.31 mm, orthogonal run 163.83 mm
+    gap (34.29,35.56)-(237.49,25.4): straight 203.45 mm, orthogonal run 213.36 mm
+    gap (195.58,38.1)-(237.49,25.4): straight 43.79 mm, orthogonal run 54.61 mm
+
+sel1  (1 label)
+    local   at (85.09, 106.68) rot 0 shape -
+
+sel10  (1 label)
+    local   at (107.95, 132.08) rot 0 shape -
+
+sel11  (1 label)
+    local   at (92.71, 134.62) rot 0 shape -
+
+sel2  (1 label)
+    local   at (92.71, 109.22) rot 0 shape -
+
+sel3  (1 label)
+    local   at (107.95, 111.76) rot 0 shape -
+
+sel4  (1 label)
+    local   at (123.19, 114.3) rot 0 shape -
+
+sel5  (1 label)
+    local   at (153.67, 116.84) rot 0 shape -
+
+sel6  (1 label)
+    local   at (184.15, 119.38) rot 0 shape -
+
+sel7  (1 label)
+    local   at (184.15, 124.46) rot 0 shape -
+
+sel8  (1 label)
+    local   at (153.67, 127.0) rot 0 shape -
+
+sel9  (1 label)
+    local   at (123.19, 129.54) rot 0 shape -
+
+sel_common  (1 label)
+    local   at (38.1, 115.57) rot 0 shape -
+
+tap_0r1h  (1 label)
+    local   at (95.25, 151.13) rot 0 shape -
+
+tap_0r22h  (1 label)
+    local   at (140.97, 151.13) rot 0 shape -
+
+tap_0r45h  (1 label)
+    local   at (186.69, 151.13) rot 0 shape -
+
+tap_1h  (1 label)
+    local   at (171.45, 91.44) rot 0 shape -
+
+tap_2h  (1 label)
+    local   at (125.73, 91.44) rot 0 shape -
+

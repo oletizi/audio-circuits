@@ -51,8 +51,66 @@ export const TEMPLATE_IDS = [
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
-/** UPPER_SNAKE, may start with a digit (3V3_D), never contains "/". */
-export const NET_NAME = /^[A-Z0-9][A-Z0-9_]*$/;
+/**
+ * WHAT A NET NAME MAY BE. **The CASE half is gone by the owner's decision, 2026-10-23**, and this
+ * is the whole of what replaced it.
+ *
+ * It was `/^[A-Z0-9][A-Z0-9_]*$/` - UPPER_SNAKE - until Task 3 of the net-names-and-floating-pins
+ * plan. The owner, verbatim: *"i absolutely do not care about the letter case of net names. That's
+ * a silly quibble."* `docs/known-gaps.md` **G150** carries the decision and what it unblocked; it
+ * also records that the one regex refused two different things with one message, of which the case
+ * half was the silly one.
+ *
+ * **WHAT REPLACED IT: non-empty, and no control character.** Both halves have a reason and
+ * neither is a convention.
+ *
+ * **NON-EMPTY**, because `lib/model/types.ts`'s own `net()` refuses an empty name
+ * (*"net name must not be empty"*). A rule here that accepted `""` would be weaker than the
+ * contract it guards, which is the defect the change removing the case demand was most likely to
+ * introduce.
+ *
+ * **NO CONTROL CHARACTER - AND THE REASON IS NOT THAT KICAD REJECTS ONE.** `[RAN]`
+ * `tools/schgen/label-syntax/probe-run.log`, `kicad-cli` 10.0.5, six control arms through a real
+ * global label:
+ *
+ * | arm | `kicad-cli sch export netlist` | the name that came back |
+ * | --- | --- | --- |
+ * | tab (`\u0009`) | exit 0, parsed | the tab, **verbatim** |
+ * | newline (`\u000a`) | exit 3, nothing produced | - |
+ * | carriage return (`\u000d`) | **exit 0, label drawn** | **`RAWCR` - a DIFFERENT net name** |
+ * | NUL (`\u0000`) | **exit 0, label drawn** | **`RAW` - truncated** |
+ *
+ * So *"a control character breaks a net name"* is **false**: a tab is accepted verbatim and only
+ * the newline is refused. **The hazard is the opposite of rejection - two of them SUCCEED and
+ * RENAME the net**: exit 0, a drawn label, and a net name in the exported netlist that is not the
+ * one the sheet carried. A check asking only whether `kicad-cli` succeeded would pass both, which
+ * is this repository's cardinal failure mode landing in the one place a net name becomes a label.
+ * That silent rename is why this is refused rather than defaulted.
+ *
+ * **The class is EXACTLY the one `str()` refuses** (`lib/schgen/render/sexpr-write.ts:31`,
+ * `[\u0000-\u001f]`), deliberately: the writer and this rule then draw the same line, so a net
+ * name that passes here cannot fail at emit for a reason this rule did not state. **DEL
+ * (`\u007f`) and the C1 range are in NEITHER class and were never measured** -
+ * `docs/known-gaps.md` **G280**.
+ *
+ * **PUNCTUATION IS NOT REFUSED, and that is measured rather than conceded.** Same run:
+ * `Net-(C10-Pad1)` and `unconnected-(U1-CLK_O-Pad5)` parse, round-trip byte-identical and render,
+ * and `lib/kicad/sexpr.ts`'s `quoteString` escapes nothing for either - it escapes only `\` and
+ * `"`, both of which were measured too and both of which round-trip.
+ *
+ * **TWO PRODUCTION CALLERS, and they are not interchangeable.**
+ * `lib/schgen/ir/validate.ts`'s `netNames` rule applies it to every net of the IR at gate 1,
+ * before any geometry, and reports WHICH net with the reason above spelled out - that is the
+ * guard. `lib/schgen/gates/pin-table.ts`'s `mechanical()` applies it to a pin table's
+ * `mechanicalPads` net as the type-plus-format check that gate has always made - a **BACKSTOP on a
+ * different input**, whose message is lumped across five failure modes and names no reason.
+ *
+ * **ROUND 0 OF TASK 3 DELETED THE RULE AND LEFT ONLY THE GATE**, which put the only application of
+ * this constant on an input that never becomes a label and moved the real refusal to emit time in
+ * `str()`. The coordinator reversed it: *"The owner removed the CASING demand, not all net-name
+ * validation."* `validate.ts`'s own comment carries that history; **do not delete the rule again.**
+ */
+export const NET_NAME = /^[^\u0000-\u001f]+$/;
 
 /** A pin is on a named net, or explicitly not connected. "NC" is a type, never a net name. */
 export type PinConnection =
@@ -152,6 +210,31 @@ export interface BlockSpec {
   readonly members: readonly BlockMember[];
   readonly checklist: readonly string[];
   readonly rendering: Rendering;
+  /**
+   * The net this block's DRAWING reads from - its left edge under decision D4's left-to-right
+   * flow - or `null` for "nothing states one".
+   *
+   * **IT IS A STATEMENT ABOUT THE PICTURE AND NOT ABOUT THE CIRCUIT, which is the whole reason it
+   * is not `portDirections`.** `docs/known-gaps.md` **G294**: the Pultec section boards declare
+   * `hi_boost_out` and `lo_boost_in` `bidirectional`, and that is CORRECT - `hi_boost_out` is
+   * *"the node between the hi boost pot's output and the lo cut pot's input"* and the mid section
+   * *"hangs off it as a variable-depth shunt"*, so three things meet there and no arrow is true of
+   * it. An agent (this one) proposed overwriting those declarations with `in`/`out` to make the
+   * layout read correctly, which would have put a false electrical claim in the model to buy a
+   * drawing property.
+   *
+   * So the two questions get two fields. `portDirections` answers *which way does this net cross
+   * the boundary, electrically* and is `bidirectional` when nothing does. This answers *which side
+   * of the page does this block's drawing start from*, which a human may state about a picture
+   * even where the circuit has no direction.
+   *
+   * **OPTIONAL, AND ITS ABSENCE IS NOT A SILENT DEFAULT.** Omitting it means `null`, which means
+   * *"nothing states one"* - and `tests/schgen/direction-seed.test.ts` counts every block in that
+   * state, prints the figure on every run and refuses a NEW one. That is the difference between
+   * this and the `bidirectional` that caused the bug: `bidirectional` was indistinguishable from a
+   * considered answer, and `null` is both distinguishable and counted.
+   */
+  readonly readsFrom?: NetName | null;
 }
 
 /** Text placed on a sheet, e.g. a layout note. Each line becomes one text item. */
@@ -279,6 +362,8 @@ export interface IrBlock {
   readonly members: readonly IrUnitRef[];
   readonly checklist: readonly string[];
   readonly rendering: Rendering;
+  /** See `BlockSpec.readsFrom`: the net the drawing starts from, or null. */
+  readonly readsFrom: NetName | null;
   readonly order: number;
 }
 

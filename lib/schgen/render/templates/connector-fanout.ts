@@ -22,8 +22,13 @@
  * block, not a statement that the idiom does not apply, so it is a `clearance` mismatch naming the
  * constraint and the two obstacles of rotation 0's first problem - and `selectRenderer` refuses on
  * it rather than letting ELK rescue it, which is `docs/known-gaps.md` **G84**'s whole point.
+ *
+ * **DIVERGED FURTHER BY TASK 3 of `docs/superpowers/plans/2026-10-27-gates-classify.md`:** that
+ * third refusal now carries the rotation-0 layout and `checkLayout`'s own findings on it, so the
+ * drawing survives the refusal and is classified rather than hidden. It is the only template site
+ * in the set that has geometry to hand back.
  */
-import { clearanceViolation, notApplicable, type BlockSubgraph, type RealiseResult, type Template } from "../block-types.ts";
+import { clearanceViolation, notApplicable, type BlockSubgraph, type Drawn, type RealiseResult, type Template } from "../block-types.ts";
 import { fanout, tracePaths } from "../fanout-kit.ts";
 import { ROTATIONS } from "../geometry.ts";
 import { checkLayout } from "../layout-check.ts";
@@ -38,16 +43,35 @@ function realise(g: BlockSubgraph): RealiseResult {
   const traced = tracePaths(g, unit, new Set());
   // A FORWARD of the fan-out primitive's mismatch, which is always `not-applicable`.
   if (!traced.ok) return { ok: false, mismatch: traced.mismatch };
-  const firstProblems: string[] = [];
+  // **THE FIRST FAILING ROTATION'S DRAWING IS KEPT, NOT JUST ITS PROBLEM TEXT** - Task 3 fix round 1
+  // of `docs/superpowers/plans/2026-10-27-gates-classify.md`, and this was a live hole in exactly
+  // the thing that task exists to close. This loop had the geometry AND `checkLayout`'s `Finding[]`
+  // in hand and threw both away, keeping only `.what` strings, so the refusal below carried no
+  // `Drawn` and `render/blocks.ts` hid the picture. **It is NOT like the fourteen forward sites that
+  // legitimately carry nothing**: those are shape and reachability verdicts taken before anything is
+  // drawn, and this one has a complete layout.
+  //
+  // **THE REACHABLE PATH IS A `wired` BLOCK, NOT AN `auto` ONE, and the review that found this hole
+  // said `auto`.** The anchor comes from `r.kind === "wired" ? r.anchor : null` at the top of this
+  // function, so an `auto` block always takes the `not-applicable` arm here and can never reach the
+  // refusal below. What reaches it is a block whose author DECLARED this template, which is what
+  // `tests/schgen/render/templates/connector-fanout.test.ts`'s `EAR` fixture is - and
+  // `selectRenderer` makes a non-`not-applicable` template mismatch FINAL, so that block was
+  // refused with its drawing hidden. Same hole, one declaration away from where it was reported.
+  let firstFail: Drawn | null = null;
   for (const rot of ROTATIONS) {
     const layout = fanout(g, unit, rot, traced.paths);
     const problems = checkLayout(g, layout);
     if (problems.length === 0) return { ok: true, layout };
-    if (firstProblems.length === 0) firstProblems.push(...problems);
+    if (firstFail === null) firstFail = { layout, findings: problems };
   }
+  const firstProblems = (firstFail?.findings ?? []).map((p) => p.what);
   const reason = `connector-fanout found no rotation without collisions (rotation 0: ${firstProblems.join("; ")})`;
   const first = firstProblems[0];
-  if (first === undefined) {
+  // Both conditions are the same disagreement and neither is reachable: `firstFail` is set on every
+  // iteration that records a problem, and it is only set when `problems.length > 0`. They are tested
+  // together rather than asserted away, because the alternative is a non-null assertion.
+  if (first === undefined || firstFail === null) {
     throw new Error(
       `block ${g.block.id}: connector-fanout rejected every rotation but checkLayout reported no problem for ` +
         "rotation 0. The loop only records problems when there are some, so the two disagree: this is a defect " +
@@ -66,7 +90,7 @@ function realise(g: BlockSubgraph): RealiseResult {
         `defaulted because the pair is what makes a clearance refusal actionable. The full refusal was: ${reason}`,
     );
   }
-  return clearanceViolation(g.block.id, pair.constraint, pair.obstacles, reason);
+  return clearanceViolation(g.block.id, pair.constraint, pair.obstacles, reason, firstFail);
 }
 
 export const connectorFanout: Template = { id: "connector-fanout", realise };

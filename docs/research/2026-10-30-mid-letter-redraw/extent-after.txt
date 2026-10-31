@@ -1,0 +1,26 @@
+sheet   /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/after/pultec-mid.kicad_sch
+paper   USLetter
+
+BODY      x   15.240 ..  264.160  =  248.920 mm wide
+          y   15.240 ..  168.910  =  153.670 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          379 points
+          frame 11.980,11.980 .. 267.377,171.831 (255.397 x 159.851 mm usable)
+          slack  W   +3.260  E   +3.217  N   +3.260  S   +2.921 mm
+          FITS INSIDE FRAME: YES
+
+PLACED    x   15.240 ..  264.160  =  248.920 mm wide
+          y   15.240 ..  168.910  =  153.670 mm tall
+          westmost : rect
+          eastmost : rect
+          northmost: rect
+          southmost: rect
+          887 points
+          frame 11.980,11.980 .. 267.377,171.831 (255.397 x 159.851 mm usable)
+          slack  W   +3.260  E   +3.217  N   +3.260  S   +2.921 mm
+          FITS INSIDE FRAME: YES
+
+CONTROL  body width 248.920 -> 273.920 with one point 25 mm east: MOVED

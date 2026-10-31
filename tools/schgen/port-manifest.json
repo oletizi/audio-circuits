@@ -37,10 +37,6 @@
       "to": "lib/schgen/lock/version-lock.ts"
     },
     {
-      "from": "render/connectivity.ts",
-      "to": "lib/schgen/render/connectivity.ts"
-    },
-    {
       "from": "render/drawnText.ts",
       "to": "lib/schgen/render/drawn-text.ts"
     },
@@ -98,7 +94,17 @@
     },
     {
       "from": "ir/author.test.ts",
-      "to": "tests/schgen/ir/author.test.ts"
+      "to": "tests/schgen/ir/author.test.ts",
+      "cuts": [
+        {
+          "text": "describe(\"NET_NAME\", () => {\n  it(\"accepts UPPER_SNAKE names, including ones that start with a digit\", () => {\n    for (const n of [\"VIN_PROT\", \"3V3_D\", \"5V_A\", \"SDRAM_A12\", \"GND\"]) expect(NET_NAME.test(n)).toBe(true);\n  });\n\n  it(\"rejects lower case, slashes, leading underscores and empty names\", () => {\n    for (const n of [\"vin\", \"/core/X\", \"_X\", \"\", \"A-B\", \"A B\"]) expect(NET_NAME.test(n)).toBe(false);\n  });\n});\n\n",
+          "occurrences": 1
+        },
+        {
+          "text": "NET_NAME, ",
+          "occurrences": 1
+        }
+      ]
     },
     {
       "from": "ir/order.test.ts",
@@ -153,20 +159,8 @@
       "to": "lib/schgen/render/symbol-self-text.ts"
     },
     {
-      "from": "render/connectivity.test.ts",
-      "to": "tests/schgen/render/connectivity.test.ts"
-    },
-    {
       "from": "render/wireSafety.test.ts",
       "to": "tests/schgen/render/wire-safety.test.ts"
-    },
-    {
-      "from": "render/pageRefs.ts",
-      "to": "lib/schgen/render/page-refs.ts"
-    },
-    {
-      "from": "render/emit.ts",
-      "to": "lib/schgen/render/emit.ts"
     },
     {
       "from": "render/ercExclusions.ts",
@@ -245,25 +239,9 @@
       "to": "tests/schgen/render/templates/connector-fanout.test.ts"
     },
     {
-      "from": "render/bodyClearance.test.ts",
-      "to": "tests/schgen/render/body-clearance.test.ts"
-    },
-    {
       "from": "kicad/libtable.ts",
       "to": "lib/kicad/libtable.ts",
       "root": "pedals-tools"
-    },
-    {
-      "from": "render/sheetCheck.ts",
-      "to": "lib/schgen/render/sheet-check.ts"
-    },
-    {
-      "from": "render/glyphClearance.test.ts",
-      "to": "tests/schgen/render/glyph-clearance.test.ts"
-    },
-    {
-      "from": "render/glyphGlyphClearance.test.ts",
-      "to": "tests/schgen/render/glyph-glyph-clearance.test.ts"
     },
     {
       "from": "report.test.ts",
@@ -321,7 +299,13 @@
     },
     {
       "from": "gates/pintable.test.ts",
-      "to": "tests/schgen/gates/pin-table.test.ts"
+      "to": "tests/schgen/gates/pin-table.test.ts",
+      "cuts": [
+        {
+          "text": "    [\"mechanical net not UPPER_SNAKE\", (t) => { t.mechanicalPads = { \"9\": { net: \"gnd\" } }; }, /pin table X: mechanicalPads.9 must be/],\n",
+          "occurrences": 1
+        }
+      ]
     },
     {
       "from": "gates/pinIdentity.test.ts",
@@ -351,6 +335,13 @@
     }
   ],
   "diverged": [
+    {
+      "from": "render/emit.ts",
+      "to": "lib/schgen/render/emit.ts",
+      "sourceSha": "4e600c1fa54d78bbfa3ecbcdc80dce4bed6085a918e5f7b06b0be99ce53c1d70",
+      "task": "Task 5 of docs/superpowers/plans/2026-10-27-gates-classify.md",
+      "why": "THE TWO MARKS AN UNRATIFIED DRAWING CARRIES. `EmitContext` gains a required `status: RefusalClass`, and a sheet emitted under any class but `usable` carries a watermark (graphic `text` items from the new hand-written `lib/schgen/render/unratified-mark.ts`, placed against `PAPER[d.sheet.paper]`) and a title-block comment at slot 1. The caller's comment budget therefore drops from 9 to 8 - `MAX_AUTHOR_COMMENTS` - because the reserved slot is taken whatever the class, since a warning field that exists only when there is room for it is not a field a reader can rely on. `emitRoot` is marked too: it is the file a person opens first. The owner's directive is the authority (docs/known-gaps.md G303): *\"A watermark over the drawing that declares the drawing defective is a critical safety signal to NOT USE the drawing at the bench. As such, an unusable schematic doesn't need to be easy to read - it just needs to be possible to read\"*. A `cuts` entry cannot express this: it adds a parameter, a helper, two imports and two emission sites. THE PEDALS SOURCE HAS NO CONCEPT OF A REFUSAL CLASS, so there is nothing upstream to re-derive from - the divergence will not converge."
+    },
     {
       "from": "gates/connectivity.ts",
       "to": "lib/schgen/gates/connectivity.ts",
@@ -391,7 +382,7 @@
       "to": "tests/schgen/render/pin-marks.test.ts",
       "sourceSha": "d81d28b08812fd4e7a7f1a23450c8a74c48854d3070370745615f739097976d9",
       "task": "Task 6b round 2",
-      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168."
+      "why": "D3, and the review found it recoverable after round 1 declared it dead. The LABELS constant and `realiseLabelled` are pure SCAFFOLDING here - the file's subject is `pinMarks`, `pinMarkBox` and `dnpCross`, and the labels block only supplies it a second `BlockLayout`. `{ kind: \"bus\", groups: [] }` and `realiseBus(...).layout` serve that identically for a one-unit block, and every assertion - including `dnpCross`'s exact box - is unchanged. It is the ONLY test in this repository that executes `pinMarks`' mark construction or `dnpCross` at all: no fixture and no circuit here declares `dnp: true`, so without it both are dead code and G130's measured entry rests on nothing. See docs/known-gaps.md G168. ADDED TO BY Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md (source unchanged, same sourceSha): `textProblems` now returns `readonly Finding[]` rather than `string[]`, so the two `toContain`/`not.toContain` assertions against it now map the result to `.what` first; no assertion's meaning changed."
     },
     {
       "from": "render/stockFields.kicad.test.ts",
@@ -600,8 +591,8 @@
       "from": "ir/types.ts",
       "to": "lib/schgen/ir/types.ts",
       "sourceSha": "ceaffd378c80b54202a65f2c635a23599ea9c5d21b7bc5a9ee78d9cb8e9aad04",
-      "task": "Task 8",
-      "why": "Plan decision D3: `Rendering` loses `{ kind: \"labels\"; reason }` and gains `{ kind: \"auto\" }`. The pedals source has `labels` and keeps it, so no rewrite rule reconciles the two. The MCU `cuts` this entry carried in files[] (G112: PinmapInput, CircuitSpec.mcu, Circuit.mcu, the \"pinmap\" pin origin) were applied before it diverged and the file on disk is that cut form; they are no longer declared anywhere but the git history of this manifest."
+      "task": "Task 8 and Task 3",
+      "why": "Plan decision D3: `Rendering` loses `{ kind: \"labels\"; reason }` and gains `{ kind: \"auto\" }`. The pedals source has `labels` and keeps it, so no rewrite rule reconciles the two. The MCU `cuts` this entry carried in files[] (G112: PinmapInput, CircuitSpec.mcu, Circuit.mcu, the \"pinmap\" pin origin) were applied before it diverged and the file on disk is that cut form; they are no longer declared anywhere but the git history of this manifest. TASK 3 (net-names-and-floating-pins plan) REDEFINES `NET_NAME`. It was the pedals source's `/^[A-Z0-9][A-Z0-9_]*$/` and is now `/^[^\\u0000-\\u001f]+$/` - non-empty, no control character. The owner ruled the case demand out: \"i absolutely do not care about the letter case of net names. That's a silly quibble.\" THE REPLACEMENT IS NOT A WIDENING NOBODY CHOSE, and the constant's own comment carries both reasons: non-empty because lib/model/types.ts:45's `net()` refuses an empty name, so a looser rule here would be weaker than the contract it guards; and no control character because `kicad-cli` 10.0.5 accepts a carriage return and a NUL at exit 0, DRAWS the label, and returns a DIFFERENT net name (`RAWCR`, and `RAW` truncated) - measured in tools/schgen/label-syntax/probe-run.log. The class is exactly the one `str()` refuses in render/sexpr-write.ts, so the writer and the rule draw the same line. docs/known-gaps.md G150, G277 and G280."
     },
     {
       "from": "ir/classify.ts",
@@ -642,8 +633,8 @@
       "from": "ir/validate.test.ts",
       "to": "tests/schgen/ir/validate.test.ts",
       "sourceSha": "1c2db45219f2b76be3d8fbda0de06310bfd262d0e5cd3d7d536f9faa563b9e3a",
-      "task": "Task 8; diverged further by Task 20",
-      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the removal of that rule from ir/validate.ts is part of that file's own Task 20 divergence entry in this array, and was a declared `cuts` entry in files[] until then). Its MCU `cuts` (G112) were applied before divergence. TASK 20: `validateCircuit` no longer runs `bomFields` (the owner's ruling, in that entry), so the two V10 cases call the new `validateSourcing` instead - every expected problem string verbatim, as ruling R4 requires. The exemption case gained a CONTROL in the same edit: it asserted only that an exempt TP part is NOT refused, which under either composition can pass without the rule running at all, so it now also asserts that the same empty field on a non-exempt part IS refused by name. docs/known-gaps.md G245."
+      "task": "Task 8; diverged further by Task 20 and Task 3",
+      "why": "D3: the shared `LABELS` rendering is `{ kind: \"bus\", groups: [] }`, and the V6 test \"requires a reason for label rendering\" is DELETED with the rule it tested (supersede means delete; the removal of that rule from ir/validate.ts is part of that file's own Task 20 divergence entry in this array, and was a declared `cuts` entry in files[] until then). Its MCU `cuts` (G112) were applied before divergence. TASK 20: `validateCircuit` no longer runs `bomFields` (the owner's ruling, in that entry), so the two V10 cases call the new `validateSourcing` instead - every expected problem string verbatim, as ruling R4 requires. The exemption case gained a CONTROL in the same edit: it asserted only that an exempt TP part is NOT refused, which under either composition can pass without the rule running at all, so it now also asserts that the same empty field on a non-exempt part IS refused by name. docs/known-gaps.md G245. TASK 3: the V1 case \"rejects a net that is not UPPER_SNAKE\" is DELETED with the DEMAND it tested (supersede means delete, as Task 8 did for V6 and Task 20 for the V10 composition), and a comment in its place carries the deleted source, the owner's words and where the surviving predicate is tested. The RULE is not deleted - it is narrowed, and tests/schgen/ir/net-name.test.ts drives it; V1 went because it asserted the casing message, not because net names stopped being validated. NOTHING ELSE IN THIS FILE MOVED - deleting a test that asserts a deliberately removed demand is correct, and loosening any other assertion in the same diff would not be. docs/known-gaps.md G150."
     },
     {
       "from": "render/drawnText.test.ts",
@@ -719,8 +710,8 @@
       "from": "ir/validate.ts",
       "to": "lib/schgen/ir/validate.ts",
       "sourceSha": "b9e10e418655e63622e80815612d8cfdd8425616c1cfa7b301b00e465d955672",
-      "task": "Task 20",
-      "why": "THE BOM GATE IS A PROPERTY OF THE CONSUMER OF AN ARTIFACT, NOT OF THE CIRCUIT, and that is the owner's ruling. He asked \"why does a schematic need bom-level specificity?\" and then ruled: \"the gate you describe *is* important for pcb layout intended for outsourced manufacture-but a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht pcbs.\" The pedals source runs twelve rules in one `RULES` list, so `bomFields` - Manufacturer, MPN, Supplier and SupplierPart non-empty on every part whose refPrefix is not TP/H/FID - gated the emission of a DRAWING. This file now splits that list: `DRAWING_RULES` (eleven rules) is what `validateCircuit` runs and therefore what `tools/schgen/generate.ts` gates on, and `SOURCING_RULES` ([bomFields]) is what the new `validateSourcing` runs for a consumer that has to source and place the parts. THE RULE ITSELF IS UNTOUCHED: `ir/validateParts.ts` is still byte-checked in files[], the four keys and `BOM_EXEMPT_PREFIXES` are unchanged, and no flag, mode or widened exemption relaxes it in place. A `cuts` entry cannot express this: a cut is deletion-only, and deleting `bomFields` from the list would leave nothing naming the consumer it still binds for, which is the half of the ruling that has to survive. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger) and keeps only the sourceSha watch on the upstream end. IT ALSO SUBSUMES THE `cuts` ENTRY THIS FILE CARRIED IN files[]: plan decision D3 deletes the `labels` rendering, so the line `if (r.kind === \"labels\" && r.reason.trim() === \"\") ...` is absent here, as it was before - that deletion is now part of the divergence rather than a declared cut, and the `ir/validate.test.ts` entry in this array points here for it. WHAT IT UNBLOCKS, measured: docs/known-gaps.md G238 recorded `transistor-preamp` refusing at gate 1 on 101 problems of which 100 were empty purchasing fields; G245 records this change, what each parity circuit validates at now, and that `validateSourcing` has no production caller yet."
+      "task": "Task 20 and Task 3",
+      "why": "THE BOM GATE IS A PROPERTY OF THE CONSUMER OF AN ARTIFACT, NOT OF THE CIRCUIT, and that is the owner's ruling. He asked \"why does a schematic need bom-level specificity?\" and then ruled: \"the gate you describe *is* important for pcb layout intended for outsourced manufacture-but a fully specified BOM isn't needed for schematics, stripboard layout, and, in many cases, tht pcbs.\" The pedals source runs twelve rules in one `RULES` list, so `bomFields` - Manufacturer, MPN, Supplier and SupplierPart non-empty on every part whose refPrefix is not TP/H/FID - gated the emission of a DRAWING. This file now splits that list: `DRAWING_RULES` (eleven rules) is what `validateCircuit` runs and therefore what `tools/schgen/generate.ts` gates on, and `SOURCING_RULES` ([bomFields]) is what the new `validateSourcing` runs for a consumer that has to source and place the parts. THE RULE ITSELF IS UNTOUCHED: `ir/validateParts.ts` is still byte-checked in files[], the four keys and `BOM_EXEMPT_PREFIXES` are unchanged, and no flag, mode or widened exemption relaxes it in place. A `cuts` entry cannot express this: a cut is deletion-only, and deleting `bomFields` from the list would leave nothing naming the consumer it still binds for, which is the half of the ruling that has to survive. WHAT THE DIVERGENCE COSTS, recorded rather than paid silently: this file loses its byte-check against the pedals source for good (docs/known-gaps.md G139's loss, one file larger) and keeps only the sourceSha watch on the upstream end. IT ALSO SUBSUMES THE `cuts` ENTRY THIS FILE CARRIED IN files[]: plan decision D3 deletes the `labels` rendering, so the line `if (r.kind === \"labels\" && r.reason.trim() === \"\") ...` is absent here, as it was before - that deletion is now part of the divergence rather than a declared cut, and the `ir/validate.test.ts` entry in this array points here for it. WHAT IT UNBLOCKS, measured: docs/known-gaps.md G238 recorded `transistor-preamp` refusing at gate 1 on 101 problems of which 100 were empty purchasing fields; G245 records this change, what each parity circuit validates at now, and that `validateSourcing` has no production caller yet. TASK 3 (net-names-and-floating-pins plan) NARROWS THE `netNames` RULE. The owner's decision, verbatim: \"i absolutely do not care about the letter case of net names. That's a silly quibble.\" The pedals source refuses anything but UPPER_SNAKE and states no reason for it; docs/known-gaps.md G150 records that there was none to state. The rule here applies the redefined `NET_NAME` (non-empty, no control character) and reports WHICH net with the measured reason - two control characters are accepted by kicad-cli 10.0.5 at exit 0, DRAW the label, and come back from the netlist as a DIFFERENT net name, which no exit code reports. ROUND 0 OF THAT TASK DELETED THE RULE OUTRIGHT, on the brief's instruction, and the coordinator reversed it: \"The owner removed the CASING demand, not all net-name validation.\" For one round nothing validated an IR net name, so the control-character refusal sat in render/sexpr-write.ts's `str()` - a refusal at EMIT time, against a sheet rather than a circuit. The rule's own comment carries that history so the deletion is not repeated. `DRAWING_RULES` is eleven rules (the twelve ported ones less `bomFields`). A cut cannot express a changed predicate and a changed message, and the pedals source will always carry the casing form, so no rewrite rule reconciles the two. docs/known-gaps.md G150, G277 and G280. MECHANICAL-PINS EXEMPTION, 2026-10-24: `pinsDeclared` no longer demands an electrical disposition for a library pin declared MECHANICAL in `./mechanical-pins.ts`, and it gained a second refusal for a STALE table entry naming a pin the symbol does not have. The owner asked what the demand was for - \"why do you need to know which rotary switch is fitted?\", then \"why do you need the specific part number of a component in a schematic?\", then \"why do you need to specify a mechanical part in the schematic?\" - and all three answers are no: a schematic's NC asserts that no conductor in the circuit reaches the terminal, which the fitted part cannot contradict, and KiCad's library has no single-pole rotary symbol WITHOUT a mount pin, so the pin is forced by the library rather than chosen by the design. This is a CHANGED PREDICATE plus a NEW REFUSAL in a rule the pedals source will always carry in its original form, so no cut or rewrite rule reconciles the two, exactly as for the net-name narrowing above. The measured effect: the four Pultec MP boards cleared validateCircuit and now refuse at ELK layout - three on the G260/G265 text-placement class and pultec-low-boost on a MISSING JUNCTION, which is a different sub-class and was not predicted, gate-1 problems went 5 to 1, and the five pultec boards stayed at make check exit 0 with their .vrt artifacts byte-identical. docs/known-gaps.md G282 (struck owner question) and G290 (why the classification is a whitelist and not inferred from symbol geometry); docs/superpowers/specs/2026-10-24-mechanical-pins-design.md."
     },
     {
       "from": "render/sheetTypes.ts",
@@ -735,6 +726,55 @@
       "sourceSha": "9e540ba867a6cf8619e39674526bbbb3ed6a1a19e02f869fba414897b42cea0c",
       "task": "Task 24",
       "why": "`textClearanceProblems` no longer early-returns the field-placement refusal, because `render/field-placement.ts` no longer produces one. That early return is how one defect hid another for the whole of G232's life (docs/known-gaps.md G258): building a text scene places fields, so a block whose fields did not place had no scene and every other text-clearance problem it carried went unreported. The full text pass now runs on every block."
+    },
+    {
+      "from": "render/connectivity.ts",
+      "to": "lib/schgen/render/connectivity.ts",
+      "sourceSha": "683f52511532af3ad40c39c2ebab9bd08ff176dad80670668c411b9afa09b631",
+      "task": "the T-junction change of 2026-10-26",
+      "why": "T-JUNCTIONS IN `junctionPoints`, AND THE DIVERGENCE IS AN ADDITION THAT NO `cuts` ENTRY CAN EXPRESS. Counting coincident wire ENDS finds a branch where three or more ends meet; it cannot find the other kind, a wire ENDING part-way along another wire of the same net, because only ONE end sits at that point. KiCad joins a branch point only with a junction object - which this repository MEASURED, and the measurement is in the ported test beside this file: `connectedComponents (KiCad 10 as observed)` asserts \"does not join an unsplit T (KiCad needs a junction there)\" on the identical two wires. So without the addition the emitter omits the one object that makes the connection, and `lib/schgen/elk/adapt.ts` refuses on exactly that disagreement (spec 1.4 obligation 2). SAME NET ONLY: two wires of different nets crossing is not a connection and a junction there would draw a short, which is driven as its own assertion. The gap was always in this function; `docs/known-gaps.md` G293 records what walked into it - a CHAIN's routes meet end to end, so no T existed until `edgesForNet` became a STAR and routes began landing part-way along their neighbours. Nothing else in the file changes: the >= 3 count, `onSegment`, `strictlyInside`, `connectedComponents` and the sort order are untouched, and the function still returns points in the same (y, x) order. COST: this is now one of the files a later port has to re-apply by hand, and the sibling repository is read-only from here, so the addition cannot go upstream instead. docs/known-gaps.md G296."
+    },
+    {
+      "from": "render/connectivity.test.ts",
+      "to": "tests/schgen/render/connectivity.test.ts",
+      "sourceSha": "5d43f33f3bcf5924309f06f51c3b65fd306c4d428c631c374fcf6a15afbf7c07",
+      "task": "the T-junction change of 2026-10-26",
+      "why": "The demand half of the divergence above, and it is a CHANGED DEMAND rather than a moved measurement. One assertion in `junctionPoints (cosmetic)` required `[]` for the unsplit T - the same geometry the `connectedComponents (KiCad 10 as observed)` describe in this same file calls \"does not join an unsplit T (KiCad needs a junction there)\". The two assertions contradicted each other and the connectivity one is the measured one, so the junction assertion changes to `[{ x: 2540, y: 0 }]` and the describe is renamed to say that junctionPoints is cosmetic for a TEMPLATE and not for an ELK route. TWO ASSERTIONS ARE ADDED, both controls: a CORNER still takes no junction (both ends terminate, so neither is strictly inside the other), and a T of two DIFFERENT nets takes none. No other assertion in the file changes and every other test is verbatim. docs/known-gaps.md G296."
+    },
+    {
+      "from": "render/sheetCheck.ts",
+      "to": "lib/schgen/render/sheet-check.ts",
+      "sourceSha": "d1a5e265762667101f1d47e2cc39c8cad99beb914cc724f997958005a6cf2e98",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
+      "why": "`assertSheetSafe` wraps the string arrays `checkWireSafety`, `danglingWireEnds`, `bodyOverlaps`, `clearance`, `bodyGlyphProblems` and `glyphGlyphProblems` return into `Finding[]` (kind `\"short\"`, `\"dangling-end\"`, `\"body-clearance\"` x2, `\"glyph-clearance\"` x2 respectively) and throws `SchgenRefusal(findings, message)` in place of a plain `Error`, with the thrown message text byte-identical. This plan's Task 2 converts every checker it names from `string[]` to `readonly Finding[]` so a later task can classify a refusal without reading a class off a sentence; the owner's existing wire-safety/body-clearance split, already present in this function, is preserved as kinds rather than re-derived. No refusal text changed - proved by a before/after diff of `tools/schgen/board-sheets.ts`'s census output."
+    },
+    {
+      "from": "render/bodyClearance.test.ts",
+      "to": "tests/schgen/render/body-clearance.test.ts",
+      "sourceSha": "478090c4265ed51ef544f4951308e2e3c36be6832471e994d3f22a43c323f42a",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
+      "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]` (see the `render/sheetCheck.ts` entry above for the plan). Three regex assertions that tested an array element `l` directly now test `l.what`; no assertion's meaning changed."
+    },
+    {
+      "from": "render/glyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-clearance.test.ts",
+      "sourceSha": "dc2b00d36d4f97f366ba1a8cb0a8b21e401181f375d71a3379b7495e00bb9d50",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
+      "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]`. Two assertions that compared or searched the array directly now map it to `.what` first; no assertion's meaning changed."
+    },
+    {
+      "from": "render/glyphGlyphClearance.test.ts",
+      "to": "tests/schgen/render/glyph-glyph-clearance.test.ts",
+      "sourceSha": "6d2a2627397c97d5449e271cef7802ccc090951f48717ec6187ec42dd6e07639",
+      "task": "Task 2 of docs/superpowers/plans/2026-10-27-gates-classify.md",
+      "why": "`checkLayout` now returns `readonly Finding[]` rather than `string[]`. The file's local `glyphLines` helper still takes `string[]`, so both call sites map the result to `.what` before filtering; no assertion's meaning changed."
+    },
+    {
+      "from": "render/pageRefs.ts",
+      "to": "lib/schgen/render/page-refs.ts",
+      "sourceSha": "89c29ca26aa14321b8fcd76e79fce11ca43c59e62b2a785b9e8324ff6c86e0bc",
+      "task": "Task 3 (gates-classify)",
+      "why": "Task 3 of docs/superpowers/plans/2026-10-27-gates-classify.md splits the body of `assertRefsMatchDrawings` out into `refsMatchProblems`, which returns the same problem strings instead of throwing them. `tools/schgen/generate.ts` calls the new function and tags each line `reference-disagreement`, so an intersheet-reference disagreement lands on `Generation.findings` and is CLASSIFIED rather than hiding the drawing it is about - the owner's directive that a gate may refuse to ratify an output without hiding it. `assertRefsMatchDrawings` keeps its name, its signature and its thrown message byte for byte and is now that one-line wrapper, so `tests/schgen/render/page-refs.test.ts` and the pedals source's own callers are untouched. Not expressible as a `cuts` entry: extracting a function is new code, not a deletion."
     }
   ],
   "handWritten": [
@@ -750,6 +790,7 @@
     "tools/schgen/symbol-census.ts",
     "tests/schgen/__fixtures__/designs/mini/run.ts",
     "tests/schgen/emit-byte-stable.test.ts",
+    "tests/schgen/fan-geometry.test.ts",
     "lib/schgen/gates/oscar/boundary.ts",
     "lib/schgen/render/stock-symbols.ts",
     "lib/schgen/render/problem-obstacles.ts",
@@ -760,7 +801,15 @@
     "lib/schgen/render/obstacle-pairs-graphic-wire.ts",
     "lib/schgen/render/obstacle-pairs-glyph.ts",
     "lib/schgen/render/obstacle-pairs-text-frame.ts",
+    "lib/schgen/ir/mechanical-pins.ts",
+    "tests/schgen/decomposition-probe.test.ts",
+    "tests/schgen/direction-seed.test.ts",
+    "tests/schgen/sheet-file-collision.test.ts",
     "tests/schgen/ir/auto-not-labelled.test.ts",
+    "tests/schgen/ir/mechanical-pins.test.ts",
+    "tests/schgen/ir/nc-end-to-end.test.ts",
+    "tests/schgen/nc-pins.test.ts",
+    "tests/schgen/ir/net-name.test.ts",
     "tests/schgen/ir/no-pin-map.test.ts",
     "tests/schgen/ir/single-pin-net-guard.test.ts",
     "tests/schgen/port-fidelity.test.ts",
@@ -790,6 +839,7 @@
     "tests/schgen/rules/orientation.test.ts",
     "lib/schgen/gates/round-trip.ts",
     "tests/schgen/gates/round-trip.kicad.test.ts",
+    "tests/schgen/gates/pt2399-nc-round-trip.kicad.test.ts",
     "tools/schgen/gate-census.ts",
     "lib/schgen/elk/options.ts",
     "lib/schgen/elk/serialize.ts",
@@ -817,6 +867,7 @@
     "lib/schgen/elk/sheet-graph.ts",
     "lib/schgen/render/cross-sheet.ts",
     "lib/schgen/render/compose.ts",
+    "lib/schgen/render/fan-geometry.ts",
     "tools/schgen/elk/sheet-layout.ts",
     "tests/schgen/__fixtures__/designs/crosssheet.ts",
     "tests/schgen/render/cross-sheet.kicad.test.ts",
@@ -859,8 +910,9 @@
     "tests/schgen/gates/reference-graph.test.ts",
     "tests/schgen/gates/reference-graph.kicad.test.ts",
     "tests/schgen/gates/graph-match.test.ts",
-    "lib/schgen/render/occupancy.ts",
     "tools/schgen/board-sheets.ts",
+    "tools/schgen/board-geometry.ts",
+    "tools/schgen/junction-probe.ts",
     "tests/schgen/render/field-fallback.test.ts",
     "tools/schgen/board-declarations.ts",
     "tests/schgen/board-declarations.test.ts",
@@ -885,6 +937,18 @@
     "tools/schgen/label-freedom/step3.ts",
     "tests/schgen/label-freedom/fixtures.test.ts",
     "tests/schgen/text-metrics/document-pastes.test.ts",
-    "tests/schgen/text-metrics/pen-call-sites.test.ts"
+    "tests/schgen/text-metrics/pen-call-sites.test.ts",
+    "tools/schgen/label-syntax/fixtures.ts",
+    "tools/schgen/label-syntax/probe.ts",
+    "lib/schgen/findings.ts",
+    "tests/schgen/findings.test.ts",
+    "tests/schgen/gates/geometry-survives.test.ts",
+    "tools/schgen/board-artifacts.ts",
+    "tools/schgen/library-digest.ts",
+    "tests/schgen/board-status.test.ts",
+    "lib/schgen/render/unratified-mark.ts",
+    "tools/schgen/defective-fixture.ts",
+    "tests/schgen/watermark.test.ts",
+    "tests/schgen/hairpins.test.ts"
   ]
 }

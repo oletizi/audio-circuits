@@ -221,17 +221,26 @@ test("G4's fourth condition: a footprint with no recorded span refuses BY NAME t
   // *"Reading every threshold from stripboard/rules.json or from a committed
   // data module and refusing rather than defaulting when one is missing"* - the
   // condition that keeps an admitted verifier from deriving a criterion of its
-  // own. CP_Radial_D10.0mm_P5.00mm is in neither LEAD_SPANS nor UNSOURCED, and
-  // it is the footprint transistor-preamp-staged places that this gate now
-  // refuses on, so the fixture is the live case rather than an invented one.
+  // own.
+  //
+  // **THE FIXTURE WAS `CP_Radial_D10.0mm_P5.00mm` UNTIL 2026-10-30, BECAUSE THAT
+  // WAS THE LIVE CASE: transistor-preamp-staged places it and nothing recorded a
+  // span for it.** Recording one (Panasonic M-A ECA-1VM471, 2 to 11 holes) made
+  // this test pass by making the gate green, which is the right outcome for the
+  // board and the wrong fixture for this test. It now names a footprint that is
+  // REAL - `tests/kicad/footprint-names.test.ts` sweeps every name in this
+  // repository against `Capacitor_THT.pretty` on disk, and this one is in it -
+  // and that no board places, which is the same footprint and the same reasoning
+  // `tests/kicad/lead-span.test.ts` uses for its own unknown-footprint case.
+  const unrecorded = "Capacitor_THT:C_Rect_L13.0mm_W4.0mm_P10.00mm_FKS3_FKP3_MKS4"
   await withVrt(async (vrtPath) => {
     const result = await checkWithFixture(vrtPath, () =>
-      Promise.resolve(inputWithFootprint("Capacitor_THT:CP_Radial_D10.0mm_P5.00mm")),
+      Promise.resolve(inputWithFootprint(unrecorded)),
     )
     expect(result.ok).toBe(false)
     expect(result.report).toContain("NOT GRADED")
     expect(result.report).toContain("no lead span is recorded for footprint")
-    expect(result.report).toContain("Capacitor_THT:CP_Radial_D10.0mm_P5.00mm")
+    expect(result.report).toContain(unrecorded)
     // IT MUST NOT READ AS A VERDICT ABOUT THE LAYOUT. A refusal is the absence
     // of a datum; a NOT HELD is a fact about the board. Both are red, and the
     // wording keeps them distinguishable.

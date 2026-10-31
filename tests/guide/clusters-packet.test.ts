@@ -21,9 +21,27 @@
  * module, so the board is loaded the way `make guide` loads it: the committed
  * `.vrt` through the real pinned veroroute binary and the board's own circuit
  * module, the shape `./junction-pad-rows.test.ts` and `./board-pipeline.ts`
- * use. What is injected is only what would touch the operator's disk or need a
- * browser: the filesystem (`./memory-fs.ts`) and the PDF print. `guide/` on a
- * real board is never written by a test.
+ * use. `guide/` on a real board is never written by a test.
+ *
+ * **THIS BOARD NOW DECLARES AN `"sch"`, AND THAT CHANGED THIS FILE'S PREMISE.**
+ * Until `boards/pultec-low-boost/perfboard.json` named the approved page in
+ * `drafted/pultec/pultec-low-boost/`, it declared none, and the paragraph that
+ * stood here said so: `resolveSchematic` offered the board to a REAL `schgen`
+ * generation against `REPO_ROOT`, that generation resolved `"withheld"`, and
+ * `exportSchematicPdf` below THREW so that a stray export would be loud. It
+ * also predicted the transition that has now happened - *"the day the
+ * arrangement work drives that count to zero the board resolves `"generated"`
+ * instead"* - and the prediction was right about the mechanism and wrong about
+ * which arm would fire: the board got a DECLARED page rather than a ratified
+ * generated one, so `resolveSchematic` returns `"printed"` on its first branch
+ * and never reaches `schgen` at all.
+ *
+ * **SO THE OVERRIDE RECORDS INSTEAD OF THROWING, AND IT IS STILL THE SAME
+ * GUARD.** An export is no longer stray - it is what a declared board is for -
+ * so the test asserts it happened EXACTLY ONCE and for the declared sheet,
+ * which is a stronger claim than the throw ever made and keeps the real
+ * `kicad-cli` out of this harness's `/fake/kicad-cli` path. A silent stub is
+ * what this file has always refused, and recording with an assertion is not one.
  */
 import { test, expect } from "bun:test"
 import path from "node:path"
@@ -31,8 +49,9 @@ import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { loadBoardCircuit } from "../../tools/guide/circuit.ts"
 import {
-  writeGuidePacket, packetFiles, CLUSTERS_SVG, GUIDE_HTML, type GuideDeps,
+  writeGuidePacket, packetFiles, CLUSTERS_SVG, GUIDE_HTML, SCHEMATIC_PDF, type GuideDeps,
 } from "../../tools/guide/packet.ts"
+import { fakePdfTools } from "./fake-pdf-tools.ts"
 import { memoryFs } from "./memory-fs.ts"
 
 const REPO_ROOT = moduleRepoRoot()
@@ -43,23 +62,37 @@ const GUIDE_DIR = path.join(DECLARATION.dir, "guide")
 interface Packet {
   readonly files: Map<string, string>
   readonly report: string
+  /** Every `exportSchematicPdf` call, as `[schPath, pdfPath]`. */
+  readonly exports: readonly (readonly [string, string])[]
 }
 
 /**
  * Run the real packet writer on the real board, through an in-memory
  * filesystem.
  *
- * `exportSchematicPdf` throws rather than recording: this board declares no
- * `"sch"`, so a call here would mean the test is no longer about the board it
- * says it is, and a silent stub would hide that.
+ * `exportSchematicPdf` RECORDS, and every caller below asserts what it
+ * recorded - see this file's module comment for why it no longer throws. It
+ * writes through `fs` rather than to disk for the reason `printGuidePdf` does:
+ * the staging directory this packet is assembled in exists only in the memory
+ * filesystem, and an export that wrote anywhere else would leave the packet a
+ * file short.
  */
 async function writePacket(): Promise<Packet> {
   const { fs, files } = memoryFs()
+  const exports: (readonly [string, string])[] = []
+  // THE MERGE AND THE PAGE-SIZE READ ARE FAKED for the reason the export and
+  // the print are: there is no file on disk here for the real qpdf to read.
+  // What the real merge guarantees is tests/guide/merge-pdf.test.ts's subject.
+  const pdfTools = fakePdfTools((file, text) => fs.writeText(file, text))
   const deps: GuideDeps = {
     kicadCli: "/fake/kicad-cli",
     htmlToPdf: "/fake/html-to-pdf",
-    exportSchematicPdf: () => {
-      throw new Error(`test: ${BOARD} declares no "sch", so no schematic should be exported`)
+    pdfMerge: "/fake/pdf-merge",
+    mergeSchematicPage: pdfTools.mergeSchematicPage,
+    pdfPageSizes: pdfTools.pdfPageSizes,
+    exportSchematicPdf: (_kicadCli, schPath, pdfPath) => {
+      exports.push([schPath, pdfPath])
+      fs.writeText(pdfPath, "%PDF-fake-schematic")
     },
     printGuidePdf: (_tool, _htmlPath, pdf) => {
       fs.writeText(pdf, "%PDF-fake")
@@ -69,7 +102,7 @@ async function writePacket(): Promise<Packet> {
     repoRoot: REPO_ROOT,
   }
   const report = await writeGuidePacket(DECLARATION, deps)
-  return { files, report }
+  return { files, report, exports }
 }
 
 test("the premise: pultec-low-boost declares stand-in groups, so its packet has a clusters page to deliver", async () => {
@@ -77,18 +110,33 @@ test("the premise: pultec-low-boost declares stand-in groups, so its packet has 
   const scaffold = circuit.scaffold
   if (scaffold === undefined) throw new Error(`test: ${BOARD} declares SCAFFOLD; the guide did not load it`)
   expect(scaffold.groups.length, "a group for each of the other four sections").toBe(4)
-  // THE FILE LIST ITSELF, asserted directly: `packetFiles(_, true)` naming the
+  // THE FILE LIST ITSELF, asserted directly: `packetFiles(true)` naming the
   // image is one of the three delivery lines, and a packet whose written set
   // and whose declared set both lost it would otherwise agree with itself.
-  expect(packetFiles(false, true), "the clusters image is one of the packet's files").toContain(CLUSTERS_SVG)
-  expect(packetFiles(false, false), "and only on a board that has groups").not.toContain(CLUSTERS_SVG)
+  expect(packetFiles(true), "the clusters image is one of the packet's files").toContain(CLUSTERS_SVG)
+  expect(packetFiles(false), "and only on a board that has groups").not.toContain(CLUSTERS_SVG)
 })
 
 test("the packet for a board with stand-in groups holds layout-clusters.svg, hatched", async () => {
-  const { files, report } = await writePacket()
-  expect([...files.keys()].sort(), "the five-file packet plus the clusters image").toEqual(
-    packetFiles(false, true).map((file) => path.join(GUIDE_DIR, file)).sort(),
+  const { files, report, exports } = await writePacket()
+  expect([...files.keys()].sort(), "the packet's files plus the clusters image").toEqual(
+    packetFiles(true).map((file) => path.join(GUIDE_DIR, file)).sort(),
   )
+  // THE EXPORT HAPPENED, ONCE, AND FROM THE DECLARED SHEET - and the exported
+  // page is now merged into guide.pdf rather than published beside it, so the
+  // file list above does NOT name it. This says the page came from the file
+  // `perfboard.json` names and from nothing else, which is the claim the
+  // throwing override used to make in the negative.
+  expect(exports.map(([sch]) => sch), "exactly one export, from the declared sheet").toEqual([
+    DECLARATION.schPath ?? "test: the declaration names no sch",
+  ])
+  // INTO THE STAGING DIRECTORY, not into `guide/` - `tools/guide/packet.ts`
+  // assembles the packet beside the real directory and swaps it in only once
+  // every file exists, so the path the export was handed is the staging one and
+  // the file set above is what it became after the rename.
+  const pdf = exports[0]?.[1] ?? ""
+  expect(path.basename(pdf)).toBe(SCHEMATIC_PDF)
+  expect(path.dirname(pdf).startsWith(path.join(DECLARATION.dir, ".guide-staging-")), pdf).toBe(true)
   const clusters = files.get(path.join(GUIDE_DIR, CLUSTERS_SVG))
   if (clusters === undefined) throw new Error(`the packet wrote no ${CLUSTERS_SVG}`)
   // HATCH PATCHES, not merely a file: an unhatched copy of the designators

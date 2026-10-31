@@ -54,8 +54,25 @@ export function intersheetRefs(c: Circuit): ReadonlyMap<NetName, string> {
 /**
  * The reserved references must be what KiCad will print: for every labelled net, the pages its
  * labels are actually drawn on, and every label of the net carrying that text.
+ *
+ * **`assertRefsMatchDrawings` IS DELETED HERE** - Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md`. It is a GENERATION-level check: it
+ * quantifies over every sheet's labels at once, so it belongs to no single sheet and its findings
+ * go on `Generation.findings` rather than on a `SheetDrawing`.
+ *
+ * `tools/schgen/generate.ts` tags each line `reference-disagreement`, which `findings.ts` classes
+ * `defective`: a label printing `[3]` on a net whose labels are drawn on pages 2 and 3 tells a
+ * reader the net does not reach page 2, which is the drawing being WRONG ABOUT THE CIRCUIT.
+ *
+ * **THE THROWING WRAPPER IS GONE, AND THAT IS FIX ROUND 1's ITEM 3.** Round 1 left
+ * `assertRefsMatchDrawings` in place with `tests/schgen/render/page-refs.test.ts` as its ONLY
+ * caller, so the suite asserted a refusal path production had abandoned and would have stayed
+ * green if the tagging in `generate.ts` were deleted. `CLAUDE.md`'s *supersede means delete*, and
+ * applying it to `assertTextClear` and not to this was the inconsistency that created the
+ * test-only path. That test now asserts this function's exact problem list, which is stronger than
+ * a regex over a thrown message.
  */
-export function assertRefsMatchDrawings(c: Circuit, drawings: readonly SheetDrawing[]): void {
+export function refsMatchProblems(c: Circuit, drawings: readonly SheetDrawing[]): readonly string[] {
   const drawn = new Map<NetName, Set<number>>();
   const printed = new Map<NetName, Set<string>>();
   for (const d of drawings) {
@@ -70,5 +87,5 @@ export function assertRefsMatchDrawings(c: Circuit, drawings: readonly SheetDraw
     const got = [...(printed.get(net) ?? [])];
     if (got.length !== 1 || got[0] !== want) problems.push(`net ${net}: its labels print ${got.join(" / ")} but are drawn on pages ${want}`);
   }
-  if (problems.length > 0) throw new Error(`intersheet references disagree with the drawing:${problems.map((p) => `\n  - ${p}`).join("")}`);
+  return problems;
 }

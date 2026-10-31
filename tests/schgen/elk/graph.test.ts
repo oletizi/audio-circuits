@@ -12,7 +12,7 @@ import { expect, test } from "bun:test"
 import { elkInputOf, boundaryNodeId, pinPortId, unitNodeId } from "../../../lib/schgen/elk/graph.ts"
 import { ELK_SIDE, ELK_SIDES, LAYER_CONSTRAINT_KEY, NODE_SEPARATION, LAYER_SEPARATION, PORT_SIDE_KEY, layerConstraintFor, wholeGridSteps } from "../../../lib/schgen/elk/options.ts"
 import { sideOfPin } from "../../../lib/schgen/rules/pin-sides.ts"
-import { placeBox } from "../../../lib/schgen/render/geometry.ts"
+import { GRID, placeBox } from "../../../lib/schgen/render/geometry.ts"
 import { autoBlock, dividerSubgraph, groundedPinOneBlock, groundOfDegreeSix, inboundAndOutboundBlock } from "./fixtures.ts"
 import { cap, res, symbols } from "../__fixtures__/circuits.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
@@ -89,20 +89,81 @@ test("a pin explicitly not connected gets no port", () => {
   expect(ports.length).toBe(wired.length)
 })
 
-test("each boundary net is one zero-size node, and an inbound one is pinned to the first layer", () => {
+/**
+ * **THIS TEST ASSERTED `width: 0, height: 0` UNTIL 2026-10-25, AND IT WAS THE DEFECT WRITTEN DOWN
+ * AS A REQUIREMENT.** `docs/known-gaps.md` **G291**: ELK packed the circuit around dimensionless
+ * points, the labels and power symbols were drawn afterwards at their real size, and the clearance
+ * checks then refused the block for text that never had room reserved for it. The old comment here
+ * - *"G101's floor was ENTIRELY netlistsvg's 30x20 `inputExt` glyph; this backend emits none"* -
+ * is true about a PORT GLYPH and was wrong as a reason for zero size: this backend draws no port
+ * glyph, but it does draw a global label or a power symbol at every boundary net, and that is what
+ * the node now reserves.
+ *
+ * **EVERY NUMBER BELOW IS DERIVED FROM THE SYMBOL AND THE TEXT RULES, NOT READ OFF THE OUTPUT.**
+ * All schematic text is 1.27 mm and a character is reserved one `GRID` step (`render/text-boxes.ts`).
+ *
+ * `Pwr:GND`'s body is the polyline x -1.27..1.27 mm, y 0..-2.54 mm, so its glyph at the anchor is
+ * 2540 x 2540 um; a ground sits on a block's BOTTOM edge, and `powerRotation("ground","down")` is
+ * 0, so the glyph hangs below the anchor. Its value text is the net name, `GND`, three characters =
+ * 3810 um. `boundaryBox` unions over both `valueAlong` settings:
+ *   - along: the value runs down the glyph from `maxY + GRID/2` = 3175 to 3175 + 3810 = 6985, one
+ *     half-step either side across -> 2540 x 6985.
+ *   - across: the value is horizontal, centred at `maxY + GRID` = 3810 -> 3810 x 4445.
+ *   - union -> **3810 x 6985**.
+ *
+ * `Pwr:+3V3`'s body is x -0.762..0.762 mm, y 0..2.54 mm (1524 x 2540), a supply sits on the TOP
+ * edge at rotation 0 so the glyph rises above the anchor, and its value is `3V3` - also three
+ * characters. The same two cases mirror vertically and give **3810 x 6985** again. The two rails
+ * coinciding is arithmetic, not a copied number: both texts are 3 characters wide and both glyphs
+ * are narrower than their own text.
+ */
+test("each boundary net is a node SIZED BY WHAT IS DRAWN AT IT, and neither rail is pinned to a layer", () => {
   const { graph } = elkInputOf(dividerSubgraph())
   const supply = (graph.children ?? []).find((c) => c.id === boundaryNodeId("3V3"))
   const ground = (graph.children ?? []).find((c) => c.id === boundaryNodeId("GND"))
   expect(supply).toBeDefined()
   expect(ground).toBeDefined()
-  // G101's floor was ENTIRELY netlistsvg's 30x20 `inputExt` glyph; this backend emits none.
-  expect(supply?.width).toBe(0)
-  expect(supply?.height).toBe(0)
+  // Derived above: the glyph unioned with its value text, over both valueAlong settings.
+  expect(supply?.width).toBe(3 * GRID)
+  expect(supply?.height).toBe(5 * GRID + GRID / 2)
+  expect(ground?.width).toBe(3 * GRID)
+  expect(ground?.height).toBe(5 * GRID + GRID / 2)
+  // A boundary net still has no ports of its own: the node is a reservation, not a symbol.
   expect(supply?.ports ?? []).toEqual([])
   // 3V3 is a declared SUPPLY rail, so negotiablePort puts it on the top edge, which is not a
   // layer under direction=RIGHT - so no layer constraint, which is the honest answer.
   expect(supply?.layoutOptions?.[LAYER_CONSTRAINT_KEY]).toBeUndefined()
   expect(ground?.layoutOptions?.[LAYER_CONSTRAINT_KEY]).toBeUndefined()
+})
+
+/**
+ * **THE CASE THAT GOES RED IF THE SIZE EVER BECOMES A CONSTANT AGAIN** - zero or otherwise. The
+ * two assertions above would survive a `boundaryNodeOf` that returned 3810 x 6985 for everything;
+ * this one cannot, because it asserts a DIFFERENCE that only the drawn geometry produces.
+ *
+ * `inboundAndOutboundBlock` has two LABELLED boundary nets, `IN` (declared `in`, so `negotiablePort`
+ * puts it on the left) and `OUT` (declared `out`, on the right). A global label's extent along its
+ * side is `labelExtent` = `(net.length + 2) * GRID` for the outline's text plus its two arrow ends,
+ * then `GRID/2` of gap and the intersheet references; `blockCircuit`'s `external` nets each get one
+ * peer block, so the references read `[2]` - three characters.
+ *   - `IN`:  (2 + 2) * 1270 + 635 + 3 * 1270 = 5080 + 635 + 3810 = **9525**
+ *   - `OUT`: (3 + 2) * 1270 + 635 + 3 * 1270 = 6350 + 635 + 3810 = **10795**
+ * Across its side a label is one grid step either side of the anchor: **2540** for both. So `OUT`
+ * is wider than `IN` by exactly one GRID step - one character of net name - and nothing but the
+ * real geometry reaching ELK can produce that.
+ */
+test("a labelled boundary node is as wide as its own label, so one more character is one more grid step", () => {
+  const { graph } = elkInputOf(inboundAndOutboundBlock())
+  const inbound = (graph.children ?? []).find((c) => c.id === boundaryNodeId("IN"))
+  const outbound = (graph.children ?? []).find((c) => c.id === boundaryNodeId("OUT"))
+  expect(inbound, "the fixture must produce a non-rail inbound boundary node").toBeDefined()
+  expect(outbound).toBeDefined()
+  expect(inbound?.width).toBe((2 + 2) * GRID + GRID / 2 + 3 * GRID)
+  expect(outbound?.width).toBe((3 + 2) * GRID + GRID / 2 + 3 * GRID)
+  expect(inbound?.height).toBe(2 * GRID)
+  expect(outbound?.height).toBe(2 * GRID)
+  // The difference, stated as a difference: a constant size of any value fails here.
+  expect((outbound?.width ?? 0) - (inbound?.width ?? 0)).toBe(GRID)
 })
 
 test("a non-rail inbound net is pinned to the first layer and an outbound one to the last", () => {

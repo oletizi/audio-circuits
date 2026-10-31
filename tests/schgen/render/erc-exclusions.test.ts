@@ -41,7 +41,7 @@ function fixture(): { c: Circuit; drawings: SheetDrawing[] } {
   return { c, drawings: c.sheets.map((s) => layoutSheet(c, s.id, symbols, "Pwr:PWR_FLAG")) };
 }
 
-const ctxOf = (c: Circuit) => emitContext("fix", c, symbols, new Map(), []);
+const ctxOf = (c: Circuit) => emitContext("fix", c, symbols, new Map(), [], "usable");
 
 const exclusion = (over: Partial<ErcExclusion> = {}): ErcExclusion => ({
   code: "pin_to_pin", severity: "error", pins: ["R_T.2", "R_B.1"], reason: "fixture reason", ownerSignOff: "fixture", ...over,

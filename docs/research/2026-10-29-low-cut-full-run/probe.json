@@ -1,0 +1,8 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/low-cut-run/probe/pultec-low-cut.kicad_sch",
+  "ops": [
+    { "op": "set_component_transform", "designator": "SW1", "rotation": 0, "mirror": "none" }
+  ]
+}

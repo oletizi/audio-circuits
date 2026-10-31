@@ -17,7 +17,8 @@
  */
 import { beforeAll, describe, expect, it } from "bun:test"
 import { SCALE_INVARIANT_UPTO, SCALE_UNSTABLE_FROM } from "../../lib/schgen/readability/baseline.ts"
-import { BLOCK_SIZE, blocksOutside, remeasure, renderRow, type Remeasurement } from "../../tools/schgen/remeasure.ts"
+import { GRID } from "../../lib/schgen/render/geometry.ts"
+import { BLOCK_SIZE, blocksOutside, remeasure, type Remeasurement } from "../../tools/schgen/remeasure.ts"
 import { floorEvidence, orderSweep, renderSweep, sizeCoverage, type OrderSweepRow } from "../../tools/schgen/remeasure-ceiling.ts"
 
 let rows: readonly Remeasurement[]
@@ -29,21 +30,81 @@ beforeAll(async () => {
 }, 600_000)
 
 describe("step 5: the ceiling's shape, and the floor's basis", () => {
-  /** The sweep, pinned: four declaration orders per block, crossings in each. */
+  /**
+   * The sweep, pinned: four declaration orders per block, crossings in each.
+   *
+   * **THREE `[gates refuse]` TAGS CAME OFF ON 2026-10-25 AND NOT ONE CROSSING COUNT MOVED, which
+   * is a measurement in its own right.** Boundary-node sizing (`docs/known-gaps.md` **G291**)
+   * drew `oc-audio`, `tp-leg-emitter-bypass` and `tp-stage` for the first time, so `gatesRefuse` -
+   * which is a property of the UNPERMUTED block's production geometry - is now false for them.
+   * **Every one of the 40 crossing counts in this table was byte-identical through that change**,
+   * although wire length or occupied area moved on TEN of the twelve blocks.
+   *
+   * **THE ORIENTATION RULE MOVED 18 OF THE 40 AND MOVED NO BLOCK ACROSS THE INVARIANT/MOVES
+   * LINE, and the contrast with the paragraph above is the finding** (`docs/known-gaps.md`
+   * **G292**). Node sizing re-packed one graph; turning every non-rail two-terminal passive
+   * through 90 degrees changes its node box AND its two pin ports' sides, which builds a different
+   * graph, and a sweep over DECLARATION orders is exactly the quantity that notices.
+   *
+   * **THE STAR AND THE TWO 180 RULES MOVED 21 OF THE 40, MOVED THREE `[gates refuse]` TAGS ON AND
+   * ONE OFF, AND AGAIN MOVED NO BLOCK ACROSS THE INVARIANT/MOVES LINE** (**G296**). Which moved,
+   * term by term: **all four** on `oc-power`, `oc-sidechain` and `pt-core`; **three of four** on
+   * `ob-buffer` (its declaration order held at 6), on `oc-audio` (its third order held at 6) and
+   * on `tp-stage` (its fourth held at 6); **none at all on any of the six legs**. 4+4+4+3+3+3 = 21.
+   * The tags are the other half: `oc-power`, `oc-audio` and `tp-leg-upper` acquire one
+   * because their production geometry is now refused, and `ob-buffer` loses one because its is
+   * accepted. **`gatesRefuse` is a property of the UNPERMUTED block, so a tag moving is the block
+   * census showing up in this table and not a sweep result.**
+   *
+   * **DECLINING THE JUMPER TURN MOVED ONE TAG OFF AND NOT ONE OF THE 40 COUNTS** (**G297**), which
+   * is the cleanest instance of the distinction the paragraph above draws. `tp-leg-upper`'s
+   * production geometry is accepted again, so its tag comes off; its three sweep counts are
+   * `0, 0, 0` as they have been through every change, because a leg with three placements and no
+   * crossing in any declaration order has nothing for a re-placement to move. **A tag moved and
+   * the sweep did not, on the same row, in the same change.**
+   *
+   * **`oc-power`'s ROW MOVED FOR THE FIRST TIME AND IT IS LOAD-BEARING.** Its unmoved
+   * `1, 3, 2, 2` was the single subject `SCALE_UNSTABLE_FROM` rests on; it now reads
+   * `2, 8, 1, 3`. The constant is unchanged, because what the test below derives from this row is
+   * that the counts DIFFER across orders at 8 placements, and they still do - over a wider spread
+   * (1 to 8 where it was 1 to 3). **The derivation survives; the figures behind it do not.**
+   *
+   * **THE CLASSIFICATION COLUMN IS THE CLAIM AND IT IS UNMOVED ON ALL TWELVE** - six INVARIANT,
+   * six MOVES, same blocks - which is what makes the ceiling below unmoved rather than
+   * coincidentally re-derived at the same number. **The counts themselves are a record**: nothing
+   * here is a crossing budget, and the one that fell a long way (`pt-core` 71 to 54 in declaration
+   * order) is reported beside `tp-stage`'s 6 to 11, not netted against it.
+   *
+   * Each row's FIRST count is declaration order, and the test immediately below ties it per block
+   * to `tools/schgen/remeasure.ts`'s own figure for the unsuffixed block - so no row here can
+   * drift from the per-block table without one of the two going red.
+   */
   it("is these twelve sweep rows", () => {
     expect(renderSweep(sweep)).toEqual([
-      "ob-buffer parts=9 placements=11 orders=4 crossings 7, 7, 4, 8 MOVES [gates refuse]",
-      "oc-power parts=8 placements=8 orders=4 crossings 1, 3, 2, 2 MOVES",
-      "oc-audio parts=12 placements=14 orders=4 crossings 5, 12, 7, 6 MOVES [gates refuse]",
-      "oc-sidechain parts=17 placements=19 orders=4 crossings 7, 14, 9, 19 MOVES [gates refuse]",
-      "pt-core parts=24 placements=24 orders=4 crossings 78, 53, 39, 65 MOVES",
+      "ob-buffer parts=9 placements=11 orders=4 crossings 6, 7, 7, 8 MOVES",
+      "oc-power parts=8 placements=8 orders=4 crossings 2, 8, 1, 3 MOVES [gates refuse]",
+      "oc-audio parts=12 placements=14 orders=4 crossings 9, 11, 6, 8 MOVES [gates refuse]",
+      "oc-sidechain parts=17 placements=19 orders=4 crossings 13, 4, 13, 24 MOVES [gates refuse]",
+      "pt-core parts=24 placements=24 orders=4 crossings 54, 39, 74, 75 MOVES",
       "tp-leg-upper parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-feedback parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-a parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-lower-b parts=3 placements=3 orders=3 crossings 0, 0, 0 INVARIANT",
       "tp-leg-collector parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
-      "tp-leg-emitter-bypass parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT [gates refuse]",
-      "tp-stage parts=16 placements=16 orders=4 crossings 7, 4, 5, 6 MOVES [gates refuse]",
+      "tp-leg-emitter-bypass parts=2 placements=2 orders=2 crossings 0, 0 INVARIANT",
+      "tp-stage parts=16 placements=16 orders=4 crossings 11, 3, 5, 6 MOVES",
+    ])
+    // THE TAG COLUMN, asserted as a column so a tag cannot move behind a count: the three blocks
+    // whose production geometry the gates refuse are exactly the three `tools/schgen/remeasure.ts`
+    // reports at the `backend-output` stage.
+    expect(sweep.filter((r) => r.gatesRefuse).map((r) => r.block)).toEqual([
+      "oc-power", "oc-audio", "oc-sidechain",
+    ])
+    // The classification column, asserted as a column so it cannot move behind the counts.
+    expect(sweep.map((r) => (r.invariant ? "INVARIANT" : "MOVES"))).toEqual([
+      "MOVES", "MOVES", "MOVES", "MOVES", "MOVES",
+      "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT", "INVARIANT",
+      "MOVES",
     ])
   })
 
@@ -64,9 +125,12 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
   /** Ruling R40: per size, with the subject count and how many are geometry the gates refuse. */
   it("covers 2 of the spike's 7 sweep sizes and says the other 5 are unmeasured", () => {
     expect(sizeCoverage(sweep).map((s) => `${s.placements}: ${s.unmeasured ? "unmeasured" : `${s.subjects.length} subject(s), ${s.refusedSubjects} refused`}`)).toEqual([
+      // ZERO REFUSED AT SIZE 3 SINCE `tp-leg-upper` DRAWS AGAIN (**G297**). The subject count is
+      // unmoved at 4 - the four bias legs - because `sizeCoverage` counts SUBJECTS swept, not
+      // blocks accepted, and the sweep has always run on all four.
       "3: 4 subject(s), 0 refused",
       "4: unmeasured",
-      "8: 1 subject(s), 0 refused",
+      "8: 1 subject(s), 1 refused",
       "9: unmeasured",
       "13: unmeasured",
       "17: unmeasured",
@@ -76,47 +140,92 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
 
   /**
    * **THE CEILING's OWN SIZE, NOT THE AGGREGATE - fix round 1, item 3.** The caveat used to say
-   * *"three distinct topologies"*, which is true of sizes 2 and 3 together and conceals that the
-   * ceiling's own size has ONE topology swept over half its permutations. Both figures are
-   * asserted here so the disclosure cannot drift from the measurement.
+   * *"three distinct topologies"*, which is true of sizes 2 and 3 together and concealed the
+   * ceiling's own size. Both figures are asserted here so the disclosure cannot drift from the
+   * measurement.
+   *
+   * **THE THIN SPOT THIS TEST EXISTED TO EXPOSE IS GONE, AND THE CAUSE IS WORTH THE WHOLE
+   * COMMENT.** Until 2026-10-25 the four subjects at the ceiling were ONE topology four times,
+   * *"because the four bias legs draw byte-identically (G185)"*. **They do not any more.**
+   * Boundary-node sizing (`docs/known-gaps.md` **G291**) makes a boundary node as big as the text
+   * drawn at it, and **the four legs differ in exactly that text**:
+   *
+   * | leg | boundary nets | distinct geometry |
+   * | --- | --- | --- |
+   * | `tp-leg-upper` | `VCC` power symbol + `BASE` label | its own |
+   * | `tp-leg-feedback` | `COLLECTOR` label + `BASE` label | its own |
+   * | `tp-leg-lower-a` | `GND` power symbol + `BASE` label | shared with `-lower-b` |
+   * | `tp-leg-lower-b` | `GND` power symbol + `BASE` label | shared with `-lower-a` |
+   *
+   * A `COLLECTOR` label reserves `(9 + 2) * GRID` plus its references where `BASE` reserves
+   * `(4 + 2) * GRID` plus references, so ELK packs `-feedback` differently from the other three;
+   * `VCC` and `GND` are both three characters but their SYMBOL bodies differ, so `-upper` differs
+   * from the two `-lower` legs. **Only the two legs with identical boundary nets stay congruent**,
+   * which is three distinct topologies over four subjects where there was one.
+   *
+   * **THAT IS BETTER SUPPORT FOR THE CEILING AND NOT WORSE, and it is asserted as a count rather
+   * than argued**: the number of distinct topologies at the ceiling's own size is pinned, so it
+   * cannot drift back to one without this test saying so.
    */
-  it("supports the CEILING's size with one topology over 3 of its 6 permutations", () => {
+  it("supports the CEILING's size with three topologies over 3 of its 6 permutations", () => {
     const atCeiling = sweep.filter((r) => r.placements === SCALE_INVARIANT_UPTO)
     expect(atCeiling.map((r) => r.block)).toEqual(["tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b"])
-    // ONE topology: the four are byte-identical (G185), which these four measure rows show.
+    // The crossing counts are 0 in every order on all four, so the SWEEP cannot separate them -
+    // which is why the geometry is compared below rather than the sweep's own output.
     const shapes = new Set(atCeiling.map((r) => r.results.map((x) => x.crossings).join(",")))
-    expect(shapes.size, "the four subjects at the ceiling are one topology four times").toBe(1)
-    // The four MEASURE identically. The rendered rows differ only in which spike row each is paired
-    // with, so the comparison is over the measures themselves rather than over the printed line.
-    const legMeasures = new Set(
-      rows
-        .filter((r) => atCeiling.some((a) => a.block === r.block))
-        .map((r) => JSON.stringify({ ...r.geometry.measures, aspect: r.geometry.aspect, placements: r.geometry.placements })),
-    )
-    expect(legMeasures.size, "and they measure identically, which is what makes them one topology").toBe(1)
+    expect(shapes.size, "all four sweep to 0 crossings in every order").toBe(1)
+    // THREE distinct geometries, and the pair that coincides is named: the comparison is over the
+    // measures themselves rather than over the printed row, which differs by spike row anyway.
+    const measureOf = (block: string): string => {
+      const r = rows.find((x) => x.block === block)
+      if (r === undefined) throw new Error(`the per-block table holds no ${block}`)
+      return JSON.stringify({ ...r.geometry.measures, aspect: r.geometry.aspect, placements: r.geometry.placements })
+    }
+    const legMeasures = new Set(atCeiling.map((r) => measureOf(r.block)))
+    expect(legMeasures.size, "three distinct topologies at the ceiling's own size").toBe(3)
+    // The coincidence is the two legs whose boundary nets are the SAME pair, which is the half of
+    // G185's congruence that survives node sizing.
+    expect(measureOf("tp-leg-lower-a")).toBe(measureOf("tp-leg-lower-b"))
+    expect(measureOf("tp-leg-upper")).not.toBe(measureOf("tp-leg-lower-a"))
+    expect(measureOf("tp-leg-feedback")).not.toBe(measureOf("tp-leg-lower-a"))
+    expect(measureOf("tp-leg-feedback")).not.toBe(measureOf("tp-leg-upper"))
     // 3 of 6 permutations: 3 placements have 3! = 6 orderings and the sweep laid out 3 distinct ones.
     const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1))
     for (const row of atCeiling) {
       expect(row.distinctOrders, `${row.block} distinct orders`).toBe(3)
       expect(factorial(row.placements), `${row.block} possible orders`).toBe(6)
     }
-    // Size 2 is the better-supported size - two topologies, swept exhaustively - and is NOT the
-    // ceiling, which is the half an aggregate caveat hides.
+    // Size 2 is swept EXHAUSTIVELY and is still not the ceiling, which is the half an aggregate
+    // caveat hides whichever way the topology count goes.
     const atTwo = sweep.filter((r) => r.placements === 2)
     expect(atTwo.map((r) => r.block)).toEqual(["tp-leg-collector", "tp-leg-emitter-bypass"])
     for (const row of atTwo) expect(row.distinctOrders, `${row.block}`).toBe(factorial(row.placements))
   })
 
-  it("rests its invariant side on THREE distinct topologies, because four of the six are congruent", () => {
+  /**
+   * **FIVE DISTINCT TOPOLOGIES, NOT THREE, SINCE 2026-10-25 - and the old figure is kept here
+   * because it is the one the published caveat quoted.** It read *"three distinct topologies,
+   * because four of the six are congruent"*; only `tp-leg-lower-a` and `tp-leg-lower-b` are
+   * congruent now, for the reason the test above sets out, so the six invariant subjects are five
+   * distinct geometries. `docs/known-gaps.md` **G291**.
+   */
+  it("rests its invariant side on FIVE distinct topologies, because only two of the six are congruent", () => {
     const invariant = sweep.filter((r) => r.invariant)
     expect(invariant.map((r) => r.block)).toEqual([
       "tp-leg-upper", "tp-leg-feedback", "tp-leg-lower-a", "tp-leg-lower-b",
       "tp-leg-collector", "tp-leg-emitter-bypass",
     ])
     expect(invariant.length).toBe(6)
-    // The four legs are one topology drawn four times (G185: byte-identical), so the distinct
-    // subjects are {a bias leg, tp-leg-collector, tp-leg-emitter-bypass}.
     expect(new Set(invariant.map((r) => r.placements))).toEqual(new Set([2, 3]))
+    // The distinct count, asserted rather than described, so the caveat cannot drift from it.
+    const geometries = new Set(
+      invariant.map((r) => {
+        const row = rows.find((x) => x.block === r.block)
+        if (row === undefined) throw new Error(`the per-block table holds no ${r.block}`)
+        return JSON.stringify({ ...row.geometry.measures, aspect: row.geometry.aspect, placements: row.geometry.placements })
+      }),
+    )
+    expect(geometries.size).toBe(5)
   })
 
   /**
@@ -161,12 +270,50 @@ describe("step 5: the ceiling's shape, and the floor's basis", () => {
     ])
   })
 
-  /** The floor's basis: a boundary node of zero size has no area for a floor to be a bound on. */
-  it("measures all 38 boundary nodes at zero size, which is why the floor stays unmeasured", () => {
+  /**
+   * **THE FLOOR's STATED BASIS IS REFUTED AND NOTHING HAS REPLACED IT - this test used to be
+   * `measures all 38 boundary nodes at zero size, which is why the floor stays unmeasured`.**
+   *
+   * That was the argument: a boundary node of zero size has no area for a floor to be a bound on.
+   * Since 2026-10-25 **every one of the 38 boundary nodes has a size** (`docs/known-gaps.md`
+   * **G291**), so the premise is gone. **`BLOCK_SIZE.floor` is still `"unmeasured"`, and this test
+   * deliberately does NOT re-derive it**: the floor is a spec §1.8 claim, and an agent that
+   * measured a floor here and then checked the drawing against it would be authoring the criterion
+   * it is judged by (`CLAUDE.md`). What is pinned is the MEASUREMENT, and the refutation with it.
+   *
+   * **AND THE 38 SIZES ARE A CLOSED FORM, WHICH IS WHY THEY ARE CHECKED AND NOT LISTED.** Each is
+   * the box the thing drawn at it occupies, unioned over both `valueAlong` settings:
+   *   - a RAIL (power symbol) is `textWidth(net)` wide and `glyph + GRID/2 + textWidth(net)` tall,
+   *     which for a 3-character net is `3810 x 6985` - the ground glyph being 2540 tall;
+   *   - a LABEL is `labelExtent(net, refs)` along its side and `2 * GRID` = 2540 across it.
+   * Both forms are asserted below, so a size that stopped following its own geometry fails here.
+   */
+  it("measures all 38 boundary nodes at a NON-zero size, which refutes the floor's stated basis", () => {
     const floor = floorEvidence()
     expect(floor.boundaryNodes).toBe(38)
-    expect(floor.zeroSized).toBe(38)
-    expect(floor.nonZeroSized).toEqual([])
+    expect(floor.zeroSized, "a zero-size boundary node is the defect G291 names").toBe(0)
+    expect(floor.nonZeroSized.length).toBe(38)
+    // The closed form, both arms. A rail is as tall as its glyph plus its value; a label is two
+    // grid steps across whichever side it is on.
+    const sizes = floor.nonZeroSized.map((s) => {
+      const m = /is (\d+) x (\d+)$/.exec(s)
+      if (m === null) throw new Error(`floorEvidence printed a size this test cannot read: ${s}`)
+      return { what: s, w: Number(m[1]), h: Number(m[2]) }
+    })
+    const rails = sizes.filter((s) => s.h !== 2 * GRID)
+    const labels = sizes.filter((s) => s.h === 2 * GRID)
+    expect(rails.length, "the corpus has rails, or the rail arm below is vacuous").toBeGreaterThan(0)
+    expect(labels.length, "the corpus has labels, or the label arm below is vacuous").toBeGreaterThan(0)
+    // A rail: the value text's width across, and the glyph plus a half step plus that width along.
+    // Every rail symbol in this corpus has a 2540 um glyph, so the height is w + 2540 + GRID/2.
+    for (const r of rails) expect(r.h, r.what).toBe(r.w + 2540 + GRID / 2)
+    // A label: a whole number of grid steps along its side, at least (1 + 2) * GRID of outline.
+    for (const l of labels) {
+      expect(l.w % (GRID / 2), l.what).toBe(0)
+      expect(l.w, l.what).toBeGreaterThanOrEqual(3 * GRID)
+    }
+    // The port-glyph SHARE is a count ratio over graph cells and no size enters it, so it is the
+    // control that says this test is reading sizes and not re-reading the census.
     expect(floor.worstShareBlock).toBe("tp-leg-emitter-bypass")
     expect((100 * floor.worstShare).toFixed(1)).toBe("66.7")
   })

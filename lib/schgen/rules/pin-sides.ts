@@ -35,7 +35,7 @@
  * one. Neither depends on the deleted branch.
  */
 
-import { pinSide, type Rotation } from "../render/geometry.ts"
+import { pinSide, type Rotation, type Side as GeometrySide } from "../render/geometry.ts"
 import type { LibPin, LibSymbol } from "../render/library.ts"
 import type { ComponentKind } from "../../model/types.ts"
 
@@ -58,6 +58,23 @@ const SIDE_NAMES: Readonly<Record<string, PinSide>> = {
   right: "right",
   up: "top",
   down: "bottom",
+}
+
+/**
+ * The same four values the other way round, for a caller holding a `PinSide` and needing the
+ * geometry word - sizing a boundary node by the box its label or power symbol will occupy
+ * (`../elk/graph.ts`), which reaches for `labelBox` and `powerRotation` and those speak `Side`.
+ *
+ * **`lib/schgen/elk/read-graph.ts` HOLDS A SECOND COPY OF THIS MAP** (`SIDE_OF_PIN_SIDE`), which
+ * makes the claim above - *"this is the one place they meet"* - false as it stands. It is
+ * recorded rather than fixed here because collapsing the two is a change to a module this one
+ * does not own; `docs/known-gaps.md` **G291** carries it.
+ */
+export const GEOMETRY_SIDE: Readonly<Record<PinSide, GeometrySide>> = {
+  left: "left",
+  right: "right",
+  top: "up",
+  bottom: "down",
 }
 
 /** The side `pin` leaves from when the symbol is placed at `rot`. */

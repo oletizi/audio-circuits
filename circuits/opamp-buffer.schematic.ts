@@ -30,7 +30,7 @@ import type { RailSpec, SheetSpec } from "../lib/schgen/ir/types.ts"
 const SHEET = "buffer"
 
 const SHEETS: readonly SheetSpec[] = [
-  { id: SHEET, title: "Unity-gain op-amp buffer", file: "opamp-buffer.kicad_sch", paper: "A4", notes: [] },
+  { id: SHEET, title: "Unity-gain op-amp buffer", file: "buffer.kicad_sch", paper: "A4", notes: [] },
 ]
 
 /**

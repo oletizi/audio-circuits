@@ -74,13 +74,32 @@ HTML_TO_PDF := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" html-to-
 endif
 export HTML_TO_PDF
 
+# PDF_MERGE follows THE SAME SHAPE AGAIN, and for the same reason: a board's
+# build packet is ONE printable document - the owner, 2026-10-30: "merge them.
+# I want a single printable document" - so joining the schematic page to the
+# printed guide is part of this build system, not something an operator does
+# by hand afterwards.
+#
+# It must be a qpdf-compatible binary: `guide` invokes it with --show-npages
+# and --json=latest to read page counts and page sizes, and with
+# --empty --pages <file> <range> ... -- <out> to do the merge. Of the three
+# tools on a typical machine that can join two PDFs, gs is excluded outright
+# because it re-distills the content streams - a re-render of an approved
+# drawing - and pdfunite cannot be asked what it did. There is no fallback: a
+# missing tool refuses by name (tools/guide/merge-pdf.ts) rather than leaving
+# the packet as two documents, which is the state this variable exists to end.
+ifeq ($(origin PDF_MERGE),undefined)
+PDF_MERGE := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" pdf-merge)
+endif
+export PDF_MERGE
+
 .PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt print-%
 
 # print-%: prints any Make variable's final, resolved value - `make
 # print-KICAD_CLI` - the GNU Make idiom for inspecting what a variable
-# actually became. It is how tests/kicad/install.test.ts proves KICAD_CLI
-# and HTML_TO_PDF reach lib/kicad/install.ts's resolver when unset, and leave
-# an explicit override untouched, without the test having to re-parse this
+# actually became. It is how tests/kicad/install.test.ts proves KICAD_CLI,
+# HTML_TO_PDF and PDF_MERGE reach their resolvers when unset, and leave an
+# explicit override untouched, without the test having to re-parse this
 # file's own ifeq/shell logic to predict what Make would do with it
 # (docs/known-gaps.md G170).
 print-%:
@@ -250,13 +269,18 @@ perfboard-help:
 	@echo ""
 	@echo "Build it on the bench"
 	@echo "  make guide           write the printable build packet into guide/: the three"
-	@echo "                       layout images, a black-and-white schematic PDF (only if"
-	@echo "                       this board declares \"sch\"), the guide itself as"
-	@echo "                       guide.html AND as guide.pdf printed from it - the PDF is"
-	@echo "                       the thing you take to the bench. Replaces guide/, never"
-	@echo "                       the layout; refuses while cuts are unresolved, a part is"
-	@echo "                       unplaced, or the HTML_TO_PDF converter is missing, and"
-	@echo "                       leaves the previous packet intact when it does"
+	@echo "                       layout images, the guide as guide.html, and ONE printable"
+	@echo "                       document, guide.pdf - that page printed with the"
+	@echo "                       black-and-white schematic merged in as its page 2 on every"
+	@echo "                       board that has a schematic. guide.pdf is the one thing you"
+	@echo "                       take to the bench; there is no second PDF. Replaces"
+	@echo "                       guide/, never the layout; refuses while cuts are"
+	@echo "                       unresolved, a part is unplaced, the HTML_TO_PDF converter"
+	@echo "                       or the PDF_MERGE tool is missing, or the merge drops or"
+	@echo "                       resizes a page, and leaves the previous packet intact when"
+	@echo "                       it does. Nothing is ever scaled to fit: a schematic page"
+	@echo "                       on paper other than US Letter is carried at its own size"
+	@echo "                       and SAID SO on page one"
 	@echo ""
 	@echo "Buy the parts"
 	@echo "  make bom             compare what the circuit needs with bom.json and the"
@@ -284,10 +308,16 @@ perfboard-help:
 	@echo "                       every run that declares \"sch\"/\"netlist\", since every"
 	@echo "                       such run now re-exports the schematic to check it"
 	@echo "  HTML_TO_PDF          override: point at your OWN Chromium-family browser - it"
-	@echo "                       is what prints guide.pdf from guide.html on every"
-	@echo "                       \`make guide\`, invoked with --headless --print-to-pdf. A"
-	@echo "                       converter that is not there refuses by name; a packet"
-	@echo "                       without its PDF is never written"
+	@echo "                       is what prints the guide's own pages from guide.html on"
+	@echo "                       every \`make guide\`, invoked with --headless"
+	@echo "                       --print-to-pdf. A converter that is not there refuses by"
+	@echo "                       name; a packet without its PDF is never written"
+	@echo "  PDF_MERGE            override: point at your OWN qpdf-compatible binary - it is"
+	@echo "                       what merges the schematic page into guide.pdf so the packet"
+	@echo "                       is one document, and what reports the page count and page"
+	@echo "                       sizes that merge is checked against. A tool that is not"
+	@echo "                       there refuses by name; a packet left as two documents is"
+	@echo "                       never written"
 	@echo "  ALLOW_DIRTY=1        let update/stripboard/adopt write over uncommitted changes"
 
 # `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
@@ -359,7 +389,7 @@ edit: veroroute
 # The build packet is generated, never committed: guide/ is git-ignored and
 # rebuilt whole from the .vrt, the schematic and the circuit on every run.
 guide: veroroute netlist-agrees
-	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)" --html-to-pdf "$(HTML_TO_PDF)"
+	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)" --html-to-pdf "$(HTML_TO_PDF)" --pdf-merge "$(PDF_MERGE)"
 
 # The stripboard pipeline, on THIS board. It writes only under
 # build/stripboard/<board>/<stamp>/ - never the layout - so it needs no

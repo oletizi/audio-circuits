@@ -97,31 +97,66 @@ describe.each(PARITY_CASES.map((c) => [c.name, c] as const))("%s", (_name, c) =>
 /**
  * **WHICH RULES REFUSE, AND THAT IT IS ONLY THESE FOUR** - Task 9 review, round 1, item I4.
  *
+ * **TASK 3 OF THE NET-NAMES-AND-FLOATING-PINS PLAN NARROWED `netNames` AND, FOR ONE ROUND,
+ * DELETED IT.** The owner took the CASE demand out - *"i absolutely do not care about the letter
+ * case of net names. That's a silly quibble."* - and round 0 of that task deleted the whole rule
+ * on the brief's instruction, which took this class out of the table. **The coordinator reversed
+ * that: "The owner removed the CASING demand, not all net-name validation."** The rule is back,
+ * narrowed to *non-empty, no control character*, and the class is back with it.
+ *
+ * **ITS ROW IS ZERO ON ALL FOUR CIRCUITS AND THAT IS A MEASUREMENT, NOT A TAUTOLOGY.** The rule
+ * runs and can fire; what it demands is a property of the characters in a name rather than a
+ * convention, and no parity circuit violates it. `tests/schgen/ir/net-name.test.ts` drives the
+ * rule red directly, five ways, so nothing here rests on this zero to show the rule works.
+ * **The class is in the list for the `unclassified` arm below**: a net-name refusal arriving in
+ * this table would otherwise be reported as *"a reason none of the register entries covers"*,
+ * which is exactly the misdiagnosis that arm exists to prevent.
+ *
  * `circuitSpecFrom`'s output does NOT validate clean, and that is the consequence of obeying
  * G99's criterion rather than a violation of it: making `validateCircuit` pass would need an
- * invented net rename and an invented no-connect reason, and making `validateSourcing` pass would
- * need invented BOM fields - three of the exact inventions the criterion forbids, now split across
- * the two compositions rather than all three gating a drawing (Task 20, **G245**). Each refusing rule has a register entry - `netNames`
- * **G150**, `pinsDeclared` **G151**, `singlePinNets` **G159**, `bomFields` **G149** - and this
- * test locks all four deferrals at once.
+ * invented no-connect reason, and making `validateSourcing` pass would need invented BOM fields -
+ * two of the exact inventions the criterion forbids, split across the two compositions rather than
+ * gating a drawing together (Task 20, **G245**). Each refusing rule has a register entry -
+ * `netNames` **G150**, `pinsDeclared` **G151**, `bomFields` **G149**.
+ * **`netNames` is no longer a DEFERRAL though it is still a class:** its demand was withdrawn
+ * rather than satisfied, so its zero means "nothing left to defer" where the other rows mean
+ * "deferred and counted".
  *
- * **SINCE TASK 20 THE FOUR ARE SPLIT ACROSS TWO COMPOSITIONS, and the split is the owner's
- * ruling rather than a reorganisation.** The BOM requirement is a property of the CONSUMER of an
- * artifact and not of the circuit, so `validateCircuit` - what `generate` gates a DRAWING on -
- * runs the first three, and `validateSourcing` runs `bomFields` for a consumer that has to source
- * and place the parts. `lib/schgen/ir/validate.ts`'s header carries his words; `docs/known-gaps.md`
- * **G245** carries the decision and this table's figures. **Both halves are pinned here**: the
- * sourcing counts are the same 36 / 148 / 96 / 100 this test asserted before the split, so the
- * rule is still measured on all four circuits and a later task that quietly stopped running it
- * fails here rather than going green.
+ * **`singlePinNets` CARRIED **G159** AND NOW CARRIES NOTHING, 2026-10-24, Task 5.** Its only
+ * subject was `pt2399-core`'s CLK_O placeholder; that circuit declares the pin `NC` and **G159**
+ * is deleted. **The rule is unchanged and still runs** - the test named for it below asserts it
+ * finds nothing there, because a zero in this table cannot tell a rule that found nothing from a
+ * rule that stopped running.
  *
- * **It is the check that catches a later task "fixing" one of them the forbidden way:** a
- * generator that normalised net names would drop `netNames` to 0 and fail the counts here, which
- * is what G150's criterion (*"the mapping … is stated once and is reversible"*) requires someone
- * to notice.
+ * **SINCE TASK 20 THE FOUR ARE SPLIT ACROSS TWO COMPOSITIONS, and the split is the owner's ruling
+ * rather than a reorganisation.** The BOM requirement is a property of the CONSUMER of an artifact
+ * and not of the circuit, so `validateCircuit` - what `generate` gates a DRAWING on - runs the
+ * first three, and `validateSourcing` runs `bomFields` for a consumer that has to source and place
+ * the parts. `lib/schgen/ir/validate.ts`'s header carries his words; `docs/known-gaps.md` **G245**
+ * carries the decision and this table's figures. **Both halves are pinned here**: the sourcing
+ * counts are the same 36 / 148 / 96 / 100 this test asserted before the split, so the rule is
+ * still measured on all four circuits and a later task that quietly stopped running it fails here
+ * rather than going green.
+ *
+ * **THE "GENERATOR THAT NORMALISED NET NAMES" TRIPWIRE THIS COMMENT USED TO CLAIM IS NOT HERE ANY
+ * MORE, and the replacement is better.** The old claim was that such a generator *"would drop
+ * `netNames` to 0 and fail the counts here"*. That worked only while the rule demanded UPPER_SNAKE,
+ * and the row is legitimately 0 now, so the counts below cannot carry it. `[RAN]` with the
+ * generator perturbed to case-fold every net name: **the counts below PASSED.** One assertion in
+ * this file did fail - *"the one single-pin net is pt2399-core's CLK_O placeholder"*, which spells
+ * a net name out in full - but incidentally, on one net of one circuit. **The pass-through
+ * invariant is `tests/schgen/ir/net-name.test.ts`'s sweep**, which compares the model's net set
+ * against the IR's over all 13 declared cases and catches a case-folder, a truncator and any
+ * rename between two acceptable names.
+ *
+ * > **AND THE ONE INCIDENTAL CATCH IS GONE, 2026-10-24, Task 5, WHICH STRENGTHENS THE PARAGRAPH
+ * > ABOVE RATHER THAN WEAKENING IT.** The test that spelled `unconnected-(U1-CLK_O-Pad5)` out in
+ * > full is replaced: that net no longer exists, because the pin is declared `NC`. So **nothing in
+ * > this file catches a normaliser even incidentally now**, and the sweep named above is the whole
+ * > of the guard - which is what the paragraph already said it should be.
  */
 const RULE_CLASSES = [
-  { name: "netNames", matches: (p: string): boolean => p.includes("is not UPPER_SNAKE") },
+  { name: "netNames", matches: (p: string): boolean => p.includes("is not a usable net name") },
   { name: "pinsDeclared", matches: (p: string): boolean => p.includes("is neither on a net nor declared not connected") },
   { name: "singlePinNets", matches: (p: string): boolean => p.includes("has only one pin") },
 ] as const
@@ -129,11 +164,22 @@ const RULE_CLASSES = [
 /** The one class `validateSourcing` reports, and the one `validateCircuit` must never report again. */
 const BOM_CLASS = { name: "bomFields", matches: (p: string): boolean => p.includes("BOM field") } as const
 
-/** Per circuit: total DRAWING problems, then netNames / pinsDeclared / singlePinNets. */
+/**
+ * Per circuit: total DRAWING problems, then netNames / pinsDeclared / singlePinNets.
+ *
+ * **TASK 3 re-drove every row.** `optical-compressor` went 14 -> 0 and `pt2399-core` 18 -> 1,
+ * which is the whole of what taking the case demand out bought on the parity set: its 14
+ * refusals were all net names, and 17 of `pt2399-core`'s 18 were. **The netNames column is now
+ * 0 on all four and the rule still runs** - see the block above for why that is a measurement.
+ */
 const EXPECTED_REFUSALS: Readonly<Record<string, readonly [number, number, number, number]>> = {
   "opamp-buffer": [3, 0, 3, 0],
-  "optical-compressor": [14, 14, 0, 0],
-  "pt2399-core": [18, 17, 0, 1],
+  "optical-compressor": [0, 0, 0, 0],
+  // TASK 5, 2026-10-24: 1 -> 0. The one problem was the single-pin net KiCad's placeholder gave
+  // U1 pin 5; the circuit declares the pin `NC` now and the fake port that had been standing in
+  // for it is deleted. **`singlePinNets` is unchanged and still runs** - see the test below, which
+  // asserts the rule has nothing to report here rather than that it stopped reporting.
+  "pt2399-core": [0, 0, 0, 0],
   // TASK 20: zero. This circuit's 100 gate-1 problems were ALL empty purchasing fields, and
   // nothing else was wrong with it - G238 measured that and G245 records what it unblocked.
   "transistor-preamp": [0, 0, 0, 0],
@@ -186,22 +232,39 @@ test("validateSourcing refuses each parity circuit on its empty purchasing field
   }
 })
 
-test("the one single-pin net is pt2399-core's CLK_O placeholder, which the declaration declares a port", () => {
-  // G159: the authoring file deliberately declares this net a port AND an interface port with a
-  // stated reason, and the IR refuses it as a single-pin net. The declaration and the IR disagree
-  // about the same net; this names which net, so the disagreement cannot be mistaken for a
-  // generic BOM or net-name refusal.
+/**
+ * **THIS TEST ASSERTED THE OPPOSITE UNTIL 2026-10-24, AND THE INVERSION IS THE RESULT RATHER THAN
+ * A TIDY-UP.** It was called *"the one single-pin net is pt2399-core's CLK_O placeholder, which
+ * the declaration declares a port"*, and it pinned `docs/known-gaps.md` **G159**: the authoring
+ * file deliberately declared the placeholder net a port with a stated reason, and the IR refused
+ * the same net as a single-pin net - **the declaration and the IR disagreeing about one net.**
+ * Task 5 resolved it the way the spec's decision (1) directs: the model declares U1 pin 5 `NC`,
+ * the fake port is deleted, and **G159** is deleted with it.
+ *
+ * **IT IS NOT DELETED, BECAUSE AN ABSENT ASSERTION IS NOT A MEASUREMENT.** `EXPECTED_REFUSALS`'s
+ * zero for `pt2399-core` cannot tell *"`singlePinNets` found nothing"* from *"`singlePinNets` no
+ * longer runs"*, and a rule that stopped running is exactly the regression the counts were built
+ * to catch. So this names the circuit, confirms `singlePinNets` reports nothing on it, and
+ * confirms the two sites that carried the fake port carry it no longer - each in a direction that
+ * a re-added port would fail.
+ */
+test("pt2399-core has no single-pin net any more, and nothing declares the deleted placeholder", () => {
   const c = PARITY_CASES.find((x) => x.name === "pt2399-core")
   expect(c).toBeDefined()
   if (c === undefined) return
   const circuit = buildCircuit(circuitSpecFrom(c.network, c.authoring, symbols), { symbols })
-  const singles = validateCircuit(circuit, symbols).filter((p) => p.includes("has only one pin"))
-  expect(singles).toEqual([
-    "net unconnected-(U1-CLK_O-Pad5) has only one pin (U1.5); connect it or declare the pin not connected",
-  ])
-  const port = c.authoring.blocks[0]?.interface.find((p) => p.net === "unconnected-(U1-CLK_O-Pad5)")
-  expect(port, "the declaration no longer declares the net the IR refuses").toBeDefined()
-  expect(c.authoring.portDirections["unconnected-(U1-CLK_O-Pad5)"]).toBe("out")
+  expect(validateCircuit(circuit, symbols).filter((p) => p.includes("has only one pin"))).toEqual([])
+  // The pin is in the IR and on NO net, which is what distinguishes a declared no-connect from a
+  // pin somebody forgot to mention (tests/schgen/ir/nc-end-to-end.test.ts states the four states).
+  const pin5 = circuit.pins.filter((p) => p.part === "U1" && p.pin === "5")
+  expect(pin5.map((p) => p.net)).toEqual([null])
+  // And the three places the falsehood used to live are empty.
+  expect(Object.keys(c.network.ports)).not.toContain("unconnected-(U1-CLK_O-Pad5)")
+  expect(Object.values(c.network.ports)).not.toContain("unconnected-(U1-CLK_O-Pad5)")
+  expect(c.authoring.portDirections["unconnected-(U1-CLK_O-Pad5)"]).toBeUndefined()
+  expect(
+    c.authoring.blocks[0]?.interface.map((p) => p.net),
+  ).not.toContain("unconnected-(U1-CLK_O-Pad5)")
 })
 
 /**

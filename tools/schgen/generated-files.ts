@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { repoRoot } from "../repo.ts";
 import type { LoadedDesign } from "../../lib/schgen/design.ts";
+import { worstClass, type Finding } from "../../lib/schgen/findings.ts";
 import type { Circuit } from "../../lib/schgen/ir/types.ts";
 import { serializeRefLock, type Annotation } from "../../lib/schgen/lock/annotate.ts";
 import { renderRefmap } from "../../lib/schgen/lock/refmap.ts";
@@ -84,12 +85,26 @@ export interface FileInputs {
    * the manifest hashes the files this function produces and is itself one of them.
    */
   readonly manifestSources: ManifestSources;
+  /**
+   * **EVERY GATE COMPLAINT OF THIS GENERATION, and therefore whether the emitted sheets are
+   * marked** - Task 5 of `docs/superpowers/plans/2026-10-27-gates-classify.md`.
+   *
+   * It is the findings and not the class, so that `worstClass` stays the one place a class is
+   * decided: a caller that could pass a class could pass the wrong one, and the whole mechanism
+   * rests on the mark agreeing with the evidence.
+   *
+   * **THE MARK IS PART OF THE GENERATED FILE SET, which is why this field is here and not on a
+   * later writer.** `MANIFEST.json` hashes these files, `staleFiles` compares them by content and
+   * `writeGeneration` writes them: a mark added after any of those would be a mark the manifest
+   * does not cover and a regeneration would report as drift.
+   */
+  readonly findings: readonly Finding[];
 }
 
 export function generatedFiles(x: FileInputs): Map<string, string> {
   const d = x.design;
   const project = d.spec.project;
-  const ctx = emitContext(project, x.circuit, x.symbols, x.annotation.refs, titleComments(d, x.versions));
+  const ctx = emitContext(project, x.circuit, x.symbols, x.annotation.refs, titleComments(d, x.versions), worstClass(x.findings));
   const files = new Map<string, string>();
   const add = (name: string, text: string): void => {
     if (files.has(name)) throw new Error(`generate: two generated files are named ${name}`);

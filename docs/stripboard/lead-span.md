@@ -7,6 +7,20 @@ each one says where. Nothing here is recalled, estimated, or measured by hand.
 The code is the authority for the values; this page is the authority for *why*
 they are those values, and is the thing to read before changing one.
 
+> **AMENDED 2026-10-30: there are FIFTEEN entries, and the tables below enumerate
+> thirteen.** `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm` (Panasonic M-A ECA-1VM471,
+> 2–11 holes, from ABA0000C1218's own drawing — where `14min.` and `3min.` are a
+> chain whose first figure is the SHORT, negative lead) and
+> `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical` (3 holes, a moulded
+> SIP field) were added for `transistor-preamp-staged`, which `make check` had been
+> refusing to grade. **The rows below were not back-filled, deliberately: a count in
+> prose is a transcription with a date on it, and the reason each of those two is
+> what it is lives in its own entry's comment in `lib/kicad/lead-span.ts`.** For the
+> current set, read the table — `LEAD_SPANS` — or run
+> `bun test tests/kicad/lead-span.test.ts`, which recomputes every recorded integer
+> from its recorded dimensions. `docs/research/2026-10-30-known-defects.md` section 2
+> has the evidence for both.
+
 ---
 
 ## 1. Why the table exists

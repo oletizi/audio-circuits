@@ -12,6 +12,7 @@
  * `lib/schgen/README.md` and `docs/known-gaps.md` **G139**.
  */
 
+import { finding, type Finding, type FindingKind } from "../findings.ts";
 import type { BlockId, IrBlock, IrPart, IrPin, NetName, PartLabel, PortDirection, RailSpec, TemplateId } from "../ir/types.ts";
 import type { Point, Rotation, Side } from "./geometry.ts";
 import type { LibSymbol } from "./library.ts";
@@ -148,15 +149,117 @@ export type Mismatch =
   | { readonly kind: "backend-raised"; readonly reason: string;
       readonly backend: string; readonly inputKey: string };
 
+/**
+ * **THE FALSE ARM CARRIES THE GEOMETRY THE RENDERER DID PRODUCE, which is Task 3 of
+ * `docs/superpowers/plans/2026-10-27-gates-classify.md` and the owner's directive:** *"Gates can
+ * still refuse to ratify an output, but they shouldn't hide the output."* A refusal used to carry
+ * a `Mismatch` and nothing else, so a block whose route was drawn, snapped, canonicalised and
+ * then failed a clearance check reached its caller as a sentence - and **four of the eleven boards
+ * in `boards/` have never been seen because of it.**
+ *
+ * **BOTH NEW FIELDS ARE OPTIONAL, AND THAT IS A MEASURED TRADE RATHER THAN LAXITY.** Fourteen
+ * sites across eight template modules forward an inner planning helper's refusal as
+ * `{ ok: false, mismatch: plan.mismatch }`; every one of them is a SHAPE or REACHABILITY verdict
+ * taken before any geometry exists, so an absent field states the truth at those sites. Making the
+ * fields required would have diverged eight ported template modules to write `layout: null,
+ * findings: []` fourteen times and bought nothing. **An absence therefore means "this renderer
+ * drew nothing", and `refusedLayout` below is the one place that reading is stated.**
+ *
+ * `findings` is the per-item classification of what went wrong, when the producer HAS it -
+ * `lib/schgen/elk/adapt.ts` runs `checkLayout`, which returns `Finding[]` already, and flattening
+ * those to a sentence was the other half of the same loss. Where a producer has none,
+ * `mismatchFindings` synthesises exactly one from the mismatch's own kind, so **no refusal reaches
+ * the census without a class.**
+ */
 export type RealiseResult =
   | { readonly ok: true; readonly layout: BlockLayout }
-  | { readonly ok: false; readonly mismatch: Mismatch };
+  | {
+      readonly ok: false;
+      readonly mismatch: Mismatch;
+      /** The geometry this renderer produced before it was refused; absent when it drew nothing. */
+      readonly layout?: BlockLayout | undefined;
+      /** The per-item findings behind the refusal; absent when the producer has none to give. */
+      readonly findings?: readonly Finding[] | undefined;
+    };
+
+/** The geometry a refusal carries, or `null` when the renderer drew nothing. */
+export function refusedLayout(r: RealiseResult): BlockLayout | null {
+  if (r.ok) return r.layout;
+  return r.layout ?? null;
+}
+
+/**
+ * **A `MismatchKind`'s `FindingKind`, and the mapping is the owner's line rather than this file's
+ * judgement.** `findings.ts`'s `classOf` then decides the class, and nothing here may second-guess
+ * it. The switch has no `default`: a fifth `MismatchKind` fails to compile here.
+ *
+ * - `not-applicable` -> `no-template-applies`. Nothing was drawn and nothing could be by this
+ *   renderer, which is `not-drawable` - the one class where there is no artifact to call right or
+ *   wrong.
+ * - `invalid-geometry` -> `geometry-disagrees-with-ir`. Its own docstring is *"a renderer applied
+ *   and produced geometry disagreeing with the IR"*: a drawing that asserts a connection the
+ *   circuit does not have is WRONG ABOUT THE CIRCUIT, so it is `defective`. **A drawing exists and
+ *   is still produced** - it is marked, not withheld.
+ * - `clearance` -> `body-clearance`. *"A template applied and violated a clearance constraint"* is
+ *   crowding: correct about the circuit, hard to read, which is the owner's *"ugly but usable"*.
+ *   It is the GENERIC crowding kind because a `Mismatch` names a constraint and an obstacle pair
+ *   rather than which of body, glyph or text clearance produced it; where the producer carries its
+ *   own `Finding[]` those exact kinds travel instead of this one, which is the normal case on the
+ *   ELK path.
+ * - `backend-raised` -> `backend-raised`, the same name in both vocabularies. *"The backend did
+ *   not return a result at all: it raised, or did not terminate"* is this generator failing rather
+ *   than a fact about the circuit, which is `generator-defect` - and `findings.ts` had already
+ *   classified that name before this mapping existed.
+ */
+export function findingKindOfMismatch(kind: MismatchKind): FindingKind {
+  switch (kind) {
+    case "not-applicable": return "no-template-applies";
+    case "invalid-geometry": return "geometry-disagrees-with-ir";
+    case "clearance": return "body-clearance";
+    case "backend-raised": return "backend-raised";
+  }
+}
+
+/**
+ * The findings behind one refusal, **never empty**: the producer's own when it has them, otherwise
+ * exactly one built from the mismatch's kind. `where` names the subject - a block, a sheet - so a
+ * synthesised finding is as locatable as a measured one.
+ *
+ * The producer's findings win because they are per-item and the synthesised one is per-refusal:
+ * `checkLayout` naming eleven overlaps is eleven classifiable facts, and collapsing them into one
+ * `body-clearance` would throw away the distinction between a glyph collision and a label that
+ * misnames a net.
+ */
+export function mismatchFindings(where: string, m: Mismatch, carried?: readonly Finding[] | undefined): readonly Finding[] {
+  if (carried !== undefined && carried.length > 0) return carried;
+  return [finding(findingKindOfMismatch(m.kind), describeMismatch(m), where)];
+}
+
+/** The findings behind a `RealiseResult` that refused; `[]` for one that did not. */
+export function realiseFindings(where: string, r: RealiseResult): readonly Finding[] {
+  return r.ok ? [] : mismatchFindings(where, r.mismatch, r.findings);
+}
 
 /** A template only positions parts and routes the IR's own connections; it never adds one. */
 export interface Template {
   readonly id: TemplateId;
   realise(g: BlockSubgraph): RealiseResult;
 }
+
+/**
+ * What a refusing renderer HAD when it refused: the geometry it drew, and the findings it measured
+ * on that geometry. **Defaulted to `NOTHING_DRAWN` by the two constructors that can be handed one**,
+ * so a template site that passes three arguments keeps saying exactly what it said before - it drew
+ * nothing - while `lib/schgen/elk/adapt.ts` passes the route it snapped and the `checkLayout`
+ * findings it ran on it.
+ */
+export interface Drawn {
+  readonly layout: BlockLayout | null;
+  readonly findings: readonly Finding[];
+}
+
+/** The `Drawn` of a renderer that produced no geometry and measured nothing on it. */
+export const NOTHING_DRAWN: Drawn = { layout: null, findings: [] };
 
 /**
  * **The site is a SHAPE test over the subgraph**: this template's idiom is not what the block
@@ -172,8 +275,8 @@ export function notApplicable(reason: string): RealiseResult {
  * connection it failed to realise, because "the geometry is wrong" without saying which
  * connection is a refusal nobody can act on.
  */
-export function invalidGeometry(template: Renderer, connection: string, reason: string): RealiseResult {
-  return { ok: false, mismatch: { kind: "invalid-geometry", reason, template, connection } };
+export function invalidGeometry(template: Renderer, connection: string, reason: string, drawn: Drawn = NOTHING_DRAWN): RealiseResult {
+  return { ok: false, mismatch: { kind: "invalid-geometry", reason, template, connection }, layout: drawn.layout ?? undefined, findings: drawn.findings };
 }
 
 /**
@@ -183,8 +286,8 @@ export function invalidGeometry(template: Renderer, connection: string, reason: 
  * it refuses rather than guessing when it cannot.
  */
 export function clearanceViolation(block: BlockId, constraint: string,
-  obstacles: readonly [string, string], reason: string): RealiseResult {
-  return { ok: false, mismatch: { kind: "clearance", reason, constraint, obstacles, block } };
+  obstacles: readonly [string, string], reason: string, drawn: Drawn = NOTHING_DRAWN): RealiseResult {
+  return { ok: false, mismatch: { kind: "clearance", reason, constraint, obstacles, block }, layout: drawn.layout ?? undefined, findings: drawn.findings };
 }
 
 /**
@@ -228,7 +331,17 @@ export function describeMismatch(m: Mismatch): string {
 export type Selection =
   | { readonly kind: "template"; readonly template: TemplateId; readonly layout: BlockLayout }
   | { readonly kind: "elk" }
-  | { readonly kind: "refused"; readonly mismatch: Mismatch };
+  /**
+   * **The refused arm carries the geometry and findings its `RealiseResult` carried, for the same
+   * reason that arm does** (Task 3). `selectRenderer` forwarding only the `Mismatch` would have
+   * reinstated the drop one layer above the one the plan names.
+   */
+  | {
+      readonly kind: "refused";
+      readonly mismatch: Mismatch;
+      readonly layout?: BlockLayout | undefined;
+      readonly findings?: readonly Finding[] | undefined;
+    };
 
 /**
  * A renderer that is not a template: the ELK backend of Task 12 onward. It returns a

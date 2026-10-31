@@ -146,7 +146,7 @@ export const TRANSISTOR_PREAMP_STAGED_SCHEMATIC: SchematicAuthoring = {
   project: "transistor-preamp-staged",
   designators: DESIGNATORS,
   blocks: [...CLAIMED_BEFORE_SECOND_STAGE, SECOND_STAGE, CORE],
-  sheets: sheetFor(SHEET, "Transistor preamp staged board", "transistor-preamp-staged.kicad_sch"),
+  sheets: sheetFor(SHEET, "Transistor preamp staged board", "staged.kicad_sch"),
   rails: RAILS,
   portDirections: PORT_DIRECTIONS,
   overrides: OVERRIDES,

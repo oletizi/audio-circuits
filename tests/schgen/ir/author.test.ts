@@ -1,25 +1,16 @@
 /**
  * Ported from digital-pedal-platform's `tools/schgen/ir/author.test.ts`, mechanically
- * rewritten by `tools/schgen/port.ts` (imports only, per
+ * rewritten by `tools/schgen/port.ts` (imports only, plus this entry's declared
+ * `cuts` (a deliberate content deletion - see `docs/known-gaps.md`), per
  * `tools/schgen/port-manifest.json`). Edit the pedals source and re-run the
  * port rather than hand-editing this file - see `lib/schgen/README.md`.
  */
 
 import { describe, expect, it } from "bun:test";
 import { netRange, twoPin, UNNAMED } from "../../../lib/schgen/ir/author.ts";
-import { connectedNet, NET_NAME, unitKey } from "../../../lib/schgen/ir/types.ts";
+import { connectedNet, unitKey } from "../../../lib/schgen/ir/types.ts";
 
 const BOM = { Manufacturer: "M", MPN: "P", Supplier: "LCSC", SupplierPart: "C1", AbsMaxV: null };
-
-describe("NET_NAME", () => {
-  it("accepts UPPER_SNAKE names, including ones that start with a digit", () => {
-    for (const n of ["VIN_PROT", "3V3_D", "5V_A", "SDRAM_A12", "GND"]) expect(NET_NAME.test(n)).toBe(true);
-  });
-
-  it("rejects lower case, slashes, leading underscores and empty names", () => {
-    for (const n of ["vin", "/core/X", "_X", "", "A-B", "A B"]) expect(NET_NAME.test(n)).toBe(false);
-  });
-});
 
 describe("twoPin", () => {
   it("puts pin 1 on the first net and pin 2 on the second, with the given identities", () => {

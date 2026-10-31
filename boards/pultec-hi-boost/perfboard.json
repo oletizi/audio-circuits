@@ -1,5 +1,7 @@
 {
+  "sch": "../../drafted/pultec/pultec-hi-boost/pultec-hi-boost.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/pultec/physical/hi-boost.ts",
   "export": "pultecHiBoost",
+  "netlist": "../../tests/fixtures/pultec-hi-boost.net",
   "vrt": "pultec-hi-boost.perfboard.vrt"
 }

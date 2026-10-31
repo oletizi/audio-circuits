@@ -88,7 +88,7 @@ export const TRANSISTOR_PREAMP_FEEDBACK_SCHEMATIC: SchematicAuthoring = {
   project: "transistor-preamp-feedback",
   designators: DESIGNATORS,
   blocks: [...LEG_BLOCKS, CORE],
-  sheets: sheetFor(SHEET, "Transistor preamp collector-feedback board", "transistor-preamp-feedback.kicad_sch"),
+  sheets: sheetFor(SHEET, "Transistor preamp collector-feedback board", "feedback.kicad_sch"),
   rails: RAILS,
   portDirections: PORT_DIRECTIONS,
   overrides: OVERRIDES,

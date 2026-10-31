@@ -236,13 +236,24 @@ export function sizeCoverage(rows: readonly OrderSweepRow[], sizes: readonly num
  * **THE FLOOR's BASIS, MEASURED: every boundary node this backend emits, and its size.**
  *
  * **G101**'s floor rested on `netlistsvg` emitting a 30x20 `inputExt` CELL per declared port, so
- * *"a 1-part block's drawing was two-thirds boundary"*. `boundaryNodeOf` emits a node of width 0
- * and height 0, so a block whose CELLS are two-thirds boundary has a drawing with **no boundary
- * area at all** - and the quantity the floor was a bound on does not exist on this backend.
+ * *"a 1-part block's drawing was two-thirds boundary"*.
+ *
+ * **THIS COMMENT SAID `boundaryNodeOf` EMITS A NODE OF WIDTH 0 AND HEIGHT 0, SO THE QUANTITY THE
+ * FLOOR WAS A BOUND ON *"does not exist on this backend"*. THAT IS REFUTED SINCE 2026-10-25.**
+ * `boundaryNodeOf` sizes each node by the box the label or power symbol drawn at it will occupy
+ * (`docs/known-gaps.md` **G291**), and this function now measures **38 of 38 non-zero**. So the
+ * reason the floor was reported unmeasured is gone, and **nothing has replaced it.**
+ *
+ * **WHAT THIS FUNCTION ESTABLISHES IS THEREFORE NARROWER THAN IT WAS, AND SAYING SO IS THE
+ * RESULT.** It reports every boundary node's size and the worst port-glyph share of graph cells.
+ * It does **NOT** derive a floor from them: a floor is a spec §1.8 claim, and a tool that measured
+ * one and then graded drawings against it would be authoring the criterion its own output is
+ * judged by (`CLAUDE.md`). `BLOCK_SIZE.floor` stays `"unmeasured"` with the change of basis
+ * recorded beside it.
  *
  * It is re-taken here rather than relayed from **G216** because this task's criterion is that the
  * figure is measured on this pipeline, and because a floor reported as unmeasured has to be
- * unmeasured for a stated reason that a check could have contradicted.
+ * unmeasured for a stated reason that a check could have contradicted. **It was contradicted.**
  */
 export interface FloorEvidence {
   readonly boundaryNodes: number

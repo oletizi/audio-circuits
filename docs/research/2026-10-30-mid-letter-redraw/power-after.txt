@@ -1,0 +1,27 @@
+total wires on sheet: 84   (every '(wire' token accounted for, or this script would have refused)
+
+#FLG01     copperhead_power:PWR_FLAG  anchor (26.67, 54.61) rot 0
+    pin (26.67, 54.61) power_out: 1 wire(s) touch it - 1 end here, 0 pass through (NO DOT)
+        (31.75, 54.61) -> (26.67, 54.61)  len   5.08  ENDS at the pin  7058f2eb-27e3-52b1-b1e9-cf4476d0d436
+
+#PWR01     copperhead_power:GND       anchor (31.75, 38.1) rot 0
+    Value text 'GND' at (24.511, 38.1) angle 0 size 1.27
+    pin (31.75, 38.1) power_in: 1 wire(s) touch it - 1 end here, 0 pass through (NO DOT)
+        (36.83, 38.1) -> (31.75, 38.1)  len   5.08  ENDS at the pin  638812d5-69c0-53b7-8a2f-9998920307c7
+
+#PWR06     copperhead_power:GND       anchor (31.75, 59.69) rot 0
+    Value text 'GND' at (28.321, 59.69) angle 0 size 1.27
+    pin (31.75, 59.69) power_in: 2 wire(s) touch it - 2 end here, 0 pass through (with a dot)
+        (36.83, 59.69) -> (31.75, 59.69)  len   5.08  ENDS at the pin  888a8ddf-6be6-52db-9da8-0862ca75e071
+        (31.75, 49.53) -> (31.75, 59.69)  len  10.16  ENDS at the pin  ac11ed87-b1fd-5e2e-a471-c9867723d268
+
+#PWR07     copperhead_power:GND       anchor (250.19, 134.62) rot 0
+    Value text 'GND' at (250.19, 140.72) angle 0 size 1.27
+    pin (250.19, 134.62) power_in: 1 wire(s) touch it - 0 end here, 1 pass through (with a dot)
+        (242.57, 134.62) -> (257.81, 134.62)  len  15.24  PASSES THROUGH the pin  e957ec06-f643-5d5d-87e1-0795867795a0
+
+#PWR09     copperhead_power:GND       anchor (255.27, 30.48) rot 0
+    Value text 'GND' at (255.27, 26.924) angle 0 size 1.27
+    pin (255.27, 30.48) power_in: 1 wire(s) touch it - 1 end here, 0 pass through (NO DOT)
+        (255.27, 33.02) -> (255.27, 30.48)  len   2.54  ENDS at the pin  d760defa-d60f-5e82-b4b2-2be677797dce
+

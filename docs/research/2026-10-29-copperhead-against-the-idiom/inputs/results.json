@@ -1,0 +1,6503 @@
+{
+  "c1-base4": {
+    "tag": "c1-base4",
+    "note": "prior trial's four groups, iface-last order (control)",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A5",
+      "inkUtilization": 0.48405061590145576,
+      "compaction": "compacted",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 12950,
+        "boxAreaAfter": 12950
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A5",
+        "paperAfter": "A5"
+      }
+    },
+    "wireCount": 78,
+    "labelCount": 21,
+    "paper": "A5",
+    "notes": [
+      "sheet compacted: the natural layout fit A4 at 20% utilization; reflowed onto A5",
+      "group \"Hi boost\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 270\u00b0, SI2 turned 270\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2",
+          "SI5",
+          "SI7",
+          "SI8"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "R1",
+          "RV1",
+          "SI3",
+          "SI4",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Cap bank",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Interface",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 78,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c1-base4.png"
+  },
+  "c2-one-group": {
+    "tag": "c2-one-group",
+    "note": "every part in a single group",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c2-one-group.png"
+  },
+  "c3-spine-group": {
+    "tag": "c3-spine-group",
+    "note": "the three series spine parts alone in one group",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A5",
+      "inkUtilization": 0.4331169316909294,
+      "compaction": "compacted",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 14197,
+        "boxAreaAfter": 14197
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A5"
+      }
+    },
+    "wireCount": 78,
+    "labelCount": 22,
+    "paper": "A5",
+    "notes": [
+      "sheet compacted: the natural layout fit A4 at 18% utilization; reflowed onto A5",
+      "group \"Hi cut\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "groups wrapped onto 3 rows to fit the sheet",
+      "label reach measured: the wrap fitted again takes A5, not A4",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 180\u00b0, SI4 turned 90\u00b0, SI5 turned 180\u00b0, SI6 turned 90\u00b0; label overlaps 1 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Interface",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Signal spine",
+        "members": [
+          "SI1",
+          "SI2",
+          "SI7"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Cap bank",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "R1",
+          "RV1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 78,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c3-spine-group.png"
+  },
+  "c3b-spine-first": {
+    "tag": "c3b-spine-first",
+    "note": "same groups, spine declared first",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A5",
+      "inkUtilization": 0.4331169316909294,
+      "compaction": "compacted",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 14197,
+        "boxAreaAfter": 14197
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A5"
+      }
+    },
+    "wireCount": 78,
+    "labelCount": 22,
+    "paper": "A5",
+    "notes": [
+      "sheet compacted: the natural layout fit A4 at 18% utilization; reflowed onto A5",
+      "group \"Hi cut\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "groups wrapped onto 3 rows to fit the sheet",
+      "label reach measured: the wrap fitted again takes A5, not A4",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 180\u00b0, SI4 turned 90\u00b0, SI5 turned 180\u00b0, SI6 turned 90\u00b0; label overlaps 1 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Signal spine",
+        "members": [
+          "SI1",
+          "SI2",
+          "SI7"
+        ]
+      },
+      {
+        "name": "Interface",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Cap bank",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "R1",
+          "RV1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 78,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c3b-spine-first.png"
+  },
+  "c4-station": {
+    "tag": "c4-station",
+    "note": "one group per station on the spine, ITB left-to-right order",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 155\u00d7118 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 15329,
+        "boxAreaAfter": 15329
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 155\u00d7118 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c4-station.png"
+  },
+  "c4b-station-rev": {
+    "tag": "c4b-station-rev",
+    "note": "station groups, order reversed",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 167\u00d7116 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 15371,
+        "boxAreaAfter": 15371
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 167\u00d7116 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c4b-station-rev.png"
+  },
+  "c5-station-kinds": {
+    "tag": "c5-station-kinds",
+    "note": "station groups + every signal net declared kind=signal",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 155\u00d7118 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 15329,
+        "boxAreaAfter": 15329
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 155\u00d7118 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c5-station-kinds.png"
+  },
+  "c6-gnd-signal": {
+    "tag": "c6-gnd-signal",
+    "note": "station groups, 0V net declared kind=signal (no GND symbols?)",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.13257939461260765,
+      "compaction": "failed",
+      "misses": [
+        "A5 132\u00d7144 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 15487,
+        "boxAreaAfter": 15487
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 79,
+    "labelCount": 29,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 13% utilization, but no smaller sheet holds the reflowed content (A5 132\u00d7144 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 79,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 19,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c6-gnd-signal.png"
+  },
+  "c7-gnd-power": {
+    "tag": "c7-gnd-power",
+    "note": "station groups, 0V net declared kind=power",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 155\u00d7130 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 16402,
+        "boxAreaAfter": 16402
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 155\u00d7130 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "rail",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c7-gnd-power.png"
+  },
+  "c8-two-group": {
+    "tag": "c8-two-group",
+    "note": "signal path vs lo-boost network",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.30554474220124045,
+      "compaction": "failed",
+      "misses": [
+        "A5 171\u00d7113 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 21123,
+        "boxAreaAfter": 21123
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 83,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 31% utilization, but no smaller sheet holds the reflowed content (A5 171\u00d7113 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Signal path",
+        "members": [
+          "J1",
+          "J2",
+          "R1",
+          "SI1",
+          "SI2",
+          "SI7",
+          "SI8"
+        ]
+      },
+      {
+        "name": "Lo boost network",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 83,
+    "crossings": 4,
+    "crossingPoints": [
+      [
+        180.34,
+        57.15
+      ],
+      [
+        154.94,
+        59.69
+      ],
+      [
+        154.94,
+        49.53
+      ],
+      [
+        180.34,
+        54.61
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c8-two-group.png"
+  },
+  "c9-station-A3": {
+    "tag": "c9-station-A3",
+    "note": "station groups pinned to A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.0748040452674897,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 16006,
+        "boxAreaAfter": 16006
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A3",
+        "paperAfter": "A3"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A3",
+    "notes": [
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c9-station-A3.png"
+  },
+  "c10-itb-captions": {
+    "tag": "c10-itb-captions",
+    "note": "station groups captioned in ITB's own vocabulary",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 158\u00d7115 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 15587,
+        "boxAreaAfter": 15587
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 158\u00d7115 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "IN / 0V",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "MID (flat)",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "HI BOOST (flat)",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "HI CUT (flat)",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "LO BOOST",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "LO CUT (flat)",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c10-itb-captions.png"
+  },
+  "c11-station-split": {
+    "tag": "c11-station-split",
+    "note": "station groups with the cap bank split from the pot",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.2353735366136429,
+      "compaction": "failed",
+      "misses": [
+        "A5 127\u00d7141 mm vs 159\u00d763 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 13842,
+        "boxAreaAfter": 13842
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 71,
+    "labelCount": 27,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 24% utilization, but no smaller sheet holds the reflowed content (A5 127\u00d7141 mm vs 159\u00d763 usable)",
+      "groups wrapped onto 2 rows to fit the sheet"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Cap bank",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "RV1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 71,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      180.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c11-station-split.png"
+  },
+  "c12-per-part": {
+    "tag": "c12-per-part",
+    "note": "one group per part",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.09637725250162986,
+      "compaction": "failed",
+      "misses": [
+        "A5 137\u00d7137 mm vs 172\u00d776 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 13731,
+        "boxAreaAfter": 13731
+      },
+      "look": {
+        "kept": false,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 52,
+    "labelCount": 35,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 10% utilization, but no smaller sheet holds the reflowed content (A5 137\u00d7137 mm vs 172\u00d776 usable)",
+      "groups wrapped onto 3 rows to fit the sheet"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "J1",
+        "members": [
+          "J1"
+        ]
+      },
+      {
+        "name": "J2",
+        "members": [
+          "J2"
+        ]
+      },
+      {
+        "name": "SI1",
+        "members": [
+          "SI1"
+        ]
+      },
+      {
+        "name": "SI2",
+        "members": [
+          "SI2"
+        ]
+      },
+      {
+        "name": "SI3",
+        "members": [
+          "SI3"
+        ]
+      },
+      {
+        "name": "SI4",
+        "members": [
+          "SI4"
+        ]
+      },
+      {
+        "name": "SI5",
+        "members": [
+          "SI5"
+        ]
+      },
+      {
+        "name": "SI6",
+        "members": [
+          "SI6"
+        ]
+      },
+      {
+        "name": "SI7",
+        "members": [
+          "SI7"
+        ]
+      },
+      {
+        "name": "SI8",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "R1",
+        "members": [
+          "R1"
+        ]
+      },
+      {
+        "name": "RV1",
+        "members": [
+          "RV1"
+        ]
+      },
+      {
+        "name": "SW1",
+        "members": [
+          "SW1"
+        ]
+      },
+      {
+        "name": "C1",
+        "members": [
+          "C1"
+        ]
+      },
+      {
+        "name": "C2",
+        "members": [
+          "C2"
+        ]
+      },
+      {
+        "name": "C3",
+        "members": [
+          "C3"
+        ]
+      },
+      {
+        "name": "C4",
+        "members": [
+          "C4"
+        ]
+      },
+      {
+        "name": "C5",
+        "members": [
+          "C5"
+        ]
+      },
+      {
+        "name": "C6",
+        "members": [
+          "C6"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 52,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 34,
+    "rotations": [
+      0.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c12-per-part.png"
+  },
+  "c13-0v-name": {
+    "tag": "c13-0v-name",
+    "note": "station groups, ground net named 0V with no kind declaration",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.1682623623067666,
+      "compaction": "failed",
+      "misses": [
+        "A5 155\u00d7130 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 16402,
+        "boxAreaAfter": 16402
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 74,
+    "labelCount": 24,
+    "paper": "A4",
+    "notes": [
+      "sheet not compacted: the natural layout fits A4 at 17% utilization, but no smaller sheet holds the reflowed content (A5 155\u00d7130 mm vs 190\u00d794 usable)",
+      "groups wrapped onto 2 rows to fit the sheet",
+      "placement search: SI1 turned 90\u00b0, SI3 turned 270\u00b0, SI5 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "0V",
+        "class": "rail",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "In",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      },
+      {
+        "name": "Mid shunt",
+        "members": [
+          "SI8"
+        ]
+      },
+      {
+        "name": "Hi boost",
+        "members": [
+          "SI1",
+          "SI2"
+        ]
+      },
+      {
+        "name": "Hi cut",
+        "members": [
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6"
+        ]
+      },
+      {
+        "name": "Lo boost",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "RV1",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Lo cut",
+        "members": [
+          "R1",
+          "SI7"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 74,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/c13-0v-name.png"
+  },
+  "d1-one-A3": {
+    "tag": "d1-one-A3",
+    "note": "single group, pinned to A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.14061434773662554,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25006,
+        "boxAreaAfter": 25006
+      }
+    },
+    "wireCount": 80,
+    "labelCount": 20,
+    "paper": "A3",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom, SI6 turned 270\u00b0; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 80,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        119.38,
+        123.19
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d1-one-A3.png"
+  },
+  "d2-one-flow": {
+    "tag": "d2-one-flow",
+    "note": "single group, parts declared in signal-flow order",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d2-one-flow.png"
+  },
+  "d3-one-flow-A3": {
+    "tag": "d3-one-flow-A3",
+    "note": "single group, signal-flow declaration order, A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.14061434773662554,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25006,
+        "boxAreaAfter": 25006
+      }
+    },
+    "wireCount": 80,
+    "labelCount": 20,
+    "paper": "A3",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom, SI6 turned 270\u00b0; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 80,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        119.38,
+        123.19
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d3-one-flow-A3.png"
+  },
+  "d4-one-revflow": {
+    "tag": "d4-one-revflow",
+    "note": "single group, reverse declaration order",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.313905604924558,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7118 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 20613,
+        "boxAreaAfter": 20613
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on SW1.7 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        143.51,
+        58.42
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d4-one-revflow.png"
+  },
+  "d5-one-gnd-signal": {
+    "tag": "d5-one-gnd-signal",
+    "note": "single group, 0V net declared kind=signal",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.2481757868184763,
+      "compaction": "compacted",
+      "misses": [
+        "A5 152\u00d7110 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 21414,
+        "boxAreaAfter": 21414
+      }
+    },
+    "wireCount": 86,
+    "labelCount": 25,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 11% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored left for right; label overlaps 0 to 0, wire crossings 1 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 86,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        95.25,
+        67.31
+      ]
+    ],
+    "symbols": 19,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d5-one-gnd-signal.png"
+  },
+  "d6-one-itb-caption": {
+    "tag": "d6-one-itb-caption",
+    "note": "single group captioned '3 BAND PULTEC STYLE EQ - LOW BOOST SECTION'",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"3 BAND PULTEC STYLE EQ - LOW BOOST SECTION\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"3 BAND PULTEC STYLE EQ - LOW BOOST SECTION\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "3 BAND PULTEC STYLE EQ - LOW BOOST SECTION",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d6-one-itb-caption.png"
+  },
+  "d7-one-flow-gnd0v": {
+    "tag": "d7-one-flow-gnd0v",
+    "note": "single group, signal-flow order, ground net renamed 0V (kind=ground)",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "0V",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d7-one-flow-gnd0v.png"
+  },
+  "d8-spine-then-blocks": {
+    "tag": "d8-spine-then-blocks",
+    "note": "spine group first, all hanging parts in one group",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.2670250532259558,
+      "compaction": "compacted",
+      "misses": [
+        "A5 160\u00d7131 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 20706,
+        "boxAreaAfter": 20706
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 77,
+    "labelCount": 22,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Blocks\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 12% utilization; reflowed onto A4",
+      "group \"Blocks\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom, SI1 turned 180\u00b0, SI2 turned 90\u00b0; label overlaps 0 to 0, wire crossings 1 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Signal spine",
+        "members": [
+          "SI1",
+          "SI2",
+          "SI7"
+        ]
+      },
+      {
+        "name": "Blocks",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 77,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d8-spine-then-blocks.png"
+  },
+  "d9-flow-iface-split": {
+    "tag": "d9-flow-iface-split",
+    "note": "signal-flow order, J1/J2 in their own group declared last",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.20170581320003703,
+      "compaction": "compacted",
+      "misses": [
+        "A5 160\u00d7123 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 21003,
+        "boxAreaAfter": 21003
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A4",
+        "paperAfter": "A4"
+      }
+    },
+    "wireCount": 75,
+    "labelCount": 23,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 9% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 3 bands",
+      "placement search: SI1 turned 90\u00b0, SI7 turned 180\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Interface",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 75,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d9-flow-iface-split.png"
+  },
+  "d10-flow-iface-A3": {
+    "tag": "d10-flow-iface-A3",
+    "note": "signal-flow order, interface split, A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.08887543621399178,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 17524,
+        "boxAreaAfter": 17524
+      },
+      "look": {
+        "kept": true,
+        "paperBefore": "A3",
+        "paperAfter": "A3"
+      }
+    },
+    "wireCount": 72,
+    "labelCount": 24,
+    "paper": "A3",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: SI1 turned 270\u00b0, SI7 turned 180\u00b0, SI8 turned 90\u00b0; label overlaps 0 to 0, wire crossings 0 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      },
+      {
+        "name": "Interface",
+        "members": [
+          "J1",
+          "J2"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 72,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/d10-flow-iface-A3.png"
+  },
+  "e1-one-short": {
+    "tag": "e1-one-short",
+    "note": "single group, short net names",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A5",
+      "inkUtilization": 0.6912170548712206,
+      "compaction": "compacted",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 16834,
+        "boxAreaAfter": 16834
+      }
+    },
+    "wireCount": 81,
+    "labelCount": 19,
+    "paper": "A5",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 13% utilization; reflowed onto A5",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "0V",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hbo",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k3",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k4",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k5",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k6",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lbi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 81,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        87.63,
+        35.56
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e1-one-short.png"
+  },
+  "e2-one-A2": {
+    "tag": "e2-one-A2",
+    "note": "single group, pinned to A2",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A2",
+      "inkUtilization": 0.06505833190533311,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25006,
+        "boxAreaAfter": 25006
+      }
+    },
+    "wireCount": 80,
+    "labelCount": 20,
+    "paper": "A2",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom, SI6 turned 270\u00b0; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 80,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        207.01,
+        184.15
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e2-one-A2.png"
+  },
+  "e3-one-kinds": {
+    "tag": "e3-one-kinds",
+    "note": "single group, every net's kind declared explicitly",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e3-one-kinds.png"
+  },
+  "e4-one-long": {
+    "tag": "e4-one-long",
+    "note": "single group, long descriptive net names",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.3816883134314542,
+      "compaction": "compacted",
+      "misses": [
+        "A5 217\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 27705,
+        "boxAreaAfter": 27705
+      }
+    },
+    "wireCount": 80,
+    "labelCount": 20,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A2 at 8% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 1 to 1, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "cap_selector_contact_1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "cap_selector_contact_2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "cap_selector_contact_3",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "cap_selector_contact_4",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "cap_selector_contact_5",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "cap_selector_contact_6",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "eq_section_input",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "eq_section_output",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_pot_input",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_pot_output",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_cut_tap_one",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_cut_tap_two",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_node",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 80,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        182.88,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e4-one-long.png"
+  },
+  "e5-one-nokind": {
+    "tag": "e5-one-nokind",
+    "note": "single group, no kind declared anywhere (inference only)",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e5-one-nokind.png"
+  },
+  "e6-one-A1": {
+    "tag": "e6-one-A1",
+    "note": "single group, pinned to A1",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A1",
+      "inkUtilization": 0.03082896783507015,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25006,
+        "boxAreaAfter": 25006
+      }
+    },
+    "wireCount": 80,
+    "labelCount": 20,
+    "paper": "A1",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom, SI6 turned 270\u00b0; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 80,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        330.2,
+        271.78
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e6-one-A1.png"
+  },
+  "e7-short-A3": {
+    "tag": "e7-short-A3",
+    "note": "single group, short net names, A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.12700757818930042,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 21221,
+        "boxAreaAfter": 21221
+      }
+    },
+    "wireCount": 79,
+    "labelCount": 20,
+    "paper": "A3",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "0V",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hbo",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k3",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k4",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k5",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k6",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lbi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 79,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        130.81,
+        124.46
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e7-short-A3.png"
+  },
+  "e8-one-usletter": {
+    "tag": "e8-one-usletter",
+    "note": "single group, pinned to USLetter",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.31659302508562437,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7128 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25123,
+        "boxAreaAfter": 25123
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "paper hint \"USLetter\" is not a standard size; deriving paper from content",
+      "hang refused: SI6 could not be placed cleanly on RV1.2 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        140.97,
+        59.69
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/e8-one-usletter.png"
+  },
+  "f1-rev-A3": {
+    "tag": "f1-rev-A3",
+    "note": "reverse order, single group, A3",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A3",
+      "inkUtilization": 0.1394196069958848,
+      "compaction": "pinned",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 25445,
+        "boxAreaAfter": 25445
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A3",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on SW1.7 in \"Low boost section\"; drawn in a column instead",
+      "placement search: J1 mirrored top to bottom, SI6 turned 270\u00b0; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        119.38,
+        124.46
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/f1-rev-A3.png"
+  },
+  "f2-rev-gndsig": {
+    "tag": "f2-rev-gndsig",
+    "note": "reverse order, single group, 0V declared signal",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.295354940757197,
+      "compaction": "compacted",
+      "misses": [
+        "A5 177\u00d7109 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 20487,
+        "boxAreaAfter": 20487
+      }
+    },
+    "wireCount": 84,
+    "labelCount": 25,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on SW1.7 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 13% utilization; reflowed onto A4",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored left for right, J2 mirrored left for right, in labelled; label overlaps 2 to 0, wire crossings 5 to 0"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "signal",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 84,
+    "crossings": 0,
+    "crossingPoints": [],
+    "symbols": 19,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/f2-rev-gndsig.png"
+  },
+  "f3-rev-short": {
+    "tag": "f3-rev-short",
+    "note": "reverse order, single group, short net names",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A5",
+      "inkUtilization": 0.6494947816349383,
+      "compaction": "compacted",
+      "misses": [],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 14134,
+        "boxAreaAfter": 14134
+      }
+    },
+    "wireCount": 81,
+    "labelCount": 19,
+    "paper": "A5",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on SW1.7 in \"Low boost section\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 12% utilization; reflowed onto A5",
+      "group \"Low boost section\" was wider than the sheet; its columns wrapped onto 2 bands"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "0V",
+        "class": "ground",
+        "overridden": true,
+        "basis": "declared"
+      },
+      {
+        "name": "hbo",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k3",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k4",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k5",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "k6",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lbi",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "Low boost section",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 81,
+    "crossings": 2,
+    "crossingPoints": [
+      [
+        118.11,
+        40.64
+      ],
+      [
+        91.44,
+        33.02
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/f3-rev-short.png"
+  },
+  "f4-rev-itb": {
+    "tag": "f4-rev-itb",
+    "note": "reverse order, single group, ITB caption",
+    "ok": true,
+    "sheetFit": {
+      "paper": "A4",
+      "inkUtilization": 0.313905604924558,
+      "compaction": "compacted",
+      "misses": [
+        "A5 159\u00d7118 mm vs 190\u00d794 usable"
+      ],
+      "squeeze": {
+        "rounds": 0,
+        "boxAreaBefore": 20613,
+        "boxAreaAfter": 20613
+      }
+    },
+    "wireCount": 82,
+    "labelCount": 19,
+    "paper": "A4",
+    "notes": [
+      "hang refused: SI6 could not be placed cleanly on SW1.7 in \"3 BAND PULTEC STYLE EQ - LOW BOOST SECTION\"; drawn in a column instead",
+      "sheet compacted: the natural layout fit A3 at 14% utilization; reflowed onto A4",
+      "group \"3 BAND PULTEC STYLE EQ - LOW BOOST SECTION\" was wider than the sheet; its columns wrapped onto 2 bands",
+      "placement search: J1 mirrored top to bottom; label overlaps 0 to 0, wire crossings 2 to 1"
+    ],
+    "mergedNets": [],
+    "labelOverlaps": 0,
+    "netClasses": [
+      {
+        "name": "c1_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c2_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c3_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c4_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c5_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "c6_sel",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "GND",
+        "class": "ground",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_boost_out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "hi_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_boost_in",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t1",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "lo_t2",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      },
+      {
+        "name": "out",
+        "class": "signal",
+        "overridden": false,
+        "basis": "name"
+      }
+    ],
+    "groups": [
+      {
+        "name": "3 BAND PULTEC STYLE EQ - LOW BOOST SECTION",
+        "members": [
+          "C1",
+          "C2",
+          "C3",
+          "C4",
+          "C5",
+          "C6",
+          "J1",
+          "J2",
+          "R1",
+          "RV1",
+          "SI1",
+          "SI2",
+          "SI3",
+          "SI4",
+          "SI5",
+          "SI6",
+          "SI7",
+          "SI8",
+          "SW1"
+        ]
+      }
+    ],
+    "erc": "Found 0 violations",
+    "netlist": {
+      "match": true,
+      "missing": [],
+      "extra": [],
+      "mp_alone": true,
+      "spec_nets": 14,
+      "got_nets": 14
+    },
+    "wireSegments": 82,
+    "crossings": 1,
+    "crossingPoints": [
+      [
+        143.51,
+        58.42
+      ]
+    ],
+    "symbols": 29,
+    "rotations": [
+      0.0,
+      90.0,
+      180.0,
+      270.0
+    ],
+    "render": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/copperhead-idiom/renders/f4-rev-itb.png"
+  }
+}
