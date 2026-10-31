@@ -37,8 +37,13 @@ at the render - not a placement algorithm.
 **This reverses what the repository tried for two sessions before 2026-10-28**,
 which was to develop readability algorithms in `lib/schgen/`. That work produced
 three invented readability metrics each pointing the opposite way to the owner's
-judgement. `DEVELOPMENT-LOG.md` records it; `lib/schgen/` remains the
-model-to-sheet generator and is not what draws the pages he has accepted.
+judgement. `DEVELOPMENT-LOG.md` records it. **`lib/schgen/` is now deleted** -
+this sentence said it *"remains the model-to-sheet generator and is not what
+draws the pages he has accepted"*, and the second half of that is why the first
+half stopped being worth keeping: nothing in this repository generates a sheet
+from a model any more
+(`docs/superpowers/plans/2026-10-30-remove-schgen.md`,
+`docs/research/2026-10-30-schgen-removed.md`).
 
 ---
 
@@ -51,7 +56,7 @@ The toolchain
 | **akcli-kicad** | `0.22.0` (protocol 2) | MIT | PyPI `akcli-kicad`, upstream `github.com/tipoLi5890/akcli` | repairs the sheet; queries pin geometry |
 | **kicad-cli** | `10.0.5` | GPL-3.0 | `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` | renders, exports netlists, runs ERC |
 | **tsx** | `4.23.1` on node `v22.19.0` | MIT | npm, via `npx` | **this is what actually runs copperhead's CLI** |
-| **bun** | `1.3.8` | MIT | bun.sh | runs this repo's own `tools/schgen/*.ts` |
+| **bun** | `1.3.8` | MIT | bun.sh | runs this repository's own TypeScript - `bun test`, and the tools under `tools/`. It ran `tools/schgen/*.ts` until those were deleted |
 | **Python** | `3.14.6` | PSF | system / venv | akcli's venv, every check script, direct sheet edits |
 | **ImageMagick** | `7.1.1-47 Q16-HDRI` | ImageMagick | `brew install imagemagick` | **every PDF to PNG conversion and every crop** |
 | **git** | any | GPL-2.0 | system | copperhead **refuses to draft** outside a git repository |
@@ -65,8 +70,13 @@ by an agent that had not drawn the first two:**
 - **copperhead is invoked with `npx tsx src/cli.ts`, not `bun src/cli.ts`.** The
   committed `draft.py` uses tsx, so tsx is the measured path. This file said
   `bun` until the hi-boost run, and **nothing has ever measured that path.**
-  `bun` is still required, for `bun tools/schgen/board-sheets.ts`, which produces
-  the sheet the intent is verified against.
+  `bun` is still required, for `bun test` and the tools under `tools/`.
+
+  **It was required here for `bun tools/schgen/board-sheets.ts`, which produced
+  the sheet the intent was verified against, and that command is deleted.** The
+  intent is verified against the netlist exported from the model instead -
+  `scripts/intent_vs_model.py`, named in step 1 below - so the check survives
+  and the sheet it used to be taken against does not.
 - **ImageMagick and git were missing from this table entirely**, and the loop
   cannot produce a picture anyone can look at without ImageMagick. A toolchain
   list assembled from what you remember using omits the tools that worked.
@@ -593,9 +603,12 @@ decide something this file does not answer:
   `sha256(svg minus the generation-title line)` is byte-stable on one machine,
   measured; whether it survives a font substitution is not known, and an
   approval bound to it would read as a withdrawn signature if it drifted.
-- **`tools/draught/gate.ts` is committed and known inadequate.** It matched a
-  netlist exactly on the A5-overflowed page. It is structurally incapable of the
-  class of defect that matters, and nothing has replaced it.
+- **`tools/draught/gate.ts` IS DELETED, and nothing replaced it.** This entry
+  said it was *"committed and known inadequate"* - it matched a netlist exactly
+  on the A5-overflowed page, so it was structurally incapable of the class of
+  defect that matters. It went with the generator's three CLI verbs. **Read that
+  as a gap, not as a resolution**: the hole the entry named is still open and
+  there is now not even an inadequate check sitting in it.
 - **"DUPLICATE" IS UNDEFINED, AND THE WORKING READING IS NOT A RULE.** On a
   one-sheet page every label is on-page, and a net that crosses the junction
   ladder into four groups legitimately carries four labels. Both accepted pages
