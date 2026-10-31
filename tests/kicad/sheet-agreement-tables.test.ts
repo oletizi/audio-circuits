@@ -4,7 +4,8 @@
  * table.
  *
  * **WHY THIS FILE EXISTS, AND IT IS NOT TIDINESS.** Both tables were carried into that module from
- * `lib/schgen/`, which this plan deletes - and so were the two tests that kept them from rotting.
+ * `lib/schgen/`, which this plan has deleted - and so were the two tests that kept them from
+ * rotting.
  * `tests/schgen/rules/symbols.test.ts` resolved every lib id of the whitelist on every run;
  * `tests/schgen/ir/mechanical-pins.test.ts` resolved every key of the mechanical table, its own
  * comment saying *"throws if the key is a typo - that IS the assertion"*. **Both die with the
@@ -15,7 +16,7 @@
  * tool or a test that re-runs it, never in prose."*
  *
  * **IT READS THE INSTALLED LIBRARY THROUGH `./symbol-library-disk.ts`, NOT THROUGH
- * `lib/schgen/render/stock-symbols.ts`**, which is also being deleted. That helper refuses when no
+ * `lib/schgen/render/stock-symbols.ts`**, which is deleted too. That helper refuses when no
  * library is present and does NOT skip, for the reason `tests/circuits/kicad-round-trip.ts` gives:
  * a green suite on a machine with no KiCad would be a check that looked like it had passed while
  * reading nothing, which is the one failure mode this workflow exists to prevent. The last test

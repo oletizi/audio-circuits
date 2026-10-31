@@ -4,8 +4,8 @@
  *
  * `tests/circuits/kicad-round-trip.ts`'s `kicadRoundTrip` was this proof for `lib/kicad/schematic.ts`'s
  * stub writer: write the stub, export it with the real `kicad-cli`, and compare the export against
- * the circuit. The stub writer is being deleted - its own module comment records what it emits as a
- * known failure mode - and once the schematic generator goes with it, the stub writer would become
+ * the circuit. The stub writer is deleted - its own module comment recorded what it emitted as a
+ * known failure mode - and with the schematic generator gone too, it would have become
  * the repository's only model-to-schematic writer, carrying that proof for output nobody ships. This
  * file moves the proof onto the five sheets this repository actually ships: the approved pages under
  * `drafted/pultec/`.

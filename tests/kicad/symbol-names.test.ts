@@ -201,21 +201,40 @@ test("every declared symbol table resolves too, including the rotary table and t
  * `./symbol-library-disk.ts`'s root and the read throws, for the reason that
  * file gives.
  */
+/**
+ * The installed library for `libId`, as a name-to-block map.
+ *
+ * Shared by the comparison and by its controls on purpose: a control that reimplemented the read
+ * would prove something about itself. `fs.readFileSync` here is what makes the whole arm refuse
+ * rather than skip on a machine with no KiCad.
+ */
+function installedLibraryOf(libId: string): ReadonlyMap<string, string> {
+  return librarySymbols(fs.readFileSync(symbolLibraryFile(libId), "utf8"))
+}
+
+/**
+ * Why `libId`'s vendored copy and `library`'s own flattened text disagree, or `undefined` when
+ * they do not.
+ *
+ * **THE ONE COMPARISON, CALLED BY THE REAL ARM AND BY BOTH CONTROLS.** `library` is a parameter so
+ * a control can hand it a PERTURBED installed side and watch this same function report the drift -
+ * which is the only form of control that can fail here (see the first one below).
+ */
+function vendoredDrift(libId: string, library: ReadonlyMap<string, string>): string | undefined {
+  const { name } = splitLibId(libId)
+  if (!library.has(name)) {
+    return `${libId}: ${symbolLibraryFile(libId)} no longer holds a symbol "${name}"`
+  }
+  const installedText = `${flattenedSymbol(library, name)}\n`
+  if (installedText === vendoredSymbolText(libId)) return undefined
+  return `${libId}: ${vendoredSymbolFile(libId)} differs from ${symbolLibraryFile(libId)}`
+}
+
 test("every vendored symbol is byte-identical to the installed library's own flattened text", () => {
   expect(VENDORED_SYMBOLS.length, "an empty vendored set would make the loop below vacuous")
     .toBeGreaterThan(0)
-  const drifted: string[] = []
-  for (const libId of VENDORED_SYMBOLS) {
-    const { name } = splitLibId(libId)
-    const installed = librarySymbols(fs.readFileSync(symbolLibraryFile(libId), "utf8"))
-    if (!installed.has(name)) {
-      drifted.push(`${libId}: ${symbolLibraryFile(libId)} no longer holds a symbol "${name}"`)
-      continue
-    }
-    const installedText = `${flattenedSymbol(installed, name)}\n`
-    if (installedText === vendoredSymbolText(libId)) continue
-    drifted.push(`${libId}: ${vendoredSymbolFile(libId)} differs from ${symbolLibraryFile(libId)}`)
-  }
+  const drifted = VENDORED_SYMBOLS.map((libId) => vendoredDrift(libId, installedLibraryOf(libId)))
+    .filter((d): d is string => d !== undefined)
   expect(
     drifted,
     "NOTHING IS PREFERRED. Re-run tools/kicad/vendor-symbols.ts against this KiCad and update " +
@@ -224,17 +243,57 @@ test("every vendored symbol is byte-identical to the installed library's own fla
   ).toEqual([])
 })
 
-test("CONTROL: a vendored block with one byte changed is NOT byte-identical, so the zero above counts", () => {
-  // The perturbation is in memory and the vendored file is never written. Without it, a
-  // comparison that always answered equal - a flattener that returned the vendored text, say -
-  // would pass the test above for ever.
-  const [libId] = VENDORED_SYMBOLS
-  if (libId === undefined) throw new Error("VENDORED_SYMBOLS is empty; the test above is vacuous")
+/**
+ * **THE PERTURBATION IS ON THE INSTALLED SIDE, AND THE FIRST VERSION OF THIS CONTROL COULD NOT
+ * FAIL.** It asserted `installedText` equalled the vendored text and then that it did not equal
+ * `` `${vendoredSymbolText(libId)} ` `` - a string against itself plus a space, which is a
+ * tautology. Under the very sabotage its own comment claimed to catch - a flattener that returned
+ * the vendored text - both lines still passed, so it proved only that `===` distinguishes two
+ * different strings.
+ *
+ * What it does now is change ONE CHARACTER of the installed library's own block for this symbol,
+ * in memory, and require `vendoredDrift` - the same function the arm above calls - to report the
+ * disagreement. A flattener that ignored its `library` argument, or a comparison that always
+ * answered equal, fails here.
+ */
+test("CONTROL: one character changed on the INSTALLED side is reported as drift, by the same comparison", () => {
+  const libId = VENDORED_SYMBOLS[0]
+  if (libId === undefined) throw new Error("VENDORED_SYMBOLS is empty; the arm above is vacuous")
   const { name } = splitLibId(libId)
-  const installed = librarySymbols(fs.readFileSync(symbolLibraryFile(libId), "utf8"))
-  const installedText = `${flattenedSymbol(installed, name)}\n`
-  expect(installedText).toBe(vendoredSymbolText(libId))
-  expect(installedText).not.toBe(`${vendoredSymbolText(libId)} `)
+  const library = installedLibraryOf(libId)
+  // The unperturbed state first: without it, a perturbation that happened to produce the vendored
+  // text would read as a working control.
+  expect(vendoredDrift(libId, library), `${libId} already disagrees; perturbing it proves nothing`)
+    .toBeUndefined()
+
+  const block = library.get(name)
+  if (block === undefined) throw new Error(`${libId}: the installed library has no "${name}"`)
+  // A digit inside the block, not its name or its structure: the claim under test is BYTE
+  // equality, so the smallest real edit is the right perturbation. Nothing is written to disk.
+  const perturbed = block.replace(/(\(pin[\s\S]{0,200}?\(at )(-?[0-9]+)/, (_m, head: string, n: string) => `${head}${Number(n) + 1}`)
+  expect(perturbed, "the perturbation changed nothing, so this control cannot run").not.toBe(block)
+  expect(perturbed.length, "the perturbation must be a character change, not a deletion")
+    .toBeGreaterThanOrEqual(block.length)
+
+  const drift = vendoredDrift(libId, new Map(library).set(name, perturbed))
+  expect(drift, "a one-character change on the installed side was NOT reported").toBeDefined()
+  expect(drift).toContain(vendoredSymbolFile(libId))
+})
+
+/**
+ * **THE SECOND HALF: the comparison is keyed on the NAME it is asked about.** A flattener that
+ * returned whichever block it liked - the first in the library, say - would pass the arm above on
+ * any machine where that block happened to be vendored. Handing it a DIFFERENT symbol of the same
+ * installed library must not answer this symbol's vendored text.
+ */
+test("CONTROL: flattening a different symbol of the same library does not match this symbol's vendored copy", () => {
+  const libId = VENDORED_SYMBOLS[0]
+  if (libId === undefined) throw new Error("VENDORED_SYMBOLS is empty; the arm above is vacuous")
+  const { name } = splitLibId(libId)
+  const library = installedLibraryOf(libId)
+  const other = [...library.keys()].find((k) => k !== name)
+  if (other === undefined) throw new Error(`${symbolLibraryFile(libId)} holds only "${name}", so there is no other symbol to substitute`)
+  expect(`${flattenedSymbol(library, other)}\n`).not.toBe(vendoredSymbolText(libId))
 })
 
 test("every symbol the five Pultec boards actually emit resolves, which is the derived arm", () => {

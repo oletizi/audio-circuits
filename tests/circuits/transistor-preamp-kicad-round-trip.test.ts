@@ -6,7 +6,7 @@
  * `"KiCad reads the generated stub as the same circuit"` test that calls
  * `./kicad-round-trip.ts`'s `kicadRoundTrip`: write a FRESH stub from the live model with
  * `lib/kicad/schematic.ts`'s `writeSchematicStub`, export THAT with the real `kicad-cli`, and
- * compare. The stub writer is being deleted, and that test cannot survive it - but these five
+ * compare. The stub writer is deleted, and that test could not survive it - but these five
  * boards are not `drafted/pultec/`'s boards, with no approved page of their own: each has a real,
  * committed `.kicad_sch` under `circuits/transistor-preamp/`, declared as its own `"sch"` in
  * `boards/<board>/perfboard.json`, re-exported and reconciled against
