@@ -25,22 +25,30 @@ doing that work end to end:**
   that writes its own criteria from the layout it already produced will pass
   every check it set itself.
 
-Authority runs in both directions depending on where a circuit came from.
-`lib/schgen/` writes a `.kicad_sch` **from** a model — templates, a layout
-backend, deterministic UUIDs and a set of gates — and `bun run schgen` is its
-front door. The Pultec runs the other way: an existing design imported
+Authority runs in both directions depending on where a circuit came from. For a
+circuit an agent designs, the model is authoritative and the drawing is derived
+from it. The Pultec runs the other way: an existing design imported
 schematic-first, with the model derived from a netlist export.
 
-`lib/kicad/schematic.ts` is the **superseded** stub writer that `lib/schgen/`
-replaced. Nothing invites you to it: there is no script and no verb. It survives
-only because the five `tests/circuits/transistor-preamp-*.test.ts` files are this
-repository's only `kicad-cli` proof that KiCad reads a generated schematic the
-way the circuit means it, and `schgen` cannot draw any of those five boards
-today — it **refuses** `lab-board` at layout, and the other four it **cannot be
-offered at all**, because no module declares a schematic for them.
-`docs/known-gaps.md` **G247** measures the refusals, **G248** records what has to
-be true before the file goes, and **G81** records what is wrong with what it
-emits.
+**A `.kicad_sch` is not written by code in this repository.** It is drawn by
+`TOOLING.md`'s loop — copperhead drafts, akcli-kicad repairs, `kicad-cli`
+renders and exports, the reviewer gives a verdict on the rendered page, and the
+page is committed under `drafted/<circuit>/<board>/` beside a `RECORD.md`
+carrying the sha256 the verdict is bound to.
+
+> **This paragraph described a model-to-schematic generator at `lib/schgen/`
+> with `bun run schgen` as its front door, and a superseded stub writer at
+> `lib/kicad/schematic.ts` kept alive for the `transistor-preamp` round trips.
+> All of it is deleted** — `lib/schgen/`, `tools/schgen/`, `tests/schgen/`,
+> `lib/kicad/schematic.ts` and the three `schgen` CLI verbs — in the plan at
+> `docs/superpowers/plans/2026-10-30-remove-schgen.md`, with the findings in
+> `docs/research/2026-10-30-schgen-removed.md`. **The `kicad-cli` proof the stub
+> was being kept for did not depend on the stub**: it is
+> `tests/circuits/transistor-preamp-kicad-round-trip.test.ts`, which exports
+> each board's committed `.kicad_sch` under `circuits/transistor-preamp/` with
+> the real `kicad-cli` and compares it against the live model — so all five
+> boards kept the proof and only its subject changed. **G247**, **G248** and
+> **G81** measured a generator that no longer exists.
 
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
@@ -55,7 +63,7 @@ Read them in this order. Each outranks the ones below it.
 | [`EVALUATING-DRAWINGS.md`](EVALUATING-DRAWINGS.md) | **canonical on drawings** - who may judge one, what counts as a valid evaluation, what an agent may say about one. An agent is not a qualified reviewer, and *better*, *good*, *clean*, *readable* and *legible* are forbidden words about any drawing produced here |
 | [`CLAUDE.md`](CLAUDE.md) | the conventions every circuit follows |
 | [`AGENTS.md`](AGENTS.md) | the shared working rules |
-| [`TOOLING.md`](TOOLING.md) | **how a schematic actually gets drawn** - the toolchain with exact versions, the copperhead-then-akcli loop, the six known repair classes, the checks that must be able to fail, and what the procedure does not yet cover |
+| [`TOOLING.md`](TOOLING.md) | **how a schematic actually gets drawn** - the toolchain with exact versions, the copperhead-then-akcli loop, the known repair classes (it says how many, and the set is not closed), the checks that must be able to fail, and what the procedure does not yet cover |
 | [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md) | the owner's verdicts on the pages he has seen, verbatim, each bound to the sha256 of the sheet. The defects he named are the only statements of what he wants that carry authority |
 | [`DEVELOPMENT-LOG.md`](DEVELOPMENT-LOG.md) | newest session first - what was done, and what went wrong doing it |
 
@@ -140,7 +148,13 @@ audio-circuits/
   board. `docs/known-gaps.md` **G250** carries the six-arm measurement. What is
   true of the original sentence is its *point*: those tests invoke `kicad-cli`
   and **fail rather than skip**, because they are the only proof that KiCad
-  reads a generated schematic stub the way the circuit means it. The default
+  reads this repository's committed sheets the way the circuits mean them.
+  **The five per-board tests that carried that claim were named "KiCad reads
+  the generated stub as the same circuit" and are deleted with the stub
+  writer**; the claim moved whole to
+  `tests/circuits/transistor-preamp-kicad-round-trip.test.ts` and
+  `tests/circuits/drafted-kicad-round-trip.test.ts`, which run `kicad-cli` on
+  the committed `.kicad_sch` instead of on a freshly written stub. The default
   assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
@@ -177,31 +191,25 @@ audio-circuits/
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
-- **Two npm RUNTIME dependencies, installed by `bun install` rather than by
-  you**: `eecircuit-engine` (the vendored SPICE engine) and `elkjs` (the
-  schematic layout backend, pinned to an exact version). Neither pulls in
-  anything transitively and both ship their own types, so there is nothing to
-  configure. `elkjs` is 7.7 MB on disk, almost all of it one
-  GWT-compiled worker, and it needs a non-obvious construction under Bun -
-  `docs/known-gaps.md` G183 records why, and why the pinned version is 0.9.3
-  rather than the latest.
-- **`SCHGEN_SOURCE`**, an environment variable (no default - see below),
-  pointing at a local checkout of `digital-pedal-platform`'s
-  `tools/schgen/` directory, the source tree the `lib/schgen/` port is
-  ported from. Required for **eight tests, all in one file** - the sentence
-  here said *"exactly one test"* and is understated by seven, measured
-  (**G250**'s `noschgen` arm): unsetting it fails eight testcases, every one of
-  them in `tests/schgen/port-fidelity.test.ts` and every one of them named,
-  with nothing unregistered. The one it named is
-  "every ported file is its source, rewritten only by the manifest" in
-  `tests/schgen/port-fidelity.test.ts`, which **fails** (never skips) when
-  it is unset, because it is the only proof that every file under
-  `lib/schgen/` is still a mechanical port of its pedals source and not a
-  hand edit. Unlike `kicad-cli`, Chrome or `qt@5`, this has **no default
-  path to assume**: it names another private repository checkout on this
-  machine, not a package with one standard install location, so nothing
-  here guesses where that checkout lives. See `lib/schgen/README.md` and
-  `docs/known-gaps.md` G110.
+- **One npm RUNTIME dependency you need, installed by `bun install` rather than
+  by you**: `eecircuit-engine`, the vendored SPICE engine. It pulls in nothing
+  transitively and ships its own types, so there is nothing to configure.
+
+  **`elkjs` 0.9.3 is still declared in `package.json` and NOTHING IMPORTS IT.**
+  It was the deleted generator's layout backend; the only remaining mentions of
+  it in the tree are that declaration, `bun.lock` and the research documents.
+  Recorded rather than quietly dropped, because removing a declared dependency
+  is a `package.json` change and this was a prose pass: **the dependency is
+  dead weight, not a prerequisite**, and `docs/known-gaps.md` G183's note on
+  constructing it under Bun no longer applies to anything here.
+- **No `SCHGEN_SOURCE`, and there is nothing to set.** This list carried that
+  environment variable as a prerequisite for eight tests in
+  `tests/schgen/port-fidelity.test.ts`, which proved every file under
+  `lib/schgen/` was still a mechanical port of its `digital-pedal-platform`
+  source. **That file and the tree it guarded are deleted**, nothing in the
+  repository reads the variable, and a `bun test` on a clean machine no longer
+  has those eight failures in its baseline. `docs/known-gaps.md` G110 and
+  G250's `noschgen` arm measured a prerequisite that no longer exists.
 
 Nothing else needs setting up: the perfboard tooling builds and locates the
 VeroRoute fork itself, and none of the rest of this requires an environment
@@ -222,8 +230,13 @@ the per-file losses.
 | **`kicad-cli`** | **ERASES 294 tests**, 144 of them in twelve files that leave no `testsuite` element, no name and no failure; 208 further testcases fail by name; 50 skip |
 | **the VeroRoute binary** | **ERASES 48 tests**, 6 of them with no trace at all; 77 testcases fail by name |
 | Google Chrome | fails **1** test, by name. Nothing erased |
-| `SCHGEN_SOURCE` | fails **8** tests, by name, all in one file. Nothing erased |
 | Homebrew `qt@5` | **nothing at all** - the suite exits 0. It is needed to BUILD the VeroRoute binary, not to use one that exists |
+
+**This table had a fifth row, `SCHGEN_SOURCE`**, measured as eight named
+failures in one file with nothing erased. Both the file and the variable are
+deleted; the row is removed rather than kept as a prerequisite nobody can
+satisfy. The other four rows are unchanged and were not re-measured in that
+change, so they remain G250's figures with G250's date on them.
 
 **The rule behind the table is where the prerequisite is resolved, not which
 prerequisite it is**: resolved inside a test it fails loudly, resolved at a test
@@ -236,28 +249,24 @@ files` does not move at all.
 
 ```bash
 bun install
-bun test           # the full suite, including the SPICE simulations, one
-                   # test that invokes kicad-cli directly, and one that
-                   # requires SCHGEN_SOURCE (see Prerequisites)
+bun test           # the full suite, including the SPICE simulations and the
+                   # tests that invoke kicad-cli directly (see Prerequisites)
 bun run typecheck
 ```
 
-`bun run schgen` is the schematic generator's front door, and it has two verbs:
+**There is no verb that writes a schematic, and `bun run schgen` is gone.**
+It had two verbs, `check` and `generate`, over a design module exporting a
+`DesignSpec`; all three verbs, the generator behind them and the one fixture
+design in the tree were deleted with
+`docs/superpowers/plans/2026-10-30-remove-schgen.md`. **G165**'s look at what it
+drew is a look at deleted output.
 
-```bash
-bun run schgen check <design-module>       # build, validate, report staleness; writes nothing
-bun run schgen generate <design-module>    # the same, then write the KiCad project
-                                           #   --init             create the lock files
-                                           #   --accept-toolchain record a new KiCad baseline
-```
-
-A design module is TypeScript exporting `design` (a `DesignSpec`); the only one
-in this repository today is the ported fixture at
-`tests/schgen/__fixtures__/designs/mini/index.ts`. `check` is read-only, which
-is structural rather than careful - the only writer is injected into the CLI -
-and it compares what is on disk to what the model produces **by content, never
-by timestamp**. `lib/schgen/README.md` explains the generator; `docs/known-gaps.md`
-**G165** is a look at what it draws.
+A schematic is drawn by hand-running [`TOOLING.md`](TOOLING.md)'s loop and is
+approved by the reviewer, never by a check. What `bun test` holds is the other
+direction: `tests/circuits/drafted-kicad-round-trip.test.ts` and
+`tests/circuits/transistor-preamp-kicad-round-trip.test.ts` export committed
+sheets with the real `kicad-cli` and compare them against the models, **by
+content, never by timestamp**.
 
 Circuits are checked against real, physically-built layouts through the
 perfboard workflow. `make check`, run from a board's directory (e.g.
@@ -334,12 +343,15 @@ to one supplier. Keys are read from `~/.config/mouser/mouser-credentials.txt`
 and `~/.config/digikey/digikey-credentials.txt` and never printed; see
 `docs/parts/sourcing-notes.md`.
 
-A new board's KiCad schematic comes from `bun run schgen` — its two verbs and
-what a design module is are at the top of this section. The committed
-schematics under `circuits/` predate the generator and were arranged by hand;
-nothing regenerates them, and `docs/known-gaps.md` **G247** measures which of
-this repository's own boards `schgen` will accept today, which is none of the
-five preamp boards.
+A new board's KiCad schematic is **drawn**, not generated: [`TOOLING.md`](TOOLING.md)
+is the procedure and [`EVALUATING-DRAWINGS.md`](EVALUATING-DRAWINGS.md) binds
+before it. The committed schematics under `circuits/` were arranged by hand and
+nothing regenerates them; the drawn pages live under `drafted/<circuit>/<board>/`
+with their verdicts in [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md).
+**This paragraph said a new board's schematic comes from `bun run schgen`, and
+cited G247 for which boards that generator would accept** - the verb and the
+generator are deleted, so the question G247 answered is not one anybody can ask
+of this tree.
 
 ## How the Pultec reference is validated
 
