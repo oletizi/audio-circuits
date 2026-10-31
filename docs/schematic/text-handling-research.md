@@ -98,21 +98,38 @@ document can get to pinning the tree it was measured on - against
 KiCad tag `10.0.5`, SHA-256
 `dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9`. **The probe
 refuses a font blob with any other hash**, so a figure here cannot have come
-from an unknown font. Re-drive it with:
+from an unknown font.
+
+**THE PROBE IS DELETED AND THIS RUN CANNOT BE RE-DRIVEN FROM THIS TREE.**
+`tools/schgen/text-metrics/probe.ts` and the three other probes went with the
+schematic generator in `6085dc5`
+(`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+`docs/research/2026-10-30-schgen-removed.md`); they are in git at `6085dc5^`.
+This paragraph ended *"Re-drive it with:"* followed by a `curl` of the font
+blob, the probe, and the paste checker. **The first two of those three commands
+no longer exist.**
+
+**THE CHECKER SURVIVED AND SO DID THE LOG, WHICH IS THE HALF THAT MATTERS
+HERE.** The four probe runs are committed beside this document under
+`docs/schematic/text-handling-research-logs/`, named for the probe each came
+from, and the checker is `tools/text-metrics/verify-pastes.ts` - moved there
+out of `tools/schgen/text-metrics/`, where its path had implied a dependency it
+never had (one import, `node:fs`). It is driven on every `bun test` by
+`tests/text-metrics/document-pastes.test.ts`:
 
 ```sh
-curl -sSL -o /tmp/newstroke_font.cpp \
-  https://gitlab.com/kicad/code/kicad/-/raw/10.0.5/common/newstroke_font.cpp
-bun run tools/schgen/text-metrics/probe.ts --font /tmp/newstroke_font.cpp > run.log
-bun run tools/schgen/text-metrics/verify-pastes.ts run.log
+bun test tests/text-metrics/
+bun run tools/text-metrics/verify-pastes.ts \
+  docs/schematic/text-handling-research-logs/text-metrics-probe-run.log
 ```
 
-**The second command checks this document against that run**, and
-`tests/schgen/text-metrics/document-pastes.test.ts` runs it on every `bun test`.
-**Every fenced block tagged ` ```run <section> ` must be a contiguous, unique
-slice of that named section of the log**; every block tagged otherwise must
-share no line with it, and is listed by name as not checked. **§1.11 states what
-that does and does not establish, and why it is on its third version.**
+**That couples this document to the log it was pasted from, and it never
+established that the log was a current run** - so losing the probe does not
+weaken it. **Every fenced block tagged ` ```run <section> ` must be a
+contiguous, unique slice of that named section of the log**; every block tagged
+otherwise must share no line with it, and is listed by name as not checked.
+**§1.11 states what that does and does not establish, and why it is on its
+third version.**
 
 ### 1.0 The three quantities, and why this section elects between none of them
 

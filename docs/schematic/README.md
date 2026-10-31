@@ -10,6 +10,32 @@ Schematic generation and readability: the research record
 > has not named one, and an agent may not author the words its own output is
 > judged in.
 
+> **THE SCHEMATIC GENERATOR THESE PASSES WERE COMMISSIONED FOR IS DELETED, AND
+> MOST OF THIS INDEX IS NOW A RESEARCH RECORD RATHER THAN A ROUTE INTO LIVE
+> CODE.** `lib/schgen/`, `tools/schgen/`, `tests/schgen/`,
+> `lib/kicad/schematic.ts` and the three `schgen` CLI verbs went in
+> `docs/superpowers/plans/2026-10-30-remove-schgen.md`; the findings are in
+> [`../research/2026-10-30-schgen-removed.md`](../research/2026-10-30-schgen-removed.md).
+> **Every `lib/schgen/`, `tools/schgen/` or `tests/schgen/` path on this page is
+> a path into deleted code** - the figures stand as dated measurements and not
+> one of the commands or modules can be run or read in this tree (they are in
+> git at `6085dc5^`).
+>
+> **What draws a page now is `../../TOOLING.md`'s loop** - copperhead drafts,
+> akcli-kicad repairs, `kicad-cli` renders, the reviewer gives a verdict, and
+> the page is committed under `drafted/<circuit>/<board>/`. **Nothing on this
+> page is about that loop.** `../../EVALUATING-DRAWINGS.md` is still the
+> criteria and [`verdicts.md`](verdicts.md) is still where a verdict lives, as
+> the note above says; both are unaffected.
+>
+> **Two documents this index used to list are deleted with the generator**, and
+> their rows are gone from the tables below: `template-parity.md` and
+> `template-parity-anchors.md`. Both were headed *"GENERATED - do not
+> hand-edit"* and named a verb (`bun run schgen-parity`, `bun run
+> schgen-anchors`) that no longer exists, so they were derived artifacts nothing
+> could regenerate or content-compare - and a stale derived artifact is exactly
+> what makes stale look current. They are in git at the commit before.
+
 **Six research passes** landed on 2026-10-19, ahead of the schematic-generation
 work described in
 [`../superpowers/specs/2026-10-08-agent-authored-boards-design.md`](../superpowers/specs/2026-10-08-agent-authored-boards-design.md)
@@ -415,12 +441,24 @@ and both are outside all six files:
 What this index does NOT cover
 ------------------------------
 
-**It indexes the six research passes and nothing else, and SEVEN later documents
-in this directory are not in it.** It said *"five"* until 2026-10-23, when the
-eighth pass added two; the number is corrected rather than the sentence rewritten,
-for the reason the inventory note at the top of this file gives. Stated here
-rather than left for a reader to notice, because this index's own opening says
-*"committed is not durable if nobody can find it"*:
+**It indexes the six research passes and nothing else, and the later documents
+in this directory are not in it. THE TABLES BELOW ARE THE LIST; THIS SENTENCE NO
+LONGER CARRIES A COUNT, AND THE REASON IS THAT ITS COUNT WAS WRONG.** It read
+*"SEVEN later documents"* over two tables holding **eight** rows, and the second
+table was introduced as *"the remaining five"* over **six** rows - both
+understated by one, and the file had already corrected this same number once
+(*"it said five until 2026-10-23, when the eighth pass added two"*) without
+either figure matching what it indexed.
+
+**That is this file's own worked example happening a fourth time**, and the
+inventory note at the top records the first three. The remedy taken here is the
+one `../../CLAUDE.md` states - *a figure in prose is a transcription with a date
+on it* - so the figure is deleted rather than corrected again, and the tables
+answer the question. **The deletion of `template-parity.md` and
+`template-parity-anchors.md` is what made the counts need touching**; it would
+have moved both of them downward, which no change to this sentence had ever
+done. Stated here rather than left for a reader to notice, because this index's
+own opening says *"committed is not durable if nobody can find it"*:
 
 **The first two rows are the eighth pass's, and the first of them is where a
 reader should start** - ahead of this index, ahead of the research document, and
@@ -431,23 +469,23 @@ ahead of the register:
 | [`text-handling-report.md`](text-handling-report.md) | **the human-facing report on the eighth pass** - what was asked, what was found in order of consequence, what it means for the mandate's five output classes, what is reserved to the owner, and what was not established | **Relays almost everything and says so in its own header**; its own work is a re-drive of the board census that CONFIRMS `../known-gaps.md` **G274** clause (2) rather than discovering it, plus one inference marked where it appears. It exists because the research document is written for an adversarial reader rather than a human one. **Its §2 leads with G274(2)'s finding rather than §1's: text placement is the sole cited cause of refusal on TWO of the eleven boards, and six refuse before any text is placed** |
 | [`false-greens.md`](false-greens.md) | **twenty-nine** distinct mechanisms by which a check on this branch looked green and established nothing, in six families, each with its instance, how it was caught, and the general form | **24 of 29 verified by its author against the source, 5 `[RELAYED]` with their source named**, which a catalogue of false greens had better be. **This row said *"the sixteen"* until 2026-10-23** - the controller's estimate, written into the index before the sources were walked, and corrected here by the controller because the document's own author declined to revise the entry that grades its work. Its closing section splits the twenty-nine **18 suite-catchable / 1 partly / 10 reader-only** and transfers four families to PCB place-and-route |
 
-**The remaining five predate the eighth pass** and are the spikes and parity
-measurements:
+**The rest predate the eighth pass** and are the spikes and the re-measurements.
+**Two parity documents stood in this table and are deleted** - see the notice at
+the top of this file. No count here either, for the reason given above:
 
 | document | what it is | how much it can be trusted |
 | --- | --- | --- |
-| [`elk-spike.md`](elk-spike.md) | ELK on whole circuits, flat | **Measured, no template and no block scale.** Every figure went through `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1, which this generator does not use - `../known-gaps.md` **G180** names the three figures that were properties of its skin |
+| [`elk-spike.md`](elk-spike.md) | ELK on whole circuits, flat | **Measured, no template and no block scale.** Every figure went through `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1, which the generator did not use - `../known-gaps.md` **G180** names the three figures that were properties of its skin |
 | [`elk-block-spike.md`](elk-block-spike.md) | the same, one declared block at a time | **Measured, with a paired control and a byte-identical regeneration of the first spike's inputs as the check that its extracted converter changed no behaviour.** Same frontend contamination |
-| [`template-parity.md`](template-parity.md) | do the ported templates draw this repository's blocks? | **GENERATED and content-compared on every test run.** A measurement with no target (spec §5.1) |
-| [`template-parity-anchors.md`](template-parity-anchors.md) | what a template COULD draw under an anchor probed over a block's own members | **GENERATED.** Read it only beside `template-parity.md`: `../known-gaps.md` **G160** is explicit that a realised probe is not a recommendation to declare that anchor |
-| [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on this generator, every figure produced by committed code and pinned by a committed test.** It is also the record of which spike figures CANNOT be compared, and why |
-| [`reference-graph-checks.md`](reference-graph-checks.md) | gate 8's M1 half: a generated schematic's netlist against a hand-arranged one, by value and pin-level adjacency | **Measured, and the headline is a GAP rather than a result.** Every figure comes from a real `kicad-cli` export and is asserted on every run - and the gate **has never run against a generated drawing**, because `generate` refuses both references at gate 1 (`../known-gaps.md` **G238**, **G240**). Read the first section before reading the table |
+| [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on the deleted generator; every figure WAS produced by committed code and pinned by a committed test, and all eight of those commands are now deleted** - its own heading says so, and none of the figures can be re-taken. It is also the record of which spike figures CANNOT be compared, and why |
+| [`reference-graph-checks.md`](reference-graph-checks.md) | gate 8's M1 half: a generated schematic's netlist against a hand-arranged one, by value and pin-level adjacency | **Measured, and the headline is a GAP that is now permanent rather than pending.** Every figure came from a real `kicad-cli` export and was asserted on every run; the gate **never ran against a generated drawing**, because `generate` refused both references at gate 1 (`../known-gaps.md` **G238**, **G240**), **and gate 8 is deleted with the generator, so there is nothing left for it to run against.** Read the first section before reading the table |
 
-**The two spikes are the strongest evidence in this directory about ELK and the
-weakest about THIS generator**, and `m1-remeasurement.md` is where the difference
-is measured rather than argued: of the five figures the block spike's own table
-publishes per block, **two are the same quantity as this generator's and three
-are not.**
+**The two spikes were the strongest evidence in this directory about ELK and the
+weakest about the generator**, and `m1-remeasurement.md` is where the difference
+was measured rather than argued: of the five figures the block spike's own table
+publishes per block, **two were the same quantity as the generator's and three
+were not.** With the generator deleted, the ELK half is what survives as
+evidence about anything.
 
 Four research documents landed in `docs/research/` on 2026-10-28, and nothing pointed at them
 ================================================================================================

@@ -19,6 +19,33 @@ acceptance criteria for anything. Where a mechanism has no guard in this reposit
 says so. Marks are this repository's: `[RAN]` driven here, `[READ]` read here, `[RELAYED]`
 another agent's report, not re-driven here.
 
+**SOME OF THE "WHAT GUARDS AGAINST IT HERE" CLAUSES BELOW NAME A GUARD THAT IS NOW DELETED, AND A
+CATALOGUE OF FALSE GREENS CLAIMING PROTECTION IT HAS LOST IS ITSELF ONE.** The schematic generator
+went whole in `6085dc5` - `lib/schgen/`, `tools/schgen/`, `tests/schgen/` -
+(`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+`docs/research/2026-10-30-schgen-removed.md`), and **every `lib/schgen/`, `tools/schgen/` or
+`tests/schgen/` path in this file is a path into deleted code.** The instances and the general
+forms are dated evidence and stand as written; what cannot stand is a present-tense claim that
+something guards a mechanism today. Enumerated here rather than rewritten clause by clause, so the
+list is checkable against the file:
+
+| mechanism | what it named as its guard | state now |
+| --- | --- | --- |
+| **4** (a sentinel in the comparison) | `tests/schgen/text-metrics/document-pastes.test.ts` | **LIVE, moved** to `tests/text-metrics/document-pastes.test.ts` - path corrected in place below |
+| **8** (a probe resolving a different dependency version) | `tests/schgen/port-fidelity.test.ts` refusing an undeclared `.ts`, and `tools/schgen/port-manifest.json` | **GONE.** Nothing now refuses an undeclared probe, and there is no manifest to declare one in |
+| **10** (a rotted pointer from prose to a test) | `tests/schgen/pointers.test.ts` | **GONE**, and this is the widest of them: **nothing in this repository guards a doc-to-test pointer any more.** The guard was a 17-row whitelist that also pinned its own population, and every row cited a file inside the deleted tree. **G233**'s limit - *"every other prose reference to a test file in this repository can still rot silently"* - is now the whole of it |
+| **12** (a control that catches unanticipated routes) | `tools/schgen/elk-labels/probe-run.log` as the twelve-arm run | **LOG LIVE, PROBE GONE.** The four logs are committed at `docs/schematic/text-handling-research-logs/`; the probes that wrote them are not, so the arms can be read and not re-driven - path corrected in place below |
+| **14** (a measurement whose subject the measured thing chose) | prediction `P6` in `tools/schgen/field-order/probe.ts` | **GONE.** This was named below as *"the one place on this branch where a control that would have caught a Critical is committed beside it"*, and it is deleted |
+| **19** (a filter written for a file applied to a line) | `tools/schgen/claim-sweep.ts` | **GONE.** That sweep is no longer re-drivable; the `--exclude`-plus-control practice the clause recommends does not depend on it |
+| **23** (a self-measurement stale at the commit publishing it) | `citationCount` in `tests/schgen/pointers.test.ts` | **GONE**, with mechanism 10's guard. The clause already said nothing guards 23 itself; what it offered as the general remedy taken elsewhere is now also gone |
+| **28** (a prediction verifiable only by trusting when it was written) | the predictions on the arms in `tools/schgen/label-freedom/fixtures.ts`, the probe that printed them, the committed log, and the paste checker holding the two together | **SPLIT: the fixtures and the probe are GONE, the log and the checker are LIVE.** The counter-example the clause calls credible survives in the half that can still fail - the log at `docs/schematic/text-handling-research-logs/label-freedom-probe-run.log` and `tests/text-metrics/document-pastes.test.ts` - and the ordering property it rested on, the probe printing before it exported, is now only readable in the log |
+| **29** (a claim about one's own drive or search never performed) | `tools/schgen/text-metrics/verify-pastes.ts` | **LIVE, moved** to `tools/text-metrics/verify-pastes.ts` - path corrected in place below |
+
+**The rows marked LIVE have their paths repaired in the clauses themselves**, because a live guard
+cited at a dead path is mechanism 10 happening again. **The rows marked GONE are left as written
+and answered here**, because repairing one would mean inventing a replacement guard, and there is
+none to name.
+
 **This document was swept against its own mechanism 20, and the sweep found defects.** `[RAN]` A
 script extracted **every** `*"…"*` span below of eight characters or more and searched each,
 whitespace-normalised for the hard wrap on both sides, across the register, the research document,
@@ -228,7 +255,7 @@ second by a reviewer **driving the deletion** - the report had understated it, a
 `-1` is a legal input to `<` and sorts before every real offset, so a missing anchor is
 indistinguishable from an anchor at the front.
 
-**What guards against it here.** `tests/schgen/text-metrics/document-pastes.test.ts` asserts all
+**What guards against it here.** `tests/text-metrics/document-pastes.test.ts` asserts all
 eight anchors **present** before any index is compared, and the comment says the presence line is
 the only teeth in that case and that deleting it silently removes them. §7.6 of
 `docs/schematic/text-handling-research.md` states the rule in prose:
@@ -449,7 +476,10 @@ nonetheless the best available remedy *because* it catches routes the author did
 where every other remedy on the branch asks the author to look for something they have already
 imagined. **G266** clause 9 now holds one control per option family with two of the three
 **failing**, which is a result rather than a gap, and `[READ]` **G266** records
-`tools/schgen/elk-labels/probe-run.log` as the twelve-arm run so anyone can re-drive them.
+`tools/schgen/elk-labels/probe-run.log` as the twelve-arm run so anyone can re-drive them. **That
+log is now `docs/schematic/text-handling-research-logs/elk-labels-probe-run.log` and the probe that
+wrote it is deleted**, so the twelve arms can be read and not re-driven; the path G266 names is the
+one it was committed at.
 
 ### 13. A one-sided perturbation of a symmetric check
 
@@ -558,7 +588,7 @@ hole is worse than no remedy, because it licenses confidence.
 replaced by declaration plus a totality assertion**. A block declares itself; every block is
 `VERIFIED`, `NOT-OUTPUT` or `FAILED`; and the suite asserts the three sum to the block count -
 which is exactly the property the hole violated. There is no gate left to fall below.
-`tests/schgen/text-metrics/document-pastes.test.ts` runs it on every `bun test` (ruling **R12**),
+`tests/text-metrics/document-pastes.test.ts` runs it on every `bun test` (ruling **R12**),
 and §1.11 of the research document records that the checker prints the three blocks it cannot check
 **by name on every run**, precisely so that *not checked* can never be indistinguishable from
 *checked and clean*.
@@ -999,7 +1029,7 @@ prose about the code.
 same discipline, harder"* as a **non-mechanism**, because this branch has watched it fail at least
 three times (**G234**, **G236**, **G237**). The two things that demonstrably worked were (a) a
 machine check that holds a document to a committed log, which is what
-`tools/schgen/text-metrics/verify-pastes.ts` does for pasted output and explicitly does not do for
+`tools/text-metrics/verify-pastes.ts` does for pasted output and explicitly does not do for
 prose, and (b) a named suspicion handed to a second reader.
 
 ---

@@ -231,8 +231,29 @@ What this check does NOT cover
   with one part name in different libraries would compare equal. **G242** records
   it.
 
-How to re-run everything here
------------------------------
+Where everything here came from - AND NONE OF IT CAN BE RE-RUN
+--------------------------------------------------------------
+
+**EVERY COMMAND IN THE BLOCK BELOW IS DELETED.** The four tests under
+`tests/schgen/gates/` and `tools/schgen/gate-census.ts` went with the schematic
+generator in `6085dc5`
+(`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+`docs/research/2026-10-30-schgen-removed.md`), and gate 8 itself went with them.
+This section was headed *"How to re-run everything here"*; it is kept as
+provenance - which code produced which figure, recoverable from git at
+`6085dc5^` - and not as an instruction.
+
+**The headline above is therefore permanent rather than pending:** the gate
+never ran against a generated drawing, and there is no longer a generator for it
+to run against.
+
+**AND NOTHING IN THIS REPOSITORY GUARDS A DOC-TO-TEST POINTER ANY MORE**, which
+is why this block is annotated rather than repaired. `tests/schgen/pointers.test.ts`
+was the guard, a whitelist of 17 rows that also pinned its own population, and
+every row cited a test file inside the deleted tree. A citation repaired here
+would be held to nothing and the next one to rot would do it silently;
+`docs/schematic/false-greens.md` family 10 recorded the hole while the guard
+still existed.
 
 ```
 bun test tests/schgen/gates/reference-graph.kicad.test.ts   THE FIGURES ABOVE

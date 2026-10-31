@@ -683,6 +683,28 @@ overlap only.
 7. What this repository actually does, verified clause by clause
 ---------------------------------------------------------------
 
+> **EVERY MODULE §7 AND §8 INVENTORY IS DELETED, AND THEIR DESIGN ADVICE HAS NO
+> SUBJECT LEFT.** `lib/schgen/render/field-placement.ts`, `text-boxes.ts`,
+> `text-scene.ts`, `layout-check.ts`, `geometry.ts`, `unit-text.ts`,
+> `obstacle-matrix.ts` and its five `obstacle-pairs-*.ts` siblings went whole
+> with the schematic generator in `6085dc5`
+> (`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+> `docs/research/2026-10-30-schgen-removed.md`). **The `[CODE]` and
+> `[MEASURED-HERE]` marks stand and the readings were taken** - the worktree
+> commit is named below and the code is in git at `6085dc5^` - but sentences
+> like *"nothing in any formulation above requires replacing any of it"* and
+> *"the repository has it in the wrong place"* are now statements about code
+> that is gone. **§8's one claim about a surviving module is still live**:
+> `tools/guide/placement.ts` and `tools/guide/render-edges.ts` are committed and
+> untouched, and remain this repository's scored, weighted, least-cost text
+> placer with leader lines.
+>
+> What a schematic's text geometry is handled by now is third-party: copperhead
+> places and akcli-kicad repairs, with `TOOLING.md` as the procedure and
+> `EVALUATING-DRAWINGS.md` as the criteria. Sections 1-6 of this document
+> survive the deletion entirely - they are about the published literature and
+> about KiCad, neither of which this plan touched.
+
 The brief states a controller's reading and asks for it to be checked rather
 than inherited. `[CODE]`/`[MEASURED-HERE]`, reading
 `lib/schgen/render/field-placement.ts`, `text-boxes.ts`, `text-scene.ts` and
