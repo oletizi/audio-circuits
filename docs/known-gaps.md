@@ -4201,11 +4201,41 @@ reviewer's act, and he made it.
 describes. Five approved Pultec pages came out of it; `drafted/pultec/` holds
 them and the build guides print them.
 
-**What was measured before the deletion, so the size is not re-litigated:**
-`make check` does **not** touch schgen - zero mentions in a full run - and the
-netlist round-trip is `tools/perfboard/`'s `netlist-agrees`, not schgen's. An
-earlier relayed claim that schgen carried "the census, the netlist round-trip and
-the gates" overstated it. 164 source files, 36,479 lines, 134 test files, 25,157
+**THE MEASUREMENT THIS ENTRY FIRST CARRIED WAS WRONG, and it is corrected here
+rather than edited away, because how it was wrong is the useful part.** It read:
+*"`make check` does **not** touch schgen - zero mentions in a full run - and the
+netlist round-trip is `tools/perfboard/`'s `netlist-agrees`, not schgen's."*
+
+**That rested on grepping a `make check` log for the string `schgen`. A log
+records what a tool PRINTS, never what it IMPORTS, so the check could not have
+failed.** It is the exact class this repository catalogues as a false green, and
+this writer produced it while warning subagents about the class.
+
+**Measured properly, with a control: `make check` executes schgen five times
+every run.** `make/board.mk`'s `netlist-agrees` runs
+`tests/circuits/<board>.test.ts` for every board declaring an `"sch"`; all five
+Pultec boards do; all five delegate to `tests/circuits/drafted-sheet.ts`, which
+imports `lib/schgen/gates/round-trip.ts`, `ir/build.ts`, `lock/annotate.ts`,
+`render/library.ts` and four `tools/schgen/` modules. Control: moving
+`round-trip.ts` aside gives `Cannot find module`, `0 pass / 1 fail`; intact it is
+`5 pass / 40 expect()`, and that block appears five times in the log.
+
+**FOUR GUARDS ON THE FIVE APPROVED PAGES RIDE ON IT**: each page's bytes against
+the digest its `RECORD.md` binds it to; that its netlist came from that sheet and
+no other file; that every component and net agrees with the model; and that the
+known disagreements are exactly the expected ones.
+
+**A second claim in the first version was also wrong**: four of the five sheet
+digests are NOT in `docs/schematic/verdicts.md`. The binding lives in each
+board's `RECORD.md`, deliberately - *"a hash copied into a test file is a second
+place for one fact to be wrong."*
+
+**The sizes hold**: `lib/schgen/` 110 files / 22,365 lines, `tools/schgen/`
+81 / 17,674, `tests/schgen/` 152 / 26,141. **And the reach is not the size**:
+the comparison core those guards actually need is 1,958 lines, 3,969 with the
+authoring types ten `circuits/` files import - but taking the board gates'
+imports as written pulls 22,836, because four glue functions in `tools/schgen/`
+import the generator wholesale. 164 source files, 36,479 lines, 134 test files, 25,157
 test lines. Four live consumers reached into it for utilities unrelated to
 drawing, and those were relocated rather than deleted.
 
