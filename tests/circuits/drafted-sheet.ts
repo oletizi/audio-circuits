@@ -42,7 +42,7 @@ import { createHash } from "node:crypto"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { importNetlist, type ImportedNetlist } from "../../lib/kicad/netlist.ts"
+import { importNetlist, KICAD_CLI, type ImportedNetlist } from "../../lib/kicad/netlist.ts"
 import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
 import { modelForSheet } from "./sheet-model.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
@@ -53,6 +53,7 @@ import { caseResolver } from "../../tools/schgen/authoring-census.ts"
 import { boardRefs, declarationFor } from "../../tools/schgen/board-sheets.ts"
 import { parityDesign } from "../../tools/schgen/gate-census.ts"
 import { designResolver } from "../../tools/schgen/generate.ts"
+import { defaultKicadCliExists, defaultRunExport } from "../../tools/perfboard/netlist-sync.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
@@ -74,6 +75,39 @@ export function draftedDir(circuit: string, board: string): string {
 /** The drafted sheet itself, absolute. */
 export function draftedSheet(circuit: string, board: string): string {
   return path.join(draftedDir(circuit, board), `${board}${DRAFTED_SUFFIX}.kicad_sch`)
+}
+
+/**
+ * Exports `board`'s drafted sheet with the real `kicad-cli`, right now, and imports the result.
+ *
+ * **THIS IS THE PROOF `./kicad-round-trip.ts`'s `kicadRoundTrip` GAVE THE STUB WRITER, MOVED ONTO
+ * THE APPROVED PAGE.** `registerDraftedPageTests`'s other guards compare the model against the
+ * committed `.net` fixture, and `./sheet-model.ts`'s own module doc says why deliberately: that
+ * fixture is reconciled by `make netlist-agrees` outside `bun test`, so a stale fixture passes a
+ * `bun test`-only run. This function is what lets a test invoke `kicad-cli` on the committed sheet
+ * itself, inside `bun test`, so the claim "KiCad reads this sheet the way the circuit means it" has
+ * a check that runs there too - the same claim `kicadRoundTrip` made about generated stub output,
+ * for the one subject this repository actually ships.
+ *
+ * **FAILS RATHER THAN SKIPS WHEN `kicad-cli` IS ABSENT**, in the same words `kicadRoundTrip` uses
+ * and for the same reason: a missing binary here would make this the only one of this repository's
+ * kicad-cli proofs that silently passed without ever running it.
+ */
+export function exportDraftedSheet(circuit: string, board: string): ImportedNetlist {
+  if (!defaultKicadCliExists(KICAD_CLI)) {
+    throw new Error(
+      `kicad-cli not found at ${KICAD_CLI}. Install KiCad or set KICAD_CLI. This test ` +
+        "does not skip: it is the only proof KiCad reads the drafted sheet the way the circuit means it.",
+    )
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `${board}-drafted-export-`))
+  try {
+    const net = path.join(dir, `${board}.net`)
+    defaultRunExport(KICAD_CLI, draftedSheet(circuit, board), net, moduleRepoRoot())
+    return importNetlist(fs.readFileSync(net, "utf8"))
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 }
 
 export function sha256OfFile(file: string): string {
