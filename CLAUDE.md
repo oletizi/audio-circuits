@@ -307,6 +307,26 @@ whitelist that refuses loudly beats a general rule that quietly accepts a guess.
 the libraries are on disk. Do not write one from memory; this repository has
 twice shipped a footprint that does not exist.
 
+**AND THAT INCLUDES THIS FILE: YOUR COPY OF IT MAY BE OLDER THAN IT IS.** A
+project's instructions are injected into an agent's context when its session
+begins and are **not** re-read when the file changes, so a long session carries
+whatever this file said when it started - and every agent dispatched from that
+session inherits the snapshot. **Where your instructions and the file on disk
+disagree, the file on disk wins, and say the disagreement out loud** rather
+than quietly picking one: an agent citing a tool that does not exist looks like
+invention and is usually a snapshot, and from the outside the two are
+indistinguishable.
+
+**This is measured, not inferred.** The sentence naming the deleted schematic
+generator went on instructing agents for a day after it was struck from this
+file, and a freshly dispatched agent reproduced it verbatim on request -
+including both deleted commands, and with no occurrence of the word
+`copperhead` anywhere in its instructions. The final reviewer of that plan
+caught it only because it chose to read `HEAD` over its own context.
+`docs/research/2026-10-30-schgen-removed.md` records the measurement, what was
+checked on disk to rule out a repository defect, and the one question it
+leaves to the owner.
+
 **NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER. BUILD IT IN
 CODE.** A `\u0000` or `\r` written into an edit string, a search pattern or a
 document arrives as the **real byte**, not as the four characters you typed, and

@@ -416,3 +416,69 @@ because `schematic/README.md` is prose in the same directory and the prose pass
 rewrote it. Run against `schematic/` at a later commit the diff is red on that
 README, and reading it as a changed sheet would be a false alarm of exactly the
 kind this document exists to prevent.
+
+### The branch's own closing figures, which are not Task 9's
+
+**[RAN]** 2026-10-31, after the final whole-branch review's fix round:
+`bun run typecheck` exit 0; `bun test` run alone **2724 pass / 0 fail across
+258 files**, 38,546 `expect()` calls, 124 s, no segfault;
+`git diff fdbc51a..HEAD -- drafted/ docs/schematic/verdicts.md schematic/readability-baselines.json`
+empty.
+
+**The 2714 in the gates table above is Task 9's and is left as Task 9's.** The
+difference is `+10` and it is accounted for exactly: `registerDraftedPageTests`
+gained two tests, and it is invoked once per drafted board over five boards.
+What those two replaced was one inert *assertion* inside an existing test, not
+a test — which is why nothing was removed. Both figures are quoted with the
+pass that drove them, because a single current number in prose here would
+assert that nobody measured it twice.
+
+---
+
+## The honey pot outlived its deletion by one session, and that is measured
+
+The sentence this plan struck from `CLAUDE.md` — *"The schematic generator is
+`lib/schgen/`, and `lib/kicad/schematic.ts` is the superseded stub it
+replaced"* — went on instructing agents for the rest of the day after the file
+was corrected. A project's instructions are injected into an agent's context
+when its session begins and are **not** re-read when the file changes, so a
+long-running session carries whatever the file said when it started, and every
+agent dispatched from that session inherits the snapshot.
+
+**It was found, not suspected.** The final whole-branch reviewer reported that
+its own context carried the pre-plan text, and said it had read `HEAD` instead.
+That claim was then tested rather than relayed **[RAN]**: a freshly dispatched
+agent, instructed to use no tool and to quote only what was in front of it,
+returned the struck sentence word for word, the fenced block with both deleted
+commands intact, and **no occurrence of the word `copperhead`** anywhere in its
+instructions.
+
+**What the disk says, so this is not mistaken for a repository defect.**
+**[RAN]** `CLAUDE.md` at `HEAD` is correct. `AGENTS.md` and
+`.claude/agents/part-researcher.md` carry no reference to the generator at all,
+and `CONSTITUTION.md`'s only matches are its rule against inventing a
+readability score, which is live. **All six worktrees on the machine** were
+checked for the struck sentence and for the runnable command block: zero and
+zero in every one, `main` included. The twenty-eight surviving non-markdown
+files that still name `lib/schgen/`, `tools/schgen/` or `tests/schgen/` are all
+past-tense provenance — *used to sit at*, *lived in*, *is now gone*, *the
+deleted*, *carried over from* — which is the transcription record this
+repository requires a ported file to keep. Deleting those would destroy
+evidence, not remove an instruction.
+
+**Why this is written down rather than told to someone.** The symptom is an
+agent confidently citing a tool that does not exist, which reads as invention.
+It is not invention; it is an instruction that outlived its file, and from the
+outside the two are indistinguishable. A reader who does not know this will
+spend the time it has already cost once.
+
+**What settles it, and the part that is not an agent's to settle.** A session
+started after the correction reads the corrected file, so the hazard ends with
+a restart and needs nothing built. What is open is whether this repository
+wants a **refusing signpost** at each deleted command's old path — a few lines
+that throw, naming `TOOLING.md` — which would turn a module-not-found into a
+refusal that teaches, in the shape this repository prefers everywhere else. It
+is recorded as a question rather than proposed as a design, because it reopens
+a directory the owner asked to be gone: *"I don't want it acting as a honey pot
+for agents to start thinking it's how this project generates schematics."* He
+drew that line and only he can move it.
