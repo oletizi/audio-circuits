@@ -33,22 +33,17 @@
  * reader holding four pages and concluding the fifth fell out of the
  * stapler - a skipped step that looks like a passing one.
  *
- * **`kind: "withheld"` IS A DIFFERENT CLAIM FROM `"none"` AND PRINTS A
- * DIFFERENT NOTICE, AND IT IS ITSELF NOT ONE CLAIM BUT TWO.** `none` says
- * this board declares no schematic at all. `withheld` says `schgen` was
- * offered the board's own declaration and there is no page to print - and
- * which of two things that means is `GuideSchematic`'s
- * `drawn` field, carried through from `tools/guide/schematic-source.ts`: a
- * sheet was drawn and is `defective`, wrong about the circuit (`drawn:
- * true`), or nothing was drawn at all - a refusal, or a generation that drew
- * zero sheets (`drawn: false`). **A CROWDED SHEET IS NEITHER, AND IT PRINTS
- * (2026-10-30).** `lib/schgen/findings.ts` classes crowding `usable`, this
- * file is not a qualified reviewer of a layout, and the owner is: *"YOU MUST
- * SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!"* `kind: "generated"` is the fourth
- * state, printed as a schematic page like `"printed"` is, plus one line
- * saying the sheet came from `schgen` rather than a hand-drawn source.
+ * **`GuideSchematic` HAD TWO MORE OUTCOMES, `"generated"` AND `"withheld"`,
+ * UNTIL `docs/superpowers/plans/2026-10-30-remove-schgen.md`.** Both belonged
+ * to a board with no declared `"sch"` being offered to `schgen` for
+ * generation; all eleven boards under `boards/` now declare a schematic, so
+ * that offer is deleted rather than kept live-but-unreachable. A board either
+ * declares a schematic - `kind: "printed"`, printed exactly as before - or it
+ * does not - `kind: "none"`, the notice above. See
+ * `tools/guide/schematic-source.ts` and `tools/guide/schematic-notice.ts` for
+ * what each used to carry.
  *
- * `GuideSchematic` itself, the header row and both notices live in
+ * `GuideSchematic` itself, the header row and the no-schematic notice live in
  * `./schematic-notice.ts` - split out to keep this file under the project's
  * 300-500 line ceiling, the same way `resolveSchematic` lives in
  * `./schematic-source.ts` rather than in `./packet.ts`.
@@ -58,11 +53,9 @@ import type { ChecklistSection } from "./checklist.ts"
 import type { PowerUpChecks } from "./power-up.ts"
 import { GUIDE_PAPER, type PageSize } from "./paper.ts"
 import {
-  generatedNote,
   header,
   noSchematicNotice,
   schematicPaperNotice,
-  withheldSchematicNotice,
   type GuideSchematic,
 } from "./schematic-notice.ts"
 import { standInSection, type StandInGroupBlock, type StandInSection } from "./stand-in-section.ts"
@@ -122,8 +115,8 @@ export interface GuideInput {
    * off the exported PDF itself (`./merge-pdf.ts`'s `defaultPdfPageSizes`) -
    * `undefined` when this packet carries no schematic page at all.
    *
-   * **REQUIRED WHENEVER `schematic.kind` IS `"printed"` OR `"generated"`, AND
-   * REFUSED OTHERWISE**, by `buildGuideHtml` below. It is a measurement, not a
+   * **REQUIRED WHENEVER `schematic.kind` IS `"printed"`, AND REFUSED
+   * OTHERWISE**, by `buildGuideHtml` below. It is a measurement, not a
    * declaration: the page is on whatever paper `kicad-cli` exported it on, and
    * the only way the printed document can say so is for somebody to have
    * measured it. A packet that carried a schematic page and did not know its
@@ -354,7 +347,7 @@ function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
  * document's paper` notice about a page that is not there.
  */
 function assertSchematicPaper(input: GuideInput): void {
-  const carriesPage = input.schematic.kind === "printed" || input.schematic.kind === "generated"
+  const carriesPage = input.schematic.kind === "printed"
   if (carriesPage && input.schematicPaper === undefined) {
     throw new Error(
       `the build guide for ${input.boardName} carries a schematic page (kind ` +
@@ -385,13 +378,11 @@ export function buildGuideHtml(input: GuideInput): string {
     "</head>",
     "<body>",
     header(input),
-    ...generatedNote(input.schematic),
     ...noSchematicNotice(input.boardName, input.schematic),
-    ...withheldSchematicNotice(input.boardName, input.schematic),
-    // ON PAGE ONE WITH THE OTHER TWO NOTICES, and for the same reason: it is
+    // ON PAGE ONE WITH THE NOTICE ABOVE, and for the same reason: it is
     // about the document a reader is holding, so it has to be seen before
-    // they send it to a printer. The three are mutually exclusive by
-    // construction - the first two fire only when there is no schematic page
+    // they send it to a printer. The two are mutually exclusive by
+    // construction - the first fires only when there is no schematic page
     // and this one only when there is.
     ...schematicPaperNotice(input.schematic, input.schematicPaper),
     image("Component side - designators", input.images.designators, false),

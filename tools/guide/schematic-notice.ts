@@ -1,7 +1,8 @@
 /**
  * The build guide's header and schematic notices: `GuideSchematic`, the
- * `<h1>`/`<dl class="meta">` header block, and the two bordered notices that
- * stand in for a missing or withheld schematic page.
+ * `<h1>`/`<dl class="meta">` header block, the no-schematic notice, and the
+ * paper-size notice for a printed schematic page that is not on the guide's
+ * own paper.
  *
  * Split out of `tools/guide/guide.ts` (which was pushing this project's
  * 300-500 line ceiling) rather than left there, for the same reason
@@ -14,9 +15,8 @@ import { describePaper, GUIDE_PAPER, samePaper, type PageSize } from "./paper.ts
 import { escapeXml } from "./svg.ts"
 
 /**
- * The packet's schematic: the repository-relative path of the one it printed,
- * a generated one `schgen` drew from the board's own declaration, or the
- * paths the notice needs when there is none to print or none fit to print.
+ * The packet's schematic: the repository-relative path of the one it
+ * printed, or the paths the notice needs when there is none to print.
  *
  * Both members of `"none"` are REQUIRED and neither is defaulted. The notice
  * has to send a reader somewhere - to the file that would declare a schematic,
@@ -24,56 +24,20 @@ import { escapeXml } from "./svg.ts"
  * notice that merely announced an absence would be the silence this union
  * exists to break.
  *
- * **`"withheld"` is a FOURTH variant, never collapsed into `"none"`.** `none`
- * means this board declares no schematic at all. `withheld` means `schgen`
- * was offered the board's declaration and there is no page to print - it
- * refused outright, it drew nothing at all, or the drawing it produced is
- * `defective`: WRONG ABOUT THE CIRCUIT, the one ground
- * `EVALUATING-DRAWINGS.md` §3 permits for withholding a drawing. Those are
- * different claims about different situations, and printing one notice for
- * all of them would be exactly the silent skip this file's own module
- * comment names as the failure to avoid.
- *
- * **"DRAWN WITH TEXT THE PLACER COULD NOT KEEP CLEAR" WAS A FOURTH GROUND
- * HERE AND IS GONE, 2026-10-30.** The owner: *"STOP PASSING JUDGEMENT ON
- * LAYOUT!!! ... YOU MUST SHOW ME WHAT YOU THINK MIGHT BE WRONG!!!"* A
- * crowded page is `usable` to `lib/schgen/findings.ts`'s classifier and now
- * prints as a page; `tools/guide/schematic-source.ts` carries the deletion
- * and the reasoning.
+ * **THIS UNION HAD TWO MORE MEMBERS, `"generated"` AND `"withheld"`, UNTIL
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`.** Both belonged to a
+ * board with no declared `"sch"` being offered to `schgen` for generation -
+ * `tools/guide/schematic-source.ts`'s `resolveSchematic` - and all eleven
+ * boards under `boards/` now declare a schematic, so that offer was dead in
+ * practice. It is deleted along with the `generatedNote` and
+ * `withheldSchematicNotice` functions that printed for it; their reasoning
+ * (the owner's *"STOP PASSING JUDGEMENT ON LAYOUT!!!"* and the `worstClass`
+ * gate it struck) is in this file's git history and
+ * `docs/superpowers/plans/2026-10-30-remove-schgen-execution/`, not
+ * reproduced here.
  */
 export type GuideSchematic =
   | { readonly kind: "printed"; readonly path: string }
-  // NO `path`, UNLIKE `"printed"`, and the absence is the point: a generated
-  // sheet has no committed source file to name - it was drawn from the board's
-  // own declaration into a temporary directory and exported from there. The
-  // field it used to carry was the string `"schematic.pdf"`, which named the
-  // packet's SECOND FILE; that file is gone (the page is merged into the one
-  // document now), so the field named nothing and is deleted rather than left
-  // for somebody to find and trust. `generatedNote` below is what says where
-  // this page came from.
-  | { readonly kind: "generated" }
-  | {
-      readonly kind: "withheld"
-      /** Repository-relative perfboard.json. */
-      readonly declarationPath: string
-      /** Repository-relative circuit module: what the pages WERE checked against. */
-      readonly circuitPath: string
-      /** Why it was withheld, in the words the gate used. Never empty. */
-      readonly reason: string
-      /**
-       * Whether `schgen` actually drew a sheet before it was judged unfit to
-       * build from. `false` for a refusal or a zero-sheet generation - there
-       * is no sheet, so there is nothing drawn "over something" to withhold.
-       * `true` only when a sheet was drawn and its class is not `usable`:
-       * `defective` - the drawing is wrong about the circuit - or its
-       * producer reporting its own breakage. **It was `true` for a
-       * field-placement fallback until 2026-10-30**, and that ground is
-       * deleted: a crowded sheet prints. The printed notice reads this field
-       * rather than assuming every `"withheld"` drew a sheet - see
-       * `withheldSchematicNotice` below.
-       */
-      readonly drawn: boolean
-    }
   | {
       readonly kind: "none"
       /** Repository-relative perfboard.json: the only place a board names its schematic. */
@@ -114,11 +78,7 @@ function schematicRow(schematic: GuideSchematic): string {
   const text =
     schematic.kind === "printed"
       ? `${page}, printed from ${schematic.path}`
-      : schematic.kind === "generated"
-        ? `${page}, generated by schgen - see the note below`
-        : schematic.kind === "withheld"
-          ? 'withheld - see "Schematic withheld" below'
-          : 'none - see "No schematic in this packet" below'
+      : 'none - see "No schematic in this packet" below'
   return `<dt>Schematic</dt><dd>${escapeXml(text)}</dd>`
 }
 
@@ -145,10 +105,10 @@ export function schematicPaperNotice(
   schematicPaper: PageSize | undefined,
 ): readonly string[] {
   if (schematicPaper === undefined) return []
-  if (schematic.kind !== "printed" && schematic.kind !== "generated") return []
+  if (schematic.kind !== "printed") return []
   if (samePaper(schematicPaper, GUIDE_PAPER)) return []
   const code = (text: string): string => `<code>${escapeXml(text)}</code>`
-  const source = schematic.kind === "printed" ? schematic.path : "the sheet schgen generated"
+  const source = schematic.path
   return [
     '<section class="notice">',
     `<h2>Page ${String(SCHEMATIC_PAGE)} is not on this document's paper</h2>`,
@@ -164,21 +124,6 @@ export function schematicPaperNotice(
       "this packet. Changing it moves the sheet frame and title block, so it is a change the " +
       "drawing's reviewer has to approve - it is not something this tool does on its own.</p>",
     "</section>",
-  ]
-}
-
-/**
- * The one line that distinguishes a `schgen`-drawn sheet from a hand-authored
- * one, printed right after the header on a `"generated"` packet and nowhere
- * else: a reader holding a generated sheet is looking at a different kind of
- * artifact than a hand-drawn schematic, even though this packet treats both
- * as fit to build from.
- */
-export function generatedNote(schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind !== "generated") return []
-  return [
-    '<p class="note">This schematic was generated by <code>schgen</code> from the board\'s own ' +
-      "authoring declaration; it is not hand-drawn.</p>",
   ]
 }
 
@@ -235,46 +180,6 @@ export function noSchematicNotice(boardName: string, schematic: GuideSchematic):
       `${code(schematic.declarationPath)} as an ${code('"sch"')} / ${code('"netlist"')} pair, then ` +
       `run ${code("make guide")} again. The packet prints the schematic on every board that ` +
       `declares one.</p>`,
-    "</section>",
-  ]
-}
-
-/**
- * The printed statement that stands where a schematic from `schgen` was
- * withheld: a DIFFERENT claim from `noSchematicNotice` above, and printed only
- * for `"withheld"`.
- *
- * **`withheld` COVERS TWO DIFFERENT CLAIMS, AND `schematic.drawn` IS WHICH ONE
- * THIS NOTICE MAKES.** `drawn: true` means a sheet WAS generated from this
- * board's own declaration and is `defective`: wrong about the circuit, which
- * is the one ground `EVALUATING-DRAWINGS.md` §3 permits. `drawn: false` means `schgen`
- * never produced a sheet to judge at all - it refused outright, or reported
- * "generated" having drawn zero sheets. Printing the `drawn: true` sentence
- * for a `drawn: false` result would assert a drawing exists when none does,
- * which is the live defect this field was added to close (the finding: *"an
- * operator ... gets a bench page claiming a schematic was generated when none
- * was"*). Collapsing either case into the no-schematic notice would read as
- * the quieter claim - "this board has none" - instead of what actually
- * happened, which is the worse of the two things CLAUDE.md says about this
- * packet: *"if the schematics are wonky, it's worse than having nothing at
- * all."*
- */
-export function withheldSchematicNotice(boardName: string, schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind !== "withheld") return []
-  const code = (text: string): string => `<code>${escapeXml(text)}</code>`
-  const claim = schematic.drawn
-    ? `schgen generated one from this board's own declaration and it was withheld as not fit to build from.`
-    : `schgen was offered this board's own declaration and produced no sheet to judge, so there is ` +
-      `nothing drawn to withhold - see the reason below for why nothing was drawn.`
-  return [
-    '<section class="notice">',
-    "<h2>Schematic withheld</h2>",
-    `<p><strong>This packet prints no schematic for ${escapeXml(boardName)}: ${claim}</strong></p>`,
-    `<p>Declared in ${code(schematic.declarationPath)}. What these pages were checked against instead ` +
-      `is the circuit model in ${code(schematic.circuitPath)}: every part, value, lead and connection ` +
-      "in the checklist comes from that model, independently of whatever schgen did or did not draw.</p>",
-    `<p>Withheld because: ${escapeXml(schematic.reason)}</p>`,
-    `<p>Reproduce this measurement with ${code("bun run tools/schgen/board-geometry.ts")}.</p>`,
     "</section>",
   ]
 }

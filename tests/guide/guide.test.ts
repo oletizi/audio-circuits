@@ -43,8 +43,7 @@ function guideHtml(
     // tracks `schematic`. The guide's own paper is what the project is aiming
     // at - one document, one sheet size, no paper notice; the A4 case these
     // boards are in today is tests/guide/packet.test.ts's subject.
-    schematicPaper:
-      schematic.kind === "printed" || schematic.kind === "generated" ? GUIDE_PAPER : undefined,
+    schematicPaper: schematic.kind === "printed" ? GUIDE_PAPER : undefined,
     // THE FIXTURE BOARD DECLARES NO SCAFFOLD, so the packet prints the
     // one-sentence stand-in section. What that section does on a board that
     // HAS groups is tests/guide/stand-in-section.test.ts's subject.
