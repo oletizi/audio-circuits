@@ -207,7 +207,7 @@ audio-circuits/
   `tests/schgen/port-fidelity.test.ts`, which proved every file under
   `lib/schgen/` was still a mechanical port of its `digital-pedal-platform`
   source. **That file and the tree it guarded are deleted**, nothing in the
-  repository reads the variable, and a `bun test` on a clean machine no longer
+  repository reads the variable, and a `bun test` on a fresh machine no longer
   has those eight failures in its baseline. `docs/known-gaps.md` G110 and
   G250's `noschgen` arm measured a prerequisite that no longer exists.
 
