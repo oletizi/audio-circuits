@@ -54,6 +54,26 @@ import { MECHANICAL_PINS } from "../../lib/kicad/sheet-agreement.ts"
  * one symbol in this repository with an unused electrical pin to tell apart from a mount lug. */
 const ELEVEN_THROW = "Switch:SW_Rotary_1x12"
 
+/**
+ * The mount lugs the DECLARED table records for a symbol - read, never inferred from its name.
+ *
+ * **THIS READS `MECHANICAL_PINS` BECAUSE A NAME HEURISTIC HERE WOULD HIDE THE DEFECT THE EXACT-SET
+ * COMPARISON EXISTS TO FIND.** It was `libId.endsWith("_MP") ? ["MP"] : []` for a time, which is
+ * correct for both of today's entries and wrong as a rule: a future `_MP` symbol added to
+ * `THROW_PINS` with NO `MECHANICAL_PINS` entry would pass here - the heuristic supplies the lug the
+ * table does not - while `compareSheetToModel` silently omits that lug from the model's pin
+ * partition, which is the one error class that makes a drawing disagree with a model invisibly.
+ * Reading the table instead means the exact-set comparison fails, naming the symbol.
+ * `CLAUDE.md`: *"An empty whitelist that refuses loudly beats a general rule that quietly accepts a
+ * guess."*
+ *
+ * `Object.hasOwn` rather than a bare lookup, for `lib/kicad/sheet-agreement.ts`'s own stated
+ * reason: a lib id colliding with an `Object.prototype` member must not return a function.
+ */
+function declaredMechanicalPins(libId: string): readonly string[] {
+  return Object.hasOwn(MECHANICAL_PINS, libId) ? (MECHANICAL_PINS[libId] ?? []) : []
+}
+
 test("every recorded pole pin is a pin of that symbol in the installed library", () => {
   const libIds = Object.keys(POLE_PIN)
   expect(libIds.length, "an empty table would make the loop below vacuous").toBeGreaterThan(0)
@@ -70,8 +90,9 @@ test("THROW_PINS plus POLE_PIN plus the mount lug is exactly each symbol's pin s
     const numbers = new Set(installedSymbolPinNumbers(libId))
     const pole = POLE_PIN[libId]
     expect(pole, `${libId} has throw pins recorded and no pole pin`).toBeDefined()
-    const claimed = new Set([...throws, pole as string, ...(libId.endsWith("_MP") ? ["MP"] : [])])
-    expect(claimed.size, `${libId}: a pin is accounted for twice`).toBe(throws.length + 1 + (libId.endsWith("_MP") ? 1 : 0))
+    const lugs = declaredMechanicalPins(libId)
+    const claimed = new Set([...throws, pole as string, ...lugs])
+    expect(claimed.size, `${libId}: a pin is accounted for twice`).toBe(throws.length + 1 + lugs.length)
     expect([...claimed].sort()).toEqual([...numbers].sort())
   }
 })
@@ -233,14 +254,27 @@ test("CONTROL: a pin set missing one of the symbol's real throws is NOT an exact
     const numbers = new Set(installedSymbolPinNumbers(libId))
     const pole = POLE_PIN[libId] as string
     const short = throws.slice(1)
-    const claimedShort = new Set([...short, pole, ...(libId.endsWith("_MP") ? ["MP"] : [])])
+    const claimedShort = new Set([...short, pole, ...declaredMechanicalPins(libId)])
     expect([...claimedShort].sort()).not.toEqual([...numbers].sort())
   }
 })
 
-test("CONTROL: a pole pin claim naming a pin number the symbol does not have is NOT contained", () => {
-  for (const libId of Object.keys(POLE_PIN)) {
+test("CONTROL: the recorded pole pin PERTURBED off the symbol's own numbering is NOT contained", () => {
+  // **IT PERTURBS `POLE_PIN` ITSELF, WHICH THE LINE IT REPLACED DID NOT.** That line asserted
+  // `expect(numbers).not.toContain("not-a-real-pin-number")` - a string no library could ever ship
+  // as a pin number, derived from nothing, so it passed whatever `POLE_PIN` said and demonstrated
+  // nothing about the containment assertion it was labelled a control for. The perturbation here
+  // is built FROM the recorded pole, so it is the stale-table corruption the containment arm
+  // exists to catch: a pole number that is off by a digit.
+  const entries = Object.entries(POLE_PIN)
+  expect(entries.length, "an empty table would make the loop below vacuous").toBeGreaterThan(0)
+  for (const [libId, pole] of entries) {
     const numbers = installedSymbolPinNumbers(libId)
-    expect(numbers).not.toContain("not-a-real-pin-number")
+    // The real claim first: without it the perturbation below could pass because the lookup
+    // returned nothing at all.
+    expect(numbers, `${libId}: the recorded pole ${pole}`).toContain(pole)
+    const perturbed = `${pole}0`
+    expect(perturbed, `${libId}: the perturbation must change the claim`).not.toBe(pole)
+    expect(numbers, `${libId}: a pole recorded as "${perturbed}"`).not.toContain(perturbed)
   }
 })

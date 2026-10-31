@@ -11,7 +11,7 @@
  * `drafted/pultec/`.
  *
  * **WHY THIS IS NOT THE SAME CHECK `registerDraftedPageTests` ALREADY RUNS, in `./drafted-sheet.ts`.**
- * Those five guards per board compare the model against the COMMITTED `.net` FIXTURE, and
+ * Those per-board guards compare the model against the COMMITTED `.net` FIXTURE, and
  * `./drafted-sheet.ts`'s module doc says why deliberately: `make netlist-agrees` re-exports and
  * reconciles that fixture by content on every `make check` run, outside `bun test`, so running
  * `kicad-cli` again inside those guards would check the same thing twice. The cost of that choice,
@@ -22,7 +22,8 @@
  * does against the committed fixture.
  *
  * **IT DOES NOT ASSERT THE PER-BOARD DISAGREEMENT LISTS AGAIN.** Those are already asserted exactly,
- * per board, by `registerDraftedPageTests`'s fifth test (`tests/circuits/pultec-hi-boost.test.ts` and
+ * per board, by `registerDraftedPageTests`'s "known disagreements with the model are exactly the
+ * drawn-elsewhere ones" test (`tests/circuits/pultec-hi-boost.test.ts` and
  * its four siblings). Restating them here would duplicate what they already pin down and give a
  * second place for one fact to be wrong. What this file adds is the one thing they do not have: a
  * right-now `kicad-cli` run on the committed sheet, and the assertion that doing so changes nothing

@@ -108,15 +108,23 @@ export function sha256OfFile(file: string): string {
 }
 
 /**
- * The sheet digest `drafted/<circuit>/<board>/RECORD.md` records as the binding.
+ * The sheet digest the `RECORD.md` in `dir` records as the binding.
  *
  * **IT IS PARSED OUT OF THE RECORD RATHER THAN WRITTEN HERE**, because a hash copied into a test
  * file is a second place for one fact to be wrong, and the record beside the drawing is where §3
  * puts it. Throws naming the file when the row is absent or ambiguous: a record whose digest cannot
  * be read is not a record that passes.
+ *
+ * **IT TAKES A DIRECTORY RATHER THAN A `(circuit, board)` PAIR SO THAT ITS CONTROL CAN DRIVE THE
+ * FAULT IT GUARDS.** The fault is this function answering with the digest of the SHEET instead of
+ * the digest the record binds, which makes the equality in `registerDraftedPageTests` self-fulfilling.
+ * Nothing can perturb a record under `drafted/` - those bytes are frozen and a standing gate is
+ * that a diff over them is empty - so the control builds a stand-in directory holding a copy of
+ * the real sheet beside a record whose BINDING row names a DIFFERENT digest, and asserts the answer
+ * tracks the record. A directory argument is what lets it point this function at that stand-in.
  */
-export function recordedSheetDigest(circuit: string, board: string): string {
-  const file = path.join(draftedDir(circuit, board), "RECORD.md")
+export function sheetDigestInRecord(dir: string): string {
+  const file = path.join(dir, "RECORD.md")
   const text = fs.readFileSync(file, "utf8")
   const rows = [...text.matchAll(/sha256 of the sheet - THE BINDING\*\* \| `([0-9a-f]{64})` \|/g)]
   const first = rows[0]
@@ -128,6 +136,41 @@ export function recordedSheetDigest(circuit: string, board: string): string {
     )
   }
   return first[1] as string
+}
+
+/** The sheet digest `drafted/<circuit>/<board>/RECORD.md` records as the binding. */
+export function recordedSheetDigest(circuit: string, board: string): string {
+  return sheetDigestInRecord(draftedDir(circuit, board))
+}
+
+/**
+ * A stand-in `drafted/` directory: `board`'s real sheet, beside its real record with the BINDING
+ * digest replaced by `digest`.
+ *
+ * **IT EXISTS SO THE DIGEST CONTROL CAN PERTURB THE RECORD WITHOUT TOUCHING `drafted/`.** The
+ * committed records are frozen - a verdict is bound to bytes - and this plan's standing gate is
+ * that `git diff -- drafted/` is empty, so a control that edited one in place and restored it
+ * would be one failed assertion away from defeating that gate.
+ */
+function standInRecord(circuit: string, board: string, digest: string): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `${board}-record-control-`))
+  const sheet = draftedSheet(circuit, board)
+  fs.copyFileSync(sheet, path.join(dir, path.basename(sheet)))
+  const real = path.join(draftedDir(circuit, board), "RECORD.md")
+  const text = fs.readFileSync(real, "utf8")
+  const rewritten = text.replace(
+    /(sha256 of the sheet - THE BINDING\*\* \| `)[0-9a-f]{64}(` \|)/,
+    `$1${digest}$2`,
+  )
+  if (rewritten === text) {
+    throw new Error(
+      `${real}: the BINDING row's digest was not replaced, so the stand-in record is a copy of ` +
+        "the real one and the control below would pass whatever this function answered. The row's " +
+        "shape changed; re-derive the substitution from sheetDigestInRecord's own regex.",
+    )
+  }
+  fs.writeFileSync(path.join(dir, "RECORD.md"), rewritten)
+  return dir
 }
 
 /** The board's committed netlist export, imported. */
@@ -244,7 +287,11 @@ export interface DraftedPageUnderTest {
 }
 
 /**
- * The five tests every board declaring a page under `drafted/` gets.
+ * The tests every board declaring a page under `drafted/` gets.
+ *
+ * **NOT STATED AS A COUNT.** It read "the five tests" until two of them became four - the digest
+ * guard's inert control was replaced by two that drive the fault it claimed to catch - and a
+ * figure in prose is a transcription with a date on it. The `test(...)` calls below are the list.
  *
  * Registered from the board's own `tests/circuits/<board>.test.ts` because `make/board.mk` looks
  * for a file at exactly that path and fails naming it when it is absent - one file per board is the
@@ -254,12 +301,48 @@ export function registerDraftedPageTests(page: DraftedPageUnderTest): void {
   const { board, circuit, netlist } = page
 
   test(`${board}: the committed sheet still hashes to the digest its record binds it to`, () => {
-    const sheet = draftedSheet(circuit, board)
-    const computed = sha256OfFile(sheet)
+    const computed = sha256OfFile(draftedSheet(circuit, board))
     expect(computed).toBe(recordedSheetDigest(circuit, board))
-    // The positive control: the digest is of THIS file and moves with its bytes. Without it, a
-    // `recordedSheetDigest` that returned the computed value would pass the line above forever.
-    expect(createHash("sha256").update(fs.readFileSync(sheet)).update("x").digest("hex")).not.toBe(computed)
+  })
+
+  test(`${board}: the digest compared above comes out of the record and not out of the sheet - the control for the equality`, () => {
+    // THE FAULT THIS DRIVES, which the line it replaced could not: a `sheetDigestInRecord` that
+    // answered with the digest of the SHEET would make the equality above true of any bytes
+    // whatsoever, forever. The old control asserted sha256(bytes ++ "x") != sha256(bytes), which
+    // is a property of SHA-256, holds for every file in existence, and says nothing about where
+    // the digest came from - the exact `expect(x).not.toBe(x + " ")` shape this plan caught once
+    // already.
+    const computed = sha256OfFile(draftedSheet(circuit, board))
+    // A syntactically valid digest that is not this sheet's. Built here rather than written as a
+    // literal nobody can check: sha256 of the four bytes "none", which no .kicad_sch can hash to.
+    const other = createHash("sha256").update("none").digest("hex")
+    expect(other, "the perturbation must actually change the recorded digest").not.toBe(computed)
+    const stand = standInRecord(circuit, board, other)
+    try {
+      // The sheet in `stand` is byte-identical to the real one, so the ONLY thing that differs is
+      // the record's BINDING row. The answer tracking it is what says the digest is read.
+      expect(sheetDigestInRecord(stand)).toBe(other)
+    } finally {
+      fs.rmSync(stand, { recursive: true, force: true })
+    }
+  })
+
+  test(`${board}: a record with no BINDING row refuses rather than answering - the control for the parse`, () => {
+    // The other half: the row is found by a strict regex, and a record it cannot read must throw
+    // naming the file rather than answer with something. Without this, a parse that silently
+    // returned the first 64 hex characters it saw anywhere in the record would pass everything
+    // above on four of the five pages, whose records also quote the netlist's digest.
+    const stand = fs.mkdtempSync(path.join(os.tmpdir(), `${board}-record-rowless-`))
+    try {
+      const real = path.join(draftedDir(circuit, board), "RECORD.md")
+      const text = fs.readFileSync(real, "utf8")
+      const rowless = text.split("\n").filter((line) => !line.includes("THE BINDING")).join("\n")
+      expect(rowless, "the record has no BINDING row to remove").not.toBe(text)
+      fs.writeFileSync(path.join(stand, "RECORD.md"), rowless)
+      expect(() => sheetDigestInRecord(stand)).toThrow(/THE BINDING/)
+    } finally {
+      fs.rmSync(stand, { recursive: true, force: true })
+    }
   })
 
   test(`${board}: the committed netlist was exported from the drafted sheet and no other file`, () => {
