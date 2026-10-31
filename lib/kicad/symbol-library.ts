@@ -6,39 +6,45 @@
  * pin geometry, but never to re-serialise: it drops whether an atom was quoted,
  * and KiCad distinguishes `yes` from `"yes"`.
  *
- * **IT HAD TWO CONSUMERS; IT HAS ONE NOW.** It was written for
- * `lib/kicad/schematic.ts`, the stub writer `lib/schgen/` replaced - that
- * file is deleted (Task 6, `docs/superpowers/plans/2026-10-30-remove-schgen.md`,
- * discharging `docs/known-gaps.md` **G248**'s non-deletion). The one consumer
- * left is `lib/schgen/render/stock-symbols.ts`: it imports `VENDORED_SYMBOLS`,
- * `librarySymbols`, `splitLibId`, `flattenedSymbol`, `vendoredSymbolFile` and
- * `vendoredSymbolText` to build the nickname map `createResolver` is handed,
- * with the vendored set authoritative and the installed stock directory a
- * declared extension (its own header has the deviation that decision cost).
- * **It does not import `symbolPins` or the `supportedUnitSymbols` helper
- * below them**, so those two now have ZERO production callers - every
- * remaining caller of either is a test. State this as a fact about today, not
- * a judgement to act on: whether a test-only function should move or go is
- * not this comment's call, and Task 9 of the same plan deletes
- * `lib/schgen/render/stock-symbols.ts` itself, which will change the answer
- * again - check who imports what at the time you read this rather than
- * trusting the count above it.
+ * **IT HAD TWO CONSUMERS AND IT HAS NO SCHEMATIC WRITER AT ALL NOW.** It was
+ * written for `lib/kicad/schematic.ts`, the stub writer `lib/schgen/` replaced,
+ * and then served `lib/schgen/render/stock-symbols.ts`, which built the
+ * nickname map the generator's symbol resolver was handed. Both are deleted -
+ * the stub by Task 6 of `docs/superpowers/plans/2026-10-30-remove-schgen.md`
+ * (discharging `docs/known-gaps.md` **G248**'s non-deletion) and the whole of
+ * `lib/schgen/` by Task 9 of the same plan.
+ *
+ * **WHO READS IT NOW, which is a different shape and worth stating plainly.**
+ * No program here writes a schematic any more, so nothing needs symbol TEXT to
+ * paste. What survives reads symbol GEOMETRY and symbol NAMES:
+ * `tests/kicad/symbol-library-disk.ts` builds `installedSymbolPins`,
+ * `installedSymbolPinNumbers` and `installedSymbolStrokeEndpoints` on
+ * `symbolPins`/`symbolStrokeSegments`/`strokeEndpointsAt`, and through it
+ * `tests/kicad/sheet-agreement-tables.test.ts` and
+ * `tests/circuits/pultec-switch-geometry.test.ts` hold
+ * `lib/kicad/sheet-agreement.ts`'s `MECHANICAL_PINS` and
+ * `circuits/pultec/physical/parts.ts`'s `POLE_PIN`/`THROW_PINS` to the
+ * installed library. `tools/kicad/vendor-symbols.ts` writes the vendored set,
+ * and `tests/kicad/symbol-names.test.ts` checks it against the installed
+ * library (see the next paragraph). **So every caller of the embedding half -
+ * `embeddedSymbol`, `supportedUnitSymbols` - is now a test.** That is a fact
+ * about today rather than a judgement to act on; check who imports what at the
+ * time you read this rather than trusting this paragraph.
  *
  * The symbols live in `./symbols/<Library>/<Name>.sexpr`, copied from an
  * installed KiCad by `tools/kicad/vendor-symbols.ts`. The deleted stub writer
  * read `vendoredSymbolText` and embedded the result verbatim, so its output
  * never depended on whichever KiCad happened to be installed, and needed none
- * installed. Nothing left imports `vendoredSymbolText` for that purpose; see
- * the next paragraph for how the surviving consumer uses it instead.
+ * installed. Nothing embeds them now; see the next paragraph for what the
+ * files are still for.
  *
- * **THE SURVIVING CONSUMER USES THESE FILES THE OTHER WAY ROUND.**
- * `lib/schgen/render/stock-symbols.ts` resolves a library nickname to the
- * INSTALLED KiCad's `.kicad_sym` and reads the files here only to CHECK it,
- * refusing when a vendored symbol and the installed library's flattened text
- * for the same name disagree. It cannot do otherwise: `createResolver`'s map
- * is keyed by nickname, so a single-symbol `.sexpr` is not something it can
- * be handed. So vendoring buys that consumer a refusal rather than
- * independence, and KiCad is a hard dependency of it. See
+ * **THE VENDORED FILES ARE A DRIFT CHECK, NOT A SOURCE OF INDEPENDENCE.** The
+ * generator's `stock-symbols.ts` resolved a library nickname to the INSTALLED
+ * KiCad's `.kicad_sym` and read the files here only to CHECK it, refusing when
+ * a vendored symbol and the installed library's flattened text for the same
+ * name disagreed. That refusal was the only thing running the comparison, so it
+ * is ported - as two arms of `tests/kicad/symbol-names.test.ts`, which is now
+ * what fails when a KiCad release redraws a symbol under the same name. See
  * `./symbols/PROVENANCE.md` and `docs/known-gaps.md` **G119**.
  */
 import fs from "node:fs"
@@ -55,11 +61,14 @@ export const VENDORED_SYMBOLS: readonly string[] = [
   "Connector_Generic:Conn_01x02",
   "Connector:TestPoint",
   "Jumper:Jumper_2_Open",
-  // Vendored for DRIFT DETECTION rather than for embedding: `lib/schgen/ir/mechanical-pins.ts`
-  // exempts this symbol's `MP` pin from `pinsDeclared`, and that exemption is only as good as
-  // the claim that `MP` is still the mount lug. Vendoring puts the symbol under
-  // `lib/schgen/render/stock-symbols.ts`' byte-exact refusal, so a KiCad that moves the pin
-  // fails loudly instead of silently exempting whatever ends up with that number.
+  // Vendored for DRIFT DETECTION rather than for embedding: `lib/kicad/sheet-agreement.ts`'s
+  // `MECHANICAL_PINS` exempts this symbol's `MP` pin from the model's pin partition, and that
+  // exemption is only as good as the claim that `MP` is still the mount lug. Vendoring puts the
+  // symbol under a byte-exact comparison against the installed library - the generator's
+  // `stock-symbols.ts` refusal until Task 9 of
+  // `docs/superpowers/plans/2026-10-30-remove-schgen.md`, and
+  // `tests/kicad/symbol-names.test.ts` since - so a KiCad that moves the pin fails loudly
+  // instead of silently exempting whatever ends up with that number.
   // `docs/superpowers/specs/2026-10-24-mechanical-pins-design.md` section 3.5.
   "Switch:SW_Rotary_1x6_MP",
 ]
@@ -176,9 +185,10 @@ export interface SymbolPin {
    * The electrical type KiCad stores on the pin itself (`passive`, `power_in`,
    * `bidirectional`, ...). **This is not reliable evidence that a pin is mechanical rather
    * than electrical** - an ordinary two-leg part and a mounting lug on the same symbol can
-   * both be typed `passive` (`lib/schgen/ir/mechanical-pins.ts`'s own header measures this:
-   * both terminals of `Device:R` and six of eight TL072 pins would misclassify under a
-   * type-based rule). It is exposed because a caller may still want to assert it, not because
+   * both be typed `passive` (`lib/kicad/sheet-agreement.ts`'s own header carries the
+   * measurement, from the deleted `lib/schgen/ir/mechanical-pins.ts`: both terminals of
+   * `Device:R` and six of eight TL072 pins would misclassify under a type-based rule). It is
+   * exposed because a caller may still want to assert it, not because
    * it answers "is this pin reached by a conductor" - `strokeEndpointsAt` below answers that.
    */
   readonly type: string
@@ -214,18 +224,16 @@ function unitSubSymbolName(unit: SNode, symbolName: string): string {
  * genuine multi-unit part's pins or graphics rather than being wrong about it loudly - the
  * refusal below is what made that loud while the stub writer was this function's caller.
  *
- * **THE REFUSAL WAS THE STUB WRITER'S LIMIT AND NEVER THE REPOSITORY'S.**
- * `lib/schgen/` handles multi-unit packages - a UNIT is its unit of placement,
- * `lib/schgen/ir/` keys parts by `unitKey(label, unit)`, and
- * `tests/schgen/render/templates/opamp-stock.kicad.test.ts` draws a three-unit
- * op-amp through it. `lib/schgen/render/stock-symbols.ts` does not import this
- * function (it takes `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`,
- * `flattenedSymbol`, `vendoredSymbolFile` and `vendoredSymbolText` and nothing
- * else), so **nothing in the generator's path meets this refusal - and now that
- * the stub writer is deleted, nothing in production calls `symbolPins`, or this
- * function through it, at all: every remaining caller of either is a test.**
- * See this file's own header for the same count and why it is stated rather
- * than acted on here.
+ * **THE REFUSAL WAS THE STUB WRITER'S LIMIT AND NEVER THE REPOSITORY'S.** The
+ * schematic generator handled multi-unit packages - a UNIT was its unit of
+ * placement, its IR keyed parts by `unitKey(label, unit)`, and one of its tests
+ * drew a three-unit op-amp through that path - and it never called this
+ * function. Both are deleted now (Task 9 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`), so the refusal below
+ * binds the only callers there are: `symbolPins` and `symbolStrokeSegments`,
+ * reached from `tests/kicad/symbol-library-disk.ts`, over SINGLE-unit symbols.
+ * **Nothing in production calls either**, which is a fact about today and not a
+ * judgement to act on - see this file's own header.
  *
  * **SHARED BY `symbolPins` AND `symbolStrokeSegments`**, so a pin walk and a graphics walk of
  * the same block can never disagree about which unit sub-symbols are in scope - the one thing
@@ -252,10 +260,10 @@ function supportedUnitSymbols(block: string): { readonly name: string; readonly 
           "function does not support multi-unit symbols: lib/kicad/schematic.ts, the now-" +
           "deleted stub writer that was once its only caller, always placed a symbol as " +
           "\"(unit 1)\" and merged every unit's pins onto it, which would have been wrong once " +
-          "there was more than one unit. lib/schgen/ places units separately and draws them " +
-          "through a different path that does not call this function; if you reached this " +
-          "refusal, you are calling symbolPins or symbolStrokeSegments directly on a multi-" +
-          "unit block, which neither supports.",
+          "there was more than one unit. If you reached this refusal, you are calling " +
+          "symbolPins or symbolStrokeSegments directly on a multi-unit block, which neither " +
+          "supports: read the units you want out of the block yourself, or widen this function " +
+          "with a test over a real multi-unit symbol beside it.",
       )
     }
     if (bodyStyle !== "0" && bodyStyle !== "1") continue
@@ -335,7 +343,7 @@ function legsOf(points: readonly (readonly [number, number])[]): SymbolSegment[]
  * either). **This is scoped to exactly what `strokeEndpointsAt` needs - a stroke's ENDPOINTS -
  * and nothing past that**: no de-duplication, no bounding-box union, no µm snapping. The
  * original ported those for ITS OWN purpose (placement clearance and text avoidance in a
- * generator this repository is deleting); reproducing them here would be writing a second
+ * generator this repository has since deleted); reproducing them here would be writing a second
  * symbol parser for a purpose nothing in this repository has. Coordinates stay in the raw mm
  * floats `symbolPins` already returns, which is why `strokeEndpointsAt` can compare a pin's
  * computed body-side point against these endpoints without converting either side's units.
@@ -416,8 +424,9 @@ export function strokeEndpointsAt(block: string, pin: SymbolPin): number {
 /**
  * Where the vendored block for `libId` lives, whether or not it is there.
  * Exported so a caller can NAME the file in its own refusal without
- * re-deriving the path shape - `lib/schgen/render/stock-symbols.ts` reports
- * both sides of a vendored-versus-installed disagreement by path.
+ * re-deriving the path shape - `tests/kicad/symbol-names.test.ts` reports both
+ * sides of a vendored-versus-installed disagreement by path, as the deleted
+ * `lib/schgen/render/stock-symbols.ts` did before it.
  */
 export function vendoredSymbolFile(libId: string): string {
   const { library, name } = splitLibId(libId)

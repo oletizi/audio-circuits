@@ -7,18 +7,18 @@
  * exactly one definition of each word list and each predicate, and every sentence of reasoning
  * below is theirs, carried across rather than rewritten. Nothing was widened in the move: the four
  * lists hold exactly the entries they held, and the three predicates behave exactly as they did
- * (`tests/stripboard/approvals-refusals.test.ts` drives them through the approvals loader, and
- * `tests/schgen/readability/baseline.test.ts` drives them through the readability loader).
+ * (`tests/stripboard/approvals-refusals.test.ts` drives them through the approvals loader).
  *
- * **WHY IT MOVED, which is the one thing that is new.** Task 16 of the M1 schematic-authoring plan
- * adds a SECOND owner-judgement registry - `schematic/readability-baselines.json`, spec §3.3 -
- * whose loader lives in `lib/schgen/readability/baseline.ts`. **`lib/schgen/` may not import from
- * `tools/`** (the M1 plan's global constraint, stated in `lib/schgen/render/blocks.ts`), so the
- * refusals could not be reused where they were. The task brief's instruction was *"reuse
- * `tools/stripboard/approvals-read.ts`'s three refusals rather than writing a fourth reader of the
- * same shape"*, and this file is the only mechanism that obeys it: a second copy of
- * `FIRST_OR_SECOND_PERSON` would be two places to keep correct, which `CLAUDE.md` forbids in as
- * many words.
+ * **WHY IT MOVED, AND WHY THAT REASON NO LONGER APPLIES.** Task 16 of the M1 schematic-authoring
+ * plan added a SECOND owner-judgement registry - `schematic/readability-baselines.json`, spec
+ * §3.3 - whose loader lived in `lib/schgen/readability/baseline.ts`, and `lib/schgen/` was
+ * forbidden to import from `tools/`, so the refusals could not be reused where they were. **That
+ * loader is deleted with the schematic generator** (Task 9 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`), leaving the approvals registry as the one
+ * reader again. The JSON itself survives by the owner's decision rather than an agent's -
+ * `schematic/README.md` records what it is and the open question about it - so this file stays
+ * where it is: the second registry's own records are still on disk, and moving the readings back
+ * into `tools/` would have to be undone the moment anything reads them again.
  *
  * **WHAT IS HERE AND WHAT IS NOT.** Here: the word lists, the predicates, and the narration sweep.
  * Not here: the refusal SENTENCES, which name the registry they are refusing for (*"the approval

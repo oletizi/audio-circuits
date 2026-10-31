@@ -1,6 +1,6 @@
 /**
- * `compareSheetToModel` - the standalone sheet-to-model comparison that replaces
- * `lib/schgen/gates/round-trip.ts`.
+ * `compareSheetToModel` - the standalone sheet-to-model comparison that replaced
+ * `lib/schgen/gates/round-trip.ts`, now deleted with the rest of the schematic generator.
  *
  * **EVERY ASSERTION HERE IS AN EXACT MESSAGE LIST, NEVER A COUNT.** A test asserting that a list
  * has one entry passes when the entry is the wrong one, and the five lists this module returns are

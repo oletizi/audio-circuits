@@ -259,9 +259,11 @@ export const POLE_PIN: Readonly<Record<string, string>> = {
  * **IT REPLACES AN ASSUMPTION WITH A DATUM, and the assumption was already written down as a
  * comment.** `switchOverride` used to number the throws `String(index + 1)`, which is correct for
  * both of these symbols and is a rule nothing checked. The list is now the one statement of that
- * fact, it drives the pin map, and `tests/schgen/nc-pins.test.ts` asserts every entry against the
- * installed library - that each pin exists, that it is on the throw side at the throw angle, and
- * that **`THROW_PINS` plus `POLE_PIN` plus `MECHANICAL_PINS` is EXACTLY the symbol's pin set.**
+ * fact, it drives the pin map, and `tests/circuits/pultec-switch-geometry.test.ts` asserts every
+ * entry against the installed library - that each pin exists, that it is on the throw side at the
+ * throw angle opposite the pole, and that **`THROW_PINS` plus `POLE_PIN` plus `MECHANICAL_PINS` is
+ * EXACTLY the symbol's pin set.** (Those arms were `tests/schgen/nc-pins.test.ts`'s and moved in
+ * Task 1 of `docs/superpowers/plans/2026-10-30-remove-schgen.md`, ahead of Task 9 deleting it.)
  * That last assertion is what makes the unused-detent declaration below specific: a pin a future
  * KiCad adds to one of these symbols fails the test rather than quietly becoming an unaccounted
  * pin that stops a board drawing, or - worse - one a blanket silently excused.
@@ -269,9 +271,11 @@ export const POLE_PIN: Readonly<Record<string, string>> = {
  * **AND IT IS WHAT LETS A SELECTOR BE DRAWN WITH A SYMBOL CARRYING MORE THROWS THAN THE CIRCUIT
  * WIRES.** `SW_MID` has eleven positions and `Switch:SW_Rotary_1x12` draws twelve, because the
  * owner's part choice is a twelve-position switch with its stop set to eleven - *"Assume a
- * 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` in `../physical/parts.ts`. The detents past the
- * circuit's last position are then DECLARED no-connect by number, through
- * `ComponentOverride.ncPins`; nothing is exempted and nothing is inferred from the count.
+ * 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` below. The detents past the circuit's last position
+ * are DECLARED no-connect by number and never inferred from the count: that declaration was the
+ * deleted schematic generator's `ComponentOverride.ncPins`, and it is now
+ * `tests/circuits/sheet-model.ts`'s `rotaryPinNumbers`, which enters an unwired detent under its
+ * own pin number so the drafted page's `unconnected-(SW1-Pad12)` net has something to agree with.
  */
 export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
   "Switch:SW_Rotary_1x6_MP": ["1", "2", "3", "4", "5", "6"],
@@ -292,9 +296,9 @@ export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
  * **IT SITS HERE BESIDE `POLE_PIN` AND `THROW_PINS` BECAUSE IT IS THE SAME KIND OF FACT AS
  * THEY ARE** - where one selector's terminals sit on the symbol it is drawn with - and because
  * its previous home, `../schematic/section-board.ts`, is deleted with the schematic generator it
- * was written for. Its two readers are that file's `switchOverride` and the drafted-page guard's
- * `tests/circuits/sheet-model.ts`, and a copy in either would be a second place for one fact
- * about one switch to be wrong.
+ * was written for. Its reader is the drafted-page guard's `tests/circuits/sheet-model.ts` - the
+ * other was that deleted file's `switchOverride` - and a copy would be a second place for one
+ * fact about one switch to be wrong.
  */
 export const SPDT_PINS: Readonly<Record<string, string>> = { common: "2", boost: "1", cut: "3" }
 

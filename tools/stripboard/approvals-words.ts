@@ -32,10 +32,11 @@ import { subjectNamesFor } from "../../lib/owner-words.ts"
  * PLAN, AND THIS FILE RE-EXPORTS THEM RATHER THAN HOLDING A SECOND COPY.**
  *
  * `schematic/readability-baselines.json` (spec §3.3) is a SECOND owner-judgement registry, and its
- * loader lives in `lib/schgen/readability/baseline.ts` - which **may not import from `tools/`**
- * (the M1 plan's global constraint, stated in `lib/schgen/render/blocks.ts`). The readings
- * therefore had to be reachable from `lib/`, and the only alternative was a fourth reader of the
- * same shape, which `CLAUDE.md` forbids and which that task's brief forbids by name.
+ * loader lived in `lib/schgen/readability/baseline.ts` - which **could not import from `tools/`**
+ * (the M1 plan's global constraint). The readings therefore had to be reachable from `lib/`, and
+ * the only alternative was a fourth reader of the same shape, which `CLAUDE.md` forbids and which
+ * that task's brief forbade by name. **That loader is deleted with the schematic generator**; see
+ * `lib/owner-words.ts`'s own header for why the readings stay there anyway.
  *
  * **NOTHING WAS WIDENED IN THE MOVE.** The four word lists hold exactly the entries they held and
  * the three predicates behave exactly as they did; `tests/stripboard/approvals-refusals.test.ts`

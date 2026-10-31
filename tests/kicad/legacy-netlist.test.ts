@@ -13,8 +13,11 @@ import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
  * own export of the schematic the built board was laid out from - spells "no connection" as a
  * one-member placeholder net, `unconnected-(U1-CLK_O-Pad5)`. **The two derivations of "this model
  * as a netlist" disagree about how to spell `NC`:** `lib/kicad/from-network.ts:190` represents it
- * by OMITTING the pin, while `lib/schgen/gates/round-trip.ts`'s `modelPartition` represents it as
- * a one-member set *"because that is how the export carries it"*. That disagreement is
+ * by OMITTING the pin, while the sheet-to-model comparison puts it in the model's partition as a
+ * one-member set *"because that is how `kicad-cli` exports such a pin"* - the generator's
+ * `lib/schgen/gates/round-trip.ts` until Task 9 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md` deleted it, and
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` since. That disagreement is
  * `docs/known-gaps.md` **G286**, with a criterion; it is not resolved here, and the writer cannot
  * resolve it by reproducing KiCad's name, which embeds the SYMBOL PIN NAME (`CLK_O`) that the
  * model does not carry.

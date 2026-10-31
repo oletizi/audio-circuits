@@ -3,11 +3,12 @@
  * printed build guide (`tools/guide/placement.ts`, committed 2026-09-29), moved to
  * `lib/schgen/render/occupancy.ts` so the schematic's field placer could use the same arithmetic
  * and the same weights under one hashed library directory, and moved back here in Task 7 of
- * `docs/superpowers/plans/2026-10-30-remove-schgen.md`: `lib/schgen/` is being deleted in that
- * plan's Task 9, so this file cannot stay in a directory that is about to go with it.
- * `lib/schgen/render/field-placement.ts` still imports it from here for as long as `lib/schgen/`
- * exists. Nothing about what it computes has changed across either move, and `tests/guide/` —
- * including `tests/guide/occupancy.test.ts` — is what holds that claim.
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`, ahead of that plan's Task 9 deleting
+ * `lib/schgen/`. **The schematic field placer that was its second consumer is now gone, so the
+ * printed build guide is its only one again** - `./placement.ts` re-exports it, and
+ * `tools/guide/render*.ts` reach it through there. Nothing about what it computes has changed
+ * across either move, and `tests/guide/` — including `tests/guide/occupancy.test.ts` — is what
+ * holds that claim.
  *
  * **THE SHAPE IS THE ONE THE LITERATURE PRESCRIBES, which is why it is reused rather than
  * reinvented.** `docs/schematic/text-placement-prior-art.md` establishes it: point-feature label

@@ -292,8 +292,9 @@ export const APPROVAL_REQUIRED_EDGE_NAMES = ["violationsOf", "candidateSha256"] 
  *
  * **WHY THEY MOVED, and nothing about them changed.** `schematic/readability-baselines.json`
  * (spec §3.3) is a SECOND registry recording the owner's judgement about a
- * produced artifact, and its loader is `lib/schgen/readability/baseline.ts` -
- * which may not import from `tools/` (the M1 plan's global constraint). So the
+ * produced artifact, and its loader WAS `lib/schgen/readability/baseline.ts` -
+ * deleted with the schematic generator, and unable while it existed to import
+ * from `tools/` (the M1 plan's global constraint). So the
  * three readings had to be reachable from `lib/`, and the only alternative was
  * a second copy of these lists: two places to keep correct, which `CLAUDE.md`
  * forbids, and which that task's brief forbids by name (*"reuse

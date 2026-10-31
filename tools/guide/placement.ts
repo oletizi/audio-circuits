@@ -6,10 +6,10 @@
  * re-exported here so the guide's own placement helpers reach them through one name. The module
  * used to sit at `lib/schgen/render/occupancy.ts` so the schematic's field placer could weigh an
  * overlap the same way under one hashed library directory; it moved back here in Task 7 of
- * `docs/superpowers/plans/2026-10-30-remove-schgen.md`, because `lib/schgen/` is deleted in that
- * plan's Task 9. `lib/schgen/render/field-placement.ts` still imports it from here for as long as
- * `lib/schgen/` exists. This file keeps the `Occupied` categories, which are the guide's own and
- * mean nothing to a schematic.
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`, ahead of that plan's Task 9 deleting
+ * `lib/schgen/`. That placer is gone, so the guide is the primitive's only consumer again. This
+ * file keeps the `Occupied` categories, which are the guide's own and mean nothing to a
+ * schematic.
  */
 import { createOccupancy, leastCovered, MARK_WEIGHT, type Occupancy } from "./occupancy.ts"
 

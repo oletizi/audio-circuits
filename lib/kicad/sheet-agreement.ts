@@ -4,10 +4,12 @@
  * and nothing else.
  *
  * It is the standalone replacement for `lib/schgen/gates/round-trip.ts`, written so that the four
- * guards binding the five approved pages under `drafted/pultec/` to their models survive the
- * deletion of `lib/schgen/`. **It imports nothing from `lib/schgen/` or `tools/schgen/`, and that
- * is the whole point of it** - it reads a `Network`, a designator map, a pin-number map and an
- * imported netlist, all four of which exist without a schematic generator.
+ * guards binding the five approved pages under `drafted/pultec/` to their models would survive
+ * the deletion of `lib/schgen/` - which has now happened. **It reads a `Network`, a designator
+ * map, a pin-number map and an imported netlist, all four of which exist without a schematic
+ * generator**, and that is the whole point of it. The equivalence of the two implementations was
+ * measured on all six lists on all five approved pages before the switch
+ * (`tests/circuits/guard-equivalence.test.ts`, which existed only while both did).
  *
  * ---
  *
@@ -79,7 +81,7 @@ export interface SheetAgreement {
  * Per kind, the KiCad symbol a kind alone settles - **a whitelist that refuses loudly, not a
  * general rule that accepts a guess.**
  *
- * **IT IS THE FOUR-ENTRY TABLE `lib/schgen/rules/symbols.ts` CARRIES, AND IT IS HERE FOR THE SAME
+ * **IT IS THE FOUR-ENTRY TABLE `lib/schgen/rules/symbols.ts` CARRIED, AND IT IS HERE FOR THE SAME
  * REASON `MECHANICAL_PINS` IS**: that file is deleted with the rest of the generator, and without
  * these four entries nothing would know what symbol an ordinary resistor or capacitor is meant to
  * be drawn with - **18 of 27, 17 of 21, 15 of 19, 16 of 20 and 29 of 39 components of the five
@@ -148,10 +150,10 @@ function intendedSymbol(component: Component): string {
  * Library pins that are MECHANICAL MOUNT POINTS: a terminal on the symbol body that no conductor
  * inside the symbol reaches, which the electrical model is therefore not required to carry.
  *
- * **THIS IS THE SAME CLAIM `lib/schgen/ir/mechanical-pins.ts` MAKES, AND THE DUPLICATE IS
- * DELIBERATE FOR THE LENGTH OF ONE PLAN.** That file is deleted with the rest of `lib/schgen/`,
- * after the equivalence test that compares this module's output against its predecessor's on the
- * five drafted pages - which is also what checks the two tables agree while both exist. It is
+ * **THIS WAS THE SAME CLAIM `lib/schgen/ir/mechanical-pins.ts` MADE, AND THE DUPLICATE LASTED
+ * EXACTLY ONE PLAN.** That file is deleted with the rest of `lib/schgen/`, so this table is now
+ * the only one; the two were held to each other while both existed by the equivalence test over
+ * the five drafted pages. It is
  * keyed by KiCad library id, values are pin NUMBERS, and the entry below was read off KiCad
  * 10.0.5's `Switch.kicad_sym`: `MP` is the panel mounting lug, a `passive` pin with an empty name
  * at (-7.62, -5.08) whose body-side end no polyline reaches, unlike pole pin 7's.

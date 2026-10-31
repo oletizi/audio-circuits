@@ -2,7 +2,7 @@
  * **THE THREE ARGUMENTS `compareSheetToModel` NEEDS FOR ONE DRAFTED PULTEC PAGE, built without
  * reaching into `lib/schgen/` or `tools/schgen/` at all.**
  *
- * `tests/circuits/drafted-sheet.ts`'s `modelUnderTest` builds the same facts by running the
+ * `tests/circuits/drafted-sheet.ts`'s `modelUnderTest` built the same facts by running the
  * schematic generator's front half - `circuitSpecFrom`, `buildCircuit`, `annotate` - and that
  * whole path is deleted. What a model-versus-drawing comparison actually needs out of it is three
  * things, and none of them needs a generator: the board's `Network`, the KiCad reference each
@@ -10,10 +10,13 @@
  * This module produces those three, from the board's own circuit module and from the pin tables
  * `circuits/pultec/physical/parts.ts` declares.
  *
- * **`tests/circuits/guard-equivalence.test.ts` IS WHAT SAYS IT IS THE SAME COMPARISON**, element
+ * **`tests/circuits/guard-equivalence.test.ts` IS WHAT SAID IT IS THE SAME COMPARISON**, element
  * for element on all six of `SheetAgreement`'s lists across all five approved pages, against the
- * generator-backed path while both exist. Nothing here may be trusted on the strength of its
- * reasoning; that test is the measurement.
+ * generator-backed path. Nothing here was to be trusted on the strength of its reasoning; that
+ * test was the measurement, it passed on all five pages with controls, and it was deleted with the
+ * generator in Task 9 because it existed only while both implementations did. It is in git at
+ * `84e810b^`, and a change to the derivations below is now checked by the five board guards in
+ * `./drafted-sheet.ts` and by nothing else.
  *
  * ---
  *
@@ -73,8 +76,9 @@ interface DraftedBoard {
  * The five boards, their builders, and the two claims about each that `declaredBoard` checks.
  *
  * **A STATIC TABLE, VERIFIED AGAINST `boards/<board>/perfboard.json` ON EVERY CALL.** The board's
- * own manifest is the authority for which circuit it is - `tools/schgen/board-sheets.ts` states
- * why, and a directory name says nothing about which TypeScript builds it - but a test file
+ * own manifest is the authority for which circuit it is - the deleted
+ * `tools/schgen/board-sheets.ts` stated why, and a directory name says nothing about which
+ * TypeScript builds it - but a test file
  * cannot import a path it reads at run time without a dynamic import, and a dynamic import would
  * make a wrong path a timing failure rather than a named one. So the binding is written down and
  * CHECKED: the manifest's `circuit` and `export` must be the module and builder named here, or
@@ -133,9 +137,10 @@ function declaredBoard(board: string): DraftedBoard {
 /**
  * Kinds whose canonical pin vocabulary IS the symbol's pins 1..n, in the order written here.
  *
- * **IT IS `lib/schgen/rules/symbols.ts`'s POSITIONAL RULE, narrowed to the four kinds the five
- * approved pages carry and with each kind's vocabulary spelled out rather than read from
- * `lib/model/kinds.ts`.** That file's `POSITIONAL_KINDS` also covers `photoresistor`, which no
+ * **IT WAS `lib/schgen/rules/symbols.ts`'s POSITIONAL RULE** - that file is deleted with the
+ * generator - **narrowed to the four kinds the five approved pages carry and with each kind's
+ * vocabulary spelled out rather than read from
+ * `lib/model/kinds.ts`.** That rule's `POSITIONAL_KINDS` also covered `photoresistor`, which no
  * Pultec board has; a kind absent here REFUSES, and widening the table is a deliberate edit.
  * Spelling the order out is the point of the entry - `potentiometer` is `ccw, wiper, cw` and
  * `Device:R_Potentiometer` numbers its lugs in exactly that order, which is a claim about the
@@ -405,16 +410,16 @@ function checkDeclaredPinNumbers(board: string, network: Network): void {
   }
 }
 
-/** The leading capitals of a part's label - `from-network.ts`'s `refPrefixOf`. */
+/** The leading capitals of a part's label - the generator's own `refPrefixOf`. */
 const REF_PREFIX = /^([A-Z]+)/
 
 /**
  * The KiCad reference every component of `network` carries on its approved page.
  *
- * `<refPrefix><n>` in network order, counting per prefix from 1, which is what
- * `lib/schgen/lock/annotate.ts` assigns from an empty references lock with nothing pinned - see
- * the module header for the three facts that make it reproducible, and `guard-equivalence.test.ts`
- * for the measurement that it does reproduce it.
+ * `<refPrefix><n>` in network order, counting per prefix from 1, which is what the generator's
+ * `lib/schgen/lock/annotate.ts` assigned from an empty references lock with nothing pinned - see
+ * the module header for the three facts that made it reproducible, and for what measured that it
+ * does reproduce it.
  */
 export function sheetDesignators(network: Network): ReadonlyMap<string, string> {
   const used = new Map<string, number>()

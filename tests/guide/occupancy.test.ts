@@ -3,9 +3,11 @@
  * `docs/superpowers/plans/2026-10-30-remove-schgen.md` from
  * `tests/schgen/render/field-fallback.test.ts`'s "the weighted overlap cost" block, unchanged,
  * because that block tested `occupancy.ts` directly and not the schematic field placer the rest of
- * that file exercises. `tests/schgen/render/field-fallback.test.ts` still proves the schematic
- * field placer chooses the least-covered candidate under this same weighting; this file proves the
- * weighting itself.
+ * that file exercised. **That file is deleted with the generator in Task 9, so this is now the
+ * only test of the weighting**, which is why the block was moved rather than copied: it proves the
+ * weighting itself, and nothing else does. What went with the generator is the separate claim that
+ * the schematic field placer chose the least-covered candidate under this weighting - there is no
+ * schematic field placer any more.
  */
 import { describe, expect, it } from "bun:test"
 import { createOccupancy, MARK_WEIGHT } from "../../tools/guide/occupancy.ts"
