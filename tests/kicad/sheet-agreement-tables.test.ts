@@ -24,6 +24,18 @@
  * **EVERY ARM IS GENERIC OVER ITS TABLE, not written against today's entries.** A review of the
  * schgen original found its first version hard-coded the one rotary, so the tenth `_MP` symbol
  * would have been added with no check at all. That lesson is carried, not just its result.
+ *
+ * **ONE ASSERTION WAS MISSING UNTIL NOW, AND IT WAS THE ONE THAT MATTERED.** The original
+ * `tests/schgen/ir/mechanical-pins.test.ts` arm 1 did not only resolve each listed pin against the
+ * installed library (the test above already did that) - it also asserted, with its own
+ * `endpointsAt`, that NO graphic stroke inside the symbol has an endpoint at that pin's body-side
+ * connection point. That is the measurement `lib/kicad/sheet-agreement.ts`'s own header leans on:
+ * pin TYPE cannot tell a mounting lug from an electrical pin (both `passive` on this symbol), so
+ * the table is trustworthy only to the extent that every pin it lists is actually unreached by a
+ * conductor. The port here uses `installedSymbolStrokeEndpoints`
+ * (`./symbol-library-disk.ts`), built on `lib/kicad/symbol-library.ts`'s widened `symbolPins` /
+ * `symbolStrokeSegments` / `strokeEndpointsAt` - the same geometry the original arm computed,
+ * carried over rather than approximated.
  */
 import { expect, test } from "bun:test"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
@@ -32,7 +44,7 @@ import { ALL_KINDS } from "../../lib/model/kinds.ts"
 import { circuit } from "../../lib/model/index.ts"
 import { net } from "../../lib/model/types.ts"
 import type { Component } from "../../lib/model/types.ts"
-import { installedSymbolPinNumbers } from "./symbol-library-disk.ts"
+import { installedSymbolPinNumbers, installedSymbolPins, installedSymbolStrokeEndpoints } from "./symbol-library-disk.ts"
 
 test("the whitelist is exactly four kinds, and every lib id in it resolves on disk", () => {
   expect(ALL_KINDS.length, "a kind list nothing iterates is a check that cannot fail").toBe(11)
@@ -53,7 +65,7 @@ test("the whitelist is exactly four kinds, and every lib id in it resolves on di
   ])
 })
 
-test("every mechanical-table entry names a resolvable symbol and pins that symbol really has", () => {
+test("every mechanical-table entry names a resolvable symbol and pins that symbol really has, with NO stroke endpoint at that pin's body-side end", () => {
   const entries = Object.entries(MECHANICAL_PINS)
   expect(entries.length, "an empty table would make every loop below vacuous").toBeGreaterThan(0)
   for (const [libId, pins] of entries) {
@@ -64,6 +76,13 @@ test("every mechanical-table entry names a resolvable symbol and pins that symbo
     expect(pins.length, `${libId} has an empty pin list, which exempts nothing`).toBeGreaterThan(0)
     for (const number of pins) {
       expect(numbers.includes(number), `${libId} has no pin ${number}`).toBe(true)
+      // Ported from tests/schgen/ir/mechanical-pins.test.ts arm 1: the geometric claim, not
+      // merely the pin's existence. A pin reached by a stroke is wired into the symbol's own
+      // drawing and is not isolated, whatever its declared electrical type says.
+      expect(
+        installedSymbolStrokeEndpoints(libId, number),
+        `${libId} pin ${number} is reached by a stroke, so it is not isolated`,
+      ).toBe(0)
     }
     // A table claiming EVERY pin of a symbol is mechanical would exempt a part entirely.
     expect(pins.length, `${libId} lists all of its own pins as mechanical`).toBeLessThan(numbers.length)
@@ -73,6 +92,35 @@ test("every mechanical-table entry names a resolvable symbol and pins that symbo
 test("the mechanical table carries only entries this repository has verified", () => {
   expect(Object.keys(MECHANICAL_PINS)).toEqual(["Switch:SW_Rotary_1x6_MP"])
   expect(MECHANICAL_PINS["Switch:SW_Rotary_1x6_MP"]).toEqual(["MP"])
+})
+
+/**
+ * Ported from arm 1b of `tests/schgen/ir/mechanical-pins.test.ts`: the CONTRAST that makes the
+ * zero above mean something. `passive` alone does not distinguish MP from an electrical pin - see
+ * `lib/kicad/sheet-agreement.ts`'s own header - so this is the other half of the measurement,
+ * pinned to the one symbol this repository has verified rather than generalised across the
+ * table: a future entry's un-listed pins are not guaranteed to be drawn the same way this one's
+ * are, and asserting that generally would be exactly the "inferred from stroke geometry" rule
+ * that header already rejects as a general replacement for the whitelist.
+ */
+test("on Switch:SW_Rotary_1x6_MP specifically, all seven ELECTRICAL pins are reached by exactly one stroke endpoint - the contrast that makes MP's zero mean something", () => {
+  const rotary = "Switch:SW_Rotary_1x6_MP"
+  const pins = installedSymbolPins(rotary)
+  const listed = new Set(MECHANICAL_PINS[rotary] ?? [])
+  expect([...listed]).toEqual(["MP"])
+  const mp = pins.find((p) => p.number === "MP")
+  expect(mp?.name).toBe("")
+
+  const electrical = pins.filter((p) => !listed.has(p.number))
+  expect(electrical.map((p) => p.number)).toEqual(["1", "2", "3", "4", "5", "6", "7"])
+  for (const p of electrical) {
+    expect(installedSymbolStrokeEndpoints(rotary, p.number), `pin ${p.number}`).toBe(1)
+  }
+})
+
+test("CONTROL: MP's own stroke-endpoint count is not what an electrical pin's is - the zero/one contrast above is a measurement, not a tautology true of any two pins", () => {
+  const rotary = "Switch:SW_Rotary_1x6_MP"
+  expect(installedSymbolStrokeEndpoints(rotary, "MP")).not.toBe(installedSymbolStrokeEndpoints(rotary, "1"))
 })
 
 /** A single-pole rotary drawn with `symbol`, wired to its pole and one throw. */

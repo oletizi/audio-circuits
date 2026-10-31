@@ -165,20 +165,45 @@ export interface SymbolPin {
   readonly y: number
   /** Direction, in degrees, from the connection point into the symbol body. */
   readonly angle: number
+  /**
+   * The electrical type KiCad stores on the pin itself (`passive`, `power_in`,
+   * `bidirectional`, ...). **This is not reliable evidence that a pin is mechanical rather
+   * than electrical** - an ordinary two-leg part and a mounting lug on the same symbol can
+   * both be typed `passive` (`lib/schgen/ir/mechanical-pins.ts`'s own header measures this:
+   * both terminals of `Device:R` and six of eight TL072 pins would misclassify under a
+   * type-based rule). It is exposed because a caller may still want to assert it, not because
+   * it answers "is this pin reached by a conductor" - `strokeEndpointsAt` below answers that.
+   */
+  readonly type: string
+  /** The pin's own name, as KiCad draws it - often `""`, and sometimes the pin's own number
+   * re-used as its name (e.g. every pin of `Switch:SW_Rotary_1x12`). */
+  readonly name: string
+  /** How far the pin's own drawn leg runs from `(at x y angle)` into the symbol body. */
+  readonly length: number
 }
 
 /**
- * The pins of a symbol's SUPPORTED units: unit 0 (pins and graphics common to
- * every unit) and unit 1 (the part's own body, which is every pin a
- * single-unit symbol has). KiCad names a unit sub-symbol
- * "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common unit or 1, 2, 3...
- * for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
- * here (a De Morgan alternate would be 2 and is skipped, since this
- * repository has none). A unit sub-symbol with no name, or with a unit number
- * greater than 1, refuses: the superseded stub writer always emits a placed
- * symbol's `(unit 1)` and merges every returned pin onto it
- * (lib/kicad/schematic.ts), which silently drops or wrongly combines a genuine
- * multi-unit part's pins rather than being wrong about it loudly.
+ * The library's own name for a unit sub-symbol, `symbol.atoms[0]` of a `(symbol "Name_<unit>_
+ * <bodyStyle>" ...)` form - refusing an unnamed one so every caller gets the same message.
+ */
+function unitSubSymbolName(unit: SNode, symbolName: string): string {
+  const unitName = unit.atoms[0]
+  if (unitName === undefined) {
+    throw new Error(`symbol "${symbolName}" has a unit sub-symbol with no name; expected "Name_<unit>_<bodyStyle>"`)
+  }
+  return unitName
+}
+
+/**
+ * This symbol's SUPPORTED unit sub-symbols: unit 0 (pins and graphics common to every unit)
+ * and unit 1 (the part's own body, which is every pin and every graphic a single-unit symbol
+ * has). KiCad names a unit sub-symbol "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common
+ * unit or 1, 2, 3... for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
+ * here (a De Morgan alternate would be 2 and is skipped, since this repository has none). A
+ * unit sub-symbol with no name, or with a unit number greater than 1, refuses: the superseded
+ * stub writer always emits a placed symbol's `(unit 1)` and merges every returned pin onto it
+ * (lib/kicad/schematic.ts), which silently drops or wrongly combines a genuine multi-unit
+ * part's pins or graphics rather than being wrong about it loudly.
  *
  * **THE REFUSAL IS THE STUB WRITER'S LIMIT AND NOT THE REPOSITORY'S.**
  * `lib/schgen/` handles multi-unit packages - a UNIT is its unit of placement,
@@ -188,16 +213,17 @@ export interface SymbolPin {
  * function (it takes `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`,
  * `flattenedSymbol`, `vendoredSymbolFile` and `vendoredSymbolText` and nothing
  * else), so **nothing in the generator's path meets this refusal.**
+ *
+ * **SHARED BY `symbolPins` AND `symbolStrokeSegments`**, so a pin walk and a graphics walk of
+ * the same block can never disagree about which unit sub-symbols are in scope - the one thing
+ * that would make a stroke-endpoint comparison between the two meaningless.
  */
-export function symbolPins(block: string): readonly SymbolPin[] {
+function supportedUnitSymbols(block: string): { readonly name: string; readonly units: readonly SNode[] } {
   const root = parseSexpr(block)
   const name = root.atoms[0] ?? "(unnamed)"
-  const pins: SymbolPin[] = []
+  const units: SNode[] = []
   for (const unit of root.nodes.filter((n) => n.name === "symbol")) {
-    const unitName = unit.atoms[0]
-    if (unitName === undefined) {
-      throw new Error(`symbol "${name}" has a unit sub-symbol with no name; expected "Name_<unit>_<bodyStyle>"`)
-    }
+    const unitName = unitSubSymbolName(unit, name)
     const fields = unitName.split("_")
     const bodyStyle = fields[fields.length - 1]
     const unitNumberText = fields[fields.length - 2]
@@ -218,6 +244,15 @@ export function symbolPins(block: string): readonly SymbolPin[] {
       )
     }
     if (bodyStyle !== "0" && bodyStyle !== "1") continue
+    units.push(unit)
+  }
+  return { name, units }
+}
+
+export function symbolPins(block: string): readonly SymbolPin[] {
+  const { name, units } = supportedUnitSymbols(block)
+  const pins: SymbolPin[] = []
+  for (const unit of units) {
     for (const pin of unit.nodes.filter((n) => n.name === "pin")) {
       const at = pin.nodes.find((n) => n.name === "at")
       const number = pin.nodes.find((n) => n.name === "number")?.atoms[0]
@@ -229,13 +264,138 @@ export function symbolPins(block: string): readonly SymbolPin[] {
         !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(angle)) {
         throw new Error(`symbol "${name}" pin "${number}" has an unreadable (at ...)`)
       }
+      const type = pin.atoms[0]
+      if (type === undefined) {
+        throw new Error(`symbol "${name}" pin "${number}" has no electrical type (expected "(pin <type> <style> ...)")`)
+      }
+      const pinName = pin.nodes.find((n) => n.name === "name")?.atoms[0]
+      if (pinName === undefined) {
+        throw new Error(`symbol "${name}" pin "${number}" has no (name ...)`)
+      }
+      const lengthText = pin.nodes.find((n) => n.name === "length")?.atoms[0]
+      const length = lengthText === undefined ? Number.NaN : Number(lengthText)
+      if (!Number.isFinite(length)) {
+        throw new Error(`symbol "${name}" pin "${number}" has no numeric (length ...)`)
+      }
       if (pins.some((p) => p.number === number)) {
         throw new Error(`symbol "${name}" declares pin "${number}" twice`)
       }
-      pins.push({ number, x, y, angle })
+      pins.push({ number, x, y, angle, type, name: pinName, length })
     }
   }
   return pins
+}
+
+/** A straight stroke's two endpoints, in the library frame (raw mm, not snapped to any grid). */
+export type SymbolSegment = readonly [readonly [number, number], readonly [number, number]]
+
+/** The two numbers of an `(xy x y)`-shaped child of `node` named `childName`, or undefined if absent. */
+function xyOf(node: SNode, childName: string): readonly [number, number] | undefined {
+  const child = node.nodes.find((n) => n.name === childName)
+  if (child === undefined) return undefined
+  const [x, y] = child.atoms.map(Number)
+  if (x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)) return undefined
+  return [x, y]
+}
+
+/** Consecutive points turned into legs: `[p0,p1], [p1,p2], ...` - a single-segment `(pts ...)`
+ * (every polyline this repository has read off Switch.kicad_sym) becomes exactly one leg. */
+function legsOf(points: readonly (readonly [number, number])[]): SymbolSegment[] {
+  const legs: SymbolSegment[] = []
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1]
+    const b = points[i]
+    if (a === undefined || b === undefined) continue
+    legs.push([a, b])
+  }
+  return legs
+}
+
+/**
+ * The straight strokes a symbol's supported units draw, BESIDES the pins' own legs: rectangle
+ * edges, polyline/bezier legs, and a circle's bounding-box edges (which is what
+ * `lib/schgen/render/lib-graphics.ts`'s `drawn()` - the function this ports the one assertion
+ * of - also puts into its `segments` list; an `arc` there contributes to `blocks`, a
+ * text-avoidance concern, and never to `segments`, so arcs are deliberately not read here
+ * either). **This is scoped to exactly what `strokeEndpointsAt` needs - a stroke's ENDPOINTS -
+ * and nothing past that**: no de-duplication, no bounding-box union, no µm snapping. The
+ * original ported those for ITS OWN purpose (placement clearance and text avoidance in a
+ * generator this repository is deleting); reproducing them here would be writing a second
+ * symbol parser for a purpose nothing in this repository has. Coordinates stay in the raw mm
+ * floats `symbolPins` already returns, which is why `strokeEndpointsAt` can compare a pin's
+ * computed body-side point against these endpoints without converting either side's units.
+ */
+export function symbolStrokeSegments(block: string): readonly SymbolSegment[] {
+  const { units } = supportedUnitSymbols(block)
+  const segments: SymbolSegment[] = []
+  for (const unit of units) {
+    for (const item of unit.nodes) {
+      if (item.name === "polyline" || item.name === "bezier") {
+        const pts = item.nodes.find((n) => n.name === "pts")
+        if (pts === undefined) continue
+        const points = pts.nodes
+          .filter((n) => n.name === "xy")
+          .map((n): readonly [number, number] | undefined => {
+            const [x, y] = n.atoms.map(Number)
+            return x === undefined || y === undefined || !Number.isFinite(x) || !Number.isFinite(y)
+              ? undefined
+              : [x, y]
+          })
+          .filter((p): p is readonly [number, number] => p !== undefined)
+        segments.push(...legsOf(points))
+      } else if (item.name === "rectangle") {
+        const start = xyOf(item, "start")
+        const end = xyOf(item, "end")
+        if (start === undefined || end === undefined) continue
+        const [x0, y0] = start
+        const [x1, y1] = end
+        segments.push(...legsOf([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]))
+      } else if (item.name === "circle") {
+        const center = xyOf(item, "center")
+        const radiusText = item.nodes.find((n) => n.name === "radius")?.atoms[0]
+        const radius = radiusText === undefined ? Number.NaN : Number(radiusText)
+        if (center === undefined || !Number.isFinite(radius)) continue
+        const [cx, cy] = center
+        segments.push(...legsOf([
+          [cx - radius, cy - radius], [cx + radius, cy - radius],
+          [cx + radius, cy + radius], [cx - radius, cy + radius], [cx - radius, cy - radius],
+        ]))
+      }
+    }
+  }
+  return segments
+}
+
+/** Coordinates equal within float noise from two independently-evaluated expressions over the
+ * same decimal literals (addition on one side, direct parse on the other). */
+const COINCIDENT_EPSILON = 1e-6
+
+/**
+ * Where a pin's own drawn leg ends, at its body-side (inward) connection point - the point
+ * `strokeEndpointsAt` asks whether any OTHER stroke in the symbol also ends at.
+ *
+ * Carried over from `endpointsAt` in `tests/schgen/ir/mechanical-pins.test.ts`: `angle` is
+ * always a multiple of 90 on every symbol this repository reads, so `Math.round` on `cos`/`sin`
+ * turns the trig functions' float noise (`cos(90deg)` is not exactly 0) into the exact -1/0/1
+ * the direction actually is.
+ */
+export function pinBodyEnd(pin: SymbolPin): readonly [number, number] {
+  const rad = (pin.angle * Math.PI) / 180
+  return [pin.x + pin.length * Math.round(Math.cos(rad)), pin.y + pin.length * Math.round(Math.sin(rad))]
+}
+
+/**
+ * How many of the symbol's OTHER strokes (`symbolStrokeSegments`, which never includes the
+ * pins' own legs) have an endpoint at `pin`'s body-side connection point. Zero means no
+ * conductor drawn inside the symbol reaches that pin - the geometric test
+ * `lib/schgen/ir/mechanical-pins.ts`'s header and `tests/schgen/ir/mechanical-pins.test.ts`'s
+ * arm 1 used to tell a mounting lug from an electrical pin, both `passive` in the library data
+ * alike. Ported assertion, not a re-derivation: see that test's `endpointsAt` for the original.
+ */
+export function strokeEndpointsAt(block: string, pin: SymbolPin): number {
+  const [ix, iy] = pinBodyEnd(pin)
+  const at = (p: number, q: number): boolean => Math.abs(p - ix) < COINCIDENT_EPSILON && Math.abs(q - iy) < COINCIDENT_EPSILON
+  return symbolStrokeSegments(block).filter(([a, b]) => at(a[0], a[1]) || at(b[0], b[1])).length
 }
 
 /**

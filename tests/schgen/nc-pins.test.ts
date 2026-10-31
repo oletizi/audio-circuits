@@ -44,7 +44,6 @@ import { circuit } from "../../lib/model/index.ts"
 import { authoringProblems, negotiablePort } from "../../lib/schgen/authoring.ts"
 import { circuitSpecFrom, nicknamesOf, schematicParts } from "../../lib/schgen/from-network.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
-import { mechanicalPinsOf } from "../../lib/schgen/ir/mechanical-pins.ts"
 import { validateCircuit } from "../../lib/schgen/ir/validate.ts"
 import { annotate, EMPTY_LOCK } from "../../lib/schgen/lock/annotate.ts"
 import { createResolver } from "../../lib/schgen/render/library.ts"
@@ -58,7 +57,7 @@ import type { PinMap } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/types.ts"
 import type { BlockDeclaration, ComponentOverride, SchematicAuthoring } from "../../lib/schgen/authoring.ts"
 import type { Circuit, PortDirection, RailSpec, SheetSpec } from "../../lib/schgen/ir/types.ts"
-import type { LibSymbol, SymbolResolver } from "../../lib/schgen/render/library.ts"
+import type { SymbolResolver } from "../../lib/schgen/render/library.ts"
 
 /* ------------------------------------------------------------------ the fixture ---------- */
 
@@ -233,46 +232,14 @@ const pultecSymbols: SymbolResolver = createResolver(symbolLibraries([...nicknam
 
 const ELEVEN_THROW = "Switch:SW_Rotary_1x12"
 
-describe("the selector symbols, read off the INSTALLED Switch.kicad_sym", () => {
-  test("SW_Rotary_1x12 has thirteen pins: twelve throws and a pole, every one passive and named with its own number", () => {
-    const sym: LibSymbol = pultecSymbols.resolve(ELEVEN_THROW)
-    expect(sym.pins.map((p) => p.number).sort((a, b) => Number(a) - Number(b))).toEqual([
-      "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
-    ])
-    for (const p of sym.pins) {
-      expect(p.type, `pin ${p.number} is not passive`).toBe("passive")
-      expect(p.name, `pin ${p.number} is not named with its own number`).toBe(p.number)
-    }
-  })
-
-  test("pin 12 is a THROW and nothing like a mounting lug: passive, on the throw side, at the throws' own pitch", () => {
-    const sym = pultecSymbols.resolve(ELEVEN_THROW)
-    const at = (number: string): { x: number; y: number; angle: number } => {
-      const pin = sym.pins.find((p) => p.number === number)
-      if (pin === undefined) throw new Error(`SW_Rotary_1x12 has no pin ${number}; the arm above asserts it does`)
-      return { x: pin.x, y: pin.y, angle: pin.angle }
-    }
-    // Same side, same angle, and the SAME STEP the wired throws are drawn at - compared against
-    // the 10-to-11 step rather than against a figure, so the arm does not restate the library's
-    // coordinate unit. That is the whole argument against MECHANICAL_PINS: this pin is
-    // indistinguishable from the eleven the circuit uses, so an entry in that table would exempt a
-    // genuinely electrical pin.
-    expect(at("12").x).toBe(at("11").x)
-    expect(at("12").angle).toBe(at("11").angle)
-    expect(at("11").y - at("12").y).toBe(at("10").y - at("11").y)
-    expect(sym.pins.find((p) => p.number === "12")?.type).toBe("passive")
-    // And the symbol has NO mechanical pin at all, so there was never a table entry to reuse.
-    expect(mechanicalPinsOf(ELEVEN_THROW).size).toBe(0)
-    expect(sym.pins.filter((p) => p.name === "").map((p) => p.number)).toEqual([])
-  })
-
-  // "the pole is on the opposite side at angle 0, which is why POLE_PIN is not pin 1" and
-  // "THROW_PINS plus POLE_PIN plus MECHANICAL_PINS is EXACTLY each selector symbol's pin set"
-  // moved to tests/circuits/pultec-switch-geometry.test.ts, the permanent home for POLE_PIN and
-  // THROW_PINS now that both constants live in circuits/pultec/physical/parts.ts rather than
-  // being authored only to feed this generator. The two tests kept above still need a pin's own
-  // (at x y angle) and type, which that permanent home's disk-backed helper does not expose.
-})
+// The describe block that used to live here - "the selector symbols, read off the INSTALLED
+// Switch.kicad_sym" - is gone rather than emptied. All four of its arms moved to
+// tests/circuits/pultec-switch-geometry.test.ts: the two with a direct brief-given equivalent
+// moved first, and the other two (the pin count/type/name check, and "pin 12 is a THROW and
+// nothing like a mounting lug") followed once tests/kicad/symbol-library-disk.ts was widened to
+// expose a pin's name, type and geometry - not only its number - so they no longer needed this
+// generator's own library resolver. `pultecNetwork`, `pultecSymbols` and `ELEVEN_THROW` stay:
+// the "pultec-mid" describe block below still needs them.
 
 /* ------------------------------------------------------------- the board this unblocked ------ */
 

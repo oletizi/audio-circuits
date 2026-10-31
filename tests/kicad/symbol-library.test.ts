@@ -43,8 +43,8 @@ test("flattening an extends copies the parent's body under the child's name and 
 test("pin geometry comes from the symbol's units", () => {
   const pins = symbolPins(flattenedSymbol(librarySymbols(LIBRARY), "Child"))
   expect(pins).toEqual([
-    { number: "1", x: 0, y: 2.54, angle: 270 },
-    { number: "2", x: 0, y: -2.54, angle: 90 },
+    { number: "1", x: 0, y: 2.54, angle: 270, type: "passive", name: "~", length: 1.27 },
+    { number: "2", x: 0, y: -2.54, angle: 90, type: "passive", name: "~", length: 1.27 },
   ])
 })
 

@@ -18,17 +18,32 @@
  * rather than skipping, when no KiCad is installed (`KICAD_SYMBOLS` names the override), so a
  * green run here never means "nothing was read."
  *
- * **WHAT DID NOT MOVE.** `nc-pins.test.ts` kept two arms from that same describe block - the pin
- * count/type/name check and the "pin 12 is a THROW and nothing like a mounting lug" angle check -
- * because both need a pin's `(at x y angle)` and `type`, which `installedSymbolPinNumbers` does
- * not expose (it answers only "which pin numbers does this symbol have"). Those two arms still
- * depend on the generator's own library resolver and are left for whatever later task removes
- * that resolver to deal with; what this file carries forward is pin EXISTENCE and pin-set
- * COMPLETENESS, which is what `POLE_PIN` and `THROW_PINS` themselves claim.
+ * **THE OTHER TWO ARMS OF THAT DESCRIBE BLOCK MOVED TOO, ONE LEVEL LATER.** A first pass of this
+ * file left them in `nc-pins.test.ts` because the disk-backed helper exposed only pin NUMBERS -
+ * not a pin's name, electrical type or `(at x y angle)`. That was the same hole Task 1's dropped
+ * `tests/schgen/ir/mechanical-pins.test.ts` arm had hit from the other side (a geometric
+ * stroke-endpoint check with no installed-library home), so rather than leaving two orphaned arms
+ * for whatever later task deletes the generator to rediscover, `tests/kicad/symbol-library-disk.ts`
+ * was widened: `installedSymbolPins` now returns each pin's number, name, type, position, angle
+ * and drawn leg length, and `installedSymbolStrokeEndpoints` answers how many of a symbol's OTHER
+ * strokes end at a given pin's body-side connection point - the geometric fact that tells a
+ * mounting lug from an electrical pin typed `passive` just like it. Both are built on
+ * `lib/kicad/symbol-library.ts`'s own `symbolPins`/`symbolStrokeSegments`/`strokeEndpointsAt`,
+ * widened in place rather than re-parsed: see that module's header for why the stroke geometry
+ * stays scoped to endpoints only and never grows into a second copy of
+ * `lib/schgen/render/lib-graphics.ts`.
  */
 import { expect, test } from "bun:test"
 import { POLE_PIN, THROW_PINS } from "../../circuits/pultec/physical/parts.ts"
-import { installedSymbolPinNumbers } from "../kicad/symbol-library-disk.ts"
+import {
+  installedSymbolPinNumbers, installedSymbolPins, installedSymbolStrokeEndpoints,
+} from "../kicad/symbol-library-disk.ts"
+import { symbolPins } from "../../lib/kicad/symbol-library.ts"
+import { MECHANICAL_PINS } from "../../lib/kicad/sheet-agreement.ts"
+
+/** `SW_Rotary_1x12` draws one more throw (12) than any Pultec circuit wires (11), so it is the
+ * one symbol in this repository with an unused electrical pin to tell apart from a mount lug. */
+const ELEVEN_THROW = "Switch:SW_Rotary_1x12"
 
 test("every recorded pole pin is a pin of that symbol in the installed library", () => {
   const libIds = Object.keys(POLE_PIN)
@@ -49,6 +64,87 @@ test("THROW_PINS plus POLE_PIN plus the mount lug is exactly each symbol's pin s
     const claimed = new Set([...throws, pole as string, ...(libId.endsWith("_MP") ? ["MP"] : [])])
     expect(claimed.size, `${libId}: a pin is accounted for twice`).toBe(throws.length + 1 + (libId.endsWith("_MP") ? 1 : 0))
     expect([...claimed].sort()).toEqual([...numbers].sort())
+  }
+})
+
+/*
+ * THE TWO ARMS CARRIED OVER FROM `tests/schgen/nc-pins.test.ts`'s "the selector symbols, read off
+ * the INSTALLED Switch.kicad_sym" - ported assertion for assertion, not re-derived, now that the
+ * widened disk-backed helper can express a pin's name/type/geometry and not only its number.
+ */
+
+test("SW_Rotary_1x12 has thirteen pins: twelve throws and a pole, every one passive and named with its own number", () => {
+  const pins = installedSymbolPins(ELEVEN_THROW)
+  expect(pins.map((p) => p.number).sort((a, b) => Number(a) - Number(b))).toEqual([
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+  ])
+  for (const p of pins) {
+    expect(p.type, `pin ${p.number} is not passive`).toBe("passive")
+    expect(p.name, `pin ${p.number} is not named with its own number`).toBe(p.number)
+  }
+})
+
+test("pin 12 is a THROW and nothing like a mounting lug: passive, on the throw side, at the throws' own pitch, reached by a stroke", () => {
+  const pins = installedSymbolPins(ELEVEN_THROW)
+  const at = (number: string): { readonly x: number; readonly y: number; readonly angle: number; readonly type: string } => {
+    const pin = pins.find((p) => p.number === number)
+    if (pin === undefined) throw new Error(`SW_Rotary_1x12 has no pin ${number}; the arm above asserts it does`)
+    return pin
+  }
+  // Same side, same angle, and the SAME STEP the wired throws are drawn at - compared against the
+  // 10-to-11 step rather than against a figure, so the arm does not restate the library's
+  // coordinate unit. That is the whole argument against MECHANICAL_PINS: this pin is
+  // indistinguishable from the eleven the circuit uses, so an entry in that table would exempt a
+  // genuinely electrical pin.
+  expect(at("12").x).toBe(at("11").x)
+  expect(at("12").angle).toBe(at("11").angle)
+  // toBeCloseTo, not toBe: lib/kicad/symbol-library.ts reads these as plain mm floats off the
+  // text (unlike the generator's resolver, which this arm originally read through, and which
+  // canonicalises every coordinate onto a whole-µm integer grid before subtracting). The two
+  // sides differ only at ~1e-15, ordinary float noise from the library's own decimal literals,
+  // twelve decimal places inside the 0.01mm the library itself is written to.
+  expect(at("11").y - at("12").y).toBeCloseTo(at("10").y - at("11").y, 10)
+  expect(at("12").type).toBe("passive")
+  // And the symbol has NO mechanical pin at all, so there was never a table entry to reuse.
+  expect(Object.hasOwn(MECHANICAL_PINS, ELEVEN_THROW)).toBe(false)
+  expect(pins.filter((p) => p.name === "").map((p) => p.number)).toEqual([])
+  // THE GEOMETRIC FACT THE ORIGINAL ARM COULD ONLY ARGUE AROUND, NOW MEASURED: pin 12 is reached
+  // by exactly one stroke endpoint, the same as every wired throw - which is what actually
+  // distinguishes an electrical pin from a mount lug typed `passive` just like it (see MP on
+  // SW_Rotary_1x6_MP below).
+  expect(installedSymbolStrokeEndpoints(ELEVEN_THROW, "12")).toBe(1)
+  expect(installedSymbolStrokeEndpoints(ELEVEN_THROW, "11")).toBe(1)
+})
+
+/*
+ * POSITIVE CONTROLS for the two arms just above.
+ */
+
+test("CONTROL: a synthetic pin typed power_in and named VCC fails both the passive and the name-equals-number claim", () => {
+  // Built inline rather than pulled from the installed library, because every real pin this
+  // repository reads off Switch.kicad_sym IS passive with a number-shaped name - there is no
+  // installed counter-example to point at. `symbolPins` (the primitive `installedSymbolPins`
+  // widens) is exercised directly, proving the two assertions above are checking something that
+  // CAN be false rather than restating a tautology true of every SymbolPin.
+  const block = [
+    '(symbol "Counterexample"',
+    '\t(symbol "Counterexample_0_1")',
+    '\t(symbol "Counterexample_1_1"',
+    '\t\t(pin power_in line (at 0 0 0) (length 1.27) (name "VCC") (number "1"))',
+    "\t)",
+    ")",
+  ].join("\n")
+  const [pin] = symbolPins(block)
+  if (pin === undefined) throw new Error("the fixture has no pin; the test above is vacuous")
+  expect(pin.type).not.toBe("passive")
+  expect(pin.name).not.toBe(pin.number)
+})
+
+test("CONTROL: the mount lug MP on SW_Rotary_1x6_MP has zero stroke endpoints, unlike every electrical pin on it - so installedSymbolStrokeEndpoints distinguishes rather than always answering 1", () => {
+  const sixPosition = "Switch:SW_Rotary_1x6_MP"
+  expect(installedSymbolStrokeEndpoints(sixPosition, "MP")).toBe(0)
+  for (const number of ["1", "2", "3", "4", "5", "6", "7"]) {
+    expect(installedSymbolStrokeEndpoints(sixPosition, number), `pin ${number}`).toBe(1)
   }
 })
 
