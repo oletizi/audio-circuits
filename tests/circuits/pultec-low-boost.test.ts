@@ -37,4 +37,6 @@ registerDraftedPageTests({
     'SI3: the schematic says "0.047uF" and the model says ".047uF"',
     'SW1: the schematic says "6-way selector" and the model says "SW_Rotary_1x6_MP"',
   ],
+  // The boost pot and the selector - this board's two off-board parts and nothing else.
+  footprintlessParts: ["RV_LO_BOOST", "SW_LO_BOOST"],
 })

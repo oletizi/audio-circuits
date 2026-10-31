@@ -20,4 +20,7 @@ registerDraftedPageTests({
   netlist: "tests/fixtures/pultec-hi-cut.net",
   pinDisagreements: [SELECTOR_PIN_DISAGREEMENT],
   valueDisagreements: [SELECTOR_VALUE_DISAGREEMENT],
+  // The cut pot and the selector - this board's two off-board parts and nothing else. Its own
+  // section carries no inductor, which is why the list is two where hi-boost's is seven.
+  footprintlessParts: ["RV_HI_CUT", "SW_HI_CUT"],
 })

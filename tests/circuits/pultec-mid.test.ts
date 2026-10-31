@@ -34,4 +34,17 @@ registerDraftedPageTests({
     'SW1: the schematic says "11-way selector" and the model says "SW_Rotary_1x12"',
     'SW2: the schematic says "boost/off/cut" and the model says "SW_SPDT"',
   ],
+  // The five tapped coil sections, the level pot, and BOTH switches - the eleven-position selector
+  // and the boost/off/cut toggle. Every off-board part of this board and nothing else; it is eight
+  // where the two cut boards are two because mid's own section carries the inductor bank.
+  footprintlessParts: [
+    "L_MID_0R1H",
+    "L_MID_0R22H",
+    "L_MID_0R45H",
+    "L_MID_1H",
+    "L_MID_2H",
+    "RV_MID",
+    "SW_MID",
+    "SW_MID_MODE",
+  ],
 })

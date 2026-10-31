@@ -20,4 +20,6 @@ registerDraftedPageTests({
   netlist: "tests/fixtures/pultec-low-cut.net",
   pinDisagreements: [SELECTOR_PIN_DISAGREEMENT],
   valueDisagreements: [SELECTOR_VALUE_DISAGREEMENT],
+  // The cut pot and the selector - this board's two off-board parts and nothing else.
+  footprintlessParts: ["RV_LO_CUT", "SW_LO_CUT"],
 })

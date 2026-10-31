@@ -241,6 +241,29 @@ export interface DraftedPageUnderTest {
    * one more place must fail here, and a list is the only form of this claim that says WHICH.
    */
   readonly valueDisagreements: readonly string[]
+  /**
+   * Every component of this board the MODEL declares no footprint for, by model id, in the order
+   * `compareSheetToModel` returns them - which is `footprintsUndeclared`, its sixth list.
+   *
+   * **IT IS NOT A PASS AND IT IS NOT A FAILURE: it is the set of parts `footprints` says nothing
+   * about**, because a part with no declared footprint has nothing to compare. An empty
+   * `footprints` over a board where eight of thirty-nine parts declare none would otherwise read
+   * as agreement while being silence, which is why `lib/kicad/sheet-agreement.ts` reports it
+   * separately at all.
+   *
+   * **THIS LIST WAS UNASSERTED UNTIL THE GUARDS MOVED OFF `roundTrip`, AND THAT WAS THE GAP.**
+   * The old comparison carried the same field and nothing here read it; the only thing that ever
+   * asserted it exactly was `./guard-equivalence.test.ts`, which exists only while both
+   * comparisons do and goes with the generator. A guard whose sole assertion a later change
+   * removes is a lapsing guard, so the claim is written down here, beside the two lists that are
+   * here for exactly this reason.
+   *
+   * **ASSERTED EXACTLY AND NEVER AS A COUNT**, like the two above. Every member on all five pages
+   * is an off-board part - a tapped coil section, a panel pot or a selector - and the thing that
+   * must fail is a component silently ACQUIRING or LOSING a footprint declaration, which moves it
+   * between this list and `footprints`. A count of 7 would survive that swap; a list says which.
+   */
+  readonly footprintlessParts: readonly string[]
 }
 
 /**
@@ -297,5 +320,12 @@ export function registerDraftedPageTests(page: DraftedPageUnderTest): void {
     // Not an incidental zero: a page that declared every footprint would make the loop above vacuous,
     // and this says the loop had something to examine.
     expect(problems.footprints.length).toBeGreaterThan(0)
+    // **AND THE PARTS THE LOOP ABOVE SAYS NOTHING ABOUT, NAMED.** `footprints` compares only the
+    // parts whose model declares a footprint, so without this the two assertions above are silent
+    // about every panel control, selector and tapped coil on the page. Compared UNSORTED because
+    // `compareSheetToModel` sorts this list itself, and the board's own entry is written in that
+    // order. A component moving between this list and `footprints` - acquiring or losing a
+    // footprint declaration - must fail here, which is why it is a list and not a count.
+    expect(problems.footprintsUndeclared).toEqual([...page.footprintlessParts])
   })
 }
