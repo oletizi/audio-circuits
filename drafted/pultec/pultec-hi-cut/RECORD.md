@@ -23,7 +23,7 @@ Re-papered, centred, and APPROVED in this state
 HERE.** The sheet in this directory hashes to
 `e9843e6dbd3f765822e34bf51cd0d3d2659f0a6969c4c9a866e7691727bdf332`, and that is
 the digest `../../../docs/schematic/verdicts.md` records his approval against.
-The other four pages in `drafted/pultec/` are **awaiting re-approval**; this one
+The other four pages in `drafted/pultec/` were **re-approved on 2026-10-31**, each against its own present digest; this one
 is not.
 
 The owner, 2026-10-30, looking at this page on US Letter with nothing moved:

@@ -15,10 +15,10 @@ register is right and this one is stale.
 | This sheet came from | `docs/research/2026-10-30-mid-letter-redraw/pultec-mid-letter.kicad_sch`, copied byte-for-byte |
 | Produced by | copperhead draft `v1-blocks-own-last`, then akcli repairs and a restyle pass; then **re-drawn for US Letter** on 2026-10-30 |
 | Shown | 2026-10-29, as the A3 page plus the Mid group before and after, the capacitor bank, the coil row, and the `no_connect` marker |
-| Paper | `USLetter`, **re-drawn from `A3`** on 2026-10-30 - **see below, this page is AWAITING RE-APPROVAL** |
+| Paper | `USLetter`, **re-drawn from `A3`** on 2026-10-30 - **and APPROVED in that state on 2026-10-31; see below** |
 
-Re-drawn from A3 to US Letter, centred, and AWAITING RE-APPROVAL
-----------------------------------------------------------------
+Re-drawn from A3 to US Letter, centred, and APPROVED on 2026-10-31
+------------------------------------------------------------------
 
 **THE VERDICT BELOW IS BOUND TO BYTES THAT NO LONGER EXIST, AND IT DOES NOT
 TRANSFER.** This sheet was `A3` when it was approved and hashed to
@@ -26,11 +26,7 @@ TRANSFER.** This sheet was `A3` when it was approved and hashed to
 `USLetter` and hashes to
 `d4b0b8cc6e3be35298cf1a240dcf8705bce655822224493670089df272138e2b`. The sheet IS
 the approved artifact only while its bytes still hash to the digest the verdict
-was recorded against, so **this page is awaiting re-approval and must not be
-described as approved anywhere.**
-`../../../docs/schematic/verdicts.md` is deliberately NOT edited: the
-re-approval is the reviewer's to record, and until he has looked there is no
-verdict to record.
+was recorded against, so **this page is APPROVED in the state it is now in.** He was shown it on 2026-10-31, as a 2400 px PNG rendered by `kicad-cli` 10.0.5 from these exact bytes - the sheet's sha256 was checked against the digest above before the image was made - and his verdict was *"yes, approved"*. `../../../docs/schematic/verdicts.md` carries it, under *"The four remaining Pultec pages on US Letter, centred"*, and that file is the authority. **The digest above is what the verdict binds to**: change one byte of this sheet and the page is awaiting re-approval again.
 
 **AND THIS IS THE ONE PAGE OF THE FIVE WHERE THE BYTES CHANGED BY MORE THAN A
 PAPER LINE AND A TRANSLATION.** A3 is 420 x 297 mm and US Letter landscape is

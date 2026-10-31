@@ -11,13 +11,13 @@ register is right and this one is stale.
 | **sha256 of the sheet - THE BINDING** | `5e1a4139918cf7ddb9a9f4588b2f3e04091539cd9d5830650bc95c359c8896db` |
 | Render | `pultec-low-cut.generated-do-not-edit.svg` |
 | sha256 of the render, volatile title line dropped - **evidence, not a binding** | `ae77b472ce4a8b5e6afa4af9595c3e9c890317165d340fa5be70fc9fc44a07b0` |
-| Paper | `USLetter`, re-papered from `A4` on 2026-10-30, then **centred** on the horizontal axis the same day - **see below, this page is AWAITING RE-APPROVAL** |
+| Paper | `USLetter`, re-papered from `A4` on 2026-10-30, then **centred** on the horizontal axis the same day - **and APPROVED in that state on 2026-10-31; see below** |
 | Approved page came from | `docs/research/2026-10-29-low-cut-collapse-pass/low-cut-collapsed.kicad_sch`, copied byte-for-byte |
 | Produced by | the accepted full-run page with both duplicate on-page label pairs collapsed to wires; SI5 and SI6 redrawn as a series column |
 | Shown | 2026-10-29, as the full page plus before/after crops of the Hi cut group |
 
-Re-papered A4 to US Letter, and AWAITING RE-APPROVAL
-----------------------------------------------------
+Re-papered A4 to US Letter, centred, and APPROVED on 2026-10-31
+---------------------------------------------------------------
 
 **THE VERDICT BELOW IS BOUND TO BYTES THAT NO LONGER EXIST, AND IT DOES NOT
 TRANSFER.** This sheet was `A4` when it was approved and hashed to
@@ -27,11 +27,7 @@ re-paper made it
 centring below made it
 `5e1a4139918cf7ddb9a9f4588b2f3e04091539cd9d5830650bc95c359c8896db`. The sheet
 IS the approved artifact only while its bytes still hash to the digest the
-verdict was recorded against, so **this page is awaiting re-approval and must
-not be described as approved anywhere.**
-`../../../docs/schematic/verdicts.md` is deliberately NOT edited: the
-re-approval is the reviewer's to record, and until he has looked there is no
-verdict to record.
+verdict was recorded against, so **this page is APPROVED in the state it is now in.** He was shown it on 2026-10-31, as a 2400 px PNG rendered by `kicad-cli` 10.0.5 from these exact bytes - the sheet's sha256 was checked against the digest above before the image was made - and his verdict was *"yes, approved"*. `../../../docs/schematic/verdicts.md` carries it, under *"The four remaining Pultec pages on US Letter, centred"*, and that file is the authority. **The digest above is what the verdict binds to**: change one byte of this sheet and the page is awaiting re-approval again.
 
 Centred on the horizontal axis, 2026-10-30
 ------------------------------------------

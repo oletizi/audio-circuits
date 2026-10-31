@@ -11,13 +11,13 @@ register is right and this one is stale.
 | **sha256 of the sheet - THE BINDING** | `a1fa415966ad026c2448c25e65a7e267e51554853cb563399f62befc47bf668e` |
 | Render | `pultec-hi-boost.generated-do-not-edit.svg` |
 | sha256 of the render, volatile title line dropped - **evidence, not a binding** | `6e16e5cb9a55cd87b7ece10775812c8185aae30f3aa200df7ea86e765bb88ead` |
-| Paper | `USLetter`, re-papered from `A4` on 2026-10-30, then **centred** on the horizontal axis the same day - **see below, this page is AWAITING RE-APPROVAL** |
+| Paper | `USLetter`, re-papered from `A4` on 2026-10-30, then **centred** on the horizontal axis the same day - **and APPROVED in that state on 2026-10-31; see below** |
 | Approved page came from | `docs/research/2026-10-29-hi-boost-hairpin-fix/hi-boost-hairpin-fixed.kicad_sch`, copied byte-for-byte |
 | Produced by | the accepted hi-boost page with the Lo boost stand-in group redrawn to the `S1` convention. **No copperhead** - the first run of this loop with no drafting step at all |
 | Shown | 2026-10-29, as before/after crops of the group, a close crop of `SI7` and its ground, and the whole page |
 
-Re-papered A4 to US Letter, and AWAITING RE-APPROVAL
-----------------------------------------------------
+Re-papered A4 to US Letter, centred, and APPROVED on 2026-10-31
+---------------------------------------------------------------
 
 **THE VERDICT BELOW IS BOUND TO BYTES THAT NO LONGER EXIST, AND IT DOES NOT
 TRANSFER.** This sheet was `A4` when it was approved and hashed to
@@ -26,11 +26,7 @@ made it `9aa390a420edc4d845b5b0281b00e41efbae5e98dab90cdd847a2f55f38a2278`, and
 the centring below made it
 `a1fa415966ad026c2448c25e65a7e267e51554853cb563399f62befc47bf668e`. The sheet
 IS the approved artifact only while its bytes still hash to the digest the
-verdict was recorded against, so **this page is awaiting re-approval and must
-not be described as approved anywhere.**
-`../../../docs/schematic/verdicts.md` is deliberately NOT edited: the
-re-approval is the reviewer's to record, and until he has looked there is no
-verdict to record.
+verdict was recorded against, so **this page is APPROVED in the state it is now in.** He was shown it on 2026-10-31, as a 2400 px PNG rendered by `kicad-cli` 10.0.5 from these exact bytes - the sheet's sha256 was checked against the digest above before the image was made - and his verdict was *"yes, approved"*. `../../../docs/schematic/verdicts.md` carries it, under *"The four remaining Pultec pages on US Letter, centred"*, and that file is the authority. **The digest above is what the verdict binds to**: change one byte of this sheet and the page is awaiting re-approval again.
 
 Centred on the horizontal axis, 2026-10-30
 ------------------------------------------

@@ -401,6 +401,55 @@ eleven boards now declare an `"sch"`, so its pages reach no build guide today.
 and it is open.
 
 ---
+## The four remaining Pultec pages on US Letter, centred
+
+- **Sheets** the four centred Letter pages, each sha256 verified against the
+  digest its own `RECORD.md` binds **before** the image was rendered from it:
+
+  | Board | sha256 |
+  | --- | --- |
+  | `pultec-hi-boost` | `a1fa415966ad026c2448c25e65a7e267e51554853cb563399f62befc47bf668e` |
+  | `pultec-low-boost` | `b9e42e6a90a7fee4a440760bc67df1968fd756325987327db84b434a565dbc59` |
+  | `pultec-low-cut` | `5e1a4139918cf7ddb9a9f4588b2f3e04091539cd9d5830650bc95c359c8896db` |
+  | `pultec-mid` | `d4b0b8cc6e3be35298cf1a240dcf8705bce655822224493670089df272138e2b` |
+
+- **Produced by** the re-paper from `A4` to `USLetter` and the horizontal
+  centring he directed on 2026-10-30, for `hi-boost`, `low-boost` and
+  `low-cut`; `mid` was **re-drawn** from `A3` rather than re-papered.
+- **Shown** 2026-10-31, as four PNGs rendered by `kicad-cli` 10.0.5 from the
+  committed sheets at 2400 px wide, sent to his phone in the order
+  `hi-boost`, `low-boost`, `low-cut`, `mid`, carrying one question and nothing
+  else: *"Do you approve each of these four?"*
+- **Verdict, verbatim:**
+
+  > *"yes, approved"*
+
+**THIS CLOSES THE GAP THE PRECEDING ENTRY LEFT OPEN BY NAME.** That entry said
+of these same four boards: *"Those four are not recorded here as approved, and
+the centring he directed has not been applied to them yet - so their bytes are
+about to change again in any case."* The centring was applied, the bytes
+changed, and these are the digests of the changed bytes.
+
+**WHAT THIS ENTRY COVERS, AND IT IS EXACTLY FOUR SHEETS.** The four digests
+above, as rendered and shown. §5 binds: approval is state the reviewer writes,
+never derived and never widened by an agent reading a sentence generously. It
+is not a verdict on a build guide, on a board layout, on `pt2399-core` or on
+any `transistor-preamp` page, and it does not transfer to any later byte of
+these four - a re-paper, a re-centre or a single moved label puts a page back
+in front of him.
+
+**WHY THE PREVIOUS VERDICTS ON THESE FOUR BOARDS DID NOT TRANSFER, recorded
+because an agent got it wrong in the session that produced this entry.** Each
+of these boards was approved earlier, at `A4` or `A3`. A verdict is bound to a
+sha256, so the re-paper and the re-draw left four verdicts bound to bytes that
+no longer existed, and the pages were awaiting re-approval from the moment
+their bytes changed - which the four `RECORD.md` files said plainly and a
+controller's dispatch brief contradicted, claiming five approved pages. **The
+records were right and the summary was wrong.** The cheap check that settles it
+at any time: of the digests in this file, count how many equal a sheet's
+present bytes.
+
+---
 
 ## What this record is for, beyond not losing a verdict
 
