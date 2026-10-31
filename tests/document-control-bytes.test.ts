@@ -29,17 +29,20 @@
  * **WHY THE SCOPE IS BY EXTENSION AND NOT BY DIRECTORY.** `docs/` is not a text-only tree: it
  * holds three PDFs (`docs/pultec/P3bandDoc.pdf` and two under `docs/tascam-38/sources/`), three
  * CSVs and three `.net.xml` netlist exports. A PDF is binary by construction, so a
- * directory-scoped scan would be red on the first run for a reason that is not a defect. Scoping
- * to `*.md` and `*.ts` also excludes, without having to name them, the two populations that legitimately
- * hold a control byte: `tools/schgen/label-syntax/sheets/ctl-nul.kicad_sch`, a fixture carrying
- * one deliberate NUL to exercise **G277** clause 9's control arm, and
- * `tools/schgen/label-syntax/probe-run.log`, which records what `kicad-cli` emitted.
+ * directory-scoped scan would be red on the first run for a reason that is not a defect.
  *
- * **AND A LONE CR WOULD PASS THIS GUARD ANYWAY**, which is worth saying because the task brief
- * described the fixtures as carrying "a NUL and a lone CR" as if both needed excluding. CR is in
- * the allowed set - the scan's business is the C0 range MINUS tab, CR and LF - so
- * `ctl-carriage-return.kicad_sch` holds nothing this guard would refuse even in scope.
- * `[RAN]` a byte count over all ten fixture sheets: one offending byte in the tree, in
+ * **THE TWO POPULATIONS THAT LEGITIMATELY HELD A CONTROL BYTE WERE THE SCHEMATIC GENERATOR'S AND
+ * ARE DELETED WITH IT**: `tools/schgen/label-syntax/sheets/ctl-nul.kicad_sch`, a fixture carrying
+ * one deliberate NUL to exercise **G277** clause 9's control arm, and
+ * `tools/schgen/label-syntax/probe-run.log`, which recorded what `kicad-cli` emitted. Scoping by
+ * `*.md` and `*.ts` excluded both without naming them, and still would; the scope is unchanged
+ * because the reasoning for it never rested on those two files.
+ *
+ * **AND A LONE CR WOULD HAVE PASSED THIS GUARD ANYWAY**, which is worth keeping because the task
+ * brief described those fixtures as carrying "a NUL and a lone CR" as if both needed excluding. CR
+ * is in the allowed set - the scan's business is the C0 range MINUS tab, CR and LF - so
+ * `ctl-carriage-return.kicad_sch` held nothing this guard would refuse even in scope.
+ * `[RAN]` a byte count over all ten fixture sheets: one offending byte in that tree, in
  * `ctl-nul.kicad_sch`.
  */
 
@@ -144,10 +147,17 @@ test("no committed text document carries a control byte outside tab, CR and LF",
 
 test("no TypeScript source carries a control byte outside tab, CR and LF either", () => {
   const sources = matching(".", SOURCE_SCOPE)
-  // Same anti-vacuity guard as above: an empty population would make this pass by reading nothing.
+  // Same anti-vacuity guard as above: an empty population would make this pass by reading
+  // nothing, and ONE PER ROOT, so a glob that stopped matching a whole tree fails here. The
+  // first is incident 6's own file. `tools/schgen/label-syntax/fixtures.ts` anchored the
+  // `tools/**` arm until the schematic generator was deleted.
   expect(sources).toContain("tests/stripboard/materialize-net-names.test.ts")
-  expect(sources).toContain("tools/schgen/label-syntax/fixtures.ts")
-  expect(sources.length).toBeGreaterThan(800)
+  expect(sources).toContain("tools/guide/guide.ts")
+  expect(sources).toContain("lib/kicad/sheet-agreement.ts")
+  expect(sources).toContain("circuits/pultec/physical/parts.ts")
+  // 620 at the time of writing, measured, down from 917 before `lib/schgen/`, `tools/schgen/`
+  // and `tests/schgen/` were deleted. The floor is that figure less a little slack.
+  expect(sources.length).toBeGreaterThan(560)
   expect(controlByteOffences(".", sources)).toEqual([])
 })
 
