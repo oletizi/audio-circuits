@@ -12,9 +12,6 @@
     "test": "bun test",
     "check": "bun run typecheck && bun test",
     "perfboard": "bun run tools/cli/perfboard.ts",
-    "schgen": "bun run tools/cli/schgen.ts",
-    "schgen-parity": "bun run tools/cli/schgen-parity.ts",
-    "schgen-anchors": "bun run tools/cli/schgen-anchors.ts",
     "parts": "bun run tools/cli/parts.ts"
   },
   "devDependencies": {
