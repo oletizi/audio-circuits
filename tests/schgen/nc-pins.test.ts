@@ -233,13 +233,21 @@ const pultecSymbols: SymbolResolver = createResolver(symbolLibraries([...nicknam
 const ELEVEN_THROW = "Switch:SW_Rotary_1x12"
 
 // The describe block that used to live here - "the selector symbols, read off the INSTALLED
-// Switch.kicad_sym" - is gone rather than emptied. All four of its arms moved to
-// tests/circuits/pultec-switch-geometry.test.ts: the two with a direct brief-given equivalent
-// moved first, and the other two (the pin count/type/name check, and "pin 12 is a THROW and
-// nothing like a mounting lug") followed once tests/kicad/symbol-library-disk.ts was widened to
-// expose a pin's name, type and geometry - not only its number - so they no longer needed this
-// generator's own library resolver. `pultecNetwork`, `pultecSymbols` and `ELEVEN_THROW` stay:
-// the "pultec-mid" describe block below still needs them.
+// Switch.kicad_sym" - is gone rather than emptied, and all four of its arms are now accounted
+// for in tests/circuits/pultec-switch-geometry.test.ts, but not all four simply MOVED:
+//   - "THROW_PINS plus POLE_PIN plus MECHANICAL_PINS is EXACTLY each selector symbol's pin set"
+//     moved as a faithful equivalent (commit c685da0).
+//   - "the pole is on the opposite side at angle 0, which is why POLE_PIN is not pin 1" was, at
+//     that same commit, WRONGLY DESCRIBED as moved: what actually landed was the brief's weaker
+//     bare pin-number containment test, with the angle and side assertions dropped. That was
+//     caught in review and the original's actual assertions were restored in a later commit,
+//     generalised over the whole POLE_PIN table with a pole/throw-swap control - see
+//     assertPoleOppositeEveryThrow in the other file.
+//   - the pin count/type/name check, and "pin 12 is a THROW and nothing like a mounting lug",
+//     moved once tests/kicad/symbol-library-disk.ts was widened to expose a pin's name, type and
+//     geometry - not only its number - so they no longer needed this generator's own resolver.
+// `pultecNetwork`, `pultecSymbols` and `ELEVEN_THROW` stay: the "pultec-mid" describe block below
+// still needs them.
 
 /* ------------------------------------------------------------- the board this unblocked ------ */
 
