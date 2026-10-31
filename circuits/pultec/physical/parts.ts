@@ -278,6 +278,26 @@ export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
   "Switch:SW_Rotary_1x12": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
 }
 
+/**
+ * The SPDT mid-mode switch's pins. `Switch:SW_SPDT` names them A, B, C at numbers 1, 2, 3, and
+ * **B at angle 0 on the left is the pole** while A and C are the two throws on the right.
+ *
+ * **WHICH THROW IS "boost" AND WHICH IS "cut" IS THE MODEL'S DECLARATION ORDER AND NOTHING
+ * STRONGER, and saying so is the honest form of this entry.** `SW_MID_MODE`'s unit declares its
+ * pins `common`, `boost`, `cut` in that order; the model carries no mechanical detent, and the
+ * switch is a physical part whose two positions nobody has measured against a panel. So `boost`
+ * takes A and `cut` takes C because that is the order the component is written in. An
+ * observation, not a measurement, is recorded in `docs/known-gaps.md`.
+ *
+ * **IT SITS HERE BESIDE `POLE_PIN` AND `THROW_PINS` BECAUSE IT IS THE SAME KIND OF FACT AS
+ * THEY ARE** - where one selector's terminals sit on the symbol it is drawn with - and because
+ * its previous home, `../schematic/section-board.ts`, is deleted with the schematic generator it
+ * was written for. Its two readers are that file's `switchOverride` and the drafted-page guard's
+ * `tests/circuits/sheet-model.ts`, and a copy in either would be a second place for one fact
+ * about one switch to be wrong.
+ */
+export const SPDT_PINS: Readonly<Record<string, string>> = { common: "2", boost: "1", cut: "3" }
+
 /** A pot's lugs, in the order a panel-mount part numbers them. */
 export const POT_PAD_ORDER: readonly string[] = ["ccw", "wiper", "cw"]
 

@@ -40,8 +40,9 @@
  * wearing a literal's clothes.
  *
  * **WHAT THIS FILE DECLARES THAT THE MODEL CANNOT HOLD, each with its reason on the declaration:**
- * the selectors' pin maps and their unused detents (`switchOverride`, using `POLE_PIN` and
- * `THROW_PINS` from `../physical/parts.ts`), the ground rail and the five port directions. KiCad
+ * the selectors' pin maps and their unused detents (`switchOverride`, using `POLE_PIN`,
+ * `THROW_PINS` and `SPDT_PINS` from `../physical/parts.ts`), the ground rail and the five port
+ * directions. KiCad
  * designators are the Pultec circuit's own id-to-designator map rather than layout intent, so
  * `pultecDesignator` is used here but declared in `../designators.ts` beside the circuit.
  */
@@ -50,7 +51,7 @@ import { negotiablePort } from "../../../lib/schgen/authoring.ts"
 import { GROUND_NET } from "../../../lib/board/scaffold/index.ts"
 import { pultecDesignator } from "../designators.ts"
 import { asModuleOwner, groupsOn, sectionBoard, standInGroup } from "../physical/board.ts"
-import { JUNCTION_NETS, junctionComponents, ownComponents, POLE_PIN, portsOn, rotaryPadOrder, THROW_PINS } from "../physical/parts.ts"
+import { JUNCTION_NETS, junctionComponents, ownComponents, POLE_PIN, portsOn, rotaryPadOrder, SPDT_PINS, THROW_PINS } from "../physical/parts.ts"
 import type { BlockDeclaration, ComponentOverride, PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
 import type { Component, Network } from "../../../lib/model/types.ts"
 import type { RailSpec, SheetSpec } from "../../../lib/schgen/ir/types.ts"
@@ -117,19 +118,6 @@ function unusedDetentReason(symbol: string, pin: string, wired: number, total: n
     "from the pin map and any pin a future KiCad adds to this symbol."
   )
 }
-
-/**
- * The SPDT mid-mode switch's pins. `Switch:SW_SPDT` names them A, B, C at numbers 1, 2, 3, and
- * **B at angle 0 on the left is the pole** while A and C are the two throws on the right.
- *
- * **WHICH THROW IS "boost" AND WHICH IS "cut" IS THE MODEL'S DECLARATION ORDER AND NOTHING
- * STRONGER, and saying so is the honest form of this entry.** `SW_MID_MODE`'s unit declares its
- * pins `common`, `boost`, `cut` in that order; the model carries no mechanical detent, and the
- * switch is a physical part whose two positions nobody has measured against a panel. So `boost`
- * takes A and `cut` takes C because that is the order the component is written in. An
- * observation, not a measurement, is recorded in `docs/known-gaps.md`.
- */
-const SPDT_PINS: Readonly<Record<string, string>> = { common: "2", boost: "1", cut: "3" }
 
 /**
  * The `symbolPins` override one selector needs, or null when it needs none.
