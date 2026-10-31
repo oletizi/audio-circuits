@@ -27,7 +27,16 @@ went whole in `6085dc5` - `lib/schgen/`, `tools/schgen/`, `tests/schgen/` -
 `tests/schgen/` path in this file is a path into deleted code.** The instances and the general
 forms are dated evidence and stand as written; what cannot stand is a present-tense claim that
 something guards a mechanism today. Enumerated here rather than rewritten clause by clause, so the
-list is checkable against the file:
+list is checkable against the file.
+
+**THE TABLE CLAIMS TO COVER EVERY SUCH CLAUSE, AND HERE IS HOW TO CHECK THAT CLAIM**, because the
+first version of it was **one row short** - it omitted mechanism 16, whose guard is live and was
+repaired in place, so a reader would have found a repair the index did not explain. **An index that
+is wrong about its own scope is this file's own mechanism 23**, which is why the recipe is written
+down rather than the count: scan the file at `6085dc5^` for every *"What guards against it here"*
+paragraph naming a `lib/schgen/`, `tools/schgen/` or `tests/schgen/` path, and every mechanism that
+returns must have a row below. **No count is given here on purpose** - a count would be one more
+figure in prose, and the enumeration is the claim.
 
 | mechanism | what it named as its guard | state now |
 | --- | --- | --- |
@@ -36,6 +45,7 @@ list is checkable against the file:
 | **10** (a rotted pointer from prose to a test) | `tests/schgen/pointers.test.ts` | **GONE**, and this is the widest of them: **nothing in this repository guards a doc-to-test pointer any more.** The guard was a 17-row whitelist that also pinned its own population, and every row cited a file inside the deleted tree. **G233**'s limit - *"every other prose reference to a test file in this repository can still rot silently"* - is now the whole of it |
 | **12** (a control that catches unanticipated routes) | `tools/schgen/elk-labels/probe-run.log` as the twelve-arm run | **LOG LIVE, PROBE GONE.** The four logs are committed at `docs/schematic/text-handling-research-logs/`; the probes that wrote them are not, so the arms can be read and not re-driven - path corrected in place below |
 | **14** (a measurement whose subject the measured thing chose) | prediction `P6` in `tools/schgen/field-order/probe.ts` | **GONE.** This was named below as *"the one place on this branch where a control that would have caught a Critical is committed beside it"*, and it is deleted |
+| **16** (a gate that stops checking the input it cannot score) | `tests/schgen/text-metrics/document-pastes.test.ts` | **LIVE, moved** to `tests/text-metrics/document-pastes.test.ts` - path corrected in place below. The remedy itself is untouched: a block declares itself, every block is `VERIFIED`, `NOT-OUTPUT` or `FAILED`, and the suite asserts the three sum to the block count |
 | **19** (a filter written for a file applied to a line) | `tools/schgen/claim-sweep.ts` | **GONE.** That sweep is no longer re-drivable; the `--exclude`-plus-control practice the clause recommends does not depend on it |
 | **23** (a self-measurement stale at the commit publishing it) | `citationCount` in `tests/schgen/pointers.test.ts` | **GONE**, with mechanism 10's guard. The clause already said nothing guards 23 itself; what it offered as the general remedy taken elsewhere is now also gone |
 | **28** (a prediction verifiable only by trusting when it was written) | the predictions on the arms in `tools/schgen/label-freedom/fixtures.ts`, the probe that printed them, the committed log, and the paste checker holding the two together | **SPLIT: the fixtures and the probe are GONE, the log and the checker are LIVE.** The counter-example the clause calls credible survives in the half that can still fail - the log at `docs/schematic/text-handling-research-logs/label-freedom-probe-run.log` and `tests/text-metrics/document-pastes.test.ts` - and the ordering property it rested on, the probe printing before it exported, is now recoverable only from the log |

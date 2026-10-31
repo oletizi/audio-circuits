@@ -13,10 +13,11 @@ Text handling in a generated schematic: the research record
 > **WHAT THIS DOES NOT WEAKEN, AND IT IS THE POINT.** The four probe runs are
 > committed beside this document under
 > [`text-handling-research-logs/`](text-handling-research-logs/), each named for
-> its probe and each verified byte-identical to the original by sha256; the
-> checker is `tools/text-metrics/verify-pastes.ts` and
-> `tests/text-metrics/document-pastes.test.ts` drives its **44 cases on every
-> `bun test`**. That check never established that a log was a current run - what
+> its probe and each **`[RELAYED]`** verified byte-identical to the original by
+> sha256 against git, by the task that moved them; the checker is
+> `tools/text-metrics/verify-pastes.ts` and
+> `tests/text-metrics/document-pastes.test.ts` drives its **`[RAN]` 44 cases,
+> 0 failures, on every `bun test`**. That check never established that a log was a current run - what
 > it couples is **this document to the log it was pasted from** - so losing the
 > probes costs the ability to take a measurement again and costs the coupling
 > nothing. Each section's `[RAN]` marks stand: they were driven, on the commit
@@ -818,13 +819,15 @@ cb35fe0:tools/schgen/elk-labels/probe-run.log` and the same for `b6876c7` are th
 earlier logs and the comparison is a `diff`. Unlike §1's probe this one needs no
 external download and no installed application:
 
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/elk-labels-probe-run.log`](text-handling-research-logs/elk-labels-probe-run.log).
+
 ```sh
 bun run tools/schgen/elk-labels/probe.ts
 ```
 
-re-drives every figure in this section from a clean checkout. **DELETED - see
-the notice at the head of this document.** The log is
-[`text-handling-research-logs/elk-labels-probe-run.log`](text-handling-research-logs/elk-labels-probe-run.log).
+re-drives every figure in this section from a clean checkout.
 
 ### 2.0 Two grades of evidence, kept apart, because Task 7 ranks them differently
 
@@ -3524,13 +3527,16 @@ section pastes to it on every `bun test` (§5.12). Unlike §1's probe it needs n
 download, no Python and no font blob - only the `kicad-cli` that `make check`
 already requires on every run:
 
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/label-freedom-probe-run.log`](text-handling-research-logs/label-freedom-probe-run.log).
+
 ```sh
 bun run tools/schgen/label-freedom/probe.ts
 ```
 
 re-drives every figure in this section from a clean checkout, in about thirty
-seconds. **DELETED - see the notice at the head of this document.** The log is
-[`text-handling-research-logs/label-freedom-probe-run.log`](text-handling-research-logs/label-freedom-probe-run.log).
+seconds.
 
 ### 5.0 Three grades of evidence, kept apart
 
@@ -4384,13 +4390,15 @@ criterion, and `CLAUDE.md` forbids the producing agent from authoring one.
 section pastes to it on every `bun test` (§6.12) by a fourth call to the same
 checker. Unlike §1's probe it needs nothing external at all:
 
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/field-order-probe-run.log`](text-handling-research-logs/field-order-probe-run.log).
+
 ```sh
 bun run tools/schgen/field-order/probe.ts
 ```
 
-re-drives every figure in §6.5 from a clean checkout. **DELETED - see the notice
-at the head of this document.** The log is
-[`text-handling-research-logs/field-order-probe-run.log`](text-handling-research-logs/field-order-probe-run.log).
+re-drives every figure in §6.5 from a clean checkout.
 
 ### 6.0 Three grades of evidence, kept apart
 

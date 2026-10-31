@@ -80,9 +80,12 @@ template registry only, so a working ELK backend cannot move a number in it.
 DRAW. **That is the ELK axis.** In the census's vocabulary `realised` means *a
 template drew the block*, so a sentence like *"five blocks moved from `elk` to
 `realised`"* would be false in its own words. The template axis is 0 of 12 as
-declared, and
-[`template-parity-anchors.md`](template-parity-anchors.md)'s 2 of 12 is what a
-template COULD draw under an anchor nobody declared (**G160**).
+declared, and `template-parity-anchors.md`'s 2 of 12 is what a template COULD
+draw under an anchor nobody declared (**G160**). **That document is deleted**,
+with `template-parity.md`, by the generator-removal plan: both were generated
+files naming a verb that no longer exists, so nothing could regenerate or
+content-compare them. The link to it is removed rather than left hanging — its
+figure is quoted here and it is in git at `6085dc5^`.
 
 | axis | before | now |
 | --- | --- | --- |

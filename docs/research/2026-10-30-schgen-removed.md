@@ -372,7 +372,7 @@ here** **[task-9]**:
 | `bun run typecheck` | **clean** after every commit |
 | `bun test` | **2714 pass / 0 fail** across **258 files** — 2669 before `22e184e` restored the 44 paste cases and added a second control arm. The 8 baseline failures were `tests/schgen/port-fidelity.test.ts` on an unset `SCHGEN_SOURCE` and went with their file. **Zero failures remain** |
 | `make check` | **exactly four FAIL, seven ok** — `pt2399-core` (no parts-list rule for `delay_ic` in `tools/bom/needs.ts`), `transistor-preamp-lab`, `-loop`, `-staged` (incomplete layout state). **The same four boards and the same two causes as the pre-plan baseline**, and neither cause mentions a schematic |
-| the five drafted sheets | **byte-identical** — `a1fa4159 e9843e6d b9e42e6a 5e1a4139 d4b0b8cc`, with `git diff -- drafted/ schematic/` empty |
+| the five drafted sheets | **byte-identical** — `a1fa4159 e9843e6d b9e42e6a 5e1a4139 d4b0b8cc`, with `git diff f6a4d40..HEAD -- drafted/ schematic/` empty **over Task 9's range, which is the command and the range that report gives** |
 
 **All five Pultec guides rebuild**, 12 pages each and 13 for `pultec-mid`, each
 printing `guide.pdf is ONE document: page 2 is the schematic` — a message gated
@@ -392,3 +392,11 @@ seconds and segfaulted once under concurrent load, so it was never run beside
 `bun run typecheck` clean; `bun test tests/text-metrics/` **44 pass / 0 fail**
 before and after the edit to the document those 44 cases guard;
 `git diff -- drafted/ schematic/readability-baselines.json` empty.
+
+**DO NOT WIDEN THAT LAST EXPRESSION TO `schematic/` AND EXPECT IT EMPTY.** The
+row above quotes Task 9's command over Task 9's range; **the gate this prose
+pass was held to is `drafted/` plus `schematic/readability-baselines.json`**,
+because `schematic/README.md` is prose in the same directory and the prose pass
+rewrote it. Run against `schematic/` at a later commit the diff is red on that
+README, and reading it as a changed sheet would be a false alarm of exactly the
+kind this document exists to prevent.

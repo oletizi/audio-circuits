@@ -37,6 +37,22 @@ there is nothing recorded in it to lose. What is at stake is the schema and
 the channel for recording a future owner-granted comparison — whether that
 channel is still wanted now that its only reader is gone.
 
+**AND THE JSON'S OWN `notes` BLOCK STILL DESCRIBES THAT LOADER IN THE PRESENT
+TENSE. THE CORRECTION IS HERE BECAUSE IT IS NOT THERE.** Read
+`readability-baselines.json` and its `notes` say that schema 1 *"names the
+twelve fields `lib/schgen/readability/baseline-model.ts` declares"*, that *"the
+loader refuses any other value"*, that *"the loader refuses any other grantor by
+name"* and that *"the loader refuses a sixth number by name"*. **There is no
+loader, and nothing in that file refuses anything** — it is inert JSON that no
+code opens. **Its bytes are deliberately untouched**: the registry is the
+owner's reserved channel, an agent may never author the acceptance criteria for
+the artifact it is producing, and the removal plan's standing gate is that a
+diff over this file is empty. **This is the last place in the repository where
+text describes the schematic generator as live**, and it is left that way on
+purpose. Whoever answers the question above settles it with the same answer:
+kept, the registry needs a reader and those sentences become true again;
+retired, the file goes and they go with it.
+
 **THE QUESTION IS STILL OPEN AND IT IS THE OWNER'S, NOT AN AGENT'S.**
 `CLAUDE.md`: an agent may never author the acceptance criteria for the artifact
 it is producing. A registry of the owner's recorded judgements about a drawing's
