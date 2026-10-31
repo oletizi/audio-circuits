@@ -17,8 +17,9 @@
  *
  * **IT RAN `lib/schgen/gates/round-trip.ts` UNTIL THE SWITCH, and the two were MEASURED to agree
  * before the switch was made** - element for element, in order, on all six lists, on all five
- * approved pages (`./guard-equivalence.test.ts`, which exists only while both implementations do).
- * `roundTrip` needs the schematic generator's whole front half to build a model to compare
+ * approved pages. That measurement was `./guard-equivalence.test.ts`, which existed only while
+ * both implementations did and was deleted with the generator; it is in git at `f6a4d40^..`.
+ * `roundTrip` needed the schematic generator's whole front half to build a model to compare
  * against; `compareSheetToModel` takes a `Network`, a designator map and a pin-number map, which
  * is what `./sheet-model.ts` hands it without the generator.
  *
@@ -31,11 +32,11 @@
  * `.net` is committed, so a stale fixture passes it. `make check` is where the freshness comes
  * from.
  *
- * **AND IT DOES NOT DRAW ANYTHING.** `generateReported` would lay the circuit out with ELK and
- * render it, which is several seconds a board and couples this guard to every file under
- * `lib/schgen/render/`. A model, its designators and its pin numbers are all that comparing a
- * model with a netlist needs, and none of the three is geometry - so `./sheet-model.ts` builds
- * exactly those three and nothing else.
+ * **AND IT DOES NOT DRAW ANYTHING.** The generator's `generateReported` would have laid the
+ * circuit out with ELK and rendered it, which was several seconds a board and coupled this guard
+ * to every file under `lib/schgen/render/`. A model, its designators and its pin numbers are all
+ * that comparing a model with a netlist needs, and none of the three is geometry - so
+ * `./sheet-model.ts` builds exactly those three and nothing else.
  */
 import { expect, test } from "bun:test"
 import { createHash } from "node:crypto"
@@ -45,14 +46,6 @@ import path from "node:path"
 import { importNetlist, KICAD_CLI, type ImportedNetlist } from "../../lib/kicad/netlist.ts"
 import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
 import { modelForSheet } from "./sheet-model.ts"
-import { buildCircuit } from "../../lib/schgen/ir/build.ts"
-import { annotate, EMPTY_LOCK } from "../../lib/schgen/lock/annotate.ts"
-import type { Circuit, PartLabel } from "../../lib/schgen/ir/types.ts"
-import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
-import { caseResolver } from "../../tools/schgen/authoring-census.ts"
-import { boardRefs, declarationFor } from "../../tools/schgen/board-sheets.ts"
-import { parityDesign } from "../../tools/schgen/gate-census.ts"
-import { designResolver } from "../../tools/schgen/generate.ts"
 import { defaultKicadCliExists, defaultRunExport } from "../../tools/perfboard/netlist-sync.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
@@ -135,56 +128,6 @@ export function recordedSheetDigest(circuit: string, board: string): string {
     )
   }
   return first[1] as string
-}
-
-/**
- * The board's IR and its designator annotation - everything `roundTrip` compares a netlist against.
- *
- * **NOTHING IN THIS FILE USES IT ANY MORE.** Its one reader is `./guard-equivalence.test.ts`,
- * which needs the generator-backed side of the comparison to measure the standalone one against,
- * and which goes with the generator.
- */
-export interface ModelUnderTest {
-  readonly circuit: Circuit
-  readonly refs: ReadonlyMap<PartLabel, string>
-}
-
-/**
- * Build one board's schematic IR and annotate it, with no layout and no file written.
- *
- * The authority for which circuit a board is remains the board's own `perfboard.json`, through
- * `boardRefs`/`declarationFor` - not a name match, for the reason `tools/schgen/board-sheets.ts`
- * states. A board with no `SchematicAuthoring` declaration throws naming itself rather than being
- * skipped.
- */
-export function modelUnderTest(board: string): ModelUnderTest {
-  const repoRoot = moduleRepoRoot()
-  const ref = boardRefs(repoRoot).find((b) => b.name === board)
-  if (ref === undefined) throw new Error(`no board directory ${board} under boards/`)
-  const declared = declarationFor(ref)
-  if (declared === null) {
-    throw new Error(
-      `no SchematicAuthoring declaration for ${ref.export}() (${ref.circuit}), so there is no ` +
-        "schematic-side model to compare the drafted sheet against. docs/known-gaps.md G247.",
-    )
-  }
-  // A scratch outDir nothing writes into: `parityDesign` only needs somewhere to point `outDir`,
-  // and neither `buildCircuit` nor `annotate` touches the filesystem. Removed before returning so
-  // a test run leaves no directory behind.
-  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "drafted-sheet-"))
-  try {
-    const design = parityDesign(declared, caseResolver([declared]), repoRoot, scratch)
-    const symbols = designResolver(design, stockSymbolDir())
-    const circuit = buildCircuit(design.spec.circuit, { symbols })
-    // EMPTY_LOCK, not a read of a committed refs lock: no board under `boards/` has one, because
-    // `tools/schgen/board-sheets.ts` writes every generation into the git-ignored `build/` tree
-    // with `initLock: true`. `annotate` assigns deterministically from an empty lock, which is
-    // what the designators on the drafted sheets were drawn from.
-    const { refs } = annotate(circuit, EMPTY_LOCK, new Map())
-    return { circuit, refs }
-  } finally {
-    fs.rmSync(scratch, { recursive: true, force: true })
-  }
 }
 
 /** The board's committed netlist export, imported. */

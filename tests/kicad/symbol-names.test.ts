@@ -33,11 +33,23 @@
  * failure shape this repository's own rule calls a skipped check that looks like
  * a passing one. So the sweep asserts a floor on how many distinct names it
  * found and names three it must contain.
+ *
+ * **AND ONE ARM IS NOT ABOUT A NAME AT ALL**: every VENDORED symbol is compared
+ * byte for byte against the installed library's own flattened text. It was
+ * `tests/schgen/render/stock-symbols.test.ts`'s and is ported here, with its
+ * own comment saying why the claim outlives the generator that used to make it.
  */
 import { expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
-import { VENDORED_SYMBOLS } from "../../lib/kicad/symbol-library.ts"
+import {
+  VENDORED_SYMBOLS,
+  flattenedSymbol,
+  librarySymbols,
+  splitLibId,
+  vendoredSymbolFile,
+  vendoredSymbolText,
+} from "../../lib/kicad/symbol-library.ts"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
 import {
   INDUCTOR_SYMBOL,
@@ -111,162 +123,20 @@ test("the sweep finds the symbol declarations it is supposed to, so it cannot pa
 const LIB_ID = /^[A-Za-z0-9_+-]+:[A-Za-z0-9_.,+-]+$/
 
 /**
- * How a lib id fails, or does not fail, to resolve - the three-valued answer
- * an exemption is held to below. Split rather than boolean because
- * `symbolExistsOnDisk` THROWS on an uninstalled library (deliberately: see
- * `./symbol-library-disk.ts`), and an exemption that caught that throw to
- * call it "unresolvable" would also catch a genuinely broken KiCad install.
+ * **THERE IS NO EXEMPTION LIST ANY MORE, AND THAT IS THE STRONGER STATE.**
+ * `NOT_A_KICAD_SYMBOL` held eight lib ids naming a hand-written FIXTURE
+ * library - `Fix:R`, `Fix:C`, `Fix:BIG8`, `Fix:OPAMP2`, `Fix:OPAMP2X`,
+ * `Pwr:GND`, `Pwr:+3V3` and `H7:TPS7A4901` - each declared in a ported test
+ * under `tests/schgen/`, and the whole of `tests/schgen/` is deleted with the
+ * schematic generator. Its two teeth went with it: each entry had to still
+ * fail to resolve in the recorded way, and every swept site had to be under
+ * `tests/schgen/`. Both are now vacuous, so the list and its teeth test are
+ * deleted rather than left empty - an exemption nothing can fire is a hole
+ * waiting for the next name somebody puts in it. **Every swept lib id now has
+ * to resolve on disk, with nothing to skip past.** The eight entries and the
+ * reasons each one could not be a real KiCad name are in git; a future ported
+ * fixture library needs the list, the teeth and its own test back together.
  */
-function resolutionOnDisk(libId: string): "resolves" | "no-such-library" | "no-such-symbol" {
-  if (!fs.existsSync(symbolLibraryFile(libId))) return "no-such-library"
-  return symbolExistsOnDisk(libId) ? "resolves" : "no-such-symbol"
-}
-
-/**
- * Lib ids naming a HAND-WRITTEN TEST FIXTURE LIBRARY rather than a KiCad one,
- * with how each fails to resolve and why no real name can serve.
- *
- * `tests/schgen/__fixtures__/symbols/Fix.kicad_sym` and `Pwr.kicad_sym` are
- * copied verbatim from `digital-pedal-platform` by the schgen port
- * (`lib/schgen/README.md`), and the ported tests that read them name their
- * symbols in a part spec's `symbol` field, which is exactly what the sweep
- * above looks for. Substituting an installed KiCad name would mean editing a
- * ported file, which `tests/schgen/port-fidelity.test.ts` refuses.
- *
- * **THIS LIST HAS THREE PROPERTIES ITS DELETED PREDECESSOR LACKED**, and
- * Controller ruling R5 (Task 2 review, round 2) is why. The earlier
- * `NOT_A_KICAD_SYMBOL` exempted any well-formed lib id with no check that the
- * exempted name actually fails to resolve, and its `continue` ran ahead of the
- * malformed-value arm, silencing that report too. So:
- *
- * 1. **Each entry must still fail to resolve, in the recorded way** - a real
- *    KiCad name cannot hide behind the list. This is the footprint side's
- *    `CONSTRUCTED_FOR_A_REFUSAL` discipline (`tests/kicad/footprint-sweep.ts`).
- * 2. **Every swept SITE must be under `tests/schgen/`.** Without this the
- *    exemption is a hole the size of the name: a production circuit or a
- *    vendored library later declaring one of these as its own part spec's
- *    symbol would pass the sweep silently, which is the defect this file's
- *    header says it exists to catch. (The declaration form is deliberately
- *    not spelled out here, for the reason the header gives: a comment quoting
- *    it becomes a site of its own, and this exemption would then exempt the
- *    file doing the looking.)
- * 3. **It is pinned in both directions** - an entry nothing sweeps any more
- *    fails rather than rotting, and the exemption arm in the sweep test sits
- *    AFTER the malformed-value arm so it cannot silence that report.
- */
-const NOT_A_KICAD_SYMBOL: ReadonlyMap<
-  string,
-  { readonly failure: "no-such-library" | "no-such-symbol"; readonly reason: string }
-> = new Map([
-  [
-    "Fix:R",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the nickname \"Fix\" is tests/schgen/__fixtures__/symbols/Fix.kicad_sym, a hand-written " +
-        "fixture library holding deliberately degenerate symbols (OFFGRID, HIDPWR, a De Morgan " +
-        "body style, an extends child) that no installed KiCad library has. No KICAD_SYMBOLS " +
-        "root holds a Fix.kicad_sym, so the whole library half fails to resolve, not just R.",
-    },
-  ],
-  [
-    "Pwr:GND",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the nickname \"Pwr\" is tests/schgen/__fixtures__/symbols/Pwr.kicad_sym, the fixture " +
-        "power library (GND, +3V3, PWR_FLAG) the ported ir/ tests declare as a rail symbol. " +
-        "KiCad's own equivalent is power:GND, a different nickname; no KICAD_SYMBOLS root holds " +
-        "a Pwr.kicad_sym, so this fails at the library, not at the symbol.",
-    },
-  ],
-  [
-    "Pwr:+3V3",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the same fixture power library as Pwr:GND above, reached by a second rail. Task 6's " +
-        "ported tests/schgen/__fixtures__/circuits.ts declares a supply rail and a second " +
-        "analogue supply with this symbol, so the sweep now finds the +3V3 member of " +
-        "Pwr.kicad_sym as well as GND. KiCad's own equivalent is power:+3V3, a different " +
-        "nickname; the library half is what fails, exactly as for Pwr:GND.",
-    },
-  ],
-  [
-    "Fix:C",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the same fixture library as Fix:R above, reached by a third ported file. Task 6b's " +
-        "tests/schgen/render/sheets.test.ts rewrites the GND rail's symbol to this one to prove " +
-        "layoutSheet refuses a rail whose symbol is not a one-pin power symbol - so the name is " +
-        "declared here PRECISELY because it is wrong, which is the fourth repo-wide guard the " +
-        "port has needed an exemption from (docs/known-gaps.md G133). The library half is what " +
-        "fails, exactly as for Fix:R.",
-    },
-  ],
-  [
-    "Fix:OPAMP2",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the same hand-written fixture library as Fix:R above, reached by a fifth ported file. " +
-        "Task 11's tests/schgen/gates/pin-identity.test.ts draws its three-unit op-amp with this " +
-        "fixture symbol, because gate 6 compares a datasheet pin table against the SYMBOL'S own " +
-        "pin names and numbers and the fixture is the only symbol whose pins the test controls. " +
-        "No KICAD_SYMBOLS root holds a Fix.kicad_sym, so the library half is what fails.",
-    },
-  ],
-  [
-    "Fix:OPAMP2X",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the same hand-written fixture library again, and the `extends` child of Fix:OPAMP2 in " +
-        "it. The ported pin-identity test names it in ONE pin table to drive gate 6's refusal " +
-        "\"pin table OPA1688 is for symbol Fix:OPAMP2X, not Fix:OPAMP2\" - so it is declared " +
-        "here precisely because it is the WRONG symbol for that part, and no installed name " +
-        "could serve. The library half is what fails, exactly as for Fix:R.",
-    },
-  ],
-  [
-    "Fix:BIG8",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the same hand-written fixture library as Fix:R above, reached by the first HAND-WRITTEN " +
-        "file rather than a ported one: Task 2 of the 2026-10-23 net-names-and-floating-pins " +
-        "plan drives a model NC pin to an emitted (no_connect ...) in " +
-        "tests/schgen/ir/nc-end-to-end.test.ts, and one of the four states that test keeps " +
-        "distinguishable is a pin the LIBRARY types no_connect sitting on a net - which needs a " +
-        "symbol whose pin 7 is typed no_connect, as BIG8's and BIG8C's both are. THE REASON IS " +
-        "HERMETICITY, NOT SCARCITY: installed KiCad libraries hold 4513 such pins across 139 of " +
-        "223 libraries (measured 2026-10-23), so a real name exists, but SYMBOL_LIBRARY_ROOT in " +
-        "./symbol-library-disk.ts is KICAD_SYMBOLS or a derived install path, and the test reads " +
-        "its symbols through fixtureResolver(), which is bound to Fix and Pwr. Naming an " +
-        "installed symbol would make a validator test depend on an env-overridable install " +
-        "without reading it through that install. No KICAD_SYMBOLS root holds a Fix.kicad_sym, " +
-        "so the library half is what fails, exactly as for Fix:R. docs/known-gaps.md G278 clause " +
-        "8 carries the measurement and the reason this replaced.",
-    },
-  ],
-  [
-    "H7:TPS7A4901",
-    {
-      failure: "no-such-library" as const,
-      reason:
-        "the nickname \"H7\" is digital-pedal-platform's own PROJECT symbol library, which this " +
-        "repository does not have and never will: Task 11's ported " +
-        "tests/schgen/gates/pin-table.test.ts uses that project's TPS7A4901 pin table verbatim " +
-        "as its well-formed fixture, and a pin table names the lib id it is for. The name is a " +
-        "statement about the fixture's provenance, not about any library here. No KICAD_SYMBOLS " +
-        "root holds an H7.kicad_sym, so the library half is what fails.",
-    },
-  ],
-])
-
-/** Where an exempt fixture lib id may appear at all. */
-const EXEMPT_SITE_PREFIX = "tests/schgen/"
 
 test("every symbol name swept out of the source resolves in an installed KiCad library", () => {
   const missing: string[] = []
@@ -279,9 +149,6 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
       malformed.push(`${libId} (${sites.join(", ")})`)
       continue
     }
-    // AFTER the malformed arm, deliberately: the deleted predecessor skipped
-    // first and silenced that report for an exempted malformed value.
-    if (NOT_A_KICAD_SYMBOL.has(libId)) continue
     if (!symbolExistsOnDisk(libId)) missing.push(`${libId} (${sites.join(", ")})`)
   }
   expect(malformed, "these swept values are not <Library>:<Name>, so nothing could look them up")
@@ -290,35 +157,6 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
     missing,
     `these symbol names are in no installed library under ${SYMBOL_LIBRARY_ROOT}`,
   ).toEqual([])
-})
-
-test("every exempted fixture lib id is still swept, still unresolvable, and still only in tests/schgen/", () => {
-  // THE TEETH ON NOT_A_KICAD_SYMBOL - see its own comment for why the deleted
-  // predecessor had none. Four things must hold per entry, each a check that
-  // could fail, plus the bidirectional pin.
-  const exempt = [...NOT_A_KICAD_SYMBOL.keys()].sort()
-  expect(exempt.length, "an exemption list nothing iterates is a check that cannot fail")
-    .toBeGreaterThan(0)
-  expect(
-    [...SWEPT.keys()].filter((libId) => NOT_A_KICAD_SYMBOL.has(libId)).sort(),
-    "an exemption the sweep no longer finds is stale; delete it rather than leaving it",
-  ).toEqual(exempt)
-  for (const [libId, { failure, reason }] of NOT_A_KICAD_SYMBOL) {
-    expect(
-      resolutionOnDisk(libId),
-      `${libId} now resolves, or fails differently than recorded - a real KiCad name must not ` +
-        "hide behind this list",
-    ).toBe(failure)
-    expect(reason.length, libId).toBeGreaterThan(60)
-    const sites = SWEPT.get(libId) ?? []
-    expect(sites.length, libId).toBeGreaterThan(0)
-    expect(
-      sites.filter((site) => !site.startsWith(EXEMPT_SITE_PREFIX)).sort(),
-      `${libId} is declared outside ${EXEMPT_SITE_PREFIX} in these files. The exemption covers ` +
-        "the schgen port's hand-written fixture libraries and nothing else: a production circuit " +
-        "or a vendored library naming it would otherwise pass this sweep silently.",
-    ).toEqual([])
-  }
 })
 
 test("every declared symbol table resolves too, including the rotary table and the vendored set", () => {
@@ -335,6 +173,68 @@ test("every declared symbol table resolves too, including the rotary table and t
   expect(ROTARY_SYMBOLS.length).toBe(8)
   const missing = declared.filter((libId) => !symbolExistsOnDisk(libId))
   expect(missing).toEqual([])
+})
+
+/**
+ * **EVERY VENDORED SYMBOL IS BYTE-IDENTICAL TO THE INSTALLED LIBRARY'S OWN
+ * FLATTENED TEXT - PORTED HERE FROM THE DELETED
+ * `tests/schgen/render/stock-symbols.test.ts`.**
+ *
+ * That file's first arm was the only thing that ran this comparison, and the
+ * comparison itself lived in `lib/schgen/render/stock-symbols.ts`'s
+ * `checkVendoredAgreement`, which the generator's removal deletes. The CLAIM
+ * is not about the generator at all: `lib/kicad/symbols/<Nickname>/<Name>.sexpr`
+ * and `lib/kicad/symbol-library.ts`'s `VENDORED_SYMBOLS` both survive, and what
+ * makes a vendored copy worth having is that the installed KiCad still holds
+ * the same bytes. Without this, the surviving checks are that each vendored
+ * name RESOLVES (above) and that its copy loads and has pins
+ * (`./symbol-library.test.ts`) - neither of which would notice a KiCad release
+ * redrawing a symbol under the same name, which is the whole thing the vendored
+ * set exists to pin.
+ *
+ * **BOTH SIDES ARE FLATTENED BY `flattenedSymbol`**, the same function
+ * `tools/kicad/vendor-symbols.ts` used to write the copies, so equality is
+ * exact rather than approximate - including an `(extends ...)` symbol's parent
+ * body. The trailing newline is the one the vendoring tool writes.
+ *
+ * It does NOT skip when KiCad is absent: `symbolLibraryFile` resolves through
+ * `./symbol-library-disk.ts`'s root and the read throws, for the reason that
+ * file gives.
+ */
+test("every vendored symbol is byte-identical to the installed library's own flattened text", () => {
+  expect(VENDORED_SYMBOLS.length, "an empty vendored set would make the loop below vacuous")
+    .toBeGreaterThan(0)
+  const drifted: string[] = []
+  for (const libId of VENDORED_SYMBOLS) {
+    const { name } = splitLibId(libId)
+    const installed = librarySymbols(fs.readFileSync(symbolLibraryFile(libId), "utf8"))
+    if (!installed.has(name)) {
+      drifted.push(`${libId}: ${symbolLibraryFile(libId)} no longer holds a symbol "${name}"`)
+      continue
+    }
+    const installedText = `${flattenedSymbol(installed, name)}\n`
+    if (installedText === vendoredSymbolText(libId)) continue
+    drifted.push(`${libId}: ${vendoredSymbolFile(libId)} differs from ${symbolLibraryFile(libId)}`)
+  }
+  expect(
+    drifted,
+    "NOTHING IS PREFERRED. Re-run tools/kicad/vendor-symbols.ts against this KiCad and update " +
+      "lib/kicad/symbols/PROVENANCE.md if the drift is intended, or point KICAD_SYMBOLS at the " +
+      "version PROVENANCE.md names.",
+  ).toEqual([])
+})
+
+test("CONTROL: a vendored block with one byte changed is NOT byte-identical, so the zero above counts", () => {
+  // The perturbation is in memory and the vendored file is never written. Without it, a
+  // comparison that always answered equal - a flattener that returned the vendored text, say -
+  // would pass the test above for ever.
+  const [libId] = VENDORED_SYMBOLS
+  if (libId === undefined) throw new Error("VENDORED_SYMBOLS is empty; the test above is vacuous")
+  const { name } = splitLibId(libId)
+  const installed = librarySymbols(fs.readFileSync(symbolLibraryFile(libId), "utf8"))
+  const installedText = `${flattenedSymbol(installed, name)}\n`
+  expect(installedText).toBe(vendoredSymbolText(libId))
+  expect(installedText).not.toBe(`${vendoredSymbolText(libId)} `)
 })
 
 test("every symbol the five Pultec boards actually emit resolves, which is the derived arm", () => {
