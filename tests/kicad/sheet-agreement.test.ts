@@ -40,16 +40,21 @@ const PINS = new Map([
  * parameter by `lib/kicad/value-notation.ts` - `parseValue("10k")` is 10000 and `resistanceText`
  * spells that `10K`. A fixture spelling it `10k` is a value disagreement, which is what the
  * `values` test below uses on purpose.
+ *
+ * **THE `libsource` IS NOT DECORATION.** It is what the symbol half of `pinIdentity` compares
+ * against, and `TWO_RESISTORS` declares no `part.symbol`, so the expectation comes from the
+ * reviewed by-kind whitelist: `resistor` is `Device:R`, whose entry name is `R`. A fixture with no
+ * `libsource` reports that nothing fixes the pin numbering, which is what one test below asserts.
  */
 const AGREEING = `(export (components
-  (comp (ref "R1") (value "10K"))
-  (comp (ref "R2") (value "10K")))
+  (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")))
+  (comp (ref "R2") (value "10K") (libsource (lib "Device") (part "R"))))
  (nets
   (net (name "IN") (node (ref "R1") (pin "1")))
   (net (name "MID") (node (ref "R1") (pin "2")) (node (ref "R2") (pin "1")))
   (net (name "OUT") (node (ref "R2") (pin "2")))))`
 
-test("a sheet drawn from the model agrees in all five lists", () => {
+test("a sheet drawn from the model agrees in all five comparisons", () => {
   const out = compareSheetToModel(TWO_RESISTORS, DESIGNATORS, PINS, importNetlist(AGREEING))
   expect(out).toEqual({
     componentIdentity: [],
@@ -57,7 +62,91 @@ test("a sheet drawn from the model agrees in all five lists", () => {
     pinIdentity: [],
     values: [],
     footprints: [],
+    // **AND AN EMPTY `footprints` HERE IS SILENCE AND NOT AGREEMENT**, which is the whole reason
+    // this sixth list exists: neither resistor declares a footprint, so `footprints` compared
+    // nothing for either of them. Asserted as the positive claim it is.
+    footprintsUndeclared: ["r_in", "r_out"],
   })
+})
+
+test("a symbol the sheet is drawn with that the model does not name is reported", () => {
+  const exported = importNetlist(`(export (components
+    (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")))
+    (comp (ref "R2") (value "10K") (libsource (lib "Device") (part "R_Small"))))
+   (nets
+    (net (name "IN") (node (ref "R1") (pin "1")))
+    (net (name "MID") (node (ref "R1") (pin "2")) (node (ref "R2") (pin "1")))
+    (net (name "OUT") (node (ref "R2") (pin "2")))))`)
+  const out = compareSheetToModel(TWO_RESISTORS, DESIGNATORS, PINS, exported)
+  // The pin NUMBERING is identical either way - `Device:R` and `Device:R_Small` both number their
+  // terminals 1 and 2 - so no other comparison here can see this. That is why it is checked.
+  expect(out.pinIdentity).toEqual(['R2 is drawn with symbol "R_Small" but the model says "R"'])
+  expect(out.netMembership).toEqual([])
+})
+
+test("a netlist with no symbol at all is reported as nothing fixing the pin numbering", () => {
+  const exported = importNetlist(`(export (components
+    (comp (ref "R1") (value "10K"))
+    (comp (ref "R2") (value "10K") (libsource (lib "Device") (part "R"))))
+   (nets
+    (net (name "IN") (node (ref "R1") (pin "1")))
+    (net (name "MID") (node (ref "R1") (pin "2")) (node (ref "R2") (pin "1")))
+    (net (name "OUT") (node (ref "R2") (pin "2")))))`)
+  const out = compareSheetToModel(TWO_RESISTORS, DESIGNATORS, PINS, exported)
+  expect(out.pinIdentity).toEqual([
+    'R1 has no symbol in the schematic\'s netlist, so nothing fixes its pin numbering; the model says "R"',
+  ])
+})
+
+/** A capacitor whose model declares a symbol the by-kind whitelist would not have chosen. */
+const POLARISED = circuit()
+  .capacitor("c_in", "10uF", { a: "IN", b: "MID" }, { symbol: "Device:C_Polarized" })
+  .resistor("r_out", "10k", { a: "MID", b: "OUT" })
+  .port("input", "IN")
+  .port("output", "OUT")
+  .done()
+
+test("a declared part.symbol outranks the by-kind whitelist", () => {
+  const exported = importNetlist(`(export (components
+    (comp (ref "C1") (value "10uF") (libsource (lib "Device") (part "C_Polarized")))
+    (comp (ref "R2") (value "10K") (libsource (lib "Device") (part "R"))))
+   (nets
+    (net (name "IN") (node (ref "C1") (pin "1")))
+    (net (name "MID") (node (ref "C1") (pin "2")) (node (ref "R2") (pin "1")))
+    (net (name "OUT") (node (ref "R2") (pin "2")))))`)
+  const designators = new Map([["c_in", "C1"], ["r_out", "R2"]])
+  const pins = new Map([
+    ["c_in", new Map([["a", "1"], ["b", "2"]])],
+    ["r_out", new Map([["a", "1"], ["b", "2"]])],
+  ])
+  const out = compareSheetToModel(POLARISED, designators, pins, exported)
+  // The whitelist would have said "C", so an empty list here is the declaration winning and not
+  // the comparison being absent - the test above shows it fires.
+  expect(out.pinIdentity).toEqual([])
+})
+
+test("a kind the whitelist does not settle and the model does not declare refuses by name", () => {
+  const network = circuit()
+    .inductor("l_series", "100mH", { a: "IN", b: "OUT" })
+    .resistor("r_load", "10k", { a: "OUT", b: "IN" })
+    .port("input", "IN")
+    .port("output", "OUT")
+    .done()
+  const exported = importNetlist(`(export (components
+    (comp (ref "L1") (value "100mH") (libsource (lib "Device") (part "L")))
+    (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R"))))
+   (nets
+    (net (name "IN") (node (ref "L1") (pin "1")) (node (ref "R1") (pin "2")))
+    (net (name "OUT") (node (ref "L1") (pin "2")) (node (ref "R1") (pin "1")))))`)
+  const designators = new Map([["l_series", "L1"], ["r_load", "R1"]])
+  const pins = new Map([
+    ["l_series", new Map([["a", "1"], ["b", "2"]])],
+    ["r_load", new Map([["a", "1"], ["b", "2"]])],
+  ])
+  expect(() => compareSheetToModel(network, designators, pins, exported)).toThrow(
+    'component "l_series" (kind "inductor") declares no part.symbol, and its kind is not one of ' +
+      "the four SYMBOL_BY_KIND settles",
+  )
 })
 
 test("a reference in the schematic but not in the model is reported", () => {
@@ -115,8 +204,8 @@ test("one pin moved between two nets is reported from both sides", () => {
 
 test("a symbol pin the model does not declare is reported as a pin-numbering disagreement", () => {
   const exported = importNetlist(`(export (components
-    (comp (ref "R1") (value "10K"))
-    (comp (ref "R2") (value "10K")))
+    (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")))
+    (comp (ref "R2") (value "10K") (libsource (lib "Device") (part "R"))))
    (nets
     (net (name "IN") (node (ref "R1") (pin "1")))
     (net (name "MID") (node (ref "R1") (pin "2")) (node (ref "R2") (pin "1")))
@@ -176,10 +265,40 @@ test("a declared footprint the sheet carries no field for is reported as <none>"
 
 test("a footprint the sheet agrees with is reported nowhere - the control for the two above", () => {
   const out = compareSheetToModel(ONE_FOOTPRINT, DESIGNATORS, PINS, importNetlist(withFootprints(AXIAL, SMD)))
-  // R2 declares no footprint in the model, so the SMD field the sheet carries for it is compared
-  // against nothing. That silence is the `footprintsUndeclared` case the module header warns is
-  // not agreement, and this asserts it rather than leaving it undocumented.
   expect(out.footprints).toEqual([])
+  // AND THE EMPTY LIST ABOVE IS NOT THE WHOLE STORY. R2 declares no footprint in the model, so the
+  // SMD field the sheet carries for it was compared against nothing at all - which is exactly the
+  // silence an empty `footprints` would otherwise be read as agreement about.
+  expect(out.footprintsUndeclared).toEqual(["r_out"])
+})
+
+/** Both resistors with a footprint declared - the control for every `footprintsUndeclared` claim. */
+const BOTH_FOOTPRINTS = circuit()
+  .resistor("r_in", "10k", { a: "IN", b: "MID" }, { footprint: AXIAL })
+  .resistor("r_out", "10k", { a: "MID", b: "OUT" }, { footprint: AXIAL })
+  .port("input", "IN")
+  .port("output", "OUT")
+  .done()
+
+test("a circuit declaring every footprint reports nothing undeclared - the control", () => {
+  const out = compareSheetToModel(BOTH_FOOTPRINTS, DESIGNATORS, PINS, importNetlist(withFootprints(AXIAL, AXIAL)))
+  expect(out.footprintsUndeclared).toEqual([])
+  expect(out.footprints).toEqual([])
+})
+
+test("a component the schematic has no symbol for is in neither footprint list", () => {
+  // `r_out` is absent from the export, so componentIdentity owns the finding and nothing else
+  // compares anything about it - including its missing footprint, which would otherwise be
+  // reported twice under two different names.
+  const exported = importNetlist(`(export (components
+    (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")) (footprint "${AXIAL}")))
+   (nets
+    (net (name "IN") (node (ref "R1") (pin "1")))
+    (net (name "MID") (node (ref "R1") (pin "2")))))`)
+  const out = compareSheetToModel(ONE_FOOTPRINT, DESIGNATORS, PINS, exported)
+  expect(out.componentIdentity).toEqual(["reference R2 is in the model but not in the schematic"])
+  expect(out.footprints).toEqual([])
+  expect(out.footprintsUndeclared).toEqual([])
 })
 
 /** A single-pole rotary selector drawn with `symbol`, wired to one of its throws. */
@@ -207,8 +326,8 @@ const SELECTOR_DESIGNATORS = new Map([["r_in", "R1"], ["selector", "SW1"]])
 
 /** The export of a sheet drawn with a mount-lug rotary: `kicad-cli` gives `MP` its own net. */
 const WITH_MOUNT_LUG = `(export (components
-  (comp (ref "R1") (value "10K"))
-  (comp (ref "SW1") (value "SW_Rotary_1x6_MP")))
+  (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")))
+  (comp (ref "SW1") (value "SW_Rotary_1x6_MP") (libsource (lib "Switch") (part "SW_Rotary_1x6_MP"))))
  (nets
   (net (name "IN") (node (ref "R1") (pin "1")) (node (ref "SW1") (pin "7")))
   (net (name "OUT") (node (ref "R1") (pin "2")) (node (ref "SW1") (pin "1")))
@@ -247,8 +366,8 @@ test("a lug on a symbol the mechanical table does not list IS a stray net - the 
 
 /** The export of a sheet whose selector has one detent drawn and wired to nothing. */
 const WITH_UNUSED_DETENT = `(export (components
-  (comp (ref "R1") (value "10K"))
-  (comp (ref "SW1") (value "SW_Rotary_1x12")))
+  (comp (ref "R1") (value "10K") (libsource (lib "Device") (part "R")))
+  (comp (ref "SW1") (value "SW_Rotary_1x12") (libsource (lib "Switch") (part "SW_Rotary_1x12"))))
  (nets
   (net (name "IN") (node (ref "R1") (pin "1")) (node (ref "SW1") (pin "13")))
   (net (name "OUT") (node (ref "R1") (pin "2")) (node (ref "SW1") (pin "1")))

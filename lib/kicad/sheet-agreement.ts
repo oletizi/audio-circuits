@@ -39,41 +39,101 @@
  *
  * ---
  *
- * **WHAT THIS DOES NOT CARRY ACROSS FROM `round-trip.ts`, STATED RATHER THAN DISCOVERED LATER.**
+ * **AND `footprintsUndeclared` IS REPORTED SEPARATELY AND IS NOT A PASS.** A part the model
+ * declares no footprint for has nothing to compare, so `footprints` says nothing about it. An
+ * empty `footprints` over a circuit where half the parts declare none would otherwise read as
+ * agreement, and that is not hypothetical here: **7, 2, 2, 2 and 8 components of the five drafted
+ * Pultec pages declare no footprint** - every panel control, selector and inductor on them.
  *
- * **THE SYMBOL-NAME HALF OF `pinIdentity` IS GONE.** That module also compared the netlist's
- * `libsource` part name against the lib id the generator resolved for each part, reporting
- * `X is drawn with symbol "A" but the model says "B"`. A `Network` carries `part.symbol` only
- * where a circuit chose to declare one - the generator's by-kind rule and its authoring overrides
- * are what filled the rest - so this module has no complete statement of the intended symbol to
- * compare against, and inventing one from the kind would be a second rule library living here.
- * **It is EMPTY on all five drafted Pultec pages, so an equivalence test against the old output
- * is NOT evidence that this half was carried over.** What would restore it: a model-id to lib-id
- * map, the same shape `designators` has, supplied by the caller.
+ * **IT NAMES COMPONENTS BY MODEL ID WHERE THE MODULE THIS REPLACES NAMED THEM BY IR LABEL**, and
+ * the two are the same string for every footprint-less part of all five pages (measured, not
+ * assumed). The id is kept rather than the designator the other four lists use, because this is
+ * the one finding whose fix is in the MODEL - a footprint is declared on `part.footprint`, which a
+ * reader reaches by id - and because it is what makes the lists comparable across the change.
  *
- * **`footprintsUndeclared` IS GONE AS A LIST, AND ITS WARNING IS NOT.** A part the model declares
- * no footprint for has nothing to compare, so `footprints` says nothing about it, and an empty
- * `footprints` over a circuit where half the parts declare none reads as agreement while being
- * silence. The parts in that state are simply skipped here; a caller that needs the count must ask
- * the `Network` for it.
+ * ---
  *
  * **NOTHING THROWS ON A DISAGREEMENT, AND IT DOES THROW ON A MISSING INPUT.** A disagreement is a
  * problem string, which is what makes this usable from a test or a gate runner. A component with
- * no designator, or a pin with no number, is not a disagreement - it is a question this module was
- * not given the data to ask - so it refuses by name instead of comparing nothing and passing.
+ * no designator, no pin number, or no symbol anything can name is not a disagreement - it is a
+ * question this module was not given the data to ask - so it refuses by name instead of comparing
+ * nothing and passing.
  */
 
 import type { Component, Connection, Network } from "../model/types.ts"
 import type { ImportedNetlist } from "./netlist.ts"
 import { valueFor } from "./value-notation.ts"
 
-/** The five comparisons, each sorted and stable so a caller can print or diff them. */
+/** The comparisons, each sorted and stable so a caller can print or diff them. */
 export interface SheetAgreement {
   componentIdentity: string[]
   netMembership: string[]
   pinIdentity: string[]
   values: string[]
   footprints: string[]
+  /** Components with no declared footprint: compared against nothing, and NOT a pass. */
+  footprintsUndeclared: string[]
+}
+
+/**
+ * Per kind, the KiCad symbol a kind alone settles - **a whitelist that refuses loudly, not a
+ * general rule that accepts a guess.**
+ *
+ * **IT IS THE FOUR-ENTRY TABLE `lib/schgen/rules/symbols.ts` CARRIES, AND IT IS HERE FOR THE SAME
+ * REASON `MECHANICAL_PINS` IS**: that file is deleted with the rest of the generator, and without
+ * these four entries nothing would know what symbol an ordinary resistor or capacitor is meant to
+ * be drawn with - **18 of 27, 17 of 21, 15 of 19, 16 of 20 and 29 of 39 components of the five
+ * drafted Pultec pages declare no `part.symbol`**, so a check that demanded one would refuse every
+ * page rather than compare it.
+ *
+ * Each entry is here because the symbol claims exactly what the MODEL claims and no more: a
+ * resistor is a resistor; `Device:C` is the non-polarised glyph and `CapacitorParameters` is
+ * `{ farads }` and nothing else, so a polarised part is a PART fact that says so itself; likewise
+ * a photoresistor; and `Device:D` is a plain diode, where an LED or a Schottky is again a part
+ * fact. Every lib id was resolved against the libraries on disk where it was first written.
+ *
+ * **EVERY OTHER KIND REFUSES**, because a symbol choice for it is a claim about a PART: which
+ * package an op-amp is in, how many ways a connector has, whether a transistor is NPN or PNP,
+ * whether a pot is a panel control or a board trimmer, what a `switch` physically is. Those parts
+ * declare `part.symbol` on the component, which every off-board Pultec part does.
+ */
+const SYMBOL_BY_KIND: Partial<Readonly<Record<Component["kind"], string>>> = {
+  resistor: "Device:R",
+  capacitor: "Device:C",
+  photoresistor: "Device:R_Photo",
+  diode: "Device:D",
+}
+
+/** The symbol's entry name, which is what a netlist's `libsource` records. `Device:R` -> `R`. */
+function symbolEntry(libId: string): string {
+  const sep = libId.indexOf(":")
+  return sep < 0 ? libId : libId.slice(sep + 1)
+}
+
+/**
+ * The entry name of the symbol the model says this component is drawn with: its own declaration
+ * first, then the reviewed by-kind whitelist, then a refusal.
+ *
+ * **THE ORDER IS THE MODEL'S DECLARATION FIRST**, because `part.symbol` IS a declaration in the
+ * model and a rule must not outrank one. A kind outside the whitelist with no declaration is a
+ * refusal and not a skip: skipping it would make the symbol comparison silently vacuous for
+ * exactly the parts whose symbol is a real choice.
+ */
+function intendedSymbol(component: Component): string {
+  const declared = component.part?.symbol
+  if (declared !== undefined) return symbolEntry(declared)
+  const byKind = SYMBOL_BY_KIND[component.kind]
+  if (byKind !== undefined) return symbolEntry(byKind)
+  throw new Error(
+    `component "${component.id}" (kind "${component.kind}") declares no part.symbol, and its ` +
+      "kind is not one of the four SYMBOL_BY_KIND settles, so nothing says which symbol the " +
+      "sheet should be drawn with and the comparison has no expectation to test. Declare " +
+      "part.symbol on the component. It is not defaulted and the check is not skipped: a symbol " +
+      "choice for this kind is a claim about which PART is fitted - a package, a way count, a " +
+      "transistor's polarity - and a rule that guessed it would compare the drawing against an " +
+      "expectation nobody reviewed, while a skip would make this comparison vacuous for exactly " +
+      "the parts whose symbol is a real decision.",
+  )
 }
 
 /**
@@ -298,6 +358,7 @@ export function compareSheetToModel(
   const pinIdentity: string[] = []
   const values: string[] = []
   const footprints: string[] = []
+  const footprintsUndeclared: string[] = []
   const byNet = new Map<string, string[]>()
   const unconnected: string[][] = []
 
@@ -332,6 +393,22 @@ export function compareSheetToModel(
     // there; comparing nothing against it here would double-count it.
     if (drawn === undefined) continue
 
+    // THE SYMBOL, BEFORE THE PIN NUMBERS, because it is the stronger claim of the two: knowing the
+    // right designators are present fixes the pad COUNT and nothing else, and the symbol a
+    // designator is drawn with is what fixes which pin is which. A swap to another symbol with the
+    // same numbering changes no net and no pin count, so this is the only thing that sees it.
+    //
+    // It compares the SYMBOL NAME and not pin functions: `importNetlist` does not read a node's
+    // `pinfunction`, so a symbol that keeps its lib id and has its pin NAMES edited is invisible
+    // here, as it was in the module this replaces.
+    const want = intendedSymbol(component)
+    const drawnWith = drawn.libPart
+    if (drawnWith === undefined) {
+      pinIdentity.push(`${ref} has no symbol in the schematic's netlist, so nothing fixes its pin numbering; the model says "${want}"`)
+    } else if (drawnWith !== want) {
+      pinIdentity.push(`${ref} is drawn with symbol "${drawnWith}" but the model says "${want}"`)
+    }
+
     const expectPins = sorted(declared)
     const actualPins = sorted(schematicPins.get(ref) ?? [])
     if (expectPins.join(",") !== actualPins.join(",")) {
@@ -344,10 +421,14 @@ export function compareSheetToModel(
     }
 
     // An absent footprint is an absent footprint, not a blank nobody chose: the model's field is
-    // optional and a part declaring none has nothing to compare, so it is skipped. See the header
-    // on why that silence is not agreement.
+    // optional and a part declaring none has nothing to compare. It is REPORTED rather than
+    // skipped, in its own list, because an empty `footprints` over a circuit where half the parts
+    // declare none reads as agreement while being silence. See the header.
     const footprint = component.part?.footprint ?? ""
-    if (footprint.trim() === "") continue
+    if (footprint.trim() === "") {
+      footprintsUndeclared.push(component.id)
+      continue
+    }
     if (drawn.footprint !== footprint) {
       footprints.push(
         `${ref}: the schematic says footprint "${drawn.footprint ?? "<none>"}" and the model says "${footprint}"`,
@@ -363,5 +444,12 @@ export function compareSheetToModel(
     for (const set of withoutOnce(schematic, model)) netMembership.push(`the schematic connects [${set}] and the model does not`)
   }
 
-  return { componentIdentity, netMembership, pinIdentity, values, footprints }
+  return {
+    componentIdentity,
+    netMembership,
+    pinIdentity,
+    values,
+    footprints,
+    footprintsUndeclared: footprintsUndeclared.sort(),
+  }
 }
