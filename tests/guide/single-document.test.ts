@@ -19,7 +19,7 @@
  *    size.** Measured on the merged file, against the standalone export.
  *
  * **IT FAILS RATHER THAN SKIPS** when either tool is absent, on the precedent
- * `./print-pdf.test.ts` and `tests/circuits/kicad-round-trip.ts` set: a
+ * `./print-pdf.test.ts` and `tests/circuits/committed-schematic.ts` set: a
  * skipped check must never look like a passing one.
  */
 import { test, expect } from "bun:test"

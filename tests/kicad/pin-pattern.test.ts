@@ -85,7 +85,7 @@ test("every recorded pad OPENS its .kicad_mod and agrees with the file, pad by p
   //
   // readFootprintPads THROWS when the library is not resolvable. It must not
   // skip - see tests/kicad/footprint-library.ts and the precedent in
-  // tests/circuits/kicad-round-trip.ts.
+  // tests/circuits/committed-schematic.ts.
   for (const pattern of PIN_PATTERNS.values()) {
     const file = readFootprintPads(pattern.footprint)
     expect(pattern.source.file, pattern.footprint).toBe(file.file)

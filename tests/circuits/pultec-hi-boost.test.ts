@@ -5,7 +5,7 @@
  * export - that guard is what this declaration exists for."*
  *
  * `./drafted-sheet.ts` holds the body, and says why the comparison is
- * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./kicad-round-trip.ts`'s
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./committed-schematic.ts`'s
  * `expectSameCircuit`.
  *
  * **SEVEN OF THIS BOARD'S PARTS DECLARE NO FOOTPRINT IN THE MODEL EITHER** - the four tapped coil

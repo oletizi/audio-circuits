@@ -15,7 +15,7 @@
  * fourth.
  *
  * **IT REFUSES AND DOES NOT SKIP**, for the reason `./footprint-library.ts` and
- * `tests/circuits/kicad-round-trip.ts` both give: a green suite on a machine
+ * `tests/circuits/committed-schematic.ts` both give: a green suite on a machine
  * with no KiCad would be a check that looked like it had passed while reading
  * nothing, which is the one failure mode this workflow exists to prevent.
  *

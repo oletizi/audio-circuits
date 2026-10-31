@@ -13,7 +13,7 @@
  *    a size nobody approved.
  *
  * **THE LAST FOUR RUN THE REAL MERGE TOOL AND FAIL RATHER THAN SKIP**, on the
- * precedent `tests/guide/print-pdf.test.ts` and `tests/circuits/kicad-round-trip.ts`
+ * precedent `tests/guide/print-pdf.test.ts` and `tests/circuits/committed-schematic.ts`
  * set: `make guide` needs the merge tool the way it needs the browser, so it
  * is part of the toolchain, and these are the only proof that the arguments
  * this repository passes still merge on the machine in front of us.

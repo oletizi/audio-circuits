@@ -6,7 +6,8 @@
  * circuit still agrees with the schematic export - that guard is what this declaration exists
  * for."* This module is what the four Pultec section boards' files share.
  *
- * **IT IS NOT `expectSameCircuit`, AND THAT IS NOT A SHORTCUT.** `./kicad-round-trip.ts` compares a
+ * **IT IS NOT `expectSameCircuit`, AND THAT IS NOT A SHORTCUT.** `./committed-schematic.ts`'s
+ * `expectSameCircuit` compares a
  * KiCad export against `toImportedNetlist(network, DESIGNATORS, PIN_NUMBERS, ...)` - the VEROROUTE
  * lowering, in which an off-board part's footprint is the string `PADS<n>` and its pins are
  * numbered by `PAD_ORDER` index. A Pultec section board has four to seven off-board parts, so that
@@ -82,9 +83,10 @@ export function draftedSheet(circuit: string, board: string): string {
  * a check that runs there too - the same claim `kicadRoundTrip` made about generated stub output,
  * for the one subject this repository actually ships.
  *
- * **FAILS RATHER THAN SKIPS WHEN `kicad-cli` IS ABSENT**, in the same words `kicadRoundTrip` uses
- * and for the same reason: a missing binary here would make this the only one of this repository's
- * kicad-cli proofs that silently passed without ever running it.
+ * **FAILS RATHER THAN SKIPS WHEN `kicad-cli` IS ABSENT**, in the words `kicadRoundTrip` used
+ * before it was deleted with the stub writer, and for the same reason: a missing binary here would
+ * make this the only one of this repository's kicad-cli proofs that silently passed without ever
+ * running it. `./committed-schematic.ts`'s `exportCommittedSheet` is the live sibling refusal.
  */
 export function exportDraftedSheet(circuit: string, board: string): ImportedNetlist {
   if (!defaultKicadCliExists(KICAD_CLI)) {

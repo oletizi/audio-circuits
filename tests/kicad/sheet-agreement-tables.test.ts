@@ -17,10 +17,12 @@
  *
  * **IT READS THE INSTALLED LIBRARY THROUGH `./symbol-library-disk.ts`, NOT THROUGH
  * `lib/schgen/render/stock-symbols.ts`**, which is deleted too. That helper refuses when no
- * library is present and does NOT skip, for the reason `tests/circuits/kicad-round-trip.ts` gives:
- * a green suite on a machine with no KiCad would be a check that looked like it had passed while
- * reading nothing, which is the one failure mode this workflow exists to prevent. The last test
- * below proves that refusal is live rather than taking it on trust.
+ * library is present and does NOT skip, because a green suite on a machine with no KiCad would be
+ * a check that looked like it had passed while reading nothing - `CLAUDE.md`: *"A skipped check
+ * must never look like a passing one."* The live kicad-cli refusals in the same shape are
+ * `tests/circuits/committed-schematic.ts`'s `exportCommittedSheet` and
+ * `tests/circuits/drafted-sheet.ts`'s `exportDraftedSheet`. The last test below proves this
+ * helper's refusal is live rather than taking it on trust.
  *
  * **EVERY ARM IS GENERIC OVER ITS TABLE, not written against today's entries.** A review of the
  * schgen original found its first version hard-coded the one rotary, so the tenth `_MP` symbol
