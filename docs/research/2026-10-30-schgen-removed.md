@@ -245,6 +245,29 @@ says the same thing.
 **The 28-case loader test went with the loader.** If the channel is kept, it
 needs a reader and a test together; if it is retired, the file goes.
 
+**AND THE FILE'S OWN `notes` BLOCK STILL DESCRIBES THAT LOADER IN THE PRESENT
+TENSE — DELIBERATELY NOT EDITED.** Its `schema` note says *"Schema 1 names the
+twelve fields `lib/schgen/readability/baseline-model.ts` declares"* and *"the
+loader refuses any other value"*; `grantedBy` says *"the loader refuses any
+other grantor by name"*; `measures` says *"the loader refuses a sixth number by
+name"*. **There is no loader to refuse anything.** The prose pass left every
+byte of it alone because this plan's standing gate is that
+`git diff -- drafted/ schematic/*.json` is empty, and a registry whose only
+content is a schema plus the owner's reserved channel is not a file an agent
+edits on its own reading. **`schematic/README.md` is where the correction
+lives**, and it says plainly that the registry now has no reader. Whoever
+answers the question above settles the `notes` block with it: kept, it needs a
+reader and these sentences become true again; retired, the file goes and they go
+with it.
+
+**Also left alone, and not repository content**: `build/schgen-boards/` and
+`build/schgen-defective-fixture/` may still sit on a working tree from before
+the deletion, with a `STATUS.md` and a `RENDER-REPORT.md` per board. They are
+**untracked and covered by `.gitignore`'s `build/`**, which is exactly what that
+file's comment anticipated when the two specific entries were removed with the
+tools that wrote them. Nothing in the repository regenerates or reads them;
+`git clean -fdx` removes them.
+
 ---
 
 6. What nothing in this repository holds any more
