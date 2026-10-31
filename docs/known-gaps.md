@@ -4174,3 +4174,49 @@ a crowded sheet carries no mark and never did.
   UNTRIED:** one condition in `generate()`, narrowed the way the guide's was.
   `docs/research/2026-10-30-no-layout-withholding.md` carries the full audit of
   every gate that can withhold, suppress or mark a drawing.
+
+
+### G306 - OWNER DECISION, 2026-10-30: `lib/schgen/` and `tools/schgen/` are DELETED, and the reason is the honey pot rather than the code
+
+> *"I feel like we should throw away schgen - it has never worked well. Our new
+> process works MUCH better"*
+
+and, on how:
+
+> *"refactor whatever is used elsewhere to a more suitable library location. I
+> don't want it acting as a honey pot for agents to start thinking it's how this
+> project generates schematics."*
+
+**The second quotation is the operative one and it is a statement about what a
+file's existence TEACHES, not about whether its code runs.** A large, plausible,
+well-documented generator sitting in `lib/` is read by the next agent as the way
+this project draws schematics. It was that, and it is not any more.
+
+**The verdict behind it**, the same day, on the eleven `lib/schgen/` pages shown
+beside the five build guides: *"the drawings in the build guides are MUCH better
+than the lib/schgen pages you just showed me."* Comparing two drawings is the
+reviewer's act, and he made it.
+
+**What draws now:** copperhead drafts, akcli-kicad repairs, the loop `TOOLING.md`
+describes. Five approved Pultec pages came out of it; `drafted/pultec/` holds
+them and the build guides print them.
+
+**What was measured before the deletion, so the size is not re-litigated:**
+`make check` does **not** touch schgen - zero mentions in a full run - and the
+netlist round-trip is `tools/perfboard/`'s `netlist-agrees`, not schgen's. An
+earlier relayed claim that schgen carried "the census, the netlist round-trip and
+the gates" overstated it. 164 source files, 36,479 lines, 134 test files, 25,157
+test lines. Four live consumers reached into it for utilities unrelated to
+drawing, and those were relocated rather than deleted.
+
+- **Found** 2026-10-30, after the layout-withholding gate was removed and all
+  eleven generated pages were put in front of him for the first time.
+- **Evidence** his words above; the eleven rendered pages; a full `make check`
+  run with no schgen in it; the dependency sweep.
+- **Verified** **CONFIRMED by this writer** for the dependency measurements,
+  which were run here. The verdict is his.
+- **Why it is open** it is a directive, recorded so it is not re-opened. A later
+  agent proposing to restore a model-to-sheet generator should read this first.
+- **What would settle it.** Nothing to settle - it is a decision. **What would
+  REVERSE it is his instruction and nothing else**, and the deleted code is in
+  git history, not gone.
