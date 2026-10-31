@@ -5,7 +5,12 @@
  * export - that guard is what this declaration exists for."*
  *
  * `./drafted-sheet.ts` holds the body, and says why the comparison is
- * `lib/schgen/gates/round-trip.ts` rather than `./kicad-round-trip.ts`'s `expectSameCircuit`.
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./kicad-round-trip.ts`'s
+ * `expectSameCircuit`.
+ *
+ * **THIS PAGE CARRIES THE ONE DECLARED PIN SWAP OF THE FIVE.** `R2` is drawn with its output end
+ * on the right, which the by-kind rule does not derive, so `./sheet-model.ts`'s
+ * `DECLARED_PIN_NUMBERS` names it - with the owner's observation that earned it.
  *
  * **THIS PAGE CARRIES SEVEN VALUE DISAGREEMENTS AND THE OTHER THREE PULTEC PAGES CARRY ONE**, which
  * is the one thing worth stating here rather than in the shared module. Six capacitor values and

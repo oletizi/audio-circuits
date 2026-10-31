@@ -5,7 +5,8 @@
  * export - that guard is what this declaration exists for."*
  *
  * `./drafted-sheet.ts` holds the body, and says why the comparison is
- * `lib/schgen/gates/round-trip.ts` rather than `./kicad-round-trip.ts`'s `expectSameCircuit`.
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./kicad-round-trip.ts`'s
+ * `expectSameCircuit`.
  */
 import {
   registerDraftedPageTests,

@@ -11,8 +11,16 @@
  * lowering, in which an off-board part's footprint is the string `PADS<n>` and its pins are
  * numbered by `PAD_ORDER` index. A Pultec section board has four to seven off-board parts, so that
  * comparison would report a disagreement on every one of them about a vocabulary neither side is
- * wrong in. What compares a drawing against a model is `lib/schgen/gates/round-trip.ts`, whose five
- * separately-reported comparisons were written for exactly this, and that is what this module runs.
+ * wrong in. What compares a drawing against a model is `lib/kicad/sheet-agreement.ts`'s
+ * `compareSheetToModel`, whose six separately-reported comparisons were written for exactly this,
+ * and that is what this module runs.
+ *
+ * **IT RAN `lib/schgen/gates/round-trip.ts` UNTIL THE SWITCH, and the two were MEASURED to agree
+ * before the switch was made** - element for element, in order, on all six lists, on all five
+ * approved pages (`./guard-equivalence.test.ts`, which exists only while both implementations do).
+ * `roundTrip` needs the schematic generator's whole front half to build a model to compare
+ * against; `compareSheetToModel` takes a `Network`, a designator map and a pin-number map, which
+ * is what `./sheet-model.ts` hands it without the generator.
  *
  * **IT DOES NOT RUN `kicad-cli`, DELIBERATELY.** The netlist it reads is the board's declared,
  * committed `.net`, and `make netlist-agrees` re-exports that file from the sheet and reconciles it
@@ -25,8 +33,9 @@
  *
  * **AND IT DOES NOT DRAW ANYTHING.** `generateReported` would lay the circuit out with ELK and
  * render it, which is several seconds a board and couples this guard to every file under
- * `lib/schgen/render/`. Only the IR and the designator annotation are needed to compare a model
- * with a netlist, and both exist before any geometry does - so this builds exactly those two.
+ * `lib/schgen/render/`. A model, its designators and its pin numbers are all that comparing a
+ * model with a netlist needs, and none of the three is geometry - so `./sheet-model.ts` builds
+ * exactly those three and nothing else.
  */
 import { expect, test } from "bun:test"
 import { createHash } from "node:crypto"
@@ -34,7 +43,8 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { importNetlist, type ImportedNetlist } from "../../lib/kicad/netlist.ts"
-import { roundTrip, type RoundTripProblems } from "../../lib/schgen/gates/round-trip.ts"
+import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
+import { modelForSheet } from "./sheet-model.ts"
 import { buildCircuit } from "../../lib/schgen/ir/build.ts"
 import { annotate, EMPTY_LOCK } from "../../lib/schgen/lock/annotate.ts"
 import type { Circuit, PartLabel } from "../../lib/schgen/ir/types.ts"
@@ -93,7 +103,13 @@ export function recordedSheetDigest(circuit: string, board: string): string {
   return first[1] as string
 }
 
-/** The board's IR and its designator annotation - everything `roundTrip` compares a netlist against. */
+/**
+ * The board's IR and its designator annotation - everything `roundTrip` compares a netlist against.
+ *
+ * **NOTHING IN THIS FILE USES IT ANY MORE.** Its one reader is `./guard-equivalence.test.ts`,
+ * which needs the generator-backed side of the comparison to measure the standalone one against,
+ * and which goes with the generator.
+ */
 export interface ModelUnderTest {
   readonly circuit: Circuit
   readonly refs: ReadonlyMap<PartLabel, string>
@@ -142,12 +158,6 @@ export function committedNetlist(netlist: string): ImportedNetlist {
   return importNetlist(fs.readFileSync(path.join(moduleRepoRoot(), netlist), "utf8"))
 }
 
-/** `roundTrip` over one board: its IR and refs against its committed netlist export. */
-export function roundTripOf(board: string, netlist: string): RoundTripProblems {
-  const { circuit, refs } = modelUnderTest(board)
-  return roundTrip(circuit, refs, committedNetlist(netlist))
-}
-
 /**
  * `exported` with one pin moved from its largest net to its second largest.
  *
@@ -179,13 +189,13 @@ export function withOnePinMoved(exported: ImportedNetlist): ImportedNetlist {
 }
 
 /**
- * The two disagreements the four SIX-WAY-SELECTOR Pultec pages carry, in the exact words `roundTrip`
- * reports them, because they are properties of how those sheets were drawn rather than of any
- * circuit.
+ * The two disagreements the four SIX-WAY-SELECTOR Pultec pages carry, in the exact words
+ * `compareSheetToModel` reports them, because they are properties of how those sheets were drawn
+ * rather than of any circuit.
  *
  * `SW1` is drawn with the `SW_Rotary_1x6_MP` stock symbol, which carries a mechanical mount lug the
  * model does not - *"a mounting pin `MP`, which is a mechanical pad and is on no net in the
- * model"* (`circuits/pultec/schematic/section-board.ts:162`), the same fact `docs/known-gaps.md`
+ * model"* (`circuits/pultec/physical/parts.ts`'s `POLE_PIN`), the same fact `docs/known-gaps.md`
  * **G282** records - and its `Value` field holds that symbol's name where the model holds the
  * model's own value. Asserted EXACTLY rather than tolerated loosely: a second entry appearing in
  * either list is a new disagreement and must fail.
@@ -193,7 +203,7 @@ export function withOnePinMoved(exported: ImportedNetlist): ImportedNetlist {
  * **THIS SAID "EVERY DRAFTED PULTEC PAGE" UNTIL `pultec-mid` REFUTED IT, and the wording is
  * corrected rather than widened.** The mid page is drawn with `Switch:SW_Rotary_1x12`, which has no
  * `_MP` variant and therefore no mount lug, and its unused twelfth contact is declared
- * not-connected in the model through `ComponentOverride.ncPins` rather than left to disagree. So
+ * not-connected through `./sheet-model.ts`'s pin-number map rather than left to disagree. So
  * that page's `pinIdentity` is EMPTY, which is why the pin list below is per-board
  * (`DraftedPageUnderTest.pinDisagreements`) and not a constant the shared body asserts for
  * everyone. A shared body that hard-codes one board's symbol choice is a check that passes for the
@@ -214,7 +224,7 @@ export interface DraftedPageUnderTest {
   /** The committed netlist export, repository-relative, exactly as `perfboard.json` declares it. */
   readonly netlist: string
   /**
-   * Every `pinIdentity` disagreement this page carries, in `roundTrip`'s own words.
+   * Every `pinIdentity` disagreement this page carries, in `compareSheetToModel`'s own words.
    *
    * **PER-BOARD BECAUSE IT IS A FACT ABOUT WHICH SYMBOL THE PAGE WAS DRAWN WITH**, and the five
    * Pultec pages are not drawn with the same selector: four carry `SW_Rotary_1x6_MP`'s mechanical
@@ -224,7 +234,8 @@ export interface DraftedPageUnderTest {
    */
   readonly pinDisagreements: readonly string[]
   /**
-   * Every `values` disagreement this page carries, in `roundTrip`'s own words, sorted as it sorts.
+   * Every `values` disagreement this page carries, in `compareSheetToModel`'s own words, sorted as
+   * it sorts.
    *
    * **ASSERTED EXACTLY AND NEVER AS A COUNT.** A page whose value text drifts from the model's in
    * one more place must fail here, and a list is the only form of this claim that says WHICH.
@@ -258,21 +269,21 @@ export function registerDraftedPageTests(page: DraftedPageUnderTest): void {
   })
 
   test(`${board}: every component and every net agrees between the drafted page and the model`, () => {
-    const model = modelUnderTest(board)
-    const problems = roundTrip(model.circuit, model.refs, committedNetlist(netlist))
+    const model = modelForSheet(board)
+    const problems = compareSheetToModel(model.network, model.designators, model.pinNumbers, committedNetlist(netlist))
     expect(problems.componentIdentity).toEqual([])
     expect(problems.netMembership).toEqual([])
   })
 
   test(`${board}: moving one pin between two nets is reported - the control for the zero above`, () => {
-    const model = modelUnderTest(board)
+    const model = modelForSheet(board)
     const mutated = withOnePinMoved(committedNetlist(netlist))
-    expect(roundTrip(model.circuit, model.refs, mutated).netMembership).not.toEqual([])
+    expect(compareSheetToModel(model.network, model.designators, model.pinNumbers, mutated).netMembership).not.toEqual([])
   })
 
   test(`${board}: the page's known disagreements with the model are exactly the drawn-elsewhere ones`, () => {
-    const model = modelUnderTest(board)
-    const problems = roundTrip(model.circuit, model.refs, committedNetlist(netlist))
+    const model = modelForSheet(board)
+    const problems = compareSheetToModel(model.network, model.designators, model.pinNumbers, committedNetlist(netlist))
     // The selector's mechanical mount lug and its Value field: properties of the stock symbol the
     // page is drawn with, not of any circuit. See the two constants above - and note that the lug
     // is NOT universal, which is why this list comes from the board rather than from a constant.

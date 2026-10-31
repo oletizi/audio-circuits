@@ -5,15 +5,17 @@
  * export - that guard is what this declaration exists for."*
  *
  * `./drafted-sheet.ts` holds the body, and says why the comparison is
- * `lib/schgen/gates/round-trip.ts` rather than `./kicad-round-trip.ts`'s `expectSameCircuit`.
+ * `lib/kicad/sheet-agreement.ts`'s `compareSheetToModel` rather than `./kicad-round-trip.ts`'s
+ * `expectSameCircuit`.
  *
  * **THIS PAGE'S `pinIdentity` IS EMPTY WHERE THE OTHER FOUR CARRY ONE ENTRY, and that is the one
  * thing worth stating here rather than in the shared module.** The four six-way boards are drawn
  * with `Switch:SW_Rotary_1x6_MP`, whose mechanical mount lug is on no net in the model. This page
  * is drawn with `Switch:SW_Rotary_1x12`, which has **no `_MP` variant and so no lug**, and its
- * unused twelfth contact is declared not-connected in the model through `ComponentOverride.ncPins`
- * - it appears in the export as the one-member net `unconnected-(SW1-Pad12)` and `roundTrip` has
- * nothing to report about it. An empty list is asserted here as a positive claim, not omitted.
+ * unused twelfth contact is declared not-connected through `./sheet-model.ts`'s pin-number map - a
+ * number in that map that no model pin claims IS a declared no-connect - so it appears in the
+ * export as the one-member net `unconnected-(SW1-Pad12)` and the comparison has nothing to report
+ * about it. An empty list is asserted here as a positive claim, not omitted.
  *
  * **AND THIS BOARD HAS TWO SWITCHES, SO IT CARRIES TWO VALUE DISAGREEMENTS RATHER THAN ONE.** Both
  * `SW1` and the boost/off/cut mode switch `SW2` hold their stock symbol's name in the `Value` field
