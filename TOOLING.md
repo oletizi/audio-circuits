@@ -75,8 +75,12 @@ by an agent that had not drawn the first two:**
   **It was required here for `bun tools/schgen/board-sheets.ts`, which produced
   the sheet the intent was verified against, and that command is deleted.** The
   intent is verified against the netlist exported from the model instead -
-  `scripts/intent_vs_model.py`, named in step 1 below - so the check survives
-  and the sheet it used to be taken against does not.
+  `docs/research/2026-10-29-low-cut-full-run/scripts/intent_vs_model.py`, the
+  path step 1 below writes - so the check survives and the sheet it used to be
+  taken against does not. **That full path is deliberate**: there is no
+  `scripts/` directory at the repository root, and the bare `scripts/…` form
+  this file uses in the verification set resolves only from inside a run
+  directory under `docs/research/`.
 - **ImageMagick and git were missing from this table entirely**, and the loop
   cannot produce a picture anyone can look at without ImageMagick. A toolchain
   list assembled from what you remember using omits the tools that worked.

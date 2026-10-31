@@ -170,10 +170,20 @@ So:
     every committed page with the real `kicad-cli` and compares it against the
     board model, and `tests/circuits/transistor-preamp-kicad-round-trip.test.ts`
     for the five preamp boards.
-  - **Geometry - crossings, T-meetings, orphan junction dots, margins**:
-    `TOOLING.md`'s verification set names each measure and the script that takes
-    it. **There is no single command here that reports them**, and this file is
-    not the place to invent one.
+  - **Geometry - crossings, T-meetings, orphan junction dots**:
+    `TOOLING.md`'s verification set is the list of measures to report before and
+    after a repair. **It is a list of measures and NOT a toolkit, which is the
+    thing to know before relying on it.** Only two of its rows name a script -
+    the orphan-junction audit and the duplicate-label survey - and both are
+    per-run copies under `docs/research/`; a few more name `kicad-cli` or a
+    counter in the check loop; **and the rest name no command at all**, carrying
+    a caution or a definition where a tool would go, because nobody has written
+    one. **Most of the geometry is therefore taken by hand in the loop.** Read
+    the table before quoting it, go by what each row's second column actually
+    says, and do not read a measure's presence there as a measure something
+    runs. **There is no single command here that reports any of this**, and this
+    file is not the place to invent one. Margins are not in that table at all -
+    they are in the repair-class section of the same file.
 
   **This paragraph used to carry the census, and the owner struck it on
   2026-10-27:** *"why are there entries about specific artifacts and
@@ -265,10 +275,18 @@ have found a demand to question rather than a refusal to satisfy.**
 
 **AND BEFORE YOU RAISE AN OWNER QUESTION, SEARCH FOR WHETHER THIS REPOSITORY
 ALREADY ANSWERS IT.** The fourth instance was answered in a code comment written
-before the task began - `circuits/pultec/schematic/section-board.ts:162`:
-*"a mounting pin `MP`, which is a mechanical pad and is on no net in the
-model."* The agent measured the symbol, reached that same conclusion, recorded
-it in **G282** clause 4, **and then asked him anyway.** An owner question costs
+before the task began - now `circuits/pultec/physical/parts.ts:245`, above
+`POLE_PIN`: *"a mounting pin `MP`, which is a mechanical pad and is on no net in
+the model."* The agent measured the symbol, reached that same conclusion,
+recorded it in **G282** clause 4, **and then asked him anyway.**
+
+  **That citation read `circuits/pultec/schematic/section-board.ts:162` until
+  2026-10-31, and that file was deleted by this repository's own
+  generator-removal plan** - the comment moved with `POLE_PIN` and `THROW_PINS`
+  to the parts file, verbatim. **A dead pointer here defeats the whole
+  paragraph**, since what it buys is the next agent finding the answer instead
+  of spending the owner's attention on a question that was never his. Repointed
+  and the line verified by reading it. An owner question costs
 him attention and stalls the boards behind it, so it is the last resort and not
 the first: a question he could not answer from the circuit is a question that
 was never his.

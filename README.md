@@ -43,12 +43,15 @@ carrying the sha256 the verdict is bound to.
 > `lib/kicad/schematic.ts` and the three `schgen` CLI verbs — in the plan at
 > `docs/superpowers/plans/2026-10-30-remove-schgen.md`, with the findings in
 > `docs/research/2026-10-30-schgen-removed.md`. **The `kicad-cli` proof the stub
-> was being kept for did not depend on the stub**: it is
-> `tests/circuits/transistor-preamp-kicad-round-trip.test.ts`, which exports
-> each board's committed `.kicad_sch` under `circuits/transistor-preamp/` with
-> the real `kicad-cli` and compares it against the live model — so all five
-> boards kept the proof and only its subject changed. **G247**, **G248** and
-> **G81** measured a generator that no longer exists.
+> was being kept for did not have to die with it — but it did change subject.**
+> The old tests wrote a fresh throwaway stub from the live model and exported
+> that, so they could not survive the writer; what survived is the comparison,
+> and `tests/circuits/transistor-preamp-kicad-round-trip.test.ts` now runs the
+> same three assertion shapes against each board's **committed** `.kicad_sch`
+> under `circuits/transistor-preamp/`. **No test will again export a freshly
+> written stub**; all five boards keep a live-`kicad-cli` model-against-schematic
+> proof, pointed at the sheet they actually ship. **G247**, **G248** and **G81**
+> measured a generator that no longer exists.
 
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
