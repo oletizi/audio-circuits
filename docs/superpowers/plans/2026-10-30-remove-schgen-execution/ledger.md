@@ -525,3 +525,485 @@ Task 7: 4117 pass / 8 fail (exact baseline), typecheck clean, make check on
 Task 7: carried forward - the registry finding must reach Task 10's findings
   doc, and docs/known-gaps.md once the owner rules.
 Task 7: review dispatched.
+Task 7: review spec OK, quality APPROVED, 1 Important. Reviewer re-swept two
+  ways (path literal AND by symbol name) and confirmed four importers, no
+  fifth, including no runtime-only path. Moved test byte-for-byte on its three
+  assertions. port-manifest fix confirmed a real fix: that test fails on
+  accountedButMissing exactly when a listed file is not at its path.
+Task 7: Ruling: the Important stands - the implementer put its registry warning
+  in lib/schgen/readability/baseline.ts, which TASK 9 DELETES WHOLESALE, and
+  called that location natural without answering the brief's actual question of
+  whether it survives. It does not. Fixed by placing schematic/README.md beside
+  the registry itself, which Task 9 does not touch. Cost if wrong: a sibling
+  README where a code comment would have done - trivial against a finding that
+  evaporates.
+Task 7: fix landed at 78985ef. Carries the measurements (one commit b526c1d
+  2026-10-20, "baselines": [] with zero entries ever, nothing can read it after
+  Task 9), states the decision is the owner's and not an agent's, and records
+  the transferable lesson that a warning in a doomed file is not a durable
+  record.
+Task 7: CONTROLLER PROCESS DEFECT, found by this reviewer and acted on.
+  The whole execution record - ledger and seven task reports - was still in the
+  gitignored .superpowers/ workspace seven tasks in. CLAUDE.md requires it
+  committed beside the plan precisely because an entry there is destroyed by
+  git clean -fdx. Committed at d696854 to
+  docs/superpowers/plans/2026-10-30-remove-schgen-execution/ with a README
+  carrying what the diff cannot show. Waiting for the final review would have
+  been the same mistake the rule exists to prevent.
+Task 7: complete (commits f5694c9..78985ef, review clean)
+Task 8: dispatched (BASE 78985ef), implementer a4be589f1cd60c1d5, model sonnet.
+Task 8: DONE at f6a4d40. resolveSchematic reduced to two outcomes, printed and
+  none. The generate path, the temp-directory lifecycle, the worstClass gate,
+  generatedNote and withheldSchematicNotice all gone.
+Task 8: THE SYMBOL-NAME SWEEP PAID OFF A THIRD TIME. packet.ts imported
+  boardRefs and boardSheets from tools/schgen/board-sheets.ts directly as its
+  own deps defaults - NOT in the brief's file list, and separate from
+  schematic-source.ts. Found by sweeping for the symbol names rather than the
+  path, which is now three tasks running (6, 7, 8) where that instruction
+  caught a consumer the brief had missed.
+Task 8: two test files deleted wholesale with per-assertion accounting in the
+  commit message: one assertion superseded by existing coverage in
+  guide.test.ts, nine with no successor because the behaviour they tested no
+  longer exists.
+Task 8: no withholding reintroduced. The only surviving notice path is the
+  pre-existing "this board declares no sch at all" case, which is not a ground
+  for holding a drawing back - EVALUATING-DRAWINGS section 3 permits exactly
+  one, an electrical fault.
+Task 8: 4107 pass / 8 fail (drop of 10 is exactly the two deleted files, same
+  eight by name), typecheck clean, make check exactly four boards, all five
+  guides regenerated with page 2 the merged schematic, five digests unchanged.
+Task 8: review dispatched.
+Task 8: review spec OK, quality APPROVED. NO Critical, NO Important, no Minor
+  worth recording - the first completely clean task in the plan.
+  Reviewer confirmed the withheld and generated members are deleted from the
+  TYPE, not merely unreached, and grepped tools/guide/ for worstClass,
+  "withheld", "generated", boardRefs, boardSheets and schgen - every remaining
+  hit is prose. No path under tools/guide/ can suppress or decline a declared
+  sheet for any reason but "this board declares none".
+  Read both deleted test files in full: four of five assertions in one and all
+  five in the other drive types or signatures that no longer exist; the one
+  superseded assertion was checked against guide.test.ts:193-226 and found to
+  be a SUBSET of what already covers it.
+  Spot-checked the guide by measurement: 12 pages, the Schematic row reads
+  "page 2 of this document, printed from drafted/.../pultec-hi-cut...", and
+  pdftotext on page 2 returns schematic content. Explicitly declined to
+  characterise the drawing.
+Task 8: complete (commits 78985ef..f6a4d40, review clean, 0 minors)
+Task 9: dispatched (BASE f6a4d40), implementer a47f576711a676399, model opus.
+Task 9: DONE in five staged commits 84e810b, 38c147c, 6085dc5, dfd629e,
+  7a1b813. 342 files, ~42,500 lines deleted. bun test 2669 pass / ZERO fail -
+  the eight port-fidelity failures went with their code. make check on exactly
+  the four baseline boards. Five digests byte-identical, git diff on drafted/
+  and schematic/ empty. All five guides rebuild with page 2 the schematic, and
+  that message is gated on carriesSchematic so it is evidence rather than
+  assertion.
+Task 9: accounting - all 124 test files had their subject inside the deleted
+  trees, MEASURED by resolving every import rather than assumed. Five outliving
+  claims were already ported by Tasks 1/5/6, each verified against its new home.
+  ONE WAS UNACCOUNTED AND IS THE FINDING: stock-symbols.test.ts arm 1 was the
+  only check that the vendored symbols are byte-identical to the installed
+  library, and BOTH SIDES OF THAT CLAIM SURVIVE. Ported to
+  tests/kicad/symbol-names.test.ts with a perturbation control. Four guards
+  genuinely dropped and named.
+Task 9: THE SWEEP FOUND MORE THAN THE BRIEF AGAIN, fourth task running.
+  Sixteen layout-intent files, not the ten I listed. Three ported files outside
+  lib/schgen that became unreachable. And four repo-wide static guards whose
+  BOTH-DIRECTION exemption pins broke when tests/schgen went. Handled well:
+  each exemption list is DELETED rather than emptied, with a comment where it
+  stood, so every swept id now has to resolve with nothing to skip past.
+  A reachability sweep finds exactly one unreached module in 620.
+Task 9: concerns carried - (1) valueIsSymbolPartName is now an orphan, labelled
+  rather than deleted since the brief did not list it; (3) two docs carry re-run
+  instructions for deleted test files and the guard that would have caught that
+  is one of the four dropped - TASK 10 MUST SWEEP FOR THESE; (4) docs/research
+  pasted probe output is no longer held to its committed log; (5) elkjs is still
+  a package.json dependency with no importer, left out of a deletion commit to
+  avoid a lockfile change; (6) pt2399-core still fails make check on a BOM rule
+  before its drawing is ever looked at, which is the G303 shape.
+Task 9: review dispatched.
+Task 9: review spec OK, quality APPROVED with 3 Important, 3 Minor. Reviewer
+  resolved imports for all 126 deleted test files (exactly 3 with no schgen
+  import, each verified a correct drop), confirmed all four exemption guards
+  are STRICTER not quieter (list deleted AND the skip-arm removed from the
+  sweep), reconciled the 1,446-case drop exactly, and confirmed every protected
+  and relocated item intact with git diff on drafted/ and schematic/ empty.
+Task 9: IMPORTANT 1 - THE ONE DROP WHOSE SUBJECT SURVIVES. document-pastes
+  (44 cases) was dropped as "docs/research/'s pasted output, out of scope".
+  verify-pastes.ts:59 reads DOCUMENT = docs/schematic/text-handling-research.md
+  - the 432 KB deliverable CLAUDE.md names, which SURVIVES. The checker imports
+  only node:fs; it sat under tools/schgen/ by accident of history. Its log went
+  too, so the guard could not be rebuilt from the tree at all.
+  Ruling: restore rather than disclose. Cost if wrong: a relocated checker and
+  four logs against a surviving deliverable silently unguarded.
+Task 9: IMPORTANT 2 - the new control could not fail.
+  expect(installed).not.toBe(vendored + " ") is a tautology; under the sabotage
+  its own comment named, both lines pass. The inert-control defect this plan
+  caught three times in other code, written into the fix for it.
+Task 9: fix landed at 22e184e. Guard restored as a MOVE not a rebuild -
+  tools/text-metrics/verify-pastes.ts, tests/text-metrics/document-pastes.test.ts
+  (44 cases pass, commit-pin coupling included), and FOUR logs (not one) beside
+  the document they pin, each verified byte-identical by sha256 against git.
+  The four probes stay deleted as generator code, and the one claim that
+  genuinely changed - section 6, whose probe needed nothing external - is
+  recorded on that section's own comment.
+  Control rebuilt: comparison factored into vendoredDrift() so a control cannot
+  exercise a different comparison; one control perturbs the INSTALLED side,
+  one hands the flattener a different symbol. PROVEN BY DRIVING THE SABOTAGE -
+  old control's two lines both pass, new control fails.
+Task 9: TOTALS CORRECTED. 367 files and 69,733 lines across the three deletion
+  commits, net 361 after the six restored. My relay of 342/~42,500 to the owner
+  was wrong - that was commit 6085dc5 alone - and I repeated it on the
+  implementer's authority without checking. Corrected to him.
+Task 9: FOR TASK 10, the part it cannot infer: NOTHING IN THE REPOSITORY GUARDS
+  A DOC-TO-TEST POINTER ANY MORE. The guard that did was a whitelist, every row
+  cited a deleted test file, and it pinned its own length - so a repaired
+  citation in m1-remeasurement.md or reference-graph-checks.md will not be held
+  to its test by anything, and a future one goes stale silently.
+Task 9: scoped re-review dispatched.
+Task 9: re-review returns ALL THREE ADDRESSED, every claim re-derived rather
+  than taken: the checker diffed against git show 84e810b^ and found identical
+  in logic (only path strings and added commentary differ), test(  count 45 in
+  both, all four logs sha256-matched against their pre-deletion blobs
+  (77459d6f, b045786a, aef8898f, 4fc805b5), no control bytes in any of the six
+  touched files, diff footprint exactly ten paths with nothing else resurrected,
+  and the totals re-derived independently from git show --name-status on all
+  three deletion commits: 154+4+209 = 367 files, 26,820+448+42,465 = 69,733
+  lines, net 361.
+Task 9: MY OWN LEDGER CLAIM NARROWED by the re-review, and it is the honest
+  correction. I wrote that the factoring means "a control cannot exercise a
+  different comparison than the real arm" and that both controls call
+  vendoredDrift. Control 2 does NOT - it calls flattenedSymbol directly and
+  compares by hand, so it would not catch a vendoredDrift hardcoded to return
+  undefined. Ruling: ACCEPT as is. The two controls sabotage two different
+  layers on purpose - Control 1 shares vendoredDrift and drives it to fail,
+  Control 2 proves flattenedSymbol honours its name argument - and the defect
+  this round existed to fix, a self-comparison that cannot fail, is gone and
+  was driven. What was wrong was my sentence, not the test. Cost if wrong: a
+  sabotage of vendoredDrift itself is caught by Control 1 but not Control 2,
+  which is one control rather than two on that layer.
+Task 9: complete. Commit range 38c147c..22e184e.
+Task 10: PRE-DISPATCH SWEEP AND RULINGS. The brief's Step 3 is one line for
+  four files; the sweep says README.md alone has four separate regions of live
+  instruction, and six files the plan never names carry dangling commands.
+  Ruling: Task 10 corrects every file whose prose reads as a LIVE INSTRUCTION,
+  and leaves every dated or verbatim record alone. The rulings, each with what
+  it costs if wrong:
+Task 10: Ruling A - NO REPLACEMENT TOOL EXISTS for board-sheets.ts, and
+  CLAUDE.md must not invent one. "Which boards draw" is now answered by
+  drafted/<circuit>/<board>/ plus each RECORD.md digest, held by
+  tests/circuits/drafted-kicad-round-trip.test.ts, with TOOLING.md for how a
+  page gets there. The governance of that paragraph - a figure in prose is a
+  transcription with a date on it - survives verbatim; only the mechanism
+  changes. Cost if wrong: the paragraph names a weaker check than exists.
+Task 10: Ruling B - NO FORWARD REFERENCE to the institutionalisation plan's
+  unbuilt make targets (make draw, make draught-doctor). A command that does
+  not exist yet is the same defect being removed, one plan early. Cost if
+  wrong: CLAUDE.md is correct today and must be amended again when they land -
+  which is the right way round.
+Task 10: Ruling C - TOOLING.md gets its falsehoods corrected and nothing more
+  (the bun justification at :54, the board-sheets command at :68, the
+  lib/schgen sentence at :38-40). Task 6 of
+  docs/superpowers/plans/2026-10-30-institutionalise-draughting.md owns
+  TOOLING.md's structure. Cost if wrong: one file edited twice.
+Task 10: Ruling D - WHAT IS A RECORD AND MAY NOT BE EDITED, widening the
+  brief's Step 4 grep: docs/schematic/verdicts.md (the owner's verbatim words
+  bound to a sha256 - append-only), every docs/schematic file with a date in
+  its name, docs/schematic/schgen-development-history.md, docs/known-gaps.md
+  (frozen), docs/research/, docs/superpowers/, DEVELOPMENT-LOG.md, and the five
+  drafted/ RECORD.md files. A citation in these that resolves to nothing is
+  inert, which CLAUDE.md explicitly accepts. Cost if wrong: an owner verdict or
+  a dated finding is quietly rewritten, which is the one unrecoverable edit on
+  this task.
+Task 10: Ruling E - template-parity.md and template-parity-anchors.md are
+  DELETED, not annotated. Both are headed "GENERATED - do not hand-edit" and
+  name a generator verb (bun run schgen-parity, bun run schgen-anchors) that no
+  longer exists, so they are derived artifacts nothing can regenerate or check
+  - "supersede means delete", and a stale derived artifact is exactly what
+  makes stale look current. Their citation from the dated 2026-10-26 governance
+  review goes inert by Ruling D. Cost if wrong: two generated tables about a
+  deleted generator's templates, recoverable from git at the commit before.
+Task 10: Ruling F - m1-remeasurement.md and reference-graph-checks.md keep
+  their measurements and lose their instruction. Each command block is headed
+  with the fact that every command in it was deleted, naming the commit, so the
+  block stops reading as something to run. Carry the Task 9 re-review's finding
+  into the heading: NOTHING IN THE REPOSITORY GUARDS A DOC-TO-TEST POINTER ANY
+  MORE. Cost if wrong: two documents still read as runnable.
+Task 10: Ruling G - THE HAZARD ON THIS TASK, and it is a real one.
+  docs/schematic/text-handling-research.md is guarded by the 44 cases of
+  tests/text-metrics/document-pastes.test.ts, restored in Task 9's fix round,
+  which compare its pasted blocks byte for byte against the four logs beside
+  it. Its two command lines at :106-107 are stale - the probe is deleted, and
+  verify-pastes.ts MOVED to tools/text-metrics/. Any edit to that file must be
+  made with the guard re-run, and an edit that lands inside a guarded paste
+  block is a defect, not a conflict to resolve by changing the log. Cost if
+  wrong: the guard restored one commit earlier is broken by the next one.
+Task 10: Ruling H - schematic/README.md is written in the future tense about a
+  Task 9 that has run, and its registry now has no loader at all. Past tense,
+  and say that plainly; it is the readability-baselines owner question's home
+  and must not lose the question. Cost if wrong: the one surviving open
+  question on this plan reads as pending work on a deleted file.
+Task 10: dispatch held until Task 9's scoped re-review returns - a fix round
+  and an implementer must never run concurrently.
+Task 10: dispatched.
+Task 10: implementer DONE_WITH_CONCERNS. Seven commits, 22e184e..5f1e906,
+  14 files, +807/-529. typecheck clean after every commit; the paste guard's
+  44 cases run five times, green, before and after every edit to the guarded
+  document; the Step 4 record-set grep empty on all four prose commits and
+  over the whole range the only record-set path is A on the new findings
+  document.
+Task 10: MY BRIEF CARRIED A FALSE FACT AND THE IMPLEMENTER CAUGHT IT. I wrote
+  "five Pultec boards have approved pages". VERIFIED MYSELF against the five
+  RECORD.md files: FOUR SAY AWAITING RE-APPROVAL. hi-boost, low-boost and
+  low-cut were re-papered A4 to US Letter and then centred; mid was re-drawn
+  from A3. A verdict is bound to a sha256 and does not transfer when the bytes
+  change, which is this project's own rule, so only pultec-hi-cut carries a
+  verdict bound to the bytes that are there - and its own RECORD.md says so in
+  as many words: "THIS IS THE ONE PULTEC PAGE WHOSE VERDICT IS BOUND TO THE
+  BYTES THAT ARE... The other four pages in drafted/pultec/ are awaiting
+  re-approval".
+  This is the "stale cause" failure in its purest form and I committed it: I
+  relayed a count that was true on 2026-10-30 before the re-paper, carried it
+  into a dispatch as a premise, and the only reason it did not propagate is
+  that the implementer read the records instead of the brief. The phrase
+  survives in test-file comments and will keep propagating.
+  Ruling: no prose anywhere asserts an approval status; verdicts.md is the
+  authority and the records point at it. OWNER ITEM, not a plan item: four
+  re-papered pages need showing to him for re-approval. It does not block this
+  plan - nothing in it changes a page - and it must not be buried in it.
+  Cost if wrong: four pages read as approved that he has not seen in their
+  current form, which is the one thing EVALUATING-DRAWINGS exists to prevent.
+Task 10: UNRULED EDIT TO JUDGE AT REVIEW - docs/schematic/false-greens.md.
+  No ruling named it. The implementer found eight "what guards against it
+  here" clauses naming guards inside the deleted tree - a catalogue of checks
+  that lie, claiming protection it had lost - and restructured it into a head
+  table: three LIVE and moved with paths repaired, five GONE, one SPLIT.
+  Carried to the reviewer as the largest unruled edit in the diff, with the
+  note that a false-greens catalogue wrongly claiming a guard is live is
+  itself a false green.
+Task 10: review dispatched.
+Task 10: review returns spec MEETS brief and Rulings A-H, quality STRONG, no
+  Critical, five Important, seven Minor. Ruling D re-derived clean over the
+  whole range; the census governance in CLAUDE.md confirmed BYTE-IDENTICAL by
+  segment comparison rather than clause grep; zero control characters in all
+  twelve files on two scans; the paste guard re-run green AND GIVEN A TEETH
+  TEST - one guarded run line tampered in memory produced one named failure,
+  which is the first time on this plan a guard has been proven to have teeth
+  rather than merely reported passing; diff-to-fence intersection zero of 61
+  added and zero of 14 removed lines inside any guarded block.
+Task 10: the reviewer's one-line diagnosis, and it is the right one - THE
+  ACCOUNTING OF THE WORK OVERSTATES THE WORK, by one table row, one record
+  location and one count. All five Importants are that shape, and I-1 and I-2
+  are the task committing its own defect class:
+  I-1 TOOLING.md:78 adds a NEW dangling path, scripts/intent_vs_model.py,
+    with no scripts/ at the repo root and the real path in step 1 of the same
+    file.
+  I-2 CLAUDE.md:173-176 names a STRONGER check than exists - "names each
+    measure and the script that takes it" over a table where 4 of 11 rows name
+    no script, 2 name one, and "margins" is not a row at all. Ruling A's cost
+    inverted: the ruling forbade inventing a tool, the sentence invented a
+    property of a real one.
+  I-3 CLAUDE.md:268 cites section-board.ts:162, deleted by this plan in
+    6085dc5, inside the paragraph whose purpose is to stop an agent re-raising
+    an answered owner question - so the pointer failing defeats the paragraph.
+  I-4 false-greens.md's head table enumerates nine of ten repaired clauses,
+    omitting mechanism 16, in a table that invites the reader to check it.
+  I-5 the last present-tense live-generator claim is recorded in one place,
+    not the two both the report and the findings document assert.
+Task 10: accepted without revisiting, each with the reviewer's reason -
+  elkjs (the README sentence IS the record; removing a declaration is not a
+  prose pass), the two deleted miscounts (right call, right reason, named as
+  the fourth instance rather than quietly fixed), and the fourth TOOLING.md
+  falsehood (same statement class, written as a widened gap, nothing
+  structural moved).
+Task 10: THE SURVIVING PROPAGATOR OF MY FALSE PREMISE is
+  tests/circuits/drafted-kicad-round-trip.test.ts:37, which still says five
+  approved pages. Out of this task's scope and deliberately not edited;
+  carried to the final whole-branch review instead, because a comment in a
+  live test is exactly where a stale cause gets read next.
+Task 10: fix round 1 dispatched to the same implementer.
+Task 10: fix round 1 landed, 2642afb and 5149f56, eight files, +103/-33. All
+  five Importants and all seven Minors taken, nothing disputed. typecheck
+  clean; the paste guard's 44 cases driven separately after each of the four
+  edits to the guarded document; control-character scan zero in all twelve
+  files; Ruling D intersection re-derived over the whole range including both
+  fix commits and still one line, A on the findings document.
+Task 10: TWO DECLARED DEPARTURES, BOTH TOWARD LESS, AND I AM ACCEPTING BOTH
+  ON THE GOVERNANCE RATHER THAN ON COMPLIANCE. The review asked for corrected
+  counts in two places; the implementer published neither and said why.
+  I-2: a tally of another file's row types is one more figure in prose, and it
+    would sit six lines above CLAUDE.md's own "a figure in prose is a
+    transcription with a date on it". Its own draft of the tally got one of
+    the counts wrong, which is the argument rather than an excuse for it. The
+    bullet now says what the table IS - a list of measures, not a toolkit -
+    names the two rows that carry a script, and tells the reader not to read a
+    measure's presence there as a measure something runs.
+  I-4: rather than publish a corrected count it wrote the RE-DERIVATION RECIPE
+    into the table's intro, and drove it: it returns 4 8 10 12 14 16 19 23 28
+    29, which is exactly the table's ten rows in that order.
+  Ruling: ACCEPT. Both are the rule this repository actually holds - a
+  measurement goes in a tool or a test that re-runs it, never in prose - and a
+  recipe a reader can run is strictly stronger than a number a reader must
+  trust. The re-review is told to RUN the recipe rather than read it, because
+  a recipe that does not reproduce its claim is the same defect wearing the
+  fix's clothes. Cost if wrong: two descriptions where the review wanted two
+  numbers, and the numbers are one command away.
+Task 10: the review also corrected MY diagnosis, not just the implementer's.
+  The CLAUDE.md phrase I called a self-reference to an edited-away sentence is
+  the owner's own wording at docs/known-gaps.md:24. Recorded in the report
+  over the original misreading rather than edited away, which is the right
+  disposal.
+Task 10: CARRIED FORWARD TO THE FINAL WHOLE-BRANCH REVIEW, both out of this
+  task's scope and both named in the report:
+  - tests/circuits/drafted-kicad-round-trip.test.ts:37 still says five boards
+    have an approved page. My false premise, surviving in a live test comment.
+  - circuits/pultec/physical/parts.ts:247 says "which is why
+    ../physical/parts.ts keeps eleven throws" while living IN physical/parts.ts
+    - an artefact of Task 2's verbatim move, one word to fix. This is the
+    fourth instance on this plan of a verbatim move carrying a self-reference
+    that stopped being true when the file changed address, and it is worth
+    naming as a class in the final review rather than as a typo.
+Task 10: scoped re-review of the fix round dispatched.
+Task 10: complete (commits 22e184e..5149f56, re-review ALL FIVE ADDRESSED,
+  no new breakage). Both declined counts verified rather than accepted: the
+  reviewer read the eleven-row table and confirmed the qualitative wording
+  matches it exactly (two rows name a script, three name kicad-cli or a
+  counter, six name none, and margins is genuinely not a row), and it RAN the
+  false-greens recipe from 6085dc5^ itself and got 4 8 10 12 14 16 19 23 28 29
+  - the table rows exactly, in order. It also noted why the recipe correctly
+  EXCLUDES mechanisms 1 and 5, which mention a schgen path in an Instances
+  paragraph rather than in a What-guards-against-it-here paragraph; that is a
+  distinction a count could not have carried, which is the case for the recipe.
+Task 10: paste guard re-run by the reviewer, 44 pass / 0 fail / 179 expect
+  calls, and the three insertion points mapped against the fence inventory -
+  none inside any run, elk-run, label-run or field-order-run block. Record-set
+  intersection, control-character scan on all eight files, typecheck and the
+  attribution check all re-driven.
+ALL TEN TASKS COMPLETE. Plan range fdbc51a..5149f56: 35 commits, 446 files,
+  +6,546 / -69,375. 368 D, 22 A, 49 M, 7 R.
+Final whole-branch review dispatched over the whole plan range.
+FINAL WHOLE-BRANCH REVIEW: FINISHABLE WITH NAMED FIXES. No Critical, four
+  Important, seven Minor, all text or test-only, none behavioural. Twenty-eight
+  checks RAN, three labelled REASONED, and the three are named in the review
+  rather than left to be discovered.
+FINAL: THE NET-CAPABILITY TEST CAME OUT IN THE PLAN'S FAVOUR. The reviewer
+  went looking for a deleted check with a surviving unprotected subject and
+  could not find one. That is the question the whole plan turned on and it is
+  the first time it has been asked against the deletions rather than against
+  the plan's description of them.
+FINAL: gates all driven solo. typecheck exit 0. bun test 2714 pass / 0 fail,
+  258 files, 38,526 expect calls, 122.31 s, no segfault - matching the reported
+  figures exactly. make check 4 FAIL / 7 ok on pt2399-core,
+  transistor-preamp-lab, -loop and -staged; causes HC5/HC8/HC10 buildability
+  only, NOT ONE FAILURE NAMES A SCHEMATIC, and zero schgen mentions in the log.
+  drafted/ and verdicts.md diffs empty. Five RECORD.md digests 5/5 MATCH with a
+  one-byte perturbation control proving the comparison could fail.
+FINAL: AND THE REVIEWER VERIFIED THE PREMISE I GAVE IT RATHER THAN TAKING IT.
+  Of the eight sha256 digests in verdicts.md, exactly one - e9843e6d,
+  pultec-hi-cut - equals a sheet's present bytes. One approved as-is, four
+  awaiting re-approval. Independent confirmation of the correction I made after
+  my own brief got it wrong.
+FINAL: THE CONTROL-BYTE SCAN FAILED FIRST AND WAS CAUGHT BY ITS OWN CANARY.
+  macOS grep has no -P, so the first attempt reported "0 hits over 0 files" - a
+  check that could not have failed, in the one scan this repository has been
+  broken by four times. It fired only because the reviewer had put a canary in
+  it. Second attempt over all 78 added, modified and renamed files: 0 hits,
+  canary fires. THIS IS THE RULE EARNING ITSELF AGAIN and it goes in the fix
+  dispatch so the next scan carries a canary too.
+FINAL: the four Importants and what makes each one more than a typo -
+  I1 designators.ts:28 and :52 - the latter INSIDE THE THROW - cite "the IR's
+    partShapes rule" where the IR is deleted and grep finds only those three
+    sites. A stale CAUSE in a live refusal, which CLAUDE.md ranks worse than a
+    stale count. The same message's PATH was updated, so the clause was seen
+    and left.
+  I2 drafted-sheet.ts:262 - expect(sha256(bytes+"x")).not.toBe(sha256(bytes))
+    is a property of SHA-256. Its comment claims it catches a
+    recordedSheetDigest returning the computed value, WHICH WOULD PASS BOTH
+    LINES. The third instance of this exact shape on this plan.
+  I3 eighteen approval claims in live code, fifteen false, four inside refusal
+    messages, twelve in files THIS PLAN ADDED - against a findings document of
+    its own that says "do not quote five approved pages". Ruled: not a five-to-
+    one edit. Not one of the eighteen behaves differently because a page is
+    approved, so the fix is to say what the code depends on - the sheets
+    committed under drafted/ - which cannot rot when he re-approves one.
+  I4 the FIFTH verbatim-move self-reference, predicted in the dispatch and
+    found: ten present-tense citations of the deleted
+    tests/circuits/kicad-round-trip.ts across nine files, one of them in a file
+    this plan ADDED. Ruled: repair all ten, including the five judged inert,
+    because a pointer resolving to nothing is what a later reader trusts.
+FINAL: M1 is the only real COMPOSITION of the ~25 deferred minors, and reading
+  them as a set is what found it. Three minors in sheet-model.ts together mean
+  the rebuilt guard's single hand-declared exception hangs off a board key read
+  by bare bracket index with no validation - so a renamed board yields
+  undefined and the exception silently stops applying. The reviewer's one
+  pre-finish fix, and it is in.
+FINAL: deferred, with reasons - M7 (SheetAgreement's six fields are mutable
+  string[]; the consumer that made that harmless is deleted - a hardening, not
+  a defect) and the review's own reasoned item (iii), that make check's four
+  CAUSES are identical to the pre-plan baseline rather than merely the same
+  four boards. The second needs a checkout of fdbc51a and a re-run, which is a
+  measurement and not a fix; recorded so the claim is not quoted as measured.
+FINAL: G303's unratified-drawing watermark directive NOW HAS NO IMPLEMENTATION
+  ANYWHERE - its producer was the generator. Not a net loss of this plan, but a
+  live directive about marking unratified drawings with nothing honouring it,
+  while four of five printed pages await re-approval. Owner-facing, not the
+  fixer's to design; recorded in the findings document.
+FINAL: ONE OBSERVATION ABOUT THE SESSION ITSELF, worth more than any finding
+  in it. The harness injected the PRE-PLAN CLAUDE.md into the reviewer's
+  context - the honey pot itself, naming lib/schgen as the generator and
+  printing the two deleted tools/schgen commands. It read HEAD instead and
+  said so. The same stale text is in this controller's context. An agent that
+  trusts its injected instructions over the file on disk will read the deleted
+  generator as current, which is the exact failure the plan was for, arriving
+  by a route the plan could not close.
+FINAL: one fix dispatch sent - I1 to I4 and M1 to M6, with M3 folded in beside
+  I2 as the same defect. I2 and M3 must be PROVEN BY DRIVING THE SABOTAGE, not
+  reported.
+INJECTED INSTRUCTIONS: MEASURED, NOT SUSPECTED. The final reviewer reported
+  that its context carried the PRE-PLAN CLAUDE.md - the honey pot itself. I
+  probed it rather than relaying it: a freshly dispatched agent, told to use no
+  tool and to quote only what was in front of it, returned the old sentence
+  word for word ("The schematic generator is `lib/schgen/`, and
+  `lib/kicad/schematic.ts` is the superseded stub it replaced"), the fenced
+  block with both deleted commands intact, and NO occurrence of the word
+  copperhead anywhere in its instructions.
+  So the injection is a SESSION-START SNAPSHOT, inherited by every dispatch,
+  not re-read per agent. Every agent spawned from this session is told the
+  deleted generator is how this project draws a schematic and handed two
+  commands that do not exist.
+WHAT WAS CHECKED ON DISK, so this is not confused with a repo defect:
+  - CLAUDE.md at HEAD is correct - the old sentence shown struck, both halves
+    named false, the two commands marked deleted with "nothing replaced either
+    of them", and the copperhead loop named in their place.
+  - AGENTS.md and .claude/agents/part-researcher.md contain no schgen
+    reference at all. CONSTITUTION.md's only hits are the rule against
+    inventing a readability score, which is live and correct.
+  - ALL SIX WORKTREES on this machine were checked for the live honey-pot
+    sentence and the runnable command block: zero and zero in every one,
+    including main, which predates the generator work entirely.
+  - The 28 non-markdown files still naming lib/schgen, tools/schgen or
+    tests/schgen are ALL past-tense provenance - "used to sit at", "lived in",
+    "is now gone", "the deleted", "carried over from". That is the
+    transcription record CLAUDE.md requires a ported file to keep. Deleting
+    them would destroy evidence, not stale instruction. NOT A FINDING.
+THE ONLY STALE COPY IS IN CONTEXT, AND IT IS NOT REMOVABLE FROM INSIDE THE
+  SESSION THAT HOLDS IT. A restart reads the amended file; that is the complete
+  fix and it is the owner's to perform.
+MY OWN FAILURE IN THIS, which is the part worth keeping. I had been supplying
+  dispatches with correct facts ALONGSIDE the injected false ones, never
+  contradicting them. That left every agent to notice the conflict and pick.
+  The final reviewer did pick correctly and said so; a weaker one would have
+  followed its instructions, which is what instructions are for. From here a
+  dispatch CONTRADICTS the injected claim explicitly rather than out-arguing it
+  by context.
+RECORDED IN THE REPO once the fix round lands and the findings document is
+  free: a context snapshot can outlive the file it came from, and the symptom -
+  an agent confidently citing a deleted tool - looks like hallucination rather
+  than a stale injection, which is why it needs writing down rather than
+  remembering.
+OWNER DECISION OUTSTANDING, not taken unilaterally: whether a refusing
+  signpost at each deleted command's old path is wanted. It would turn a
+  module-not-found into a refusal that teaches, which is this repository's
+  preferred shape - but it resurrects tools/schgen/, and the owner's words were
+  that he did not want it "acting as a honey pot for agents to start thinking
+  it's how this project generates schematics". He drew that line; reinterpreting
+  it is not the agent's call.
