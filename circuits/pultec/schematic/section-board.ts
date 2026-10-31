@@ -40,13 +40,15 @@
  * wearing a literal's clothes.
  *
  * **WHAT THIS FILE DECLARES THAT THE MODEL CANNOT HOLD, each with its reason on the declaration:**
- * KiCad designators (`pultecDesignator`), the selectors' pin maps and their unused detents
- * (`switchOverride`, using `POLE_PIN` and `THROW_PINS` from `../physical/parts.ts`), the ground
- * rail and the five port directions.
+ * the selectors' pin maps and their unused detents (`switchOverride`, using `POLE_PIN` and
+ * `THROW_PINS` from `../physical/parts.ts`), the ground rail and the five port directions. KiCad
+ * designators are the Pultec circuit's own id-to-designator map rather than layout intent, so
+ * `pultecDesignator` is used here but declared in `../designators.ts` beside the circuit.
  */
 
 import { negotiablePort } from "../../../lib/schgen/authoring.ts"
 import { GROUND_NET } from "../../../lib/board/scaffold/index.ts"
+import { pultecDesignator } from "../designators.ts"
 import { asModuleOwner, groupsOn, sectionBoard, standInGroup } from "../physical/board.ts"
 import { JUNCTION_NETS, junctionComponents, ownComponents, POLE_PIN, portsOn, rotaryPadOrder, THROW_PINS } from "../physical/parts.ts"
 import type { BlockDeclaration, ComponentOverride, PortDirection, SchematicAuthoring } from "../../../lib/schgen/authoring.ts"
@@ -90,56 +92,6 @@ const PORT_DIRECTIONS: Readonly<Record<string, PortDirection>> = {
 }
 
 const CONTEXT = { portDirections: PORT_DIRECTIONS, rails: RAILS }
-
-/** The KiCad designator for the two junction rows, which have no designator-shaped id. */
-const JUNCTION_DESIGNATORS: Readonly<Record<string, string>> = {
-  junction_signals: "J_SIGNALS",
-  junction_grounds: "J_GROUNDS",
-}
-
-const DESIGNATOR = /^[A-Z][A-Z0-9_]*$/
-
-/**
- * A component's KiCad designator: its own id, upper-cased, with `.` and `-` turned into `_`.
- *
- * **THIS IS A MAPPING AND IT IS NOT A NO-OP, WHICH IS THE POINT OF HAVING IT HERE RATHER THAN
- * REUSING THE BOARD'S OWN MAP.** `designatorsFor` in `../physical/parts.ts` maps every id to
- * ITSELF, annotated *"the reference ids are netlist-derived and already designator-shaped"*. That
- * is true of `C14` and `R3` and false of three kinds of id the boards actually carry, each of
- * which the IR's `partShapes` rule refuses as a label (`^[A-Z][A-Z0-9_]*$`):
- *
- * - the Pultec schematic's own lower-cased suffixes - `C2a2`, `C4a2`, `C5a2` on hi-boost, and
- *   every `C_MID_*Hz_*` on mid;
- * - the stand-in reduction's generated ids for a pot split into two resistors -
- *   `SI_HI_CUT_RV_HI_CUT.ccw-wiper`, which carries both a `.` and a `-`;
- * - the two junction rows, `junction_signals` and `junction_grounds`, which are handled by
- *   `JUNCTION_DESIGNATORS` above because upper-casing them would produce a label with no
- *   reference prefix a reader would recognise.
- *
- * **THE COST IS REAL AND IS RECORDED RATHER THAN HIDDEN.** For the Pultec the SCHEMATIC is
- * authoritative and the model is derived from a netlist export (`CLAUDE.md`, *"Authority runs in
- * both directions"*), so a generated drawing labelled `C2A2` disagrees with the authoritative
- * drawing's `C2a2` by one character. `docs/known-gaps.md` carries the measurement and the list.
- * Nothing in the circuit is edited to avoid it: an id is semantic and a designator is declared.
- */
-export function pultecDesignator(id: string): string {
-  const declared = JUNCTION_DESIGNATORS[id]
-  if (declared !== undefined) return declared
-  const designator = id.toUpperCase().replace(/[.-]/g, "_")
-  if (!DESIGNATOR.test(designator)) {
-    throw new Error(
-      `the Pultec component id "${id}" does not become a KiCad designator by upper-casing and ` +
-        `replacing "." and "-" with "_": the result "${designator}" is not ` +
-        `${DESIGNATOR.source}, which the IR's partShapes rule requires of every part label. ` +
-        "Add an explicit entry to JUNCTION_DESIGNATORS in " +
-        "circuits/pultec/schematic/section-board.ts, beside the two junction rows, rather than " +
-        "widening this transformation - a wider transformation would silently rename a part the " +
-        "authoritative Pultec schematic names, which is the one thing a designator map must not " +
-        "do quietly.",
-    )
-  }
-  return designator
-}
 
 /** Every component's designator, derived from its own id. */
 function designatorsFor(network: Network): Readonly<Record<string, string>> {
