@@ -20,7 +20,6 @@ import { describe, expect, it } from "bun:test"
 import { blockCircuit, cap, symbols } from "../__fixtures__/circuits.ts"
 import { subgraphOf } from "../../../lib/schgen/render/blocks.ts"
 import { placeFields, type FieldScene } from "../../../lib/schgen/render/field-placement.ts"
-import { createOccupancy, MARK_WEIGHT } from "../../../lib/schgen/render/occupancy.ts"
 import { GRID, type Point, type Side } from "../../../lib/schgen/render/geometry.ts"
 import type { Box } from "../../../lib/schgen/render/lib-pins.ts"
 import type { Wire } from "../../../lib/schgen/render/block-types.ts"
@@ -131,19 +130,6 @@ describe("a unit with no clear field slot", () => {
     expect(withLabel.fields, "a MARK over it makes that candidate no longer least-covered").not.toEqual(withoutLabel.fields)
     expect(candidates, "and the one it moves to is still one of the candidates").toContainEqual(withLabel.fields)
     expect(withLabel.fallback?.covers.some((c) => /^wire \d+ \(BLOCK\d+\)$/.test(c))).toBe(true)
-  })
-})
-
-describe("the weighted overlap cost", () => {
-  it("is area times the category's weight, and a mark weighs twice a body", () => {
-    const box = { minX: 0, minY: 0, maxX: 10, maxY: 4 }
-    const bodies = createOccupancy(1)
-    const marks = createOccupancy(MARK_WEIGHT)
-    bodies.add(box)
-    marks.add(box)
-    expect(bodies.overlap({ minX: 0, minY: 0, maxX: 5, maxY: 4 })).toBe(20)
-    expect(marks.overlap({ minX: 0, minY: 0, maxX: 5, maxY: 4 })).toBe(40)
-    expect(MARK_WEIGHT).toBe(2)
   })
 })
 

@@ -1,18 +1,13 @@
 /**
  * **THE REPOSITORY'S WEIGHTED-OVERLAP PLACEMENT PRIMITIVE, IN ONE PLACE.** It was written for the
- * printed build guide (`tools/guide/placement.ts`, committed 2026-09-29) and is moved here
- * unchanged so the schematic's field placer uses the same arithmetic and the same weights rather
- * than a second set of its own. That tool now imports it; nothing about what it computes moved, and
- * `tests/guide/` is what holds that claim.
- *
- * **WHY THIS DIRECTORY AND NOT A NEUTRAL ONE.** `lib/placement/` would read better and would be
- * hashed by nothing: `tools/schgen/generate.ts`'s `TEMPLATE_LIBRARY_DIR` is `lib/schgen/render`,
- * and spec §2.1 has the generation manifest record the library version that graded a drawing. A
- * cost function the placer reads and the manifest does not hash is a library input that can change
- * with nothing failing - `CLAUDE.md`'s *"a skipped check must never look like a passing one"* in a
- * hash's clothing. So it lives in the tree that is hashed, and the cost is that the build guide
- * imports a module under `lib/schgen/`. `docs/known-gaps.md` records that cost rather than hiding
- * it.
+ * printed build guide (`tools/guide/placement.ts`, committed 2026-09-29), moved to
+ * `lib/schgen/render/occupancy.ts` so the schematic's field placer could use the same arithmetic
+ * and the same weights under one hashed library directory, and moved back here in Task 7 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`: `lib/schgen/` is being deleted in that
+ * plan's Task 9, so this file cannot stay in a directory that is about to go with it.
+ * `lib/schgen/render/field-placement.ts` still imports it from here for as long as `lib/schgen/`
+ * exists. Nothing about what it computes has changed across either move, and `tests/guide/` —
+ * including `tests/guide/occupancy.test.ts` — is what holds that claim.
  *
  * **THE SHAPE IS THE ONE THE LITERATURE PRESCRIBES, which is why it is reused rather than
  * reinvented.** `docs/schematic/text-placement-prior-art.md` establishes it: point-feature label

@@ -910,7 +910,6 @@
     "tests/schgen/gates/reference-graph.test.ts",
     "tests/schgen/gates/reference-graph.kicad.test.ts",
     "tests/schgen/gates/graph-match.test.ts",
-    "lib/schgen/render/occupancy.ts",
     "tools/schgen/board-sheets.ts",
     "tools/schgen/board-geometry.ts",
     "tools/schgen/junction-probe.ts",

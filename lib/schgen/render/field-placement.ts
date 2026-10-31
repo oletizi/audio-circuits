@@ -50,7 +50,7 @@ import { valueIsSymbolPartName } from "../../kicad/value-notation.ts";
 import type { BlockLayout, BlockSubgraph, BlockUnit, Placement, Wire } from "./block-types.ts";
 import { boxesOverlap, GRID, growBox, segmentHitsBox, type Side, type Um } from "./geometry.ts";
 import type { Box } from "./lib-pins.ts";
-import { chooseLeastCovered, createOccupancy, MARK_WEIGHT } from "./occupancy.ts";
+import { chooseLeastCovered, createOccupancy, MARK_WEIGHT } from "../../../tools/guide/occupancy.ts";
 import { pinMarkBox, pinMarks } from "./pin-marks.ts";
 import { anchorsToSymbols, powerText, type LibLookup, valuesAlong } from "./power-text.ts";
 import type { GlobalLabel, PowerSymbol } from "./sheet-types.ts";
