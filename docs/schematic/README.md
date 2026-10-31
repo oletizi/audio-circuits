@@ -28,6 +28,19 @@ Schematic generation and readability: the research record
 > criteria and [`verdicts.md`](verdicts.md) is still where a verdict lives, as
 > the note above says; both are unaffected.
 >
+> **AND ONE THING THE DELETION LEFT OPEN IS NOT IN THIS DIRECTORY AT ALL:
+> [`../../schematic/README.md`](../../schematic/README.md).** It sits beside
+> `schematic/readability-baselines.json` - spec section 3.3's readability-baseline
+> registry - and it is the **only** home of the correction that the registry now
+> has no loader anywhere, that its own `notes` block still describes that loader
+> in the present tense, and that whether to keep, shelve or retire the channel is
+> **the owner's question and nobody has taken it**. Its bytes are deliberately
+> untouched. Linked from here because until now it was reachable from exactly one
+> place in the repository, which is this index's own lesson - *committed is not
+> durable if nobody can find it* - and that page's own: **a finding belongs
+> beside the thing that outlives the change, not beside the thing the change
+> removes.**
+
 > **Two documents this index used to list are deleted with the generator**, and
 > their rows are gone from the tables below: `template-parity.md` and
 > `template-parity-anchors.md`. Both were headed *"GENERATED - do not

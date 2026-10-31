@@ -288,6 +288,22 @@ end to sweep up.**
   nothing, and the next one to rot would do it silently. `G233`'s stated
   limit — *"every other prose reference to a test file in this repository can
   still rot silently"* — is now the whole of it.
+- **`docs/known-gaps.md` G303's UNRATIFIED-DRAWING WATERMARK NOW HAS NO
+  IMPLEMENTATION ANYWHERE, and that is an owner-facing gap rather than a defect
+  of this branch.** The directive is the owner's — the mark is a *"critical
+  safety signal to NOT USE the drawing at the bench"* — and the only code that
+  ever honoured it was the generator's, held by `tests/schgen/watermark.test.ts`;
+  both went in this plan. **This is not a loss the plan caused**: the pages under
+  `drafted/` carried no such mark before `fdbc51a` either, because they are not
+  the generator's output. But the directive outlived the only producer it ever
+  had, and **four of the five pages the build guides print are awaiting
+  re-approval** — so a rule about marking an unratified drawing is live while
+  nothing in the repository honours it, on exactly the pages it would speak to.
+  **Nobody had written that down, here or anywhere.** What it would take to
+  settle it is his decision about whether the signal is wanted on a page drawn by
+  the `TOOLING.md` loop, and if so where in that loop it is applied — not an
+  agent's design, because a mark on a drawing is a statement about the drawing's
+  status and `EVALUATING-DRAWINGS.md` §5 reserves status to the reviewer.
 - **`tools/draught/gate.ts` is gone and nothing replaced it.** `TOOLING.md`
   recorded it as *"committed and known inadequate"* — it matched a netlist
   exactly on the page that had overflowed to A5 and was missing a third of its
