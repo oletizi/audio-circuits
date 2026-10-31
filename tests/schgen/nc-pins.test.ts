@@ -51,7 +51,6 @@ import { createResolver } from "../../lib/schgen/render/library.ts"
 import { emitContext, emitSheet } from "../../lib/schgen/render/emit.ts"
 import { layoutSheet } from "../../lib/schgen/render/sheets.ts"
 import { symbolLibraries } from "../../lib/schgen/render/stock-symbols.ts"
-import { POLE_PIN, THROW_PINS } from "../../circuits/pultec/schematic/section-board.ts"
 import { PULTEC_MID_SCHEMATIC } from "../../circuits/pultec/schematic/mid.ts"
 import { pultecMid } from "../../circuits/pultec/physical/mid.ts"
 import { symbols as fixtureSymbols } from "./__fixtures__/circuits.ts"
@@ -267,37 +266,12 @@ describe("the selector symbols, read off the INSTALLED Switch.kicad_sym", () => 
     expect(sym.pins.filter((p) => p.name === "").map((p) => p.number)).toEqual([])
   })
 
-  test("the pole is on the opposite side at angle 0, which is why POLE_PIN is not pin 1", () => {
-    const sym = pultecSymbols.resolve(ELEVEN_THROW)
-    const pole = sym.pins.find((p) => p.number === POLE_PIN[ELEVEN_THROW])
-    expect(pole).toBeDefined()
-    expect(pole?.angle).toBe(0)
-    const throws = sym.pins.filter((p) => p.number !== pole?.number)
-    for (const t of throws) {
-      expect(t.angle, `throw ${t.number} is not drawn at the throw angle`).toBe(180)
-      expect(Math.sign(t.x), `throw ${t.number} is not on the opposite side from the pole`).toBe(-Math.sign(pole?.x ?? 0))
-    }
-  })
-
-  /**
-   * **THE ARM A FUTURE KICAD BREAKS, and the reason `THROW_PINS` exists as a declaration rather
-   * than as the `String(index + 1)` rule it replaced.** Every pin of each selector symbol is
-   * accounted for by exactly one of three statements this repository makes about it, so a pin
-   * added, removed or renumbered upstream fails here by name instead of quietly becoming an
-   * unaccounted pin that stops a board drawing - or one a blanket silently excused.
-   */
-  test("THROW_PINS plus POLE_PIN plus MECHANICAL_PINS is EXACTLY each selector symbol's pin set", () => {
-    const entries = Object.entries(THROW_PINS)
-    expect(entries.length).toBeGreaterThan(0)
-    for (const [libId, throws] of entries) {
-      const sym = pultecSymbols.resolve(libId)
-      const pole = POLE_PIN[libId]
-      expect(pole, `${libId} has throw pins recorded and no pole pin`).toBeDefined()
-      const accounted = [...throws, ...(pole === undefined ? [] : [pole]), ...mechanicalPinsOf(libId)]
-      expect(new Set(accounted).size, `${libId}: a pin is accounted for twice`).toBe(accounted.length)
-      expect([...accounted].sort(), `${libId}`).toEqual([...sym.pins.map((p) => p.number)].sort())
-    }
-  })
+  // "the pole is on the opposite side at angle 0, which is why POLE_PIN is not pin 1" and
+  // "THROW_PINS plus POLE_PIN plus MECHANICAL_PINS is EXACTLY each selector symbol's pin set"
+  // moved to tests/circuits/pultec-switch-geometry.test.ts, the permanent home for POLE_PIN and
+  // THROW_PINS now that both constants live in circuits/pultec/physical/parts.ts rather than
+  // being authored only to feed this generator. The two tests kept above still need a pin's own
+  // (at x y angle) and type, which that permanent home's disk-backed helper does not expose.
 })
 
 /* ------------------------------------------------------------- the board this unblocked ------ */
