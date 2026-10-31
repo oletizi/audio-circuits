@@ -6,33 +6,40 @@
  * pin geometry, but never to re-serialise: it drops whether an atom was quoted,
  * and KiCad distinguishes `yes` from `"yes"`.
  *
- * **IT HAS TWO CONSUMERS NOW AND THEY WANT DIFFERENT THINGS FROM IT.** It was
- * written for `lib/kicad/schematic.ts`, the stub writer `lib/schgen/` replaced
- * and `docs/known-gaps.md` **G248** records as kept rather than deleted.
- * `lib/schgen/render/stock-symbols.ts` is the second: it imports
- * `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`, `flattenedSymbol`,
- * `vendoredSymbolFile` and `vendoredSymbolText` to build the nickname map
- * `createResolver` is handed, with the vendored set authoritative and the
- * installed stock directory a declared extension (its own header has the
- * deviation that decision cost). **So "the stub writer" below names the writer
- * that motivated a given sentence and never the only reader of this module** -
- * check which consumer a sentence is about before acting on it.
+ * **IT HAD TWO CONSUMERS; IT HAS ONE NOW.** It was written for
+ * `lib/kicad/schematic.ts`, the stub writer `lib/schgen/` replaced - that
+ * file is deleted (Task 6, `docs/superpowers/plans/2026-10-30-remove-schgen.md`,
+ * discharging `docs/known-gaps.md` **G248**'s non-deletion). The one consumer
+ * left is `lib/schgen/render/stock-symbols.ts`: it imports `VENDORED_SYMBOLS`,
+ * `librarySymbols`, `splitLibId`, `flattenedSymbol`, `vendoredSymbolFile` and
+ * `vendoredSymbolText` to build the nickname map `createResolver` is handed,
+ * with the vendored set authoritative and the installed stock directory a
+ * declared extension (its own header has the deviation that decision cost).
+ * **It does not import `symbolPins` or the `supportedUnitSymbols` helper
+ * below them**, so those two now have ZERO production callers - every
+ * remaining caller of either is a test. State this as a fact about today, not
+ * a judgement to act on: whether a test-only function should move or go is
+ * not this comment's call, and Task 9 of the same plan deletes
+ * `lib/schgen/render/stock-symbols.ts` itself, which will change the answer
+ * again - check who imports what at the time you read this rather than
+ * trusting the count above it.
  *
  * The symbols live in `./symbols/<Library>/<Name>.sexpr`, copied from an
- * installed KiCad by `tools/kicad/vendor-symbols.ts`. For
- * `lib/kicad/schematic.ts`, which reads `vendoredSymbolText` and embeds the
- * result, that means its output never depends on whichever KiCad happens to be
- * installed, and needs none installed.
+ * installed KiCad by `tools/kicad/vendor-symbols.ts`. The deleted stub writer
+ * read `vendoredSymbolText` and embedded the result verbatim, so its output
+ * never depended on whichever KiCad happened to be installed, and needed none
+ * installed. Nothing left imports `vendoredSymbolText` for that purpose; see
+ * the next paragraph for how the surviving consumer uses it instead.
  *
- * **THERE IS A SECOND CONSUMER SINCE TASK 4 OF THE M1 SCHEMATIC PLAN, AND IT
- * USES THESE FILES THE OTHER WAY ROUND.** `lib/schgen/render/stock-symbols.ts`
- * resolves a library nickname to the INSTALLED KiCad's `.kicad_sym` and reads
- * the files here only to CHECK it, refusing when a vendored symbol and the
- * installed library's flattened text for the same name disagree. It cannot do
- * otherwise: `createResolver`'s map is keyed by nickname, so a single-symbol
- * `.sexpr` is not something it can be handed. So vendoring buys that consumer
- * a refusal rather than independence, and KiCad is a hard dependency of it.
- * See `./symbols/PROVENANCE.md` and `docs/known-gaps.md` **G119**.
+ * **THE SURVIVING CONSUMER USES THESE FILES THE OTHER WAY ROUND.**
+ * `lib/schgen/render/stock-symbols.ts` resolves a library nickname to the
+ * INSTALLED KiCad's `.kicad_sym` and reads the files here only to CHECK it,
+ * refusing when a vendored symbol and the installed library's flattened text
+ * for the same name disagree. It cannot do otherwise: `createResolver`'s map
+ * is keyed by nickname, so a single-symbol `.sexpr` is not something it can
+ * be handed. So vendoring buys that consumer a refusal rather than
+ * independence, and KiCad is a hard dependency of it. See
+ * `./symbols/PROVENANCE.md` and `docs/known-gaps.md` **G119**.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -200,19 +207,25 @@ function unitSubSymbolName(unit: SNode, symbolName: string): string {
  * has). KiCad names a unit sub-symbol "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common
  * unit or 1, 2, 3... for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
  * here (a De Morgan alternate would be 2 and is skipped, since this repository has none). A
- * unit sub-symbol with no name, or with a unit number greater than 1, refuses: the superseded
- * stub writer always emits a placed symbol's `(unit 1)` and merges every returned pin onto it
- * (lib/kicad/schematic.ts), which silently drops or wrongly combines a genuine multi-unit
- * part's pins or graphics rather than being wrong about it loudly.
+ * unit sub-symbol with no name, or with a unit number greater than 1, refuses: the now-deleted
+ * stub writer (`lib/kicad/schematic.ts`, removed by Task 6 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`) always placed a symbol's `(unit 1)` and
+ * merged every returned pin onto it, which would have silently dropped or wrongly combined a
+ * genuine multi-unit part's pins or graphics rather than being wrong about it loudly - the
+ * refusal below is what made that loud while the stub writer was this function's caller.
  *
- * **THE REFUSAL IS THE STUB WRITER'S LIMIT AND NOT THE REPOSITORY'S.**
+ * **THE REFUSAL WAS THE STUB WRITER'S LIMIT AND NEVER THE REPOSITORY'S.**
  * `lib/schgen/` handles multi-unit packages - a UNIT is its unit of placement,
  * `lib/schgen/ir/` keys parts by `unitKey(label, unit)`, and
  * `tests/schgen/render/templates/opamp-stock.kicad.test.ts` draws a three-unit
  * op-amp through it. `lib/schgen/render/stock-symbols.ts` does not import this
  * function (it takes `VENDORED_SYMBOLS`, `librarySymbols`, `splitLibId`,
  * `flattenedSymbol`, `vendoredSymbolFile` and `vendoredSymbolText` and nothing
- * else), so **nothing in the generator's path meets this refusal.**
+ * else), so **nothing in the generator's path meets this refusal - and now that
+ * the stub writer is deleted, nothing in production calls `symbolPins`, or this
+ * function through it, at all: every remaining caller of either is a test.**
+ * See this file's own header for the same count and why it is stated rather
+ * than acted on here.
  *
  * **SHARED BY `symbolPins` AND `symbolStrokeSegments`**, so a pin walk and a graphics walk of
  * the same block can never disagree about which unit sub-symbols are in scope - the one thing
@@ -235,12 +248,14 @@ function supportedUnitSymbols(block: string): { readonly name: string; readonly 
     }
     if (unitNumber > 1) {
       throw new Error(
-        `symbol "${name}" has unit ${unitNumber} ("${unitName}"): a multi-unit symbol. ` +
-          "lib/kicad/schematic.ts always places a symbol as \"(unit 1)\" and merges every unit's " +
-          "pins onto it, which is wrong once there is more than one unit. Multi-unit symbols are " +
-          "not supported by the SUPERSEDED stub writer, this function's only production caller. " +
-          "lib/schgen/ places units separately and draws them; if you reached this refusal, you " +
-          "are on the stub writer's path and docs/known-gaps.md G248 says why it still exists.",
+        `symbol "${name}" has unit ${unitNumber} ("${unitName}"): a multi-unit symbol. This ` +
+          "function does not support multi-unit symbols: lib/kicad/schematic.ts, the now-" +
+          "deleted stub writer that was once its only caller, always placed a symbol as " +
+          "\"(unit 1)\" and merged every unit's pins onto it, which would have been wrong once " +
+          "there was more than one unit. lib/schgen/ places units separately and draws them " +
+          "through a different path that does not call this function; if you reached this " +
+          "refusal, you are calling symbolPins or symbolStrokeSegments directly on a multi-" +
+          "unit block, which neither supports.",
       )
     }
     if (bodyStyle !== "0" && bodyStyle !== "1") continue
