@@ -12,9 +12,12 @@ test("the two junction rows keep the names that say what they are", () => {
 })
 
 // A positive control for the two tests above: a designator this transformation cannot produce
-// still throws, naming the id and the offending result, rather than silently returning something
-// the IR's partShapes rule would refuse. "2x_bad" upper-cases to "2X_BAD", which starts with a
-// digit and so does not match DESIGNATOR (`^[A-Z][A-Z0-9_]*$`).
+// still throws, naming the id and the offending result, rather than silently returning a label
+// with no reference prefix in it. "2x_bad" upper-cases to "2X_BAD", which starts with a digit and
+// so does not match DESIGNATOR (`^[A-Z][A-Z0-9_]*$`) - and `sheetDesignators` in ./sheet-model.ts
+// takes a label's leading capitals as the prefix it counts the part under, so a label beginning
+// with a digit has no prefix at all. `circuits/pultec/designators.ts` states that reason beside
+// the regex.
 test("an id whose upper-cased form is not a valid KiCad designator throws, naming both", () => {
   expect(() => pultecDesignator("2x_bad")).toThrow(/"2x_bad"/)
   expect(() => pultecDesignator("2x_bad")).toThrow(/"2X_BAD"/)
