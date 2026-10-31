@@ -89,12 +89,28 @@ function schematicRow(schematic: GuideSchematic): string {
  * **IT EXISTS BECAUSE THE ALTERNATIVE IS A DOCUMENT THAT SILENTLY NEEDS A
  * PRINTER THE READER MAY NOT OWN.** The owner, 2026-10-30: *"I don't have an
  * A3-capable printer. I live in california and have a printer capable of
- * printing US letter 8.5x11"."* Four of the five Pultec sheets declare A4 and
- * the fifth declares A3, so every packet today carries one page that is not
- * US Letter. Nothing in this repository scales it - `./merge-pdf.ts` refuses a
- * merge that resized any page - so the reader's own printer would, by a factor
- * nobody chose. This notice is what makes that visible before the paper comes
- * out of the tray.
+ * printing US letter 8.5x11"."* Nothing in this repository scales a schematic
+ * page - `./merge-pdf.ts` refuses a merge that resized any page - so the
+ * reader's own printer would, by a factor nobody chose. This notice is what
+ * makes that visible before the paper comes out of the tray.
+ *
+ * **NO PACKET TODAY CARRIES SUCH A PAGE, AND THE BEHAVIOUR STAYS ANYWAY.**
+ * This paragraph said *"Four of the five Pultec sheets declare A4 and the
+ * fifth declares A3, so every packet today carries one page that is not US
+ * Letter"*. All five now declare `USLetter`, so both halves were false and the
+ * conclusion was inverted; the re-paper landed before this file was last
+ * touched and nobody had written that down. The figure is not corrected,
+ * because a count of sheets by paper size is a transcription with a date on
+ * it. The command is `grep -m1 -o '(paper ...)'` over each sheet under
+ * `drafted/pultec/`, written out rather than glob-starred because a `*`
+ * followed by a `/` would close this comment.
+ *
+ * **The behaviour is unaffected and is NOT removed.** This function compares
+ * the actual page sizes and returns nothing when they match, so it is silent
+ * on every packet today by measuring rather than by assumption. A page's size
+ * comes from its own `(paper ...)` setting and a future sheet can be drawn on
+ * anything; a notice deleted because today's five agree would have to be
+ * rewritten from the owner's words the first time one does not.
  *
  * No lines at all when the schematic page IS on the guide's paper, which is
  * the state this notice is waiting for: a notice printed on a document that

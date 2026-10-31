@@ -157,11 +157,20 @@ function symbolPartName(symbol: string): string {
  * true - `mpn: "PT2399"` drawn with `Audio:PT2399` is that case and it is live in this repository.
  * Hiding it loses nothing a reader needs, because the field is a verbatim repeat of the symbol
  * name either way; what it costs is that the two cases cannot be told apart here. Carrying the
- * branch instead would mean a new field on `PartSpec` and `IrPart`, and therefore an edit at every
- * site that builds one - **49 of them across 29 files** (`grep -rn "refPrefix:" lib tools tests
- * circuits | grep -v "readonly refPrefix"`). `docs/known-gaps.md` **G257** records the choice, the
- * cost and what would settle it, and `tests/kicad/value-notation.test.ts` asserts the deviation
- * rather than leaving it as prose.
+ * branch instead would mean a new field on `PartSpec`, and therefore an edit at every site that
+ * builds one - `grep -rn "part: {" lib tools tests circuits` counts them.
+ *
+ * **THE FIGURE THAT STOOD HERE IS DELETED RATHER THAN CORRECTED, AND ITS OWN DISPROOF WAS PRINTED
+ * BESIDE IT.** It read *"49 of them across 29 files"* and handed the reader
+ * `grep -rn "refPrefix:" lib tools tests circuits | grep -v "readonly refPrefix"` to check it
+ * with. That grep returns **this comment and nothing else**: `refPrefix` was a field of `IrPart`,
+ * which went with `lib/schgen/ir/`, so the command measured a vocabulary this repository no longer
+ * has while the number beside it described a tree that no longer exists. `CLAUDE.md`: a
+ * measurement goes in a tool or a test that re-runs it, never in prose - so the command above
+ * stands without an answer written next to it.
+ *
+ * `docs/known-gaps.md` **G257** records the choice, the cost and what would settle it, and
+ * `tests/kicad/value-notation.test.ts` asserts the deviation rather than leaving it as prose.
  *
  * `symbol` is the RESOLVED lib id the part is drawn with - the same thing `from-network.ts`'s
  * `valueOf` hands `valueFor`, so the two see one symbol and cannot disagree.

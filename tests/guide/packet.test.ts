@@ -119,10 +119,16 @@ test("the schematic is merged into guide.pdf from the two staged intermediates",
 })
 
 test("a schematic page on other paper is carried unscaled and SAID SO, on the page and in the report", async () => {
-  // Four of the five Pultec sheets declare A4 and the fifth A3; the owner
-  // prints US Letter. Nothing scales the page, so the document has to say it
-  // needs other paper - otherwise it is a packet that silently needs a printer
-  // the reader does not own.
+  // The owner prints US Letter and nothing scales the page, so a document
+  // whose schematic page is on anything else has to say so - otherwise it is a
+  // packet that silently needs a printer the reader does not own.
+  //
+  // THE A4 DIMENSIONS BELOW ARE THIS TEST'S OWN FIXTURE, NOT A PULTEC SHEET.
+  // This comment used to say four of the five Pultec sheets declare A4 and the
+  // fifth A3; all five declare USLetter, so no packet today takes this path.
+  // That is why the size is synthesised here: the notice compares actual page
+  // sizes, and the only way to exercise the arm is to hand it two that differ.
+  // tools/guide/schematic-notice.ts carries the correction and the command.
   const h = harness(DUMP_TEXT, {}, { widthPt: 841.896, heightPt: 595.296 })
   const text = await writeGuidePacket(DECLARATION, h.deps)
   const html = h.files.get(`${GUIDE}/${GUIDE_HTML}`) ?? ""

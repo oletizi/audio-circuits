@@ -41,7 +41,17 @@
  *
  * So `C2a2` labels `C2A2`, prefixes `C`, and takes whichever `C<n>` its position in the network
  * earns it; `SI_HI_BOOST_RV_HI_BOOST.ccw-wiper` prefixes `SI` and becomes an `SI<n>`, which is
- * why the committed exports carry `SI1`..`SI6` for parts whose symbol is an ordinary `Device:R`.
+ * why the committed exports carry `SI`-prefixed references for parts whose symbol is an ordinary
+ * `Device:R`.
+ *
+ * **HOW MANY OF THEM IS DELIBERATELY NOT WRITTEN HERE.** This said `SI1`..`SI6` and was wrong on
+ * four boards of five - the maxima are `SI8`, `SI6`, `SI8`, `SI9`, `SI9`, so the figure was true
+ * of `pultec-hi-cut` alone. A figure in prose is a transcription with a date on it, so the
+ * command that answers it stands instead of the answer:
+ *
+ * ```
+ * grep -o 'SI[0-9]*' tests/fixtures/pultec-<board>.net | sort -u -V | tail -1
+ * ```
  * **The rule is NOT read off the sheet being compared**: a designator map derived from the
  * netlist under test would make `componentIdentity` vacuous, which is the one list whose whole
  * job is to notice a part on one side and not the other.
@@ -384,9 +394,20 @@ const DECLARED_PIN_NUMBERS: Readonly<Record<string, Readonly<Record<string, Read
   "pultec-low-boost": { R2: { a: "2", b: "1" } },
 }
 
+/**
+ * `DECLARED_PIN_NUMBERS`' entry for one board, by `Object.hasOwn` rather than a bare index.
+ *
+ * `lib/kicad/sheet-agreement.ts`'s own stated reason: a key colliding with an `Object.prototype`
+ * member must not return a function and be read as a declaration.
+ */
+function declaredOn(board: string): Readonly<Record<string, Readonly<Record<string, string>>>> | undefined {
+  return Object.hasOwn(DECLARED_PIN_NUMBERS, board) ? DECLARED_PIN_NUMBERS[board] : undefined
+}
+
 /** One component's pin numbers on one board: a declared map where there is one, else the rule. */
 function pinNumbersOn(board: string, component: Component): ReadonlyMap<string, string> {
-  const declared = DECLARED_PIN_NUMBERS[board]?.[component.id]
+  const forBoard = declaredOn(board)
+  const declared = forBoard === undefined || !Object.hasOwn(forBoard, component.id) ? undefined : forBoard[component.id]
   if (declared === undefined) return pinNumbersFor(component)
   const names = soleUnitPinNames(component)
   const mapped = Object.keys(declared)
@@ -402,9 +423,36 @@ function pinNumbersOn(board: string, component: Component): ReadonlyMap<string, 
   return new Map(Object.entries(declared))
 }
 
-/** Every component a board's declared pin maps name must be a component of that board. */
+/**
+ * Every BOARD `DECLARED_PIN_NUMBERS` names must be one of `BOARDS`, and every COMPONENT it names
+ * must be a component of that board.
+ *
+ * **THE BOARD HALF WAS VALIDATED BY NOTHING, AND THAT IS WHY IT IS HERE.** Only the component half
+ * was checked, and the board key was read by a bare bracket index - so a typo'd or renamed key
+ * made its whole entry silently inert: `pinNumbersOn` fell through to the positional rule and the
+ * only symptom was `pultec-low-boost`'s `netMembership` guard failing with a message about two
+ * nets rather than about a declaration that stopped applying. The one hand-declared exception in
+ * this guard - the `R2` a/b swap the owner's verdict on that page asked for - hung off that key.
+ *
+ * It refuses NAMING THE KEY AND THE BOARDS THAT EXIST, and nothing is defaulted: an entry that
+ * applies to no board is precisely the one a reader would have trusted to cover the part whose pin
+ * map is now coming from the rule instead. Renaming a board directory is the live way to reach
+ * this - the keys here are strings and nothing moves them.
+ */
 function checkDeclaredPinNumbers(board: string, network: Network): void {
-  const declared = DECLARED_PIN_NUMBERS[board]
+  const names = new Set(BOARDS.map((b) => b.board))
+  const unknownBoards = Object.keys(DECLARED_PIN_NUMBERS).filter((key) => !names.has(key))
+  if (unknownBoards.length > 0) {
+    throw new Error(
+      `DECLARED_PIN_NUMBERS in tests/circuits/sheet-model.ts is keyed by board, and ` +
+        `[${unknownBoards.join(", ")}] name no board in BOARDS, whose boards are ` +
+        `[${[...names].join(", ")}]. Fix the key or delete the entry. It is not ignored: an entry ` +
+        "under a key nothing looks up never applies, and the part it was written for silently " +
+        "takes the positional rule's answer instead - which is the one error class that makes a " +
+        "drawing disagree with its model in a way no message names.",
+    )
+  }
+  const declared = declaredOn(board)
   if (declared === undefined) return
   const present = new Set(network.components.map((c) => c.id))
   const unknown = Object.keys(declared).filter((id) => !present.has(id))
