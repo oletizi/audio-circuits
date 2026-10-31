@@ -8,9 +8,9 @@
  * is being removed; the two constants are facts about the rotary switch parts themselves, not
  * layout intent, so they moved to `circuits/pultec/physical/parts.ts` beside
  * `ROTARY_SYMBOLS_BY_POSITIONS`. The arms that checked them against the installed library had to
- * move with them, because `nc-pins.test.ts` and the generator infrastructure it still exercises
+ * move with them, because `nc-pins.test.ts` and the generator infrastructure it exercised
  * (`lib/schgen/ir/mechanical-pins.ts`'s `mechanicalPinsOf`, `lib/schgen/render/stock-symbols.ts`'s
- * `symbolLibraries`) are deleted along with the generator in a later task.
+ * `symbolLibraries`) were deleted with the generator in that plan's Task 9.
  *
  * **IT READS THE INSTALLED LIBRARY THROUGH `tests/kicad/symbol-library-disk.ts`**, which is the
  * disk-backed helper `lib/kicad/sheet-agreement.ts`'s own tests already use for this - not through
