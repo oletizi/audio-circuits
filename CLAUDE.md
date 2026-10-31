@@ -133,17 +133,47 @@ So:
   cycles are cheaper than mine" is the governing economics here. A first
   solution that technically works but leaves a person doing fiddly remedial work
   is a failure, not a delivery.
-- **The schematic generator is `lib/schgen/`, and `lib/kicad/schematic.ts` is the
-  superseded stub it replaced.** **Nothing invites you to the stub**: its CLI
-  verb, its script and its instructions are deleted. Say "stub" when that is
-  what you made, and read **G81** before you reach for it for anything.
+- **THE SCHEMATIC GENERATOR IS DELETED, AND SO IS THE STUB IT HAD REPLACED.**
+  This sentence named `lib/schgen/` as the generator and `lib/kicad/schematic.ts`
+  as the superseded stub; **both halves are false and neither path exists** -
+  `lib/schgen/`, `tools/schgen/`, `tests/schgen/` and `lib/kicad/schematic.ts`
+  all went in the plan recorded at
+  `docs/superpowers/plans/2026-10-30-remove-schgen.md`. The clause telling you to
+  read **G81** before reaching for the stub is struck with the stub: there is
+  nothing left to reach for. **"Say 'stub' when that is what you made" is kept,
+  because it was never about that file** - it is the rule against describing what
+  you produced as more than it is.
 
-  **NO COUNT OF WHAT DRAWS BELONGS IN THIS FILE. RUN THE TOOL.**
+  **What draws a page now is `TOOLING.md`'s loop**, and it is glue over
+  third-party tools rather than code here: copperhead drafts a `.kicad_sch` from
+  an intent built off this repository's own model, akcli-kicad repairs it,
+  `kicad-cli` renders and exports it, the reviewer gives a verdict on the
+  rendered page, and the page is committed under `drafted/<circuit>/<board>/`
+  beside a `RECORD.md`. **Read `EVALUATING-DRAWINGS.md` and then `TOOLING.md`
+  before you render anything.**
 
-  ```
-  bun tools/schgen/board-sheets.ts     which boards draw, and what refuses
-  bun run tools/schgen/board-geometry.ts     crossings, corners, fallbacks
-  ```
+  **NO COUNT OF WHAT DRAWS BELONGS IN THIS FILE. READ THE ARTIFACTS AND RUN THE
+  CHECK.** The two commands that stood here -
+  `bun tools/schgen/board-sheets.ts` for *which boards draw, and what refuses*,
+  and `bun run tools/schgen/board-geometry.ts` for *crossings, corners,
+  fallbacks* - **are deleted, and nothing replaced either of them.** In their
+  place, and none of the three is a tool that prints a census:
+
+  - **Which boards have a drafted page**: the directories under `drafted/`, one
+    per board. Each holds the sheet, its render and a `RECORD.md` carrying the
+    sha256 the verdict is bound to - and whether that verdict still holds for
+    the bytes now on disk. `docs/schematic/verdicts.md` is the authority for a
+    verdict, and `EVALUATING-DRAWINGS.md` §5 is why no check and no agent may
+    advance a page's status.
+  - **Whether a drafted page still says the circuit the model says**:
+    `bun test tests/circuits/drafted-kicad-round-trip.test.ts`, which exports
+    every committed page with the real `kicad-cli` and compares it against the
+    board model, and `tests/circuits/transistor-preamp-kicad-round-trip.test.ts`
+    for the five preamp boards.
+  - **Geometry - crossings, T-meetings, orphan junction dots, margins**:
+    `TOOLING.md`'s verification set names each measure and the script that takes
+    it. **There is no single command here that reports them**, and this file is
+    not the place to invent one.
 
   **This paragraph used to carry the census, and the owner struck it on
   2026-10-27:** *"why are there entries about specific artifacts and
@@ -224,8 +254,9 @@ no review did:
 **The third is the purest form and the one to recognise.** `G150` measured the
 violation exactly, counted the 31 offending nets, and offered three mechanisms
 for *complying* - normalise, rename, or relax - **without once asking what the
-rule was for.** `lib/schgen/ir/validate.ts` states no reason for it, and there
-is none to state: letter case carries no information a schematic needs.
+rule was for.** The rule lived in `lib/schgen/ir/validate.ts`, which stated no
+reason for it; the file is gone with the generator, and there was never a reason
+to state, because letter case carries no information a schematic needs.
 
 **The tell is a rule that refuses with a restatement of itself** - *"net `in` is
 not UPPER_SNAKE"* says what the rule is, not why it exists. Where you cannot
@@ -321,8 +352,13 @@ register is FROZEN and you may not add to it.**
 
 - **A measurement goes in a tool or a test that re-runs it**, never in prose. The
   tool is the answer to the question; a figure written down is a transcription
-  with a date on it. `bun tools/schgen/board-sheets.ts` is the worked example,
-  and this file already says it is *"the only thing that answers this question."*
+  with a date on it. **The worked example named here was
+  `bun tools/schgen/board-sheets.ts`, and it is deleted - which is the rule
+  arguing for itself**, since a command in prose rots exactly as a figure does.
+  The live worked example is
+  `bun test tests/circuits/drafted-kicad-round-trip.test.ts`: it re-exports every
+  committed page with `kicad-cli` and re-derives the comparison on every run, so
+  there is no figure here to go stale.
 - **A defect you are not fixing goes in a comment beside the code**, or in a test
   marked for the behaviour you are not delivering, or in the refusal message
   itself. A refusal that names what is missing is worth more than an entry
