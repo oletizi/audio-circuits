@@ -14,7 +14,8 @@
  * because a blank line here would be indistinguishable from a check that
  * never ran at all.
  *
- * **`akcli doctor` IS INCLUDED FOR CONTEXT, NOT AS A SECOND GATE.**
+ * **`akcli doctor` IS INCLUDED FOR CONTEXT, NOT AS A SECOND GATE - AND ONLY
+ * WHEN `akcli` IS ACTUALLY ONE OF THE TOOLS THIS RUN IS CHECKING.**
  * `TOOLING.md` describes `akcli doctor` as printing its own environment
  * report over python, kicad-cli, ngspice, symbols, config and network - more
  * than the lock's single pinned version number covers. It is run best-effort
@@ -24,10 +25,23 @@
  * mismatched `akcli` as a toolchain problem in its own right, so a second,
  * separate signal from running `doctor` would just be the same fact told
  * twice - one authoritative and one advisory would invite them to disagree.
+ *
+ * **Fix round 1, Important 1.** The gate on `"akcli" in lock` was missing
+ * entirely: `runAkcliDoctor` ran unconditionally, so a lock with no `akcli`
+ * entry at all still printed `akcli doctor could not run... ENOENT`
+ * unconditionally beside an unconditional `exit 0` "every tool matches" -
+ * a visible error sitting next to a success a reader cannot tell whether to
+ * believe, which is this project's own central rule (a skipped check must
+ * never look like a passing one, and the reverse holds too: a check that is
+ * not IN SCOPE must not look like one that failed) inverted. `akcli doctor`
+ * now runs only when `akcli` is a key of the `Toolchain` being checked -
+ * `tests/draught/doctor.test.ts` carries the regression this is checked
+ * against, reproducing the reviewer's exact repro state (a lock trimmed to
+ * only the tools actually installed).
  */
 import { execFileSync } from "node:child_process"
 import { defaultAkcli } from "../draught/akcli-install.ts"
-import { checkToolchain, readLock, type ToolchainProblem } from "../draught/toolchain.ts"
+import { checkToolchain, readLock, type Toolchain, type ToolchainProblem } from "../draught/toolchain.ts"
 import { isMain } from "./entrypoint.ts"
 
 const LOCK_RELATIVE = "draughting/tools.lock.json"
@@ -80,22 +94,26 @@ export interface DraughtDoctorResult {
 }
 
 /**
- * The whole report: `akcli doctor`'s own output first (context, never a
- * gate), then the pinned-toolchain report `checkToolchain` produced against
- * `draughting/tools.lock.json`. The exit code comes from the toolchain report
+ * The whole report: `akcli doctor`'s own output first, but ONLY when `akcli`
+ * is one of the tools `lock` names - never unconditionally (fix round 1,
+ * Important 1, above) - then the pinned-toolchain report `checkToolchain`
+ * produced against `lock`. The exit code comes from the toolchain report
  * alone - see the module comment for why `akcli doctor`'s own success or
  * failure never contributes a second signal.
+ *
+ * `lock` defaults to `readLock()` (the real `draughting/tools.lock.json`),
+ * the shape `make draught-doctor` calls this with; it takes an explicit
+ * `Toolchain` so a test can drive this function directly - including with
+ * `akcli` removed - rather than only the pure `renderToolchainReport` half.
  */
-export function runDraughtDoctor(): DraughtDoctorResult {
-  const akcliDoctorReport = runAkcliDoctor()
-  const problems = checkToolchain(readLock())
-  const text = [
-    "akcli doctor:",
-    akcliDoctorReport,
-    "",
-    renderToolchainReport(problems),
-  ].join("\n")
-  return { text, exitCode: problems.length === 0 ? 0 : 1 }
+export function runDraughtDoctor(lock: Toolchain = readLock()): DraughtDoctorResult {
+  const sections: string[] = []
+  if ("akcli" in lock) {
+    sections.push("akcli doctor:", runAkcliDoctor(), "")
+  }
+  const problems = checkToolchain(lock)
+  sections.push(renderToolchainReport(problems))
+  return { text: sections.join("\n"), exitCode: problems.length === 0 ? 0 : 1 }
 }
 
 if (isMain(import.meta.url)) {
