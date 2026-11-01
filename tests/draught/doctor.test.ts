@@ -232,16 +232,68 @@ test("runDraughtDoctor's exit code is non-zero and names the tool when checkTool
  * declared board directory (make/board.mk), because the two files each own
  * a separate copy of the help text and the reviewer's own finding was that
  * one of the two is easy to edit while forgetting the other.
+ *
+ * **IT COVERS EVERY VERB `make/perfboard.mk` DECLARES, AND THAT IS THE FINAL
+ * REVIEW'S I-2.** The two tests above named `draught-doctor` alone, so when
+ * Task 5 added `draw` three tasks later - a verb `TOOLING.md`, `SKILL.md`
+ * and `README.md` all instruct a reader to run - it went into neither help
+ * text and nothing noticed. The guard is therefore built from the verb list
+ * rather than from one literal: a verb added to `make/perfboard.mk` and to
+ * neither help text fails here, naming it, instead of being rediscovered by
+ * the next reviewer. `VERBS` is asserted non-empty first - a list nothing
+ * iterates is a check that cannot fail.
  */
 const REPO_ROOT = path.join(import.meta.dir, "..", "..")
 const PROBE_BOARD = path.join(REPO_ROOT, "boards", "pt2399-core")
 
-test("make help, from the repository root, lists draught-doctor", () => {
-  const output = execFileSync("make", ["help"], { cwd: REPO_ROOT, encoding: "utf8" })
-  expect(output).toContain("draught-doctor")
+/** The drawing verbs `make/perfboard.mk` owns - machine-wide, outside board.mk's BOARD_DECL split. */
+const VERBS: readonly string[] = ["draught-doctor", "draw"]
+
+test("the verb list this file guards is not empty", () => {
+  expect(VERBS.length).toBeGreaterThan(0)
 })
 
-test("make help, from a declared board directory, lists draught-doctor", () => {
+/**
+ * **A SUBSTRING MATCH ON THE VERB NAME IS A CHECK THAT CANNOT FAIL, AND
+ * DRIVING THE CONTROL IS HOW THAT WAS FOUND.** The first version of these two
+ * tests asked `output.includes(verb)`. Renaming the `make draw` help line to
+ * `make DRAWX` in `make/board.mk` did not fail it: the `draught-doctor` entry
+ * two lines above says *"the pinned **draw**ing toolchain"*, so `"draw"` was
+ * already in the text whether the verb was documented or not. The guard
+ * therefore matches a RUNNABLE LINE - whitespace, `make`, then the verb as a
+ * whole word - which `"drawing"` does not satisfy (`\bdraw\b` needs a
+ * non-word character after it) and which both help texts' own forms do
+ * (`make draw` in `board.mk`, `make -C <board directory> draw` in
+ * `aggregate.mk`).
+ */
+function helpLineFor(verb: string): RegExp {
+  return new RegExp(String.raw`^\s*make\b[^\n]*\b${verb}\b`, "m")
+}
+
+test("make help, from the repository root, lists every drawing verb as a runnable line", () => {
+  const output = execFileSync("make", ["help"], { cwd: REPO_ROOT, encoding: "utf8" })
+  const missing = VERBS.filter((verb) => !helpLineFor(verb).test(output))
+  expect(missing, `make/aggregate.mk's help text has no runnable line for: ${missing.join(", ")}`).toEqual([])
+})
+
+test("make help, from a declared board directory, lists every drawing verb as a runnable line", () => {
   const output = execFileSync("make", ["help"], { cwd: PROBE_BOARD, encoding: "utf8" })
-  expect(output).toContain("draught-doctor")
+  const missing = VERBS.filter((verb) => !helpLineFor(verb).test(output))
+  expect(missing, `make/board.mk's help text has no runnable line for: ${missing.join(", ")}`).toEqual([])
+})
+
+/**
+ * The other half, so `VERBS` cannot go quietly stale in the opposite
+ * direction: every `.PHONY` verb `make/perfboard.mk` declares is in the list
+ * above. A new sibling of `draw` that nobody adds to `VERBS` would otherwise
+ * leave the two tests above guarding a shrinking subset while reading as a
+ * full pass.
+ */
+test("every verb make/perfboard.mk declares is in the list the help tests guard", () => {
+  const text = fs.readFileSync(path.join(REPO_ROOT, "make", "perfboard.mk"), "utf8")
+  const declared = [...text.matchAll(/^\.PHONY:\s*(.+)$/gm)].flatMap((match) =>
+    (match[1] ?? "").split(/\s+/).filter((name) => name !== ""),
+  )
+  expect(declared.length).toBeGreaterThan(0)
+  expect(declared.filter((verb) => !VERBS.includes(verb)).sort()).toEqual([])
 })
