@@ -13,15 +13,28 @@ telling you, and sending the result out - is judgement, and this skill is
 where it lives.
 
 **Three documents outrank this one, in this order, and this skill restates
-none of them:**
+NONE OF `EVALUATING-DRAWINGS.md`'s CRITERIA:**
+
+> **That sentence used to read "and this skill restates none of them", which
+> this skill's own body contradicts - the final review's M-4.** It reproduces
+> `TOOLING.md`'s trap index, its false-greens list and its verification
+> table, because the spec requires this skill to carry them: a trap you have
+> to go and read another file to learn about is a trap you walk into. The
+> duplication is sanctioned and the sentence was what was wrong. **Two copies
+> of one table is still a drift risk this branch treats as a defect
+> elsewhere, so the rule is: `TOOLING.md` is the original, a disagreement
+> between the two is a bug in one of them, and nothing is edited HERE only.**
 
 1. `EVALUATING-DRAWINGS.md` - canonical on drawings. Who may judge one, what
    counts as a valid evaluation, what an agent may say about one. **This
    skill points at it and does not summarise, paraphrase or restate its
-   criteria anywhere below.** Read it before drawing anything.
+   criteria anywhere below.** Read it before drawing anything. This is the
+   one of the three that is genuinely never restated here, and it is the one
+   where restating would do the damage.
 2. `TOOLING.md` - the reference procedure: the pinned toolchain, the full
    loop, the repair classes, what the procedure does not yet cover. This
-   skill is the invocation of that procedure, not a replacement for it. Any
+   skill is the invocation of that procedure, not a replacement for it, and
+   it does carry copies of three of its sections - see the note above. Any
    place this skill and `TOOLING.md` disagree is a bug in one of them -
    report it rather than picking a side.
 3. `CLAUDE.md` - the conventions every circuit and every drawing session
@@ -38,9 +51,16 @@ none of them:**
    artifact.
 1. Build or locate the copperhead intent and verify its net partition against
    the model's committed netlist export, as sets of `REF.PIN` sets.
-2. Draft with copperhead, and draft more than one group arrangement when the
-   first is unusable - there is no stated criterion for "unusable"; record
-   which arrangement you took and why.
+2. Draft with copperhead, and draft more than one group arrangement. **The
+   word for when to stop is `TOOLING.md`'s, it is in quotes there, and it is
+   undefined** - its §2 says *"Try more than one if the first is unusable"
+   does not define unusable*, and calls this *"the largest undocumented
+   decision in the loop."* So it is not this skill's judgement about a page
+   and must not be read as one (final review M-4): it is a quoted,
+   attributed, admittedly empty criterion. What §2 asks of you instead is a
+   record - which arrangement you took and why - and it gives the worked
+   example where a measured number was traded against a structural property
+   with nothing written to adjudicate it.
 3. Render, and look at the render. A netlist match is not a substitute for
    this step.
 4. Repair with `akcli` - query geometry first, dry-run every op-list, read
