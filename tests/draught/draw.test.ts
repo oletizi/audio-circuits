@@ -10,6 +10,7 @@ import { expect, test } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
 import { readLock, type Toolchain } from "../../tools/draught/toolchain.ts"
+import { repaperToUSLetter } from "../../tools/draught/draw-render.ts"
 import { runDraw } from "../../tools/cli/draw.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
@@ -86,7 +87,7 @@ test("an intent whose net partition disagrees with the model refuses before draf
  * REGARDLESS of what the measurement suite reports, and separately asserts the
  * measurement suite's own output is present in the report.
  */
-test("a real draw of pultec-hi-cut drafts, renders and measures without withholding the page", async () => {
+test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and measures without withholding the page", async () => {
   const repoRoot = moduleRepoRoot()
   const outDir = fs.mkdtempSync(path.join(repoRoot, "build", "draw-test-real-"))
   try {
@@ -94,10 +95,22 @@ test("a real draw of pultec-hi-cut drafts, renders and measures without withhold
     expect(result.exitCode).toBe(0)
     expect(result.drew).toBe(true)
 
-    expect(fs.existsSync(path.join(outDir, "pultec-hi-cut.kicad_sch"))).toBe(true)
+    const schematicPath = path.join(outDir, "pultec-hi-cut.kicad_sch")
+    expect(fs.existsSync(schematicPath)).toBe(true)
     expect(fs.existsSync(path.join(outDir, "pultec-hi-cut.pdf"))).toBe(true)
     expect(fs.existsSync(path.join(outDir, "pultec-hi-cut.svg"))).toBe(true)
     expect(fs.existsSync(path.join(outDir, "crops", "pultec-hi-cut-whole-page.png"))).toBe(true)
+
+    // I-1 (fix round 1): every approved Pultec page is USLetter, not copperhead's own A4 pick -
+    // the drafted sheet itself must carry the USLetter token, not merely a stdout claim.
+    expect(fs.readFileSync(schematicPath, "utf8")).toContain('(paper "USLetter")')
+    expect(result.stdout).toContain("re-paper (US Letter)")
+    expect(result.stdout).toContain("fits: yes")
+
+    // The scope disclosure (fix round 1): this verb says plainly it is a mechanical draft and
+    // that repair is a separate step it did not run.
+    expect(result.stdout).toContain("MECHANICAL draft")
+    expect(result.stdout).toContain("does NOT run akcli repairs")
 
     expect(result.stdout).toContain("crossings.py")
     expect(result.stdout).toContain("junction_audit.py")
@@ -106,6 +119,82 @@ test("a real draw of pultec-hi-cut drafts, renders and measures without withhold
     expect(result.stdout).toContain("ORPHAN JUNCTIONS")
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true })
+  }
+})
+
+/**
+ * I-1 (fix round 1) regression: `repaperToUSLetter` on a real committed Pultec page (already
+ * US Letter, already fits) must leave the fit measurement reporting "yes" - the positive half
+ * of the pair, mirrored by the overshoot test below.
+ */
+test("repaperToUSLetter reports fits:yes on content that comfortably sits inside the US Letter frame", async () => {
+  const repoRoot = moduleRepoRoot()
+  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-test-"))
+  try {
+    const copy = path.join(scratch, "sheet.kicad_sch")
+    fs.copyFileSync(
+      path.join(repoRoot, "drafted", "pultec", "pultec-hi-cut", "pultec-hi-cut.generated-do-not-edit.kicad_sch"),
+      copy,
+    )
+    const result = repaperToUSLetter(copy)
+    expect(result.ok).toBe(true)
+    expect(result.fits).toBe(true)
+    expect(fs.readFileSync(copy, "utf8")).toContain('(paper "USLetter")')
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
+  }
+})
+
+/**
+ * The negative half: content moved far past the US Letter frame must report `fits: false`
+ * rather than silently passing - the same drive-by-sabotage discipline this file's other
+ * controls use, kept as a permanent regression rather than a one-off manual drive.
+ */
+test("repaperToUSLetter reports fits:no when content overshoots the frame", async () => {
+  const repoRoot = moduleRepoRoot()
+  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-overshoot-test-"))
+  try {
+    const source = path.join(
+      repoRoot,
+      "drafted",
+      "pultec",
+      "pultec-hi-cut",
+      "pultec-hi-cut.generated-do-not-edit.kicad_sch",
+    )
+    const text = fs.readFileSync(source, "utf8")
+    // Target the first (xy ...) AFTER a (wire token specifically - a bare (xy ...) earlier in
+    // the file can sit inside lib_symbols' own symbol-local graphics, which the body-extent
+    // measurement deliberately excludes (paper_fit.py / kicad_sheet.py), so corrupting one of
+    // those would not move the number this test is driving.
+    const wireIndex = text.indexOf("(wire")
+    if (wireIndex === -1) throw new Error("fixture has no (wire token to corrupt a point after")
+    const xyPattern = /\(xy ([\d.]+) ([\d.]+)\)/
+    const rest = text.slice(wireIndex)
+    const match = rest.match(xyPattern)
+    if (match === null) throw new Error("fixture has no (xy ...) point after its first (wire token")
+    const matchStart = wireIndex + (match.index ?? 0)
+    const corrupted = text.slice(0, matchStart) + `(xy 999.0 ${match[2]})` + text.slice(matchStart + match[0].length)
+    const copy = path.join(scratch, "sheet.kicad_sch")
+    fs.writeFileSync(copy, corrupted)
+    const result = repaperToUSLetter(copy)
+    expect(result.ok).toBe(true)
+    expect(result.fits).toBe(false)
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
+  }
+})
+
+test("repaperToUSLetter refuses rather than guessing when the (paper ...) token is not exactly one match", async () => {
+  const repoRoot = moduleRepoRoot()
+  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-no-token-test-"))
+  try {
+    const copy = path.join(scratch, "sheet.kicad_sch")
+    fs.writeFileSync(copy, "(kicad_sch (version 1) (generator x))")
+    const result = repaperToUSLetter(copy)
+    expect(result.ok).toBe(false)
+    expect(result.stderr).toContain("found 0")
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
   }
 })
 
