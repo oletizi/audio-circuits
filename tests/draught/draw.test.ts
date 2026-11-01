@@ -17,10 +17,17 @@
 // same "a timeout failure here was a lie about the code" shape the two
 // 60_000 comments below argue against. `os.tmpdir()` is what every other
 // `mkdtemp` site in this suite uses; it also brings these prefixes inside
-// `make prune-temp`'s derivation, which reads the literal
-// `mkdtempSync(path.join(os.tmpdir(), "<prefix>-"` form
-// (`tools/stripboard/prune-temp.ts`'s `derivePrefixes`) and could never have
-// seen a `build/` path.
+// `make prune-temp`'s derivation (`tools/stripboard/prune-temp.ts`'s
+// `derivePrefixes`), which reads the temp-call-then-`path.join`-then-literal
+// form out of these sources and could never have seen a `build/` path.
+//
+// THE CALL IS NOT WRITTEN OUT IN THIS COMMENT, AND THE FULL SUITE IS WHY.
+// `tests/stripboard/temp-scratch.test.ts` counts the scratch-call token in a
+// file and compares that against the number of named `const` assignments of
+// it, so naming the call in PROSE reports this file as having an unnamed
+// scratch site - a finding about the comment, not about any code. Spelling it
+// out here cost one full-suite failure; `tests/kicad/footprint-sweep.ts`'s own
+// header records the same discipline for the same reason.
 import { expect, test } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
