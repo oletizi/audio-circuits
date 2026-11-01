@@ -74,18 +74,43 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
+  DRAFT_TOOLS,
   draftWithCopperhead,
   parseIntent,
   resolveIntentPath,
   verifyIntentAgainstModel,
   type Intent,
 } from "../draught/draw-draft.ts"
-import { renderSheet, repaperToUSLetter, runMeasurementSuite } from "../draught/draw-render.ts"
+import {
+  RENDER_TOOLS,
+  renderSheet,
+  repaperToUSLetter,
+  runMeasurementSuite,
+} from "../draught/draw-render.ts"
 import { checkToolchain, readLock, type Toolchain } from "../draught/toolchain.ts"
 import { loadDeclaration, type PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { renderToolchainReport } from "./draught.ts"
 import { isMain } from "./entrypoint.ts"
+
+/**
+ * EVERY `draughting/tools.lock.json` TOOL THE DRAWING PATH ACTUALLY SPAWNS,
+ * and the only tools a disagreement in which may stop a draft - controller
+ * Ruling 1 of the final review's fix round 2. See `runDraw`'s step 1 for the
+ * ruling and the reasoning.
+ *
+ * **It is a UNION of what each step declares, never a list written here.**
+ * `DRAFT_TOOLS` and `RENDER_TOOLS` sit beside their own `spawnSync` calls in
+ * `../draught/draw-draft.ts` and `../draught/draw-render.ts`, because which
+ * tools a step needs is a fact about that step's code. A list maintained in
+ * this file would be a second place for that fact to be wrong - the same
+ * argument `lib/not-source.ts` makes about six walkers' skip-sets, and the
+ * one ruling R1 makes about install locations.
+ *
+ * Sorted and de-duplicated so the order two steps happen to declare in
+ * cannot change what this verb reports.
+ */
+const DRAWING_PATH_TOOLS: readonly string[] = [...new Set([...DRAFT_TOOLS, ...RENDER_TOOLS])].sort()
 
 /** Printed at the top of every successful (or partially successful) run - see the module comment. */
 const SCOPE_DISCLOSURE =
@@ -125,8 +150,19 @@ export interface DrawResult {
   readonly drew: boolean
 }
 
-function refusal(stderr: string): DrawResult {
-  return { exitCode: 1, stdout: "", stderr, drew: false }
+/**
+ * A refusal, carrying any advisory sections produced before it.
+ *
+ * **`advisory` IS NOT OPTIONAL DECORATION (controller Ruling 1).** The
+ * toolchain advisory - a lock disagreement on a tool the drawing path does
+ * not use - is produced at step 1, before any of the four refusal grounds
+ * that follow it. Dropping it on those paths would make a check that RAN and
+ * found something look like one that found nothing, which is the shape
+ * `CLAUDE.md` names: *"a skipped check must never look like a passing one."*
+ * So every refusal after step 1 carries it.
+ */
+function refusal(stderr: string, advisory: readonly string[] = []): DrawResult {
+  return { exitCode: 1, stdout: advisory.join("\n\n"), stderr, drew: false }
 }
 
 /**
@@ -158,31 +194,62 @@ function resolveBoardDir(repoRoot: string, options: DrawOptions): string {
 export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   const repoRoot = moduleRepoRoot()
 
-  // Step 1: check the toolchain. Nothing else runs until every pinned tool agrees.
+  // Step 1: check the toolchain. Nothing else runs until every tool THE
+  // DRAWING PATH USES agrees - and every other disagreement is reported
+  // beside the page instead of blocking it.
   //
-  // THIS GATE IS WIDER THAN THE TOOLS THIS VERB ACTUALLY RUNS, AND THAT IS
-  // RECORDED HERE RATHER THAN QUIETLY WIDENED FURTHER. It refuses on ANY
-  // disagreement in `draughting/tools.lock.json`, and the lock names tools
-  // this path never invokes: `qpdf` (a build-guide tool) from the start, and
-  // `numpy`/`pillow` since the final review's I-3 added them for
-  // `framegeom.py`, which `runMeasurementSuite` does not call. So a missing
-  // numpy stops a page being drawn.
+  // **CONTROLLER RULING 1, final review fix round 2.** This gate used to
+  // refuse on ANY disagreement in `draughting/tools.lock.json`, including
+  // tools this path never invokes: `qpdf` (a build-guide tool) from the
+  // start, and `numpy`/`pillow` once they were pinned for `framegeom.py`,
+  // which `runMeasurementSuite` does not call. `akcli` too - this verb never
+  // calls it, by design, as this module's own scope disclosure says. So a
+  // missing numpy stopped a page being drawn. The ruling, verbatim:
   //
-  // **That is worth asking about rather than assuming, because
-  // `EVALUATING-DRAWINGS.md` §3 permits withholding a drawing for an
-  // electrical fault and nothing else**, and `docs/known-gaps.md` G303 is the
-  // owner's own directive about a gate nobody can see past. It is left as the
-  // existing design's granularity - "the drawing toolchain agrees, or stop" -
-  // because narrowing it per-step would be this verb authoring its own
-  // acceptance criteria, which is the one thing `CLAUDE.md` forbids the
-  // producing agent. If it is narrowed, the question to answer first is which
-  // tools each STEP needs, and the answer belongs in the lock (a field) or in
-  // a spec, not in a judgement made here.
+  //   *"the gate that precedes drafting checks the tools the drawing path
+  //   uses, and nothing else"* ... *"'numpy is missing' is a dumb reason not
+  //   to draw a schematic"* ... and that `qpdf` was already in that position
+  //   *"makes it a pre-existing wrong, not a licence to widen it by two."*
+  //
+  // It rests on the owner's own words behind `docs/known-gaps.md` G303 -
+  // *"if I can't look at it, I cant decide if the refusal is for dumb
+  // reasons"* - which `EVALUATING-DRAWINGS.md` §3 states as: only an
+  // electrical fault may withhold a drawing. A pre-draft refusal is not
+  // literally withholding a rendered page, since no page exists yet; it has
+  // the same effect on the reviewer, who gets no page and a reason that is
+  // not about the circuit.
+  //
+  // **WHAT COUNTS AS "THE DRAWING PATH" IS DECLARED BY THE MODULES THAT
+  // SPAWN THE TOOLS**, not listed here: `DRAFT_TOOLS` in
+  // `../draught/draw-draft.ts` and `RENDER_TOOLS` in
+  // `../draught/draw-render.ts`, each beside its own `spawnSync`.
+  // `tests/draught/draw.test.ts` cross-checks both against those modules'
+  // source, so a tool added to the draw path without being declared fails a
+  // test rather than being discovered as a late, worse error message.
+  //
+  // Machine-wide toolchain health is `make draught-doctor`'s job and it
+  // still refuses on every one of these - see `./draught.ts`.
   const lock = options.lock ?? readLock()
   const problems = checkToolchain(lock)
-  if (problems.length > 0) {
-    return refusal(renderToolchainReport(problems))
+  const blocking = problems.filter((problem) => DRAWING_PATH_TOOLS.includes(problem.tool))
+  const advisory = problems.filter((problem) => !DRAWING_PATH_TOOLS.includes(problem.tool))
+  if (blocking.length > 0) {
+    return refusal(renderToolchainReport(blocking))
   }
+  // Reported, never silent, and never gating - the same shape
+  // `make draught-doctor` already uses for akcli doctor's own report. A
+  // skipped check must never look like a passing one (`CLAUDE.md`), and
+  // neither must a check whose finding is not this verb's business. It is
+  // threaded through every later refusal as well as into a successful run's
+  // stdout - see `refusal` above.
+  const advisorySections: string[] =
+    advisory.length === 0
+      ? []
+      : [
+          "toolchain (ADVISORY - does not block this draft, because the drawing path does not " +
+            "use these tools; `make draught-doctor` is what refuses on them):\n" +
+            renderToolchainReport(advisory),
+        ]
 
   const boardDir = resolveBoardDir(repoRoot, options)
   const board = options.board ?? path.basename(boardDir)
@@ -193,30 +260,32 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
       `${boardDir} declares no perfboard.json, so there is no board to draw here. draw acts on ` +
         "$(CURDIR) exactly as check does (docs/known-gaps.md G308) - run it from a board directory, " +
         "e.g. `make -C boards/<board> draw`.",
+      advisorySections,
     )
   }
   let declaration: PerfboardDeclaration
   try {
     declaration = loadDeclaration(declarationFile)
   } catch (error) {
-    return refusal(error instanceof Error ? error.message : String(error))
+    return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
 
   // Step 2: resolve the intent - a committed one, or a refusal naming the board.
   const resolvedIntent = resolveIntentPath(board, options.intentPath)
-  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal)
+  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
 
   let intent: Intent
   try {
     intent = parseIntent(resolvedIntent.path)
   } catch (error) {
-    return refusal(error instanceof Error ? error.message : String(error))
+    return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
 
   if (declaration.netlistPath === undefined) {
     return refusal(
       `${declaration.file} declares no "netlist" field, so there is no committed model export to verify ` +
         `${board}'s intent against. Declare "sch"/"netlist" there (tools/perfboard/declaration.ts) before drafting.`,
+      advisorySections,
     )
   }
 
@@ -228,7 +297,7 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
     netlistText = fs.readFileSync(declaration.netlistPath, "utf8")
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
-    return refusal(`could not read ${declaration.netlistPath}: ${detail}.`)
+    return refusal(`could not read ${declaration.netlistPath}: ${detail}.`, advisorySections)
   }
   const agreement = verifyIntentAgainstModel(intent, netlistText)
   if (!agreement.agrees) {
@@ -239,6 +308,7 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
           "drawing whose connectivity disagrees with the circuit model, so nothing was drafted:",
         ...agreement.disagreements,
       ].join("\n"),
+      advisorySections,
     )
   }
 
@@ -247,6 +317,7 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,
+    ...advisorySections,
     `draft (copperhead, intent ${resolvedIntent.path}):\n${draft.stdout}`.trim(),
   ]
   const stderrSections: string[] = []

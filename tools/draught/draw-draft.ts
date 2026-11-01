@@ -196,6 +196,24 @@ export function verifyIntentAgainstModel(intent: Intent, netlistText: string): A
 
 // --- drafting with copperhead ---
 
+/**
+ * The `draughting/tools.lock.json` tools THIS MODULE ACTUALLY SPAWNS, so
+ * `tools/cli/draw.ts`'s pre-draft gate can refuse on these and on nothing
+ * else - controller Ruling 1 of the final review's fix round 2.
+ *
+ * **IT IS DECLARED HERE, BESIDE THE SPAWN, AND NOT IN A LIST IN `draw.ts`.**
+ * Which tools a step needs is a fact about the step's own code: this module
+ * runs `defaultCopperheadTsx()` on `src/cli.ts` and nothing else from the
+ * lock. `git` is spawned too and is deliberately absent - `TOOLING.md`'s
+ * table lists it as a system tool this repository has never pinned, so it is
+ * not in the lock and there is nothing here to check it against.
+ *
+ * `tests/draught/draw.test.ts` cross-checks this against the source: a lock
+ * tool whose resolver is referenced by a drawing-path module and is NOT
+ * declared fails, and so does one declared here but referenced nowhere.
+ */
+export const DRAFT_TOOLS: readonly string[] = ["copperhead"]
+
 export interface DraftOutcome {
   readonly ok: boolean
   readonly schematicPath: string

@@ -33,7 +33,8 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { readLock, type Toolchain } from "../../tools/draught/toolchain.ts"
-import { fitStatusFromReport, repaperToUSLetter } from "../../tools/draught/draw-render.ts"
+import { DRAFT_TOOLS } from "../../tools/draught/draw-draft.ts"
+import { RENDER_TOOLS, fitStatusFromReport, repaperToUSLetter } from "../../tools/draught/draw-render.ts"
 import { runDraw } from "../../tools/cli/draw.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
@@ -41,6 +42,10 @@ import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
  * The real pinned lock, plus one tool nothing on this machine will ever answer to - named
  * "definitely-not-a-tool" itself, not merely probed with that argv, so the rendered report's
  * per-tool line (`tools/cli/draught.ts`'s `renderToolchainReport`) names it literally.
+ *
+ * **IT IS NOT A DRAWING-PATH TOOL, AND AFTER CONTROLLER RULING 1 THAT IS THE POINT.** A
+ * disagreement on it is reported and does not block - see the advisory test below. The
+ * blocking half is driven with a real drawing-path tool instead.
  */
 function lockWantingAMissingTool(): Toolchain {
   return {
@@ -49,11 +54,116 @@ function lockWantingAMissingTool(): Toolchain {
   }
 }
 
-test("draw refuses with the toolchain report when a pinned tool is missing", async () => {
-  const result = await runDraw({ board: "pultec-hi-cut", lock: lockWantingAMissingTool() })
+/**
+ * CONTROLLER RULING 1, THE BLOCKING HALF: a disagreement on a tool the drawing path USES
+ * refuses before anything is drafted.
+ *
+ * `kicad-cli` is a real `RENDER_TOOLS` member, pinned to a version nothing will ever
+ * report, so the perturbation is synthetic while the TOOL is real - this must not pass by
+ * naming a tool that happens to be absent on the machine running it.
+ */
+test("draw refuses before drafting when a tool the drawing path uses disagrees with the lock", async () => {
+  const lock = { ...readLock(), "kicad-cli": { ...readLock()["kicad-cli"], version: "0.0.1-ruling-1" } }
+  const result = await runDraw({ board: "pultec-hi-cut", lock })
   expect(result.exitCode).not.toBe(0)
-  expect(result.stderr).toContain("definitely-not-a-tool")
   expect(result.drew).toBe(false)
+  expect(result.stderr).toContain("kicad-cli")
+  expect(result.stderr).toContain("0.0.1-ruling-1")
+})
+
+/**
+ * CONTROLLER RULING 1, THE OTHER HALF, AND THE ONE THE RULING WAS MADE FOR: a disagreement
+ * on a tool the drawing path does NOT use must not block the draft, and must still be
+ * reported.
+ *
+ * Before the ruling, `runDraw` refused on ANY lock disagreement, so a missing `numpy` -
+ * pinned for `framegeom.py`, which this verb never calls - stopped a page being drawn. The
+ * owner's words behind `docs/known-gaps.md` G303: *"if I can't look at it, I cant decide if
+ * the refusal is for dumb reasons"*, and the controller's: *"'numpy is missing' is a dumb
+ * reason not to draw a schematic."*
+ *
+ * **BOTH HALVES ARE ASSERTED, because either alone is satisfiable the wrong way.** A test
+ * that only checked the draft succeeded would pass against an implementation that dropped
+ * the finding silently - which is the "a skipped check must never look like a passing one"
+ * failure wearing a fix's clothes.
+ */
+test("a lock disagreement on a tool the drawing path does not use is reported and does not block the draft", async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-advisory-"))
+  try {
+    const result = await runDraw({ board: "pultec-hi-cut", lock: lockWantingAMissingTool(), outDir })
+    expect(result.exitCode).toBe(0)
+    expect(result.drew).toBe(true)
+    expect(fs.existsSync(path.join(outDir, "crops", "pultec-hi-cut-whole-page.png"))).toBe(true)
+    // Reported, labelled as not gating, and naming the tool.
+    expect(result.stdout).toContain("definitely-not-a-tool")
+    expect(result.stdout).toContain("ADVISORY")
+    expect(result.stdout).toContain("does not block this draft")
+  } finally {
+    fs.rmSync(outDir, { recursive: true, force: true })
+  }
+}, 60_000)
+
+/**
+ * RULING 1'S DECLARATION CANNOT GO STALE SILENTLY: the set of drawing-path tools is
+ * cross-checked against the source of the three modules that make up that path.
+ *
+ * `DRAFT_TOOLS` and `RENDER_TOOLS` are hand-written beside their own `spawnSync` calls,
+ * which is the right home for them - but a hand-written list is exactly what this branch
+ * has twice found going stale (`VENDORED_CHECKOUT_NAMES`' six copies, the `make help`
+ * verb). So: for every tool in the lock, its resolver identifier must appear in those
+ * modules' source if and only if the tool is declared. A tool whose resolver gets called
+ * from the draw path without being declared would otherwise fail LATER, with a worse
+ * message, in the middle of a draft.
+ *
+ * `RESOLVER_FOR` must cover every key of the real lock, asserted first - a table that
+ * silently skips a tool is a check that cannot fail for it.
+ */
+const RESOLVER_FOR: Readonly<Record<string, string>> = {
+  copperhead: "defaultCopperheadTsx",
+  "kicad-cli": "defaultKicadCli",
+  magick: "defaultMagick",
+  akcli: "defaultAkcli",
+  qpdf: "defaultQpdf",
+  numpy: "defaultAkcliVenvPython",
+  pillow: "defaultAkcliVenvPython",
+}
+
+test("the drawing-path tool declaration matches what the drawing-path modules actually resolve", () => {
+  const lock = readLock()
+  const uncovered = Object.keys(lock).filter((tool) => RESOLVER_FOR[tool] === undefined)
+  expect(
+    uncovered,
+    "these lock tools have no resolver identifier in this test's table, so nothing below checks " +
+      "them. Add each one before relying on this test.",
+  ).toEqual([])
+
+  const repoRoot = moduleRepoRoot()
+  const source = ["tools/cli/draw.ts", "tools/draught/draw-draft.ts", "tools/draught/draw-render.ts"]
+    .map((file) => fs.readFileSync(path.join(repoRoot, file), "utf8"))
+    .join("\n")
+  // Only the CODE, so the prose in those modules' comments (which names akcli, numpy and
+  // pillow at length, precisely to say they are NOT used here) cannot satisfy this.
+  const code = source
+    .split("\n")
+    .filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line))
+    .join("\n")
+
+  const declared = [...DRAFT_TOOLS, ...RENDER_TOOLS]
+  const wrong: string[] = []
+  for (const [tool, resolver] of Object.entries(RESOLVER_FOR)) {
+    if (lock[tool] === undefined) continue
+    const resolved = new RegExp(String.raw`\b${resolver}\(`).test(code)
+    const isDeclared = declared.includes(tool)
+    if (resolved && !isDeclared) wrong.push(`${tool}: the draw path calls ${resolver}() but does not declare it`)
+    if (!resolved && isDeclared) wrong.push(`${tool}: declared as a drawing-path tool but ${resolver}() is never called`)
+  }
+  expect(
+    wrong,
+    "DRAFT_TOOLS (tools/draught/draw-draft.ts) and RENDER_TOOLS (tools/draught/draw-render.ts) are " +
+      "what runDraw's pre-draft gate refuses on - controller Ruling 1. A tool missing from them is " +
+      "a tool whose absence surfaces as a late, worse error in the middle of a draft; a tool listed " +
+      "in them but never called blocks a page for no reason.",
+  ).toEqual([])
 })
 
 test("a board with no committed intent refuses, naming the board, rather than deriving one", async () => {
@@ -145,6 +255,21 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
     expect(result.stdout).toContain("label_survey.py")
     expect(result.stdout).toContain("TRUE CROSSINGS")
     expect(result.stdout).toContain("ORPHAN JUNCTIONS")
+
+    // CONTROLLER RULING 2: the suite's own selftest runs FIRST, which is what spec §2
+    // asks for and what runMeasurementSuite did not do. The ordering is the whole of the
+    // finding - the control itself was never lost, since ./measure-suite.test.ts runs
+    // selftest.py on every bun test - so this asserts the POSITION, not merely the
+    // presence. A test that only checked it appeared would pass with it printed last,
+    // which is the state the ruling corrected.
+    expect(result.stdout).toContain("selftest.py")
+    expect(result.stdout).toContain("every one moved or fired")
+    const selftestAt = result.stdout.indexOf("selftest.py")
+    for (const script of ["crossings.py", "junction_audit.py", "label_survey.py"]) {
+      expect(selftestAt, `selftest.py must be reported before ${script}`).toBeLessThan(
+        result.stdout.indexOf(script),
+      )
+    }
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true })
   }

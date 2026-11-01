@@ -84,6 +84,17 @@ per-board, and names every disagreement between `draughting/tools.lock.json`
 and what is actually installed. Do not proceed past a disagreement it
 reports.
 
+**`make draw` WILL STILL DRAFT PAST SOME OF WHAT IT REPORTS, AND THAT IS
+DELIBERATE, NOT A HOLE.** `make draw`'s own pre-draft gate refuses only on the
+tools the drawing path spawns - copperhead, `kicad-cli`, `magick` - and prints
+every other lock disagreement as an ADVISORY section beside the page.
+`akcli`, `qpdf`, `numpy` and `pillow` are pinned and are not on that path, so
+a disagreement in one of them is reported and drafted past. **Read the
+advisory**: it is still a real finding about this machine, and `make
+draught-doctor` is where it refuses. Controller Ruling 1 of the final review's
+fix round 2, on the owner's directive behind `docs/known-gaps.md` G303 - *"if
+I can't look at it, I cant decide if the refusal is for dumb reasons."*
+
 Then, for a fresh draft, run `make draw` from the board's own directory, or
 `make -C boards/<board> draw` from outside it. There is deliberately no
 `BOARD=` variable or environment variable - the verb reads `process.cwd()`,
@@ -112,8 +123,12 @@ noticing:**
 2. **`make draw` IS A MECHANICAL DRAFT AND STOPS BEFORE THE REPAIR STEP.**
    It runs the toolchain check, resolves and verifies the intent, drafts
    with copperhead, re-papers, renders with `kicad-cli`, runs the
-   measurement suite (`draughting/measure/crossings.py`,
-   `junction_audit.py`, `label_survey.py`), and writes one whole-page crop.
+   measurement suite - **`selftest.py` first**, then
+   `draughting/measure/crossings.py`, `junction_audit.py` and
+   `label_survey.py` - and writes one whole-page crop. The selftest runs
+   first so that one run's output carries its own evidence that the shared
+   reader those three depend on can still tell a difference; a failing
+   selftest is loud and withholds nothing.
    **It never calls `akcli`.** Repair - step 4 of the loop above - is
    judgement work this skill is responsible for, not something any verb
    performs for you. Only `pultec-hi-cut` has a `COMMITTED_INTENT` entry

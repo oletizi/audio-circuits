@@ -223,13 +223,36 @@ boards/<board> draw` from outside it - there is no `BOARD=` variable). It
 resolves the board's committed copperhead intent, verifies the intent's net
 partition against the model's committed netlist export, drafts with
 copperhead, **re-papers the draft to US Letter** (step 2.5 below), renders
-with `kicad-cli`, and runs the measurement suite
-(`draughting/measure/crossings.py`, `junction_audit.py`, `label_survey.py`),
-writing everything under `build/draw/<board>/` - never under `drafted/`, never
-a board's own declared files. **It stops there.** It never calls `akcli`:
-step 4 (repair) and everything after it is judgement work this procedure still
-describes by hand below, and `build/draw/<board>/` is raw material for that
-pass, not the reviewer-ready artifact `drafted/` holds.
+with `kicad-cli`, and runs the measurement suite - **`selftest.py` first**,
+then `draughting/measure/crossings.py`, `junction_audit.py` and
+`label_survey.py` - writing everything under `build/draw/<board>/` - never
+under `drafted/`, never a board's own declared files. **It stops there.** It
+never calls `akcli`: step 4 (repair) and everything after it is judgement work
+this procedure still describes by hand below, and `build/draw/<board>/` is raw
+material for that pass, not the reviewer-ready artifact `drafted/` holds.
+
+**`selftest.py` RUNS FIRST, AND THE ORDER IS THE POINT** (controller Ruling 2
+of the final review's fix round 2; this verb ran the three measurements and
+not the selftest until then). Three numbers printed by a reader nobody has
+just checked are three numbers taken on faith: the selftest perturbs committed
+sheets and reports whether each count MOVED, so running it first means one
+run's output carries its own evidence that the reader can still tell a
+difference. It takes 0.27 s. **A failing selftest is loud and withholds
+nothing** - it is a labelled section like every other measurement, and
+`make draw`'s exit code does not move, because a broken reader makes the three
+numbers untrustworthy without making the page unfit to look at.
+
+**AND `make draw`'s PRE-DRAFT TOOLCHAIN GATE IS NARROWER THAN
+`make draught-doctor`'s, deliberately** (Ruling 1, same round). It refuses
+ahead of drafting only on the tools the drawing path actually spawns -
+copperhead, `kicad-cli`, `magick` - and **reports every other lock
+disagreement beside the page instead of blocking it.** `akcli`, `qpdf`,
+`numpy` and `pillow` are in the lock and are not on that path, and *"numpy is
+missing" is a dumb reason not to draw a schematic*: the owner's standing
+directive behind `docs/known-gaps.md` **G303** is *"if I can't look at it, I
+cant decide if the refusal is for dumb reasons"*. Machine-wide toolchain
+health stays `make draught-doctor`'s job, and that verb still refuses on every
+one of them.
 
 `.claude/skills/drawing-a-schematic/SKILL.md` is the invocation of this whole
 loop - it names which commands are `make draught-doctor` and `make draw`'s job

@@ -167,6 +167,22 @@ export function repaperToUSLetter(schematicPath: string): RepaperOutcome {
 
 // --- rendering, and the one crop this verb can write without a judgement call ---
 
+/**
+ * The `draughting/tools.lock.json` tools THIS MODULE ACTUALLY SPAWNS - see
+ * `./draw-draft.ts`'s `DRAFT_TOOLS` for why the declaration lives beside the
+ * spawn rather than in a list in `tools/cli/draw.ts` (controller Ruling 1).
+ *
+ * `renderSheet` runs `defaultKicadCli()` twice and `defaultMagick()` once.
+ * `python3` is spawned by `repaperToUSLetter` and `runMeasurementSuite` and is
+ * deliberately absent for the same reason `git` is absent from `DRAFT_TOOLS`:
+ * it is not in the lock, so there is nothing to check it against. **`numpy`
+ * and `pillow` are in the lock and are NOT here**, because the scripts this
+ * module runs - `paper_fit.py`, `crossings.py`, `junction_audit.py`,
+ * `label_survey.py`, `selftest.py` - import neither; `framegeom.py`, which
+ * does, is run by hand and by `tests/draught/install-script.test.ts`.
+ */
+export const RENDER_TOOLS: readonly string[] = ["kicad-cli", "magick"]
+
 export interface RenderOutcome {
   readonly ok: boolean
   readonly stdout: string
@@ -232,59 +248,79 @@ export function renderSheet(opts: { readonly schematicPath: string; readonly out
 // --- the measurement suite ---
 
 /**
- * The measurement suite this verb runs against every fresh draft, in order.
+ * THE SUITE'S OWN SELFTEST, AND IT RUNS FIRST - controller Ruling 2 of the
+ * final review's fix round 2.
  *
- * **IT DOES NOT RUN `selftest.py`, AND THE SPEC SAYS IT SHOULD - recorded
- * here as a deviation rather than left for the next reader to notice (final
- * review M-1).** `docs/superpowers/specs/2026-10-30-institutionalise-draughting-design.md`
+ * `docs/superpowers/specs/2026-10-30-institutionalise-draughting-design.md`
  * §2: *"Every check keeps a positive control, and the suite's own selftest
- * runs first."* This list is the three scripts below and nothing else.
+ * runs first."* This verb ran the three measurements below and never the
+ * selftest, which M-1 reported as an unrecorded deviation. **The ruling: the
+ * code changes, not the spec sentence**, and the measurement is why it went
+ * that way rather than the other - `selftest.py` takes **0.27s**
+ * (`/usr/bin/time -p`, this machine) against the seconds this verb already
+ * spends in copperhead and `kicad-cli`, so the only argument for leaving it
+ * out did not survive being measured.
  *
- * **The control is not lost**, which is why it is a deviation and not a
- * defect: `tests/draught/measure-suite.test.ts` runs `selftest.py` on every
- * `bun test`, and it reports ten controls, every one moved or fired. What is
- * lost is the ordering the spec asks for - `make draw` prints three
- * measurements without first demonstrating, in that same run, that the
- * shared reader those three depend on can still tell a difference.
+ * **WHAT THE ORDERING BUYS, which is the whole point and is not the control
+ * itself.** The control was never lost: `tests/draught/measure-suite.test.ts`
+ * runs the selftest on every `bun test` and it reports ten controls, every
+ * one moved or fired. What was lost is that `make draw` printed three
+ * measurements **without first showing, in that same run, that the shared
+ * reader those three depend on can still tell a difference.** A reader of one
+ * run's output had to take the reader's health on faith from somewhere else.
  *
- * **The cost of closing it is small and was measured: `selftest.py` takes
- * 0.27s** (`/usr/bin/time -p`, this machine), against the seconds this verb
- * already spends in copperhead and `kicad-cli`. So "it would slow the verb
- * down" is not the reason it is absent, and nobody should assume it is.
+ * **IT TAKES NO SHEET ARGUMENT.** It perturbs its own committed fixtures
+ * under `docs/research/` - that is what makes it a control - so it is
+ * spawned with no path, unlike the three below. (Measured: it ignores argv
+ * entirely, so passing one would have been harmless and meaningless; it is
+ * omitted because it means nothing, not because it breaks.)
  *
- * It is NOT closed here because deciding that `make draw`'s output should
- * change shape is a change to what this verb produces, and the producing
- * agent does not get to settle that against its own judgement
- * (`CLAUDE.md`). The spec sentence and this list disagree; one of the two
- * should move, and the reviewer picks which.
+ * **A FAILING SELFTEST IS LOUD AND STILL WITHHOLDS NOTHING.** It is reported
+ * exactly like every other measurement - a labelled section, `ok: false` -
+ * and `runDraw`'s exit code does not move, because `EVALUATING-DRAWINGS.md`
+ * §3 permits withholding a page for an electrical fault and nothing else. A
+ * broken reader makes the three numbers below untrustworthy; it does not make
+ * the page unfit to look at, and the reviewer is the one who decides what to
+ * do about it.
  */
+const SELFTEST_SCRIPT = "selftest.py"
+
+/** The three measurements this verb runs against every fresh draft, in order, after the selftest. */
 const MEASUREMENT_SCRIPTS: readonly string[] = ["crossings.py", "junction_audit.py", "label_survey.py"]
 
 /**
- * Run every script in `MEASUREMENT_SCRIPTS` against the drafted sheet and
- * concatenate what each prints. **A script's own non-zero exit is reported
- * as a TOOLING failure, in its own labelled paragraph, never silently
- * dropped and never treated as a drawing finding** - "a skipped check must
- * never look like a passing one" (`CLAUDE.md`). Neither kind of result ever
- * changes `runDraw`'s exit code: the measurement suite's whole job here is
- * to print findings beside an already-written page, not to gate it
- * (`EVALUATING-DRAWINGS.md` §3, §6).
+ * Run `selftest.py`, then every script in `MEASUREMENT_SCRIPTS` against the
+ * drafted sheet, and concatenate what each prints. **A script's own non-zero
+ * exit is reported as a TOOLING failure, in its own labelled paragraph, never
+ * silently dropped and never treated as a drawing finding** - "a skipped
+ * check must never look like a passing one" (`CLAUDE.md`). Neither kind of
+ * result ever changes `runDraw`'s exit code: the measurement suite's whole
+ * job here is to print findings beside an already-written page, not to gate
+ * it (`EVALUATING-DRAWINGS.md` §3, §6).
  */
 export function runMeasurementSuite(schematicPath: string): { readonly report: string; readonly ok: boolean } {
   const measureDir = path.join(moduleRepoRoot(), "draughting", "measure")
   const sections: string[] = []
   let ok = true
-  for (const script of MEASUREMENT_SCRIPTS) {
-    const result = spawnSync("python3", [path.join(measureDir, script), schematicPath], { encoding: "utf8" })
+
+  /** One script's labelled section, with its own non-zero exit called a tooling failure. */
+  const run = (script: string, args: readonly string[]): void => {
+    const result = spawnSync("python3", [path.join(measureDir, script), ...args], { encoding: "utf8" })
     const body = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim()
     if (result.status !== 0) {
       ok = false
       sections.push(
         `${script}: EXITED ${result.status ?? "with no status"} - a tooling failure, not a drawing finding:\n${body}`,
       )
-    } else {
-      sections.push(`${script}:\n${body}`)
+      return
     }
+    sections.push(`${script}:\n${body}`)
+  }
+
+  // Ruling 2: FIRST, and with no sheet argument - see SELFTEST_SCRIPT above.
+  run(SELFTEST_SCRIPT, [])
+  for (const script of MEASUREMENT_SCRIPTS) {
+    run(script, [schematicPath])
   }
   return { report: sections.join("\n\n"), ok }
 }
