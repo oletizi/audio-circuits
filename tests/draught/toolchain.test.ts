@@ -61,7 +61,12 @@ test("Important 1: copperhead's fix command targets the directory the probe actu
   const dir = defaultCopperheadDir()
   expect(problem?.how).toContain(dir)
   expect(problem?.how).toContain(`git -C ${dir} checkout`)
-  expect(problem?.how).toContain(`cd ${dir} && npm install`)
+  expect(problem?.how).toContain(`cd ${dir} && npm ci`)
+  // Final review I-1: these four assertions pinned `npm install` and so
+  // DEFENDED the bug - the one command `draughting/install.sh` refuses to
+  // use. `npm ci` is not a substring of `npm install`, so the positive
+  // assertion above cannot catch a regression on its own; this one can.
+  expect(problem?.how).not.toContain("npm install")
 })
 
 test("Important 2: akcli's fix command installs with the pip that lives beside the akcli binary the probe resolved, not bare PATH pip", () => {
@@ -102,7 +107,8 @@ test("R6 bootstrap: copperhead's fix clones fresh when the probe found nothing a
   const dir = defaultCopperheadDir()
   expect(how).toContain(`git clone ${spec.upstream} ${dir}`)
   expect(how).toContain(`git -C ${dir} checkout ${spec.commit}`)
-  expect(how).toContain(`cd ${dir} && npm install`)
+  expect(how).toContain(`cd ${dir} && npm ci`)
+  expect(how).not.toContain("npm install")
 })
 
 test("R6 upgrade: copperhead's fix fetches and checks out in place, never clones, once a checkout answers the probe at all", () => {
@@ -112,7 +118,8 @@ test("R6 upgrade: copperhead's fix fetches and checks out in place, never clones
   expect(how).not.toContain("git clone")
   expect(how).toContain(`git -C ${dir} fetch`)
   expect(how).toContain(`git -C ${dir} checkout ${spec.commit}`)
-  expect(how).toContain(`cd ${dir} && npm install`)
+  expect(how).toContain(`cd ${dir} && npm ci`)
+  expect(how).not.toContain("npm install")
 })
 
 test("R6 bootstrap: akcli's fix creates the venv before installing into it when the probe found nothing at all", () => {

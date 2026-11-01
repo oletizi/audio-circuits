@@ -344,6 +344,16 @@ export function howToFix(tool: string, spec: ToolSpec, found: string | null): st
   // second commit-pinned tool falls through to the generic
   // `install ... from ...` message below rather than silently getting
   // copperhead's own checkout directory.
+  //
+  // **`npm ci`, NEVER `npm install`** - the final review's I-1, which is this
+  // branch's own fix carried one file over. `draughting/install.sh`'s header
+  // argues the case at length and its refusal message says falling back to
+  // `npm install` is *"not something to silently work around"*: copperhead's
+  // `package.json` asks for `tsx` `^4.19.3` while its `package-lock.json`
+  // names `4.23.1`, so the two commands install two different trees and only
+  // one of them is the pinned one. Printing the unpinned command here was
+  // worse than printing nothing, because `make draught-doctor` is what puts
+  // this string in front of a person as THE repair.
   if (spec.commit !== undefined && spec.upstream !== undefined) {
     const checkoutDirResolver = RESOLVED_CHECKOUT_DIR[tool]
     if (checkoutDirResolver !== undefined) {
@@ -357,11 +367,11 @@ export function howToFix(tool: string, spec: ToolSpec, found: string | null): st
       // directory refuses outright rather than updating it. Fetch and
       // check out the pinned commit in place instead of cloning again.
       if (found !== null) {
-        return `git -C ${dir} fetch && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
+        return `git -C ${dir} fetch && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm ci`
       }
       // R6: BOOTSTRAP. Nothing answered the probe at all, so there is
       // nothing at `dir` yet to fetch into - clone it fresh.
-      return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
+      return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm ci`
     }
   }
   if (spec.upstream !== undefined) {

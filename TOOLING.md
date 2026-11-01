@@ -90,12 +90,21 @@ Reproducing it:
 ```
 git clone https://github.com/copperheadhq/copperhead.git
 git -C copperhead checkout 476cc15965f0d1eeda70afb9e806936f6bb15c5c
-cd copperhead && npm install
+cd copperhead && npm ci
 
 python3 -m venv venv-akcli
 ./venv-akcli/bin/pip install 'akcli-kicad==0.22.0' numpy pillow
 ./venv-akcli/bin/akcli doctor
 ```
+
+**`npm ci`, NOT `npm install`, and that correction is the final review's
+I-1.** This block said `npm install` while `draughting/install.sh` - which the
+paragraph below claims runs this block for you - refuses to use anything but
+`npm ci` and says why at length in its own header. The two are not
+interchangeable here: copperhead's `package.json` asks for `tsx` `^4.19.3`
+while its `package-lock.json` names `4.23.1`, so `npm install` floats the
+transitive tree off the pin and `npm ci` installs exactly what the lock names,
+refusing outright if the lock and `package.json` disagree.
 
 **`numpy` and `pillow` go into the SAME venv**, because `pixeldiff.py` and
 every pixel measurement run under `venv-akcli/bin/python`. Only a docstring said
