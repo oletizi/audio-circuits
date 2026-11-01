@@ -1,6 +1,9 @@
 // tests/draught/toolchain.test.ts
 import { expect, test } from "bun:test"
+import path from "node:path"
 import { checkToolchain, probeTool, readLock } from "../../tools/draught/toolchain.ts"
+import { defaultAkcli } from "../../tools/draught/akcli-install.ts"
+import { defaultCopperheadDir } from "../../tools/draught/copperhead-install.ts"
 
 test("a tool whose found version differs from the lock is reported, with the fix", () => {
   const lock = { ...readLock(), akcli: { ...readLock().akcli, version: "0.0.1" } }
@@ -37,4 +40,38 @@ test("kicad-cli's probe resolves through the installed-location default, not bar
   // A tool correctly resolved and matching its pinned version is not a
   // "problem" at all - checkToolchain reports disagreements, not matches.
   expect(checkToolchain(lock).find((p) => p.tool === "kicad-cli")).toBeUndefined()
+})
+
+/**
+ * FIX-ROUND REGRESSION TESTS (task-1-review.md, Important 1 and 2).
+ *
+ * Both prove the printed `how` targets the SAME location the probe itself
+ * resolved - not merely that the string contains a plausible-looking
+ * command. A `how` built from a hand-written literal instead of the
+ * resolver would pass a "does it mention pip install" check while still
+ * failing exactly this one, which is why each test compares against the
+ * live resolver's own return value rather than a literal path.
+ */
+
+test("Important 1: copperhead's fix command clones into the directory the probe actually resolves, not a written-out literal", () => {
+  const lock = { ...readLock(), copperhead: { ...readLock().copperhead, version: "0.0.1" } }
+  const problem = checkToolchain(lock).find((p) => p.tool === "copperhead")
+  expect(problem).toBeDefined()
+  const dir = defaultCopperheadDir()
+  expect(problem?.how).toContain(`git clone ${lock.copperhead.upstream} ${dir}`)
+  expect(problem?.how).toContain(`git -C ${dir} checkout`)
+  expect(problem?.how).toContain(`cd ${dir} && npm install`)
+})
+
+test("Important 2: akcli's fix command installs with the pip that lives beside the akcli binary the probe resolved, not bare PATH pip", () => {
+  const lock = { ...readLock(), akcli: { ...readLock().akcli, version: "0.0.1" } }
+  const problem = checkToolchain(lock).find((p) => p.tool === "akcli")
+  expect(problem).toBeDefined()
+  const akcliDir = path.dirname(defaultAkcli())
+  // The pip the "how" names must be the one THIS venv provides - same
+  // directory as the akcli binary `probeTool` actually resolved and ran -
+  // not a bare "pip install" that a plain shell would take from PATH.
+  expect(problem?.how).toContain(akcliDir)
+  expect(problem?.how).not.toBe(`pip install 'akcli-kicad==0.0.1'`)
+  expect(problem?.how).toContain("akcli-kicad==0.0.1")
 })

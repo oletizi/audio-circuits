@@ -24,7 +24,23 @@
  * location Task 3 is expected to install into rather than one it has
  * confirmed. If Task 3 chooses a different location, this is the one function
  * to change; nothing else in `./toolchain.ts` hardcodes the path a second
- * time.
+ * time - `howToFix`'s copperhead branch calls this function for its `git
+ * clone` target rather than repeating the literal, which is exactly the
+ * G170 shape: a fix-round review (task-1-review.md, Important 1) caught a
+ * version of this file where that claim was false, because `howToFix` had
+ * written `draughting/copperhead` out by hand instead.
+ *
+ * **DELIBERATELY NOT A PER-PLATFORM CANDIDATE LIST, NOT AN OMISSION OF
+ * ONE.** `./akcli-install.ts` and `./magick-install.ts` both branch on three
+ * platforms because each resolves an OS-level install path that genuinely
+ * differs by platform. This function does not, because what it resolves is
+ * a location INSIDE this checkout - the same value on darwin, linux or
+ * win32, since it is built from `moduleRepoRoot()` plus two literal path
+ * segments rather than from any platform-specific installer convention.
+ * `G169` clause b's "three platforms" requirement is about an OS install
+ * path; it does not apply to a project-relative directory any platform
+ * computes identically, so there is nothing here for a `platform` parameter
+ * to branch on.
  *
  * copperhead is invoked as `npx tsx src/cli.ts --version` from inside its
  * checkout (`TOOLING.md`), so the resolved value here is the CHECKOUT

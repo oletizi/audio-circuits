@@ -211,18 +211,42 @@ export function probeTool(tool: string, probe: readonly string[]): string | null
   }
 }
 
+/**
+ * The `pip` sibling of a resolved venv console script - same directory, same
+ * naming convention the script's own path already carries (`.exe` or not).
+ * Fix-round Important 2: a `how` string for a pypi-backed tool has to
+ * install into the SAME venv the probe reads, not whatever `pip` happens to
+ * be on `PATH` - deriving it from the already-resolved binary path, rather
+ * than writing the venv's location out a second time, is what keeps the two
+ * from drifting apart the way Important 1 did for copperhead.
+ */
+function venvPipFor(scriptPath: string): string {
+  const dir = path.dirname(scriptPath)
+  const pipName = scriptPath.toLowerCase().endsWith(".exe") ? "pip.exe" : "pip"
+  return path.join(dir, pipName)
+}
+
 /** The command that would fix `tool`, given what its lock entry carries. */
 function howToFix(tool: string, spec: ToolSpec): string {
   if (spec.pypi !== undefined) {
     const pinnedPackage = spec.pypi.replace(/==.*/, `==${spec.version}`)
+    const resolver = RESOLVED_BINARY[tool]
+    // Fix-round Important 2: if this tool resolves to a specific installed
+    // binary (akcli does, via its venv), target THAT venv's pip rather than
+    // the bare "pip" a plain shell would resolve from PATH - the probe reads
+    // the resolved binary, so the fix has to install beside it.
+    if (resolver !== undefined) {
+      return `${venvPipFor(resolver())} install '${pinnedPackage}'`
+    }
     return `pip install '${pinnedPackage}'`
   }
   if (tool === "copperhead" && spec.commit !== undefined && spec.upstream !== undefined) {
-    return (
-      `git clone ${spec.upstream} draughting/copperhead && ` +
-      `git -C draughting/copperhead checkout ${spec.commit} && ` +
-      "cd draughting/copperhead && npm install"
-    )
+    // Fix-round Important 1: built from `defaultCopperheadDir()`, the same
+    // function `resolveProbeArgv` above calls - never the literal
+    // "draughting/copperhead" a second time, so this cannot drift from
+    // wherever the probe actually looks.
+    const dir = defaultCopperheadDir()
+    return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
   }
   if (spec.upstream !== undefined) {
     return `install ${tool} ${spec.version} from ${spec.upstream}`
