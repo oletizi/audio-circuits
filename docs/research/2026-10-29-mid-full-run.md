@@ -794,3 +794,9 @@ control that perturbed the wrong kind of object — and two are behaviours of
 set is complete, and it does not establish anything at all about the drawing: the
 page is unreviewed, and `EVALUATING-DRAWINGS.md` §5 is explicit that no check
 passing and no absence of findings advances its status.
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `junction_audit.py`, `crossings.py`, `label_survey.py`, `netcmp.py` and
+`crop.py` now have one home at `draughting/measure/`; copy from there for new
+work, not from this run's `scripts/`, which is left as the unmodified record
+of what this run actually ran.

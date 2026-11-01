@@ -754,3 +754,8 @@ and no absence of findings advances its status. It establishes that the content
 fits inside the measured Letter frame at full size, that the circuit on the page
 is the same circuit to the pin, and that the five groups the reviewer has already
 seen are where they were relative to one another.
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `framegeom.py` and `crop.py` now have one home at `draughting/measure/`;
+copy from there for new work, not from this run's `scripts/`, which is left as
+the unmodified record of what this run actually ran.

@@ -705,3 +705,9 @@ rebuilds the final sheet and both renders from the committed baseline.
 
 Every script takes a `.kicad_sch` and prints a measurement or performs a literal
 edit; **none of them computes a placement.**
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `junction_audit.py`, `crossings.py`, `label_survey.py` and `crop.py` now
+have one home at `draughting/measure/`; copy from there for new work, not from
+this run's `scripts/`, which is left as the unmodified record of what this run
+actually ran.

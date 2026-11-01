@@ -532,3 +532,8 @@ Four places it did not cover:
 One thing it does cover that was load-bearing: **look at the render.** The
 field-angle class, the `GND` text landing on `SI7`'s lead, and the title-block
 band were all invisible to every count in the table above.
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `netcmp.py` and `crop.py` now have one home at `draughting/measure/`;
+copy from there for new work, not from this run's `scripts/`, which is left as
+the unmodified record of what this run actually ran.

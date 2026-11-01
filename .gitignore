@@ -65,9 +65,10 @@ _autosave-*
 *.bak
 fp-info-cache
 
-# Python bytecode. The research measurement scripts under docs/research/ import
-# a shared reader from docs/research/lib/, so running one writes a __pycache__
-# beside it. One such .pyc was committed on 2026-10-30 before this line existed.
+# Python bytecode. The measurement scripts under draughting/measure/ (and the
+# remaining per-run copies under docs/research/) import a shared reader,
+# kicad_sheet.py, so running one writes a __pycache__ beside it. One such
+# .pyc was committed on 2026-10-30 before this line existed.
 __pycache__/
 *.pyc
 

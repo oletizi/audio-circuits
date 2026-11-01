@@ -519,3 +519,9 @@ next case.
 - eight single-instance local labels naming fully-drawn wires - naming, not
   connectivity, and not raised by him
 - the Hi boost group rectangle, now larger than its contents after SI8 moved
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `crossings.py` and `label_survey.py` now have one home at
+`draughting/measure/`; copy from there for new work, not from this run's
+`scripts/`, which is left as the unmodified record of what this run actually
+ran.

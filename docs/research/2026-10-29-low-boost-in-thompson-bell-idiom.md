@@ -510,3 +510,10 @@ this tool will hit them.
   consumers it binds for.
 - **v4 has not been evaluated.** v3 was, and his words are quoted above. See the
   status note at the top.
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** A
+`crossings.py` now has one home at `draughting/measure/`; this run's own copy
+was NOT the one promoted (see `draughting/measure/crossings.py`'s docstring -
+it is the older, one-sheet-at-a-time version without the X-crossing/T-meeting
+split) and is left unmodified as the record of what this run actually ran.
+Copy new work from `draughting/measure/`, not from this run's `scripts/`.

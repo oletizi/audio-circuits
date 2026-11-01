@@ -432,3 +432,8 @@ docs/research/2026-10-30-centre-and-promote/
   scripts/paper-notice-control.ts   the control for "the paper notice has cleared"
   pages/<board>-centred.pdf|.png    viewing copies of the five centred pages
 ```
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `center.py` now has one home at `draughting/measure/`; copy from there
+for new work, not from this run's `scripts/`, which is left as the unmodified
+record of what this run actually ran.

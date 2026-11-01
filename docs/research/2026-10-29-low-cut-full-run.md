@@ -608,3 +608,9 @@ It is the first evidence that the practice is repeatable rather than a one-off.
 **What it does not establish:** that the repair set is complete. Three new
 classes appeared on this board that did not exist on the first, two of them
 second-order - defects created by an earlier repair.
+
+**Promoted, 2026-10-30 (Task 4 of the institutionalise-draughting plan).** This
+run's `crossings.py` and `label_survey.py` now have one home at
+`draughting/measure/`; copy from there for new work, not from this run's
+`scripts/`, which is left as the unmodified record of what this run actually
+ran.
