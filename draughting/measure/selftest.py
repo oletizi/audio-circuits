@@ -20,19 +20,52 @@ assert that the old one's number moves where the new one's does not. That is the
 form of control that proves a parser was form-dependent rather than merely
 asserting it.
 
-usage: python3 docs/research/lib/selftest.py
+**THE FIXTURES LIVE IN `docs/research/`, NOT HERE, AND THAT IS DELIBERATE.**
+This file was promoted to `draughting/measure/` by
+`.superpowers/sdd/2026-10-30-institutionalise-draughting/task-4-brief.md`, but
+the seven committed sheets it measures are the execution record of runs
+already approved and stay where they are - copying them here would duplicate
+an artifact that `drafted/` and the run records already pin. So the repo root
+below is asked of git rather than counted off `__file__`'s parents: a path
+computed by counting levels is a path that breaks silently on exactly the kind
+of move that put this file here (it used to read `HERE.parents[2]` from
+`docs/research/lib/`, which is two directories above the repo root; from here
+it is one).
+
+usage: python3 draughting/measure/selftest.py
 exit 0 if every control moved; exit 1, loudly, otherwise.
 """
 import math
 import pathlib
 import re
+import subprocess
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import kicad_sheet  # noqa: E402
 
-REPO = HERE.parents[2]
+
+def _repo_root():
+    """The repository root, asked of git rather than counted off this file's
+    own location - see the module docstring for why counting broke on the
+    move that put this file here."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=HERE, capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SystemExit(
+            f"cannot resolve the repository root: "
+            f"`git rev-parse --show-toplevel` failed from {HERE}: {exc}")
+    root = out.stdout.strip()
+    if not root:
+        raise SystemExit(
+            f"`git rev-parse --show-toplevel` from {HERE} printed nothing")
+    return pathlib.Path(root)
+
+
+REPO = _repo_root()
 RESEARCH = REPO / "docs/research"
 
 MID = RESEARCH / "2026-10-29-mid-full-run/mid-hybrid.kicad_sch"
@@ -531,7 +564,7 @@ CONTROLS = [
 
 
 def main():
-    print("positive controls for docs/research/lib/kicad_sheet.py")
+    print("positive controls for draughting/measure/kicad_sheet.py")
     print("=" * 72)
     for c in CONTROLS:
         c()

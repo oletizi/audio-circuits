@@ -44,7 +44,7 @@ module is for.
 USAGE
 =====
     import sys, pathlib
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "lib"))
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import kicad_sheet
 
     sheet = kicad_sheet.read(path)
@@ -53,9 +53,17 @@ USAGE
     sheet.pin_points()               set of (x, y) in sheet space
     kicad_sheet.wire_hits(x, y, sheet.wires())   -> Hits(through, endpoints)
 
-Run `python3 docs/research/lib/selftest.py` for the positive controls. Each one
-perturbs a sheet and asserts the number MOVES; a check that cannot fail is the
-failure mode this whole repository exists to prevent.
+Run `python3 draughting/measure/selftest.py` for the positive controls. Each
+one perturbs a sheet and asserts the number MOVES; a check that cannot fail is
+the failure mode this whole repository exists to prevent.
+
+PROMOTED FROM `docs/research/lib/` to `draughting/measure/` by
+`.superpowers/sdd/2026-10-30-institutionalise-draughting/task-4-brief.md`, so
+every caller is now a sibling file in the same directory rather than two
+levels below a `lib/` subdirectory - the usage above reflects that; the
+narrative above it, about where the six bugs were found and fixed, is left as
+the historical record of what happened and is not a description of today's
+directory layout.
 """
 import math
 import re
@@ -325,11 +333,12 @@ class Hits:
     """How a point meets the wires: `through` counts containment, `endpoints`
     counts only the wires that END there.
 
-    BOTH ARE RETURNED ON PURPOSE. `orphan_junctions.py` and `pwr_survey.py`
-    each reported a false negative because they tested endpoints only, and the
-    mid run found `pwr_survey.py` saying "NO WIRE touches this anchor" for a pin
-    sitting in the middle of the 15.24 mm link it terminates. A caller that
-    wants endpoints has to say so.
+    BOTH ARE RETURNED ON PURPOSE. The superseded `orphan_junctions.py`
+    (deleted 2026-10-30 - supersede means delete, so it does not return) and
+    `pwr_survey.py` each reported a false negative because they tested
+    endpoints only, and the mid run found `pwr_survey.py` saying "NO WIRE
+    touches this anchor" for a pin sitting in the middle of the 15.24 mm link
+    it terminates. A caller that wants endpoints has to say so.
     """
 
     __slots__ = ("through", "endpoints", "interiors", "wires")
