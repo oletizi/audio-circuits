@@ -159,6 +159,25 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   const repoRoot = moduleRepoRoot()
 
   // Step 1: check the toolchain. Nothing else runs until every pinned tool agrees.
+  //
+  // THIS GATE IS WIDER THAN THE TOOLS THIS VERB ACTUALLY RUNS, AND THAT IS
+  // RECORDED HERE RATHER THAN QUIETLY WIDENED FURTHER. It refuses on ANY
+  // disagreement in `draughting/tools.lock.json`, and the lock names tools
+  // this path never invokes: `qpdf` (a build-guide tool) from the start, and
+  // `numpy`/`pillow` since the final review's I-3 added them for
+  // `framegeom.py`, which `runMeasurementSuite` does not call. So a missing
+  // numpy stops a page being drawn.
+  //
+  // **That is worth asking about rather than assuming, because
+  // `EVALUATING-DRAWINGS.md` §3 permits withholding a drawing for an
+  // electrical fault and nothing else**, and `docs/known-gaps.md` G303 is the
+  // owner's own directive about a gate nobody can see past. It is left as the
+  // existing design's granularity - "the drawing toolchain agrees, or stop" -
+  // because narrowing it per-step would be this verb authoring its own
+  // acceptance criteria, which is the one thing `CLAUDE.md` forbids the
+  // producing agent. If it is narrowed, the question to answer first is which
+  // tools each STEP needs, and the answer belongs in the lock (a field) or in
+  // a spec, not in a judgement made here.
   const lock = options.lock ?? readLock()
   const problems = checkToolchain(lock)
   if (problems.length > 0) {

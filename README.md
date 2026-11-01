@@ -194,13 +194,44 @@ audio-circuits/
   fork the perfboard tooling drives. It is keg-only, which is why the tooling
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
-- **copperhead and akcli-kicad**, the schematic-drawing toolchain
-  `TOOLING.md`'s loop runs. `draughting/install.sh` installs the pinned
-  versions `draughting/tools.lock.json` names into `draughting/copperhead` and
-  `draughting/venv-akcli` - fixed locations, not an override - and
-  `make draught-doctor` reports any disagreement between that lock and what is
-  actually installed. Neither is required for `bun test`; they are required
-  for drawing a schematic.
+- **Node and npm** (`npm`, and `npx` for anything that still reaches for it),
+  which `draughting/install.sh` needs for `npm ci` in the copperhead checkout
+  and which copperhead's own CLI runs under - the `tsx` that runs it is a
+  devDependency of that checkout, installed by that `npm ci`. Measured here on
+  node `v22.19.0`. Listed because the final review's M-8 found the install and
+  draw paths both depend on it while this list named neither; `TOOLING.md`'s
+  toolchain table already carried it.
+- **copperhead, akcli-kicad, numpy and Pillow**, the schematic-drawing
+  toolchain `TOOLING.md`'s loop runs. `draughting/install.sh` installs the
+  pinned versions `draughting/tools.lock.json` names into
+  `draughting/copperhead` and `draughting/venv-akcli` - fixed locations, not an
+  override - and `make draught-doctor` reports any disagreement between that
+  lock and what is actually installed.
+
+  **THIS SAID "NEITHER IS REQUIRED FOR `bun test`" AND THAT WAS FALSE - the
+  final review's I-4.** `tools/cli/draw.ts` checks the whole lock before it
+  does anything else and refuses on any disagreement, and
+  `tests/draught/draw.test.ts` drives two real draws expecting exit 0. The
+  right statement is the one this list already makes for `kicad-cli`, Chrome
+  and qpdf: **the drawing toolchain is required for `bun test`, and the tests
+  that need it fail rather than skip.** It is required for drawing a schematic
+  too, which is what the old sentence was reaching for.
+
+  **Each piece was measured separately, because "the toolchain" is four things
+  and a prerequisite claim about a set is not a measurement of its members.**
+  Running `tests/draught/` with one piece removed and the rest present:
+
+  | removed | what `bun test` does |
+  | --- | --- |
+  | `numpy` from the venv | **7 fail by name.** Nothing erased |
+  | the `akcli` console script | **5 fail by name.** Nothing erased |
+
+  In both arms four of the failures are `make draw` tests whose own subject is
+  a refusal message or an intent mismatch: `runDraw` checks the whole lock
+  before it does anything else, so a missing tool fails them for a reason that
+  has nothing to do with what they test. That is the gate's granularity, not a
+  defect in those tests, and `tools/cli/draw.ts` records the question it
+  raises.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
 - **One npm RUNTIME dependency you need, installed by `bun install` rather than
   by you**: `eecircuit-engine`, the vendored SPICE engine. It pulls in nothing
