@@ -1,0 +1,255 @@
+/**
+ * THE PINNED TOOLCHAIN AND THE CHECK THAT REFUSES ON A MISMATCH.
+ *
+ * `TOOLING.md`'s own words about its toolchain table: *"a procedure that
+ * names versions it does not enforce is a transcription with a date on
+ * it."* `draughting/tools.lock.json` is the names; `readLock` and
+ * `checkToolchain` below are the enforcement. Nothing here installs
+ * anything - `draughting/install.sh` (Task 3 of
+ * `docs/superpowers/plans/2026-10-30-institutionalise-draughting.md`) does
+ * that - and nothing here decides what to do about a disagreement, which is
+ * `make draught-doctor` (Task 2) and `make draw` (Task 5).
+ *
+ * **"any" AS A VERSION MEANS PRESENCE ONLY.** `qpdf`'s entry in the lock
+ * carries no pinned version because nothing in the loop depends on a
+ * specific one (`TOOLING.md`); `checkToolchain` still runs its probe and
+ * still reports a problem if it finds nothing, because "any version" is not
+ * "no check".
+ *
+ * **A PROBE THAT CANNOT RUN YIELDS `found: null`, NEVER A THROWN ERROR.**
+ * The caller - the doctor verb, `make draw`'s own refusal - decides what a
+ * missing tool means; this module only reports what it measured.
+ *
+ * **WHY SOME PROBES ARE NOT THE BARE COMMAND THE LOCK NAMES.**
+ * `.superpowers/sdd/2026-10-30-institutionalise-draughting/rulings.md`
+ * Finding 7, measured on the machine this was written on: `kicad-cli` is
+ * fully installed and working (`make check` invokes it on every run) but is
+ * NOT on `PATH` - it lives where `lib/kicad/install.ts`'s `defaultKicadCli`
+ * resolves it, the macOS `.app` bundle's `Contents/MacOS/kicad-cli`. A probe
+ * that runs `execFileSync("kicad-cli", ...)` would report that working
+ * install as absent. **A probe resolves its tool the way the rest of this
+ * repository does**: for a tool with a resolver
+ * (`kicad-cli`, `akcli`, `magick`, `qpdf`, `copperhead`), `resolveProbeArgv`
+ * below substitutes the resolved path before running anything. The bare-name
+ * form in the lock stays as the human-readable, documentary command; only
+ * `nosuchtool`-shaped entries with no resolver actually run it verbatim.
+ */
+import { execFileSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { defaultKicadCli } from "../../lib/kicad/install.ts"
+import { defaultQpdf } from "../guide/pdf-merge-install.ts"
+import { defaultAkcli } from "./akcli-install.ts"
+import { defaultCopperheadDir } from "./copperhead-install.ts"
+import { defaultMagick } from "./magick-install.ts"
+import { moduleRepoRoot } from "../perfboard/repo-root.ts"
+
+/** One tool's pinned spec, as `draughting/tools.lock.json` declares it. */
+export interface ToolSpec {
+  readonly version: string
+  readonly probe: readonly string[]
+  readonly commit?: string
+  readonly upstream?: string
+  readonly licence?: string
+  readonly pypi?: string
+}
+
+export type Toolchain = Readonly<Record<string, ToolSpec>>
+
+export interface ToolchainProblem {
+  readonly tool: string
+  readonly wanted: string
+  readonly found: string | null
+  readonly how: string
+}
+
+const LOCK_PATH = path.join(moduleRepoRoot(), "draughting", "tools.lock.json")
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === "string"
+}
+
+function parseToolSpec(lockPath: string, tool: string, value: unknown): ToolSpec {
+  if (!isRecord(value)) {
+    throw new Error(
+      `${lockPath}: "${tool}" must be a JSON object naming at least "version" and "probe", ` +
+        `found ${JSON.stringify(value)}.`,
+    )
+  }
+  const { version, probe, commit, upstream, licence, pypi } = value
+  if (typeof version !== "string") {
+    throw new Error(`${lockPath}: "${tool}.version" is missing or not a string.`)
+  }
+  if (!isStringArray(probe) || probe.length === 0) {
+    throw new Error(
+      `${lockPath}: "${tool}.probe" is missing or not a non-empty array of strings - it is the ` +
+        "command this check runs to find the installed version.",
+    )
+  }
+  if (!isOptionalString(commit)) {
+    throw new Error(`${lockPath}: "${tool}.commit" must be a string when present.`)
+  }
+  if (!isOptionalString(upstream)) {
+    throw new Error(`${lockPath}: "${tool}.upstream" must be a string when present.`)
+  }
+  if (!isOptionalString(licence)) {
+    throw new Error(`${lockPath}: "${tool}.licence" must be a string when present.`)
+  }
+  if (!isOptionalString(pypi)) {
+    throw new Error(`${lockPath}: "${tool}.pypi" must be a string when present.`)
+  }
+  return { version, probe, commit, upstream, licence, pypi }
+}
+
+/**
+ * Read and validate `draughting/tools.lock.json`, throwing naming the file
+ * and the missing or malformed field rather than defaulting one.
+ */
+export function readLock(): Toolchain {
+  let raw: string
+  try {
+    raw = readFileSync(LOCK_PATH, "utf8")
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(`could not read the pinned toolchain lock ${LOCK_PATH}: ${detail}.`)
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(`${LOCK_PATH} is not valid JSON: ${detail}.`)
+  }
+
+  if (!isRecord(parsed)) {
+    throw new Error(`${LOCK_PATH} must hold a JSON object mapping tool name to its pinned spec.`)
+  }
+
+  const toolchain: Record<string, ToolSpec> = {}
+  for (const [tool, value] of Object.entries(parsed)) {
+    toolchain[tool] = parseToolSpec(LOCK_PATH, tool, value)
+  }
+  return toolchain
+}
+
+/**
+ * Resolvers for the tools this repository pins beyond trusting `PATH` -
+ * Finding 3 of the rulings file above, extended here beside
+ * `lib/kicad/install.ts`'s own `defaultKicadCli` rather than a fourth
+ * pattern. Keyed by the lock's tool name, each returns the resolved
+ * BINARY path that replaces `probe[0]`.
+ */
+const RESOLVED_BINARY: Readonly<Record<string, () => string>> = {
+  "kicad-cli": defaultKicadCli,
+  akcli: defaultAkcli,
+  magick: defaultMagick,
+  qpdf: defaultQpdf,
+}
+
+/**
+ * Build the argv actually executed for `tool`'s `probe`: substitute a
+ * resolved path for tools `RESOLVED_BINARY` knows, resolve copperhead's
+ * relative `src/cli.ts` against its checkout directory, and otherwise run
+ * the lock's own command verbatim - the path a genuinely PATH-resident tool
+ * (or an unrecognised one, like the "nosuchtool" test fixture) takes.
+ */
+function resolveProbeArgv(tool: string, probe: readonly string[]): readonly string[] {
+  const resolver = RESOLVED_BINARY[tool]
+  if (resolver !== undefined) {
+    return [resolver(), ...probe.slice(1)]
+  }
+  if (tool === "copperhead") {
+    const scriptIndex = probe.indexOf("src/cli.ts")
+    if (scriptIndex === -1) return probe
+    const resolved = [...probe]
+    resolved[scriptIndex] = path.join(defaultCopperheadDir(), "src/cli.ts")
+    return resolved
+  }
+  return probe
+}
+
+/** The first `major.minor(.patch)(-build)`-shaped token in free-form `--version` output. */
+function extractVersion(output: string): string | null {
+  const match = output.match(/\d+\.\d+(?:\.\d+)?[\w.-]*/)
+  return match ? match[0] : null
+}
+
+/**
+ * Run `tool`'s `probe` (through `resolveProbeArgv`) and report what it
+ * printed - a version-looking token if one is found, the trimmed raw output
+ * otherwise, or `null` if the command could not be run at all. Never throws:
+ * a probe failing to run IS the answer "not found", not an error in this
+ * check.
+ */
+export function probeTool(tool: string, probe: readonly string[]): string | null {
+  const argv = resolveProbeArgv(tool, probe)
+  const [command, ...args] = argv
+  if (command === undefined) return null
+  try {
+    // `stdio` is explicit, not left to default: a probe that fails (every
+    // "not installed" case this function exists to report) otherwise lets
+    // the failing subprocess's own stack trace reach this process's own
+    // stderr, which reads like THIS check crashed rather than like the
+    // probe answering "not found".
+    const output = execFileSync(command, args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    })
+    const trimmed = output.trim()
+    return extractVersion(trimmed) ?? (trimmed === "" ? null : trimmed)
+  } catch {
+    return null
+  }
+}
+
+/** The command that would fix `tool`, given what its lock entry carries. */
+function howToFix(tool: string, spec: ToolSpec): string {
+  if (spec.pypi !== undefined) {
+    const pinnedPackage = spec.pypi.replace(/==.*/, `==${spec.version}`)
+    return `pip install '${pinnedPackage}'`
+  }
+  if (tool === "copperhead" && spec.commit !== undefined && spec.upstream !== undefined) {
+    return (
+      `git clone ${spec.upstream} draughting/copperhead && ` +
+      `git -C draughting/copperhead checkout ${spec.commit} && ` +
+      "cd draughting/copperhead && npm install"
+    )
+  }
+  if (spec.upstream !== undefined) {
+    return `install ${tool} ${spec.version} from ${spec.upstream}`
+  }
+  return `install ${tool} ${spec.version} - see draughting/tools.lock.json and TOOLING.md`
+}
+
+/**
+ * Probe every tool the lock names and report one problem per disagreement:
+ * a version that does not match (for a pinned version) or a tool the probe
+ * could not find at all (for "any", or for a pinned version nothing
+ * answered for). A tool that matches is not reported - this is a list of
+ * disagreements, not a status report.
+ */
+export function checkToolchain(lock: Toolchain): ToolchainProblem[] {
+  const problems: ToolchainProblem[] = []
+  for (const [tool, spec] of Object.entries(lock)) {
+    const found = probeTool(tool, spec.probe)
+    if (spec.version === "any") {
+      if (found === null) {
+        problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec) })
+      }
+      continue
+    }
+    if (found === null || found !== spec.version) {
+      problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec) })
+    }
+  }
+  return problems
+}

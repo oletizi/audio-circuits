@@ -66,3 +66,15 @@ export function defaultPdfMerge(platform: string = process.platform): string {
   for (const candidate of candidates) if (fs.existsSync(candidate)) return candidate
   return candidates[0] as string
 }
+
+/**
+ * `tools/draught/toolchain.ts`'s pinned-toolchain probe needs a resolver
+ * named for the TOOL (`qpdf`), not for the ROLE this file resolves it under
+ * (`PDF_MERGE`) - the same binary, two names for two different questions
+ * ("what joins two PDFs here" versus "is the qpdf this repository pins
+ * actually installed"). This is an alias rather than a second candidate
+ * list: duplicating `CANDIDATES` under a second name is exactly the kind of
+ * drift `docs/known-gaps.md` **G170** records, and there is only one
+ * qpdf install to describe.
+ */
+export const defaultQpdf = defaultPdfMerge
