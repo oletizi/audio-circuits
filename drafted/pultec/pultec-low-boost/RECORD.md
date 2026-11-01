@@ -169,7 +169,7 @@ Four items this page still holds, none of which he named as a defect. The
 register has them in full; they are named here so a reader of the drawing knows
 they were seen:
 
-- `#PWR02`, J1's ground
+- `#PWR02`, J1's own ground symbol - **RULED 2026-10-31, it stays**, which overrules the defence this record called the weakest of the four: *"The ground on J1 is fine"*. `../../../docs/known-gaps.md` **G307**. Note the designator: this page says `#PWR02` where the other four say `#PWR01` for the same symbol
 - the `RV1`/`47K` text graze
 - eight single-instance local labels
 - the Hi boost group rectangle larger than its contents

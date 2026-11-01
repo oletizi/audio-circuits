@@ -4250,3 +4250,61 @@ drawing, and those were relocated rather than deleted.
 - **What would settle it.** Nothing to settle - it is a decision. **What would
   REVERSE it is his instruction and nothing else**, and the deleted code is in
   git history, not gone.
+
+---
+
+### G307 - OWNER RULING, 2026-10-31: J1's own ground symbol STAYS, and the agents' standing objection to it is overruled
+
+> *"The ground on J1 is fine"*
+
+**What was asked.** On every Pultec page the input/output connector `J1` carries
+its ground pin into a **ground symbol of its own** rather than onto the shared
+ground line the way `J2`'s pins do. He was shown a crop of the low-boost page -
+`J1` pin 5 running a short wire west into its own `GND` triangle, with `J2`'s
+joined grounds visible below it for comparison - and asked whether it keeps its
+own symbol or joins the shared ground.
+
+**Why it was asked, and this is the part worth keeping.** This was not an agent
+noticing something and wondering. It was an agent's own objection, raised by the
+agent, which the agent could not defend. The low-boost record, 2026-10-29, filed
+it as *"the weakest defence of the four and flagged for overrule rather than
+defended"* - and it was flagged against his own earlier directive on that page:
+
+> *"we dont need five discrete ground symbols here. one will suffice if all the
+> wires connect."*
+
+The other grounds were consolidated under that directive. This one was left
+standing with a note saying so.
+
+**What the ruling does.** It overrules the objection and closes the item. The
+symbol stays. It also fixes the scope of the five-grounds directive above: that
+directive was about a cluster of stacked symbols on one node, not a rule that a
+page carries one ground symbol - which is how an agent had been reading it
+against `J1` for four consecutive pages.
+
+**What it does NOT do.** It is not a verdict on any page, and it is not recorded
+in `docs/schematic/verdicts.md`, which binds verdicts to a sheet's sha256. The
+five pages were separately re-approved the same day and that is recorded there.
+
+- **Found** 2026-10-31, on being asked to explain the carried item in plain
+  terms.
+- **Evidence** his words above; the rendered crop he was shown; the symbol
+  positions measured off all five committed sheets - `J1`'s nearest ground
+  symbol is **11.4 mm** away on every one of the five, which is the same
+  arrangement on each.
+- **Verified** **CONFIRMED by this writer** for the measurements, which were run
+  here. The ruling is his.
+- **Why it is open** it is a ruling, recorded so it is not re-raised. **It had
+  been carried unresolved onto five pages across three days**, listed each time
+  under *"stated to him as not done, and not objected to"* - which is not
+  approval, and is why it kept coming back.
+- **What would settle it.** Nothing to settle. **A later agent that finds J1's
+  separate ground symbol and thinks it should be consolidated has found this
+  entry's subject, not a defect.**
+
+**One naming detail, because it will confuse the next reader.** The records call
+this symbol `#PWR01`, which is right on `pultec-hi-boost`, `pultec-hi-cut`,
+`pultec-low-cut` and `pultec-mid`. On `pultec-low-boost` it is **`#PWR02`** -
+the designators were reassigned at some point and that page kept the older
+number. Same symbol, same ruling. Identify it by what it is attached to, not by
+its designator.

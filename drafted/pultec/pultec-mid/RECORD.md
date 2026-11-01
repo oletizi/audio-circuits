@@ -152,8 +152,7 @@ Stated to him as not done, and not objected to
 
 - the 90.5 x 28.5 mm unoccupied region in the Mid box's upper-left is not
   closed; closing it means moving the return block west or re-laying the group
-- `#PWR01` unchanged - **the symbol all five accepted pages have now put up for
-  overruling, still unruled**
+- `#PWR01`, J1's own ground symbol - **RULED 2026-10-31, it stays.** He was shown it and said *"The ground on J1 is fine"*, which overrules the agents' own standing objection to it. `../../../docs/known-gaps.md` **G307** carries the ruling and what it does not extend to. Not a carried item any more
 - `#FLG01` moved rather than deleted; it earns nothing
 - the `out` label still against J1's pin-4 number
 - the Lo cut stand-in's output sits below its input; `S1` is followed, never

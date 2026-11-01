@@ -190,8 +190,7 @@ Stated to him as not done, and not objected to
 - the ~40 mm void in the middle of the Hi cut box is not closed
 - the `hi_boost_out` label above SI5 sits 1.27 mm below the group box's top edge,
   the smallest gap on the page, nothing overlapping
-- `#FLG01` and the four ground symbols are unchanged, including the `#PWR01` put
-  up for overruling on the low-boost page
+- `#FLG01` and the four ground symbols are unchanged. The `#PWR01` among them is J1's own ground symbol, **RULED 2026-10-31 - it stays**: *"The ground on J1 is fine"*. `../../../docs/known-gaps.md` **G307**
 
 Legibility findings
 -------------------
