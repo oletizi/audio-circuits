@@ -4,6 +4,7 @@ import path from "node:path"
 import { checkToolchain, howToFix, probeTool, readLock } from "../../tools/draught/toolchain.ts"
 import { defaultAkcli } from "../../tools/draught/akcli-install.ts"
 import { defaultCopperheadDir } from "../../tools/draught/copperhead-install.ts"
+import { defaultQpdf } from "../../tools/guide/pdf-merge-install.ts"
 
 test("a tool whose found version differs from the lock is reported, with the fix", () => {
   const lock = { ...readLock(), akcli: { ...readLock().akcli, version: "0.0.1" } }
@@ -127,4 +128,32 @@ test("R6 upgrade: akcli's fix installs directly, with no venv creation, once the
   const how = howToFix("akcli", spec, "0.0.1")
   expect(how).not.toContain("python3 -m venv")
   expect(how).toContain(`install 'akcli-kicad==${spec.version}'`)
+})
+
+/**
+ * FIX ROUND 2, M-2 REGRESSION (task-3-review.md). `howToFix`'s bootstrap
+ * branch used to require `tool === "akcli"` literally, in ADDITION to
+ * `found === null` and a resolved binary - which is exactly the bug R6
+ * exists to fix, reproduced in R6's own fix: akcli is the only tool in the
+ * real lock that is both pypi-backed and resolver-backed today, so the
+ * literal name check was invisible until a second one existed.
+ *
+ * `qpdf` is a real entry in the lock with a real resolver
+ * (`tools/guide/pdf-merge-install.ts`'s `defaultQpdf`) that is NOT
+ * pypi-backed in reality - this test gives it a synthetic `pypi` field
+ * (`spec.pypi !== undefined`, exactly the gate `howToFix` already checks)
+ * to stand in for "a second pypi-backed, resolver-backed tool", and drives
+ * `howToFix` directly with `found: null`. Against the unfixed code (`tool
+ * === "akcli"` required) this returns a bare `pip install` with no venv
+ * creation for "qpdf" - wrong, for the same reason it was wrong for akcli
+ * before R6. The fix derives the branch from `found` and the spec alone,
+ * so a tool's NAME is irrelevant to which command it gets.
+ */
+test("M-2 regression: the bootstrap venv-creation branch is not gated on the literal tool name 'akcli'", () => {
+  const qpdfSpec = readLock().qpdf
+  const syntheticSecondPypiTool = { ...qpdfSpec, pypi: "some-other-pypi-package==1.0.0" }
+  const how = howToFix("qpdf", syntheticSecondPypiTool, null)
+  const venvDir = path.dirname(path.dirname(defaultQpdf()))
+  expect(how).toContain(`python3 -m venv ${venvDir}`)
+  expect(how).toContain("install 'some-other-pypi-package==")
 })

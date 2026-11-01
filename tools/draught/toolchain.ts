@@ -261,14 +261,26 @@ export function howToFix(tool: string, spec: ToolSpec, found: string | null): st
       const binary = resolver()
       const pip = venvPipFor(binary)
       // R6: BOOTSTRAP. Nothing answered the probe at all, which for a
-      // pypi-backed tool with a dedicated venv (akcli) means the venv itself
-      // is missing - `pip install` into a `bin/pip` that was never created
+      // pypi-backed tool with a dedicated venv means the venv itself is
+      // missing - `pip install` into a `bin/pip` that was never created
       // fails `No such file or directory` rather than installing anything.
       // Create the venv first, in the exact directory the probe (and this
       // same `pip`) already resolve - two levels above the binary on every
-      // platform this repository's venv layouts use (`bin/akcli` or
-      // `Scripts\akcli.exe`), never a second literal path.
-      if (found === null && tool === "akcli") {
+      // platform this repository's venv layouts use (`bin/<tool>` or
+      // `Scripts\<tool>.exe`), never a second literal path.
+      //
+      // Fix round 2, M-2: this used to also require `tool === "akcli"`
+      // literally, which is exactly the bug R6 exists to fix, reproduced in
+      // R6's own code - akcli is the only pypi-backed, resolver-backed tool
+      // TODAY, so the literal name check was harmless today and would
+      // silently print the wrong (non-venv-creating) command for a SECOND
+      // one added later. `found === null` plus already being inside both
+      // `spec.pypi !== undefined` and `resolver !== undefined` is the
+      // derivation this branch actually needs - a property of the SPEC and
+      // the probe's result, not of which tool happens to be named here.
+      // `tests/draught/toolchain.test.ts`'s "M-2 regression" test drives a
+      // synthetic second pypi tool through this exact path.
+      if (found === null) {
         const venvDir = path.dirname(path.dirname(binary))
         return `python3 -m venv ${venvDir} && ${pip} install '${pinnedPackage}'`
       }
