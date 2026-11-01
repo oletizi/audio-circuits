@@ -11,6 +11,7 @@
 // cannot import TypeScript, so the thing that holds the two together has to
 // be a check that reads both and can fail.
 import { expect, test } from "bun:test"
+import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { VENDORED_CHECKOUTS } from "../lib/not-source.ts"
@@ -91,5 +92,53 @@ test("every NON-dot-exempt vendored checkout falls outside bun test's discovery 
     leaking.map((c) => c.repoRelativePath),
     `bunfig.toml's [test].root ("${root}") must not contain a vendored checkout - a fetched ` +
       "third-party project's own test suite is not this repository's to run",
+  ).toEqual([])
+})
+
+/**
+ * M-6 (final review): EXACTLY ONE DIRECTORY CARRIES EACH VENDORED BASENAME,
+ * SO A BASENAME SKIP-SET IS SAFE TO KEEP.
+ *
+ * `VENDORED_CHECKOUT_NAMES` is matched against `entry.name` by three walkers
+ * (the footprint sweep, the symbol-name sweep, perfboard discovery), so a
+ * second directory anywhere in the tree named `copperhead` or `.tools` would
+ * be skipped by all three - and the symptom is a sweep that reports NOTHING
+ * about it, not an error. This is the check that makes "exactly one" a
+ * measurement rather than an assumption: a second one fails here, naming its
+ * path, instead of quietly disappearing from three sweeps.
+ *
+ * The walk reads the git index rather than the filesystem, deliberately:
+ * `git ls-files` lists tracked paths only, so it cannot be confused by the
+ * fetched checkouts' own contents (which is the state this whole file is
+ * about) or by anything under `build/`.
+ */
+test("exactly one tracked directory carries each vendored checkout's basename", () => {
+  const tracked = execFileSync("git", ["ls-files", "-z"], { cwd: REPO_ROOT, encoding: "utf8" })
+    .split("\0")
+    .filter((line) => line !== "")
+  expect(tracked.length).toBeGreaterThan(0)
+
+  const offenders: string[] = []
+  for (const checkout of VENDORED_CHECKOUTS) {
+    // Every directory prefix of every tracked path whose last segment is this
+    // basename - the set of places a walker's `entry.name` check would fire.
+    const directories = new Set<string>()
+    for (const file of tracked) {
+      const segments = file.split("/")
+      for (let depth = 1; depth < segments.length; depth += 1) {
+        if (segments[depth - 1] === checkout.basename) directories.add(segments.slice(0, depth).join("/"))
+      }
+    }
+    for (const directory of directories) {
+      if (directory === checkout.repoRelativePath) continue
+      offenders.push(`${checkout.basename}: also at ${directory}`)
+    }
+  }
+  expect(
+    offenders,
+    "these tracked directories share a vendored checkout's basename, so the footprint sweep, " +
+      "the symbol-name sweep and perfboard discovery all skip them silently - see " +
+      "VENDORED_CHECKOUT_NAMES in lib/not-source.ts. Either rename the directory or make those " +
+      "three walkers compare a root-relative path instead of entry.name.",
   ).toEqual([])
 })

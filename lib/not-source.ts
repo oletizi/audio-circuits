@@ -95,7 +95,27 @@ export const VENDORED_CHECKOUTS: readonly VendoredCheckout[] = [
   },
 ]
 
-/** Bare basenames, for a raw recursive-listing walker's own skip-set. */
+/**
+ * Bare basenames, for a raw recursive-listing walker's own skip-set.
+ *
+ * **WHAT A BASENAME SKIP-SET COSTS, which the final review's M-6 found
+ * undisclosed here.** Three walkers compare `entry.name` against this set -
+ * `tests/kicad/footprint-sweep.ts`, `tests/kicad/symbol-names.test.ts` and
+ * `tools/perfboard/declaration.ts` - so ANY directory anywhere in the tree
+ * named `copperhead` or `.tools` is skipped, not only the two at
+ * `repoRelativePath`. A board, circuit or docs directory that happened to
+ * take one of those names would be silently invisible to a footprint sweep,
+ * a symbol-name sweep and perfboard discovery, and the symptom would be a
+ * sweep reporting nothing rather than an error.
+ *
+ * It is left as a basename match rather than made path-aware, and the
+ * `everyOneOfThese` test in `tests/not-source.test.ts` is why that is
+ * tolerable: a SECOND directory with one of these names now fails a check
+ * by name instead of quietly disappearing. Changing three walkers from
+ * `entry.name` to a root-relative path comparison is a bigger change than
+ * the risk warrants while exactly one of each exists; the check is what
+ * makes "exactly one" true rather than assumed.
+ */
 export const VENDORED_CHECKOUT_NAMES: readonly string[] = VENDORED_CHECKOUTS.map(
   (checkout) => checkout.basename,
 )
