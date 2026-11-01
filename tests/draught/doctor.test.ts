@@ -1,9 +1,12 @@
 // tests/draught/doctor.test.ts
 import { expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
+import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
-import { renderToolchainReport, runDraughtDoctor } from "../../tools/cli/draught.ts"
+import { composeDraughtDoctorReport, renderToolchainReport, runDraughtDoctor } from "../../tools/cli/draught.ts"
 import { readLock } from "../../tools/draught/toolchain.ts"
+import { defaultAkcli } from "../../tools/draught/akcli-install.ts"
 
 test("the report names the tool, what is wanted, what was found and how to fix it", () => {
   const text = renderToolchainReport([
@@ -52,7 +55,133 @@ test("a lock that DOES name akcli still folds akcli doctor's own report in", () 
   // Whether akcli is actually installed on the machine running this test or
   // not, the section header must appear - this is the other half of the
   // gate the regression test above proves the absence of.
-  expect(result.text).toContain("akcli doctor:")
+  expect(result.text).toContain("akcli doctor")
+})
+
+/**
+ * FIX-ROUND 2 REGRESSION (task-2-review.md). Round 1 only closed the case
+ * where `akcli doctor` could not run AT ALL. The reviewer built a stub
+ * `akcli` that version-matches the lock (so `checkToolchain` reports no
+ * problem) but EXITS NON-ZERO on `doctor` - a real failure of a kind
+ * `checkToolchain` cannot see, since it only reads one version number and
+ * `akcli doctor` additionally covers python, kicad-cli, ngspice, symbols,
+ * config and network. Unfixed, this reproduces the same contradiction as
+ * I-1 in a different shape: `exitCode` is correctly 0 (checkToolchain found
+ * no version mismatch - the exit code correctly stays scoped to the lock),
+ * but the text would carry a visible akcli-doctor failure directly above an
+ * UNQUALIFIED "every tool matches", with no label saying which signal
+ * governs. This is the pure half of that regression: it drives
+ * `composeDraughtDoctorReport` directly with a problems list of zero and a
+ * failing `AkcliDoctorReport`, with no subprocess and no filesystem writes
+ * at all.
+ */
+test("fix round 2 regression (pure): a doctor-failing-but-version-matching akcli does not read as an unqualified pass", () => {
+  const result = composeDraughtDoctorReport([], { ok: false, summary: "FAKE DOCTOR FAILURE: symbols library check FAILED" })
+  expect(result.exitCode).toBe(0)
+  expect(result.text).toContain("FAKE DOCTOR FAILURE")
+  expect(result.text).toContain("ADVISORY")
+  // The decisive assertion: the base message ALONE already contains neither
+  // "ADVISORY" (that is the section header, present whenever akcli is in
+  // scope at all) nor "FAKE DOCTOR FAILURE" (that is the stub's own text),
+  // so the two assertions above would pass even against an unfixed
+  // implementation that prints the header and the raw failure but never
+  // qualifies the pass line itself. This is the one check that would not:
+  // the exact sentence `qualifyPassForAdvisoryFailure` adds, which only
+  // exists when the pass line was actually qualified.
+  expect(result.text).toContain("does not make draught-doctor refuse")
+  expect(result.text).not.toBe(renderToolchainReport([]))
+})
+
+/**
+ * FIX-ROUND 2 REGRESSION (task-2-review.md), THE FULL REPRODUCTION. Builds a
+ * real stub executable that prints the LOCK'S OWN pinned `akcli` version for
+ * `--version` (so `checkToolchain`'s real probe finds no disagreement) and
+ * exits 1 with a distinctive message for `doctor`, installs it at the exact
+ * path `defaultAkcli()` resolves (the only path `runDraughtDoctor`'s real
+ * probe will ever read - there is no override hook), runs the real
+ * `runDraughtDoctor()` end to end, and removes exactly what it created
+ * afterward.
+ *
+ * SAFETY: refuses outright, rather than silently skipping or overwriting,
+ * if a real binary already exists at that path - this test must never touch
+ * a genuine install. `firstMissingAncestor` finds the single topmost
+ * directory this test needs to create, so cleanup removes exactly that
+ * subtree and nothing that was already under `draughting/` (which holds
+ * `tools.lock.json` and this plan's other committed files).
+ */
+function firstMissingAncestor(dir: string): string {
+  if (fs.existsSync(dir)) {
+    throw new Error(`${dir} already exists - refusing to treat it as this test's own stub.`)
+  }
+  let current = dir
+  while (!fs.existsSync(path.dirname(current))) {
+    current = path.dirname(current)
+  }
+  return current
+}
+
+test("fix round 2 regression (end to end): a real version-matching, doctor-failing akcli does not read as an unqualified pass", () => {
+  // Trimmed to exclude copperhead, the one OTHER tool genuinely not
+  // installed on this machine today - this test is about akcli alone, and
+  // must reach the reviewer's own "with akcli present and every version
+  // matching" state, which copperhead's own absence would otherwise spoil
+  // with an unrelated disagreement.
+  const fullLock = readLock()
+  const lock = Object.fromEntries(Object.entries(fullLock).filter(([tool]) => tool !== "copperhead"))
+  const akcliVersion = lock.akcli?.version
+  if (akcliVersion === undefined) {
+    throw new Error("draughting/tools.lock.json no longer names akcli - this test has nothing to stub.")
+  }
+  const resolvedAkcli = defaultAkcli()
+
+  if (fs.existsSync(resolvedAkcli)) {
+    throw new Error(
+      `${resolvedAkcli} already exists - this test installs a temporary stub there for the ` +
+        "duration of one run and must never do that against a real install.",
+    )
+  }
+
+  // Built in the system temp directory first, exactly as instructed, before
+  // being copied to the one path this verb's probe will actually read.
+  const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "draught-doctor-akcli-stub-"))
+  const stubScript = path.join(stubDir, "akcli-stub.sh")
+  fs.writeFileSync(
+    stubScript,
+    [
+      "#!/bin/sh",
+      'if [ "$1" = "--version" ]; then',
+      `  echo "${akcliVersion}"`,
+      "  exit 0",
+      "fi",
+      'if [ "$1" = "doctor" ]; then',
+      '  echo "FAKE DOCTOR FAILURE: symbols library check FAILED"',
+      "  exit 1",
+      "fi",
+      "exit 1",
+      "",
+    ].join("\n"),
+  )
+  fs.chmodSync(stubScript, 0o755)
+
+  const resolvedDir = path.dirname(resolvedAkcli)
+  const createdRoot = firstMissingAncestor(resolvedDir)
+  fs.mkdirSync(resolvedDir, { recursive: true })
+  fs.copyFileSync(stubScript, resolvedAkcli)
+  fs.chmodSync(resolvedAkcli, 0o755)
+
+  try {
+    const result = runDraughtDoctor(lock)
+    expect(result.exitCode).toBe(0)
+    expect(result.text).toContain("FAKE DOCTOR FAILURE")
+    expect(result.text).toContain("ADVISORY")
+    // The decisive assertion, same reasoning as the pure test above: the
+    // exact qualifying sentence, not just the header or the raw stub text.
+    expect(result.text).toContain("does not make draught-doctor refuse")
+    expect(result.text).not.toBe(renderToolchainReport([]))
+  } finally {
+    fs.rmSync(createdRoot, { recursive: true, force: true })
+    fs.rmSync(stubDir, { recursive: true, force: true })
+  }
 })
 
 /**
