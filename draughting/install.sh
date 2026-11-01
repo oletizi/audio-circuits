@@ -32,14 +32,27 @@
 # by default:
 #   - copperhead: `git clone` refuses outright onto an existing directory,
 #     so an existing checkout already AT the pinned commit is left alone
-#     (this script re-runs `npm install` either way, which is already
-#     idempotent); one that exists but is NOT at the pinned commit is
+#     (this script re-runs `npm ci` either way - see below for why `ci` and
+#     not `install`); one that exists but is NOT at the pinned commit is
 #     refused by name rather than silently reset, moved or deleted.
 #   - akcli: `python3 -m venv` run against an existing venv directory
 #     repairs it in place rather than wiping it, and `pip install` of an
 #     exact version is a no-op when that version is already satisfied -
 #     both already idempotent on their own, so the venv half of this script
 #     has no existence check of its own.
+#
+# TASK 3 FIX ROUND 2, I-2: `npm ci`, NOT `npm install`, FOR COPPERHEAD'S OWN
+# DEPENDENCIES. Pinning the commit exactly and then letting copperhead's
+# transitive dependency tree float on whatever `npm install` happens to
+# resolve pins the half of this toolchain that is easy to see and leaves
+# the other half - the ~22-vulnerability-deep tree underneath it - adrift
+# from what the checkout's own `package-lock.json` names. `npm ci` installs
+# exactly what that lock file names and refuses outright if the lock and
+# `package.json` disagree, which is the same "refuse by name, no fallback
+# to a different version" this script already holds `git` and `pip` to.
+# `npm ci` also deletes `node_modules` first, which strengthens the
+# re-run safety above rather than weakening it: a re-run cannot leave stray
+# packages behind from a version this script no longer asks for.
 
 set -euo pipefail
 
@@ -74,7 +87,7 @@ else
   git -C "${COPPERHEAD_DIR}" checkout "${COPPERHEAD_COMMIT}" || refuse "git checkout ${COPPERHEAD_COMMIT} in ${COPPERHEAD_DIR} failed."
 fi
 
-( cd "${COPPERHEAD_DIR}" && npm install ) || refuse "npm install in ${COPPERHEAD_DIR} failed."
+( cd "${COPPERHEAD_DIR}" && npm ci ) || refuse "npm ci in ${COPPERHEAD_DIR} failed - its package-lock.json and package.json disagree, or the lock is missing, at commit ${COPPERHEAD_COMMIT}. This is a finding about the copperhead checkout upstream, not something to silently work around by falling back to 'npm install' - report it rather than patching around it here."
 
 echo "draughting/install.sh: creating the akcli venv at ${VENV_DIR}"
 python3 -m venv "${VENV_DIR}" || refuse "python3 -m venv ${VENV_DIR} failed."
