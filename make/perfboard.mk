@@ -35,6 +35,20 @@ PERFBOARD_MAKE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
 include $(PERFBOARD_MAKE_DIR)veroroute.mk
 
+# `draught-doctor` IS MACHINE-WIDE, NOT PER-BOARD, SO IT LIVES HERE RATHER
+# THAN IN make/aggregate.mk OR make/board.mk. It names every disagreement
+# between the pinned drawing toolchain (draughting/tools.lock.json) and what
+# is actually installed on this machine, and exits non-zero when there is at
+# least one - a report that is silent on success would be indistinguishable
+# from a check that never ran. $(REPO_ROOT) is the whole of its context, the
+# same as every other toolchain target here; there is deliberately no
+# BOARD=<name> or other selecting variable, because this verb does not act on
+# a board at all.
+.PHONY: draught-doctor
+
+draught-doctor:
+	@bun "$(REPO_ROOT)/tools/cli/draught.ts"
+
 # The declaration in THIS directory, if there is one. Its presence is the
 # whole of the board-versus-aggregate decision - no lists of boards anywhere.
 BOARD_DECL := $(wildcard $(CURDIR)/perfboard.json)
