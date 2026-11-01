@@ -327,6 +327,16 @@ caught it only because it chose to read `HEAD` over its own context.
 checked on disk to rule out a repository defect, and the one question it
 leaves to the owner.
 
+**AND DO NOT CHECK THIS BY EYE - DIFF THE PASSAGE AGAINST `HEAD`.** On
+2026-10-31 two agents in one session were each asked whether their injected
+copy disagreed with the file. **Both were stale on the same paragraph; one
+reported "no drift found".** It had re-read the file and still missed it,
+because a copy that is 99% right reads as right - the eye confirms what it
+expects, and the stale half is a sentence that was true last week. So the check
+is mechanical: read the specific passage at `HEAD` and compare it to what your
+instructions say, rather than forming an impression that they agree. **A
+disagreement you did not find is the one that gets acted on.**
+
 **NEVER TYPE A CONTROL-CHARACTER ESCAPE INTO A TOOL PARAMETER. BUILD IT IN
 CODE.** A `\u0000` or `\r` written into an edit string, a search pattern or a
 document arrives as the **real byte**, not as the four characters you typed, and
