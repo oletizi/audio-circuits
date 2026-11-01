@@ -68,7 +68,23 @@ def body_extent(sheet):
     return (min(xs), max(xs)), (min(ys), max(ys))
 
 
+def usage_line():
+    """This script's own `usage:` line - see netcmp.py's copy for why it is
+    searched for rather than indexed (final review M-2)."""
+    for line in (__doc__ or "").splitlines():
+        if line.strip().startswith("usage:"):
+            return line.strip()
+    raise SystemExit("paper_fit.py: its own docstring carries no 'usage:' line to quote - fix the docstring.")
+
+
 def main():
+    # M-2 names netcmp.py, crop.py and center.py; this script had the same
+    # bare `IndexError` and is the one `make draw` actually runs on every
+    # call, so it is fixed with them rather than left as the next finding.
+    if len(sys.argv) != 2:
+        raise SystemExit(
+            "paper_fit.py: needs exactly one sheet to measure, got %d argument(s). %s"
+            % (len(sys.argv) - 1, usage_line()))
     sheet = kicad_sheet.read(sys.argv[1])
     (x0, x1), (y0, y1) = body_extent(sheet)
     fits_x = FRAME_X[0] <= x0 and x1 <= FRAME_X[1]

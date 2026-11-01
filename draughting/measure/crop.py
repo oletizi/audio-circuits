@@ -43,16 +43,20 @@ promoted, and the next caller is expected to replace the table with its own
 boxes, the way every run before this one did. The other five copies are
 left in their run directories unchanged.
 
-INHERITED DISCREPANCY, not introduced by this move and not fixed here: the
-usage line below advertises a `--dpi N` flag. This script does not parse one
-- every argument is positional (`sch`, `side`, `prefix`), and the per-region
-dpi comes only from the `REGIONS` table. Checked rather than assumed: none
-of the five ancestor copies mention "dpi" in any form, so this is not a flag
-that regressed somewhere upstream - it was written into this usage line at
-the same time as the per-region `REGIONS` table, in this same file, and
-never wired to a command-line argument.
+INHERITED DISCREPANCY, now FIXED rather than only disclosed (final review
+M-2): the usage line below used to advertise a `--dpi N` flag. This script
+does not parse one - every argument is positional (`sch`, `side`, `prefix`),
+and the per-region dpi comes only from the `REGIONS` table. Checked rather
+than assumed at promotion time: none of the five ancestor copies mention
+"dpi" in any form, so it was not a flag that regressed somewhere upstream -
+it was written into this usage line at the same time as the per-region
+`REGIONS` table, in this same file, and never wired to a command-line
+argument. It is struck from the usage line because M-2 made this script
+REFUSE on an argument count, and a refusal that quotes a usage line
+advertising an argument the script rejects is worse than the silent
+ignoring it replaced.
 
-usage: crop.py <sheet.kicad_sch> <before|after> <out-prefix> [--dpi N]
+usage: crop.py <sheet.kicad_sch> <before|after> <out-prefix>
 """
 import subprocess
 import sys
@@ -86,7 +90,20 @@ REGIONS = {
 }
 
 
+def usage_line():
+    """This script's own `usage:` line - see netcmp.py's copy for why it is
+    searched for rather than indexed (final review M-2)."""
+    for line in (__doc__ or "").splitlines():
+        if line.strip().startswith("usage:"):
+            return line.strip()
+    raise SystemExit("crop.py: its own docstring carries no 'usage:' line to quote - fix the docstring.")
+
+
 def main():
+    if len(sys.argv) != 4:
+        raise SystemExit(
+            "crop.py: needs a sheet, a side and an output prefix, got %d argument(s). %s"
+            % (len(sys.argv) - 1, usage_line()))
     sch = sys.argv[1]
     side = sys.argv[2]
     prefix = Path(sys.argv[3])

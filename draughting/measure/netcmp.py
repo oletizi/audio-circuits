@@ -64,7 +64,29 @@ def partition(nets):
     return {frozenset(v) for v in nets.values()}
 
 
+def usage_line():
+    """This script's own `usage:` line, found rather than counted.
+
+    FINAL REVIEW M-2: THESE SCRIPTS RAISED A BARE `IndexError: list index out
+    of range` ON MISSING ARGUMENTS, against this project's rule that every
+    refusal names what is missing. `center.py` was worse and is the reason
+    this is a search and not an index: it refused with
+    `__doc__.strip().splitlines()[5]`, which is the BLANK line above the
+    usage, so it exited 1 having printed nothing at all. An index into a
+    docstring goes stale the first time anyone adds a sentence; a search for
+    the line that starts with `usage:` does not.
+    """
+    for line in (__doc__ or "").splitlines():
+        if line.strip().startswith("usage:"):
+            return line.strip()
+    raise SystemExit("netcmp.py: its own docstring carries no 'usage:' line to quote - fix the docstring.")
+
+
 def main():
+    if len(sys.argv) != 3:
+        raise SystemExit(
+            "netcmp.py: needs exactly two sheets to compare, got %d argument(s). %s"
+            % (len(sys.argv) - 1, usage_line()))
     a_path, b_path = sys.argv[1], sys.argv[2]
     a, b = netsets(a_path), netsets(b_path)
 

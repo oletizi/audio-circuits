@@ -144,9 +144,27 @@ def fmt(v):
     return text if text not in ("", "-0") else "0"
 
 
+def usage_line():
+    """This script's own `usage:` line - see netcmp.py's copy for why it is
+    searched for rather than indexed (final review M-2)."""
+    for line in (__doc__ or "").splitlines():
+        if line.strip().startswith("usage:"):
+            return line.strip()
+    raise SystemExit("center.py: its own docstring carries no 'usage:' line to quote - fix the docstring.")
+
+
 def main():
     if len(sys.argv) != 5:
-        raise SystemExit(__doc__.strip().splitlines()[5].strip())
+        # FINAL REVIEW M-2: THIS REFUSAL PRINTED NOTHING. It was
+        # `__doc__.strip().splitlines()[5]`, and index 5 of this docstring is
+        # the BLANK line above the usage, so running this script with no
+        # arguments exited 1 in silence - a refusal that names nothing, which
+        # is the one thing this project's refusals may not be. The off-by-one
+        # is also the argument against indexing a docstring at all: it is
+        # wrong the moment anyone adds a sentence above it.
+        raise SystemExit(
+            "center.py: needs an input sheet, an output sheet and the frame's x bounds, got %d "
+            "argument(s). %s" % (len(sys.argv) - 1, usage_line()))
     src, dst, fx0, fx1 = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
     s = open(src).read()
 
