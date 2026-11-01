@@ -6,8 +6,24 @@
 // for the order (check the toolchain; resolve the intent; verify it against
 // the model; draft; render; measure; crop) and for why it never withholds a
 // page over anything but a connectivity disagreement.
+//
+// EVERY SCRATCH DIRECTORY HERE IS UNDER `os.tmpdir()`, AND THAT IS THE FINAL
+// REVIEW'S CRITICAL FINDING (C-1), NOT A STYLE CHOICE. Seven `mkdtempSync`
+// calls in this file used to target a repository-root `build/` directory.
+// `build/` is gitignored and committed by nothing (`git ls-files build` is
+// empty), nothing under `tests/`, `tools/` or `lib/` creates it, and
+// `fs.mkdtempSync` into a missing parent throws `ENOENT` - so on a fresh
+// clone this file failed before reaching anything it is about, which is the
+// same "a timeout failure here was a lie about the code" shape the two
+// 60_000 comments below argue against. `os.tmpdir()` is what every other
+// `mkdtemp` site in this suite uses; it also brings these prefixes inside
+// `make prune-temp`'s derivation, which reads the literal
+// `mkdtempSync(path.join(os.tmpdir(), "<prefix>-"` form
+// (`tools/stripboard/prune-temp.ts`'s `derivePrefixes`) and could never have
+// seen a `build/` path.
 import { expect, test } from "bun:test"
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import { readLock, type Toolchain } from "../../tools/draught/toolchain.ts"
 import { repaperToUSLetter } from "../../tools/draught/draw-render.ts"
@@ -65,7 +81,7 @@ test("an intent whose net partition disagrees with the model refuses before draf
     ...committed,
     nets: committed.nets.map((net, index) => (index === 0 ? { ...net, pins: net.pins.slice(1) } : net)),
   }
-  const scratchDir = fs.mkdtempSync(path.join(repoRoot, "build", "draw-test-"))
+  const scratchDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-"))
   const intentPath = path.join(scratchDir, "corrupted.intent.json")
   fs.writeFileSync(intentPath, JSON.stringify(corrupted))
   try {
@@ -88,8 +104,7 @@ test("an intent whose net partition disagrees with the model refuses before draf
  * measurement suite's own output is present in the report.
  */
 test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and measures without withholding the page", async () => {
-  const repoRoot = moduleRepoRoot()
-  const outDir = fs.mkdtempSync(path.join(repoRoot, "build", "draw-test-real-"))
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-real-"))
   try {
     const result = await runDraw({ board: "pultec-hi-cut", outDir })
     expect(result.exitCode).toBe(0)
@@ -133,7 +148,7 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
  */
 test('repaperToUSLetter reports fitStatus "fits" on content that comfortably sits inside the US Letter frame', async () => {
   const repoRoot = moduleRepoRoot()
-  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-test-"))
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "repaper-test-"))
   try {
     const copy = path.join(scratch, "sheet.kicad_sch")
     fs.copyFileSync(
@@ -156,7 +171,7 @@ test('repaperToUSLetter reports fitStatus "fits" on content that comfortably sit
  */
 test('repaperToUSLetter reports fitStatus "overflow" when content overshoots the frame', async () => {
   const repoRoot = moduleRepoRoot()
-  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-overshoot-test-"))
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "repaper-overshoot-test-"))
   try {
     const source = path.join(
       repoRoot,
@@ -197,8 +212,7 @@ test('repaperToUSLetter reports fitStatus "overflow" when content overshoots the
  * fit", which is a false finding about the board wearing a broken-check's clothes.
  */
 test('repaperToUSLetter reports fitStatus "unmeasured", not "overflow", when the fit check itself cannot run', async () => {
-  const repoRoot = moduleRepoRoot()
-  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-unmeasured-test-"))
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "repaper-unmeasured-test-"))
   try {
     const copy = path.join(scratch, "sheet.kicad_sch")
     // A syntactically valid, parseable sheet with exactly one (paper ...) token and NO wires,
@@ -218,8 +232,7 @@ test('repaperToUSLetter reports fitStatus "unmeasured", not "overflow", when the
 })
 
 test("repaperToUSLetter refuses rather than guessing when the (paper ...) token is not exactly one match", async () => {
-  const repoRoot = moduleRepoRoot()
-  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-no-token-test-"))
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "repaper-no-token-test-"))
   try {
     const copy = path.join(scratch, "sheet.kicad_sch")
     fs.writeFileSync(copy, "(kicad_sch (version 1) (generator x))")
@@ -238,7 +251,7 @@ test("nothing here touches drafted/ - the real run writes only its own outDir", 
     .readdirSync(draftedHiCut)
     .sort()
     .map((name) => fs.readFileSync(path.join(draftedHiCut, name)).toString("base64"))
-  const outDir = fs.mkdtempSync(path.join(repoRoot, "build", "draw-test-untouched-"))
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-untouched-"))
   try {
     await runDraw({ board: "pultec-hi-cut", outDir })
     const after = fs
