@@ -58,7 +58,48 @@ export function defaultAkcli(platform: string = process.platform): string {
     return path.join(venv, "bin", "akcli")
   }
   throw new Error(
-    `no known akcli venv layout for platform "${platform}". Set AKCLI to your own akcli ` +
-      "binary's path - tools/draught/akcli-install.ts has no candidate for this platform.",
+    `no known akcli venv layout for platform "${platform}". There is deliberately no override ` +
+      "to set (controller ruling R1: a second way to say where a tool lives is two places for " +
+      "one fact to be wrong), so this needs a candidate adding to defaultAkcli in " +
+      "tools/draught/akcli-install.ts.",
+  )
+}
+
+/**
+ * THE PYTHON INSIDE THAT SAME VENV, because the measurement suite's
+ * numpy-and-Pillow half runs under it and under nothing else.
+ *
+ * **This is the final review's I-3.** `TOOLING.md`'s reproduction installs
+ * `numpy` and `pillow` into this venv and says in bold why - *"`pixeldiff.py`
+ * and every pixel measurement run under `venv-akcli/bin/python`"* - while
+ * `draughting/install.sh` installed `akcli-kicad` alone. Measured at the time
+ * the review was written: neither this venv's python nor the system `python3`
+ * had numpy, so `draughting/measure/framegeom.py` - a PROMOTED member of the
+ * measurement suite, and what `paper_fit.py`'s own docstring sends you to if
+ * the frame geometry is ever in question - raised `ModuleNotFoundError` on the
+ * machine that promoted it, covered by no test and no `make draw` step.
+ *
+ * **WHY A SECOND RESOLVER RATHER THAN A STRING BUILT AT EACH CALL SITE.** The
+ * two pinned python libraries are now lock entries, so `./toolchain.ts`'s
+ * probe has to run SOMETHING to ask them their version, and that something
+ * must be this venv's interpreter rather than whatever `python3` resolves to
+ * on `PATH` - the same argument `venvPipFor` already makes for pip. Deriving
+ * it here, from the same `VENV_DIR_NAME` `defaultAkcli` uses, is what keeps
+ * the probe, the repair command and the install script pointed at one venv.
+ *
+ * `python3` and not `python`: both exist in a `venv` on posix, and `python3`
+ * is the name `TOOLING.md`'s own reproduction and `install.sh` use.
+ */
+export function defaultAkcliVenvPython(platform: string = process.platform): string {
+  const venv = path.join(moduleRepoRoot(), "draughting", VENV_DIR_NAME)
+  if (platform === "win32") {
+    return path.join(venv, "Scripts", "python.exe")
+  }
+  if (platform === "darwin" || platform === "linux") {
+    return path.join(venv, "bin", "python3")
+  }
+  throw new Error(
+    `no known akcli venv layout for platform "${platform}" - tools/draught/akcli-install.ts has ` +
+      "no python candidate for it, the same way it has no akcli candidate.",
   )
 }

@@ -110,7 +110,7 @@ git -C copperhead checkout 476cc15965f0d1eeda70afb9e806936f6bb15c5c
 cd copperhead && npm ci
 
 python3 -m venv venv-akcli
-./venv-akcli/bin/pip install 'akcli-kicad==0.22.0' numpy pillow
+./venv-akcli/bin/pip install 'akcli-kicad==0.22.0' 'numpy==2.5.4' 'pillow==13.0.0'
 ./venv-akcli/bin/akcli doctor
 ```
 
@@ -125,7 +125,20 @@ refusing outright if the lock and `package.json` disagree.
 
 **`numpy` and `pillow` go into the SAME venv**, because `pixeldiff.py` and
 every pixel measurement run under `venv-akcli/bin/python`. Only a docstring said
-so, and the fourth board had to install them. **The two committed `run.sh`
+so, and the fourth board had to install them.
+
+**AND THEY ARE PINNED, AND `draughting/install.sh` INSTALLS THEM - the final
+review's I-3.** This line said bare `numpy pillow` while the script installed
+`akcli-kicad` alone, so on the machine that promoted
+`draughting/measure/framegeom.py` that script raised `ModuleNotFoundError: No
+module named 'numpy'`: a promoted member of the measurement suite, covered by
+no test and no `make draw` step, reading as available. Both are now entries in
+`draughting/tools.lock.json` with their own probes against this venv's own
+python, so `make draught-doctor` reports a disagreement about either, and
+`tests/draught/install-script.test.ts` checks the script's text against EVERY
+`pypi` field in the lock rather than against two named ones.
+
+**The two committed `run.sh`
 scripts also disagree about where that venv is** - the hi-boost run expects
 `$SCRATCHPAD/hybrid-pass-1/venv-akcli` and the hairpin-fix run
 `$SCRATCHPAD/venv-akcli` - so read the script you are about to run rather than
@@ -141,7 +154,7 @@ this procedure can work on the machine you are on.
 
 **`draughting/install.sh` runs the reproduction above for you**, into
 `draughting/copperhead` and `draughting/venv-akcli`, pinned to the exact commit
-and pypi version `draughting/tools.lock.json` names - and `make draught-doctor`
+and pypi versions `draughting/tools.lock.json` names - and `make draught-doctor`
 checks the result against that same lock. **The accepted risk, taken over
 vendoring:** this script fetches from `github.com/copperheadhq/copperhead` and
 PyPI, so it depends on both staying reachable and on the pinned commit and

@@ -16,8 +16,17 @@ a stroke width - `docs/research/2026-10-30-letter-repaper.md` §3 and
 `drafted/pultec/pultec-hi-cut/RECORD.md`. Re-rendering a blank page on every
 `make draw` call to re-derive a number that has not moved since would cost a
 KiCad invocation for nothing; if this KiCad's frame geometry is ever in
-question, re-measure with `framegeom.py USLetter` and update the two constants
-below, citing the new run.
+question, re-measure and update the two constants below, citing the new run:
+
+    draughting/venv-akcli/bin/python3 draughting/measure/framegeom.py USLetter \
+        --work <a scratch directory>
+
+THAT COMMAND IS WRITTEN OUT BECAUSE THE SHORT FORM THIS LINE USED TO CARRY -
+`framegeom.py USLetter` - COULD NOT RUN, TWICE OVER (final review I-3).
+`framegeom.py` imports `numpy` and `PIL`, which live in the akcli venv and not
+in the system `python3` (`TOOLING.md`: *"numpy and pillow go into the SAME
+venv"*), and `--work` is a required argument of its own. Neither of those is
+visible from the two words this file used to point at.
 
 usage: paper_fit.py <sheet.kicad_sch>
 prints the content extent, the frame, and "fits: yes" or "fits: no"; exits 0

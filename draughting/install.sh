@@ -15,12 +15,17 @@
 # it changes in defaultCopperheadDir()/defaultAkcli() and here, together.
 #
 # THE PINNED VALUES BELOW ARE A DELIBERATE COPY of
-# draughting/tools.lock.json's copperhead.commit and akcli.pypi, not a
-# re-read of that file at install time: tests/draught/install-script.test.ts
-# asserts this script's own TEXT contains both literal strings, so an edit
-# to the lock that is not carried here fails that test loudly instead of the
-# two drifting apart silently - which is the whole reason a lockfile is
-# worth having.
+# draughting/tools.lock.json's copperhead.commit and of EVERY pypi field in
+# it, not a re-read of that file at install time:
+# tests/draught/install-script.test.ts asserts this script's own TEXT
+# contains each of those literal strings, so an edit to the lock that is not
+# carried here fails that test loudly instead of the two drifting apart
+# silently - which is the whole reason a lockfile is worth having.
+#
+# "EVERY pypi field" RATHER THAN "akcli.pypi": that test iterated two
+# hardcoded lock keys until the final review's I-3 added numpy and pillow,
+# and a drift guard that names its subjects one by one is a guard that stops
+# covering the next one.
 #
 # REFUSES BY NAME ON ANY INSTALL FAILURE, WITH NO FALLBACK TO A DIFFERENT
 # VERSION. If the pinned commit cannot be checked out, or the pinned pypi
@@ -65,6 +70,8 @@ COPPERHEAD_COMMIT="476cc15965f0d1eeda70afb9e806936f6bb15c5c"
 
 VENV_DIR="${REPO_ROOT}/draughting/venv-akcli"
 AKCLI_PYPI="akcli-kicad==0.22.0"
+NUMPY_PYPI="numpy==2.5.4"
+PILLOW_PYPI="pillow==13.0.0"
 
 refuse() {
   echo "draughting/install.sh: refusing - $1" >&2
@@ -93,6 +100,20 @@ echo "draughting/install.sh: creating the akcli venv at ${VENV_DIR}"
 python3 -m venv "${VENV_DIR}" || refuse "python3 -m venv ${VENV_DIR} failed."
 
 "${VENV_DIR}/bin/pip" install "${AKCLI_PYPI}" || refuse "${VENV_DIR}/bin/pip install '${AKCLI_PYPI}' failed - no fallback to a different version is attempted."
+
+# FINAL REVIEW I-3: numpy AND pillow GO INTO THIS SAME VENV, PINNED, AND THIS
+# SCRIPT DID NOT INSTALL THEM. TOOLING.md's reproduction - which this script
+# now claims to run for you - installs both here and says in bold why: every
+# pixel measurement runs under this venv's python. Measured when the review was
+# written: neither this venv nor the system python3 had numpy, so
+# draughting/measure/framegeom.py raised ModuleNotFoundError on the machine
+# that promoted it, and nothing checked. They are PINNED rather than floated
+# for the same reason npm ci replaced npm install above, and they are separate
+# pip invocations rather than one so that a refusal names which package failed.
+# draughting/tools.lock.json carries both as entries with their own probes,
+# so make draught-doctor now reports a disagreement about either.
+"${VENV_DIR}/bin/pip" install "${NUMPY_PYPI}" || refuse "${VENV_DIR}/bin/pip install '${NUMPY_PYPI}' failed - no fallback to a different version is attempted. draughting/measure/framegeom.py cannot run without it."
+"${VENV_DIR}/bin/pip" install "${PILLOW_PYPI}" || refuse "${VENV_DIR}/bin/pip install '${PILLOW_PYPI}' failed - no fallback to a different version is attempted. draughting/measure/framegeom.py cannot run without it."
 
 echo "draughting/install.sh: install complete."
 echo "draughting/install.sh: running akcli doctor as a sanity check. This is ADVISORY, the same way tools/cli/draught.ts treats it: akcli doctor additionally checks python, kicad-cli, ngspice, symbols, config and network, and a machine being offline or missing one of those must not read as this install script having failed when the two pinned versions above installed correctly."

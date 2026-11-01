@@ -39,7 +39,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
 import { defaultQpdf } from "../guide/pdf-merge-install.ts"
-import { defaultAkcli } from "./akcli-install.ts"
+import { defaultAkcli, defaultAkcliVenvPython } from "./akcli-install.ts"
 import { defaultCopperheadDir, defaultCopperheadTsx } from "./copperhead-install.ts"
 import { defaultMagick } from "./magick-install.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
@@ -153,6 +153,19 @@ const RESOLVED_BINARY: Readonly<Record<string, () => string>> = {
   akcli: defaultAkcli,
   magick: defaultMagick,
   qpdf: defaultQpdf,
+  // Final review I-3: `numpy` and `pillow` are PYTHON LIBRARIES, not
+  // binaries, so what gets resolved for them is the INTERPRETER that can
+  // answer whether they are installed - and it has to be the akcli venv's
+  // own, because that venv is where `TOOLING.md` says they go and where
+  // `draughting/install.sh` now puts them. Resolving `python3` from `PATH`
+  // instead would answer a different machine's question: measured at the
+  // time this was written, the system `python3` had neither library while
+  // the venv was about to have both. They are two lock entries rather than
+  // one because they are two independently pinned packages that can
+  // independently be absent, and a check that cannot say which one is
+  // missing is a worse refusal.
+  numpy: defaultAkcliVenvPython,
+  pillow: defaultAkcliVenvPython,
 }
 
 /**
