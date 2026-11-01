@@ -132,23 +132,72 @@ choose and does not pin individually - that is upstream's dependency
 security posture, not this repository's, and accepting the install script
 over vendoring accepted it along with everything else upstream changes.
 
-### NEITHER TOOL IS PINNED IN THIS REPOSITORY, AND THAT IS A STANDING RISK
+### NEITHER TOOL IS PINNED IN THIS REPOSITORY, AND THAT IS A STANDING RISK - STRUCK 2026-11-01, NOT DELETED
 
-Both have so far lived in an agent session's scratchpad, which `git clean -fdx`
-and session rotation destroy. **Three accepted pages depend on tools that no
-committed file installs.** This table is the whole of the pinning: there is no
-lockfile, no submodule, no vendored copy, and no check that the installed
-versions match these.
+> **This heading and the two paragraphs under it are shown struck rather than
+> deleted, because what they produced is the argument for the change that
+> replaced them.** They read:
+>
+> *"Both have so far lived in an agent session's scratchpad, which `git clean
+> -fdx` and session rotation destroy. Three accepted pages depend on tools
+> that no committed file installs. This table is the whole of the pinning:
+> there is no lockfile, no submodule, no vendored copy, and no check that the
+> installed versions match these."*
+>
+> *"What would settle it is a decision nobody has made: vendor, submodule,
+> pin in a manifest, or accept the drift. Until then, re-record the versions
+> you actually used in your run's findings document, because a procedure
+> that names versions it does not enforce is a transcription with a date on
+> it."*
+>
+> **Both claims are now false, and have been since Task 1 of
+> `.superpowers/sdd/2026-10-30-institutionalise-draughting`.** There is a
+> lockfile (`draughting/tools.lock.json`, in the table above), an install
+> script that pins to it (`draughting/install.sh`), and a check that the
+> installed versions match it (`make draught-doctor`, below in "The loop").
+> This struck text is the decision those three things made, left in place as
+> the record of why they exist rather than removed once they existed.
 
-**What would settle it** is a decision nobody has made: vendor, submodule, pin
-in a manifest, or accept the drift. Until then, **re-record the versions you
-actually used in your run's findings document**, because a procedure that names
-versions it does not enforce is a transcription with a date on it.
+**Pinning is `draughting/tools.lock.json`, enforced by `make
+draught-doctor`.** Run `make draught-doctor` before anything else in this
+procedure - see "The loop" below - and do not proceed past a disagreement it
+reports. `draughting/install.sh` installs copperhead and akcli pinned to
+that same lock, into the two locations the table above already names; the
+accepted risk in choosing that install path over vendoring is recorded
+above it, not repeated here.
 
 ---
 
 The loop
 --------
+
+**Run `make draught-doctor` first, from anywhere in the repository.** It is
+machine-wide, not per-board: it checks every tool in `draughting/tools.lock.json`
+against what is actually installed and names every disagreement, with the
+command that fixes it, exiting non-zero on at least one. `draughting/install.sh`
+is that fix for copperhead and akcli. Do not proceed past a disagreement it
+reports.
+
+**For a fresh draft, `make draw` mechanises steps 1 through 3 below.** Run it
+from the board's own directory (`cd boards/<board> && make draw`, or `make -C
+boards/<board> draw` from outside it - there is no `BOARD=` variable). It
+resolves the board's committed copperhead intent, verifies the intent's net
+partition against the model's committed netlist export, drafts with
+copperhead, **re-papers the draft to US Letter** (step 2.5 below), renders
+with `kicad-cli`, and runs the measurement suite
+(`draughting/measure/crossings.py`, `junction_audit.py`, `label_survey.py`),
+writing everything under `build/draw/<board>/` - never under `drafted/`, never
+a board's own declared files. **It stops there.** It never calls `akcli`:
+step 4 (repair) and everything after it is judgement work this procedure still
+describes by hand below, and `build/draw/<board>/` is raw material for that
+pass, not the reviewer-ready artifact `drafted/` holds.
+
+`.claude/skills/drawing-a-schematic/SKILL.md` is the invocation of this whole
+loop - it names which commands are `make draught-doctor` and `make draw`'s job
+and which are judgement this procedure still has to be read for. Read it
+alongside this file, not instead of it: the commands below are what `make
+draw` itself runs internally, and are also what to run by hand when drafting
+outside it, or when working a step it does not perform.
 
 ### 0. Establish which direction authority runs
 
@@ -207,6 +256,34 @@ splits turn four tap nets into cross-group label pairs and cut one functional
 section into three headed boxes. **A number from the tool traded against a
 structural property, with nothing written to adjudicate it.** Whoever runs this
 next will make that trade again; record which way you went and why.
+
+### 2.5. Re-paper to US Letter
+
+**COPPERHEAD CANNOT DRAFT TO US LETTER.** Its draft engine checks a requested
+paper size against its own table
+(`draughting/copperhead/src/kicad/draft/engine.ts`, the `PAPERS` table near
+line 219), which holds only the ISO series, A5 through A0 - `USLetter`
+appears nowhere in that file. A different table, in the legibility checker
+(`src/kicad/legibility.ts`), does know `USLetter`, but the draft engine never
+reads it. Passing `hints.paper: "USLetter"` is silently ignored rather than
+honoured: the engine logs *"paper hint 'USLetter' is not a standard size;
+deriving paper from content"* and drafts on A4 regardless.
+
+**Every page must be re-papered after drafting, before rendering.** All five
+approved Pultec pages are `USLetter`, and the owner has no A3 or A4 printer -
+a page left on A4, or on whatever size the engine derived from content, is
+the wrong artifact for him to receive, whatever its circuit says.
+`docs/research/2026-10-30-letter-repaper.md` confirms the fix: rewrite the
+drafted sheet's own `(paper "...")` token to `(paper "USLetter")` and
+re-export - `git diff` of that edit is exactly one insertion and one
+deletion, the paper line and nothing else. Never pass `USLetter` to
+copperhead as a hint; it has no effect but to be ignored.
+
+`make draw` does this itself, via `repaperToUSLetter` in
+`tools/draught/draw-render.ts`, immediately after copperhead drafts and
+before anything renders. **Drafting outside `make draw` - by hand, or from a
+script - must call the same rewrite before rendering**, or the rendered page
+is on the wrong paper with nothing in the render itself to say so.
 
 ### 3. Render, and LOOK AT THE RENDER
 
@@ -388,10 +465,16 @@ reading the sheet after the ops rather than by any check.
    looked at in a rendered crop with its neighbours.**
 6. **`delete_object` orphans junction dots** - 11 across four passes on one
    board, **invisible to every check that ran.** Count them with
-   `scripts/junction_audit.py` from any run directory: on 2026-10-30 every copy
-   was converged on `docs/research/lib/kicad_sheet.py`, so they no longer
-   disagree. **Until that day this entry named the hi-boost copy, which was one
-   of the two that still held the two-textual-forms bug** - see trap 11.
+   `draughting/measure/junction_audit.py` - promoted there on 2026-10-30 from
+   the three run-directory copies, which had converged byte-identical by that
+   point, so there was no choice between competing fixes to make. It imports
+   `draughting/measure/kicad_sheet.py`, its sibling in the promoted home, not
+   `docs/research/lib/kicad_sheet.py` - that directory no longer exists, and
+   each run directory's own frozen copy of both files still names it, so
+   running one of those copies directly now raises `ImportError`
+   (`docs/research/README.md` records this). **Until the promotion this entry
+   named the hi-boost copy, which was one of the two that still held the
+   two-textual-forms bug** - see trap 11.
 
    **`scripts/orphan_junctions.py` IS DELETED, not deprecated.** It counted wire
    endpoints only, so it called a rail passing through a symbol pin an orphan and
@@ -589,8 +672,8 @@ Report each **before and after**, as a number that could have been different:
 | parenthesis depth | counter in the check loop; must be 0 |
 | true wire crossings | distinguish from T-meetings |
 | T-meetings, and whether each carries a junction dot | |
-| orphan junction dots, out of total | `scripts/junction_audit.py`, which counts PINS as well as wires. The `orphan_junctions.py` this row named until 2026-10-30 is deleted; it counted wire endpoints only |
-| duplicate on-page labels per group | `docs/research/2026-10-29-low-cut-full-run/scripts/label_survey.py`; **zero after the collapse pass** |
+| orphan junction dots, out of total | `draughting/measure/junction_audit.py`, which counts PINS as well as wires. The `orphan_junctions.py` this row named until 2026-10-30 is deleted; it counted wire endpoints only |
+| duplicate on-page labels per group | `draughting/measure/label_survey.py` (promoted 2026-10-30 from the run directories' byte-identical copies); **zero after the collapse pass** |
 | per-net wire stroke consistency | a net drawn in two colours reads as two nets |
 | symbol count, pin count | should be unchanged by a repair |
 | wire count, total wire length | |
@@ -616,7 +699,10 @@ decide something this file does not answer:
 - **Group assignment is a judgement with no stated method.** Which parts share a
   group, and in what order, is the main lever on the output and the records show
   it being chosen by trying several.
-- **Neither tool is pinned**, as above.
+- **"Neither tool is pinned", as above - STRUCK 2026-11-01.** Both are now:
+  `draughting/tools.lock.json`, `draughting/install.sh` and `make
+  draught-doctor` are the pinning, the installer and the check, respectively.
+  See the struck section under "The toolchain" for the correction in full.
 - **The verdict record substrate is not built.** `docs/schematic/verdicts.md` is
   interim markdown; the designed form is a `drafted/<circuit>/<board>/` tree with
   a GNU recutils register and a staleness check. **The status vocabulary is
