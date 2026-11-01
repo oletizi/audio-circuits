@@ -120,7 +120,11 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true })
   }
-})
+  // 60_000, not bun's 5000ms default: this shells out to copperhead, kicad-cli
+  // and python3. It runs in seconds alone and crossed 5s twice under full-suite
+  // parallel load - a timeout failure here was a lie about the code, not a defect
+  // in it. 60_000 is this repository's established figure for a real-tool test.
+}, 60_000)
 
 /**
  * I-1 (fix round 1) regression: `repaperToUSLetter` on a real committed Pultec page (already
@@ -245,4 +249,8 @@ test("nothing here touches drafted/ - the real run writes only its own outDir", 
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true })
   }
-})
+  // 60_000, not bun's 5000ms default: this shells out to copperhead, kicad-cli
+  // and python3. It runs in seconds alone and crossed 5s twice under full-suite
+  // parallel load - a timeout failure here was a lie about the code, not a defect
+  // in it. 60_000 is this repository's established figure for a real-tool test.
+}, 60_000)
