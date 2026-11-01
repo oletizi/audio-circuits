@@ -157,3 +157,51 @@ test("M-2 regression: the bootstrap venv-creation branch is not gated on the lit
   expect(how).toContain(`python3 -m venv ${venvDir}`)
   expect(how).toContain("install 'some-other-pypi-package==")
 })
+
+/**
+ * FIX ROUND 3 (task-3-review.md). `howToFix`'s clone-or-fetch branch used
+ * to require `tool === "copperhead"` literally, in addition to
+ * `spec.commit !== undefined && spec.upstream !== undefined` - the SAME bug
+ * M-2 fixed for the pypi branch, one line further down in the same
+ * function. This pins the decision the fix round made: the CONDITION is
+ * derived from the spec alone now, but the DIRECTORY still has to come
+ * from a per-tool resolver (`RESOLVED_CHECKOUT_DIR`), because dropping the
+ * name check without also keying the directory by name would make a
+ * second commit-pinned tool silently receive COPPERHEAD's own checkout
+ * directory - a wrong answer, not merely an incomplete one.
+ *
+ * A synthetic tool, NOT "copperhead", carrying `commit` and `upstream` but
+ * absent from `RESOLVED_CHECKOUT_DIR` (there is no second real
+ * git-checked-out tool in the lock to reuse the way M-2's test reused
+ * `qpdf`'s real resolver) must fall through to the generic
+ * `install ... from ...` message - proving the fix does not guess a
+ * directory for a tool it does not actually know how to find.
+ */
+test("fix round 3 regression: a second commit-pinned tool with no known checkout directory does not get copperhead's", () => {
+  const syntheticSecondCommitPinnedTool = {
+    version: "1.0.0",
+    probe: ["echo", "1.0.0"],
+    commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    upstream: "https://example.invalid/widget",
+  }
+  const how = howToFix("widget", syntheticSecondCommitPinnedTool, null)
+  expect(how).toBe("install widget 1.0.0 from https://example.invalid/widget")
+  expect(how).not.toContain(defaultCopperheadDir())
+  expect(how).not.toContain("git clone")
+})
+
+/**
+ * THE OTHER HALF OF THE SAME FIX, SO THE REAL TOOL IS NOT LEFT UNCHECKED:
+ * copperhead itself, the one tool actually in `RESOLVED_CHECKOUT_DIR`,
+ * must still get its real clone/fetch commands after the generalisation -
+ * Important 1 and "R6 bootstrap/upgrade" above already cover this through
+ * `checkToolchain`'s real probe and directly, respectively; this is the
+ * same claim stated once more beside the round-3 test for a reader
+ * comparing the two.
+ */
+test("fix round 3: copperhead itself is unaffected by the generalisation - still resolves through RESOLVED_CHECKOUT_DIR", () => {
+  const spec = readLock().copperhead
+  const dir = defaultCopperheadDir()
+  expect(howToFix("copperhead", spec, null)).toContain(`git clone ${spec.upstream} ${dir}`)
+  expect(howToFix("copperhead", spec, "0.0.1-other")).toContain(`git -C ${dir} fetch`)
+})

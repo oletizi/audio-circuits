@@ -156,6 +156,35 @@ const RESOLVED_BINARY: Readonly<Record<string, () => string>> = {
 }
 
 /**
+ * Fix round 3: the git-checkout counterpart of `RESOLVED_BINARY`, for the
+ * same reason - `howToFix`'s clone-or-fetch branch below used to be gated
+ * on `tool === "copperhead"` literally, which is the SAME bug M-2 fixed for
+ * the pypi branch, reproduced one line further down: a second tool pinned
+ * to a commit and fetched from `upstream` would fall past that branch
+ * entirely rather than get clone-or-fetch handling.
+ *
+ * **Dropping the name check from the CONDITION is not enough on its own.**
+ * The branch's body also calls `defaultCopperheadDir()` directly - a single
+ * hardcoded resolver, not one keyed by tool name. Generalising the
+ * condition to `spec.commit !== undefined && spec.upstream !== undefined`
+ * while leaving that call unconditional would make a SECOND commit-pinned
+ * tool silently get COPPERHEAD's own checkout directory in its clone
+ * command - a wrong answer, not merely an incomplete one, and worse than
+ * the status quo it would replace. This map is what keeps the directory
+ * resolution keyed by name the same way `RESOLVED_BINARY` already is,
+ * so `howToFix` can derive the clone/fetch branch from the SPEC
+ * (`commit`/`upstream` presence) while still deriving WHICH directory from
+ * the TOOL - an unmapped tool name falls through to the generic
+ * `install ... from ...` message below rather than a guessed path.
+ * `tests/draught/toolchain.test.ts`'s "fix round 3" test drives exactly
+ * this: a synthetic second commit-pinned tool with no entry here must NOT
+ * receive copperhead's own directory.
+ */
+const RESOLVED_CHECKOUT_DIR: Readonly<Record<string, () => string>> = {
+  copperhead: defaultCopperheadDir,
+}
+
+/**
  * Build the argv actually executed for `tool`'s `probe`: substitute a
  * resolved path for tools `RESOLVED_BINARY` knows, resolve copperhead's
  * relative `src/cli.ts` against its checkout directory, and otherwise run
@@ -167,6 +196,24 @@ function resolveProbeArgv(tool: string, probe: readonly string[]): readonly stri
   if (resolver !== undefined) {
     return [resolver(), ...probe.slice(1)]
   }
+  // Fix round 3: CONFIRMED, not the same bug as `RESOLVED_CHECKOUT_DIR`
+  // above or the clone/fetch branch it serves. Those derive WHICH REPAIR
+  // COMMAND from a property of the spec (`commit`/`upstream` presence) -
+  // any git-fetched, commit-pinned tool gets the same command SHAPE. This
+  // branch instead substitutes a tool-specific INVOCATION SHAPE: copperhead
+  // happens to be run as `npx tsx src/cli.ts ...`, a relative script path
+  // inside an npm-installed checkout, which is a fact about how THIS one
+  // tool's CLI is packaged, not a property every commit-pinned tool shares.
+  // A second commit-pinned tool could just as easily be a compiled binary
+  // with no `src/cli.ts` at all, in which case there is nothing here to
+  // derive from its spec - `scriptIndex === -1` already guards against
+  // rewriting a probe that does not contain that literal path, so a
+  // same-named-by-coincidence probe is inert here rather than silently
+  // wrong, but there is no SPEC field (unlike `commit`/`upstream`) that
+  // would tell this function a second tool needs the same treatment. If
+  // that changes - a second tool is genuinely invoked the same way - this
+  // is the one place to generalise, and `RESOLVED_CHECKOUT_DIR` is the map
+  // to key it from.
   if (tool === "copperhead") {
     const scriptIndex = probe.indexOf("src/cli.ts")
     if (scriptIndex === -1) return probe
@@ -288,22 +335,34 @@ export function howToFix(tool: string, spec: ToolSpec, found: string | null): st
     }
     return `pip install '${pinnedPackage}'`
   }
-  if (tool === "copperhead" && spec.commit !== undefined && spec.upstream !== undefined) {
-    // Fix-round Important 1: built from `defaultCopperheadDir()`, the same
-    // function `resolveProbeArgv` above calls - never the literal
-    // "draughting/copperhead" a second time, so this cannot drift from
-    // wherever the probe actually looks.
-    const dir = defaultCopperheadDir()
-    // R6: UPGRADE. The probe ran and reported something - so the checkout
-    // directory exists - and `git clone` onto an existing directory refuses
-    // outright rather than updating it. Fetch and check out the pinned
-    // commit in place instead of cloning a second time.
-    if (found !== null) {
-      return `git -C ${dir} fetch && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
+  // Fix round 3: derived from the SPEC (any tool pinned to a commit and
+  // fetched from `upstream` gets clone-or-fetch handling), not from
+  // `tool === "copperhead"` literally - M-2's own argument, applied to the
+  // branch beside it. Which DIRECTORY still has to come from the tool,
+  // though: `RESOLVED_CHECKOUT_DIR` is looked up by name exactly the way
+  // `RESOLVED_BINARY` already is for the pypi branch above, so an unmapped
+  // second commit-pinned tool falls through to the generic
+  // `install ... from ...` message below rather than silently getting
+  // copperhead's own checkout directory.
+  if (spec.commit !== undefined && spec.upstream !== undefined) {
+    const checkoutDirResolver = RESOLVED_CHECKOUT_DIR[tool]
+    if (checkoutDirResolver !== undefined) {
+      // Fix-round Important 1: built from the resolver, the same function
+      // `resolveProbeArgv` above calls for this tool - never a literal
+      // "draughting/copperhead" a second time, so this cannot drift from
+      // wherever the probe actually looks.
+      const dir = checkoutDirResolver()
+      // R6: UPGRADE. The probe ran and reported something - so the
+      // checkout directory exists - and `git clone` onto an existing
+      // directory refuses outright rather than updating it. Fetch and
+      // check out the pinned commit in place instead of cloning again.
+      if (found !== null) {
+        return `git -C ${dir} fetch && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
+      }
+      // R6: BOOTSTRAP. Nothing answered the probe at all, so there is
+      // nothing at `dir` yet to fetch into - clone it fresh.
+      return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
     }
-    // R6: BOOTSTRAP. Nothing answered the probe at all, so there is nothing
-    // at `dir` yet to fetch into - clone it fresh.
-    return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
   }
   if (spec.upstream !== undefined) {
     return `install ${tool} ${spec.version} from ${spec.upstream}`
