@@ -76,3 +76,16 @@ __pycache__/
 # its own build - not vendored, not a submodule - so it is acquired locally
 # rather than committed here.
 .tools/
+
+# The pinned schematic-drawing toolchain draughting/install.sh fetches
+# (Task 3 of docs/superpowers/plans/2026-10-30-institutionalise-draughting.md):
+# a copperhead git checkout and an akcli-kicad venv. draughting/tools.lock.json
+# pins the versions and install.sh fetches them on demand - deliberately not
+# vendored - so these two directories are a local build product of that
+# script, not repository content. No trailing slash on either pattern,
+# deliberately: a trailing-slash ("directory only") pattern only matches
+# once the directory exists on disk, so `git check-ignore` reports NOT
+# ignored before install.sh has ever run - exactly the window this entry
+# exists to close.
+draughting/copperhead
+draughting/venv-akcli
