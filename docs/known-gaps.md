@@ -4308,3 +4308,71 @@ this symbol `#PWR01`, which is right on `pultec-hi-boost`, `pultec-hi-cut`,
 the designators were reassigned at some point and that page kept the older
 number. Same symbol, same ruling. Identify it by what it is attached to, not by
 its designator.
+
+---
+
+### G308 - OWNER RULING, 2026-10-31: no `BOARD=<name>` on `make draw`, or on anything else. The directory is the context
+
+> *"I hate using environment variables"*
+
+**What was asked.** The approved institutionalisation spec and plan specified
+`make draw BOARD=<board>`. He was shown the two forms side by side and asked to
+confirm or overrule:
+
+```
+make -C boards/pultec-mid draw     follows the existing convention
+make draw BOARD=pultec-mid         what the plan asked for
+```
+
+**The ruling is the first form.** The verb takes no board argument. `$(CURDIR)`
+is the whole of the context, exactly as it is for `check`, `bom` and `cuts`, and
+a board is acted on from outside with make's own `-C` flag.
+
+**PRECISELY WHAT HE REJECTED, because the terminology will mislead a later
+reader.** `make draw BOARD=x` passes a **make variable** on the command line,
+not an environment variable in the shell sense; `BOARD=x make draw` would be the
+environment-variable form. **Both are the rejected shape** and the distinction
+does not rescue either - what he rejected is naming the board anywhere but by
+standing in its directory. An agent that proposes `BOARD=` again on the grounds
+that it is "not really an environment variable" has found this paragraph.
+
+**This repository had already written the rule down twice, with its reason, and
+an agent wrote a spec against it anyway.** `make/board.mk`:
+
+> *"`$(CURDIR)` is the whole of the context - no `BOARD=<name>` variable,
+> because two ways to say which board is two places for one fact to be wrong."*
+
+and `make/perfboard.mk`:
+
+> *"TO ACT ON A BOARD FROM OUTSIDE ITS DIRECTORY, use make's own flag:
+> `make -C boards/pt2399-core check`. That is the same mechanism driven from
+> elsewhere, not a second one - there is deliberately no `BOARD=<name>`
+> variable."*
+
+**That is the part worth keeping.** The conflict was caught by a pre-flight
+conflict scan before the plan's first task was dispatched, not by the spec
+review and not by the owner's approval of the spec - he approved a document that
+contradicted his own Makefile, because the contradiction was three files away
+from the sentence. **A spec adding a verb to an existing file is checked against
+that file's own stated conventions before it is written**, which is cheap and
+was not done here.
+
+- **Found** 2026-10-31, in the pre-flight conflict scan for
+  `docs/superpowers/plans/2026-10-30-institutionalise-draughting.md`, committed
+  at
+  `docs/superpowers/plans/2026-10-30-remove-schgen-execution/next-plan-preflight-scan.md`.
+- **Evidence** his words above; the two Makefile comments quoted verbatim, both
+  read at `HEAD`.
+- **Verified** **CONFIRMED by this writer** for the Makefile quotations, which
+  were read here. The ruling is his.
+- **Why it is open** it is a ruling, recorded so the `BOARD=` form is not
+  reintroduced by the next agent that finds naming a board from elsewhere
+  convenient.
+- **What would settle it.** Nothing to settle. The spec and the plan are amended
+  to match, with the old wording shown struck rather than edited away.
+
+**The cost if this turns out wrong, stated rather than hidden.** If drawing ever
+needs to act on several boards at once from a directory that is not a board,
+the verb needs an argument after all. The shape already available for that is
+`check`'s: an aggregate directory walks downward from wherever it is run. That
+is the answer to reach for, not `BOARD=`.

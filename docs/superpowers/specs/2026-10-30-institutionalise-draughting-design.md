@@ -67,7 +67,17 @@ it fail.
 available. That is the trade accepted in choosing it over vendoring, and it is
 recorded rather than discovered later.
 
-## 2. `make draw BOARD=<board>`: the mechanical half
+## 2. `make draw`: the mechanical half
+
+**THE VERB TAKES NO BOARD ARGUMENT, and this section said `make draw
+BOARD=<board>` until 2026-10-31.** The owner, shown both forms: *"I hate using
+environment variables"*. `make/board.mk` had already said it - *"no
+`BOARD=<name>` variable, because two ways to say which board is two places for
+one fact to be wrong"* - and `make/perfboard.mk` says it again with the remedy:
+*"use make's own flag: `make -C boards/pt2399-core check`. That is the same
+mechanism driven from elsewhere, not a second one."* The directory you are
+standing in is the context, exactly as it is for `check`, `bom` and `cuts`.
+`docs/known-gaps.md` **G308**.
 
 One verb that does what five run directories each re-implemented: resolve the
 tools, build or take the intent, verify the intent against the model, draft,

@@ -208,7 +208,7 @@ They are the execution record of runs already approved. **Do not delete them and
 
 ---
 
-## Task 5: `make draw BOARD=<board>`
+## Task 5: `make draw`, context-directed
 
 **Files:**
 - Create: `tools/cli/draw.ts`
@@ -238,7 +238,7 @@ Order: check the toolchain; resolve the intent (take a committed one, or refuse 
 
 **It never withholds a page.** If a check reports something, the page is still written and the finding is printed beside it.
 
-- [ ] **Step 4: Run `make draw BOARD=pultec-hi-cut` and compare against the committed page**
+- [ ] **Step 4: Run `make -C boards/pultec-hi-cut draw` and compare against the committed page**
 
 The sheet it produces should match `drafted/pultec/pultec-hi-cut/`'s byte for byte, or the difference should be explainable and explained. **Do not overwrite anything in `drafted/`** — write to `build/`.
 
@@ -257,7 +257,7 @@ The sheet it produces should match `drafted/pultec/pultec-hi-cut/`'s byte for by
 Frontmatter `name` and `description` that make it fire when the task is drawing or revising a schematic. Body:
 
 - the loop's steps, and that **a repair of an existing page skips the draft step**
-- `make draught-doctor` first, `make draw BOARD=x` for the mechanics
+- `make draught-doctor` first, then `make draw` from the board's own directory (or `make -C boards/<board> draw` from outside) for the mechanics
 - the trap index: `--apply` is not optional and its absence is silent; `akcli pins` mixes units; a field renders horizontally when `(rotation + angle) mod 180 == 0`; a global label's tag is a shape KiCad draws the wire through; a sheet holds wires, symbols and pins in **two textual forms**
 - the false greens: `kicad-cli sch export netlist` exits 0 on a paren-broken sheet; Chrome exits 0 when it prints nothing; `qpdf` exits 3 on success with warnings; `akcli check --layout` has been wrong in **both** directions
 - the verification table
