@@ -50,6 +50,7 @@ import {
   vendoredSymbolFile,
   vendoredSymbolText,
 } from "../../lib/kicad/symbol-library.ts"
+import { VENDORED_CHECKOUT_NAMES } from "../../lib/not-source.ts"
 import { physicalBoard } from "../../circuits/pultec/physical/board.ts"
 import {
   INDUCTOR_SYMBOL,
@@ -66,8 +67,17 @@ import {
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 
-/** Directories a source sweep must not walk into, named rather than pattern-matched. */
-const NOT_SOURCE = new Set([".git", "node_modules", "build", ".tools", "guide"])
+/**
+ * Directories a source sweep must not walk into, named rather than
+ * pattern-matched. `build` and `guide` are this sweep's own generated
+ * output; `VENDORED_CHECKOUT_NAMES` (`lib/not-source.ts`) is the fetched,
+ * not-authored-here half - `.tools` and `copperhead` - shared with every
+ * other walker that has to agree on the same fact. This set used to be a
+ * byte-identical copy of `./footprint-sweep.ts`'s own - Task 3 fix round 1
+ * found that duplication was exactly how the two walkers could silently
+ * drift apart on what "not ours" means.
+ */
+const NOT_SOURCE = new Set([".git", "node_modules", "build", "guide", ...VENDORED_CHECKOUT_NAMES])
 
 function sourceFiles(dir: string): readonly string[] {
   const found: string[] = []

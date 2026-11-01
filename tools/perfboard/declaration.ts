@@ -22,6 +22,7 @@
  */
 import fs from "node:fs"
 import path from "node:path"
+import { VENDORED_CHECKOUT_NAMES } from "../../lib/not-source.ts"
 
 export interface PerfboardDeclaration {
   /** Absolute path to the perfboard.json itself. */
@@ -50,7 +51,13 @@ export interface PerfboardDeclaration {
   readonly netlistPath?: string
 }
 
-const SKIP_DIRECTORIES = new Set(["node_modules", ".git", ".tools", "dist"])
+// `dist` is this walker's own build-output name; `VENDORED_CHECKOUT_NAMES`
+// (`lib/not-source.ts`) is the fetched, not-authored-here half - `.tools`
+// and `copperhead` - shared with every other repository-wide walker. Before
+// Task 3 fix round 1, a `perfboard.json` fetched inside `copperhead`'s own
+// checkout would have been discovered as though this repository had
+// declared it; nothing has NAMED one yet, which is luck rather than a rule.
+const SKIP_DIRECTORIES = new Set(["node_modules", ".git", "dist", ...VENDORED_CHECKOUT_NAMES])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)

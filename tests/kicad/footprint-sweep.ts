@@ -33,13 +33,20 @@
 import fs from "node:fs"
 import path from "node:path"
 import { splitLibId } from "../../lib/kicad/symbol-library.ts"
+import { VENDORED_CHECKOUT_NAMES } from "../../lib/not-source.ts"
 import { installedFootprintLibraries, resolveFootprintOnDisk } from "./footprint-library.ts"
 import { installedSymbolNames, symbolLibraryFile } from "./symbol-library-disk.ts"
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 
-/** Directories a source sweep must not walk into, named rather than pattern-matched. */
-const NOT_SOURCE = new Set([".git", "node_modules", "build", ".tools", "guide"])
+/**
+ * Directories a source sweep must not walk into, named rather than
+ * pattern-matched. `build` and `guide` are this sweep's own generated
+ * output; `VENDORED_CHECKOUT_NAMES` (`lib/not-source.ts`) is the fetched,
+ * not-authored-here half - `.tools` and `copperhead` - shared with every
+ * other walker that has to agree on the same fact.
+ */
+const NOT_SOURCE = new Set([".git", "node_modules", "build", "guide", ...VENDORED_CHECKOUT_NAMES])
 
 /** The library prefix that exempts a name from the disk check. */
 export const SYNTHETIC_PREFIX = "SYNTHETIC:"
