@@ -21,11 +21,41 @@ PROMOTED to `draughting/measure/` from
 six byte-identical copies at promotion time
 (`hybrid-pass-1`, `low-cut-full-run`, `hi-boost-full-run`, `hi-cut-full-run`,
 `mid-full-run`) and one outlier,
-`2026-10-29-low-boost-in-thompson-bell-idiom/scripts/crossings.py`, which is
-the OLDER, weaker script this docstring's own paragraph above describes - the
-LITERAL-SPACE pattern, one sheet per invocation, no T-meeting/X-crossing
-split. All seven copies are left in their run directories unchanged; this is
-a promotion of the identical majority, not a fix made in the move.
+`2026-10-29-low-boost-in-thompson-bell-idiom/scripts/crossings.py`.
+
+**CORRECTION, fix round 1 of this task's own review.** This paragraph
+originally claimed the outlier had "no shared-reader import" - that is
+FALSE, and the review that caught it read the file rather than relaying a
+claim about it: the outlier already reads through `kicad_sheet.py` (fixed by
+commit `cedd922`, which landed before this task's own starting commit
+`06d6776` - before the promotion work began at all). The LITERAL-SPACE bug
+the paragraph above describes is real but historical; it does not describe
+this file as it stood at promotion time. `dfa964e`'s own commit message
+says the outlier was excluded for "the older literal-space wire pattern"
+without qualifying that the pattern was historical rather than current,
+which reads the same way and overstates the case the same way; that commit
+is not amended here (new commits, not rewritten ones, is this project's own
+rule), so this docstring is the correction of record for both.
+
+The outlier is still genuinely weaker, for reasons that are true of the file
+as it actually stands: it has no X-crossing/T-meeting split (one undivided
+"interior crossings without a junction" count), it takes one sheet per
+invocation rather than several, and it rounds coordinates to whole mils with
+its own `MM = 1 / 0.0254` rather than using `kicad_sheet.TOL`, the shared
+reader's own tolerance. Promoting the five-way-identical copy instead was
+still the right call - it was simply right for the wrong stated reason. All
+seven copies are left in their run directories unchanged; this is a
+promotion of the identical majority, not a fix made in the move.
+
+NOT CONSIDERED AS AN EIGHTH COPY, and the reason is recorded here so the
+next person diffing copies does not have to re-establish it:
+`docs/research/2026-10-29-trial-microsoft-schgen/scripts/count_crossings.py`.
+It counts the same kind of thing (wire-segment crossings) but is a different
+tool - a standalone regex-only script with no `kicad_sheet` import at all,
+written for the abandoned Microsoft-schgen trial rather than for any Pultec
+run, and it lives in the one directory `docs/research/2026-10-30-lying-checks.md`
+names as dead (`2026-10-29-trial-microsoft-schgen/`). It is a different
+script that happens to share a subject, not a copy of this one.
 
 usage: crossings.py <sheet.kicad_sch> [<sheet.kicad_sch> ...]
 """

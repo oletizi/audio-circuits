@@ -1,6 +1,6 @@
 // tests/draught/measure-suite.test.ts
 //
-// Task 4 of docs/superpowers/sdd/2026-10-30-institutionalise-draughting: the
+// Task 4 of .superpowers/sdd/2026-10-30-institutionalise-draughting: the
 // measurement scripts that used to be copied forward from run directory to
 // run directory now have one home, draughting/measure/. This test drives
 // that home's own positive-control suite rather than re-asserting any of its

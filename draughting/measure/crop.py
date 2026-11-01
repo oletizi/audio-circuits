@@ -14,21 +14,43 @@ visible in the diff of this file.
 
 PROMOTED to `draughting/measure/` from
 `docs/research/2026-10-30-mid-letter-redraw/scripts/crop.py`. SIX copies
-existed at promotion time and no two share a `CROPS`/`REGIONS` table - each
-is "Adapted from" the one before it in its own docstring, a lineage rather
-than duplicates of one script: `hi-boost-full-run` -> `hi-cut-full-run` and
-`hi-boost-hairpin-fix` -> `mid-full-run` -> `mid-letter-redraw`, with
-`low-cut-full-run` a side branch off `hi-boost-full-run`. This copy is taken
-because it is the newest and most general point in that lineage - the only
-one that renders at a per-region DPI, uses a temp directory instead of
-leaving `.pdf`/`.png` siblings beside the output, and supports two distinct
-boxes per region (`--side before|after`) rather than assuming the same box
-works on both sides of a repair. Its own `REGIONS` table is specific to the
-mid-letter-redraw run, exactly as every prior copy's table was specific to
-its own run: the mechanics are what is promoted, and the next caller is
-expected to replace the table with its own boxes, the way every run before
-this one did. The other five copies are left in their run directories
-unchanged.
+existed at promotion time and no two share a `CROPS`/`REGIONS` table.
+
+**LINEAGE, checked against each file's own "Adapted from" line and its
+first-commit date rather than asserted** (fix round 1 of this task's own
+review flagged the first version of this paragraph as not quite matching the
+files' own citations - this is the corrected account, in creation order):
+`low-cut-full-run` (the root; cites nothing) is cited by `hi-boost-full-run`
+as what it adapted from; `hi-boost-full-run` is cited by
+`hi-boost-hairpin-fix`; `hi-boost-hairpin-fix` is cited by `hi-cut-full-run`.
+`mid-full-run` and this file, `mid-letter-redraw`, carry NO "Adapted from"
+citation at all - `mid-full-run` is next in time after `hi-cut-full-run` and
+closest in mechanics to `hi-boost-hairpin-fix`'s (the same `os.path`/`magick`
+style, not this file's `tempfile`/`Path`), and `mid-letter-redraw` is a
+rewrite a day later that names "the hi-cut run's 'crop sized to the after
+state' finding" in prose - a reference to that run's FINDING, not evidence
+that its code was adapted from that run's file. Where the chain is not an
+explicit citation, it is stated as inference from date and style, not fact.
+
+This copy is taken because it is the newest and most general point in that
+lineage - the only one that renders at a per-region DPI, uses a temp
+directory instead of leaving `.pdf`/`.png` siblings beside the output, and
+supports two distinct boxes per region (`--side before|after`) rather than
+assuming the same box works on both sides of a repair. Its own `REGIONS`
+table is specific to the mid-letter-redraw run, exactly as every prior
+copy's table was specific to its own run: the mechanics are what is
+promoted, and the next caller is expected to replace the table with its own
+boxes, the way every run before this one did. The other five copies are
+left in their run directories unchanged.
+
+INHERITED DISCREPANCY, not introduced by this move and not fixed here: the
+usage line below advertises a `--dpi N` flag. This script does not parse one
+- every argument is positional (`sch`, `side`, `prefix`), and the per-region
+dpi comes only from the `REGIONS` table. Checked rather than assumed: none
+of the five ancestor copies mention "dpi" in any form, so this is not a flag
+that regressed somewhere upstream - it was written into this usage line at
+the same time as the per-region `REGIONS` table, in this same file, and
+never wired to a command-line argument.
 
 usage: crop.py <sheet.kicad_sch> <before|after> <out-prefix> [--dpi N]
 """
