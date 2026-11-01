@@ -1,7 +1,7 @@
 {
   "copperhead": { "version": "0.12.0", "commit": "476cc15965f0d1eeda70afb9e806936f6bb15c5c",
     "upstream": "https://github.com/copperheadhq/copperhead", "licence": "Apache-2.0",
-    "probe": ["npx", "tsx", "src/cli.ts", "--version"] },
+    "probe": ["tsx", "src/cli.ts", "--version"] },
   "akcli": { "version": "0.22.0", "pypi": "akcli-kicad==0.22.0",
     "upstream": "https://github.com/tipoLi5890/akcli", "licence": "MIT",
     "probe": ["akcli", "--version"] },

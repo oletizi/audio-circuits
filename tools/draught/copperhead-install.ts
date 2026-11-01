@@ -42,11 +42,11 @@
  * computes identically, so there is nothing here for a `platform` parameter
  * to branch on.
  *
- * copperhead is invoked as `npx tsx src/cli.ts --version` from inside its
- * checkout (`TOOLING.md`), so the resolved value here is the CHECKOUT
- * DIRECTORY, and `./toolchain.ts` joins `src/cli.ts` onto it rather than
- * changing the probe subprocess's working directory - `tsx` accepts an
- * absolute script path.
+ * copperhead's CLI is a TypeScript entry point run under `tsx`
+ * (`TOOLING.md`), so the resolved value here is the CHECKOUT DIRECTORY, and
+ * `./toolchain.ts` joins `src/cli.ts` onto it rather than changing the probe
+ * subprocess's working directory - `tsx` accepts an absolute script path.
+ * `defaultCopperheadTsx` below resolves the `tsx` that runs it.
  */
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import path from "node:path"
@@ -58,4 +58,55 @@ import path from "node:path"
  */
 export function defaultCopperheadDir(): string {
   return path.join(moduleRepoRoot(), "draughting", "copperhead")
+}
+
+/**
+ * THE `tsx` THAT RUNS COPPERHEAD'S CLI: THE ONE `npm ci` INSTALLED INSIDE
+ * THE CHECKOUT, NEVER `npx`'s PICK.
+ *
+ * **This is the final review's I-5, and the measurement is the whole
+ * argument.** `npx tsx` resolves `tsx` from `node_modules/.bin` walking up
+ * from the CURRENT WORKING DIRECTORY, and falls back to npm's `_npx` cache or
+ * the registry. Measured on this machine, with the absolute `src/cli.ts`
+ * argument IDENTICAL in both runs and `cwd` the only variable:
+ *
+ *     cwd = repository root        npx tsx --version -> 4.23.15   (_npx cache)
+ *     cwd = draughting/copperhead  npx tsx --version -> 4.23.1    (the checkout's own)
+ *
+ * 4.23.1 is what copperhead's `package-lock.json` names and what `npm ci`
+ * installs; its `package.json` asks for `^4.19.3`, so the three versions
+ * 4.23.15, 4.23.1 and 4.19.3 were all resolvable here at once. `npx
+ * --offline tsx --version` against an empty npm cache fails `ENOTCACHED`, so
+ * a clean machine's first `make draught-doctor` or `make draw` FETCHED AN
+ * UNPINNED tsx OVER THE NETWORK - under a lock whose whole purpose is that
+ * it does not.
+ *
+ * **THE REVIEW'S STATED CAUSE WAS HALF WRONG AND THE CORRECTION MATTERS.**
+ * It read the cause as passing an absolute `src/cli.ts` path with no `cwd`.
+ * The absolute path is not causal: `npx` resolves the COMMAND before `tsx`
+ * ever sees its arguments, and the measurement above holds the argument
+ * fixed while only `cwd` moves. Removing the absolute path and leaving `cwd`
+ * unset would therefore have changed nothing - the path is what makes
+ * running from outside the checkout possible, not what breaks the pin.
+ *
+ * Resolving the binary directly is better than setting `cwd` on each
+ * subprocess, not merely equivalent: it is independent of where anything is
+ * run from, so there is no per-call-site option to forget, and it keeps the
+ * deliberate property that nothing here changes a working directory. A
+ * checkout whose `npm ci` has never run has no such binary, `execFileSync`
+ * fails, and `./toolchain.ts`'s probe reports `found: null` - which is the
+ * truth about that checkout, and `howToFix`'s repair command ends in `npm
+ * ci`.
+ *
+ * **THE win32 ENTRY IS UNVERIFIED**, declared the way `./magick-install.ts`
+ * declares its own unexercised candidates rather than left out: npm writes
+ * `node_modules\.bin\tsx.cmd` there, and a `.cmd` is not directly
+ * executable through `execFileSync` without a shell. Nothing on this
+ * platform has been driven; if copperhead is ever run on Windows this is the
+ * one function to measure.
+ */
+export function defaultCopperheadTsx(platform: string = process.platform): string {
+  const binDir = path.join(defaultCopperheadDir(), "node_modules", ".bin")
+  if (platform === "win32") return path.join(binDir, "tsx.cmd")
+  return path.join(binDir, "tsx")
 }

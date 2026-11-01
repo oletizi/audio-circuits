@@ -40,7 +40,7 @@ import path from "node:path"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
 import { defaultQpdf } from "../guide/pdf-merge-install.ts"
 import { defaultAkcli } from "./akcli-install.ts"
-import { defaultCopperheadDir } from "./copperhead-install.ts"
+import { defaultCopperheadDir, defaultCopperheadTsx } from "./copperhead-install.ts"
 import { defaultMagick } from "./magick-install.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 
@@ -187,11 +187,12 @@ const RESOLVED_CHECKOUT_DIR: Readonly<Record<string, () => string>> = {
 /**
  * Build the argv actually executed for `tool`'s `probe`: substitute a
  * resolved path for tools `RESOLVED_BINARY` knows, resolve copperhead's
- * relative `src/cli.ts` against its checkout directory, and otherwise run
- * the lock's own command verbatim - the path a genuinely PATH-resident tool
- * (or an unrecognised one, like the "nosuchtool" test fixture) takes.
+ * relative `src/cli.ts` AND the `tsx` that runs it against its checkout
+ * directory, and otherwise run the lock's own command verbatim - the path a
+ * genuinely PATH-resident tool (or an unrecognised one, like the
+ * "nosuchtool" test fixture) takes.
  */
-function resolveProbeArgv(tool: string, probe: readonly string[]): readonly string[] {
+export function resolveProbeArgv(tool: string, probe: readonly string[]): readonly string[] {
   const resolver = RESOLVED_BINARY[tool]
   if (resolver !== undefined) {
     return [resolver(), ...probe.slice(1)]
@@ -201,7 +202,7 @@ function resolveProbeArgv(tool: string, probe: readonly string[]): readonly stri
   // COMMAND from a property of the spec (`commit`/`upstream` presence) -
   // any git-fetched, commit-pinned tool gets the same command SHAPE. This
   // branch instead substitutes a tool-specific INVOCATION SHAPE: copperhead
-  // happens to be run as `npx tsx src/cli.ts ...`, a relative script path
+  // happens to be run as `tsx src/cli.ts ...`, a relative script path
   // inside an npm-installed checkout, which is a fact about how THIS one
   // tool's CLI is packaged, not a property every commit-pinned tool shares.
   // A second commit-pinned tool could just as easily be a compiled binary
@@ -217,9 +218,20 @@ function resolveProbeArgv(tool: string, probe: readonly string[]): readonly stri
   if (tool === "copperhead") {
     const scriptIndex = probe.indexOf("src/cli.ts")
     if (scriptIndex === -1) return probe
-    const resolved = [...probe]
-    resolved[scriptIndex] = path.join(defaultCopperheadDir(), "src/cli.ts")
-    return resolved
+    // Final review I-5: the `tsx` is resolved too, not only the script.
+    // `defaultCopperheadTsx`'s own comment carries the measurement - `npx`
+    // picks `tsx` by CURRENT WORKING DIRECTORY, so with no `cwd` set this
+    // probe ran an unpinned 4.23.15 out of npm's `_npx` cache (and would
+    // fetch one over the network on a clean machine) while the lock's point
+    // is that it does not. Everything before the script path in the lock's
+    // documentary probe - the `tsx` token - is replaced by the pinned
+    // binary; anything after it is the tool's own argv and is passed
+    // through untouched.
+    return [
+      defaultCopperheadTsx(),
+      path.join(defaultCopperheadDir(), "src/cli.ts"),
+      ...probe.slice(scriptIndex + 1),
+    ]
   }
   return probe
 }

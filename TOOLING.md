@@ -55,7 +55,7 @@ The toolchain
 | **copperhead** | `0.12.0`, commit `476cc15965f0d1eeda70afb9e806936f6bb15c5c` (2026-10-22) | Apache-2.0 | `github.com/copperheadhq/copperhead` | drafts the sheet from the intent |
 | **akcli-kicad** | `0.22.0` (protocol 2) | MIT | PyPI `akcli-kicad`, upstream `github.com/tipoLi5890/akcli` | repairs the sheet; queries pin geometry |
 | **kicad-cli** | `10.0.5` | GPL-3.0 | `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` | renders, exports netlists, runs ERC |
-| **tsx** | `4.23.1` on node `v22.19.0` | MIT | npm, via `npx` | **this is what actually runs copperhead's CLI** |
+| **tsx** | `4.23.1` on node `v22.19.0` | MIT | copperhead's own `package-lock.json`, installed by its `npm ci` | **this is what actually runs copperhead's CLI** - and it is run from `draughting/copperhead/node_modules/.bin/tsx` by path, never through `npx` |
 | **bun** | `1.3.8` | MIT | bun.sh | runs this repository's own TypeScript - `bun test`, and the tools under `tools/`. It ran `tools/schgen/*.ts` until those were deleted |
 | **Python** | `3.14.6` | PSF | system / venv | akcli's venv, every check script, direct sheet edits |
 | **ImageMagick** | `7.1.1-47 Q16-HDRI` | ImageMagick | `brew install imagemagick` | **every PDF to PNG conversion and every crop** |
@@ -67,10 +67,27 @@ above came from `--version` or `git rev-parse` on the actual installed artifact.
 **Two entries are corrections, and both were found by a third board being drawn
 by an agent that had not drawn the first two:**
 
-- **copperhead is invoked with `npx tsx src/cli.ts`, not `bun src/cli.ts`.** The
+- **copperhead is invoked with `tsx src/cli.ts`, not `bun src/cli.ts`.** The
   committed `draft.py` uses tsx, so tsx is the measured path. This file said
   `bun` until the hi-boost run, and **nothing has ever measured that path.**
   `bun` is still required, for `bun test` and the tools under `tools/`.
+
+  **AND IT IS NOT `npx tsx` ANY MORE, WHICH IS THE FINAL REVIEW'S I-5 AND A
+  CORRECTION TO THE ROW ABOVE.** `npx` resolves `tsx` from the current working
+  directory upwards, so running it from anywhere but the checkout picked a
+  different `tsx` from the pinned one. Measured, with the script argument held
+  identical and `cwd` the only variable: `4.23.15` from npm's `_npx` cache at
+  the repository root, `4.23.1` - the pinned one - inside
+  `draughting/copperhead`, and a third, `4.19.3`, on `PATH`. `npx --offline
+  tsx --version` against an empty cache fails `ENOTCACHED`, so a clean machine
+  **fetched an unpinned `tsx` over the network** on its first `make
+  draught-doctor`. `tools/draught/copperhead-install.ts`'s
+  `defaultCopperheadTsx` now resolves the checkout's own
+  `node_modules/.bin/tsx` by path, and
+  `tests/draught/toolchain.test.ts` checks the version it reports against
+  copperhead's own `package-lock.json` rather than against the row above -
+  because a version in a table is a transcription with a date on it, and this
+  one was wrong for the whole of this branch.
 
   **It was required here for `bun tools/schgen/board-sheets.ts`, which produced
   the sheet the intent was verified against, and that command is deleted.** The
@@ -244,7 +261,7 @@ follow it.
 ### 2. Draft, and draft more than one arrangement
 
 ```
-cd <copperhead-src> && npx tsx src/cli.ts --repo <board-dir> draft schematic --intent <path>
+cd <copperhead-src> && ./node_modules/.bin/tsx src/cli.ts --repo <board-dir> draft schematic --intent <path>
 ```
 
 **The board directory must be a git repository** - `git init -q` is enough.

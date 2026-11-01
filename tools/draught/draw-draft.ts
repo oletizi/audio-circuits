@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
-import { defaultCopperheadDir } from "./copperhead-install.ts"
+import { defaultCopperheadDir, defaultCopperheadTsx } from "./copperhead-install.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 
 /**
@@ -212,11 +212,19 @@ export interface DraftOutcome {
  * run's `draft.py` used it, rather than passed via `--intent` - both are
  * equivalent for a fresh directory with nothing else in it.
  *
- * **COPPERHEAD IS INVOKED AS `npx tsx <abs path to src/cli.ts>`, NOT `bun`**
- * (`TOOLING.md`: *"the bun path has never been measured"*), with the script
- * path resolved through `defaultCopperheadDir()` - never a hardcoded
- * checkout directory - and never by changing this process's own working
- * directory, the same way `tools/draught/toolchain.ts`'s probe invokes it.
+ * **COPPERHEAD IS INVOKED AS `<the checkout's own pinned tsx> <abs path to
+ * src/cli.ts>`, NOT `bun`** (`TOOLING.md`: *"the bun path has never been
+ * measured"*), with both the `tsx` binary and the script path resolved
+ * through `./copperhead-install.ts` - never a hardcoded checkout directory -
+ * and never by changing this process's own working directory, the same way
+ * `tools/draught/toolchain.ts`'s probe invokes it.
+ *
+ * **IT WAS `npx tsx` UNTIL THE FINAL REVIEW'S I-5, AND `npx` IS WHAT BROKE
+ * THE PIN.** `npx` resolves `tsx` from the current working directory
+ * upwards, so with no `cwd` set this ran an unpinned `tsx` out of npm's
+ * `_npx` cache - and, on a machine with an empty cache, fetched one over the
+ * network. `defaultCopperheadTsx()` carries the measurement and the
+ * correction to the review's own stated cause.
  *
  * **THIS WRITES NO `hints.paper`, AND THAT IS A MEASURED DECISION, NOT AN
  * OMISSION (Task 5 fix round 1, I-1).** The fix round's own reviewer pointed
@@ -263,7 +271,9 @@ export function draftWithCopperhead(opts: { readonly outDir: string; readonly bo
   }
 
   const cliPath = path.join(defaultCopperheadDir(), "src", "cli.ts")
-  const draft = spawnSync("npx", ["tsx", cliPath, "--repo", opts.outDir, "draft", "schematic"], { encoding: "utf8" })
+  const draft = spawnSync(defaultCopperheadTsx(), [cliPath, "--repo", opts.outDir, "draft", "schematic"], {
+    encoding: "utf8",
+  })
   const produced = fs.existsSync(schematicPath)
   return {
     ok: draft.status === 0 && produced,

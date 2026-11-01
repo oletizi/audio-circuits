@@ -1,9 +1,11 @@
 // tests/draught/toolchain.test.ts
 import { expect, test } from "bun:test"
+import { execFileSync } from "node:child_process"
+import fs from "node:fs"
 import path from "node:path"
-import { checkToolchain, howToFix, probeTool, readLock } from "../../tools/draught/toolchain.ts"
+import { checkToolchain, howToFix, probeTool, readLock, resolveProbeArgv } from "../../tools/draught/toolchain.ts"
 import { defaultAkcli } from "../../tools/draught/akcli-install.ts"
-import { defaultCopperheadDir } from "../../tools/draught/copperhead-install.ts"
+import { defaultCopperheadDir, defaultCopperheadTsx } from "../../tools/draught/copperhead-install.ts"
 import { defaultQpdf } from "../../tools/guide/pdf-merge-install.ts"
 
 test("a tool whose found version differs from the lock is reported, with the fix", () => {
@@ -206,6 +208,99 @@ test("fix round 3 regression: a second commit-pinned tool with no known checkout
  * same claim stated once more beside the round-3 test for a reader
  * comparing the two.
  */
+/**
+ * FINAL REVIEW I-5: THE `tsx` THAT RUNS COPPERHEAD IS THE ONE THE CHECKOUT'S
+ * OWN `package-lock.json` NAMES, AND NOTHING COULD SEE THAT BEFORE.
+ *
+ * `tools.lock.json` has no `tsx` entry, so `make draught-doctor` cannot
+ * report on it, while `TOOLING.md`'s table asserts a specific version "is
+ * what actually runs copperhead's CLI". Three versions were resolvable on
+ * this machine at once - 4.23.15 from `npx`'s `_npx` cache, 4.23.1 in the
+ * checkout, 4.19.3 on `PATH` - and the `npx` invocation this branch used
+ * picked the first.
+ *
+ * This is the check that can fail, and it is deliberately NOT a literal
+ * version: it reads the version out of copperhead's own `package-lock.json`
+ * (what `npm ci` installs, and the only authority for it) and asserts the
+ * binary `defaultCopperheadTsx()` resolves reports exactly that. It fails if
+ * `npm ci` has not been run, if `npm install` floated the tree off the pin
+ * (`package.json` asks for `^4.19.3`), or if anything reverts the invocation
+ * to `npx`.
+ */
+test("I-5: the tsx that runs copperhead is the version its own package-lock.json pins", () => {
+  const checkout = defaultCopperheadDir()
+  const lockText = fs.readFileSync(path.join(checkout, "package-lock.json"), "utf8")
+  const parsed: unknown = JSON.parse(lockText)
+  if (typeof parsed !== "object" || parsed === null) {
+    throw new Error(`${checkout}/package-lock.json does not hold an object - nothing to read a tsx pin from.`)
+  }
+  const packages: unknown = (parsed as Record<string, unknown>)["packages"]
+  if (typeof packages !== "object" || packages === null) {
+    throw new Error(`${checkout}/package-lock.json has no "packages" map - this test cannot find its tsx pin.`)
+  }
+  const entry: unknown = (packages as Record<string, unknown>)["node_modules/tsx"]
+  if (typeof entry !== "object" || entry === null) {
+    throw new Error(
+      `${checkout}/package-lock.json names no "node_modules/tsx" package. copperhead's CLI is run ` +
+        "under tsx, so either the checkout changed shape or this test is reading the wrong file.",
+    )
+  }
+  const pinned: unknown = (entry as Record<string, unknown>)["version"]
+  if (typeof pinned !== "string") {
+    throw new Error(`${checkout}/package-lock.json's node_modules/tsx entry has no string version.`)
+  }
+
+  const tsx = defaultCopperheadTsx()
+  expect(tsx.startsWith(checkout)).toBe(true)
+  const reported = execFileSync(tsx, ["--version"], { encoding: "utf8" })
+  expect(reported).toContain(pinned)
+})
+
+/**
+ * The other half of I-5, because the test above pins the RESOLVER and the
+ * version it reports while saying nothing about what the probe actually
+ * runs. This drives `resolveProbeArgv` with the real lock entry: the
+ * executed command must BE the resolved binary, with `npx` nowhere in the
+ * argv at all.
+ */
+test("I-5: copperhead's probe argv runs the resolved tsx binary, with npx nowhere in it", () => {
+  const spec = readLock().copperhead
+  const argv = resolveProbeArgv("copperhead", spec.probe)
+  expect(argv[0]).toBe(defaultCopperheadTsx())
+  expect(argv[1]).toBe(path.join(defaultCopperheadDir(), "src/cli.ts"))
+  expect(argv).not.toContain("npx")
+  // The tool's own trailing argv survives untouched - the substitution
+  // replaces the runner and the script path, not the command being probed.
+  expect(argv[argv.length - 1]).toBe("--version")
+})
+
+/**
+ * THE STATIC HALF, so a revert to `npx` at the DRAFT call site - which
+ * neither test above reaches, because `draftWithCopperhead` shells out and
+ * both tests above read the probe - fails here rather than passing
+ * everything.
+ *
+ * **ITS SCOPE IS STATED RATHER THAN OVERCLAIMED, AND DRIVING THE CONTROL IS
+ * WHY.** The first version of this test matched `npx` in any quote,
+ * including backticks, and failed immediately against the FIXED tree: four
+ * of these modules discuss `npx` in prose, and prose in this repository
+ * quotes a command name in backticks. It therefore matches only the two
+ * quote forms an argv literal uses here, `"npx"` and `'npx'`. A
+ * template-literal invocation would slip past it; that is a disclosed limit
+ * of this guard, not a claim it does not have one.
+ */
+test("I-5: no module under tools/draught/ passes npx as a command argument", () => {
+  const draughtDir = path.join(import.meta.dir, "..", "..", "tools", "draught")
+  const sources = fs.readdirSync(draughtDir).filter((name) => name.endsWith(".ts"))
+  expect(sources.length).toBeGreaterThan(0)
+  const offenders = sources.filter((name) => /"npx"|'npx'/.test(fs.readFileSync(path.join(draughtDir, name), "utf8")))
+  expect(
+    offenders,
+    "npx picks tsx by current working directory, so these would run an unpinned tsx (and fetch " +
+      "one over the network on a clean machine) - see defaultCopperheadTsx's own comment.",
+  ).toEqual([])
+})
+
 test("fix round 3: copperhead itself is unaffected by the generalisation - still resolves through RESOLVED_CHECKOUT_DIR", () => {
   const spec = readLock().copperhead
   const dir = defaultCopperheadDir()
