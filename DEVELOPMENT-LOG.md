@@ -15,6 +15,136 @@ replaced it.
 
 ---
 
+## Session of 2026-10-31/11-01: the generator deleted, the practice institutionalised, and eleven checks that could not fail
+
+**Two plans, both finished, both reviewed to a clean whole-branch pass.** The
+first deleted `lib/schgen/` — **367 files, 69,733 lines** — after rebuilding as
+standalone code the four guards that lived inside it. The second turned the
+copperhead-plus-akcli loop from a procedure people followed by hand into pinned
+tooling with verbs: `draughting/tools.lock.json`, `make draught-doctor`,
+`draughting/install.sh`, `draughting/measure/`, `make draw`, and a skill at
+`.claude/skills/drawing-a-schematic/`.
+
+**All five Pultec pages were re-approved on 2026-10-31**, against the bytes
+actually on disk. Four of them had been awaiting re-approval since the re-paper
+and the `pultec-mid` re-draw, because **a verdict is bound to a sha256 and does
+not survive a byte change**. The cheap check: of the digests in
+`docs/schematic/verdicts.md`, count how many equal a present sheet. It read
+**1 of 8** before and reads **5 of 12** now.
+
+### The thing worth carrying forward: a check whose output does not depend on what it checks
+
+**Eleven instances across the two plans.** Almost none was visible by reading.
+
+- A `make help` guard that **passed with the verb renamed to `DRAWX`**, because
+  the line above it said "the pinned **draw**ing toolchain".
+- A control-byte scan whose shell pattern `$'\x00\|\r'` collapsed under ANSI-C
+  quoting into a literal match on the letter **"r"**, reporting false hits on
+  three clean files.
+- `expect(sha256(bytes + "x")).not.toBe(sha256(bytes))` — a property of SHA-256,
+  claiming to catch a digest function returning the wrong value.
+- `expect(installedText).not.toBe(vendoredSymbolText(libId) + " ")` — a string
+  never equals itself plus a space. **Written into the fix for that same defect
+  class.**
+- Two assertions that **both passed against the reintroduced bug**, caught by
+  their own author mid-sabotage.
+- A figure in `lib/kicad/value-notation.ts` — *"49 of them across 29 files"* —
+  whose printed grep searched for a field of the deleted IR and so **returned
+  the comment itself**. One hit, and it was its own text.
+- And twice, the controller chaining a commit behind `grep -c`, **which exits 1
+  on zero matches** — a guard that blocks on success, written while hunting for
+  guards that pass on failure.
+
+**The remedy was never review. It was sabotage:** introduce the fault the
+comment names, watch the check fail, revert, prove the tree byte-clean. Every
+one of the above was found that way or not at all. It is now a standing
+instruction in every dispatch.
+
+### A stale cause is worse than a stale count, demonstrated twice
+
+`CLAUDE.md` already said it. The two instances:
+
+- A promoted `crossings.py` excluded a weaker copy **for a reason that was
+  false** — the outlier's cited defect had been fixed before the task began.
+  The decision was right; the recorded cause was not, and it sat in the promoted
+  file's own provenance docstring.
+- A `paper_fit.py` measurement **failure** was reported downstream as a layout
+  **finding**, so a broken tool read as a real defect in a board. That is the
+  skipped-check rule inverted, and worse: silence hides a problem, a false
+  finding sends someone chasing one that is not there.
+
+### What the toolchain actually does, measured rather than assumed
+
+- **copperhead cannot draft to US Letter.** Its engine checks a paper hint
+  against a table holding only A5–A0; `USLetter` lives in the legibility
+  checker, a different consumer. **Every page is re-papered after drafting**,
+  which `make draw` now does itself. `TOOLING.md` was silent on this until the
+  last task of the second plan — the single fact that quietly turns every future
+  draft into the wrong paper size.
+- **The pinned `tsx` was not the one running.** Three versions resolved three
+  ways, and a clean machine fetched an unpinned one over the network. The cause
+  was a missing `cwd`, **not** the absolute script path a review blamed —
+  established by holding the path constant and varying only the directory.
+- **Installing a third-party checkout inside the repository made it visible to
+  three things nobody had connected:** `tsc`, `bun test`'s discovery (250
+  vendored test files, 42 failures), and every repository sweep. Six places
+  would have had to know it was not ours; `lib/not-source.ts` is now the one
+  that does, with a test holding `tsconfig.json` and `bunfig.toml` to it.
+
+### Two failures of process, both ours
+
+**A flake hid for five runs behind a `tail -40`.** One failure in three runs,
+its identity truncated away and never recovered. Runs four and five kept the
+whole log and the answer was immediate: two real-subprocess tests carrying
+bun's default 5000 ms, crossing it under parallel load. Not assertion failures
+— **tests lying about the code.** A tail is fine on a run that says `0 fail`
+and useless on the one that does not.
+
+**And the suite could not pass on a clean checkout.** Seven `mkdtemp` sites
+wrote into a repo-root `build/` that is not committed and that nothing creates.
+Every task on the second plan gated on a green suite; it was green because this
+machine had a `build/` left over. Proved fixed by running the whole suite with
+`build/` moved aside.
+
+### An agent's copy of `CLAUDE.md` can be older than `CLAUDE.md`
+
+Instructions are injected at session start and not re-read when the file
+changes, so a long session carries whatever it said then — and every agent
+dispatched from it inherits the snapshot. The sentence naming the deleted
+generator went on instructing agents for a day after it was struck. **Three
+agents carried the stale paragraph; one re-read the file and reported "no drift
+found" before retracting.** Checking by eye does not work. `CLAUDE.md` now says
+to diff the passage, and `docs/research/2026-10-30-schgen-removed.md` carries
+the measurement.
+
+### Owner decisions recorded
+
+**G307** — J1's own ground symbol stays: *"The ground on J1 is fine."* It had
+been carried unresolved across five pages for three days as an agent's own
+objection that the agent could not defend.
+
+**G308** — no `BOARD=` on `make draw`: *"I hate using environment variables."*
+The repository had stated that rule twice already, with its reason, and a spec
+was written against it anyway.
+
+### What is open
+
+Four boards fail `make check`, all pre-existing: `pt2399-core` (no parts-list
+rule for kind `ic`) and three `transistor-preamp` boards (HC5/HC8). Only
+`pultec-hi-cut` has a committed intent, so the other four refuse by name.
+`make draw` stops before the akcli repair step, by design. About 47 frozen
+scripts under `docs/research/*/scripts/` raise `ModuleNotFoundError` since the
+shared reader moved; `docs/research/README.md` says so.
+
+**And one thing belongs in front of the owner as evidence rather than as a
+question.** `TOOLING.md` records that choosing an install script *"accepted"*
+copperhead's dependency posture — **22 vulnerabilities, 3 critical**, in
+packages this repository did not choose. His recorded word, *"install script"*,
+answered **how to pin copperhead and akcli**, not whether to accept their
+transitive tree. An agent wrote that acceptance on his behalf.
+
+---
+
 ## Session of 2026-10-29/30: five of five, and the drawings he had to ask for twice
 
 **All five Pultec section boards have an approved schematic, and every one of them
