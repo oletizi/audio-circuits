@@ -26,7 +26,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { readLock, type Toolchain } from "../../tools/draught/toolchain.ts"
-import { repaperToUSLetter } from "../../tools/draught/draw-render.ts"
+import { fitStatusFromReport, repaperToUSLetter } from "../../tools/draught/draw-render.ts"
 import { runDraw } from "../../tools/cli/draw.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
@@ -120,7 +120,13 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
     // the drafted sheet itself must carry the USLetter token, not merely a stdout claim.
     expect(fs.readFileSync(schematicPath, "utf8")).toContain('(paper "USLetter")')
     expect(result.stdout).toContain("re-paper (US Letter)")
-    expect(result.stdout).toContain("fits: yes")
+    // M-5: the fit MEASUREMENT must have run and answered - not a particular
+    // answer. This asserted `"fits: yes"` literally, which makes a legitimate
+    // future overflow read as a test failure, when an overflow is a finding
+    // about a board and never a withholding ground (EVALUATING-DRAWINGS.md
+    // §3). Either token satisfies it; silence does not, which is the state
+    // `fitStatusFromReport` calls "unmeasured".
+    expect(result.stdout).toMatch(/fits: (yes|no)/)
 
     // The scope disclosure (fix round 1): this verb says plainly it is a mechanical draft and
     // that repair is a separate step it did not run.
@@ -231,6 +237,22 @@ test('repaperToUSLetter reports fitStatus "unmeasured", not "overflow", when the
   }
 })
 
+/**
+ * M-3 as a unit, because the third state is not reachable through a real
+ * `paper_fit.py` without rewording that script - which is the very edit this
+ * guards against. `fitStatusFromReport` is the whole decision, so the three
+ * cases are driven directly: the two tokens, and an exit-0 report carrying
+ * neither. The last one used to come back `"overflow"` - a finding about a
+ * board, invented out of a check that did not answer.
+ */
+test("fitStatusFromReport answers from both tokens, and calls a report with neither unmeasured", () => {
+  expect(fitStatusFromReport("content extent x: 1.000 .. 2.000\nfits: yes")).toBe("fits")
+  expect(fitStatusFromReport("content extent x: 1.000 .. 2.000\n  overshoot east: 4.530 mm\nfits: no")).toBe("overflow")
+  // A plausible rewording of that final line, which is all it would take.
+  expect(fitStatusFromReport("content extent x: 1.000 .. 2.000\nfit: inside the frame")).toBe("unmeasured")
+  expect(fitStatusFromReport("")).toBe("unmeasured")
+})
+
 test("repaperToUSLetter refuses rather than guessing when the (paper ...) token is not exactly one match", async () => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "repaper-no-token-test-"))
   try {
@@ -244,21 +266,40 @@ test("repaperToUSLetter refuses rather than guessing when the (paper ...) token 
   }
 })
 
+/**
+ * M-7: THE SNAPSHOT IS RECURSIVE, AND IT WAS NOT.
+ *
+ * This read every entry of a non-recursive `readdirSync` with
+ * `readFileSync`, so the first subdirectory anyone adds under
+ * `drafted/pultec/pultec-hi-cut/` would make it throw `EISDIR` - a crash
+ * about a directory entry, in a test whose subject is whether a file changed.
+ * It also saw nothing INSIDE such a subdirectory, so a write there would have
+ * passed. Keyed by path relative to the root so a failure names the file.
+ */
+function contentsByRelativePath(root: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  const walk = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else out[path.relative(root, full)] = fs.readFileSync(full).toString("base64")
+    }
+  }
+  walk(root)
+  return out
+}
+
 test("nothing here touches drafted/ - the real run writes only its own outDir", async () => {
   const repoRoot = moduleRepoRoot()
   const draftedHiCut = path.join(repoRoot, "drafted", "pultec", "pultec-hi-cut")
-  const before = fs
-    .readdirSync(draftedHiCut)
-    .sort()
-    .map((name) => fs.readFileSync(path.join(draftedHiCut, name)).toString("base64"))
+  const before = contentsByRelativePath(draftedHiCut)
+  // The snapshot must have something in it, or comparing two empty objects
+  // below would pass having compared nothing.
+  expect(Object.keys(before).length).toBeGreaterThan(0)
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-untouched-"))
   try {
     await runDraw({ board: "pultec-hi-cut", outDir })
-    const after = fs
-      .readdirSync(draftedHiCut)
-      .sort()
-      .map((name) => fs.readFileSync(path.join(draftedHiCut, name)).toString("base64"))
-    expect(after).toEqual(before)
+    expect(contentsByRelativePath(draftedHiCut)).toEqual(before)
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true })
   }

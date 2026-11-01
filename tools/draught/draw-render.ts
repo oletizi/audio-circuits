@@ -29,6 +29,27 @@ import { moduleRepoRoot } from "../perfboard/repo-root.ts"
  */
 export type FitStatus = "fits" | "overflow" | "unmeasured"
 
+/**
+ * Read `paper_fit.py`'s verdict out of what it printed - M-3 of the final
+ * review, and the same shape fix round 2 was opened to correct, one line
+ * over.
+ *
+ * **IT ASKS FOR BOTH TOKENS, AND "NEITHER" IS `unmeasured`.** The decision
+ * used to be `report.includes("fits: yes") ? "fits" : "overflow"`, which is
+ * bounded only by `paper_fit.py` continuing to print one of those two
+ * strings: ANY other exit-0 output - a reworded final line, a future
+ * `fits: unknown`, a flag that suppresses it - became `"overflow"`, which is
+ * a FINDING ABOUT A BOARD invented out of a check that did not answer. That
+ * is exactly what `FitStatus`'s own three states exist to prevent, so the
+ * third state has to be reachable from the parsing as well as from a non-zero
+ * exit.
+ */
+export function fitStatusFromReport(report: string): FitStatus {
+  if (report.includes("fits: yes")) return "fits"
+  if (report.includes("fits: no")) return "overflow"
+  return "unmeasured"
+}
+
 export interface RepaperOutcome {
   readonly ok: boolean
   /** Whether the content, once re-papered, still sits inside US Letter's inner frame - or
@@ -121,9 +142,24 @@ export function repaperToUSLetter(schematicPath: string): RepaperOutcome {
         `the fit check did not run, which says nothing about whether the content fits: ${fitReport}`,
     }
   }
+  const fitStatus = fitStatusFromReport(fitReport)
+  if (fitStatus === "unmeasured") {
+    // M-3: exit 0 and neither token. The rewrite still happened, so the page
+    // is not withheld - but there is no verdict to report, and reporting
+    // "overflow" here would be a finding about the board that nothing
+    // measured.
+    return {
+      ok: true,
+      fitStatus,
+      stdout: rewriteNote,
+      stderr:
+        "paper_fit.py exited 0 but printed neither \"fits: yes\" nor \"fits: no\", so the fit check " +
+        `did not answer - which says nothing about whether the content fits: ${fitReport}`,
+    }
+  }
   return {
     ok: true,
-    fitStatus: fitReport.includes("fits: yes") ? "fits" : "overflow",
+    fitStatus,
     stdout: `${rewriteNote}\n${fitReport}`,
     stderr: "",
   }
