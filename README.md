@@ -67,6 +67,7 @@ Read them in this order. Each outranks the ones below it.
 | [`CLAUDE.md`](CLAUDE.md) | the conventions every circuit follows |
 | [`AGENTS.md`](AGENTS.md) | the shared working rules |
 | [`TOOLING.md`](TOOLING.md) | **how a schematic actually gets drawn** - the toolchain with exact versions, the copperhead-then-akcli loop, the known repair classes (it says how many, and the set is not closed), the checks that must be able to fail, and what the procedure does not yet cover |
+| [`.claude/skills/drawing-a-schematic/SKILL.md`](.claude/skills/drawing-a-schematic/SKILL.md) | **the invocation of `TOOLING.md`'s procedure** - `make draught-doctor` then `make draw` for the mechanics, the measured traps and false greens in that loop, and the ordering rule for sending a render to the reviewer. It is not the criteria and does not restate `EVALUATING-DRAWINGS.md` |
 | [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md) | the owner's verdicts on the pages he has seen, verbatim, each bound to the sha256 of the sheet. The defects he named are the only statements of what he wants that carry authority |
 | [`DEVELOPMENT-LOG.md`](DEVELOPMENT-LOG.md) | newest session first - what was done, and what went wrong doing it |
 
