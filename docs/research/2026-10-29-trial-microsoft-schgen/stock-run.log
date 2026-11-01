@@ -1,0 +1,175 @@
+Running command:
+"/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/venv/bin/python" "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/runs/prog_stock.py"
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C2 (center x: 95.250, y: 88.080), with bounding box: upper_left_corner (91.440, 90.080), bottom_right_corner (99.060, 86.080)
+ overlaps with existing symbols: 
+ [ C - C1: upper_left_corner (91.440, 92.620), bottom_right_corner (99.060, 88.620) ]
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C3 (center x: 95.250, y: 85.540), with bounding box: upper_left_corner (91.440, 87.540), bottom_right_corner (99.060, 83.540)
+ overlaps with existing symbols: 
+ [ C - C2: upper_left_corner (91.440, 90.080), bottom_right_corner (99.060, 86.080) ]
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C4 (center x: 95.250, y: 83.000), with bounding box: upper_left_corner (91.440, 85.000), bottom_right_corner (99.060, 81.000)
+ overlaps with existing symbols: 
+ [ C - C3: upper_left_corner (91.440, 87.540), bottom_right_corner (99.060, 83.540) ]
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C5 (center x: 95.250, y: 80.460), with bounding box: upper_left_corner (91.440, 82.460), bottom_right_corner (99.060, 78.460)
+ overlaps with existing symbols: 
+ [ C - C4: upper_left_corner (91.440, 85.000), bottom_right_corner (99.060, 81.000) ]
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C6 (center x: 95.250, y: 77.920), with bounding box: upper_left_corner (91.440, 79.920), bottom_right_corner (99.060, 75.920)
+ overlaps with existing symbols: 
+ [ C - C5: upper_left_corner (91.440, 82.460), bottom_right_corner (99.060, 78.460) ]
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/runs/prog_stock.py", line 123, in <module>
+    x_J1_1, y_J1_1 = get_pin_location(symbol_ref="J1", pin_name="1")
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/SchGen/modules/kicad_sch_interface.py", line 863, in get_pin_location
+    elif pin_name in symbol.pin:
+         ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: argument of type 'NoneType' is not a container or iterable
+
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/../SchGen/init_project.py", line 133, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/../SchGen/init_project.py", line 121, in main
+    run_py(schematic_code)
+    ~~~~~~^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/../SchGen/init_project.py", line 40, in run_py
+    raise RuntimeError(
+        f"Failed to run schematic code: {schematic_code}"
+    )
+RuntimeError: Failed to run schematic code: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/schgen-trial/work/runs/prog_stock.py

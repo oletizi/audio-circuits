@@ -15,21 +15,24 @@ import { defaultKicadCli } from "./install.ts"
  *
  * **Why it lives in this module.** `digital-pedal-platform`'s
  * `tools/kicad/netlist.ts` - the counterpart this file's name matches - exports
- * `KICAD_CLI`, and `lib/schgen/render/library.ts`'s ported `stockSymbolDir()`
- * imports it from there to derive
- * `dirname(KICAD_CLI)/../SharedSupport/symbols`. `tools/schgen/port-manifest.json`
- * resolves that `@/kicad/netlist` import to THIS file, so the specifier points
- * at the module it names rather than at a stand-in. Task 11 of the M1 schematic
- * plan adapts the rest of pedals' netlist API (`connectivityFromXml`) here; a
- * ported file that needs it before then fails `bun run typecheck` naming the
- * missing export.
+ * `KICAD_CLI`, and the schematic generator's ported `stockSymbolDir()` imported
+ * it from there to derive `dirname(KICAD_CLI)/../SharedSupport/symbols`; the
+ * port manifest resolved that `@/kicad/netlist` specifier to THIS file, so it
+ * pointed at the module it named rather than at a stand-in. The port and every
+ * file it brought in are deleted (Task 9 of
+ * `docs/superpowers/plans/2026-10-30-remove-schgen.md`), so the name is now
+ * just this repository's own; what still derives a path from it is
+ * `./install.ts`'s `defaultSymbolDir`/`defaultFootprintDir`.
  *
  * **THE DEFAULT IS NOW ONE TypeScript SOURCE OF TRUTH**
  * (`docs/known-gaps.md` **G169**, discharging **G121**'s point (b)):
  * `./install.ts`'s `defaultKicadCli()` is a per-platform candidate list, not
- * a bare macOS literal, and `tests/circuits/kicad-round-trip.ts` and
- * `tools/pultec/schematic-sync.ts` both now import THIS constant instead of
- * carrying their own copy. **It still duplicates the `KICAD_CLI ?=` default
+ * a bare macOS literal, and every consumer imports THIS constant instead of
+ * carrying its own copy - `./pin-pattern-sources.ts`,
+ * `tools/pultec/schematic-sync.ts`, and on the test side
+ * `tests/circuits/drafted-sheet.ts`, `tests/circuits/committed-schematic.ts`,
+ * `tests/kicad/symbol-library-disk.ts` and `tests/kicad/footprint-library.ts`.
+ * **It still duplicates the `KICAD_CLI ?=` default
  * in `make/board.mk`**, because Make cannot import TypeScript - that one
  * remaining duplicate is deliberate (the Makefile's own comment explains why)
  * and `tests/kicad/install.test.ts` checks the two literals agree rather than

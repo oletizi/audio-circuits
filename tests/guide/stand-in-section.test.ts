@@ -29,6 +29,7 @@ import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { loadBoardCircuit } from "../../tools/guide/circuit.ts"
 import { ALWAYS, fitCondition, groupMembership } from "../../tools/guide/fit-condition.ts"
 import { buildGuideHtml, type GuideInput } from "../../tools/guide/guide.ts"
+import { GUIDE_PAPER } from "../../tools/guide/paper.ts"
 import {
   NO_GROUPS_DECLARED,
   NO_STAND_IN_GROUPS,
@@ -72,6 +73,10 @@ function guideHtml(scaffold: ScaffoldDoc | undefined, wiringPath: string | undef
     powerUpChecks: undefined,
     wiringPath,
     scaffold,
+    // Required beside a `"printed"` schematic - see `buildGuideHtml`'s guard.
+    // The guide's own paper, so nothing in this file's subject is disturbed by
+    // a paper notice.
+    schematicPaper: GUIDE_PAPER,
   }
   return buildGuideHtml(input)
 }

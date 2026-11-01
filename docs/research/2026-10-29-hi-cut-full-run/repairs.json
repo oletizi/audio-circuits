@@ -1,0 +1,1113 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "pultec-hi-cut.kicad_sch",
+  "ops": [
+    {
+      "op": "delete_object",
+      "uuid": "65104f20-890a-598b-9d82-4c675a3b99b0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2352305e-4327-58c1-beec-34937e2a615c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "707f2deb-1a5d-5851-b81e-68c606c51bc6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fc69e533-84f6-57cc-8b3a-d7906c00c39a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5dbd42da-ff04-5257-a64f-c9a357d40c9c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "63d12684-ecb3-5c51-aba3-1f05a9bbc7ff"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "350b0866-9c19-5ee9-b9c2-47fabdca9389"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e684083c-3f79-5f6f-8dd4-ffa2e09ea042"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "71381611-62e9-5dc3-a582-320fb1cf0ab9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3231a104-264a-5352-ab66-e6831b5b3246"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "cd9e177f-d0cb-5ed7-b6a8-ed7dd43e83a9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "076b3af3-bd97-55a3-a3c5-f1cda804c04c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "a91a45ea-78cc-5260-ab92-e128878e3287"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "9ca86e4f-d630-5ab3-bb5c-c00a3fec0428"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d7881796-3c0d-507f-ab41-28c90978cba5"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1691231b-a267-5cd8-a516-45dcfe82614e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "28fabed8-dece-5e69-8596-0eebde75df1b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fd7313d7-3829-5f89-bb46-67cb919e4370"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b9acbe00-49c1-5eb3-b28e-9c98e1afb1ff"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5aadef94-3d95-523e-9b41-ccb7316dcc36"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "7be7bc1b-0c79-5f18-93bf-0800d82490f0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4c8c14bf-5626-5963-b7b0-3b67309a2571"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3b160954-0900-5dcb-b9ea-bc5f6cff7de6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3f25681d-f721-5a21-a3ac-4dd452f59fe6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b82120ae-4c71-56e5-8b6a-73d35f1bdbcc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "82b59735-3d50-52a6-94a6-c7b9aa9c18bc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8845d5f3-94fc-5e16-89a7-926baed390af"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "620341ab-d482-5885-9e12-442607669420"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2edb1d2a-fba6-5d52-9a60-62ccc14cd707"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "afde2e81-fcfd-5f48-ac01-8114c614c745"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "6885ce69-4007-5120-9102-e8b860b12369"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "86339e08-be18-53f6-bc5d-ee056c640629"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "51870d86-b7d2-5505-a9dc-fcb9ca99ad66"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f13ad4ac-58b3-58cc-bed5-92651968c725"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d83ea4ac-b18e-5a2b-9139-45c6eafa3bf3"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "34120053-f52e-5fcb-8f87-34b9d977f240"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3a03cce0-75ff-5759-889b-078bc41f6752"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "846715ed-5232-5cfa-ac26-46b8bacfa9dd"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ce602fd5-343a-58c6-98e0-7f3cea2047f9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "dfb17851-33c8-5aba-937d-6a6c337876af"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1974f60c-3968-503a-94e9-58ee6effdb70"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "84144f21-5b8c-50a6-ae72-b1fa7ccaee8e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e2265af0-78ac-5ef1-8b18-5ec7aa20a6c8"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e7446d22-25e9-5b8f-af0d-0096bfdfdd1a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f2e444f5-015b-597f-a8c3-f047beead0be"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "694b2d3b-bede-54ca-9731-54e5226d57c3"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e4bcc853-ee78-5d52-af9b-9b40c39e6b4f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d21056f0-324e-53e0-bd1c-74951405c2bf"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "572bd974-fc8c-5622-a69c-f2fe89d90263"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d4e47664-06b4-52b2-8daa-6595163304f1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2079858e-54de-524e-8c34-a4d39395f6d5"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f321df18-96c0-5a90-aca6-b58fe1a679fc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5c9ec7fd-e3b8-5b78-92e1-4554db0b7319"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3f53b7f5-a739-5674-9f30-69b5b91e7a16"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "08c2ea1f-b44a-505c-a1eb-70fe495ac0fc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "c9741a3f-4fc6-59f6-9995-040b752f350c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "9421681f-41e2-5c51-80fb-cc7fd4d3534e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "76e34e94-76d5-5ebe-994d-4099714b4adb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3537da5e-146c-52f5-9c1f-27a5c6700198"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f73d91fb-ee51-5a8f-99f2-b26d19e29852"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f230f2f8-e2f9-51eb-94da-b6c7e2832ce6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "37b9726d-8523-5698-ab33-53c356ae23cd"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b5db9ea0-2325-5ba4-9f84-d27693bfb75b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3b25170e-2c6c-5144-afb1-f89ec4053dc0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fbfa5839-6d20-59f7-971c-bc9999a2150e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "6ec1b2af-8148-535f-8cd8-ab9a765b9d82"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "655544da-1a51-5124-a8b4-54b28bf50d1e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e53a1b0b-9949-5d8c-a6e9-9923ec100f1e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ac19f79a-bada-591f-90fb-f6c719cb9f99"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "55497b09-e1cf-5268-953f-1777389733a0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "93597b3a-bfc6-54ae-8688-68f29c349d5c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "31e0657e-57b0-579d-9259-5960aa3c10c3"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e3614a30-1d54-5434-acb7-7d6e468322f2"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "c03d1f7e-506e-5d9a-81ae-b3c9d171fd60"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0e19d60e-b0d4-55a1-b976-5f0be6733a2b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b37047e5-2fba-5921-8cd9-a9d403f84f7d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f0474c98-ce3a-50cb-b5c0-95735737c8be"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "6e982cbb-0ef5-541d-ad66-9c16e2f37fd4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "44c36f8e-97ea-5420-a75d-cdd0f93ed911"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR02"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR03"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR04"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR05"
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "RV1",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "RV1",
+      "x_mil": 2400,
+      "y_mil": 4050,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "R1",
+      "rotation": 90,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "R1",
+      "x_mil": 2850,
+      "y_mil": 4600,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SW1",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "SW1",
+      "x_mil": 3850,
+      "y_mil": 4600,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C1",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C1",
+      "x_mil": 4500,
+      "y_mil": 4150,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C7",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C7",
+      "x_mil": 5100,
+      "y_mil": 4150,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C2",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C2",
+      "x_mil": 5700,
+      "y_mil": 4250,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C8",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C8",
+      "x_mil": 6300,
+      "y_mil": 4250,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C3",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C3",
+      "x_mil": 6900,
+      "y_mil": 4350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C4",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C4",
+      "x_mil": 7500,
+      "y_mil": 4450,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C9",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C9",
+      "x_mil": 8100,
+      "y_mil": 4450,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C5",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C5",
+      "x_mil": 8700,
+      "y_mil": 4550,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C10",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C10",
+      "x_mil": 9300,
+      "y_mil": 4550,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C6",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C6",
+      "x_mil": 9900,
+      "y_mil": 4650,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SI5",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "SI5",
+      "x_mil": 7100,
+      "y_mil": 2200,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "move_component",
+      "designator": "#FLG01",
+      "x_mil": 2450,
+      "y_mil": 2800,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "move_component",
+      "designator": "#PWR07",
+      "x_mil": 7100,
+      "y_mil": 2450,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2400,
+          3800
+        ],
+        [
+          10000,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2400,
+          3900
+        ],
+        [
+          2400,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2250,
+          4050
+        ],
+        [
+          2250,
+          4600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2250,
+          4600
+        ],
+        [
+          2700,
+          4600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3000,
+          4600
+        ],
+        [
+          3550,
+          4600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4300
+        ],
+        [
+          5100,
+          4300
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4400
+        ],
+        [
+          6300,
+          4400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4500
+        ],
+        [
+          6900,
+          4500
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4600
+        ],
+        [
+          8100,
+          4600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4700
+        ],
+        [
+          9300,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4150,
+          4800
+        ],
+        [
+          9900,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4500,
+          4000
+        ],
+        [
+          4500,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4000
+        ],
+        [
+          5100,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5700,
+          4100
+        ],
+        [
+          5700,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6300,
+          4100
+        ],
+        [
+          6300,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6900,
+          4200
+        ],
+        [
+          6900,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7500,
+          4300
+        ],
+        [
+          7500,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          8100,
+          4300
+        ],
+        [
+          8100,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          8700,
+          4400
+        ],
+        [
+          8700,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9300,
+          4400
+        ],
+        [
+          9300,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9900,
+          4500
+        ],
+        [
+          9900,
+          3800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2650,
+          2600
+        ],
+        [
+          2650,
+          3000
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2650,
+          2800
+        ],
+        [
+          2450,
+          2800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6400,
+          2050
+        ],
+        [
+          7100,
+          2050
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7100,
+          2350
+        ],
+        [
+          7100,
+          2450
+        ]
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4500,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        5100,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        5700,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6300,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6900,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7500,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        8100,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        8700,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        9300,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        9900,
+        3800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4500,
+        4300
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        5700,
+        4400
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7500,
+        4600
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        8700,
+        4700
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2650,
+        2700
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2650,
+        2800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2650,
+        2900
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2650,
+        3000
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6400,
+        2050
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "hi_boost_out",
+      "at": [
+        2400,
+        4200
+      ],
+      "scope": "global",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "lo_boost_in",
+      "at": [
+        10000,
+        3800
+      ],
+      "scope": "global",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "cut_wiper",
+      "at": [
+        2250,
+        4600
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel_common",
+      "at": [
+        3000,
+        4600
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel1",
+      "at": [
+        4200,
+        4300
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel2",
+      "at": [
+        5150,
+        4400
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel3",
+      "at": [
+        6350,
+        4500
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel4",
+      "at": [
+        6950,
+        4600
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel5",
+      "at": [
+        8150,
+        4700
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel6",
+      "at": [
+        9350,
+        4800
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_no_connect",
+      "pin": "SW1.MP"
+    }
+  ]
+}

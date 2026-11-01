@@ -5,6 +5,7 @@ import path from "node:path"
 import {
   boardName, discoverDeclarations, loadDeclaration,
 } from "../../tools/perfboard/declaration.ts"
+import { VENDORED_CHECKOUTS } from "../../lib/not-source.ts"
 
 function withDeclaration(contents: string, run: (file: string) => void): void {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-decl-"))
@@ -152,6 +153,33 @@ test("discovery matches the exact basename, not a suffix", () => {
     fs.writeFileSync(path.join(root, "a", "perfboard.json"), VALID)
     fs.writeFileSync(path.join(root, "a", "other.perfboard.json"), VALID)
     fs.writeFileSync(path.join(root, "node_modules", "b", "perfboard.json"), VALID)
+    expect(discoverDeclarations(root)).toEqual([path.join(root, "a", "perfboard.json")])
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
+
+/**
+ * TASK 3 FIX ROUND 1 (`.superpowers/sdd/2026-10-30-institutionalise-draughting/`):
+ * nothing proved this walker skips a VENDORED checkout before this test -
+ * `draughting/copperhead` (the real checkout `draughting/install.sh`
+ * fetches) happens to hold no file literally named `perfboard.json` today,
+ * so the real tree alone never demonstrated the skip one way or the other.
+ * "Finds nothing today" is not "the walker refuses to look" - this fixture
+ * makes that claim checkable by PLANTING one, for every name
+ * `lib/not-source.ts`'s `VENDORED_CHECKOUTS` lists, and proving none of
+ * them is discovered.
+ */
+test("discovery skips every vendored checkout name, not only node_modules", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-vendored-"))
+  try {
+    fs.mkdirSync(path.join(root, "a"), { recursive: true })
+    fs.writeFileSync(path.join(root, "a", "perfboard.json"), VALID)
+    for (const checkout of VENDORED_CHECKOUTS) {
+      const planted = path.join(root, checkout.basename, "b")
+      fs.mkdirSync(planted, { recursive: true })
+      fs.writeFileSync(path.join(planted, "perfboard.json"), VALID)
+    }
     expect(discoverDeclarations(root)).toEqual([path.join(root, "a", "perfboard.json")])
   } finally {
     fs.rmSync(root, { recursive: true, force: true })

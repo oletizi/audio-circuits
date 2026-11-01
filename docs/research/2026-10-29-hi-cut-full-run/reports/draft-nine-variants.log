@@ -1,0 +1,135 @@
+============================================================================
+VARIANT: v1-blocks-ladder    groups: 6
+    drafted: 6 group(s), 77 wire segment(s), 26 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Hi boost": SI1, SI2
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      group "Lo cut": SI3
+      group "Lo boost": SI4, SI5
+      group "Mid": SI6
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 25% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 25% utilization, but no smaller sheet holds the reflowed content (A5 186×141 mm vs 179×83 usable)
+      note: groups wrapped onto 3 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v1-blocks-ladder.png
+============================================================================
+VARIANT: v2-blocks-own-last    groups: 6
+    drafted: 6 group(s), 77 wire segment(s), 26 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Hi boost": SI1, SI2
+      group "Mid": SI6
+      group "Lo cut": SI3
+      group "Lo boost": SI4, SI5
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 23% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 23% utilization, but no smaller sheet holds the reflowed content (A5 171×126 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v2-blocks-own-last.png
+============================================================================
+VARIANT: v3-blocks-own-first    groups: 6
+    drafted: 6 group(s), 77 wire segment(s), 26 label(s), 1 no-connect(s) on A4
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      group "Junction": J1, J2
+      group "Hi boost": SI1, SI2
+      group "Mid": SI6
+      group "Lo cut": SI3
+      group "Lo boost": SI4, SI5
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 23% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 23% utilization, but no smaller sheet holds the reflowed content (A5 171×126 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v3-blocks-own-first.png
+============================================================================
+VARIANT: v4-blocks-mid-late    groups: 6
+    drafted: 6 group(s), 77 wire segment(s), 26 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Hi boost": SI1, SI2
+      group "Lo cut": SI3
+      group "Lo boost": SI4, SI5
+      group "Mid": SI6
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 23% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 23% utilization, but no smaller sheet holds the reflowed content (A5 186×106 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v4-blocks-mid-late.png
+============================================================================
+VARIANT: v5-merged    groups: 3
+    drafted: 3 group(s), 79 wire segment(s), 25 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Stand-ins": SI1, SI2, SI3, SI4, SI5, SI6
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 23% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 23% utilization, but no smaller sheet holds the reflowed content (A5 186×107 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, SI1 turned 180°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v5-merged.png
+============================================================================
+VARIANT: v6-merged-own-first    groups: 3
+    drafted: 3 group(s), 79 wire segment(s), 25 label(s), 1 no-connect(s) on A4
+      group "Hi cut": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, R1, RV1, SW1
+      group "Junction": J1, J2
+      group "Stand-ins": SI1, SI2, SI3, SI4, SI5, SI6
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 23% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 23% utilization, but no smaller sheet holds the reflowed content (A5 186×108 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI2 turned 90°, SI1 turned 180°, cut_wiper labelled; label overlaps 0 to 0, wire crossings 9 to 8
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v6-merged-own-first.png
+============================================================================
+VARIANT: v7-blocks-split    groups: 7
+    drafted: 7 group(s), 79 wire segment(s), 25 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Hi boost": SI1, SI2
+      group "Mid": SI6
+      group "Lo cut": SI3
+      group "Lo boost": SI4, SI5
+      group "Cut level": R1, RV1
+      group "Cap bank": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, SW1
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 21% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 21% utilization, but no smaller sheet holds the reflowed content (A5 150×121 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI1 turned 90°; label overlaps 0 to 0, wire crossings 11 to 11
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v7-blocks-split.png
+============================================================================
+VARIANT: v8-merged-split    groups: 4
+    drafted: 4 group(s), 81 wire segment(s), 24 label(s), 1 no-connect(s) on A4
+      group "Junction": J1, J2
+      group "Stand-ins": SI1, SI2, SI3, SI4, SI5, SI6
+      group "Cut level": R1, RV1
+      group "Cap bank": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, SW1
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 21% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 21% utilization, but no smaller sheet holds the reflowed content (A5 163×101 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI1 turned 180°, SI2 turned 90°; label overlaps 0 to 0, wire crossings 11 to 11
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v8-merged-split.png
+============================================================================
+VARIANT: v9-merged-split-bank-first    groups: 4
+    drafted: 4 group(s), 81 wire segment(s), 24 label(s), 1 no-connect(s) on A4
+      group "Cap bank": C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, SW1
+      group "Cut level": R1, RV1
+      group "Junction": J1, J2
+      group "Stand-ins": SI1, SI2, SI3, SI4, SI5, SI6
+      net classes: cut_wiper=signal, GND=ground*, hi_boost_out=signal, hi_tap=signal, in=signal, lo_boost_in=signal, out=signal, sel_common=signal, sel1=signal, sel2=signal, sel3=signal, sel4=signal, sel5=signal, sel6=signal (*=IR override)
+      PWR_FLAG synthesized on: GND
+      sheet fit: A4, ink 21% of the usable frame, compaction failed
+      note: sheet not compacted: the natural layout fits A4 at 21% utilization, but no smaller sheet holds the reflowed content (A5 170×101 mm vs 190×94 usable)
+      note: groups wrapped onto 2 rows to fit the sheet
+      note: placement search: SI5 turned 180°, SI1 turned 180°, SI2 turned 90°; label overlaps 0 to 0, wire crossings 11 to 11
+    rendered: /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hi-cut-run/renders/v9-merged-split-bank-first.png

@@ -1,0 +1,174 @@
+[  0] delete_object            (87.63,106.68)-(130.81,106.68)
+[  1] delete_object            (128.27,124.46)-(130.81,124.46)
+[  2] delete_object            (130.81,106.68)-(130.81,124.46)
+[  3] delete_object            (255.27,120.65)-(252.73,120.65)
+[  4] delete_object            (255.27,130.81)-(252.73,130.81)
+[  5] delete_object            (259.08,139.7)-(259.08,137.16)
+[  6] delete_object            (259.08,137.16)-(252.73,137.16)
+[  7] delete_object            (252.73,120.65)-(252.73,130.81)
+[  8] delete_object            (252.73,130.81)-(252.73,137.16)
+[  9] delete_object            (27.94,132.08)-(25.4,132.08)
+[ 10] delete_object            (25.4,132.08)-(25.4,99.06)
+[ 11] delete_object            (88.9,57.15)-(91.44,57.15)
+[ 12] delete_object            (43.18,124.46)-(45.72,124.46)
+[ 13] delete_object            (45.72,124.46)-(97.79,124.46)
+[ 14] delete_object            (100.33,124.46)-(97.79,124.46)
+[ 15] delete_object            (43.18,127.0)-(45.72,127.0)
+[ 16] delete_object            (45.72,127.0)-(86.36,127.0)
+[ 17] delete_object            (86.36,138.43)-(86.36,135.89)
+[ 18] delete_object            (151.13,127.0)-(148.59,127.0)
+[ 19] delete_object            (148.59,127.0)-(86.36,127.0)
+[ 20] delete_object            (86.36,127.0)-(86.36,135.89)
+[ 21] delete_object            (43.18,129.54)-(45.72,129.54)
+[ 22] delete_object            (45.72,129.54)-(181.61,129.54)
+[ 23] delete_object            (184.15,129.54)-(181.61,129.54)
+[ 24] delete_object            (43.18,132.08)-(45.72,132.08)
+[ 25] delete_object            (45.72,132.08)-(72.39,132.08)
+[ 26] delete_object            (72.39,138.43)-(72.39,135.89)
+[ 27] delete_object            (215.9,132.08)-(213.36,132.08)
+[ 28] delete_object            (213.36,132.08)-(72.39,132.08)
+[ 29] delete_object            (72.39,132.08)-(72.39,135.89)
+[ 30] delete_object            (43.18,134.62)-(45.72,134.62)
+[ 31] delete_object            (45.72,134.62)-(58.42,134.62)
+[ 32] delete_object            (58.42,138.43)-(58.42,135.89)
+[ 33] delete_object            (100.33,134.62)-(97.79,134.62)
+[ 34] delete_object            (97.79,134.62)-(58.42,134.62)
+[ 35] delete_object            (58.42,134.62)-(58.42,135.89)
+[ 36] delete_object            (43.18,137.16)-(45.72,137.16)
+[ 37] delete_object            (45.72,137.16)-(129.54,137.16)
+[ 38] delete_object            (132.08,137.16)-(129.54,137.16)
+[ 39] delete_object            (107.95,134.62)-(110.49,134.62)
+[ 40] delete_object            (110.49,134.62)-(142.24,134.62)
+[ 41] delete_object            (139.7,137.16)-(142.24,137.16)
+[ 42] delete_object            (142.24,134.62)-(142.24,137.16)
+[ 43] delete_object            (58.42,146.05)-(58.42,148.59)
+[ 44] delete_object            (259.08,147.32)-(259.08,149.86)
+[ 45] delete_object            (223.52,132.08)-(226.06,132.08)
+[ 46] delete_object            (72.39,146.05)-(72.39,148.59)
+[ 47] delete_object            (262.89,130.81)-(265.43,130.81)
+[ 48] delete_object            (86.36,146.05)-(86.36,148.59)
+[ 49] delete_object            (86.36,148.59)-(196.85,148.59)
+[ 50] delete_object            (158.75,127.0)-(161.29,127.0)
+[ 51] delete_object            (161.29,127.0)-(196.85,127.0)
+[ 52] delete_object            (191.77,129.54)-(194.31,129.54)
+[ 53] delete_object            (194.31,129.54)-(196.85,129.54)
+[ 54] delete_object            (196.85,127.0)-(196.85,129.54)
+[ 55] delete_object            (196.85,129.54)-(196.85,148.59)
+[ 56] delete_object            (262.89,120.65)-(265.43,120.65)
+[ 57] delete_object            (107.95,124.46)-(110.49,124.46)
+[ 58] delete_object            (110.49,124.46)-(118.11,124.46)
+[ 59] delete_object            (120.65,124.46)-(118.11,124.46)
+[ 60] delete_object            junction (58.42,134.62)
+[ 61] delete_object            junction (72.39,132.08)
+[ 62] delete_object            junction (86.36,127.0)
+[ 63] delete_object            junction (196.85,129.54)
+[ 64] delete_object            junction (252.73,130.81)
+[ 65] delete_object            hcut_t2 dup at (130.81,50.80)
+[ 66] delete_object            lo_boost_in dup at (91.44,57.15)
+[ 67] delete_object            coil_top dup at (252.73,120.65)
+[ 68] delete_object            sel1
+[ 69] delete_object            sel2
+[ 70] delete_object            sel3
+[ 71] delete_object            sel4
+[ 72] delete_object            sel5
+[ 73] delete_object            sel6
+[ 74] delete_object            tap_100mh 1 of 3
+[ 75] delete_object            tap_100mh 2 of 3
+[ 76] delete_object            tap_100mh 3 of 3
+[ 77] delete_object            tap_200mh 1 of 3
+[ 78] delete_object            tap_200mh 2 of 3
+[ 79] delete_object            tap_200mh 3 of 3
+[ 80] delete_object            tap_300mh 1 of 2
+[ 81] delete_object            tap_300mh 2 of 2
+[ 82] delete_object            tap_600mh
+[ 83] delete_object            no_connect at SW1.MP
+[ 84] delete_component         one of J2's five stacked ground symbols
+[ 85] delete_component         one of J2's five stacked ground symbols
+[ 86] delete_component         one of J2's five stacked ground symbols
+[ 87] delete_component         one of J2's five stacked ground symbols
+[ 88] set_component_transform  SW1 rotation 0
+[ 89] move_component           SW1 to (66.04, 137.16) mm
+[ 90] set_component_transform  C1 rotation 0
+[ 91] move_component           C1 to (93.98, 125.73) mm
+[ 92] set_component_transform  C2 rotation 0
+[ 93] move_component           C2 to (109.22, 128.27) mm
+[ 94] set_component_transform  C5 rotation 0
+[ 95] move_component           C5 to (124.46, 128.27) mm
+[ 96] set_component_transform  C3 rotation 0
+[ 97] move_component           C3 to (139.7, 130.81) mm
+[ 98] set_component_transform  C4 rotation 0
+[ 99] move_component           C4 to (154.94, 133.35) mm
+[100] set_component_transform  C8 rotation 0
+[101] move_component           C8 to (170.18, 133.35) mm
+[102] set_component_transform  C6 rotation 0
+[103] move_component           C6 to (185.42, 135.89) mm
+[104] set_component_transform  C9 rotation 0
+[105] move_component           C9 to (200.66, 135.89) mm
+[106] set_component_transform  C7 rotation 0
+[107] move_component           C7 to (215.9, 138.43) mm
+[108] set_component_transform  L4 rotation 180
+[109] move_component           L4 to (93.98, 110.49) mm
+[110] set_component_transform  L3 rotation 180
+[111] move_component           L3 to (124.46, 110.49) mm
+[112] set_component_transform  L2 rotation 180
+[113] move_component           L2 to (162.56, 110.49) mm
+[114] set_component_transform  L1 rotation 180
+[115] move_component           L1 to (200.66, 110.49) mm
+[116] move_component           #FLG01 to (27.94, 71.12) mm, off the J2 ground trunk
+[117] add_wire                 in column, 38.10 mm
+[118] add_wire                 in -> SW1.7, 33.02 mm
+[119] add_wire                 coil_top rail, 113.03 mm
+[120] add_wire                 tap_600mh L4.1 -> C1.1
+[121] add_wire                 tap_300mh L3.1 drop
+[122] add_wire                 tap_300mh bus, 30.48 mm
+[123] add_wire                 C2.1 riser
+[124] add_wire                 C5.1 riser
+[125] add_wire                 C3.1 riser
+[126] add_wire                 tap_200mh L2.1 drop
+[127] add_wire                 tap_200mh bus, 15.24 mm
+[128] add_wire                 C4.1 riser
+[129] add_wire                 C8.1 riser
+[130] add_wire                 tap_100mh L1.1 drop
+[131] add_wire                 tap_100mh bus, 30.48 mm
+[132] add_wire                 C6.1 riser
+[133] add_wire                 C9.1 riser
+[134] add_wire                 C7.1 riser
+[135] add_wire                 sel1 run, 20.32 mm
+[136] add_wire                 sel2 run, 50.80 mm
+[137] add_wire                 sel3 run, 66.04 mm
+[138] add_wire                 sel4 run, 96.52 mm
+[139] add_wire                 sel5 run, 127.00 mm
+[140] add_wire                 sel6 run, 142.24 mm
+[141] add_wire                 J2 ground trunk, 10.16 mm
+[142] add_wire                 #FLG01 stub
+[143] add_wire                 hcut_t2 rail, 52.07 mm
+[144] add_wire                 hcut_t2 riser to SI3/SI4
+[145] add_wire                 lo_boost_in drop off SI1.1
+[146] add_wire                 lo_boost_in rail, 59.69 mm
+[147] add_wire                 lo_boost_in up to SI4.2 stub
+[148] add_junction             rail through L4.2
+[149] add_junction             rail through L3.2
+[150] add_junction             rail through L2.2
+[151] add_junction             tap_300mh bus / L3 drop / C5 riser
+[152] add_junction             tap_200mh bus / L2 drop
+[153] add_junction             tap_100mh bus / L1 drop / C9 riser
+[154] add_junction             sel2 run through C2.2
+[155] add_junction             sel4 run through C4.2
+[156] add_junction             sel5 run through C6.2
+[157] add_junction             J2 trunk / pin 3 stub
+[158] add_junction             J2 trunk / pin 4 stub / flag stub
+[159] add_junction             J2 trunk / pin 5 stub
+[160] add_junction             J2 trunk foot / pin stub / #PWR06
+[161] add_junction             hcut_t2 at SI2.1
+[162] add_junction             hcut_t2 tee to SI3 and SI4
+[163] add_net_label            the one sel1 label
+[164] add_net_label            the one sel2 label
+[165] add_net_label            the one sel3 label
+[166] add_net_label            the one sel4 label
+[167] add_net_label            the one sel5 label
+[168] add_net_label            the one sel6 label
+[169] add_net_label            the one tap_600mh label
+[170] add_net_label            the one tap_300mh label
+[171] add_net_label            the one tap_200mh label
+[172] add_net_label            the one tap_100mh label
+[173] add_no_connect           selector mounting lug, on no net in the model

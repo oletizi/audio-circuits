@@ -1,0 +1,15 @@
+# metadata
+  passive-pin ratio: 0.859375
+  No-ERC suppressed: 1
+  unnamed nets: 1
+  frac coords present: False
+  config-waived: 0 (0 demoted)
+# findings (8)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel1' at (4500,4750) runs over C1 (4750,4750) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel1', 'C1'] @ (4500,4750)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel2' at (5850,4850) runs over C2 (6100,4850) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel2', 'C2'] @ (5850,4850)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel3' at (7200,5200) runs over C3 (7450,5200) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel3', 'C3'] @ (7200,5200)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel4' at (8500,5300) runs over C4 (8750,5300) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel4', 'C4'] @ (8500,5300)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel5' at (4500,5650) runs over C10 (4750,5650) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel5', 'C10'] @ (4500,5650)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'out' at (2750,2050) runs over #FLG01 (2650,2150) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['out', '#FLG01'] @ (2750,2050)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel_common' at (3000,5300) runs over the wire (3100,5300)-(3500,5300) it is not attached to — move or reorient the label ['sel_common'] @ (3000,5300)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel6' at (4200,5500) runs over the wire (4300,5500)-(5850,5500) it is not attached to — move or reorient the label ['sel6'] @ (4200,5500)

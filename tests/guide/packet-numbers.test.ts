@@ -2,6 +2,7 @@ import { test, expect } from "bun:test"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { writeGuidePacket, type GuideFs } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
+import { fakePdfTools } from "./fake-pdf-tools.ts"
 import { attr, cutCentre, elements, holeCentre, lineEnds, num, type At } from "./svg-query.ts"
 import { BRIDGE_INSET } from "../../tools/guide/render-board.ts"
 
@@ -32,6 +33,9 @@ async function writtenPacket(): Promise<ReadonlyMap<string, string>> {
     removeDir: (dir) => {
       for (const file of [...files.keys()]) if (file.startsWith(`${dir}/`)) files.delete(file)
     },
+    removeFile: (file) => {
+      files.delete(file)
+    },
     writeText: (file, text) => {
       files.set(file, text)
     },
@@ -43,9 +47,13 @@ async function writtenPacket(): Promise<ReadonlyMap<string, string>> {
       }
     },
   }
+  const pdfTools = fakePdfTools((file, text) => fs.writeText(file, text))
   await writeGuidePacket(DECLARATION, {
     kicadCli: "/fake/kicad-cli",
     htmlToPdf: "/fake/html-to-pdf",
+    pdfMerge: "/fake/pdf-merge",
+    mergeSchematicPage: pdfTools.mergeSchematicPage,
+    pdfPageSizes: pdfTools.pdfPageSizes,
     runVeroroute: () => ({ status: 0, output: DUMP_TEXT }),
     exportSchematicPdf: (_cli, _sch, pdf) => fs.writeText(pdf, "%PDF-fake"),
     printGuidePdf: (_tool, _html, pdf) => fs.writeText(pdf, "%PDF-fake"),

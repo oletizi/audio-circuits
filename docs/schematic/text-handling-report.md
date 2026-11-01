@@ -46,6 +46,16 @@ re-drove the same census independently on 2026-10-23 (`[RAN]`
 only thing here that is this document's own work. Read G274(2) for the full
 account; what follows is the shape of it:
 
+> **THAT COMMAND IS DELETED AND SO IS THE CENSUS IT PRINTED.** `board-sheets.ts`
+> went with the schematic generator in `6085dc5`
+> (`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+> `docs/research/2026-10-30-schgen-removed.md`). **The `[RAN]` mark above stands
+> - it was driven on 2026-10-23 - and the figures below are a record of a
+> generator that no longer exists**, so nothing in this table can be re-taken
+> and none of it describes the drawing path `TOOLING.md` now documents. Read the
+> table as the account of why that generator was abandoned, which is what it
+> turned out to be.
+
 | boards | where they stop | what actually stops them |
 | --- | --- | --- |
 | 6 | `validateCircuit`, before any geometry exists | net names, **plus one other problem each** |

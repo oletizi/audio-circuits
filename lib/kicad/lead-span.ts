@@ -52,6 +52,7 @@ import { deriveSpanHoles } from "./lead-span-model.ts"
 import {
   KICAD_FOOTPRINTS,
   NICHICON_PS,
+  PANASONIC_M_A,
   TDK_B32529,
   VEROROUTE_FORK,
   VISHAY_MBB0207,
@@ -186,6 +187,46 @@ function nichiconPs(
   }
 }
 
+/**
+ * The Panasonic M-A geometry for the phi10 x 16mm can on a 5.00mm pitch: the 470uF
+ * 35V ECA-1VM471, which `parts/electrolytic-470uf-35v-radial-10x16mm.json` buys and
+ * the only part any board fits to `CP_Radial_D10.0mm_P5.00mm`.
+ *
+ * **THE LEAD IS 14mm AND IT IS THE NEGATIVE ONE.** The dimensional drawing's
+ * `14min.` and `3min.` are a CHAIN, not two readings of one lead: the first ends at
+ * the short lead's end, marked with a circled minus, the second at the long lead's
+ * end, marked with a circled plus. A span is something BOTH leads must reach, so
+ * the short one decides it and the positive lead's 17mm is unusable here.
+ *
+ * NOT NICHICON. The three smaller electrolytic footprints below carry Nichicon PS
+ * dimensions, and the PS case-size table this repository recorded stops at phi8,
+ * so there was no phi10 row to extend - and extending one anyway would record one
+ * manufacturer's guarantees for another's part. The catalogue names Panasonic
+ * here, so Panasonic's own document is what this entry reads.
+ *
+ * THE BODY IS RECORDED AT ITS MAXIMUM, which is what those two fields mean:
+ * `L+-1.0` (for `L <= 16`) and `oD+-0.5` make the 16.0 x 10.0 case 17.0 x 10.5 at
+ * worst. Neither is read by a radial family's arithmetic - both leads leave the
+ * same face - and a nominal in a field documented as a maximum would overstate it.
+ */
+const MA_ECA1VM471: FamilyGeometry = {
+  kind: "formable",
+  mpn: "Panasonic M-A series ECA-1VM471, 470uF 35V, phi10 x 16mm, straight leads",
+  mounting: "radial-vertical",
+  bodyLengthMm: 17.0,
+  bodyDiameterMm: 10.5,
+  nominalPitchMm: 5.0,
+  leadLengthMm: 14.0,
+  leadLengthBasis:
+    "\"14min.\" on the STRAIGHT-LEAD (bulk: ordering code with the packaging letter left out) " +
+    "dimensional drawing, and it dimensions the SHORT - negative - lead, which is what a span " +
+    "both leads reach is bounded by. The taped variant (*B, which Panasonic also lists at a 5mm " +
+    "lead space here) has its leads cut by the tape and is NOT covered.",
+  leadDiameterMm: 0.6,
+  manufacturerMinPitchMm: null,
+  source: PANASONIC_M_A,
+}
+
 /** A moulded pin field, whose span is read off the footprint rather than derived. */
 function rigid(part: string, terminalPitchMm: number, fixedSpanHoles: number, why: string): FamilyGeometry {
   return {
@@ -303,6 +344,15 @@ const SPANS: readonly LeadSpan[] = [
   span("Capacitor_THT:CP_Radial_D6.3mm_P2.50mm", nichiconPs(6.3, 2.5, 0.5), RADIAL_MIN_GRID, ELECTRO_MAX),
   span("Capacitor_THT:CP_Radial_D8.0mm_P3.50mm", nichiconPs(8.0, 3.5, 0.6), RADIAL_MIN_GRID, ELECTRO_MAX),
   span(
+    "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm",
+    MA_ECA1VM471,
+    RADIAL_MIN_GRID,
+    "MOUNTING: STANDING, as the minimum. 14.0mm of lead - the SHORT, negative one, which is what " +
+      "a span both leads reach is bounded by - less 5.23mm of dog-leg overhead leaves 8.77mm of " +
+      "outward run each, which with the two bend offsets gives 26.1mm of pitch: 10 steps, 11 " +
+      "holes. Lead-limited, not tool-limited: the next hole out, 27.94mm, is past its reach.",
+  ),
+  span(
     "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
     rigid("1x01 pin header, 2.54mm", 2.54, 1, SIP_WHY),
     rigidBasis("One hole. A single pin has no span and bridges nothing."),
@@ -311,6 +361,12 @@ const SPANS: readonly LeadSpan[] = [
   span(
     "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
     rigid("1x02 pin header, 2.54mm", 2.54, 2, SIP_WHY),
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
+  ),
+  span(
+    "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+    rigid("1x03 pin header, 2.54mm", 2.54, 3, SIP_WHY),
     rigidBasis(SIP_WHY),
     rigidBasis(SIP_WHY),
   ),

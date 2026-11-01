@@ -1,0 +1,40 @@
+board            pultec-hi-boost
+sheet            pultec-hi-boost.generated-do-not-edit.kicad_sch  sha256 9aa390a420edc4d845b5b0281b00e41efbae5e98dab90cdd847a2f55f38a2278
+committed render sha256 3a77e442c724cb54a6f4a3b48eb749975f9c4f4e91d824370c594e83db9e91d3  (volatile title dropped: f694f0e43d5edd82a3bbc8422cbf8072b0bdb8eb1265a8c262eb021175f2ee4c)
+fresh export     sha256 d2e20811d2598f1d097501a98592fc5cf1bbaab721ddd10f0252e9c118f1ebea  (volatile title dropped: f694f0e43d5edd82a3bbc8422cbf8072b0bdb8eb1265a8c262eb021175f2ee4c)
+stripped digests agree: True
+RECIPE CONFIRMED against an unchanged sheet; nothing written.
+exit=0
+
+board            pultec-hi-cut
+sheet            pultec-hi-cut.generated-do-not-edit.kicad_sch  sha256 7ccf557c5474222f6850b78f8c3c53ac45b89389f782f4b8c317d483900a76f1
+committed render sha256 bf64aafbd8a0f087ef2d707074f0a995b2875ec33d6cf8206ab682c3ebc6dafb  (volatile title dropped: 5b77acaad5a939c373758f58bbb4b198e33d1a2b25b9af87a0c3a7640b8b1dda)
+fresh export     sha256 2653f0bb19a1ee4b49d6f96178a259fc1c9a5be2173a8b9c1c56f1065fe5c41f  (volatile title dropped: 5b77acaad5a939c373758f58bbb4b198e33d1a2b25b9af87a0c3a7640b8b1dda)
+stripped digests agree: True
+RECIPE CONFIRMED against an unchanged sheet; nothing written.
+exit=0
+
+board            pultec-low-boost
+sheet            pultec-low-boost.generated-do-not-edit.kicad_sch  sha256 2849126909cb7bda048f17dbc92acdae7cb7eaf6409c414db6ab05e2ba5ce67a
+committed render sha256 98dfa12a7c5e82147779b2a5757323dfd58fc0ff957c550dd0f0298d445936c6  (volatile title dropped: b29fd05cd6cf1b983cebfbd0d550f2e664e385566e9bad1a99a4c608a375a0c7)
+fresh export     sha256 834869e868721605d8791b20178220e015d68fb7b7e338569f4effd38531a70b  (volatile title dropped: b29fd05cd6cf1b983cebfbd0d550f2e664e385566e9bad1a99a4c608a375a0c7)
+stripped digests agree: True
+RECIPE CONFIRMED against an unchanged sheet; nothing written.
+exit=0
+
+board            pultec-low-cut
+sheet            pultec-low-cut.generated-do-not-edit.kicad_sch  sha256 189c8d3098931e406cc7533bace242e29e27d780966f65f36e3a9c1157e50fee
+committed render sha256 c776648d53fe8b9014a4a5e0d6e7ac79c547615b8bda890fe6ae8eedb62b281a  (volatile title dropped: d03aa08d1dc95415f8a82859bade984c358a47fb32782fdd36ce217fb47639a4)
+fresh export     sha256 f3f84c31d12a8d523eca5a0e765c7a2d356de2fce5238e5bfb75fdc0c366b1c5  (volatile title dropped: d03aa08d1dc95415f8a82859bade984c358a47fb32782fdd36ce217fb47639a4)
+stripped digests agree: True
+RECIPE CONFIRMED against an unchanged sheet; nothing written.
+exit=0
+
+board            pultec-mid
+sheet            pultec-mid.generated-do-not-edit.kicad_sch  sha256 1f8de32150f322f8f040b2cef1d857df7b16e884bff409a0debd5ec3a7344ff8
+committed render sha256 0f1c187e455c2796cd90347d35739f82af3808eabe79354031050680b1d60eac  (volatile title dropped: ccf3bbca81f169e2da8351fa4f382684b8f9a2680660ca791006c1bc12f5fa8b)
+fresh export     sha256 76f3653a5a8efcc6ac85365ae341a6f81f8b9657a067bbf9c6437ecdd02fbd69  (volatile title dropped: e1f0603afc7b5b4841b6157618211572a0d6704fc7e6d3de004065487324cd73)
+stripped digests agree: False
+REFUSING: `kicad-cli sch export svg --black-and-white` of this UNCHANGED sheet does not reproduce the committed render's digest, so the recipe is not the one the committed renders were made with. Nothing was written. Settle the recipe before replacing any render.
+exit=1
+

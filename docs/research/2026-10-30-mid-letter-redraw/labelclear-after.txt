@@ -1,0 +1,19 @@
+sheet /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/after/pultec-mid.kicad_sch
+rendered 6600 x 5100 px at 600 dpi; 84 wires read from the sheet
+
+tag                            text rows (mm) wires           their y (mm) gap above gap below  verdict
+sel1                         104.781..106.220     2         106.68, 109.22         -     0.333  
+sel2                         107.321..108.760     2         109.22, 111.76         -     0.333  
+sel3                         109.861..111.300     2         111.76, 114.30         -     0.333  
+sel4                         112.316..113.840     2         114.30, 116.84         -     0.333  
+sel5                         114.941..116.380     2         116.84, 119.38         -     0.333  
+sel6                         117.481..118.920     1                 119.38         -     0.333  
+sel7                         122.561..124.000     1                 124.46         -     0.333  
+sel8                         125.101..126.540     2         124.46, 127.00     0.514     0.333  
+sel9                         127.641..129.080     2         127.00, 129.54     0.514     0.333  
+sel10                        130.181..131.620     2         129.54, 132.08     0.514     0.333  
+sel11                        132.721..134.160     2         132.08, 134.62     0.514     0.333  
+CONTROL empty                               -     0                      -         -         -  NO TEXT INK as expected
+CONTROL sel8 justify top     126.582..128.022     2         124.46, 127.00     1.995         -  WIRE AT y=127.00 RUNS THROUGH THE TEXT
+
+every box matched its expectation, and the perturbation control fired

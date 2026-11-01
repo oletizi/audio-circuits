@@ -131,17 +131,21 @@ const USAGE = [
   "                           every discovered board (e.g. `make -C <dir>`).",
   "  --force                  veroroute: rebuild even if a binary already exists",
   "                           at the resolved path.",
-  "  --kicad-cli <path> --html-to-pdf <path>",
-  "                           guide: the kicad-cli that exports the schematic PDF,",
-  "                           and the headless browser that prints guide.html to",
-  "                           guide.pdf. BOTH required, neither defaulted here;",
-  "                           `make guide` passes its KICAD_CLI and HTML_TO_PDF.",
-  "                           The packet is guide/layout-designators.svg,",
-  "                           layout-values.svg, copper-side.svg, schematic.pdf",
-  "                           (iff the board declares \"sch\"), guide.html and",
-  "                           guide.pdf. Refuses while the cuts are unresolved,",
-  "                           any part is unplaced, or either tool is missing -",
-  "                           a packet without its PDF is never written.",
+  "  --kicad-cli <path> --html-to-pdf <path> --pdf-merge <path>",
+  "                           guide: the kicad-cli that exports the schematic",
+  "                           page, the headless browser that prints the guide's",
+  "                           own pages, and the qpdf-compatible tool that merges",
+  "                           them into ONE guide.pdf. ALL THREE required, none",
+  "                           defaulted here; `make guide` passes its KICAD_CLI,",
+  "                           HTML_TO_PDF and PDF_MERGE. The packet is",
+  "                           guide/layout-designators.svg, layout-values.svg,",
+  "                           copper-side.svg, guide.html and guide.pdf - one",
+  "                           printable document, with the schematic as its",
+  "                           page 2 on every board that has one. Refuses while",
+  "                           the cuts are unresolved, any part is unplaced, any",
+  "                           tool is missing, or the merge drops or resizes a",
+  "                           page - a packet that reads as complete and is not",
+  "                           is never written.",
   "  --sch, --netlist, --kicad-cli <path>",
   "                           netlist-sync: the resolved schematic, netlist fixture and kicad-cli",
   "                           paths. make/board.mk passes all three - this verb never re-derives",
@@ -238,7 +242,7 @@ export interface RunCliOptions {
    * Injected so `guide` needs no real binary, kicad-cli, headless browser,
    * circuit module or filesystem in tests.
    */
-  readonly guideDeps?: Omit<GuideDeps, "kicadCli" | "htmlToPdf">
+  readonly guideDeps?: Omit<GuideDeps, "kicadCli" | "htmlToPdf" | "pdfMerge">
   /** Injected so `bom` needs no real circuit module, simulator, catalog or filesystem in tests. */
   readonly bomDeps?: BomDeps
   /** Injected so `place` needs no fork, circuit module or search in tests. */

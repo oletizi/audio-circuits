@@ -1,0 +1,67 @@
+================ pultec-hi-boost
+content x      16.510 .. 243.840   (227.330 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied +9.5250 mm
+content now    26.035 .. 253.365
+margins        west 14.035   east 14.035
+rectangles     6, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (382)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 3.91e-14 mm)
+margin asymmetry 3.20e-14 mm
+exit=0
+
+================ pultec-hi-cut
+content x      29.210 .. 250.190   (220.980 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied -0.0000 mm
+content now    29.210 .. 250.190
+margins        west 17.210   east 17.210
+rectangles     6, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (295)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 7.11e-15 mm)
+offset is zero to within the formatter's resolution (-7.11e-15 mm), so the output must be byte-identical to the input: True
+margin asymmetry 2.13e-14 mm
+exit=0
+
+================ pultec-low-boost
+content x      50.800 .. 246.380   (195.580 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied -8.8900 mm
+content now    41.910 .. 237.490
+margins        west 29.910   east 29.910
+rectangles     4, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (338)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 1.42e-14 mm)
+margin asymmetry 2.84e-14 mm
+exit=0
+
+================ pultec-low-cut
+content x      30.480 .. 265.430   (234.950 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied -8.2550 mm
+content now    22.225 .. 257.175
+margins        west 10.225   east 10.225
+rectangles     6, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (323)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 3.91e-14 mm)
+margin asymmetry 3.55e-14 mm
+exit=0
+
+================ pultec-mid
+content x      15.240 .. 264.160   (248.920 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied -0.0000 mm
+content now    15.240 .. 264.160
+margins        west 3.240   east 3.240
+rectangles     6, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (487)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 1.95e-14 mm)
+offset is zero to within the formatter's resolution (-1.95e-14 mm), so the output must be byte-identical to the input: True
+margin asymmetry 4.80e-14 mm
+exit=0
+

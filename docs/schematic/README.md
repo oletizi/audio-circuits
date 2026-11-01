@@ -1,6 +1,54 @@
 Schematic generation and readability: the research record
 =========================================================
 
+> **READ [`verdicts.md`](verdicts.md) FIRST if a drawing is what you are here
+> about.** It is the record `../../EVALUATING-DRAWINGS.md` §5 requires: the
+> reviewer's verdicts on drawings this project produced, **verbatim**, each bound
+> to the sha256 of the sheet he was shown. Everything else in this index is
+> research about how to make a drawing; that file is the only thing that says
+> what he thought of one. It carries **no status vocabulary**, deliberately - he
+> has not named one, and an agent may not author the words its own output is
+> judged in.
+
+> **THE SCHEMATIC GENERATOR THESE PASSES WERE COMMISSIONED FOR IS DELETED, AND
+> MOST OF THIS INDEX IS NOW A RESEARCH RECORD RATHER THAN A ROUTE INTO LIVE
+> CODE.** `lib/schgen/`, `tools/schgen/`, `tests/schgen/`,
+> `lib/kicad/schematic.ts` and the three `schgen` CLI verbs went in
+> `docs/superpowers/plans/2026-10-30-remove-schgen.md`; the findings are in
+> [`../research/2026-10-30-schgen-removed.md`](../research/2026-10-30-schgen-removed.md).
+> **Every `lib/schgen/`, `tools/schgen/` or `tests/schgen/` path on this page is
+> a path into deleted code** - the figures stand as dated measurements and not
+> one of the commands or modules can be run or read in this tree (they are in
+> git at `6085dc5^`).
+>
+> **What draws a page now is `../../TOOLING.md`'s loop** - copperhead drafts,
+> akcli-kicad repairs, `kicad-cli` renders, the reviewer gives a verdict, and
+> the page is committed under `drafted/<circuit>/<board>/`. **Nothing on this
+> page is about that loop.** `../../EVALUATING-DRAWINGS.md` is still the
+> criteria and [`verdicts.md`](verdicts.md) is still where a verdict lives, as
+> the note above says; both are unaffected.
+>
+> **AND ONE THING THE DELETION LEFT OPEN IS NOT IN THIS DIRECTORY AT ALL:
+> [`../../schematic/README.md`](../../schematic/README.md).** It sits beside
+> `schematic/readability-baselines.json` - spec section 3.3's readability-baseline
+> registry - and it is the **only** home of the correction that the registry now
+> has no loader anywhere, that its own `notes` block still describes that loader
+> in the present tense, and that whether to keep, shelve or retire the channel is
+> **the owner's question and nobody has taken it**. Its bytes are deliberately
+> untouched. Linked from here because until now it was reachable from exactly one
+> place in the repository, which is this index's own lesson - *committed is not
+> durable if nobody can find it* - and that page's own: **a finding belongs
+> beside the thing that outlives the change, not beside the thing the change
+> removes.**
+
+> **Two documents this index used to list are deleted with the generator**, and
+> their rows are gone from the tables below: `template-parity.md` and
+> `template-parity-anchors.md`. Both were headed *"GENERATED - do not
+> hand-edit"* and named a verb (`bun run schgen-parity`, `bun run
+> schgen-anchors`) that no longer exists, so they were derived artifacts nothing
+> could regenerate or content-compare - and a stale derived artifact is exactly
+> what makes stale look current. They are in git at the commit before.
+
 **Six research passes** landed on 2026-10-19, ahead of the schematic-generation
 work described in
 [`../superpowers/specs/2026-10-08-agent-authored-boards-design.md`](../superpowers/specs/2026-10-08-agent-authored-boards-design.md)
@@ -406,12 +454,24 @@ and both are outside all six files:
 What this index does NOT cover
 ------------------------------
 
-**It indexes the six research passes and nothing else, and SEVEN later documents
-in this directory are not in it.** It said *"five"* until 2026-10-23, when the
-eighth pass added two; the number is corrected rather than the sentence rewritten,
-for the reason the inventory note at the top of this file gives. Stated here
-rather than left for a reader to notice, because this index's own opening says
-*"committed is not durable if nobody can find it"*:
+**It indexes the six research passes and nothing else, and the later documents
+in this directory are not in it. THE TABLES BELOW ARE THE LIST; THIS SENTENCE NO
+LONGER CARRIES A COUNT, AND THE REASON IS THAT ITS COUNT WAS WRONG.** It read
+*"SEVEN later documents"* over two tables holding **eight** rows, and the second
+table was introduced as *"the remaining five"* over **six** rows - both
+understated by one, and the file had already corrected this same number once
+(*"it said five until 2026-10-23, when the eighth pass added two"*) without
+either figure matching what it indexed.
+
+**That is this file's own worked example happening a fourth time**, and the
+inventory note at the top records the first three. The remedy taken here is the
+one `../../CLAUDE.md` states - *a figure in prose is a transcription with a date
+on it* - so the figure is deleted rather than corrected again, and the tables
+answer the question. **The deletion of `template-parity.md` and
+`template-parity-anchors.md` is what made the counts need touching**; it would
+have moved both of them downward, which no change to this sentence had ever
+done. Stated here rather than left for a reader to notice, because this index's
+own opening says *"committed is not durable if nobody can find it"*:
 
 **The first two rows are the eighth pass's, and the first of them is where a
 reader should start** - ahead of this index, ahead of the research document, and
@@ -422,20 +482,86 @@ ahead of the register:
 | [`text-handling-report.md`](text-handling-report.md) | **the human-facing report on the eighth pass** - what was asked, what was found in order of consequence, what it means for the mandate's five output classes, what is reserved to the owner, and what was not established | **Relays almost everything and says so in its own header**; its own work is a re-drive of the board census that CONFIRMS `../known-gaps.md` **G274** clause (2) rather than discovering it, plus one inference marked where it appears. It exists because the research document is written for an adversarial reader rather than a human one. **Its §2 leads with G274(2)'s finding rather than §1's: text placement is the sole cited cause of refusal on TWO of the eleven boards, and six refuse before any text is placed** |
 | [`false-greens.md`](false-greens.md) | **twenty-nine** distinct mechanisms by which a check on this branch looked green and established nothing, in six families, each with its instance, how it was caught, and the general form | **24 of 29 verified by its author against the source, 5 `[RELAYED]` with their source named**, which a catalogue of false greens had better be. **This row said *"the sixteen"* until 2026-10-23** - the controller's estimate, written into the index before the sources were walked, and corrected here by the controller because the document's own author declined to revise the entry that grades its work. Its closing section splits the twenty-nine **18 suite-catchable / 1 partly / 10 reader-only** and transfers four families to PCB place-and-route |
 
-**The remaining five predate the eighth pass** and are the spikes and parity
-measurements:
+**The rest predate the eighth pass** and are the spikes and the re-measurements.
+**Two parity documents stood in this table and are deleted** - see the notice at
+the top of this file. No count here either, for the reason given above:
 
 | document | what it is | how much it can be trusted |
 | --- | --- | --- |
-| [`elk-spike.md`](elk-spike.md) | ELK on whole circuits, flat | **Measured, no template and no block scale.** Every figure went through `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1, which this generator does not use - `../known-gaps.md` **G180** names the three figures that were properties of its skin |
+| [`elk-spike.md`](elk-spike.md) | ELK on whole circuits, flat | **Measured, no template and no block scale.** Every figure went through `netlistsvg` at `d3518f1` with its pinned `elkjs` 0.7.1, which the generator did not use - `../known-gaps.md` **G180** names the three figures that were properties of its skin |
 | [`elk-block-spike.md`](elk-block-spike.md) | the same, one declared block at a time | **Measured, with a paired control and a byte-identical regeneration of the first spike's inputs as the check that its extracted converter changed no behaviour.** Same frontend contamination |
-| [`template-parity.md`](template-parity.md) | do the ported templates draw this repository's blocks? | **GENERATED and content-compared on every test run.** A measurement with no target (spec §5.1) |
-| [`template-parity-anchors.md`](template-parity-anchors.md) | what a template COULD draw under an anchor probed over a block's own members | **GENERATED.** Read it only beside `template-parity.md`: `../known-gaps.md` **G160** is explicit that a realised probe is not a recommendation to declare that anchor |
-| [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on this generator, every figure produced by committed code and pinned by a committed test.** It is also the record of which spike figures CANNOT be compared, and why |
-| [`reference-graph-checks.md`](reference-graph-checks.md) | gate 8's M1 half: a generated schematic's netlist against a hand-arranged one, by value and pin-level adjacency | **Measured, and the headline is a GAP rather than a result.** Every figure comes from a real `kicad-cli` export and is asserted on every run - and the gate **has never run against a generated drawing**, because `generate` refuses both references at gate 1 (`../known-gaps.md` **G238**, **G240**). Read the first section before reading the table |
+| [`m1-remeasurement.md`](m1-remeasurement.md) | the two spikes' figures re-taken on the real pipeline | **Measured on the deleted generator; every figure WAS produced by committed code and pinned by a committed test, and all eight of those commands are now deleted** - its own heading says so, and none of the figures can be re-taken. It is also the record of which spike figures CANNOT be compared, and why |
+| [`reference-graph-checks.md`](reference-graph-checks.md) | gate 8's M1 half: a generated schematic's netlist against a hand-arranged one, by value and pin-level adjacency | **Measured, and the headline is a GAP that is now permanent rather than pending.** Every figure came from a real `kicad-cli` export and was asserted on every run; the gate **never ran against a generated drawing**, because `generate` refused both references at gate 1 (`../known-gaps.md` **G238**, **G240**), **and gate 8 is deleted with the generator, so there is nothing left for it to run against.** Read the first section before reading the table |
 
-**The two spikes are the strongest evidence in this directory about ELK and the
-weakest about THIS generator**, and `m1-remeasurement.md` is where the difference
-is measured rather than argued: of the five figures the block spike's own table
-publishes per block, **two are the same quantity as this generator's and three
-are not.**
+**The two spikes were the strongest evidence in this directory about ELK and the
+weakest about the generator**, and `m1-remeasurement.md` is where the difference
+was measured rather than argued: of the five figures the block spike's own table
+publishes per block, **two were the same quantity as the generator's and three
+were not.** With the generator deleted, the ELK half is what survives as
+evidence about anything.
+
+Four research documents landed in `docs/research/` on 2026-10-28, and nothing pointed at them
+================================================================================================
+
+**Same failure this index exists to prevent, one directory over.** They are
+indexed here rather than in a new index because a reader looking for "what does
+the field already do" looks here first, and because two of the four are partly
+superseded by the eight passes above and need to say so where they are found.
+
+> **THE HEADING SAYS FOUR AND THERE ARE SIX, and the heading is left as written
+> rather than silently incremented, for the reason this file gives three times
+> above.** `2026-10-28-academic-schematic-generation-check.md` was committed on
+> 2026-10-28 and never added to the table below; it is added now.
+> `2026-10-28-drafting-practice-survey.md` landed the same day and is the sixth.
+> **What changed is the directory, not the sentence.**
+>
+> **AND NOW THERE ARE SEVEN.** `2026-10-28-registry-enumeration-packages.md` is
+> the seventh, added to the table below in the change that wrote it, which is
+> what this heading has been asking for since it was written. It is the only
+> **enumerative** pass of the seven - every other one went looking for tools
+> somebody had already named, so none of them could have found anything nobody
+> thought to name.
+>
+> **EIGHT.** `2026-10-28-placement-intent-representations.md` is the eighth, and
+> it is the only one that asks about the **authored layer** rather than about a
+> tool: how an existing system lets a human or an agent SAY where a part goes,
+> as something committed and reviewed. **Its answer is a negative**, which is
+> why it is worth having: fourteen systems, and not one carries a reason
+> attached to a placement decision. It also corrects the `diodeinc/pcb` row
+> below, which calls that project *"the closest prior art that exists"* - true,
+> and **its own skill file now labels the mechanism `legacy`.**
+>
+> **NINE.** `2026-10-28-kicad-native-schematic-layout.md` is the ninth, and it is
+> the only one that asks about **KiCad itself** rather than about the field: what
+> the released product ships for schematic geometry, and whether a plugin could
+> ever have added more. **Its central result refutes a premise several of the
+> documents below lean on** - that KiCad's not having schematic auto-layout says
+> something about whether schematic auto-layout works. It does not: through
+> KiCad 10 the schematic editor has **no Python module, no action-plugin host,
+> and an IPC schematic API with zero commands and no symbol type**, for a cause
+> the maintainer states as data-model technical debt. Nobody could have written
+> the plugin. It also records two things this index needs: **KiCad supplies no
+> presentational rule check on a schematic at all** (ERC only, and ERC fires on
+> connectivity), so there is no upstream criterion to defer to; and
+> **`kicad-cli` has eleven schematic verbs and not one of them mutates
+> geometry**, which is the same verifier-not-mutator role the `agent-kicad-surfaces`
+> row below assigns it, reached independently.
+
+| document | what it is | how much it can be trusted |
+| --- | --- | --- |
+| [`../research/2026-10-28-draughtsmanship-tool-bakeoff.md`](../research/2026-10-28-draughtsmanship-tool-bakeoff.md) | **READ THIS ONE FIRST of the four.** Which external tool to REUSE today for draughtsmanship - how a schematic is drawn and judged, connectivity assumed given. copperhead, `kicad-sch-api`, `kicad-mcp-pro`, `kicad-sch-lint`, and four more | **Everything in it was installed and RUN** against `build/schgen-boards/pultec-low-boost/` and `build/schgen-boards/transistor-preamp-lab/` on KiCad 10.0.5, with a hand-drawn control. Three results bind: copperhead's 13-family checker **is** reusable as a standalone gate on an arbitrary `.kicad_sch` (`score schematic --file`, or `checkLegibility(path)`); `kicad-sch-api` **destroys every `global_label`** on a no-op save and KiCad's own netlist export shows the named nets gone; and `rashuky/kicad-sch-lint` took `transistor-preamp-lab` from 2 errors to **0** with the netlist provably unchanged. It also records that **two external checkers contradict our own `STATUS.md`**, which calls a sheet with nine text-on-wire collisions "No findings" |
+| [`../research/2026-10-28-drafting-practice-survey.md`](../research/2026-10-28-drafting-practice-survey.md) | **PRACTICE, not tools and not standards** - who drafts, what conventions practitioners actually follow, how schematic review is run as a process, **how a reviewer's verdict is captured and reused**, and whether anyone teaches drawing quality by worked exemplars. Extends [`readability-research.md`](readability-research.md) and defers every standards question to it | **Mixed and marked clause by clause.** KLC's rule implementations, six review checklists, four team convention documents and **all ten of EEschematic's prompt files** were fetched and read; the four exemplar PNGs were looked at. AllSpice, Fagan inspection and Adaptive Comparative Judgement are `[SUMMARISED]` through a fetch tool and are flagged as such. **Nothing was run.** Its web-search budget was **exhausted before its first query**, so the corpus is biased toward public git and professional company standards are under-sampled - its §7.6 says so. Two findings bind: **KLC stores a waiver as a private property on the symbol, keyed `KLC_<rule>_<element>` with the human's reason as its value**, which is the strongest precedent found for recording a verdict; and **no source anywhere retains verdicts as a corpus or induces a rule from them**, so the project's central mechanism is unprecedented (§6) |
+| [`../research/2026-10-28-drafting-office-checking-practice.md`](../research/2026-10-28-drafting-office-checking-practice.md) | **CLOSES the gap the row above declares open in its own §7.1** - the pre-CAD drawing office's formal check: the dedicated **checker** as a role distinct from draughtsman and engineer, the coloured **check print**, the revision block, and **what became of the markup**. **Bishop 1920 ch. XXIX (the fullest of them, and found last)**, Collins 1918, French 1911/1918, Kepler 1921, Machinery's Reference Series No. 2, two Bell Labs **circuit**-drafting standards, MIL-STD-100F/G, MIL-D-5480F, NASA GSFC 1994 and NPS-10 1986 | **VERIFIED or RELAYED clause by clause, and ten of fourteen sources were read end to end** rather than summarised. Nothing was run - it is document research, and §8 bounds every failure instead of filling it in. **Five results bind. (1) The markup was RETAINED, and the clause is an exception inside a deletion rule** - Collins 1918: *"Old prints of revised drawings (except record and check prints) shall be destroyed by the file clerk"*, filed with the record prints under signed-receipt custody **after** the corrections were made. That is the precedent the row above says does not exist anywhere modern, and Bishop supplies the missing *why*: marking the tracing is quicker, and *"the blueprint method is used when a permanent record of the checker's marks is desired"* - **the check print is the variant you choose when the review must outlive the correction**, which is the variant this project needs. **(2) Drawing quality WAS formally checked, and it was item 1 in three independent sources** - French, quoting Follows: *"find out if it is easy to read and tells a straight story. Always do this before checking any individual features; in other words, before you have had time to become accustomed to the contents"*, because the instrument is naivety and the detail passes spend it. It survives as MIL-STD-100F's **DRAWING APPROVAL** signature distinct from DESIGN APPROVAL, as MIL-D-5480F §4.2's retrace-or-redraw rejection **on legibility alone**, and as NPS-10's *"avoid line congestion"*. **This also kills §359 of the row above**, which records the no-overlap rule as *"not found as a clause"*: Bishop states it in 1920 - *"no dimension lines or other lines or points appear to coincide on the drawing unless it is proper that they should coincide"*, with exactly the exception clause a schematic needs, where a junction dot and four wire ends are *supposed* to coincide. **(3) There was a BACK-CHECK, and it is the finding with the most bearing on an agent workflow.** The draughtsman had to verify the checker's correction *before applying it*, because otherwise *"certain parts of the drawing are left unchecked, the value being the checker's instead of the detailer's"* - the fix has been through one mind, at the spot already proven error-prone. Some checkers forced compliance by **withholding the correct value** and recording only the numbered defect. **An agent applies a reviewer's fix perfectly and without resistance, so this hole is wider here than it ever was on paper.** **(4) The markup was a COVERAGE record, not a defect list** - correct matter was ticked too, so an unmarked feature meant *not reached*, which is why the sheet had to be kept; Bishop adds that tick **position** encodes provenance (above = originally correct, below = correct after correction) and that a **pencilled** ring means *doubtful* rather than wrong, carrying a quarantine rule - *"no use should be made of figures or other data taken without verification from within the ring"*. **(5) The colour code varied in KIND and then in direction, and Bishop explains why**: Collins marks the verdict (yellow correct / red wrong), NPS-10 marks the edit (red add / green delete / blue note), French's structural chapter uses **red to mean verified**, and **Bishop forbids red outright** - on erasability and on red-on-blue defeating the eye's focus. **The colour was chosen by the physics of the medium, not by meaning**, so no palette here carries information into a digital one. Its weak clauses are flagged: **the ASME Y14.2/Y14.35/Y14.100 clause text was NOT obtained** (paywalled; scope statements only) and the Giesecke and Jensen chapters sit behind archive.org's lending restriction. It also carries its **own withdrawn negative** in §8 item 2 - it had recorded the back-check as unattested, and says why that was wrong, which is that a bounded negative is bounded by the shelf it was taken from. **MIL-STD-100F and 100G download free from everyspec after all** - the earlier 404 was a wrong directory range - and §9 records every access path, including the archive.org search-inside endpoint that works where the documented one does not resolve, **and the phrase-search trap in it that nearly produced a false negative** - that backend does not honour quoted phrases, so a `check print` query scored 0 of 334 items while the passage sat in one of them |
+| [`../research/2026-10-28-academic-schematic-generation-check.md`](../research/2026-10-28-academic-schematic-generation-check.md) | whether four claimed academic schematic generators are real - EEschematic, Microsoft SchGen, CircuitLM and one more - and what each actually measures | **Verification work, nothing run.** Its own §limits say so: no code was installed and EEschematic's output format is established **negatively** (no EDA tool is named anywhere in the paper or repo). Read it before the drafting-practice survey's §3.4, which reads the prompt files it identified but did not open |
+| [`../research/2026-10-28-agent-kicad-surfaces.md`](../research/2026-10-28-agent-kicad-surfaces.md) | what an agent can drive as a **tool** to read, place, move, wire and inspect a `.kicad_sch`, rather than writing its own layout | **Measured, and the strongest of the three.** Every PASS/FAIL was produced by running the thing against `circuits/pt2399-core/pt2399-core.kicad_sch` on KiCad 10.0.5. Its `kiutils` result is a false green worth reading on its own: every check passes, `kicad-cli` exits 0, and **192 `hide` flags and 259 `do_not_autoplace` flags vanish** |
+| [`../research/2026-10-28-schematic-layout-engines.md`](../research/2026-10-28-schematic-layout-engines.md) | whether an off-the-shelf engine could replace this generator | **Its own §0 says the question is largely already answered here and defers to the passes above**, which is the right posture. It gathers evidence and declines to recommend |
+| [`../research/2026-10-28-registry-enumeration-packages.md`](../research/2026-10-28-registry-enumeration-packages.md) | **ENUMERATIVE, and the only pass here that is.** Every other document on this page went looking for tools somebody had already named; this one swept nine package registries through their own HTTP APIs - **all 925,633 PyPI project names**, 37 npm queries, crates.io, RubyGems, Hackage, pkg.go.dev, Zenodo, Software Heritage and Hugging Face - and triaged ~7,000 candidates into draws/checks/represents/renders/adjacent | **NOTHING WAS RUN, and it says so in its own second paragraph.** Existence, versions, licences, dates and dependency counts are VERIFIED from the registry APIs; **every "what it does" is the author's own summary and is marked RELAYED.** It is a candidate list and nothing about quality. Four results bind. **No package in any registry claims to measure schematic LEGIBILITY** - `keywords:schematic-capture` and `keywords:circuit-diagram` are both **0** on npm, and the closest artifacts are `pcb-maker` (a scorer, but for PCB agents) and `tscircuit/schematic-layout-testing` (a harness that is on **no** registry). **Hackage, RubyGems and Zenodo are effectively empty** for this domain - three findings, not three gaps in the method. **Software Heritage holds two on-topic tools no registry has**, `Flians/netlist2schematic` and `damdoy/procedural-electronic-schematic-generation`. And **`microsoft/SchGen` is CONFIRMED** (MIT, model + dataset, fetched from the HF API), which upgrades the academic-check document above. Its own §"what this method WOULD HAVE MISSED" is the part to read before quoting it: triage read only summaries and keywords, **never a README**, so the general graph-layout libraries where the actual algorithms live - elkjs, dagre, OGDF, libavoid - were found only as somebody else's dependency |
+| [`../research/2026-10-28-placement-intent-representations.md`](../research/2026-10-28-placement-intent-representations.md) | **THE AUTHORED LAYER, which no other document here asks about.** Not tools and not algorithms: how fourteen existing systems let a human or an agent SAY *"this part goes here, oriented this way, in this group"* as a durable, re-runnable, committed artifact. Lcapy's hint language, Microsoft SchGen's generated code, copperhead's `intent.json`, SKiDL/`schematizer`'s JSON hint seam, SchemDraw, circuitikz, `.kicad_sch` itself, atopile, tscircuit (props **and** `manual-edits.json`), `diodeinc/pcb`'s `# pcb:sch`, WireViz, circuit-synth, pcbGPT | **NOTHING WAS RUN** - its own §limits lead with that, and by this page's own standard that is its main weakness. Seven systems were read at source level; §§7-12 are RELAYED from two parallel passes with four KiCad claims and two others re-verified. **Four results bind. (1) Fourteen for fourteen, no EDA system carries a reason per placement decision** - the only surveyed artifact that does is WireViz, a cable-harness documenter, and `diodeinc/pcb`'s parser *refuses* one (`// No trailing tokens allowed.`). **(2) `(custom_property "key" "value")` is NOT in KiCad 10** - the `10.0` branch tops out at file version `20260306` and this repository's own sheets write exactly that, so the one intent slot in the `.kicad_sch` format is nightly-only. **(3) KiCad 10 DOES have `(group … (members "uuid" …))`, sorted for diff stability, and no sheet in `circuits/` contains one.** **(4) `diodeinc/pcb` labels its own `# pcb:sch` block `legacy`** and documents a migration to a reconciled `.kicad_sch`, which is the strongest evidence on the design and it is negative. Read its one-screen summary and Part III; the fourteen per-system sections are evidence, not argument |
+| [`../research/2026-10-28-ai-native-eda-platforms.md`](../research/2026-10-28-ai-native-eda-platforms.md) | the **commercial and agent-surface** picture: Diode, Flux, Koppar, CELUS, Circuit Mind, Quilter, atopile, JITX, ProtoFlow, Coppr, copperhead, AllSpice, and the EDA MCP ecosystem - agent surfaces, pricing, licensing, corporate health, export surfaces | **Mixed, and it grades itself.** It is the only source for the commercial tier, and it carries three things nothing else here does: **`diodeinc/pcb`** (MIT, native `.kicad_sch` with placement AND reconciliation - the closest prior art that exists), **the two MCP retreats** (two teams built EDA MCP servers, measured them against a plain agent plus `kicad-cli`, and withdrew), and the **KiCad-API answer** read off the protos and `kipy` 0.8.0 (`Schematic` is marked `versionadded (KiCad 11)`). It also corrects `../decisions/2026-09-21-why-not-tscircuit.md`. But **it ran nothing against this repository's circuits**, and its own "READ THIS FIRST" hands the `schematizer`, Weave, ELK and netlistsvg questions back to the passes above, which ran them |
+| [`../research/2026-10-28-kicad-native-schematic-layout.md`](../research/2026-10-28-kicad-native-schematic-layout.md) | **KiCad ITSELF, which no other document here asks about.** Not the field and not a tool: what KiCad 10 ships for schematic geometry, what its maintainers have said, and whether an in-application schematic-layout plugin was ever possible. The complete 230-action eeschema inventory, the 863-file source census, the shipped manual, `kicad-cli`, the IPC protos on `10.0` vs `master`, all 136 PCM packages, the issue tracker and the forum | **Measured where it could be, and it says which clauses are not.** Every count came from running `strings` on the shipped 10.0.5 kifaces or walking the GitLab API; the PCM sweep fetched all 136 `metadata.json` files with 0 errors. **Four results bind. (1) The hypothesis it was sent to test is FALSE** - KiCad has no schematic plugin surface in any released version, so the absence of auto-layout there carries no information about whether auto-layout works. **(2) The maintainer names the cause verbatim**: *"due to historical reasons / technical debt, it is not currently feasible to provide an API that allows you to work with schematic symbols"* - and KiCad 10’s `schematic_commands.proto` is **866 bytes with zero messages**, which is that sentence in a file. **(3) KiCad declines PCB autorouting too** (*"we aren’t going to implement it anyway"*), on a capability that demonstrably works, so the inference pattern fails on a control case. **(4) Zero of 136 PCM packages and zero GitHub repositories do schematic auto-placement** - `kicad schematic autoplace` returns 0 on GitHub, and the seven PCM plugins that read a schematic all run schematic→PCB, never schematic→schematic. Its weak clauses are flagged: the forum material is RELAYED from the Discourse search index and a summarising fetch, and the maintainer quotes came through GitLab’s public **GraphQL** endpoint because REST `issues/:iid/notes` returns 401 unauthenticated | **AND the historical pass folded into its §6 splits the question in a way the rest of this index does not: schematic WIRE auto-routing shipped in OrCAD (2010), Altium, Proteus and Virtuoso and is in daily use, while schematic SYMBOL auto-placement essentially never shipped — the three instances that exist all dodge the problem (Virtuoso copies coordinates from the physical layout; EasyEDA Pro's `SCH_Document.autoLayout()` carries its vendor's own *"Do not use this API in a production environment"* and is in no release note; Viewlogic's `ViewGen` died with its vendor in 2002). That §6 also kills two false secondary claims by downloading the sources, carries EasyEDA's `designatorDeviceTypeMap` as a real production placement-intent vocabulary, and flags **Weave's round-trip netlist-equivalence certificate** as a correctness gate none of the nine passes here has. §6 is RELAYED throughout and says so.
+
+**The correction that document carries is the reason to read it despite the
+above.** `_schDirectLineRoutingEnabled` **does** reach tscircuit's core: zod
+strips it from `_parsedProps`, and the call site reads raw `.props`, which
+`PrimitiveComponent` assigns unparsed. The decision's conclusion survives; its
+stated reasoning does not, and the decision file still says the old thing.

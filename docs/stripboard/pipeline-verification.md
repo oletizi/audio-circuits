@@ -3481,6 +3481,18 @@ one per board per run; the table above was enumerated over every placed part.
 being authored on another branch**, and this task neither supplies nor guesses
 them.
 
+> **AMENDED 2026-10-30: the two `transistor-preamp-staged` rows are CLOSED, and
+> the last row of §10.3 clause 4 with them.** Both footprints are recorded now -
+> `CP_Radial_D10.0mm_P5.00mm` from Panasonic M-A ECA-1VM471's own datasheet
+> (ABA0000C1218) and `PinHeader_1x03_P2.54mm_Vertical` as a moulded SIP pin field
+> - so that board grades, and `HC5` does NOT hold on it: `C8` spans 14 holes
+> against `maxSpanHoles` 11 for `CP_Radial_D5.0mm_P2.00mm`, with `HC8`, `HC9` and
+> `HC10` holding. **A refusal became a verdict, which is what §10.1 was waiting
+> for, and the verdict is red.** The `pt2399-core` rows stand unchanged. Clause 4
+> below also names `CP_Radial_D10.0mm_P5.00mm` as the footprint a test drives
+> through `make check`'s own path; that fixture now uses a real
+> `Capacitor_THT.pretty` name no board places, because this one no longer refuses.
+
 ### 10.2 No span bound is violated anywhere in the tree
 
 `HC5` and `HC9` **hold on every board where they can be graded** —

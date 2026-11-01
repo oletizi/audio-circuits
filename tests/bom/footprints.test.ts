@@ -31,6 +31,26 @@ test("a radial electrolytic footprint parses its body diameter and lead spacing"
   expect(physical).toEqual({ kind: "radial-electrolytic", maxDiameterMm: 5.0, leadSpacingMm: 2.0 })
 })
 
+/**
+ * The `C_Disc` family: the dimensions are read off the footprint FILE, not written from
+ * memory. `/Applications/KiCad/.../Capacitor_THT.pretty/C_Disc_D5.0mm_W2.5mm_P2.50mm.kicad_mod`
+ * (version 20260206) has `descr "... pin pitch=2.50mm, diameter*width=5*2.5mm^2 ..."` and
+ * pads 1 and 2 at x 0 and x 2.5. So D is the diameter and P is the pitch, and the W
+ * dimension deliberately becomes nothing: `Specs` has no field for a body thickness, so
+ * there is nothing to compare it with and nothing is invented to pretend otherwise.
+ */
+test("a C_Disc capacitor footprint parses its body diameter and lead spacing", () => {
+  const physical = physicalFor("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm", resistor("c1"), {})
+  expect(physical).toEqual({ kind: "disc-capacitor", maxDiameterMm: 5.0, leadSpacingMm: 2.5 })
+})
+
+test("a C_Disc footprint is not confused with the polarised CP_Radial family", () => {
+  expect(physicalFor("Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm", resistor("c1"), {}).kind)
+    .toBe("disc-capacitor")
+  expect(physicalFor("Capacitor_THT:CP_Radial_D5.0mm_P2.50mm", resistor("c2"), {}).kind)
+    .toBe("radial-electrolytic")
+})
+
 test("a TO-92 footprint takes its pin order from PIN_NUMBERS.bjt, sorted by pin number", () => {
   const physical = physicalFor("Package_TO_SOT_THT:TO-92_Inline", bjt("q1"), BJT_PIN_NUMBERS)
   expect(physical).toEqual({ kind: "to92", pinOrder: ["emitter", "base", "collector"] })

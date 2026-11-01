@@ -16,6 +16,15 @@ import type { Physical } from "./types.ts"
 
 const AXIAL_RESISTOR = /^Resistor_THT:R_Axial_DIN0207_.*_P([0-9]+(?:\.[0-9]+)?)mm_.*$/
 const RADIAL_ELECTROLYTIC = /^Capacitor_THT:CP_Radial_D([0-9]+(?:\.[0-9]+)?)mm_P([0-9]+(?:\.[0-9]+)?)mm$/
+// KiCad's C_Disc family: a two-lead non-polarised capacitor body, `D` across the lead
+// axis and `P` the pitch. Read off the library file rather than from memory -
+// C_Disc_D5.0mm_W2.5mm_P2.50mm.kicad_mod (version 20260206) carries
+// `descr "... pin pitch=2.50mm, diameter*width=5*2.5mm^2 ..."` with pads 1 and 2 at x 0
+// and x 2.5. `W` is captured by the pattern and DISCARDED: it is the body's thickness,
+// and tools/bom/catalog.ts has no Specs field to compare a thickness with, so there is
+// nothing to check and nothing is invented. tests/bom/footprints.test.ts records this.
+const DISC_CAPACITOR =
+  /^Capacitor_THT:C_Disc_D([0-9]+(?:\.[0-9]+)?)mm_W([0-9]+(?:\.[0-9]+)?)mm_P([0-9]+(?:\.[0-9]+)?)mm$/
 const TO92_INLINE = "Package_TO_SOT_THT:TO-92_Inline"
 const TRIMMER_RM065 = "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 const PIN_HEADER = /^Connector_PinHeader_2\.54mm:PinHeader_1x([0-9]+)_P2\.54mm_Vertical$/
@@ -24,6 +33,7 @@ const PIN_HEADER_PITCH_MM = 2.54
 const KNOWN_FOOTPRINTS =
   "Resistor_THT:R_Axial_DIN0207_*_P<p>mm_* (axial resistor), " +
   "Capacitor_THT:CP_Radial_D<d>mm_P<p>mm (radial electrolytic), " +
+  "Capacitor_THT:C_Disc_D<d>mm_W<w>mm_P<p>mm (non-polarised two-lead capacitor), " +
   `${TO92_INLINE} (TO-92), ${TRIMMER_RM065} (trimmer), ` +
   "Connector_PinHeader_2.54mm:PinHeader_1x<n>_P2.54mm_Vertical (pin header)"
 
@@ -83,6 +93,14 @@ export function physicalFor(footprint: string, component: Component, pinNumbers:
       kind: "radial-electrolytic",
       maxDiameterMm: parseMm(radial[1], footprint, "body diameter"),
       leadSpacingMm: parseMm(radial[2], footprint, "lead spacing"),
+    }
+  }
+  const disc = DISC_CAPACITOR.exec(footprint)
+  if (disc !== null) {
+    return {
+      kind: "disc-capacitor",
+      maxDiameterMm: parseMm(disc[1], footprint, "body diameter"),
+      leadSpacingMm: parseMm(disc[3], footprint, "lead spacing"),
     }
   }
   const header = PIN_HEADER.exec(footprint)

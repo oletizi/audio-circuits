@@ -4,7 +4,7 @@
  * transcription checked only against itself is a transcription nobody verified.
  *
  * This helper REFUSES rather than skips when the library is not resolvable,
- * for the reason tests/circuits/kicad-round-trip.ts gives for kicad-cli: a
+ * for the reason tests/circuits/committed-schematic.ts gives for kicad-cli: a
  * skipped check must never look like a passing one, and a green suite on a
  * machine with no KiCad would be exactly that.
  *

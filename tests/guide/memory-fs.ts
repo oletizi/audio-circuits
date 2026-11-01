@@ -27,6 +27,13 @@ export function memoryFs(initial: Record<string, string> = {}): {
       removeDir: (dir) => {
         for (const file of under(dir)) files.delete(file)
       },
+      // ONE FILE, which is what the two staging intermediates need: the
+      // printed-but-unmerged guide and the exported schematic page are written
+      // inside the staging directory and must not reach the published packet,
+      // and `removeDir` on that directory would take the packet with them.
+      removeFile: (file) => {
+        files.delete(file)
+      },
       writeText: (file, text) => {
         files.set(file, text)
       },

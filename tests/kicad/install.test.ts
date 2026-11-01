@@ -1,7 +1,8 @@
 /**
- * Checks for `lib/kicad/install.ts` and `tools/guide/browser-install.ts`
- * (`docs/known-gaps.md` **G169**): the resolver is one place that owns the
- * KiCad install root and every default is a per-platform candidate list.
+ * Checks for `lib/kicad/install.ts`, `tools/guide/browser-install.ts` and
+ * `tools/guide/pdf-merge-install.ts` (`docs/known-gaps.md` **G169**): the
+ * resolver is one place that owns the KiCad install root and every default is
+ * a per-platform candidate list.
  *
  * **`docs/known-gaps.md` G170, and why the Makefile checks below run `make`
  * for real rather than pattern-matching this file's text.** `make/board.mk`
@@ -12,7 +13,7 @@
  * It did not: Make exported the literal regardless of platform, which
  * defeated the resolver underneath it on every non-macOS `make check`. The
  * checks below run the real `make print-%` debug target (see
- * `make/board.mk`) with `KICAD_CLI`/`HTML_TO_PDF` genuinely unset, and assert
+ * `make/board.mk`) with `KICAD_CLI`/`HTML_TO_PDF`/`PDF_MERGE` genuinely unset, and assert
  * the OUTPUT against the resolver - a check that would have failed against
  * the Makefile this replaces, and a check an explicit override still passes
  * untouched.
@@ -29,10 +30,9 @@ import { expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
 import path from "node:path"
 import { defaultFootprintDir, defaultKicadCli, defaultSymbolDir } from "../../lib/kicad/install.ts"
-import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
-import { stockSymbolDir } from "../../lib/schgen/render/library.ts"
 import { defaultHtmlToPdf } from "../../tools/guide/browser-install.ts"
+import { defaultPdfMerge } from "../../tools/guide/pdf-merge-install.ts"
 import { FOOTPRINT_LIBRARY_ROOT } from "./footprint-library.ts"
 
 const REPO_ROOT = path.join(import.meta.dir, "..", "..")
@@ -81,6 +81,15 @@ test("make print-HTML_TO_PDF honours an explicit override, untouched by the reso
   expect(makePrint("HTML_TO_PDF", { HTML_TO_PDF: sentinel })).toBe(sentinel)
 })
 
+test("make print-PDF_MERGE, with PDF_MERGE unset, reaches tools/guide/pdf-merge-install.ts's resolver", () => {
+  expect(makePrint("PDF_MERGE", { PDF_MERGE: undefined })).toBe(defaultPdfMerge())
+})
+
+test("make print-PDF_MERGE honours an explicit override, untouched by the resolver", () => {
+  const sentinel = "/tmp/single-document-packet-pdf-merge-sentinel"
+  expect(makePrint("PDF_MERGE", { PDF_MERGE: sentinel })).toBe(sentinel)
+})
+
 test("defaultKicadCli covers darwin, linux and win32 as distinct, justified candidates", () => {
   expect(defaultKicadCli("darwin")).toBe("/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli")
   expect(defaultKicadCli("linux")).toBe("/usr/bin/kicad-cli")
@@ -123,20 +132,17 @@ test("defaultSymbolDir and defaultFootprintDir derive from the resolved cli path
   )
 })
 
-test(
-  "library.ts's stockSymbolDir() agrees with lib/kicad/install.ts's resolver on this machine",
-  () => {
-    // stockSymbolDir() lives in a ported file (tools/schgen/port-manifest.json;
-    // not in diverged[], so R18 forbids editing it here) and keeps its own
-    // two-candidate chain verbatim - this is the check clause (a) needs in
-    // its place, because the two implementations cannot share code. It does
-    // not skip when KiCad is absent - stockSymbolDir() throws, on the
-    // precedent tests/circuits/kicad-round-trip.ts sets: a skipped check
-    // must never look like a passing one.
-    const expected = process.env["KICAD_SYMBOL_DIR"] ?? defaultSymbolDir(KICAD_CLI)
-    expect(stockSymbolDir()).toBe(expected)
-  },
-)
+/*
+ * **THE SECOND IMPLEMENTATION OF THE SYMBOL-DIRECTORY RESOLVER IS GONE, AND SO IS THE TEST THAT
+ * HELD THE TWO TOGETHER.** A test here asserted that `lib/schgen/render/library.ts`'s
+ * `stockSymbolDir()` - a PORTED file that kept its own two-candidate chain verbatim, which the
+ * port's fidelity rule forbade editing - answered the same directory as `defaultSymbolDir`. It
+ * was the check clause (a) of the one-resolver rule needed in place of shared code, and it is
+ * superseded rather than dropped: the schematic generator's removal deletes the duplicate, so
+ * `defaultSymbolDir` is now the only implementation and there is nothing left to disagree with
+ * it. Its readers are `tests/kicad/symbol-library-disk.ts`'s `SYMBOL_LIBRARY_ROOT` (through
+ * `KICAD_SYMBOLS`) and this file's own derivation arms above.
+ */
 
 test("pin-pattern-sources.ts's LIBRARY_ROOT agrees with footprint-library.ts's FOOTPRINT_LIBRARY_ROOT", () => {
   // tests/kicad/pin-pattern.test.ts depends on these two constants never

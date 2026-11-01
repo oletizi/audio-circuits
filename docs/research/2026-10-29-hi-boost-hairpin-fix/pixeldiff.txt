@@ -1,0 +1,5 @@
+positive control: image vs itself 0 differing pixels; image vs its inverse 3826842
+image 2339x1654 px at 200 dpi
+differing pixels: 6425
+row bands (sheet mm): [(38.86, 61.09)]
+column bands (sheet mm): [(176.91, 212.22)]

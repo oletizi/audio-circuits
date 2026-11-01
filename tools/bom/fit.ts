@@ -74,7 +74,14 @@ function physicalMisfits(line: BomLine, specs: Specs): readonly Misfit[] {
     // Only the body decides whether an axial part fits: its leads are bent to the
     // footprint's pitch on the bench, so no datasheet states a lead spacing to check.
     push(checkEqual("package", physical.body, specs.package))
-  } else if (physical.kind === "radial-electrolytic") {
+  } else if (physical.kind === "radial-electrolytic" || physical.kind === "disc-capacitor") {
+    // The same two checks for both capacitor bodies, because the same two dimensions are
+    // what a datasheet and a footprint both state: the body must fit the footprint's
+    // across-the-leads extent, and the leads must land on its pitch. The disc family's
+    // `W` (body thickness) is NOT checked and cannot be - `Specs` has no field for it,
+    // and a needed spec an entry does not state is a misfit, so inventing the field
+    // would make every existing capacitor entry stop fitting. tools/bom/types.ts's
+    // `disc-capacitor` comment carries the reasoning.
     push(checkAtMost("diameterMm", physical.maxDiameterMm, specs.diameterMm))
     push(checkEqual("leadSpacingMm", physical.leadSpacingMm, specs.leadSpacingMm))
   } else if (physical.kind === "to92") {

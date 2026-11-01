@@ -14,10 +14,15 @@
  * different environment variables; every default but one was macOS-only; and
  * the symbol and footprint roots were written out by hand instead of derived
  * from one resolved install, so they could disagree with the `kicad-cli` a
- * run actually used. `lib/schgen/render/library.ts`'s `stockSymbolDir()` was
- * already the one exception - `KICAD_SYMBOL_DIR`, then a path derived from
- * `KICAD_CLI`, then a static fallback - and this file generalises that
- * pattern rather than leaving it a special case.
+ * run actually used. The schematic generator's ported
+ * `lib/schgen/render/library.ts` carried the one exception, `stockSymbolDir()`
+ * - `KICAD_SYMBOL_DIR`, then a path derived from `KICAD_CLI`, then a static
+ * fallback - and this file generalised that pattern rather than leaving it a
+ * special case. **That second implementation is gone with the generator** (Task
+ * 9 of `docs/superpowers/plans/2026-10-30-remove-schgen.md`), so the functions
+ * below are now the only ones, and the test that held the two to each other is
+ * superseded rather than dropped - `tests/kicad/install.test.ts` says so where
+ * it stood.
  *
  * WHAT THIS FILE DOES NOT DO: refuse. Every function here is a best-effort
  * DEFAULT, computed with nothing heavier than `existsSync`, and safe to call
@@ -26,25 +31,21 @@
  * without KiCad installed, because `lib/stripboard/board.ts` imports the pin
  * patterns for pure placement logic that never opens a `.kicad_mod`. The
  * refusal belongs at the point something is actually opened, and every
- * existing refusal that does that - `stockSymbolDir()`,
- * `tests/kicad/footprint-library.ts`'s `readFootprintPads`,
- * `tests/kicad/symbol-library-disk.ts`'s `installedSymbolNames`,
- * `tests/circuits/kicad-round-trip.ts`'s `kicadRoundTrip` - is unchanged by
- * this file and still names the environment variable to set.
+ * existing refusal that does that - `tests/kicad/footprint-library.ts`'s
+ * `readFootprintPads`, `tests/kicad/symbol-library-disk.ts`'s
+ * `installedSymbolNames`, `tests/circuits/drafted-sheet.ts`'s
+ * `exportDraftedSheet` - is unchanged by this file and still names the
+ * environment variable to set.
  *
- * `lib/schgen/render/library.ts` IS NOT EDITED HERE. It is a ported file
- * (`tools/schgen/port-manifest.json`'s `files`) and is not declared in
- * `diverged[]`, so R18 forbids touching it. Its `stockSymbolDir()` keeps its
- * own two-candidate chain verbatim; what this file changes instead is the
- * `KICAD_CLI` it derives from (`lib/kicad/netlist.ts`), which is now
- * platform-aware rather than a bare macOS literal. On Linux that already
- * makes `stockSymbolDir()` correct, because its own second candidate,
- * `/usr/share/kicad/symbols`, is this file's Linux default too. On Windows it
- * does not, because neither of `stockSymbolDir()`'s two literal candidates
- * matches a Windows install, and that function cannot gain a third candidate
- * without declaring the ported file diverged - out of this task's scope.
- * `docs/known-gaps.md` records this as the one clause-(a) gap this change
- * leaves, with the path to closing it.
+ * **THE WINDOWS GAP IS STILL OPEN AND ITS CAUSE HAS CHANGED.** While the
+ * generator's ported `stockSymbolDir()` existed, this file could not fix its
+ * Windows behaviour: neither of that function's two literal candidates matched
+ * a Windows install, and a third could not be added without declaring the
+ * ported file diverged. That obstacle is gone with the file, and what remains
+ * is the ordinary one - **no Windows machine has exercised `defaultSymbolDir`,
+ * `defaultFootprintDir` or `defaultKicadCli`'s `win32` arm for real.**
+ * `tests/kicad/install.test.ts` exercises all three as pure path arithmetic and
+ * says in its own header that it claims no more than that.
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -80,10 +81,9 @@ function isKicadPlatform(value: string): value is KicadPlatform {
  *    since it began (`lib/kicad/symbols/PROVENANCE.md`: "KiCad 10.0.5").
  *  - **linux**: `/usr/bin` is where a distro-packaged `kicad-cli` binary
  *    lands (Debian/Ubuntu and Fedora's `kicad` packages both install their
- *    binaries under `/usr/bin`) - the same prefix
- *    `lib/schgen/render/library.ts`'s `stockSymbolDir()` already assumes for
- *    its own `/usr/share/kicad/symbols` fallback, which only makes sense if
- *    `kicad-cli` itself is under `/usr` too.
+ *    binaries under `/usr/bin`) - the same prefix `STATIC_SHARED_DATA_DIR`
+ *    below assumes for its own `/usr/share/kicad` fallback, which only makes
+ *    sense if `kicad-cli` itself is under `/usr` too.
  *  - **win32**: the official Windows installer's default, versioned by
  *    major.minor under `Program Files` - pinned to `10.0` because that is
  *    the major.minor this repository vendors against
@@ -99,11 +99,11 @@ const KICAD_CLI_CANDIDATES: Readonly<Record<KicadPlatform, readonly string[]>> =
 /**
  * The static, cli-independent fallback for the installed support directory,
  * for platforms where package managers put it at a fixed location
- * regardless of where `kicad-cli` itself landed. `lib/schgen/render/library.ts`'s
- * `stockSymbolDir()` already tries `/usr/share/kicad/symbols` unconditionally
- * as its own second candidate; this is that same literal, generalised to
- * also cover footprints, and kept as a SINGLE entry because nothing in this
- * repository evidences a second one.
+ * regardless of where `kicad-cli` itself landed. It is the literal the
+ * generator's deleted `stockSymbolDir()` tried unconditionally as its own
+ * second candidate (`/usr/share/kicad/symbols`), generalised to also cover
+ * footprints, and kept as a SINGLE entry because nothing in this repository
+ * evidences a second one.
  */
 const STATIC_SHARED_DATA_DIR = "/usr/share/kicad"
 
@@ -117,9 +117,9 @@ function firstExisting(candidates: readonly string[]): string {
  * A best-effort `kicad-cli` path for `platform` - NEVER CHECKED FOR EXISTENCE
  * BY THE CALLS THAT MATTER, by design: `lib/kicad/netlist.ts`'s `KICAD_CLI`
  * computes this once at import time, and an import must not throw merely
- * because KiCad is not installed. The existing point-of-use refusals
- * (`stockSymbolDir()`, `kicadRoundTrip`, `defaultRunExport`) are what check
- * existence and name the variable to set.
+ * because KiCad is not installed. The point-of-use refusals
+ * (`exportDraftedSheet`, `exportCommittedSheet`, `defaultRunExport`) are what
+ * check existence and name the variable to set.
  *
  * An unknown platform is the one case this throws: silently handing an
  * unrecognised platform the macOS literal is exactly the "general rule that
@@ -157,9 +157,9 @@ function sharedDataDirFromCli(cliPath: string, platform: string): string {
 
 /**
  * A best-effort installed symbol directory, derived from `cliPath` with
- * `STATIC_SHARED_DATA_DIR/symbols` as the same cli-independent second
- * candidate `stockSymbolDir()` already tries. Never checked for existence by
- * import-time callers - see this file's module comment.
+ * `STATIC_SHARED_DATA_DIR/symbols` as the cli-independent second candidate.
+ * Never checked for existence by import-time callers - see this file's module
+ * comment.
  */
 export function defaultSymbolDir(cliPath: string, platform: string = process.platform): string {
   const platformPath = pathFor(platform)

@@ -7,7 +7,7 @@
  * four would otherwise fail SILENTLY.
  *
  * **THE LAST ONE RUNS THE REAL BROWSER AND FAILS RATHER THAN SKIPS**, on the
- * precedent of tests/circuits/kicad-round-trip.ts: `make guide` now needs a
+ * precedent of tests/circuits/committed-schematic.ts: `make guide` now needs a
  * converter the way `make check` needs kicad-cli, so it is part of the
  * toolchain, and it is the only proof that the flags this repository passes
  * still produce a PDF on the machine in front of us. Chrome's headless flags
@@ -23,7 +23,8 @@ import { defaultPrintGuidePdf } from "../../tools/guide/print-pdf.ts"
 
 /**
  * Still duplicates the default `HTML_TO_PDF ?= ...` line in make/board.mk,
- * as tests/circuits/kicad-round-trip.ts duplicates KICAD_CLI's: a constant
+ * as lib/kicad/netlist.ts's `KICAD_CLI` duplicates the `KICAD_CLI ?=` default
+ * in the same makefile: a constant
  * shared between make and TypeScript is not possible, so keep the two in
  * sync by hand - `tests/kicad/install.test.ts` checks they agree. What
  * changed (`docs/known-gaps.md` **G169**) is that the default itself is now
@@ -145,4 +146,13 @@ test("the real converter prints a multi-page PDF from a page with the guide's pr
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
-})
+  // AN EXPLICIT TIMEOUT, FOR THE SAME REASON the schematic generator's deleted
+  // decomposition-probe.test.ts had one.
+  // This is the only test here that launches the real browser, and a cold
+  // Chrome start is not a 5s operation on a loaded machine: the whole file runs in
+  // 2.3s alone and this one test was measured at 5.96s inside a full-suite run,
+  // where bun's 5s default failed it as a TIMEOUT - a red that says nothing about
+  // the flags it exists to check, on the machine where it matters most. 60s is what
+  // the other subprocess-driving tests in this directory use (./merge-pdf.test.ts's three
+  // real-merge-tool tests).
+}, 60_000)

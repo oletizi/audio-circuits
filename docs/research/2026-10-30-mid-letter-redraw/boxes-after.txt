@@ -1,0 +1,32 @@
+6 sheet rectangles, 6 of them group boxes; 676 graphic points from 44 symbols and 84 wires
+
+=== Junction   rect (15.24, 15.24) -> (49.53, 67.31)   34.29 x 52.07 mm
+  graphics       margins  left  10.41  right   6.35  top  11.43  bottom   5.08
+                          left-most '#FLG01' at (25.654, 52.705)   right-most 'J1' at (43.18, 39.37)
+                          top-most 'J1' at (40.64, 26.67)   bottom-most '#PWR06' at (31.75, 62.23)
+
+=== Hi boost   rect (54.61, 15.24) -> (95.25, 41.91)   40.64 x 26.67 mm
+  graphics       margins  left   2.79  right  19.05  top  10.16  bottom   5.33
+                          left-most 'SI1' at (57.404, 34.29)   right-most 'wire' at (76.2, 35.56)
+                          top-most 'wire' at (58.42, 25.4)   bottom-most 'SI2' at (71.12, 36.576)
+
+=== Hi cut   rect (100.33, 15.24) -> (186.69, 43.18)   86.36 x 27.94 mm
+  graphics       margins  left  17.78  right  26.67  top  11.68  bottom   4.32
+                          left-most 'wire' at (118.11, 27.94)   right-most 'wire' at (160.02, 27.94)
+                          top-most 'SI5' at (123.19, 26.924)   bottom-most 'SI3' at (156.972, 38.862)
+
+=== Lo cut   rect (191.77, 15.24) -> (214.63, 41.91)   22.86 x 26.67 mm
+  graphics       margins  left   2.79  right  18.03  top  10.16  bottom   3.81
+                          left-most 'SI7' at (194.564, 34.29)   right-most 'SI7' at (196.596, 29.21)
+                          top-most 'wire' at (195.58, 25.4)   bottom-most 'wire' at (195.58, 38.1)
+
+=== Lo boost   rect (219.71, 15.24) -> (264.16, 46.99)   44.45 x 31.75 mm
+  graphics       margins  left  16.76  right   7.62  top  10.16  bottom   3.81
+                          left-most 'SI8' at (236.474, 34.29)   right-most '#PWR09' at (256.54, 31.75)
+                          top-most 'wire' at (237.49, 25.4)   bottom-most 'wire' at (237.49, 43.18)
+
+=== Mid   rect (15.24, 72.39) -> (264.16, 168.91)   248.92 x 96.52 mm
+  graphics       margins  left  15.24  right   5.33  top   5.08  bottom   5.08
+                          left-most 'wire' at (30.48, 121.92)   right-most 'R3' at (258.826, 128.27)
+                          top-most 'wire' at (125.73, 77.47)   bottom-most 'wire' at (95.25, 163.83)
+

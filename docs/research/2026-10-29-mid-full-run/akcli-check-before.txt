@@ -1,0 +1,19 @@
+# metadata
+  passive-pin ratio: 0.9065420560747663
+  No-ERC suppressed: 1
+  unnamed nets: 1
+  frac coords present: False
+  config-waived: 0 (0 demoted)
+# findings (12)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel1' at (7950,7050) runs over C1 (8200,7050) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel1', 'C1'] @ (7950,7050)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'sel2' at (9100,7150) runs over C2 (9350,7150) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['sel2', 'C2'] @ (9100,7150)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'out' at (2950,2750) runs over #FLG01 (2850,2850) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['out', '#FLG01'] @ (2950,2750)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'tap_0r1h' at (13650,7850) runs over L4 (13650,7550) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['tap_0r1h', 'L4'] @ (13650,7850)
+  WARNING [LAYOUT_LABEL_OVERLAP] labels 'coil_return' at (13750,7250) and 'tap_0r22h' at (13650,7300) overlap — separate them or shorten the text ['coil_return', 'tap_0r22h'] @ (13750,7250)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'boost_return' at (4800,5450) runs over the wire (4900,5450)-(5400,5450) it is not attached to — move or reorient the label ['boost_return'] @ (4800,5450)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'coil_return' at (3750,5550) runs over the wire (3850,5550)-(4300,5550) it is not attached to — move or reorient the label ['coil_return'] @ (3750,5550)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel10' at (4150,8050) runs over the wire (4250,8050)-(12750,8050) it is not attached to — move or reorient the label ['sel10'] @ (4150,8050)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel3' at (4150,7250) runs over the wire (4250,7250)-(10250,7250) it is not attached to — move or reorient the label ['sel3'] @ (4150,7250)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel6' at (4150,7550) runs over the wire (4250,7550)-(9100,7550) it is not attached to — move or reorient the label ['sel6'] @ (4150,7550)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'tap_0r22h' at (13650,7300) runs over the wire (13750,7250)-(13750,7800) it is not attached to — move or reorient the label ['tap_0r22h'] @ (13650,7300)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'tap_0r1h' at (13650,7850) runs over the wire (13650,7700)-(13650,7800) it is not attached to — move or reorient the label ['tap_0r1h'] @ (13650,7850)

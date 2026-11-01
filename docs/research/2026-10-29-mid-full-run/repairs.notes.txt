@@ -1,0 +1,384 @@
+[  0] delete_object              Mid: wire (121.92,138.43)-(124.46,138.43)
+[  1] delete_object              Mid: wire (124.46,138.43)-(137.16,138.43)
+[  2] delete_object              Mid: wire (139.7,138.43)-(137.16,138.43)
+[  3] delete_object              Mid: wire (95.25,140.97)-(97.79,140.97)
+[  4] delete_object              Mid: wire (97.79,140.97)-(109.22,140.97)
+[  5] delete_object              Mid: wire (109.22,144.78)-(109.22,142.24)
+[  6] delete_object              Mid: wire (111.76,140.97)-(109.22,140.97)
+[  7] delete_object              Mid: wire (109.22,140.97)-(109.22,142.24)
+[  8] delete_object              Mid: wire (346.71,181.61)-(346.71,184.15)
+[  9] delete_object              Mid: wire (346.71,184.15)-(349.25,184.15)
+[ 10] delete_object              Mid: wire (346.71,195.58)-(346.71,198.12)
+[ 11] delete_object              Mid: wire (346.71,198.12)-(349.25,198.12)
+[ 12] delete_object              Mid: wire (346.71,209.55)-(346.71,212.09)
+[ 13] delete_object              Mid: wire (346.71,212.09)-(349.25,212.09)
+[ 14] delete_object              Mid: wire (349.25,184.15)-(349.25,198.12)
+[ 15] delete_object              Mid: wire (349.25,198.12)-(349.25,212.09)
+[ 16] delete_object              Mid: wire (121.92,143.51)-(124.46,143.51)
+[ 17] delete_object              Mid: wire (124.46,147.32)-(124.46,144.78)
+[ 18] delete_object              Mid: wire (124.46,143.51)-(124.46,144.78)
+[ 19] delete_object              Mid: wire (124.46,154.94)-(124.46,157.48)
+[ 20] delete_object              Mid: wire (149.86,149.86)-(149.86,152.4)
+[ 21] delete_object              Hi cut: wire (153.67,69.85)-(153.67,72.39)
+[ 22] delete_object              Hi cut: wire (153.67,72.39)-(173.99,72.39)
+[ 23] delete_object              Hi cut: wire (173.99,71.12)-(173.99,73.66)
+[ 24] delete_object              Hi cut: wire (173.99,72.39)-(173.99,73.66)
+[ 25] delete_object              Hi cut: wire (173.99,63.5)-(173.99,60.96)
+[ 26] delete_object              Hi cut: wire (191.77,71.12)-(191.77,73.66)
+[ 27] delete_object              Hi cut: wire (209.55,63.5)-(209.55,60.96)
+[ 28] delete_object              Mid: wire (115.57,119.38)-(115.57,116.84)
+[ 29] delete_object              Hi boost: wire (116.84,69.85)-(116.84,72.39)
+[ 30] delete_object              Hi cut: wire (191.77,63.5)-(191.77,60.96)
+[ 31] delete_object              Hi boost: wire (99.06,69.85)-(99.06,72.39)
+[ 32] delete_object              Hi boost: wire (116.84,62.23)-(116.84,59.69)
+[ 33] delete_object              Mid: wire (147.32,138.43)-(149.86,138.43)
+[ 34] delete_object              Mid: wire (149.86,142.24)-(149.86,139.7)
+[ 35] delete_object              Mid: wire (149.86,138.43)-(149.86,139.7)
+[ 36] delete_object              Hi boost: wire (99.06,62.23)-(99.06,59.69)
+[ 37] delete_object              Hi cut: wire (153.67,62.23)-(153.67,59.69)
+[ 38] delete_object              Hi cut: wire (209.55,71.12)-(209.55,73.66)
+[ 39] delete_object              Mid: wire (115.57,127.0)-(115.57,129.54)
+[ 40] delete_object              Mid: wire (115.57,129.54)-(121.92,129.54)
+[ 41] delete_object              Mid: wire (119.38,123.19)-(121.92,123.19)
+[ 42] delete_object              Mid: wire (121.92,123.19)-(121.92,129.54)
+[ 43] delete_object              Mid: wire (74.93,194.31)-(72.39,194.31)
+[ 44] delete_object              Mid: wire (105.41,179.07)-(107.95,179.07)
+[ 45] delete_object              Mid: wire (107.95,179.07)-(201.93,179.07)
+[ 46] delete_object              Mid: wire (204.47,179.07)-(201.93,179.07)
+[ 47] delete_object              Mid: wire (105.41,204.47)-(107.95,204.47)
+[ 48] delete_object              Mid: wire (107.95,204.47)-(323.85,204.47)
+[ 49] delete_object              Mid: wire (326.39,204.47)-(323.85,204.47)
+[ 50] delete_object              Mid: wire (105.41,207.01)-(107.95,207.01)
+[ 51] delete_object              Mid: wire (107.95,207.01)-(120.65,207.01)
+[ 52] delete_object              Mid: wire (120.65,210.82)-(120.65,208.28)
+[ 53] delete_object              Mid: wire (236.22,207.01)-(233.68,207.01)
+[ 54] delete_object              Mid: wire (233.68,207.01)-(120.65,207.01)
+[ 55] delete_object              Mid: wire (120.65,207.01)-(120.65,208.28)
+[ 56] delete_object              Mid: wire (105.41,181.61)-(107.95,181.61)
+[ 57] delete_object              Mid: wire (107.95,181.61)-(231.14,181.61)
+[ 58] delete_object              Mid: wire (233.68,181.61)-(231.14,181.61)
+[ 59] delete_object              Mid: wire (105.41,184.15)-(107.95,184.15)
+[ 60] delete_object              Mid: wire (107.95,184.15)-(260.35,184.15)
+[ 61] delete_object              Mid: wire (262.89,184.15)-(260.35,184.15)
+[ 62] delete_object              Mid: wire (105.41,186.69)-(107.95,186.69)
+[ 63] delete_object              Mid: wire (107.95,186.69)-(190.5,186.69)
+[ 64] delete_object              Mid: wire (190.5,210.82)-(190.5,208.28)
+[ 65] delete_object              Mid: wire (290.83,186.69)-(288.29,186.69)
+[ 66] delete_object              Mid: wire (288.29,186.69)-(190.5,186.69)
+[ 67] delete_object              Mid: wire (190.5,186.69)-(190.5,208.28)
+[ 68] delete_object              Mid: wire (105.41,189.23)-(107.95,189.23)
+[ 69] delete_object              Mid: wire (107.95,189.23)-(176.53,189.23)
+[ 70] delete_object              Mid: wire (176.53,210.82)-(176.53,208.28)
+[ 71] delete_object              Mid: wire (204.47,189.23)-(201.93,189.23)
+[ 72] delete_object              Mid: wire (201.93,189.23)-(176.53,189.23)
+[ 73] delete_object              Mid: wire (176.53,189.23)-(176.53,208.28)
+[ 74] delete_object              Mid: wire (105.41,191.77)-(107.95,191.77)
+[ 75] delete_object              Mid: wire (107.95,191.77)-(231.14,191.77)
+[ 76] delete_object              Mid: wire (233.68,191.77)-(231.14,191.77)
+[ 77] delete_object              Mid: wire (105.41,196.85)-(107.95,196.85)
+[ 78] delete_object              Mid: wire (107.95,196.85)-(162.56,196.85)
+[ 79] delete_object              Mid: wire (162.56,210.82)-(162.56,208.28)
+[ 80] delete_object              Mid: wire (262.89,196.85)-(260.35,196.85)
+[ 81] delete_object              Mid: wire (260.35,196.85)-(162.56,196.85)
+[ 82] delete_object              Mid: wire (162.56,196.85)-(162.56,208.28)
+[ 83] delete_object              Mid: wire (105.41,199.39)-(107.95,199.39)
+[ 84] delete_object              Mid: wire (107.95,199.39)-(148.59,199.39)
+[ 85] delete_object              Mid: wire (148.59,210.82)-(148.59,208.28)
+[ 86] delete_object              Mid: wire (204.47,199.39)-(201.93,199.39)
+[ 87] delete_object              Mid: wire (201.93,199.39)-(148.59,199.39)
+[ 88] delete_object              Mid: wire (148.59,199.39)-(148.59,208.28)
+[ 89] delete_object              Mid: wire (105.41,201.93)-(107.95,201.93)
+[ 90] delete_object              Mid: wire (107.95,201.93)-(134.62,201.93)
+[ 91] delete_object              Mid: wire (134.62,210.82)-(134.62,208.28)
+[ 92] delete_object              Mid: wire (294.64,201.93)-(292.1,201.93)
+[ 93] delete_object              Mid: wire (292.1,201.93)-(134.62,201.93)
+[ 94] delete_object              Mid: wire (134.62,201.93)-(134.62,208.28)
+[ 95] delete_object              Mid: wire (243.84,207.01)-(246.38,207.01)
+[ 96] delete_object              Mid: wire (120.65,218.44)-(120.65,220.98)
+[ 97] delete_object              Mid: wire (346.71,201.93)-(346.71,199.39)
+[ 98] delete_object              Mid: wire (302.26,201.93)-(304.8,201.93)
+[ 99] delete_object              Mid: wire (304.8,201.93)-(336.55,201.93)
+[100] delete_object              Mid: wire (334.01,204.47)-(336.55,204.47)
+[101] delete_object              Mid: wire (336.55,201.93)-(336.55,204.47)
+[102] delete_object              Mid: wire (134.62,218.44)-(134.62,220.98)
+[103] delete_object              Mid: wire (346.71,187.96)-(346.71,185.42)
+[104] delete_object              Mid: wire (148.59,218.44)-(148.59,220.98)
+[105] delete_object              Mid: wire (148.59,220.98)-(162.56,220.98)
+[106] delete_object              Mid: wire (162.56,218.44)-(162.56,220.98)
+[107] delete_object              Mid: wire (270.51,196.85)-(273.05,196.85)
+[108] delete_object              Mid: wire (212.09,199.39)-(214.63,199.39)
+[109] delete_object              Mid: wire (346.71,173.99)-(346.71,171.45)
+[110] delete_object              Mid: wire (212.09,189.23)-(214.63,189.23)
+[111] delete_object              Mid: wire (214.63,189.23)-(243.84,189.23)
+[112] delete_object              Mid: wire (241.3,191.77)-(243.84,191.77)
+[113] delete_object              Mid: wire (243.84,189.23)-(243.84,191.77)
+[114] delete_object              Mid: wire (176.53,218.44)-(176.53,220.98)
+[115] delete_object              Mid: wire (109.22,152.4)-(109.22,154.94)
+[116] delete_object              Mid: wire (190.5,218.44)-(190.5,220.98)
+[117] delete_object              Mid: wire (190.5,220.98)-(303.53,220.98)
+[118] delete_object              Mid: wire (212.09,179.07)-(214.63,179.07)
+[119] delete_object              Mid: wire (214.63,179.07)-(303.53,179.07)
+[120] delete_object              Mid: wire (241.3,181.61)-(243.84,181.61)
+[121] delete_object              Mid: wire (243.84,181.61)-(303.53,181.61)
+[122] delete_object              Mid: wire (270.51,184.15)-(273.05,184.15)
+[123] delete_object              Mid: wire (273.05,184.15)-(303.53,184.15)
+[124] delete_object              Mid: wire (298.45,186.69)-(300.99,186.69)
+[125] delete_object              Mid: wire (300.99,186.69)-(303.53,186.69)
+[126] delete_object              Mid: wire (303.53,179.07)-(303.53,181.61)
+[127] delete_object              Mid: wire (303.53,181.61)-(303.53,184.15)
+[128] delete_object              Mid: wire (303.53,184.15)-(303.53,186.69)
+[129] delete_object              Mid: wire (303.53,186.69)-(303.53,220.98)
+[130] delete_object              Mid: wire (87.63,140.97)-(85.09,140.97)
+[131] delete_object              Mid: junction (109.22,140.97)
+[132] delete_object              Mid: junction (120.65,207.01)
+[133] delete_object              Mid: junction (134.62,201.93)
+[134] delete_object              Mid: junction (148.59,199.39)
+[135] delete_object              Mid: junction (162.56,196.85)
+[136] delete_object              Mid: junction (176.53,189.23)
+[137] delete_object              Mid: junction (190.5,186.69)
+[138] delete_object              Mid: junction (303.53,181.61)
+[139] delete_object              Mid: junction (303.53,184.15)
+[140] delete_object              Mid: junction (303.53,186.69)
+[141] delete_object              Mid: junction (349.25,198.12)
+[142] delete_object              Mid: label boost_return at (121.92,138.43)
+[143] delete_object              Mid: label coil_return at (95.25,140.97)
+[144] delete_object              Mid: label coil_return at (349.25,184.15)
+[145] delete_object              Mid: label cut_return at (124.46,143.51)
+[146] delete_object              Hi cut: label hcut_t1 at (153.67,69.85)
+[147] delete_object              Hi cut: label hcut_t2 at (173.99,60.96)
+[148] delete_object              Hi cut: label hcut_t2 at (191.77,73.66)
+[149] delete_object              Hi cut: label hcut_t2 at (209.55,60.96)
+[150] delete_object              Mid: label hi_boost_out at (115.57,116.84)
+[151] delete_object              Hi boost: label hi_boost_out at (116.84,72.39)
+[152] delete_object              Hi cut: label hi_boost_out at (191.77,60.96)
+[153] delete_object              Hi boost: label hi_tap at (99.06,72.39)
+[154] delete_object              Hi boost: label hi_tap at (116.84,59.69)
+[155] delete_object              Hi boost: label in at (99.06,59.69)
+[156] delete_object              Mid: label in at (149.86,138.43)
+[157] delete_object              Hi cut: label lo_boost_in at (153.67,59.69)
+[158] delete_object              Hi cut: label lo_boost_in at (209.55,73.66)
+[159] delete_object              Mid: label sel_common at (72.39,194.31)
+[160] delete_object              Mid: label sel_common at (121.92,123.19)
+[161] delete_object              Mid: label sel1 at (201.93,179.07)
+[162] delete_object              Mid: label sel10 at (105.41,204.47)
+[163] delete_object              Mid: label sel11 at (120.65,207.01)
+[164] delete_object              Mid: label sel2 at (231.14,181.61)
+[165] delete_object              Mid: label sel3 at (105.41,184.15)
+[166] delete_object              Mid: label sel4 at (190.5,186.69)
+[167] delete_object              Mid: label sel5 at (176.53,189.23)
+[168] delete_object              Mid: label sel6 at (105.41,191.77)
+[169] delete_object              Mid: label sel7 at (162.56,196.85)
+[170] delete_object              Mid: label sel8 at (148.59,199.39)
+[171] delete_object              Mid: label sel9 at (134.62,201.93)
+[172] delete_object              Mid: label tap_0r1h at (120.65,220.98)
+[173] delete_object              Mid: label tap_0r1h at (246.38,207.01)
+[174] delete_object              Mid: label tap_0r1h at (346.71,199.39)
+[175] delete_object              Mid: label tap_0r22h at (134.62,220.98)
+[176] delete_object              Mid: label tap_0r22h at (304.8,201.93)
+[177] delete_object              Mid: label tap_0r22h at (346.71,185.42)
+[178] delete_object              Mid: label tap_0r45h at (148.59,219.71)
+[179] delete_object              Mid: label tap_0r45h at (214.63,199.39)
+[180] delete_object              Mid: label tap_0r45h at (273.05,196.85)
+[181] delete_object              Mid: label tap_0r45h at (346.71,171.45)
+[182] delete_object              Mid: label tap_1h at (109.22,154.94)
+[183] delete_object              Mid: label tap_1h at (176.53,220.98)
+[184] delete_object              Mid: label tap_1h at (243.84,189.23)
+[185] delete_object              Mid: label tap_2h at (85.09,140.97)
+[186] delete_object              Mid: label tap_2h at (303.53,179.07)
+[187] delete_object              Mid: no_connect at (105.41,209.55)
+[188] delete_component           one of J2's five stacked ground symbols
+[189] delete_component           one of J2's five stacked ground symbols
+[190] delete_component           one of J2's five stacked ground symbols
+[191] delete_component           one of J2's five stacked ground symbols
+[192] delete_component           one of J2's five stacked ground symbols
+[193] set_component_transform    L1 rotation 180
+[194] move_component             L1 to (158.75, 124.46) mm
+[195] set_component_transform    L2 rotation 180
+[196] move_component             L2 to (219.71, 124.46) mm
+[197] set_component_transform    L3 rotation 180
+[198] move_component             L3 to (265.43, 124.46) mm
+[199] set_component_transform    L4 rotation 180
+[200] move_component             L4 to (326.39, 124.46) mm
+[201] set_component_transform    L5 rotation 180
+[202] move_component             L5 to (356.87, 124.46) mm
+[203] set_component_transform    C1 rotation 0
+[204] move_component             C1 to (120.65, 143.51) mm
+[205] set_component_transform    C2 rotation 0
+[206] move_component             C2 to (135.89, 146.05) mm
+[207] set_component_transform    C3 rotation 0
+[208] move_component             C3 to (151.13, 148.59) mm
+[209] set_component_transform    C4 rotation 0
+[210] move_component             C4 to (166.37, 151.13) mm
+[211] set_component_transform    C5 rotation 0
+[212] move_component             C5 to (181.61, 151.13) mm
+[213] set_component_transform    C6 rotation 0
+[214] move_component             C6 to (196.85, 153.67) mm
+[215] set_component_transform    C7 rotation 0
+[216] move_component             C7 to (212.09, 153.67) mm
+[217] set_component_transform    C8 rotation 0
+[218] move_component             C8 to (227.33, 156.21) mm
+[219] set_component_transform    C9 rotation 0
+[220] move_component             C9 to (242.57, 161.29) mm
+[221] set_component_transform    C10 rotation 0
+[222] move_component             C10 to (257.81, 161.29) mm
+[223] set_component_transform    C11 rotation 0
+[224] move_component             C11 to (273.05, 163.83) mm
+[225] set_component_transform    C12 rotation 0
+[226] move_component             C12 to (288.29, 163.83) mm
+[227] set_component_transform    C13 rotation 0
+[228] move_component             C13 to (303.53, 166.37) mm
+[229] set_component_transform    C14 rotation 0
+[230] move_component             C14 to (318.77, 166.37) mm
+[231] set_component_transform    C15 rotation 0
+[232] move_component             C15 to (334.01, 168.91) mm
+[233] set_component_transform    C16 rotation 0
+[234] move_component             C16 to (349.25, 171.45) mm
+[235] set_component_transform    C17 rotation 0
+[236] move_component             C17 to (364.49, 171.45) mm
+[237] set_component_transform    SW1 rotation 0
+[238] move_component             SW1 to (85.09, 162.56) mm
+[239] set_component_transform    RV1 rotation 90
+[240] move_component             RV1 to (50.8, 162.56) mm
+[241] set_component_transform    SW2 rotation 0
+[242] move_component             SW2 to (364.49, 118.11) mm
+[243] set_component_transform    R1 rotation 270
+[244] move_component             R1 to (388.62, 115.57) mm
+[245] set_component_transform    R2 rotation 0
+[246] move_component             R2 to (377.19, 127.0) mm
+[247] set_component_transform    R3 rotation 0
+[248] move_component             R3 to (392.43, 127.0) mm
+[249] set_component_transform    SI2 rotation 90
+[250] move_component             SI2 to (109.22, 69.85) mm
+[251] set_component_transform    SI5 rotation 90
+[252] move_component             SI5 to (166.37, 62.23) mm
+[253] set_component_transform    SI6 rotation 90
+[254] move_component             SI6 to (196.85, 62.23) mm
+[255] set_component_transform    SI4 rotation 90
+[256] move_component             SI4 to (180.34, 71.12) mm
+[257] set_component_transform    SI3 rotation 270
+[258] move_component             SI3 to (196.85, 71.12) mm
+[259] move_component             #FLG01 to (67.31, 88.9) mm
+[260] move_component             #PWR07 to (384.81, 130.81) mm
+[261] add_wire                   [coil_return] coil_return rail, 200.66 mm, six pins drawn once
+[262] add_wire                   [coil_return] L1.2 riser to the rail
+[263] add_wire                   [tap_2h] L1.1 drop to the tap_2h bus
+[264] add_wire                   [tap_2h] tap_2h bus, 60.96 mm
+[265] add_wire                   [coil_return] L2.2 riser to the rail
+[266] add_wire                   [tap_1h] L2.1 drop to the tap_1h bus
+[267] add_wire                   [tap_1h] tap_1h bus, 30.48 mm
+[268] add_wire                   [coil_return] L3.2 riser to the rail
+[269] add_wire                   [tap_0r45h] L3.1 drop to the tap_0r45h bus
+[270] add_wire                   [tap_0r45h] tap_0r45h bus, 45.72 mm
+[271] add_wire                   [coil_return] L4.2 riser to the rail
+[272] add_wire                   [tap_0r22h] L4.1 drop to the tap_0r22h bus
+[273] add_wire                   [tap_0r22h] tap_0r22h bus, 30.48 mm
+[274] add_wire                   [coil_return] L5.2 riser to the rail
+[275] add_wire                   [tap_0r1h] L5.1 drop to the tap_0r1h bus
+[276] add_wire                   [tap_0r1h] tap_0r1h bus, 15.24 mm
+[277] add_wire                   [tap_2h] C1.1 riser to tap_2h, 5.08 mm
+[278] add_wire                   [tap_2h] C2.1 riser to tap_2h, 7.62 mm
+[279] add_wire                   [tap_2h] C3.1 riser to tap_2h, 10.16 mm
+[280] add_wire                   [tap_2h] C4.1 riser to tap_2h, 12.70 mm
+[281] add_wire                   [tap_2h] C5.1 riser to tap_2h, 12.70 mm
+[282] add_wire                   [tap_1h] C6.1 riser to tap_1h, 15.24 mm
+[283] add_wire                   [tap_1h] C7.1 riser to tap_1h, 15.24 mm
+[284] add_wire                   [tap_1h] C8.1 riser to tap_1h, 17.78 mm
+[285] add_wire                   [tap_0r45h] C9.1 riser to tap_0r45h, 22.86 mm
+[286] add_wire                   [tap_0r45h] C10.1 riser to tap_0r45h, 22.86 mm
+[287] add_wire                   [tap_0r45h] C11.1 riser to tap_0r45h, 25.40 mm
+[288] add_wire                   [tap_0r45h] C12.1 riser to tap_0r45h, 25.40 mm
+[289] add_wire                   [tap_0r22h] C13.1 riser to tap_0r22h, 27.94 mm
+[290] add_wire                   [tap_0r22h] C14.1 riser to tap_0r22h, 27.94 mm
+[291] add_wire                   [tap_0r22h] C15.1 riser to tap_0r22h, 30.48 mm
+[292] add_wire                   [tap_0r1h] C16.1 riser to tap_0r1h, 33.02 mm
+[293] add_wire                   [tap_0r1h] C17.1 riser to tap_0r1h, 33.02 mm
+[294] add_wire                   [sel1] sel1 run, 20.32 mm
+[295] add_wire                   [sel2] sel2 run, 35.56 mm
+[296] add_wire                   [sel3] sel3 run, 50.80 mm
+[297] add_wire                   [sel4] sel4 run, 81.28 mm
+[298] add_wire                   [sel5] sel5 run, 111.76 mm
+[299] add_wire                   [sel6] sel6 run, 127.00 mm
+[300] add_wire                   [sel7] sel7 run, 157.48 mm
+[301] add_wire                   [sel8] sel8 run, 187.96 mm
+[302] add_wire                   [sel9] sel9 run, 218.44 mm
+[303] add_wire                   [sel10] sel10 run, 233.68 mm
+[304] add_wire                   [sel11] sel11 run, 264.16 mm
+[305] add_wire                   [hi_boost_out] the input label to RV1.1 (ccw), 5.08 mm
+[306] add_wire                   [sel_common] RV1.3 (cw) east to the selector pole, 15.24 mm
+[307] add_wire                   [sel_common] RV1.2 (wiper) up 2.54 mm
+[308] add_wire                   [sel_common] the rheostat tie, east 6.35 mm over the body
+[309] add_wire                   [sel_common] the rheostat tie, down onto the pole wire
+[310] add_wire                   [boost_return] SW2.1 (boost) east to R1.2, 15.24 mm
+[311] add_wire                   [cut_return] SW2.3 (cut) east 7.62 mm
+[312] add_wire                   [cut_return] down 2.54 mm to R2.1
+[313] add_wire                   [in] the `in` node down to R3.1, 7.62 mm
+[314] add_wire                   [GND] R2.2 to R3.2: one ground symbol for the two return legs, 15.24 mm
+[315] add_wire                   [GND] J2 ground trunk, 10.16 mm
+[316] add_wire                   [GND] #FLG01 stub off the trunk, 5.08 mm
+[317] add_wire                   [hi_tap] SI1.2 to SI2.1: the collapsed duplicate `hi_tap` pair, 6.35 mm
+[318] add_wire                   [hi_boost_out] SI2.2 to the label, 3.81 mm
+[319] add_wire                   [in] the `in` label down to SI1.1, 2.54 mm
+[320] add_wire                   [hi_boost_out] the input label to SI5.1, 3.81 mm
+[321] add_wire                   [hcut_t2] SI5.2 to SI6.1 across the top: the collapsed `hcut_t2` triple, 22.86 mm
+[322] add_wire                   [hcut_t2] down to SI4.1, 8.89 mm - the third `hcut_t2` pin
+[323] add_wire                   [hcut_t1] SI4.2 to SI3.2, 8.89 mm
+[324] add_wire                   [lo_boost_in] SI6.2 down to SI3.1: the collapsed duplicate `lo_boost_in` pair, 8.89 mm
+[325] add_junction               rail through L2.2
+[326] add_junction               rail through L3.2
+[327] add_junction               rail through L4.2
+[328] add_junction               rail through L5.2
+[329] add_junction               tap_2h bus through C2
+[330] add_junction               tap_2h bus through C3
+[331] add_junction               tap_2h bus through L1
+[332] add_junction               tap_2h bus through C4
+[333] add_junction               tap_1h bus through C7
+[334] add_junction               tap_1h bus through L2
+[335] add_junction               tap_0r45h bus through C10
+[336] add_junction               tap_0r45h bus through L3
+[337] add_junction               tap_0r45h bus through C11
+[338] add_junction               tap_0r22h bus through C14
+[339] add_junction               tap_0r22h bus through L4
+[340] add_junction               tap_0r1h bus through L5
+[341] add_junction               sel4 run through C4.2
+[342] add_junction               sel5 run through C6.2
+[343] add_junction               sel7 run through C9.2
+[344] add_junction               sel8 run through C11.2
+[345] add_junction               sel9 run through C13.2
+[346] add_junction               sel11 run through C16.2
+[347] add_junction               the shared ground symbol on the return legs' link
+[348] add_junction               the rheostat tie onto the pole wire
+[349] add_junction               J2 trunk / pin 2 stub
+[350] add_junction               J2 trunk / pin 3 stub / #FLG01 stub
+[351] add_junction               J2 trunk / pin 4 stub
+[352] add_junction               J2 trunk foot / pin 5 stub / #PWR06
+[353] add_junction               Hi cut: the hcut_t2 drop off the top wire
+[354] add_net_label              global label hi_boost_out: the section's input, west of RV1.1, pointing into the wire
+[355] add_net_label              local label sel_common: the rheostat's output node, on the tie's horizontal
+[356] add_net_label              local label coil_return: the rail's west end
+[357] add_net_label              global label in: the boost leg's return to the input node, pointing right
+[358] add_net_label              local label boost_return: SW2.1 to R1
+[359] add_net_label              local label cut_return: SW2.3 to R2
+[360] add_net_label              global label in: SI1.1
+[361] add_net_label              local label hi_tap: the one label this net keeps, on the collapsed wire
+[362] add_net_label              global label hi_boost_out: SI2.2, pointing right
+[363] add_net_label              global label hi_boost_out: SI5.1, pointing into the wire
+[364] add_net_label              local label hcut_t2: the one label this net keeps, east of the drop
+[365] add_net_label              local label hcut_t1: SI4.2 to SI3.2
+[366] add_net_label              global label lo_boost_in: SI3.1, pointing right
+[367] add_net_label              local label tap_2h: the tap_2h bus, on L1's drop
+[368] add_net_label              local label tap_1h: the tap_1h bus, on L2's drop
+[369] add_net_label              local label tap_0r45h: the tap_0r45h bus, on L3's drop
+[370] add_net_label              local label tap_0r22h: the tap_0r22h bus, on L4's drop
+[371] add_net_label              local label tap_0r1h: the tap_0r1h bus, on L5's drop
+[372] add_net_label              local label sel1: contact 1
+[373] add_net_label              local label sel2: contact 2
+[374] add_net_label              local label sel3: contact 3
+[375] add_net_label              local label sel4: contact 4
+[376] add_net_label              local label sel5: contact 5
+[377] add_net_label              local label sel6: contact 6
+[378] add_net_label              local label sel7: contact 7
+[379] add_net_label              local label sel8: contact 8
+[380] add_net_label              local label sel9: contact 9
+[381] add_net_label              local label sel10: contact 10
+[382] add_net_label              local label sel11: contact 11
+[383] add_no_connect             the unused twelfth detent of a 1x12 rotary wired for eleven positions; ComponentOverride.ncPins declares it

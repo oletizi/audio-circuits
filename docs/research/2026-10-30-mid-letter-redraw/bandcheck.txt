@@ -1,0 +1,5 @@
+band: everything anchored above y = 68.00 on the after sheet (102.29 on the before sheet)
+  before: 73 objects, shifted by (-40.64, -34.29)
+  after:  73 objects
+  RIGID TRANSLATION: every object matches, including every visible symbol field's position and angle
+  CONTROL: moving J1 1.27 mm east in the after fingerprint makes 1 object(s) stop matching: COMPARISON DISCRIMINATES

@@ -126,15 +126,25 @@ function symbolPartName(symbol: string): string {
  * **WHETHER A PART'S VALUE FIELD IS NOTHING BUT ITS SYMBOL'S OWN PART NAME** - the other half of
  * `valueFor`'s last step, asked by the drawing side.
  *
- * **WHY IT EXISTS.** `lib/schgen/render/field-placement.ts` refuses a block when a unit's
- * Reference AND Value cannot both be printed somewhere adjacent to it, and the `Value` of a part
- * with no electrical parameter is whatever `valueFor` fell through to - for
+ * **WHY IT EXISTS, AND IT HAS NO PRODUCTION CALLER SINCE THE SCHEMATIC GENERATOR WAS DELETED**
+ * (Task 9 of `docs/superpowers/plans/2026-10-30-remove-schgen.md`). Its one reader was
+ * `lib/schgen/render/field-placement.ts`; today the only caller is
+ * `tests/kicad/value-notation.test.ts`. It is kept rather than deleted because the distinction it
+ * draws is a property of `valueFor` and of KiCad, not of any placer - the next thing that has to
+ * decide whether a `Value` field is worth printing needs exactly this question answered - but
+ * **that is a judgement to revisit and not a dependency: nothing breaks if it goes.** The
+ * paragraphs below are its original reasoning, in the tense it was written in.
+ *
+ * `lib/schgen/render/field-placement.ts` refused a block when a unit's
+ * Reference AND Value could not both be printed somewhere adjacent to it, and the `Value` of a
+ * part with no electrical parameter is whatever `valueFor` fell through to - for
  * `Jumper:Jumper_2_Open` that is the thirteen-character string `Jumper_2_Open`, a text box about
  * seven times wider than the jumper's own body (`docs/known-gaps.md` **G232**). That text repeats
  * the symbol: the glyph already draws a two-pin open jumper, so demanding adjacent room for a
  * second copy of its name is what blocks the drawing, and the value is therefore emitted and
  * marked hidden rather than placed. The owner's question that dissolved three rounds of routing
- * around it is quoted in `tests/schgen/render/hidden-value-fields.test.ts`.
+ * around it - *"has it occurred to you that extremely long labels are pathological?"* - was
+ * quoted in the generator's own `hidden-value-fields.test.ts`, deleted with it.
  *
  * **IT IS DERIVED FROM THE SAME DISTINCTION `valueFor` MAKES AND NOT A SECOND ONE.** That
  * function's steps are: an electrical formatter per kind, then `part.mpn`, then the part name of
@@ -147,11 +157,20 @@ function symbolPartName(symbol: string): string {
  * true - `mpn: "PT2399"` drawn with `Audio:PT2399` is that case and it is live in this repository.
  * Hiding it loses nothing a reader needs, because the field is a verbatim repeat of the symbol
  * name either way; what it costs is that the two cases cannot be told apart here. Carrying the
- * branch instead would mean a new field on `PartSpec` and `IrPart`, and therefore an edit at every
- * site that builds one - **49 of them across 29 files** (`grep -rn "refPrefix:" lib tools tests
- * circuits | grep -v "readonly refPrefix"`). `docs/known-gaps.md` **G257** records the choice, the
- * cost and what would settle it, and `tests/kicad/value-notation.test.ts` asserts the deviation
- * rather than leaving it as prose.
+ * branch instead would mean a new field on `PartSpec`, and therefore an edit at every site that
+ * builds one - `grep -rn "part: {" lib tools tests circuits` counts them.
+ *
+ * **THE FIGURE THAT STOOD HERE IS DELETED RATHER THAN CORRECTED, AND ITS OWN DISPROOF WAS PRINTED
+ * BESIDE IT.** It read *"49 of them across 29 files"* and handed the reader
+ * `grep -rn "refPrefix:" lib tools tests circuits | grep -v "readonly refPrefix"` to check it
+ * with. That grep returns **this comment and nothing else**: `refPrefix` was a field of `IrPart`,
+ * which went with `lib/schgen/ir/`, so the command measured a vocabulary this repository no longer
+ * has while the number beside it described a tree that no longer exists. `CLAUDE.md`: a
+ * measurement goes in a tool or a test that re-runs it, never in prose - so the command above
+ * stands without an answer written next to it.
+ *
+ * `docs/known-gaps.md` **G257** records the choice, the cost and what would settle it, and
+ * `tests/kicad/value-notation.test.ts` asserts the deviation rather than leaving it as prose.
  *
  * `symbol` is the RESOLVED lib id the part is drawn with - the same thing `from-network.ts`'s
  * `valueOf` hands `valueFor`, so the two see one symbol and cannot disagree.

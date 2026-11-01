@@ -14,7 +14,7 @@
  *
  * IT IS NOT A `.test.ts` FILE: it is a helper several test files import,
  * following `tests/stripboard/score-fixtures.ts` and
- * `tests/circuits/kicad-round-trip.ts`.
+ * `tests/circuits/drafted-sheet.ts`.
  *
  * THE FOUR REAL DUMPS ARE CAPTURED LIVE RATHER THAN READ FROM
  * `tests/fixtures/stripboard/`, and the reason is a fact about those fixtures:

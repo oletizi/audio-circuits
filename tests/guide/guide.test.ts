@@ -3,6 +3,8 @@ import { net } from "../../lib/model/types.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
 import { buildGuideHtml, type GuideInput, type GuideSchematic } from "../../tools/guide/guide.ts"
+import { SCHEMATIC_PAGE } from "../../tools/guide/merge-pdf.ts"
+import { GUIDE_PAPER } from "../../tools/guide/paper.ts"
 import { nodeMembers } from "../../tools/guide/node-members.ts"
 import { offBoardLabels } from "../../tools/guide/off-board.ts"
 import type { PowerUpChecks } from "../../tools/guide/power-up.ts"
@@ -36,6 +38,12 @@ function guideHtml(
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
     wiringPath,
+    // THE SCHEMATIC PAGE'S OWN SIZE, required whenever the packet carries one
+    // and refused when it does not (`buildGuideHtml`'s own guard), so this
+    // tracks `schematic`. The guide's own paper is what the project is aiming
+    // at - one document, one sheet size, no paper notice; the A4 case these
+    // boards are in today is tests/guide/packet.test.ts's subject.
+    schematicPaper: schematic.kind === "printed" ? GUIDE_PAPER : undefined,
     // THE FIXTURE BOARD DECLARES NO SCAFFOLD, so the packet prints the
     // one-sentence stand-in section. What that section does on a board that
     // HAS groups is tests/guide/stand-in-section.test.ts's subject.
@@ -208,7 +216,14 @@ test("a packet that does print a schematic carries no no-schematic notice", () =
   const html = guideHtml()
   expect(html).not.toContain("No schematic in this packet")
   expect(html).not.toContain('class="notice"')
-  expect(html).toContain("<dt>Schematic</dt><dd>circuits/test.kicad_sch</dd>")
+  // THE PAGE IN THIS DOCUMENT, THEN THE SOURCE SHEET. This row named the
+  // `.kicad_sch` alone until 2026-10-30, which is a file a builder at a bench
+  // cannot open, while the printable page sat unnamed in a second PDF beside
+  // it (docs/research/2026-10-29-guides-with-approved-schematics.md §6.1).
+  expect(html).toContain(
+    `<dt>Schematic</dt><dd>page ${String(SCHEMATIC_PAGE)} of this document, printed from ` +
+      "circuits/test.kicad_sch</dd>",
+  )
 })
 
 test("a board with a wiring.md names it on page one, saying this packet does not replace it", () => {

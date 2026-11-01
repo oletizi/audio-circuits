@@ -28,10 +28,29 @@ wire crossings, bends or wire length"* (**G71**) - and revision 4 adds that
 absent a dominance rule they are descriptive. **Every figure below that came out
 unfavourably is recorded as a finding and nothing was changed to improve one.**
 
-**WHERE THE FIGURES COME FROM, AND HOW TO RE-RUN THEM.** Every number is
-produced by committed code and asserted by a committed test, which is
-**G209**'s lesson applied (*"round 1's figures were computed in a scratch script
-and were the only number in these entries nobody else could reproduce"*):
+**WHERE THE FIGURES CAME FROM. EVERY COMMAND BELOW IS DELETED AND NONE OF THEM
+CAN BE RUN.** The eight commands were five tools under `tools/schgen/` and three
+tests under `tests/schgen/`, all removed with the schematic generator in
+`6085dc5` (`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+`docs/research/2026-10-30-schgen-removed.md`). **The figures are kept as a dated
+record and the block is kept as provenance** - it says which code produced which
+number, which is recoverable from git at `6085dc5^` - but it is not an
+instruction, and this heading is here so that it stops reading as one.
+
+**AND NOTHING IN THIS REPOSITORY GUARDS A DOC-TO-TEST POINTER ANY MORE**, which
+is why this block is annotated rather than repaired. The guard that held prose
+citations to the tests they named was `tests/schgen/pointers.test.ts`, a
+whitelist of 17 rows which also pinned its own population; every row cited a
+test file inside the deleted tree, so the guard went with its subject. A
+citation repaired here would be held to nothing, and the next one to go stale
+would do it silently. `docs/schematic/false-greens.md` family 10 is the entry
+that recorded this hole while the guard still existed.
+
+**What the paragraph said before**, and it is the claim the deletion withdrew:
+every number is produced by committed code and asserted by a committed test,
+which is **G209**'s lesson applied (*"round 1's figures were computed in a
+scratch script and were the only number in these entries nobody else could
+reproduce"*). The lesson stands; the code that honoured it here does not.
 
 ```
 bun tools/schgen/remeasure.ts            the per-block table, and BLOCK_SIZE
@@ -61,9 +80,12 @@ template registry only, so a working ELK backend cannot move a number in it.
 DRAW. **That is the ELK axis.** In the census's vocabulary `realised` means *a
 template drew the block*, so a sentence like *"five blocks moved from `elk` to
 `realised`"* would be false in its own words. The template axis is 0 of 12 as
-declared, and
-[`template-parity-anchors.md`](template-parity-anchors.md)'s 2 of 12 is what a
-template COULD draw under an anchor nobody declared (**G160**).
+declared, and `template-parity-anchors.md`'s 2 of 12 is what a template COULD
+draw under an anchor nobody declared (**G160**). **That document is deleted**,
+with `template-parity.md`, by the generator-removal plan: both were generated
+files naming a verb that no longer exists, so nothing could regenerate or
+content-compare them. The link to it is removed rather than left hanging — its
+figure is quoted here and it is in git at `6085dc5^`.
 
 | axis | before | now |
 | --- | --- | --- |

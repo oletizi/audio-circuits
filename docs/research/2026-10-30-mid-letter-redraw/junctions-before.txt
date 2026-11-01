@@ -1,0 +1,7 @@
+wires 82   symbol pins 102   junctions 29
+  (every '(wire' and '(pin' token in the source is accounted for, or this script would have refused)
+  junctions at a pin on a single wire (legitimate tees): 7
+ORPHAN JUNCTIONS: 0
+WIRE-TO-WIRE TEES: 21   without a dot: 0 []
+COLLINEAR OVERLAPPING PAIRS: 0   (a tee-without-a-dot at one of these is the known artefact, not a connectivity defect)
+PINS ON A WIRE INTERIOR: 7   without a dot: 0 []

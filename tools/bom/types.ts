@@ -9,6 +9,19 @@ import type { ComponentKind } from "../../lib/model/types.ts"
 export type Physical =
   | { readonly kind: "axial-resistor"; readonly body: "0207"; readonly leadSpacingMm: number }
   | { readonly kind: "radial-electrolytic"; readonly maxDiameterMm: number; readonly leadSpacingMm: number }
+  /**
+   * A two-lead, NON-POLARISED capacitor body at a fixed pitch - KiCad's `C_Disc`
+   * footprint family. It names the FOOTPRINT's body style and not the part's: the part
+   * fitted may be a literal ceramic disc or a radial dipped block, and
+   * `parts/ceramic-100nf-50v-x7r-radial-2.5mm.json` records that no genuine 0.1 uF disc
+   * is sold at 2.5 mm lead spacing at all. So only the two dimensions a datasheet and
+   * this footprint both state bind: the body's extent across the lead axis
+   * (`maxDiameterMm`, the footprint's `D`) and the pitch (`leadSpacingMm`, its `P`).
+   * The footprint's `W` - the body's thickness - has NO `Specs` field to compare with
+   * (tools/bom/catalog.ts), so it is deliberately absent here rather than carried as a
+   * number nothing checks.
+   */
+  | { readonly kind: "disc-capacitor"; readonly maxDiameterMm: number; readonly leadSpacingMm: number }
   | { readonly kind: "to92"; readonly pinOrder: readonly string[] }
   | { readonly kind: "trimmer"; readonly package: "RM-065" }
   | { readonly kind: "pin-header"; readonly pins: number; readonly pitchMm: number }

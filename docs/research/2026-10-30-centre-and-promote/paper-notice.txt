@@ -1,0 +1,17 @@
+=== the five guides, grepped for the notice ===
+pultec-hi-boost: 0 occurrence(s) in guide.html
+pultec-hi-cut: 0 occurrence(s) in guide.html
+pultec-low-boost: 0 occurrence(s) in guide.html
+pultec-low-cut: 0 occurrence(s) in guide.html
+pultec-mid: 0 occurrence(s) in guide.html
+
+=== POSITIVE CONTROL ===
+guide paper            612 x 792 pt
+search string          "is not on this document's paper"
+
+schematic page on A3     -> 6 lines emitted
+  lines matching the search string: 1
+    <h2>Page 2 is not on this document's paper</h2>
+schematic page on Letter -> 0 lines emitted
+
+CONTROL PASSED: the notice fires for a non-Letter schematic page and the five-guide search string matches what it writes; it emits nothing for a Letter one. So zero occurrences across the five guides is the notice correctly absent.

@@ -1,0 +1,10 @@
+# metadata
+  passive-pin ratio: 0.9509803921568627
+  No-ERC suppressed: 1
+  unnamed nets: 1
+  frac coords present: False
+  config-waived: 0 (0 demoted)
+# findings (3)
+  WARNING [LAYOUT_LABEL_OVER_SYMBOL] label 'hi_tap' at (3900,2750) runs over SI2 (4300,2750) — reorient it away from the symbol (the writer auto-orients labels anchored on pins) or move it to a wire stub ['hi_tap', 'SI2'] @ (3900,2750)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'sel_common' at (2000,6150) runs over the wire (2250,6150)-(2250,6400) it is not attached to — move or reorient the label ['sel_common'] @ (2000,6150)
+  NOTE [LAYOUT_LABEL_OVER_WIRE] label 'cut_return' at (14550,4750) runs over the wire (14850,4750)-(14850,4850) it is not attached to — move or reorient the label ['cut_return'] @ (14550,4750)

@@ -4,14 +4,23 @@
  *
  * **HOW BIG THIS EVIDENCE ACTUALLY IS, SIZED BEFORE IT IS LEANED ON.** The plan
  * billed it as eleven boards whose cut sets an independent C++ implementation
- * derived years ago. **Measured, TWO of the committed boards import completely** -
- * `transistor-preamp-feedback` (5 cuts, hand-laid and hand-built by the owner)
- * and `transistor-preamp-loop` (49 cuts). The rest refuse for reasons that belong
+ * derived years ago. **Measured, THREE of the committed boards import completely** -
+ * `transistor-preamp-feedback` (5 cuts, hand-laid and hand-built by the owner),
+ * `transistor-preamp-loop` (49 cuts) and, since 2026-10-30,
+ * `transistor-preamp-staged` (10 cuts). The rest refuse for reasons that belong
  * to the importer and to part records rather than to cut derivation, and each
  * one's key is asserted below so that a board which starts importing fails this
- * file rather than quietly staying out of the comparison. **54 cuts across two
+ * file rather than quietly staying out of the comparison. **64 cuts across three
  * real boards is what this test runs on, and calling it an eleven-board
  * comparison would be false.**
+ *
+ * **THE THIRD BOARD IS HERE BECAUSE THIS FILE DEMANDED IT, which is the mechanism
+ * working rather than a widening somebody chose.** `transistor-preamp-staged`
+ * refused to import for want of a lead span and a pin pattern for
+ * `Capacitor_THT:CP_Radial_D10.0mm_P5.00mm`; recording those (Panasonic M-A
+ * ECA-1VM471) made it import, and the "starts importing" assertion below went red
+ * until it was either compared or excluded for a stated reason. It is compared:
+ * all three of its per-board agreements hold, unchanged and unexplained-away.
  *
  * **WHAT AGREES, AND IT IS THE SUBSTANCE.** On both boards the two derivations
  * find the same NUMBER of cuts, on the same STRIPS, separating the same pairs of
@@ -31,8 +40,8 @@
  * hole IMMEDIATELY BEFORE it on the strip", walking holes whose nodeIds
  * `AutoFillVero` PAINTED. So the fork's gap is a function of its paint, which on
  * a hand-laid board is a function of what a person painted. Measured both ways:
- * our convention puts 38 of the 54 cuts in the fork's own gap, and a
- * hug-the-earlier-run convention would put 52 there. **The convention was chosen
+ * our convention puts 40 of the 64 cuts in the fork's own gap, and a
+ * hug-the-earlier-run convention would put 58 there. **The convention was chosen
  * on the clearance argument and not tuned towards either figure**, the difference
  * is reported rather than smoothed over, and `gapFor` is one line if the plan
  * would rather have the other rule.
@@ -41,7 +50,8 @@
  * comes from the node id the fork prints on the wire's ends, so on a wire-carrying
  * board this comparison is not fully independent of VeroRoute's own net identity.
  * There is no second source: the reference netlist names a wire nothing.
- * `transistor-preamp-feedback` carries 4 wires and is affected.
+ * `transistor-preamp-feedback` carries 4 wires and `transistor-preamp-staged` 7,
+ * so both are affected.
  * **`transistor-preamp-loop` carries none**, and its bridges' nets come from the
  * pins in their own holes (`tools/stripboard/vero-import-nets.ts`'s `bridgesOf`)
  * rather than from a node id - so its 49 cuts are derived from the `PIN` lines and
@@ -78,12 +88,11 @@ import {
  * shrink silently as the importer changes, and a shrinking differential test that
  * still passes is the failure mode this whole workflow exists to prevent.
  */
-const COMPARED: readonly string[] = ["transistor-preamp-feedback", "transistor-preamp-loop"]
+const COMPARED: readonly string[] = ["transistor-preamp-feedback", "transistor-preamp-loop", "transistor-preamp-staged"]
 
 const REFUSED: ReadonlyMap<string, string> = new Map([
   // Footprints with no recorded pin pattern - part records, not cut derivation.
   ["pt2399-core", "vero-import-no-geometry"],
-  ["transistor-preamp-staged", "vero-import-no-geometry"],
   // A Phoenix terminal block in no pattern or span table at all.
   ["pultec-low-boost-frozen", "vero-import-no-geometry"],
   // The synthetic refs an --import run invents, which no committed map covers.
@@ -187,9 +196,9 @@ test("every committed board either imports and is compared, or refuses by a name
   }
 })
 
-test("the comparison runs on two boards and 54 of the fork's cuts, not eleven boards", () => {
+test("the comparison runs on three boards and 64 of the fork's cuts, not eleven boards", () => {
   expect(compared.map((board) => board.name)).toEqual([...COMPARED])
-  expect(compared.reduce((total, board) => total + forkCuts(board).length, 0)).toBe(54)
+  expect(compared.reduce((total, board) => total + forkCuts(board).length, 0)).toBe(64)
 })
 
 for (const board of COMMITTED_BOARDS) {
@@ -262,8 +271,8 @@ for (const board of COMMITTED_BOARDS) {
 test("how many positions agree exactly, which is a property of the convention", () => {
   // ASSERTED AS A FIGURE SO THAT CHANGING `gapFor` SAYS SO. It is not a
   // correctness claim: the tests above are, and they hold whichever gap the
-  // convention picks inside a span. The two numbers are 1 of 5 on `feedback` and
-  // 37 of 49 on `loop`.
+  // convention picks inside a span. The three numbers are 1 of 5 on `feedback`,
+  // 37 of 49 on `loop` and 2 of 10 on `staged`.
   const agreed = new Map<string, string>()
   for (const board of compared) {
     const ours = canonical(derivedCuts(candidateOf(board), referenceOf(board)))
@@ -274,15 +283,25 @@ test("how many positions agree exactly, which is a property of the convention", 
   expect([...agreed]).toEqual([
     ["transistor-preamp-feedback", "1 of 5"],
     ["transistor-preamp-loop", "37 of 49"],
+    ["transistor-preamp-staged", "2 of 10"],
   ])
 })
 
-test("the fork's own gap rule, applied to our runs, would agree on 52 of the 54", () => {
+test("the fork's own gap rule, applied to our runs, would agree on 58 of the 64", () => {
   // The measurement behind this module's comment, kept as a test so the claim is
   // checked rather than remembered: hugging the earlier run's last hole - which
   // is what `AutoFillVero`'s paint amounts to on these boards - reproduces the
-  // fork's positions on 52 of the 54 cuts. The two it does not are on
+  // fork's positions on 58 of the 64 cuts. Two of the six it does not are on
   // `feedback`, whose paint was a person's.
+  //
+  // **THE OTHER FOUR ARE ON `staged` AND ARE UNDIAGNOSED**, stated rather than
+  // explained away: this figure went from 52 of 54 to 58 of 64 when that board
+  // joined the comparison, so six of its ten cuts hug and four do not, while only
+  // two of its ten sit where OUR convention puts them. Nothing here establishes
+  // whose paint that board carries. WHAT WOULD SETTLE IT: read whether its
+  // committed `.vrt` was painted by `AutoFillVero` or by hand, which is the same
+  // question `feedback`'s two answered. It bears on this caveat and on nothing
+  // above it - every correctness comparison on that board holds.
   let agreed = 0
   let total = 0
   for (const board of compared) {
@@ -302,8 +321,8 @@ test("the fork's own gap rule, applied to our runs, would agree on 52 of the 54"
     total += fork.length
     agreed += fork.filter((key) => theirs.includes(key)).length
   }
-  expect(total).toBe(54)
-  expect(agreed).toBe(52)
+  expect(total).toBe(64)
+  expect(agreed).toBe(58)
 })
 
 test("transistor-preamp-loop carries no wire, so its 49 cuts are an independent comparison", () => {

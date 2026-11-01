@@ -1,0 +1,5 @@
+wires 149   symbol pins 106   junctions 11
+  junctions at a pin on a single wire (legitimate tees): 0
+ORPHAN JUNCTIONS: 0
+WIRE-TO-WIRE TEES: 1   without a dot: 1 [(173.99, 72.39)]
+PINS ON A WIRE INTERIOR: 0   without a dot: 0 []

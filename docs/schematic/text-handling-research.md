@@ -1,6 +1,32 @@
 Text handling in a generated schematic: the research record
 ===========================================================
 
+> **THE GENERATOR THIS DOCUMENT IS ABOUT IS DELETED, AND THE FOUR PROBES THAT
+> DROVE IT ARE DELETED WITH IT. THE FOUR LOGS AND THE PASTE CHECKER SURVIVE.**
+> `lib/schgen/`, `tools/schgen/` and `tests/schgen/` went in `6085dc5`
+> (`../superpowers/plans/2026-10-30-remove-schgen.md`;
+> [`../research/2026-10-30-schgen-removed.md`](../research/2026-10-30-schgen-removed.md)),
+> so **every `lib/schgen/`, `tools/schgen/` or `tests/schgen/` path below is a
+> path into deleted code** and no `re-drives every figure` sentence in this
+> document can be acted on. The probes are in git at `6085dc5^`.
+>
+> **WHAT THIS DOES NOT WEAKEN, AND IT IS THE POINT.** The four probe runs are
+> committed beside this document under
+> [`text-handling-research-logs/`](text-handling-research-logs/), each named for
+> its probe and each **`[RELAYED]`** verified byte-identical to the original by
+> sha256 against git, by the task that moved them; the checker is
+> `tools/text-metrics/verify-pastes.ts` and
+> `tests/text-metrics/document-pastes.test.ts` drives its **`[RAN]` 44 cases,
+> 0 failures, on every `bun test`**. That check never established that a log was a current run - what
+> it couples is **this document to the log it was pasted from** - so losing the
+> probes costs the ability to take a measurement again and costs the coupling
+> nothing. Each section's `[RAN]` marks stand: they were driven, on the commit
+> each section names.
+>
+> **The log paths each section gives are the paths the log was committed at.**
+> They are left as written, because the sentence around them is a dated record
+> of where a figure came from; the current location is the directory above.
+
 **This document is the deliverable of
 [`../superpowers/plans/2026-10-22-text-handling-research.md`](../superpowers/plans/2026-10-22-text-handling-research.md),
 one section per task.** It is research. **It designs nothing, recommends
@@ -98,21 +124,38 @@ document can get to pinning the tree it was measured on - against
 KiCad tag `10.0.5`, SHA-256
 `dd686d654166869bad4866b107c81e538736c057721ddbf70036a50d8e844de9`. **The probe
 refuses a font blob with any other hash**, so a figure here cannot have come
-from an unknown font. Re-drive it with:
+from an unknown font.
+
+**THE PROBE IS DELETED AND THIS RUN CANNOT BE RE-DRIVEN FROM THIS TREE.**
+`tools/schgen/text-metrics/probe.ts` and the three other probes went with the
+schematic generator in `6085dc5`
+(`docs/superpowers/plans/2026-10-30-remove-schgen.md`;
+`docs/research/2026-10-30-schgen-removed.md`); they are in git at `6085dc5^`.
+This paragraph ended *"Re-drive it with:"* followed by a `curl` of the font
+blob, the probe, and the paste checker. **The first two of those three commands
+no longer exist.**
+
+**THE CHECKER SURVIVED AND SO DID THE LOG, WHICH IS THE HALF THAT MATTERS
+HERE.** The four probe runs are committed beside this document under
+`docs/schematic/text-handling-research-logs/`, named for the probe each came
+from, and the checker is `tools/text-metrics/verify-pastes.ts` - moved there
+out of `tools/schgen/text-metrics/`, where its path had implied a dependency it
+never had (one import, `node:fs`). It is driven on every `bun test` by
+`tests/text-metrics/document-pastes.test.ts`:
 
 ```sh
-curl -sSL -o /tmp/newstroke_font.cpp \
-  https://gitlab.com/kicad/code/kicad/-/raw/10.0.5/common/newstroke_font.cpp
-bun run tools/schgen/text-metrics/probe.ts --font /tmp/newstroke_font.cpp > run.log
-bun run tools/schgen/text-metrics/verify-pastes.ts run.log
+bun test tests/text-metrics/
+bun run tools/text-metrics/verify-pastes.ts \
+  docs/schematic/text-handling-research-logs/text-metrics-probe-run.log
 ```
 
-**The second command checks this document against that run**, and
-`tests/schgen/text-metrics/document-pastes.test.ts` runs it on every `bun test`.
-**Every fenced block tagged ` ```run <section> ` must be a contiguous, unique
-slice of that named section of the log**; every block tagged otherwise must
-share no line with it, and is listed by name as not checked. **§1.11 states what
-that does and does not establish, and why it is on its third version.**
+**That couples this document to the log it was pasted from, and it never
+established that the log was a current run** - so losing the probe does not
+weaken it. **Every fenced block tagged ` ```run <section> ` must be a
+contiguous, unique slice of that named section of the log**; every block tagged
+otherwise must share no line with it, and is listed by name as not checked.
+**§1.11 states what that does and does not establish, and why it is on its
+third version.**
 
 ### 1.0 The three quantities, and why this section elects between none of them
 
@@ -775,6 +818,10 @@ for arms a-i is identical across all three**. `git show
 cb35fe0:tools/schgen/elk-labels/probe-run.log` and the same for `b6876c7` are the
 earlier logs and the comparison is a `diff`. Unlike §1's probe this one needs no
 external download and no installed application:
+
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/elk-labels-probe-run.log`](text-handling-research-logs/elk-labels-probe-run.log).
 
 ```sh
 bun run tools/schgen/elk-labels/probe.ts
@@ -3480,6 +3527,10 @@ section pastes to it on every `bun test` (§5.12). Unlike §1's probe it needs n
 download, no Python and no font blob - only the `kicad-cli` that `make check`
 already requires on every run:
 
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/label-freedom-probe-run.log`](text-handling-research-logs/label-freedom-probe-run.log).
+
 ```sh
 bun run tools/schgen/label-freedom/probe.ts
 ```
@@ -4338,6 +4389,10 @@ criterion, and `CLAUDE.md` forbids the producing agent from authoring one.
 `tests/schgen/text-metrics/document-pastes.test.ts` holds every block this
 section pastes to it on every `bun test` (§6.12) by a fourth call to the same
 checker. Unlike §1's probe it needs nothing external at all:
+
+**THE COMMAND BELOW IS DELETED - see the notice at the head of this document.**
+The log it wrote is
+[`text-handling-research-logs/field-order-probe-run.log`](text-handling-research-logs/field-order-probe-run.log).
 
 ```sh
 bun run tools/schgen/field-order/probe.ts

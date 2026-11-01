@@ -5,6 +5,13 @@ node_modules/
 dist/
 build/
 
+# Two build/ subdirectories were named here with their own explanations - the
+# board schematic census and the deliberately defective fixture, both written by
+# tools under tools/schgen/. The schematic generator is deleted (Task 9 of
+# docs/superpowers/plans/2026-10-30-remove-schgen.md) and nothing writes either
+# directory any more, so the entries are gone with the tools; build/ above still
+# covers anything left on a working tree from before.
+
 # Environment variables
 .env
 .env.local
@@ -58,8 +65,28 @@ _autosave-*
 *.bak
 fp-info-cache
 
+# Python bytecode. The measurement scripts under draughting/measure/ (and the
+# remaining per-run copies under docs/research/) import a shared reader,
+# kicad_sheet.py, so running one writes a __pycache__ beside it. One such
+# .pyc was committed on 2026-10-30 before this line existed.
+__pycache__/
+*.pyc
+
 # The forked VeroRoute binary, cloned and built from veroroute.pin's pinned
 # commit (tools/perfboard/acquire.ts). It is a GPLv3 Qt5 C++ application with
 # its own build - not vendored, not a submodule - so it is acquired locally
 # rather than committed here.
 .tools/
+
+# The pinned schematic-drawing toolchain draughting/install.sh fetches
+# (Task 3 of docs/superpowers/plans/2026-10-30-institutionalise-draughting.md):
+# a copperhead git checkout and an akcli-kicad venv. draughting/tools.lock.json
+# pins the versions and install.sh fetches them on demand - deliberately not
+# vendored - so these two directories are a local build product of that
+# script, not repository content. No trailing slash on either pattern,
+# deliberately: a trailing-slash ("directory only") pattern only matches
+# once the directory exists on disk, so `git check-ignore` reports NOT
+# ignored before install.sh has ever run - exactly the window this entry
+# exists to close.
+draughting/copperhead
+draughting/venv-akcli

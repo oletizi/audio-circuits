@@ -8,10 +8,20 @@
  * `stand-in-section.ts`), which is the configuration decision the checklist's
  * Fit column then refers to; the build checklist in the operator's order
  * (see `checklist.ts`), every row with a printed checkbox; then the power-up
- * checks, with a blank for each reading. Print CSS targets US Letter, draws
- * nothing on a background and breaks the page between the images and the
- * checklist, so it reads the same from a black-and-white laser printer as on
- * screen.
+ * checks, with a blank for each reading. Print CSS targets US Letter
+ * (`./paper.ts`'s `GUIDE_PAPER`, which is also what the printed notices say
+ * this document's paper is), draws nothing on a background and breaks the
+ * page between the images and the checklist, so it reads the same from a
+ * black-and-white laser printer as on screen.
+ *
+ * **THESE PAGES ARE NOT THE WHOLE DOCUMENT ANY MORE.** The schematic is a
+ * page of the same PDF, inserted after this page's page one by
+ * `./merge-pdf.ts` - the owner, 2026-10-30: *"merge them. I want a single
+ * printable document"*. Nothing in this file renders it; what this file does
+ * is name where it went (the header's `Schematic` row, through
+ * `SCHEMATIC_PAGE`) and, when that page is not on this document's paper, say
+ * so on page one. So the page numbers below are the numbers of the PRINTED
+ * GUIDE, one less than the merged document's from the schematic page on.
  *
  * **A PACKET WITHOUT A SCHEMATIC SAYS SO ON THE PAPER.** `GuideSchematic` is
  * a union rather than an optional path precisely so the absence is a shape
@@ -22,12 +32,36 @@
  * what would put a schematic page here. The failure being prevented is a
  * reader holding four pages and concluding the fifth fell out of the
  * stapler - a skipped step that looks like a passing one.
+ *
+ * **`GuideSchematic` HAD TWO MORE OUTCOMES, `"generated"` AND `"withheld"`,
+ * UNTIL `docs/superpowers/plans/2026-10-30-remove-schgen.md`.** Both belonged
+ * to a board with no declared `"sch"` being offered to `schgen` for
+ * generation; all eleven boards under `boards/` now declare a schematic, so
+ * that offer is deleted rather than kept live-but-unreachable. A board either
+ * declares a schematic - `kind: "printed"`, printed exactly as before - or it
+ * does not - `kind: "none"`, the notice above. See
+ * `tools/guide/schematic-source.ts` and `tools/guide/schematic-notice.ts` for
+ * what each used to carry.
+ *
+ * `GuideSchematic` itself, the header row and the no-schematic notice live in
+ * `./schematic-notice.ts` - split out to keep this file under the project's
+ * 300-500 line ceiling, the same way `resolveSchematic` lives in
+ * `./schematic-source.ts` rather than in `./packet.ts`.
  */
 import type { ScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import type { ChecklistSection } from "./checklist.ts"
 import type { PowerUpChecks } from "./power-up.ts"
+import { GUIDE_PAPER, type PageSize } from "./paper.ts"
+import {
+  header,
+  noSchematicNotice,
+  schematicPaperNotice,
+  type GuideSchematic,
+} from "./schematic-notice.ts"
 import { standInSection, type StandInGroupBlock, type StandInSection } from "./stand-in-section.ts"
 import { escapeXml } from "./svg.ts"
+
+export type { GuideSchematic } from "./schematic-notice.ts"
 
 export interface GuideImages {
   readonly designators: string
@@ -48,26 +82,6 @@ export interface GuideImages {
    */
   readonly clusters: string | undefined
 }
-
-/**
- * The packet's schematic: the repository-relative path of the one it printed,
- * or the two paths the notice needs when there is none to print.
- *
- * Both members of `"none"` are REQUIRED and neither is defaulted. The notice
- * has to send a reader somewhere - to the file that would declare a schematic,
- * and to the model the printed pages were actually checked against - and a
- * notice that merely announced an absence would be the silence this union
- * exists to break.
- */
-export type GuideSchematic =
-  | { readonly kind: "printed"; readonly path: string }
-  | {
-      readonly kind: "none"
-      /** Repository-relative perfboard.json: the only place a board names its schematic. */
-      readonly declarationPath: string
-      /** Repository-relative circuit module: what the layout and checklist were checked against. */
-      readonly circuitPath: string
-    }
 
 export interface GuideInput {
   readonly boardName: string
@@ -96,10 +110,29 @@ export interface GuideInput {
    * this file decides where that content sits on the page.
    */
   readonly scaffold: ScaffoldDoc | undefined
+  /**
+   * The size of the schematic page that gets merged into this document, read
+   * off the exported PDF itself (`./merge-pdf.ts`'s `defaultPdfPageSizes`) -
+   * `undefined` when this packet carries no schematic page at all.
+   *
+   * **REQUIRED WHENEVER `schematic.kind` IS `"printed"`, AND REFUSED
+   * OTHERWISE**, by `buildGuideHtml` below. It is a measurement, not a
+   * declaration: the page is on whatever paper `kicad-cli` exported it on, and
+   * the only way the printed document can say so is for somebody to have
+   * measured it. A packet that carried a schematic page and did not know its
+   * size would be a document that silently needs a printer the reader may not
+   * own - see `schematicPaperNotice` in `./schematic-notice.ts`.
+   */
+  readonly schematicPaper: PageSize | undefined
 }
 
+// THE PAPER IS NAMED ONCE, in `./paper.ts`'s `GUIDE_PAPER`, and reaches both
+// this stylesheet and the printed notice from there. The notice says what
+// paper this document is on; the stylesheet is what makes that true. Two
+// literals would be two places for one fact to be wrong, and the fact is one
+// a reader acts on by loading a tray.
 const STYLE = `
-@page { size: letter; margin: 0.5in; }
+@page { size: ${GUIDE_PAPER.cssSize}; margin: 0.5in; }
 * { box-sizing: border-box; }
 body { font: 11pt/1.35 "Helvetica Neue", Arial, sans-serif; color: #000; background: #fff; margin: 0 auto; max-width: 7.5in; padding: 0.25in 0; }
 h1 { font-size: 18pt; margin: 0 0 4pt; }
@@ -142,72 +175,6 @@ p.parts { margin: 0 0 5pt; }
 `
 
 const CHECKBOX = '<td class="tick"><span class="box" aria-label="to do"></span></td>'
-
-/** The one-line Schematic entry in the header: the path, or a pointer to the notice. */
-function schematicRow(schematic: GuideSchematic): string {
-  const text =
-    schematic.kind === "printed"
-      ? schematic.path
-      : 'none - see "No schematic in this packet" below'
-  return `<dt>Schematic</dt><dd>${escapeXml(text)}</dd>`
-}
-
-/**
- * The one-line Wiring guide entry: only present when the board has a
- * `wiring.md` on disk. It names the file and says plainly that this packet
- * does not replace it, because the checklist and images here cover the
- * board itself - not the off-board terminals, stand-in groups and builds
- * `wiring.md` describes.
- */
-function wiringRow(wiringPath: string): string {
-  return (
-    `<dt>Wiring guide</dt><dd>${escapeXml(wiringPath)} - this packet does not replace it, ` +
-    "read it alongside this one</dd>"
-  )
-}
-
-function header(input: GuideInput): string {
-  return [
-    `<h1>${escapeXml(input.boardName)} - build guide</h1>`,
-    '<dl class="meta">',
-    `<dt>Generated</dt><dd>${escapeXml(input.generated)}</dd>`,
-    `<dt>Layout</dt><dd>${escapeXml(input.layoutPath)}</dd>`,
-    schematicRow(input.schematic),
-    ...(input.wiringPath === undefined ? [] : [wiringRow(input.wiringPath)]),
-    "</dl>",
-  ].join("\n")
-}
-
-/**
- * The printed statement that stands where the schematic page would be.
- *
- * It is a page-one block, between the header and the first image, so it
- * cannot be mistaken for a page that fell out of the stapler: a reader sees
- * it before any layout. No lines at all when a schematic WAS printed - the
- * notice must never appear on a complete packet, where it would be a false
- * alarm.
- */
-function noSchematicNotice(boardName: string, schematic: GuideSchematic): readonly string[] {
-  if (schematic.kind === "printed") return []
-  const code = (text: string): string => `<code>${escapeXml(text)}</code>`
-  return [
-    '<section class="notice">',
-    "<h2>No schematic in this packet</h2>",
-    `<p><strong>This packet prints no schematic, and no schematic page has gone missing from it: ` +
-      `there is no schematic for ${escapeXml(boardName)} to print.</strong></p>`,
-    `<p>A board names its schematic in its own ${code("perfboard.json")}, and ` +
-      `${code(schematic.declarationPath)} names none - so no file in this repository claims to be ` +
-      `this board's schematic. What these pages were built from and checked against instead is the ` +
-      `circuit model in ${code(schematic.circuitPath)}: every part, value, lead and connection in ` +
-      `the checklist comes from that model, and this packet refuses to build at all if the layout ` +
-      `and the model disagree about any part.</p>`,
-    `<p>What would put a schematic page here: declare this board's schematic in ` +
-      `${code(schematic.declarationPath)} as an ${code('"sch"')} / ${code('"netlist"')} pair, then ` +
-      `run ${code("make guide")} again. The packet prints the schematic on every board that ` +
-      `declares one.</p>`,
-    "</section>",
-  ]
-}
 
 function image(title: string, svg: string, pageBreak: boolean): string {
   const cls = pageBreak ? "layout page" : "layout"
@@ -369,7 +336,38 @@ function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
   ].join("\n")
 }
 
+/**
+ * The one thing this file refuses rather than printing: a packet that says it
+ * carries a schematic page without knowing what size that page is, or one
+ * that knows a size for a page it does not carry.
+ *
+ * Both are defects in the caller, not missing declarations, and both would
+ * print as a quieter claim than the truth - the first as a document that says
+ * nothing about needing other paper, the second as a `Page 2 is not on this
+ * document's paper` notice about a page that is not there.
+ */
+function assertSchematicPaper(input: GuideInput): void {
+  const carriesPage = input.schematic.kind === "printed"
+  if (carriesPage && input.schematicPaper === undefined) {
+    throw new Error(
+      `the build guide for ${input.boardName} carries a schematic page (kind ` +
+        `"${input.schematic.kind}") but was given no schematicPaper. The page's size is MEASURED ` +
+        "from the exported PDF - tools/guide/merge-pdf.ts's defaultPdfPageSizes - and the printed " +
+        "page needs it to say whether this document can be printed on one paper. This is a defect " +
+        "in the caller (tools/guide/packet.ts), not a missing declaration.",
+    )
+  }
+  if (!carriesPage && input.schematicPaper !== undefined) {
+    throw new Error(
+      `the build guide for ${input.boardName} was given a schematicPaper but its schematic is ` +
+        `"${input.schematic.kind}", so this packet carries no schematic page for that size to ` +
+        "belong to. This is a defect in the caller, not a missing declaration.",
+    )
+  }
+}
+
 export function buildGuideHtml(input: GuideInput): string {
+  assertSchematicPaper(input)
   return [
     "<!DOCTYPE html>",
     '<html lang="en">',
@@ -381,6 +379,12 @@ export function buildGuideHtml(input: GuideInput): string {
     "<body>",
     header(input),
     ...noSchematicNotice(input.boardName, input.schematic),
+    // ON PAGE ONE WITH THE NOTICE ABOVE, and for the same reason: it is
+    // about the document a reader is holding, so it has to be seen before
+    // they send it to a printer. The two are mutually exclusive by
+    // construction - the first fires only when there is no schematic page
+    // and this one only when there is.
+    ...schematicPaperNotice(input.schematic, input.schematicPaper),
     image("Component side - designators", input.images.designators, false),
     image("Component side - values", input.images.values, true),
     image("Copper side (mirrored) - cuts and solder bridges", input.images.copper, true),
