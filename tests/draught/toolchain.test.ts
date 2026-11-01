@@ -1,7 +1,7 @@
 // tests/draught/toolchain.test.ts
 import { expect, test } from "bun:test"
 import path from "node:path"
-import { checkToolchain, probeTool, readLock } from "../../tools/draught/toolchain.ts"
+import { checkToolchain, howToFix, probeTool, readLock } from "../../tools/draught/toolchain.ts"
 import { defaultAkcli } from "../../tools/draught/akcli-install.ts"
 import { defaultCopperheadDir } from "../../tools/draught/copperhead-install.ts"
 
@@ -53,12 +53,12 @@ test("kicad-cli's probe resolves through the installed-location default, not bar
  * live resolver's own return value rather than a literal path.
  */
 
-test("Important 1: copperhead's fix command clones into the directory the probe actually resolves, not a written-out literal", () => {
+test("Important 1: copperhead's fix command targets the directory the probe actually resolves, not a written-out literal", () => {
   const lock = { ...readLock(), copperhead: { ...readLock().copperhead, version: "0.0.1" } }
   const problem = checkToolchain(lock).find((p) => p.tool === "copperhead")
   expect(problem).toBeDefined()
   const dir = defaultCopperheadDir()
-  expect(problem?.how).toContain(`git clone ${lock.copperhead.upstream} ${dir}`)
+  expect(problem?.how).toContain(dir)
   expect(problem?.how).toContain(`git -C ${dir} checkout`)
   expect(problem?.how).toContain(`cd ${dir} && npm install`)
 })
@@ -74,4 +74,57 @@ test("Important 2: akcli's fix command installs with the pip that lives beside t
   expect(problem?.how).toContain(akcliDir)
   expect(problem?.how).not.toBe(`pip install 'akcli-kicad==0.0.1'`)
   expect(problem?.how).toContain("akcli-kicad==0.0.1")
+})
+
+/**
+ * R6 (rulings.md): BOOTSTRAP VERSUS UPGRADE ARE TWO DIFFERENT COMMANDS, AND
+ * `howToFix` PRINTED THE SAME ONE FOR BOTH STATES UNTIL NOW.
+ *
+ * `git clone` refuses outright onto a directory that already exists; `pip
+ * install` into a venv's `bin/pip` fails `No such file or directory` when
+ * that venv was never created. The old, unconditional `how` strings were
+ * each correct for exactly one of the two states a disagreement can be in -
+ * copperhead's for "absent", akcli's for "present but wrong version" - and
+ * wrong, in a way that would fail outright if run, for the other.
+ *
+ * These four tests drive `howToFix` directly with a synthetic `found`
+ * rather than through a real probe, so each state is exercised
+ * deterministically regardless of whether copperhead or akcli happen to be
+ * installed on the machine the suite runs on - Important 1 and 2 above
+ * already cover the "the probe really ran against what's on disk" half of
+ * this; these cover the two command shapes `howToFix` must choose between.
+ */
+
+test("R6 bootstrap: copperhead's fix clones fresh when the probe found nothing at all", () => {
+  const spec = readLock().copperhead
+  const how = howToFix("copperhead", spec, null)
+  const dir = defaultCopperheadDir()
+  expect(how).toContain(`git clone ${spec.upstream} ${dir}`)
+  expect(how).toContain(`git -C ${dir} checkout ${spec.commit}`)
+  expect(how).toContain(`cd ${dir} && npm install`)
+})
+
+test("R6 upgrade: copperhead's fix fetches and checks out in place, never clones, once a checkout answers the probe at all", () => {
+  const spec = readLock().copperhead
+  const how = howToFix("copperhead", spec, "0.0.1-some-other-commit")
+  const dir = defaultCopperheadDir()
+  expect(how).not.toContain("git clone")
+  expect(how).toContain(`git -C ${dir} fetch`)
+  expect(how).toContain(`git -C ${dir} checkout ${spec.commit}`)
+  expect(how).toContain(`cd ${dir} && npm install`)
+})
+
+test("R6 bootstrap: akcli's fix creates the venv before installing into it when the probe found nothing at all", () => {
+  const spec = readLock().akcli
+  const how = howToFix("akcli", spec, null)
+  const venvDir = path.dirname(path.dirname(defaultAkcli()))
+  expect(how).toContain(`python3 -m venv ${venvDir}`)
+  expect(how).toContain(`install 'akcli-kicad==${spec.version}'`)
+})
+
+test("R6 upgrade: akcli's fix installs directly, with no venv creation, once the binary answers the probe at all", () => {
+  const spec = readLock().akcli
+  const how = howToFix("akcli", spec, "0.0.1")
+  expect(how).not.toContain("python3 -m venv")
+  expect(how).toContain(`install 'akcli-kicad==${spec.version}'`)
 })

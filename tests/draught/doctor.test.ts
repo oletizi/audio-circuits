@@ -102,12 +102,20 @@ test("fix round 2 regression (pure): a doctor-failing-but-version-matching akcli
  * `runDraughtDoctor()` end to end, and removes exactly what it created
  * afterward.
  *
- * SAFETY: refuses outright, rather than silently skipping or overwriting,
- * if a real binary already exists at that path - this test must never touch
- * a genuine install. `firstMissingAncestor` finds the single topmost
- * directory this test needs to create, so cleanup removes exactly that
- * subtree and nothing that was already under `draughting/` (which holds
- * `tools.lock.json` and this plan's other committed files).
+ * **TASK 3 FIX ROUND 1: THIS TEST USED TO REFUSE OUTRIGHT WHENEVER A REAL
+ * `akcli` ALREADY EXISTED AT THE RESOLVED PATH - which, after
+ * `draughting/install.sh` (Task 3) has ever actually run on a machine, is
+ * EVERY TIME. A test that can never pass again once the repository's own
+ * install script has done its job is a permanently red check, and a
+ * permanently red check trains people to ignore red - the exact failure
+ * this plan exists to prevent. Still never silently overwrites or skips: if
+ * a real binary is there, it is renamed aside for the duration of this one
+ * test and renamed back in `finally`, rather than deleted, trusted to a
+ * second copy, or left for the stub to clobber. `firstMissingAncestor`
+ * covers the OTHER state (no real binary at all - a from-scratch checkout
+ * before `install.sh` has run), unchanged from before: it finds the single
+ * topmost directory this test needs to create, so cleanup removes exactly
+ * that subtree and nothing that was already under `draughting/`.
  */
 function firstMissingAncestor(dir: string): string {
   if (fs.existsSync(dir)) {
@@ -120,12 +128,11 @@ function firstMissingAncestor(dir: string): string {
   return current
 }
 
-test("fix round 2 regression (end to end): a real version-matching, doctor-failing akcli does not read as an unqualified pass", () => {
-  // Trimmed to exclude copperhead, the one OTHER tool genuinely not
-  // installed on this machine today - this test is about akcli alone, and
-  // must reach the reviewer's own "with akcli present and every version
-  // matching" state, which copperhead's own absence would otherwise spoil
-  // with an unrelated disagreement.
+test("fix round 2 regression (end to end): a real version-matching, doctor-failing akcli does not read as an unqualified pass, whether or not a real akcli is already installed", () => {
+  // Trimmed to exclude copperhead, the one OTHER tool this test is not
+  // about - this test is about akcli alone, and must reach the reviewer's
+  // own "with akcli present and every version matching" state, which
+  // copperhead's own disagreement (or agreement) would otherwise spoil.
   const fullLock = readLock()
   const lock = Object.fromEntries(Object.entries(fullLock).filter(([tool]) => tool !== "copperhead"))
   const akcliVersion = lock.akcli?.version
@@ -133,13 +140,7 @@ test("fix round 2 regression (end to end): a real version-matching, doctor-faili
     throw new Error("draughting/tools.lock.json no longer names akcli - this test has nothing to stub.")
   }
   const resolvedAkcli = defaultAkcli()
-
-  if (fs.existsSync(resolvedAkcli)) {
-    throw new Error(
-      `${resolvedAkcli} already exists - this test installs a temporary stub there for the ` +
-        "duration of one run and must never do that against a real install.",
-    )
-  }
+  const resolvedDir = path.dirname(resolvedAkcli)
 
   // Built in the system temp directory first, exactly as instructed, before
   // being copied to the one path this verb's probe will actually read.
@@ -163,13 +164,32 @@ test("fix round 2 regression (end to end): a real version-matching, doctor-faili
   )
   fs.chmodSync(stubScript, 0o755)
 
-  const resolvedDir = path.dirname(resolvedAkcli)
-  const createdRoot = firstMissingAncestor(resolvedDir)
-  fs.mkdirSync(resolvedDir, { recursive: true })
-  fs.copyFileSync(stubScript, resolvedAkcli)
-  fs.chmodSync(resolvedAkcli, 0o755)
+  // TWO STATES, chosen by what is actually on this machine right now rather
+  // than assumed: a real binary already there (the common case once
+  // `install.sh` has run) is displaced, not deleted; its total absence (a
+  // from-scratch checkout) is handled the old way, by creating only the
+  // missing ancestor directories.
+  const realAkcliExisted = fs.existsSync(resolvedAkcli)
+  const displacedPath = `${resolvedAkcli}.task3-fix-round-1-real-akcli-backup`
+  let createdRoot: string | null = null
+
+  if (realAkcliExisted) {
+    if (fs.existsSync(displacedPath)) {
+      throw new Error(
+        `${displacedPath} already exists - a previous run of this test may have crashed before ` +
+          "restoring the real akcli binary it displaced. Resolve that by hand before re-running.",
+      )
+    }
+    fs.renameSync(resolvedAkcli, displacedPath)
+  } else {
+    createdRoot = firstMissingAncestor(resolvedDir)
+    fs.mkdirSync(resolvedDir, { recursive: true })
+  }
 
   try {
+    fs.copyFileSync(stubScript, resolvedAkcli)
+    fs.chmodSync(resolvedAkcli, 0o755)
+
     const result = runDraughtDoctor(lock)
     expect(result.exitCode).toBe(0)
     expect(result.text).toContain("FAKE DOCTOR FAILURE")
@@ -179,7 +199,12 @@ test("fix round 2 regression (end to end): a real version-matching, doctor-faili
     expect(result.text).toContain("does not make draught-doctor refuse")
     expect(result.text).not.toBe(renderToolchainReport([]))
   } finally {
-    fs.rmSync(createdRoot, { recursive: true, force: true })
+    fs.rmSync(resolvedAkcli, { force: true })
+    if (realAkcliExisted) {
+      fs.renameSync(displacedPath, resolvedAkcli)
+    } else if (createdRoot !== null) {
+      fs.rmSync(createdRoot, { recursive: true, force: true })
+    }
     fs.rmSync(stubDir, { recursive: true, force: true })
   }
 })

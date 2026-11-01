@@ -226,8 +226,30 @@ function venvPipFor(scriptPath: string): string {
   return path.join(dir, pipName)
 }
 
-/** The command that would fix `tool`, given what its lock entry carries. */
-function howToFix(tool: string, spec: ToolSpec): string {
+/**
+ * The command that would fix `tool`, given what its lock entry carries and
+ * what the probe actually found - `null` for "nothing answered at all" (a
+ * BOOTSTRAP: the venv or checkout itself is missing), anything else for "it
+ * ran and reported the wrong thing" (an UPGRADE: the venv or checkout
+ * exists, just at the wrong version or commit).
+ *
+ * **R6 (rulings.md): a bootstrap `how` and an upgrade `how` are two
+ * different commands, and this function printed the same one for both
+ * states until now.** `git clone` refuses outright onto a directory that
+ * already exists, so the clone chain this function used to print
+ * unconditionally for copperhead was correct only for "absent" and failed
+ * with `fatal: destination path ... already exists` on the far more common
+ * mismatch case - a checkout present at the wrong commit. `pip install`
+ * fails `No such file or directory` against a venv's `bin/pip` that was
+ * never created, so the bare pip-install chain this function printed
+ * unconditionally for akcli was correct only for "version mismatch inside an
+ * existing venv" and failed on this very machine's actual state before Task
+ * 3's install ran (the venv did not exist at all). `found` is what
+ * distinguishes the two states, and `checkToolchain` already has it to
+ * hand - this function just has to be given it rather than reprobing the
+ * filesystem a second time.
+ */
+export function howToFix(tool: string, spec: ToolSpec, found: string | null): string {
   if (spec.pypi !== undefined) {
     const pinnedPackage = spec.pypi.replace(/==.*/, `==${spec.version}`)
     const resolver = RESOLVED_BINARY[tool]
@@ -236,7 +258,21 @@ function howToFix(tool: string, spec: ToolSpec): string {
     // the bare "pip" a plain shell would resolve from PATH - the probe reads
     // the resolved binary, so the fix has to install beside it.
     if (resolver !== undefined) {
-      return `${venvPipFor(resolver())} install '${pinnedPackage}'`
+      const binary = resolver()
+      const pip = venvPipFor(binary)
+      // R6: BOOTSTRAP. Nothing answered the probe at all, which for a
+      // pypi-backed tool with a dedicated venv (akcli) means the venv itself
+      // is missing - `pip install` into a `bin/pip` that was never created
+      // fails `No such file or directory` rather than installing anything.
+      // Create the venv first, in the exact directory the probe (and this
+      // same `pip`) already resolve - two levels above the binary on every
+      // platform this repository's venv layouts use (`bin/akcli` or
+      // `Scripts\akcli.exe`), never a second literal path.
+      if (found === null && tool === "akcli") {
+        const venvDir = path.dirname(path.dirname(binary))
+        return `python3 -m venv ${venvDir} && ${pip} install '${pinnedPackage}'`
+      }
+      return `${pip} install '${pinnedPackage}'`
     }
     return `pip install '${pinnedPackage}'`
   }
@@ -246,6 +282,15 @@ function howToFix(tool: string, spec: ToolSpec): string {
     // "draughting/copperhead" a second time, so this cannot drift from
     // wherever the probe actually looks.
     const dir = defaultCopperheadDir()
+    // R6: UPGRADE. The probe ran and reported something - so the checkout
+    // directory exists - and `git clone` onto an existing directory refuses
+    // outright rather than updating it. Fetch and check out the pinned
+    // commit in place instead of cloning a second time.
+    if (found !== null) {
+      return `git -C ${dir} fetch && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
+    }
+    // R6: BOOTSTRAP. Nothing answered the probe at all, so there is nothing
+    // at `dir` yet to fetch into - clone it fresh.
     return `git clone ${spec.upstream} ${dir} && git -C ${dir} checkout ${spec.commit} && cd ${dir} && npm install`
   }
   if (spec.upstream !== undefined) {
@@ -267,12 +312,12 @@ export function checkToolchain(lock: Toolchain): ToolchainProblem[] {
     const found = probeTool(tool, spec.probe)
     if (spec.version === "any") {
       if (found === null) {
-        problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec) })
+        problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec, found) })
       }
       continue
     }
     if (found === null || found !== spec.version) {
-      problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec) })
+      problems.push({ tool, wanted: spec.version, found, how: howToFix(tool, spec, found) })
     }
   }
   return problems

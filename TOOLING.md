@@ -113,6 +113,25 @@ symbols, config and network with remediation hints, and `--require` gates it for
 CI. **Run it first.** It is the one command that tells you whether the rest of
 this procedure can work on the machine you are on.
 
+**`draughting/install.sh` runs the reproduction above for you**, into
+`draughting/copperhead` and `draughting/venv-akcli`, pinned to the exact commit
+and pypi version `draughting/tools.lock.json` names - and `make draught-doctor`
+checks the result against that same lock. **The accepted risk, taken over
+vendoring:** this script fetches from `github.com/copperheadhq/copperhead` and
+PyPI, so it depends on both staying reachable and on the pinned commit and
+release staying available there indefinitely. There is no vendored fallback
+copy if either disappears; the trade is a repository that does not carry a
+third-party checkout and its `node_modules`, against a one-time install that
+can fail if upstream is gone. Neither install directory is committed -
+`.gitignore` excludes both - so this is a local build product of the script,
+re-created by running it again, not repository content. **The same trade
+also means this project does not audit copperhead's own dependency tree**:
+`npm install` in a fresh checkout currently reports 22 vulnerabilities (3
+low, 6 moderate, 10 high, 3 critical) in packages this repository did not
+choose and does not pin individually - that is upstream's dependency
+security posture, not this repository's, and accepting the install script
+over vendoring accepted it along with everything else upstream changes.
+
 ### NEITHER TOOL IS PINNED IN THIS REPOSITORY, AND THAT IS A STANDING RISK
 
 Both have so far lived in an agent session's scratchpad, which `git clean -fdx`

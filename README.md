@@ -193,6 +193,13 @@ audio-circuits/
   fork the perfboard tooling drives. It is keg-only, which is why the tooling
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
+- **copperhead and akcli-kicad**, the schematic-drawing toolchain
+  `TOOLING.md`'s loop runs. `draughting/install.sh` installs the pinned
+  versions `draughting/tools.lock.json` names into `draughting/copperhead` and
+  `draughting/venv-akcli` - fixed locations, not an override - and
+  `make draught-doctor` reports any disagreement between that lock and what is
+  actually installed. Neither is required for `bun test`; they are required
+  for drawing a schematic.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
 - **One npm RUNTIME dependency you need, installed by `bun install` rather than
   by you**: `eecircuit-engine`, the vendored SPICE engine. It pulls in nothing
