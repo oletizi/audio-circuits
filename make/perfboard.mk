@@ -49,6 +49,32 @@ include $(PERFBOARD_MAKE_DIR)veroroute.mk
 draught-doctor:
 	@bun "$(REPO_ROOT)/tools/cli/draught.ts"
 
+# `draw` - Task 5 of
+# .superpowers/sdd/2026-10-30-institutionalise-draughting. It absorbs the
+# mechanics five run directories under docs/research/ each hand-wrote:
+# resolve a committed copperhead intent, verify its net partition against
+# the model, draft, render, run the measurement suite, write a crop. It
+# lives HERE rather than in make/board.mk for the same reason
+# draught-doctor does: tools/cli/draw.ts resolves its own board declaration
+# from $(CURDIR) and refuses, naming the directory, when there is none - it
+# does not need board.mk's BOARD_DECL split to do that itself.
+#
+# $(CURDIR) IS THE WHOLE OF ITS CONTEXT, EXACTLY AS IT IS FOR check, bom AND
+# cuts (G308, docs/known-gaps.md - the owner, 2026-10-31: "I hate using
+# environment variables"). THERE IS DELIBERATELY NO BOARD=<name> OR OTHER
+# SELECTING VARIABLE. Act on a board from outside with make's own flag:
+#
+#     make -C boards/pultec-hi-cut draw
+#
+# IT NEVER WITHHOLDS A PAGE (EVALUATING-DRAWINGS.md §3): once copperhead
+# drafts and kicad-cli renders, the measurement suite's findings are
+# printed beside the page, never used to refuse it. It writes only under
+# build/draw/<board>/ - never drafted/, never a board's own declared files.
+.PHONY: draw
+
+draw:
+	@bun "$(REPO_ROOT)/tools/cli/draw.ts"
+
 # The declaration in THIS directory, if there is one. Its presence is the
 # whole of the board-versus-aggregate decision - no lists of boards anywhere.
 BOARD_DECL := $(wildcard $(CURDIR)/perfboard.json)
