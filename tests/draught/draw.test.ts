@@ -124,10 +124,10 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
 
 /**
  * I-1 (fix round 1) regression: `repaperToUSLetter` on a real committed Pultec page (already
- * US Letter, already fits) must leave the fit measurement reporting "yes" - the positive half
- * of the pair, mirrored by the overshoot test below.
+ * US Letter, already fits) must leave the fit measurement reporting "fits" - one of three
+ * states (fix round 2), mirrored by the overshoot and unmeasurable-sheet tests below.
  */
-test("repaperToUSLetter reports fits:yes on content that comfortably sits inside the US Letter frame", async () => {
+test('repaperToUSLetter reports fitStatus "fits" on content that comfortably sits inside the US Letter frame', async () => {
   const repoRoot = moduleRepoRoot()
   const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-test-"))
   try {
@@ -138,7 +138,7 @@ test("repaperToUSLetter reports fits:yes on content that comfortably sits inside
     )
     const result = repaperToUSLetter(copy)
     expect(result.ok).toBe(true)
-    expect(result.fits).toBe(true)
+    expect(result.fitStatus).toBe("fits")
     expect(fs.readFileSync(copy, "utf8")).toContain('(paper "USLetter")')
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true })
@@ -146,11 +146,11 @@ test("repaperToUSLetter reports fits:yes on content that comfortably sits inside
 })
 
 /**
- * The negative half: content moved far past the US Letter frame must report `fits: false`
- * rather than silently passing - the same drive-by-sabotage discipline this file's other
- * controls use, kept as a permanent regression rather than a one-off manual drive.
+ * The negative half: content moved far past the US Letter frame must report `fitStatus:
+ * "overflow"` rather than silently passing - the same drive-by-sabotage discipline this file's
+ * other controls use, kept as a permanent regression rather than a one-off manual drive.
  */
-test("repaperToUSLetter reports fits:no when content overshoots the frame", async () => {
+test('repaperToUSLetter reports fitStatus "overflow" when content overshoots the frame', async () => {
   const repoRoot = moduleRepoRoot()
   const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-overshoot-test-"))
   try {
@@ -178,7 +178,36 @@ test("repaperToUSLetter reports fits:no when content overshoots the frame", asyn
     fs.writeFileSync(copy, corrupted)
     const result = repaperToUSLetter(copy)
     expect(result.ok).toBe(true)
-    expect(result.fits).toBe(false)
+    expect(result.fitStatus).toBe("overflow")
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true })
+  }
+})
+
+/**
+ * THE FIX ROUND 2 DEFECT, as its own permanent regression. When `paper_fit.py` cannot measure
+ * a sheet - here, a sheet with no body coordinates at all, the exact case the reviewer
+ * reproduced - the REWRITE still succeeded (the page is still written, `ok: true`), but there
+ * is no fit measurement to report. `fitStatus` must come back "unmeasured", never "overflow":
+ * the earlier shape returned a bare `fits: false` for both "the tool broke" and "it does not
+ * fit", which is a false finding about the board wearing a broken-check's clothes.
+ */
+test('repaperToUSLetter reports fitStatus "unmeasured", not "overflow", when the fit check itself cannot run', async () => {
+  const repoRoot = moduleRepoRoot()
+  const scratch = fs.mkdtempSync(path.join(repoRoot, "build", "repaper-unmeasured-test-"))
+  try {
+    const copy = path.join(scratch, "sheet.kicad_sch")
+    // A syntactically valid, parseable sheet with exactly one (paper ...) token and NO wires,
+    // symbols, labels or rectangles - paper_fit.py's body_extent finds nothing and refuses
+    // rather than reporting an empty extent as a fit, which is the case this test drives.
+    fs.writeFileSync(copy, '(kicad_sch (version 1) (generator x) (paper "A4"))')
+    const result = repaperToUSLetter(copy)
+    expect(result.ok).toBe(true)
+    expect(result.fitStatus).toBe("unmeasured")
+    expect(result.stderr).toContain("could not measure")
+    expect(result.stderr).not.toContain("does not fit")
+    // The rewrite itself still happened - the page is not withheld over an unmeasurable check.
+    expect(fs.readFileSync(copy, "utf8")).toContain('(paper "USLetter")')
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true })
   }

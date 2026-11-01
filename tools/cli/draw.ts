@@ -244,11 +244,21 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   if (!repaper.ok) {
     return partialFailure(stdoutSections, stderrSections, draft.schematicPath)
   }
-  if (!repaper.fits) {
+  // THREE OUTCOMES, NOT TWO (Task 5 fix round 2) - "overflow" is a finding about the board;
+  // "unmeasured" is the fit check itself not having run, and must read as exactly that, never
+  // as a claim about the board's content. Collapsing the two into one boolean is how a broken
+  // measurement tool used to report itself as a false layout finding.
+  if (repaper.fitStatus === "overflow") {
     stderrSections.push(
       `re-paper: ${board}'s content does not fit US Letter's inner frame after re-papering - see the ` +
         "paper_fit.py measurement above. This is a finding, not a withholding ground " +
         "(EVALUATING-DRAWINGS.md §3): the page is still rendered below.",
+    )
+  } else if (repaper.fitStatus === "unmeasured") {
+    stderrSections.push(
+      `re-paper: whether ${board}'s content fits US Letter's inner frame could not be determined - ` +
+        "see the paper_fit.py output above for why. This is the fit CHECK not running, not a " +
+        "finding about the board; the page is still rendered below.",
     )
   }
 

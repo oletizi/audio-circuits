@@ -15,10 +15,25 @@ import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 
 // --- re-papering to US Letter ---
 
+/**
+ * THREE OUTCOMES, NOT TWO (Task 5 fix round 2). `"fits"` and `"overflow"` are
+ * both real measurements of the board; `"unmeasured"` is the check itself
+ * not having run - `paper_fit.py` could not read the sheet it was given, for
+ * instance a sheet with no body coordinates at all. Collapsing the third
+ * into the second (`fits: false` for "overflow" and for "the tool broke"
+ * alike) is exactly the shape `CLAUDE.md` names: *"a stale count misleads
+ * about progress; a stale cause sends the next agent after a rule that is
+ * not there"* - here it would send someone after a layout defect that does
+ * not exist. `runDraw` must print `"unmeasured"` as a statement that the
+ * check did not run, never as a finding about the board.
+ */
+export type FitStatus = "fits" | "overflow" | "unmeasured"
+
 export interface RepaperOutcome {
   readonly ok: boolean
-  /** Whether the content, once re-papered, still sits inside US Letter's inner frame. */
-  readonly fits: boolean
+  /** Whether the content, once re-papered, still sits inside US Letter's inner frame - or
+   * whether that could not be determined at all. See `FitStatus`. */
+  readonly fitStatus: FitStatus
   readonly stdout: string
   readonly stderr: string
 }
@@ -59,10 +74,12 @@ export interface RepaperOutcome {
  * `draughting/measure/paper_fit.py` rather than assumed either way: measured
  * here, for `pultec-hi-cut`'s own current raw draft, content extent 50.800 ..
  * 246.380 mm sits inside the frame's 267.377 mm east edge with margin to
- * spare. An overflow would be reported as a finding (`fits: false`),
+ * spare. An overflow would be reported as a finding (`fitStatus: "overflow"`),
  * exactly like any other measurement-suite result - EVALUATING-DRAWINGS.md
  * §3 permits withholding only for a connectivity disagreement, and a paper
- * overflow is not one.
+ * overflow is not one. A THIRD state, `fitStatus: "unmeasured"`, covers the
+ * check itself failing to run (Task 5 fix round 2) - see `FitStatus` below;
+ * that state is never reported as a finding about the board.
  */
 export function repaperToUSLetter(schematicPath: string): RepaperOutcome {
   let text: string
@@ -70,14 +87,14 @@ export function repaperToUSLetter(schematicPath: string): RepaperOutcome {
     text = fs.readFileSync(schematicPath, "utf8")
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
-    return { ok: false, fits: false, stdout: "", stderr: `could not read ${schematicPath}: ${detail}.` }
+    return { ok: false, fitStatus: "unmeasured", stdout: "", stderr: `could not read ${schematicPath}: ${detail}.` }
   }
   const paperLine = /\(paper "[^"]*"\)/g
   const matches = text.match(paperLine)
   if (matches === null || matches.length !== 1) {
     return {
       ok: false,
-      fits: false,
+      fitStatus: "unmeasured",
       stdout: "",
       stderr:
         `${schematicPath}: expected exactly one (paper "...") token to rewrite to USLetter, found ` +
@@ -89,18 +106,25 @@ export function repaperToUSLetter(schematicPath: string): RepaperOutcome {
   const fitScript = path.join(moduleRepoRoot(), "draughting", "measure", "paper_fit.py")
   const fit = spawnSync("python3", [fitScript, schematicPath], { encoding: "utf8" })
   const fitReport = `${fit.stdout ?? ""}${fit.stderr ?? ""}`.trim()
+  const rewriteNote = `re-papered ${matches[0]} -> (paper "USLetter").`
   if (fit.status !== 0) {
+    // The rewrite itself succeeded (the page is still written - `ok: true`); what failed is
+    // the FIT MEASUREMENT, which is why `fitStatus` is "unmeasured" and not "overflow". The
+    // stderr line says the check did not run, and says why - it must never read as a claim
+    // about this board's content, because it is not one.
     return {
       ok: true,
-      fits: false,
-      stdout: `re-papered ${matches[0]} -> (paper "USLetter").`,
-      stderr: `paper_fit.py could not measure the re-papered sheet (exited ${fit.status ?? "with no status"}): ${fitReport}`,
+      fitStatus: "unmeasured",
+      stdout: rewriteNote,
+      stderr:
+        `paper_fit.py could not measure the re-papered sheet (exited ${fit.status ?? "with no status"}) - ` +
+        `the fit check did not run, which says nothing about whether the content fits: ${fitReport}`,
     }
   }
   return {
     ok: true,
-    fits: fitReport.includes("fits: yes"),
-    stdout: `re-papered ${matches[0]} -> (paper "USLetter").\n${fitReport}`,
+    fitStatus: fitReport.includes("fits: yes") ? "fits" : "overflow",
+    stdout: `${rewriteNote}\n${fitReport}`,
     stderr: "",
   }
 }
