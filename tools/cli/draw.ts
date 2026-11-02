@@ -48,14 +48,12 @@
  * `repaperToUSLetter`) is reported the same way - a finding, never a
  * withholding ground.
  *
- * **THIS PLAN DOES NOT DERIVE AN INTENT FROM A `Network`** - stated as an
- * open question in the design this plan implements, and repeated in the
- * task-5 brief. `COMMITTED_INTENT` (`../draught/draw-draft.ts`) is therefore
- * a map of board name to an intent file ALREADY ON DISK, committed by an
- * earlier run; a board with no entry refuses, naming the board, rather than
- * inventing one. This is the same shape `tools/draught/toolchain.ts` already
- * uses for `RESOLVED_BINARY`/`RESOLVED_CHECKOUT_DIR` - a small, explicit,
- * name-keyed map rather than a derivation.
+ * **AN INTENT COMES FROM ONE OF TWO DECLARED SOURCES** (`../draught/draw-intent.ts`):
+ * a committed file named in `COMMITTED_INTENT` (`../draught/draw-draft.ts`) -
+ * the schematic-authoritative Pultec path - or a `drawingIntent()` export on
+ * the board's circuit module, generated from the model
+ * (`../draught/intent-from-network.ts`) - the model-authoritative path. A
+ * board with neither refuses, naming both; a board with both refuses too.
  *
  * **NO TOOL PATH IS HARDCODED (`docs/known-gaps.md` G170).** `kicad-cli`,
  * `magick` and copperhead's checkout directory are resolved through the same
@@ -67,20 +65,24 @@
  * toolchain table lists `git` and `Python` as system tools this repository
  * has never pinned.
  *
- * **WRITES ONLY UNDER `build/draw/<board>/`.** Never `drafted/`, never a
- * board's own declared files. `build/` is gitignored, so a run here never
- * shows up in `git status`.
+ * **WRITES ONLY UNDER THE GITIGNORED `build/draw/`.** The draft, render and
+ * crop outputs land in `build/draw/<board>/`; a derived intent (the
+ * `drawingIntent()` path - see `../draught/draw-intent.ts`) is written
+ * beside it, at `build/draw/<board>.intent.json`, never inside it -
+ * `draftWithCopperhead` (`../draught/draw-draft.ts`) empties `outDir`
+ * before drafting, so a file this verb needs to survive the draft cannot
+ * sit inside the directory the draft is about to clear. Never `drafted/`,
+ * never a board's own declared files. `build/` is gitignored, so a run here
+ * never shows up in `git status`.
  */
 import fs from "node:fs"
 import path from "node:path"
 import {
   DRAFT_TOOLS,
   draftWithCopperhead,
-  parseIntent,
-  resolveIntentPath,
   verifyIntentAgainstModel,
-  type Intent,
 } from "../draught/draw-draft.ts"
+import { resolveDrawIntent } from "../draught/draw-intent.ts"
 import {
   RENDER_TOOLS,
   renderSheet,
@@ -185,6 +187,23 @@ function partialFailure(stdoutSections: readonly string[], stderrSections: reado
   }
 }
 
+/**
+ * The derived intent's path, beside (never inside) `outDir` - see the module
+ * comment's "WRITES ONLY UNDER THE GITIGNORED `build/draw/`" paragraph.
+ *
+ * **`path.resolve` FIRST, NOT A BARE TEMPLATE (Minor 8, final review).** A
+ * trailing-slash `outDir` (`"build/draw/foo/"`) would otherwise produce
+ * `"build/draw/foo/.intent.json"` - a path INSIDE the directory
+ * `draftWithCopperhead` empties with `rmSync` before every draft, so the
+ * intent this run just derived would be deleted before copperhead ever reads
+ * it. `path.resolve` strips the trailing slash before `.intent.json` is
+ * appended, so the derived path always lands beside `outDir`, never inside
+ * it, regardless of how the caller spelled it.
+ */
+export function derivedIntentPathFor(outDir: string): string {
+  return `${path.resolve(outDir)}.intent.json`
+}
+
 function resolveBoardDir(repoRoot: string, options: DrawOptions): string {
   if (options.boardDir !== undefined) return options.boardDir
   if (options.board !== undefined) return path.join(repoRoot, "boards", options.board)
@@ -270,16 +289,19 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
 
-  // Step 2: resolve the intent - a committed one, or a refusal naming the board.
-  const resolvedIntent = resolveIntentPath(board, options.intentPath)
-  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
-
-  let intent: Intent
+  // Step 2: resolve the intent - a committed file, a circuit's drawingIntent() export, or a
+  // refusal naming the board and both sources.
+  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
+  let resolvedIntent: Awaited<ReturnType<typeof resolveDrawIntent>>
   try {
-    intent = parseIntent(resolvedIntent.path)
+    resolvedIntent = await resolveDrawIntent({
+      board, declaration, override: options.intentPath, derivedIntentPath: derivedIntentPathFor(outDir),
+    })
   } catch (error) {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
+  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
+  const intent = resolvedIntent.intent
 
   if (declaration.netlistPath === undefined) {
     return refusal(
@@ -313,7 +335,6 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   }
 
   // Step 4: draft with copperhead.
-  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
   const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,

@@ -451,6 +451,71 @@ present bytes.
 
 ---
 
+## transistor-preamp-staged, copperhead draft repaired with akcli
+
+- **Sheet** `drafted/transistor-preamp/transistor-preamp-staged/transistor-preamp-staged.generated-do-not-edit.kicad_sch`,
+  sha256 `e6165baac555523691a400441245d4c14babb0301881dcfcb350702ba63e7775`
+- **Produced by** `make draw` from the intent `drawingIntent()` generates from
+  the model, as one copperhead group, then one akcli op-list and literal text
+  edits. Every part was moved in the repair pass: the coordinates and
+  orientations are agent-placed, not copperhead's. The page's `RECORD.md` has
+  the detail.
+- **Shown** 2026-11-01, as two renders side by side: copperhead's draft as
+  `make draw` wrote it, re-papered, and the repaired page, rendered by
+  `kicad-cli` 10.0.5 from the sheet above
+- **Verdict, verbatim:**
+
+  > *"The repaired drawing looks great"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** He did not use the word "approved", and §5
+does not let an agent supply it. Nor did he rule on whether this page replaces
+`circuits/transistor-preamp/staged-board.kicad_sch`, the sheet the board's
+`perfboard.json` names and the build guide prints. Both are his to state.
+
+**THEN, THE SAME DAY, ON PROMOTION, verbatim:**
+
+> *"This drawing is better than my hand-drawn one—it fits on the page, where
+> mine doesn't. Let's promote this new drawing to the canonical schematic"*
+
+Done in `288bd0a`: `circuits/transistor-preamp/staged-board.kicad_sch` is now
+this page plus hidden Footprint fields set from the model and minus the title
+block's "generated - do not edit" line, sha256
+`402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493`. A 150 dpi
+render of it differs from the page he reviewed in two title-block lines: the
+file name (`staged-board.kicad_sch` versus
+`transistor-preamp-staged.generated-do-not-edit.kicad_sch`) and the absence of
+the "generated - do not edit" comment, which the reviewed page shows and the
+promoted page does not. Those bytes are not the ones his verdict above binds
+to, and this entry does not claim they are.
+
+**ERC on the promoted sheet, from `circuits/transistor-preamp/` (its own
+directory, empty `sym-lib-table`):** 0 errors, 7 warnings - the same 4
+`lib_symbol_issues` (library `copperhead_power` not configured) and 3
+`lib_symbol_mismatch` (the embedded 2N3904) the drafted copy's `RECORD.md`
+records for its own directory. The old hand sheet did not have these; the
+owner chose to keep copperhead's power symbols (see the Decisions table in
+`docs/superpowers/specs/2026-11-01-staged-preamp-copperhead-drawing-design.md`).
+
+**THE PROMOTION ALSO DROPPED A TEXT BLOCK, AND NO EARLIER ENTRY HERE SAID SO.**
+The sheet `288bd0a` replaced carried one text block - **STARTING SETTINGS**
+(each leg's total and trim value for RV1-RV4, the 2B variant, "pull C1"), the
+Q2 emitter-follower measurement instructions, and **PANEL CONTROLS** (what
+DRIVE, CHARACTER and TRANSFORMER DRIVE do) - which is
+`circuits/transistor-preamp/staged-board.ts`'s `schematicNotes()`. The promoted
+page carries no such block; its only `(text ...)` is the group caption.
+`perfboard.json` names this sheet and `make guide` prints it as the build
+packet's schematic page, so the build packet no longer prints the starting
+trim positions or the panel-control explanations anywhere. `schematicNotes()`
+is not restored here and the sheet is not changed to add it back - that would
+change bytes the owner has not seen. **Open question for the owner:** should
+the notes go back on the page (for example as an akcli text placement in the
+free area this page's `RECORD.md` measures), or should the build guide print
+`schematicNotes()`'s strings on its own schematic page instead? Tracked as a
+row in the Decisions table of
+`docs/superpowers/specs/2026-11-01-staged-preamp-copperhead-drawing-design.md`.
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded

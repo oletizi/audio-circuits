@@ -517,6 +517,14 @@ to an agent in a diff.
 
 **Transcription is evidence, not memory.** See the section of that name below.
 
+**The work that made an artifact is committed with it.** A drawing's akcli
+repair - every op-list, every script, the intent it started from, and a replay
+that reaches the page's sha256 - goes under `drafted/<circuit>/<board>/repair/`
+(`TOOLING.md` step 5.5). A gitignored scratch directory is never the only copy:
+a plan's workspace is deleted when the plan ends, and one staged-preamp page was
+left with no way to remake it that way. The owner: *"we should keep the repair
+info committed. That's important work we shouldn't lose."*
+
 **Supersede means delete.** A pattern replaced by a better one is removed in the
 same change, not left as a stub for somebody to find and trust.
 

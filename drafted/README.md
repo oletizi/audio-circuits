@@ -36,7 +36,19 @@ drafted/<circuit>/<board>/
     <board>.generated-do-not-edit.svg         the render, so git can diff it
     sym-lib-table                             empty; the symbols are embedded
     RECORD.md                                 the hashes and the verdict
+    repair/                                   how the page was made from its draft:
+        REPLAY.md                               the commands, in order, and the sha256 they reach
+        intent.json                             the intent the draft was made from
+        01-....json, 02-....json                every akcli op-list applied, in order
+        <scripts>                               whatever built an op-list or edited the sheet
 ```
+
+**`repair/` IS REQUIRED for every page drawn or repaired after 2026-11-01**
+(`../TOOLING.md` step 5.5). The Pultec pages predate it: their op-lists and
+scripts are in their research run directories under `../docs/research/`, not
+beside the page, and no replay of them was checked.
+`transistor-preamp/transistor-preamp-staged/` has none at all - its repair was
+lost with a deleted scratch directory, which is why the rule exists.
 
 **THE FILE NAME IS THE TITLE-BLOCK NOTICE, AND IT IS THERE DELIBERATELY RATHER
 THAN BY ACCIDENT.** §3 requires *"generated - do not edit"* in every title block.

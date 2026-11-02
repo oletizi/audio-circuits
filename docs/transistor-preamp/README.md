@@ -16,7 +16,7 @@ Brief: [From one transistor to a feedback microphone preamp](microphone-preamp-f
 | Build 4, first step | One feedback loop around both stages | Modelled and simulated, stub and layout generated (`loop-board.ts`); **paused**, not built |
 | Build 4, later | Three stages, direct coupling, emitter feedback and compensation, like the 1073 preamp section | Not started; a separately gated design |
 | Gain structure (current direction) | Independently biased, AC-coupled stages with a drive control ahead of each, run at 24 V into an EDCOR WSM10K/10K | Proposal approved: [gain-structure proposal](transistor-preamp-gain-structure-proposal.md). Extends the built buffered board; Build 4's loop is paused in its favour |
-| Staged board | The gain-structure proposal's next version: a second gain stage (Q3) with panel DRIVE, CHARACTER and TRANSFORMER DRIVE controls | Modelled and simulated at 24 V, stub and layout generated (`staged-board.ts`); laid out on stripboard, ready for the operator to build. Design: `docs/superpowers/specs/2026-09-28-transistor-preamp-staged-design.md` |
+| Staged board | The gain-structure proposal's next version: a second gain stage (Q3) with panel DRIVE, CHARACTER and TRANSFORMER DRIVE controls | Modelled and simulated at 24 V (`staged-board.ts`); laid out on stripboard. Schematic: the copperhead page promoted to `circuits/transistor-preamp/staged-board.kicad_sch` in `288bd0a` (see `docs/schematic/verdicts.md`), not a generated stub. Ready for the operator to build. Design: `docs/superpowers/specs/2026-09-28-transistor-preamp-staged-design.md` |
 
 Designs: `docs/superpowers/specs/2026-09-23-transistor-preamp-lab-design.md`,
 `2026-09-24-transistor-preamp-buffered-design.md`,

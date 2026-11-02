@@ -350,6 +350,13 @@ branch, comparing `BOUNDS` against the extent of the holes the dump enumerates
 | `pultec-low-boost` | 14 x 32 | `3,3 10,28` | `3,3 10,28` | `3,3 10,28` |
 | `pt2399-core` | 17 x 36 | `0,0 16,35` | `0,0 16,35` | `0,0 16,35` |
 
+The `transistor-preamp-staged` row is the layout as it stood then. The board
+was later re-placed to fit 27-hole stock (commit `60ded02`), and the re-placed
+layout's `BOUNDS` ends on its last used column with nothing outside, so it now
+coincides like `pultec-low-boost` and `pt2399-core`. `transistor-preamp-feedback`
+still over-states by one column, and `tests/stripboard/extent.test.ts` uses it
+as the real-board witness of over-statement.
+
 Three things follow, and each is a thing a later task would otherwise assume:
 
 - `BOUNDS` and the hole extent are **different quantities**, and the difference

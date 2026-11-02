@@ -287,6 +287,32 @@ two suite runs, compare the junit reports' per-file testcase counts; `Ran N
 tests` under-reports the gap by the number of unhandled errors, and `across N
 files` does not move at all.
 
+## Setting up a checkout
+
+Three of the prerequisites above are built or installed into the checkout
+itself, under gitignored directories, so **every clone and every git worktree
+needs them once**, after the system tools are in place:
+
+```bash
+bun install            # node_modules, including the vendored SPICE engine
+make veroroute         # clone and build the VeroRoute fork veroroute.pin names,
+                       # into .tools/ - a Qt5 C++ build, so it takes a while
+draughting/install.sh  # copperhead and akcli-kicad at the versions
+                       # draughting/tools.lock.json pins
+make draught-doctor    # confirm the drawing toolchain agrees with that lock
+bun test
+```
+
+**After a pull or merge that changes `veroroute.pin`, run `make veroroute`
+again before `bun test`.** `make check` rebuilds a stale binary for you,
+because it depends on the `veroroute` target, but `bun test` does not. It
+runs whatever is already in `.tools/`, and a binary built at an older pin can
+fail tests in confusing ways. A test that calls a flag the old binary lacks,
+such as `--materialize`, shows up as `veroroute ... exited -1` or as a test
+timing out at 5000 ms, not as "rebuild the fork". The same applies to
+`draughting/install.sh` when `draughting/tools.lock.json` changes:
+`make draught-doctor` names any disagreement.
+
 ## Usage
 
 ```bash

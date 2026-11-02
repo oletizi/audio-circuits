@@ -68,6 +68,16 @@ NONE OF `EVALUATING-DRAWINGS.md`'s CRITERIA:**
 5. Re-render, look again, iterate. Driving a measurable cost (crossings,
    corners, hairpins, wire length, label count) down is work to automate, not
    hand back.
+5.5. **Commit the repair, not only the page** (`TOOLING.md` step 5.5). Every
+   op-list applied, in order; every script that built one or edited the
+   sheet; the intent the draft came from; and a `REPLAY.md` of the exact
+   commands from a fresh `make draw` to the page, with the sha256 it must
+   reach - all under `drafted/<circuit>/<board>/repair/`, replayed and
+   checked before committing. **Work in a scratch directory if you like, but
+   copy the repair out and commit it before anything can delete that
+   directory** - a plan's workspace is deleted when the plan finishes. The
+   owner: *"we should keep the repair info committed. That's important work we
+   shouldn't lose."*
 6. Hand the page to the reviewer - see "The ordering rule" below.
 
 **A REPAIR OF AN EXISTING PAGE SKIPS STEP 2 ENTIRELY.** `TOOLING.md` is
@@ -131,10 +141,14 @@ noticing:**
    selftest is loud and withholds nothing.
    **It never calls `akcli`.** Repair - step 4 of the loop above - is
    judgement work this skill is responsible for, not something any verb
-   performs for you. Only `pultec-hi-cut` has a `COMMITTED_INTENT` entry
-   today (`tools/draught/draw-draft.ts`); the other four Pultec boards with
-   a page under `drafted/pultec/` refuse by name, rather than guess at an
-   intent, until one is added.
+   performs for you. A board's intent comes from one of two declared sources: a committed
+   file in `COMMITTED_INTENT` (`tools/draught/draw-draft.ts`; only
+   `pultec-hi-cut` is registered, though all five Pultec boards have intents under `docs/research/` - hi-cut,
+   hi-boost, low-cut and mid in their `2026-10-29-<board>-full-run/`
+   directories, low-boost in `2026-10-29-copperhead-against-the-idiom/inputs/`), or a `drawingIntent()` export on a
+   model-authoritative circuit (`transistor-preamp-staged` is the first). A
+   board with neither refuses by name, and so does one with both
+   (`tools/draught/draw-intent.ts`).
 3. **IT NEVER WITHHOLDS A PAGE FOR A LAYOUT REASON.** See "Never withhold a
    drawing" below - this is the same rule, stated here because `make draw`'s
    own behavior is where it is easiest to verify: the measurement suite's

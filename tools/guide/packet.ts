@@ -366,6 +366,7 @@ export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: 
       images,
       checklist,
       powerUpChecks: circuit.powerUpChecks,
+      guideNotes: circuit.guideNotes,
       wiringPath,
       // STRAIGHT OFF THE CIRCUIT, undefined and all: a board that declares no
       // SCAFFOLD prints the sentence `tools/guide/stand-in-section.ts` holds

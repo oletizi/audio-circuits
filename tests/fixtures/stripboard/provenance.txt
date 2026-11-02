@@ -152,6 +152,12 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
       sha256 b686f5409744c8a16173565a3678f7f5822349e8f53dbbed203a483c88bedc0c
     tests/fixtures/transistor-preamp-staged.net
       sha256 2a0c547156e951876ca1ce4b1f84684bc159cc433ab92eeb579470c926027e31
+      (regenerated in 288bd0a, the staged board's copperhead-page promotion,
+      to 95166c6e45b706f95654fc50301da592cbd0421b25d696def380ac366cd42abd -
+      same REF.PIN partition, which is what HC8 grades, so no grade here is
+      affected; this entry's dump above is a dated capture against the input
+      board at 7e1406c3, from before that promotion and before 60ded02's
+      re-placement)
 
   binary         .tools/veroroute-perfboard at commit
                  0bf46e5b1b97c6bd206af39e7217ba1fe278a207, which is what
