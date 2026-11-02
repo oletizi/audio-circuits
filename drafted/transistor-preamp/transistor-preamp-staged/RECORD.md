@@ -163,9 +163,9 @@ collector. Nothing outside stage 1 moved.
 | | |
 | --- | --- |
 | sha256 of `circuits/transistor-preamp/staged-board.kicad_sch` before | `402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493` (`288bd0a`) |
-| **sha256 after - awaiting the owner's review** | `31a5e0c47ebf3a2ee1d94e6d3c0d62d534137e86690863abfbe9411fba04422e` |
+| **sha256 after** | `31a5e0c47ebf3a2ee1d94e6d3c0d62d534137e86690863abfbe9411fba04422e` |
 | How | `repair/`: two akcli op-lists and one text-edit script, with `repair/REPLAY.md` and `repair/replay.sh` from the before sha256 to the after; replayed and matched before commit |
-| Status | **awaiting the owner's review.** The verdict above binds the copperhead page in this directory, which is unchanged; it says nothing about the changed sheet |
+| Status | **reviewed 2026-11-02** - verdict *"looks good"*, recorded verbatim in `../../../docs/schematic/verdicts.md` against the sha256 above. Not recorded as approved. The 2026-11-01 verdict above binds the copperhead page in this directory, which is unchanged |
 
 **The repaired page is NOT added to this directory**, and that is a reading of
 `../../README.md`, not an omission: its layout holds one page per board
