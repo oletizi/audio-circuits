@@ -62,56 +62,55 @@ netlist export (`tests/fixtures/transistor-preamp-staged.net`), as sets of
 draft before a coordinate is placed** - the one refusal `EVALUATING-DRAWINGS.md`
 §3 allows.
 
-### 2. The group map, and two arrangements
+### 2. One group
 
-Group assignment is the main lever copperhead gives (`TOOLING.md` step 2), and
-the procedure says to draft more than one. Two arrangements, both in signal
-order, left to right:
+Group assignment is the main lever copperhead gives (`TOOLING.md` step 2).
+**Every part goes in a single group**, the owner's call: the Pultec pages are
+divided into sections because that circuit is a set of separate bands joined
+at a junction, and the staged preamp is one signal chain.
 
-**A - one group per stage and per control (six groups)**
+What that buys and costs is measured, in
+`docs/research/2026-10-29-copperhead-against-the-idiom.md` §3 and §5, on the
+low-boost circuit:
 
-| group | contents |
-| --- | --- |
-| Power | `J3` supply header, `C4` reservoir |
-| Stage 1 | `J1` input header, `C2` input coupling, `Q1`, its four legs `R1`/`RV1`, `R2`/`RV2`, `R3`/`RV3`, `R4` with `C1`/`RV4` |
-| Drive | `C3` (stage 1's output coupling), `RV5` DRIVE, `C6` |
-| Stage 2 | `Q3`, `R8`-`R11`, CHARACTER branch `C7`, `R12`, `RV6` |
-| Transformer drive | `C8`, `RV7` TRANSFORMER DRIVE, `C9` |
-| Output | `Q2` follower, `R5`-`R7`, `C5` output coupling, `J2` |
+- copperhead draws a net as wire only when all its endpoints are in one group,
+  so one group lets the signal chain be wired rather than labelled. Single-group
+  drafts there measured a longest continuous run of 88.9-161.3 mm, against
+  74.9 mm or less for every multi-group draft;
+- one group is one box with one caption, so the stages are not titled;
+- a net with more than four endpoints (`MAX_WIRED_ENDPOINTS`) still becomes
+  labels in any grouping, so `VCC` and `GND` will be labels or power symbols;
+- `hints.groupOrder` is inert with one group.
 
-`C3` could sit in Stage 1 instead, since the model builds it there
-(`addFeedbackStage`); it is placed in Drive here because it is the first part
-of the cap-pot-cap attenuator.
+The group's caption is the only free text copperhead places. It is
+`Transistor preamp - staged`, held in the drawing file below.
 
-**B - each control folded into the stage it feeds (four groups)**
-
-Power; Stage 1; Stage 2 with DRIVE in front of it; Output with TRANSFORMER
-DRIVE in front of it.
-
-The exact membership of each group is written out in the group map and
-checked by the module: every component in exactly one group.
+The procedure says to draft more than one arrangement. With one group the
+remaining inputs are minor ones the same research measured (`parts[]`
+declaration order, net `kind` on ground), so the first draft is taken through
+the loop and further variants are drafted only if the first leaves something
+those inputs could change.
 
 ### 3. Where things live
 
 | what | where | why |
 | --- | --- | --- |
-| group map (edited here) | `circuits/transistor-preamp/staged-board.drawing.ts` | a source beside its circuit (`CLAUDE.md`: ask whether it will be edited here) |
+| drawing inputs: the group and its caption (edited here) | `circuits/transistor-preamp/staged-board.drawing.ts` | a source beside its circuit (`CLAUDE.md`: ask whether it will be edited here) |
 | derivation module | `tools/draught/intent-from-network.ts` | tooling, with the other draught modules |
-| drafts, repairs, renders | `drafted/transistor-preamp/transistor-preamp-staged/<arrangement>/` | the same shape as `drafted/pultec/`, each with a `RECORD.md` |
+| draft, repairs, renders | `drafted/transistor-preamp/transistor-preamp-staged/` | the same shape as `drafted/pultec/`, with a `RECORD.md` |
 
 ### 4. The loop, run as the procedure says
 
-For each arrangement: `make draught-doctor`, `make draw` (draft, re-paper to
-US Letter, render, measure), look at the render, repair with `akcli` (dry-run
-every op-list, read the net diff), re-render, iterate on the measurable costs.
-Each `RECORD.md` carries the verification set from the skill before and after
-repair, and which arrangement was taken further and why.
+`make draught-doctor`, `make draw` (draft, re-paper to US Letter, render,
+measure), look at the render, repair with `akcli` (dry-run every op-list, read
+the net diff), re-render, iterate on the measurable costs. The `RECORD.md`
+carries the verification set from the skill before and after repair.
 
 ### 5. Handing it back
 
-The renders go to the owner **first, side by side, unranked**, with a request
-for evaluation and nothing else (`EVALUATING-DRAWINGS.md` §4). Measurements
-follow only on request.
+The render goes to the owner **first**, with a request for evaluation and
+nothing else (`EVALUATING-DRAWINGS.md` §4). If he asks, it can be placed beside
+the existing sheet, unranked. Measurements follow only on request.
 
 **Whether a copperhead page replaces the current sheet is the owner's call**,
 made after seeing it. Until then `perfboard.json`, the round-trip tests and the
@@ -132,8 +131,6 @@ build guide keep pointing at the existing sheet.
    generated, because a hand-typed copy of the circuit is a second place for
    it to be wrong, and the model already holds every fact the intent needs
    except the grouping. The hand-written path is the one with precedent.
-2. **Are arrangements A and B the right two to start from**, or is there a
-   grouping you'd rather see?
 
 ## Decisions
 
@@ -143,4 +140,4 @@ build guide keep pointing at the existing sheet.
 | Leave the existing sheet untouched; the copperhead page is a separate candidate | this writer, pending review | the existing sheet is the owner's arrangement and is what the guide prints |
 | Model-authoritative | this writer, pending review | an agent-designed circuit (`CLAUDE.md`, `TOOLING.md` step 0) |
 | Generate the intent from the `Network` | this writer, pending review | open question 1 |
-| Draft arrangements A and B | this writer, pending review | open question 2 |
+| Draw the whole circuit as a single group | owner | *"The pultec circuits are a little unusual. Let's try using a single group for the staged preamp circuit"* |
