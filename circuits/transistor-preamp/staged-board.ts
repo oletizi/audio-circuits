@@ -44,7 +44,7 @@ import type { GuideNotesExport } from "../../tools/guide/guide-notes.ts"
 import type { BomConditions, BomConditionsExport } from "../../tools/bom/conditions.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
-import { addFeedbackStage } from "./feedback-board.ts"
+import { TRIMMED_STAGE_ONE, addFeedbackStage } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import type { FeedbackSetting } from "./feedback-board.ts"
 import { formatOhms, legPosition } from "./leg-values.ts"
@@ -75,7 +75,7 @@ export function transistorPreampStaged(): Network {
   builder
     .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
     .port("input", IN_EXT)
-  addFeedbackStage(builder, "DRIVE_TOP")
+  addFeedbackStage(builder, "DRIVE_TOP", TRIMMED_STAGE_ONE)
 
   builder
     // DRIVE: C3 (from stage 1) -> pot -> C6 -> Q3's base.

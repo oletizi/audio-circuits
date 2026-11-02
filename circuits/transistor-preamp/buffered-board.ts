@@ -22,7 +22,7 @@
  */
 import { circuit } from "../../lib/model/index.ts"
 import type { Builder, Network } from "../../lib/model/index.ts"
-import { addFeedbackStage, schematicNotes as feedbackNotes } from "./feedback-board.ts"
+import { TRIMMED_STAGE_ONE, addFeedbackStage, schematicNotes as feedbackNotes } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import { HEADER_2, RESISTOR, electrolytic, transistor2N3904 } from "./parts.ts"
 
@@ -40,7 +40,7 @@ export function transistorPreampBuffered(): Network {
   builder
     .connector("input_header", { "1": "IN_EXT", "2": GND }, HEADER_2)
     .port("input", "IN_EXT")
-  addFeedbackStage(builder, COLLECTOR_COUPLED)
+  addFeedbackStage(builder, COLLECTOR_COUPLED, TRIMMED_STAGE_ONE)
   addFollower(builder)
   return builder.done()
 }

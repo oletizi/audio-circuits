@@ -26,7 +26,7 @@ import type { Network } from "../../lib/model/index.ts"
 import { parseValue } from "../../lib/model/units.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
-import { addFeedbackStage } from "./feedback-board.ts"
+import { TRIMMED_STAGE_ONE, addFeedbackStage } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import type { FeedbackSetting } from "./feedback-board.ts"
 import { formatOhms, legPosition, trimOnlyOhms } from "./leg-values.ts"
@@ -49,7 +49,7 @@ export function transistorPreampLoop(): Network {
     .connector("input_header", { "1": IN_SOURCE, "2": GND }, HEADER_2)
     .port("input", IN_SOURCE)
     .resistor("input_resistor", "4.7k", { a: IN_SOURCE, b: "IN_EXT" }, RESISTOR)
-  addFeedbackStage(builder, "BUFFER_BASE")
+  addFeedbackStage(builder, "BUFFER_BASE", TRIMMED_STAGE_ONE)
   addFollower(builder)
   builder.capacitor("loop_feedback_cap", "10uF", { a: "BUFFER_EMITTER", b: "LOOP_CAP" },
     electrolytic("CP_Radial_D5.0mm_P2.00mm"))
