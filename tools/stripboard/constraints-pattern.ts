@@ -221,9 +221,11 @@ function hc10Rows(pattern: PinPattern): readonly (readonly string[])[] {
  * still the point of this paragraph. It asked that a part's pins *"fall on a set
  * of strips whose occupied strips are exactly the rows the footprint's
  * classification predicts"* - which requires a footprint row to lie ALONG a
- * strip. Measured against the three committed boards that passed `make check`,
- * that refused 13 of 16, 27 of 34 and 10 of 12 placed parts. The owner settled
- * it the other way round, and the measurements are in
+ * strip. Measured against the three committed boards that passed `make check`
+ * at the time of this decision (the `34` against `transistor-preamp-staged`
+ * predates its 2026-11-02 fixed-stage-one re-placement; see the current count
+ * above), that refused 13 of 16, 27 of 34 and 10 of 12 placed parts. The owner
+ * settled it the other way round, and the measurements are in
  * `docs/stripboard/pipeline-verification.md` section 3.
  *
  * **THE DIP'S CENTRE CUT IS STILL NOT ASSERTED HERE.** That cut divides pins of

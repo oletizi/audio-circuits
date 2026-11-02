@@ -295,7 +295,7 @@ assuming either:
 
 | rule | placements claiming a hole another part's lead occupies |
 | --- | --- |
-| **strip cell** (what the code does) | **14 holes, 11 parts, 4 boards** |
+| **strip cell** (what the code does) | **14 holes, 11 parts, 4 boards (measured before 2026-11-02; `staged` was one of the 4 and is not any more - see its bullet below, now 3 boards)** |
 | **point** | **none, on any board** |
 
 The strip-cell clashes, by part:
@@ -311,13 +311,14 @@ The strip-cell clashes, by part:
   layout captured from `7e1406c3`: `Q1` (TO-92) claimed `8,12`=`R1.1`; `RV2`
   claimed `21,28`=`R2.2`. The board was re-placed when stage 1 became three
   fixed resistors (`boards/transistor-preamp-staged/layout/REPLAY.md`), and
-  measured on the re-placed board's dump with the same rule - every placement
-  through `candidateFromDump`, the 14 of its 30 placements whose leads are at
+  measured on the re-placed board's dump with the same rule, by
+  `tools/stripboard/measure-clashes.ts` - every placement through
+  `candidateFromDump`, the 14 of its 30 placements whose leads are at
   their footprint's own geometry run through `geometryOf`, each claimed hole
   checked against every other part's leads - **no hole is claimed**. So the
   table's totals above count two clashes that no committed board now has; they
   are left as measured rather than re-derived, because the other boards were not
-  re-measured here. The same script run on the `7e1406c3` capture reproduces
+  re-measured here. `tools/stripboard/measure-clashes.ts` run on the `7e1406c3` capture reproduces
   `Q1`'s clash but not `RV2`'s, and also reports `C7` (the D10 can, whose pattern
   was recorded after this table was measured) claiming `13,20`=`Q3.2` and
   `14,20`=`Q3.1` - so the method agrees with this table on one of its two staged

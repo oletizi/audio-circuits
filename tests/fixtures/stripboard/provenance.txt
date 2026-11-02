@@ -175,9 +175,9 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
       (regenerated in 288bd0a, the staged board's copperhead-page promotion,
       to 95166c6e45b706f95654fc50301da592cbd0421b25d696def380ac366cd42abd -
       same REF.PIN partition, which is what HC8 grades, so no grade here is
-      affected; this entry's dump above is a dated capture against the input
-      board at 7e1406c3, from before that promotion and before 60ded02's
-      re-placement)
+      affected; UNTIL 2026-11-02, this entry's dump above was a dated capture
+      against the input board at 7e1406c3, from before that promotion and
+      before 60ded02's re-placement - see the re-capture noted next)
       (regenerated again in 2185dfe7ba2d3953cd40cd7191d1ac641e9356c9, the
       fixed-stage-one sheet repair, to
       f6e67426a3cee21d1d516b6d903a148e947ed2f6627ef6e69473fa239ed4fb40 - a
@@ -187,9 +187,10 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
 
   binary         .tools/veroroute-perfboard at commit
                  0bf46e5b1b97c6bd206af39e7217ba1fe278a207, which is what
-                 veroroute.pin pins, built from that commit
-                 (.tools/veroroute-perfboard/.built-commit agrees - D25's two
-                 figures, recorded separately because they have disagreed)
+                 veroroute.pin pinned at their capture, built from that commit
+                 (.tools/veroroute-perfboard/.built-commit agreed at that time -
+                 D25's two figures, recorded separately because they have
+                 disagreed)
                  --version prints "VeroRoute Version 2.40", the upstream app
                  version, which carries no fork commit; the stamp is the only
                  witness of which build ran
