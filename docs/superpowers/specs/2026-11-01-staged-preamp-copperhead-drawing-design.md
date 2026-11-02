@@ -1,6 +1,7 @@
 # Drawing the staged preamp with copperhead
 
-**Status:** proposed, awaiting the owner's review. Nothing below is built yet.
+**Status:** the owner has decided the grouping and the intent's source; the
+implementation plan is next. Nothing below is built yet.
 
 ## Why
 
@@ -124,13 +125,6 @@ build guide keep pointing at the existing sheet.
   others by name. The Pultec intents stay as they are.
 - Not a verdict on any drawing. Approval is recorded by the owner only.
 
-## Open question for the owner
-
-1. **Is generating the intent from the model the right call**, rather than a
-   hand-written JSON file like all five Pultec boards' intents? Recommended:
-   generated, because a hand-typed copy of the circuit is a second place for
-   it to be wrong, and the model already holds every fact the intent needs
-   except the grouping. The hand-written path is the one with precedent.
 
 ## Decisions
 
@@ -139,5 +133,5 @@ build guide keep pointing at the existing sheet.
 | Try the copperhead procedure on `transistor-preamp-staged` | owner | *"I'd like to see if our new copperhead hybrid drawing discipline can generate a suitable schematic drawing"* |
 | Leave the existing sheet untouched; the copperhead page is a separate candidate | this writer, pending review | the existing sheet is the owner's arrangement and is what the guide prints |
 | Model-authoritative | this writer, pending review | an agent-designed circuit (`CLAUDE.md`, `TOOLING.md` step 0) |
-| Generate the intent from the `Network` | this writer, pending review | open question 1 |
+| Generate the intent from the `Network`, not by hand | owner | *"drive the intent from the model"*; a hand-typed copy of the circuit is a second place for it to be wrong |
 | Draw the whole circuit as a single group | owner | *"The pultec circuits are a little unusual. Let's try using a single group for the staged preamp circuit"* |
