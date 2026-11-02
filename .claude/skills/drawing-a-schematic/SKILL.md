@@ -133,8 +133,9 @@ noticing:**
    judgement work this skill is responsible for, not something any verb
    performs for you. A board's intent comes from one of two declared sources: a committed
    file in `COMMITTED_INTENT` (`tools/draught/draw-draft.ts`; only
-   `pultec-hi-cut` is registered, though all five Pultec boards have intents
-   under `docs/research/`), or a `drawingIntent()` export on a
+   `pultec-hi-cut` is registered, though all five Pultec boards have intents under `docs/research/` - hi-cut,
+   hi-boost, low-cut and mid in their `2026-10-29-<board>-full-run/`
+   directories, low-boost in `2026-10-29-copperhead-against-the-idiom/inputs/`), or a `drawingIntent()` export on a
    model-authoritative circuit (`transistor-preamp-staged` is the first). A
    board with neither refuses by name, and so does one with both
    (`tools/draught/draw-intent.ts`).
