@@ -42,6 +42,7 @@ function bothCircuit() {
     { potentiometer: { ccw: "1", wiper: "2", cw: "3" } },
     undefined,
     undefined,
+    undefined,
   )
 }
 

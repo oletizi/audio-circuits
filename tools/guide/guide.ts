@@ -94,6 +94,16 @@ export interface GuideInput {
   /** `undefined` when the circuit module declares no power-up checks. */
   readonly powerUpChecks: PowerUpChecks | undefined
   /**
+   * The board's build notes (./guide-notes.ts), straight off
+   * `BoardCircuit.guideNotes` - `undefined` when the circuit module declares
+   * no `guideNotes`. UNLIKE `powerUpChecks`, `undefined` here prints NOTHING:
+   * no heading, no "declares none" sentence - most boards never had a
+   * schematic-page note to lose, so a sentence announcing that on every one
+   * of them would be noise rather than information (the design spec's "Build
+   * notes in the guide" section).
+   */
+  readonly guideNotes: readonly string[] | undefined
+  /**
    * The board's `wiring.md`, repository-relative - `undefined` when the
    * board has no such file on disk. This packet does not replace that
    * document; it only names it, on page one, so a reader holding this
@@ -171,6 +181,7 @@ ul.states li { margin-bottom: 3pt; }
 p.mark-one { font-style: italic; margin: 0 0 4pt; }
 p.parts { margin: 0 0 5pt; }
 .group { page-break-inside: avoid; break-inside: avoid; margin-bottom: 10pt; }
+pre.notes { font-family: Menlo, Consolas, monospace; font-size: 9.5pt; line-height: 1.4; white-space: pre-wrap; margin: 4pt 0 0; }
 @media print { body { padding: 0; max-width: none; } }
 `
 
@@ -337,6 +348,26 @@ function powerUp(powerUpChecks: PowerUpChecks | undefined): string {
 }
 
 /**
+ * The **Build notes** section: printed only when the circuit module declares
+ * `guideNotes`, immediately after the power-up checks section
+ * (`buildGuideHtml` below). Lines are HTML-escaped and joined with a literal
+ * newline inside a `<pre>`, which prints them verbatim and in order - leading
+ * spaces intact - without a second place reproducing the exact text
+ * (./guide-notes.ts).
+ *
+ * `undefined` prints NOTHING: no heading, no "declares none" notice. That is
+ * the one place this section is unlike `powerUp` above, and deliberately so -
+ * see the module comment on `GuideInput.guideNotes`.
+ */
+function buildNotes(guideNotes: readonly string[] | undefined): readonly string[] {
+  if (guideNotes === undefined) return []
+  return [
+    "<h2>Build notes</h2>",
+    `<pre class="notes">${guideNotes.map((line) => escapeXml(line)).join("\n")}</pre>`,
+  ]
+}
+
+/**
  * The one thing this file refuses rather than printing: a packet that says it
  * carries a schematic page without knowing what size that page is, or one
  * that knows a size for a page it does not carry.
@@ -403,6 +434,7 @@ export function buildGuideHtml(input: GuideInput): string {
     ...input.checklist.map(checklistSection),
     "</section>",
     powerUp(input.powerUpChecks),
+    ...buildNotes(input.guideNotes),
     "</body>",
     "</html>",
     "",

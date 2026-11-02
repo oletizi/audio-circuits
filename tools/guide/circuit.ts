@@ -23,6 +23,7 @@ import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import type { BoardDump } from "./dump.ts"
 import type { PadTerminal } from "./pads.ts"
+import { declaredGuideNotes } from "./guide-notes.ts"
 import { declaredPowerUpChecks, type PowerUpChecks } from "./power-up.ts"
 
 export { isPanelPot }
@@ -43,6 +44,14 @@ export interface BoardCircuit extends PerfboardBoardCircuit {
   /** The module's power-up table; `undefined` when it declares none. */
   readonly powerUpChecks: PowerUpChecks | undefined
   /**
+   * The module's build-notes lines (./guide-notes.ts); `undefined` when it
+   * declares none. NOT defaulted to `[]`: an empty array is a refused export
+   * (tools/guide/guide-notes.ts's `declaredGuideNotes`), not "none", so the
+   * two must stay distinguishable here the same way `scaffold` below is kept
+   * distinct from an empty `ScaffoldDoc`.
+   */
+  readonly guideNotes: readonly string[] | undefined
+  /**
    * The module's stand-in groups; `undefined` when it declares none.
    *
    * NOT defaulted to an empty `ScaffoldDoc`. An empty doc (`groups: []`)
@@ -55,19 +64,21 @@ export interface BoardCircuit extends PerfboardBoardCircuit {
   readonly scaffold: ScaffoldDoc | undefined
 }
 
-/** Index a network's components by designator, pairing it with its power-up checks and scaffold doc. */
+/** Index a network's components by designator, pairing it with its power-up checks, scaffold doc and build notes. */
 export function boardCircuitFrom(
   network: Network,
   designators: Readonly<Record<string, string>>,
   pinNumbers: PinNumbers,
   powerUpChecks: PowerUpChecks | undefined,
   scaffold: ScaffoldDoc | undefined,
+  guideNotes: readonly string[] | undefined,
 ): BoardCircuit {
   return {
     ...perfboardBoardCircuitFrom(network, designators, pinNumbers),
     designators,
     powerUpChecks,
     scaffold,
+    guideNotes,
   }
 }
 
@@ -98,6 +109,7 @@ export async function loadBoardCircuit(declaration: PerfboardDeclaration): Promi
     designators,
     powerUpChecks: await declaredPowerUpChecks(module, declaration.circuitPath),
     scaffold: declaredScaffold(module, declaration.circuitPath),
+    guideNotes: declaredGuideNotes(module, declaration.circuitPath),
   }
 }
 

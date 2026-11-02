@@ -76,6 +76,7 @@ function guidePage(): string {
     },
     checklist: rows,
     powerUpChecks: undefined,
+    guideNotes: undefined,
     wiringPath: undefined,
     scaffold: undefined,
     schematicPaper: GUIDE_PAPER,

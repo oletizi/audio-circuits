@@ -40,6 +40,7 @@ import { parseValue } from "../../lib/model/units.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import type { PowerUpChecks, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
+import type { GuideNotesExport } from "../../tools/guide/guide-notes.ts"
 import type { BomConditions, BomConditionsExport } from "../../tools/bom/conditions.ts"
 import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
@@ -163,6 +164,17 @@ export function schematicNotes(): readonly string[] {
     "  TRANSFORMER DRIVE (RV7) sets how hard Q2 and the output transformer are driven.",
   ]
 }
+
+/**
+ * The build guide's Build notes section, for this board only
+ * (tools/guide/guide-notes.ts): this is the one board whose copperhead-drawn
+ * sheet dropped the STARTING SETTINGS / measurement / PANEL CONTROLS text
+ * that `schematicNotes()` above carries, so the guide is its only remaining
+ * home - the owner's call, recorded in the design spec's Decisions table.
+ * Returning `schematicNotes()` rather than a second copy keeps the text
+ * derived from the model, with one source.
+ */
+export const guideNotes: GuideNotesExport = (): readonly string[] => schematicNotes()
 
 /**
  * The parts-list derivation's operating conditions: the 24 V rail and every control

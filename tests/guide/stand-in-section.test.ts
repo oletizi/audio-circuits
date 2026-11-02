@@ -71,6 +71,7 @@ function guideHtml(scaffold: ScaffoldDoc | undefined, wiringPath: string | undef
     images: { designators: "<svg>d</svg>", values: "<svg>v</svg>", copper: "<svg>c</svg>", clusters: undefined },
     checklist: [],
     powerUpChecks: undefined,
+    guideNotes: undefined,
     wiringPath,
     scaffold,
     // Required beside a `"printed"` schematic - see `buildGuideHtml`'s guard.

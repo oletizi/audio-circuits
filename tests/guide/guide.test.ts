@@ -26,6 +26,7 @@ function guideHtml(
   powerUpChecks: PowerUpChecks | undefined = undefined,
   schematic: GuideSchematic = PRINTED_SCHEMATIC,
   wiringPath: string | undefined = undefined,
+  guideNotes: readonly string[] | undefined = undefined,
 ): string {
   const circuit = fixtureCircuit(powerUpChecks)
   const edges = offBoardLabels(circuit)
@@ -37,6 +38,7 @@ function guideHtml(
     images: { designators: "<svg>designators</svg>", values: "<svg>values</svg>", copper: "<svg>copper</svg>", clusters: undefined },
     checklist: buildChecklist(DUMP, circuit, edges, [], new Map(), NODE_MEMBERS),
     powerUpChecks: circuit.powerUpChecks,
+    guideNotes,
     wiringPath,
     // THE SCHEMATIC PAGE'S OWN SIZE, required whenever the packet carries one
     // and refused when it does not (`buildGuideHtml`'s own guard), so this
@@ -254,6 +256,18 @@ test("declared power-up checks render with a blank for the reading, and the cond
   )
   expect(html).toContain('<p class="conditions">Supply 24 V, at START.</p>')
   expect(html).not.toContain("declares no power-up checks")
+})
+
+test("declared guideNotes render as a Build notes section, escaped and with leading spaces intact", () => {
+  const html = guideHtml(undefined, PRINTED_SCHEMATIC, undefined, ["X & Y", "  indented"])
+  expect(html).toContain("<h2>Build notes</h2>")
+  expect(html).toContain("X &amp; Y")
+  expect(html).toContain("  indented")
+})
+
+test("a board with no guideNotes prints no Build notes section at all", () => {
+  const html = guideHtml()
+  expect(html).not.toContain("Build notes")
 })
 
 test("a part that fits no checklist step is refused, naming it", () => {

@@ -119,5 +119,6 @@ export function fixtureCircuit(
     PIN_NUMBERS,
     powerUpChecks,
     undefined,
+    undefined,
   )
 }
