@@ -14,15 +14,15 @@ Supply 24 V; stage 1 fixed (R1 820k feedback, R2 270k base to ground, R3 2.7k co
 | C7 | 470uF, radial, <= 10 mm dia, 5 mm leads, min 35 V | 1 | 2<br>2 | 470uF, 35V, radial aluminum electrolytic, 10x16mm body, 5mm lead spacing | Panasonic Industry ECA-1VM471 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Panasonic-Industry/ECA-1VM471?qs=4indQ9AG%252BqEMpMNEQEBA0w%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1VM471/245027) (checked 2026-10-09) | 0.69 USD<br>0.69 USD | 1.38 USD<br>1.38 USD |
 | J1, J2, J3 | 2-pin 2.54 mm header | 3 | 4<br>4 | 2-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-102-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-102-07-G-S?qs=iT52DjcXudsNPhlNCDp8vw%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/samtec-inc/TSW-102-07-G-S/1101325) (checked 2026-10-09) | 0.36 USD<br>0.21 USD | 1.44 USD<br>0.84 USD |
 | RV5, RV6, RV7 | 3-pin 2.54 mm header | 3 | 4<br>4 | 3-position single-row male pin header, straight (vertical), 2.54mm (0.1in) pitch, through-hole | Samtec TSW-103-07-G-S | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/Samtec/TSW-103-07-G-S?qs=iT52DjcXudtntd1jApTIAw%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/samtec-inc/TSW-103-07-G-S/1101324) (checked 2026-10-09) | 0.29 USD<br>0.27 USD | 1.16 USD<br>1.08 USD |
-| R12 | 22R, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 22 ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-22R | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-22R?qs=oAGoVhmvjhx96aHnODh%2FLA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-22R/9138099) (checked 2026-10-09) | 0.029 USD<br>0.0284 USD | 2.90 USD<br>2.84 USD |
-| R11 | 1.2K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 1.2k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K2?qs=oAGoVhmvjhwubsAZsxG%2FVA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K2/9138061) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
+| R12 | 22R, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>2 | 22 ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-22R | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-22R?qs=oAGoVhmvjhx96aHnODh%2FLA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-22R/9138099) (checked 2026-10-09) | 0.029 USD<br>0.11 USD | 2.90 USD<br>0.22 USD |
+| R11 | 1.2K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>2 | 1.2k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K2 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K2?qs=oAGoVhmvjhwubsAZsxG%2FVA%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K2/9138061) (checked 2026-10-09) | 0.027 USD<br>0.10 USD | 2.70 USD<br>0.20 USD |
 | R4, R7 | 1.5K, 0207 axial, 10.16 mm leads, min 0.25 W | 2 | 100<br>100 | 1.5k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-1K5 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-1K5?qs=oAGoVhmvjhxRPUzOCLoqMQ%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-1K5/13046) (checked 2026-10-09) | 0.033 USD<br>0.0268 USD | 3.30 USD<br>2.68 USD |
-| R3 | 2.7K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| R3 | 2.7K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 2.7k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-2K7 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-2K7?qs=oAGoVhmvjhyqP6%2F%252BlnIvMg%3D%3D) (checked 2026-11-02)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-2K7/9138110) (checked 2026-11-02) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 | R10 | 5.6K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 5.6k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-5K6 | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-5K6?qs=oAGoVhmvjhxL79DuPEfHMw%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-5K6/9138195) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 | R9 | 15K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 15k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-15K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-15K?qs=oAGoVhmvjhzZTLCD9uq%2F7w%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-15K/13252) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 | R5, R6, R8 | 100K, 0207 axial, 10.16 mm leads, min 0.25 W | 3 | 100<br>100 | 100k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-100K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-100K?qs=oAGoVhmvjhxAqZbyE%2Fs9bg%3D%3D) (checked 2026-09-30)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-100K/13473) (checked 2026-10-09) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
-| R2 | 270K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
-| R1 | 820K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | not chosen | not chosen | not chosen | not chosen | not chosen | not chosen |
+| R2 | 270K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 270k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-270K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-270K?qs=oAGoVhmvjhwN1R24VyY4nw%3D%3D) (checked 2026-11-02)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-270K/9138104) (checked 2026-11-02) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
+| R1 | 820K, 0207 axial, 10.16 mm leads, min 0.25 W | 1 | 100<br>100 | 820k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body | Yageo MFR-25FBF52-820K | [Mouser (standard)](https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-820K?qs=oAGoVhmvjhwrljpFGi9UCA%3D%3D) (checked 2026-11-02)<br>[Digi-Key (standard)](https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-820K/9138206) (checked 2026-11-02) | 0.027 USD<br>0.0268 USD | 2.70 USD<br>2.68 USD |
 
 ## Off the board
 
@@ -43,29 +43,35 @@ Supply 24 V; stage 1 fixed (R1 820k feedback, R2 270k base to ground, R3 2.7k co
 
 | Supplier | Currency | Total |
 | --- | --- | --- |
-| Digi-Key | USD | 52.47 |
-| Mouser | USD | 75.67 |
+| Digi-Key | USD | 55.41 |
+| Mouser | USD | 83.77 |
 
 ## Bulk buys
 
 Bought in bulk:
 
-- R12 (resistor-22r-metal-film-0207) at Digi-Key: 100 at 0.0284 USD
-- R11 (resistor-1k2-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R4, R7 (resistor-1k5-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
+- R3 (resistor-2k7-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R10 (resistor-5k6-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R9 (resistor-15k-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R5, R6, R8 (resistor-100k-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
+- R2 (resistor-270k-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
+- R1 (resistor-820k-metal-film-0207) at Digi-Key: 100 at 0.0268 USD
 - R12 (resistor-22r-metal-film-0207) at Mouser: 100 at 0.029 USD
 - R11 (resistor-1k2-metal-film-0207) at Mouser: 100 at 0.027 USD
 - R4, R7 (resistor-1k5-metal-film-0207) at Mouser: 100 at 0.033 USD
+- R3 (resistor-2k7-metal-film-0207) at Mouser: 100 at 0.027 USD
 - R10 (resistor-5k6-metal-film-0207) at Mouser: 100 at 0.027 USD
 - R9 (resistor-15k-metal-film-0207) at Mouser: 100 at 0.027 USD
 - R5, R6, R8 (resistor-100k-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R2 (resistor-270k-metal-film-0207) at Mouser: 100 at 0.027 USD
+- R1 (resistor-820k-metal-film-0207) at Mouser: 100 at 0.027 USD
 
 Not bought in bulk:
 
 - J1, J2, J3 (pin-header-2position-2.54mm) at Digi-Key: not 100 - its unit price 0.1536 USD is over the 0.15 USD bulk cap; buying 4
 - RV5, RV6, RV7 (pin-header-3position-2.54mm) at Digi-Key: not 100 - its unit price 0.1955 USD is over the 0.15 USD bulk cap; buying 4
+- R12 (resistor-22r-metal-film-0207) at Digi-Key: not 100 - dropped to keep the Digi-Key USD order within 50% over its total at covered quantities; buying 2
+- R11 (resistor-1k2-metal-film-0207) at Digi-Key: not 100 - dropped to keep the Digi-Key USD order within 50% over its total at covered quantities; buying 2
 - J1, J2, J3 (pin-header-2position-2.54mm) at Mouser: not 100 - its unit price 0.215 USD is over the 0.15 USD bulk cap; buying 4
 - RV5, RV6, RV7 (pin-header-3position-2.54mm) at Mouser: not 250 - its unit price 0.271 USD is over the 0.15 USD bulk cap; buying 4
