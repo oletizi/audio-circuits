@@ -4376,3 +4376,57 @@ needs to act on several boards at once from a directory that is not a board,
 the verb needs an argument after all. The shape already available for that is
 `check`'s: an aggregate directory walks downward from wherever it is run. That
 is the answer to reach for, not `BOARD=`.
+
+---
+
+### G309 - OWNER DECISION, 2026-11-01: copperhead's dependency tree is ACCEPTED, and the reason is the threat model rather than the count
+
+> *"The copperhead dependency tree is fine. We're not running production
+> software in a data center"*
+
+**What was put to him, and why it was put at all.** `npm audit` in copperhead's
+own checkout reports **22 vulnerabilities - 3 low, 6 moderate, 10 high, 3
+critical** - in packages this repository did not choose and does not pin
+individually. He was shown that measurement with the vendoring alternative
+beside it.
+
+**THE SECOND SENTENCE IS THE RULING AND THE FIRST IS ONLY ITS CONCLUSION.** He
+did not weigh 22 against some threshold. He named the **threat model**: this is
+a bench tool that draws schematics on one person's machine, run by hand, with
+no network service, no untrusted input and no third party relying on it. A
+dependency advisory describes what an attacker could do to a host that is
+exposed; nothing here is exposed. **An agent that finds this entry and proposes
+vendoring, pinning the transitive tree, or gating a drawing on an audit has
+found this paragraph**, and the thing to re-examine is whether the threat model
+still holds, not whether the number has gone up.
+
+**THIS CORRECTS AN ACCEPTANCE AN AGENT WROTE ON HIS BEHALF, which is the part
+worth keeping.** `TOOLING.md` already stated that choosing the install script
+over vendoring *"accepted it along with everything else upstream changes"*. It
+did not. His recorded word, *"install script"* on 2026-10-30, answered **how to
+pin copperhead and akcli** - the question on the table was vendoring versus
+installing, not whether an unaudited transitive tree was acceptable. **Those are
+two different questions and only the first was ever asked.** A whole-branch
+review caught the substitution and said so rather than letting it stand; the
+decision is now actually his, and `TOOLING.md` cites this entry instead of
+inferring consent from a sentence about something else.
+
+**The general form, because this will happen again.** An agent writing down a
+consequence of a decision is doing its job. An agent writing down that the owner
+**accepted** a consequence he was never shown is authoring his judgement, which
+`CLAUDE.md` forbids in the same breath as acceptance criteria. The tell is the
+word *accepted* attached to a thing no quoted sentence of his mentions.
+
+- **Found** 2026-11-01, by the institutionalisation plan's whole-branch review,
+  which flagged it as evidence to put to him rather than as a question to invent.
+- **Evidence** his words above; `npm audit` run for real in
+  `draughting/copperhead/` by two independent agents, both returning the same
+  counts.
+- **Verified** **CONFIRMED by this writer** for the audit figures, which were
+  re-run here. The decision is his.
+- **Why it is open** it is a decision, recorded so it is not re-raised every
+  time someone runs `npm audit` and sees a red number.
+- **What would settle it.** Nothing to settle. **What would REOPEN it is a
+  change in the threat model** - copperhead becoming something this repository
+  ships, exposes to a network, or runs against untrusted input - and not a
+  change in the advisory count.
