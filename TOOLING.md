@@ -293,6 +293,16 @@ net's `kind`, `noConnect`, and `libId`. There is **no coordinate and no
 orientation control** - copperhead places, and that is the trade this tool is
 chosen for.
 
+**For a model-authoritative board, the intent is generated, not written.** Its
+circuit module exports `drawingIntent()`, built by
+`tools/draught/intent-from-network.ts` from the `Network`, the circuit's
+`DESIGNATORS` and `PIN_NUMBERS`, and a small drawing file holding the group and
+the net kinds (`circuits/transistor-preamp/staged-board.drawing.ts` is the
+first). `make draw` writes it to `build/draw/<board>.intent.json` on every run.
+A schematic-authoritative board - the Pultec - keeps a committed, hand-written
+intent named in `COMMITTED_INTENT`. `tools/draught/draw-intent.ts` refuses a
+board that declares both.
+
 `docs/research/2026-10-29-low-cut-full-run/base.intent.json` is the worked
 example, and `docs/research/2026-10-29-low-cut-full-run/draft.py` beside it shows group assignments written out as
 literals.

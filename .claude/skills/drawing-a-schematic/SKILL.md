@@ -131,10 +131,13 @@ noticing:**
    selftest is loud and withholds nothing.
    **It never calls `akcli`.** Repair - step 4 of the loop above - is
    judgement work this skill is responsible for, not something any verb
-   performs for you. Only `pultec-hi-cut` has a `COMMITTED_INTENT` entry
-   today (`tools/draught/draw-draft.ts`); the other four Pultec boards with
-   a page under `drafted/pultec/` refuse by name, rather than guess at an
-   intent, until one is added.
+   performs for you. A board's intent comes from one of two declared sources: a committed
+   file in `COMMITTED_INTENT` (`tools/draught/draw-draft.ts`; only
+   `pultec-hi-cut` is registered, though all five Pultec boards have intents
+   under `docs/research/`), or a `drawingIntent()` export on a
+   model-authoritative circuit (`transistor-preamp-staged` is the first). A
+   board with neither refuses by name, and so does one with both
+   (`tools/draught/draw-intent.ts`).
 3. **IT NEVER WITHHOLDS A PAGE FOR A LAYOUT REASON.** See "Never withhold a
    drawing" below - this is the same rule, stated here because `make draw`'s
    own behavior is where it is easiest to verify: the measurement suite's
