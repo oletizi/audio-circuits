@@ -163,13 +163,28 @@ copy if either disappears; the trade is a repository that does not carry a
 third-party checkout and its `node_modules`, against a one-time install that
 can fail if upstream is gone. Neither install directory is committed -
 `.gitignore` excludes both - so this is a local build product of the script,
-re-created by running it again, not repository content. **The same trade
-also means this project does not audit copperhead's own dependency tree**:
-`npm install` in a fresh checkout currently reports 22 vulnerabilities (3
-low, 6 moderate, 10 high, 3 critical) in packages this repository did not
-choose and does not pin individually - that is upstream's dependency
-security posture, not this repository's, and accepting the install script
-over vendoring accepted it along with everything else upstream changes.
+re-created by running it again, not repository content.
+
+**This project does not audit copperhead's own dependency tree, and that is
+the owner's decision rather than a consequence of this one.** `npm audit` in
+the checkout currently reports 22 vulnerabilities (3 low, 6 moderate, 10 high,
+3 critical) in packages this repository did not choose and does not pin
+individually. He was shown that measurement with the vendoring alternative
+beside it, 2026-11-01: *"The copperhead dependency tree is fine. We're not
+running production software in a data center"* - **a ruling about the threat
+model, not about the number.** `docs/known-gaps.md` **G309** carries it, and
+says what would reopen it: copperhead becoming something this repository
+ships, exposes to a network, or runs against untrusted input. Not a higher
+count.
+
+> **This paragraph said until 2026-11-01 that "accepting the install script
+> over vendoring accepted it along with everything else upstream changes",
+> and that was an agent writing his acceptance for him.** His word
+> *"install script"* answered how to pin copperhead and akcli; the question
+> on the table was vendoring versus installing, not whether an unaudited
+> transitive tree was acceptable. Shown struck rather than edited away,
+> because the substitution is the useful part: the tell is the word
+> **accepted** attached to a thing no quoted sentence of his mentions.
 
 ### NEITHER TOOL IS PINNED IN THIS REPOSITORY, AND THAT IS A STANDING RISK - STRUCK 2026-11-01, NOT DELETED
 
