@@ -65,9 +65,15 @@
  * toolchain table lists `git` and `Python` as system tools this repository
  * has never pinned.
  *
- * **WRITES ONLY UNDER `build/draw/<board>/`.** Never `drafted/`, never a
- * board's own declared files. `build/` is gitignored, so a run here never
- * shows up in `git status`.
+ * **WRITES ONLY UNDER THE GITIGNORED `build/draw/`.** The draft, render and
+ * crop outputs land in `build/draw/<board>/`; a derived intent (the
+ * `drawingIntent()` path - see `../draught/draw-intent.ts`) is written
+ * beside it, at `build/draw/<board>.intent.json`, never inside it -
+ * `draftWithCopperhead` (`../draught/draw-draft.ts`) empties `outDir`
+ * before drafting, so a file this verb needs to survive the draft cannot
+ * sit inside the directory the draft is about to clear. Never `drafted/`,
+ * never a board's own declared files. `build/` is gitignored, so a run here
+ * never shows up in `git status`.
  */
 import fs from "node:fs"
 import path from "node:path"
