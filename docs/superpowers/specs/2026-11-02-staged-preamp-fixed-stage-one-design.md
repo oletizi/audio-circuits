@@ -1,6 +1,6 @@
 # Staged preamp: stage 1 at the tuned values, as fixed parts
 
-**Status:** implemented on `feature/transistor-preamp` (plan `docs/superpowers/plans/2026-11-02-staged-preamp-fixed-stage-one.md`); the repaired schematic and the re-placed stripboard await the owner's evaluation.
+**Status:** implemented on `feature/transistor-preamp` (plan `docs/superpowers/plans/2026-11-02-staged-preamp-fixed-stage-one.md`); the owner reviewed the repaired schematic and the re-placed stripboard on 2026-11-02 (*"looks good"*, recorded in `docs/schematic/verdicts.md`).
 
 ## Why
 
