@@ -1,6 +1,6 @@
 # Staged preamp: stage 1 at the tuned values, as fixed parts
 
-**Status:** proposed, awaiting the owner's review. Nothing below is built yet.
+**Status:** reviewed; the owner chose the values. The implementation plan is next.
 
 ## Why
 
@@ -43,7 +43,7 @@ the base read low under meter loading):
 meters, 5% resistors, 2N3904 beta spread). The ratio of the two legs sets the
 bias more than either value alone.
 
-**The value choice is open question 1 below.**
+**The owner chose 820k / 270k** - the pair nearest the readings he took.
 
 ## The change
 
@@ -51,8 +51,8 @@ On the staged board only:
 
 | leg | today | becomes |
 | --- | --- | --- |
-| feedback | R1 470k + RV1 1M trim | one resistor, value per question 1 |
-| base to ground | R2 47k + RV2 200k trim | one resistor, value per question 1 |
+| feedback | R1 470k + RV1 1M trim | one resistor, 820k |
+| base to ground | R2 47k + RV2 200k trim | one resistor, 270k |
 | collector | R3 1k + RV3 2k trim | one resistor, 2.7k |
 | emitter bypass | RV4 1k trim between C1 and GND | removed; C1 straight to GND |
 
@@ -97,19 +97,12 @@ Each of these is regenerated or redone, never left stale:
 - Not a retune: the values are the owner's, taken from his readings.
 - Not a change to the panel controls.
 
-## Open questions for the owner
-
-1. **Which values?** If the buffered board is still as tuned, lifting one end
-   of RV1 and of RV2 and reading each pot alone settles the legs directly - the
-   precise route. Otherwise, 820k / 270k is the pair nearest the readings he
-   took, and 910k / 300k sits between those and the corrected values; the
-   simulation cannot separate them.
-
 ## Decisions
 
 | Decision | Who | Why |
 | --- | --- | --- |
 | Fix stage 1 at the buffered board's tuned values on the staged board | owner | *"I'd like to fix the variables we've already found suitable values for"* |
-| Collector 2.7k, emitter fully bypassed (RV4 removed) | this writer, pending review | 2.7k is the E24 value nearest 1k + 1.8k; RV4 was at 0 |
-| Feedback, buffered and loop boards keep their trims | this writer, pending review | they are tuning boards; stage 1's builder is shared, so it is parameterised, not copied |
+| Collector 2.7k, emitter fully bypassed (RV4 removed) | this writer, reviewed | 2.7k is the E24 value nearest 1k + 1.8k; RV4 was at 0 |
+| Feedback, buffered and loop boards keep their trims | this writer, reviewed | they are tuning boards; stage 1's builder is shared, so it is parameterised, not copied |
+| Feedback leg 820k, base-to-ground leg 270k | owner | *"Let's use the 820K/270K pair"* |
 | Staged board not yet built | owner | *"I have not build the staged board yet"* |
