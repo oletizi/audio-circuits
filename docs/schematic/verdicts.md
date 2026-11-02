@@ -472,6 +472,19 @@ does not let an agent supply it. Nor did he rule on whether this page replaces
 `circuits/transistor-preamp/staged-board.kicad_sch`, the sheet the board's
 `perfboard.json` names and the build guide prints. Both are his to state.
 
+**THEN, THE SAME DAY, ON PROMOTION, verbatim:**
+
+> *"This drawing is better than my hand-drawn one—it fits on the page, where
+> mine doesn't. Let's promote this new drawing to the canonical schematic"*
+
+Done in `288bd0a`: `circuits/transistor-preamp/staged-board.kicad_sch` is now
+this page plus hidden Footprint fields set from the model and minus the title
+block's "generated - do not edit" line, sha256
+`402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493`. A 150 dpi
+render of it differs from the page he reviewed only in the title block's
+file-name line. Those bytes are not the ones his verdict above binds to, and
+this entry does not claim they are.
+
 ---
 
 ## What this record is for, beyond not losing a verdict

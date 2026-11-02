@@ -131,7 +131,9 @@ build guide keep pointing at the existing sheet.
 | Decision | Who | Why |
 | --- | --- | --- |
 | Try the copperhead procedure on `transistor-preamp-staged` | owner | *"I'd like to see if our new copperhead hybrid drawing discipline can generate a suitable schematic drawing"* |
-| Leave the existing sheet untouched; the copperhead page is a separate candidate | this writer, pending review | the existing sheet is the owner's arrangement and is what the guide prints |
+| Leave the existing sheet untouched until the owner has seen the copperhead page | this writer | the existing sheet is the owner's arrangement and is what the guide prints |
+| Promote the copperhead page to `circuits/transistor-preamp/staged-board.kicad_sch` | owner | *"This drawing is better than my hand-drawn one—it fits on the page, where mine doesn't. Let's promote this new drawing to the canonical schematic"*; done in `288bd0a`, with footprints added from the model |
+| Keep copperhead's own VCC, GND and PWR_FLAG symbols | owner | asked whether to swap them for KiCad's `power:` symbols: *"No. It's fine the way it is."* |
 | Model-authoritative | this writer, pending review | an agent-designed circuit (`CLAUDE.md`, `TOOLING.md` step 0) |
 | Generate the intent from the `Network`, not by hand | owner | *"drive the intent from the model"*; a hand-typed copy of the circuit is a second place for it to be wrong |
 | Draw the whole circuit as a single group | owner | *"The pultec circuits are a little unusual. Let's try using a single group for the staged preamp circuit"* |

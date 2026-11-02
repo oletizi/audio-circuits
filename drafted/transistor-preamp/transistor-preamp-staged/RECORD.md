@@ -15,7 +15,8 @@ reader can check.
 | Render | `transistor-preamp-staged.generated-do-not-edit.svg` |
 | sha256 of the render, volatile `<title>` line dropped - evidence, not a binding | `5e0449e6b8011032c135dcf5f33d6de9f07f0de4f59b478ad1e4a3674ce8caa0` |
 | Status | **reviewed 2026-11-01** - verdict *"The repaired drawing looks great"*, recorded verbatim in `../../../docs/schematic/verdicts.md` against the sha256 above. Not recorded as approved: he has not used that word |
-| Authority | model-authoritative: `circuits/transistor-preamp/staged-board.ts`. The existing sheet `circuits/transistor-preamp/staged-board.kicad_sch` is untouched; this page is a separate candidate |
+| Authority | model-authoritative: `circuits/transistor-preamp/staged-board.ts` |
+| Promoted | 2026-11-01, on the owner's directive, to `circuits/transistor-preamp/staged-board.kicad_sch` (`288bd0a`), with hidden Footprint fields added from the model and the title block's "generated - do not edit" line removed. That file is now the board's schematic and is his to edit; this page stays here unchanged, as the record of where it came from |
 | Drafted by | `make -C boards/transistor-preamp-staged draw`, copperhead, from the intent `drawingIntent()` generates from the model - **one group**, captioned `Transistor preamp - staged` (the owner's decision) |
 | Draft sha256 (as `make draw` wrote it, re-papered) | `3b5a31ae87ae567263c8a8cac3d85a8cf436e3ba2ce5539f674fec22bc6ec743` |
 | Repaired by | one akcli 0.22.0 op-list (380 ops, dry-run with `akcli plan` first, then `akcli draw --apply`), then literal text edits for what akcli has no operation for (wire stroke and colour, symbol fields, the group rectangle and caption) |
