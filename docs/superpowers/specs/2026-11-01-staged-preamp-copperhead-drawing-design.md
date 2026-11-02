@@ -145,4 +145,18 @@ day he saw it; see the Decisions table's promotion row.)
 | Model-authoritative | this writer, pending review | an agent-designed circuit (`CLAUDE.md`, `TOOLING.md` step 0) |
 | Generate the intent from the `Network`, not by hand | owner | *"drive the intent from the model"*; a hand-typed copy of the circuit is a second place for it to be wrong |
 | Draw the whole circuit as a single group | owner | *"The pultec circuits are a little unusual. Let's try using a single group for the staged preamp circuit"* |
-| Where should the dropped notes text go: back on the page, or printed by the build guide from `schematicNotes()`? | owner, open | the promotion (`288bd0a`) carried over no equivalent of the replaced sheet's **STARTING SETTINGS** / Q2 measurement / **PANEL CONTROLS** text block, which `make guide` used to print from the old sheet and prints from nothing now - recorded in `docs/schematic/verdicts.md` and `drafted/transistor-preamp/transistor-preamp-staged/RECORD.md`; not decided or added without the owner's say |
+| The dropped notes go into the build guide, not back on the page | owner | asked where the replaced sheet's **STARTING SETTINGS** / Q2 measurement / **PANEL CONTROLS** text should go: *"into the build guide"* |
+| The guide prints notes from an optional `guideNotes()` export, which only the staged board declares | this writer | four other preamp boards export `schematicNotes()` and their sheets already carry that text on the page; keying the section on `schematicNotes()` would print theirs twice. See "Build notes in the guide" below |
+
+## Build notes in the guide
+
+A circuit module MAY export `guideNotes(): readonly string[]`. When it does,
+`make guide` prints a **Build notes** section carrying those lines, verbatim and
+in order. When it does not, the guide prints no such section and nothing else
+changes. A malformed export - not a function, not an array of strings, or an
+empty array - refuses at load, naming the module, the same way
+`powerUpChecks` does (`tools/guide/power-up.ts`).
+
+`circuits/transistor-preamp/staged-board.ts` exports `guideNotes`, returning its
+own `schematicNotes()`, so the text stays derived from the model and has one
+source. No other board exports it, so no other guide changes.
