@@ -166,14 +166,16 @@ test("the drawing-path tool declaration matches what the drawing-path modules ac
   ).toEqual([])
 })
 
-test("a board with no committed intent refuses, naming the board, rather than deriving one", async () => {
-  // pultec-mid has a page under drafted/pultec/ but no entry in COMMITTED_INTENT yet - this
-  // plan does not derive an intent from a Network, so it must refuse rather than guess.
+test("a board with no intent from either source refuses, naming the board and both sources", async () => {
+  // pultec-mid has a page under drafted/pultec/, no COMMITTED_INTENT entry, and its circuit
+  // module exports no drawingIntent - so there is nothing to draft from, and it must refuse
+  // rather than guess.
   const result = await runDraw({ board: "pultec-mid" })
   expect(result.exitCode).not.toBe(0)
   expect(result.drew).toBe(false)
   expect(result.stderr).toContain("pultec-mid")
-  expect(result.stderr).toContain("no committed copperhead intent")
+  expect(result.stderr).toContain("COMMITTED_INTENT")
+  expect(result.stderr).toContain("drawingIntent")
 })
 
 test("a directory with no perfboard.json refuses, naming the directory, rather than crashing", async () => {

@@ -12,7 +12,6 @@ import fs from "node:fs"
 import path from "node:path"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { defaultCopperheadDir, defaultCopperheadTsx } from "./copperhead-install.ts"
-import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 
 /**
  * One board's committed copperhead intent, repository-relative.
@@ -27,10 +26,12 @@ import { moduleRepoRoot } from "../perfboard/repo-root.ts"
  * afterwards that this verb does not run (`TOOLING.md` steps 4-6 are
  * judgement-laden repair work, not mechanics - see `tools/cli/draw.ts`'s own
  * module comment). The other four Pultec boards with a page under
- * `drafted/pultec/` have no entry here yet; `make -C boards/<one of them>
- * draw` refuses, naming the board, until one is added.
+ * `drafted/pultec/` have intents committed in their research run directories
+ * but no entry here yet. A MODEL-AUTHORITATIVE board does not belong here at
+ * all: its circuit module exports `drawingIntent()` instead, and
+ * `./draw-intent.ts` resolves between the two sources.
  */
-const COMMITTED_INTENT: Readonly<Record<string, string>> = {
+export const COMMITTED_INTENT: Readonly<Record<string, string>> = {
   "pultec-hi-cut": "docs/research/2026-10-29-hi-cut-full-run/intent-v4-blocks-mid-late.json",
 }
 
@@ -46,12 +47,18 @@ export interface IntentPart {
 export interface IntentNet {
   readonly name: string
   readonly pins: readonly string[]
+  /** copperhead's own drawing hint (e.g. "ground"/"power") - carried through, never required. */
+  readonly kind?: string
 }
 
 export interface Intent {
+  /** copperhead's schema version - carried through when the file has one, never required. */
+  readonly version?: number
   readonly parts: readonly IntentPart[]
   readonly nets: readonly IntentNet[]
   readonly noConnect: readonly string[]
+  /** Free-form drawing hints (e.g. `groupOrder`) - carried through opaquely, never required. */
+  readonly hints?: Readonly<Record<string, unknown>>
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -70,6 +77,11 @@ function isStringArray(value: unknown): value is readonly string[] {
  * exists only so `verifyIntentAgainstModel` below has something typed to
  * read before that point, and refuses by name rather than letting a
  * malformed file reach `Object.entries` as `unknown`.
+ *
+ * `version`, `hints` and a net's `kind` are carried through opaquely when
+ * present, so re-reading a written file (`./draw-intent.ts`'s derived path)
+ * round-trips losslessly rather than silently narrowing it to the fields
+ * this check cares about.
  */
 export function parseIntent(file: string): Intent {
   let raw: string
@@ -104,10 +116,13 @@ export function parseIntent(file: string): Intent {
   if (!Array.isArray(netsValue)) throw new Error(`${file}: "nets" is missing or not an array.`)
   const nets = netsValue.map((item, index): IntentNet => {
     if (!isRecord(item)) throw new Error(`${file}: nets[${index}] is not an object.`)
-    const { name, pins } = item
+    const { name, pins, kind } = item
     if (typeof name !== "string") throw new Error(`${file}: nets[${index}].name is missing or not a string.`)
     if (!isStringArray(pins)) throw new Error(`${file}: nets[${index}].pins is missing or not an array of strings.`)
-    return { name, pins }
+    if (kind !== undefined && typeof kind !== "string") {
+      throw new Error(`${file}: nets[${index}].kind must be a string when present.`)
+    }
+    return kind === undefined ? { name, pins } : { name, pins, kind }
   })
 
   const noConnectValue = parsed["noConnect"]
@@ -116,33 +131,23 @@ export function parseIntent(file: string): Intent {
   }
   const noConnect = noConnectValue ?? []
 
-  return { parts, nets, noConnect }
-}
-
-// --- resolving the intent: a committed one, or a refusal naming the board ---
-
-export type IntentResolution = { readonly path: string } | { readonly refusal: string }
-
-export function resolveIntentPath(board: string, override: string | undefined): IntentResolution {
-  if (override !== undefined) {
-    const abs = path.resolve(override)
-    if (!fs.existsSync(abs)) {
-      return { refusal: `--intent override ${override} does not exist.` }
-    }
-    return { path: abs }
+  const versionValue = parsed["version"]
+  if (versionValue !== undefined && typeof versionValue !== "number") {
+    throw new Error(`${file}: "version" must be a number when present.`)
   }
-  const relative = COMMITTED_INTENT[board]
-  if (relative === undefined) {
-    const known = Object.keys(COMMITTED_INTENT).sort().join(", ")
-    return {
-      refusal:
-        `no committed copperhead intent is declared for board "${board}". ` +
-        "COMMITTED_INTENT in tools/draught/draw-draft.ts names one intent file per board that has one, and " +
-        `this plan does not derive an intent from a Network (the board has none yet, among [${known}]). ` +
-        `Add "${board}" to COMMITTED_INTENT, pointing at a committed intent file, before drafting it here.`,
-    }
+
+  const hintsValue = parsed["hints"]
+  if (hintsValue !== undefined && !isRecord(hintsValue)) {
+    throw new Error(`${file}: "hints" must be an object when present.`)
   }
-  return { path: path.join(moduleRepoRoot(), relative) }
+
+  return {
+    ...(versionValue === undefined ? {} : { version: versionValue }),
+    parts,
+    nets,
+    noConnect,
+    ...(hintsValue === undefined ? {} : { hints: hintsValue }),
+  }
 }
 
 // --- verifying the intent's net partition against the model ---

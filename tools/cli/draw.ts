@@ -48,14 +48,12 @@
  * `repaperToUSLetter`) is reported the same way - a finding, never a
  * withholding ground.
  *
- * **THIS PLAN DOES NOT DERIVE AN INTENT FROM A `Network`** - stated as an
- * open question in the design this plan implements, and repeated in the
- * task-5 brief. `COMMITTED_INTENT` (`../draught/draw-draft.ts`) is therefore
- * a map of board name to an intent file ALREADY ON DISK, committed by an
- * earlier run; a board with no entry refuses, naming the board, rather than
- * inventing one. This is the same shape `tools/draught/toolchain.ts` already
- * uses for `RESOLVED_BINARY`/`RESOLVED_CHECKOUT_DIR` - a small, explicit,
- * name-keyed map rather than a derivation.
+ * **AN INTENT COMES FROM ONE OF TWO DECLARED SOURCES** (`../draught/draw-intent.ts`):
+ * a committed file named in `COMMITTED_INTENT` (`../draught/draw-draft.ts`) -
+ * the schematic-authoritative Pultec path - or a `drawingIntent()` export on
+ * the board's circuit module, generated from the model
+ * (`../draught/intent-from-network.ts`) - the model-authoritative path. A
+ * board with neither refuses, naming both; a board with both refuses too.
  *
  * **NO TOOL PATH IS HARDCODED (`docs/known-gaps.md` G170).** `kicad-cli`,
  * `magick` and copperhead's checkout directory are resolved through the same
@@ -76,11 +74,9 @@ import path from "node:path"
 import {
   DRAFT_TOOLS,
   draftWithCopperhead,
-  parseIntent,
-  resolveIntentPath,
   verifyIntentAgainstModel,
-  type Intent,
 } from "../draught/draw-draft.ts"
+import { resolveDrawIntent } from "../draught/draw-intent.ts"
 import {
   RENDER_TOOLS,
   renderSheet,
@@ -270,16 +266,19 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
 
-  // Step 2: resolve the intent - a committed one, or a refusal naming the board.
-  const resolvedIntent = resolveIntentPath(board, options.intentPath)
-  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
-
-  let intent: Intent
+  // Step 2: resolve the intent - a committed file, a circuit's drawingIntent() export, or a
+  // refusal naming the board and both sources.
+  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
+  let resolvedIntent: Awaited<ReturnType<typeof resolveDrawIntent>>
   try {
-    intent = parseIntent(resolvedIntent.path)
+    resolvedIntent = await resolveDrawIntent({
+      board, declaration, override: options.intentPath, derivedIntentPath: `${outDir}.intent.json`,
+    })
   } catch (error) {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
+  if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
+  const intent = resolvedIntent.intent
 
   if (declaration.netlistPath === undefined) {
     return refusal(
@@ -313,7 +312,6 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   }
 
   // Step 4: draft with copperhead.
-  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
   const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,
