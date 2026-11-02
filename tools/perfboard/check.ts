@@ -13,6 +13,15 @@
  * unrouted) and all five are not-ok. Anything other than 0 or 1 throws rather
  * than being mapped, because the one verdict a broken run must never produce is
  * a clean board.
+ *
+ * THE BINARY'S VERDICT IS NO LONGER THE WHOLE VERDICT. `checkPerfboard` also
+ * grades the four buildability constraints CRITERIA `G4` admits here - `HC5`,
+ * `HC8`, `HC9`, `HC10` - which ran only on the adoption path until 2026-10-13,
+ * leaving this command WEAKER THAN THE ADOPTION GATE on exactly the constraints
+ * that catch a board that does not conduct. `../stripboard/buildability.ts`
+ * holds the subset and the reason each is admitted; `./buildability-input.ts`
+ * assembles what they read; neither this file nor either of those decides a
+ * bound. The report still carries the binary's own words first and verbatim.
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
@@ -21,7 +30,14 @@ import path from "node:path"
 import { writeLegacyNetlist } from "../../lib/kicad/legacy-netlist.ts"
 import { checkBoardBom, type BomCheck } from "../bom/run.ts"
 import { toImportedNetlist } from "../../lib/kicad/from-network.ts"
+import {
+  gradeBuildability,
+  refusedBuildability,
+  type BuildabilityVerdict,
+} from "../stripboard/buildability.ts"
+import type { CheckInput } from "../stripboard/constraints-model.ts"
 import { resolveBinary } from "./acquire.ts"
+import { buildabilityInputFor } from "./buildability-input.ts"
 import { foldCutState } from "./cut-state.ts"
 import type { PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
@@ -138,12 +154,36 @@ export interface CheckDeps {
   readonly repoRoot?: string
   /** Injected so no test needs a circuit module, bom.json or catalog on disk. */
   readonly checkBom?: (declaration: PerfboardDeclaration) => Promise<BomCheck>
+  /**
+   * What the four admitted buildability constraints are graded over, injected so
+   * no test needs a real layout and a real circuit to exercise them.
+   *
+   * IT IS THE INPUT AND NOT THE VERDICT, so a test that supplies one of the
+   * negative fixtures runs the REAL `HC5`, `HC8`, `HC9` and `HC10` through this
+   * exact path. A dep returning a verdict would let a fixture pass or fail
+   * without any constraint having been evaluated, which is the one thing
+   * `G4`'s third admission condition - *"a fixture it must reject, by name"* -
+   * is checking for.
+   */
+  readonly buildabilityInput?: (
+    declaration: PerfboardDeclaration,
+    netlistText: string,
+    run: CheckRun,
+  ) => Promise<CheckInput>
 }
 
 export interface PerfboardResult {
   readonly declaration: PerfboardDeclaration
   readonly ok: boolean
-  /** veroroute's own report, verbatim. */
+  /**
+   * veroroute's own report verbatim, then the buildability section, then the
+   * parts-list section when it has something to say.
+   *
+   * THE SECTIONS ARE APPENDED AND THE FIRST ONE IS NEVER REWRITTEN. Whatever
+   * else this gate learns about a board, the binary's own words about it are
+   * carried through unaltered, which is what makes them quotable in a bug
+   * report against the fork.
+   */
   readonly report: string
 }
 
@@ -267,7 +307,50 @@ export async function checkPerfboard(
   // compares a fresh in-memory rendering with the committed BOM.md - it never writes.
   const checkBom = deps.checkBom ?? ((board) => checkBoardBom(board, { repoRoot: deps.repoRoot }))
   const bom = await checkBom(declaration)
+
+  // THE FOUR BUILDABILITY VERIFIERS (CRITERIA G4), which until this ran only on
+  // the adoption path - so `make check`, the command that runs on boards a
+  // person laid by hand, was weaker than the adoption gate on exactly the
+  // constraints that catch a board that does not conduct.
+  //
+  // IT RUNS WHATEVER `--check` SAID, and the section is appended whether the
+  // four hold or not. A board already failing on Layout state is the case where
+  // this matters most: its report IS printed, and a reader needs to find out
+  // there whether the spans and the pin patterns are sound as well. A held
+  // constraint carries its figures, because a pass that says nothing is
+  // indistinguishable from a pass that checked nothing.
+  //
+  // A MISSING DATUM IS A REFUSAL AND IS CARRIED AS A SECTION, not re-thrown.
+  // `hc8`'s distinction between a failed constraint and an ungradeable board is
+  // kept in the WORDING (`refusedBuildability`) rather than in the control flow,
+  // and the reason is the output: a refusal that escapes this function replaces
+  // the binary's report with its own text, so one of the Pultec boards - already
+  // failing, with unplaced parts an `HC8` refusal names - would lose the list of
+  // incomplete nets that says what to go and fix. Both survive as sections.
+  //
+  // THE BOARD IS RED EITHER WAY, so nothing here softens a verdict: a refusal
+  // sets `ok` false exactly as a broken constraint does. What it costs, stated
+  // rather than discovered: a DEFECT in the grader itself now reads as "NOT
+  // GRADED - <message>" under `FAIL <board>` instead of as a crash. It is still
+  // loud, still red and still quotes the message, and that is the trade - the
+  // one outcome this must never produce is a board that looks clean, and a
+  // refusal can never produce it.
+  const buildabilityInput = deps.buildabilityInput ??
+    ((board, netlistText, checkRun) =>
+      buildabilityInputFor(board, netlistText, checkRun, { repoRoot: deps.repoRoot }))
+  let buildability: BuildabilityVerdict
+  try {
+    buildability = gradeBuildability(await buildabilityInput(declaration, text, run))
+  } catch (caught) {
+    buildability = refusedBuildability(caught instanceof Error ? caught.message : String(caught))
+  }
+
   const layoutOk = run.status === 0
-  if (!bom.applies || bom.ok) return { declaration, ok: layoutOk, report: run.output }
-  return { declaration, ok: false, report: `${run.output}\nParts list (bom.json)\n${bom.report}\n` }
+  const sections = [run.output, buildability.report]
+  if (bom.applies && !bom.ok) sections.push(`Parts list (bom.json)\n${bom.report}\n`)
+  return {
+    declaration,
+    ok: layoutOk && buildability.ok && (!bom.applies || bom.ok),
+    report: sections.join("\n"),
+  }
 }

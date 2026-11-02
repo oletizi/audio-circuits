@@ -1,0 +1,19 @@
+control sheet  /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/zoc/zero-offset-control.kicad_sch
+body coordinate at offset 21572: '(xy 50.8 54.61)' -> '(xy 50.80 54.61)'
+  same number, different bytes; the offset stays zero, so center.py's formatter
+  must renormalise the spelling and the byte-identity guard must REFUSE.
+
+--- center.py on the perturbed sheet (exit 1) ---
+content x      29.210 .. 250.190   (220.980 wide)
+frame  x       12.000 .. 267.400   (255.400 wide)
+offset applied -0.0000 mm
+content now    29.210 .. 250.190
+margins        west 17.210   east 17.210
+rectangles     6, every `(start`/`(end` token consumed by the pair pattern
+coordinate count unchanged: True (295)
+lib_symbols bytes unchanged: True
+every coordinate moved by exactly the offset: True (worst deviation 7.11e-15 mm)
+offset is zero to within the formatter's resolution (-7.11e-15 mm), so the output must be byte-identical to the input: False
+REFUSING: the offset is zero but the bytes changed. The formatter has rewritten a coordinate it was not asked to move - on an already-approved page that would silently break its binding to its recorded digest.
+
+CONTROL PASSED: the guard refused, so it discriminates.

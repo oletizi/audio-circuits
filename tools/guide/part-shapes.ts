@@ -1,5 +1,5 @@
 import { REBUILD_PINNED_FORK, type Part, type Pin } from "./dump.ts"
-import { INK, PAPER, PITCH, boxAround, circle, fmt, polygon, type Box, type Point } from "./svg.ts"
+import { INK, PAPER, PITCH, WIRE_WIDTH, boxAround, circle, fmt, line, polygon, type Box, type Point } from "./svg.ts"
 
 /**
  * Part outlines by VeroRoute part type, each at the centroid of the part's
@@ -12,6 +12,31 @@ const PIN1_MARK = 7
 
 /** An electrolytic's VeroRoute type: CAP_ELECTRO_<diameter in mils>. */
 const ELECTROLYTIC_TYPE = /^CAP_ELECTRO_(\d+)$/
+
+/**
+ * A ceramic disc capacitor's VeroRoute type, with or without the lead-span
+ * digit a fresh import carries: `--dump-board` prints the bare `CAP_CERAMIC`
+ * (see `tests/fixtures/pt2399-core-board.dump` and
+ * `tests/fixtures/stripboard/pt2399-core.dump`), while
+ * `lib/kicad/import-string.ts:247` emits `CAP_CERAMIC${gridSteps(...)}` -
+ * e.g. `CAP_CERAMIC1` - the same `<name><span>` convention as `RESISTOR<n>`.
+ * Both spellings draw, for the same reason `FILM_CAPACITOR_TYPE` below covers
+ * two spellings of its own.
+ */
+const CERAMIC_CAPACITOR_TYPE = /^CAP_CERAMIC\d*$/
+
+/**
+ * A film capacitor's VeroRoute type, with or without the lead-span digit a
+ * fresh import carries: `--dump-board` prints the bare `CAP_FILM` /
+ * `CAP_FILM_WIDE` the fork's `CompTypes.h` aliases (see
+ * `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`), while
+ * `lib/kicad/import-string.ts`'s `FILM_CAPACITOR_IMPORT_STRINGS` emits the
+ * same two names suffixed with the span the import carried in, e.g.
+ * `CAP_FILM2` and `CAP_FILM_WIDE2` - the same `<name><span>` convention as
+ * `RESISTOR<n>` and `CAP_CERAMIC<n>` above. Both spellings get the same
+ * drawing (see the comment at their use below), so one pattern covers both.
+ */
+const FILM_CAPACITOR_TYPE = /^CAP_FILM(_WIDE)?\d*$/
 
 /**
  * The electrolytic polarity rule, in one place for the images and the
@@ -200,6 +225,78 @@ function to92Body(part: Part, pins: readonly PlacedPin[]): Body {
   }
 }
 
+/**
+ * A LANDING PAD: a ring around the one hole an off-board wire is soldered to.
+ *
+ * **IT IS NOT DISPATCHED BY `bodyFor` AND THAT IS DELIBERATE.** A pad has no
+ * VeroRoute part type - it is a `PAD` line, not a `PART` line - so there is no
+ * type for `bodyFor` to branch on, and a branch for one would be a predicate
+ * nothing can reach. `./render-parts.ts` calls this directly, from the pads
+ * `./pads.ts` reads.
+ *
+ * **THE RING IS NOT A CLAIM ABOUT A BODY, because a pad has none.** The owner
+ * settled what one is: *"yeah - a single pad has no orientation. It's just a
+ * place to solder an off-board wire or a test point to."* So nothing is drawn
+ * over the hole - it stays visible, since the hole IS the feature - and the ring
+ * is a target around it, sized larger than the pin dot `./render-parts.ts` puts
+ * in it so the two read as one mark rather than two. It is round for the reason
+ * `standingResistorBody` is round: a square here could be read as a checkbox to
+ * tick.
+ */
+export function padBody(at: Point): Body {
+  const r = PITCH * 0.34
+  return {
+    outline: circle(at, r, { fill: "none", stroke: INK, width: 1.6, cls: "pad-body" }),
+    extent: boxAround([at], r),
+    centre: at,
+    // NOTHING FITS INSIDE ONE HOLE'S RING, so the tag goes beside it - which is
+    // what `labelArea: undefined` asks `./render-parts.ts` for.
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
+/**
+ * A PART THAT IS A WIRE LINK: the line a builder actually solders between its
+ * two holes, drawn exactly as `render-board.ts`'s `drawWires` draws a
+ * W-numbered wire.
+ *
+ * **IT IS NOT DISPATCHED BY `bodyFor`, FOR `padBody`'s REASON.** Which parts
+ * are wire links is a fact about the CIRCUIT - a pot section resolved to 0 Ω -
+ * and `bodyFor` branches on the VeroRoute part type, which is `RESISTOR` here
+ * and says nothing about the value. `./render-parts.ts` calls this directly for
+ * the refs its caller names (`./wire-links.ts`), the same division as a pad's.
+ *
+ * **WHY THE RESISTOR OUTLINE HAD TO GO, in the owner's words (2026-10-18):**
+ * *"I am likely to question the validity of a perfboard layout that specifies 0
+ * ohm resistors ... in a perfboard context, they raise eyebrows."* A rectangle
+ * with `0R` printed beside it is that layout specifying one, so fixing the
+ * checklist row and leaving this picture alone would have fixed the half that
+ * was easy to find (`docs/known-gaps.md`'s G55).
+ *
+ * **NO `labelArea`:** nothing may be printed ON this line, both because there is
+ * no body to print it on and because a tag over the wire would hide the one mark
+ * that says it is a wire. `render-parts.ts` puts the tag beside it, as it does
+ * for a standing resistor and a pad.
+ */
+export function wireLinkBody(part: Part, pins: readonly PlacedPin[]): Body {
+  expectPinCount(part, pins, 2)
+  const a = pinNamed(part, pins, "1").at
+  const b = pinNamed(part, pins, "2").at
+  // Refuses two pins in one hole, exactly as `resistorBody` does through the
+  // same helper: a zero-length wire cannot be drawn and would not be solderable.
+  unit(a, b, part)
+  return {
+    outline: line(a, b, { width: WIRE_WIDTH, cls: "wire", data: { ref: part.ref } }),
+    extent: boxAround([a, b], WIRE_WIDTH),
+    centre: centroid([a, b]),
+    labelArea: undefined,
+    marks: [],
+    polarity: undefined,
+  }
+}
+
 /** A trim-pot or pin header: a box around its pins, pin 1 marked. */
 function boxBody(part: Part, pins: readonly PlacedPin[]): Body {
   const p1 = pinNamed(part, pins, "1").at
@@ -238,6 +335,57 @@ export function bodyFor(part: Part, pins: readonly PlacedPin[]): Body {
   }
   if (part.type === "TRIM_FLAT") {
     expectPinCount(part, pins, 3)
+    return boxBody(part, pins)
+  }
+  // A CERAMIC DISC CAPACITOR: a box around its pins, same shape and same
+  // reasoning as the film branch below. **A BOX AROUND THE PINS IS NOT A
+  // CLAIM ABOUT THE BODY'S DIMENSIONS.** A disc's real body is round, not
+  // boxy, but no body dimension for the part actually fitted is recorded
+  // anywhere in this repository: `lib/kicad/lead-span.ts`'s `UNSOURCED` entry
+  // for `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm` - the footprint
+  // pt2399-core's ceramics use - refuses to guess a lead length for the same
+  // part, for the same reason. Drawing a disc from memory here would be the
+  // same guess in a different file. The box says where the part's holes are
+  // and that something non-polarised sits over them; nothing more.
+  if (CERAMIC_CAPACITOR_TYPE.test(part.type)) {
+    expectPinCount(part, pins, 2)
+    return boxBody(part, pins)
+  }
+  // THE PULTEC TYPES, AND THIS RENDERER HAD NEVER DRAWN A PULTEC BOARD. Its
+  // shapes were written for the transistor-preamp boards - TO92, electrolytics,
+  // trim pots, headers - and the five Pultec layouts carry CAP_FILM,
+  // CAP_FILM_WIDE and BLOCK_200MIL3, three of the four types on
+  // `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`. So "look at the
+  // output, not only the tests" was unavailable for exactly the boards this
+  // repository is named for, and the gap surfaced only when someone asked to
+  // SEE one.
+  //
+  // **A BOX AROUND THE PINS IS NOT A CLAIM ABOUT THE BODY'S DIMENSIONS.** A film
+  // cap's real body is wider than its lead span and a WIDE one wider still, but
+  // no body dimension for either is recorded anywhere in this repository, and
+  // drawing one from memory is the guess `lib/kicad/lead-span.ts` refuses for
+  // the same parts. The box is the honest drawing: it says where the part's
+  // holes are and that something non-polarised sits over them. If a body
+  // dimension is ever sourced, this is where it belongs.
+  //
+  // THE MATCH IS WIDER THAN THE BARE NAME FOR THE SAME REASON RESISTOR<n> IS A
+  // PATTERN AND NOT A LIST: `lib/kicad/import-string.ts` maps the Pultec rect
+  // capacitors to `CAP_FILM2` and `CAP_FILM_WIDE2` (its span-suffixed import
+  // string, not the `--dump-board` spelling), and a renderer that only knew the
+  // bare names refused those with "no drawing for VeroRoute part type
+  // CAP_FILM2" - the rendering layer failing to read a shape the physical model
+  // already names, rather than the physical model being wrong. Fixing that here
+  // is the point: `importStringFor` in `lib/kicad/import-string.ts` is
+  // untouched, because the import string IS part of the physical model and
+  // changing it to suit the drawing would turn a presentation bug into an
+  // electrical-model change.
+  if (FILM_CAPACITOR_TYPE.test(part.type)) {
+    expectPinCount(part, pins, 2)
+    return boxBody(part, pins)
+  }
+  const block = /^BLOCK_(?:100|200)MIL(\d+)$/.exec(part.type)
+  if (block !== null) {
+    expectPinCount(part, pins, Number(block[1]))
     return boxBody(part, pins)
   }
   throw new Error(

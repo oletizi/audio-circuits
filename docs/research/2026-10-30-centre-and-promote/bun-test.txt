@@ -1,0 +1,31 @@
+bun test - this run, timings stripped, compared by failing name
+======================================================================
+
+exit code: 1
+ 4053 pass
+ 8 fail
+ 45547 expect() calls
+Ran 4061 tests across 378 files. [252.21s]
+
+FAILING TESTS, by name:
+  (fail) a from that escapes its source root is refused, whether or not it declares one
+  (fail) a ported file importing a name an externals target does not export is refused, naming both
+  (fail) every copied (non-.ts) fixture is byte-identical to its pedals source
+  (fail) every declared source root is a directory on disk and is used by an entry
+  (fail) every diverged entry names a real pedals source, a file on disk, and its reason
+  (fail) every diverged file's pedals source is unchanged since it diverged
+  (fail) every ported file is its source, rewritten only by the manifest
+  (fail) no hand-written file shadows a pedals source file
+
+ALL EIGHT ARE IN tests/schgen/port-fidelity.test.ts, every one for an unset
+SCHGEN_SOURCE. That is the stated baseline for this repository:
+
+  23 |       "SCHGEN_SOURCE is not set. It must point at digital-pedal-platform's tools/schgen/ " +
+  24 |         "directory so this test can compare every ported file against its source - " +
+  25 |         "nothing here defaults to a guessed path.",
+  26 |     )
+           ^
+
+DIFF AGAINST THE BASELINE: none. No new failure, no fixed failure.
+The five drafted-page test files pass 25 of 25, including each board's
+"the committed sheet still hashes to the digest its record binds it to".

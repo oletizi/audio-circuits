@@ -1,0 +1,54 @@
+BEFORE /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-repair/before/pultec-mid.kicad_sch
+       sha256 3aa967a361a726d4ac312abb08d8a34da0b25ccaa60bbf8d3982941a62c10044  29 nets
+AFTER  /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-repair/after/pultec-mid.kicad_sch
+       sha256 1f8de32150f322f8f040b2cef1d857df7b16e884bff409a0debd5ec3a7344ff8  29 nets
+
+positive control: moved SI9.1 from GND to unconnected-(SW1-Pad12) in a copy of BEFORE -> partition differs: True
+
+NET PARTITION (pin sets, ignoring net names): IDENTICAL
+NET NAMES: DIFFER
+  only BEFORE: ['hcut_t2', 'hi_tap', 'sel_common', 'tap_0r1h', 'tap_0r45h', 'tap_1h', 'tap_2h']
+  only AFTER : ['/hcut_t2', '/hi_tap', '/sel_common', '/tap_0r1h', '/tap_0r45h', '/tap_1h', '/tap_2h']
+NAME -> PIN SET MAPPING: DIFFERS
+  /hcut_t2:
+    before None
+    after  ['SI4.1', 'SI5.2', 'SI6.1']
+  /hi_tap:
+    before None
+    after  ['SI1.2', 'SI2.1']
+  /sel_common:
+    before None
+    after  ['RV1.2', 'RV1.3', 'SW1.13']
+  /tap_0r1h:
+    before None
+    after  ['C16.1', 'C17.1', 'L5.1']
+  /tap_0r45h:
+    before None
+    after  ['C10.1', 'C11.1', 'C12.1', 'C9.1', 'L3.1']
+  /tap_1h:
+    before None
+    after  ['C6.1', 'C7.1', 'C8.1', 'L2.1']
+  /tap_2h:
+    before None
+    after  ['C1.1', 'C2.1', 'C3.1', 'C4.1', 'C5.1', 'L1.1']
+  hcut_t2:
+    before ['SI4.1', 'SI5.2', 'SI6.1']
+    after  None
+  hi_tap:
+    before ['SI1.2', 'SI2.1']
+    after  None
+  sel_common:
+    before ['RV1.2', 'RV1.3', 'SW1.13']
+    after  None
+  tap_0r1h:
+    before ['C16.1', 'C17.1', 'L5.1']
+    after  None
+  tap_0r45h:
+    before ['C10.1', 'C11.1', 'C12.1', 'C9.1', 'L3.1']
+    after  None
+  tap_1h:
+    before ['C6.1', 'C7.1', 'C8.1', 'L2.1']
+    after  None
+  tap_2h:
+    before ['C1.1', 'C2.1', 'C3.1', 'C4.1', 'C5.1', 'L1.1']
+    after  None

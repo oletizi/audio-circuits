@@ -1,0 +1,500 @@
+/**
+ * How far apart, and how close together, each through-hole family this
+ * repository places can physically be mounted on 2.54mm stripboard.
+ *
+ * WHY IT EXISTS. The stripboard placement pipeline's stretch lever puts a part's
+ * lead on the strip its net already occupies, and the tool will happily stretch
+ * any two-terminal part to any span in 2-16 holes - `CompTypes::GetMinLength`
+ * returns 2 and `GetMaxLength` 16 for every stretchable family. The part will
+ * not: the WIMA FKP2's 4mm lead cannot be formed at any span, and a Nichicon PS
+ * can reaches 11 holes and no more. So both bounds are needed and both are
+ * recorded, keyed by the footprint name the netlist actually carries.
+ *
+ * A BOUND IS A BOUND OVER THE MOUNTINGS THE PART HAS, NOT OVER ONE OF THEM. The
+ * DIN0207 is the instructive case: lying flat, 6.5mm of body on a 10.16mm pitch,
+ * `--stretch shrink` taking it to a 5.08mm span would put the holes inside its
+ * own body - but the owner stands his resistors on end, and then the body is not
+ * between the holes and 5.08mm is ordinary. Each entry's `minBasis`/`maxBasis`
+ * therefore NAMES THE MOUNTING its figure comes from, and the two can differ
+ * within one record; `./lead-span-model.ts` has the arithmetic for both.
+ *
+ * A FAMILY HAS NO DATASHEET; A PART DOES. `R_Axial_DIN0207_*` names a DIN case
+ * size, not something a manufacturer publishes a lead length for, so every entry
+ * says which specific widely available part its numbers ARE - and they are that
+ * part's numbers, not the family's. Fitting a different part in the same case
+ * size is a reason to come back here, not a reason to trust these.
+ *
+ * NOTHING IS DEFAULTED. An unlisted footprint throws. A footprint whose lead
+ * length nobody could source is listed in `UNSOURCED` with what is missing, and
+ * also throws - an empty whitelist that refuses loudly beats a general rule that
+ * quietly accepts a guess, and a span the part cannot make is not a lever but a
+ * fiction.
+ *
+ * WHAT IS NOT HERE. Off-board parts - the Pultec pots, rotary selectors and
+ * inductors in `circuits/pultec/off-board.ts` - are panel-mount, carry a symbol
+ * rather than a footprint, and never reach this lookup. In particular the mid and
+ * hi-boost inductors have no chosen part at all (`docs/pultec/values.md` admits a
+ * catalogue part, a pot core or a transformer winding), so there is no geometry to
+ * record; if one comes on-board it arrives here with its datasheet or it refuses.
+ * `docs/parts/2026-10-10-capacitor-and-inductor-research.md` records what the
+ * distributor APIs were asked about them and what came back - in short, the
+ * Carnhill VTB9050 the documentation cites is at neither distributor, and the one
+ * catalogue family found at 1H is listed everywhere at zero stock.
+ *
+ * The derivation, shown so a reader can check the arithmetic, is in
+ * `docs/stripboard/lead-span.md`. The bend rule and the formulae are in
+ * `./lead-span-model.ts`. This file is a sibling of `./import-string.ts` rather
+ * than part of it only because that file is already near this repository's
+ * 300-500 line ceiling.
+ */
+import type { FamilyGeometry, LeadSpan } from "./lead-span-model.ts"
+import { deriveSpanHoles } from "./lead-span-model.ts"
+import {
+  KICAD_FOOTPRINTS,
+  NICHICON_PS,
+  PANASONIC_M_A,
+  TDK_B32529,
+  VEROROUTE_FORK,
+  VISHAY_MBB0207,
+  WIMA_FKP2,
+} from "./lead-span-sources.ts"
+
+/**
+ * The Vishay MBB/SMA 0207 geometry, which `R_Axial_DIN0207_*` is fitted with.
+ *
+ * `Mmin. 10.0` IS THE MINIMUM FOR THE PART LYING FLAT, AND IT IS THE
+ * MANUFACTURER'S OWN. The drawing's M is the distance between the formed leads,
+ * i.e. the hole spacing, and note (1) confirms it by saying what to order for a
+ * tighter one. Body-plus-standoff gives 6.5 + 2 x 0.8 = 8.1mm independently, the
+ * same 4-step span; `axialFlatMinPitchMm` takes the manufacturer's larger figure
+ * because it was stated rather than computed.
+ *
+ * IT IS NOT THE RECORDED `minSpanHoles`, because the part has a second mounting
+ * and `M` is not about it. Stood on end the body is not between the holes at all,
+ * and the owner's own boards are built that way: *"It's standard practice to
+ * stand resistors on end when their holes are next to each other. That's should
+ * NOT be a failure condition"*. `minReachPitchMm` takes the looser mounting, so
+ * this family's floor is the grid's 2 holes and `M`'s 5-hole figure is recorded
+ * in `AXIAL_MIN` as the flat mounting's.
+ *
+ * **THESE FIGURES ARE A CONSERVATIVE STAND-IN FOR THE PART THE CATALOGUE BUYS,
+ * AND THE CEILING IS UNVERIFIED FOR IT.** `parts/resistor-*-0207.json` - nine
+ * files - fit this footprint with **Yageo MFR-25FBF52-xxx**, which bends this
+ * module's own rule (*"A FAMILY HAS NO DATASHEET; A PART DOES"*). The FLOOR does
+ * not move, traced rather than assumed: the MFR datasheet's Dimensions table
+ * gives MFR-25 as L = 6.3 +- 0.5mm and dia = 2.4 +- 0.2mm, so worst-case body
+ * 6.8mm -> `6.8 + 2 x 0.8 = 8.4mm` -> 4 steps -> 5 holes, the same figure, and
+ * the vertical floor stays grid-bound. The CEILING does: `leadLengthMm` is the
+ * only dimension that sets the maximum, the recorded 16-hole ceiling is
+ * `TOOL_MAX_SPAN_HOLES` clamping a **28mm Vishay lead**, and the Yageo part's
+ * lead length is recorded NOWHERE. No figure is invented here - closing it means
+ * reading the MFR-25's own lead length off its datasheet. `./lead-span.test.ts`'s
+ * sibling test ties `parts/*.json` to `geometry.mpn` so the divergence cannot
+ * widen silently; `docs/stripboard/pipeline-verification.md` §9.3 has the rest.
+ */
+const MBB0207: FamilyGeometry = {
+  kind: "formable",
+  mpn: "Vishay MBB/SMA 0207 (metric size DIN 0207, CECC size B)",
+  mounting: "axial-horizontal",
+  bodyLengthMm: 6.5,
+  bodyDiameterMm: 2.5,
+  nominalPitchMm: 10.16,
+  leadLengthMm: 28.0,
+  leadLengthBasis:
+    "lmin. for the untaped (bulk) part. The taped variants are supplied pre-formed to a 2.5mm " +
+    "or 5.0mm lead spacing and have less free lead, so a taped part is NOT covered by this.",
+  leadDiameterMm: 0.6,
+  manufacturerMinPitchMm: 10.0,
+  source: VISHAY_MBB0207,
+}
+
+/**
+ * The TDK B32529 geometry, shared by the two 2.5mm and 3.5mm-bodied film
+ * footprints.
+ *
+ * THE LEAD IS 5mm IN THE WORST CASE, and that is the whole story of this family.
+ * `docs/pultec/capacitor-selection.md` selects the UNTAPED ordering codes
+ * (`...K000`), whose standard lead length the datasheet gives as 6 +-1 mm. Five
+ * millimetres is 0.24mm more than a minimum dog-leg needs, so the part can be
+ * splayed by exactly one step and no further. At the 6mm nominal it would reach
+ * two, which is why the tolerance is not rounded away.
+ */
+const B32529: FamilyGeometry = {
+  kind: "formable",
+  mpn: "TDK/EPCOS B32529, 63V, untaped (ordering-code packaging field 000)",
+  mounting: "radial-vertical",
+  bodyLengthMm: 7.2,
+  bodyDiameterMm: 2.5,
+  nominalPitchMm: 5.0,
+  leadLengthMm: 5.0,
+  leadLengthBasis:
+    "untaped (bulk) standard lead length 6 +-1 mm, taken at the bottom of the tolerance. " +
+    "Taped (ammo pack, code 289, or reel, code 189) parts are cut by the tape and are NOT " +
+    "covered. TDK offers special lead lengths on request, which would be a different entry.",
+  leadDiameterMm: 0.5,
+  manufacturerMinPitchMm: null,
+  source: TDK_B32529,
+}
+
+/**
+ * The WIMA FKP2 geometry: the 470pF below B32529's 1nF floor.
+ *
+ * IT CANNOT BE FORMED AT ALL. The drawing gives the pin length as "6-2", which
+ * reads as 6mm with a 2mm downward tolerance either way it is parsed, so 4mm is
+ * the worst case - 0.76mm short of a minimum dog-leg. Its span is therefore
+ * fixed at the footprint's own, and the stretch lever does not apply to it.
+ */
+const FKP2_470PF: FamilyGeometry = {
+  kind: "formable",
+  mpn: "WIMA FKP2, 63V, 470pF (FKP2C004701D00...)",
+  mounting: "radial-vertical",
+  bodyLengthMm: 7.2,
+  bodyDiameterMm: 4.5,
+  nominalPitchMm: 5.0,
+  leadLengthMm: 4.0,
+  leadLengthBasis:
+    "pin length \"6-2\" from the dimensional drawing, taken at the bottom of the tolerance. " +
+    "The glyph is a hyphen in the extracted text and could be either 6 +-2 or 6 -2; both give " +
+    "4.0mm as the worst case, so the reading does not change the result.",
+  leadDiameterMm: 0.5,
+  manufacturerMinPitchMm: null,
+  source: WIMA_FKP2,
+}
+
+/** One Nichicon PS case size: same 15mm lead, different pitch and lead diameter. */
+function nichiconPs(
+  caseDiameterMm: number,
+  pitchMm: number,
+  leadDiameterMm: number,
+): FamilyGeometry {
+  return {
+    kind: "formable",
+    mpn: `Nichicon PS series, case phi${caseDiameterMm}mm`,
+    mounting: "radial-vertical",
+    bodyLengthMm: 11.0,
+    bodyDiameterMm: caseDiameterMm,
+    nominalPitchMm: pitchMm,
+    leadLengthMm: 15.0,
+    leadLengthBasis:
+      "\"15MIN\" in the Radial Lead Type drawing, a series-level minimum for the straight-lead " +
+      "(bulk) part. Nichicon's trimmed, formed and taped variants are a separate document " +
+      "(CAT.8100D / e-mi_tape) and are NOT covered. The same drawing carries a second " +
+      "dimension, \"4MIN\", whose meaning could not be established from the document; it is " +
+      "not used here, and being smaller than 15 it cannot loosen anything.",
+    leadDiameterMm,
+    manufacturerMinPitchMm: null,
+    source: NICHICON_PS,
+  }
+}
+
+/**
+ * The Panasonic M-A geometry for the phi10 x 16mm can on a 5.00mm pitch: the 470uF
+ * 35V ECA-1VM471, which `parts/electrolytic-470uf-35v-radial-10x16mm.json` buys and
+ * the only part any board fits to `CP_Radial_D10.0mm_P5.00mm`.
+ *
+ * **THE LEAD IS 14mm AND IT IS THE NEGATIVE ONE.** The dimensional drawing's
+ * `14min.` and `3min.` are a CHAIN, not two readings of one lead: the first ends at
+ * the short lead's end, marked with a circled minus, the second at the long lead's
+ * end, marked with a circled plus. A span is something BOTH leads must reach, so
+ * the short one decides it and the positive lead's 17mm is unusable here.
+ *
+ * NOT NICHICON. The three smaller electrolytic footprints below carry Nichicon PS
+ * dimensions, and the PS case-size table this repository recorded stops at phi8,
+ * so there was no phi10 row to extend - and extending one anyway would record one
+ * manufacturer's guarantees for another's part. The catalogue names Panasonic
+ * here, so Panasonic's own document is what this entry reads.
+ *
+ * THE BODY IS RECORDED AT ITS MAXIMUM, which is what those two fields mean:
+ * `L+-1.0` (for `L <= 16`) and `oD+-0.5` make the 16.0 x 10.0 case 17.0 x 10.5 at
+ * worst. Neither is read by a radial family's arithmetic - both leads leave the
+ * same face - and a nominal in a field documented as a maximum would overstate it.
+ */
+const MA_ECA1VM471: FamilyGeometry = {
+  kind: "formable",
+  mpn: "Panasonic M-A series ECA-1VM471, 470uF 35V, phi10 x 16mm, straight leads",
+  mounting: "radial-vertical",
+  bodyLengthMm: 17.0,
+  bodyDiameterMm: 10.5,
+  nominalPitchMm: 5.0,
+  leadLengthMm: 14.0,
+  leadLengthBasis:
+    "\"14min.\" on the STRAIGHT-LEAD (bulk: ordering code with the packaging letter left out) " +
+    "dimensional drawing, and it dimensions the SHORT - negative - lead, which is what a span " +
+    "both leads reach is bounded by. The taped variant (*B, which Panasonic also lists at a 5mm " +
+    "lead space here) has its leads cut by the tape and is NOT covered.",
+  leadDiameterMm: 0.6,
+  manufacturerMinPitchMm: null,
+  source: PANASONIC_M_A,
+}
+
+/** A moulded pin field, whose span is read off the footprint rather than derived. */
+function rigid(part: string, terminalPitchMm: number, fixedSpanHoles: number, why: string): FamilyGeometry {
+  return {
+    kind: "rigid",
+    part,
+    terminalPitchMm,
+    fixedSpanHoles,
+    nonStretchable: why,
+    source: KICAD_FOOTPRINTS,
+  }
+}
+
+const SIP_WHY =
+  "A header's pins are moulded into its plastic at 2.54mm and there is no lead to form, so " +
+  "its span is its pin count. VeroRoute agrees from the other side: GetMinLength(SIP) and " +
+  "GetMaxLength(SIP) are both the PIN COUNT, so stretching a SIP changes how many pins the " +
+  `part has rather than how far apart they sit (${VEROROUTE_FORK.documentId}).`
+
+const DIP_WHY =
+  "A DIP's leads leave a moulded leadframe at a fixed 7.62mm row spacing and 2.54mm along the " +
+  "row. VeroRoute's GetMinLength(DIP) is pins/2, i.e. the along-row extent, so a stretch " +
+  `changes the pin count, not the mounting span (${VEROROUTE_FORK.documentId}).`
+
+const TO92_WHY =
+  "The KiCad footprint puts the three pins on 1.27mm, but VeroRoute's TO92 is rows = 1, " +
+  "cols = 3 - three pins on the 2.54mm grid - so the part is splayed to the grid once, as a " +
+  "fixed preparation, and is not a lever afterwards. TO92 has no case in GetMinLength or " +
+  `GetMaxLength and falls to \"default: assert(0) // Non-stretchable component\" (${VEROROUTE_FORK.documentId}).`
+
+const TRIM_WHY =
+  "The trimmer's three legs leave a moulded body at 5.0mm (pins 1 and 3) with the wiper offset, " +
+  "and VeroRoute's TRIM_FLAT is a fixed 3 x 3 hole pattern \"+2++++1+3\" with no case in " +
+  `GetMinLength or GetMaxLength (${VEROROUTE_FORK.documentId}).`
+
+/**
+ * A rigid family's basis text: the mounting clause, then why the pin field is
+ * fixed. A rigid part has ONE mounting, the one the package was moulded for, and
+ * saying so is what tells a reader this record's two bounds are not two
+ * different mountings the way an axial family's are.
+ */
+function rigidBasis(why: string): string {
+  return `MOUNTING: as moulded, the only one a rigid pin field has. ${why}`
+}
+
+/** Each family's bounds, with the reasoning for each bound beside it. */
+function span(
+  footprint: string,
+  geometry: FamilyGeometry,
+  minBasis: string,
+  maxBasis: string,
+): LeadSpan {
+  const derived = deriveSpanHoles(geometry, footprint)
+  return { footprint, ...derived, geometry, minBasis, maxBasis }
+}
+
+const AXIAL_MIN =
+  "MOUNTING: STOOD ON END, which is the looser of this part's two mountings and the owner's " +
+  "standard practice - \"It's standard practice to stand resistors on end when their holes are " +
+  "next to each other. That's should NOT be a failure condition\". Standing it up takes the body " +
+  "out from between the holes, so the 6.5mm length constrains nothing; what is left is the " +
+  "returning lead running down the outside of the 2.5mm body (1.25 + 0.3 = 1.55mm from the axis) " +
+  "and the two legs of its 180-degree fold (2 x 0.9 = 1.80mm). Both are inside one grid step, so " +
+  "the GRID binds: 1 step, 2 holes. The 28.0mm lead makes the fold easily (0.8 + 2.83 + 6.5 + " +
+  "1.6 = 11.73mm needed).\n" +
+  "LYING FLAT the floor would be 5 holes instead: Mmin. 10.0mm, the manufacturer's own minimum " +
+  "lead spacing, rounds up to 4 grid steps (10.16mm), and the 6.5mm body plus a 0.8mm standoff " +
+  "at each end gives 8.1mm independently, the same 4 steps. That is the FLAT mounting's figure."
+const AXIAL_MAX =
+  "MOUNTING: LYING FLAT, the footprint's own, which is the wider of the two at this end. " +
+  "Lead-limited reach is 55.8mm, about 22 steps, so the lead is NOT the binding constraint " +
+  "here - VeroRoute's 16-hole ceiling is, and 16 is what is recorded. Standing the part on end " +
+  "cannot raise this: the flat reach is already past the ceiling the derivation clamps at."
+
+const RADIAL_MIN_GRID =
+  "MOUNTING: STANDING, which is the only mounting a radial part has - both leads leave the same " +
+  "face, so there is no second way to lay it and no body to take out from between the holes. " +
+  "One grid step: nothing has to fit between the holes, so the floor is the point at which two " +
+  "holes stop being two holes. The tool's own per-diameter floor may be tighter and also binds."
+const ELECTRO_MAX =
+  "MOUNTING: STANDING, as the minimum. 15mm of lead less 4.8-5.2mm of dog-leg overhead leaves " +
+  "about 9.8-10.2mm of outward run per lead, so about 26mm of pitch, which is 10 steps."
+
+const SPANS: readonly LeadSpan[] = [
+  span(
+    "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
+    MBB0207,
+    AXIAL_MIN,
+    AXIAL_MAX,
+  ),
+  span(
+    "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+    B32529,
+    RADIAL_MIN_GRID,
+    "MOUNTING: STANDING, as the minimum. 5.0mm of worst-case lead less 4.76mm of dog-leg " +
+      "overhead leaves 0.24mm of outward run per lead, so 8.49mm of pitch - 3 steps, one step " +
+      "past the footprint's own 2.",
+  ),
+  span(
+    "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm",
+    { ...B32529, bodyDiameterMm: 3.5 },
+    RADIAL_MIN_GRID,
+    "MOUNTING: STANDING, as the minimum. As the 2.5mm-bodied B32529: the body width does not " +
+      "enter a radial part's span arithmetic, only the lead does, and both footprints carry the " +
+      "same 5mm lead on the same 5mm pitch.",
+  ),
+  span(
+    "Capacitor_THT:C_Rect_L7.2mm_W4.5mm_P5.00mm",
+    FKP2_470PF,
+    "MOUNTING: STANDING, the only one it has, and not formable in it: 4.0mm of worst-case lead " +
+      "is 0.76mm short of the 4.76mm a minimum dog-leg needs, so the part mounts at its own " +
+      "5.00mm pitch or not at all.",
+    "MOUNTING: STANDING. Not formable - see the minimum. Both bounds are the footprint's own span.",
+  ),
+  span("Capacitor_THT:CP_Radial_D5.0mm_P2.00mm", nichiconPs(5.0, 2.0, 0.5), RADIAL_MIN_GRID, ELECTRO_MAX),
+  span("Capacitor_THT:CP_Radial_D6.3mm_P2.50mm", nichiconPs(6.3, 2.5, 0.5), RADIAL_MIN_GRID, ELECTRO_MAX),
+  span("Capacitor_THT:CP_Radial_D8.0mm_P3.50mm", nichiconPs(8.0, 3.5, 0.6), RADIAL_MIN_GRID, ELECTRO_MAX),
+  span(
+    "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm",
+    MA_ECA1VM471,
+    RADIAL_MIN_GRID,
+    "MOUNTING: STANDING, as the minimum. 14.0mm of lead - the SHORT, negative one, which is what " +
+      "a span both leads reach is bounded by - less 5.23mm of dog-leg overhead leaves 8.77mm of " +
+      "outward run each, which with the two bend offsets gives 26.1mm of pitch: 10 steps, 11 " +
+      "holes. Lead-limited, not tool-limited: the next hole out, 27.94mm, is past its reach.",
+  ),
+  span(
+    "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+    rigid("1x01 pin header, 2.54mm", 2.54, 1, SIP_WHY),
+    rigidBasis("One hole. A single pin has no span and bridges nothing."),
+    rigidBasis("One hole - see the minimum."),
+  ),
+  span(
+    "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+    rigid("1x02 pin header, 2.54mm", 2.54, 2, SIP_WHY),
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
+  ),
+  span(
+    "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical",
+    rigid("1x03 pin header, 2.54mm", 2.54, 3, SIP_WHY),
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
+  ),
+  span(
+    "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical",
+    rigid("1x05 pin header, 2.54mm", 2.54, 5, SIP_WHY),
+    rigidBasis(SIP_WHY),
+    rigidBasis(SIP_WHY),
+  ),
+  span(
+    "Package_DIP:DIP-16_W7.62mm",
+    rigid("DIP-16, 7.62mm row spacing", 2.54, 8, DIP_WHY),
+    rigidBasis(DIP_WHY),
+    rigidBasis(DIP_WHY),
+  ),
+  span(
+    "Package_TO_SOT_THT:TO-92_Inline",
+    rigid("TO-92, inline leads", 1.27, 3, TO92_WHY),
+    rigidBasis(TO92_WHY),
+    rigidBasis(TO92_WHY),
+  ),
+  span(
+    "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical",
+    rigid("Runtron RM-065 trimmer, vertical", 5.0, 3, TRIM_WHY),
+    rigidBasis(TRIM_WHY),
+    rigidBasis(TRIM_WHY),
+  ),
+]
+
+export const LEAD_SPANS: ReadonlyMap<string, LeadSpan> = new Map(
+  SPANS.map((entry) => [entry.footprint, entry]),
+)
+
+/**
+ * Footprints this repository places whose span is deliberately NOT recorded,
+ * each mapped to what is missing.
+ *
+ * These refuse, and they refuse with a better message than an unknown footprint
+ * gets, because the remedy is different: an unknown footprint needs an entry, and
+ * one of these needs a part number first. Recording a plausible figure for either
+ * would be the worst available outcome, because the arithmetic would look right.
+ */
+export const UNSOURCED: ReadonlyMap<string, string> = new Map([
+  [
+    "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm",
+    "no lead length is sourced FOR A PART THAT COVERS THIS BOARD'S VALUES, and the two families " +
+      "searched fail for different reasons.\n" +
+      "  Vishay BCcomponents D Series (Document Number 28549, Revision 08-Jan-2026) states no " +
+      "lead length at all: digit 13 of the ordering code is \"Packaging / Lead Length\" and its " +
+      "only values are \"3 = bulk, T = tape and reel, U = ammo\" - packaging, not millimetres. " +
+      "The one length the document prints, \"Length of cut leads L 11.0 max.\", is in the TAPING " +
+      "section and is a maximum for a lead the tape has already cut, so it bounds nothing from " +
+      "below. The older design note's catalogue range \"a lead length from 4 to 30 mm\" still " +
+      "decides the answer entirely: 4mm cannot be formed at all, 30mm reaches the tool's ceiling.\n" +
+      "  Walsin's disc catalogue DOES state one - its part-number system makes length code 20 " +
+      "\"20.0mm\" with length-tolerance code C \"Min.\", pitch code 2 \"2.5+-0.8mm\" and " +
+      "phid 0.55+-0.05mm - but its parts that fit this footprint's 5.0mm diameter are diameter " +
+      "code 040, \"D max 4.5mm\", which at 50V stops around 1000pF. This footprint carries " +
+      "5600pF, 0.01uF and 0.1uF components on pt2399-core, and Walsin's whole disc catalogue " +
+      "stops at 22000pF (in a 8.5mm body); no 0.1uF ceramic DISC is in it at any diameter. So " +
+      "Walsin is a sourced lead length for a part that is not the one fitted.\n" +
+      "  What settles this: name the part actually fitted to the 0.01uF and 0.1uF positions - " +
+      "which are very likely multilayer (monolithic) ceramics rather than discs, in which case " +
+      "the footprint is the thing to change - and read its lead length off its own datasheet. " +
+      "The arithmetic is ready: a 2.5mm-pitch radial part with a 20mm lead and a 0.55mm wire " +
+      "derives to 2-15 holes, and that figure is stable across the whole +-0.05mm wire tolerance.",
+  ],
+  [
+    "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm",
+    "no datasheet is sourced for a phi5mm can at 2.5mm lead spacing - but a PART now is, and " +
+      "only its lead length is missing, so this is no longer a question of whether the footprint " +
+      "is real.\n" +
+      "  Panasonic's M-A (ECA) series datasheet (ABA0000C1218, dated 01-Sep-25) has a " +
+      "\"Lead space\" column group with three entries per row - Straight, Taping *B, Taping *i - " +
+      "and every phi5.0 x 11.0mm row reads 2.0 / 5.0 / 2.5, with the footnote \"Lead wire pitch " +
+      "*B=5 mm, 7.5 mm, i=2.5 mm\". So the STRAIGHT-lead phi5 can is 2.0mm, as Nichicon's PS, VZ " +
+      "and UM tables also have it, and the 2.5mm part is the taped-and-formed \"i\" variant. It " +
+      "exists at exactly the two values pt2399-core puts on this footprint: ECA1HM4R7i (4.7uF, " +
+      "50V) and ECA1HM100i (10uF, 50V), with ECA2AM4R7i / ECA2AM100i at 100V, all phi5.0 x 11.0, " +
+      "phid 0.5mm. Panasonic's taping document (DMF0000COL51, 25-Aug-21) confirms the forming: " +
+      "Figure C, \"Lead space : 2.5 mm / phiD x L : phi5 x 11, ...\", F nominal 2.50 +0.5.\n" +
+      "  What is missing is the free lead length of that formed part. The M-A dimensional " +
+      "drawing's \"14min.\" and \"3min.\" are dimensions on the STRAIGHT-lead part; the \"i\" " +
+      "variant's leads are cut by the tape, and the taping document gives tape geometry " +
+      "(18.50 +0.75/-0.50, 9.0+-0.5, protrusion 0 to 1.5) from which a free lead length can only " +
+      "be inferred, not read. Ask Panasonic for the cut length of the \"i\" variant, or decide " +
+      "that the can fitted is really a straight-lead phi5/P2.00mm part and change the footprint - " +
+      "CP_Radial_D5.0mm_P2.00mm is already recorded above, with the Nichicon PS 15mm lead.",
+  ],
+])
+
+/** Every footprint with a recorded span, sorted, for quoting in a refusal. */
+function recorded(): string {
+  return [...LEAD_SPANS.keys()].sort().map((name) => `  ${name}`).join("\n")
+}
+
+/**
+ * The span bounds for a footprint, or a refusal that says what is missing.
+ *
+ * There is no default and there will not be one. A span the part cannot
+ * physically make produces a board that scores well and cannot be built.
+ */
+export function leadSpanFor(
+  footprint: string,
+  spans: ReadonlyMap<string, LeadSpan> = LEAD_SPANS,
+  unsourced: ReadonlyMap<string, string> = UNSOURCED,
+): LeadSpan {
+  const found = spans.get(footprint)
+  if (found !== undefined) return found
+
+  const why = unsourced.get(footprint)
+  if (why !== undefined) {
+    throw new Error(
+      `no lead span is recorded for footprint "${footprint}": ${why}\n` +
+        "It is listed in UNSOURCED in lib/kicad/lead-span.ts precisely so that it refuses here " +
+        "rather than being given a plausible figure. See docs/stripboard/lead-span.md.",
+    )
+  }
+
+  throw new Error(
+    `no lead span is recorded for footprint "${footprint}": it is not in LEAD_SPANS in ` +
+      "lib/kicad/lead-span.ts, so how far its leads can be bent apart - and how far they can be " +
+      "brought together - is unknown.\nThis is NOT defaulted: the tool will stretch any " +
+      "two-terminal part to any span in 2-16 holes, so a guessed bound produces a layout that " +
+      "scores well and cannot be built.\nFootprints with a recorded span:\n" +
+      `${recorded()}\n` +
+      "To add one, read the lead length, lead diameter and body dimensions off a named part's " +
+      "datasheet, record them with their document number, revision and table, and put the entry " +
+      "beside the others. docs/stripboard/lead-span.md shows the arithmetic.",
+  )
+}

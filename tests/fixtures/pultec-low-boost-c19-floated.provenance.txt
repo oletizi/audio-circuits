@@ -1,0 +1,56 @@
+pultec-low-boost-c19-floated.vrt / .dump
+========================================
+
+A low-boost board carrying ONE part that is off the board: C19, which was at
+hole 3,13 and is FLOATING. Nothing else differs from the committed layout.
+
+WHY THIS FILE EXISTS, AND WHY IT IS COMMITTED RATHER THAN REGENERATED
+---------------------------------------------------------------------
+It is the negative fixture for the H3 / H8 gates of
+docs/superpowers/specs/2026-10-10-stripboard-pipeline-design.md - a board that
+every term of the pipeline's cost objective reports as healthy while one of its
+parts is in mid-air. Its CUT count is 5, its NODE count is 9 and its GRID is
+14 32, exactly as on the committed layout; the only two dump signals that differ
+are the PART line's placement field and the absence of C19's two PIN lines, and
+both derive from Component::GetIsPlaced(), so they are one signal reported twice
+rather than two witnesses.
+
+It is committed, and cannot be regenerated, because the only thing that ever
+produced such a board was a shipped verb exiting 0 while floating a part - which
+is the defect M1.2 removes. Spec section 4 names this sequencing trap: capture
+the fixture from the pre-M1.2 binary first, because afterwards no shipped verb
+will make one. This capture is that one.
+
+HOW IT WAS MADE - the exact commands, on a scratch copy, never on a board under
+boards/
+--------------------------------------------------------------------------------
+  cp boards/pultec-low-boost/pultec-low-boost.perfboard.vrt $SCRATCH/low.vrt
+  veroroute --stretch $SCRATCH/low.vrt --ref C19 --direction grow -o $SCRATCH/s1.vrt
+  cp $SCRATCH/s1.vrt tests/fixtures/pultec-low-boost-c19-floated.vrt
+  veroroute --dump-board tests/fixtures/pultec-low-boost-c19-floated.vrt \
+      > tests/fixtures/pultec-low-boost-c19-floated.dump
+
+The stretch exited 0, printed nothing on stdout and nothing on stderr, and wrote
+the board. That is the whole of the defect.
+
+PROVENANCE OF THE INPUT, AND THE BINARY THAT WROTE THE OUTPUT
+-------------------------------------------------------------
+  input board      boards/pultec-low-boost/pultec-low-boost.perfboard.vrt
+                   at commit 2f62ee1d643e15e73bd220c10215957ab4c460a9
+                   sha256 411412bdf087c5aeea15195ae6ffc2bd1e453c3ca81fcdcf64307effd21b43ae
+  this fixture     sha256 89049aaec626d7864e702701bff36d52cf8df1791aa7a0011c4da66ec6978b13
+  binary           .tools/veroroute-perfboard at commit
+                   2cfaad8171cd9a2be881117d19f4d748e8e1a4a0, which is what
+                   veroroute.pin pins, built from that commit
+                   (.tools/veroroute-perfboard/.built-commit agrees)
+
+The .dump beside it is this binary's --dump-board output on this file, committed
+for the same reason tests/fixtures/pt2399-core-board.dump is: it is the readable
+form of the board, and a test can assert over it without spawning the binary.
+
+WHAT MAY NOT BE CONCLUDED FROM IT
+---------------------------------
+It is not evidence about any other board, and it is not a layout. C19's grow was
+refused by Board::CanPutDown because the wider footprint collided with occupied
+holes; the part being off the board is that refusal's symptom, not a placement
+anybody chose.

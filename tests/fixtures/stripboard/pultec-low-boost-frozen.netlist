@@ -1,0 +1,50 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T08:00:38 }
+ ( /C18 CAP_FILM_WIDE2  C18 .33uF
+  (    1 0 )
+  (    2 j10_p1 )
+ )
+ ( /C19 CAP_FILM2  C19 .22uF
+  (    1 0 )
+  (    2 j10_p2 )
+ )
+ ( /C20 CAP_FILM2  C20 .12uF
+  (    1 0 )
+  (    2 j10_p3 )
+ )
+ ( /C21 CAP_FILM2  C21 .068uF
+  (    1 0 )
+  (    2 j10_p4 )
+ )
+ ( /C22 CAP_FILM2  C22 .047uF
+  (    1 0 )
+  (    2 j10_p5 )
+ )
+ ( /C23 CAP_FILM2  C23 .033uF
+  (    1 0 )
+  (    2 j10_p6 )
+ )
+ ( /R2 RESISTOR4  R2 56K
+  (    1 out )
+  (    2 lo_boost_in )
+ )
+ ( /RV_LO_BOOST PADS3  RV_LO_BOOST 47K
+  (    1 0 )
+  (    2 lo_boost_in )
+  (    3 lo_boost_in )
+ )
+ ( /SW_LO_BOOST PADS7  SW_LO_BOOST SW_Rotary
+  (    1 lo_boost_in )
+  (    2 j10_p1 )
+  (    3 j10_p2 )
+  (    4 j10_p3 )
+  (    5 j10_p4 )
+  (    6 j10_p5 )
+  (    7 j10_p6 )
+ )
+ ( /board_terminals BLOCK_200MIL3  board_terminals Conn_01x03
+  (    1 lo_boost_in )
+  (    2 out )
+  (    3 0 )
+ )
+)
+*

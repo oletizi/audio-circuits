@@ -1,0 +1,45 @@
+Every page of every guide.pdf on US Letter, measured off the PDF's own MediaBox.
+ORIENTATION IS NOT PAPER: 612x792 pt is Letter portrait and 792x612 is Letter
+LANDSCAPE, and the schematic page is the landscape one. tools/guide/paper.ts
+compares the SORTED edge pair for exactly this reason, so that is the test here.
+
+=== pultec-hi-boost
+  12 pages
+     612.0 x  792.0 pt  x11   (portrait)
+     792.0 x  612.0 pt  x1    (landscape)
+  distinct PAPERS (sorted edge pair): 1 -> [(612.0, 792.0)]
+  every page is US Letter: True
+  CONTROL  the same test applied to an A3 page ([842.0, 1191.0]): correctly NOT US Letter - TEST DISCRIMINATES
+  exit=0
+=== pultec-hi-cut
+  12 pages
+     612.0 x  792.0 pt  x11   (portrait)
+     792.0 x  612.0 pt  x1    (landscape)
+  distinct PAPERS (sorted edge pair): 1 -> [(612.0, 792.0)]
+  every page is US Letter: True
+  CONTROL  the same test applied to an A3 page ([842.0, 1191.0]): correctly NOT US Letter - TEST DISCRIMINATES
+  exit=0
+=== pultec-low-boost
+  12 pages
+     612.0 x  792.0 pt  x11   (portrait)
+     792.0 x  612.0 pt  x1    (landscape)
+  distinct PAPERS (sorted edge pair): 1 -> [(612.0, 792.0)]
+  every page is US Letter: True
+  CONTROL  the same test applied to an A3 page ([842.0, 1191.0]): correctly NOT US Letter - TEST DISCRIMINATES
+  exit=0
+=== pultec-low-cut
+  12 pages
+     612.0 x  792.0 pt  x11   (portrait)
+     792.0 x  612.0 pt  x1    (landscape)
+  distinct PAPERS (sorted edge pair): 1 -> [(612.0, 792.0)]
+  every page is US Letter: True
+  CONTROL  the same test applied to an A3 page ([842.0, 1191.0]): correctly NOT US Letter - TEST DISCRIMINATES
+  exit=0
+=== pultec-mid
+  13 pages
+     612.0 x  792.0 pt  x12   (portrait)
+     792.0 x  612.0 pt  x1    (landscape)
+  distinct PAPERS (sorted edge pair): 1 -> [(612.0, 792.0)]
+  every page is US Letter: True
+  CONTROL  the same test applied to an A3 page ([842.0, 1191.0]): correctly NOT US Letter - TEST DISCRIMINATES
+  exit=0

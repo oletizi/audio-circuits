@@ -6,30 +6,74 @@ right. Nothing here is finished software — it is hardware in progress.
 
 ## What this repository is for
 
-**It is a bridge between AI agents and human designers**, and the split of
-responsibilities is deliberate:
+**It is for carrying a circuit from a model to something buildable, with agents
+doing that work end to end:**
 
-- **The TypeScript is for agents.** Agents are good at software, so a circuit
-  is held as data — built with `lib/model/`'s `circuit()` builder or read from
-  a KiCad netlist — where it can be validated, simulated in SPICE, composed,
-  partitioned and checked. That is work an agent can do well and be held to.
-- **The KiCad and VeroRoute interfaces are for the human designer.** Agents are
-  bad at hardware design: they cannot draw a legible schematic and cannot be
-  trusted to lay out a physical board. So the handoff is explicit. An agent
-  codifies and tests the circuit; a person picks it up in KiCad and VeroRoute
-  and produces the things that actually get built — readable schematics, and
-  buildable layouts for stripboard, perfboard and manufactured PCBs.
+- **A circuit is held as data** — built with `lib/model/`'s `circuit()` builder
+  or read from a KiCad netlist — where it can be validated, simulated in SPICE,
+  composed, partitioned and checked.
+- **The KiCad and VeroRoute interfaces are driven by agents too**, which
+  arrange schematics and place and route layouts for stripboard, perfboard and
+  manufactured PCBs. Until 2026-10-10 this file said the opposite — that those
+  were a person's work because agents are bad at hardware design. That is no
+  longer the project's position; see
+  `docs/superpowers/specs/2026-10-08-agent-authored-boards-design.md`.
+- **What an agent never does is set the bar its own artifact is measured
+  against.** Acceptance criteria come from a rule file, a spec, or a reviewing
+  agent that did not produce the artifact. That constraint is the one thing kept
+  from the older arrangement, because the failure it prevents is real: an agent
+  that writes its own criteria from the layout it already produced will pass
+  every check it set itself.
 
-Authority runs in both directions depending on where a circuit came from.
-`lib/kicad/schematic.ts` writes a `.kicad_sch` **from** a model, as a starting
-point a person rearranges into something legible. The Pultec runs the other
-way: an existing design imported schematic-first, with the model derived from a
-netlist export.
+Authority runs in both directions depending on where a circuit came from. For a
+circuit an agent designs, the model is authoritative and the drawing is derived
+from it. The Pultec runs the other way: an existing design imported
+schematic-first, with the model derived from a netlist export.
+
+**A `.kicad_sch` is not written by code in this repository.** It is drawn by
+`TOOLING.md`'s loop — copperhead drafts, akcli-kicad repairs, `kicad-cli`
+renders and exports, the reviewer gives a verdict on the rendered page, and the
+page is committed under `drafted/<circuit>/<board>/` beside a `RECORD.md`
+carrying the sha256 the verdict is bound to.
+
+> **This paragraph described a model-to-schematic generator at `lib/schgen/`
+> with `bun run schgen` as its front door, and a superseded stub writer at
+> `lib/kicad/schematic.ts` kept alive for the `transistor-preamp` round trips.
+> All of it is deleted** — `lib/schgen/`, `tools/schgen/`, `tests/schgen/`,
+> `lib/kicad/schematic.ts` and the three `schgen` CLI verbs — in the plan at
+> `docs/superpowers/plans/2026-10-30-remove-schgen.md`, with the findings in
+> `docs/research/2026-10-30-schgen-removed.md`. **The `kicad-cli` proof the stub
+> was being kept for did not have to die with it — but it did change subject.**
+> The old tests wrote a fresh throwaway stub from the live model and exported
+> that, so they could not survive the writer; what survived is the comparison,
+> and `tests/circuits/transistor-preamp-kicad-round-trip.test.ts` now runs the
+> same three assertion shapes against each board's **committed** `.kicad_sch`
+> under `circuits/transistor-preamp/`. **No test will again export a freshly
+> written stub**; all five boards keep a live-`kicad-cli` model-against-schematic
+> proof, pointed at the sheet they actually ship. **G247**, **G248** and **G81**
+> measured a generator that no longer exists.
 
 **KiCad is a primary tool here, not an optional extra.** `make check` runs
 `kicad-cli` on every board on every run. Treat it the way you would a compiler.
 
-Read `CLAUDE.md` for the conventions every circuit follows.
+## The documents that govern the work
+
+Read them in this order. Each outranks the ones below it.
+
+| | |
+| --- | --- |
+| [`CONSTITUTION.md`](CONSTITUTION.md) | the few principles this project does not revisit |
+| [`EVALUATING-DRAWINGS.md`](EVALUATING-DRAWINGS.md) | **canonical on drawings** - who may judge one, what counts as a valid evaluation, what an agent may say about one. An agent is not a qualified reviewer, and *better*, *good*, *clean*, *readable* and *legible* are forbidden words about any drawing produced here |
+| [`CLAUDE.md`](CLAUDE.md) | the conventions every circuit follows |
+| [`AGENTS.md`](AGENTS.md) | the shared working rules |
+| [`TOOLING.md`](TOOLING.md) | **how a schematic actually gets drawn** - the toolchain with exact versions, the copperhead-then-akcli loop, the known repair classes (it says how many, and the set is not closed), the checks that must be able to fail, and what the procedure does not yet cover |
+| [`.claude/skills/drawing-a-schematic/SKILL.md`](.claude/skills/drawing-a-schematic/SKILL.md) | **the invocation of `TOOLING.md`'s procedure** - `make draught-doctor` then `make draw` for the mechanics, the measured traps and false greens in that loop, and the ordering rule for sending a render to the reviewer. It is not the criteria and does not restate `EVALUATING-DRAWINGS.md` |
+| [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md) | the owner's verdicts on the pages he has seen, verbatim, each bound to the sha256 of the sheet. The defects he named are the only statements of what he wants that carry authority |
+| [`DEVELOPMENT-LOG.md`](DEVELOPMENT-LOG.md) | newest session first - what was done, and what went wrong doing it |
+
+`TOOLING.md` is the procedure and **not** the criteria; `EVALUATING-DRAWINGS.md`
+is the criteria, because an agent may never author the bar its own artifact is
+measured against.
 
 This repository was previously a tscircuit component package. tscircuit has
 been removed entirely — see `docs/decisions/2026-09-21-why-not-tscircuit.md`
@@ -53,11 +97,12 @@ audio-circuits/
 │   │                     # vocabularies, validation, the circuit() builder,
 │   │                     # include() composition
 │   ├── kicad/            # Readers for two KiCad netlist export formats, and
-│   │   │                 # the schematic-stub writer (schematic.ts) that
-│   │   │                 # writes a KiCad .kicad_sch from a Network
+│   │   │                 # the superseded stub writer (schematic.ts) - see
+│   │   │                 # "Authority runs in both directions" above and
+│   │   │                 # docs/known-gaps.md G248 for why it is still here
 │   │   └── symbols/      # Vendored KiCad symbol definitions the stub writer
-│   │                     # embeds, so a generated schematic never depends on
-│   │                     # an installed KiCad - see symbols/PROVENANCE.md
+│   │                     # embeds, so its output never depends on an installed
+│   │                     # KiCad - see symbols/PROVENANCE.md
 │   └── sim/              # SPICE netlist generation, AC and operating-point
 │       └── models/       # Device models, each with its own provenance
 │
@@ -95,34 +140,175 @@ audio-circuits/
 - **[KiCad](https://www.kicad.org/)**, for `kicad-cli`. Required: the perfboard
   workflow re-exports each board's netlist from its KiCad schematic on every
   run (see `make/board.mk`'s `netlist-agrees`), not just once, so `kicad-cli`
-  has to be present to run `make check` against a declared board. It is also
-  required for `bun test`: exactly one test, "KiCad reads the generated stub
-  as the same circuit" in `tests/circuits/transistor-preamp-lab.test.ts`,
-  deliberately invokes `kicad-cli` and **fails** (never skips) when it cannot
-  find it, because it is the only proof that KiCad reads a generated
-  schematic stub the way the circuit means it. Every other test injects
-  `kicad-cli` out. The default assumes a standard macOS install
+  has to be present to run `make check` against a declared board. **It is
+  required for `bun test` far more widely than this paragraph used to claim.**
+  It said *"exactly one test"* - "KiCad reads the generated stub as the same
+  circuit" in `tests/circuits/transistor-preamp-lab.test.ts` - *"and every
+  other test injects `kicad-cli` out."* **Both halves are false, measured:**
+  with `KICAD_CLI` pointed at a path that does not exist, **208 testcases fail
+  across 55 files, 294 further tests never register at all** (144 of them in
+  twelve files that leave no trace whatever), and **50 more skip**. That test
+  is also **one of five bearing the same name**, one per transistor-preamp
+  board. `docs/known-gaps.md` **G250** carries the six-arm measurement. What is
+  true of the original sentence is its *point*: those tests invoke `kicad-cli`
+  and **fail rather than skip**, because they are the only proof that KiCad
+  reads this repository's committed sheets the way the circuits mean them.
+  **The five per-board tests that carried that claim were named "KiCad reads
+  the generated stub as the same circuit" and are deleted with the stub
+  writer**; the claim moved whole to
+  `tests/circuits/transistor-preamp-kicad-round-trip.test.ts` and
+  `tests/circuits/drafted-kicad-round-trip.test.ts`, which run `kicad-cli` on
+  the committed `.kicad_sch` instead of on a freshly written stub. The default
+  assumes a standard macOS install
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); override
   `KICAD_CLI` if yours lives elsewhere.
+- **[Google Chrome](https://www.google.com/chrome/)** (or another
+  Chromium-family browser), for printing a build guide. Required by `make
+  guide`, which renders `guide.html` to the guide's own pages with it -
+  printing is part of this build system rather than a manual step afterwards,
+  so a missing converter **refuses by name** instead of writing a packet with
+  no PDF. It is
+  also required for `bun test`: exactly one test, "the real converter prints a
+  multi-page PDF from a page with the guide's print CSS" in
+  `tests/guide/print-pdf.test.ts`, invokes it and **fails** (never skips) when
+  it cannot find it, because Chrome's headless flags have changed across
+  versions and it is the only proof that the flags this repository passes
+  still produce a PDF. **That "exactly one" is measured and exact**: masking
+  `HTML_TO_PDF` gives **one** failing testcase, that one, and nothing
+  unregistered (**G250**'s `nochrome` arm). The default assumes a standard macOS install
+  (`/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`); override
+  `HTML_TO_PDF` if yours lives elsewhere.
+- **[qpdf](https://qpdf.sourceforge.io/)** (`brew install qpdf`), for merging
+  the schematic page into a build guide so a board's packet is one printable
+  document. Required by `make guide`, and by `bun test`:
+  `tests/guide/merge-pdf.test.ts` and `tests/guide/single-document.test.ts`
+  invoke it and **fail rather than skip**, because they are the only proof that
+  the arguments this repository passes still merge, and that the inserted page
+  is neither dropped nor resized. qpdf rather than `pdfunite` or `gs` for two
+  stated reasons: `gs` re-distills the content streams, which is a re-render of
+  an approved drawing, and qpdf is the one that will also report the page count
+  and every page's size, which is what the merge is verified with. The default
+  assumes Homebrew (`/opt/homebrew/bin/qpdf`, then `/usr/local/bin/qpdf`);
+  override `PDF_MERGE` if yours lives elsewhere.
 - **Homebrew's `qt@5`** (`brew install qt@5`), needed to build the VeroRoute
   fork the perfboard tooling drives. It is keg-only, which is why the tooling
   locates it via `brew --prefix qt@5` rather than expecting `qmake` on `PATH` -
   there is nothing to configure once it's installed.
+- **Node and npm** (`npm`, and `npx` for anything that still reaches for it),
+  which `draughting/install.sh` needs for `npm ci` in the copperhead checkout
+  and which copperhead's own CLI runs under - the `tsx` that runs it is a
+  devDependency of that checkout, installed by that `npm ci`. Measured here on
+  node `v22.19.0`. Listed because the final review's M-8 found the install and
+  draw paths both depend on it while this list named neither; `TOOLING.md`'s
+  toolchain table already carried it.
+- **copperhead, akcli-kicad, numpy and Pillow**, the schematic-drawing
+  toolchain `TOOLING.md`'s loop runs. `draughting/install.sh` installs the
+  pinned versions `draughting/tools.lock.json` names into
+  `draughting/copperhead` and `draughting/venv-akcli` - fixed locations, not an
+  override - and `make draught-doctor` reports any disagreement between that
+  lock and what is actually installed.
+
+  **THIS SAID "NEITHER IS REQUIRED FOR `bun test`" AND THAT WAS FALSE - the
+  final review's I-4.** `tools/cli/draw.ts` checks the whole lock before it
+  does anything else and refuses on any disagreement, and
+  `tests/draught/draw.test.ts` drives two real draws expecting exit 0. The
+  right statement is the one this list already makes for `kicad-cli`, Chrome
+  and qpdf: **the drawing toolchain is required for `bun test`, and the tests
+  that need it fail rather than skip.** It is required for drawing a schematic
+  too, which is what the old sentence was reaching for.
+
+  **Each piece was measured separately, because "the toolchain" is four things
+  and a prerequisite claim about a set is not a measurement of its members.**
+  Running `tests/draught/` with one piece removed and the rest present:
+
+  | removed | what `bun test` does |
+  | --- | --- |
+  | `numpy` from the venv | **7 fail by name.** Nothing erased |
+  | the `akcli` console script | **5 fail by name.** Nothing erased |
+
+  In both arms four of the failures are `make draw` tests whose own subject is
+  a refusal message or an intent mismatch: `runDraw` checks the whole lock
+  before it does anything else, so a missing tool fails them for a reason that
+  has nothing to do with what they test. That is the gate's granularity, not a
+  defect in those tests, and `tools/cli/draw.ts` records the question it
+  raises.
 - **[Bun](https://bun.sh/)**, for the runtime and the test suite.
+- **One npm RUNTIME dependency you need, installed by `bun install` rather than
+  by you**: `eecircuit-engine`, the vendored SPICE engine. It pulls in nothing
+  transitively and ships its own types, so there is nothing to configure.
+
+  **`elkjs` 0.9.3 is still declared in `package.json` and NOTHING IMPORTS IT.**
+  It was the deleted generator's layout backend; the only remaining mentions of
+  it in the tree are that declaration, `bun.lock` and the research documents.
+  Recorded rather than quietly dropped, because removing a declared dependency
+  is a `package.json` change and this was a prose pass: **the dependency is
+  dead weight, not a prerequisite**, and `docs/known-gaps.md` G183's note on
+  constructing it under Bun no longer applies to anything here.
+- **No `SCHGEN_SOURCE`, and there is nothing to set.** This list carried that
+  environment variable as a prerequisite for eight tests in
+  `tests/schgen/port-fidelity.test.ts`, which proved every file under
+  `lib/schgen/` was still a mechanical port of its `digital-pedal-platform`
+  source. **That file and the tree it guarded are deleted**, nothing in the
+  repository reads the variable, and a `bun test` on a fresh machine no longer
+  has those eight failures in its baseline. `docs/known-gaps.md` G110 and
+  G250's `noschgen` arm measured a prerequisite that no longer exists.
 
 Nothing else needs setting up: the perfboard tooling builds and locates the
-VeroRoute fork itself, and none of this requires an environment variable. If
-you want to point at your own builds instead, `VEROROUTE`, `QMAKE` and
-`KICAD_CLI` are overrides, not required setup.
+VeroRoute fork itself, and none of the rest of this requires an environment
+variable. If you want to point at your own builds instead, `VEROROUTE`,
+`QMAKE`, `KICAD_CLI` and `HTML_TO_PDF` are overrides, not required setup.
+
+### Which of these a green `bun test` is NOT evidence about
+
+**A missing prerequisite does not always produce a failure. Two of the five
+make tests DISAPPEAR, and the suite's printed file count does not move when
+they do** - so `3672 pass / 0 fail` in a tree missing one of them is a true
+statement about a smaller suite than the number suggests. Measured over six
+full-suite arms; `docs/known-gaps.md` **G250** carries the table, the method and
+the per-file losses.
+
+| prerequisite | what its absence does to `bun test` |
+| --- | --- |
+| **`kicad-cli`** | **ERASES 294 tests**, 144 of them in twelve files that leave no `testsuite` element, no name and no failure; 208 further testcases fail by name; 50 skip |
+| **the VeroRoute binary** | **ERASES 48 tests**, 6 of them with no trace at all; 77 testcases fail by name |
+| Google Chrome | fails **1** test, by name. Nothing erased |
+| Homebrew `qt@5` | **nothing at all** - the suite exits 0. It is needed to BUILD the VeroRoute binary, not to use one that exists |
+
+**This table had a fifth row, `SCHGEN_SOURCE`**, measured as eight named
+failures in one file with nothing erased. Both the file and the variable are
+deleted; the row is removed rather than kept as a prerequisite nobody can
+satisfy. The other four rows are unchanged and were not re-measured in that
+change, so they remain G250's figures with G250's date on them.
+
+**The rule behind the table is where the prerequisite is resolved, not which
+prerequisite it is**: resolved inside a test it fails loudly, resolved at a test
+file's module scope it takes the rest of the file with it. If you are comparing
+two suite runs, compare the junit reports' per-file testcase counts; `Ran N
+tests` under-reports the gap by the number of unhandled errors, and `across N
+files` does not move at all.
 
 ## Usage
 
 ```bash
 bun install
-bun test           # the full suite, including the SPICE simulations and one
-                   # test that invokes kicad-cli directly (see Prerequisites)
+bun test           # the full suite, including the SPICE simulations and the
+                   # tests that invoke kicad-cli directly (see Prerequisites)
 bun run typecheck
 ```
+
+**There is no verb that writes a schematic, and `bun run schgen` is gone.**
+It had two verbs, `check` and `generate`, over a design module exporting a
+`DesignSpec`; all three verbs, the generator behind them and the one fixture
+design in the tree were deleted with
+`docs/superpowers/plans/2026-10-30-remove-schgen.md`. **G165**'s look at what it
+drew is a look at deleted output.
+
+A schematic is drawn by hand-running [`TOOLING.md`](TOOLING.md)'s loop and is
+approved by the reviewer, never by a check. What `bun test` holds is the other
+direction: `tests/circuits/drafted-kicad-round-trip.test.ts` and
+`tests/circuits/transistor-preamp-kicad-round-trip.test.ts` export committed
+sheets with the real `kicad-cli` and compare them against the models, **by
+content, never by timestamp**.
 
 Circuits are checked against real, physically-built layouts through the
 perfboard workflow. `make check`, run from a board's directory (e.g.
@@ -132,15 +318,35 @@ board, is that workflow's front door - see `make help` for the rest of it.
 `make guide`, run from a declared board's directory (e.g.
 `boards/transistor-preamp-staged`), writes that board's printable build
 packet into `<board>/guide/`: two component-side layout SVGs (by designator
-and by value), a mirrored copper-side SVG of cuts and solder bridges, the
-schematic as a black-and-white PDF, and a `guide.html` that embeds all three
-images with a build checklist (in build order: ICs and transistors,
-resistors and trim-pots, capacitors, wire links, wire-to-board junctions,
-solder bridges, cuts) and, where the circuit module declares them, a
-power-up table of expected DC voltages. `guide/` is regenerated whole on
-every run, is git-ignored, and is never hand-edited; the command refuses to
-write a packet when the layout has unresolved cuts, an unplaced part, or
-disagrees with the circuit it claims to be.
+and by value), a mirrored copper-side SVG of cuts and solder bridges, and a
+`guide.html` that embeds all three images with a build checklist (in build
+order: ICs and transistors, resistors and trim-pots, capacitors, wire links,
+wire-to-board junctions, solder bridges, cuts) and, where the circuit module
+declares them, a power-up table of expected DC voltages - **plus `guide.pdf`,
+which is ONE printable document and the only file you take to the bench.** It
+is that page printed, with the board's black-and-white schematic merged in as
+its **page 2** on every board that has a schematic; the header's `Schematic`
+row names that page. There is no second PDF: the packet used to be an
+eleven-page `guide.pdf` and a one-page `schematic.pdf` beside it with nothing
+saying the stack was two documents, and the owner asked for one
+(2026-10-30: *"merge them. I want a single printable document"*).
+
+Printing and merging are both part of this build system, not steps done by
+hand afterwards: the converter is a Chromium-family browser resolved through
+the `HTML_TO_PDF` make variable and the merge tool is a qpdf-compatible binary
+resolved through `PDF_MERGE`, each exactly as `kicad-cli` is through
+`KICAD_CLI` (see `make help`). A converter or merge tool that is missing, that
+fails, or that exits 0 having produced nothing usable refuses by name rather
+than leaving a packet whose document is quietly absent - and the merge is
+checked against the artifact rather than the exit status, because a merge that
+**drops** the schematic page still writes a valid PDF and still exits 0. The
+page count and every page's size are read back from the merged file, so a
+dropped page or a page the tool **resized** is a refusal. **Nothing is ever
+scaled to fit**: a schematic page on paper other than US Letter goes in at its
+own size and the document says so on page one. `guide/` is regenerated whole on every run, is
+git-ignored, and is never hand-edited; the command refuses to write a packet
+when the layout has unresolved cuts, an unplaced part, or disagrees with the
+circuit it claims to be.
 
 `make bom`, run from a declared board's directory, keeps that board's parts
 list. It reads the board's circuit module (including its `bomConditions()`
@@ -179,11 +385,15 @@ to one supplier. Keys are read from `~/.config/mouser/mouser-credentials.txt`
 and `~/.config/digikey/digikey-credentials.txt` and never printed; see
 `docs/parts/sourcing-notes.md`.
 
-A new board's KiCad schematic starts from a generated stub, written once with
-`bun run schematic-stub <circuit-module> <export> <out.kicad_sch>` (e.g.
-`circuits/transistor-preamp/lab-board.kicad_sch`) and arranged by hand in
-KiCad from there; see `lib/kicad/schematic.ts`'s module comment for what the
-stub does and does not carry.
+A new board's KiCad schematic is **drawn**, not generated: [`TOOLING.md`](TOOLING.md)
+is the procedure and [`EVALUATING-DRAWINGS.md`](EVALUATING-DRAWINGS.md) binds
+before it. The committed schematics under `circuits/` were arranged by hand and
+nothing regenerates them; the drawn pages live under `drafted/<circuit>/<board>/`
+with their verdicts in [`docs/schematic/verdicts.md`](docs/schematic/verdicts.md).
+**This paragraph said a new board's schematic comes from `bun run schgen`, and
+cited G247 for which boards that generator would accept** - the verb and the
+generator are deleted, so the question G247 answered is not one anybody can ask
+of this tree.
 
 ## How the Pultec reference is validated
 
@@ -276,4 +486,11 @@ tidied away. The two that matter most to anyone building this:
   electrical content still stands.
 - `docs/decisions/` — recorded architecture decisions, including why tscircuit
   was dropped
+- `docs/schematic/` — the research the schematic-generation program rests on:
+  what the published standards say about readable schematics, what already
+  exists in agent and programmatic schematic generation, and how one working
+  generator actually arrived at drawings somebody accepted.
+  **`docs/schematic/README.md` is the index, and it records how far each of the
+  three can be trusted** — they differ sharply, and the weakest verified nothing
+  by running it.
 - `docs/superpowers/specs/` — design documents for individual changes

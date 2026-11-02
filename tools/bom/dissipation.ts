@@ -8,6 +8,11 @@
  * with ids `<pot id>.<section>`; those pass through the same "kind === resistor" rule
  * as any other resistor and appear in the returned map under their section ids.
  *
+ * It takes `SimulatedBomConditions` and not `BomConditions`, so a board that declared
+ * a rail bound instead of an environment cannot reach here at all: there is no
+ * environment to solve, and the type says so rather than a runtime check finding out.
+ * The rail-bound path is tools/bom/rail-bound.ts.
+ *
  * Design: docs/superpowers/specs/2026-09-30-bom-design.md
  */
 import { resolveNetwork } from "../../lib/model/control-state.ts"
@@ -15,7 +20,7 @@ import type { ResolvedComponent } from "../../lib/model/control-state.ts"
 import type { Network, Parameters } from "../../lib/model/types.ts"
 import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
-import type { BomConditions } from "./conditions.ts"
+import type { SimulatedBomConditions } from "./conditions.ts"
 
 interface ResistorTerminals {
   readonly id: string
@@ -73,7 +78,7 @@ function requireResistorTerminals(component: ResolvedComponent): ResistorTermina
  */
 export async function resistorDissipation(
   network: Network,
-  conditions: BomConditions,
+  conditions: SimulatedBomConditions,
 ): Promise<ReadonlyMap<string, number>> {
   const resolved = resolveNetwork(network, conditions.controlState)
   const resistors = resolved.components

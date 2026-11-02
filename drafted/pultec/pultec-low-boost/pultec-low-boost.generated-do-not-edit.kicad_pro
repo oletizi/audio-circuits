@@ -1,0 +1,18 @@
+{
+  "erc": {
+    "erc_exclusions": []
+  },
+  "meta": {
+    "filename": "pultec-low-boost.generated-do-not-edit.kicad_pro",
+    "version": 3
+  },
+  "schematic": {
+    "drawing": {
+      "intersheets_ref_show": false,
+      "intersheets_ref_own_page": true,
+      "intersheets_ref_short": false,
+      "intersheets_ref_prefix": "[",
+      "intersheets_ref_suffix": "]"
+    }
+  }
+}

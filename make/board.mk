@@ -8,12 +8,14 @@
 # board. No board logic is reimplemented here.
 #
 # WHAT WRITES. `check`, `cuts` and `board-info` write nothing. `bom` rewrites
-# this board's BOM.md and never its bom.json or the parts/ catalog. `update` and
-# `stripboard` rewrite the declared layout IN PLACE - the CLI itself refuses
-# while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is passed
-# through as --allow-dirty. `edit` writes nothing itself; it hands the
+# this board's BOM.md and never its bom.json or the parts/ catalog. `update`,
+# `stripboard` and `adopt` rewrite the declared layout IN PLACE - the CLI itself
+# refuses while the layout has uncommitted changes, unless ALLOW_DIRTY=1 is
+# passed through as --allow-dirty. `edit` writes nothing itself; it hands the
 # layout to the GUI, which writes only when you save. `guide` never touches
-# the layout; it replaces this board's git-ignored guide/ directory.
+# the layout; it replaces this board's git-ignored guide/ directory. `place`
+# writes only under build/stripboard/, and `adopt` is the one target by which
+# anything the pipeline produced reaches this board (CRITERIA G1).
 #
 # THE SCHEMATIC IS THE ROOT OF THIS DEPENDENCY GRAPH. SCH and NETLIST come
 # from THIS board's own declaration (perfboard.json's optional
@@ -36,13 +38,72 @@
 SCH     := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field sch)
 NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 
-# KICAD_CLI follows the exact VEROROUTE/QMAKE shape from veroroute.mk: this
-# repository's own contingent default, exported so it reaches any recipe
-# that needs it, with an explicitly set KICAD_CLI always winning.
-KICAD_CLI ?= /Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli
+# KICAD_CLI follows the VEROROUTE/QMAKE shape from veroroute.mk in spirit -
+# an explicitly set KICAD_CLI (environment, or `make KICAD_CLI=...`) always
+# wins outright, and the result is exported so it reaches any recipe that
+# needs it - but NOT in the letter any more, and docs/known-gaps.md **G170**
+# is why: a plain `KICAD_CLI ?= <macOS literal>` here, once Task 10b gave
+# every TypeScript call site a per-platform resolver (lib/kicad/install.ts),
+# became the one thing that still handed a Linux or Windows `make check` the
+# macOS path regardless of platform - on 21 bun invocations that inherit the
+# export, AND on netlist-agrees/guide below, which pass $(KICAD_CLI) as an
+# explicit --kicad-cli flag that no environment change can touch. $(origin)
+# distinguishes "the user set this" from "nothing set this yet": only the
+# second case shells out to tools/cli/resolved-default.ts, which is the one
+# place Make, unable to import TypeScript itself, calls into the resolver -
+# the same bridge $(SCH)/$(NETLIST) above already use for board-info.
+ifeq ($(origin KICAD_CLI),undefined)
+KICAD_CLI := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" kicad-cli)
+endif
 export KICAD_CLI
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring
+# HTML_TO_PDF follows THE SAME SHAPE and the same G170 fix, and for the same
+# reason: printing the build guide is part of this build system, not
+# something an operator does by hand in a browser afterwards, so the
+# converter is a resolved, overridable variable here rather than a path
+# buried in TypeScript - and, as of G170, not a bare macOS literal either.
+#
+# It must be a Chromium-family browser binary - `guide` invokes it with
+# --headless --no-pdf-header-footer --print-to-pdf and a throwaway
+# --user-data-dir, and the guide page's own @page/@media print rules do the
+# pagination. There is no fallback: a missing converter refuses by name
+# (tools/guide/print-pdf.ts) rather than writing a packet whose PDF is
+# quietly absent.
+ifeq ($(origin HTML_TO_PDF),undefined)
+HTML_TO_PDF := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" html-to-pdf)
+endif
+export HTML_TO_PDF
+
+# PDF_MERGE follows THE SAME SHAPE AGAIN, and for the same reason: a board's
+# build packet is ONE printable document - the owner, 2026-10-30: "merge them.
+# I want a single printable document" - so joining the schematic page to the
+# printed guide is part of this build system, not something an operator does
+# by hand afterwards.
+#
+# It must be a qpdf-compatible binary: `guide` invokes it with --show-npages
+# and --json=latest to read page counts and page sizes, and with
+# --empty --pages <file> <range> ... -- <out> to do the merge. Of the three
+# tools on a typical machine that can join two PDFs, gs is excluded outright
+# because it re-distills the content streams - a re-render of an approved
+# drawing - and pdfunite cannot be asked what it did. There is no fallback: a
+# missing tool refuses by name (tools/guide/merge-pdf.ts) rather than leaving
+# the packet as two documents, which is the state this variable exists to end.
+ifeq ($(origin PDF_MERGE),undefined)
+PDF_MERGE := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" pdf-merge)
+endif
+export PDF_MERGE
+
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt print-%
+
+# print-%: prints any Make variable's final, resolved value - `make
+# print-KICAD_CLI` - the GNU Make idiom for inspecting what a variable
+# actually became. It is how tests/kicad/install.test.ts proves KICAD_CLI,
+# HTML_TO_PDF and PDF_MERGE reach their resolvers when unset, and leave an
+# explicit override untouched, without the test having to re-parse this
+# file's own ifeq/shell logic to predict what Make would do with it
+# (docs/known-gaps.md G170).
+print-%:
+	@echo '$($*)'
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -125,7 +186,23 @@ perfboard-help:
 	@echo "directory you are in is the board."
 	@echo ""
 	@echo "Check (read-only)"
-	@echo "  make check           check this layout against the circuit it was built from"
+	@echo "  make check           check this layout against the circuit it was built from,"
+	@echo "                       and grade the four buildability constraints the adoption"
+	@echo "                       gate already applied: HC5 (no lead stretched past the"
+	@echo "                       part's reach), HC9 (none compressed below its floor),"
+	@echo "                       HC8 (the copper partitions the pins exactly as the"
+	@echo "                       netlist does) and HC10 (no pin pattern the strips cannot"
+	@echo "                       take). A footprint with no span or pattern recorded is"
+	@echo "                       REFUSED by name rather than guessed at. It also checks"
+	@echo "                       this board's scaffold doc against the parts the layout"
+	@echo "                       holds (see scaffold-membership below)"
+	@echo "  make scaffold-membership"
+	@echo "                       every stand-in group in this board's SCAFFOLD claims"
+	@echo "                       parts the layout actually holds, and no part is claimed"
+	@echo "                       by two groups - the comparison the hatched stand-in"
+	@echo "                       diagram in the build packet rests on. A board that"
+	@echo "                       declares no SCAFFOLD prints a NOTICE saying so rather"
+	@echo "                       than passing silently. check runs this"
 	@echo "  make cuts            print the cut list and solder bridges"
 	@echo "  make board-info      what this directory declares"
 	@echo ""
@@ -149,14 +226,61 @@ perfboard-help:
 	@echo "  ALLOW_DIRTY=1                           accept that the write cannot be"
 	@echo "                                          undone through git"
 	@echo ""
+	@echo "Let the pipeline lay it out (writes only build/stripboard/, never the layout)"
+	@echo "  make place SEED_ARM=constructed|import|random"
+	@echo "                                          run the stripboard pipeline on this"
+	@echo "                                          board and print its report. SEED_ARM"
+	@echo "                                          is REQUIRED: the three starting arms"
+	@echo "                                          are an experiment with random as its"
+	@echo "                                          control, and an arm chosen for you"
+	@echo "                                          would be a comparison nobody named -"
+	@echo "                                          so the run refuses without one"
+	@echo "  FROZEN=<fixture> NETLIST_EXPORT=<export>"
+	@echo "                                          run the FROZEN hand layout's"
+	@echo "                                          benchmark instead of this board"
+	@echo "  SWEEP=1                                 add the seed-set diagnostic: one run"
+	@echo "                                          per reviewed seed, each with the full"
+	@echo "                                          evaluation cap. No number is attached"
+	@echo "                                          to the rate and it changes no verdict"
+	@echo ""
+	@echo "Admit one of its layouts (the ONLY pipeline target that writes this board)"
+	@echo "  make adopt RUN=<run directory>"
+	@echo "                                          admit the candidate that run"
+	@echo "                                          produced into this board, IN PLACE."
+	@echo "                                          RUN is REQUIRED: there is no default"
+	@echo "                                          run, because adopting off the most"
+	@echo "                                          recent directory would be adopting"
+	@echo "                                          off whatever the clock last named."
+	@echo "                                          It refuses ten things by name -"
+	@echo "                                          among them a candidate whose hash"
+	@echo "                                          disagrees with its run.json, a rules"
+	@echo "                                          or span file edited since the run, a"
+	@echo "                                          verdict that is not admissible, and"
+	@echo "                                          an uncommitted layout - and it runs"
+	@echo "                                          \`make check\` after the copy,"
+	@echo "                                          reverting the copy if that fails"
+	@echo "  CANDIDATE=<vrt>                         which .vrt to admit. Optional:"
+	@echo "                                          run.json identifies it by sha256"
+	@echo "  ALLOW_DIRTY=1                           accept that the write cannot be"
+	@echo "                                          undone"
+	@echo ""
 	@echo "Hand it to the GUI"
 	@echo "  make edit            open this layout in the forked VeroRoute"
 	@echo ""
 	@echo "Build it on the bench"
-	@echo "  make guide           write the printable build packet into guide/ (layout"
-	@echo "                       images, black-and-white schematic PDF, checklist in"
-	@echo "                       guide.html) - replaces guide/, never the layout;"
-	@echo "                       refuses while cuts are unresolved or a part is unplaced"
+	@echo "  make guide           write the printable build packet into guide/: the three"
+	@echo "                       layout images, the guide as guide.html, and ONE printable"
+	@echo "                       document, guide.pdf - that page printed with the"
+	@echo "                       black-and-white schematic merged in as its page 2 on every"
+	@echo "                       board that has a schematic. guide.pdf is the one thing you"
+	@echo "                       take to the bench; there is no second PDF. Replaces"
+	@echo "                       guide/, never the layout; refuses while cuts are"
+	@echo "                       unresolved, a part is unplaced, the HTML_TO_PDF converter"
+	@echo "                       or the PDF_MERGE tool is missing, or the merge drops or"
+	@echo "                       resizes a page, and leaves the previous packet intact when"
+	@echo "                       it does. Nothing is ever scaled to fit: a schematic page"
+	@echo "                       on paper other than US Letter is carried at its own size"
+	@echo "                       and SAID SO on page one"
 	@echo ""
 	@echo "Buy the parts"
 	@echo "  make bom             compare what the circuit needs with bom.json and the"
@@ -170,6 +294,22 @@ perfboard-help:
 	@echo "The toolchain"
 	@echo "  make veroroute       acquire and build the pinned VeroRoute fork (a"
 	@echo "                       no-op once it is already built)"
+	@echo "  make draught-doctor  report every disagreement between the pinned drawing"
+	@echo "                       toolchain (draughting/tools.lock.json) and what is"
+	@echo "                       actually installed, and exit non-zero naming each one."
+	@echo "                       Machine-wide - no variable to set, wherever it is run"
+	@echo ""
+	@echo "Draw a schematic"
+	@echo "  make draw            draft this board's schematic from its committed"
+	@echo "                       copperhead intent, verify the intent against the"
+	@echo "                       model, re-paper to US Letter, render, and run the"
+	@echo "                       measurement suite - everything under"
+	@echo "                       build/draw/<board>/, never under drafted/ and never"
+	@echo "                       this board's own declared files. It is a MECHANICAL"
+	@echo "                       draft: it runs no akcli repair, and it never"
+	@echo "                       withholds the page over a measurement finding. A"
+	@echo "                       board with no committed intent is refused by name"
+	@echo "                       rather than having one derived for it"
 	@echo ""
 	@echo "Elsewhere"
 	@echo "  make -C <dir> <target>   act on another board without leaving this one"
@@ -183,7 +323,18 @@ perfboard-help:
 	@echo "  KICAD_CLI            override: point at your OWN kicad-cli - consulted on"
 	@echo "                       every run that declares \"sch\"/\"netlist\", since every"
 	@echo "                       such run now re-exports the schematic to check it"
-	@echo "  ALLOW_DIRTY=1        let update/stripboard write over uncommitted changes"
+	@echo "  HTML_TO_PDF          override: point at your OWN Chromium-family browser - it"
+	@echo "                       is what prints the guide's own pages from guide.html on"
+	@echo "                       every \`make guide\`, invoked with --headless"
+	@echo "                       --print-to-pdf. A converter that is not there refuses by"
+	@echo "                       name; a packet without its PDF is never written"
+	@echo "  PDF_MERGE            override: point at your OWN qpdf-compatible binary - it is"
+	@echo "                       what merges the schematic page into guide.pdf so the packet"
+	@echo "                       is one document, and what reports the page count and page"
+	@echo "                       sizes that merge is checked against. A tool that is not"
+	@echo "                       there refuses by name; a packet left as two documents is"
+	@echo "                       never written"
+	@echo "  ALLOW_DIRTY=1        let update/stripboard/adopt write over uncommitted changes"
 
 # `wiring` is a prerequisite of `check` for the same reason `netlist-agrees` is:
 # a derived artifact nobody regenerates is one that goes quietly stale, and a
@@ -191,11 +342,47 @@ perfboard-help:
 # layout cannot contradict. It rewrites rather than failing, exactly as
 # netlist-agrees does, so drift surfaces as a git diff the operator has to look
 # at. A board with nothing off it reports that and writes nothing.
-check: veroroute netlist-agrees wiring
+#
+# CHECK IS NO LONGER WEAKER THAN `adopt`'s GATE (CRITERIA G4). As well as the
+# binary's own --check, this now grades the four buildability constraints -
+# HC5 the part's reach, HC9 the part's own floor, HC8 the netlist equivalence
+# reconstructed from copper, HC10 the pin pattern the strips can take - which
+# until 2026-10-13 ran only on the adoption path. So the command that runs on
+# boards a person laid by hand was blind to exactly the faults that make a
+# board not conduct. HC6 is deliberately NOT among them (OB4): pt2399-core is
+# 17 x 36 against a declared stock of 34 x 27 and it is a board that works.
+#
+# NO EXTRA PREREQUISITE IS NEEDED FOR IT. The bounds come from committed data
+# modules (lib/kicad/lead-span.ts, lib/kicad/pin-pattern.ts) and from
+# stripboard/rules.json, every one of which REFUSES BY NAME rather than
+# defaulting when the datum it needs is not recorded - so a board placing a
+# footprint whose span nobody has read off a datasheet now FAILS here, naming
+# the footprint. That is the gate working, not a gate to loosen: see
+# docs/stripboard/lead-span.md for how to add an entry with its evidence.
+#
+# `scaffold-membership` IS A PREREQUISITE FOR THE REASON `wiring` IS, pointed at
+# a different artifact. Three comparisons exist around a Pultec section board and
+# until this one they did not close the triangle: `check` below and
+# `assertLayoutMatchesCircuit` compare the LAYOUT against the CIRCUIT, and
+# `groupsFor` (circuits/pultec/physical/scaffold-doc.ts) compares the stand-in
+# GROUPS against the MODEL - but nothing compared the GROUPS against the LAYOUT.
+# A group claiming a part the board holds no position for, or claiming one part
+# twice, would surface first as a confidently-hatched stand-in diagram in a
+# printed packet, where the five .vrt files are owner-approved and immutable and
+# so a builder has no reason to suspect the diagram rather than the board.
+#
+# IT PRINTS ON EVERY RUN, pass included, and a board that declares no SCAFFOLD
+# prints a NOTICE saying so - `check` reports `ok <path>` in identical words
+# whether a guard ran or not, which is the failure shape this whole workflow
+# exists to prevent.
+check: veroroute netlist-agrees wiring scaffold-membership
 	@bun "$(CLI)" check -C "$(CURDIR)"
 
 wiring:
 	@bun "$(CLI)" wiring -C "$(CURDIR)"
+
+scaffold-membership:
+	@bun "$(CLI)" scaffold-membership -C "$(CURDIR)"
 
 cuts: veroroute netlist-agrees
 	@bun "$(CLI)" cuts -C "$(CURDIR)"
@@ -218,7 +405,46 @@ edit: veroroute
 # The build packet is generated, never committed: guide/ is git-ignored and
 # rebuilt whole from the .vrt, the schematic and the circuit on every run.
 guide: veroroute netlist-agrees
-	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)"
+	@bun "$(CLI)" guide -C "$(CURDIR)" --kicad-cli "$(KICAD_CLI)" --html-to-pdf "$(HTML_TO_PDF)" --pdf-merge "$(PDF_MERGE)"
+
+# The stripboard pipeline, on THIS board. It writes only under
+# build/stripboard/<board>/<stamp>/ - never the layout - so it needs no
+# ALLOW_DIRTY and is not guarded by the recoverability check the write verbs
+# are. netlist-agrees IS a prerequisite: the run exports this board's netlist
+# and checks every candidate against it, so a schematic the committed export
+# disagrees with would be a run graded against a stale reference.
+#
+# SEED_ARM IS REQUIRED AND THIS FILE SUPPLIES NO DEFAULT. Passed through
+# verbatim when set, and omitted when not - the CLI then refuses and lists the
+# three arms, which is the whole point: an arm chosen by a makefile would be a
+# comparison nobody named. FROZEN/NETLIST run the frozen benchmark fixture
+# instead of this board, and SWEEP=1 adds the seed-set diagnostic at the cost
+# of one full evaluation cap per seed.
+place: veroroute netlist-agrees
+	@bun "$(CLI)" place -C "$(CURDIR)" $(if $(SEED_ARM),--seed-arm "$(SEED_ARM)") $(if $(FROZEN),--frozen "$(FROZEN)") $(if $(NETLIST_EXPORT),--netlist "$(NETLIST_EXPORT)") $(if $(SWEEP),--sweep)
+
+# THE ONE TARGET THAT WRITES UNDER boards/ FROM THE PIPELINE (CRITERIA G1), and
+# it writes this board's declared layout IN PLACE, so git is the undo exactly as
+# it is for update and stripboard - ALLOW_DIRTY=1 is the operator's statement
+# that this run cannot be undone.
+#
+# RUN=<dir> IS REQUIRED AND THIS FILE SUPPLIES NO DEFAULT. Passed through
+# verbatim when set and omitted when not, after which the CLI refuses and says
+# why: adopting off the most recent run directory would be adopting off whatever
+# the clock last named, and this is the verb whose whole job is not taking a
+# candidate's provenance on trust. CANDIDATE=<vrt> is optional - run.json
+# identifies the candidate by its sha256, so the gate finds the file rather than
+# being told it.
+#
+# IT RUNS `make check` ITSELF, AFTER THE COPY (G4), and reverts the copy when
+# that does not exit 0. So there is deliberately no `check` prerequisite here:
+# a prerequisite would check the board BEFORE the layout under test was in
+# place, which is the wrong board, and would then have to be run again anyway.
+# veroroute and netlist-agrees ARE prerequisites, because the gate's own
+# `make check` needs the binary built and the export fresh before it can mean
+# anything.
+adopt: veroroute netlist-agrees
+	@bun "$(CLI)" adopt -C "$(CURDIR)" $(if $(RUN),--run "$(RUN)") $(if $(CANDIDATE),--candidate "$(CANDIDATE)") $(if $(ALLOW_DIRTY),--allow-dirty)
 
 # The parts list. No veroroute or netlist-agrees prerequisite: it reads only the
 # circuit, bom.json and the parts/ catalog, never the layout or the schematic.

@@ -1,5 +1,7 @@
 {
+  "sch": "../../drafted/pultec/pultec-low-boost/pultec-low-boost.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/pultec/physical/low-boost.ts",
   "export": "pultecLowBoost",
+  "netlist": "../../tests/fixtures/pultec-low-boost.net",
   "vrt": "pultec-low-boost.perfboard.vrt"
 }

@@ -27,6 +27,18 @@ export function isMarkedStrip(index: number): boolean {
 /** One hole pitch (0.1 inch) in SVG user units. */
 export const PITCH = 20
 
+/**
+ * How thick a wire link is drawn, in ONE place.
+ *
+ * Two marks on the component side are wire links and they must look identical: a
+ * `WIRE` line in the layout (`./render-board.ts`'s `drawWires`) and a part that
+ * resolves to 0 Ω, which is a wire a builder solders between two holes and no
+ * part at all (`./part-shapes.ts`'s `wireLinkBody`). Two widths would make one
+ * sheet show two kinds of wire link and invite a reader to look for the
+ * difference.
+ */
+export const WIRE_WIDTH = 2
+
 export const FONT = "Helvetica, Arial, sans-serif"
 
 export interface Point {

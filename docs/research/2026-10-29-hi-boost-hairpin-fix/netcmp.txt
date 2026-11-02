@@ -1,0 +1,10 @@
+BEFORE /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hairpin/hairpin-run/before/pultec-hi-boost.kicad_sch
+       sha256 3c2f302b12a8c4c1eb8d1523bc876740d4b509cc8ee47934208471389d3a682c  21 nets
+AFTER  /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hairpin/hairpin-run/after/pultec-hi-boost.kicad_sch
+       sha256 240c61df793611adebf0c4a76a103c31c8b8d8cc2b4b243dba043c5e58f0135a  21 nets
+
+positive control: moved SI8.2 from GND to unconnected-(SW1-PadMP) in a copy of BEFORE -> partition differs: True
+
+NET PARTITION (pin sets, ignoring net names): IDENTICAL
+NET NAMES: IDENTICAL
+NAME -> PIN SET MAPPING: IDENTICAL

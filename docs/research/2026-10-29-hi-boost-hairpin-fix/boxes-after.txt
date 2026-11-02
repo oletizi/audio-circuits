@@ -1,0 +1,36 @@
+=== Junction   rect (16.51, 31.75) -> (50.8, 83.82)   34.29 x 52.07 mm
+  graphics       margins  left  10.41  right   8.89  top  12.70  bottom   5.08
+                          bottom-most '#PWR06' at (33.02, 78.74)   top-most 'wire' at (38.1, 44.45)
+  graphics+text  margins  left   7.84  right   2.86  top   8.26  bottom   3.17
+                          bottom-most 'Conn_01x05' at (47.9425, 80.64500000000001)   top-most 'J1' at (42.2275, 40.005)
+
+=== Mid   rect (55.88, 31.75) -> (69.85, 62.23)   13.97 x 30.48 mm
+  graphics       margins  left   3.81  right   7.62  top  10.16  bottom   5.08
+                          bottom-most '#PWR08' at (60.96, 57.15)   top-most 'wire' at (60.96, 41.91)
+  graphics+text  margins  left   3.65  right   2.67  top  10.16  bottom   3.43
+                          bottom-most 'GND' at (62.38875, 58.800999999999995)   top-most 'wire' at (60.96, 41.91)
+
+=== Hi cut   rect (74.93, 31.75) -> (166.37, 69.85)   91.44 x 38.10 mm
+  graphics       margins  left   3.81  right  17.78  top   0.00  bottom   1.27
+                          bottom-most 'SW1' at (104.14, 68.58)   top-most 'SW1' at (100.33, 31.75)
+  graphics+text  margins  left   3.81  right  11.56  top   0.00  bottom   1.27
+                          bottom-most 'SW1' at (104.14, 68.58)   top-most 'SW1' at (100.33, 31.75)
+
+=== Lo boost   rect (171.45, 31.75) -> (215.9, 63.5)   44.45 x 31.75 mm
+  graphics       margins  left  17.78  right   8.89  top  11.43  bottom   5.08
+                          bottom-most '#PWR07' at (191.77, 58.42)   top-most 'wire' at (189.23, 43.18)
+  graphics+text  margins  left  17.78  right   8.89  top   7.24  bottom   3.43
+                          bottom-most 'GND' at (193.19875000000002, 60.071)   top-most 'SI6' at (199.23125, 38.989000000000004)
+
+=== Lo cut   rect (220.98, 31.75) -> (243.84, 58.42)   22.86 x 26.67 mm
+  graphics       margins  left   3.81  right  19.05  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (224.79, 54.61)   top-most 'wire' at (224.79, 41.91)
+  graphics+text  margins  left   3.81  right  13.81  top  10.16  bottom   3.81
+                          bottom-most 'wire' at (224.79, 54.61)   top-most 'wire' at (224.79, 41.91)
+
+=== Hi boost   rect (16.51, 88.9) -> (231.14, 153.67)   214.63 x 64.77 mm
+  graphics       margins  left   8.89  right  13.21  top   1.27  bottom  10.16
+                          bottom-most 'SW1' at (71.12, 143.51)   top-most 'SW1' at (104.14, 90.17)
+  graphics+text  margins  left   8.89  right   6.03  top   1.27  bottom   6.98
+                          bottom-most '6-way selector' at (72.70750000000001, 146.685)   top-most 'SW1' at (104.14, 90.17)
+

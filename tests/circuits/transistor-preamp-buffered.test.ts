@@ -15,8 +15,8 @@ import { spiceNodeName, toSpiceOperatingPointNetlist } from "../../lib/sim/netli
 import type { SimulationEnvironment } from "../../lib/sim/netlist.ts"
 import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import { acSweepOf } from "../sim/helpers.ts"
-import { expectSameCircuit, kicadRoundTrip } from "./kicad-round-trip.ts"
-import type { BoardUnderTest } from "./kicad-round-trip.ts"
+import { expectSameCircuit } from "./committed-schematic.ts"
+import type { BoardUnderTest } from "./committed-schematic.ts"
 
 function byId(network: Network, id: string): Component {
   const found = network.components.find((c) => c.id === id)
@@ -131,12 +131,19 @@ test("into a 2k load the buffered output holds its level; the unbuffered stage's
 
 const BUFFERED_BOARD: BoardUnderTest = {
   network: transistorPreampBuffered(), designators: DESIGNATORS, pinNumbers: PIN_NUMBERS,
-  notes: schematicNotes(),
 }
 
-test("KiCad reads the generated stub as the same circuit", () => {
-  expectSameCircuit(kicadRoundTrip(BUFFERED_BOARD, "buffered-board"), BUFFERED_BOARD)
-}, 30_000)
+/**
+ * "KiCad reads the generated stub as the same circuit" is deleted with `lib/kicad/schematic.ts`'s
+ * `writeSchematicStub`, the only caller of which it exercised. It proved that a FRESHLY WRITTEN
+ * stub, generated from this board's live model and exported with the real `kicad-cli`, agreed with
+ * the model by net-membership partition, per-designator value and per-component footprint - the
+ * same three claims `expectSameCircuit` makes below. `tests/circuits/transistor-preamp-kicad-round-trip.test.ts`
+ * (Task 5) is the remaining proof: it runs the real `kicad-cli`, inside `bun test`, on this board's
+ * actual committed `circuits/transistor-preamp/buffered-board.kicad_sch` and asserts the same
+ * `expectSameCircuit` comparison against the model - the live-`kicad-cli`, model-vs-schematic proof
+ * for this board now that the stub it used to write is gone.
+ */
 
 test("the schematic's netlist export describes the same circuit as the model", async () => {
   expectSameCircuit(

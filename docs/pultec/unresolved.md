@@ -321,3 +321,51 @@ before adding rows or modules.
 
 **Resolves by:** a decision on which of the above, made before the next module
 or row is added rather than after.
+
+## 11. No in-stock catalogue part exists at 1H, or at 100-600mH
+
+**Deferred on the owner's instruction (2026-10-10), to be picked up when the mid
+and hi-boost boards are worked on.** Recorded here rather than left in a research
+document because the evidence is what makes picking it up cheap, and because the
+deferral is safe for a specific reason stated below.
+
+`circuits/pultec/off-board.ts` puts every inductor off-board "pending a part
+choice, not a permanent decision", so none carries a footprint and none asserts a
+lead span. Nothing in the stripboard pipeline trips over them.
+
+**Why deferring blocks only mid.** Holding the scaffold's mid reference at `off`
+rather than `boost` collapsed mid's stand-in from six components to one - the
+`R_MID_SHUNT` resistor - and dropped `L_MID_1H` from the other four boards'
+stand-in groups. So `L_MID_1H` is now on no board but mid's own, and the four
+non-mid section boards can be laid out, built and measured without it. Before that
+change it landed on all four and would have blocked everything.
+
+**What was searched, 2026-10-10**, through this repository's Mouser and Digi-Key
+clients (`tools/suppliers/`), 17 calls, logged in
+`docs/parts/2026-10-10-capacitor-and-inductor-research.md`:
+
+- **The documented part is unobtainable as documented.** `docs/pultec/values.md`
+  and `P3bandDoc.pdf` cite a **VTB9050**. It resolves at neither supplier. It is a
+  Carnhill tapped coil - 0.1 / 0.16 / 0.22 / 0.45 / 1 / 2H - and `carnhill.co.uk`
+  returns 404.
+- **A catalogue 1H part exists and is not stocked.** Gowanda `927T1007`,
+  `930T1007`, `203T1007`, `047T1007`, DCR 70 / 110 / 135 / 290 ohm, all inside
+  what `values.md` specifies. A fifteen-row sweep at Digi-Key returned `stock: 0`
+  on every line: build-to-order.
+- **Nothing at all at 100-600mH** at either supplier, which is the hi-boost tap
+  range.
+- **Sowter** builds EQ inductors to order, but its published tap sets - 9325,
+  9858, 9955, 9312, 9930 - do not match this project's values.
+
+**Left deliberately unchecked:** Gowanda's range below 1H. The series datasheet
+was not read. It is the cheapest remaining lead and was left undone rather than
+guessed at.
+
+**Alternatives, none chosen.** A tapped coil built to order, matching the
+documented design. Separate single-value inductors per tap. A gyrator, which
+changes the circuit from passive and is a design decision rather than a
+substitution. A different frequency set chosen around what is actually stocked.
+
+**Resolves by:** a part choice, or a decision to change the topology, taken when
+the mid and hi-boost boards are next worked on. Until then every inductor stays
+in `OFF_BOARD` and no footprint or span is asserted for one.

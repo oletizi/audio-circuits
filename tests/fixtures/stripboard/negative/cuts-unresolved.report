@@ -1,0 +1,20 @@
+Layout state
+BASE incomplete
+BYPASS_CAP incomplete
+BYPASS_JUMPED incomplete
+COLLECTOR incomplete
+COLLECTOR_LOAD_FLOOR incomplete
+EMITTER complete
+FEEDBACK_FLOOR complete
+FEEDBACK_JUMPED complete
+GND blocked (J2 unplaced)
+IN_EXT incomplete
+LOWER_A_FLOOR complete
+LOWER_A_JUMPED complete
+LOWER_B_FLOOR incomplete
+LOWER_B_JUMPED incomplete
+OUT blocked (J2 unplaced)
+UPPER_FLOOR incomplete
+UPPER_JUMPED complete
+VCC incomplete
+Cuts: not resolved (strip connectivity incomplete - run --update)

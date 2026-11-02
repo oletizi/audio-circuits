@@ -1,0 +1,17 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "notes": [
+    { "before_op_index": 0,
+      "note": "Seven more orphan junction dots, created by pass 3's deletions exactly as pass 1's deletions created four. Same akcli behaviour, confirmed twice on one sheet." }
+  ],
+  "ops": [
+    { "op": "delete_object", "uuid": "3328f400-1fe2-5fbc-8076-7fade7a59a61" },
+    { "op": "delete_object", "uuid": "c07324f0-91f1-556b-8474-a60116976426" },
+    { "op": "delete_object", "uuid": "0867ea84-a3e3-594a-a641-00994fa9fa1d" },
+    { "op": "delete_object", "uuid": "8539b02c-f85b-5109-9eeb-c445aa0f5aef" },
+    { "op": "delete_object", "uuid": "d406ad64-d580-575d-af54-dfde9150fba1" },
+    { "op": "delete_object", "uuid": "c917ad80-1fbf-5f95-a80a-85eb816e4614" },
+    { "op": "delete_object", "uuid": "30dcaa4d-c156-57b1-8acf-53e3dd76e2ac" }
+  ]
+}

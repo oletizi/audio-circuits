@@ -1,0 +1,36 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "/private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/hybrid-pass-1/step4/pultec-low-boost.kicad_sch",
+  "ops": [
+    { "op": "delete_object", "uuid": "9278457f-a498-5628-a33f-5afb6e0664f7" },
+    { "op": "delete_object", "uuid": "49a9bc42-c358-5a5b-8ab0-f44e27b6443f" },
+    { "op": "delete_object", "uuid": "997226f5-4859-5d18-bfbf-7fd935ef3aea" },
+    { "op": "delete_component", "designator": "#PWR08" },
+    { "op": "set_component_transform", "designator": "RV1", "rotation": 0, "mirror": "x" },
+    { "op": "add_wire", "vertices": ["RV1.1", [7450, 2550]] },
+    { "op": "place_gnd", "at": [7450, 2550], "lib_id": "copperhead_power:GND", "net_name": "GND", "rotation": 0 },
+    { "op": "add_wire", "vertices": ["RV1.3", [7700, 1950], [7700, 2100]] },
+
+    { "op": "delete_component", "designator": "#PWR03" },
+    { "op": "delete_component", "designator": "#PWR04" },
+    { "op": "delete_component", "designator": "#PWR05" },
+    { "op": "delete_component", "designator": "#PWR06" },
+    { "op": "add_wire", "vertices": [[2650, 2700], [2650, 3100]] },
+
+    { "op": "delete_object", "uuid": "f3b91324-b577-53fa-a637-58354d6e5d0b" },
+    { "op": "delete_object", "uuid": "19fe1d85-6724-5408-85d4-7ac3fba377f6" },
+    { "op": "delete_object", "uuid": "da1d30be-2bc3-5056-9620-9c12eb1cfb32" },
+    { "op": "delete_object", "uuid": "1e4c5e40-b3aa-5757-af48-19882a8ff90d" },
+    { "op": "move_component", "designator": "SI8", "x_mil": 3900, "y_mil": 2300 },
+    { "op": "move_component", "designator": "#PWR09", "x_mil": 3900, "y_mil": 2550 },
+    { "op": "add_wire", "vertices": ["SI8.1", [3900, 1950]] },
+    { "op": "add_wire", "vertices": ["SI8.2", [3900, 2550]] },
+
+    { "op": "set_component_transform", "designator": "SI7", "rotation": 180, "mirror": "none" },
+    { "op": "delete_object", "uuid": "3d8f7c06-9a98-5de3-902a-c0bc7581f2ea" },
+    { "op": "delete_object", "uuid": "61c55e82-24df-5cf9-bb79-3a4de9756d1d" },
+    { "op": "add_wire", "vertices": [[5600, 2250], [6300, 2250]] },
+    { "op": "add_net_label", "name": "out", "at": [6300, 1750], "scope": "global", "rotation": 0 }
+  ]
+}

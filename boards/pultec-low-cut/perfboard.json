@@ -1,5 +1,7 @@
 {
+  "sch": "../../drafted/pultec/pultec-low-cut/pultec-low-cut.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/pultec/physical/low-cut.ts",
   "export": "pultecLowCut",
+  "netlist": "../../tests/fixtures/pultec-low-cut.net",
   "vrt": "pultec-low-cut.perfboard.vrt"
 }

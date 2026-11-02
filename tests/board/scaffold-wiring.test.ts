@@ -26,6 +26,7 @@ import { asScaffoldDoc } from "../../lib/board/scaffold/doc.ts"
 import { wiringDocument } from "../../lib/board/wiring.ts"
 import { physicalOnly } from "../../lib/board/physicalize.ts"
 import { componentNets } from "../../lib/model/topology.ts"
+import { net } from "../../lib/model/types.ts"
 import { LADDER_ORDER } from "../../lib/board/scaffold/supplier.ts"
 import { scaffoldDoc } from "../../circuits/pultec/physical/scaffold-doc.ts"
 import {
@@ -384,22 +385,67 @@ test("stand-in parts are out of the always-populated table and into their own se
   expect(document).toContain("## Stand-in groups")
 })
 
-test("a stand-in part that is a panel part says which group it belongs to", () => {
+test("no stand-in group needs a panel part at the reference flat state", () => {
+  // Recorded, because it is what makes the test below synthetic rather than a check on
+  // a real board. Every stand-in part the five boards carry is a resistor or a
+  // capacitor that sits ON the board: the only off-board stand-in part there has ever
+  // been was mid's 1 H coil, and `REFERENCE_FLAT` holds `midMode: "off"`, where the
+  // coil's return is open and the reduction drops it. A flat state that put a panel
+  // part back in a group fails here and the next test stops being hypothetical.
+  for (const section of LADDER_ORDER) {
+    const board = sectionBoard(section)
+    for (const id of standInPartIds(docFor(section))) {
+      expect(board.offBoardIds.has(id), `${section}: ${id} is a panel part`).toBe(false)
+    }
+  }
+})
+
+test("a stand-in part that IS a panel part says which group it belongs to", () => {
+  // THE PATH IS REAL EVEN THOUGH NO BOARD TAKES IT TODAY. `OFF_BOARD` holds every
+  // inductor pending a part choice, and deleting those lines is a stated intention
+  // rather than a hypothetical - so a stand-in group can hold a panel part again, and
+  // when it does, that part must not sit silently among the ones every build wires.
+  // Until then the only honest way to exercise the renderer is to hand it a board that
+  // has one, which is what this does: low-cut's real board plus one off-board part
+  // added to mid's group. A guide generated from the real board would not reach this
+  // branch, and a test that quietly stopped checking it would be the failure mode this
+  // whole workflow exists to prevent.
   const board = sectionBoard("low-cut")
+  const panelPart: Component = {
+    id: "SI_MID_PANEL_COIL",
+    kind: "inductor",
+    parameters: { henries: 1 },
+    pins: {},
+    units: [{ name: "MAIN", pins: { a: net("hi_boost_out"), b: net("si_mid_coil") } }],
+  }
+  const doc = docFor("low-cut")
+  const groups = doc.groups.map((group) =>
+    group.section === "mid"
+      ? { ...group, partIds: [...group.partIds, panelPart.id] }
+      : group,
+  )
   const document = wiringDocument({
     boardName: "pultec-low-cut",
     circuitPath: "circuits/pultec/physical/low-cut.ts",
-    network: board.network,
+    network: {
+      ports: board.network.ports,
+      components: [...board.network.components, panelPart],
+    },
     designators: board.designators,
-    offBoard: board.offBoardIds,
-    padOrder: board.padOrders,
+    offBoard: new Set([...board.offBoardIds, panelPart.id]),
+    padOrder: { ...board.padOrders, [panelPart.id]: ["a", "b"] },
     sharedBy: sharedByFor("low-cut"),
-    scaffold: docFor("low-cut"),
+    scaffold: { ...doc, groups },
   })
-  // mid's 1H tap is an off-board landing, so it appears among the panel parts a builder
-  // wires on every build unless the guide says otherwise.
-  expect(document).toContain("### SI_MID_L_MID_1H")
+  expect(document).toContain(`### ${panelPart.id}`)
   expect(document).toContain("**Part of the mid stand-in group.**")
+  // And it is rendered as a PANEL part, not as one of the board's own: the note only
+  // means anything where the surrounding section says every build wires these.
+  const panelSection = document.slice(
+    document.indexOf("## Panel parts"),
+    document.indexOf("## Board terminals"),
+  )
+  expect(panelSection).toContain(`### ${panelPart.id}`)
 })
 
 test("the section is deterministic", () => {

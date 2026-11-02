@@ -124,7 +124,7 @@ improvising one later.
 
 **The junction rows are ONE 2x05 pin field — fit a single stacking header, not 2 plain ones.** `junction_signals` and `junction_grounds` are the 2 rows of one 10-pin field at 2.54mm pitch, and the part that goes in it is a 2x05 LONG-TAIL (stacking) header: its tails reach through this board into the socket of the board above, which is what lets the boards stack and makes this junction a bus they all share rather than a row of pins going nowhere.
 
-2 plain vertical 1x05 headers fit the same holes and leave nothing to stack onto, so they are the one thing not to order. A ribbon socket spanning every row, or individual leads, is the bench substitute when the boards are not stacked.
+2 plain vertical 1x05 headers fit the same holes and leave nothing to stack onto, so they are the one thing not to order. Individual leads soldered into the field are the bench substitute when the boards are not stacked. A ribbon socket also fits these holes and is NOT used here: the owner does not use ribbon on stripboard.
 
 It is 2 parts in the model and one part in the hand: the layout tool's part families (see `lib/kicad/import-string.ts`) have no multi-row shape at 2.54mm row pitch, so the field is declared a row at a time. The holes, and what you fit in them, are the same either way.
 
@@ -171,7 +171,7 @@ nets and halve a value — at the bench that is a plausible wrong measurement, n
 fault. **What to populate, by build** below names the one board that carries each absent
 group, so a group you leave empty here is one you can see is covered somewhere else.
 
-**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in boost.**
+**The stand-ins are the absent sections at one setting: low frequency 100Hz, high frequency 5kHz, mid frequency 1kHz, mid in off.**
 Their values are derived at that setting and at no other, so leave the frequency
 selectors you DO have there.
 Nothing on this board's panel is ganged, so no knob here turns two sections at once.
@@ -180,7 +180,9 @@ a stand-in group is covering — on this board or on whichever board the table b
 carries it.
 Moving it then moves the section you built and not the stand-in covering the one you
 did not: the two disagree by up to 3.71 dB, which reads as a circuit fault rather than
-as a knob in the wrong place.
+as a knob in the wrong place. That 3.71 dB is a worst case measured at an earlier
+reference setting, not a figure to expect — treat it as the reason to leave the knob
+alone, not as a prediction of what you will hear.
 
 **A part listed as `0R` is a wire link.** A level pot sitting at its end stop
 reduces to a zero-ohm part rather than to nothing at all — an ideal short stays a part

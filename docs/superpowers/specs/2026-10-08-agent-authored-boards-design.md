@@ -14,15 +14,98 @@ arranges a KiCad schematic, places every part, and routes every track. The gover
 documents state that as a principle - "agents are good at software and bad at hardware
 design" - and the division of labour follows from it.
 
-That principle is now partly false. The `oletizi/pedals` repository demonstrates, on a
-real four-stage fuzz board, that an agent can place and route a PCB and generate a
-legible multi-sheet schematic, **when the result is graded by code rather than by the
-agent's own judgement.** This design brings that capability here, extends it to cover
-the one step pedals leaves to its operator.
+That principle is now partly false. The `oletizi/pedals` repository demonstrates both
+halves of it - **but on two different boards, and each claim has to name its own.** An
+agent placed and routed a PCB: that is the **four-stage fuzz board** (`fuzz/`), and it
+is the source of the place-and-route tooling. An agent generated a legible multi-sheet
+schematic: that is the **STM32H743 digital mainboard** (`h7-platform/`) - 7 pages, 103
+circuit blocks, a 176-pin MCU, SDRAM and a PCM3060 codec. Both held **because the
+result was graded by something other than the producing agent's own judgement** - code
+in both cases, and for the schematic also an independent reader **denied the source**.
+`docs/known-gaps.md` **G82** records who that reader was, and who it was not. This
+design brings that capability here, and extends it to cover the one step pedals leaves
+to its operator.
+
+> **Correction, 2026-10-19.** From 2026-10-08 until this edit, the paragraph above read
+> *"demonstrates, on a real four-stage fuzz board, that an agent can place and route a
+> PCB **and** generate a legible multi-sheet schematic."* **That was wrong, and it was
+> this program's foundational sentence for eleven days.** It attached both proofs to one
+> board. The schematic generator never drew the fuzz pedal: `tools/schgen/h7/` is
+> hardcoded to the mainboard throughout - `pdfSource.ts` sets
+> `PDF = "h7-platform.pdf"`, `designatorMap.ts` checks
+> `h7-platform/boards/v1/REFMAP.md`, and the only `schgen.lock.json` in that repository
+> is under `h7-platform/boards/v1/`. The error is recorded here rather than silently
+> edited away, because a wrong claim that shaped decisions is shown as corrected.
+> Sources: `docs/schematic/schgen-development-history.md` §0, and a direct reading of
+> the pedals tree.
+>
+> **The consequence, which is the part that matters for planning, and it is NOT
+> settled.** The seven templates this program proposes to port were **sized by a dense
+> digital mainboard**, not by a discrete audio circuit. They drew all 103 of that
+> board's blocks; **nothing is known about their pass rate on a circuit that is mostly
+> passive chains, dividers and op-amp stages**, which is what the Pultec is. That is the
+> **mirror image** of the risk the owner's forcing-function directive names below: not
+> Pultec-shaped assumptions, but **mainboard-shaped** ones, arriving unexamined through
+> the ported templates. *"It worked on the H7"* is not evidence about the Pultec in
+> either direction. This note **names** the question and does not resolve it - whether
+> the templates transfer, need different proportions, or need different templates
+> entirely is unknown, and `docs/known-gaps.md` **G87** carries it, with the measurement
+> that would settle it.
+
+**The research this design rests on is indexed at
+[`../../schematic/README.md`](../../schematic/README.md)**, which records how far each of
+the three passes can be trusted - they differ sharply, and the weakest of them verified
+nothing by running it.
 
 The owner's instruction is explicit: take the operator out of schematic and PCB
 creation as far as possible. This document's central problem is how to do that without
 reintroducing the failure that motivated pedals' design in the first place.
+
+### What the Pultec is to this work, and it is two things at once
+
+**Added 2026-10-18, in the owner's words, because the single most likely way to get this
+program wrong is to hold only one half of it.**
+
+> *"I'm using the Pultec boards as a forcing function to drive building general purpose
+> schematic authoring discipline and tooling. No shortcuts just to get to Pultec-specific
+> schematics"*
+
+> *"But, Pultec schematics ARE a requirement. If the tooling can't build them, it's not
+> fit for purpose"*
+
+**So the Pultec is the FORCING FUNCTION and the ACCEPTANCE TEST, and neither half
+survives without the other.**
+
+- **It is not the deliverable.** The thing being built is general-purpose schematic
+  authoring discipline and tooling. Reaching a Pultec schematic sooner by special-casing
+  a Pultec idiom - hand-shaping `selectorBank` to the five banks that happen to be on
+  these boards, grading only against a Pultec topology, writing an abstraction whose only
+  consumer is a Pultec construct - **defeats the entire point**, however good the
+  resulting sheet looks.
+- **And it is not optional.** If the general tooling cannot generate the five Pultec
+  section schematics, **the tooling has failed.** "It is general" is not a defence for
+  not getting there. That is his bar and it is stated in his own words above.
+
+**The two together are what makes this testable: the evidence that the tooling is
+genuinely general is precisely that it does the Pultec WITHOUT special-casing.** A
+general-purpose generator that cannot do the Pultec is unfit; a generator that does the
+Pultec by special-casing is the shortcut he has ruled out. Either one alone is a failure
+with a plausible-sounding excuse attached, which is why both sentences are recorded here
+rather than one.
+
+**What this settles about T2's ordering.** The milestone order - infrastructure parity,
+then ported-template parity against the four circuits already here, then the new
+templates, then cross-circuit validation - **is the discipline rather than an obstacle to
+it**, and the fact that the first two milestones produce no Pultec schematic is not a cost
+to be minimised. This document already argues the same thing on its own terms under
+**Schematic generation**: shipping template code with nothing in the repository
+exercising it is *"exactly what look at the output, not only the tests forbids."* A plan
+that reorders T2 to reach a Pultec sheet earlier is reintroducing the shortcut.
+
+**What it puts a live obligation on.** T2 must END with the five Pultec sections
+generable from general templates. If the template set this document names turns out not
+to cover a Pultec construct, **that is a defect in this document** to be found and fixed
+before the port is planned - not a surprise to meet at the end of a 20,000-line port.
 
 ## What is not decided, and must not be assumed
 
@@ -106,6 +189,295 @@ in `CLAUDE.md`; this design extends it downstream.
 For an agent-designed circuit (the optical compressor, the transistor preamp) the
 direction reverses: the `Network` is authoritative and the schematic is derived from it.
 The pipeline below is the same either way; only the top box changes.
+
+### A per-board Pultec schematic is DERIVED from the canonical schematic, and that is a requirement
+
+**Added 2026-10-18. The owner, in his own words:**
+
+> *"The per-board schematics need to be derived from the canonical schematic—that's a
+> crucial part of modularizing. It's not a blocker, it's a REQUIREMENT"*
+
+So the authority row above is **not** in question and no second authority is wanted. The
+canonical `circuits/pultec/pultec-three-band-eq.kicad_sch` stays authoritative for all
+five section boards, and `CLAUDE.md` already states the direction - *"For an existing
+design being brought in - the Pultec - the schematic is authoritative and the model is
+derived from a netlist export."* A per-board schematic is a further derivation along that
+same chain, and **that it derives is the crucial part of modularizing**:
+
+```text
+  pultec-three-band-eq.kicad_sch        the canonical schematic, authoritative
+            │  netlist export
+            ▼
+  circuits/pultec/electrical/*.ts       the model derived from it
+            │  partition.ts
+            ▼
+  a section's own components            which section owns which component
+            │  physicalization - stand-in groups, junction headers
+            ▼
+  physicalBoard(section)                the section network
+            │  schematic generation
+            ▼
+  <section>.kicad_sch                    the per-board schematic
+```
+
+The stand-in groups and the two `physicalOnly` junction headers enter at the
+physicalization step. **They are products of modularization, not foreign matter**: they
+are what modularizing ADDS, and they are themselves derived - a stand-in is
+`resolveSectionFlat` applied to an absent section's own components, and the junction is
+the harness that makes the ladder whole across boards.
+
+**THE DEFECT, AND IT IS NARROW. FOUND 2026-10-18 BY A DRIFT CHECK, BEFORE PLANNING.**
+Gate 4 names a comparison of the generated schematic against *"the netlist export for the
+Pultec"* - that is, a **direct** whole-EQ-to-section comparison, with every derivation
+step above collapsed into it. That comparison rejects on a section board, and the
+rejection is measured, not argued: `docs/known-gaps.md` G16 records that declaring the
+whole-EQ `netlist` against one section's board makes `netlist-agrees` compare and reject,
+because half a section's parts are not in it - and the section additionally carries
+stand-ins and junction headers the whole EQ does not have at all.
+
+**So the comparison is being made at the wrong point in the chain, and the authority is
+fine.** Each STEP of the derivation has to be checkable; one end-to-end comparison that
+skips the steps cannot be, and a gate that cannot hold is worse than no gate by
+`CLAUDE.md`'s *"a skipped check must never look like a passing one"* - as written, gate 4
+could go green on four agent-designed circuits and the whole-EQ Pultec and say nothing at
+all about the five section boards while reading as though it had covered both authority
+directions.
+
+**Naming where the chain is unchecked is the whole of this fix. Designing the per-step
+checks is the T2 plan's job and is not done here** - an agent that specified them now
+would be authoring the acceptance criteria for the artifact it is about to produce, which
+is the invariant in `CLAUDE.md`.
+
+### Both authority directions are requirements, and only one of them is today's work
+
+**Added 2026-10-18. This makes an already half-stated thing explicit and names it a
+requirement; it introduces nothing.** `CLAUDE.md` already says *"Authority runs in both
+directions, depending on where a circuit came from"*, and **Schematic generation** below
+already says the canonical-graph gate *"exercises both authority directions:
+model-to-schematic for the agent-designed circuits, schematic-to-model for the Pultec."*
+The owner, asked about the derivation requirement above:
+
+> *"We ALSO need to build support for ex nihilo schematics, but that's not our current
+> situation."*
+
+So:
+
+| direction | authority | what grades a generated schematic | status |
+| --- | --- | --- | --- |
+| **schematic-first** - an imported design | the canonical `.kicad_sch`; the model derives from its netlist export; a per-board schematic derives from the canonical one | the reference drawing, at the right step of the derivation | **the current situation** - the Pultec, and the work in hand |
+| **model-first / ex nihilo** - a circuit the agent designs | the `Network`; there is no reference drawing, because none was ever made | **nothing to compare against** - grading has to come from the model plus the standing rule library | **also required**, and NOT today's work |
+
+**Ex nihilo is not hypothetical here.** Counted 2026-10-18:
+`circuits/optical-compressor/` holds **zero** `.kicad_sch` files and
+`circuits/opamp-buffer.ts` has neither a directory nor a schematic, while
+`circuits/pt2399-core/` has one, `circuits/pultec/` two and
+`circuits/transistor-preamp/` five. **Both of the schematic-less circuits are already in
+T2's verification set**, so T2 exercises both directions by construction rather than by
+intention, and the ex nihilo requirement needs no new material to be tested against.
+
+**Why the ex nihilo direction is the harder one, recorded as the open question it is
+rather than as a task.** In the schematic-first direction a reference drawing exists and
+a generated schematic can be graded against it. In the ex nihilo direction there is none,
+so grading must come from the model plus a rule library that was reviewed before the
+artifact existed - which is where this document's governing invariant bites hardest,
+because **an agent with no reference is the agent most tempted to grade its own output.**
+How that grading works is not proposed here.
+
+**Scope, explicitly:** *"that's not our current situation."* Ex nihilo is recorded as a
+requirement. It is not scheduled, not sequenced, and its absence today is not a defect.
+The work in hand is the schematic-first derivation for the Pultec.
+
+### A schematic is not always a derived artifact, and must never be treated as one by default
+
+**Added 2026-10-18.** The owner, on the framing above:
+
+> *"Sometimes the schematic is the source, not a derivation"*
+
+**This is a hazard and not a nuance, because of a rule this repository already enforces.**
+`CLAUDE.md`: *"Derived artifacts are regenerated every run and compared by content."* A
+tool that classifies every `.kicad_sch` as derived output therefore does not merely
+mislabel a hand-drawn schematic - **it regenerates over it, and the next `make` destroys
+work nobody can recover from the model, because the model was derived FROM that file.**
+The Pultec's canonical `pultec-three-band-eq.kicad_sch` is exactly such a file.
+
+So the generator's contract has a second half, and it is as load-bearing as what it emits:
+
+- **Every schematic file carries a known provenance - AUTHORED or GENERATED - and the
+  generator writes only to GENERATED paths.** An unclassified `.kicad_sch` is refused, not
+  assumed to be either. `CLAUDE.md`'s *"refuse rather than guess"* applies with unusual
+  force here, since the cost of guessing wrong in one direction is destroyed source.
+- **An authored schematic is an input and an authority. It is never an output.** No code
+  path overwrites one, and nothing compares one by content against a regenerated copy,
+  because there is no regenerated copy to compare it to.
+- **A human's edit to an authored schematic must be able to propagate**, which this
+  repository already provides for: *"Where a generated netlist is committed, it is
+  committed deliberately: it is the form in which a human's schematic edit becomes legible
+  to an agent in a diff."* That mechanism is the schematic-first direction working, and
+  the generator must not break it.
+
+**Where this cuts against a natural reading of this document.** "Agent-authored boards"
+and "take the operator out of schematic creation" can be read as *every schematic becomes
+generated*. They do not mean that. A design brought in from outside - the Pultec - has a
+drawn schematic that is its authority, and **that file stays authored however good the
+generator gets.** What is generated for such a circuit is the per-board schematics derived
+FROM it, which is the requirement recorded above.
+
+### A requirement the tooling cannot yet meet is a requirement, not a blocker
+
+**A pattern worth more than either fix above, because it kept happening in one sitting.**
+On 2026-10-18 a requirement of the owner's was relayed to him as a blocker or as a defect
+in this document twice over - first the absence of vendored KiCad symbols, then the
+authority row - and the controller counted the second as the third such framing in that
+one sitting. He corrected it each time: *"not having access to symbols
+is not a valid blocker. There are MANY symbols freely available in kicad."*, and *"It's
+not a blocker, it's a REQUIREMENT"* about the derivation above. **A hard requirement the
+current tooling cannot yet meet is a requirement, not a blocker.** Calling it a blocker
+invites the next reader to route around it, which on both
+of those would have meant inventing a second authority or a Pultec-local symbol table -
+the shortcuts the owner's directive rules out. Write what is missing and what it would
+take; do not promote it to an obstacle.
+
+### Two tracks: a general engine where the field has solved it, templates for the idioms it handles badly
+
+**Added 2026-10-19.** The owner, after reading the second prior-art pass, proposed the
+architecture and approved it when the refinement below was put to him (*"good. that sounds
+like a sane approach"*):
+
+> *"if there's sufficient prior art for more modern circuit topologies, we can optimize for
+> that and treat 20th-century designs on a case by case basis, perhaps using the
+> ever-growing idiom template library approach"*
+
+**The shape is settled; where the line falls is not.** Two paths to a drawn block: a
+general layout engine for topologies the field has already solved, and a **growing library
+of hand-designed idiom templates** for the shapes that engine draws badly. The template
+library grows when a circuit needs an idiom it does not have - it is not enumerated up
+front.
+
+**Why this fits the evidence rather than merely sounding tidy.**
+`docs/schematic/generation-prior-art-second-pass.md` measured that a general
+router (`schematizer`) draws correct but unreadable output and **cannot route parallel
+element banks at all** - four capacitors in plain parallel route 1 time in 3, ten route 0
+in 3 - while hand-designed templates produced legible 7-page output elsewhere. A single
+approach that covers both is not in evidence; two are.
+
+**And it serves the forcing-function directive exactly:** the general engine IS the
+general-purpose tooling, and the Pultec exercises the template path. Neither is a
+special case of the other.
+
+**THE AXIS IS NET DEGREE. SETTLED BY MEASUREMENT 2026-10-19, AND THE CHRONOLOGICAL
+FRAMING IS DEAD.**
+
+**What this paragraph said until the measurement landed**, kept visible rather than edited
+away, because this repository shows a wrong claim as corrected: it said the axis was
+*probably* topological rather than chronological, that *"modern versus 20th-century" is the
+owner's framing and it may not survive measurement*, and that a measurement was in flight
+which nothing should be implemented before. The measurement landed. The framing did not
+survive it.
+
+`docs/schematic/generation-prior-art-circuit-families.md`, all `[RAN]`:
+
+- **`schematizer` failed on all four non-Pultec circuits: 0 successes in 12 attempts**,
+  across a passive EQ, an op-amp circuit, a discrete transistor board and a delay IC.
+- **`circuits/opamp-buffer.ts` fails.** Nine parts, one op-amp, four capacitors - the
+  simplest circuit this repository owns and the shape that tool is built for - **failing in
+  under four seconds.** That result alone kills "passive EQ" and "20th-century" as the
+  explanation.
+- **The degree sweep, on an ACTIVE circuit** (a TL072 follower plus N rail capacitors, N
+  the only variable): **max net degree <= 4 routes 12/12; max net degree >= 5 routes
+  17/44.**
+- **The control that separates degree from size:** 15 parts in a series chain, every net
+  degree <= 3, routed **15/15**; 15 parts with one degree-15 net routed **1/5**. Part count
+  is not the variable.
+- **`pt2399-core`** - a delay IC, the modern end of the owner's own axis - failed **0/3**,
+  **identically to the passive Pultec.**
+- **Every circuit in `circuits/` has a ground net of degree 6 or more.** A shared ground of
+  degree 6 is enough.
+
+**So the split is low-degree versus high-degree nets, and it has nothing to do with the
+decade.** His framing nonetheless produced the right architecture - two tracks, a general
+engine plus a growing template library - and the architecture is what was approved, not the
+axis he named it by. **The template path is load-bearing on every circuit here, not on the
+old ones.**
+
+**AND THE FACT THAT COMPLETES THE PICTURE: THE HIGH-DEGREE PROBLEM IS NOT OPEN. ONE
+SPECIFIC ROUTER FAILS AT IT AND A MATURE ENGINE DOES NOT.**
+`docs/schematic/generation-prior-art-third-pass.md` §3.4-3.5, `[RAN]`: a layered orthogonal
+engine - **ELK, driven through `netlistsvg`'s analog skin** - drew **14 capacitors in
+parallel in 0.17 s, byte-identical across 30 runs, with zero crossings between different
+nets**. That is the exact probe `schematizer` never once drew. **Read the degree axis as a
+statement about `schematizer`, not about layout engines**: what defeats one general router
+is solved work in the field, which is precisely the condition the owner's "where the field
+has solved it" track was stated for.
+
+**Two things to get right on either path.**
+
+- **What decides a block's path must not be an agent's judgement.** It is declared in the
+  model or decided by a measurable property of the subgraph. This is the governing
+  invariant applied to a routing decision, and it is easy to lose: "the engine tries and an
+  agent notices when it looks wrong" is the failure, not the fallback.
+- **The two paths share ONE visual language.** A sheet with template-drawn blocks beside
+  engine-drawn blocks reads as two drawings stapled together unless grid, flow direction,
+  label placement and line conventions are common to both.
+
+**Selection, not degradation** - a distinction that matters because the pedals project
+killed a superficially similar mechanism. It rejected an automatic fallback to a
+label-rendered block when no template matched: *"Why generate a knowingly inferior
+schematic and rely on an agent later noticing it?"* That fallback degraded TOWARD something
+worse and, as that review noted, it also degraded the GATE - a reviewer ends up auditing
+damage the pipeline chose to do. Choosing a template over the general engine is not that:
+both paths are meant to produce a drawing the pipeline stands behind, and the choice is
+made before anything is drawn rather than after something failed.
+
+### DECIDED: port `schgen` whole, and add ELK as a geometry backend at the seams
+
+**Owner decision, 2026-10-19.** He was put three options for what the schematic generator
+is built from - port pedals' `schgen` wholesale, port it selectively and use ELK for
+geometry, or build fresh - and **he rejected the framing and proposed a fourth**:
+
+> *"Why can't we port schgen and add ELK for geometries it excels at? Don't we want, in
+> your words, 'a layered orthogonal engine'?"*
+
+and on the answer: *"agreed. proceed"*.
+
+**THE DECISION:** port `schgen` whole, as the *"What ports"* list under **Schematic
+generation** already specifies, **and add ELK as a geometry backend at the seams where it
+excels.** Not instead of the templates, and not instead of the port.
+
+**The controller's either/or framing was wrong, and naming why is the point of recording
+it.** It offered the port and ELK as competitors for one slot. **They were never competing
+for one slot: this is the owner's own two-track architecture applied to the port.** The
+template library is track two - the idioms a general engine draws badly - and ELK is track
+one, the general engine for topologies the field has solved. Presenting them as alternatives
+re-asked a question he had already settled one section above, in different words.
+
+**The two seams, identified by reading the pedals tree.**
+
+- **Within a block, where no template matches.** `tools/schgen/render/blocks.ts` states the
+  contract: *"A template that cannot realise its subgraph, or that produces a layout whose
+  geometry disagrees with the IR, is a generation error."* Today that is a hard refusal with
+  nothing after it. **ELK becomes what that refusal falls through to.** This also resolves
+  the dead end pedals hit: they rejected a label-rendered fallback and were right to, because
+  **they had nothing good to fall back TO** - the only candidate degraded both the drawing and
+  the gate. A layered orthogonal engine that draws 14 parallel capacitors with zero
+  inter-net crossings is a different kind of fall-through, and *"there is no implicit
+  fallback to label-rendering"* under **Schematic generation** stays true: ELK is not
+  label-rendering.
+- **Between blocks, at sheet level.** `sheets.ts`, `sheetCheck.ts` and `pageRefs.ts` are
+  where block-to-block arrangement is decided, and that is the second place a layered
+  orthogonal engine has something to offer.
+
+**Two constraints on the seam, and neither is optional.**
+
+- **ONE visual language across both paths**, which is the general requirement above with a
+  concrete instance that will bite: `[RAN]`, third pass §3.1, **`netlistsvg`'s analog skin
+  sets `org.eclipse.elk.direction="DOWN"` while its digital skin flows left-to-right**, and
+  `schgen`'s templates carry their own conventions. **One choice must be pinned** - grid,
+  flow direction, rail convention, label placement - before any ELK-drawn geometry lands
+  beside a template-drawn block, or the sheet reads as two drawings stapled together.
+- **What decides a block's path must not be an agent's judgement**, and **the selector
+  already exists and is mechanical**: `blocks.ts`'s test is whether a template realises the
+  IR subgraph. That is a property of the subgraph and the template, computed before anything
+  is drawn. **Use it as the selector. Do not add a judgement call beside it.**
 
 ## Architecture
 
@@ -194,6 +566,11 @@ places the parts on the IR's feedback net in its feedback corridor. Any IR conne
 template cannot realise is a generation error, never a silent omission. There is no
 implicit fallback to label-rendering.
 
+**That generation error now falls through to ELK, by owner decision 2026-10-19** - see
+*"DECIDED: port `schgen` whole, and add ELK as a geometry backend at the seams"* above. ELK
+is not label-rendering, so the sentence above stands unchanged; what changes is that a
+block no template fits is drawn by a layered orthogonal engine rather than refused.
+
 **The template set ports, and it is load-bearing.** The Pultec is a passive EQ and uses
 almost none of pedals' templates - but this repository holds four other circuits that do.
 The earlier reading of this, that the templates were "unused here, ported for later
@@ -216,9 +593,29 @@ verification material, not a future benefit.
 | `potNetwork` | a potentiometer as rheostat (wiper tied to one end) or as divider | **new** |
 | `tappedReturn` | four or five discrete inductors from their taps to a common coil return | **new** |
 | `modeSwitch` | the mid section's two-throw boost/cut switch, selecting which resistor the coil returns through - no capacitors on its throws | **new** |
+| the **stand-in group** | every Pultec section board - 6 to 9 conditionally populated components per board (measured: low-boost 8, low-cut 9, hi-boost 8, hi-cut 6, mid 9), carrying a group identity (`standInGroup`, `circuits/pultec/physical/board.ts:236`), a population rule (*"Populate a group whole, or leave it empty"*, *"One group, one board"*) and a per-build supplier assignment (`lib/board/scaffold/supplier.ts`) | **GAP - no template, and no IR concept of a conditionally populated part. To be designed in the T2 plan** |
+| the **junction bus** | every Pultec section board - two fixed-pinout `physicalOnly` 1x05 stacking headers carrying the five ladder nets with interleaved grounds (`circuits/pultec/physical/parts.ts:348, 383`) | **GAP, with its coverage UNDETERMINED - `fanoutKit`'s row claims "the Pultec's terminal blocks and header landings", and whether `fanoutKit` as ported realises a fixed-pinout bus rather than a per-net edge landing was NOT established. Determine it from the port source; do not assume either answer** |
+| the **ganged pole** | `lo_freq` (`SW_LO_CUT` + `SW_LO_BOOST`) and `hi_freq` (`SW_HI_CUT` + `SW_HI_BOOST`) - one gang joining two poles of one shaft **across two different boards** (`circuits/pultec/electrical/controls.ts`) | **GAP - no template and no gate carries it. To be designed in the T2 plan** |
 
 So the port writes five new templates, not four, and the ported ones are proven against the
 existing circuits rather than taken on trust.
+
+**THE LAST THREE ROWS ARE A DEFECT IN THIS DOCUMENT, FOUND 2026-10-18 BY A DRIFT CHECK,
+BEFORE PLANNING.** This section's table named five new templates and stopped there, and
+the obligation two sections up - *"If the template set this document names turns out not
+to cover a Pultec construct, that is a defect in this document to be found and fixed
+before the port is planned"* - is what makes that an error rather than a detail. The three
+constructs above are present on all five Pultec section boards today and no row covered
+any of them, so T2 as previously specced would have reached its last milestone and found
+the five section schematics ungenerable.
+
+**Naming them is the whole of this fix. Designing them is the T2 plan's job and is not
+done here**, deliberately: a specification written now would be written from the five
+boards that happen to exist, which is the special-casing the owner's directive rules out.
+What the plan may not do is treat any of the three as covered by an existing row -
+`passiveChain` would silently absorb a stand-in group as ordinary series and shunt
+resistors and lose both the group identity and the population condition, which is the
+defect `docs/known-gaps.md` G58 already records on the printed checklist.
 
 **`gates/oscar/` ports too, and this repository supplies its own reference material.**
 Pedals compares its generated schematic against the OSCAR reference design at a pinned
@@ -525,6 +922,13 @@ for a human, never a verdict.
 4. **Canonical graph equivalence** against the authoritative source - the netlist export
    for the Pultec, the `Network` for an agent-designed circuit - comparing values and
    pin-level adjacency independent of names.
+
+   **This gate as written cannot grade a Pultec SECTION schematic, and that is a defect
+   in this document found 2026-10-18 before planning.** It names a direct whole-EQ-to-
+   section comparison, which rejects on a section board - see **A per-board Pultec
+   schematic is DERIVED from the canonical schematic** under **Authority hierarchy** for
+   the measured reason, for the derivation chain whose steps need checking instead, and
+   for why the authority itself is not in question.
 5. **Pin identity.** Pin numbers and names agree across the symbol, the IR's expected
    identity (compared exactly, after declared aliases only - no case folding, no fuzzy
    matching) and the footprint's pads. Pad-count parity alone would not catch a swapped
@@ -594,12 +998,21 @@ Two groups, and the difference between them matters more than the order within e
 | | Sub-project | Deliverable | Gates | Depends on |
 | --- | --- | --- | --- | --- |
 | **S0** | The section scaffold | one scaffold board that lets any combination of discrete sections be built and measured, with stand-in values derived from the model. Designed in `2026-10-09-pultec-section-scaffold-design.md` | composition across all 31 subsets; strict graph equivalence in the integrated case | - |
-| **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S0 |
+| **S1a** | Stripboard placement and routing | a repeatable pipeline that places and routes a stripboard layout from a circuit: a cost model, the levers quantified, a headless move verb in the pinned VeroRoute fork, and an iterative optimiser with a stated stopping rule. Cost model designed in `2026-10-10-stripboard-placement-cost-design.md`; the pipeline designed in `2026-10-10-stripboard-pipeline-design.md` | **the acceptance criteria in `2026-10-10-stripboard-acceptance-criteria.md`, which is their authority** — this row's own gate is its `A3`, cuts and wire bridges within a stated factor of the derived floor, on every Pultec section board, and its `PAR4` is the requirement that criteria come from a reviewed, circuit-independent rule file and never from the producing agent; `make check` per board | S0 |
+| **S1** | Perfboard versions of each discrete circuit | the four remaining Pultec sections laid out, built and measured against the model's predictions; `docs/pultec/unresolved.md` items closed or restated with evidence | `make check` per board; measured-versus-predicted recorded | S1a |
 
 This is the work with a known shape. S0 comes first because without the scaffold a single
 Pultec section has no signal path at all, so there is nothing to measure — it is what makes
-building in isolation possible. Agents contribute the scaffold, the wiring guide and
-`make check`; the layout and the build are the owner's.
+building in isolation possible.
+
+**S1a was added on 2026-10-10 and S1 now depends on it.** S1 previously depended on S0
+alone, and said the layout and the build were the owner's. That followed from the
+stripboard carve-out withdrawn under "Governing-document changes", and without S1a it
+means laying out five boards by hand — on boards that each carry stand-in positions for
+four absent sections, where the stale layouts already need between five and sixty-five
+strip cuts. Handing a person work that is measurable and repeatable is the failure this
+sub-project exists to remove. What remains the owner's in S1 is the build and the
+measurement, which is where their judgement and their bench actually are.
 
 **Tooling, built against no particular form factor.**
 
@@ -676,9 +1089,18 @@ omitted and all five sections present must recover a graph **strictly equivalent
 reference network. Not "the scaffold measures as inert" - graph equivalence.
 
 The limits are measured and stated in the child spec: stand-in values are specific to the
-frequency setting they emulate (up to 3.71 dB error if the circuit is set elsewhere), the low
-selectors are ganged, standing in for mid needs a 1 H inductor that has no part number, and
-the metric is action rather than absolute level.
+setting they emulate (up to 3.71 dB error if the circuit is set elsewhere - an upper bound
+measured at an earlier reference setting and not re-measured since), one selector gang can
+move a present section's shaft without moving the stand-in covering the absent one it shares
+with, and the metric is action rather than absolute level.
+
+**The scaffold needs no inductor, and that is a derived result rather than a given.** An
+earlier reference flat state put mid's mode switch in `boost`, which made standing in for mid
+need a 1 H coil with no part number, on four boards that carry no mid section. Holding the
+reference at `off` - where the mode switch leaves the coil's return connected to nothing, so
+the whole branch reduces away as inert - removed it. The nine inductors remain an open part
+question for the sections that really have them; the scaffold no longer spreads that question
+across every board.
 
 ## What the operator still decides
 
@@ -720,9 +1142,22 @@ that an agent cannot produce either.
 The replacement rule: **an agent may author a schematic rendering and a PCB placement and
 route when the result is graded by code against criteria the agent did not write for that
 artifact, and reaches the repository through a single gate that verifies its provenance.**
-"Never place parts or route a board" narrows to stripboard, where no such pipeline exists.
 "Never call a generated schematic finished" narrows to a schematic that has not passed the
 readability review.
+
+**The stripboard carve-out is withdrawn (2026-10-10).** This section originally narrowed
+"never place parts or route a board" to stripboard, on the stated ground that no such
+pipeline exists there. The owner has rejected that narrowing: agents place and route
+stripboard layouts too. The ground was also the wrong kind of reason - "no pipeline exists"
+argues for building one, not for keeping the prohibition that makes building one
+unthinkable, and as written it left `S1` quietly depending on hand layout for four boards.
+
+Withdrawing it opens a gap this design does not cover, and that gap is now its own
+sub-project: see **S1a** below. The replacement rule above governs it unchanged - a
+stripboard placement is graded by code against criteria the producing agent did not write,
+and cut count, wire-bridge count, board area and physical lead span are measurable without
+an agent's opinion entering. `CLAUDE.md`, `AGENTS.md` and `README.md` were updated to match
+in commit 5089cda, which is why they no longer read as this section's "before" state.
 
 `README.md`'s structure tree, prerequisites (Python 3.13, Rust/cargo) and the
 `schematic-stub` instructions change with it. The two repositories' opposite postures on
@@ -776,9 +1211,16 @@ this document does not reach into pedals.
 - Stitching vias, and any routing pass after the first route.
 - Changes to KiCadRoutingTools. A needed engine change is reported upstream, not patched
   here.
-- **Automating perfboard layout.** KRT does nothing for it - strips and cuts are a
-  different problem from copper on a plane - and no pipeline here places a perfboard part.
-  The four remaining sections are laid out by the owner in VeroRoute, as low-boost was.
-  Agents contribute the wiring guide, the S0 scaffold and `make check`. S1 is that work and
-  it is in scope; automating it is not.
+- **~~Automating perfboard layout.~~ WITHDRAWN 2026-10-10 — this is now S1a.** This entry
+  said KRT does nothing for strips and cuts, that no pipeline here places a perfboard part,
+  and that the four remaining sections are laid out by the owner as low-boost was. The first
+  clause is still true and is the reason S1a is its own sub-project rather than a use of T1:
+  strips and cuts are a different problem from copper on a plane. The rest is withdrawn on
+  the owner's instruction. Automating it IS in scope, it is specified in
+  `2026-10-10-stripboard-pipeline-design.md`, and S1 now depends on it.
+
+  Kept from this entry, because it survived the reversal: nothing about the owner laying out
+  low-boost by hand is undone. That layout is the only one of the five that conducts, and
+  S1a adopts it as the externally authored benchmark the pipeline must meet — which is a
+  better use for it than a precedent for doing the other four the same way.
 - The perfboard tooling itself, which is unaffected except for the directory move in T3.

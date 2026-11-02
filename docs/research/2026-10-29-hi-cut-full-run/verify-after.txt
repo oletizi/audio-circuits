@@ -1,0 +1,37 @@
+=== AFTER - the repaired page
+  sha256                        7ccf557c5474222f6850b78f8c3c53ac45b89389f782f4b8c317d483900a76f1
+  parenthesis depth (end)       0   lowest reached 0
+  NUL bytes                     0   CR bytes 0   [positive control: LF bytes 2332]
+  netlist nets / components     15 / 21
+  ERC errors                    0
+  ERC warnings                  5   kinds ['lib_symbol_issues']   (kicad-cli --exit-code-violations rc=5)
+  wires                         46
+  total wire length             974.09 mm
+  longest wire                  193.04 mm
+  true wire crossings           0  []
+  wire-to-wire tees             13   without a dot 0 []
+  pins on a wire interior       4   without a dot 0 []
+  junction dots                 19   orphans 0 []
+  symbols placed                26
+  symbol pin instances          60   lib-resolved pin points 55
+  global labels                 13
+  local labels                  9
+  duplicate labels in a group   0 []
+  group rectangles              6
+  band (50.8, 95.25, 271.78, 110.49) wires 14 pins 13   [positive control: whole-sheet wires 46]
+  nets as sorted REF.PIN sets:
+    /cut_wiper  (2)  R1.1 RV1.2
+    /hi_tap  (2)  SI1.2 SI2.1
+    /sel1  (3)  C1.2 C7.2 SW1.1
+    /sel2  (3)  C2.2 C8.2 SW1.2
+    /sel3  (2)  C3.2 SW1.3
+    /sel4  (3)  C4.2 C9.2 SW1.4
+    /sel5  (3)  C10.2 C5.2 SW1.5
+    /sel6  (2)  C6.2 SW1.6
+    /sel_common  (2)  R1.2 SW1.7
+    GND  (8)  J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 SI5.1 SI6.2
+    hi_boost_out  (4)  J1.2 RV1.1 SI2.2 SI3.1
+    in  (3)  J1.1 SI1.1 SI6.1
+    lo_boost_in  (14)  C1.1 C10.1 C2.1 C3.1 C4.1 C5.1 C6.1 C7.1 C8.1 C9.1 J1.3 RV1.3 SI4.2 SI5.2
+    out  (3)  J1.4 SI3.2 SI4.1
+    unconnected-(SW1-PadMP)  (1)  SW1.MP

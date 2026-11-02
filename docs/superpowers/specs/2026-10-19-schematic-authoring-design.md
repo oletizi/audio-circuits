@@ -1,0 +1,2003 @@
+---
+title: Schematic authoring - the generator, its two seams, and what grades it
+date: 2026-10-19
+status: draft-for-owner-review
+revision: revision 1, 2026-10-19, against an independent third-party review; revision 2, 2026-10-19, against two measurement spikes; revision 3, 2026-10-19, three changes that landed after revision 2 was written; revision 4, 2026-10-19, against a second independent review, which overturned revision 3's gate-8 deferral
+parent: ./2026-10-08-agent-authored-boards-design.md
+---
+
+Schematic authoring
+===================
+
+**This is the child spec for sub-project T2** of
+[`2026-10-08-agent-authored-boards-design.md`](./2026-10-08-agent-authored-boards-design.md).
+It does not re-argue the parent. Where the two disagree, **the parent wins** and
+the disagreement is a defect in this document.
+
+**The research this rests on is indexed, with its reliability recorded per pass,
+at [`../../schematic/README.md`](../../schematic/README.md).** **Six passes are
+indexed there; this spec draws on five of them.** The sixth verified nothing by
+running or by reading a primary source, and three of its characterisations have
+since been measured false. Read the index before building on any single pass.
+
+Revision 1, 2026-10-19: an independent review, and what it changed
+--------------------------------------------------------------------
+
+**This document was reviewed by a third party that did not write it, and this
+section records that the review happened and what it moved.** It is here rather
+than folded silently into the text because this repository shows a corrected
+claim as corrected (`CLAUDE.md`, and the parent's own *"Correction,
+2026-10-19"*).
+
+**The reviewer approved the architecture** - the port plus two ELK seams, the
+link-by-link derivation chain, and the refusal to invent a numeric readability
+threshold. It raised **eleven findings**: three blocking, the rest high, medium
+or corrections. The controller re-measured the checkable ones and accepted
+essentially all of it.
+
+| # | Finding | How this revision resolves it | Where |
+| --- | --- | --- | --- |
+| 1 | **BLOCKING.** The spec stated two different template-selection rules - *"ELK is what that refusal falls through to"* and *"template where one matches; ELK otherwise"* | A three-valued selection result. **Only not-applicable selects ELK**; a matching template that fails refuses | §1.3 |
+| 2 | **BLOCKING.** The ELK-to-KiCad realization contract was absent | Five realization obligations settled here, plus a **re-validation** requirement the reviewer did not reach | §1.4 |
+| 3 | **BLOCKING.** *"Does not get worse"* had no defined baseline | Measurement separated from acceptance; **no composite score at this stage**; the baseline channel is `stripboard/render-approvals.json` extended | §3.3 |
+| 4 | **HIGH.** The ELK evidence is not representative, and §1.1 overclaimed from it | §1.1's *"ELK does not have that problem"* is **withdrawn and replaced with what was actually measured**; a spike is recorded as the next step | §1.1, §6 |
+| 5 | **HIGH.** Multi-sheet was undefined | Blocks / sheets / section boards distinguished, one cross-sheet mechanism made authoritative, a single-sheet-versus-multi-sheet net-membership test added. **One part of this finding is corrected** | §1.6 |
+| 6 | **HIGH.** Symbol orientation had no authority order | Template, then circuit-context rule, then ELK - and ELK may not invent symbol semantics | §1.5 |
+| 7 | **MEDIUM.** One milestone held both *"templates out of scope"* and *"five Pultec schematics"* | Split into **M1** and **M2**. Carries the reviewer's distinction between a component-block template and a sheet-level composition construct | §6, §5.5 |
+| 8 | **MEDIUM.** The readability reviewer had no output contract | A finding's required fields, without prescribing what the findings are; and a reviewer may not silently change the criteria | §3.5 |
+| 9 | **MEDIUM.** Nothing tied the individual link checks to one derivation | A **generation manifest** of input and output hashes | §2.1 |
+| 10 | **Correction.** The round trip was described as partition equality; it is more than that | The complete contract stated: identity, pins, values, footprints | §2 |
+| 11 | **Correction.** `docs/schematic/README.md` said *"the three documents"* while indexing six | Fixed in that file, with the correction shown | the index |
+
+**Two places where the review itself is corrected**, recorded because a review
+is evidence and not an authority:
+
+- **On finding 5.** The reviewer warned that sheet partitioning must never alter
+  the electrical partition. **The architecture already prevents that hazard:**
+  the electrical partition is `circuits/pultec/partition.ts`, which runs
+  **upstream** of schematic generation, and sheets are decided **downstream** of
+  the section `Network`. There is no code path by which a sheet decision reaches
+  the partition. The cross-sheet contract still has to be written - that part of
+  the finding stands - but the hazard is not live.
+- **On finding 3's supporting figure.** The controller's note said
+  `stripboard/render-approvals.json` holds **17 entries**. Measured:
+  **it holds five**, one per Pultec section board, with **six** `ownerWords`
+  utterances across them and **twelve** declared fields per entry; the sibling
+  `stripboard/exemptions.json` holds two. **The mechanism is exactly as
+  described and the count was wrong**, so the channel is adopted and the figure
+  is corrected rather than repeated.
+
+**And one place the review strengthened a finding the reviewer had half of** -
+the re-validation requirement in §1.4. That is the controller's addition, marked
+as such there.
+
+Revision 2, 2026-10-19: two measurement spikes, and what they moved
+---------------------------------------------------------------------
+
+**§6's spike ran. Then a second spike ran against the question the first one
+left open about itself.** This section records what they moved, for the same
+reason Revision 1 has one: this repository shows a corrected claim as corrected.
+
+- [`../../schematic/elk-spike.md`](../../schematic/elk-spike.md) - **five real
+  repository circuits, laid out WHOLE and flat**, through this repository's own
+  IR rather than probes reconstructed in a tool's input format;
+- [`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md) -
+  **eighteen DECLARED blocks** from the same repository, 1 to 28 parts, taken
+  from `include()`, `OWNERSHIP`/`partitionReference()`, `LEGS` and
+  `allStandIns()` and from nothing an agent chose, **plus both parents as a
+  paired control.**
+
+**Neither spike recommends an architecture, and neither is treated here as
+approval of one.** Both say so in terms. Their findings are registered as
+`docs/known-gaps.md` **G94-G103**, and that register is where the measurements
+and their caveats live; this section records only what they changed in this
+document.
+
+| # | What was measured | How revision 2 resolves it | Where |
+| --- | --- | --- | --- |
+| 1 | **The block seam has direct evidence for the first time.** The same 37-part circuit, whole against its three declared blocks, and the 76-part reference going from REFUSED to five drawings | §1.1 carries the paired control **and its mechanism**, which is what makes it an argument rather than a lucky number | §1.1 |
+| 2 | **G94.** A block that reaches the backend and makes it THROW is a state the source's result type cannot express, and §5.3 (answered the same day) shows that type is two-valued with 30 call sites funnelling into it | §1.3's fourth value is restated as **a code change, not a wording change**: what the widened result must distinguish, and that every template reporting a mismatch has to say which kind | §1.3 |
+| 3 | **G95.** A drawing is a function of cell ORDER - and that instability is **absent below ~9 cells** and present from 13 up | The manifest and the baseline hash **the serialized layout input**, not the section `Network`'s content, **with the block-scale refinement stated** | §2.1, §3.3 |
+| 4 | **G101.** Block size has a measured **ceiling near 9 parts** and, under the tested frontend, an interface cost that dominates a very small block | **NEW §1.8**, **REWRITTEN in revision 4**: block granularity trades internal routing complexity against interface complexity, and the relationship is re-measured with the ported generator. **This spec does not pick a number**; the ceiling's SHAPE survives and the number nine does not, and **the floor is unmeasured for this backend rather than 4** | §1.8 |
+| 5 | **G97.** Congruence of repeated sub-circuits **FLIPPED** between the two scales: flat it spanned -912 to +564, at block scale it is congruent to the pixel | §3.4's congruence criterion is **supported at block scale and was not at flat scale**, with the qualification that broke it | §3.4 |
+| 6 | **Neither spike had a template in the loop, and neither measured a block in CONTEXT** | **NEW §5.6**, stated as the largest open assumption in the evidence - and as **a reason M1 exists**, not a defect in the plan | §5.6 |
+
+**What the spikes did NOT change.** §1.1's withdrawal stands and is now
+over-determined: on whole circuits **not one of fourteen runs beat the
+representative probe on bends per edge** (G96). At block scale 6 of 18 blocks
+beat it - **and the same block drawings still put interface ports mid-sheet,
+leave capacitor banks out of frequency order, and produce 4.7:1 and 6.6:1
+ribbons.** The second spike's own summary is the honest form of this:
+***"block scale removes the catastrophe and leaves the complaint."***
+
+Revision 3, 2026-10-19: three changes that landed after Revision 2 was written
+---------------------------------------------------------------------------------
+
+**This section exists because the two above went stale within hours, which is
+the same failure the research index at
+[`../../schematic/README.md`](../../schematic/README.md) had on the same day:
+a record of what changed, not recording the last things that changed.** A
+reviewer reading only Revisions 1 and 2 would have had an incomplete account of
+what moved and why.
+
+| # | What moved | Where | Why |
+| --- | --- | --- | --- |
+| 12 | **§5.3 is ANSWERED, not open.** `schgen`'s templates are not coupled to a geometry layer - a `Template` returns `BlockLayout` as plain data, so an ELK backend implements the same interface and **seam A is a dispatch, not a refactor** | §5.3 | Read in the pedals tree. **And it found the harder half:** `RealiseResult` is **two-valued** with **30 `mismatch(...)` call sites**, so §1.3's three-valued selector is **an interface widening**, not spec text - and G94's crash is a fifth state that type cannot express at all |
+| 13 | **§1.8's two bounds are scoped by contamination.** The ceiling's SHAPE survives and **the number nine does not**; the floor is **entirely the skin's** and is marked **unmeasured**, not 4 | §1.8 | Both spikes drove ELK through `netlistsvg`; the plan's backend does not. A port becomes a drawn cell only because that skin emits a glyph for it. **What survives is that a floor exists and that the bounds are close enough to collide** - which is what the section is for, and depends on neither number |
+| 14 | **Gate 8 is restored to the derivation table as deferred, not absent** | §2 | An earlier revision of that table omitted it and called the round trip *"the only new check"*, **silently dropping a strictly stronger check.** The round trip proves a schematic matches the netlist it came from; gate 8 proves it matches **a drawing a human trusts** |
+
+**The one thing a reviewer should weigh in this revision** is item 14's
+deferral.
+
+> **OVERTURNED IN REVISION 4, shown rather than edited away.** This paragraph
+> read: ***"The gate needs a declared-delta list, and that list cannot be
+> written before the generator exists** - enumerating how a generated schematic
+> is supposed to differ from a hand-drawn one, before seeing what the generator
+> produces, is guessing. **That makes it a sequencing fact rather than a scope
+> cut**, and `docs/known-gaps.md` **G104** holds it so the deferral cannot drift
+> back into an omission."* **The second review was right that this is backwards**
+> and §2's gate-8 note now carries the corrected position: a delta is derived
+> from the TRANSFORMATION, not discovered from the output, and waiting for the
+> output is the provenance risk gate 8 exists to prevent. G104 is rewritten to
+> record the overturn.
+
+**What has NOT changed across all three revisions**, said once so a reviewer
+does not have to reconstruct it: every owner decision in "The decisions already
+made" stands untouched, and no revision has altered the architecture - the port
+plus two ELK seams, link-by-link checking, and the refusal to invent a numeric
+readability threshold.
+
+Revision 4, 2026-10-19: a second independent review, and the decision it overturned
+--------------------------------------------------------------------------------------
+
+**A second third party reviewed this document, having not written it.** It
+**conditionally approved the architecture** - the port plus two ELK seams, the
+link-by-link derivation chain, and the refusal to invent a numeric readability
+threshold - and raised **three HIGH and four MEDIUM** findings. The controller
+verified the checkable ones and **accepted essentially all of it.** This section
+records that the review happened and what it moved, for the same reason
+Revisions 1-3 have one.
+
+**The finding to weigh first OVERTURNS a decision this document recorded
+yesterday.** Revision 3's item 14 and `docs/known-gaps.md` **G104** both argued
+that gate 8's declared-delta list could not be written before the generator
+exists. **That argument was wrong.** It is left visible above and in §2, with
+the correction beside it, because this repository shows a corrected claim as
+corrected.
+
+| # | Finding | How this revision resolves it | Where |
+| --- | --- | --- | --- |
+| 15 | **HIGH.** The block-interface contract is missing. §1.1's paired control carries 96 edges in blocks against 139 whole, and **the review asked the right question: where did the other 43 edges go?** They became block-interface connections - legitimate, and represented nowhere in this document | **NEW §1.9**: named electrical interface ports, acceptable attachment sides, fixed versus negotiable positions, and **seam B preserves a block's internal geometry or REFUSES.** Plus the controller's sharpening the review did not have: **6.1x is a measured UPPER BOUND on the improvement, not an estimate of it** | §1.9, §1.1 |
+| 16 | **HIGH.** §1.6 requires one authoritative cross-sheet mechanism, §5.2 leaves the choice open, and M1 promises sheet-level layout and verification. **That is a contradiction for M1 specifically** | The review's rule adopted and quoted: **each CLASS of connection has one authoritative mechanism, with no ambiguous or duplicate representation.** §5.2 now **names the M1 plan's Task 15 as the decision's owner** | §1.6, §5.2 |
+| 17 | **HIGH, and it overturns revision 3.** *"Waiting until generated schematics exist to enumerate their differences creates precisely the provenance risk gate 8 is supposed to prevent"* | Gate 8 **splits**: **M1 ports it and exercises it where the permitted delta is EMPTY**; M2 adds the Pultec-specific, mechanically derived transformation manifest. **A list of permitted electrical changes is never inferred from a generated schematic** | §2, and **G104 rewritten** |
+| 18 | **MEDIUM.** §3.3 scopes the baseline to the exact serialized layout input, so a changed serialization makes the baseline **stale rather than comparable** - the system can tell the output changed but not whether it improved | **Two identities, separated: reproducibility identity** (exact input, engine, templates, artifact) and **comparison identity** (the fixture's declared electrical and semantic structure). A comparison fixture **reports all four measures with the changed hash FLAGGED.** And, stated plainly: **absent a dominance rule the four-measure comparison is DESCRIPTIVE, not pass/fail** | §3.3 |
+| 19 | **MEDIUM.** §1.8 contradicted itself. Revision 3 appended a contamination caveat and left the heading, the body and **two tables** asserting the numbers the caveat withdrew | §1.8 **rewritten around the portable finding** rather than caveated again, and **both tables fixed.** The overclaim is softened: the evidence supports interface overhead that can dominate a very small block **under the tested frontend**, and does **not** establish that a numerical floor necessarily exists for the new backend | §1.8, revision 2's table, Decisions |
+| 20 | **MEDIUM.** M1 promises the seven ported templates draw the circuits here, while §5.1 says their applicability to discrete audio is unknown | **Four measurements separated**: **port parity** (a REGRESSION requirement, tested against the source project's own fixtures), **template applicability** (a MEASUREMENT), **ELK coverage** (the NEW capability), **integrated correctness** (the ARTIFACT) | §5.1, §6 |
+| 21 | **MEDIUM.** §1.4 makes every multi-terminal branch point an explicit junction without distinguishing a wire CROSSING from a T-junction, saying whether a branch point may coincide with a pin endpoint, or defining how coincident branches are normalised | **A canonical wire topology is required before serialization.** Plus the controller's evidence, which the review did not have: **the spikes measured 30-187 duplicate wire segments per whole-circuit drawing and 0-80 per block drawing**, so this is **already present in the geometry the adapter would adapt from** | §1.4 |
+
+**Two places where this review is corrected**, recorded because a review is
+evidence and not an authority:
+
+- **On finding 16's sequencing.** It recommends settling the cross-sheet
+  mechanism *"before writing the M1 plan"*. **The plan exists**, and its
+  **Task 15 is already titled *"Seam B, sheets, and one cross-sheet mechanism
+  per net"***. So the decision lands **inside that task's design**, not in a
+  plan rewrite, and §5.2 points at Task 15 as its owner rather than leaving the
+  question unowned.
+- **On finding 19's remedy.** It asks that §1.8's numbers be preserved in the
+  research record, labelled frontend-specific. **That is substantially already
+  done**:
+  [`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md)
+  records them against `netlistsvg` at `d3518f1` with its pinned elkjs 0.7.1,
+  and `docs/known-gaps.md` **G101** holds the 18-block table and the port-glyph
+  split. **The work is removing them from the design CONTRACT, not preserving
+  them.** **One genuine gap was found while checking that claim and is fixed in
+  the same change as this revision:** G101 carried the two-unusual-parents
+  caveat and the no-template caveat but **not** the frontend contamination, so
+  the register asserted a measured floor of 4 that the spec had already
+  withdrawn. The caveat is added there.
+
+**And one place the review's finding is widened rather than merely accepted.**
+Finding 17 names the provenance risk. **The governing invariant it violates is
+`CLAUDE.md`'s own - an agent authoring the acceptance criteria for the artifact
+it produces** - and the deferral argument was that violation wearing a
+sequencing argument's clothes, which is the costume that file warns about by
+name.
+
+What this builds, and what says it is done
+-------------------------------------------
+
+**A generator that turns a circuit model into a KiCad schematic a person can
+read**, and the gates that say whether it did.
+
+**Done is the owner's bar and it has two halves that only work together**
+(parent, "What the Pultec is to this work"):
+
+- the tooling is **general-purpose schematic authoring discipline**, not a Pultec
+  schematic generator;
+- and **if it cannot generate the five Pultec section schematics, it has failed.**
+
+The evidence that it is general is precisely that it does the Pultec **without
+special-casing**. Neither half stands alone.
+
+The decisions already made
+----------------------------
+
+Recorded in the parent, in the owner's words. **Listed here so a plan does not
+re-open them**, not restated as though new.
+
+| Decision | Where |
+| --- | --- |
+| The Pultec is the forcing function AND the acceptance test | parent, "What the Pultec is to this work" |
+| Per-board schematics are **derived from the canonical schematic**; that derivation is crucial to modularizing | parent, "Authority hierarchy" |
+| **Both authority directions are requirements**; ex nihilo is required and is NOT this work | parent, "Both authority directions" |
+| A schematic is **not always a derived artifact** and must never be regenerated over | parent, "A schematic is not always derived" |
+| **Two tracks**: a general engine, and a growing library of idiom templates | parent, "Two tracks" |
+| **The axis is net degree**, not chronology - measured | parent, "Two tracks", corrected 2026-10-19 |
+| Build it by **porting `schgen` whole and adding ELK** at the seams where it excels | parent, "Two tracks", owner 2026-10-19 |
+
+1. Architecture: one port, two seams
+--------------------------------------
+
+**Port `tools/schgen/` from the pedals repository whole** - the IR and its
+validator, the s-expression writer, the symbol-library loader that flattens
+`extends`, the geometry layer, deterministic UUIDs (v5 from stable keys, so
+output is byte-stable), the append-only reference lock, the wire-safety
+refusals, the seven templates, the ~160 clearance refusals, and the gates.
+
+**Then add ELK as a geometry backend at two seams**, both identified by reading
+the pedals tree:
+
+**Seam A - within a block that NO TEMPLATE SUPPORTS.** `render/blocks.ts` states
+the contract today: *"A template that cannot realise its subgraph, or that
+produces a layout whose geometry disagrees with the IR, is a generation error."*
+That one sentence covers two situations this spec now separates, because they
+want opposite answers - see §1.3. **ELK is the renderer for the case where no
+template supports the topology at all.** It is not a recovery path for a
+template that was tried and failed.
+
+**Seam B - between blocks, at sheet level** (`sheets.ts`, `sheetCheck.ts`,
+`pageRefs.ts`). Arranging blocks on a page is a graph-layout problem, and it is
+the one that produced a 1:1.97 unusable ribbon when a competing tool did it
+badly.
+
+### 1.1 Why ELK, and what was actually measured
+
+**Every circuit in `circuits/` has a ground net of degree 6 or more**, and net
+degree is what defeats a general schematic router: measured 12/12 routed at max
+degree <= 4 against 17/44 at >= 5, with a control separating degree from part
+count (15 parts in a series chain routed 15/15; 15 parts on one degree-15 net
+routed 1/5).
+[`../../schematic/generation-prior-art-circuit-families.md`](../../schematic/generation-prior-art-circuit-families.md),
+all `[RAN]`; registered as `docs/known-gaps.md` **G90**.
+
+**ELK ROUTES AND IS DETERMINISTIC WHERE THAT ROUTER FAILS. IT DOES NOT FOLLOW
+THAT IT DRAWS A GOOD AUDIO SCHEMATIC.**
+
+> **Withdrawn 2026-10-19 on review, shown rather than edited away.** This
+> paragraph read: ***"ELK does not have that problem.** Driven through a
+> schematic-aware front end it drew 14 capacitors in parallel at zero crossings
+> in 0.17 s, byte-identical across 30 runs."*** **That overclaimed, and the
+> reviewer was right about why:** 14 capacitors between two nodes is a highly
+> regular network, and the sentence generalised from the most regular probe in
+> the set to circuits that are not like it.
+
+What
+[`../../schematic/generation-prior-art-third-pass.md`](../../schematic/generation-prior-art-third-pass.md)
+§3.4-3.5 actually establishes, `[RAN]`, ten probes run three times each:
+
+- **Routing success and determinism: 10/10, 30 runs, byte-for-byte identical,
+  never slower than 0.19 s.** The probe set is broader than the review assumed -
+  it includes 3-, 5- and 7-way selector fan-outs and a **25-part Pultec-shaped
+  passive EQ**, not only capacitor banks. Determinism is not a configuration
+  there; it is what the tool does, and it is the property the first pass recorded
+  as a gap across the whole prior art.
+- **On the regular probe the drawing is good:** 14 capacitors in parallel render
+  as a bank between two bus rails with junction dots at every tap and **zero
+  crossings between different nets** - though in ELK's crossing-minimising order
+  rather than numeric order.
+- **On the one representative probe the drawing is NOT good, and the research
+  says so in terms:** the 25-part Pultec-shaped EQ *"renders correctly and
+  legibly ... and is **not a good audio schematic**"* - **15 crossings between
+  different nets**, **1.72 bends per edge**, the seven throws of the HF selector
+  placed at the far upper left and travelling the entire 1232-unit canvas width
+  to reach their capacitors at the far right, and **signal flow not left to
+  right** (`vin` and `vout` sit in the middle of the sheet).
+
+**So the correct claim is narrow: ELK solves the failure mode that defeats
+`schematizer` - it routes high-degree nets, repeatably - and it does not by
+itself solve arrangement.** That is precisely why the seam is a seam and not a
+replacement for the template library, and why §1.5 keeps symbol semantics out of
+ELK's hands.
+
+**High net degree may correlate with routing difficulty without being its only
+cause.** Terminal placement and topology matter too, and nothing measured so far
+separates them. **The spike that would is §6's next step, and it is not a
+precondition already met.**
+
+#### Weakened again in revision 2 - and the better news is the paired control
+
+**The spike ran, and on real circuits the picture is worse than this section
+assumed even after the withdrawal above.** `[RAN]`, `docs/schematic/elk-spike.md`
+§2, registered as `docs/known-gaps.md` **G96**: across fourteen successful
+whole-circuit runs, inter-net crossings reach **195 on a 24-part circuit**
+against the probe's 15, aspect reaches **5.19:1**, and **not one of the fourteen
+beats the probe's 1.72 bends per edge.** **The representative probe was the best
+case, not a typical one.**
+
+**AND THEN THE PAIRED CONTROL, WHICH IS THE STRONGEST EVIDENCE FOR THIS
+ARCHITECTURE THAT EXISTS.** `[RAN]`, `docs/schematic/elk-block-spike.md` §4,
+registered as **G100**. Same circuit, same converter, same policy, same skin;
+the only difference is whether ELK saw it whole or one declared block at a time:
+
+| `optical-compressor`, `v-bare` | parts | inter-net crossings | bends/edge | worst aspect | wire length |
+| --- | --- | --- | --- | --- | --- |
+| **drawn whole** | 37 | **293** | **3.18** | **4.05:1** | **159 967** |
+| **drawn as its three declared blocks** | 37 | **48** | **2.70** | **3.11:1** | **35 070** |
+
+**6.1x fewer crossings, 4.6x less wire, and the worst block's aspect is better
+than the whole's.** `v-rails` gives the same shape. **And the 76-part
+`THREE_BAND_REFERENCE` goes from REFUSED under both vertical policies to five
+drawings that all complete** (G94).
+
+**THE MECHANISM, STATED, BECAUSE IT IS WHY THIS IS NOT A LUCKY RESULT.** **The
+three blocks carry FEWER EDGES THAN THE WHOLE - 96 against 139.** The parent's
+maximum net degree is 19 and no block's exceeds 7, so **a ground fanning to
+nineteen pins across one sheet becomes four smaller fans, and the edges that
+disappear are the ones that were crossing everything.** Decomposition is not ELK
+routing the same graph better; it is ELK handed a smaller graph - which is the
+same variable §1.1 opens with, net degree, acting through the seam rather than
+against it.
+
+**Three limits on that result, so the seam is not oversold.** It is **not
+uniformly a win per block** - under `h-rails` the 28-part `pultec-mid` scores
+worse than its own parent, and the gain is in the totals and in whether the
+drawing completes at all. Each block was drawn **on its own canvas**, so the
+totals add crossings across three sheets and **seam B would add its own**
+(untested, §5.2). And a block is still not a good drawing: see revision 2's
+closing paragraph above, and §1.8 for how the measurements stop being about the
+block at all.
+
+#### Revision 4: 6.1x IS A MEASURED UPPER BOUND ON THE IMPROVEMENT, NOT AN ESTIMATE OF IT
+
+**Finding 15, and the spike said it before the review asked.**
+[`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md) §11,
+verbatim: ***"the totals in §4 add up crossings across three sheets; a mechanism
+that put them on one sheet would add its own."*** Nothing composition does can
+make the figure better than the figure that was taken with composition left out,
+so **6.1x bounds the improvement from above and the only open question is how
+much of it survives.**
+
+**AND THE 43 EDGES DID NOT STOP EXISTING.** 139 whole against 96 in blocks is
+the mechanism this section rests on, and the review's question about it is the
+right one: **the difference became block-interface connections.** §1.9 is what
+represents them and seam B is what draws them, and until both exist the 43 edges
+are a cost that has been moved rather than removed. **A reader who quotes 6.1x
+without that sentence is quoting a bound as a result.**
+
+**Registered as `docs/known-gaps.md` G105**, with the edge counts and the
+spike's own limitation beside each other.
+
+**CRITERION: the integrated experiment measures how much of the bound SURVIVES
+composition** - a complete circuit drawn with both template-drawn and ELK-drawn
+blocks, composed onto sheets through seam B, and compared against the flat
+whole-circuit baseline on the same four measures. **The M1 plan's Task 17 owns
+it.** **MECHANISM, untested:** the paired control's own circuit,
+`optical-compressor` at `v-bare`, whose whole and three-block figures are both
+already recorded, so the comparison has both ends.
+
+### 1.2 What we take from `netlistsvg` and what we do not
+
+`netlistsvg` (MIT) is the proof that ELK can be driven to schematic-shaped
+output. **We take its mechanism and not its code path**, because it emits SVG
+and we emit `.kicad_sch`. **What that leaves us owing is a realization
+contract, and §1.4 is it.**
+
+The mechanism, which is the transferable part: **every symbol declares which
+SIDE each pin leaves from** (`top`/`bottom`/`left`/`right`), and ELK is told
+those port positions are **fixed**. That one constraint is what turns a generic
+layered graph drawing into something that reads like a circuit.
+
+**A second thing it does that we keep, and the research already names why.**
+`netlistsvg`'s input carries a part's drawn orientation (`r_v` for a vertical
+resistor, `c_h` for a horizontal capacitor) rather than deriving it: *"orientation
+is a semantic choice about the circuit, which is how this repository already
+treats criteria that must not come from the producing agent"* (third pass §3.3).
+§1.5 makes that an authority order.
+
+### 1.3 Template selection: a three-valued result, and only one value selects ELK
+
+**This replaces two sentences that stated different rules.** The withdrawn
+reading - *"ELK is what that refusal falls through to"*, inherited from the
+parent's seam-A paragraph - would make ELK a recovery path for a template that
+had already been tried. **It is not.** An implementer needs one rule, so here it
+is.
+
+**Selecting a block's renderer produces one of three results**, computed from
+the IR subgraph and the template set before anything is drawn:
+
+| result | what it means | what happens |
+| --- | --- | --- |
+| **not-applicable** | no template in the library supports this topology | **route the block through ELK** |
+| **applicable** | a template supports this topology and realised it | emit the template's geometry; the clearance and wire-safety checks then grade it |
+| **generation-failed** | a template supports this topology and did not realise it acceptably | **REFUSE**, and say which of the two sub-cases it is |
+
+**`generation-failed` has two sub-cases and both refuse**, because they are
+different defects and the report must distinguish them:
+
+- **the template produced invalid electrical geometry** - geometry disagreeing
+  with the IR. **Report a template defect**, naming the template and the IR
+  connection it failed to realise;
+- **the template produced geometry that fails a clearance constraint.**
+  **Report the violated constraint**, naming it, the obstacle pair, and the
+  block.
+
+**THE REASON, AND IT IS THE WHOLE POINT OF THE DISTINCTION: if ELK rescues a
+template that should have worked, defects in the preferred rendering path go
+dark.** The sheet looks fine, the gate passes, and a template that is broken for
+every future circuit of that shape is never reported. That is the *"a fallback
+degrades the GATE, not just the drawing"* lesson this spec already cites
+approvingly from `docs/known-gaps.md` **G84** - and the withdrawn sentence
+violated it one section after quoting it. The pedals objection it dismissed
+(*"why generate a knowingly inferior schematic and rely on an agent later
+noticing it?"*) does not apply to `not-applicable`, where nothing was tried and
+there is no defect to hide; it applies with full force to `generation-failed`.
+
+**What decides the result must not be an agent's judgement**, and it already is
+not: `blocks.ts` asks whether a template realises the IR subgraph, which is a
+property of the subgraph and the template. **Selection is decided before
+anything is drawn. It is never degradation after something failed.**
+
+#### Revision 2: the fourth value is a CODE change, not a wording change
+
+**Revision 1 made selection three-valued in this document. Two measurements
+since then make it an interface widening in the ported source.**
+
+**§5.3, answered 2026-10-19, read the source `[CODE]`:** a template is
+`realise(g: BlockSubgraph): RealiseResult`, and **`RealiseResult` is
+two-valued** - `{ ok: true, layout }` or `{ ok: false, reason: string }`. `[RAN]`
+**30 `mismatch(...)` call sites across the seven templates funnel into that one
+`ok: false` channel**, and the caller cannot tell *"no template applies to this
+subgraph"* from *"a template applied and failed"*.
+
+**And `docs/known-gaps.md` G94 is a state that type cannot express at all: a
+`realise` that RAISES.** ELK throws `IllegalStateException` on an op-amp
+self-loop with horizontal passives on its net - reproduced on `opamp-buffer`
+flat and on the 12-part declared block `oc-audio`, and on the 76-part Pultec
+reference under **both** vertical policies, where all five of its declared
+sections lay out. **This is reachable from house style**, not from an exotic
+input: the four self-loop cells on that reference are strapped pot wipers that
+`circuits/pultec/electrical/three-band.ts` and
+`circuits/transistor-preamp/parts.ts` both declare deliberately.
+
+**CRITERION: the widened result distinguishes five outcomes, and a caller can
+act differently on each:**
+
+| outcome | what the caller does |
+| --- | --- |
+| realised a layout | emit it; the clearance and wire-safety checks grade it |
+| **no template applies** to this subgraph | route the block through ELK (§1.3's `not-applicable`) |
+| a template applied and produced **invalid electrical geometry** | refuse; report a template defect, naming the template and the IR connection |
+| a template applied and **violated a clearance constraint** | refuse; report the violated constraint, the obstacle pair and the block |
+| **the backend did not return a result at all** - it raised, or failed to terminate | refuse, and say which backend and on what input. **This is the one the type has no room for** |
+
+**AND EVERY TEMPLATE REPORTING A MISMATCH HAS TO SAY WHICH KIND IT IS.** A
+widened type with 30 call sites still reporting an undifferentiated `reason`
+string buys nothing: the whole point of §1.3 is that the caller behaves
+differently on *not-applicable* than on *generation-failed*, and today the
+caller cannot tell. **That is 30 edits in ported code, and it belongs in M1
+beside the adapter**, which is where §5.3 puts it.
+
+**What this does NOT settle:** whether §1.5's orientation rule library can be
+required never to emit the crashing shape. **G94's own suggested mechanism -
+constraining laterals on a self-loop net to vertical - is measured wrong**: on
+`oc-audio` it leaves 32 of 128 assignments still failing. **A defined outcome
+when the backend throws is required either way**, and it is required because a
+rule that prevented the shape would also have to refuse a strapped wiper.
+
+#### Does this contradict the parent? No - and saying why matters, because the parent wins
+
+**The parent uses the same loose phrasing**: *"ELK becomes what that refusal
+falls through to."* Read alone that is the reading this section withdraws, and
+this document's own rule is that where the two disagree the parent wins. **They
+do not disagree.** The parent's governing paragraph on this exact question is
+*"Selection, not degradation"*, and it states the three-valued rule in words:
+*"the choice is made before anything is drawn rather than after something
+failed"*, and *"the selector already exists and is mechanical ... Use it as the
+selector. Do not add a judgement call beside it."* It also names the reason this
+section gives, that a fallback *"degraded the GATE - a reviewer ends up auditing
+damage the pipeline chose to do."*
+
+**So the parent already holds the rule and states it imprecisely in one
+sentence.** §1.3 is the precise form of the parent's own position, not a
+departure from it. **What is owed: the parent's two "falls through to" sentences
+should be tightened to match when that document is next edited**, and until they
+are, a reader who finds them should come here. This is recorded rather than
+silently relied on.
+
+### 1.4 The ELK-to-KiCad realization contract
+
+**New in revision 1. The reviewer found this missing; it is the second blocking
+finding.** §1.2 says we take `netlistsvg`'s mechanism and not its code path, and
+until this revision the spec then said nothing about how ELK's output becomes a
+`.kicad_sch`.
+
+**THE CLAIM AN IMPLEMENTER MUST START FROM: a geometrically valid ELK drawing is
+not necessarily a valid KiCad schematic.** ELK knows about nodes, ports and
+orthogonal edges. KiCad knows about a 1.27 mm electrical grid, pin ends that are
+the only places a wire connects, junction objects that make a crossing a
+connection, and symbol transforms that move pins. Every one of those is a way a
+correct ELK drawing becomes a wrong schematic.
+
+**And the electrical round trip (§2) cannot stand in for geometric checks,
+because a schematic can export a correct netlist while visually suggesting wrong
+connections.** That is the same gap §3.2 is built on, arriving from the other
+direction: KiCad joins a wire to a pin only at the pin's end, and a reader joins
+anything drawn on a pin's line. A netlist export sees the first and is blind to
+the second.
+
+Five obligations, settled here:
+
+1. **Grid snapping must not merge previously distinct wires.** ELK coordinates
+   are continuous; KiCad's electrical grid is 1.27 mm. Snapping two distinct
+   parallel segments onto the same grid line makes them collinear and overlapping,
+   which `schgen`'s wire-safety refusal already treats as a defect - and if both
+   land on a pin end they become one net. **The contract is that snapping is
+   checked for identity collapse, not assumed to preserve it:** after snapping,
+   the set of distinct wire geometries and the set of net memberships must both
+   be unchanged from before snapping, and a collapse refuses.
+2. **ELK edge junctions become KiCad wire junctions explicitly, including
+   multi-terminal nets.** A net of degree n > 2 drawn as a tree has n - 2 or more
+   branch points, and in KiCad a branch point is only a connection if a junction
+   object is emitted there. **Every branch point of every net carries an emitted
+   junction, and every emitted junction sits on exactly one net.** A crossing
+   between different nets carries no junction, and a net's branch point carrying
+   none is a refusal rather than a cosmetic miss.
+3. **Port positions survive rotation and mirroring by being recomputed, never
+   carried.** A symbol's declared port side (§1.2) is in the symbol's own frame.
+   The fixed-port constraint handed to ELK, and the coordinate a wire is attached
+   to, are both in the sheet frame. **The transform is applied once, to the
+   library pin geometry, and the result is what both ELK and the emitter see** -
+   so there is one transformed geometry and no second copy to drift. §1.5's
+   four-step mapping is the check.
+4. **Routes are kept off unrelated pins, labels and symbol bodies by the same
+   obstacle matrix that grades template output**, not by a second set of rules -
+   see the re-validation requirement below.
+5. **When snapping makes a previously valid route invalid, the generator
+   REFUSES. Decided here, and it is deliberately the unambitious answer.** A
+   repair pass is a second layout engine with no gate of its own, written at the
+   point in the pipeline where the agent has the least information and the most
+   incentive to make the sheet pass. A refusal names the block, the segment and
+   the constraint, and is a defect report against the realization layer.
+   **CRITERION: no generated schematic is emitted whose geometry was altered
+   after its last clearance check.** A repair pass may be proposed later as a
+   change to this clause, with its own gate.
+
+#### Revision 4: obligation 2 needs a CANONICAL WIRE TOPOLOGY, and this is not precautionary
+
+**Finding 21. Obligation 2 says every branch point of every net carries an
+emitted junction, and that sentence assumes three things it does not define.**
+The review named them and they are adopted:
+
+- **a wire CROSSING is distinguished from a T-JUNCTION.** Two segments whose
+  interiors meet at a point are a crossing; a point where a net's segments
+  branch is a T-junction. A junction object is emitted at the second and never
+  at the first, and the distinction is a property of net membership and segment
+  geometry rather than of appearance;
+- **whether a branch point may coincide with a component pin ENDPOINT is
+  stated.** A pin end is already an electrical attachment in KiCad, so a branch
+  there is a different object from a branch in free space, and an emitter that
+  treats them alike either double-counts a connection or drops a junction;
+- **coincident branches are NORMALISED before counting.** Two branches at one
+  point are one branch point, and a measure that counts them twice reports a
+  defect that is an artefact of the representation.
+
+**AND THE EVIDENCE THAT MAKES THIS A PRESENT DEFECT RATHER THAN A HAZARD - the
+controller's addition, which the review did not have.** `[RAN]`
+[`../../schematic/elk-spike.md`](../../schematic/elk-spike.md) §7:
+***"Duplicate wire segments: 30-187 per drawing. Any measure that does not
+collapse them double-counts crossings."*** And
+[`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md) §10:
+**0-80 per block drawing.** Zero-length segments too - 1-8 per whole-circuit
+drawing, 0-5 per block. **Duplicate junction objects and overlapping segments
+are not a risk the adapter might introduce. They are already in the geometry it
+would adapt FROM**, so an adapter that passes ELK's segment list through emits
+them into the schematic, and **every one of §3.3's four measures taken over an
+uncanonicalised topology is inflated by an unknown amount.** **Registered as
+`docs/known-gaps.md` G106**, which also records that every published crossing
+figure in §1.1 and §1.8 was taken over uncanonicalised geometry.
+
+**CRITERION: a canonical wire topology is established before serialization, and
+it (a) deduplicates coincident segments, (b) represents each net's branches
+explicitly, (c) preserves pin-end identity, and (d) REJECTS an ambiguous
+overlap rather than choosing one reading of it.** The last clause is the
+§1.4-obligation-5 discipline again: a partial overlap that is neither a
+duplicate nor a clean T is a refusal naming the two segments, not a repair.
+
+**REVISION 5, 2026-10-20 — controller ruling R31 refines what clause (d) means
+by *ambiguous*, and the refinement is narrow.** Task 13 found that **0 of 12
+blocks reach the clearance checks**: eleven refuse at clause (d). Its review
+then measured what the refusals actually are, and the characterisation
+everything rested on was wrong.
+
+**Measured, over all twelve blocks, pre-snap:** 30 ambiguous pairs. **30 of 30
+are same-net, between two CONSECUTIVE edges of the routed chain. 30 of 30 are
+CONTAINMENTS — one segment's span wholly inside the other's, on the same line.
+Zero are partial. Zero are cross-net.** The same arm with padding and the five
+remaining spacings at whole grid steps gives the identical 30/30/0.
+
+**A same-net collinear containment is not ambiguous. It has exactly one
+reading.** The interval union *is* the longer segment; dropping the contained
+one changes neither the drawn picture nor the connectivity, because its
+endpoints stay covered by the survivor and `touches`/`onSegment` still join
+whatever attached there. That is **deduplication one dimension up** — clause
+(a)'s own job, applied to a containment rather than to an exact coincidence.
+
+**So clause (d) is refined, not relaxed:**
+
+- **a same-net collinear CONTAINMENT is collapsed to the containing segment,
+  and COUNTED** — reported the way `collapsed` is, **never silent**;
+- **a cross-net collinear overlap still REFUSES**, naming both segments;
+- **a same-net NON-containment overlap — a genuine partial — still REFUSES**,
+  naming both segments. The measured population for the permissive arm is
+  0 of 30, so this clause is currently a guard against a shape this corpus does
+  not produce, and it must stay armed for the first one that does.
+
+**Why the ruling went this way rather than changing the edge model.** Task 13
+proposed one `ElkExtendedEdge` per net — a hyperedge routed once as a tree
+instead of as *n*−1 chained edges. **Its review probed that before anyone acted
+on it, and it does not run**: `elkjs@0.9.3` with `layered` raises
+`java.lang.IllegalArgumentException: Passed edge is not 'simple'.` for any edge
+carrying more than one source or target — on all twelve blocks and on a
+three-node minimal graph. `stress` and `force` raise
+`UnsupportedGraphException: Graph must not contain hyperedges.`; `mrtree` and
+`radial` accept one and return **a single section for an n-target edge**, an
+incomplete route, and neither is an orthogonal router. A star model, untried by
+anyone until the review measured it, is legal and **worse**: 113 ambiguous
+pairs against 30. **The edge model is not the lever in either direction.**
+
+**AMENDED 2026-10-20, same day, by the task implementing it — and the
+amendment corrects this ruling's own justification.** The paragraph above says
+dropping the contained segment *"changes neither the drawn picture nor the
+connectivity, because its endpoints stay covered by the survivor."* **That is
+true only WITH a junction at the branch point.** The implementer wrote the
+connectivity guard this justification implies, measured it, and found **it
+fires**: on `tp-leg-upper` the collapse takes a 4-piece partition to 5. It then
+deleted the guard for a better reason than it failed — `connectedComponents`
+**cannot see junctions by construction**, so the guard answered the question
+with a model that excludes the answer. **Obligation 2 is the gate that does see
+it**, and with this ruling live `oc-power` and `tp-stage` refuse there by name.
+See `docs/known-gaps.md` **G194**. So: the collapse is sound, the connectivity
+claim holds **only with the junction**, and **the collapse moved the problem
+rather than removing it** — which is what the register must say and what this
+clause now says.
+
+**What this ruling does NOT do.** It does not weaken obligation 5, which still
+refuses a repair it cannot justify. It does not touch any serialized byte, so
+no manifest key moves. **And it did not make anything draw**: clause (d)'s
+refusals went 11 to 0 with 30 containments collapsed, and the same eleven
+blocks then refuse one gate later, at snapping (**G188**). The barrier moved.
+
+---
+
+**RULING R32, 2026-10-20 — where a junction comes from, which is the decision
+that makes something draw.** With `elk.spacing.nodeSelfLoop` set and the
+criterion fully met (**G188**), the barrier is obligation 2 on **10 of 12
+blocks**, and it is measurably R31's own doing: **25 missing junctions, 25 of
+25 at a wire END sitting on a point another same-net segment passes THROUGH** -
+the containment collapse's exact signature - and **the missing-junction count
+equals the containment count block for block.** One collapsed containment, one
+branch point with no junction. **G194** offers two mechanisms and says plainly
+they are different decisions rather than two routes to one place.
+
+**Decided: mechanism (2) — emit a junction at every branch point the canonical
+topology requires, giving the emitter `branchJunctions` rather than
+`junctionPoints`' coincident-ends rule — AND GATED ON A MEASUREMENT THAT MUST
+BE TAKEN FIRST.**
+
+**Why (2) rather than (1).** Criterion (b) of this very clause already requires
+that the canonical topology **"represents each net's branches explicitly."**
+Having built that, reading junctions from anywhere else is leaving the
+authority we constructed unused and asking a coincidence rule to guess what the
+topology already knows. `junctionPoints` emits where three or more wire **ends**
+coincide; it is silent at a pass-through by design, because it was written for
+template geometry, which does not produce one. That is not a bug in
+`junctionPoints` - it is the wrong source for a sheet whose geometry a router
+drew.
+
+**Mechanism (1) — splitting the container at the contained segment's interior
+endpoint - is rejected, and not because it fails.** It would work: a collinear
+split changes no ink, converts the T into a three-end meeting, and
+`junctionPoints` would then fire unmodified. It is rejected because it reshapes
+the geometry so that a rule written for a different case happens to catch this
+one. **That is a workaround wearing a repair's clothes**, and obligation 5 would
+have to be read against a segment the router did not draw - a question
+mechanism (2) does not raise at all.
+
+**THE GATE, and it is not optional.** Mechanism (2) *"touches what a template
+sheet emits"*, and a template sheet is the **reviewed human arrangement** that
+§3.1 and D4 make the thing ELK is measured against. So, **before landing it:
+compute both junction sets - `junctionPoints`' and `branchJunctions`' - for
+every template-drawn block and every ELK block, and report the difference.**
+
+- **If the template sheets are unchanged**, there is no risk and it lands: the
+  two rules agree wherever a template draws, which is the expected result
+  because a template's branches are all coincident-end meetings.
+- **If any template sheet changes, STOP and report it.** That is a defect in one
+  of the two rules, and which one it is is a finding, not an implementation
+  detail to absorb. **Do not reconcile it by adjusting either rule until the
+  difference has been read.**
+
+**What this ruling does not claim.** It does not say `junctionPoints` is wrong
+for templates - it says it is the wrong **source** for ELK geometry. And it
+does not predict the measurement: if the template sheets move, the right answer
+may yet be (1), and this ruling is to be reopened rather than worked around.
+
+---
+
+**R32 IS REOPENED AND REVERSED. RULING R33, 2026-10-20: take mechanism (1) -
+split the container at the contained segment's interior endpoint.** The gate
+R32 imposed is why: the task took the measurement, it sent the decision the
+other way, and it **stopped and reported rather than working around it.**
+Nothing was landed in `lib/`.
+
+**What the measurement found.**
+
+**The template gate fired, narrowly.** Nine template-drawn blocks examined,
+**eight agree exactly, one differs**: `mini/XTAL` at a single point, where
+`junctionPoints` emits a dot and `branchJunctions` does not. The cause is one
+`GND` wire end plus **two coincident pins of `Y1`** - `junctionPoints` counts
+pin ends individually and reaches three; `branchJunctions` counts *"a pin is
+here"* as a boolean and reaches two. **Neither rule is electrically wrong**:
+KiCad connects a wire end to coincident pins natively, so a dot there is
+neither required nor harmful. One cosmetic dot. On its own this would not have
+reversed the ruling - see **G197**.
+
+**What reversed it is the second measurement.** Mechanism (2) satisfies
+obligation 2 and is **then refused by `checkWireSafety` at the same 25 points,
+and at 0 others** - the same block-for-block identity G194 measured, arriving
+from the other side. **Obligation 2 says *emit a junction*; `checkWireSafety`
+says *split the wire there*.** And `connectivity.ts`'s own module comment states
+which policy this repository holds: ***"the generator never relies on the
+junction-dependent cases … junction dots are cosmetic."***
+
+**So my stated reason for rejecting (1) was wrong.** I called it *"a rule
+written for a different case happening to catch this one."* The measurement
+says otherwise: **split the wire there is not a different case — it is the
+standing policy of every geometric check in this generator**, stated in the
+tree. Mechanism (2) would have built connectivity on dots that this
+generator's own policy calls cosmetic.
+
+**And the obligation-5 question I raised against (1) is answered, not dodged.**
+I asked whether a collinear split of a segment the router drew is a repair.
+**It is not.** A segment from A to C with a branch at B is **the same ink**
+whether it is held as one wire or as two; the choice is representational, not
+geometric. And criterion (b) of this very clause requires the canonical
+topology to *"represent each net's branches explicitly"* - **a split at a
+branch point is literally that**, performed in the wire list rather than in a
+side table. So the three operations now line up as one discipline:
+
+| clause (a) | coincident duplicates | **merge** |
+| **R31** | same-net containments | **merge**, one dimension up |
+| **R33** | branch points | **split**, making criterion (b)'s branch explicit |
+
+None of the three moves ink, changes connectivity, or chooses between two
+readings. **Obligation 5 is satisfied because no repair occurs.**
+
+**What stays from R32.** Its gate was right and is the reason this ruling
+exists: a decision that touches the reviewed human arrangement gets measured
+before it lands, and a task that finds the measurement against its instruction
+**stops and says so**. That is the behaviour, not the exception.
+
+**G197 stays open on its own merits.** The two rules genuinely disagree about
+coincident pins, the one-line fix is recorded and deliberately not taken, and
+which rule is right about that point is a question this ruling does not
+answer. And it does not claim the corpus will stay this way: the
+30/30 containment measurement is a property of **these twelve blocks under this
+backend at this version**, and the refusing arms exist for the day that changes.
+
+**Had the ruling gone the other way**, "nothing draws" would have been the
+correct outcome and Tasks 15–18 would be blocked on a routing property the
+pinned backend cannot produce. That is a plan-level fact and it would have
+belonged in the plan rather than in a gap entry.
+
+#### The clearance checks must be RE-VALIDATED against ELK geometry, not merely reused
+
+**This is the controller's addition. The reviewer recommended reusing `schgen`'s
+wire-safety and clearance checks after realization, and reuse is not enough.**
+
+The evidence is in
+[`../../schematic/schgen-development-history.md`](../../schematic/schgen-development-history.md)
+§6, CONFIRMED against 105 commits and their messages: those refusals **accreted
+one pair at a time over eleven steps**, and *"every new check discovered that the
+previous checks had a blind spot, and the blind spot was always the same shape:
+category A had been modelled as an obstacle for category B but not for category
+C."* Body-vs-anchor but not body-vs-glyph. Glyph-vs-text but not glyph-vs-body.
+Glyph-vs-body but not glyph-vs-glyph. Text-vs-everything but not
+text-vs-no-connect-marker.
+
+**They were grown against template-produced geometry.** ELK is a different
+geometry source with different bend patterns and different port approach angles.
+**Pointing a pairwise-accreted check set at a new geometry source is exactly the
+condition that creates a fresh blind spot** - the ladder is a property of how the
+checks were built, not of the board that provoked them.
+
+**CRITERION, which is the research's own and not this spec's invention
+(`docs/known-gaps.md` G85, *"what would settle it: an up-front
+obstacle-category matrix"*): enumerate the obstacle categories once and check
+the full matrix of pairs, rather than re-running the eleven-step ladder against
+a new geometry source.** The categories the research names: bodies, pin lines,
+pin numbers, pin names, interior graphics, wires, junctions, power/`PWR_FLAG`
+glyphs, label outlines, field text, frame borders, no-connect markers (including
+at hidden pins), and KiCad's DNP cross.
+
+**MECHANISM, and it is the research's guess and not a measurement:** that an
+up-front matrix is cheaper than the ladder. The criterion binds; the mechanism
+is advice from someone who had not yet tried it. **If the matrix turns out not to
+meet the criterion - a pair that is meaningless, a pair that needs a
+direction-sensitive test rather than a symmetric one - record the deviation
+rather than quietly doing something else** (`CLAUDE.md`, the worked example at
+G52).
+
+### 1.5 Symbol orientation: whose decision it is
+
+**New in revision 1, finding 6.** Orientation was unstated, and ELK's graph
+direction would otherwise have decided it by default.
+
+**The authority order, highest first:**
+
+1. **An explicit orientation in a reviewed template wins.** A template is a
+   human arrangement reviewed once (§3.1); its orientations are part of what was
+   reviewed.
+2. **Otherwise a circuit-context rule gives a preferred orientation.** These are
+   rule-library entries - circuit-independent, reviewed before the artifact
+   exists - not per-block choices.
+3. **ELK then places, subject to fixed port geometry.** It may position and it
+   may choose among orientations the rules leave open; **it may not invent symbol
+   semantics through graph direction alone.**
+
+**Semantic orientation and physical transform are different things and the
+contract keeps them apart.** *"The NPN's collector is up and the emitter is
+down"* is semantic. *"This instance is mirrored about Y so its base faces the
+driver"* is a transform. **The same NPN mirrored for readability keeps its pin
+identity** - mirroring moves geometry, never pin assignment. A transform that
+changes which terminal a pad or wire reaches is a defect, not a style.
+
+**So the mapping below is verified end to end, and it is one mapping with four
+links rather than four facts that happen to agree:**
+
+```text
+IR terminal  ->  symbol-library pin  ->  transformed geometric pin  ->  KiCad electrical connection
+```
+
+**Built on `schgen`'s existing symbol-library loader, not reimplemented.** That
+loader is already in the port list because an unflattened copy *"silently drops
+every pin"* (parent, "What ports"), and it is the only thing here that knows what
+a library pin is. A second reader of symbol geometry would be a second answer to
+the same question.
+
+This is the schematic-side half of what the parent's gate 7 does for the board
+(*"electrical terminal -> schematic pin -> footprint pad -> PCB net"*), and the
+parent's reason carries over verbatim: a sheet can hold every expected part on
+correctly named nets and still have a wire reaching the wrong terminal.
+
+### 1.6 Blocks, sheets and section boards
+
+**New in revision 1, finding 5.** The spec had one ELK seam at sheet level and no
+account of what a sheet is.
+
+**Three partitions, which may overlap and are not identical:**
+
+| partition | authority | decided |
+| --- | --- | --- |
+| **functional block** | `include(prefix, network, portMap)` in the circuit model | by the circuit author, upstream of everything here |
+| **physical section board** | `circuits/pultec/partition.ts` plus physicalization | upstream of schematic generation |
+| **schematic sheet** | this generator | **downstream of the section `Network`** |
+
+**The reviewer's hazard here is already prevented, and that is finding 5's
+correction** (see the revision table above): sheets cannot alter the electrical
+partition, because the partition is computed before the generator runs and the
+generator consumes it. A sheet may group two functional blocks, split one across
+two sheets, or correspond to a board one-to-one. **None of those is an
+electrical claim.**
+
+**One cross-sheet connection mechanism is authoritative, and the others are
+decoration.** Which one is open (§5.2) and must be pinned before the first
+multi-sheet output; what is settled is that **exactly one mechanism carries
+cross-sheet connectivity** and a net that crosses a sheet boundary by any other
+means is a refusal. The candidates are power symbols, global labels and
+hierarchical ports, and they have different KiCad semantics - a drawing that uses
+two of them for the same net reads as two claims about one connection.
+
+**The test, which is the reviewer's and is adopted as written: generate the same
+network as one sheet and as multiple sheets, export both through `kicad-cli`, and
+verify identical net membership.** Coverage:
+
+- **a shared rail** - the case a power symbol exists for;
+- **a signal crossing more than two sheets** - a two-sheet test cannot
+  distinguish a working mechanism from one that happens to pair up;
+- **a repeated block** - two instances of one function must not merge through a
+  cross-sheet name collision, which is the failure a prefixed net scheme exists
+  to prevent.
+
+**This test is cheap and load-bearing** because it compares the generator against
+itself through KiCad, so it needs no reference drawing and works in both authority
+directions.
+
+#### Revision 4: one mechanism per CLASS, and Task 15 owns the choice
+
+**Finding 16. The paragraph above reads as a demand for artificial uniformity** -
+*"exactly one mechanism carries cross-sheet connectivity"* - **while §5.2 leaves
+the choice open and M1 promises sheet-level layout and verification. For M1
+specifically those three cannot all stand.**
+
+**The review's rule, adopted and quoted: *each CLASS of connection has one
+authoritative mechanism, with no ambiguous or duplicate representation.***
+Power symbols, global labels and hierarchical ports **have different KiCad
+semantics and may legitimately serve different classes.** What is refused is a
+net represented two ways, or a class of connection with no stated mechanism -
+not a sheet that uses two mechanisms for two different kinds of connection.
+**Whether the combination behaves is established by the round trip**, which is
+why the one-sheet-versus-multi-sheet net-membership test above is the check and
+the rule above is only the rule.
+
+**The decision is no longer unowned: its owner is the M1 plan's Task 15**,
+already titled *"Seam B, sheets, and one cross-sheet mechanism per net"*. It
+lands inside that task's design. See §5.2.
+
+### 1.7 The seam's two constraints
+
+**One visual language across both paths.** A sheet with template-drawn blocks
+beside ELK-drawn blocks reads as two drawings stapled together unless grid, flow
+direction, label placement and line conventions are common. **A concrete
+instance to settle rather than discover:** `netlistsvg`'s analog skin sets ELK
+direction `DOWN` while its digital skin flows left-to-right, and `schgen`'s
+templates carry their own conventions. **One must be pinned and the others made
+to match.** §1.1's measurement makes this sharper than it looked: on the 25-part
+probe, signal flow was neither direction consistently - `vin` and `vout` sat in
+the middle of the sheet.
+
+**What decides a block's path must not be an agent's judgement.** §1.3 is the
+rule, and it is mechanical.
+
+### 1.8 Block granularity trades internal routing complexity against interface complexity
+
+**New in revision 2, REWRITTEN IN REVISION 4 on finding 19.** Revision 3
+appended a contamination caveat to this section and **left the rest of it
+asserting the numbers the caveat had just withdrawn**: the heading said block
+size *"has a floor as well as a ceiling"*, the body reasoned *"above the
+ceiling... below the floor..."*, and **two tables elsewhere in this document
+still called both bounds measured** - revision 2's table and the Decisions table.
+**A caveat that contradicts the section it sits in is not a correction**, so the
+section is rewritten around what is portable and both tables are fixed.
+
+**THE PORTABLE FINDING: block granularity trades INTERNAL ROUTING COMPLEXITY
+against INTERFACE COMPLEXITY.** §1.1's paired control is one half of it - three
+blocks carry 96 edges where the whole carries 139, and the crossings that
+disappear are the ones that were crossing everything. §1.9 is the other half -
+**the 43 edges that left the blocks became interface connections**, and an
+interface is not free: it is declared, it is drawn, it occupies the boundary, and
+**the boundary is the bendy part** (port edges carried more bends per edge than
+internal edges on every one of the 8 blocks of 8 parts or more). **Cut coarser
+and the internal graph is harder. Cut finer and the interface is larger.** That
+is the relationship a block-granularity decision is choosing within, and it is
+the finding that does not depend on a frontend.
+
+**CRITERION: the relationship is RE-MEASURED with the ported generator -
+templates in the loop and sheet composition included - before any value is
+chosen from it.** Nothing measured so far was taken under those conditions: both
+spikes drove ELK through `netlistsvg` and the plan's backend does not, neither
+had a template in the loop (§5.6), and each block was drawn on its own canvas
+with no seam B. **The plan's Task 17 is where that re-measurement happens.**
+
+**Where the numbers live, and why they are not repeated as a contract here.**
+The spikes measured, over 18 declared blocks of 1 to 28 parts: inter-net
+crossings zero on every block of 8 parts or fewer and then rising; crossing count
+invariant under declaration-order shuffling at 9 cells and moving 22-29 at 13
+(G95); port glyphs 10-67 % of a block's cells; labels past the canvas edge on 26
+of 53 block drawings against 5 of 14 whole-circuit drawings. **Those figures stay
+in the research record, where their conditions are stated** -
+[`../../schematic/elk-block-spike.md`](../../schematic/elk-block-spike.md) §7
+and §9, and `docs/known-gaps.md` **G101** - **and they are deliberately absent
+from this design contract, because a contract that carries a number carries it
+without its conditions.** That is how the number nine came to be quoted in two
+tables as settled.
+
+**THE CEILING'S SHAPE SURVIVES AND THE NUMBER DOES NOT.** There is a size above
+which a block's measured quality stops being a property of the BLOCK and becomes
+partly a property of the order somebody typed the components in. That shape rests
+on comparisons taken under identical conditions on both sides, so a frontend that
+inflates crossings inflates both. **The number nine is the tested frontend's**,
+because it is read off crossing counts that depend on node sizes and on the port
+constraints the skin declared.
+
+**AND THE FLOOR IS AN OVERCLAIM THAT REVISION 4 WITHDRAWS.** What the evidence
+supports is **interface overhead that can dominate a very small block under the
+tested frontend**: `[CODE]` a declared port became a cell because `netlistsvg`
+emitted a 30x20 `inputExt` glyph for it, and `[RAN]` a 1-part block's drawing was
+two-thirds boundary as a result. **It does NOT establish that a numerical floor
+necessarily exists for the backend this plan builds**, which emits no such glyph.
+Revision 3 said *"a floor EXISTS - a block small enough is mostly boundary
+however the boundary is drawn"*; that is an argument, not a measurement, and it
+is demoted to one here. **Treat the floor as unmeasured for this design.**
+
+**CRITERION, G101's own, carried forward with the floor marked unmeasured: a
+block-granularity decision names both bounds and says which cost it is paying.**
+Under revision 4 that means naming **the ceiling's shape** as measured and
+re-derived, **the interface cost as a relationship rather than a number**, and
+**the floor as unmeasured for this backend rather than restated as 4.** The costs
+being traded are unchanged: above the ceiling the measured quality is not a
+property of the circuit, so §3.3's baseline is measuring a serialization; a cut
+fine enough that most of the drawing is interface puts the cost on §1.9 and on
+§1.6's cross-sheet mechanism.
+
+**THIS SPEC STILL DOES NOT PICK A NUMBER, and the reason is now stronger.** It
+is not only that the value would have been picked from a contaminated
+measurement; **the measurement was of a different quantity from the one a
+composed drawing has.** The window came from 18 blocks out of two parents, both
+unusual - a 76-part passive EQ and a 37-part compressor with two dual op-amps -
+and the repository declares no block above 28 parts. **Choosing a value is a
+decision the plan needs and this document does not make**, and the plan's own
+block-cutting decision - blocks come from committed declarations and the
+generator never subdivides one - deliberately rests on neither bound.
+
+### 1.9 The block-interface contract
+
+**New in revision 4, finding 15, and the review found it by asking the right
+question about this document's best number.** §1.1's paired control shows **139
+edges whole against 96 in three blocks. Where did the other 43 edges go?** They
+became connections between blocks. **That is legitimate - it is what
+decomposition does - but nothing here said how a block's interface is
+REPRESENTED when blocks are composed**, so 43 edges were being read as removed
+when they had been moved. §1.1's revision-4 note states the consequence for the
+number; this section states the contract.
+
+**Every block exposes an interface, DECLARED rather than discovered:**
+
+| the block declares | what it means |
+| --- | --- |
+| **named electrical interface ports** | the nets by which this block connects to anything outside it, named, and agreeing with the block's declared ports in the model - **never inferred from which nets happen to leave** |
+| **acceptable attachment sides** | which sides of the block's drawn extent a given interface port may be reached from |
+| **which attachment positions are FIXED and which are NEGOTIABLE** | a position fixed by the block's own internal geometry, against one seam B may choose |
+
+**SEAM B PRESERVES A BLOCK'S INTERNAL GEOMETRY AND CONNECTS ITS INTERFACES. IF
+IT CANNOT DO BOTH WITHOUT VIOLATING SHARED CLEARANCE, IT REFUSES.** It does not
+move a part inside a validated block, it does not re-route a wire inside one, and
+**it does not silently redraw a validated block under a different arrangement to
+make the sheet fit.** The refusal names the block, the interface port and the
+clearance it could not satisfy.
+
+**CRITERION: no block's internal geometry is altered after that block passed its
+own clearance check.**
+
+**That refusal rule is §1.3's discipline, not a new one.** A seam B that quietly
+redrew a block would hide a composition defect exactly as a fallback hides a
+template defect: the sheet comes out looking fine, the gate passes, and the thing
+that could not be composed is never reported. It is also §1.4's obligation 5 one
+level up - *"no generated schematic is emitted whose geometry was altered after
+its last clearance check"* - and the reason is the same one G84 records.
+
+**What this section does NOT decide**, so a plan does not read a design into it:
+how many interface ports a block should have, which sides are acceptable for
+which kind of port, how a fixed position is distinguished from a negotiable one
+in a particular block, or how seam B chooses among negotiable positions. Those
+are design decisions, and the seam B task in the plan owns them.
+
+2. The derivation chain, and where each link is checked
+---------------------------------------------------------
+
+The owner: *"The per-board schematics need to be derived from the canonical
+schematic - that's a crucial part of modularizing."*
+
+```text
+canonical <board>.kicad_sch        AUTHORED - never regenerated, never overwritten
+        │  kicad-cli netlist export
+        ▼
+circuits/<circuit>/electrical/     derived
+        │  partition
+        ▼
+a section Network                  derived; stand-ins and junction enter HERE
+        │  schematic authoring (this spec)
+        ▼
+<board>.kicad_sch                  GENERATED
+```
+
+**The parent records that gate 4 is defective** because it compares a generated
+section schematic **directly** against the whole-EQ netlist, which rejects - the
+section legitimately carries stand-ins and junction headers the whole EQ does
+not have. **Those are products of modularization, not foreign matter.**
+
+**This spec's position: each LINK is checked, and no check spans the chain.**
+
+| link | what is checked | status |
+| --- | --- | --- |
+| canonical -> electrical model | existing: the committed netlist export, compared by content | **exists** |
+| electrical -> section network | existing: `assertLayoutMatchesCircuit`, the composition gate over all 31 subsets | **exists** |
+| section network -> generated schematic | **the round trip**: export a netlist from the generated `.kicad_sch` with `kicad-cli` and compare it against the section network on the full contract below | **to build** |
+| scaffold doc vs layout | `make check`'s scaffold-membership guard | **exists**, added 2026-10-18 |
+| generated schematic vs **a drawing a human made and trusts** | `schgen`'s **gate 8** - graph isomorphism against a reference, with every intended difference declared in advance | **EXISTS IN THE SOURCE. SPLIT IN REVISION 4: the EMPTY-DELTA half is M1; the Pultec transformation manifest is M2.** See below |
+
+> **GATE 8 IS SPLIT ACROSS M1 AND M2, AND THIS TABLE HAS NOW BEEN WRONG ABOUT
+> IT TWICE.** The parent spec says `gates/oscar/` ports; an earlier revision of
+> this table omitted it and called the round trip *"the only new check"*. **That
+> dropped a strictly stronger check without saying so**, which is the failure
+> this repository keeps a rule about.
+>
+> **What it does.** `gates/oscar/compare.ts`: *"a carried-over subcircuit equals
+> OSCAR's once the declared CORE-BRIEF deltas are applied to OSCAR's graph. **An
+> undeclared difference fails by construction.**"* Every intended difference
+> between the generated circuit and the reference is written down in advance,
+> with a reason, in a `CORE-BRIEF.md`; the comparison applies those edits and
+> anything left over is a defect. **You cannot accidentally change a circuit and
+> pass, because passing requires having said beforehand what you meant to
+> change.**
+>
+> **What the round trip cannot catch and this can.** The round trip proves a
+> generated schematic matches **the netlist it was generated from** - it is a
+> self-consistency check. Gate 8 proves it matches **a drawing a human made and
+> trusts.** A generator that mangles a circuit the same way at both ends passes
+> the round trip happily. These catch different failures and neither substitutes
+> for the other.
+>
+> **REVISION 4, FINDING 17: THE DEFERRAL'S REASONING WAS WRONG, AND THE WRONG
+> REASONING IS LEFT HERE BECAUSE A CORRECTED CLAIM IS SHOWN AS CORRECTED.**
+>
+> > **WITHDRAWN.** This passage read: *"**Why M2 and not M1, and the reason is
+> > better than 'extra work'.** The gate needs a reference and a declared-delta
+> > list. The reference exists - `circuits/pt2399-core/pt2399-core.kicad_sch`
+> > and `circuits/transistor-preamp/lab-board.kicad_sch` are hand-arranged and
+> > known good, and the parent names them for exactly this. **The delta list
+> > does not, and it CANNOT be written before the generator exists**:
+> > enumerating how a generated schematic is supposed to differ from a
+> > hand-drawn one, before seeing what the generator produces, is guessing.
+> > **The list is genuinely downstream of M1**, which is why the deferral is a
+> > sequencing fact rather than a scope cut."*
+>
+> **The second review named the consequence exactly:**
+>
+> > *"Waiting until generated schematics exist to enumerate their differences
+> > creates precisely the provenance risk gate 8 is supposed to prevent: a
+> > generator defect could be retrospectively classified as an intended
+> > change."*
+>
+> **THAT IS THE GOVERNING INVARIANT BEING VIOLATED** - an agent authoring the
+> acceptance criteria for the artifact it produces (`CLAUDE.md`) - and the
+> deferral argument was that violation wearing a sequencing argument's clothes.
+> The withdrawn passage's own words give it away: a list written *from* what the
+> generator produces is a list the generator chose.
+>
+> **THE CORRECT POSITION: electrical deltas are derived from the
+> TRANSFORMATION, not discovered from the output.** For the Pultec they are
+> already defined upstream of any drawing - `circuits/pultec/partition.ts`
+> removes the other sections, inserts stand-ins, and introduces the junction
+> connections - and **those are logical transformations, expressible
+> independently of how anything is drawn.** The delta list is a statement about
+> the partition, not about the emitter.
+>
+> **So the gate splits, and the halves have different acceptance:**
+>
+> | | M1 | M2 |
+> | --- | --- | --- |
+> | **what is ported** | `gates/oscar/`'s comparison, and a reference-graph check exercised on circuits that **require NO electrical change** | the same gate, plus the Pultec-specific transformation manifest |
+> | **the permitted delta** | **EMPTY.** A circuit rendered from its own model should differ from its own reference in nothing at all | the manifest's declared deltas, **derived mechanically from the partition** |
+> | **why it is checkable then** | an empty list needs no generator to write it, so **this is checkable on day one of the port** | the partition exists already; the manifest is read off it, not off a drawing |
+>
+> > **AMENDED 2026-10-21 UNDER RULING R56, EXTENDED BY R63: THE THIRD ROW's
+> > PREMISE IS TRUE AND ITS CONCLUSION IS FALSE**, which is why it is corrected
+> > here rather than rewritten. *"An empty list needs no generator to write it"*
+> > is exactly right and is the whole reason the M1 half was brought forward.
+> > **But *"this is checkable on day one of the port"* does not follow, and Task
+> > 18 measured it false:** checking the empty delta needs a GENERATED schematic
+> > to compare against the reference, and `generate` refuses both of this
+> > repository's hand-arranged references at **gate 1** - 115 and 101
+> > `validateCircuit` problems, before any block reaches a layout backend.
+> > `docs/known-gaps.md` **G238** has the measurement, **G240** the gap with its
+> > price. **So the delta list was never what stood in the way; the generator's
+> > input validation was**, and nothing in this row contemplated that.
+> >
+> > **FURTHER AMENDED 2026-10-21 UNDER RULING R70: *"115 and 101"* IS HISTORICAL,
+> > MEASURED UNDER THE OLD RULE COMPOSITION, AND THE CORRECTED CONCLUSION IS
+> > UNCHANGED.** Task 20 took `bomFields` out of `validateCircuit` under the
+> > owner's ruling that the BOM requirement belongs to the CONSUMER of an
+> > artifact. `[RAN]`: `pt2399-core` refuses at gate 1 on **18**;
+> > `transistor-preamp` validates clean and `generate` refuses it at **layout**,
+> > on **G232**'s field-placement defect. **The generator's input validation is
+> > still what stood in the way for one of the two, and a LAYOUT defect is what
+> > stands in the way for the other** - the delta list is still not it.
+> > `docs/known-gaps.md` **G245**.
+> >
+> > **The first row's word *"exercised"* is scope-wording and is read as *ported
+> > for*, not as a claim that it ran** - that cell answers *what is ported*. It is
+> > flagged rather than rewritten because rewriting a scope cell to carry an
+> > outcome is how a split table stops recording the split. The deliverable row at
+> > the milestone table below carries the outcome, and it is corrected there.
+>
+> **AND THE RULE THAT REPLACES THE WITHDRAWN ARGUMENT: the list of permitted
+> electrical changes must NEVER be inferred from a generated schematic.** A
+> delta is admitted because a transformation is declared to produce it, named
+> with the transformation that does so. A difference found by looking at output
+> is a defect report until some declared transformation accounts for it - never
+> a new list entry.
+>
+> **What is genuinely M2 and not a hidden deferral:** the Pultec manifest itself,
+> because M1 produces no Pultec section schematic at all (§6) and a manifest for
+> an artifact no milestone emits would be written against nothing.
+>
+> `docs/known-gaps.md` **G104** is rewritten to record this overturn, with the
+> wrong reasoning visible there too.
+
+**The round trip is the only new check, and the pattern is proven - and its
+contract is wider than this spec first said.** Finding 10 was a correction and it
+is accepted: `tests/circuits/kicad-round-trip.ts` does not compare net partitions
+alone. **Verified by reading it:** `expectSameCircuit` compares the net partition
+as sorted sets of `designator.pin` ignoring net names, **and** a
+designator-to-value map, **and** each component's footprint against
+`component.part?.footprint`. The file's own header says so: *"compare that export
+with the circuit by net membership (a partition, ignoring net names), values and
+footprints."*
+
+**So the complete contract for the new check, stated rather than inherited:**
+
+| compared | why it is not covered by the one before it |
+| --- | --- |
+| **component identity** | a net partition is over `designator.pin` strings, so it cannot see a component that is present, absent or duplicated. **The justification this cell originally gave — *"two components swapped consistently produce the same partition"* — is WITHDRAWN 2026-10-20 by controller ruling R28**, because its premise is true and its inference does not follow. See `docs/known-gaps.md` **G177**. |
+| **pin identity** | pad-count parity cannot catch a swapped IN/OUT (parent, gate 5) |
+| **net membership**, as a partition ignoring net names | catches wrong connectivity and a renamed interface net with equivalent topology |
+
+**Ruling R28, 2026-10-20 — why the component-identity justification was
+withdrawn, and why the row stays.** Task 11's implementer measured a consistent
+swap three ways over a real generated export, and its reviewer reproduced the
+first arm independently on a synthetic circuit. Arm A, the two 100n decoupling
+capacitors (both 3V3 to GND), swapped in `components[]` and in every net member:
+**all six problem lists came back empty.** Arm B, a 10u on VIN against a 22u on
+3V3, identical transformation: 4 `netMembership` problems and 2 `values`
+problems. Arm C is the one that settles it - arm A's pair is *identical apart
+from the designator* and has the *same net set*.
+
+So the premise holds and the inference does not. **A consistent swap preserves
+the partition ONLY when the two components are netlist-indistinguishable, and
+in exactly that case the netlist carries no information that tells them apart** -
+so no function of `ImportedNetlist` can report it, a widened `componentIdentity`
+included. That case is also electrically a no-op, because the parts are
+interchangeable. The moment they differ at all, arm B shows the swap is caught
+by `values`, `footprints`, `pinIdentity` or `netMembership`. **The five rows
+together catch every consistent swap of distinguishable components; the single
+case none catches is the one that is not a defect.**
+
+**The row stays**, on the justification above: a partition over `designator.pin`
+strings cannot see a component that is present, absent or duplicated, and the
+shipped mutation that drives it - an extra `components[]` entry on no net -
+turns exactly its own test red.
+
+**And the real guard against a mis-assigned designator is gate 1, not this
+row.** `roundTrip` takes `refs` from the generation itself, while `annotate`
+takes every locked part's designator straight from the committed
+`refs.lock.json`, so a designator swap surfaces as a gate-1 `staleFiles`
+finding. The round trip was never the link that checks it.
+
+**Recorded here rather than acted on by the task that found it.** The
+implementer stated the position and deliberately did not amend this spec,
+because amending the acceptance criteria for the artifact it is producing is
+the one thing this project forbids above all others. The amendment is the
+controller's, on two independent measurements that agree.
+| **values** | a correct topology with a wrong capacitor is a correct netlist |
+| **footprints where declared** | *where declared* is deliberate: the existing test compares against `component.part?.footprint`, so a component with no declared part has nothing to compare and that must not read as a pass |
+
+A competing tool certifies every output the same way and reported 100% on 117
+circuits.
+
+**And the warning that the round trip CANNOT catch, which must be written where
+an implementer will read it.** A certificate verifies what it was given, not
+what you meant. Measured: a tool whose input format could not express a rotary
+selector drew *"an excellent picture of a circuit that is not the Pultec"*, and
+its round-trip certificate was blind to the substitution because the
+substitution happened upstream. **Our chain is only as good as the link that
+checks the model against the authored schematic**, and that link is the existing
+committed-netlist comparison, not the round trip.
+
+**The second thing it cannot catch is geometric**, and §1.4 states it: a
+schematic can export a correct netlist while visually suggesting wrong
+connections. The round trip is not a readability gate and must never be reported
+as one.
+
+### 2.1 A generation manifest, so the link checks certify ONE derivation
+
+**New in revision 1, finding 9.** Four link checks that each pass prove nothing
+jointly unless they ran over the same derivation. Nothing above said they did.
+
+**Every generated schematic is accompanied by a manifest recording the hashes
+of:**
+
+- the canonical schematic's **netlist export** (the authority for a
+  schematic-first circuit);
+- the **section network** the generator consumed;
+- **the SERIALIZED LAYOUT INPUT handed to the layout backend, per block**
+  - added in revision 2, see below;
+- the **template library** version and the **rule library** version that graded
+  it;
+- the **generated schematic** itself.
+
+**CRITERION: a gate that reports a pass names the manifest it passed against,
+and a manifest whose input hashes do not match the files on disk fails rather
+than regenerating silently.**
+
+#### Revision 2: it must hash the SERIALIZED LAYOUT INPUT, not the network's content
+
+**Measured, `docs/known-gaps.md` G95.** `[RAN]` Three shuffles of the same
+netlist - **same components, same nets, same partition** - produce **three
+distinct drawings out of three on 4 of 4 circuits**, none matching declaration
+order, and move inter-net crossings by up to **2.1x** at block scale and **3x**
+flat. **Reordering the `.capacitor(...)` calls in a circuit file would change
+every generated schematic.**
+
+**So a hash over the section `Network`'s CONTENT would not detect the change
+that moved the drawing.** A manifest built that way would certify two different
+drawings under one input hash, which is exactly the failure the manifest exists
+to prevent. **CRITERION: the manifest hashes the exact bytes handed to the
+layout backend for each block, in addition to the network they were derived
+from.** Determinism for a fixed input holds - 14 of 14 inputs gave one distinct
+output over three runs - so that hash is a stable key; the network's content is
+not.
+
+**THE BLOCK-SCALE REFINEMENT, and it is why §1.8 exists.** `[RAN]` That
+instability is **absent below about 9 cells** - crossing counts are invariant
+over four orders at 3, 4, 8 and 9 cells - and **present from 13 cells up**,
+moving 22-29. **A sufficiently small block has a measured quality that is a
+property of the block; a large one does not.** The drawing itself still changes
+at every size, so **this refines nothing about the hash and everything about
+what the numbers mean** (§3.3).
+
+This is not a new discipline here, which is the argument for it: the parent's
+`run.json` records hashes of the source board, the intent, the rules, the policy
+and the engine commit, and *"`adopt` refuses a run whose result hash has
+changed"*. The stripboard side does the same, and
+`stripboard/render-approvals.json` scopes an owner approval to a
+`candidateSha256` for exactly this reason - **an approval of a render is an
+approval of those bytes.** The schematic side had no equivalent.
+
+3. Acceptance: three mechanisms, and no invented number
+---------------------------------------------------------
+
+**No published source anywhere states an acceptable number of wire crossings,
+bends or wire length.** Not IEC 61082-1, not ANSI Y14.15 (*"as few as
+possible"*), and the research literature is weaker rather than stronger - one
+published generator reports only relative reduction, another explicitly declines
+to report crossing or visual metrics, a third scores aesthetics **subjectively
+out of ten by a human** and names that as a limitation.
+
+**So inventing a threshold would put this project ahead of every published
+source while appearing to cite one.** That is the failure the governing
+invariant exists to prevent. **No criterion in this design carries a numeric
+crossing, bend or length threshold** unless a named source states it with a
+clause, or the owner states it as his own decision and it is recorded as his.
+
+What we have instead, strongest first:
+
+### 3.1 Readable by construction - templates
+
+**This is how the proven generator actually achieved legible output, and it
+never graded readability at all.** Its four gates are all correctness; there is
+no aesthetic score anywhere in it. Legibility came from templates that place one
+idiom in an arrangement a human designed once and reviewed once - *"one op-amp
+unit with + above - on the left and the output on the right... the feedback
+parts run as rows in a corridor below the body"*.
+
+**That is channel 2 of the parent's governing principle** - a standing rule
+library, circuit-independent, reviewed once, applied without further sign-off -
+and NOT a rubric applied after the fact.
+
+### 3.2 Specific misreadings refused - clearance
+
+~160 refusals in the render layer alone. The reasoning is the sharpest idea in
+the whole body of prior work:
+
+> *"KiCad joins a wire or label to a pin only at the pin's end, but a reader
+> joins anything drawn on a pin's line or inside a symbol's body."*
+
+**The gap between what the tool considers connected and what a human eye reads
+as connected is where unreadable schematics live - and it is a boolean, not a
+score.** A wire through a symbol body is electrically perfect and visually a lie.
+
+**These accreted pairwise over eleven steps**, each step finding that the prior
+checks had the same shape of blind spot - category A modelled as an obstacle for
+B but not for C. **This port short-circuits that ladder**: enumerate the obstacle
+categories once and check the full pair matrix. **And §1.4 says why that is not
+optional once ELK is in the pipeline** - the checks were grown against
+template-produced geometry, so a new geometry source is the condition that
+creates a fresh blind spot.
+
+### 3.3 Measured, with no threshold - and measurement is separated from acceptance
+
+**Rewritten in revision 1. Finding 3 was blocking and it was right.** This
+section read: *"Measure and record; require that a given netlist's drawing does
+not get worse."* **That sentence hid three unanswered questions** - what the
+baseline is for a circuit never generated before, what it is for a circuit whose
+canonical schematic holds different components from its section network
+(stand-ins, junction headers), and what happens when yesterday's output would
+perpetuate an already-bad result. **And it did not say whether improving
+crossings while doubling wire length is a regression.**
+
+**The structure is the reviewer's: MEASUREMENT and ACCEPTANCE are separate
+things.**
+
+**Measure these four, independently and separately reported:**
+
+| measure | unit |
+| --- | --- |
+| bends | count, and per edge |
+| crossings between different nets | count |
+| wire length | total, in grid steps |
+| occupied area | sheet extent actually used |
+
+**NO COMPOSITE SCORE AT THIS STAGE.** This is a narrowing of what this spec
+previously proposed and the change is deliberate. It said the shape to use was
+AEM's - *"a per-net average of a multiplicative discount on bends and on
+crossings against an alignment baseline, less a length penalty"* - **and that
+shape is a composite whose four sub-terms are unpublished.** Adopting the shape
+of a formula we cannot reproduce would produce a number that looks cited, trades
+the four measures against each other at weights nobody chose, and answers
+"crossings down, length doubled" by hiding the trade rather than showing it.
+**Four numbers reported side by side show it.** A composite may be proposed
+later as a reviewed change with its weights argued; it is not adopted here.
+
+**What survives from AEM, and it is worth keeping:** **its benchmark is twelve
+real discrete-analog boards with a public BSD-licensed netlist dataset and
+published scores**, so our own measures can be exercised on the same circuits.
+That is a fixture source, not a formula.
+
+**Note which term the literature puts first.** Bends, then crossings. That is
+consistent with the one user study in evidence, which attributes the harm to
+**right-angle bends** rather than crossings and finds **no correlation between
+crossing count and task performance at all** - while declaring its own sample too
+small to be conclusive. **A schematic is orthogonal by convention, so bends are
+intrinsic to the form.** This orders the report; it does not weight a score,
+because there is no score.
+
+**ACCEPTANCE, which is a different question from measurement:**
+
+| case | acceptance |
+| --- | --- |
+| **a known fixture** | compare each measure against a **reviewed, versioned baseline held outside the generator** |
+| **a circuit generated for the first time** | **report the measures with no pass/fail.** A first generation has nothing to regress against, and inventing a verdict for it is inventing a threshold |
+
+**THE BASELINE CHANNEL ALREADY EXISTS AND IS NOT INVENTED HERE - this is the
+controller's addition to finding 3 and it is the part that makes the finding
+actionable.** `stripboard/render-approvals.json` is this repository's mechanism
+for an externally-held, provenance-carrying judgement about a produced artifact,
+and `tools/stripboard/approvals-model.ts` documents what it is for. **Measured,
+because the figure it was relayed with was wrong** (see the revision table):
+the file holds **five** approvals, one per Pultec section board, each carrying
+**twelve** declared fields - `id`, `board`, `candidateSha256`, `renderedFrom`,
+`admits`, `why`, `grantedBy`, `grantedOn`, `ownerWords`, `doesNotExcuse`,
+`consultedBy`, `note` - with six `ownerWords` utterances across the five.
+
+Three properties of it are exactly what a readability baseline needs, which is
+the argument for extending it rather than building a parallel registry:
+
+- **it is scoped to bytes.** An entry names one board and one `candidateSha256`,
+  so *"the owner approved this board"* cannot silently cover a later, different
+  board for the same section. A readability baseline needs the same scoping for
+  the same reason;
+- **it carries his words verbatim, one utterance per list element**, because *"a
+  single string would have made an agent's concatenation of them the record"*;
+- **a producing agent cannot silently replace it.**
+  `tools/stripboard/approvals-read.ts` refuses a
+  record with no quote, a quote in the narrator's voice, and a quote that is the
+  entry's own reasoning in quotation marks; the registry is committed; the
+  adoption prints the entry it was admitted on. **The mechanism's own stated
+  limit is recorded rather than papered over** - *"no file can prove the owner
+  said anything"*, residual at `docs/known-gaps.md` **G27** - and the design
+  makes a forgery expensive and visible instead.
+
+**CRITERION: a readability baseline is held in a committed registry outside the
+generator, scoped to the artifact's bytes, and a gate cites the entry it passed
+against.**
+
+**REVISION 2 ADDS WHICH BYTES, AND IT IS NOT THE NETWORK'S.** `docs/known-gaps.md`
+**G95**: the same components, nets and partition in a different cell order give
+three distinct drawings out of three and move crossings by up to **2.1x**. **So a
+baseline scoped to the section `Network`'s content would compare numbers that are
+not properties of the circuit** - a later run could regress every measure with no
+change to anything the baseline names. **CRITERION: a baseline entry is scoped to
+the same SERIALIZED LAYOUT INPUT the manifest hashes (§2.1), and an entry whose
+serialization hash has moved is stale rather than passed.**
+
+**And the block-scale refinement, which decides whether a baseline is worth
+holding at all for a given block.** `[RAN]` That order-instability is **absent
+below about 9 cells and present from 13 up** (§1.8). **A baseline over blocks
+small enough that the measure does not move under reordering is a baseline about
+the circuit. Over large blocks it is a baseline about a serialization**, which is
+legitimate and much weaker, and a gate citing one must not be read as the
+former. **This is a second, independent reason block size is a design parameter
+and not an implementation detail.**
+
+#### Revision 4: REPRODUCIBILITY identity and COMPARISON identity are different things
+
+**Finding 18, and it is a defect in the paragraph immediately above.** Scoping
+the baseline to the exact serialized layout input makes a changed serialization
+**stale rather than comparable** - so after any change to how a block is
+serialized, **the system can tell that the output changed and cannot tell whether
+it improved.** That is backwards for the thing §3.3 exists to do.
+
+**The review's split, adopted:**
+
+| identity | what it names | what it is FOR |
+| --- | --- | --- |
+| **reproducibility identity** | the exact serialized layout input, the engine version, the template and rule libraries, and the output artifact | **provenance.** Did this artifact come from these bytes through this engine? This is §2.1's manifest and the criterion above is unchanged |
+| **comparison identity** | the circuit or block FIXTURE, with its declared electrical and semantic structure | **comparing implementations of the same drawing problem.** Is this drawing of this circuit better or worse than the last one? |
+
+**CRITERION: for a comparison fixture, all four measures are reported against
+the reviewed baseline EVEN WHEN THE SERIALIZATION CHANGES, with the changed hash
+FLAGGED - not treated as proof that comparison is impossible.** A moved
+serialization hash is information about provenance; it is not a reason to stop
+reporting four numbers. The previous criterion stands where it belongs: a
+reproducibility claim over a moved input hash is stale.
+
+**AND THE THING THE REVIEW ASKS TO BE STATED PLAINLY, which this document
+implied and never said: WITHOUT A DOMINANCE RULE, A FOUR-MEASURE COMPARISON IS
+DESCRIPTIVE, NOT PASS/FAIL.** §3.3 refuses a composite score, and that refusal
+has a consequence it must own: four numbers moving in different directions
+**cannot be resolved into a verdict by anything in this document.** So the four
+measures are **diagnostics**, and acceptance rests on the two mechanisms that do
+produce verdicts - **the hard geometric checks of §1.4 and §3.2, and the
+independent render approval of §3.3's baseline channel and §3.5's reviewer.**
+Reporting a measure comparison as an acceptance result is a category error, and a
+gate that does it is a defect.
+
+**MECHANISM, and it is this spec's and not a measurement: extend
+`stripboard/render-approvals.json`'s shape to schematic renders.** Whether that
+is a new registry with the same twelve-field shape, a `subjectKind` discriminator
+on the existing one, or a shared loader is an implementation question the plan
+answers. **Record the deviation if the shape does not carry over** - a schematic
+baseline differs from a render approval in at least one way the plan must face:
+an approval admits one termination, whereas a baseline carries four measured
+numbers.
+
+### 3.4 Three criteria this repository can make objective, where others cannot
+
+A real asset and the reason the general-purpose claim is testable here:
+
+- **functional-grouping disjointness** - `include(prefix, network, portMap)`
+  names the functional blocks, so "are the blocks visually disjoint" is a
+  question about declared sets;
+- **congruent repeated sub-circuits** - a repeated block is literally the same
+  function applied twice, so two instances should draw congruently;
+- **rail via power symbol** - rails must be declared ports, so a rail drawn as an
+  ordinary net is detectable.
+
+**Elsewhere these are judgement calls. Here they are properties of the model.**
+Registered as an asset at `docs/known-gaps.md` **G75**.
+
+#### Revision 2: congruence FLIPPED between the two scales, and that supports this section
+
+**Both the first two criteria were measured, and the second one changed its
+answer.** `docs/known-gaps.md` **G97**.
+
+**Flat, it answered no.** `[RAN]` Four structurally identical declared bias legs
+inside one 32-part drawing gave `jumper -> trim` offsets spanning **-912 to
++564**, with one leg running the opposite direction from the other three.
+
+**At block scale, laid out alone, the same four legs draw CONGRUENTLY.** `[RAN]`
+Identical vertical offsets, identical internal `floor -> trim` vector, identical
+starting corner - and the **one** x difference is predicted exactly by
+**`6 * len(component id) + 5`**, giving 107 / 125 / 119 / 119 for ids of length
+17 / 20 / 19 / 19, **4 of 4 to the pixel** (6 px per character is the skin's
+0.6 em at 10 px monospace). **The blocks are congruent and the drawn width of
+the component's NAME is what separates them.**
+
+**So this section's claim that congruence can be made objective here is
+SUPPORTED at block scale and was NOT at flat scale.** That is a result about the
+architecture, not only about the criterion: **the scale at which the generator
+hands work to the backend is the scale at which one of §3.4's three criteria
+becomes measurable.**
+
+**AND THE QUALIFICATION, WHICH A TEMPLATE DESIGNER NEEDS MORE THAN THE RESULT.**
+`[RAN]` Under the rail policy the congruence **breaks**: one leg runs from `VCC`
+and gets a `vcc` glyph, its twin runs from `COLLECTOR` and gets none, and they
+land at (91, 42) on a 364x210 canvas against (81, 22) on 390x190, with the
+internal vector splitting +54 / +44. **Adding a rail symbol to one of two
+otherwise identical blocks stops them drawing alike.** **CRITERION: congruence is
+measured with the rail glyphs the two instances would actually get** - what broke
+it here was the glyph, not the topology, and a check run without them would pass
+and mean nothing.
+
+**The disjointness criterion does not get an answer this way - it gets
+dissolved.** Inside a single block, disjointness is trivially satisfied, so a
+block-scale measurement can neither pass nor fail it. **It stands measured only
+at flat scale, where it answers no** (67 % of canvas, 11 non-members inside the
+group's box), and whatever mechanism composes blocks onto a sheet - seam B,
+§5.2 - is what it will have to be measured against.
+
+### 3.5 And one gate this project must build better than its source
+
+The proven generator's readability review was done by an agent **denied the
+source**, rendering pages to PNG at 300 dpi and cropping region by region. **No
+human with domain expertise ever read those drawings for legibility**, and 16 of
+19 cosmetic defects were knowingly shipped.
+
+Worse for our purposes: **that reviewer's prompt pre-named the defect
+categories**, and five of twenty findings map onto the hint list one-to-one
+(`docs/known-gaps.md` **G83**). The reviewer was independent of the source but
+**not of the producing controller's expectations.**
+
+**So: a reviewing agent is handed the CRITERION and never the list.** That is the
+invariant applied to the gate itself.
+
+#### The output contract, added in revision 1
+
+**Finding 8, and it is a real gap in "criterion, never the list":** withholding
+the defect categories stops the reviewer being led and does nothing to stop a
+vague finding. *"The mid sheet is hard to follow"* is unactionable and
+unfalsifiable. **So the FORM of a finding is specified while its CONTENT is
+not** - which is the distinction that keeps this from reintroducing the hint
+list.
+
+**Every finding carries:**
+
+| field | why |
+| --- | --- |
+| **the affected sheet or region** | a finding nobody can locate cannot be fixed or disputed |
+| **what a reader might misinterpret, stated as the misreading** | not *"this is unclear"* but *"a reader would take this wire as joining C3 to the coil return"* |
+| **electrical error or readability problem** | they go to different places: an electrical error is a generator defect; a readability problem is graded against the criteria |
+| **enough visual evidence to reproduce it** | the render, the crop, the coordinates - whatever makes a second reader able to look at the same thing |
+| **blocking or suggestion** | 16 of 19 cosmetic defects were knowingly shipped at the source project; that is a legitimate outcome only if the reviewer said which were which |
+
+**Nothing here says what the findings should be, how many there should be, or
+what categories they fall into.** The fields are the contract.
+
+**AND THE REVIEWER MAY NOT SILENTLY MODIFY THE ACCEPTANCE CRITERIA.** A reviewer
+that adds a constraint it then grades against has authored the criteria for the
+artifact in front of it - the governing invariant, one level up from where it is
+usually caught. **A recurring new failure mode is a PROPOSED ADDITION to the
+standing rule library, subject to independent review, and never an automatically
+accepted constraint.** The proposal is a legitimate and wanted output; the
+automatic acceptance is the failure.
+
+4. Out of scope, with reasons
+-------------------------------
+
+- **Ex nihilo generation.** A requirement (parent), explicitly not this work:
+  *"that's not our current situation."*
+- **PCB synthesis, placement and routing** - T4, T5, T6 of the parent.
+- **Changing any adopted layout.** The owner: *"Leave the approved boards alone."*
+- **Reimplementing AEM, and now also adopting its SHAPE.** Its sub-terms are
+  unpublished. Revision 1 narrows this further than the first draft did: §3.3 no
+  longer proposes using its composite form either. Its benchmark circuits remain
+  useful as fixtures.
+- **A composite readability score, at this stage.** The four measures are
+  reported separately. A composite is a reviewed change with its weights argued,
+  not a default.
+- **A geometry repair pass after snapping** (§1.4, obligation 5). Refusal is the
+  decided behaviour; a repair pass needs its own gate and is not specified here.
+- **Designing the five new templates and the three uncovered constructs** - see
+  §5.5 and §6's M2.
+- **Adopting `schematizer` or `weave` code.** Measured unsuitable - one cannot
+  route our net degrees, the other's input format cannot express a selector, a
+  pot, a jumper or a connector, and its repository ships no LICENSE.
+
+5. Open questions this spec does NOT answer
+---------------------------------------------
+
+Named so a plan does not pretend they are settled.
+
+### 5.1 Do the seven ported templates transfer?
+
+They were sized by a 103-block digital mainboard. Nothing is known about their
+pass rate on circuits that are mostly passive chains, dividers and op-amp
+stages. **Parent G87.** The measurement: run them and count. **This is M1's
+existing-template parity demonstration** (§6).
+
+#### Revision 4: PARITY and APPLICABILITY are four different measurements, not one
+
+**Finding 20.** §6's M1 acceptance promises the seven ported templates draw the
+circuits already here, and this section says their applicability to discrete
+audio is unknown. **Those are compatible only if the acceptance separates what
+is being measured**, and until revision 4 it did not:
+
+| measurement | meaning | what it is |
+| --- | --- | --- |
+| **port parity** | the existing template fixtures behave identically before and after porting | a **REGRESSION** requirement - it either holds or the port is broken |
+| **template applicability** | how often the seven templates match this repository's circuit blocks | a **MEASUREMENT**, with no target, which is this section's open question |
+| **ELK coverage** | how many blocks no template supports are realised by ELK | a test of the **NEW capability** seam A exists for |
+| **integrated correctness** | whether the completed schematics pass the KiCad and geometric checks | the **ARTIFACT**, and the only one of the four that is a verdict |
+
+**PORT PARITY IS TESTED AGAINST THE SOURCE PROJECT'S OWN FIXTURES, NOT AGAINST
+THIS REPOSITORY'S CIRCUITS.** Requiring all seven templates to match our
+circuits in order to prove the porting was faithful **confuses a regression test
+with a measurement**: a template that is simply inapplicable here would read as
+a port defect, and a port defect in a template that happens to be inapplicable
+here would read as a pass. The source ships the fixtures that answer the
+regression question; this repository's circuits answer the applicability
+question; they are different runs with different meanings.
+
+### 5.2 Which direction does the sheet flow, and which cross-sheet mechanism is authoritative?
+
+See §1.7 and §1.6. **Two conventions must be pinned**, and §1.1's measurement
+says the first one is not self-evident: on the 25-part probe, signal flow ran
+neither left-to-right nor top-down consistently.
+
+**REVISION 4, FINDING 16: THIS QUESTION NOW HAS A NAMED OWNER, because leaving
+it open contradicted M1.** §1.6 requires one authoritative mechanism per class of
+connection, and M1 promises sheet-level layout and verification; an open question
+cannot sit between them. **The owner is the M1 plan's Task 15,
+*"Seam B, sheets, and one cross-sheet mechanism per net"*** - the decision lands
+inside that task's design, with its reasoning recorded there so a later reader can
+dispute it.
+
+**The review recommended settling it *"before writing the M1 plan"*, and that
+part is corrected rather than adopted: the plan exists and Task 15 is already
+the place.** What this spec contributes is the rule (§1.6's revision-4 note) and
+the test (§1.6's one-sheet-versus-multi-sheet net-membership comparison).
+**This spec still does not choose the mechanism**, and naming an owner is not
+choosing it.
+
+### 5.3 ~~Are `schgen`'s templates separable from its geometry layer?~~ ANSWERED 2026-10-19: yes, and they are already behind the interface an ELK backend would implement
+
+**Read in the pedals tree, `[CODE]`.** A template is:
+
+```ts
+export interface Template {
+  readonly id: TemplateId;
+  realise(g: BlockSubgraph): RealiseResult;
+}
+
+export type RealiseResult =
+  | { readonly ok: true; readonly layout: BlockLayout }
+  | { readonly ok: false; readonly reason: string };
+
+export interface BlockLayout {
+  readonly placements: readonly Placement[];   // part, unit, at: Point, rot
+  readonly wires: readonly Wire[];             // a: Point, b: Point, net
+  readonly anchors: readonly Anchor[];         // net, at: Point, side
+}
+```
+
+**A template is a pure function from a subgraph to coordinates.** It does not
+call into a shared geometry layer - **it RETURNS geometry as plain data.** There
+is nothing to separate, because they were never joined.
+
+**So seam A is a dispatch, not a refactor.** An ELK backend implements the same
+`realise(g: BlockSubgraph): RealiseResult`: hand it a subgraph, get back
+placements, wires and anchors, or a reason. Every template-shaped consumer
+downstream - `checkLayout`, the clearance refusals, the emitter - takes
+`BlockLayout` and does not care which produced it.
+
+**The cost is not separation. It is the adapter**, and the spec already names it:
+turning ELK's nodes, ports, edges and bend points into `Placement[]`, `Wire[]`
+and `Anchor[]` in one coordinate system **IS §1.4's realization contract.** The
+grid snapping, junction emission and route-invalidation questions all live in
+that adapter and nowhere else, which is a smaller and better-bounded problem than
+"port a geometry layer".
+
+**AND THE CATCH, WHICH IS §1.3's CONTRADICTION SITTING IN THE SOURCE.**
+`RealiseResult` is **two-valued** where the design needs three. Its single
+`ok: false` channel carries both *"no template applies to this subgraph"* and
+*"a template applied and failed"*, and the caller cannot tell them apart:
+
+```ts
+// render/blocks.ts:63-66
+const result = attributed(() => template.realise(g));
+if (!result.ok) {
+  throw new Error(`block ${id} ... cannot realise its subgraph: ${result.reason}`);
+}
+```
+
+`[RAN]` **30 `mismatch(...)` call sites across the seven templates funnel into
+that one channel.** So §1.3's three-valued selector is not only a specification
+change - **it is a widening of this interface**, and every template that reports
+a mismatch has to say which kind it is.
+
+**And `docs/known-gaps.md` G94 adds a fourth value this interface has no room
+for at all**: ELK throwing. A `realise` that can raise is outside
+`RealiseResult`'s type entirely.
+
+- **Evidence** `render/blockTypes.ts:27-63` and `render/blocks.ts:63-69`, read
+  directly; the `mismatch(` count measured across `render/templates/*.ts`.
+- **What this closes and what it opens** the separability question is closed. The
+  interface widening is **new work this answer created**, and it belongs in M1
+  alongside the adapter.
+
+### 5.4 Is a passive's symbol declared per part or derived from its kind?
+
+`lib/model/kinds.ts` already derives pin vocabulary by kind; the analogous move
+for symbols is available and unmade. 15 of `pultec-low-boost`'s 19 components
+declare no symbol. **§1.5's authority order does not settle this** - it says who
+decides an orientation, not where a symbol choice is declared.
+
+### 5.5 The five new templates are not designed - and finding 7 says two of three remaining constructs may not be templates at all
+
+`selectorBank`, `potNetwork`, `tappedReturn`, `modeSwitch`, `bjtStage`, plus the
+three constructs the parent records as having no template at all - the stand-in
+group, the junction bus, and a gang spanning two boards. **Designing them is
+spec work, not plan work**, and this document does not do it.
+
+**What revision 1 adds, because the reviewer found a distinction this spec
+missed and it changes what those constructs ARE:**
+
+| construct | what it may actually be |
+| --- | --- |
+| the **stand-in group** | a **sheet-level composition construct** - a conditionally populated set with a group identity and a population rule, which is a property of a sheet's composition rather than of one idiom's arrangement |
+| the **junction bus** | likewise **sheet-level** - a fixed-pinout interface between boards, which is what a sheet boundary is for |
+| a **gang spanning two boards** | as much a **cross-sheet documentation requirement** as a layout problem: one shaft, two poles, two sheets, and a reader has to be able to see that they move together |
+
+**The reviewer, and it is adopted as a constraint on the design work rather than
+as the design: *"Don't force all three through the same abstraction merely to
+make the template list uniform."*** The parent already warns that
+`passiveChain` *"would silently absorb a stand-in group as ordinary series and
+shunt resistors and lose both the group identity and the population
+condition"* - the same failure one level up. A uniform template list is not a
+goal.
+
+### 5.6 NO TEMPLATE WAS IN THE LOOP IN EITHER SPIKE - the largest assumption in the evidence
+
+**New in revision 2, and it is stated here rather than buried in a caveat
+because every number in §1.1, §1.8, §3.3 and §3.4 carries it.**
+
+**Seam A sends ELK the subgraph that is left over AFTER templates have drawn its
+neighbours.** Both spikes measured **a block in isolation**: its own canvas, no
+neighbourhood, no template-produced geometry anywhere on the sheet, every port a
+free cell ELK could place where it liked. **Those are different problems, and
+nothing measured so far says by how much.**
+
+What that leaves uncertain, concretely:
+
+- **a block's ports are fixed in seam A and were free in both spikes.** §7 of the
+  block spike measured ELK putting interface ports in the interior of the sheet -
+  `input` at 0.02 and `hi_boost_out` at 0.06 of canvas width, adjacent at the far
+  left. **In seam A a neighbouring template has already decided where that net
+  arrives**, so both the measured defect and the measured boundary cost may move;
+- **§1.8's two bounds are bounds on an isolated block.** The ceiling is about
+  crossings and order-sensitivity within the subgraph; the floor is about port
+  glyphs that a real neighbourhood may not emit at all;
+- **§3.4's congruence result held for two blocks drawn alone and broke when one
+  of them gained a rail glyph.** A template in the loop is a much larger
+  perturbation than a rail glyph.
+
+**THIS GAP CANNOT BE CLOSED BEFORE M1, AND THAT IS A REASON M1 EXISTS RATHER
+THAN A DEFECT IN THE PLAN.** Measuring a block in context requires templates that
+draw its neighbours in the same coordinate system - which is **M1's deliverable**
+(`schgen` ported, ELK integrated at both seams, the §1.4 adapter written) and
+**M1's acceptance** (existing-template parity, the seven ported templates drawing
+this repository's circuits). **The spikes measured what could be measured without
+the port, and the thing they could not measure is the port.** A plan that tries to
+settle it first is asking for the milestone in the wrong order; a plan that
+forgets it is asking M1 to inherit numbers that were never about M1's pipeline.
+
+**CRITERION: the measurements in §1.1, §1.8, §3.3 and §3.4 are RE-TAKEN at M1
+with templates in the loop, and each is reported as either reproduced or moved.**
+They are the before-measurement and nothing else. **MECHANISM, untested:** the
+same 18 declared blocks, which exist and are enumerated in the block spike's §1,
+re-run through the ported pipeline.
+
+6. Milestones, and the spike that comes first
+-----------------------------------------------
+
+**New in revision 1, finding 7.** This spec said designing the five new
+templates was out of scope while T2's acceptance in the parent is five Pultec
+section schematics. **Those cannot both sit in one milestone**, and the parent's
+own four-milestone sequence for T2 did not separate them either.
+
+**The next step, and it is not a precondition already met: the ELK
+representativeness spike.** The owner has scheduled it **after** this revision,
+so it is recorded here as the next piece of work rather than as evidence this
+spec rests on.
+
+> **RUN, 2026-10-19 - and then run a second time at a different scale.**
+> `docs/schematic/elk-spike.md` covers all three structures named below, on real
+> repository circuits, and records electrical correctness, routing success,
+> crossings, bends, page extent and determinism as asked.
+> `docs/schematic/elk-block-spike.md` then re-ran the question at **declared
+> block** scale, which is what seam A actually hands ELK. **Revision 2 above
+> records what the two moved. Neither recommends an architecture, and §5.6
+> states the assumption both of them left standing.**
+
+**What it tests: at least three representative structures**, using **real
+repository circuit fragments** rather than probes reconstructed in a tool's own
+input format - which is what the existing evidence is (§1.1):
+
+- a **large passive star or parallel bank**;
+- an **interacting ladder with branches**;
+- a **mixed topology with a selector, a potentiometer, and a feedback or return
+  path**.
+
+**What it records, per structure:** electrical correctness, routing success,
+crossings, bends, page extent, and determinism.
+
+**This spec does not resolve the spike's questions and does not predict its
+results.** What it does is stop §1.1 from standing on the regular case.
+
+**Then two milestones:**
+
+| | M1 | M2 |
+| --- | --- | --- |
+| **deliverable** | `schgen` ported; ELK integrated at both seams; the geometry and verification contracts of §1.3, §1.4, §1.5, §1.6, §1.9, §2 and §2.1 established; **gate 8's empty-delta half ported and — see the amendment below — NOT exercised on a generated drawing** | the analog idioms designed and implemented, **the Pultec transformation manifest derived from the partition**, then **all five Pultec section schematics** |
+
+> **AMENDED 2026-10-21 UNDER CONTROLLER RULING R56, with the original wording left visible.** The M1 cell above read *"gate 8's empty-delta half ported and **exercised**"*. **The half is ported, driven and wired; "exercised" is not true of a generated drawing and cannot be made true inside M1 as it stands.** Task 18 measured why rather than inheriting it: `generate` refuses BOTH hand-arranged references at **gate 1** — `pt2399-core` on 115 `validateCircuit` problems (17 netNames, 1 single-pin net, 96 BOM fields) and `transistor-preamp` on 101 (100 BOM fields) — **before any block reaches a layout backend**, so the gate's own subject does not exist for either. `docs/known-gaps.md` **G238** holds the measurement, **G240** holds the gap with its price, and `docs/schematic/reference-graph-checks.md` states both as that document's headline rather than a footnote. **What WAS exercised is the comparison, end to end, on two real hand-arranged drawings through the real `kicad-cli` and on no generated one** — and the live-export-against-committed-fixture agreement that proves is explicitly **not** gate 8, because neither side is generated. **Closing this needs the four authoring classes G238 names, which are the circuits' own data and not generator defects.**
+| **acceptance**, **restated in revision 4 as four separate measurements** (§5.1) | **port parity** against the source project's own template fixtures (a REGRESSION); **template applicability** on this repository's circuit blocks (a MEASUREMENT, no target); **ELK coverage** of the blocks no template supports; **integrated correctness** - the completed schematics pass the KiCad and geometric checks, **and the reference-graph check with an EMPTY declared delta** | the five sections generable **from general templates**, without special-casing, with every electrical delta declared from the transformation in advance |
+| **what it does NOT produce** | any Pultec section schematic | - |
+
+**What revision 4 changed in this table, and why the first form was wrong.** M1's
+acceptance read *"existing-template parity - the seven ported templates draw the
+circuits already in this repository"*, which **fused a regression requirement to
+a measurement with an unknown answer** (finding 20): §5.1 says nothing is known
+about the templates' pass rate on discrete audio circuits, so "the seven draw the
+circuits here" could not be an acceptance condition without inventing a target
+for it. The four measurements are separated above, and only two of them are
+verdicts.
+
+**And M1 now carries gate 8's empty-delta half** (§2, finding 17). It is not a
+reordering toward a Pultec sheet - the circuit it would run on is one rendered
+from its own model, with no electrical change and therefore an empty permitted
+delta. M1 still produces no Pultec section schematic.
+
+> **AMENDED 2026-10-21 UNDER RULING R56: the present tense above was wrong and is
+> corrected to the conditional.** This paragraph said *"the circuit it runs on is
+> one rendered from its own model"*. **No such circuit exists.** Task 18 measured
+> that `generate` refuses both of this repository's hand-arranged references at
+> gate 1 - 115 and 101 `validateCircuit` problems, before any block reaches a
+> layout backend - so the half is ported, driven and wired, and it has run on two
+> real hand-arranged drawings and on nothing generated. `docs/known-gaps.md`
+> **G238** and **G240**.
+>
+> **FURTHER AMENDED 2026-10-21 UNDER RULING R70.** *"115 and 101"* above is
+> HISTORICAL - measured before Task 20 took `bomFields` out of the drawing path
+> under the owner's ruling that the BOM requirement belongs to the CONSUMER of an
+> artifact. `[RAN]` after it: `pt2399-core` **18** at gate 1;
+> `transistor-preamp` **0** at gate 1, refusing instead at layout on **G232**'s
+> field-placement defect. **"Exercised" is still not true of a generated drawing
+> and still cannot be made true inside M1 as it stands**, so this amendment's
+> conclusion is untouched; what changed is that the **four authoring classes**
+> the R56 amendment above names ("*Closing this needs the four authoring classes
+> G238 names*") **are now three** - the BOM class is gone because the drawing
+> path stopped asking, not because any circuit grew purchasing data - and for
+> `transistor-preamp` the remaining wall is one LAYOUT defect and no authoring
+> work at all. `docs/known-gaps.md` **G245**.
+
+**M1 producing no Pultec schematic is not a cost to be minimised**, and the
+parent says so in terms: the milestone order *"is the discipline rather than an
+obstacle to it"*, and **a plan that reorders T2 to reach a Pultec sheet earlier
+is reintroducing the shortcut.**
+
+Decisions
+---------
+
+| What | Who | Why |
+| --- | --- | --- |
+| Port `schgen` whole and add ELK at the seams | owner, 2026-10-19 | *"Why can't we port schgen and add ELK for geometries it excels at?"*, then *"agreed. proceed"* |
+| ~~ELK is what seam A's refusal falls through to~~ **WITHDRAWN on review** - only `not-applicable` selects ELK; a matching template that fails REFUSES | this spec, revision 1 | the withdrawn form made ELK a recovery path for a template that had been tried, so a defect in the preferred rendering path would go dark - which is the G84 lesson this spec cites one section earlier |
+| A selection result is three-valued, and a `generation-failed` report names which sub-case | this spec, revision 1 | a template defect and a clearance violation are different defects and need different reports |
+| A geometrically valid ELK drawing is not a valid KiCad schematic; five realization obligations are settled here | this spec, revision 1 | the spec took `netlistsvg`'s mechanism and not its code path and then specified no realization |
+| Snapping that invalidates a route REFUSES; no repair pass | this spec, revision 1 | a repair pass is a second layout engine with no gate, written where the agent has least information and most incentive |
+| The clearance checks are RE-VALIDATED against ELK geometry via an obstacle-category matrix, not merely reused | controller, revision 1 | G85: they accreted pairwise over eleven steps against template-produced geometry; a new geometry source is the condition that creates a fresh blind spot |
+| Orientation authority: reviewed template, then circuit-context rule, then ELK - and ELK may not invent symbol semantics | this spec, revision 1 | `netlistsvg` already treats orientation as an input, and the third pass names why: it is a semantic choice about the circuit |
+| Sheets are downstream of the section network; the electrical partition is upstream and unreachable from here | this spec, revision 1 | corrects the reviewer: the hazard it named is already prevented by `circuits/pultec/partition.ts`'s position in the chain |
+| Each derivation LINK is checked; no check spans the chain | this spec | gate 4's defect is that it compares at the wrong point, not that the authority is wrong |
+| The round trip's contract is component identity, pin identity, net membership, values, and footprints where declared | this spec, revision 1, from reading `tests/circuits/kicad-round-trip.ts` | the first draft described it as partition equality; the existing test already compares values and footprints too |
+| A generation manifest ties the link checks to one derivation | this spec, revision 1 | four checks that each pass prove nothing jointly unless they ran over the same inputs; `run.json` and `candidateSha256` are the existing precedent |
+| No invented crossing, bend or length threshold | this spec, from measurement | no published source states one; inventing one would appear to cite a standard that does not exist |
+| Measurement is separated from acceptance; four measures reported independently | this spec, revision 1 | *"does not get worse"* had no baseline for a new circuit, for a section whose components differ from the canonical, or for an already-bad previous result |
+| **No composite score at this stage**, including AEM's shape | this spec, revision 1 | its sub-terms are unpublished, and a composite hides the crossings-down-length-doubled trade rather than showing it |
+| The readability baseline extends `stripboard/render-approvals.json`'s channel rather than inventing one | controller, revision 1 | it is already externally held, scoped to bytes, carries his words verbatim, and is protected against a producing agent silently replacing it |
+| A reviewing agent gets the criterion, never the defect list | this spec | measured: the source project's reviewer had its categories pre-named and five of twenty findings matched the hints one-to-one (G83) |
+| A readability finding has a required FORM; its content is unprescribed; a reviewer may not silently change the criteria | this spec, revision 1 | "criterion, never the list" prevented leading the reviewer and permitted a vague finding |
+| T2 splits into M1 (port, ELK, contracts, existing-template parity) and M2 (idioms, then five Pultec sections) | this spec, revision 1 | "templates out of scope" and "five Pultec schematics" cannot both be one milestone's acceptance |
+| The stand-in group and the junction bus may be sheet-level composition constructs, and a cross-board gang a cross-sheet documentation requirement | reviewer, revision 1 | *"Don't force all three through the same abstraction merely to make the template list uniform."* |
+| Designing the five new templates is NOT in this spec | this spec | they are design decisions; a plan argues from a spec and does not invent one |
+| The block seam's argument is the paired control **plus its mechanism**: the blocks carry fewer edges than the whole, 96 against 139 | this spec, revision 2, from measurement | a 6.1x crossing reduction with no stated mechanism is a number somebody will later explain away; a ground of degree 19 becoming four fans of at most 7 is a reason |
+| §1.3's fourth value is an **interface widening in ported code**, and all 30 `mismatch(...)` sites must say which kind of mismatch they are | this spec, revision 2 | §5.3 read the source: `RealiseResult` is two-valued, and G94's raise is a state it cannot express at all |
+| The manifest and the readability baseline hash the **serialized layout input**, not the section `Network`'s content | this spec, revision 2, from measurement | G95: same components, nets and partition in a different order give three distinct drawings out of three and move crossings up to 2.1x |
+| ~~Block size is a design parameter with a stated ceiling (~9 parts) and floor (~4 parts)~~ **REVISED in revision 4: block granularity trades internal routing complexity against interface complexity; the relationship is re-measured with the ported generator; this spec does not pick a number** | this spec, revision 2, revised revision 4 | the ceiling's SHAPE survives and **the number nine does not**; **the floor was entirely the tested frontend's and is unmeasured for this backend, not 4**; the figures come from 18 blocks out of two unusual parents, with no template in the loop and no sheet composition. The withdrawn form had this table and revision 2's calling both bounds measured while §1.8's own caveat withdrew them |
+| §3.4's congruence criterion is supported at **block** scale and was not at **flat** scale, and congruence is measured with the rail glyphs the instances would actually get | this spec, revision 2, from measurement | G97 flipped between the two scales, and what broke it at block scale was a rail glyph on one of two identical blocks, not the topology |
+| **Neither spike had a template in the loop**; the measurements are re-taken at M1 and reported as reproduced or moved | this spec, revision 2 | seam A hands ELK a block in CONTEXT and both spikes measured one in isolation; closing that needs the templates M1 ports, so it is a reason M1 exists rather than a defect in the plan |
+| **A block declares an interface - named ports, acceptable sides, fixed versus negotiable positions - and seam B preserves a block's internal geometry or REFUSES** | this spec, revision 4 | the paired control's 43 missing edges became interface connections and nothing represented them; a seam B that redrew a validated block would hide a composition defect the way a fallback hides a template defect (G84) |
+| **6.1x is a measured UPPER BOUND on the improvement, not an estimate of it**, and the integrated experiment measures how much survives composition | controller, revision 4 | the block spike's own §11 says the totals add crossings across three sheets and a mechanism putting them on one sheet would add its own |
+| **One authoritative mechanism per CLASS of cross-sheet connection, with no ambiguous or duplicate representation** - not artificial uniformity | reviewer, revision 4, adopted as written | power symbols, global labels and hierarchical ports have different KiCad semantics and may legitimately serve different classes; the round trip establishes whether the combination behaves |
+| **§5.2's cross-sheet decision has a named owner: the M1 plan's Task 15** | controller, revision 4 | the review asked for it to be settled before the plan was written; the plan exists and that task is already titled for it, so the decision lands in its design rather than in a plan rewrite |
+| ~~Gate 8's declared-delta list cannot be written before the generator exists~~ **OVERTURNED in revision 4. Gate 8 SPLITS: M1 exercises reference-graph verification where the permitted delta is EMPTY; M2 adds the Pultec transformation manifest** | reviewer, revision 4, accepted | *"Waiting until generated schematics exist to enumerate their differences creates precisely the provenance risk gate 8 is supposed to prevent"* - and that is the governing invariant, an agent authoring the criteria for what it produces, wearing a sequencing argument's clothes |
+| **A list of permitted electrical changes is NEVER inferred from a generated schematic**; a delta is derived from the declared transformation | reviewer, revision 4 | a difference found by looking at output is a defect report until a declared transformation accounts for it; the Pultec's deltas are already defined by `circuits/pultec/partition.ts` upstream of any drawing |
+| **Reproducibility identity and comparison identity are separated; a comparison fixture reports all four measures with a changed serialization hash FLAGGED** | reviewer, revision 4 | a baseline scoped only to the exact input goes stale on any serialization change, leaving a system that can tell the output changed and not whether it improved |
+| **Absent a dominance rule the four-measure comparison is DESCRIPTIVE, not pass/fail**; acceptance rests on the hard geometric checks plus independent render approval | reviewer, revision 4, accepted | refusing a composite score has a consequence this document implied and never stated, and a gate reporting a measure comparison as an acceptance result is a category error |
+| **§1.8 is rewritten rather than caveated again**, around block granularity's trade; the floor is **unmeasured for this backend** and the ceiling's number is the tested frontend's | this spec, revision 4 | revision 3 appended a caveat and left the heading, the body and two tables asserting the numbers it withdrew; a caveat that contradicts its own section is not a correction |
+| **Port parity, template applicability, ELK coverage and integrated correctness are four separate measurements**, and port parity is tested against the source project's own fixtures | reviewer, revision 4 | requiring all seven templates to match our circuits to prove faithful porting confuses a regression test with a measurement whose answer §5.1 says is unknown |
+| **A canonical wire topology is required before serialization**: deduplicate coincident segments, represent each net's branches explicitly, preserve pin-end identity, reject ambiguous overlaps | reviewer, revision 4, with the controller's evidence | 30-187 duplicate wire segments per whole-circuit drawing and 0-80 per block drawing are **already in the geometry the adapter would adapt from**, so any measure that does not collapse them double-counts |
+</content>

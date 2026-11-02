@@ -1,0 +1,32 @@
+6 sheet rectangles, 6 of them group boxes; 672 graphic points from 44 symbols and 82 wires
+
+=== Junction   rect (55.88, 49.53) -> (90.17, 101.6)   34.29 x 52.07 mm
+  graphics       margins  left  10.41  right   6.35  top  11.43  bottom   5.08
+                          left-most '#FLG01' at (66.294, 86.995)   right-most 'J1' at (83.82, 73.66)
+                          top-most 'J1' at (81.28, 60.96)   bottom-most '#PWR06' at (72.39, 96.52)
+
+=== Hi boost   rect (95.25, 49.53) -> (135.89, 76.2)   40.64 x 26.67 mm
+  graphics       margins  left   2.79  right  19.05  top  10.16  bottom   5.33
+                          left-most 'SI1' at (98.044, 68.58)   right-most 'wire' at (116.84, 69.85)
+                          top-most 'wire' at (99.06, 59.69)   bottom-most 'SI2' at (111.76, 70.866)
+
+=== Hi cut   rect (140.97, 49.53) -> (227.33, 77.47)   86.36 x 27.94 mm
+  graphics       margins  left  17.78  right  26.67  top  11.68  bottom   4.32
+                          left-most 'wire' at (158.75, 62.23)   right-most 'wire' at (200.66, 62.23)
+                          top-most 'SI5' at (163.83, 61.214)   bottom-most 'SI3' at (197.612, 73.152)
+
+=== Lo cut   rect (232.41, 49.53) -> (255.27, 76.2)   22.86 x 26.67 mm
+  graphics       margins  left   2.79  right  18.03  top  10.16  bottom   3.81
+                          left-most 'SI7' at (235.204, 68.58)   right-most 'SI7' at (237.236, 63.5)
+                          top-most 'wire' at (236.22, 59.69)   bottom-most 'wire' at (236.22, 72.39)
+
+=== Lo boost   rect (260.35, 49.53) -> (304.8, 81.28)   44.45 x 31.75 mm
+  graphics       margins  left  16.76  right   7.62  top  10.16  bottom   3.81
+                          left-most 'SI8' at (277.114, 68.58)   right-most '#PWR09' at (297.18, 66.04)
+                          top-most 'wire' at (278.13, 59.69)   bottom-most 'wire' at (278.13, 77.47)
+
+=== Mid   rect (22.86, 106.68) -> (400.05, 186.69)   377.19 x 80.01 mm
+  graphics       margins  left  19.05  right   6.60  top   7.62  bottom   7.62
+                          left-most 'wire' at (41.91, 162.56)   right-most 'R3' at (393.446, 124.46)
+                          top-most 'SW2' at (361.315, 114.3)   bottom-most 'SW1' at (96.52, 179.07)
+

@@ -41,7 +41,15 @@ const LABELS: ReadonlyMap<string, string> = new Map([
 ])
 
 function options(view: RenderOptions["view"]): RenderOptions {
-  return { view, title: "test board", edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }] }
+  return {
+    view,
+    title: "test board",
+    edgeLabels: [{ ref: "R1", pin: "1", text: "IN" }],
+    pads: [],
+    padLabels: new Map(),
+    wireLinks: new Set(),
+    clusters: undefined,
+  }
 }
 
 const COMPONENT = renderLayout(DUMP, LABELS, options("component"))
@@ -192,7 +200,15 @@ const VERTICAL = parseBoardDump(
 
 test("with vertical strips the copper view mirrors rows instead of columns, cuts included", () => {
   const labels = new Map([["R1", "R1"]])
-  const opts = (view: RenderOptions["view"]): RenderOptions => ({ view, title: "vertical", edgeLabels: [] })
+  const opts = (view: RenderOptions["view"]): RenderOptions => ({
+    view,
+    title: "vertical",
+    edgeLabels: [],
+    pads: [],
+    padLabels: new Map(),
+    wireLinks: new Set(),
+    clusters: undefined,
+  })
   const component = renderLayout(VERTICAL, labels, opts("component"))
   const copper = renderLayout(VERTICAL, labels, opts("copper"))
   const lastRow = holeName(VERTICAL.grid.rows - 1, 0)
@@ -227,6 +243,10 @@ test("an edge label's leader detours round another part's pin that stands betwee
     view: "component",
     title: "detour",
     edgeLabels: [{ ref: "C1", pin: "2", text: "OUT" }],
+    pads: [],
+    padLabels: new Map(),
+    wireLinks: new Set(),
+    clusters: undefined,
   })
   const f11 = holeCentre(svg, "F11")
   const leaders = elements(svg, "line", "edge-leader")
@@ -241,7 +261,11 @@ test("an edge label's leader detours round another part's pin that stands betwee
 test("the copper view's summary counts only what it shows", () => {
   expect(COPPER).toContain(">2 cuts, 1 solder bridges<")
   expect(COPPER).not.toContain("wire links")
-  expect(COMPONENT).toContain(">3 parts, 1 wire links, 2 cuts, 1 solder bridges<")
+  // THE PAD COUNT IS PRINTED EVEN AT ZERO, which this board is: a `PAD` line
+  // used to be skipped by keyword, so a figure that only appeared when it was
+  // non-zero could not be read as "this board has none". See `tests/guide/
+  // pad-identity.test.ts` for the same summary over a board that has ten.
+  expect(COMPONENT).toContain(">3 parts, 0 off-board pads, 1 wire links, 2 cuts, 1 solder bridges<")
 })
 
 test("the electrolytic's + is marked beside its pin 1 hole, however far that lead is stretched", () => {
@@ -309,6 +333,10 @@ test("text is XML-escaped", () => {
     view: "component",
     title: "x & y",
     edgeLabels: [{ ref: "R1", pin: "1", text: "<IN>" }],
+    pads: [],
+    padLabels: new Map(),
+    wireLinks: new Set(),
+    clusters: undefined,
   })
   expect(svg).toContain("a&lt;b&amp;c")
   expect(svg).toContain("x &amp; y")
@@ -324,4 +352,74 @@ test("refusals: a missing label, an unknown edge-label pin, an unplaced pin list
   expect(() => renderLayout(noPins, LABELS, options("component"))).toThrow(/C1.*pinned/)
   const oddType = { ...DUMP, parts: DUMP.parts.map((p) => (p.ref === "R1" ? { ...p, type: "DIP8" } : p)) }
   expect(() => renderLayout(oddType, LABELS, options("component"))).toThrow(/DIP8.*R1/)
+})
+
+/**
+ * The Pultec part types, and the gap they revealed.
+ *
+ * **THIS RENDERER HAD NEVER DRAWN A PULTEC BOARD.** Its shapes were written for
+ * the transistor-preamp boards - TO92, electrolytics, trim pots, headers - and
+ * the five Pultec layouts carry `CAP_FILM`, `CAP_FILM_WIDE` and
+ * `BLOCK_200MIL3`, three of the four types on
+ * `tests/fixtures/stripboard/pultec-low-boost-frozen.dump`. So "look at the
+ * output, not only the tests" - this repository's own stated practice - was
+ * unavailable for exactly the boards it is named for, and nobody noticed until
+ * the owner asked to SEE one on 2026-10-14.
+ */
+const PULTEC_DUMP = [
+  "PART C18 CAP_FILM_WIDE .33uF AT 3,8 SPAN 3",
+  "PART C19 CAP_FILM .22uF AT 3,13 SPAN 1",
+  "PART board_terminals BLOCK_200MIL3 Conn_01x03 AT 4,5 SPAN 3",
+  "NODE 1 NAME a C18.1 C19.1",
+  "NODE 2 NAME b C18.2 C19.2 board_terminals.1",
+  "VERTICAL_STRIPS 0",
+  "CUT_STATE COMPUTED",
+  "GRID 10 16",
+  "PIN C18 1 AT 5,9",
+  "PIN C18 2 AT 3,9",
+  "PIN C19 1 AT 5,13",
+  "PIN C19 2 AT 3,13",
+  "PIN board_terminals 1 AT 4,5",
+  "PIN board_terminals 2 AT 4,6",
+  "PIN board_terminals 3 AT 4,7",
+].join("\n")
+
+test("the Pultec part types draw, so a Pultec board can be looked at", () => {
+  const dump = parseBoardDump(PULTEC_DUMP)
+  const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
+  const svg = renderLayout(dump, labels, {
+    view: "component",
+    title: "pultec",
+    edgeLabels: [],
+    pads: [],
+    padLabels: new Map(),
+    wireLinks: new Set(),
+    clusters: undefined,
+  })
+  // ONE BODY PER PART, asserted by the parts' own refs rather than by a count:
+  // a renderer that drew two of one and none of another would satisfy a count.
+  for (const ref of ["C18", "C19", "board_terminals"]) {
+    expect(svg, `${ref} is drawn`).toContain(ref)
+  }
+  expect(svg.length, "the drawing is not an empty document").toBeGreaterThan(1000)
+})
+
+test("a part type with no recorded shape still REFUSES by name rather than drawing a guess", () => {
+  // THE REFUSAL IS THE POINT OF THE TABLE. Adding three shapes must not turn an
+  // unknown type into a plausible-looking box: a drawing nobody recorded is the
+  // same guess lib/kicad/lead-span.ts refuses for the same parts.
+  const unknown = PULTEC_DUMP.replace("CAP_FILM_WIDE", "CAP_INVENTED_999")
+  const dump = parseBoardDump(unknown)
+  const labels = new Map(dump.parts.map((part) => [part.ref, part.ref]))
+  expect(() =>
+    renderLayout(dump, labels, {
+      view: "component",
+      title: "pultec",
+      edgeLabels: [],
+      pads: [],
+      padLabels: new Map(),
+      wireLinks: new Set(),
+      clusters: undefined,
+    }),
+  ).toThrow(/no drawing for VeroRoute part type "CAP_INVENTED_999"/)
 })

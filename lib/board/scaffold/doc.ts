@@ -79,7 +79,8 @@ export interface BuildDoc {
 export interface ScaffoldDoc {
   /** The section this board IS. */
   readonly section: string
-  /** The setting the stand-ins emulate. Up to 3.71 dB rides on it, so it travels with
+  /** The setting the stand-ins emulate. Up to 3.71 dB rides on it - a worst case from an
+   * earlier reference setting, see "Limits, measured" in the design doc - so it travels with
    * the data rather than being written into the guide's prose by hand. */
   readonly flat: FlatState
   readonly groups: readonly StandInGroupDoc[]

@@ -31,6 +31,7 @@ import {
   partRow,
   pinFieldNotes,
   pinsOf,
+  positionsByPin,
 } from "./part-text.ts"
 import { physicalOnly } from "./physicalize.ts"
 import { standInGroupsSection, standInOwners, standInPartIds } from "./scaffold/wiring.ts"
@@ -168,31 +169,6 @@ function linkedPads(
     else byNet.set(netName, [label])
   })
   return [...byNet.values()].filter(pads => pads.length > 1)
-}
-
-/**
- * Which switch position selects a given throw pin.
- *
- * The low selectors name their throws `t1`..`t6`, which says nothing at a
- * bench. The frequency is in `contacts`, which maps a position to the contact
- * pairs it closes, so the position that closes `common`-to-`t1` IS the label
- * for that pad. Reading it from there rather than the pin name means the guide
- * cannot disagree with the frequency tables the circuit is built from.
- */
-function positionsByPin(component: Component): Readonly<Record<string, string>> {
-  const contacts = Reflect.get(component.parameters, "contacts")
-  if (typeof contacts !== "object" || contacts === null) return {}
-  const byPin: Record<string, string> = {}
-  for (const [position, pairs] of Object.entries(contacts)) {
-    if (!Array.isArray(pairs)) continue
-    for (const pair of pairs) {
-      if (!Array.isArray(pair)) continue
-      for (const pin of pair) {
-        if (typeof pin === "string" && pin !== "common") byPin[pin] = position
-      }
-    }
-  }
-  return byPin
 }
 
 function padTable(

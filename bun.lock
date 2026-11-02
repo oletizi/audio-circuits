@@ -6,6 +6,7 @@
       "name": "audio-circuits",
       "dependencies": {
         "eecircuit-engine": "1.5.8",
+        "elkjs": "0.9.3",
       },
       "devDependencies": {
         "bun-types": "^1.4.2",
@@ -19,6 +20,8 @@
     "bun-types": ["bun-types@1.4.2", "", { "dependencies": { "@types/node": "*" } }, "sha512-bxV1FgK7yBIzjRe5zBozIM4Bem11ZJcCXSrjWRG3YWLt8yFDePu4cLjpebO8OvPeIE9trbyPF4fuj3Cia4Fj3w=="],
 
     "eecircuit-engine": ["eecircuit-engine@1.5.8", "", {}, "sha512-nldh20KEB296WdwNDFvkGlMCD16ESnUaSPm+IxtDzWG0NJle+Zbw1X42tfTsTA39mO0pBW5774fuGP6pmgivsQ=="],
+
+    "elkjs": ["elkjs@0.9.3", "", {}, "sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

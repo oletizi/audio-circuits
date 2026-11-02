@@ -34,6 +34,7 @@ import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 
 /** Repository-relative paths, so a clone at any path reads the same. */
 export const SCHEMATIC = "circuits/pultec/pultec-three-band-eq.kicad_sch"
@@ -89,8 +90,6 @@ export interface PultecSyncResult {
   readonly message: string
 }
 
-const DEFAULT_KICAD_CLI = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
-
 function defaultRunExport(kicadCli: string, schPath: string, outPath: string): void {
   const result = spawnSync(
     kicadCli,
@@ -141,7 +140,7 @@ export function syncPultecSchematic(deps: PultecSyncDeps = {}): PultecSyncResult
   try {
     const produced = path.join(scratch, "three-band-eq.net.xml")
     const runExport = deps.runExport ?? defaultRunExport
-    runExport(deps.kicadCli ?? DEFAULT_KICAD_CLI, schematic, produced)
+    runExport(deps.kicadCli ?? KICAD_CLI, schematic, produced)
 
     const fresh = withRepoRelativeSource(fs.readFileSync(produced, "utf8"))
     const existing = fs.existsSync(EXPORT) ? fs.readFileSync(EXPORT, "utf8") : undefined

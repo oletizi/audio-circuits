@@ -85,7 +85,7 @@ export function assertScaffold(
 }
 
 export interface WiringSyncResult {
-  readonly status: "written" | "unchanged" | "not-applicable"
+  readonly status: "written" | "unchanged" | "not-applicable" | "removed"
   readonly file: string
   /** What to tell the operator. Always set, so a caller never invents wording. */
   readonly message: string
@@ -127,6 +127,31 @@ export async function syncWiringDoc(
   const fresh = await wiringDocumentFor(declaration)
 
   if (fresh === undefined) {
+    // A STALE GUIDE IS REMOVED RATHER THAN LEFT, and the reason is the one the
+    // netlist-agrees / schematic-notice split exists for. Until this branch
+    // removed it, a circuit that STOPPED having off-board parts left its old
+    // `wiring.md` exactly where it was: status `not-applicable`, exit 0, file
+    // untouched, `make check` green. A reconciliation that did not run read as a
+    // clean result, on a derived artifact the layout cannot contradict - so a
+    // builder went on reading wiring instructions for parts the circuit no
+    // longer has, with nothing in the tree saying so.
+    //
+    // IT IS REMOVED AND NOT REWRITTEN TO "None": `wiringDocumentFor` returns
+    // undefined precisely because a document saying "None" twice is noise a
+    // reader has to learn to skip, which is the judgement that branch records.
+    // The absence of the file is the honest statement, and its removal shows up
+    // in `git status` where a silent staleness did not.
+    if (fs.existsSync(file)) {
+      fs.rmSync(file)
+      return {
+        status: "removed",
+        file,
+        message:
+          `${file} HAS BEEN REMOVED: nothing is off ${boardName(declaration)} any more, so the ` +
+          "guide described parts the circuit no longer has. Read the diff - anything already " +
+          "wired to this board from that guide may now be wrong.",
+      }
+    }
     return {
       status: "not-applicable",
       file,

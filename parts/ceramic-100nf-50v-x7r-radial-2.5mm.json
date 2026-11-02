@@ -1,0 +1,132 @@
+{
+  "id": "ceramic-100nf-50v-x7r-radial-2.5mm",
+  "kind": "capacitor",
+  "description": "0.1uF (100nF), 50V, X7R, 10%, radial-leaded multilayer ceramic, 2.5mm lead spacing, size-15 body (Wb 4.0mm x T 2.6mm max), straight 0.5mm leads 30mm long",
+  "manufacturer": "Vishay BCcomponents",
+  "mpn": "K104K15X7RF53L2",
+  "specs": {
+    "farads": 1e-7,
+    "volts": 50,
+    "tolerancePercent": 10,
+    "leadSpacingMm": 2.5,
+    "diameterMm": 4,
+    "package": "radial-mlcc-size-15-L2"
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/Vishay-BC-Components/K104K15X7RF53L2?qs=mWFvmKOfYW8KbAXlf9eSQA%3D%3D",
+      "note": "Mouser Search API, 2026-10-16: exact match for K104K15X7RF53L2 (Vishay / BC Components), Mouser part 594-K104K15X7RF53L2, description 'Multilayer Ceramic Capacitors MLCC - Leaded 0.1uF 50volts 10% X7R 2.5mm LS', packaging Bulk, 60330 in stock. Digi-Key Product Information API, 2026-10-16: same part number under Vishay Beyschlag/Draloric/BC Components, Digi-Key BC3324-ND, 'CAP CER 0.1UF 50V X7R RADIAL'. Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025), 'ORDERING CODE INFORMATION' table, decodes this exact code: K = radial leaded MLCC, 104 = 100 000 pF, K = +-10 %, 15 = size code, X7R = temperature characteristic, F = 50 VDC, 5 = 0.50 mm lead diameter, 3 = bulk, L = straight lead style, 2 = 2.5 mm lead spacing."
+    },
+    {
+      "spec": "farads",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16), 'ORDERING CODE INFORMATION': digits 2-4 '104' are the capacitance in pF, 'the first two digits are the significant figures of capacitance and the last digit is a multiplier', 4 = x 10 000, so 10 x 10 000 pF = 100 000 pF = 0.1 uF. Mouser Search API, 2026-10-16: description states '0.1uF'; Digi-Key Product Information API, 2026-10-16: parameter 'Capacitance: 0.1 uF'."
+    },
+    {
+      "spec": "volts",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16), 'ORDERING CODE INFORMATION' digit 11: 'F = 50 VDC'. Digi-Key Product Information API, 2026-10-16: parameter 'Voltage - Rated: 50V'. This board's only rail is +5 V, so the line needs 6.3 V (1.2 x 5 V rounded up to a standard rating); 50 V is far above it."
+    },
+    {
+      "spec": "tolerancePercent",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16), 'ORDERING CODE INFORMATION' digit 5: 'K = +- 10 %'. Digi-Key Product Information API, 2026-10-16: parameter 'Tolerance: +-10%'."
+    },
+    {
+      "spec": "leadSpacingMm",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16), 'LEAD CONFIGURATION AND DIMENSIONS (in millimeters)': the L2 outline ('Component outline for lead spacing 2.5 mm +- 0.8 mm (straight leads)') is the one this part's ordering code selects (digit 14 'L = straight', digit 15 '2 = 2.5 mm'), so lead spacing is 2.5 mm with a +-0.8 mm tolerance. Digi-Key Product Information API, 2026-10-16: parameter 'Lead Spacing: 0.098\" (2.50mm)', 'Lead Style: Straight'. The footprint Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm has 0.8 mm drills at 2.50 mm pitch (KiCad 9 library file C_Disc_D5.0mm_W2.5mm_P2.50mm.kicad_mod), which the 0.50 mm leads pass through."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16), 'LEAD CONFIGURATION AND DIMENSIONS' table, row 'SIZE CODE 15': Wb MAX. 4.0 mm, H MAX. 4.0 mm, T MAX. 2.6 mm, and 'MAXIMUM SEATING HEIGHT (SH)' 1.6 mm for lead style L2. The body is a rectangular dipped block, not a disc, so this entry records Wb (4.0 mm max) - the body width across the lead axis, the dimension the footprint's D 5.0 mm direction constrains - as diameterMm. Digi-Key Product Information API, 2026-10-16: parameter 'Size / Dimension: 0.157\" L x 0.102\" W (4.00mm x 2.60mm)', 'Height - Seated (Max): 0.220\" (5.60mm)' - 4.0 mm body height plus 1.6 mm seating height, consistent with the datasheet table."
+    },
+    {
+      "spec": "package",
+      "url": "https://www.vishay.com/docs/45171/kseries.pdf",
+      "note": "Vishay K Series datasheet (document 45171, Rev. 05-Sep-2025, fetched 2026-10-16): 'Radial Leaded Multilayer Ceramic Capacitors for General Purpose', 'Mounting: Radial'; 'ORDERING CODE INFORMATION' gives this part size code 15 and lead style/spacing L2, and the 'LEAD CONFIGURATION AND DIMENSIONS' table names the L2 outline (straight leads, 2.5 mm +- 0.8 mm). 'radial-mlcc-size-15-L2' is that body-and-lead configuration written as one token; no fit check in tools/bom/fit.ts reads a package for this footprint."
+    }
+  ],
+  "why": "ALL the dimensions the lead-span derivation needs, from one readable manufacturer datasheet (Vishay document 45171, Rev. 05-Sep-2025): body Wb 4.0 mm max x H 4.0 mm max x T 2.6 mm max (size code 15), maximum seating height 1.6 mm (lead style L2), lead spacing 2.5 +- 0.8 mm, lead diameter 0.50 +- 0.05 mm ('The lead wires are 0.5 mm and are made of 100 % tinned copper clad steel wire', DESIGN section; ordering-code digit 12 '5 = 0.50 mm +- 0.05 mm'), and lead length 30 +- 5 mm ('Bulk packed types have a standard lead length L = 30 mm +- 5 mm', note under the dimension table - this part's digit 13 is '3 = bulk'). Nothing is interpolated. Note that tools/bom/catalog.ts has no spec field for body thickness, lead diameter or lead length, so those three live here in `why` with the document named rather than in `specs`.\n\nNo genuine 0.1 uF ceramic DISC exists at this footprint's 2.5 mm lead spacing: searching Mouser for ceramic discs at 0.1 uF / 2.5LS returns only radial-dipped MLCCs, and Walsin's disc (YP) family reaches 0.1 uF only at 5 mm lead spacing. A radial-dipped MLCC is what the 2.5 mm pitch is actually sold at, and these five positions are supply decoupling (+5V to GND) and PT2399 internal-oscillator bypassing (CC0, CC1) plus the two op-amp feedback caps - not signal-path parts - so ordinary X7R is right and nothing finer was sought.\n\nAgainst the footprint: the part's 4.0 mm body width sits a millimetre inside the footprint's 5.0 mm D direction, and its 2.6 mm maximum thickness is 0.1 mm over the footprint's nominal 2.5 mm W but inside the body outline the footprint actually draws (the silkscreen rectangle in C_Disc_D5.0mm_W2.5mm_P2.50mm.kicad_mod runs -1.37 to +1.37 mm, i.e. 2.74 mm, across the lead axis). Both are maxima, not nominals.\n\nAgainst the alternatives: at 2.5 mm lead spacing and 0.1 uF / 50 V / X7R, Mouser also lists KEMET's C315C104K5R5TA7301 (USD 0.60 at 1), KYOCERA AVX's SR155C104KARTR1 (0.49) and AR155C104K4RAP2 (0.57), and Vishay/Sprague's 1C10X7R104K050B (0.46). This part is the cheapest of them (0.22 at 1, 0.099 at 100) and the best stocked (60 330 at Mouser, 25 855 at Digi-Key), it is the bulk-packed rather than taped variant (full 30 mm straight leads, which the perfboard build wants), and its datasheet is the only one of the group that states lead diameter AND lead length as well as the body table.",
+  "stock": true,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/Vishay-BC-Components/K104K15X7RF53L2?qs=mWFvmKOfYW8KbAXlf9eSQA%3D%3D",
+      "sku": "594-K104K15X7RF53L2",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.22
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.112
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.099
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.078
+        },
+        {
+          "quantity": 1000,
+          "unitPrice": 0.076
+        },
+        {
+          "quantity": 2500,
+          "unitPrice": 0.074
+        },
+        {
+          "quantity": 5000,
+          "unitPrice": 0.065
+        },
+        {
+          "quantity": 10000,
+          "unitPrice": 0.061
+        },
+        {
+          "quantity": 25000,
+          "unitPrice": 0.059
+        }
+      ],
+      "checked": "2026-10-16",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/vishay-beyschlag-draloric-bc-components/K104K15X7RF53L2/2820506",
+      "sku": "BC3324-ND",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 0.29
+        },
+        {
+          "quantity": 10,
+          "unitPrice": 0.167
+        },
+        {
+          "quantity": 50,
+          "unitPrice": 0.1206
+        },
+        {
+          "quantity": 100,
+          "unitPrice": 0.1065
+        },
+        {
+          "quantity": 500,
+          "unitPrice": 0.08274
+        }
+      ],
+      "checked": "2026-10-16",
+      "use": "standard"
+    }
+  ]
+}

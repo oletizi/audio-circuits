@@ -1,0 +1,10 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /SW1 PAD5  SW1 SW_Rotary5
+  (    1 n1 )
+  (    2 n2 )
+  (    3 n3 )
+  (    4 n4 )
+  (    5 n5 )
+ )
+)
+*

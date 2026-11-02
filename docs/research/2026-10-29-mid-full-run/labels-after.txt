@@ -1,0 +1,110 @@
+boost_return  (1 label)
+    local   at (369.57, 115.57) rot 0
+
+coil_return  (1 label)
+    local   at (158.75, 118.11) rot 0
+
+cut_return  (1 label)
+    local   at (369.57, 120.65) rot 0
+
+hcut_t1  (1 label)
+    local   at (184.15, 71.12) rot 0
+
+hcut_t2  (1 label)
+    local   at (180.34, 62.23) rot 0
+
+hi_boost_out  (5 labels)
+    global  at (74.93, 64.77) rot 180
+    global  at (236.22, 59.69) rot 0
+    global  at (41.91, 162.56) rot 180
+    global  at (116.84, 69.85) rot 0
+    global  at (158.75, 62.23) rot 180
+    gap (74.93,64.77)-(236.22,59.69): straight 161.37 mm, orthogonal run 166.37 mm
+    gap (74.93,64.77)-(41.91,162.56): straight 103.21 mm, orthogonal run 130.81 mm
+    gap (74.93,64.77)-(116.84,69.85): straight 42.22 mm, orthogonal run 46.99 mm
+    gap (74.93,64.77)-(158.75,62.23): straight 83.86 mm, orthogonal run 86.36 mm
+    gap (236.22,59.69)-(41.91,162.56): straight 219.86 mm, orthogonal run 297.18 mm
+    gap (236.22,59.69)-(116.84,69.85): straight 119.81 mm, orthogonal run 129.54 mm
+    gap (236.22,59.69)-(158.75,62.23): straight 77.51 mm, orthogonal run 80.01 mm
+    gap (41.91,162.56)-(116.84,69.85): straight 119.20 mm, orthogonal run 167.64 mm
+    gap (41.91,162.56)-(158.75,62.23): straight 154.01 mm, orthogonal run 217.17 mm
+    gap (116.84,69.85)-(158.75,62.23): straight 42.60 mm, orthogonal run 49.53 mm
+
+hi_tap  (1 label)
+    local   at (99.06, 69.85) rot 0
+
+in  (3 labels)
+    global  at (74.93, 62.23) rot 180
+    global  at (392.43, 115.57) rot 0
+    global  at (99.06, 59.69) rot 0
+    gap (74.93,62.23)-(392.43,115.57): straight 321.95 mm, orthogonal run 370.84 mm
+    gap (74.93,62.23)-(99.06,59.69): straight 24.26 mm, orthogonal run 26.67 mm
+    gap (392.43,115.57)-(99.06,59.69): straight 298.64 mm, orthogonal run 349.25 mm
+
+lo_boost_in  (3 labels)
+    global  at (74.93, 67.31) rot 180
+    global  at (278.13, 77.47) rot 180
+    global  at (200.66, 71.12) rot 0
+    gap (74.93,67.31)-(278.13,77.47): straight 203.45 mm, orthogonal run 213.36 mm
+    gap (74.93,67.31)-(200.66,71.12): straight 125.79 mm, orthogonal run 129.54 mm
+    gap (278.13,77.47)-(200.66,71.12): straight 77.73 mm, orthogonal run 83.82 mm
+
+out  (3 labels)
+    global  at (74.93, 69.85) rot 180
+    global  at (236.22, 72.39) rot 0
+    global  at (278.13, 59.69) rot 0
+    gap (74.93,69.85)-(236.22,72.39): straight 161.31 mm, orthogonal run 163.83 mm
+    gap (74.93,69.85)-(278.13,59.69): straight 203.45 mm, orthogonal run 213.36 mm
+    gap (236.22,72.39)-(278.13,59.69): straight 43.79 mm, orthogonal run 54.61 mm
+
+sel1  (1 label)
+    local   at (102.87, 147.32) rot 0
+
+sel10  (1 label)
+    local   at (321.31, 172.72) rot 0
+
+sel11  (1 label)
+    local   at (336.55, 175.26) rot 0
+
+sel2  (1 label)
+    local   at (123.19, 149.86) rot 0
+
+sel3  (1 label)
+    local   at (138.43, 152.4) rot 0
+
+sel4  (1 label)
+    local   at (153.67, 154.94) rot 0
+
+sel5  (1 label)
+    local   at (184.15, 157.48) rot 0
+
+sel6  (1 label)
+    local   at (214.63, 160.02) rot 0
+
+sel7  (1 label)
+    local   at (229.87, 165.1) rot 0
+
+sel8  (1 label)
+    local   at (260.35, 167.64) rot 0
+
+sel9  (1 label)
+    local   at (290.83, 170.18) rot 0
+
+sel_common  (1 label)
+    local   at (50.8, 156.21) rot 0
+
+tap_0r1h  (1 label)
+    local   at (356.87, 132.08) rot 0
+
+tap_0r22h  (1 label)
+    local   at (326.39, 132.08) rot 0
+
+tap_0r45h  (1 label)
+    local   at (265.43, 132.08) rot 0
+
+tap_1h  (1 label)
+    local   at (219.71, 132.08) rot 0
+
+tap_2h  (1 label)
+    local   at (158.75, 132.08) rot 0
+

@@ -1,0 +1,15 @@
+paper USLetter     viewBox 0.0000 0.0000 279.4000 215.9000 mm
+1769 coordinates in the drawing-sheet vectors
+
+closed axis-aligned rectangles on the page, largest first:
+  x   10.0000 ..  269.4000   y   10.0000 ..  205.9000   (259.4000 x 195.9000 mm)
+  x   12.0000 ..  267.4000   y   12.0000 ..  203.9000   (255.4000 x 191.9000 mm)
+  x  159.4000 ..  267.4000   y  171.9000 ..  203.9000   (108.0000 x  32.0000 mm)
+
+OUTER FRAME  x 10.0000 .. 269.4000   y 10.0000 .. 205.9000
+INNER FRAME  x 12.0000 .. 267.4000   y 12.0000 .. 203.9000   (255.4000 x 191.9000 mm)
+TITLE BLOCK  a CORNER from x 159.4000, y 171.9000
+
+--frame-x 12.0000 267.4000
+
+CONTROL  the same reader on the same SVG with its path data emptied finds 0 coordinates: READER DISCRIMINATES

@@ -1,0 +1,51 @@
+=== AFTER - the repaired page
+  sha256                        1f8de32150f322f8f040b2cef1d857df7b16e884bff409a0debd5ec3a7344ff8
+  parenthesis depth (end)       0   lowest reached 0
+  NUL bytes                     0   CR bytes 0   [positive control: LF bytes 3496]
+  netlist nets / components     29 / 39
+  ERC errors                    0
+  ERC warnings                  5   kinds ['lib_symbol_issues']   (kicad-cli --exit-code-violations rc=5)
+  wires                         82
+  total wire length             2505.71 mm
+  longest wire                  264.16 mm
+  true wire crossings           0  []
+  wire-to-wire tees             21   without a dot 0 []
+  pins on a wire interior       7   without a dot 0 []
+  junction dots                 29   orphans 0 []
+  symbols placed                44
+  symbol pin instances          102   lib-resolved pin points 102
+  global labels                 14
+  local labels                  23
+  duplicate labels in a group   0 []
+  group rectangles              6
+  band (115.0, 133.35, 376.0, 154.94) wires 31 pins 13   [positive control: whole-sheet wires 82]
+  nets as sorted REF.PIN sets:
+    /boost_return  (2)  R1.2 SW2.1
+    /coil_return  (6)  L1.2 L2.2 L3.2 L4.2 L5.2 SW2.2
+    /cut_return  (2)  R2.1 SW2.3
+    /hcut_t1  (2)  SI3.2 SI4.2
+    /hcut_t2  (3)  SI4.1 SI5.2 SI6.1
+    /hi_tap  (2)  SI1.2 SI2.1
+    /sel1  (2)  C1.2 SW1.1
+    /sel10  (2)  C15.2 SW1.10
+    /sel11  (3)  C16.2 C17.2 SW1.11
+    /sel2  (2)  C2.2 SW1.2
+    /sel3  (2)  C3.2 SW1.3
+    /sel4  (3)  C4.2 C5.2 SW1.4
+    /sel5  (3)  C6.2 C7.2 SW1.5
+    /sel6  (2)  C8.2 SW1.6
+    /sel7  (3)  C10.2 C9.2 SW1.7
+    /sel8  (3)  C11.2 C12.2 SW1.8
+    /sel9  (3)  C13.2 C14.2 SW1.9
+    /sel_common  (3)  RV1.2 RV1.3 SW1.13
+    /tap_0r1h  (3)  C16.1 C17.1 L5.1
+    /tap_0r22h  (4)  C13.1 C14.1 C15.1 L4.1
+    /tap_0r45h  (5)  C10.1 C11.1 C12.1 C9.1 L3.1
+    /tap_1h  (4)  C6.1 C7.1 C8.1 L2.1
+    /tap_2h  (6)  C1.1 C2.1 C3.1 C4.1 C5.1 L1.1
+    GND  (9)  J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 R2.2 R3.2 SI9.1
+    hi_boost_out  (5)  J1.2 RV1.1 SI2.2 SI5.1 SI7.1
+    in  (4)  J1.1 R1.1 R3.1 SI1.1
+    lo_boost_in  (5)  J1.3 SI3.1 SI6.2 SI8.2 SI9.2
+    out  (3)  J1.4 SI7.2 SI8.1
+    unconnected-(SW1-Pad12)  (1)  SW1.12

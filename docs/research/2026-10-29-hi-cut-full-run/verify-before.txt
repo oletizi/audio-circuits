@@ -1,0 +1,37 @@
+=== BEFORE - copperhead draft v4-blocks-mid-late
+  sha256                        2bb49cfce8b80dbde4afac44a16fe3c9d19f045d739385daf787b203b00ab876
+  parenthesis depth (end)       0   lowest reached 0
+  NUL bytes                     0   CR bytes 0   [positive control: LF bytes 2775]
+  netlist nets / components     15 / 21
+  ERC errors                    0
+  ERC warnings                  9   kinds ['lib_symbol_issues']   (kicad-cli --exit-code-violations rc=5)
+  wires                         77
+  total wire length             610.87 mm
+  longest wire                  73.66 mm
+  true wire crossings           8  [(114.3, 139.7), (127.0, 129.54), (127.0, 132.08), (127.0, 134.62), (127.0, 139.7), (161.29, 132.08), (161.29, 134.62), (195.58, 134.62)]
+  wire-to-wire tees             2   without a dot 2 [(161.29, 129.54), (195.58, 132.08)]
+  pins on a wire interior       0   without a dot 0 []
+  junction dots                 8   orphans 0 []
+  symbols placed                30
+  symbol pin instances          64   lib-resolved pin points 55
+  global labels                 18
+  local labels                  8
+  duplicate labels in a group   3 [('cut_wiper', (50.8, 88.9)), ('lo_boost_in', (50.8, 88.9)), ('lo_boost_in', (158.75, 31.75))]
+  group rectangles              6
+  band (50.8, 95.25, 271.78, 110.49) wires 3 pins 3   [positive control: whole-sheet wires 77]
+  nets as sorted REF.PIN sets:
+    /hi_tap  (2)  SI1.2 SI2.1
+    /sel1  (3)  C1.2 C7.2 SW1.1
+    /sel2  (3)  C2.2 C8.2 SW1.2
+    /sel3  (2)  C3.2 SW1.3
+    /sel4  (3)  C4.2 C9.2 SW1.4
+    /sel5  (3)  C10.2 C5.2 SW1.5
+    /sel6  (2)  C6.2 SW1.6
+    /sel_common  (2)  R1.2 SW1.7
+    GND  (8)  J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 SI5.1 SI6.2
+    cut_wiper  (2)  R1.1 RV1.2
+    hi_boost_out  (4)  J1.2 RV1.1 SI2.2 SI3.1
+    in  (3)  J1.1 SI1.1 SI6.1
+    lo_boost_in  (14)  C1.1 C10.1 C2.1 C3.1 C4.1 C5.1 C6.1 C7.1 C8.1 C9.1 J1.3 RV1.3 SI4.2 SI5.2
+    out  (3)  J1.4 SI3.2 SI4.1
+    unconnected-(SW1-PadMP)  (1)  SW1.MP

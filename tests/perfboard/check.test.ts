@@ -6,20 +6,8 @@ import { fileURLToPath } from "node:url"
 import { checkPerfboard, verorouteBinary } from "../../tools/perfboard/check.ts"
 import { resolveBinary } from "../../tools/perfboard/acquire.ts"
 import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
-
-function declaration(vrtPath: string): PerfboardDeclaration {
-  return {
-    file: "/tmp/perfboard.json", dir: "/tmp",
-    circuitPath: "/tmp/circuit.ts", exportName: "circuit", vrtPath,
-  }
-}
-
-function withVrt(run: (vrtPath: string) => Promise<void>): Promise<void> {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-check-"))
-  const vrtPath = path.join(dir, "board.vrt")
-  fs.writeFileSync(vrtPath, "59")
-  return run(vrtPath).finally(() => fs.rmSync(dir, { recursive: true, force: true }))
-}
+import { BUILDABILITY_HEADING } from "../../tools/stripboard/buildability.ts"
+import { declaration, healthyBuildability, netlist, withVrt } from "./check-fixtures.ts"
 
 function withTempDir(run: (dir: string) => void): void {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-check-repo-"))
@@ -29,8 +17,6 @@ function withTempDir(run: (dir: string) => void): void {
     fs.rmSync(dir, { recursive: true, force: true })
   }
 }
-
-const netlist = () => Promise.resolve("( { EESchema Netlist Version 1.1 created  x }\n)\n*\n")
 
 // `verorouteBinary` used to say unset always throws "VEROROUTE is not set".
 // It no longer does: unset now resolves through the same rule
@@ -65,21 +51,26 @@ test("VEROROUTE unset with no binary built yet refuses naming the veroroute verb
   })
 })
 
-test("exit 0 is ok and exit 1 is not, both carrying the report verbatim", async () => {
+test("exit 0 is ok and exit 1 is not, both carrying the binary's report first and verbatim", async () => {
   await withVrt(async (vrtPath) => {
     const clean = await checkPerfboard(declaration(vrtPath), {
       exportNetlist: netlist,
       runCheck: () => ({ status: 0, output: "Layout state\n  all nets complete\n" }),
+      buildabilityInput: healthyBuildability,
     })
     expect(clean.ok).toBe(true)
-    expect(clean.report).toBe("Layout state\n  all nets complete\n")
+    // The binary's own words are FIRST and unaltered; the buildability section
+    // is appended after them. `toStartWith` rather than `toBe`, because the
+    // report is now sections and the claim being made is about the first one.
+    expect(clean.report).toStartWith("Layout state\n  all nets complete\n")
 
     const stale = await checkPerfboard(declaration(vrtPath), {
       exportNetlist: netlist,
       runCheck: () => ({ status: 1, output: "Schematic delta\n  C17 added\n" }),
+      buildabilityInput: healthyBuildability,
     })
     expect(stale.ok).toBe(false)
-    expect(stale.report).toBe("Schematic delta\n  C17 added\n")
+    expect(stale.report).toStartWith("Schematic delta\n  C17 added\n")
   })
 })
 
@@ -162,6 +153,7 @@ test("a well-formed circuit, DESIGNATORS and PIN_NUMBERS reach the binary as a r
           netText = fs.readFileSync(netPath, "utf8")
           return { status: 0, output: "all nets complete" }
         },
+        buildabilityInput: healthyBuildability,
       })
       expect(result.ok).toBe(true)
       expect(netText).toContain("R1")
@@ -221,8 +213,15 @@ test("a board the BOM hook does not apply to keeps the layout verdict and report
       exportNetlist: netlist,
       runCheck: () => ({ status: 0, output: "all nets complete\n" }),
       checkBom: async () => ({ applies: false }),
+      buildabilityInput: healthyBuildability,
     })
-    expect(result).toEqual({ declaration: declaration(vrtPath), ok: true, report: "all nets complete\n" })
+    expect(result.ok).toBe(true)
+    expect(result.declaration).toEqual(declaration(vrtPath))
+    // The layout verdict and the binary's own words are unchanged by a board the
+    // BOM hook does not apply to; what follows them is the buildability section,
+    // which every board gets.
+    expect(result.report).toStartWith("all nets complete\n")
+    expect(result.report).toContain(BUILDABILITY_HEADING)
   })
 })
 
@@ -232,6 +231,7 @@ test("a failing BOM hook fails a clean layout and its report is appended", async
       exportNetlist: netlist,
       runCheck: () => ({ status: 0, output: "all nets complete\n" }),
       checkBom: async () => ({ applies: true, ok: false, report: "BOM.md is out of date - run make bom" }),
+      buildabilityInput: healthyBuildability,
     })
     expect(result.ok).toBe(false)
     expect(result.report).toContain("all nets complete")
@@ -245,8 +245,9 @@ test("a passing BOM hook leaves a failing layout failing", async () => {
       exportNetlist: netlist,
       runCheck: () => ({ status: 1, output: "Schematic delta\n" }),
       checkBom: async () => ({ applies: true, ok: true, report: "" }),
+      buildabilityInput: healthyBuildability,
     })
     expect(result.ok).toBe(false)
-    expect(result.report).toBe("Schematic delta\n")
+    expect(result.report).toStartWith("Schematic delta\n")
   })
 })

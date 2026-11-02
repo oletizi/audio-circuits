@@ -21,10 +21,11 @@ import path from "node:path"
 import type { Network } from "../../lib/model/types.ts"
 import { parseBoardBom } from "./board-bom.ts"
 import { loadCatalog, type CatalogEntry } from "./catalog.ts"
-import { declaredBomConditions, highestRailVolts, type BomConditions } from "./conditions.ts"
+import { declaredBomConditions, highestRailVolts, type BomConditions, type SimulatedBomConditions } from "./conditions.ts"
 import { resistorDissipation } from "./dissipation.ts"
 import { localDate } from "./local-date.ts"
 import { deriveNeeds } from "./needs.ts"
+import { railBoundResistorWatts } from "./rail-bound.ts"
 import { renderBomMarkdown } from "./render.ts"
 import { compareBom, isComplete, reportText, type BomReport } from "./report.ts"
 import { boardCircuitFrom } from "../perfboard/board-circuit.ts"
@@ -50,8 +51,12 @@ export interface BomDeps {
   readonly fs?: BomFs
   /** Injected so tests need no circuit module on disk. */
   readonly importModule?: (declaration: PerfboardDeclaration) => Promise<Readonly<Record<string, unknown>>>
-  /** Injected so tests run no operating-point simulation. */
-  readonly dissipation?: (network: Network, conditions: BomConditions) => Promise<ReadonlyMap<string, number>>
+  /** Injected so tests run no operating-point simulation. The simulated arm only: a
+   * rail-bound board has no simulation to stand in for, and its check is the point. */
+  readonly dissipation?: (
+    network: Network,
+    conditions: SimulatedBomConditions,
+  ) => Promise<ReadonlyMap<string, number>>
   /** Injected so tests read no real `parts/` directory. */
   readonly loadCatalog?: (dir: string) => ReadonlyMap<string, CatalogEntry>
   /** Today as "YYYY-MM-DD"; injected so staleness tests do not depend on the clock. */
@@ -110,7 +115,14 @@ async function evaluate(declaration: PerfboardDeclaration, deps: BomDeps): Promi
     assertPinNumbers(module["PIN_NUMBERS"], declaration),
   )
   const conditions = await declaredBomConditions(module, declaration.circuitPath)
-  const dissipation = await (deps.dissipation ?? resistorDissipation)(network, conditions)
+  // The two arms of BomConditions, and the ONE place that chooses between them. A board
+  // declaring `railBound` has its resistor dissipation bounded arithmetically by its rail
+  // (tools/bom/rail-bound.ts) and runs no simulation; every other board is simulated
+  // exactly as before. `deps.dissipation` injects a stub for the simulated path only -
+  // the rail-bound path has no simulation to stand in for.
+  const dissipation = conditions.railBound === undefined
+    ? await (deps.dissipation ?? resistorDissipation)(network, conditions)
+    : railBoundResistorWatts(network, conditions.railBound, declaration.circuitPath)
   const lines = deriveNeeds(circuit, highestRailVolts(conditions), dissipation)
 
   const catalogDir = path.join(deps.repoRoot ?? moduleRepoRoot(), "parts")

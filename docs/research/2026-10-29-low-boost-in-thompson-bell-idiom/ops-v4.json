@@ -1,0 +1,1102 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "low-boost-itb-v4.kicad_sch",
+  "ops": [
+    {
+      "op": "set_title_block",
+      "title": "3 BAND PULTEC STYLE EQ - LOW BOOST SECTION",
+      "rev": "B",
+      "date": "2026-10-29",
+      "comment1": "Layout after Ian Thompson-Bell 2012, drawn with KiCad symbols"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI8",
+      "x_mil": 1000,
+      "y_mil": 4900,
+      "rotation": 0,
+      "value": "100K"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI1",
+      "x_mil": 1600,
+      "y_mil": 1400,
+      "rotation": 90,
+      "value": "0R"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI2",
+      "x_mil": 2200,
+      "y_mil": 1400,
+      "rotation": 90,
+      "value": "47K"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI5",
+      "x_mil": 2700,
+      "y_mil": 2000,
+      "rotation": 0,
+      "value": "0R"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI6",
+      "x_mil": 2700,
+      "y_mil": 3100,
+      "rotation": 0,
+      "value": "4.7K"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI4",
+      "x_mil": 3100,
+      "y_mil": 2550,
+      "rotation": 90,
+      "value": "430R"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "SI3",
+      "x_mil": 3500,
+      "y_mil": 3100,
+      "rotation": 180,
+      "value": ".047uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "SI7",
+      "x_mil": 6850,
+      "y_mil": 1400,
+      "rotation": 90,
+      "value": "0R"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R",
+      "designator": "R1",
+      "x_mil": 10600,
+      "y_mil": 2500,
+      "rotation": 180,
+      "value": "56K"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:R_Potentiometer",
+      "designator": "RV1",
+      "x_mil": 10000,
+      "y_mil": 4900,
+      "rotation": 180,
+      "value": "47K"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Switch:SW_Rotary_1x6_MP",
+      "designator": "SW1",
+      "x_mil": 4800,
+      "y_mil": 4550,
+      "rotation": 0,
+      "value": "1x6 rotary"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C6",
+      "x_mil": 5800,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".033uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C5",
+      "x_mil": 6500,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".047uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C4",
+      "x_mil": 7200,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".068uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C3",
+      "x_mil": 7900,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".12uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C2",
+      "x_mil": 8600,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".22uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Device:C",
+      "designator": "C1",
+      "x_mil": 9300,
+      "y_mil": 5700,
+      "rotation": 180,
+      "value": ".33uF"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Connector_Generic:Conn_01x05",
+      "designator": "J1",
+      "x_mil": 1900,
+      "y_mil": 4200,
+      "rotation": 0,
+      "mirror": "y",
+      "value": "1x05"
+    },
+    {
+      "op": "place_component",
+      "lib_id": "Connector_Generic:Conn_01x05",
+      "designator": "J2",
+      "x_mil": 1600,
+      "y_mil": 5300,
+      "rotation": 90,
+      "value": "1x05"
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          600,
+          1400
+        ],
+        [
+          1450,
+          1400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1750,
+          1400
+        ],
+        [
+          2050,
+          1400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2350,
+          1400
+        ],
+        [
+          6700,
+          1400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7000,
+          1400
+        ],
+        [
+          10850,
+          1400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1000,
+          1400
+        ],
+        [
+          1000,
+          4750
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1000,
+          5050
+        ],
+        [
+          1000,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2700,
+          1400
+        ],
+        [
+          2700,
+          1850
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2700,
+          2150
+        ],
+        [
+          2700,
+          2950
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2700,
+          2550
+        ],
+        [
+          2950,
+          2550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3250,
+          2550
+        ],
+        [
+          3500,
+          2550
+        ],
+        [
+          3500,
+          2950
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2700,
+          3250
+        ],
+        [
+          2700,
+          3600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3500,
+          3250
+        ],
+        [
+          3500,
+          3600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2700,
+          3600
+        ],
+        [
+          10600,
+          3600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          10600,
+          1400
+        ],
+        [
+          10600,
+          2350
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          10600,
+          2650
+        ],
+        [
+          10600,
+          3600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          10000,
+          3600
+        ],
+        [
+          10000,
+          4750
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          10000,
+          5050
+        ],
+        [
+          10000,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9850,
+          4900
+        ],
+        [
+          9650,
+          4900
+        ],
+        [
+          9650,
+          4550
+        ],
+        [
+          10000,
+          4550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4500,
+          4550
+        ],
+        [
+          4200,
+          4550
+        ],
+        [
+          4200,
+          3600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4750
+        ],
+        [
+          5800,
+          4750
+        ],
+        [
+          5800,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4650
+        ],
+        [
+          6500,
+          4650
+        ],
+        [
+          6500,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4550
+        ],
+        [
+          7200,
+          4550
+        ],
+        [
+          7200,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4450
+        ],
+        [
+          7900,
+          4450
+        ],
+        [
+          7900,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4350
+        ],
+        [
+          8600,
+          4350
+        ],
+        [
+          8600,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5100,
+          4250
+        ],
+        [
+          9300,
+          4250
+        ],
+        [
+          9300,
+          5550
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5800,
+          5850
+        ],
+        [
+          5800,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6500,
+          5850
+        ],
+        [
+          6500,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7200,
+          5850
+        ],
+        [
+          7200,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7900,
+          5850
+        ],
+        [
+          7900,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          8600,
+          5850
+        ],
+        [
+          8600,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          9300,
+          5850
+        ],
+        [
+          9300,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          600,
+          6150
+        ],
+        [
+          10000,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2200,
+          6150
+        ],
+        [
+          2200,
+          6500
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2100,
+          4000
+        ],
+        [
+          2700,
+          4000
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2100,
+          4100
+        ],
+        [
+          2700,
+          4100
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2100,
+          4200
+        ],
+        [
+          2700,
+          4200
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2100,
+          4300
+        ],
+        [
+          2700,
+          4300
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2100,
+          4400
+        ],
+        [
+          3800,
+          4400
+        ],
+        [
+          3800,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1400,
+          5500
+        ],
+        [
+          1400,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1500,
+          5500
+        ],
+        [
+          1500,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1600,
+          5500
+        ],
+        [
+          1600,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1700,
+          5500
+        ],
+        [
+          1700,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1800,
+          5500
+        ],
+        [
+          1800,
+          6150
+        ]
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1000,
+        1400
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2700,
+        1400
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        10600,
+        1400
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2700,
+        2550
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        3500,
+        3600
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4200,
+        3600
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        10000,
+        3600
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        10000,
+        4550
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1000,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1400,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1500,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1600,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1700,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1800,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        2200,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        3800,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        5800,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6500,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7200,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7900,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        8600,
+        6150
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        9300,
+        6150
+      ]
+    },
+    {
+      "op": "place_gnd",
+      "at": [
+        600,
+        6150
+      ]
+    },
+    {
+      "op": "place_pwr_flag",
+      "at": [
+        2200,
+        6500
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "in",
+      "at": [
+        600,
+        1400
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "hi_boost_out",
+      "at": [
+        4600,
+        1400
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "out",
+      "at": [
+        10850,
+        1400
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "lo_boost_in",
+      "at": [
+        6800,
+        3600
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "in",
+      "at": [
+        2700,
+        4000
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "hi_boost_out",
+      "at": [
+        2700,
+        4100
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "lo_boost_in",
+      "at": [
+        2700,
+        4200
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "out",
+      "at": [
+        2700,
+        4300
+      ]
+    },
+    {
+      "op": "add_text",
+      "text": "HI BOOST (flat)",
+      "at": [
+        1900,
+        900
+      ],
+      "key": "t-hi-boost"
+    },
+    {
+      "op": "add_text",
+      "text": "HI CUT (flat)",
+      "at": [
+        4000,
+        2300
+      ],
+      "key": "t-hi-cut"
+    },
+    {
+      "op": "add_text",
+      "text": "LO CUT (flat)",
+      "at": [
+        6850,
+        900
+      ],
+      "key": "t-lo-cut"
+    },
+    {
+      "op": "add_text",
+      "text": "MID shunt (flat)",
+      "at": [
+        1700,
+        4900
+      ],
+      "key": "t-mid"
+    },
+    {
+      "op": "add_text",
+      "text": "LO BOOST",
+      "at": [
+        10350,
+        5450
+      ],
+      "key": "t-lo-boost"
+    },
+    {
+      "op": "add_text",
+      "text": "LO BOOST SELECTOR",
+      "at": [
+        4500,
+        5250
+      ],
+      "key": "t-selector"
+    },
+    {
+      "op": "add_text",
+      "text": "0V",
+      "at": [
+        9650,
+        6000
+      ],
+      "key": "t-0v"
+    },
+    {
+      "op": "add_text",
+      "text": "SI1-SI8 stand in for the other four sections, each at its flat setting.",
+      "at": [
+        7000,
+        2300
+      ],
+      "key": "t-note1"
+    },
+    {
+      "op": "add_text",
+      "text": "A low-boost build does not populate them.",
+      "at": [
+        7000,
+        2600
+      ],
+      "key": "t-note2"
+    }
+  ]
+}

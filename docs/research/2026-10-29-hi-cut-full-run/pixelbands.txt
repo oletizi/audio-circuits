@@ -1,0 +1,6 @@
+positive control: self 0 differing pixels, inverse 3835631
+image 2339x1654 px at 200 dpi, differing pixels 83394
+  rows   32.13 ..   34.16 mm        62 px   columns [(158.5, 158.88)]
+  rows   36.70 ..   38.61 mm        56 px   columns [(158.5, 158.88)]
+  rows   40.51 ..   76.83 mm      7071 px   columns [(57.53, 69.85), (158.5, 198.25)]
+  rows   88.77 ..  153.80 mm     76205 px   columns [(50.55, 271.91)]

@@ -1,0 +1,51 @@
+connector,pin,card_side_node,motherboard_side_node,signal_class,mode_dependency,card_evidence,motherboard_evidence,status,uncertainty_id,notes
+J101,1,common return below TR101 stage,,return,,"prior card-side trace, verification-gate.md",,CANDIDATE,,Worksheet: GND (K101/D101 -). Motherboard side untraced.
+J101,2,K101 coil / D101 return; upper coil terminal 24V,,control,K101 coil state,"prior card-side trace, verification-gate.md",,CANDIDATE,C06,Worksheet: J180-2 (OUT SELECT) 24V. Coil vs contact behaviour and drive polarity not traced.
+J101,3,common return,,return,,"prior card-side trace, verification-gate.md",,CANDIDATE,,Worksheet: GND. Motherboard side untraced.
+J101,4,K101 signal contact to TR101 primary / input network,,head,K101 contact state,"prior card-side trace, verification-gate.md",,CANDIDATE,C12,Worksheet: J121 (REPRO HEAD). Head winding / shield conductor assignment untraced.
+J102,1,,,unknown,,,,UNRESOLVED,C09,Worksheet X (unknown; not a verified no-connect). Neither side traced.
+J102,2,,,audio,K102 contact state,,,CANDIDATE,,Worksheet: J131-1 line OUTPUT from U101 2/2 via K102 contacts.
+J102,3,,,control,POWER MUTE,,,CANDIDATE,,Worksheet: J171-3 POWER MUTE; K102 / D120 (-).
+J102,4,,,control,OUT SELECT,,,CANDIDATE,,Worksheet: J180-4 OUT SELECT COMMON OFF 24V; K102 / D120 (+).
+J102,5,joins J105-2 on card,joins P105-1 on motherboard,audio,,"prior trace, j102-j105-trace.md","prior trace, j102-j105-trace.md and right-motherboard-conductor-trace.md",CANDIDATE,C02,Worksheet rows disagree (J105-2 vs J105-1); prior trace explains this as separate card and motherboard wires. Not independently re-traced; downstream function untraced.
+J102,6,,,unknown,,,no obvious motherboard conductor at prior crop scale (right-motherboard-conductor-trace.md),UNRESOLVED,C09,Worksheet X. Absence of a visible conductor is not a verified no-connect.
+J102,7,,,unknown,,,no obvious motherboard conductor at prior crop scale (right-motherboard-conductor-trace.md),UNRESOLVED,C09,Worksheet X. Absence of a visible conductor is not a verified no-connect.
+J103,1,,,unknown,,,,UNRESOLVED,C09,Worksheet X. Neither side traced.
+J103,2,,,control,OUT SELECT SYNC,,,CANDIDATE,,Worksheet: J181-2 OUT SELECT SYNC 24V.
+J103,3,,,unknown,,,,UNRESOLVED,C09,Worksheet X. Neither side traced.
+J103,4,,,unknown,,,,UNRESOLVED,C03,"Worksheet: J161 ERASE HEAD (?) and J108-3 (OUT SELECT REPRO), self-marked uncertain. Erase drive vs select line must be traced."
+J103,5,,,supply,,,,CANDIDATE,C05,Worksheet: J107-4 B- (-15V) on this board; target written as 107.
+J103,6,,,unknown,,,,UNRESOLVED,C04,Worksheet: joins J103-4 on this connector. Continuity untraced.
+J104,1,,,control,PLAY MUTE,,,CANDIDATE,,Worksheet: J171-6 PLAY MUTE.
+J104,2,,,control,OUT SELECT,,,CANDIDATE,,Worksheet: J180-4 OUT SELECT COMMON OFF 24V.
+J104,3,,P104-3 possibly joined to P107-7 (right-motherboard-conductor-trace.md),control,FUNCTION,,"prior trace, right-motherboard-conductor-trace.md (flagged for re-check: parallel runs)",CANDIDATE,C08,Worksheet: J173-1 FUNCTION PCB and J107-7 this board.
+J104,4,,,control,OUT SELECT INPUT,,,CANDIDATE,,Worksheet: J181-1 OUT SELECT INPUT.
+J104,5,,,control,OUT SELECT SYNC,,,CANDIDATE,,Worksheet: J181-2 OUT SELECT SYNC.
+J104,6,,common net with P107-1 and P108-1,return,,,"prior trace, p108-p107-p104-common-return.md",CANDIDATE,,Worksheet: GND. Card side untraced.
+J104,7,,joined to P107-2 on motherboard,unknown,,,"prior trace, p107-2-p104-7-motherboard-link.md",UNRESOLVED,C13,Worksheet X. Prior trace found a motherboard conductor to P107-2 (worksheet 24V); card-side node unknown and P107-2 route to supply untraced.
+J105,1,,joins P102-5 on motherboard,meter,,,"prior trace, j102-j105-trace.md",CANDIDATE,C02,Worksheet: J102-5 this board; OUTPUT to VU meter.
+J105,2,joins J102-5 on card,,audio,,"prior trace, j102-j105-trace.md",,UNRESOLVED,C02,Worksheet X; prior card-side trace contradicts that by joining it to J102-5. Motherboard side untraced.
+J105,3,,,unknown,,,,UNRESOLVED,C09,Worksheet X. Neither side traced.
+J105,4,,,unknown,,,,UNRESOLVED,C09,Worksheet X. Neither side traced.
+J105,5,,,supply,,,,CANDIDATE,,Worksheet: B+ (15V).
+J105,6,,possibly shares conductor with P107-3 (right-motherboard-conductor-trace.md),oscillator,,,"prior trace, right-motherboard-conductor-trace.md (flagged for re-check)",CANDIDATE,,Worksheet: J182-5 MASTER OSC. Prior trace's P107-3 join (worksheet +15V) would conflict with an oscillator feed; must be resolved.
+J105,7,,,meter,,,,CANDIDATE,,Worksheet: J176-1 VU METER.
+J106,1,,,audio,,,,CANDIDATE,,Worksheet: J141-1 line INPUT.
+J106,2,,,return,,,,CANDIDATE,C11,Worksheet: GND.
+J106,3,,,supply,,,,CANDIDATE,,Worksheet: B- (-15V).
+J106,4,,,supply,,,,CANDIDATE,,Worksheet: B+ (+15V).
+J106,5,,,return,,,,CANDIDATE,C11,Worksheet: GND.
+J106,6,,,return,,,,CANDIDATE,C11,Worksheet: GND.
+J106,7,,,head,,,,CANDIDATE,C12,Worksheet: J151 SYNC HEAD.
+J106,8,,,return,,,,CANDIDATE,C07,Worksheet: GND. Contact existence confirmed (connector-reconciliation-pass3.md); endpoint untraced.
+J107,1,,common net with P104-6 and P108-1,return,,,"prior trace, p108-p107-p104-common-return.md",CANDIDATE,,Worksheet: GND. Card side untraced.
+J107,2,,joined to P104-7 on motherboard,supply,,,"prior trace, p107-2-p104-7-motherboard-link.md",CANDIDATE,C13,Worksheet: 24V power rail. Route to P171 supply untraced.
+J107,3,,possibly shares conductor with P105-6 (right-motherboard-conductor-trace.md),supply,,,"prior trace, right-motherboard-conductor-trace.md (flagged for re-check)",CANDIDATE,,Worksheet: B+ 15V. See J105-6 note.
+J107,4,,,supply,,,,CANDIDATE,,Worksheet: B- -15V.
+J107,5,,,unknown,,,,UNRESOLVED,C09,Worksheet X. Neither side traced.
+J107,6,,,unknown,,,,UNRESOLVED,C08,Worksheet X with J174 mentioned and no pin. Neither side traced.
+J107,7,,P107-7 possibly joined to P104-3 (right-motherboard-conductor-trace.md),control,FUNCTION,,"prior trace, right-motherboard-conductor-trace.md (flagged for re-check)",CANDIDATE,C08,Worksheet: J174-1 FUNCTION SELECT and J104-3 this board.
+J108,1,,common net with P107-1 and P104-6,return,,,"prior trace, p108-p107-p104-common-return.md",CANDIDATE,,Worksheet: GND. Card side untraced.
+J108,2,,,erase,,,,CANDIDATE,C03,Worksheet: J161 ERASE HEAD.
+J108,3,,,erase,,,,CANDIDATE,C03,Worksheet: J161 ERASE HEAD; J103-4 also names J108-3.
+J108,4,,,oscillator,,,,CANDIDATE,,Worksheet: J182-8 MASTER OSC.

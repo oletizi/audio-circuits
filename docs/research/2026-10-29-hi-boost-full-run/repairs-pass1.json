@@ -1,0 +1,1175 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "pultec-hi-boost.kicad_sch",
+  "ops": [
+    {
+      "op": "delete_object",
+      "uuid": "44aefaf5-6543-5429-80f8-9b1874b590eb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "46b89384-615e-51a7-b0c8-6ca7849a6708"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2236f705-02dc-5f01-9601-9d0a4cf93464"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "39078fe3-030c-5f6f-932b-7666adaa63c6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0d1429c4-ac75-54e0-82d7-d54d43ae2483"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4f78f0c2-58d9-508f-b278-b97e3a3e6ff1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0c8ecea8-1684-5377-923c-a27fca1ad8f2"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "9094de81-5988-5ce8-8514-906a544cef39"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "64d5ad8a-d0af-519d-a152-28523c8fec3e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ac3c6774-6e9d-5837-9035-285cc5e56cdc"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b8ab1ad3-f297-507e-949d-01ecbc53bf21"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "25cbd143-1c99-5400-85a6-1b8e18e1f94f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fe65b206-eb85-5364-bcb1-892546902caa"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "98af6c9b-57a4-51aa-aea7-10b6e775a451"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5c1377b6-d9b1-5e15-ba55-b8462eba5c90"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2ea86c32-759d-5508-8b8f-4c6ab29a9501"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "223a0b4d-8921-5a31-8538-6acdf8df063a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3ed03f02-25e6-5b22-afcc-ce7908679c39"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4fa68b57-2cb3-5721-b949-75aab054358d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "6bc3385a-cc36-5345-81d0-bb126a3a568a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "90d421b6-54d8-5a1a-b3ec-1f5d7550762c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "faa9a647-b5c4-5aa6-8269-f169a86f659c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "7bb0991f-75f1-5b60-8d1c-829a415414a1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "0609960a-0843-56a4-83ae-5f57999bd0e8"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f4435fad-7335-57e0-aad5-59b44783e5b1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "253646cb-b756-50e7-8cf9-36a665fdbca0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "825ca70d-8337-5674-a449-6d55971cd06e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b8c40a78-511a-5dac-a5d8-6d295c3b83f4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ddee33e7-20f9-5cd5-bb0f-b6b83381391c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b08386d1-085e-56b1-8c5d-33aa19bda221"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "48a18040-1ae2-562e-abf4-e1380a0f2afb"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1283fed5-aba8-5261-abfd-bfab10fa4035"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "84729f35-d847-5d52-8b26-264270c602ae"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "efb322c0-7758-5ce1-a217-8ce19db481b7"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "bc8d9c45-3c03-552a-99b6-075d496b81a4"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b345acff-cf02-5ce2-9c4b-46fe4d5c60e2"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "94c79182-1357-5130-88c0-772ec21a4813"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "7c7778de-4c5a-564c-835b-b62bed32ed9c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b72cda76-a727-5df5-80b7-333cc8f27f62"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "407493e4-2853-5197-bf6d-1b25d42e279f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "503acbe7-ddd8-53b6-aa2b-f2e642545cec"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1b32e53c-f485-513b-8450-c4d585d2173a"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8deead0b-f1ab-521c-80ab-7c53dfcf584e"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "06bbc1de-0681-58f0-838a-d779252398e2"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "59a7f5e6-e487-5430-9c03-4d4c5b3bee1d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "cdb9db2b-31eb-534b-9262-f5bce7670d97"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "86ca56b1-81e2-5ac9-9a67-74e802a4a083"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b01e3f0b-9d8d-57a7-b70f-73b7c2559432"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "237ef1a5-fbf0-5d6a-a3cd-91419304f6d6"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "ba15a275-db2e-592c-9683-d7f7b26107b3"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "9afa6148-367d-58d8-b547-072ec8eae80c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "da9fe57a-c2c5-57cc-822a-7c1adfec821d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b6f1a739-75bc-56c3-8fe1-5af2ef2367d7"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "4e132adc-c3b1-553d-9c95-07245ea82b28"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "945fe761-3cf3-5799-aa47-0c441ded1f09"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "3cb2ea6e-003b-549e-922a-913768a516cd"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "451653e8-d373-5317-9f91-3c428c4aaeda"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "1526c10a-8947-50e3-85c0-157ae610382c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "787823a6-f22a-549f-be1e-e4df3359e0c2"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "aa4b1b21-1625-5d0d-95b8-05756513463c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e5526b45-3915-5cb5-8f11-48fcfca85822"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "739b3c50-eef9-556a-b9a3-5a8ad10467d0"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "7ebfd4ab-b189-5d89-8928-799dd7b97aab"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "43726b5c-e445-5548-827a-28b8f4b07297"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5169e846-d769-558e-ac8f-8b142a1e5c0f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "43a8de6b-caa8-519d-bdbf-120e1e5ce2ac"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "fcf6a791-9804-5d53-b600-8f1307dd27ce"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "8909b973-3785-5520-9a86-e881b776b74c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "b1909e1e-0d6e-50fd-b8b2-0e3f0e5c9fc9"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "056cc7a4-2e07-5d5b-9f35-0f854c2e62f5"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "f732b46c-7161-5966-9902-f9868c89aa53"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "2939f7d6-eb66-550e-8864-790c5dddffee"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "98d0f05c-ec75-57ac-b698-50b6a7836bbf"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d9e98304-135c-5326-9136-bb1d1065d49b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "5ef24bfa-1d51-5054-9792-c2227942e435"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e6950061-a860-575e-8515-124b7b73a4fd"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "e60555ee-736b-594d-9e5c-4d18514e318d"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "24aeb3ce-2932-5527-be9a-6cd09dc434f1"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "75d8e60c-cafa-5d9a-b5ba-ec16418eb863"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "dcaea76b-0335-513d-b9a7-73783ce06c8b"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "c132d1e5-f1d2-577c-8b02-745b784bdcdd"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "d2dd3fbd-62ad-59cc-b73d-f3a2b55cbf0c"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "95dfa74d-79e8-5676-a760-cbd7b850297f"
+    },
+    {
+      "op": "delete_object",
+      "uuid": "219740dd-4941-5af2-bd0d-6d697a8cc4de"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR02"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR03"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR04"
+    },
+    {
+      "op": "delete_component",
+      "designator": "#PWR05"
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "SW1",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "SW1",
+      "x_mil": 2600,
+      "y_mil": 5400,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C1",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C1",
+      "x_mil": 3700,
+      "y_mil": 4950,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C2",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C2",
+      "x_mil": 4300,
+      "y_mil": 5050,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C5",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C5",
+      "x_mil": 4900,
+      "y_mil": 5050,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C3",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C3",
+      "x_mil": 5500,
+      "y_mil": 5150,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C4",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C4",
+      "x_mil": 6100,
+      "y_mil": 5250,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C8",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C8",
+      "x_mil": 6700,
+      "y_mil": 5250,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C6",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C6",
+      "x_mil": 7300,
+      "y_mil": 5350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C9",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C9",
+      "x_mil": 7900,
+      "y_mil": 5350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "C7",
+      "rotation": 0,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "C7",
+      "x_mil": 8500,
+      "y_mil": 5450,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "L4",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "L4",
+      "x_mil": 3700,
+      "y_mil": 4350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "L3",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "L3",
+      "x_mil": 4900,
+      "y_mil": 4350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "L2",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "L2",
+      "x_mil": 6400,
+      "y_mil": 4350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "set_component_transform",
+      "designator": "L1",
+      "rotation": 180,
+      "mirror": "none"
+    },
+    {
+      "op": "move_component",
+      "designator": "L1",
+      "x_mil": 7900,
+      "y_mil": 4350,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "move_component",
+      "designator": "#FLG01",
+      "x_mil": 1100,
+      "y_mil": 2800,
+      "carry_labels": false,
+      "carry_wires": false
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1000,
+          3900
+        ],
+        [
+          1000,
+          5400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1000,
+          5400
+        ],
+        [
+          2300,
+          5400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3450,
+          4200
+        ],
+        [
+          7900,
+          4200
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3700,
+          4500
+        ],
+        [
+          3700,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4900,
+          4500
+        ],
+        [
+          4900,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4300,
+          4700
+        ],
+        [
+          5500,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4300,
+          4900
+        ],
+        [
+          4300,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          4900,
+          4900
+        ],
+        [
+          4900,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5500,
+          5000
+        ],
+        [
+          5500,
+          4700
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6400,
+          4500
+        ],
+        [
+          6400,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6100,
+          4800
+        ],
+        [
+          6700,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6100,
+          5100
+        ],
+        [
+          6100,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          6700,
+          5100
+        ],
+        [
+          6700,
+          4800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7900,
+          4500
+        ],
+        [
+          7900,
+          4900
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7300,
+          4900
+        ],
+        [
+          8500,
+          4900
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7300,
+          5200
+        ],
+        [
+          7300,
+          4900
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          7900,
+          5200
+        ],
+        [
+          7900,
+          4900
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          8500,
+          5300
+        ],
+        [
+          8500,
+          4900
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5100
+        ],
+        [
+          3700,
+          5100
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5200
+        ],
+        [
+          4900,
+          5200
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5300
+        ],
+        [
+          5500,
+          5300
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5400
+        ],
+        [
+          6700,
+          5400
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5500
+        ],
+        [
+          7900,
+          5500
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          2900,
+          5600
+        ],
+        [
+          8500,
+          5600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1300,
+          2600
+        ],
+        [
+          1300,
+          3000
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          1300,
+          2800
+        ],
+        [
+          1100,
+          2800
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3100,
+          1750
+        ],
+        [
+          5150,
+          1750
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5150,
+          2000
+        ],
+        [
+          5150,
+          1750
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3500,
+          2250
+        ],
+        [
+          3500,
+          2600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          3500,
+          2600
+        ],
+        [
+          5850,
+          2600
+        ]
+      ]
+    },
+    {
+      "op": "add_wire",
+      "vertices": [
+        [
+          5850,
+          2600
+        ],
+        [
+          5850,
+          2500
+        ]
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        3700,
+        4200
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4900,
+        4200
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6400,
+        4200
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4900,
+        4700
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6400,
+        4800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7900,
+        4900
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        4300,
+        5200
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        6100,
+        5400
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        7300,
+        5500
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1300,
+        2700
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1300,
+        2800
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1300,
+        2900
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        1300,
+        3000
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        3100,
+        1750
+      ]
+    },
+    {
+      "op": "add_junction",
+      "at": [
+        5150,
+        2000
+      ]
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel1",
+      "at": [
+        3150,
+        5100
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel2",
+      "at": [
+        3800,
+        5200
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel3",
+      "at": [
+        5000,
+        5300
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel4",
+      "at": [
+        5600,
+        5400
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel5",
+      "at": [
+        6800,
+        5500
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "sel6",
+      "at": [
+        8000,
+        5600
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "tap_600mh",
+      "at": [
+        3700,
+        4650
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "tap_300mh",
+      "at": [
+        4900,
+        4600
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "tap_200mh",
+      "at": [
+        6400,
+        4650
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_net_label",
+      "name": "tap_100mh",
+      "at": [
+        7900,
+        4650
+      ],
+      "scope": "local",
+      "rotation": 0
+    },
+    {
+      "op": "add_no_connect",
+      "pin": "SW1.MP"
+    }
+  ]
+}

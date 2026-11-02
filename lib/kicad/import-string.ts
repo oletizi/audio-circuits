@@ -6,6 +6,16 @@
  * directly. A netlist whose package field already holds a valid import string
  * therefore imports with no manual Part Aliases entry at all.
  *
+ * WHAT THIS FILE DOES NOT DECIDE. An import string says which VeroRoute type a
+ * footprint becomes and, for the span-suffixed families, the span its OWN pitch
+ * sits at. It says nothing about how far that span may then be stretched or
+ * shrunk - the tool will take any two-terminal part to any span in 2-16 holes,
+ * and the part will not. That is `./lead-span.ts`, which the spec's section 9.2
+ * calls for "beside the import-string whitelist" and which is a sibling file
+ * rather than a section of this one only because this one is already near the
+ * repository's 300-500 line ceiling. The grid arithmetic both share is in
+ * `./grid.ts`.
+ *
  * THE GRAMMAR IS DELIBERATELY NARROW. Only the five families this repository
  * has evidence for are recognized; everything else refuses. The evidence is
  * `tests/fixtures/pt2399-core.net` paired with
@@ -14,21 +24,9 @@
  * footprints to the import strings that board actually used.
  */
 
-/** Millimetres per 100-mil grid step. */
-const GRID_MM = 2.54
+import { GRID_MM, PITCH_TOLERANCE_MM, nearestGridSteps } from "./grid.ts"
 
 const MM_PER_INCH = 25.4
-
-/**
- * How far a lead pitch may sit from the grid and still be accepted.
- *
- * Sized for one specific phenomenon: KiCad names imperial parts in rounded
- * metric. `P2.50mm` IS a 0.1in part and is 0.04mm off; `P7.50mm` IS a 0.3in
- * part and is 0.12mm off; `P10.16mm` is exact. A tighter tolerance refuses
- * real, correct footprints. A much looser one starts accepting genuinely
- * off-pitch parts as though they fitted their holes.
- */
-const PITCH_TOLERANCE_MM = 0.15
 
 /** VeroRoute's lead-span suffix range, from CompTypes.h. */
 const MIN_SPAN = 1
@@ -146,8 +144,7 @@ function refuse(footprint: string, because: string): never {
 
 /** Lead pitch in millimetres to a whole number of 100-mil grid steps. */
 function gridSteps(mm: number, footprint: string): number {
-  const steps = Math.round(mm / GRID_MM)
-  const error = Math.abs(mm - GRID_MM * steps)
+  const { steps, errorMm: error } = nearestGridSteps(mm)
   if (error > PITCH_TOLERANCE_MM) {
     refuse(
       footprint,

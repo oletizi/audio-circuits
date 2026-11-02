@@ -18,10 +18,12 @@
  * (`valueLabel`) says only what is fitted there.
  */
 import type { Component } from "../../lib/model/types.ts"
+import { isZeroOhmResistor } from "../../lib/model/zero-ohm.ts"
 import { pinNumberFor } from "../../lib/kicad/from-network.ts"
 import { noPinLinesMessage, type BoardDump, type Part } from "./dump.ts"
 import type { EdgeLabel } from "./render-edges.ts"
 import { componentAt, isPanelPot, type BoardCircuit } from "./circuit.ts"
+import { WIRE_LINK_VALUE } from "./wire-links.ts"
 
 const POT_SUFFIX = "_pot"
 
@@ -78,10 +80,22 @@ export type ValueLabelUse = "image" | "checklist"
  * what the builder fits at those holes. In the checklist, a panel pot's
  * header keeps the pot as context: "3-pin header (25K pot, off-board)".
  *
+ * **A PART THAT RESOLVES TO 0 Ω IS A WIRE LINK, and that is this same rule
+ * applied to a third kind of part**: its dump value is `0R`, and what the
+ * builder fits in those holes is a wire or a solder bridge. `./wire-links.ts`
+ * holds the words and `lib/model/zero-ohm.ts` the test. The dump value is not
+ * passed through, for the reason a connector's symbol name is not: it is not
+ * what goes in the holes. The checklist lists such a part among the **Wire
+ * links** rather than the resistors (`./checklist.ts`), so in practice this
+ * label reaches the values image; it is returned for both uses because one
+ * function answering two ways is how an image and a table come to disagree
+ * about one part.
+ *
  * One function for the values image and the checklist, so the two agree.
  */
 export function valueLabel(dump: BoardDump, part: Part, circuit: BoardCircuit, use: ValueLabelUse): string {
   const component = componentAt(circuit, part.ref)
+  if (isZeroOhmResistor(component)) return WIRE_LINK_VALUE
   const panelPot = isPanelPot(component)
   if (component.kind !== "connector" && !panelPot) return part.value
   const pins = dump.pins[part.ref] ?? []

@@ -147,7 +147,13 @@ export function spicePinOrder(kind: ComponentKind): readonly string[] {
   const order = SPICE_PIN_ORDER[kind]
   if (order === undefined) {
     throw new Error(
-      `kind "${kind}" is not emitted as a SPICE primitive; its pin order comes from its model`,
+      `kind "${kind}" is not emitted as a SPICE primitive, so SPICE itself fixes no argument ` +
+        "order for it and this function refuses rather than inventing one. Its pin order is a " +
+        "property of the CONCRETE MODEL, because two macromodels of one kind may order their " +
+        "pins differently, so read it from that model's own `DeviceModel.pinOrder` in " +
+        "lib/sim/models/index.ts. SPICE_PIN_ORDER in lib/model/kinds.ts is keyed only by the " +
+        "kinds SPICE emits as primitives (R, C, L, D, Q) and must not be extended to cover a " +
+        "subcircuit-backed kind.",
     )
   }
   return order

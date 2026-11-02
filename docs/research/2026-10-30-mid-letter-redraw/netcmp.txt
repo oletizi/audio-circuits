@@ -1,0 +1,10 @@
+BEFORE /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/before/pultec-mid.kicad_sch
+       sha256 1f8de32150f322f8f040b2cef1d857df7b16e884bff409a0debd5ec3a7344ff8  29 nets
+AFTER  /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/after/pultec-mid.kicad_sch
+       sha256 d4b0b8cc6e3be35298cf1a240dcf8705bce655822224493670089df272138e2b  29 nets
+
+positive control: moved SI9.1 from GND to unconnected-(SW1-Pad12) in a copy of BEFORE -> partition differs: True
+
+NET PARTITION (pin sets, ignoring net names): IDENTICAL
+NET NAMES: IDENTICAL
+NAME -> PIN SET MAPPING: IDENTICAL

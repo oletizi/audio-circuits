@@ -1,0 +1,27 @@
+sheet /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/mid-letter-run/before/pultec-mid.kicad_sch
+rendered 9921 x 7016 px at 600 dpi
+
+tag                       ink x1    ink x2    width   height      px  verdict
+C1 .33uF                 124.531   129.527    4.995    1.439     990  
+C2 .15uF                 139.771   144.767    4.995    1.439     908  
+C3 .047uF                154.376   160.599    6.223    1.482    1126  
+C4 .022uF                169.616   175.839    6.223    1.439    1238  
+C5 3300pF                184.560   191.376    6.816    1.820    1634  
+C6 .022uF                200.096   206.319    6.223    1.439    1238  
+C7 3300pF                215.040   221.856    6.816    1.820    1634  
+C8 .012uF                230.576   236.799    6.223    1.439    1204  
+C9 .012uF                245.816   252.039    6.223    1.439    1204  
+C10 2200pF               260.760   267.576    6.816    1.820    1602  
+C11 4700pF               276.000   282.816    6.816    1.863    1492  
+C12 1500pF               291.240   298.056    6.816    1.820    1590  
+C13 4700pF               306.480   313.296    6.816    1.863    1492  
+C14 2200pF               321.720   328.536    6.816    1.820    1602  
+C15 4700pF               336.960   343.776    6.816    1.863    1492  
+C16 2200pF               352.200   359.016    6.816    1.820    1602  
+C17 1000pF               367.440   374.256    6.816    1.820    1582  
+hi_boost_out tag          28.411    42.592   14.182    2.794    5752  
+CONTROL empty band             -         -        -        -       0  EMPTY as expected
+
+WIDEST: hi_boost_out tag at 14.182 mm
+NARROWEST: C1 .33uF at 4.995 mm
+every box matched its expectation (controls included)

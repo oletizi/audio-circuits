@@ -5,7 +5,7 @@
       "loFrequency": "100Hz",
       "hiFrequency": "5kHz",
       "midFrequency": "1kHz",
-      "midMode": "boost"
+      "midMode": "off"
     },
     "boundary": [
       "hi_boost_out",
@@ -54,7 +54,7 @@
       "loFrequency": "100Hz",
       "hiFrequency": "5kHz",
       "midFrequency": "1kHz",
-      "midMode": "boost"
+      "midMode": "off"
     },
     "boundary": [
       "hi_boost_out",
@@ -137,7 +137,7 @@
       "loFrequency": "100Hz",
       "hiFrequency": "5kHz",
       "midFrequency": "1kHz",
-      "midMode": "boost"
+      "midMode": "off"
     },
     "boundary": [
       "0",
@@ -187,7 +187,7 @@
       "loFrequency": "100Hz",
       "hiFrequency": "5kHz",
       "midFrequency": "1kHz",
-      "midMode": "boost"
+      "midMode": "off"
     },
     "boundary": [
       "hi_boost_out",
@@ -219,7 +219,7 @@
       "loFrequency": "100Hz",
       "hiFrequency": "5kHz",
       "midFrequency": "1kHz",
-      "midMode": "boost"
+      "midMode": "off"
     },
     "boundary": [
       "0",
@@ -227,74 +227,6 @@
       "in"
     ],
     "components": [
-      {
-        "id": "C_MID_1kHz_A",
-        "kind": "capacitor",
-        "parameters": {
-          "farads": 2.2e-8
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "mid_tap_1h",
-              "b": "mid_sel_1khz"
-            }
-          }
-        ]
-      },
-      {
-        "id": "C_MID_1kHz_B",
-        "kind": "capacitor",
-        "parameters": {
-          "farads": 3.3e-9
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "mid_tap_1h",
-              "b": "mid_sel_1khz"
-            }
-          }
-        ]
-      },
-      {
-        "id": "L_MID_1H",
-        "kind": "inductor",
-        "parameters": {
-          "henries": 1
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "mid_tap_1h",
-              "b": "mid_boost_return"
-            }
-          }
-        ]
-      },
-      {
-        "id": "R_MID_BOOST",
-        "kind": "resistor",
-        "parameters": {
-          "ohms": 4700
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "in",
-              "b": "mid_boost_return"
-            }
-          }
-        ]
-      },
       {
         "id": "R_MID_SHUNT",
         "kind": "resistor",
@@ -308,23 +240,6 @@
             "pins": {
               "a": "in",
               "b": "0"
-            }
-          }
-        ]
-      },
-      {
-        "id": "RV_MID.ccw-wiper",
-        "kind": "resistor",
-        "parameters": {
-          "ohms": 0
-        },
-        "pins": {},
-        "units": [
-          {
-            "name": "MAIN",
-            "pins": {
-              "a": "hi_boost_out",
-              "b": "mid_sel_1khz"
             }
           }
         ]

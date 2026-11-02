@@ -1,0 +1,10 @@
+{
+  "C18": "Capacitor_THT:C_Rect_L7.2mm_W3.5mm_P5.00mm",
+  "C19": "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+  "C20": "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+  "C21": "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+  "C22": "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+  "C23": "Capacitor_THT:C_Rect_L7.2mm_W2.5mm_P5.00mm",
+  "R2": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
+  "board_terminals": "TerminalBlock_Phoenix:TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal"
+}

@@ -1,0 +1,37 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "notes": [
+    {
+      "before_op_index": 0,
+      "note": "A capacitor symbol's body is 5.08 mm across the leads, so two capacitors 7.62 mm apart in one column leave 2.54 mm between their bodies and copperhead needs about 4 mm for a part's two lines of field text. C7 sat 7.62 mm above C3 and the 'C3' reference was drawn over C7's lower plate. C7 drops to 10.16 mm of clearance and the hi_boost_out trunk, its seven risers and RV1's drop all lift 2.54 mm to make room. This was found by looking at the rendered page: no check reported it."
+    }
+  ],
+  "ops": [
+    { "op": "delete_object", "uuid": "eac1050b-0860-5433-94e8-81d80f5c4c54" },
+    { "op": "delete_object", "uuid": "409b8748-1a94-54c5-955c-e81cd4042542" },
+    { "op": "delete_object", "uuid": "1616d990-3872-5dc9-afb5-4921e7452600" },
+    { "op": "delete_object", "uuid": "80910538-1334-5379-b2fd-07f6c94d4b66" },
+    { "op": "delete_object", "uuid": "e17a2018-4957-5865-8d37-01701b737fd9" },
+    { "op": "delete_object", "uuid": "e0b7ec67-7eb7-5dbd-8b87-0521ab7eadc5" },
+    { "op": "delete_object", "uuid": "c6a402b9-51a9-571a-80a0-76c530444307" },
+    { "op": "delete_object", "uuid": "b14e23c5-f47e-57f1-9786-7c11e67cfd1c" },
+    { "op": "delete_object", "uuid": "8d9a69f6-79ba-5da0-89b3-1cffa5c95c7e" },
+    { "op": "delete_object", "uuid": "d61ee6dd-c23c-59ac-8c52-f66f633fab9d" },
+    { "op": "delete_object", "uuid": "ba18165b-d9c8-568c-8166-bb1fd79614de" },
+
+    { "op": "move_component", "designator": "C7", "x_mil": 4800, "y_mil": 4600 },
+
+    { "op": "add_wire", "vertices": [[4050, 4800], [4050, 4300]] },
+    { "op": "add_wire", "vertices": [[4550, 4900], [4550, 4300]] },
+    { "op": "add_wire", "vertices": [[5050, 5000], [5050, 4300]] },
+    { "op": "add_wire", "vertices": ["C7.1", [5050, 4600]] },
+    { "op": "add_wire", "vertices": ["C7.2", [4650, 5000]] },
+    { "op": "add_wire", "vertices": [[5550, 5100], [5550, 4300]] },
+    { "op": "add_wire", "vertices": [[6050, 5200], [6050, 4300]] },
+    { "op": "add_wire", "vertices": [[6550, 5300], [6550, 4300]] },
+    { "op": "add_wire", "vertices": ["RV1.1", [1350, 4300]] },
+    { "op": "add_wire", "vertices": [[1350, 4300], [6800, 4300]] },
+    { "op": "add_net_label", "name": "hi_boost_out", "at": [6800, 4300], "scope": "global", "rotation": 0 }
+  ]
+}

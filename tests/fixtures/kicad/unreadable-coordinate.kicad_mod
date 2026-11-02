@@ -1,0 +1,30 @@
+(footprint "fixture_unreadable_coordinate_P5.00mm"
+	(version 20260206)
+	(generator "hand-written test fixture - tests/fixtures/kicad")
+	(layer "F.Cu")
+	(descr "A TEST FIXTURE, not an installed KiCad footprint. Its F.Fab rectangle states a start with only ONE coordinate, which no KiCad writer emits. It exists so that lib/kicad/footprint-extent.ts's unreadable-coordinate refusal is exercised rather than merely present: that guard is what stands between a truncated graphic and a body outline quietly smaller than the part, and an untested guard is the skipped check that looks like a passing one.")
+	(tags "fixture")
+	(attr through_hole)
+	(fp_rect
+		(start -1.1)
+		(end 6.1 1.25)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+	)
+	(pad "1" thru_hole circle
+		(at 0 0)
+		(size 1.5 1.5)
+		(drill 0.75)
+		(layers "*.Cu" "*.Mask")
+	)
+	(pad "2" thru_hole circle
+		(at 5 0)
+		(size 1.5 1.5)
+		(drill 0.75)
+		(layers "*.Cu" "*.Mask")
+	)
+)

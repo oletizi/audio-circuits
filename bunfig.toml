@@ -1,0 +1,23 @@
+# bunfig.toml
+#
+# `[test].root` restricts `bun test`'s own recursive file discovery to this
+# directory - every test file this repository owns already lives under
+# `tests/` (confirmed: `find . -name "*.test.ts"` outside `node_modules/`,
+# `.tools/` and `draughting/` returns nothing else).
+#
+# WITHOUT THIS, a bare `bun test` also picks up every `*.test.ts` under
+# `draughting/copperhead/` - the third-party checkout
+# `draughting/install.sh` (Task 3 of
+# docs/superpowers/plans/2026-10-30-institutionalise-draughting.md) fetches -
+# and runs THAT project's own test suite as though it were this repository's,
+# failing on things that have nothing to do with this repository (a CLI
+# smoke test expecting its own dependency tree, a platform-specific
+# kicad-cli-path probe written for a different repository's layout). `.tools/`
+# (the VeroRoute fork, acquired the same way) never collided with this
+# because a leading dot already excludes a directory from bun's scan; a
+# repository-relative, non-dot location like `draughting/` does not get that
+# for free, and there is no equivalent per-path ignore flag to reach for
+# instead - this is the config `bun test --help` and bunfig.toml's own `[test]`
+# table actually offer.
+[test]
+root = "tests"

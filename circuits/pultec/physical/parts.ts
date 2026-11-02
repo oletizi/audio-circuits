@@ -8,7 +8,7 @@
  * `FILM_CAPACITOR_IMPORT_STRINGS` in `lib/kicad/import-string.ts` for the
  * footprints' VeroRoute import strings.
  */
-import type { Component, Network, PinField } from "../../../lib/model/types.ts"
+import type { Component, Network, PartSpec, PinField } from "../../../lib/model/types.ts"
 import { net } from "../../../lib/model/types.ts"
 import { componentNets } from "../../../lib/model/topology.ts"
 import { PHYSICAL_ONLY } from "../../../lib/board/physicalize.ts"
@@ -86,11 +86,13 @@ export const AXIAL_RESISTOR =
  *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Connector_Generic.kicad_sym"
  *
  * The footprint is a landing, not a purchase: a plain header, a stacking
- * (long-tail) header, a ribbon socket or individual leads all press into the
- * same row of five holes. See the design doc's "The junction is a stacking
- * 2x05 bus" for why the pitch and the two-row-of-five shape (one of these
- * headers for signals, a second for grounds - see below) are what let the
- * five boards stack on a shared bus.
+ * (long-tail) header or individual leads all press into the same row of five
+ * holes. A ribbon socket fits too and is NOT a build option here - the owner
+ * does not use ribbon on stripboard (2026-10-10) - so it is named only where
+ * naming it stops somebody rediscovering that it would have fitted. See the
+ * design doc's "The junction is a stacking 2x05 bus" for why the pitch and the
+ * two-row-of-five shape (one of these headers for signals, a second for
+ * grounds - see below) are what let the five boards stack on a shared bus.
  *
  * MODELLED AS TWO 1x05 HEADERS, NOT ONE 2x05 PART. The hardware is one 2x05
  * header occupying one row-of-ten pin field; the model is two, because
@@ -101,9 +103,8 @@ export const AXIAL_RESISTOR =
  * mapping a 2.54mm 2x05 to it would be exactly the kind of footprint-name-
  * lies error this repository has shipped twice already; `BLOCK_100`/
  * `BLOCK_200` are single-row terminal blocks). Two `PinHeader_1x05` headers on
- * adjacent rows occupy the identical pin field a single 2x05 does - a ribbon
- * socket still mates across both, a stack still carries every net through -
- * so nothing physical is lost. What is lost is model tidiness: KiCad sees two
+ * adjacent rows occupy the identical pin field a single 2x05 does, and a stack
+ * still carries every net through, so nothing physical is lost. What is lost is model tidiness: KiCad sees two
  * connectors where the hardware is one part, which matters only for a future
  * PCB footprint placement, out of scope for this stripboard design, and is
  * recorded here as a limitation rather than silently hidden.
@@ -126,10 +127,180 @@ export const HEADER_1X05 =
 const JUNCTION_FIELD: PinField = { name: "junction", mating: "stacking" }
 
 /** Symbols for the off-board parts, so their netlist value field is not empty. */
-export const ROTARY_SYMBOL = "Switch:SW_Rotary"
 export const TOGGLE_SYMBOL = "Switch:SW_SPDT"
 export const POT_SYMBOL = "Device:R_Potentiometer"
 export const INDUCTOR_SYMBOL = "Device:L"
+
+/**
+ * Single-pole rotary symbols, BY POSITION COUNT, transcribed from the installed
+ * `Switch.kicad_sym`.
+ *
+ * **THIS REPLACES A SYMBOL THAT DOES NOT EXIST.** Until this table landed, every
+ * selector with more than three pins was valued `Switch:SW_Rotary` - a name no
+ * KiCad resolves (`grep -c '(symbol "SW_Rotary"' Switch.kicad_sym` is 0), and so
+ * a false provenance claim in every committed Pultec netlist. That is the third
+ * time this repository has shipped a KiCad name nobody can look up, the first two
+ * being footprints; `tests/kicad/symbol-names.test.ts` is the disk-backed check
+ * that closes the symbol axis, and `tests/kicad/footprint-names.test.ts` is its
+ * mirror on the footprint axis.
+ *
+ * **THE KEY IS POSITIONS, NOT PINS.** KiCad's `SW_Rotary_1xN` is one pole with `N`
+ * throws, so it carries `N + 1` electrical pins plus `MP`; a six-position selector
+ * is `SW_Rotary_1x6_MP` with seven pins, which is exactly what the netlist's
+ * `PADS7` already reported. Deriving the name from the component's own throws is
+ * what keeps the two from disagreeing.
+ *
+ * **THE TABLE IS THE LIBRARY'S CONTENTS AND NOTHING MORE.** `_MP` (with a mounting
+ * pin) runs 3 to 9; 12 has no `_MP` variant. **There is no `1x10` and no `1x11`,
+ * and this table does not pretend otherwise** - the eleven-position selector is
+ * served by a separate, documented clause in `rotarySymbolFor` recording which
+ * physical part the owner chose, because a `[11, ...1x12]` entry here would read
+ * as a library the library does not have. A ten-position selector still REFUSES
+ * outright: nothing rounds up on its own.
+ */
+const ROTARY_SYMBOLS_BY_POSITIONS: ReadonlyMap<number, string> = new Map([
+  [3, "Switch:SW_Rotary_1x3_MP"],
+  [4, "Switch:SW_Rotary_1x4_MP"],
+  [5, "Switch:SW_Rotary_1x5_MP"],
+  [6, "Switch:SW_Rotary_1x6_MP"],
+  [7, "Switch:SW_Rotary_1x7_MP"],
+  [8, "Switch:SW_Rotary_1x8_MP"],
+  [9, "Switch:SW_Rotary_1x9_MP"],
+  [12, "Switch:SW_Rotary_1x12"],
+])
+
+/**
+ * The eleven-position selector's symbol, and the part decision it records.
+ *
+ * **IT IS A TWELVE-POSITION SWITCH WITH ITS STOP SET TO ELEVEN, WHICH IS THE
+ * OWNER'S CHOICE AND NOT A DERIVATION.** The mid section selects among all
+ * eleven of P3bandDoc.pdf page 3's frequencies, and `Switch.kicad_sym` has
+ * nothing at `1x10` or `1x11` - it runs `SW_Rotary_1x3_MP` to
+ * `SW_Rotary_1x9_MP`, then `SW_Rotary_1x12`. Rounding an eleven-throw selector
+ * up to the twelve-throw symbol asserts which physical part is in the box, so it
+ * was asked rather than assumed. **Owner's words (verbatim): _"Assume a
+ * 1x12"_.** Everything else in this comment is the reasoning, not his.
+ *
+ * **THE SYMBOL THEREFORE CARRIES ONE MORE THROW THAN THE CIRCUIT USES**, and
+ * that is a fact about the switch rather than a mismatch to reconcile: twelve
+ * detents exist, eleven are wired, the twelfth is unused. Nothing in the
+ * pipeline compares a symbol's pin count against a component's - the symbol is
+ * consumed only as the netlist's value field, through `symbolPartName` in
+ * `lib/kicad/value-notation.ts` - so no check is being satisfied by coincidence
+ * here. It is kept OUT of `ROTARY_SYMBOLS_BY_POSITIONS` deliberately: that table
+ * is the library's contents, and an `[11, ...]` key in it would claim a symbol
+ * the library does not have.
+ *
+ * **WHAT THIS REPLACED, SO THE HISTORY IS NOT LOST.** Before the part was
+ * chosen this function returned `undefined` for eleven and the field was
+ * omitted, so the two emitters refused and `pultec-mid` could not export a
+ * netlist. That was the honest state of an unmade decision, and it replaced a
+ * sentinel string - the fallback this project's rules forbid outright. The
+ * decision is made now, so both are gone rather than left as stubs.
+ */
+const ELEVEN_THROW_SYMBOL = "Switch:SW_Rotary_1x12"
+
+/** Every rotary symbol this repository can name, for the disk-backed check to verify. */
+export const ROTARY_SYMBOLS: readonly string[] = [
+  ...new Set([...ROTARY_SYMBOLS_BY_POSITIONS.values(), ELEVEN_THROW_SYMBOL]),
+]
+
+/**
+ * The single-pole rotary symbol for a selector with `throws` throws.
+ *
+ * Eleven comes from `ELEVEN_THROW_SYMBOL` above, which records the owner's part
+ * choice; every other count comes from the library table. An unrecorded count
+ * REFUSES rather than rounding to a neighbour, because rounding would assert a
+ * part nobody has chosen - which is the mistake eleven was held open to avoid.
+ *
+ * `componentId` is named only so the refusal can say which selector it is about.
+ */
+export function rotarySymbolFor(componentId: string, throws: number): string {
+  if (throws === 11) return ELEVEN_THROW_SYMBOL
+  const symbol = ROTARY_SYMBOLS_BY_POSITIONS.get(throws)
+  if (symbol !== undefined) return symbol
+  throw new Error(
+    `no KiCad symbol is recorded for the ${throws}-position rotary "${componentId}". The ` +
+      "installed Switch.kicad_sym has SW_Rotary_1x3_MP through SW_Rotary_1x9_MP and " +
+      `SW_Rotary_1x12, and nothing at 1x${throws}; eleven is served by ELEVEN_THROW_SYMBOL, ` +
+      "which records a part the owner chose. It is NOT rounded up to the next symbol the " +
+      "library does have, because that would assert which physical switch is fitted. Add this " +
+      "count to ROTARY_SYMBOLS_BY_POSITIONS in circuits/pultec/physical/parts.ts once its part " +
+      "is chosen, with the symbol it maps to.",
+  )
+}
+
+/**
+ * Where the pole of a single-pole selector sits on its symbol, by the symbol the model declares.
+ *
+ * **READ OFF THE INSTALLED LIBRARY, NOT REMEMBERED** (`CLAUDE.md`: *"verify names against the
+ * thing itself"*). In both rotary symbols the THROWS are pins `1..n` on the right at angle 180
+ * and the POLE is the last pin, on the left at angle 0 - which is the opposite of what "pin 1 is
+ * the common" would have you write. Confirm with:
+ *
+ *   awk '/\(symbol "SW_Rotary_1x6_MP"/,/\(symbol "SW_Rotary_1x7_MP"/' \
+ *     "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/Switch.kicad_sym" \
+ *     | grep -E '\(at [-0-9.]+ [-0-9.]+ (0|180)\)|\(number "'
+ *
+ * `SW_Rotary_1x6_MP` also carries a mounting pin `MP`, which is a mechanical pad and is on no net
+ * in the model; `SW_Rotary_1x12` has no `_MP` variant in the library at all, which is why
+ * `../physical/parts.ts` keeps eleven throws out of its by-position table and serves them from a
+ * separate clause.
+ */
+export const POLE_PIN: Readonly<Record<string, string>> = {
+  "Switch:SW_Rotary_1x6_MP": "7",
+  "Switch:SW_Rotary_1x12": "13",
+}
+
+/**
+ * Each selector symbol's THROW pins, in detent order, read off the installed `Switch.kicad_sym`
+ * the same way `POLE_PIN` above was.
+ *
+ * **IT REPLACES AN ASSUMPTION WITH A DATUM, and the assumption was already written down as a
+ * comment.** `switchOverride` used to number the throws `String(index + 1)`, which is correct for
+ * both of these symbols and is a rule nothing checked. The list is now the one statement of that
+ * fact, it drives the pin map, and `tests/circuits/pultec-switch-geometry.test.ts` asserts every
+ * entry against the installed library - that each pin exists, that it is on the throw side at the
+ * throw angle opposite the pole, and that **`THROW_PINS` plus `POLE_PIN` plus `MECHANICAL_PINS` is
+ * EXACTLY the symbol's pin set.** (Those arms were `tests/schgen/nc-pins.test.ts`'s and moved in
+ * Task 1 of `docs/superpowers/plans/2026-10-30-remove-schgen.md`, ahead of Task 9 deleting it.)
+ * That last assertion is what makes the unused-detent declaration below specific: a pin a future
+ * KiCad adds to one of these symbols fails the test rather than quietly becoming an unaccounted
+ * pin that stops a board drawing, or - worse - one a blanket silently excused.
+ *
+ * **AND IT IS WHAT LETS A SELECTOR BE DRAWN WITH A SYMBOL CARRYING MORE THROWS THAN THE CIRCUIT
+ * WIRES.** `SW_MID` has eleven positions and `Switch:SW_Rotary_1x12` draws twelve, because the
+ * owner's part choice is a twelve-position switch with its stop set to eleven - *"Assume a
+ * 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` below. The detents past the circuit's last position
+ * are DECLARED no-connect by number and never inferred from the count: that declaration was the
+ * deleted schematic generator's `ComponentOverride.ncPins`, and it is now
+ * `tests/circuits/sheet-model.ts`'s `rotaryPinNumbers`, which enters an unwired detent under its
+ * own pin number so the drafted page's `unconnected-(SW1-Pad12)` net has something to agree with.
+ */
+export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
+  "Switch:SW_Rotary_1x6_MP": ["1", "2", "3", "4", "5", "6"],
+  "Switch:SW_Rotary_1x12": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+}
+
+/**
+ * The SPDT mid-mode switch's pins. `Switch:SW_SPDT` names them A, B, C at numbers 1, 2, 3, and
+ * **B at angle 0 on the left is the pole** while A and C are the two throws on the right.
+ *
+ * **WHICH THROW IS "boost" AND WHICH IS "cut" IS THE MODEL'S DECLARATION ORDER AND NOTHING
+ * STRONGER, and saying so is the honest form of this entry.** `SW_MID_MODE`'s unit declares its
+ * pins `common`, `boost`, `cut` in that order; the model carries no mechanical detent, and the
+ * switch is a physical part whose two positions nobody has measured against a panel. So `boost`
+ * takes A and `cut` takes C because that is the order the component is written in. An
+ * observation, not a measurement, is recorded in `docs/known-gaps.md`.
+ *
+ * **IT SITS HERE BESIDE `POLE_PIN` AND `THROW_PINS` BECAUSE IT IS THE SAME KIND OF FACT AS
+ * THEY ARE** - where one selector's terminals sit on the symbol it is drawn with - and because
+ * its previous home, `../schematic/section-board.ts`, is deleted with the schematic generator it
+ * was written for. Its reader is the drafted-page guard's `tests/circuits/sheet-model.ts` - the
+ * other was that deleted file's `switchOverride` - and a copy would be a second place for one
+ * fact about one switch to be wrong.
+ */
+export const SPDT_PINS: Readonly<Record<string, string>> = { common: "2", boost: "1", cut: "3" }
 
 /** A pot's lugs, in the order a panel-mount part numbers them. */
 export const POT_PAD_ORDER: readonly string[] = ["ccw", "wiper", "cw"]
@@ -165,16 +336,52 @@ export function footprintForKind(component: Component): string {
   )
 }
 
-/** The symbol an off-board component's value field takes, by kind. */
+/**
+ * The symbol an off-board component's value field takes, by kind.
+ *
+ * It no longer returns `undefined`: every off-board part on the five sections
+ * has a chosen part now, and a kind or shape with no symbol REFUSES by name
+ * rather than handing back a gap for a caller to interpret.
+ */
 export function symbolFor(component: Component): string {
   if (component.kind === "potentiometer") return POT_SYMBOL
   if (component.kind === "inductor") return INDUCTOR_SYMBOL
   if (component.kind === "switch") {
     const unit = component.units[0]
     if (unit === undefined) throw new Error(`switch "${component.id}" has no unit`)
-    return Object.keys(unit.pins).length > 3 ? ROTARY_SYMBOL : TOGGLE_SYMBOL
+    const pins = Object.keys(unit.pins)
+    // THE THROW COUNT IS THE PIN COUNT LESS THE COMMON, which is what
+    // `rotaryPadOrder` above already asserts the shape of: a rotary's pins are
+    // one `common` plus one per selectable position. A three-pin switch is the
+    // boost/off/cut toggle, which is an SPDT and not a rotary.
+    if (pins.length <= 3) return TOGGLE_SYMBOL
+    if (!pins.includes("common")) {
+      throw new Error(
+        `switch "${component.id}" has ${pins.length} pins and no "common" pin, so its throw ` +
+          `count cannot be derived and no rotary symbol can be named for it. Its pins are ` +
+          `${pins.join(", ")}. Give it a "common" pin where it has one, or add its shape to ` +
+          "symbolFor in circuits/pultec/physical/parts.ts - the count is not guessed from the " +
+          "pin total, because a multi-pole rotary's pins include one common per pole and " +
+          "guessing would name a symbol with the wrong number of throws.",
+      )
+    }
+    return rotarySymbolFor(component.id, pins.length - 1)
   }
   throw new Error(`no symbol is defined for off-board component "${component.id}"`)
+}
+
+/**
+ * The part spec an off-board component carries: whatever it already had, plus
+ * the KiCad symbol for its kind.
+ *
+ * The absent-field branch is gone with the unmade decision it existed for. It
+ * returned `{ ...component.part }` with no `symbol` key for the one selector
+ * whose part was unchosen, so the emitters refused on the gap; the owner chose
+ * a 1x12 on 2026-10-13, `symbolFor` always answers, and a branch that can no
+ * longer be reached is deleted rather than kept as a stub.
+ */
+export function offBoardPart(component: Component): PartSpec {
+  return { ...component.part, symbol: symbolFor(component) }
 }
 
 /**
@@ -294,7 +501,7 @@ export function ownComponents(owner: ModuleOwner): readonly Component[] {
   }
   return owned.map((component) =>
     OFF_BOARD.has(component.id)
-      ? { ...component, part: { ...component.part, symbol: symbolFor(component) } }
+      ? { ...component, part: offBoardPart(component) }
       : { ...component, part: { ...component.part, footprint: footprintForKind(component) } })
 }
 

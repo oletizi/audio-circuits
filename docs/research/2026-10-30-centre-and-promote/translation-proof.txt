@@ -1,0 +1,145 @@
+==============================================================================
+pultec-hi-boost
+  before /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/pre-centre/pultec-hi-boost.kicad_sch
+  after  drafted/pultec/pultec-hi-boost/pultec-hi-boost.generated-do-not-edit.kicad_sch
+
+  COUNTS
+    wires           72 vs    72   same
+    symbols         32 vs    32   same
+    pin points      73 vs    73   same
+    labels          28 vs    28   same
+    junctions       17 vs    17   same
+    rectangles       6 vs     6   same
+    texts            6 vs     6   same
+    CONTROL  one wire deleted from the after-sheet: counts differ - CHECK DISCRIMINATES
+  WIRE LENGTH
+    total          1181.100 vs   1181.100 mm   same
+    CONTROL  one wire shortened 5 mm: total   1181.020, differs - CHECK DISCRIMINATES
+  RIGID TRANSLATION
+    367 placed points (wire ends, symbol origins, every symbol FIELD, junctions, labels, rectangle corners, texts)
+    offset       dx +9.5250 mm   dy +0.0000 mm
+    worst deviation from that single offset: dx 2.49e-14 mm, dy 0.00e+00 mm   RIGID
+    CONTROL  one symbol moved 1.27 mm diagonally in the after-sheet: the single-offset test fails - CHECK DISCRIMINATES
+  FIELD ANGLES
+    128 fields, angles IDENTICAL
+    CONTROL  one field rotated 90 degrees: angles differ - CHECK DISCRIMINATES
+
+  VERDICT  a rigid translation of +9.5250 mm in x and 0 in y; every check had a control that reported a difference.
+exit=0
+
+==============================================================================
+pultec-hi-cut
+  before /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/pre-centre/pultec-hi-cut.kicad_sch
+  after  drafted/pultec/pultec-hi-cut/pultec-hi-cut.generated-do-not-edit.kicad_sch
+
+  COUNTS
+    wires           46 vs    46   same
+    symbols         26 vs    26   same
+    pin points      60 vs    60   same
+    labels          22 vs    22   same
+    junctions       19 vs    19   same
+    rectangles       6 vs     6   same
+    texts            6 vs     6   same
+    CONTROL  one wire deleted from the after-sheet: counts differ - CHECK DISCRIMINATES
+  WIRE LENGTH
+    total           974.090 vs    974.090 mm   same
+    CONTROL  one wire shortened 5 mm: total    979.090, differs - CHECK DISCRIMINATES
+  RIGID TRANSLATION
+    281 placed points (wire ends, symbol origins, every symbol FIELD, junctions, labels, rectangle corners, texts)
+    offset       dx +0.0000 mm   dy +0.0000 mm
+    worst deviation from that single offset: dx 0.00e+00 mm, dy 0.00e+00 mm   RIGID
+    CONTROL  one symbol moved 1.27 mm diagonally in the after-sheet: the single-offset test fails - CHECK DISCRIMINATES
+  FIELD ANGLES
+    104 fields, angles IDENTICAL
+    CONTROL  one field rotated 90 degrees: angles differ - CHECK DISCRIMINATES
+
+  VERDICT  a rigid translation of +0.0000 mm in x and 0 in y; every check had a control that reported a difference.
+exit=0
+
+==============================================================================
+pultec-low-boost
+  before /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/pre-centre/pultec-low-boost.kicad_sch
+  after  drafted/pultec/pultec-low-boost/pultec-low-boost.generated-do-not-edit.kicad_sch
+
+  COUNTS
+    wires           78 vs    78   same
+    symbols         25 vs    25   same
+    pin points      57 vs    57   same
+    labels          20 vs    20   same
+    junctions       14 vs    14   same
+    rectangles       4 vs     4   same
+    texts            4 vs     4   same
+    CONTROL  one wire deleted from the after-sheet: counts differ - CHECK DISCRIMINATES
+  WIRE LENGTH
+    total           605.790 vs    605.790 mm   same
+    CONTROL  one wire shortened 5 mm: total    605.710, differs - CHECK DISCRIMINATES
+  RIGID TRANSLATION
+    325 placed points (wire ends, symbol origins, every symbol FIELD, junctions, labels, rectangle corners, texts)
+    offset       dx -8.8900 mm   dy +0.0000 mm
+    worst deviation from that single offset: dx 1.42e-14 mm, dy 0.00e+00 mm   RIGID
+    CONTROL  one symbol moved 1.27 mm diagonally in the after-sheet: the single-offset test fails - CHECK DISCRIMINATES
+  FIELD ANGLES
+    98 fields, angles IDENTICAL
+    CONTROL  one field rotated 90 degrees: angles differ - CHECK DISCRIMINATES
+
+  VERDICT  a rigid translation of -8.8900 mm in x and 0 in y; every check had a control that reported a difference.
+exit=0
+
+==============================================================================
+pultec-low-cut
+  before /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/pre-centre/pultec-low-cut.kicad_sch
+  after  drafted/pultec/pultec-low-cut/pultec-low-cut.generated-do-not-edit.kicad_sch
+
+  COUNTS
+    wires           63 vs    63   same
+    symbols         25 vs    25   same
+    pin points      58 vs    58   same
+    labels          22 vs    22   same
+    junctions       17 vs    17   same
+    rectangles       6 vs     6   same
+    texts            6 vs     6   same
+    CONTROL  one wire deleted from the after-sheet: counts differ - CHECK DISCRIMINATES
+  WIRE LENGTH
+    total           873.760 vs    873.760 mm   same
+    CONTROL  one wire shortened 5 mm: total    878.760, differs - CHECK DISCRIMINATES
+  RIGID TRANSLATION
+    308 placed points (wire ends, symbol origins, every symbol FIELD, junctions, labels, rectangle corners, texts)
+    offset       dx -8.2550 mm   dy +0.0000 mm
+    worst deviation from that single offset: dx 2.49e-14 mm, dy 0.00e+00 mm   RIGID
+    CONTROL  one symbol moved 1.27 mm diagonally in the after-sheet: the single-offset test fails - CHECK DISCRIMINATES
+  FIELD ANGLES
+    100 fields, angles IDENTICAL
+    CONTROL  one field rotated 90 degrees: angles differ - CHECK DISCRIMINATES
+
+  VERDICT  a rigid translation of -8.2550 mm in x and 0 in y; every check had a control that reported a difference.
+exit=0
+
+==============================================================================
+pultec-mid
+  before /private/tmp/claude-501/-Users-orion-work-audio-circuits-work-pultec-modularize/7351c56b-0470-40ca-bb36-6cea2909f627/scratchpad/cap/pre-centre/pultec-mid.kicad_sch
+  after  drafted/pultec/pultec-mid/pultec-mid.generated-do-not-edit.kicad_sch
+
+  COUNTS
+    wires           84 vs    84   same
+    symbols         44 vs    44   same
+    pin points     102 vs   102   same
+    labels          37 vs    37   same
+    junctions       29 vs    29   same
+    rectangles       6 vs     6   same
+    texts            6 vs     6   same
+    CONTROL  one wire deleted from the after-sheet: counts differ - CHECK DISCRIMINATES
+  WIRE LENGTH
+    total          1678.940 vs   1678.940 mm   same
+    CONTROL  one wire shortened 5 mm: total   1683.940, differs - CHECK DISCRIMINATES
+  RIGID TRANSLATION
+    472 placed points (wire ends, symbol origins, every symbol FIELD, junctions, labels, rectangle corners, texts)
+    offset       dx +0.0000 mm   dy +0.0000 mm
+    worst deviation from that single offset: dx 0.00e+00 mm, dy 0.00e+00 mm   RIGID
+    CONTROL  one symbol moved 1.27 mm diagonally in the after-sheet: the single-offset test fails - CHECK DISCRIMINATES
+  FIELD ANGLES
+    176 fields, angles IDENTICAL
+    CONTROL  one field rotated 90 degrees: angles differ - CHECK DISCRIMINATES
+
+  VERDICT  a rigid translation of +0.0000 mm in x and 0 in y; every check had a control that reported a difference.
+exit=0
+

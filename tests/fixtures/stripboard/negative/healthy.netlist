@@ -1,0 +1,15 @@
+( { EESchema Netlist Version 1.1 created  2026-10-11T00:00:00 }
+ ( /R1 RESISTOR4  R1 10K
+  (    1 top )
+  (    2 bottom )
+ )
+ ( /R2 RESISTOR4  R2 22K
+  (    1 top )
+  (    2 bottom )
+ )
+ ( /J1 SIP2  J1 Conn_01x02
+  (    1 top )
+  (    2 bottom )
+ )
+)
+*
