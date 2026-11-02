@@ -514,6 +514,20 @@ free area this page's `RECORD.md` measures), or should the build guide print
 row in the Decisions table of
 `docs/superpowers/specs/2026-11-01-staged-preamp-copperhead-drawing-design.md`.
 
+**THEN, 2026-11-02, THE PROMOTED SHEET CHANGED - AWAITING THE OWNER'S REVIEW.**
+Per `docs/superpowers/specs/2026-11-02-staged-preamp-fixed-stage-one-design.md`,
+the staged board's stage 1 is fixed at the values tuned on the buffered board,
+and `circuits/transistor-preamp/staged-board.kicad_sch` was repaired in place to
+match: RV1-RV4 deleted, R1 820K, R2 270K, R3 2.7K, C1 straight to GND, nothing
+outside stage 1 moved. sha256
+`402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493` ->
+`31a5e0c47ebf3a2ee1d94e6d3c0d62d534137e86690863abfbe9411fba04422e`. **No verdict
+is recorded against the new bytes**; the page awaits his review. The repair and
+its replay are in `drafted/transistor-preamp/transistor-preamp-staged/repair/`,
+and that page's `RECORD.md` has the before/after measurements. ERC on the new
+sheet from `circuits/transistor-preamp/`: 0 errors, 7 warnings, the same kinds
+as above.
+
 ---
 
 ## What this record is for, beyond not losing a verdict
