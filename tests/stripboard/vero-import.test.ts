@@ -417,9 +417,12 @@ const SPAN_FINDINGS: Readonly<Record<string, readonly string[]>> = {
   "transistor-preamp-buffered": [],
   "transistor-preamp-feedback": [],
   "transistor-preamp-loop": [],
-  // The one already-recorded HC5 failure in this repository, and the only
-  // placement on any committed board outside its own recorded bound.
-  "transistor-preamp-staged": ["C8 spans 14 holes, outside 2..11"],
+  // Empty since the 2026-11-02 re-capture (the board re-placed for the fixed
+  // stage 1). The capture before it - the board at 7e1406c3 - carried this
+  // repository's one recorded HC5 failure, "C8 spans 14 holes, outside 2..11";
+  // measured on the new capture, C8 spans 6 holes and no part is outside its
+  // bound, so no committed board now has a placement outside its recorded bound.
+  "transistor-preamp-staged": [],
 }
 
 for (const board of COMMITTED_BOARDS) {
@@ -448,10 +451,12 @@ for (const board of COMMITTED_BOARDS) {
 }
 
 /**
- * THE FIT IS CROSS-CHECKED AGAINST THE FORK'S OWN `DIRECTION` FIELD, on the two
- * dumps that carry one.
+ * THE FIT IS CROSS-CHECKED AGAINST THE FORK'S OWN `DIRECTION` FIELD, on the
+ * three importing dumps that carry one. `transistor-preamp-staged` joined on
+ * 2026-11-02, when its dump was re-captured from the re-placed board by a binary
+ * that prints the field.
  *
- * Four of the seven captures predate that field, so the facing is solved from
+ * Three of the seven captures predate that field, so the facing is solved from
  * the pins rather than read - which is a derivation, and a derivation nobody
  * checks is a guess with a type. Here it is checked: on a board where every
  * part carries a `DIRECTION`, the solved facing must be a FUNCTION of that
@@ -460,7 +465,11 @@ for (const board of COMMITTED_BOARDS) {
  * correspondence is not something it may claim - only that the map is
  * single-valued, which an arbitrary fit would not be.
  */
-const DIRECTED: readonly string[] = ["transistor-preamp-loop", "transistor-preamp-buffered"]
+const DIRECTED: readonly string[] = [
+  "transistor-preamp-loop",
+  "transistor-preamp-buffered",
+  "transistor-preamp-staged",
+]
 
 for (const name of DIRECTED) {
   const board = boardNamed(name)

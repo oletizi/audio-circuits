@@ -13,9 +13,10 @@
  * comes from its `PIN` lines and nothing else - the dump is the authority for a
  * board that already exists, which is the direction of authority
  * `CLAUDE.md` states for a design being brought in. What this module decides is
- * the single field a dump does not reliably carry: `Placement.direction`. Four
+ * the single field a dump does not reliably carry: `Placement.direction`. Three
  * of the seven committed dumps print no `DIRECTION` at all (they predate the
- * field), so it is solved from the pins rather than read.
+ * field; `transistor-preamp-staged`'s was the fourth until its 2026-11-02
+ * re-capture), so it is solved from the pins rather than read.
  *
  * **A STRETCH IS ADMITTED AND IS NOT A DEFECT**, which is the owner's ruling:
  * *"the whole point of stripboards is to use the flexibility of the leads to
@@ -28,10 +29,12 @@
  * applied here**: `HC5`/`HC9` own them and this module would be a second owner.
  * Measured with `spanHoles`' own INCLUSIVE convention
  * (`tools/stripboard/constraints-model.ts`: `max(|dRow|, |dCol|) + 1`, so two
- * leads in adjacent holes span TWO), exactly one placement on the committed
- * boards is outside its recorded bound: `transistor-preamp-staged`'s `C8` at 14
- * holes against a ceiling of 11, which is this repository's one already-recorded
- * `HC5` failure. **An earlier version of this comment claimed two of
+ * leads in adjacent holes span TWO), no placement on the committed boards is
+ * outside its recorded bound. The one that was - `transistor-preamp-staged`'s
+ * `C8` at 14 holes against a ceiling of 11, this repository's one recorded `HC5`
+ * failure - was on that board's capture from `7e1406c3`; its 2026-11-02
+ * re-capture places `C8` at 6 holes. `tests/stripboard/vero-import.test.ts`'s
+ * `SPAN_FINDINGS` asserts the per-board figures. **An earlier version of this comment claimed two of
  * `buffered`'s resistors were under the DIN0207's floor of two; they are at
  * exactly the floor, and the claim was a pitch count read as an inclusive
  * span.**

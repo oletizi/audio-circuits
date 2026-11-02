@@ -93,6 +93,9 @@ files above: the export has 9 nets and 27 pins; the dump has 9 NODE lines and
 and not the other - once the dump's PAD provenance is read (see below). The
 same comparison on the other three: 21/65, 11/37 and 22/78, agreeing on both
 counts and on every pin identity. Nothing was adjusted to make it agree.
+(The staged figure, 22/78, is of the capture this directory held until
+2026-11-02; its re-capture, below, is 18/66 against an export of 18 nets and 66
+pins, and tests/stripboard/agreement.test.ts's HC8 row for it passes.)
 
 THE ONE FIELD THAT IS NOT BYTE-REPRODUCIBLE: the .netlist's header comment
 carries the timestamp the export ran at, `{ EESchema Netlist Version 1.1
@@ -126,8 +129,24 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
                  last changed in commit 153dea950e38515b6b43e327dea9f363efb5db7f
                  sha256 b52e3858521a3e8616b3bf7088bb235b4cfa614baf30b102ebf19609ed10e85e
   input board    boards/transistor-preamp-staged/transistor-preamp-staged.perfboard.vrt
-                 last changed in commit 7e1406c3d4c2e20dedd9e46d449e87d049e51cc3
-                 sha256 cb55f3ee15f0636bd8bef267bc3223243126eb9b0f8130402cc301bb5cb347a8
+                 last changed in commit fcfb3f2a33a456769c647ca0a87a805723ed6da5
+                 sha256 4e579f9872a0d844972f843562051f7afffadc7f21ed853d2c8bfe5ad6d2ebb9
+                 RE-CAPTURED 2026-11-02, by the command above and no other, for
+                 Task 3 of docs/superpowers/plans/2026-11-02-staged-preamp-fixed-stage-one.md:
+                 stage 1 of the staged board became three fixed resistors
+                 (R1 820k, R2 270k, R3 2.7k; RV1-RV4 and the floor resistors
+                 removed), the layout was re-placed for it
+                 (boards/transistor-preamp-staged/layout/REPLAY.md), and the
+                 previous capture placed parts the circuit no longer has, so
+                 every HC8, cut and invariant comparison over it refused.
+                 The previous capture was of the board as it stood at
+                 7e1406c3d4c2e20dedd9e46d449e87d049e51cc3,
+                 sha256 cb55f3ee15f0636bd8bef267bc3223243126eb9b0f8130402cc301bb5cb347a8,
+                 and its dump was
+                 sha256 d0dac0ce9765f8fdd24c0c3181341559173a39099d24c253ded5dd1c60d5e797
+                 (10 cuts, 7 wires, no DIRECTION or BOUNDS lines); the
+                 re-capture has 0 cuts, 2 wires, 1 solder bridge, and carries
+                 DIRECTION on every PART line and a BOUNDS line
 
   these fixtures
     pultec-low-boost-frozen.vrt
@@ -141,7 +160,8 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
     transistor-preamp-feedback.dump
       sha256 b1bf9e56c0738476c6db5e24c88fdef7d9dd20d12730e93657a899de1c2a545a
     transistor-preamp-staged.dump
-      sha256 d0dac0ce9765f8fdd24c0c3181341559173a39099d24c253ded5dd1c60d5e797
+      sha256 b765e07838d66ec4cedc47ceaefa6bb7167ef07432a4e79814063e880d9dec47
+      (re-captured 2026-11-02 - see its input board above)
 
   the reference netlists the three further dumps are graded against are not
   copied here and are not hashed here either; they are committed sources with
@@ -158,6 +178,12 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
       affected; this entry's dump above is a dated capture against the input
       board at 7e1406c3, from before that promotion and before 60ded02's
       re-placement)
+      (regenerated again in 2185dfe7ba2d3953cd40cd7191d1ac641e9356c9, the
+      fixed-stage-one sheet repair, to
+      f6e67426a3cee21d1d516b6d903a148e947ed2f6627ef6e69473fa239ed4fb40 - a
+      DIFFERENT partition this time: RV1-RV4 gone, 22 nets and 78 pins
+      become 18 nets and 66 pins. The staged dump above was re-captured against the board laid
+      out for this export, and is graded against it)
 
   binary         .tools/veroroute-perfboard at commit
                  0bf46e5b1b97c6bd206af39e7217ba1fe278a207, which is what
@@ -167,6 +193,11 @@ PROVENANCE OF THE INPUTS, AND THE BINARY THAT WROTE THE OUTPUTS
                  --version prints "VeroRoute Version 2.40", the upstream app
                  version, which carries no fork commit; the stamp is the only
                  witness of which build ran
+                 EXCEPT transistor-preamp-staged.dump since its 2026-11-02
+                 re-capture: written by .tools/veroroute-perfboard at commit
+                 9d35333ca782d0e0ffd5e5b15578f2da66c4a564, which is what
+                 veroroute.pin pins at that re-capture and what
+                 .tools/veroroute-perfboard/.built-commit records as built
 
 WHAT MAY NOT BE CONCLUDED FROM IT
 ---------------------------------
@@ -332,6 +363,10 @@ line and a BOUNDS line, which the three older captures do not, because those
 were taken before either field existed. tools/guide/dump.ts treats both fields
 as optional for exactly this reason and its own header says so. Nothing was
 regenerated to make them match: the older three are frozen evidence.
+(Since 2026-11-02 that is two of the three: transistor-preamp-staged.dump was
+re-captured because its board was re-placed - the reason is with its entry
+above - and the binary that did it prints both fields, so it now carries them.
+It was not re-captured to make it match.)
 
   binary         .tools/veroroute-perfboard at commit
                  ed6c5a64eb5125346e8b0bc0b434b332c7750bb6, which is what

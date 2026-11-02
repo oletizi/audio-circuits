@@ -123,7 +123,10 @@ function rowsAlong(pads: readonly PadPosition[], axis: "x" | "y"): readonly (rea
  *
  * MEASURED BEFORE BEING RELIED ON, on four committed boards: zero violations on
  * `pt2399-core` (12 graded), `transistor-preamp-feedback` (16) and
- * `transistor-preamp-staged` (30), all three of which pass `make check`; and
+ * `transistor-preamp-staged` (30), all three of which pass `make check` - staged
+ * re-measured on 2026-11-02 after it was re-placed for its fixed stage 1, by
+ * `make check`'s own `HC10` line: all 30 placed parts admitted, 0 footprint rows
+ * with two or more pins on one strip; and
  * FIVE on `transistor-preamp-lab`, which does not - `C3`, `R4`, `RV2`, `RV4`
  * and `RV5` each have both leads of one row on a single strip. So the rule is
  * satisfied by every board a person built and in service, and is not vacuous:
