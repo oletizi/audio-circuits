@@ -1,6 +1,6 @@
 # Staged preamp: stage 1 at the tuned values, as fixed parts
 
-**Status:** reviewed; the owner chose the values. The implementation plan is next.
+**Status:** the owner chose the values (820k / 270k). The implementation plan is next.
 
 ## Why
 
@@ -102,7 +102,7 @@ Each of these is regenerated or redone, never left stale:
 | Decision | Who | Why |
 | --- | --- | --- |
 | Fix stage 1 at the buffered board's tuned values on the staged board | owner | *"I'd like to fix the variables we've already found suitable values for"* |
-| Collector 2.7k, emitter fully bypassed (RV4 removed) | this writer, reviewed | 2.7k is the E24 value nearest 1k + 1.8k; RV4 was at 0 |
-| Feedback, buffered and loop boards keep their trims | this writer, reviewed | they are tuning boards; stage 1's builder is shared, so it is parameterised, not copied |
+| Collector 2.7k, emitter fully bypassed (RV4 removed) | this writer | 2.7k is the E24 value nearest 1k + 1.8k; RV4 was at 0 |
+| Feedback, buffered and loop boards keep their trims | this writer | they are tuning boards; stage 1's builder is shared, so it is parameterised, not copied |
 | Feedback leg 820k, base-to-ground leg 270k | owner | *"Let's use the 820K/270K pair"* |
 | Staged board not yet built | owner | *"I have not build the staged board yet"* |
