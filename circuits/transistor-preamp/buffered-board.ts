@@ -69,8 +69,13 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
 
 /** Stage 1's starting settings, then what the follower is and what to measure on it. */
 export function schematicNotes(): readonly string[] {
+  return [...feedbackNotes(), ...followerNotes()]
+}
+
+/** What the follower is and what to measure on it. Shared with the staged board,
+ * whose stage 1 is fixed and so has no starting settings to print. */
+export function followerNotes(): readonly string[] {
   return [
-    ...feedbackNotes(),
     "OUTPUT: Q2 is an emitter follower (no trim). R5/R6 bias its base below the",
     "naive 4.5 V by an amount that depends on beta - measure Q2's base and emitter",
     "voltages, V_BE and I_E = V_E / 1.5k.",

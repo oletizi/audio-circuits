@@ -37,16 +37,49 @@ function twoPin(network: Network, id: string): readonly [string, string] {
   return [netOf(component, "a"), netOf(component, "b")]
 }
 
-test("the staged board validates: 34 parts, the buffered board's ids and designators unchanged", () => {
+const REMOVED_STAGE_ONE_TRIMS = [
+  "feedback_floor", "feedback_trim", "base_ground_floor", "base_ground_trim",
+  "collector_floor", "collector_trim", "emitter_bypass_trim",
+]
+
+test("the staged board validates: 30 parts, the buffered board's remaining ids and designators unchanged", () => {
   const network = transistorPreampStaged()
   expect(() => validateNetwork(network)).not.toThrow()
-  expect(network.components.map((c) => c.id).sort()).toEqual(Object.keys(DESIGNATORS).sort())
   const designators = Object.values(DESIGNATORS)
   expect(new Set(designators).size).toBe(designators.length)
-  expect(network.components.length).toBe(34)
+  expect(network.components.length).toBe(30)
   for (const [id, designator] of Object.entries(buffered.DESIGNATORS)) {
-    expect(DESIGNATORS[id]).toBe(designator)
+    if (REMOVED_STAGE_ONE_TRIMS.includes(id)) expect(DESIGNATORS[id]).toBeUndefined()
+    else expect(DESIGNATORS[id]).toBe(designator)
   }
+  // The removed trims' designators are not reused.
+  for (const gone of ["RV1", "RV2", "RV3", "RV4"]) expect(designators).not.toContain(gone)
+})
+
+test("every component has a designator, and every designator names a component", () => {
+  const ids = transistorPreampStaged().components.map((c) => c.id)
+  for (const id of ids) expect(DESIGNATORS[id]).toBeDefined()
+  for (const id of Object.keys(DESIGNATORS)) expect(ids).toContain(id)
+})
+
+test("stage 1 is fixed: R1 820k feedback, R2 270k base to ground, R3 2.7k collector, C1 straight to GND", () => {
+  const n = transistorPreampStaged()
+  const fixed: readonly (readonly [string, string, readonly [string, string], number])[] = [
+    ["feedback_resistor", "R1", ["COLLECTOR", "BASE"], 820e3],
+    ["base_ground_resistor", "R2", ["BASE", "GND"], 270e3],
+    ["collector_resistor", "R3", ["VCC", "COLLECTOR"], 2.7e3],
+  ]
+  for (const [id, designator, nets, ohms] of fixed) {
+    expect(DESIGNATORS[id]).toBe(designator)
+    expect(twoPin(n, id)).toEqual(nets)
+    const part = byId(n, id)
+    expect(part.kind).toBe("resistor")
+    if (!("ohms" in part.parameters)) throw new Error(`"${id}" carries no ohms parameter`)
+    expect(part.parameters.ohms).toBe(ohms)
+  }
+  expect(twoPin(n, "emitter_bypass_cap")).toEqual(["EMITTER", "GND"])
+  const pots = n.components.filter((c) => c.kind === "potentiometer").map((c) => DESIGNATORS[c.id]).sort()
+  expect(pots).toEqual(["RV5", "RV6", "RV7"])
 })
 
 test("DRIVE and TRANSFORMER DRIVE are each wired cap - pot - cap, with + terminals on the biased side", () => {
@@ -83,8 +116,16 @@ test("the board lowers to a VeroRoute netlist: panel pots on 3-pin headers", () 
   expect(typeOf("C7")).toBe("CAP_ELECTRO_400")
 })
 
-test("the schematic notes name the three panel controls", () => {
-  const text = schematicNotes().join("\n")
+test("the schematic notes state stage 1's fixed values, then the follower, then the three panel controls", () => {
+  const notes = schematicNotes()
+  expect(notes[0]).toBe(
+    "STAGE 1 is fixed at the values tuned by hand on the buffered board: R1 820k feedback, " +
+      "R2 270k base to ground, R3 2.7k collector, emitter fully bypassed.",
+  )
+  const follower = [...buffered.followerNotes()]
+  expect(notes.slice(1, 1 + follower.length)).toEqual(follower)
+  const text = notes.join("\n")
+  for (const gone of ["RV1", "RV2", "RV3", "RV4", "STARTING SETTINGS"]) expect(text).not.toContain(gone)
   for (const control of ["DRIVE (RV5)", "CHARACTER (RV6)", "TRANSFORMER DRIVE (RV7)"]) expect(text).toContain(control)
 })
 
@@ -164,15 +205,17 @@ test("powerUpChecks: one accurate conditions statement, then the supply, Q1, Q3,
   const { conditions, checks } = await powerUpChecks()
 
   // One stated condition covering everything the readings depend on: the
-  // supply, the on-board trims RV1-RV4 (carried over from the feedback
-  // stage, not just the panel controls) and the panel controls RV5-RV7 -
-  // with START's actual values, not just "START" asserted by name.
+  // supply, stage 1's fixed legs R1-R3 (no trims on this board) and the
+  // panel controls RV5-RV7 - with START's actual values, not just "START"
+  // asserted by name.
   expect(conditions).toContain("24 V")
-  for (const designator of ["RV1", "RV2", "RV3", "RV4", "RV5", "RV6", "RV7"]) expect(conditions).toContain(designator)
+  for (const designator of ["RV5", "RV6", "RV7"]) expect(conditions).toContain(designator)
+  for (const gone of ["RV1", "RV2", "RV3", "RV4"]) expect(conditions).not.toContain(gone)
   expect(conditions).toContain("START")
-  expect(conditions).toContain("470k") // RV1 feedback leg
-  expect(conditions).toContain("150k") // RV2 base-to-ground leg
-  expect(conditions).toContain("1.8k") // RV3 collector leg
+  expect(conditions).toContain("R1 820k feedback")
+  expect(conditions).toContain("R2 270k base to ground")
+  expect(conditions).toContain("R3 2.7k collector")
+  expect(conditions).toContain("emitter fully bypassed")
   expect(conditions).toContain("272R") // RV6 CHARACTER, formatted from START.character
   expect(conditions).toContain("50%") // RV5 DRIVE and RV7 TRANSFORMER DRIVE, both 0.5
 
