@@ -1,6 +1,6 @@
 # Staged preamp: stage 1 at the tuned values, as fixed parts
 
-**Status:** the owner chose the values (820k / 270k). The implementation plan is next.
+**Status:** implemented on `feature/transistor-preamp` (plan `docs/superpowers/plans/2026-11-02-staged-preamp-fixed-stage-one.md`); the repaired schematic and the re-placed stripboard await the owner's evaluation.
 
 ## Why
 

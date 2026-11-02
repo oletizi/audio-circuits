@@ -86,8 +86,8 @@ export function transistorPreampFeedback(): Network {
  * Stage 1's feedback, base-to-ground and collector legs, plus the emitter
  * bypass: either the bench boards' trim pots (feedback, buffered, loop - each
  * leg a fixed floor resistor plus a trim pot, tuned on the bench) or a fixed
- * board's single resistors at already-tuned values (the staged board, once
- * Task 2 switches it).
+ * board's single resistors at already-tuned values (the staged board, using the
+ * fixed stage-1 variant defined as STAGE_ONE in staged-board.ts).
  */
 export type StageOneLegs =
   | { readonly kind: "trimmed" }

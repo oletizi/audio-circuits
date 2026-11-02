@@ -9,7 +9,7 @@
    in `lib_symbols` with no instance. KiCad drops an unused cache entry when it
    saves; this removes it the same way. Refuses if any instance still uses it.
 
-usage: python3 02-text-edits.py <sheet.kicad_sch>   (edits in place)
+usage: python3 03-text-edits.py <sheet.kicad_sch>   (edits in place)
 """
 import pathlib
 import sys
@@ -28,7 +28,7 @@ wires = sheet.wires()
 fresh = [w for w in wires if w.width == 0]
 old = [w for w in wires if w.width != 0]
 if not fresh:
-    raise SystemExit("02-text-edits: no width-0 wire on the sheet - is this the sheet after 01's op-list?")
+    raise SystemExit("03-text-edits: no width-0 wire on the sheet - is this the sheet after 01's op-list?")
 
 lines = src.split("\n")
 
@@ -36,7 +36,7 @@ lines = src.split("\n")
 def stroke_text_of(uuid):
     hits = [ln for ln in lines if f'(uuid "{uuid}")' in ln and ln.lstrip().startswith("(wire")]
     if len(hits) != 1:
-        raise SystemExit(f"02-text-edits: wire {uuid} is not one one-line (wire ...) form ({len(hits)} found)")
+        raise SystemExit(f"03-text-edits: wire {uuid} is not one one-line (wire ...) form ({len(hits)} found)")
     start = hits[0].index("(stroke ")
     end = hits[0].index(" (uuid ")
     return hits[0][start:end]
@@ -59,31 +59,31 @@ while pending:
                     any(f.contains(x, y) for x, y in ((w.x1, w.y1), (w.x2, w.y2)))):
                 strokes.add(resolved[f.uuid])
         if len(strokes) > 1:
-            raise SystemExit(f"02-text-edits: wire {w} meets wires of different strokes {sorted(strokes)}; "
+            raise SystemExit(f"03-text-edits: wire {w} meets wires of different strokes {sorted(strokes)}; "
                              "it is on two nets or the page's strokes are inconsistent - not choosing")
         if len(strokes) == 1:
             resolved[w.uuid] = strokes.pop()
             pending.remove(w)
             progress = True
     if not progress:
-        raise SystemExit(f"02-text-edits: no stroke to copy for {pending}; no pre-existing wire meets them")
+        raise SystemExit(f"03-text-edits: no stroke to copy for {pending}; no pre-existing wire meets them")
 
 for i, ln in enumerate(lines):
     for uuid, stroke in resolved.items():
         if f'(uuid "{uuid}")' in ln and ln.lstrip().startswith("(wire"):
             if NEW_STROKE not in ln:
-                raise SystemExit(f"02-text-edits: wire {uuid} does not carry akcli's stroke text")
+                raise SystemExit(f"03-text-edits: wire {uuid} does not carry akcli's stroke text")
             lines[i] = ln.replace(NEW_STROKE, stroke)
             print(f"stroke {uuid}: {stroke}")
 src = "\n".join(lines)
 
 # 2. The unused embedded symbol, removed by balanced-paren span.
 if f'(lib_id "{UNUSED}")' in src:
-    raise SystemExit(f"02-text-edits: an instance still uses {UNUSED}; not removing its library entry")
+    raise SystemExit(f"03-text-edits: an instance still uses {UNUSED}; not removing its library entry")
 head = f'(symbol "{UNUSED}"'
 at = src.find(head)
 if at < 0:
-    raise SystemExit(f"02-text-edits: no lib_symbols entry {UNUSED} to remove")
+    raise SystemExit(f"03-text-edits: no lib_symbols entry {UNUSED} to remove")
 depth = 0
 i = at
 in_str = False
