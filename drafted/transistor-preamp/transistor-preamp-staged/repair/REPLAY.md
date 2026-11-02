@@ -18,7 +18,10 @@ start of this replay and is not changed by it; see `../RECORD.md`.
 
 ## Replay
 
-From the repository root, with an empty work directory outside the repository:
+From the repository root, with a new or empty work directory outside the
+repository (`replay.sh` refuses a non-empty one, so nothing an earlier run
+left there can be read as this run's result; it and `verify.sh`, `render.sh`
+and `crop.sh` stop non-zero, naming the step, when any step cannot run):
 
 ```
 sh drafted/transistor-preamp/transistor-preamp-staged/repair/replay.sh <work-dir>
