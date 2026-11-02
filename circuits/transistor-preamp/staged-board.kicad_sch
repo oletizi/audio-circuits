@@ -1264,6 +1264,121 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "power:PWR_FLAG"
+		(power global)
+		(pin_numbers
+			(hide yes)
+		)
+		(pin_names
+			(offset 0)
+			(hide yes)
+		)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(duplicate_pin_numbers_are_jumpers no)
+		(property "Reference" "#FLG"
+			(at 0 1.905 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 0 3.81 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Special symbol for telling ERC where power comes from"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "ki_keywords" "flag power"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(symbol "PWR_FLAG_0_0"
+			(pin power_out line
+				(at 0 0 90)
+				(length 0)
+				(name ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(symbol "PWR_FLAG_0_1"
+			(polyline
+				(pts
+					(xy 0 0) (xy 0 1.27) (xy -1.016 1.905) (xy 0 2.54) (xy 1.016 1.905) (xy 0 1.27)
+				)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type none)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
 	)
 	(text "STARTING SETTINGS (circuits/transistor-preamp/feedback-board.ts)\nEach leg's total resistance and, in parens, what to dial the pot itself to (the leg total minus its fixed floor resistor, where it has one).\n  RV1 leg 470k (trim 0)  RV2 leg 150k (trim 103k)  RV3 leg 1.8k (trim 800R)  RV4 leg 0 (trim 0)\nOther 2B variant: RV1 leg about 1.3M and lift R2 (no base-to-ground leg).\nFully unbypassed emitter: pull C1.\nOUTPUT: Q2 is an emitter follower (no trim). R5/R6 bias its base below the\nnaive 4.5 V by an amount that depends on beta - measure Q2's base and emitter\nvoltages, V_BE and I_E = V_E / 1.5k.\nPANEL CONTROLS (off-board pots on headers):\n  DRIVE (RV5) sets how hard Q3 is driven - the amount of saturation.\n  CHARACTER (RV6) shapes it: toward 0, early and gradual; toward 1k, cleaner for longer.\n  TRANSFORMER DRIVE (RV7) sets how hard Q2 and the output transformer are driven."
 		(exclude_from_sim no)
@@ -6904,4 +7019,8 @@
 		)
 	)
 	(embedded_fonts no)
+	(wire (pts (xy 38.1 39.37) (xy 33.02 39.37)) (stroke (width 0) (type default)) (uuid "917bdce3-8c6c-5114-aba4-3d553592f0d3"))
+	(junction (at 38.1 39.37) (diameter 0) (color 0 0 0 0) (uuid "9e93e688-4187-5cd0-9b87-aadc62855631"))
+	(symbol (lib_id "power:PWR_FLAG") (at 33.02 39.37 180) (unit 1) (uuid "399ecdc2-a12a-5bd2-8e28-e22121786c3a") (pin "1" (uuid "ce2b4354-2220-56d9-acde-a1a8db7bf815")) (property "Reference" "#PWR014" (at 33.02 43.18 0) (effects (font (size 1.27 1.27)) (hide yes))) (instances (project "staged-board" (path "/edcf1b90-b123-4cb4-ac20-b48e3dc5fcca" (reference "#PWR014") (unit 1))))
+	(property "Value" "PWR_FLAG" (at 33.02 43.18 0) (effects (font (size 1.27 1.27)))))
 )
