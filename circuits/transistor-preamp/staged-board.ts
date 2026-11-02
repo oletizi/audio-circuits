@@ -52,6 +52,7 @@ import type { Leg } from "./parts.ts"
 import { STAGED_BOARD_ENVIRONMENT } from "./staged-environment.ts"
 
 export { PIN_NUMBERS } from "./parts.ts"
+export { drawingIntent } from "./staged-board.drawing.ts"
 
 const VCC = "VCC"
 const GND = "GND"

@@ -11,6 +11,7 @@ import * as feedback from "../../circuits/transistor-preamp/feedback-board.ts"
 import * as lab from "../../circuits/transistor-preamp/lab-board.ts"
 import * as loop from "../../circuits/transistor-preamp/loop-board.ts"
 import * as staged from "../../circuits/transistor-preamp/staged-board.ts"
+import { drawingIntent as stagedDrawingIntent } from "../../circuits/transistor-preamp/staged-board.ts"
 import { PIN_NUMBERS, RESISTOR } from "../../circuits/transistor-preamp/parts.ts"
 
 const INPUTS: DrawingInputs = { group: "Board", netKinds: { GND: "ground", VCC: "power" } }
@@ -76,3 +77,15 @@ for (const [board, network, designators] of BOARDS) {
     expect(agreement.agrees ? [] : agreement.disagreements).toEqual([])
   })
 }
+
+test("the staged board exports a one-group intent that agrees with its committed netlist", () => {
+  const intent = stagedDrawingIntent()
+  const groups = new Set(intent.parts.map((part) => part.group))
+  expect([...groups]).toEqual(["Transistor preamp - staged"])
+  expect(intent.hints.groupOrder).toEqual(["Transistor preamp - staged"])
+  expect(intent.nets.find((net) => net.name === "GND")?.kind).toBe("ground")
+  expect(intent.nets.find((net) => net.name === "VCC")?.kind).toBe("power")
+  const netlist = fs.readFileSync(path.join(moduleRepoRoot(), "tests/fixtures/transistor-preamp-staged.net"), "utf8")
+  const agreement = verifyIntentAgainstModel(intent, netlist)
+  expect(agreement.agrees ? [] : agreement.disagreements).toEqual([])
+})
