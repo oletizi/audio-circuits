@@ -102,23 +102,26 @@ test("featuresOutsideBounds is non-empty exactly where a feature reaches past BO
 
 test("BOUNDS and the features coincide on real boards, which is the empty half of that pair", () => {
   // Measured in docs/stripboard/pipeline-verification.md section 2.1 and
-  // re-measured here through the binary: on pultec-low-boost and pt2399-core
-  // BOUNDS equals the extent of every enumerated hole, so nothing is outside.
+  // re-measured here through the binary: on pultec-low-boost, pt2399-core and
+  // transistor-preamp-staged BOUNDS equals the extent of every enumerated hole,
+  // so nothing is outside. Section 2.1 measured staged as over-stating; that was
+  // the layout before it was re-placed to fit 27-hole stock, and the re-placed
+  // board's BOUNDS ends on its last used column.
   const byName = new Map(everyExtentFixture())
-  for (const name of ["pultec-low-boost", "pt2399-core"]) {
+  for (const name of ["pultec-low-boost", "pt2399-core", "transistor-preamp-staged"]) {
     const dump = byName.get(name)
     if (dump === undefined) throw new Error(`${name} is not among the extent fixtures`)
     expect(fabricationExtent(dump).featuresOutsideBounds, name).toEqual([])
   }
-  // And on transistor-preamp-staged BOUNDS OVER-states: it reaches columns no
-  // hole does, so the union equals BOUNDS there and nothing is outside either -
-  // the over-statement shows up as the extent being wider than every feature,
-  // not as a feature outside.
-  const staged = byName.get("transistor-preamp-staged")
-  if (staged === undefined) throw new Error("transistor-preamp-staged is not among the fixtures")
-  const extent = fabricationExtent(staged)
+  // And on transistor-preamp-feedback BOUNDS OVER-states: it reaches a column
+  // no hole does, so the union equals BOUNDS there and nothing is outside
+  // either - the over-statement shows up as the extent being wider than every
+  // feature, not as a feature outside.
+  const feedback = byName.get("transistor-preamp-feedback")
+  if (feedback === undefined) throw new Error("transistor-preamp-feedback is not among the fixtures")
+  const extent = fabricationExtent(feedback)
   expect(extent.featuresOutsideBounds).toEqual([])
-  const columns = requiredFeatures(staged).map((feature) => Number(feature.hole.split(",")[1]))
+  const columns = requiredFeatures(feedback).map((feature) => Number(feature.hole.split(",")[1]))
   expect(extent.maxCol).toBeGreaterThan(Math.max(...columns))
 })
 
