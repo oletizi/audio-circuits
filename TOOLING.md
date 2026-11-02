@@ -235,8 +235,11 @@ reports.
 **For a fresh draft, `make draw` mechanises steps 1 through 3 below.** Run it
 from the board's own directory (`cd boards/<board> && make draw`, or `make -C
 boards/<board> draw` from outside it - there is no `BOARD=` variable). It
-resolves the board's committed copperhead intent, verifies the intent's net
-partition against the model's committed netlist export, drafts with
+resolves the board's intent - a committed file (`COMMITTED_INTENT`,
+`tools/draught/draw-draft.ts`) or a circuit's `drawingIntent()` export
+(`tools/draught/draw-intent.ts`, built by
+`tools/draught/intent-from-network.ts`) - verifies the intent's net partition
+against the model's committed netlist export, drafts with
 copperhead, **re-papers the draft to US Letter** (step 2.5 below), renders
 with `kicad-cli`, and runs the measurement suite - **`selftest.py` first**,
 then `draughting/measure/crossings.py`, `junction_audit.py` and
@@ -778,11 +781,22 @@ What this procedure does not cover
 Stated rather than buried, because each is a place the next run will have to
 decide something this file does not answer:
 
-- **Building the intent file is not automated.** There is no committed tool that
-  derives a copperhead intent from a `Network`. Each board's intent has been
-  hand-built and then verified against the model. **This is the obvious
-  candidate for glue**, and it is glue rather than an algorithm - it computes no
-  coordinate.
+- **"Building the intent file is not automated" - STRUCK 2026-11-01, NOT
+  DELETED, because what it said motivated the tool that replaced it.** It
+  read: *"There is no committed tool that derives a copperhead intent from a
+  `Network`. Each board's intent has been hand-built and then verified against
+  the model. This is the obvious candidate for glue, and it is glue rather than
+  an algorithm - it computes no coordinate."* That gap is closed for a
+  model-authoritative board: `tools/draught/intent-from-network.ts` derives the
+  intent from the `Network`, the circuit's `DESIGNATORS` and `PIN_NUMBERS`, and
+  a small drawing file (`circuits/transistor-preamp/staged-board.drawing.ts` is
+  the first), and the circuit module exports it as `drawingIntent()`. A
+  schematic-authoritative board - the Pultec - still keeps a committed,
+  hand-written intent named in `COMMITTED_INTENT`
+  (`tools/draught/draw-draft.ts`); `tools/draught/draw-intent.ts` resolves
+  between the two declared sources and refuses a board that names both or
+  neither. See "1. Build the copperhead intent from the repo's own model"
+  above for the correction in full.
 - **Group assignment is a judgement with no stated method.** Which parts share a
   group, and in what order, is the main lever on the output and the records show
   it being chosen by trying several.

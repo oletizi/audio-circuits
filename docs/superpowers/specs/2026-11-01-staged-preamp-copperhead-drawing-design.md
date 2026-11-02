@@ -1,7 +1,11 @@
 # Drawing the staged preamp with copperhead
 
-**Status:** the owner has decided the grouping and the intent's source; the
-implementation plan is next. Nothing below is built yet.
+**Status:** built, drawn, reviewed and promoted. The owner decided the
+grouping and the intent's source; the copperhead page was drafted, repaired
+with akcli, reviewed and then promoted to
+`circuits/transistor-preamp/staged-board.kicad_sch` (`288bd0a`) - see the
+Decisions table below, which is authoritative over the sentences in the body
+that predate the promotion.
 
 ## Why
 
@@ -13,7 +17,9 @@ The board already has a sheet, `circuits/transistor-preamp/staged-board.kicad_sc
 the old generator's stub, rearranged by the owner in `fd582f9`, with a
 `PWR_FLAG` added in `f3dca40` so it passes ERC. That sheet is the one
 `perfboard.json` names and the one page 2 of the build guide prints. **This
-work does not touch it.** The copperhead page is a second, separate candidate.
+spec does not touch it directly** - the copperhead page below started as a
+second, separate candidate. (It was later promoted over that sheet on the
+owner's directive; see the Decisions table.)
 
 ## Which way authority runs
 
@@ -115,11 +121,13 @@ the existing sheet, unranked. Measurements follow only on request.
 
 **Whether a copperhead page replaces the current sheet is the owner's call**,
 made after seeing it. Until then `perfboard.json`, the round-trip tests and the
-build guide keep pointing at the existing sheet.
+build guide keep pointing at the existing sheet. (He made that call the same
+day he saw it; see the Decisions table's promotion row.)
 
 ## What this is not
 
-- Not a change to the existing staged sheet.
+- Not a change to the existing staged sheet, as originally planned. (Decided
+  otherwise on promotion - see the Decisions table.)
 - Not a general "derive any board's intent" feature. The module is written for
   boards whose components carry `symbol` and a designator map, and refuses
   others by name. The Pultec intents stay as they are.
@@ -137,3 +145,4 @@ build guide keep pointing at the existing sheet.
 | Model-authoritative | this writer, pending review | an agent-designed circuit (`CLAUDE.md`, `TOOLING.md` step 0) |
 | Generate the intent from the `Network`, not by hand | owner | *"drive the intent from the model"*; a hand-typed copy of the circuit is a second place for it to be wrong |
 | Draw the whole circuit as a single group | owner | *"The pultec circuits are a little unusual. Let's try using a single group for the staged preamp circuit"* |
+| Where should the dropped notes text go: back on the page, or printed by the build guide from `schematicNotes()`? | owner, open | the promotion (`288bd0a`) carried over no equivalent of the replaced sheet's **STARTING SETTINGS** / Q2 measurement / **PANEL CONTROLS** text block, which `make guide` used to print from the old sheet and prints from nothing now - recorded in `docs/schematic/verdicts.md` and `drafted/transistor-preamp/transistor-preamp-staged/RECORD.md`; not decided or added without the owner's say |

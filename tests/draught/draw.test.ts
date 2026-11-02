@@ -35,7 +35,7 @@ import path from "node:path"
 import { readLock, type Toolchain } from "../../tools/draught/toolchain.ts"
 import { DRAFT_TOOLS } from "../../tools/draught/draw-draft.ts"
 import { RENDER_TOOLS, fitStatusFromReport, repaperToUSLetter } from "../../tools/draught/draw-render.ts"
-import { runDraw } from "../../tools/cli/draw.ts"
+import { derivedIntentPathFor, runDraw } from "../../tools/cli/draw.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 /**
@@ -291,7 +291,7 @@ test("a real draw of pultec-hi-cut drafts, re-papers to USLetter, renders and me
  */
 test("a real draw of transistor-preamp-staged drafts from its circuit's drawingIntent() export", async () => {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "draw-test-derived-"))
-  const derivedIntentPath = `${outDir}.intent.json`
+  const derivedIntentPath = derivedIntentPathFor(outDir)
   try {
     const result = await runDraw({ board: "transistor-preamp-staged", outDir })
     expect(result.exitCode).toBe(0)
@@ -306,6 +306,23 @@ test("a real draw of transistor-preamp-staged drafts from its circuit's drawingI
   // shells out to copperhead, kicad-cli and python3, and a timeout failure here would
   // be a lie about the code, not a defect in it.
 }, 60_000)
+
+/**
+ * Minor 8, final review: a trailing-slash `outDir` must still derive a path
+ * BESIDE `outDir`, never inside it - `draftWithCopperhead` empties `outDir`
+ * with `rmSync` before every draft, so a derived intent landing inside it
+ * would not survive to be read. Before the fix this was
+ * `${outDir}.intent.json`, a bare template that turns "build/draw/foo/" into
+ * "build/draw/foo/.intent.json" - inside the directory, not beside it. No
+ * real tool runs here; this is the path computation alone.
+ */
+test("derivedIntentPathFor normalises a trailing slash so the path lands beside outDir, not inside it", () => {
+  const withoutSlash = derivedIntentPathFor("/tmp/build/draw/some-board")
+  const withSlash = derivedIntentPathFor("/tmp/build/draw/some-board/")
+  expect(withSlash).toBe(withoutSlash)
+  expect(withSlash.startsWith("/tmp/build/draw/some-board/")).toBe(false)
+  expect(withSlash).toBe("/tmp/build/draw/some-board.intent.json")
+})
 
 /**
  * I-1 (fix round 1) regression: `repaperToUSLetter` on a real committed Pultec page (already

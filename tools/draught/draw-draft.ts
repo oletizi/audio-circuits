@@ -2,10 +2,11 @@
  * `make draw`'s intent-resolution and drafting stage - split out of
  * `tools/cli/draw.ts` in Task 5 fix round 1 (M-1: that file was 557 lines,
  * over this project's 300-500 ceiling). This half answers "what should
- * copperhead draft, and is it safe to" - resolving a committed intent,
- * parsing it, verifying its net partition against the model, and running
- * copperhead itself. `./draw-render.ts` is the other half: what happens to
- * what this module produces.
+ * copperhead draft, and is it safe to" - parsing an intent (resolving which
+ * source it comes from is `./draw-intent.ts`'s job), verifying its net
+ * partition against the model, and running copperhead itself.
+ * `./draw-render.ts` is the other half: what happens to what this module
+ * produces.
  */
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
@@ -89,7 +90,7 @@ export function parseIntent(file: string): Intent {
     raw = fs.readFileSync(file, "utf8")
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
-    throw new Error(`could not read the committed intent ${file}: ${detail}.`)
+    throw new Error(`could not read the intent ${file}: ${detail}.`)
   }
   let parsed: unknown
   try {

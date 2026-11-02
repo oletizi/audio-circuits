@@ -52,6 +52,10 @@ import type { Leg } from "./parts.ts"
 import { STAGED_BOARD_ENVIRONMENT } from "./staged-environment.ts"
 
 export { PIN_NUMBERS } from "./parts.ts"
+// Closes a cycle with staged-board.drawing.ts, which imports DESIGNATORS and
+// transistorPreampStaged from this module. Safe because neither module reads
+// the other's bindings at load time: this is a re-export, evaluated only when
+// something calls drawingIntent(), not when either module is first loaded.
 export { drawingIntent } from "./staged-board.drawing.ts"
 
 const VCC = "VCC"
