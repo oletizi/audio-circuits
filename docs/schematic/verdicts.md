@@ -451,6 +451,29 @@ present bytes.
 
 ---
 
+## transistor-preamp-staged, copperhead draft repaired with akcli
+
+- **Sheet** `drafted/transistor-preamp/transistor-preamp-staged/transistor-preamp-staged.generated-do-not-edit.kicad_sch`,
+  sha256 `e6165baac555523691a400441245d4c14babb0301881dcfcb350702ba63e7775`
+- **Produced by** `make draw` from the intent `drawingIntent()` generates from
+  the model, as one copperhead group, then one akcli op-list and literal text
+  edits. Every part was moved in the repair pass: the coordinates and
+  orientations are agent-placed, not copperhead's. The page's `RECORD.md` has
+  the detail.
+- **Shown** 2026-11-01, as two renders side by side: copperhead's draft as
+  `make draw` wrote it, re-papered, and the repaired page, rendered by
+  `kicad-cli` 10.0.5 from the sheet above
+- **Verdict, verbatim:**
+
+  > *"The repaired drawing looks great"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** He did not use the word "approved", and §5
+does not let an agent supply it. Nor did he rule on whether this page replaces
+`circuits/transistor-preamp/staged-board.kicad_sch`, the sheet the board's
+`perfboard.json` names and the build guide prints. Both are his to state.
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded

@@ -1,12 +1,12 @@
 transistor-preamp-staged - drafted page record
 ==============================================
 
-**STATUS: UNREVIEWED.** `../../../EVALUATING-DRAWINGS.md` §1: a drawing has no
-quality until a qualified reviewer says so, and the agent that produced it is not
-one. Nothing below assesses the page; every line is an observation or a
-measurement another reader can check. When the owner records a verdict it goes in
-`../../../docs/schematic/verdicts.md`, bound to the sha256 below, and that
-register is the authority over this file.
+**STATUS: REVIEWED, 2026-11-01.** The owner's verdict, verbatim: *"The repaired
+drawing looks great"*. It is recorded in `../../../docs/schematic/verdicts.md`,
+bound to the sha256 below, and that register is the authority over this file:
+change one byte of the sheet and the page is awaiting review again. Nothing
+below assesses the page; every line is an observation or a measurement another
+reader can check.
 
 | | |
 | --- | --- |
@@ -14,7 +14,7 @@ register is the authority over this file.
 | **sha256 of the sheet - the binding a verdict is recorded against** | `e6165baac555523691a400441245d4c14babb0301881dcfcb350702ba63e7775` |
 | Render | `transistor-preamp-staged.generated-do-not-edit.svg` |
 | sha256 of the render, volatile `<title>` line dropped - evidence, not a binding | `5e0449e6b8011032c135dcf5f33d6de9f07f0de4f59b478ad1e4a3674ce8caa0` |
-| Status | **unreviewed** |
+| Status | **reviewed 2026-11-01** - verdict *"The repaired drawing looks great"*, recorded verbatim in `../../../docs/schematic/verdicts.md` against the sha256 above. Not recorded as approved: he has not used that word |
 | Authority | model-authoritative: `circuits/transistor-preamp/staged-board.ts`. The existing sheet `circuits/transistor-preamp/staged-board.kicad_sch` is untouched; this page is a separate candidate |
 | Drafted by | `make -C boards/transistor-preamp-staged draw`, copperhead, from the intent `drawingIntent()` generates from the model - **one group**, captioned `Transistor preamp - staged` (the owner's decision) |
 | Draft sha256 (as `make draw` wrote it, re-papered) | `3b5a31ae87ae567263c8a8cac3d85a8cf436e3ba2ce5539f674fec22bc6ec743` |
