@@ -465,6 +465,43 @@ corners, hairpins, total wire length and label count are numbers.
 solution that technically works but leaves a person doing fiddly remedial work
 is a failure, not a delivery.
 
+### 5.5. Commit the repair, not only the page
+
+**The repair is work, and it is committed beside the page it produced.** A
+page in git with no record of how it was made cannot be made again: when the
+circuit changes, the draft from `make draw` is reproducible and everything
+after it is lost. The owner, 2026-11-01, after the first staged-preamp page
+was promoted with its op-list left in a deleted scratch directory: *"we should
+keep the repair info committed. That's important work we shouldn't lose."*
+
+Every repair run commits, under `drafted/<circuit>/<board>/repair/`:
+
+- **every akcli op-list applied, in order**, named so the order is the sort
+  order (`01-....json`, `02-....json`);
+- **every script** that generated an op-list, measured geometry to build one,
+  or edited the sheet directly, plus the direct text edits themselves where no
+  op exists (wire stroke, field angles, the group rectangle);
+- **the intent the draft was made from**, copied as it was at draft time - for a
+  model-authoritative board `make draw` regenerates it every run, so the copy
+  is what ties this repair to the circuit as it then was;
+- **a `REPLAY.md`** giving the exact commands, in order, from a fresh
+  `make draw` to the committed sheet, and the sha256 the replay is expected to
+  reach.
+
+**Replay before you commit.** Run `REPLAY.md` against a fresh draft and compare
+the result's sha256 with the page's. A replay that does not reach the page's
+bytes is not a record of how the page was made; fix the record until it does,
+or say in `RECORD.md` exactly which step does not reproduce and why.
+
+**A scratch directory is never the only copy.** `build/`, `.superpowers/` and
+any other gitignored workspace can be deleted - by the end of a plan, by
+`git clean`, by another session. Copy the repair into `drafted/` and commit it
+before anything that might delete the workspace.
+
+A repair of an existing page that skipped the draft step commits the same way,
+and its `REPLAY.md` starts from the page's previous committed sha256 instead of
+from `make draw`.
+
 ### 6. Hand the page to the reviewer
 
 `EVALUATING-DRAWINGS.md` §4 governs this message and is written to be checkable

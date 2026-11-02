@@ -68,6 +68,16 @@ NONE OF `EVALUATING-DRAWINGS.md`'s CRITERIA:**
 5. Re-render, look again, iterate. Driving a measurable cost (crossings,
    corners, hairpins, wire length, label count) down is work to automate, not
    hand back.
+5.5. **Commit the repair, not only the page** (`TOOLING.md` step 5.5). Every
+   op-list applied, in order; every script that built one or edited the
+   sheet; the intent the draft came from; and a `REPLAY.md` of the exact
+   commands from a fresh `make draw` to the page, with the sha256 it must
+   reach - all under `drafted/<circuit>/<board>/repair/`, replayed and
+   checked before committing. **Work in a scratch directory if you like, but
+   copy the repair out and commit it before anything can delete that
+   directory** - a plan's workspace is deleted when the plan finishes. The
+   owner: *"we should keep the repair info committed. That's important work we
+   shouldn't lose."*
 6. Hand the page to the reviewer - see "The ordering rule" below.
 
 **A REPAIR OF AN EXISTING PAGE SKIPS STEP 2 ENTIRELY.** `TOOLING.md` is
