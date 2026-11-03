@@ -148,3 +148,38 @@ Left as it is, and why
   embedded.
 - **The arrangement is agent-authored and unreviewed as an arrangement**, as is
   every part orientation on it.
+
+After promotion: stage 1 fixed, 2026-11-02 - AWAITING THE OWNER'S REVIEW
+------------------------------------------------------------------------
+
+**The board's canonical sheet changed; the page in this directory did not.**
+Per `../../../docs/superpowers/specs/2026-11-02-staged-preamp-fixed-stage-one-design.md`
+the staged board's stage 1 is fixed at the values tuned on the buffered board,
+and `circuits/transistor-preamp/staged-board.kicad_sch` was repaired in place to
+match: RV1-RV4 deleted, R1 820K (moved to RV1's old position on the feedback
+row), R2 270K and C1 straight to the GND rail, R3 2.7K straight to the
+collector. Nothing outside stage 1 moved.
+
+| | |
+| --- | --- |
+| sha256 of `circuits/transistor-preamp/staged-board.kicad_sch` before | `402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493` (`288bd0a`) |
+| **sha256 after** | `31a5e0c47ebf3a2ee1d94e6d3c0d62d534137e86690863abfbe9411fba04422e` |
+| How | `repair/`: two akcli op-lists and one text-edit script, with `repair/REPLAY.md` and `repair/replay.sh` from the before sha256 to the after; replayed and matched before commit |
+| Status | **reviewed 2026-11-02** - verdict *"looks good"*, recorded verbatim in `../../../docs/schematic/verdicts.md` against the sha256 above. Not recorded as approved. The 2026-11-01 verdict above binds the copperhead page in this directory, which is unchanged |
+
+**The repaired page is NOT added to this directory**, and that is a reading of
+`../../README.md`, not an omission: its layout holds one page per board
+directory, a page here is replaced only by a new drafting run, and this one is
+kept as the record of where the canonical sheet came from. The record of the
+change is the canonical sheet in `circuits/`, the committed `repair/` beside
+this file, and its replay.
+
+**Measured, before -> after** (`repair/verify.sh`): netlist export against the
+model 22 nets / 34 parts (differs from the fixed-stage model, as it must) ->
+18 nets / 30 parts, 0 differences in partition, values or footprints; ERC 0
+errors and 7 warnings on both (4 `lib_symbol_issues`, 3 `lib_symbol_mismatch`,
+the library-configuration kind recorded above); parenthesis depth 0 -> 0; true
+crossings 0 -> 0; orphan junctions 0 -> 0; labels 0 -> 0; symbols 38 -> 34
+(the four trims); placed pins 82 -> 70; wires 103 -> 91; total wire length
+1297.94 -> 1272.54 mm; wire corners 9 -> 9; junctions 38 -> 34; wire groups with
+more than one stroke 0 -> 0; paper fit: fits -> fits.

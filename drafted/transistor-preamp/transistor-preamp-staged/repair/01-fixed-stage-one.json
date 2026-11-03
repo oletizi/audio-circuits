@@ -1,0 +1,49 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "staged-board.kicad_sch",
+  "ops": [
+    { "op": "delete_component", "designator": "RV1", "cascade": false },
+    { "op": "delete_object", "uuid": "d9da28a2-e0bb-5d9c-a571-0457cb6b4421" },
+    { "op": "delete_object", "uuid": "7ad08f18-8695-5f75-8ee2-9b211cf4fe58" },
+    { "op": "delete_object", "uuid": "74c474ab-e262-5d28-a38f-f8f9455d1f77" },
+    { "op": "delete_object", "uuid": "f770f4fb-1411-513e-a910-c8064034ceb9" },
+    { "op": "delete_object", "uuid": "e8b4ff50-89b3-5b36-bbae-9ce7547c92c2" },
+    { "op": "add_wire", "vertices": [[2900, 3300], "R1.2"] },
+    { "op": "add_wire", "vertices": [[2900, 3700], [3350, 3700]] },
+
+    { "op": "delete_component", "designator": "RV2", "cascade": false },
+    { "op": "delete_object", "uuid": "77572dda-c760-5e9c-8970-3063efd1cb62" },
+    { "op": "delete_object", "uuid": "8773c213-e6d9-5da4-be4e-717d543b5d1b" },
+    { "op": "delete_object", "uuid": "b98e05f1-d035-5ae4-b4e5-d3dc8dd295d0" },
+    { "op": "delete_object", "uuid": "25d7bd61-1fc9-5ea4-a3f4-3645d68bdf10" },
+    { "op": "delete_object", "uuid": "af62ff9a-d422-5ae7-abdf-0e3c7078e359" },
+    { "op": "delete_object", "uuid": "19b13759-d9a9-5bfc-9a56-35f00c9e6e2e" },
+    { "op": "add_wire", "vertices": ["R2.2", [3350, 5450]] },
+    { "op": "add_wire", "vertices": [[3350, 5450], [4050, 5450]] },
+
+    { "op": "delete_component", "designator": "RV3", "cascade": false },
+    { "op": "delete_object", "uuid": "c51339ed-d523-5dfe-ab37-dbb618552a83" },
+    { "op": "delete_object", "uuid": "781ae353-0d44-5d16-8ea1-b8ea0094b64f" },
+    { "op": "delete_object", "uuid": "db6c158e-b26c-5f35-8645-30f54face0f5" },
+    { "op": "delete_object", "uuid": "fcaa0073-1f00-52b3-81ad-a09677d81bd7" },
+    { "op": "delete_object", "uuid": "cc79ea1d-2d1f-590a-b059-0b964c25b230" },
+    { "op": "delete_object", "uuid": "619acbd4-d691-5b3a-abf5-dccd2d8852f4" },
+    { "op": "add_wire", "vertices": ["R3.2", [4050, 3100]] },
+    { "op": "add_wire", "vertices": [[4050, 3100], "C3.1"] },
+
+    { "op": "delete_component", "designator": "RV4", "cascade": false },
+    { "op": "delete_object", "uuid": "d4614e6b-c368-598b-b93a-fcb6b4199bef" },
+    { "op": "delete_object", "uuid": "856abfd5-023c-556c-bd1a-237e69aaba5b" },
+    { "op": "delete_object", "uuid": "040adc93-231c-5a08-9f82-006e1b50e79e" },
+    { "op": "delete_object", "uuid": "04ea8209-c697-50f7-ae9d-c36776ca0a5b" },
+    { "op": "delete_object", "uuid": "ee0db676-f022-5564-9380-f9545fea30ff" },
+    { "op": "delete_object", "uuid": "a557395e-2b72-57e3-8bcf-886efee727e1" },
+    { "op": "add_wire", "vertices": ["C1.2", [4550, 5450]] },
+    { "op": "add_wire", "vertices": [[4550, 5450], [5050, 5450]] },
+
+    { "op": "set_component_parameters", "designator": "R1", "value": "820K" },
+    { "op": "set_component_parameters", "designator": "R2", "value": "270K" },
+    { "op": "set_component_parameters", "designator": "R3", "value": "2.7K" }
+  ]
+}

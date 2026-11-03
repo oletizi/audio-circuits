@@ -513,6 +513,35 @@ free area this page's `RECORD.md` measures), or should the build guide print
 `schematicNotes()`'s strings on its own schematic page instead? Tracked as a
 row in the Decisions table of
 `docs/superpowers/specs/2026-11-01-staged-preamp-copperhead-drawing-design.md`.
+**Answered the same day:** *"into the build guide"* - the guide prints them as
+**Build notes** from the circuit's `guideNotes()` export (`f566b0d`).
+
+**THEN, 2026-11-02, THE PROMOTED SHEET CHANGED.**
+Per `docs/superpowers/specs/2026-11-02-staged-preamp-fixed-stage-one-design.md`,
+the staged board's stage 1 is fixed at the values tuned on the buffered board,
+and `circuits/transistor-preamp/staged-board.kicad_sch` was repaired in place to
+match: RV1-RV4 deleted, R1 820K, R2 270K, R3 2.7K, C1 straight to GND, nothing
+outside stage 1 moved. sha256
+`402e0f383660892a8f794063c3629fa10e7001b20c305e405f4542dee0635493` ->
+`31a5e0c47ebf3a2ee1d94e6d3c0d62d534137e86690863abfbe9411fba04422e`. The repair and
+its replay are in `drafted/transistor-preamp/transistor-preamp-staged/repair/`,
+and that page's `RECORD.md` has the before/after measurements. ERC on the new
+sheet from `circuits/transistor-preamp/`: 0 errors, 7 warnings, the same kinds
+as above.
+
+- **Shown** 2026-11-02, as three renders together: this sheet (sha256
+  `31a5e0c4...` above, rendered by `kicad-cli` 10.0.5 from those bytes), and the
+  re-placed stripboard `boards/transistor-preamp-staged/transistor-preamp-staged.perfboard.vrt`
+  (sha256 `4e579f9872a0d844972f843562051f7afffadc7f21ed853d2c8bfe5ad6d2ebb9`) by
+  designator and by value
+- **Verdict, verbatim:**
+
+  > *"looks good"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** He did not use the word "approved", and §5
+does not let an agent supply it. The same message carried the fork fix spec;
+the verdict is recorded against the three renders, which are what was asked
+about, and not as a ruling on that spec's open questions.
 
 ---
 

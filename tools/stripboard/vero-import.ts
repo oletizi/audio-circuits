@@ -191,7 +191,7 @@ function placementOf(
         `different facings reproduce exactly (${fit.directions.join(", ")}), so which way round ` +
         "it is cannot be read off the board.\nFix it by recording something that tells them " +
         "apart - a pad pattern that is not symmetric under that turn, or the dump's own " +
-        "DIRECTION field, which four of the committed captures predate.\nOne of them is not " +
+        "DIRECTION field, which three of the committed captures predate.\nOne of them is not " +
         "picked: the two describe different parts in the same holes, and an export would draw " +
         "whichever was chosen.",
     )

@@ -1,0 +1,12 @@
+{
+  "protocol_version": 2,
+  "target_format": "kicad",
+  "target_file": "staged-board.kicad_sch",
+  "ops": [
+    { "op": "delete_object", "uuid": "c216b4ca-0325-5858-b76f-6e491af8a9e4" },
+    { "op": "delete_object", "uuid": "73c06b98-1995-5904-8458-b606543bb1c9" },
+    { "op": "move_component", "designator": "R1", "x_mil": 3050, "y_mil": 3300, "unit": 1,
+      "carry_labels": false, "carry_wires": false },
+    { "op": "add_wire", "vertices": ["R1.1", [4050, 3300]] }
+  ]
+}

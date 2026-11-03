@@ -47,8 +47,11 @@ drafted/<circuit>/<board>/
 (`../TOOLING.md` step 5.5). The Pultec pages predate it: their op-lists and
 scripts are in their research run directories under `../docs/research/`, not
 beside the page, and no replay of them was checked.
-`transistor-preamp/transistor-preamp-staged/` has none at all - its repair was
-lost with a deleted scratch directory, which is why the rule exists.
+`transistor-preamp/transistor-preamp-staged/`'s own page has none - its repair was
+lost with a deleted scratch directory, which is why the rule exists. Its
+`repair/` holds a later repair, of the promoted copy in `circuits/` (stage 1
+fixed, 2026-11-02), replayed from that copy's previous sha256; that page's
+`RECORD.md` says why the repaired copy is not also kept here.
 
 **THE FILE NAME IS THE TITLE-BLOCK NOTICE, AND IT IS THERE DELIBERATELY RATHER
 THAN BY ACCIDENT.** §3 requires *"generated - do not edit"* in every title block.

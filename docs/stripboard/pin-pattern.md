@@ -295,7 +295,7 @@ assuming either:
 
 | rule | placements claiming a hole another part's lead occupies |
 | --- | --- |
-| **strip cell** (what the code does) | **14 holes, 11 parts, 4 boards** |
+| **strip cell** (what the code does) | **14 holes, 11 parts, 4 boards (measured before 2026-11-02; `staged` was one of the 4 and is not any more - see its bullet below, now 3 boards)** |
 | **point** | **none, on any board** |
 
 The strip-cell clashes, by part:
@@ -307,7 +307,24 @@ The strip-cell clashes, by part:
   `18,28`=`JP3.1`; `RV3` claims `13,27`=`R3.2`.
 - `loop` — `C2`, `C4`, `C5` and `C6` (cans), `Q1` and `Q2` (two TO-92s on
   adjacent strips over the same three columns), and `RV1`.
-- `staged` — `Q1` (TO-92) claims `8,12`=`R1.1`; `RV2` claims `21,28`=`R2.2`.
+- `staged` — **none, since 2026-11-02.** The two above were measured on the
+  layout captured from `7e1406c3`: `Q1` (TO-92) claimed `8,12`=`R1.1`; `RV2`
+  claimed `21,28`=`R2.2`. The board was re-placed when stage 1 became three
+  fixed resistors (`boards/transistor-preamp-staged/layout/REPLAY.md`), and
+  measured on the re-placed board's dump with the same rule, by
+  `tools/stripboard/measure-clashes.ts` - every placement through
+  `candidateFromDump`, the 14 of its 30 placements whose leads are at
+  their footprint's own geometry run through `geometryOf`, each claimed hole
+  checked against every other part's leads - **no hole is claimed**. So the
+  table's totals above count two clashes that no committed board now has; they
+  are left as measured rather than re-derived, because the other boards were not
+  re-measured here. `tools/stripboard/measure-clashes.ts` run on the `7e1406c3` capture reproduces
+  `Q1`'s clash but not `RV2`'s, and also reports `C7` (the D10 can, whose pattern
+  was recorded after this table was measured) claiming `13,20`=`Q3.2` and
+  `14,20`=`Q3.1` - so the method agrees with this table on one of its two staged
+  clashes. Why `RV2`'s is not reproduced was not investigated: the layout it is
+  about is no longer the committed one, and on the re-placed board the question
+  does not arise (there is no trimmer on it).
 - `buffered` and `pt2399-core` — none; but see the stretch finding, because 13
   of `buffered`'s 21 parts have no body model at all.
 

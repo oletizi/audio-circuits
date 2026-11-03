@@ -22,7 +22,7 @@
  */
 import { circuit } from "../../lib/model/index.ts"
 import type { Builder, Network } from "../../lib/model/index.ts"
-import { addFeedbackStage, schematicNotes as feedbackNotes } from "./feedback-board.ts"
+import { TRIMMED_STAGE_ONE, addFeedbackStage, schematicNotes as feedbackNotes } from "./feedback-board.ts"
 import * as feedbackBoard from "./feedback-board.ts"
 import { HEADER_2, RESISTOR, electrolytic, transistor2N3904 } from "./parts.ts"
 
@@ -40,7 +40,7 @@ export function transistorPreampBuffered(): Network {
   builder
     .connector("input_header", { "1": "IN_EXT", "2": GND }, HEADER_2)
     .port("input", "IN_EXT")
-  addFeedbackStage(builder, COLLECTOR_COUPLED)
+  addFeedbackStage(builder, COLLECTOR_COUPLED, TRIMMED_STAGE_ONE)
   addFollower(builder)
   return builder.done()
 }
@@ -69,8 +69,13 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
 
 /** Stage 1's starting settings, then what the follower is and what to measure on it. */
 export function schematicNotes(): readonly string[] {
+  return [...feedbackNotes(), ...followerNotes()]
+}
+
+/** What the follower is and what to measure on it. Shared with the staged board,
+ * whose stage 1 is fixed and so has no starting settings to print. */
+export function followerNotes(): readonly string[] {
   return [
-    ...feedbackNotes(),
     "OUTPUT: Q2 is an emitter follower (no trim). R5/R6 bias its base below the",
     "naive 4.5 V by an amount that depends on beta - measure Q2's base and emitter",
     "voltages, V_BE and I_E = V_E / 1.5k.",

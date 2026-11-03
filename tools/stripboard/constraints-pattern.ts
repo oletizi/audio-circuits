@@ -123,7 +123,10 @@ function rowsAlong(pads: readonly PadPosition[], axis: "x" | "y"): readonly (rea
  *
  * MEASURED BEFORE BEING RELIED ON, on four committed boards: zero violations on
  * `pt2399-core` (12 graded), `transistor-preamp-feedback` (16) and
- * `transistor-preamp-staged` (30), all three of which pass `make check`; and
+ * `transistor-preamp-staged` (30), all three of which pass `make check` - staged
+ * re-measured on 2026-11-02 after it was re-placed for its fixed stage 1, by
+ * `make check`'s own `HC10` line: all 30 placed parts admitted, 0 footprint rows
+ * with two or more pins on one strip; and
  * FIVE on `transistor-preamp-lab`, which does not - `C3`, `R4`, `RV2`, `RV4`
  * and `RV5` each have both leads of one row on a single strip. So the rule is
  * satisfied by every board a person built and in service, and is not vacuous:
@@ -218,9 +221,11 @@ function hc10Rows(pattern: PinPattern): readonly (readonly string[])[] {
  * still the point of this paragraph. It asked that a part's pins *"fall on a set
  * of strips whose occupied strips are exactly the rows the footprint's
  * classification predicts"* - which requires a footprint row to lie ALONG a
- * strip. Measured against the three committed boards that passed `make check`,
- * that refused 13 of 16, 27 of 34 and 10 of 12 placed parts. The owner settled
- * it the other way round, and the measurements are in
+ * strip. Measured against the three committed boards that passed `make check`
+ * at the time of this decision (the `34` against `transistor-preamp-staged`
+ * predates its 2026-11-02 fixed-stage-one re-placement; see the current count
+ * above), that refused 13 of 16, 27 of 34 and 10 of 12 placed parts. The owner
+ * settled it the other way round, and the measurements are in
  * `docs/stripboard/pipeline-verification.md` section 3.
  *
  * **THE DIP'S CENTRE CUT IS STILL NOT ASSERTED HERE.** That cut divides pins of

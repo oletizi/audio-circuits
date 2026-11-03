@@ -545,3 +545,11 @@ the date.)
   [<partType>] <footprint-without-library>`, with the value as
   `lib/kicad/value-notation.ts`'s `valueFor` spells it - ".1uF", not "100nF")
   and report that it is unverified rather than implying the line is met.
+- 2026-11-02: **Digi-Key's product number for a Yageo MFR-25FBF52 value is not
+  always `<mpn>-ND`.** 2K7 and 270K are `MFR-25FBF52-2K7-ND` /
+  `MFR-25FBF52-270K-ND`, but 820K is `13-MFR-25FBF52-820K-ND` (same bulk
+  packaging, same prices). Take the `--sku` for `parts source --supplier
+  digikey` from `lookup`'s output, never by building it from the mpn. Digi-Key's
+  parameters for this family also state the body directly ("Size / Dimension:
+  2.40mm x 6.30mm"), a second source for the 0207 body beside Yageo's datasheet
+  DIMENSIONS table (readable at yageogroup.com; the mouser.com copy is blocked).

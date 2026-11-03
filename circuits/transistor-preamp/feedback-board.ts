@@ -75,12 +75,31 @@ export function transistorPreampFeedback(): Network {
   builder
     .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
     .port("input", IN_EXT)
-  addFeedbackStage(builder, OUT)
+  addFeedbackStage(builder, OUT, TRIMMED_STAGE_ONE)
   builder
     .connector("output_header", { "1": OUT, "2": GND }, HEADER_2)
     .port("output", OUT)
   return builder.done()
 }
+
+/**
+ * Stage 1's feedback, base-to-ground and collector legs, plus the emitter
+ * bypass: either the bench boards' trim pots (feedback, buffered, loop - each
+ * leg a fixed floor resistor plus a trim pot, tuned on the bench) or a fixed
+ * board's single resistors at already-tuned values (the staged board, using the
+ * fixed stage-1 variant defined as STAGE_ONE in staged-board.ts).
+ */
+export type StageOneLegs =
+  | { readonly kind: "trimmed" }
+  | {
+      readonly kind: "fixed"
+      readonly feedback: string
+      readonly baseToGround: string
+      readonly collector: string
+    }
+
+/** Today's stage 1: trim pots on every leg, tuned on the bench. */
+export const TRIMMED_STAGE_ONE: StageOneLegs = { kind: "trimmed" }
 
 /**
  * The collector-feedback gain stage, everything up to and including its output
@@ -91,17 +110,30 @@ export function transistorPreampFeedback(): Network {
  * and "input" port are each board's own, because the loop board puts a
  * resistor between them and IN_EXT. Shared so every later board's stage 1 is
  * this one, part for part and id for id, rather than a copy that could drift.
+ *
+ * `legs` selects the feedback, base-to-ground and collector legs: trimmed
+ * (today's bench boards) or fixed at the given values (the staged board).
  */
-export function addFeedbackStage(builder: Builder, couplesTo: string): void {
-  addLeg(builder, FEEDBACK_LEGS.feedback, "FEEDBACK", COLLECTOR, BASE)
-  addLeg(builder, FEEDBACK_LEGS.baseToGround, "BASE_GROUND", BASE, GND)
-  addLeg(builder, FEEDBACK_LEGS.collector, "COLLECTOR_LOAD", VCC, COLLECTOR)
+export function addFeedbackStage(builder: Builder, couplesTo: string, legs: StageOneLegs): void {
+  if (legs.kind === "trimmed") {
+    addLeg(builder, FEEDBACK_LEGS.feedback, "FEEDBACK", COLLECTOR, BASE)
+    addLeg(builder, FEEDBACK_LEGS.baseToGround, "BASE_GROUND", BASE, GND)
+    addLeg(builder, FEEDBACK_LEGS.collector, "COLLECTOR_LOAD", VCC, COLLECTOR)
+  } else {
+    builder
+      .resistor("feedback_resistor", legs.feedback, { a: COLLECTOR, b: BASE }, RESISTOR)
+      .resistor("base_ground_resistor", legs.baseToGround, { a: BASE, b: GND }, RESISTOR)
+      .resistor("collector_resistor", legs.collector, { a: VCC, b: COLLECTOR }, RESISTOR)
+  }
 
   builder.resistor("emitter_dc_resistor", "1.5k", { a: EMITTER, b: GND }, RESISTOR)
-  builder.capacitor("emitter_bypass_cap", "220uF", { a: EMITTER, b: "BYPASS_CAP" },
+  const bypassTo = legs.kind === "trimmed" ? "BYPASS_CAP" : GND
+  builder.capacitor("emitter_bypass_cap", "220uF", { a: EMITTER, b: bypassTo },
     electrolytic("CP_Radial_D8.0mm_P3.50mm"))
-  const bypass = FEEDBACK_LEGS.emitterBypass
-  builder.add(trim(bypass.trimId, bypass.trim, "BYPASS_CAP", GND))
+  if (legs.kind === "trimmed") {
+    const bypass = FEEDBACK_LEGS.emitterBypass
+    builder.add(trim(bypass.trimId, bypass.trim, "BYPASS_CAP", GND))
+  }
 
   builder
     .add(transistor2N3904("gain_transistor", BASE, COLLECTOR, EMITTER))

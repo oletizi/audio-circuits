@@ -17,9 +17,15 @@
  * value below, and the decisions behind them, is
  * docs/superpowers/specs/2026-09-28-transistor-preamp-staged-design.md.
  *
- * Q1 and Q2 are the buffered board's, built by the same shared functions, so
- * their parts, ids and designators are unchanged; only C3 now lands on
- * DRIVE's top instead of Q2's base.
+ * Q1 and Q2 are the buffered board's, built by the same shared functions; only
+ * C3 now lands on DRIVE's top instead of Q2's base.
+ *
+ * STAGE 1 IS FIXED, NOT TRIMMED (docs/superpowers/specs/
+ * 2026-11-02-staged-preamp-fixed-stage-one-design.md): its feedback,
+ * base-to-ground and collector legs are single resistors at the values tuned by
+ * hand on the buffered board, and its emitter is fully bypassed (C1 straight
+ * to GND, no RV4). The buffered board's trims RV1-RV4 and floor resistors are
+ * not on this board; R1-R3 are the fixed resistors, and RV1-RV4 are not reused.
  *
  * Q3 IS DIVIDER-BIASED WITH EMITTER DEGENERATION, so it saturates under the
  * operator's control and does not depend on the particular transistor: the
@@ -42,11 +48,10 @@ import { runOperatingPoint } from "../../lib/sim/operating-point.ts"
 import type { PowerUpChecks, PowerUpChecksExport } from "../../tools/guide/power-up.ts"
 import type { GuideNotesExport } from "../../tools/guide/guide-notes.ts"
 import type { BomConditions, BomConditionsExport } from "../../tools/bom/conditions.ts"
-import { addFollower, schematicNotes as bufferedNotes } from "./buffered-board.ts"
+import { addFollower, followerNotes } from "./buffered-board.ts"
 import * as buffered from "./buffered-board.ts"
 import { addFeedbackStage } from "./feedback-board.ts"
-import * as feedbackBoard from "./feedback-board.ts"
-import type { FeedbackSetting } from "./feedback-board.ts"
+import type { StageOneLegs } from "./feedback-board.ts"
 import { formatOhms, legPosition } from "./leg-values.ts"
 import { HEADER_2, RESISTOR, electrolytic, panelPot, transistor2N3904 } from "./parts.ts"
 import type { Leg } from "./parts.ts"
@@ -63,6 +68,21 @@ const VCC = "VCC"
 const GND = "GND"
 const IN_EXT = "IN_EXT"
 
+/** Stage 1's legs when they are single fixed resistors. */
+type FixedStageOne = Extract<StageOneLegs, { readonly kind: "fixed" }>
+
+/**
+ * Stage 1's fixed legs: the values tuned by hand on the built buffered board,
+ * as single E-series resistors. The owner chose 820k / 270k - "Let's use the
+ * 820K/270K pair" - the pair nearest his in-circuit readings; 2.7k is the E24
+ * value nearest the tuned 1k + 1.8k collector leg. The authority and the
+ * simulated alternatives are in
+ * docs/superpowers/specs/2026-11-02-staged-preamp-fixed-stage-one-design.md.
+ */
+export const STAGE_ONE: FixedStageOne = {
+  kind: "fixed", feedback: "820k", baseToGround: "270k", collector: "2.7k",
+}
+
 /** CHARACTER's branch as a leg (floor R12 plus the panel pot), for legPosition.
  * Built explicitly below, because addLeg builds trim-pots, not panel pots. */
 export const CHARACTER_LEG: Leg = {
@@ -75,7 +95,7 @@ export function transistorPreampStaged(): Network {
   builder
     .connector("input_header", { "1": IN_EXT, "2": GND }, HEADER_2)
     .port("input", IN_EXT)
-  addFeedbackStage(builder, "DRIVE_TOP")
+  addFeedbackStage(builder, "DRIVE_TOP", STAGE_ONE)
 
   builder
     // DRIVE: C3 (from stage 1) -> pot -> C6 -> Q3's base.
@@ -105,9 +125,36 @@ export function transistorPreampStaged(): Network {
   return builder.done()
 }
 
-/** Semantic id -> KiCad reference designator: the buffered board's, then Q3's. */
+/** The buffered board's stage-1 parts this board does not have: the trims and
+ * their floor resistors, replaced by STAGE_ONE's fixed resistors. */
+const TRIMMED_STAGE_ONE_IDS: readonly string[] = [
+  "feedback_floor", "feedback_trim", "base_ground_floor", "base_ground_trim",
+  "collector_floor", "collector_trim", "emitter_bypass_trim",
+]
+
+/** The buffered board's designators, minus its stage-1 trims and floors. */
+function bufferedDesignatorsWithoutTrims(): Record<string, string> {
+  const kept: Record<string, string> = {}
+  for (const id of TRIMMED_STAGE_ONE_IDS) {
+    if (buffered.DESIGNATORS[id] === undefined) {
+      throw new Error(
+        `staged-board.ts: TRIMMED_STAGE_ONE_IDS names "${id}", which buffered-board.ts's DESIGNATORS ` +
+          "does not have; the list of removed stage-1 parts has drifted from the buffered board",
+      )
+    }
+  }
+  for (const [id, designator] of Object.entries(buffered.DESIGNATORS)) {
+    if (!TRIMMED_STAGE_ONE_IDS.includes(id)) kept[id] = designator
+  }
+  return kept
+}
+
+/** Semantic id -> KiCad reference designator: the buffered board's without its
+ * stage-1 trims and floors, then stage 1's fixed resistors (R1-R3, keeping the
+ * leg numbering; RV1-RV4 are not reused), then Q3's. */
 export const DESIGNATORS: Readonly<Record<string, string>> = {
-  ...buffered.DESIGNATORS,
+  ...bufferedDesignatorsWithoutTrims(),
+  feedback_resistor: "R1", base_ground_resistor: "R2", collector_resistor: "R3",
   second_gain_transistor: "Q3",
   q3_bias_upper: "R8", q3_bias_lower: "R9", q3_collector_resistor: "R10",
   q3_emitter_resistor: "R11", character_floor: "R12",
@@ -121,18 +168,17 @@ function designatorOf(id: string): string {
   return designator
 }
 
-/** Stage 1's legs, plus DRIVE and TRANSFORMER DRIVE as wiper positions (0 to 1)
- * and CHARACTER as its branch's total resistance (floor plus pot). */
-export type StagedSetting = FeedbackSetting & {
+/** The panel controls, the board's only settings (stage 1 is fixed): DRIVE and
+ * TRANSFORMER DRIVE as wiper positions (0 to 1) and CHARACTER as its branch's
+ * total resistance (floor plus pot). */
+export type StagedSetting = {
   readonly drive: number
   readonly character: string
   readonly transformerDrive: number
 }
 
-/** Stage 1 as on the feedback board's START; the panel controls mid-way. */
-export const START: StagedSetting = {
-  ...feedbackBoard.START, drive: 0.5, character: "272", transformerDrive: 0.5,
-}
+/** The panel controls mid-way. */
+export const START: StagedSetting = { drive: 0.5, character: "272", transformerDrive: 0.5 }
 
 function position(control: string, value: number): number {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
@@ -142,22 +188,30 @@ function position(control: string, value: number): number {
 }
 
 export function controlStateFor(setting: StagedSetting): ControlState {
-  const stage = feedbackBoard.controlStateFor(setting)
   return {
     potPositions: {
-      ...stage.potPositions,
       drive_pot: position("DRIVE", setting.drive),
       transformer_drive_pot: position("TRANSFORMER DRIVE", setting.transformerDrive),
       [CHARACTER_LEG.trimId]: legPosition(CHARACTER_LEG, parseValue(setting.character)),
     },
-    switchPositions: stage.switchPositions,
+    switchPositions: {},
   }
 }
 
-/** Stage 1's and the follower's notes, then the three panel controls. */
+/** Stage 1's fixed legs in plain terms, read from STAGE_ONE and DESIGNATORS. */
+function stageOneLegs(): string {
+  return (
+    `${designatorOf("feedback_resistor")} ${STAGE_ONE.feedback} feedback, ` +
+    `${designatorOf("base_ground_resistor")} ${STAGE_ONE.baseToGround} base to ground, ` +
+    `${designatorOf("collector_resistor")} ${STAGE_ONE.collector} collector, emitter fully bypassed`
+  )
+}
+
+/** Stage 1's fixed values, the follower's notes, then the three panel controls. */
 export function schematicNotes(): readonly string[] {
   return [
-    ...bufferedNotes(),
+    `STAGE 1 is fixed at the values tuned by hand on the buffered board: ${stageOneLegs()}.`,
+    ...followerNotes(),
     "PANEL CONTROLS (off-board pots on headers):",
     "  DRIVE (RV5) sets how hard Q3 is driven - the amount of saturation.",
     "  CHARACTER (RV6) shapes it: toward 0, early and gradual; toward 1k, cleaner for longer.",
@@ -168,8 +222,9 @@ export function schematicNotes(): readonly string[] {
 /**
  * The build guide's Build notes section, for this board only
  * (tools/guide/guide-notes.ts): this is the one board whose copperhead-drawn
- * sheet dropped the STARTING SETTINGS / measurement / PANEL CONTROLS text
- * that `schematicNotes()` above carries, so the guide is its only remaining
+ * sheet dropped the board-notes text block that `schematicNotes()` above
+ * carries (now stage 1's fixed values, the follower's measurement notes and
+ * the PANEL CONTROLS), so the guide is its only remaining
  * home - the owner's call, recorded in the design spec's Decisions table.
  * Returning `schematicNotes()` rather than a second copy keeps the text
  * derived from the model, with one source.
@@ -177,14 +232,15 @@ export function schematicNotes(): readonly string[] {
 export const guideNotes: GuideNotesExport = (): readonly string[] => schematicNotes()
 
 /**
- * The parts-list derivation's operating conditions: the 24 V rail and every control
- * (on-board trims and panel pots alike) at START, with the AC source and load taken
- * from the same bench environment - minus its sweep, which an operating-point deck
- * has no use for.
+ * The parts-list derivation's operating conditions: the 24 V rail, stage 1's fixed
+ * legs and the panel controls at START, with the AC source and load taken from the
+ * same bench environment - minus its sweep, which an operating-point deck has no
+ * use for.
  */
 export const bomConditions: BomConditionsExport = (): BomConditions => {
   return {
-    description: `Supply ${supplyVolts()} V; every control (RV1-RV7) at START.`,
+    description: `Supply ${supplyVolts()} V; stage 1 fixed (${stageOneLegs()}); ` +
+      `panel controls (${panelDesignators()}) at START.`,
     environment: {
       source: STAGED_BOARD_ENVIRONMENT.source,
       load: STAGED_BOARD_ENVIRONMENT.load,
@@ -226,26 +282,25 @@ function percentOfTravel(position: number): string {
   return `${Math.round(position * 100)}%`
 }
 
+/** The three panel controls' designators, in panel order. */
+function panelDesignators(): string {
+  return ["drive_pot", "character_pot", "transformer_drive_pot"].map(designatorOf).join(", ")
+}
+
 /**
  * What state the board must be in for the power-up table's voltages to
- * hold: the supply, the on-board trims (RV1-RV4, the feedback stage's -
- * carried over unchanged from the buffered board) and the three panel
- * controls (RV5-RV7), all at START. Every value is read from `START` and
- * the shared environment rather than retyped, so a changed setting cannot
- * drift out of step with this sentence.
+ * hold: the supply, stage 1's fixed legs (no trims on this board) and the
+ * three panel controls (RV5-RV7) at START. Every value is read from
+ * `STAGE_ONE`, `START` and the shared environment rather than retyped, so a
+ * changed value cannot drift out of step with this sentence.
  */
 function powerUpConditions(): string {
-  const trims =
-    `${designatorOf("feedback_trim")} feedback leg ${START.feedback}, ` +
-    `${designatorOf("base_ground_trim")} base-to-ground leg ${START.baseToGround}, ` +
-    `${designatorOf("collector_trim")} collector leg ${START.collector}, ` +
-    `${designatorOf("emitter_bypass_trim")} emitter bypass leg ${START.emitterBypass}`
   const panel =
     `${designatorOf("drive_pot")} DRIVE ${percentOfTravel(START.drive)}, ` +
     `${designatorOf("character_pot")} CHARACTER ${formatOhms(parseValue(START.character))}, ` +
     `${designatorOf("transformer_drive_pot")} TRANSFORMER DRIVE ${percentOfTravel(START.transformerDrive)}`
   return (
-    `Supply ${supplyVolts()} V; on-board trims at START (${trims}); ` +
+    `Supply ${supplyVolts()} V; stage 1 fixed (${stageOneLegs()}); ` +
     `panel controls at START (${panel}).`
   )
 }

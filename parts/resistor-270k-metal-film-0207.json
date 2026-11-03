@@ -1,0 +1,88 @@
+{
+  "id": "resistor-270k-metal-film-0207",
+  "kind": "resistor",
+  "description": "270k ohm, 1%, 1/4 W metal-film axial resistor, 0207 body",
+  "manufacturer": "Yageo",
+  "mpn": "MFR-25FBF52-270K",
+  "specs": {
+    "ohms": 270000,
+    "tolerancePercent": 1,
+    "watts": 0.25,
+    "package": "0207",
+    "diameterMm": 2.4
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-270K?qs=oAGoVhmvjhwN1R24VyY4nw%3D%3D",
+      "note": "Mouser Search API, 2026-11-02: exact match for MFR-25FBF52-270K (YAGEO), Mouser part 603-MFR-25FBF52-270K; Digi-Key Product Information API, same date, lists the same mpn as MFR-25FBF52-270K-ND."
+    },
+    {
+      "spec": "ohms",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-270K/9138104",
+      "note": "Digi-Key Product Information API, 2026-11-02: Resistance 270 kOhms; Mouser Search API description 'Metal Film Resistors - Through Hole 270K OHM 1/4W 1%'."
+    },
+    {
+      "spec": "tolerancePercent",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-270K/9138104",
+      "note": "Digi-Key Product Information API, 2026-11-02: Tolerance +-1%, Composition Metal Film."
+    },
+    {
+      "spec": "watts",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-270K/9138104",
+      "note": "Digi-Key Product Information API, 2026-11-02: Power (Watts) 0.25W, 1/4W; Yageo MFR datasheet CHARACTERISTICS table rates MFR-25 at 1/4W."
+    },
+    {
+      "spec": "package",
+      "url": "https://yageogroup.com/content/Resource%20Library/Datasheet/YAGEO-MFR_DATASHEET.pdf",
+      "note": "Yageo MFR series datasheet, DIMENSIONS table: MFR-25 body L = 6.3 +- 0.5 mm, diameter 2.4 +- 0.2 mm - the DIN 0207 body. Digi-Key Product Information API, 2026-11-02, states Size / Dimension 2.40mm x 6.30mm."
+    },
+    {
+      "spec": "diameterMm",
+      "url": "https://yageogroup.com/content/Resource%20Library/Datasheet/YAGEO-MFR_DATASHEET.pdf",
+      "note": "Yageo MFR series datasheet, DIMENSIONS table: MFR-25 body diameter 2.4 +- 0.2 mm."
+    }
+  ],
+  "why": "Same Yageo MFR-25FBF52 1% metal-film family as every other axial resistor on this board (docs/parts/sourcing-notes.md Lessons, 2026-09-30), so the board is one family in one 0207 body; in stock at both Mouser and Digi-Key at commodity price.",
+  "stock": true,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/YAGEO/MFR-25FBF52-270K?qs=oAGoVhmvjhwN1R24VyY4nw%3D%3D",
+      "sku": "603-MFR-25FBF52-270K",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.1 },
+        { "quantity": 10, "unitPrice": 0.042 },
+        { "quantity": 25, "unitPrice": 0.031 },
+        { "quantity": 100, "unitPrice": 0.027 },
+        { "quantity": 250, "unitPrice": 0.023 },
+        { "quantity": 500, "unitPrice": 0.021 },
+        { "quantity": 1000, "unitPrice": 0.018 },
+        { "quantity": 5000, "unitPrice": 0.015 },
+        { "quantity": 10000, "unitPrice": 0.014 }
+      ],
+      "checked": "2026-11-02",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/yageo/MFR-25FBF52-270K/9138104",
+      "sku": "MFR-25FBF52-270K-ND",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 0.1 },
+        { "quantity": 10, "unitPrice": 0.042 },
+        { "quantity": 25, "unitPrice": 0.0348 },
+        { "quantity": 50, "unitPrice": 0.0304 },
+        { "quantity": 100, "unitPrice": 0.0268 },
+        { "quantity": 250, "unitPrice": 0.02272 },
+        { "quantity": 500, "unitPrice": 0.02016 },
+        { "quantity": 1000, "unitPrice": 0.01799 },
+        { "quantity": 5000, "unitPrice": 0.01412 }
+      ],
+      "checked": "2026-11-02",
+      "use": "standard"
+    }
+  ]
+}
