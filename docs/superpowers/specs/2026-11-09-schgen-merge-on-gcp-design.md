@@ -131,7 +131,17 @@ check are therefore done in fp32 (about 84 GB for the model alone), where
 rounding is far below the delta, and the model is cast to bf16 only when saved.
 The criterion is unchanged in kind: PEFT's delta equals the reference's within
 the rounding of the precision the merge is done in. The machine is the step-up
-this spec already named. A second control was added: `down_proj` is square, so
+this spec already named.
+
+**The base loads as bf16 and is upcast to fp32.** Measured on the first merge
+run: transformers dequantizes MXFP4 to bf16 on CPU whatever dtype is
+requested, and the check's dtype guard refused (`model.layers.7.mlp.experts.gate_up_proj
+loaded as torch.bfloat16`). The model is upcast to fp32 after loading. This is
+exact: an MXFP4 value is an e2m1 element times a power of two, at most two
+significant bits, which bf16 represents exactly, and bf16 to fp32 is exact.
+Peak RSS of the refused run, which loaded bf16 only: 61,821,972 kB.
+
+A second control was added: `down_proj` is square, so
 the transposed einsum orientation fits its shape too, and it must also fail.
 
 ## Open for the owner

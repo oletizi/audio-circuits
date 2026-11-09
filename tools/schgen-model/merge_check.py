@@ -111,9 +111,18 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(
         base_dir,
         quantization_config=Mxfp4Config(dequantize=True),
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         device_map="cpu",
     )
+    # transformers dequantizes MXFP4 to bf16 on CPU whatever dtype is asked for
+    # (measured on the first run: the experts came back bf16 and the check
+    # below refused). The upcast is EXACT, not an approximation: an MXFP4 value
+    # is an e2m1 element (0, 0.5, 1, 1.5, 2, 3, 4, 6, signed) times a power of
+    # two, at most 2 significant bits, which bf16 holds exactly; and bf16 to
+    # fp32 is exact for every bf16 value. The dtype check below now verifies
+    # that this upcast happened.
+    report["loaded_expert_dtype"] = str(model.model.layers[EXPERT_LAYERS[0]].mlp.experts.gate_up_proj.dtype)
+    model = model.to(torch.float32)
     report["load_seconds"] = round(time.time() - t0)
     params = dict(model.named_parameters())
 
