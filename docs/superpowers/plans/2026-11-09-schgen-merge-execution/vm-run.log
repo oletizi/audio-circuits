@@ -1,0 +1,783 @@
+Hit:2 https://deb.debian.org/debian bookworm InRelease
+Fetched 2332 kB in 1s (3476 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  binutils binutils-common binutils-x86-64-linux-gnu build-essential bzip2 cpp
+  cpp-12 dpkg-dev fakeroot fontconfig-config fonts-dejavu-core g++ g++-12 gcc
+  gcc-12 javascript-common libabsl20220623 libalgorithm-diff-perl
+  libalgorithm-diff-xs-perl libalgorithm-merge-perl libaom3 libasan8
+  libatomic1 libavif15 libbinutils libc-dev-bin libc-devtools libc6-dev
+  libcc1-0 libcrypt-dev libctf-nobfd0 libctf0 libdav1d6 libde265-0 libdeflate0
+  libdpkg-perl libexpat1-dev libfakeroot libfile-fcntllock-perl libfontconfig1
+  libgav1-1 libgcc-12-dev libgd3 libgdbm-compat4 libgomp1 libgprofng0 libheif1
+  libisl23 libitm1 libjansson4 libjbig0 libjpeg62-turbo libjs-jquery
+  libjs-sphinxdoc libjs-underscore liblerc4 liblocale-gettext-perl liblsan0
+  libmpc3 libmpfr6 libnsl-dev libnuma1 libperl5.36 libpython3-dev
+  libpython3.11 libpython3.11-dev libquadmath0 librav1e0 libstdc++-12-dev
+  libsvtav1enc1 libtiff6 libtirpc-dev libtsan2 libubsan1 libwebp7 libx11-6
+  libx11-data libx265-199 libxau6 libxcb1 libxdmcp6 libxpm4 libyuv0
+  linux-libc-dev make manpages-dev patch perl perl-modules-5.36 python3-dev
+  python3-distutils python3-lib2to3 python3-pip-whl python3-setuptools
+  python3-setuptools-whl python3-wheel python3.11-dev python3.11-venv
+  rpcsvc-proto zlib1g-dev
+Suggested packages:
+  binutils-doc bzip2-doc cpp-doc gcc-12-locales cpp-12-doc debian-keyring
+  g++-multilib g++-12-multilib gcc-12-doc gcc-multilib autoconf automake
+  libtool flex bison gdb gcc-doc gcc-12-multilib apache2 | lighttpd | httpd
+  glibc-doc git bzr libgd-tools libstdc++-12-doc make-doc ed diffutils-doc
+  perl-doc libterm-readline-gnu-perl | libterm-readline-perl-perl
+  libtap-harness-archive-perl python-setuptools-doc
+The following NEW packages will be installed:
+  binutils binutils-common binutils-x86-64-linux-gnu build-essential bzip2 cpp
+  cpp-12 dpkg-dev fakeroot fontconfig-config fonts-dejavu-core g++ g++-12 gcc
+  gcc-12 javascript-common libabsl20220623 libalgorithm-diff-perl
+  libalgorithm-diff-xs-perl libalgorithm-merge-perl libaom3 libasan8
+  libatomic1 libavif15 libbinutils libc-dev-bin libc-devtools libc6-dev
+  libcc1-0 libcrypt-dev libctf-nobfd0 libctf0 libdav1d6 libde265-0 libdeflate0
+  libdpkg-perl libexpat1-dev libfakeroot libfile-fcntllock-perl libfontconfig1
+  libgav1-1 libgcc-12-dev libgd3 libgdbm-compat4 libgomp1 libgprofng0 libheif1
+  libisl23 libitm1 libjansson4 libjbig0 libjpeg62-turbo libjs-jquery
+  libjs-sphinxdoc libjs-underscore liblerc4 liblocale-gettext-perl liblsan0
+  libmpc3 libmpfr6 libnsl-dev libnuma1 libperl5.36 libpython3-dev
+  libpython3.11 libpython3.11-dev libquadmath0 librav1e0 libstdc++-12-dev
+  libsvtav1enc1 libtiff6 libtirpc-dev libtsan2 libubsan1 libwebp7 libx11-6
+  libx11-data libx265-199 libxau6 libxcb1 libxdmcp6 libxpm4 libyuv0
+  linux-libc-dev make manpages-dev patch perl perl-modules-5.36 python3-dev
+  python3-distutils python3-lib2to3 python3-pip python3-pip-whl
+  python3-setuptools python3-setuptools-whl python3-venv python3-wheel
+  python3.11-dev python3.11-venv rpcsvc-proto zlib1g-dev
+0 upgraded, 102 newly installed, 0 to remove and 7 not upgraded.
+Need to get 102 MB of archives.
+After this operation, 420 MB of additional disk space will be used.
+Preconfiguring packages ...
+Fetched 102 MB in 1s (131 MB/s)
+
+(Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 61878 files and directories currently installed.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+update-alternatives: using /usr/bin/fakeroot-sysv to provide /usr/bin/fakeroot (fakeroot) in auto mode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+
+
+
+
+
+
+
+
+
+
+
+
+=== stage setup done 2026-11-09T23:11:42Z
+
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+Fetching 14 files:  14%|█▍        | 2/14 [00:00<00:00, 17.08it/s]
+Fetching 14 files:  71%|███████▏  | 10/14 [00:00<00:00, 45.42it/s]
+Fetching 14 files:  79%|███████▊  | 11/14 [00:20<00:00, 45.42it/s]
+Fetching 14 files:  86%|████████▌ | 12/14 [01:05<00:15,  7.60s/it]
+Fetching 14 files:  93%|█████████▎| 13/14 [01:05<00:06,  6.59s/it]
+Fetching 14 files: 100%|██████████| 14/14 [01:10<00:00,  5.05s/it]
+base: openai/gpt-oss-20b @ 6cee5e81ee83917806bbde320786a8fb61efebee
+
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]
+Fetching 15 files:   7%|▋         | 1/15 [00:00<00:01,  7.25it/s]
+Fetching 15 files:  40%|████      | 6/15 [00:00<00:00, 25.55it/s]
+Fetching 15 files:  60%|██████    | 9/15 [00:00<00:00, 23.60it/s]
+Fetching 15 files:  80%|████████  | 12/15 [00:00<00:00, 11.51it/s]
+Fetching 15 files:  93%|█████████▎| 14/15 [00:01<00:00,  5.64it/s]
+Fetching 15 files: 100%|██████████| 15/15 [00:02<00:00,  6.89it/s]
+adapter: microsoft/SchGen @ 97ac53055570568e125510237e06fdb340a38558
+=== stage download done 2026-11-09T23:12:56Z
+/home/orion/schgen/vm-run.sh: line 37: /usr/bin/time: No such file or directory
+Hit:7 https://packages.cloud.google.com/apt google-compute-engine-bookworm-stable InRelease
+Hit:3 https://deb.debian.org/debian bookworm InRelease
+Hit:4 https://deb.debian.org/debian bookworm-updates InRelease
+Hit:5 https://deb.debian.org/debian bookworm-backports InRelease
+Hit:8 https://packages.cloud.google.com/apt cloud-sdk-bookworm InRelease
+Hit:6 https://deb.debian.org/debian-security bookworm-security InRelease
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+python3-venv is already the newest version (3.11.2-1+b1).
+python3-pip is already the newest version (23.0.1+dfsg-1).
+The following NEW packages will be installed:
+  time
+0 upgraded, 1 newly installed, 0 to remove and 7 not upgraded.
+Need to get 50.8 kB of archives.
+After this operation, 132 kB of additional disk space will be used.
+Fetched 50.8 kB in 0s (424 kB/s)
+
+(Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 72221 files and directories currently installed.)
+
+
+
+
+
+=== stage setup done 2026-11-09T23:15:56Z
+[23:16:00] loading base, MXFP4 experts dequantized, float32
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[transformers] MXFP4 inference on CPU requires use_kernels=True, but use_kernels is disabled. We will dequantize the model to bf16. To run MXFP4 natively on CPU, please set use_kernels=True.
+
+Loading weights:   0%|          | 0/411 [00:00<?, ?it/s]
+Loading weights:   1%|          | 5/411 [00:00<01:03,  6.41it/s]
+Loading weights:   2%|▏         | 7/411 [00:02<02:15,  2.99it/s]
+Loading weights:   5%|▌         | 22/411 [00:02<00:39,  9.96it/s]
+Loading weights:   6%|▌         | 24/411 [00:03<00:55,  6.95it/s]
+Loading weights:   9%|▉         | 39/411 [00:03<00:27, 13.39it/s]
+Loading weights:  10%|▉         | 41/411 [00:04<00:39,  9.41it/s]
+Loading weights:  14%|█▎        | 56/411 [00:05<00:22, 15.49it/s]
+Loading weights:  14%|█▍        | 59/411 [00:05<00:31, 11.16it/s]
+Loading weights:  18%|█▊        | 73/411 [00:06<00:20, 16.42it/s]
+Loading weights:  18%|█▊        | 76/411 [00:07<00:30, 10.87it/s]
+Loading weights:  22%|██▏       | 90/411 [00:07<00:20, 15.94it/s]
+Loading weights:  23%|██▎       | 93/411 [00:08<00:27, 11.62it/s]
+Loading weights:  26%|██▌       | 107/411 [00:08<00:18, 16.73it/s]
+Loading weights:  27%|██▋       | 110/411 [00:09<00:25, 12.01it/s]
+Loading weights:  30%|███       | 124/411 [00:09<00:16, 17.12it/s]
+Loading weights:  31%|███       | 127/411 [00:10<00:23, 12.22it/s]
+Loading weights:  34%|███▍      | 141/411 [00:11<00:15, 17.30it/s]
+Loading weights:  35%|███▌      | 144/411 [00:11<00:21, 12.29it/s]
+Loading weights:  38%|███▊      | 158/411 [00:12<00:14, 17.42it/s]
+Loading weights:  39%|███▉      | 161/411 [00:12<00:20, 12.36it/s]
+Loading weights:  43%|████▎     | 175/411 [00:13<00:13, 17.44it/s]
+Loading weights:  43%|████▎     | 178/411 [00:14<00:18, 12.36it/s]
+Loading weights:  47%|████▋     | 192/411 [00:14<00:12, 17.46it/s]
+Loading weights:  47%|████▋     | 195/411 [00:15<00:17, 12.36it/s]
+Loading weights:  51%|█████     | 209/411 [00:15<00:11, 17.46it/s]
+Loading weights:  52%|█████▏    | 212/411 [00:16<00:16, 12.37it/s]
+Loading weights:  55%|█████▍    | 226/411 [00:16<00:10, 17.49it/s]
+Loading weights:  56%|█████▌    | 229/411 [00:17<00:15, 11.97it/s]
+Loading weights:  59%|█████▉    | 243/411 [00:17<00:09, 17.04it/s]
+Loading weights:  60%|█████▉    | 246/411 [00:18<00:13, 12.06it/s]
+Loading weights:  63%|██████▎   | 260/411 [00:19<00:08, 17.13it/s]
+Loading weights:  64%|██████▍   | 263/411 [00:19<00:12, 12.25it/s]
+Loading weights:  67%|██████▋   | 277/411 [00:20<00:07, 17.35it/s]
+Loading weights:  68%|██████▊   | 280/411 [00:21<00:10, 12.33it/s]
+Loading weights:  72%|███████▏  | 294/411 [00:21<00:06, 17.44it/s]
+Loading weights:  72%|███████▏  | 297/411 [00:22<00:09, 12.34it/s]
+Loading weights:  76%|███████▌  | 311/411 [00:22<00:05, 17.45it/s]
+Loading weights:  76%|███████▋  | 314/411 [00:23<00:07, 12.36it/s]
+Loading weights:  80%|███████▉  | 328/411 [00:23<00:04, 17.27it/s]
+Loading weights:  81%|████████  | 331/411 [00:24<00:06, 12.24it/s]
+Loading weights:  84%|████████▍ | 345/411 [00:24<00:03, 17.32it/s]
+Loading weights:  85%|████████▍ | 348/411 [00:25<00:05, 12.16it/s]
+Loading weights:  88%|████████▊ | 362/411 [00:26<00:02, 17.23it/s]
+Loading weights:  89%|████████▉ | 365/411 [00:26<00:03, 11.93it/s]
+Loading weights:  92%|█████████▏| 379/411 [00:27<00:01, 16.98it/s]
+Loading weights:  93%|█████████▎| 382/411 [00:28<00:02, 12.14it/s]
+Loading weights:  96%|█████████▋| 396/411 [00:28<00:00, 17.18it/s]
+Loading weights:  97%|█████████▋| 399/411 [00:29<00:00, 12.22it/s]
+Loading weights: 100%|██████████| 411/411 [00:29<00:00, 14.06it/s]
+refusing: model.layers.7.mlp.experts.gate_up_proj loaded as torch.bfloat16, not float32; the check's tolerance assumes fp32
+Command exited with non-zero status 1
+	Command being timed: "/home/orion/venv/bin/python /home/orion/schgen/merge_check.py /home/orion/models/base /home/orion/models/adapter /home/orion/models/schgen-merged /home/orion/schgen/merge-report.json"
+	User time (seconds): 333.43
+	System time (seconds): 106.08
+	Percent of CPU this job got: 1264%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:34.75
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 61821972
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 15
+	Minor (reclaiming a frame) page faults: 941821
+	Voluntary context switches: 37699
+	Involuntary context switches: 1369
+	Swaps: 0
+	File system inputs: 1832
+	File system outputs: 64
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1
+[23:17:12] loading base, MXFP4 experts dequantized, float32
+[transformers] MXFP4 inference on CPU requires use_kernels=True, but use_kernels is disabled. We will dequantize the model to bf16. To run MXFP4 natively on CPU, please set use_kernels=True.
+
+Loading weights:   0%|          | 0/411 [00:00<?, ?it/s]
+Loading weights:   1%|          | 5/411 [00:00<00:59,  6.80it/s]
+Loading weights:   2%|▏         | 7/411 [00:01<01:44,  3.87it/s]
+Loading weights:   5%|▌         | 22/411 [00:02<00:28, 13.68it/s]
+Loading weights:   6%|▌         | 25/411 [00:02<00:41,  9.31it/s]
+Loading weights:   9%|▉         | 39/411 [00:03<00:23, 15.76it/s]
+Loading weights:  10%|█         | 42/411 [00:03<00:33, 10.95it/s]
+Loading weights:  14%|█▎        | 56/411 [00:04<00:21, 16.66it/s]
+Loading weights:  14%|█▍        | 59/411 [00:05<00:30, 11.60it/s]
+Loading weights:  18%|█▊        | 73/411 [00:05<00:19, 17.01it/s]
+Loading weights:  18%|█▊        | 76/411 [00:06<00:27, 12.07it/s]
+Loading weights:  22%|██▏       | 90/411 [00:06<00:18, 17.31it/s]
+Loading weights:  23%|██▎       | 93/411 [00:07<00:25, 12.28it/s]
+Loading weights:  26%|██▌       | 107/411 [00:07<00:17, 17.49it/s]
+Loading weights:  27%|██▋       | 110/411 [00:08<00:24, 12.39it/s]
+Loading weights:  30%|███       | 124/411 [00:08<00:16, 17.54it/s]
+Loading weights:  31%|███       | 127/411 [00:09<00:22, 12.45it/s]
+Loading weights:  34%|███▍      | 141/411 [00:10<00:15, 17.58it/s]
+Loading weights:  35%|███▌      | 144/411 [00:10<00:21, 12.47it/s]
+Loading weights:  38%|███▊      | 158/411 [00:11<00:14, 17.61it/s]
+Loading weights:  39%|███▉      | 161/411 [00:11<00:20, 12.50it/s]
+Loading weights:  43%|████▎     | 175/411 [00:12<00:13, 17.64it/s]
+Loading weights:  43%|████▎     | 178/411 [00:13<00:18, 12.51it/s]
+Loading weights:  47%|████▋     | 192/411 [00:13<00:12, 17.64it/s]
+Loading weights:  47%|████▋     | 195/411 [00:14<00:17, 12.43it/s]
+Loading weights:  51%|█████     | 209/411 [00:14<00:11, 17.55it/s]
+Loading weights:  52%|█████▏    | 212/411 [00:15<00:15, 12.47it/s]
+Loading weights:  55%|█████▍    | 226/411 [00:15<00:10, 17.58it/s]
+Loading weights:  56%|█████▌    | 229/411 [00:16<00:14, 12.49it/s]
+Loading weights:  59%|█████▉    | 243/411 [00:16<00:09, 17.62it/s]
+Loading weights:  60%|█████▉    | 246/411 [00:17<00:13, 12.48it/s]
+Loading weights:  63%|██████▎   | 260/411 [00:18<00:09, 15.67it/s]
+Loading weights:  64%|██████▎   | 262/411 [00:19<00:15,  9.79it/s]
+Loading weights:  67%|██████▋   | 277/411 [00:19<00:08, 15.09it/s]
+Loading weights:  68%|██████▊   | 280/411 [00:20<00:11, 11.32it/s]
+Loading weights:  72%|███████▏  | 294/411 [00:20<00:07, 16.26it/s]
+Loading weights:  72%|███████▏  | 297/411 [00:21<00:09, 11.87it/s]
+Loading weights:  76%|███████▌  | 311/411 [00:22<00:05, 16.90it/s]
+Loading weights:  76%|███████▋  | 314/411 [00:22<00:07, 12.16it/s]
+Loading weights:  80%|███████▉  | 328/411 [00:23<00:04, 17.23it/s]
+Loading weights:  81%|████████  | 331/411 [00:24<00:06, 11.69it/s]
+Loading weights:  84%|████████▍ | 345/411 [00:24<00:03, 16.70it/s]
+Loading weights:  85%|████████▍ | 348/411 [00:25<00:05, 12.04it/s]
+Loading weights:  88%|████████▊ | 362/411 [00:25<00:02, 17.10it/s]
+Loading weights:  89%|████████▉ | 365/411 [00:26<00:03, 12.26it/s]
+Loading weights:  92%|█████████▏| 379/411 [00:26<00:01, 17.35it/s]
+Loading weights:  93%|█████████▎| 382/411 [00:27<00:02, 12.36it/s]
+Loading weights:  96%|█████████▋| 396/411 [00:27<00:00, 17.42it/s]
+Loading weights:  97%|█████████▋| 399/411 [00:28<00:00, 12.36it/s]
+Loading weights: 100%|██████████| 411/411 [00:28<00:00, 14.37it/s]
+[23:17:45] snapshotted 106 tensors
+[23:17:45] applying adapter with PEFT
+[23:17:45] merge_and_unload
+[23:18:07] report written: /home/orion/schgen/merge-report.json
+[23:18:07] {"all_checks_within_rounding": true, "all_controls_fail": true, "untouched_bit_identical": true}
+[23:18:07] casting to bfloat16 and saving
+
+Writing model shards:   0%|          | 0/9 [00:00<?, ?it/s]
+Writing model shards:  11%|█         | 1/9 [00:02<00:20,  2.55s/it]
+Writing model shards:  22%|██▏       | 2/9 [00:05<00:18,  2.63s/it]
+Writing model shards:  33%|███▎      | 3/9 [00:07<00:15,  2.64s/it]
+Writing model shards:  44%|████▍     | 4/9 [00:10<00:13,  2.64s/it]
+Writing model shards:  56%|█████▌    | 5/9 [00:13<00:10,  2.73s/it]
+Writing model shards:  67%|██████▋   | 6/9 [00:16<00:08,  2.92s/it]
+Writing model shards:  78%|███████▊  | 7/9 [00:20<00:06,  3.04s/it]
+Writing model shards:  89%|████████▉ | 8/9 [00:25<00:03,  3.70s/it]
+Writing model shards: 100%|██████████| 9/9 [00:30<00:00,  4.19s/it]
+Writing model shards: 100%|██████████| 9/9 [00:30<00:00,  3.38s/it]
+[23:18:41] writing MANIFEST.sha256
+[23:20:27] done
+	Command being timed: "/home/orion/venv/bin/python /home/orion/schgen/merge_check.py /home/orion/models/base /home/orion/models/adapter /home/orion/models/schgen-merged /home/orion/schgen/merge-report.json"
+	User time (seconds): 605.20
+	System time (seconds): 310.20
+	Percent of CPU this job got: 457%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:20.06
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 115531100
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2815
+	Minor (reclaiming a frame) page faults: 2212526
+	Voluntary context switches: 47002
+	Involuntary context switches: 2136
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 81753112
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+=== stage merge done 2026-11-09T23:20:28Z
+Copying file:///home/orion/models/schgen-merged/tokenizer.json to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/tokenizer.json
+Copying file:///home/orion/models/schgen-merged/tokenizer_config.json to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/tokenizer_config.json
+  
+.....WARNING: Parallel composite upload was turned ON to get the best performance on
+uploading large objects. If you would like to opt-out and instead
+perform a normal upload, run:
+`gcloud config set storage/parallel_composite_upload_enabled False`
+If you would like to disable this warning, run:
+`gcloud config set storage/parallel_composite_upload_enabled True`
+Note that with parallel composite uploads, your object might be
+uploaded as a composite object
+(https://cloud.google.com/storage/docs/composite-objects), which means
+that any user who downloads your object will need to use crc32c
+checksums to verify data integrity. gcloud storage is capable of
+computing crc32c checksums, but this might pose a problem for other
+clients.
+
+Copying file:///home/orion/models/schgen-merged/model-00005-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00005-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model.safetensors.index.json to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model.safetensors.index.json
+Copying file:///home/orion/models/schgen-merged/model-00008-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00008-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model-00002-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00002-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model-00001-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00001-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model-00003-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00003-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/MANIFEST.sha256 to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/MANIFEST.sha256
+Copying file:///home/orion/models/schgen-merged/generation_config.json to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/generation_config.json
+Copying file:///home/orion/models/schgen-merged/model-00009-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00009-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/chat_template.jinja to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/chat_template.jinja
+Copying file:///home/orion/models/schgen-merged/model-00006-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00006-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model-00007-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00007-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/model-00004-of-00009.safetensors to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00004-of-00009.safetensors
+Copying file:///home/orion/models/schgen-merged/config.json to gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/config.json
+..................................................................................................................
+
+Average throughput: 1.8GiB/s
+Copying file:///home/orion/schgen/merge-report.json to gs://oletizi-docs-cli-20261028-schgen-merge/record/merge-report.json
+Copying file:///home/orion/schgen/sources.json to gs://oletizi-docs-cli-20261028-schgen-merge/record/sources.json
+  
+Copying file:///home/orion/schgen/pip-freeze.txt to gs://oletizi-docs-cli-20261028-schgen-merge/record/pip-freeze.txt
+
+
+Average throughput: 2.3MiB/s
+=== stage upload done 2026-11-09T23:20:59Z
+@@DONE@@
