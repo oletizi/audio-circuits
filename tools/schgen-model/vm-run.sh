@@ -19,7 +19,8 @@ mark() { touch "$HERE/done/$1"; echo "=== stage $1 done $(date -u +%FT%TZ)"; }
 
 if ! stage setup; then
   sudo apt-get update -q
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q python3-venv python3-pip
+  # time: GNU time, for the merge stage's peak-memory record; Debian lacks it.
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q python3-venv python3-pip time
   python3 -m venv "$VENV"
   "$VENV/bin/pip" install -q --upgrade pip
   "$VENV/bin/pip" install -q torch --index-url https://download.pytorch.org/whl/cpu
