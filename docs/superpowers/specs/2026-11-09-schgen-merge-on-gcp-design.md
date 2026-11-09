@@ -116,6 +116,7 @@ evaluation until it is resolved.
 | Store the large outputs on m1-mini's Big Disk | owner, 2026-11-09 | multi-terabyte volume; 7.7 TB free when checked |
 | Download cost is acceptable for ~40 GB | owner, 2026-11-09 | he checked GCP's egress pricing |
 | Project `oletizi-docs-cli-20261028`, billing account `013BD2-F2034F-3AED1A` | owner, 2026-11-09 | the project he named and linked billing to; asked about sharing it with the Docs CLI: *"The docs cli project is fine"* |
+| m1-mini pulls from GCS itself with `gcloud storage cp` (option 1a below) | owner, 2026-11-09 | he installed `gcloud` on m1-mini |
 | Purpose: test Kinference for Buoyant content work | owner, 2026-11-09 | *"I'm doing this work to test kinference as part of my content development effort for buoyant"* |
 | CPU VM, no GPU, for the merge | agent, proposed | the merge is bound by memory, not compute; avoids GPU quota |
 | Never edit PEFT to make the merge pass | agent, proposed | a merge forced through by editing the library is the converter's mispacking risk again, with nothing to check it against |
