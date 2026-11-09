@@ -1,8 +1,7 @@
 # Merging the SchGen adapter into gpt-oss-20b on a GCP machine
 
-**Status:** draft, awaiting the owner's review. No billed resource has been
-created. Compute Engine was enabled on `oletizi-docs-cli-20261028`, which costs
-nothing by itself.
+**Status:** approved by the owner, 2026-11-09 (*"spec is approved"*). Tooling
+in `tools/schgen-model/`. One deviation, recorded under **Deviations** below.
 
 **What this is.** `docs/research/2026-10-29-schgen-model-running.md` ran
 Microsoft's SchGen LoRA on `tower.local` and left two questions it could not
@@ -120,6 +119,20 @@ evaluation until it is resolved.
 | Purpose: test Kinference for Buoyant content work | owner, 2026-11-09 | *"I'm doing this work to test kinference as part of my content development effort for buoyant"* |
 | CPU VM, no GPU, for the merge | agent, proposed | the merge is bound by memory, not compute; avoids GPU quota |
 | Never edit PEFT to make the merge pass | agent, proposed | a merge forced through by editing the library is the converter's mispacking risk again, with nothing to check it against |
+
+## Deviations
+
+**fp32 merge on `n2-highmem-32`, not bf16 on `n2-highmem-16`.** Found while
+writing the check, after approval. The criterion says "within bf16 rounding of
+the merged weight", but bf16 rounding of a weight can be as large as the
+adapter's delta to it, so a wrong delta - including the mispacked control -
+could hide inside the tolerance and the check would be void. The merge and the
+check are therefore done in fp32 (about 84 GB for the model alone), where
+rounding is far below the delta, and the model is cast to bf16 only when saved.
+The criterion is unchanged in kind: PEFT's delta equals the reference's within
+the rounding of the precision the merge is done in. The machine is the step-up
+this spec already named. A second control was added: `down_proj` is square, so
+the transposed einsum orientation fits its shape too, and it must also fail.
 
 ## Open for the owner
 
