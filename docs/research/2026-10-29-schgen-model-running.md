@@ -501,7 +501,11 @@ evaluation, and this document does not pretend otherwise.
 Each is a criterion. Where a mechanism is suggested it is a guess from someone
 who has not tried it, and the criterion is what binds.
 
-1. **Is the expert reconstruction faithful?**
+1. **Is the expert reconstruction faithful?** **SETTLED, 2026-11-09: yes** -
+   PEFT's own merge matches it on every adapted tensor to within fp32
+   rounding, and the mispacked and transposed controls fail. See
+   `docs/research/2026-11-09-schgen-merge.md`. The criterion as first stated
+   is kept below.
    *Criterion:* the custom converter's per-expert delta equals the delta between
    `openai/gpt-oss-20b` and a trusted `merge_and_unload()` of
    `microsoft/SchGen`, on `blk.{7,15,23}.ffn_{gate,up,down}_exps`.
