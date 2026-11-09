@@ -1,6 +1,35 @@
 # Serving base gpt-oss-20b and merged SchGen behind Kinference on GKE
 
-**Status:** draft, awaiting the owner's review. No cluster exists.
+**Status:** approved with a **narrowed scope**, 2026-11-09. The owner:
+*"Let's just get kinference running and routing traffic to the model for now.
+Once that's working, we can discuss further operations."* So this phase serves
+**the merged SchGen model only** - no base arm, no A/B, no feature exercise, no
+workload beyond the requests that prove routing. Sections below marked
+**(deferred)** are kept as the design for later and are not run now. Tooling in
+`tools/schgen-serving/`.
+
+### The narrowed phase, concretely
+
+| | |
+| --- | --- |
+| cluster | GKE Standard, zonal `us-central1-a`, one small system node |
+| GPU pool | one `g2-standard-48` (4 x L4), merged model in bf16, tensor-parallel 4 |
+| vLLM | `vllm/vllm-openai:v0.32.0` pinned by digest (latest with a non-rc GitHub release on 2026-11-09; Kinference needs >= 0.28.0) |
+| vLLM wiring | copied from Kinference's own e2e manifest `tests/e2e/manifests/dummy-vllm.yaml`: ports `http` 8000, `kv-pub` 5557, `kv-replay` 5558; `--kv-events-config` with topic `kv@$(POD_IP):$(POD_PORT)@<model>`; `--enable-prefix-caching`; plus `--enable-prompt-tokens-details` from the serving guide |
+| Kinference | as its getting-started page installs it; chart and image versions recorded at install |
+
+**Pass, in two layers so a failure is located in one:**
+
+1. **vLLM alone**: `/v1/models` on the pod's service lists the merged model, and
+   a chat completion returns.
+2. **Through Kinference**: the `InferenceWorkerSet` reports `Accepted` and
+   `Ready`, its status shows KV events configured with one subscribed
+   endpoint, and a chat completion sent **to the gateway** returns - with the
+   request visible in the vLLM pod's log, not inferred from the answer.
+
+`kvBlockSize` is **measured** at bring-up from vLLM's own startup log and KV
+events, not assumed: Kinference's reference warns it need not equal vLLM's
+`--block-size`, and gpt-oss mixes sliding-window and full attention.
 
 **What this is.** The second phase after
 `docs/superpowers/specs/2026-11-09-schgen-merge-on-gcp-design.md`. The merge
@@ -76,7 +105,7 @@ m1-mini has verified its copy; this spec defers that, because re-uploading 42 GB
 from m1-mini to serve it would be slower than keeping it. Its storage cost is
 the price. Deleted at this phase's teardown.
 
-## What is run
+## What is run (the full design; only bring-up and routing run now)
 
 1. **Bring-up.** Cluster, pools, GPU drivers; vLLM per arm with the flags
    Kinference requires, served model names `gpt-oss-20b` and `schgen-merged`.
@@ -96,7 +125,7 @@ the price. Deleted at this phase's teardown.
    **Not an evaluation**: a set of circuits and a scoring rule would be, and
    that is its own spec.
 
-## The A/B has a confound, stated before anyone reads a result
+## The A/B has a confound, stated before anyone reads a result (deferred)
 
 The two arms differ in **precision** as well as adapter: base runs MXFP4
 kernels, merged runs bf16. A difference between them cannot be attributed to
@@ -128,6 +157,7 @@ the owner has his own read of it.
 
 | decision | who | why |
 | --- | --- | --- |
+| Narrow to: Kinference running and routing to the merged model; nothing else yet | owner, 2026-11-09 | *"Let's just get kinference running and routing traffic to the model for now"* |
 | This spec lives in this repository | owner, 2026-11-09 | *"put the spec here. We can write reports about our experience to kinference-research"* |
 | Purpose: test Kinference for Buoyant content work | owner, 2026-11-09 | *"I'm doing this work to test kinference as part of my content development effort for buoyant"* |
 | Project `oletizi-docs-cli-20261028` | owner, 2026-11-09 | as for the merge |

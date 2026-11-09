@@ -1,0 +1,98 @@
+# The merged SchGen model (bf16) on one g2-standard-48 node, 4 x L4,
+# tensor-parallel 4. The Kinference wiring (ports, kv-events-config, prefix
+# caching) is copied from Kinference's own e2e manifest,
+# Kinference-AI/kinference tests/e2e/manifests/dummy-vllm.yaml.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: schgen-merged
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: schgen-merged
+  ports:
+    - {name: http, port: 8000, targetPort: 8000, protocol: TCP}
+    - {name: kv-pub, port: 5557, targetPort: 5557, protocol: TCP}
+    - {name: kv-replay, port: 5558, targetPort: 5558, protocol: TCP}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schgen-merged
+  namespace: default
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: schgen-merged
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: schgen-merged
+    spec:
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-l4
+      tolerations:
+        - {key: nvidia.com/gpu, operator: Exists, effect: NoSchedule}
+      initContainers:
+        # Copies the merged model from the bucket and refuses to let vLLM start
+        # unless every file matches the manifest the merge wrote.
+        - name: fetch-model
+          image: google/cloud-sdk@sha256:08c9cb2c82625689f26172f46f2cefdf30c3449959a71492569a824b537d369f
+          command: ["bash", "-c"]
+          args:
+            - >-
+              set -euo pipefail;
+              gcloud storage cp -r gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged /models/;
+              cd /models/schgen-merged;
+              sha256sum -c MANIFEST.sha256;
+              echo MODEL-VERIFIED
+          volumeMounts:
+            - {name: models, mountPath: /models}
+      containers:
+        - name: vllm
+          # vllm/vllm-openai:v0.32.0
+          image: vllm/vllm-openai@sha256:befccf0e7e4089aa23926bb6f887a85c0d46c2a99e6de5c5ffdf5cb7957c5b34
+          command: ["vllm", "serve"]
+          args:
+            - /models/schgen-merged
+            - --served-model-name=schgen-merged
+            - --host=0.0.0.0
+            - --port=8000
+            - --tensor-parallel-size=4
+            - --max-model-len=16384
+            - --enable-prefix-caching
+            - --enable-prompt-tokens-details
+            - >-
+              --kv-events-config={"enable_kv_cache_events":true,"publisher":"zmq","endpoint":"tcp://*:5557","replay_endpoint":"tcp://*:5558","topic":"kv@$(POD_IP):$(POD_PORT)@schgen-merged"}
+          env:
+            - name: POD_IP
+              valueFrom: {fieldRef: {fieldPath: status.podIP}}
+            - {name: POD_PORT, value: "5557"}
+            - {name: VLLM_NO_USAGE_STATS, value: "1"}
+            - {name: DO_NOT_TRACK, value: "1"}
+          ports:
+            - {containerPort: 8000, name: http}
+            - {containerPort: 5557, name: kv-pub}
+            - {containerPort: 5558, name: kv-replay}
+          resources:
+            requests: {nvidia.com/gpu: 4, memory: 64Gi, cpu: "16"}
+            limits: {nvidia.com/gpu: 4, memory: 170Gi}
+          volumeMounts:
+            - {name: models, mountPath: /models, readOnly: true}
+            - {name: dshm, mountPath: /dev/shm}
+          startupProbe:
+            httpGet: {path: /v1/models, port: http}
+            periodSeconds: 10
+            failureThreshold: 180
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+      volumes:
+        - name: models
+          emptyDir: {}
+        - name: dshm
+          emptyDir: {medium: Memory, sizeLimit: 32Gi}
