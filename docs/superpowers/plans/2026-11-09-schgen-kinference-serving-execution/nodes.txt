@@ -1,0 +1,3 @@
+NAME                                         STATUS   ROLES    AGE   VERSION               INTERNAL-IP   EXTERNAL-IP      OS-IMAGE                             KERNEL-VERSION      CONTAINER-RUNTIME
+gke-schgen-kinf-default-pool-9fc76501-pw0w   Ready    <none>   27m   v1.36.4-gke.2377000   10.132.0.4    35.205.250.195   Container-Optimized OS from Google   6.12.110+ (amd64)   containerd://2.2.7
+gke-schgen-kinf-l4x4-spot-ef5d0e9e-4jrm      Ready    <none>   13m   v1.36.4-gke.2377000   10.132.0.7    34.53.148.120    Container-Optimized OS from Google   6.12.110+ (amd64)   containerd://2.2.7

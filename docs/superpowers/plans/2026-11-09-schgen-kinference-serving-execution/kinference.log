@@ -1,0 +1,9 @@
+2026-11-10T03:20:15.679827Z  INFO kinference::server: starting kinference version="0.1.0-alpha.7" listen=0.0.0.0:50051 worker_sets=0 profiles=1
+2026-11-10T03:20:15.680548Z  WARN kinference_router::metrics: tenant label values are unbounded; set metrics.tenant_labels to an allowlist
+2026-11-10T03:20:15.681466Z  INFO kinference::server: ready listen=0.0.0.0:50051 worker_sets=0
+2026-11-10T03:20:15.681740Z  INFO kinference_controller::policy::worker_sets: watching InferenceWorkerSets namespace=None selector=None profiles=1
+2026-11-10T03:20:15.682277Z  INFO kinference::admin: admin listener ready listen=0.0.0.0:9001
+2026-11-10T03:20:15.682373Z  INFO kinference_controller::policy::store: watching policy resources namespace=None pools=0
+2026-11-10T03:35:14.881987Z  INFO kinference_fleet::pool: worker set created workerset=default/schgen-merged profile=default block_size=16 resurrected=false
+2026-11-10T03:35:14.894283Z  INFO kinference_fleet::coordinator: worker added workerset="default/schgen-merged" worker_id="default/schgen-merged-775fcf7cc7-t5rh8" block_size=16 zmq_endpoint="tcp://10.24.1.5:5557" http_url="http://10.24.1.5:8000/"
+2026-11-10T03:35:14.897064Z  INFO kinference_fleet::models: worker set serves the model model=schgen-merged workerset=default/schgen-merged workersets_serving=1

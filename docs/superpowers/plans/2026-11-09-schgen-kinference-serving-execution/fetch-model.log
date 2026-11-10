@@ -1,0 +1,36 @@
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/MANIFEST.sha256 to file:///models/schgen-merged/MANIFEST.sha256
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/chat_template.jinja to file:///models/schgen-merged/chat_template.jinja
+  
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/config.json to file:///models/schgen-merged/config.json
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/generation_config.json to file:///models/schgen-merged/generation_config.json
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00001-of-00009.safetensors to file:///models/schgen-merged/model-00001-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00002-of-00009.safetensors to file:///models/schgen-merged/model-00002-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00003-of-00009.safetensors to file:///models/schgen-merged/model-00003-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00004-of-00009.safetensors to file:///models/schgen-merged/model-00004-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00005-of-00009.safetensors to file:///models/schgen-merged/model-00005-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00006-of-00009.safetensors to file:///models/schgen-merged/model-00006-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00007-of-00009.safetensors to file:///models/schgen-merged/model-00007-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00008-of-00009.safetensors to file:///models/schgen-merged/model-00008-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model-00009-of-00009.safetensors to file:///models/schgen-merged/model-00009-of-00009.safetensors
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/model.safetensors.index.json to file:///models/schgen-merged/model.safetensors.index.json
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/tokenizer.json to file:///models/schgen-merged/tokenizer.json
+Copying gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/tokenizer_config.json to file:///models/schgen-merged/tokenizer_config.json
+........................................................................................................................................................................................................................................................................................................
+
+Average throughput: 681.3MiB/s
+chat_template.jinja: OK
+config.json: OK
+generation_config.json: OK
+model-00001-of-00009.safetensors: OK
+model-00002-of-00009.safetensors: OK
+model-00003-of-00009.safetensors: OK
+model-00004-of-00009.safetensors: OK
+model-00005-of-00009.safetensors: OK
+model-00006-of-00009.safetensors: OK
+model-00007-of-00009.safetensors: OK
+model-00008-of-00009.safetensors: OK
+model-00009-of-00009.safetensors: OK
+model.safetensors.index.json: OK
+tokenizer.json: OK
+tokenizer_config.json: OK
+MODEL-VERIFIED
