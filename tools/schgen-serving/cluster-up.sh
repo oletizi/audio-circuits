@@ -2,6 +2,15 @@
 # Laptop. Creates the cluster and the GPU pool, each only if absent, and fetches
 # credentials. The GPU pool create is where a zero project-wide GPU quota
 # (GPUS_ALL_REGIONS) would surface; it fails loudly with GCP's own message.
+#
+# The GPU pool is NOT pinned to one zone. Measured 2026-11-09: a fixed
+# 1-node pool in us-central1-a sat in PROVISIONING for 20+ minutes while its
+# instance group logged ZONE_RESOURCE_POOL_EXHAUSTED (STOCKOUT) every few
+# minutes - and gcloud reports that only as "still running". So the pool spans
+# every zone offering the machine, starts at 0 nodes, and the autoscaler
+# (location policy ANY, total max 1) places the node wherever capacity exists
+# when the vLLM pod asks for GPUs. A stockout then shows as the pod Pending
+# with a FailedScaleUp event, not as a hung create.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 
@@ -17,7 +26,9 @@ if ! gcloud container node-pools describe "$GPU_POOL" --cluster "$CLUSTER" --pro
   gcloud container node-pools create "$GPU_POOL" --cluster "$CLUSTER" --project "$PROJECT" --zone "$ZONE" \
     --machine-type "$GPU_MACHINE" \
     --accelerator type=nvidia-l4,count=4,gpu-driver-version=latest \
-    --num-nodes 1 \
+    --node-locations "$GPU_ZONES" \
+    --num-nodes 0 \
+    --enable-autoscaling --total-min-nodes 0 --total-max-nodes 1 --location-policy ANY \
     --disk-type pd-balanced --disk-size 300 \
     --scopes cloud-platform
 fi
