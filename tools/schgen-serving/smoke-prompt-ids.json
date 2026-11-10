@@ -1,0 +1,28 @@
+{
+ "source_text": "<|start|>user<|message|>Name one use of a 100nF capacitor beside an IC power pin.<|end|><|start|>assistant",
+ "tokenizer": "tools/schgen-drawing-trial/runtime/tokenizer/tokenizer.json (sha256 0614fe83cadab421296e664e1f48f4261fa8fef6e03e63bb75c20f38e37d07d3)",
+ "prompt_token_ids": [
+  200006,
+  1428,
+  200008,
+  864,
+  1001,
+  1199,
+  328,
+  261,
+  220,
+  1353,
+  77,
+  37,
+  149687,
+  49662,
+  448,
+  30492,
+  3470,
+  10251,
+  13,
+  200007,
+  200006,
+  173781
+ ]
+}

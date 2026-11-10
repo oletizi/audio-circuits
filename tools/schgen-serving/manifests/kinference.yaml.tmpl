@@ -50,3 +50,8 @@ spec:
         - path: {type: PathPrefix, value: /v1/chat/completions}
       backendRefs:
         - {kind: InferencePool, group: kinference.buoyant.io, name: inference-pool}
+    # The SchGen trial sends token-ID prompts to /v1/completions, same backend.
+    - matches:
+        - path: {type: PathPrefix, value: /v1/completions}
+      backendRefs:
+        - {kind: InferencePool, group: kinference.buoyant.io, name: inference-pool}
