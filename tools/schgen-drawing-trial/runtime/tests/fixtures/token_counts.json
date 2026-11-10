@@ -1,11 +1,11 @@
 {
-  "source": "python -m trial.prompt on each fixtures/<board>/request.json in schgen-runtime:0707520c; test_longest_prompt_recorded re-renders and compares",
+  "source": "python -m trial.prompt on each fixtures/<board>/request.json in schgen-runtime:0707520c (organized_lib.json with the organized_lib_sys and pin_name_empty fixes); test_longest_prompt_recorded re-renders and compares",
   "token_count": {
-    "pultec-hi-boost": 4891,
-    "pultec-hi-cut": 4642,
-    "pultec-low-boost": 4612,
-    "pultec-low-cut": 4634,
-    "pultec-mid": 5495
+    "pultec-hi-boost": 4917,
+    "pultec-hi-cut": 4668,
+    "pultec-low-boost": 4638,
+    "pultec-low-cut": 4660,
+    "pultec-mid": 5505
   },
-  "longest": 5495
+  "longest": 5505
 }

@@ -12,7 +12,7 @@ the file, and trial/prompt.py refuses a context that does not cover every
 requested symbol.
 
 The file is made by SchGen's gather_symbols_by_lib() and save_organized_lib(),
-called here rather than through kicad_scan_lib's __main__, with one fix:
+called here rather than through kicad_scan_lib's __main__, with two fixes:
 
   organized_lib_sys
       kicad_scan_lib imports `sys` only under `if __name__ == "__main__":`,
@@ -20,6 +20,18 @@ called here rather than through kicad_scan_lib's __main__, with one fix:
       calling it from an import raises NameError. The module is given `sys`
       before the call. Nothing else about the scan changes (SKIP_LIB, fields,
       the `extends` handling are SchGen's).
+
+  pin_name_empty
+      KiCad 10.0.5's libraries write an unnamed pin as (name ""); KiCad 8's,
+      which SchGen trained on, wrote (name "~"). symbol_context's
+      _extract_bbox_and_pins substitutes the pin number only for "~", so under
+      10.0.5 Device:R, Device:C, power:GND and others reach the prompt with an
+      empty pin_name and no identifier. Before the file is saved, each pin's
+      stored name '""' is rewritten to '"~"' - KiCad 8's spelling - and
+      SchGen's own "~" handling then substitutes the number. Only that one
+      value changes; a pin with a real name is untouched. organized_lib.json
+      is read only by the prompt side (symbol_context); the emitter does not
+      load it. Made by controller ruling, Task 4 fix round 2.
 
 The __main__ path is not used because it reads KICAD_SYMBOL_LIB_PATH
 (config.py's Linux /usr/share/kicad/symbols, absent here) and then goes on to
@@ -50,6 +62,40 @@ sys.path.append(PROJECT_PATH)
 
 from modules.utils import kicad_scan_lib as scan  # noqa: E402
 
+# How parse_sexp stores the two spellings of "this pin has no name".
+EMPTY_NAME = '""'
+KICAD8_NO_NAME = '"~"'
+
+
+def _pin_nodes(tree: object):
+    if isinstance(tree, list):
+        if tree and tree[0] == "pin":
+            yield tree
+        for item in tree:
+            yield from _pin_nodes(item)
+
+
+def pin_name_empty(org_lib: dict) -> int:
+    """Rewrite each pin's stored (name "") to (name "~"); return how many.
+
+    Only the `name` child of a `pin` node whose stored value is exactly '""'
+    changes. Everything else in the scan output is left as SchGen made it.
+    """
+    count = 0
+    for symbols in org_lib.values():
+        for info in symbols:
+            tree = info.get("symbol")
+            if not isinstance(tree, list):  # an `extends` entry holds a string
+                continue
+            for pin in _pin_nodes(tree):
+                for child in pin[1:]:
+                    if (isinstance(child, list) and len(child) >= 2 and child[0] == "name"
+                            and child[1] == EMPTY_NAME):
+                        child[1] = KICAD8_NO_NAME
+                        count += 1
+    return count
+
+
 scan.sys = sys  # the organized_lib_sys fix, see the module docstring
 # gather_symbols_by_lib writes a carriage-return progress line per symbol
 # (about a megabyte in a build log); it is discarded, errors still raise.
@@ -57,6 +103,14 @@ with open(os.devnull, "w", encoding="utf-8") as devnull, contextlib.redirect_std
     org_lib = scan.gather_symbols_by_lib(SYMBOL_DIR)
 print(f"gather_symbols_by_lib: {len(org_lib)} libraries, "
       f"{sum(len(v) for v in org_lib.values())} symbols")
+pin_name_empty_count = pin_name_empty(org_lib)  # the pin_name_empty fix
+print(f"pin_name_empty: {pin_name_empty_count} pin names \"\" -> \"~\"")
+if pin_name_empty_count == 0:
+    raise SystemExit(
+        "pin_name_empty rewrote no pin name. KiCad 10.0.5's libraries write every unnamed pin "
+        "as (name \"\"), so zero means the scan's stored form changed and the fix no longer "
+        "applies; the prompt would then describe those pins with no identifier"
+    )
 for required in ("power", "Device"):
     if not org_lib.get(required):
         raise SystemExit(

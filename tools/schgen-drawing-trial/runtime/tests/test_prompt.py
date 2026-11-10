@@ -176,12 +176,37 @@ def test_symbol_context_covers_every_symbol() -> None:
     # Recorded, not corrected: SchGen's bbox extraction reads only `xy` and
     # `rectangle` nodes, so the arc-drawn inductor is described with [].
     assert [c["Bounding_box"] for c in context.values() if c["symbol_name"] == "L"] == [[]]
-    # Recorded, not corrected: KiCad 10.0.5 writes an unnamed pin as (name "")
-    # where KiCad 8 wrote (name "~"); SchGen maps only "~" to the pin number, so
-    # these pins reach the model with an empty pin_name and no number.
-    unnamed = sorted(c["symbol_name"] for c in context.values()
-                     if all(p["pin_name"] == "" for p in c["pin_info"]))
-    assert unnamed == ["C", "GND", "R"]
+    assert [p for c in context.values() for p in c["pin_info"] if p["pin_name"] == ""] == []
+
+
+# Pin numbers read from KiCad 10.0.5's Device, power and Switch libraries. Each
+# of these pins is written (name "") there; the pin_name_empty fix makes SchGen
+# substitute the number, as it does for KiCad 8's (name "~").
+UNNAMED_PIN_NUMBERS = {
+    "Device:R": ["1", "2"],
+    "Device:C": ["1", "2"],
+    "power:GND": ["1"],
+    "Switch:SW_Rotary_1x6_MP": ["1", "2", "3", "4", "5", "6", "7", "MP"],
+}
+# Pins that carry a real name keep it, not their number.
+NAMED_PINS = {
+    "Switch:SW_SPDT": ["A", "B", "C"],
+    "Connector_Generic:Conn_01x05": ["Pin_1", "Pin_2", "Pin_3", "Pin_4", "Pin_5"],
+}
+
+
+def _pin_names(symbols: dict[str, list[str]]) -> dict[str, list[str]]:
+    context = prompt.symbol_context(sorted(symbols))
+    return {f"{c['lib_name']}:{c['symbol_name']}": [p["pin_name"] for p in c["pin_info"]]
+            for c in context.values()}
+
+
+def test_unnamed_pins_carry_their_number() -> None:
+    assert _pin_names(UNNAMED_PIN_NUMBERS) == UNNAMED_PIN_NUMBERS
+
+
+def test_named_pins_keep_their_name() -> None:
+    assert _pin_names(NAMED_PINS) == NAMED_PINS
 
 
 ENTRY = {"symbol_name": "R", "lib_name": "Device", "description": "Resistor",
