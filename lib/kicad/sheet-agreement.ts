@@ -137,12 +137,24 @@ function symbolEntry(libId: string): string {
  * model and a rule must not outrank one. A kind outside the whitelist with no declaration is a
  * refusal and not a skip: skipping it would make the symbol comparison silently vacuous for
  * exactly the parts whose symbol is a real choice.
+ *
+ * EXPORTED, with `intendedLibId` beside it, for the SchGen drawing trial's request generator
+ * (`tools/schgen-drawing-trial/request.ts`), which must name the same symbol this comparison
+ * expects - in full `library:symbol` form, since that is what a schematic places.
  */
-function intendedSymbol(component: Component): string {
+export function intendedSymbol(component: Component): string {
+  return symbolEntry(intendedLibId(component))
+}
+
+/**
+ * The full `library:symbol` id `intendedSymbol` takes its entry name from, by the same rule and
+ * with the same refusal.
+ */
+export function intendedLibId(component: Component): string {
   const declared = component.part?.symbol
-  if (declared !== undefined) return symbolEntry(declared)
+  if (declared !== undefined) return declared
   const byKind = SYMBOL_BY_KIND[component.kind]
-  if (byKind !== undefined) return symbolEntry(byKind)
+  if (byKind !== undefined) return byKind
   throw new Error(
     `component "${component.id}" (kind "${component.kind}") declares no part.symbol, and its ` +
       "kind is not one of the four SYMBOL_BY_KIND settles, so nothing says which symbol the " +
