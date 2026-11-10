@@ -1,0 +1,2 @@
+{"at": "20261110T094634.195508Z", "operator_reason": "spot-reclaim: Spot node shut down 09:30Z; gateway returned 403 'no rule matched and the unmatched route had no candidate' at 09:30:13Z with no vLLM endpoint; nothing was generated", "reason": "regeneration-allowed"}
+{"at": "20261110T094634.195937Z", "moved_to": "interrupted/20261110T094634.195937Z", "reason": "generation-lost", "request_id": "schgen-trial-pultec-low-boost-attempt-2-c82a9582-52b4-4ad7-8267-257050755c1b"}

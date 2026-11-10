@@ -501,7 +501,11 @@ evaluation, and this document does not pretend otherwise.
 Each is a criterion. Where a mechanism is suggested it is a guess from someone
 who has not tried it, and the criterion is what binds.
 
-1. **Is the expert reconstruction faithful?**
+1. **Is the expert reconstruction faithful?** **SETTLED, 2026-11-09: yes** -
+   PEFT's own merge matches it on every adapted tensor to within fp32
+   rounding, and the mispacked and transposed controls fail. See
+   `docs/research/2026-11-09-schgen-merge.md`. The criterion as first stated
+   is kept below.
    *Criterion:* the custom converter's per-expert delta equals the delta between
    `openai/gpt-oss-20b` and a trusted `merge_and_unload()` of
    `microsoft/SchGen`, on `blk.{7,15,23}.ffn_{gate,up,down}_exps`.
@@ -509,7 +513,11 @@ who has not tried it, and the criterion is what binds.
    dequantized base and diff. **This needs far more than 15 GB of RAM** for a
    bf16 20B merge, so it is not a job for this machine.
 
-2. **Does the fine-tune help at all, and at what circuit size?**
+2. **Does the fine-tune help at all, and at what circuit size?** **No longer
+   pursued, 2026-11-10.** The merged model was asked to draw five approved
+   Pultec boards, three attempts each, and produced no page
+   (`docs/research/2026-11-09-schgen-drawing-trial.md`); the owner's decision
+   is `docs/known-gaps.md` G310. The criterion as first stated is kept below.
    *Criterion:* over a set of circuits of increasing part count, base against
    base-plus-adapter, the share of responses that are (a) parseable
    five-primitive programs with no prose wrapper and (b) netlist-equivalent to

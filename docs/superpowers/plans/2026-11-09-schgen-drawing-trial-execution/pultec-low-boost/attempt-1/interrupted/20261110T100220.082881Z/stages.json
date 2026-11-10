@@ -1,0 +1,31 @@
+{
+  "compare": {
+    "detail": "",
+    "exit_code": 0,
+    "status": "ok"
+  },
+  "emitter": {
+    "detail": "emit.sh exited 0",
+    "exit_code": 0,
+    "status": "ok"
+  },
+  "erc": {
+    "detail": "",
+    "exit_code": 0,
+    "status": "ok"
+  },
+  "extraction": {
+    "detail": "",
+    "status": "ok"
+  },
+  "netlist": {
+    "detail": "",
+    "exit_code": 0,
+    "status": "ok"
+  },
+  "render": {
+    "detail": "{\"pdf\":\"/Users/orion/work/audio-circuits-work/ai-schgen/docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.pdf\",\"svg\":\"/Users/orion/work/audio-circuits-work/ai-schgen/docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.svg\",\"png\":\"/Users/orion/work/audio-circuits-work/ai-schgen/docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.png\"}",
+    "exit_code": 0,
+    "status": "ok"
+  }
+}

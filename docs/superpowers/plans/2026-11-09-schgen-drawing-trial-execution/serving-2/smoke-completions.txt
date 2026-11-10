@@ -1,0 +1,8 @@
+--- /v1/completions via svc/kinference-gw-gatewayd, marker smoke-1794306652-15812
+{"id":"cmpl-smoke-1794306652-15812","finish_reason":"length","text":"<|channel|>analysis<|message|>We need answer: use of a 100nF capacitor beside an IC power pin. Probably: decoupling capacitor for noisy power rail,","usage":{"prompt_tokens":22,"total_tokens":54,"completion_tokens":32,"prompt_tokens_details":{"cached_tokens":0,"created_cache_tokens":null,"multimodal_tokens":null},"completion_tokens_details":null}}
+22 prompt IDs equal; 32 generated IDs; harmony marker present in text
+--- vLLM log lines naming the marker or a completion request
+(APIServer pid=1) INFO 11-10 10:29:59 [launcher.py:195] Route: /v1/completions, Methods: POST
+(APIServer pid=1) INFO 11-10 10:29:59 [launcher.py:195] Route: /v1/completions/render, Methods: POST
+(APIServer pid=1) INFO 11-10 10:29:59 [launcher.py:195] Route: /v1/completions/derender, Methods: POST
+INFO:     10.80.0.21:33032 - "POST /v1/completions HTTP/1.1" 200 OK

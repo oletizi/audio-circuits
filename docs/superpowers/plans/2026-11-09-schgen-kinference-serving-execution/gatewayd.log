@@ -1,0 +1,4 @@
+[2m2026-11-10T03:35:19.953724Z[0m [32m INFO[0m [2mgatewayd[0m[2m:[0m admin server listening [3maddr[0m[2m=[0m0.0.0.0:15021
+[2m2026-11-10T03:35:19.953841Z[0m [32m INFO[0m [2mgatewayd[0m[2m:[0m connecting to control plane [3mendpoint[0m[2m=[0mEndpoint [3mclient_id[0m[2m=[0m"default/kinference-gw"
+[2m2026-11-10T03:35:19.959195Z[0m [32m INFO[0m [2mgateway_cp_client::client[0m[2m:[0m control-plane sync complete
+[2m2026-11-10T03:35:19.959373Z[0m [32m INFO[0m [2mgateway_runtime::accept[0m[2m:[0m bind listening [3mbind[0m[2m=[0mdefault/kinference-gw:8080 [3mlocal_addr[0m[2m=[0m0.0.0.0:8080 [3mprotocol[0m[2m=[0mHttp

@@ -1,0 +1,81 @@
+{
+  "accept_count_only_env": false,
+  "approved_sheet_sha256": "b9e42e6a90a7fee4a440760bc67df1968fd756325987327db84b434a565dbc59",
+  "attempt": 1,
+  "board": "pultec-low-boost",
+  "count_only_acknowledged": false,
+  "downstream_reruns": [
+    {
+      "at": "20261110T100220.082881Z",
+      "finish_reason": "abort",
+      "found": "saved response, re-checked",
+      "moved_to": "interrupted/20261110T100220.082881Z",
+      "reason": "generation-interrupted"
+    },
+    {
+      "at": "20261110T103141.635787Z",
+      "reason": "regeneration-automatic"
+    }
+  ],
+  "emitter_fixes": [
+    "component_repository",
+    "pin_extraction",
+    "root_uuid",
+    "skip_get_fp"
+  ],
+  "endpoint": "http://localhost:18000",
+  "extraction_input": "response.decoded.txt",
+  "extraction_input_sha256": "5c10ffa7db0e2d9cd92a9f33249825745553a03829f553d896ad3c5df06f914c",
+  "failure_stage": "emitter",
+  "finish_reason": "stop",
+  "git_dirty": true,
+  "git_revision": "3775443a12c6f1d6225aaccc7cf21b7e279ec42f",
+  "kicad_cli_version": "10.0.5",
+  "latency_s": 59.531,
+  "limit": null,
+  "merged_manifest_sha256": "6afd9664bbbb76afb7332c6f4c5b07f52faeb51f7469bc051b7b0efb3286b909",
+  "model_module": "circuits/pultec/physical/low-boost.ts",
+  "outcome": "program-raised",
+  "outcome_detail": "emit.sh exited 1; the traceback is in emitter.log",
+  "output_tokens": 5587,
+  "page_produced": false,
+  "prompt_sha256": "0b5c2698b12e581fef2ada7b9c92c2ef09a656d74d7391387197b93ecfaf768c",
+  "prompt_tokens": 4638,
+  "raw_response_sha256": "5a10f515a7e3d04b19973903222d26df3bd86640cdf919eed8623bad3ce1d0cb",
+  "rendered_date": "2026-11-10",
+  "request_dir": "pultec-low-boost/request",
+  "request_id": "schgen-trial-pultec-low-boost-attempt-1-57c8129f-2fad-4794-8b95-4f5519fbaa70",
+  "runtime_image_digest": "sha256:a6e23571d370f0af74ccd4950f066349279fac5c2fef28c61867c0ad607049a5",
+  "sampling": {
+    "max_tokens": 13312,
+    "model": "schgen-merged",
+    "return_token_ids": true,
+    "seed": 42,
+    "skip_special_tokens": false,
+    "spaces_between_special_tokens": false,
+    "temperature": 1.0,
+    "top_k": 50,
+    "top_p": 1.0
+  },
+  "schgen_commit": "0707520c587984651cd32908acfd9b117876e93b",
+  "seed": 42,
+  "stage_status": {
+    "compare": "not-run",
+    "emitter": "failed",
+    "erc": "not-run",
+    "extraction": "ok",
+    "netlist": "not-run",
+    "render": "not-run"
+  },
+  "template_sha256": "a4c9919cbbd4acdd51ccffe22da049264b1b73e59055fa58811a99efbd7c8146",
+  "text_vs_decoded": "stop-token-omitted-by-server",
+  "token_identity": "verified",
+  "tokenizer_files_sha256": {
+    "chat_template.jinja": "a4c9919cbbd4acdd51ccffe22da049264b1b73e59055fa58811a99efbd7c8146",
+    "tokenizer.json": "0614fe83cadab421296e664e1f48f4261fa8fef6e03e63bb75c20f38e37d07d3",
+    "tokenizer_config.json": "50005a69dd9115dda03ce27e71f25673f659929a8fcb005879ca34bc8e0ec8d4"
+  },
+  "user_message_template_sha256": "856e3758e40be41bbc598c0f8008a2a9d86e98bd0bed05e719485a8a4d53234a",
+  "vllm_image_digest": "sha256:befccf0e7e4089aa23926bb6f887a85c0d46c2a99e6de5c5ffdf5cb7957c5b34",
+  "vllm_version": "0.32.0"
+}

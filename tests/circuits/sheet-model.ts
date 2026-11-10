@@ -499,6 +499,15 @@ export function sheetDesignators(network: Network): ReadonlyMap<string, string> 
   return out
 }
 
+/**
+ * The repository-relative path of the circuit module that builds `board`'s model, after the same
+ * manifest check `modelForSheet` makes. The SchGen drawing trial records it in each attempt's
+ * manifest as the model the request was generated from.
+ */
+export function modelModuleFor(board: string): string {
+  return declaredBoard(board).module
+}
+
 /** One drafted Pultec page's model, designators and pin numbers. */
 export function modelForSheet(board: string): SheetModel {
   const network = declaredBoard(board).build()

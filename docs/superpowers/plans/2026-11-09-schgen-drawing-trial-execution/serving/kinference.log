@@ -1,0 +1,13 @@
+2026-11-10T09:03:55.080665Z  INFO kinference::server: starting kinference version="0.1.0-alpha.7" listen=0.0.0.0:50051 worker_sets=0 profiles=1
+2026-11-10T09:03:55.081660Z  WARN kinference_router::metrics: tenant label values are unbounded; set metrics.tenant_labels to an allowlist
+2026-11-10T09:03:55.082672Z  INFO kinference::server: ready listen=0.0.0.0:50051 worker_sets=0
+2026-11-10T09:03:55.082831Z  INFO kinference_controller::policy::store: watching policy resources namespace=None pools=0
+2026-11-10T09:03:55.082970Z  INFO kinference_controller::policy::worker_sets: watching InferenceWorkerSets namespace=None selector=None profiles=1
+2026-11-10T09:03:55.083499Z  INFO kinference::admin: admin listener ready listen=0.0.0.0:9001
+2026-11-10T09:16:11.470117Z  INFO kinference_fleet::pool: worker set created workerset=default/schgen-merged profile=default block_size=16 resurrected=false
+2026-11-10T09:16:11.485607Z  INFO kinference_fleet::coordinator: worker added workerset="default/schgen-merged" worker_id="default/schgen-merged-cf9577cf6-wwdgh" block_size=16 zmq_endpoint="tcp://10.120.1.5:5557" http_url="http://10.120.1.5:8000/"
+2026-11-10T09:16:11.488937Z  INFO kinference_fleet::models: worker set serves the model model=schgen-merged workerset=default/schgen-merged workersets_serving=1
+2026-11-10T09:16:40.489739Z  WARN pick{req=smoke-1794302200-31457 response_id=14876231594172489451 model="schgen-merged"}: kinference_router::service::scoring: tokenize failed; picking on load alone workerset=default/schgen-merged model="schgen-merged" attempts=1 reason=/render returned 403 Forbidden: {"error":{"message":"Scale-out endpoints are disabled. Restart vllm serve with --enable-scale-out to enable them.","type":"PermissionDeniedError","param":null,"code":403}}
+2026-11-10T09:30:07.488092Z  WARN kinference_fleet::scrape: metrics scrape failed worker_id="default/schgen-merged-cf9577cf6-wwdgh" error=GET http://10.120.1.5:8000/metrics error.sources=[error sending request for url (http://10.120.1.5:8000/metrics), client error (Connect), tcp connect error, Connection refused (os error 111)]
+2026-11-10T09:30:08.063245Z  INFO kinference_fleet::coordinator: Removed worker workerset="default/schgen-merged" worker_id="default/schgen-merged-cf9577cf6-wwdgh"
+2026-11-10T09:45:55.340679Z  INFO kinference_fleet::coordinator: worker added workerset="default/schgen-merged" worker_id="default/schgen-merged-cf9577cf6-rv9jv" block_size=16 zmq_endpoint="tcp://10.120.1.5:5557" http_url="http://10.120.1.5:8000/"

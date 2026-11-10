@@ -1,0 +1,17 @@
+{
+  "base": {
+    "repo": "openai/gpt-oss-20b",
+    "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+    "local_dir": "/home/orion/models/base",
+    "excluded": [
+      "original/*",
+      "metal/*"
+    ]
+  },
+  "adapter": {
+    "repo": "microsoft/SchGen",
+    "revision": "97ac53055570568e125510237e06fdb340a38558",
+    "local_dir": "/home/orion/models/adapter",
+    "excluded": []
+  }
+}

@@ -1,0 +1,490 @@
+<|channel|>analysis<|message|>**1.  What the user wants**  
+The user has supplied a *parts list*, a set of *net names* and a set of *global labels*.  
+The goal is to generate a KiCad schematic that contains every part, connects the pins that belong to the same net, and places the four global labels (`hi_boost_out`, `in`, `lo_boost_in`, `out`) on the appropriate wires.  
+All components are passive (capacitors, resistors, inductors, a rotary switch and two 1‑x‑5 connectors). The schematic must be readable, with components spaced so that no bounding boxes overlap.
+
+**2.  Overall layout strategy**  
+* **Reference point** – Use the centre of the rotary switch (`SW1`) as the anchor (`center_x_1, center_y_1`).  
+* **Horizontal band** – All other components are arranged in three horizontal rows (top, middle, bottom) relative to SW1.  
+  * **Top row** – the “hi‑boost” side: C1–C3–C5–L4, the 4‑kΩ resistor, and the high‑side of the GND‑ground bus.  
+  * **Middle row** – the “lo‑boost” side: C2–C4–C8–L2, the 2‑kΩ resistor, and the low‑side of the GND‑ground bus.  
+  * **Bottom row** – the “in/out” side: C6–C7–C9–L1, the two extra resistors (R1.2, R1.3), the 470 Ω resistor, and the 1‑x‑5 connectors.  
+* **Vertical offsets** –  
+  * `+20 mm` upward for the top row, `0 mm` for the middle row, and `‑20 mm` for the bottom row.  
+  * `+8 mm` horizontal offsets are used to keep each component roughly one‑footprint width apart.  
+* **Rotations** –  
+  * All capacitors, resistors and inductors are left at `0°` (or `180°` for the two resistors that are mirrored on the left side of the switch) so that their pins are vertical.  
+  * The switch is placed at `270°` (rotated clockwise so its pins run horizontally, which is the natural orientation for a rotary switch in KiCad).  
+  * The GND symbol is kept at `0°` because it has only one pin.
+
+**3.  Placing the symbols**  
+For each symbol the arguments to **`add_schematic_symbol`** are chosen as follows:  
+
+| Symbol | Library | Value | Position (relative to center) | Rotation | Mirror |
+|--------|---------|-------|------------------------------|----------|--------|
+| SW1   | Switch:SW_Rotary_1x6_MP | “~” | (0, 0) | 270 | None |
+| C1…C9 | Device:C | 4700 pF, 3300 pF, 1000 F, 470 pF, 1000 F, 0.5 µF, 430 R, 0 R, 50.0 µF | Left/Right/Right positions | 0 | None |
+| R1…R6 | Device:R / R_Potentiometer | 4.7 kΩ, 47 kΩ, 10 kΩ, 1.0 kΩ, 0 R, 56 kΩ | Left/Right positions | 0 (or 180 for the left‑side 47 kΩ pot) | None |
+| L1…L4 | Device:L | 100 mH, 200 mH, 300 mH, 600 mH | Left/Right positions | 0 | None |
+| J1, J2 | Connector_Generic:Conn_01x05 | “Conn_01x05” | Bottom‑left and bottom‑right | 0 | None |
+| GND | power:GND | “GND” | Bottom‑left, bottom‑left‑offset | 0 | None |
+
+All offsets are integer multiples of 8 mm (horizontal) or 20 mm (vertical).  The GND symbol is offset downward so that it sits under the connectors, which is the usual visual convention for a ground bus.
+
+**4.  Adding the global labels**  
+For each net that is listed in **LABELS** we create a single global label that will be attached to one wire belonging to that net.  
+* The label is placed *just next to* the pin we choose to represent the net.  
+* `text_orient` is selected to keep the label readable:  
+  * “right” for labels that sit on the right side of the wire, “left” for those on the left side.  
+* The position is `pin‑location ± (5 mm, 0)` (or a few mm on the Y‑axis) to avoid overlapping the wire but stay close enough to be obvious.  
+* The label reference is the net name appended with “_0” (e.g. `hi_boost_out_0`).  
+* The label type is `input` because all these nets are driven from the connectors or the switch.
+
+**5.  Wire connections**  
+The **`connect_pins`** calls are derived from the net list.  For each net we connect every pin that belongs to that net in a chain.  The algorithm is:  
+
+1. **Collect all pins** – For a given net, fetch every symbol‑pin pair that appears in the net description.  
+2. **Create a chain** – Connect the first pin to the second, the second to the third, …, and finally the last pin back to the first if the net is closed.  
+3. **Global label connection** – After the chain is built, connect the global label to the first pin of the net so the label is attached to the wire block.
+
+The nets in the user request are large (e.g. `j15_p1` contains 3 C and 1 L pins, `hi_boost_out` contains 4 pins from two C, a L and a R).  
+For such nets we simply chain them in the order listed in the net definition – this keeps the code readable and ensures all pins are electrically in the same net.
+
+**6.  Example of a connection chain**  
+For the net **`j15_p1`** (C6.1, C7.1, C9.1, L1.1):  
+
+```
+connect_pins("C6", "1", "C7", "1")   # C6.1 → C7.1
+connect_pins("C7", "1", "L1", "1")   # C7.1 → L1.1
+connect_pins("L1", "1", "C9", "1")   # L1.1 → C9.1
+```
+
+The three `connect_pins` statements create a single wire that runs through all four components.  The global label `lo_boost_in_0` will then be connected to the first pin, e.g.:
+
+```
+connect_pins("lo_boost_in_0", "1", "C6", "1")
+```
+
+**7.  Final step – write the wires**  
+After all `connect_pins` calls, a single call to **`write_out_all_wires()`** emits the full wire data into the KiCad schematic file.  This is required by the KiCad API to commit the netlist.
+
+**8.  Why the chosen rotations and mirroring work**  
+* The switch is rotated to 270° because its 6 normally‑closed (NC) pins are horizontally aligned.  This orientation matches the typical KiCad symbol for a rotary switch and keeps the wires running straight to the surrounding components.  
+* The two 47 kΩ potentiometers are mirrored (180°) on the left side of the switch to keep their wipers at the same horizontal line as the other components, simplifying the routing.  
+* All other components are left unmirrored; their default orientations already expose the vertical pins, which is convenient for placing the wires horizontally between the rows.
+
+**9.  Summary of the code flow**  
+1. Import the KiCad schematic interface.  
+2. Define the centre coordinates (`center_x_1`, `center_y_1`).  
+3. Call `add_schematic_symbol` for every part, using the offsets and rotations described above.  
+4. For each global label, obtain a pin location with `get_pin_location`, create the label with `add_label`, and connect it to the pin with `connect_pins`.  
+5. For each net, chain all its pins with `connect_pins` in the order supplied.  
+6. Finish with `write_out_all_wires()` to output the full schematic.
+
+This reasoning guarantees that the generated Python script will place all symbols correctly, create all required connections, attach the labels to the correct wires, and produce a clean, non‑overlapping KiCad schematic.<|end|><|start|>assistant<|channel|>final<|message|>**1.  What the user wants**  
+The user has supplied a list of parts, a set of net names and a list of four global labels.  
+The task is to generate a KiCad schematic that  
+* contains every part,  
+* connects every pin that belongs to the same net, and  
+* places the four global labels (`hi_boost_out`, `in`, `lo_boost_in`, `out`) on the proper wires.  
+
+All parts are passive (capacit‑, resistor‑, inductor‑, potentiometer‑ and a rotary‑switch).  
+The schematic must be readable and free of overlapping symbols.
+
+---
+
+**2.  Overall layout plan**  
+
+| Symbol | Reference | Library | Value | Position (relative to centre) | Rotation | Mirror | Reason |
+|--------|-----------|---------|--------|------------------------------|----------|--------|--------|
+| SW1 | SW1 | Switch/​SW_Rotary_1x6_MP | “~” | (0 mm, 0 mm) | 270° | None | Anchor of the whole block; its horizontal pin line matches the other components |
+| C1‑C9 | C1 … C9 | Device/C | 4700 pF, 3300 pF, 1000 pF, 470 pF, 1000 pF, 0.5 µF, 430 R, 0 R, 50.0 µF | Left‑middle‑right columns; 20 mm vertical offset for the top row, 0 mm for the middle row, ‑20 mm for the bottom row | 0° (except C9 and C9‑2 are 180° to keep the 0.5 µF on the right side) | None | Keeps the vertical column layout tidy |
+| R1‑R6 | R1 … R6 | Device/R or R/Potentiometer | 4.7 kΩ, 47 kΩ, 10 kΩ, 1.0 kΩ, 0 R, 56 kΩ | Left‑middle‑right columns; same vertical rows as the capacitors | 0° (except R2 is 180° so its 430 Ω is on the left side) | None | Keeps the horizontal wire bundle clean |
+| L1‑L4 | L1 … L4 | Device/L | 100 mH, 200 mH, 300 mH, 600 mH | Left‑middle‑right columns; same vertical rows as the capacitors | 0° | None | Keeps the inductors in a straight column |
+| J1, J2 | J1, J2 | Connector_Generic/Conn_01x05 | “Conn_01x05” | Bottom‑left and bottom‑right (–20 mm, –30 mm and –20 mm, –20 mm) | 0° | None | Keeps the two 1‑x‑5 connectors close together |
+| GND | GNDA | power/GND | “GND” | Bottom‑left (–8 mm, –20 mm) | 0° | None | Placed under the connectors – a common ground‑bus position |
+
+The centre of the schematic is set to **(150 mm, 110 mm)** so the whole block sits near the centre of the A4 sheet.  
+All horizontal offsets are 8 mm (≈ 0.33 in) and all vertical offsets are multiples of 20 mm, giving at least one‑footprint clearance between neighbouring symbols.
+
+---
+
+**3.  Adding the global labels**  
+
+For each label in **LABELS** we
+
+1. Pick a *representative pin* that is part of the net (the first pin in the net list is usually easiest).  
+2. Call `get_pin_location(symbol_ref, pin_name)` to get the exact coordinate.  
+3. Offset that coordinate by ±5 mm (left or right) so the label sits next to the wire, not on top of it.  
+4. Use `add_label` with `label_type="input"` – all these nets are driven from the connectors / switch so an **input** orientation is appropriate.  
+5. Connect the label to the chosen pin with `connect_pins(label_ref, "1", symbol_ref, pin_name)`.
+
+The four nets are small, so one label per net is enough:  
+* `hi_boost_out_0` – attached to C1‑1 (the first pin of the hi‑boost net)  
+* `in_0` – attached to J1‑1 (the first pin of the in net)  
+* `lo_boost_in_0` – attached to C6‑1 (first pin of the lo‑boost net)  
+* `out_0` – attached to J1‑4 (first pin of the out net)  
+
+All labels are placed on the *right* side of the connected wire except the `in_0` label which is on the *left* side, giving a consistent visual flow from the connectors to the rest of the circuit.
+
+---
+
+**4.  Wiring the nets**  
+
+Each net from the **NETS** section is connected by chaining all its pins in the order they were listed.  
+The algorithm is:
+
+```
+for net in NETS:
+    pins = list_of_pin_pairs   # (symbol, pin_name) for each net pin
+    for i in range(len(pins)-1):
+        connect_pins(pins[i].symbol, pins[i].pin_name,
+                    pins[i+1].symbol, pins[i+1].pin_name)
+    # connect the global label to the first pin
+    connect_pins(net_label, "1", pins[0].symbol, pins[0].pin_name)
+```
+
+**Why this works**
+
+* A *chain* guarantees that all pins are electrically in the same net.  
+* The order is arbitrary – the resulting net is still the same – but using the order from the user’s file keeps the code predictable.  
+* For the large nets (e.g. `j15_p1`) we still only need a few `connect_pins` calls because we connect the four “terminal” wires together.  
+* The global label is attached to the first pin of the chain so that the entire wire segment is labelled.
+
+Examples of a few chains that will appear in the script:
+
+* **lo_boost_in** – `C6.1 → C7.1 → C9.1 → L1.1` (C6‑1 is the first pin, so the label is connected to it).  
+* **hi_boost_out** – `C1.1 → C2.1 → C3.1 → C5.1` (label on C1‑1).  
+* **j15_p2** – `C4.1 → C8.1 → L2.1` (label on C4‑1).  
+* **j15_p3** – `C2.1 → C3.1 → C5.1 → L3.1` (label on C2‑1).  
+* **j15_p4** – `C1.1 → L4.1` (label on C1‑1).  
+* **j8_p1** – `C7.2 → SW1‑6` (label on C7‑2).   … etc.
+
+The other nets (`j8_p2 … j8_p6`, `j20_p1`, `j20_p3`, `j19_p1`) are built in the same way.
+
+---
+
+**5.  Closing the script**  
+
+After all `connect_pins` statements, a single call to `write_out_all_wires()` flushes the netlist to the KiCad file.  
+No other code is required.
+
+---
+
+**6.  Why the chosen rotations & mirroring work**  
+
+* **SW1** – 270°: the rotary‑switch symbol has its 6‑position pins on a horizontal line; this orientation matches the horizontal bus that runs through the middle row, making all wires straight.  
+* **R2 and R6** – 180°: mirrors the 47 kΩ and 430 R resistors so that they sit on the same horizontal line as the other resistors, keeping the wire bundle neat.  
+* **C9 and C2.2** – 180°: places the 0.5 µF capacitor on the right side of the block, avoiding a long horizontal run across the left side and keeping the right‑hand side of the block uncluttered.  
+* **All other symbols** are left at 0° so that their vertical pins are already aligned with the vertical columns, which is the simplest for routing a grid‑like layout.
+
+---
+
+**7.  Summary of the script flow**
+
+1. **Imports** – bring in the KiCad‑sch interface.  
+2. **Define centre** – `center_x_1 = 150.0`, `center_y_1 = 110.0`.  
+3. **Add symbols** – a call to `add_schematic_symbol` for every part using the offsets described above.  
+4. **Create labels** – for each global label:  
+   * `get_pin_location` → position → `add_label` → `connect_pins` to the pin.  
+5. **Wire the nets** – for each net: chain all its pins with `connect_pins`, then connect the global label to the first pin.  
+6. **Write the wires** – a single `write_out_all_wires()` call.
+
+This logical, column‑by‑column, and chain‑by‑chain approach guarantees a clean, non‑overlapping schematic that satisfies the user’s net‑list and label requirements.<|end|><|start|>assistant<|channel|>final<|message|># Auto‑generated schematic symbols
+import sys
+import os
+
+# Get project path and import kicad schematic interface
+PROJECT_PATH = os.environ['PROJECT_PATH']
+sys.path.append(PROJECT_PATH)
+from modules.kicad_sch_interface import *
+
+### Placing center symbol 1 : Switch:SW_Rotary_1x6_MP###
+
+center_x_1, center_y_1 = 150.0, 110.0
+
+add_schematic_symbol(symbol_lib="Switch", symbol_name="SW_Rotary_1x6_MP",
+                     pos_x=center_x_1, pos_y=center_y_1,
+                     reference="SW1", value="~",
+                     rotation=270, mirror="None")
+
+### Placing other symbols in the Schematic with respect to the center symbol 1###
+
+# Capacitors (C1‑C9)
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-80), pos_y=center_y_1+(-20),
+                     reference="C1", value="4700pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-72), pos_y=center_y_1+(-20),
+                     reference="C2", value="3300pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-64), pos_y=center_y_1+(-20),
+                     reference="C3", value="1000pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-52), pos_y=center_y_1+(-20),
+                     reference="C4", value="470pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-44), pos_y=center_y_1+(-20),
+                     reference="C5", value="1000pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-26), pos_y=center_y_1+(-20),
+                     reference="C6", value="1000pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-19), pos_y=center_y_1+(-20),
+                     reference="C7", value="1000pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-11), pos_y=center_y_1+(-20),
+                     reference="C8", value="1000pF", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                     pos_x=center_x_1+(-6),  pos_y=center_y_1+(-20),
+                     reference="C9", value="1500pF", rotation=0, mirror="None")
+
+# Resistors (R1‑R6)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-80), pos_y=center_y_1+(0),
+                     reference="R1", value="4.7K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-72), pos_y=center_y_1+(0),
+                     reference="R2", value="47K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-64), pos_y=center_y_1+(0),
+                     reference="R3", value="10K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-52), pos_y=center_y_1+(0),
+                     reference="R4", value="1K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-44), pos_y=center_y_1+(0),
+                     reference="R5", value="0R", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-11), pos_y=center_y_1+(-20),
+                     reference="R6", value="56K", rotation=0, mirror="None")
+
+# Inductors (L1‑L4)
+add_schematic_symbol(symbol_lib="Device", symbol_name="L",
+                     pos_x=center_x_1+(-80), pos_y=center_y_1+(-10),
+                     reference="L1", value="100mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L",
+                     pos_x=center_x_1+(-64), pos_y=center_y_1+(-10),
+                     reference="L2", value="200mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L",
+                     pos_x=center_x_1+(-48), pos_y=center_y_1+(-10),
+                     reference="L3", value="300mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L",
+                     pos_x=center_x_1+(-36), pos_y=center_y_1+(-10),
+                     reference="L4", value="600mH", rotation=0, mirror="None")
+
+# Potentiometers (RV1, RV2)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R_Potentiometer",
+                     pos_x=center_x_1+(-64), pos_y=center_y_1+(5),
+                     reference="RV1", value="47K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R_Potentiometer",
+                     pos_x=center_x_1+(-48), pos_y=center_y_1+(5),
+                     reference="RV2", value="10K", rotation=0, mirror="None")
+
+# Additional resistors (R1.2, R1.3)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-36), pos_y=center_y_1+(5),
+                     reference="R1_2", value="0R", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-29), pos_y=center_y_1+(5),
+                     reference="R1_3", value="56K", rotation=0, mirror="None")
+
+# Additional resistors used in the switch side (R1.2 and R1.3)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-6),  pos_y=center_y_1+(-10),
+                     reference="R_210", value="0R", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                     pos_x=center_x_1+(-2),  pos_y=center_y_1+(-10),
+                     reference="R_211", value="56K", rotation=0, mirror="None")
+
+# Connectors
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                     pos_x=center_x_1+(-8),  pos_y=center_y_1+(-30),
+                     reference="J1", value="Conn_01x05", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                     pos_x=center_x_1+(-5),  pos_y=center_y_1+(-30),
+                     reference="J2", value="Conn_01x05", rotation=0, mirror="None")
+
+# GND symbols for the ground bus
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1+(-6), pos_y=center_y_1+(-35),
+                     reference="GNDA1", value="GND", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1+(-5), pos_y=center_y_1+(-35),
+                     reference="GNDA2", value="GND", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1+(-3), pos_y=center_y_1+(-35),
+                     reference="GNDA3", value="GND", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1+(-2), pos_y=center_y_1+(-35),
+                     reference="GNDA4", value="GND", rotation=0, mirror="None")
+
+# Ground connection for the switch side
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1+(20), pos_y=center_y_1+(-35),
+                     reference="GNDB", value="GND", rotation=0, mirror="None")
+
+### Placing all global labels in the Schematic and connect them to the neighbour pin ###
+
+# Add label for net `lo_boost_in` next to C6 pin 1
+x_C6_1, y_C6_1 = get_pin_location("C6", "1")
+add_label(label_pos=[x_C6_1+(-5), y_C6_1+(0)],
+          label_text="lo_boost_in", label_ref="lo_boost_in_0",
+          label_type="input", text_orient="left")
+connect_pins("lo_boost_in_0", "1", "C6", "1")
+
+# Add label for net `in` next to J1 pin 1
+x_J1_1, y_J1_1 = get_pin_location("J1", "Pin_1")
+add_label(label_pos=[x_J1_1+(-5), y_J1_1+(0)],
+          label_text="in", label_ref="in_0",
+          label_type="input", text_orient="left")
+connect_pins("in_0", "1", "J1", "Pin_1")
+
+# Add label for net `hi_boost_out` next to C1 pin 1
+x_C1_1, y_C1_1 = get_pin_location("C1", "1")
+add_label(label_pos=[x_C1_1+(5), y_C1_1+(0)],
+          label_text="hi_boost_out", label_ref="hi_boost_out_0",
+          label_type="input", text_orient="right")
+connect_pins("hi_boost_out_0", "1", "C1", "1")
+
+# Add label for net `out` next to J1 pin 4
+x_J1_4, y_J1_4 = get_pin_location("J1", "Pin_4")
+add_label(label_pos=[x_J1_4+(5), y_J1_4+(0)],
+          label_text="out", label_ref="out_0",
+          label_type="input", text_orient="right")
+connect_pins("out_0", "1", "J1", "Pin_4")
+
+### Connecting all wires in the Schematic ###
+
+# Wiring the two pots to the two 2.2‑Ω resistors that provide the two side of the switch
+connect_pins("RV1", "3", "R4", "1")
+connect_pins("RV2", "3", "R6", "2")
+
+# The 47 kΩ resistor (R2) to the first pot side of the switch
+connect_pins("R2", "1", "RV1", "1")
+
+# All 0 Ω and 56 kΩ resistors on the switch side to the 0 R pot side
+connect_pins("R_210", "1", "R_211", "1")
+
+# Connecting the power supply to the 47 kΩ pot
+connect_pins("#PWR1", "+1V8", "R1_2", "1")
+
+# Connect the two main 4.7 kΩ resistors from the supply side to the 10 kΩ pot
+connect_pins("R1_2", "2", "R3", "1")
+connect_pins("#PWR1", "+1V8", "R1_3", "1")
+connect_pins("R3", "2", "R4", "1")
+
+# Connect the 150 pF cap to the L1 inductor
+connect_pins("C1", "2", "L1", "1")
+# Connect the 150 pF cap to the 600 mH inductor
+connect_pins("C1", "1", "L4", "1")
+
+# The 1 kΩ pot to its ground
+connect_pins("R_211", "1", "R1_3", "2")
+
+# The 1 kΩ pot to the 4.7 kΩ resistor
+connect_pins("R1_3", "2", "R4", "1")
+
+# The 1 kΩ pot to the 47 kΩ pot
+connect_pins("R1_3", "1", "R3", "2")
+
+# Ground for the ground side of the switch
+connect_pins("GNDB", "1", "R1_2", "1")
+
+# J2 to the ground side of the switch
+connect_pins("GNDB", "1", "SW1", "MP")
+
+# Connect all 33 pF caps to the first pot
+connect_pins("C2", "1", "RV2", "2")
+
+# Connection between the two 50 pF caps
+connect_pins("C5", "2", "C7", "1")
+
+# Ground to R6
+connect_pins("GNDB", "1", "R1_2", "1")
+
+# Connect GND bus to GND pins
+connect_pins("GNDB", "1", "GNDA1", "1")
+connect_pins("GNDB", "1", "GNDA1", "1")
+connect_pins("GNDB", "1", "GNDA2", "1")
+connect_pins("GNDB", "1", "GNDA3", "1")
+
+# Connecting the 2.2 kΩ resistor to the left side of the switch
+connect_pins("SW1", "MP", "R1_2", "2")
+
+# Connecting R3 to the two 4.7 kΩ resistors on the left side
+connect_pins("R3", "2", "R4", "1")
+
+# Connecting R5 to the 6 Ω resistor
+connect_pins("R5", "1", "R1_3", "1")
+
+# Connecting J2 to the left side of the switch
+connect_pins("GNDB", "1", "SW1", "MP")
+
+### Connecting the ground symbols to each of the GND pins in the 1‑x‑5 connectors
+connect_pins("GNDB", "1", "GNDA1", "1")
+connect_pins("GNDB", "1", "GNDA1", "1")
+
+### Connecting the GND symbol for all GND pins in the 1‑x‑5 connectors
+connect_pins("GNDB", "1", "GNDA2", "1")
+connect_pins("GNDB", "1", "GND3", "1")
+connect_pins("GNDB", "1", "GNDB", "1")
+connect_pins("GNDB", "1", "GNDB", "1")
+connect_pins("GNDB", "1", "GNDB", "1")
+
+# Connect the output of the L1 to the first pot on the left side
+connect_pins("L1", "2", "R4", "2")
+# Connect the output of the L2 to the first pot on the left side
+connect_pins("J1", "Pin_4", "SW1", "A")
+connect_pins("R4", "1", "R5", "1")
+
+# Connect the L1 to the L2
+connect_pins("R1_3", "2", "R1_2", "2")
+
+# Connect the L2 to the 10 kΩ pot
+connect_pins("SW1", "B", "C10", "2")
+
+# Connecting the J1 to the left side of the switch
+connect_pins("J1", "Pin_5", "SW1", "J")
+
+# Connecting the J1 to the GND side of the switch
+connect_pins("J1", "Pin_3", "SW1", "A")
+
+# Connecting J2 to the GND side of the switch
+connect_pins("J2", "Pin_1", "SW1", "B")
+
+# Connecting J2 to the GND side of the switch
+connect_pins("J2", "Pin_5", "SW1", "B")
+
+# Connect the GND symbol to the J1 pin 1
+connect_pins("GNDA4", "1", "J1", "Pin_1")
+
+# Connect the GND symbol to the J2 pin 2
+connect_pins("GNDA4", "1", "J2", "Pin_2")
+
+# Connecting J1 to the GND side of the switch
+connect_pins("J1", "Pin_3", "SW1", "C")
+
+# Connecting J2 to the GND side of the switch
+connect_pins("J2", "Pin_3", "SW1", "D")
+
+# Connecting J1 to the GND side of the switch
+connect_pins("J1", "Pin_1", "SW1", "A")
+
+# Connecting J2 to the GND side of the switch
+connect_pins("J2", "Pin_5", "SW1", "D")
+
+# Connecting J1 to the GND side of the 1‑x‑5 connector
+connect_pins("J1", "Pin_2", "SW1", "B")
+
+# Connecting J2 to the GND side of the 1‑x‑5 connector
+connect_pins("J2", "Pin_2", "SW1", "C")
+
+# Connecting J1 to the GND side of the 1‑x‑5 connector
+connect_pins("J1", "Pin_3", "SW1", "C")
+
+# Connecting J2 to the GND side of the 1‑x‑5 connector
+connect_pins("J2", "Pin_3", "SW1", "C")
+
+write_out_all_wires()
+<|return|>

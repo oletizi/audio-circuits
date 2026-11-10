@@ -1,0 +1,69 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"Gateway","metadata":{"annotations":{},"name":"kinference-gw","namespace":"default"},"spec":{"gatewayClassName":"buoyant-gateway","listeners":[{"name":"http","port":8080,"protocol":"HTTP"}]}}
+  creationTimestamp: "2026-11-10T10:30:28Z"
+  generation: 1
+  name: kinference-gw
+  namespace: default
+  resourceVersion: "1794306675511711020"
+  uid: 360a8c16-cb28-431b-8760-1f71275d1195
+spec:
+  gatewayClassName: buoyant-gateway
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: Same
+    name: http
+    port: 8080
+    protocol: HTTP
+status:
+  addresses:
+  - type: IPAddress
+    value: 35.194.189.183
+  conditions:
+  - lastTransitionTime: "2026-11-10T10:30:29Z"
+    message: gateway is accepted
+    observedGeneration: 1
+    reason: Accepted
+    status: "True"
+    type: Accepted
+  - lastTransitionTime: "2026-11-10T10:30:29Z"
+    message: 1 listener(s) programmed
+    observedGeneration: 1
+    reason: Programmed
+    status: "True"
+    type: Programmed
+  listeners:
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2026-11-10T10:30:29Z"
+      message: listener is accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-10T10:30:29Z"
+      message: listener is programmed
+      observedGeneration: 1
+      reason: Programmed
+      status: "True"
+      type: Programmed
+    - lastTransitionTime: "2026-11-10T10:30:29Z"
+      message: all references resolved
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-11-10T10:30:29Z"
+      message: no conflicts
+      observedGeneration: 1
+      reason: NoConflicts
+      status: "False"
+      type: Conflicted
+    name: http
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute

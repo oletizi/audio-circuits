@@ -1,0 +1,54 @@
+apiVersion: kinference.buoyant.io/v1alpha1
+kind: InferenceWorkerSet
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kinference.buoyant.io/v1alpha1","kind":"InferenceWorkerSet","metadata":{"annotations":{},"name":"schgen-merged","namespace":"default"},"spec":{"kvBlockSize":16,"kvEvents":{"port":"kv-pub"},"profile":"default","serviceRef":{"name":"schgen-merged","port":"http"}}}
+  creationTimestamp: "2026-11-10T10:30:28Z"
+  generation: 1
+  name: schgen-merged
+  namespace: default
+  resourceVersion: "1794306662317919016"
+  uid: 72c6c416-9e43-4a97-adbf-491d8fd77833
+spec:
+  kvBlockSize: 16
+  kvEvents:
+    port: kv-pub
+  profile: default
+  serviceRef:
+    name: schgen-merged
+    port: http
+status:
+  conditions:
+  - lastTransitionTime: "2026-11-10T10:30:32Z"
+    message: materialized as a pool; Service `schgen-merged`
+    observedGeneration: 1
+    reason: Accepted
+    status: "True"
+    type: Accepted
+  - lastTransitionTime: "2026-11-10T10:30:32Z"
+    message: 1 ready endpoint(s)
+    observedGeneration: 1
+    reason: EndpointsReady
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2026-11-10T10:30:32Z"
+    message: destination of pool(s) inference-pool
+    observedGeneration: 1
+    reason: InPool
+    status: "True"
+    type: Referenced
+  endpoints:
+    ready: 1
+  kvEvents:
+    configured: true
+    subscribedEndpoints: 1
+  models:
+  - contextWindow:
+      max: 19456
+      min: 19456
+    readyEndpoints: 1
+    upstreamName: schgen-merged
+  referencedBy:
+  - inference-pool
+  state: Accepted

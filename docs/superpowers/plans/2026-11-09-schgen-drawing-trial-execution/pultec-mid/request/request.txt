@@ -1,0 +1,74 @@
+PARTS:
+C1 .33uF Device:C
+C2 .15uF Device:C
+C3 .047uF Device:C
+C4 .022uF Device:C
+C5 3300pF Device:C
+C6 .022uF Device:C
+C7 3300pF Device:C
+C8 .012uF Device:C
+C9 .012uF Device:C
+C10 2200pF Device:C
+C11 4700pF Device:C
+C12 1500pF Device:C
+C13 4700pF Device:C
+C14 2200pF Device:C
+C15 4700pF Device:C
+C16 2200pF Device:C
+C17 1000pF Device:C
+L1 2H Device:L
+L2 1H Device:L
+L3 450mH Device:L
+L4 220mH Device:L
+L5 100mH Device:L
+R1 4.7K Device:R
+R2 1K Device:R
+R3 100K Device:R
+RV1 47K Device:R_Potentiometer
+SW1 SW_Rotary_1x12 Switch:SW_Rotary_1x12
+SW2 SW_SPDT Switch:SW_SPDT
+SI1 0R Device:R
+SI2 47K Device:R
+SI3 .047uF Device:C
+SI4 430R Device:R
+SI5 0R Device:R
+SI6 4.7K Device:R
+SI7 0R Device:R
+SI8 56K Device:R
+SI9 0R Device:R
+J1 Conn_01x05 Connector_Generic:Conn_01x05
+J2 Conn_01x05 Connector_Generic:Conn_01x05
+NETS:
+GND: J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 R2.2 R3.2 SI9.1
+hi_boost_out: J1.2 RV1.1 SI2.2 SI5.1 SI7.1
+in: J1.1 R1.1 R3.1 SI1.1
+lo_boost_in: J1.3 SI3.1 SI6.2 SI8.2 SI9.2
+mid_boost_return: R1.2 SW2.1
+mid_coil_return: L1.2 L2.2 L3.2 L4.2 L5.2 SW2.2
+mid_cut_return: R2.1 SW2.3
+mid_sel_1k5hz: C8.2 SW1.6
+mid_sel_1khz: C6.2 C7.2 SW1.5
+mid_sel_200hz: C1.2 SW1.1
+mid_sel_2khz: C10.2 C9.2 SW1.7
+mid_sel_300hz: C2.2 SW1.2
+mid_sel_3khz: C11.2 C12.2 SW1.8
+mid_sel_4khz: C13.2 C14.2 SW1.9
+mid_sel_500hz: C3.2 SW1.3
+mid_sel_5khz: C15.2 SW1.10
+mid_sel_700hz: C4.2 C5.2 SW1.4
+mid_sel_7khz: C16.2 C17.2 SW1.11
+mid_sel_common: RV1.2 RV1.3 SW1.13
+mid_tap_0r1h: C16.1 C17.1 L5.1
+mid_tap_0r22h: C13.1 C14.1 C15.1 L4.1
+mid_tap_0r45h: C10.1 C11.1 C12.1 C9.1 L3.1
+mid_tap_1h: C6.1 C7.1 C8.1 L2.1
+mid_tap_2h: C1.1 C2.1 C3.1 C4.1 C5.1 L1.1
+out: J1.4 SI7.2 SI8.1
+si_hi_boost_j20_p3: SI1.2 SI2.1
+si_hi_cut_j12_p3: SI3.2 SI4.2
+si_hi_cut_j4_p2: SI4.1 SI5.2 SI6.1
+LABELS:
+hi_boost_out -> hi_boost_out
+in -> in
+lo_boost_in -> lo_boost_in
+out -> out

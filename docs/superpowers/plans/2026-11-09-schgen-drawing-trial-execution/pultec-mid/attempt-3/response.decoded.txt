@@ -1,0 +1,333 @@
+<|channel|>analysis<|message|>**1.  What the user asked**  
+The user wants a full KiCad schematic that contains 17 capacitors, 5 inductors, 7 resistors, a potentiometer, two rotary and SPDT switches, two 5‑pin connectors and a set of power and ground labels.  All the net names are listed under **NETS** and a few of the same names are also required as global labels under **LABELS**.  
+The goal is to place every symbol on an A4 sheet, give each symbol a sensible reference (C1…L5, R1…RV1, SW1…SW2, J1…J2, etc.), connect every pin exactly as described in the NETS table, and add the four global labels that the user listed.
+
+**2.  High‑level layout strategy**  
+
+* Keep the two connectors near the left side of the sheet – this is where the user normally expects “J1” and “J2”.  
+* Place the rotary switch (SW1) and the SPDT switch (SW2) close to the right of the connectors because many of the net names (mid_* and mid_sel_*) are routed through them.  
+* Put the inductors and resistors in a vertical stack between the two switches.  This keeps the “mid_coil_return” and “mid_cut_return” nets short and readable.  
+* The capacitors are arranged in small horizontal clusters that feed the mid_sel_* and mid_tap_* nets.  Each cluster is kept on the same horizontal line so the wires only run vertically or horizontally.  
+* All power/ground symbols are placed on the top row so that all GND nets can join to the same ground symbol.
+
+**3.  Symbol placement details**  
+For every symbol we used the helper `add_schematic_symbol`:
+
+```
+add_schematic_symbol(symbol_lib, symbol_name, pos_x, pos_y,
+                    reference, value, rotation, mirror)
+```
+
+* **Position** – the sheet is 210 × 297 mm.  The centre of the sheet is at (105, 148.5).  All symbols are placed between x ≈ 60 mm and x ≈ 150 mm, and y ≈ 50 mm and y ≈ 250 mm, giving at least 10 mm clearance on all sides.  
+* **Rotation** – most standard components are left at 0°, but the rotary switch is rotated 90° so its 12‑pin row runs vertically, which is the natural orientation of the 1‑x‑12 symbol.  
+* **Mirror** – only the pot and the SPDT were mirrored on the Y‑axis to keep the “W” and “C” pins (the centre pins) on the same side of the symbol as the other components they connect to.  
+* **Value** – the value strings are the same as the part value in the user list; for capacitors the “uF” suffix is written as “uF” (no spaces).
+
+**4.  Global labels**  
+The four labels requested by the user are added with `add_label`.  The label is placed a few millimetres away from the pin it represents, using the pin’s coordinates obtained with `get_pin_location`.  The orientation of the text is chosen so that the label appears on the same side of the block of components as the net it belongs to (e.g. “in” is on the left side, “out” on the right).
+
+**5.  Wire‑connection logic**  
+The `connect_pins` function is used for every net.  The first argument is the symbol or label reference, the second argument is the pin name (or “1” for a power/ground symbol).  The connection graph is built by reading the NETS table:
+
+* **GND** – all GND pins are all‑star‑connected to the single GND symbol “#PWR_GND”.  
+* **hi_boost_out** – connects the +5 V output of the boost section (SI7‑2, SI5‑1, SI7‑1, RI2‑2) to the label “hi_boost_out”.  
+* **in** – connects J1‑1, R1‑1, R3‑1, SI1‑1 to the label “in”.  
+* **lo_boost_in** – connects the low‑side input pins (J1‑3, SI3‑1, SI6‑2, SI8‑2, SI9‑2) to the label “lo_boins”.  
+* **out** – connects J1‑4, SI7‑2, SI8‑1 to the label “out”.  
+
+All other nets are connected exactly as the user’s table specifies.  For example, “mid_cut_return” is a 4‑pin bus that runs from R1‑2 → SW2‑1, and “mid_coil_return” travels from the lower side of each inductor (L1‑2 … L5‑2) to the corresponding switch pin SW2‑2.  The “mid_sel_*” nets are single‑pole selections that each connect a capacitor’s high‑side pin to the appropriate switch pin; the “mid_tap_*” nets are simple series chains that combine the corresponding low‑side capacitor with an inductor and the next high‑side capacitor.
+
+**6.  Example of a single connection**  
+```python
+# GND net
+connect_pins("J1", "5", "#PWR_GND", "1")
+connect_pins("J2", "1", "#PWR_GND", "1")
+connect_pins("J2", "2", "#PWR_GND", "1")
+# … all other GND pins
+```
+
+Each call uses the exact pin names from the symbol definition (e.g. “5” for the fifth pin of J1).  The power symbol has only one pin, so the second side uses “1”.
+
+**7.  Final step**  
+After all `connect_pins` calls the user simply calls `write_out_all_wires()` to dump the full wire set into the schematic file.
+
+**8.  Summary**  
+The script therefore:  
+1. Imports the KiCad interface.  
+2. Places each symbol with a clear reference and value, rotated/mirrored where needed.  
+3. Adds four global labels next to their first pin.  
+4. Connects every pin to every other pin (or label) as listed in the NETS table.  
+5. Calls `write_out_all_wires()` to finish the schematic.  
+
+All coordinates, rotations, and mirror flags were chosen to keep components from overlapping and to make the main signal paths (R‑I/O‑J‑S) follow straight horizontal or vertical lines, which is the cleanest layout style for a complex PCB schematic.<|end|><|start|>assistant<|channel|>final<|message|># Auto‑generated schematic symbols
+import sys
+import os
+
+# Get the project path and import kicad schematic interface
+PROJECT_PATH = os.environ['PROJECT_PATH']
+sys.path.append(PROJECT_PATH)
+from modules.kicad_sch_interface import *
+
+# Placing center symbol 1 : Switch:SW_Rotary_1x12
+center_x_1, center_y_1 = 105.0, 148.5
+add_schematic_symbol(symbol_lib="Switch", symbol_name="SW_Rotary_1x12",
+                     pos_x=center_x_1, pos_y=center_y_1, reference="SW1",
+                     value="SW_Rotary_1x12", rotation=90, mirror="None")
+
+# Placing other symbols in the Schematic with respect to the center symbol 1
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                     pos_x=center_x_1 + (-83), pos_y=center_y_1 + (22),
+                     reference="J1", value="Conn_01x05", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                     pos_x=center_x_1 + (-83), pos_y=center_y_1 + (-20),
+                     reference="J2", value="Conn_01x05", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                     pos_x=center_x_1 + (-80), pos_y=center_y_1 + (40),
+                     reference="#PWR_GND_J1_J2", value="GND", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-80), pos_y=center_y_1 + (16),
+                     reference="R1", value="4.7K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-80), pos_y=center_y_1 + (0),
+                     reference="R2", value="1K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-80), pos_y=center_y_1 + (-16),
+                     reference="R3", value="100K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R_Potentiometer",
+                     pos_x=center_x_1 + (-78), pos_y=center_y_1 + (-30),
+                     reference="RV1", value="47K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Switch", symbol_name="SW_SPDT",
+                     pos_x=center_x_1 + (-69), pos_y=center_y_1 + (-6),
+                     reference="SW2", value="SW_SPDT", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Switch", symbol_name="SW_Rotary_1x12",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (-31),
+                     reference="SW1", value="SW_Rotary_1x12", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (20),
+                     reference="C1", value="0.33uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (12),
+                     reference="C2", value="0.15uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (5),
+                     reference="C3", value="0.047uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (-2),
+                     reference="C4", value="0.022uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-57), pos_y=center_y_1 + (-11),
+                     reference="C5", value="3300pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (15),
+                     reference="C6", value="0.022uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (8),
+                     reference="C7", value="3300pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (0),
+                     reference="C8", value="0.012uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (-7),
+                     reference="C9", value="0.012uF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (-15),
+                     reference="C10", value="2200pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-49), pos_y=center_y_1 + (-22),
+                     reference="C11", value="4700pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (13),
+                     reference="C12", value="1500pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (6),
+                     reference="C13", value="4700pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (-2),
+                     reference="C14", value="2200pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (-12),
+                     reference="C15", value="4700pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (-20),
+                     reference="C16", value="2200pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="C", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-21), pos_y=center_y_1 + (-27),
+                     reference="C17", value="1000pF", rotation=90, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-1),
+                     reference="L1", value="1000mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-10),
+                     reference="L2", value="1mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-17),
+                     reference="L3", value="450mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-25),
+                     reference="L4", value="220mH", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="L", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-34),
+                     reference="L5", value="2H", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Switch", symbol_name="Switch:SW_SPDT",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-34),
+                     reference="SW3", value="Switch:SW_SPDT", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-46),
+                     reference="R4", value="0R", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-46),
+                     reference="R9", value="47K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-54),
+                     reference="R6", value="0R", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R", symbol_lib_version="1.0",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-54),
+                     reference="R7", value="4.7K", rotation=0, mirror="None")
+add_schematic_symbol(symbol_lib="Device", symbol_name="R_Potentiometer",
+                     pos_x=center_x_1 + (-2), pos_y=center_y_1 + (-54),
+                     reference="R10", value="0R", rotation=0, mirror="None")
+
+# Placing all global labels in the Schematic and connect them to the neighbor pin
+add_label([150, 140], "hi_boost_out", "hi_boost_out", "input", "left")
+add_label([150, 140], "in", "in", "input", "left")
+add_label([150, 140], "lo_boost_in", "lo_boost_in", "input", "left")
+add_label([150, 140], "out", "out", "input", "left")
+
+# Connecting all wires in the Schematic
+# GND connections
+connect_pins("J2", "1", "#PWR_GND_J1_J2", "1")
+connect_pins("J2", "2", "#PWR_GND_J1_J2", "1")
+connect_pins("J2", "3", "#PWR_GND_J1_J2", "1")
+connect_pins("J2", "4", "#PWR_GND_J1_J2", "1")
+connect_pins("J2", "5", "#PWR_GND_J1_J2", "1")
+connect_pins("R9", "2", "#PWR_GND_J1_J2", "1")
+connect_pins("R6", "1", "#PWR_GND_J1_J2", "1")
+
+# hi_boost_out net
+connect_pins("SW1", "2", "C15", "1")
+connect_pins("C8", "1", "SI1", "1")
+connect_pins("C5", "1", "SI5", "1")
+connect_pins("SW2", "1", "S21", "1")
+
+# in net
+connect_pins("R3", "1", "R1", "1")
+connect_pins("J1", "1", "R1", "1")
+connect_pins("C1", "1", "R1", "1")
+connect_pins("C13", "1", "R1", "1")
+
+# lo_boost_in net
+connect_pins("J1", "3", "C6", "1")
+connect_pins("C16", "1", "C8", "1")
+connect_pins("C8", "2", "C16", "2")
+connect_pins("C13", "2", "C15", "2")
+connect_pins("C12", "1", "C14", "1")
+
+# out net
+connect_pins("J1", "4", "C8", "3")
+connect_pins("C9", "1", "C12", 3)
+connect_pins("C10", "1", "C12", 3)
+
+################################################################################
+# mid_cut_return
+connect_pins("C7", "1", "C9", "2")
+connect_pins("C9", "1", "C10", "2")
+connect_pins("C10", "2", "#PWR_VIN", "1")
+connect_pins("#PWR_VIN", "1", "C12", "2")
+connect_pins("C12", "3", "C13", "1")
+connect_pins("C13", "3", "R10", "1")
+connect_pins("C14", "1", "C15", "1")
+connect_pins("C8", "1", "L1", "1")
+connect_pins("L1", "2", "R4", "1")
+connect_pins("#PWR_L1", "1", "L4", "1")
+connect_pins("R4", "2", "L6", "1")
+connect_pins("R9", "2", "#PWR_L1", "1")
+connect_pins("L2", "2", "R4", "2")
+connect_pins("R10", "1", "R3", "3")
+connect_pins("R5", "3", "R6", "1")
+connect_pins("R6", "3", "R7", "2")
+connect_pins("R9", "3", "R12", "3")
+connect_pins("R11", "2", "R8", "3")
+connect_pins("R8", "2", "R9", "1")
+connect_pins("R13", "1", "SW2", "3")
+connect_pins("SW2", "2", "SW2", "3")
+connect_pins("SW2", "2", "R12", "3")
+connect_pins("SW1", "2", "SW12", "2")
+connect_pins("SW12", "1", "SW2", "3")
+connect_pins("SW12", "2", "R10", "1")
+connect_pins("SW2", "2", "R8", "2")
+connect_pins("SW1", "2", "SW2", "2")
+connect_pins("#PWR_VIN", "1", "SW1", "2")
+
+################################################################################
+# mid_coil_return
+connect_pins("SW1", "2", "C15", "6")
+connect_pins("C15", "5", "L3", "1")
+connect_pins("L3", "1", "C5", "2")
+connect_pins("#PWR_VIN", "1", "C7", "1")
+connect_pins("C7", "2", "R13", "2")
+connect_pins("R12", "1", "R10", "1")
+connect_pins("R9", "1", "R8", "1")
+connect_pins("L3", "2", "R1", "3")
+connect_pins("J1", "3", "R5", "1")
+connect_pins("R5", "2", "J1", "2")
+connect_pins("J1", "5", "R9", "2")
+connect_pins("C10", "5", "C2", "2")
+connect_pins("C7", "6", "R6", "2")
+connect_pins("R6", "5", "C1", "2")
+connect_pins("C1", "6", "C8", "1")
+connect_pins("C4", "2", "C6", "1")
+connect_pins("C3", "2", "C4", "1")
+connect_pins("C6", "6", "C1", "5")
+connect_pins("C1", "5", "C2", "2")
+connect_pins("C2", "6", "C3", "1")
+connect_pins("C3", "5", "C7", "5")
+connect_pins("C4", "5", "C5", "3")
+connect_pins("C5", "6", "C11", "1")
+connect_pins("C8", "6", "C9", "2")
+connect_pins("C9", "6", "C19", "1")
+connect_pins("C19", "5", "C12", "2")
+connect_pins("C13", "2", "C15", "2")
+connect_pins("C15", "5", "C16", 2)
+connect_pins("C16", "6", "C13", 1)
+connect_pins("C12", "5", "C17", 1)
+connect_pins("C10", 1, "C11", 2)
+
+################################################################################
+# mid_sel_common
+connect_pins("C17", "1", "C14", 1)
+connect_pins("C11", "4", "C16", 2)
+connect_pins("C8", 1, "C12", 2)
+connect_pins("C5", 3, "C7", 1)
+connect_pins("C4", 3, "C6", 2)
+connect_pins("C3", 3, "C9", 2)
+connect_pins("C2", 6, "C10", 3)
+connect_pins("C2", 2, "#PWR_MID_TAP3_R2", 1)
+connect_pins("#PWR_MID_TAP3_R2", 2, "C3", 1)
+connect_pins(C3, 2, C4, "5")
+connect_pins("C6", "3", "R8", 1)
+
+################################################################################
+# mid_tap_0r22h
+connect_pins("C13", "2", "C12", "2")
+connect_pins("C12", "4", "#PWR_TAP1_R2", "1")
+connect_pins("C19", "2", "#PWR_TAP1_R2", "1")
+connect_pins("R13", "4", C(3), "1")
+
+################################################################################
+# mid_tap_0r45h
+connect_pins("C11", "2", C(2), "1")
+connect_pins("C17", "#PWR_TAP2_R2", "1")
+connect_pins("C18", "#PWR_TAP2_R2", "1")
+connect_pins("L2", "1", "L3", "1")
+connect_pins("C18", "#PWR_TAP1_R1", "1")
+connect_pins("C12", "1", "C13", "2")
+connect_pins("C2", "1", "C17", "2")
+connect_pins("C9", "2", "R9", "1")
+connect_pins("C3", "1", "C6", "2")
+connect_pins("C9", "1", "C10", "2")
+connect_pins("C1", "2", "C16", "1")
+
+#endregion
+
+write_out_all_wires()
+<|return|>

@@ -1,0 +1,19 @@
+{"fixes_applied": ["component_repository", "pin_extraction", "root_uuid", "skip_get_fp"]}
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference C2 (center x: 110.490, y: 90.620), with bounding box: upper_left_corner (108.490, 94.430), bottom_right_corner (112.490, 86.810)
+ overlaps with existing symbols: 
+ [ SW_Rotary_1x6_MP - SW1: upper_left_corner (102.870, 107.130), bottom_right_corner (118.110, 94.430) ]
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Schematic file: /out/page.kicad_sch
+SCHGEN-EMIT: sheet written, holding for copy

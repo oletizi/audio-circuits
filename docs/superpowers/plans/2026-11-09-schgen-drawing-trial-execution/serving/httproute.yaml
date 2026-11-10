@@ -1,0 +1,58 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"HTTPRoute","metadata":{"annotations":{},"name":"kinference-route","namespace":"default"},"spec":{"parentRefs":[{"name":"kinference-gw","sectionName":"http"}],"rules":[{"backendRefs":[{"group":"kinference.buoyant.io","kind":"InferencePool","name":"inference-pool"}],"matches":[{"path":{"type":"PathPrefix","value":"/v1/chat/completions"}}]},{"backendRefs":[{"group":"kinference.buoyant.io","kind":"InferencePool","name":"inference-pool"}],"matches":[{"path":{"type":"PathPrefix","value":"/v1/completions"}}]}]}}
+  creationTimestamp: "2026-11-10T09:16:12Z"
+  generation: 1
+  name: kinference-route
+  namespace: default
+  resourceVersion: "1794302175164623022"
+  uid: 33f58ad9-6d96-4fdd-8ce2-f36da4fb82b4
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: kinference-gw
+    sectionName: http
+  rules:
+  - backendRefs:
+    - group: kinference.buoyant.io
+      kind: InferencePool
+      name: inference-pool
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /v1/chat/completions
+  - backendRefs:
+    - group: kinference.buoyant.io
+      kind: InferencePool
+      name: inference-pool
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /v1/completions
+status:
+  parents:
+  - conditions:
+    - lastTransitionTime: "2026-11-10T09:16:12Z"
+      message: route is accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-10T09:16:15Z"
+      message: all references resolved
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    controllerName: gateway.buoyant.io/controller
+    parentRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: kinference-gw
+      sectionName: http

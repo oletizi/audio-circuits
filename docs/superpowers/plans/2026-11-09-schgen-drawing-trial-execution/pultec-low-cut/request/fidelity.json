@@ -1,0 +1,9 @@
+{
+  "board": "pultec-low-cut",
+  "equal": true,
+  "ours": 4660,
+  "theirs": 4660,
+  "first_diff": null,
+  "ours_ids_sha256": "b6aff28e6bdefbab35f1501916bc1a1041a80bbe8d081c57bfc30526df5c39ba",
+  "rendered_date": "2026-11-10"
+}

@@ -1,0 +1,129 @@
+{"fixes_applied": ["component_repository", "pin_extraction", "root_uuid", "skip_get_fp"]}
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Error: Symbol 'C' with reference SI3 (center x: 124.460, y: 80.460), with bounding box: upper_left_corner (122.460, 84.270), bottom_right_corner (126.460, 76.650)
+ overlaps with existing symbols: 
+ [ R - SI2: upper_left_corner (123.444, 89.350), bottom_right_corner (125.476, 81.730) ]
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Error: Symbol 'R' with reference SI7 (center x: 144.780, y: 70.300), with bounding box: upper_left_corner (143.764, 74.110), bottom_right_corner (145.796, 66.490)
+ overlaps with existing symbols: 
+ [ R - SI6: upper_left_corner (143.764, 79.190), bottom_right_corner (145.796, 71.570) ]
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Error: Symbol 'SW_Rotary_1x6_MP' with reference SW1 (center x: 154.940, y: 104.590), with bounding box: upper_left_corner (147.320, 112.210), bottom_right_corner (162.560, 99.510)
+ overlaps with existing symbols: 
+ [ Conn_01x05 - J1: upper_left_corner (144.780, 116.020), bottom_right_corner (151.130, 103.320) ]
+Undefined symbol definition, Pass.
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Passed key  -- can't parsy
+Warning: Pin G not found in symbol SW1 by number or name. Trying to find the best match.
+Pin match 'G' -> '' (score 0.0)
+Traceback (most recent call last):
+  File "/trial/fixes/run_emitter.py", line 228, in main
+    run_program(program, sheet)
+  File "/trial/fixes/run_emitter.py", line 155, in run_program
+    exec(code, namespace)
+  File "/in/program.py", line 74, in <module>
+    add_label(label_pos=[x_SW1_1+(10), y_SW1_1+(0)], label_text="lo_boost_in", label_ref="lo_boost_in_0", label_type="input", text_orient="right")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/schgen/modules/kicad_sch_interface.py", line 883, in get_pin_location
+    raise ValueError(f"Pin {pin_name} not found in symbol {symbol_ref}. Available pins: {list(symbol.pin)}")
+ValueError: Pin G not found in symbol SW1. Available pins: [<SymbolPin 1 "">, <SymbolPin 2 "">, <SymbolPin 3 "">, <SymbolPin 4 "">, <SymbolPin 5 "">, <SymbolPin 6 "">, <SymbolPin 7 "">, <SymbolPin MP "">]

@@ -90,3 +90,7 @@ __pycache__/
 # exists to close.
 draughting/copperhead
 draughting/venv-akcli
+
+# The host-side test venv for the SchGen drawing trial, created with
+# `python3 -m venv` from tools/schgen-drawing-trial/host-requirements.txt.
+tools/schgen-drawing-trial/.venv

@@ -1,0 +1,6 @@
+NAME                                      READY   STATUS    RESTARTS   AGE   IP            NODE                                         NOMINATED NODE   READINESS GATES
+gateway-cp-5d56df65f4-jp7l6               1/1     Running   0          51m   10.120.0.17   gke-schgen-kinf-default-pool-e38e2889-swpc   <none>           <none>
+gateway-cp-5d56df65f4-qtknd               1/1     Running   0          51m   10.120.0.16   gke-schgen-kinf-default-pool-e38e2889-swpc   <none>           <none>
+kinference-57988c95f6-dklr2               1/1     Running   0          51m   10.120.0.18   gke-schgen-kinf-default-pool-e38e2889-swpc   <none>           <none>
+kinference-gw-gatewayd-6b64c57d95-tcrc7   1/1     Running   0          38m   10.120.0.21   gke-schgen-kinf-default-pool-e38e2889-swpc   <none>           <none>
+schgen-merged-cf9577cf6-rv9jv             1/1     Running   0          24m   10.120.1.5    gke-schgen-kinf-l4x4-spot-ad38c83d-v489      <none>           <none>

@@ -1,0 +1,3 @@
+gateway-cp-5d56df65f4-jp7l6	cr.kinference.ai/buoyantio/gateway-cp:0.1.0-alpha.6 
+gateway-cp-5d56df65f4-qtknd	cr.kinference.ai/buoyantio/gateway-cp:0.1.0-alpha.6 
+kinference-57988c95f6-dklr2	cr.kinference.ai/kinference-ai/kinference:0.1.0-alpha.7 
