@@ -63,12 +63,34 @@ rm -f "$SHEET"
 : > "$LOG"
 
 NAME="schgen-emit-$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')"
-STATUS_FILE="$(mktemp "${TMPDIR:-/tmp}/schgen-emit-status.XXXXXX")"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/schgen-emit.XXXXXX")"
+STATUS_FILE="$WORK_DIR/status"
+GROUP_PID_FILE="$WORK_DIR/group.pid"
 
+# Every line this script writes into the log goes through log_line, which
+# first ends the program's last line if it left one unterminated; otherwise
+# `LIMIT: <name>` would be glued onto it and the final-line contract broken.
+log_line() {
+  if [ -s "$LOG" ] && [ -n "$(tail -c 1 "$LOG")" ]; then
+    printf '\n' >> "$LOG"
+  fi
+  printf '%s\n' "$1" >> "$LOG"
+}
+
+limit_line() {
+  log_line "LIMIT: $1"
+}
+
+# Kills the container, then the background `docker run` subshell, and waits
+# for both, so nothing is left to write the status file after it is removed.
 remove_container() {
   docker kill "$NAME" > /dev/null 2>&1 || true
+  if [ -s "$GROUP_PID_FILE" ]; then
+    kill "$(cat "$GROUP_PID_FILE")" 2> /dev/null || true
+  fi
+  wait 2> /dev/null || true
   docker rm -f "$NAME" > /dev/null 2>&1 || true
-  rm -f "$STATUS_FILE"
+  rm -rf "$WORK_DIR"
 }
 trap remove_container EXIT
 
@@ -78,6 +100,7 @@ trap remove_container EXIT
 # sees a log at the cap and stops the container as output-bytes. A polled size
 # check alone is not enough: a print loop wrote 54 GB in about two minutes.
 {
+  sh -c 'echo "$PPID"' > "$GROUP_PID_FILE"
   run_status=0
   docker run --name "$NAME" \
     --network none --read-only \
@@ -99,7 +122,7 @@ stop_for_output_bytes() {
   docker kill "$NAME" > /dev/null 2>&1 || true
   wait "$STREAM_PID" 2> /dev/null || true
   rm -f "$SHEET"
-  printf '\nLIMIT: output-bytes\n' >> "$LOG"
+  limit_line output-bytes
   exit 1
 }
 
@@ -115,18 +138,22 @@ while kill -0 "$STREAM_PID" 2> /dev/null; do
     # the sheet is read from inside the running container instead.
     if ! docker exec "$NAME" cat /out/page.kicad_sch > "$SHEET" 2>> "$LOG"; then
       rm -f "$SHEET"
-      echo "emit.sh: run_emitter.py reported the sheet written but it could not be read out of $NAME" >> "$LOG"
+      log_line "emit.sh: run_emitter.py reported the sheet written but it could not be read out of $NAME"
       exit 1
     fi
     copied=1
-    docker kill --signal USR1 "$NAME" > /dev/null
+    if ! docker kill --signal USR1 "$NAME" > /dev/null 2>> "$LOG"; then
+      rm -f "$SHEET"
+      log_line "emit.sh: the sheet was read out of $NAME but SIGUSR1 could not be sent to release it, so the run's exit status is unknown and the sheet is not kept"
+      exit 1
+    fi
   fi
   if [ "$SECONDS" -ge "$deadline" ]; then
     docker kill "$NAME" > /dev/null 2>&1 || true
     docker rm -f "$NAME" > /dev/null 2>&1 || true
     wait "$STREAM_PID" 2> /dev/null || true
     rm -f "$SHEET"
-    echo "LIMIT: wall-time" >> "$LOG"
+    limit_line wall-time
     exit 124
   fi
   sleep 0.2
@@ -136,9 +163,9 @@ wait "$STREAM_PID" 2> /dev/null || true
 if log_capped; then
   stop_for_output_bytes
 fi
-status="$(cat "$STATUS_FILE")"
+status="$(cat "$STATUS_FILE" 2> /dev/null || true)"
 if [ -z "$status" ]; then
-  echo "emit.sh: the log stream ended without the container's exit status" >> "$LOG"
+  log_line "emit.sh: the log stream ended without the container's exit status"
   rm -f "$SHEET"
   exit 1
 fi
@@ -146,11 +173,11 @@ fi
 oom="$(docker inspect --format '{{.State.OOMKilled}}' "$NAME" 2> /dev/null || echo unknown)"
 if [ "$oom" = "true" ]; then
   rm -f "$SHEET"
-  echo "LIMIT: memory" >> "$LOG"
+  limit_line memory
   exit 137
 fi
 if [ "$oom" = "unknown" ]; then
-  echo "emit.sh: could not inspect container $NAME after it exited, so an OOM kill cannot be ruled out" >> "$LOG"
+  log_line "emit.sh: could not inspect container $NAME after it exited, so an OOM kill cannot be ruled out"
   rm -f "$SHEET"
   exit 125
 fi
@@ -160,7 +187,7 @@ if [ "$status" -ne 0 ]; then
   exit "$status"
 fi
 if [ "$copied" -ne 1 ] || [ ! -f "$SHEET" ]; then
-  echo "emit.sh: the container exited 0 but the sheet was never copied out of it" >> "$LOG"
+  log_line "emit.sh: the container exited 0 but the sheet was never copied out of it"
   rm -f "$SHEET"
   exit 1
 fi

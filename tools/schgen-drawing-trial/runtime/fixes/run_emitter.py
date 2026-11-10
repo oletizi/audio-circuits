@@ -38,7 +38,9 @@ The log protocol emit.sh relies on, all on stdout:
   - line 1 is {"fixes_applied": [...]} as JSON, on success and failure alike;
   - a failure prints the original traceback, and for a limit a final line
     `LIMIT: output-bytes` (ENOSPC on a tmpfs) or `LIMIT: pids` (the cgroup's
-    pids.max was hit); `wall-time` and `memory` are written by emit.sh, since
+    refused-fork counter rose while the program ran; a `PIDS-CHECK:` line says
+    so when that counter cannot be read); `wall-time` and `memory` are written
+    by emit.sh, since
     this process does not survive them;
   - a success prints READY_MARKER and then holds the container open until
     emit.sh has copied the sheet out and sends SIGUSR1.
@@ -164,20 +166,38 @@ def chain(exc: BaseException):
         exc = exc.__cause__ or exc.__context__
 
 
-def pids_limit_hit() -> bool:
+def pids_max_events() -> int | None:
+    """The cgroup's count of forks refused at pids.max, or None when this
+    cgroup layout has no pids.events to read it from."""
     if not PIDS_EVENTS.is_file():
-        return False
+        return None
     for line in PIDS_EVENTS.read_text().splitlines():
         key, _, value = line.partition(" ")
-        if key == "max" and int(value) > 0:
-            return True
-    return False
+        if key == "max":
+            return int(value)
+    return None
 
 
-def limit_name(exc: BaseException) -> str | None:
+def limit_name(exc: BaseException, pids_before: int | None) -> str | None:
+    """Name the limit that caused `exc`, if one did.
+
+    `pids_before` is pids_max_events() read before the program ran: pids is
+    blamed only when the refused-fork counter rose while it ran, not because
+    the limit was ever hit. When either reading is missing the pids check
+    cannot run, and that is said in the log rather than passed over.
+    """
     if any(isinstance(e, OSError) and e.errno == errno.ENOSPC for e in chain(exc)):
         return "output-bytes"
-    if pids_limit_hit():
+    pids_now = pids_max_events()
+    if pids_before is None or pids_now is None:
+        print(
+            f"PIDS-CHECK: could not run: {PIDS_EVENTS} was not readable "
+            f"(before={pids_before}, now={pids_now}), so a pids-limit failure "
+            "cannot be told apart from any other failure here",
+            flush=True,
+        )
+        return None
+    if pids_now > pids_before:
         return "pids"
     return None
 
@@ -202,12 +222,13 @@ def main(argv: list[str]) -> int:
     signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGUSR1})
     sys.path.insert(0, str(project_path()))
     write_blank_sheet(sheet)
+    pids_before = pids_max_events()
     try:
         patch_pin_extraction()
         run_program(program, sheet)
     except BaseException as exc:
         traceback.print_exc(file=sys.stdout)
-        name = limit_name(exc)
+        name = limit_name(exc, pids_before)
         if name is not None:
             print(f"LIMIT: {name}", flush=True)
         return 1

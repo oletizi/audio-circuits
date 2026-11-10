@@ -15,6 +15,7 @@ by run_emitter.py exactly as one would be.
 import hashlib
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -60,13 +61,35 @@ HOSTILE = {
     + "    if os.fork() == 0:\n"
     + "        time.sleep(600)\n"
     + "        os._exit(0)\n",
+    # A program whose last output has no newline: emit.sh's own LIMIT line
+    # must still be a line of its own.
+    "runaway_unterminated": HEADER
+    + "print('x', end='', flush=True)\n"
+    + "while True:\n"
+    + "    pass\n",
+    "memory_unterminated": HEADER
+    + "print('x', end='', flush=True)\n"
+    + "hog = []\n"
+    + "while True:\n"
+    + "    hog.append(b'x' * (100 * 1000 * 1000))\n",
 }
+WALL_OVERRIDE = {"runaway": 10, "runaway_unterminated": 10}
 
 
-def emit(program: Path, out_dir: Path, wall_seconds: int | None = None) -> subprocess.CompletedProcess:
+def emit(
+    program: Path,
+    out_dir: Path,
+    wall_seconds: int | None = None,
+    tmpdir: Path | None = None,
+    path_prefix: Path | None = None,
+) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     if wall_seconds is not None:
         env["SCHGEN_EMIT_WALL_SECONDS"] = str(wall_seconds)
+    if tmpdir is not None:
+        env["TMPDIR"] = str(tmpdir)
+    if path_prefix is not None:
+        env["PATH"] = f"{path_prefix}{os.pathsep}{env['PATH']}"
     return subprocess.run(
         ["bash", str(EMIT), str(program), str(out_dir)],
         env=env,
@@ -103,13 +126,15 @@ def hostile_runs(tmp_path_factory) -> dict:
         program = work / "program.py"
         program.write_text(source, encoding="utf-8")
         out_dir = work / "out"
-        wall = 10 if name == "runaway" else None
-        res = emit(program, out_dir, wall_seconds=wall)
+        tmpdir = work / "tmp"
+        tmpdir.mkdir()
+        res = emit(program, out_dir, wall_seconds=WALL_OVERRIDE.get(name), tmpdir=tmpdir)
         runs[name] = {
             "res": res,
             "out_dir": out_dir,
             "lines": log_lines(out_dir),
             "leftover": leftover_containers(),
+            "tmp_leftover": sorted(p.name for p in tmpdir.iterdir()),
         }
     return runs
 
@@ -201,3 +226,117 @@ def test_no_network(hostile_runs):
 @pytest.mark.parametrize("name", sorted(HOSTILE))
 def test_failure_keeps_fixes_line(hostile_runs, name):
     assert json.loads(hostile_runs[name]["lines"][0]) == {"fixes_applied": EXPECTED_FIXES}
+
+
+@pytest.mark.parametrize(
+    "name, limit",
+    [("runaway_unterminated", "wall-time"), ("memory_unterminated", "memory")],
+)
+def test_limit_line_survives_unterminated_output(hostile_runs, name, limit):
+    run = hostile_runs[name]
+    assert run["res"].returncode != 0
+    assert run["lines"][-1] == f"LIMIT: {limit}"
+    assert run["lines"][-2].endswith("x")
+    assert run["leftover"] == ""
+
+
+@pytest.mark.parametrize("name", sorted(HOSTILE))
+def test_no_temp_files_left(hostile_runs, name):
+    """emit.sh's status file and the background subshell's pid file live in
+    a directory under TMPDIR that the EXIT trap removes after waiting for the
+    subshell, so nothing is left behind on any path."""
+    assert hostile_runs[name]["tmp_leftover"] == []
+
+
+def test_failed_release_signal_keeps_no_sheet(imu_program, tmp_path):
+    """If SIGUSR1 cannot be sent after the sheet is read out, the run's exit
+    status is unknown, so emit.sh says so and keeps no sheet."""
+    real_docker = subprocess.run(
+        ["sh", "-c", "command -v docker"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    shim_dir = tmp_path / "shim"
+    shim_dir.mkdir()
+    shim = shim_dir / "docker"
+    shim.write_text(
+        "#!/bin/sh\n"
+        'if [ "$1" = kill ] && [ "$2" = --signal ] && [ "$3" = USR1 ]; then\n'
+        "  echo 'shim: refusing USR1' >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        f'exec "{real_docker}" "$@"\n',
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+    out_dir = tmp_path / "out"
+    res = emit(imu_program, out_dir, path_prefix=shim_dir)
+    assert res.returncode != 0
+    lines = log_lines(out_dir)
+    assert lines[-1].startswith("emit.sh: the sheet was read out of schgen-emit-")
+    assert "SIGUSR1 could not be sent" in lines[-1]
+    assert not (out_dir / "page.kicad_sch").exists()
+    assert leftover_containers() == ""
+
+
+def run_in_image(code: str) -> str:
+    res = subprocess.run(
+        ["docker", "run", "--rm", "--network", "none", IMAGE, "python", "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return res.stdout
+
+
+PIDS_PRELUDE = (
+    "import sys\n"
+    "sys.path.insert(0, '/trial/fixes')\n"
+    "from pathlib import Path\n"
+    "import run_emitter as r\n"
+    "fork_refused = BlockingIOError(11, 'Resource temporarily unavailable')\n"
+)
+
+
+def test_pids_check_says_when_it_cannot_run():
+    out = run_in_image(
+        PIDS_PRELUDE
+        + "r.PIDS_EVENTS = Path('/nonexistent/pids.events')\n"
+        + "print('RESULT', r.limit_name(fork_refused, r.pids_max_events()))\n"
+    )
+    assert "PIDS-CHECK: could not run" in out
+    assert "RESULT None" in out
+
+
+def test_pids_blamed_only_when_counter_rose():
+    out = run_in_image(
+        PIDS_PRELUDE
+        + "r.PIDS_EVENTS = Path('/tmp/pids.events')\n"
+        + "r.PIDS_EVENTS.write_text('max 3\\n')\n"
+        + "before = r.pids_max_events()\n"
+        + "print('UNCHANGED', r.limit_name(fork_refused, before))\n"
+        + "r.PIDS_EVENTS.write_text('max 4\\n')\n"
+        + "print('ROSE', r.limit_name(fork_refused, before))\n"
+    )
+    assert "UNCHANGED None" in out
+    assert "ROSE pids" in out
+
+
+def test_pin_fix_finds_pins_not_first_child(tmp_path):
+    """Connector_Generic:Conn_01x05's unit sub-symbol does not start with a
+    pin, so stock SchGen's extract_pins_from_symbol finds none; with the
+    pin_extraction fix the placed instance carries all five."""
+    program = tmp_path / "conn.py"
+    program.write_text(
+        HEADER
+        + 'add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05", '
+        + 'pos_x=100, pos_y=100, reference="J1", value="J", rotation=0, mirror="None")\n',
+        encoding="utf-8",
+    )
+    out_dir = tmp_path / "out"
+    res = emit(program, out_dir)
+    assert res.returncode == 0, (out_dir / "emitter.log").read_text()
+    sheet = " ".join((out_dir / "page.kicad_sch").read_text(encoding="utf-8").split())
+    marker = '(symbol (lib_id "Connector_Generic:Conn_01x05")'
+    assert sheet.count(marker) == 1
+    instance = sheet.split(marker, 1)[1]
+    pins = set(re.findall(r'\(pin "(\d+)" \(uuid', instance))
+    assert pins == {"1", "2", "3", "4", "5"}
