@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -202,6 +202,16 @@ check_architecture() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+POWER="$DOCS/power.md"
+
+check_power() {
+  local bad=""
+  [ -f "$POWER" ] || { echo " [missing docs/h7-platform/power.md]"; return 1; }
+  grep -qF -- "Q_PEN" "$POWER" || bad="$bad [power.md lacks 'Q_PEN']"
+  grep -F -- "9 V" "$POWER" | grep -qF -- "Seed" || bad="$bad [power.md has no line containing both '9 V' and 'Seed']"
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -212,6 +222,7 @@ run_check() {
     stale-json) reason=$(check_stale_json) ;;
     decisions) reason=$(check_decisions) ;;
     architecture) reason=$(check_architecture) ;;
+    power) reason=$(check_power) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
