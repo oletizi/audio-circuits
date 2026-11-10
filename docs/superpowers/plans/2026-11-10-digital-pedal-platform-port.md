@@ -15,8 +15,11 @@
 - **Source:** `oletizi/pedals` at `5b926d0aaf002d3ea111786f6ab9cdb72b8a913e`. Local checkout: `/Users/orion/work/pedals-work/digital-pedal-platform`. Read it with `git -C <checkout> show 5b926d0:<path>`, never from the working tree, so the pin is what you read.
 - **Pinned link prefix**, used for every citation: `https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/`
 - **Worktree:** `/Users/orion/work/audio-circuits-work/digital-pedal-platform`, branch `feature/digital-pedal-platform`. Commit and push after every task.
-- **No code crosses.** Nothing under `docs/h7-platform/` or `circuits/h7-platform/` is anything but `.md`, `.json`, `.svg` or a `LICENSE-*` file. No pedals command (`pnpm schgen`, `pnpm pinmap`, `pnpm interface`, `make check` in `h7-platform/`) is written as something to run. No schgen IR vocabulary (`PartSpec`, `BlockSpec`, `sheetKit`, `blocksOn`) is used to describe parts.
-- **The byte-identical files are never edited** in this phase.
+- **No code crosses.** Nothing under `docs/h7-platform/` or `circuits/h7-platform/` is anything but `.md`, `.json`, `.svg` or a `LICENSE-*` file.
+  - **Newly written prose** names no pedals command at all: no `pnpm …`, and no `make check` in `h7-platform/`. Where history needs one, it cites the script's file by pinned link. It uses no schgen IR vocabulary (`PartSpec`, `BlockSpec`, `sheetKit`, `blocksOn`).
+  - The byte-identical records are exempt from these content bans, since they are historical provenance (`results.json` line 380 contains `pnpm hotplug-sweep`).
+- **The byte-identical files are never edited** in this phase, even where they hold superseded statements (`module-interface.json` lines 355 and 405 say 9–12 V). The README warns about those statements instead (Task 12).
+- **The five byte-identical records** are `circuits/h7-platform/module-interface.json`, `circuits/h7-platform/interface-analysis-results.json`, `circuits/h7-platform/LICENSE-OSCAR`, `circuits/h7-platform/LICENSE-APACHE-2.0` and `docs/h7-platform/layout-B.svg`.
 - **Labels.** "Owner decision" is used only where the source itself says so (spec Goal 1). Everything else is "Controller ruling (the owner may override)". Owner measurements are "Owner-supplied fact".
 - **Precedence** follows the spec section "How amendments resolve": authority first, then date. A controller ruling never supersedes an owner decision.
 - **Effective-constraint shape:** the current value is stated once, followed by `Set by:` and `Amended by:` links. A superseded value appears only on a line that begins `*Not in force:*`.
@@ -71,7 +74,7 @@
 
 ## The verification script
 
-`verify.sh` takes check names as arguments (`verify.sh bytes nocode`) and runs all checks when given none. It prints `PASS <check>` or `FAIL <check>: <reason>` for each one and exits non-zero if any check fails. It requires `PEDALS_REPO` to be set, refusing with a message naming the variable and its expected value if it is not. The script lives under `docs/superpowers/plans/`, which is outside the two paths the no-code rule covers.
+`verify.sh` takes check names as arguments (`verify.sh bytes nocode`) and runs all checks when given none. It prints `PASS <check>` or `FAIL <check>: <reason>` for each one and exits non-zero if any check fails. **An unknown check name is a FAIL**, never a skip, because a skipped check that looks like a pass is a false green. It requires `PEDALS_REPO` to be set, refusing with a message naming the variable and its expected value if it is not. The script lives under `docs/superpowers/plans/`, which is outside the two paths the no-code rule covers.
 
 ---
 
@@ -81,7 +84,7 @@
 - Create: the four files under `circuits/h7-platform/`, `docs/h7-platform/layout-B.svg`, `docs/h7-platform/open-items.md`, `.../port-execution/verify.sh`
 
 **Interfaces:**
-- Produces: `verify.sh` with the checks `bytes`, `nocode` and `provenance`; the `open-items.md` table with the columns `Id | Item | Board / domain | Status | Evidence that closes it | Phase that must close it | Source`; the `### Conflict:` section heading `## Conflicts`.
+- Produces: `verify.sh` with the checks `bytes`, `nocode`, `provenance`, `effective` and `stale-json`; the `open-items.md` table with the columns `Id | Item | Board / domain | Status | Evidence that closes it | Phase that must close it | Source`; the `### Conflict:` section heading `## Conflicts`.
 
 - [ ] **Step 1: Write `verify.sh` with three checks.**
   - **`bytes`:** for each pair below, `git -C "$PEDALS_REPO" show 5b926d0:<src> | shasum -a 256` must equal `shasum -a 256 < <dst>`.
@@ -90,15 +93,21 @@
     - `h7-platform/LICENSE-OSCAR` → `circuits/h7-platform/LICENSE-OSCAR`
     - `h7-platform/LICENSE-APACHE-2.0` → `circuits/h7-platform/LICENSE-APACHE-2.0`
     - `h7-platform/interface-analysis/layouts/layout-B.svg` → `docs/h7-platform/layout-B.svg`
-  - **`nocode`:** fails on any file under `docs/h7-platform` or `circuits/h7-platform` that is not `*.md`, `*.json`, `*.svg` or `LICENSE-*`. Also fails on any match of `pnpm |PartSpec|BlockSpec|sheetKit|blocksOn` there.
+  - **`nocode`:**
+    - Fails on any file under `docs/h7-platform` or `circuits/h7-platform` that is not `*.md`, `*.json`, `*.svg` or `LICENSE-*`. This file-type rule applies to every file there.
+    - Fails on any match of `pnpm |PartSpec|BlockSpec|sheetKit|blocksOn` in those trees, **excluding the five byte-identical records**.
   - **`provenance`:** fails on any `*.md` under `docs/h7-platform/` that lacks the pinned link prefix.
-- [ ] **Step 2: Run `PEDALS_REPO=/Users/orion/work/pedals-work/digital-pedal-platform bash .../verify.sh bytes`.** Expected: `FAIL bytes` (the files are missing). Then run it with `PEDALS_REPO` unset. Expected: a refusal naming `PEDALS_REPO`.
+  - **`effective`:**
+    - Every line in a `*.md` under `docs/h7-platform/` and `docs/standards/` that matches `9[–-]12 V` or `179 Hz` must begin with `*Not in force:*`. One exception: the README's stale-record warning (Task 12), which names those values by quoting the records. A line that starts with `*Superseded in the records:*` is also accepted.
+    - The JSON and the other records are not scanned.
+  - **`stale-json`:** informational. It prints every line of the two JSON records that matches `9[–-]12 V` or `179 Hz`, with its line number. It FAILs only if the README lacks the stale-record warning, which Task 12 adds. Until then, it is invoked only in Task 12 onward. This keeps the list of stale statements in a tool that re-derives it, not in prose.
+- [ ] **Step 2: Run `PEDALS_REPO=/Users/orion/work/pedals-work/digital-pedal-platform bash .../verify.sh bytes`.** Expected: `FAIL bytes` (the files are missing). Then run it with `PEDALS_REPO` unset. Expected: a refusal naming `PEDALS_REPO`. Then run `verify.sh no-such-check`. Expected: `FAIL no-such-check: unknown check`.
 - [ ] **Step 3: Copy the five files.** Use `git -C "$PEDALS_REPO" show 5b926d0:<src> > <dst>`, so nothing passes through an editor. Write `open-items.md`:
   - a `Ported from:` line;
   - one paragraph stating that every figure is paper analysis of an unbuilt board and that no row is a closure;
   - the empty table;
   - an empty `## Conflicts` section.
-- [ ] **Step 4: Run `verify.sh bytes nocode provenance`.** Expected: three PASS lines.
+- [ ] **Step 4: Run `verify.sh bytes nocode provenance effective`.** Expected: four PASS lines. In particular, `nocode` passes with the pinned `results.json` (and its `pnpm hotplug-sweep`) in place.
 - [ ] **Step 5: Commit and push** with the message "h7-platform port: byte-identical contract, results, licences and layout-B record; verify script".
 
 ### Task 2: Decisions
@@ -113,7 +122,8 @@
 - split spec §2 and §2.1;
 - the original platform spec's decision tables;
 - `OWNER-DEFAULTS.md` (OWN-xx, D14–D19);
-- `CORE-BRIEF.md` §4 (the D-deltas, including the approved D20–D24 that the split spec says the plan appends);
+- `CORE-BRIEF.md` §4 (the D-deltas). It stops at **D19** at the pin.
+- **Split spec §9.4**, which is the only home of the approved D20–D24 (O-14). It also withdraws D4 (MCU-driven codec reset) and D13 (PC3_C carrying SDCKE0) and amends the other core assumptions. Its planned append to `CORE-BRIEF.md` never happened, and this port does not do it either: the deltas are recorded here, citing §9.4.
 - `docs/superpowers/plans/2026-10-05-h7-split-rulings.md`;
 - `2026-10-03-h7-schgen-a1-rulings.md` and `-a2-rulings.md`, but only their owner-decision entries, and only where the decision is about the circuit rather than the generator.
 
@@ -122,6 +132,8 @@
   - Each of `O-1` … `O-18` appears in a heading.
   - `R-34`, `R-43` and `R-56` appear under `## Owner decisions`.
   - `O-15` appears under `## Controller rulings`.
+  - `D20` … `D24` each appear in a heading, citing split spec §9.4.
+  - `D4` and `D13` each appear with the word `withdrawn`.
 - [ ] **Step 2: Run `verify.sh decisions`.** Expected: FAIL.
 - [ ] **Step 3: Write `decisions.md`.** For each entry, record:
   - the date;
@@ -144,10 +156,10 @@ Every topic task follows the same five steps. The table gives each task's docume
 | 4 | `power.md` | `POWER.md`; `interface-analysis/vin-mod.md`, `3v3-d.md`, `pedal-digital-rail.md`, `power-fail.md`; ledger R-50, R-58, R-59 | check `power`: `Q_PEN`, a line containing `9 V` and `Seed`; and global check `effective` (below) |
 | 5 | `analog.md` | `ANALOG.md`; `interface-analysis/vref-a.md`, `codec-domain.md`, `crossings.md`; ledger R-15, R-57 | check `analog`: `421 Hz`, `806`, `PCM3060` |
 | 6 | `bypass-relay.md` | `BYPASS-RELAY.md`; split spec §7.4, §7.5; power-fail R-PF items | check `bypass`: `unpowered`, `power-fail` |
-| 7 | `processor-and-memory.md` and `firmware-facing-requirements.md` | `CORE-BRIEF.md`; `SDRAM-COMPATIBILITY.md`; split spec §6, §11, §12.4; original spec firmware sections; `facts.md` §4–§8 | check `firmware`: in `firmware-facing-requirements.md`, `H750`, `H743`, `QSPI`, `32 MB`, `bootloader`, `SAI2`, `watchdog`, `USB`, and the sentence that this repository does not own firmware |
+| 7 | `processor-and-memory.md` and `firmware-facing-requirements.md` | `CORE-BRIEF.md` **as amended by split spec §9.4** (D4 and D13 withdrawn, D20–D24 in force, other core assumptions amended; use the current meaning and link `decisions.md`); `SDRAM-COMPATIBILITY.md`; split spec §6, §11, §12.4; original spec firmware sections; `facts.md` §4–§8 | check `firmware`: in `firmware-facing-requirements.md`, `H750`, `H743`, `QSPI`, `32 MB`, `bootloader`, `SAI2`, `watchdog`, `USB`, and the sentence that this repository does not own firmware |
 | 8 | `mechanical-and-controls.md` | `interface-analysis/envelope.md`, `controls.md`; O-12, O-17, O-18; ledger R-55, R-56, R-60–R-62; `layout-B.svg` | check `mechanical`: `1590BB`, `stack height`, `layout-B.svg`, `six` |
 
-**Global check `effective`, added in Task 4:** every line under `docs/h7-platform/` that matches `9[–-]12 V` or `179 Hz` must begin with `*Not in force:*`.
+`effective` is defined in Task 1 (see there for its scope and exemptions).
 
 **Steps for each of Tasks 3–8:**
 
@@ -230,7 +242,13 @@ Task 5 must add rows **VDDA-WIDEBAND** and **VBUS-HOTPLUG** (R-57). Task 3 must 
     - an R-57 amendment;
     - an `mcu.*.pinData` path.
   - Licences: which circuitry each file covers, and that OSCAR_AUDIO_01's licence statement is unresolved upstream.
-- [ ] **Step 4: Run `verify.sh`** (all checks). Expected: every line PASS.
+  - **The stale-record warning**, a `## Superseded statements in the records` section. It says:
+    - the byte-identical records keep superseded statements unedited;
+    - which values are superseded (at least 9–12 V Seed benches and 179 Hz), each on a line beginning `*Superseded in the records:*` with a link to its effective constraint;
+    - `verify.sh stale-json` lists where they occur.
+
+    No line numbers go in prose, because the tool re-derives them.
+- [ ] **Step 4: Run `verify.sh`** (all checks, including `stale-json`). Expected: every line PASS. `stale-json` also prints the stale locations, among them `module-interface.json` lines 355 and 405.
 - [ ] **Step 5: Commit and push.**
 
 ### Task 13: Final verification and execution record

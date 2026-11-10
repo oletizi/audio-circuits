@@ -351,8 +351,15 @@ no baseline, so the port resolves amendments by rule:
   - the 421 Hz control-noise band (R-57);
   - the Q_PEN reset of 3V3_P's EN (R-58).
 
-  None of the superseded values (9-12 V, 179 Hz, the diode reset) appears
-  except in a history line marked as not in force. *These three are a sample
+  In **newly written prose**, none of the superseded values (9-12 V, 179 Hz,
+  the diode reset) appears except in a history line marked as not in force.
+  The byte-identical records (the two JSON files, the licences and the
+  layout-B picture) are exempt and are not edited. They still say, for
+  example, "Seed benches run on 9–12 V supplies only (O-15)". The README
+  warns that these records contain superseded statements, names the
+  superseded values, and links each one to its effective constraint.
+  *(Clarified after the issue #27 follow-up review; the approved intent is
+  unchanged.)* *These three are a sample
   that a reviewer can check, not the whole of the requirement.*
 - The firmware-facing requirements and the bring-up checklist exist, and the
   bring-up checklist has BU-01 to BU-29 by their original identifiers.
