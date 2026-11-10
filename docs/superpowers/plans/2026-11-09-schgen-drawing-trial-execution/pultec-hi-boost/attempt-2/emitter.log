@@ -1,0 +1,11 @@
+{"fixes_applied": ["component_repository", "pin_extraction", "root_uuid", "skip_get_fp"]}
+Traceback (most recent call last):
+  File "/trial/fixes/run_emitter.py", line 228, in main
+    run_program(program, sheet)
+  File "/trial/fixes/run_emitter.py", line 150, in run_program
+    code = compile(code_text, str(program), "exec")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/in/program.py", line 73
+    add_schematic_symbol(symbol_lib="Device", symbol_name="R",  pos_x=center_x_1 + (45), pos_y=center_y_1 + (-15), reference="SI11", value="0R",  rotation=0, mirror="None)
+                                                                                                                                                                     ^
+SyntaxError: unterminated string literal (detected at line 73)

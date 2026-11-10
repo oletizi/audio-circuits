@@ -1,0 +1,13 @@
+{"fixes_applied": ["component_repository", "pin_extraction", "root_uuid", "skip_get_fp"]}
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Undefined symbol definition, Pass.
+Traceback (most recent call last):
+  File "/trial/fixes/run_emitter.py", line 228, in main
+    run_program(program, sheet)
+  File "/trial/fixes/run_emitter.py", line 155, in run_program
+    exec(code, namespace)
+  File "/in/program.py", line 27, in <module>
+    pos_x=center_x_1 + (-80), pos_y=center_y_1 + (16),
+TypeError: add_schematic_symbol() got an unexpected keyword argument 'symbol_lib_version'

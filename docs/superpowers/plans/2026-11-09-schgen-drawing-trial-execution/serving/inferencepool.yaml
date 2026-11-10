@@ -1,0 +1,61 @@
+apiVersion: kinference.buoyant.io/v1alpha1
+kind: InferencePool
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kinference.buoyant.io/v1alpha1","kind":"InferencePool","metadata":{"annotations":{},"name":"inference-pool","namespace":"default"},"spec":{"destinations":[{"kind":"InferenceWorkerSet","name":"schgen-merged"}]}}
+  creationTimestamp: "2026-11-10T09:16:11Z"
+  generation: 1
+  name: inference-pool
+  namespace: default
+  resourceVersion: "1794303965101279006"
+  uid: ad5c70b7-6a87-465f-ad51-0326f75dba71
+spec:
+  destinations:
+  - group: kinference.buoyant.io
+    kind: InferenceWorkerSet
+    name: schgen-merged
+status:
+  conditions:
+  - lastTransitionTime: "2026-11-10T09:16:15Z"
+    message: 1 destination(s) resolved to a routable pool
+    observedGeneration: 1
+    reason: Accepted
+    status: "True"
+    type: Accepted
+  - lastTransitionTime: "2026-11-10T09:16:15Z"
+    message: all destinations and the policyRef resolved
+    observedGeneration: 1
+    reason: ResolvedRefs
+    status: "True"
+    type: ResolvedRefs
+  destinationCount: 1
+  models:
+  - contextWindow:
+      max: 19456
+      min: 19456
+    name: schgen-merged
+    servedBy:
+    - schgen-merged
+  parents:
+  - conditions:
+    - lastTransitionTime: "2026-11-10T09:16:15Z"
+      message: 1 destination(s) resolved to a routable pool
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-10T09:16:15Z"
+      message: all destinations and the policyRef resolved
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    controllerName: kinference.buoyant.io/router
+    parentRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: kinference-gw
+      namespace: default
+  state: Accepted
+  unresolvedDestinations: []

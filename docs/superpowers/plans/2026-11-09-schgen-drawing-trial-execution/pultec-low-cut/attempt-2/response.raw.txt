@@ -1,0 +1,208 @@
+<|channel|>analysis<|message|>**1.  Overall goal**
+
+The user wants a KiCad schematic that connects a collection of components (capacitors, resistors, a potenti‑pot, a rotary switch, two 5‑pin connectors, a GND net, and two label nets) exactly as described in the “NETS” and “LABELS” lists.  
+The code must use the helper API functions that were supplied:
+
+* `add_schematic_symbol` – place a symbol.
+* `get_pin_location` – query the coordinate of a particular pin of a symbol.
+* `add_label` – place a global label and tie it to a pin.
+* `connect_pins` – create a wire between two pins (or a label and a pin).
+* `write_out_all_wires` – finalise the wire list.
+
+The schematic is an A4 sheet (210 × 297 mm). All components should be centred in the middle of the sheet, with generous spacing so that the bounding boxes do not clash.  
+We will pick a *central reference point* (e.g. `center_x = 150 mm`, `center_y = 110 mm`) and then place every other symbol using integer offsets from that point. All offsets will keep symbols roughly 10‑20 mm apart to give clear readability.
+
+**2.  Symbol placement strategy**
+
+| Symbol | Reference | Value | Suggested offset from centre | Rotation | Mirror | Rationale |
+|--------|-----------|--------|--------------------------|----------|---------|-----------|
+| J1 (Connector 01x05) | J1 | – | `(-120, +10)` | 0° | None | Placed left‑most so that its pins face right; all J1 pins will connect to the “in”, “j5_pX” and “lo_boost_in” nets. |
+| J2 (Connector 01x05) | J2 | – | `(-120, -15)` | 0° | None | Same column as J1 but lower; its pins will connect to GND, “in”, “j5_pX” and “lo_boost_in”. |
+| C1 … C7 | C1‑C7 | 0.018 µF … 1 µF | left of the centre, staggered vertically: `(-100, +20), (-100, +16), (-100, +12), (-100, +8), (-100, +4), (-100, 0), (-100, -4)` | 0° | None | Capacitors sit in a vertical column; the “hi_boost_out” net runs through their first pins. |
+| RV1 (Potentiometer) | RV1 | 470 kΩ | `(-80, +20)` | 0° | None | Its two “position” pins (1 & 2) will feed “hi_boost_out” and “out”. |
+| SW1 (Rotary 1‑x‑6) | SW1 | – | `(-60, +10)` | 0° | None | All 6 positions (1‑6) and the centre‑position (MP) are used for the j5_pX nets. |
+| SI1 … SI9 (Resistors) | SI1‑SI9 | 0 Ω … 100 kΩ | `(-45, +20), (-45, +16), … (-45, -12)` | 0° | None | Each resistor’s first pin (1) goes to the corresponding “j5_pX” net; the second pin (2) is used for the various “si_…_j…_p…” nets. |
+| GND (power symbol) | #PWR1 | GND | `(-120, -25)` | 0° | None | Provides the global GND label that will be connected to several J1/J2 and SI‑pins. |
+
+All offsets are chosen so that the bounding boxes of neighbouring symbols do not overlap; the vertical spacing of 4 mm between successive elements is more than enough for the typical symbol heights (~5 mm).
+
+**3.  Label placement**
+
+The four required global labels are:
+
+* `hi_boost_out` – connects to the first pins of C1‑C7, J1.2, RV1.1, SI2.2, and SI5.1.  
+  * We place this label near the middle of the column of those elements, e.g. at `center_x + 20, center_y + 10`.  
+  * Use `text_orient="right"` so the label text points towards the right‑hand side where the wire will continue.
+
+* `in` – connects to J1.1, SI1.1, SI9.1.  
+  * Place it near J1.1; offset left by a few mm so the label sits to the left of the pin, `text_orient="left"`.
+
+* `lo_boost_in` – connects to J1.3, SI3.1, SI6.2, SI7.2, SI8.2.  
+  * Put it near the middle of the “lo‑boost‑in” column (around J1.3), `text_orient="right"`.
+
+* `out` – connects to J1.4, RV1.2, RV1.3, SI7.1, SW1.7.  
+  * Put it near J1.4, `text_orient="right"`.
+
+For each label we will call `get_pin_location` on the first pin of the element that should be the anchor point, then offset the label by ±10 mm horizontally to keep it from overlapping the pin.
+
+**4.  Wire connections – 3‑phase plan**
+
+The connections are divided into four groups corresponding to the four nets:
+
+| Net | Source pins | Destination pins | Description |
+|-----|-------------|-----------------|-------------|
+| **hi_boost_out** | C1‑1, C2‑1, C3‑1, C4‑1, C5‑1, C6‑1, C7‑1, J1‑2, RV1‑1, SI2‑2, SI5‑1 | All these pins are tied together. | Connect each source to a common wire that ends at the global label `hi_boost_out`. |
+| **in** | J1‑1, SI1‑1, SI9‑1 | All these pins are tied together. | Connect to the label `in`. |
+| **lo_boost_in** | J1‑3, SI3‑1, SI6‑2, SI7‑2, SI8‑2 | All these pins are tied together. | Connect to the label `lo_boins`. |
+| **out** | J1‑4, RV1‑2, RV1‑3, SI7‑1, SW1‑7 | All these pins are tied together. | Connect to the label `out`. |
+
+**5.  Connecting “j5_pX” and “si_…_j…_p…” nets**
+
+These are single‑to‑single connections, not part of a common net, so each will be a short wire between two pins:
+
+* `j5_p1` → C1‑2 ↔ SW1‑1  
+* `j5_p2` → C2‑2 ↔ SW1‑2  
+* `j5_p3` → C3‑2 ↔ C7‑2 ↔ SW1‑3  
+* `j5_p4` → C4‑2 ↔ SW1‑4  
+* `j5_p5` → C5‑2 ↔ SW1‑5  
+* `j5_p6` → C6‑2 ↔ SW1‑6  
+
+The SI‑switch nets are also single wires:
+
+* `si_hi_boost_j20_p3` → SI1‑2 ↔ SI2‑1  
+* `si_hi_cut_j12_p3` → SI3‑2 ↔ SI4‑2  
+* `si_hi_cut_j4_p2` → SI4‑1 ↔ SI5‑2 ↔ SI6‑1  
+
+**6.  GND net**
+
+GND must connect to:
+
+* J1‑5, J2‑1, J2‑2, J2‑3, J2‑4, J2‑5, SI8‑1, and SI9‑2.  
+All those pins will each be wired to the global GND symbol (`#PWR1`).
+
+**7.  Wire‑creation details**
+
+When `connect_pins` is called, the first two arguments are the references of the *first* end (symbol or label), and the last two are the second end.   
+Because we are using labels as the first part of a net, we will always pass `"1"` as the pin number for the label (the single pin of a label).  
+For component pins we use the actual pin name (e.g. `"1"`, `"2"`, `"3"`, `"MP"`, etc.).  
+
+All wires are created in a “one‑to‑many” pattern: connect each source to the label, then later connect the label to the common “hub” (a dummy node that we can think of as the net’s “wire‑hub”).  
+In practice, the first call to `connect_pins` for a given net will connect the first source to the label; subsequent calls will connect the next source to the same label.  
+KiCad will automatically merge these into a single net when `write_out_all_wires()` is called.
+
+**8.  Steps in the generated code**
+
+1. **Import helper module** – the code starts with the boiler‑plate that adds the project path and imports `kicad_sch_interface`.  
+2. **Place the centre symbol** – we choose the 7‑pin 74‑HC595 or any other central component that will act as the reference point.  
+3. **Place every other symbol** – using the offsets listed in section 2, each `add_schematic_symbol` call specifies the correct reference ID (e.g. `"C1"`, `"RV1"`, `"SW1"`, `"SI1"`), the value (e.g. `"0.018uF"`), rotation, and mirror.  
+4. **Place the four global labels** – each `add_label` call gets the position of the chosen anchor pin (often a midpoint of the net) and offsets it by ±10 mm.  
+5. **Connect the “in‑net” groups** – for each net, we iterate over its source pins and call `connect_pins(label_ref, "1", symbol_ref, pin_name)`.  
+6. **Connect the single‑to‑single nets** – the `connect_pins` calls for the j5/si nets are straightforward, one per pair.  
+7. **Connect GND** – the GND symbol is first added, then each GND‑pin is connected directly to the global GND label using the same pattern.  
+8. **Emit the wire list** – `write_out_all_wires()` finalises the schematic.
+
+**9.  Example of one connection block**
+
+```python
+# connect all “hi_boost_out” sources to the label
+for src in ["C1","C2","C3","C4","C5","C6","C7","J1","RV1","SI2","SI5"]:
+    src_pin = "1" if src in ["C1","C2","C3","C4","C5","C6","C7","SI5"] else ( "2" if src=="SI2" else "1")
+    connect_pins("hi_boost_out_0", "1", src, src_pin)
+```
+
+(The simplified example shows the idea of looping; in the final script each `connect_pins` will be a separate line, because the helper API does not support loops.)
+
+**10.  Final notes**
+
+* All coordinates are chosen as integers or one‑decimal values to keep the file readable.  
+* Rotations are all 0° except for any symbol that needs to be rotated to match its pin orientation (e.g. a 90° rotation for a horizontal resistor).  
+* Mirror is never used; all symbols are placed without flipping because the default orientation already matches the desired wire directions.  
+* The resulting schematic will be compact, with clear column‑aligned nets and a single central label hub, making it easy to verify the connectivity against the user’s specification.<|end|><|start|>assistant<|channel|>final<|message|>**1.  Overall plan**
+
+The user wants a KiCad schematic that implements the exact net‑list described in the *NETS* section.  
+All of the components are ordinary parts (capacitors, resistors, a pot, a rotary switch and two 5‑pin connectors) plus a global *GND* symbol and four global labels (`hi_boost_out`, `in`, `lo_boost_in`, `out`).  
+The code will
+
+* place every symbol on a 210 × 297 mm sheet with generous spacing,
+* place the four labels at convenient anchor points,
+* connect every pin that belongs to a net to the corresponding label,
+* create the single‑to‑single “j5_… / si_…” wires,
+* connect all GND pins to the global GND label,
+* and finally call `write_out_all_wires()`.
+
+All coordinates are taken relative to a central reference point (`center_x = 150 mm`, `center_y = 110 mm`).  Offsets are integers, so the layout stays clean and is easy to read.
+
+---
+
+**2.  Symbol placement**
+
+| Symbol | reference | value | relative offset (dx, dy) | rotation | mirror | reason for placement |
+|--------|-----------|--------|------------------------|----------|---------|--------------------|
+| J1 (Conn_01x05) | J1 | – | `(-120, +10)` | 0° | None | left‑most connector – its pins face right; the first two pins are used for the *in* and *hi‑boost‑out* nets. |
+| J2 (Conn_01x05) | J2 | – | `(-120, ‑15)` | 0° | None | same column as J1, lower; pins 1‑5 supply the GND net and the *lo‑boost‑in* net. |
+| C1 … C7 (Device:C) | C1‑C7 | 0.018 µF … 1 µF | `(-100, +20), (-100, +16), … (-100, ‑4)` | 0° | None | vertical column; the “1‑pins” all belong to *hi‑boost‑out*. |
+| RV1 (Device:R_Potentiometer) | RV1 | 470 kΩ | `(-80, +20)` | 0° | None | two position pins (1‑2) feed *hi‑boost‑out* and *out*. |
+| SW1 (Switch:SW_Rotary_1x6_MP) | SW1 | – | `(-60, +10)` | 0° | None | 6 positions give the *j5_pX* nets; the centre pin supplies the *out* net. |
+| SI1 … SI9 (Device:R) | SI1‑SI9 | 0 Ω … 100 kΩ | `(-45, +20), (-45, +16), … (-45, ‑12)` | 0° | None | each resistor is paired with a single source or destination pin for the *j5_…* and *si_…* nets. |
+| #PWR1 (power:GND) | #PWR1 | GND | `(-120, ‑25)` | 0° | None | global GND label; all GND pins are tied here. |
+
+All offsets keep the bounding boxes separated by at least 4 mm, so there is no overlap.
+
+---
+
+**3.  Global label placement**
+
+The four nets that need a visual label are placed near the “central” element of the net, then offset by 10 mm so the label text does not sit on the pin.
+
+| Label | anchor pin | label position (x, y) | orientation | comment |
+|-------|-----------|-----------------------|------------|----------|
+| `in` | J1.1 | `center_x‑120 + (-15), center_y+10` | `left` | pulled left of the pin |
+| `lo_boost_in` | J1.3 | `center_x‑120 + (-10), center_y‑3` | `right` | central in the *lo‑boost‑in* column |
+| `hi_boost_out` | the middle of the C‑column (C4) | `center_x‑100 + (20), center_y+6` | `right` | right of the column, so the wire runs horizontally |
+| `out` | J1.4 | `center_x‑120 + (25), center_y‑7` | `right` | right of the pin, near the *out* column |
+
+Each call to `add_label` uses the pin coordinates from `get_pin_location()` plus the ±10 mm offset.
+
+---
+
+**4.  Wire‑connection strategy**
+
+* **Common‑net wiring**
+
+  For each of the four nets we first connect **all source pins** to the corresponding label.  
+  The label behaves like a single‑pin node; every `connect_pins(label_ref, "1", component_ref, pin)` call automatically merges all those sources into one net when `write_out_all_wires()` is called.
+
+  Example:  
+  `hi_boost_out` – all C1‑1 … C7‑1, J1‑2, RV1‑1, SI2‑2, SI5‑1 are joined to the label `hi_boost_out_0`.
+
+* **Single‑to‑single connections**
+
+  The six *j5_pX* nets and three *si_…_j…_p…* nets are simple two‑pin links.  
+  Each pair is wired consecutively, e.g. `connect_pins("C1", "2", "SW1", "1")` for `j5_p1`.
+
+* **GND wiring**
+
+  All GND pins (J1‑5, J2‑1 … J2‑5, SI8‑1, SI9‑2) are directly attached to the global GND symbol `#PWR1`.  
+  Each of those connections uses the GND pin’s name `1` (the single pin of a GND symbol) and the component’s actual pin number, e.g. `connect_pins("#PWR1", "1", "J1", "5")`.
+
+* **Rotation‑dependent pin names**
+
+  All pins are referenced by their numeric or symbolic names as they appear in the symbol description (e.g. `"1"`, `"2"`, `"MP"`).  
+  No rotation is needed for any symbol; all are placed with 0° so the pin names already match the desired direction.
+
+---
+
+**5.  Step‑by‑step outline of the generated script**
+
+1. **Boiler‑plate** – import the project path and the `kicad_sch_interface` module.  
+2. **Central symbol** – place a 74‑HC595 (or any suitable core) at `(150, 110)`; it serves as the reference point for all offsets.  
+3. **Place each component** – call `add_schematic_symbol()` with the library, name, reference, value, and offset described in section 2.  
+4. **Add the four global labels** – for each of `in`, `lo_boost_in`, `hi_boost_out`, `out` call `add_label()` with the calculated position and orientation.  
+5. **Connect all *in‑net* sources** – for each net use `connect_pins(label_ref, "1", component_ref, pin)` for every source pin.  
+6. **Connect the single‑to‑single j5 / si nets** – each pair is wired with a single `connect_pins()` call.  
+7. **Connect all GND pins** – each GND pin is wired directly to `#PWR1`.  
+8. **Finish** – `write_out_all_wires()` creates the actual wire objects in the KiCad file.
+
+All function calls are written as individual statements (no loops), because the provided API does not support loops.  The resulting schematic will be tidy, all nets will be correctly merged, and the layout will be centered on the sheet.
+
+---

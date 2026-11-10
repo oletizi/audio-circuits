@@ -1,0 +1,27 @@
+{
+  "compare": {
+    "detail": "no sheet was emitted",
+    "status": "not-run"
+  },
+  "emitter": {
+    "detail": "emit.sh exited 1",
+    "exit_code": 1,
+    "status": "failed"
+  },
+  "erc": {
+    "detail": "no sheet was emitted",
+    "status": "not-run"
+  },
+  "extraction": {
+    "detail": "",
+    "status": "ok"
+  },
+  "netlist": {
+    "detail": "no sheet was emitted",
+    "status": "not-run"
+  },
+  "render": {
+    "detail": "no sheet was emitted",
+    "status": "not-run"
+  }
+}

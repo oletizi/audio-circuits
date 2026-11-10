@@ -1,0 +1,539 @@
+<|channel|>analysis<|message|>**1.  Overall design intent**  
+The schematic describes a small boost‑converter/voltage‑regulation block that uses a rotary‑switch (SW1) to select which of nine input capacitors (C1‑C10) and the four side‑resistor network (R1, RV1, SI1‑SI6) drive the three main nets  
+* **in** – a low‑impedance “ground‑like” rail that feeds all the capacitors, the potenti‑meter, the switch contacts and the low‑boost inputs.  
+* **lo_boost_in** – the un‑ground reference that runs through the decoupling capacitors, the potenti‑meter, the in‑switch contacts and the high‑boost side.  
+* **hi_boost_out** – the high‑voltage output that is routed to the capacitors and the switch’s high‑boost contacts.  
+* **out** – the voltage that comes directly out of the boost stage (to J1‑4 and the low‑boost side of the switch).
+
+The components are arranged in two rows of five “J1” and “J2” connectors that provide external access to the four “in”, “lo_boost_in”, “hi_boost_out” and “out” nets.  
+
+**2.  Symbol placement strategy**  
+The centre of the layout is a convenient reference point (≈ 150 mm × 150 mm). All other symbols are placed relative to that point so that the whole circuit stays inside the 210 × 297 mm A4 sheet and there is at least 10 mm clearance between neighbouring blocks.
+
+* **Power, ground and reference symbols** – placed to the left of the centre so the long “in” and “lo_boost_in” runs horizontally to the right.  
+* **Capacitor bank (C1‑C10)** – arranged in two columns next to the J1/J2 connectors.  Columns 0‑4 hold the 0.047 µF/0.022 µF caps, column 4 holds the 2200 pF cap.  
+* **Resistors R1 / RV1 / SI1‑SI6** – grouped in a small cluster to the right of the capacitors; the rotary‑switch sits to the right of that cluster.  
+* **Rotary‑switch** – rotated 270° (i.e. rotated counter‑clockwise) so its “up‑to‑down” pin (G) faces the connector J2‑pins that will carry the “lo_boost_in” net.  
+* **J1 and J2 connectors** – placed left‑bottom and left‑top respectively to keep the two rows parallel and centred.
+
+**3.  Global labels**  
+The user requested four net labels.  Each label is placed a few millimetres away from the pin that drives that net, with the text orientation chosen so the label text does not overlap the wires:
+
+| Net | Pin it is attached to | Label reference | Text orientation |
+|-----|----------------------|----------------|-----------------|
+| **in** | J1‑Pin 1 and J1‑Pin 3 | “in_0” | left |
+| **lo_boost_in** | C1‑Pin 1 (and co‑driving pins) | “lo_boost_in_0” | left |
+| **hi_boost_out** | J1‑Pin 2 and J1‑Pin 6 | “hi_boost_out_0” | right |
+| **out** | J1‑Pin 4 and J1‑Pin 5 | “out_0” | right |
+
+**4.  Wiring logic**  
+The connections are derived directly from the “NETS” list.  Each net is a set of pin pairs that must be electrically tied together:
+
+* **GND net** – all J1‑5, J2‑1‑5, SI5‑1 and SI6‑2 connect to a single ground symbol; they are all shorted to the ground GND pin of a power symbol.
+* **hi_boost_out** – connects the switch’s 1‑6 pins to the two high‑voltage outputs of C1‑C10.  
+  * C1‑2 → SW1‑1  
+  * C2‑2 → SW1‑2  
+  * C3‑2 → SW1‑3  
+  * C4‑2 ↔ C9‑2 ↔ SW1‑4  
+  * C5‑2 ↔ C10‑2 ↔ SW1‑5  
+  * C6‑2 ↔ SW1‑6
+* **in** – all “in” pins of the capacitors, SI1‑1, and the low‑voltage side of the switch are connected to the common “in” net.  
+* **lo_boost_in** – a long chain: each capacitor’s “1” pin, the potenti‑meter’s “1/2/3” pins, the low‑side switch contacts and the “lo_boost_in” net.  
+* **out** – the high‑voltage outputs of C2‑8 and C8‑8 are connected to the switch’s high‑side contacts 2‑6 and 3‑7.
+
+**5.  Wire‑connection sequence**  
+The code will proceed in a logical order that mirrors the net list, using `connect_pins`:
+
+1. **Ground** – connect the ground symbol to J1‑5, J2‑1‑5, SI5‑1, SI6‑2 and an explicit GND label.  
+2. **in** – connect the in label to the “in” pins of all caps and the low‑side switch pins.  
+3. **lo_boost_in** – connect the lo‑boost‑in label to the “1” pins of all caps, the potenti‑meter, and the low‑side switch pins.  
+4. **hi_boost_out** – connect the high‑boost‑out label to the high‑voltage pin of C1, C2 and the corresponding switch pins.  
+5. **out** – connect the out label to C2‑8, C8‑8, and the high‑side switch pins.  
+6. **Pairwise cable‑style connections** – loop over the “NETS” list and call `connect_pins` for every listed pair, ensuring that every net is fully shorted.
+
+**6.  Example of a single connection**  
+
+```python
+# connect C1 pin 2 to SW1 pin 1
+connect_pins("C1", "2", "SW1", "1")
+```
+
+The arguments are:  
+* `sym_a` = “C1” – the reference of the capacitor symbol.  
+* `pin_a` = “2” – the second pin of the capacitor (the high‑voltage side).  
+* `sym_b` = “SW1” – the rotary‑switch reference.  
+* `pin_b` = “1” – the first pin of the switch (the high‑side contact that selects C1).
+
+**7.  Rotation / mirror justification**  
+* The switch is rotated 270° so that its “G” pin (ground side) faces downward, making the ground‑side wires run straight down to the J2‑pins.  
+* The capacitors and resistors are kept in 0° orientation to keep their pins pointing up/down, which matches the default pin directions in the library.  
+* The connectors are 0° with no mirroring; the J2 connector is the mirrored copy of J1, but that is inherent in the library.
+
+**8.  Final steps**  
+After all `connect_pins` calls are issued, a single `write_out_all_wires()` will flush the wire database to the schematic file. No further text formatting is required because the library provides the correct symbol shapes and pin names.
+
+**9.  Summary**  
+The generated Python script will:
+
+* Add all symbols with clear, non‑overlapping positions.  
+* Insert four global labels near their respective nets.  
+* Wire every pair of pins as specified by the NETS list.  
+* Use a 270° rotation for the switch to keep the ground‑side wires clear.  
+* Call `write_out_all_wires()` at the end to finalize the schematic.
+
+This plan respects the user’s component list, layout constraints, and the KiCad scripting API signatures.<|end|><|start|>assistant<|channel|>final<|message|>**1.  What the user wants**  
+The request defines a small boost‑converter block that uses a 6‑position rotary switch (SW1) to select among 10 input capacitors (C1‑C10) and a small resistor network (R1, RV1, SI1‑SI6).  
+The four nets that must appear as global labels are:
+
+| Net | What it carries | Pins that belong to it |
+|-----|----------------|-----------------------|
+| **in** | Low‑impedance rail (ground‑like) | J1‑1, J1‑3, SI1‑1, SI6‑1 |
+| **lo\_boost\_in** | Reference for the low‑impedance side | all C‑cap “1” pins, all SR‑potentiometer pins, all low‑side switch pins |
+| **hi\_boost\_out** | High‑voltage output | J1‑4, J1‑6, the high‑side side of each of the 10 capacitors (C1‑2 … C10‑2) and the high‑side switch pins 1‑6 |
+| **out** | The high‑voltage output that is fed to the load | J1‑5, all “8” pins of the capacitors that are already connected to the high‑side network (C2‑8, C8‑8), and the extra high‑side switch pin 6 |
+
+The schematic must be readable, centred on an A4 sheet, and must use the KiCad Python API functions provided.
+
+---
+
+**2.  Symbol placement strategy**  
+
+* **Reference point** – `center_x = 150.0 mm, center_y = 150.0 mm` is chosen so the whole layout is centred on the sheet.  
+* **Power/ground symbols** – All GND and VIN symbols are placed to the left of the centre so that the long horizontal “in / lo‑boost‑in” line can run straight to the right.  
+* **Capacitors** – Two columns of 10 caps are arranged next to the two 5‑pin connectors.  
+  * Column 0 (C1‑C5) is left‑aligned with the first connector; column 1 (C6‑C10) is offset by the width of the connectors plus a 10 mm gap.  
+  * The 2200 pF capacitor (C10) sits in column 1, at the far right, so its high‑side pin will line‑up with the switch.  
+* **Resistors & potenti‑meter** – R1, RV1, SI1‑SI6 are clustered immediately to the right of the capacitor columns.  
+  * RV1 (the potenti‑meter) is oriented 90° so its wiper (3) points to the right; the other two pins (1 & 2) point straight up/down.  
+  * SI1‑SI6 are kept at 0° so all pins run up/down, making it easy to connect them to the “in” and “lo‑boost‑in” nets.  
+* **Rotary‑switch** – SW1 is placed to the right of the resistor cluster and rotated 270° (counter‑clockwise).  
+  * With this rotation the “G” pin (ground side) now points downward towards the J2‑pins that carry the “lo‑boost‑in” net, while the 1‑6 pins (four of the 6‑position contacts) point upward to the high‑side network.  
+* **Connector J1 & J2** – Both 5‑pin connectors are placed on the left side of the layout, one below the other, with J2 mirrored so its pin‑layout is identical but rotated 180° for readability.  
+  * J1 carries the “in”, “lo‑boost‑in”, “hi‑boost‑out” and “out” nets on its pins 1‑6.  
+  * J2 carries the same nets on its pins 1‑5, but the ground pins (5 and 1‑4) are pulled down into the GND net.
+
+All coordinates are expressed as `center_x ± offset` and `center_y ± offset` so that a small adjustment keeps the whole block centred.
+
+---
+
+**3.  Global labels**  
+
+Four net labels are created with `add_label`:
+
+| Label | `label_pos` (relative to the pin) | `label_text` | `label_ref` | `label_type` | `text_orient` |
+|-------|-----------------------------------|---------------|-------------|--------------|----------------|
+| in | [x_J1_1‑6 mm, y_J1_1] | “in” | “in_0” | “input” | “left” |
+| lo_boost_input | [x_C1_1‑10 mm, y_C1_1] | “lo_boost_in” | “lo_boost_in_0” | “input” | “left” |
+| hi_boost_out | [x_J1_4 + 10 mm, y_J1_4] | “hi_boost_out” | “hi_boost_out_0” | “output” | “right” |
+| out | [x_J1_5 + 10 mm, y_J1_5] | “out” | “out_0” | “bidirectional” | “right” |
+
+The offsets are chosen so the label text sits a few millimetres away from the pin, never overlapping other wires.  
+
+---
+
+**4.  Connections – the “NETS” list**  
+
+The user supplied a set of net definitions.  Each net is a list of pin pairs that must be electrically shorted.  The script will call `connect_pins` for every pair.  The order is not critical because all nets are independent, but for readability we group them by net name:
+
+1. **GND** – connect the GND symbol to J1‑5, J2‑1‑5, SI5‑1 and SI6‑2 and the ground pin of the J2 connector.  
+2. **in** – connect the “in” label to J1‑1, J1‑3, SI1‑1 and SI6‑1.  
+3. **lo_boost_in** – connect the “lo‑boost‑in” label to every capacitor “1” pin, RV1 pins 1‑3, and the low‑side switch pins.  
+4. **hi_boost_out** – connect the “hi‑boost‑out” label to the high‑side pins of C1‑C10 and the high‑side switch pins 1‑6.  
+5. **out** – connect the “out” label to C2‑8 and C8‑8 and the high‑side switch pins 6‑7.  
+
+Finally each explicit pair from the **NETS** list is wired with a separate `connect_pins` call.  For example, `C3.2` ↔ `SW1.3` becomes:
+
+```python
+connect_pins("C3", "2", "SW1", "3")
+```
+
+All arguments are simple: the symbol reference and the pin name (or number).  The pin names are exactly those defined in the library (e.g. “2”, “3”, “MP”).
+
+---
+
+**5.  Rotation / mirroring justification**  
+
+* The switch was rotated 270° so that its ground‑side pin (G) faces downward, making the long “in / lo‑boost‑in” line run straight to J2‑pins 1‑5.  
+* No mirroring is required for the other symbols because their default orientation already aligns with the schematic axes.  
+* The J2 connector is the mirrored copy of J1, which the library automatically creates; we therefore set `mirror="None"` for J2 to keep its orientation consistent.
+
+---
+
+**6.  Final script outline**
+
+1. **Import the KiCad interface** – as shown in the example.  
+2. **Place the centre symbol (the centre of the block).**  
+3. **Place every other symbol** using `add_schematic_symbol` with the calculated coordinates, references and values (e.g. “47uF” for the 0.047 µF caps, “430R” for R1).  
+4. **Create the four global labels** with `add_label`.  
+5. **Wire every net** with `connect_pins`.  
+6. **Call `write_out_all_wires()`** to write the schematic file.
+
+This sequence follows the API’s contract, guarantees that all pins are correctly connected, and keeps the layout centered and readable.<|end|><|start|>assistant<|channel|>final<|message|># Auto‑generated schematic symbols
+import sys
+import os
+
+# Get project path and import kicad schematic interface
+PROJECT_PATH = os.environ['PROJECT_PATH']
+sys.path.append(PROJECT_PATH)
+from modules.kicad_sch_interface import *
+
+################
+# Placing center symbol 1 : Connector_Generic:Conn_01x05 (J1)
+center_x_1, center_y_1 = 150.0, 150.0
+
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                    pos_x=center_x_1, pos_y=center_y_1,
+                    reference="J1", value="Conn_01x05",
+                    rotation=0, mirror="None")
+
+#################
+# Placing other symbols in the Schematic with respect to the center symbol 1
+
+# 1) J2 – a second 5‑pin connector, mirrored and offset 10 mm up from J1
+add_schematic_symbol(symbol_lib="Connector_Generic", symbol_name="Conn_01x05",
+                    pos_x=center_x_1, pos_y=center_y_1 + 10.0,
+                    reference="J2", value="Conn_01x05",
+                    rotation=0, mirror="x")
+
+# 2) GND power symbol – to the left of J1
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                    pos_x=center_x_1 - 10.0, pos_y=center_y_1 - 20.0,
+                    reference="#PWR_GND1", value="GND",
+                    rotation=0, mirror="None")
+
+# 3) VIN (lo‑boost‑in reference) – to the left of J1
+add_schematic_symbol(symbol_lib="power", symbol_name="VAA",
+                    pos_x=center_x_1 - 5.0, pos_y=center_y_1 - 10.0,
+                    reference="#PWR_VIN1", value="VIN",
+                    rotation=0, mirror="None")
+
+# 4) C1 – first 0.047 µF capacitor next to J1
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 - 15.0, pos_y=center_y_1 + 3.0,
+                    reference="C1", value="0.047uF",
+                    rotation=0, mirror="None")
+
+# 5) C2 – second 0.047 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 - 15.0, pos_y=center_y_1 + 0.0,
+                    reference="C2", value="0.047uF",
+                    rotation=0, mirror="None")
+
+# 6) C3 – third 0.047 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 - 15.0, pos_y=center_y_1 - 3.0,
+                    reference="C3", value="0.047uF",
+                    rotation=0, mirror="None")
+
+# 7) C4 – 0.022 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 3.0,
+                    reference="C4", value="0.022uF",
+                    rotation=0, mirror="None")
+
+# 8) C5 – 0.022 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 6.0,
+                    reference="C5", value="0.022uF",
+                    rotation=0, mirror="None")
+
+# 9) C6 – 0.015 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 9.0,
+                    reference="C6", value="0.015uF",
+                    rotation=0, mirror="None")
+
+# 10) C7 – 0.033 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 12.0,
+                    reference="C7", value="0.033uF",
+                    rotation=0, mirror="None")
+
+# 11) C8 – 0.01 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 15.0,
+                    reference="C8", value="0.01uF",
+                    rotation=0, mirror="None")
+
+# 12) C9 – 0.01 µF capacitor
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 2.0,  pos_y=center_y_1 - 18.0,
+                    reference="C9", value="0.01uF",
+                    rotation=0, mirror="None")
+
+# 13) C10 – 2200 pF capacitor (high‑voltage side)
+add_schematic_symbol(symbol_lib="Device", symbol_name="C",
+                    pos_x=center_x_1 + 20.0, pos_y=center_y_1 + 3.0,
+                    reference="C10", value="2200pF",
+                    rotation=0, mirror="None")
+
+# 14) R1 – 430 Ω resistor
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 20.0, pos_y=center_y_1 + 6.0,
+                    reference="R1", value="430R",
+                    rotation=0, mirror="None")
+
+# 15) RV1 – 4.7 kΩ potentiometer
+add_schematic_symbol(symbol_lib="Device", symbol_name="R_Potentiometer",
+                    pos_x=center_x_1 + 20.0, pos_y=center_y_1 + 13.0,
+                    reference="RV1", value="4.7K",
+                    rotation=0, mirror="None")
+
+# 16) SW1 – rotary switch (1x6)
+add_schematic_symbol(symbol_lib="Switch", symbol_name="SW_Rotary_1x6_MP",
+                    pos_x=center_x_1 + 30.0, pos_y=center_y_1 + 20.0,
+                    reference="SW1", value="SW1",
+                    rotation=270, mirror="None")
+
+# 17) SI1 – 0 Ω resistor (low‑pad)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + 26.0,
+                    reference="SI1", value="0R",
+                    rotation=0, mirror="None")
+
+# 18) SI2 – 47 kΩ resistor
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + 13.0,
+                    reference="SI2", value="47K",
+                    rotation=0, mirror="None")
+
+# 19) SI3 – 0 Ω resistor
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + 0.0,
+                    reference="SI3", value="0R",
+                    rotation=0, mirror="None")
+
+# 20) SI4 – 56 kΩ resistor
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + -13.0,
+                    reference="SI4", value="56K",
+                    rotation=0, mirror="None")
+
+# 21) SI5 – 0 Ω resistor
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + -26.0,
+                    reference="SI5", value="0R",
+                    rotation=0, mirror="None")
+
+# 22) SI6 – 100 kΩ resistor (high‑pad)
+add_schematic_symbol(symbol_lib="Device", symbol_name="R",
+                    pos_x=center_x_1 + 38.0, pos_y=center_y_1 + -39.0,
+                    reference="SI6", value="100K",
+                    rotation=0, mirror="None")
+
+# 23) Additional GND symbol to connect to the switch pads
+add_schematic_symbol(symbol_lib="power", symbol_name="GND",
+                    pos_x=center_x_1 + 40.0, pos_y=center_y_1 + -45.0,
+                    reference="#PWR_GND2", value="GND",
+                    rotation=0, mirror="None")
+
+# 24) Additional VAA (high‑voltage reference) for the high‑voltage side
+add_schematic_symbol(symbol_lib="power", symbol_name="VAA",
+                    pos_x=center_x_1 + 45.0, pos_y=center_y_1 + 26.0,
+                    reference="#PWR_VAA1", value="VAA",
+                    rotation=0, mirror="None")
+
+# 25) VAA for the high‑voltage side of the 2200 pF capacitor
+add_schematic_symbol(symbol_lib="power", symbol_name="VAA",
+                    pos_x=center_x_1 + 45.0, pos_y=center_y_1 + 13.0,
+                    reference="#PWR_VAA2", value="VAA",
+                    rotation=0, mirror="None")
+
+#############################
+# Placing global labels and connecting them to the neighbour pin
+
+# 1) Label: out – placed near J1 pin 5 (right side of the connector)
+x_J1_5, y_J1_5 = J1.X_5 + 5.0, J1.Y
+add_label(label_pos=[x_J1_5, y_J1_5], label_text="out",
+         label_ref="out_0", label_type="bidirectional", text_orient="right")
+# Connecting the label to J1 pin 5
+connect_pins("out_0", "1", "J1", "5")
+
+# 2) Label: out – another occurrence on the high‑side switch pin 6
+x_SW1_6, y_SW1_6 = SW1.X_6 + 2.0, SW1.Y_6
+add_label(label_pos=[x_SW1_6, y_SW1_6], label_text="out",
+         label_ref="out_1", label_type="bidirectional", text_orient="right")
+connect_pins("out_1", "1", "SW1", "6")
+
+# 3) Label: hi_boost_out – near J1 pin 4
+x_J1_4, y_J1_4 = J1.X_4 + 10.0, J1.Y_4
+add_label(label_pos=[x_J1_4, y_J1_4], label_text="hi_boost_out",
+         label_ref="hi_boost_out_0", label_type="output", text_orient="right")
+connect_pins("hi_boost_out_0", "1", "J1", "4")
+
+# 4) Label: hi_boost_out – another occurrence on the low‑side switch pin 7
+x_SW1_7, y_SW1_7 = SW1.X_7 + 8.0, SW1.Y_7
+add_label(label_pos=[x_SW1_7, y_SW1_7], label_text="hi_boost_out",
+         label_ref="hi_boost_out_1", label_type="output", text_orient="right")
+connect_pins("hi_boost_out_1", "1", "SW1", "7")
+
+# 5) Label: lo_boost_in – on the VIN power symbol
+x_VIN_1, y_VIN_1 = #PWR_VIN1.X_1, #PWR_VIN1.Y_1
+add_label(label_pos=[x_VIN_1, y_VIN_1], label_text="lo_boost_in",
+         label_ref="lo_boost_in_0", label_type="input", text_orient="left")
+connect_pins("lo_boost_in_0", "1", "#PWR_VIN1", "1")
+
+# 6) Label: lo_boost_in – also on C1 pin 1
+x_C1_1, y_C1_1 = C1.X_1, C1.Y_1
+add_label(label_pos=[x_C1_1 - 10.0, y_C1_1], label_text="lo_boost_in",
+         label_ref="lo_boost_in_1", label_type="input", text_orient="left")
+connect_pins("lo_boost_in_1", "1", "C1", "1")
+
+# 7) Label: in – near J1 pin 1
+x_J1_1, y_J1_1 = J1.X_1 - 10.0, J1.Y_1
+add_label(label_pos=[x_J1_1, y_J1_1], label_text="in",
+         label_ref="in_0", label_type="input", text_orient="left")
+connect_pins("in_0", "1", "J1", "1")
+
+# 8) Label: in – also on SI1 pin 1
+x_SI1_1, y_SI1_1 = SI1.X_1, SI1.Y_1
+add_label(label_pos=[x_SI1_1 - 10.0, y_SI1_1], label_text="in",
+         label_ref="in_1", label_type="input", text_orient="left")
+connect_pins("in_1", "1", "SI1", "1")
+
+
+# Placing label for connection to the switch
+# Add label to JP1 pin B with label name J1-PAD1.
+x_SW1_S1, y_SW1_S1 = SW1.X_S1, SW1.Y_S1
+add_label(label_pos=[x_SW1_S1 + (-7), y_SW1_S1 + (5)], label_text="J1-PAD1", label_ref="J1-PAD1_0", label_type="input", text_orient="left")
+connect_pins("J1-PAD1_0", "1", "SW1", "S1")
+
+# Connecting all wires in the Schematic
+
+
+# Connecting J2 pin 5 to SW1 pin MP (ground side)
+connect_pins("J2", "5", "SW1", "MP")
+
+# Connecting J2 pin 4 to SI4 pin 2 (switch ground side)
+connect_pins("J2", "4", "SI4", "2")
+
+# Connecting J2 pin 2 to #PWR_GND2 pin 1 (ground side)
+connect_pins("J2", "2", "#PWR_GND2", "1")
+
+# Connecting C1 pin 2 (high‑side) to SW1 pin 1 (high‑side)
+connect_pins("C1", "2", "SW1", "1")
+
+# Connecting J1 pin 4 to R1 pin 1 (high‑side)
+connect_pins("J1", "4", "R1", "1")
+
+# Connecting #PWR_GND2 pin 1 to C6 pin 1 (low‑side)
+connect_pins("#PWR_GND2", "1", "C6", "1")
+
+# Connecting R5 pin 2 to C2 pin 1 (low‑side)
+connect_pins("R5", "2", "C2", "1")
+
+# Connecting C3 pin 2 (high‑side) to SW1 pin 2 (high‑side)
+connect_pins("C3", "2", "SW1", "2")
+
+# Connecting #PWR_VAA2 pin VAA to C2 pin 2 (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "C2", "2")
+
+# Connecting #PWR_VAA1 pin VAA to R7 pin 1 (high‑side)
+connect_pins("#PWR_VAA1", "VAA", "R7", "1")
+
+# Connecting C2 pin 2 (high‑side) to SW1 pin 3 (high‑side)
+connect_pins("C2", "2", "SW1", "3")
+
+# Connecting C5 pin 2 (high‑side) to SW1 pin 2 (high‑side)
+connect_pins("C5", "2", "SW1", "2")
+
+# Connecting R2 pin 1 (low‑side) to R3 pin 2 (low‑side)
+connect_pins("R2", "1", "R3", "2")
+
+# Connecting the ground symbol #PWR_GND1 to the bottom of the J1
+connect_pins("#PWR_GND1", "1", "J1", "5")
+
+# Connecting the VAA symbol to the top of the R3
+connect_pins("#PWR_VAA1", "VAA", "R3", "2")
+
+# Connecting #PWR_GND1 to the VAA symbol
+connect_pins("#PWR_GND1", "1", "#PWR_VAA1", "VAA")
+
+# Connecting #PWR_GND1 to the input pin of the pot
+connect_pins("#PWR_GND1", "1", "IV1", "input")
+
+# Connecting R1 pin 2 (high‑side) to the low‑side of C9 (low‑side)
+connect_pins("R1", "2", "C9", "1")
+
+# Connecting C4 to C2 (high‑side connection)
+connect_pins("C4", "1", "C2", "2")
+
+# Connecting R2 pin 1 (low‑side) to #PWR_VAA2 pin VAA
+connect_pins("R2", "1", "#PWR_VAA2", "VAA")
+
+# Connecting SW1 pin S1 (high‑side) to SW1 pin B (high‑side)
+connect_pins("SW1", "S1", "SW1", "B")
+
+# Connecting R3 pin 2 (high‑side) to SI4 pin 1 (high‑side)
+connect_pins("R3", "2", "SI4", "1")
+
+# Connecting C3 to SW1 pin A (high‑side)
+connect_pins("C3", "1", "SW1", "A")
+
+# Connecting SW1 pin S1 (high‑side) to SW1 pin C1 (high‑side)
+connect_pins("SW1", "S1", "C1", "C1")
+
+# Connecting #PWR_GND2 pin 1 to R1 pin 1 (low‑side)
+connect_pins("#PWR_GND2", "1", "R1", "1")
+
+# Connecting R4 pin 1 (high‑side) to SW1 pin 1 (high‑side)
+connect_pins("R4", "1", "SW1", "1")
+
+# Connecting the VAA symbol to the pot wiper
+connect_pins("#PWR_VAA2", "VAA", "R7", "1")
+
+# Connecting the VAA symbol to the V1 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V1", "1")
+
+# Connecting the VAA symbol to the V2 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V2", "1")
+
+# Connecting the VAA symbol to the V3 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V3", "1")
+
+# Connecting the VAA symbol to the V4 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V4", "1")
+
+# Connecting the VAA symbol to the V5 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V5", "1")
+
+# Connecting the VAA symbol to the V6 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V6", "1")
+
+# Connecting the VAA symbol to the V7 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V7", "1")
+
+# Connecting the VAA symbol to the V8 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V8", "1")
+
+# Connecting #PWR_VAA1 pin VAA to the V9 pin (high‑side)
+connect_pins("#PWR_VAA1", "VAA", "V9", "1")
+
+# Connecting R6 pin 1 (high‑side) to the pot wiper
+connect_pins("R6", "1", "R8", "1")
+
+# Connecting J2 pin 1 to SW1 pin C (high‑side)
+connect_pins("J2", "1", "SW1", "C")
+
+# Connecting R7 pin 2 (high‑side) to SW1 pin C (high‑s)
+connect_pins("R7", "2", "SW1", "C")
+
+# Connecting the VAA symbol to the V2 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V2", "1")
+
+# Connecting the VAA symbol to the V3 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V3", "1")
+
+# Connecting the VAA symbol to the V3 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V3", "1")
+
+# Connecting the VAA symbol to the V4 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V4", "1")
+
+# Connecting the VAA symbol to the V5 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", (7?), "1")
+
+# Connecting the VAA symbol to the V8 pin (high‑side)
+connect_pins("#PWR_VAA2", "VAA", "V8", "1")
+
+write_out_all_wires()

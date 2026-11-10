@@ -1,0 +1,90 @@
+2026-11-10T09:23:41Z host tools: kicad-cli 10.0.5, magick present
+2026-11-10T09:23:41Z pultec-hi-boost: request directory
+pultec-hi-boost: fidelity equal, 4917 prompt tokens, rendered 2026-11-10
+2026-11-10T09:23:41Z pultec-hi-cut: request directory
+pultec-hi-cut: fidelity equal, 4668 prompt tokens, rendered 2026-11-10
+2026-11-10T09:23:41Z pultec-low-boost: request directory
+pultec-low-boost: fidelity equal, 4638 prompt tokens, rendered 2026-11-10
+2026-11-10T09:23:41Z pultec-low-cut: request directory
+pultec-low-cut: fidelity equal, 4660 prompt tokens, rendered 2026-11-10
+2026-11-10T09:23:41Z pultec-mid: request directory
+pultec-mid: fidelity equal, 5505 prompt tokens, rendered 2026-11-10
+2026-11-10T09:23:41Z pultec-hi-boost attempt 1: complete, skipped
+2026-11-10T09:23:41Z pultec-hi-boost attempt 2: running
+pultec-hi-boost attempt 2: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:24:31Z pultec-hi-boost attempt 3: running
+pultec-hi-boost attempt 3: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:25:59Z pultec-hi-cut attempt 1: running
+pultec-hi-cut attempt 1: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:26:46Z pultec-hi-cut attempt 2: running
+pultec-hi-cut attempt 2: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:27:58Z pultec-hi-cut attempt 3: running
+pultec-hi-cut attempt 3: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:29:30Z pultec-low-boost attempt 1: running
+pultec-low-boost attempt 1: page (page_produced=True, token_identity=verified)
+2026-11-10T09:30:12Z pultec-low-boost attempt 2: running
+Traceback (most recent call last):
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/run_attempt.py", line 142, in ensure_response
+    text, meta = generation.generate(client, prompt_ids, seed_for(attempt), request_id, provenance)
+                 ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/generation.py", line 122, in generate
+    payload, choice, text = parse_completion(status, raw)
+                            ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/generation.py", line 99, in parse_completion
+    raise RejectedPayload(status, raw, "the server returned an error status")
+generation.RejectedPayload: HTTP 403: the server returned an error status
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/run_attempt.py", line 243, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/run_attempt.py", line 229, in main
+    record = run_attempt(args.exec_dir, args.board, args.attempt, RealHostTools(),
+                         generation.HttpCompletionsClient, os.environ, args.rerun_reason,
+                         args.allow_regeneration)
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/run_attempt.py", line 187, in run_attempt
+    ensure_response(directory, board, attempt, prompt_ids, client_factory, env, allow_regeneration)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/orion/work/audio-circuits-work/ai-schgen/tools/schgen-drawing-trial/run_attempt.py", line 145, in ensure_response
+    raise generation.GenerationError(
+    ...<2 lines>...
+    ) from err
+generation.GenerationError: schgen-trial-pultec-low-boost-attempt-2-c82a9582-52b4-4ad7-8267-257050755c1b: HTTP 403: the server returned an error status. The payload is kept at /Users/orion/work/audio-circuits-work/ai-schgen/docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-2/rejected/20261110T093013.801252Z; request.sent stays, so the next run records this attempt as generation-lost before it sends again
+2026-11-10T09:30:13Z pultec-low-boost attempt 2: run_attempt.py exited 1; stopping. Relaunch resumes here.
+pultec-low-boost attempt 2: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:47:12Z host tools: kicad-cli 10.0.5, magick present
+2026-11-10T09:47:12Z pultec-hi-boost: request directory
+pultec-hi-boost: fidelity equal, 4917 prompt tokens, rendered 2026-11-10
+2026-11-10T09:47:12Z pultec-hi-cut: request directory
+pultec-hi-cut: fidelity equal, 4668 prompt tokens, rendered 2026-11-10
+2026-11-10T09:47:12Z pultec-low-boost: request directory
+pultec-low-boost: fidelity equal, 4638 prompt tokens, rendered 2026-11-10
+2026-11-10T09:47:12Z pultec-low-cut: request directory
+pultec-low-cut: fidelity equal, 4660 prompt tokens, rendered 2026-11-10
+2026-11-10T09:47:12Z pultec-mid: request directory
+pultec-mid: fidelity equal, 5505 prompt tokens, rendered 2026-11-10
+2026-11-10T09:47:12Z pultec-hi-boost attempt 1: complete, skipped
+2026-11-10T09:47:12Z pultec-hi-boost attempt 2: complete, skipped
+2026-11-10T09:47:12Z pultec-hi-boost attempt 3: complete, skipped
+2026-11-10T09:47:12Z pultec-hi-cut attempt 1: complete, skipped
+2026-11-10T09:47:12Z pultec-hi-cut attempt 2: complete, skipped
+2026-11-10T09:47:12Z pultec-hi-cut attempt 3: complete, skipped
+2026-11-10T09:47:12Z pultec-low-boost attempt 1: complete, skipped
+2026-11-10T09:47:12Z pultec-low-boost attempt 2: complete, skipped
+2026-11-10T09:47:12Z pultec-low-boost attempt 3: running
+pultec-low-boost attempt 3: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:48:09Z pultec-low-cut attempt 1: running
+pultec-low-cut attempt 1: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:49:48Z pultec-low-cut attempt 2: running
+pultec-low-cut attempt 2: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:50:37Z pultec-low-cut attempt 3: running
+pultec-low-cut attempt 3: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:51:22Z pultec-mid attempt 1: running
+pultec-mid attempt 1: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:52:08Z pultec-mid attempt 2: running
+pultec-mid attempt 2: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:53:23Z pultec-mid attempt 3: running
+pultec-mid attempt 3: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T09:54:29Z all attempts complete

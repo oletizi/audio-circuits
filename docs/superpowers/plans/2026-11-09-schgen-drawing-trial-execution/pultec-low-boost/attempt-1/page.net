@@ -1,0 +1,1293 @@
+(export
+	(version "E")
+	(design
+		(source "/Users/orion/work/audio-circuits-work/ai-schgen/docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+		(date "2026-11-10T01:30:11")
+		(tool "Eeschema 10.0.5")
+		(sheet
+			(number "1")
+			(name "/")
+			(tstamps "/")
+			(title_block
+				(title)
+				(company)
+				(rev)
+				(date)
+				(source "page.kicad_sch")
+				(comment
+					(number "1")
+					(value "")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+	)
+	(components
+		(comp
+			(ref "C1")
+			(value "0.33uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "b0c4c35f-a74b-4db6-a4e5-3aeee67dbc08")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C2")
+			(value "0.22uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "bc667c2c-a094-479d-94d1-3b0ccecea8fa")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C3")
+			(value "0.12uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "c5e0bfda-a03e-404c-8889-31b7d7326ec3")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C4")
+			(value "0.068uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "7cfebdb6-a237-444d-8931-76a017b687a1")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C5")
+			(value "0.047uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "f023d343-d694-40b8-a4d2-3ad40a8072dd")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C6")
+			(value "0.033uF")
+			(description "Unpolarized capacitor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "8bcc4dd1-db97-45ad-a059-d3cf5fe121aa")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J1")
+			(value "Conn_01x05")
+			(description "Generic connector, single row, 01x05, script generated              (             kicad-library-utils/schlib/autogen/connector/             )")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Generic connector, single row, 01x05, script generated              (             kicad-library-utils/schlib/autogen/connector/             )")
+			)
+			(libsource
+				(lib "Connector_Generic")
+				(part "Conn_01x05")
+				(description "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "connector")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Connector*:*_1x??_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "bb71eedc-9caf-4905-a88c-b3268c36fbbe")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "J2")
+			(value "Conn_01x05")
+			(description "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			)
+			(libsource
+				(lib "Connector_Generic")
+				(part "Conn_01x05")
+				(description "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "connector")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Connector*:*_1x??_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "5e8e9d5a-5ef1-44b1-a8e2-909fcf72441c")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "R1")
+			(value "56K")
+			(description "Resistor")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Resistor")
+			)
+			(libsource
+				(lib "Device")
+				(part "R")
+				(description "Resistor")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "R res resistor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "R_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "048d7537-1a65-4f61-9bc5-942dbdb50b7c")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "RV1")
+			(value "47K")
+			(description "Potentiometer")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Potentiometer")
+			)
+			(libsource
+				(lib "Device")
+				(part "R_Potentiometer")
+				(description "Potentiometer")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "resistor variable")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "Potentiometer*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "73ba5b02-7202-400f-a70d-4b4fd1b7e66c")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "SW1")
+			(value "SW_Rotary_1x6_MP")
+			(description "Rotary switch 1x6, SP6T with mount point")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Rotary switch 1x6, SP6T with mount point")
+			)
+			(libsource
+				(lib "Switch")
+				(part "SW_Rotary_1x6_MP")
+				(description "Rotary switch 1x6, SP6T with mount point")
+			)
+			(property
+				(name "Sheetname")
+				(value "Root")
+			)
+			(property
+				(name "Sheetfile")
+				(value "docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/pultec-low-boost/attempt-1/page.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "Rotary switch 1x6 SP6T")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "274c6b03-c61a-4125-9d06-f053a9fd2515")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "MP")
+						)
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+					)
+				)
+			)
+		)
+	)
+	(groups)
+	(variants)
+	(libparts
+		(libpart
+			(lib "Connector_Generic")
+			(part "Conn_01x05")
+			(description "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			(footprints
+				(fp "Connector*:*_1x??_*")
+			)
+			(fields
+				(field
+					(name "Reference") "J")
+				(field
+					(name "Value") "Conn_01x05")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Generic connector, single row, 01x05, script generated             (            kicad-library-utils/schlib/autogen/connector/            )")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Pin_1")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "Pin_2")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "Pin_3")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "Pin_4")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "Pin_5")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "C")
+			(description "Unpolarized capacitor")
+			(footprints
+				(fp "C_*")
+			)
+			(fields
+				(field
+					(name "Reference") "C")
+				(field
+					(name "Value") "C")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Unpolarized capacitor")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "R")
+			(description "Resistor")
+			(footprints
+				(fp "R_*")
+			)
+			(fields
+				(field
+					(name "Reference") "R")
+				(field
+					(name "Value") "R")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Resistor")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Device")
+			(part "R_Potentiometer")
+			(description "Potentiometer")
+			(footprints
+				(fp "Potentiometer*")
+			)
+			(fields
+				(field
+					(name "Reference") "RV")
+				(field
+					(name "Value") "R_Potentiometer")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Potentiometer")
+				(field
+					(name "Sim.Device") "R")
+				(field
+					(name "Sim.Type") "POT")
+				(field
+					(name "Sim.Pins") "1=r0 2=wiper 3=r1")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "1")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "2")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "3")
+					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "Switch")
+			(part "SW_Rotary_1x6_MP")
+			(description "Rotary switch 1x6, SP6T with mount point")
+			(fields
+				(field
+					(name "Reference") "SW")
+				(field
+					(name "Value") "SW_Rotary_1x6_MP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Rotary switch 1x6, SP6T with mount point")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "3")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "4")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "5")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "6")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "7")
+					(name "")
+					(type "passive")
+				)
+				(pin
+					(num "MP")
+					(name "")
+					(type "passive")
+				)
+			)
+		)
+	)
+	(libraries
+		(library
+			(logical "Connector_Generic")
+			(uri "${KICAD10_SYMBOL_DIR}/Connector_Generic.kicad_sym")
+		)
+		(library
+			(logical "Device")
+			(uri "${KICAD10_SYMBOL_DIR}/Device.kicad_sym")
+		)
+		(library
+			(logical "Switch")
+			(uri "${KICAD10_SYMBOL_DIR}/Switch.kicad_sym")
+		)
+	)
+	(nets
+		(net
+			(code "2")
+			(name "unconnected-(C1-Pad1)")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "3")
+			(name "unconnected-(C1-Pad2)")
+			(class "Default")
+			(node
+				(ref "C1")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "4")
+			(name "unconnected-(C2-Pad1)")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "5")
+			(name "unconnected-(C2-Pad2)")
+			(class "Default")
+			(node
+				(ref "C2")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "6")
+			(name "unconnected-(C3-Pad1)")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "7")
+			(name "unconnected-(C3-Pad2)")
+			(class "Default")
+			(node
+				(ref "C3")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "8")
+			(name "unconnected-(C4-Pad1)")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "9")
+			(name "unconnected-(C4-Pad2)")
+			(class "Default")
+			(node
+				(ref "C4")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "10")
+			(name "unconnected-(C5-Pad1)")
+			(class "Default")
+			(node
+				(ref "C5")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "11")
+			(name "unconnected-(C5-Pad2)")
+			(class "Default")
+			(node
+				(ref "C5")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "unconnected-(C6-Pad1)")
+			(class "Default")
+			(node
+				(ref "C6")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "13")
+			(name "unconnected-(C6-Pad2)")
+			(class "Default")
+			(node
+				(ref "C6")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "14")
+			(name "unconnected-(J1-Pin_1-Pad1)")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "15")
+			(name "unconnected-(J1-Pin_2-Pad2)")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "2")
+				(pinfunction "Pin_2_2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "16")
+			(name "unconnected-(J1-Pin_3-Pad3)")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "3")
+				(pinfunction "Pin_3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "17")
+			(name "unconnected-(J1-Pin_4-Pad4)")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "4")
+				(pinfunction "Pin_4_4")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "18")
+			(name "unconnected-(J1-Pin_5-Pad5)")
+			(class "Default")
+			(node
+				(ref "J1")
+				(pin "5")
+				(pinfunction "Pin_5_5")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "19")
+			(name "unconnected-(J2-Pin_1-Pad1)")
+			(class "Default")
+			(node
+				(ref "J2")
+				(pin "1")
+				(pinfunction "Pin_1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "20")
+			(name "unconnected-(J2-Pin_2-Pad2)")
+			(class "Default")
+			(node
+				(ref "J2")
+				(pin "2")
+				(pinfunction "Pin_2_2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "21")
+			(name "unconnected-(J2-Pin_3-Pad3)")
+			(class "Default")
+			(node
+				(ref "J2")
+				(pin "3")
+				(pinfunction "Pin_3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "22")
+			(name "unconnected-(J2-Pin_4-Pad4)")
+			(class "Default")
+			(node
+				(ref "J2")
+				(pin "4")
+				(pinfunction "Pin_4_4")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "23")
+			(name "unconnected-(J2-Pin_5-Pad5)")
+			(class "Default")
+			(node
+				(ref "J2")
+				(pin "5")
+				(pinfunction "Pin_5_5")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "24")
+			(name "unconnected-(R1-Pad1)")
+			(class "Default")
+			(node
+				(ref "R1")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "25")
+			(name "unconnected-(R1-Pad2)")
+			(class "Default")
+			(node
+				(ref "R1")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "26")
+			(name "unconnected-(RV1-Pad1)")
+			(class "Default")
+			(node
+				(ref "RV1")
+				(pin "1")
+				(pinfunction "1_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "27")
+			(name "unconnected-(RV1-Pad2)")
+			(class "Default")
+			(node
+				(ref "RV1")
+				(pin "2")
+				(pinfunction "2_2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "28")
+			(name "unconnected-(RV1-Pad3)")
+			(class "Default")
+			(node
+				(ref "RV1")
+				(pin "3")
+				(pinfunction "3_3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "29")
+			(name "unconnected-(SW1-Pad1)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "30")
+			(name "unconnected-(SW1-Pad2)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "2")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "31")
+			(name "unconnected-(SW1-Pad3)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "3")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "32")
+			(name "unconnected-(SW1-Pad4)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "4")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "33")
+			(name "unconnected-(SW1-Pad5)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "5")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "34")
+			(name "unconnected-(SW1-Pad6)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "6")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "35")
+			(name "unconnected-(SW1-Pad7)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "7")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "36")
+			(name "unconnected-(SW1-PadMP)")
+			(class "Default")
+			(node
+				(ref "SW1")
+				(pin "MP")
+				(pintype "passive")
+			)
+		)
+	)
+)

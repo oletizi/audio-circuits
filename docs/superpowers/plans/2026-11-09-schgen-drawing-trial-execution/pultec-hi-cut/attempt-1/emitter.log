@@ -1,0 +1,11 @@
+{"fixes_applied": ["component_repository", "pin_extraction", "root_uuid", "skip_get_fp"]}
+Traceback (most recent call last):
+  File "/trial/fixes/run_emitter.py", line 228, in main
+    run_program(program, sheet)
+  File "/trial/fixes/run_emitter.py", line 150, in run_program
+    code = compile(code_text, str(program), "exec")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/in/program.py", line 2
+    The script must create a single‑sheet Ki‑Cad schematic that contains **all** of the parts listed, puts the four net labels (“hi_boost_out”, “in”, “lo_boost_in” and “out”) on the first pin of the corresponding net, and connects every pin that belongs to the same net together.  
+                                   ^
+SyntaxError: invalid character '‑' (U+2011)
