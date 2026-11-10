@@ -1,0 +1,6 @@
+SchGen trial Task 8: present.py composes one image per board
+
+Approved page then attempts 1, 2, 3, captioned only approved / attempt N.
+An attempt with no page (not produced, or a missing, empty or corrupt PNG)
+is the card "Attempt N: no schematic generated". Refuses when any attempt
+directory lacks manifest.json. Pillow pinned in host-requirements.txt.

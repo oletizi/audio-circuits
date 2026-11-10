@@ -1,0 +1,5 @@
+SchGen trial Task 8 fix round 1: native-scale panels, exactly three attempts
+
+Pages are pasted at native pixel size, top-aligned, with cards sized to the
+approved page. Exactly attempt-1..3 required per board. Bare assert replaced
+by a PresentRefusal. An existing presentation/ refuses unless --replace.

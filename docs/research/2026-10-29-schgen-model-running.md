@@ -513,7 +513,11 @@ who has not tried it, and the criterion is what binds.
    dequantized base and diff. **This needs far more than 15 GB of RAM** for a
    bf16 20B merge, so it is not a job for this machine.
 
-2. **Does the fine-tune help at all, and at what circuit size?**
+2. **Does the fine-tune help at all, and at what circuit size?** **No longer
+   pursued, 2026-11-10.** The merged model was asked to draw five approved
+   Pultec boards, three attempts each, and produced no page
+   (`docs/research/2026-11-09-schgen-drawing-trial.md`); the owner's decision
+   is `docs/known-gaps.md` G310. The criterion as first stated is kept below.
    *Criterion:* over a set of circuits of increasing part count, base against
    base-plus-adapter, the share of responses that are (a) parseable
    five-primitive programs with no prose wrapper and (b) netlist-equivalent to

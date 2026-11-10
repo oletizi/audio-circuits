@@ -545,6 +545,30 @@ about, and not as a ruling on that spec's open questions.
 
 ---
 
+## Microsoft SchGen's attempts at the five approved Pultec boards
+
+- **Date:** 2026-11-10.
+- **What he was shown:** one image per board, the approved page then SchGen's
+  attempts 1-3. No attempt produced a sheet, so each attempt was a card reading
+  *"Attempt N: no schematic generated"*. **There is no SchGen sheet to bind to**;
+  the verdict is bound to the images, in
+  `docs/superpowers/plans/2026-11-09-schgen-drawing-trial-execution/presentation/`:
+  - `pultec-hi-boost.png` `d2c6164c11addc5fd68644b865a39a711db333f6f9a0e2caae39bc4c6b423d93`
+  - `pultec-hi-cut.png` `c7d691c7fe7ec1711c18d0a92213a2aa26b4edbb514773236f0431eb03eaa65f`
+  - `pultec-low-boost.png` `1e24b11ac63f6ab57fb853fb16a7aeb94b5a788cd2bb7ddb6a2d5ff8a8725f62`
+  - `pultec-low-cut.png` `a0bc701c3a2fa1e86e57745444b0127fa22bf464b3313df56eb970c873e0c28f`
+  - `pultec-mid.png` `b5bbb963e75cdf364b1e3e33b8499a1ea785473e5b88f56f41dcc61b792c543e`
+- **Verdict, verbatim:**
+
+  > *"every image says “no schematic generated”"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** It is a reading of the images, not a verdict
+on any drawing, since none exists. His decision on SchGen that followed is
+`docs/known-gaps.md` **G310**, and the findings are
+`docs/research/2026-11-09-schgen-drawing-trial.md`.
+
+---
+
 ## What this record is for, beyond not losing a verdict
 
 §7 extends the reviewer role by **demonstrated agreement with the recorded
