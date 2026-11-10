@@ -1,6 +1,7 @@
 # SchGen drawing trial: what the merged model draws for the approved Pultec boards
 
-**Status:** draft, awaiting owner review. Nothing here is built.
+**Status:** approved by the owner, 2026-11-09 (*"approved"*), as revised after
+the issue-24 review. Next: the implementation plan.
 
 ## Intent
 
