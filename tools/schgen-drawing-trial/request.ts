@@ -12,9 +12,18 @@
  *     LABELS:
  *     <label> -> <net>
  *
- * **WHAT IT READS.** `modelForSheet(board)` - the board's `Network`, the reference each part
- * carries on the committed page, and the pin number each canonical pin sits on in the part's
- * symbol - plus `valueFor` and `intendedLibId`. **It opens no `.kicad_sch`**: nothing about where
+ * **WHAT IT READS.** `modelForSheet(board)`'s `Network` and the reference each part carries,
+ * `pinNumbersFor` for the symbol pin each canonical pin sits on, plus `valueFor` and
+ * `intendedLibId`.
+ *
+ * **PIN NUMBERS COME FROM THE RULE, NOT FROM `modelForSheet`'s `pinNumbers`.** That map overlays
+ * `DECLARED_PIN_NUMBERS` (`tests/circuits/sheet-model.ts`), which its own comment calls *"a pin
+ * map the committed page declares and no rule derives"*: `pultec-low-boost`'s `R2` with `a`/`b`
+ * swapped so the approved page's `out` wire runs straight. That is electrically a no-op, but it is
+ * a layout fact taken from the approved drawing, so it stays out of the request. The test asserts
+ * `R1.1` is on `out` for that board, which fails if the declared map comes back.
+ *
+ * **It opens no `.kicad_sch`**: nothing about where
  * the approved page put anything can reach the text, and `tests/schgen-trial/request.test.ts`
  * checks that no coordinate pair, rotation, mirror or UUID from the approved sheet appears in it.
  * The references are the model's annotation (`sheetDesignators`, network order counted per
@@ -61,7 +70,7 @@ import path from "node:path"
 import { intendedLibId } from "../../lib/kicad/sheet-agreement.ts"
 import { valueFor } from "../../lib/kicad/value-notation.ts"
 import type { Component } from "../../lib/model/types.ts"
-import { modelForSheet } from "../../tests/circuits/sheet-model.ts"
+import { modelForSheet, pinNumbersFor } from "../../tests/circuits/sheet-model.ts"
 import { assertTrialBoard } from "./boards.ts"
 
 export interface TrialRequest {
@@ -82,9 +91,25 @@ const MODEL_GROUND = "0"
 const GROUND = "GND"
 const GROUND_SYMBOL = "power:GND"
 
+/**
+ * A symbol on a PARTS line: exactly `library:symbol`, refused here where it is created rather
+ * than left for `parseRequest` to reject on the way back. A bare entry name ("R") names no
+ * library, so it is not a symbol SchGen's symbol context or a schematic could place.
+ */
+export function symbolToken(text: string): string {
+  if (!/^[^\s:]+:[^\s:]+$/.test(text)) {
+    throw new Error(
+      `symbol "${text}" is not a library:symbol id with exactly one colon and no whitespace. ` +
+        "A PARTS line names the symbol a schematic places, which is always library-qualified; " +
+        "the library is not guessed, because two libraries may carry an entry of the same name.",
+    )
+  }
+  return text
+}
+
 /** A token on a request line: no whitespace, and no `:` that would read as a net header. */
 function token(text: string, what: string): string {
-  if (!/^[^\s:]+$/.test(text) && !(what === "symbol" && /^[^\s:]+:[^\s:]+$/.test(text))) {
+  if (!/^[^\s:]+$/.test(text)) {
     throw new Error(
       `${what} "${text}" cannot be written on a request line: the format separates fields by ` +
         "single spaces and marks a net with a trailing colon, so a field holding whitespace or a " +
@@ -115,6 +140,15 @@ function pinGroups(component: Component): [string, Component["pins"][string]][] 
   return [component.pins, ...component.units.map((unit) => unit.pins)].flatMap((g) => Object.entries(g))
 }
 
+/**
+ * Canonical pin -> symbol pin number for the request: `pinNumbersFor`'s rule, by kind and by the
+ * part tables, with no page-declared override. Exported so the tests compare against this same
+ * map.
+ */
+export function requestPinNumbers(component: Component): ReadonlyMap<string, string> {
+  return pinNumbersFor(component)
+}
+
 /** The netlist the request states for `board`, from its model alone. */
 function netlistFor(board: string): Netlist {
   const model = modelForSheet(board)
@@ -122,25 +156,27 @@ function netlistFor(board: string): Netlist {
   const nets: Record<string, string[]> = {}
   for (const component of model.network.components) {
     const designator = model.designators.get(component.id)
-    const numbers = model.pinNumbers.get(component.id)
-    if (designator === undefined || numbers === undefined) {
+    if (designator === undefined) {
       throw new Error(
-        `modelForSheet("${board}") gave component "${component.id}" no designator or no pin ` +
-          "map, so the request cannot name it. tests/circuits/sheet-model.ts builds both for " +
-          "every component; reaching this means that changed.",
+        `modelForSheet("${board}") gave component "${component.id}" no designator, so the ` +
+          "request cannot name it. tests/circuits/sheet-model.ts builds one for every " +
+          "component; reaching this means that changed.",
       )
     }
+    // THE RULE, NEVER `model.pinNumbers`: that map carries DECLARED_PIN_NUMBERS, a pin swap
+    // the approved page declares for its own wiring (see the module comment).
+    const numbers = requestPinNumbers(component)
     components.push({
       designator: token(designator, "designator"),
       value: token(valueFor(component), "value"),
-      symbol: token(intendedLibId(component), "symbol"),
+      symbol: symbolToken(intendedLibId(component)),
     })
     for (const [pin, connection] of pinGroups(component)) {
       if (connection.kind === "nc") continue
       const number = numbers.get(pin)
       if (number === undefined) {
         throw new Error(
-          `component "${component.id}" pin "${pin}" has no pin number in modelForSheet("${board}"), ` +
+          `component "${component.id}" pin "${pin}" has no pin number from pinNumbersFor, ` +
             "so the request cannot say which symbol pin joins the net. Not guessed: a wrong " +
             "number moves a connection to another pin of the drawn symbol.",
         )

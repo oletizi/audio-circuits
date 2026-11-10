@@ -34,17 +34,28 @@ import { draftedSheet, SELECTOR_PIN_DISAGREEMENT } from "../circuits/drafted-she
 import { installedSymbolPinNumbers, symbolExistsOnDisk } from "../kicad/symbol-library-disk.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { approvedDigestOf, approvedSheetDigest, TRIAL_BOARDS } from "../../tools/schgen-drawing-trial/boards.ts"
-import { buildRequest, parseRequest } from "../../tools/schgen-drawing-trial/request.ts"
+import { buildRequest, parseRequest, requestPinNumbers, symbolToken } from "../../tools/schgen-drawing-trial/request.ts"
 
 type Netlist = ReturnType<typeof parseRequest>
+
+/**
+ * The model's per-component pin numbers BY THE RULE (`requestPinNumbers`, i.e. `pinNumbersFor`),
+ * not `modelForSheet`'s `pinNumbers`, which overlays the approved page's `DECLARED_PIN_NUMBERS`.
+ * The request is built from the rule, so it is held to the rule.
+ */
+function rulePinNumbers(board: string): Map<string, ReadonlyMap<string, string>> {
+  const model = modelForSheet(board)
+  return new Map(model.network.components.map((c) => [c.id, requestPinNumbers(c)]))
+}
 
 /** Every connected model pin as `<designator>.<number>`, derived here and not by the generator. */
 function modelPins(board: string): string[] {
   const model = modelForSheet(board)
+  const pinNumbers = rulePinNumbers(board)
   const out: string[] = []
   for (const component of model.network.components) {
     const designator = model.designators.get(component.id)
-    const numbers = model.pinNumbers.get(component.id)
+    const numbers = pinNumbers.get(component.id)
     if (designator === undefined || numbers === undefined) {
       throw new Error(`modelForSheet("${board}") gave "${component.id}" no designator or pin map`)
     }
@@ -85,7 +96,7 @@ function asExport(netlist: Netlist): ImportedNetlist {
  */
 function disagreements(board: string, netlist: Netlist): string[] {
   const model = modelForSheet(board)
-  const found = compareSheetToModel(model.network, model.designators, model.pinNumbers, asExport(netlist))
+  const found = compareSheetToModel(model.network, model.designators, rulePinNumbers(board), asExport(netlist))
   return [...found.componentIdentity, ...found.netMembership, ...found.pinIdentity, ...found.values]
 }
 
@@ -206,4 +217,14 @@ test("buildRequest refuses a board outside the trial", () => {
 test("parseRequest refuses text outside the fixed format", () => {
   expect(() => parseRequest("PARTS:\nR1 10k Device:R\nNETS:\nLABELS:\nhello")).toThrow()
   expect(() => parseRequest("NETS:\nPARTS:\nLABELS:")).toThrow()
+})
+
+test("pultec-low-boost: R1.1 is on out - the page-declared R2 a/b swap does not reach the request", () => {
+  expect(buildRequest("pultec-low-boost").netlist.nets["out"]).toContain("R1.1")
+})
+
+test("symbolToken refuses a symbol with no library prefix where it is created", () => {
+  expect(() => symbolToken("R")).toThrow(/library:symbol/)
+  expect(() => symbolToken("Device:R:x")).toThrow(/library:symbol/)
+  expect(symbolToken("Device:R")).toBe("Device:R")
 })
