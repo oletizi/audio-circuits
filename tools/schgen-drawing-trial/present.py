@@ -12,7 +12,8 @@ The approved page's PNG is not committed under drafted/ (only its .kicad_sch and
 the CLI renders it with render.ts, the path the approved pages were rasterised with.
 
 CLI: `.venv/bin/python tools/schgen-drawing-trial/present.py EXEC_DIR` writes
-EXEC_DIR/presentation/<board>.png for every board in `board-info.ts --list`.
+EXEC_DIR/presentation/<board>.png for every board in `board-info.ts --list`. Refuses if
+presentation/ exists unless `--replace`. Pages are pasted at native pixel size, never resized.
 """
 
 from __future__ import annotations
@@ -28,8 +29,6 @@ from typing import Callable
 
 from PIL import Image, ImageDraw, ImageFont
 
-PANEL_HEIGHT = 900
-CARD_WIDTH = 1200
 CAPTION_HEIGHT = 70
 GUTTER = 24
 BACKGROUND = (255, 255, 255)
@@ -77,6 +76,10 @@ def _attempt_dirs(exec_dir: Path, board: str) -> list[tuple[int, Path]]:
             found.append((int(m.group(1)), d))
     if not found:
         raise PresentRefusal(f"{board_dir} holds no attempt-<n> directory; there is nothing to present for {board}")
+    numbers = sorted(n for n, _ in found)
+    if numbers != [1, 2, 3]:
+        raise PresentRefusal(f"{board_dir} holds attempts {numbers}; the trial is exactly attempt-1, attempt-2, "
+                             "attempt-3, and a different set is not presented")
     return sorted(found)
 
 
@@ -114,42 +117,59 @@ def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     return ImageFont.load_default(size)
 
 
-def _panel_image(panel: Panel) -> Image.Image:
+def _tile(panel: Panel, card_size: tuple[int, int]) -> Image.Image:
+    """The panel's body at native pixel size (no resize), a card at the approved page's size."""
     if panel.image is not None:
-        scale = PANEL_HEIGHT / panel.image.height
-        body = panel.image.resize((max(1, round(panel.image.width * scale)), PANEL_HEIGHT), Image.LANCZOS)
-    else:
-        body = Image.new("RGB", (CARD_WIDTH, PANEL_HEIGHT), CARD_FILL)
-        draw = ImageDraw.Draw(body)
-        font = _font(44)
-        assert panel.card_text is not None
-        box = draw.textbbox((0, 0), panel.card_text, font=font)
-        draw.text(((CARD_WIDTH - box[2]) / 2, (PANEL_HEIGHT - box[3]) / 2), panel.card_text, fill=INK, font=font)
-    out = Image.new("RGB", (body.width, PANEL_HEIGHT + CAPTION_HEIGHT), BACKGROUND)
-    out.paste(body, (0, 0))
-    draw = ImageDraw.Draw(out)
-    font = _font(40)
-    box = draw.textbbox((0, 0), panel.caption, font=font)
-    draw.text(((body.width - box[2]) / 2, PANEL_HEIGHT + (CAPTION_HEIGHT - box[3]) / 2), panel.caption,
-              fill=INK, font=font)
-    return out
+        return panel.image
+    if panel.card_text is None:
+        raise PresentRefusal(f"panel {panel.caption} has neither a page nor card text; nothing to draw")
+    body = Image.new("RGB", card_size, CARD_FILL)
+    draw = ImageDraw.Draw(body)
+    font = _font(44)
+    box = draw.textbbox((0, 0), panel.card_text, font=font)
+    draw.text(((card_size[0] - box[2]) / 2, (card_size[1] - box[3]) / 2), panel.card_text, fill=INK, font=font)
+    return body
+
+
+def layout(panels: list[Panel]) -> list[tuple[int, int, int, int]]:
+    """Each panel's (left, top, width, height) in the composed image; panels are top-aligned."""
+    approved = panels[0].image
+    if approved is None:
+        raise PresentRefusal("the first panel must be the approved page")
+    boxes, x = [], GUTTER
+    for p in panels:
+        w, h = (p.image.size if p.image is not None else approved.size)
+        boxes.append((x, GUTTER, w, h))
+        x += w + GUTTER
+    return boxes
 
 
 def compose(panels: list[Panel]) -> Image.Image:
-    tiles = [_panel_image(p) for p in panels]
-    width = sum(t.width for t in tiles) + GUTTER * (len(tiles) + 1)
-    sheet = Image.new("RGB", (width, PANEL_HEIGHT + CAPTION_HEIGHT + 2 * GUTTER), BACKGROUND)
-    x = GUTTER
-    for t in tiles:
-        sheet.paste(t, (x, GUTTER))
-        x += t.width + GUTTER
+    boxes = layout(panels)
+    approved = panels[0].image
+    if approved is None:
+        raise PresentRefusal("the first panel must be the approved page")
+    card_size = approved.size
+    height = max(b[3] for b in boxes)
+    width = boxes[-1][0] + boxes[-1][2] + GUTTER
+    sheet = Image.new("RGB", (width, GUTTER + height + CAPTION_HEIGHT + GUTTER), BACKGROUND)
+    draw = ImageDraw.Draw(sheet)
+    font = _font(40)
+    for p, (left, top, w, h) in zip(panels, boxes):
+        sheet.paste(_tile(p, card_size), (left, top))
+        box = draw.textbbox((0, 0), p.caption, font=font)
+        draw.text((left + (w - box[2]) / 2, GUTTER + height + (CAPTION_HEIGHT - box[3]) / 2), p.caption,
+                  fill=INK, font=font)
     return sheet
 
 
-def present(exec_dir: Path, boards: list[str], approved_png_for: Callable[[str], Path]) -> dict[str, list[Panel]]:
+def present(exec_dir: Path, boards: list[str], approved_png_for: Callable[[str], Path],
+            replace: bool = False) -> dict[str, list[Panel]]:
     """Build every board's panels first (refusing on any unfinished attempt), then write the images."""
-    built = {b: build_panels(exec_dir, b, approved_png_for(b)) for b in boards}
     out_dir = exec_dir / "presentation"
+    if out_dir.exists() and not replace:
+        raise PresentRefusal(f"{out_dir} already exists; pass --replace to overwrite what was shown before")
+    built = {b: build_panels(exec_dir, b, approved_png_for(b)) for b in boards}
     out_dir.mkdir(exist_ok=True)
     for board, panels in built.items():
         compose(panels).save(out_dir / f"{board}.png")
@@ -170,12 +190,14 @@ def _render_approved(board: str, out_root: Path) -> Path:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 1:
-        raise SystemExit("usage: present.py EXEC_DIR")
-    exec_dir = Path(argv[0]).resolve()
+    replace = "--replace" in argv
+    args = [a for a in argv if a != "--replace"]
+    if len(args) != 1:
+        raise SystemExit("usage: present.py EXEC_DIR [--replace]")
+    exec_dir = Path(args[0]).resolve()
     boards = _bun("tools/schgen-drawing-trial/board-info.ts", "--list").split()
     with tempfile.TemporaryDirectory(prefix="present-approved-") as tmp:
-        present(exec_dir, boards, lambda b: _render_approved(b, Path(tmp)))
+        present(exec_dir, boards, lambda b: _render_approved(b, Path(tmp)), replace)
     for b in boards:
         print(exec_dir / "presentation" / f"{b}.png")
     return 0

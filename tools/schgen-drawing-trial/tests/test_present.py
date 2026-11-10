@@ -127,3 +127,44 @@ def test_refuses_non_boolean_page_produced(tmp_path: Path) -> None:
     (exec_dir / "board-a" / "attempt-2" / "manifest.json").write_text(json.dumps({"page_produced": "yes"}))
     with pytest.raises(present.PresentRefusal, match="page_produced"):
         _run(exec_dir, tmp_path)
+
+
+def test_native_pixels_survive_composition(tmp_path: Path) -> None:
+    exec_dir = _setup(tmp_path, {"board-a": [(True, "none"), (False, "none"), (True, "none")]})
+    sizes = {1: (500, 700), 3: (900, 300)}
+    for n, size in sizes.items():
+        img = Image.new("RGB", size, (255, 255, 255))
+        for x in range(0, size[0], 7):
+            img.putpixel((x, x % size[1]), (200, 10, 10))
+        img.save(exec_dir / "board-a" / f"attempt-{n}" / "page.png")
+    approved = _approved(tmp_path, "board-a")
+    present.present(exec_dir, ["board-a"], lambda b: approved)
+    panels = present.build_panels(exec_dir, "board-a", approved)
+    boxes = present.layout(panels)
+    composed = Image.open(exec_dir / "presentation" / "board-a.png").convert("RGB")
+    sources = [Image.open(approved).convert("RGB"), Image.open(exec_dir / "board-a/attempt-1/page.png").convert("RGB"),
+               None, Image.open(exec_dir / "board-a/attempt-3/page.png").convert("RGB")]
+    for src, (left, top, w, h) in zip(sources, boxes):
+        assert (w, h) == (src.size if src is not None else (400, 260))
+        crop = composed.crop((left, top, left + w, top + h))
+        if src is not None:
+            assert crop.tobytes() == src.tobytes()
+    assert boxes[2][2:] == (400, 260)
+    assert len({b[1] for b in boxes}) == 1
+
+
+@pytest.mark.parametrize("numbers", [[1, 2], [1, 3], [1, 2, 3, 4], [2, 3, 4]])
+def test_refuses_anything_but_three_attempts(tmp_path: Path, numbers: list[int]) -> None:
+    exec_dir = tmp_path / "exec"
+    for n in numbers:
+        _attempt(exec_dir, "board-a", n, True)
+    with pytest.raises(present.PresentRefusal, match="exactly attempt-1"):
+        present.present(exec_dir, ["board-a"], lambda b: _approved(tmp_path, b))
+
+
+def test_refuses_existing_presentation_unless_replace(tmp_path: Path) -> None:
+    exec_dir = _setup(tmp_path)
+    _run(exec_dir, tmp_path)
+    with pytest.raises(present.PresentRefusal, match="--replace"):
+        _run(exec_dir, tmp_path)
+    present.present(exec_dir, BOARDS, lambda b: _approved(tmp_path, b), replace=True)
