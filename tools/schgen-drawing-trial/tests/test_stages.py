@@ -295,3 +295,10 @@ def test_unparseable_rejection_json_names_file_and_the_way_out(tmp_path: Path) -
     with pytest.raises(ValueError, match="allow-regeneration") as caught:
         persist.pending_rejection_status(tmp_path)
     assert str(path) in str(caught.value) and "Inspect the file" in str(caught.value)
+
+
+def test_non_object_rejection_json_is_refused_with_its_type(tmp_path: Path) -> None:
+    path = kept_rejection(tmp_path, "[1, 2]")
+    with pytest.raises(ValueError, match="list") as caught:
+        persist.pending_rejection_status(tmp_path)
+    assert str(path) in str(caught.value)

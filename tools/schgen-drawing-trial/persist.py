@@ -139,7 +139,13 @@ def pending_rejection_status(attempt_dir: Path) -> int | None:
                 f"{rejection} is not readable JSON ({error}); the 4xx guard cannot tell whether a resend is "
                 "safe. Inspect the file, then rerun with --allow-regeneration REASON if a resend is intended."
             ) from error
-        if isinstance(record, dict) and record.get("request_id") == request_id:
+        if not isinstance(record, dict):
+            raise ValueError(
+                f"{rejection} holds a JSON {type(record).__name__}, not an object; the 4xx guard cannot "
+                "tell whether a resend is safe. Inspect the file, then rerun with "
+                "--allow-regeneration REASON if a resend is intended."
+            )
+        if record.get("request_id") == request_id:
             status = record.get("status")
             if not isinstance(status, int) or isinstance(status, bool):
                 raise ValueError(
