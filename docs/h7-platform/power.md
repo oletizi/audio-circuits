@@ -422,7 +422,9 @@ The limit is **25 mA continuous**, all pedal-board loads together, so declared l
 | `maxPeakCurrentMa` | **26.3 mA** | declared 16.66 mA + charging the permitted 10 µF over the fastest soft start, 10 µF × 3.513 V / 3.66 ms = 9.61 mA; an upper bound (full-voltage loads during the ramp) |
 | `rippleMvPp` | **20.7 mV p-p** (bound) | SLUSEA4D Eq. 15 at VIN 17.6 V, VOUT 3.513 V, L 4.7 µH −20 %, fSW 450 kHz: ΔIL = 1.66 A. Capacitive term (Eq. 20) into 40 µF × 0.9 × 0.85 = 15.1 mV; ESR term (Eq. 19) at 10 mΩ per part, three in parallel (an allowance), 5.5 mV; their sum is an upper bound |
 
-That ripple reaches pin 21 through FB_VDDA: 0.745 mV rms against VREF_A's 806 µV wideband requirement, a 7.6 % margin that the module design must keep (open item 3V3D-RIPPLE-INTO-VREF-A; the requirement itself is in [analog.md](analog.md)).
+That ripple reaches pin 21 through FB_VDDA and the VDDA bank. On ruling [R-57](decisions.md#r-57)'s ceramic basis the module's present bank passes 2.13 mV rms of it, over VREF_A's 806 µV wideband requirement, so the module's VDDA network must change to meet f0 ≤ 158.0 kHz (open items 3V3D-RIPPLE-INTO-VREF-A and VDDA-WIDEBAND; the requirement is [analog.md](analog.md#ec-vdda-wideband)).
+
+*Not in force:* the S1 estimate of 0.745 mV rms at pin 21, "a 7.6 % margin that the module design must keep" (the VDDA bank at −10 % only), withdrawn as a bound by [R-57](decisions.md#r-57).
 
 ## 6. The pedal digital rail 3V3_P
 

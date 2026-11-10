@@ -245,9 +245,10 @@ check_openitems() {
       if (id == "Id" || id ~ /^-+$/) next
       phase = (n >= 8) ? cell[7] : ""
       gsub(/^ +| +$/, "", phase)
-      if (phase == "") print "line " FNR " (" id ")"
+      if (phase == "") print "line " FNR " (" id "): empty"
+      else if (phase != "phase 2" && phase != "phase 3" && phase != "phase 4" && phase != "bring-up") print "line " FNR " (" id "): \"" phase "\""
     }' "$OPEN_ITEMS")
-  [ -z "$out" ] || bad="$bad [empty phase cell: $(echo "$out" | head -5 | tr '\n' ' ')]"
+  [ -z "$out" ] || bad="$bad [phase cell empty or not one of phase 2, phase 3, phase 4, bring-up: $(echo "$out" | head -5 | tr '\n' ' ')]"
   grep -qF -- "paper analysis" "$OPEN_ITEMS" || bad="$bad [open-items.md lacks the phrase 'paper analysis']"
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
