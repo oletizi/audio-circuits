@@ -132,10 +132,22 @@ def pending_rejection_status(attempt_dir: Path) -> int | None:
         return None
     request_id = sent_request_id(sent)
     for rejection in sorted((attempt_dir / REJECTED).glob("*/rejection.json")):
-        record = json.loads(rejection.read_text(encoding="utf-8"))
-        if record.get("request_id") == request_id:
+        try:
+            record = json.loads(rejection.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise ValueError(
+                f"{rejection} is not readable JSON ({error}); the 4xx guard cannot tell whether a resend is "
+                "safe. Inspect the file, then rerun with --allow-regeneration REASON if a resend is intended."
+            ) from error
+        if isinstance(record, dict) and record.get("request_id") == request_id:
             status = record.get("status")
-            return status if isinstance(status, int) else None
+            if not isinstance(status, int) or isinstance(status, bool):
+                raise ValueError(
+                    f"{rejection} records status {status!r}, which is not an integer HTTP status; the 4xx "
+                    "guard will not read that as 'no 4xx'. Inspect the file, then rerun with "
+                    "--allow-regeneration REASON if a resend is intended."
+                )
+            return status
     return None
 
 

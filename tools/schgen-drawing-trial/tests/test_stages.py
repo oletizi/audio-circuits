@@ -272,3 +272,26 @@ def test_real_board_info_gate() -> None:
     assert len(info["approved_sheet_sha256"]) == 64 and info["model_module"] == "circuits/pultec/physical/mid.ts"
     with pytest.raises(RuntimeError, match="not a trial board"):
         RealHostTools().board_info("transistor-preamp-staged")
+
+
+def kept_rejection(attempt_dir: Path, text: str) -> Path:
+    persist.write_sent(attempt_dir, "req-1", 7)
+    target = attempt_dir / persist.REJECTED / "stamp"
+    target.mkdir(parents=True)
+    path = target / "rejection.json"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_non_int_rejection_status_is_refused_not_read_as_no_4xx(tmp_path: Path) -> None:
+    path = kept_rejection(tmp_path, json.dumps({"request_id": "req-1", "status": "429"}))
+    with pytest.raises(ValueError, match="rejection.json") as caught:
+        persist.pending_rejection_status(tmp_path)
+    assert str(path) in str(caught.value) and "'429'" in str(caught.value)
+
+
+def test_unparseable_rejection_json_names_file_and_the_way_out(tmp_path: Path) -> None:
+    path = kept_rejection(tmp_path, "{not json")
+    with pytest.raises(ValueError, match="allow-regeneration") as caught:
+        persist.pending_rejection_status(tmp_path)
+    assert str(path) in str(caught.value) and "Inspect the file" in str(caught.value)
