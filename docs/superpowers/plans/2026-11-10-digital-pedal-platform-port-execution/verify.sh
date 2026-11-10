@@ -39,12 +39,16 @@ if [ -z "${PEDALS_REPO:-}" ]; then
 fi
 
 check_bytes() {
-  local pair src dst want got bad=""
+  local pair src dst want got tmp bad=""
   for pair in "${BYTE_PAIRS[@]}"; do
     src="${pair%%|*}"; dst="${pair##*|}"
-    if ! want=$(git -C "$PEDALS_REPO" show "$PIN:$src" 2>/dev/null | shasum -a 256 | cut -d' ' -f1); then
-      bad="$bad [cannot read $src at $PIN]"; continue
+    tmp=$(mktemp) || { echo " [mktemp failed]"; return 1; }
+    if ! git -C "$PEDALS_REPO" show "$PIN:$src" > "$tmp" 2>/dev/null; then
+      rm -f "$tmp"
+      bad="$bad [cannot read $src at $PIN from $PEDALS_REPO]"; continue
     fi
+    want=$(shasum -a 256 < "$tmp" | cut -d' ' -f1)
+    rm -f "$tmp"
     if [ ! -f "$ROOT/$dst" ]; then bad="$bad [missing $dst]"; continue; fi
     got=$(shasum -a 256 < "$ROOT/$dst" | cut -d' ' -f1)
     [ "$want" = "$got" ] || bad="$bad [differs $dst]"
@@ -67,8 +71,17 @@ tree_files() {
   done
 }
 
+require_trees() {
+  local d missing=""
+  for d in "$DOCS" "$CIRC"; do
+    [ -d "$d" ] || missing="$missing [missing directory ${d#"$ROOT"/}]"
+  done
+  [ -z "$missing" ] || { echo "$missing"; return 1; }
+}
+
 check_nocode() {
   local bad="" f base hits
+  bad=$(require_trees) || { echo "$bad"; return 1; }
   # file-type rule applies to every file, records included
   while read -r f; do
     base=$(basename "$f")
@@ -86,26 +99,32 @@ check_nocode() {
 }
 
 check_provenance() {
-  local bad="" f
+  local bad="" f n=0
+  bad=$(require_trees) || { echo "$bad"; return 1; }
   while read -r f; do
+    n=$((n+1))
     grep -qF "$PREFIX" "$f" || bad="$bad [no pinned link prefix: ${f#"$ROOT"/}]"
-  done < <(find "$DOCS" -type f -name '*.md' 2>/dev/null)
+  done < <(find "$DOCS" -type f -name '*.md')
+  [ $n -gt 0 ] || { echo " [no .md files found under docs/h7-platform to scan]"; return 1; }
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
 check_effective() {
-  local bad="" f out
+  local bad="" f out n=0
+  bad=$(require_trees) || { echo "$bad"; return 1; }
   while read -r f; do
-    out=$(awk -v re="$STALE_RE" -v heading="$SUPERSEDED_HEADING" -v isreadme="$([ "$f" = "$README" ] && echo 1 || echo 0)" '
+    n=$((n+1))
+    out=$(awk -v re="$STALE_RE" -v heading="$SUPERSEDED_HEADING" -v rel="${f#"$ROOT"/}" -v isreadme="$([ "$f" = "$README" ] && echo 1 || echo 0)" '
       /^## / { insec = (isreadme == 1 && $0 == heading) }
       $0 ~ re {
         if ($0 ~ /^\*Not in force:\*/) next
         if ($0 ~ /^\*Superseded in the records:\*/) next
         if (insec) next
-        print FILENAME ":" FNR ": " $0
+        print rel ":" FNR ": " $0
       }' "$f")
     [ -z "$out" ] || bad="$bad [stale value in force: $(echo "$out" | head -3 | tr '\n' ' ')]"
   done < <(find "$DOCS" "$STANDARDS" -type f -name '*.md' 2>/dev/null)
+  [ $n -gt 0 ] || { echo " [no .md files found to scan]"; return 1; }
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
