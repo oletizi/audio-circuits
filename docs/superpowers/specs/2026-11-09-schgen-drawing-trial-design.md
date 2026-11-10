@@ -87,17 +87,36 @@ symbol context, then their instructions on rotation, mirror and pin locations,
 and *"Limit your thinking process less than 1000 words."* This trial uses that
 template verbatim.
 
-**Their chat template matches the served one.** `training/modified_chat_template.txt`
+**Their chat template, applied by us, not by the server.** `training/modified_chat_template.txt`
 differs from `openai/gpt-oss-20b`'s `chat_template.jinja` at the pinned base
-revision only by the `{% generation %}` training markers (diffed 2026-11-09), so
-vLLM applying the checkpoint's own template is their template.
+revision only by the `{% generation %}` training markers (diffed 2026-11-09).
+But vLLM's chat endpoint for gpt-oss may build the prompt its own way (the
+harmony renderer) rather than from that file, and it returns reasoning and
+answer as parsed fields without the `<|channel|>final<|message|>` markers their
+`get_final_python` looks for. So **the trial renders the prompt itself** with
+their template via `tokenizer.apply_chat_template(..., add_generation_prompt=True)`,
+sends the resulting text to **`/v1/completions`**, and asks for the output with
+special tokens kept. The prompt bytes are then theirs, the committed raw
+response is what their extractor parses, and extraction is their
+`get_final_python` unchanged. *(Agent's call.)*
+
+**Sampling matches theirs, sent explicitly.** Their `model.generate` takes the
+base checkpoint's `generation_config.json` (`do_sample: true`, nothing else set)
+and so transformers' defaults: temperature 1.0, top_k 50, top_p 1.0. vLLM does
+not apply transformers' top_k default, so every request sends
+`temperature=1.0, top_k=50, top_p=1.0, max_tokens=13312`. Reasoning effort is
+whatever their template renders by default (medium); nothing overrides it.
+Attempts 1, 2, 3 carry seeds 42, 43, 44 - theirs is `torch.manual_seed(42)` -
+recorded, though vLLM's sampler will not reproduce transformers' draws.
+*(Agent's call.)*
 
 | departure | why | effect, as far as known |
 | --- | --- | --- |
 | **Symbol selection.** Theirs asks a second model (`gpt-5.2` on Azure) to pick symbols from the library for the request, then formats them with `describe_symbol_info`. This trial **supplies the exact symbols the approved page uses**, formatted by the same `describe_symbol_info`. | no Azure GPT-5.2 here; and the parts are known exactly from the board, so a selector could only add error | favours SchGen: it cannot pick a wrong symbol. Stated so nobody reads a page as including symbol choice |
 | **Inference engine.** vLLM 0.32 serving the merged bf16 weights, not transformers `generate` on MXFP4-dequantized base plus PEFT merged at load | this is the serving stack already proven (`docs/research/2026-11-09-schgen-kinference-serving.md`); the merge is verified faithful (`docs/research/2026-11-09-schgen-merge.md`) | same weights to bf16; sampling implementation differs, so samples are not bit-reproducible against theirs |
 | **Context length.** `max_model_len` raised from 16384 to fit the longest prompt plus 13312 output tokens | a Pultec board's symbol context may be long; a truncated prompt or cap below theirs would handicap the model | none on content |
-| **Emitter patches.** The 2026-10-29 trial needed a rebuilt `component_repository.json` and a four-line pin-extraction fix to draw `pultec-low-boost` at all | without them their emitter cannot draw these boards (`docs/research/2026-10-29-trial-microsoft-schgen.md` §2, §3) | none on placement; reused as recorded there |
+| **Emitter fixes - all four from the 2026-10-29 trial.** (a) rebuilt `component_repository.json`; (b) the four-line pin-extraction fix - there a monkey-patch inside the hand-written program, here **injected by the harness** before the model's program runs, never written into it; (c) replacing the nil root-sheet UUID, without which every page renders blank while export and ERC report success; (d) skipping `get_fp()`, which always raises, so `init_project.py` does not always exit non-zero | without them their emitter cannot draw these boards, and without (c) all fifteen pages would come out blank (`docs/research/2026-10-29-trial-microsoft-schgen.md` §2, §3, §4) | none on placement or connectivity |
+| **Power symbols.** The approved pages use `copperhead_power:GND` and `copperhead_power:PWR_FLAG`, which are not stock libraries and which `describe_symbol_info` cannot describe. SchGen is given **stock `power:GND`**, and **no `PWR_FLAG`** | `GND` is the same symbol in the stock library SchGen resolves to anyway; `PWR_FLAG` is a page convention, not part of the circuit, so supplying it would hint at the approved page | expect an ERC `power_pin_not_driven` on every attempt, reported as an expected consequence; a ground net named differently on the page than in the model (`0` against `GND`) must not count as a difference: the comparison is of which pins share a net. The builder confirms how the existing comparator in `tests/circuits/` treats net names before reusing it (not checked while writing this) |
 
 ## The user request - the one piece of text not taken from SchGen
 
@@ -119,11 +138,21 @@ gateway**. Capacity is found first with `tools/schgen-serving/probe-capacity.sh`
 the cluster exists only for the run and is torn down after. Fifteen requests is
 a short run.
 
-**Model-written programs run in a locked-down container**, not on the laptop:
-no network, a read-only SchGen tree and KiCad libraries, a writable output
-directory, CPU and time limits. Each program runs through SchGen's own
-`init_project.py` path as in the 2026-10-29 trial, then `kicad-cli` exports
-PNG, PDF, netlist and ERC.
+**Requests go through the gateway on `/v1/completions`.** The serving phase
+routed only `/v1/chat/completions`; the HTTPRoute gains a `/v1/completions`
+rule and the builder proves it with the same marker smoke before the run. If
+Kinference will not route `/v1/completions`, that is a finding, recorded, and
+the run goes direct to vLLM's service, named as a departure - fidelity to
+SchGen's prompt outranks the gateway. *(Agent's call.)*
+
+**Model-written programs run in a locked-down Docker container on the
+laptop** - not on the laptop's own Python: no network, a read-only SchGen tree
+and KiCad symbol libraries, a writable output directory, CPU and time limits.
+The container's only job is SchGen's emitter, writing a `.kicad_sch`. **The
+sheet is data, so rendering, netlist export and ERC run on the host** with the
+same macOS `kicad-cli` 10.0.5 that rendered the approved pages and runs the
+round-trip test, so both sides of every comparison come from one renderer.
+*(Agent's call.)*
 
 ## What the owner is shown, and in what order
 
@@ -166,3 +195,9 @@ the owner; the order boards run in.
 | Supply exact symbols instead of the Azure GPT-5.2 selector | agent | no access to it; the parts are known; stated as favouring SchGen |
 | User request generated from the model, no layout hints | agent | transcription is evidence, not memory; no leak of the approved placement |
 | Serve through the Kinference gateway on the existing stack | agent | proven in the serving phase; keeps the Kinference content thread alive at no extra cost |
+| Render SchGen's template ourselves and use `/v1/completions`; direct to vLLM only if the gateway will not route it | agent | the prompt bytes and the raw response must be theirs; fidelity to SchGen outranks the gateway |
+| Send transformers' sampling defaults explicitly; seeds 42, 43, 44 | agent | vLLM's defaults differ from what their `generate` used |
+| Stock `power:GND`, no `PWR_FLAG` | agent | `copperhead_power` is not describable; `PWR_FLAG` is a page convention that would hint at the approved page |
+| All four emitter fixes from the 2026-10-29 trial, pin fix injected by the harness | agent | without them nothing draws, or every page is blank |
+| Emitter in laptop Docker; render, netlist and ERC on the host's `kicad-cli` 10.0.5 | agent | isolates model-written code; one renderer for both sides of the comparison |
+| Builder check run 2026-11-09; its four questions settled as the rows above | agent | none needed the owner |
