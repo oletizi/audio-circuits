@@ -91,10 +91,16 @@ def output_ids(text: str) -> list[int]:
     return tokenizer().encode(text, add_special_tokens=False).ids
 
 
-def save_response(attempt_dir: Path, text: str, finish_reason: str = "stop", seed: int = 42) -> None:
-    """A response as run_attempt would have persisted it, from a server returning matching token IDs."""
+def save_response(attempt_dir: Path, text: str, finish_reason: str = "stop", seed: int = 42,
+                  generated_text: str | None = None) -> None:
+    """A response as run_attempt would have persisted it, from a server returning token IDs.
+
+    The IDs encode `generated_text` when given (what the model generated), else `text` (what the
+    server returned as text) - so a test can stand in for a server that drops the stop token.
+    """
     attempt_dir.mkdir(parents=True, exist_ok=True)
-    payload = completion(text, finish_reason, token_ids=output_ids(text), prompt_ids=PROMPT_IDS)
+    ids = output_ids(generated_text if generated_text is not None else text)
+    payload = completion(text, finish_reason, token_ids=ids, prompt_ids=PROMPT_IDS)
     persist_response(attempt_dir, text, {
         "request_id": "saved", "request": {"model": "schgen-merged", "seed": seed}, "latency_s": 1.0,
         "finish_reason": finish_reason, "usage": payload["usage"],

@@ -80,9 +80,11 @@ def read_stages(attempt_dir: Path) -> dict[str, dict[str, object]]:
     return stages
 
 
-def extract(attempt_dir: Path, tools: HostTools) -> None:
+def extract(attempt_dir: Path, tools: HostTools, source: Path) -> None:
+    """SchGen's extraction over `source`: response.decoded.txt, the token IDs decoded with special
+    tokens kept, as SchGen's generate.py decodes; response.raw.txt only in acknowledged count-only."""
     try:
-        result = tools.extract(attempt_dir / RAW)
+        result = tools.extract(source)
     except Exception as err:  # the container itself failing is a tooling observation, kept as text
         _record(attempt_dir, "extraction", "failed", f"{type(err).__name__}: {err}")
         return
@@ -133,8 +135,8 @@ def stray_render_outputs(attempt_dir: Path) -> list[Path]:
     return sorted(stray)
 
 
-def run_downstream(attempt_dir: Path, board: str, tools: HostTools) -> None:
-    extract(attempt_dir, tools)
+def run_downstream(attempt_dir: Path, board: str, tools: HostTools, extraction_input: Path) -> None:
+    extract(attempt_dir, tools, extraction_input)
     emit(attempt_dir, tools)
     render_and_check(attempt_dir, board, tools)
 

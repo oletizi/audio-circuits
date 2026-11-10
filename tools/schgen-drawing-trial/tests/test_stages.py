@@ -169,7 +169,7 @@ def test_special_tokens_stripped_stops(exec_dir: Path) -> None:
     assert "<|channel|>" not in stripped
     with FakeServer(completion(stripped, token_ids=tokens, prompt_ids=PROMPT_IDS)) as server:
         env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
-        with pytest.raises(token_identity.TokenIdentityError, match="stripped"):
+        with pytest.raises(token_identity.TokenIdentityError, match="differs from the returned text"):
             run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
 
 

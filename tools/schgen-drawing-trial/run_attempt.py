@@ -57,9 +57,10 @@ import token_identity
 from host_tools import HostTools, RealHostTools
 from persist import (META, RAW, pending_rejection_status, persist_response, quarantine_incomplete, record_rerun,
                      regenerations_recorded, response_complete, utc_stamp, write_json_atomic, write_rejected,
-                     write_sent)
+                     write_atomic, write_sent)
 
 MANIFEST = "manifest.json"
+DECODED = "response.decoded.txt"
 DOWNSTREAM_PREVIOUS = "downstream-previous"
 PROVENANCE_ENV = {
     "endpoint": "TRIAL_ENDPOINT",
@@ -190,12 +191,20 @@ def run_attempt(exec_dir: Path, board: str, attempt: int, tools: HostTools, clie
     acknowledged = token_identity.accept_count_only(env)
     identity = token_identity.check_token_identity(meta, (directory / RAW).read_text(encoding="utf-8"),
                                                    prompt_ids, acknowledged)
+    # What extraction reads is decode(token_ids, skip_special_tokens=False), as SchGen's
+    # generate.py:150 decodes - not vLLM's text, which omits the stop token. response.raw.txt and
+    # response.json are never rewritten; the decoded text is its own file, its sha256 in the manifest.
+    if identity.decoded_text is not None:
+        extraction_input = directory / DECODED
+        write_atomic(extraction_input, identity.decoded_text.encode("utf-8"))
+    else:
+        extraction_input = directory / RAW
 
     set_aside_downstream(directory, rerun_reason)
-    stages.run_downstream(directory, board, tools)
+    stages.run_downstream(directory, board, tools, extraction_input)
     record = manifest.build(directory, board=board, attempt=attempt, seed=seed, request_dir=request,
                             exec_dir=exec_dir, board_info=info, kicad_cli_version=kicad_version,
-                            runtime_image_digest=image, token_identity=identity,
+                            runtime_image_digest=image, identity=identity, extraction_input=extraction_input,
                             accept_count_only_env=acknowledged)
     write_json_atomic(directory / MANIFEST, record)
     return record

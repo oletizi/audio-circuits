@@ -23,7 +23,9 @@ discarded, and a mismatch stops the run every time it is looked at.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 from tokenizers import Tokenizer
@@ -31,12 +33,19 @@ from tokenizers import Tokenizer
 from persist import sha256_file
 
 VERIFIED = "verified"
+TEXT_EQUAL = "equal"
+STOP_OMITTED = "stop-token-omitted-by-server"
 COUNT_ONLY = "unverified - count only"
 ACCEPT_ENV = "TRIAL_ACCEPT_COUNT_ONLY"
 EXPECTED_PATHS = ("choices[0].prompt_token_ids", "choices[0].token_ids")
 
 HERE = Path(__file__).resolve().parent
 TOKENIZER_DIR = HERE / "runtime" / "tokenizer"
+# The merged model's generation_config.json, copied from
+# gs://oletizi-docs-cli-20261028-schgen-merge/schgen-merged/; this sha256 is the one that bucket's
+# MANIFEST.sha256 lists for it. vLLM stops on its eos_token_id.
+GENERATION_CONFIG = HERE / "model" / "generation_config.json"
+GENERATION_CONFIG_SHA256 = "1fdf6869787b3a8f1259846c2f3bd314c91cb928b5f2f60cfc77bb0f3bd18b7f"
 
 
 class TokenIdentityError(RuntimeError):
@@ -91,9 +100,48 @@ def _choice(body: Mapping[str, object]) -> Mapping[str, object]:
     return choices[0]
 
 
+@dataclass(frozen=True)
+class IdentityResult:
+    identity: str
+    """VERIFIED or COUNT_ONLY."""
+    text_vs_decoded: str | None
+    """TEXT_EQUAL or STOP_OMITTED; None in count-only, where there are no IDs to decode."""
+    decoded_text: str | None
+    """decode(token_ids, skip_special_tokens=False): what extraction reads. None in count-only."""
+
+
+def stop_strings() -> list[str]:
+    """The model's stop tokens as text: the pinned generation_config.json's eos_token_id, decoded."""
+    path = GENERATION_CONFIG
+    if sha256_file(path) != GENERATION_CONFIG_SHA256:
+        raise TokenIdentityError(
+            f"{path} does not have sha256 {GENERATION_CONFIG_SHA256}, the value the merged model's "
+            "MANIFEST.sha256 records for generation_config.json; it is a pinned input"
+        )
+    ids = json.loads(path.read_text(encoding="utf-8")).get("eos_token_id")
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) for i in ids):
+        raise TokenIdentityError(f"{path} has no eos_token_id list")
+    tok = tokenizer()
+    names = [tok.id_to_token(i) for i in ids]
+    if any(not isinstance(n, str) for n in names):
+        raise TokenIdentityError(f"an eos_token_id in {path} is not in the tokenizer: {ids}")
+    return [str(n) for n in names]
+
+
+def _only_stop_tokens(remainder: str, stops: list[str]) -> bool:
+    if not remainder:
+        return False
+    while remainder:
+        match = next((s for s in stops if remainder.startswith(s)), None)
+        if match is None:
+            return False
+        remainder = remainder[len(match):]
+    return True
+
+
 def check_token_identity(meta: Mapping[str, object], raw_text: str, sent_ids: list[int],
-                         accept_count_only: bool) -> str:
-    """Return VERIFIED or (acknowledged) COUNT_ONLY; raise TokenIdentityError on anything else."""
+                         accept_count_only: bool) -> IdentityResult:
+    """VERIFIED (with the decoded text extraction reads) or acknowledged COUNT_ONLY; else raise."""
     body = meta.get("body")
     if not isinstance(body, dict):
         raise TokenIdentityError("response.json carries no server body to check")
@@ -107,7 +155,7 @@ def check_token_identity(meta: Mapping[str, object], raw_text: str, sent_ids: li
     choice = _choice(body)
     prompt_field, output_field = choice.get("prompt_token_ids"), choice.get("token_ids")
     if prompt_field is None and output_field is None:
-        return _count_only(meta, sent_ids, accept_count_only)
+        return IdentityResult(_count_only(meta, sent_ids, accept_count_only), None, None)
     if prompt_field is None or output_field is None:
         raise TokenIdentityError(
             "the server returned only one of prompt_token_ids and token_ids; return_token_ids gives both, "
@@ -127,14 +175,21 @@ def check_token_identity(meta: Mapping[str, object], raw_text: str, sent_ids: li
         )
     generated = _int_list(output_field, "token_ids")
     decoded = tokenizer().decode(generated, skip_special_tokens=False)
-    if decoded != raw_text:
-        at = next((i for i, (a, b) in enumerate(zip(decoded, raw_text)) if a != b), min(len(decoded), len(raw_text)))
-        raise TokenIdentityError(
-            f"the generated token IDs decode, special tokens kept, to text that differs from the returned text "
-            f"at character {at} (decoded {decoded[at:at + 40]!r}, returned {raw_text[at:at + 40]!r}); special "
-            "tokens get_final_python needs may have been stripped or spaced"
-        )
-    return VERIFIED
+    if decoded == raw_text:
+        return IdentityResult(VERIFIED, TEXT_EQUAL, decoded)
+    # The one accepted difference (controller ruling, 2026-11-10 preflight): vLLM keeps the stop
+    # token in token_ids and leaves it out of text. Only on finish_reason "stop", and only when the
+    # whole difference is trailing stop-token strings from the pinned generation config.
+    if (meta.get("finish_reason") == "stop" and decoded.startswith(raw_text)
+            and _only_stop_tokens(decoded[len(raw_text):], stop_strings())):
+        return IdentityResult(VERIFIED, STOP_OMITTED, decoded)
+    at = next((i for i, (a, b) in enumerate(zip(decoded, raw_text)) if a != b), min(len(decoded), len(raw_text)))
+    raise TokenIdentityError(
+        f"the generated token IDs decode, special tokens kept, to text that differs from the returned text "
+        f"at character {at} (decoded {decoded[at:at + 40]!r}, returned {raw_text[at:at + 40]!r}, finish_reason "
+        f"{meta.get('finish_reason')!r}); the only difference accepted is trailing stop tokens on "
+        "finish_reason stop"
+    )
 
 
 def _count_only(meta: Mapping[str, object], sent_ids: list[int], accepted: bool) -> str:
