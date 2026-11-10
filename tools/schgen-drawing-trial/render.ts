@@ -29,7 +29,12 @@ export function renderPage(sheet: string, outDir: string): RenderedPage {
   fs.mkdirSync(outDir, { recursive: true })
   const stem = path.basename(sheet, ".kicad_sch")
   const outcome = renderSheet({ schematicPath: sheet, outDir, board: stem })
-  if (!outcome.ok) throw new Error(`rendering ${sheet} failed: ${outcome.stderr}`)
+  if (!outcome.ok) {
+    // Naming what kicad-cli did write turns "failed" into an observation: on a nil-UUID sheet the
+    // SVG export exits 0 and names its file after a sheet it could not resolve ("Schematic.svg").
+    const written = fs.readdirSync(outDir).filter((f) => f !== path.basename(sheet))
+    throw new Error(`rendering ${sheet} failed: ${outcome.stderr}; ${outDir} now holds [${written.join(", ")}]`)
+  }
   const crops = path.join(outDir, "crops")
   const png = path.join(outDir, `${stem}.png`)
   fs.renameSync(path.join(crops, `${stem}-whole-page.png`), png)
