@@ -5,7 +5,20 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 OUT="${1:?usage: install-kinference.sh RECORD_DIR}"
 mkdir -p "$OUT"
-H() { helm --kube-context "$KUBECTX" "$@"; }
+
+# Helm runs with docker-credential-osxkeychain OFF its PATH and an empty
+# DOCKER_CONFIG. Measured 2026-11-09 with helm 4.3.1: pulling a public chart
+# from ghcr.io hung indefinitely right after the registry's 401, before any
+# token request - the registry library consults the macOS keychain helper
+# (it finds it on PATH even when the docker config names no credsStore), and
+# that call never returned. With the helper off PATH the same pull completes
+# at once. Every chart here is public, so no credentials are needed.
+HELM_BIN="$(command -v helm)"
+HELM_ENV="$(mktemp -d)"
+trap 'rm -rf "$HELM_ENV"' EXIT
+echo '{}' > "$HELM_ENV/config.json"
+HELM_PATH="/opt/homebrew/share/google-cloud-sdk/bin:/usr/bin:/bin"
+H() { env PATH="$HELM_PATH" DOCKER_CONFIG="$HELM_ENV" "$HELM_BIN" --kube-context "$KUBECTX" "$@"; }
 
 GWAPI_VERSION=1.5.1
 k apply --server-side --force-conflicts -f \
