@@ -1,0 +1,267 @@
+{
+  "board": "pultec-hi-boost",
+  "text": "PARTS:\nC1 4700pF Device:C\nC2 4700pF Device:C\nC3 3300pF Device:C\nC4 1000pF Device:C\nC5 470pF Device:C\nC6 1000pF Device:C\nC7 1000pF Device:C\nC8 1000pF Device:C\nC9 1500pF Device:C\nR1 4.7K Device:R\nRV1 47K Device:R_Potentiometer\nRV2 10K Device:R_Potentiometer\nL1 100mH Device:L\nL2 200mH Device:L\nL3 300mH Device:L\nL4 600mH Device:L\nSW1 SW_Rotary_1x6_MP Switch:SW_Rotary_1x6_MP\nSI1 .047uF Device:C\nSI2 430R Device:R\nSI3 0R Device:R\nSI4 4.7K Device:R\nSI5 0R Device:R\nSI6 56K Device:R\nSI7 0R Device:R\nSI8 100K Device:R\nJ1 Conn_01x05 Connector_Generic:Conn_01x05\nJ2 Conn_01x05 Connector_Generic:Conn_01x05\nNETS:\nGND: J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 SI7.1 SI8.2\nhi_boost_out: J1.2 RV1.3 SI3.1 SI5.1\nin: J1.1 RV1.1 SI8.1 SW1.7\nj15_p1: C6.1 C7.1 C9.1 L1.1\nj15_p2: C4.1 C8.1 L2.1\nj15_p3: C2.1 C3.1 C5.1 L3.1\nj15_p4: C1.1 L4.1\nj19_p1: L1.2 L2.2 L3.2 L4.2 R1.1\nj20_p1: R1.2 RV2.1 RV2.2\nj20_p3: RV1.2 RV2.3\nj8_p1: C7.2 SW1.6\nj8_p2: C6.2 C9.2 SW1.5\nj8_p3: C4.2 C8.2 SW1.4\nj8_p4: C3.2 SW1.3\nj8_p5: C2.2 C5.2 SW1.2\nj8_p6: C1.2 SW1.1\nlo_boost_in: J1.3 SI1.1 SI4.2 SI6.2 SI7.2\nout: J1.4 SI5.2 SI6.1\nsi_hi_cut_j12_p3: SI1.2 SI2.2\nsi_hi_cut_j4_p2: SI2.1 SI3.2 SI4.1\nLABELS:\nhi_boost_out -> hi_boost_out\nin -> in\nlo_boost_in -> lo_boost_in\nout -> out\n",
+  "symbols": [
+    "Connector_Generic:Conn_01x05",
+    "Device:C",
+    "Device:L",
+    "Device:R",
+    "Device:R_Potentiometer",
+    "Switch:SW_Rotary_1x6_MP",
+    "power:GND"
+  ],
+  "netlist": {
+    "components": [
+      {
+        "designator": "C1",
+        "value": "4700pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C2",
+        "value": "4700pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C3",
+        "value": "3300pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C4",
+        "value": "1000pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C5",
+        "value": "470pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C6",
+        "value": "1000pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C7",
+        "value": "1000pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C8",
+        "value": "1000pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "C9",
+        "value": "1500pF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "R1",
+        "value": "4.7K",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "RV1",
+        "value": "47K",
+        "symbol": "Device:R_Potentiometer"
+      },
+      {
+        "designator": "RV2",
+        "value": "10K",
+        "symbol": "Device:R_Potentiometer"
+      },
+      {
+        "designator": "L1",
+        "value": "100mH",
+        "symbol": "Device:L"
+      },
+      {
+        "designator": "L2",
+        "value": "200mH",
+        "symbol": "Device:L"
+      },
+      {
+        "designator": "L3",
+        "value": "300mH",
+        "symbol": "Device:L"
+      },
+      {
+        "designator": "L4",
+        "value": "600mH",
+        "symbol": "Device:L"
+      },
+      {
+        "designator": "SW1",
+        "value": "SW_Rotary_1x6_MP",
+        "symbol": "Switch:SW_Rotary_1x6_MP"
+      },
+      {
+        "designator": "SI1",
+        "value": ".047uF",
+        "symbol": "Device:C"
+      },
+      {
+        "designator": "SI2",
+        "value": "430R",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI3",
+        "value": "0R",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI4",
+        "value": "4.7K",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI5",
+        "value": "0R",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI6",
+        "value": "56K",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI7",
+        "value": "0R",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "SI8",
+        "value": "100K",
+        "symbol": "Device:R"
+      },
+      {
+        "designator": "J1",
+        "value": "Conn_01x05",
+        "symbol": "Connector_Generic:Conn_01x05"
+      },
+      {
+        "designator": "J2",
+        "value": "Conn_01x05",
+        "symbol": "Connector_Generic:Conn_01x05"
+      }
+    ],
+    "nets": {
+      "GND": [
+        "J1.5",
+        "J2.1",
+        "J2.2",
+        "J2.3",
+        "J2.4",
+        "J2.5",
+        "SI7.1",
+        "SI8.2"
+      ],
+      "hi_boost_out": [
+        "J1.2",
+        "RV1.3",
+        "SI3.1",
+        "SI5.1"
+      ],
+      "in": [
+        "J1.1",
+        "RV1.1",
+        "SI8.1",
+        "SW1.7"
+      ],
+      "j15_p1": [
+        "C6.1",
+        "C7.1",
+        "C9.1",
+        "L1.1"
+      ],
+      "j15_p2": [
+        "C4.1",
+        "C8.1",
+        "L2.1"
+      ],
+      "j15_p3": [
+        "C2.1",
+        "C3.1",
+        "C5.1",
+        "L3.1"
+      ],
+      "j15_p4": [
+        "C1.1",
+        "L4.1"
+      ],
+      "j19_p1": [
+        "L1.2",
+        "L2.2",
+        "L3.2",
+        "L4.2",
+        "R1.1"
+      ],
+      "j20_p1": [
+        "R1.2",
+        "RV2.1",
+        "RV2.2"
+      ],
+      "j20_p3": [
+        "RV1.2",
+        "RV2.3"
+      ],
+      "j8_p1": [
+        "C7.2",
+        "SW1.6"
+      ],
+      "j8_p2": [
+        "C6.2",
+        "C9.2",
+        "SW1.5"
+      ],
+      "j8_p3": [
+        "C4.2",
+        "C8.2",
+        "SW1.4"
+      ],
+      "j8_p4": [
+        "C3.2",
+        "SW1.3"
+      ],
+      "j8_p5": [
+        "C2.2",
+        "C5.2",
+        "SW1.2"
+      ],
+      "j8_p6": [
+        "C1.2",
+        "SW1.1"
+      ],
+      "lo_boost_in": [
+        "J1.3",
+        "SI1.1",
+        "SI4.2",
+        "SI6.2",
+        "SI7.2"
+      ],
+      "out": [
+        "J1.4",
+        "SI5.2",
+        "SI6.1"
+      ],
+      "si_hi_cut_j12_p3": [
+        "SI1.2",
+        "SI2.2"
+      ],
+      "si_hi_cut_j4_p2": [
+        "SI2.1",
+        "SI3.2",
+        "SI4.1"
+      ]
+    },
+    "labels": {
+      "hi_boost_out": "hi_boost_out",
+      "in": "in",
+      "lo_boost_in": "lo_boost_in",
+      "out": "out"
+    }
+  }
+}

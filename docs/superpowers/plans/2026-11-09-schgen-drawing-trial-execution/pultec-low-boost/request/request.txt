@@ -1,0 +1,40 @@
+PARTS:
+C1 .33uF Device:C
+C2 .22uF Device:C
+C3 .12uF Device:C
+C4 .068uF Device:C
+C5 .047uF Device:C
+C6 .033uF Device:C
+R1 56K Device:R
+RV1 47K Device:R_Potentiometer
+SW1 SW_Rotary_1x6_MP Switch:SW_Rotary_1x6_MP
+SI1 0R Device:R
+SI2 47K Device:R
+SI3 .047uF Device:C
+SI4 430R Device:R
+SI5 0R Device:R
+SI6 4.7K Device:R
+SI7 0R Device:R
+SI8 100K Device:R
+J1 Conn_01x05 Connector_Generic:Conn_01x05
+J2 Conn_01x05 Connector_Generic:Conn_01x05
+NETS:
+GND: C1.1 C2.1 C3.1 C4.1 C5.1 C6.1 J1.5 J2.1 J2.2 J2.3 J2.4 J2.5 RV1.1 SI8.2
+hi_boost_out: J1.2 SI2.2 SI5.1 SI7.1
+in: J1.1 SI1.1 SI8.1
+j10_p1: C1.2 SW1.1
+j10_p2: C2.2 SW1.2
+j10_p3: C3.2 SW1.3
+j10_p4: C4.2 SW1.4
+j10_p5: C5.2 SW1.5
+j10_p6: C6.2 SW1.6
+lo_boost_in: J1.3 R1.2 RV1.2 RV1.3 SI3.1 SI6.2 SW1.7
+out: J1.4 R1.1 SI7.2
+si_hi_boost_j20_p3: SI1.2 SI2.1
+si_hi_cut_j12_p3: SI3.2 SI4.2
+si_hi_cut_j4_p2: SI4.1 SI5.2 SI6.1
+LABELS:
+hi_boost_out -> hi_boost_out
+in -> in
+lo_boost_in -> lo_boost_in
+out -> out
