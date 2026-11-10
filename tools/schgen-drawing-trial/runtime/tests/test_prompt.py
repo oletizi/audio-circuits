@@ -31,6 +31,10 @@ UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 # f-string in run_raw_test must fail here rather than pass silently. Cross-checked
 # when pinned by a separate host-side static ast rebuild of the same f-string.
 USER_MESSAGE_TEMPLATE_SHA256 = "856e3758e40be41bbc598c0f8008a2a9d86e98bd0bed05e719485a8a4d53234a"
+# sha256 of get_final_python's source (evaluation.py:46-72 at 0707520c, the def
+# through its return line). Cross-checked when pinned by a host-side static read
+# of those lines.
+FINAL_PYTHON_SOURCE_SHA256 = "655dfd97b9c021a874ac97c5b7bf7aa39b3c4159b9bb8cc4d77f9ece02e39722"
 
 
 def request(board: str) -> dict:
@@ -145,6 +149,12 @@ def test_template_bytes_pinned() -> None:
     assert hashlib.sha256(template.encode("utf-8")).hexdigest() == USER_MESSAGE_TEMPLATE_SHA256
 
 
+def test_final_python_source_pinned() -> None:
+    source = schgen_source.final_python_source()
+    assert source.startswith("def get_final_python(")
+    assert hashlib.sha256(source.encode("utf-8")).hexdigest() == FINAL_PYTHON_SOURCE_SHA256
+
+
 @pytest.mark.parametrize("board", BOARDS)
 def test_symbol_context_has_no_page_data(board: str) -> None:
     page = json.loads((FIXTURES / board / "page_data.json").read_text(encoding="utf-8"))
@@ -161,6 +171,41 @@ def test_symbol_context_covers_every_symbol() -> None:
     assert sorted(f"{c['lib_name']}:{c['symbol_name']}" for c in context.values()) == sorted(r["symbols"])
     with pytest.raises(prompt.PromptError):
         prompt.symbol_context(r["symbols"] + ["Device:No_Such_Symbol_In_Any_Library"])
+    for entry in context.values():
+        assert entry["pin_info"], entry["symbol_name"]
+    # Recorded, not corrected: SchGen's bbox extraction reads only `xy` and
+    # `rectangle` nodes, so the arc-drawn inductor is described with [].
+    assert [c["Bounding_box"] for c in context.values() if c["symbol_name"] == "L"] == [[]]
+    # Recorded, not corrected: KiCad 10.0.5 writes an unnamed pin as (name "")
+    # where KiCad 8 wrote (name "~"); SchGen maps only "~" to the pin number, so
+    # these pins reach the model with an empty pin_name and no number.
+    unnamed = sorted(c["symbol_name"] for c in context.values()
+                     if all(p["pin_name"] == "" for p in c["pin_info"]))
+    assert unnamed == ["C", "GND", "R"]
+
+
+ENTRY = {"symbol_name": "R", "lib_name": "Device", "description": "Resistor",
+         "Bounding_box": [-1.0, -2.5, 1.0, 2.5],
+         "pin_info": [{"pin_name": "1", "x": 0.0, "y": 3.81, "orientation": "Down"}]}
+
+
+@pytest.mark.parametrize("broken", [
+    {**ENTRY, "pin_info": []},
+    {**ENTRY, "error": "ParseError: unexpected token"},
+])
+def test_symbol_context_refuses_pinless_or_error_entry(
+        monkeypatch: pytest.MonkeyPatch, broken: dict) -> None:
+    def describe(objects: list) -> dict:
+        return {"symbol#1": broken}
+
+    real = prompt.schgen_modules()
+    monkeypatch.setattr(prompt, "schgen_modules", lambda: type(real)(
+        prepare_context=real.prepare_context, describe_symbol_info=describe))
+    with pytest.raises(prompt.PromptError, match="Device:R"):
+        prompt.symbol_context(["Device:R"])
+    monkeypatch.setattr(prompt, "schgen_modules", lambda: type(real)(
+        prepare_context=real.prepare_context, describe_symbol_info=lambda objects: {"symbol#1": ENTRY}))
+    assert prompt.symbol_context(["Device:R"]) == {"symbol#1": ENTRY}
 
 
 def test_longest_prompt_recorded() -> None:
@@ -178,3 +223,5 @@ def test_record_carries_provenance() -> None:
     assert record["tokenizer_files_sha256"] == dict(zip(sums[1::2], sums[0::2]))
     template = (Path(prompt.TOKENIZER_DIR) / "chat_template.jinja").read_bytes()
     assert record["template_sha256"] == hashlib.sha256(template).hexdigest()
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", record["rendered_date"])
+    assert f"\nCurrent date: {record['rendered_date']}\n" in record["text"]

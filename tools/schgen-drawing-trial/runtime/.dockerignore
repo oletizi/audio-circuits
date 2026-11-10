@@ -1,0 +1,5 @@
+# The approved pages' UUIDs and (at x y) pairs never enter the image that runs
+# model-written programs. test_prompt.py reads them from the read-only bind
+# mount of runtime/ that every test run uses.
+tests/fixtures/*/page_data.json
+**/__pycache__

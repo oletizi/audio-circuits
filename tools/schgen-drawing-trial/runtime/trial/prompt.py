@@ -17,19 +17,22 @@ added), then tokenize that text with no special tokens added. fidelity.py
 checks the resulting IDs against generate.py's own path.
 
 The chat template writes "Current date: YYYY-MM-DD" from strftime_now, as
-generate.py's does, so a prompt is bound to the day it was rendered: render it
-once and send the saved IDs.
+generate.py's does, so a prompt is bound to the day it was rendered (the
+container's UTC date): render it once and send the saved IDs. The record
+carries that date as rendered_date, read out of the rendered text.
 
 Fail-closed points: a tokenizer file whose sha256 differs from SHA256SUMS; a
 symbol describe_symbol_info() did not describe (SchGen drops those silently,
-and with no export/organized_lib.json it drops all of them); a rendered text
-that does not end in the generation prefix.
+and with no export/organized_lib.json it drops all of them), or described
+with no pins; a rendered text that does not end in the
+generation prefix or does not carry exactly one "Current date:" line.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -42,6 +45,7 @@ TOKENIZER_DIR = Path(__file__).resolve().parent.parent / "tokenizer"
 CHAT_TEMPLATE = "chat_template.jinja"
 GENERATION_PREFIX = "<|start|>assistant"
 ORGANIZED_LIB = Path("export") / "organized_lib.json"
+RENDERED_DATE_RE = re.compile(r"^Current date: (\d{4}-\d{2}-\d{2})$", re.M)
 
 
 class PromptError(RuntimeError):
@@ -55,6 +59,7 @@ class PromptRecord(TypedDict):
     template_sha256: str
     tokenizer_files_sha256: dict[str, str]
     user_message_template_sha256: str
+    rendered_date: str
 
 
 def _sha256(path: Path) -> str:
@@ -129,6 +134,18 @@ def symbol_objects(symbols: list[str]) -> list[SimpleNamespace]:
 def symbol_context(symbols: list[str]) -> dict[str, dict[str, Any]]:
     """describe_symbol_info() on the request's symbols, refused unless it describes all of them."""
     context = schgen_modules().describe_symbol_info(symbol_objects(symbols))
+    for entry in context.values():
+        lib_id = f"{entry.get('lib_name')}:{entry.get('symbol_name')}"
+        # An empty Bounding_box is NOT refused: SchGen's extractor builds it only
+        # from `xy` and `rectangle` nodes, so an arc-drawn symbol such as Device:L
+        # gets [] from SchGen's own code, and that [] is what its prompt carries.
+        if "error" in entry or not entry.get("pin_info"):
+            raise PromptError(
+                f"SchGen's describe_symbol_info gave '{lib_id}' "
+                f"{'an error entry' if 'error' in entry else 'no pins'}; the model wires a "
+                "symbol from its pins, so a description without them tells it nothing usable "
+                "about that part. Check export/organized_lib.json for this symbol"
+            )
     described = sorted(f"{c['lib_name']}:{c['symbol_name']}" for c in context.values())
     if described != sorted(symbols):
         missing = sorted(set(symbols) - set(described))
@@ -155,6 +172,12 @@ def render(request_text: str, symbols: list[str]) -> PromptRecord:
                                    add_generation_prompt=True, chat_template=template)
     if not isinstance(text, str) or not text.endswith(GENERATION_PREFIX):
         raise PromptError(f"the rendered prompt does not end with {GENERATION_PREFIX!r}")
+    dates = RENDERED_DATE_RE.findall(text)
+    if len(dates) != 1:
+        raise PromptError(
+            f"the rendered prompt has {len(dates)} 'Current date: YYYY-MM-DD' lines, expected 1; the "
+            "chat template writes exactly one and the record carries it as rendered_date"
+        )
     ids = list(tok(text, add_special_tokens=False)["input_ids"])
     user_template = schgen_source.user_message_template()
     return PromptRecord(
@@ -164,6 +187,7 @@ def render(request_text: str, symbols: list[str]) -> PromptRecord:
         template_sha256=hashlib.sha256(template.encode("utf-8")).hexdigest(),
         tokenizer_files_sha256=dict(tokenizer_files_sha256()),
         user_message_template_sha256=hashlib.sha256(user_template.encode("utf-8")).hexdigest(),
+        rendered_date=dates[0],
     )
 
 

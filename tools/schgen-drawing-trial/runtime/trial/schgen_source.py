@@ -17,8 +17,8 @@ model. So both are read out of the pinned source with `ast`:
       evaluation of SchGen's expression rather than against itself.
   get_final_python()
       evaluation.py's function source, executed in a namespace holding only
-      `re` and `Path` (Python supplies __builtins__; the function's annotation
-      `decoded: str` needs `str` at definition time).
+      `re`, `Path` and a builtins table of `str` alone (the annotation
+      `decoded: str` is evaluated at definition time).
 
 Every extraction fails closed: a missing function, a missing or changed
 message, or a field other than the two expected raises SchGenSourceError
@@ -156,13 +156,22 @@ def evaluate_user_message(prompt: str, symbol_context: object,
     return result
 
 
-@lru_cache(maxsize=None)
-def _final_python_from(source_file: Path) -> Callable[[str], str]:
-    text, func = _module_function(source_file, EXTRACT_FUNCTION)
+def final_python_source(source_file: Path | None = None) -> str:
+    """The exact source text of evaluation.py's get_final_python, as ast locates it."""
+    path = source_file if source_file is not None else evaluation_py()
+    text, func = _module_function(path, EXTRACT_FUNCTION)
     segment = ast.get_source_segment(text, func)
     if not segment:
-        raise SchGenSourceError(f"{source_file}: no source segment for def {EXTRACT_FUNCTION}")
-    namespace: dict[str, object] = {"re": re, "Path": Path}
+        raise SchGenSourceError(f"{path}: no source segment for def {EXTRACT_FUNCTION}")
+    return segment
+
+
+@lru_cache(maxsize=None)
+def _final_python_from(source_file: Path) -> Callable[[str], str]:
+    segment = final_python_source(source_file)
+    # Only re and Path, and of the builtins only `str`: the definition evaluates
+    # the annotations `decoded: str` and `-> Path`; the body uses no builtin.
+    namespace: dict[str, object] = {"__builtins__": {"str": str}, "re": re, "Path": Path}
     exec(compile(segment, str(source_file), "exec"), namespace)
     extracted = namespace.get(EXTRACT_FUNCTION)
     if not callable(extracted):
