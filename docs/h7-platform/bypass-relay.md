@@ -31,7 +31,7 @@ Decisions are linked by anchor into [decisions.md](decisions.md). An owner decis
 
 *Not in force:* the v1 gate network, R_BG 100 Ω from PI5 and R_BPD 100 kΩ (`BYPASS-RELAY.md` §3.3; `SCHEMATIC-CHECKLIST.md` AIO-20 as replaced by `BYPASS-RELAY.md` §9), replaced on the split pedal by [R-13](decisions.md#r-13).
 
-*Not in force:* the v1 power-fail shed: U_PF (TPS3808G01) on VIN_PROT through 174 kΩ over 10.0 kΩ, its open-drain RESET on BUCK_EN, tripping at 7.288–7.616 V (7.452 V nominal) and releasing at ≤ 7.84 V 12–28 ms later, so the buck stopped and the analog load alone drained the bulk (`BYPASS-RELAY.md` §3.4, §5.4; checklist item PWR-18 as `BYPASS-RELAY.md` §9 wrote it). The owner approved it on 2026-10-04 (`BYPASS-RELAY.md` §11 item 2); split spec §9.1 records that "The approved shed is replaced by §7.4, which the owner directed (O-6)". See [O-6](decisions.md#o-6) and [OWN-01](decisions.md#own-01).
+*Not in force:* the v1 power-fail shed: U_PF (TPS3808G01) on VIN_PROT through 174 kΩ over 10.0 kΩ, its open-drain RESET on BUCK_EN, tripping at 7.288–7.616 V (7.452 V nominal) and releasing at ≤ 7.84 V 12–28 ms later, so the buck stopped and the analog load alone drained the bulk (`BYPASS-RELAY.md` §3.4, §5.4; checklist item PWR-18 as `BYPASS-RELAY.md` §9 wrote it). The owner approved it with the note on 2026-10-04 (`BYPASS-RELAY.md` status line: "approved by the owner on 2026-10-04 and implemented"; split spec §9.1's Owner decisions table, row "Relay bypass (2026-10-04) and the power-fail shed"); split spec §9.1 records that "The approved shed is replaced by §7.4, which the owner directed (O-6)". See [O-6](decisions.md#o-6) and [OWN-01](decisions.md#own-01).
 
 *Not in force:* v1's relay margins after the shed's trip, +3.1 ms at 9 V and −0.2 ms at 12 V in the worst-case stack, and the "≤ 0.10 V" tick at 12 V (`BYPASS-RELAY.md` §5.4, §12). They are a record of v1 only (split spec §14 R-13); the split's margins are in [power.md](power.md) §3.4.
 
@@ -53,7 +53,7 @@ Decisions are linked by anchor into [decisions.md](decisions.md). An owner decis
 
 ### EC-COIL-RAIL
 
-**The coils and their suppressor Zeners are on the pedal digital rail 3V3_P, 3.274–3.513 V**, a TPS62933F (U_PRAIL) fed from VIN_MOD, never from VIN_A and never from pin 38. The coil-voltage check at this range is in [power.md](power.md) §6.1 (must-operate margin 0.088 V at the rail minimum and the hot corner; the maximum 3.513 V is 78 % of the coil's 4.5 V limit; the claim holds to 70 °C ambient, the relay's own rating).
+**The coils and their suppressor Zeners are on the pedal digital rail 3V3_P, 3.274–3.513 V**, a TPS62933F (U_PRAIL) fed from VIN_MOD, never from VIN_A and never from pin 38. The coil-voltage check at this range (must-operate, maximum, and the ambient the claim holds to) is in [power.md](power.md) §6.1, "Coils at the rail minimum".
 - **Set by:** split spec §7.5 ([RR-3](decisions.md#rr-3)); [R-25](decisions.md#r-25).
 - **Amended by:** [R-44](decisions.md#r-44), [R-45](decisions.md#r-45), [R-52](decisions.md#r-52), [R-58](decisions.md#r-58) (3V3_P's EN network, which holds the coil supply off until after Q_MSW's switch-on ramp, [power.md](power.md#ec-qpen-reset)).
 
@@ -88,7 +88,7 @@ Per channel x = L, R (`BYPASS-RELAY.md` §2.1; the circuits either side are unch
 | Net | Connects |
 |---|---|
 | IN_TIP_x | Input jack tip, its jack ESD diode, **K_BYP_IN COM** |
-| FX_IN_x | K_BYP_IN NO → R_RF_x and the front end ([analog.md](analog.md) §4) |
+| FX_IN_x | K_BYP_IN NO → R_RF_x and the front end ([analog.md](analog.md) §6) |
 | BYP_x | K_BYP_IN NC ↔ K_BYP_OUT NC: the bypass link |
 | FX_OUT_x | The output stage's C_DC_x on its jack side, R_B_x 100 kΩ bleed, the output test pad, **K_BYP_OUT NO** |
 | OUT_JACK_x | Output jack tip, its jack ESD diode, **K_BYP_OUT COM** |
@@ -165,15 +165,15 @@ The requirements are split spec §7.4's; the numbers they name are `BYPASS-RELAY
 | Id | Requirement (split spec §7.4) | On paper | Open item |
 |---|---|---|---|
 | R-PF-1 | The output relay's contacts open before the analog rail falls to V_B = VMID + 0.1 V | V_B 4.842 V at 9 V, 6.421 V at 12 V ([power.md](power.md) §3.4) | POWER-FAIL-REPLACEMENT-MEASURE |
-| R-PF-2 | Contact-opening budget t_open = t_detect + SENSE to RESET + gate turn-off + release (≤ 3.0 ms, K106-E1-11; BU-19 target ≤ 2.7 ms) | t_open 3.068 ms, with SENSE to RESET taken as a 50 µs allowance ([power.md](power.md) §3.4) | POWER-FAIL-REPLACEMENT-MEASURE |
+| R-PF-2 | Contact-opening budget t_open = t_detect + SENSE to RESET + gate turn-off + the release, the release term being ≤ 3.0 ms (K106-E1-11; BU-19 target ≤ 2.7 ms). The split spec's note on R-PF-2 (pre-flight K-7/D-1): the 3.0 ms "is the contacts' datasheet release maximum, one term of the budget. It does not cap t_open"; R-PF-1 and R-PF-3 must hold with t_open | t_open 3.068 ms: detection 0.017 ms + SENSE to RESET 0.050 ms (an allowance) + gate 0.00067 ms + release 3.0 ms ([power.md](power.md) §3.4) | POWER-FAIL-REPLACEMENT-MEASURE |
 | R-PF-3 | Hold-up: VIN_A ≥ V_B for at least t_open in the full worst-case stack, margin ≥ 0 at 9 V and at 12 V | +10.80 / +16.27 ms (plug pull, 9 / 12 V), +8.01 / +1.21 ms (slow fall); 345 µF effective, 80.15 mA ([power.md](power.md) §3.2, §3.4) | POWER-FAIL-REPLACEMENT-MEASURE |
 | R-PF-4 | Relay override independent of the processor; RELAY_EN cannot hold the coils on during a trip, with a Seed or our module; series resistance keeps the MCU pin and the override inside their ratings; the gate pull-down releases the relays whenever the module stops driving RELAY_EN | Q_PFG; [FIG-OVERRIDE](#fig-override) | RELAY-OVERRIDE-ON-TRIP |
 | R-PF-5 | No re-engage without the ramp: after any trip the coils stay off until firmware runs the full engage sequence | The module load switch Q_MSW opens and VIN_MOD is discharged while tripped, so the module always reboots, into bypass, after td 154–395 ms ([R-38](decisions.md#r-38); [power.md](power.md) §3.5); a latch was rejected because it would make RELAY_EN a declared crossing ([power-fail.md §7][pf]) | POWER-FAIL-REPLACEMENT-MEASURE |
 | R-PF-6 | Start-up on a sagging 9 V supply; no trip on normal sag | Trip 7.799–8.159 V, release ≤ 8.404 V at VIN, 46 mV under the sagged 8.45 V ([power.md](power.md#fig-trip) FIG-TRIP) | POWER-FAIL-REPLACEMENT-MEASURE |
 | R-PF-7 | Analog headroom not reduced | VIN_A 8.615 V at exactly 9.00 V in, cold, against 8.44 V ([R-34](decisions.md#r-34), owner; [power.md](power.md) §3.1) | ANALOG-HEADROOM-9V |
 | R-PF-8 | Detection time bounded | Sensing at VIN, upstream of both diodes; t_detect 0.017 ms on a plug pull, and the slow-fall frame holds for any detection time ([R-39](decisions.md#r-39)) | POWER-FAIL-REPLACEMENT-MEASURE |
-| R-PF-9 | 18 V survival of every new part | [power.md](power.md) §3.7, §8 | POWER-FAIL-SEQUENCE-CHECKS |
-| R-PF-10 | Codec VCC before VDD; every crossing inside IF-PD-1 through the trip and power-up | [power.md](power.md) §9; [architecture.md](architecture.md) §4.8 | POWER-FAIL-SEQUENCE-CHECKS, IF-PD-1-MEASURE |
+| R-PF-9 | Every new part rated for the 18 V continuous condition with derating; the supervisor's VDD (5V_A) stays up through the trip | [power.md](power.md) §3.7, §8 | POWER-FAIL-SEQUENCE-CHECKS (SENSE with 18 V reversed), PEDAL-POWER-PARTS-TO-MODEL (each rating re-derived against the model) |
+| R-PF-10 | The codec's VCC (5V_A) up before VDD and down after VDD; the module's own reset supervisor covers the MCU; every interface crossing inside IF-PD-1 through the whole trip and power-up in either order | VDD from 5V_A through U_CVDD ([power.md](power.md) §9; [analog.md](analog.md) §13.3); crossings [architecture.md](architecture.md) §4.8 | POWER-FAIL-SEQUENCE-CHECKS (VCC/VDD order), IF-PD-1-MEASURE (crossings) |
 | R-PF-11 | The supervisor asserts codec RST together with the relay override; it does not replace the SAI isolation | Q_PFR, on the same PF_TRIP as Q_PFG ([analog.md](analog.md#ec-codec-reset) EC-CODEC-RESET, [FIG-CODEC-RST](analog.md#fig-codec-rst)) | RELAY-OVERRIDE-ON-TRIP, CODEC-DOMAIN-BRINGUP |
 
 Split spec §7.4's "Final component values are **marked for re-analysis in the plan**" was answered by that analysis; the values it chose are in [power.md](power.md) §3 and in §4.3 below.
@@ -200,7 +200,7 @@ The other checks `power-fail.md` §6 records, each a paper analysis of an unbuil
 
 Split spec §5.6.5 states the sequence the analysis must show, and [architecture.md](architecture.md) §4.8 carries it: input lost → supervisor trips → relay gate pulled low and codec RST asserted → relays open while the reservoir holds the analog rail → module 3V3 collapses while the codec domain is still up → the isolation buffers keep every SAI crossing inside IF-PD-1. On paper the contacts are open ≤ 3.068 ms after the input is lost on a plug pull, while VIN_A falls at ≤ 0.232 V/ms ([power.md](power.md) §3.4).
 
-- **Residual when engaged at the moment of loss** (`BYPASS-RELAY.md` §5.4, written for v1). Before the contacts open the output stage's DC is still steady; what can reach the jack is the wet signal stopping abruptly and the PCM3060's behaviour as it goes, which SLAS533B does not specify. On v1 that was the MCU's SAI clocks stopping; on the split the codec is its own clock master from its oscillator and its RST is asserted at the trip (R-PF-11), and SLAS533B gives no output state in reset (split spec §5.6.5). `BYPASS-RELAY.md` calls the result "a cut, not a DC thump", and BU-08 measures it (open item POWER-FAIL-REPLACEMENT-MEASURE).
+- **Residual when engaged at the moment of loss** (`BYPASS-RELAY.md` §5.4, written for v1). v1's analysis: in the ≤ 3.3 ms before the contacts opened the output stage's DC was still steady; what could reach the jack was "the wet signal stopping abruptly when the MCU and SAI clocks stop, plus the PCM3060's behaviour when its clocks stop (not specified; `AN` §11 item 10 estimates a few mV for the reset case). This is a cut, not a DC thump. BU-08 measures it." **That conclusion is v1's; no source re-analysed the residual on the split.** This document's reading, not a source's: on the split the mechanism differs, because the codec is its own clock master from its oscillator and its RST is asserted at the trip (R-PF-11); split spec §5.6.5 records that after RST falls it takes about 40 ms (1936/fS at 48 kHz) before even DOUT is forced to zero, longer than the ≤ 3.068 ms to open the contacts, and that SLAS533B gives no output state in reset. The residual stays a BU-08 measurement (open item POWER-FAIL-REPLACEMENT-MEASURE).
 - **Mains-off** (the supply switched off at the wall) is slower than a plug pull: the adapter's own output capacitance keeps feeding the board after the trip (`BYPASS-RELAY.md` §5.4). The split analysis covers it with the slow-fall frame ([R-39](decisions.md#r-39)).
 - **Supply dips.** On the split any dip at the jack below the trip (7.80–8.16 V) reboots the module; the pedal holds bypass for td plus firmware's 2.5 s, with the dry signal passing throughout ([power.md](power.md) §3.5, "Behaviour the owner should know"). A supply too weak to hold the trip during the switch-on retries once per td while the pedal sits in bypass.
 
@@ -232,7 +232,7 @@ All values K106-E1-11 unless stated (`BYPASS-RELAY.md` §3.1).
 
 **Coil current** on 3V3_P: 56.8 mA per coil, 113.6 mA for both, worst case (3.513 V into 91 Ω × 0.9 × 0.755: −10 % tolerance, then cold −40 °C copper); 37.3 mA per coil at 3.392 V nominal. It is part of 3V3_P's budget ([power.md](power.md) §6.1), not the module's, and it does not pass through the MCU's supply pins (Q_BYP switches it).
 
-**Why not the alternatives** (`BYPASS-RELAY.md` §3.1, §1). A latching relay (G6KU, Panasonic TQ2-L2) stays wherever it was last set, so bypass on power loss would need stored energy and a reset pulse on the way down: it fails the requirement by design. A 5 V or 4.5 V coil (OSCAR's coil voltage) needs a 5 V-class rail, which on v1 meant the codec's analog rail 5V_A; on the split a 5 V-class rail cannot feed the 4.5 V-maximum DC3 coil, so 3V3_P stays 3.3 V class ([power.md](power.md) §6.1).
+**Why not the alternatives** (`BYPASS-RELAY.md` §3.1, §1). A latching relay (G6KU, Panasonic TQ2-L2) stays wherever it was last set, so bypass on power loss would need stored energy and a reset pulse on the way down: it fails the requirement by design. A 5 V coil on 5V_A (OSCAR's coil voltage) "puts 2 × 21 mA of switched coil current on the codec's analog rail, and 5V_A outlives 3V3_D at power-down (`PW` §5.2), which is the wrong order for dropping the relay"; a 4.5 V coil on 5V_A has the same objection (`BYPASS-RELAY.md` §3.1, written when the coils were on 3V3_D).
 
 ### 5.2 The coil drive
 
@@ -324,7 +324,7 @@ Differences from OSCAR, each for a stated reason: a 3 V coil on its own rail ins
 
 ## 11. Open items this document raises
 
-In [open-items.md](open-items.md): BYPASS-PARTS-TO-MODEL, BYPASS-PATH-UNPOWERED, RELAY-OVERRIDE-ON-TRIP. It extends POWER-FAIL-REPLACEMENT-MEASURE (the residual at the moment of loss, BU-08's split scope, BU-28's 8.45 V start), PEDAL-ANALOG-LAYOUT-RULES (the relay layout notes), STACK-HEIGHT-CONFIRM (the relay height) and FIRMWARE-ANALOG-OBLIGATIONS (the split spec's "unchanged contracts"). It also relies on rows other documents raised: POWER-FAIL-SEQUENCE-CHECKS, ANALOG-HEADROOM-9V, IF-PD-1-MEASURE, CODEC-DOMAIN-BRINGUP, 3V3P-RAIL-MEASURE, QPEN-RERELEASE, INTERFACE-PARTS-TO-MODEL, PEDAL-POWER-PARTS-TO-MODEL, SEED-ONBOARD-LOADS, SEED-BOOTLOADER-PIN-STATES.
+In [open-items.md](open-items.md): BYPASS-PARTS-TO-MODEL, BYPASS-PATH-UNPOWERED, RELAY-OVERRIDE-ON-TRIP. It extends POWER-FAIL-REPLACEMENT-MEASURE (the residual at the moment of loss, BU-08's split scope, BU-28's 8.45 V start), PEDAL-ANALOG-LAYOUT-RULES (the relay layout notes), STACK-HEIGHT-CONFIRM (the relay height) FIRMWARE-ANALOG-OBLIGATIONS (the split spec's "unchanged contracts"), ANALOG-HEADROOM-9V (R-PF-7), POWER-FAIL-SEQUENCE-CHECKS (R-PF-9, R-PF-10), IF-PD-1-MEASURE (R-PF-10's crossings) and PEDAL-POWER-PARTS-TO-MODEL (R-PF-9's ratings), each now naming the requirement it holds open. It also relies on rows other documents raised: CODEC-DOMAIN-BRINGUP, 3V3P-RAIL-MEASURE, QPEN-RERELEASE, INTERFACE-PARTS-TO-MODEL, SEED-ONBOARD-LOADS, SEED-BOOTLOADER-PIN-STATES.
 
 [br]: https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/BYPASS-RELAY.md
 [split]: https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/docs/superpowers/specs/2026-10-05-h7-modular-split-design.md
