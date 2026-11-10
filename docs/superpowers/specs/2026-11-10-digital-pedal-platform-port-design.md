@@ -1,7 +1,8 @@
 # Digital pedal platform, phase 1: porting the design knowledge from the pedals repository
 
-**Status:** draft, awaiting the owner's review. Revised in response to the
-third-party review in issue #27. Branch: `feature/digital-pedal-platform`.
+**Status:** approved by the owner, 2026-11-10 (*"approved"*), as revised in
+response to the third-party review in issue #27. Next: the implementation
+plan. Branch: `feature/digital-pedal-platform`.
 
 ## Intent
 
