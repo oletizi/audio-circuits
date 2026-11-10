@@ -179,6 +179,38 @@ def _final_python_from(source_file: Path) -> Callable[[str], str]:
     return extracted
 
 
+FINAL_REGEX_NAME = "final_block_re"
+
+
+def final_channel_regex(source_file: Path | None = None) -> re.Pattern[str]:
+    """The `final_block_re` get_final_python searches with, compiled from its own source.
+
+    get_final_python uses the final channel's segment when this regex matches
+    and silently falls back to the whole response when it does not; the trial
+    reports which happened (outcome `no-final-channel`), so it asks the same
+    regex rather than a retyped one. The assignment's call is evaluated with
+    `re` and no builtins.
+    """
+    path = source_file if source_file is not None else evaluation_py()
+    _, func = _module_function(path, EXTRACT_FUNCTION)
+    found = [
+        n.value for n in ast.walk(func)
+        if isinstance(n, ast.Assign) and len(n.targets) == 1
+        and isinstance(n.targets[0], ast.Name) and n.targets[0].id == FINAL_REGEX_NAME
+    ]
+    if len(found) != 1:
+        raise SchGenSourceError(
+            f"{path}: def {EXTRACT_FUNCTION} has {len(found)} assignments to {FINAL_REGEX_NAME}, "
+            "expected exactly 1; whether a response had a final channel is decided by that regex "
+            "and the trial has no copy of its own"
+        )
+    code = compile(ast.Expression(body=found[0]), filename=str(path), mode="eval")
+    pattern = eval(code, {"__builtins__": {}, "re": re})
+    if not isinstance(pattern, re.Pattern):
+        raise SchGenSourceError(f"{path}: {FINAL_REGEX_NAME} evaluated to {type(pattern)}, not a compiled regex")
+    return pattern
+
+
 def get_final_python(decoded: str, source_file: Path | None = None) -> str:
     path = source_file if source_file is not None else evaluation_py()
     result = _final_python_from(path)(decoded)
