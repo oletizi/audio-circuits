@@ -26,7 +26,7 @@ The **box frame** for plan positions is layout B's: seen from above, x 0 … 112
 | --- | --- | --- |
 | [O-12](decisions.md#o-12): the module is socketed | Owner | Owner. The socket and header parts written beside it are controller part choices, last set by [R-61](decisions.md#r-61) |
 | [O-17](decisions.md#o-17): the mechanical baseline (1590BB, board height, soft footswitches on hung boards, everything tall on the underside) | Owner | Owner, with the parts he chose on 2026-10-05 (the PBS-24-MP actuator, a tactile switch under the spring, the HCTL button) |
-| [O-18](decisions.md#o-18): six configurable control positions in layout B | Owner | Owner. Its two binding rules bind since he chose B ("binding since the owner chose B (2026-10-05)", `layouts.md`); the 4.97 mm and 1.4 mm figures in them are controller figures, set through the part choices of [R-54](decisions.md#r-54) and [R-61](decisions.md#r-61) |
+| [O-18](decisions.md#o-18): six configurable control positions in layout B | Owner | Owner. Its two binding rules bind since he chose B ("binding since the owner chose B (2026-10-05)", `layouts.md`); the 4.97 mm figure is a controller figure, set through the socket and header choices of [R-54](decisions.md#r-54) and [R-61](decisions.md#r-61); the 1.4 mm figure is the HCTL button's own lead, 3.0 − 1.6 (split spec §5.1.2 rule 2), a part the owner chose ("lets start with the simple option A") |
 | [R-56](decisions.md#r-56): design the footswitch for both lid stack-ups | Owner ("Owner decision, quoted" in the ledger) | Owner for the decision. The realisation (a Schurter LSH switch in two builds) is the controller's |
 | [R-55](decisions.md#r-55), [R-60](decisions.md#r-60), [R-61](decisions.md#r-61), [RR-8](decisions.md#rr-8) | Controller | Controller rulings |
 | [R-62](decisions.md#r-62): design to the owner-measured box | Controller, on the owner's measurements | Controller ruling. The measurements it rests on are owner-supplied fact [F-5](decisions.md#f-5), carried apart from it |
@@ -40,7 +40,7 @@ A sentence that is this port's own reading, and not a source's, says so ("this d
 ### EC-ENCLOSURE
 
 **A 1590BB-size box in landscape, designed to the owner-measured reference box: below the top panel's inner face, the box rim is 30.0, the back plate's lip top 28.0 (a raised band assumed to lie within 4 mm of the inside wall), and the back plate's inner face inside the lip 31.0. Plan sizes are Hammond's: 112.66 × 87.16 inside at the top panel, top panel 2.25 thick.** The ordered boxes are assumed to match the reference box, and the first build checks that they do (ENCLOSURE-FIRST-BUILD).
-- **Set by:** [O-17](decisions.md#o-17) (owner: "Hammond 1590BB, landscape").
+- **Set by:** [O-17](decisions.md#o-17) (owner; the baseline he adopted names the enclosure as a Hammond 1590BB in landscape, in `envelope.md`'s Owner inputs and split spec §5.1.1).
 - **Amended by:** [R-62](decisions.md#r-62) (ruling, 2026-10-06, on the owner's measurements [F-5](decisions.md#f-5)): "Design to the measured box", taken to be "the owner's preferred supplier's (Tayda) 1590BB-style box"; "Plan sizes stay Hammond's". R-62 narrows O-17's enclosure (it keeps the 1590BB size and changes only the depths, from the owner's own box); it is linked from O-17 and the owner may override it.
 
 *Not in force:* Hammond's drawn inside height 29.75 and rim 27.75 below the top panel, and the room they gave: 17.45 under the board to the back plate's pocket face and 15.45 to the seam (`envelope.md` §0, "Before R-62").
@@ -54,7 +54,7 @@ A sentence that is this port's own reading, and not a source's, says so ("this d
 ### EC-MODULE-MOUNTING
 
 **The module is socketed on the audio board's underside, its component face toward the back plate, and is reachable with the back plate off. The module's BOOT and RESET buttons need not be reachable in a finished pedal.**
-- **Set by:** [O-12](decisions.md#o-12) (owner: socketed; "The enclosure must allow the stacking height"); [O-17](decisions.md#o-17) (owner: the underside, reachable with the back plate off).
+- **Set by:** [O-12](decisions.md#o-12) (owner: socketed; the split spec records with it that the enclosure must allow the stacking height, §2, §5.1); [O-17](decisions.md#o-17) (owner: the underside, reachable with the back plate off).
 - **Amended by:** [RR-8](decisions.md#rr-8) (ruling): the module envelope and the stack height are fixed by the mechanical study and frozen with the contract before audio-board layout; layout confirms them and may not change them. They are not frozen (CONTRACT-FREEZE, STACK-HEIGHT-CONFIRM).
 
 ### EC-SOCKET-AND-HEADER
@@ -73,7 +73,7 @@ A sentence that is this port's own reading, and not a source's, says so ("this d
 
 *Not in force:* the connector-face limit as 5.09 (the first drafted contract), 3.69 (layout B with the SLW socket) and 3.32 (with the TLW header, before R-54); the stack as 13.52 (TLW header).
 
-*Not in force:* the 13.89 stack (4.57 + 1.52 + 1.6 + 6.2, the SLW socket and TLW header) that `envelope.md` "took as" the owner's acceptance of the O-17 baseline. The owner's words accepted a baseline described without a number ("Low-profile socket: a Daisy Seed sits slightly proud but connects"; "Yes, adopt it (Recommended)"); 13.89 was the study's figure for it. R-54 records that 15.17 is taller and that it "still fits and is reported". No owner response to that report is in the sources (STACK-HEIGHT-CONFIRM).
+*Not in force:* the 13.89 stack (4.57 + 1.52 + 1.6 + 6.2, the SLW socket and TLW header), which `envelope.md` says "is taken as the owner's acceptance of the low-profile socketed stack". The owner's words accepted a baseline described without a number ("Low-profile socket: a Daisy Seed sits slightly proud but connects"; "Yes, adopt it (Recommended)"); 13.89 was the study's figure for it. R-54: "The owner accepted a 13.89 mm stack in O-17; 15.17 mm still fits and is reported." `envelope.md`'s Owner inputs say where it went: "Reported to the controller." The split spec requires the study to report the stack height and envelope to the owner (§5.1: "reported to the owner"; §13.1: "records it in the drafted contract and reports it to the owner"), and no source shows that the 15.17 stack or the 4.97 limit reached him (STACK-HEIGHT-OWNER-REPORT). This is not a conflict: O-12 fixes no number, and 15.17 fits.
 
 ### EC-MODULE-USB
 
@@ -124,6 +124,8 @@ A sentence that is this port's own reading, and not a source's, says so ("this d
 **How a production pedal mounts the module (socketed or soldered) is deferred until a working board exists.**
 - **Set by:** [O-17](decisions.md#o-17) (owner: "don't over-constrain what a 'production' version will look like yet.").
 - **Amended by:** none.
+
+This is an owner deferral: the question returns to the owner after bring-up, once a working board exists. It has no open-items row because no phase of this port's programme (phase 2, 3, 4 or bring-up) closes it.
 
 ## 2. The enclosure and the room under the board
 
@@ -299,7 +301,7 @@ The electrical scheme per position (R_POSn 10.0 kΩ and C_POSn 100 nF always fit
 
 ### 4.3 The layout-B picture
 
-[layout-B.svg](layout-B.svg) is a byte-identical copy of the pedals file at the pin ([pinned link][svg]), carried as a record of what the owner chose from ("I prefer B", [O-18](decisions.md#o-18)). It shows, to scale in mm, the top with every position a knob, the top with a mixed fit (POS1–POS3 knobs, POS4–POS6 buttons), and the underside seen through the board. A pedals script generated it; nothing in this repository regenerates or edits it.
+[layout-B.svg](layout-B.svg) is a byte-identical copy of the pedals file at the pin ([pinned link][svg]), carried as the record of layout B, the layout the owner chose ("I prefer B", [O-18](decisions.md#o-18)). It was last regenerated at pedals commit `753d63e` (2026-10-06 12:55), before the commits that made R-60 and R-61 (`9693f7d`, 14:08) and R-62 (`a705f7f`, 16:23); each of those rulings leaves layout B as it was (R-60: "Layout B's drawing is unchanged"; R-61: "layout B unchanged"; R-62: "The NMJ6HCD2 and layout B stay"). It shows, to scale in mm, the top with every position a knob, the top with a mixed fit (POS1–POS3 knobs, POS4–POS6 buttons), and the underside seen through the board. A pedals script generated it; nothing in this repository regenerates or edits it.
 
 **What the file at the pin is, found by this port.** The picture on the screen when the owner said "I prefer B" was `candidate-B.svg` at pedals commit `b0e69c8` ([pinned link][svg-chosen]); commit `216f324` renamed it `layout-B.svg`, and the pedals script regenerated it four times more by `753d63e` (2026-10-06). Comparing the two pinned files, the control, footswitch, LED, jack and relay positions are unchanged. What changed is the title ("Candidate B:" became "Layout B (baseline, owner 2026-10-05):"), the module outline (55.09 became 55.12, the header change of R-54), the socket bodies (51.55 × 2.99 at x 30.41 became 51.3 × 3.04 at x 30.53, the socket changes), and the hung boards (12 deep at y 71 became 15 deep at y 70.5, R-56's board). The file here is therefore the chosen layout as the S1 rulings left it, not the exact bytes he looked at.
 
@@ -434,7 +436,7 @@ The other assembly notes: the module headers are cut from the 64-way strip (§3.
 
 ## 9. Open items this document raises
 
-In [open-items.md](open-items.md): ENCLOSURE-FIRST-BUILD, ENCLOSURE-DRAWING-CHECKS, MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING, AUDIO-BOARD-MECH-LAYOUT, MODULE-SOCKET-MATE, TRIM-RULES-ORDER, CONTROL-POSITION-VARIANTS, CONTROLS-FIRST-BUILD and FOOTSWITCH-PAPER-READINGS. It extends STACK-HEIGHT-CONFIRM (the 15.17 stack against the 13.89 the study took as accepted, and the margins it rests on). It relies on rows other documents raised: USB-DFU-VERTICAL (the module's receptacle, its land pattern and thickness note, the plug column, the bench note), I2C-RISE-AND-DEBOUNCE (the 2 pF contact allowance), CONTRACT-FREEZE (`stackHeightMm` and `maxHeightBottomMm` are draft values), MODULE-INTERNAL-PIN-MAP and RECOVERY-PATH-CHECKS.
+In [open-items.md](open-items.md): ENCLOSURE-FIRST-BUILD, ENCLOSURE-DRAWING-CHECKS, MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING, AUDIO-BOARD-MECH-LAYOUT, MODULE-SOCKET-MATE, TRIM-RULES-ORDER, CONTROL-POSITION-VARIANTS, CONTROLS-FIRST-BUILD and FOOTSWITCH-PAPER-READINGS. It adds STACK-HEIGHT-OWNER-REPORT (the 15.17 stack and the 4.97 limit, reported to the controller and not shown to have reached the owner) and extends STACK-HEIGHT-CONFIRM (the margins the stack rests on). It relies on rows other documents raised: USB-DFU-VERTICAL (the module's receptacle, its land pattern and thickness note, the plug column, the bench note), I2C-RISE-AND-DEBOUNCE (the 2 pF contact allowance), CONTRACT-FREEZE (`stackHeightMm` and `maxHeightBottomMm` are draft values), MODULE-INTERNAL-PIN-MAP and RECOVERY-PATH-CHECKS.
 
 [env]: https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/interface-analysis/envelope.md
 [ctl]: https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/interface-analysis/controls.md
