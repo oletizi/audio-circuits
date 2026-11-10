@@ -8,7 +8,7 @@ Ported from:
 - [h7-platform/interface-analysis/facts.md][facts]: §3 (the PB0 note), §4, §5
 - [2026-10-05-h7-split-rulings.md][ledger] (the S1 rulings ledger): R-60, and the entries linked through [decisions.md](decisions.md)
 - [h7-platform/LAYOUT-CARRYFORWARD.md][lcf]: the module requirement USB-DFU-VERTICAL
-- [h7-platform/SCHEMATIC-CHECKLIST.md][checklist]: §9 bring-up identifiers BU-05 to BU-07, BU-20 to BU-22, cited for traceability only
+- [h7-platform/SCHEMATIC-CHECKLIST.md][checklist]: §9 identifiers CORE-14, BU-05 to BU-07, BU-09 and BU-20 to BU-22, cited for traceability only
 
 This document describes the processor side of the STM32H743 digital pedal platform (h7-platform) after the split: the processor module (h7-module) with its MCU, SDRAM, QSPI flash, crystal, clock tree, reset, boot and debug access, and how it is identified. It records the design as it stood in the pedals repository at commit `5b926d0`. Nothing here has been built, modelled or drawn in this repository.
 
@@ -41,7 +41,7 @@ Decisions are linked by anchor into [decisions.md](decisions.md). An owner decis
 | D17 VDDA ferrite | BLM21PG221SN1D, kept, on the module | [D17](decisions.md#d17) (owner-approved) |
 | D18 one GND net | Kept on both boards | [D18](decisions.md#d18) (owner-approved) |
 | D20 codec clock master | IFMD to VDD, SCKI from a 12.288 MHz oscillator | [D20](decisions.md#d20) (owner-approved) |
-| D21 codec local reset | From a local reset on the pedal, with the power-fail supervisor | [D21](decisions.md#d21) (owner-approved) |
+| D21 codec local reset | From a local reset on the pedal | [D21](decisions.md#d21) (owner-approved); the power-fail supervisor also driving RST is [RR-11](decisions.md#rr-11)'s Q-6 ruling |
 | D22 codec VDD regulator | A local 3.3 V regulator on 5V_A | [D22](decisions.md#d22) (owner-approved) |
 | D23 SDRAM control pins | SDNWE, SDNE0, SDCKE0 on PH5, PH3, PH2 | [D23](decisions.md#d23) (owner-approved) |
 | D24 module buck EN | From VIN_MOD | [D24](decisions.md#d24) (owner-approved) |
@@ -64,9 +64,11 @@ The codec half of `CORE-BRIEF.md` §2 (the PCM3060, its straps, its decoupling) 
 
 **The module fits 32 MB of SDRAM: 256 Mbit × 16, 13 row bits (A0–A12), 9 column bits, 4 banks, TSOP-II-54; the part named is the Winbond W9825G6KH-6I.** Firmware's SDRAM region is 32 MB on both boards, the Seed included.
 - **Set by:** original spec *SDRAM* (the baseline class); [D1](decisions.md#d1) (ruling).
-- **Amended by:** [O-4](decisions.md#o-4) (owner): 32 MB on the module, and firmware fits 32 MB of SDRAM though the Seed has 64 MB; split spec §6.1 names the part.
+- **Amended by:** [O-4](decisions.md#o-4) (owner): 32 MB on the module, and firmware fits 32 MB of SDRAM though the Seed has 64 MB; split spec §3's SDRAM row: "Build-time choice between 32 MB baseline and 64 MB optional class" becomes "32 MB is the module baseline; firmware fits 32 MB on every board, the Seed included"; split spec §6.1 names the part.
 
-*Not in force:* "The fitted density is a build-time board configuration ... It sets the FMC column-bit count, the refresh count and the linker's SDRAM region size together" (original spec *SDRAM*), where the linker region followed the fitted class. After O-4 the region is 32 MB on every board; the FMC column count still follows the fitted part (§6).
+*Not in force:* the linker's SDRAM region size following the fitted class (original spec *SDRAM*: the fitted density "sets the FMC column-bit count, the refresh count and the linker's SDRAM region size together"); after O-4 and split spec §3 the region is 32 MB on every board.
+
+Still in force from that sentence: the fitted density is a build-time board configuration that sets the FMC column-bit count (§6.3). *This document's reading:* split spec §3 calls 32 MB "the module baseline", which is the closest any source comes to the optional 64 MB class on the split; no source says whether a 64 MB part may still be fitted, and if one is, its FMC values follow the part while the region stays 32 MB.
 
 ### EC-SDRAM-CONTROL-PINS
 
@@ -80,7 +82,7 @@ The codec half of `CORE-BRIEF.md` §2 (the PCM3060, its straps, its decoupling) 
 
 **HSE 25 MHz; PLL1 gives the 480 MHz system clock at VOS0; PLL2 gives the FMC kernel clock (SDCLK 92.5 MHz) and the ADC kernel clock; QUADSPI runs at 60 MHz from HCLK; SAI2 runs both blocks as slaves on the codec's clocks; the application's USB is the OTG_HS controller with its internal full-speed PHY, clocked from HSI48 with the clock recovery system (CRS) synchronised to USB1 SOF.** §5 gives every value and its source.
 - **Set by:** [CORE-BRIEF.md §5, §5b][cb]; [PW-TJ](decisions.md#pw-tj) (owner) keeps 480 MHz at VOS0.
-- **Amended by:** split spec §9.4: "SAI1 → SAI2, both blocks slave; PLL3's MCLK role ends (the SAI kernel clock requirement in slave mode is a plan item); USB on the OTG_HS controller (USB1) using its internal full-speed PHY, with CRS synchronised to USB1 SOF, not USB2". The revised tree as a whole was never restated: open item MODULE-CLOCK-TREE-RESTATE. The slave-mode kernel clock: open item SAI-KERNEL-CLOCK-SLAVE.
+- **Amended by:** [O-2](decisions.md#o-2) (owner: the codec is clock master and the STM32 SAI is slave; MCLK is not on the interface) and [D20](decisions.md#d20) (owner-approved: IFMD to VDD, SCKI from a 12.288 MHz XO), which end the MCU's MCLK; split spec §9.4: "SAI1 → SAI2, both blocks slave; PLL3's MCLK role ends (the SAI kernel clock requirement in slave mode is a plan item); USB on the OTG_HS controller (USB1) using its internal full-speed PHY, with CRS synchronised to USB1 SOF, not USB2". The revised tree as a whole was never restated: open item MODULE-CLOCK-TREE-RESTATE. The slave-mode kernel clock: open item SAI-KERNEL-CLOCK-SLAVE.
 
 *Not in force:* SAI1 block A master transmitter on PLL3 (P3 = 8, pll3_p_ck 98.303986 MHz, MCKDIV 8) driving MCLK 12.287998 MHz on PE2 (SAI1_MCLK_A), −0.147 ppm from PLL quantisation, with SCK 3.072 MHz and FS 47 999.993 Hz (`CORE-BRIEF.md` §5b).
 
