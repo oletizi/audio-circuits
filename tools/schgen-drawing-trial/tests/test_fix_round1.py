@@ -53,9 +53,9 @@ def test_sent_request_without_response_is_lost(exec_dir: Path) -> None:
     client = CountingClient(verified(WITH_FINAL))
     record = run(exec_dir, FakeTools(), client)
     assert len(client.calls) == 1
-    assert reasons(record) == ["generation-lost"]
+    assert reasons(record) == ["regeneration-automatic", "generation-lost"]
     reruns = record["downstream_reruns"]
-    assert isinstance(reruns, list) and reruns[0]["request_id"] == "earlier"
+    assert isinstance(reruns, list) and reruns[1]["request_id"] == "earlier"
     kept = list((directory / "interrupted").glob("*/request.sent"))
     assert len(kept) == 1, "the marker is kept, not deleted"
 
@@ -73,7 +73,7 @@ def test_http_error_body_is_kept_and_next_run_records_loss(exec_dir: Path) -> No
     assert (directory / "request.sent").is_file()
     client = CountingClient(verified(WITH_FINAL))
     record = run(exec_dir, FakeTools(), client)
-    assert len(client.calls) == 1 and reasons(record) == ["generation-lost"]
+    assert len(client.calls) == 1 and reasons(record) == ["regeneration-automatic", "generation-lost"]
 
 
 @pytest.mark.parametrize("raw", [b"not json", b"[1, 2]", json.dumps({"choices": [{"finish_reason": "stop"}]}).encode()])

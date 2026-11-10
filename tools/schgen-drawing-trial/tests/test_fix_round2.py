@@ -42,7 +42,7 @@ def test_second_relaunch_after_rejection_refused(exec_dir: Path) -> None:
         run(exec_dir, server_error)
     with pytest.raises(Exception, match="rejected"):
         run(exec_dir, server_error)  # the one automatic regeneration, after a 5xx
-    assert len(server_error.calls) == 2 and reasons(exec_dir) == ["generation-lost"]
+    assert len(server_error.calls) == 2 and reasons(exec_dir) == ["regeneration-automatic", "generation-lost"]
     untouched = CountingClient(verified(WITH_FINAL))
     with pytest.raises(run_attempt.RegenerationRefused, match="allow-regeneration"):
         run(exec_dir, untouched)
@@ -85,7 +85,8 @@ def test_unreadable_request_sent_is_said(exec_dir: Path) -> None:
     record = run(exec_dir, CountingClient(verified(WITH_FINAL)))
     reruns = record["downstream_reruns"]
     assert isinstance(reruns, list)
-    assert reruns[0]["reason"] == "generation-lost" and reruns[0]["request_id"] == "request_id unreadable"
+    assert [r["reason"] for r in reruns] == ["regeneration-automatic", "generation-lost"]
+    assert reruns[1]["request_id"] == "request_id unreadable"
 
 
 def test_count_only_acknowledged_means_the_path_was_used(exec_dir: Path, tmp_path: Path) -> None:

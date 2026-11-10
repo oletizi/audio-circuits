@@ -12,6 +12,9 @@
      or generation-lost when only request.sent shows a request went out;
      a complete one is never regenerated. request.sent is written before
      the POST; a non-completion payload is kept under rejected/<stamp>/.
+     A finish_reason other than stop or length (vLLM's "abort") is an
+     interruption, never complete, both when it arrives and when found
+     saved (aborts.py).
   4. Token identity, checked from the saved response.json on every run
      (token_identity.py); count-only only with TRIAL_ACCEPT_COUNT_ONLY=1.
   5. The downstream stages (stages.py) on the saved response, then the
@@ -55,12 +58,13 @@ import manifest
 import stages
 import token_identity
 from host_tools import HostTools, RealHostTools
-from persist import (META, RAW, pending_rejection_status, persist_response, quarantine_incomplete, record_rerun,
-                     regenerations_recorded, response_complete, utc_stamp, write_json_atomic, write_rejected,
+from aborts import is_complete_finish, keep_aborted, quarantine_saved_abort
+from persist import (DECODED, MANIFEST_FILE, META, RAW, SENT, pending_rejection_status, persist_response,
+                     quarantine_incomplete, record_rerun, regenerations_recorded, regenerations_sent,
+                     response_complete, response_leftovers, utc_stamp, write_json_atomic, write_rejected,
                      write_atomic, write_sent)
 
-MANIFEST = "manifest.json"
-DECODED = "response.decoded.txt"
+MANIFEST = MANIFEST_FILE
 DOWNSTREAM_PREVIOUS = "downstream-previous"
 PROVENANCE_ENV = {
     "endpoint": "TRIAL_ENDPOINT",
@@ -110,14 +114,21 @@ def check_regeneration_allowed(directory: Path, allow_regeneration: str | None) 
     --allow-regeneration REASON, and the reason is recorded. Checked before anything is moved.
     """
     earlier = regenerations_recorded(directory)
+    pending = bool(response_leftovers(directory)) or (directory / SENT).is_file()
     rejected = pending_rejection_status(directory)
     client_error = rejected is not None and 400 <= rejected < 500
-    if earlier == 0 and not client_error:
+    if earlier == 0 and not pending and not client_error:
+        return  # a first send: nothing was sent for this attempt before
+    sent_before = regenerations_sent(directory)
+    if not allow_regeneration and not client_error and sent_before == 0:
+        # The one automatic regeneration, recorded so a second loss cannot take it again.
+        record_rerun(directory, "regeneration-automatic", utc_stamp(), {})
         return
     if not allow_regeneration:
         why = (f"the last request was rejected with HTTP {rejected}, which a resend of the same body repeats"
                if client_error else
-               f"reruns.jsonl already records {earlier} lost or interrupted generation(s) for this attempt")
+               f"this attempt's one automatic regeneration was already sent, and reruns.jsonl records "
+               f"{earlier} lost or interrupted generation(s)")
         raise RegenerationRefused(
             f"{directory}: not sending seed again: {why}. Read rejected/ and interrupted/, fix the cause, then "
             "run this attempt with --allow-regeneration REASON; the reason is recorded in downstream_reruns. "
@@ -130,6 +141,7 @@ def ensure_response(directory: Path, board: str, attempt: int, prompt_ids: list[
                     client_factory: ClientFactory, env: Mapping[str, str],
                     allow_regeneration: str | None = None) -> None:
     """Generate once when no complete response exists; never when one does."""
+    quarantine_saved_abort(directory)
     if response_complete(directory):
         return
     provenance = provenance_from(env)
@@ -146,6 +158,13 @@ def ensure_response(directory: Path, board: str, attempt: int, prompt_ids: list[
             f"{request_id}: {err}. The payload is kept at {kept}; request.sent stays, so the next run records "
             "this attempt as generation-lost before it sends again"
         ) from err
+    if not is_complete_finish(meta.get("finish_reason")):
+        kept = keep_aborted(directory, text, meta)
+        raise generation.GenerationError(
+            f"{request_id} ended with finish_reason {meta.get('finish_reason')!r}, which is an interrupted "
+            f"generation, not the model's output. It is kept at {kept} and recorded as generation-interrupted; "
+            "the next run sends the attempt's one automatic regeneration with the same seed"
+        )
     persist_response(directory, text, meta)
 
 

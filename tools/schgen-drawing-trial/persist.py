@@ -35,6 +35,8 @@ RAW = "response.raw.txt"
 META = "response.json"
 MARKER = "response.complete"
 SENT = "request.sent"
+DECODED = "response.decoded.txt"
+MANIFEST_FILE = "manifest.json"
 RESPONSE_FILES = (RAW, META, MARKER)
 INTERRUPTED = "interrupted"
 REJECTED = "rejected"
@@ -158,10 +160,33 @@ def pending_rejection_status(attempt_dir: Path) -> int | None:
 
 
 REGENERATION_REASONS = ("generation-lost", "generation-interrupted")
+REGENERATION_SENT = ("regeneration-automatic", "regeneration-allowed")
+# A generation that ended any other way (vLLM's "abort" when the node went away mid-request) did
+# not finish: it is an interruption, not the model's output (controller ruling, 2026-11-10 run).
+COMPLETE_FINISH_REASONS = ("stop", "length")
 
 
 def regenerations_recorded(attempt_dir: Path) -> int:
+    """Lost or interrupted generations recorded for this attempt."""
     return sum(1 for entry in read_reruns(attempt_dir) if entry.get("reason") in REGENERATION_REASONS)
+
+
+def regenerations_sent(attempt_dir: Path) -> int:
+    """Regenerations already sent for this attempt, automatic or operator-allowed."""
+    return sum(1 for entry in read_reruns(attempt_dir) if entry.get("reason") in REGENERATION_SENT)
+
+
+def quarantine_paths(attempt_dir: Path, paths: list[Path], reason: str, extra: dict[str, object]) -> Path:
+    """Move `paths` into interrupted/<stamp>/ (never delete) and append `reason` to reruns.jsonl."""
+    stamp = utc_stamp()
+    target = attempt_dir / INTERRUPTED / stamp
+    target.mkdir(parents=True, exist_ok=False)
+    for path in paths:
+        shutil.move(str(path), str(target / path.name))
+    _fsync_dir(target)
+    _fsync_dir(attempt_dir)
+    record_rerun(attempt_dir, reason, stamp, {"moved_to": str(target.relative_to(attempt_dir)), **extra})
+    return target
 
 
 def quarantine_incomplete(attempt_dir: Path) -> Path | None:
@@ -177,19 +202,10 @@ def quarantine_incomplete(attempt_dir: Path) -> Path | None:
     if not moving:
         return None
     reason = "generation-interrupted" if leftovers else "generation-lost"
-    request_id = sent_request_id(sent) if sent.is_file() else None
-    stamp = utc_stamp()
-    target = attempt_dir / INTERRUPTED / stamp
-    target.mkdir(parents=True, exist_ok=False)
-    for path in moving:
-        shutil.move(str(path), str(target / path.name))
-    _fsync_dir(target)
-    _fsync_dir(attempt_dir)
-    extra: dict[str, object] = {"moved_to": str(target.relative_to(attempt_dir))}
-    if request_id is not None:
-        extra["request_id"] = request_id
-    record_rerun(attempt_dir, reason, stamp, extra)
-    return target
+    extra: dict[str, object] = {}
+    if sent.is_file():
+        extra["request_id"] = sent_request_id(sent)
+    return quarantine_paths(attempt_dir, moving, reason, extra)
 
 
 def write_rejected(attempt_dir: Path, request_id: str, status: int, payload: bytes, reason: str) -> Path:

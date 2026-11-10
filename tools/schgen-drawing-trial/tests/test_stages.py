@@ -132,7 +132,7 @@ def test_partial_response_is_not_complete(exec_dir: Path) -> None:
     moved = list((directory / "interrupted").glob("*/response.raw.txt.part"))
     assert len(moved) == 1 and moved[0].read_text() == "<|channel|>analysis<|message|>half"
     reruns = record["downstream_reruns"]
-    assert isinstance(reruns, list) and [r["reason"] for r in reruns] == ["generation-interrupted"]
+    assert isinstance(reruns, list) and [r["reason"] for r in reruns] == ["regeneration-automatic", "generation-interrupted"]
     assert client.calls[0][0]["seed"] == 42, "regenerated with the same seed"
 
 
@@ -147,7 +147,7 @@ def test_marker_digest_mismatch(exec_dir: Path) -> None:
     assert len(client.calls) == 1
     assert len(list((directory / "interrupted").glob("*/response.complete"))) == 1
     reruns = record["downstream_reruns"]
-    assert isinstance(reruns, list) and reruns[0]["reason"] == "generation-interrupted"
+    assert isinstance(reruns, list) and reruns[1]["reason"] == "generation-interrupted"
 
 
 def test_prompt_ids_mismatch_stops(exec_dir: Path) -> None:
