@@ -1,6 +1,7 @@
 # Digital pedal platform, phase 1: porting the design knowledge from the pedals repository
 
-**Status:** draft, awaiting the owner's review. Branch: `feature/digital-pedal-platform`.
+**Status:** draft, awaiting the owner's review. Revised in response to the
+third-party review in issue #27. Branch: `feature/digital-pedal-platform`.
 
 ## Intent
 
@@ -107,7 +108,35 @@ The design history in brief:
    - the schematic checklist content that is about the circuit rather than about
      the old generator (`SCHEMATIC-CHECKLIST.md`);
    - the open risks and unverified facts (split spec §14, §16), each still
-     marked as open.
+     marked as open;
+   - **a carry-forward table of every unresolved requirement, allowance and
+     freeze blocker** (issue #27, finding 1). It covers split spec §14 and §16.
+     It also covers every "Not verified" and "Carries" section of each S1
+     analysis and every later ruling. Each row names:
+     - the affected board and power domain;
+     - the current status;
+     - the evidence that would close it;
+     - the phase that must close it;
+     - the pinned source.
+
+     It must include at least VDDA-WIDEBAND, VBUS-HOTPLUG and FB-AN2606 from
+     R-57. Every figure in it is a **paper analysis of a board that has not
+     been built**. The table says so, and says nothing that reads as a hardware
+     failure or as a closure;
+   - **hardware requirements that firmware imposes or depends on** (issue #27,
+     finding 3), restated against the split architecture:
+     - the Seed H750/QSPI versus H743/internal-flash configurations, and 32 MB
+       SDRAM compatibility;
+     - the bootloader/application flash map and its recovery limits;
+     - codec-master SAI2, pin states that depend on power domain, relay and
+       watchdog sequencing, and USB update enumeration.
+
+     They are recorded as constraints on the hardware. This repository does not
+     own firmware, and the section does not set it up to;
+   - **the bring-up acceptance checklist**: `SCHEMATIC-CHECKLIST.md` §9,
+     BU-01 to BU-29, and any BL items. Original source identifiers are kept for
+     traceability. Each item is marked as an original requirement, a deferred
+     measurement or a paper analysis that passed.
 3. **The module contract is here as data**, at
    `circuits/h7-platform/module-interface.json`, still marked draft. It is a
    source that will be edited here, because the analyses that fill in and
@@ -121,12 +150,19 @@ The design history in brief:
    - **The contract's citations stay as they are.** Its `source` fields cite pedals
      paths and sections ("interface-analysis/envelope.md §3", "spec §5.6.3",
      R-61, D-A-1). Rewriting them is not part of this phase. Instead, the README
-     states that every citation inside either JSON file resolves against the
-     pedals repository at the pinned commit. It also gives the link prefix to
-     put in front of a path. Each ported document names the pedals file
-     and sections it came from, so a reader can go from a citation to its new
-     home. Re-pointing the citations is a contract edit, so it belongs to
-     whichever later phase next edits the contract.
+     carries a **provenance index** (issue #27, finding 4). It maps each alias
+     used in either JSON file to an exact pinned source file:
+     - document aliases (`spec`, `PW`, `AN`, `CB` and the like), saying which of
+       the two platform specs an unqualified `spec` means;
+     - the prefixes of ruling and review identifiers (R-, RR-, D-A- and so on);
+     - relative path roots such as `vendor/st-pin-data/...`.
+
+     The index says these strings are historical provenance, not paths that
+     resolve here. The index carries three worked traces, each to its source: a
+     rail limit, an S1 amendment, and a pin-data path. Each ported document
+     names the pedals file and sections it came from. Re-pointing the citations
+     is a contract edit, so it belongs to whichever later phase next edits the
+     contract.
 4. **A reader can tell what came across and what did not.** A README at
    `docs/h7-platform/README.md` says what the platform is, where each part of
    the knowledge now lives, what was deliberately left in the pedals
@@ -152,9 +188,12 @@ The design history in brief:
      them, and this repository has no `docs/standards/` yet.
 5. **The OSCAR licences and attributions come across.** `h7-platform/LICENSE-OSCAR`
    records that the core MCU, SDRAM and flash circuitry derives from DADDesign
-   OSCAR_PROC_01 (MIT). The codec circuitry derives from OSCAR_AUDIO_01, which
-   also carries `LICENSE-APACHE-2.0`. Both files go to `circuits/h7-platform/`
-   unchanged, and the README says which circuitry they cover. That obligation
+   OSCAR_PROC_01 (MIT). The codec circuitry derives from OSCAR_AUDIO_01, for
+   which the attribution file records Apache-2.0 alongside MIT. It records the
+   discrepancy between the two upstream statements as **unresolved**. Both files
+   go to `circuits/h7-platform/` unchanged. The README says which circuitry they
+   cover and repeats that the OSCAR_AUDIO_01 licence statement is unresolved
+   upstream. It must not paraphrase it as settled. That obligation
    follows the circuit into the phase-2 models and the phase-4 fabrication
    files, and it costs nothing to carry now. Finding it only at fabrication
    would cost more.
@@ -253,9 +292,35 @@ The design history in brief:
 
 - How to split the prose into files under `docs/h7-platform/`. One file per
   topic (decisions, architecture, parts, power, analog, bypass relay, memory,
-  interface analyses, layout carry-forward, risks) is a reasonable start.
-- Whether a given pedals passage is still live, where it is not obvious. When in
-  doubt, carry it and mark it as possibly superseded, with the reason.
+  interface analyses, layout carry-forward, risks, carry-forward table,
+  firmware-facing requirements, bring-up) is a reasonable start.
+
+## How amendments resolve (issue #27, finding 2)
+
+The pedals sources were amended many times after the split spec. The split spec
+§9, the S1 analyses, R-1 onward, and the Task 17 rulings all amend earlier
+text. "Carry both versions and mark one possibly superseded" leaves phase 2 with
+no baseline, so the port resolves amendments by rule:
+
+1. **Authority first, then date.**
+   - An owner decision is superseded only by a later owner decision.
+   - Among controller rulings, and among analyses, the later dated text
+     supersedes the earlier text it names or amends.
+   - **A controller ruling never supersedes an owner decision.** A ruling that
+     narrows one is carried as a narrowing that the owner may override, and it
+     is linked to the decision it narrows.
+   - Note that O-15, despite its O-number, is recorded in the split spec as a
+     controller ruling. That makes R-50's 9 V Seed bench rule a ruling
+     narrowing a ruling, not a ruling overriding the owner.
+2. **The effective constraint is stated once, as current**, with a link to each
+   source that set or amended it. Superseded values appear only in a history
+   line marked as not in force.
+3. **Where the sources cannot settle it**, for example two rulings with no
+   stated ordering, or an analysis that contradicts a ruling without amending
+   it, the port writes an explicit **conflict entry** naming both and does not
+   pick one. A conflict that changes what gets built is put to the owner.
+4. Where it isn't obvious whether a passage is still live, carry it and mark
+   it, with the reason. This is the residual case, not the default.
 - How to represent each S1 analysis result so that its inputs and method travel
   with the number.
 
@@ -275,11 +340,29 @@ The design history in brief:
   rulings.
 - No file under the paths this phase adds contains TypeScript or a script, or
   names a pedals tool as something to run.
-- `docs/h7-platform/README.md` maps every platform file listed under Goal 4.
+- `docs/h7-platform/README.md` maps every platform file listed under Goal 4,
+  and its provenance index resolves the three worked traces (Goal 3).
+- The carry-forward table contains VDDA-WIDEBAND, VBUS-HOTPLUG and FB-AN2606,
+  each still open and each naming the phase that must close it.
+- The effective constraints state, as current and with their supersession
+  links:
+  - the 9 V Seed bench restriction (R-50, R-59);
+  - the 421 Hz control-noise band (R-57);
+  - the Q_PEN reset of 3V3_P's EN (R-58).
+
+  None of the superseded values (9-12 V, 179 Hz, the diode reset) appears
+  except in a history line marked as not in force. *These three are a sample
+  that a reviewer can check, not the whole of the requirement.*
+- The firmware-facing requirements and the bring-up checklist exist, and the
+  bring-up checklist has BU-01 to BU-29 by their original identifiers.
 - `bun run typecheck` and `make check` are unaffected (nothing here is code; run
   them anyway to show it).
 
 ## What this leaves open
+
+- Where the platform's firmware lives. This repository's mandate names five
+  hardware output classes and no firmware. Phase 1 records the hardware side of
+  the firmware contract only.
 
 - The order in which the three boards go through modelling and drawing (phase
   2's design).
