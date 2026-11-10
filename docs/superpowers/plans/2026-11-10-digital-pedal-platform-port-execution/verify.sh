@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts bringup)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -342,6 +342,30 @@ check_parts() {
   [ -z "$out" ] || { echo " [$(echo "$out" | head -5 | tr '\n' ';')]"; return 1; }
 }
 
+BRINGUP="$DOCS/bring-up.md"
+BRINGUP_MARKINGS='original requirement|deferred measurement|passed paper analysis'
+
+# A BU line is a line that begins "- **BU-NN**". Each of BU-01 to BU-29 must have
+# exactly one such line, and that line must carry exactly one occurrence of one
+# of the three markings. Each of BL-1 to BL-4 must have a line beginning
+# "- **BL-n**".
+check_bringup() {
+  local bad="" n id lines count marks
+  [ -f "$BRINGUP" ] || { echo " [missing docs/h7-platform/bring-up.md]"; return 1; }
+  for n in $(seq 1 29); do
+    id=$(printf 'BU-%02d' "$n")
+    lines=$(grep -E "^- \*\*$id\*\*" "$BRINGUP")
+    count=$(printf '%s' "$lines" | grep -c '^')
+    if [ "$count" -ne 1 ]; then bad="$bad [$id: $count lines beginning '- **$id**', expected 1]"; continue; fi
+    marks=$(printf '%s\n' "$lines" | grep -oE "$BRINGUP_MARKINGS" | wc -l | tr -d ' ')
+    [ "$marks" = "1" ] || bad="$bad [$id line carries $marks markings, expected exactly 1]"
+  done
+  for n in 1 2 3 4; do
+    grep -qE "^- \*\*BL-$n\*\*" "$BRINGUP" || bad="$bad [no line beginning '- **BL-$n**']"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -359,6 +383,7 @@ run_check() {
     firmware) reason=$(check_firmware) ;;
     mechanical) reason=$(check_mechanical) ;;
     parts) reason=$(check_parts) ;;
+    bringup) reason=$(check_bringup) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
