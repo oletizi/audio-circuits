@@ -1,0 +1,10 @@
+2026-11-10T10:14:52.294664Z  INFO kinference::server: starting kinference version="0.1.0-alpha.7" listen=0.0.0.0:50051 worker_sets=0 profiles=1
+2026-11-10T10:14:52.296576Z  WARN kinference_router::metrics: tenant label values are unbounded; set metrics.tenant_labels to an allowlist
+2026-11-10T10:14:52.297565Z  INFO kinference::server: ready listen=0.0.0.0:50051 worker_sets=0
+2026-11-10T10:14:52.297596Z  INFO kinference_controller::policy::worker_sets: watching InferenceWorkerSets namespace=None selector=None profiles=1
+2026-11-10T10:14:52.297616Z  INFO kinference_controller::policy::store: watching policy resources namespace=None pools=0
+2026-11-10T10:14:52.298080Z  INFO kinference::admin: admin listener ready listen=0.0.0.0:9001
+2026-11-10T10:30:28.256418Z  INFO kinference_fleet::pool: worker set created workerset=default/schgen-merged profile=default block_size=16 resurrected=false
+2026-11-10T10:30:28.274860Z  INFO kinference_fleet::coordinator: worker added workerset="default/schgen-merged" worker_id="default/schgen-merged-cf9577cf6-wxwqq" block_size=16 zmq_endpoint="tcp://10.80.1.5:5557" http_url="http://10.80.1.5:8000/"
+2026-11-10T10:30:28.277749Z  INFO kinference_fleet::models: worker set serves the model model=schgen-merged workerset=default/schgen-merged workersets_serving=1
+2026-11-10T10:30:52.613879Z  WARN pick{req=smoke-1794306652-15812 response_id=11322834098062416206 model="schgen-merged"}: kinference_router::service::scoring: tokenize failed; picking on load alone workerset=default/schgen-merged model="schgen-merged" attempts=1 reason=/render returned 403 Forbidden: {"error":{"message":"Scale-out endpoints are disabled. Restart vllm serve with --enable-scale-out to enable them.","type":"PermissionDeniedError","param":null,"code":403}}

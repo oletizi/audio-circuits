@@ -88,3 +88,31 @@ pultec-mid attempt 2: program-raised (page_produced=False, token_identity=verifi
 2026-11-10T09:53:23Z pultec-mid attempt 3: running
 pultec-mid attempt 3: program-raised (page_produced=False, token_identity=verified)
 2026-11-10T09:54:29Z all attempts complete
+2026-11-10T10:31:40Z host tools: kicad-cli 10.0.5, magick present
+2026-11-10T10:31:40Z pultec-hi-boost: request directory
+pultec-hi-boost: fidelity equal, 4917 prompt tokens, rendered 2026-11-10
+2026-11-10T10:31:40Z pultec-hi-cut: request directory
+pultec-hi-cut: fidelity equal, 4668 prompt tokens, rendered 2026-11-10
+2026-11-10T10:31:40Z pultec-low-boost: request directory
+pultec-low-boost: fidelity equal, 4638 prompt tokens, rendered 2026-11-10
+2026-11-10T10:31:40Z pultec-low-cut: request directory
+pultec-low-cut: fidelity equal, 4660 prompt tokens, rendered 2026-11-10
+2026-11-10T10:31:41Z pultec-mid: request directory
+pultec-mid: fidelity equal, 5505 prompt tokens, rendered 2026-11-10
+2026-11-10T10:31:41Z pultec-hi-boost attempt 1: complete, skipped
+2026-11-10T10:31:41Z pultec-hi-boost attempt 2: complete, skipped
+2026-11-10T10:31:41Z pultec-hi-boost attempt 3: complete, skipped
+2026-11-10T10:31:41Z pultec-hi-cut attempt 1: complete, skipped
+2026-11-10T10:31:41Z pultec-hi-cut attempt 2: complete, skipped
+2026-11-10T10:31:41Z pultec-hi-cut attempt 3: complete, skipped
+2026-11-10T10:31:41Z pultec-low-boost attempt 1: running
+pultec-low-boost attempt 1: program-raised (page_produced=False, token_identity=verified)
+2026-11-10T10:32:45Z pultec-low-boost attempt 2: complete, skipped
+2026-11-10T10:32:45Z pultec-low-boost attempt 3: complete, skipped
+2026-11-10T10:32:45Z pultec-low-cut attempt 1: complete, skipped
+2026-11-10T10:32:45Z pultec-low-cut attempt 2: complete, skipped
+2026-11-10T10:32:45Z pultec-low-cut attempt 3: complete, skipped
+2026-11-10T10:32:45Z pultec-mid attempt 1: complete, skipped
+2026-11-10T10:32:45Z pultec-mid attempt 2: complete, skipped
+2026-11-10T10:32:45Z pultec-mid attempt 3: complete, skipped
+2026-11-10T10:32:45Z all attempts complete
