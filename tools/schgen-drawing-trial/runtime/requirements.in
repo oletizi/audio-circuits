@@ -1,0 +1,12 @@
+# Input to requirements.lock. The image installs only from the lock, with
+# --require-hashes; regenerate the lock with build.sh's `lock` step, never by
+# editing it.
+#
+# transformers: the tokenizer side of the trial (Task 4).
+# kicad-skip, sexpdata: SchGen's emitter imports (my_skip_lib imports skip,
+#   kicad_add_symbol imports sexpdata); versions from SchGen's requirements.txt.
+# pytest: the in-container tests.
+transformers==5.22.2
+kicad-skip==0.2.5
+sexpdata==1.0.0
+pytest==9.2.0
