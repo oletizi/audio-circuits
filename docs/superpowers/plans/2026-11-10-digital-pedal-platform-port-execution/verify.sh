@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -281,6 +281,20 @@ check_firmware() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+MECHANICAL="$DOCS/mechanical-and-controls.md"
+MECHANICAL_TERMS=("1590BB" "stack height" "layout-B.svg")
+
+# "six" is matched as a whole word, so "sixty" or "sixth" does not satisfy it.
+check_mechanical() {
+  local bad="" term
+  [ -f "$MECHANICAL" ] || { echo " [missing docs/h7-platform/mechanical-and-controls.md]"; return 1; }
+  for term in "${MECHANICAL_TERMS[@]}"; do
+    grep -qF -- "$term" "$MECHANICAL" || bad="$bad [mechanical-and-controls.md lacks '$term']"
+  done
+  grep -qw -- "six" "$MECHANICAL" || bad="$bad [mechanical-and-controls.md lacks the word 'six']"
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -296,6 +310,7 @@ run_check() {
     openitems) reason=$(check_openitems) ;;
     bypass) reason=$(check_bypass) ;;
     firmware) reason=$(check_firmware) ;;
+    mechanical) reason=$(check_mechanical) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
