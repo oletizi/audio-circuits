@@ -11,6 +11,12 @@
 # (location policy ANY, total max 1) places the node wherever capacity exists
 # when the vLLM pod asks for GPUs. A stockout then shows as the pod Pending
 # with a FailedScaleUp event, not as a hung create.
+#
+# The pool is SPOT. Measured 2026-11-09: the on-demand pool above then failed
+# scale-up in all three zones for an hour, every attempt "GCE out of
+# resources". Spot draws on separate capacity; Google may reclaim the node at
+# any time, which a routing smoke test tolerates. Owner decision, recorded in
+# the serving spec's Decisions table.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 
@@ -24,7 +30,7 @@ fi
 
 if ! gcloud container node-pools describe "$GPU_POOL" --cluster "$CLUSTER" --project "$PROJECT" --zone "$ZONE" >/dev/null 2>&1; then
   gcloud container node-pools create "$GPU_POOL" --cluster "$CLUSTER" --project "$PROJECT" --zone "$ZONE" \
-    --machine-type "$GPU_MACHINE" \
+    --machine-type "$GPU_MACHINE" --spot \
     --accelerator type=nvidia-l4,count=4,gpu-driver-version=latest \
     --node-locations "$GPU_ZONES" \
     --num-nodes 0 \

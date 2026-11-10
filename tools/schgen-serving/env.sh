@@ -2,7 +2,7 @@
 PROJECT=oletizi-docs-cli-20261028
 ZONE=us-central1-a
 CLUSTER=schgen-kinf
-GPU_POOL=l4x4
+GPU_POOL=l4x4-spot
 GPU_MACHINE=g2-standard-48
 # Zones of the region offering GPU_MACHINE (gcloud compute machine-types list, 2026-11-09).
 GPU_ZONES=us-central1-a,us-central1-b,us-central1-c
