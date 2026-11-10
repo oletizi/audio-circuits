@@ -301,7 +301,8 @@ PARTS_HEADER="Role|MPN|Manufacturer|LCSC|Board|Chosen by|Source"
 # Every table whose header row is exactly PARTS_HEADER is a parts table. Each of
 # its rows must have seven cells, and its "Chosen by" and "Source" cells must not
 # be empty. Escaped pipes (\|) inside a cell are not cell boundaries. A file with
-# no such table, or a parts table with no rows, fails.
+# no such table, a parts table with no rows, or any other header row whose first
+# cell is "Role" (a misspelt or reordered parts header) fails.
 check_parts() {
   local out
   [ -f "$PARTS" ] || { echo " [missing docs/h7-platform/parts.md]"; return 1; }
@@ -320,7 +321,9 @@ check_parts() {
     }
     /^\|/ {
       if (!intable) {
-        if (cells($0) == want) { intable = 1; tables++; seenSep = 0 }
+        hdr = cells($0)
+        if (hdr == want) { intable = 1; tables++; seenSep = 0 }
+        else if (cell[2] == "Role") print "line " FNR ": header starting | Role | is not | Role | MPN | Manufacturer | LCSC | Board | Chosen by | Source |"
         next
       }
       cells($0)
