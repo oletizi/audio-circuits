@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -253,6 +253,18 @@ check_openitems() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+BYPASS="$DOCS/bypass-relay.md"
+BYPASS_TERMS=("unpowered" "power-fail")
+
+check_bypass() {
+  local bad="" term
+  [ -f "$BYPASS" ] || { echo " [missing docs/h7-platform/bypass-relay.md]"; return 1; }
+  for term in "${BYPASS_TERMS[@]}"; do
+    grep -qF -- "$term" "$BYPASS" || bad="$bad [bypass-relay.md lacks '$term']"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -266,6 +278,7 @@ run_check() {
     power) reason=$(check_power) ;;
     analog) reason=$(check_analog) ;;
     openitems) reason=$(check_openitems) ;;
+    bypass) reason=$(check_bypass) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
