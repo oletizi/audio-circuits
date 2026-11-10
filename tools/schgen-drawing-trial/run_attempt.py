@@ -8,9 +8,12 @@
      request, fidelity (must be equal), prompt.
   3. Generation, only when the attempt has no complete response
      (persist.response_complete). An incomplete one is moved to
-     interrupted/<timestamp>/ first and recorded as generation-interrupted;
-     a complete one is never regenerated.
-  4. Token identity, checked from the saved response.json on every run.
+     interrupted/<timestamp>/ first and recorded as generation-interrupted,
+     or generation-lost when only request.sent shows a request went out;
+     a complete one is never regenerated. request.sent is written before
+     the POST; a non-completion payload is kept under rejected/<stamp>/.
+  4. Token identity, checked from the saved response.json on every run
+     (token_identity.py); count-only only with TRIAL_ACCEPT_COUNT_ONLY=1.
   5. The downstream stages (stages.py) on the saved response, then the
      classification and manifest.json.
 
@@ -45,9 +48,10 @@ import board_request
 import generation
 import manifest
 import stages
+import token_identity
 from host_tools import HostTools, RealHostTools
 from persist import (META, RAW, persist_response, quarantine_incomplete, record_rerun, response_complete,
-                     utc_stamp, write_json_atomic)
+                     utc_stamp, write_json_atomic, write_rejected, write_sent)
 
 MANIFEST = "manifest.json"
 DOWNSTREAM_PREVIOUS = "downstream-previous"
@@ -91,17 +95,26 @@ def ensure_response(directory: Path, board: str, attempt: int, prompt_ids: list[
     """Generate once when no complete response exists; never when one does."""
     if response_complete(directory):
         return
-    quarantine_incomplete(directory)
     provenance = provenance_from(env)
+    quarantine_incomplete(directory)
     client = client_factory(str(provenance["endpoint"]))
     request_id = f"schgen-trial-{board}-attempt-{attempt}-{uuid.uuid4()}"
-    text, meta = generation.generate(client, prompt_ids, seed_for(attempt), request_id, provenance)
+    write_sent(directory, request_id, seed_for(attempt))
+    try:
+        text, meta = generation.generate(client, prompt_ids, seed_for(attempt), request_id, provenance)
+    except generation.RejectedPayload as err:
+        kept = write_rejected(directory, request_id, err.status, err.payload, err.reason)
+        raise generation.GenerationError(
+            f"{request_id}: {err}. The payload is kept at {kept}; request.sent stays, so the next run records "
+            "this attempt as generation-lost before it sends again"
+        ) from err
     persist_response(directory, text, meta)
 
 
 def set_aside_downstream(directory: Path, rerun_reason: str | None) -> None:
     """Move earlier downstream outputs aside; a completed earlier run needs a stated reason."""
     previous = [directory / n for n in (*stages.DOWNSTREAM_FILES, MANIFEST) if (directory / n).exists()]
+    previous += stages.stray_render_outputs(directory)
     completed = (directory / MANIFEST).is_file()
     if completed and not rerun_reason:
         raise RerunReasonRequired(
@@ -136,15 +149,24 @@ def run_attempt(exec_dir: Path, board: str, attempt: int, tools: HostTools, clie
     meta = generation.load_meta(directory / META)
     if meta["request"].get("seed") != seed:
         raise RuntimeError(f"{directory / META} was generated with seed {meta['request'].get('seed')}, not {seed}")
-    identity = generation.check_token_identity(meta, (directory / RAW).read_text(encoding="utf-8"), prompt_ids)
+    acknowledged = token_identity.accept_count_only(env)
+    identity = token_identity.check_token_identity(meta, (directory / RAW).read_text(encoding="utf-8"),
+                                                   prompt_ids, acknowledged)
 
     set_aside_downstream(directory, rerun_reason)
     stages.run_downstream(directory, board, tools)
     record = manifest.build(directory, board=board, attempt=attempt, seed=seed, request_dir=request,
                             exec_dir=exec_dir, board_info=info, kicad_cli_version=kicad_version,
-                            runtime_image_digest=image, token_identity=identity)
+                            runtime_image_digest=image, token_identity=identity,
+                            count_only_acknowledged=acknowledged)
     write_json_atomic(directory / MANIFEST, record)
     return record
+
+
+def summary_line(record: Mapping[str, object]) -> str:
+    """The run log's line per attempt; token identity is on it, so a count-only run is visible there."""
+    return (f"{record['board']} attempt {record['attempt']}: {record['outcome']} "
+            f"(page_produced={record['page_produced']}, token_identity={record['token_identity']})")
 
 
 def main(argv: list[str]) -> int:
@@ -157,10 +179,10 @@ def main(argv: list[str]) -> int:
     try:
         record = run_attempt(args.exec_dir, args.board, args.attempt, RealHostTools(),
                              generation.HttpCompletionsClient, os.environ, args.rerun_reason)
-    except generation.TokenIdentityError as err:
+    except token_identity.TokenIdentityError as err:
         print(f"run_attempt: STOP {args.board} attempt {args.attempt}: {err}", file=sys.stderr)
         return 3
-    print(f"{args.board} attempt {args.attempt}: {record['outcome']} (page_produced={record['page_produced']})")
+    print(summary_line(record))
     return 0
 
 

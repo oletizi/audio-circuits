@@ -62,6 +62,11 @@ class PromptRecord(TypedDict):
     rendered_date: str
 
 
+def ids_sha256(ids: list[int]) -> str:
+    """sha256 of the IDs as compact JSON ("[1,2,3]"): what fidelity.json binds prompt.json's IDs by."""
+    return hashlib.sha256(json.dumps(ids, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 

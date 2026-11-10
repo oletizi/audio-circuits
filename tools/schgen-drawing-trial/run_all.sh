@@ -53,7 +53,10 @@ if [ ! -x "$PYTHON" ]; then
   exit 2
 fi
 cd "$REPO"
-echo "$(stamp) host tools: kicad-cli $(bun "$HERE/kicad.ts" version), magick present"
+# On its own line so set -e stops the run when kicad.ts refuses: a failing
+# substitution inside an echo argument does not.
+kicad_version="$(bun "$HERE/kicad.ts" version)"
+echo "$(stamp) host tools: kicad-cli $kicad_version, magick present"
 
 boards="$(bun "$HERE/board-info.ts" --list)"
 for board in $boards; do

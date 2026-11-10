@@ -124,6 +124,15 @@ def render_and_check(attempt_dir: Path, board: str, tools: HostTools) -> None:
         _record(attempt_dir, "compare", "not-run", "no netlist was exported")
 
 
+def stray_render_outputs(attempt_dir: Path) -> list[Path]:
+    """Files kicad-cli or renderSheet left under other names: an SVG not named page.svg (on the
+    nil-UUID class kicad-cli writes Schematic.svg), and renderSheet's crops/ when the render stopped."""
+    stray = [p for p in attempt_dir.glob("*.svg") if p.name != SVG]
+    if (attempt_dir / "crops").exists():
+        stray.append(attempt_dir / "crops")
+    return sorted(stray)
+
+
 def run_downstream(attempt_dir: Path, board: str, tools: HostTools) -> None:
     extract(attempt_dir, tools)
     emit(attempt_dir, tools)
@@ -172,13 +181,17 @@ def _emitter_outcome(attempt_dir: Path, stage: dict[str, object]) -> Outcome:
         limit = lines[-1][len("LIMIT: "):].strip()
         return Outcome("limit-exceeded", "emitter", f"emit.sh stopped the program at its {limit} limit", limit)
     code = stage.get("exit_code")
+    # Details state what emitter.log shows and nothing about whose defect it was: the brief
+    # leaves cause to the diagnostics after the owner's verdict.
     if emitter_fixes(attempt_dir) is None:
-        return Outcome("tooling-failed", "emitter", f"emit.sh exited {code} before run_emitter.py reported its fixes")
-    if "EmitterSetupError" in log or any(line.startswith("emit.sh:") for line in lines):
-        return Outcome("tooling-failed", "emitter", f"emit.sh exited {code}; the harness, not the program, failed")
+        return Outcome("tooling-failed", "emitter", f"emit.sh exited {code}; emitter.log has no fixes line 1")
+    reported = [line for line in lines if line.startswith("emit.sh:") or "EmitterSetupError" in line]
+    if reported:
+        return Outcome("tooling-failed", "emitter", f"emit.sh exited {code}; emitter.log reports: {reported[0]}")
     if PROGRAM_FRAME in log or NO_IMPORT_LINE in log:
         return Outcome("program-raised", "emitter", f"emit.sh exited {code}; the traceback is in {EMITTER_LOG}")
-    return Outcome("tooling-failed", "emitter", f"emit.sh exited {code} with no frame of the program in its traceback")
+    return Outcome("tooling-failed", "emitter",
+                   f"emit.sh exited {code}; no frame of /in/program.py appears in {EMITTER_LOG}")
 
 
 def _read(path: Path) -> str:
@@ -188,7 +201,10 @@ def _read(path: Path) -> str:
 def blank_reason(attempt_dir: Path) -> str | None:
     """Why a sheet with symbols rendered or exported empty, or None when it did not."""
     sheet = _read(attempt_dir / SHEET)
-    if netlist_components(_read(attempt_dir / NETLIST)) == 0:
+    # An empty netlist counts only when the export succeeded: a failed export is a tooling
+    # observation, and must never turn a rendered page into a card.
+    netlist_ok = read_stages(attempt_dir).get("netlist", {}).get("status") == "ok"
+    if netlist_ok and netlist_components(_read(attempt_dir / NETLIST)) == 0:
         return f"the sheet places {symbol_instances(sheet)} symbols and its exported netlist lists no component"
     refs = sheet_references(sheet)
     if refs and not set(refs) & svg_strings(_read(attempt_dir / SVG)):

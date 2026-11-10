@@ -5,6 +5,14 @@ and the directory is fsync'd after the rename. `response.raw.txt` and
 `response.json` are written first; `response.complete` is written last and
 holds both files' sha256.
 
+`request.sent` is written atomically BEFORE the request goes out, holding
+its X-Request-Id, seed and time. A `request.sent` with no complete response
+and no response file is a request that was sent and lost (a Spot reclaim, a
+reset connection, a rejected payload): it is moved to interrupted/<stamp>/
+like any other leftover and recorded as `generation-lost`, so a relaunch that
+sends the same seed again says that it did. A payload that came back but is
+not a persistable completion is kept under rejected/<stamp>/.
+
 An attempt counts as generated only when `response.complete` exists and its
 digests match the files on disk. A `.part`, or a response without a valid
 marker, means the outcome of generation is unknown: those files are moved to
@@ -26,8 +34,10 @@ from pathlib import Path
 RAW = "response.raw.txt"
 META = "response.json"
 MARKER = "response.complete"
+SENT = "request.sent"
 RESPONSE_FILES = (RAW, META, MARKER)
 INTERRUPTED = "interrupted"
+REJECTED = "rejected"
 RERUNS = "reruns.jsonl"
 
 
@@ -95,26 +105,55 @@ def response_complete(attempt_dir: Path) -> bool:
 
 def response_leftovers(attempt_dir: Path) -> list[Path]:
     """Response files, or their .part files, present in an attempt that is not complete."""
-    names = [*RESPONSE_FILES, *(n + ".part" for n in RESPONSE_FILES)]
+    names = [*RESPONSE_FILES, *(n + ".part" for n in (*RESPONSE_FILES, SENT))]
     return [attempt_dir / n for n in names if (attempt_dir / n).exists()]
 
 
-def quarantine_incomplete(attempt_dir: Path) -> Path | None:
-    """Move an incomplete response's files to interrupted/<timestamp>/ and log the interruption.
+def write_sent(attempt_dir: Path, request_id: str, seed: int) -> None:
+    write_json_atomic(attempt_dir / SENT, {"request_id": request_id, "seed": seed, "at": utc_stamp()})
 
-    Returns the directory they were moved to, or None when there was nothing to move.
+
+def _sent_request_id(path: Path) -> object:
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("request_id")
+    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+        return None
+
+
+def quarantine_incomplete(attempt_dir: Path) -> Path | None:
+    """Move an incomplete generation's files to interrupted/<timestamp>/ and log why.
+
+    `generation-interrupted` when any response file was written; `generation-lost`
+    when only request.sent is there - the request went out and nothing came back
+    that could be kept. Returns the directory, or None when there was nothing.
     """
     leftovers = response_leftovers(attempt_dir)
-    if not leftovers:
+    sent = attempt_dir / SENT
+    moving = leftovers + ([sent] if sent.is_file() else [])
+    if not moving:
         return None
+    reason = "generation-interrupted" if leftovers else "generation-lost"
+    request_id = _sent_request_id(sent) if sent.is_file() else None
     stamp = utc_stamp()
     target = attempt_dir / INTERRUPTED / stamp
     target.mkdir(parents=True, exist_ok=False)
-    for path in leftovers:
+    for path in moving:
         shutil.move(str(path), str(target / path.name))
     _fsync_dir(target)
     _fsync_dir(attempt_dir)
-    record_rerun(attempt_dir, "generation-interrupted", stamp, {"moved_to": str(target.relative_to(attempt_dir))})
+    extra: dict[str, object] = {"moved_to": str(target.relative_to(attempt_dir))}
+    if request_id is not None:
+        extra["request_id"] = request_id
+    record_rerun(attempt_dir, reason, stamp, extra)
+    return target
+
+
+def write_rejected(attempt_dir: Path, request_id: str, status: int, payload: bytes, reason: str) -> Path:
+    """Keep a payload that is not a persistable completion, with why it was not taken."""
+    target = attempt_dir / REJECTED / utc_stamp()
+    target.mkdir(parents=True, exist_ok=False)
+    write_atomic(target / "response.body", payload)
+    write_json_atomic(target / "rejection.json", {"request_id": request_id, "status": status, "reason": reason})
     return target
 
 

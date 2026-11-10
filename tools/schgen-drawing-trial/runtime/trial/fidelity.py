@@ -1,6 +1,11 @@
 """Input fidelity: the trial's prompt IDs against SchGen's own prompt path.
 
-    check(request_text, symbols) -> {equal, ours, theirs, first_diff}
+    check(request_text, symbols) -> {equal, ours, theirs, first_diff, ours_ids_sha256, rendered_date}
+
+ours_ids_sha256 (prompt.ids_sha256 of the IDs compared) and rendered_date bind
+the check to one render: the host refuses a prompt.json whose IDs or date are
+not these, since the chat template embeds the date and prompt.json is written
+by a separate call.
 
 "Ours" is prompt.render(). "Theirs" follows generate.py's main() for
 --test_raw, line for line, with only the model removed:
@@ -44,7 +49,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from trial import schgen_source
-from trial.prompt import PromptError, render, schgen_modules, symbol_context, tokenizer
+from trial.prompt import PromptError, ids_sha256, render, schgen_modules, symbol_context, tokenizer
 
 MODIFIED_CHAT_TEMPLATE = Path("training") / "modified_chat_template.txt"
 
@@ -54,6 +59,8 @@ class FidelityResult(TypedDict):
     ours: int
     theirs: int
     first_diff: int | None
+    ours_ids_sha256: str
+    rendered_date: str
 
 
 def theirs_ids(request_text: str, symbols: list[str]) -> list[int]:
@@ -87,10 +94,12 @@ def first_difference(ours: list[int], theirs: list[int]) -> int | None:
 
 
 def check(request_text: str, symbols: list[str]) -> FidelityResult:
-    ours = render(request_text, symbols)["ids"]
+    record = render(request_text, symbols)
+    ours = record["ids"]
     theirs = theirs_ids(request_text, symbols)
     diff = first_difference(ours, theirs)
-    return FidelityResult(equal=diff is None, ours=len(ours), theirs=len(theirs), first_diff=diff)
+    return FidelityResult(equal=diff is None, ours=len(ours), theirs=len(theirs), first_diff=diff,
+                          ours_ids_sha256=ids_sha256(ours), rendered_date=record["rendered_date"])
 
 
 def main(argv: list[str]) -> None:

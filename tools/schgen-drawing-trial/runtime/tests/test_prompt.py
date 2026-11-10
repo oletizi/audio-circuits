@@ -51,9 +51,15 @@ def rendered(board: str) -> dict:
 def test_fidelity_equal(board: str) -> None:
     r = request(board)
     result = fidelity.check(r["text"], r["symbols"])
+    ours = rendered(board)
     assert result == {"equal": True, "ours": result["theirs"], "theirs": result["theirs"],
-                      "first_diff": None}
-    assert result["ours"] == rendered(board)["token_count"]
+                      "first_diff": None, "ours_ids_sha256": prompt.ids_sha256(ours["ids"]),
+                      "rendered_date": ours["rendered_date"]}
+    assert result["ours"] == ours["token_count"]
+
+
+def test_ids_sha256_is_compact_json() -> None:
+    assert prompt.ids_sha256([1, 22, 333]) == hashlib.sha256(b"[1,22,333]").hexdigest()
 
 
 def test_fidelity_control(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -17,9 +17,12 @@ import pytest
 import generation
 import persist
 import run_attempt
+import token_identity
 from trial_fakes import (BOARD, ENV, NO_FINAL, PROMPT_IDS, WITH_FINAL, CountingClient, FakeServer, FakeTools,
                          completion, nil_uuid_sheet, refusing_factory, save_response, symbol_free_sheet,
-                         write_request_dir)
+                         verified, write_request_dir)
+
+ACCEPT = {**ENV, "TRIAL_ACCEPT_COUNT_ONLY": "1"}
 
 
 def attempt_path(exec_dir: Path, attempt: int = 1) -> Path:
@@ -47,7 +50,7 @@ def test_saved_response_is_not_regenerated(exec_dir: Path) -> None:
 
 
 def test_missing_response_is_generated_once(exec_dir: Path) -> None:
-    client = CountingClient(completion(WITH_FINAL))
+    client = CountingClient(verified(WITH_FINAL))
     tools = FakeTools()
     seen_complete: list[bool] = []
     original = tools.extract
@@ -61,7 +64,8 @@ def test_missing_response_is_generated_once(exec_dir: Path) -> None:
     assert len(client.calls) == 1 and seen_complete == [True]
     body, request_id = client.calls[0]
     assert body == {"model": "schgen-merged", "prompt": PROMPT_IDS, "max_tokens": 13312, "temperature": 1.0,
-                    "top_k": 50, "top_p": 1.0, "seed": 42, "skip_special_tokens": False, "return_token_ids": True}
+                    "top_k": 50, "top_p": 1.0, "seed": 42, "skip_special_tokens": False,
+                    "spaces_between_special_tokens": False, "return_token_ids": True}
     assert request_id.startswith(f"schgen-trial-{BOARD}-attempt-1-")
     run(exec_dir, tools, lambda endpoint: client, rerun_reason="second look")
     assert len(client.calls) == 1
@@ -122,7 +126,7 @@ def test_partial_response_is_not_complete(exec_dir: Path) -> None:
     directory = attempt_path(exec_dir)
     directory.mkdir(parents=True)
     (directory / "response.raw.txt.part").write_text("<|channel|>analysis<|message|>half")
-    client = CountingClient(completion(WITH_FINAL))
+    client = CountingClient(verified(WITH_FINAL))
     record = run(exec_dir, FakeTools(), lambda endpoint: client)
     assert len(client.calls) == 1
     moved = list((directory / "interrupted").glob("*/response.raw.txt.part"))
@@ -138,7 +142,7 @@ def test_marker_digest_mismatch(exec_dir: Path) -> None:
     with open(directory / "response.raw.txt", "a", encoding="utf-8") as fh:
         fh.write("tail written after the marker")
     assert not persist.response_complete(directory)
-    client = CountingClient(completion(WITH_FINAL))
+    client = CountingClient(verified(WITH_FINAL))
     record = run(exec_dir, FakeTools(), lambda endpoint: client)
     assert len(client.calls) == 1
     assert len(list((directory / "interrupted").glob("*/response.complete"))) == 1
@@ -149,10 +153,10 @@ def test_marker_digest_mismatch(exec_dir: Path) -> None:
 def test_prompt_ids_mismatch_stops(exec_dir: Path) -> None:
     consumed = list(PROMPT_IDS)
     consumed[7] += 1
-    tokens = generation.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
+    tokens = token_identity.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
     with FakeServer(completion(WITH_FINAL, token_ids=tokens, prompt_ids=consumed)) as server:
         env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
-        with pytest.raises(generation.TokenIdentityError, match="index 7"):
+        with pytest.raises(token_identity.TokenIdentityError, match="index 7"):
             run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
         assert server.requests[0][1] and server.requests[0][0]["prompt"] == PROMPT_IDS
     assert persist.response_complete(attempt_path(exec_dir)), "the response is kept, never discarded"
@@ -160,17 +164,17 @@ def test_prompt_ids_mismatch_stops(exec_dir: Path) -> None:
 
 
 def test_special_tokens_stripped_stops(exec_dir: Path) -> None:
-    tokens = generation.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
-    stripped = generation.tokenizer().decode(tokens, skip_special_tokens=True)
+    tokens = token_identity.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
+    stripped = token_identity.tokenizer().decode(tokens, skip_special_tokens=True)
     assert "<|channel|>" not in stripped
     with FakeServer(completion(stripped, token_ids=tokens, prompt_ids=PROMPT_IDS)) as server:
         env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
-        with pytest.raises(generation.TokenIdentityError, match="stripped"):
+        with pytest.raises(token_identity.TokenIdentityError, match="stripped"):
             run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
 
 
 def test_token_ids_verified(exec_dir: Path) -> None:
-    tokens = generation.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
+    tokens = token_identity.tokenizer().encode(WITH_FINAL, add_special_tokens=False).ids
     with FakeServer(completion(WITH_FINAL, token_ids=tokens, prompt_ids=PROMPT_IDS)) as server:
         env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
         record = run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
@@ -178,16 +182,43 @@ def test_token_ids_verified(exec_dir: Path) -> None:
 
 
 def test_no_token_ids_field_is_qualified(exec_dir: Path) -> None:
+    """Only with the operator's acknowledgement, which the manifest and the run-log line carry."""
     with FakeServer(completion(WITH_FINAL)) as server:
-        env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
+        env = {**ACCEPT, "TRIAL_ENDPOINT": server.endpoint}
         record = run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
     assert record["token_identity"] == "unverified - count only"
+    assert record["count_only_acknowledged"] is True
+    assert "token_identity=unverified - count only" in run_attempt.summary_line(record)
+
+
+def test_no_token_ids_without_acknowledgement_stops(exec_dir: Path) -> None:
+    with FakeServer(completion(WITH_FINAL)) as server:
+        env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
+        with pytest.raises(token_identity.TokenIdentityError, match="TRIAL_ACCEPT_COUNT_ONLY=1"):
+            run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
+    assert persist.response_complete(attempt_path(exec_dir)), "the response is kept"
+    assert not (attempt_path(exec_dir) / "manifest.json").exists()
+
+
+def test_token_ids_at_another_path_refused(exec_dir: Path) -> None:
+    payload = completion(WITH_FINAL)
+    payload["prompt_token_ids"] = PROMPT_IDS
+    with FakeServer(payload) as server:
+        env = {**ACCEPT, "TRIAL_ENDPOINT": server.endpoint}
+        with pytest.raises(token_identity.TokenIdentityError, match=r"carries prompt_token_ids,"):
+            run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
+
+
+def test_verified_attempt_records_no_acknowledgement(exec_dir: Path) -> None:
+    save_response(attempt_path(exec_dir), WITH_FINAL)
+    record = run(exec_dir, FakeTools(), refusing_factory)
+    assert record["token_identity"] == "verified" and record["count_only_acknowledged"] is False
 
 
 def test_no_token_ids_and_wrong_count_stops(exec_dir: Path) -> None:
     with FakeServer(completion(WITH_FINAL, prompt_tokens=len(PROMPT_IDS) - 1)) as server:
-        env = {**ENV, "TRIAL_ENDPOINT": server.endpoint}
-        with pytest.raises(generation.TokenIdentityError, match="count"):
+        env = {**ACCEPT, "TRIAL_ENDPOINT": server.endpoint}
+        with pytest.raises(token_identity.TokenIdentityError, match="count"):
             run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), generation.HttpCompletionsClient, env)
 
 
@@ -205,7 +236,7 @@ def test_downstream_rerun_recorded(exec_dir: Path) -> None:
 
 
 def test_generation_refuses_without_provenance(exec_dir: Path) -> None:
-    client = CountingClient(completion(WITH_FINAL))
+    client = CountingClient(verified(WITH_FINAL))
     env = {k: v for k, v in ENV.items() if k != "TRIAL_VLLM_IMAGE_DIGEST"}
     with pytest.raises(RuntimeError, match="TRIAL_VLLM_IMAGE_DIGEST"):
         run_attempt.run_attempt(exec_dir, BOARD, 1, FakeTools(), lambda e: client, env)

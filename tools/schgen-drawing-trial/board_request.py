@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 from host_tools import HostTools, RealHostTools
-from persist import sha256_file, write_atomic
+from persist import sha256_bytes, sha256_file, write_atomic
 
 REQUEST_DIR = "request"
 REQUEST_FILES = ("request.json", "request.txt")
@@ -95,7 +95,37 @@ def prepare(exec_dir: Path, board: str, tools: HostTools) -> Path:
         _with_request(scratch, target)
         tools.render_prompt(scratch)
         _install(scratch, target, ("prompt.json",))
+    check_prompt_bound(target)
     return target
+
+
+def ids_sha256(ids: list[int]) -> str:
+    """trial.prompt.ids_sha256, computed on the host: sha256 of the IDs as compact JSON ("[1,2,3]")."""
+    return sha256_bytes(json.dumps(ids, separators=(",", ":")).encode("utf-8"))
+
+
+def check_prompt_bound(directory: Path) -> None:
+    """Refuse a prompt.json whose IDs or render date are not the ones the fidelity check compared.
+
+    prompt.json is written by a separate container call from fidelity.json, and the chat template
+    embeds the current date, so the two can differ across midnight UTC (or by any later edit). The
+    IDs sent must be the IDs proven equal to SchGen's.
+    """
+    fidelity = json.loads((directory / "fidelity.json").read_text(encoding="utf-8"))
+    prompt = json.loads((directory / "prompt.json").read_text(encoding="utf-8"))
+    ids = prompt.get("ids")
+    if not isinstance(ids, list):
+        raise FidelityError(f"{directory / 'prompt.json'} has no ids list")
+    expected = (fidelity.get("ours_ids_sha256"), fidelity.get("rendered_date"))
+    actual = (ids_sha256(ids), prompt.get("rendered_date"))
+    if expected != actual:
+        raise FidelityError(
+            f"{directory / 'prompt.json'} (ids sha256 {actual[0]}, rendered {actual[1]}) is not the prompt "
+            f"{directory / 'fidelity.json'} checked (ids sha256 {expected[0]}, rendered {expected[1]}). Nothing "
+            "is generated from IDs that were not proven equal to SchGen's. Before any attempt has generated, "
+            "move both files aside and run again so they are made together; after one has, the attempts' "
+            "prompt_sha256 says which prompt they were sent"
+        )
 
 
 def load_prompt(directory: Path, board: str) -> dict[str, object]:

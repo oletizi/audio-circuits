@@ -47,7 +47,7 @@ def _usage(meta: dict[str, object], key: str) -> object:
 
 def build(attempt_dir: Path, *, board: str, attempt: int, seed: int, request_dir: Path, exec_dir: Path,
           board_info: dict[str, str], kicad_cli_version: str, runtime_image_digest: str,
-          token_identity: str) -> dict[str, object]:
+          token_identity: str, count_only_acknowledged: bool) -> dict[str, object]:
     meta = json.loads((attempt_dir / META).read_text(encoding="utf-8"))
     provenance = meta["provenance"]
     prompt = json.loads((request_dir / "prompt.json").read_text(encoding="utf-8"))
@@ -81,6 +81,7 @@ def build(attempt_dir: Path, *, board: str, attempt: int, seed: int, request_dir
         "finish_reason": meta["finish_reason"],
         "latency_s": meta["latency_s"],
         "token_identity": token_identity,
+        "count_only_acknowledged": count_only_acknowledged,
         "emitter_fixes": stages.emitter_fixes(attempt_dir),
         "kicad_cli_version": kicad_cli_version,
         "outcome": outcome.name,
