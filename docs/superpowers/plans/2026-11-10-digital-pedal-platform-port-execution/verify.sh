@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -265,6 +265,22 @@ check_bypass() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+FIRMWARE="$DOCS/firmware-facing-requirements.md"
+PROCESSOR="$DOCS/processor-and-memory.md"
+FIRMWARE_TERMS=("H750" "H743" "QSPI" "32 MB" "bootloader" "SAI2" "watchdog" "USB")
+FIRMWARE_SENTENCE="This repository does not own firmware."
+
+check_firmware() {
+  local bad="" term
+  [ -f "$PROCESSOR" ] || bad="$bad [missing docs/h7-platform/processor-and-memory.md]"
+  [ -f "$FIRMWARE" ] || { echo "$bad [missing docs/h7-platform/firmware-facing-requirements.md]"; return 1; }
+  for term in "${FIRMWARE_TERMS[@]}"; do
+    grep -qF -- "$term" "$FIRMWARE" || bad="$bad [firmware-facing-requirements.md lacks '$term']"
+  done
+  grep -qF -- "$FIRMWARE_SENTENCE" "$FIRMWARE" || bad="$bad [firmware-facing-requirements.md lacks the sentence '$FIRMWARE_SENTENCE']"
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -279,6 +295,7 @@ run_check() {
     analog) reason=$(check_analog) ;;
     openitems) reason=$(check_openitems) ;;
     bypass) reason=$(check_bypass) ;;
+    firmware) reason=$(check_firmware) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
