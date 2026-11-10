@@ -51,7 +51,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** split the platform into a core processor module on the Daisy Seed 40-pin pinout (2 × 20, 2.54 mm, rows 15.24 mm apart) and an audio pedal board. Development uses a real Seed or Seed3; production uses our own H743 module, with no Electrosmith dependency.
 - **Set by:** [split spec §2][split].
-- **Amended by:** [O-16](#o-16) (owner) names the accepted development substitutes: the original Daisy Seed (Rev5 or Rev7, STM32H750IB, same pinout) or the Seed3, and development starts on an original Seed. [RR-4](#rr-4) (ruling) states what a Seed is: a development substitute compatible with the signal contract and the documented development load envelope, with listed exceptions.
+- **Amended by:** [O-16](#o-16) (owner) names the accepted development substitutes: the original Daisy Seed (Rev5 or Rev7, STM32H750IB, same pinout) or the Seed3, and development starts on an original Seed.
+- **Narrowed by:** [RR-4](#rr-4) (controller ruling; the owner may override) states what a Seed is: a development substitute compatible with the signal contract and the documented development load envelope, with listed exceptions.
 
 ### O-2
 
@@ -59,7 +60,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** the codec is on the audio board, joined to the module over digital audio on SAI2: SCK PA2, FS PG9, SD-in PA0, SD-out PD11. The PCM3060 is clock master in hardware mode (IFMD high: "Master (256 fS) mode for ADC, slave mode for DAC", TI SLAS533B), BCK fixed at 64 fS, clocks tied, driven by a 12.288 MHz packaged oscillator on the audio board. The STM32 SAI is slave. MCLK is not on the interface. Codec I²C crosses the interface if pins allow. TDM capability is noted for future multichannel audio boards.
 - **Set by:** [split spec §2][split]; implemented by [D20](#d20).
-- **Amended by:** [RR-6](#rr-6) and [RR-11](#rr-11) (rulings) settle "if pins allow": the codec's I²C reaches the I²C expansion bus (PB8/PB9) through not-fitted links on this audio board. [R-29](#r-29) (ruling) chooses the oscillator. [R-9](#r-9) (ruling) fixes the SAI clock-edge setting firmware must use.
+- **Amended by:** none (no later owner decision); [D20](#d20) (owner-approved) implements it.
+- **Narrowed by:** [RR-6](#rr-6) and [RR-11](#rr-11) (controller ruling; the owner may override) settle "if pins allow": the codec's I²C reaches the I²C expansion bus (PB8/PB9) through not-fitted links on this audio board. [R-29](#r-29) (controller ruling; the owner may override) chooses the oscillator. [R-9](#r-9) (controller ruling; the owner may override) fixes the SAI clock-edge setting firmware must use.
 - **Carried in:** [analog.md §13.1](analog.md#131-what-it-is); [firmware-facing-requirements.md EC-SAI2-SLAVE](firmware-facing-requirements.md#ec-sai2-slave); [processor-and-memory.md EC-CLOCK-TREE](processor-and-memory.md#ec-clock-tree).
 
 ### O-3
@@ -76,7 +78,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** MCU, 32 MB SDRAM, QSPI flash, 25 MHz crystal, reset supervisor, BOOT/RESET buttons, its own 3.3 V regulator, SWD header, and a USB socket on PA11/PA12 for ROM DFU. VIN comes in on the Seed's VIN pin; 3.3 V goes out on the Seed's 3V3 pins. Firmware must fit 32 MB of SDRAM (the Seed has 64 MB).
 - **Set by:** [split spec §2][split].
-- **Amended by:** [O-11](#o-11) (owner) added the USB socket. [RR-1](#rr-1) and [RR-3](#rr-3) (rulings) narrow "3.3 V out": pin 38 is a low-current logic supply and pin 21 is the ADC reference, and neither powers relay coils or LEDs. [R-60](#r-60) (ruling) makes the module's USB socket a vertical USB-C receptacle.
+- **Amended by:** [O-11](#o-11) (owner) added the USB socket.
+- **Narrowed by:** [RR-1](#rr-1) and [RR-3](#rr-3) (controller ruling; the owner may override) narrow "3.3 V out": pin 38 is a low-current logic supply and pin 21 is the ADC reference, and neither powers relay coils or LEDs. [R-60](#r-60) (controller ruling; the owner may override) makes the module's USB socket a vertical USB-C receptacle.
 - **Carried in:** [processor-and-memory.md EC-SDRAM-CLASS](processor-and-memory.md#ec-sdram-class) and [§2](processor-and-memory.md#2-what-the-module-carries); [firmware-facing-requirements.md §2](firmware-facing-requirements.md#2-memory-32-mb-of-sdram-on-every-board).
 
 ### O-5
@@ -85,7 +88,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** DC jack and protection, 5V_A, VMID, codec and oscillator, input and output stages, bypass relays, the panel controls, footswitches, LEDs, expression, MIDI, and USB-C wired to the Seed's external USB pins.
 - **Set by:** [split spec §2][split].
-- **Amended by:** [O-17](#o-17) (owner): the three toggles become three momentary soft buttons. [O-18](#o-18) (owner): the pots and buttons become six configurable control positions. [RR-3](#rr-3) (ruling): relay-coil and LED power are on the pedal board, from the pedal digital rail, which [R-25](#r-25) makes 3V3_P.
+- **Amended by:** [O-17](#o-17) (owner): the three toggles become three momentary soft buttons. [O-18](#o-18) (owner): the pots and buttons become six configurable control positions.
+- **Narrowed by:** [RR-3](#rr-3) (controller ruling; the owner may override): relay-coil and LED power are on the pedal board, from the pedal digital rail, which [R-25](#r-25) (controller ruling; the owner may override) makes 3V3_P.
 
 *Not in force:* "pots, toggles" as separate panel controls (O-5 as first written), replaced by O-17 and then O-18.
 
@@ -95,10 +99,11 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** the bypass-relay power-off timing used to shed the buck, which now sits inside the module with no EN pin on the Seed pinout. A replacement must hold the analog rail steady while the relays release. The recommended direction is a diode-isolated hold-up reservoir feeding the analog supply; final values are re-analysed in the plan.
 - **Set by:** [split spec §2][split], §7.4.
-- **Amended by:** realised by controller rulings [R-33](#r-33) to [R-45](#r-45) and [R-58](#r-58), within the owner's own [R-34](#r-34) (the R-PF-7 basis) and [R-43](#r-43) (the supply rating).
+- **Amended by:** the owner's own [R-34](#r-34) (the R-PF-7 basis) and [R-43](#r-43) (the supply rating), within which it is realised.
+- **Narrowed by:** [R-33](#r-33) to [R-45](#r-45) and [R-58](#r-58) (controller ruling; the owner may override), which realise it.
 - **Carried in:** [bypass-relay.md EC-POWER-FAIL-OVERRIDE](bypass-relay.md#ec-power-fail-override) and [§4](bypass-relay.md#4-power-fail); [power.md §3](power.md#3-pedal-power-entry-the-isolated-held-up-analog-branch).
 
-*Not in force:* the owner's approval of the v1 power-fail shed, in which the power-fail supervisor pulled the one-board v1 design's buck EN low (`BYPASS-RELAY.md` status line "approved by the owner on 2026-10-04 and implemented"; its §11 item 2 "Approve the power-fail shed"). This owner decision superseded it: split spec §9.1, "The approved shed is replaced by §7.4, which the owner directed (O-6)". It is recorded beside [OWN-01](#own-01), whose note carried the shed.
+*Not in force:* the owner's approval of the v1 power-fail shed (2026-10-04), an owner decision carried in the same note as [OWN-01](#own-01): the power-fail supervisor pulled the one-board v1 design's buck EN low so the relays released before the output stage moved. Its record is `BYPASS-RELAY.md`'s status line, "approved by the owner on 2026-10-04 and implemented", answering its §11 item 2, "Approve the power-fail shed". This later owner decision superseded it: split spec §9.1's row "Relay bypass (2026-10-04) and the power-fail shed (`BR` §11 item 2)" reads "The approved shed is replaced by §7.4, which the owner directed (O-6)".
 
 ### O-7
 
@@ -114,7 +119,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05; the connector clause reopened by the owner the same day.
 - **Decides:** two designs, the module (h7-module) and the audio pedal board (h7-pedal). The 40-pin interface is two ordinary 1 × 20 2.54 mm header parts, each with its own BOM line: J_MOD_A carries contract pins 1–20 (its pins 1–20) and J_MOD_B carries contract pins 21–40 (its pins 1–20). The source's words for the reopening: "**Owner note, reopened 2026-10-05: two 1×20 parts.**"
 - **Set by:** [split spec §2][split].
-- **Amended by:** [R-5](#r-5) (ruling) implements the two parts.
+- **Amended by:** none after the owner's reopening.
+- **Narrowed by:** [R-5](#r-5) (controller ruling; the owner may override) implements the two parts.
 - **Not carried:** the clause giving each design "its own full gates" (gate 8 over the OSCAR subcircuits, and so on) is about the pedals schematic generator and stayed behind with it.
 
 *Not in force:* "one 40-pin connector part" and the quantity-2 footprint-field workaround, withdrawn by the owner's reopening of O-8.
@@ -135,7 +141,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** the interface spec and contract first, then splitting the design into two boards, then audio board layout, then module layout. The contract is drafted, populated by analysis and only then frozen.
 - **Set by:** [split spec §2][split].
-- **Amended by:** [RR-10](#rr-10) (ruling) refines it into the split spec's ten steps (§13). [O-16](#o-16) (owner) withdraws step 1, the Seed3 bench characterisation. The contract was never frozen in the pedals repository (its `status` is still `draft`).
+- **Amended by:** [O-16](#o-16) (owner) withdraws step 1, the Seed3 bench characterisation. The contract was never frozen in the pedals repository (its `status` is still `draft`).
+- **Narrowed by:** [RR-10](#rr-10) (controller ruling; the owner may override) refines it into the split spec's ten steps (§13).
 - **Not carried:** "Sub-project B (layout tooling) comes before both layouts" names the pedals repository's own layout tooling, which stays behind. In this repository the phases are the port spec's (models, schematics, then layout and fabrication).
 
 ### O-11
@@ -144,7 +151,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** end-user firmware update uses a bootloader in flash, run over the pedal's USB-C on the Seed USB pins 36/37. The STM32 ROM DFU stays available on the module's own USB socket for bench recovery of a bricked unit. The module and the firmware contract must leave room for the bootloader in flash, and USB on pins 36/37 must be enumerable from the bootloader.
 - **Set by:** [split spec §2][split], §6.4, §11, §15 Q-1.
-- **Amended by:** [RR-11](#rr-11) (ruling, Q-7): end users enter the bootloader by holding both footswitches at power-up, or by a USB command from the running application. [R-14](#r-14) (ruling) puts a USB isolation switch between pins 36/37 and the pedal's USB-C; with a Seed fitted, DFU through the Daisy bootloader over the pedal's USB-C is lost (the Seed's own USB still works). [R-60](#r-60) (ruling): the module's own socket is a vertical USB-C receptacle, and "Owner decision O-11 stands".
+- **Amended by:** none (no later owner decision).
+- **Narrowed by:** [RR-11](#rr-11) (controller ruling, Q-7; the owner may override): end users enter the bootloader by holding both footswitches at power-up, or by a USB command from the running application. [R-14](#r-14) (controller ruling; the owner may override) puts a USB isolation switch between pins 36/37 and the pedal's USB-C; with a Seed fitted, DFU through the Daisy bootloader over the pedal's USB-C is lost (the Seed's own USB still works). [R-60](#r-60) (controller ruling; the owner may override): the module's own socket is a vertical USB-C receptacle, and "Owner decision O-11 stands".
 - **Carried in:** [firmware-facing-requirements.md §3.1](firmware-facing-requirements.md#31-our-module-a-bootloader-in-flash-ahead-of-the-application); [processor-and-memory.md §8](processor-and-memory.md#8-reset-boot-debug-and-the-modules-usb-socket).
 
 ### O-12
@@ -153,7 +161,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** female headers on the audio board, so a Seed or our module plugs in and out. The enclosure must allow the stacking height. The module's BOOT/RESET buttons need not be reachable in a finished pedal.
 - **Set by:** [split spec §2][split], §5.1, §15 Q-2.
-- **Amended by:** [RR-8](#rr-8) (ruling): the module envelope and stack height are fixed by a mechanical study and frozen with the contract before audio-board layout; layout confirms them and may not change them. [O-17](#o-17) (owner): the sockets sit on the audio board's underside, and the module is reachable with the back plate off. The socket and header parts are controller choices, last set by [R-61](#r-61): socket Mill-Max 801-43-020-10-012000, header Mill-Max 800-10-020-10-002000 cut to 20 from the stocked 800-10-064-10-002000, the Preci-Dip pair as fallback. Stack height 15.17 mm.
+- **Amended by:** [O-17](#o-17) (owner): the sockets sit on the audio board's underside, and the module is reachable with the back plate off.
+- **Narrowed by:** [RR-8](#rr-8) (controller ruling; the owner may override): the module envelope and stack height are fixed by a mechanical study and frozen with the contract before audio-board layout; layout confirms them and may not change them. The socket and header parts are controller choices, last set by [R-61](#r-61) (controller ruling; the owner may override): socket Mill-Max 801-43-020-10-012000, header Mill-Max 800-10-020-10-002000 cut to 20 from the stocked 800-10-064-10-002000, the Preci-Dip pair as fallback. Stack height 15.17 mm.
 - **Derived in:** [mechanical-and-controls.md FIG-STACK-HEIGHT](mechanical-and-controls.md#fig-stack-height) (the 15.17 mm); [EC-MODULE-MOUNTING](mechanical-and-controls.md#ec-module-mounting) and [EC-SOCKET-AND-HEADER](mechanical-and-controls.md#ec-socket-and-header).
 
 *Not in force:* the parts named in O-12's row as annotations: Preci-Dip 801-87-020-10-012101 sockets (first Samtec SLW-120-01-G-S), with Samtec TLW-120-06-G-S headers, then Preci-Dip 800-10-020-10-002101 headers ([R-54](#r-54)). These were controller part choices, not the owner's decision, and R-61 replaced them.
@@ -194,7 +203,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Owner, choosing the parts (2026-10-05):** the footswitch actuator: "this is the stomp switch actuator: https://www.taydaelectronics.com/momentary-pcb-spring-switch.html" (DAIER PBS-24-MP). On the switch under the spring: "the board switch under the spring stomp actuators should be a tactile switch… why would those be hard to source?" and "the switch is actuated by a spring. The whole point of the spring is to offer forgiving compliance that translates a hard foot stomp to a gentle button press". The soft buttons: "lets start with the simple option A" (HCTL TC-6610-17-100G).
 - **Decides:** a Hammond 1590BB in landscape; the audio board's top face about 10.7 mm below the lid's inner face, set by short-shaft Alpha RV16AF-41 pots; soft footswitches, each a DAIER PBS-24-MP spring actuator in the lid pressing a tactile switch on a small standoff board hung under the audio board; every jack, the bypass relays and the socketed module on the underside, reachable with the back plate off. Production mounting is deferred until a working board exists.
 - **Set by:** [split spec §2, §5.1.1][split].
-- **Amended by:** [O-18](#o-18) (owner) replaces the three separate buttons with six configurable positions. [R-56](#r-56) (owner decision, with the controller's realisation) replaces the tactile switch under the spring with a Schurter LSH in two builds. [R-62](#r-62) (ruling, on the owner's measurements [F-5](#f-5)) re-bases the enclosure depths on the owner-measured box; plan sizes stay Hammond's. [R-55](#r-55) (ruling) sets the footswitch lid hole at Ø13.4 with an M12 washer under the outside nut. [R-60](#r-60) and [R-61](#r-61) (rulings) set the module's USB socket and the socket and header pair under the board. The owner's measurements quoted above are also [F-1](#f-1) to [F-3](#f-3).
+- **Amended by:** [O-18](#o-18) (owner) replaces the three separate buttons with six configurable positions. [R-56](#r-56) (owner decision, with the controller's realisation) replaces the tactile switch under the spring with a Schurter LSH in two builds. The owner's measurements quoted above are also [F-1](#f-1) to [F-3](#f-3).
+- **Narrowed by:** [R-62](#r-62) (controller ruling on the owner's measurements [F-5](#f-5); the owner may override) re-bases the enclosure depths on the owner-measured box; plan sizes stay Hammond's. [R-55](#r-55) (controller ruling; the owner may override) sets the footswitch lid hole at Ø13.4 with an M12 washer under the outside nut. [R-60](#r-60) and [R-61](#r-61) (controller ruling; the owner may override) set the module's USB socket and the socket and header pair under the board.
 - **Derived in:** [mechanical-and-controls.md EC-BOARD-HEIGHT](mechanical-and-controls.md#ec-board-height) (the 10.7 mm); [EC-ENCLOSURE](mechanical-and-controls.md#ec-enclosure), [EC-FOOTSWITCH](mechanical-and-controls.md#ec-footswitch), [§5.4](mechanical-and-controls.md#54-clearances-attachment-and-connection) (the Ø13.4 lid hole) and [EC-PRODUCTION-MOUNTING](mechanical-and-controls.md#ec-production-mounting).
 
 *Not in force:* the owner's decision of 2026-10-04 (A2 rulings) "footswitch = a PCB-mount momentary with a complete manufacturer PCB drawing", superseded by O-17's soft footswitches.
@@ -208,7 +218,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Owner:** asked whether the three buttons should go where they fit or in a neat row: "B. The controls are the user interface—they have to seem natural". Then: "Another approach is to have a bank of six swappable controls so we can spec any combination of 6 knobs and/or switches in the main control cluster, tailored for the given effect to be loaded into the firmware and the enclosure art." Approved: "yes, proceed". On the layout candidates: "I prefer B".
 - **Decides:** the main control cluster is six positions, each fitted per effect with either a pot (RV16AF-41) or a tactile button (HCTL TC-6610-17-100G); firmware configures each position; lid drilling and art are per effect; the two footswitches stay fixed; the three separate buttons are removed. Layout B is an even 2 × 3 grid with the LEDs between the footswitches. Its two binding rules: the module's connector-face parts stand at most 4.97 mm (`moduleEnvelope.maxHeightBottomMm`), and every pot, button and LED lead within the module outline is trimmed to at most 1.4 mm below the audio board after soldering. [layout-B.svg](layout-B.svg) is the record of layout B, the layout the owner chose. It is not the exact file he chose from: that was `candidate-B.svg` at pedals commit `b0e69c8`, which a pedals script regenerated as `layout-B.svg`, last at `753d63e`, before R-60, R-61 and R-62, each of which leaves layout B unchanged. Every control, footswitch, LED, jack and relay position is the one he saw; the title, the module outline, the socket bodies and the hung boards' size changed ([mechanical-and-controls.md §4.3](mechanical-and-controls.md#43-the-layout-b-picture)).
 - **Set by:** [split spec §2, §5.1.2][split].
-- **Amended by:** [R-54](#r-54) and [R-61](#r-61) (rulings) set the 4.97 mm figure through the socket and header choice. [R-55](#r-55) (ruling) adds that each trimmed joint is reflowed or inspected (IPC J-STD-001), and that the socket tails are trimmed to at most 0.6 mm above the board. [R-8](#r-8) (ruling) records the contract change: pins 22–27 carry POS1–POS6 and the freed toggle pins become spares.
+- **Amended by:** none (no later owner decision).
+- **Narrowed by:** [R-54](#r-54) and [R-61](#r-61) (controller ruling; the owner may override) set the 4.97 mm figure through the socket and header choice. [R-55](#r-55) (controller ruling; the owner may override) adds that each trimmed joint is reflowed or inspected (IPC J-STD-001), and that the socket tails are trimmed to at most 0.6 mm above the board. [R-8](#r-8) (controller ruling; the owner may override) records the contract change: pins 22–27 carry POS1–POS6 and the freed toggle pins become spares.
 - **Derived in:** [mechanical-and-controls.md EC-LEAD-TRIM](mechanical-and-controls.md#ec-lead-trim) and [FIG-STACK-HEIGHT](mechanical-and-controls.md#fig-stack-height) (the 4.97 mm and 1.4 mm rules), [FIG-SOCKET-TAILS](mechanical-and-controls.md#fig-socket-tails) (the 0.6 mm), [EC-CONTROL-POSITIONS](mechanical-and-controls.md#ec-control-positions) and [EC-LAYOUT-B](mechanical-and-controls.md#ec-layout-b).
 
 *Not in force:* the connector-face limit as 3.69 mm (SLW socket) and then 3.32 mm (TLW header), before R-54.
@@ -243,7 +254,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** approved by the owner 2026-10-04, conditional on OSCAR's FB3 being a different part; the condition was met (the A2 Task 18 outcome: OSCAR's FB3 carries no MPN, so it is not identifiable as this part), so D17 stands.
 - **Decides:** FB_VDDA is Murata BLM21PG221SN1D.
 - **Set by:** [OWNER-DEFAULTS.md][own] D17; [CORE-BRIEF.md §4][cb].
-- **Amended by:** split spec §9.4: kept, on the module. [R-57](#r-57) (ruling) sets the S2 module requirement VDDA-WIDEBAND on the network this bead is part of (f0 ≤ 158.0 kHz: more VDDA-bank capacitance or a bead with more inductance).
+- **Amended by:** split spec §9.4: kept, on the module.
+- **Narrowed by:** [R-57](#r-57) (controller ruling; the owner may override) sets the S2 module requirement VDDA-WIDEBAND on the network this bead is part of (f0 ≤ 158.0 kHz: more VDDA-bank capacitance or a bead with more inductance).
 - **Derived in:** [analog.md FIG-VDDA-WIDEBAND](analog.md#fig-vdda-wideband) and [EC-VDDA-WIDEBAND](analog.md#ec-vdda-wideband) (the 158.0 kHz).
 
 ### D18
@@ -260,7 +272,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** approved by the owner 2026-10-04 (the A2 rulings record it as "Owner decision (2026-10-04): D19 APPROVED").
 - **Decides (as revised):** U_EXP (MCP6001) has its supply on the ADC reference, with its 100 nF bypass C_EXP. After the split the follower stays on VREF_A.
 - **Set by:** [OWNER-DEFAULTS.md][own] D19; [CORE-BRIEF.md §4][cb]; [A2 rulings][a2].
-- **Amended by:** [split spec §9.4][split]: "D19's follower stays on VREF_A". [RR-1](#rr-1): "U_EXP stays on it (D19)".
+- **Amended by:** [split spec §9.4][split]: "D19's follower stays on VREF_A".
+- **Narrowed by:** [RR-1](#rr-1) (controller ruling; the owner may override) keeps it within VREF_A's contract: "U_EXP stays on it (D19)".
 
 ### D20
 
@@ -268,7 +281,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** approved by the owner 2026-10-05 ([O-14](#o-14)).
 - **Decides:** IFMD (pin 27) to VDD, and SCKI1/SCKI2 from a 12.288 MHz XO: the codec is clock master. It implements [O-2](#o-2).
 - **Set by:** [split spec §9.4][split]. Never appended to `CORE-BRIEF.md`; this entry is its record.
-- **Amended by:** none. [R-29](#r-29) (ruling) chooses the XO.
+- **Amended by:** none.
+- **Narrowed by:** [R-29](#r-29) (controller ruling; the owner may override) chooses the XO.
 - **Carried in:** [firmware-facing-requirements.md EC-SAI2-SLAVE](firmware-facing-requirements.md#ec-sai2-slave); [processor-and-memory.md EC-CLOCK-TREE](processor-and-memory.md#ec-clock-tree); [analog.md §13.1](analog.md#131-what-it-is).
 
 ### D21
@@ -287,7 +301,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** approved by the owner 2026-10-05 ([O-14](#o-14)).
 - **Decides:** codec VDD comes from a local 3.3 V regulator fed from 5V_A, so the codec's VCC-before-VDD sequencing holds without a buck EN.
 - **Set by:** [split spec §9.4][split] (and §7.3). Never appended to `CORE-BRIEF.md`; this entry is its record.
-- **Amended by:** none. [R-30](#r-30) (ruling) chooses the regulator and its power-down clamp.
+- **Amended by:** none.
+- **Narrowed by:** [R-30](#r-30) (controller ruling; the owner may override) chooses the regulator and its power-down clamp.
 - **Carried in:** [analog.md §13.3](analog.md#133-vdd-regulator-and-the-power-down-clamp-r-30); [power.md §7](power.md#7-5v_a-and-the-analog-branch).
 
 ### D23
@@ -305,7 +320,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** approved by the owner 2026-10-05 ([O-14](#o-14)).
 - **Decides:** the module buck's EN comes from VIN_MOD instead of 5V_A.
 - **Set by:** [split spec §9.4][split] (and §6.3). Never appended to `CORE-BRIEF.md`; this entry is its record.
-- **Amended by:** none. [R-47](#r-47) (ruling) sizes the EN/UVLO divider.
+- **Amended by:** none.
+- **Narrowed by:** [R-47](#r-47) (controller ruling; the owner may override) sizes the EN/UVLO divider.
 - **Carried in:** [power.md §4.1](power.md#41-the-modules-enuvlo-divider).
 
 ### R-34
@@ -316,7 +332,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Answer:** "Exactly 9.0 V (Recommended)". Option text: "Same basis as your 2026-10-01 full-scale decision. Use the simple diode per supply branch. An adapter running 5% low (~8.55 V) plus cable loss would clip about 0.4 V (≈0.5 dB) sooner at the very loudest peaks. Running from a 12 V supply gives full headroom anyway."
 - **Decides:** R-PF-7 is VIN_A at a 9.00 V input, with no adapter tolerance and no cable drop, cold (−20 °C), at least 8.44 V. With the per-branch PMEG4030ER the ledger computes 9.00 − 0.385 = 8.615 V. With a 5 %-low adapter and 0.1 V of cable drop it would be 8.065 V, about 0.44 dB less clip-free level; that case is information, not a requirement.
 - **Set by:** [S1 ledger R-34][ledger].
-- **Amended by:** [R-40](#r-40) (ruling) records that R-34 covers R-PF-7 only: the plug-pull hold-up margins keep the brief's basis (supply 5 % low, 0.1 V cable, element cold). It supersedes [R-33](#r-33) in effect: no ideal diode is used.
+- **Amended by:** none. R-34 supersedes [R-33](#r-33) in effect: no ideal diode is used.
+- **Narrowed by:** [R-40](#r-40) (controller ruling; the owner may override) records that R-34 covers R-PF-7 only: the plug-pull hold-up margins keep the brief's basis (supply 5 % low, 0.1 V cable, element cold).
 - **Derived in:** [power.md §3.1](power.md#31-the-analog-branch-r-pf-7-and-its-load) (8.615 V, 8.065 V and 0.44 dB); [analog.md FIG-HEADROOM](analog.md#fig-headroom).
 
 ### R-43
@@ -327,7 +344,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Answer:** "Design for 1 A, measure (Recommended)". Option text: "Keep the design as is, which is safe on a 1 A supply. Measure real current on the first board, then publish the real figure; it may well come in near 300–500 mA."
 - **Decides:** the design is safe and starts on a 1 A supply. Its sufficient condition is a regulated 9 V supply that holds at least 8.55 V at 0.98 A behind 0.185 Ω; steady running draws at most 0.70 A. The published rating follows a bring-up measurement of the steady and peak input current. A weak supply is safe but does not start: the module retries while the pedal sits in bypass with the dry signal passing.
 - **Set by:** [S1 ledger R-43][ledger].
-- **Amended by:** restated 2026-10-06 (S1 Task 17 fix D-D-2; the ledger says "the owner decision is not reopened") on the module's real start-up. [R-50](#r-50) withdrew an unsourced retry-power figure in it.
+- **Amended by:** none (no later owner decision).
+- **Narrowed by:** the controller's restatement of 2026-10-06 on the module's real start-up (S1 Task 17 fix D-D-2; the ledger says "the owner decision is not reopened") (controller ruling; the owner may override); [R-50](#r-50) (controller ruling; the owner may override) withdrew an unsourced retry-power figure in it.
 - **Derived in:** [power.md §3.5](power.md#35-re-engage-the-module-load-switch-q_msw-r-pf-5) and its *Supply rating* paragraph under [FIG-EN-DELAY](power.md#fig-en-delay) (8.55 V at 0.98 A behind 0.185 Ω); [§4.3](power.md#43-the-switch-on-and-the-9-v-dip).
 
 *Not in force:* the sufficient condition as 8.55 V at 1.08 A, before the D-D-2 restatement.
@@ -357,7 +375,7 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 
 *Not in force:* the solid-state mute and its not-fitted footprints, which this decision replaced.
 
-*Not in force:* the owner's approval of the power-fail shed, a second owner decision of 2026-10-04 carried in the same note: the power-fail supervisor pulled the buck's EN low so the relays released before the output stage moved. Its record is `BYPASS-RELAY.md`'s status line, "approved by the owner on 2026-10-04 and implemented", answering its §11 item 2, "Approve the power-fail shed". It was superseded by a later owner decision, [O-6](#o-6): split spec §9.1's row "Relay bypass (2026-10-04) and the power-fail shed (`BR` §11 item 2)" reads "The approved shed is replaced by §7.4, which the owner directed (O-6)".
+The owner's 2026-10-04 approval of the power-fail shed, carried in the same note as this decision, is superseded by [O-6](#o-6), and recorded there.
 
 ### OWN-03
 
@@ -374,7 +392,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** platform spec, 2026-09-30 (rev 5, owner decisions 2026-10-01).
 - **Decides:** the pedal survives 18 V DC continuously, and reverse polarity, without damage. The spec's words: "This is an owner decision: an 18 V pedal supply plugged in by mistake is a continuous condition, not a transient. *Survival is not operation.*" The operating input range is 9 V to 12 V DC (the platform spec's *Power* table).
 - **Set by:** [platform spec][plat], *Power*, "Survival".
-- **Amended by:** split spec §9.1: unchanged for the production pair (module and audio board). It holds to 74 °C ambient ([R-32](#r-32)), above the platform's processor-limited operating envelope ([R-20](#r-20)). [R-41](#r-41) (ruling) confirms that 18 V is a survival condition, applied continuously, not an operating point. A bench with a real Seed fitted has no 18 V survival; see [O-15](#o-15).
+- **Amended by:** split spec §9.1: unchanged for the production pair (module and audio board).
+- **Narrowed by:** [O-15](#o-15) (controller ruling; the owner may override): a development bench with a real Seed fitted has no 18 V survival. [R-32](#r-32) (controller ruling; the owner may override): it holds to 74 °C ambient, above the platform's processor-limited operating envelope ([R-20](#r-20), controller ruling). [R-41](#r-41) (controller ruling; the owner may override) confirms that 18 V is a survival condition, applied continuously, not an operating point.
 - **Derived in:** [power.md §8](power.md#8-18-v-survival-by-board) (survival by board) and [§7](power.md#7-5v_a-and-the-analog-branch) (the 74 °C ambient of R-32).
 
 ### PW-TJ
@@ -383,7 +402,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-01.
 - **Decides:** keep 480 MHz at VOS0 and the CORE-BRIEF §5b clock tree, with three requirements that follow: thermal copper under and around the LQFP-176 (an owner layout item); a bring-up measurement of the die temperature from the MCU's internal sensor, in the closed enclosure under a representative DSP load; and a firmware fallback to 400 MHz at VOS1 if the sensor reads 95 °C or more, which needs the VOS1 clock configuration validated first.
 - **Set by:** [POWER.md][power], "Owner decision: MCU junction temperature at 480 MHz (VOS0). Resolved by the owner, 2026-10-01".
-- **Amended by:** split spec §9.1: unchanged; the thermal copper moves to module layout ([OWN-06](#own-06)). Split spec §9.4 revises the CORE-BRIEF §5b clock tree this decision kept: "SAI1 → SAI2, both blocks slave; PLL3's MCLK role ends …; USB on the OTG_HS controller (USB1) using its internal full-speed PHY, with CRS synchronised to USB1 SOF, not USB2". The 480 MHz system clock at VOS0 is not affected ([processor-and-memory.md EC-CLOCK-TREE](processor-and-memory.md#ec-clock-tree)).
+- **Amended by:** split spec §9.1: unchanged; the thermal copper moves to module layout. Split spec §9.4 revises the CORE-BRIEF §5b clock tree this decision kept: "SAI1 → SAI2, both blocks slave; PLL3's MCLK role ends …; USB on the OTG_HS controller (USB1) using its internal full-speed PHY, with CRS synchronised to USB1 SOF, not USB2". The 480 MHz system clock at VOS0 is not affected ([processor-and-memory.md EC-CLOCK-TREE](processor-and-memory.md#ec-clock-tree)).
+- **Narrowed by:** [OWN-06](#own-06) (controller ruling; the owner may override) makes the thermal copper a layout feature, now of module layout.
 - **The figures behind it** (`POWER.md`'s owner-decision section, at maximum currents, TJ = 105 °C at VOS0, θJA 43.0 °C/W): the ambient at which the junction reaches 105 °C is 34.7 °C for the used-peripheral build-up with an estimated 30 mA of I/O, 26.1 °C with the full 88.8 mA I/O bound, and 20.4 °C with every peripheral enabled (580 mA). So 34.7 °C is not the worst case. At 400 MHz VOS1, where TJ may reach 125 °C, the ambient may reach 57 °C. The ledger's [R-20](#r-20) states the envelope it evaluates self-heating claims against as "`POWER.md` §4.2 gives TA ≤ 34.7 °C at 480 MHz VOS0 worst case and ≤ 57 °C at VOS1 400 MHz"; the table it cites is in the owner-decision section, not §4.2, and its worst row is 20.4 °C. The self-heating rulings ([R-32](#r-32), [R-55](#r-55)) compare against 57 °C.
 - **Derived in:** [power.md §5.3](power.md#53-mcu-reset-decoupling-and-junction-temperature).
 
@@ -393,7 +413,8 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-02 (design-review gap G-S2).
 - **Decides:** the DC input has no TVS diode, provided the hot-plug analysis keeps the peak at the buck's VIN at or below about 28 V (87 % of the buck's 32 V absolute maximum) for an 18 V hot plug. The source's words: "**Decision (owner, 2026-10-02).** No input TVS, provided this analysis keeps the peak at the buck's VIN at or below about 28 V (87 % of its 32 V absolute maximum) for an 18 V hot plug." It is the design note's sentence; his own words are not recorded. Had the peak exceeded 28 V, a bidirectional TVS from VIN to GND before the input diode and a ≥ 50 V bulk capacitor would have been added.
 - **Set by:** [POWER.md][power] §4.4, "Hot-plug overshoot (design-review gap G-S2)"; repeated in §4, "**No input TVS is fitted** (owner decision 2026-10-02, design-review gap G-S2)".
-- **Amended by:** none (no later owner decision). Split spec §5.6.1 requires the analysis re-run with the module branch and the connector in the path, inside our module's survival rating and, on a Seed bench, inside 17 V. [R-59](#r-59) (ruling) records the re-run on the split: `vinMod.hotPlugPeakV` 26.3 V at pin 39 and 25.76 V at the module buck's VIN, and "Pin-39 parts are rated against 26.3 V; ≤ 28 V holds". So the condition still holds and the decision stands.
+- **Amended by:** none (no later owner decision). Split spec §5.6.1 requires the analysis re-run with the module branch and the connector in the path, inside our module's survival rating and, on a Seed bench, inside 17 V.
+- **Narrowed by:** [R-59](#r-59) (controller ruling; the owner may override) records the re-run on the split: `vinMod.hotPlugPeakV` 26.3 V at pin 39 and 25.76 V at the module buck's VIN, and "Pin-39 parts are rated against 26.3 V; ≤ 28 V holds". So the condition still holds and the decision stands.
 - **Derived in:** [power.md §4.5](power.md#45-hot-plug-at-the-module-input), [FIG-HOTPLUG](power.md#fig-hotplug) (26.3 V) and [FIG-SEED-HOTPLUG](power.md#fig-seed-hotplug) (the 9 V Seed bench).
 
 *Not in force:* the one-board v1 result that first met the condition, 21.9 V at the buck's VIN over the parameter grid and 24.8 V at an extreme corner (`POWER.md` §4.4). The split moved the buck onto the module, and R-59's figures replace it.
@@ -441,6 +462,7 @@ These are the owner's own measurements and statements of fact. The F-numbers are
 - **Fact:** the owner gave the Alpha SF12030F as the part the DAIER PBS-24-MP likely copies. The source records this without his words.
 - **Source:** [split spec §5.1.1][split].
 - **Used by:** [O-17](#o-17), [R-56](#r-56) (the Alpha's printed dimensions are taken as the primary source; the two agree within 0.5 mm everywhere).
+- **Derived in:** [mechanical-and-controls.md §5.1](mechanical-and-controls.md#51-the-actuator) (the dimension-by-dimension comparison behind "within 0.5 mm").
 
 ### F-4
 
@@ -649,7 +671,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 **SDRAM class.**
 - **Label:** controller ruling, with an ambiguity the owner may want to settle. The evidence each way:
   - **For a ruling.** `CORE-BRIEF.md` records no owner approval for D1 to D13. They are the brief's deltas from OSCAR. The owner's recorded approvals start at D14 ([OWNER-DEFAULTS.md][own]: "The owner approved deltas D14–D19 on 2026-10-04").
-  - **For an owner approval.** The generator spec, whose front matter reads "status: approved-design (rev 3)", required them in its gate 8: "Every difference must be declared as one of CORE-BRIEF D1–D13", and its approach needs "about 10 of the 13 CORE-BRIEF deltas" ([generator spec][gen]). The file does not say who approved it. The A1 ruling that extended gate 8 to D14 onward adds "deltas still need owner approval to enter CORE-BRIEF" ([A1 rulings][a1]), which reads as a rule that every delta in `CORE-BRIEF.md` §4, D1 to D13 included, carries owner approval.
+  - **For an owner approval.** The generator spec, whose front matter reads "status: approved-design (rev 3)", required them in its gate 8: "Every difference must be declared as one of CORE-BRIEF D1–D13", and its approach needs "about 10 of the 13 CORE-BRIEF deltas" ([generator spec][gen]). The file does not say who approved it. The A1 ruling that extended gate 8 to D14 onward reads, in full: "Ruling: A2 pre-flight (a)2 — gate 8 accepts any delta that CORE-BRIEF.md §4 declares with owner approval; D14–D18 were approved 2026-10-04 — the spec's "D1–D13" predates owner-approved later deltas — cost if wrong: none, because deltas still need owner approval to enter CORE-BRIEF." ([A1 rulings][a1]). Read one way, "deltas still need owner approval to enter CORE-BRIEF" is a rule that every delta in `CORE-BRIEF.md` §4, D1 to D13 included, carries owner approval. Read the other way, "the spec's "D1–D13" predates owner-approved later deltas" contrasts D1 to D13 with the owner-approved deltas that came after them, and suggests they had no such approval.
   - **How it is carried.** The port spec's label rule counts an entry as an owner decision only where the source says so, and no source says the owner approved D1 to D13 by name. So D1 to D13 are carried as controller rulings, and the owner may rule otherwise.
 - **Decides:** the 32 MB baseline class: 256 Mbit × 16, 13 row bits, 9 column bits, 4 banks; the TSOP-II-54 pinout and A0–A12 carry over from OSCAR.
 - **Set by:** [CORE-BRIEF.md §4][cb]; compatibility in `SDRAM-COMPATIBILITY.md`.
@@ -800,7 +822,8 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 
 **Spare interface pins and the control positions.**
 - **Date:** 2026-10-05 (on owner decisions [O-18](#o-18) and layout B).
-- **Decides:** a freed GPIO pin stays a `signal` pin with a unique name, direction `in`, function `GPIO`. Pins 22–27 are POS1–POS6. 3V3_D gains the load role `control-button-pullup`, declared at 1.94 mA, its 1 % worst case at the 3.513 V rail maximum.
+- **Decides:** a freed GPIO pin stays a `signal` pin with a unique name, direction `in`, function `GPIO`. Pins 22–27 are POS1–POS6. 3V3_D gains the load role `control-button-pullup`.
+- **Current:** `control-button-pullup` is declared at 1.94 mA, its 1 % worst case at the 3.513 V rail maximum. The spares are SPARE1–SPARE5 on pins 1, 2, 3, 7 and 10; pin 11 is USB_EN_N.
 - **Set by:** [S1 ledger R-8][ledger].
 - **Amended by:** [R-14](#r-14): pin 11 becomes USB_EN_N; the spares are SPARE1–SPARE5 on pins 1, 2, 3, 7 and 10. [R-23](#r-23) declares the pin-38 loads at their 1 % worst case: "button pull-ups 1.94 (spec §5.6.2's 0.70 and 1.92 are nominal)".
 - **Derived in:** [power.md §5.4](power.md#54-pin-38-what-the-pedal-may-draw-from-3v3_d) (the role's 1.94 mA); [mechanical-and-controls.md EC-CONTROL-POSITIONS](mechanical-and-controls.md#ec-control-positions).

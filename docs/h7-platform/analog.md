@@ -328,7 +328,7 @@ Parts ([EC-RING-REFERENCE](#ec-ring-reference)): U_REFBLK TI LM66100DCKR (C28697
 
 ### 10.1 Ring reference
 
-The ring is fed from VREF_A through the blocking network of §9.6 and **R_REF 3.30 kΩ**, so the reading is ratiometric; **100 nF X7R** at the ring to GND. Ring reading across 10–100 kΩ pedals: 70.6 % (10 kΩ at −20 %) to 96.8 % of full scale; at 16 bits that is ≥ 46,000 codes, far above R-15's 1,024 steps, and the blocking network's non-ratiometric error is ≤ 85 ppm. The ring short draws 1.08 mA. Firmware calibrates the minimum and maximum. **Ring external DC limit ±5 V**, set by R_REF's dissipation (A2 Task 13 ruling, "best practice; owner may override", `ANALOG.md` §8.2; a controller ruling): the input is specified for passive expression pedals, which put no voltage on the ring. At −5 V, R_REF 3.30 kΩ dissipates 22 mW (1206, 250 mW). Source: [vref-a.md §1, §4][vref]; [ANALOG.md §8.1, §8.2][an].
+The ring is fed from VREF_A through the blocking network of §9.6 and **R_REF 3.30 kΩ**, so the reading is ratiometric; **100 nF X7R** at the ring to GND. Ring reading across 10–100 kΩ pedals: 70.6 % (10 kΩ at −20 %) to 96.8 % of full scale; at 16 bits that is ≥ 46,000 codes, far above R-15's 1,024 steps, and the blocking network's non-ratiometric error is ≤ 85 ppm. The ring short draws 1.08 mA. Firmware calibrates the minimum and maximum. **Ring external DC limit ±5 V**, set by R_REF's dissipation (A2 Task 13 ruling, "best practice; owner may override", `ANALOG.md` §8.2; a controller ruling, [AN-RING](decisions.md#an-ring)): the input is specified for passive expression pedals, which put no voltage on the ring. At −5 V, R_REF 3.30 kΩ dissipates 22 mW (1206, 250 mW). Source: [vref-a.md §1, §4][vref]; [ANALOG.md §8.1, §8.2][an].
 
 ### 10.2 Tip
 
