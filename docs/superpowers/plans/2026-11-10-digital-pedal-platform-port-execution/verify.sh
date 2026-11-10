@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -212,6 +212,46 @@ check_power() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+ANALOG="$DOCS/analog.md"
+ANALOG_TERMS=("421 Hz" "806" "PCM3060")
+
+check_analog() {
+  local bad="" term
+  [ -f "$ANALOG" ] || { echo " [missing docs/h7-platform/analog.md]"; return 1; }
+  for term in "${ANALOG_TERMS[@]}"; do
+    grep -qF -- "$term" "$ANALOG" || bad="$bad [analog.md lacks '$term']"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
+OPEN_ITEMS="$DOCS/open-items.md"
+OPEN_ITEMS_REQUIRED_IDS=(FB-AN2606 VDDA-WIDEBAND VBUS-HOTPLUG)
+
+# A table row is a line starting with "|", other than the header row (first
+# cell "Id") and the separator row. Escaped pipes (\|) inside a cell are not
+# cell boundaries. The phase is the sixth cell.
+check_openitems() {
+  local bad="" id out
+  [ -f "$OPEN_ITEMS" ] || { echo " [missing docs/h7-platform/open-items.md]"; return 1; }
+  for id in "${OPEN_ITEMS_REQUIRED_IDS[@]}"; do
+    grep -qE "^\| $id \|" "$OPEN_ITEMS" || bad="$bad [no table row with Id $id]"
+  done
+  out=$(awk '
+    /^\|/ {
+      line = $0
+      gsub(/\\\|/, "", line)
+      n = split(line, cell, "|")
+      id = cell[2]; gsub(/^ +| +$/, "", id)
+      if (id == "Id" || id ~ /^-+$/) next
+      phase = (n >= 8) ? cell[7] : ""
+      gsub(/^ +| +$/, "", phase)
+      if (phase == "") print "line " FNR " (" id ")"
+    }' "$OPEN_ITEMS")
+  [ -z "$out" ] || bad="$bad [empty phase cell: $(echo "$out" | head -5 | tr '\n' ' ')]"
+  grep -qF -- "paper analysis" "$OPEN_ITEMS" || bad="$bad [open-items.md lacks the phrase 'paper analysis']"
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -223,6 +263,8 @@ run_check() {
     decisions) reason=$(check_decisions) ;;
     architecture) reason=$(check_architecture) ;;
     power) reason=$(check_power) ;;
+    analog) reason=$(check_analog) ;;
+    openitems) reason=$(check_openitems) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
