@@ -165,6 +165,7 @@ the owner has his own read of it.
 | Keep the bucket through this phase | agent, proposed | the merged pool loads from it; deviates from the merge spec's teardown |
 | GKE Standard, not Autopilot | agent, proposed | GPU pool shapes and drivers are explicit, and they are part of what is being tried |
 | GPU pool is Spot 4 x L4 in us-central1, replacing the on-demand pool; another region is the next step if Spot also stocks out | owner, 2026-11-09 (*"your recommendation"*) | on-demand g2-standard-48 failed scale-up in all of us-central1-a/b/c for an hour ("GCE out of resources"); Spot is a separate capacity pool, needs no new infrastructure, and preemption is acceptable for a routing smoke test though not for a long benchmark |
+| Move to another region: probe candidate zones with a Spot g2-standard-48 VM deleted on creation, rebuild the cluster where one succeeds, delete the us-central1 cluster | owner, 2026-11-09 (*"yes"*) | Spot 4 x L4 then also failed in all of us-central1-a/b/c, twice each; probing finds capacity before anything is built, and the model copies cross-region from the us-central1 bucket |
 
 ## Open for the owner
 
