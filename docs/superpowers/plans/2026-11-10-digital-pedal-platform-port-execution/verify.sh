@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -295,6 +295,50 @@ check_mechanical() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+PARTS="$DOCS/parts.md"
+PARTS_HEADER="Role|MPN|Manufacturer|LCSC|Board|Chosen by|Source"
+
+# Every table whose header row is exactly PARTS_HEADER is a parts table. Each of
+# its rows must have seven cells, and its "Chosen by" and "Source" cells must not
+# be empty. Escaped pipes (\|) inside a cell are not cell boundaries. A file with
+# no such table, or a parts table with no rows, fails.
+check_parts() {
+  local out
+  [ -f "$PARTS" ] || { echo " [missing docs/h7-platform/parts.md]"; return 1; }
+  out=$(awk -v want="$PARTS_HEADER" '
+    function cells(s,    line, n, i, c, joined) {
+      line = s
+      gsub(/\\\|/, "", line)
+      n = split(line, cell, "|")
+      ncell = n - 2
+      joined = ""
+      for (i = 2; i < n; i++) {
+        c = cell[i]; gsub(/^[ \t]+|[ \t]+$/, "", c); cell[i] = c
+        joined = joined (i > 2 ? "|" : "") c
+      }
+      return joined
+    }
+    /^\|/ {
+      if (!intable) {
+        if (cells($0) == want) { intable = 1; tables++; seenSep = 0 }
+        next
+      }
+      cells($0)
+      if (!seenSep && cell[2] ~ /^:?-+:?$/) { seenSep = 1; next }
+      rows++
+      if (ncell != 7) { print "line " FNR ": " ncell " cells, expected 7"; next }
+      if (cell[7] == "") print "line " FNR " (" cell[2] "): empty Chosen by"
+      if (cell[8] == "") print "line " FNR " (" cell[2] "): empty Source"
+      next
+    }
+    { intable = 0 }
+    END {
+      if (tables == 0) print "no table with header | Role | MPN | Manufacturer | LCSC | Board | Chosen by | Source |"
+      else if (rows == 0) print "parts tables have no rows"
+    }' "$PARTS")
+  [ -z "$out" ] || { echo " [$(echo "$out" | head -5 | tr '\n' ';')]"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -311,6 +355,7 @@ run_check() {
     bypass) reason=$(check_bypass) ;;
     firmware) reason=$(check_firmware) ;;
     mechanical) reason=$(check_mechanical) ;;
+    parts) reason=$(check_parts) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
