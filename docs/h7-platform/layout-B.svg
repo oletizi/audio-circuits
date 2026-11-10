@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 433.98 129.16" width="1735.92" height="516.64">
+<title>Layout B (baseline, owner 2026-10-05): Even grid, LEDs between the footswitches</title>
+<style>.box{fill:#fafafa;stroke:#000;stroke-width:0.35}.corner{fill:none;stroke:#999;stroke-width:0.2;stroke-dasharray:1 1}.knob{fill:#d9d9d9;stroke:#333;stroke-width:0.3}.ptr{stroke:#333;stroke-width:0.5}.env{fill:none;stroke:#bbb;stroke-width:0.2;stroke-dasharray:1 1}.hole{fill:#fff;stroke:#333;stroke-width:0.25}.btn{fill:#333}.nut{fill:none;stroke:#555;stroke-width:0.3;stroke-dasharray:1.5 0.8}.cap{fill:#b08d57;stroke:#333;stroke-width:0.3}.led{fill:#d22;stroke:#600;stroke-width:0.2}.d{stroke:#06c;stroke-width:0.2}.module{fill:#dbe9f7;stroke:#06c;stroke-width:0.3}.socket{fill:#06c;opacity:0.6}.jack{fill:#eee;stroke:#333;stroke-width:0.3}.relay{fill:#f3e3c3;stroke:#963;stroke-width:0.3}.board{fill:#e3f3e3;stroke:#393;stroke-width:0.3}.lead{fill:#e33;opacity:0.45}text{font-family:sans-serif;text-anchor:middle}.t{font-size:2.6px}.ts{font-size:2.1px;fill:#444}.tc{font-size:2.3px}.th{font-size:3.4px;font-weight:bold}.tw{font-size:2.3px;fill:#777}.td{font-size:2.1px;fill:#06c}.tdv{font-size:2.1px;fill:#06c;text-anchor:end}.tsr{font-size:2.1px;fill:#444;text-anchor:end}.tsl{font-size:2.1px;fill:#444;text-anchor:start}</style>
+<rect x="0" y="0" width="433.98" height="129.16" fill="#fff"/>
+<g transform="translate(16 22)">
+<text class="th" x="56.33" y="-9">B: top, every position a knob (Ø19 knobs; mm)</text>
+<text class="tw" x="56.33" y="-3">rear wall</text>
+<text class="tw" x="56.33" y="92.16">front wall (player)</text>
+<rect class="box" x="0" y="0" width="112.66" height="87.16"/>
+<rect class="corner" x="0" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="0" y="77.58" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="77.58" width="9.58" height="9.58"/>
+<circle class="knob" cx="28.5" cy="22" r="9.5"/>
+<line class="ptr" x1="28.5" y1="22" x2="28.5" y2="14"/>
+<text class="t" x="28.5" y="25.6">POS1</text>
+<text class="ts" x="28.5" y="28.6">(28.5, 22)</text>
+<circle class="knob" cx="56.33" cy="22" r="9.5"/>
+<line class="ptr" x1="56.33" y1="22" x2="56.33" y2="14"/>
+<text class="t" x="56.33" y="25.6">POS2</text>
+<text class="ts" x="56.33" y="28.6">(56.33, 22)</text>
+<circle class="knob" cx="84.16" cy="22" r="9.5"/>
+<line class="ptr" x1="84.16" y1="22" x2="84.16" y2="14"/>
+<text class="t" x="84.16" y="25.6">POS3</text>
+<text class="ts" x="84.16" y="28.6">(84.16, 22)</text>
+<circle class="knob" cx="28.5" cy="49" r="9.5"/>
+<line class="ptr" x1="28.5" y1="49" x2="28.5" y2="41"/>
+<text class="t" x="28.5" y="52.6">POS4</text>
+<text class="ts" x="28.5" y="55.6">(28.5, 49)</text>
+<circle class="knob" cx="56.33" cy="49" r="9.5"/>
+<line class="ptr" x1="56.33" y1="49" x2="56.33" y2="41"/>
+<text class="t" x="56.33" y="52.6">POS5</text>
+<text class="ts" x="56.33" y="55.6">(56.33, 49)</text>
+<circle class="knob" cx="84.16" cy="49" r="9.5"/>
+<line class="ptr" x1="84.16" y1="49" x2="84.16" y2="41"/>
+<text class="t" x="84.16" y="52.6">POS6</text>
+<text class="ts" x="84.16" y="55.6">(84.16, 49)</text>
+<circle class="nut" cx="25.5" cy="77" r="7.88"/>
+<circle class="cap" cx="25.5" cy="77" r="5"/>
+<text class="tc" x="25.5" y="78">FSW1</text>
+<text class="tsr" x="16.5" y="78">(25.5, 77)</text>
+<circle class="nut" cx="87.16" cy="77" r="7.88"/>
+<circle class="cap" cx="87.16" cy="77" r="5"/>
+<text class="tc" x="87.16" y="78">FSW2</text>
+<text class="tsl" x="96.16" y="78">(87.16, 77)</text>
+<circle class="led" cx="42" cy="77" r="2.95"/>
+<text class="ts" x="42" y="81.8">LED1</text>
+<circle class="led" cx="70.66" cy="77" r="2.95"/>
+<text class="ts" x="70.66" y="81.8">LED2</text>
+<line class="d" x1="28.5" y1="10" x2="56.33" y2="10"/><text class="td" x="42.41" y="9.2">27.83</text>
+<line class="d" x1="56.33" y1="10" x2="84.16" y2="10"/><text class="td" x="70.25" y="9.2">27.83</text>
+<line class="d" x1="0" y1="22" x2="28.5" y2="22"/><text class="td" x="14.25" y="21.2">28.5</text>
+<line class="d" x1="17" y1="22" x2="17" y2="49"/><text class="tdv" x="16.2" y="35.5">27</text>
+<line class="d" x1="97.66" y1="0" x2="97.66" y2="22"/><text class="tdv" x="96.86" y="11">22</text>
+<line class="d" x1="25.5" y1="82.5" x2="87.16" y2="82.5"/><text class="td" x="56.33" y="81.7">61.66</text>
+<line class="d" x1="23.5" y1="77" x2="23.5" y2="87.16"/><text class="tdv" x="22.7" y="82.08">10.16</text>
+</g>
+<g transform="translate(160.66 22)">
+<text class="th" x="56.33" y="-9">B: top, mixed fit (POS4, POS5, POS6 buttons)</text>
+<text class="tw" x="56.33" y="-3">rear wall</text>
+<text class="tw" x="56.33" y="92.16">front wall (player)</text>
+<rect class="box" x="0" y="0" width="112.66" height="87.16"/>
+<rect class="corner" x="0" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="0" y="77.58" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="77.58" width="9.58" height="9.58"/>
+<circle class="knob" cx="28.5" cy="22" r="9.5"/>
+<line class="ptr" x1="28.5" y1="22" x2="28.5" y2="14"/>
+<text class="t" x="28.5" y="25.6">POS1</text>
+<text class="ts" x="28.5" y="28.6">(28.5, 22)</text>
+<circle class="knob" cx="56.33" cy="22" r="9.5"/>
+<line class="ptr" x1="56.33" y1="22" x2="56.33" y2="14"/>
+<text class="t" x="56.33" y="25.6">POS2</text>
+<text class="ts" x="56.33" y="28.6">(56.33, 22)</text>
+<circle class="knob" cx="84.16" cy="22" r="9.5"/>
+<line class="ptr" x1="84.16" y1="22" x2="84.16" y2="14"/>
+<text class="t" x="84.16" y="25.6">POS3</text>
+<text class="ts" x="84.16" y="28.6">(84.16, 22)</text>
+<circle class="env" cx="28.5" cy="49" r="9.5"/>
+<circle class="hole" cx="28.5" cy="49" r="2"/>
+<circle class="btn" cx="28.5" cy="49" r="1.5"/>
+<text class="t" x="28.5" y="46">POS4 button</text>
+<text class="ts" x="28.5" y="55.6">(28.5, 49)</text>
+<circle class="env" cx="56.33" cy="49" r="9.5"/>
+<circle class="hole" cx="56.33" cy="49" r="2"/>
+<circle class="btn" cx="56.33" cy="49" r="1.5"/>
+<text class="t" x="56.33" y="46">POS5 button</text>
+<text class="ts" x="56.33" y="55.6">(56.33, 49)</text>
+<circle class="env" cx="84.16" cy="49" r="9.5"/>
+<circle class="hole" cx="84.16" cy="49" r="2"/>
+<circle class="btn" cx="84.16" cy="49" r="1.5"/>
+<text class="t" x="84.16" y="46">POS6 button</text>
+<text class="ts" x="84.16" y="55.6">(84.16, 49)</text>
+<circle class="nut" cx="25.5" cy="77" r="7.88"/>
+<circle class="cap" cx="25.5" cy="77" r="5"/>
+<text class="tc" x="25.5" y="78">FSW1</text>
+<text class="tsr" x="16.5" y="78">(25.5, 77)</text>
+<circle class="nut" cx="87.16" cy="77" r="7.88"/>
+<circle class="cap" cx="87.16" cy="77" r="5"/>
+<text class="tc" x="87.16" y="78">FSW2</text>
+<text class="tsl" x="96.16" y="78">(87.16, 77)</text>
+<circle class="led" cx="42" cy="77" r="2.95"/>
+<text class="ts" x="42" y="81.8">LED1</text>
+<circle class="led" cx="70.66" cy="77" r="2.95"/>
+<text class="ts" x="70.66" y="81.8">LED2</text>
+<line class="d" x1="28.5" y1="10" x2="56.33" y2="10"/><text class="td" x="42.41" y="9.2">27.83</text>
+<line class="d" x1="56.33" y1="10" x2="84.16" y2="10"/><text class="td" x="70.25" y="9.2">27.83</text>
+<line class="d" x1="0" y1="22" x2="28.5" y2="22"/><text class="td" x="14.25" y="21.2">28.5</text>
+<line class="d" x1="17" y1="22" x2="17" y2="49"/><text class="tdv" x="16.2" y="35.5">27</text>
+<line class="d" x1="97.66" y1="0" x2="97.66" y2="22"/><text class="tdv" x="96.86" y="11">22</text>
+<line class="d" x1="25.5" y1="82.5" x2="87.16" y2="82.5"/><text class="td" x="56.33" y="81.7">61.66</text>
+<line class="d" x1="23.5" y1="77" x2="23.5" y2="87.16"/><text class="tdv" x="22.7" y="82.08">10.16</text>
+</g>
+<g transform="translate(305.32 22)">
+<text class="th" x="56.33" y="-9">B: underside, seen from above through the board (mm)</text>
+<text class="tw" x="56.33" y="-3">rear wall</text>
+<text class="tw" x="56.33" y="92.16">front wall (player)</text>
+<rect class="box" x="0" y="0" width="112.66" height="87.16"/>
+<rect class="corner" x="0" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="0" width="9.58" height="9.58"/>
+<rect class="corner" x="0" y="77.58" width="9.58" height="9.58"/>
+<rect class="corner" x="103.08" y="77.58" width="9.58" height="9.58"/>
+<rect class="module" x="28.84" y="10.7" width="54.97" height="55.12"/>
+<text class="tc" x="56.33" y="63.82">module 54.97 x 55.12 (turned 90°)</text>
+<rect class="socket" x="30.53" y="11.7" width="51.3" height="3.04"/>
+<text class="ts" x="56.18" y="11.1">J_MOD_A socket</text>
+<rect class="socket" x="30.53" y="26.94" width="51.3" height="3.04"/>
+<text class="ts" x="56.18" y="26.34">J_MOD_B socket</text>
+<rect class="jack" x="0" y="11.05" width="20.86" height="18.7"/>
+<text class="tc" x="10.43" y="21.4">J_OUT_L</text>
+<rect class="jack" x="0" y="30.85" width="20.86" height="18.7"/>
+<text class="tc" x="10.43" y="41.2">J_OUT_R</text>
+<rect class="jack" x="0" y="50.65" width="20.86" height="18.7"/>
+<text class="tc" x="10.43" y="61">J_EXP</text>
+<rect class="jack" x="91.8" y="11.05" width="20.86" height="18.7"/>
+<text class="tc" x="102.23" y="21.4">J_IN_L</text>
+<rect class="jack" x="91.8" y="30.85" width="20.86" height="18.7"/>
+<text class="tc" x="102.23" y="41.2">J_IN_R</text>
+<rect class="jack" x="98.11" y="52.25" width="14.55" height="9.5"/>
+<text class="tc" x="105.38" y="58">J_DC</text>
+<rect class="relay" x="12.25" y="1.5" width="10.5" height="7"/>
+<text class="ts" x="17.5" y="11.5">K_BYP_OUT</text>
+<rect class="relay" x="89.91" y="1.5" width="10.5" height="7"/>
+<text class="ts" x="95.16" y="11.5">K_BYP_IN</text>
+<rect class="board" x="13.5" y="70.5" width="24" height="15"/>
+<text class="tc" x="25.5" y="79">FSW1 hung board</text>
+<rect class="board" x="75.16" y="70.5" width="24" height="15"/>
+<text class="tc" x="87.16" y="79">FSW2 hung board</text>
+<rect class="lead" x="24.35" y="18.75" width="8.3" height="6.5"/>
+<rect class="lead" x="22.3" y="36.8" width="12.4" height="2.4"/>
+<rect class="lead" x="52.18" y="18.75" width="8.3" height="6.5"/>
+<rect class="lead" x="50.13" y="36.8" width="12.4" height="2.4"/>
+<rect class="lead" x="80.01" y="18.75" width="8.3" height="6.5"/>
+<rect class="lead" x="77.96" y="36.8" width="12.4" height="2.4"/>
+<rect class="lead" x="24.35" y="45.75" width="8.3" height="6.5"/>
+<rect class="lead" x="22.3" y="31.8" width="12.4" height="2.4"/>
+<rect class="lead" x="52.18" y="45.75" width="8.3" height="6.5"/>
+<rect class="lead" x="50.13" y="31.8" width="12.4" height="2.4"/>
+<rect class="lead" x="80.01" y="45.75" width="8.3" height="6.5"/>
+<rect class="lead" x="77.96" y="31.8" width="12.4" height="2.4"/>
+<rect class="lead" x="38.8" y="73.8" width="6.4" height="6.4"/>
+<rect class="lead" x="67.46" y="73.8" width="6.4" height="6.4"/>
+<text class="ts" x="56.33" y="97.16">red: lead fields (button leads, pot pins, LED leads), at most 1.4 mm below the board where over the module</text>
+</g>
+</svg>

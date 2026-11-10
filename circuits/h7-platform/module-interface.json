@@ -1,0 +1,2270 @@
+{
+  "schema": 1,
+  "status": "draft",
+  "connector": {
+    "parts": [
+      {
+        "label": "J_MOD_A",
+        "firstContractPin": 1,
+        "pinCount": 20
+      },
+      {
+        "label": "J_MOD_B",
+        "firstContractPin": 21,
+        "pinCount": 20
+      }
+    ],
+    "pitchMm": 2.54,
+    "rowSpacingMm": 15.24,
+    "numbering": "seed: 1-20 down one row, 21-40 back up the other; 1 opposite 40, 20 opposite 21",
+    "pin1": "USB-connector end, in the row carrying D0-D14, top view (DS120 p. 1, Table 2; SCH-R5 sheet 1)"
+  },
+  "moduleEnvelope": {
+    "outline": {
+      "xMinMm": {
+        "value": -2.52,
+        "unit": "mm",
+        "source": "interface-analysis/envelope.md §3: J_MOD_A courtyard (Mill-Max 800-10-020-10-002000 insulator 2.54 wide, catalogue p. 53, since ruling R-61 of 2026-10-06; the same 2.54 as the Preci-Dip 800-10-020-10-002101 of R-54; + IPC-7351B 0.25 mm) less the 1.0 mm mechanical margin; relative to contract pin 1, module component-face view (−2.495 with the Samtec TLW's 2.49 before the header change of 2026-10-06, S1 Task 17 fix D-A-1, ruling R-54)",
+        "analysis": "S1 Task 9"
+      },
+      "xMaxMm": {
+        "value": 52.6,
+        "unit": "mm",
+        "source": "interface-analysis/envelope.md §3: U_MCU courtyard (DS12110 Rev 10 Figure 129 LQFP176 26.7 mm land + IPC-7351B 0.25 mm) plus the 1.0 mm mechanical margin; relative to contract pin 1",
+        "analysis": "S1 Task 9"
+      },
+      "yMinMm": {
+        "value": -3.5,
+        "unit": "mm",
+        "source": "interface-analysis/envelope.md §3: U_MCU and L_FILT courtyards less the 1.0 mm mechanical margin; relative to contract pin 1",
+        "analysis": "S1 Task 9"
+      },
+      "yMaxMm": {
+        "value": 51.47,
+        "unit": "mm",
+        "source": "interface-analysis/envelope.md §3: J_USB_MOD courtyard (HCTL HC-TYPE-C-16P-01A drawing rev A) plus the 1.0 mm mechanical margin; since ruling R-60 (2026-10-06) J_USB_MOD is the vertical HRO TYPE-C-31-E-17 (6.0 mm, mouth toward the back plate), placed to keep this +y edge, so the value is unchanged and the outline carries no connector keep-out; relative to contract pin 1",
+        "analysis": "S1 Task 9"
+      }
+    },
+    "maxHeightTopMm": {
+      "value": 6.2,
+      "unit": "mm",
+      "source": "interface-analysis/envelope.md §4: tallest part on the module's component face, SW_RESET/SW_BOOT, C&K PTS645 Series datasheet p. 3 V Vertical THT, 6.2 mm",
+      "analysis": "S1 Task 9"
+    },
+    "maxHeightBottomMm": {
+      "value": 4.97,
+      "unit": "mm",
+      "source": "interface-analysis/envelope.md §4, layouts/layouts.md; spec §5.1.2 (owner decisions O-18 and layout B, 2026-10-05): module connector face to the audio board's underside = Mill-Max 801-43-020-10-012000 insulator 4.19 mm + Mill-Max 800-10-020-10-002000 header, 3.18 mm from its insulator's top to its seating plane (catalogue p. 53 FIG. 4 and FIG. 1; ruling R-61, 2026-10-06; Preci-Dip 4.2 + 3.17 under R-54, the same 7.37 mm; it was the TLW's 1.52 mm, 5.72 mm and 3.32 mm in all) = 7.37 mm, less the 1.4 mm the control leads stand below the audio board over the module (HCTL TC-6610-17-100G drawing rev A: leads 3 below the seat, less the 1.6 mm board; pot and LED leads trimmed to it), less the 1.0 mm margin. Our module places nothing there except the J_MOD headers; the Daisy Seed's technical drawing (datasheet p. 10) shows parts only on its top face",
+      "analysis": "S1 Task 9"
+    },
+    "stackHeightMm": {
+      "value": 15.17,
+      "unit": "mm",
+      "source": "interface-analysis/envelope.md §4: owner baseline 2026-10-05, audio board's underside to the module's tallest part, Mill-Max 801-43-020-10-012000 socket 4.19 + Mill-Max 800-10-020-10-002000 header 3.18 to its seating plane (ruling R-61, 2026-10-06; Preci-Dip 4.2 + 3.17 under R-54, the same 7.37) + module PCB 1.6 + SW_RESET/SW_BOOT 6.2 mm; against 18.7 mm under the board to the lid's centre face in the owner-measured enclosure (31.0 - 10.7 - 1.6, ruling R-62, 2026-10-06), margin 2.53 mm after the 1 mm tolerance, the module lying inside the lid lip's band in plan, envelope.md §5; the value is not loosened by the extra room (1.28 mm against Hammond's drawing, 17.45 mm, before R-62) (13.52 mm and 2.93 mm with the Samtec TLW before 2026-10-06, S1 Task 17 fix D-A-1, ruling R-54)",
+      "analysis": "S1 Task 9"
+    }
+  },
+  "mcu": {
+    "seed": {
+      "part": "STM32H750IB",
+      "pinData": [
+        "vendor/st-pin-data/STM32H750IBKx.xml",
+        "vendor/st-pin-data/STM32H750IBTx.xml"
+      ],
+      "gpioModes": "vendor/st-pin-data/GPIO-STM32H747_gpio_v1_0_Modes.xml"
+    },
+    "module": {
+      "part": "STM32H743IIT6",
+      "pinData": [
+        "vendor/st-pin-data/STM32H743IITx.xml"
+      ],
+      "gpioModes": "vendor/st-pin-data/GPIO-STM32H747_gpio_v1_0_Modes.xml"
+    }
+  },
+  "domains": [
+    {
+      "id": "module_3v3",
+      "supply": "Module 3V3 regulator output: every module I/O and pin 38",
+      "sequencedWith": [
+        "adc_ref"
+      ]
+    },
+    {
+      "id": "adc_ref",
+      "supply": "VREF_A (pin 21): VDDA after FB_VDDA, derived from module 3V3",
+      "sequencedWith": [
+        "module_3v3"
+      ]
+    },
+    {
+      "id": "pedal_codec_3v3",
+      "supply": "Codec VDD and XO, local regulator on 5V_A (held-up analog branch)",
+      "sequencedWith": []
+    },
+    {
+      "id": "pedal_digital",
+      "supply": "Pedal digital rail: relay coils, LEDs, pedal-side logic",
+      "sequencedWith": []
+    },
+    {
+      "id": "usb_vbus",
+      "supply": "Host VBUS on the pedal's USB-C",
+      "sequencedWith": []
+    }
+  ],
+  "rails": [
+    {
+      "net": "VIN_MOD",
+      "pin": 39,
+      "drivenBy": "pedal",
+      "moduleSourceRoles": [],
+      "permittedLoadRoles": [],
+      "benchLoadRoles": [],
+      "declaredLoads": [],
+      "limits": {
+        "minV": {
+          "value": 7.93,
+          "unit": "V",
+          "source": "interface-analysis/vin-mod.md §1, ruling R-46: 9 V × 0.95 − cable 0.130 V (BYPASS-RELAY.md §3.4's 0.185 Ω at the pedal's 0.70 A; the brief's flat 0.1 V gives 7.97 V) − D_MIN PMEG4030ER cold 0.4676 V (Table 7 log-interpolated at 0.65 A, 419.4 mV, + Fig. 4's typical 1.07 mV/K × 45 K) − Q_MSW AOD4185 0.623 A × 20 mΩ = 7.9398 V, rounded down. 7.94 V before 2026-10-06: S1 Task 17 fix D-D-7 computes D_MIN's drop exactly (0.467 V was rounded down), which takes the exact figure under 7.94 V; module branch 623 mA since fix D-C-1 (ruling R-53). ≥ 5.0 V (DS120) and ≥ the module's EN start maximum 6.75 V / 0.9. The pedal keeps running down to U_PF's lowest trip, VIN_MOD 7.32 V, where the module is already running",
+          "analysis": "S1 Task 16"
+        },
+        "maxV": {
+          "value": 12.6,
+          "unit": "V",
+          "source": "interface-analysis/vin-mod.md §1, ruling R-46: 12 V × 1.05, less no drop (PMEG4030ER and AOD4185 give no minimum VF or RDS(on)); the operating maximum",
+          "analysis": "S1 Task 16"
+        },
+        "survivalV": {
+          "value": 18,
+          "unit": "V",
+          "source": "interface-analysis/vin-mod.md §1: the 18 V input condition (spec §5.6.1, POWER.md §4.1) less no drop, continuous; hot-plug transients are vinMod.hotPlugPeakV (§6): 26.3 V at pin 39 itself (25.76 V at the module buck's VIN after L_FILT), ≤ 28 V; pin-39 parts are rated against 26.3 V (S1 Task 17 fix D-D-3, 2026-10-06). A Seed: 17 V, so Seed benches run on 9–12 V (O-15; R-50 limits them to 9 V until bring-up measures a Seed)",
+          "analysis": "S1 Task 16"
+        },
+        "maxSteadyCurrentMa": {
+          "value": 449,
+          "unit": "mA",
+          "source": "interface-analysis/vin-mod.md §1: buckInputMa(3.392 V, 892 mA, 7.93 V, η 0.85) (SLUSEA4D Eq. 25; spec §5.6.2 budget; POWER.md §2.3 efficiency floor) = 448.9 mA, rounded up (448.3 mA at 7.94 V before S1 Task 17 fix D-D-7, 2026-10-06); 486 mA at the lowest running VIN_MOD 7.32 V",
+          "analysis": "S1 Task 16"
+        },
+        "maxPeakCurrentMa": {
+          "value": 674,
+          "unit": "mA",
+          "source": "interface-analysis/vin-mod.md §1: buckInputMa(3.392 V, 1.5 × 892 mA, 7.93 V, 0.85) = 673.3 mA, rounded up (729 mA at 7.32 V; 673 mA at 7.94 V before S1 Task 17 fix D-D-7, 2026-10-06); 3 A contact (the lower of the Mill-Max pair's 4.5 A and the Preci-Dip fallback's 3 A, ruling R-61) × 1000 ≥ 1.5 × 674 = 1011 mA, and 674 mA ≤ the 2000 mA cap that rule sets",
+          "analysis": "S1 Task 16"
+        },
+        "maxInrushPeakA": {
+          "value": 0.65,
+          "unit": "A",
+          "source": "interface-analysis/vin-mod.md §4, rulings R-48, R-50 and R-58: the peak current through pin 39 while Q_MSW's Miller ramp brings VIN_MOD up (154–395 ms after U_PF releases): the module's input bulk at its maximum 78.5 µF × the ramp plus the module's own start-up current (EN start ≥ 5.58 V, soft start ≥ 3.66 ms), the worst over the 9.45, 12.6 and 18 V corners; 0.648 A at 18 V fast (4.50 V/ms), rounded up. 0.61 A before 2026-10-06: S1 Task 17 fix D-D-9 takes C_SS's X7R temperature term on the fast corner, which speeds it. The carrier allows ≤ 220 µF on VIN_MOD in all (power-fail.md §7) and keeps VIN ≥ 8.37 V on a sagging 9 V supply",
+          "analysis": "S1 Task 16"
+        },
+        "permittedRippleMvPp": {
+          "value": 41.6,
+          "unit": "mVpp",
+          "source": "interface-analysis/vin-mod.md §5, ruling R-51: 1.5 × what the carrier presents at 450–550 kHz, U_PRAIL's 27.2 mV p-p (pedalRail.inputRippleMvPp; feedNet VIN_MOD; 26.4 mV and a 40.4 mV limit before R_MGP became 160 Ω, ruling R-53, 2026-10-06) + the module's own input ripple reflected through L_FILT 0.47 mV; the module filter (POWER.md §4.3; Middlebrook ratio 12.5 at the binding 1.5× peak load and 7.32 V, 18.7 at steady load, vin-mod.md §3; corrected 2026-10-06, S1 Task 17 fix D-D-11) passes ≤ 0.23 mV of it to the buck, about 1 % of 3V3_D's 20.7 mV",
+          "analysis": "S1 Task 16"
+        }
+      }
+    },
+    {
+      "net": "3V3_D",
+      "pin": 38,
+      "drivenBy": "module",
+      "moduleSourceRoles": [
+        "module-3v3-regulator"
+      ],
+      "permittedLoadRoles": [
+        "footswitch-pullup",
+        "control-button-pullup",
+        "i2c-pullup",
+        "i2c-device",
+        "midi-header-supply",
+        "midi-out-driver",
+        "sai-isolation-module-side",
+        "usb-isolation-switch"
+      ],
+      "benchLoadRoles": [
+        "bench-dummy-load",
+        "bench-breakout"
+      ],
+      "declaredLoads": [
+        {
+          "role": "footswitch-pullup",
+          "maxMa": 0.71,
+          "source": "interface-analysis/3v3-d.md §4, ruling R-23: 2 × 3.513 V / 9.9 kΩ (10.0 kΩ −1 %, both switches closed; spec §5.6.2's 0.70 mA is nominal)"
+        },
+        {
+          "role": "control-button-pullup",
+          "maxMa": 1.94,
+          "source": "interface-analysis/3v3-d.md §3, ruling R-23: spec §5.1.2 (O-18), 6 × 3.513 V / 10.89 kΩ, every button held (R_PUn 10.0 kΩ + R_BTNn 1.00 kΩ, −1 %; spec §5.6.2's 1.92 mA is nominal)"
+        },
+        {
+          "role": "i2c-pullup",
+          "maxMa": 2.96,
+          "source": "interface-analysis/3v3-d.md §1, ruling R-21: both lines held low, 2 × 3.513 V / 2.376 kΩ (R_SCL_PU, R_SDA_PU_EXP 2.40 kΩ −1 %); replaces spec §5.6.2's 3 mA-per-line ceiling"
+        },
+        {
+          "role": "sai-isolation-module-side",
+          "maxMa": 2.15,
+          "source": "results.json sai.moduleSideSupplyMa (S1 Task 10, crossings.md §2.4): U_ISO_M SN74LVC3G34 on 3V3_D"
+        },
+        {
+          "role": "usb-isolation-switch",
+          "maxMa": 0.39,
+          "source": "crossings.md §7.4, ruling R-14: TS3USB221 ICC 0.03 mA (SCDS220M §5.5) + R_USBEN 3.513 V / 9.9 kΩ with USB enabled"
+        },
+        {
+          "role": "midi-header-supply",
+          "maxMa": 2,
+          "source": "interface-analysis/3v3-d.md §4, ruling R-23 (confirmed 2026-10-06): the MIDI IN receiver only, an allocation that a cited part meets (TI ISOM8710 opto-emulator, push-pull output, ICCH/ICCL max 2 mA over −40 to 125 °C, VCC 2.7–5.5 V, SLLSFO4E §6.9, so no output pull-up); the CA-033 MIDI OUT current loop is on the pedal digital rail"
+        },
+        {
+          "role": "midi-out-driver",
+          "maxMa": 0.21,
+          "source": "interface-analysis/3v3-d.md §4, rulings R-23 (confirmed 2026-10-06) and R-28: U_MIDIDRV, TI SN74LVC1G07DBVR open-drain buffer (LCSC C7829) on 3V3_D, ICC max 10 µA (SCES296AG §5.5, VI = VCC or GND), plus R_TXPU 18.0 kΩ from MIDI_UART_TX to 3V3_D, 3.513 V / 17.82 kΩ = 0.197 mA while TX drives low; it drives the gate of Q_MIDI on the pedal digital rail (ruling R-26): only R_MGP's gate pull-up current (≤ 22.2 mA with R_MGP 160 Ω, ruling R-53, 2026-10-06; ≤ 13.14 mA with 270 Ω before; from 3V3_P) enters its output and leaves by GND, not through 3V3_D, and no MIDI loop current reaches it; Ioff ±10 µA at VCC = 0"
+        },
+        {
+          "role": "i2c-device",
+          "maxMa": 6.3,
+          "source": "interface-analysis/3v3-d.md §4, rulings R-23 and R-28: up to four expansion devices together (ruling R-21), the rest of the 16.67 mA declared-load ceiling (6.5 mA less the 0.20 mA R_TXPU adds to midi-out-driver)"
+        }
+      ],
+      "limits": {
+        "minV": {
+          "value": 3.274,
+          "unit": "V",
+          "source": "POWER.md §3.3",
+          "analysis": "S1 Task 6"
+        },
+        "maxV": {
+          "value": 3.513,
+          "unit": "V",
+          "source": "POWER.md §3.3",
+          "analysis": "S1 Task 6"
+        },
+        "maxContinuousMa": {
+          "value": 25,
+          "unit": "mA",
+          "source": "spec §5.6.2",
+          "analysis": "S1 Task 6"
+        },
+        "maxPeakCurrentMa": {
+          "value": 26.3,
+          "unit": "mA",
+          "source": "interface-analysis/3v3-d.md §5, ruling R-24: the declared total 16.66 mA (16.65 before the 2026-10-06 correction, S1 Task 17 review D-C-6) plus the module's soft-start charging the permitted 10 µF, 10 µF × 3.513 V / 3.66 ms (SLUSEA4D Equation 6 at C_SS 33 nF −10 % and ISS max 6.5 µA) = 9.61 mA; I²C and isolation switching edges come from each load's local 100 nF and add nothing at pin 38 above the declared figures",
+          "analysis": "S1 Task 12"
+        },
+        "maxExternalCapacitanceUf": {
+          "value": 10,
+          "unit": "uF",
+          "source": "interface-analysis/3v3-d.md §5, ruling R-24: a decision, not a derivation: SLUSEA4D §10.2.2.8 states no maximum output capacitance and asks for a loop and start-up study beyond Table 10-2; 10 µF covers 100 nF at each load plus about 1 µF of bulk per expansion board, and is carried, with VREF_A's 4 µF, to the module design's TPS62933F loop and start-up check",
+          "analysis": "S1 Task 12"
+        },
+        "rippleMvPp": {
+          "value": 20.7,
+          "unit": "mVpp",
+          "source": "interface-analysis/3v3-d.md §5, ruling R-24: SLUSEA4D Equations 15, 19, 20 at VIN 17.6 V, VOUT 3.513 V, L 4.7 µH −20 %, fSW 450 kHz: ΔIL 1.66 A; capacitive term into 40 µF −10 % −15 % (X5R over temperature) 15.1 mV, ESR term at a 10 mΩ-per-part allowance 5.5 mV, summed though out of phase; POWER.md §3.3's 7.3 mV is the nominal case",
+          "analysis": "S1 Task 12"
+        }
+      }
+    },
+    {
+      "net": "VREF_A",
+      "pin": 21,
+      "drivenBy": "module",
+      "moduleSourceRoles": [
+        "vdda-filter"
+      ],
+      "permittedLoadRoles": [
+        "pot-top",
+        "expr-ring-reference",
+        "hw-rev-divider",
+        "u-exp-supply"
+      ],
+      "benchLoadRoles": [
+        "bench-dummy-load",
+        "bench-breakout"
+      ],
+      "declaredLoads": [
+        {
+          "role": "pot-top",
+          "maxMa": 2.64,
+          "source": "interface-analysis/vref-a.md §1, ruling R-16: all-pots fit (spec §5.1.2), 6 × 3.513 V / 8.0 kΩ (10 kΩ − 20 % allowance; spec §5.6.3's 2.11 mA is nominal)"
+        },
+        {
+          "role": "expr-ring-reference",
+          "maxMa": 3.5,
+          "source": "interface-analysis/vref-a.md §1, rulings R-19 and R-17 (fix rounds 2 and 3): −5 V on the ring (ANALOG.md §8.2 limit) through R_REF 3.30 kΩ, (3.513 + 5) V / 3.267 kΩ = 2.61 mA (the ring-to-sleeve short is 1.08 mA), plus the blocking network: D_RCLAMP leakage 0.86 mA (85 °C allowance, ruling R-20 ceiling), R_CE 100 kΩ 35 µA, Q_REFEN gate 0.1 µA, LM66100 IQ 0.3 µA"
+        },
+        {
+          "role": "hw-rev-divider",
+          "maxMa": 0.18,
+          "source": "spec §5.6.3 load budget: 3.513 V / 20 kΩ"
+        },
+        {
+          "role": "u-exp-supply",
+          "maxMa": 0.17,
+          "source": "spec §5.6.3 load budget: MCP6001, PW §8 item 8 (DS20001733L)"
+        }
+      ],
+      "limits": {
+        "maxContinuousMa": {
+          "value": 10,
+          "unit": "mA",
+          "source": "spec §5.6.3",
+          "analysis": "S1 Task 6"
+        },
+        "maxTransientMa": {
+          "value": 15,
+          "unit": "mA",
+          "source": "spec §5.6.3",
+          "analysis": "S1 Task 6"
+        },
+        "maxTransientMs": {
+          "value": 1,
+          "unit": "ms",
+          "source": "spec §5.6.3",
+          "analysis": "S1 Task 6"
+        },
+        "maxExternalCapacitanceUf": {
+          "value": 4,
+          "unit": "uF",
+          "source": "interface-analysis/vref-a.md §2, ruling R-18: a decision, not a derivation: FB_VDDA's Q and the 15 mA step set no upper bound (both improve with C), so 4 µF is chosen pending the module design's TPS62933F loop and start-up check with its total 3V3 capacitance; it sits under the Rev5 Seed bound of 145.5 µF (LP2985 200 µF less the Seed's own 54.5 µF, SCH-R5; Rev7 and Seed3 unknown); the pedal fits 0.1 µF (C_EXP)",
+          "analysis": "S1 Task 11"
+        },
+        "permittedNoiseUvRms": {
+          "value": 1123,
+          "unit": "uVrms",
+          "source": "interface-analysis/vref-a.md §3, ruling R-15: residue ≤ LSB/4 at 10 bits over 3.3 V (806 µV) with the pot filter's ratiometric mismatch 0.707 at its band edge plus U_EXP's PSRR at a 40 dB allowance: 806 / 0.717",
+          "analysis": "S1 Task 11"
+        },
+        "noiseBandwidthHz": {
+          "value": 421,
+          "unit": "Hz",
+          "source": "interface-analysis/vref-a.md §3: the widest control filter corner, R_POSn 9.9 kΩ (−1 %) and C_POSn 38.25 nF (100 nF × 0.9 tolerance × 0.85 X7R temperature × 0.5 DC bias, ruling R-57), 420.3 Hz rounded up (179 Hz before 2026-10-06, S1 Task 17 fix D-B-2, which took C_POSn at −10 % only)",
+          "analysis": "S1 Task 11"
+        }
+      }
+    }
+  ],
+  "seedExceptions": [
+    {
+      "id": "S-1",
+      "exception": "VIN rated 5–17 V (Rev7, DS120) or 4–17 V (Rev5, Seed3); no 18 V survival",
+      "consequence": "Seed benches run on 9–12 V supplies only (O-15)"
+    },
+    {
+      "id": "S-2",
+      "exception": "No published current rating on pin 38 or pin 21 (U, §16 item 8)",
+      "consequence": "Pin 38 and pin 21 load limits are guaranteed by our module only; the Seed is confirmed at first bring-up at the development envelope (R-2b)"
+    },
+    {
+      "id": "S-3",
+      "exception": "Pins 16–19 are driven and loaded by the Seed's own codec (SCH-R5 sheet 4)",
+      "consequence": "Pins 16–19 are reservedCompatibility: never assigned (§5.7)"
+    },
+    {
+      "id": "S-4",
+      "exception": "AGND and DGND are not joined on the Seed (SCH-R5 sheet 1)",
+      "consequence": "The audio board joins pins 20 and 40 (§5.6.4)"
+    },
+    {
+      "id": "S-5",
+      "exception": "The Daisy bootloader drives the SDMMC1 pins and may run a USB host on pins 36/37 during its grace period (LD-BOOT); exact states U (§16 item 11)",
+      "consequence": "RELAY_EN kept off those pins; switch inputs carry series resistance (§5.4)"
+    },
+    {
+      "id": "S-6",
+      "exception": "Onboard loads on header pins of Rev7 and Seed3 are unpublished (U, §16 item 7)",
+      "consequence": "Onboard loads on Rev7 and Seed3 header pins are a named risk with a design margin, confirmed at first bring-up before a Seed is plugged in (R-2a)"
+    },
+    {
+      "id": "S-7",
+      "exception": "Different silicon and clocks: STM32H750, 16 MHz HSE, 64 MB SDRAM, QSPI execution",
+      "consequence": "Separate firmware board configuration; firmware fits 32 MB (§11)"
+    },
+    {
+      "id": "S-8",
+      "exception": "No module identification strap",
+      "consequence": "Firmware identifies a Seed by its flash size (§6.5)"
+    },
+    {
+      "id": "S-9",
+      "exception": "Inrush, ripple, back-feed and hot-plug behaviour on VIN, pin 38 and pin 21 are unpublished",
+      "consequence": "The contract values in §5.6 are verified on our module; on a Seed they are bench observations only"
+    },
+    {
+      "id": "S-10",
+      "exception": "Pin 21 on the Seed is an LDO output shared with the Seed's own analog loads (Rev5: LP2985, SCH-R5 sheet 1); its noise and capacitance limits are unpublished",
+      "consequence": "Development readings on a Seed are not evidence for the VREF_A noise requirement (§5.6.3)"
+    },
+    {
+      "id": "S-11",
+      "exception": "Revisions differ: VIN minimum 4 V (Rev5, DS105) or 5 V (Rev7, DS120); onboard codec WM8731 (Rev5) or PCM3060 (Rev7) (DS120 p. 13). Revision pins pulled low: PD3 Rev5, PD5 Rev7 (DS120 p. 13, LD-H); PD4 Seed2 DFM, PH6 Seed3 (LD-H only); none Rev4 (LD-H) (interface-analysis/facts.md §8)",
+      "consequence": "9–12 V development limit on every revision (O-15); pins 16–19 reserved, so the codec difference is invisible to the contract; the fitted revision is recorded at first bring-up (R-2)"
+    },
+    {
+      "id": "S-12",
+      "exception": "No Electrosmith document states the Seed MCU's package in words. DS-S3 p. 1 names only \"STM32H750\"; DS120 and DS105 name no part number. SCH-R5 sheet 2 (DS105 p. 13) labels the MCU pins with UFBGA ball positions that match ST's STM32H750IBKx (UFBGA176+25) pin data (PA0 N3, PA2 P2, PB8 A5, PB14 R14, PD11 N14), so Rev5 is the IBK package; no Rev7 or Seed3 schematic is published, so their package is U",
+      "consequence": "mcu.seed.part stays STM32H750IB without a package letter, and the ST check runs every contract function on both packages (STM32H750IBKx and STM32H750IBTx); the ports and AF numbers agree on both (spec §5.2)"
+    }
+  ],
+  "reservedOverrides": [],
+  "pins": [
+    {
+      "pin": 1,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D0",
+      "signal": "SPARE1",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB12",
+      "moduleMcuPin": "PB12",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: spare, no audio-board circuit; a pull must not exceed the 8 mA pin rating if firmware drives the pin (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": ""
+    },
+    {
+      "pin": 2,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D1",
+      "signal": "SPARE2",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC11",
+      "moduleMcuPin": "PC11",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: spare, no audio-board circuit; a pull must not exceed the 8 mA pin rating if firmware drives the pin (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "Spare GPIO (owner decision O-18, 2026-10-05: formerly TOGGLE1_B; spec §5.2). SDMMC1_D3 on the Seed's SD interface: see the bootloader note in §5.4. ST ROM bootloader uses PC11 as SPI3_MISO, a push-pull output (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 3,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D2",
+      "signal": "SPARE3",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC10",
+      "moduleMcuPin": "PC10",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: spare, no audio-board circuit; a pull must not exceed the 8 mA pin rating if firmware drives the pin (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "Spare GPIO (O-18: formerly TOGGLE2_A). SDMMC1_D2: as above. ST ROM bootloader uses PC10 as SPI3_SCK, an input (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 4,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D3",
+      "signal": "LED2",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC9",
+      "moduleMcuPin": "PC9",
+      "function": "TIM3_CH4",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 60764,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: LED2 gate, R_pd 10.0 kΩ (gate.ledPullDownOhms) at +1 % × (3.513 / 0.5 − 1) less CTL-05's 100 Ω at −1 %: the gate stays ≤ 0.5 V at 3.513 V; ≤ 100 kΩ (R-13); 60260 before 2026-10-06 (S1 Task 17 fix D-B-4: R_pd had been taken at nominal)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "Gates the external LED MOSFET (SC CTL-05); the LED is powered from the pedal digital rail and the gate has a pull-down (§7.5). SDMMC1_D1: as above. ST ROM bootloader uses PC9 as I2C3_SDA, open-drain no pull: it can pull the gate low or release it, never drive it high (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 5,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D4",
+      "signal": "LED1",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC8",
+      "moduleMcuPin": "PC8",
+      "function": "TIM3_CH3",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 60764,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: LED1 gate, R_pd 10.0 kΩ (gate.ledPullDownOhms) at +1 % × (3.513 / 0.5 − 1) less CTL-05's 100 Ω at −1 %: the gate stays ≤ 0.5 V at 3.513 V; ≤ 100 kΩ (R-13); 60260 before 2026-10-06 (S1 Task 17 fix D-B-4: R_pd had been taken at nominal)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "As above; SDMMC1_D0"
+    },
+    {
+      "pin": 6,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D5",
+      "signal": "FSW1",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 3.04,
+        "unit": "mA",
+        "source": "interface-analysis/3v3-d.md §2, ruling R-22: a bootloader-driven high into a closed footswitch, 3.6 V / (1.20 kΩ −1 %) = 3.03 mA ≤ spec §5.4's 3.3 mA and ≤ Task 7's 8 mA (facts.md §1)",
+        "analysis": "S1 Task 12"
+      },
+      "maxSinkCurrent": {
+        "value": 3.04,
+        "unit": "mA",
+        "source": "interface-analysis/3v3-d.md §2, ruling R-22: a driven low discharges the 100 nF node through the 1.20 kΩ series, ≤ 3.6 V / 1.188 kΩ = 3.03 mA at the first instant, then 3.513 V / 11.1 kΩ ≤ 0.32 mA through the 10.0 kΩ pull-up",
+        "analysis": "S1 Task 12"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PD2",
+      "moduleMcuPin": "PD2",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 26395,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: footswitch released, 10 kΩ pull-up + 1.20 kΩ series (CTL-04 with switch.seriesOhms, restated by S1 Task 12, ruling R-22) against a pull-down, VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "SDMMC1_CMD: as above. Moved here from PG10 so RELAY_EN avoids the SD pins (§5.4)"
+    },
+    {
+      "pin": 7,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D6",
+      "signal": "SPARE4",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees. Spare with no pedal-board connection (O-18), so S1 Task 7's per-pin figure applies (3v3-d.md §2)",
+        "analysis": "S1 Task 12"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC12",
+      "moduleMcuPin": "PC12",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: spare, no audio-board circuit; a pull must not exceed the 8 mA pin rating if firmware drives the pin (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "Spare GPIO (O-18: formerly TOGGLE2_B). SDMMC1_CK: as above. ST ROM bootloader uses PC12 as SPI3_MOSI, an input (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 8,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D7",
+      "signal": "RELAY_EN",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PG10",
+      "moduleMcuPin": "PG10",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 87433,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: relay gate, R_pd 15.0 kΩ (gate.relayPullDownOhms) at +1 % × (3.513 / 0.5 − 1) less R_RELAY_EN 3.9 kΩ (gate.relaySeriesOhms) at −1 %: the gate stays ≤ 0.5 V at 3.513 V; ≤ 100 kΩ (R-13); 90390 before 2026-10-06 (S1 Task 17 fix D-B-4, which counts the series resistor and the tolerance)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "High = effect engaged; Hi-Z or low = bypass. Drives the relay MOSFET gate through R_RELAY_EN 3.9 kOhm, with a 15.0 kOhm gate pull-down (S1 Task 10 ruling R-13; was BR §3.3's 100 kOhm); coils on the pedal digital rail (§7.5). Not on the SD or USB pins the Daisy bootloader uses (LD-BOOT)."
+    },
+    {
+      "pin": 9,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D8",
+      "signal": "FSW2",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PG11",
+      "moduleMcuPin": "PG11",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 26395,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: footswitch released, 10 kΩ pull-up + 1.20 kΩ series (CTL-04 with switch.seriesOhms; both footswitches carry it, S1 Task 12 ruling R-22) against a pull-down, VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Same port as v1"
+    },
+    {
+      "pin": 10,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D9",
+      "signal": "SPARE5",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB4",
+      "moduleMcuPin": "PB4",
+      "function": "GPIO",
+      "resetState": "pull-up (NJTRST)",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: spare, no audio-board circuit; a pull must not exceed the 8 mA pin rating if firmware drives the pin (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Spare GPIO (O-18: formerly TOGGLE3_A). PB4 resets as NJTRST with a pull-up: harmless on an input, unsafe for RELAY_EN or an LED gate"
+    },
+    {
+      "pin": 11,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D10",
+      "signal": "USB_EN_N",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB5",
+      "moduleMcuPin": "PB5",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 8604,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: the 10.0 kΩ OE pull-up to 3V3_D against an onboard pull-down must keep OE ≥ VIH 0.46 VCC (TS3USB221 SCDS220M §5.3), so the switch stays open: 10.1 kΩ × 0.46 / 0.54",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Was SPARE6 (O-18). S1 Task 10 ruling R-14: active-low enable of the pedal's USB isolation switch U_USBSW (TI TS3USB221RSER) between pins 36/37 and the USB-C. 10.0 kΩ pull-up to 3V3_D holds OE high (switch open) whenever PB5 is not driven: at reset PB5 is in analog mode with no pull (RM0433 Rev 8 §11.4.1, GPIOB_MODER reset 0xFFFF FEBF), and the ST ROM bootloader does not use PB5 (AN2606 Rev 70 Table 135; facts.md §3). Firmware drives it low to connect USB; sinks 3.513 V / 9.9 kΩ = 0.35 mA. On a Seed, D10 has no onboard function (DS120 Table 2: GPIO, SPI1_MOSI alternate), and the Daisy bootloader does not drive it, so DFU over the pedal's USB-C is not available there (spec §6.4 BL-3)"
+    },
+    {
+      "pin": 12,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D11",
+      "signal": "EXP_I2C_SCL",
+      "direction": "bidir-od",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB8",
+      "moduleMcuPin": "PB8",
+      "function": "I2C1_SCL",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 10000,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): holds for S1 Task 12 pull-ups of 1.3–3.3 kΩ; a 10 kΩ pull-down keeps VIH, a 10 kΩ pull-up keeps the 3 mA sink at 3.6 V",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "I²C expansion bus (§5.4). Pull-ups on the audio board to 3V3_D (pin 38). Reaches the codec only through a DNF 0 Ω link on this board (CB D2)"
+    },
+    {
+      "pin": 13,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D12",
+      "signal": "EXP_I2C_SDA",
+      "direction": "bidir-od",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB9",
+      "moduleMcuPin": "PB9",
+      "function": "I2C1_SDA",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 10000,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): holds for S1 Task 12 pull-ups of 1.3–3.3 kΩ; a 10 kΩ pull-down keeps VIH, a 10 kΩ pull-up keeps the 3 mA sink at 3.6 V",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "I²C expansion bus. As above. ST ROM bootloader uses PB9 as I2C1_SDA, open-drain no pull (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 14,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D13",
+      "signal": "MIDI_UART_TX",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB6",
+      "moduleMcuPin": "PB6",
+      "function": "USART1_TX",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: MIDI header not fitted on this board; a pull must not exceed the 8 mA pin rating (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "To the unpopulated MIDI header (SC USB-08). ST ROM bootloader uses PB6 as I2C1_SCL, open-drain no pull (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 15,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D14",
+      "signal": "MIDI_UART_RX",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB7",
+      "moduleMcuPin": "PB7",
+      "function": "USART1_RX",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 116667,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: idles on the internal pull-up (RPU ≤ 50 kΩ, DS12110 Rev 10 Table 60) with the MIDI header not fitted; a pull-down must leave VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": ""
+    },
+    {
+      "pin": 16,
+      "category": "reservedCompatibility",
+      "reason": "Seed onboard codec analog audio; a fitted Seed drives or loads this pin (SCH-R5 sheet 4)",
+      "seedLabel": "Audio in L",
+      "signal": null,
+      "direction": "nc",
+      "voltage": "none",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2; SCH-R5 sheet 4"
+      },
+      "seedRisks": [],
+      "notes": "Unconnected on every audio board and on our module; the gate refuses to assign it."
+    },
+    {
+      "pin": 17,
+      "category": "reservedCompatibility",
+      "reason": "Seed onboard codec analog audio; a fitted Seed drives or loads this pin (SCH-R5 sheet 4)",
+      "seedLabel": "Audio in R",
+      "signal": null,
+      "direction": "nc",
+      "voltage": "none",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2; SCH-R5 sheet 4"
+      },
+      "seedRisks": [],
+      "notes": "Unconnected on every audio board and on our module; the gate refuses to assign it."
+    },
+    {
+      "pin": 18,
+      "category": "reservedCompatibility",
+      "reason": "Seed onboard codec analog audio; a fitted Seed drives or loads this pin (SCH-R5 sheet 4)",
+      "seedLabel": "Audio out L",
+      "signal": null,
+      "direction": "nc",
+      "voltage": "none",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2; SCH-R5 sheet 4"
+      },
+      "seedRisks": [],
+      "notes": "Unconnected on every audio board and on our module; the gate refuses to assign it."
+    },
+    {
+      "pin": 19,
+      "category": "reservedCompatibility",
+      "reason": "Seed onboard codec analog audio; a fitted Seed drives or loads this pin (SCH-R5 sheet 4)",
+      "seedLabel": "Audio out R",
+      "signal": null,
+      "direction": "nc",
+      "voltage": "none",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2; SCH-R5 sheet 4"
+      },
+      "seedRisks": [],
+      "notes": "Unconnected on every audio board and on our module; the gate refuses to assign it."
+    },
+    {
+      "pin": 20,
+      "category": "ground",
+      "reason": null,
+      "seedLabel": "AGND",
+      "signal": "GND",
+      "direction": "ground",
+      "voltage": "ground",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2"
+      },
+      "seedRisks": [],
+      "notes": "Not joined to DGND on the Seed (§5.6.4); the audio board joins pins 20 and 40 to its one GND net (CB D18), as all three datasheets require"
+    },
+    {
+      "pin": 21,
+      "category": "reference",
+      "reason": null,
+      "seedLabel": "3V3 A",
+      "signal": "VREF_A",
+      "direction": "reference-out",
+      "voltage": "vref",
+      "powerDomain": {
+        "module": "adc_ref",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "U",
+        "source": "DS120 Table 3: output only, no current rating (§16 item 8, R-2b)"
+      },
+      "seedRisks": [
+        "R-2b"
+      ],
+      "notes": "ADC reference rail, not a power output. Permitted loads only: pot tops, expression ring reference, HW_REV divider, U_EXP supply. Contract in spec §5.6.3. S1 Task 11 (2026-10-06, rulings R-15 to R-18): external capacitance ≤ 4 µF, noise ≤ 1123 µV rms in 0–421 Hz (0–179 Hz before S1 Task 17 fix D-B-2, 2026-10-06, ruling R-57); the pedal blocks back-feed from the expression jack with an LM66100 ideal diode in the ring reference (held on by a 2N7002 while VREF_A is up, a Schottky clamp on its output, R_REF 3.30 kΩ) and 2.2 MΩ ahead of U_EXP's input (interface-analysis/vref-a.md; fix round 1, rulings R-17, R-19)."
+    },
+    {
+      "pin": 22,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A0",
+      "signal": "POS1",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC0",
+      "moduleMcuPin": "PC0",
+      "function": "ADC1_INP10",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Control position 1 (O-18, spec §5.1.2): a pot read as analog, or a button read as a digital input, per effect. Freed by moving SDNWE to PH5"
+    },
+    {
+      "pin": 23,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A1",
+      "signal": "POS2",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PA3",
+      "moduleMcuPin": "PA3",
+      "function": "ADC1_INP15",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Control position 2 (O-18). Also the AN2606 USART2_RX: a static pot voltage or a held button level cannot form the sync byte, as SC CTL-02"
+    },
+    {
+      "pin": 24,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A2",
+      "signal": "POS3",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PB1",
+      "moduleMcuPin": "PB1",
+      "function": "ADC1_INP5",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Control position 3 (O-18). 3.3 V-tolerant pin on the Seed"
+    },
+    {
+      "pin": 25,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A3",
+      "signal": "POS4",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PA7",
+      "moduleMcuPin": "PA7",
+      "function": "ADC1_INP7",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Control position 4 (O-18). 3.3 V-tolerant pin on the Seed. ST ROM bootloader uses PA7 as SPI1_MOSI, an input (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 26,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A4",
+      "signal": "POS5",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PA6",
+      "moduleMcuPin": "PA6",
+      "function": "ADC1_INP3",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Control position 5 (O-18). ST ROM bootloader uses PA6 as SPI1_MISO, a push-pull output (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 27,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A5",
+      "signal": "POS6",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC1",
+      "moduleMcuPin": "PC1",
+      "function": "ADC1_INP11",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 498378,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): pot fit binds, 10.0 kΩ wiper resistor + pot Thevenin, error ≤ 2 % of full scale at the worst wiper position; button fit needs ≤ 47.1 kΩ",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": ""
+    },
+    {
+      "pin": 28,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A6",
+      "signal": "EXPR_TIP",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PC4",
+      "moduleMcuPin": "PC4",
+      "function": "ADC1_INP4",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 49490,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5 (ruling R-11): U_EXP through the 1.00 kΩ filter resistor (ANALOG.md §8.3), error ≤ 2 % of full scale",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Freed by moving SDNE0 to PH3. 3.3 V-tolerant pin on the Seed"
+    },
+    {
+      "pin": 29,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A7",
+      "signal": "HW_REV",
+      "direction": "in",
+      "voltage": "analog-0-vref",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PA5",
+      "moduleMcuPin": "PA5",
+      "function": "ADC1_INP19",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 164621,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: every ANALOG.md §9.2 strap stays inside its 3.61 % decode guard (§9.3); revision 2 (35.7 kΩ / 10.2 kΩ) binds",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Audio board revision strap; DAC1 must stay disabled. ST ROM bootloader uses PA5 as SPI1_SCK, an input (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 30,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A8",
+      "signal": "EXPR_DETECT",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "adc_ref"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": "PA4",
+      "moduleMcuPin": "PA4",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 235667,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: plug inserted, the 100 kΩ pull-down (ANALOG.md §8.4) against a pull-up, VIL 0.3 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "DAC1 must stay disabled. ST ROM bootloader uses PA4 as SPI1_NSS, an input (AN2606 Rev 70 Table 135; facts.md §3)"
+    },
+    {
+      "pin": 31,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "A9",
+      "signal": "USB_VBUS_SENSE",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "usb_vbus"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "divider-within-limits",
+        "partRole": "vbus-sense-divider",
+        "companionRoles": []
+      },
+      "seedMcuPin": "PA1",
+      "moduleMcuPin": "PA1",
+      "function": "GPIO",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 106251,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: at VBUS 4.35 V a pull-down in parallel with R_VBUSB 20.0 kΩ must leave VIH 0.7 × 3.6 V",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Freed by dropping MCLK (research P2.2). Divider ratio re-derived for PA1's pin type (FT_ha, DS12110; §9.3, USB-03). VBUS is an independently sequenced domain (§5.6.5). PA1 tolerates 0 mA injection, negative and positive, even powered (DS12110 Rev 10 Table 59, DS12556 Rev 7 Table 57; facts.md §2). S1 Task 10 (crossings.md §4): R_VBUST 12.0 kΩ, R_VBUSB 20.0 kΩ, 1 %; pin ≤ 3.498 V at VBUS 5.50 V + 1 %, below the unpowered 3.6 V of DS12110 Rev 10 Table 60 note 6 and the 4.0 V of Table 21, so by Table 22 note 3 no positive injection occurs, powered or not, and the pin never goes below 0 V; ≥ 2.698 V (VIH 0.7 × 3.6 V = 2.52 V) at the 4.35 V a device may see (USB 2.0 Figure 7-47); ≤ 0.18 mA. Firmware leaves PA1's internal pull-up and pull-down off and handles USB connect and disconnect from its level (BU-12; USB 2.0 §7.1.5.1)"
+    },
+    {
+      "pin": 32,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D25 (A10)",
+      "signal": "CODEC_DOUT",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "pedal_codec_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "sai-isolation-to-module",
+        "companionRoles": [
+          "sai-module-series"
+        ]
+      },
+      "seedMcuPin": "PA0",
+      "moduleMcuPin": "PA0",
+      "function": "SAI2_SD_B",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 1195,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: U_ISO_M drives the pin through 470 Ω (sai.moduleSeriesOhms); a pull-down must leave VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Codec ADC data (PCM3060 DOUT). FT_a pin (DS12110). Crosses domains: isolated on the audio board (§5.6.5). Firmware: SAI2 is slave; RM0433 Rev 8 §51.4.8 does not state whether the SAI kernel clock may stop in slave mode, so keep it enabled, and keep the SAI2 APB clock above 2 × SCK (§51.4.4; facts.md §4). S1 Task 10 (crossings.md §1–§2): U_ISO_M SN74LVC3G34DCTR (C139356) on 3V3_D drives this pin through 470 Ω (R-10); SAI2 runs with CKSTR = 1 (sample on the BCK rising edge, launch on the falling edge; RM0433 Rev 8 §51.6.2), the setting the timing margins assume (R-9)"
+    },
+    {
+      "pin": 33,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D26",
+      "signal": "CODEC_DIN",
+      "direction": "out",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "pedal_codec_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": true,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "sai-isolation-to-codec",
+        "companionRoles": []
+      },
+      "seedMcuPin": "PD11",
+      "moduleMcuPin": "PD11",
+      "function": "SAI2_SD_A",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 450,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: module output into U_ISO_C and its 47 kΩ bias; a pull must not exceed the 8 mA pin rating (3.6 V / 8 mA)",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Codec DAC data (PCM3060 DIN). FT_h pin. Crosses domains (§5.6.5). SAI2 slave clocking: see pin 32 (facts.md §4). S1 Task 10 (crossings.md §2): U_ISO_C SN74LVC1G34DBVR (C840096) on 3V3_CODEC, input biased to GND through 47 kΩ, so the codec sees a defined low while the module is off; Ioff ±10 µA with the codec domain off"
+    },
+    {
+      "pin": 34,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D27",
+      "signal": "CODEC_LRCK",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "pedal_codec_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "sai-isolation-to-module",
+        "companionRoles": [
+          "sai-module-series"
+        ]
+      },
+      "seedMcuPin": "PG9",
+      "moduleMcuPin": "PG9",
+      "function": "SAI2_FS_B",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 1195,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: U_ISO_M drives the pin through 470 Ω (sai.moduleSeriesOhms); a pull-down must leave VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Frame clock from the codec, 48 kHz. FT_h pin. Crosses domains (§5.6.5). SAI2 slave clocking: see pin 32 (facts.md §4). S1 Task 10: driven by U_ISO_M through 470 Ω, as pin 32"
+    },
+    {
+      "pin": 35,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D28 (A11)",
+      "signal": "CODEC_BCK",
+      "direction": "in",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "pedal_codec_3v3"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "sai-isolation-to-module",
+        "companionRoles": [
+          "sai-module-series"
+        ]
+      },
+      "seedMcuPin": "PA2",
+      "moduleMcuPin": "PA2",
+      "function": "SAI2_SCK_B",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 1195,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: U_ISO_M drives the pin through 470 Ω (sai.moduleSeriesOhms); a pull-down must leave VIH 0.7 VDD",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a)"
+      },
+      "seedRisks": [
+        "R-2a"
+      ],
+      "notes": "Bit clock from the codec, 64 fS = 3.072 MHz. FT_a pin. Crosses domains (§5.6.5). SAI2 slave clocking: see pin 32 (facts.md §4). ST ROM bootloader uses PA2 as USART2_TX, a push-pull output (AN2606 Rev 70 Table 135; facts.md §3). S1 Task 10 (crossings.md §2.3, R-10): U_ISO_M drives this pin through 470 Ω 1 %, so PA2 driven against the buffer carries ≤ 3.6 V / 465 Ω = 7.7 mA, inside the 8 mA operating figure and the 20 mA IIO absolute maximum (DS12110 Rev 10 Tables 61, 22) and the buffer's ±24 mA"
+    },
+    {
+      "pin": 36,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D29",
+      "signal": "USB_DM",
+      "direction": "bidir",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "usb_vbus"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": true,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "usb-isolation-switch",
+        "companionRoles": []
+      },
+      "seedMcuPin": "PB14",
+      "moduleMcuPin": "PB14",
+      "function": "USB_OTG_HS_DM",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 300000,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: USB 2.0 §7.1.6 and Table 7-7, ZINP ≥ 300 kΩ exclusive of termination",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "The Daisy bootloader may run a USB host here (§5.4). Our bootloader must enumerate on pins 36/37 (O-11, §6.4). ST ROM bootloader uses PB14 as USART1_TX, a push-pull output with pull-up (AN2606 Rev 70 Table 135; facts.md §3). S1 Task 10 fix round (crossings.md §7.3): the idle-high TX looks like a low-speed attach, so a host on the pedal's USB-C resets the port by driving SE0 (≥ 10 ms, ≥ 50 ms from a root port, retried) through 28–49.5 Ω against PB14, which then carries more than 20 mA (DS12110 Rev 10 Table 61 guarantees VOH ≥ VDD − 1.3 V at 20 mA), past the 20 mA IIO absolute maximum (Table 22). Ruling R-14 (final): the pedal fits U_USBSW, TI TS3USB221RSER (C130085), on pins 36/37 between this pin and the USB-C/USBLC6-2; it is open unless firmware drives pin 11 (USB_EN_N) low, so it is open through reset, the ST ROM bootloader and with the module unpowered (VCC from 3V3_D; IOFF ±2 µA at VCC = 0, SCDS220M §5.5). Protection class isolation-buffer-ioff, part role usb-isolation-switch (R-14 replaces R-12's usb2-attach-protocol; the attach argument still holds with the switch closed). Second safeguard: unplug the pedal's USB-C before ROM DFU entry (spec §6.4). Bring-up checks full-speed enumeration and the eye with the switch's ≤ 6 Ω in the path (crossings.md §7.4)"
+    },
+    {
+      "pin": 37,
+      "category": "signal",
+      "reason": null,
+      "seedLabel": "D30",
+      "signal": "USB_DP",
+      "direction": "bidir",
+      "voltage": "3v3-logic",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "usb_vbus"
+      },
+      "maxSourceCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOH ≥ VDD−0.4 V at IIO = −8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "maxSinkCurrent": {
+        "value": 8,
+        "unit": "mA",
+        "source": "interface-analysis/facts.md §1; DS12110 Rev 10 Table 61: CMOS port, VOL ≤ 0.4 V at IIO = 8 mA, 2.7 V ≤ VDD ≤ 3.6 V (not the 20 mA absolute maximum of Table 22); DS12556 Rev 7 Table 59 agrees",
+        "analysis": "S1 Task 7"
+      },
+      "poweredWhenPeerOff": {
+        "module": true,
+        "pedal": true
+      },
+      "failsafeRequired": true,
+      "protection": {
+        "class": "isolation-buffer-ioff",
+        "partRole": "usb-isolation-switch",
+        "companionRoles": []
+      },
+      "seedMcuPin": "PB15",
+      "moduleMcuPin": "PB15",
+      "function": "USB_OTG_HS_DP",
+      "resetState": "hi-z",
+      "seedOnboardPullTolerance": {
+        "value": 300000,
+        "unit": "ohm",
+        "source": "interface-analysis/crossings.md §5: USB 2.0 §7.1.6 and Table 7-7, ZINP ≥ 300 kΩ exclusive of termination",
+        "analysis": "S1 Task 10"
+      },
+      "seedFact": {
+        "status": "U",
+        "source": "Label and port V: DS120, DS105, DS-S3 Table 2; LD-H. Onboard loads on Rev7/Seed3 U (§16 item 7, R-2a); Daisy-bootloader pin states U (§16 item 11, R-2c)"
+      },
+      "seedRisks": [
+        "R-2a",
+        "R-2c"
+      ],
+      "notes": "See R-7 (§14) on PB15 at ROM boot. Must stay enumerable from our bootloader (O-11, §6.4). ST ROM bootloader uses PB15 as USART1_RX, input pull-up (AN2606 Rev 70 Table 135; facts.md §3). S1 Task 10 (crossings.md §7): isolated by U_USBSW (TS3USB221RSER) like pin 36 (ruling R-14, class isolation-buffer-ioff, part role usb-isolation-switch); firmware closes the switch (pin 11 low) only in the application or our bootloader, and drops the D+ pull-up (soft disconnect) whenever pin 31 reads VBUS absent (USB 2.0 §7.1.5.1)"
+    },
+    {
+      "pin": 38,
+      "category": "power",
+      "reason": null,
+      "seedLabel": "3V3 D",
+      "signal": "3V3_D",
+      "direction": "power-out",
+      "voltage": "3v3-supply",
+      "powerDomain": {
+        "module": "module_3v3",
+        "pedal": "module_3v3"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "U",
+        "source": "DS120 Table 3: output only, no current rating (§16 item 8, R-2b)"
+      },
+      "seedRisks": [
+        "R-2b"
+      ],
+      "notes": "Low-current logic supply only: footswitch pull-ups, control-position button pull-ups, I²C expansion pull-ups, MIDI header supply. No relay coils or LEDs. Contract in §5.6.2. Output only (DS120 Table 3); Seed current rating U (§16 item 8)"
+    },
+    {
+      "pin": 39,
+      "category": "power",
+      "reason": null,
+      "seedLabel": "VIN",
+      "signal": "VIN_MOD",
+      "direction": "power-in",
+      "voltage": "vin",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2"
+      },
+      "seedRisks": [],
+      "notes": "From the audio board's module branch (§7.4). Contract in §5.6.1. Seed VIN 5–17 V (DS120); 4–17 V in DS105 and DS-S3"
+    },
+    {
+      "pin": 40,
+      "category": "ground",
+      "reason": null,
+      "seedLabel": "DGND",
+      "signal": "GND",
+      "direction": "ground",
+      "voltage": "ground",
+      "powerDomain": {
+        "module": "none",
+        "pedal": "none"
+      },
+      "maxSourceCurrent": null,
+      "maxSinkCurrent": null,
+      "poweredWhenPeerOff": {
+        "module": false,
+        "pedal": false
+      },
+      "failsafeRequired": false,
+      "protection": null,
+      "seedMcuPin": null,
+      "moduleMcuPin": null,
+      "function": null,
+      "resetState": null,
+      "seedOnboardPullTolerance": null,
+      "seedFact": {
+        "status": "V",
+        "source": "DS120, DS105, DS-S3 Table 2"
+      },
+      "seedRisks": [],
+      "notes": "Labelled GND in DS120/DS105 Table 2, DGND in the pinout drawing and DS-S3"
+    }
+  ]
+}

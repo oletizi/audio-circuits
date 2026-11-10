@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# Mechanical Done-when checks for the h7-platform port.
+# Usage: PEDALS_REPO=/Users/orion/work/pedals-work/digital-pedal-platform bash verify.sh [check ...]
+# With no arguments, every check in ALL_CHECKS runs. An unknown check name is a FAIL.
+# To add a check: write a function check_<name> that echoes a reason and returns
+# non-zero on failure, add <name> to ALL_CHECKS, and add a case in run_check.
+
+set -u
+
+PIN=5b926d0
+PREFIX="https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/"
+EXPECTED_PEDALS_REPO=/Users/orion/work/pedals-work/digital-pedal-platform
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+DOCS="$ROOT/docs/h7-platform"
+CIRC="$ROOT/circuits/h7-platform"
+STANDARDS="$ROOT/docs/standards"
+README="$DOCS/README.md"
+SUPERSEDED_HEADING="## Superseded statements in the records"
+
+# Values that are no longer in force. en dash and hyphen, matched bytewise.
+STALE_RE='9(–|-)12 V|179 Hz'
+
+# source (in pedals at the pin) -> destination (in this repo)
+BYTE_PAIRS=(
+  "h7-platform/module-interface.json|circuits/h7-platform/module-interface.json"
+  "h7-platform/interface-analysis/results.json|circuits/h7-platform/interface-analysis-results.json"
+  "h7-platform/LICENSE-OSCAR|circuits/h7-platform/LICENSE-OSCAR"
+  "h7-platform/LICENSE-APACHE-2.0|circuits/h7-platform/LICENSE-APACHE-2.0"
+  "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
+)
+
+ALL_CHECKS=(bytes nocode provenance effective stale-json)
+
+if [ -z "${PEDALS_REPO:-}" ]; then
+  echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
+  exit 2
+fi
+
+check_bytes() {
+  local pair src dst want got bad=""
+  for pair in "${BYTE_PAIRS[@]}"; do
+    src="${pair%%|*}"; dst="${pair##*|}"
+    if ! want=$(git -C "$PEDALS_REPO" show "$PIN:$src" 2>/dev/null | shasum -a 256 | cut -d' ' -f1); then
+      bad="$bad [cannot read $src at $PIN]"; continue
+    fi
+    if [ ! -f "$ROOT/$dst" ]; then bad="$bad [missing $dst]"; continue; fi
+    got=$(shasum -a 256 < "$ROOT/$dst" | cut -d' ' -f1)
+    [ "$want" = "$got" ] || bad="$bad [differs $dst]"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
+# Files under the two trees, minus the five byte-identical records.
+tree_files() {
+  local d f rec skip
+  for d in "$DOCS" "$CIRC"; do
+    [ -d "$d" ] || continue
+    find "$d" -type f | while read -r f; do
+      skip=0
+      for pair in "${BYTE_PAIRS[@]}"; do
+        [ "$f" = "$ROOT/${pair##*|}" ] && skip=1
+      done
+      [ $skip -eq 1 ] || echo "$f"
+    done
+  done
+}
+
+check_nocode() {
+  local bad="" f base hits
+  # file-type rule applies to every file, records included
+  while read -r f; do
+    base=$(basename "$f")
+    case "$base" in
+      *.md|*.json|*.svg|LICENSE-*) ;;
+      *) bad="$bad [disallowed file type: ${f#"$ROOT"/}]" ;;
+    esac
+  done < <(find "$DOCS" "$CIRC" -type f 2>/dev/null)
+  # vocabulary rule excludes the records
+  while read -r f; do
+    hits=$(grep -nE 'pnpm |PartSpec|BlockSpec|sheetKit|blocksOn' "$f" | head -3)
+    [ -z "$hits" ] || bad="$bad [code vocabulary in ${f#"$ROOT"/}: $(echo "$hits" | tr '\n' ' ')]"
+  done < <(tree_files)
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
+check_provenance() {
+  local bad="" f
+  while read -r f; do
+    grep -qF "$PREFIX" "$f" || bad="$bad [no pinned link prefix: ${f#"$ROOT"/}]"
+  done < <(find "$DOCS" -type f -name '*.md' 2>/dev/null)
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
+check_effective() {
+  local bad="" f out
+  while read -r f; do
+    out=$(awk -v re="$STALE_RE" -v heading="$SUPERSEDED_HEADING" -v isreadme="$([ "$f" = "$README" ] && echo 1 || echo 0)" '
+      /^## / { insec = (isreadme == 1 && $0 == heading) }
+      $0 ~ re {
+        if ($0 ~ /^\*Not in force:\*/) next
+        if ($0 ~ /^\*Superseded in the records:\*/) next
+        if (insec) next
+        print FILENAME ":" FNR ": " $0
+      }' "$f")
+    [ -z "$out" ] || bad="$bad [stale value in force: $(echo "$out" | head -3 | tr '\n' ' ')]"
+  done < <(find "$DOCS" "$STANDARDS" -type f -name '*.md' 2>/dev/null)
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
+check_stale_json() {
+  local f
+  for f in "$CIRC/module-interface.json" "$CIRC/interface-analysis-results.json"; do
+    [ -f "$f" ] || { echo "missing ${f#"$ROOT"/}"; return 1; }
+    echo "  records ${f#"$ROOT"/}:" >&2
+    grep -nE "$STALE_RE" "$f" | sed 's/^/    /' >&2
+  done
+  if [ ! -f "$README" ] || ! grep -qxF "$SUPERSEDED_HEADING" "$README"; then
+    echo "docs/h7-platform/README.md lacks a '$SUPERSEDED_HEADING' section (written in Task 12)"
+    return 1
+  fi
+}
+
+run_check() {
+  local name="$1" reason rc
+  case "$name" in
+    bytes) reason=$(check_bytes) ;;
+    nocode) reason=$(check_nocode) ;;
+    provenance) reason=$(check_provenance) ;;
+    effective) reason=$(check_effective) ;;
+    stale-json) reason=$(check_stale_json) ;;
+    *) echo "FAIL $name: unknown check"; return 1 ;;
+  esac
+  rc=$?
+  if [ $rc -eq 0 ]; then echo "PASS $name"; else echo "FAIL $name:$reason"; fi
+  return $rc
+}
+
+if [ $# -eq 0 ]; then set -- "${ALL_CHECKS[@]}"; fi
+status=0
+for c in "$@"; do run_check "$c" || status=1; done
+exit $status

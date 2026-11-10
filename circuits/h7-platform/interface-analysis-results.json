@@ -1,0 +1,382 @@
+{
+  "mech.socketMpn": {
+    "value": "801-43-020-10-012000",
+    "unit": null,
+    "source": "interface-analysis/envelope.md §1 (S1 Task 17 follow-up D-A-1, controller ruling R-61, 2026-10-06; it was the Preci-Dip 801-87-020-10-012101, now the fallback pair's socket): Mill-Max low-profile socket (long insulator), 20 contacts, plating code 43 (5.08 µm Sn sleeve, 0.76 µm Au clip), Mill-Max catalogue p. 53 FIG. 4 (sources/MillMax-800-803-p53.pdf): insulator 4.19 mm, clip 2.24 mm and bore 3.71 mm deep, Ø0.56 tail 3.18 mm, accepts Ø0.64-0.94 round and 0.64 mm square pins, 6-finger BeCu #47 contact rated 4.5 A, insulators 'suitable for all soldering operations', RoHS-2 2011/65/EU; Mouser 1,070 in stock (read 2026-10-06). Before R-61: low-profile 1x20 sockets on the audio board's underside (owner baseline 2026-10-05), re-chosen 2026-10-05 to replace the lead-wave-only Samtec SLW-120-01-G-S; Preci-Dip data sheet 801-PP-NNN-10-012101 and catalogue p. 86 (sources/PreciDip-801-87-NNN-10-012101.pdf, sources/PreciDip-catalog-p86-p94.pdf): insulator 4.2 mm, clip 2.4 mm and bore 3.7 mm deep, tail 3.18 mm, mating pins 0.635 mm square, lead-free solderability J-STD-002 SnAg3.8Cu0.7 and 260 °C soldering heat; listed as a current catalogue product on the maker's page precidip.com/product/801-87-020-10-012101/ (read 2026-10-06; the page publishes no lifecycle field, so Digi-Key's \"Active\" stands in for the status, S1 Task 17 fix D-A-8), Digi-Key 344 and TTI Europe 200 in stock (read 2026-10-06 on that page), RoHS3; LCSC/JLCPCB list no stock"
+  },
+  "mech.socketManufacturer": {
+    "value": "Mill-Max",
+    "unit": null,
+    "source": "interface-analysis/envelope.md §1 (ruling R-61, 2026-10-06; Preci-Dip before)"
+  },
+  "mech.maleHeaderMpn": {
+    "value": "800-10-020-10-002000",
+    "unit": null,
+    "source": "interface-analysis/envelope.md §1 (S1 Task 17 follow-up D-A-1, controller ruling R-61, 2026-10-06): Mill-Max single row low profile pin header, 20 pins, plating code 10 (0.25 µm Au), the Series 800 header Mill-Max offers on one page with its Series 801 sockets (catalogue p. 53 FIG. 1, sources/MillMax-800-803-p53.pdf: 'Receptacles accept 0,76 diameter and 0,64 square pins'); Ø0.76 pin 3.61 above the insulator (1.37 past the socket's 2.24 clip, 0.10 short of its 3.71 bore), 3.18 from the insulator's top to the seating plane (2.79 insulator), Ø0.61 tail 3.0. Cut to 20 from the stocked 64-way 800-10-064-10-002000 (Digi-Key 3,147 Active, Mouser 460, read 2026-10-06; the 20-way part shows Mouser 0). Fallback pair: Preci-Dip 801-87-020-10-012101 with 800-10-064-10-002101 cut to 20. Before R-61 (S1 Task 17 fix D-A-1, ruling R-54, 2026-10-06; it was the Samtec TLW-120-06-G-S, whose mate with this socket no document supports): Preci-Dip pin connector, height 3.2 mm, short pin, solder tail, single row, 20 contacts, gold (code 10), the maker's pin connector for its 2.54 mm socket connectors (catalogue p. 108: \"For corresponding socket connectors, see pages 85-99\"); insulator 3.17, Ø0.76 pin 3.6 above it (inside the socket's 3.7 bore, 1.2 past its 2.4 clip), Ø0.6 tail 3; 3 A; J-STD-002A SnAg3.8Cu0.7 solderability and 260 °C/20 s (catalogue p. 43); sources/PreciDip-catalog-p43-p108.pdf; precidip.com/product/800-10-020-10-002101/ lists it with Mouser 5 in stock, read 2026-10-06; LCSC C6091837 lists 0 in stock (the TLW-120-06-G-S, C7124489, also 0)"
+  },
+  "mech.maleHeaderManufacturer": {
+    "value": "Mill-Max",
+    "unit": null,
+    "source": "interface-analysis/envelope.md §1 (ruling R-61, 2026-10-06; Preci-Dip before)"
+  },
+  "mech.moduleUsbConnectorLcsc": {
+    "value": "C7424785",
+    "unit": null,
+    "source": "interface-analysis/envelope.md §1, §5 (S1 Task 17 follow-up D-A-3, controller ruling R-60, 2026-10-06; it was C2894897, the pedal's right-angle HCTL HC-TYPE-C-16P-01A, whose mouth faced J_OUT_R 9.2 mm away): HRO (Korean Hroparts) TYPE-C-31-E-17, a vertical SMD 16-pin USB Type-C receptacle, mouth toward the back plate so a straight plug enters with the plate off (drawing rev A 2022.11.23, sources/HRO-TYPE-C-31-E-17.pdf): 6.00 ±0.1 mm above the board (under the module's 6.2 mm tallest part), body 9.70, ring flange 10.38 × 4.59; pins A6/A7 DP1/DN1 and B6/B7 DP2/DN2 (USB 2.0), A5 CC1 and B5 CC2 on their own pins, so R_CC1/R_CC2 5.1 kΩ 1 % Rd fit as v1 (S_USB); 5 A total VBUS/GND, -25 to 85 °C; LCSC C7424785, 454 in stock (read 2026-10-06). Not in the v1 catalog: S2 adds the catalog entry and a footprint from the drawing's recommended layout"
+  },
+  "mech.socketContactRatingA": {
+    "value": 3,
+    "unit": "A",
+    "source": "The lower of the two pairs ruling R-61 (2026-10-06) allows: the Mill-Max pair's 6-finger BeCu #47 contact is rated 4.5 A (catalogue p. 53, sources/MillMax-800-803-p53.pdf; the page gives no separate pin rating), and the Preci-Dip fallback pair is 3 A (data sheet 801-PP-NNN-10-012101, sources/PreciDip-801-87-NNN-10-012101.pdf, Rated current 3 A; its 800-10-0NN-10-002101 header 3 A too, catalogue p. 108; the TLW's was 5.2 A), so 3 A holds for either"
+  },
+  "sai.toModulePartLcsc": {
+    "value": "C139356",
+    "unit": null,
+    "source": "interface-analysis/crossings.md §2.1: U_ISO_M, TI SN74LVC3G34DCTR triple buffer, SM8 (DCT) 0.65 mm pitch, on 3V3_D (roles sai-isolation-to-module, sai-isolation-module-side); SCES366L §6.5 Ioff ±10 µA at VCC = 0, –40 to 125 °C; ti.com status ACTIVE and LCSC C139356 stock 1229, read 2026-10-05"
+  },
+  "sai.toCodecPartLcsc": {
+    "value": "C840096",
+    "unit": null,
+    "source": "interface-analysis/crossings.md §2.1: U_ISO_C, TI SN74LVC1G34DBVR single buffer, SOT-23-5 (DBV) 0.95 mm pitch, on 3V3_CODEC (role sai-isolation-to-codec; no 3V3_D pin); SCES519O §5.5 Ioff ±10 µA at VCC = 0, –40 to 125 °C; ti.com status ACTIVE and LCSC C840096 stock 77580, read 2026-10-05"
+  },
+  "sai.inputBiasOhms": {
+    "value": 47000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §2.2: 47.0 kΩ 1 % to GND on every isolation input; 5 µA × 47.47 kΩ = 0.24 V < VIL 0.8 V with the driver off; 77 µA load keeps the codec (VOH 2.8 V at 4 mA) and the MCU above VIH 2.0 V"
+  },
+  "sai.codecSeriesOhms": {
+    "value": 33,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §3: 33 Ω at the codec on BCK, LRCK and DOUT (spec §5.5, signal integrity only)"
+  },
+  "sai.moduleSeriesOhms": {
+    "value": 470,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §2.3, ruling R-10: 470 Ω 1 % between each U_ISO_M output and its contract pin; a module pin driven against the buffer (ST ROM bootloader USART2_TX on PA2) carries ≤ 3.6 V / 465.3 Ω = 7.74 mA ≤ 8 mA (DS12110 Rev 10 Table 61) < 20 mA (Table 22)"
+  },
+  "sai.worstDelayNs": {
+    "value": 19.33,
+    "unit": "ns",
+    "source": "interface-analysis/crossings.md §1: codec pin to module pin, 0.80 (33 Ω RC) + 5.10 (SN74LVC3G34 tpd max, –40 to 125 °C) + 11.43 (470 Ω RC to 0.7 VDD with the 20 pF node allowance, R-10) + 2 (R-6 allowance)"
+  },
+  "sai.setupMarginNs": {
+    "value": 75.28,
+    "unit": "ns",
+    "source": "interface-analysis/crossings.md §1: smallest of DOUT 81.28, LRCK 75.28, DIN 77.18 ns, launch and capture half a BCK period apart at the 0.4 t(BCY) minimum pulse (R-9)"
+  },
+  "sai.holdMarginNs": {
+    "value": 110.28,
+    "unit": "ns",
+    "source": "interface-analysis/crossings.md §1: smallest of DOUT 110.28, LRCK 111.28, DIN 129.61 ns (R-9; DIN was 130.11 ns before S1 Task 17 fix D-B-7, 2026-10-06, which takes U_ISO_C's 1.0 ns minimum at CL 15 pF); the slave DAC's LRCK2 holds 89.41 ns setup and 119.41 ns hold over SLAS533B Figure 24's 10 ns (fix D-B-6)"
+  },
+  "sai.moduleSideSupplyMa": {
+    "value": 2.15,
+    "unit": "mA",
+    "source": "interface-analysis/crossings.md §2.4: U_ISO_M on 3V3_D at 3.513 V, (Cpd 19 pF + 20 pF) × VCC × (3.072 + 1.536 + 0.048 MHz) = 0.64 mA, ICC 0.01 mA, ΔICC 3 × 0.5 mA with the codec's highs below VCC − 0.6 V"
+  },
+  "sai.codecSideSupplyMa": {
+    "value": 0.94,
+    "unit": "mA",
+    "source": "interface-analysis/crossings.md §2.4: U_ISO_C on 3V3_CODEC at 3.6 V, (16 + 20 pF) × 3.6 V × 1.536 MHz = 0.20 mA, ICC 0.01 mA, ΔICC 0.5 mA, plus the codec's drive into the three 47 kΩ biases, 0.23 mA"
+  },
+  "vbus.dividerTopOhms": {
+    "value": 12000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §4: R_VBUST 12.0 kΩ 1 %, VBUS to PA1 (pin 31)"
+  },
+  "vbus.dividerBottomOhms": {
+    "value": 20000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §4: R_VBUSB 20.0 kΩ 1 %, PA1 to GND"
+  },
+  "vbus.pinMaxV": {
+    "value": 3.498,
+    "unit": "V",
+    "source": "interface-analysis/crossings.md §4: dividerOut(5.50 V × 1.01, 12.0 kΩ × 0.99, 20.0 kΩ × 1.01) ≤ 3.6 V (DS12110 Rev 10 Table 60 note 6, unpowered module); minimum 2.698 V ≥ VIH 2.52 V at 4.35 V; draw ≤ 0.18 mA"
+  },
+  "gate.relayPullDownOhms": {
+    "value": 15000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §6.1, ruling R-13: R_BPD 15.0 kΩ 1 % (replaces BYPASS-RELAY.md §3.3's 100 kΩ on the split pedal); R-2a tolerance 15.0 kΩ × (3.513 / 0.5 − 1) = 90.4 kΩ ≤ 100 kΩ; gate on ≥ 2.58 V ≥ 2.5 V through R_RELAY_EN at 3V3_D 3.274 V; MCU drive ≤ 0.19 mA"
+  },
+  "gate.ledPullDownOhms": {
+    "value": 10000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §6.1, ruling R-13: 10.0 kΩ 1 % (replaces CTL-05's 100 kΩ on the split pedal); R-2a tolerance 60.3 kΩ ≤ 100 kΩ; gate on ≥ 3.22 V through CTL-05's 100 Ω; MCU drive ≤ 0.36 mA"
+  },
+  "gate.relaySeriesOhms": {
+    "value": 3900,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §6.2: 3.9 kΩ 1 % RELAY_EN to the relay gate; a high RELAY_EN into the tripped supervisor carries ≤ 3.6 V / 3.861 kΩ = 0.93 mA, inside TPS3808's VOL ≤ 0.4 V at 1 mA (SBVS050N §6.5) and its ±5 mA rating; with R_BPD 15.0 kΩ the gate is on at ≥ 2.58 V ≥ 2.5 V (AO3400A Rev 3.1)"
+  },
+  "usb.isolationSwitchLcsc": {
+    "value": "C130085",
+    "unit": null,
+    "source": "interface-analysis/crossings.md §7.4, ruling R-14: U_USBSW, TI TS3USB221RSER, UQFN-10 (RSE0010A) 1.5 × 2 mm, 0.5 mm pitch, on pins 36/37 between J_MOD and the USBLC6-2/USB-C; VCC 3V3_D; SCDS220M (revised November 2024) RON ≤ 6 Ω, IOFF ±2 µA at VCC = 0; ti.com Active; LCSC C130085 stock 65380, read 2026-10-06 (chosen over the VSON C324071, 1060 in stock, at the same 0.5 mm pitch)"
+  },
+  "usb.enablePullUpOhms": {
+    "value": 10000,
+    "unit": "ohm",
+    "source": "interface-analysis/crossings.md §7.4, ruling R-14: R_USBEN 10.0 kΩ 1 %, OE (pin 11, USB_EN_N) to 3V3_D; switch open unless firmware drives PB5 low (0.35 mA); tolerates an onboard pull-down ≥ 8.60 kΩ (OE ≥ VIH 0.46 VCC, SCDS220M §5.3)"
+  },
+  "vref.dynamicPeakMa": {
+    "value": 8.5,
+    "unit": "mA",
+    "source": "interface-analysis/vref-a.md §1, rulings R-16, R-17 and R-19: all-pots fit at 3.513 V, the brief's plain sum: six pot tops at 8.0 kΩ (−20 %) 2.63 + ring-to-sleeve short 3.513 V / 3.267 kΩ 1.08 + blocking network 0.89 (D_RCLAMP leakage allowance at 85 °C, R_CE 100 kΩ 35 µA, Q_REFEN gate, LM66100 IQ) + HW_REV 0.18 + U_EXP IQ 0.17 + U_EXP charging its 1.00 kΩ / 100 nF filter 3.55 mA; 1.5 × 8.50 = 12.75 mA ≤ 15 mA; charge τ 0.11 ms, below 1 % within 0.51 ms"
+  },
+  "vref.expressionBlocking": {
+    "value": true,
+    "unit": null,
+    "source": "interface-analysis/vref-a.md §4, spec §14 risk R-14, ruling R-17: unblocked, +5 V on the ring lifts the unpowered module's 3V3 to 4.65 V and +12 V on the tip to 7.95 V against its only fixed load (the 42.8 kΩ buck feedback divider), past DS12110 Table 21's 4.0 V; blocked, ≤ 8.8 µA gives ≤ 0.38 V at the 85 °C design ceiling (ruling R-20), below the 1.62 V POR release (Table 27); with the module unpowered and +5 V on the ring, CE stays 0.91 V above U_REFBLK's turn-off level (VIN + 80 mV) at 85 °C, Q_REFEN's IDSS and subthreshold current (slope scaled to 85 °C) through R_CE 100 kΩ included"
+  },
+  "vref.expressionBlockingPartLcsc": {
+    "value": "C2869734",
+    "unit": null,
+    "source": "interface-analysis/vref-a.md §4, ruling R-17 (fix rounds 1 and 3): U_REFBLK, TI LM66100DCKR ideal diode, SC-70-6 (DCK) 0.65 mm pitch, VIN on VREF_A, VOUT to R_REF, CE to VOUT through R_CE 100 kΩ (C25803) and pulled to GND by Q_REFEN (2N7002, gate on VREF_A through 100 kΩ) so the switch is held on while VREF_A is up; ST and N/C to GND; unpowered blocking per SLVSEZ8A §9.2.1 (Figures 15–16); IOUT,OFF ≤ 2.7 µA (–40 to 85 °C, VIN ≥ 1.5 V), RON ≤ 230 mΩ; ti.com Active; LCSC C2869734 stock 32920, read 2026-10-06"
+  },
+  "vref.tipInputSeriesOhms": {
+    "value": 2200000,
+    "unit": "ohm",
+    "source": "interface-analysis/vref-a.md §4, ruling R-17 (fix round 1): R_EXPIN 2.2 MΩ ±1 % (Uniroyal 0603WAF2204T5E, LCSC C22938, 166,215 in stock, read 2026-10-06) from the tip node to U_EXP IN+; +12 V on the tip feeds U_EXP's input clamp ≤ 5.5 µA; IB 19 pA typ at 85 °C costs 42 µV, 1 nA of board leakage 2.2 mV (0.69 LSB10, static)"
+  },
+  "vref.ringRefOhms": {
+    "value": 3300,
+    "unit": "ohm",
+    "source": "interface-analysis/vref-a.md §1, ruling R-19 as amended in fix round 2: R_REF 3.30 kΩ 1 % 1206 (Uniroyal 1206W4F3301T5E, LCSC C26032, 243,301 in stock, read 2026-10-06), replacing ANALOG.md §8.1's 1.00 kΩ on the split pedal; R_REF must be ≥ 3.079 kΩ (with R_CE 100 kΩ, fix round 3) to keep the −5 V ring case plus the blocking network inside the declared load; at 3.30 kΩ the ring declares 3.50 mA and the total 6.49 mA × 1.5 = 9.74 mA, 0.26 mA under 10 mA; 2.49 kΩ declares 7.31 mA, × 1.5 = 10.97 mA, and fails; span 70.6–96.8 % of full scale over 10–100 kΩ pedals"
+  },
+  "vref.ringClampPartLcsc": {
+    "value": "C426867",
+    "unit": null,
+    "source": "interface-analysis/vref-a.md §4, ruling R-19: D_RCLAMP, Nexperia PMEG4005AEA,115 Schottky, SOD-323, anode GND, cathode on the U_REFBLK VOUT / R_REF node; VF ≤ 221 mV at the 1.53 mA of an unpowered −5 V ring (210 mV max at 1 mA, 270 mV at 10 mA, 25 °C, Table 7), ≤ 294 mV at −20 °C with the 1.62 mV/K tempco read from Fig. 1 (25 vs 85 °C at 1.5 mA); reverse-leakage allowance 0.86 mA at 85 °C (Fig. 2 typical 300 µA at 3.5 V × the 25 °C max/typ ratio 20/7; the only maximum given is 20 µA at 10 V, 25 °C); product data sheet 13 February 2023; LCSC C426867 stock 5787, read 2026-10-06"
+  },
+  "vref.blockEnablePartLcsc": {
+    "value": "C65189",
+    "unit": null,
+    "source": "interface-analysis/vref-a.md §4, ruling R-17 (fix round 1): Q_REFEN, Nexperia 2N7002,215 N-MOSFET, SOT-23, drain on U_REFBLK CE, source GND, gate on VREF_A through 100 kΩ (C25803); VGSth 1.0–2.5 V at 25 °C, ≥ 0.6 V at 150 °C, ≤ 2.75 V at –55 °C; IDSS ≤ 1 µA at 25 °C, ≤ 10 µA at 150 °C (Rev. 7, Table 7); LCSC C65189 stock 197420, read 2026-10-06"
+  },
+  "i2c.pullUpOhms": {
+    "value": 2400,
+    "unit": "ohm",
+    "source": "interface-analysis/3v3-d.md §1, ruling R-21: R_SCL_PU, R_SDA_PU_EXP to 3V3_D, 2.40 kΩ ±1 % 0603, Uniroyal 0603WAF2401T5E, LCSC C22940 (Active, stock 1,284,600, read 2026-10-06); inside [max(R_min 1.04 kΩ (UM10204 Rev 7.0 Eq 2), Task 10's 1.3 kΩ), R_max 2.60 kΩ (Eq 1, tr 300 ns, C_b 136 pF)]; rise time 279 ns at +1 %"
+  },
+  "i2c.busSpeedHz": {
+    "value": 400000,
+    "unit": "Hz",
+    "source": "interface-analysis/3v3-d.md §1, ruling R-21: Fast-mode (UM10204 Rev 7.0 Table 11, fSCL ≤ 400 kHz); at most four expansion devices and 40 cm of wiring, else buffered"
+  },
+  "switch.seriesOhms": {
+    "value": 1200,
+    "unit": "ohm",
+    "source": "interface-analysis/3v3-d.md §2, ruling R-22: R_FSW1, R_FSW2 node to pin, 1.20 kΩ ±1 % 0603, Uniroyal 0603WAF1201T5E, LCSC C22765 (Active, stock 2,133,000, read 2026-10-06); a bootloader-driven high into a closed switch 3.6 V / 1.188 kΩ = 3.03 mA ≤ 3.3 mA (spec §5.4); closed level with RPU 30 kΩ 0.14 V ≤ VIL − 0.2 V = 0.78 V"
+  },
+  "switch.debounceCapNf": {
+    "value": 100,
+    "unit": "nF",
+    "source": "interface-analysis/3v3-d.md §2, ruling R-22: CTL-04's 100 nF X7R (C1591) stays at the switch node, not at the pin; release τ = 10.1 kΩ × 110 nF = 1.11 ms ≤ the 5 ms firmware debounce window"
+  },
+  "midi.headerSupplyMa": {
+    "value": 2,
+    "unit": "mA",
+    "source": "interface-analysis/3v3-d.md §4, ruling R-23 (confirmed 2026-10-06): the MIDI IN receiver on 3V3_D, an allocation met by TI ISOM8710 (ICCH/ICCL max 2 mA, push-pull output, SLLSFO4E §6.9); CA-033's 3.3 V MIDI OUT loop (up to 8.46 mA, 112 mA into a shorted cable) is powered from the pedal digital rail, switched by U_MIDIDRV (SN74LVC1G07, C7829, role midi-out-driver, 0.21 mA on 3V3_D: ICC 10 µA plus R_TXPU 18.0 kΩ, ruling R-28; text corrected 2026-10-06, S1 Task 17 review D-C-4, it said 0.01 mA)"
+  },
+  "pedalRail.net": {
+    "value": "3V3_P",
+    "unit": null,
+    "source": "interface-analysis/pedal-digital-rail.md §1, ruling R-25: the pedal digital rail, nominal 3.392 V (the 3.3 V class), feeding both G6K-2F-Y DC3 coils, both LED anodes and the MIDI OUT loop (ruling R-23)"
+  },
+  "pedalRail.topology": {
+    "value": "switching",
+    "unit": null,
+    "source": "interface-analysis/pedal-digital-rail.md §2, ruling R-25: a linear rail from 17.55 V dissipates 2.63 W at the 184.3 mA budget (R_MGP 160 Ω, ruling R-53, 2026-10-06; 2.50 W at 175.2 mA before); the LM317 in SOT-223 (RθJA 59.6 °C/W, SLVS044Z §6.5) reaches 207 °C at 50 °C ambient against 125 − 10 °C; at R-20's 85 °C ambient any linear part would need RθJA ≤ 12 °C/W"
+  },
+  "pedalRail.feedPoint": {
+    "value": "module-branch",
+    "unit": null,
+    "source": "interface-analysis/pedal-digital-rail.md §3, ruling R-25: on the module branch after its reverse-polarity element (spec §7.4), never VIN_A (R-PF-3); no extra reverse-polarity element, and the ripple it puts on VIN_MOD is a computed input to Task 16"
+  },
+  "pedalRail.feedNet": {
+    "value": "VIN_MOD",
+    "unit": null,
+    "source": "interface-analysis/pedal-digital-rail.md §3: U_PRAIL's VIN is on VIN_MOD, the module branch net (spec §5.6.1, §7.4)"
+  },
+  "pedalRail.regulatorLcsc": {
+    "value": "C5219272",
+    "unit": null,
+    "source": "interface-analysis/pedal-digital-rail.md §2, ruling R-25: U_PRAIL, TI TPS62933FDRLR (FCCM, 3 A, 3.8–30 V, VIN abs max 32 V; SLUSEA4D), SOT-583, already in the catalog; the POWER.md §3.3 network copied (4.7 µH 74439346047, 3 × 22 µF C12891, 2 × 10 µF 50 V C89632 + 100 nF, 32.4 kΩ / 10.0 kΩ, C_SS 33 nF, RT floating; EN from PF_ON through R_PEN / C_PEN / R_PENPD / D_PEN / R_PENS (rulings R-44, R-45, R-52; text corrected 2026-10-06, S1 Task 17 review D-C-5: it said EN floating)); ti.com Active; LCSC C5219272 stock 2,465, read 2026-10-06"
+  },
+  "pedalRail.nominalV": {
+    "value": 3.392,
+    "unit": "V",
+    "source": "interface-analysis/pedal-digital-rail.md §1: 0.8 V × (1 + 32.4 / 10.0) (POWER.md §3.3, SLUSEA4D Eq 14)"
+  },
+  "pedalRail.minV": {
+    "value": 3.274,
+    "unit": "V",
+    "source": "interface-analysis/pedal-digital-rail.md §1: VFB 784 mV (SLUSEA4D §8.5) with the 1 % divider at its low ratio (POWER.md §3.3); coil margin over copperHotV(2.4, 85) + 0.2 V = 3.178 V is 0.088 V after Q_BYP's ≤ 7.8 mV (RDS(on) 48 mΩ × 38 / 26.5, the AO3400A's 125 °C row, ruling R-53, 2026-10-06; 0.091 V on the 25 °C figure before)"
+  },
+  "pedalRail.maxV": {
+    "value": 3.513,
+    "unit": "V",
+    "source": "interface-analysis/pedal-digital-rail.md §1: VFB 816 mV with the 1 % divider at its high ratio (POWER.md §3.3); 78 % of the coil's 4.5 V maximum (150 %, K106-E1-11); coils 2 × 56.8 mA = 114 mA here (BYPASS-RELAY.md §3.2)"
+  },
+  "pedalRail.ledSeriesOhms": {
+    "value": 100,
+    "unit": "ohm",
+    "source": "interface-analysis/pedal-digital-rail.md §4, ruling R-27: the smallest E24 value with (3.513 − 1.6) V / (R × 0.99) ≤ 20 mA (≥ 96.6 Ω); 100 Ω ±1 % (C22775, as CTL-06) gives 19.3 mA, 37 mW; VF,min 1.6 V is an allowance, the WP7113ID sheet (DSAF0012 Rev V.14A) giving no minimum"
+  },
+  "pedalRail.inputRippleMvPp": {
+    "value": 27.2,
+    "unit": "mVpp",
+    "source": "interface-analysis/pedal-digital-rail.md §3 (R_MGP 160 Ω, ruling R-53, 2026-10-06; 26.4 mV with 270 Ω before): SLUSEA4D Eq 23 at the faulted load 287.9 mA (coils 113.6 + LEDs 40 + MIDI pin 4 shorted 112.1 + Q_MIDI gate pull-up 22.2), CIN 2 × 3.45 µF × 0.9 = 6.21 µF effective (TI's figure for TDK CGA5L1X7R1H106K160AC, an allowance for C89632, R-27), fSW 450 kHz, ESR 5 mΩ: 25.75 + 1.44 = 27.19 mV p-p on VIN_MOD at U_PRAIL's input capacitors; Task 16 reads it for VIN_MOD's permitted ripple"
+  },
+  "codecLdo.lcsc": {
+    "value": "C2866134",
+    "unit": null,
+    "source": "interface-analysis/codec-domain.md §2, ruling R-30: U_CVDD, TI TPS7A2433DBVR, fixed 3.3 V, SOT-23-5 (DBV) 0.95 mm pitch, IN on 5V_A_CODEC, OUT on 3V3_CODEC; ±2.0 % at full load (SBVS386E §6.5: ±1.25 % + line ±0.25 % + load ±0.5 %), 200 mA, VIN absolute maximum 20 V (26 % at 5V_A's 5.202 V), ceramic COUT 1–100 µF; with D_CVCL (PMEG4005AEA, C426867) OUT to IN per SBVS386E Figure 8-1 and R_CBLD 3.60 kΩ; ti.com Active (ordering addendum); LCSC 13,155 in stock, read 2026-10-06"
+  },
+  "xo.lcsc": {
+    "value": "C255992",
+    "unit": null,
+    "source": "interface-analysis/codec-domain.md §1, ruling R-29: U_XO, Epson SG-210STF 12.288000 MHz L (X1G0041710019), 2.5 × 2.0 mm, four pads at 1.7 × 1.3 mm pitch, on 3V3_CODEC; tolerance ±50 ppm over −40 to 85 °C all-inclusive (aging ±3 ppm first year listed apart), start-up 3.0 ms max, 1.8 mA max no load, symmetry 45–55 %, VCC 1.60–3.63 V (Spec SGxxxxCAN_E_Ver2.16); listed as a current product on epsondevice.com; LCSC 753 in stock, read 2026-10-06"
+  },
+  "codecReset.supervisorLcsc": {
+    "value": "C1852114",
+    "unit": null,
+    "source": "interface-analysis/codec-domain.md §3, ruling R-31: U_CRST, TI TLV803EA29DBZR (catalog family TLV803E; variant A, 2.93 V, open drain, SOT-23-3 DBZ), VDD on 3V3_CODEC, RESET on CODEC_RST_N with R_CRST 4.70 kΩ to 3V3_CODEC (10.0 kΩ until S1 Task 15 fix round 1, review I-3); SLVSES2J §9.2 selects this device for a 3.3 V LDO rail; ti.com Active (ordering addendum); LCSC 449 in stock, read 2026-10-06"
+  },
+  "codecReset.delayMinMs": {
+    "value": 130,
+    "unit": "ms",
+    "source": "interface-analysis/codec-domain.md §3: TLV803EA29 tD variant A 130 ms min (SLVSES2J §7.6, −40 to 125 °C) ≥ XO start-up 3.0 ms + 2048 / 48 kHz = 45.7 ms; ≥ 73.7 ms with 5V_A's whole soft start (28 ms allowance) added"
+  },
+  "codecDomain.supplyMa": {
+    "value": 17.05,
+    "unit": "mA",
+    "source": "interface-analysis/codec-domain.md §4: codec IDD 12 mA (SLAS533B) + U_XO 2.43 mA (1.8 mA + 15 pF at 3.366 V and 12.288 MHz) + sai.codecSideSupplyMa 0.94 mA + R_CRST 0.73 mA (asserted, 3.366 V / 4.653 kΩ; R_CRST 4.70 kΩ since S1 Task 15 fix round 1, review I-3) + R_CBLD 0.95 mA (ruling R-30, 3.366 V / 3.564 kΩ); × 1.5 = 25.58 mA ≤ 200 mA; input side (S1 Task 15) 17.15 mA with U_CVDD's 0.1 mA IGND allowance"
+  },
+  "pf.realisation": {
+    "value": "per-branch-schottky",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §2, rulings R-34 and R-35: one PMEG4030ER per branch (D_AIN on the analog branch to VIN_A, D_MIN on the module branch); the spec's preferred realisation, chosen by the controller after the owner's R-PF-7 decision"
+  },
+  "pf.analogBranchElementLcsc": {
+    "value": "C389355",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §2: D_AIN, Nexperia PMEG4030ER,115 (SOD-123; VR 40 V, IF(AV) 3 A), VF ≤ 330 mV at 0.1 A, 25 °C, ≤ 0.385 V at −20 °C; LCSC 11,560 in stock, read 2026-10-06"
+  },
+  "pf.moduleBranchElementLcsc": {
+    "value": "C389355",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §2: D_MIN, Nexperia PMEG4030ER,115 on the module branch (VIN_MOD and 3V3_P), ≤ 0.65 A; LCSC 11,560 in stock, read 2026-10-06"
+  },
+  "pf.reengageMechanism": {
+    "value": "module-load-switch",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §7, ruling R-38: Q_MSW (AOS AOD4185, C400894, TO-252; ramp SOA on Fig. 11's ZθJC plus the case's rise on 1 oz copper with 3V3_P held off, R-42 to R-45; governed since R-50 by the module's real start-up, Tj ≤ 123.7 °C at 18 V with the hot plateau (vin-mod.md §4; 119.4 °C before S1 Task 17 fixes D-D-9 and D-D-13, 2026-10-06, ruling R-58); Task 15's profile, now information, reaches 142.7 °C, under 150 °C; 3V3_P's EN reset by Q_PEN, ruling R-58) between D_MIN and VIN_MOD, switched by Q_MSWD from PF_ON and released td = 154–395 ms after VIN recovers (C_PFCT 47 nF), with a diode-steered Miller-ramp soft start (C_SS 2.2 µF, D_SS, R_SSR 15 kΩ); Q_VDIS + R_VDIS 10 Ω pulse-proof (CRCW2010-HP, C4332954, 63 % of its continuous-pulse curve at 18 V) discharge VIN_MOD from 18 V to 1 V in 6.4 ms while tripped, so the module always reboots into bypass (rulings R-38, R-40 to R-45)"
+  },
+  "pf.overridePartLcsc": {
+    "value": "C20917",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §6, ruling R-37: Q_PFG, AOS AO3400A on the relay gate, driven by U_PFINV (SN74LVC2G14, C12401; first channel PF_TRIP) from U_PF's RESET; U_PF's open-drain output no longer joins the gate node (it would join the gate to CODEC_RST_N); LCSC 388,370 in stock, read 2026-10-06"
+  },
+  "pf.latchPartLcsc": {
+    "value": "none",
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §7, ruling R-38: the re-engage mechanism is the module load switch, so no latch is fitted"
+  },
+  "pf.reservoirParts": {
+    "value": ["C128462x4", "C89632x5"],
+    "unit": null,
+    "source": "interface-analysis/power-fail.md §3, ruling R-35 as amended: on VIN_A, 4 × 100 µF 35 V Al EEE-FK1V101P (C_BULK from v1 + C_BULK2–4 added; LCSC 3,340 in stock, read 2026-10-06) and 5 × 10 µF 50 V X7R CL31B106KBHNNNE (C_PROT, C_LIN, three op-amp decoupling, carried from v1)"
+  },
+  "pf.reservoirUfNominal": {
+    "value": 450,
+    "unit": "uF",
+    "source": "interface-analysis/power-fail.md §3: 4 × 100 µF + 5 × 10 µF"
+  },
+  "pf.reservoirUfMinEffective": {
+    "value": 345,
+    "unit": "uF",
+    "source": "interface-analysis/power-fail.md §3: Al at −20 % initial tolerance (320 µF) + X7R at 0.5× under DC bias (25 µF), BYPASS-RELAY.md §5.2's rule; cold and ageing loss covered by the margin (review M-1)"
+  },
+  "pf.senseTopOhms": {
+    "value": 187000,
+    "unit": "ohm",
+    "source": "interface-analysis/power-fail.md §4, rulings R-36 and R-40: R_PFT1 13.0 kΩ (C861121) + R_PFT2 174 kΩ (C861163), both ±0.1 % 0603, VIN to PF_SENSE, with the BAS116H reverse clamp at their junction"
+  },
+  "pf.senseBottomOhms": {
+    "value": 10000,
+    "unit": "ohm",
+    "source": "interface-analysis/power-fail.md §4: R_PFB 10.0 kΩ ±0.1 % 0603, Yageo RT0603BRD0710KL, LCSC C95204 (v1's part)"
+  },
+  "pf.tripFallingMinV": {
+    "value": 7.7994,
+    "unit": "V",
+    "source": "interface-analysis/power-fail.md §4: falling trip at VIN 7.799–8.160 V (nominal 7.979 V; the maximum includes D_PFCL's 80 nA × 13 kΩ), TPS3808G01 VIT 0.405 V ±2 % and ISENSE ±25 nA through the whole 187 kΩ top (SBVS050N §6.5, ±4.68 mV) through the 0.1 % divider; ≥ 0.291 V below the sagged 8.45 V. 7.8041 V before 2026-10-06 (S1 Task 17 fix D-D-4 added ISENSE)"
+  },
+  "pf.releaseRisingMaxV": {
+    "value": 8.4041,
+    "unit": "V",
+    "source": "interface-analysis/power-fail.md §4: rising release ≤ 8.1593 V (trip max with the clamp's 80 nA × 13 kΩ and ISENSE 25 nA × 187 kΩ) × 1.03 (hysteresis 3 % max) = 8.4040 V, under the sagged 9 V level at the jack (8.55 − 0.1 = 8.45 V) by 46 mV. 8.3992 V before 2026-10-06 (S1 Task 17 fix D-D-4)"
+  },
+  "pf.vinAMin9VColdV": {
+    "value": 8.61465,
+    "unit": "V",
+    "source": "interface-analysis/power-fail.md §2, owner decision R-34: VIN_A at exactly 9.00 V, cold (−20 °C), 9.00 − 0.385 V ≥ 8.44 V by 0.175 V; information: 8.065 V with a 9 V adapter 5 % low and 0.1 V of cable drop (about 0.4 V, ≈ 0.5 dB, earlier clipping at the loudest peaks)"
+  },
+  "pf.detectMaxMs": {
+    "value": 0.01699,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5, ruling R-39: plug pull, VIN from 12.6 V to the lowest trip through R_VBLD 10.0 kΩ ∥ 197 kΩ with a 2 nF node allowance and the 9.5 µs SENSE filter, against 25 °C element leakage; slower detection is covered by the slow-fall bound (pf.slowFallMargin*)"
+  },
+  "pf.openMaxMs": {
+    "value": 3.0677,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5: t_open = t_detect 0.017 + SENSE to RESET 0.050 (an allowance from SBVS050N Fig. 6-5; 0.020 typical before S1 Task 17 fix D-D-5, 2026-10-06) + gate turn-off 0.0007 + release 3.0 ms (K106-E1-11 maximum); 2.768 ms at the BU-19 target (3.0376 ms before)"
+  },
+  "pf.margin9VMs": {
+    "value": 10.803,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5, plug-pull frame on the brief's basis (ruling R-40): (9 × 0.95 − 0.1 − 0.385 = 8.065 V − 4.842 V) / (80.15 mA / 345 µF = 0.232 V/ms) − 3.068 ms; 11.10 ms at the BU-19 release target (10.833 before S1 Task 17 fix D-D-5, 2026-10-06)"
+  },
+  "pf.margin12VMs": {
+    "value": 16.273,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5, plug-pull frame on the brief's basis: (10.915 − 6.421 V) / 0.232 V/ms − 3.068 ms; 16.57 ms at the BU-19 release target (16.304 before S1 Task 17 fix D-D-5, 2026-10-06)"
+  },
+  "pf.vinALoadMaxMa": {
+    "value": 80.15,
+    "unit": "mA",
+    "source": "interface-analysis/power-fail.md §1: BYPASS-RELAY.md §5.2's 63 mA analog load + the codec domain's input side 17.15 mA (codec-domain.md §4, R_CRST 4.7 kΩ)"
+  },
+  "pf.slowFallMargin9VMs": {
+    "value": 8.0103,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5, ruling R-39, slow-fall frame (any fall profile): (trip min 7.799 − VF cold 0.385 − V_B 4.842 V) / 0.232 V/ms − (0.050 + 0.0095 + 0.0007 + 3.0 ms); 8.31 ms at the BU-19 target (8.0604 before S1 Task 17 fixes D-D-4, D-D-5, 2026-10-06)"
+  },
+  "pf.slowFallMargin12VMs": {
+    "value": 1.213,
+    "unit": "ms",
+    "source": "interface-analysis/power-fail.md §5, ruling R-39, slow-fall frame: (7.799 − 0.385 − 6.421 V) / 0.232 V/ms − 3.060 ms; the binding case (needs ≥ 247 µF effective, 345 fitted; ≥ 0 to a further ×0.72 Al loss, review M-1); 1.51 ms at the BU-19 target (1.2631 before S1 Task 17 fixes D-D-4, D-D-5, 2026-10-06)"
+  },
+  "vinMod.enTopOhms": {
+    "value": 18000,
+    "unit": "ohm",
+    "source": "interface-analysis/vin-mod.md §2, ruling R-47: R_UV1 18.0 kΩ ±1 % 0603 from VIN_MOD to the module buck's EN (Uniroyal 0603WAF1802T5E, LCSC C25810); with R_UV2 the module starts at 5.58–6.75 V (SLUSEA4D Eq. 3–5, VEN_RISE ≤ 1.28 V, VEN_FALL ≥ 1.1 V, Ip and Ih × 3), ≤ 0.9 × VIN_MOD,min 7.15 V, and stops ≥ 5.50 V, above the 3.8 V internal UVLO"
+  },
+  "vinMod.enBottomOhms": {
+    "value": 4300,
+    "unit": "ohm",
+    "source": "interface-analysis/vin-mod.md §2, ruling R-47: R_UV2 4.30 kΩ ±1 % 0603 from EN to GND (Uniroyal 0603WAF4301T5E, LCSC C23159); EN ≤ 3.55 V at 18 V and ≤ 5.2 V at the 26.2 V hot-plug bound, inside 5.5 V"
+  },
+  "vinMod.moduleInputBulkUf": {
+    "value": 67.1,
+    "unit": "uF",
+    "source": "interface-analysis/vin-mod.md §3, ruling R-48: POWER.md §1's buck branch moved onto the module: C_DAMP 47 µF 35 V aluminium (EEE-FK1V470P) + C_BIN1/2 2 × 10 µF 50 V X7R + C_BINHF 100 nF, nominal; 78.5 µF at most (+20 %, +10 %). With U_PRAIL's 22.1 µF VIN_MOD holds ≤ 100.6 µF, inside power-fail.md's 220 µF"
+  },
+  "vinMod.hotPlugPeakV": {
+    "value": 26.3,
+    "unit": "V",
+    "source": "interface-analysis/vin-mod.md §6, rulings R-49, R-59: POWER.md §4.4's method re-run (hotPlug.ts, which reproduces §4.4's v1 figures). At a plug-in from rest Q_MSW is held off by C_GS 220 nF / D_GS (VSG ≤ 1.217 V < 1.58 V) and the module sees no plug-in edge; within 0.44 s of an unplug the hold is void (fix round 1). The value is the bound with Q_MSW conducting from the first instant, at the VIN_MOD node, pin 39 itself: 18.28 V on §4.4's grid and 26.23 V at the extreme corners (0.5 m with 2 µH of ferrite, 0.3 m with 3 µH, no ferrite), rounded up, ≤ 28 V. The module buck's VIN after L_FILT peaks lower, 18.34 / 25.76 V; a re-plug gives VIN_MOD 24.95 V. 25.8 V (the buck's VIN) before 2026-10-06 (S1 Task 17 fix D-D-3: pin-39 parts are rated against the pin's figure). `pnpm hotplug-sweep` checks the corners dominate a 1,296-run sweep"
+  }
+}
