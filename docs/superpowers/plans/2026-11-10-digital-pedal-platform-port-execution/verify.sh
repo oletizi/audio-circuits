@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json)
+ALL_CHECKS=(bytes nocode provenance effective stale-json decisions)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -141,6 +141,55 @@ check_stale_json() {
   fi
 }
 
+DECISIONS="$DOCS/decisions.md"
+SEC_OWNER="## Owner decisions"
+SEC_FACTS="## Owner-supplied facts"
+SEC_RULINGS="## Controller rulings (the owner may override)"
+
+# Print the lines of one "## " section of decisions.md (heading excluded).
+decisions_section() {
+  awk -v want="$1" '
+    /^## / { insec = ($0 == want); next }
+    insec { print }' "$DECISIONS"
+}
+
+# Print each entry (a heading line through the line before the next heading)
+# whose heading matches the extended regex $1, entries separated by a line "@@".
+decisions_entries() {
+  awk -v re="$1" '
+    /^#+ / { if (inent) print "@@"; inent = ($0 ~ re) }
+    inent { print }
+    END { if (inent) print "@@" }' "$DECISIONS"
+}
+
+check_decisions() {
+  local bad="" sec n id ent owner rulings
+  [ -f "$DECISIONS" ] || { echo " [missing docs/h7-platform/decisions.md]"; return 1; }
+  for sec in "$SEC_OWNER" "$SEC_FACTS" "$SEC_RULINGS"; do
+    grep -qxF "$sec" "$DECISIONS" || bad="$bad [missing section '$sec']"
+  done
+  for n in $(seq 1 18); do
+    grep -qE "^#+ (.*[^0-9A-Za-z-])?O-$n([^0-9]|\$)" "$DECISIONS" || bad="$bad [O-$n in no heading]"
+  done
+  owner=$(decisions_section "$SEC_OWNER")
+  for id in R-34 R-43 R-56; do
+    echo "$owner" | grep -qE "^#+ (.*[^0-9A-Za-z-])?$id([^0-9]|\$)" || bad="$bad [no $id heading under '$SEC_OWNER']"
+  done
+  rulings=$(decisions_section "$SEC_RULINGS")
+  echo "$rulings" | grep -qE "^#+ (.*[^0-9A-Za-z-])?O-15([^0-9]|\$)" || bad="$bad [no O-15 heading under '$SEC_RULINGS']"
+  for n in 20 21 22 23 24; do
+    ent=$(decisions_entries "(^|[^0-9A-Za-z-])D$n([^0-9]|\$)")
+    if [ -z "$ent" ]; then bad="$bad [D$n in no heading]"; continue; fi
+    echo "$ent" | grep -qF "§9.4" || bad="$bad [D$n entry does not cite §9.4]"
+  done
+  for n in 4 13; do
+    ent=$(decisions_entries "(^|[^0-9A-Za-z-])D$n([^0-9]|\$)")
+    if [ -z "$ent" ]; then bad="$bad [D$n in no heading]"; continue; fi
+    echo "$ent" | grep -qi "withdrawn" || bad="$bad [D$n entry lacks the word 'withdrawn']"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -149,6 +198,7 @@ run_check() {
     provenance) reason=$(check_provenance) ;;
     effective) reason=$(check_effective) ;;
     stale-json) reason=$(check_stale_json) ;;
+    decisions) reason=$(check_decisions) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
