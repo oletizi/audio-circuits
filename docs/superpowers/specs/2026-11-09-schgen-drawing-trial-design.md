@@ -124,10 +124,38 @@ SchGen's user request is free text written by a person. Here it is **generated
 mechanically from the board's model** - the same netlist the round-trip test
 compares the approved page against: each part with its reference designator,
 value and symbol, and each net with its pins, plus the board's ports as labels.
-No layout hint is given that the approved page's placement could leak through.
+
+**Format, fixed across all five boards** (review, issue 24, point 1): one
+section listing every part (designator, value, `library:symbol`), one listing
+every net as the full set of `designator.pin` it joins with pins named as the
+symbol names them, one listing the ports as global labels with their nets. No
+prose, no function description, no layout or orientation words, no hand-written
+text of any kind. The builder first reads SchGen's published training requests
+and records how they state connectivity; where their convention can be followed
+mechanically it is, and where it cannot the difference is named as a departure
+(a netlist-shaped request may be off their training distribution, and that is
+a cost of not hand-authoring, accepted, not hidden).
+
+**Validated before the run, by checks that can fail:**
+- **Complete and unambiguous.** Parse each generated request back into a
+  netlist and compare it to the board model: every part, every pin on a net
+  appears exactly once, no net is split or merged. A deliberately altered
+  request (one pin moved) must fail the comparison.
+- **No placement leak, by construction and by test.** The generator reads only
+  the circuit model; it opens no `.kicad_sch`. A test asserts that no x/y
+  coordinate, rotation, mirror value or approved-page UUID from the approved
+  sheet appears in the request or in the symbol context. The symbol context
+  carries library pin geometry only - `describe_symbol_info` is called with
+  `library:symbol` names and reads the KiCad libraries, never a page
+  (`modules/symbol_context.py:337`, read 2026-11-09).
 
 The exact generator and the generated text for each board are committed and
 shown to the owner with the first page, so he can see what SchGen was asked.
+
+**What this evaluates, stated so it is not over-read:** drawing from a known
+symbol inventory and an explicit netlist. It does not evaluate SchGen's full
+workflow, which also selects symbols and infers structure from a person's
+request.
 
 ## Where it runs
 
@@ -135,8 +163,9 @@ The serving stack from the serving spec, unchanged except `max_model_len`:
 GKE Standard, one Spot g2-standard-48 (4 x L4), vLLM v0.32.0 by digest behind
 Kinference, model from the bucket. Requests go **through the Kinference
 gateway**. Capacity is found first with `tools/schgen-serving/probe-capacity.sh`;
-the cluster exists only for the run and is torn down after. Fifteen requests is
-a short run.
+the cluster exists only for the run and is torn down after. Run length is not
+assumed: the preflight attempt below measures one full attempt's latency and
+token count, and the batch plan is made from that.
 
 **Requests go through the gateway on `/v1/completions`.** The serving phase
 routed only `/v1/chat/completions`; the HTTPRoute gains a `/v1/completions`
@@ -154,17 +183,80 @@ same macOS `kicad-cli` 10.0.5 that rendered the approved pages and runs the
 round-trip test, so both sides of every comparison come from one renderer.
 *(Agent's call.)*
 
+## Input fidelity, checked before any sample is drawn
+
+Review, issue 24, point 2. SchGen's prompt construction is tokenizer-only -
+`prepare_context()`, the `run_raw_test()` message, `apply_chat_template` - so
+it is reproduced exactly on CPU without loading a model:
+
+1. Render the prompt token IDs two ways for one board: by the trial's own
+   code, and by SchGen's code path (`config.py` and `generate.py`'s message
+   construction, imported, with the symbol selector replaced by the supplied
+   symbol list). They must be identical, special tokens and generation prefix
+   included.
+2. **Send token IDs, not text,** to `/v1/completions`, so the server cannot
+   re-tokenize. Confirm with vLLM's reported `prompt_tokens` that it consumed
+   the same count.
+3. Record tokenizer revision, template sha256, vLLM version and image digest,
+   prompt token count, and every sampling parameter sent.
+
+Output sampling is not expected to be bit-identical to theirs; input is.
+
+## Preflight, which is attempt 1 of the first board - not an extra sample
+
+Review, issue 24, point 3. **The preflight is not a throwaway generation.**
+A sample drawn and then discarded would be a selection the owner never sees,
+which is the first anti-goal. So the preflight is attempt 1 of the first board
+in the run order, and it **counts**: its page is shown like every other.
+
+- It runs the whole chain once: request, generation, extraction, isolated
+  emitter, host render, netlist export, ERC, artifact capture, manifest.
+- **A tooling failure never causes a resample.** The raw response is saved
+  before anything downstream runs. If the emitter, renderer, comparator or
+  harness fails for a reason that is not the model's program, the tooling is
+  fixed and **the downstream chain re-runs on the same saved response**. The
+  fix and the re-run are recorded. Generation is never repeated for an attempt
+  that already has a response.
+- Failures are classified by stage: no final channel or no program extracted
+  (model); program raised (model, with the original traceback kept); emitter
+  or harness raised outside the model's code (tooling); blank page (tooling
+  until shown otherwise). Which emitter fixes were active is recorded per
+  attempt.
+- Nothing in the preflight tunes prompts, sampling or presentation from what
+  the page looks like.
+
+**The comparator is proven before it is trusted.** On a known-equal case (the
+approved sheet against its model) it must report equal; on deliberately altered
+copies it must report each difference: a pin moved to another net, two nets
+merged, a net renamed (must report *equal* - names do not count), a pin
+number swapped, a pin left unconnected, and a power symbol replaced. Any case
+that does not behave is a comparator defect fixed before the run.
+
+## Provenance and resumability
+
+Review, issue 24, point 4. `manifest.json` per attempt, committed, holding:
+board, model module path and git revision, approved sheet sha256, SchGen
+commit, merged-model manifest sha256, tokenizer revision, template sha256, vLLM
+version and digest, prompt and raw-response sha256, seed and sampling
+parameters, prompt and output tokens, `finish_reason`, emitter fixes applied,
+`kicad-cli` version, outcome, failure stage.
+
+**Resumable across Spot interruption:** an attempt whose raw response is on
+disk is never regenerated; downstream stages are pure functions of the saved
+response and re-run freely. The run can be killed at any point and relaunched.
+
 ## What the owner is shown, and in what order
 
 Per board, in a fixed order: the approved page, then attempts 1, 2, 3 by
-attempt number. An attempt with no page appears as a text card saying which
-stage stopped it (no program extracted / program raised / blank page) with the
-error verbatim. **Renders go first**, before any summary (§4). One question per
-board: what he makes of SchGen's attempts against the approved page.
+attempt number. An attempt with no page appears as a neutral card -
+*"Attempt 2: no schematic generated"* - and nothing more; the stage and the
+exception belong to the diagnostics that follow his verdict (review, issue 24).
+**Renders go first**, before any summary (§4). One question per board: what he
+makes of SchGen's attempts against the approved page.
 
-Then, after he rules or on request, per attempt: program ran or not; netlist
-equal to the board model or the differences; ERC counts; output tokens;
-`finish_reason`.
+Then, after he rules or on request, per attempt: failure stage and traceback
+where there is no page; program ran or not; netlist equal to the board model or
+the differences; ERC counts; output tokens; `finish_reason`.
 
 ## Recorded where
 
@@ -201,3 +293,6 @@ the owner; the order boards run in.
 | All four emitter fixes from the 2026-10-29 trial, pin fix injected by the harness | agent | without them nothing draws, or every page is blank |
 | Emitter in laptop Docker; render, netlist and ERC on the host's `kicad-cli` 10.0.5 | agent | isolates model-written code; one renderer for both sides of the comparison |
 | Builder check run 2026-11-09; its four questions settled as the rows above | agent | none needed the owner |
+| Third-party review (issue 24, "approve with revisions") adopted: request format and validation, input-fidelity check, preflight, comparator proof, manifest and resumability, neutral failure cards, measured run length | owner supplied the review, 2026-11-09 | protects attributing a disappointing result to SchGen rather than to prompt, inference or tooling |
+| Preflight is attempt 1 of the first board and counts; tooling failures re-run downstream on the saved response, never resample | agent, departing from the review's framing | a discarded preflight sample would be an unseen selection |
+| Fidelity check compares against SchGen's tokenizer-only prompt path on CPU, and token IDs are sent to the server | agent, narrowing the review's ask | their prompt path loads no model, so running their full Transformers generation would add a GPU job without testing anything more about the input |
