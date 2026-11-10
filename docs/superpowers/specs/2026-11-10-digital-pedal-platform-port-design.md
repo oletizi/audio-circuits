@@ -79,10 +79,19 @@ The design history in brief:
    repository**, verbatim where his words exist, with a link to where it was
    made. "Live" means it still binds the split design: O-1 to O-18 as amended,
    the D-numbered CORE-BRIEF deltas he approved, the OWN-xx defaults that still
-   stand, and the owner rulings and owner measurements recorded in the S1
-   rulings ledger. These include R-55 (withdrawn), R-60, R-61 and R-62 (the
-   owner-measured enclosure). Controller rulings that the owner "may override"
-   are carried and marked as rulings, not as his decisions.
+   stand, and the owner decisions in the S1 rulings ledger
+   (`docs/superpowers/plans/2026-10-05-h7-split-rulings.md`).
+   **An entry counts as an owner decision only if the ledger itself says so**:
+   it is titled "Owner decision" (R-34, R-43) or quotes his answer under
+   "Owner decision, quoted" (R-56). Everything else in the ledger is a
+   controller ruling, and the port labels it that way, as something he may
+   override. That includes R-55, R-60, R-61, and R-62, which is a controller
+   ruling on **his measurements** of the enclosure. Measurements he took
+   are carried as facts he supplied, separately from the ruling built on them.
+   An entry that says "confirmed" without saying who confirmed it is carried
+   as a controller ruling, with that ambiguity noted beside it.
+   *(Corrected after the builder check. The first draft called R-55 to R-62
+   owner rulings; the ledger labels them controller rulings.)*
 2. **The design content the next phases need is here, rewritten in this
    repository's vocabulary**, as documentation under `docs/h7-platform/`:
    - the split design: architecture, the two boards' contents, the interface
@@ -104,10 +113,56 @@ The design history in brief:
    source that will be edited here, because the analyses that fill in and
    freeze it are not finished. So it sits with the circuit and not under
    `docs/` (CLAUDE.md, "One directory per circuit").
+   - **The analysis results file crosses with it, also unchanged:**
+     `interface-analysis/results.json`, with 76 values, each carrying its source,
+     goes to `circuits/h7-platform/interface-analysis-results.json`. It is a
+     source still being edited, for the same reason as the contract. The prose
+     analyses (Goal 2) are what explain it.
+   - **The contract's citations stay as they are.** Its `source` fields cite pedals
+     paths and sections ("interface-analysis/envelope.md §3", "spec §5.6.3",
+     R-61, D-A-1). Rewriting them is not part of this phase. Instead, the README
+     states that every citation inside either JSON file resolves against the
+     pedals repository at the pinned commit. It also gives the link prefix to
+     put in front of a path. Each ported document names the pedals file
+     and sections it came from, so a reader can go from a citation to its new
+     home. Re-pointing the citations is a contract edit, so it belongs to
+     whichever later phase next edits the contract.
 4. **A reader can tell what came across and what did not.** A README at
    `docs/h7-platform/README.md` says what the platform is, where each part of
    the knowledge now lives, what was deliberately left in the pedals
    repository, and how to reach it.
+   - **The mapping covers the platform's files, not the whole pedals
+     repository.** At the pinned commit that means:
+     - everything under `h7-platform/`;
+     - the platform's specs (`2026-09-30-h7-pedal-platform-design.md`, which
+       the split spec amends section by section, and
+       `2026-10-05-h7-modular-split-design.md`);
+     - four documents outside that directory that carry platform knowledge:
+       `docs/research/2026-09-30-proven-reference-designs.md`,
+       `docs/research/2026-10-05-processor-module-form-factors.md`,
+       `docs/standards/pcbway-fab-rules.md` and the S1 rulings ledger.
+
+     Whole directories that stay behind (`boards/v1/`, `mechanical/`,
+     `interface-analysis/sources/` and so on) can each be one row. The pedals
+     repository's other projects (fuzz-v2, perfboard and so on) belong to their
+     own ports.
+   - **The two research documents and the PCBWay fabrication rules cross**, to
+     `docs/h7-platform/research/` and `docs/standards/pcbway-fab-rules.md`. The
+     fabrication rules are not specific to this platform, but phase 4 needs
+     them, and this repository has no `docs/standards/` yet.
+5. **The OSCAR licences and attributions come across.** `h7-platform/LICENSE-OSCAR`
+   records that the core MCU, SDRAM and flash circuitry derives from DADDesign
+   OSCAR_PROC_01 (MIT). The codec circuitry derives from OSCAR_AUDIO_01, which
+   also carries `LICENSE-APACHE-2.0`. Both files go to `circuits/h7-platform/`
+   unchanged, and the README says which circuitry they cover. That obligation
+   follows the circuit into the phase-2 models and the phase-4 fabrication
+   files, and it costs nothing to carry now. Finding it only at fabrication
+   would cost more.
+6. **The picture of the chosen control layout comes across as a record**:
+   `interface-analysis/layouts/layout-B.svg`, the layout the owner chose ("I
+   prefer B", O-18), goes beside the decisions document. A pedals script
+   generated it, but it is carried as the picture he chose from, not as
+   output to regenerate. Nothing here rebuilds it.
 
 ## Non-goals
 
@@ -188,6 +243,11 @@ The design history in brief:
 | `pinmap.json` does not cross; the contract does | Pedals owner decision O-7 | O-7 retired the pin map in favour of the contract |
 | The contract lives at `circuits/h7-platform/`; the prose at `docs/h7-platform/` | Agent's call | CLAUDE.md: something edited here is a source; prose is documentation |
 | The circuit directory is named `h7-platform` | Agent's call | Continuity with the pedals name, so links and searches line up |
+| Owner decision vs controller ruling is whatever the pedals ledger's own label says | Agent's call | The only checkable criterion; a wrong guess either inflates a ruling into his decision or demotes his decision |
+| The contract and the results file cross byte-identical; their pedals citations resolve via the pinned commit and are not rewritten now | Agent's call | Keeps the data provably unchanged; re-pointing citations is a contract edit for the phase that next edits it |
+| The PCBWay fabrication rules and the two platform research documents cross | Agent's call | Phase 4 needs the fab rules; the research documents are live platform knowledge |
+| The OSCAR MIT and Apache-2.0 licence files cross now | Agent's call | The derived circuitry carries the obligation all the way to fabrication |
+| The layout-B picture crosses as a record and is not regenerated | Agent's call | It is what the owner chose from |
 
 ## What is left to the builder
 
@@ -204,13 +264,18 @@ The design history in brief:
 - Every file named under Goal 2 exists, and the README (Goal 4) maps each
   pedals source file at the pinned commit to where its content went, or to
   "stayed behind" with the reason.
-- `circuits/h7-platform/module-interface.json` is byte-identical to the pedals
-  file at the pinned commit. Any change to it is a later phase's work, made in
-  a commit of its own.
-- Owner decisions O-1 to O-18 and every owner ruling found in the S1 rulings
-  ledger appear in the decisions document, each with its link.
-- No file under the paths this phase adds contains TypeScript, a script, or a
-  pedals tool's name used as something to run.
+- `circuits/h7-platform/module-interface.json`,
+  `interface-analysis-results.json`, `LICENSE-OSCAR` and `LICENSE-APACHE-2.0`
+  are byte-identical to the pedals files at the pinned commit (compare the
+  sha256 of each). Any change to them is a later phase's work, made in a commit
+  of its own.
+- Owner decisions O-1 to O-18 and every ledger entry the ledger itself marks
+  as an owner decision (Goal 1) appear in the decisions document, each with its
+  link. Controller rulings that still bind appear separately, labelled as
+  rulings.
+- No file under the paths this phase adds contains TypeScript or a script, or
+  names a pedals tool as something to run.
+- `docs/h7-platform/README.md` maps every platform file listed under Goal 4.
 - `bun run typecheck` and `make check` are unaffected (nothing here is code; run
   them anyway to show it).
 
