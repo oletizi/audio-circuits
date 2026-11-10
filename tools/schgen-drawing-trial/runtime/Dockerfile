@@ -27,7 +27,8 @@ FROM ${PYTHON_IMAGE}
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PROJECT_PATH=/schgen
+    PROJECT_PATH=/schgen \
+    PYTHONPATH=/trial
 COPY requirements.lock /tmp/requirements.lock
 RUN pip install --no-cache-dir --retries 10 --timeout 120 \
       --require-hashes --no-deps -r /tmp/requirements.lock \
@@ -36,9 +37,16 @@ COPY --from=fetch /schgen /schgen
 COPY fixes /trial/fixes
 COPY trial /trial/trial
 COPY tests /trial/tests
+# The merged model's tokenizer files and chat_template.jinja (Task 4), with
+# their sha256 in tokenizer/SHA256SUMS; trial/prompt.py checks them on load.
+COPY tokenizer /trial/tokenizer
 # component_repository fix: SchGen neither ships nor generates this file.
 RUN --mount=type=bind,from=kicad_symbols,target=/kicad-symbols \
     python /trial/fixes/build_repo.py /kicad-symbols /schgen/modules/component_repository.json
+# export/organized_lib.json: SchGen's README has the user generate it, and
+# without it the prompt's symbol context is silently empty (Task 4).
+RUN --mount=type=bind,from=kicad_symbols,target=/kicad-symbols \
+    cd /schgen && python /trial/fixes/build_organized_lib.py /kicad-symbols /schgen/export
 RUN useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin schgen
 USER schgen
 WORKDIR /schgen

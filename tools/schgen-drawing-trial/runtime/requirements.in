@@ -5,8 +5,11 @@
 # transformers: the tokenizer side of the trial (Task 4).
 # kicad-skip, sexpdata: SchGen's emitter imports (my_skip_lib imports skip,
 #   kicad_add_symbol imports sexpdata); versions from SchGen's requirements.txt.
+# jinja2: apply_chat_template renders through it and transformers does not
+#   depend on it; version from SchGen's requirements.txt (Task 4).
 # pytest: the in-container tests.
 transformers==5.22.2
+jinja2==3.1.6
 kicad-skip==0.2.5
 sexpdata==1.0.0
 pytest==9.2.0
