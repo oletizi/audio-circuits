@@ -207,7 +207,10 @@ def blank_reason(attempt_dir: Path) -> str | None:
     if netlist_ok and netlist_components(_read(attempt_dir / NETLIST)) == 0:
         return f"the sheet places {symbol_instances(sheet)} symbols and its exported netlist lists no component"
     refs = sheet_references(sheet)
-    if refs and not set(refs) & svg_strings(_read(attempt_dir / SVG)):
+    # Only an SVG kicad-cli actually wrote counts: a missing page.svg or a failed render is not a
+    # page with nothing on it, and must never withhold a PNG.
+    render_ok = read_stages(attempt_dir).get("render", {}).get("status") == "ok"
+    if render_ok and (attempt_dir / SVG).is_file() and refs and not set(refs) & svg_strings(_read(attempt_dir / SVG)):
         return f"the sheet places {symbol_instances(sheet)} symbols and the SVG shows none of their references"
     return None
 

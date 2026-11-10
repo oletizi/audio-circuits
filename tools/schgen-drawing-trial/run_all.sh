@@ -17,7 +17,10 @@
 #   - nothing here truncates or deletes a file; output goes to stdout, which
 #     the caller redirects (nohup bash run_all.sh > run.log 2>&1 &).
 # It stops at the first attempt that exits non-zero (3 is a token-identity
-# disagreement); the next launch resumes there.
+# disagreement, 4 a further regeneration that needs the operator); the next
+# launch resumes there. It never passes --allow-regeneration: a resend beyond
+# the one automatic regeneration is run by hand with run_attempt.py
+# --allow-regeneration REASON, which is recorded.
 #
 # Generation reads TRIAL_ENDPOINT, TRIAL_MERGED_MANIFEST_SHA256,
 # TRIAL_VLLM_VERSION and TRIAL_VLLM_IMAGE_DIGEST (run_attempt.py refuses when

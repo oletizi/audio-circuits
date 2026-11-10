@@ -30,8 +30,13 @@ Generation needs, from the environment, with no defaults:
   TRIAL_VLLM_IMAGE_DIGEST         the served vLLM image digest
 Task 7 sets them from the live deployment. A downstream-only run needs none.
 
+A further generation beyond the one automatic regeneration - a second lost
+or interrupted generation, or any resend after a 4xx rejection - is refused
+unless --allow-regeneration REASON is given; run_all.sh never passes it.
+
 Exit status: 0 with manifest.json written; 3 on a token-identity
-disagreement, which stops run_all.sh; 1 on anything else.
+disagreement; 4 when a regeneration needs --allow-regeneration; 1 on
+anything else. run_all.sh stops on any of them.
 """
 
 from __future__ import annotations
@@ -50,8 +55,9 @@ import manifest
 import stages
 import token_identity
 from host_tools import HostTools, RealHostTools
-from persist import (META, RAW, persist_response, quarantine_incomplete, record_rerun, response_complete,
-                     utc_stamp, write_json_atomic, write_rejected, write_sent)
+from persist import (META, RAW, pending_rejection_status, persist_response, quarantine_incomplete, record_rerun,
+                     regenerations_recorded, response_complete, utc_stamp, write_json_atomic, write_rejected,
+                     write_sent)
 
 MANIFEST = "manifest.json"
 DOWNSTREAM_PREVIOUS = "downstream-previous"
@@ -63,6 +69,10 @@ PROVENANCE_ENV = {
 }
 
 ClientFactory = Callable[[str], generation.CompletionsClient]
+
+
+class RegenerationRefused(RuntimeError):
+    """A further generation for an attempt needs the operator's --allow-regeneration REASON."""
 
 
 class RerunReasonRequired(RuntimeError):
@@ -90,12 +100,39 @@ def provenance_from(env: Mapping[str, str]) -> dict[str, object]:
     return {key: env[name] for key, name in PROVENANCE_ENV.items()}
 
 
+def check_regeneration_allowed(directory: Path, allow_regeneration: str | None) -> None:
+    """Refuse a resend the operator has not asked for; record it when they have.
+
+    The brief allows one automatic regeneration of an attempt whose generation never completed.
+    Beyond that - a second lost or interrupted generation on the same attempt, or any resend after a
+    4xx rejection, which a resend would only repeat - it is the operator's call, made with
+    --allow-regeneration REASON, and the reason is recorded. Checked before anything is moved.
+    """
+    earlier = regenerations_recorded(directory)
+    rejected = pending_rejection_status(directory)
+    client_error = rejected is not None and 400 <= rejected < 500
+    if earlier == 0 and not client_error:
+        return
+    if not allow_regeneration:
+        why = (f"the last request was rejected with HTTP {rejected}, which a resend of the same body repeats"
+               if client_error else
+               f"reruns.jsonl already records {earlier} lost or interrupted generation(s) for this attempt")
+        raise RegenerationRefused(
+            f"{directory}: not sending seed again: {why}. Read rejected/ and interrupted/, fix the cause, then "
+            "run this attempt with --allow-regeneration REASON; the reason is recorded in downstream_reruns. "
+            "Not automatic: an unbounded resend spends a generation per relaunch with nobody deciding to"
+        )
+    record_rerun(directory, "regeneration-allowed", utc_stamp(), {"operator_reason": allow_regeneration})
+
+
 def ensure_response(directory: Path, board: str, attempt: int, prompt_ids: list[int],
-                    client_factory: ClientFactory, env: Mapping[str, str]) -> None:
+                    client_factory: ClientFactory, env: Mapping[str, str],
+                    allow_regeneration: str | None = None) -> None:
     """Generate once when no complete response exists; never when one does."""
     if response_complete(directory):
         return
     provenance = provenance_from(env)
+    check_regeneration_allowed(directory, allow_regeneration)
     quarantine_incomplete(directory)
     client = client_factory(str(provenance["endpoint"]))
     request_id = f"schgen-trial-{board}-attempt-{attempt}-{uuid.uuid4()}"
@@ -135,7 +172,8 @@ def set_aside_downstream(directory: Path, rerun_reason: str | None) -> None:
 
 
 def run_attempt(exec_dir: Path, board: str, attempt: int, tools: HostTools, client_factory: ClientFactory,
-                env: Mapping[str, str], rerun_reason: str | None = None) -> dict[str, object]:
+                env: Mapping[str, str], rerun_reason: str | None = None,
+                allow_regeneration: str | None = None) -> dict[str, object]:
     seed = seed_for(attempt)
     info = tools.board_info(board)
     request = board_request.prepare(exec_dir, board, tools)
@@ -145,7 +183,7 @@ def run_attempt(exec_dir: Path, board: str, attempt: int, tools: HostTools, clie
     directory = attempt_dir(exec_dir, board, attempt)
     directory.mkdir(parents=True, exist_ok=True)
 
-    ensure_response(directory, board, attempt, prompt_ids, client_factory, env)
+    ensure_response(directory, board, attempt, prompt_ids, client_factory, env, allow_regeneration)
     meta = generation.load_meta(directory / META)
     if meta["request"].get("seed") != seed:
         raise RuntimeError(f"{directory / META} was generated with seed {meta['request'].get('seed')}, not {seed}")
@@ -158,7 +196,7 @@ def run_attempt(exec_dir: Path, board: str, attempt: int, tools: HostTools, clie
     record = manifest.build(directory, board=board, attempt=attempt, seed=seed, request_dir=request,
                             exec_dir=exec_dir, board_info=info, kicad_cli_version=kicad_version,
                             runtime_image_digest=image, token_identity=identity,
-                            count_only_acknowledged=acknowledged)
+                            accept_count_only_env=acknowledged)
     write_json_atomic(directory / MANIFEST, record)
     return record
 
@@ -173,15 +211,21 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--exec-dir", required=True, type=Path)
     parser.add_argument("--rerun-reason")
+    parser.add_argument("--allow-regeneration", metavar="REASON",
+                        help="send this attempt's seed again after a lost or rejected generation; recorded")
     parser.add_argument("board")
     parser.add_argument("attempt", type=int)
     args = parser.parse_args(argv)
     try:
         record = run_attempt(args.exec_dir, args.board, args.attempt, RealHostTools(),
-                             generation.HttpCompletionsClient, os.environ, args.rerun_reason)
+                             generation.HttpCompletionsClient, os.environ, args.rerun_reason,
+                             args.allow_regeneration)
     except token_identity.TokenIdentityError as err:
         print(f"run_attempt: STOP {args.board} attempt {args.attempt}: {err}", file=sys.stderr)
         return 3
+    except RegenerationRefused as err:
+        print(f"run_attempt: STOP {args.board} attempt {args.attempt}: {err}", file=sys.stderr)
+        return 4
     print(summary_line(record))
     return 0
 

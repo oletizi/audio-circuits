@@ -17,6 +17,7 @@ from pathlib import Path
 
 import board_request
 import stages
+from token_identity import COUNT_ONLY
 from persist import META, RAW, read_reruns, sha256_file
 
 HERE = Path(__file__).resolve().parent
@@ -47,7 +48,7 @@ def _usage(meta: dict[str, object], key: str) -> object:
 
 def build(attempt_dir: Path, *, board: str, attempt: int, seed: int, request_dir: Path, exec_dir: Path,
           board_info: dict[str, str], kicad_cli_version: str, runtime_image_digest: str,
-          token_identity: str, count_only_acknowledged: bool) -> dict[str, object]:
+          token_identity: str, accept_count_only_env: bool) -> dict[str, object]:
     meta = json.loads((attempt_dir / META).read_text(encoding="utf-8"))
     provenance = meta["provenance"]
     prompt = json.loads((request_dir / "prompt.json").read_text(encoding="utf-8"))
@@ -81,7 +82,9 @@ def build(attempt_dir: Path, *, board: str, attempt: int, seed: int, request_dir
         "finish_reason": meta["finish_reason"],
         "latency_s": meta["latency_s"],
         "token_identity": token_identity,
-        "count_only_acknowledged": count_only_acknowledged,
+        # True only when the count-only path was taken (which needs the flag); the flag itself beside it.
+        "count_only_acknowledged": token_identity == COUNT_ONLY,
+        "accept_count_only_env": accept_count_only_env,
         "emitter_fixes": stages.emitter_fixes(attempt_dir),
         "kicad_cli_version": kicad_cli_version,
         "outcome": outcome.name,

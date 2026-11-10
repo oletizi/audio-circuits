@@ -139,13 +139,15 @@ class FakeTools:
     """RealHostTools' interface, with the request and container steps stood in for unless asked for."""
 
     def __init__(self, sheet: Path | None = None, real_extract: bool = False, real_kicad: bool = False,
-                 emit_log: str | None = None, emit_code: int = 0, netlist_code: int = 0) -> None:
+                 emit_log: str | None = None, emit_code: int = 0, netlist_code: int = 0,
+                 render_svg: bool = True) -> None:
         self.sheet = sheet if sheet is not None else SCHGEN_SHEET
         self.real_extract = real_extract
         self.real_kicad = real_kicad
         self.emit_log = emit_log
         self.emit_code = emit_code
         self.netlist_code = netlist_code
+        self.render_svg = render_svg
         self.extract_calls: list[Path] = []
         self.emitted: list[str] = []
         self.real = RealHostTools()
@@ -190,7 +192,8 @@ class FakeTools:
             return self.real.render(sheet, out_dir)
         refs = "".join(f"<desc>{r}</desc>" for r in ("R1", "C1", "J1"))
         for name, data in (("page.pdf", b"%PDF"), ("page.svg", f"<svg>{refs}</svg>".encode()), ("page.png", b"PNG")):
-            (out_dir / name).write_bytes(data)
+            if name != "page.svg" or self.render_svg:
+                (out_dir / name).write_bytes(data)
         return ToolRun(0, "")
 
     def netlist(self, sheet: Path, out: Path) -> ToolRun:

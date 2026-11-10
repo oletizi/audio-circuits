@@ -113,11 +113,37 @@ def write_sent(attempt_dir: Path, request_id: str, seed: int) -> None:
     write_json_atomic(attempt_dir / SENT, {"request_id": request_id, "seed": seed, "at": utc_stamp()})
 
 
-def _sent_request_id(path: Path) -> object:
+UNREADABLE = "request_id unreadable"
+
+
+def sent_request_id(path: Path) -> str:
+    """The request id request.sent records, or UNREADABLE - said in the record, never dropped."""
     try:
-        return json.loads(path.read_text(encoding="utf-8")).get("request_id")
+        value = json.loads(path.read_text(encoding="utf-8")).get("request_id")
     except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+        return UNREADABLE
+    return value if isinstance(value, str) and value else UNREADABLE
+
+
+def pending_rejection_status(attempt_dir: Path) -> int | None:
+    """The HTTP status of the rejection kept for the request request.sent names, if there is one."""
+    sent = attempt_dir / SENT
+    if not sent.is_file():
         return None
+    request_id = sent_request_id(sent)
+    for rejection in sorted((attempt_dir / REJECTED).glob("*/rejection.json")):
+        record = json.loads(rejection.read_text(encoding="utf-8"))
+        if record.get("request_id") == request_id:
+            status = record.get("status")
+            return status if isinstance(status, int) else None
+    return None
+
+
+REGENERATION_REASONS = ("generation-lost", "generation-interrupted")
+
+
+def regenerations_recorded(attempt_dir: Path) -> int:
+    return sum(1 for entry in read_reruns(attempt_dir) if entry.get("reason") in REGENERATION_REASONS)
 
 
 def quarantine_incomplete(attempt_dir: Path) -> Path | None:
@@ -133,7 +159,7 @@ def quarantine_incomplete(attempt_dir: Path) -> Path | None:
     if not moving:
         return None
     reason = "generation-interrupted" if leftovers else "generation-lost"
-    request_id = _sent_request_id(sent) if sent.is_file() else None
+    request_id = sent_request_id(sent) if sent.is_file() else None
     stamp = utc_stamp()
     target = attempt_dir / INTERRUPTED / stamp
     target.mkdir(parents=True, exist_ok=False)
