@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts bringup)
+ALL_CHECKS=(bytes nocode provenance standards effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts bringup)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -109,9 +109,25 @@ check_provenance() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+STANDARDS_FILES=(
+  "docs/h7-platform/research/proven-reference-designs.md"
+  "docs/h7-platform/research/processor-module-form-factors.md"
+  "docs/standards/pcbway-fab-rules.md"
+)
+
+check_standards() {
+  local bad="" rel
+  for rel in "${STANDARDS_FILES[@]}"; do
+    if [ ! -f "$ROOT/$rel" ]; then bad="$bad [missing $rel]"; continue; fi
+    grep -qF "$PREFIX" "$ROOT/$rel" || bad="$bad [no pinned link prefix: $rel]"
+  done
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 check_effective() {
   local bad="" f out n=0
   bad=$(require_trees) || { echo "$bad"; return 1; }
+  [ -d "$STANDARDS" ] || { echo " [missing directory docs/standards: the standards documents must be scanned for superseded values]"; return 1; }
   while read -r f; do
     n=$((n+1))
     out=$(awk -v re="$STALE_RE" -v heading="$SUPERSEDED_HEADING" -v rel="${f#"$ROOT"/}" -v isreadme="$([ "$f" = "$README" ] && echo 1 || echo 0)" '
@@ -372,6 +388,7 @@ run_check() {
     bytes) reason=$(check_bytes) ;;
     nocode) reason=$(check_nocode) ;;
     provenance) reason=$(check_provenance) ;;
+    standards) reason=$(check_standards) ;;
     effective) reason=$(check_effective) ;;
     stale-json) reason=$(check_stale_json) ;;
     decisions) reason=$(check_decisions) ;;
