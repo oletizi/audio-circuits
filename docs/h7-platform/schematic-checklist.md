@@ -135,7 +135,7 @@ Split spec §9.3: "PWR-01–04, 08–13, 15, 17 to the pedal (02–04 reworked i
 
 *Not in force:* PWR-14's sequencing through the buck's EN divider on 5V_A, with U_PF's RESET on BUCK_EN: split spec §7.3 ("v1's method is gone"), [D24](decisions.md#d24), and §9.3's replacement of PWR-18.
 
-- **PWR-15** · h7-pedal · An 0805 0 Ω, fitted, in series between the LDO's output and the codec's VCC decoupling, a bring-up option for a ferrite; no ferrite on 5V_A otherwise ([analog.md](analog.md) §13.1 joins 5V_A_CODEC through it; [power.md](power.md) §7 records the position as v1's; BU-04). v1 contained: 0805W8F0000T5E (C17477).
+- **PWR-15** · h7-pedal · An 0805 0 Ω, fitted, in series between the LDO's output and the codec's VCC decoupling, a bring-up option for a ferrite; no ferrite on 5V_A otherwise (split spec §9.3 sends PWR-15 to the pedal unchanged; [power.md](power.md) §7; [analog.md](analog.md) §13.1; BU-04). v1 contained: 0805W8F0000T5E (C17477).
 - **PWR-16** · split by split spec §9.3 · The test pads: [layout-carry-forward.md](layout-carry-forward.md) §3, "Test pads"; no source settles the split (open item TEST-PAD-SPLIT and its conflict entry).
 - **PWR-17** · both, layout · One GND net, an unsplit layer-2 GND plane, placement zones, and the buck's hot loop: [layout-carry-forward.md](layout-carry-forward.md) §1 and §2; [power.md](power.md) §10.
 - **PWR-18** · h7-pedal, replaced by split spec §7.4's circuit · The power-fail supervisor and its override: [power.md](power.md) §3; [bypass-relay.md](bypass-relay.md) §4 and [EC-POWER-FAIL-OVERRIDE](bypass-relay.md#ec-power-fail-override). The supervisor TPS3808G01 and the 0.1 % divider parts are in [parts.md](parts.md) §2.
@@ -236,14 +236,14 @@ Split spec §9.3: "ALL 01–09: Both designs. ALL-03 reads 'contract nets'. ALL-
 
 ## 9. Items not carried: they test the old generator or its gates
 
-Each of these existed to satisfy a check in the pedals repository's schematic generator or its gates, not to make the circuit work. Where an item also said something about the circuit, that part is carried in the place named.
+Each of these existed to satisfy a check in the pedals repository's schematic generator or its gates, or (ALL-05) to organise the drawing, not to make the circuit work. Where an item also said something about the circuit, that part is carried in the place named.
 
 - **CORE-01's annotation clause** (the item itself is carried): "U_MCU must be annotated U1", because the pin-map check keyed on that reference. Reference designators belong to KiCad here, not to a checking tool.
 - **PWR-04**: the protected rail's net named exactly `VIN_PROT`, because the BOM check found the parts on it by that leaf net name. Split spec §9.3 extends "the VIN_PROT name and AbsMaxV rules" to both branches as rules of that check. The circuit content, the analog and buck branches kept apart in copper, is superseded by the split's two branches ([layout-carry-forward.md](layout-carry-forward.md) §3).
 - **PWR-13**: an AbsMaxV field recorded on every active part with a pin on VIN_PROT, and those parts annotated `U` + digit, so the BOM check's ≥ 20 V gate would not skip them. The requirement it enforced, that every part on the input nets survives 18 V with derating, is [power.md](power.md) §3.7 and §8 ([PS-18V](decisions.md#ps-18v)).
 - **ALL-01**: Manufacturer, MPN, Supplier and SupplierPart on every part except `#`, `TP`, `H` and `FID` references, the BOM check's field contract. What the fabricator needs from the board file is [layout-carry-forward.md](layout-carry-forward.md) §1.
 - **ALL-02**: not-fitted parts marked and still carrying the four BOM fields, because the BOM check did not skip them. The parts that are not fitted are named in their own items (CODEC-06, CODEC-09, CODEC-10, USB-08).
-- **ALL-05**: the six hierarchical sheets of the v1 schematic, the generator's repository layout. How a board is drawn here is `TOOLING.md`'s.
+- **ALL-05**: the six hierarchical sheets of the v1 schematic, from the original spec's *Repository layout*; split spec §9.3 reworks it ("ALL-05 lists each design's sheets"). Dropped because how a schematic is organised into sheets is not a circuit requirement; how a board is drawn here is `TOOLING.md`'s.
 - **ALL-06**: functional labels never used as references, and every active part on VIN_PROT annotated `U`, `Q` or `D` + digit for the BOM check's regular expression, with the mapping recorded in v1's verification file. Designators belong to KiCad here (CLAUDE.md, "Ids are semantic; designators belong to KiCad").
 - **ALL-07**: KiCad ERC run at warning severity, every waiver recorded in v1's verification file, and the one error-level exclusion (VCAP1/VCAP2) awaiting an owner sign-off. A record of v1's verification, which split spec §8 does not carry as evidence; [decisions.md](decisions.md) records the exclusion as not carried. The circuit fact is under CORE-04.
 

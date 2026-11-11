@@ -35,7 +35,7 @@ Split spec §12.4, as amended. [architecture.md](architecture.md) §9 maps the o
 
 ## 3. BU-01 to BU-29
 
-- **BU-01** · *passed paper analysis* · h7-pedal (steps 1 and 3) · THD+N at full scale, 7.62 Vp-p into 10 kΩ, with exactly 9.00 V in, cold and hot: the acceptance gate for the full-scale decision ([AN-D1](decisions.md#an-d1), owner; the 9.00 V basis is the owner's [R-34](decisions.md#r-34)). The headroom it confirms passed on paper with the analog branch's own reverse-polarity diode: [analog.md](analog.md) §3, [FIG-HEADROOM](analog.md#fig-headroom). Closes open item ANALOG-HEADROOM-9V.
+- **BU-01** · *deferred measurement* · h7-pedal (steps 1 and 3) · THD+N at full scale, 7.62 Vp-p into 10 kΩ, with exactly 9.00 V in, cold and hot: the acceptance gate for the full-scale decision ([AN-D1](decisions.md#an-d1), owner; the 9.00 V basis is the owner's [R-34](decisions.md#r-34)). The paper margin does not settle it: [FIG-HEADROOM](analog.md#fig-headroom)'s small positive margin is used up by a DAC or 5V_A only 0.4 % high, well inside the DAC's stated ±6 % maximum gain error, and at the stage's real load the interpolated margin is negative ([analog.md](analog.md) §3, "Limits of the check"). Closes open item ANALOG-HEADROOM-9V.
 - **BU-02** · *deferred measurement* · h7-module in the pedal · MCU die temperature from the internal sensor, the representative DSP load running, the enclosure closed, ambient recorded; firmware falls back to 400 MHz at VOS1 at ≥ 95 °C (the owner's [PW-TJ](decisions.md#pw-tj)). The owner's decision itself makes this a bring-up measurement; the paper figures it rests on are in [power.md](power.md) §5.3. Closes open item MCU-TJ-MEASURE.
 - **BU-03** · *deferred measurement* · h7-module (steps 2 and 3) · NRST stability under load: the scope on NRST falling during SDRAM-heavy DSP steps, and the 3.3 V minimum at the MCU pins recorded. The droop against the supervisor's run-time headroom was never computed ([power.md](power.md) §5.3). Closes open item 3V3D-RAIL-MEASURE (its NRST half).
 - **BU-04** · *deferred measurement* · h7-pedal with our module (step 3) · Switching-noise characterisation: output noise and spurs with the input terminated, DSP idle against the representative DSP load; on the split the switching sources are the module buck and the pedal's 3V3_P converter, unsynchronised. The 0 Ω position in series with the codec's 5V_A supply (`SCHEMATIC-CHECKLIST.md` PWR-15, on h7-pedal under split spec §9.3) stays the place for a ferrite if 5V_A is implicated. Figures: [power.md](power.md) §7, [analog.md](analog.md) §6.7 and §7.6. Closes open items LDO-PSRR-SPUR and ANALOG-NOISE-MEASURE.
@@ -95,7 +95,7 @@ Split spec §12.4, as amended. [architecture.md](architecture.md) §9 maps the o
 
 *Not in force:* BU-28 as v1 wrote it, the trip and release measured on VIN_PROT against PWR-18's v1 thresholds; [bypass-relay.md](bypass-relay.md) §9 carries those thresholds on its own history line.
 
-- **BU-29** · *passed paper analysis* · h7-pedal, unpowered (no module needed) · The bypass path: with the board unpowered, jack-to-jack resistance ≤ 0.2 Ω, and a guitar plays through normally on both channels, including mono in to both outputs ([bypass-relay.md](bypass-relay.md) §2.2, §3; [EC-UNPOWERED-BYPASS](bypass-relay.md#ec-unpowered-bypass)). The 0.2 Ω is two contacts' data-sheet maximum in series. Closes open item BYPASS-PATH-UNPOWERED.
+- **BU-29** · *passed paper analysis* · h7-pedal, unpowered (no module needed) · The bypass path: with the board unpowered, jack-to-jack resistance ≤ 0.2 Ω, and a guitar plays through normally on both channels, including mono in to both outputs ([bypass-relay.md](bypass-relay.md) §2.2, §3; [EC-UNPOWERED-BYPASS](bypass-relay.md#ec-unpowered-bypass)). The 0.2 Ω limit equals two contacts' data-sheet maximum in series, so the paper check has zero margin. Closes open item BYPASS-PATH-UNPOWERED.
 
 ## 4. Checks split spec §9.3 adds
 
@@ -133,6 +133,7 @@ Split spec §6.4 sets these on the hardware and on the firmware contract ([O-11]
 - **The module sockets**: all 40 contacts continuous after one insertion, and the module held. Open item MODULE-SOCKET-MATE.
 - **The trimmed leads and socket tails** measured against their limits, each trimmed joint reflowed or inspected. Open item TRIM-RULES-ORDER.
 - **The expression input's back-feed gate**: with the module unpowered and +5 V on the ring, VREF_A reads at most 0.6 V, at room temperature, at the hottest bench condition and through a slow 0 to +5 V sweep. **A failure means the unpowered blocking does not hold: stop and redesign the ring reference before use.** Open item VREF-A-BACKFEED-GATE.
+- **VREF_A's noise at pin 21** with our module fitted: in the 0–421 Hz control band at most 1,123 µV rms, and wideband, to the ADC's sampling bandwidth, at most 806 µV rms ([R-15](decisions.md#r-15), [R-57](decisions.md#r-57); [analog.md](analog.md) [EC-CONTROL-NOISE-BAND](analog.md#ec-control-noise-band), [EC-VDDA-WIDEBAND](analog.md#ec-vdda-wideband)). Open item VREF-A-NOISE-MEASURE.
 - **The module's DFU socket**: hold the module while pulling the plug. Open item USB-DFU-VERTICAL.
 
 ## 7. What did not cross
