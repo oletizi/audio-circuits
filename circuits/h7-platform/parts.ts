@@ -55,7 +55,10 @@ export const USB_SWITCH: PartSpec = {
   symbol: "h7-platform:TS3USB221RSER",
 }
 
-/** USB ESD protection, ST USBLC6-2SC6, the pedal's part. Source: parts.md:146 (ruling D10). Its own stock symbol. */
+/** USB ESD protection, ST USBLC6-2SC6, the pedal's part. Source: parts.md:146 (ruling D10). Its own stock symbol.
+ * TRAP: the copy copperhead embeds in a drafted page carries the parent USBLC6-2P6's Value,
+ * Footprint (SOT-666) and filter, not the installed SOT-23-6 ones - see
+ * drafted/h7-platform/h7-carrier/RECORD.md. Take this part's footprint from the part, not the page. */
 export const USB_ESD: PartSpec = {
   mpn: "USBLC6-2SC6",
   symbol: "Power_Protection:USBLC6-2SC6",

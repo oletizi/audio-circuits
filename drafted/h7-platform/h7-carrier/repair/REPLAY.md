@@ -18,12 +18,12 @@ From the repository root, with a new or empty work directory outside the reposit
 run's result; it stops non-zero, naming the step, when any step cannot run or any file differs):
 
 ```
-sh drafted/h7-platform/h7-carrier/repair/replay.sh <work-dir>
+bash drafted/h7-platform/h7-carrier/repair/replay.sh <work-dir>
 ```
 
 `replay.sh` does, in order:
 
-1. `make -C boards/h7-carrier draw`; checks the generated intent is byte-identical to
+1. `make -C boards/h7-carrier draw` (this writes `build/draw/h7-carrier*` inside the repository, overwriting any draft already there); checks the generated intent is byte-identical to
    `intent.json` and the draft's sha256 is the start value above. A model change since this
    repair stops the replay here, by name.
 2. `python3 net_strokes.py` on the draft: copperhead's stroke for each net. Checked against
@@ -36,6 +36,7 @@ sh drafted/h7-platform/h7-carrier/repair/replay.sh <work-dir>
    against the committed copies; `akcli plan`, then `akcli draw --apply`.
 6. `python3 03-text-edits.py`: wire strokes, fields, the group rectangle and caption.
 7. Checks the sha256 is the end value above and the sheet is byte-identical to the committed page.
+8. Makes the page's `sym-lib-table` (one row, `h7-platform`, naming `circuits/h7-platform/h7-platform.kicad_sym` in place in the repository) and checks it is byte-identical to the committed one.
 
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-11 into a new directory and
@@ -44,8 +45,8 @@ reached the end sha256.
 Then, to check and look at the result:
 
 ```
-sh drafted/h7-platform/h7-carrier/repair/verify.sh <sheet.kicad_sch>
-sh drafted/h7-platform/h7-carrier/repair/render.sh <sheet.kicad_sch> <out-dir>
+bash drafted/h7-platform/h7-carrier/repair/verify.sh <sheet.kicad_sch>
+bash drafted/h7-platform/h7-carrier/repair/render.sh <sheet.kicad_sch> <out-dir>
 ```
 
 ## The files

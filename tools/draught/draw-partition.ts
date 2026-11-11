@@ -74,8 +74,13 @@ export function checkPartition(opts: {
     kind: "refused",
     message: [
       `${board}'s intent (${opts.intentPath}) disagrees with the model's committed netlist ` +
-        `(${declaration.netlistPath}) on net partition - EVALUATING-DRAWINGS.md §3 permits withholding a ` +
-        "drawing whose connectivity disagrees with the circuit model, so nothing was drafted:",
+        `(${declaration.netlistPath}) on net partition, so nothing was drafted. Two things can cause this, ` +
+        "and the refusal cannot tell them apart:",
+      "  (a) the model changed and the committed page is stale: for a pcb board whose declared netlist is the " +
+        "kicad-cli export of the previous drafted page, a legitimate model change lands here;",
+      "  (b) the model is wrong: EVALUATING-DRAWINGS.md §3 permits withholding a drawing whose connectivity " +
+        "disagrees with the circuit model.",
+      `  The fixture compared against is ${declaration.netlistPath}. TOOLING.md, section C2, says what to do for (a).`,
       ...agreement.disagreements,
     ].join("\n"),
   }

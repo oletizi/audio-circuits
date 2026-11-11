@@ -14,7 +14,7 @@ to the sha256 below, and that register is then the authority over this file.
 | sha256 of the render, volatile `<title>` line dropped - **evidence, not a binding** | `46f42671c247e0ec1c8cc965d1bc2acedace46d1519c0f9f7fb2d3bbecc52290` |
 | Status | **unreviewed** - awaiting the owner's verdict |
 | Authority | model-authoritative: `circuits/h7-platform/carrier-board.ts` (`h7Carrier()`), the circuit's own transcription record |
-| Drafted by | `make -C boards/h7-carrier draw`, copperhead 0.12.0, from the intent `drawingIntent()` generates from the model - **one group**, captioned `H7 bring-up carrier` (`carrier-board.drawing.ts`). The board declares no netlist, so `make draw` printed its `NO INDEPENDENT NETLIST:` block (`TOOLING.md`, design change C2): the pre-draft partition check did not run, and the binding comparison is this page's own `kicad-cli` export against the model, below and in `tests/circuits/drafted-kicad-round-trip.test.ts` |
+| Drafted by | `make -C boards/h7-carrier draw`, copperhead 0.12.0, from the intent `drawingIntent()` generates from the model - **one group**, captioned `H7 bring-up carrier` (`carrier-board.drawing.ts`). At draft time the board declared no netlist, so `make draw` printed its `NO INDEPENDENT NETLIST:` block (`TOOLING.md`, design change C2): the pre-draft partition check did not run, and the binding comparison is this page's own `kicad-cli` export against the model, below and in `tests/circuits/drafted-kicad-round-trip.test.ts` |
 | Draft sha256 (as `make draw` wrote it, re-papered) | `106b21a13ceded56135f58f5638ac50d73c32b1e6a83511f9f7c336856a8c5b5` |
 | Repaired by | two akcli 0.22.0 op-lists (`repair/01-place.json`, 395 ops; `repair/02-wire.json`, 207 ops), each dry-run with `akcli plan` first, then `akcli draw --apply`; then literal text edits for what akcli has no operation for (wire stroke, fields, group rectangle and caption). `repair/REPLAY.md` replays it from a fresh `make draw` to the sha256 above; replayed 2026-11-11 and matched |
 | Paper | `USLetter`. copperhead drafted on A3; `make draw` re-papered it; the draft's content then overshot Letter's inner frame by 133.943 mm east and 37.423 mm south. After repair `paper_fit.py` reports it fits |
@@ -70,7 +70,7 @@ After = the sheet in this directory, measured here. Every number came from
 | --- | --- | --- |
 | sha256 | `106b21a1...` | `dc9e93ea...` |
 | ERC errors (`kicad-cli sch erc --format json --severity-all`) | 0 | 0 |
-| ERC warnings, same invocation, from the sheet's own directory | 0 (build directory, with copperhead's `sym-lib-cache`) | 36: 35 `lib_symbol_issues` (library `copperhead_power` not configured) and 1 `lib_symbol_mismatch` (`USBLC6-2SC6` differs from the installed `Power_Protection` copy) |
+| ERC warnings, same invocation, from the sheet's own directory | 0 (build directory, with copperhead's `sym-lib-cache`) | 36: 35 `lib_symbol_issues` (library `copperhead_power` not configured) and 1 `lib_symbol_mismatch` (`USBLC6-2SC6`'s embedded symbol differs from the installed `Power_Protection` copy; the measured fields are under "U2's embedded symbol" below) |
 | `compareSheetToModel` on the `kicad-cli` export: componentIdentity / netMembership / pinIdentity / values / footprints | 0 / 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 / 0 |
 | footprintsUndeclared (the model declares no footprint) | 30 of 30 | 30 of 30 |
 | export size | 30 components, 52 nets, 151 net members | 30 components, 52 nets, 151 net members |
@@ -177,8 +177,28 @@ Left as it is, and why
 - **The ERC warnings from this directory are the library-configuration kind**,
   not connectivity: `copperhead_power` is embedded in the sheet and named in no
   `sym-lib-table`, as on `../../transistor-preamp/transistor-preamp-staged/`, and
-  copperhead's embedded `USBLC6-2SC6` differs from the installed copy.
+  copperhead's embedded `USBLC6-2SC6` differs from the installed copy (measured below).
 - **Total wire length is about five times the draft's**, because the draft's
   labels stood in for the band wires and the taps.
 - **The arrangement is agent-authored and unreviewed as an arrangement**, as is
   every part orientation and every hidden Value on it.
+
+U2's embedded symbol (`Power_Protection:USBLC6-2SC6`), measured against the sheet and the installed
+`Power_Protection.kicad_sym`
+---------------------------------------------------------------------------------------------
+
+| | embedded in the sheet (and so in the netlist fixture) | installed `USBLC6-2SC6` |
+| --- | --- | --- |
+| pins | six, identical to the installed parent `USBLC6-2P6`'s (I/O1 1, GND 2, I/O2 3, I/O2 4, VBUS 5, I/O1 6, same positions and lengths) | `(extends "USBLC6-2P6")`: the same six |
+| Value | `USBLC6-2P6` (the parent's) | `USBLC6-2SC6` |
+| Footprint | `Package_TO_SOT_SMD:SOT-666` | `Package_TO_SOT_SMD:SOT-23-6` |
+| footprint filter (`ki_fp_filters`) | `SOT?666*` | `SOT?23*` |
+| Description | "Very low capacitance ESD protection diode, 2 data-line, SOT-666" | "... SOT-23-6" |
+
+The pins are the same, so the difference is not electrical and the model comparison cannot see it.
+The embedded copy carries the parent's fields, which is what copperhead's flattening of an
+`extends` symbol produces (third-party behaviour, not changed here).
+
+**Trap for footprint assignment in a later PCB output:** a footprint taken from this page's
+symbol fields for U2 is SOT-666, and its filter is SOT-666, while the installed part is
+SOT-23-6. Take U2's footprint from the part, not from the embedded symbol.

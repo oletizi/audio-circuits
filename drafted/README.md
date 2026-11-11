@@ -34,7 +34,7 @@ drafted/<circuit>/<board>/
     <board>.generated-do-not-edit.kicad_sch   the page
     <board>.generated-do-not-edit.kicad_pro   the project context it renders in
     <board>.generated-do-not-edit.svg         the render, so git can diff it
-    sym-lib-table                             empty; the symbols are embedded
+    sym-lib-table                             the project symbol library, in place in the repo (TOOLING.md, C4); every symbol is also embedded
     RECORD.md                                 the hashes and the verdict
     repair/                                   how the page was made from its draft:
         REPLAY.md                               the commands, in order, and the sha256 they reach

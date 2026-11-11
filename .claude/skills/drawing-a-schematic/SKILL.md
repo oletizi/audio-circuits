@@ -93,6 +93,14 @@ is not re-drafted in order to follow the loop from the top - steps 3 through
 6 run directly against it. Re-drafting a page he has accepted throws away
 work only he is positioned to have approved.
 
+## Project symbol libraries (design change C4)
+
+A part with no stock symbol is drawn from a project `.kicad_sym` beside the circuit. The circuit
+module exports its absolute path as `PROJECT_SYMBOL_LIBRARY`; `make draw` copies it into the draft
+directory with a `${KIPRJMOD}/<file>` row, and the committed page's `sym-lib-table` names it in
+place in the repository (one copy); `repair/replay.sh` makes and checks that table. See
+`TOOLING.md`, C4.
+
 ## Running the mechanics: `make draught-doctor`, then `make draw`
 
 Run `make draught-doctor` first, from anywhere - it is machine-wide, not

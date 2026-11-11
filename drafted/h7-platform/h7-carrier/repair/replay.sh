@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Replay the h7-carrier repair from a fresh `make draw` to the committed page, in a work
 # directory, checking every sha256 and every generated op-list on the way. Exits non-zero on any
 # mismatch.
@@ -9,7 +9,7 @@
 # `akcli draw` must report that it APPLIED - its dry-run also exits 0 having written nothing
 # (TOOLING.md step 4).
 #
-# usage: sh replay.sh <new-or-empty-work-dir>
+# usage: bash replay.sh <new-or-empty-work-dir>
 set -eu
 set -o pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -74,3 +74,17 @@ check "01, 02 and 03" "$PAGE"
 cmp -s "$sch" "$here/../h7-carrier.generated-do-not-edit.kicad_sch" \
   || fail "the replayed sheet differs from the committed page"
 echo "the replayed sheet is byte-identical to the committed page"
+
+# The committed page's sym-lib-table names the project symbol library IN PLACE in the repository
+# (one copy of the symbol), where the draft's table names a copy inside the draft directory
+# (tools/draught/draw-draft.ts writeProjectSymbolTable). Make the committed table here and
+# require it to match byte for byte, and require the library it names to exist from the page.
+lib_rel="../../../circuits/h7-platform/h7-platform.kicad_sym"
+[ -f "$here/../$lib_rel" ] || fail "the committed sym-lib-table names $lib_rel, which does not exist from the page's directory"
+nl="$(printf '\n')"
+tab="$(printf '\t')"
+printf '(sym_lib_table\n%s(version 7)\n%s(lib (name "h7-platform")(type "KiCad")(uri "${KIPRJMOD}/%s")(options "")(descr "project library, circuits/h7-platform/h7-platform.kicad_sym"))\n)\n' \
+  "$tab" "$tab" "$lib_rel" > "$work/sym-lib-table" || fail "could not write the sym-lib-table"
+cmp -s "$work/sym-lib-table" "$here/../sym-lib-table" \
+  || fail "the sym-lib-table this replay makes differs from the committed one"
+echo "the committed sym-lib-table matches the one this replay makes"

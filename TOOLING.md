@@ -978,6 +978,20 @@ compares the model with a copy of itself cannot fail. A perfboard board with no
 The step lives in `tools/draught/draw-partition.ts`; the tests are
 `tests/draught/draw-board-kind.test.ts`.
 
+**When the model has legitimately changed (a `pcb` board with a bound page).**
+Once a `pcb` board declares `"sch"`/`"netlist"` as the previous drafted page and
+that page's `kicad-cli` export, the netlist is no longer independent of the
+page: it is an export of the previous page. The next `make draw` after a model
+change then refuses, because the new intent no longer matches that export. The
+refusal states both causes: the model moved on and the page is stale, or the model
+is wrong. To tell them apart, compare the model change against its source (the
+spec or datasheet). If the model change is the intended one, draft again with the
+declaration's `netlist` pointed at nothing to compare (remove `sch`/`netlist` for
+that draft, so the NO INDEPENDENT NETLIST block prints), repair and commit the
+new page, then re-declare `sch`/`netlist` as an export of the new page. The
+registered page tests (`tests/circuits/drafted-kicad-round-trip.test.ts`) are off
+while the declaration is removed, so run them by hand before committing.
+
 Two notices follow from the same rule, that a skipped check must never look like a
 passing one. `make/board.mk`'s `netlist-agrees` passes `--kind` to
 `schematic-notice`, and for a `pcb` board the notice says no layout check exists
@@ -986,6 +1000,27 @@ the perfboard wording ("the check below still ran, against the layout"). And the
 repo-root `perfboard.ts check` walk prints a `SKIP <board>: kind "pcb" has no
 VeroRoute layout; its check is make -C boards/<board> check` line for each `pcb`
 board; that line is not an `ok` and does not change the exit status.
+
+---
+
+Project symbol libraries (design change C4)
+-------------------------------------------
+
+A part with no stock KiCad symbol is drawn from a project library: a committed
+`.kicad_sym` beside the circuit (the H7 platform's is
+`circuits/h7-platform/h7-platform.kicad_sym`). The circuit module exports its
+absolute path as `PROJECT_SYMBOL_LIBRARY`; `make draw` reads it
+(`tools/draught/draw-draft.ts` `projectSymbolLibrariesFor`). The nickname is the
+file name without `.kicad_sym`.
+
+- **The draft** gets a COPY of the library in its own directory (`build/draw/<board>/`)
+  and a `sym-lib-table` row `${KIPRJMOD}/<file>`, so the draft resolves by itself.
+- **The committed page** (`drafted/<circuit>/<board>/sym-lib-table`) references the
+  library IN PLACE in the repository, by a relative `${KIPRJMOD}/../../../circuits/...`
+  path, so there is one copy of each symbol. The repair's `replay.sh` makes that
+  table and requires it byte-identical to the committed one.
+- Every symbol is also embedded in the sheet. Proved end to end by
+  `tests/circuits/h7-project-symbol.test.ts`.
 
 ---
 
