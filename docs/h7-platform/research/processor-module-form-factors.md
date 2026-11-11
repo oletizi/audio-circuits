@@ -1,6 +1,7 @@
 # Processor module form factors: survey for splitting the h7-platform into a core module and audio carriers
 
 Ported from: [docs/research/2026-10-05-processor-module-form-factors.md](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/docs/research/2026-10-05-processor-module-form-factors.md)
+
 Pedals paths this document cites, pinned at the same commit where they exist there: [`h7-platform/pinmap.json`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/pinmap.json), [`h7-platform/boards/v1/SUMMARY.md`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/boards/v1/SUMMARY.md), [`h7-platform/CORE-BRIEF.md`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/CORE-BRIEF.md). The OSCAR KiCad checkout `.tools/oscar` it names is not a file in the pedals history at that commit, so it has no link.
 
 > **Dated research. Background only; it does not bind.** This is a research document as it stood in the pedals repository at commit `5b926d0`, brought across below this banner with its text as written; the only edits are that pedals file paths became pinned links. It records what the research found on its date, and a later decision may have overtaken any claim in it. The documents that bind are [decisions.md](../decisions.md) and [architecture.md](../architecture.md); where this text and either of them disagree, they win, and this text is left as the research said it.
@@ -153,7 +154,7 @@ Sources: hardware architecture v1.1 <https://emcraft.com/som/stm32h7/stm32h7-som
 
 ### 2.9 OSCAR_PROC_01 / OSCAR_AUDIO_01 (the split we copied)
 
-Source: `.tools/oscar` (KiCad), [`h7-platform/CORE-BRIEF.md`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/CORE-BRIEF.md) §1–§2.
+Source: `.tools/oscar` (KiCad; not a file in the pedals history at the pin), [`h7-platform/CORE-BRIEF.md`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/CORE-BRIEF.md) §1–§2.
 
 - **MCU and module.** STM32H743IIT6 LQFP-176, 64 MB IS42S16320, two W25Q128 flashes, USB, SWD (V). The processor board also carries the pedal UI: TFT, encoders and footswitch headers (V).
 - **Interconnect.** Ad hoc 2.54 mm single-row sockets and headers: 1×7, 1×6, 1×3 and several 1×2 (V, KiCad footprints). The SAI link is pins 1–5 of J7 to J5, carrying SAI1 SD_A, SCK_A, FS_A, SD_B and MCLK_A on PE2–PE6 (V, CORE-BRIEF §2). This shows a working precedent of **codec on the audio board, SAI1 plus MCLK over a 2.54 mm header**.

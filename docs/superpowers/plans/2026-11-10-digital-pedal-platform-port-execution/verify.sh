@@ -92,9 +92,9 @@ check_nocode() {
   done < <(find "$DOCS" "$CIRC" -type f 2>/dev/null)
   # vocabulary rule excludes the records
   while read -r f; do
-    hits=$(grep -nE 'pnpm |PartSpec|BlockSpec|sheetKit|blocksOn' "$f" | head -3)
+    hits=$(grep -nE 'pnpm |make -C |PartSpec|BlockSpec|sheetKit|blocksOn' "$f" | head -3)
     [ -z "$hits" ] || bad="$bad [code vocabulary in ${f#"$ROOT"/}: $(echo "$hits" | tr '\n' ' ')]"
-  done < <(tree_files)
+  done < <(tree_files; [ -d "$STANDARDS" ] && find "$STANDARDS" -type f -name '*.md')
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 

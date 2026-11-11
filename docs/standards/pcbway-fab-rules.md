@@ -2,9 +2,9 @@
 
 Ported from: [docs/standards/pcbway-fab-rules.md](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/docs/standards/pcbway-fab-rules.md)
 
-> **Authority at phase 4.** PCBWay's currently published capabilities are the authority when a board is prepared for fabrication in phase 4 of this port. Every figure below is kept with the date it carries: the pedals file gives no capture date for the PCBWay column, and its last change before the pin was 2026-10-04 (from that file's history in the pedals repository), so read each figure as of that date and no later. The one dated item inside the text, the "A2 Task 8 fix round 1" supersession in the plated-slot row, is kept as written.
+> **Authority at phase 4.** PCBWay's currently published capabilities are the authority when a board is prepared for fabrication in phase 4 of this port. Every figure below is kept with the date it carries: the pedals file gives no capture date for the PCBWay column, and its last change before the pin was 2026-10-04 (from that file's history in the pedals repository), so read each figure as of that date and no later. The one dated-by-event supersession inside the text, the "A2 Task 8 fix round 1" item in the plated-slot row, carries no calendar date and is kept as written.
 >
-> The board paths, file names and the `make -C fuzz` command in this document belong to the pedals repository at the pinned commit; they are linked where the file exists there and have no counterpart in this repository.
+> The board paths, file names and tools named in this document belong to the pedals repository at the pinned commit; they are linked where the file exists there and have no counterpart in this repository.
 
 Every board in this repository is designed to PCBWay's **standard, no-extra-cost** 2-layer FR-4
 specification. A design rule tighter than this spec raises the price of every order, so it is
@@ -44,10 +44,16 @@ A rule written only in prose drifts. Each value lives in the files the tools rea
 - **`<board>/fuzz.kicad_pro`**: Board Setup constraints (`min_track_width`, `min_clearance` via the
   Default net class, `min_via_diameter`, `min_via_annular_width`, `min_through_hole_diameter`,
   `min_hole_to_hole`, `min_copper_edge_clearance`, `min_text_thickness`, `min_text_height`) and
-  every net class's `via_diameter` 0.8 / `via_drill` 0.4 and track widths. KiCad's DRC (`make -C fuzz drc-<board>`,
-  and the `drc_kicad` check of `krt route`) fails a board that breaks them.
-- **`<board>/route-fab-floor.txt`**: the same minimums for the KiCadRoutingTools router, applied as
-  a standing route instruction from `placement-policy.json`. Without it the router's own
+  every net class's `via_diameter` 0.8 / `via_drill` 0.4 and track widths. KiCad's DRC (in the pedals repository the DRC target lived in
+  [`fuzz/Makefile`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/Makefile) at the pin,
+  and the `drc_kicad` check belonged to the pedals routing tool `krt`, whose make rules are in
+  [`make/krt.mk`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/make/krt.mk)) fails a board that breaks them.
+  Neither tool came across to this repository.
+- **`<board>/route-fab-floor.txt`** (a pedals artifact; for example
+  [`fuzz/boards/smd-v2/route-fab-floor.txt`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/route-fab-floor.txt)):
+  the same minimums for the KiCadRoutingTools router, applied as
+  a standing route instruction from `placement-policy.json` (a pedals artifact; for example
+  [`fuzz/boards/smd-v2/placement-policy.json`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/placement-policy.json)). Without it the router's own
   fab tier necks tracks down to 0.127 mm and shrinks vias, below this spec.
 
 A board conforms when both files carry these values and its DRC is clean. When starting a new
