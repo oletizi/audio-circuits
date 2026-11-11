@@ -265,3 +265,19 @@ test("an unqualified symbol name has no library prefix to strip", () => {
   expect(valueIsSymbolPartName("Jumper_2_Open", "Jumper_2_Open")).toBe(true)
   expect(valueIsSymbolPartName("Jumper_2_Open", "Jumper:Jumper_2_Open")).toBe(false)
 })
+
+test("a stated part.value is the value of a part with no electrical quantity, ahead of mpn and symbol", () => {
+  expect(valueFor({
+    id: "fuse", kind: "ic", parameters: {}, pins: {}, units: [],
+    part: { symbol: "Device:Fuse", value: "0.75A hold" },
+  })).toBe("0.75A hold")
+  expect(valueFor({
+    id: "fuse", kind: "ic", parameters: {}, pins: {}, units: [],
+    part: { mpn: "SOME-PTC", symbol: "Device:Fuse", value: "0.75A hold" },
+  })).toBe("0.75A hold")
+})
+
+test("part.value on a part whose value comes from its parameters refuses", () => {
+  expect(() => valueFor({ ...resistor(1000), part: { symbol: "Device:R", value: "2k" } }))
+    .toThrow(/derived from its parameters/)
+})

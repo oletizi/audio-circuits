@@ -15,6 +15,7 @@
  * Every combination of the three state flags is supported (controller ruling CR-CARRIER-DUMMY-LOADS).
  */
 import type { Component, Network } from "../../lib/model/index.ts"
+import { isResistor } from "../../tools/bom/rail-bound.ts"
 
 export type Rail = "3V3_D" | "VREF_A"
 
@@ -62,11 +63,10 @@ function component(network: Network, id: string): Component {
 }
 
 function ohms(c: Component): number {
-  const value: unknown = Reflect.get(c.parameters, "ohms")
-  if (c.kind !== "resistor" || typeof value !== "number") {
-    throw new Error(`rail budget: "${c.id}" is not a resistor with a numeric ohms value, so its current cannot be computed`)
+  if (!isResistor(c)) {
+    throw new Error(`rail budget: "${c.id}" is kind "${c.kind}", not a resistor, so its current cannot be computed from a resistance`)
   }
-  return value
+  return c.parameters.ohms
 }
 
 /** Worst-case current through a 1 % resistor across the full rail maximum. */
@@ -81,8 +81,10 @@ export function worstResistorAmps(resistorOhms: number): number {
  */
 export function dummyResistorBehind(network: Network, jumperId: string, rail: Rail): Component {
   const far = connectionsOf(component(network, jumperId)).filter(([, n]) => n !== rail).map(([, n]) => n)
-  if (far.length !== 1) throw new Error(`rail budget: jumper "${jumperId}" must have exactly one pin off ${rail}, found ${far.length}`)
-  const farNet = far[0] ?? ""
+  const farNet = far[0]
+  if (far.length !== 1 || farNet === undefined) {
+    throw new Error(`rail budget: jumper "${jumperId}" must have exactly one pin off ${rail}, found ${far.length}`)
+  }
   const loads = network.components.filter((c) => c.id !== jumperId && connectionsOf(c).some(([, n]) => n === farNet))
   const only = loads[0]
   if (loads.length !== 1 || only === undefined) {

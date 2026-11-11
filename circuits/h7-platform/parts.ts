@@ -67,20 +67,20 @@ export const USB_C_RECEPTACLE: PartSpec = {
   electricallyInert: true,
 }
 
-/** The VIN fuse. Its rating is FUSE_HOLD_CURRENT_A; no MPN is chosen (ruling CR-CARRIER-VIN). */
-export const FUSE: PartSpec = { symbol: "Device:Fuse" }
-
 /**
  * The fuse's hold current, 0.75 A: the next standard PTC hold current above the module's
  * largest documented VIN_MOD input current, 729 mA at the 1.5x peak down to VIN_MOD 7.32 V
  * (docs/h7-platform/power.md:246), which is above the contract's 674 mA `maxPeakCurrentMa`
  * (power.md:240). Ruling CR-CARRIER-VIN.
- *
- * NOT CARRIED INTO THE DRAWING'S VALUE FIELD: the fuse is modelled as kind `ic` (the model has no
- * fuse kind), and `valueFor` gives an `ic` with no MPN its symbol's name, "Fuse". A numeric
- * parameter on an `ic` would make `valueFor` refuse. So this figure lives here, beside the part.
  */
 export const FUSE_HOLD_CURRENT_A = 0.75
+
+/**
+ * The VIN fuse. No MPN is chosen (ruling CR-CARRIER-VIN). The model has no fuse kind, so it is an
+ * `ic`, and its rating reaches the drawing's value field through `part.value`, which `valueFor`
+ * uses for a part with no electrical quantity.
+ */
+export const FUSE: PartSpec = { symbol: "Device:Fuse", value: `${FUSE_HOLD_CURRENT_A}A hold` }
 
 export const RESISTOR: PartSpec = { symbol: "Device:R" }
 export const CAPACITOR: PartSpec = { symbol: "Device:C" }
@@ -96,8 +96,8 @@ export const DATASHEET_PIN_NAMES: Readonly<Record<string, Readonly<Record<string
     "1": "1D+", "2": "1D-", "3": "2D+", "4": "2D-", "5": "GND",
     "6": "~{OE}", "7": "D-", "8": "D+", "9": "S", "10": "VCC",
   },
-  // The part's own stock symbol (spec C4). ST's datasheet could not be fetched to cite (st.com
-  // timed out on 2026-11-11), so these are read from the symbol, not checked independently of it.
+  // docs/h7-platform/schematic-checklist.md:213, USB-04 (the pedal's USBLC6-2SC6): I/O1 on pins 1
+  // and 6, I/O2 on pins 3 and 4, pin 2 GND, pin 5 VBUS. h7-carrier.test.ts reads that line.
   "Power_Protection:USBLC6-2SC6": {
     "1": "I/O1", "2": "GND", "3": "I/O2", "4": "I/O2", "5": "VBUS", "6": "I/O1",
   },

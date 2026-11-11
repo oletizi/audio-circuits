@@ -56,6 +56,13 @@ export type Parameters =
 
 export interface PartSpec {
   readonly mpn?: string
+  /**
+   * The value field's text for a part whose kind carries no electrical quantity - a fuse's
+   * rating, say ("0.75A hold"), where the part is an `ic` with no MPN chosen. `valueFor` uses it
+   * ahead of the MPN and the symbol name. It is refused on a kind whose value is derived from
+   * its parameters (a resistor's ohms), because two sources for one field could disagree.
+   */
+  readonly value?: string
   readonly footprint?: string
   /** KiCad symbol library id, e.g. "Amplifier_Operational:TL072". */
   readonly symbol?: string

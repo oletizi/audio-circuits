@@ -88,3 +88,29 @@ export async function resolveDrawIntent(opts: {
   fs.writeFileSync(opts.derivedIntentPath, JSON.stringify(generated, null, 2) + "\n")
   return { source: "derived", path: opts.derivedIntentPath, intent: parseIntent(opts.derivedIntentPath) }
 }
+
+/**
+ * The project symbol libraries a board's drawing needs (spec C4), read from the board's circuit
+ * module: an exported `PROJECT_SYMBOL_LIBRARY`, the absolute path of a committed `.kicad_sym`.
+ * A module that exports none needs none, and the draft runs exactly as it does for every
+ * stock-symbol board. `draftWithCopperhead` names the library in the draft's `sym-lib-table`.
+ *
+ * Read from the module, never written here: which library a circuit draws from is a fact about
+ * the circuit, so this file holds no path of its own.
+ */
+export async function projectSymbolLibrariesFor(declaration: PerfboardDeclaration): Promise<readonly string[]> {
+  const module = await importCircuitModule(declaration)
+  const exported = module["PROJECT_SYMBOL_LIBRARY"]
+  if (exported === undefined) return []
+  const circuit = declaration.circuitPath
+  if (typeof exported !== "string") {
+    throw new Error(`${circuit} exports PROJECT_SYMBOL_LIBRARY as a ${typeof exported}; it must be the absolute path of a .kicad_sym.`)
+  }
+  if (!path.isAbsolute(exported) || !exported.endsWith(".kicad_sym")) {
+    throw new Error(`${circuit} exports PROJECT_SYMBOL_LIBRARY "${exported}", which is not an absolute path to a .kicad_sym.`)
+  }
+  if (!fs.existsSync(exported)) {
+    throw new Error(`${circuit} exports PROJECT_SYMBOL_LIBRARY "${exported}", which does not exist; the drawing names symbols in it.`)
+  }
+  return [exported]
+}

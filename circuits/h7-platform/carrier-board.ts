@@ -26,6 +26,9 @@ import {
 } from "./parts.ts"
 
 export { RAIL_LOADS } from "./rail-budget.ts"
+// The project symbol library this circuit draws from (spec C4); `make draw` reads this export
+// (tools/draught/draw-intent.ts projectSymbolLibrariesFor) and names it in the draft's sym-lib-table.
+export { PROJECT_SYMBOL_LIBRARY } from "./parts.ts"
 // A cycle with carrier-board.drawing.ts, which imports h7Carrier and DESIGNATORS from here. It
 // is safe for the reason circuits/transistor-preamp/staged-board.ts gives: a re-export is only
 // evaluated when drawingIntent() is called.
@@ -164,8 +167,8 @@ function usbPath(): Component[] {
       B1: "GND", B4: "VBUS", B5: "USB_CC2", B6: "USB_C_DP", B7: "USB_C_DM", B8: NC, B9: "VBUS", B12: "GND",
       SH: "USB_SHIELD",
     }, USB_C_RECEPTACLE, usbc),
-    make("r_cc1", "resistor", { a: "USB_CC1", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:263 (5.1 kOhm Rd)`, "5.1k"),
-    make("r_cc2", "resistor", { a: "USB_CC2", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:263 (5.1 kOhm Rd)`, "5.1k"),
+    make("r_cc1", "resistor", { a: "USB_CC1", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:267 (5.1 kOhm Rd)`, "5.1k"),
+    make("r_cc2", "resistor", { a: "USB_CC2", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:267 (5.1 kOhm Rd)`, "5.1k"),
     make("r_shld", "resistor", { a: "USB_SHIELD", b: "GND" }, RESISTOR, `${usbc}; schematic-checklist.md:214 USB-05 (R_SHLD 1 MOhm)`, "1M"),
     make("c_shld", "capacitor", { a: "USB_SHIELD", b: "GND" }, CAPACITOR, `${usbc}; schematic-checklist.md:214 USB-05 (C_SHLD 4.7 nF 2 kV)`, "4.7n"),
     make("r_vbus_top", "resistor", { a: "VBUS", b: "USB_VBUS_SENSE" }, RESISTOR,

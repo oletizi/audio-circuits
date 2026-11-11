@@ -217,6 +217,18 @@ function hasNumericQuantity(component: Component): boolean {
  * value field would reconcile as a value change against every board.
  */
 export function valueFor(component: Component): string {
+  const stated = component.part?.value
+  if (stated !== undefined) {
+    if (hasNumericQuantity(component)) {
+      throw new Error(
+        `component "${component.id}" (kind "${component.kind}") states part.value "${stated}", but its ` +
+          "value is derived from its parameters. Two sources for one value field could disagree, so " +
+          "part.value is only for a kind that carries no electrical quantity.",
+      )
+    }
+    if (stated.trim() === "") throw new Error(`component "${component.id}" states an empty part.value`)
+    return stated
+  }
   if (component.kind === "capacitor") {
     const farads: unknown = Reflect.get(component.parameters, "farads")
     if (typeof farads !== "number") {

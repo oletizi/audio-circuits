@@ -82,7 +82,7 @@ import {
   draftWithCopperhead,
 } from "../draught/draw-draft.ts"
 import { checkPartition } from "../draught/draw-partition.ts"
-import { resolveDrawIntent } from "../draught/draw-intent.ts"
+import { projectSymbolLibrariesFor, resolveDrawIntent } from "../draught/draw-intent.ts"
 import {
   RENDER_TOOLS,
   renderSheet,
@@ -308,8 +308,15 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   const partition = checkPartition({ board, declaration, intent, intentPath: resolvedIntent.path })
   if (partition.kind === "refused") return refusal(partition.message, advisorySections)
 
-  // Step 4: draft with copperhead.
-  const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path })
+  // Step 4: draft with copperhead, naming any project symbol library the circuit module exports
+  // (spec C4). A module that exports none drafts exactly as before.
+  let projectSymbolLibraries: readonly string[]
+  try {
+    projectSymbolLibraries = await projectSymbolLibrariesFor(declaration)
+  } catch (error) {
+    return refusal(error instanceof Error ? error.message : String(error), advisorySections)
+  }
+  const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path, projectSymbolLibraries })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,
     ...(partition.kind === "not-run" ? [partition.notice] : []),

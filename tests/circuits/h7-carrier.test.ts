@@ -16,7 +16,7 @@ import { checkInterface } from "../../circuits/h7-platform/interface-check.ts"
 import {
   DESIGNATORS, PIN_NUMBERS, drawingIntent, h7Carrier,
 } from "../../circuits/h7-platform/carrier-board.ts"
-import { DATASHEET_PIN_NAMES, PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
+import { DATASHEET_PIN_NAMES, FUSE_HOLD_CURRENT_A, PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import { railDraw } from "../../circuits/h7-platform/rail-budget.ts"
 import type { CarrierState } from "../../circuits/h7-platform/rail-budget.ts"
 
@@ -127,8 +127,29 @@ describe("h7 bring-up carrier", () => {
         units: [{ name: "MAIN", pins: { a: { kind: "net", net: "3V3_D" }, b: { kind: "net", net: "GND" } } }],
       }],
     }
-    expect(() => railDraw(extended, "3V3_D", STATES[0] ?? { dummy3v3d: false, dummyVrefA: false, usbEnabled: false }))
+    expect(() => railDraw(extended, "3V3_D", { dummy3v3d: false, dummyVrefA: false, usbEnabled: false }))
       .toThrow(/unbudgeted_load/)
+  })
+
+  test("the fuse's hold rating is its value on the drawing", () => {
+    const fuseRef = DESIGNATORS["f_vin"]
+    const fuse = drawingIntent().parts.find((p) => p.ref === fuseRef)
+    if (fuse === undefined) throw new Error(`the intent has no part ${fuseRef} for f_vin`)
+    expect(fuse.libId).toBe("Device:Fuse")
+    expect(fuse.value).toContain(`${FUSE_HOLD_CURRENT_A}A`)
+  })
+
+  test("the USBLC6-2SC6 pin names agree with schematic-checklist.md USB-04", () => {
+    const checklist = fs.readFileSync(path.join(import.meta.dir, "../../docs/h7-platform/schematic-checklist.md"), "utf8")
+    const usb04 = checklist.split("\n").find((line) => line.includes("**USB-04**"))
+    if (usb04 === undefined) throw new Error("schematic-checklist.md has no USB-04 line")
+    const names = DATASHEET_PIN_NAMES["Power_Protection:USBLC6-2SC6"] ?? {}
+    // USB-04: "D+ and D- through I/O1 (pins 1<->6) and I/O2 (pins 3<->4); pin 2 GND ...; pin 5 to VBUS".
+    expect(usb04).toContain("I/O1 (pins 1\u21946)")
+    expect(usb04).toContain("I/O2 (pins 3\u21944)")
+    expect(usb04).toContain("pin 2 GND")
+    expect(usb04).toContain("pin 5 to VBUS")
+    expect(names).toEqual({ "1": "I/O1", "2": "GND", "3": "I/O2", "4": "I/O2", "5": "VBUS", "6": "I/O1" })
   })
 
   test("the intent lowers", () => {

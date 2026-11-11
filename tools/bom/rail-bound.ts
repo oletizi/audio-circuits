@@ -54,7 +54,7 @@ export interface RailBoundPower {
   readonly basis: string
 }
 
-function isResistor(component: Component): component is ResistorComponent {
+export function isResistor(component: Component): component is ResistorComponent {
   return component.kind === "resistor"
 }
 
