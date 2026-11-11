@@ -32,8 +32,13 @@ drawn pages reach him board by board rather than all models first.
 
 1. **The owner is asked no circuit question without a drawing.** Where the
    ported documents leave something open, the controller rules on it, labels it
-   a controller ruling, and it appears on the page, where the owner can overrule
-   it. He said so directly when asked whether he wanted any board changed: a
+   a controller ruling, and records it in the page's `RECORD.md` and in
+   `docs/h7-platform/decisions.md`. The ruled part or value is on the drawn
+   page itself, where the owner can see it and overrule it. The message that
+   sends a drawing still carries a question and nothing else
+   (`EVALUATING-DRAWINGS.md` §4). A summary of the rulings a page rests on, and
+   of any practice change it needed, goes to the owner in a separate message,
+   after his verdict or when he asks (controller ruling). He said so directly when asked whether he wanted any board changed: a
    question about the circuit, asked before he can see it, is one he cannot
    answer.
 2. **The models are a faithful transcription of the pedals design as
@@ -143,6 +148,13 @@ step below ends with pages shown to the owner.
    ruling reuses the pedal's codec and SAI isolation, they come in through
    `include()` from the pedal's blocks, not as copies.
 
+**A board is finished for sequencing when its pages have been sent to the
+owner, not when he has given a verdict** (controller ruling). He gives verdicts
+on his own schedule, and the work does not stall waiting for one. When a verdict
+asks for a repair or a change, that work comes before further work on the next
+board, because the owner's review is the scarce thing and his feedback should
+not queue behind new pages.
+
 The owner may reorder this at any point. The builder may also change it if a
 step turns out blocked, provided the reason is recorded in the plan's execution
 record and pages still reach the owner board by board.
@@ -152,7 +164,8 @@ record and pages still reach the owner board by board.
 These are the places where the loop as it stands cannot take these boards. The
 reconnaissance found each one in the code, cited below. Each change is limited
 to what the boards need, is recorded in `TOOLING.md` (or the skill) where it
-lands, and is reported to the owner with the first page that depends on it.
+lands, and is reported to the owner in the separate message that follows the
+first page depending on it (see point 1 under **What follows from that**).
 
 - **C1. A board that is not a perfboard.** A board is discovered by its
   `boards/<board>/perfboard.json`. That declaration requires a `vrt` field
@@ -196,9 +209,14 @@ lands, and is reported to the owner with the first page that depends on it.
   shown to work. A check of KiCad 10.0.5's installed libraries
   (controller, 2026-11-10) found exact symbols for STM32H743IITx, PCM3060,
   W25Q128JVS, TPS62933F, G6K-2, USBLC6-2SC6, SN74LVC2G14DBV, TPS3808DBV,
-  LM66100DCK, MCP6001, AO3400A, AO3401A, 2N7002 and PMEG4030ER. It found none
-  for W9825G6KH, TPS7A49, TPS7A24, TLV803, TS3USB221, OPA1688, SN74LVC1G34,
-  SN74LVC3G34, SN74LVC1G07 or AOD4185. **Rule:** use the part's own stock
+  LM66100DCK, MCP6001, AO3400A, AO3401A, 2N7002, PMEG4030ER and 1N4148W, and
+  generic `Device` and `Connector` symbols (crystal, ferrite bead, fuse, test
+  point, USB-C receptacle, 1x20 and 2x05 headers). It found none for W9825G6KH,
+  TPS7A49, TPS7A24, TLV803, TS3USB221, OPA1688, SN74LVC1G34, SN74LVC3G34,
+  SN74LVC1G07, AOD4185, BZT52C12, PESD12VL1BA, ISOM8710, the NX3225 crystal or
+  the X1G004 oscillator; PMEG4005 has variants but not the AEA. The search
+  matched symbol names by prefix only, so an alias under another name may
+  exist. **Rule:** use the part's own stock
   symbol where it exists. Otherwise use a stock symbol whose pins match the part
   pin for pin, verified against the part's datasheet and recorded per part with
   that citation, while the model's `part.mpn` names the real part. Add a
