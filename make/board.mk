@@ -102,7 +102,7 @@ PDF_MERGE := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" pdf-merge)
 endif
 export PDF_MERGE
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt pcb-test print-%
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt pcb-circuit pcb-test print-%
 
 # print-%: prints any Make variable's final, resolved value - `make
 # print-KICAD_CLI` - the GNU Make idiom for inspecting what a variable
@@ -389,13 +389,19 @@ perfboard-help:
 #
 # A `pcb` BOARD HAS NO LAYOUT TO CHECK, so its `check` is not this one with parts
 # removed: it runs `netlist-agrees` (the notice when no schematic is declared)
-# and then `pcb-test`, which requires tests/circuits/<board>.test.ts whether or
+# then `pcb-circuit` (the declared module and export must build) and then `pcb-test`, which
+# requires tests/circuits/<board>.test.ts whether or
 # not a schematic is declared - without a schematic that test is the only thing
 # the board's check can say. It never runs veroroute, wiring, scaffold-membership
 # or `perfboard.ts check`: each of them reads a VeroRoute layout this board does
 # not have.
 ifeq ($(BOARD_KIND),pcb)
-check: netlist-agrees pcb-test
+check: netlist-agrees pcb-circuit pcb-test
+
+# The declared circuit must build: nothing else in a pcb board's check loads the model, so a
+# declaration naming a module or export that does not exist would pass without this.
+pcb-circuit:
+	@bun "$(CLI)" board-info -C "$(CURDIR)" --validate
 
 pcb-test:
 	@if [ ! -f "$(NETLIST_TEST)" ]; then \

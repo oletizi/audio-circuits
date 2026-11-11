@@ -6,7 +6,7 @@ Source: the pedals repository at commit `5b926d0aaf002d3ea111786f6ab9cdb72b8a913
 
 ## What is in this directory
 
-- `verify.sh`, the check script the tasks appended to; its last run is under "Final verify.sh output".
+- `verify.sh`, the check script the tasks appended to (`check_nocode` is sourced from `verify-nocode.sh` beside it); its last run is under "Final verify.sh output".
 - `record/`, the execution record committed beside the plan, as the project rule asks:
   - `ledger.md`, the controller's progress ledger (the file `progress.md` of the working directory);
   - `task-<n>-brief.md` and `task-<n>-report.md` for every task, including `2b`;
@@ -53,7 +53,7 @@ The README of the documents, [docs/h7-platform/README.md](../../../h7-platform/R
 - **Sources that are not in the pedals history.** The Task 17 rulings and research files that ledger entries R-58 and others name (`task-17-rulings.md`, `task-17-research-A.md`) were never committed to pedals. The documents cite the ledger entry that names them and say the underlying file is not in the pedals history. Likewise the `.tools/oscar` path in the processor-module research is not a file at the pin.
 - **Superseded material kept only as history.** Candidates A and C of the layout study, the envelope history table and v1's designator map stayed behind. The v1 schematic is not an authority anywhere in the port.
 - **Unsettleable upstream.** The two conflicts above, and the owner question the pedals sources left unanswered (OSCAR-AUDIO-LICENCE-L1), are open items, not rulings.
-- **Judgement calls left to the controller or owner.** The `make -C fuzz drc-<board>` command in the fab rules was replaced by a pinned link to the pedals Makefile (Task 11, fix round 1). The review of Task 11 found that the `nocode` check did not scan `docs/standards/`; the controller ruled that it should, and Task 11's fix round 1 (`40682f5`) extended `nocode`'s vocabulary scan to `docs/standards/*.md` (`verify.sh` line 97). Its file-type rule still covers only `docs/h7-platform/` and `circuits/h7-platform/`, and the standards scan is skipped silently if `docs/standards/` is absent, a deferred minor that `effective` backstops, since `effective` fails when that directory is missing (ledger, Task 11).
+- **Judgement calls left to the controller or owner.** The `make -C fuzz drc-<board>` command in the fab rules was replaced by a pinned link to the pedals Makefile (Task 11, fix round 1). The review of Task 11 found that the `nocode` check did not scan `docs/standards/`; the controller ruled that it should, and Task 11's fix round 1 (`40682f5`) extended `nocode`'s vocabulary scan to `docs/standards/*.md` (the vocabulary loop in `check_nocode`, now in `verify-nocode.sh`). Its file-type rule still covers only `docs/h7-platform/` and `circuits/h7-platform/`, and the standards scan is skipped silently if `docs/standards/` is absent, a deferred minor that `effective` backstops, since `effective` fails when that directory is missing (ledger, Task 11).
 
 ## Amendment for phase 2: the "no model code" rule for TypeScript
 

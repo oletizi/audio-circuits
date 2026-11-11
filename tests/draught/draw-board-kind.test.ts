@@ -12,6 +12,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { runDraw } from "../../tools/cli/draw.ts"
+import { parseIntent } from "../../tools/draught/draw-draft.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
 const REPO = moduleRepoRoot()
@@ -61,12 +62,7 @@ test("a perfboard board with no netlist still refuses", async () => {
 })
 
 test("a pcb board that declares a netlist still runs the partition check", async () => {
-  const committed = JSON.parse(
-    fs.readFileSync(
-      path.join(REPO, "docs/research/2026-10-29-hi-cut-full-run/intent-v4-blocks-mid-late.json"),
-      "utf8",
-    ),
-  ) as { nets: { name: string; pins: string[] }[] }
+  const committed = parseIntent(path.join(REPO, "docs/research/2026-10-29-hi-cut-full-run/intent-v4-blocks-mid-late.json"))
   const corrupted = {
     ...committed,
     nets: committed.nets.map((net, index) => (index === 0 ? { ...net, pins: net.pins.slice(1) } : net)),

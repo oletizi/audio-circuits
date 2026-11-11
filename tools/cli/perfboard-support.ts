@@ -11,6 +11,7 @@ import {
   discoverDeclarations, loadDeclaration, requirePerfboard,
   type PerfboardBoardDeclaration, type PerfboardDeclaration,
 } from "../perfboard/declaration.ts"
+import { loadCircuit } from "../perfboard/load.ts"
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -237,4 +238,26 @@ export function resolveDirectoryFlag(
     return null
   }
   return { cwd: resolved, rest }
+}
+
+/**
+ * `board-info --validate`: build the circuit the declaration names. `make check` of a `pcb`
+ * board calls it, because that board's other checks never load the model: a declaration naming
+ * a module or export that does not exist would otherwise pass. `loadCircuit` refuses naming the
+ * declaration file, the module and the export, and `done()` validates the network it returns.
+ */
+export async function validateDeclaredCircuit(
+  declaration: PerfboardDeclaration,
+  log: (line: string) => void,
+  error: (line: string) => void,
+): Promise<number> {
+  try {
+    const network = await loadCircuit(declaration)
+    log(`ok: ${declaration.circuitPath} (${declaration.exportName}) built and validated, ${network.components.length} components`)
+    return 0
+  } catch (caught) {
+    error(`FAIL ${declaration.file}: the declared circuit ${declaration.circuitPath} (export ${declaration.exportName}) could not be built`)
+    for (const line of reportLines(errorMessage(caught))) error(line)
+    return 1
+  }
 }

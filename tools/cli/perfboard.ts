@@ -45,7 +45,7 @@ import {
 } from "../perfboard/acquire.ts"
 import type { VerbDeps } from "../perfboard/verbs.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
-import { errorMessage, reportLines, resolveDirectoryFlag, safeTargets } from "./perfboard-support.ts"
+import { errorMessage, reportLines, resolveDirectoryFlag, safeTargets, validateDeclaredCircuit } from "./perfboard-support.ts"
 import {
   dispatchCuts, dispatchEdit, dispatchGuide, dispatchImport, dispatchUpdate, dispatchStripboard,
   dispatchVerorouteVerb, defaultBinaryExists,
@@ -166,6 +166,8 @@ const USAGE = [
   "                           reached the board's own clause. It is a DIAGNOSTIC",
   "                           and no number is attached to it; it costs the full",
   "                           evaluation cap per seed.",
+  "  --validate               board-info: build the declared circuit; fail naming",
+  "                           the module and export if either does not exist.",
   "  --field sch|netlist|kind board-info: print only that resolved path (or an",
   "                           empty line if it was not declared), for scripts.",
   "",
@@ -380,6 +382,8 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
       for (const line of reportLines(errorMessage(caught))) error(line)
       return 1
     }
+
+    if (args.includes("--validate")) return validateDeclaredCircuit(declaration, log, error)
 
     // `--field <name>` is the machine-readable form make/board.mk uses to
     // pull SCH and NETLIST out of the declaration without reimplementing

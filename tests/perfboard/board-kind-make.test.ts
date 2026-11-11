@@ -25,6 +25,10 @@ const BOARD_DIR = path.join(REPO, "boards", NAME)
 const TEST_FILE = path.join(REPO, "tests", "circuits", `${NAME}.test.ts`)
 const SENTINEL = `kind routing sentinel for ${NAME} ran`
 
+function writeDeclaration(circuit: string, exportName: string): void {
+  fs.writeFileSync(path.join(BOARD_DIR, "perfboard.json"), JSON.stringify({ kind: "pcb", circuit, export: exportName }))
+}
+
 function makeCheck(): { status: number | null; output: string } {
   const run = spawnSync("make", ["-C", BOARD_DIR, "check"], { encoding: "utf8" })
   return { status: run.status, output: `${run.stdout}${run.stderr}` }
@@ -42,10 +46,7 @@ beforeAll(() => {
     path.join(BOARD_DIR, "Makefile"),
     "include $(shell git rev-parse --show-toplevel)/make/perfboard.mk\n",
   )
-  fs.writeFileSync(
-    path.join(BOARD_DIR, "perfboard.json"),
-    JSON.stringify({ kind: "pcb", circuit: "../../circuits/opamp-buffer/opamp-buffer.ts", export: "opampBuffer" }),
-  )
+  writeDeclaration("../../circuits/opamp-buffer.ts", "opampBuffer")
 })
 
 afterAll(removeScratch)
@@ -69,4 +70,19 @@ test("a pcb board with no tests/circuits/<board>.test.ts fails, naming the file"
   const { status, output } = makeCheck()
   expect(status).not.toBe(0)
   expect(output).toContain(`tests/circuits/${NAME}.test.ts`)
+})
+
+test("a pcb board whose declared circuit does not exist fails make check, naming the module", () => {
+  fs.writeFileSync(TEST_FILE, `import { test, expect } from "bun:test"\ntest("stub", () => { expect(1).toBe(1) })\n`)
+  writeDeclaration("../../circuits/zz-no-such-circuit/zz-no-such-circuit.ts", "noSuchExport")
+  const { status, output } = makeCheck()
+  expect(status).not.toBe(0)
+  expect(output).toContain("zz-no-such-circuit.ts")
+})
+
+test("a pcb board whose declared export does not exist fails make check, naming the export", () => {
+  writeDeclaration("../../circuits/opamp-buffer.ts", "noSuchExport")
+  const { status, output } = makeCheck()
+  expect(status).not.toBe(0)
+  expect(output).toContain("noSuchExport")
 })
