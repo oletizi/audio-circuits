@@ -160,7 +160,7 @@ On v1 the supervisor stopped the buck at the trip, so the bulk capacitor fed onl
 
 ### 4.2 The requirements and how each is met on paper
 
-The requirements are split spec §7.4's; the numbers they name are `BYPASS-RELAY.md` §5's and `ANALOG.md`'s. Each was met on paper by the S1 power-fail analysis ([power-fail.md][pf]; rulings [R-33](decisions.md#r-33) to [R-45](decisions.md#r-45), [R-58](decisions.md#r-58)), a paper analysis of an unbuilt board; the last column names the open item that holds it open.
+The requirements are split spec §7.4's; the numbers they name are `BYPASS-RELAY.md` §5's and `ANALOG.md`'s. Each was met on paper by the S1 power-fail analysis ([power-fail.md][pf]; rulings [R-33](decisions.md#r-33), [R-35](decisions.md#r-35) to [R-42](decisions.md#r-42), [R-44](decisions.md#r-44), [R-45](decisions.md#r-45) and [R-58](decisions.md#r-58), and the owner decisions [R-34](decisions.md#r-34) and [R-43](decisions.md#r-43)), a paper analysis of an unbuilt board; the last column names the open item that holds it open.
 
 | Id | Requirement (split spec §7.4) | On paper | Open item |
 |---|---|---|---|

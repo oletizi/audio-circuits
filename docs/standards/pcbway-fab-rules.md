@@ -5,6 +5,8 @@ Ported from: [docs/standards/pcbway-fab-rules.md](https://github.com/oletizi/ped
 > **Authority at phase 4.** PCBWay's currently published capabilities are the authority when a board is prepared for fabrication in phase 4 of this port. Every figure below is kept with the date it carries: the pedals file gives no capture date for the PCBWay column, and its last change before the pin was 2026-10-04 (from that file's history in the pedals repository), so read each figure as of that date and no later. The one dated-by-event supersession inside the text, the "A2 Task 8 fix round 1" item in the plated-slot row, carries no calendar date and is kept as written.
 >
 > The board paths, file names and tools named in this document belong to the pedals repository at the pinned commit; they are linked where the file exists there and have no counterpart in this repository.
+>
+> **Edited in the port's final review (controller ruling):** the section the pedals file titles "Where the rules are enforced" read as a live instruction here (a board conforms when it carries the pedals router's `route-fab-floor.txt`; copy both files when starting a board; other boards must be brought to the standard). It is retitled "Where the rules were enforced in the pedals repository" and reframed as history of how pedals enforced the rules at the pin; this repository's enforcement is set in phase 4 with its own tooling. Every figure, date and pinned link in it is kept, and the rules table is not changed.
 
 Every board in this repository is designed to PCBWay's **standard, no-extra-cost** 2-layer FR-4
 specification. A design rule tighter than this spec raises the price of every order, so it is
@@ -37,9 +39,16 @@ integrity: trace impedance and via inductance do not matter here. What matters e
 (input/output separation, ground pour) is set per board, for example in smd-v2's
 [`fuzz/boards/smd-v2/fuzz.kicad_dru`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/fuzz.kicad_dru).
 
-## Where the rules are enforced
+## Where the rules were enforced in the pedals repository
 
-A rule written only in prose drifts. Each value lives in the files the tools read:
+**History, not an instruction.** This section says how the pedals repository enforced these
+rules at the pinned commit. Nothing in it applies to this repository: the files, the router,
+the DRC target and the board named below belong to the pedals repository and none of them came
+across. This repository's enforcement of the rules table is set in phase 4 of this port, with
+its own tooling. The rules table above is unchanged by this framing.
+
+The pedals source's reasoning was that a rule written only in prose drifts, so each value lived
+in the files the pedals tools read:
 
 - **`<board>/fuzz.kicad_pro`**: Board Setup constraints (`min_track_width`, `min_clearance` via the
   Default net class, `min_via_diameter`, `min_via_annular_width`, `min_through_hole_diameter`,
@@ -47,7 +56,7 @@ A rule written only in prose drifts. Each value lives in the files the tools rea
   every net class's `via_diameter` 0.8 / `via_drill` 0.4 and track widths. KiCad's DRC (in the pedals repository the DRC target lived in
   [`fuzz/Makefile`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/Makefile) at the pin,
   and the `drc_kicad` check belonged to the pedals routing tool `krt`, whose make rules are in
-  [`make/krt.mk`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/make/krt.mk)) fails a board that breaks them.
+  [`make/krt.mk`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/make/krt.mk)) failed a board that broke them.
   Neither tool came across to this repository.
 - **`<board>/route-fab-floor.txt`** (a pedals artifact; for example
   [`fuzz/boards/smd-v2/route-fab-floor.txt`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/route-fab-floor.txt)):
@@ -56,11 +65,14 @@ A rule written only in prose drifts. Each value lives in the files the tools rea
   [`fuzz/boards/smd-v2/placement-policy.json`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/placement-policy.json)). Without it the router's own
   fab tier necks tracks down to 0.127 mm and shrinks vias, below this spec.
 
-A board conforms when both files carry these values and its DRC is clean. When starting a new
-board, copy both from [`fuzz/boards/smd-v2/`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/).
+In the pedals repository, a board conformed when both of those files carried these values and
+its DRC was clean, and a new pedals board started from copies of both taken from
+[`fuzz/boards/smd-v2/`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/).
 
-Current conformance: [`fuzz/boards/smd-v2/`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/) conforms. Other boards predate this standard and
-must be brought to it before they are ordered.
+Conformance as the pedals file recorded it at the pin (its last change before the pin was
+2026-10-04): [`fuzz/boards/smd-v2/`](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/fuzz/boards/smd-v2/) conformed, and the
+pedals repository's other boards predated the standard and were to be brought to it before they
+were ordered. That is a statement about pedals boards; it names no board in this repository.
 
 ## Not checked by DRC
 

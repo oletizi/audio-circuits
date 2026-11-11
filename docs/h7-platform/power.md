@@ -35,7 +35,7 @@ Decisions are linked by anchor into [decisions.md](decisions.md). An owner decis
 | Relay coils, LEDs on 3V3_D | On the pedal digital rail **3V3_P** ([R-25](decisions.md#r-25)) | pedal |
 | PCM3060 VDD from 3V3_D | From a local regulator on 5V_A, U_CVDD ([D22](decisions.md#d22), owner-approved; [R-30](decisions.md#r-30)) | pedal |
 
-*Not in force:* `POWER.md` §5.2's power-fail shed, U_PF's open-drain RESET joined to the buck's EN node (BUCK_EN), tripping at VIN_PROT 7.45 V and releasing at ≤ 7.84 V 12–28 ms later; replaced by the split spec §7.4 circuit, which the owner directed ([O-6](decisions.md#o-6)), as realised by [R-33](decisions.md#r-33) to [R-45](decisions.md#r-45) and [R-58](decisions.md#r-58).
+*Not in force:* `POWER.md` §5.2's power-fail shed, U_PF's open-drain RESET joined to the buck's EN node (BUCK_EN), tripping at VIN_PROT 7.45 V and releasing at ≤ 7.84 V 12–28 ms later; replaced by the split spec §7.4 circuit, which the owner directed ([O-6](decisions.md#o-6)), as realised by the rulings [R-33](decisions.md#r-33), [R-35](decisions.md#r-35) to [R-42](decisions.md#r-42), [R-44](decisions.md#r-44), [R-45](decisions.md#r-45) and [R-58](decisions.md#r-58) and the owner decisions [R-34](decisions.md#r-34) and [R-43](decisions.md#r-43).
 
 *Not in force:* the buck's EN from the 5V_A divider (100 kΩ over 40.2 kΩ, `POWER.md` §3.3, §5.2), which enforced the codec's VCC-before-VDD order on v1; replaced by [D24](decisions.md#d24) on the module and by [D22](decisions.md#d22) on the pedal.
 

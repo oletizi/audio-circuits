@@ -38,7 +38,7 @@ Decisions are linked by anchor into [decisions.md](decisions.md). An owner decis
 | D14 NRST pull-up and supervisor | Kept, on the module | [D14](decisions.md#d14) (owner-approved) |
 | D15 test pads | Kept, on the module | [D15](decisions.md#d15) (owner-approved) |
 | D16, D19 VDDA's extra contacts | On the module, VDDA's one extra contact is interface pin 21, VREF_A; the pots, expression and HW_REV contacts and the expression follower are loads on VREF_A on the pedal | [D16](decisions.md#d16), [D19](decisions.md#d19) (owner-approved); [analog.md](analog.md) §9 |
-| D17 VDDA ferrite | BLM21PG221SN1D, kept, on the module | [D17](decisions.md#d17) (owner-approved) |
+| D17 VDDA ferrite | BLM21PG221SN1D, kept, on the module; narrowed by [R-57](decisions.md#r-57) (controller ruling): the network it is part of must meet VDDA-WIDEBAND, f0 ≤ 158.0 kHz, by more VDDA-bank capacitance or a bead with more inductance (§4) | [D17](decisions.md#d17) (owner-approved) |
 | D18 one GND net | Kept on both boards | [D18](decisions.md#d18) (owner-approved) |
 | D20 codec clock master | IFMD to VDD, SCKI from a 12.288 MHz oscillator | [D20](decisions.md#d20) (owner-approved) |
 | D21 codec local reset | From a local reset on the pedal | [D21](decisions.md#d21) (owner-approved); the power-fail supervisor also driving RST is [RR-11](decisions.md#rr-11)'s Q-6 ruling |

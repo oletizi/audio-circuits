@@ -100,7 +100,7 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Decides:** the bypass-relay power-off timing used to shed the buck, which now sits inside the module with no EN pin on the Seed pinout. A replacement must hold the analog rail steady while the relays release. The recommended direction is a diode-isolated hold-up reservoir feeding the analog supply; final values are re-analysed in the plan.
 - **Set by:** [split spec §2][split], §7.4.
 - **Amended by:** the owner's own [R-34](#r-34) (the R-PF-7 basis) and [R-43](#r-43) (the supply rating), within which it is realised.
-- **Narrowed by:** [R-33](#r-33) to [R-45](#r-45) and [R-58](#r-58) (controller ruling; the owner may override), which realise it.
+- **Narrowed by:** [R-33](#r-33), [R-35](#r-35) to [R-42](#r-42), [R-44](#r-44), [R-45](#r-45) and [R-58](#r-58) (controller ruling; the owner may override), which realise it, with the owner decisions [R-34](#r-34) and [R-43](#r-43) between them.
 - **Carried in:** [bypass-relay.md EC-POWER-FAIL-OVERRIDE](bypass-relay.md#ec-power-fail-override) and [§4](bypass-relay.md#4-power-fail); [power.md §3](power.md#3-pedal-power-entry-the-isolated-held-up-analog-branch).
 
 *Not in force:* the owner's approval of the v1 power-fail shed (2026-10-04), an owner decision carried in the same note as [OWN-01](#own-01): the power-fail supervisor pulled the one-board v1 design's buck EN low so the relays released before the output stage moved. Its record is `BYPASS-RELAY.md`'s status line, "approved by the owner on 2026-10-04 and implemented", answering its §11 item 2, "Approve the power-fail shed". This later owner decision superseded it: split spec §9.1's row "Relay bypass (2026-10-04) and the power-fail shed (`BR` §11 item 2)" reads "The approved shed is replaced by §7.4, which the owner directed (O-6)".
@@ -143,7 +143,7 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Set by:** [split spec §2][split].
 - **Amended by:** [O-16](#o-16) (owner) withdraws step 1, the Seed3 bench characterisation. The contract was never frozen in the pedals repository (its `status` is still `draft`).
 - **Narrowed by:** [RR-10](#rr-10) (controller ruling; the owner may override) refines it into the split spec's ten steps (§13).
-- **Not carried:** "Sub-project B (layout tooling) comes before both layouts" names the pedals repository's own layout tooling, which stays behind. In this repository the phases are the port spec's (models, schematics, then layout and fabrication).
+- **Not carried:** "re-run every gate" (after the split) names the pedals generator's gates, which stayed behind with it; and "Sub-project B (layout tooling) comes before both layouts" names the pedals repository's own layout tooling, which stays behind. In this repository the phases are the port spec's (models, schematics, then layout and fabrication).
 
 ### O-11
 
@@ -727,9 +727,12 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 
 **MCU power pins OSCAR gets wrong or leaves short.**
 - **Label:** controller ruling (see [D1](#d1)).
-- **Decides:** PDR_ON tied to VDD; VCAP1 joined to VCAP2, each with 2.2 µF; 100 nF plus 1 µF on VDD33USB; OSCAR's VDDA bank kept.
+- **Decides:** PDR_ON tied to VDD; VCAP1 joined to VCAP2, each with 2.2 µF; 100 nF plus 1 µF on VDD33USB; a VDDA bank on FB_VDDA that meets VDDA-WIDEBAND (below).
 - **Set by:** [CORE-BRIEF.md §4][cb].
 - **Amended by:** not named in split spec §9.4; on the module.
+- **Narrowed by:** [R-57](#r-57) (controller ruling; the owner may override): the VDDA bank must meet VDDA-WIDEBAND, f0 ≤ 158.0 kHz ([processor-and-memory.md §4](processor-and-memory.md#4-the-mcu-and-its-supply-network); [analog.md EC-VDDA-WIDEBAND](analog.md#ec-vdda-wideband)).
+
+*Not in force:* OSCAR's VDDA bank of 2 × 100 nF + 2 × 2.2 µF as the module's bank, which `CORE-BRIEF.md` D7 kept because it meets AN4938's 100 nF + 1 µF; on R-57's ceramic basis it gives 2.13 mV rms at pin 21, over the 806 µV requirement ([processor-and-memory.md §4](processor-and-memory.md#4-the-mcu-and-its-supply-network)).
 
 ### D8
 
@@ -1318,7 +1321,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 
 ## What this document does not carry
 
-- **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10.
+- **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
 - **Superseded owner decisions** appear only on *Not in force:* lines beside the decision that replaced them.
 
 [split]: https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/docs/superpowers/specs/2026-10-05-h7-modular-split-design.md
