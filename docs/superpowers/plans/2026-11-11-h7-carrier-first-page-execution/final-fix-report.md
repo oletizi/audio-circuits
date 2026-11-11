@@ -1,0 +1,10 @@
+Final-review fix report (commits 3280781, 430c14a)
+
+I1: committed page references the library in place (relative KIPRJMOD path); the draft keeps a copy. replay.sh now makes the sym-lib-table (printf) and requires it byte-identical to the committed one; verified by a full replay (rc 0, "committed sym-lib-table matches"). Documented in draw-draft.ts comment, drafted/README.md, TOOLING.md (new section C4), SKILL.md.
+I2: RECORD.md "At draft time the board declared no netlist". draw-partition.ts refusal reworded (words only; keeps "disagrees with the model's committed netlist"; states (a) stale page / (b) wrong model; names the fixture). TOOLING.md C2 paragraph on what to do after a legitimate model change.
+I3: board-info --validate (tools/cli/perfboard-support.ts validateDeclaredCircuit); make/board.mk pcb check = netlist-agrees pcb-circuit pcb-test. Routing test fixture now ../../circuits/opamp-buffer.ts; two negative cases (missing module, missing export) fail naming it. make -C boards/h7-carrier check prints "ok: .../carrier-board.ts (h7Carrier) built and validated, 30 components" then 20 pass.
+I4: RECORD.md section with measured fields, each checked by script against the sheet and installed Power_Protection.kicad_sym (pins identical to parent; Value USBLC6-2P6; Footprint SOT-666; filter SOT?666*; Description SOT-666; installed SC6 is SOT-23-6, SOT?23*). Trap noted; comment beside USB_ESD in parts.ts.
+Also: REPLAY.md build/draw sentence and bash invocation; replay.sh bash shebang; port README repointed to check_nocode in verify-nocode.sh; as cast removed (parseIntent used); verify.sh 517 -> 483 lines via verify-nocode.sh.
+
+Commands: bun run typecheck clean. bun test (perfboard, draught, h7-carrier, round-trip, sheet-model): 268 pass 0 fail, plus 20 pass 0 fail on the h7 carrier file. verify.sh: 17 PASS, rc 0. nocode-amendment-controls.sh: all 4 cases behave as stated.
+sha256 of .kicad_sch after all changes and after replay: dc9e93ea4ca6f42249df5faf7004965f83396db9f0c8e366474ca3e3ec5252af (unchanged); svg unchanged per git.
