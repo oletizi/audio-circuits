@@ -60,7 +60,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { DESIGNATORS as CARRIER_DESIGNATORS, h7Carrier, PIN_NUMBERS as CARRIER_PIN_NUMBERS } from "../../circuits/h7-platform/carrier-board.ts"
-import { pinNumberFor } from "../../lib/kicad/from-network.ts"
+import { type OwnMappingBoard, pinNumbersFromTable } from "./own-mapping-board.ts"
 import { pultecDesignator } from "../../circuits/pultec/designators.ts"
 import { pultecHiBoost } from "../../circuits/pultec/physical/hi-boost.ts"
 import { pultecHiCut } from "../../circuits/pultec/physical/hi-cut.ts"
@@ -80,7 +80,7 @@ export interface SheetModel {
   readonly pinNumbers: ReadonlyMap<string, ReadonlyMap<string, string>>
 }
 
-/** One board whose `"sch"` is a page committed under `drafted/pultec/`. */
+/** One Pultec board, whose model, designators and pin numbers this file derives by the Pultec rules. */
 interface DraftedBoard {
   readonly board: string
   /** The circuit module, repository-relative, checked against the board's own manifest. */
@@ -91,7 +91,7 @@ interface DraftedBoard {
 }
 
 /**
- * The five boards, their builders, and the two claims about each that `declaredBoard` checks.
+ * The boards, their builders, and the two claims about each that `declaredBoard` checks.
  *
  * **A STATIC TABLE, VERIFIED AGAINST `boards/<board>/perfboard.json` ON EVERY CALL.** The board's
  * own manifest is the authority for which circuit it is - the deleted
@@ -103,40 +103,6 @@ interface DraftedBoard {
  * the call refuses. A board re-pointed at another circuit fails loudly instead of being compared
  * against a model that is no longer its own.
  */
-/**
- * A board whose own module supplies its designators and pin numbers, so neither is derived by the
- * Pultec rules below. `pinNumbers` is built from the module's own kind-keyed table; a pin that
- * table does not number refuses (see `carrierPinNumbers`).
- */
-interface OwnMappingBoard extends DraftedBoard {
-  readonly designators: ReadonlyMap<string, string>
-  /** Built from the model when asked, so a refusal surfaces in the test that asks and not at import. */
-  readonly pinNumbers: (network: Network) => ReadonlyMap<string, ReadonlyMap<string, string>>
-}
-
-/** Every pin a component declares, package pins and unit pins together. */
-function everyPin(component: Component): readonly string[] {
-  const pins = Object.keys(component.pins)
-  for (const unit of component.units) pins.push(...Object.keys(unit.pins))
-  return pins
-}
-
-/**
- * Component id -> (canonical pin -> number) from a kind-keyed `PIN_NUMBERS`, by the same lookup
- * `lib/kicad/from-network.ts` lowers with, which refuses a pin it cannot number and names it.
- */
-function pinNumbersFromTable(
-  network: Network,
-  table: Readonly<Record<string, Readonly<Record<string, string>>>>,
-): ReadonlyMap<string, ReadonlyMap<string, string>> {
-  return new Map(
-    network.components.map((component) => [
-      component.id,
-      new Map(everyPin(component).map((pin) => [pin, pinNumberFor(component, pin, table)])),
-    ]),
-  )
-}
-
 const BOARDS: readonly (DraftedBoard | OwnMappingBoard)[] = [
   {
     board: "h7-carrier",
@@ -166,8 +132,8 @@ function declaredBoard(board: string): DraftedBoard | OwnMappingBoard {
   const entry = BOARDS.find((b) => b.board === board)
   if (entry === undefined) {
     throw new Error(
-      `no drafted-page model is declared for the board "${board}". The boards with a page ` +
-        `committed under drafted/pultec/ are [${BOARDS.map((b) => b.board).join(", ")}], and ` +
+      `no drafted-page model is declared for the board "${board}". The boards ` +
+        `declared are [${BOARDS.map((b) => b.board).join(", ")}], and ` +
         "each is written down in BOARDS in tests/circuits/sheet-model.ts with its circuit " +
         "module and builder. It is not derived from the name: a board directory says nothing " +
         "about which TypeScript builds it, and guessing would compare a page against whichever " +
