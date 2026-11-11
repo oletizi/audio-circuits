@@ -16,7 +16,7 @@
  */
 import { test, expect } from "bun:test"
 import path from "node:path"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { runnerFor } from "../../tools/perfboard/verbs.ts"
 import { buildChecklist } from "../../tools/guide/checklist.ts"
@@ -28,7 +28,7 @@ import { padTerminals } from "../../tools/guide/pads.ts"
 import { buildableDump } from "../../tools/guide/preflight.ts"
 
 const REPO_ROOT = moduleRepoRoot()
-const DECLARATION = loadDeclaration(path.join(REPO_ROOT, "boards", "pultec-low-boost", "perfboard.json"))
+const DECLARATION = loadPerfboardDeclaration(path.join(REPO_ROOT, "boards", "pultec-low-boost", "perfboard.json"), "test")
 
 /** Dump the real board through the real, pinned veroroute binary. */
 function dumpLowBoost(): string {

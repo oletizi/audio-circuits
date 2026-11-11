@@ -11,14 +11,14 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import type { ConstraintId } from "../../tools/stripboard/constraints-model.ts"
 import { healthyInput } from "../stripboard/grade-fixtures.ts"
 
 /** A declaration pointing at one throwaway layout, with nothing else on disk. */
-export function declaration(vrtPath: string): PerfboardDeclaration {
+export function declaration(vrtPath: string): PerfboardBoardDeclaration {
   return {
-    file: "/tmp/perfboard.json", dir: "/tmp",
+    kind: "perfboard", file: "/tmp/perfboard.json", dir: "/tmp",
     circuitPath: "/tmp/circuit.ts", exportName: "circuit", vrtPath,
   }
 }

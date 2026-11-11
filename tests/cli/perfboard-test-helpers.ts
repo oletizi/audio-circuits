@@ -10,7 +10,7 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 
 /** A throwaway tree with one declared board at boards/demo. */
 export function tree(): string {
@@ -18,7 +18,7 @@ export function tree(): string {
   fs.mkdirSync(path.join(root, "boards", "demo"), { recursive: true })
   fs.writeFileSync(
     path.join(root, "boards", "demo", "perfboard.json"),
-    JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "demo.vrt" }),
+    JSON.stringify({ kind: "perfboard", circuit: "c.ts", export: "demo", vrt: "demo.vrt" }),
   )
   return root
 }
@@ -27,5 +27,5 @@ export function boardDir(root: string): string {
   return path.join(root, "boards", "demo")
 }
 
-export const okCheck = (declaration: PerfboardDeclaration) =>
+export const okCheck = (declaration: PerfboardBoardDeclaration) =>
   Promise.resolve({ declaration, ok: true, report: "" })

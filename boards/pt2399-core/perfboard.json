@@ -1,4 +1,5 @@
 {
+  "kind": "perfboard",
   "sch": "../../circuits/pt2399-core/pt2399-core.kicad_sch",
   "circuit": "../../circuits/pt2399-core/pt2399-core.ts",
   "export": "pt2399Core",

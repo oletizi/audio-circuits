@@ -56,7 +56,7 @@ test("a stale board fails the run but does not stop the batch", async () => {
     fs.mkdirSync(path.join(root, "boards", "second"), { recursive: true })
     fs.writeFileSync(
       path.join(root, "boards", "second", "perfboard.json"),
-      JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "second.vrt" }),
+      JSON.stringify({ kind: "perfboard", circuit: "c.ts", export: "demo", vrt: "second.vrt" }),
     )
     let count = 0
     const code = await runCli(["check"], {
@@ -113,7 +113,7 @@ test("boards --paths prints each board's own directory, for a caller that acts o
     fs.mkdirSync(path.join(root, "boards", "second"), { recursive: true })
     fs.writeFileSync(
       path.join(root, "boards", "second", "perfboard.json"),
-      JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "second.vrt" }),
+      JSON.stringify({ kind: "perfboard", circuit: "c.ts", export: "demo", vrt: "second.vrt" }),
     )
     const lines: string[] = []
     const code = await runCli(["boards", "--paths"], { cwd: root, log: (line) => lines.push(line) })
@@ -174,7 +174,7 @@ test("standing in a board directory targets only that board, even with a board n
     fs.mkdirSync(path.join(root, "boards", "demo", "nested"), { recursive: true })
     fs.writeFileSync(
       path.join(root, "boards", "demo", "nested", "perfboard.json"),
-      JSON.stringify({ circuit: "c.ts", export: "demo", vrt: "nested.vrt" }),
+      JSON.stringify({ kind: "perfboard", circuit: "c.ts", export: "demo", vrt: "nested.vrt" }),
     )
     const checked: string[] = []
     const code = await runCli(["check"], {
@@ -225,6 +225,7 @@ test("board-info --field sch/netlist print the resolved paths when declared, and
     fs.writeFileSync(
       path.join(root, "boards", "demo", "perfboard.json"),
       JSON.stringify({
+        kind: "perfboard",
         sch: "../../board.kicad_sch",
         circuit: "c.ts",
         export: "demo",

@@ -25,7 +25,7 @@ import type { GitRunner } from "./mutate.ts"
 import { exportNetlistFor, verorouteBinary } from "./check.ts"
 import { unresolvedCutsMessage } from "./cut-state.ts"
 import type { Env } from "./check.ts"
-import type { PerfboardDeclaration } from "./declaration.ts"
+import type { PerfboardBoardDeclaration } from "./declaration.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
 
 /** One spawn's exit status and its combined stdout+stderr. */
@@ -36,7 +36,7 @@ export interface VerbRun {
 
 export interface VerbDeps {
   /** Injected so no test needs a circuit module on disk. */
-  readonly exportNetlist?: (declaration: PerfboardDeclaration) => Promise<string>
+  readonly exportNetlist?: (declaration: PerfboardBoardDeclaration) => Promise<string>
   /** Injected so no test needs the veroroute binary. */
   readonly runVeroroute?: (args: readonly string[]) => VerbRun
   /** Injected so no test needs a real git checkout. */
@@ -148,7 +148,7 @@ const CUT_LINE_KEYWORDS = new Set([
  * cut, and that is reported as the fact it is, naming the verb that changes
  * it, rather than as an empty cut list.
  */
-export function runCuts(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
+export function runCuts(declaration: PerfboardBoardDeclaration, deps: VerbDeps = {}): string {
   const runVeroroute = runnerFor(deps)
   const run = runVeroroute(["--dump-board", declaration.vrtPath])
   if (run.status !== 0) {
@@ -214,7 +214,7 @@ export interface UpdateOptions {
  * is unexecutable if that text is discarded.
  */
 export async function runUpdate(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
   opts: UpdateOptions,
   deps: VerbDeps = {},
 ): Promise<string> {
@@ -296,7 +296,7 @@ export interface StripboardOptions {
  * layout.
  */
 export async function runStripboard(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
   opts: StripboardOptions,
   deps: VerbDeps = {},
 ): Promise<string> {
@@ -387,7 +387,7 @@ function defaultLaunchEditor(binary: string, vrtPath: string): void {
  * which could launch a stock VeroRoute - a build that opens the board
  * perfectly well and silently lacks every verb this workflow depends on.
  */
-export function runEdit(declaration: PerfboardDeclaration, deps: VerbDeps = {}): string {
+export function runEdit(declaration: PerfboardBoardDeclaration, deps: VerbDeps = {}): string {
   const [env, repoRoot] = resolvedEnvAndRepoRoot(deps)
   const binary = verorouteBinary(env, repoRoot)
   const isExecutable = deps.isExecutable ?? defaultIsExecutable

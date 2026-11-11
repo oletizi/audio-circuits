@@ -80,7 +80,7 @@ export function makeBoardDir(root: string): string {
   fs.writeFileSync(
     path.join(boardDir, "perfboard.json"),
     `${JSON.stringify(
-      { circuit: "low-boost.ts", export: "pultecLowBoost", vrt: LAYOUT_BASENAME },
+      { kind: "perfboard", circuit: "low-boost.ts", export: "pultecLowBoost", vrt: LAYOUT_BASENAME },
       null,
       2,
     )}\n`,

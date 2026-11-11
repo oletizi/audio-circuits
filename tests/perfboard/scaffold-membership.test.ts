@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import path from "node:path"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { dumpBoard } from "../../tools/perfboard/buildability-input.ts"
 import { parseBoardDump } from "../../tools/guide/dump.ts"
@@ -33,7 +33,7 @@ import type { ScaffoldDoc, StandInGroupDoc } from "../../lib/board/scaffold/doc.
 const REPO_ROOT = moduleRepoRoot()
 
 function declarationFor(board: string) {
-  return loadDeclaration(path.join(REPO_ROOT, "boards", board, "perfboard.json"))
+  return loadPerfboardDeclaration(path.join(REPO_ROOT, "boards", board, "perfboard.json"), "test")
 }
 
 /** The real low-boost doc with its group list swapped - everything else real. */

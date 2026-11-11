@@ -42,7 +42,7 @@
 import { parseBoardDump, type BoardDump } from "../guide/dump.ts"
 import { dumpBoard } from "./buildability-input.ts"
 import { assertDesignators } from "./circuit-exports.ts"
-import type { PerfboardDeclaration } from "./declaration.ts"
+import type { PerfboardBoardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
 import { assertScaffold } from "./wiring-sync.ts"
@@ -184,7 +184,7 @@ export interface ScaffoldMembershipDeps {
  * five committed boards for a reason that is not about them.
  */
 export async function checkScaffoldMembership(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
   deps: ScaffoldMembershipDeps = {},
 ): Promise<ScaffoldMembershipResult> {
   const imported: unknown = await import(declaration.circuitPath)

@@ -31,7 +31,7 @@ import { recordedHashFor } from "./adopt-provenance.ts"
 import { boardCircuitFrom } from "../perfboard/board-circuit.ts"
 import { assertOffBoardIds, exportNetlistFor } from "../perfboard/check.ts"
 import { assertDesignators, assertPinNumbers } from "../perfboard/circuit-exports.ts"
-import { boardName, loadDeclaration } from "../perfboard/declaration.ts"
+import { boardName, loadPerfboardDeclaration } from "../perfboard/declaration.ts"
 import { circuitFromModule, importCircuitModule } from "../perfboard/load.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { boardGeometry } from "./copper.ts"
@@ -228,7 +228,7 @@ async function prepareBoard(
   spawn: SpawnVeroroute,
 ): Promise<Prepared> {
   const declarationFile = path.join(directory, "perfboard.json")
-  const declaration = loadDeclaration(declarationFile)
+  const declaration = loadPerfboardDeclaration(declarationFile, "place")
   const board = boardName(declaration)
   // ONE MODULE IMPORT, read twice: the network for the targets and the
   // designator index for the footprints. `loadBoardCircuit` does the second

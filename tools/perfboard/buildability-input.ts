@@ -55,7 +55,7 @@ import { stockFor } from "../stripboard/grade.ts"
 import { loadRules } from "../stripboard/rules.ts"
 import type { CheckInput } from "../stripboard/constraints-model.ts"
 import { assertDesignators } from "./circuit-exports.ts"
-import type { PerfboardDeclaration } from "./declaration.ts"
+import type { PerfboardBoardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 import { loadCircuit } from "./load.ts"
 import { moduleRepoRoot } from "./repo-root.ts"
@@ -107,7 +107,7 @@ export function dumpBoard(
  * at - and `make check` would print four passes about nothing.
  */
 export async function boardFootprints(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
 ): Promise<ReadonlyMap<string, string>> {
   const network = await loadCircuit(declaration)
   const imported: unknown = await import(declaration.circuitPath)
@@ -155,7 +155,7 @@ export async function boardFootprints(
 /** What `buildabilityInputFor` needs injected so no test has to produce a real board. */
 export interface BuildabilityInputDeps {
   readonly dumpBoard?: (vrtPath: string) => string
-  readonly footprints?: (declaration: PerfboardDeclaration) => Promise<ReadonlyMap<string, string>>
+  readonly footprints?: (declaration: PerfboardBoardDeclaration) => Promise<ReadonlyMap<string, string>>
   readonly repoRoot?: string
 }
 
@@ -172,7 +172,7 @@ export interface BuildabilityInputDeps {
  * two strings would hand the grader two different boards.
  */
 export async function buildabilityInputFor(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
   netlistText: string,
   run: CheckRun,
   deps: BuildabilityInputDeps = {},

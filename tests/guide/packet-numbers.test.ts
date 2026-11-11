@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { writeGuidePacket, type GuideFs } from "../../tools/guide/packet.ts"
 import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 import { fakePdfTools } from "./fake-pdf-tools.ts"
@@ -14,8 +14,8 @@ import { BRIDGE_INSET } from "../../tools/guide/render-board.ts"
  * line between - on every image that draws them.
  */
 
-const DECLARATION: PerfboardDeclaration = {
-  file: "/repo/boards/test-board/perfboard.json",
+const DECLARATION: PerfboardBoardDeclaration = {
+  kind: "perfboard", file: "/repo/boards/test-board/perfboard.json",
   dir: "/repo/boards/test-board",
   circuitPath: "/repo/circuits/test.ts",
   exportName: "testBoard",

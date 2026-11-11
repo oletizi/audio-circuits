@@ -14,7 +14,7 @@ import type { Pin, BinaryResolution, AcquireOptions } from "../perfboard/acquire
 import { runCuts, runUpdate, runStripboard, runEdit, type VerbDeps } from "../perfboard/verbs.ts"
 import { runImport } from "../perfboard/import.ts"
 import { writeGuidePacket, type GuideDeps } from "../guide/packet.ts"
-import { boardHere, parseFlags, isStripsDirection, reportLines, errorMessage } from "./perfboard-support.ts"
+import { perfboardHere, parseFlags, isStripsDirection, reportLines, errorMessage } from "./perfboard-support.ts"
 
 /**
  * `verbDeps`, with `repoRoot` merged in as the fallback for `repoRoot` when
@@ -40,7 +40,7 @@ export function dispatchCuts(
   error: (line: string) => void,
 ): number {
   if (parseFlags(args, new Set(), error) === null) return 1
-  const declaration = boardHere(cwd, "cuts", error)
+  const declaration = perfboardHere(cwd, "cuts", error)
   if (declaration === null) return 1
   try {
     log(runCuts(declaration, mergedVerbDeps(verbDeps, repoRoot)))
@@ -61,7 +61,7 @@ export function dispatchEdit(
   error: (line: string) => void,
 ): number {
   if (parseFlags(args, new Set(), error) === null) return 1
-  const declaration = boardHere(cwd, "edit", error)
+  const declaration = perfboardHere(cwd, "edit", error)
   if (declaration === null) return 1
   try {
     log(runEdit(declaration, mergedVerbDeps(verbDeps, repoRoot)))
@@ -83,7 +83,7 @@ export async function dispatchUpdate(
 ): Promise<number> {
   const flags = parseFlags(args, new Set(["--allow-dirty"]), error)
   if (flags === null) return 1
-  const declaration = boardHere(cwd, "update", error)
+  const declaration = perfboardHere(cwd, "update", error)
   if (declaration === null) return 1
   try {
     log(await runUpdate(declaration, { allowDirty: flags.allowDirty }, mergedVerbDeps(verbDeps, repoRoot)))
@@ -104,7 +104,7 @@ export async function dispatchImport(
   error: (line: string) => void,
 ): Promise<number> {
   if (parseFlags(args, new Set(), error) === null) return 1
-  const declaration = boardHere(cwd, "import", error)
+  const declaration = perfboardHere(cwd, "import", error)
   if (declaration === null) return 1
   try {
     log(await runImport(declaration, mergedVerbDeps(verbDeps, repoRoot)))
@@ -126,7 +126,7 @@ export async function dispatchStripboard(
 ): Promise<number> {
   const flags = parseFlags(args, new Set(["--allow-dirty", "--strips"]), error)
   if (flags === null) return 1
-  const declaration = boardHere(cwd, "stripboard", error)
+  const declaration = perfboardHere(cwd, "stripboard", error)
   if (declaration === null) return 1
 
   let strips: "horizontal" | "vertical" | undefined
@@ -225,7 +225,7 @@ export async function dispatchGuide(
 ): Promise<number> {
   const tools = guideToolPaths(args, error)
   if (tools === null) return 1
-  const declaration = boardHere(cwd, "guide", error)
+  const declaration = perfboardHere(cwd, "guide", error)
   if (declaration === null) return 1
   try {
     log(

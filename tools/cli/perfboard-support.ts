@@ -8,7 +8,8 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
-  discoverDeclarations, loadDeclaration, type PerfboardDeclaration,
+  discoverDeclarations, loadDeclaration, requirePerfboard,
+  type PerfboardBoardDeclaration, type PerfboardDeclaration,
 } from "../perfboard/declaration.ts"
 
 export function errorMessage(error: unknown): string {
@@ -83,6 +84,27 @@ export function boardHere(
     return loadDeclaration(here)
   } catch (caught) {
     error(`FAIL ${here}`)
+    for (const line of reportLines(errorMessage(caught))) error(line)
+    return null
+  }
+}
+
+/**
+ * `boardHere`, narrowed to a perfboard, for the verbs whose whole job is a
+ * VeroRoute layout. A `pcb` board has none, so it refuses naming the verb
+ * rather than answering with an empty layout path.
+ */
+export function perfboardHere(
+  cwd: string,
+  verb: string,
+  error: (line: string) => void,
+): PerfboardBoardDeclaration | null {
+  const declaration = boardHere(cwd, verb, error)
+  if (declaration === null) return null
+  try {
+    return requirePerfboard(declaration, verb)
+  } catch (caught) {
+    error(`FAIL ${declaration.file}`)
     for (const line of reportLines(errorMessage(caught))) error(line)
     return null
   }

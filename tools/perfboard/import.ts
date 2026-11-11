@@ -11,12 +11,12 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { exportNetlistFor } from "./check.ts"
-import type { PerfboardDeclaration } from "./declaration.ts"
+import type { PerfboardBoardDeclaration } from "./declaration.ts"
 import { replaceAtomically } from "./mutate.ts"
 import { cleanupProduced, runnerFor, tempPathAlongside } from "./verbs.ts"
 import type { VerbDeps, VerbRun } from "./verbs.ts"
 
-export async function runImport(declaration: PerfboardDeclaration, deps: VerbDeps = {}): Promise<string> {
+export async function runImport(declaration: PerfboardBoardDeclaration, deps: VerbDeps = {}): Promise<string> {
   if (fs.existsSync(declaration.vrtPath)) {
     throw new Error(
       `${declaration.vrtPath} already exists. "import" creates a board's first layout; to bring ` +

@@ -15,7 +15,7 @@
  * (`tools/perfboard/scaffold-membership.ts`), because a skipped check must never
  * look like a passing one.
  */
-import { boardHere, errorMessage, reportLines } from "./perfboard-support.ts"
+import { perfboardHere, errorMessage, reportLines } from "./perfboard-support.ts"
 import { checkScaffoldMembership } from "../perfboard/scaffold-membership.ts"
 
 export async function dispatchScaffoldMembership(
@@ -24,7 +24,7 @@ export async function dispatchScaffoldMembership(
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
-  const declaration = boardHere(cwd, "scaffold-membership", error)
+  const declaration = perfboardHere(cwd, "scaffold-membership", error)
   if (declaration === null) return 1
   try {
     const result = await checkScaffoldMembership(

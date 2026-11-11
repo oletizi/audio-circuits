@@ -3,7 +3,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { runImport } from "../../tools/perfboard/import.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import type { VerbDeps } from "../../tools/perfboard/verbs.ts"
 
 const createdDirs: string[] = []
@@ -12,11 +12,11 @@ afterEach(() => {
   for (const dir of createdDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
 })
 
-function board(): PerfboardDeclaration {
+function board(): PerfboardBoardDeclaration {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-import-"))
   createdDirs.push(dir)
   return {
-    file: path.join(dir, "perfboard.json"), dir,
+    kind: "perfboard", file: path.join(dir, "perfboard.json"), dir,
     circuitPath: path.join(dir, "circuit.ts"), exportName: "circuit",
     vrtPath: path.join(dir, "board.vrt"),
   }

@@ -1,4 +1,5 @@
 {
+  "kind": "perfboard",
   "sch": "../../circuits/transistor-preamp/staged-board.kicad_sch",
   "circuit": "../../circuits/transistor-preamp/staged-board.ts",
   "export": "transistorPreampStaged",

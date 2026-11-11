@@ -1,9 +1,9 @@
 import { test, expect } from "bun:test"
 import { assertOffBoardIds, assertPadOrder } from "../../tools/perfboard/check.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 
-const DECLARATION: PerfboardDeclaration = {
-  file: "/tmp/perfboard.json",
+const DECLARATION: PerfboardBoardDeclaration = {
+  kind: "perfboard", file: "/tmp/perfboard.json",
   dir: "/tmp",
   circuitPath: "/tmp/circuit.ts",
   exportName: "board",

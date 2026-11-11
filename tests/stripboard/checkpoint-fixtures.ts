@@ -65,7 +65,7 @@ import { referenceNetsFromExport } from "../../tools/stripboard/equivalence.ts"
 import { parseCheckReport, type CheckInput } from "../../tools/stripboard/constraints.ts"
 import { stockFor } from "../../tools/stripboard/grade.ts"
 import { loadRules } from "../../tools/stripboard/rules.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { exportNetlistFor, runVerorouteCheck, verorouteBinary } from "../../tools/perfboard/check.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
@@ -134,7 +134,7 @@ export function checkpointInput(board: string): CheckInput {
     )
   }
   const root = moduleRepoRoot()
-  const declaration = loadDeclaration(path.join(root, entry.declaration))
+  const declaration = loadPerfboardDeclaration(path.join(root, entry.declaration), "test")
   const dumpText = dumpOf(declaration.vrtPath)
   const rules = loadRules()
   return {
@@ -151,7 +151,7 @@ export function checkpointInput(board: string): CheckInput {
 /** `--check` on one checkpoint board, exported through the repository's own lowering path. */
 function checkRunFor(declarationPath: string): { readonly status: number; readonly output: string } {
   const root = moduleRepoRoot()
-  const declaration = loadDeclaration(path.join(root, declarationPath))
+  const declaration = loadPerfboardDeclaration(path.join(root, declarationPath), "test")
   // The SAME lowering `make check` and the write verbs use, so there is no
   // second export path here.
   const text = exportedNetlist.get(declarationPath)
@@ -190,7 +190,7 @@ export async function primeCheckpointNetlists(): Promise<void> {
   const root = moduleRepoRoot()
   for (const [, entry] of Object.entries(CHECKPOINT_BOARDS)) {
     if (exportedNetlist.has(entry.declaration)) continue
-    const declaration = loadDeclaration(path.join(root, entry.declaration))
+    const declaration = loadPerfboardDeclaration(path.join(root, entry.declaration), "test")
     exportedNetlist.set(entry.declaration, await exportNetlistFor(declaration))
   }
 }

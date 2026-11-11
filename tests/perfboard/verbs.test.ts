@@ -3,12 +3,12 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { runCuts, runUpdate, runStripboard, runEdit } from "../../tools/perfboard/verbs.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import type { GitRunner } from "../../tools/perfboard/mutate.ts"
 
-function declaration(vrtPath: string): PerfboardDeclaration {
+function declaration(vrtPath: string): PerfboardBoardDeclaration {
   return {
-    file: "/tmp/perfboard.json", dir: "/tmp",
+    kind: "perfboard", file: "/tmp/perfboard.json", dir: "/tmp",
     circuitPath: "/tmp/circuit.ts", exportName: "circuit", vrtPath,
   }
 }

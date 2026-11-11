@@ -44,12 +44,12 @@ import { padTerminals } from "../../tools/guide/pads.ts"
 import { buildableDump } from "../../tools/guide/preflight.ts"
 import { renderLayout } from "../../tools/guide/render.ts"
 import { wireLinkRefs } from "../../tools/guide/wire-links.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { runnerFor } from "../../tools/perfboard/verbs.ts"
 
 const REPO_ROOT = moduleRepoRoot()
-const DECLARATION = loadDeclaration(path.join(REPO_ROOT, "boards", "pultec-low-boost", "perfboard.json"))
+const DECLARATION = loadPerfboardDeclaration(path.join(REPO_ROOT, "boards", "pultec-low-boost", "perfboard.json"), "test")
 
 /** The three stand-in sections sitting at a level pot's end stop on this board. */
 const ZERO_OHM_PARTS = [

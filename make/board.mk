@@ -38,6 +38,15 @@
 SCH     := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field sch)
 NETLIST := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field netlist)
 
+# THE BOARD'S KIND, read through the declaration loader like SCH and NETLIST
+# above, never by grepping the JSON. `perfboard` is a hand-built stripboard with
+# a VeroRoute layout; `pcb` has no layout (design change C1, TOOLING.md "Board
+# kinds"). It selects what `check` runs below. If the declaration is broken the
+# loader prints why and this is empty; `check` then takes the perfboard path,
+# whose own CLI call refuses on the same declaration, so a broken declaration is
+# never read as a pcb.
+BOARD_KIND := $(shell bun "$(CLI)" board-info -C "$(CURDIR)" --field kind)
+
 # KICAD_CLI follows the VEROROUTE/QMAKE shape from veroroute.mk in spirit -
 # an explicitly set KICAD_CLI (environment, or `make KICAD_CLI=...`) always
 # wins outright, and the result is exported so it reaches any recipe that
@@ -93,7 +102,7 @@ PDF_MERGE := $(shell bun "$(REPO_ROOT)/tools/cli/resolved-default.ts" pdf-merge)
 endif
 export PDF_MERGE
 
-.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt print-%
+.PHONY: help perfboard-help check cuts import update stripboard edit guide bom board-info netlist-agrees wiring scaffold-membership place adopt pcb-test print-%
 
 # print-%: prints any Make variable's final, resolved value - `make
 # print-KICAD_CLI` - the GNU Make idiom for inspecting what a variable
@@ -104,6 +113,10 @@ export PDF_MERGE
 # (docs/known-gaps.md G170).
 print-%:
 	@echo '$($*)'
+
+# The board's own test file. Defined outside the schematic conditional because a
+# pcb board needs it whether or not a schematic is declared (`pcb-test` below).
+NETLIST_TEST := $(REPO_ROOT)/tests/circuits/$(notdir $(CURDIR)).test.ts
 
 ifneq ($(strip $(SCH)),)
 ifeq ($(wildcard $(SCH)),)
@@ -149,8 +162,6 @@ else
 # drifted transcription stops here, loudly, naming the mismatch bun test
 # found, instead of `check` producing a confident wrong answer against a
 # circuit nobody looked at again.
-NETLIST_TEST := $(REPO_ROOT)/tests/circuits/$(notdir $(CURDIR)).test.ts
-
 netlist-agrees:
 	@bun "$(CLI)" netlist-sync --sch "$(SCH)" --netlist "$(NETLIST)" --kicad-cli "$(KICAD_CLI)"
 	@if [ ! -f "$(NETLIST_TEST)" ]; then \
@@ -375,8 +386,33 @@ perfboard-help:
 # prints a NOTICE saying so - `check` reports `ok <path>` in identical words
 # whether a guard ran or not, which is the failure shape this whole workflow
 # exists to prevent.
+#
+# A `pcb` BOARD HAS NO LAYOUT TO CHECK, so its `check` is not this one with parts
+# removed: it runs `netlist-agrees` (the notice when no schematic is declared)
+# and then `pcb-test`, which requires tests/circuits/<board>.test.ts whether or
+# not a schematic is declared - without a schematic that test is the only thing
+# the board's check can say. It never runs veroroute, wiring, scaffold-membership
+# or `perfboard.ts check`: each of them reads a VeroRoute layout this board does
+# not have.
+ifeq ($(BOARD_KIND),pcb)
+check: netlist-agrees pcb-test
+
+pcb-test:
+	@if [ ! -f "$(NETLIST_TEST)" ]; then \
+		echo "$(CURDIR) is kind \"pcb\", but $(NETLIST_TEST) does not exist."; \
+		echo "  A pcb board has no layout to check, so tests/circuits/<board>.test.ts is the"; \
+		echo "  whole of its check. Add it; there is no default for a check that asserts nothing."; \
+		exit 1; \
+	fi
+	@cd "$(REPO_ROOT)" && bun test "$(NETLIST_TEST)"
+else
 check: veroroute netlist-agrees wiring scaffold-membership
 	@bun "$(CLI)" check -C "$(CURDIR)"
+
+pcb-test:
+	@echo "$(CURDIR) is kind \"perfboard\"; pcb-test applies to a pcb board only." >&2
+	@exit 1
+endif
 
 wiring:
 	@bun "$(CLI)" wiring -C "$(CURDIR)"

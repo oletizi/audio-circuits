@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test"
 import path from "node:path"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { unresolvedCutsMessage } from "../../tools/perfboard/cut-state.ts"
 import {
   writeGuidePacket, packetFiles, GUIDE_HTML, GUIDE_PAGES_PDF, GUIDE_PDF, SCHEMATIC_PAGE,
@@ -11,8 +11,8 @@ import { DUMP_TEXT, fixtureCircuit } from "./fixture.ts"
 import { fakePdfTools } from "./fake-pdf-tools.ts"
 import { memoryFs } from "./memory-fs.ts"
 
-const DECLARATION: PerfboardDeclaration = {
-  file: "/repo/boards/test-board/perfboard.json",
+const DECLARATION: PerfboardBoardDeclaration = {
+  kind: "perfboard", file: "/repo/boards/test-board/perfboard.json",
   dir: "/repo/boards/test-board",
   circuitPath: "/repo/circuits/test.ts",
   exportName: "testBoard",

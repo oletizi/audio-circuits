@@ -5,7 +5,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { checkPerfboard, verorouteBinary } from "../../tools/perfboard/check.ts"
 import { resolveBinary } from "../../tools/perfboard/acquire.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { BUILDABILITY_HEADING } from "../../tools/stripboard/buildability.ts"
 import { declaration, healthyBuildability, netlist, withVrt } from "./check-fixtures.ts"
 
@@ -127,15 +127,15 @@ export function board() {
 
 function withCircuitModule(
   source: string,
-  run: (declaration: PerfboardDeclaration) => Promise<void>,
+  run: (declaration: PerfboardBoardDeclaration) => Promise<void>,
 ): Promise<void> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-check-mod-"))
   const circuitPath = path.join(dir, `circuit-${Math.random().toString(36).slice(2)}.ts`)
   fs.writeFileSync(circuitPath, source)
   const vrtPath = path.join(dir, "board.vrt")
   fs.writeFileSync(vrtPath, "59")
-  const decl: PerfboardDeclaration = {
-    file: path.join(dir, "perfboard.json"), dir,
+  const decl: PerfboardBoardDeclaration = {
+    kind: "perfboard", file: path.join(dir, "perfboard.json"), dir,
     circuitPath, exportName: "board", vrtPath,
   }
   return run(decl).finally(() => fs.rmSync(dir, { recursive: true, force: true }))

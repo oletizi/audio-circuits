@@ -57,7 +57,7 @@ import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { builtCommit as defaultBuiltCommit, readPin as defaultReadPin } from "../perfboard/acquire.ts"
-import { boardName, loadDeclaration } from "../perfboard/declaration.ts"
+import { boardName, loadPerfboardDeclaration } from "../perfboard/declaration.ts"
 import { assertLayoutRecoverable, defaultGitRunner } from "../perfboard/mutate.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { refuse, type AdoptDeps, type AdoptInput, type MakeCheckRun } from "./adopt-model.ts"
@@ -266,7 +266,7 @@ function revert(placed: Placed): void {
  */
 export function adoptLayout(input: AdoptInput, deps: AdoptDeps): readonly string[] {
   const declarationFile = path.join(input.boardDir, "perfboard.json")
-  const declaration = loadDeclaration(declarationFile)
+  const declaration = loadPerfboardDeclaration(declarationFile, "adopt")
   const board = {
     name: boardName(declaration),
     declarationFile,

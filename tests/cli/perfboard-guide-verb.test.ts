@@ -20,6 +20,7 @@ function boardTree(schematic: "declared" | "none" = "declared"): string {
   fs.writeFileSync(
     path.join(dir, "perfboard.json"),
     JSON.stringify({
+      kind: "perfboard",
       circuit: "c.ts",
       export: "demo",
       vrt: "demo.vrt",

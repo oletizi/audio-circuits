@@ -3,7 +3,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { loadCircuit } from "../../tools/perfboard/load.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 
 /**
  * Each test writes its own throwaway circuit module to a fresh temp directory
@@ -11,12 +11,12 @@ import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
  * filename, so Node/Bun's module cache never returns a stale module for a
  * path a previous test already imported.
  */
-function withModule(contents: string, run: (declaration: PerfboardDeclaration) => Promise<void>): Promise<void> {
+function withModule(contents: string, run: (declaration: PerfboardBoardDeclaration) => Promise<void>): Promise<void> {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "perfboard-load-"))
   const circuitPath = path.join(dir, `circuit-${Math.random().toString(36).slice(2)}.ts`)
   fs.writeFileSync(circuitPath, contents)
-  const declaration: PerfboardDeclaration = {
-    file: path.join(dir, "perfboard.json"),
+  const declaration: PerfboardBoardDeclaration = {
+    kind: "perfboard", file: path.join(dir, "perfboard.json"),
     dir,
     circuitPath,
     exportName: "circuit",

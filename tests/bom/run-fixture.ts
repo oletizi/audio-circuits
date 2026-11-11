@@ -6,7 +6,7 @@
 import { net, type Network } from "../../lib/model/types.ts"
 import type { BomDeps, BomFs } from "../../tools/bom/run.ts"
 import type { CatalogEntry } from "../../tools/bom/catalog.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 
 export const RESISTOR_FOOTPRINT = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 
@@ -59,9 +59,9 @@ export function fittingResistor(checked: string = "2026-09-01"): CatalogEntry {
   }
 }
 
-export function declarationIn(dir: string): PerfboardDeclaration {
+export function declarationIn(dir: string): PerfboardBoardDeclaration {
   return {
-    file: `${dir}/perfboard.json`, dir,
+    kind: "perfboard", file: `${dir}/perfboard.json`, dir,
     circuitPath: `${dir}/circuit.ts`, exportName: "demo", vrtPath: `${dir}/demo.vrt`,
   }
 }

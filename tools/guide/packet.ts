@@ -56,7 +56,7 @@
  */
 import fs from "node:fs"
 import path from "node:path"
-import { boardName, type PerfboardDeclaration } from "../perfboard/declaration.ts"
+import { boardName, type PerfboardBoardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { runnerFor, type VerbRun } from "../perfboard/verbs.ts"
 import { wiringPath as boardWiringPath } from "../perfboard/wiring-sync.ts"
@@ -145,7 +145,7 @@ export interface GuideDeps {
    * Optional and overridden for the same reason as `mergeSchematicPage`.
    */
   readonly pdfPageSizes?: (pdfMerge: string, pdf: string) => readonly PageSize[]
-  readonly loadCircuit?: (declaration: PerfboardDeclaration) => Promise<BoardCircuit>
+  readonly loadCircuit?: (declaration: PerfboardBoardDeclaration) => Promise<BoardCircuit>
   readonly fs?: GuideFs
   readonly now?: () => Date
   readonly env?: Env
@@ -205,7 +205,7 @@ const REAL_FS: GuideFs = {
   rename: (from, to) => fs.renameSync(from, to),
 }
 
-function dumpBoard(declaration: PerfboardDeclaration, deps: GuideDeps): string {
+function dumpBoard(declaration: PerfboardBoardDeclaration, deps: GuideDeps): string {
   const run = runnerFor(deps)(["--dump-board", declaration.vrtPath])
   if (run.status !== 0) {
     throw new Error(
@@ -227,7 +227,7 @@ function isoDate(date: Date): string {
  * cuts are unresolved, a part is floating, or any step fails. A board that
  * declares no schematic is NOT an error: see this module's comment.
  */
-export async function writeGuidePacket(declaration: PerfboardDeclaration, deps: GuideDeps): Promise<string> {
+export async function writeGuidePacket(declaration: PerfboardBoardDeclaration, deps: GuideDeps): Promise<string> {
   const schPath = declaration.schPath
   const dumpText = dumpBoard(declaration, deps)
   const dump = buildableDump(dumpText, declaration.vrtPath)

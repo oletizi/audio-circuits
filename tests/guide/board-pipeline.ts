@@ -16,7 +16,7 @@
  * `assertLayoutMatchesCircuit` rather than loaded in a half state.
  */
 import path from "node:path"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { runnerFor } from "../../tools/perfboard/verbs.ts"
 import { buildChecklist, type ChecklistSection } from "../../tools/guide/checklist.ts"
@@ -65,7 +65,7 @@ export interface Loaded {
 
 /** Load a board's real layout and circuit, and build its checklist - the pipeline `make guide` runs. */
 export async function loadBoard(boardName: string): Promise<Loaded> {
-  const declaration = loadDeclaration(path.join(REPO_ROOT, "boards", boardName, "perfboard.json"))
+  const declaration = loadPerfboardDeclaration(path.join(REPO_ROOT, "boards", boardName, "perfboard.json"), "test")
   const dumpText = dumpBoard(declaration.vrtPath)
   const dump = buildableDump(dumpText, declaration.vrtPath)
   const pads = padTerminals(dumpText)

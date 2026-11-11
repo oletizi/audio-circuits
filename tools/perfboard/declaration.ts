@@ -24,7 +24,16 @@ import fs from "node:fs"
 import path from "node:path"
 import { VENDORED_CHECKOUT_NAMES } from "../../lib/not-source.ts"
 
-export interface PerfboardDeclaration {
+/**
+ * What a declared board IS. A `perfboard` is a hand-built stripboard with a
+ * VeroRoute layout; a `pcb` is a board whose artifact is a KiCad design with
+ * no VeroRoute layout (design change C1 of the H7 carrier plan). The kind is
+ * REQUIRED and never defaulted: a declaration that omitted it would silently
+ * become one or the other, and the two have different checks.
+ */
+export type BoardKind = "perfboard" | "pcb"
+
+interface DeclarationCommon {
   /** Absolute path to the perfboard.json itself. */
   readonly file: string
   /** The directory holding it, which relative fields resolve against. */
@@ -33,8 +42,6 @@ export interface PerfboardDeclaration {
   readonly circuitPath: string
   /** The named export in that module which returns the Network. */
   readonly exportName: string
-  /** Absolute path to the VeroRoute layout, resolved from `dir`. */
-  readonly vrtPath: string
   /**
    * Absolute path to the hand-authored KiCad schematic this board's netlist
    * export comes from, when declared. Present iff `netlistPath` is present.
@@ -49,6 +56,34 @@ export interface PerfboardDeclaration {
    * let `make` catch.
    */
   readonly netlistPath?: string
+}
+
+export interface PerfboardBoardDeclaration extends DeclarationCommon {
+  readonly kind: "perfboard"
+  /** Absolute path to the VeroRoute layout, resolved from `dir`. */
+  readonly vrtPath: string
+}
+
+export interface PcbBoardDeclaration extends DeclarationCommon {
+  readonly kind: "pcb"
+}
+
+export type PerfboardDeclaration = PerfboardBoardDeclaration | PcbBoardDeclaration
+
+/**
+ * Narrow to a perfboard, refusing a pcb board loudly. For every caller that
+ * only makes sense on a VeroRoute layout: a pcb board has none, and answering
+ * with an empty path would be a fallback.
+ */
+export function requirePerfboard(
+  declaration: PerfboardDeclaration, verb: string,
+): PerfboardBoardDeclaration {
+  if (declaration.kind === "perfboard") return declaration
+  throw new Error(
+    `${declaration.file}: "${verb}" acts on a VeroRoute layout, and this board is kind "pcb", ` +
+      "which has none. A pcb board is checked by its netlist agreement and its " +
+      "tests/circuits/<board>.test.ts only (see TOOLING.md, board kinds).",
+  )
 }
 
 // `dist` is this walker's own build-output name; `VENDORED_CHECKOUT_NAMES`
@@ -105,6 +140,20 @@ function readOptionalString(parsed: unknown, key: string, file: string): string 
 }
 
 /**
+ * Read the required `kind`. There is no default: a declaration that does not
+ * say which kind of board it is would be guessed into one, and the two kinds
+ * run different checks.
+ */
+function readKind(parsed: unknown, file: string): BoardKind {
+  const value = readString(parsed, "kind", file)
+  if (value === "perfboard" || value === "pcb") return value
+  throw new Error(
+    `${file}: field "kind" must be "perfboard" or "pcb", got "${value}". "perfboard" is a ` +
+      'hand-built stripboard with a VeroRoute layout ("vrt"); "pcb" is a board with no layout.',
+  )
+}
+
+/**
  * Load one perfboard.json.
  *
  * Nothing is defaulted or guessed. The named circuit and layout are NOT
@@ -133,6 +182,7 @@ export function loadDeclaration(file: string): PerfboardDeclaration {
 
   const dir = path.dirname(abs)
 
+  const kind = readKind(parsed, abs)
   const sch = readOptionalString(parsed, "sch", abs)
   const netlist = readOptionalString(parsed, "netlist", abs)
   if ((sch === undefined) !== (netlist === undefined)) {
@@ -143,15 +193,26 @@ export function loadDeclaration(file: string): PerfboardDeclaration {
     )
   }
 
-  return {
+  const common = {
     file: abs,
     dir,
     circuitPath: path.resolve(dir, readString(parsed, "circuit", abs)),
     exportName: readString(parsed, "export", abs),
-    vrtPath: path.resolve(dir, readString(parsed, "vrt", abs)),
     ...(sch !== undefined ? { schPath: path.resolve(dir, sch) } : {}),
     ...(netlist !== undefined ? { netlistPath: path.resolve(dir, netlist) } : {}),
   }
+
+  if (kind === "pcb") {
+    if (isRecord(parsed) && parsed["vrt"] !== undefined) {
+      throw new Error(
+        `${abs}: a "pcb" declaration must not declare "vrt". A pcb board has no VeroRoute ` +
+          "layout, so a layout field on it is a contradiction rather than an extra. Remove " +
+          '"vrt", or change "kind" to "perfboard" if this board is a stripboard layout.',
+      )
+    }
+    return { kind, ...common }
+  }
+  return { kind, ...common, vrtPath: path.resolve(dir, readString(parsed, "vrt", abs)) }
 }
 
 /**
@@ -212,4 +273,12 @@ export function discoverDeclarations(root: string): string[] {
   }
   walk(path.resolve(root))
   return found.sort()
+}
+
+/**
+ * Load a declaration and narrow it to a perfboard in one step, refusing a pcb
+ * board by name. For every caller whose whole job is a VeroRoute layout.
+ */
+export function loadPerfboardDeclaration(file: string, verb: string): PerfboardBoardDeclaration {
+  return requirePerfboard(loadDeclaration(file), verb)
 }

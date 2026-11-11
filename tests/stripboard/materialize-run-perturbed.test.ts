@@ -41,7 +41,7 @@ import {
   sha256OfFile,
 } from "../../tools/stripboard/adopt-checks.ts"
 import { exportNetlistFor } from "../../tools/perfboard/check.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import {
   PIN_PATTERN_ENTRY,
   SPAN_DATA_ENTRY,
@@ -237,7 +237,7 @@ test("provenance-chain: a netlist re-exported after the run is refused by name",
   )
   // AND THE SAME CIRCUIT STILL EXPORTS TO THE SAME CONTENT, so the case is about
   // the stamp rather than about a changed circuit.
-  const declaration = loadDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"))
+  const declaration = loadPerfboardDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"), "test")
   const again = await exportNetlistFor(declaration)
   expect(
     again.replace(/created\s+\S+/, ""),
@@ -268,7 +268,7 @@ test("provenance-chain: a candidate outside the run directory is refused", () =>
   // THE REALISTIC MISTAKE IS NAMING THE BOARD ITSELF - `--candidate
   // boards/<board>/<board>.perfboard.vrt` - which is the file an operator has in
   // hand and the one the verb is about to overwrite.
-  const committed = loadDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json")).vrtPath
+  const committed = loadPerfboardDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"), "test").vrtPath
   expect(() =>
     assertProvenanceChain(
       { ...adoptInputFor(run), candidate: committed },
@@ -433,7 +433,7 @@ test("the producer refuses a board whose committed layout runs its strips the ot
   const root = freshRoot("vertical-board")
   const boardDir = path.join(root, "boards", BOARD)
   fs.mkdirSync(boardDir, { recursive: true })
-  const committed = loadDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"))
+  const committed = loadPerfboardDeclaration(path.join(REPO, "boards", BOARD, "perfboard.json"), "test")
   const flipped = path.join(boardDir, `${BOARD}.perfboard.vrt`)
   const set = forkSpawn()([
     "--set-strips",
@@ -448,6 +448,7 @@ test("the producer refuses a board whose committed layout runs its strips the ot
     path.join(boardDir, "perfboard.json"),
     `${JSON.stringify(
       {
+        kind: "perfboard",
         circuit: path.relative(boardDir, path.join(REPO, "circuits", "pultec", "physical", "low-boost.ts")),
         export: "pultecLowBoost",
         vrt: `${BOARD}.perfboard.vrt`,

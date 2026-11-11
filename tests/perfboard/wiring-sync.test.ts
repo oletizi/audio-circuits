@@ -4,10 +4,10 @@ import path from "node:path"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { assertSharedBy, syncWiringDoc, wiringDocumentFor } from "../../tools/perfboard/wiring-sync.ts"
 import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
-import type { PerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
+import type { PerfboardBoardDeclaration } from "../../tools/perfboard/declaration.ts"
 
-const DECLARATION: PerfboardDeclaration = {
-  file: "/tmp/perfboard.json",
+const DECLARATION: PerfboardBoardDeclaration = {
+  kind: "perfboard", file: "/tmp/perfboard.json",
   dir: "/tmp",
   circuitPath: "/tmp/circuit.ts",
   exportName: "board",
@@ -106,8 +106,8 @@ test("a drifted guide is rewritten, and the message says the wiring changed", as
   // Written into a scratch directory so the real board files are untouched; the
   // declaration still points at the real circuit, so the content is genuine.
   const scratch = freshTempScratch("wiring-sync-")
-  const declaration: PerfboardDeclaration = {
-    file: path.join(scratch, "perfboard.json"),
+  const declaration: PerfboardBoardDeclaration = {
+    kind: "perfboard", file: path.join(scratch, "perfboard.json"),
     dir: scratch,
     circuitPath: path.join(REPO, "circuits/pultec/physical/low-cut.ts"),
     exportName: "pultecLowCut",

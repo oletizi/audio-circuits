@@ -31,7 +31,8 @@ import path from "node:path"
 import { isMain } from "./entrypoint.ts"
 import { checkPerfboard, type PerfboardResult, type Env } from "../perfboard/check.ts"
 import {
-  boardName, loadDeclaration, type PerfboardDeclaration,
+  boardName, loadDeclaration, loadPerfboardDeclaration,
+  type PerfboardBoardDeclaration, type PerfboardDeclaration,
 } from "../perfboard/declaration.ts"
 import {
   readPin as defaultReadPin,
@@ -165,7 +166,7 @@ const USAGE = [
   "                           reached the board's own clause. It is a DIAGNOSTIC",
   "                           and no number is attached to it; it costs the full",
   "                           evaluation cap per seed.",
-  "  --field sch|netlist      board-info: print only that resolved path (or an",
+  "  --field sch|netlist|kind board-info: print only that resolved path (or an",
   "                           empty line if it was not declared), for scripts.",
   "",
   "Environment:",
@@ -214,7 +215,7 @@ export interface RunCliOptions {
   readonly log?: (line: string) => void
   readonly error?: (line: string) => void
   /** Injected so the CLI is testable without a veroroute binary. */
-  readonly check?: (declaration: PerfboardDeclaration) => Promise<PerfboardResult>
+  readonly check?: (declaration: PerfboardBoardDeclaration) => Promise<PerfboardResult>
   /** Injected so `cuts`, `update`, `stripboard` and `edit` never touch a real spawn or git checkout in tests. */
   readonly verbDeps?: VerbDeps
   /** Injected so `veroroute` never reads the real process environment in tests. */
@@ -258,7 +259,7 @@ export interface RunCliOptions {
 
 async function runCheck(
   cwd: string,
-  check: (declaration: PerfboardDeclaration) => Promise<PerfboardResult>,
+  check: (declaration: PerfboardBoardDeclaration) => Promise<PerfboardResult>,
   log: (line: string) => void,
   error: (line: string) => void,
 ): Promise<number> {
@@ -273,10 +274,10 @@ async function runCheck(
 
   let failed = false
   for (const file of files) {
-    let declaration: PerfboardDeclaration | null = null
+    let declaration: PerfboardBoardDeclaration | null = null
     let result: PerfboardResult
     try {
-      declaration = loadDeclaration(file)
+      declaration = loadPerfboardDeclaration(file, "check")
       result = await check(declaration)
     } catch (caught) {
       failed = true
@@ -312,7 +313,7 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
 
   const check =
     opts.check ??
-    ((declaration: PerfboardDeclaration) => checkPerfboard(declaration, { repoRoot: opts.repoRoot }))
+    ((declaration: PerfboardBoardDeclaration) => checkPerfboard(declaration, { repoRoot: opts.repoRoot }))
 
   const verb = args[0]
   if (verb === undefined || verb === "--help" || verb === "-h" || verb === "help") {
@@ -388,13 +389,18 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
         log(declaration.netlistPath ?? "")
         return 0
       }
-      error(`--field "${field ?? ""}" is not a known field. Valid fields: sch, netlist.`)
+      if (field === "kind") {
+        log(declaration.kind)
+        return 0
+      }
+      error(`--field "${field ?? ""}" is not a known field. Valid fields: sch, netlist, kind.`)
       return 1
     }
 
     log(`board:   ${boardName(declaration)}`)
     log(`circuit: ${declaration.circuitPath} (${declaration.exportName})`)
-    log(`layout:  ${declaration.vrtPath}`)
+    log(declaration.kind === "perfboard" ? `layout:  ${declaration.vrtPath}` : "layout:  none (kind pcb)")
+    log(`kind:    ${declaration.kind}`)
     if (declaration.schPath !== undefined) log(`sch:     ${declaration.schPath}`)
     if (declaration.netlistPath !== undefined) log(`netlist: ${declaration.netlistPath}`)
     return 0

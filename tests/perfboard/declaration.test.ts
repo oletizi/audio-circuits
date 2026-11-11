@@ -3,7 +3,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import {
-  boardName, discoverDeclarations, loadDeclaration,
+  boardName, discoverDeclarations, loadDeclaration, requirePerfboard,
 } from "../../tools/perfboard/declaration.ts"
 import { VENDORED_CHECKOUTS } from "../../lib/not-source.ts"
 
@@ -19,12 +19,12 @@ function withDeclaration(contents: string, run: (file: string) => void): void {
 }
 
 const VALID = JSON.stringify({
-  circuit: "../../circuits/pt2399-core/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
+  kind: "perfboard", circuit: "../../circuits/pt2399-core/pt2399-core.ts", export: "pt2399Core", vrt: "board.vrt",
 })
 
 test("resolves both paths against the declaration's own directory", () => {
   withDeclaration(VALID, (file) => {
-    const declaration = loadDeclaration(file)
+    const declaration = requirePerfboard(loadDeclaration(file), "test")
     expect(declaration.exportName).toBe("pt2399Core")
     expect(declaration.vrtPath).toBe(path.join(path.dirname(file), "board.vrt"))
     expect(declaration.circuitPath).toBe(
@@ -40,16 +40,16 @@ test("the board name is its directory's basename, never a field", () => {
 })
 
 test("absent field throws with field name", () => {
-  withDeclaration(JSON.stringify({ export: "x", vrt: "b.vrt" }), (file) => {
+  withDeclaration(JSON.stringify({ kind: "perfboard", export: "x", vrt: "b.vrt" }), (file) => {
     expect(() => loadDeclaration(file)).toThrow(/missing required string field "circuit"/)
   })
 })
 
 test("wrong-typed and empty fields throw with proper messages", () => {
-  withDeclaration(JSON.stringify({ circuit: 5, export: "x", vrt: "b.vrt" }), (file) => {
+  withDeclaration(JSON.stringify({ kind: "perfboard", circuit: 5, export: "x", vrt: "b.vrt" }), (file) => {
     expect(() => loadDeclaration(file)).toThrow(/must be a string, got number/)
   })
-  withDeclaration(JSON.stringify({ circuit: "  ", export: "x", vrt: "b.vrt" }), (file) => {
+  withDeclaration(JSON.stringify({ kind: "perfboard", circuit: "  ", export: "x", vrt: "b.vrt" }), (file) => {
     expect(() => loadDeclaration(file)).toThrow(/must not be empty/)
   })
 })
@@ -96,6 +96,7 @@ test("a board declaring neither sch nor netlist leaves both undefined", () => {
 test("sch and netlist resolve against the declaration's own directory, like every other path", () => {
   const contents = JSON.stringify({
     sch: "../sch/board.kicad_sch",
+    kind: "perfboard",
     circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
@@ -111,6 +112,7 @@ test("sch and netlist resolve against the declaration's own directory, like ever
 test("an absolute sch path is honored as given, unmodified by the declaration's directory", () => {
   const contents = JSON.stringify({
     sch: "/absolute/path/board.kicad_sch",
+    kind: "perfboard",
     circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
@@ -124,6 +126,7 @@ test("an absolute sch path is honored as given, unmodified by the declaration's 
 test("declaring sch without netlist is a refusal naming the fix", () => {
   const contents = JSON.stringify({
     sch: "../sch/board.kicad_sch",
+    kind: "perfboard",
     circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     vrt: "board.vrt",
@@ -135,6 +138,7 @@ test("declaring sch without netlist is a refusal naming the fix", () => {
 
 test("declaring netlist without sch is a refusal naming the fix", () => {
   const contents = JSON.stringify({
+    kind: "perfboard",
     circuit: "../../circuits/pt2399-core/pt2399-core.ts",
     export: "pt2399Core",
     netlist: "../fixtures/board.net",
@@ -184,4 +188,46 @@ test("discovery skips every vendored checkout name, not only node_modules", () =
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
+})
+
+const PCB_BASE = {
+  kind: "pcb", circuit: "../../circuits/x/x.ts", export: "x",
+}
+
+test("a declaration without kind refuses, naming the field", () => {
+  withDeclaration(JSON.stringify({ circuit: "c.ts", export: "x", vrt: "b.vrt" }), (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/field "kind"/)
+  })
+})
+
+test("kind must be perfboard or pcb", () => {
+  withDeclaration(JSON.stringify({ kind: "smd", circuit: "c.ts", export: "x" }), (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/"perfboard" or "pcb"/)
+  })
+})
+
+test("a pcb declaration with vrt refuses", () => {
+  withDeclaration(JSON.stringify({ ...PCB_BASE, vrt: "b.vrt" }), (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/pcb.*vrt/)
+  })
+})
+
+test("a pcb declaration needs no vrt", () => {
+  withDeclaration(JSON.stringify(PCB_BASE), (file) => {
+    const declaration = loadDeclaration(file)
+    expect(declaration.kind).toBe("pcb")
+    expect("vrtPath" in declaration).toBe(false)
+  })
+})
+
+test("a perfboard declaration still requires vrt", () => {
+  withDeclaration(JSON.stringify({ kind: "perfboard", circuit: "c.ts", export: "x" }), (file) => {
+    expect(() => loadDeclaration(file)).toThrow(/field "vrt"/)
+  })
+})
+
+test("requirePerfboard refuses a pcb board naming the verb and the kind", () => {
+  withDeclaration(JSON.stringify(PCB_BASE), (file) => {
+    expect(() => requirePerfboard(loadDeclaration(file), "cuts")).toThrow(/"cuts".*kind "pcb"/)
+  })
 })

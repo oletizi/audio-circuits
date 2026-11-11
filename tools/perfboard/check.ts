@@ -39,7 +39,7 @@ import type { CheckInput } from "../stripboard/constraints-model.ts"
 import { resolveBinary } from "./acquire.ts"
 import { buildabilityInputFor } from "./buildability-input.ts"
 import { foldCutState } from "./cut-state.ts"
-import type { PerfboardDeclaration } from "./declaration.ts"
+import type { PerfboardBoardDeclaration, PerfboardDeclaration } from "./declaration.ts"
 import { isRecord } from "./guards.ts"
 import { assertDesignators, assertPinNumbers } from "./circuit-exports.ts"
 import { loadCircuit } from "./load.ts"
@@ -166,14 +166,14 @@ export interface CheckDeps {
    * is checking for.
    */
   readonly buildabilityInput?: (
-    declaration: PerfboardDeclaration,
+    declaration: PerfboardBoardDeclaration,
     netlistText: string,
     run: CheckRun,
   ) => Promise<CheckInput>
 }
 
 export interface PerfboardResult {
-  readonly declaration: PerfboardDeclaration
+  readonly declaration: PerfboardBoardDeclaration
   readonly ok: boolean
   /**
    * veroroute's own report verbatim, then the buildability section, then the
@@ -268,7 +268,7 @@ export async function exportNetlistFor(declaration: PerfboardDeclaration): Promi
 }
 
 export async function checkPerfboard(
-  declaration: PerfboardDeclaration,
+  declaration: PerfboardBoardDeclaration,
   deps: CheckDeps = {},
 ): Promise<PerfboardResult> {
   const exportNetlist = deps.exportNetlist ?? exportNetlistFor

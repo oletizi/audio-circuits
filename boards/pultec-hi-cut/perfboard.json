@@ -1,4 +1,5 @@
 {
+  "kind": "perfboard",
   "sch": "../../drafted/pultec/pultec-hi-cut/pultec-hi-cut.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/pultec/physical/hi-cut.ts",
   "export": "pultecHiCut",

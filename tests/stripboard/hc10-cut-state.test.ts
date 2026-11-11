@@ -52,7 +52,7 @@ import { copperComponents, cutsAcross, netByPin, netOf } from "../../tools/strip
 import type { Pin } from "../../tools/guide/dump.ts"
 import { exportNetlistFor, runVerorouteCheck } from "../../tools/perfboard/check.ts"
 import { buildabilityInputFor } from "../../tools/perfboard/buildability-input.ts"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { negativeInput } from "./grade-fixtures.ts"
 import { cleanUpFixtures, freshRoot } from "./run-scratch.ts"
@@ -62,7 +62,7 @@ afterAll(cleanUpFixtures)
 /** One committed board's `CheckInput`, through the same path `make check` builds it. */
 async function boardInput(board: string): Promise<CheckInput> {
   const root = moduleRepoRoot()
-  const declaration = loadDeclaration(path.join(root, "boards", board, "perfboard.json"))
+  const declaration = loadPerfboardDeclaration(path.join(root, "boards", board, "perfboard.json"), "test")
   const text = await exportNetlistFor(declaration)
   const netPath = path.join(freshRoot(`hc10-${board}`), "board.net")
   fs.writeFileSync(netPath, text)

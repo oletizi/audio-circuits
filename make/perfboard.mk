@@ -27,6 +27,13 @@
 # elsewhere, not a second one - there is deliberately no BOARD=<name>
 # variable.
 #
+# TWO BOARD KINDS (design change C1). A perfboard.json declares a required
+# "kind": "perfboard" is the hand-built stripboard described above, and "pcb" is a
+# board with no VeroRoute layout. A pcb board's `check` runs netlist-agrees and
+# then tests/circuits/<board>.test.ts (required, with or without a schematic), and
+# never veroroute, wiring, scaffold-membership or `perfboard.ts check`. See
+# TOOLING.md, "Board kinds", and make/board.mk's `check`.
+#
 # Every directory opts in with exactly one line:
 #
 #     include $(shell git rev-parse --show-toplevel)/make/perfboard.mk

@@ -451,6 +451,6 @@ export function withStripAxisFlipped(input: CheckInput): CheckInput {
  */
 export function fixtureDeclaration(fields: Record<string, unknown>): string {
   const file = path.join(freshTempScratch("stripboard-stock-"), "perfboard.json")
-  fs.writeFileSync(file, JSON.stringify({ circuit: "./c.ts", export: "c", vrt: "c.vrt", ...fields }))
+  fs.writeFileSync(file, JSON.stringify({ kind: "perfboard", circuit: "./c.ts", export: "c", vrt: "c.vrt", ...fields }))
   return file
 }

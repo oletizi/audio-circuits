@@ -931,6 +931,36 @@ decide something this file does not answer:
 
 ---
 
+Board kinds: `perfboard` and `pcb` (design change C1)
+-------------------------------------------------------
+
+Every `boards/<board>/perfboard.json` declares a REQUIRED `"kind"`, with no
+default: a declaration that omitted it would be guessed into one kind or the
+other, and the two run different checks. `tools/perfboard/declaration.ts` refuses
+a missing or unknown kind naming the field.
+
+- **`"perfboard"`** is a hand-built stripboard with a VeroRoute layout. It
+  requires `"vrt"`, and its `make check` is unchanged: `veroroute`,
+  `netlist-agrees`, `wiring`, `scaffold-membership`, then
+  `tools/cli/perfboard.ts check`.
+- **`"pcb"`** is a board whose artifact is a KiCad design with no VeroRoute
+  layout. It must NOT declare `"vrt"` (a layout field on a board with no layout is
+  a contradiction, so it refuses). Its `make check` runs `netlist-agrees` (the
+  usual notice when no schematic is declared) and then `bun test
+  tests/circuits/<board>.test.ts`. **That test file is required for a `pcb` board
+  whether or not `sch` is declared**, and `make check` fails naming it when it
+  is absent. A `pcb` board never runs `veroroute`, `wiring`,
+  `scaffold-membership` or `tools/cli/perfboard.ts check`; each of the verbs
+  that act on a layout (`cuts`, `import`, `update`, `stripboard`, `edit`,
+  `guide`, `place`, `adopt`, `scaffold-membership`, `check`) refuses on a
+  `pcb` board, naming the verb and the kind.
+
+`make/board.mk` reads the kind through the declaration loader
+(`bun tools/cli/perfboard.ts board-info --field kind`), never by grepping JSON.
+The routing is tested by `tests/perfboard/board-kind-make.test.ts`.
+
+---
+
 The failure mode this document exists inside
 --------------------------------------------
 

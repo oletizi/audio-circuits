@@ -45,7 +45,7 @@
  */
 import { test, expect } from "bun:test"
 import path from "node:path"
-import { loadDeclaration } from "../../tools/perfboard/declaration.ts"
+import { loadPerfboardDeclaration } from "../../tools/perfboard/declaration.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { loadBoardCircuit } from "../../tools/guide/circuit.ts"
 import {
@@ -56,7 +56,7 @@ import { memoryFs } from "./memory-fs.ts"
 
 const REPO_ROOT = moduleRepoRoot()
 const BOARD = "pultec-low-boost"
-const DECLARATION = loadDeclaration(path.join(REPO_ROOT, "boards", BOARD, "perfboard.json"))
+const DECLARATION = loadPerfboardDeclaration(path.join(REPO_ROOT, "boards", BOARD, "perfboard.json"), "test")
 const GUIDE_DIR = path.join(DECLARATION.dir, "guide")
 
 interface Packet {
