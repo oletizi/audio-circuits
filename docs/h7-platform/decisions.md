@@ -141,7 +141,7 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 - **Date:** 2026-10-05.
 - **Decides:** the interface spec and contract first, then splitting the design into two boards, then audio board layout, then module layout. The contract is drafted, populated by analysis and only then frozen.
 - **Set by:** [split spec §2][split].
-- **Amended by:** [O-16](#o-16) (owner) withdraws step 1, the Seed3 bench characterisation. The contract was never frozen in the pedals repository (its `status` is still `draft`).
+- **Amended by:** [O-16](#o-16) (owner) withdraws step 1, the Seed3 bench characterisation. The contract was never frozen in the pedals repository (its `status` is still `draft`). Then the owner's direction of 2026-11-10 in this repository (`docs/known-gaps.md` G311): the order of work is the controller's, chosen to put drawn pages in front of him soonest, so the boards are drawn against the draft contract while the freeze proceeds alongside, and a page the freeze changes is redrawn.
 - **Narrowed by:** [RR-10](#rr-10) (controller ruling; the owner may override) refines it into the split spec's ten steps (§13).
 - **Not carried:** "re-run every gate" (after the split) names the pedals generator's gates, which stayed behind with it; and "Sub-project B (layout tooling) comes before both layouts" names the pedals repository's own layout tooling, which stays behind. In this repository the phases are the port spec's (models, schematics, then layout and fabrication).
 

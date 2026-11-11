@@ -148,6 +148,18 @@ step below ends with pages shown to the owner.
    ruling reuses the pedal's codec and SAI isolation, they come in through
    `include()` from the pedal's blocks, not as copies.
 
+**The contract freeze runs alongside, not ahead.** Pedals owner decision O-10
+put the freeze before the carrier. The owner's direction of 2026-11-10
+(`docs/known-gaps.md` G311, recorded as an amendment on O-10 in
+`decisions.md`) puts drawn pages first and hands the order to the controller.
+So pages are drawn against the draft `module-interface.json`, and the freeze
+proceeds in this phase: FB-AN2606, DATASHEET-REVISIONS-RECHECK,
+MIDI-IN-RECEIVER-STOCK, STACK-HEIGHT-OWNER-REPORT, then CONTRACT-FREEZE. When
+the freeze changes the contract, G4 re-runs on every board and every page it
+changes is redrawn and sent again. STACK-HEIGHT-OWNER-REPORT is a report, not a
+circuit question: it goes to the owner in a message of its own, never with a
+drawing.
+
 **A board is finished for sequencing when its pages have been sent to the
 owner, not when he has given a verdict** (controller ruling). He gives verdicts
 on his own schedule, and the work does not stall waiting for one. When a verdict
@@ -276,10 +288,11 @@ controller ruling.
   BYPASS-PARTS-TO-MODEL; VBUS-HOTPLUG; VREF-A-BLEEDER-DECISION; TEST-PAD-SPLIT
   (with its `### Conflict:` entry); CONTRACT-MODEL-CHECK (G4);
   MODULE-3V3-BUDGET; MODULE-BUCK-LOOP-STARTUP; SWD-PINOUT-FORMAL-SPEC.
+- **The contract freeze, run alongside the drawing** (see **Sequence**):
+  FB-AN2606, DATASHEET-REVISIONS-RECHECK, STACK-HEIGHT-OWNER-REPORT and
+  CONTRACT-FREEZE, with MIDI-IN-RECEIVER-STOCK above.
 - **Left for layout, fabrication or bring-up**, whatever their tag:
-  FB-AN2606, CONTRACT-FREEZE, DATASHEET-REVISIONS-RECHECK, MLCC-DC-BIAS,
-  MODULE-CLOCK-TREE-RESTATE, STACK-HEIGHT-OWNER-REPORT,
-  MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING,
+  MLCC-DC-BIAS, MODULE-CLOCK-TREE-RESTATE, MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING,
   FOOTSWITCH-PAPER-READINGS, USB2-SPEC-UNREAD. Each one's row gets its phase
   corrected in `open-items.md`, with the reason.
 
@@ -295,6 +308,7 @@ That rule carries over from the port.
 | No circuit questions to the owner without a drawing | Owner | *"I can't make any informed review decisions until I can see schematics"* |
 | The drawing practice is used as it stands, except where these boards need a change | Owner | *"We will NOT be relitigating ANY of that (unless we find a need to improve it)"* |
 | Order of work | Owner handed it to the controller | *"I don't care what order you execute in"* |
+| Drawing does not wait for the contract freeze (amends O-10's order) | Owner (G311) | *"What did I just say about my ability to evaluate circuits?"*, his answer to being asked whether it should |
 | Faithful transcription of `docs/h7-platform/`; no redesign | Controller ruling | Follows from the owner reviewing only drawings; changes come from his review |
 | One board at a time, smallest first, carrier without loopback first | Controller ruling | Fastest route to a page; tests the new plumbing on a small board |
 | One page per functional block (C3) | Controller ruling | Keeps the one-page loop unchanged; matches the Pultec section pattern and `include()` atomicity |
