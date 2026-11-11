@@ -5,8 +5,10 @@
  * Model conventions this check relies on:
  * - A socket pad is the pin keyed by the pad number as a string, e.g. "8", on the
  *   socket component's units (or its package pins).
+ * - Each socket component must list exactly pads "1".."20". A missing pad, or a
+ *   pad outside 1..20, is a mismatch: a socket model missing a pad must not pass.
  * - "nc" means an unconnected pad: the pin carries the model's tagged no-connect
- *   (`NC`), or the socket lists no such pin at all. A pad on a net with no other
+ *   (`NC`) and nothing else. An absent pad is not nc. A pad on a net with no other
  *   member is not a third representation; `validateNetwork` refuses that.
  *
  * Rules: a signal pin's net is named exactly the contract signal. Reserved pins
@@ -47,6 +49,23 @@ function padConnection(socket: Component, pad: number): Connection | undefined {
   return undefined
 }
 
+const PAD_COUNT = 20
+const PAD_KEY = /^(?:[1-9]|1\d|20)$/
+
+/** Requires exactly pads "1".."20" on a socket; a missing or stray pad is a mismatch. */
+function checkPadSet(socket: Component, part: string, contractPinOf: (pad: number) => number, out: string[]): void {
+  const listed = new Set<string>()
+  for (const [name] of allPins(socket)) {
+    listed.add(name)
+    if (!PAD_KEY.test(name)) out.push(`${part} pad "${name}" is outside 1..${PAD_COUNT}; the socket has no such pad`)
+  }
+  for (let pad = 1; pad <= PAD_COUNT; pad++) {
+    if (!listed.has(String(pad))) {
+      out.push(`${part} pad ${pad} is missing (contract pin ${contractPinOf(pad)}); the socket must list pads 1..${PAD_COUNT}`)
+    }
+  }
+}
+
 function membersOnNet(network: Network, netName: string): number {
   let count = 0
   for (const component of network.components) {
@@ -57,8 +76,7 @@ function membersOnNet(network: Network, netName: string): number {
   return count
 }
 
-function describe(connection: Connection | undefined): string {
-  if (connection === undefined) return "no pin"
+function describe(connection: Connection): string {
   return connection.kind === "nc" ? "nc" : `"${connection.net}"`
 }
 
@@ -68,9 +86,10 @@ function checkPin(
   const { part, pad } = socketPadFor(cp.pin)
   const where = `contract pin ${cp.pin} (${part} pad ${pad})`
   const found = padConnection(findSocket(network, sockets[part]), pad)
+  if (found === undefined) return // reported once by checkPadSet as a missing pad
 
   if (cp.signal !== null) {
-    if (found === undefined || found.kind !== "net" || found.net !== cp.signal) {
+    if (found.kind !== "net" || found.net !== cp.signal) {
       out.push(`${where}: expected net "${cp.signal}", found ${describe(found)}`)
     }
     return
@@ -79,16 +98,17 @@ function checkPin(
     out.push(`${where}: contract gives category "${cp.category}" no signal, so the check cannot say what it should carry`)
     return
   }
-  const unconnected = found === undefined || found.kind === "nc"
+  const unconnected = found.kind === "nc"
   if (board !== "carrier") {
     if (!unconnected) out.push(`${where}: reserved pin must be nc on a ${board}, found ${describe(found)}`)
     return
   }
   const expected = `RESERVED_${cp.pin}`
-  if (found === undefined || found.kind !== "net" || found.net !== expected) {
+  if (found.kind !== "net" || found.net !== expected) {
     out.push(`${where}: reserved pin on the carrier must be net "${expected}", found ${describe(found)}`)
     return
   }
+  // Counts members only; it does not check that the second member is a breakout terminal (no part-role field).
   const members = membersOnNet(network, expected)
   if (members !== 2) {
     out.push(`${where}: net "${expected}" must hold exactly 2 members (pad and one breakout terminal), found ${members}`)
@@ -98,6 +118,8 @@ function checkPin(
 export function checkInterface(network: Network, board: BoardKind, sockets: SocketIds): InterfaceReport {
   const contract = loadContract()
   const mismatches: string[] = []
+  checkPadSet(findSocket(network, sockets.J_MOD_A), "J_MOD_A", (pad) => pad, mismatches)
+  checkPadSet(findSocket(network, sockets.J_MOD_B), "J_MOD_B", (pad) => pad + 20, mismatches)
   for (const cp of contract.pins) checkPin(network, board, sockets, cp, mismatches)
   const protectionUnchecked = contract.pins.filter((p) => p.failsafeRequired).map((p) => p.pin)
   return { mismatches, protectionUnchecked }

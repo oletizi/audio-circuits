@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test"
 import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { loadContract, parseContract, socketPadFor } from "../../circuits/h7-platform/contract.ts"
 import { checkInterface } from "../../circuits/h7-platform/interface-check.ts"
 import type { BoardKind } from "../../circuits/h7-platform/interface-check.ts"
@@ -67,8 +68,23 @@ test("a reserved pin connected on the pedal is reported", () => {
   expect(mismatches[0]).toContain("nc")
 })
 
-test("a reserved pin the socket does not list counts as nc", () => {
-  expect(checkInterface(fixture("module", { 16: "absent" }), "module", SOCKETS).mismatches).toEqual([])
+test("a reserved pad the socket does not list is a mismatch, not nc", () => {
+  const { mismatches } = checkInterface(fixture("module", { 16: "absent" }), "module", SOCKETS)
+  expect(mismatches).toHaveLength(1)
+  expect(mismatches[0]).toContain("J_MOD_A pad 16")
+  expect(mismatches[0]).toContain("missing")
+})
+
+test("a pad 21 on J_MOD_A is reported", () => {
+  const board = fixture("module")
+  const withStray: Network = {
+    ...board,
+    components: board.components.map((c) => c.id === SOCKETS.J_MOD_A
+      ? { ...c, units: [{ name: "MAIN", pins: { ...c.units[0]?.pins, "21": net("VREF_A") } }] } : c),
+  }
+  const { mismatches } = checkInterface(withStray, "module", SOCKETS)
+  expect(mismatches).toHaveLength(1)
+  expect(mismatches[0]).toContain('J_MOD_A pad "21"')
 })
 
 test("a carrier reserved pin with one breakout terminal passes", () => {
@@ -93,7 +109,7 @@ test("a carrier reserved pin left nc is reported", () => {
 })
 
 test("protectionUnchecked lists exactly the contract's failsafe pins", () => {
-  const raw: unknown = JSON.parse(readFileSync("circuits/h7-platform/module-interface.json", "utf8"))
+  const raw: unknown = JSON.parse(readFileSync(join(import.meta.dir, "../../circuits/h7-platform/module-interface.json"), "utf8"))
   const expected: number[] = []
   if (typeof raw === "object" && raw !== null && "pins" in raw && Array.isArray(raw.pins)) {
     for (const p of raw.pins) {
