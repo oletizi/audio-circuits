@@ -59,6 +59,8 @@
 
 import fs from "node:fs"
 import path from "node:path"
+import { DESIGNATORS as CARRIER_DESIGNATORS, h7Carrier, PIN_NUMBERS as CARRIER_PIN_NUMBERS } from "../../circuits/h7-platform/carrier-board.ts"
+import { pinNumberFor } from "../../lib/kicad/from-network.ts"
 import { pultecDesignator } from "../../circuits/pultec/designators.ts"
 import { pultecHiBoost } from "../../circuits/pultec/physical/hi-boost.ts"
 import { pultecHiCut } from "../../circuits/pultec/physical/hi-cut.ts"
@@ -101,7 +103,49 @@ interface DraftedBoard {
  * the call refuses. A board re-pointed at another circuit fails loudly instead of being compared
  * against a model that is no longer its own.
  */
-const BOARDS: readonly DraftedBoard[] = [
+/**
+ * A board whose own module supplies its designators and pin numbers, so neither is derived by the
+ * Pultec rules below. `pinNumbers` is built from the module's own kind-keyed table; a pin that
+ * table does not number refuses (see `carrierPinNumbers`).
+ */
+interface OwnMappingBoard extends DraftedBoard {
+  readonly designators: ReadonlyMap<string, string>
+  /** Built from the model when asked, so a refusal surfaces in the test that asks and not at import. */
+  readonly pinNumbers: (network: Network) => ReadonlyMap<string, ReadonlyMap<string, string>>
+}
+
+/** Every pin a component declares, package pins and unit pins together. */
+function everyPin(component: Component): readonly string[] {
+  const pins = Object.keys(component.pins)
+  for (const unit of component.units) pins.push(...Object.keys(unit.pins))
+  return pins
+}
+
+/**
+ * Component id -> (canonical pin -> number) from a kind-keyed `PIN_NUMBERS`, by the same lookup
+ * `lib/kicad/from-network.ts` lowers with, which refuses a pin it cannot number and names it.
+ */
+function pinNumbersFromTable(
+  network: Network,
+  table: Readonly<Record<string, Readonly<Record<string, string>>>>,
+): ReadonlyMap<string, ReadonlyMap<string, string>> {
+  return new Map(
+    network.components.map((component) => [
+      component.id,
+      new Map(everyPin(component).map((pin) => [pin, pinNumberFor(component, pin, table)])),
+    ]),
+  )
+}
+
+const BOARDS: readonly (DraftedBoard | OwnMappingBoard)[] = [
+  {
+    board: "h7-carrier",
+    module: "circuits/h7-platform/carrier-board.ts",
+    exportName: "h7Carrier",
+    build: h7Carrier,
+    designators: new Map(Object.entries(CARRIER_DESIGNATORS)),
+    pinNumbers: (network) => pinNumbersFromTable(network, CARRIER_PIN_NUMBERS),
+  },
   { board: "pultec-hi-boost", module: "circuits/pultec/physical/hi-boost.ts", exportName: "pultecHiBoost", build: pultecHiBoost },
   { board: "pultec-hi-cut", module: "circuits/pultec/physical/hi-cut.ts", exportName: "pultecHiCut", build: pultecHiCut },
   { board: "pultec-low-boost", module: "circuits/pultec/physical/low-boost.ts", exportName: "pultecLowBoost", build: pultecLowBoost },
@@ -118,7 +162,7 @@ function manifestString(record: Record<string, unknown>, key: string, file: stri
 }
 
 /** The board's entry, after checking the board's own manifest still names this circuit. */
-function declaredBoard(board: string): DraftedBoard {
+function declaredBoard(board: string): DraftedBoard | OwnMappingBoard {
   const entry = BOARDS.find((b) => b.board === board)
   if (entry === undefined) {
     throw new Error(
@@ -510,7 +554,11 @@ export function modelModuleFor(board: string): string {
 
 /** One drafted Pultec page's model, designators and pin numbers. */
 export function modelForSheet(board: string): SheetModel {
-  const network = declaredBoard(board).build()
+  const entry = declaredBoard(board)
+  const network = entry.build()
+  if ("designators" in entry) {
+    return { network, designators: entry.designators, pinNumbers: entry.pinNumbers(network) }
+  }
   checkDeclaredPinNumbers(board, network)
   const pinNumbers = new Map<string, ReadonlyMap<string, string>>()
   for (const component of network.components) pinNumbers.set(component.id, pinNumbersOn(board, component))

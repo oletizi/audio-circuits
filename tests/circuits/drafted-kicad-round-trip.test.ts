@@ -46,20 +46,18 @@ import { committedNetlist, exportDraftedSheet, withOnePinMoved } from "./drafted
  * imported from those five files: each is a `registerDraftedPageTests` CALL, not an exported table,
  * and the pair (board, netlist path) is the one fact of theirs this file needs.
  */
-const BOARDS: ReadonlyArray<{ readonly board: string; readonly netlist: string }> = [
-  { board: "pultec-hi-boost", netlist: "tests/fixtures/pultec-hi-boost.net" },
-  { board: "pultec-hi-cut", netlist: "tests/fixtures/pultec-hi-cut.net" },
-  { board: "pultec-low-boost", netlist: "tests/fixtures/pultec-low-boost.net" },
-  { board: "pultec-low-cut", netlist: "tests/fixtures/pultec-low-cut.net" },
-  { board: "pultec-mid", netlist: "tests/fixtures/pultec-mid.net" },
+const BOARDS: ReadonlyArray<{ readonly board: string; readonly circuit: string; readonly netlist: string }> = [
+  { board: "pultec-hi-boost", circuit: "pultec", netlist: "tests/fixtures/pultec-hi-boost.net" },
+  { board: "pultec-hi-cut", circuit: "pultec", netlist: "tests/fixtures/pultec-hi-cut.net" },
+  { board: "pultec-low-boost", circuit: "pultec", netlist: "tests/fixtures/pultec-low-boost.net" },
+  { board: "pultec-low-cut", circuit: "pultec", netlist: "tests/fixtures/pultec-low-cut.net" },
+  { board: "pultec-mid", circuit: "pultec", netlist: "tests/fixtures/pultec-mid.net" },
 ]
 
-const CIRCUIT = "pultec"
-
-for (const { board, netlist } of BOARDS) {
+for (const { board, circuit, netlist } of BOARDS) {
   test(`${board}: kicad-cli's export of the drafted sheet, right now, agrees with the model exactly as the committed fixture does`, () => {
     const model = modelForSheet(board)
-    const fresh = exportDraftedSheet(CIRCUIT, board)
+    const fresh = exportDraftedSheet(circuit, board)
     const fromFresh = compareSheetToModel(model.network, model.designators, model.pinNumbers, fresh)
     const fromFixture = compareSheetToModel(
       model.network,
@@ -72,11 +70,15 @@ for (const { board, netlist } of BOARDS) {
     // comparing against the committed fixture does. The fixture's own exact lists are already
     // asserted by registerDraftedPageTests; this is what proves the fixture is not stale.
     expect(fromFresh).toEqual(fromFixture)
+    // Equality with the fixture alone would pass a page and fixture that are wrong together, so the
+    // fresh export is also asserted clean on the two lists that say the page IS the circuit.
+    expect(fromFresh.componentIdentity).toEqual([])
+    expect(fromFresh.netMembership).toEqual([])
   })
 
   test(`${board}: moving one pin in the fresh export is reported - the control for the equality above`, () => {
     const model = modelForSheet(board)
-    const fresh = exportDraftedSheet(CIRCUIT, board)
+    const fresh = exportDraftedSheet(circuit, board)
     const mutated = withOnePinMoved(fresh)
     const problems = compareSheetToModel(model.network, model.designators, model.pinNumbers, mutated)
     // An equality assertion between two comparisons is the same shape whether they agreed or

@@ -32,6 +32,7 @@ registerDraftedPageTests({
   valueDisagreements: [SELECTOR_VALUE_DISAGREEMENT],
   // The four tapped coil sections, the boost and Q pots, and the selector - every off-board part
   // of this board and nothing else.
+  footprintComparisons: "some",
   footprintlessParts: [
     "L_HI_BOOST_100MH",
     "L_HI_BOOST_200MH",

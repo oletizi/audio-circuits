@@ -294,6 +294,52 @@ export interface DraftedPageUnderTest {
    * between this list and `footprints`. A count of 7 would survive that swap; a list says which.
    */
   readonly footprintlessParts: readonly string[]
+  /**
+   * Whether this board's model declares any footprint for the page to be compared against.
+   * `"some"`: the five Pultec boards, whose pages declare none, so `footprints` must report the
+   * `"<none>"` disagreements. `"none"`: a model that declares no footprint at all, where
+   * `footprints` must be empty and `footprintlessParts` must name EVERY component, so a part that
+   * later acquires a footprint fails here. Required, never defaulted: which of the two a board is
+   * is a claim about its model.
+   */
+  readonly footprintComparisons: "some" | "none"
+}
+
+/** The slice of `compareSheetToModel`'s result the footprint claim reads. */
+interface FootprintLists {
+  readonly footprints: readonly string[]
+  readonly footprintsUndeclared: readonly string[]
+}
+
+/** The footprint assertions of `registerDraftedPageTests`, separate so each branch is testable without a page. */
+export function assertFootprintComparisons(
+  mode: "some" | "none",
+  problems: FootprintLists,
+  footprintlessParts: readonly string[],
+  componentIds: readonly string[],
+): void {
+  if (mode === "some") {
+    // **THE ONLY FOOTPRINT DISAGREEMENT IS THAT THE PAGE DECLARES NONE.** copperhead and akcli
+    // write no `Footprint` field at all, so every entry here must read `"<none>"`; one that names a
+    // real footprint would be the page and the model disagreeing about which part is fitted, which
+    // is a different and far worse claim.
+    for (const problem of problems.footprints) expect(problem).toContain('footprint "<none>"')
+    // Not an incidental zero: a page that declared every footprint would make the loop above vacuous,
+    // and this says the loop had something to examine.
+    expect(problems.footprints.length).toBeGreaterThan(0)
+  } else {
+    // A model declaring no footprint has nothing for `footprints` to compare, and every component
+    // is footprintless. A part that acquires a footprint moves out of both lists and fails here.
+    expect([...problems.footprints]).toEqual([])
+    expect([...footprintlessParts].sort()).toEqual([...componentIds].sort())
+  }
+  // **AND THE PARTS THE LOOP ABOVE SAYS NOTHING ABOUT, NAMED.** `footprints` compares only the
+  // parts whose model declares a footprint, so without this the assertions above are silent
+  // about every panel control, selector and tapped coil on the page. Compared UNSORTED because
+  // `compareSheetToModel` sorts this list itself, and the board's own entry is written in that
+  // order. A component moving between this list and `footprints` - acquiring or losing a
+  // footprint declaration - must fail here, which is why it is a list and not a count.
+  expect(problems.footprintsUndeclared).toEqual([...footprintlessParts])
 }
 
 /**
@@ -382,20 +428,6 @@ export function registerDraftedPageTests(page: DraftedPageUnderTest): void {
     // is NOT universal, which is why this list comes from the board rather than from a constant.
     expect([...problems.pinIdentity].sort()).toEqual([...page.pinDisagreements].sort())
     expect([...problems.values].sort()).toEqual([...page.valueDisagreements].sort())
-    // **THE ONLY FOOTPRINT DISAGREEMENT IS THAT THE PAGE DECLARES NONE.** copperhead and akcli
-    // write no `Footprint` field at all, so every entry here must read `"<none>"`; one that names a
-    // real footprint would be the page and the model disagreeing about which part is fitted, which
-    // is a different and far worse claim.
-    for (const problem of problems.footprints) expect(problem).toContain('footprint "<none>"')
-    // Not an incidental zero: a page that declared every footprint would make the loop above vacuous,
-    // and this says the loop had something to examine.
-    expect(problems.footprints.length).toBeGreaterThan(0)
-    // **AND THE PARTS THE LOOP ABOVE SAYS NOTHING ABOUT, NAMED.** `footprints` compares only the
-    // parts whose model declares a footprint, so without this the two assertions above are silent
-    // about every panel control, selector and tapped coil on the page. Compared UNSORTED because
-    // `compareSheetToModel` sorts this list itself, and the board's own entry is written in that
-    // order. A component moving between this list and `footprints` - acquiring or losing a
-    // footprint declaration - must fail here, which is why it is a list and not a count.
-    expect(problems.footprintsUndeclared).toEqual([...page.footprintlessParts])
+    assertFootprintComparisons(page.footprintComparisons, problems, page.footprintlessParts, model.network.components.map((c) => c.id))
   })
 }

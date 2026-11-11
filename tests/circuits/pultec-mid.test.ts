@@ -37,6 +37,7 @@ registerDraftedPageTests({
   // The five tapped coil sections, the level pot, and BOTH switches - the eleven-position selector
   // and the boost/off/cut toggle. Every off-board part of this board and nothing else; it is eight
   // where the two cut boards are two because mid's own section carries the inductor bank.
+  footprintComparisons: "some",
   footprintlessParts: [
     "L_MID_0R1H",
     "L_MID_0R22H",
