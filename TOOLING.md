@@ -961,6 +961,34 @@ The routing is tested by `tests/perfboard/board-kind-make.test.ts`.
 
 ---
 
+Drawing a board that has never had a schematic (design change C2)
+------------------------------------------------------------------
+
+`make draw` verifies the intent's net partition against the board's committed
+netlist export before it drafts. A `pcb` board whose schematic is the thing being
+drafted has no such export, so for a `pcb` board that declares no `"netlist"` the
+verb SKIPS that step, continues to draft and render, and prints a block starting
+`NO INDEPENDENT NETLIST:` saying the pre-draft partition check did not run, that
+there is no schematic to export one from, and that the binding check is the
+drafted page's own `kicad-cli` export compared with the model
+(`tests/circuits/drafted-kicad-round-trip.test.ts`) once the page is committed.
+It does NOT write a netlist derived from the model to stand in: a check that
+compares the model with a copy of itself cannot fail. A perfboard board with no
+`netlist` still refuses, and a `pcb` board that declares one still runs the check.
+The step lives in `tools/draught/draw-partition.ts`; the tests are
+`tests/draught/draw-board-kind.test.ts`.
+
+Two notices follow from the same rule, that a skipped check must never look like a
+passing one. `make/board.mk`'s `netlist-agrees` passes `--kind` to
+`schematic-notice`, and for a `pcb` board the notice says no layout check exists
+and that the board's own `tests/circuits/<board>.test.ts` is what runs, instead of
+the perfboard wording ("the check below still ran, against the layout"). And the
+repo-root `perfboard.ts check` walk prints a `SKIP <board>: kind "pcb" has no
+VeroRoute layout; its check is make -C boards/<board> check` line for each `pcb`
+board; that line is not an `ok` and does not change the exit status.
+
+---
+
 The failure mode this document exists inside
 --------------------------------------------
 

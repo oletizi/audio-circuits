@@ -51,6 +51,12 @@ NONE OF `EVALUATING-DRAWINGS.md`'s CRITERIA:**
    artifact.
 1. Build or locate the copperhead intent and verify its net partition against
    the model's committed netlist export, as sets of `REF.PIN` sets.
+   A `pcb` board that has never had a schematic declares no netlist, so `make
+   draw` skips this step and prints a `NO INDEPENDENT NETLIST:` block saying the
+   check did not run (`TOOLING.md`, design change C2). Treat that as a check not
+   made, not a check passed: the binding comparison is the committed page's
+   `kicad-cli` export against the model. Never write a model-derived netlist to
+   fill the gap.
 2. Draft with copperhead, and draft more than one group arrangement. **The
    word for when to stop is `TOOLING.md`'s, it is in quotes there, and it is
    undefined** - its §2 says *"Try more than one if the first is unusable"

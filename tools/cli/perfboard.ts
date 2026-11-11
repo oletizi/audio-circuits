@@ -277,6 +277,14 @@ async function runCheck(
     let declaration: PerfboardBoardDeclaration | null = null
     let result: PerfboardResult
     try {
+      const loaded = loadDeclaration(file)
+      if (loaded.kind === "pcb") {
+        // Said out loud, never skipped silently: a pcb board has no VeroRoute layout, so this
+        // walk has nothing to check for it. This is neither an `ok` nor a FAIL and does not
+        // change the exit status; the board's own check is the make target named here.
+        log(`SKIP ${boardName(loaded)}: kind "pcb" has no VeroRoute layout; its check is make -C boards/${boardName(loaded)} check`)
+        continue
+      }
       declaration = loadPerfboardDeclaration(file, "check")
       result = await check(declaration)
     } catch (caught) {
@@ -440,7 +448,19 @@ export async function runCli(argv: string[], opts: RunCliOptions = {}): Promise<
   if (verb === "netlist-sync") return dispatchNetlistSync(args.slice(1), opts.netlistSyncDeps, log, error)
 
   if (verb === "schematic-notice") {
-    for (const line of schematicNoticeLines(path.join(cwd, "perfboard.json"))) log(line)
+    // `--kind` is REQUIRED and there is no default wording: the perfboard text claims a layout
+    // check ran, which is false for a pcb board, and guessing the wrong one is exactly that lie.
+    const kindIndex = args.indexOf("--kind")
+    const kind = kindIndex === -1 ? undefined : args[kindIndex + 1]
+    if (kind !== "perfboard" && kind !== "pcb") {
+      error(
+        `"schematic-notice" requires --kind perfboard|pcb (got ${kind === undefined ? "none" : `"${kind}"`}). ` +
+          "make/board.mk passes the declaration's kind; it is not defaulted because the two kinds' " +
+          "notices say different things about which check ran.",
+      )
+      return 1
+    }
+    for (const line of schematicNoticeLines(path.join(cwd, "perfboard.json"), kind)) log(line)
     return 0
   }
 

@@ -185,7 +185,7 @@ else
 # tools/perfboard/schematic-notice.ts (bun test reaches it; this recipe just
 # calls it, same as every other verb here).
 netlist-agrees:
-	@bun "$(CLI)" schematic-notice -C "$(CURDIR)"
+	@bun "$(CLI)" schematic-notice --kind "$(BOARD_KIND)" -C "$(CURDIR)"
 endif
 
 .DEFAULT_GOAL := help

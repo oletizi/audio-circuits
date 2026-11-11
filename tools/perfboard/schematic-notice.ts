@@ -25,8 +25,30 @@
  * the fix (declare `sch`/`netlist` in this exact file).
  */
 
-/** The notice's lines, in print order, for `perfboardJsonPath`. */
-export function schematicNoticeLines(perfboardJsonPath: string): string[] {
+import type { BoardKind } from "./declaration.ts"
+
+/**
+ * The notice's lines, in print order, for `perfboardJsonPath`.
+ *
+ * **THE WORDING DEPENDS ON THE BOARD'S KIND, because the perfboard wording is false for a
+ * `pcb` board.** The perfboard text says the check that follows "still ran, against the layout
+ * this board was built from". A `pcb` board has no layout, so that sentence would claim a check
+ * ran that did not - a skipped check looking like a passing one. A pcb board's notice says
+ * instead what did and did not run: no layout check exists for the kind, and the board's own
+ * `tests/circuits/<board>.test.ts` is what `make check` runs.
+ */
+export function schematicNoticeLines(perfboardJsonPath: string, kind: BoardKind): string[] {
+  if (kind === "pcb") {
+    return [
+      `NOTICE: ${perfboardJsonPath} declares no "sch"/"netlist" pair.`,
+      "  This run did NOT compare the circuit against any schematic, so drift between the",
+      "  circuit and its schematic source cannot have been detected here.",
+      '  This board is kind "pcb": no layout check exists for this kind, so none ran or will run.',
+      "  What `make check` runs instead is this board's own tests/circuits/<board>.test.ts, and that",
+      "  is the only check behind an `ok` from it.",
+      `  Declare "sch" and "netlist" in ${perfboardJsonPath} to enable the schematic comparison.`,
+    ]
+  }
   return [
     `NOTICE: ${perfboardJsonPath} declares no "sch"/"netlist" pair.`,
     "  This run did NOT compare the circuit against any schematic, so drift between the",

@@ -80,8 +80,8 @@ import path from "node:path"
 import {
   DRAFT_TOOLS,
   draftWithCopperhead,
-  verifyIntentAgainstModel,
 } from "../draught/draw-draft.ts"
+import { checkPartition } from "../draught/draw-partition.ts"
 import { resolveDrawIntent } from "../draught/draw-intent.ts"
 import {
   RENDER_TOOLS,
@@ -303,41 +303,16 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   if ("refusal" in resolvedIntent) return refusal(resolvedIntent.refusal, advisorySections)
   const intent = resolvedIntent.intent
 
-  if (declaration.netlistPath === undefined) {
-    return refusal(
-      `${declaration.file} declares no "netlist" field, so there is no committed model export to verify ` +
-        `${board}'s intent against. Declare "sch"/"netlist" there (tools/perfboard/declaration.ts) before drafting.`,
-      advisorySections,
-    )
-  }
-
-  // Step 3: verify the intent's net partition against the model. A disagreement here is the
-  // one ground EVALUATING-DRAWINGS.md §3 permits withholding a page for - a drawing whose
-  // connectivity would disagree with the circuit model - so nothing is drafted.
-  let netlistText: string
-  try {
-    netlistText = fs.readFileSync(declaration.netlistPath, "utf8")
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
-    return refusal(`could not read ${declaration.netlistPath}: ${detail}.`, advisorySections)
-  }
-  const agreement = verifyIntentAgainstModel(intent, netlistText)
-  if (!agreement.agrees) {
-    return refusal(
-      [
-        `${board}'s intent (${resolvedIntent.path}) disagrees with the model's committed netlist ` +
-          `(${declaration.netlistPath}) on net partition - EVALUATING-DRAWINGS.md §3 permits withholding a ` +
-          "drawing whose connectivity disagrees with the circuit model, so nothing was drafted:",
-        ...agreement.disagreements,
-      ].join("\n"),
-      advisorySections,
-    )
-  }
+  // Step 3: verify the intent's net partition against the model's committed netlist - or, for
+  // a pcb board that has never had a schematic, say loudly that this check did not run (C2).
+  const partition = checkPartition({ board, declaration, intent, intentPath: resolvedIntent.path })
+  if (partition.kind === "refused") return refusal(partition.message, advisorySections)
 
   // Step 4: draft with copperhead.
   const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,
+    ...(partition.kind === "not-run" ? [partition.notice] : []),
     ...advisorySections,
     `draft (copperhead, intent ${resolvedIntent.path}):\n${draft.stdout}`.trim(),
   ]

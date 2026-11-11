@@ -270,3 +270,33 @@ test("board-info --field with an unknown field name refuses", async () => {
     fs.rmSync(root, { recursive: true, force: true })
   }
 })
+
+test("check prints an explicit SKIP line for a pcb board: not a pass, not a failure", async () => {
+  const root = tree()
+  try {
+    fs.mkdirSync(path.join(root, "boards", "carrier"), { recursive: true })
+    fs.writeFileSync(
+      path.join(root, "boards", "carrier", "perfboard.json"),
+      JSON.stringify({ kind: "pcb", circuit: "c.ts", export: "carrier" }),
+    )
+    const checked: string[] = []
+    const lines: string[] = []
+    const errors: string[] = []
+    const code = await runCli(["check"], {
+      cwd: root,
+      log: (line) => lines.push(line),
+      error: (line) => errors.push(line),
+      check: (declaration) => { checked.push(declaration.vrtPath); return okCheck(declaration) },
+    })
+    expect(code).toBe(0)
+    expect(errors).toEqual([])
+    // The perfboard board is still checked; the pcb board never reaches the layout check.
+    expect(checked).toEqual([path.join(root, "boards", "demo", "demo.vrt")])
+    expect(lines).toContain(
+      'SKIP carrier: kind "pcb" has no VeroRoute layout; its check is make -C boards/carrier check',
+    )
+    expect(lines.filter((line) => line.startsWith("ok "))).toEqual([`ok ${path.join(root, "boards", "demo", "demo.vrt")}`])
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true })
+  }
+})
