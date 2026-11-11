@@ -143,3 +143,16 @@ Task 12: minor (deferred): README.md:161 trace 1 hop 5 attributes "Contract in s
 Task 2: minor (deferred): decisions.md:1321 "does not carry" gate-clause summary omits O-10
 Spec observation (owner's document, not edited): spec Goal 6 (line 204) and Decisions table (line 290) say layout-B.svg is "the picture he chose from"; it is a regeneration with control positions unchanged (mechanical-and-controls.md §4.3) — surface to owner
 Task 13: dispatched implementer (sonnet), BASE 43ccbad
+Task 13: implementer DONE_WITH_CONCERNS 413b28f (verify 17/17 PASS; typecheck exit 0 after bun install; make check exit 2 at boards/pt2399-core "delay_ic (kind ic) has no parts-list rule in tools/bom/needs.ts" — identical on main 05f4a2a, pre-existing)
+Task 13: complete (commits 43ccbad..413b28f; no separate task review — verification-only task, its outputs re-checked by the final review)
+Ruling: Task 13 gets no separate task review; the final whole-branch review covers its README and record — it writes no ported content — costs: a record error caught one stage later
+Final review: dispatched (opus) over bd5f061..413b28f
+Final review: not ready as-is — 3 Important (I-1 decisions.md D7 VDDA bank current; I-2 O-6 "R-33 to R-45" labels owner decisions R-34/R-43 as rulings in 4 places; I-3 pcbway-fab-rules.md "Where the rules are enforced" reads as live pedals-router instruction) + Minors M-1..M-9
+Ruling: I-3 is fixed (marked as how pedals enforced the rules at the pin, history; enforcement here set in phase 4) — the owner's "do NOT poison it" and anti-goal outweigh "keep the content" for a standing instruction — costs a slightly edited fab-rules section
+Ruling: final fix wave includes I-1, I-2, I-3, M-1, M-2, M-4, M-5, M-6, M-7, M-8; M-3 (verify.sh coverage of D_PEN / stale-json per-value) parked — no defect hidden today, manual sweep found none — costs a weaker guard for later phases
+Final fix wave: dispatched (opus), FIX_BASE 413b28f
+Final fix wave: DONE ca5f6a0 (I-1..I-3, M-1, M-2, M-4..M-8); residual: pcbway-fab-rules.md:13 present-tense 'every board in this repository is designed to PCBWay standard spec'
+Final fix wave: re-review — all findings addressed, no new Critical/Important breakage (commits 413b28f..ca5f6a0)
+Final: parked — pcbway-fab-rules.md:11-14 present-tense "Every board in this repository is designed to PCBWay's standard ... spec" — Ruling: left as the standard's stated scope (banners at :5/:7 make phase-4 authority explicit); reviewer rated Minor — costs a sentence that reads as a measured fact
+Final: parked — M-3 verify.sh coverage (D_PEN not in STALE_RE; stale-json does not check per-value naming; nocode skip if docs/standards absent when run alone; power check loose) — see Ruling above
+Final: complete
