@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "drafted/h7-platform/h7-carrier/h7-carrier.generated-do-not-edit.kicad_sch")
-		(date "2026-11-11T10:59:18")
+		(date "2026-11-11T15:29:43")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -202,6 +202,60 @@
 				(tstamps "/")
 			)
 			(tstamps "00899963-994c-55cf-8a74-3dcc0b587128")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "C4")
+			(value ".1uF")
+			(fields
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "Device")
+				(part "C")
+				(description "Unpolarized capacitor")
+			)
+			(property
+				(name "Sheetname")
+				(value "h7-carrier.generated-do-not-edit")
+			)
+			(property
+				(name "Sheetfile")
+				(value "h7-carrier.generated-do-not-edit.kicad_sch")
+			)
+			(property
+				(name "ki_keywords")
+				(value "cap capacitor")
+			)
+			(property
+				(name "ki_fp_filters")
+				(value "C_*")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "55bac977-393e-5a70-812c-df15e482ace5")
 			(units
 				(unit
 					(name "A")
@@ -3126,6 +3180,11 @@
 			(name "/USB_VBUS_SENSE")
 			(class "Default")
 			(node
+				(ref "C4")
+				(pin "1")
+				(pintype "passive")
+			)
+			(node
 				(ref "J2")
 				(pin "11")
 				(pinfunction "Pin_11_11")
@@ -3209,6 +3268,11 @@
 			)
 			(node
 				(ref "C3")
+				(pin "2")
+				(pintype "passive")
+			)
+			(node
+				(ref "C4")
 				(pin "2")
 				(pintype "passive")
 			)

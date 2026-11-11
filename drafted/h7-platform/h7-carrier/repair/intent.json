@@ -180,6 +180,12 @@
       "libId": "Device:R",
       "value": "20K",
       "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "C4",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "H7 bring-up carrier"
     }
   ],
   "nets": [
@@ -291,6 +297,7 @@
         "C1.2",
         "C2.2",
         "C3.2",
+        "C4.2",
         "J1.20",
         "J2.20",
         "J3.20",
@@ -529,6 +536,7 @@
     {
       "name": "USB_VBUS_SENSE",
       "pins": [
+        "C4.1",
         "J2.11",
         "J4.11",
         "R2.2",

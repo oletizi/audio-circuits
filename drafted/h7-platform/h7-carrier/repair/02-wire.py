@@ -62,6 +62,8 @@ path("USB_DM", (B_TAPS[16], p("J2.16")[1]), (B_TAPS[16], p("U1.7")[1]), "U1.7") 
 for k, tp in ((12, "TP5"), (13, "TP6"), (14, "TP7"), (15, "TP8")):
     path(B_NETS[k], (B_TAPS[k], p(f"J2.{k}")[1]), f"{tp}.1")
 path("USB_VBUS_SENSE", (B_TAPS[11], p("J2.11")[1]), "R2.2")  # sense node: R2 east, R3 south
+path("USB_VBUS_SENSE", "R3.1", "C4.1")                       # C4 in parallel with R3, west of it
+path("GND", "R3.2", "C4.2")
 
 # --- A band: contract pins 1-20, J1 (socket) pad k to J3 (breakout) pad k. ----------------
 A_NETS = {1: "SPARE1", 2: "SPARE2", 3: "SPARE3", 4: "LED2", 5: "LED1", 6: "FSW1", 7: "SPARE4",

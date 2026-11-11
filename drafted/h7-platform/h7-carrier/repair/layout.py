@@ -32,6 +32,7 @@ PARTS = {
     "TP8": (8600, 3300, 180, "none"),
     "R2": (9250, 3300, 270, "none"),  # VBUS -> sense, pin 1 east
     "R3": (9100, 3450, 0, "none"),    # sense -> GND
+    "C4": (8750, 3450, 0, "none"),    # sense -> GND, beside R3 to the west, pins on R3's rows
     # Power entry, dummy loads and rail test points, north-west.
     "J5": (800, 1600, 0, "y"),
     "F1": (1300, 1600, 90, "none"),

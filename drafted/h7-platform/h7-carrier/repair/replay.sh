@@ -15,8 +15,8 @@ set -o pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
 akcli="$root/draughting/venv-akcli/bin/akcli"
-DRAFT=106b21a13ceded56135f58f5638ac50d73c32b1e6a83511f9f7c336856a8c5b5
-PAGE=dc9e93ea4ca6f42249df5faf7004965f83396db9f0c8e366474ca3e3ec5252af
+DRAFT=f5c427e8c6558c2e744762890dc8dd2a24bd39ff52784d29af9e4ad89c27419f
+PAGE=c9355a88d72d589edccc457b3648e0141baf9f5cceb231adb94c3af69061d8f8
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2

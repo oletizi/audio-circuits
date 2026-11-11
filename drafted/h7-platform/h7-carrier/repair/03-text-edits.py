@@ -91,7 +91,11 @@ FIELDS = {
     "R6": {"Reference": (21.5, 114.3, 0), "Value": (21.5, 116.84, 0)},
     "C2": {"Reference": (29.1, 114.3, 0), "Value": (31.8, 116.84, 0)},
     "R2": {"Reference": (234.95, 86.6, 90), "Value": (234.95, 88.9, 90)},
-    "R3": {"Reference": (227.4, 86.36, 0), "Value": (226.3, 88.9, 0)},
+    # R3's Value was at x 226.3 until C4 was added; it moved 1.1 mm east so C4's lower plate
+    # does not end on its first character.
+    "R3": {"Reference": (227.4, 86.36, 0), "Value": (227.4, 88.9, 0)},
+    # C4's fields sit below its GND wire: TP8 is west of it and R3's fields east.
+    "C4": {"Reference": (222.25, 93.98, 0), "Value": (222.25, 96.52, 0)},
 }
 # Power symbols: the Value is the rail's name. Offsets by orientation, in mm from the pin.
 POWER_OFFSET = {

@@ -7,9 +7,9 @@ them, and checks the result against the committed page byte for byte.
 
 | | sha256 |
 | --- | --- |
-| start: `build/draw/h7-carrier/h7-carrier.kicad_sch`, as `make draw` writes it (re-papered to US Letter) | `106b21a13ceded56135f58f5638ac50d73c32b1e6a83511f9f7c336856a8c5b5` |
-| `build/draw/h7-carrier.intent.json`, the intent that draft came from (copied here as `intent.json`) | `e28982a75a5d9502642cd55afc6c45a89da253d21f2ed75e63a57ec13731e57a` |
-| end: the committed page | `dc9e93ea4ca6f42249df5faf7004965f83396db9f0c8e366474ca3e3ec5252af` |
+| start: `build/draw/h7-carrier/h7-carrier.kicad_sch`, as `make draw` writes it (re-papered to US Letter) | `f5c427e8c6558c2e744762890dc8dd2a24bd39ff52784d29af9e4ad89c27419f` |
+| `build/draw/h7-carrier.intent.json`, the intent that draft came from (copied here as `intent.json`) | `804c48cfba820eebce830c3a7bce78bbebcbed4d5cb5d31f9337c2947377b439` |
+| end: the committed page | `c9355a88d72d589edccc457b3648e0141baf9f5cceb231adb94c3af69061d8f8` |
 
 ## Replay
 
