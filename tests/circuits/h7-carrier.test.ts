@@ -20,6 +20,7 @@ import {
 } from "../../circuits/h7-platform/carrier-board.ts"
 import { DATASHEET_PIN_NAMES, FUSE_HOLD_CURRENT_A, PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import { railDraw } from "../../circuits/h7-platform/rail-budget.ts"
+import { vbusSenseAnalysis } from "../../circuits/h7-platform/vbus-sense.ts"
 import { registerDraftedPageTests } from "./drafted-sheet.ts"
 import type { CarrierState } from "../../circuits/h7-platform/rail-budget.ts"
 
@@ -155,6 +156,46 @@ describe("h7 bring-up carrier", () => {
     expect(names).toEqual({ "1": "I/O1", "2": "GND", "3": "I/O2", "4": "I/O2", "5": "VBUS", "6": "I/O1" })
   })
 
+  test("R-57's sense capacitor sits on USB_VBUS_SENSE, apart from the ESD part's VBUS bypass", () => {
+    const network = h7Carrier()
+    const netsOf = (id: string): string[] => {
+      const c = network.components.find((x) => x.id === id)
+      if (c === undefined) throw new Error(`the carrier has no "${id}"`)
+      return Object.values(c.units[0]?.pins ?? {}).map((p) => (p.kind === "net" ? p.net : "NC")).sort()
+    }
+    // Issue 30: the two capacitors two documents both call C_VBUS. Only the first is R-57's option.
+    expect(netsOf("c_vbus_sense")).toEqual(["GND", "USB_VBUS_SENSE"])
+    expect(netsOf("c_vbus")).toEqual(["GND", "VBUS"])
+  })
+
+  test("the sense capacitor's plug-in windows, on FIG-VBUS-HOTPLUG's basis, not derated twice", () => {
+    const a = vbusSenseAnalysis(h7Carrier())
+    // 100 nF x 0.9 x 0.85 x 0.5, the 38.25 nF FIG-VBUS-HOTPLUG already uses.
+    expect(a.cLeastF).toBeCloseTo(38.25e-9, 12)
+    // The carrier's own divider at 1 %: 20.2 / 32.08, and 11.88 k || 19.8 k for the fastest rise.
+    expect(a.ratioMax).toBeCloseTo(20.2 / 32.08, 6)
+    expect(a.tauMinS * 1e6).toBeCloseTo(284.0, 0)
+    expect(a.steadyMaxV).toBeCloseTo(3.498, 3)
+    const at = (limitV: number) => a.windows.find((w) => w.limitV === limitV)
+    // From the steady level, the shorter window: FIG-VBUS-HOTPLUG's 8.4 us and 44 us.
+    expect((at(3.6)?.fromSteadyS ?? 0) * 1e6).toBeCloseTo(8.4, 1)
+    expect((at(4.0)?.fromSteadyS ?? 0) * 1e6).toBeCloseTo(44, 0)
+    // From VBUS = 0 V at plug-in.
+    expect((at(3.6)?.fromZeroS ?? 0) * 1e6).toBeCloseTo(205, 0)
+    expect((at(4.0)?.fromZeroS ?? 0) * 1e6).toBeCloseTo(241, 0)
+  })
+
+  test("a minimum VBUS still reads high through the sense capacitor, and the delay is stated", () => {
+    const a = vbusSenseAnalysis(h7Carrier())
+    // The DC divider is unchanged: 4.35 V x 19.8 / 31.92 = 2.698 V, over VIH 2.52 V.
+    expect(a.steadyMinV).toBeCloseTo(2.698, 3)
+    expect(a.steadyMinV).toBeGreaterThan(2.52)
+    // The capacitor only delays it: 7.575 k x 110 nF = 0.833 ms, and ln(2.698 / 0.178) = 2.72
+    // time constants to VIH, 2.26 ms.
+    expect(a.tauMaxS * 1e3).toBeCloseTo(0.833, 3)
+    expect(a.detectS * 1e3).toBeCloseTo(2.26, 2)
+  })
+
   test("the intent lowers", () => {
     const intent = drawingIntent()
     expect(intent.parts).toHaveLength(h7Carrier().components.length)
@@ -189,7 +230,7 @@ registerDraftedPageTests({
   valueDisagreements: [],
   footprintComparisons: "none",
   footprintlessParts: [
-    "brk_a", "brk_b", "c_shld", "c_usbsw", "c_vbus", "f_vin", "j_dummy_3v3d", "j_dummy_vref_a",
+    "brk_a", "brk_b", "c_shld", "c_usbsw", "c_vbus", "c_vbus_sense", "f_vin", "j_dummy_3v3d", "j_dummy_vref_a",
     "j_mod_a", "j_mod_b", "j_usb", "j_vin", "r_cc1", "r_cc2", "r_dummy_3v3d", "r_dummy_vref_a",
     "r_shld", "r_usben", "r_vbus_bot", "r_vbus_top", "tp_3v3d", "tp_codec_bck", "tp_codec_din",
     "tp_codec_dout", "tp_codec_lrck", "tp_gnd", "tp_vin_mod", "tp_vref_a", "u_esd", "u_usbsw",

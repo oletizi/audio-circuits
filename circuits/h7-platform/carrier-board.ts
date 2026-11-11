@@ -56,7 +56,7 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   f_vin: "F1", u_usbsw: "U1", u_esd: "U2",
   r_usben: "R1", r_vbus_top: "R2", r_vbus_bot: "R3", r_cc1: "R4", r_cc2: "R5", r_shld: "R6",
   r_dummy_3v3d: "R7", r_dummy_vref_a: "R8",
-  c_usbsw: "C1", c_shld: "C2", c_vbus: "C3",
+  c_usbsw: "C1", c_shld: "C2", c_vbus: "C3", c_vbus_sense: "C4",
   tp_vin_mod: "TP1", tp_3v3d: "TP2", tp_vref_a: "TP3", tp_gnd: "TP4",
   tp_codec_dout: "TP5", tp_codec_din: "TP6", tp_codec_lrck: "TP7", tp_codec_bck: "TP8",
 }
@@ -171,14 +171,17 @@ function usbPath(): Component[] {
     make("r_cc2", "resistor", { a: "USB_CC2", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:267 (5.1 kOhm Rd)`, "5.1k"),
     make("r_shld", "resistor", { a: "USB_SHIELD", b: "GND" }, RESISTOR, `${usbc}; schematic-checklist.md:214 USB-05 (R_SHLD 1 MOhm)`, "1M"),
     make("c_shld", "capacitor", { a: "USB_SHIELD", b: "GND" }, CAPACITOR, `${usbc}; schematic-checklist.md:214 USB-05 (C_SHLD 4.7 nF 2 kV)`, "4.7n"),
-    // OPEN, not cleared for physical bring-up: VBUS-HOTPLUG (R-57) applies to this divider. With the
-    // module unpowered, a host VBUS ring to 11.11 V puts PA1 at 7.00 V (analog.md FIG-VBUS-HOTPLUG).
-    // c_vbus above is VBUS-to-GND at the USBLC6-2, NOT R-57's sense-node capacitor. See issue 30 and
-    // decisions.md CR-CARRIER-VBUS-SENSE.
+    // VBUS-HOTPLUG (R-57) applies to this divider: with the module unpowered, a host VBUS ring to
+    // 11.11 V would put PA1 at 7.00 V (analog.md FIG-VBUS-HOTPLUG). c_vbus_sense is R-57's option,
+    // on USB_VBUS_SENSE itself; c_vbus above is the USBLC6-2's VBUS-to-GND bypass and is not it.
+    // vbus-sense.ts states the windows it covers. STILL OPEN, not cleared for physical bring-up:
+    // whether a real host and cable stay inside those windows (issue 30; CR-CARRIER-VBUS-SENSE-CAP).
     make("r_vbus_top", "resistor", { a: "VBUS", b: "USB_VBUS_SENSE" }, RESISTOR,
       "controller ruling CR-CARRIER-VBUS-SENSE; architecture.md:257 (12.0 kOhm over 20.0 kOhm, 1 %)", "12.0k"),
     make("r_vbus_bot", "resistor", { a: "USB_VBUS_SENSE", b: "GND" }, RESISTOR,
       "controller ruling CR-CARRIER-VBUS-SENSE; architecture.md:257 (12.0 kOhm over 20.0 kOhm, 1 %)", "20.0k"),
+    make("c_vbus_sense", "capacitor", { a: "USB_VBUS_SENSE", b: "GND" }, CAPACITOR,
+      "controller ruling CR-CARRIER-VBUS-SENSE-CAP; R-57's option (parts.md:177, 100 nF X7R, C1591); analog.md FIG-VBUS-HOTPLUG; issue 30", "100n"),
   ]
 }
 
