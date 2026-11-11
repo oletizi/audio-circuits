@@ -76,6 +76,19 @@ drawn pages reach him board by board rather than all models first.
   by machine against `circuits/h7-platform/module-interface.json`. This is open
   item CONTRACT-MODEL-CHECK, and the contract is the acceptance criterion: it
   was written before any of these models.
+
+  **Reserved pins 16-19 on the carrier (controller ruling, issue 28, finding
+  4).** The contract marks them `reservedCompatibility`, `direction: nc`, and
+  CONTRACT-MODEL-CHECK wants reserved pins unconnected. O-13 (owner) makes the
+  carrier a 40-pin breakout, and `architecture.md` §carrier says every pin.
+  These are reconciled by a diagnostic-access exception that the checker
+  states, not by inventing signals. On the carrier only, each reserved contact
+  goes to a test point and nothing else, on a net named for its contract pin
+  and marked reserved. The check accepts a reserved pin on the carrier if its
+  net holds exactly the socket contact and that one test point. Any other
+  connection fails it, as does any connection at all to a reserved pin on the
+  module or the pedal. A fitted Seed drives those pins from its own codec, so a
+  bare test point is all the carrier may put there.
 - **G5.** Every controller ruling made to get a board drawn is recorded where
   the owner reviews the page that shows it (the page's `RECORD.md`), and in
   `docs/h7-platform/decisions.md`, labelled "Controller ruling (the owner may
@@ -209,13 +222,37 @@ first page depending on it (see point 1 under **What follows from that**).
   per functional block**, each block being one `include()`d sub-network of the
   board's model. Each page goes through the loop exactly as a one-page board does
   today. This follows the Pultec pattern of one page per section and keeps
-  component atomicity (CLAUDE.md, "Composition"). **Criteria:** every component
-  of the board appears on exactly one page; a net that crosses pages carries the
-  same name on every page it appears on; and the union of the pages' exported
-  netlists agrees with the board's model. A block too large for a Letter page is
-  split into smaller blocks; the page is never shrunk. Whether the pages are also
-  assembled now as one hierarchical KiCad project is the builder's choice, but
-  phase 4 will need one netlist per board, so nothing may rule that out.
+  component atomicity (CLAUDE.md, "Composition").
+
+  **Cross-page connections are never joined by matching names.** In KiCad a
+  local label connects only within its own sheet, and `include()` prefixes a
+  block's private nets. So two pages that each name an internal node `FB` are
+  two nets, and two pages that each carry a local `3V3_D` label are not joined
+  by that alone (issue 28, finding 2). **Controller ruling:** the board's pages
+  are assembled as **one hierarchical KiCad project**: a root sheet with one
+  sub-sheet per block, and a block's ports drawn as hierarchical labels joined
+  at the root. That makes KiCad's own export the evidence of how pages connect,
+  and it is the one netlist per board that phase 4 needs anyway. Each block page
+  is still drafted and repaired by the loop as a one-page board. Turning its
+  boundary labels into hierarchical labels is a recorded repair step, replayed
+  like any other. A board-wide designator map assigns every component exactly
+  one reference across all its pages. Where a check needs the composition
+  before the project is assembled, it takes the composition from the model's
+  own `include()` port bindings. It never uses a second, separately written map,
+  which would be one more copy of the composition that could drift from the
+  model.
+
+  **Criteria:**
+  - Every component of the board appears on exactly one page, under the
+    reference the board-wide map gives it.
+  - `kicad-cli`'s export of the assembled project agrees with the board's model,
+    net for net and pin for pin.
+  - Negative controls fail that agreement for each of these: a missing boundary
+    connection, a wrong boundary connection, and two blocks whose private nets
+    share a name.
+
+  A block too large for a Letter page is split into smaller blocks; the page is
+  never shrunk.
 - **C4. Symbols the installed KiCad libraries lack.** Copperhead resolves
   symbols from the installed KiCad libraries. No custom-symbol path has been
   shown to work. A check of KiCad 10.0.5's installed libraries
@@ -235,6 +272,24 @@ first page depending on it (see point 1 under **What follows from that**).
   project symbol only where neither exists, and only if the builder first shows
   copperhead can draw one. Footprint and symbol names are verified against the
   libraries on disk, never written from memory (CLAUDE.md).
+- **C6. Packages with more than one unit.** The pedal has four dual OPA1688
+  packages. The path from model to drawing is not unit-aware.
+  `intentFromNetwork` flattens package and unit pins and looks each one up
+  without its unit (`tools/draught/intent-from-network.ts:100-102`), and
+  `pinNumberFor` reads only `PIN_NUMBERS[kind][pin]`
+  (`lib/kicad/from-network.ts:69-72`). So both sections of a dual op-amp lower
+  onto the same physical pins. Issue 28, finding 1, demonstrated this with
+  section A and section B inputs both landing on `U1.3`. The sheet-agreement
+  resolver (`lib/kicad/sheet-agreement.ts:267`) has the same gap. **Criterion:**
+  a multi-unit package lowers losslessly. Each unit's pins map to distinct
+  physical pins under one reference and one MPN, with the package's supply pins
+  included. An end-to-end test proves it on a dual op-amp with both sections and
+  its supplies, by a fresh `kicad-cli` export agreeing with the model. Negative
+  controls fail it when one section's mapping is swapped with or duplicated onto
+  the other's. The mechanism is the builder's, most likely making the lookup
+  unit-aware through the existing `part.symbolPins`. It is scoped to the
+  packages these boards use. It blocks the pedal's analog pages, not the
+  carrier.
 - **C5. The toolchain in this worktree.** Copperhead and akcli are not
   installed here. `draughting/install.sh` installs them, at the versions pinned
   in `draughting/tools.lock.json`. This is setup, not a change to the practice.
@@ -277,9 +332,10 @@ controller ruling.
 - **Must be settled before the board's page is correct**, by a controller
   ruling shown on the page:
   - **Module:** MODULE-INTERNAL-PIN-MAP; VDDA-WIDEBAND, 3V3D-RIPPLE-INTO-VREF-A
-    and VDDA-DAMPING-LEG, treated together. The present bank fails R-57, and the
-    ruling must meet the stated f0 ≤ 158 kHz with its derivation written out.
-    Also the ESD part in USB-DFU-VERTICAL.
+    and VDDA-DAMPING-LEG, treated together. The present bank fails R-57. The
+    ruling picks the parts that get drawn; it does not by itself show that the
+    requirement is met (see **Chosen and drawn is not electrically shown**
+    below). Also the ESD part in USB-DFU-VERTICAL.
   - **Carrier:** CARRIER-LOOPBACK-FORM.
   - **Pedal:** MIDI-IN-RECEIVER-STOCK, for the MIDI IN block only. Until a
     stocked part is ruled, that block is left undrawn and the page says so.
@@ -291,14 +347,34 @@ controller ruling.
 - **The contract freeze, run alongside the drawing** (see **Sequence**):
   FB-AN2606, DATASHEET-REVISIONS-RECHECK, STACK-HEIGHT-OWNER-REPORT and
   CONTRACT-FREEZE, with MIDI-IN-RECEIVER-STOCK above.
-- **Left for layout, fabrication or bring-up**, whatever their tag:
-  MLCC-DC-BIAS, MODULE-CLOCK-TREE-RESTATE, MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING,
+- **Left for layout, fabrication or bring-up**, whatever their tag, except
+  where the analysis below needs it: MLCC-DC-BIAS, MODULE-CLOCK-TREE-RESTATE, MODULE-PART-HEIGHT-READINGS, MODULE-HEADER-SOURCING,
   FOOTSWITCH-PAPER-READINGS, USB2-SPEC-UNREAD. Each one's row gets its phase
   corrected in `open-items.md`, with the reason.
 
-A row this phase settles is closed in `open-items.md` by citing what settled it
-(a ruling in `decisions.md`, a test, or a committed page), never by paraphrase.
-That rule carries over from the port.
+A row this phase settles is closed in `open-items.md` by citing what settled it,
+never by paraphrase. That rule carries over from the port.
+
+**Chosen and drawn is not electrically shown** (issue 28, finding 3). A
+controller ruling or a committed page can close a row that asks for a choice:
+a part, a fit or no-fit, a pin. **Neither can close a row that states a
+quantity.** Those rows close only on an analysis that meets the row's own
+requirement, written out with its inputs cited:
+- VDDA-WIDEBAND, 3V3D-RIPPLE-INTO-VREF-A and VDDA-DAMPING-LEG need the ripple at
+  pin 21 at or below 806 µV rms, computed from the re-derived upstream ripple,
+  the bead's actual data and the damping leg's transfer and Q. The f0 ≤ 158 kHz
+  bound is a derived figure on one capacitance basis; it is not the requirement.
+- MODULE-BUCK-LOOP-STARTUP needs the module's 3V3 total within 150 µF, with the
+  loop and start-up check run against it.
+
+Effective capacitance under DC bias feeds all of these. MLCC-DC-BIAS therefore
+does not simply wait for layout. Either the chosen parts' effective-capacitance
+figures are recorded, or the analysis states conservative bounds and passes at
+both ends of them. If that evidence is still missing when the pages are drawn,
+the dependent rows stay open, marked conditional on it, and each row names what
+must be rechecked before electrical sign-off. Pages are still drawn and sent
+with the provisional values, labelled as such in `RECORD.md`. The analysis is
+on paper; nothing here requires simulating the MCU or codec.
 
 ## What is decided, and by whom
 
@@ -312,6 +388,10 @@ That rule carries over from the port.
 | Faithful transcription of `docs/h7-platform/`; no redesign | Controller ruling | Follows from the owner reviewing only drawings; changes come from his review |
 | One board at a time, smallest first, carrier without loopback first | Controller ruling | Fastest route to a page; tests the new plumbing on a small board |
 | One page per functional block (C3) | Controller ruling | Keeps the one-page loop unchanged; matches the Pultec section pattern and `include()` atomicity |
+| Pages assembled as one hierarchical KiCad project; composition taken from the model, never from a separate map (C3) | Controller ruling, after issue 28 finding 2 | Real inter-sheet connectivity is checkable by KiCad's own export; a second map is a copy that drifts |
+| Unit-aware lowering of multi-unit packages (C6) | Controller ruling, adopting issue 28 finding 1 | Both op-amp sections otherwise land on the same pins |
+| Quantitative rows close only on analysis; MLCC bias bounds feed it | Controller ruling, adopting issue 28 finding 3 | A choice is not a demonstration |
+| Carrier reserved pins: test point only, checker exception | Controller ruling, after issue 28 finding 4 | Reconciles O-13's 40-pin breakout with the contract's `nc` |
 | Symbol rule (C4) | Controller ruling | Copperhead draws only stock symbols, so far as anyone has shown |
 | Open-item grouping | Controller ruling | Reconnaissance reading, 2026-11-10 |
 | Relative imports with `.ts` extension, not `@/` | Controller ruling | The project's `CLAUDE.md` ("Imports") and all existing circuit code use them; the owner's global `@/` rule is general, and the project file is specific |
