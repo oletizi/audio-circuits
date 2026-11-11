@@ -3,7 +3,9 @@
  * contract, its symbols and pin numbers against the KiCad libraries on disk, and its worst-case
  * draw on the two module rails in every supported state.
  *
- * This is also the board's `make check` test (`boards/h7-carrier`, kind "pcb").
+ * This is also the board's `make check` test (`boards/h7-carrier`, kind "pcb"). The board declares
+ * the agent-drafted page in `drafted/h7-platform/h7-carrier/` as its `"sch"`, so the last block
+ * below registers `./drafted-sheet.ts`'s guards for it (H7 carrier plan, Task 7).
  */
 import { describe, expect, test } from "bun:test"
 import fs from "node:fs"
@@ -18,6 +20,7 @@ import {
 } from "../../circuits/h7-platform/carrier-board.ts"
 import { DATASHEET_PIN_NAMES, FUSE_HOLD_CURRENT_A, PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import { railDraw } from "../../circuits/h7-platform/rail-budget.ts"
+import { registerDraftedPageTests } from "./drafted-sheet.ts"
 import type { CarrierState } from "../../circuits/h7-platform/rail-budget.ts"
 
 const PROJECT_NICKNAME = "h7-platform"
@@ -163,4 +166,32 @@ describe("h7 bring-up carrier", () => {
     expect(path.basename(PROJECT_SYMBOL_LIBRARY)).toBe("h7-platform.kicad_sym")
     expect(fs.existsSync(PROJECT_SYMBOL_LIBRARY)).toBe(true)
   })
+})
+
+/**
+ * The drafted page against the model. Every list below is asserted exactly.
+ *
+ * - `pinDisagreements: []` - every carrier pin is numbered as its symbol numbers it. Most are named
+ *   by number in the model (sockets, headers, test points, the fuse, U1, U2) and reach the page by
+ *   identity, so this empty list is what checks them; the round-trip test asserts the fresh
+ *   `kicad-cli` export reports the same.
+ * - `valueDisagreements: []` - every Value field on the page is the model's value for that part.
+ * - `footprintComparisons: "none"` - the carrier's model declares no footprint (a schematic needs
+ *   none, CLAUDE.md G245), so `footprints` must be empty and every component is footprintless.
+ * - `footprintlessParts` - therefore every component, by model id, in the sorted order
+ *   `compareSheetToModel` reports them.
+ */
+registerDraftedPageTests({
+  board: "h7-carrier",
+  circuit: "h7-platform",
+  netlist: "tests/fixtures/h7-carrier.net",
+  pinDisagreements: [],
+  valueDisagreements: [],
+  footprintComparisons: "none",
+  footprintlessParts: [
+    "brk_a", "brk_b", "c_shld", "c_usbsw", "c_vbus", "f_vin", "j_dummy_3v3d", "j_dummy_vref_a",
+    "j_mod_a", "j_mod_b", "j_usb", "j_vin", "r_cc1", "r_cc2", "r_dummy_3v3d", "r_dummy_vref_a",
+    "r_shld", "r_usben", "r_vbus_bot", "r_vbus_top", "tp_3v3d", "tp_codec_bck", "tp_codec_din",
+    "tp_codec_dout", "tp_codec_lrck", "tp_gnd", "tp_vin_mod", "tp_vref_a", "u_esd", "u_usbsw",
+  ],
 })

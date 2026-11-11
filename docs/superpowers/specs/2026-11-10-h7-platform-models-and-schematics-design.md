@@ -83,12 +83,19 @@ drawn pages reach him board by board rather than all models first.
   carrier a 40-pin breakout, and `architecture.md` §carrier says every pin.
   These are reconciled by a diagnostic-access exception that the checker
   states, not by inventing signals. On the carrier only, each reserved contact
-  goes to a test point and nothing else, on a net named for its contract pin
-  and marked reserved. The check accepts a reserved pin on the carrier if its
-  net holds exactly the socket contact and that one test point. Any other
-  connection fails it, as does any connection at all to a reserved pin on the
-  module or the pedal. A fitted Seed drives those pins from its own codec, so a
-  bare test point is all the carrier may put there.
+  goes to one breakout terminal (a test point or a header pin) and nothing
+  else, on a net named for its contract pin and marked reserved. The check
+  accepts a reserved pin on the carrier if its net holds exactly the socket
+  contact and that one breakout terminal. Any other connection fails it, as
+  does any connection at all to a reserved pin on the module or the pedal. A
+  fitted Seed drives those pins from its own codec, so a bare breakout terminal
+  is all the carrier may put there.
+
+  *Plan-time correction (H7 carrier plan, under its breakout-header ruling
+  `CR-CARRIER-BREAKOUT` in `docs/h7-platform/decisions.md`): this read "goes to
+  a test point". The carrier breaks every contract pin out to a 1 × 20 header,
+  so a reserved pin's one breakout terminal is a header pin; the rule's
+  substance - exactly one terminal, nothing else on the net - is unchanged.*
 - **G5.** Every controller ruling made to get a board drawn is recorded where
   the owner reviews the page that shows it (the page's `RECORD.md`), and in
   `docs/h7-platform/decisions.md`, labelled "Controller ruling (the owner may
@@ -391,7 +398,7 @@ on paper; nothing here requires simulating the MCU or codec.
 | Pages assembled as one hierarchical KiCad project; composition taken from the model, never from a separate map (C3) | Controller ruling, after issue 28 finding 2 | Real inter-sheet connectivity is checkable by KiCad's own export; a second map is a copy that drifts |
 | Unit-aware lowering of multi-unit packages (C6) | Controller ruling, adopting issue 28 finding 1 | Both op-amp sections otherwise land on the same pins |
 | Quantitative rows close only on analysis; MLCC bias bounds feed it | Controller ruling, adopting issue 28 finding 3 | A choice is not a demonstration |
-| Carrier reserved pins: test point only, checker exception | Controller ruling, after issue 28 finding 4 | Reconciles O-13's 40-pin breakout with the contract's `nc` |
+| Carrier reserved pins: one breakout terminal only (a test point or a header pin), checker exception | Controller ruling, after issue 28 finding 4; "test point" corrected at plan time under `CR-CARRIER-BREAKOUT` | Reconciles O-13's 40-pin breakout with the contract's `nc` |
 | Symbol rule (C4) | Controller ruling | Copperhead draws only stock symbols, so far as anyone has shown |
 | Open-item grouping | Controller ruling | Reconnaissance reading, 2026-11-10 |
 | Relative imports with `.ts` extension, not `@/` | Controller ruling | The project's `CLAUDE.md` ("Imports") and all existing circuit code use them; the owner's global `@/` rule is general, and the project file is specific |

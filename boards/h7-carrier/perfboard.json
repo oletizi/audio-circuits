@@ -1,5 +1,7 @@
 {
   "kind": "pcb",
+  "sch": "../../drafted/h7-platform/h7-carrier/h7-carrier.generated-do-not-edit.kicad_sch",
   "circuit": "../../circuits/h7-platform/carrier-board.ts",
-  "export": "h7Carrier"
+  "export": "h7Carrier",
+  "netlist": "../../tests/fixtures/h7-carrier.net"
 }

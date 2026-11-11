@@ -13,8 +13,8 @@
  * the circuit. The stub writer is deleted - its own module comment recorded what it emitted as a
  * known failure mode - and with the schematic generator gone too, it would have become
  * the repository's only model-to-schematic writer, carrying that proof for output nobody ships. This
- * file moves the proof onto the five sheets this repository actually ships: the pages committed
- * under `drafted/pultec/`.
+ * file moves the proof onto the sheets this repository actually ships: the pages committed
+ * under `drafted/` that a board declares as its `"sch"`.
  *
  * **WHY THIS IS NOT THE SAME CHECK `registerDraftedPageTests` ALREADY RUNS, in `./drafted-sheet.ts`.**
  * Those per-board guards compare the model against the COMMITTED `.net` FIXTURE, and
@@ -41,9 +41,9 @@ import { modelForSheet } from "./sheet-model.ts"
 import { committedNetlist, exportDraftedSheet, withOnePinMoved } from "./drafted-sheet.ts"
 
 /**
- * The five boards with a page committed under `drafted/pultec/`, and the committed netlist fixture
- * each board's own `tests/circuits/<board>.test.ts` declares. Written down again rather than
- * imported from those five files: each is a `registerDraftedPageTests` CALL, not an exported table,
+ * The boards with a page committed under `drafted/`, and the committed netlist fixture each
+ * board's own `tests/circuits/<board>.test.ts` declares. Written down again rather than imported
+ * from those files: each is a `registerDraftedPageTests` CALL, not an exported table,
  * and the pair (board, netlist path) is the one fact of theirs this file needs.
  */
 const BOARDS: ReadonlyArray<{ readonly board: string; readonly circuit: string; readonly netlist: string }> = [
@@ -52,6 +52,7 @@ const BOARDS: ReadonlyArray<{ readonly board: string; readonly circuit: string; 
   { board: "pultec-low-boost", circuit: "pultec", netlist: "tests/fixtures/pultec-low-boost.net" },
   { board: "pultec-low-cut", circuit: "pultec", netlist: "tests/fixtures/pultec-low-cut.net" },
   { board: "pultec-mid", circuit: "pultec", netlist: "tests/fixtures/pultec-mid.net" },
+  { board: "h7-carrier", circuit: "h7-platform", netlist: "tests/fixtures/h7-carrier.net" },
 ]
 
 for (const { board, circuit, netlist } of BOARDS) {
