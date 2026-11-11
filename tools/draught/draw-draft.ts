@@ -220,6 +220,31 @@ export function verifyIntentAgainstModel(intent: Intent, netlistText: string): A
  */
 export const DRAFT_TOOLS: readonly string[] = ["copperhead"]
 
+/** Copies each project library into `outDir` and writes the `sym-lib-table` naming them. */
+function writeProjectSymbolTable(outDir: string, libraries: readonly string[]): void {
+  if (libraries.length === 0) return
+  const rows: string[] = []
+  const seen = new Set<string>()
+  for (const library of libraries) {
+    const file = path.basename(library)
+    if (!file.endsWith(".kicad_sym")) {
+      throw new Error(`project symbol library ${library} is not a .kicad_sym file; copperhead resolves only KiCad symbol libraries.`)
+    }
+    if (!fs.existsSync(library)) {
+      throw new Error(`project symbol library ${library} does not exist; the intent names a symbol in it, so the draft cannot resolve without it.`)
+    }
+    const nickname = file.slice(0, -".kicad_sym".length)
+    if (seen.has(nickname)) {
+      throw new Error(`two project symbol libraries share the nickname "${nickname}"; a sym-lib-table row is keyed by nickname, so one would shadow the other.`)
+    }
+    seen.add(nickname)
+    fs.copyFileSync(library, path.join(outDir, file))
+    rows.push(`\t(lib (name "${nickname}")(type "KiCad")(uri "\${KIPRJMOD}/${file}")(options "")(descr "project library"))`)
+  }
+  const newline = String.fromCharCode(10)
+  fs.writeFileSync(path.join(outDir, "sym-lib-table"), ["(sym_lib_table", "\t(version 7)", ...rows, ")"].join(newline) + newline)
+}
+
 export interface DraftOutcome {
   readonly ok: boolean
   readonly schematicPath: string
@@ -271,7 +296,22 @@ export interface DraftOutcome {
  * sheet: 1 insertion, 1 deletion - the `(paper ...)` line and nothing
  * else"*), not an invention made for this fix.
  */
-export function draftWithCopperhead(opts: { readonly outDir: string; readonly board: string; readonly intentPath: string }): DraftOutcome {
+export function draftWithCopperhead(opts: {
+  readonly outDir: string
+  readonly board: string
+  readonly intentPath: string
+  /**
+   * Absolute paths of project `.kicad_sym` libraries the intent draws from (spec C4: a part
+   * with no stock symbol). Each is COPIED into `outDir` and named in a project `sym-lib-table`
+   * as `${KIPRJMOD}/<file>`, nickname = file name without `.kicad_sym`, so the drafted
+   * directory resolves its symbols by itself on any machine. copperhead reads a library the
+   * project table names in place, before its vendored cache, and keeps that row when it
+   * rewrites the table (`draughting/copperhead/src/kicad/draft/symsource.ts` `resolve`,
+   * `draft.ts` `draftSchematic`). Proved end to end by
+   * `tests/circuits/h7-project-symbol.test.ts`. Absent means the intent uses stock symbols only.
+   */
+  readonly projectSymbolLibraries?: readonly string[]
+}): DraftOutcome {
   const schematicRelative = `${opts.board}.kicad_sch`
   const schematicPath = path.join(opts.outDir, schematicRelative)
 
@@ -282,6 +322,7 @@ export function draftWithCopperhead(opts: { readonly outDir: string; readonly bo
     JSON.stringify({ schematic: schematicRelative, docs: "docs/" }) + "\n",
   )
   fs.copyFileSync(opts.intentPath, path.join(opts.outDir, "schematic.intent.json"))
+  writeProjectSymbolTable(opts.outDir, opts.projectSymbolLibraries ?? [])
 
   const gitInit = spawnSync("git", ["init", "-q", opts.outDir], { encoding: "utf8" })
   if (gitInit.status !== 0) {

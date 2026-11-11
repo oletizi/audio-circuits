@@ -89,7 +89,7 @@ require_trees() {
 }
 
 check_nocode() {
-  local bad="" f base hits ts=0
+  local bad="" f base hits ts=0 sym=0
   bad=$(require_trees) || { echo "$bad"; return 1; }
   # file-type rule applies to every file, records included
   while read -r f; do
@@ -101,6 +101,11 @@ check_nocode() {
           "$CIRC"/*) ts=$((ts+1)) ;;
           *) bad="$bad [disallowed file type: ${f#"$ROOT"/}]" ;;
         esac ;;
+      *.kicad_sym)
+        case "$f" in
+          "$CIRC"/*) sym=$((sym+1)) ;;
+          *) bad="$bad [disallowed file type: ${f#"$ROOT"/}]" ;;
+        esac ;;
       *) bad="$bad [disallowed file type: ${f#"$ROOT"/}]" ;;
     esac
   done < <(find "$DOCS" "$CIRC" -type f 2>/dev/null)
@@ -110,7 +115,7 @@ check_nocode() {
     [ -z "$hits" ] || bad="$bad [code vocabulary in ${f#"$ROOT"/}: $(echo "$hits" | tr '\n' ' ')]"
   done < <(tree_files; [ -d "$STANDARDS" ] && find "$STANDARDS" -type f -name '*.md')
   [ -z "$bad" ] || { echo "$bad"; return 1; }
-  [ $ts -eq 0 ] || echo "(phase-2 amendment: $ts .ts files under circuits/h7-platform/ held by typecheck and tests)"
+  [ $ts -eq 0 ] && [ $sym -eq 0 ] || echo "(phase-2 amendment: $ts .ts files and $sym .kicad_sym files under circuits/h7-platform/ held by typecheck and tests)"
 }
 
 check_provenance() {
