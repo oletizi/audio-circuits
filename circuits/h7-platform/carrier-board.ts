@@ -171,6 +171,10 @@ function usbPath(): Component[] {
     make("r_cc2", "resistor", { a: "USB_CC2", b: "GND" }, RESISTOR, `${usbc}; processor-and-memory.md:267 (5.1 kOhm Rd)`, "5.1k"),
     make("r_shld", "resistor", { a: "USB_SHIELD", b: "GND" }, RESISTOR, `${usbc}; schematic-checklist.md:214 USB-05 (R_SHLD 1 MOhm)`, "1M"),
     make("c_shld", "capacitor", { a: "USB_SHIELD", b: "GND" }, CAPACITOR, `${usbc}; schematic-checklist.md:214 USB-05 (C_SHLD 4.7 nF 2 kV)`, "4.7n"),
+    // OPEN, not cleared for physical bring-up: VBUS-HOTPLUG (R-57) applies to this divider. With the
+    // module unpowered, a host VBUS ring to 11.11 V puts PA1 at 7.00 V (analog.md FIG-VBUS-HOTPLUG).
+    // c_vbus above is VBUS-to-GND at the USBLC6-2, NOT R-57's sense-node capacitor. See issue 30 and
+    // decisions.md CR-CARRIER-VBUS-SENSE.
     make("r_vbus_top", "resistor", { a: "VBUS", b: "USB_VBUS_SENSE" }, RESISTOR,
       "controller ruling CR-CARRIER-VBUS-SENSE; architecture.md:257 (12.0 kOhm over 20.0 kOhm, 1 %)", "12.0k"),
     make("r_vbus_bot", "resistor", { a: "USB_VBUS_SENSE", b: "GND" }, RESISTOR,

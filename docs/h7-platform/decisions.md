@@ -1361,6 +1361,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Date:** 2026-11-11.
 - **Decides:** USB_VBUS_SENSE (pin 31) is VBUS through 12.0 kΩ over 20.0 kΩ, 1 %, the pedal's divider ([architecture.md](architecture.md) §4.8, pin 31 row). Why: the same interface path as the pedal.
 - **Set by:** the controller, H7 carrier plan Task 5.
+- **Open, applies here too:** VBUS-HOTPLUG ([R-57](#r-57); [open-items.md](open-items.md)). The divider copies the pedal's topology, so the carrier inherits the pedal's unresolved plug-in edge. With the module unpowered and a host's VBUS ringing to the 11.11 V lossless bound, PA1 can reach 7.00 V ([analog.md](analog.md) FIG-VBUS-HOTPLUG), past the 4.0 V an unpowered FT pin accepts. The carrier's `c_vbus` is VBUS-to-GND at the USBLC6-2 (schematic-checklist.md USB-04). It is **not** R-57's option, which is a capacitor from USB_VBUS_SENSE to GND. The carrier's USB sense path is not cleared for physical bring-up until this item is settled for the carrier. Raised by the circuit review in [issue 30](https://github.com/oletizi/audio-circuits/issues/30).
 
 ### CR-CARRIER-USBSW-SELECT
 
