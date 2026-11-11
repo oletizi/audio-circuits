@@ -40,6 +40,7 @@ Every entry is a level-3 heading whose text is only its identifier, so the ancho
 | Older owner decisions on the platform (no number of their own in the source) | `### PS-18V`, `### PW-TJ`, `### PW-NOTVS`, `### AN-D1`, `### AN-D2` | `#ps-18v`, `#pw-tj`, `#pw-notvs`, `#an-d1`, `#an-d2` | `decisions.md#an-d1` |
 | Older controller rulings on the platform still in force (no number of their own in the source) | `### PW-CHASSIS`, `### AN-RING` | `#pw-chassis`, `#an-ring` | `decisions.md#pw-chassis` |
 | Owner-supplied fact (numbered by this document) | `### F-n` | `#f-n` | `decisions.md#f-5` |
+| Phase-2 controller ruling of this repository on the bring-up carrier (no source in the pedals repository) | `### CR-CARRIER-<topic>` | `#cr-carrier-<topic>` | `decisions.md#cr-carrier-dummy-loads` |
 
 `AN-D1` and `AN-D2` are `ANALOG.md`'s own owner-decision numbers D1 and D2. They are prefixed here because CORE-BRIEF's deltas D1 and D2 are different things. `PW-NOTVS`, `PW-CHASSIS` and `AN-RING` are this document's names: the prefix says which design note records the entry (`POWER.md` or `ANALOG.md`). Q-6 and Q-7 are under [RR-11](#rr-11). The ledger's unnumbered "R-31 and R-32 amendment" is folded into [R-31](#r-31) and [R-32](#r-32).
 
@@ -1318,6 +1319,90 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Derived in:** [mechanical-and-controls.md EC-ENCLOSURE](mechanical-and-controls.md#ec-enclosure), [FIG-ROOM-UNDER-BOARD](mechanical-and-controls.md#fig-room-under-board) (18.7, 15.7 and 17.7 mm), [FIG-HEIGHTS-UNDER-BOARD](mechanical-and-controls.md#fig-heights-under-board), [FIG-JACKS-OVER-LIP](mechanical-and-controls.md#fig-jacks-over-lip) (0.03 mm) and [FIG-JACK-HOLE-CROSSCHECK](mechanical-and-controls.md#fig-jack-hole-crosscheck).
 
 *Not in force:* the room under the board from Hammond's drawing (29.75 mm inside height, 17.45 mm under the board), and R-55's lid relief.
+
+### CR-CARRIER-BREAKOUT
+
+**The carrier breaks every contract pin out to two 1 × 20 male headers.**
+- **Label:** Controller ruling (the owner may override). A phase-2 ruling of this repository, not carried from the pedals repository.
+- **Date:** 2026-11-11.
+- **Decides:** every contract pin goes to a 1 × 20 2.54 mm male header, `brk_a` for J_MOD_A and `brk_b` for J_MOD_B, pad for pad with the sockets (symbol `Connector_Generic:Conn_01x20`). A header pin is the one breakout terminal a reserved pin (16–19) is allowed on the carrier, so each `RESERVED_<pin>` net holds exactly the socket pad and that header pin. Why headers, not 40 test points: [O-13](#o-13)'s 40-pin breakout in two parts instead of forty, which keeps the drawn page near the size the drawing loop has already handled.
+- **Set by:** the controller, H7 carrier plan Task 5 (`docs/superpowers/plans/2026-11-11-h7-carrier-first-page.md`).
+- **Carried in:** [architecture.md §7](architecture.md#7-the-bring-up-carrier) ("every pin broken out to a header or test point"); `circuits/h7-platform/carrier-board.ts`.
+
+### CR-CARRIER-TEST-POINTS
+
+**Probe test points on the power nets and the four SAI nets.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** one probe test point (`Connector:TestPoint`) each on VIN_MOD, 3V3_D, VREF_A, GND and the four SAI nets, contract pins 32–35 (CODEC_DOUT, CODEC_DIN, CODEC_LRCK, CODEC_BCK), as [architecture.md §7](architecture.md#7-the-bring-up-carrier) lists them. Each draws no current from either rail (no DC path).
+- **Set by:** the controller, H7 carrier plan Task 5.
+
+### CR-CARRIER-USB-C
+
+**The carrier's USB connection is a USB-C receptacle with 5.1 kΩ CC pull-downs, and the pedal's shield network.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** a USB 2.0 Type-C receptacle (`Connector:USB_C_Receptacle_USB2.0_16P`; no part number chosen), each CC pin (A5, B5) 5.1 kΩ to GND, which is the module's USB-DFU arrangement ([processor-and-memory.md](processor-and-memory.md) §8, line 263); SBU1 and SBU2 unconnected; both D+ pins and both D− pins joined at the receptacle. The shell goes to GND through 1 MΩ in parallel with 4.7 nF, as the pedal's USB-05 does ([schematic-checklist.md](schematic-checklist.md) USB-05). **The shield network was added by the Task 5 implementer under this ruling's stated reason, not by the controller's text**, which named only the receptacle and the CC pull-downs; the controller may strike it. Why mirror the pedal: the carrier exists to exercise the same interface path the pedal will.
+- **Set by:** the controller, H7 carrier plan Task 5.
+- **Carried in:** `circuits/h7-platform/carrier-board.ts` (`j_usb`, `r_cc1`, `r_cc2`, `r_shld`, `c_shld`).
+
+### CR-CARRIER-ESD
+
+**USB ESD protection on the carrier: the pedal's USBLC6-2SC6, fitted as the pedal fits it.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** U_ESD, ST USBLC6-2SC6 ([parts.md](parts.md) §5, the pedal's part under [D10](#d10)), between the isolation switch's port 1 and the receptacle, wired as [schematic-checklist.md](schematic-checklist.md) USB-04 wires it on the pedal: D+ through I/O1 (pins 1 and 6), D− through I/O2 (pins 3 and 4), pin 2 to GND, pin 5 to VBUS with C_VBUS 100 nF to GND. Symbol: the part's own stock `Power_Protection:USBLC6-2SC6` (spec C4).
+- **Set by:** the controller, H7 carrier plan Task 5. The C_VBUS capacitor follows USB-04 and was added by the implementer under this ruling.
+
+### CR-CARRIER-VBUS-SENSE
+
+**VBUS reaches contract pin 31 through the pedal's divider.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** USB_VBUS_SENSE (pin 31) is VBUS through 12.0 kΩ over 20.0 kΩ, 1 %, the pedal's divider ([architecture.md](architecture.md) §4.8, pin 31 row). Why: the same interface path as the pedal.
+- **Set by:** the controller, H7 carrier plan Task 5.
+
+### CR-CARRIER-USBSW-SELECT
+
+**The isolation switch's select pin is tied to GND, and its second port is unused.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** on the carrier's TS3USB221RSER, S (pin 9) goes to GND and 2D+/2D− (pins 3, 4) are not connected. With S low and OE low the common port D connects to 1D (TI SCDS220M p. 12, Table 7-1), so port 1 goes to the ESD part and the receptacle. [R-14](#r-14) names the switch, its supply and its enable but not S, and no document in `docs/h7-platform/` states it. S is still counted as a control input in the switch's ΔI_CC allowance on 3V3_D (CR-CARRIER-DUMMY-LOADS).
+- **Set by:** the controller, H7 carrier plan Task 5, on the implementer's report that S was unspecified.
+
+### CR-CARRIER-USBSW-SYMBOL
+
+**The TS3USB221RSER is drawn from a project symbol.**
+- **Label:** Controller ruling (the owner may override), under the spec's rule C4.
+- **Date:** 2026-11-11.
+- **Decides:** the TS3USB221 has no symbol of its own in the installed KiCad libraries. The two candidates, `Interface_USB:TS3USB30ERSWR` and `TS3USB30EDGSR`, differ from its RSE pinout on 9 and 8 of its 10 pins (TI SCDS220M p. 3 Table 4-1 against TI SCDS255G p. 3 Table 4-1). A scan of all 320 installed single-unit 10-pin symbols found none that matches, and a control run of the same scan did find TS3USB30ERSWR. So, under C4, the symbol is a project symbol `h7-platform:TS3USB221RSER` in `circuits/h7-platform/h7-platform.kicad_sym`, transcribed pin for pin from SCDS220M Table 4-1. C4's precondition was shown first: `tests/circuits/h7-project-symbol.test.ts` drafts it with the real copperhead through the repository's draft path, exports it with `kicad-cli`, and checks each pin's net and name. The draft path names the library in a project `sym-lib-table`. The port verifier's `nocode` check allows `.kicad_sym` under `circuits/h7-platform/` only.
+- **Set by:** the controller, H7 carrier plan Task 5, on the implementer's BLOCKED report.
+
+### CR-CARRIER-RAIL-LOADS
+
+**Every part with a pin on 3V3_D or VREF_A states its worst-case current.**
+- **Label:** Controller ruling (the owner may override). It is the plan's ruling P1.
+- **Date:** 2026-11-11.
+- **Decides:** the 25 mA 3V3_D limit ([power.md](power.md) §5.4) and the 10 mA VREF_A limit ([architecture.md](architecture.md) §4.7, pin 21) bound the carrier's aggregate draw, so the carrier's rail budget covers every part with a pin on either rail and refuses any that has none. The socket is the rail's source (0 A). Breakout header pins, test points and decoupling capacitors have no DC path (0 A). The TS3USB221 draws I_CC 30 µA plus ΔI_CC 20 µA for each of its two control inputs plus the OE input current I_IN 1 µA (SCDS220M p. 5, §5.5, VCC 3.6 V), in every state. The enable pull-up draws 3.513 V / (R × 0.99) while firmware enables USB, and nothing otherwise. Each dummy load draws the same expression for its own resistor when its jumper is fitted. Every resistance is read from the model, never copied as a constant, and 3.513 V is the rail maximum ([power.md](power.md) §5.2).
+- **Set by:** the controller, H7 carrier plan Task 5.
+- **Carried in:** `circuits/h7-platform/rail-budget.ts`.
+
+### CR-CARRIER-DUMMY-LOADS
+
+**Dummy loads: 147 Ω on 3V3_D and 357 Ω on VREF_A, each fitted by a jumper.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** each dummy load is a 1 % resistor to GND behind a 2-pin jumper header (`Connector_Generic:Conn_01x02`) from its rail. Its value is the smallest E96 resistor that keeps the rail's **aggregate** draw within its limit in **every** supported state with the dummy fitted. Every one of the eight combinations of three flags is supported: 3V3_D dummy fitted or not, VREF_A dummy fitted or not, USB enabled or not. No interlock or note rules any of them out, because a bring-up user who enables USB with the dummy fitted is using the board normally. The worst case on 3V3_D is both dummies fitted with USB enabled: 147 Ω gives 24.139 mA, plus the 0.355 mA pull-up, plus 0.071 mA for the switch (I_CC 30 µA, SCDS220M p. 5 §5.5; ΔI_CC 2 × 20 µA; I_IN 1 µA), for **24.565 mA ≤ 25 mA**. 143 Ω gives 25.240 mA in that state. **This replaces the plan's earlier 143 Ω after the plan review.** On VREF_A, nothing else draws current: 357 Ω gives **9.940 mA ≤ 10 mA**, and 348 Ω would give 10.197 mA. Packages: 1206 for 3V3_D (86.6 mW at 3.513 V), 0805 for VREF_A.
+- **Set by:** the controller, H7 carrier plan Task 5 (plan review finding).
+- **Derived in:** `tests/circuits/h7-carrier.test.ts` ("every supported state keeps each rail within its limit", "dummy fitted with USB enabled is within the 3V3_D limit").
+
+### CR-CARRIER-VIN
+
+**The carrier's VIN entry: a 2-pin input and a 0.75 A hold fuse.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-11.
+- **Decides:** VIN_MOD enters through a 2-pin input header (`Connector_Generic:Conn_01x02`; pin 1 is the supply, pin 2 is GND) and a fuse (`Device:Fuse`) in series. The bench supply's current limit stays the primary limit ([architecture.md §7](architecture.md#7-the-bring-up-carrier)). The fuse's hold current is **0.75 A**: the next standard PTC hold current above the module's largest documented VIN_MOD input current. That figure is **729 mA**, the 1.5× peak down to VIN_MOD 7.32 V ([power.md](power.md) §4, line 246), which exceeds the contract's `maxPeakCurrentMa` of 674 mA (line 240). No part number is chosen, because a schematic needs none (CLAUDE.md, G245). The model has no fuse kind, so the fuse is modelled as kind `ic` with pins "1" and "2". Its rating therefore sits beside the part in `circuits/h7-platform/parts.ts` and does not reach the drawing's value field.
+- **Set by:** the controller, H7 carrier plan Task 5.
 
 ## What this document does not carry
 
