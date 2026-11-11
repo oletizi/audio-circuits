@@ -1,0 +1,5 @@
+{
+  "kind": "pcb",
+  "circuit": "../../circuits/h7-platform/carrier-board.ts",
+  "export": "h7Carrier"
+}
