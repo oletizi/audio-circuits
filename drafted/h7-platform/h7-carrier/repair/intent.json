@@ -1,0 +1,590 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J1",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "801-43-020-10-012000",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J2",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "801-43-020-10-012000",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J3",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "Conn_01x20",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J4",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "Conn_01x20",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP1",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP2",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP3",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP4",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP5",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP6",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP7",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "TP8",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J5",
+      "libId": "Connector_Generic:Conn_01x02",
+      "value": "Conn_01x02",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "F1",
+      "libId": "Device:Fuse",
+      "value": "0.75A hold",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J7",
+      "libId": "Connector_Generic:Conn_01x02",
+      "value": "Conn_01x02",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R7",
+      "libId": "Device:R",
+      "value": "147R",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J8",
+      "libId": "Connector_Generic:Conn_01x02",
+      "value": "Conn_01x02",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R8",
+      "libId": "Device:R",
+      "value": "357R",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "U1",
+      "libId": "h7-platform:TS3USB221RSER",
+      "value": "TS3USB221RSER",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R1",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "C1",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "U2",
+      "libId": "Power_Protection:USBLC6-2SC6",
+      "value": "USBLC6-2SC6",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "C3",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "J6",
+      "libId": "Connector:USB_C_Receptacle_USB2.0_16P",
+      "value": "USB_C_Receptacle_USB2.0_16P",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R4",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R5",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R6",
+      "libId": "Device:R",
+      "value": "1M",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "C2",
+      "libId": "Device:C",
+      "value": "4700pF",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R2",
+      "libId": "Device:R",
+      "value": "12K",
+      "group": "H7 bring-up carrier"
+    },
+    {
+      "ref": "R3",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "H7 bring-up carrier"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "power",
+      "pins": [
+        "C1.1",
+        "J2.18",
+        "J4.18",
+        "J7.1",
+        "R1.1",
+        "TP2.1",
+        "U1.10"
+      ]
+    },
+    {
+      "name": "CODEC_BCK",
+      "pins": [
+        "J2.15",
+        "J4.15",
+        "TP8.1"
+      ]
+    },
+    {
+      "name": "CODEC_DIN",
+      "pins": [
+        "J2.13",
+        "J4.13",
+        "TP6.1"
+      ]
+    },
+    {
+      "name": "CODEC_DOUT",
+      "pins": [
+        "J2.12",
+        "J4.12",
+        "TP5.1"
+      ]
+    },
+    {
+      "name": "CODEC_LRCK",
+      "pins": [
+        "J2.14",
+        "J4.14",
+        "TP7.1"
+      ]
+    },
+    {
+      "name": "DUMMY_3V3D",
+      "pins": [
+        "J7.2",
+        "R7.1"
+      ]
+    },
+    {
+      "name": "DUMMY_VREF_A",
+      "pins": [
+        "J8.2",
+        "R8.1"
+      ]
+    },
+    {
+      "name": "EXPR_DETECT",
+      "pins": [
+        "J2.10",
+        "J4.10"
+      ]
+    },
+    {
+      "name": "EXPR_TIP",
+      "pins": [
+        "J2.8",
+        "J4.8"
+      ]
+    },
+    {
+      "name": "EXP_I2C_SCL",
+      "pins": [
+        "J1.12",
+        "J3.12"
+      ]
+    },
+    {
+      "name": "EXP_I2C_SDA",
+      "pins": [
+        "J1.13",
+        "J3.13"
+      ]
+    },
+    {
+      "name": "FSW1",
+      "pins": [
+        "J1.6",
+        "J3.6"
+      ]
+    },
+    {
+      "name": "FSW2",
+      "pins": [
+        "J1.9",
+        "J3.9"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "ground",
+      "pins": [
+        "C1.2",
+        "C2.2",
+        "C3.2",
+        "J1.20",
+        "J2.20",
+        "J3.20",
+        "J4.20",
+        "J5.2",
+        "J6.A1",
+        "J6.A12",
+        "J6.B1",
+        "J6.B12",
+        "R3.2",
+        "R4.2",
+        "R5.2",
+        "R6.2",
+        "R7.2",
+        "R8.2",
+        "TP4.1",
+        "U1.5",
+        "U1.9",
+        "U2.2"
+      ]
+    },
+    {
+      "name": "HW_REV",
+      "pins": [
+        "J2.9",
+        "J4.9"
+      ]
+    },
+    {
+      "name": "LED1",
+      "pins": [
+        "J1.5",
+        "J3.5"
+      ]
+    },
+    {
+      "name": "LED2",
+      "pins": [
+        "J1.4",
+        "J3.4"
+      ]
+    },
+    {
+      "name": "MIDI_UART_RX",
+      "pins": [
+        "J1.15",
+        "J3.15"
+      ]
+    },
+    {
+      "name": "MIDI_UART_TX",
+      "pins": [
+        "J1.14",
+        "J3.14"
+      ]
+    },
+    {
+      "name": "POS1",
+      "pins": [
+        "J2.2",
+        "J4.2"
+      ]
+    },
+    {
+      "name": "POS2",
+      "pins": [
+        "J2.3",
+        "J4.3"
+      ]
+    },
+    {
+      "name": "POS3",
+      "pins": [
+        "J2.4",
+        "J4.4"
+      ]
+    },
+    {
+      "name": "POS4",
+      "pins": [
+        "J2.5",
+        "J4.5"
+      ]
+    },
+    {
+      "name": "POS5",
+      "pins": [
+        "J2.6",
+        "J4.6"
+      ]
+    },
+    {
+      "name": "POS6",
+      "pins": [
+        "J2.7",
+        "J4.7"
+      ]
+    },
+    {
+      "name": "RELAY_EN",
+      "pins": [
+        "J1.8",
+        "J3.8"
+      ]
+    },
+    {
+      "name": "RESERVED_16",
+      "pins": [
+        "J1.16",
+        "J3.16"
+      ]
+    },
+    {
+      "name": "RESERVED_17",
+      "pins": [
+        "J1.17",
+        "J3.17"
+      ]
+    },
+    {
+      "name": "RESERVED_18",
+      "pins": [
+        "J1.18",
+        "J3.18"
+      ]
+    },
+    {
+      "name": "RESERVED_19",
+      "pins": [
+        "J1.19",
+        "J3.19"
+      ]
+    },
+    {
+      "name": "SPARE1",
+      "pins": [
+        "J1.1",
+        "J3.1"
+      ]
+    },
+    {
+      "name": "SPARE2",
+      "pins": [
+        "J1.2",
+        "J3.2"
+      ]
+    },
+    {
+      "name": "SPARE3",
+      "pins": [
+        "J1.3",
+        "J3.3"
+      ]
+    },
+    {
+      "name": "SPARE4",
+      "pins": [
+        "J1.7",
+        "J3.7"
+      ]
+    },
+    {
+      "name": "SPARE5",
+      "pins": [
+        "J1.10",
+        "J3.10"
+      ]
+    },
+    {
+      "name": "USB_CC1",
+      "pins": [
+        "J6.A5",
+        "R4.1"
+      ]
+    },
+    {
+      "name": "USB_CC2",
+      "pins": [
+        "J6.B5",
+        "R5.1"
+      ]
+    },
+    {
+      "name": "USB_C_DM",
+      "pins": [
+        "J6.A7",
+        "J6.B7",
+        "U1.2",
+        "U2.3",
+        "U2.4"
+      ]
+    },
+    {
+      "name": "USB_C_DP",
+      "pins": [
+        "J6.A6",
+        "J6.B6",
+        "U1.1",
+        "U2.1",
+        "U2.6"
+      ]
+    },
+    {
+      "name": "USB_DM",
+      "pins": [
+        "J2.16",
+        "J4.16",
+        "U1.7"
+      ]
+    },
+    {
+      "name": "USB_DP",
+      "pins": [
+        "J2.17",
+        "J4.17",
+        "U1.8"
+      ]
+    },
+    {
+      "name": "USB_EN_N",
+      "pins": [
+        "J1.11",
+        "J3.11",
+        "R1.2",
+        "U1.6"
+      ]
+    },
+    {
+      "name": "USB_SHIELD",
+      "pins": [
+        "C2.1",
+        "J6.SH",
+        "R6.1"
+      ]
+    },
+    {
+      "name": "USB_VBUS_SENSE",
+      "pins": [
+        "J2.11",
+        "J4.11",
+        "R2.2",
+        "R3.1"
+      ]
+    },
+    {
+      "name": "VBUS",
+      "kind": "power",
+      "pins": [
+        "C3.1",
+        "J6.A4",
+        "J6.A9",
+        "J6.B4",
+        "J6.B9",
+        "R2.1",
+        "U2.5"
+      ]
+    },
+    {
+      "name": "VIN_IN",
+      "pins": [
+        "F1.1",
+        "J5.1"
+      ]
+    },
+    {
+      "name": "VIN_MOD",
+      "kind": "power",
+      "pins": [
+        "F1.2",
+        "J2.19",
+        "J4.19",
+        "TP1.1"
+      ]
+    },
+    {
+      "name": "VREF_A",
+      "kind": "power",
+      "pins": [
+        "J2.1",
+        "J4.1",
+        "J8.1",
+        "TP3.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J6.A8",
+    "J6.B8",
+    "U1.3",
+    "U1.4"
+  ],
+  "hints": {
+    "groupOrder": [
+      "H7 bring-up carrier"
+    ]
+  }
+}
