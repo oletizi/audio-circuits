@@ -1,6 +1,6 @@
 # H7 platform phase 2: models, and the drawings they exist for
 
-**Status:** design, awaiting the owner's approval.
+**Status:** approved by the owner, 2026-11-11 (*"approved"*), at `3a00182`.
 **Follows:** `docs/superpowers/specs/2026-11-10-digital-pedal-platform-port-design.md`
 (the port, phase 1, complete on `feature/digital-pedal-platform`).
 **Inputs:** `docs/h7-platform/` and `circuits/h7-platform/module-interface.json`.
