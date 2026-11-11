@@ -31,7 +31,7 @@ BYTE_PAIRS=(
   "h7-platform/interface-analysis/layouts/layout-B.svg|docs/h7-platform/layout-B.svg"
 )
 
-ALL_CHECKS=(bytes nocode provenance standards effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts bringup)
+ALL_CHECKS=(bytes nocode provenance standards effective stale-json decisions architecture power analog openitems bypass firmware mechanical parts bringup readme)
 
 if [ -z "${PEDALS_REPO:-}" ]; then
   echo "verify.sh refuses to run: PEDALS_REPO is not set. Set it to the local pedals checkout, expected value: $EXPECTED_PEDALS_REPO" >&2
@@ -382,6 +382,88 @@ check_bringup() {
   [ -z "$bad" ] || { echo "$bad"; return 1; }
 }
 
+# The platform source paths of spec Goal 4. The h7-platform/ part is read from
+# git at the pin on every run, so a file the pin holds cannot be missed; the
+# directories below collapse to one path each. The paths outside h7-platform/
+# are named by the spec rather than found by a rule, so they are listed here,
+# and each is checked to exist at the pin so a misspelling fails loudly.
+README_COLLAPSE_DIRS=(boards/v1/ circuit/ mechanical/ vendor/ symbols/ footprints/ pintables/ generated/ interface-analysis/sources/)
+README_EXTRA_PATHS=(
+  "docs/superpowers/specs/2026-09-30-h7-pedal-platform-design.md"
+  "docs/superpowers/specs/2026-10-05-h7-modular-split-design.md"
+  "docs/research/2026-09-30-proven-reference-designs.md"
+  "docs/research/2026-10-05-processor-module-form-factors.md"
+  "docs/standards/pcbway-fab-rules.md"
+  "docs/superpowers/plans/2026-10-03-h7-schgen-a1-rulings.md"
+  "docs/superpowers/plans/2026-10-03-h7-schgen-a2-rulings.md"
+  "docs/superpowers/plans/2026-10-05-h7-split-rulings.md"
+)
+README_SOURCE_MAP="## Source map"
+README_PROVENANCE="## Provenance index"
+
+# Print the platform source paths, one per line. Fails if git cannot list the
+# tree, or a collapse directory or an extra path is not at the pin.
+readme_source_paths() {
+  local listing d p missing=""
+  listing=$(git -C "$PEDALS_REPO" ls-tree -r --name-only "$PIN" h7-platform 2>/dev/null)
+  [ -n "$listing" ] || { echo "cannot list h7-platform at $PIN in $PEDALS_REPO" >&2; return 1; }
+  for d in "${README_COLLAPSE_DIRS[@]}"; do
+    printf '%s\n' "$listing" | grep -q "^h7-platform/$d" || missing="$missing [collapse directory h7-platform/$d has no files at $PIN]"
+  done
+  for p in "${README_EXTRA_PATHS[@]}"; do
+    git -C "$PEDALS_REPO" cat-file -e "$PIN:$p" 2>/dev/null || missing="$missing [$p is not at $PIN]"
+  done
+  [ -z "$missing" ] || { echo "$missing" >&2; return 1; }
+  printf '%s\n' "$listing" | awk -v dirs="${README_COLLAPSE_DIRS[*]}" '
+    BEGIN { n = split(dirs, d, " ") }
+    {
+      p = $0
+      for (i = 1; i <= n; i++) {
+        pre = "h7-platform/" d[i]
+        if (substr(p, 1, length(pre)) == pre) { p = pre; break }
+      }
+      if (!(p in seen)) { seen[p] = 1; print p }
+    }'
+  printf '%s\n' "${README_EXTRA_PATHS[@]}"
+}
+
+# Print the lines of one "## " section of the README (heading excluded).
+readme_section() {
+  awk -v want="$1" '
+    /^## / { insec = ($0 == want); next }
+    insec { print }' "$README"
+}
+
+# Each source path must appear as a code span (`path`) in the Source map section,
+# on a line that either links a document in this repository (a relative link) or
+# says "stayed behind". The Provenance index must hold at least three "Trace:"
+# headings, and a line naming OSCAR_AUDIO_01 must say "unresolved".
+check_readme() {
+  local bad="" paths p map prov lines traces errfile
+  [ -f "$README" ] || { echo " [missing docs/h7-platform/README.md]"; return 1; }
+  errfile=$(mktemp) || { echo " [mktemp failed]"; return 1; }
+  paths=$(readme_source_paths 2>"$errfile")
+  if [ $? -ne 0 ] || [ -z "$paths" ]; then
+    bad=" [cannot build the source-path list:$(cat "$errfile")]"
+    rm -f "$errfile"
+    echo "$bad"; return 1
+  fi
+  rm -f "$errfile"
+  grep -qxF "$README_SOURCE_MAP" "$README" || bad="$bad [no '$README_SOURCE_MAP' section]"
+  map=$(readme_section "$README_SOURCE_MAP")
+  while read -r p; do
+    lines=$(printf '%s\n' "$map" | grep -F -- "\`$p\`")
+    if [ -z "$lines" ]; then bad="$bad [source map lacks \`$p\`]"; continue; fi
+    printf '%s\n' "$lines" | grep -qiE 'stayed behind|\]\([^h)#][^)]*\)' || bad="$bad [source map line for \`$p\` neither links a document here nor says 'stayed behind']"
+  done <<< "$paths"
+  grep -qxF "$README_PROVENANCE" "$README" || bad="$bad [no '$README_PROVENANCE' section]"
+  prov=$(readme_section "$README_PROVENANCE")
+  traces=$(printf '%s\n' "$prov" | grep -cE '^#+ Trace:')
+  [ "$traces" -ge 3 ] || bad="$bad [provenance index has $traces 'Trace:' headings, expected at least 3]"
+  grep -F -- "OSCAR_AUDIO_01" "$README" | grep -qF -- "unresolved" || bad="$bad [no line naming OSCAR_AUDIO_01 says 'unresolved']"
+  [ -z "$bad" ] || { echo "$bad"; return 1; }
+}
+
 run_check() {
   local name="$1" reason rc
   case "$name" in
@@ -401,6 +483,7 @@ run_check() {
     mechanical) reason=$(check_mechanical) ;;
     parts) reason=$(check_parts) ;;
     bringup) reason=$(check_bringup) ;;
+    readme) reason=$(check_readme) ;;
     *) echo "FAIL $name: unknown check"; return 1 ;;
   esac
   rc=$?
