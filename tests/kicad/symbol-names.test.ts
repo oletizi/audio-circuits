@@ -148,6 +148,29 @@ const LIB_ID = /^[A-Za-z0-9_+-]+:[A-Za-z0-9_.,+-]+$/
  * fixture library needs the list, the teeth and its own test back together.
  */
 
+/**
+ * PROJECT SYMBOL LIBRARIES (spec C4): a part with no stock symbol may take one from a committed
+ * library in this repository, which a draft names in its project `sym-lib-table`. Such a lib id
+ * resolves against THAT file, not the installed KiCad. This is not an exemption: the name must
+ * still be defined in the file, and `tests/circuits/h7-project-symbol.test.ts` drafts and exports
+ * it with the real copperhead and kicad-cli.
+ */
+const PROJECT_LIBRARIES: Readonly<Record<string, string>> = {
+  "h7-platform": path.join(REPO_ROOT, "circuits/h7-platform/h7-platform.kicad_sym"),
+}
+
+function resolvesOnDisk(libId: string): boolean {
+  const colon = libId.indexOf(":")
+  const project = PROJECT_LIBRARIES[libId.slice(0, colon)]
+  if (project === undefined) return symbolExistsOnDisk(libId)
+  return fs.readFileSync(project, "utf8").includes(`(symbol "${libId.slice(colon + 1)}"`)
+}
+
+test("a project library resolves only names it defines", () => {
+  expect(resolvesOnDisk("h7-platform:TS3USB221RSER")).toBe(true)
+  expect(resolvesOnDisk("h7-platform:NOT_A_SYMBOL")).toBe(false)
+})
+
 test("every symbol name swept out of the source resolves in an installed KiCad library", () => {
   const missing: string[] = []
   const malformed: string[] = []
@@ -159,7 +182,7 @@ test("every symbol name swept out of the source resolves in an installed KiCad l
       malformed.push(`${libId} (${sites.join(", ")})`)
       continue
     }
-    if (!symbolExistsOnDisk(libId)) missing.push(`${libId} (${sites.join(", ")})`)
+    if (!resolvesOnDisk(libId)) missing.push(`${libId} (${sites.join(", ")})`)
   }
   expect(malformed, "these swept values are not <Library>:<Name>, so nothing could look them up")
     .toEqual([])
