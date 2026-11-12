@@ -42,11 +42,11 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
 | usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
-| qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
+| qspi | UNREVIEWED; `verify.sh` exits 0 since ruling CR-MODULE-CROSS-PAGE-DRIVERS (27bc5a0); before it, it exited 1 (the history is in its section) | `qspi.svg` |
 | vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 | sdram | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
 | decoupling | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
-| mcu | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, `pin_to_pin` between U1's two VCAP pins, awaiting a controller ruling (see its section) (Task 7d) | `mcu.svg` |
+| mcu | UNREVIEWED; `verify.sh` exits 0 since ruling CR-MODULE-VCAP-ERC, which excuses its one `pin_to_pin` between U1's two VCAP pins; before it, it exited 1 (the history is in its section) (Task 7d) | `mcu.svg` |
 
 ## The drafts every repair starts from
 
@@ -126,8 +126,8 @@ ERC is itself a backstop, but it does not name the table entry at fault.
 **And about cross-page drivers.** Ruling
 [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
 `repair/tools/cross-page-drivers.ts` declares each signal net whose driver is on another page
-(FLASH_CLK -> mcu, U1 PF10, and since Task 7c the sdram page's 22 input nets -> mcu, U1's FMC
-pins, as the table stands), and the one-block root puts a stand-in driver, a
+(its `CROSS_PAGE_DRIVERS` is the authority for the entries: by group, FLASH_CLK and the sdram
+page's input nets -> mcu, U1's QUADSPI and FMC pins; NRST and BOOT0 -> reset_boot), and the one-block root puts a stand-in driver, a
 `Connector:TestPoint`, on that net's stub when the block under check is not the driving block. The
 stand-in only says the net is driven somewhere, and a passive pin cannot raise a `pin_to_pin`
 conflict, so the root assembled in Task 7b (step 4) must:
@@ -135,6 +135,19 @@ conflict, so the root assembled in Task 7b (step 4) must:
 - **clear every entry of the table with its real driver**: the root's ERC, every sheet together and
   no stand-in placed, reports no `pin_not_driven` on any table net, and the driving pin the entry
   names is on that net in the root's netlist export.
+
+**And about the VCAP ERC allowance.** Ruling
+[CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc): the stock symbol
+`MCU_ST_STM32H7:STM32H743IITx` types U1's VCAP1 (pin 81) and VCAP2 (pin 125) `power_out`, the
+documented circuit joins them on VCAP, and ERC reports `pin_to_pin` between them on `/mcu/`.
+`repair/tools/erc-allowances.ts` declares that one violation as the only ERC allowance, and
+`verify.sh` excuses nothing else. So the root assembled at step 4 must:
+
+- **carry the same single exclusion in the module root's `.kicad_pro`**: sheet `/mcu/`, type
+  `pin_to_pin`, between exactly U1 pin 81 and U1 pin 125, and no other exclusion;
+- **check it the same way**: the root's ERC, every sheet together, excuses only a violation matching
+  that sheet, that type and exactly those two (designator, pin) pairs, names it with the ruling id,
+  and fails on any other error, including any other `pin_to_pin`.
 
 ## power: 3.3 V buck and input network
 
@@ -1008,7 +1021,17 @@ VREF_A one pin, TP3's). **The page fits US Letter**: no overshoot to record.
 **Status: UNREVIEWED.** sha256 `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981`.
 Render: `mcu.svg` beside it.
 
-**`verify.sh` exits 1 on this page, on one ERC error, awaiting a controller ruling.** The model
+**`verify.sh` exits 0 on this page since ruling
+[CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc)**, with no byte of
+the page changed (same sha256). `repair/tools/erc-allowances.ts` declares the one ERC allowance the
+ruling admits: sheet `/mcu/`, type `pin_to_pin`, between exactly U1 pin 81 and U1 pin 125, held to
+the model on every run (both pins on VCAP in `h7Module()`, each typed `power_out` by the installed
+symbol). `verify.sh`'s closing lines name the excused violation with the ruling id. The stock symbol
+is kept. `erc-control.sh` controls 14 to 17 hold it: the page verifies; it fails on `pin_to_pin`
+with the allowance removed through the test override; an allowance naming pins 81 and 126 is
+refused by the model check; and on synthetic reports nothing near the exact match is excused.
+
+**The history, kept: before the ruling, `verify.sh` exited 1 on this page, on one ERC error.** The model
 comparison gives 0 disagreements and 0 of 90 ports on the wrong net. Under the one-block root, ERC
 reports one error on `/mcu/`: `pin_to_pin`, *"Pins of type Power output and Power output are
 connected"*, on *"Symbol U1 Pin 81 [VCAP, Power output, Line]"* and *"Symbol U1 Pin 125 [VCAP, Power
