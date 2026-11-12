@@ -1422,6 +1422,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Date:** 2026-11-12.
 - **Decides:** the module revision strap ([processor-and-memory.md](processor-and-memory.md) §9) is on the first pin, in ascending LQFP position, whose ST signal list includes an `ADCx_INPy` channel and which no internal assignment (`circuits/h7-platform/module-pins.ts`) and no interface assignment (`moduleMcuPin` in `module-interface.json`) uses. Computed from ST's pin data, that is PC2_C (position 34, signal ADC3_INP0); net `MODULE_ID_STRAP`.
 - **Only a deterministic choice:** split spec §6.5 says "a free module ADC pin" and no document prefers one. The rule exists so the choice is reproducible and checkable, not because PC2_C is better suited than another free ADC pin; the owner may move it.
+- **Open condition, to be rechecked before firmware bring-up:** PC2_C is an STM32H7 "_C" pad, joined to the PC2 function through an analog switch (SYSCFG PC2SO). ST's pin data shows no separate PC2 pad in this package, and nothing else assigns PC2. Whether the switch state matters for reading the strap on ADC3_INP0 was NOT checked against RM0433 or DS12110, so this ruling is conditional on that check.
 - **Set by:** the controller, H7 module plan Task 2 (open item MODULE-INTERNAL-PIN-MAP).
 - **Derived in:** `tests/circuits/h7-module-pins.test.ts` ("the ID strap pin follows CR-MODULE-ID-STRAP-PIN"), which recomputes the rule from the data.
 

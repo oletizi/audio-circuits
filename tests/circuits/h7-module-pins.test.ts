@@ -1,20 +1,12 @@
 import { test, expect } from "bun:test"
-import { loadContract } from "../../circuits/h7-platform/contract.ts"
 import { loadPinData, parsePinData, portName } from "../../circuits/h7-platform/st-pin-data.ts"
 import { MODULE_PINS } from "../../circuits/h7-platform/module-pins.ts"
-import { checkPinMap } from "../../circuits/h7-platform/pin-map-check.ts"
+import { checkPinMap, interfaceOccupancy } from "../../circuits/h7-platform/pin-map-check.ts"
 import type { InterfacePin } from "../../circuits/h7-platform/pin-map-check.ts"
 
 const data = loadPinData()
 
-/** The interface side, read from the loaded contract: signal name and the module MCU port. */
-function interfacePins(): readonly InterfacePin[] {
-  const out: InterfacePin[] = []
-  for (const p of loadContract().pins) {
-    if (p.moduleMcuPin !== null && p.signal !== null) out.push({ net: p.signal, pin: p.moduleMcuPin })
-  }
-  return out
-}
+const interfacePins = interfaceOccupancy
 
 test("the pin data has 176 pins, and PH5 at 46 lists FMC_SDNWE", () => {
   expect(data.pins).toHaveLength(176)
@@ -109,4 +101,18 @@ test("the real loaded contract rejects an internal assignment to PC0", () => {
     { net: "SDRAM_NWE", pin: "PC0", signal: "FMC_SDNWE", source: "negative control" }]
   const problems = checkPinMap(onPc0, interfacePins(), data)
   expect(problems.some((p) => p.includes("PC0") && p.includes("POS1"))).toBe(true)
+})
+
+test("a decorated interface pin name collides with an internal assignment", () => {
+  const problems = checkPinMap(MODULE_PINS, [{ net: "X", pin: "PA13 (JTMS/SWDIO)" }], data)
+  expect(problems.some((p) => p.includes("PA13") && p.includes("SWDIO") && p.includes("X"))).toBe(true)
+})
+
+test("a nonexistent interface port is reported", () => {
+  const problems = checkPinMap(MODULE_PINS, [{ net: "Y", pin: "PZ99" }], data)
+  expect(problems.some((p) => p.includes("PZ99") && p.includes("Y"))).toBe(true)
+})
+
+test("interfaceOccupancy skips only null moduleMcuPin", () => {
+  expect(interfaceOccupancy()).toHaveLength(31)
 })

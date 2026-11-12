@@ -8,6 +8,7 @@
  * what to fix; nothing is defaulted or skipped.
  */
 import { portName } from "./st-pin-data.ts"
+import { loadContract } from "./contract.ts"
 import type { McuPinData } from "./st-pin-data.ts"
 
 export interface PinAssignment {
@@ -38,7 +39,12 @@ export function checkPinMap(
   const netOwner = new Map<string, string>()
 
   for (const i of interfacePins) {
-    pinOwner.set(i.pin, `interface net ${i.net}`)
+    const resolved = byName.get(i.pin) ?? data.pins.find((p) => p.name === i.pin)
+    if (resolved === undefined) {
+      problems.push(`interface net ${i.net}: ${i.pin} is not a pin in ST's STM32H743IITx data; correct moduleMcuPin in module-interface.json`)
+      continue
+    }
+    pinOwner.set(portName(resolved), `interface net ${i.net}`)
     netOwner.set(i.net, `interface pin ${i.pin}`)
   }
 
@@ -54,11 +60,12 @@ export function checkPinMap(
         problems.push(`net ${a.net}: ST does not list ${a.signal} on ${a.pin} (it lists ${pin.signals.join(", ")}); move the function to a pin that carries it`)
       }
     }
-    const pinPrior = pinOwner.get(a.pin)
+    const key = pin === undefined ? a.pin : portName(pin)
+    const pinPrior = pinOwner.get(key)
     if (pinPrior !== undefined) {
       problems.push(`pin ${a.pin} is used twice: by ${pinPrior} and by net ${a.net}`)
     } else {
-      pinOwner.set(a.pin, `net ${a.net}`)
+      pinOwner.set(key, `net ${a.net}`)
     }
     const netPrior = netOwner.get(a.net)
     if (netPrior !== undefined) {
@@ -68,4 +75,22 @@ export function checkPinMap(
     }
   }
   return problems
+}
+
+/**
+ * The interface side of the collision check, read from the loaded contract: every
+ * pin whose `moduleMcuPin` is a string, as its signal name and module MCU port. Only an
+ * explicit null `moduleMcuPin` is skipped (the contract loader refuses an absent key). A
+ * non-null `moduleMcuPin` on a pin with no signal name refuses, since the net is unknown.
+ */
+export function interfaceOccupancy(contract = loadContract()): readonly InterfacePin[] {
+  const out: InterfacePin[] = []
+  for (const p of contract.pins) {
+    if (p.moduleMcuPin === null) continue
+    if (p.signal === null) {
+      throw new Error(`contract pin ${p.pin} has moduleMcuPin ${p.moduleMcuPin} but no signal name; the interface net cannot be named`)
+    }
+    out.push({ net: p.signal, pin: p.moduleMcuPin })
+  }
+  return out
 }
