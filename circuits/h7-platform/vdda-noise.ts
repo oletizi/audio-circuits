@@ -115,18 +115,8 @@ export const VDDA_DOCUMENTED: Omit<VddaInputs, "bank" | "damping"> = {
 }
 
 /**
- * The bank the controller's brief for CR-MODULE-VDDA-BANK names: analog.md:298's own example,
+ * Controller ruling CR-MODULE-VDDA-BANK (decisions.md): the bank is analog.md:298's own example,
  * 2 x 10 uF + 2 x 100 nF X7R. No ESR has been read for any of these parts (see the module comment).
- *
- * NOT YET A RULING, and there is deliberately no R_DAMP_VDDA constant here. The brief's leg is
- * R in series with 22 uF X7R across the bank (open-items.md VDDA-DAMPING-LEG), R the E24 value in
- * 0.25-0.5 ohm minimising rms at pin 21 subject to Q <= 1 and |H| at fsw not above the undamped
- * value. Every candidate meets 806 uV (about 360-371 uV rms), but none reaches Q <= 1: the
- * least pole-pair Q is 1.24 (0.27 ohm) with the bead's DCR at its 0.045 ohm bound and 2.25 (0.30
- * ohm) at DCR 0. With a 22 uF leg against a ~20 uF bank (7.7 uF vs 8.4 uF effective), a parallel
- * R-C leg cannot bring Q to 1 at any R. `selectDampingR` throws with the table. analog.md:274's
- * "Q = 1 needs R >= sqrt(L/C)" is the series-R form of Q; it does not size a leg across the bank.
- * Reported to the controller (H7 module plan, Task 3); Task 6 waits on the ruling.
  */
 export const VDDA_RULED_BANK: readonly BankCapacitor[] = [
   { nominal_F: 10e-6, esr_ohm: 0 },
@@ -136,6 +126,22 @@ export const VDDA_RULED_BANK: readonly BankCapacitor[] = [
 ]
 /** The damping leg's capacitor, nominal (open-items.md VDDA-DAMPING-LEG, "about 22 uF"). */
 export const VDDA_DAMPING_C_F = 22e-6
+
+/**
+ * CR-MODULE-VDDA-BANK, the bank and leg Task 6's model reads. The leg is R_DAMP_VDDA in series with
+ * 22 uF X7R across the bank, never in VDDA's DC path (R-18). R is what `selectDampingR` selects
+ * under the ruling's rule; a test holds them equal.
+ *
+ * Q <= 1 IS NOT REACHED with this leg size, and the ruling records it for the owner. With a 22 uF
+ * leg against the ~20 uF bank (8.4 uF vs 7.7 uF effective) a parallel R-C leg cannot bring the
+ * pole-pair Q to 1 at any R: at 0.30 ohm it is 2.25 at DCR 0 and 1.26 at DCR 0.045 ohm.
+ * analog.md:274's "Q = 1 needs R >= sqrt(L/C)" is the series-R form of Q; it does not size a leg
+ * across the bank. A larger leg capacitor was ruled out as redesign that spends R-50's 150 uF.
+ */
+export const VDDA_RULED: { readonly bank: readonly BankCapacitor[]; readonly damping: DampingLeg } = {
+  bank: VDDA_RULED_BANK,
+  damping: { r_ohm: 0.3, c_F: VDDA_DAMPING_C_F },
+}
 
 /** Symmetric triangle of peak-to-peak `deltaIL`: odd harmonic n's peak, 4 deltaIL / (pi^2 n^2). */
 export function triangleHarmonicPeak(deltaIL_A: number, n: number): number {
@@ -274,12 +280,16 @@ export interface DampingCandidate {
   readonly r_ohm: number
   /** Worst over the bead's DCR bound (0 and BEAD_DCR_MAX_OHM). */
   readonly rms_V: number
-  /** Pole-pair Q at DCR 0 and at BEAD_DCR_MAX_OHM; the rule takes the larger. */
+  /** Pole-pair Q at DCR 0 and at BEAD_DCR_MAX_OHM. */
   readonly qAtDcrZero: number
   readonly qAtDcrMax: number
+  /** The larger of the two: the quantity the ruling minimises. */
+  readonly qWorst: number
+  /** Worst over the DCR bound. */
   readonly hAt_fsw: number
   /** |H| at fsw of the same bank undamped, by the documented form. */
   readonly undampedH: number
+  /** Meets 806 uV rms and does not raise |H| at fsw above the undamped bank's. */
   readonly admissible: boolean
 }
 
@@ -297,32 +307,33 @@ export function dampingCandidates(): readonly DampingCandidate[] {
         vddaNoise({ ...base, beadDcr_ohm: dcr, damping: { r_ohm: r, c_F: VDDA_DAMPING_C_F } }))
       const rms = Math.max(zero.rmsAtPin21_V, max.rmsAtPin21_V)
       const h = Math.max(zero.hAt_fsw, max.hAt_fsw)
-      const q = Math.max(zero.q, max.q)
       return {
-        r_ohm: r, rms_V: rms, qAtDcrZero: zero.q, qAtDcrMax: max.q, hAt_fsw: h, undampedH,
-        admissible: q <= 1 && h <= undampedH,
+        r_ohm: r, rms_V: rms, qAtDcrZero: zero.q, qAtDcrMax: max.q, qWorst: Math.max(zero.q, max.q),
+        hAt_fsw: h, undampedH, admissible: rms <= VDDA_WIDEBAND_LIMIT_V && h <= undampedH,
       }
     })
 }
 
 /**
- * The brief's rule for CR-MODULE-VDDA-BANK: the candidate minimising rms at pin 21, subject to
- * Q <= 1 and |H| at fsw not above the undamped bank's. Throws, with every candidate's figures, if
- * none is admissible and meets 806 uV; the range is not widened here.
+ * CR-MODULE-VDDA-BANK's rule: among the admissible candidates (806 uV rms at pin 21, |H| at fsw not
+ * above the undamped bank's), the one with the smallest worst-case Q over the DCR bound; ties go to
+ * the lower R. Q <= 1 is not a condition (the ruling drops it; see VDDA_RULED). Throws, with every
+ * candidate's figures, if none is admissible; the range is not widened here.
  */
 export function selectDampingR(): { r_ohm: number; candidates: readonly DampingCandidate[] } {
   const candidates = dampingCandidates()
-  const ok = candidates.filter((c) => c.admissible && c.rms_V <= VDDA_WIDEBAND_LIMIT_V)
+  const ok = candidates.filter((c) => c.admissible)
   if (ok.length === 0) {
-    const undampedH = candidates[0].undampedH
     const table = candidates.map((c) =>
       `${c.r_ohm} ohm: ${(c.rms_V * 1e6).toFixed(1)} uV rms, Q ${c.qAtDcrZero.toFixed(3)} / ` +
       `${c.qAtDcrMax.toFixed(3)} (DCR 0 / ${BEAD_DCR_MAX_OHM}), |H| ${c.hAt_fsw.toFixed(4)}`).join("; ")
     throw new Error(
-      `vdda-noise: no E24 damping resistor in 0.25-0.5 ohm meets ${VDDA_WIDEBAND_LIMIT_V * 1e6} uV rms with Q <= 1 ` +
-        `and |H| at fsw <= ${undampedH.toFixed(4)} (undamped). ${table}. Report to the controller; the range is not widened.`,
+      `vdda-noise: no E24 damping resistor in 0.25-0.5 ohm meets ${VDDA_WIDEBAND_LIMIT_V * 1e6} uV rms ` +
+        `with |H| at fsw <= ${candidates[0].undampedH.toFixed(4)} (undamped). ${table}. ` +
+        "Report to the controller; the range is not widened.",
     )
   }
-  const best = ok.reduce((a, b) => (b.rms_V < a.rms_V ? b : a))
+  const best = ok.reduce((a, b) =>
+    b.qWorst < a.qWorst || (b.qWorst === a.qWorst && b.r_ohm < a.r_ohm) ? b : a)
   return { r_ohm: best.r_ohm, candidates }
 }

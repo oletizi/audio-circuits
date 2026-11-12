@@ -1,19 +1,13 @@
 /**
  * The module's VDDA network (pin 21, VDDA = VREF+): analog.md FIG-VDDA-WIDEBAND's method in code,
  * its reproduction of the documented figure for the old bank, and the bank and damping leg the
- * controller's brief for CR-MODULE-VDDA-BANK names (H7 module plan, Task 3).
- *
- * Two of the brief's tests are marked `test.failing`: no E24 leg resistor in 0.25-0.5 ohm with
- * 22 uF reaches Q <= 1 on the ruled bank, so there is no R to rule yet (see vdda-noise.ts,
- * VDDA_RULED_BANK). They pass while they fail; when a ruling makes them pass, bun reports them,
- * and they become plain tests.
+ * controller ruling CR-MODULE-VDDA-BANK (H7 module plan, Task 3).
  */
 import { describe, expect, test } from "bun:test"
 import {
   BEAD_DCR_MAX_OHM,
-  VDDA_DAMPING_C_F,
   VDDA_DOCUMENTED,
-  VDDA_RULED_BANK,
+  VDDA_RULED,
   VDDA_WIDEBAND_LIMIT_V,
   dampingCandidates,
   selectDampingR,
@@ -34,7 +28,11 @@ const OLD_BANK: VddaInputs = {
   damping: null,
 }
 
-const RULED_UNDAMPED: VddaInputs = { ...VDDA_DOCUMENTED, bank: VDDA_RULED_BANK, damping: null }
+const RULED_DAMPED: VddaInputs = { ...VDDA_DOCUMENTED, bank: VDDA_RULED.bank, damping: VDDA_RULED.damping }
+const RULED_UNDAMPED: VddaInputs = { ...RULED_DAMPED, damping: null }
+
+/** The bead's DCR is a bound, <= 0.045 ohm; less DCR is less damping, so both ends are checked. */
+const DCR_CORNERS = [0, BEAD_DCR_MAX_OHM]
 
 describe("VDDA wideband noise at pin 21 (analog.md FIG-VDDA-WIDEBAND)", () => {
   test("the fundamental is 0.673 A peak for 1.66 A peak-to-peak", () => {
@@ -67,17 +65,36 @@ describe("VDDA wideband noise at pin 21 (analog.md FIG-VDDA-WIDEBAND)", () => {
     for (const c of dampingCandidates()) expect(c.hAt_fsw).toBeLessThanOrEqual(c.undampedH)
   })
 
-  test.failing("the damping leg keeps Q at or below 1 and does not raise |H| at 450 kHz", () => {
-    const { r_ohm } = selectDampingR()
-    for (const dcr of [0, BEAD_DCR_MAX_OHM]) {
-      const damped = vddaNoise({ ...RULED_UNDAMPED, beadDcr_ohm: dcr, damping: { r_ohm, c_F: VDDA_DAMPING_C_F } })
-      expect(damped.q).toBeLessThanOrEqual(1)
-      expect(damped.hAt_fsw).toBeLessThanOrEqual(vddaNoise(RULED_UNDAMPED).hAt_fsw)
+  test("the ruled bank and leg meet 806 uV rms at pin 21", () => {
+    for (const dcr of DCR_CORNERS) {
+      expect(vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: dcr }).rmsAtPin21_V).toBeLessThanOrEqual(VDDA_WIDEBAND_LIMIT_V)
     }
   })
 
-  test.failing("the ruled bank and damping leg meet 806 uV rms at pin 21 under the stated rule", () => {
-    expect(selectDampingR().r_ohm).toBeGreaterThan(0)
+  test("the leg does not raise |H| at 450 kHz", () => {
+    const undamped = vddaNoise(RULED_UNDAMPED).hAt_fsw
+    for (const dcr of DCR_CORNERS) {
+      expect(vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: dcr }).hAt_fsw).toBeLessThanOrEqual(undamped)
+    }
+  })
+
+  test("the chosen R is the candidate with the least worst-case Q", () => {
+    const admissible = dampingCandidates().filter(
+      (c) => c.rms_V <= VDDA_WIDEBAND_LIMIT_V && c.hAt_fsw <= c.undampedH)
+    const worst = (c: { qAtDcrZero: number; qAtDcrMax: number }): number => Math.max(c.qAtDcrZero, c.qAtDcrMax)
+    const least = Math.min(...admissible.map(worst))
+    const expected = Math.min(...admissible.filter((c) => worst(c) === least).map((c) => c.r_ohm))
+    expect(VDDA_RULED.damping.r_ohm).toBe(expected)
+    expect(selectDampingR().r_ohm).toBe(expected)
+  })
+
+  test("the achieved worst-case Q is 2.25 at DCR 0 and 1.26 at the 0.045 ohm bound", () => {
+    // Q <= 1 is NOT met. The leg's 22 uF (8.4 uF effective) is about the bank's 7.7 uF, and a
+    // parallel R-C leg that size cannot bring the pole-pair Q to 1 at any R. analog.md:274's
+    // "Q = 1 needs R >= sqrt(L/C)" is the series-R form; CR-MODULE-VDDA-BANK records this for the
+    // owner. Asserted as numbers so a change to the network shows here.
+    expect(vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: 0 }).q).toBeCloseTo(2.246, 3)
+    expect(vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: BEAD_DCR_MAX_OHM }).q).toBeCloseTo(1.261, 3)
   })
 
   test("a basis of 1.0 is refused", () => {
