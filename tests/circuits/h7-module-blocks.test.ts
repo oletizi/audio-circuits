@@ -18,9 +18,11 @@ import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { qspiBlock } from "../../circuits/h7-platform/module/qspi.ts"
 import { clockBlock } from "../../circuits/h7-platform/module/clock.ts"
 import { resetBootBlock } from "../../circuits/h7-platform/module/reset-boot.ts"
+import { swdBlock } from "../../circuits/h7-platform/module/swd.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  swd: swdBlock,
   reset_boot: resetBootBlock,
   clock: clockBlock,
   qspi: qspiBlock,
@@ -237,5 +239,19 @@ describe("Reset and boot (processor-and-memory.md:264-265; CORE-10 to CORE-12)",
     expect(nets("c_boot0")).toEqual(["BOOT0", "GND"])
     expect(nets("sw_boot")).toEqual(["3V3_D", "BOOT0"])
     expect(capacitors(net)).toEqual(["1.00e-7 3V3_D|GND", "1.00e-7 BOOT0|GND", "1.00e-7 GND|NRST"])
+  })
+})
+
+describe("SWD (processor-and-memory.md:266; USB-06; CR-MODULE-SWD-HEADER)", () => {
+  const net = swdBlock()
+  test("J_SWD is USB-06's pinout", () => {
+    expect(netsOf(only(net, "j_swd"))).toEqual({
+      "1": "3V3_D", "2": "SWDIO", "3": "GND", "4": "SWCLK", "5": "GND",
+      "6": "NC", "7": "NC", "8": "NC", "9": "GND", "10": "NRST",
+    })
+  })
+  test("pogo pads for SWDIO, SWCLK, NRST, the module's 3V3 and GND", () => {
+    const pads = net.components.filter((c) => c.id.startsWith("tp_")).map((c) => netsOf(c)["1"] ?? "?").sort()
+    expect(pads).toEqual(["3V3_D", "GND", "NRST", "SWCLK", "SWDIO"])
   })
 })
