@@ -132,3 +132,22 @@ test("the loader refuses a repeated pin number", () => {
   const pins = loadContract().pins.map((p) => (p.pin === 40 ? { ...p, pin: 39 } : p))
   expect(() => parseContract({ status: "draft", pins })).toThrow(/repeated/)
 })
+
+test("moduleMcuPin is kept, a string or null", () => {
+  const pins = loadContract().pins
+  expect(pins.find((p) => p.pin === 1)?.moduleMcuPin).toBe("PB12")
+  expect(pins.find((p) => p.pin === 22)?.moduleMcuPin).toBe("PC0")
+  expect(pins.filter((p) => p.moduleMcuPin === null)).toHaveLength(9)
+})
+
+test("a pin without moduleMcuPin refuses", () => {
+  const raw = JSON.parse(readFileSync(join(import.meta.dir, "../../circuits/h7-platform/module-interface.json"), "utf8"))
+  const missing = { ...raw, pins: raw.pins.map((p: Record<string, unknown>) => {
+    if (p.pin !== 3) return p
+    const { moduleMcuPin: _dropped, ...rest } = p
+    return rest
+  }) }
+  expect(() => parseContract(missing)).toThrow(/pin 3.*moduleMcuPin/)
+  const wrongType = { ...raw, pins: raw.pins.map((p: Record<string, unknown>) => (p.pin === 3 ? { ...p, moduleMcuPin: 7 } : p)) }
+  expect(() => parseContract(wrongType)).toThrow(/pin 3.*moduleMcuPin/)
+})

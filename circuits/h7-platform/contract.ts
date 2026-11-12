@@ -18,6 +18,8 @@ export interface ContractPin {
   readonly signal: string | null
   readonly direction: string
   readonly failsafeRequired: boolean
+  /** The module MCU's port on this contract pin (e.g. `PB12`), or null where the JSON has null (no MCU port). */
+  readonly moduleMcuPin: string | null
 }
 
 export interface InterfaceContract {
@@ -36,7 +38,7 @@ function isRecord(v: unknown): v is Json {
 
 function parsePin(raw: unknown, index: number): ContractPin {
   if (!isRecord(raw)) throw new Error(`contract pins[${index}] is not an object`)
-  const { pin, category, signal, direction, failsafeRequired } = raw
+  const { pin, category, signal, direction, failsafeRequired, moduleMcuPin } = raw
   if (typeof pin !== "number" || !Number.isInteger(pin)) {
     throw new Error(`contract pins[${index}].pin is not an integer`)
   }
@@ -48,7 +50,15 @@ function parsePin(raw: unknown, index: number): ContractPin {
   if (typeof failsafeRequired !== "boolean") {
     throw new Error(`contract pin ${pin}: failsafeRequired is not a boolean`)
   }
-  return { pin, category, signal, direction, failsafeRequired }
+  // An absent key is refused, never read as "no assignment": that would quietly
+  // empty the interface side of the module pin-map collision check.
+  if (!("moduleMcuPin" in raw)) {
+    throw new Error(`contract pin ${pin}: moduleMcuPin is absent; the JSON states a port string or null for every pin`)
+  }
+  if (moduleMcuPin !== null && (typeof moduleMcuPin !== "string" || moduleMcuPin === "")) {
+    throw new Error(`contract pin ${pin}: moduleMcuPin is neither a non-empty string nor null`)
+  }
+  return { pin, category, signal, direction, failsafeRequired, moduleMcuPin }
 }
 
 /** Validates an already-parsed contract document. Exported so a test can feed it a bad one. */

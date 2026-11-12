@@ -279,14 +279,14 @@ Split spec §6.5:
 
 ## 10. The module's internal MCU pin assignments
 
-The contract fixes only the 40 interface pins ([architecture.md](architecture.md) §4.3). **The module's internal MCU pin assignments (SDRAM, QSPI, HSE, SWD, the DFU socket on PA11/PA12, the module identification strap) are not carried here as fact.** The port spec leaves them open ("What this leaves open"), and phase 2 re-derives them from the STM32H743 datasheet and ST's pin data. Where the pedals repository records them, for phase 2 to cite:
+The contract fixes only the 40 interface pins ([architecture.md](architecture.md) §4.3). **The module's internal MCU pin assignments (SDRAM, QSPI, HSE, SWD, the DFU socket on PA11/PA12, the module identification strap) are `MODULE_PINS` in `circuits/h7-platform/module-pins.ts`, the derived map; this section does not restate it.** Each assignment cites its source there, and `tests/circuits/h7-module-pins.test.ts` checks every function against ST's pin data and every port and net against the contract's 31 interface pins; the ID strap's pin is the controller ruling [CR-MODULE-ID-STRAP-PIN](decisions.md#cr-module-id-strap-pin). What follows is what the map was derived from. Where the pedals repository records them:
 - [CORE-BRIEF.md §6][cb], "OSCAR's pin assignments (starting point for Task 8)": OSCAR_PROC_01's SDRAM, SAI1, flash, USB, SWD, HSE and dedicated pins, by LQFP-176 position, each signal checked against ST's `STM32H743IITx.xml`. It is what OSCAR and v1 started from, and that is all it is.
 - [h7-platform/PINMAP.md][pinmapmd] and [h7-platform/pinmap.json][pinmap]: v1's generated pin map (the v1 schematic is not an authority, and the pin map was retired in favour of the contract, [O-7](decisions.md#o-7)).
 - The changes the split made to it: split spec §6.2 ([D23](decisions.md#d23) moves three SDRAM control pins; v1's PI4, PI5, PH6, PH9, PG12, PB0, PB12, PB13, PD3–PD7, PE2–PE6 and PA9 become unallocated and analog-mode, apart from PA11/PA12, which go to the module's USB socket, and PA9/PA10, which stay unallocated).
 - ST's pin data as the pedals repository vendored it: [vendor/st-pin-data/STM32H743IITx.xml][stpin] (with the two STM32H750IB files beside it).
 - The split spec planned a hand-authored module-internal pin file (`module-pins.json`, §10.2) merged with the contract and refused on any port or net used twice. It was never written; no such file exists at the pinned commit.
 
-Split spec §6.2 states that none of the 31 interface ports collides with the SDRAM, QSPI, HSE or SWD pins, "checked against `pinmap.json`; the plan's contract gate re-checks it mechanically". That re-check never ran on the split. Open item MODULE-INTERNAL-PIN-MAP.
+Split spec §6.2 states that none of the 31 interface ports collides with the SDRAM, QSPI, HSE or SWD pins, "checked against `pinmap.json`; the plan's contract gate re-checks it mechanically". That re-check never ran on the split; it runs now, as `checkPinMap` (`circuits/h7-platform/pin-map-check.ts`) under `tests/circuits/h7-module-pins.test.ts`. Open item MODULE-INTERNAL-PIN-MAP (closed).
 
 ## 11. What did not cross
 

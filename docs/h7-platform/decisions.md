@@ -1415,6 +1415,16 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Decides:** VIN_MOD enters through a 2-pin input header (`Connector_Generic:Conn_01x02`; pin 1 is the supply, pin 2 is GND) and a fuse (`Device:Fuse`) in series. The bench supply's current limit stays the primary limit ([architecture.md §7](architecture.md#7-the-bring-up-carrier)). The fuse's hold current is **0.75 A**: the next standard PTC hold current above the module's largest documented VIN_MOD input current. That figure is **729 mA**, the 1.5× peak down to VIN_MOD 7.32 V ([power.md](power.md) §4, line 246), which exceeds the contract's `maxPeakCurrentMa` of 674 mA (line 240). No part number is chosen, because a schematic needs none (CLAUDE.md, G245). The model has no fuse kind, so the fuse is modelled as kind `ic` with pins "1" and "2". Its rating reaches the drawing's value field as "0.75A hold" through the part's stated value (`part.value`, which the value lowering uses for a part with no electrical quantity), set in `circuits/h7-platform/parts.ts`.
 - **Set by:** the controller, H7 carrier plan Task 5.
 
+### CR-MODULE-ID-STRAP-PIN
+
+**The module's ID strap goes on the first free ADC-capable pin in ascending LQFP position.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the module revision strap ([processor-and-memory.md](processor-and-memory.md) §9) is on the first pin, in ascending LQFP position, whose ST signal list includes an `ADCx_INPy` channel and which no internal assignment (`circuits/h7-platform/module-pins.ts`) and no interface assignment (`moduleMcuPin` in `module-interface.json`) uses. Computed from ST's pin data, that is PC2_C (position 34, signal ADC3_INP0); net `MODULE_ID_STRAP`.
+- **Only a deterministic choice:** split spec §6.5 says "a free module ADC pin" and no document prefers one. The rule exists so the choice is reproducible and checkable, not because PC2_C is better suited than another free ADC pin; the owner may move it.
+- **Set by:** the controller, H7 module plan Task 2 (open item MODULE-INTERNAL-PIN-MAP).
+- **Derived in:** `tests/circuits/h7-module-pins.test.ts` ("the ID strap pin follows CR-MODULE-ID-STRAP-PIN"), which recomputes the rule from the data.
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
