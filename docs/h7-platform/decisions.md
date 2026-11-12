@@ -1426,6 +1426,28 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan Task 2 (open item MODULE-INTERNAL-PIN-MAP).
 - **Derived in:** `tests/circuits/h7-module-pins.test.ts` ("the ID strap pin follows CR-MODULE-ID-STRAP-PIN"), which recomputes the rule from the data.
 
+### CR-MODULE-VDDA-BANK
+
+**The module's VDDA bank is 2 × 10 µF + 2 × 100 nF X7R, with a damping leg of 0.30 Ω in series with 22 µF X7R across it.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the bank is [analog.md](analog.md) FIG-VDDA-WIDEBAND's own example (line 298), meeting its nominal X7R ≥ 10.1 µF. The damping leg keeps the documented size, about 22 µF with R about 0.25–0.5 Ω (analog.md §9.3, line 274; open item VDDA-DAMPING-LEG), across the bank and never in VDDA's DC path ([R-18](#r-18)). R_DAMP_VDDA is the E24 value in 0.25–0.5 Ω with the least worst-case Q over the bead's DCR bound (Q at DCR 0 and at 0.045 Ω, the larger taken), subject to ≤ 806 µV rms at pin 21 and \|H\| at 450 kHz not above the undamped bank's; ties go to the lower R. That is **0.30 Ω**. Part numbers are not needed for the drawing; they are left to phase 4.
+- **Inputs and basis:** ΔIL 1.66 A peak-to-peak at fSW 450 kHz ([power.md](power.md) §5.4, line 425; §5.2, line 374); the buck output 30.6 µF effective with 3.33 mΩ ESR (analog.md line 298); FB_VDDA's L at its lower bound, 165 Ω / (2π × 100 MHz) = 0.2626 µH, and DCR from 0 to its 0.045 Ω bound (analog.md lines 242, 272); every bank and leg ceramic on [R-57](#r-57)'s basis, 0.3825; odd harmonics to the 15th, root-sum-square; the bank's and leg's ESR taken as 0 Ω, no part being chosen (not conservative above f0, where ESR raises the shunt impedance).
+- **Computed** by `circuits/h7-platform/vdda-noise.ts` (FIG-VDDA-WIDEBAND's method in code, which reproduces its 2.12 mV rms and 234.1 kHz for the old bank) and asserted in `tests/circuits/h7-vdda-noise.test.ts`:
+
+  | | DCR 0 | DCR 0.045 Ω |
+  |---|---|---|
+  | rms at pin 21 | 363.4 µV | 362.4 µV |
+  | \|H\| at 450 kHz (undamped 0.0657) | 0.0635 | 0.0633 |
+  | pole-pair Q | 2.246 | 1.261 |
+
+  The bank alone puts f0 at 111.7 kHz and gives 376.0 µV rms undamped. So the network meets 806 µV, and the leg does not raise \|H\| at 450 kHz.
+- **Q ≤ 1 is not reached with the documented leg size.** Its 22 µF (8.4 µF effective) is about the bank's 7.7 µF, and a parallel R-C leg that size cannot bring the pole-pair Q to 1 at any R in the range (the least worst-case Q is 2.246, at 0.30 Ω). The source's "Q = 1 needs R ≥ √(L/C)" is the series-resistance form of Q, Q = √(L/C) / R, and does not size a leg across the bank. A larger leg capacitor was not taken: it would be a redesign, and it spends R-50's budget. Recorded for the owner's review of the page.
+- **Toward [R-50](#r-50)'s 150 µF:** the bank and leg add 20.2 µF + 22 µF = **42.2 µF** nominal to the module's 3V3; the module's total is summed by the module plan's later tasks.
+- **Not settled by this:** VDDA-WIDEBAND, 3V3D-RIPPLE-INTO-VREF-A and VDDA-DAMPING-LEG stay open, conditional on Murata's curve (L is only a lower bound, and Q rises with L) and the chosen parts' DC-bias curves ([open-items.md](open-items.md)).
+- **Set by:** the controller, H7 module plan Task 3, on the implementer's report that no candidate reaches Q ≤ 1.
+- **Carried in:** `circuits/h7-platform/vdda-noise.ts` (`VDDA_RULED`, which the module model reads).
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
