@@ -5,8 +5,8 @@
 #
 # It grows one block at a time, as each page is repaired (H7 module plan Task 7). Today it drafts
 # all twelve pages, checks each draft and its intent against the committed record, and repairs the
-# power page and each Task 7b, Task 7c and Task 7d page (repair_block), which is every block; the
-# root is not assembled yet.
+# power page and each Task 7b, Task 7c and Task 7d page (repair_block), which is every block; then
+# assembles the root (Task 7e) and writes its .kicad_pro.
 #
 # Fails loudly: the work directory must be new or empty, every command's status is checked through
 # pipes (pipefail), each generated op-list must be byte-identical to the committed one, each
@@ -54,6 +54,9 @@ PAGE_VDDA=7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444
 PAGE_SDRAM=0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf
 PAGE_DECOUPLING=8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb
 PAGE_MCU=c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981
+ROOT_BLANK=134c620e32f4587ab861a8210298ae31533ca041247b3bb183f8e1b13eef25d2
+ROOT=fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86
+ROOT_PRO=62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -94,7 +97,13 @@ apply() {
 # 1. make draw: one draft per block, each intent and each draft checked against the record.
 make -C "$root/boards/$board" draw > "$work/make-draw.log" 2>&1 \
   || fail "make -C boards/$board draw failed; see $work/make-draw.log"
-grep -q '^NO INDEPENDENT NETLIST:' "$work/make-draw.log" || fail "make draw printed no NO INDEPENDENT NETLIST block"
+# Since Task 7e the board declares a "netlist" (the root's export, tests/fixtures/h7-module.net), so
+# make draw runs its per-block partition check against it (tools/draught/draw-partition.ts; a refusal
+# stops make draw non-zero, which fails above) and prints no NO INDEPENDENT NETLIST block. The drafts
+# are the same bytes either way: each is checked against its recorded sha256 below.
+if grep -q '^NO INDEPENDENT NETLIST:' "$work/make-draw.log"; then
+  fail "make draw printed a NO INDEPENDENT NETLIST block, so it did not read the board's declared netlist"
+fi
 mkdir -p "$work/repair"
 for b in $BLOCKS; do
   cp "$root/build/draw/$board/$b/$b.kicad_sch" "$work/$b.kicad_sch" || fail "make draw wrote no sheet for block $b"
@@ -200,3 +209,30 @@ printf '(sym_lib_table\n%s(version 7)\n%s(lib (name "h7-platform")(type "KiCad")
   "$(printf '\t')" "$(printf '\t')" "$lib_rel" > "$work/sym-lib-table" || fail "could not write the sym-lib-table"
 cmp -s "$work/sym-lib-table" "$drafted/sym-lib-table" || fail "the sym-lib-table this replay makes differs from the committed one"
 echo "the committed sym-lib-table matches the one this replay makes"
+
+# 4. The root (Task 7e): assemble-root.ts's starting text and op-list, the root-held PWR_FLAGs
+#    (root-flags.ts, ruling CR-MODULE-PWR-FLAGS), their references renamed #FLG0<n> (root_flag_refs.py),
+#    and the .kicad_pro with its one ERC exclusion (kicad-pro.ts, ruling CR-MODULE-VCAP-ERC). Every
+#    block sheet must be unchanged by it.
+mkdir -p "$work/repair/root"
+(cd "$root" && bun tools/draught/assemble-root.ts blank "$board") > "$work/$board.kicad_sch" || fail "assemble-root.ts blank failed"
+check "$board.kicad_sch" "assemble-root blank" "$ROOT_BLANK"
+(cd "$root" && bun tools/draught/assemble-root.ts ops "$module" h7Module "$board") > "$work/repair/root/01-assemble.json" \
+  || fail "assemble-root.ts ops failed"
+same root/01-assemble.json
+apply "$board.kicad_sch" root/01-assemble.json
+(cd "$root" && bun "$here/tools/root-flags.ts" "$board") > "$work/repair/root/02-pwr-flags.json" || fail "root-flags.ts failed"
+same root/02-pwr-flags.json
+apply "$board.kicad_sch" root/02-pwr-flags.json
+python3 "$here/tools/root_flag_refs.py" "$work/$board.kicad_sch" 3 || fail "root_flag_refs.py failed"
+check "$board.kicad_sch" "root 01 to 03" "$ROOT"
+cmp -s "$work/$board.kicad_sch" "$drafted/$board.kicad_sch" || fail "the replayed $board.kicad_sch differs from the committed $drafted/$board.kicad_sch"
+echo "the replayed $board.kicad_sch is byte-identical to the committed root"
+(cd "$root" && bun "$here/tools/kicad-pro.ts" "$work" "$board") > "$work/$board.kicad_pro" || fail "kicad-pro.ts failed"
+check "$board.kicad_pro" "kicad-pro.ts" "$ROOT_PRO"
+cmp -s "$work/$board.kicad_pro" "$drafted/$board.kicad_pro" || fail "the replayed $board.kicad_pro differs from the committed one"
+echo "the replayed $board.kicad_pro is byte-identical to the committed one"
+for b in $BLOCKS; do
+  cmp -s "$work/$b.kicad_sch" "$drafted/$b.kicad_sch" || fail "after the root, $b.kicad_sch differs from the committed sheet"
+done
+echo "every block sheet is unchanged by the root's assembly"
