@@ -100,7 +100,7 @@ python3 "$m/paper_fit.py" "$sch" >"$out/fit.log" || fail "paper_fit.py could not
 cat "$out/fit.log"
 grep -qx 'fits: yes' "$out/fit.log" || failed="$failed paper-fit"
 echo "== sheet symbols on the paper"
-python3 "$here/root_sheets_fit.py" "$sch" || failed="$failed sheets-fit"
+python3 "$root/draughting/measure/root_sheets_fit.py" "$sch" || failed="$failed sheets-fit"
 echo "== counts"; python3 "$here/counts.py" "$sch"
 echo "== sheet page numbers (reported, never judged)"; python3 -I "$here/root_pages.py" "$sch" | tr '\n' ';'; echo
 if [ -s "$dir/$board.svg" ]; then

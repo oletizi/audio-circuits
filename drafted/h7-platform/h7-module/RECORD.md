@@ -212,7 +212,7 @@ VCAP exclusion, and every sheet symbol lies on US Letter's paper.
    pin wired to a 200 mil stub ending in a LOCAL label naming the parent net.
 3. `repair/tools/root-flags.ts`, `02-pwr-flags.json`: the three root-held PWR_FLAGs.
 4. `repair/tools/root_flag_refs.py`: their references `#FLG01` to `#FLG03`.
-5. `repair/tools/root_pin_justify.py` (Task 7e fix round 1): every sheet pin's name justified into its
+5. `draughting/repair/root_pin_justify.py` (Task 7e fix round 1; it was `repair/tools/` until the final review moved it): every sheet pin's name justified into its
    box, west-edge pins left and east-edge pins right, as KiCad writes them (akcli writes no justify).
 6. `repair/tools/kicad-pro.ts`: `h7-module.kicad_pro`, unchanged by the fix round.
 

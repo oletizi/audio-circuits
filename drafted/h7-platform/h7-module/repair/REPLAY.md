@@ -68,7 +68,7 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
    checks it is byte-identical to `../sym-lib-table`.
 5. The root (Task 7e), each op-list checked against `root/` and applied as above:
    `assemble-root.ts blank` (its sha256 checked), `assemble-root.ts ops` (`root/01-assemble.json`),
-   `tools/root-flags.ts` (`root/02-pwr-flags.json`), `tools/root_flag_refs.py`, `tools/root_pin_justify.py`
+   `tools/root-flags.ts` (`root/02-pwr-flags.json`), `tools/root_flag_refs.py`, `draughting/repair/root_pin_justify.py`
    (since Task 7e fix round 1); the root's sha256 must
    be its end value and the sheet byte-identical to `../h7-module.kicad_sch`. Then
    `tools/kicad-pro.ts` writes the `.kicad_pro`, which must reach its sha256 and be byte-identical to
@@ -120,8 +120,8 @@ sh drafted/h7-platform/h7-module/repair/tools/render.sh drafted/h7-platform/h7-m
 | `tools/render.sh` | PDF, SVG and a 150 dpi PNG of one sheet, copied from the carrier's. A third argument, `root` or a KiCad page number, renders that one page of a multi-page export (the root's 13 pages; kicad-cli `--pages`); with none, a multi-page PDF is refused. kicad-cli 10.0.5's SVG export ignores `--pages` for a sub-sheet page and writes the root, so the script compares the SVG's title-block `Sheet:` text with the PDF's and, on a mismatch, deletes every output and refuses naming both sheets: a sub-sheet page cannot be rendered through the root, only `root` can |
 | `tools/render-control.sh` | the controls for that check, on a scratch copy: `root` renders with matching sheets; reset_boot's page number is refused naming `/reset_boot/` and `/` and leaves no output (before the check, that run exited 0 and wrote a PDF and PNG of reset_boot beside an SVG of the root); and kicad-cli's own SVG of that page is measured to be the root. `erc-control.sh` runs it as its control 19 |
 | `tools/root_pages.py`, `tools/svg_stroked_text.py` | measures `verify-root.sh` reports and does not judge: the page number each sheet of the root carries; and the drawn text of the committed render (overlapping text ink boxes, ink crossing a sheet box edge) |
-| `tools/root_pin_justify.py` | root step 5 (Task 7e fix round 1): every root sheet pin's name justified into its box, west left and east right, as KiCad writes them; akcli 0.22.0 writes no justify. Refuses a count other than `root/01-assemble.json`'s, and a second run |
-| `tools/root_sheets_fit.py` | every root sheet box inside US Letter's inner frame and clear of the title block (`paper_fit.py` does not measure a sheet box); run by `verify-root.sh`, controlled by `root-control.sh` control 10 |
+| `draughting/repair/root_pin_justify.py` (moved from `tools/` by the final review, M5: nothing in it is board-specific) | root step 5 (Task 7e fix round 1): every root sheet pin's name justified into its box, west left and east right, as KiCad writes them; akcli 0.22.0 writes no justify. Refuses a count other than `root/01-assemble.json`'s, and a second run |
+| `draughting/measure/root_sheets_fit.py` (moved from `tools/` likewise) | every root sheet box inside US Letter's inner frame and clear of the title block (`paper_fit.py` does not measure a sheet box); run by `verify-root.sh`, controlled by `root-control.sh` control 10 |
 | `tools/verify-root.sh`, `tools/root-control.sh` | the root's verification set (fails on ERC, on `paper_fit.py` not reporting "fits: yes", and on a sheet box off the paper) and its ten controls; `erc-control.sh` runs the controls as its control 18 |
 | `tools/page.py` | the shared op-list writers for the Task 7b pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals, among them a port label on a wire drawn for another net), and the field placements `layout.py` uses |
 | `tools/place.py`, `tools/text_edits.py` | op-list 01, and the direct text edits (strokes, fields, the group rectangle), for any Task 7b block, driven by its `layout.py` |

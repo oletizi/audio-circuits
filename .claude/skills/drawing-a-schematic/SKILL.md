@@ -114,6 +114,16 @@ connect.**
 - **The repair adds two op-lists**: per block, `tools/draught/hierarchical-labels.ts` (`ops`, then
   `check` as the post-condition; deletes go by uuid, because a position match that misses is a
   silent note in akcli); and the root, `tools/draught/assemble-root.ts` (`blank`, then `ops`).
+- **The root's arrangement is a fixed rule that fits US Letter** (`tools/draught/root-arrangement.ts`;
+  ruling CR-MODULE-ROOT-FITS-LETTER): each block a cell sized from its port count and text lengths,
+  packed tallest first, pins 100 mil apart down the west edge, or both edges when one cannot hold
+  them. A board that cannot fit is refused, naming the block. It is not a layout judged from the circuit.
+- **Every akcli root then needs `draughting/repair/root_pin_justify.py`**: akcli 0.22.0 writes no
+  justify on a sheet pin, and kicad-cli centres a long pin name across the box edge (measured).
+- **On a root, `draughting/measure/root_sheets_fit.py` is the check that every sheet symbol is on
+  the paper**: `paper_fit.py` does not measure a `(sheet ...)` box.
+- **No `.kicad_pro` is written by the C3 tooling**; a board may commit one beside its root carrying
+  only its declared ERC exclusions (the h7 module does; kicad-cli 10.0.5 honours `erc_exclusions`).
 - **Committed form**: `drafted/<circuit>/<board>/` holds `<board>.kicad_sch` (the root),
   `<block>.kicad_sch` per block, one `RECORD.md` with a sha256 row per sheet, and `repair/` with a
   directory per block plus `root/` and one `replay.sh` reaching every sha256.

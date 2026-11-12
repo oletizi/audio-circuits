@@ -1075,10 +1075,10 @@ any other (step 5.5):
   rather than drawn off the paper. It is not a layout judged from the circuit. akcli 0.22.0 writes
   no justify on a sheet pin, and kicad-cli then centres a long pin name across the box edge
   (measured), so the h7 module's repair justifies every root sheet pin into its box
-  (`drafted/h7-platform/h7-module/repair/tools/root_pin_justify.py`). The two-block fixture's root
+  (`draughting/repair/root_pin_justify.py`). The two-block fixture's root
   is not justified: it is test data and is never sent for review.
   `draughting/measure/paper_fit.py` does not measure a `(sheet ...)` box, so on a root,
-  `drafted/h7-platform/h7-module/repair/tools/root_sheets_fit.py` is the check that every sheet
+  `draughting/measure/root_sheets_fit.py` is the check that every sheet
   symbol is on the paper.
 
 **The committed form** is `drafted/<circuit>/<board>/`: `<board>.kicad_sch` (the root),

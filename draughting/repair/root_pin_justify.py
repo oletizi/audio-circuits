@@ -1,6 +1,8 @@
-"""Justify the h7-module ROOT's sheet pin names into their sheet boxes, as KiCad itself writes such
-pins: west-edge pins `(justify left)`, east-edge pins `(justify right)`. (Ruling
-CR-MODULE-ROOT-FITS-LETTER, Task 7e fix round 1.)
+"""Justify an akcli-assembled ROOT's sheet pin names into their sheet boxes, as KiCad itself writes
+such pins: west-edge pins `(justify left)`, east-edge pins `(justify right)`. (Ruling
+CR-MODULE-ROOT-FITS-LETTER, Task 7e fix round 1.) Written for the h7-module root and moved here from
+its repair directory (H7 module plan, final review M5): nothing in it is board-specific, and it is
+the repair step every akcli root needs (TOOLING.md, C3).
 
 Why. To fit US Letter, `tools/draught/root-arrangement.ts` puts half of mcu's 90 sheet pins on the
 EAST edge of its sheet box. akcli 0.22.0 writes every sheet pin's effects with no justify
@@ -30,7 +32,7 @@ import json
 import pathlib
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[5]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "draughting" / "measure"))
 import kicad_sheet  # noqa: E402
 

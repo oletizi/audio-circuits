@@ -1,5 +1,7 @@
 """Does every sheet symbol on a root lie on US Letter's paper: inside the inner frame and clear of
-the title block? (Ruling CR-MODULE-ROOT-FITS-LETTER, Task 7e fix round 1.)
+the title block? (Ruling CR-MODULE-ROOT-FITS-LETTER, Task 7e fix round 1.) Written for the h7-module
+root and moved here from its repair directory (H7 module plan, final review M5): nothing in it is
+board-specific, and every akcli root that `make draw` assembles is to be checked with it.
 
 `draughting/measure/paper_fit.py` measures wire ends, symbol origins, label anchors and rectangles,
 but not a `(sheet ...)` box, so on a root it can report "fits: yes" while a sheet box runs off the
@@ -16,7 +18,7 @@ frame or on the title block, or when the root holds no sheet at all.
 import pathlib
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[5]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "draughting" / "measure"))
 import kicad_sheet  # noqa: E402
 

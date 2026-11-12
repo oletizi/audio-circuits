@@ -158,13 +158,13 @@ if (cd "$root" && bun "$here/root-netcompare.ts" "$work/cut.net") >"$work/cut-cm
 echo "   fails as expected: $(grep 'FAIL - NRST' "$work/cut.log" | cut -c1-120)"
 
 echo "== 10. the root's sheet symbols on the paper; one moved off it fails"
-python3 "$here/root_sheets_fit.py" "$proj/$board.kicad_sch" >"$work/fit.log" 2>&1 || { cat "$work/fit.log" >&2; bad "root_sheets_fit.py failed on the committed root"; }
+python3 "$root/draughting/measure/root_sheets_fit.py" "$proj/$board.kicad_sch" >"$work/fit.log" 2>&1 || { cat "$work/fit.log" >&2; bad "root_sheets_fit.py failed on the committed root"; }
 grep -q '^sheets on the paper: 12 of 12$' "$work/fit.log" || bad "root_sheets_fit.py did not find 12 of 12 sheets on the paper"
 python3 "$root/draughting/measure/paper_fit.py" "$proj/$board.kicad_sch" | grep -qx 'fits: yes' || bad "paper_fit.py did not report fits: yes on the committed root"
 copy moved
 cp "$proj/sym-lib-table" "$work/moved/"
 python3 "$here/root_tamper.py" move-sheet "$work/moved/$board.kicad_sch" interface 100 >/dev/null
-if python3 "$here/root_sheets_fit.py" "$work/moved/$board.kicad_sch" >"$work/moved.fit.log" 2>&1; then bad "root_sheets_fit.py passed a sheet moved off the paper"; fi
+if python3 "$root/draughting/measure/root_sheets_fit.py" "$work/moved/$board.kicad_sch" >"$work/moved.fit.log" 2>&1; then bad "root_sheets_fit.py passed a sheet moved off the paper"; fi
 grep -q 'interface: .*FAIL - off the inner frame' "$work/moved.fit.log" || { cat "$work/moved.fit.log" >&2; bad "it failed, but not naming interface"; }
 sh "$here/verify-root.sh" "$work/moved" >"$work/moved.verify.log" 2>&1 && bad "verify-root.sh passed a sheet moved off the paper"
 grep -q 'these checks failed:.*sheets-fit' "$work/moved.verify.log" || { tail -5 "$work/moved.verify.log" >&2; bad "verify-root.sh failed, but not naming sheets-fit"; }
