@@ -42,7 +42,7 @@ import { committedNetlist, exportDraftedSheet, withOnePinMoved } from "./drafted
 import path from "node:path"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { exportProjectRoot, type ProjectModel } from "./drafted-project.ts"
-import { pinNumbersFromTable } from "./own-mapping-board.ts"
+import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
 import { DESIGNATORS as TWO_BLOCK_DESIGNATORS, PIN_NUMBERS as TWO_BLOCK_PIN_NUMBERS, twoBlockBoard } from "../fixtures/two-block-board/two-block-board.ts"
 
 /**

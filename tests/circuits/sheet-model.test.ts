@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { DESIGNATORS, PIN_NUMBERS } from "../../circuits/h7-platform/carrier-board.ts"
-import { pinNumberFor } from "../../lib/kicad/from-network.ts"
-import { everyPin } from "./own-mapping-board.ts"
+import { everyPin, pinNumberFor } from "../../lib/kicad/from-network.ts"
 import { modelForSheet } from "./sheet-model.ts"
 
 test("the carrier's sheet model uses the carrier's own designators", () => {

@@ -19,7 +19,7 @@ import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { DESIGNATORS, PIN_NUMBERS, twoBlockBoard } from "../fixtures/two-block-board/two-block-board.ts"
 import { exportProjectRoot, registerDraftedProjectTests, type ProjectModel } from "./drafted-project.ts"
-import { pinNumbersFromTable } from "./own-mapping-board.ts"
+import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
 
 const BOARD = "two-block-board"
 const DIR = path.join(moduleRepoRoot(), "tests", "fixtures", "two-block-board", "drafted")

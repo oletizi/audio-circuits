@@ -15,10 +15,10 @@
  */
 import { readFileSync } from "node:fs"
 import { DESIGNATORS, PIN_NUMBERS, h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
+import { pinNumbersFromTable } from "../../../../../lib/kicad/from-network.ts"
 import { importNetlist } from "../../../../../lib/kicad/netlist.ts"
 import { compareSheetToModel } from "../../../../../lib/kicad/sheet-agreement.ts"
 import type { Network } from "../../../../../lib/model/index.ts"
-import { pinNumbersFromTable } from "../../../../../tests/circuits/own-mapping-board.ts"
 
 const [block, file] = process.argv.slice(2)
 if (block === undefined || file === undefined) {

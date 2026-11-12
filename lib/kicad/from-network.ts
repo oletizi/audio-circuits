@@ -82,10 +82,28 @@ export function pinNumberFor(component: Component, pin: string, pinNumbers: PinN
 export type PadOrders = Readonly<Record<string, readonly string[]>>
 
 /** Every pin a component declares, package pins and unit pins together. */
-function allPins(component: Component): readonly string[] {
+export function everyPin(component: Component): readonly string[] {
   const pins = Object.keys(component.pins)
   for (const unit of component.units) pins.push(...Object.keys(unit.pins))
   return pins
+}
+
+/**
+ * Component id -> (canonical pin -> number) from a kind-keyed `PIN_NUMBERS`, by `pinNumberFor`,
+ * which refuses a pin it cannot number and names it. Used by the round-trip tests and by the
+ * drafted boards' repair tools, so it lives here and not under `tests/` (a repair tool must not
+ * depend on a test helper).
+ */
+export function pinNumbersFromTable(
+  network: Network,
+  table: PinNumbers,
+): ReadonlyMap<string, ReadonlyMap<string, string>> {
+  return new Map(
+    network.components.map((component) => [
+      component.id,
+      new Map(everyPin(component).map((pin) => [pin, pinNumberFor(component, pin, table)])),
+    ]),
+  )
 }
 
 /**
@@ -106,7 +124,7 @@ function padOrderFor(component: Component, padOrders: PadOrders): readonly strin
         "parts of one kind may put the same pin name in different positions.",
     )
   }
-  const pins = new Set(allPins(component))
+  const pins = new Set(everyPin(component))
   for (const pin of order) {
     if (!pins.has(pin)) {
       throw new Error(
