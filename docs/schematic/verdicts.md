@@ -605,7 +605,7 @@ It is not a clearance of the circuit. Three items stay open:
 
 It covers none of the controller rulings the page rests on, each of which the
 owner may still override: CR-MODULE-PAGE-RAILS, CR-MODULE-INDUCTANCE-NOTATION,
-CR-MODULE-SUBOHM-RKM, and the PWR_FLAG admission. It covers only this one page
+CR-MODULE-SUBOHM-RKM, and [the PWR_FLAG admission](../h7-platform/decisions.md#cr-module-pwr-flags). It covers only this one page
 of the module, not the root or the other eleven blocks.
 
 ---

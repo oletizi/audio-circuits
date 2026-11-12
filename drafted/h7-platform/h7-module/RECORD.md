@@ -83,6 +83,24 @@ moved or fired, on every page):
 | id_strap | 10 | 2 (0) | 0 | 0 | 0 | 0 | 0 |
 | interface | 3 | 1 (0) | 4 | 0 | 0 | 0 | 0 |
 
+## What the root must do about PWR_FLAGs (Task 7b)
+
+Ruling [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): each
+module net carries at most one PWR_FLAG across the hierarchy, at the home
+`repair/tools/pwr-flag-homes.ts` declares. The block pages carry none on a shared net whose flag
+lives on the root, so the root assembled in Task 7b must:
+
+- **place the root-held flags**, one on each net the table homes on `root` (3V3_D, VREF_A and VSSA
+  as the table stands), and none on GND, whose flag is the power page's;
+- **check exactly one PWR_FLAG per net across the hierarchy**, every sheet together, against the
+  table, failing and naming any net with two or with none where ERC needs one;
+- **reach 0 ERC errors on the root**, every sheet included.
+
+`tools/draught/assemble-root.ts` places no flag today, and no check of the one-per-net rule across
+the whole hierarchy exists yet: `verify.sh` checks one block page at a time. Two flags on one net
+across two sheets is a `pin_to_pin` error at the root (measured; the ruling quotes it), so the root
+ERC is itself a backstop, but it does not name the table entry at fault.
+
 ## power: 3.3 V buck and input network
 
 **Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`.
@@ -101,13 +119,23 @@ VIN_MOD, 3V3_D and GND.
   L1 and L2 read ".0047mH".
 - [CR-MODULE-SUBOHM-RKM](../../../docs/h7-platform/decisions.md#cr-module-subohm-rkm): R3 reads
   "0R22".
-- **Not ruled: the two PWR_FLAGs** (op-list 03). Without them `kicad-cli sch erc` reports two
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): the two
+  PWR_FLAGs (op-list 03), on VIN_BUCK and GND. Without them `kicad-cli sch erc` reports two
   `power_pin_not_driven` ERRORS, on U2's VIN (VIN_BUCK) and GND, on the draft and on the repair
-  alike. A PWR_FLAG is a `power`-library symbol; measured on a copy of the two-block fixture, two
-  PWR_FLAGs on two blocks' same-named private nets left the root export's nets unchanged (four nets,
-  /a/FB and /b/FB still two) and ERC on that root at 0 errors, 0 warnings. Whether
-  CR-MODULE-PAGE-RAILS admits them is the controller's question; the replay without op-list 03
-  reaches a page that fails ERC with those two errors.
+  alike; the replay without op-list 03 reaches a page that fails ERC with those two errors. Each
+  module net carries at most one PWR_FLAG across the hierarchy, at the home declared in
+  `repair/tools/pwr-flag-homes.ts`: GND's is this page's, VIN_BUCK is private to it, and 3V3_D,
+  VREF_A and VSSA have theirs on the root.
+
+  What was measured (kicad-cli 10.0.5). A PWR_FLAG joins no nets by name: on a copy of the
+  two-block fixture, a flag on each block's same-named private FB left the root export's nets
+  unchanged (four nets, /a/FB and /b/FB still two) and ERC on that root at 0 errors, 0 warnings.
+  **Two flags on one SHARED net are an error, on one sheet and across sheets**, measured, not
+  inferred: a second flag on this page's own GND row gave a new `pin_to_pin` (Task 7a review); on a
+  copy of the two-block fixture, a GND flag in block a and one in block b gave, at the root,
+  *"[error] pin_to_pin: Pins of type Power output and Power output are connected"* on `/a/`, where a
+  GND flag in block a alone gave 0 violations; and this page with an extra flag on 3V3_D, under a
+  one-block root whose 3V3_D stub carries the root's flag, gave the same error on `/`.
 
 ### How it was repaired
 
@@ -142,7 +170,18 @@ hierarchical labels are expected of a sheet with no parent.
 - the committed page verifies;
 - the page with its two PWR_FLAGs removed fails on `/power/`'s `power_pin_not_driven`, which is the
   reviewer's reproduction;
-- and five synthetic reports each come out as stated.
+- five synthetic reports each come out as stated;
+- the page with one more PWR_FLAG, on 3V3_D, fails, and `flag-check.ts` names 3V3_D and the root
+  (CR-MODULE-PWR-FLAGS);
+- the committed swd draft, with only its hierarchical-label op-list applied and no flag of its own,
+  reports `power_pin_not_driven` alone and 0 errors, 0 warnings on `/swd/` under its one-block root,
+  whose GND and 3V3_D stubs carry the flags.
+
+`verify.sh` also fails, before ERC, when the page carries a PWR_FLAG on a shared net whose single
+flag lives elsewhere (`repair/tools/flag-check.ts`, on the `kicad-cli` export of a probe copy whose
+flags `flag_probe.py` renames so the export lists them; the export leaves out `#` references). The
+one-block root puts a flag on a stub exactly when that net's flag lives off the block under check;
+for this page that is 3V3_D's stub, and GND's stub carries none.
 
 The draft column below would now fail, on its `/power/` errors and its root `hier_label_mismatch`.
 That is expected, because a draft is not a page.
@@ -154,7 +193,7 @@ That is expected, because a draft is not a page.
 | exported nets carrying a model net name | 11 of 12 | 3 of 12 (/3V3_D, /GND, /VIN_MOD; private nets are unlabelled wire) |
 | ERC, the sheet alone (`kicad-cli sch erc --severity-all`) | 2 errors (`power_pin_not_driven` 2), 1 warning | 3 errors (`pin_not_connected` 3: each hierarchical label "cannot be connected to non-existent parent sheet"), 1 warning |
 | ERC under a one-block root, the block's own sheet `/power/` | 2 errors (`power_pin_not_driven` 2), 0 warnings | **0 errors, 0 warnings** |
-| ERC under a one-block root, the root `/` | 6 errors (`hier_label_mismatch` 3, `label_dangling` 3), 1 warning | 3 errors (`label_dangling` 3: each root stub label is alone with one block), 1 warning |
+| ERC under a one-block root, the root `/` | 6 errors (`hier_label_mismatch` 3, `label_dangling` 3), 1 warning | 2 errors (`label_dangling` 2: the GND and VIN_MOD stub labels are alone with one block; 3V3_D's stub carries the root's PWR_FLAG, so its label is not dangling), 1 warning. Before the stub flags (CR-MODULE-PWR-FLAGS): 3 `label_dangling` |
 | ERC warning (both runs) | `lib_symbol_mismatch`: U2's embedded TPS62933F differs from the library copy | the same |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings | 3 | 1, at (114.3, 93.98): the EN descent over the VIN_BUCK row |
@@ -165,7 +204,7 @@ That is expected, because a draft is not a page.
 | labels | 15 on 11 nets (4 global) | 3 on 3 nets, all hierarchical |
 | paper fit (US Letter) | fits | fits |
 | wire groups with more than one stroke | 0 of 15 | 0 of 11 |
-| symbols (parts, power) | 19 (19, 0) | 21 (19, 2 PWR_FLAGs, which `counts.py` lists as power because akcli names them `#PWR01`, `#PWR02`) |
+| symbols (parts, power symbols, PWR_FLAGs) | 19 (19, 0, 0) | 21 (19, 0, 2); `counts.py` tells them apart by lib_id, since akcli names a PWR_FLAG `#PWR01` |
 | placed pins | 44 | 46 (44 on parts) |
 | wires, total length | 85, 749.30 mm | 60, 765.81 mm |
 | wire corners | 19 | 3 |

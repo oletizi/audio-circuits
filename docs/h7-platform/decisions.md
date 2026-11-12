@@ -1563,7 +1563,25 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Decides:** on every h7-module block page, GND, 3V3_D, VREF_A and VIN_MOD are drawn as wires carrying the block's hierarchical label, never as power symbols, as design change C3 built it (`TOOLING.md`, "Multi-page drawing"). The reason: C3 says cross-page connections are never joined by matching names, and a power symbol joins every sheet by name around the root, so a missing rail boundary at the root would be hidden from every current control.
 - **Costs if wrong:** the owner asks for power symbols on the module pages; then the drawing practice adds a fixture port that is not a rail and a rail-binding check, and the pages are redrawn.
 - **Set by:** the controller, H7 module plan, after Task 5's review. Recorded here in Task 7, with the page that first rests on it.
-- **Open with it:** a `PWR_FLAG` is a symbol from KiCad's `power` library but joins no nets by name (measured; `drafted/h7-platform/h7-module/repair/power/03-pwr-flags.py` says how). The power page carries two, so that ERC reports no `power_pin_not_driven`; whether this ruling admits them is put to the controller in the Task 7 report.
+- **Settled with it:** a `PWR_FLAG` is a symbol from KiCad's `power` library but joins no nets by name, so this ruling does not exclude it; where the module's flags go, and that each net carries at most one, is [CR-MODULE-PWR-FLAGS](#cr-module-pwr-flags).
+
+### CR-MODULE-PWR-FLAGS
+
+**Each h7-module net carries at most one PWR_FLAG across the module's hierarchy: GND's on the power page, every other shared net's on the root.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:**
+  - A `PWR_FLAG` is admitted on a module page where ERC needs one: a net with a KiCad power input on it and no power output anywhere in the module reports `power_pin_not_driven` as an error without it. It joins no nets by name ([CR-MODULE-PAGE-RAILS](#cr-module-page-rails)).
+  - Each net of the module carries at most one, across the whole hierarchy.
+  - GND keeps its flag on the power page, which the owner approved with it and which is not redrawn. VIN_BUCK is private to the power block and keeps its own flag there.
+  - Every other shared net ERC needs flagged gets its single flag on the module's ROOT sheet (Task 7b draws it): 3V3_D, VREF_A and VSSA, as `kicad-cli sch erc`'s `power_pin_not_driven` reports on the twelve drafts show, cross-checked against the exports' pin types. VSSA's report is on the mcu draft's unwired pin 37, which the model puts on VSSA. So a block page carries no flag on a shared net whose flag lives elsewhere.
+- **Why:** two PWR_FLAGs on one net are an ERC `pin_to_pin` error, and moving GND's flag to the root would redraw an approved page. The error is MEASURED, not inferred, on one sheet and across sheets, with kicad-cli 10.0.5:
+  - one sheet: the Task 7a review placed a second flag on the power page's own GND row and ERC reported a new `pin_to_pin`;
+  - across sheets, on a copy of the two-block fixture (`tests/fixtures/two-block-board/`): one flag on GND in block a and one in block b gave, at the root, *"[error] pin_to_pin: Pins of type Power output and Power output are connected"* on `/a/`, between the two flags; one flag in block a alone gave 0 violations;
+  - across sheets, on the module: the power page with an extra flag on 3V3_D, under a one-block root whose 3V3_D stub carries the root's flag, gave the same `pin_to_pin` on `/`.
+- **Costs if wrong:** GND's flag sits on the power page while the others sit on the root, which is an inconsistency. If the owner wants them all in one place, the power page is redrawn and the table edited.
+- **Set by:** the controller, H7 module plan, Task 7a fix round 1, after the task review (I1, I2).
+- **Carried in:** the table `drafted/h7-platform/h7-module/repair/tools/pwr-flag-homes.ts`. `repair/tools/one-block-root.ts` puts a flag on a stub exactly when the net's flag lives off the block under check; `repair/tools/verify.sh` (`flag-check.ts`) fails a block page carrying a flag on a shared net whose flag lives elsewhere, naming the net; `repair/tools/erc-control.sh` holds a negative and a positive control. The root Task 7b assembles must place the root-held flags and check exactly one PWR_FLAG per net across the hierarchy (`drafted/h7-platform/h7-module/RECORD.md`).
 
 ### CR-MODULE-INDUCTANCE-NOTATION
 
