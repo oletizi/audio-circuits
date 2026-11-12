@@ -646,6 +646,53 @@ the module's root.
 
 ---
 
+## h7-module qspi, vdda, sdram and decoupling pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-module/qspi.kicad_sch` sha256 `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` (commit `1a2078f`)
+  - `drafted/h7-platform/h7-module/vdda.kicad_sch` sha256 `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` (commit `2245ac7`)
+  - `drafted/h7-platform/h7-module/sdram.kicad_sch` sha256 `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` (commit `0f06844`)
+  - `drafted/h7-platform/h7-module/decoupling.kicad_sch` sha256 `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` (commit `03caf6f`)
+- **Produced by** `make -C boards/h7-module draw`, one intent per block of
+  `circuits/h7-platform/module-board.ts`. Each draft was repaired with akcli
+  op-lists and literal text edits; every part position and wire is
+  agent-authored. The module's `RECORD.md`, with one section per page, and
+  `repair/<block>/` have the detail.
+- **Shown** 2026-11-12, as 150 dpi PNGs, with two questions:
+  - qspi alone, once its per-block check passed: *"What is your verdict on this
+    module QSPI flash page?"*;
+  - then the other three together: *"What is your verdict on each of these
+    three module pages: VDDA filter, SDRAM, and MCU decoupling?"*.
+- **Verdict, verbatim:**
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The word came after a message about the mcu
+page's VCAP rule-check error. That message described a controller ruling and
+closed by listing these four pages' verdicts as the open requests to the owner.
+The word is recorded against these four sheets on that reading, and the owner
+may correct it for any one of them.
+
+**It is not recorded as an owner decision on that ruling.** The ruling is
+CR-MODULE-VCAP-ERC, and v1 left its exclusion awaiting an owner sign-off. It
+stays a controller ruling the owner may override. This entry also does not cover
+the mcu page, which has not been shown, or the module's root.
+
+It is not a clearance of any circuit. VDDA-DAMPING-LEG, VDDA-WIDEBAND,
+MODULE-BUCK-LOOP-STARTUP and the bring-up rows stay open.
+
+It covers none of the controller rulings these pages rest on, each of which the
+owner may still override:
+- CR-MODULE-PAGE-RAILS
+- CR-MODULE-PWR-FLAGS
+- CR-MODULE-CROSS-PAGE-DRIVERS
+- CR-MODULE-PORT-LABEL-CHECK
+- CR-MODULE-VDDA-BANK
+- the bead value rule
+- CR-MODULE-SUBOHM-RKM
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
