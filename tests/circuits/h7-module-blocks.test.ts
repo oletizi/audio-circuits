@@ -13,6 +13,7 @@ import { MODULE_PIN_NUMBERS } from "../../circuits/h7-platform/module/build.ts"
 import { mcuBlock } from "../../circuits/h7-platform/module/mcu.ts"
 import { mcuDecouplingBlock } from "../../circuits/h7-platform/module/mcu-decoupling.ts"
 import { vddaBlock } from "../../circuits/h7-platform/module/vdda.ts"
+import { sdramBlock } from "../../circuits/h7-platform/module/sdram.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
@@ -20,6 +21,7 @@ const BLOCKS: Readonly<Record<string, () => Network>> = {
   mcu: mcuBlock,
   decoupling: mcuDecouplingBlock,
   vdda: vddaBlock,
+  sdram: sdramBlock,
 }
 
 const MAX_SYMBOLS = 40
@@ -154,5 +156,29 @@ describe("VDDA (processor-and-memory.md:138; CR-MODULE-VDDA-BANK; CORE-07, CORE-
     const rv = only(net, "r_vssa")
     expect(value(rv, "ohms")).toBe(0)
     expect(Object.values(netsOf(rv)).sort()).toEqual(["GND", "VSSA"])
+  })
+})
+
+describe("SDRAM (schematic-checklist.md CORE-19 to CORE-21; processor-and-memory.md:107, :210)", () => {
+  const net = sdramBlock()
+
+  test("every W9825G6KH pin is on CORE-19's net, supplies on 3V3_D and GND, pin 40 NC", () => {
+    const want: Record<string, string> = { "40": "NC" }
+    const put = (pins: readonly number[], nets: readonly string[]): void => pins.forEach((p, i) => { want[String(p)] = nets[i] ?? "?" })
+    const range = (prefix: string, from: number, to: number): string[] => Array.from({ length: to - from + 1 }, (_, i) => `${prefix}${from + i}`)
+    put([23, 24, 25, 26, 29, 30, 31, 32, 33, 34, 22, 35, 36], range("SDRAM_A", 0, 12))
+    put([2, 4, 5, 7, 8, 10, 11, 13, 42, 44, 45, 47, 48, 50, 51, 53], range("SDRAM_D", 0, 15))
+    put([20, 21, 15, 39, 16, 17, 18, 19, 37, 38],
+      ["SDRAM_BA0", "SDRAM_BA1", "SDRAM_NBL0", "SDRAM_NBL1", "SDRAM_NWE", "SDRAM_NCAS", "SDRAM_NRAS", "SDRAM_NE", "SDRAM_CKE", "SDRAM_CLK"])
+    put([1, 14, 27, 3, 9, 43, 49], Array<string>(7).fill("3V3_D"))
+    put([28, 41, 54, 6, 12, 46, 52], Array<string>(7).fill("GND"))
+    expect(netsOf(only(net, "u_sdram"))).toEqual(want)
+  })
+  test("100 nF on each of the 7 VDD and VDDQ pins, and 10 k from SDRAM_NE to 3V3_D", () => {
+    expect(count(capacitors(net), "1.00e-7 3V3_D|GND")).toBe(7)
+    expect(capacitors(net)).toHaveLength(7)
+    const r = only(net, "r_sdram_ne_pullup")
+    expect(Reflect.get(r.parameters, "ohms")).toBe(10_000)
+    expect(Object.values(netsOf(r)).sort()).toEqual(["3V3_D", "SDRAM_NE"])
   })
 })
