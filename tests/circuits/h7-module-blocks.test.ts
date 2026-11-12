@@ -15,9 +15,11 @@ import { mcuDecouplingBlock } from "../../circuits/h7-platform/module/mcu-decoup
 import { vddaBlock } from "../../circuits/h7-platform/module/vdda.ts"
 import { sdramBlock } from "../../circuits/h7-platform/module/sdram.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
+import { qspiBlock } from "../../circuits/h7-platform/module/qspi.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  qspi: qspiBlock,
   mcu: mcuBlock,
   decoupling: mcuDecouplingBlock,
   vdda: vddaBlock,
@@ -180,5 +182,21 @@ describe("SDRAM (schematic-checklist.md CORE-19 to CORE-21; processor-and-memory
     const r = only(net, "r_sdram_ne_pullup")
     expect(Reflect.get(r.parameters, "ohms")).toBe(10_000)
     expect(Object.values(netsOf(r)).sort()).toEqual(["3V3_D", "SDRAM_NE"])
+  })
+})
+
+describe("QSPI flash (schematic-checklist.md CORE-23; processor-and-memory.md:258)", () => {
+  const net = qspiBlock()
+  test("W25Q128JVSIQ pins as CORE-23 lists them", () => {
+    expect(netsOf(only(net, "u_flash"))).toEqual({
+      "1": "FLASH_NCS", "2": "FLASH_IO1", "3": "FLASH_IO2", "4": "GND",
+      "5": "FLASH_IO0", "6": "FLASH_CLK", "7": "FLASH_IO3", "8": "3V3_D",
+    })
+  })
+  test("10 k pull-up on its chip select and 100 nF at VCC", () => {
+    const r = only(net, "r_flash_ncs_pullup")
+    expect(Reflect.get(r.parameters, "ohms")).toBe(10_000)
+    expect(Object.values(netsOf(r)).sort()).toEqual(["3V3_D", "FLASH_NCS"])
+    expect(capacitors(net)).toEqual(["1.00e-7 3V3_D|GND"])
   })
 })
