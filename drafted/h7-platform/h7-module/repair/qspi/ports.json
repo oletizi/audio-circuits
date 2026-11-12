@@ -1,0 +1,62 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "C43.1",
+   "R10.2",
+   "U4.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "FLASH_CLK",
+  "pins": [
+   "U4.6"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO0",
+  "pins": [
+   "U4.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO1",
+  "pins": [
+   "U4.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO2",
+  "pins": [
+   "U4.3"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO3",
+  "pins": [
+   "U4.7"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_NCS",
+  "pins": [
+   "R10.1",
+   "U4.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C43.2",
+   "U4.4"
+  ],
+  "drafted": true
+ }
+]

@@ -1,0 +1,687 @@
+(kicad_sch
+	(version 20231120)
+	(generator "copperhead-draft")
+	(generator_version "8.0")
+	(uuid "7996625e-6bf8-51ac-8913-5ff64954ae61")
+	(paper "USLetter")
+	(title_block
+		(title "h7-module: qspi")
+		(date "2026-11-12")
+		(rev "A")
+		(comment 1 "generated - do not edit")
+	)
+	(lib_symbols
+		(symbol "Device:C"
+				(pin_numbers
+					(hide yes)
+				)
+				(pin_names
+					(offset 0.254)
+				)
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(property "Reference" "C"
+					(at 0.635 2.54 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Value" "C"
+					(at 0.635 -2.54 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Footprint" ""
+					(at 0.9652 -3.81 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Datasheet" ""
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Description" "Unpolarized capacitor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_keywords" "cap capacitor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_fp_filters" "C_*"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(symbol "C_0_1"
+					(polyline
+						(pts
+							(xy -2.032 0.762) (xy 2.032 0.762)
+						)
+						(stroke
+							(width 0.508)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+					(polyline
+						(pts
+							(xy -2.032 -0.762) (xy 2.032 -0.762)
+						)
+						(stroke
+							(width 0.508)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+				)
+				(symbol "C_1_1"
+					(pin passive line
+						(at 0 3.81 270)
+						(length 2.794)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin passive line
+						(at 0 -3.81 90)
+						(length 2.794)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
+		(symbol "Device:R"
+				(pin_numbers
+					(hide yes)
+				)
+				(pin_names
+					(offset 0)
+				)
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(property "Reference" "R"
+					(at 2.032 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Value" "R"
+					(at 0 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Footprint" ""
+					(at -1.778 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Datasheet" ""
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Description" "Resistor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_keywords" "R res resistor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_fp_filters" "R_*"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(symbol "R_0_1"
+					(rectangle
+						(start -1.016 -2.54)
+						(end 1.016 2.54)
+						(stroke
+							(width 0.254)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+				)
+				(symbol "R_1_1"
+					(pin passive line
+						(at 0 3.81 270)
+						(length 1.27)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin passive line
+						(at 0 -3.81 90)
+						(length 1.27)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
+		(symbol "Memory_Flash:W25Q128JVS"
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(property "Reference" "U"
+					(at -6.35 11.43 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Value" "W25Q32JVSS"
+					(at 7.62 11.43 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Footprint" "Package_SO:SOIC-8_5.3x5.3mm_P1.27mm"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Datasheet" "http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Description" "32Mbit / 4MiB Serial Flash Memory, Standard/Dual/Quad SPI, 2.7-3.6V, SOIC-8 (208 mil)"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_keywords" "flash memory SPI"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_fp_filters" "*SOIC*5.3x5.3mm*P1.27mm*"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(symbol "W25Q128JVS_0_1"
+					(rectangle
+						(start -7.62 10.16)
+						(end 10.16 -10.16)
+						(stroke
+							(width 0.254)
+							(type default)
+						)
+						(fill
+							(type background)
+						)
+					)
+				)
+				(symbol "W25Q128JVS_1_1"
+					(pin input line
+						(at -10.16 7.62 0)
+						(length 2.54)
+						(name "~{CS}"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin bidirectional line
+						(at -10.16 0 0)
+						(length 2.54)
+						(name "DO/IO_{1}"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin bidirectional line
+						(at -10.16 -2.54 0)
+						(length 2.54)
+						(name "~{WP}/IO_{2}"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "3"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin power_in line
+						(at 0 -12.7 90)
+						(length 2.54)
+						(name "GND"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "4"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin bidirectional line
+						(at -10.16 2.54 0)
+						(length 2.54)
+						(name "DI/IO_{0}"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "5"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin input line
+						(at -10.16 5.08 0)
+						(length 2.54)
+						(name "CLK"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "6"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin bidirectional line
+						(at -10.16 -5.08 0)
+						(length 2.54)
+						(name "~{HOLD}/~{RESET}/IO_{3}"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "7"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin power_in line
+						(at 0 12.7 270)
+						(length 2.54)
+						(name "VCC"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "8"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
+	)
+	(rectangle (start 78.74 76.2) (end 182.88 134.62)
+		(stroke (width 0.3) (type dash) (color 20 130 60 1))
+		(fill (type color) (color 20 130 60 0.08))
+		(uuid "684aa2a0-8917-507c-ad2b-180b97a09c31")
+	)
+	(text "QSPI flash" (at 80.74 78.2 0)
+		(effects (font (size 3.5 3.5) bold (color 20 130 60 1)) (justify left top))
+		(uuid "d5f6d3c9-f9c8-5bbc-a95c-a7db5eaa3f03")
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 162.56 107.95 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ba9c5d19-11bc-5b13-926d-6b9d8d7ff893")
+		(property "Reference" "C43" (at 165.354 106.68 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" ".1uF" (at 165.354 109.22 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "" (at 162.56 107.95 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 162.56 107.95 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "217541eb-b59e-542c-a067-ac861727356e"))
+		(pin "2" (uuid "92d53f49-6733-5ba9-811d-52c9082a9f81"))
+		(instances
+			(project "qspi"
+				(path "/7996625e-6bf8-51ac-8913-5ff64954ae61" (reference "C43") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 119.38 95.25 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ab6cdf53-3449-5dcd-9f54-2d87184e3fca")
+		(property "Reference" "R10" (at 121.158 93.98 0)
+			(effects (font (size 1.27 1.27)) (justify right))
+		)
+		(property "Value" "10K" (at 121.158 96.52 0)
+			(effects (font (size 1.27 1.27)) (justify right))
+		)
+		(property "Footprint" "" (at 119.38 95.25 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 119.38 95.25 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "20d18c44-6384-531a-bbb6-2926410a5100"))
+		(pin "2" (uuid "362d822c-ca41-5a6f-a49f-f7e088e3c37d"))
+		(instances
+			(project "qspi"
+				(path "/7996625e-6bf8-51ac-8913-5ff64954ae61" (reference "R10") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "Memory_Flash:W25Q128JVS")
+		(at 139.7 109.22 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "cb8ff926-a98d-5723-8521-2d186d947c83")
+		(property "Reference" "U4" (at 142.24 92.71 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" "W25Q128JVSIQ" (at 142.24 95.25 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "" (at 139.7 109.22 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 139.7 109.22 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "cb30458d-3591-565b-9442-b5e5adb61598"))
+		(pin "2" (uuid "d2cc721b-e336-5b6f-a6b8-57aa14a52cd3"))
+		(pin "3" (uuid "d8d8a979-56d1-5155-bc82-9cb8bf652ed9"))
+		(pin "4" (uuid "493729e0-ceab-5e3e-aa1e-a5c6c41bb11a"))
+		(pin "5" (uuid "75383e63-2a31-5042-8e09-ec9ad0c5c0c7"))
+		(pin "6" (uuid "34e40499-6fbc-5d54-b933-e28d623beec1"))
+		(pin "7" (uuid "64e51b24-065a-50c9-a843-ec5a00aa1185"))
+		(pin "8" (uuid "0f3c8e1b-b6e9-5e72-9d39-f4536a43efca"))
+		(instances
+			(project "qspi"
+				(path "/7996625e-6bf8-51ac-8913-5ff64954ae61" (reference "U4") (unit 1))
+			)
+		)
+	)
+	(sheet_instances
+		(path "/" (page "1"))
+	)
+	(wire (pts (xy 129.54 101.6) (xy 119.38 101.6)) (stroke (width 0.254) (type default)) (uuid "b11da752-bb81-5a93-a6cb-f0889d960a69"))
+	(wire (pts (xy 119.38 101.6) (xy 104.14 101.6)) (stroke (width 0.254) (type default)) (uuid "f3bb40b9-6c94-5826-9562-1a111746b47f"))
+	(wire (pts (xy 119.38 101.6) (xy 119.38 99.06)) (stroke (width 0.254) (type default)) (uuid "b3bae646-046e-5528-acf1-989523dd197f"))
+	(wire (pts (xy 129.54 104.14) (xy 104.14 104.14)) (stroke (width 0.254) (type default)) (uuid "4b359396-54aa-58e9-ab4c-1b37db0fd31c"))
+	(wire (pts (xy 129.54 106.68) (xy 104.14 106.68)) (stroke (width 0.254) (type default)) (uuid "4e673ba8-329b-557d-a964-f24b5c5a48b6"))
+	(wire (pts (xy 129.54 109.22) (xy 104.14 109.22)) (stroke (width 0.254) (type default)) (uuid "144604dc-06ae-54d7-ae8b-76ae52751b9f"))
+	(wire (pts (xy 129.54 111.76) (xy 104.14 111.76)) (stroke (width 0.254) (type default)) (uuid "56b29422-b423-5115-a7bb-d8c9fe9caa39"))
+	(wire (pts (xy 129.54 114.3) (xy 104.14 114.3)) (stroke (width 0.254) (type default)) (uuid "84c0694f-fc9c-5afc-9f39-a0ffe0ba695f"))
+	(wire (pts (xy 104.14 88.9) (xy 119.38 88.9)) (stroke (width 0.254) (type default)) (uuid "0ddfac25-fe2e-5ac7-8419-6f61b7a006a3"))
+	(wire (pts (xy 119.38 88.9) (xy 139.7 88.9)) (stroke (width 0.254) (type default)) (uuid "92aa0be7-4be1-516a-8bcd-905b55f18c85"))
+	(wire (pts (xy 139.7 88.9) (xy 162.56 88.9)) (stroke (width 0.254) (type default)) (uuid "37630fd5-cdd7-5232-888e-9c1c70b5ae13"))
+	(wire (pts (xy 119.38 88.9) (xy 119.38 91.44)) (stroke (width 0.254) (type default)) (uuid "63ff4e11-2c2a-50b4-a5fa-9507f6cc0b39"))
+	(wire (pts (xy 139.7 88.9) (xy 139.7 96.52)) (stroke (width 0.254) (type default)) (uuid "039d1b6c-9cde-5b60-a30e-74ed517dd6fc"))
+	(wire (pts (xy 162.56 88.9) (xy 162.56 104.14)) (stroke (width 0.254) (type default)) (uuid "0f24c40f-2414-5bfe-9793-34ccc927aab5"))
+	(wire (pts (xy 104.14 127) (xy 139.7 127)) (stroke (width 0.254) (type default)) (uuid "be119516-40ab-5a82-a97d-85f1c8a13da7"))
+	(wire (pts (xy 139.7 127) (xy 162.56 127)) (stroke (width 0.254) (type default)) (uuid "956d02db-e5ab-524b-9da1-718a914b0df4"))
+	(wire (pts (xy 139.7 127) (xy 139.7 121.92)) (stroke (width 0.254) (type default)) (uuid "2baecfab-88d0-58ba-9471-d2908a75bf20"))
+	(wire (pts (xy 162.56 127) (xy 162.56 111.76)) (stroke (width 0.254) (type default)) (uuid "d663338b-09b6-589c-9562-6d8404c5f28b"))
+	(junction (at 119.38 88.9) (diameter 0) (color 0 0 0 0) (uuid "a38dc7a8-cbab-525e-9fc4-33b9cb2bb452"))
+	(junction (at 119.38 101.6) (diameter 0) (color 0 0 0 0) (uuid "0ab545b2-e8d4-5279-8990-1cad071eb67b"))
+	(junction (at 139.7 88.9) (diameter 0) (color 0 0 0 0) (uuid "aa7db433-14bd-53f0-9eb5-f50a812580c9"))
+	(junction (at 139.7 127) (diameter 0) (color 0 0 0 0) (uuid "a9f61f00-daa9-5f22-9636-8e1d93d023e9"))
+	(hierarchical_label "3V3_D" (shape input) (at 104.14 88.9 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "29405889-5cf9-519b-a625-3935d8fe8f4c"))
+	(hierarchical_label "FLASH_CLK" (shape input) (at 104.14 104.14 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "7bd92517-897e-5ff5-8adc-e9c1438d0226"))
+	(hierarchical_label "FLASH_IO0" (shape input) (at 104.14 106.68 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "b9676398-a79d-5482-af05-bd51abb4d009"))
+	(hierarchical_label "FLASH_IO1" (shape input) (at 104.14 109.22 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "526d38a2-00ab-567b-9455-219ceeef32d1"))
+	(hierarchical_label "FLASH_IO2" (shape input) (at 104.14 111.76 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "af6b245a-7158-5252-989c-72b4a0b91028"))
+	(hierarchical_label "FLASH_IO3" (shape input) (at 104.14 114.3 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "3b64ca45-cee4-5fe5-8b87-7f6065f1e91d"))
+	(hierarchical_label "FLASH_NCS" (shape input) (at 104.14 101.6 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "73015933-418f-597c-9a63-1425fb6691a7"))
+	(hierarchical_label "GND" (shape input) (at 104.14 127 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "08f0adfe-1120-5774-878f-4fe5ec1d3589"))
+)

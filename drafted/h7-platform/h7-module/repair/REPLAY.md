@@ -16,6 +16,7 @@ is not assembled yet.
 | end: `swd.kicad_sch` | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 | end: `usb_dfu.kicad_sch` | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 | end: `id_strap.kicad_sch` | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
+| end: `qspi.kicad_sch` | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 
 ## Replay
 

@@ -49,6 +49,7 @@ PAGE_RESET_BOOT=ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397
 PAGE_SWD=486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8
 PAGE_USB_DFU=80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f
 PAGE_ID_STRAP=7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09
+PAGE_QSPI=a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -178,6 +179,7 @@ repair_block reset_boot "$PAGE_RESET_BOOT"
 repair_block swd "$PAGE_SWD"
 repair_block usb_dfu "$PAGE_USB_DFU"
 repair_block id_strap "$PAGE_ID_STRAP"
+repair_block qspi "$PAGE_QSPI"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

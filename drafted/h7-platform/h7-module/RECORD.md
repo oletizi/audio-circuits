@@ -24,6 +24,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `swd.kicad_sch` | block swd | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 | `usb_dfu.kicad_sch` | block usb_dfu | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 | `id_strap.kicad_sch` | block id_strap | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
+| `qspi.kicad_sch` | block qspi | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -37,6 +38,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | swd | UNREVIEWED | `swd.svg` |
 | usb_dfu | UNREVIEWED | `usb_dfu.svg` |
 | id_strap | UNREVIEWED | `id_strap.svg` |
+| qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
 
 ## The drafts every repair starts from
 
@@ -620,4 +622,77 @@ MODULE_ID_STRAP and VREF_A (VREF_A reaches one pin, R16's pin 1).
   MODULE_ID_STRAP's hierarchical label on the east edge.
 - R17 and C51 drop to a GND row that runs west to GND's hierarchical label, under VREF_A's.
 - Each part's Reference and Value are east of its body.
+- Every wire carries copperhead's default stroke.
+
+## qspi: the QSPI flash
+
+**Status: UNREVIEWED.** sha256 `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1`.
+Render: `qspi.svg` beside it.
+
+**`verify.sh` EXITS 1 ON THIS PAGE, and the controller has not yet ruled on it.** The model
+comparison gives 0 disagreements. Under the one-block root, ERC reports one error on `/qspi/`:
+`pin_not_driven`, *"Input pin not driven by any Output pins"*, on *"Symbol U4 Pin 6 [CLK, Input,
+Line]"*. U4's CLK is the only pin on FLASH_CLK on this page, and its driver is U1's PF10 on the mcu
+page (`circuits/h7-platform/module-pins.ts`, FLASH_CLK on PF10). The one-block root holds only this
+block, so the stub has no driver. The same error is on the draft. Measured with kicad-cli 10.0.5:
+under a scratch root holding this page and the mcu draft (its hierarchical-label op-list applied,
+with the one-block root's stub flags on 3V3_D, GND, VREF_A and VSSA), `/qspi/` reports **0 errors
+and 0 warnings**. The other three inputs on the page are not reported: /CS has R10 on its net, a
+passive pin, and IO0 to IO3 are bidirectional. So the error comes from the check's context, not from
+a disagreement between the page and the model. It is still a failing check, and it stays one until
+the controller rules on what the one-block root should hold for a net whose driver is on another page.
+Nothing in the harness was changed for it.
+
+The block: `circuits/h7-platform/module/qspi.ts`, 3 parts (U4 `Memory_Flash:W25Q128JVS`, R10, C43),
+ports 3V3_D, FLASH_CLK, FLASH_IO0 to FLASH_IO3, FLASH_NCS and GND (FLASH_CLK and FLASH_IO0 to IO3
+each reach one pin).
+
+### The rulings this page rests on
+
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
+  are rows ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. U4's VCC (3V3_D) and GND are power inputs, so the sheet alone reports
+  `power_pin_not_driven` on both; under the one-block root the stubs carry their flags, which clears
+  both.
+- The stroke of the five FLASH nets the draft drew no wire for: the default stroke the draft gives
+  FLASH_NCS (`qspi/layout.py`, `UNDRAWN_STROKES`, which says why no family colour was taken). A
+  drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 3, 8, 12 | 3, 8, 12 |
+| exported nets carrying a model net name | 3 of 8 | 8 of 8 |
+| ERC, the sheet alone | 8 errors (`pin_not_connected` 5: U4's five one-pin signals, unwired; `pin_not_driven` 1; `power_pin_not_driven` 2), 0 warnings | 8 errors (`pin_not_connected` 5: hierarchical labels with no parent sheet; `pin_not_driven` 1, U4's CLK; `power_pin_not_driven` 2, on 3V3_D and GND), 6 warnings (`isolated_pin_label` 5, `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/qspi/` | 8 errors (`pin_not_connected` 5, `pin_not_driven` 1, `power_pin_not_driven` 2), 1 warning | **1 error (`pin_not_driven` 1: U4's CLK, see above)**, 0 warnings |
+| ERC under a one-block root, `/` | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 3 warnings | 1 error (`label_dangling` 1: FLASH_NCS's stub label is alone with one block), 11 warnings (`isolated_pin_label` 10, `lib_symbol_mismatch` 1) |
+| ERC under a scratch root holding the mcu draft and this page, `/qspi/` | not run | 0 errors, 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 0 | 0 of 4 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 4 on 3 nets (2 global) | 8 on 8 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 4 | 0 of 8 |
+| symbols (parts, power symbols, PWR_FLAGs) | 3 (3, 0, 0) | 3 (3, 0, 0) |
+| placed pins | 12 | 12 |
+| wires, total length | 12, 116.84 mm | 18, 317.50 mm |
+| wire corners | 6 | 2 |
+| junctions | 0 | 4 |
+
+The page-side measurements come from the same steps as `verify.sh`, run without stopping, because
+`verify.sh` stops at the ERC failure before its crossings, junction, label, paper and counts steps.
+
+### What the page shows, as observations
+
+- U4 stands in the middle with its six signal pins facing west; each runs west on its own row to its
+  hierarchical label on the west edge: FLASH_NCS, FLASH_CLK, FLASH_IO0, FLASH_IO1, FLASH_IO2,
+  FLASH_IO3, top to bottom, in the symbol's pin order.
+- A 3V3_D row along the top, from its label on the west edge, takes R10, U4's VCC (pin 8) and C43.
+  R10 stands between it and the FLASH_NCS row, pin 2 up.
+- A GND row along the bottom, from its label, takes U4's GND (pin 4) and C43.
+- R10's and C43's fields are east of their bodies; U4's are above its body, east of the VCC rise.
 - Every wire carries copperhead's default stroke.

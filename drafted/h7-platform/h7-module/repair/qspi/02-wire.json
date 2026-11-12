@@ -1,0 +1,356 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "qspi.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4000
+    ],
+    [
+     4700,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4000
+    ],
+    [
+     4100,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4000
+    ],
+    [
+     4700,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4100
+    ],
+    [
+     4100,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4200
+    ],
+    [
+     4100,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4300
+    ],
+    [
+     4100,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4400
+    ],
+    [
+     4100,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4500
+    ],
+    [
+     4100,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4100,
+     3500
+    ],
+    [
+     4700,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3500
+    ],
+    [
+     5500,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3500
+    ],
+    [
+     6400,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3500
+    ],
+    [
+     4700,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3500
+    ],
+    [
+     5500,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     3500
+    ],
+    [
+     6400,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4100,
+     5000
+    ],
+    [
+     5500,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     5000
+    ],
+    [
+     6400,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     5000
+    ],
+    [
+     5500,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     5000
+    ],
+    [
+     6400,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    4000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5500,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5500,
+    5000
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_NCS",
+   "at": [
+    4100,
+    4000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_CLK",
+   "at": [
+    4100,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO0",
+   "at": [
+    4100,
+    4200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO1",
+   "at": [
+    4100,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO2",
+   "at": [
+    4100,
+    4400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO3",
+   "at": [
+    4100,
+    4500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    4100,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4100,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: qspi",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}
