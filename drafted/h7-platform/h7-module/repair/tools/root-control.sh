@@ -23,6 +23,10 @@
 #     allowance excluded, and nothing else, passes.
 #  9. negative, CR-MODULE-CROSS-PAGE-DRIVERS: the root stub of reset_boot's NRST pin cut fails
 #     root-drivers.ts on NRST, and the export comparison.
+# 10. CR-MODULE-ROOT-FITS-LETTER: on the committed root, root_sheets_fit.py finds all 12 sheet symbols
+#     on the paper and paper_fit.py reports "fits: yes"; with the interface sheet's box moved 100 mm
+#     south in a scratch copy, root_sheets_fit.py fails naming interface, and verify-root.sh fails
+#     naming sheets-fit. (paper_fit.py alone does not see it: it does not measure a sheet box.)
 #
 # usage: sh root-control.sh
 set -eu
@@ -63,7 +67,8 @@ grep -q '^root-drivers.ts: every one of 25 cross-page driver entries' "$work/pos
 grep -q '^netMembership: 0$' "$work/pos.log" || bad "the export comparison did not report netMembership 0"
 grep -q '^componentIdentity: 0$' "$work/pos.log" || bad "verify-root.sh did not reach the export comparison"
 if grep -q 'annotation errors' "$work/pos.log"; then bad "kicad-cli warned of annotation errors on the committed project"; fi
-if grep -Eq 'these checks failed:.*(export|pwr-flags|drivers|duplicate-references)' "$work/pos.log"; then bad "verify-root.sh named a failing check other than ERC: $(grep 'these checks failed' "$work/pos.log")"; fi
+if grep -q 'these checks failed' "$work/pos.log"; then bad "verify-root.sh failed on the committed project: $(grep 'these checks failed' "$work/pos.log")"; fi
+grep -q '^verify-root.sh: every check passed' "$work/pos.log" || bad "verify-root.sh did not pass on the committed project"
 echo "   pass"
 
 echo "== 2. a second PWR_FLAG on 3V3_D, on the decoupling page, fails, naming 3V3_D"
@@ -151,5 +156,18 @@ if (cd "$root" && bun "$here/root-drivers.ts" "$work/cut.net") >"$work/cut.log" 
 grep -q 'FAIL - NRST: the driving pin U5.2' "$work/cut.log" || { cat "$work/cut.log" >&2; bad "it failed, but not on NRST"; }
 if (cd "$root" && bun "$here/root-netcompare.ts" "$work/cut.net") >"$work/cut-cmp.log" 2>&1; then bad "the export comparison passed the cut copy"; fi
 echo "   fails as expected: $(grep 'FAIL - NRST' "$work/cut.log" | cut -c1-120)"
+
+echo "== 10. the root's sheet symbols on the paper; one moved off it fails"
+python3 "$here/root_sheets_fit.py" "$proj/$board.kicad_sch" >"$work/fit.log" 2>&1 || { cat "$work/fit.log" >&2; bad "root_sheets_fit.py failed on the committed root"; }
+grep -q '^sheets on the paper: 12 of 12$' "$work/fit.log" || bad "root_sheets_fit.py did not find 12 of 12 sheets on the paper"
+python3 "$root/draughting/measure/paper_fit.py" "$proj/$board.kicad_sch" | grep -qx 'fits: yes' || bad "paper_fit.py did not report fits: yes on the committed root"
+copy moved
+cp "$proj/sym-lib-table" "$work/moved/"
+python3 "$here/root_tamper.py" move-sheet "$work/moved/$board.kicad_sch" interface 100 >/dev/null
+if python3 "$here/root_sheets_fit.py" "$work/moved/$board.kicad_sch" >"$work/moved.fit.log" 2>&1; then bad "root_sheets_fit.py passed a sheet moved off the paper"; fi
+grep -q 'interface: .*FAIL - off the inner frame' "$work/moved.fit.log" || { cat "$work/moved.fit.log" >&2; bad "it failed, but not naming interface"; }
+sh "$here/verify-root.sh" "$work/moved" >"$work/moved.verify.log" 2>&1 && bad "verify-root.sh passed a sheet moved off the paper"
+grep -q 'these checks failed:.*sheets-fit' "$work/moved.verify.log" || { tail -5 "$work/moved.verify.log" >&2; bad "verify-root.sh failed, but not naming sheets-fit"; }
+echo "   12 of 12 on the paper; moved: $(grep 'interface:' "$work/moved.fit.log" | cut -c1-90)"
 
 echo "root-control.sh: every control came out as stated"

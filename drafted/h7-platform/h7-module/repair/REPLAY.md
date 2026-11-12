@@ -22,7 +22,7 @@ repaired, and the root sheet is assembled with its `.kicad_pro` (Task 7e).
 | end: `decoupling.kicad_sch` (Task 7c) | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
 | end: `mcu.kicad_sch` (Task 7d) | `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981` |
 | start: the root's blank text, `assemble-root.ts blank h7-module` (Task 7e) | `134c620e32f4587ab861a8210298ae31533ca041247b3bb183f8e1b13eef25d2` |
-| end: `h7-module.kicad_sch`, the root (Task 7e) | `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86` |
+| end: `h7-module.kicad_sch`, the root (Task 7e fix round 1: on US Letter, CR-MODULE-ROOT-FITS-LETTER; at Task 7e it was `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86`) | `3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed` |
 | end: `h7-module.kicad_pro` (Task 7e) | `62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0` |
 
 ## Replay
@@ -68,7 +68,8 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
    checks it is byte-identical to `../sym-lib-table`.
 5. The root (Task 7e), each op-list checked against `root/` and applied as above:
    `assemble-root.ts blank` (its sha256 checked), `assemble-root.ts ops` (`root/01-assemble.json`),
-   `tools/root-flags.ts` (`root/02-pwr-flags.json`), `tools/root_flag_refs.py`; the root's sha256 must
+   `tools/root-flags.ts` (`root/02-pwr-flags.json`), `tools/root_flag_refs.py`, `tools/root_pin_justify.py`
+   (since Task 7e fix round 1); the root's sha256 must
    be its end value and the sheet byte-identical to `../h7-module.kicad_sch`. Then
    `tools/kicad-pro.ts` writes the `.kicad_pro`, which must reach its sha256 and be byte-identical to
    `../h7-module.kicad_pro`; and every block sheet must still be byte-identical to its committed copy.
@@ -76,13 +77,16 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-12 into a new directory and
 reached every sha256 (again after Task 7c, with its three pages, after Task 7d, with mcu, and after
-Task 7e, with the root and its `.kicad_pro`).
+Task 7e, with the root and its `.kicad_pro`, and after Task 7e fix round 1, with reset_boot's U5 on
+`h7-platform:TLV803EA30DBZR` and the root on US Letter).
 
 Then, to check and look at a page:
 
 ```
 sh drafted/h7-platform/h7-module/repair/tools/verify.sh <block> <sheet.kicad_sch>
 sh drafted/h7-platform/h7-module/repair/tools/render.sh <sheet.kicad_sch> <out-dir>
+sh drafted/h7-platform/h7-module/repair/tools/verify-root.sh
+sh drafted/h7-platform/h7-module/repair/tools/render.sh drafted/h7-platform/h7-module/h7-module.kicad_sch <out-dir> root
 ```
 
 ## The files
@@ -110,10 +114,13 @@ sh drafted/h7-platform/h7-module/repair/tools/render.sh <sheet.kicad_sch> <out-d
 | `tools/pwr-flag-homes.ts` | the one table of where each shared module net's single PWR_FLAG lives (ruling CR-MODULE-PWR-FLAGS) |
 | `tools/flag_probe.py`, `tools/flag-check.ts` | a probe copy whose PWR_FLAGs (found by lib_id) the `kicad-cli` export lists, and the check on that export failing a flag on a shared net whose flag lives elsewhere, naming the net |
 | `tools/flag_at_label.py`, `tools/strip_pwr_flags.py` | for `erc-control.sh`'s controls: add a PWR_FLAG at a hierarchical label; remove every placed PWR_FLAG |
-| `tools/erc-control.sh` | the controls for `verify.sh`'s ERC and PWR_FLAG verdicts, each of which must come out as stated; control 13 runs `tools/port-label-control.sh`; controls 14 to 17 hold the VCAP allowance |
+| `tools/erc-control.sh` | the controls for `verify.sh`'s ERC and PWR_FLAG verdicts, each of which must come out as stated; control 13 runs `tools/port-label-control.sh`; controls 14 to 17 hold the VCAP allowance; control 18 runs `tools/root-control.sh` |
 | `tools/port-label-control.sh`, `tools/label_tamper.py` | the port-label controls: all eight committed pages verify; scratch copies with two labels swapped (interface) or one deleted (qspi), made by `label_tamper.py` parsing by parenthesis depth, fail naming the port; `Wiring.op_list` refuses a label on another net's wire |
 | `tools/verify.sh` | the verification set for one block sheet: sha256, depth, the comparison above, the PWR_FLAG homes, ERC alone and under the one-block root, the `draughting/measure/` selftest, crossings, junction audit, label survey, paper fit, counts. Copied from the carrier's, with the block argument |
-| `tools/render.sh` | PDF, SVG and a 150 dpi PNG of one sheet, copied from the carrier's |
+| `tools/render.sh` | PDF, SVG and a 150 dpi PNG of one sheet, copied from the carrier's. A third argument, a KiCad page number or `root`, renders that one page of a multi-page export (the root's 13 pages; kicad-cli `--pages`); with none, a multi-page PDF is refused |
+| `tools/root_pin_justify.py` | root step 5 (Task 7e fix round 1): every root sheet pin's name justified into its box, west left and east right, as KiCad writes them; akcli 0.22.0 writes no justify. Refuses a count other than `root/01-assemble.json`'s, and a second run |
+| `tools/root_sheets_fit.py` | every root sheet box inside US Letter's inner frame and clear of the title block (`paper_fit.py` does not measure a sheet box); run by `verify-root.sh`, controlled by `root-control.sh` control 10 |
+| `tools/verify-root.sh`, `tools/root-control.sh` | the root's verification set (fails on ERC, on `paper_fit.py` not reporting "fits: yes", and on a sheet box off the paper) and its ten controls; `erc-control.sh` runs the controls as its control 18 |
 | `tools/page.py` | the shared op-list writers for the Task 7b pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals, among them a port label on a wire drawn for another net), and the field placements `layout.py` uses |
 | `tools/place.py`, `tools/text_edits.py` | op-list 01, and the direct text edits (strokes, fields, the group rectangle), for any Task 7b block, driven by its `layout.py` |
 | `tools/ports.ts` | a block's ports and the pins each reaches, from `drawingPages()` (`<block>/ports.json`) |

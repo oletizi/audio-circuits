@@ -55,7 +55,7 @@ PAGE_SDRAM=0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf
 PAGE_DECOUPLING=8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb
 PAGE_MCU=c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981
 ROOT_BLANK=134c620e32f4587ab861a8210298ae31533ca041247b3bb183f8e1b13eef25d2
-ROOT=fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86
+ROOT=3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed
 ROOT_PRO=62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0
 
 fail() {
@@ -210,8 +210,10 @@ printf '(sym_lib_table\n%s(version 7)\n%s(lib (name "h7-platform")(type "KiCad")
 cmp -s "$work/sym-lib-table" "$drafted/sym-lib-table" || fail "the sym-lib-table this replay makes differs from the committed one"
 echo "the committed sym-lib-table matches the one this replay makes"
 
-# 4. The root (Task 7e): assemble-root.ts's starting text and op-list, the root-held PWR_FLAGs
+# 4. The root (Task 7e): assemble-root.ts's starting text and op-list (its arrangement fits US Letter
+#    since Task 7e fix round 1, ruling CR-MODULE-ROOT-FITS-LETTER), the root-held PWR_FLAGs
 #    (root-flags.ts, ruling CR-MODULE-PWR-FLAGS), their references renamed #FLG0<n> (root_flag_refs.py),
+#    every sheet pin's name justified into its box (root_pin_justify.py; akcli writes no justify),
 #    and the .kicad_pro with its one ERC exclusion (kicad-pro.ts, ruling CR-MODULE-VCAP-ERC). Every
 #    block sheet must be unchanged by it.
 mkdir -p "$work/repair/root"
@@ -225,7 +227,8 @@ apply "$board.kicad_sch" root/01-assemble.json
 same root/02-pwr-flags.json
 apply "$board.kicad_sch" root/02-pwr-flags.json
 python3 "$here/tools/root_flag_refs.py" "$work/$board.kicad_sch" 3 || fail "root_flag_refs.py failed"
-check "$board.kicad_sch" "root 01 to 03" "$ROOT"
+python3 "$here/tools/root_pin_justify.py" "$work/$board.kicad_sch" "$work/repair/root/01-assemble.json" || fail "root_pin_justify.py failed"
+check "$board.kicad_sch" "root 01 to 04" "$ROOT"
 cmp -s "$work/$board.kicad_sch" "$drafted/$board.kicad_sch" || fail "the replayed $board.kicad_sch differs from the committed $drafted/$board.kicad_sch"
 echo "the replayed $board.kicad_sch is byte-identical to the committed root"
 (cd "$root" && bun "$here/tools/kicad-pro.ts" "$work" "$board") > "$work/$board.kicad_pro" || fail "kicad-pro.ts failed"

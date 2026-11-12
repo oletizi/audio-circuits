@@ -18,7 +18,7 @@ fresh on every run and compares it with the model.
 
 | sheet | role | sha256 |
 | --- | --- | --- |
-| `two-block-board.kicad_sch` | root | `7fb295e5b088b19991728fba4ae06934ef0856cabfc38faab0a788fa0ba49389` |
+| `two-block-board.kicad_sch` | root | `4a1087d10bdff9a269a92e471477928c52597151c10b6c74ae50c5345dcea2c9` |
 | `a.kicad_sch` | block a | `230f0598397656930d09f5e8563fdb60f1fe84476a03edcb5df1d081c6a8a235` |
 | `b.kicad_sch` | block b | `c410234cbe1bf13a22025105caafac1304b2c82d4b2df8aa3b7d14431b24f966` |
 
@@ -43,12 +43,20 @@ The committed export is `../two-block-board.net`, exported from the root by
 `01-hierarchical-labels.json`, then the root's starting text and `01-assemble.json`.
 `repair/replay.sh` reaches every sha256 above from a new, empty directory.
 
+**The root was regenerated in H7 module Task 7e fix round 1**, by `tools/draught/assemble-root.ts`
+alone: its arrangement now fits US Letter (`tools/draught/root-arrangement.ts`, ruling
+CR-MODULE-ROOT-FITS-LETTER in `docs/h7-platform/decisions.md`), with sheet pins 100 mil apart and
+200 mil stubs. The root's sha256 moved from `7fb295e5b088b19991728fba4ae06934ef0856cabfc38faab0a788fa0ba49389`;
+`a.kicad_sch` and `b.kicad_sch` did not change. A fresh `kicad-cli` export of the root differs from
+`../two-block-board.net` only in its `(date)` and `(source)` lines, so the committed export stands.
+`tests/circuits/two-block-project.test.ts`'s controls pass on the new root.
+
 ## What these pages show, recorded as observations and not as a judgement
 
 - Block a and block b each carry two hierarchical labels: `GND` where copperhead had placed its
   local `GND` label, and `3V3` on the top resistor's free pin, which copperhead could not draft
   (a one-pin net). The `3V3` label stands on the lower edge of copperhead's group rectangle.
-- The root holds the two sheets side by side, each with its two sheet pins on the left edge,
+- The root holds the two sheets, placed by the arrangement's packing, each with its two sheet pins on the left edge,
   each pin wired to a local label naming the parent net.
 - Neither block page went through any repair beyond the labels: the fixture exercises the C3
   mechanism, not the draughtsmanship loop.

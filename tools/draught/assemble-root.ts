@@ -9,10 +9,15 @@
  * `./hierarchical-labels.ts`); root labels by the PARENT NET. The two differ whenever a block is
  * included with a port map that renames.
  *
- * The placement is a fixed arrangement, not a judgement made here: blocks in `Network.blocks`
- * order, three to a row, sheet pins down the left edge in port-name order at a fixed pitch. It
- * computes no layout from the circuit. akcli's `add_sheet` writes the sheet node, its pins at the
- * edge points and its `(instances ...)` page block (`akcli/writers/handlers/sheets.py`).
+ * The placement is a fixed rule, not a judgement made here, and it puts every sheet symbol inside
+ * US Letter's inner frame (`./root-arrangement.ts`): blocks in `Network.blocks` order, stacked down
+ * columns from the frame's north-west corner, a new column when the next block would leave the
+ * frame or enter the title block; sheet pins in port-name order at a fixed pitch, down the left
+ * edge, or - for a block with more ports than one edge holds within the frame - the first half
+ * down the left edge and the rest down the right. A board whose blocks cannot all fit is refused,
+ * naming the block and the overshoot, rather than drawn off the paper. akcli's `add_sheet` writes
+ * the sheet node, its pins at the edge points and its `(instances ...)` page block
+ * (`akcli/writers/handlers/sheets.py`).
  *
  * The root's STARTING text is written here too (`blankRootSheet`), rather than by `akcli new`,
  * because `akcli new` mints a random root uuid on every run (`akcli/writers/blank.py`, `uuid4()`)
@@ -26,16 +31,9 @@
 import { createHash } from "node:crypto"
 import type { Network } from "../../lib/model/types.ts"
 import { networkFrom, opList, type AkcliOp, type AkcliOpList } from "./akcli-ops.ts"
+import { arrangeRoot, ROOT_PIN_PITCH_MIL, ROOT_STUB_MIL } from "./root-arrangement.ts"
 
-/** Distance between sheet pins down a sheet's left edge, and from the top edge to the first. */
-export const ROOT_PIN_PITCH_MIL = 200
-/** Length of the wire from a sheet pin to its parent-net label. */
-export const ROOT_STUB_MIL = 400
-const SHEET_WIDTH_MIL = 2000
-const ORIGIN_MIL = 1500
-const COLUMN_PITCH_MIL = 3200
-const ROW_GAP_MIL = 800
-const PER_ROW = 3
+export { ROOT_PIN_PITCH_MIL, ROOT_STUB_MIL } from "./root-arrangement.ts"
 
 /** A uuid-shaped string derived from `seed`, so the same board always gets the same root uuid. */
 function seededUuid(seed: string): string {
@@ -69,29 +67,30 @@ export function rootSheetOps(network: Network, board: string): AkcliOpList {
     throw new Error(`${board}: the network has no blocks, so there is no root to assemble; a one-page board has no root sheet.`)
   }
   const ops: AkcliOp[] = []
-  const heights = network.blocks.map((b) => (Object.keys(b.ports).length + 1) * ROOT_PIN_PITCH_MIL)
-  let rowTop = ORIGIN_MIL
-  network.blocks.forEach((block, index) => {
-    const column = index % PER_ROW
-    if (index > 0 && column === 0) {
-      rowTop += Math.max(...heights.slice(index - PER_ROW, index)) + ROW_GAP_MIL
-    }
-    const x = ORIGIN_MIL + column * COLUMN_PITCH_MIL
-    const ports = Object.entries(block.ports).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+  for (const sheet of arrangeRoot(network, board)) {
     ops.push({
       op: "add_sheet",
-      name: block.prefix,
-      file: `${block.prefix}.kicad_sch`,
-      at: [x, rowTop],
-      size: [SHEET_WIDTH_MIL, heights[index]],
-      pins: ports.map(([name], k) => ({ name, type: "input", side: "left", offset_mil: (k + 1) * ROOT_PIN_PITCH_MIL })),
+      name: sheet.block,
+      file: sheet.file,
+      at: [sheet.x, sheet.y],
+      size: [sheet.width, sheet.height],
+      pins: [
+        ...sheet.left.map((p, k) => ({ name: p.port, type: "input", side: "left", offset_mil: (k + 1) * ROOT_PIN_PITCH_MIL })),
+        ...sheet.right.map((p, k) => ({ name: p.port, type: "input", side: "right", offset_mil: (k + 1) * ROOT_PIN_PITCH_MIL })),
+      ],
     })
-    ports.forEach(([, parent], k) => {
-      const y = rowTop + (k + 1) * ROOT_PIN_PITCH_MIL
-      ops.push({ op: "add_wire", vertices: [[x, y], [x - ROOT_STUB_MIL, y]] })
-      ops.push({ op: "add_net_label", name: parent, at: [x - ROOT_STUB_MIL, y], scope: "local", rotation: 180 })
+    sheet.left.forEach((p, k) => {
+      const y = sheet.y + (k + 1) * ROOT_PIN_PITCH_MIL
+      ops.push({ op: "add_wire", vertices: [[sheet.x, y], [sheet.x - ROOT_STUB_MIL, y]] })
+      ops.push({ op: "add_net_label", name: p.parent, at: [sheet.x - ROOT_STUB_MIL, y], scope: "local", rotation: 180 })
     })
-  })
+    const east = sheet.x + sheet.width
+    sheet.right.forEach((p, k) => {
+      const y = sheet.y + (k + 1) * ROOT_PIN_PITCH_MIL
+      ops.push({ op: "add_wire", vertices: [[east, y], [east + ROOT_STUB_MIL, y]] })
+      ops.push({ op: "add_net_label", name: p.parent, at: [east + ROOT_STUB_MIL, y], scope: "local", rotation: 0 })
+    })
+  }
   return opList(`${board}.kicad_sch`, ops)
 }
 

@@ -36,6 +36,9 @@
 # 17. erc_sheets.py alone on synthetic reports under the VCAP allowance: the exact pair on /mcu/ is
 #     excused and named; other pins, another type, a third item, or another sheet each fail; an
 #     allowance matching nothing on a sheet the report holds is reported stale and passes.
+# 18. the module ROOT, every sheet together: root-control.sh's controls (Task 7e; added at Task 7e
+#     fix round 1, once root ERC reached 0 errors apart from the VCAP exclusion). Its control 1
+#     requires verify-root.sh to pass on the committed project, ERC included.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -204,5 +207,10 @@ synth stale "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\"
 expect 0 stale "$work/vcap-allow.json" mcu
 grep -q '^stale allowance: CR-MODULE-VCAP-ERC' "$work/stale.log" || { cat "$work/stale.log" >&2; bad "stale: an allowance that matched nothing was not reported as stale"; }
 echo "   stale reported: $(grep '^stale allowance' "$work/stale.log")"
+
+echo "== 18. the module root (root-control.sh)"
+sh "$here/root-control.sh" >"$work/root-control.log" 2>&1 || { cat "$work/root-control.log" >&2; bad "root-control.sh: a root control did not come out as stated"; }
+grep -q '^root-control.sh: every control came out as stated$' "$work/root-control.log" || bad "root-control.sh exited 0 without its closing line"
+echo "   $(grep -c '^== ' "$work/root-control.log") root controls came out as stated"
 
 echo "erc-control.sh: every control came out as stated"

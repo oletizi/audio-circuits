@@ -10,11 +10,14 @@
 #     CR-MODULE-CROSS-PAGE-DRIVERS).
 #  5. ERC on the root, every sheet, with the .kicad_pro's exclusions, judged by root_erc.py against
 #     the declared allowances (erc-allowances.ts; ruling CR-MODULE-VCAP-ERC).
-#  6. the draughting/measure suite on the root sheet, paper fit and counts. Reported, never judged.
+#  6. the paper: paper_fit.py must report "fits: yes", and root_sheets_fit.py must find every sheet
+#     symbol inside US Letter's inner frame and clear of the title block (ruling
+#     CR-MODULE-ROOT-FITS-LETTER; paper_fit.py does not measure a sheet box).
+#  7. the rest of the draughting/measure suite on the root sheet, and counts. Reported, never judged.
 #
 # EVERY STEP FAILS LOUDLY, as verify.sh's do: outputs go to a fresh temporary directory, kicad-cli's
 # exit status is checked, each output must exist and be non-empty. Steps 2 to 5 each record a
-# failure and the script goes on, so one run names every failing check; it exits non-zero at the end
+# failure and the script goes on (so does step 6), so one run names every failing check; it exits non-zero at the end
 # when any did, naming them.
 #
 # usage: sh verify-root.sh [project-dir]      (default: the committed drafted/h7-platform/h7-module)
@@ -90,7 +93,12 @@ echo "== selftest"; python3 "$m/selftest.py" | tail -1
 echo "== crossings"; python3 "$m/crossings.py" "$sch" | tail -3
 echo "== junction audit"; python3 "$m/junction_audit.py" "$sch" | grep -E '^(wires|ORPHAN|WIRE-TO-WIRE|COLLINEAR|PINS ON)'
 echo "== label survey"; python3 "$m/label_survey.py" "$sch" | head -1
-echo "== paper fit"; python3 "$m/paper_fit.py" "$sch" | tail -3
+echo "== paper fit"
+python3 "$m/paper_fit.py" "$sch" >"$out/fit.log" || fail "paper_fit.py could not measure $sch"
+cat "$out/fit.log"
+grep -qx 'fits: yes' "$out/fit.log" || failed="$failed paper-fit"
+echo "== sheet symbols on the paper"
+python3 "$here/root_sheets_fit.py" "$sch" || failed="$failed sheets-fit"
 echo "== counts"; python3 "$here/counts.py" "$sch"
 [ -z "$failed" ] || fail "these checks failed:$failed (each named above)"
 echo "verify-root.sh: every check passed"

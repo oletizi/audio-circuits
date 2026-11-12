@@ -11,7 +11,7 @@ pages are never sent for review.
 | start: the root's text from `assemble-root.ts blank two-block-board` | `38f21c9df048d071a57a016bbaa41c839cddfbe9e46b380c40412356180f13f8` |
 | end: `a.kicad_sch` | `230f0598397656930d09f5e8563fdb60f1fe84476a03edcb5df1d081c6a8a235` |
 | end: `b.kicad_sch` | `c410234cbe1bf13a22025105caafac1304b2c82d4b2df8aa3b7d14431b24f966` |
-| end: `two-block-board.kicad_sch`, the root | `7fb295e5b088b19991728fba4ae06934ef0856cabfc38faab0a788fa0ba49389` |
+| end: `two-block-board.kicad_sch`, the root | `4a1087d10bdff9a269a92e471477928c52597151c10b6c74ae50c5345dcea2c9` |
 
 ## Replay
 

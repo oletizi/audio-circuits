@@ -4,7 +4,7 @@ committed files: each mode refuses a path under drafted/.
 Modes:
   flag-at-label <01-assemble.json> <net> <index>
       print an akcli op-list placing one PWR_FLAG at the <index>-th (0-based) root stub label named
-      <net>, in the root op-list's order (the first is where root-flags.ts already put one).
+      <net>, in the root op-list's order (root-flags.ts puts its flag at a top or bottom one).
   flag-at-pin <pins.json> <designator> <pin> <target-file>
       print an akcli op-list placing one PWR_FLAG on a block page at that pin's point.
   rename-ref <sheet> <old> <new>
@@ -13,6 +13,9 @@ Modes:
   cut-stub <root.kicad_sch> <01-assemble.json> <sheet-name> <pin>
       rename the root stub label of that sheet pin to <text>_CUT, which disconnects that sheet pin
       from the rest of its net on the root.
+  move-sheet <root.kicad_sch> <sheet-name> <dy-mm>
+      move that sheet symbol's box (its (at), nothing else) <dy-mm> south; its pins, stubs and labels
+      stay where they were. For the paper-fit control (CR-MODULE-ROOT-FITS-LETTER).
 
 Labels and symbols are found through `draughting/measure/kicad_sheet.py`'s parser, never by a line
 pattern; numbers are compared as numbers.
@@ -93,5 +96,19 @@ elif mode == "cut-stub":
     text = text[:lab.start] + block.replace(f'"{name}"', f'"{name}_CUT"', 1) + text[lab.end:]
     open(path, "w", encoding="utf-8", newline="").write(text)
     print(f"root_tamper.py: the root stub label of {sheet_name}.{pin} ({name}) at {want} is now {name}_CUT")
+elif mode == "move-sheet":
+    path, sheet_name, dy = args[0], args[1], float(args[2])
+    refuse_committed(path)
+    text = open(path, encoding="utf-8", newline="").read()
+    hits = [n for n in kicad_sheet.read(path).root.kids("sheet")
+            if any(p.atoms[:2] == ["Sheetname", sheet_name] for p in n.kids("property"))]
+    if len(hits) != 1:
+        sys.exit(f"root_tamper.py: {len(hits)} sheet(s) named {sheet_name}")
+    at = hits[0].kid("at")
+    old = text[at.start:at.end]
+    new = f"(at {at.atoms[0]} {float(at.atoms[1]) + dy:g})"
+    text = text[:at.start] + new + text[at.end:]
+    open(path, "w", encoding="utf-8", newline="").write(text)
+    print(f"root_tamper.py: sheet {sheet_name} box {old} -> {new}")
 else:
     sys.exit(f"root_tamper.py: unknown mode {mode!r}")

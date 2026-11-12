@@ -6,26 +6,26 @@
   {
    "op": "place_pwr_flag",
    "at": [
-    1100,
-    1700
+    1450,
+    800
    ],
    "rotation": 0
   },
   {
    "op": "place_pwr_flag",
    "at": [
-    1100,
-    19300
+    1000,
+    6100
    ],
-   "rotation": 0
+   "rotation": 180
   },
   {
    "op": "place_pwr_flag",
    "at": [
-    1100,
-    19500
+    3600,
+    5200
    ],
-   "rotation": 0
+   "rotation": 180
   }
  ]
 }

@@ -1065,9 +1065,21 @@ any other (step 5.5):
 - **the root, `tools/draught/assemble-root.ts`**: its starting text (`blank`; the uuid is seeded
   by the board's name because `akcli new` mints a random one, and the paper is US Letter from the
   start), then an op-list (`ops`) with one `add_sheet` per block, one sheet pin per port, each pin
-  wired to a short stub ending in a LOCAL label that names the parent net. The arrangement is
-  fixed - blocks in `Network.blocks` order, three to a row, pins down the left edge in name order -
-  not a layout computed from the circuit.
+  wired to a short stub ending in a LOCAL label that names the parent net. The arrangement is a
+  fixed rule that puts every sheet symbol inside US Letter's inner frame, clear of the title block
+  (`tools/draught/root-arrangement.ts`; ruling CR-MODULE-ROOT-FITS-LETTER). Each block is a cell
+  sized from its port count and the lengths of its texts. Cells are packed tallest first (ties in
+  `Network.blocks` order), each at the first free point, smallest y then x. Pins are 100 mil apart
+  in name order, down the west edge, or down both edges when one edge cannot hold them within the
+  frame (the h7 module's mcu, 90 ports). A board that cannot fit is refused, naming the block,
+  rather than drawn off the paper. It is not a layout judged from the circuit. akcli 0.22.0 writes
+  no justify on a sheet pin, and kicad-cli then centres a long pin name across the box edge
+  (measured), so the h7 module's repair justifies every root sheet pin into its box
+  (`drafted/h7-platform/h7-module/repair/tools/root_pin_justify.py`). The two-block fixture's root
+  is not justified: it is test data and is never sent for review.
+  `draughting/measure/paper_fit.py` does not measure a `(sheet ...)` box, so on a root,
+  `drafted/h7-platform/h7-module/repair/tools/root_sheets_fit.py` is the check that every sheet
+  symbol is on the paper.
 
 **The committed form** is `drafted/<circuit>/<board>/`: `<board>.kicad_sch` (the root),
 `<block>.kicad_sch` per block, one `RECORD.md` with a table row per sheet - the file name in backticks, its role

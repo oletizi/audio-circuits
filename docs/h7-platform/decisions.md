@@ -1662,6 +1662,31 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan, at Task 5's completion. The words above are the controller's, from the plan's progress log, which is gitignored; recorded here in Task 7e, when the file was made.
 - **Carried in:** `drafted/h7-platform/h7-module/h7-module.kicad_pro`, written by `repair/tools/kicad-pro.ts` and checked by `repair/replay.sh`.
 
+### CR-MODULE-ROOT-FITS-LETTER
+
+**The module root fits US Letter's inner frame, with every sheet symbol on the paper.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **What was wrong.** The root as assembled at Task 7e overshot US Letter by 779 mm, and 9 of its 12 sheet symbols lay off the paper. `tools/draught/assemble-root.ts` used a fixed arrangement: three blocks to a row, pins 200 mil apart down the left edge. The mcu sheet alone was 462 mm tall. `assemble-root.ts` is this repository's own tool, so making it fit is completing that tool's job, not a judgement of layout.
+- **Decides:**
+  - The arrangement fits the frame (`tools/draught/root-arrangement.ts`). It is deterministic, and it is a fixed rule computed from the blocks' port counts and the lengths of their texts:
+    - Pins are 100 mil apart, and stubs are 200 mil long.
+    - Each block is a cell: its box, its sheet name and file name, and its stubs and their labels.
+    - Cells are packed tallest first, ties in `Network.blocks` order. Each goes at the first candidate point, smallest y then x, where it lies inside the frame, clear of the title block (measured in `docs/research/2026-10-30-letter-repaper.md` section 3), and at least 100 mil from every other cell.
+    - A block with more ports than one edge holds within the frame carries the first half of its pins, in name order, down the west edge, and the rest down the east edge. On the module only mcu does: 45 and 45.
+    - A board that cannot fit is refused, naming the block.
+  - Two repair steps follow, because of what the first render showed:
+    - **Pin names.** akcli 0.22.0 writes no justify on a sheet pin, so kicad-cli 10.0.5 centres a pin name about 1.45 mm inside the edge. A long name then crossed its box edge and its stub, and ran into its own label. `repair/tools/root_pin_justify.py` justifies west-edge pins left and east-edge pins right, as KiCad's own files write them (810 sheet pins in KiCad's demo projects, read from the files).
+    - **PWR_FLAGs.** With pins 100 mil apart, a PWR_FLAG drawn toward a neighbouring stub put its text on that stub's label. `repair/tools/root-flags.ts` now puts each root flag on the first stub label of its net that is the top pin of its edge (rotation 0), or else the bottom pin (rotation 180). That puts 3V3_D on mcu's west edge, and VREF_A on decoupling.
+  - After both steps, a measurement of the render's drawn text finds no two text boxes overlapping.
+  - `repair/tools/verify-root.sh` now judges the paper:
+    - `draughting/measure/paper_fit.py` must report "fits: yes".
+    - `repair/tools/root_sheets_fit.py` must find every sheet box inside the frame and clear of the title block. paper_fit.py does not measure a sheet box, and on the old root it said nothing about the 9 sheets off the paper.
+    - `root-control.sh` control 10 moves one sheet off the paper in a scratch copy, and both checks must then fail.
+- **What it changes.** The root's bytes and its two op-lists, `root/01-assemble.json` and `root/02-pwr-flags.json`. The two-block fixture's root and its `01-assemble.json` also change: they come from the same tool, and its controls pass. No block page changes.
+- **Costs if wrong:** the owner wants another paper size or another arrangement. That means a rule change in one file and a regenerated root.
+- **Set by:** the controller, H7 module plan Task 7e fix round 1.
+
 ### CR-MODULE-INDUCTANCE-NOTATION
 
 **4.7 µH is drawn ".0047mH", as the existing inductance formatter writes it.**

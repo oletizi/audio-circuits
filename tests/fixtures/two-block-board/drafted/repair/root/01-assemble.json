@@ -8,25 +8,25 @@
    "name": "a",
    "file": "a.kicad_sch",
    "at": [
-    1500,
-    1500
+    1050,
+    700
    ],
    "size": [
-    2000,
-    600
+    950,
+    300
    ],
    "pins": [
     {
      "name": "3V3",
      "type": "input",
      "side": "left",
-     "offset_mil": 200
+     "offset_mil": 100
     },
     {
      "name": "GND",
      "type": "input",
      "side": "left",
-     "offset_mil": 400
+     "offset_mil": 200
     }
    ]
   },
@@ -34,12 +34,12 @@
    "op": "add_wire",
    "vertices": [
     [
-     1500,
-     1700
+     1050,
+     800
     ],
     [
-     1100,
-     1700
+     850,
+     800
     ]
    ]
   },
@@ -47,8 +47,8 @@
    "op": "add_net_label",
    "name": "3V3",
    "at": [
-    1100,
-    1700
+    850,
+    800
    ],
    "scope": "local",
    "rotation": 180
@@ -57,12 +57,12 @@
    "op": "add_wire",
    "vertices": [
     [
-     1500,
-     1900
+     1050,
+     900
     ],
     [
-     1100,
-     1900
+     850,
+     900
     ]
    ]
   },
@@ -70,8 +70,8 @@
    "op": "add_net_label",
    "name": "GND",
    "at": [
-    1100,
-    1900
+    850,
+    900
    ],
    "scope": "local",
    "rotation": 180
@@ -81,25 +81,25 @@
    "name": "b",
    "file": "b.kicad_sch",
    "at": [
-    4700,
-    1500
+    2550,
+    700
    ],
    "size": [
-    2000,
-    600
+    950,
+    300
    ],
    "pins": [
     {
      "name": "3V3",
      "type": "input",
      "side": "left",
-     "offset_mil": 200
+     "offset_mil": 100
     },
     {
      "name": "GND",
      "type": "input",
      "side": "left",
-     "offset_mil": 400
+     "offset_mil": 200
     }
    ]
   },
@@ -107,12 +107,12 @@
    "op": "add_wire",
    "vertices": [
     [
-     4700,
-     1700
+     2550,
+     800
     ],
     [
-     4300,
-     1700
+     2350,
+     800
     ]
    ]
   },
@@ -120,8 +120,8 @@
    "op": "add_net_label",
    "name": "3V3",
    "at": [
-    4300,
-    1700
+    2350,
+    800
    ],
    "scope": "local",
    "rotation": 180
@@ -130,12 +130,12 @@
    "op": "add_wire",
    "vertices": [
     [
-     4700,
-     1900
+     2550,
+     900
     ],
     [
-     4300,
-     1900
+     2350,
+     900
     ]
    ]
   },
@@ -143,8 +143,8 @@
    "op": "add_net_label",
    "name": "GND",
    "at": [
-    4300,
-    1900
+    2350,
+    900
    ],
    "scope": "local",
    "rotation": 180
