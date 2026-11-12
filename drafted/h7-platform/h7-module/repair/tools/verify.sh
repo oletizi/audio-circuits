@@ -1,7 +1,7 @@
 #!/bin/sh
 # The verification set for one h7-module BLOCK sheet: sha256, parenthesis depth, the kicad-cli
 # netlist export against that block's part of the module model (block-netcompare.ts,
-# compareSheetToModel's six lists), the PWR_FLAG homes (flag-check.ts), ERC alone and under a
+# compareSheetToModel's six lists, then each port's label on its port's pins, port-labels.ts), the PWR_FLAG homes (flag-check.ts), ERC alone and under a
 # one-block root (erc-one-block-root.sh), the draughting/measure suite (selftest first), paper fit,
 # and the counts table. Copied from the h7-carrier's repair/verify.sh; what changed is the block
 # argument, the comparison, which covers only the block's components, and the two module checks.
@@ -48,7 +48,7 @@ echo "== netlist vs model"
 quiet "$out/kc.err"
 [ -s "$out/export.net" ] || fail "kicad-cli wrote no netlist export for $sch"
 (cd "$root" && bun "$here/block-netcompare.ts" "$block" "$out/export.net") \
-  || fail "the netlist export disagrees with the model on a component, a net, a pin or a value (listed above)"
+  || fail "the netlist export disagrees with the model on a component, a net, a pin, a value or a port's label (listed above)"
 
 # Ruling CR-MODULE-PWR-FLAGS: each module net carries at most one PWR_FLAG across the hierarchy, at
 # the home pwr-flag-homes.ts declares. kicad-cli's export omits `#` references, so the nets come

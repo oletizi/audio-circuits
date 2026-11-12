@@ -13,8 +13,8 @@ holds only what is particular to it: where its parts go (`layout.py`) and how it
   no-connects; one LOCAL label per port net, which `tools/draught/hierarchical-labels.ts` turns
   into the block's hierarchical label at the same place; the title block. Refuses a segment that
   is not axis-aligned, a zero-length one, a segment ending inside another, a pin on a wire's
-  interior, a wire end at a pin of a different net than the one the wire is drawn for, and a
-  label that is not on exactly one wire end.
+  interior, a wire end at a pin of a different net than the one the wire is drawn for, a
+  label that is not on exactly one wire end, and a label on a wire drawn for a different net.
 - `layout.py` names, for `text_edits.py`, every part's field placement, the group rectangle and
   the strokes of nets the draft drew no wire for.
 
@@ -39,7 +39,7 @@ def load_layout(block_dir):
     spec = importlib.util.spec_from_file_location(f"layout_{path.parent.name}", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    for name in ("PARTS", "FIELDS", "RECT", "TITLE"):
+    for name in ("PARTS", "FIELDS", "RECT", "TITLE", "PWR_FLAGS"):
         if not hasattr(module, name):
             raise SystemExit(f"page.py: {path} does not define {name}")
     return module
@@ -169,6 +169,13 @@ class Wiring:
         for name, at, _ in self.labels:
             if ends[at] != 1:
                 raise SystemExit(f"wire: label {name} at {at} is not on exactly one wire end")
+            # The label names the net of the wire it sits on. Without this, two one-pin ports' labels
+            # could be swapped and every membership check would still pass (ruling
+            # CR-MODULE-PORT-LABEL-CHECK; verify.sh checks the same on the export).
+            under = [net for a, b, net in self.segments if at in (a, b)]
+            if under != [name]:
+                raise SystemExit(f"wire: label {name} at {at} sits on the end of a wire drawn for {under}; "
+                                 f"a port's label must sit on a wire drawn for that port's net")
         named = Counter(name for name, _, _ in self.labels)
         if set(named) != self.port_names or any(n != 1 for n in named.values()):
             raise SystemExit(f"wire: the labels {dict(named)} are not one per port {sorted(self.port_names)}; "

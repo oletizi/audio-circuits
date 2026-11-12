@@ -86,16 +86,18 @@ sh drafted/h7-platform/h7-module/repair/tools/render.sh <sheet.kicad_sch> <out-d
 | `tools/depth.py` | copied unchanged from `../../h7-carrier/repair/` |
 | `tools/erc_counts.py` | copied from the carrier's, but it NEVER FAILS: it reports the block sheet alone, which always carries one `pin_not_connected` per hierarchical label. The carrier's fails on any error since issue 32. The block's ERC verdict is `erc_sheets.py`'s |
 | `tools/erc_sheets.py` | ERC errors and warnings by sheet path, for the one-block root |
-| `tools/block-netcompare.ts` | `compareSheetToModel` of a block sheet's `kicad-cli` export against `h7Module()` restricted to that block's components (`Network.blocks`); exits 1 on a component, net, pin or value disagreement |
+| `tools/block-netcompare.ts` | `compareSheetToModel` of a block sheet's `kicad-cli` export against `h7Module()` restricted to that block's components (`Network.blocks`); exits 1 on a component, net, pin or value disagreement, and on a port whose label is not on the port's pins (`tools/port-labels.ts`, ruling CR-MODULE-PORT-LABEL-CHECK) |
+| `tools/port-labels.ts` | each port's net `/<port>` in a block sheet's export must hold exactly the pins `drawingPages()` gives that port; a failure names the port, the pins expected and the pins found |
 | `tools/one-block-root.ts` | a root holding one block sheet, from `tools/draught/assemble-root.ts`, so ERC sees each hierarchical label meet a sheet pin, with a PWR_FLAG on each stub whose net's flag lives off the block (`pwr-flag-homes.ts`); what it writes is scratch, never committed |
 | `tools/erc-one-block-root.sh` | ERC on one block sheet under that root, judged by `erc_sheets.py`; called by `verify.sh` and by `erc-control.sh` |
 | `tools/pwr-flag-homes.ts` | the one table of where each shared module net's single PWR_FLAG lives (ruling CR-MODULE-PWR-FLAGS) |
 | `tools/flag_probe.py`, `tools/flag-check.ts` | a probe copy whose PWR_FLAGs (found by lib_id) the `kicad-cli` export lists, and the check on that export failing a flag on a shared net whose flag lives elsewhere, naming the net |
 | `tools/flag_at_label.py`, `tools/strip_pwr_flags.py` | for `erc-control.sh`'s controls: add a PWR_FLAG at a hierarchical label; remove every placed PWR_FLAG |
-| `tools/erc-control.sh` | the controls for `verify.sh`'s ERC and PWR_FLAG verdicts, each of which must come out as stated |
+| `tools/erc-control.sh` | the controls for `verify.sh`'s ERC and PWR_FLAG verdicts, each of which must come out as stated; control 13 runs `tools/port-label-control.sh` |
+| `tools/port-label-control.sh`, `tools/label_tamper.py` | the port-label controls: all eight committed pages verify; scratch copies with two labels swapped (interface) or one deleted (qspi), made by `label_tamper.py` parsing by parenthesis depth, fail naming the port; `Wiring.op_list` refuses a label on another net's wire |
 | `tools/verify.sh` | the verification set for one block sheet: sha256, depth, the comparison above, the PWR_FLAG homes, ERC alone and under the one-block root, the `draughting/measure/` selftest, crossings, junction audit, label survey, paper fit, counts. Copied from the carrier's, with the block argument |
 | `tools/render.sh` | PDF, SVG and a 150 dpi PNG of one sheet, copied from the carrier's |
-| `tools/page.py` | the shared op-list writers for the Task 7b pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals), and the field placements `layout.py` uses |
+| `tools/page.py` | the shared op-list writers for the Task 7b pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals, among them a port label on a wire drawn for another net), and the field placements `layout.py` uses |
 | `tools/place.py`, `tools/text_edits.py` | op-list 01, and the direct text edits (strokes, fields, the group rectangle), for any Task 7b block, driven by its `layout.py` |
 | `tools/ports.ts` | a block's ports and the pins each reaches, from `drawingPages()` (`<block>/ports.json`) |
 | `<block>/layout.py`, Task 7b blocks | every part's position, rotation and mirror, the rows and columns its wiring uses, its field placements, group rectangle and title, and the stroke of any net the draft drew no wire for |

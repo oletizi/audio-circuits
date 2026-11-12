@@ -24,6 +24,9 @@
 #     fails with pin_not_driven on U4's CLK.
 # 12. negative, the same ruling: an entry naming a U1 pin that is not on FLASH_CLK is refused by
 #     the model check in cross-page-drivers.ts, which names the pin and the net.
+# 13. ruling CR-MODULE-PORT-LABEL-CHECK: port-label-control.sh's controls (all eight committed pages
+#     verify; a copy of interface with two one-pin labels swapped and a copy of qspi with one label
+#     deleted each fail, naming the port; Wiring.op_list refuses a label on another net's wire).
 #
 # usage: sh erc-control.sh
 set -eu
@@ -138,5 +141,8 @@ fi
 grep -q 'U1 pin 29 is on .*, not on FLASH_CLK' "$work/bad-pin.log" \
   || { cat "$work/bad-pin.log" >&2; bad "one-block-root.ts refused, but not naming U1 pin 29 as off FLASH_CLK"; }
 echo "   refused as expected: $(grep 'U1 pin 29 is on' "$work/bad-pin.log" | head -1)"
+
+echo "== 13. port labels on their ports' nets (port-label-control.sh)"
+sh "$here/port-label-control.sh" || bad "port-label-control.sh: a port-label control did not come out as stated (above)"
 
 echo "erc-control.sh: every control came out as stated"

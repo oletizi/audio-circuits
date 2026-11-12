@@ -1605,6 +1605,20 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan, Task 7b, on the qspi page's verify failure.
 - **Carried in:** the table `drafted/h7-platform/h7-module/repair/tools/cross-page-drivers.ts`, beside `pwr-flag-homes.ts`, with its model check. `repair/tools/one-block-root.ts` places the stand-in; `repair/tools/erc_sheets.py` now prints each error on the block's sheet with the symbol and pin KiCad names; `repair/tools/erc-control.sh` holds a positive control (the committed qspi page verifies, `/qspi/` at 0 and 0) and two negatives (the table overridden through `H7_CROSS_PAGE_DRIVERS_TABLE` to omit FLASH_CLK fails with `pin_not_driven` on U4's CLK; an entry naming U1 pin 29, which the model puts on HSE_IN, is refused by the model check).
 
+### CR-MODULE-PORT-LABEL-CHECK
+
+**A block page fails verification when a port's hierarchical label sits on an exported net whose pins differ from the pins the model puts on that port's net within the block.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:**
+  - The verifier checks it: `verify.sh` runs `block-netcompare.ts`, which, after the membership comparison, requires the kicad-cli export of the block sheet to carry a net named `/<port>` for every port `drawingPages()` gives the block, holding exactly that port's pins. The net names come from the export (`importNetlist`), never from a line pattern in the sheet. Exported alone, the block sheet is the root kicad-cli sees, so a label `NAME` names its net `/NAME`; a private net's label is its unprefixed model name (TOOLING.md, "Multi-page drawing"), which `drawingPagesFromNetwork` refuses to let equal a port name, so `/<port>` can only be the port's own net.
+  - It covers two swapped labels (each port's net holds the other's pins), a label on the wrong wire (the pins differ), and a missing label (no net of that name). Each failure names the port, the pins expected and the pins found.
+  - Generation checks the same: `Wiring.op_list` (`repair/tools/page.py`) refuses a label placed on the end of a wire drawn for any net other than the label's own.
+- **Why:** the membership comparison cannot see it. A port reaching one pin is a one-member net, so swapping two such ports' labels leaves every net's membership unchanged, and `verify.sh` reported 0, 0, 0, 0 on such a page. That covers 34 of 35 ports on interface and 5 of 8 on qspi, and the mcu and sdram pages rely on it more (Task 7b review, I2). The committed pages were right; the tooling would not have caught it had they been wrong.
+- **Costs if wrong:** one tooling revision. No page bytes change.
+- **Set by:** the controller, H7 module plan, Task 7b fix round 1, on the Task 7b review's I2.
+- **Carried in:** `drafted/h7-platform/h7-module/repair/tools/port-labels.ts` (the check), called by `block-netcompare.ts`; `repair/tools/page.py` (`Wiring.op_list`); controls in `repair/tools/port-label-control.sh`, called by `erc-control.sh` as control 13: all eight committed module pages verify with 0 ports on the wrong net; a scratch copy of interface with LED1 and LED2 swapped (one pin each, J1.5 and J1.4) fails naming both; a scratch copy of qspi with the FLASH_IO1 label deleted fails naming it; and `Wiring.op_list` refuses a synthetic label on another net's wire. The copies are made by `repair/tools/label_tamper.py`, which parses by parenthesis depth.
+
 ### CR-MODULE-INDUCTANCE-NOTATION
 
 **4.7 µH is drawn ".0047mH", as the existing inductance formatter writes it.**
