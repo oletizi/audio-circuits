@@ -1659,7 +1659,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Date:** 2026-11-12.
 - **Decides:** *"Task 7 commits a .kicad_pro beside the module's root sheet, as the carrier page has one; the two-block fixture needs none (it is test data, and ERC already runs on it with defaults)."* The file carries nothing but the ERC exclusions the declared allowances admit ([CR-MODULE-VCAP-ERC](#cr-module-vcap-erc)); KiCad's defaults apply to everything else. `TOOLING.md`'s C3 note that no `.kicad_pro` is written beside a project stays true of the C3 tooling and the fixture.
 - **Costs if wrong:** *"the owner opens a sheet with no project file."*
-- **Set by:** the controller, H7 module plan, at Task 5's completion. The words above are the controller's, from the plan's progress log, which is gitignored; recorded here in Task 7e, when the file was made.
+- **Set by:** the controller, H7 module plan, at Task 5's completion. The words above are the controller's, from the plan's progress log, now committed as [`progress.md`](../superpowers/plans/2026-11-12-h7-module-pages-execution/progress.md); recorded here in Task 7e, when the file was made.
 - **Carried in:** `drafted/h7-platform/h7-module/h7-module.kicad_pro`, written by `repair/tools/kicad-pro.ts` and checked by `repair/replay.sh`.
 
 ### CR-MODULE-ROOT-FITS-LETTER

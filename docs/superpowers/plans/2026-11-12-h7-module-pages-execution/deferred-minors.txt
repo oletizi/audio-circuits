@@ -1,0 +1,35 @@
+32:Task 1: minor (deferred): physicalize keeps a block with empty componentIds; drop empties if C3 iterates blocks (lib/board/physicalize.ts:117-120)
+33:Task 1: minor (deferred): refusal test rebuilds outer and duplicates the record assertion (tests/model/include-blocks.test.ts)
+34:Task 1: minor (deferred): many blocks: [] literals in tests/control-state.test.ts and tests/model/validate.test.ts; a shared helper would reduce repetition
+40:Task 2: minor (deferred): verify-nocode.sh case pattern allows .xml at any depth below vendor/st-pin-data (README overstates); refuse subdirectories + control
+41:Task 2: minor (deferred): h7-interface-check.test.ts JSON.parse implicit any; contract.ts empty-string refusal untested
+42:Task 2: minor (deferred): duplicate toBeDefined in strap test
+43:Task 2: minor (deferred): no observed red run for the two contract tests
+45:Task 2: minor (deferred): decisions.md CR-MODULE-ID-STRAP-PIN names register 'SYSCFG PC2SO' unverified (the name came from the controller's dispatch, from memory) — verify or drop
+46:Task 2: minor (deferred): pin-map-check.ts imports loadContract as a default parameter
+53:Task 3: minor (deferred): Q is pole-pair Q, not peak-|H|; say which in decisions (0.30 ohm still holds under peak |H|)
+54:Task 3: minor (deferred): 'over DCR 0 to 0.045' prose should say 'at both ends'
+55:Task 3: minor (deferred): undamped |H| ideal form vs damped full divider compared (harmless margin)
+56:Task 3: minor (deferred): vdda-noise.ts:312 trims tiny leading coefficients silently; trim exact zeros or throw
+57:Task 3: minor (deferred): rulings dated 2026-11-12 vs session date 2026-11-11 (UTC vs local); check dates across this plan's records
+63:Task 4: minor (deferred): assertModuleCapacitanceWithinLimit does not forward rootNet; added optional params not recorded in decisions.md
+64:Task 4: minor (deferred): W9825G6KH 54-pin table written three times (module-parts.ts and two tests)
+65:Task 4: minor (deferred): no test that crossing L_BUCK onto SW cannot escape to the input side
+66:Task 4: minor (deferred): test capacitor named c_bst connects 3V3 to VDDA; rename
+68:Task 4: minor (deferred): multi-unit exclusion relies on matching the error text /multi-unit/ (fails loudly if reworded)
+76:Task 5: minor (deferred): per-block partition check takes refs from page.intent.parts, not Network.blocks componentIds (project round trip catches a dropped part later)
+77:Task 5: minor (deferred): resolveDrawingPages imports the circuit module on the test-only --intent path
+78:Task 5: minor (deferred): two shape guards for DrawingPage (isPage, isDrawingPage); consolidate
+79:Task 5: minor (deferred): round-trip test rebuilds the fixture ProjectModel; export model()
+80:Task 5: minor (deferred): drawing-pages.ts groups[prefix] ?? '' unreachable fallback; throw
+81:Task 5: minor (deferred): commit 5ee0b9f message has the carrier sha tail wrong (cosmetic)
+92:Task 6: minor (deferred): valueFor beadImpedance refusal skipped for capacitor/resistor/pot/part.value early returns; move check to top + test
+93:Task 6: minor (deferred): CR-MODULE-BEAD-VALUE cites parts.md:35 for the rating; rating is analog.md:242
+94:Task 6: minor (deferred): sub-ohm RKM spelling depends on the '0.' prefix of String(number)
+95:Task 6: minor (deferred): process — MCU and clock blocks implemented before red run; decisions.md written via heredoc with #
+108:Task 7a: re-review approved (I1, I2, M1-M7 addressed); 2 minors parked for Task 7b (flag-check treats a flag on a non-port net as private; duplicate #PWR refs across sheets).
+116:Task 7b: qspi driver fix 27bc5a0 (CR-MODULE-CROSS-PAGE-DRIVERS; Connector:TestPoint stand-in, measured). Controller re-ran verify qspi: exit 0, /qspi/ 0/0. qspi page sent to the owner with a question only. Parked for final review: env-var table override in verify (announced on stderr); passive stand-in cannot catch pin-type conflict, root ERC must.
+118:Task 7b: re-review approved; minors parked for final review (H7_CROSS_PAGE_DRIVERS_TABLE override not refused outside erc-control.sh, closing verdict silent; hard-coded KICAD_CLI path; port-labels trusts drawingPages).
+124:Task 7c: review approved (0C/0I/4M). Parked for the root step / final review: erc_counts.py docstring claim; RECORD.md:44 stale qspi 'exits 1, awaiting ruling' (a false claim; fix with the next RECORD edit after 7d lands); FLASH_CLK entry not in mcuDriver form; early-committed decoupling scripts (disclosed). Note: erc_sheets accepts any label_dangling on / - root ERC is the safety net.
+131:Task 7d: review approved (0C/0I/6M); minors parked for final review (RECORD:1100 stale 'stops at ERC failure'; erc-control:191 pin 126 description; allowance refusals lacking isolating controls; one allowance excuses any count; root warnings unbounded; duplicated helpers).
+141:Task 7e: re-review 2 approved; two RECORD minors fixed by controller (stray bold, rule sentence); render.sh space-in-sheet-name minor parked for final review.
