@@ -71,10 +71,26 @@ describe("module part symbols", () => {
     }
   })
 
-  test("the SDRAM: the stock MT48LC16M16A2TG differs from the W9825G6KH datasheet, so a project symbol is used", () => {
-    // CR-MODULE-SDRAM-SYMBOL: the stock symbol is used only if all 54 pins match by name and number.
-    // They do not: 15 DQML/LDQM, 20 and 21 BA0,BA1/BS0,BS1, 22 A10/A10/AP, 39 DQMH/UDQM.
-    expect(mismatches(W9825G6KH, "Memory_RAM:MT48LC16M16A2TG")).toEqual(["15", "20", "21", "22", "39"])
+  test("the SDRAM: no stock Memory_RAM symbol matches the W9825G6KH datasheet, so a project symbol is used", () => {
+    // CR-MODULE-SDRAM-SYMBOL: C4 allows a stock symbol only on a pin-for-pin match, 54 pins by name and
+    // number, and that is a condition on the whole library, so every Memory_RAM symbol is compared.
+    const library = "Memory_RAM"
+    const names = [...installedSymbolNames(`${library}:x`)]
+    expect(names.length).toBeGreaterThan(50)
+    // A multi-unit symbol (which `symbolPins` refuses) splits its pins across drawn units, so it is not the
+    // one 54-pin body C4 compares; each such symbol is counted here and left out of the pin comparison.
+    const multiUnit = names.filter((n) => {
+      try { pinsOf(`${library}:${n}`); return false } catch (e) { return e instanceof Error && /multi-unit/.test(e.message) }
+    })
+    expect(multiUnit.length).toBeGreaterThan(0)
+    const matching = names.filter((n) => !multiUnit.includes(n) && mismatches(W9825G6KH, `${library}:${n}`).length === 0)
+    expect(matching).toEqual([])
+    // The closest candidates and where they differ.
+    expect(mismatches(W9825G6KH, `${library}:MT48LC16M16A2TG`)).toEqual(["15", "20", "21", "22", "39"])
+    for (const n of ["W9812G6KH-5", "W9812G6KH-6", "W9812G6KH-6I", "W9812G6KH-75"]) {
+      expect(mismatches(W9825G6KH, `${library}:${n}`)).toEqual(["36"])
+    }
+    expect(pinsOf(`${library}:W9812G6KH-6I`).get("36")).toBe("NC")
     expect(SDRAM.symbol).toBe("h7-platform:W9825G6KH")
     expect(SDRAM.mpn).toBe("W9825G6KH-6I")
     expect(mismatches(W9825G6KH, "h7-platform:W9825G6KH")).toEqual([])
@@ -166,6 +182,10 @@ function fixture(): ReturnType<typeof circuit> {
     .capacitor("c_vcap", "2u2", { a: "VCAP", b: "GND" })
     .capacitor("c_gnd_only", "47u", { a: "GND", b: "ISOLATED" })
     .resistor("r_isolated", "1k", { a: "ISOLATED", b: "GND" })
+    // A pull-down from a domain net to GND (as the feedback divider, BOOT0's 4.7k and the strap's bottom
+    // resistor are): without the walk's GND stop, GND joins the domain and r_isolated leads on to
+    // ISOLATED, so c_gnd_only (and every capacitor to GND) would count.
+    .resistor("r_pull", "10k", { a: "VDDA", b: "GND" })
   VDDA_RULED.bank.forEach((c, i) =>
     b.capacitor(`c_vdda_${i}`, `${c.nominal_F}`, { a: "VDDA", b: "GND" }))
   return b
