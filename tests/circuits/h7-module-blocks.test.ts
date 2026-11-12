@@ -16,9 +16,11 @@ import { vddaBlock } from "../../circuits/h7-platform/module/vdda.ts"
 import { sdramBlock } from "../../circuits/h7-platform/module/sdram.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { qspiBlock } from "../../circuits/h7-platform/module/qspi.ts"
+import { clockBlock } from "../../circuits/h7-platform/module/clock.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  clock: clockBlock,
   qspi: qspiBlock,
   mcu: mcuBlock,
   decoupling: mcuDecouplingBlock,
@@ -198,5 +200,17 @@ describe("QSPI flash (schematic-checklist.md CORE-23; processor-and-memory.md:25
     expect(Reflect.get(r.parameters, "ohms")).toBe(10_000)
     expect(Object.values(netsOf(r)).sort()).toEqual(["3V3_D", "FLASH_NCS"])
     expect(capacitors(net)).toEqual(["1.00e-7 3V3_D|GND"])
+  })
+})
+
+describe("HSE (processor-and-memory.md section 3; CORE-13, CORE-14; CR-MODULE-HSE-LOAD)", () => {
+  const net = clockBlock()
+  test("Y_HSE between HSE_IN (PH0) and HSE_OUT (PH1), both case pads to GND", () => {
+    expect(netsOf(only(net, "y_hse"))).toEqual({ "1": "HSE_IN", "2": "GND", "3": "HSE_OUT", "4": "GND" })
+    expect(only(net, "y_hse").part?.mpn).toBe("NX3225GA-25.000M-STD-CRG-2")
+  })
+  test("8 pF from each crystal pin to GND, and no series resistor", () => {
+    expect(capacitors(net)).toEqual(["8.00e-12 GND|HSE_IN", "8.00e-12 GND|HSE_OUT"])
+    expect(net.components.filter((c) => c.kind === "resistor")).toEqual([])
   })
 })
