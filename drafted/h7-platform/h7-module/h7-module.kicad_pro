@@ -1,0 +1,14 @@
+{
+  "erc": {
+    "erc_exclusions": [
+      [
+        "pin_to_pin|2197100|1371600|b33f699d-7787-575e-9db3-ad947855ca37|73608be5-c650-5722-962d-0f9443749bff|/d7735cfe-6995-a574-9567-f180c497c4ae/d9b2e76b-296e-5f64-9ca8-27a60a69076b|/d7735cfe-6995-a574-9567-f180c497c4ae/d9b2e76b-296e-5f64-9ca8-27a60a69076b|/d7735cfe-6995-a574-9567-f180c497c4ae/d9b2e76b-296e-5f64-9ca8-27a60a69076b",
+        "CR-MODULE-VCAP-ERC: pin_to_pin on /mcu/ between U1 pin 81 and U1 pin 125 (net VCAP; the installed symbol types both power_out). Declared in repair/tools/erc-allowances.ts."
+      ]
+    ]
+  },
+  "meta": {
+    "filename": "h7-module.kicad_pro",
+    "version": 3
+  }
+}
