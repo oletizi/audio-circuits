@@ -18,13 +18,15 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | sheet | role | sha256 |
 | --- | --- | --- |
 | `power.kicad_sch` | block power | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
+| `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 
-The root sheet, its `.kicad_pro` and the eleven other block sheets are not drawn yet. This table has
-no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
+The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
+has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
 
 | page | status | render |
 | --- | --- | --- |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
+| interface | UNREVIEWED | `interface.svg` |
 
 ## The drafts every repair starts from
 
@@ -230,3 +232,90 @@ exit 1.
 - Every part's Reference and Value are horizontal. Upright parts carry them to the east, except R7
   and R8, to the west; parts lying east-west carry them above.
 - Wires on VIN_MOD and VIN_BUCK carry copperhead's blue stroke; the others its default.
+
+## How the Task 7b pages are repaired
+
+The pages after power are repaired by shared tools, each block's directory holding only its own
+placement (`repair/<block>/layout.py`) and wiring (`repair/<block>/02-wire.py`). The steps are the
+power page's, in the same order, and `repair/replay.sh` runs them for each block (`repair_block`):
+
+1. `tools/ports.ts <block>`: the block's ports and the pins each reaches, from `drawingPages()`
+   (`ports.json`). A port reaching one pin is not in the block's intent, so this is where the wiring
+   learns which net such a pin is on.
+2. `tools/net_strokes.py` on the draft (`net_strokes.json`), as for power.
+3. `tools/place.py`: delete every copperhead wire, label, junction and no-connect; place and orient
+   every part to `layout.py` (`01-place.json`).
+4. `tools/pins.py` on the placed sheet (`pins.json`), as for power.
+5. `<block>/02-wire.py`, through `tools/page.py`'s `Wiring` (`02-wire.json`, `02-wire.nets.json`):
+   every wire one straight segment; a junction wherever three or more connections meet; the
+   intent's no-connects; one local label per port net; the title block. It refuses a segment that is
+   not axis-aligned or has zero length, a segment ending inside another, a pin on a wire's interior,
+   a wire end on a pin of another net than the one the wire is drawn for (read from the intent and
+   `ports.json`), a label not on exactly one wire end, and labels that are not one per port.
+6. `<block>/03-pwr-flags.py`, only where a block has one (none of the pages below does).
+7. `tools/draught/hierarchical-labels.ts ops`, then its `check` (`04-hierarchical-labels.json`).
+8. `tools/text_edits.py`: wire strokes, every part's Reference and Value from `layout.py`'s
+   `FIELDS`, the group rectangle. A net the draft drew no wire for takes the stroke `layout.py`'s
+   `UNDRAWN_STROKES` names, with its reason there.
+
+Every page below draws no rail power symbol and no PWR_FLAG: GND, 3V3_D and VREF_A are wires ending
+in the block's hierarchical labels
+([CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails)), and their
+single flags live on the power page (GND) and the root (3V3_D, VREF_A), per
+[CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags); the one-block
+root supplies them on its stubs when `verify.sh` runs ERC.
+
+The measurements in each table are `repair/tools/verify.sh <block> <sheet>` on the page, and the same
+steps run without stopping on the draft (a draft fails verify.sh's ERC, as a draft is not a page).
+None of these is a judgement of a page.
+
+## interface: the two module headers
+
+**Status: UNREVIEWED.** sha256 `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296`.
+Render: `interface.svg` beside it.
+
+The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connector_Generic:Conn_01x20`),
+36 ports: GND on J1.20 and J2.20, and 35 that each reach one pad.
+
+### The rulings this page rests on
+
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): GND, 3V3_D,
+  VREF_A and VIN_MOD are wires ending in hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input, so ERC needs none here.
+- The stroke of the 35 nets the draft drew no wire for: copperhead's stroke for a net of no colour
+  family, the one the draft's GND carries (`interface/layout.py`, `UNDRAWN_STROKES`). A drawing
+  choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 2, 39, 40 | 2, 39, 40 |
+| exported nets carrying a model net name | 1 of 39 (/GND) | 35 of 39 (every port; the 4 others are J1's no-connect pads) |
+| ERC, the sheet alone | 34 errors (`pin_not_connected` 34), 0 warnings | 35 errors (`pin_not_connected` 35: each hierarchical label has no parent sheet), 34 warnings (`isolated_pin_label` 34) |
+| ERC under a one-block root, `/interface/` | 34 errors (`pin_not_connected` 34) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 67 errors (`hier_label_mismatch` 35, `label_dangling` 32), 3 warnings | 0 errors, 64 warnings (`isolated_pin_label` 64: each stub label meets one pin, with one block) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 0 | 0 of 1 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 1 on 1 net (0 global) | 35 on 35 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 1 | 0 of 35 |
+| symbols (parts, power symbols, PWR_FLAGs) | 2 (2, 0, 0) | 2 (2, 0, 0) |
+| placed pins | 40 | 40 |
+| wires, total length | 3, 17.78 mm | 40, 351.79 mm |
+| wire corners | 0 | 3 |
+| junctions | 0 | 1 |
+
+### What the page shows, as observations
+
+- J1 and J2 stand upright side by side, J1 west of J2, pin 1 at the top, every pin facing west.
+- Each pad with a signal runs west by one 300 mil stub to its hierarchical label, so the labels
+  stand in two columns, J1's west of J1 and J2's between the two headers.
+- J1's pads 16 to 19 carry no-connects.
+- GND's label is on J1.20's stub. J2.20 runs west, drops to a row under both headers, runs west
+  under J1 and rises to J1.20's stub, where a junction joins it.
+- Both headers carry Reference over Value, centred above pin 1.

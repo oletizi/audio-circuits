@@ -1,0 +1,907 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "interface.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     5000
+    ],
+    [
+     6800,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4700
+    ],
+    [
+     6800,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4500
+    ],
+    [
+     6800,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4400
+    ],
+    [
+     6800,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4600
+    ],
+    [
+     6800,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4200
+    ],
+    [
+     6800,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4000
+    ],
+    [
+     6800,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4400
+    ],
+    [
+     4200,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4500
+    ],
+    [
+     4200,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3800
+    ],
+    [
+     4200,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4100
+    ],
+    [
+     4200,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4100
+    ],
+    [
+     6800,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3700
+    ],
+    [
+     4200,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3600
+    ],
+    [
+     4200,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4700
+    ],
+    [
+     4200,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4600
+    ],
+    [
+     4200,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3400
+    ],
+    [
+     6800,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3500
+    ],
+    [
+     6800,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3600
+    ],
+    [
+     6800,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3700
+    ],
+    [
+     6800,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3800
+    ],
+    [
+     6800,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3900
+    ],
+    [
+     6800,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4000
+    ],
+    [
+     4200,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3300
+    ],
+    [
+     4200,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3400
+    ],
+    [
+     4200,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3500
+    ],
+    [
+     4200,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3900
+    ],
+    [
+     4200,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4200
+    ],
+    [
+     4200,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4800
+    ],
+    [
+     6800,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4900
+    ],
+    [
+     6800,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4300
+    ],
+    [
+     4200,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     4300
+    ],
+    [
+     6800,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     5100
+    ],
+    [
+     6800,
+     5100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     3300
+    ],
+    [
+     6800,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     5200
+    ],
+    [
+     4350,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4350,
+     5200
+    ],
+    [
+     4200,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7100,
+     5200
+    ],
+    [
+     6950,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6950,
+     5200
+    ],
+    [
+     6950,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6950,
+     5500
+    ],
+    [
+     4350,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4350,
+     5500
+    ],
+    [
+     4350,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4350,
+    5200
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J1.16"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J1.17"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J1.18"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J1.19"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    6800,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_BCK",
+   "at": [
+    6800,
+    4700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DIN",
+   "at": [
+    6800,
+    4500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DOUT",
+   "at": [
+    6800,
+    4400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_LRCK",
+   "at": [
+    6800,
+    4600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_DETECT",
+   "at": [
+    6800,
+    4200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_TIP",
+   "at": [
+    6800,
+    4000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SCL",
+   "at": [
+    4200,
+    4400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SDA",
+   "at": [
+    4200,
+    4500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW1",
+   "at": [
+    4200,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW2",
+   "at": [
+    4200,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "HW_REV",
+   "at": [
+    6800,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED1",
+   "at": [
+    4200,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED2",
+   "at": [
+    4200,
+    3600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_RX",
+   "at": [
+    4200,
+    4700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_TX",
+   "at": [
+    4200,
+    4600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS1",
+   "at": [
+    6800,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS2",
+   "at": [
+    6800,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS3",
+   "at": [
+    6800,
+    3600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS4",
+   "at": [
+    6800,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS5",
+   "at": [
+    6800,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS6",
+   "at": [
+    6800,
+    3900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "RELAY_EN",
+   "at": [
+    4200,
+    4000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE1",
+   "at": [
+    4200,
+    3300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE2",
+   "at": [
+    4200,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE3",
+   "at": [
+    4200,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE4",
+   "at": [
+    4200,
+    3900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE5",
+   "at": [
+    4200,
+    4200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DM",
+   "at": [
+    6800,
+    4800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DP",
+   "at": [
+    6800,
+    4900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_EN_N",
+   "at": [
+    4200,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_VBUS_SENSE",
+   "at": [
+    6800,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MOD",
+   "at": [
+    6800,
+    5100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    6800,
+    3300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4200,
+    5200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: interface",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

@@ -1,0 +1,63 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "interface.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "bc97f2fc-becf-5e6d-b107-c68891b2f547"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b4ffeedc-1cbb-51d1-8bb1-0dc416cc053f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3f87968d-6b84-59e4-8219-ef0ff853fb85"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7de6d104-bb24-5558-bdb6-48649d77d1ec"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ecd672aa-ba5d-5a0b-9f42-a08ea769849e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e8db3963-02e4-5e65-83cb-e8034bc9a248"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8b56d3c3-79fb-5eea-90f3-04793c6d740e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8abf94fd-7082-529c-96a7-8583cc2277d4"
+  },
+  {
+   "op": "move_component",
+   "designator": "J1",
+   "x_mil": 4700,
+   "y_mil": 4200
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "J1",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "J2",
+   "x_mil": 7300,
+   "y_mil": 4200
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "J2",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

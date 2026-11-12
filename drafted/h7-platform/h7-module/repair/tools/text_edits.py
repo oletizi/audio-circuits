@@ -1,0 +1,157 @@
+"""One block page's direct text edits - what akcli 0.22.0 has no operation for. Driven by layout.py.
+
+1. WIRE STROKE. akcli's add_wire writes `(stroke (width 0) (type default))`. Each wire takes the
+   stroke copperhead drew its net in on the draft (`net_strokes.py`), found through the net
+   02-wire.py drew it for (its sidecar). A net the draft drew no wire for (a port reaching one pin,
+   which copperhead cannot draft) takes the stroke layout.UNDRAWN_STROKES names for it, with that
+   file's reason. Refuses a wire the sidecar does not name and a net with neither.
+2. FIELDS. Every part's Reference and Value as literals from layout.FIELDS (offsets in mm from the
+   symbol's origin, and a justification), never copied from the draft. Every field ends horizontal:
+   field angle = symbol rotation mod 180 (TOOLING.md repair class 5: a field renders horizontal when
+   symbol rotation + field angle is a multiple of 180). A hidden field stays hidden.
+3. THE GROUP RECTANGLE AND ITS CAPTION, to layout.RECT (TOOLING.md repair class 8); the caption's
+   text is copperhead's, only its place moves.
+
+Refuses a part not at layout.PARTS's place, a symbol count that does not add up (parts plus
+layout.PWR_FLAGS one-line PWR_FLAG instances), and a field not in the expected form.
+
+usage: python3 text_edits.py <block-dir> <sheet.kicad_sch> <02-wire.nets.json> <net_strokes.json>
+"""
+import json
+import pathlib
+import re
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import page  # noqa: E402
+
+if len(sys.argv) != 5:
+    raise SystemExit("usage: python3 text_edits.py <block-dir> <sheet> <02-wire.nets.json> <net_strokes.json>")
+layout = page.load_layout(sys.argv[1])
+path = pathlib.Path(sys.argv[2])
+segs = json.loads(pathlib.Path(sys.argv[3]).read_text())
+strokes = dict(json.loads(pathlib.Path(sys.argv[4]).read_text()))
+undrawn = getattr(layout, "UNDRAWN_STROKES", {})
+for net, stroke in undrawn.items():
+    if net in strokes:
+        raise SystemExit(f"text_edits: layout.UNDRAWN_STROKES names {net}, which the draft does draw")
+    strokes[net] = stroke
+src = path.read_text()
+MIL = 0.0254
+
+
+def mm(v):
+    return f"{round(v * MIL, 4):g}"
+
+
+# 1. Wire strokes ---------------------------------------------------------------------------
+NEW_STROKE = "(stroke (width 0) (type default))"
+want = {}
+for x1, y1, x2, y2, net in segs:
+    if net not in strokes:
+        raise SystemExit(f"text_edits: net {net} has no stroke on the draft and none in layout.UNDRAWN_STROKES")
+    want[frozenset({(mm(x1), mm(y1)), (mm(x2), mm(y2))})] = strokes[net]
+wire_re = re.compile(r'\(wire \(pts \(xy ([-\d.]+) ([-\d.]+)\) \(xy ([-\d.]+) ([-\d.]+)\)\) '
+                     + re.escape(NEW_STROKE))
+done = 0
+
+
+def restroke(m):
+    global done
+    key = frozenset({(f"{float(m.group(1)):g}", f"{float(m.group(2)):g}"),
+                     (f"{float(m.group(3)):g}", f"{float(m.group(4)):g}")})
+    if key not in want:
+        raise SystemExit(f"text_edits: wire {m.group(0)} is not in the 02 sidecar")
+    done += 1
+    return m.group(0).replace(NEW_STROKE, want[key])
+
+
+src = wire_re.sub(restroke, src)
+if done != len(segs) or src.count("(wire") != len(segs):
+    raise SystemExit(f"text_edits: restroked {done} wires, the sidecar has {len(segs)}, "
+                     f"the sheet has {src.count('(wire')} '(wire' tokens")
+print(f"wire strokes: {done}")
+
+# 2. Fields ---------------------------------------------------------------------------------
+sym_re = re.compile(r'\n\t\(symbol\n\t\t\(lib_id "([^"]+)"\)\n\t\t\(at ([-\d.]+) ([-\d.]+) (\d+)\)')
+blocks = []
+for m in sym_re.finditer(src):
+    start = m.start() + 1
+    depth = 0
+    i = start
+    while True:
+        c = src[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    blocks.append((start, i + 1, m.group(1), float(m.group(2)), float(m.group(3)), int(m.group(4))))
+flags = src.count('\n\t(symbol (lib_id "power:PWR_FLAG")')
+if flags != layout.PWR_FLAGS or len(blocks) + flags != src.count("(lib_id "):
+    raise SystemExit(f"text_edits: found {len(blocks)} part instances and {flags} PWR_FLAGs "
+                     f"({layout.PWR_FLAGS} expected); the sheet has {src.count('(lib_id ')} '(lib_id' tokens")
+
+prop_re = re.compile(r'\(property "(Reference|Value)" "([^"]*)" \(at [-\d.]+ [-\d.]+ \d+\)\n'
+                     r'(\t+)\(effects \(font \(size 1\.27 1\.27\)\)( \(justify [a-z ]+\))?( hide)?\)')
+
+
+def plan_for(ref, x, y, rot):
+    """field -> (x_mm, y_mm, angle, justify or None)."""
+    px, py, prot, _ = layout.PARTS[ref]
+    if (round(x / MIL), round(y / MIL), rot) != (px, py, prot):
+        raise SystemExit(f"text_edits: {ref} is at {(x, y, rot)}, not layout.py's {layout.PARTS[ref]}")
+    if ref not in layout.FIELDS:
+        raise SystemExit(f"text_edits: layout.FIELDS has no placement for {ref}")
+    angle = rot % 180
+    return {f: (x + dx, y + dy, angle, just) for f, (dx, dy, just) in layout.FIELDS[ref].items()}
+
+
+def edit_block(text, ref, plan):
+    def one(m):
+        fx, fy, a, justify = plan[m.group(1)]
+        just = f" (justify {justify})" if justify else ""
+        hide = m.group(5) or ""
+        return (f'(property "{m.group(1)}" "{m.group(2)}" (at {round(fx, 3):g} {round(fy, 3):g} {a})\n'
+                f'{m.group(3)}(effects (font (size 1.27 1.27)){just}{hide})')
+    new, n = prop_re.subn(one, text)
+    if n != 2:
+        raise SystemExit(f"text_edits: {ref} has {n} Reference/Value fields in the expected form, not 2")
+    return new
+
+
+out = []
+last = 0
+seen = set()
+for start, end, lib_id, x, y, rot in blocks:
+    text = src[start:end]
+    ref = re.search(r'\(property "Reference" "([^"]+)"', text).group(1)
+    if ref not in layout.PARTS:
+        raise SystemExit(f"text_edits: {ref} is on the sheet and not in layout.py")
+    seen.add(ref)
+    out.append(src[last:start])
+    out.append(edit_block(text, ref, plan_for(ref, x, y, rot)))
+    last = end
+out.append(src[last:])
+src = "".join(out)
+if seen != set(layout.PARTS):
+    raise SystemExit(f"text_edits: layout.py places {sorted(set(layout.PARTS) - seen)}, which the sheet lacks")
+print(f"fields: {len(seen)} symbols")
+
+# 3. Group rectangle and caption ------------------------------------------------------------
+RECT = layout.RECT
+rect_re = re.compile(r'\(rectangle \(start [-\d.]+ [-\d.]+\) \(end [-\d.]+ [-\d.]+\)\n'
+                     r'\t\t\(stroke \(width 0\.3\) \(type dash\)')
+if len(rect_re.findall(src)) != 1:
+    raise SystemExit("text_edits: expected exactly one group rectangle in copperhead's form")
+src = rect_re.sub(f'(rectangle (start {RECT[0]:g} {RECT[1]:g}) (end {RECT[2]:g} {RECT[3]:g})\n'
+                  '\t\t(stroke (width 0.3) (type dash)', src)
+cap_re = re.compile(r'\n\t\(text "([^"]*)" \(at [-\d.]+ [-\d.]+ 0\)')
+if len(cap_re.findall(src)) != 1:
+    raise SystemExit("text_edits: expected exactly one group caption")
+src = cap_re.sub(lambda m: f'\n\t(text "{m.group(1)}" (at {RECT[0] + 2:g} {RECT[1] + 2:g} 0)', src)
+print(f"group rectangle: {RECT}")
+
+path.write_text(src)

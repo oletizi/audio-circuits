@@ -5,7 +5,8 @@
 #
 # It grows one block at a time, as each page is repaired (H7 module plan Task 7). Today it drafts
 # all twelve pages, checks each draft and its intent against the committed record, and repairs the
-# power page. A block not yet repaired is checked as a draft only; the root is not assembled yet.
+# power page and each Task 7b page (repair_block). A block not yet repaired is checked as a draft
+# only; the root is not assembled yet.
 #
 # Fails loudly: the work directory must be new or empty, every command's status is checked through
 # pipes (pipefail), each generated op-list must be byte-identical to the committed one, each
@@ -42,6 +43,7 @@ draft_sha() {
   esac
 }
 PAGE_POWER=906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f
+PAGE_INTERFACE=0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -125,6 +127,47 @@ python3 "$here/$b/05-text-edits.py" "$work/$b.kicad_sch" "$work/repair/$b/02-wir
 check "$b.kicad_sch" "01 to 05" "$PAGE_POWER"
 cmp -s "$work/$b.kicad_sch" "$drafted/$b.kicad_sch" || fail "the replayed $b.kicad_sch differs from the committed $drafted/$b.kicad_sch"
 echo "the replayed $b.kicad_sch is byte-identical to the committed sheet"
+
+# 2b. The blocks repaired in Task 7b, each by the shared tools (tools/page.py) and its own layout.py
+#     and 02-wire.py: ports, strokes, place, pins, wire, any private PWR_FLAGs, hierarchical labels,
+#     text edits. The ports file is generated first because layout.py may read it.
+repair_block() {
+  b="$1"
+  want="$2"
+  mkdir -p "$work/repair/$b"
+  (cd "$root" && bun "$here/tools/ports.ts" "$b") > "$work/repair/$b/ports.json" || fail "ports.ts $b failed"
+  same "$b/ports.json"
+  python3 "$here/tools/net_strokes.py" "$work/$b.kicad_sch" > "$work/repair/$b/net_strokes.json" || fail "net_strokes.py $b failed"
+  same "$b/net_strokes.json"
+  python3 "$here/tools/place.py" "$here/$b" "$work/$b.kicad_sch" > "$work/repair/$b/01-place.json" || fail "place.py $b failed"
+  same "$b/01-place.json"
+  apply "$b.kicad_sch" "$b/01-place.json"
+  python3 "$here/tools/pins.py" "$work/$b.kicad_sch" > "$work/repair/$b/pins.json" || fail "pins.py $b failed"
+  same "$b/pins.json"
+  python3 "$here/$b/02-wire.py" "$work/repair/$b/pins.json" "$work/repair/$b/ports.json" "$b.kicad_sch" \
+    "$work/repair/$b/02-wire.nets.json" > "$work/repair/$b/02-wire.json" || fail "02-wire.py $b failed"
+  same "$b/02-wire.json"
+  same "$b/02-wire.nets.json"
+  apply "$b.kicad_sch" "$b/02-wire.json"
+  if [ -f "$here/$b/03-pwr-flags.py" ]; then
+    python3 "$here/$b/03-pwr-flags.py" "$work/repair/$b/pins.json" "$b.kicad_sch" > "$work/repair/$b/03-pwr-flags.json" \
+      || fail "03-pwr-flags.py $b failed"
+    same "$b/03-pwr-flags.json"
+    apply "$b.kicad_sch" "$b/03-pwr-flags.json"
+  fi
+  (cd "$root" && bun tools/draught/hierarchical-labels.ts ops "$module" "$b" "$work/$b.kicad_sch") \
+    > "$work/repair/$b/04-hierarchical-labels.json" || fail "hierarchical-labels.ts ops $b failed"
+  same "$b/04-hierarchical-labels.json"
+  apply "$b.kicad_sch" "$b/04-hierarchical-labels.json"
+  (cd "$root" && bun tools/draught/hierarchical-labels.ts check "$module" "$b" "$work/$b.kicad_sch") \
+    || fail "block $b fails the hierarchical-label post-condition after its op-list"
+  python3 "$here/tools/text_edits.py" "$here/$b" "$work/$b.kicad_sch" "$work/repair/$b/02-wire.nets.json" \
+    "$work/repair/$b/net_strokes.json" || fail "text_edits.py $b failed"
+  check "$b.kicad_sch" "01 to 05" "$want"
+  cmp -s "$work/$b.kicad_sch" "$drafted/$b.kicad_sch" || fail "the replayed $b.kicad_sch differs from the committed $drafted/$b.kicad_sch"
+  echo "the replayed $b.kicad_sch is byte-identical to the committed sheet"
+}
+repair_block interface "$PAGE_INTERFACE"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make
