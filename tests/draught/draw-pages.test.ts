@@ -98,3 +98,40 @@ test("a one-page board's draft is byte-for-byte unchanged: the h7-carrier still 
     fs.rmSync(dir, { recursive: true, force: true })
   }
 }, 180_000)
+
+test("with the root's export declared as its netlist, the per-block check runs, agrees, and prints no NO INDEPENDENT NETLIST block", async () => {
+  const { dir, outDir } = scratch({
+    kind: "pcb",
+    sch: path.join(REPO, "tests/fixtures/two-block-board/drafted/two-block-board.kicad_sch"),
+    netlist: path.join(REPO, "tests/fixtures/two-block-board/two-block-board.net"),
+    circuit: FIXTURE,
+    export: "twoBlockBoard",
+  }, "two-block-board")
+  try {
+    const result = await runDraw({ boardDir: dir, board: "two-block-board", outDir })
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain("NO INDEPENDENT NETLIST")
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}, 120_000)
+
+test("with a declared netlist that moves one block-a pin, the per-block check refuses before drafting, naming the block", async () => {
+  const text = fs.readFileSync(path.join(REPO, "tests/fixtures/two-block-board/two-block-board.net"), "utf8")
+  // R2 pin 1 is on /a/FB; renaming that node's pin to 2 puts a second R2 pin on FB and none on GND
+  const moved = text.replace(/\(node\s+\(ref "R2"\)\s+\(pin "1"\)/, '(node (ref "R2") (pin "2")')
+  expect(moved, "the netlist edit found no R2 pin 1 node").not.toBe(text)
+  const { dir, outDir } = scratch({ kind: "pcb", circuit: FIXTURE, export: "twoBlockBoard" }, "two-block-board")
+  const netlist = path.join(dir, "moved.net")
+  fs.writeFileSync(netlist, moved)
+  fs.writeFileSync(path.join(dir, "perfboard.json"), JSON.stringify({ kind: "pcb", sch: path.join(dir, "x.kicad_sch"), netlist, circuit: FIXTURE, export: "twoBlockBoard" }))
+  try {
+    const result = await runDraw({ boardDir: dir, board: "two-block-board", outDir })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.drew).toBe(false)
+    expect(result.stderr).toContain("block a:")
+    expect(fs.existsSync(path.join(outDir, "a", "a.kicad_sch"))).toBe(false)
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
