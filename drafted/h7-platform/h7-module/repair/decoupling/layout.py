@@ -6,7 +6,7 @@ computed from the draft.
 Two bands, one above the other.
 
 - The upper band: a 3V3_D row along the top and a GND row under it, each from its hierarchical
-  label on the west edge. C1 to C18, in reference order west to east, 400 mil apart, each stand
+  label on the west edge. C1 to C18, in reference order west to east, 450 mil apart, each stand
   between them, pin 1 up to 3V3_D and pin 2 down to GND.
 - The lower band: the bench pads and VCAP. A VCAP row from its hierarchical label on the west edge
   takes C19 and C20, each hanging from it to a second GND row, and ends in TP1, standing up from the
@@ -26,26 +26,27 @@ Y_GND = 3200      # the upper GND row
 Y_LOWER = 4000    # the VCAP, VREF_A and BOOT0 rows
 Y_GND2 = 4700     # the lower GND row
 X_WEST = 1600     # 3V3_D's, GND's and VCAP's labels
-X_VREF = 4000     # VREF_A's label
-X_BOOT0 = 5800    # BOOT0's label
-X_EAST = 9200     # the GND rise joining the two GND rows
+X_VREF = 4300     # VREF_A's label
+X_BOOT0 = 6200    # BOOT0's label
+X_EAST = 9900     # the GND rise joining the two GND rows
 
 # ref: (x, y, rotation, mirror). Device:C at rotation 0: pin 1 north, pin 2 south, 150 mil.
 # Connector:TestPoint: its one pin at the origin, the body 130 mil north of it at rotation 0 and
 # south at 180.
 PARTS = {
-    **{f"C{n}": (2000 + 400 * (n - 1), 2800, 0, "none") for n in range(1, 19)},
+    **{f"C{n}": (2000 + 450 * (n - 1), 2800, 0, "none") for n in range(1, 19)},
     "C19": (2000, 4300, 0, "none"),
-    "C20": (2400, 4300, 0, "none"),
-    "TP1": (2800, Y_LOWER, 0, "none"),
-    "TP2": (3200, Y_GND2, 180, "none"),
-    "TP3": (4400, Y_LOWER, 0, "none"),
-    "TP4": (4800, Y_GND2, 180, "none"),
-    "TP5": (6200, Y_LOWER, 0, "none"),
+    "C20": (2500, 4300, 0, "none"),
+    "TP1": (3000, Y_LOWER, 0, "none"),
+    "TP2": (3500, Y_GND2, 180, "none"),
+    "TP3": (4700, Y_LOWER, 0, "none"),
+    "TP4": (5200, Y_GND2, 180, "none"),
+    "TP5": (6600, Y_LOWER, 0, "none"),
 }
-# Offsets in mm. Each capacitor's fields east of its body. A test point's east of its body,
-# Reference over Value: above its row when it stands up, below its row when it hangs down (the swd
-# page's placement).
+# Offsets in mm. Each capacitor's fields east of its body; the capacitors stand 450 mil apart (C19
+# and C20 500) so that a value as long as C15's "4.7uF" clears the next one's leads. A test point's
+# east of its body, Reference over Value: above its row when it stands up, below its row when it
+# hangs down (the swd page's placement).
 UP = fields((1.524, -4.445, "left"), (1.524, -2.54, "left"))
 DOWN = fields((1.524, 2.54, "left"), (1.524, 4.445, "left"))
 FIELDS = {
@@ -56,7 +57,7 @@ FIELDS = {
     "TP4": DOWN,
     "TP5": UP,
 }
-RECT = (27.94, 50.8, 241.3, 132.08)
+RECT = (27.94, 50.8, 256.54, 132.08)
 TITLE = "h7-module: decoupling"
 PWR_FLAGS = 0
 # VREF_A and BOOT0 each reach one pin on this page (TP3's, TP5's), so copperhead drafted no wire for

@@ -52,6 +52,7 @@ PAGE_ID_STRAP=7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09
 PAGE_QSPI=a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1
 PAGE_VDDA=7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444
 PAGE_SDRAM=0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf
+PAGE_DECOUPLING=8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -185,6 +186,7 @@ repair_block qspi "$PAGE_QSPI"
 # Task 7c: the same steps for vdda, sdram and decoupling.
 repair_block vdda "$PAGE_VDDA"
 repair_block sdram "$PAGE_SDRAM"
+repair_block decoupling "$PAGE_DECOUPLING"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

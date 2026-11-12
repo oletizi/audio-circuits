@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "decoupling.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "c6602fab-94e4-5311-8fb0-1d12fa5a0477"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    1600,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "866304dc-f239-573f-a2b7-e50d813fd419"
+  },
+  {
+   "op": "add_net_label",
+   "name": "BOOT0",
+   "at": [
+    6200,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b11ff119-445e-5655-bd3d-3132223d4867"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1600,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "935dab1e-f058-57c2-94cc-68ad1d8f6f53"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VCAP",
+   "at": [
+    1600,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e3da6082-8f15-5d71-95a6-5cd59183d7ae"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    4300,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

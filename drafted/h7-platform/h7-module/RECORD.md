@@ -27,6 +27,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `qspi.kicad_sch` | block qspi | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 | `vdda.kicad_sch` | block vdda | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
 | `sdram.kicad_sch` | block sdram | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
+| `decoupling.kicad_sch` | block decoupling | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -43,6 +44,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
 | vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 | sdram | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
+| decoupling | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
 
 ## The drafts every repair starts from
 
@@ -931,4 +933,70 @@ each reach one of U3's pins.
 - U3's pin 40 (NC) carries a no-connect.
 - U3's Reference and Value are centred above its body, under the 3V3_D row; R9's and each
   capacitor's are east of its body.
+- Every wire carries copperhead's default stroke.
+
+## decoupling: the MCU's decoupling and bench pads (Task 7c)
+
+**Status: UNREVIEWED.** sha256 `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb`.
+Render: `decoupling.svg` beside it.
+
+Repaired by the Task 7b steps, with `repair/decoupling/layout.py` and `repair/decoupling/02-wire.py`;
+`repair/replay.sh` runs it through `repair_block`.
+
+The block: `circuits/h7-platform/module/mcu-decoupling.ts`, 25 parts (C1 to C20 `Device:C`, TP1 to
+TP5 `Connector:TestPoint`), ports 3V3_D, BOOT0, GND, VCAP and VREF_A (BOOT0 reaches one pin, TP5's;
+VREF_A one pin, TP3's). **The page fits US Letter**: no overshoot to record.
+
+### The rulings this page rests on
+
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D, GND,
+  VCAP, VREF_A and BOOT0 are wires ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input (every pin is passive), so ERC needs none here.
+  `pwr-flag-homes.ts` is unchanged. VCAP is not in it: U1's VCAP pins, on the mcu page, are power
+  outputs (the table's own comment).
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  no entry needed; the page has no input pin.
+- The stroke of VREF_A and BOOT0, which the draft drew no wire for: copperhead's stroke for a net of
+  no colour family, which every net the draft draws here carries (`decoupling/layout.py`,
+  `UNDRAWN_STROKES`). A drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| ports on the wrong net (CR-MODULE-PORT-LABEL-CHECK) | 5 of 5 (no net `/<port>`; BOOT0 and VREF_A unwired) | 0 of 5 |
+| exported components, nets, net members | 25, 5, 45 | 25, 5, 45 |
+| exported nets carrying a model net name | 3 of 5 (3V3_D, GND, VCAP) | 5 of 5 |
+| ERC, the sheet alone | 2 errors (`pin_not_connected` 2: TP3's and TP5's pins, unwired), 0 warnings | 5 errors (`pin_not_connected` 5: each hierarchical label has no parent sheet), 2 warnings (`isolated_pin_label` 2: VREF_A's and BOOT0's labels each meet one pin) |
+| ERC under a one-block root, `/decoupling/` | 2 errors (`pin_not_connected` 2), 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 7 errors (`hier_label_mismatch` 5, `label_dangling` 2), 3 warnings | 1 error (`label_dangling` 1: VCAP's stub label is alone with one block, and carries no flag, since VCAP is in no flag table), 2 warnings (`isolated_pin_label` 2: BOOT0's stub label and the sheet's BOOT0 label, each meeting one pin) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 6 | 0 of 40 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 31 on 3 nets (31 global) | 5 on 5 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 31 | 0 of 5 |
+| symbols (parts, power symbols, PWR_FLAGs) | 25 (25, 0, 0) | 25 (25, 0, 0) |
+| placed pins | 45 | 45 |
+| wires, total length | 59, 389.89 mm | 87, 958.85 mm |
+| wire corners | 14 | 4 |
+| junctions | 6 | 40 |
+
+### What the page shows, as observations
+
+- Two bands. The upper band: a 3V3_D row along the top and a GND row under it, each from its
+  hierarchical label on the west edge; C1 to C18 stand between them in reference order, west to
+  east, pin 1 up to 3V3_D and pin 2 down to GND.
+- The lower band: a VCAP row from its hierarchical label on the west edge, under GND's, with C19 and
+  C20 hanging from it and TP1 standing up at its east end. East of it, VREF_A's hierarchical label
+  and a short row to TP3, standing up; then BOOT0's hierarchical label and a short row to TP5,
+  standing up.
+- A second GND row under the lower band takes C19's and C20's feet and TP2 and TP4, which hang down
+  from it, TP2 east of TP1's column and TP4 east of TP3's. It runs east and rises at the east edge to
+  the upper GND row.
+- Each capacitor's Reference and Value are east of its body; each test point's are east of its
+  body, above its row when it stands up and below its row when it hangs down.
 - Every wire carries copperhead's default stroke.

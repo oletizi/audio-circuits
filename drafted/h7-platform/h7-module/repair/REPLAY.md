@@ -19,6 +19,7 @@ is not assembled yet.
 | end: `qspi.kicad_sch` | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 | end: `vdda.kicad_sch` (Task 7c) | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
 | end: `sdram.kicad_sch` (Task 7c) | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
+| end: `decoupling.kicad_sch` (Task 7c) | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
 
 ## Replay
 
@@ -62,7 +63,7 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
 
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-12 into a new directory and
-reached every sha256.
+reached every sha256 (again after Task 7c, with its three pages).
 
 Then, to check and look at a page:
 
