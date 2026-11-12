@@ -1,0 +1,49 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "usb_dfu.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "e1f56951-fb1b-5f9f-abde-7bb95f71358a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DFU_USB_DM",
+   "at": [
+    8100,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0e6b6aea-4b3a-5796-8134-0522da6f5a1e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DFU_USB_DP",
+   "at": [
+    8100,
+    4700
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b9242f2d-6712-5955-a6ad-e4e181912baf"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    3300,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

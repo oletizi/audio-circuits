@@ -1,0 +1,32 @@
+[
+ {
+  "name": "DFU_USB_DM",
+  "pins": [
+   "U6.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "DFU_USB_DP",
+  "pins": [
+   "U6.6"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C49.2",
+   "C50.2",
+   "J4.A1",
+   "J4.A12",
+   "J4.B1",
+   "J4.B12",
+   "R13.2",
+   "R14.2",
+   "R15.2",
+   "U6.2"
+  ],
+  "drafted": true
+ }
+]

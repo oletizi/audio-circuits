@@ -1,0 +1,9 @@
+{
+ "CC1": "(stroke (width 0.254) (type default))",
+ "CC2": "(stroke (width 0.254) (type default))",
+ "DFU_CONN_DM": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "DFU_CONN_DP": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "DFU_VBUS": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "SHIELD": "(stroke (width 0.254) (type default))"
+}

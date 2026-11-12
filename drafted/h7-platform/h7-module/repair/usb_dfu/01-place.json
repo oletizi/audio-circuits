@@ -1,0 +1,307 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "usb_dfu.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "ff00e519-cff4-56e5-a2c6-97bce8bbbd03"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8004637f-47df-526a-9d5f-f8a21ed4b357"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6cd7f037-42e7-50ae-93f5-66f47cf788fc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "77fdf54f-679b-556c-8cdc-e9309ced77ed"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5fadd41d-8eb7-59b8-8283-8567e1adaf5c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6c13aa57-e262-5252-bd8f-5078361c5323"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "69d56b3d-dfcd-5bda-a436-f3bb6a9d885c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1187ce6a-66b4-5868-8e2c-ea97703adb18"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4ec2cda2-f414-5ff5-b3a0-ed6d024ce427"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c5523731-eabf-5c06-942f-389d0c113577"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c7b3d568-a854-5cf6-9e4d-9fe46fec044f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0b4cf3f5-9f61-5209-96b1-25816bc38236"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "44eea594-bdaf-5d47-8cf8-70bc9c60ba7e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fffbaae6-b9be-504e-b0c3-9b11f991846c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "00b4cdcc-bfb7-5edb-880e-d9caeb1da715"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2f641f8d-0f68-576a-b6b6-6ca3cb594ecd"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "267e4f8c-02e2-56c2-9950-0d7fd1acc443"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f34d56c7-a65c-5fef-891d-61efcaaafe76"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "43b036ed-99b3-5eab-bd5a-70ac98d130ad"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a888f285-fadf-5752-9296-0db45a729685"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "05a656c3-0c78-59a2-9772-f0483b77b19a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fba8c5f1-9d9c-5922-b5a6-041f4a026a46"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7e98c715-ff19-5850-9c9b-3f3e88ef0c40"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "140589a2-db4c-5543-8858-9c5483ac1d23"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8988431b-1567-5abd-9cd8-15b58e64806a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ef5906f2-cf86-5548-a7fb-c48273653edc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f9f645c3-17da-5fee-a196-d1483862f654"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "049a308b-bc9f-5f09-b0ea-f3a0669fac32"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e1772f1f-1da8-580b-ac44-07282817c43c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "83162508-5d17-5d47-b8f4-6a92bda65bf0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8924457e-1f9a-5f99-8c7c-56d4944824b5"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cbc28aac-e655-5c3f-b734-d00632606756"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "54ac7083-a6e2-5150-a07d-8da8ac6b85ad"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "08dc5f6b-8663-5c8a-b329-2579bbcb0a9d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c30f1774-54f3-529b-8384-02c43730ef86"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "79432308-89d8-5a97-b020-076826c83d59"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2f935327-6f1b-5601-88d4-d43a84b838c3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a275f895-3e98-5bc6-a6f8-b2d1f49e06fd"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2b9a5557-2ec8-5965-aff7-72953e8760e6"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7133d7ec-cb7c-5657-b7bf-4671792cdec4"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "83b0914c-0e7e-5da5-a002-5511b338eb88"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "02c2fb39-ff05-5955-8658-105d52c708b3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "70f38535-7647-55f7-ba11-93f434d9993a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "868473a6-20df-5769-b935-8764b5a06651"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e6903049-3877-5f89-88fc-5b19f747e46f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7df24899-2be3-5118-8d1e-e88fabdd1abf"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "efd56f6e-820a-50aa-b5fd-d8eb68c720b3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8bb054be-6705-504d-8218-24405c42b471"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "11a2e4a1-7d8a-51cd-81fe-fed6df86b126"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "acb1aaaf-e812-588a-a58c-68bf4726bb30"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "06fdf994-385a-5ee3-bf47-7e2c635f4d68"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3166d961-eb25-513f-815d-0082594d36a3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b4190363-282c-554c-963d-66cc869c4661"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "aa544b7b-d0f7-56e6-850f-8d500bcffb11"
+  },
+  {
+   "op": "move_component",
+   "designator": "J4",
+   "x_mil": 4700,
+   "y_mil": 4300
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "J4",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R13",
+   "x_mil": 5700,
+   "y_mil": 3900
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R13",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R14",
+   "x_mil": 6400,
+   "y_mil": 4000
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R14",
+   "rotation": 90,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C49",
+   "x_mil": 7100,
+   "y_mil": 3850
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C49",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "U6",
+   "x_mil": 7500,
+   "y_mil": 4700
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "U6",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R15",
+   "x_mil": 3900,
+   "y_mil": 5500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R15",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C50",
+   "x_mil": 4200,
+   "y_mil": 5500
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C50",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

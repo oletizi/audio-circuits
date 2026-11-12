@@ -22,6 +22,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
 | `reset_boot.kicad_sch` | block reset_boot | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
 | `swd.kicad_sch` | block swd | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
+| `usb_dfu.kicad_sch` | block usb_dfu | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -33,6 +34,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | clock | UNREVIEWED | `clock.svg` |
 | reset_boot | UNREVIEWED | `reset_boot.svg` |
 | swd | UNREVIEWED | `swd.svg` |
+| usb_dfu | UNREVIEWED | `usb_dfu.svg` |
 
 ## The drafts every repair starts from
 
@@ -488,3 +490,78 @@ TP10 `Connector:TestPoint`), ports 3V3_D, GND, NRST, SWCLK and SWDIO.
 - J3's Reference and Value are above its body, west of the VTref rise; each test point's are east
   of its body.
 - Every wire carries copperhead's default stroke.
+
+## usb_dfu: the ROM DFU USB socket
+
+**Status: UNREVIEWED.** sha256 `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f`.
+Render: `usb_dfu.svg` beside it.
+
+The block: `circuits/h7-platform/module/usb-dfu.ts`, 7 parts (J4
+`Connector:USB_C_Receptacle_USB2.0_16P`, U6 `Power_Protection:USBLC6-2SC6`, C49, R13, R14, R15, C50),
+ports DFU_USB_DM, DFU_USB_DP and GND.
+
+### The rulings this page rests on
+
+- [CR-MODULE-USB-ESD](../../../docs/h7-platform/decisions.md#cr-module-usb-esd): U6 between the
+  socket and the MCU, socket side pins 1 (D+) and 3 (D-), MCU side pins 6 and 4; pin 5 on the
+  socket's VBUS and nothing else, with C49 (100 nF) from it to GND next to U6.
+- [CR-MODULE-USB-C-PINS](../../../docs/h7-platform/decisions.md#cr-module-usb-c-pins): J4's GND pins
+  to GND, A8 and B8 (SBU) no-connects, the shield to GND through R15 (1M) parallel with C50
+  (4700pF).
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): GND is a wire
+  ending in its hierarchical label.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input (U6's pin 5 and J4's VBUS are passive in their
+  symbols), so ERC needs none, on DFU_VBUS or elsewhere.
+- The stroke of DFU_USB_DM and DFU_USB_DP, which the draft drew no wire for: the DFU family's blue,
+  by copperhead's own family rule (`usb_dfu/layout.py`, `UNDRAWN_STROKES`, citing
+  `draughting/copperhead/src/kicad/draft/engine.ts`). A drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 7, 11, 33 | 7, 11, 33 |
+| exported nets carrying a model net name | 7 of 11 | 3 of 11 (/DFU_USB_DM, /DFU_USB_DP, /GND; private nets are unlabelled wire) |
+| ERC, the sheet alone | 2 errors (`pin_not_connected` 2: U6's pins 4 and 6, unwired), 0 warnings | 3 errors (`pin_not_connected` 3: each hierarchical label has no parent sheet), 3 warnings (`isolated_pin_label` 2, `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/usb_dfu/` | 2 errors (`pin_not_connected` 2), 1 warning (`same_local_global_label`) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 5 errors (`hier_label_mismatch` 3, `label_dangling` 2), 2 warnings | 0 errors, 5 warnings (`isolated_pin_label` 4, `lib_symbol_mismatch` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings | 0 | 2: at (170.18, 88.9), GND's drop over the VBUS row; at (170.18, 114.3), D-'s descent over D+'s row |
+| T-meetings | 0 | 0 |
+| orphan junctions, of total | 0 of 2 | 0 of 10 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 13 on 7 nets (8 global) | 3 on 3 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 13 | 0 of 9 |
+| symbols (parts, power symbols, PWR_FLAGs) | 7 (7, 0, 0) | 7 (7, 0, 0) |
+| placed pins | 33 | 33 |
+| wires, total length | 37, 303.53 mm | 43, 650.24 mm |
+| wire corners | 12 | 14 |
+| junctions | 2 | 10 |
+
+**Why the page has two crossings and a long GND row, as the layout records it** (observations of
+the symbols, not a judgement of the page). J4 puts D- above D+ and U6 puts D+ (pin 1) above D-
+(pin 3), so the two D lines change order once between the parts. CC1 and CC2 leave J4 between VBUS
+above and the D lines below, and VBUS ends on U6's top pin, so the CC rows are enclosed by VBUS, U6
+and the D lines; GND reaches R13, R14 and C49 there by one drop from a GND row along the top of the
+page, which crosses VBUS once and joins the bottom GND row down J4's west side.
+
+### What the page shows, as observations
+
+- J4 on the west, its pins facing east; U6 east of it; DFU_USB_DP and DFU_USB_DM leave U6's east
+  side (pins 6 and 4) to their hierarchical labels on the east edge.
+- J4's stacked VBUS pins rise to a row along the top, which runs east past C49 and down to U6's pin 5.
+  C49 hangs from it next to U6.
+- CC1 and CC2 run east along their rows to R13 and R14, lying along them, R14 east of R13.
+- J4's two D- pins join and run east, then down across D+'s row to U6's pin 3; its two D+ pins join
+  and run east, then down to U6's pin 1.
+- GND's hierarchical label is at the top-left. Its row runs east along the top of the page and drops
+  across the VBUS row to R13's and R14's east ends and C49's foot; from the label it also runs down
+  J4's west side to a bottom row that takes R15, C50, J4's GND pins and U6's pin 2.
+- J4's SH drops to a shield row with R15 and C50 hanging from it to the bottom GND row.
+- J4's A8 and B8 carry no-connects.
+- R13's fields are above it and R14's below it; the others' are beside or above their bodies.
+- Wires on DFU_VBUS, the D lines and DFU_USB_DM/DP carry copperhead's blue stroke; the others its
+  default.
