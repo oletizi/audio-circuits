@@ -5,8 +5,8 @@
 #
 # It grows one block at a time, as each page is repaired (H7 module plan Task 7). Today it drafts
 # all twelve pages, checks each draft and its intent against the committed record, and repairs the
-# power page and each Task 7b and Task 7c page (repair_block). A block not yet repaired is checked as a draft
-# only; the root is not assembled yet.
+# power page and each Task 7b, Task 7c and Task 7d page (repair_block), which is every block; the
+# root is not assembled yet.
 #
 # Fails loudly: the work directory must be new or empty, every command's status is checked through
 # pipes (pipefail), each generated op-list must be byte-identical to the committed one, each
@@ -53,6 +53,7 @@ PAGE_QSPI=a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1
 PAGE_VDDA=7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444
 PAGE_SDRAM=0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf
 PAGE_DECOUPLING=8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb
+PAGE_MCU=c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -187,6 +188,8 @@ repair_block qspi "$PAGE_QSPI"
 repair_block vdda "$PAGE_VDDA"
 repair_block sdram "$PAGE_SDRAM"
 repair_block decoupling "$PAGE_DECOUPLING"
+# Task 7d: the same steps for mcu.
+repair_block mcu "$PAGE_MCU"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

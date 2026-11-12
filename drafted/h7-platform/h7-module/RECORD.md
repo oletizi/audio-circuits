@@ -28,8 +28,9 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `vdda.kicad_sch` | block vdda | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
 | `sdram.kicad_sch` | block sdram | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
 | `decoupling.kicad_sch` | block decoupling | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
+| `mcu.kicad_sch` | block mcu | `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981` |
 
-The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
+Every block sheet is drawn. The root sheet and its `.kicad_pro` are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
 
 | page | status | render |
@@ -45,6 +46,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 | sdram | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
 | decoupling | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
+| mcu | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, `pin_to_pin` between U1's two VCAP pins, awaiting a controller ruling (see its section) (Task 7d) | `mcu.svg` |
 
 ## The drafts every repair starts from
 
@@ -1000,3 +1002,126 @@ VREF_A one pin, TP3's). **The page fits US Letter**: no overshoot to record.
 - Each capacitor's Reference and Value are east of its body; each test point's are east of its
   body, above its row when it stands up and below its row when it hangs down.
 - Every wire carries copperhead's default stroke.
+
+## mcu: the STM32H743 (Task 7d)
+
+**Status: UNREVIEWED.** sha256 `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981`.
+Render: `mcu.svg` beside it.
+
+**`verify.sh` exits 1 on this page, on one ERC error, awaiting a controller ruling.** The model
+comparison gives 0 disagreements and 0 of 90 ports on the wrong net. Under the one-block root, ERC
+reports one error on `/mcu/`: `pin_to_pin`, *"Pins of type Power output and Power output are
+connected"*, on *"Symbol U1 Pin 81 [VCAP, Power output, Line]"* and *"Symbol U1 Pin 125 [VCAP, Power
+output, Line]"*. The stock symbol `MCU_ST_STM32H7:STM32H743IITx` types both VCAP pins `power_out`,
+and the model joins them on one net, VCAP (`circuits/h7-platform/module/mcu.ts:37`, *"VCAP1 pin 81
+joined to VCAP2 pin 125"*, from `processor-and-memory.md:136` and CORE-04). The draft carries the same
+error, alone and under the one-block root. The page cannot remove it: no wiring of the two pins on one
+net avoids it, and the model, the symbol and the ERC settings are not the page's to change. The real
+root (Task 7 step 4) holds this sheet, so it will report the same error unless the ruling says
+otherwise. Options for the ruling, none tried here: a project-level ERC exclusion of this one
+violation, carried in the root's `.kicad_pro` and in `verify.sh` as a declared table like
+`cross-page-drivers.ts`; a project symbol (design change C4) typing the VCAP pins otherwise, which
+changes the model's symbol; or a project ERC pin map treating power output to power output as
+allowed, which applies to every net in the project.
+
+The block: `circuits/h7-platform/module/mcu.ts`, 1 part (U1 `MCU_ST_STM32H7:STM32H743IITx`, 176
+pins), 90 ports: 3V3_D (17 pins), GND (12), VCAP (2) and VREF_A (2), and 86 that each reach one pin.
+57 pins are NC.
+
+### The rulings this page rests on
+
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D, GND,
+  VREF_A, VSSA and VCAP are wires ending in their hierarchical labels; no power symbol.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. U1's VDD/VBAT/VDD33_USB (3V3_D), VSS (GND), VDDA (VREF_A) and VSSA are power inputs, so
+  the sheet alone reports `power_pin_not_driven` on those four nets; under the one-block root the
+  stubs carry the flags `pwr-flag-homes.ts` homes elsewhere (GND on power; 3V3_D, VREF_A, VSSA on the
+  root), which clears all four. The table is unchanged: ERC needed no net it lacks.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  **2 entries added to `repair/tools/cross-page-drivers.ts`**, for the two `pin_not_driven` errors the
+  page reported under the one-block root before them, on *"Symbol U1 Pin 31 [NRST, Input, Line]"* and
+  *"Symbol U1 Pin 166 [BOOT0, Input, Line]"*:
+  - NRST -> reset_boot, U5 pin 2 (`~{RESET}`), the supervisor's open-drain output
+    (`circuits/h7-platform/module/reset-boot.ts:27`; U5's symbol `Power_Supervisor:TPS3839DBZ` types
+    pin 2 `output`).
+  - BOOT0 -> reset_boot, SW2 pin 1, the BOOT button to VDD (`reset-boot.ts:35`). R12, the pull-down,
+    is the other passive pin on BOOT0 on that page; the table's model check needs a symbol pin
+    number, and the model keys a resistor's pins `a`/`b`, so R12 cannot be named. Either is a passive
+    pin and serves the stand-in alike; the real root must clear BOOT0 with its real pins.
+
+  Every other U1 pin on a port is bidirectional (the GPIOs), a power pin, or an input on a net whose
+  stub carries the root's flag (VREF+ on VREF_A, PDR_ON on 3V3_D). U1 is the driver of the FLASH_CLK
+  and 22 SDRAM entries, so its one-block root places no stand-in for them. The two entries put a
+  stand-in on NRST's stub when swd is checked and on BOOT0's when decoupling is checked; both pages
+  still verify with 0 errors and 0 warnings on their sheets, same sha256.
+- **Unused GPIOs are NC (CORE-27), as the model holds them.** Each of the 57 NC pins in the intent
+  carries a no-connect and no wire; no NC pin is on a net.
+- The stroke of the 86 one-pin nets, which the draft drew no wire for: copperhead's default stroke,
+  which every net the draft draws here carries (`mcu/layout.py`, `UNDRAWN_STROKES`; the qspi and sdram
+  pages' rule). A drawing choice, not a transcription.
+
+### U1's rotation, and the paper, as measurements
+
+**U1 stands at rotation 90 and the page fits the US Letter inner frame.** At rotation 0, U1 alone,
+pin end to pin end, is 231.14 mm tall: taller than the sheet itself (215.9 mm), so part of it lies off
+the paper and no render shows it. A rotation-0 layout was built and measured (the same steps, kept in
+scratch, not committed): `paper_fit.py` gave **overshoot south 72.983 mm** and the 150 dpi render
+stopped at the paper's edge, through the symbol's lower pins. At rotation 90 the symbol is 231.14 mm
+wide and 71.12 mm tall; the page's content extent is x 13.97 to 265.43 mm, y 33.02 to 185.42 mm,
+inside a frame x 11.980 to 267.377 mm, y 11.980 to 203.877 mm (**fits: yes**). The draft overshot
+south by 61.553 mm. Paper, symbol and block are unchanged: US Letter, one 176-pin unit, one page. The
+cost of rotation 90: every one-pin label and every side pin's name and number on U1 reads vertically.
+
+### Measurements, before (the draft) and after (this page)
+
+`verify.sh` stops at the ERC failure, so the page column's crossings, junction, label, paper and
+counts rows come from the same steps run without stopping; the draft's from the same steps on the
+draft. None of these is a judgement of the page.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| ports on the wrong net (CR-MODULE-PORT-LABEL-CHECK) | 88 of 90 | 0 of 90 |
+| exported components, nets, net members | 1, 147, 176 | 1, 147, 176 |
+| exported nets carrying a model net name | 4 of 147 (/3V3_D, /VCAP, GND, VREF_A) | 90 of 147 (every port; the other 57 are the NC pins) |
+| ERC, the sheet alone | 93 errors (`pin_not_connected` 86: the one-pin signals, unwired; `pin_not_driven` 2; `pin_to_pin` 1; `power_pin_not_driven` 4), 1 warning (`ground_pin_not_ground` 1) | 97 errors (`pin_not_connected` 90: hierarchical labels with no parent sheet; `pin_not_driven` 2, NRST and BOOT0; `pin_to_pin` 1, VCAP; `power_pin_not_driven` 4, on 3V3_D, GND, VREF_A, VSSA), 87 warnings (`isolated_pin_label` 86, `ground_pin_not_ground` 1) |
+| ERC under a one-block root, `/mcu/` (the two driver entries in the table) | 93 errors (`pin_not_connected` 86, `pin_not_driven` 2, `pin_to_pin` 1, `power_pin_not_driven` 4), 3 warnings (`ground_pin_not_ground` 1, `same_local_global_label` 2) | **1 error (`pin_to_pin` 1: U1 pins 81 and 125, VCAP, see above)**, 1 warning (`ground_pin_not_ground` 1) |
+| ERC under a one-block root, `/mcu/`, before the two driver entries | not run | 3 errors (`pin_not_driven` 2: U1 pins 31 NRST and 166 BOOT0; `pin_to_pin` 1), 1 warning |
+| ERC under a one-block root, `/` | 174 errors (`hier_label_mismatch` 90, `label_dangling` 84), 6 warnings | 1 error (`label_dangling` 1: VCAP's stub label, alone with one block and in no flag table), 166 warnings (`isolated_pin_label` 166) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings | 1, at (176.53, 48.26) | 1, at (21.59, 160.02): the VREF_A row over the 3V3_D bus (`mcu/layout.py` says why two nets must cross once) |
+| T-meetings | 120 | 0 |
+| orphan junctions, of total | 0 of 1 | 0 of 18 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 15; 120 | 0; 0 |
+| labels | 5 on 4 nets (3 global) | 90 on 90 nets, all hierarchical |
+| no-connects | 57 | 57 |
+| paper fit (US Letter) | overshoot south 61.553 mm | fits |
+| wire groups with more than one stroke | 0 of 5 | 0 of 90 |
+| symbols (parts, power symbols, PWR_FLAGs) | 1 (1, 0, 0) | 1 (1, 0, 0) |
+| placed pins | 176 | 176 |
+| wires, total length | 41, 722.63 mm | 133, 1059.18 mm |
+| wire corners | 4 | 7 |
+| junctions | 1 | 18 |
+
+**`ground_pin_not_ground`** (warning), on both: *"Pin VSSA not connected to ground net"*, U1 pin 37.
+The model puts pin 37 on its own net, VSSA (`module/mcu.ts`); KiCad warns because the net is not named
+as a ground. A warning, so it decides nothing here; recorded because the real root will carry it too.
+
+### What the page shows, as observations
+
+- U1 lies across the page at rotation 90, its body a wide rectangle; the group rectangle and its
+  caption enclose it and every label.
+- The north face carries U1's former east pins, PA0 at the west end to PE15 at the east end; the south
+  face its former west pins, NRST at the west end to VCAP at the east end. Each one-pin signal runs
+  straight up or down by one short stub to its hierarchical label, which reads vertically.
+- Each NC pin carries a no-connect cross at its end.
+- The west face carries the 17 supply pins, VDDA at the north end and VBAT at the south end. The 16
+  3V3_D pins run west to a vertical 3V3_D bus, which runs south under the bottom labels, east under
+  PDR_ON and up to it; 3V3_D's label stands at the foot of the bus. VDDA runs west past the bus's north
+  end to a VREF_A bus farther west, which runs south, east under VREF+ and up to it, crossing the 3V3_D
+  bus once; VREF_A's label stands at its foot.
+- VCAP's two pins, at the east end of the south face, meet at a tee under the body and run down to
+  VCAP's label.
+- The east face carries VSSA and the stacked VSS point (one pin shown, 14); each runs east 100 mil
+  and turns, VSSA up to its label, GND down to its label.
+- U1's Reference and Value are centred in the body. Every wire carries copperhead's default stroke.

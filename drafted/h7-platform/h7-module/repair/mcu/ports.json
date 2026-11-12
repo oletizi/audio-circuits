@@ -1,0 +1,661 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "U1.103",
+   "U1.114",
+   "U1.127",
+   "U1.136",
+   "U1.149",
+   "U1.15",
+   "U1.159",
+   "U1.171",
+   "U1.172",
+   "U1.23",
+   "U1.36",
+   "U1.49",
+   "U1.6",
+   "U1.62",
+   "U1.72",
+   "U1.82",
+   "U1.91"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "BOOT0",
+  "pins": [
+   "U1.166"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_BCK",
+  "pins": [
+   "U1.42"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_DIN",
+  "pins": [
+   "U1.99"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_DOUT",
+  "pins": [
+   "U1.40"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_LRCK",
+  "pins": [
+   "U1.152"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "DFU_USB_DM",
+  "pins": [
+   "U1.122"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "DFU_USB_DP",
+  "pins": [
+   "U1.123"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXPR_DETECT",
+  "pins": [
+   "U1.50"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXPR_TIP",
+  "pins": [
+   "U1.54"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXP_I2C_SCL",
+  "pins": [
+   "U1.167"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXP_I2C_SDA",
+  "pins": [
+   "U1.168"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_CLK",
+  "pins": [
+   "U1.28"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO0",
+  "pins": [
+   "U1.26"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO1",
+  "pins": [
+   "U1.27"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO2",
+  "pins": [
+   "U1.25"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_IO3",
+  "pins": [
+   "U1.24"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FLASH_NCS",
+  "pins": [
+   "U1.79"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FSW1",
+  "pins": [
+   "U1.144"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FSW2",
+  "pins": [
+   "U1.154"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "U1.102",
+   "U1.113",
+   "U1.126",
+   "U1.135",
+   "U1.14",
+   "U1.148",
+   "U1.158",
+   "U1.22",
+   "U1.48",
+   "U1.61",
+   "U1.71",
+   "U1.90"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "HSE_IN",
+  "pins": [
+   "U1.29"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "HSE_OUT",
+  "pins": [
+   "U1.30"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "HW_REV",
+  "pins": [
+   "U1.51"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "LED1",
+  "pins": [
+   "U1.117"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "LED2",
+  "pins": [
+   "U1.118"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_RX",
+  "pins": [
+   "U1.165"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_TX",
+  "pins": [
+   "U1.164"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MODULE_ID_STRAP",
+  "pins": [
+   "U1.34"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "NRST",
+  "pins": [
+   "U1.31"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS1",
+  "pins": [
+   "U1.32"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS2",
+  "pins": [
+   "U1.47"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS3",
+  "pins": [
+   "U1.57"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS4",
+  "pins": [
+   "U1.53"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS5",
+  "pins": [
+   "U1.52"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS6",
+  "pins": [
+   "U1.33"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "RELAY_EN",
+  "pins": [
+   "U1.153"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A0",
+  "pins": [
+   "U1.16"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A1",
+  "pins": [
+   "U1.17"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A10",
+  "pins": [
+   "U1.66"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A11",
+  "pins": [
+   "U1.67"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A12",
+  "pins": [
+   "U1.106"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A2",
+  "pins": [
+   "U1.18"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A3",
+  "pins": [
+   "U1.19"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A4",
+  "pins": [
+   "U1.20"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A5",
+  "pins": [
+   "U1.21"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A6",
+  "pins": [
+   "U1.60"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A7",
+  "pins": [
+   "U1.63"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A8",
+  "pins": [
+   "U1.64"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A9",
+  "pins": [
+   "U1.65"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_BA0",
+  "pins": [
+   "U1.108"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_BA1",
+  "pins": [
+   "U1.109"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_CKE",
+  "pins": [
+   "U1.43"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_CLK",
+  "pins": [
+   "U1.112"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D0",
+  "pins": [
+   "U1.104"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D1",
+  "pins": [
+   "U1.105"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D10",
+  "pins": [
+   "U1.76"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D11",
+  "pins": [
+   "U1.77"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D12",
+  "pins": [
+   "U1.78"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D13",
+  "pins": [
+   "U1.96"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D14",
+  "pins": [
+   "U1.97"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D15",
+  "pins": [
+   "U1.98"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D2",
+  "pins": [
+   "U1.142"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D3",
+  "pins": [
+   "U1.143"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D4",
+  "pins": [
+   "U1.68"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D5",
+  "pins": [
+   "U1.69"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D6",
+  "pins": [
+   "U1.70"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D7",
+  "pins": [
+   "U1.73"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D8",
+  "pins": [
+   "U1.74"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D9",
+  "pins": [
+   "U1.75"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NBL0",
+  "pins": [
+   "U1.169"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NBL1",
+  "pins": [
+   "U1.170"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NCAS",
+  "pins": [
+   "U1.160"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NE",
+  "pins": [
+   "U1.44"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NRAS",
+  "pins": [
+   "U1.59"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NWE",
+  "pins": [
+   "U1.46"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE1",
+  "pins": [
+   "U1.92"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE2",
+  "pins": [
+   "U1.140"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE3",
+  "pins": [
+   "U1.139"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE4",
+  "pins": [
+   "U1.141"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE5",
+  "pins": [
+   "U1.162"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SWCLK",
+  "pins": [
+   "U1.137"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SWDIO",
+  "pins": [
+   "U1.124"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_DM",
+  "pins": [
+   "U1.94"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_DP",
+  "pins": [
+   "U1.95"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_EN_N",
+  "pins": [
+   "U1.163"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_VBUS_SENSE",
+  "pins": [
+   "U1.41"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VCAP",
+  "pins": [
+   "U1.125",
+   "U1.81"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VREF_A",
+  "pins": [
+   "U1.38",
+   "U1.39"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VSSA",
+  "pins": [
+   "U1.37"
+  ],
+  "drafted": false
+ }
+]

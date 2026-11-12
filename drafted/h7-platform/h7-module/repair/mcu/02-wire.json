@@ -1,0 +1,2997 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "mcu.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7950,
+     2600
+    ],
+    [
+     7950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8050,
+     2600
+    ],
+    [
+     8050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5650,
+     2600
+    ],
+    [
+     5650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5750,
+     2600
+    ],
+    [
+     5750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2550,
+     2600
+    ],
+    [
+     2550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2650,
+     2600
+    ],
+    [
+     2650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2750,
+     2600
+    ],
+    [
+     2750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2850,
+     2600
+    ],
+    [
+     2850,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5850,
+     2600
+    ],
+    [
+     5850,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5950,
+     2600
+    ],
+    [
+     5950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6050,
+     2600
+    ],
+    [
+     6050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6550,
+     2600
+    ],
+    [
+     6550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6650,
+     2600
+    ],
+    [
+     6650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6750,
+     2600
+    ],
+    [
+     6750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3550,
+     2600
+    ],
+    [
+     3550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3650,
+     2600
+    ],
+    [
+     3650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3750,
+     2600
+    ],
+    [
+     3750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3850,
+     2600
+    ],
+    [
+     3850,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3950,
+     2600
+    ],
+    [
+     3950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4050,
+     2600
+    ],
+    [
+     4050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8250,
+     2600
+    ],
+    [
+     8250,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8350,
+     2600
+    ],
+    [
+     8350,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4850,
+     2600
+    ],
+    [
+     4850,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4950,
+     2600
+    ],
+    [
+     4950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5050,
+     2600
+    ],
+    [
+     5050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1450,
+     2600
+    ],
+    [
+     1450,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1550,
+     2600
+    ],
+    [
+     1550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1650,
+     2600
+    ],
+    [
+     1650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1750,
+     2600
+    ],
+    [
+     1750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1850,
+     2600
+    ],
+    [
+     1850,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1950,
+     2600
+    ],
+    [
+     1950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2050,
+     2600
+    ],
+    [
+     2050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2150,
+     2600
+    ],
+    [
+     2150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5250,
+     2600
+    ],
+    [
+     5250,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3250,
+     2600
+    ],
+    [
+     3250,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8950,
+     2600
+    ],
+    [
+     8950,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9050,
+     2600
+    ],
+    [
+     9050,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9150,
+     2600
+    ],
+    [
+     9150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9250,
+     2600
+    ],
+    [
+     9250,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9350,
+     2600
+    ],
+    [
+     9350,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9450,
+     2600
+    ],
+    [
+     9450,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9550,
+     2600
+    ],
+    [
+     9550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9650,
+     2600
+    ],
+    [
+     9650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9750,
+     2600
+    ],
+    [
+     9750,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4150,
+     2600
+    ],
+    [
+     4150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4350,
+     2600
+    ],
+    [
+     4350,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4550,
+     2600
+    ],
+    [
+     4550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4650,
+     2600
+    ],
+    [
+     4650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7350,
+     2600
+    ],
+    [
+     7350,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7450,
+     2600
+    ],
+    [
+     7450,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7550,
+     2600
+    ],
+    [
+     7550,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7650,
+     2600
+    ],
+    [
+     7650,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5450,
+     5400
+    ],
+    [
+     5450,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5650,
+     5400
+    ],
+    [
+     5650,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5750,
+     5400
+    ],
+    [
+     5750,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6050,
+     5400
+    ],
+    [
+     6050,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     5400
+    ],
+    [
+     6150,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6250,
+     5400
+    ],
+    [
+     6250,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6350,
+     5400
+    ],
+    [
+     6350,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6950,
+     5400
+    ],
+    [
+     6950,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6750,
+     5400
+    ],
+    [
+     6750,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1650,
+     5400
+    ],
+    [
+     1650,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7050,
+     5400
+    ],
+    [
+     7050,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7150,
+     5400
+    ],
+    [
+     7150,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7250,
+     5400
+    ],
+    [
+     7250,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7350,
+     5400
+    ],
+    [
+     7350,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7450,
+     5400
+    ],
+    [
+     7450,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7550,
+     5400
+    ],
+    [
+     7550,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7650,
+     5400
+    ],
+    [
+     7650,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7750,
+     5400
+    ],
+    [
+     7750,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7850,
+     5400
+    ],
+    [
+     7850,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7950,
+     5400
+    ],
+    [
+     7950,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3550,
+     5400
+    ],
+    [
+     3550,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3650,
+     5400
+    ],
+    [
+     3650,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1450,
+     5400
+    ],
+    [
+     1450,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3750,
+     5400
+    ],
+    [
+     3750,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3850,
+     5400
+    ],
+    [
+     3850,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4050,
+     5400
+    ],
+    [
+     4050,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8050,
+     5400
+    ],
+    [
+     8050,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8150,
+     5400
+    ],
+    [
+     8150,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8250,
+     5400
+    ],
+    [
+     8250,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8350,
+     5400
+    ],
+    [
+     8350,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8450,
+     5400
+    ],
+    [
+     8450,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5250,
+     5400
+    ],
+    [
+     5250,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5350,
+     5400
+    ],
+    [
+     5350,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3300
+    ],
+    [
+     850,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3400
+    ],
+    [
+     850,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3500
+    ],
+    [
+     850,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3600
+    ],
+    [
+     850,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3700
+    ],
+    [
+     850,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3800
+    ],
+    [
+     850,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     3900
+    ],
+    [
+     850,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4000
+    ],
+    [
+     850,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4100
+    ],
+    [
+     850,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4200
+    ],
+    [
+     850,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4300
+    ],
+    [
+     850,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4400
+    ],
+    [
+     850,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4500
+    ],
+    [
+     850,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4600
+    ],
+    [
+     850,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4700
+    ],
+    [
+     850,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     4800
+    ],
+    [
+     850,
+     6500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     6500
+    ],
+    [
+     2050,
+     6500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2050,
+     6500
+    ],
+    [
+     2050,
+     5400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3300
+    ],
+    [
+     850,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3400
+    ],
+    [
+     850,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3500
+    ],
+    [
+     850,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3600
+    ],
+    [
+     850,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3700
+    ],
+    [
+     850,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3800
+    ],
+    [
+     850,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3900
+    ],
+    [
+     850,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4000
+    ],
+    [
+     850,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4100
+    ],
+    [
+     850,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4200
+    ],
+    [
+     850,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4300
+    ],
+    [
+     850,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4400
+    ],
+    [
+     850,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4500
+    ],
+    [
+     850,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4600
+    ],
+    [
+     850,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4700
+    ],
+    [
+     850,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     4800
+    ],
+    [
+     850,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     850,
+     6500
+    ],
+    [
+     850,
+     6800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1050,
+     3200
+    ],
+    [
+     750,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     750,
+     3200
+    ],
+    [
+     750,
+     6300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     750,
+     6300
+    ],
+    [
+     1850,
+     6300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1850,
+     6300
+    ],
+    [
+     1850,
+     5400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     750,
+     6300
+    ],
+    [
+     750,
+     6800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8650,
+     5400
+    ],
+    [
+     8650,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8650,
+     5500
+    ],
+    [
+     8750,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8750,
+     5400
+    ],
+    [
+     8750,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8750,
+     5500
+    ],
+    [
+     8750,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     10150,
+     4000
+    ],
+    [
+     10250,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     10250,
+     4000
+    ],
+    [
+     10250,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     10150,
+     3900
+    ],
+    [
+     10250,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     10250,
+     3900
+    ],
+    [
+     10250,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    750,
+    6300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3400
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    3900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4200
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4400
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    4800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    850,
+    6500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8750,
+    5500
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.1"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.10"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.100"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.101"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.107"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.11"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.110"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.111"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.115"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.116"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.119"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.12"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.120"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.121"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.128"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.129"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.13"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.130"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.131"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.132"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.133"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.134"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.138"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.145"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.146"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.147"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.150"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.151"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.155"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.156"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.157"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.161"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.173"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.174"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.175"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.176"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.2"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.3"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.35"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.4"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.45"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.5"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.55"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.56"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.58"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.7"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.8"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.80"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.83"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.84"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.85"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.86"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.87"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.88"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.89"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.9"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U1.93"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D0",
+   "at": [
+    7950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D1",
+   "at": [
+    8050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED1",
+   "at": [
+    5650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED2",
+   "at": [
+    5750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "DFU_USB_DM",
+   "at": [
+    2550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "DFU_USB_DP",
+   "at": [
+    2650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWDIO",
+   "at": [
+    2750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWCLK",
+   "at": [
+    2850,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE3",
+   "at": [
+    5850,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE2",
+   "at": [
+    5950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE4",
+   "at": [
+    6050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D2",
+   "at": [
+    6550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D3",
+   "at": [
+    6650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW1",
+   "at": [
+    6750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE5",
+   "at": [
+    3550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_EN_N",
+   "at": [
+    3650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_TX",
+   "at": [
+    3750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_RX",
+   "at": [
+    3850,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SCL",
+   "at": [
+    3950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SDA",
+   "at": [
+    4050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL0",
+   "at": [
+    8250,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL1",
+   "at": [
+    8350,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS1",
+   "at": [
+    4850,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS6",
+   "at": [
+    4950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "MODULE_ID_STRAP",
+   "at": [
+    5050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DOUT",
+   "at": [
+    1450,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_VBUS_SENSE",
+   "at": [
+    1550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_BCK",
+   "at": [
+    1650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS2",
+   "at": [
+    1750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_DETECT",
+   "at": [
+    1850,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "HW_REV",
+   "at": [
+    1950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS5",
+   "at": [
+    2050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS4",
+   "at": [
+    2150,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_TIP",
+   "at": [
+    5250,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS3",
+   "at": [
+    3250,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D4",
+   "at": [
+    8950,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D5",
+   "at": [
+    9050,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D6",
+   "at": [
+    9150,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D7",
+   "at": [
+    9250,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D8",
+   "at": [
+    9350,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D9",
+   "at": [
+    9450,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D10",
+   "at": [
+    9550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D11",
+   "at": [
+    9650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D12",
+   "at": [
+    9750,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_NCS",
+   "at": [
+    4150,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE1",
+   "at": [
+    4350,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DM",
+   "at": [
+    4550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DP",
+   "at": [
+    4650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D13",
+   "at": [
+    7350,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D14",
+   "at": [
+    7450,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D15",
+   "at": [
+    7550,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DIN",
+   "at": [
+    7650,
+    2300
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A12",
+   "at": [
+    5450,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA0",
+   "at": [
+    5650,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA1",
+   "at": [
+    5750,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CLK",
+   "at": [
+    6050,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_LRCK",
+   "at": [
+    6150,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "RELAY_EN",
+   "at": [
+    6250,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW2",
+   "at": [
+    6350,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A0",
+   "at": [
+    6950,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NCAS",
+   "at": [
+    6750,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "BOOT0",
+   "at": [
+    1650,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A1",
+   "at": [
+    7050,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A2",
+   "at": [
+    7150,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A3",
+   "at": [
+    7250,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A4",
+   "at": [
+    7350,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A5",
+   "at": [
+    7450,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO3",
+   "at": [
+    7550,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO2",
+   "at": [
+    7650,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO0",
+   "at": [
+    7750,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_IO1",
+   "at": [
+    7850,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "FLASH_CLK",
+   "at": [
+    7950,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "HSE_IN",
+   "at": [
+    3550,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "HSE_OUT",
+   "at": [
+    3650,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "NRST",
+   "at": [
+    1450,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CKE",
+   "at": [
+    3750,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NE",
+   "at": [
+    3850,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NWE",
+   "at": [
+    4050,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NRAS",
+   "at": [
+    8050,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A6",
+   "at": [
+    8150,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A7",
+   "at": [
+    8250,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A8",
+   "at": [
+    8350,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A9",
+   "at": [
+    8450,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A10",
+   "at": [
+    5250,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A11",
+   "at": [
+    5350,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    850,
+    6800
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    750,
+    6800
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "VCAP",
+   "at": [
+    8750,
+    5700
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    10250,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 270
+  },
+  {
+   "op": "add_net_label",
+   "name": "VSSA",
+   "at": [
+    10250,
+    3600
+   ],
+   "scope": "local",
+   "rotation": 90
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: mcu",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}
