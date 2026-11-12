@@ -693,6 +693,55 @@ owner may still override:
 
 ---
 
+## h7-module mcu page, the changed reset_boot page, and the module's root sheet
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-module/mcu.kicad_sch` sha256
+    `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981` (commit `674a91f`)
+  - `drafted/h7-platform/h7-module/reset_boot.kicad_sch` sha256
+    `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` (commit `3889312`).
+    This supersedes the approved `ca60cfca…` above. Only U5's symbol changed:
+    it is now the C4 project symbol `h7-platform:TLV803EA30DBZR`, whose pin 2 is
+    open collector, under the amended CR-MODULE-SUPERVISOR-SYMBOL.
+  - `drafted/h7-platform/h7-module/h7-module.kicad_sch`, the root, sha256
+    `3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed` (commit `75c4b6f`),
+    with `h7-module.kicad_pro` sha256
+    `62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0`
+- **Produced by:** the mcu page and reset_boot as the other block pages were.
+  The root was built by `tools/draught/assemble-root.ts` with its packing
+  arrangement (CR-MODULE-ROOT-FITS-LETTER). The module's `RECORD.md` has the
+  detail.
+- **Shown** 2026-11-12, as 150 dpi PNGs, with two questions:
+  - for mcu alone: *"What is your verdict on this module MCU page?"*
+  - for the other two together: *"What is your verdict on each of these two
+    pages: the changed reset and boot page, and the module's top-level sheet?"*
+- **Verdict, verbatim:**
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** One word came after a message listing these
+three verdicts as the ones open to the owner. It is recorded against each of the
+three sheets on that reading, and the owner may correct it for any one of them.
+
+It does not record an owner decision on any controller ruling. These remain the
+controller's, and the owner may override them:
+- CR-MODULE-VCAP-ERC (v1's exclusion awaited an owner sign-off);
+- the amended CR-MODULE-SUPERVISOR-SYMBOL;
+- CR-MODULE-CROSS-PAGE-DRIVERS;
+- CR-MODULE-PWR-FLAGS;
+- CR-MODULE-ROOT-PROJECT-FILE;
+- CR-MODULE-ROOT-FITS-LETTER.
+
+It is not a clearance of the module circuit. These rows stay open:
+- MODULE-POWER-PARTS-TO-MODEL;
+- MODULE-BUCK-LOOP-STARTUP;
+- MODULE-3V3-BUDGET;
+- VDDA-DAMPING-LEG;
+- VDDA-WIDEBAND;
+- the bring-up rows.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
