@@ -19,9 +19,11 @@ import { qspiBlock } from "../../circuits/h7-platform/module/qspi.ts"
 import { clockBlock } from "../../circuits/h7-platform/module/clock.ts"
 import { resetBootBlock } from "../../circuits/h7-platform/module/reset-boot.ts"
 import { swdBlock } from "../../circuits/h7-platform/module/swd.ts"
+import { idStrapBlock } from "../../circuits/h7-platform/module/id-strap.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  id_strap: idStrapBlock,
   swd: swdBlock,
   reset_boot: resetBootBlock,
   clock: clockBlock,
@@ -253,5 +255,17 @@ describe("SWD (processor-and-memory.md:266; USB-06; CR-MODULE-SWD-HEADER)", () =
   test("pogo pads for SWDIO, SWCLK, NRST, the module's 3V3 and GND", () => {
     const pads = net.components.filter((c) => c.id.startsWith("tp_")).map((c) => netsOf(c)["1"] ?? "?").sort()
     expect(pads).toEqual(["3V3_D", "GND", "NRST", "SWCLK", "SWDIO"])
+  })
+})
+
+describe("ID strap (processor-and-memory.md:277; CR-MODULE-ID-STRAP-PIN, CR-MODULE-ID-STRAP-VALUES)", () => {
+  const net = idStrapBlock()
+  const nets = (id: string): string[] => Object.values(netsOf(only(net, id))).sort()
+  test("20.0 k from VDDA (VREF_A) to the strap pin, 2.49 k to GND, 100 nF at the pin", () => {
+    expect(Reflect.get(only(net, "r_id_top").parameters, "ohms")).toBe(20_000)
+    expect(nets("r_id_top")).toEqual(["MODULE_ID_STRAP", "VREF_A"])
+    expect(Reflect.get(only(net, "r_id_bottom").parameters, "ohms")).toBe(2_490)
+    expect(nets("r_id_bottom")).toEqual(["GND", "MODULE_ID_STRAP"])
+    expect(capacitors(net)).toEqual(["1.00e-7 GND|MODULE_ID_STRAP"])
   })
 })
