@@ -4,7 +4,7 @@
 `make -C boards/h7-module draw` (`TOOLING.md` step 5.5, and design change C3 for what a multi-page
 board adds). It grows one block at a time as each page is repaired. Today: all twelve drafts are
 checked, and the power page and the Task 7b, Task 7c and Task 7d pages in the table below, every block, are
-repaired. The root sheet is not assembled yet.
+repaired, and the root sheet is assembled with its `.kicad_pro` (Task 7e).
 
 | | sha256 |
 | --- | --- |
@@ -21,6 +21,9 @@ repaired. The root sheet is not assembled yet.
 | end: `sdram.kicad_sch` (Task 7c) | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
 | end: `decoupling.kicad_sch` (Task 7c) | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
 | end: `mcu.kicad_sch` (Task 7d) | `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981` |
+| start: the root's blank text, `assemble-root.ts blank h7-module` (Task 7e) | `134c620e32f4587ab861a8210298ae31533ca041247b3bb183f8e1b13eef25d2` |
+| end: `h7-module.kicad_sch`, the root (Task 7e) | `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86` |
+| end: `h7-module.kicad_pro` (Task 7e) | `62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0` |
 
 ## Replay
 
@@ -35,7 +38,9 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
 `replay.sh` does, in order:
 
 1. `make -C boards/h7-module draw` (this writes `build/draw/h7-module*` inside the repository,
-   overwriting any draft already there). Checks it printed `NO INDEPENDENT NETLIST:`, that each
+   overwriting any draft already there). Checks it printed NO `NO INDEPENDENT NETLIST:` block (since
+   Task 7e the board declares the root's export as its netlist, so make draw checks each page's
+   partition against it), that each
    block's generated intent is byte-identical to `<block>/intent.json`, and that each draft's
    sha256 is the recorded one. A model change since this record stops the replay here, by block.
 2. The power page, each generated file checked against the committed copy in `power/`, each op-list
@@ -61,10 +66,17 @@ bash drafted/h7-platform/h7-module/repair/replay.sh <work-dir>
 4. Makes the `sym-lib-table` (one row, `h7-platform`, naming
    `circuits/h7-platform/h7-platform.kicad_sym` in place in the repository; design change C4) and
    checks it is byte-identical to `../sym-lib-table`.
+5. The root (Task 7e), each op-list checked against `root/` and applied as above:
+   `assemble-root.ts blank` (its sha256 checked), `assemble-root.ts ops` (`root/01-assemble.json`),
+   `tools/root-flags.ts` (`root/02-pwr-flags.json`), `tools/root_flag_refs.py`; the root's sha256 must
+   be its end value and the sheet byte-identical to `../h7-module.kicad_sch`. Then
+   `tools/kicad-pro.ts` writes the `.kicad_pro`, which must reach its sha256 and be byte-identical to
+   `../h7-module.kicad_pro`; and every block sheet must still be byte-identical to its committed copy.
 
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-12 into a new directory and
-reached every sha256 (again after Task 7c, with its three pages, and after Task 7d, with mcu).
+reached every sha256 (again after Task 7c, with its three pages, after Task 7d, with mcu, and after
+Task 7e, with the root and its `.kicad_pro`).
 
 Then, to check and look at a page:
 

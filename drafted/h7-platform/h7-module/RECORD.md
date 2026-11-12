@@ -3,12 +3,15 @@
 The circuit: `circuits/h7-platform/module-board.ts` (`h7Module()`, `DESIGNATORS`, `PIN_NUMBERS`,
 `PAGE_GROUPS`, `drawingPages()`), twelve `include()`d blocks under `circuits/h7-platform/module/`.
 Model-authoritative (`TOOLING.md` step 0): every page is derived from the model. The board is
-`boards/h7-module/perfboard.json`, kind `pcb`, with no `sch` or `netlist` until the root sheet exists.
+`boards/h7-module/perfboard.json`, kind `pcb`; since Task 7e its `sch` is the root,
+`h7-module.kicad_sch`, and its `netlist` the root's export, `tests/fixtures/h7-module.net`.
 
 The project is drawn under design change C3 (`TOOLING.md`, "Multi-page drawing"): one sheet per
-block, each block's ports drawn as hierarchical labels, and a root sheet, assembled later, joining
-them. `kicad-cli`'s export of that root will be the evidence of how the pages connect. Until it
-exists, each page is checked against its own block of the model (`repair/tools/verify.sh`).
+block, each block's ports drawn as hierarchical labels, and a root sheet joining them (Task 7e).
+`kicad-cli`'s export of that root is the evidence of how the pages connect
+(`registerDraftedProjectTests` in `tests/circuits/h7-module.test.ts`, and
+`repair/tools/verify-root.sh`). Each block page is also checked against its own block of the model
+(`repair/tools/verify.sh`).
 
 **Every page here is UNREVIEWED until the owner records a verdict.** A verdict is bound to the sha256
 in the table below; `docs/schematic/verdicts.md` is where it is recorded.
@@ -31,11 +34,14 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `decoupling.kicad_sch` | block decoupling | `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb` |
 | `mcu.kicad_sch` | block mcu | `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981` |
 
-Every block sheet is drawn. The root sheet and its `.kicad_pro` are not drawn yet. This table
-has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
+Every sheet is drawn, the root with them (Task 7e). The root's `.kicad_pro`,
+`h7-module.kicad_pro` (sha256 `62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0`), is
+committed beside it and is not a sheet, so it has no row here; `repair/replay.sh` checks its
+sha256. `registerDraftedProjectTests` binds this table.
 
 | page | status | render |
 | --- | --- | --- |
+| root | UNREVIEWED; `verify-root.sh` exits 1, on ONE root ERC error the block checks could not see: `pin_to_pin` on NRST between J3 pin 10 (open collector) and U5 pin 2 (output), which needs a ruling (see "root", below) (Task 7e) | `h7-module.svg` |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 | interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `interface.svg` |
 | clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `clock.svg` |
@@ -80,7 +86,9 @@ What `make draw` printed, beside the pages:
   no schematic to export a netlist from yet, and none was derived from the model to stand in: a
   check that compares the model with itself cannot fail."* The binding check is each page's own
   `kicad-cli` export against the model, which `repair/tools/verify.sh` runs per block and the root's
-  export will run for the project.
+  export runs for the project. **Since Task 7e the board declares the root's export as its
+  `netlist`**, so `make draw` now runs the per-block partition check against it and prints no
+  such block; `repair/replay.sh` requires its absence, and the drafts are the same bytes.
 - **Paper.** copperhead drafted mcu on A3, power on A4 and the other ten on A5; `make draw`
   re-papered each to US Letter. Ten fit the inner frame. **mcu overshoots it south by 61.553 mm**
   (content y 15.24 to 265.43 mm against a frame ending at 203.877 mm); copperhead's own note: *"the
@@ -106,49 +114,175 @@ moved or fired, on every page):
 | id_strap | 10 | 2 (0) | 0 | 0 | 0 | 0 | 0 |
 | interface | 3 | 1 (0) | 4 | 0 | 0 | 0 | 0 |
 
-## What the root must do about PWR_FLAGs (Task 7b)
+## What the root does about PWR_FLAGs, cross-page drivers and the VCAP allowance (Task 7e)
 
-Ruling [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): each
-module net carries at most one PWR_FLAG across the hierarchy, at the home
-`repair/tools/pwr-flag-homes.ts` declares. The block pages carry none on a shared net whose flag
-lives on the root, so the root assembled in Task 7b must:
+Until Task 7e this section said what the root *must* do; each requirement is below with what was
+done and the evidence. `repair/tools/verify-root.sh` runs every check on the committed project, and
+`repair/tools/root-control.sh` holds the controls (nine; each must come out as stated).
 
-- **place the root-held flags**, one on each net the table homes on `root` (3V3_D, VREF_A and VSSA
-  as the table stands), and none on GND, whose flag is the power page's;
-- **check exactly one PWR_FLAG per net across the hierarchy**, every sheet together, against the
-  table, failing and naming any net with two or with none where ERC needs one;
-- **reach 0 ERC errors on the root**, every sheet included.
+**PWR_FLAGs.** Ruling [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags):
+each module net carries at most one PWR_FLAG across the hierarchy, at the home
+`repair/tools/pwr-flag-homes.ts` declares.
 
-`tools/draught/assemble-root.ts` places no flag today, and no check of the one-per-net rule across
-the whole hierarchy exists yet: `verify.sh` checks one block page at a time. Two flags on one net
-across two sheets is a `pin_to_pin` error at the root (measured; the ruling quotes it), so the root
-ERC is itself a backstop, but it does not name the table entry at fault.
+- **The root-held flags are placed:** `repair/tools/root-flags.ts` writes `repair/root/02-pwr-flags.json`,
+  one `place_pwr_flag` on each net the table homes on `root` (3V3_D, VREF_A, VSSA), at that net's
+  FIRST root stub label (blocks in `Network.blocks` order, ports in name order; all three are the mcu
+  sheet's stubs). None on GND, whose flag is the power page's.
+- **Exactly one per net, across the whole hierarchy, is checked against the table:**
+  `repair/tools/hierarchy_flag_probe.py` renames every flag of every sheet the root names to
+  `FLGPROBE<k>` in a scratch copy, `kicad-cli` exports the probe root, and
+  `repair/tools/hierarchy-flags.ts` maps each flag's net to its MODULE net through the real pins on it
+  (never a net name). On the committed project: 5 flags - 3V3_D, VREF_A, VSSA on the root,
+  `power_VIN_BUCK` and GND on power - exactly one on each of the 5 declared nets, each at its home.
+  Controls (`root-control.sh`): a second 3V3_D flag on the decoupling page fails, *"3V3_D carries 2
+  PWR_FLAGs, on root, decoupling"*; the root's three flags removed fails, naming 3V3_D, VREF_A and
+  VSSA as carrying none (control 3).
+- **The parked Task 7a minor, flag-check.ts treating a flag on a non-port net as private:** the
+  whole-hierarchy check is its backstop, and covers it. Control 4: a flag on the power page's private
+  FB (U2 pin 8) passes `flag-check.ts` (*"private to power - allowed"*) and fails `hierarchy-flags.ts`,
+  *"power_FB carries a PWR_FLAG (on power) and has no declared flag home"*, because every flagged net,
+  private ones included (`PRIVATE_FLAGS`), must be declared.
+- **The parked Task 7a minor, `#PWR` references repeating across sheets:** it MATTERS to export.
+  akcli numbers `#PWR0<n>` per sheet, so the root's flags came out `#PWR01` to `#PWR03` beside the
+  power page's `#PWR01` and `#PWR02`. Measured with kicad-cli 10.0.5: the export of that root printed
+  *"Warning: schematic has annotation errors, please use the schematic editor to fix them"* (on
+  stdout); the same root without flags printed nothing, and the two exports were identical apart from
+  their `(source)` line (an export leaves out `#` references). ERC reported nothing for it. Fixed on
+  the root, which is not approved: `repair/tools/root_flag_refs.py` renames the root's flags `#FLG01`
+  to `#FLG03` (`#FLG` is KiCad's own PWR_FLAG prefix). After it, the export prints no warning and is
+  otherwise the same. Checked on every run: the probe fails on any `#` reference used twice across
+  the hierarchy, and `verify-root.sh` on an annotation warning. Control 5: the root's `#FLG01` renamed
+  `#PWR01` fails, naming `#PWR01` on root and power, and kicad-cli warns again.
+- **0 ERC errors on the root: NOT MET.** See the ERC below: one error, not from flags.
 
-**And about cross-page drivers.** Ruling
+**Cross-page drivers.** Ruling
 [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
-`repair/tools/cross-page-drivers.ts` declares each signal net whose driver is on another page
-(its `CROSS_PAGE_DRIVERS` is the authority for the entries: by group, FLASH_CLK and the sdram
-page's input nets -> mcu, U1's QUADSPI and FMC pins; NRST and BOOT0 -> reset_boot), and the one-block root puts a stand-in driver, a
-`Connector:TestPoint`, on that net's stub when the block under check is not the driving block. The
-stand-in only says the net is driven somewhere, and a passive pin cannot raise a `pin_to_pin`
-conflict, so the root assembled in Task 7b (step 4) must:
+the real root carries **no stand-in driver** (its op-lists place only sheets, wires, labels and the
+three flags; `counts.py`: 3 symbols, all flags). Every one of the table's 25 entries is cleared by
+its real driver:
 
-- **clear every entry of the table with its real driver**: the root's ERC, every sheet together and
-  no stand-in placed, reports no `pin_not_driven` on any table net, and the driving pin the entry
-  names is on that net in the root's netlist export.
+- **no `pin_not_driven` anywhere** in the root's ERC, every sheet together (and `root_erc.py` fails
+  on any error);
+- **each driving pin is on its net with every pin the model puts there**, in the root's export:
+  `repair/tools/root-drivers.ts` - FLASH_CLK by U1.28 (2 pins), the 22 SDRAM entries by U1's FMC pins,
+  NRST by U5.2 (7 pins), BOOT0 by SW2.1 (5 pins). Control 9: the root stub of reset_boot's NRST pin
+  cut fails it, *"the driving pin U5.2's exported net /NRST_CUT lacks U1.31, J3.10, TP8.1"*.
+- **What the stand-in could not catch, the real root did.** A passive stand-in raises no
+  `pin_to_pin`, so a type conflict between a block's pin and its real driver was visible only here
+  (this record said so). There is one: on NRST, J3 pin 10 against U5 pin 2. See the ERC below.
 
-**And about the VCAP ERC allowance.** Ruling
-[CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc): the stock symbol
-`MCU_ST_STM32H7:STM32H743IITx` types U1's VCAP1 (pin 81) and VCAP2 (pin 125) `power_out`, the
-documented circuit joins them on VCAP, and ERC reports `pin_to_pin` between them on `/mcu/`.
-`repair/tools/erc-allowances.ts` declares that one violation as the only ERC allowance, and
-`verify.sh` excuses nothing else. So the root assembled at step 4 must:
+**The VCAP allowance.** Ruling [CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc):
 
-- **carry the same single exclusion in the module root's `.kicad_pro`**: sheet `/mcu/`, type
-  `pin_to_pin`, between exactly U1 pin 81 and U1 pin 125, and no other exclusion;
-- **check it the same way**: the root's ERC, every sheet together, excuses only a violation matching
-  that sheet, that type and exactly those two (designator, pin) pairs, names it with the ruling id,
-  and fails on any other error, including any other `pin_to_pin`.
+- **The root's `.kicad_pro` carries the one exclusion and no other:** `h7-module.kicad_pro`, written by
+  `repair/tools/kicad-pro.ts` from `erc-allowances.ts` (held to the model first), one
+  `erc_exclusions` entry: `pin_to_pin`, U1 pin 81 (main item) and pin 125, on `/mcu/`, each value
+  taken from a committed file (the root's and mcu sheet's uuids, U1's pin uuids, pin 81's point
+  from `repair/mcu/pins.json`). The serialisation is the one the pedals repository's v1
+  `h7-platform.kicad_pro` carries for the same violation.
+- **kicad-cli honours `.kicad_pro` exclusions** - measured with kicad-cli 10.0.5 on this root: with
+  the entry, the violation is reported with `"excluded": true` (and severity warning) and no longer
+  as an error; with the two pins swapped, or x one unit off, it is not honoured, and KiCad reports the
+  real violation as an error AND the unmatched exclusion as a separate excluded marker.
+- **Checked the same way as `verify.sh`:** `repair/tools/root_erc.py` reads the report, and an
+  excluded violation passes only if it matches a declared allowance exactly (sheet, type, the two
+  (designator, pin) pairs, `erc_sheets.py`'s matching); each allowance must be matched exactly once,
+  the `.kicad_pro` must carry as many exclusions as there are allowances, and any other error
+  fails. Controls 6 to 8: no exclusion fails on the U1 81-125 `pin_to_pin`; the exclusion twice fails
+  on the count; a synthetic excluded violation no allowance admits fails, and the exact one passes.
+
+## root: the module's root sheet (Task 7e)
+
+**Status: UNREVIEWED.** sha256 `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86`.
+Render: `h7-module.svg` beside it. **Its ERC has one error that needs a ruling** (below), so by
+`EVALUATING-DRAWINGS.md` it is an electrical fault for the controller to weigh before the page is
+sent; the page is committed so that the fault is on record.
+
+### How it was assembled
+
+`repair/root/`, replayed by `repair/replay.sh` after the twelve blocks:
+
+1. `bun tools/draught/assemble-root.ts blank h7-module`: the starting text, uuid seeded by the board,
+   US Letter (sha256 `134c620e32f4587ab861a8210298ae31533ca041247b3bb183f8e1b13eef25d2`).
+2. `assemble-root.ts ops`, `01-assemble.json`: one sheet per block in `Network.blocks` order, three to
+   a row, each port a sheet pin wired to a stub ending in a LOCAL label naming the parent net.
+3. `repair/tools/root-flags.ts`, `02-pwr-flags.json`: the three root-held PWR_FLAGs.
+4. `repair/tools/root_flag_refs.py`: their references `#FLG01` to `#FLG03`.
+5. `repair/tools/kicad-pro.ts`: `h7-module.kicad_pro`.
+
+The committed `sym-lib-table` (C4) was already here; with the `.kicad_pro` beside the root, kicad-cli
+reads it, and the root's ERC carries no `lib_symbol_issues` for `h7-platform` (a scratch copy without
+the library in reach reports it once).
+
+### The rulings it rests on
+
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): the three flags.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  no stand-in; every entry cleared by its real driver.
+- [CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc): the one exclusion.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): no power
+  symbol joins a net by name; every rail meets on the root through local labels.
+- [CR-MODULE-ROOT-PROJECT-FILE](../../../docs/h7-platform/decisions.md#cr-module-root-project-file):
+  the `.kicad_pro` beside the root. Recorded in `decisions.md` in Task 7e from the controller's Task 5
+  ruling, which until then lived only in the plan's gitignored progress log.
+
+### Measurements
+
+From `repair/tools/verify-root.sh` (kicad-cli 10.0.5). None of these is a judgement of the page.
+
+| measure | root |
+| --- | --- |
+| root export against the WHOLE model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 (`footprints` 0; `footprintsUndeclared` 94: the model declares no footprint) |
+| exported components, nets, net members | 94 (the model's 94, each once), 174, 482 |
+| kicad-cli annotation warning on export | none (it printed one before `root_flag_refs.py`) |
+| PWR_FLAGs across the hierarchy | 5: 3V3_D, VREF_A, VSSA on root; GND, VIN_BUCK on power; one per declared net, each at home |
+| `#` references across the 13 sheets | 5, none repeated |
+| cross-page driver entries on their net with the real driver | 25 of 25 |
+| ERC, every sheet, errors | **1, NOT EXCUSED: `pin_to_pin` on `/swd/`, *"Pins of type Open collector and Output are connected"*, *"Symbol J3 Pin 10 [~{RESET}, Open collector, Line]"* and *"Symbol U5 Pin 2 [~{RESET}, Output, Line]"*** |
+| ERC, excluded | 1: `pin_to_pin` on `/mcu/`, U1 pins 81 and 125, under CR-MODULE-VCAP-ERC |
+| ERC, warnings by type | `lib_symbol_mismatch` 3 (on `/`: U2 TPS62933F, U4 W25Q128JVS, U6 USBLC6-2SC6, each an embedded symbol differing from the installed library), `ground_pin_not_ground` 1 (`/mcu/`, U1 pin 37 VSSA) |
+| ERC, `pin_not_driven` | 0 |
+| sheets | 12 sheet symbols, 204 sheet pins (one per port of each block) |
+| wires, labels | 204 wires (2072.64 mm, 0 corners), 204 local labels on 91 nets; 0 junctions |
+| symbols (parts, power symbols, PWR_FLAGs) | 3 (0, 0, 3) |
+| true crossings, T-meetings, orphan junctions, tees without a dot | 0, 0, 0, 0 |
+| paper fit (US Letter) | **does not fit: overshoot south 779.103 mm** (content x 27.94 to 200.66 mm, y 43.18 to 982.98 mm, against a frame ending at y 203.877 mm) |
+
+**The root's ERC error, as measured, and why no block check saw it.** NRST joins J3 (swd) pin 10,
+typed open collector by `Connector:Conn_ARM_JTAG_SWD_10`, and U5 (reset_boot) pin 2, typed output by
+`Power_Supervisor:TPS3839DBZ`, the stand-in symbol ruling
+[CR-MODULE-SUPERVISOR-SYMBOL](../../../docs/h7-platform/decisions.md#cr-module-supervisor-symbol)
+chose for the TLV803EA30DBZR. KiCad's default pin map makes open collector to output an error. The
+two pins are on different pages, so each page's one-block root, with its passive stand-in, could not
+raise it. The fitted part drives NRST open-drain (owner-approved [D14](../../../docs/h7-platform/decisions.md#d14):
+*"a TLV803EA30DBZR supervisor drives NRST open-drain"*), so the error comes from the
+stand-in symbol's pin typing (TPS3839 is a push-pull part), not from the circuit; the export agrees
+with the model. **No ruling covers it, and none is made here.** CR-MODULE-VCAP-ERC allows exactly one
+exclusion and says *"no other"*, so a second exclusion is not this task's to add. Options for the
+ruling, none tried: a second declared allowance (sheet `/swd/`, `pin_to_pin`, J3 pin 10 and U5 pin 2),
+which amends CR-MODULE-VCAP-ERC's "no other"; a project symbol (C4) for the TLV803E typing pin 2 open
+collector, which changes the approved reset_boot page and its ruling; or a project ERC pin map
+making open collector to output a warning, which applies to every net in the project.
+
+**The paper, as measured.** `assemble-root.ts`'s arrangement is fixed (three sheets to a row, pins
+200 mil apart, `TOOLING.md`): the mcu sheet's 90 pins make it 462.28 mm tall, and four rows of
+sheets reach y 982.98 mm. The 150 dpi render of the root page shows the mcu, decoupling and vdda
+sheets, the mcu sheet's pins down to POS5; the other nine sheets and the rest of the mcu sheet's
+pins lie below the paper's edge, and no render shows them. The PDF kicad-cli plots from the root
+holds 13 pages, the root and each block; `repair/tools/render.sh` assumes one page, so the root's PNG
+was made from the PDF's first page (`magick -density 150 h7-module.pdf[0]`), and its SVG is
+`kicad-cli sch export svg`'s root file. Whether the root takes another arrangement or paper is a
+question for the controller; nothing here changes it.
+
+### What the page shows, as observations
+
+- Twelve sheet symbols, three to a row, in `Network.blocks` order: mcu, decoupling, vdda; power,
+  sdram, qspi; clock, reset_boot, swd; usb_dfu, id_strap, interface. Each is labelled with its block
+  name above and its file below.
+- Each sheet's pins run down its west edge in name order, each with a short wire west to a local
+  label naming the parent net.
+- PWR_FLAGs stand on the stub labels of 3V3_D, VREF_A and VSSA at the mcu sheet.
+- The title block reads `Sheet: /`, `File: h7-module.kicad_sch`, `Size: USLetter`, `Id: 1/13`, with
+  no title.
 
 ## power: 3.3 V buck and input network
 
@@ -1098,9 +1232,11 @@ cost of rotation 90: every one-pin label and every side pin's name and number on
 
 ### Measurements, before (the draft) and after (this page)
 
-`verify.sh` stops at the ERC failure, so the page column's crossings, junction, label, paper and
-counts rows come from the same steps run without stopping; the draft's from the same steps on the
-draft. None of these is a judgement of the page.
+The page column is `verify.sh`'s own output: since ruling CR-MODULE-VCAP-ERC it runs every step
+and exits 0 on this page (re-run in Task 7e: crossings, junctions, labels, paper and counts as
+below). Before the ruling it stopped at the ERC failure, and these rows came from the same steps
+run without stopping, with the same values. The draft's come from the same steps on the draft.
+None of these is a judgement of the page.
 
 | measure | draft | page |
 | --- | --- | --- |

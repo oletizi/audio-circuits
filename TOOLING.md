@@ -1098,9 +1098,12 @@ per-block partition check, the two op-lists above, the root sheet, and the proje
 
 - **One level only.** `include()` refuses a network that itself includes blocks, so there is no
   nested hierarchy to draw.
-- **No `.kicad_pro` is written beside a project.** KiCad's defaults apply, the sheet instances name
-  the project `noname`, and ERC on the fixture's root ran with KiCad's default severities
-  (0 errors, 0 warnings).
+- **No `.kicad_pro` is written beside a project** by the C3 tooling. KiCad's defaults apply, the
+  sheet instances name the project `noname`, and ERC on the fixture's root ran with KiCad's default
+  severities (0 errors, 0 warnings). A board may commit one beside its root: the h7 module does,
+  carrying only its declared ERC exclusion (`docs/h7-platform/decisions.md`,
+  CR-MODULE-ROOT-PROJECT-FILE), and kicad-cli 10.0.5 honours a `.kicad_pro`'s `erc_exclusions`
+  (measured; `drafted/h7-platform/h7-module/repair/tools/kicad-pro.ts`).
 - **A sheet pin's type and a hierarchical label's shape are both `input`**, because that is the
   shape akcli 0.22.0 writes a hierarchical label in; KiCad's connectivity ignores both.
 - **Ground and rails as labelled wires on a block page** is a consequence of refusing power

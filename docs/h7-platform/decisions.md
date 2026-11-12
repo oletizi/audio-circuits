@@ -1636,6 +1636,16 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan, Task 7d, on the mcu page's verify failure.
 - **Carried in:** the one declared table `drafted/h7-platform/h7-module/repair/tools/erc-allowances.ts` (`ERC_ALLOWANCES`: sheet, type, the two (designator, pin number) pairs, the ruling id and the source). It is held to the model on every run: the sheet names a block of `h7Module()`, the designator is a component of that block, both pins are on VCAP in the model, and the installed symbol types each pin `power_out`; an entry failing any of these is refused, naming what is missing. `repair/tools/erc_sheets.py` excuses a violation only when the sheet, the type and exactly the two (designator, pin) pairs it parses from KiCad's items all match, prints each excused violation with the ruling id, and reports an allowance that matched nothing on a sheet the run holds as stale without failing. `repair/tools/erc-control.sh` controls 14 to 17: the committed mcu page verifies and its closing lines name the excused violation; with the allowance removed through the `H7_ERC_ALLOWANCES_TABLE` test override the same run fails on `pin_to_pin`; an allowance naming U1 pins 81 and 126 is refused by the model check; and on synthetic reports other pins, another type, a third item or another sheet each fail, while a stale allowance is reported and passes.
 
+### CR-MODULE-ROOT-PROJECT-FILE
+
+**The module's root sheet has a `.kicad_pro` committed beside it.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** *"Task 7 commits a .kicad_pro beside the module's root sheet, as the carrier page has one; the two-block fixture needs none (it is test data, and ERC already runs on it with defaults)."* The file carries nothing but the ERC exclusions the declared allowances admit ([CR-MODULE-VCAP-ERC](#cr-module-vcap-erc)); KiCad's defaults apply to everything else. `TOOLING.md`'s C3 note that no `.kicad_pro` is written beside a project stays true of the C3 tooling and the fixture.
+- **Costs if wrong:** *"the owner opens a sheet with no project file."*
+- **Set by:** the controller, H7 module plan, at Task 5's completion. The words above are the controller's, from the plan's progress log, which is gitignored; recorded here in Task 7e, when the file was made.
+- **Carried in:** `drafted/h7-platform/h7-module/h7-module.kicad_pro`, written by `repair/tools/kicad-pro.ts` and checked by `repair/replay.sh`.
+
 ### CR-MODULE-INDUCTANCE-NOTATION
 
 **4.7 µH is drawn ".0047mH", as the existing inductance formatter writes it.**
