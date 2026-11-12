@@ -132,6 +132,9 @@ export async function resolveDrawingPages(opts: {
   readonly override: string | undefined
   readonly committed?: Readonly<Record<string, string>>
 }): Promise<{ readonly pages: readonly DrawingPage[] } | { readonly refusal: string } | undefined> {
+  // Known limitation (H7 module plan, Task 5 review): the circuit module is imported even on the
+  // test-only `--intent` override path, which then refuses for a multi-page board. The import is
+  // wasted work there, not a wrong answer; the refusal still names the reason.
   const module = await importCircuitModule(opts.declaration)
   const exported = module["drawingPages"]
   if (exported === undefined) return undefined
@@ -163,6 +166,8 @@ export async function resolveDrawingPages(opts: {
   return { pages }
 }
 
+// Known limitation (H7 module plan, Task 5 review): a second DrawingPage shape guard, `isPage`, lives in
+// tools/draught/hierarchical-labels.ts and checks less (keys only). Consolidate the two when either is next touched.
 function isDrawingPage(value: unknown): value is DrawingPage {
   if (typeof value !== "object" || value === null) return false
   const block: unknown = Reflect.get(value, "block")

@@ -120,12 +120,16 @@ export function moduleCapacitance3v3(
   return { total_F: entries.reduce((s, e) => s + e.nominal_F, 0), entries }
 }
 
-/** Refuses a network whose 3V3 capacitance exceeds R-50's 150 uF. */
+/**
+ * Refuses a network whose 3V3 capacitance exceeds R-50's 150 uF. Takes and forwards both of
+ * `moduleCapacitance3v3`'s optional parameters, so the sum it checks is the sum that function gives.
+ */
 export function assertModuleCapacitanceWithinLimit(
   network: Network,
   knownNonCapacitive: Readonly<Record<string, string>> = {},
+  rootNet: string = MODULE_3V3_NET,
 ): ModuleCapacitance {
-  const sum = moduleCapacitance3v3(network, knownNonCapacitive)
+  const sum = moduleCapacitance3v3(network, knownNonCapacitive, rootNet)
   if (sum.total_F > MODULE_3V3_LIMIT_F) {
     const uF = (sum.total_F * 1e6).toFixed(2)
     throw new Error(`the module's 3V3 capacitance is ${uF} uF, over ruling R-50's 150 uF (power.md FIG-QMSW-TJ assumes it): remove capacitance or re-run Q_MSW's switch-on figure with the new total`)

@@ -131,6 +131,8 @@ async function pageOf(module: string, block: string): Promise<DrawingPage> {
   throw new Error(`${module}'s drawingPages() has no page for block "${block}".`)
 }
 
+// Known limitation (H7 module plan, Task 5 review): `isDrawingPage` in tools/draught/draw-intent.ts is a
+// second, stricter guard for the same type. Consolidate the two when either is next touched.
 function isPage(value: unknown): value is DrawingPage {
   return typeof value === "object" && value !== null && "block" in value && "intent" in value && "ports" in value
 }

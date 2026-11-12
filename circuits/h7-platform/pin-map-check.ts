@@ -82,6 +82,11 @@ export function checkPinMap(
  * pin whose `moduleMcuPin` is a string, as its signal name and module MCU port. Only an
  * explicit null `moduleMcuPin` is skipped (the contract loader refuses an absent key). A
  * non-null `moduleMcuPin` on a pin with no signal name refuses, since the net is unknown.
+ *
+ * Known limitation (H7 module plan, Task 2 review): `contract` defaults to `loadContract()`, the
+ * committed module-interface.json, rather than being required. It is a default argument, not a
+ * fallback (the loader refuses a malformed file), but it means a caller that forgets to pass its own
+ * contract silently checks against the committed one. Make it required when a second contract exists.
  */
 export function interfaceOccupancy(contract = loadContract()): readonly InterfacePin[] {
   const out: InterfacePin[] = []

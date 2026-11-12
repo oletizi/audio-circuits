@@ -155,7 +155,12 @@ export function drawingPagesFromNetwork(
 ): readonly DrawingPage[] {
   checkCoverage(network, groups)
   return network.blocks.map((block): DrawingPage => {
-    const group = groups[block.prefix] ?? ""
+    const group = groups[block.prefix]
+    if (group === undefined) {
+      // checkCoverage refuses this first; kept as a throw, not a default, so a change there cannot
+      // turn a missing caption into an empty one.
+      throw new Error(`no page caption is given for block "${block.prefix}". Each block's page needs the caption copperhead draws around it.`)
+    }
     const byParent = portsByParentNet(block.prefix, block.ports)
     checkPrivateTexts(network, block.prefix, block.componentIds, byParent, new Set(Object.keys(block.ports)))
     const components = blockComponents(network, block.prefix, block.componentIds, byParent)

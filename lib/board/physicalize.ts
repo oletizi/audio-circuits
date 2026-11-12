@@ -86,6 +86,9 @@ export function projectPhysical(network: Network): Network {
   return {
     ports: network.ports,
     components,
+    // Known limitation (H7 module plan, Task 1 review): a block whose every part is physical-only keeps
+    // its entry here with an empty componentIds. It is not dropped or refused at this point; a page
+    // drawn from such a block refuses loudly in drawingPagesFromNetwork, since no port reaches a pin.
     blocks: network.blocks.map((block) => ({
       ...block,
       componentIds: block.componentIds.filter((id) => kept.has(id)),

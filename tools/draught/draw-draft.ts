@@ -202,6 +202,10 @@ export function verifyIntentAgainstModel(intent: Intent, netlistText: string): A
  *
  * A port net copperhead cannot draft (one pin in the block, `PagePort.drafted` false) is not in
  * the intent; it is counted here as the singleton it is, so it is compared rather than skipped.
+ *
+ * Known limitation (H7 module plan, Task 5 review): the block's refs are read from `page.intent.parts`,
+ * not from `Network.blocks` directly, so a part the page dropped would drop out of both sides here. The
+ * project round trip (`registerDraftedProjectTests`) compares the whole hierarchy and catches it.
  */
 export function verifyPageAgainstModel(page: DrawingPage, modelNets: Readonly<Record<string, readonly string[]>>): Agreement {
   const refs = new Set(page.intent.parts.map((part) => part.ref))

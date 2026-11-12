@@ -103,6 +103,10 @@ for (const { board, circuit, netlist } of BOARDS) {
  *
  * The two-block board is the C3 test fixture, kept under tests/fixtures/ rather than drafted/: its
  * pages are test data and never sent for review. The h7 module is the first board drawn this way.
+ *
+ * Known limitation (H7 module plan, Task 5 review): each entry's `model` rebuilds the ProjectModel here
+ * (designators and pin numbers from the board's tables) rather than taking it from the board's own
+ * export, so a board that builds its model differently elsewhere would be checked against this copy.
  */
 const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string; readonly netlist: string; readonly model: () => ProjectModel }> = [
   {

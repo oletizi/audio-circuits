@@ -126,6 +126,9 @@ describe("module part symbols", () => {
     const library = "Memory_RAM"
     const names = [...installedSymbolNames(`${library}:x`)]
     expect(names.length).toBeGreaterThan(50)
+    // Known limitation (H7 module plan, Task 4 review): the exclusion below recognises the refusal by its
+    // text, /multi-unit/. If `symbolPins` rewords it, nothing is excluded and the test fails (the count
+    // below needs at least one exclusion), loudly rather than silently.
     // A multi-unit symbol (which `symbolPins` refuses) splits its pins across drawn units, so it is not the
     // one 54-pin body C4 compares; each such symbol is counted here and left out of the pin comparison.
     const multiUnit = names.filter((n) => {
@@ -358,8 +361,14 @@ describe("the 3V3 capacitance sum", () => {
   })
 
   test("a capacitor with both pins in the domain counts once", () => {
-    const both = withLoad(cap("c_bst", 100e-9, MODULE_3V3_NET, "VDDA"))
-    expect(moduleCapacitance3v3(both).entries.filter((e) => e.id === "c_bst")).toHaveLength(1)
+    const both = withLoad(cap("c_both_pins", 100e-9, MODULE_3V3_NET, "VDDA"))
+    expect(moduleCapacitance3v3(both).entries.filter((e) => e.id === "c_both_pins")).toHaveLength(1)
+  })
+
+  test("the limit check walks from the root net it is given, as the sum does", () => {
+    const other = circuit().capacitor("c1", "1u", { a: "A", b: "GND" }).resistor("r1", "1k", { a: "A", b: "GND" }).done()
+    expect(assertModuleCapacitanceWithinLimit(other, {}, "A").total_F).toBeCloseTo(1e-6, 12)
+    expect(() => assertModuleCapacitanceWithinLimit(other)).toThrow(new RegExp(MODULE_3V3_NET))
   })
 
   test("the capacitance sum fails above 150 uF", () => {

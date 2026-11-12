@@ -164,7 +164,14 @@ export const SWD_HEADER_CONNECTIONS: Readonly<Record<string, Connection>> = {
 }
 
 const USBLC6 = CARRIER_PIN_NAMES["Power_Protection:USBLC6-2SC6"]
-if (USBLC6 === undefined) throw new Error("parts.ts records no pin names for Power_Protection:USBLC6-2SC6")
+if (USBLC6 === undefined) {
+  throw new Error(
+    "circuits/h7-platform/parts.ts records no pin names for Power_Protection:USBLC6-2SC6: add them to its " +
+      "DATASHEET_PIN_NAMES table, under that symbol, beside USB_ESD, read from the USBLC6-2 datasheet. They are " +
+      "not defaulted because the module's DATASHEET_PIN_NAMES reuses them and the symbol test compares the " +
+      "installed symbol with them pin for pin; a guessed table would let a wrong symbol pin pass that check.",
+  )
+}
 
 /**
  * Datasheet pin names of the module's `ic` parts, symbol pin number -> name, spelled as KiCad spells them
@@ -173,6 +180,10 @@ if (USBLC6 === undefined) throw new Error("parts.ts records no pin names for Pow
  */
 export const DATASHEET_PIN_NAMES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   // Winbond W9825G6KH Rev. A04 (20 Mar 2017) p. 4 section 4 Pin Configuration, p. 5 section 5.
+  // Known limitation, kept on purpose (H7 module plan, Task 4 review): this 54-pin table is also written
+  // out in tests/circuits/h7-module-parts.test.ts and tests/circuits/h7-project-symbol.test.ts. The test
+  // copies are independent transcriptions of the same page, so a slip in one shows as a disagreement;
+  // a correction to the datasheet reading has to land in all three.
   "h7-platform:W9825G6KH": {
     "1": "VDD", "2": "DQ0", "3": "VDDQ", "4": "DQ1", "5": "DQ2", "6": "VSSQ", "7": "DQ3", "8": "DQ4",
     "9": "VDDQ", "10": "DQ5", "11": "DQ6", "12": "VSSQ", "13": "DQ7", "14": "VDD", "15": "LDQM",

@@ -141,13 +141,15 @@ test("moduleMcuPin is kept, a string or null", () => {
 })
 
 test("a pin without moduleMcuPin refuses", () => {
-  const raw = JSON.parse(readFileSync(join(import.meta.dir, "../../circuits/h7-platform/module-interface.json"), "utf8"))
-  const missing = { ...raw, pins: raw.pins.map((p: Record<string, unknown>) => {
-    if (p.pin !== 3) return p
-    const { moduleMcuPin: _dropped, ...rest } = p
-    return rest
-  }) }
+  const raw: unknown = JSON.parse(readFileSync(join(import.meta.dir, "../../circuits/h7-platform/module-interface.json"), "utf8"))
+  if (typeof raw !== "object" || raw === null || !("pins" in raw) || !Array.isArray(raw.pins)) {
+    throw new Error("module-interface.json has no pins array; the refusal tests below edit a copy of it")
+  }
+  const pins: readonly unknown[] = raw.pins
+  const isPin3 = (p: unknown): p is object => typeof p === "object" && p !== null && "pin" in p && p.pin === 3
+  const withPin3 = (edit: (p: object) => object): unknown => ({ ...raw, pins: pins.map((p) => (isPin3(p) ? edit(p) : p)) })
+  const missing = withPin3((p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== "moduleMcuPin")))
   expect(() => parseContract(missing)).toThrow(/pin 3.*moduleMcuPin/)
-  const wrongType = { ...raw, pins: raw.pins.map((p: Record<string, unknown>) => (p.pin === 3 ? { ...p, moduleMcuPin: 7 } : p)) }
-  expect(() => parseContract(wrongType)).toThrow(/pin 3.*moduleMcuPin/)
+  expect(() => parseContract(withPin3((p) => ({ ...p, moduleMcuPin: 7 })))).toThrow(/pin 3.*moduleMcuPin/)
+  expect(() => parseContract(withPin3((p) => ({ ...p, moduleMcuPin: "" })))).toThrow(/pin 3.*moduleMcuPin/)
 })
