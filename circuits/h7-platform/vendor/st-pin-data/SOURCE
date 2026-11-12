@@ -1,0 +1,9 @@
+Upstream: https://github.com/STMicroelectronics/STM32_open_pin_data
+Commit:   7d1f1514ed5583ec5007ad91236b4e1d377295b1
+Files:    mcu/STM32H743IITx.xml, mcu/IP/GPIO-STM32H747_gpio_v1_0_Modes.xml,
+          mcu/STM32H750IBKx.xml, mcu/STM32H750IBTx.xml
+License:  BSD-3-Clause (see LICENSE)
+Why:      the pin map (h7-platform/pinmap.json) is validated against ST's own
+          CubeMX pin database rather than against hand-transcribed tables.
+Why (H750): the module contract (h7-platform/module-interface.json) is checked against the Seed's STM32H750IB as well (split spec §10.3).
+GPIO IP:  all three mcu files name GPIO Version="STM32H747_gpio_v1_0", so the one modes file serves the H743 and both H750IB packages.

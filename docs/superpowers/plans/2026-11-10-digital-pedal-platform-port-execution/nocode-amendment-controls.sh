@@ -50,9 +50,11 @@ run_case circuits/h7-platform/probe.ts PASS "phase-2 amendment"
 run_case circuits/h7-platform/probe.py FAIL "probe.py"
 run_case docs/h7-platform/probe.ts FAIL "probe.ts"
 run_case docs/h7-platform/probe.kicad_sym FAIL "probe.kicad_sym"
+run_case circuits/h7-platform/vendor/st-pin-data/probe-ok.xml PASS "vendored ST pin-data"
+run_case circuits/h7-platform/probe.xml FAIL "probe.xml"
 
 if [ $failures -ne 0 ]; then
   echo "nocode-amendment-controls: $failures case(s) did not behave as stated"
   exit 1
 fi
-echo "nocode-amendment-controls: all 4 cases behave as stated"
+echo "nocode-amendment-controls: all 6 cases behave as stated"
