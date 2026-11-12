@@ -13,9 +13,9 @@
  * FB_VDDA IS AN `inductor` IN THIS MODEL (CR-MODULE-3V3-SUM: the 3V3 capacitance walk crosses it),
  * so it must carry an inductance, and the only one any document gives is the analysis's lower
  * bound `BEAD_L_MIN_H` (165 ohm / (2 pi x 100 MHz), vdda-noise.ts; analog.md :242, :272). That
- * figure is a bound for the noise analysis, NOT the bead's rating (220 ohm +/- 25 % at 100 MHz),
- * and the part is identified by its `mpn`. The drawing's value field reads the inductance; the
- * owner sees it on the page.
+ * figure is used only by the 3V3 walk and the VDDA analysis; it is NOT the bead's rating. The page
+ * draws the rating, 220 ohm at 100 MHz, from the part spec's `beadImpedance` (ruling
+ * CR-MODULE-BEAD-VALUE; `valueFor` never prints henries for a bead).
  */
 import type { Network } from "../../../lib/model/index.ts"
 import { FERRITE_VDDA } from "../module-parts.ts"

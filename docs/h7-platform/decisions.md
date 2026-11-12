@@ -1536,6 +1536,25 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Settles:** the 150 µF half of MODULE-BUCK-LOOP-STARTUP, once Task 6's model carries the real total. The loop and start-up check needs TI's application report or a simulation and stays open.
 - **Set by:** the controller, H7 module plan Task 4.
 
+### CR-MODULE-USB-C-PINS
+
+**On the module's DFU socket J_USB_MOD, the GND pins go to GND, SBU1 and SBU2 are not connected, and the shell goes to GND through 1 MΩ in parallel with 4.7 nF.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the pins of the HRO TYPE-C-31-E-17 (`Connector:USB_C_Receptacle_USB2.0_16P`) that [processor-and-memory.md](processor-and-memory.md) §8 (line 267) leaves unstated. A1, A12, B1 and B12 go to GND. A8 (SBU1) and B8 (SBU2) are not connected. The shell (SH) goes to GND through 1 MΩ in parallel with 4.7 nF. That is the treatment the carrier has ([CR-CARRIER-USB-C](#cr-carrier-usb-c)) and the pedal has ([schematic-checklist.md](schematic-checklist.md) USB-05), so the platform has one USB-C shell treatment. [CR-MODULE-USB-ESD](#cr-module-usb-esd) states that the module socket's shell connection "is not stated for the module and is not ruled here"; this ruling settles it.
+- **Not settled:** the shield parts' ratings (USB-05 names a 2 kV capacitor for the pedal) and the footprint half of USB-DFU-VERTICAL.
+- **Set by:** the controller, H7 module plan Task 6.
+- **Carried in:** `circuits/h7-platform/module/usb-dfu.ts` (`j_usb_mod`, `r_shld`, `c_shld`).
+
+### CR-MODULE-BEAD-VALUE
+
+**A ferrite bead is drawn with its rated impedance as its value, never with henries; FB_VDDA reads "220R@100MHz".**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** FB_VDDA is an `inductor` in the model so that the 3V3 capacitance walk crosses it ([CR-MODULE-3V3-SUM](#cr-module-3v3-sum)), and its inductance is the analysis lower bound `BEAD_L_MIN_H`, 0.263 µH ([analog.md](analog.md) line 272), used only by that walk and the VDDA analysis. That figure is not the bead's rating. The rating, 220 Ω at 100 MHz ([parts.md](parts.md) line 35; [analog.md](analog.md) line 242), is carried in the part spec (`beadImpedance`), and `valueFor` (`lib/kicad/value-notation.ts`) writes it as the value of any inductor on `Device:FerriteBead` or `Device:FerriteBead_Small`. The same function supplies the drafted intent's value and the value the sheet-agreement check compares, so the page and the model cannot disagree. A bead with no rated impedance refuses, naming the part. No installed KiCad library carries a bead with an impedance value, so the spelling is chosen: the impedance in the resistance spelling, "@", and the frequency in MHz.
+- **Set by:** the controller, H7 module plan Task 6.
+- **Carried in:** `circuits/h7-platform/module-parts.ts` (`FERRITE_VDDA`); `lib/kicad/value-notation.ts`; tested in `tests/kicad/value-notation.test.ts`.
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.

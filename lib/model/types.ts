@@ -90,6 +90,14 @@ export interface PartSpec {
    */
   readonly electricallyInert?: boolean
   /**
+   * A ferrite bead's rated impedance: `ohms` at `hertz` (e.g. 220 ohm at 100 MHz). A bead is an
+   * `inductor` in the model so a DC walk crosses it, but its datasheet rates it by impedance at a
+   * frequency, not by inductance, so its value field is this rating (`valueFor` in
+   * `lib/kicad/value-notation.ts`), never henries. Required on a part whose symbol is
+   * `Device:FerriteBead` or `Device:FerriteBead_Small`; refused on any other part.
+   */
+  readonly beadImpedance?: { readonly ohms: number; readonly hertz: number }
+  /**
    * That this connector is ONE ROW of a pin field a single part occupies, when the
    * model splits that part into one component per row.
    *

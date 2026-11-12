@@ -52,8 +52,14 @@ export const SUPERVISOR: PartSpec = { mpn: "TLV803EA30DBZR", symbol: "Power_Supe
 /** 3.3 V buck, TPS62933F, SOT-583 (DRL). Stock symbol. */
 export const BUCK: PartSpec = { mpn: "TPS62933FDRLR", symbol: "Regulator_Switching:TPS62933F" }
 
-/** VDDA ferrite bead FB_VDDA (parts.md). Stock symbol. */
-export const FERRITE_VDDA: PartSpec = { mpn: "BLM21PG221SN1D", symbol: "Device:FerriteBead" }
+/**
+ * VDDA ferrite bead FB_VDDA (parts.md:35). Stock symbol. Rated 220 ohm at 100 MHz (analog.md:242,
+ * "|Z| 220 ohm +/- 25 % at 100 MHz"; the "221" of the MPN), which is its drawn value
+ * (`valueFor`, lib/kicad/value-notation.ts).
+ */
+export const FERRITE_VDDA: PartSpec = {
+  mpn: "BLM21PG221SN1D", symbol: "Device:FerriteBead", beadImpedance: { ohms: 220, hertz: 100e6 },
+}
 
 /**
  * HSE crystal Y_HSE, NDK NX3225GA 25 MHz, CL 8 pF. `Crystal_GND24` because NDK 2008E_NX3225GA_e

@@ -34,8 +34,8 @@ test("resistances are expressed in uppercase K", () => {
 test("decades the board does not exercise are refused, not guessed", () => {
   // Both ends widened independently, so the refusals moved outwards: 470R and
   // 2M are now inside the proven range and only these remain outside it.
-  expect(() => valueFor(resistor(0.5))).toThrow(/1R.*10M/s)
-  expect(() => valueFor(resistor(1e7))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(resistor(0.05))).toThrow(/100mR.*10M/s)
+  expect(() => valueFor(resistor(1e7))).toThrow(/100mR.*10M/s)
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
@@ -61,7 +61,7 @@ test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M refuses", () 
   expect(valueFor(resistor(999000))).toBe("999K")
   expect(valueFor(resistor(1e6))).toBe("1M")
   expect(valueFor(resistor(1.5e6))).toBe("1.5M")
-  expect(() => valueFor(resistor(1e7))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(resistor(1e7))).toThrow(/100mR.*10M/s)
 })
 
 test("an IC's value is its manufacturer part number", () => {
@@ -116,15 +116,22 @@ test("resistance below one kilohm keeps its ohms spelling", () => {
   expect(valueFor(twoPin("R2", "resistor", { ohms: 1 }))).toBe("1R")
 })
 
-test("exactly zero ohms is a wire link, spelled 0R, and the band above it stays refused", () => {
+test("exactly zero ohms is a wire link, spelled 0R; negative refuses", () => {
   // A stand-in derived at a control's end stop carries ideal shorts as components, so a
   // Pultec section board holds 0R resistors - a jumper or a wire across two pads. Zero
-  // is admitted as its own case, NOT by lowering the floor: 0.5R would render ".5R",
-  // a spelling nothing has been checked against.
+  // is admitted as its own case. The band below 1R is RKM-spelled (next test), never ".5R".
   expect(valueFor(twoPin("R6", "resistor", { ohms: 0 }))).toBe("0R")
-  expect(() => valueFor(twoPin("R7", "resistor", { ohms: 0.5 }))).toThrow(/1R.*10M/s)
-  expect(() => valueFor(twoPin("R8", "resistor", { ohms: 0.999 }))).toThrow(/1R.*10M/s)
-  expect(() => valueFor(twoPin("R9", "resistor", { ohms: -0.5 }))).toThrow(/1R.*10M/s)
+  expect(() => valueFor(twoPin("R9", "resistor", { ohms: -0.5 }))).toThrow(/100mR.*10M/s)
+})
+
+test("a resistance from 100 mOhm up to 1 ohm is spelled in RKM, 0R22, never .22R", () => {
+  // The h7 module's R_DAMP 0.22 ohm (power.md:270) and R_VDDA_DAMP 0.30 ohm (CR-MODULE-VDDA-BANK).
+  // RKM (IEC 60062) is the spelling parseValue already reads back.
+  expect(valueFor(twoPin("R7", "resistor", { ohms: 0.22 }))).toBe("0R22")
+  expect(valueFor(twoPin("R8", "resistor", { ohms: 0.3 }))).toBe("0R3")
+  expect(valueFor(twoPin("R10", "resistor", { ohms: 0.1 }))).toBe("0R1")
+  expect(valueFor(twoPin("R11", "resistor", { ohms: 0.5 }))).toBe("0R5")
+  expect(() => valueFor(twoPin("R12", "resistor", { ohms: 0.05 }))).toThrow(/100mR.*10M/s)
 })
 
 test("resistance at or above one kilohm is unchanged by this task", () => {
@@ -280,4 +287,30 @@ test("a stated part.value is the value of a part with no electrical quantity, ah
 test("part.value on a part whose value comes from its parameters refuses", () => {
   expect(() => valueFor({ ...resistor(1000), part: { symbol: "Device:R", value: "2k" } }))
     .toThrow(/derived from its parameters/)
+})
+
+function bead(symbol: string, beadImpedance?: { ohms: number; hertz: number }): Component {
+  return {
+    ...twoPin("FB1", "inductor", { henries: 2.6e-7 }),
+    part: { mpn: "BLM21PG221SN1D", symbol, ...(beadImpedance !== undefined ? { beadImpedance } : {}) },
+  }
+}
+
+test("a ferrite bead's value is its rated impedance, never henries", () => {
+  expect(valueFor(bead("Device:FerriteBead", { ohms: 220, hertz: 100e6 }))).toBe("220R@100MHz")
+  expect(valueFor(bead("Device:FerriteBead_Small", { ohms: 1000, hertz: 100e6 }))).toBe("1K@100MHz")
+})
+
+test("a ferrite bead with no rated impedance refuses, naming the part", () => {
+  expect(() => valueFor(bead("Device:FerriteBead"))).toThrow(/FB1.*beadImpedance/s)
+})
+
+test("a rated impedance on a part that is not a bead refuses", () => {
+  const notBead: Component = { ...twoPin("L9", "inductor", { henries: 0.1 }), part: { symbol: "Device:L", beadImpedance: { ohms: 220, hertz: 100e6 } } }
+  expect(() => valueFor(notBead)).toThrow(/L9.*beadImpedance/s)
+})
+
+test("a non-bead inductor still formats from henries", () => {
+  const l: Component = { ...twoPin("L10", "inductor", { henries: 0.22 }), part: { symbol: "Device:L" } }
+  expect(valueFor(l)).toBe("220mH")
 })

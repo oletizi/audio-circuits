@@ -36,6 +36,9 @@ const MAX_FARADS = 1e-3
 // and the tests assert both boundaries.
 const MIN_OHMS = 1
 const MAX_OHMS_EXCLUSIVE = 1e7
+// The sub-ohm band, spelled in RKM ("0R22"), was added for the h7 module's two damping resistors
+// (0.22 ohm, power.md:270; 0.30 ohm, CR-MODULE-VDDA-BANK). Its floor is the smallest value tested.
+const MIN_SUB_OHMS = 0.1
 
 /**
  * A number as KiCad spells it: no exponent, no trailing zeros, no leading zero.
@@ -78,13 +81,16 @@ export function resistanceText(ohms: number, id: string): string {
   // MIN_OHMS to 0 instead would also admit 0.5R as ".5R", a spelling nothing here has
   // been checked against, so the band between 0 and 1R stays refused.
   if (ohms === 0) return "0R"
-  if (!Number.isFinite(ohms) || ohms < MIN_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
+  if (!Number.isFinite(ohms) || ohms < MIN_SUB_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (1R up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "over (100mR up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
         "rather than letting it guess a spelling.",
     )
   }
+  // BELOW ONE OHM THE SPELLING IS RKM (IEC 60062), "0R22": `decimal` would strip the leading zero
+  // and give ".22R", which no vendor writes, and `parseValue` reads "0R22" back as 0.22.
+  if (ohms < MIN_OHMS) return `0R${String(Number(ohms.toPrecision(10))).slice(2)}`
   // Three spellings, one per decade band. Sub-kilohm parts are spelled in ohms,
   // as the reference documentation spells them ("R1 430R" in
   // docs/pultec/values.md): dividing them by 1000 would produce ".43K",
@@ -114,6 +120,40 @@ function inductanceText(henries: number, id: string): string {
     )
   }
   return henries < 1 ? `${decimal(henries * 1000)}mH` : `${decimal(henries)}H`
+}
+
+/** The symbols a ferrite bead is drawn with; a part on one of them is valued by its impedance. */
+const BEAD_SYMBOLS: ReadonlySet<string> = new Set(["Device:FerriteBead", "Device:FerriteBead_Small"])
+
+/**
+ * A ferrite bead's value field: its rated impedance at its rating frequency, "220R@100MHz".
+ *
+ * **WHY NOT HENRIES.** A bead is an `inductor` in the model so a DC walk (the h7 module's 3V3
+ * capacitance sum) crosses it, but its datasheet rates it by impedance at a frequency, and any
+ * inductance the model carries is an analysis figure (the h7 module's FB_VDDA carries a lower
+ * bound), not a part value. Printing it would put a bound on the page as a rating.
+ *
+ * **THE SPELLING.** No installed KiCad symbol or footprint library carries a bead with an impedance
+ * value (the stock `Device:FerriteBead` and `Device:FerriteBead_Small` take their symbol name as
+ * Value; searched for "@100MHz" and "Ohm@" across the installed symbols and footprints, no match).
+ * So the form is chosen here: the impedance in this module's resistance spelling, then "@" and the
+ * frequency in MHz, the way bead datasheets state the rating ("220 ohm at 100 MHz"). Only whole MHz
+ * is proven; anything else refuses.
+ */
+function beadImpedanceText(component: Component): string {
+  const rating = component.part?.beadImpedance
+  if (rating === undefined) {
+    throw new Error(
+      `ferrite bead "${component.id}" (symbol ${component.part?.symbol ?? "?"}) has no part.beadImpedance. ` +
+        "A bead's value is its rated impedance at a frequency, from its datasheet; it is never drawn " +
+        "with henries, so state the rating in its part spec rather than leaving the value to a guess.",
+    )
+  }
+  const mhz = rating.hertz / 1e6
+  if (!Number.isInteger(mhz) || mhz <= 0) {
+    throw new Error(`ferrite bead "${component.id}": rating frequency ${rating.hertz}Hz is not a whole number of MHz, the only spelling this formatter has been proven over`)
+  }
+  return `${resistanceText(rating.ohms, component.id)}@${mhz}MHz`
 }
 
 /** "Connector_Generic:Conn_01x05" -> "Conn_01x05". */
@@ -254,6 +294,14 @@ export function valueFor(component: Component): string {
     }
     return resistanceText(ohms, component.id)
   }
+  const isBead = component.kind === "inductor" && BEAD_SYMBOLS.has(component.part?.symbol ?? "")
+  if (component.part?.beadImpedance !== undefined && !isBead) {
+    throw new Error(
+      `component "${component.id}" states part.beadImpedance but is not an inductor on ${[...BEAD_SYMBOLS].join(" or ")}; ` +
+        "a rated impedance is a ferrite bead's value and nothing else's.",
+    )
+  }
+  if (isBead) return beadImpedanceText(component)
   if (component.kind === "inductor") {
     const henries: unknown = Reflect.get(component.parameters, "henries")
     if (typeof henries !== "number") {
