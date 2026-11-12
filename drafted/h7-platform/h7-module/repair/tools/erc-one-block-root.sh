@@ -6,7 +6,8 @@
 # (pwr-flag-homes.ts, ruling CR-MODULE-PWR-FLAGS), and a stand-in driver on each signal net whose
 # driver is on another page (cross-page-drivers.ts, ruling CR-MODULE-CROSS-PAGE-DRIVERS). Reported per sheet: the block's own is
 # /<block>/; the root / holds the stubs, whose labels dangle with one block. erc_sheets.py is the
-# verdict. Called by verify.sh, and by erc-control.sh's positive control on a block draft.
+# verdict, given the declared ERC allowances (erc-allowances.ts, ruling CR-MODULE-VCAP-ERC), which
+# are held to the model first. Called by verify.sh, and by erc-control.sh's positive control on a block draft.
 #
 # Fails loudly: a fresh temporary directory, kicad-cli's and akcli's status checked, the report
 # required to exist and be non-empty.
@@ -38,5 +39,8 @@ echo "$log" | grep -q 'status: APPLIED' || { echo "$log" >&2; fail "akcli did no
   || { grep -v '^Fontconfig warning' "$ctx/kc.err" >&2; fail "kicad-cli sch erc exited non-zero on the one-block root"; }
 grep -v '^Fontconfig warning' "$ctx/kc.err" >&2 || true
 [ -s "$ctx/erc.json" ] || fail "kicad-cli wrote no ERC report for the one-block root"
-python3 "$here/erc_sheets.py" "$ctx/erc.json" "$block" \
+(cd "$root" && bun "$here/erc-allowances.ts" "$ctx/allowances.json") \
+  || fail "erc-allowances.ts refused the declared ERC allowances (named above; ruling CR-MODULE-VCAP-ERC)"
+[ -s "$ctx/allowances.json" ] || fail "erc-allowances.ts wrote no allowances file"
+python3 "$here/erc_sheets.py" "$ctx/erc.json" "$block" "$ctx/allowances.json" \
   || fail "ERC under the one-block root: the block's sheet has an error, is missing, or the root has an error other than its stubs' (listed above)"

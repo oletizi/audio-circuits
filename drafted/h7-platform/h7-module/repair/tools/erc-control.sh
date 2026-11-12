@@ -27,6 +27,15 @@
 # 13. ruling CR-MODULE-PORT-LABEL-CHECK: port-label-control.sh's controls (all eight committed pages
 #     verify; a copy of interface with two one-pin labels swapped and a copy of qspi with one label
 #     deleted each fail, naming the port; Wiring.op_list refuses a label on another net's wire).
+# 14. positive, ruling CR-MODULE-VCAP-ERC: the committed mcu page verifies, and verify.sh's closing
+#     lines name the excused pin_to_pin between U1 pins 81 and 125 with the ruling.
+# 15. negative, the same ruling: with the allowance removed (the H7_ERC_ALLOWANCES_TABLE test
+#     override, announced; the committed table is untouched), the same run fails on pin_to_pin.
+# 16. negative, the same ruling: an allowance naming U1 pins 81 and 126 is refused by the model
+#     check in erc-allowances.ts (pin 126 is not on VCAP), so the run fails.
+# 17. erc_sheets.py alone on synthetic reports under the VCAP allowance: the exact pair on /mcu/ is
+#     excused and named; other pins, another type, a third item, or another sheet each fail; an
+#     allowance matching nothing on a sheet the report holds is reported stale and passes.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -58,12 +67,14 @@ synth() {
 }
 expect() {
   want="$1"; name="$2"
-  if python3 "$here/erc_sheets.py" "$work/$name.json" power >"$work/$name.log" 2>&1; then got=0; else got=1; fi
+  allow="${3:-$work/no-allowances.json}"; block="${4:-power}"
+  if python3 "$here/erc_sheets.py" "$work/$name.json" "$block" "$allow" >"$work/$name.log" 2>&1; then got=0; else got=1; fi
   [ "$got" = "$want" ] || { cat "$work/$name.log" >&2; bad "$name: erc_sheets.py exit $got, expected $want"; }
   echo "   $name: exit $got as expected"
 }
 
 echo "== 3-7. erc_sheets.py on synthetic reports"
+printf '%s\n' '[]' >"$work/no-allowances.json"
 synth absent '{"sheets":[{"path":"/","violations":[]}]}'
 expect 1 absent
 synth target-error '{"sheets":[{"path":"/","violations":[]},{"path":"/power/","violations":[{"severity":"error","type":"pin_not_connected"}]}]}'
@@ -144,5 +155,54 @@ echo "   refused as expected: $(grep 'U1 pin 29 is on' "$work/bad-pin.log" | hea
 
 echo "== 13. port labels on their ports' nets (port-label-control.sh)"
 sh "$here/port-label-control.sh" || bad "port-label-control.sh: a port-label control did not come out as stated (above)"
+
+mcu="$(cd "$here/../.." && pwd)/mcu.kicad_sch"
+echo "== 14. committed mcu page verifies, its one pin_to_pin excused under CR-MODULE-VCAP-ERC"
+sh "$here/verify.sh" mcu "$mcu" >"$work/mcu.log" 2>&1 || { cat "$work/mcu.log" >&2; bad "the committed mcu page did not verify"; }
+grep -q '^   excused: error pin_to_pin on /mcu/ under CR-MODULE-VCAP-ERC: Symbol U1 Pin 81 \[VCAP, Power output, Line\]; Symbol U1 Pin 125 \[VCAP, Power output, Line\]$' "$work/mcu.log" \
+  || { cat "$work/mcu.log" >&2; bad "verify.sh passed the mcu page but its closing lines do not name the excused VCAP pin_to_pin with CR-MODULE-VCAP-ERC"; }
+echo "   pass: $(grep '^   excused: ' "$work/mcu.log" | head -1)"
+
+echo "== 15. the same page, with the allowance removed (test override), fails on pin_to_pin"
+if H7_ERC_ALLOWANCES_TABLE="$work/no-allowances.json" sh "$here/verify.sh" mcu "$mcu" >"$work/mcu-neg.log" 2>&1; then
+  cat "$work/mcu-neg.log" >&2; bad "verify.sh passed the mcu page with no ERC allowance"
+fi
+grep -q 'TEST OVERRIDE' "$work/mcu-neg.log" || { cat "$work/mcu-neg.log" >&2; bad "the override was not announced, so the run may have used the committed table"; }
+grep -q "FAIL - the block.s own sheet /mcu/ has 1 ERC error(s): pin_to_pin" "$work/mcu-neg.log" \
+  || { cat "$work/mcu-neg.log" >&2; bad "verify.sh failed, but not on /mcu/'s pin_to_pin"; }
+echo "   fails as expected: $(grep 'at pin_to_pin' "$work/mcu-neg.log" | head -1)"
+
+echo "== 16. an allowance naming U1 pins 81 and 126 does not excuse it (refused by the model check, or not matched)"
+printf '%s\n' '[{"ruling":"CR-MODULE-VCAP-ERC","sheet":"/mcu/","type":"pin_to_pin","pins":[{"designator":"U1","pin":"81"},{"designator":"U1","pin":"126"}],"net":"VCAP","symbolPinType":"power_out","source":"erc-control.sh control 16, deliberately wrong"}]' >"$work/wrong-pin.json"
+if H7_ERC_ALLOWANCES_TABLE="$work/wrong-pin.json" sh "$here/verify.sh" mcu "$mcu" >"$work/mcu-wrong.log" 2>&1; then
+  cat "$work/mcu-wrong.log" >&2; bad "verify.sh passed the mcu page under an allowance naming U1 pins 81 and 126"
+fi
+grep -q 'TEST OVERRIDE' "$work/mcu-wrong.log" || { cat "$work/mcu-wrong.log" >&2; bad "the override was not announced"; }
+grep -q 'U1 pin 126 is on .* in the model, not on VCAP' "$work/mcu-wrong.log" \
+  || { cat "$work/mcu-wrong.log" >&2; bad "verify.sh failed, but not with the model check naming U1 pin 126 as off VCAP"; }
+echo "   fails as expected: $(grep -o 'U1 pin 126 is on [^,]*, not on VCAP' "$work/mcu-wrong.log" | head -1)"
+
+echo "== 17. erc_sheets.py: the allowance matches exactly, and nothing near it"
+cat >"$work/vcap-allow.json" <<'JSON'
+[{"ruling":"CR-MODULE-VCAP-ERC","sheet":"/mcu/","type":"pin_to_pin","pins":[{"designator":"U1","pin":"81"},{"designator":"U1","pin":"125"}],"net":"VCAP","symbolPinType":"power_out","source":"control"}]
+JSON
+p81='{"description":"Symbol U1 Pin 81 [VCAP, Power output, Line]"}'
+p125='{"description":"Symbol U1 Pin 125 [VCAP, Power output, Line]"}'
+p126='{"description":"Symbol U1 Pin 126 [VDD, Power input, Line]"}'
+synth exact "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p125,$p81]}]}]}"
+expect 0 exact "$work/vcap-allow.json" mcu
+grep -q '^excused: error pin_to_pin on /mcu/ under CR-MODULE-VCAP-ERC' "$work/exact.log" || { cat "$work/exact.log" >&2; bad "exact: the excused violation is not named with its ruling"; }
+synth other-pins "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p126]}]}]}"
+expect 1 other-pins "$work/vcap-allow.json" mcu
+synth other-type "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_not_driven\",\"items\":[$p81,$p125]}]}]}"
+expect 1 other-type "$work/vcap-allow.json" mcu
+synth third-item "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p125,$p126]}]}]}"
+expect 1 third-item "$work/vcap-allow.json" mcu
+synth other-sheet "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/power/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p125]}]}]}"
+expect 1 other-sheet "$work/vcap-allow.json" power
+synth stale "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[]}]}"
+expect 0 stale "$work/vcap-allow.json" mcu
+grep -q '^stale allowance: CR-MODULE-VCAP-ERC' "$work/stale.log" || { cat "$work/stale.log" >&2; bad "stale: an allowance that matched nothing was not reported as stale"; }
+echo "   stale reported: $(grep '^stale allowance' "$work/stale.log")"
 
 echo "erc-control.sh: every control came out as stated"

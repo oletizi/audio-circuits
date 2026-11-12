@@ -37,6 +37,7 @@ import { DESIGNATORS } from "../../../../../circuits/h7-platform/module-board.ts
 import type { Component, Network } from "../../../../../lib/model/index.ts"
 import { defaultSymbolDir } from "../../../../../lib/kicad/install.ts"
 import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../../../../lib/kicad/symbol-library.ts"
+import type { SymbolPin } from "../../../../../lib/kicad/symbol-library.ts"
 
 export interface CrossPageDriver {
   /** The module net (the parent net the blocks' ports bind to). */
@@ -154,7 +155,8 @@ export function crossPageDriverTable(): readonly CrossPageDriver[] {
   return parseOverride(file)
 }
 
-function pinConnection(component: Component, pin: string): string | null | undefined {
+/** The net a component's pin is on in the model: a net name, null for a no-connect, undefined for no such pin. */
+export function pinConnection(component: Component, pin: string): string | null | undefined {
   const all = [component.pins, ...component.units.map((u) => u.pins)]
   for (const pins of all) {
     const c = pins[pin]
@@ -163,11 +165,16 @@ function pinConnection(component: Component, pin: string): string | null | undef
   return undefined
 }
 
-function symbolPinName(libId: string, number: string): string | undefined {
+/** The pin with this number on the INSTALLED KiCad library's symbol (not a vendored copy), or undefined. */
+export function installedSymbolPin(libId: string, number: string): SymbolPin | undefined {
   const { library, name } = splitLibId(libId)
   const file = join(defaultSymbolDir(KICAD_CLI), `${library}.kicad_sym`)
   const block = flattenedSymbol(librarySymbols(readFileSync(file, "utf8")), name)
-  return symbolPins(block).find((p) => p.number === number)?.name
+  return symbolPins(block).find((p) => p.number === number)
+}
+
+function symbolPinName(libId: string, number: string): string | undefined {
+  return installedSymbolPin(libId, number)?.name
 }
 
 function problemsWith(entry: CrossPageDriver, module: Network): string[] {

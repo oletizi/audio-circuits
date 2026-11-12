@@ -2,7 +2,8 @@
 # The verification set for one h7-module BLOCK sheet: sha256, parenthesis depth, the kicad-cli
 # netlist export against that block's part of the module model (block-netcompare.ts,
 # compareSheetToModel's six lists, then each port's label on its port's pins, port-labels.ts), the PWR_FLAG homes (flag-check.ts), ERC alone and under a
-# one-block root (erc-one-block-root.sh), the draughting/measure suite (selftest first), paper fit,
+# one-block root (erc-one-block-root.sh, with the declared allowances of erc-allowances.ts, whose
+# excused violations the closing lines name), the draughting/measure suite (selftest first), paper fit,
 # and the counts table. Copied from the h7-carrier's repair/verify.sh; what changed is the block
 # argument, the comparison, which covers only the block's components, and the two module checks.
 #
@@ -71,7 +72,9 @@ quiet "$out/kc.err"
 python3 "$here/erc_counts.py" "$out/erc.json" || fail "erc_counts.py could not read the ERC report"
 
 echo "== ERC under a one-block root"
-sh "$here/erc-one-block-root.sh" "$block" "$sch" || fail "ERC under the one-block root failed (erc-one-block-root.sh, above)"
+sh "$here/erc-one-block-root.sh" "$block" "$sch" >"$out/root.log" 2>&1 \
+  || { cat "$out/root.log" >&2; fail "ERC under the one-block root failed (erc-one-block-root.sh, above)"; }
+cat "$out/root.log"
 
 echo "== selftest"; python3 "$m/selftest.py" | tail -1
 echo "== crossings"; python3 "$m/crossings.py" "$sch" | tail -3
@@ -81,3 +84,12 @@ echo "== label survey"; python3 "$m/label_survey.py" "$sch" | head -1
 echo "== paper fit"; python3 "$m/paper_fit.py" "$sch" | tail -3
 echo "== counts"; python3 "$here/counts.py" "$sch"
 echo "verify.sh: every step ran"
+# Ruling CR-MODULE-VCAP-ERC: every ERC violation excused by a declared allowance (erc-allowances.ts),
+# and every allowance that matched nothing, repeated here so a pass that rests on one is never silent.
+if grep -q "^excused: " "$out/root.log"; then
+  echo "verify.sh: ERC errors excused by a declared allowance (erc-allowances.ts):"
+  grep "^excused: " "$out/root.log" | while IFS= read -r line; do echo "   $line"; done
+else
+  echo "verify.sh: no ERC error excused by a declared allowance"
+fi
+{ grep "^stale allowance: " "$out/root.log" || true; } | while IFS= read -r line; do echo "verify.sh: $line"; done
