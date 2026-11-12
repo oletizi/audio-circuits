@@ -13,7 +13,7 @@ block, each block's ports drawn as hierarchical labels, and a root sheet joining
 `repair/tools/verify-root.sh`). Each block page is also checked against its own block of the model
 (`repair/tools/verify.sh`).
 
-**Every page here is UNREVIEWED until the owner records a verdict.** A verdict is bound to the sha256
+**A page here is UNREVIEWED until the owner records a verdict on its sha256; each page's status below says which it is.** A verdict is bound to the sha256
 in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 
 ## Sheets
@@ -568,7 +568,7 @@ ports GND, HSE_IN and HSE_OUT.
 
 ## reset_boot: the NRST supervisor and the two buttons
 
-**Status: REVIEWED, 2026-11-12, as changed.** The owner's verdict on this sha256, verbatim: *"approved"* (`docs/schematic/verdicts.md`). History (symbol swapped per amended CR-MODULE-SUPERVISOR-SYMBOL; the owner's earlier approval was of sha256 ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397).** sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`.
+**Status: REVIEWED, 2026-11-12, as changed.** The owner's verdict on this sha256, verbatim: *"approved"* (`docs/schematic/verdicts.md`). History (symbol swapped per amended CR-MODULE-SUPERVISOR-SYMBOL; the owner's earlier approval was of sha256 ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397). sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`.
 Render: `reset_boot.svg` beside it.
 
 *History:* REVIEWED, 2026-11-12. The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`), of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`, which drew U5 with `Power_Supervisor:TPS3839DBZ`. That symbol types the RESET pin push-pull `output`, and the fitted TLV803EA30DBZR drives NRST open drain. The module root's ERC found this as a `pin_to_pin` on NRST.
