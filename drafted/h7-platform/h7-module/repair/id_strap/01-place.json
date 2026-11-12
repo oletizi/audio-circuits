@@ -1,0 +1,95 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "id_strap.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "310bea43-3afa-5aec-bef6-f730df19d079"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a1674652-df87-5ca0-881f-20a7bb64d2ec"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "55b526d0-5f28-5646-8eee-dacd36a3ec71"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f3ceba42-0a54-5870-9b65-e734b8ecefc3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0a41d478-f5cc-5fa4-bda0-5dc49f610c14"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "39bc9730-a9b1-5ed9-a2fa-6533a561dd1a"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0a41e44f-8d3e-5c44-bd7a-c4d200ffe3c3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "838734f7-9a08-58a7-9683-0a493c7e50e2"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2335b1c5-ddfb-5ed3-be76-b9e2f32c36c6"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "77cf235c-ef55-52b0-a34f-f9178c58d5d7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e4c09359-3aff-5023-a72a-f4d77049cd91"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ee438885-32a6-5ba5-a311-1c999b7d6401"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "27f2be5d-f201-5613-a548-0059b9642daa"
+  },
+  {
+   "op": "move_component",
+   "designator": "R16",
+   "x_mil": 5000,
+   "y_mil": 4000
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R16",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "R17",
+   "x_mil": 5000,
+   "y_mil": 4600
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "R17",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C51",
+   "x_mil": 5500,
+   "y_mil": 4600
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C51",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

@@ -23,6 +23,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `reset_boot.kicad_sch` | block reset_boot | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
 | `swd.kicad_sch` | block swd | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 | `usb_dfu.kicad_sch` | block usb_dfu | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
+| `id_strap.kicad_sch` | block id_strap | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -35,6 +36,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | reset_boot | UNREVIEWED | `reset_boot.svg` |
 | swd | UNREVIEWED | `swd.svg` |
 | usb_dfu | UNREVIEWED | `usb_dfu.svg` |
+| id_strap | UNREVIEWED | `id_strap.svg` |
 
 ## The drafts every repair starts from
 
@@ -565,3 +567,57 @@ page, which crosses VBUS once and joins the bottom GND row down J4's west side.
 - R13's fields are above it and R14's below it; the others' are beside or above their bodies.
 - Wires on DFU_VBUS, the D lines and DFU_USB_DM/DP carry copperhead's blue stroke; the others its
   default.
+
+## id_strap: the module ID strap
+
+**Status: UNREVIEWED.** sha256 `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09`.
+Render: `id_strap.svg` beside it.
+
+The block: `circuits/h7-platform/module/id-strap.ts`, 3 parts (R16, R17, C51), ports GND,
+MODULE_ID_STRAP and VREF_A (VREF_A reaches one pin, R16's pin 1).
+
+### The rulings this page rests on
+
+- [CR-MODULE-ID-STRAP-VALUES](../../../docs/h7-platform/decisions.md#cr-module-id-strap-values): R16
+  "20K" from VREF_A, R17 "2.49K" to GND, C51 ".1uF" at the strap node.
+- [CR-MODULE-ID-STRAP-PIN](../../../docs/h7-platform/decisions.md#cr-module-id-strap-pin): the net is
+  MODULE_ID_STRAP; which MCU pin it reaches is on the mcu page, not this one.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VREF_A and GND
+  are wires ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input.
+- The stroke of VREF_A, which the draft drew no wire for: copperhead's stroke for a net of no colour
+  family (`id_strap/layout.py`, `UNDRAWN_STROKES`). A drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 3, 3, 6 | 3, 3, 6 |
+| exported nets carrying a model net name | 2 of 3 | 3 of 3 |
+| ERC, the sheet alone | 1 error (`pin_not_connected` 1: R16's pin 1, unwired), 0 warnings | 2 errors (`pin_not_connected` 2: the GND and MODULE_ID_STRAP hierarchical labels have no parent sheet), 1 warning (`isolated_pin_label` 1: VREF_A's label meets one pin) |
+| ERC under a one-block root, `/id_strap/` | 1 error (`pin_not_connected` 1) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 4 errors (`hier_label_mismatch` 3, `label_dangling` 1), 2 warnings | 1 error (`label_dangling` 1: the MODULE_ID_STRAP stub label is alone with one block; the GND and VREF_A stubs carry the stand-in flags), 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 1 | 0 of 3 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 2 on 2 nets (0 global) | 3 on 3 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 2 | 0 of 3 |
+| symbols (parts, power symbols, PWR_FLAGs) | 3 (3, 0, 0) | 3 (3, 0, 0) |
+| placed pins | 6 | 6 |
+| wires, total length | 10, 55.88 mm | 11, 88.90 mm |
+| wire corners | 5 | 2 |
+| junctions | 1 | 3 |
+
+### What the page shows, as observations
+
+- VREF_A's hierarchical label is on the west edge at the top; its row runs east and turns down into
+  R16.
+- R16 stands above R17 in one column; the strap node between them runs east past C51 to
+  MODULE_ID_STRAP's hierarchical label on the east edge.
+- R17 and C51 drop to a GND row that runs west to GND's hierarchical label, under VREF_A's.
+- Each part's Reference and Value are east of its body.
+- Every wire carries copperhead's default stroke.

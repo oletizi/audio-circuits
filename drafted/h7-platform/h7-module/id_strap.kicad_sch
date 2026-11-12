@@ -1,0 +1,426 @@
+(kicad_sch
+	(version 20231120)
+	(generator "copperhead-draft")
+	(generator_version "8.0")
+	(uuid "9f9b07cb-3e6c-5688-bd81-1f7521df60ea")
+	(paper "USLetter")
+	(title_block
+		(title "h7-module: id_strap")
+		(date "2026-11-12")
+		(rev "A")
+		(comment 1 "generated - do not edit")
+	)
+	(lib_symbols
+		(symbol "Device:C"
+				(pin_numbers
+					(hide yes)
+				)
+				(pin_names
+					(offset 0.254)
+				)
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(property "Reference" "C"
+					(at 0.635 2.54 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Value" "C"
+					(at 0.635 -2.54 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+						(justify left)
+					)
+				)
+				(property "Footprint" ""
+					(at 0.9652 -3.81 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Datasheet" ""
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Description" "Unpolarized capacitor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_keywords" "cap capacitor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_fp_filters" "C_*"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(symbol "C_0_1"
+					(polyline
+						(pts
+							(xy -2.032 0.762) (xy 2.032 0.762)
+						)
+						(stroke
+							(width 0.508)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+					(polyline
+						(pts
+							(xy -2.032 -0.762) (xy 2.032 -0.762)
+						)
+						(stroke
+							(width 0.508)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+				)
+				(symbol "C_1_1"
+					(pin passive line
+						(at 0 3.81 270)
+						(length 2.794)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin passive line
+						(at 0 -3.81 90)
+						(length 2.794)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
+		(symbol "Device:R"
+				(pin_numbers
+					(hide yes)
+				)
+				(pin_names
+					(offset 0)
+				)
+				(exclude_from_sim no)
+				(in_bom yes)
+				(on_board yes)
+				(in_pos_files yes)
+				(duplicate_pin_numbers_are_jumpers no)
+				(property "Reference" "R"
+					(at 2.032 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Value" "R"
+					(at 0 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Footprint" ""
+					(at -1.778 0 90)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Datasheet" ""
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "Description" "Resistor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_keywords" "R res resistor"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(property "ki_fp_filters" "R_*"
+					(at 0 0 0)
+					(show_name no)
+					(do_not_autoplace no)
+					(hide yes)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(symbol "R_0_1"
+					(rectangle
+						(start -1.016 -2.54)
+						(end 1.016 2.54)
+						(stroke
+							(width 0.254)
+							(type default)
+						)
+						(fill
+							(type none)
+						)
+					)
+				)
+				(symbol "R_1_1"
+					(pin passive line
+						(at 0 3.81 270)
+						(length 1.27)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "1"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+					(pin passive line
+						(at 0 -3.81 90)
+						(length 1.27)
+						(name ""
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+						(number "2"
+							(effects
+								(font
+									(size 1.27 1.27)
+								)
+							)
+						)
+					)
+				)
+				(embedded_fonts no)
+			)
+	)
+	(rectangle (start 101.6 73.66) (end 180.34 129.54)
+		(stroke (width 0.3) (type dash) (color 20 130 60 1))
+		(fill (type color) (color 20 130 60 0.08))
+		(uuid "14251a06-2540-5528-9dd2-56fac1949f73")
+	)
+	(text "Module\nID strap" (at 103.6 75.66 0)
+		(effects (font (size 3.5 3.5) bold (color 20 130 60 1)) (justify left top))
+		(uuid "d9cca617-1d12-5aea-8e68-2bfb9aaeb93d")
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 139.7 116.84 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "293c3738-d250-5918-bf07-362dbf8d45fa")
+		(property "Reference" "C51" (at 142.494 115.57 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" ".1uF" (at 142.494 118.11 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "" (at 139.7 116.84 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 139.7 116.84 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "58b3e85b-424b-54a5-86d9-9b25ba7d487e"))
+		(pin "2" (uuid "6606ddcb-10cb-5979-9418-b9773f8a036e"))
+		(instances
+			(project "id_strap"
+				(path "/9f9b07cb-3e6c-5688-bd81-1f7521df60ea" (reference "C51") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 127 101.6 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "11a606d3-c686-5f2a-bb57-67453f32a190")
+		(property "Reference" "R16" (at 128.778 100.33 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" "20K" (at 128.778 102.87 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "" (at 127 101.6 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 127 101.6 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "af58ba6e-7a3b-56ef-90b0-1e6dd0cfa5d7"))
+		(pin "2" (uuid "a320112c-6d01-592d-b5d6-44580fe90f51"))
+		(instances
+			(project "id_strap"
+				(path "/9f9b07cb-3e6c-5688-bd81-1f7521df60ea" (reference "R16") (unit 1))
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 127 116.84 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "40550a3c-07b5-520f-a093-1e772ae77ba2")
+		(property "Reference" "R17" (at 128.778 115.57 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Value" "2.49K" (at 128.778 118.11 0)
+			(effects (font (size 1.27 1.27)) (justify left))
+		)
+		(property "Footprint" "" (at 127 116.84 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(property "Datasheet" "~" (at 127 116.84 0)
+			(effects (font (size 1.27 1.27)) hide)
+		)
+		(pin "1" (uuid "47911ab4-7811-554b-af9d-816191031663"))
+		(pin "2" (uuid "59acee0a-9dd0-5ff4-8d9a-008f0aed4675"))
+		(instances
+			(project "id_strap"
+				(path "/9f9b07cb-3e6c-5688-bd81-1f7521df60ea" (reference "R17") (unit 1))
+			)
+		)
+	)
+	(sheet_instances
+		(path "/" (page "1"))
+	)
+	(wire (pts (xy 114.3 93.98) (xy 127 93.98)) (stroke (width 0.254) (type default)) (uuid "46dd865c-35ba-578f-bab6-5c418b30b656"))
+	(wire (pts (xy 127 93.98) (xy 127 97.79)) (stroke (width 0.254) (type default)) (uuid "41c9b032-ad41-5d11-b90b-d3f504b5414d"))
+	(wire (pts (xy 127 105.41) (xy 127 109.22)) (stroke (width 0.254) (type default)) (uuid "a594efc3-86bc-5584-a887-0c86381ae675"))
+	(wire (pts (xy 127 109.22) (xy 127 113.03)) (stroke (width 0.254) (type default)) (uuid "8a62cac2-9922-5ca1-b8aa-00d775d2568e"))
+	(wire (pts (xy 127 109.22) (xy 139.7 109.22)) (stroke (width 0.254) (type default)) (uuid "58340587-b0f2-5f82-8f15-cc031179fbb7"))
+	(wire (pts (xy 139.7 109.22) (xy 154.94 109.22)) (stroke (width 0.254) (type default)) (uuid "9d648661-52cb-5c1b-83ad-3ceb7085b1f2"))
+	(wire (pts (xy 139.7 109.22) (xy 139.7 113.03)) (stroke (width 0.254) (type default)) (uuid "36be8c9d-81c1-54bd-a2ac-272dd2b2773f"))
+	(wire (pts (xy 114.3 124.46) (xy 127 124.46)) (stroke (width 0.254) (type default)) (uuid "efc6a18a-c17f-55fb-ba4f-c220f2c96b1d"))
+	(wire (pts (xy 127 124.46) (xy 139.7 124.46)) (stroke (width 0.254) (type default)) (uuid "0db2670b-7c7d-569c-afa2-c000de4e8554"))
+	(wire (pts (xy 139.7 124.46) (xy 139.7 120.65)) (stroke (width 0.254) (type default)) (uuid "d64cdbb2-a531-52c0-b9af-17dfe02c5c25"))
+	(wire (pts (xy 127 124.46) (xy 127 120.65)) (stroke (width 0.254) (type default)) (uuid "58417651-82fb-582d-a296-1f45fd793dc4"))
+	(junction (at 127 109.22) (diameter 0) (color 0 0 0 0) (uuid "d57fb537-b726-5146-a0be-4f115f23aa28"))
+	(junction (at 127 124.46) (diameter 0) (color 0 0 0 0) (uuid "3a446b07-8e19-5539-9a1c-1e265b86bb45"))
+	(junction (at 139.7 109.22) (diameter 0) (color 0 0 0 0) (uuid "e9abdbd5-edee-59a5-97b0-5aea503e568a"))
+	(hierarchical_label "GND" (shape input) (at 114.3 124.46 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "fe014eeb-81df-529b-931b-15f70db75ca1"))
+	(hierarchical_label "MODULE_ID_STRAP" (shape input) (at 154.94 109.22 0) (effects (font (size 1.27 1.27)) (justify left)) (uuid "afc50bb6-4771-5d19-aec1-50afc0fdeade"))
+	(hierarchical_label "VREF_A" (shape input) (at 114.3 93.98 180) (effects (font (size 1.27 1.27)) (justify right)) (uuid "a0d4064c-4cb7-5d19-a8ba-d8252e9cb3b1"))
+)

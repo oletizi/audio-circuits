@@ -1,0 +1,49 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "id_strap.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "25fa815c-4188-5b99-8941-38ed174f6933"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4500,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2521db0d-4ac9-5b8d-b9a3-bbc36379dc1b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MODULE_ID_STRAP",
+   "at": [
+    6100,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b9c864bb-963e-52c1-8552-1e88c160d79c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    4500,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

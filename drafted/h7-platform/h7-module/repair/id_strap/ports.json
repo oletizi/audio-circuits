@@ -1,0 +1,26 @@
+[
+ {
+  "name": "GND",
+  "pins": [
+   "C51.2",
+   "R17.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "MODULE_ID_STRAP",
+  "pins": [
+   "C51.1",
+   "R16.2",
+   "R17.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VREF_A",
+  "pins": [
+   "R16.1"
+  ],
+  "drafted": false
+ }
+]
