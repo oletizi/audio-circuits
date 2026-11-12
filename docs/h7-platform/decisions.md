@@ -1555,6 +1555,35 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan Task 6.
 - **Carried in:** `circuits/h7-platform/module-parts.ts` (`FERRITE_VDDA`); `lib/kicad/value-notation.ts`; tested in `tests/kicad/value-notation.test.ts`.
 
+### CR-MODULE-PAGE-RAILS
+
+**A module block page draws no rail power symbol; GND and the rails are labelled wires, joined through the root.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** on every h7-module block page, GND, 3V3_D, VREF_A and VIN_MOD are drawn as wires carrying the block's hierarchical label, never as power symbols, as design change C3 built it (`TOOLING.md`, "Multi-page drawing"). The reason: C3 says cross-page connections are never joined by matching names, and a power symbol joins every sheet by name around the root, so a missing rail boundary at the root would be hidden from every current control.
+- **Costs if wrong:** the owner asks for power symbols on the module pages; then the drawing practice adds a fixture port that is not a rail and a rail-binding check, and the pages are redrawn.
+- **Set by:** the controller, H7 module plan, after Task 5's review. Recorded here in Task 7, with the page that first rests on it.
+- **Open with it:** a `PWR_FLAG` is a symbol from KiCad's `power` library but joins no nets by name (measured; `drafted/h7-platform/h7-module/repair/power/03-pwr-flags.py` says how). The power page carries two, so that ERC reports no `power_pin_not_driven`; whether this ruling admits them is put to the controller in the Task 7 report.
+
+### CR-MODULE-INDUCTANCE-NOTATION
+
+**4.7 µH is drawn ".0047mH", as the existing inductance formatter writes it.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** L_FILT and L_BUCK (L1, L2 on the power page) keep the Value `lib/kicad/value-notation.ts` already writes for 4.7 µH. Changing the formatter is outside the H7 module plan and would change other boards' values.
+- **Costs if wrong:** the owner asks for µH; a formatter change and redraws follow.
+- **Set by:** the controller, H7 module plan Task 6.
+
+### CR-MODULE-SUBOHM-RKM
+
+**A resistor from 100 mΩ to 1 Ω is written in RKM notation ("0R22", "0R3").**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the value notation is extended to 100 mΩ–1 Ω in RKM, tested, because the documents' R_DAMP 0.22 Ω ([power.md](power.md) line 270) and the ruled 0.30 Ω leg ([CR-MODULE-VDDA-BANK](#cr-module-vdda-bank)) must be drawn. The one changed test (0.5 Ω now "0R5") is the intended behaviour change.
+- **Costs if wrong:** a `lib/` rule to revert and two Value fields.
+- **Set by:** the controller, H7 module plan Task 6.
+- **Carried in:** `lib/kicad/value-notation.ts`; R3 on the power page reads "0R22".
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
