@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "R16",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "Module ID strap"
+    },
+    {
+      "ref": "R17",
+      "libId": "Device:R",
+      "value": "2.49K",
+      "group": "Module ID strap"
+    },
+    {
+      "ref": "C51",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Module ID strap"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C51.2",
+        "R17.2"
+      ]
+    },
+    {
+      "name": "MODULE_ID_STRAP",
+      "kind": "signal",
+      "pins": [
+        "C51.1",
+        "R16.2",
+        "R17.1"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Module ID strap"
+    ]
+  }
+}

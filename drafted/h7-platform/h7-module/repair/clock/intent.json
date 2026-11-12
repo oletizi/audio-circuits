@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "Y1",
+      "libId": "Device:Crystal_GND24",
+      "value": "NX3225GA-25.000M-STD-CRG-2",
+      "group": "HSE crystal"
+    },
+    {
+      "ref": "C44",
+      "libId": "Device:C",
+      "value": "8pF",
+      "group": "HSE crystal"
+    },
+    {
+      "ref": "C45",
+      "libId": "Device:C",
+      "value": "8pF",
+      "group": "HSE crystal"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C44.2",
+        "C45.2",
+        "Y1.2",
+        "Y1.4"
+      ]
+    },
+    {
+      "name": "HSE_IN",
+      "kind": "signal",
+      "pins": [
+        "C44.1",
+        "Y1.1"
+      ]
+    },
+    {
+      "name": "HSE_OUT",
+      "kind": "signal",
+      "pins": [
+        "C45.1",
+        "Y1.3"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "HSE crystal"
+    ]
+  }
+}

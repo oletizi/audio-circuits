@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U5",
+      "libId": "Power_Supervisor:TPS3839DBZ",
+      "value": "TLV803EA30DBZR",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "C46",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "R11",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "C47",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "SW1",
+      "libId": "Switch:SW_Push",
+      "value": "PTS645VL31-2 LFS",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "R12",
+      "libId": "Device:R",
+      "value": "4.7K",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "C48",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Reset and boot"
+    },
+    {
+      "ref": "SW2",
+      "libId": "Switch:SW_Push",
+      "value": "PTS645VL31-2 LFS",
+      "group": "Reset and boot"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C46.1",
+        "R11.1",
+        "SW2.2",
+        "U5.3"
+      ]
+    },
+    {
+      "name": "BOOT0",
+      "kind": "signal",
+      "pins": [
+        "C48.1",
+        "R12.1",
+        "SW2.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C46.2",
+        "C47.2",
+        "C48.2",
+        "R12.2",
+        "SW1.2",
+        "U5.1"
+      ]
+    },
+    {
+      "name": "NRST",
+      "kind": "signal",
+      "pins": [
+        "C47.1",
+        "R11.2",
+        "SW1.1",
+        "U5.2"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Reset and boot"
+    ]
+  }
+}

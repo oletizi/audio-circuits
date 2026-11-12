@@ -1,0 +1,49 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "power.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "e46548cf-58d3-51fc-a3b9-81e420e6c38f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    9900,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7313f91f-69c5-5ee0-b319-675e05169f68"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1200,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1bc12036-1ac7-5682-a19c-fa0018b909fa"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MOD",
+   "at": [
+    1200,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

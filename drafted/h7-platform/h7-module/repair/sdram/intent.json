@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U3",
+      "libId": "h7-platform:W9825G6KH",
+      "value": "W9825G6KH-6I",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C36",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C37",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C38",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C39",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C40",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C41",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "C42",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SDRAM"
+    },
+    {
+      "ref": "R9",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "SDRAM"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C36.1",
+        "C37.1",
+        "C38.1",
+        "C39.1",
+        "C40.1",
+        "C41.1",
+        "C42.1",
+        "R9.2",
+        "U3.1",
+        "U3.14",
+        "U3.27",
+        "U3.3",
+        "U3.43",
+        "U3.49",
+        "U3.9"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C36.2",
+        "C37.2",
+        "C38.2",
+        "C39.2",
+        "C40.2",
+        "C41.2",
+        "C42.2",
+        "U3.12",
+        "U3.28",
+        "U3.41",
+        "U3.46",
+        "U3.52",
+        "U3.54",
+        "U3.6"
+      ]
+    },
+    {
+      "name": "SDRAM_NE",
+      "kind": "signal",
+      "pins": [
+        "R9.1",
+        "U3.19"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U3.40"
+  ],
+  "hints": {
+    "groupOrder": [
+      "SDRAM"
+    ]
+  }
+}

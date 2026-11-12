@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U4",
+      "libId": "Memory_Flash:W25Q128JVS",
+      "value": "W25Q128JVSIQ",
+      "group": "QSPI flash"
+    },
+    {
+      "ref": "R10",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "QSPI flash"
+    },
+    {
+      "ref": "C43",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "QSPI flash"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C43.1",
+        "R10.2",
+        "U4.8"
+      ]
+    },
+    {
+      "name": "FLASH_NCS",
+      "kind": "signal",
+      "pins": [
+        "R10.1",
+        "U4.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C43.2",
+        "U4.4"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "QSPI flash"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J1",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "800-10-020-10-002000",
+      "group": "Interface headers"
+    },
+    {
+      "ref": "J2",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "800-10-020-10-002000",
+      "group": "Interface headers"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "J1.20",
+        "J2.20"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J1.16",
+    "J1.17",
+    "J1.18",
+    "J1.19"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Interface headers"
+    ]
+  }
+}

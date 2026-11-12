@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J4",
+      "libId": "Connector:USB_C_Receptacle_USB2.0_16P",
+      "value": "TYPE-C-31-E-17",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "U6",
+      "libId": "Power_Protection:USBLC6-2SC6",
+      "value": "USBLC6-2SC6",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "C49",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "R13",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "R14",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "R15",
+      "libId": "Device:R",
+      "value": "1M",
+      "group": "ROM DFU USB socket"
+    },
+    {
+      "ref": "C50",
+      "libId": "Device:C",
+      "value": "4700pF",
+      "group": "ROM DFU USB socket"
+    }
+  ],
+  "nets": [
+    {
+      "name": "CC1",
+      "kind": "signal",
+      "pins": [
+        "J4.A5",
+        "R13.1"
+      ]
+    },
+    {
+      "name": "CC2",
+      "kind": "signal",
+      "pins": [
+        "J4.B5",
+        "R14.1"
+      ]
+    },
+    {
+      "name": "DFU_CONN_DM",
+      "kind": "signal",
+      "pins": [
+        "J4.A7",
+        "J4.B7",
+        "U6.3"
+      ]
+    },
+    {
+      "name": "DFU_CONN_DP",
+      "kind": "signal",
+      "pins": [
+        "J4.A6",
+        "J4.B6",
+        "U6.1"
+      ]
+    },
+    {
+      "name": "DFU_VBUS",
+      "kind": "signal",
+      "pins": [
+        "C49.1",
+        "J4.A4",
+        "J4.A9",
+        "J4.B4",
+        "J4.B9",
+        "U6.5"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C49.2",
+        "C50.2",
+        "J4.A1",
+        "J4.A12",
+        "J4.B1",
+        "J4.B12",
+        "R13.2",
+        "R14.2",
+        "R15.2",
+        "U6.2"
+      ]
+    },
+    {
+      "name": "SHIELD",
+      "kind": "signal",
+      "pins": [
+        "C50.1",
+        "J4.SH",
+        "R15.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J4.A8",
+    "J4.B8"
+  ],
+  "hints": {
+    "groupOrder": [
+      "ROM DFU USB socket"
+    ]
+  }
+}

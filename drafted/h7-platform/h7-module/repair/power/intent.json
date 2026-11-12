@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "L1",
+      "libId": "Device:L",
+      "value": ".0047mH",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C26",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C27",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C28",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R3",
+      "libId": "Device:R",
+      "value": "0R22",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C29",
+      "libId": "Device:C_Polarized",
+      "value": "47uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R4",
+      "libId": "Device:R",
+      "value": "18K",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R5",
+      "libId": "Device:R",
+      "value": "4.3K",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "U2",
+      "libId": "Regulator_Switching:TPS62933F",
+      "value": "TPS62933FDRLR",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R6",
+      "libId": "Device:R",
+      "value": "0R",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C30",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C31",
+      "libId": "Device:C",
+      "value": ".033uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "L2",
+      "libId": "Device:L",
+      "value": ".0047mH",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C32",
+      "libId": "Device:C",
+      "value": "22uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C33",
+      "libId": "Device:C",
+      "value": "22uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C34",
+      "libId": "Device:C",
+      "value": "22uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "C35",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R7",
+      "libId": "Device:R",
+      "value": "32.4K",
+      "group": "3.3 V buck and input network"
+    },
+    {
+      "ref": "R8",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "3.3 V buck and input network"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C32.1",
+        "C33.1",
+        "C34.1",
+        "C35.1",
+        "L2.2",
+        "R7.1"
+      ]
+    },
+    {
+      "name": "BST",
+      "kind": "signal",
+      "pins": [
+        "R6.1",
+        "U2.6"
+      ]
+    },
+    {
+      "name": "BST_CAP",
+      "kind": "signal",
+      "pins": [
+        "C30.1",
+        "R6.2"
+      ]
+    },
+    {
+      "name": "DAMP",
+      "kind": "signal",
+      "pins": [
+        "C29.1",
+        "R3.2"
+      ]
+    },
+    {
+      "name": "EN",
+      "kind": "signal",
+      "pins": [
+        "R4.2",
+        "R5.1",
+        "U2.2"
+      ]
+    },
+    {
+      "name": "FB",
+      "kind": "signal",
+      "pins": [
+        "R7.2",
+        "R8.1",
+        "U2.8"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C26.2",
+        "C27.2",
+        "C28.2",
+        "C29.2",
+        "C31.2",
+        "C32.2",
+        "C33.2",
+        "C34.2",
+        "C35.2",
+        "R5.2",
+        "R8.2",
+        "U2.4"
+      ]
+    },
+    {
+      "name": "SS",
+      "kind": "signal",
+      "pins": [
+        "C31.1",
+        "U2.7"
+      ]
+    },
+    {
+      "name": "SW",
+      "kind": "signal",
+      "pins": [
+        "C30.2",
+        "L2.1",
+        "U2.5"
+      ]
+    },
+    {
+      "name": "VIN_BUCK",
+      "kind": "signal",
+      "pins": [
+        "C26.1",
+        "C27.1",
+        "C28.1",
+        "L1.2",
+        "R3.1",
+        "U2.3"
+      ]
+    },
+    {
+      "name": "VIN_MOD",
+      "kind": "signal",
+      "pins": [
+        "L1.1",
+        "R4.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U2.1"
+  ],
+  "hints": {
+    "groupOrder": [
+      "3.3 V buck and input network"
+    ]
+  }
+}

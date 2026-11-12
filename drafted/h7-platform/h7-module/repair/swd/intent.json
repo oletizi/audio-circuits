@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J3",
+      "libId": "Connector:Conn_ARM_JTAG_SWD_10",
+      "value": "FTSH-105-01-F-DV-K",
+      "group": "SWD"
+    },
+    {
+      "ref": "TP6",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "SWD"
+    },
+    {
+      "ref": "TP7",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "SWD"
+    },
+    {
+      "ref": "TP8",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "SWD"
+    },
+    {
+      "ref": "TP9",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "SWD"
+    },
+    {
+      "ref": "TP10",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "SWD"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "J3.1",
+        "TP9.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "J3.3",
+        "J3.5",
+        "J3.9",
+        "TP10.1"
+      ]
+    },
+    {
+      "name": "NRST",
+      "kind": "signal",
+      "pins": [
+        "J3.10",
+        "TP8.1"
+      ]
+    },
+    {
+      "name": "SWCLK",
+      "kind": "signal",
+      "pins": [
+        "J3.4",
+        "TP7.1"
+      ]
+    },
+    {
+      "name": "SWDIO",
+      "kind": "signal",
+      "pins": [
+        "J3.2",
+        "TP6.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J3.6",
+    "J3.7",
+    "J3.8"
+  ],
+  "hints": {
+    "groupOrder": [
+      "SWD"
+    ]
+  }
+}
