@@ -79,7 +79,8 @@ export function resistanceText(ohms: number, id: string): string {
   // node merges"), so a section board carries 0R resistors - a jumper, a 0R part, or a
   // length of wire across two pads, all of which every vendor spells "0R". Lowering
   // MIN_OHMS to 0 instead would also admit 0.5R as ".5R", a spelling nothing here has
-  // been checked against, so the band between 0 and 1R stays refused.
+  // been checked against. The band from 100mR up to 1R is admitted below, in RKM ("0R22"),
+  // by CR-MODULE-SUBOHM-RKM; the band between 0 and 100mR stays refused.
   if (ohms === 0) return "0R"
   if (!Number.isFinite(ohms) || ohms < MIN_SUB_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
     throw new Error(
@@ -90,6 +91,10 @@ export function resistanceText(ohms: number, id: string): string {
   }
   // BELOW ONE OHM THE SPELLING IS RKM (IEC 60062), "0R22": `decimal` would strip the leading zero
   // and give ".22R", which no vendor writes, and `parseValue` reads "0R22" back as 0.22.
+  // Known limitation (H7 module plan, Task 6 review): `.slice(2)` assumes `String` prints the number
+  // with a "0." prefix. That holds over the proven range [MIN_SUB_OHMS, 1), where every number prints
+  // as "0.xxx"; a value that printed in exponent form would be mangled. Widening MIN_SUB_OHMS below
+  // 1e-6 (where exponent form starts) needs this rewritten, with a test.
   if (ohms < MIN_OHMS) return `0R${String(Number(ohms.toPrecision(10))).slice(2)}`
   // Three spellings, one per decade band. Sub-kilohm parts are spelled in ohms,
   // as the reference documentation spells them ("R1 430R" in
@@ -257,6 +262,17 @@ function hasNumericQuantity(component: Component): boolean {
  * value field would reconcile as a value change against every board.
  */
 export function valueFor(component: Component): string {
+  // The beadImpedance refusal comes first, ahead of every early return below: a resistor or a
+  // capacitor carrying a rated impedance would otherwise be formatted from its own parameter and the
+  // stray rating silently ignored (H7 module plan, Task 6 review). Refuse rather than guess.
+  const isBead = component.kind === "inductor" && BEAD_SYMBOLS.has(component.part?.symbol ?? "")
+  if (component.part?.beadImpedance !== undefined && !isBead) {
+    throw new Error(
+      `component "${component.id}" states part.beadImpedance but is not an inductor on ${[...BEAD_SYMBOLS].join(" or ")}; ` +
+        "a rated impedance is a ferrite bead's value and nothing else's. Remove it from the part, or " +
+        "draw the part as a bead (an inductor on one of those symbols).",
+    )
+  }
   const stated = component.part?.value
   if (stated !== undefined) {
     if (hasNumericQuantity(component)) {
@@ -293,13 +309,6 @@ export function valueFor(component: Component): string {
       throw new Error(`${component.kind} "${component.id}" has no numeric ohms parameter`)
     }
     return resistanceText(ohms, component.id)
-  }
-  const isBead = component.kind === "inductor" && BEAD_SYMBOLS.has(component.part?.symbol ?? "")
-  if (component.part?.beadImpedance !== undefined && !isBead) {
-    throw new Error(
-      `component "${component.id}" states part.beadImpedance but is not an inductor on ${[...BEAD_SYMBOLS].join(" or ")}; ` +
-        "a rated impedance is a ferrite bead's value and nothing else's.",
-    )
   }
   if (isBead) return beadImpedanceText(component)
   if (component.kind === "inductor") {

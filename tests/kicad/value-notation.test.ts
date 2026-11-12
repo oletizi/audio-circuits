@@ -310,6 +310,19 @@ test("a rated impedance on a part that is not a bead refuses", () => {
   expect(() => valueFor(notBead)).toThrow(/L9.*beadImpedance/s)
 })
 
+test("a rated impedance on a resistor, a capacitor or a part.value part refuses, not formatted silently", () => {
+  const rating = { ohms: 220, hertz: 100e6 }
+  const r: Component = { ...resistor(1000), part: { symbol: "Device:R", beadImpedance: rating } }
+  expect(() => valueFor(r)).toThrow(/beadImpedance/)
+  const c: Component = { ...twoPin("C9", "capacitor", { farads: 1e-7 }), part: { symbol: "Device:C", beadImpedance: rating } }
+  expect(() => valueFor(c)).toThrow(/C9.*beadImpedance/s)
+  const stated: Component = {
+    id: "U9", kind: "ic", parameters: {}, pins: {}, units: [],
+    part: { mpn: "X", symbol: "Device:Fuse", value: "0.75A hold", beadImpedance: rating },
+  }
+  expect(() => valueFor(stated)).toThrow(/U9.*beadImpedance/s)
+})
+
 test("a non-bead inductor still formats from henries", () => {
   const l: Component = { ...twoPin("L10", "inductor", { henries: 0.22 }), part: { symbol: "Device:L" } }
   expect(valueFor(l)).toBe("220mH")

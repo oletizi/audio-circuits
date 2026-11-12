@@ -97,6 +97,25 @@ describe("VDDA wideband noise at pin 21 (analog.md FIG-VDDA-WIDEBAND)", () => {
     expect(vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: BEAD_DCR_MAX_OHM }).q).toBeCloseTo(1.261, 3)
   })
 
+  test("the figures CR-MODULE-VDDA-BANK and the VDDA open rows quote, as they quote them", () => {
+    // decisions.md CR-MODULE-VDDA-BANK, and open-items.md VDDA-WIDEBAND, 3V3D-RIPPLE-INTO-VREF-A and
+    // VDDA-DAMPING-LEG, quote these to the digits below. If one moves, the prose is stale: fix both.
+    const undamped = vddaNoise(RULED_UNDAMPED)
+    expect(undamped.f0_Hz / 1e3).toBeCloseTo(111.7, 1)
+    expect(undamped.rmsAtPin21_V * 1e6).toBeCloseTo(376.0, 1)
+    expect(undamped.hAt_fsw).toBeCloseTo(0.0657, 4)
+    expect(VDDA_DOCUMENTED.beadL_H * 1e6).toBeCloseTo(0.2626, 4)
+    const bankEff = VDDA_RULED.bank.reduce((s, b) => s + b.nominal_F, 0) * VDDA_DOCUMENTED.basis
+    expect(bankEff * 1e6).toBeCloseTo(7.73, 2)
+    expect(VDDA_RULED.damping.c_F * VDDA_DOCUMENTED.basis * 1e6).toBeCloseTo(8.4, 1)
+    const atZero = vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: 0 })
+    const atMax = vddaNoise({ ...RULED_DAMPED, beadDcr_ohm: BEAD_DCR_MAX_OHM })
+    expect(atZero.rmsAtPin21_V * 1e6).toBeCloseTo(363.4, 1)
+    expect(atMax.rmsAtPin21_V * 1e6).toBeCloseTo(362.4, 1)
+    expect(atZero.hAt_fsw).toBeCloseTo(0.0635, 4)
+    expect(atMax.hAt_fsw).toBeCloseTo(0.0633, 4)
+  })
+
   test("a basis of 1.0 is refused", () => {
     expect(() => vddaNoise({ ...OLD_BANK, basis: 1.0 })).toThrow(/basis/)
   })

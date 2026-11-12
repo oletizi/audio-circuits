@@ -162,9 +162,10 @@ function validate(i: VddaInputs): void {
         "A figure on nominal values would read as an R-57 figure, so it is refused rather than defaulted.",
     )
   }
-  for (const [name, v] of [
+  const positives: ReadonlyArray<readonly [string, number]> = [
     ["deltaIL_A", i.deltaIL_A], ["fsw_Hz", i.fsw_Hz], ["cout_F", i.cout_F], ["beadL_H", i.beadL_H],
-  ] as const) requirePositive(name, v)
+  ]
+  for (const [name, v] of positives) requirePositive(name, v)
   if (!(i.esr_ohm >= 0) || !(i.beadDcr_ohm >= 0)) throw new Error("vdda-noise: ESR and DCR must be >= 0")
   if (i.bank.length === 0) throw new Error("vdda-noise: the VDDA bank is empty; it is the filter's shunt element")
   for (const c of i.bank) {
@@ -220,6 +221,13 @@ function poleQ(i: VddaInputs, w0: number): number {
   const zs = [i.beadDcr_ohm, i.beadL_H * w0]
   const charPoly = pAdd(den, pMul(zs, num))
   const scale = Math.max(...charPoly.map(Math.abs))
+  // Known limitation (H7 module plan, Task 3 review): this trims a leading coefficient that is tiny
+  // relative to the largest (<= 1e-14 of it), not only an exact zero, and it does so silently. A
+  // branch with a vanishing R*C (an ESR of 0) gives an exact zero there; a real but very small
+  // coefficient would also be dropped, lowering the order and losing a far pole. Checked at the
+  // final-review fix round: for the ruled bank, every E24 candidate leg and the old bank, at both
+  // DCR ends, every coefficient dropped is an exact zero. Trim exact zeros only, or refuse, if an
+  // input ever lands in between.
   while (charPoly.length > 1 && Math.abs(charPoly[charPoly.length - 1]) <= scale * 1e-14) charPoly.pop()
   let q = 0
   let complexPair = false
@@ -296,6 +304,12 @@ export interface DampingCandidate {
 /**
  * Every E24 value in 0.25-0.5 ohm as the leg's R, with 22 uF, across the ruled bank, evaluated at
  * both ends of the bead's DCR bound (less DCR is less damping).
+ *
+ * Known limitation (H7 module plan, Task 3 review): `undampedH` is the documented undamped form,
+ * 1 / ((f/f0)^2 - 1), which ignores ESR and DCR, while each candidate's |H| is the full damped
+ * divider. The "does not raise |H|" test therefore compares two different models. It is harmless
+ * for the ruled network, which meets 806 uV undamped without the leg, but a ruling that leaned on
+ * the comparison would need both sides from `dividerH`.
  */
 export function dampingCandidates(): readonly DampingCandidate[] {
   const base: VddaInputs = { ...VDDA_DOCUMENTED, bank: VDDA_RULED_BANK, damping: null }
