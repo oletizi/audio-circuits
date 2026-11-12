@@ -34,9 +34,18 @@ export interface CopperheadIntentPart {
   readonly group: string
 }
 
+/**
+ * A net's kind in the intent. `signal` is copperhead's own override of its name-based inference
+ * (`draughting/copperhead/src/kicad/draft/ir.ts`, `IntentNet.kind`): without it a net named `GND`
+ * or `3V3` is drawn as a power symbol whatever the circuit means. A one-page board never writes
+ * it; a block page (`./drawing-pages.ts`) writes it on every net, because a power symbol joins
+ * every sheet of a hierarchy by name.
+ */
+export type IntentNetKind = NetKind | "signal"
+
 export interface CopperheadIntentNet {
   readonly name: string
-  readonly kind?: NetKind
+  readonly kind?: IntentNetKind
   readonly pins: readonly string[]
 }
 
