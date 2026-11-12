@@ -41,11 +41,11 @@ sha256. `registerDraftedProjectTests` binds this table.
 
 | page | status | render |
 | --- | --- | --- |
-| root | UNREVIEWED. `verify-root.sh` exits 0: root ERC 0 errors, with one excluded violation (`pin_to_pin` on `/mcu/`, U1 pins 81 and 125, CR-MODULE-VCAP-ERC). Task 7e's one NRST `pin_to_pin` error was cleared in fix round 1 by retyping U5's symbol (see "The root's ERC error at Task 7e", below) | `h7-module.svg` |
+| root | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify-root.sh` exits 0: root ERC 0 errors, with one excluded violation (`pin_to_pin` on `/mcu/`, U1 pins 81 and 125, CR-MODULE-VCAP-ERC). Task 7e's one NRST `pin_to_pin` error was cleared in fix round 1 by retyping U5's symbol (see "The root's ERC error at Task 7e", below) | `h7-module.svg` |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 | interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `interface.svg` |
 | clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `clock.svg` |
-| reset_boot | **UNREVIEWED, changed after approval.** The owner's verdict *"approved. proceed"* (2026-11-12, `docs/schematic/verdicts.md`) was of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`. The page now at sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` has U5's symbol swapped under the amended CR-MODULE-SUPERVISOR-SYMBOL (Task 7e fix round 1); that verdict does not bind it | `reset_boot.svg` |
+| reset_boot | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`) of the changed page, sha256 `00407478…`. History: The owner's verdict *"approved. proceed"* (2026-11-12, `docs/schematic/verdicts.md`) was of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`. The page now at sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` has U5's symbol swapped under the amended CR-MODULE-SUPERVISOR-SYMBOL (Task 7e fix round 1); that verdict does not bind it | `reset_boot.svg` |
 | swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
 | usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
@@ -53,7 +53,7 @@ sha256. `registerDraftedProjectTests` binds this table.
 | vdda | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 | sdram | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
 | decoupling | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
-| mcu | UNREVIEWED; `verify.sh` exits 0 since ruling CR-MODULE-VCAP-ERC, which excuses its one `pin_to_pin` between U1's two VCAP pins; before it, it exited 1 (the history is in its section) (Task 7d) | `mcu.svg` |
+| mcu | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 since ruling CR-MODULE-VCAP-ERC, which excuses its one `pin_to_pin` between U1's two VCAP pins; before it, it exited 1 (the history is in its section) (Task 7d) | `mcu.svg` |
 
 ## The drafts every repair starts from
 
@@ -195,7 +195,7 @@ its real driver:
 
 ## root: the module's root sheet (Task 7e)
 
-**Status: UNREVIEWED.** sha256 `3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed` (Task 7e fix round 1; it was
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed` (Task 7e fix round 1; it was
 `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86` at Task 7e, off the paper and with one ERC error).
 Render: `h7-module.svg` beside it, and a 150 dpi PNG of the root page by
 `sh repair/tools/render.sh h7-module.kicad_sch <out-dir> root`. Its ERC has 0 errors apart from the one
@@ -568,7 +568,7 @@ ports GND, HSE_IN and HSE_OUT.
 
 ## reset_boot: the NRST supervisor and the two buttons
 
-**Status: UNREVIEWED (changed after approval: symbol swapped per amended CR-MODULE-SUPERVISOR-SYMBOL; the owner's earlier approval was of sha256 ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397).** sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`.
+**Status: REVIEWED, 2026-11-12, as changed.** The owner's verdict on this sha256, verbatim: *"approved"* (`docs/schematic/verdicts.md`). History (symbol swapped per amended CR-MODULE-SUPERVISOR-SYMBOL; the owner's earlier approval was of sha256 ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397).** sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`.
 Render: `reset_boot.svg` beside it.
 
 *History:* REVIEWED, 2026-11-12. The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`), of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`, which drew U5 with `Power_Supervisor:TPS3839DBZ`. That symbol types the RESET pin push-pull `output`, and the fitted TLV803EA30DBZR drives NRST open drain. The module root's ERC found this as a `pin_to_pin` on NRST.
@@ -1199,7 +1199,7 @@ VREF_A one pin, TP3's). **The page fits US Letter**: no overshoot to record.
 
 ## mcu: the STM32H743 (Task 7d)
 
-**Status: UNREVIEWED.** sha256 `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `c3d780a2ec08d385c4fe777c288f851f3c8803754cf995c6cb6f1da49539f981`.
 Render: `mcu.svg` beside it.
 
 **`verify.sh` exits 0 on this page since ruling
