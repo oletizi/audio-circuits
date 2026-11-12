@@ -37,7 +37,9 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 Every sheet is drawn, the root with them (Task 7e). The root's `.kicad_pro`,
 `h7-module.kicad_pro` (sha256 `62905f75e8abc6cf0890616b8021b8a31140395b01575e817e372bbd6f09a5a0`), is
 committed beside it and is not a sheet, so it has no row here; `repair/replay.sh` checks its
-sha256. `registerDraftedProjectTests` binds this table.
+sha256. `registerDraftedProjectTests` binds this table, and
+`tests/circuits/drafted-render-binding.test.ts` binds each committed `.svg` to its sheet's bytes
+(a fresh render with the pinned kicad-cli must equal it, apart from the export time).
 
 | page | status | render |
 | --- | --- | --- |
