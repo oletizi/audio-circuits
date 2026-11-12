@@ -4,7 +4,7 @@
 # page.py's Wiring.op_list at generation). Called by erc-control.sh; each control must come out as
 # stated, or this script exits non-zero naming it. Every tampered page is a scratch copy.
 #
-#  P1. positive: all eight committed module pages verify, each with 0 ports on the wrong net.
+#  P1. positive: every committed module page verifies, each with 0 ports on the wrong net.
 #  P2. negative: a copy of the interface page with the texts of two one-pin labels, LED1 (J1.5) and
 #      LED2 (J1.4), swapped fails verify.sh, naming both ports and the pins expected and found.
 #  P3. negative: a copy of the qspi page with the FLASH_IO1 label (U4.2) deleted fails verify.sh,
@@ -24,7 +24,7 @@ bad() {
 }
 
 echo "== P1. every committed module page verifies, no port on the wrong net"
-for block in power interface clock reset_boot swd usb_dfu id_strap qspi; do
+for block in power interface clock reset_boot swd usb_dfu id_strap qspi vdda; do
   sh "$here/verify.sh" "$block" "$pages/$block.kicad_sch" >"$work/$block.log" 2>&1 \
     || { cat "$work/$block.log" >&2; bad "the committed $block page did not verify"; }
   line="$(grep '^port labels: ' "$work/$block.log")" || { cat "$work/$block.log" >&2; bad "$block: verify.sh printed no port-label count"; }

@@ -1,0 +1,63 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "vdda.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "fc8c3798-c204-51d8-bca3-fb98a9ba8e5e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    3300,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a467111c-b5f5-555a-9717-d4f426b54651"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    3300,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "22bea903-6c2f-5e7b-affd-eb8d293d52ee"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    6600,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cda10819-9956-5bf5-9a02-ab2539e4a837"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VSSA",
+   "at": [
+    6600,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

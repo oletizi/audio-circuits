@@ -1,0 +1,449 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "vdda.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     3500
+    ],
+    [
+     3650,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3950,
+     3500
+    ],
+    [
+     4400,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4400,
+     3500
+    ],
+    [
+     4800,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     3500
+    ],
+    [
+     5200,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     3500
+    ],
+    [
+     5600,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5600,
+     3500
+    ],
+    [
+     6100,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     3500
+    ],
+    [
+     6600,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4400,
+     3500
+    ],
+    [
+     4400,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     3500
+    ],
+    [
+     4800,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     3500
+    ],
+    [
+     5200,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5600,
+     3500
+    ],
+    [
+     5600,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     3500
+    ],
+    [
+     6100,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     4000
+    ],
+    [
+     6100,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3950,
+     4800
+    ],
+    [
+     4400,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4400,
+     4800
+    ],
+    [
+     4800,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     4800
+    ],
+    [
+     5200,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     4800
+    ],
+    [
+     5600,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5600,
+     4800
+    ],
+    [
+     6100,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     4800
+    ],
+    [
+     6600,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4400,
+     4800
+    ],
+    [
+     4400,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     4800
+    ],
+    [
+     4800,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     4800
+    ],
+    [
+     5200,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5600,
+     4800
+    ],
+    [
+     5600,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     4800
+    ],
+    [
+     6100,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3650,
+     4800
+    ],
+    [
+     3300,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4400,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4400,
+    4800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4800,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4800,
+    4800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5200,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5200,
+    4800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5600,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5600,
+    4800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6100,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6100,
+    4800
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    3300,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    6600,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "VSSA",
+   "at": [
+    6600,
+    4800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    3300,
+    4800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: vdda",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

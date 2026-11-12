@@ -25,6 +25,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `usb_dfu.kicad_sch` | block usb_dfu | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 | `id_strap.kicad_sch` | block id_strap | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
 | `qspi.kicad_sch` | block qspi | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
+| `vdda.kicad_sch` | block vdda | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -39,6 +40,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
 | qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
+| vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 
 ## The drafts every repair starts from
 
@@ -746,4 +748,83 @@ and counts steps. Since the ruling `verify.sh` runs every step on the page and g
   R10 stands between it and the FLASH_NCS row, pin 2 up.
 - A GND row along the bottom, from its label, takes U4's GND (pin 4) and C43.
 - R10's and C43's fields are east of their bodies; U4's are above its body, east of the VCC rise.
+- Every wire carries copperhead's default stroke.
+
+## vdda: the VDDA bead, bank and damping leg (Task 7c)
+
+**Status: UNREVIEWED.** sha256 `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444`.
+Render: `vdda.svg` beside it.
+
+Repaired by the Task 7b steps ("How the Task 7b pages are repaired", above), with `repair/vdda/layout.py`
+and `repair/vdda/02-wire.py`; `repair/replay.sh` runs it through `repair_block`.
+
+The block: `circuits/h7-platform/module/vdda.ts`, 8 parts (FB1 `Device:FerriteBead`, C21 to C25, R1,
+R2), ports 3V3_D, GND, VREF_A and VSSA (3V3_D reaches one pin, FB1's pin 1; GND reaches one pin,
+R2's pin 2).
+
+### The rulings this page rests on
+
+- [CR-MODULE-VDDA-BANK](../../../docs/h7-platform/decisions.md#cr-module-vdda-bank): the bank C21,
+  C22 (10uF) and C23, C24 (.1uF) from VREF_A to VSSA, and the damping leg R1 ("0R3") in series with
+  C25 (22uF) across the bank, never in VDDA's DC path. Drawn exactly as the model holds them. **The
+  open item VDDA-DAMPING-LEG stays open**: the ruling leaves it conditional on Murata's impedance
+  curve and the capacitors' DC-bias curves, and this page settles nothing about it.
+- [CR-MODULE-BEAD-VALUE](../../../docs/h7-platform/decisions.md#cr-module-bead-value): FB1 reads
+  "220R@100MHz", the bead's rating, not the model's analysis inductance.
+- [CR-MODULE-SUBOHM-RKM](../../../docs/h7-platform/decisions.md#cr-module-subohm-rkm): R1 reads
+  "0R3"; R2 reads "0R".
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D, VREF_A,
+  VSSA and GND are wires ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input (every pin is passive), so ERC needs none here; the
+  flags of 3V3_D, VREF_A and VSSA live on the root and GND's on the power page, and the one-block
+  root's stubs carry all four. `pwr-flag-homes.ts` is unchanged.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  no entry needed; the page has no input pin.
+- The stroke of 3V3_D and GND, which the draft drew no wire for: copperhead's stroke for a net of no
+  colour family, which every net the draft draws here carries (`vdda/layout.py`,
+  `UNDRAWN_STROKES`). A drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+The draft column is `verify.sh`'s steps run without stopping on the draft. The draft now fails the
+port-label row, which did not exist when the Task 7b drafts were measured: a draft carries no
+hierarchical label, so no port's net is named `/<port>`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| ports on the wrong net (CR-MODULE-PORT-LABEL-CHECK) | 4 of 4 (no net `/<port>`; 3V3_D and GND unwired) | 0 of 4 |
+| exported components, nets, net members | 8, 5, 16 | 8, 5, 16 |
+| exported nets carrying a model net name | 3 of 5 (/DAMP, VREF_A, VSSA) | 4 of 5 (/3V3_D, /GND, /VREF_A, /VSSA; DAMP is unlabelled wire) |
+| ERC, the sheet alone | 2 errors (`pin_not_connected` 2: FB1's pin 1 and R2's pin 2, unwired), 0 warnings | 4 errors (`pin_not_connected` 4: each hierarchical label has no parent sheet), 2 warnings (`isolated_pin_label` 2: 3V3_D's and GND's labels each meet one pin) |
+| ERC under a one-block root, `/vdda/` | 2 errors (`pin_not_connected` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 4 errors (`hier_label_mismatch` 4), 4 warnings (`isolated_pin_label` 4) | 0 errors, 0 warnings (every stub carries a PWR_FLAG) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 2 | 0 of 10 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 7 on 3 nets (6 global) | 4 on 4 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 7 | 0 of 5 |
+| symbols (parts, power symbols, PWR_FLAGs) | 8 (8, 0, 0) | 8 (8, 0, 0) |
+| placed pins | 16 | 16 |
+| wires, total length | 23, 151.13 mm | 25, 271.78 mm |
+| wire corners | 9 | 0 |
+| junctions | 2 | 10 |
+
+### What the page shows, as observations
+
+- Two rows across the page. The top row: 3V3_D's hierarchical label on the west edge, FB1 lying
+  along the row (pin 1 west), then the VREF_A row east to VREF_A's hierarchical label on the east
+  edge.
+- The bottom row: GND's hierarchical label on the west edge, under 3V3_D's, R2 lying along the row
+  (pin 2, GND, west), then the VSSA row east to VSSA's hierarchical label on the east edge, under
+  VREF_A's.
+- C21, C22, C23 and C24 stand between the two rows, west to east, each with pin 1 up to VREF_A and
+  pin 2 down to VSSA.
+- East of them, the damping leg stands in one column: R1 from the VREF_A row down to the DAMP node,
+  C25 from DAMP down to the VSSA row.
+- FB1's and R2's Reference and Value are centred above their bodies, Reference over Value; every
+  other part's are east of its body.
 - Every wire carries copperhead's default stroke.
