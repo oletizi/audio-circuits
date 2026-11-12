@@ -11,6 +11,7 @@ is not assembled yet.
 | start: each block's draft, `build/draw/h7-module/<block>/<block>.kicad_sch` as `make draw` writes it (re-papered to US Letter) | the twelve values in `../RECORD.md`, "The drafts every repair starts from", and in `replay.sh` |
 | end: `power.kicad_sch` | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | end: `interface.kicad_sch` | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
+| end: `clock.kicad_sch` | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
 
 ## Replay
 

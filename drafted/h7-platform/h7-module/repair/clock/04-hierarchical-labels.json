@@ -1,0 +1,49 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "clock.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "ec482edd-5a05-54e0-ada6-789ce7796d42"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4500,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "634e1b60-265a-5430-8fde-0e6a53859d14"
+  },
+  {
+   "op": "add_net_label",
+   "name": "HSE_IN",
+   "at": [
+    4500,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9e139f68-e2c3-56f1-9bea-e821d89b84c3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "HSE_OUT",
+   "at": [
+    6500,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

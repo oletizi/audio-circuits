@@ -1,0 +1,28 @@
+[
+ {
+  "name": "GND",
+  "pins": [
+   "C44.2",
+   "C45.2",
+   "Y1.2",
+   "Y1.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "HSE_IN",
+  "pins": [
+   "C44.1",
+   "Y1.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "HSE_OUT",
+  "pins": [
+   "C45.1",
+   "Y1.3"
+  ],
+  "drafted": true
+ }
+]

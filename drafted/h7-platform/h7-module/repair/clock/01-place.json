@@ -1,0 +1,107 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "clock.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "69971525-7501-5afc-a7bd-9ee688232f64"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "27242573-774a-5437-ab60-165ffb1c3254"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e0e5bfb3-38b5-55e1-b664-c91da5342569"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "31fbff18-62c7-5f77-aa49-c21afb4ace70"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "de50fc39-8eda-59f3-886a-cfa043abe5c7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b312a47c-8fc9-54c9-ac7c-ce1e00978624"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "408a3534-ac04-53bd-9a2a-f1aff0fe9d25"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e23ba5fb-9d5b-54a8-90c0-d042924d5119"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "168e7a66-81b8-5e27-a641-e94bfed1a34e"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a6bde781-45e3-5837-83d9-716cc3985b21"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f612f750-157f-5d59-b7db-e96b397f63d6"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8a855bbb-77d7-505e-bdd0-56b9d2bd497b"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8691133c-2995-58ed-90cd-5a56feb38cc6"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6ca93c42-6c7f-503c-9404-0fa0b4402586"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "034afe9a-b3fa-5c49-91db-975472e39cd3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "90686567-2484-5f2e-b251-0408a957b482"
+  },
+  {
+   "op": "move_component",
+   "designator": "Y1",
+   "x_mil": 5500,
+   "y_mil": 4000
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "Y1",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C44",
+   "x_mil": 4900,
+   "y_mil": 4400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C44",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "C45",
+   "x_mil": 6100,
+   "y_mil": 4400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "C45",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

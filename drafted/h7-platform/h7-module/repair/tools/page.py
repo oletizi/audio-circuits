@@ -145,7 +145,9 @@ class Wiring:
         for ref in self.pins:
             for number, xy in self.pins[ref].items():
                 pin_at.setdefault(tuple(xy), []).append(f"{ref}.{number}")
-        pin_points = Counter({pt: len(v) for pt, v in pin_at.items()})
+        # A point holding several pins (a symbol's stacked pins, as Crystal_GND24's two case pins) is
+        # one connection for the junction rule: a wire ending there makes two, not three.
+        pin_points = Counter({pt: 1 for pt in pin_at})
         junctions = [pt for pt in sorted(set(ends)) if ends[pt] + pin_points.get(pt, 0) >= 3]
 
         def interior(pt, a, b):

@@ -19,6 +19,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | --- | --- | --- |
 | `power.kicad_sch` | block power | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
+| `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -27,6 +28,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | --- | --- | --- |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 | interface | UNREVIEWED | `interface.svg` |
+| clock | UNREVIEWED | `clock.svg` |
 
 ## The drafts every repair starts from
 
@@ -319,3 +321,53 @@ The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connect
 - GND's label is on J1.20's stub. J2.20 runs west, drops to a row under both headers, runs west
   under J1 and rises to J1.20's stub, where a junction joins it.
 - Both headers carry Reference over Value, centred above pin 1.
+
+## clock: the HSE crystal
+
+**Status: UNREVIEWED.** sha256 `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1`.
+Render: `clock.svg` beside it.
+
+The block: `circuits/h7-platform/module/clock.ts`, 3 parts (Y1 `Device:Crystal_GND24`, C44, C45),
+ports GND, HSE_IN and HSE_OUT.
+
+### The rulings this page rests on
+
+- [CR-MODULE-HSE-LOAD](../../../docs/h7-platform/decisions.md#cr-module-hse-load): C44 and C45 read
+  "8pF".
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): GND is a row
+  ending in its hierarchical label.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Nothing on it is a power input.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 3, 3, 8 | 3, 3, 8 |
+| exported nets carrying a model net name | 3 of 3 | 3 of 3 |
+| ERC, the sheet alone | 0 errors, 0 warnings | 3 errors (`pin_not_connected` 3: each hierarchical label has no parent sheet), 0 warnings |
+| ERC under a one-block root, `/clock/` | 0 errors, 0 warnings | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 5 errors (`hier_label_mismatch` 3, `label_dangling` 2), 1 warning | 2 errors (`label_dangling` 2: the HSE_IN and HSE_OUT stub labels are alone with one block; GND's stub carries the stand-in flag), 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 1 | 0 of 4 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 3 on 3 nets (0 global) | 3 on 3 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 3 | 0 of 3 |
+| symbols (parts, power symbols, PWR_FLAGs) | 3 (3, 0, 0) | 3 (3, 0, 0) |
+| placed pins | 8 | 8 |
+| wires, total length | 12, 43.18 mm | 12, 124.46 mm |
+| wire corners | 4 | 1 |
+| junctions | 1 | 4 |
+
+### What the page shows, as observations
+
+- One HSE row runs west to east: HSE_IN's hierarchical label on the west, C44's tap, Y1 from pin 1 to
+  pin 3, C45's tap, HSE_OUT's hierarchical label on the east.
+- C44 and C45 hang from the row to one GND row under it; Y1's case pins 2 and 4, which KiCad
+  10.0.5's `Crystal_GND24` draws at one point under the body, drop to the same row between them.
+  GND's hierarchical label is at the row's west end, under HSE_IN's.
+- Y1's Reference and Value are centred above its case outline; C44's and C45's are to their east.
+- Wires on HSE_IN and HSE_OUT carry copperhead's blue stroke; GND its default.

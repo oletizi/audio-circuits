@@ -44,6 +44,7 @@ draft_sha() {
 }
 PAGE_POWER=906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f
 PAGE_INTERFACE=0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296
+PAGE_CLOCK=83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1
 
 fail() {
   echo "replay.sh: FAILED - $1" >&2
@@ -168,6 +169,7 @@ repair_block() {
   echo "the replayed $b.kicad_sch is byte-identical to the committed sheet"
 }
 repair_block interface "$PAGE_INTERFACE"
+repair_block clock "$PAGE_CLOCK"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make
