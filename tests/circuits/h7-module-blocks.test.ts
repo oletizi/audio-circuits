@@ -22,9 +22,11 @@ import { swdBlock } from "../../circuits/h7-platform/module/swd.ts"
 import { idStrapBlock } from "../../circuits/h7-platform/module/id-strap.ts"
 import { powerBlock } from "../../circuits/h7-platform/module/power.ts"
 import { interfaceBlock } from "../../circuits/h7-platform/module/interface.ts"
+import { usbDfuBlock } from "../../circuits/h7-platform/module/usb-dfu.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  usb_dfu: usbDfuBlock,
   interface: interfaceBlock,
   power: powerBlock,
   id_strap: idStrapBlock,
@@ -346,5 +348,34 @@ describe("Interface headers (architecture.md section 4.2, 4.11; module-interface
     expect([b["1"], b["11"], b["18"], b["19"], b["20"]]).toEqual(["VREF_A", "USB_VBUS_SENSE", "3V3_D", "VIN_MOD", "GND"])
     expect(Object.keys(a)).toHaveLength(20)
     expect(Object.keys(b)).toHaveLength(20)
+  })
+})
+
+describe("DFU socket (processor-and-memory.md:267; CR-MODULE-USB-ESD, CR-MODULE-USB-C-PINS)", () => {
+  const net = usbDfuBlock()
+  const nets = (id: string): string[] => Object.values(netsOf(only(net, id))).sort()
+  test("J_USB_MOD: GND pins to GND, VBUS to the ESD part, CC to Rd, D+ and D- joined, SBU NC, shell to SHIELD", () => {
+    const j = netsOf(only(net, "j_usb_mod"))
+    expect([j["A1"], j["A12"], j["B1"], j["B12"]]).toEqual(["GND", "GND", "GND", "GND"])
+    expect(new Set([j["A4"], j["A9"], j["B4"], j["B9"]]).size).toBe(1)
+    expect([j["A6"], j["B6"]]).toEqual(["DFU_CONN_DP", "DFU_CONN_DP"])
+    expect([j["A7"], j["B7"]]).toEqual(["DFU_CONN_DM", "DFU_CONN_DM"])
+    expect([j["A8"], j["B8"]]).toEqual(["NC", "NC"])
+    expect(nets("r_shld")).toEqual([j["SH"] ?? "missing", "GND"].sort())
+    expect(nets("c_shld")).toEqual([j["SH"] ?? "missing", "GND"].sort())
+    expect(Reflect.get(only(net, "r_shld").parameters, "ohms")).toBe(1e6)
+    expect(Reflect.get(only(net, "c_shld").parameters, "farads")).toBeCloseTo(4.7e-9, 15)
+    expect(nets("r_cc1")).toEqual([j["A5"] ?? "missing", "GND"].sort())
+    expect(nets("r_cc2")).toEqual([j["B5"] ?? "missing", "GND"].sort())
+    expect(Reflect.get(only(net, "r_cc1").parameters, "ohms")).toBe(5_100)
+    expect(Reflect.get(only(net, "r_cc2").parameters, "ohms")).toBe(5_100)
+  })
+  test("the USBLC6-2SC6 as USB-04 wires it, VBUS pin 5 on the socket's VBUS with 100 nF to GND", () => {
+    const j = netsOf(only(net, "j_usb_mod"))
+    expect(netsOf(only(net, "u_esd"))).toEqual({
+      "1": "DFU_CONN_DP", "6": "DFU_USB_DP", "3": "DFU_CONN_DM", "4": "DFU_USB_DM", "2": "GND", "5": j["A4"] ?? "missing",
+    })
+    expect(nets("c_vbus")).toEqual([j["A4"] ?? "missing", "GND"].sort())
+    expect(Object.keys(net.ports).sort()).toEqual(["DFU_USB_DM", "DFU_USB_DP", "GND"])
   })
 })
