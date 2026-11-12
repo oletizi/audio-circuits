@@ -15,6 +15,13 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-10-h7-platform-models-and-schematics-design.md` (approved 2026-11-11). This plan covers sequence steps 2 (C3) and 3 (the module). C6, the pedal, the contract freeze and the carrier's loopback each get a later plan. Precedent: `docs/superpowers/plans/2026-11-11-h7-carrier-first-page.md` and its execution record.
 
+**Review history:** revised after the plan review in [issue 31](https://github.com/oletizi/audio-circuits/issues/31). All five findings were adopted, in these places:
+- the 3V3 capacitance domain found by topology (Task 4);
+- explicit NC for unused MCU pins (Task 6);
+- one peak-to-peak harmonic convention (Task 3);
+- `moduleMcuPin` kept by the contract loader (Task 2);
+- a private-net control that actually merges nets (Task 5).
+
 ## Global Constraints
 
 - Read `CLAUDE.md`, `EVALUATING-DRAWINGS.md`, `TOOLING.md` and `.claude/skills/drawing-a-schematic/SKILL.md` before any task that renders. The drawing practice is used as it stands, plus C1, C2, C4 (already landed) and C3 (this plan).
@@ -40,7 +47,7 @@
 1. **A pin given a function ST's data does not list for it.** For example, FMC_SDNWE on PC1. The pin-map check must refuse, naming the pin and the function. Test owned by Task 2.
 2. **A pin or a net used twice.** This covers an internal signal placed on one of the 31 interface pins (for example, the ID strap on PC0, which `module-interface.json` already gives to an interface signal), or one net on two pins. The check must refuse. This is the collision check the pedals record says ran and never did. Test owned by Task 2.
 3. **A block-private net that copperhead draws as a global label.** Global labels join across sheets by name, so two blocks' private `FB` nets would merge silently. The project round-trip must fail on it. Test owned by Task 5, as one of C3's three negative controls.
-4. **A capacitor added to the module's 3V3 without being counted.** The capacitance sum must refuse a part on 3V3 with no entry, and fail when the total exceeds 150 µF (R-50). Test owned by Task 4.
+4. **A capacitor the buck charges that the sum does not count.** That includes the VDDA bank behind FB_VDDA and the damping capacitor behind its resistor (issue 31, finding 1). The capacitance sum must count capacitors reached through series resistors and beads, refuse a part it cannot classify, and fail when the total exceeds 150 µF (R-50). Test owned by Task 4.
 5. **The analysis code drifting from the figure it reimplements.** The VDDA noise function must reproduce `analog.md`'s 2.12 mV rms for the old bank (2 × 2.2 µF + 2 × 100 nF, on R-57's basis) before it is trusted on the new one. Test owned by Task 3.
 6. **A component on no page, or on two.** The board-wide designator map and the block record must refuse both. Test owned by Task 1, and again on the module in Task 6.
 
@@ -61,7 +68,7 @@
 
 - [ ] **Step 1: Write the failing tests:**
   - `"a network with no include has no blocks"`;
-  - `"include records its prefix, prefixed component ids and port bindings"`, using two small blocks that share a port net `3V3` and each have a private net `FB`. Assert two records, and that the private nets are `a_FB` and `b_FB`;
+  - `"include records its prefix, prefixed component ids and port bindings"`, using two small blocks that share a port net `3V3` and each have a private net `FB`. Assert two records, and that the private nets are `a_FB` and `b_FB`. Because of that prefixing, a test of name collisions across sheets has to give two nets the same label text deliberately; see Task 5, control 3;
   - `"blockOf names the block, and null for a top-level part"`;
   - `"including a network that has blocks refuses, naming the inner prefixes"`.
 - [ ] **Step 2: Run them and confirm they fail.** Run `bun test tests/model/include-blocks.test.ts`.
@@ -80,6 +87,12 @@
 - Produces `loadPinData(): McuPinData`, where `McuPinData` is `{ pins: readonly McuPin[] }` and `McuPin` is `{ name: string; position: number; type: "I/O" | "Power" | "Reset" | "Boot" | "MonoIO"; signals: readonly string[] }`. It parses the XML (176 `<Pin>` elements). It refuses on any other type, or on a count other than 176.
 - Produces `MODULE_PINS: readonly PinAssignment[]`, where `PinAssignment` is `{ net: string; pin: string; signal: string; source: string }`. `pin` is the port name (for example `PH5`), and `signal` is ST's signal name (for example `FMC_SDNWE`).
 - Produces `checkPinMap(assignments, interfacePins, data): readonly string[]`. It returns problems, with an empty list meaning it passed. `interfacePins` comes from `module-interface.json`'s per-pin `moduleMcuPin`, read through `loadContract()`.
+- **Modifies `circuits/h7-platform/contract.ts`** (issue 31, finding 4). Today `ContractPin` has no `moduleMcuPin`, and `parsePin` discards it.
+  - Add `moduleMcuPin: string | null` to `ContractPin`, and validate it in `parsePin` with the JSON's own semantics: a string on a signal pin, `null` where the JSON has `null` (9 pins).
+  - Any other value refuses, naming the pin, and a key that is absent also refuses. It is never read as "no assignment", because that would quietly empty the interface side of the collision check.
+  - The JSON is not edited, and no second parser of it is written.
+  - Tests go in the existing contract tests: `"moduleMcuPin is kept, a string or null"`, `"a pin without moduleMcuPin refuses"`, and, in `h7-module-pins.test.ts`, `"the real loaded contract rejects an internal assignment to PC0"`.
+  - The carrier's tests must stay green.
 - **The assignment, and where each part comes from:**
   - **Starting point:** pedals `CORE-BRIEF.md` §6 (line 309 onward at `5b926d0`).
     - SDRAM bank 1: SDCLK PG8, SDNRAS PF11, SDNCAS PG15, A0–A12, BA0/1, D0–D15, NBL0/1.
@@ -132,7 +145,11 @@
     - `harmonics`: the highest odd harmonic.
   - `VddaResult` holds `f0_Hz`, `q`, `hAt_fsw` (|H| at fsw), `rmsAtPin21_V` and a per-harmonic breakdown.
 - **Method** (`analog.md` FIG-VDDA-WIDEBAND, line 298; recon in the execution record):
-  - The inductor current is a triangle of ΔIL. Its odd harmonics have amplitude 8ΔIL/(π²n²); the fundamental is 4ΔIL/π² peak. `analog.md` states the fundamental only, so the 1/n² series is this plan's reading of a triangle, recorded as such.
+  - The inductor current is a symmetric triangle, and **ΔIL is its peak-to-peak value** (1.66 A).
+    - Odd harmonic n has peak magnitude 4ΔIL/(π²n²). At n = 1 that is `analog.md`'s 0.673 A peak.
+    - Each harmonic is converted to rms once, dividing by √2, after it passes through the filter.
+    - `analog.md` states the fundamental only, so the 1/n² series is this plan's reading of a triangle, recorded as such.
+    - Issue 31, finding 3, corrected an earlier draft of this line that gave 8ΔIL/(π²n²) beside 4ΔIL/π², a factor of two apart at n = 1.
   - Each harmonic passes through the output capacitor's impedance √(Xc² + ESR²).
   - It then passes through the bead-and-bank transfer.
     - Undamped, that is `1/((f/f0)² − 1)` above f0.
@@ -153,6 +170,7 @@
 - **What closes:** none of the three rows closes on this alone. Each row's settlement names Murata's curve or the chosen parts' DC-bias curves, and neither is in hand. Each row is amended to cite this analysis as the result on the stated bounds, and stays open, conditional on those two inputs.
 
 - [ ] **Step 1: Write the failing tests:**
+  - `"the fundamental is 0.673 A peak for 1.66 A peak-to-peak"`: asserted directly, so that a compensating error elsewhere cannot hide a normalisation error;
   - `"the old bank reproduces analog.md's 2.12 mV rms, undamped"`: 2 × 2.2 µF + 2 × 100 nF on 0.3825, to 0.02 mV;
   - `"the old bank's f0 is 234.1 kHz"`;
   - `"the ruled bank and damping leg meet 806 uV rms at pin 21"`;
@@ -188,14 +206,20 @@
 - **Crystal load capacitors:** values from `processor-and-memory.md` §3 (:111) for CL 8 pF. If §3 states no values, rule them from the NX3225GA datasheet's CL and the stated stray capacitance, citing both.
 - **SWD header pinout:** transcribe `processor-and-memory.md` :266 onto `Connector:Conn_ARM_JTAG_SWD_10`. SWD-PINOUT-FORMAL-SPEC stays open; it asks for a check against DDI0314H, which is not in hand.
 - **Produces:**
-  - `moduleCapacitance3v3(network: Network): { total_F: number; entries: readonly { id: string; nominal_F: number }[] }`. It counts every capacitor with a pin on the module 3V3 net, at nominal. It refuses a capacitor on 3V3 that has no value, and refuses any component on 3V3 that is neither a capacitor nor listed as a known non-capacitive load.
+  - `moduleCapacitance3v3(network: Network): { total_F: number; entries: readonly { id: string; nominal_F: number; via: readonly string[] }[] }`.
+    - It counts, at nominal, every capacitor the buck charges at start-up. That is the whole 3V3 capacitance, which `power.md` :183 uses for the switch-on bound and `analog.md` :298 says the VDDA bank counts toward.
+    - **The domain is found by topology** (issue 31, finding 1). Start from the 3V3 net and walk through two-terminal resistive and inductive parts: resistors, ferrite beads and inductors. FB_VDDA and the damping leg's series resistor are the reason. Every net the walk reaches is in the domain, and every capacitor with a pin on a domain net counts. `via` names the parts walked through to reach it.
+    - The walk stops at GND, at any `ic`, connector or switch, and at a capacitor. It never walks through an `ic`, so VCAP, which the MCU's internal regulator charges, is out of the domain and is said to be out.
+    - A capacitor in the domain with no value refuses. Any other component on a domain net must be either an `ic`, connector or switch (a stop), or listed with a reason as a known non-capacitive load. Anything else refuses.
   - The test asserts the total is ≤ 150 µF (R-50).
   - MODULE-BUCK-LOOP-STARTUP stays open: its loop and start-up check needs TI's application report or a simulation. The row is amended to cite this sum as the half that is settled.
 
 - [ ] **Step 1: Write the failing tests:**
   - symbol existence for every module part, and C4 pin-for-pin matches for the SDRAM and the supervisor;
   - `"the capacitance sum refuses an uncounted part on 3V3"`;
-  - `"the capacitance sum fails above 150 uF"`, a control that adds 100 µF.
+  - `"the capacitance sum fails above 150 uF"`, a control that adds 100 µF;
+  - `"a capacitor behind a ferrite bead counts"` and `"a capacitor behind a series resistor counts"`: each adds one capacitor on the far side, asserts the total rises by its value, and a large enough one trips the 150 µF limit;
+  - `"the walk stops at GND and at an ic"`: a capacitor reached only through an `ic`, or only from GND, does not count.
   (The module network those last two tests read comes in Task 6. Here they use a small fixture network, and Task 6 adds the real assertion.)
 - [ ] **Step 2: Run them and confirm they fail.**
 - [ ] **Step 3: Implement**, record each ruling, and amend the rows: USB-DFU-VERTICAL in part, VREF-A-BLEEDER-DECISION closed, MODULE-POWER-PARTS-TO-MODEL left to Task 6.
@@ -227,7 +251,8 @@ C3 is built and checked on a small synthetic board before the module uses it. A 
 - **The three negative controls** (spec C3), each a test that edits a copy of the assembled two-block project and requires the round trip to fail:
   1. **Missing boundary connection:** delete one sheet pin's wire at the root.
   2. **Wrong boundary connection:** swap two sheet pins' wires at the root.
-  3. **Private nets sharing a name:** in both block sheets, make the `FB` labels global.
+  3. **Private nets sharing a name:** in both block sheets, replace the private `FB` net's label with a global label of the **same text**, `FB`. The round trip must fail on the merged net. The model's private nets are `a_FB` and `b_FB`, so turning each label global with its own text would leave two different names that never join, and the control would prove nothing (issue 31, finding 5).
+  - **Positive control:** each block sheet carries a local label with the same text `FB` on its private net, and the round trip passes, because a local label joins only within its own sheet. The intent's label text for a private net is specified by `drawingPages()`: either the prefixed model name or the unprefixed one. Whichever it uses is stated in `TOOLING.md` and tested, and the controls are written against it.
 
 - [ ] **Step 1: The composition-driven pieces, test first.**
   - `drawingPages` for the two-block fixture: two pages, every component on exactly one, ports marked.
@@ -249,7 +274,9 @@ C3 is built and checked on a small synthetic board before the module uses it. A 
 
 **Files:**
 - Create: `circuits/h7-platform/module/` with one file per block. Each exports a function returning that block's `Network` with declared ports:
-  - `mcu.ts` holds U_MCU only, with every one of its pins on a port or a private net. It is atomic, so every other block reaches the MCU through ports.
+  - `mcu.ts` holds U_MCU only. It is atomic, so every other block reaches the MCU through ports. All 176 pins are accounted for, each as either a specified connection (a port) or an explicit NC.
+    - An NC is allowed only on a GPIO that no internal function, interface signal or ID strap uses, and each one cites CORE-27 (`schematic-checklist.md` :79: unused MCU pins get no external resistor and stay in their reset state).
+    - Meaningless private nets for unused pins, and ports for them, are both forbidden (issue 31, finding 2).
   - `mcu-decoupling.ts` holds the VCAP capacitors and the per-VDD 100 nF capacitors, the ≥ 4.7 µF, VDD33USB's 100 nF + 1 µF, VBAT's 100 nF, and the test pads (`processor-and-memory.md` :31, :136-141).
   - `vdda.ts` holds FB_VDDA, the bank and the damping leg from Task 3's constant, VREF+ tied to VDDA, and VSSA to VSS through 0 Ω (:138).
   - `sdram.ts`, `qspi.ts`, `clock.ts` (Y_HSE and its load capacitors).
@@ -270,8 +297,14 @@ C3 is built and checked on a small synthetic board before the module uses it. A 
 - [ ] **Step 1: Write the failing tests:**
   - the module validates;
   - `checkInterface(h7Module(), "module", { J_MOD_A: …, J_MOD_B: … })` reports no mismatches (G4);
-  - every MCU pin is on a net, and every `Power` pin's net is the one its name implies (VDD → `3V3`, VSS and VSSA → `GND` via the 0 Ω for VSSA, VDDA → `VDDA`, VREF+ → `VDDA`, VCAP → `VCAP`, PDR_ON → `3V3`);
-  - every `MODULE_PINS` net is on its assigned pin;
+  - all 176 MCU pins have an entry, and a missing pin entry fails;
+  - every required pin is connected to the net its function implies. NC never stands in for a required signal: a required pin marked NC fails. The required pins are:
+    - every `Power` pin: VDD → `3V3`; VSS → `GND`; VSSA → `VSSA`, joined to `GND` through the 0 Ω; VDDA → `VDDA`; VCAP → `VCAP`; PDR_ON → `3V3`; VBAT and VDD33_USB as `processor-and-memory.md` :31 and :137 give them;
+    - VREF+ → `VDDA`, NRST and BOOT0;
+    - every `MODULE_PINS` net, on its assigned pin;
+    - every interface pin's `moduleMcuPin`;
+  - every other pin is NC and is a GPIO, and the test lists them, so a newly used pin left NC shows up as a changed list;
+  - **control:** marking PH5 (FMC_SDNWE) NC fails;
   - every component appears in exactly one block, and has exactly one designator;
   - the 3V3 capacitance sum is ≤ 150 µF;
   - the VDDA block's values equal Task 3's constant;
