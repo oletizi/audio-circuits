@@ -17,9 +17,11 @@ import { sdramBlock } from "../../circuits/h7-platform/module/sdram.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { qspiBlock } from "../../circuits/h7-platform/module/qspi.ts"
 import { clockBlock } from "../../circuits/h7-platform/module/clock.ts"
+import { resetBootBlock } from "../../circuits/h7-platform/module/reset-boot.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  reset_boot: resetBootBlock,
   clock: clockBlock,
   qspi: qspiBlock,
   mcu: mcuBlock,
@@ -212,5 +214,28 @@ describe("HSE (processor-and-memory.md section 3; CORE-13, CORE-14; CR-MODULE-HS
   test("8 pF from each crystal pin to GND, and no series resistor", () => {
     expect(capacitors(net)).toEqual(["8.00e-12 GND|HSE_IN", "8.00e-12 GND|HSE_OUT"])
     expect(net.components.filter((c) => c.kind === "resistor")).toEqual([])
+  })
+})
+
+describe("Reset and boot (processor-and-memory.md:264-265; CORE-10 to CORE-12)", () => {
+  const net = resetBootBlock()
+  const nets = (id: string): string[] => Object.values(netsOf(only(net, id))).sort()
+  test("U_SUP: pin 1 GND, pin 2 RESET to NRST, pin 3 VDD on 3V3_D, with 100 nF from pin 3 to pin 1", () => {
+    expect(netsOf(only(net, "u_sup"))).toEqual({ "1": "GND", "2": "NRST", "3": "3V3_D" })
+    expect(only(net, "u_sup").part?.mpn).toBe("TLV803EA30DBZR")
+    expect(nets("c_sup")).toEqual(["3V3_D", "GND"])
+  })
+  test("NRST: 10 k pull-up, 100 nF to GND, the RESET button to GND", () => {
+    expect(Reflect.get(only(net, "r_nrst_pullup").parameters, "ohms")).toBe(10_000)
+    expect(nets("r_nrst_pullup")).toEqual(["3V3_D", "NRST"])
+    expect(nets("c_nrst")).toEqual(["GND", "NRST"])
+    expect(nets("sw_reset")).toEqual(["GND", "NRST"])
+  })
+  test("BOOT0: 4.7 k pull-down, 100 nF to GND, the BOOT button to 3V3_D", () => {
+    expect(Reflect.get(only(net, "r_boot0_pulldown").parameters, "ohms")).toBe(4_700)
+    expect(nets("r_boot0_pulldown")).toEqual(["BOOT0", "GND"])
+    expect(nets("c_boot0")).toEqual(["BOOT0", "GND"])
+    expect(nets("sw_boot")).toEqual(["3V3_D", "BOOT0"])
+    expect(capacitors(net)).toEqual(["1.00e-7 3V3_D|GND", "1.00e-7 BOOT0|GND", "1.00e-7 GND|NRST"])
   })
 })
