@@ -610,6 +610,42 @@ of the module, not the root or the other eleven blocks.
 
 ---
 
+## h7-module interface, clock, reset_boot, swd, usb_dfu and id_strap pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-module/interface.kicad_sch` sha256 `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` (commit `b0d3c00`)
+  - `drafted/h7-platform/h7-module/clock.kicad_sch` sha256 `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` (commit `e7404b4`)
+  - `drafted/h7-platform/h7-module/reset_boot.kicad_sch` sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` (commit `2b7dde8`)
+  - `drafted/h7-platform/h7-module/swd.kicad_sch` sha256 `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` (commit `056ea0d`)
+  - `drafted/h7-platform/h7-module/usb_dfu.kicad_sch` sha256 `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` (commit `58267d6`)
+  - `drafted/h7-platform/h7-module/id_strap.kicad_sch` sha256 `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` (commit `115b170`)
+- **Produced by** `make -C boards/h7-module draw`, one intent per block of
+  `circuits/h7-platform/module-board.ts`. Each draft was repaired with akcli
+  op-lists and literal text edits, and every part position and wire is
+  agent-authored. The module's `RECORD.md`, one section per page, and
+  `repair/<block>/` have the detail.
+- **Shown** 2026-11-12, as one 150 dpi PNG per sheet, the six together, with the
+  question *"What is your verdict on each of these six module pages: interface,
+  clock, reset and boot, debug header, USB update socket, and ID strap?"* The
+  qspi page, drawn in the same group, was held back and not shown, because its
+  per-block ERC check failed for want of a cross-page driver.
+- **Verdict, verbatim:**
+
+  > *"approved. proceed"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** One word answered a question about six pages,
+and it is recorded against each of the six sheets on that reading; the owner may
+correct it for any one of them. It is not a clearance of any circuit, and it
+covers none of the controller rulings these pages rest on, each of which the
+owner may still override: CR-MODULE-PAGE-RAILS, CR-MODULE-PWR-FLAGS,
+CR-MODULE-HSE-LOAD, CR-MODULE-SUPERVISOR-SYMBOL, CR-MODULE-SWD-HEADER,
+CR-MODULE-USB-ESD, CR-MODULE-USB-C-PINS, CR-MODULE-ID-STRAP-VALUES and
+CR-MODULE-ID-STRAP-PIN. The last of these carries an unchecked condition, the
+PC2_C analog switch, which stays open. The entry covers neither the qspi page nor
+the module's root.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.

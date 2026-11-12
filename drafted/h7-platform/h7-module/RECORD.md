@@ -32,12 +32,12 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | page | status | render |
 | --- | --- | --- |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
-| interface | UNREVIEWED | `interface.svg` |
-| clock | UNREVIEWED | `clock.svg` |
-| reset_boot | UNREVIEWED | `reset_boot.svg` |
-| swd | UNREVIEWED | `swd.svg` |
-| usb_dfu | UNREVIEWED | `usb_dfu.svg` |
-| id_strap | UNREVIEWED | `id_strap.svg` |
+| interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `interface.svg` |
+| clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `clock.svg` |
+| reset_boot | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `reset_boot.svg` |
+| swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
+| usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
+| id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
 | qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
 
 ## The drafts every repair starts from
@@ -283,7 +283,7 @@ None of these is a judgement of a page.
 
 ## interface: the two module headers
 
-**Status: UNREVIEWED.** sha256 `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296`.
 Render: `interface.svg` beside it.
 
 The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connector_Generic:Conn_01x20`),
@@ -334,7 +334,7 @@ The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connect
 
 ## clock: the HSE crystal
 
-**Status: UNREVIEWED.** sha256 `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1`.
 Render: `clock.svg` beside it.
 
 The block: `circuits/h7-platform/module/clock.ts`, 3 parts (Y1 `Device:Crystal_GND24`, C44, C45),
@@ -384,7 +384,7 @@ ports GND, HSE_IN and HSE_OUT.
 
 ## reset_boot: the NRST supervisor and the two buttons
 
-**Status: UNREVIEWED.** sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`.
 Render: `reset_boot.svg` beside it.
 
 The block: `circuits/h7-platform/module/reset-boot.ts`, 8 parts (U5, C46, R11, C47, SW1, R12, C48,
@@ -440,7 +440,7 @@ SW2), ports 3V3_D, BOOT0, GND and NRST.
 
 ## swd: the SWD header and its test points
 
-**Status: UNREVIEWED.** sha256 `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8`.
 Render: `swd.svg` beside it.
 
 The block: `circuits/h7-platform/module/swd.ts`, 6 parts (J3 `Connector:Conn_ARM_JTAG_SWD_10`, TP6 to
@@ -497,7 +497,7 @@ TP10 `Connector:TestPoint`), ports 3V3_D, GND, NRST, SWCLK and SWDIO.
 
 ## usb_dfu: the ROM DFU USB socket
 
-**Status: UNREVIEWED.** sha256 `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f`.
 Render: `usb_dfu.svg` beside it.
 
 The block: `circuits/h7-platform/module/usb-dfu.ts`, 7 parts (J4
@@ -572,7 +572,7 @@ page, which crosses VBUS once and joins the bottom GND row down J4's west side.
 
 ## id_strap: the module ID strap
 
-**Status: UNREVIEWED.** sha256 `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09`.
 Render: `id_strap.svg` beside it.
 
 The block: `circuits/h7-platform/module/id-strap.ts`, 3 parts (R16, R17, C51), ports GND,
