@@ -39,6 +39,11 @@ import { expect, test } from "bun:test"
 import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
 import { modelForSheet } from "./sheet-model.ts"
 import { committedNetlist, exportDraftedSheet, withOnePinMoved } from "./drafted-sheet.ts"
+import path from "node:path"
+import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
+import { exportProjectRoot, type ProjectModel } from "./drafted-project.ts"
+import { pinNumbersFromTable } from "./own-mapping-board.ts"
+import { DESIGNATORS as TWO_BLOCK_DESIGNATORS, PIN_NUMBERS as TWO_BLOCK_PIN_NUMBERS, twoBlockBoard } from "../fixtures/two-block-board/two-block-board.ts"
 
 /**
  * The boards with a page committed under `drafted/`, and the committed netlist fixture each
@@ -86,5 +91,42 @@ for (const { board, circuit, netlist } of BOARDS) {
     // whether neither one looked. Moving one pin in the freshly exported netlist must make
     // netMembership non-empty; if it does not, the equality above means nothing.
     expect(problems.netMembership).not.toEqual([])
+  })
+}
+
+/**
+ * The MULTI-PAGE projects (design change C3): a root sheet and one sheet per block. The same claim
+ * as above, made of the ROOT's export - the only export that says how the pages connect. Each
+ * project's own test (`registerDraftedProjectTests`, `./drafted-project.ts`) asserts the fresh
+ * export against the model; this asserts the committed fixture says the same.
+ *
+ * The two-block board is the C3 test fixture, kept under tests/fixtures/ rather than drafted/: its
+ * pages are test data and never sent for review.
+ */
+const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string; readonly netlist: string; readonly model: () => ProjectModel }> = [
+  {
+    board: "two-block-board",
+    dir: path.join(moduleRepoRoot(), "tests", "fixtures", "two-block-board", "drafted"),
+    netlist: "tests/fixtures/two-block-board/two-block-board.net",
+    model: () => {
+      const network = twoBlockBoard()
+      return { network, designators: new Map(Object.entries(TWO_BLOCK_DESIGNATORS)), pinNumbers: pinNumbersFromTable(network, TWO_BLOCK_PIN_NUMBERS) }
+    },
+  },
+]
+
+for (const { board, dir, netlist, model } of PROJECTS) {
+  test(`${board}: kicad-cli's export of the project root, right now, agrees with the model exactly as the committed fixture does`, () => {
+    const { network, designators, pinNumbers } = model()
+    const fromFresh = compareSheetToModel(network, designators, pinNumbers, exportProjectRoot(dir, board))
+    expect(fromFresh).toEqual(compareSheetToModel(network, designators, pinNumbers, committedNetlist(netlist)))
+    expect(fromFresh.componentIdentity).toEqual([])
+    expect(fromFresh.netMembership).toEqual([])
+  })
+
+  test(`${board}: moving one pin in the fresh root export is reported - the control for the equality above`, () => {
+    const { network, designators, pinNumbers } = model()
+    const mutated = withOnePinMoved(exportProjectRoot(dir, board))
+    expect(compareSheetToModel(network, designators, pinNumbers, mutated).netMembership).not.toEqual([])
   })
 }

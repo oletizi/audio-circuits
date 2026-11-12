@@ -57,6 +57,9 @@ import { modelForSheet } from "./sheet-model.ts"
 import { defaultKicadCliExists, defaultRunExport } from "../../tools/perfboard/netlist-sync.ts"
 import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 
+/** A multi-page drawing's guard (design change C3): `./drafted-project.ts`, kept there for this file's length. */
+export { registerDraftedProjectTests, type DraftedProjectUnderTest } from "./drafted-project.ts"
+
 /**
  * The suffix every sheet under `drafted/` carries, and the reason it is not cosmetic.
  *
