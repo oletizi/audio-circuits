@@ -12,11 +12,14 @@ import type { Component, Network } from "../../lib/model/index.ts"
 import { MODULE_PIN_NUMBERS } from "../../circuits/h7-platform/module/build.ts"
 import { mcuBlock } from "../../circuits/h7-platform/module/mcu.ts"
 import { mcuDecouplingBlock } from "../../circuits/h7-platform/module/mcu-decoupling.ts"
+import { vddaBlock } from "../../circuits/h7-platform/module/vdda.ts"
+import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
   mcu: mcuBlock,
   decoupling: mcuDecouplingBlock,
+  vdda: vddaBlock,
 }
 
 const MAX_SYMBOLS = 40
@@ -119,5 +122,37 @@ describe("MCU decoupling (processor-and-memory.md :31, :136-141; CORE-01 to CORE
   test("bench pads on VCAP and VDDA (VREF_A) each with a GND pad, and a pogo pad on BOOT0 (D15)", () => {
     const pads = net.components.filter((c) => c.kind === "connector").map((c) => netsOf(c)["1"] ?? "?").sort()
     expect(pads).toEqual(["BOOT0", "GND", "GND", "VCAP", "VREF_A"])
+  })
+})
+
+describe("VDDA (processor-and-memory.md:138; CR-MODULE-VDDA-BANK; CORE-07, CORE-08)", () => {
+  const net = vddaBlock()
+  const value = (c: Component, key: string): number => {
+    const v = Reflect.get(c.parameters, key)
+    if (typeof v !== "number") throw new Error(`${c.id} has no ${key}`)
+    return v
+  }
+
+  test("the bank's values equal Task 3's constant, each from VREF_A to VSSA", () => {
+    const bank = net.components.filter((c) => c.id.startsWith("c_vdda_bank"))
+    expect(bank.map((c) => value(c, "farads")).sort()).toEqual(VDDA_RULED.bank.map((b) => b.nominal_F).sort())
+    for (const c of bank) expect(Object.values(netsOf(c)).sort()).toEqual(["VREF_A", "VSSA"])
+  })
+  test("the damping leg is the constant's R in series with its C, across the bank", () => {
+    const r = only(net, "r_vdda_damp")
+    const c = only(net, "c_vdda_damp")
+    expect(value(r, "ohms")).toBe(VDDA_RULED.damping.r_ohm)
+    expect(value(c, "farads")).toBe(VDDA_RULED.damping.c_F)
+    const rNets = Object.values(netsOf(r))
+    const node = rNets.find((n) => n !== "VREF_A") ?? "missing"
+    expect(rNets).toContain("VREF_A")
+    expect(Object.values(netsOf(c)).sort()).toEqual([node, "VSSA"].sort())
+  })
+  test("FB_VDDA feeds VREF_A from 3V3_D; R_VSSA joins VSSA to GND through 0 ohm", () => {
+    expect(Object.values(netsOf(only(net, "fb_vdda"))).sort()).toEqual(["3V3_D", "VREF_A"])
+    expect(only(net, "fb_vdda").part?.mpn).toBe("BLM21PG221SN1D")
+    const rv = only(net, "r_vssa")
+    expect(value(rv, "ohms")).toBe(0)
+    expect(Object.values(netsOf(rv)).sort()).toEqual(["GND", "VSSA"])
   })
 })
