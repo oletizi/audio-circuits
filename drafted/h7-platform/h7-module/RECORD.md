@@ -42,10 +42,10 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
 | usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
-| qspi | UNREVIEWED; `verify.sh` exits 0 since ruling CR-MODULE-CROSS-PAGE-DRIVERS (27bc5a0); before it, it exited 1 (the history is in its section) | `qspi.svg` |
-| vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
-| sdram | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
-| decoupling | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
+| qspi | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 since ruling CR-MODULE-CROSS-PAGE-DRIVERS (27bc5a0); before it, it exited 1 (the history is in its section) | `qspi.svg` |
+| vdda | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
+| sdram | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
+| decoupling | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `decoupling.svg` |
 | mcu | UNREVIEWED; `verify.sh` exits 0 since ruling CR-MODULE-VCAP-ERC, which excuses its one `pin_to_pin` between U1's two VCAP pins; before it, it exited 1 (the history is in its section) (Task 7d) | `mcu.svg` |
 
 ## The drafts every repair starts from
@@ -676,7 +676,7 @@ MODULE_ID_STRAP and VREF_A (VREF_A reaches one pin, R16's pin 1).
 
 ## qspi: the QSPI flash
 
-**Status: UNREVIEWED.** sha256 `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1`.
 Render: `qspi.svg` beside it.
 
 **`verify.sh` exits 0 on this page since ruling
@@ -772,7 +772,7 @@ and counts steps. Since the ruling `verify.sh` runs every step on the page and g
 
 ## vdda: the VDDA bead, bank and damping leg (Task 7c)
 
-**Status: UNREVIEWED.** sha256 `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444`.
 Render: `vdda.svg` beside it.
 
 Repaired by the Task 7b steps ("How the Task 7b pages are repaired", above), with `repair/vdda/layout.py`
@@ -851,7 +851,7 @@ hierarchical label, so no port's net is named `/<port>`.
 
 ## sdram: the SDRAM and its decoupling (Task 7c)
 
-**Status: UNREVIEWED.** sha256 `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf`.
 Render: `sdram.svg` beside it.
 
 Repaired by the Task 7b steps, with `repair/sdram/layout.py` and `repair/sdram/02-wire.py`;
@@ -952,7 +952,7 @@ each reach one of U3's pins.
 
 ## decoupling: the MCU's decoupling and bench pads (Task 7c)
 
-**Status: UNREVIEWED.** sha256 `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `8d20ff5196f59330bb77424024d856124808d3d49c5affe89db56f7516c416cb`.
 Render: `decoupling.svg` beside it.
 
 Repaired by the Task 7b steps, with `repair/decoupling/layout.py` and `repair/decoupling/02-wire.py`;
