@@ -23,7 +23,7 @@ import { idStrapBlock } from "../../circuits/h7-platform/module/id-strap.ts"
 import { powerBlock } from "../../circuits/h7-platform/module/power.ts"
 import { interfaceBlock } from "../../circuits/h7-platform/module/interface.ts"
 import { usbDfuBlock } from "../../circuits/h7-platform/module/usb-dfu.ts"
-import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
+import { EXPECTED_NC_PORTS, mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
   usb_dfu: usbDfuBlock,
@@ -92,12 +92,7 @@ describe("U_MCU", () => {
   })
 
   test("every other pin is an NC GPIO; the list is exact, so a newly used pin left NC shows here", () => {
-    expect(mcuNcPorts(mcu)).toEqual([
-      "PE2", "PE3", "PE4", "PE5", "PE6", "PI8", "PC13", "PC14", "PC15", "PI9", "PI10", "PI11", "PC3_C", "PH4",
-      "PC5", "PB0", "PB2", "PB11", "PH6", "PH7", "PH8", "PH9", "PH10", "PH11", "PH12", "PB13", "PD12", "PD13",
-      "PG3", "PG6", "PG7", "PC6", "PC7", "PA8", "PA9", "PA10", "PH13", "PH14", "PH15", "PI0", "PI1", "PI2",
-      "PI3", "PA15", "PD3", "PD4", "PD5", "PD6", "PD7", "PG12", "PG13", "PG14", "PB3", "PI4", "PI5", "PI6", "PI7",
-    ])
+    expect(mcuNcPorts(mcu)).toEqual([...EXPECTED_NC_PORTS])
   })
 
   test("the block's ports are exactly the nets its used pins carry", () => {

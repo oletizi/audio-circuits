@@ -170,3 +170,14 @@ export function withPin(c: Component, pin: string, to: Connection | undefined): 
     })),
   }
 }
+
+/**
+ * The MCU pins nothing uses, by port, in LQFP position order: 140 I/O less 52 MODULE_PINS less 31
+ * interface ports. Written out so that a pin a new function needs, left NC, changes this list.
+ */
+export const EXPECTED_NC_PORTS: readonly string[] = [
+  "PE2", "PE3", "PE4", "PE5", "PE6", "PI8", "PC13", "PC14", "PC15", "PI9", "PI10", "PI11", "PC3_C", "PH4",
+  "PC5", "PB0", "PB2", "PB11", "PH6", "PH7", "PH8", "PH9", "PH10", "PH11", "PH12", "PB13", "PD12", "PD13",
+  "PG3", "PG6", "PG7", "PC6", "PC7", "PA8", "PA9", "PA10", "PH13", "PH14", "PH15", "PI0", "PI1", "PI2",
+  "PI3", "PA15", "PD3", "PD4", "PD5", "PD6", "PD7", "PG12", "PG13", "PG14", "PB3", "PI4", "PI5", "PI6", "PI7",
+]

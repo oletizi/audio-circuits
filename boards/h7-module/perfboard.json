@@ -1,0 +1,5 @@
+{
+  "kind": "pcb",
+  "circuit": "../../circuits/h7-platform/module-board.ts",
+  "export": "h7Module"
+}
