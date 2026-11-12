@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "R3",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "divider b"
+    },
+    {
+      "ref": "R4",
+      "libId": "Device:R",
+      "value": "22K",
+      "group": "divider b"
+    },
+    {
+      "ref": "C2",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "divider b"
+    }
+  ],
+  "nets": [
+    {
+      "name": "FB",
+      "kind": "signal",
+      "pins": [
+        "C2.1",
+        "R3.2",
+        "R4.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C2.2",
+        "R4.2"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "divider b"
+    ]
+  }
+}

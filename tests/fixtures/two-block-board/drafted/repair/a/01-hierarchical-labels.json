@@ -1,0 +1,27 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "a.kicad_sch",
+ "ops": [
+  {
+   "op": "add_net_label",
+   "name": "3V3",
+   "at": "R1.1",
+   "scope": "hierarchical"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4733029e-0061-519b-8f6b-ad17a1327dc3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4500,
+    2650
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

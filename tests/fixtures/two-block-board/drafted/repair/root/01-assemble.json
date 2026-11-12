@@ -1,0 +1,153 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "two-block-board.kicad_sch",
+ "ops": [
+  {
+   "op": "add_sheet",
+   "name": "a",
+   "file": "a.kicad_sch",
+   "at": [
+    1500,
+    1500
+   ],
+   "size": [
+    2000,
+    600
+   ],
+   "pins": [
+    {
+     "name": "3V3",
+     "type": "input",
+     "side": "left",
+     "offset_mil": 200
+    },
+    {
+     "name": "GND",
+     "type": "input",
+     "side": "left",
+     "offset_mil": 400
+    }
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1500,
+     1700
+    ],
+    [
+     1100,
+     1700
+    ]
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3",
+   "at": [
+    1100,
+    1700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1500,
+     1900
+    ],
+    [
+     1100,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1100,
+    1900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_sheet",
+   "name": "b",
+   "file": "b.kicad_sch",
+   "at": [
+    4700,
+    1500
+   ],
+   "size": [
+    2000,
+    600
+   ],
+   "pins": [
+    {
+     "name": "3V3",
+     "type": "input",
+     "side": "left",
+     "offset_mil": 200
+    },
+    {
+     "name": "GND",
+     "type": "input",
+     "side": "left",
+     "offset_mil": 400
+    }
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     1700
+    ],
+    [
+     4300,
+     1700
+    ]
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3",
+   "at": [
+    4300,
+    1700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     1900
+    ],
+    [
+     4300,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4300,
+    1900
+   ],
+   "scope": "local",
+   "rotation": 180
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "4cba56de-9151-d253-62fe-c5a7324da684")
+	(paper "USLetter")
+	(lib_symbols)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(sheet (at 38.1 38.1) (size 50.8 15.24) (stroke (width 0) (type default)) (fill (color 0 0 0 0.0000)) (uuid "cadfea32-1c52-5c8d-b201-c08003caefdf") (property "Sheetname" "a" (at 38.1 38.1 0) (effects (font (size 1.27 1.27)) (justify left bottom))) (property "Sheetfile" "a.kicad_sch" (at 38.1 53.34 0) (effects (font (size 1.27 1.27)) (justify left top))) (pin "3V3" input (at 38.1 43.18 180) (effects (font (size 1.27 1.27))) (uuid "84e6f5f7-0a09-596d-9c44-2d48d105b211")) (pin "GND" input (at 38.1 48.26 180) (effects (font (size 1.27 1.27))) (uuid "3083b5f3-48de-5112-a028-71588c82c2da")) (instances (project "noname" (path "/4cba56de-9151-d253-62fe-c5a7324da684" (page "2")))))
+	(wire (pts (xy 38.1 43.18) (xy 27.94 43.18)) (stroke (width 0) (type default)) (uuid "60dd52fb-7b86-58ba-9781-3ad1521abce7"))
+	(label "3V3" (at 27.94 43.18 180) (effects (font (size 1.27 1.27)) (justify right bottom)) (uuid "37c3d561-9562-5f19-906d-8058b73b143d"))
+	(wire (pts (xy 38.1 48.26) (xy 27.94 48.26)) (stroke (width 0) (type default)) (uuid "9df3c37b-bc31-5e67-b863-57b81c9e7645"))
+	(label "GND" (at 27.94 48.26 180) (effects (font (size 1.27 1.27)) (justify right bottom)) (uuid "2ab229f3-d9c8-5355-a4ef-3ca00ea2d555"))
+	(sheet (at 119.38 38.1) (size 50.8 15.24) (stroke (width 0) (type default)) (fill (color 0 0 0 0.0000)) (uuid "99445736-1854-5558-9f9f-aae13d795a17") (property "Sheetname" "b" (at 119.38 38.1 0) (effects (font (size 1.27 1.27)) (justify left bottom))) (property "Sheetfile" "b.kicad_sch" (at 119.38 53.34 0) (effects (font (size 1.27 1.27)) (justify left top))) (pin "3V3" input (at 119.38 43.18 180) (effects (font (size 1.27 1.27))) (uuid "b7512c33-4826-5816-8cb6-13bf0faab55a")) (pin "GND" input (at 119.38 48.26 180) (effects (font (size 1.27 1.27))) (uuid "550a8d11-015a-5752-b970-4443973e57e8")) (instances (project "noname" (path "/4cba56de-9151-d253-62fe-c5a7324da684" (page "7")))))
+	(wire (pts (xy 119.38 43.18) (xy 109.22 43.18)) (stroke (width 0) (type default)) (uuid "4ff89cf4-4481-536a-b168-a489c7841ea5"))
+	(label "3V3" (at 109.22 43.18 180) (effects (font (size 1.27 1.27)) (justify right bottom)) (uuid "f3cc3819-f62d-51e5-81a6-396fd299bb3e"))
+	(wire (pts (xy 119.38 48.26) (xy 109.22 48.26)) (stroke (width 0) (type default)) (uuid "f5b3d5c3-a2ac-50cc-a231-b390225478e4"))
+	(label "GND" (at 109.22 48.26 180) (effects (font (size 1.27 1.27)) (justify right bottom)) (uuid "a0a47ee5-ca7d-5b19-9d52-ad59fbbf6417"))
+)
