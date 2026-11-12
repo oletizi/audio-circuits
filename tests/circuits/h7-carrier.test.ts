@@ -190,10 +190,11 @@ describe("h7 bring-up carrier", () => {
     // The DC divider is unchanged: 4.35 V x 19.8 / 31.92 = 2.698 V, over VIH 2.52 V.
     expect(a.steadyMinV).toBeCloseTo(2.698, 3)
     expect(a.steadyMinV).toBeGreaterThan(2.52)
-    // The capacitor only delays it: 7.575 k x 110 nF = 0.833 ms, and ln(2.698 / 0.178) = 2.72
-    // time constants to VIH, 2.26 ms.
-    expect(a.tauMaxS * 1e3).toBeCloseTo(0.833, 3)
-    expect(a.detectS * 1e3).toBeCloseTo(2.26, 2)
+    // The capacitor only delays it: 7.575 k x 100 nF x 1.1 (tolerance) x 1.15 (X7R over
+    // temperature, which can raise it) = 0.958 ms, and ln(2.698 / 0.178) = 2.72 time constants
+    // to VIH, 2.60 ms.
+    expect(a.tauMaxS * 1e3).toBeCloseTo(0.958, 3)
+    expect(a.detectS * 1e3).toBeCloseTo(2.60, 2)
   })
 
   test("the intent lowers", () => {

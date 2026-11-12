@@ -26,8 +26,13 @@ export const PA1_LIMITS_V = [3.6, 4.0] as const
 const R_TOL = 0.01
 /** R-57's least-effective ceramic: tolerance 0.9 x X7R over temperature 0.85 x DC bias 0.5. */
 const C_LEAST_FACTOR = 0.9 * 0.85 * 0.5
-/** The most a 10 % X7R part can be; temperature and bias only lower it. */
-const C_MOST_FACTOR = 1.1
+/**
+ * The most a 10 % X7R part can be: tolerance 1.1 x the X7R temperature characteristic's +15 %
+ * (X7R is +/-15 % over -55 to 125 C, so temperature can raise it too; issue 30 follow-up review).
+ * DC bias only lowers it, and a node near 0 V at plug-in has little bias, so none is taken here.
+ * No selected-part curve is read; a tighter bound needs one.
+ */
+const C_MOST_FACTOR = 1.1 * 1.15
 
 export interface HotplugWindow {
   /** The limit PA1 stays under, volts. */
