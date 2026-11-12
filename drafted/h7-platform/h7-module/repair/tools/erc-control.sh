@@ -17,6 +17,13 @@
 #     hierarchical-labels.ts op-list applied, which is what turns a draft's labels into the block's
 #     boundary; no part, wire or other label moves. Shown first: the same sheet alone reports
 #     power_pin_not_driven, so the pass under the root is the stub flags' doing.
+# 10. positive, ruling CR-MODULE-CROSS-PAGE-DRIVERS: the committed qspi page verifies, /qspi/ at
+#     0 errors and 0 warnings, with the stand-in driver on FLASH_CLK's stub.
+# 11. negative, the same ruling: with the table overridden to omit FLASH_CLK's entry (the
+#     H7_CROSS_PAGE_DRIVERS_TABLE test override; the committed table is untouched), the same run
+#     fails with pin_not_driven on U4's CLK.
+# 12. negative, the same ruling: an entry naming a U1 pin that is not on FLASH_CLK is refused by
+#     the model check in cross-page-drivers.ts, which names the pin and the net.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -104,5 +111,32 @@ sh "$here/erc-one-block-root.sh" swd "$work/swd/swd.kicad_sch" >"$work/swd/root.
   || { cat "$work/swd/root.log" >&2; bad "the swd sheet failed its ERC under the one-block root"; }
 grep -q '^sheet /swd/: errors 0, warnings 0' "$work/swd/root.log" || { cat "$work/swd/root.log" >&2; bad "/swd/ is not at 0 errors, 0 warnings"; }
 echo "   under the one-block root: $(grep '^sheet /swd/' "$work/swd/root.log"); $(grep 'stub PWR_FLAGs' "$work/swd/root.log")"
+
+qspi="$(cd "$here/../.." && pwd)/qspi.kicad_sch"
+echo "== 10. committed qspi page verifies: U4's CLK is driven by the FLASH_CLK stand-in"
+sh "$here/verify.sh" qspi "$qspi" >"$work/qspi.log" 2>&1 || { cat "$work/qspi.log" >&2; bad "the committed qspi page did not verify"; }
+grep -q '^sheet /qspi/: errors 0, warnings 0' "$work/qspi.log" || { cat "$work/qspi.log" >&2; bad "/qspi/ is not at 0 errors, 0 warnings"; }
+grep -q 'stand-in drivers on FLASH_CLK (for mcu U1 PF10)' "$work/qspi.log" || { cat "$work/qspi.log" >&2; bad "the one-block root did not place FLASH_CLK's stand-in"; }
+echo "   pass: $(grep '^sheet /qspi/' "$work/qspi.log")"
+
+echo "== 11. the same page, with FLASH_CLK's entry removed from the table (test override), fails on U4's CLK"
+printf '%s\n' '[]' >"$work/no-drivers.json"
+if H7_CROSS_PAGE_DRIVERS_TABLE="$work/no-drivers.json" sh "$here/verify.sh" qspi "$qspi" >"$work/qspi-neg.log" 2>&1; then
+  cat "$work/qspi-neg.log" >&2; bad "verify.sh passed the qspi page with no FLASH_CLK stand-in"
+fi
+grep -q 'TEST OVERRIDE' "$work/qspi-neg.log" || { cat "$work/qspi-neg.log" >&2; bad "the override was not announced, so the run may have used the committed table"; }
+grep -q 'at pin_not_driven: Symbol U4 Pin 6 \[CLK, Input, Line\]' "$work/qspi-neg.log" \
+  || { cat "$work/qspi-neg.log" >&2; bad "verify.sh failed, but not with pin_not_driven on U4's CLK"; }
+echo "   fails as expected: $(grep 'at pin_not_driven' "$work/qspi-neg.log")"
+
+echo "== 12. a table entry naming a pin not on its net is refused by the model check"
+printf '%s\n' '[{"net":"FLASH_CLK","block":"mcu","designator":"U1","pin":"29","pinName":"PF10","source":"erc-control.sh control 12, deliberately wrong"}]' >"$work/bad-pin.json"
+mkdir "$work/badpin"
+if (cd "$root" && H7_CROSS_PAGE_DRIVERS_TABLE="$work/bad-pin.json" bun "$here/one-block-root.ts" qspi "$work/badpin") >"$work/bad-pin.log" 2>&1; then
+  cat "$work/bad-pin.log" >&2; bad "one-block-root.ts accepted an entry whose pin is not on its net"
+fi
+grep -q 'U1 pin 29 is on .*, not on FLASH_CLK' "$work/bad-pin.log" \
+  || { cat "$work/bad-pin.log" >&2; bad "one-block-root.ts refused, but not naming U1 pin 29 as off FLASH_CLK"; }
+echo "   refused as expected: $(grep 'U1 pin 29 is on' "$work/bad-pin.log" | head -1)"
 
 echo "erc-control.sh: every control came out as stated"

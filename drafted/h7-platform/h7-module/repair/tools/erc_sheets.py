@@ -13,6 +13,8 @@ ERC errors in its own sheet still verified, because this script only printed cou
     synthetic root is known to produce, so the allowance is scoped to the root and to that type;
   - non-zero when any other sheet appears, since the one-block root holds only the target.
 Warnings are printed and never fail: none of the four rules above is about a warning.
+Each error on the target sheet is printed with the items KiCad names (`at <type>: <items>`), so a
+failure names the symbol and pin, and a control can require it.
 
 usage: python3 erc_sheets.py <erc.json> <block>
 """
@@ -41,6 +43,11 @@ for sheet in report["sheets"]:
         print(f"   {sev} {kind}: {n}")
     error_kinds = {kind for (sev, kind) in by if sev == "error"}
     if path == target:
+        # Each error on the block's own sheet, with the items KiCad names, so a failure says where.
+        for v in sheet["violations"]:
+            if v["severity"] == "error":
+                items = "; ".join(i.get("description", "?") for i in v.get("items", []))
+                print(f"   at {v['type']}: {items}")
         if errors:
             failures.append(f"the block's own sheet {path} has {errors} ERC error(s): "
                             f"{', '.join(sorted(error_kinds))}")

@@ -15,6 +15,13 @@
  * carries elsewhere. So a block page with a power input on GND passes its ERC here without a GND
  * flag of its own, and the power page, which holds GND's flag, gets no second one on its stub.
  *
+ * CROSS-PAGE DRIVERS (ruling CR-MODULE-CROSS-PAGE-DRIVERS). A signal net whose driver is a pin on
+ * another page, declared in `./cross-page-drivers.ts` and checked there against the model, gets a
+ * stand-in driver on its stub when this block is not the driving block: one `Connector:TestPoint`
+ * (a single passive pin, which KiCad's ERC counts as driving an input; the ruling has the
+ * measurement), at the stub's label, referenced `#DRV<n>`. Not a PWR_FLAG: these are not power nets.
+ * The module's real root must clear each such net with its real driver.
+ *
  * usage: bun one-block-root.ts <block> <out-dir>
  *   writes <out-dir>/one-block-root.kicad_sch (the blank root) and <out-dir>/one-block-root.json (its op-list)
  */
@@ -24,6 +31,7 @@ import { h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { Network } from "../../../../../lib/model/index.ts"
 import { blankRootSheet, rootSheetOps } from "../../../../../tools/draught/assemble-root.ts"
 import type { AkcliOp } from "../../../../../tools/draught/akcli-ops.ts"
+import { checkCrossPageDrivers, crossPageDriverTable, STAND_IN_LIB_ID, standInsFor } from "./cross-page-drivers.ts"
 import { flagLivesElsewhere } from "./pwr-flag-homes.ts"
 
 const [block, outDir] = process.argv.slice(2)
@@ -47,6 +55,21 @@ for (const op of base.ops) {
 if (flags.length !== flagged.size) {
   throw new Error(`one-block root for "${block}": ${flagged.size} net(s) need a stub PWR_FLAG (${[...flagged].sort().join(", ")}) and ${flags.length} stub label(s) carry their names; assemble-root.ts no longer writes one label per port`)
 }
+// Ruling CR-MODULE-CROSS-PAGE-DRIVERS: the table is held to the model on every run, then a
+// stand-in driver goes on the stub of each net this block reaches whose driver is on another page.
+const table = crossPageDriverTable()
+checkCrossPageDrivers(table, module)
+const driven = standInsFor(table, block, record.ports)
+const standIns: AkcliOp[] = []
+for (const entry of driven) {
+  const labels = base.ops.filter((op) => op.op === "add_net_label" && op.name === entry.net)
+  const at = labels[0]?.at
+  if (labels.length !== 1 || !Array.isArray(at) || typeof at[0] !== "number" || typeof at[1] !== "number") {
+    throw new Error(`one-block root for "${block}": ${entry.net} needs a stand-in driver and ${labels.length} stub label(s) carry its name with a point; assemble-root.ts no longer writes one label per port`)
+  }
+  standIns.push({ op: "place_component", lib_id: STAND_IN_LIB_ID, designator: `#DRV${standIns.length + 1}`, x_mil: at[0], y_mil: at[1], rotation: 0 })
+}
 writeFileSync(join(outDir, `${board}.kicad_sch`), blankRootSheet(board))
-writeFileSync(join(outDir, `${board}.json`), JSON.stringify({ ...base, ops: [...base.ops, ...flags] }, null, 1) + "\n")
-console.log(`${board}: one sheet "${block}" with pins ${Object.keys(record.ports).sort().join(", ")}; stub PWR_FLAGs on ${[...flagged].sort().join(", ") || "none"}`)
+writeFileSync(join(outDir, `${board}.json`), JSON.stringify({ ...base, ops: [...base.ops, ...flags, ...standIns] }, null, 1) + "\n")
+const driverText = driven.map((e) => `${e.net} (for ${e.block} ${e.designator} ${e.pinName})`).join(", ") || "none"
+console.log(`${board}: one sheet "${block}" with pins ${Object.keys(record.ports).sort().join(", ")}; stub PWR_FLAGs on ${[...flagged].sort().join(", ") || "none"}; stand-in drivers on ${driverText}`)

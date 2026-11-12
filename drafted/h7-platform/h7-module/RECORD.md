@@ -115,6 +115,18 @@ the whole hierarchy exists yet: `verify.sh` checks one block page at a time. Two
 across two sheets is a `pin_to_pin` error at the root (measured; the ruling quotes it), so the root
 ERC is itself a backstop, but it does not name the table entry at fault.
 
+**And about cross-page drivers.** Ruling
+[CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+`repair/tools/cross-page-drivers.ts` declares each signal net whose driver is on another page
+(FLASH_CLK -> mcu, U1 PF10, as the table stands), and the one-block root puts a stand-in driver, a
+`Connector:TestPoint`, on that net's stub when the block under check is not the driving block. The
+stand-in only says the net is driven somewhere, and a passive pin cannot raise a `pin_to_pin`
+conflict, so the root assembled in Task 7b (step 4) must:
+
+- **clear every entry of the table with its real driver**: the root's ERC, every sheet together and
+  no stand-in placed, reports no `pin_not_driven` on any table net, and the driving pin the entry
+  names is on that net in the root's netlist export.
+
 ## power: 3.3 V buck and input network
 
 **Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`.
@@ -629,7 +641,17 @@ MODULE_ID_STRAP and VREF_A (VREF_A reaches one pin, R16's pin 1).
 **Status: UNREVIEWED.** sha256 `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1`.
 Render: `qspi.svg` beside it.
 
-**`verify.sh` EXITS 1 ON THIS PAGE, and the controller has not yet ruled on it.** The model
+**`verify.sh` exits 0 on this page since ruling
+[CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers)**,
+with no byte of the page changed (same sha256). The one-block root now places a stand-in driver, a
+`Connector:TestPoint`, on FLASH_CLK's stub, because `repair/tools/cross-page-drivers.ts` declares
+FLASH_CLK's driver as U1's PF10 on the mcu page; under it `/qspi/` reports 0 errors and 0 warnings.
+The module's real root must clear FLASH_CLK with U1's PF10 itself (the section on what the root must
+do, above). `erc-control.sh` controls 10 to 12 hold it: the page verifies, it fails with
+`pin_not_driven` on U4's CLK when the entry is removed through the test override, and an entry naming
+a pin off the net is refused.
+
+**The history, kept: before the ruling, `verify.sh` exited 1 on this page.** The model
 comparison gives 0 disagreements. Under the one-block root, ERC reports one error on `/qspi/`:
 `pin_not_driven`, *"Input pin not driven by any Output pins"*, on *"Symbol U4 Pin 6 [CLK, Input,
 Line]"*. U4's CLK is the only pin on FLASH_CLK on this page, and its driver is U1's PF10 on the mcu
@@ -639,9 +661,9 @@ under a scratch root holding this page and the mcu draft (its hierarchical-label
 with the one-block root's stub flags on 3V3_D, GND, VREF_A and VSSA), `/qspi/` reports **0 errors
 and 0 warnings**. The other three inputs on the page are not reported: /CS has R10 on its net, a
 passive pin, and IO0 to IO3 are bidirectional. So the error comes from the check's context, not from
-a disagreement between the page and the model. It is still a failing check, and it stays one until
-the controller rules on what the one-block root should hold for a net whose driver is on another page.
-Nothing in the harness was changed for it.
+a disagreement between the page and the model. It was a failing check until the controller ruled on
+what the one-block root should hold for a net whose driver is on another page, and the harness was
+not changed for it before that ruling.
 
 The block: `circuits/h7-platform/module/qspi.ts`, 3 parts (U4 `Memory_Flash:W25Q128JVS`, R10, C43),
 ports 3V3_D, FLASH_CLK, FLASH_IO0 to FLASH_IO3, FLASH_NCS and GND (FLASH_CLK and FLASH_IO0 to IO3
@@ -667,8 +689,10 @@ each reach one pin).
 | exported components, nets, net members | 3, 8, 12 | 3, 8, 12 |
 | exported nets carrying a model net name | 3 of 8 | 8 of 8 |
 | ERC, the sheet alone | 8 errors (`pin_not_connected` 5: U4's five one-pin signals, unwired; `pin_not_driven` 1; `power_pin_not_driven` 2), 0 warnings | 8 errors (`pin_not_connected` 5: hierarchical labels with no parent sheet; `pin_not_driven` 1, U4's CLK; `power_pin_not_driven` 2, on 3V3_D and GND), 6 warnings (`isolated_pin_label` 5, `lib_symbol_mismatch` 1) |
-| ERC under a one-block root, `/qspi/` | 8 errors (`pin_not_connected` 5, `pin_not_driven` 1, `power_pin_not_driven` 2), 1 warning | **1 error (`pin_not_driven` 1: U4's CLK, see above)**, 0 warnings |
-| ERC under a one-block root, `/` | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 3 warnings | 1 error (`label_dangling` 1: FLASH_NCS's stub label is alone with one block), 11 warnings (`isolated_pin_label` 10, `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/qspi/`, before the ruling (no stand-in) | 8 errors (`pin_not_connected` 5, `pin_not_driven` 1, `power_pin_not_driven` 2), 1 warning | 1 error (`pin_not_driven` 1: U4's CLK, see above), 0 warnings |
+| ERC under a one-block root, `/`, before the ruling | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 3 warnings | 1 error (`label_dangling` 1: FLASH_NCS's stub label is alone with one block), 11 warnings (`isolated_pin_label` 10, `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/qspi/`, with FLASH_CLK's stand-in (the ruling) | not run | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/`, with FLASH_CLK's stand-in | not run | 1 error (`label_dangling` 1: FLASH_NCS's stub), 9 warnings (`isolated_pin_label` 8, `lib_symbol_mismatch` 1) |
 | ERC under a scratch root holding the mcu draft and this page, `/qspi/` | not run | 0 errors, 0 warnings |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 0, 0 | 0, 0 |
@@ -683,8 +707,9 @@ each reach one pin).
 | wire corners | 6 | 2 |
 | junctions | 0 | 4 |
 
-The page-side measurements come from the same steps as `verify.sh`, run without stopping, because
-`verify.sh` stops at the ERC failure before its crossings, junction, label, paper and counts steps.
+Before the ruling, the page-side measurements came from the same steps as `verify.sh`, run without
+stopping, because `verify.sh` stopped at the ERC failure before its crossings, junction, label, paper
+and counts steps. Since the ruling `verify.sh` runs every step on the page and gives the same values.
 
 ### What the page shows, as observations
 
