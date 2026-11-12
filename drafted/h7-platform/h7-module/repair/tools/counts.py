@@ -1,4 +1,5 @@
-"""Counts for the verification table: symbols, placed pins, wires, total wire
+"""Counts for the verification table: symbols (parts, power symbols and PWR_FLAGs, told apart by
+lib_id), placed pins, wires, total wire
 length, wire corners (exactly two wire ends meeting at a right angle, no pin,
 no other wire through), junctions, distinct wire strokes.
 
@@ -14,9 +15,11 @@ import kicad_sheet  # noqa: E402
 
 sheet = kicad_sheet.read(sys.argv[1])
 symbols = sheet.symbols()
-parts = [s for s in symbols if not s.ref.startswith("#")]
-power = [s for s in symbols if s.ref.startswith("#PWR")]
-flags = [s for s in symbols if s.ref.startswith("#FLG")]
+# By lib_id, not by reference prefix: akcli names a PWR_FLAG `#PWR0n`, so a prefix test counted
+# the power page's two flags as power symbols (Task 7a review, M4).
+flags = [s for s in symbols if s.lib_id == "power:PWR_FLAG"]
+power = [s for s in symbols if s.lib_id.startswith("power:") and s.lib_id != "power:PWR_FLAG"]
+parts = [s for s in symbols if not s.lib_id.startswith("power:")]
 pins = sheet.pin_points_by_ref()
 part_pins = [p for p in pins if not p[2].startswith("#")]
 wires = sheet.wires()

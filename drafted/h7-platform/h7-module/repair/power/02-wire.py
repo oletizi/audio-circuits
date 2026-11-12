@@ -2,13 +2,13 @@
 
 Reads the pin points `../tools/pins.py` reports from the sheet after op-list 01, so a wire that
 names a pin lands on akcli's own reading of it. Every wire is one straight segment and carries the
-net it is drawn for, written to a sidecar (`02-wire.nets.json`) that 04-text-edits.py reads to give
+net it is drawn for, written to a sidecar (`02-wire.nets.json`) that 05-text-edits.py reads to give
 each wire its net's stroke. A junction goes wherever three or more connections meet (wire ends and
 pins), computed from the segments.
 
 Labels: one LOCAL label on each of the block's three port nets (VIN_MOD, GND, 3V3_D), at the end of
-its wire on the page edge. Op-list 03 (`tools/draught/hierarchical-labels.ts`) turns each into the
-block's hierarchical label at the same place. No private net is labelled: each is drawn as wire.
+its wire on the page edge. Op-list 04 (`tools/draught/hierarchical-labels.ts`; 03 is the
+PWR_FLAGs) turns each into the block's hierarchical label at the same place. No private net is labelled: each is drawn as wire.
 
 Refuses a segment that is not axis-aligned, a zero-length one, a segment ending inside another,
 and a pin that lies on a wire's interior (which KiCad would join without a wire end there).

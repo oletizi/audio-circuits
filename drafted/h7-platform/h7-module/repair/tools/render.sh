@@ -5,8 +5,8 @@
 # name and the render depends on the project file.
 #
 # Fails loudly: previous outputs are deleted first, every tool's exit status is checked, each
-# output must exist and be non-empty, and stderr stays visible (only ImageMagick's known
-# Fontconfig configuration warnings are filtered).
+# output must exist and be non-empty, and stderr stays visible (only the known Fontconfig
+# configuration warnings are filtered, from kicad-cli and ImageMagick alike).
 #
 # usage: sh render.sh <sheet.kicad_sch> <out-dir>
 set -eu
@@ -25,16 +25,27 @@ out="$(cd "$2" && pwd)"
 stem="$(basename "$1" .kicad_sch)"
 rm -f "$out/$stem.pdf" "$out/$stem.svg" "$out/$stem.png"
 
-"$kc" sch export pdf -o "$out/$stem.pdf" "$1" >/dev/null || fail "kicad-cli sch export pdf exited non-zero"
-[ -s "$out/$stem.pdf" ] || fail "kicad-cli wrote no PDF"
-"$kc" sch export svg -o "$out" "$1" >/dev/null || fail "kicad-cli sch export svg exited non-zero"
-[ -s "$out/$stem.svg" ] || fail "kicad-cli wrote no SVG"
+# A tool's stderr, minus the Fontconfig configuration warnings this machine prints on every run
+# (kicad-cli's and magick's alike; Task 7a review M6: only magick's were filtered).
+quiet() {
+  grep -v '^Fontconfig warning' "$err" >&2 || true
+}
 
 err="$(mktemp)"
 trap 'rm -f "$err"' EXIT
+
+"$kc" sch export pdf -o "$out/$stem.pdf" "$1" >/dev/null 2>"$err" \
+  || { quiet; fail "kicad-cli sch export pdf exited non-zero"; }
+quiet
+[ -s "$out/$stem.pdf" ] || fail "kicad-cli wrote no PDF"
+"$kc" sch export svg -o "$out" "$1" >/dev/null 2>"$err" \
+  || { quiet; fail "kicad-cli sch export svg exited non-zero"; }
+quiet
+[ -s "$out/$stem.svg" ] || fail "kicad-cli wrote no SVG"
+
 status=0
 magick -density 150 "$out/$stem.pdf" -background white -alpha remove "$out/$stem.png" 2>"$err" || status=$?
-grep -v '^Fontconfig warning' "$err" >&2 || true
+quiet
 [ "$status" -eq 0 ] || fail "magick exited $status converting the PDF to PNG"
 [ -s "$out/$stem.png" ] || fail "magick wrote no PNG"
 echo "$out/$stem.png"

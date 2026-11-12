@@ -69,11 +69,14 @@ same() {
   echo "generated repair/$1 matches the committed copy"
 }
 
+# akcli's stderr goes to a file in the work directory, named in the failure, so a refusal keeps its
+# reason (Task 7a review M2: it went to /dev/null).
 apply() {
-  "$akcli" plan "$work/$1" --ops "$work/repair/$2" 2>/dev/null | tail -1 || fail "akcli plan $2 failed"
-  log="$("$akcli" draw "$work/$1" --ops "$work/repair/$2" --apply 2>/dev/null)" || fail "akcli draw $2 --apply failed"
+  err="$work/akcli-$(echo "$2" | tr '/' '-').err"
+  "$akcli" plan "$work/$1" --ops "$work/repair/$2" 2>"$err.plan" | tail -1 || fail "akcli plan $2 failed; its stderr is in $err.plan"
+  log="$("$akcli" draw "$work/$1" --ops "$work/repair/$2" --apply 2>"$err.draw")" || fail "akcli draw $2 --apply failed; its stderr is in $err.draw"
   echo "$log" | tail -1
-  echo "$log" | grep -q 'status: APPLIED' || fail "akcli draw $2 did not report APPLIED - nothing was written"
+  echo "$log" | grep -q 'status: APPLIED' || fail "akcli draw $2 did not report APPLIED - nothing was written; its stderr is in $err.draw"
 }
 
 # 1. make draw: one draft per block, each intent and each draft checked against the record.
@@ -85,7 +88,10 @@ for b in $BLOCKS; do
   cp "$root/build/draw/$board/$b/$b.kicad_sch" "$work/$b.kicad_sch" || fail "make draw wrote no sheet for block $b"
   cmp -s "$root/build/draw/$board/$b.intent.json" "$here/$b/intent.json" \
     || fail "the intent make draw generated for block $b differs from the committed $b/intent.json - the model has changed since this record"
-  check "$b.kicad_sch" "make draw" "$(draft_sha "$b")"
+  # Assigned first, so an unrecorded block stops the replay with draft_sha's own message: inside an
+  # argument's $(...) its `fail` exits only the subshell (Task 7a review M3).
+  want="$(draft_sha "$b")" || exit 1
+  check "$b.kicad_sch" "make draw" "$want"
 done
 echo "every block's intent matches its committed copy"
 
