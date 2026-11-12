@@ -3,7 +3,7 @@
   "parts": [
     {
       "ref": "U5",
-      "libId": "Power_Supervisor:TPS3839DBZ",
+      "libId": "h7-platform:TLV803EA30DBZR",
       "value": "TLV803EA30DBZR",
       "group": "Reset and boot"
     },

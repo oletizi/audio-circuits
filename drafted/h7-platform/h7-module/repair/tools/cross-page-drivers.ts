@@ -13,8 +13,9 @@
  * found by scanning drafts or pages. `checkCrossPageDrivers` holds each entry to the model on every
  * run: the driving block exists, the designator is a component of that block, the pin is one of
  * that component's pins and sits on the entry's net, the driving block has a port on the net (so
- * the net crosses pages), and the pin's name is the one the installed KiCad symbol gives that
- * number. An entry failing any of these is refused, naming what is missing.
+ * the net crosses pages), and the pin's name is the one the KiCad symbol gives that number (the
+ * installed library, or the project library for an `h7-platform` symbol). An entry failing any of
+ * these is refused, naming what is missing.
  *
  * Entries for the pages Task 7b and Task 7c repair. A later page that needs one adds it, with its
  * source. Task 7c added the sdram page's 22 input nets: every SDRAM address, bank, byte-mask, clock
@@ -33,7 +34,7 @@
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { DESIGNATORS } from "../../../../../circuits/h7-platform/module-board.ts"
+import { DESIGNATORS, PROJECT_SYMBOL_LIBRARY } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { Component, Network } from "../../../../../lib/model/index.ts"
 import { defaultSymbolDir } from "../../../../../lib/kicad/install.ts"
 import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../../../../lib/kicad/symbol-library.ts"
@@ -48,7 +49,7 @@ export interface CrossPageDriver {
   readonly designator: string
   /** The driving pin's number: the model's pin key, which is the KiCad symbol's pin number. */
   readonly pin: string
-  /** The driving pin's name on the KiCad symbol, for a reader; checked against the installed library. */
+  /** The driving pin's name on the KiCad symbol, for a reader; checked against the symbol's library. */
   readonly pinName: string
   /** Where the model takes the assignment from. */
   readonly source: string
@@ -100,7 +101,7 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
     designator: "U5",
     pin: "2",
     pinName: "~{RESET}",
-    source: "circuits/h7-platform/module/reset-boot.ts:27 (u_sup pin 2 RESET to NRST, open drain; processor-and-memory.md:264; CORE-11); U5's symbol Power_Supervisor:TPS3839DBZ types pin 2 output (ruling CR-MODULE-SUPERVISOR-SYMBOL)",
+    source: "circuits/h7-platform/module/reset-boot.ts:27 (u_sup pin 2 RESET to NRST, open drain; processor-and-memory.md:264; CORE-11); U5's symbol h7-platform:TLV803EA30DBZR types pin 2 open_collector (ruling CR-MODULE-SUPERVISOR-SYMBOL, as amended 2026-11-12)",
   },
   {
     net: "BOOT0",
@@ -165,16 +166,20 @@ export function pinConnection(component: Component, pin: string): string | null 
   return undefined
 }
 
-/** The pin with this number on the INSTALLED KiCad library's symbol (not a vendored copy), or undefined. */
-export function installedSymbolPin(libId: string, number: string): SymbolPin | undefined {
+/**
+ * The pin with this number on the symbol as the drawing resolves it, or undefined: a stock symbol from
+ * the INSTALLED KiCad library (not a vendored copy), a project symbol (nickname `h7-platform`, design
+ * change C4) from the committed project library `PROJECT_SYMBOL_LIBRARY`.
+ */
+export function libraryPin(libId: string, number: string): SymbolPin | undefined {
   const { library, name } = splitLibId(libId)
-  const file = join(defaultSymbolDir(KICAD_CLI), `${library}.kicad_sym`)
+  const file = library === "h7-platform" ? PROJECT_SYMBOL_LIBRARY : join(defaultSymbolDir(KICAD_CLI), `${library}.kicad_sym`)
   const block = flattenedSymbol(librarySymbols(readFileSync(file, "utf8")), name)
   return symbolPins(block).find((p) => p.number === number)
 }
 
 function symbolPinName(libId: string, number: string): string | undefined {
-  return installedSymbolPin(libId, number)?.name
+  return libraryPin(libId, number)?.name
 }
 
 function problemsWith(entry: CrossPageDriver, module: Network): string[] {
@@ -208,7 +213,7 @@ function problemsWith(entry: CrossPageDriver, module: Network): string[] {
   } else if (on !== undefined) {
     const name = symbolPinName(libId, entry.pin)
     if (name !== entry.pinName) {
-      problems.push(`${libId} pin ${entry.pin} is named ${name ?? "nothing (no such pin)"} in the installed library, not ${entry.pinName}`)
+      problems.push(`${libId} pin ${entry.pin} is named ${name ?? "nothing (no such pin)"} in its library, not ${entry.pinName}`)
     }
   }
   return problems

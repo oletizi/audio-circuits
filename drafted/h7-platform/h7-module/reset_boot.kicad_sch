@@ -306,7 +306,7 @@
 				)
 				(embedded_fonts no)
 			)
-		(symbol "Power_Supervisor:TPS3839DBZ"
+		(symbol "h7-platform:TLV803EA30DBZR"
 				(pin_names
 					(offset 0.254)
 				)
@@ -326,7 +326,7 @@
 						(justify left)
 					)
 				)
-				(property "Value" "TPS3839DBZ"
+				(property "Value" "TLV803EA30DBZR"
 					(at 2.54 6.35 0)
 					(show_name no)
 					(do_not_autoplace no)
@@ -348,7 +348,7 @@
 						)
 					)
 				)
-				(property "Datasheet" "http://www.ti.com/lit/ds/sbvs193d/sbvs193d.pdf"
+				(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tlv803e.pdf"
 					(at 0 0 0)
 					(show_name no)
 					(do_not_autoplace no)
@@ -359,7 +359,7 @@
 						)
 					)
 				)
-				(property "Description" "150-nA, Ultralow Power, Supply Voltage Monitor, SOT-23"
+				(property "Description" "TLV803E voltage supervisor, open-drain active-low reset, SOT-23-3 DBZ with pin 1 = GND (TI SLVSES2J p. 5 Table 6-1, DCK, DBZ column; open drain p. 1 and p. 3 section 5)"
 					(at 0 0 0)
 					(show_name no)
 					(do_not_autoplace no)
@@ -392,7 +392,7 @@
 						)
 					)
 				)
-				(symbol "TPS3839DBZ_0_1"
+				(symbol "TLV803EA30DBZR_0_1"
 					(rectangle
 						(start -2.54 5.08)
 						(end 7.62 -5.08)
@@ -405,7 +405,7 @@
 						)
 					)
 				)
-				(symbol "TPS3839DBZ_1_1"
+				(symbol "TLV803EA30DBZR_1_1"
 					(pin power_in line
 						(at 0 -7.62 90)
 						(length 2.54)
@@ -424,7 +424,7 @@
 							)
 						)
 					)
-					(pin output line
+					(pin open_collector line
 						(at 10.16 0 180)
 						(length 2.54)
 						(name "~{RESET}"
@@ -841,7 +841,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Power_Supervisor:TPS3839DBZ")
+		(lib_id "h7-platform:TLV803EA30DBZR")
 		(at 165.1 109.22 0)
 		(unit 1)
 		(exclude_from_sim no)

@@ -12,7 +12,7 @@ repaired, and the root sheet is assembled with its `.kicad_pro` (Task 7e).
 | end: `power.kicad_sch` | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | end: `interface.kicad_sch` | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | end: `clock.kicad_sch` | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
-| end: `reset_boot.kicad_sch` | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
+| end: `reset_boot.kicad_sch` (Task 7e fix round 1: U5 on `h7-platform:TLV803EA30DBZR`; the approved bytes were `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`) | `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` |
 | end: `swd.kicad_sch` | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 | end: `usb_dfu.kicad_sch` | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 | end: `id_strap.kicad_sch` | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |

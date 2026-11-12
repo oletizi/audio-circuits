@@ -21,8 +21,8 @@ X_EAST = 8400     # NRST's label
 
 # ref: (x, y, rotation, mirror). Device:R/C at rotation 0: pin 1 north, pin 2 south, 150 mil from
 # the origin. Switch:SW_Push at rotation 90: pin 2 north, pin 1 south; at 270, pin 1 north; 200 mil.
-# Power_Supervisor:TPS3839DBZ at rotation 0: pin 3 (VDD) 300 mil north, pin 1 (GND) 300 mil south,
-# pin 2 (~RESET) 400 mil east.
+# h7-platform:TLV803EA30DBZR (TPS3839DBZ's geometry; CR-MODULE-SUPERVISOR-SYMBOL as amended) at
+# rotation 0: pin 3 (VDD) 300 mil north, pin 1 (GND) 300 mil south, pin 2 (~RESET) 400 mil east.
 PARTS = {
     "SW2": (4300, 4000, 90, "none"),
     "R12": (4700, 4650, 0, "none"),

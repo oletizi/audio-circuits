@@ -10,14 +10,15 @@ import { describe, expect, test } from "bun:test"
 import fs from "node:fs"
 import { circuit } from "../../lib/model/index.ts"
 import type { Component, Network } from "../../lib/model/index.ts"
-import { librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
-import { installedSymbolNames, installedSymbolPins } from "../kicad/symbol-library-disk.ts"
+import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
+import type { SymbolPin } from "../../lib/kicad/symbol-library.ts"
+import { SYMBOL_LIBRARY_ROOT, installedSymbolNames, installedSymbolPins } from "../kicad/symbol-library-disk.ts"
 import { loadPinData, portName } from "../../circuits/h7-platform/st-pin-data.ts"
 import { PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import {
   DATASHEET_PIN_NAMES, DFU_ESD_WIRING, DFU_VBUS_CAP_F, ID_STRAP, HSE_LOAD_CAP_F, MODULE_PARTS, SDRAM,
-  SUPERVISOR, SWD_HEADER_CONNECTIONS, SWD_HEADER_SYMBOL,
+  SUPERVISOR, SUPERVISOR_PIN_TYPES, SWD_HEADER_CONNECTIONS, SWD_HEADER_SYMBOL,
 } from "../../circuits/h7-platform/module-parts.ts"
 import {
   MODULE_3V3_LIMIT_F, MODULE_3V3_NET, assertModuleCapacitanceWithinLimit, moduleCapacitance3v3,
@@ -41,14 +42,62 @@ const W9825G6KH: Readonly<Record<string, string>> = {
  * Table 12-1's worked example TLV803EA29DBZR reads "Pin 1 = GND"). RESET is overbarred (active low). */
 const TLV803E_DBZ: Readonly<Record<string, string>> = { "1": "GND", "2": "~{RESET}", "3": "VDD" }
 
-function pinsOf(libId: string): ReadonlyMap<string, string> {
+/** The same pins' KiCad electrical types: Table 6-1's I/O column (GND "—", RESET "O", VDD "I", the
+ * supply), with RESET's output stage from SLVSES2J p. 1 Features and p. 3 section 5 Device
+ * Comparison, "TLV803E: open-drain, active-low". KiCad types an open-drain output `open_collector`. */
+const TLV803E_DBZ_TYPES: Readonly<Record<string, string>> = { "1": "power_in", "2": "open_collector", "3": "power_in" }
+
+function fullPinsOf(libId: string): readonly SymbolPin[] {
   const { library, name } = splitLibId(libId)
   if (library === "h7-platform") {
     const block = librarySymbols(fs.readFileSync(PROJECT_SYMBOL_LIBRARY, "utf8")).get(name)
     if (block === undefined) throw new Error(`${PROJECT_SYMBOL_LIBRARY} defines no symbol "${name}"`)
-    return new Map(symbolPins(block).map((p) => [p.number, p.name]))
+    return symbolPins(block)
   }
-  return new Map(installedSymbolPins(libId).map((p) => [p.number, p.name]))
+  return installedSymbolPins(libId)
+}
+
+function pinsOf(libId: string): ReadonlyMap<string, string> {
+  return new Map(fullPinsOf(libId).map((p) => [p.number, p.name]))
+}
+
+/** A symbol's pins read by text, "<number> <name> <type>" each, for the symbols `symbolPins` refuses. */
+function textPinTypes(block: string): string[] {
+  const pin = /\(pin\s+(\w+)\s+\w+[\s\S]*?\(name\s+"([^"]*)"[\s\S]*?\(number\s+"([^"]*)"/g
+  return [...block.matchAll(pin)].map((m) => `${m[3]} ${m[2]} ${m[1]}`)
+}
+
+const PARSED_LIBRARIES = new Map<string, ReadonlyMap<string, string>>()
+
+function installedLibrarySymbols(library: string): ReadonlyMap<string, string> {
+  let symbols = PARSED_LIBRARIES.get(library)
+  if (symbols === undefined) {
+    symbols = librarySymbols(fs.readFileSync(`${SYMBOL_LIBRARY_ROOT}/${library}.kicad_sym`, "utf8"))
+    PARSED_LIBRARIES.set(library, symbols)
+  }
+  return symbols
+}
+
+/** The installed symbol's text, flattened through any (extends); each library parsed once. */
+function installedSymbolText(libId: string): string {
+  const { library, name } = splitLibId(libId)
+  return flattenedSymbol(installedLibrarySymbols(library), name)
+}
+
+/** Whether the symbol's own text could carry a pin named ~{RESET}: it names one, or it extends
+ * another symbol (whose pins it then inherits). Anything else cannot match the TLV803E by name. */
+function mayNameReset(libId: string): boolean {
+  const { library, name } = splitLibId(libId)
+  const raw = installedLibrarySymbols(library).get(name)
+  if (raw === undefined) throw new Error(`${libId} is not in ${SYMBOL_LIBRARY_ROOT}`)
+  return raw.includes('"~{RESET}"') || raw.includes("(extends ")
+}
+
+/** Pin numbers where `libId`'s electrical type differs from `types` (or the pin is missing or extra). */
+function typeMismatches(types: Readonly<Record<string, string>>, libId: string): string[] {
+  const pins = new Map(fullPinsOf(libId).map((p) => [p.number, p.type]))
+  const numbers = new Set([...Object.keys(types), ...pins.keys()])
+  return [...numbers].filter((n) => types[n] !== pins.get(n)).sort((a, b) => Number(a) - Number(b))
 }
 
 function mismatches(table: Readonly<Record<string, string>>, libId: string): string[] {
@@ -96,15 +145,63 @@ describe("module part symbols", () => {
     expect(mismatches(W9825G6KH, "h7-platform:W9825G6KH")).toEqual([])
   })
 
-  test("the supervisor: the first Power_Supervisor symbol matching the TLV803E pin table is used", () => {
-    // CR-MODULE-SUPERVISOR-SYMBOL: library order, exact name and number.
-    const library = "Power_Supervisor"
-    const matching = [...installedSymbolNames(`${library}:x`)]
-      .filter((name) => mismatches(TLV803E_DBZ, `${library}:${name}`).length === 0)
-    expect(matching[0]).toBe("TPS3839DBZ")
-    expect(SUPERVISOR.symbol).toBe(`${library}:${matching[0]}`)
+  test("the supervisor: no installed symbol matches the TLV803E by name, number AND type, so a project symbol is used", () => {
+    // CR-MODULE-SUPERVISOR-SYMBOL as amended: a stand-in must match the fitted part's pin electrical
+    // types as well as names and numbers. Every installed library is scanned, Power_Supervisor first;
+    // a symbol `symbolPins` refuses (multi-unit, or a pin number declared twice) is counted and read
+    // by text instead: none may carry pin 2 named ~{RESET} typed open_collector.
+    const libraries = fs.readdirSync(SYMBOL_LIBRARY_ROOT).filter((f) => f.endsWith(".kicad_sym"))
+      .map((f) => f.slice(0, -".kicad_sym".length)).sort()
+    expect(libraries.length).toBeGreaterThan(100)
+    const ordered = ["Power_Supervisor", ...libraries.filter((l) => l !== "Power_Supervisor")]
+    const nameMatches: string[] = []
+    const fullMatches: string[] = []
+    const refusedWithResetPin: string[] = []
+    let refused = 0
+    let prefiltered = 0
+    for (const library of ordered) {
+      for (const name of installedSymbolNames(`${library}:x`)) {
+        const libId = `${library}:${name}`
+        if (!mayNameReset(libId)) continue
+        prefiltered++
+        try {
+          if (mismatches(TLV803E_DBZ, libId).length !== 0) continue
+        } catch (e) {
+          if (!(e instanceof Error && /multi-unit|declares pin .* twice/.test(e.message))) throw e
+          refused++
+          if (textPinTypes(installedSymbolText(libId)).some((p) => p === "2 ~{RESET} open_collector")) refusedWithResetPin.push(libId)
+          continue
+        }
+        nameMatches.push(libId)
+        if (typeMismatches(TLV803E_DBZ_TYPES, libId).length === 0) fullMatches.push(libId)
+      }
+    }
+    expect(refused).toBeGreaterThan(0)
+    expect(prefiltered).toBeGreaterThan(100)
+    // Control for the prefilter: it keeps TPS3839DBZ, which names ~{RESET}.
+    expect(mayNameReset("Power_Supervisor:TPS3839DBZ")).toBe(true)
+    expect(refusedWithResetPin).toEqual([])
+    // Control for the text reading: it reads TPS3839DBZ's three pins as symbolPins does.
+    expect(textPinTypes(installedSymbolText("Power_Supervisor:TPS3839DBZ")))
+      .toEqual(["1 GND power_in", "2 ~{RESET} output", "3 VDD power_in"])
+    expect(fullMatches).toEqual([])
+    // Positive control for the name scan: the old stand-in is still found by name and number.
+    expect(nameMatches).toEqual(["Power_Supervisor:TPS3839DBZ"])
+    // Negative control: TPS3839DBZ, the symbol this ruling used before its amendment, is rejected for
+    // its pin-2 type (push-pull `output`, where the TLV803E's RESET is open drain).
+    expect(typeMismatches(TLV803E_DBZ_TYPES, "Power_Supervisor:TPS3839DBZ")).toEqual(["2"])
+    expect(fullPinsOf("Power_Supervisor:TPS3839DBZ").find((p) => p.number === "2")?.type).toBe("output")
+    // The project symbol matches both tables, and its geometry is TPS3839DBZ's, so the page's wires stand.
+    const fitted = SUPERVISOR.symbol
+    if (fitted === undefined) throw new Error("SUPERVISOR names no symbol")
+    expect(fitted).toBe("h7-platform:TLV803EA30DBZR")
     expect(SUPERVISOR.mpn).toBe("TLV803EA30DBZR")
-  })
+    expect(mismatches(TLV803E_DBZ, fitted)).toEqual([])
+    expect(typeMismatches(TLV803E_DBZ_TYPES, fitted)).toEqual([])
+    expect(SUPERVISOR_PIN_TYPES).toEqual({ ...TLV803E_DBZ_TYPES })
+    const at = (pins: readonly SymbolPin[]): string[] => pins.map((p) => `${p.number}@${p.x},${p.y},${p.angle},${p.length}`)
+    expect(at(fullPinsOf(fitted))).toEqual(at(fullPinsOf("Power_Supervisor:TPS3839DBZ")))
+  }, 120_000)
 
   test("the recorded datasheet pin names agree with every ic symbol", () => {
     let checked = 0
@@ -113,7 +210,7 @@ describe("module part symbols", () => {
       checked += Object.keys(names).length
     }
     expect(checked).toBe(54 + 3 + 8 + 8 + 6)
-    expect(Object.keys(DATASHEET_PIN_NAMES)).toContain("Power_Supervisor:TPS3839DBZ")
+    expect(Object.keys(DATASHEET_PIN_NAMES)).toContain("h7-platform:TLV803EA30DBZR")
     expect(Object.keys(DATASHEET_PIN_NAMES)).toContain("h7-platform:W9825G6KH")
   })
 

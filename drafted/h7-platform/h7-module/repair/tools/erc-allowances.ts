@@ -32,7 +32,7 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { DESIGNATORS, h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { Network } from "../../../../../lib/model/index.ts"
-import { installedSymbolPin, pinConnection } from "./cross-page-drivers.ts"
+import { libraryPin, pinConnection } from "./cross-page-drivers.ts"
 
 export interface AllowedPin {
   /** The reference designator KiCad reports (`DESIGNATORS`). */
@@ -144,9 +144,9 @@ function pinProblems(entry: ErcAllowance, p: AllowedPin, componentIds: readonly 
   if (libId === undefined) {
     problems.push(`${p.designator} (${id}) names no KiCad symbol in the model, so its pin type cannot be checked`)
   } else {
-    const type = installedSymbolPin(libId, p.pin)?.type
+    const type = libraryPin(libId, p.pin)?.type
     if (type !== entry.symbolPinType) {
-      problems.push(`${libId} pin ${p.pin} is typed ${type ?? "nothing (no such pin)"} in the installed library, not ${entry.symbolPinType}, so the stated cause does not hold`)
+      problems.push(`${libId} pin ${p.pin} is typed ${type ?? "nothing (no such pin)"} in its library, not ${entry.symbolPinType}, so the stated cause does not hold`)
     }
   }
   return problems

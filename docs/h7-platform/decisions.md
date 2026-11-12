@@ -1473,12 +1473,28 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 ### CR-MODULE-SUPERVISOR-SYMBOL
 
 **The NRST supervisor's symbol is `Power_Supervisor:TPS3839DBZ`; `part.mpn` is TLV803EA30DBZR.**
+*Amended 2026-11-12 (below): the symbol is now the project symbol `h7-platform:TLV803EA30DBZR`, because TPS3839DBZ types the RESET pin push-pull and the TLV803E's is open drain. The original entry is kept as history.*
 - **Label:** Controller ruling (the owner may override).
 - **Date:** 2026-11-12.
 - **Decides:** no installed symbol is named for the TLV803E. TI's SLVSES2J (rev. May 2021) p. 5 Table 6-1, column "DCK, DBZ", gives pin 1 GND, pin 2 RESET (overbarred, active low), pin 3 VDD; p. 4 Figure 6-1 labels it "Pin 1 = GND", and section 12.1's worked example, TLV803EA29DBZR, reads "Pin 1 = GND". TLV803EA30DBZR carries no R or V pinout letter before DBZ, so that column applies (Table 12-1's letters are the alternatives). The first `Power_Supervisor` symbol in library order whose pins match by name and number is TPS3839DBZ (`1=GND 2=~{RESET} 3=VDD`). The ones before it differ: LM809 (pin 3 VCC), TCM809 (V_{DD}) and TLV810EA29DBZ (RESET without the overbar: the active-high part).
 - **A stand-in for the pins only:** the symbol's name is another part's; the value field and `mpn` say which part is fitted.
 - **Compared in:** `tests/circuits/h7-module-parts.test.ts`, which scans the library for the first match rather than trusting this entry.
 - **Set by:** the controller, H7 module plan Task 4.
+- **Amended:** Controller ruling (the owner may override). 2026-11-12, H7 module plan Task 7e fix round 1.
+  - **What was wrong.** The module root's ERC reported `pin_to_pin` on NRST between J3 pin 10 (`open_collector`) and U5 pin 2. TPS3839DBZ types pin 2 `output`, which is push-pull. The fitted TLV803EA30DBZR drives NRST open drain ([D14](#d14), owner-approved). TI SLVSES2J p. 1, Features, says "TLV803E: open-drain, active-low", and p. 3, section 5 Device Comparison, says "803E: Open-Drain Active-Low". So the approved reset_boot page stated the wrong output stage. That is the defect; the ERC error was its symptom.
+  - **The amended rule.** A stand-in symbol must match the fitted part's pin electrical types, as well as its pin names and numbers. An open-drain output maps to KiCad's `open_collector`.
+  - **The scan.** All 223 installed libraries were read from the files, `Power_Supervisor` first, comparing name, number and type. No symbol has 1 = GND, 2 = `~{RESET}` typed `open_collector`, 3 = VDD or VCC.
+    - By name alone, two symbols match: TPS3839DBZ, and LM809 with VCC on pin 3. Both type pin 2 `output`.
+    - The 1,347 symbols the pin reader refuses (multi-unit, or a pin number declared twice) were read by text. None has a pin 2 named `~{RESET}` typed `open_collector`.
+  - **So, under C4,** the part uses a project symbol, `h7-platform:TLV803EA30DBZR`, in `circuits/h7-platform/h7-platform.kicad_sym`.
+    - Its pins come from SLVSES2J p. 5 Table 6-1, column "DCK, DBZ": pin 1 GND (`power_in`), pin 2 RESET overbarred (`open_collector`), pin 3 VDD (`power_in`, the supply input Table 6-1 marks "I").
+    - Its geometry is TPS3839DBZ's: the body, the pin positions and lengths, and the field positions. So the reset_boot page keeps every position and wire.
+    - Its Value, Datasheet and Description name the TLV803E.
+  - **What C4 requires first is shown.** `tests/circuits/h7-project-symbol.test.ts` ("h7 project symbol TLV803EA30DBZR") has copperhead draft the symbol, and kicad-cli export each pin on the datasheet's name and type.
+  - **The test.** `tests/circuits/h7-module-parts.test.ts` scans every installed library by name, number and type, and requires no match. Its negative control is that TPS3839DBZ is now rejected for its pin-2 type.
+  - **The reset_boot page.** It was redrawn by its own replay, with only the symbol swapped. Every generated op-list was byte-identical to the committed one. The page differs from the approved bytes only in `lib_id`, the embedded symbol's name, its Value, Datasheet and Description fields, and pin 2's type. Its sha256 went from `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` to `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`. It is UNREVIEWED again.
+  - **Same class.** No other module part has a symbol named for another part. The audit is in `drafted/h7-platform/h7-module/RECORD.md`.
+  - **Costs if wrong:** one project symbol to remove, and a redraw of reset_boot.
 
 ### CR-MODULE-ID-STRAP-VALUES
 

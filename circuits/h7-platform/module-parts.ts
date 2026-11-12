@@ -40,14 +40,25 @@ export const SDRAM: PartSpec = { mpn: "W9825G6KH-6I", symbol: "h7-platform:W9825
 export const FLASH: PartSpec = { mpn: "W25Q128JVSIQ", symbol: "Memory_Flash:W25Q128JVS" }
 
 /**
- * CR-MODULE-SUPERVISOR-SYMBOL. TLV803EA30DBZR (SOT-23-3, pin 1 GND, pin 2 RESET, pin 3 VDD: TI
- * SLVSES2J p. 5 Table 6-1, "DCK, DBZ" column, a part number carrying no R or V pinout letter).
- * No installed symbol is named for it. The first `Power_Supervisor` symbol, in library order,
- * whose pins match that table by name and number is TPS3839DBZ; the supervisors before it differ
- * (LM809 pin 3 VCC, TCM809 pin 3 V_{DD}, TLV810EA29DBZ pin 2 RESET without the overbar). The
- * symbol is a stand-in for the pins only: `mpn` names the part fitted.
+ * CR-MODULE-SUPERVISOR-SYMBOL, as amended 2026-11-12. TLV803EA30DBZR (SOT-23-3, pin 1 GND, pin 2
+ * RESET, pin 3 VDD: TI SLVSES2J p. 5 Table 6-1, "DCK, DBZ" column, a part number carrying no R or V
+ * pinout letter). Its RESET is open drain (SLVSES2J p. 1 Features and p. 3 section 5, "TLV803E:
+ * open-drain, active-low"), which KiCad types `open_collector`. A stand-in symbol must match the
+ * fitted part's pin electrical types as well as its names and numbers, and no installed symbol does:
+ * TPS3839DBZ and LM809 have the names but type pin 2 `output` (push-pull). So the part is drawn from
+ * the project symbol `h7-platform:TLV803EA30DBZR`, whose geometry is TPS3839DBZ's (the reset_boot
+ * page keeps every position and wire) and whose pin 2 is `open_collector`.
  */
-export const SUPERVISOR: PartSpec = { mpn: "TLV803EA30DBZR", symbol: "Power_Supervisor:TPS3839DBZ" }
+export const SUPERVISOR: PartSpec = { mpn: "TLV803EA30DBZR", symbol: "h7-platform:TLV803EA30DBZR" }
+
+/**
+ * The TLV803E's pins, DBZ with pin 1 = GND, symbol pin number -> KiCad electrical type: TI SLVSES2J
+ * p. 5 Table 6-1 (GND "—", RESET "O", VDD "I", the supply) with RESET's output stage from p. 1 and
+ * p. 3 section 5 ("open-drain"). The test scans the libraries against this and the names together.
+ */
+export const SUPERVISOR_PIN_TYPES: Readonly<Record<string, string>> = {
+  "1": "power_in", "2": "open_collector", "3": "power_in",
+}
 
 /** 3.3 V buck, TPS62933F, SOT-583 (DRL). Stock symbol. */
 export const BUCK: PartSpec = { mpn: "TPS62933FDRLR", symbol: "Regulator_Switching:TPS62933F" }
@@ -173,7 +184,7 @@ export const DATASHEET_PIN_NAMES: Readonly<Record<string, Readonly<Record<string
     "51": "DQ14", "52": "VSSQ", "53": "DQ15", "54": "VSS",
   },
   // TI SLVSES2J (rev. May 2021) p. 5 Table 6-1, DBZ with pin 1 = GND.
-  "Power_Supervisor:TPS3839DBZ": { "1": "GND", "2": "~{RESET}", "3": "VDD" },
+  "h7-platform:TLV803EA30DBZR": { "1": "GND", "2": "~{RESET}", "3": "VDD" },
   // Winbond W25Q128JV Rev. F (27 Mar 2018) p. 5 section 3.3, SOIC 208-mil: /CS, DO (IO1), /WP (IO2), GND,
   // DI (IO0), CLK, /HOLD or /RESET (IO3), VCC, in KiCad's spelling.
   "Memory_Flash:W25Q128JVS": {

@@ -24,7 +24,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `power.kicad_sch` | block power | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
-| `reset_boot.kicad_sch` | block reset_boot | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
+| `reset_boot.kicad_sch` | block reset_boot | `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` |
 | `swd.kicad_sch` | block swd | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 | `usb_dfu.kicad_sch` | block usb_dfu | `80947ededbb593f37bd87d6e838d232557dfc07c6f6d147ac6257cca5f5a299f` |
 | `id_strap.kicad_sch` | block id_strap | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
@@ -71,7 +71,7 @@ sha256 here, so every later repair starts from these bytes.
 | `build/draw/h7-module/sdram/sdram.kicad_sch` | sdram | 9 | `bd560a2406a4ab6d7181202cf0cc59861d7880ff1bddf0592f075e93df04f2f8` |
 | `build/draw/h7-module/qspi/qspi.kicad_sch` | qspi | 3 | `1cde054c9d8e9d8cf2e362503d47a140ea39cf69bc709774d2ee9aa4e1a4c788` |
 | `build/draw/h7-module/clock/clock.kicad_sch` | clock | 3 | `4e6c1565f3b035a5137d2ee2aec5d5c428d6b4a8e4bb3ae2206769dac3a236bb` |
-| `build/draw/h7-module/reset_boot/reset_boot.kicad_sch` | reset_boot | 8 | `ce4271830f6994b4bd197c9ca3a269f42395d3937b2fa89cb1f5786d4588d5c0` |
+| `build/draw/h7-module/reset_boot/reset_boot.kicad_sch` | reset_boot | 8 | `a68c14b8c7814103c3f5ebb7b24d6016b3c2a125ec5964000031a1b170c9d5e1` (Task 7e fix round 1, U5 on `h7-platform:TLV803EA30DBZR`; was `ce4271830f6994b4bd197c9ca3a269f42395d3937b2fa89cb1f5786d4588d5c0` with `Power_Supervisor:TPS3839DBZ`) |
 | `build/draw/h7-module/swd/swd.kicad_sch` | swd | 6 | `a772b4a70a576bf77c940ac686b81a5d6259b442e5eefda3c840f3cc6d637837` |
 | `build/draw/h7-module/usb_dfu/usb_dfu.kicad_sch` | usb_dfu | 7 | `8961061ef5970c5f567bb53c8adcb63d83636187c63391dbc16ad284c83fe791` |
 | `build/draw/h7-module/id_strap/id_strap.kicad_sch` | id_strap | 3 | `4155a90943894fc2dedf9945034ec3d4c3a35f7cde36052c74fb1d9f13ec6ddd` |
@@ -560,8 +560,17 @@ ports GND, HSE_IN and HSE_OUT.
 
 ## reset_boot: the NRST supervisor and the two buttons
 
-**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`.
+**Status: UNREVIEWED (changed after approval: symbol swapped per amended CR-MODULE-SUPERVISOR-SYMBOL; the owner's earlier approval was of sha256 ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397).** sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24`.
 Render: `reset_boot.svg` beside it.
+
+*History:* REVIEWED, 2026-11-12. The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`), of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`, which drew U5 with `Power_Supervisor:TPS3839DBZ`. That symbol types the RESET pin push-pull `output`, and the fitted TLV803EA30DBZR drives NRST open drain. The module root's ERC found this as a `pin_to_pin` on NRST.
+
+**What changed (Task 7e fix round 1).** Only U5's symbol, now `h7-platform:TLV803EA30DBZR` ([CR-MODULE-SUPERVISOR-SYMBOL](../../../docs/h7-platform/decisions.md#cr-module-supervisor-symbol), as amended). That symbol has TPS3839DBZ's geometry, with pin 2 typed `open_collector`.
+- The page was remade by `repair/replay.sh` from the new draft. The model change reaches the intent as one line, U5's `libId`. Every generated op-list (`ports.json`, `net_strokes.json`, `01-place.json`, `pins.json`, `02-wire.json`, `02-wire.nets.json`, `04-hierarchical-labels.json`) is byte-identical to the committed one, so no akcli symbol-replace op was needed, and none was written.
+- `diff` against the approved bytes shows eight changed lines and nothing else: `lib_id`; the embedded symbol's name and its two unit names; its Value, Datasheet and Description; and pin 2, `output` to `open_collector`. Every position, wire, label, field and junction is unchanged.
+- The new SVG differs from the approved one only in its timestamp line.
+- `verify.sh reset_boot` exits 0. `/reset_boot/` under the one-block root still has 0 errors and 0 warnings.
+- Two warnings are new, one on the sheet alone and one on the one-block root's `/`, both `lib_symbol_issues`. The scratch roots carry no `sym-lib-table`, so KiCad cannot find the `h7-platform` library there. The sdram page, whose U3 is a project symbol, shows the same warning in both places.
 
 The block: `circuits/h7-platform/module/reset-boot.ts`, 8 parts (U5, C46, R11, C47, SW1, R12, C48,
 SW2), ports 3V3_D, BOOT0, GND and NRST.
@@ -569,7 +578,8 @@ SW2), ports 3V3_D, BOOT0, GND and NRST.
 ### The rulings this page rests on
 
 - [CR-MODULE-SUPERVISOR-SYMBOL](../../../docs/h7-platform/decisions.md#cr-module-supervisor-symbol):
-  U5 is drawn with `Power_Supervisor:TPS3839DBZ` and reads "TLV803EA30DBZR".
+  U5 is drawn with the project symbol `h7-platform:TLV803EA30DBZR` (pin 2 `open_collector`) and reads
+  "TLV803EA30DBZR". Until Task 7e fix round 1 it was drawn with `Power_Supervisor:TPS3839DBZ`.
 - [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
   are rows ending in their hierarchical labels.
 - [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
@@ -584,9 +594,9 @@ SW2), ports 3V3_D, BOOT0, GND and NRST.
 | netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
 | exported components, nets, net members | 8, 4, 17 | 8, 4, 17 |
 | exported nets carrying a model net name | 4 of 4 | 4 of 4 |
-| ERC, the sheet alone | 2 errors (`power_pin_not_driven` 2), 0 warnings | 6 errors (`pin_not_connected` 4: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, on 3V3_D and GND), 0 warnings |
+| ERC, the sheet alone | 2 errors (`power_pin_not_driven` 2), 0 warnings | 6 errors (`pin_not_connected` 4: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, on 3V3_D and GND), 0 warnings; since fix round 1, 1 warning (`lib_symbol_issues`, the project library, see above) |
 | ERC under a one-block root, `/reset_boot/` | 2 errors (`power_pin_not_driven` 2), 1 warning (`same_local_global_label`) | **0 errors, 0 warnings** |
-| ERC under a one-block root, `/` | 6 errors (`hier_label_mismatch` 4, `label_dangling` 2), 2 warnings | 2 errors (`label_dangling` 2: the BOOT0 and NRST stub labels are alone with one block), 0 warnings |
+| ERC under a one-block root, `/` | 6 errors (`hier_label_mismatch` 4, `label_dangling` 2), 2 warnings | 2 errors (`label_dangling` 2: the BOOT0 and NRST stub labels are alone with one block), 0 warnings; since fix round 1, 1 warning (`lib_symbol_issues`, as above) |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 1, 0 | 0, 0 |
 | orphan junctions, of total | 0 of 2 | 0 of 13 |
@@ -613,6 +623,34 @@ SW2), ports 3V3_D, BOOT0, GND and NRST.
 - Every part's Reference and Value are horizontal: east of each resistor, capacitor and SW1, west of
   SW2, and under the NRST row east of U5's GND drop for U5.
 - Every wire carries copperhead's default stroke.
+
+### The same-class audit: stand-in symbols among the module's parts (Task 7e fix round 1)
+
+The amended CR-MODULE-SUPERVISOR-SYMBOL says a stand-in symbol must match the fitted part's pin electrical types, as well as its names and numbers. The class is any part whose symbol is named for another part.
+
+**How the class was found.** Every distinct (symbol, mpn) pair of the 94 components `h7Module()` returns was listed, and each `decisions.md` ruling using "stand-in" was read.
+
+**Rulings that use "stand-in":**
+- CR-MODULE-SUPERVISOR-SYMBOL, for U5. This is the only part-symbol stand-in.
+- CR-MODULE-CROSS-PAGE-DRIVERS. Its `Connector:TestPoint` driver is placed only on `verify.sh`'s scratch roots. It is not a module part.
+- O-16 and OWN-07. These mean the Seed3 boards, not symbols.
+
+| symbol | parts | named for |
+| --- | --- | --- |
+| `h7-platform:TLV803EA30DBZR` (was `Power_Supervisor:TPS3839DBZ`) | U5, TLV803EA30DBZR | **was another part (TPS3839)**. Fixed: pin 2 now `open_collector` |
+| `MCU_ST_STM32H7:STM32H743IITx` | U1, STM32H743IIT6 | its own part (`x` is the temperature-range letter) |
+| `Regulator_Switching:TPS62933F` | U2, TPS62933FDRLR | its own part |
+| `h7-platform:W9825G6KH` | U3, W9825G6KH-6I | its own part (project symbol, CR-MODULE-SDRAM-SYMBOL) |
+| `Memory_Flash:W25Q128JVS` | U4, W25Q128JVSIQ | its own part |
+| `Power_Protection:USBLC6-2SC6` | U6, USBLC6-2SC6 | its own part |
+| `Device:R`, `Device:C`, `Device:C_Polarized`, `Device:L`, `Device:FerriteBead`, `Device:Crystal_GND24` | the passives, FB1, Y1 | no part (generic) |
+| `Connector:Conn_ARM_JTAG_SWD_10`, `Connector:USB_C_Receptacle_USB2.0_16P`, `Connector_Generic:Conn_01x20`, `Connector:TestPoint`, `Switch:SW_Push` | J1 to J4, TP1 to TP10, SW1, SW2 | no part (generic) |
+
+**Result: U5 is the only stand-in, so there is no other mismatch to fix.**
+
+Not audited, because they are outside the class:
+- The pin types of the symbols named for their own part.
+- The generic symbols. One of these is J3's `Conn_ARM_JTAG_SWD_10`, which types pin 10 `open_collector`, the SWD interface's convention for a header pin.
 
 ## swd: the SWD header and its test points
 

@@ -2,7 +2,7 @@
 	(version "E")
 	(design
 		(source "drafted/h7-platform/h7-module/h7-module.kicad_sch")
-		(date "2026-11-12T12:53:49")
+		(date "2026-11-12T13:28:27")
 		(tool "Eeschema 10.0.5")
 		(sheet
 			(number "1")
@@ -5388,9 +5388,9 @@
 				)
 			)
 			(libsource
-				(lib "Power_Supervisor")
-				(part "TPS3839DBZ")
-				(description "150-nA, Ultralow Power, Supply Voltage Monitor, SOT-23")
+				(lib "h7-platform")
+				(part "TLV803EA30DBZR")
+				(description "TLV803E voltage supervisor, open-drain active-low reset, SOT-23-3 DBZ with pin 1 = GND (TI SLVSES2J p. 5 Table 6-1, DCK, DBZ column; open drain p. 1 and p. 3 section 5)")
 			)
 			(property
 				(name "Sheetname")
@@ -8160,44 +8160,6 @@
 			)
 		)
 		(libpart
-			(lib "Power_Supervisor")
-			(part "TPS3839DBZ")
-			(description "150-nA, Ultralow Power, Supply Voltage Monitor, SOT-23")
-			(docs "http://www.ti.com/lit/ds/sbvs193d/sbvs193d.pdf")
-			(footprints
-				(fp "SOT?23*")
-			)
-			(fields
-				(field
-					(name "Reference") "U")
-				(field
-					(name "Value") "TPS3839DBZ")
-				(field
-					(name "Footprint") "Package_TO_SOT_SMD:SOT-23")
-				(field
-					(name "Datasheet") "http://www.ti.com/lit/ds/sbvs193d/sbvs193d.pdf")
-				(field
-					(name "Description") "150-nA, Ultralow Power, Supply Voltage Monitor, SOT-23")
-			)
-			(pins
-				(pin
-					(num "1")
-					(name "GND")
-					(type "power_in")
-				)
-				(pin
-					(num "2")
-					(name "~{RESET}")
-					(type "output")
-				)
-				(pin
-					(num "3")
-					(name "VDD")
-					(type "power_in")
-				)
-			)
-		)
-		(libpart
 			(lib "Regulator_Switching")
 			(part "TPS62933F")
 			(description "3.8-30V, 3A Synchronous Buck Converters with pulse frequency modulation (PFM), SOT583-8")
@@ -8288,6 +8250,44 @@
 					(num "2")
 					(name "2")
 					(type "passive")
+				)
+			)
+		)
+		(libpart
+			(lib "h7-platform")
+			(part "TLV803EA30DBZR")
+			(description "TLV803E voltage supervisor, open-drain active-low reset, SOT-23-3 DBZ with pin 1 = GND (TI SLVSES2J p. 5 Table 6-1, DCK, DBZ column; open drain p. 1 and p. 3 section 5)")
+			(docs "https://www.ti.com/lit/ds/symlink/tlv803e.pdf")
+			(footprints
+				(fp "SOT?23*")
+			)
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "TLV803EA30DBZR")
+				(field
+					(name "Footprint") "Package_TO_SOT_SMD:SOT-23")
+				(field
+					(name "Datasheet") "https://www.ti.com/lit/ds/symlink/tlv803e.pdf")
+				(field
+					(name "Description") "TLV803E voltage supervisor, open-drain active-low reset, SOT-23-3 DBZ with pin 1 = GND (TI SLVSES2J p. 5 Table 6-1, DCK, DBZ column; open drain p. 1 and p. 3 section 5)")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "GND")
+					(type "power_in")
+				)
+				(pin
+					(num "2")
+					(name "~{RESET}")
+					(type "open_collector")
+				)
+				(pin
+					(num "3")
+					(name "VDD")
+					(type "power_in")
 				)
 			)
 		)
@@ -8609,10 +8609,6 @@
 		(library
 			(logical "Power_Protection")
 			(uri "${KICAD10_SYMBOL_DIR}/Power_Protection.kicad_sym")
-		)
-		(library
-			(logical "Power_Supervisor")
-			(uri "${KICAD10_SYMBOL_DIR}/Power_Supervisor.kicad_sym")
 		)
 		(library
 			(logical "Regulator_Switching")
@@ -10038,7 +10034,7 @@
 				(ref "U5")
 				(pin "2")
 				(pinfunction "~{RESET}_2")
-				(pintype "output")
+				(pintype "open_collector")
 			)
 		)
 		(net

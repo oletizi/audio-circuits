@@ -173,3 +173,74 @@ describe("h7 project symbol W9825G6KH", () => {
     }
   }, 180_000)
 })
+
+/**
+ * TI SLVSES2J (rev. May 2021) p. 5 Table 6-1, column "DCK, DBZ" (pin 1 = GND), name and KiCad
+ * electrical type: RESET is open drain (p. 1 Features and p. 3 section 5, "TLV803E: open-drain,
+ * active-low"), which KiCad types open_collector; GND and VDD are the supply. Transcribed here
+ * independently of the symbol file. CR-MODULE-SUPERVISOR-SYMBOL, as amended.
+ */
+const TLV803E_DBZ: Readonly<Record<string, { readonly name: string; readonly type: string }>> = {
+  "1": { name: "GND", type: "power_in" },
+  "2": { name: "~{RESET}", type: "open_collector" },
+  "3": { name: "VDD", type: "power_in" },
+}
+
+describe("h7 project symbol TLV803EA30DBZR", () => {
+  test("its pins are SLVSES2J Table 6-1, pin for pin, name and electrical type", () => {
+    const block = librarySymbols(fs.readFileSync(LIBRARY, "utf8")).get("TLV803EA30DBZR")
+    if (block === undefined) throw new Error(`${LIBRARY} defines no symbol "TLV803EA30DBZR"`)
+    expect(Object.fromEntries(symbolPins(block).map((p) => [p.number, { name: p.name, type: p.type }])))
+      .toEqual({ ...TLV803E_DBZ })
+  })
+
+  test("copperhead drafts it and kicad-cli exports each net on the datasheet's pin, with its type", () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "h7-project-symbol-supervisor-"))
+    try {
+      const outDir = path.join(work, "draft")
+      const parts = [{ ref: "U1", libId: "h7-platform:TLV803EA30DBZR", value: "TLV803EA30DBZR", group: "spike" }]
+      const nets: { name: string; pins: string[] }[] = []
+      for (let n = 1; n <= 3; n++) {
+        parts.push({ ref: `R${n}`, libId: "Device:R", value: "10k", group: "spike" })
+        nets.push({ name: `N${n}`, pins: [`U1.${n}`, `R${n}.1`] })
+      }
+      nets.push({ name: "COM", pins: ["R1.2", "R2.2", "R3.2"] })
+      const intentPath = path.join(work, "intent.json")
+      fs.writeFileSync(intentPath, JSON.stringify({ version: 1, parts, nets, noConnect: [], hints: { groupOrder: ["spike"] } }))
+
+      const draft = draftWithCopperhead({ outDir, board: "spike", intentPath, projectSymbolLibraries: [LIBRARY] })
+      if (!draft.ok) throw new Error(`copperhead did not draft: ${draft.stderr}\n${draft.stdout}`)
+      const netPath = path.join(work, "spike.net")
+      const exported = spawnSync(KICAD_CLI, ["sch", "export", "netlist", "--output", netPath, draft.schematicPath], { encoding: "utf8" })
+      if (exported.status !== 0) throw new Error(`kicad-cli export failed: ${exported.stderr}`)
+
+      const root = parseSexpr(fs.readFileSync(netPath, "utf8"))
+      const netsNode = child(root, "nets")
+      if (netsNode === undefined) throw new Error("the export has no (nets)")
+      const u1: Record<string, { net: string; fn: string; type: string }> = {}
+      const members: Record<string, string[]> = {}
+      for (const netNode of children(netsNode, "net")) {
+        const name = attr(netNode, "name") ?? ""
+        for (const node of children(netNode, "node")) {
+          const ref = attr(node, "ref") ?? ""
+          const pin = attr(node, "pin") ?? ""
+          if (!ref.startsWith("#")) (members[name] ??= []).push(`${ref}.${pin}`)
+          if (ref !== "U1") continue
+          const raw = attr(node, "pinfunction") ?? ""
+          u1[pin] = { net: name, fn: raw.endsWith(`_${pin}`) ? raw.slice(0, -`_${pin}`.length) : raw, type: attr(node, "pintype") ?? "" }
+        }
+      }
+      for (let n = 1; n <= 3; n++) {
+        const found = u1[String(n)]
+        const want = TLV803E_DBZ[String(n)]
+        if (found === undefined || want === undefined) throw new Error(`U1 pin ${n} is on no net in the export`)
+        expect(found.fn).toBe(want.name)
+        expect(found.type).toBe(want.type)
+        expect([...(members[found.net] ?? [])].sort()).toEqual([`R${n}.1`, `U1.${n}`].sort())
+      }
+      expect(Object.keys(u1)).toHaveLength(3)
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true })
+    }
+  }, 180_000)
+})

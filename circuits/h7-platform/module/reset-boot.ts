@@ -5,8 +5,9 @@
  * - U_SUP, TLV803EA30DBZR, open drain on NRST, sensing the module's 3V3 at the MCU (:264;
  *   power.md:385). Pins as schematic-checklist.md CORE-11 gives the plain DBZ variant: 1 GND,
  *   2 RESET to NRST, 3 VDD on the 3.3 V rail; C_SUP 100 nF X7R from pin 3 to pin 1 (CORE-11,
- *   SLVSES2J section 8.3.1; power.md:387, "the supervisor 100 nF at its VDD"). The symbol is a pin
- *   stand-in (ruling CR-MODULE-SUPERVISOR-SYMBOL).
+ *   SLVSES2J section 8.3.1; power.md:387, "the supervisor 100 nF at its VDD"). The symbol is the
+ *   project symbol h7-platform:TLV803EA30DBZR, pin 2 typed open_collector (ruling
+ *   CR-MODULE-SUPERVISOR-SYMBOL, as amended 2026-11-12).
  * - NRST: 10 kOhm pull-up, 100 nF to VSS, the RESET button to VSS (:264; CORE-10). The SWD header's
  *   NRST and the NRST pogo pad are in swd.ts.
  * - BOOT0 (pin 166): 4.7 kOhm pull-down to VSS, 100 nF to VSS, the BOOT button to VDD (:265;
