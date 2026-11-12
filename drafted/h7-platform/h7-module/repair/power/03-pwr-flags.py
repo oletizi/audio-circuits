@@ -5,15 +5,24 @@ page or anywhere in the module has a power OUTPUT pin on either net: VIN_BUCK is
 GND reaches the module through connector pins, both passive. Without a flag `kicad-cli sch erc`
 reports `power_pin_not_driven` on both, as ERRORS, on the draft as on the repair. A PWR_FLAG states
 that the net is driven from outside the page, which here is true: VIN_MOD (through L1) and GND come
-in through the interface.
+in through the interface. Admitted by ruling CR-MODULE-PWR-FLAGS.
 
 WHAT IT IS NOT. A PWR_FLAG joins no two nets by name: measured on a copy of the two-block fixture
 with a PWR_FLAG on block a's private FB and one on block b's, both labelled "FB" - kicad-cli's root
 export kept /a/FB and /b/FB as two nets, the same four nets as the unedited copy, and ERC on that
 root reported 0 errors and 0 warnings. A rail power symbol (power:GND, power:+3V3) DOES join every
 sheet by name, which is why a block page draws none (TOOLING.md C3); this page still draws none.
-It is a symbol from KiCad's `power` library, so the controller's ruling that a block page draws no
-power symbols is put to the controller with this measurement (task-7a report).
+
+BUT TWO FLAGS ON ONE SHARED NET ARE AN ERC ERROR, on one sheet and ACROSS sheets. Measured with
+kicad-cli 10.0.5 (Task 7a fix round 1): on a copy of the two-block fixture, one PWR_FLAG on GND in
+block a and one in block b gave, at the root, "[error] pin_to_pin: Pins of type Power output and
+Power output are connected" on /a/; one flag in a alone gave 0 violations. On a copy of this page
+with a second flag on its own GND row the Task 7a review measured the same error on one sheet. So
+each module net carries at most one PWR_FLAG across the hierarchy, at the home declared in
+`../tools/pwr-flag-homes.ts`: ruling CR-MODULE-PWR-FLAGS (docs/h7-platform/decisions.md). GND's
+single flag is this one; VIN_BUCK is private to this page. `../tools/verify.sh` fails a block page
+carrying a flag on a shared net whose flag lives elsewhere, and the one-block root supplies the
+flag on the stub when it does.
 
 Each flag sits on an existing wire end, so it adds a connection at a point that already is one:
 VIN_BUCK's at C28's tap on the VIN_BUCK row, pointing up; GND's at U2's tap on the GND row,
