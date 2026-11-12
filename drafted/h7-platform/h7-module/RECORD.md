@@ -293,13 +293,20 @@ The measurements in each table are `repair/tools/verify.sh <block> <sheet>` on t
 steps run without stopping on the draft (a draft fails verify.sh's ERC, as a draft is not a page).
 None of these is a judgement of a page.
 
+Since ruling [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check),
+`verify.sh` also fails a page when a port's net `/<port>` in its export does not hold exactly the
+pins `drawingPages()` gives that port, which the membership row cannot see for a port reaching one
+pin; `Wiring.op_list` refuses the same at generation. Every page below, and power, verifies with 0
+ports on the wrong net, and no page byte changed (`erc-control.sh` control 13,
+`repair/tools/port-label-control.sh`).
+
 ## interface: the two module headers
 
 **Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved. proceed"* (`docs/schematic/verdicts.md`). sha256 `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296`.
 Render: `interface.svg` beside it.
 
 The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connector_Generic:Conn_01x20`),
-36 ports: GND on J1.20 and J2.20, and 35 that each reach one pad.
+35 ports: GND on J1.20 and J2.20, and 34 that each reach one pad.
 
 ### The rulings this page rests on
 
@@ -307,7 +314,7 @@ The block: `circuits/h7-platform/module/interface.ts`, 2 parts (J1, J2, `Connect
   VREF_A and VIN_MOD are wires ending in hierarchical labels.
 - [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
   this page. Nothing on it is a power input, so ERC needs none here.
-- The stroke of the 35 nets the draft drew no wire for: copperhead's stroke for a net of no colour
+- The stroke of the 34 nets the draft drew no wire for: copperhead's stroke for a net of no colour
   family, the one the draft's GND carries (`interface/layout.py`, `UNDRAWN_STROKES`). A drawing
   choice, not a transcription.
 
@@ -557,6 +564,15 @@ ports DFU_USB_DM, DFU_USB_DP and GND.
 | wire corners | 12 | 14 |
 | junctions | 2 | 10 |
 
+U6's `lib_symbol_mismatch` warning is in the page column and not in the draft column because the
+two were measured in different library contexts, not because the repair changed U6's embedded
+symbol. The draft was measured where `make draw` wrote it, beside a `sym-lib-table` that maps
+`Power_Protection` to copperhead's vendored `sym-lib-cache`; the page sits beside the committed
+`sym-lib-table`, which names only the project library, so KiCad compares U6 (`USBLC6-2SC6`, an
+`extends` symbol) with the installed library. Measured with kicad-cli 10.0.5: the draft (sha256
+`8961061ef5970c5f567bb53c8adcb63d83636187c63391dbc16ad284c83fe791`) copied beside the committed `sym-lib-table` reports the same one warning on U6. The
+power section's U2 warning is the same kind.
+
 **Why the page has two crossings and a long GND row, as the layout records it** (observations of
 the symbols, not a judgement of the page). J4 puts D- above D+ and U6 puts D+ (pin 1) above D-
 (pin 3), so the two D lines change order once between the parts. CC1 and CC2 leave J4 between VBUS
@@ -656,10 +672,12 @@ comparison gives 0 disagreements. Under the one-block root, ERC reports one erro
 `pin_not_driven`, *"Input pin not driven by any Output pins"*, on *"Symbol U4 Pin 6 [CLK, Input,
 Line]"*. U4's CLK is the only pin on FLASH_CLK on this page, and its driver is U1's PF10 on the mcu
 page (`circuits/h7-platform/module-pins.ts`, FLASH_CLK on PF10). The one-block root holds only this
-block, so the stub has no driver. The same error is on the draft. Measured with kicad-cli 10.0.5:
-under a scratch root holding this page and the mcu draft (its hierarchical-label op-list applied,
-with the one-block root's stub flags on 3V3_D, GND, VREF_A and VSSA), `/qspi/` reports **0 errors
-and 0 warnings**. The other three inputs on the page are not reported: /CS has R10 on its net, a
+block, so the stub has no driver. The same error is on the draft. The committed check of that cause
+is `repair/tools/erc-control.sh`: control 10 shows `/qspi/` at 0 errors and 0 warnings with a driver
+on FLASH_CLK's stub, and control 11 shows the same page failing with `pin_not_driven` on U4's CLK
+without one. (A scratch root holding this page and the mcu draft was measured once before the
+ruling and gave `/qspi/` 0 errors and 0 warnings; nothing committed re-runs it, so it is not cited
+as evidence here.) The other three inputs on the page are not reported: /CS has R10 on its net, a
 passive pin, and IO0 to IO3 are bidirectional. So the error comes from the check's context, not from
 a disagreement between the page and the model. It was a failing check until the controller ruled on
 what the one-block root should hold for a net whose driver is on another page, and the harness was
@@ -693,7 +711,6 @@ each reach one pin).
 | ERC under a one-block root, `/`, before the ruling | 14 errors (`hier_label_mismatch` 8, `label_dangling` 6), 3 warnings | 1 error (`label_dangling` 1: FLASH_NCS's stub label is alone with one block), 11 warnings (`isolated_pin_label` 10, `lib_symbol_mismatch` 1) |
 | ERC under a one-block root, `/qspi/`, with FLASH_CLK's stand-in (the ruling) | not run | **0 errors, 0 warnings** |
 | ERC under a one-block root, `/`, with FLASH_CLK's stand-in | not run | 1 error (`label_dangling` 1: FLASH_NCS's stub), 9 warnings (`isolated_pin_label` 8, `lib_symbol_mismatch` 1) |
-| ERC under a scratch root holding the mcu draft and this page, `/qspi/` | not run | 0 errors, 0 warnings |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 0, 0 | 0, 0 |
 | orphan junctions, of total | 0 of 0 | 0 of 4 |
@@ -706,6 +723,15 @@ each reach one pin).
 | wires, total length | 12, 116.84 mm | 18, 317.50 mm |
 | wire corners | 6 | 2 |
 | junctions | 0 | 4 |
+
+U4's `lib_symbol_mismatch` warning is in the page column and not in the draft column because the
+two were measured in different library contexts, not because the repair changed U4's embedded
+symbol. The draft was measured where `make draw` wrote it, beside a `sym-lib-table` that maps
+`Memory_Flash` to copperhead's vendored `sym-lib-cache`; the page sits beside the committed
+`sym-lib-table`, which names only the project library, so KiCad compares U4 (`W25Q128JVS`, an
+`extends` symbol) with the installed library. Measured with kicad-cli 10.0.5: the draft (sha256
+`1cde054c9d8e9d8cf2e362503d47a140ea39cf69bc709774d2ee9aa4e1a4c788`) copied beside the committed `sym-lib-table` reports the same one warning on U4. The
+power section's U2 warning is the same kind.
 
 Before the ruling, the page-side measurements came from the same steps as `verify.sh`, run without
 stopping, because `verify.sh` stopped at the ERC failure before its crossings, junction, label, paper
