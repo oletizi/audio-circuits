@@ -24,7 +24,7 @@ no root row, so `registerDraftedProjectTests` is not yet bound to this directory
 
 | page | status | render |
 | --- | --- | --- |
-| power | UNREVIEWED | `power.svg` |
+| power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 
 ## The drafts every repair starts from
 
@@ -85,7 +85,7 @@ moved or fired, on every page):
 
 ## power: 3.3 V buck and input network
 
-**Status: UNREVIEWED.** sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`.
+**Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`.
 Render: `power.svg` beside it (PDF and PNG from `repair/tools/render.sh`).
 
 The block: `circuits/h7-platform/module/power.ts`, 19 parts (L1, C26 to C35, R3 to R8, U2), ports

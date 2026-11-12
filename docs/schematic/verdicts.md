@@ -576,6 +576,40 @@ owner may still override.
 
 ---
 
+## h7-module power page, copperhead draft repaired with akcli
+
+- **Sheet** `drafted/h7-platform/h7-module/power.kicad_sch`,
+  sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`
+  (commit `7272b8d`)
+- **Produced by** `make -C boards/h7-module draw`, from the intent built off the
+  `power` block of `circuits/h7-platform/module-board.ts` (`module/power.ts`). The
+  draft was repaired with akcli op-lists and literal text edits; every part
+  position and wire is agent-authored. The page's `RECORD.md` and
+  `repair/power/` have the detail.
+- **Shown** 2026-11-12, as the 150 dpi PNG and the committed SVG of this sheet,
+  with the question *"What is your verdict on this module power page?"*
+- **Verdict, verbatim:**
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The word came after an exchange about the
+issue 32 review. That review found one gap, in the verifier rather than the page:
+it did not fail on ERC errors. The gap was fixed in `f3bb79b`, and the sheet's
+bytes did not change. The page verdict was the one request open to the owner, and
+it is recorded against this sheet on that reading; the owner may correct it.
+
+It is not a clearance of the circuit. Three items stay open:
+- MODULE-POWER-PARTS-TO-MODEL, the 26.3 V ratings;
+- MODULE-BUCK-LOOP-STARTUP;
+- MODULE-3V3-BUDGET.
+
+It covers none of the controller rulings the page rests on, each of which the
+owner may still override: CR-MODULE-PAGE-RAILS, CR-MODULE-INDUCTANCE-NOTATION,
+CR-MODULE-SUBOHM-RKM, and the PWR_FLAG admission. It covers only this one page
+of the module, not the root or the other eleven blocks.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
