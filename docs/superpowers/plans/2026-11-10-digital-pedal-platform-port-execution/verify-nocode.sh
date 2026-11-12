@@ -15,7 +15,8 @@
 # vendored byte for byte at circuits/h7-platform/vendor/st-pin-data/, is allowed
 # in that one directory as .xml, LICENSE and SOURCE files. It is the
 # input the module pin map is checked against (tests/circuits/h7-module-pins.test.ts).
-# An .xml, a LICENSE or a SOURCE anywhere else under either tree still fails.
+# An .xml, a LICENSE or a SOURCE anywhere else under either tree still fails,
+# including in a subdirectory of vendor/st-pin-data/.
 
 check_nocode() {
   local bad="" f base hits ts=0 sym=0 vend=0
@@ -23,9 +24,15 @@ check_nocode() {
   # file-type rule applies to every file, records included
   while read -r f; do
     base=$(basename "$f")
+    # A case pattern's * matches "/" too, so the vendored set is matched on the name left after the
+    # directory, and a name with a "/" in it (a file in a subdirectory) is not vendored: it falls
+    # through to the type rule below and fails there (final review of the H7 module plan).
     case "$f" in
-      "$CIRC"/vendor/st-pin-data/*.xml|"$CIRC"/vendor/st-pin-data/LICENSE|"$CIRC"/vendor/st-pin-data/SOURCE)
-        vend=$((vend+1)); continue ;;
+      "$CIRC"/vendor/st-pin-data/*)
+        case "${f#"$CIRC"/vendor/st-pin-data/}" in
+          */*) ;;
+          *.xml|LICENSE|SOURCE) vend=$((vend+1)); continue ;;
+        esac ;;
     esac
     case "$base" in
       *.md|*.json|*.svg|LICENSE-*) ;;
