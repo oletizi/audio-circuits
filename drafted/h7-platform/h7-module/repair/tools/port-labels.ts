@@ -13,6 +13,11 @@
  * A port fails when no exported net is named `/<port>` (its label is missing, or another label won
  * the net's name), or when that net's pins differ from the port's (a swapped label or a label on
  * the wrong wire). Every failure names the port, the pins expected and the pins found.
+ *
+ * Known limitation (H7 module plan, Task 7b review): the expected side trusts `drawingPages()`. If it
+ * gave a port the wrong pins, this check would agree with a page drawn the same wrong way.
+ * `block-netcompare.ts` still compares the page's membership against the model directly, which is
+ * what catches that.
  */
 import { drawingPages } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { ImportedNetlist } from "../../../../../lib/kicad/netlist.ts"

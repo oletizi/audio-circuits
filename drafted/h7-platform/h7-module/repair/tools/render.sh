@@ -91,6 +91,8 @@ mv "$svgdir"/*.svg "$out/$stem.svg"
 # page of a sub-sheet and writes the root (the PDF export honours it), so the title block's
 # "Sheet:" text of the SVG is compared with the PDF's (Task 7e fix round 2, review I4). A mismatch
 # deletes every output and refuses, rather than leaving a PDF, PNG and SVG of two different pages.
+# Known limitation (Task 7e review): the PDF side reads 'Sheet: ' up to the first space, so a sheet
+# name containing a space would be cut short and falsely refused. No sheet here has one.
 pdf_sheet="$(pdftotext "$out/$stem.pdf" - 2>/dev/null | grep -o 'Sheet: [^ ]*' | head -1)" || true
 svg_sheet="$(grep -o 'Sheet:[^<]*' "$out/$stem.svg" | head -1 | sed 's/[[:space:]]*$//')" || true
 [ -n "$pdf_sheet" ] || fail "the PDF's title block has no 'Sheet:' text to compare the SVG against"
