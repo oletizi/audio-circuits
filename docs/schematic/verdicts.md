@@ -545,6 +545,37 @@ about, and not as a ruling on that spec's open questions.
 
 ---
 
+## h7-carrier, copperhead draft repaired with akcli, with C4
+
+- **Sheet** `drafted/h7-platform/h7-carrier/h7-carrier.generated-do-not-edit.kicad_sch`,
+  sha256 `c9355a88d72d589edccc457b3648e0141baf9f5cceb231adb94c3af69061d8f8`
+  (commit `6d498a0`)
+- **Produced by** `make -C boards/h7-carrier draw` from the intent
+  `drawingIntent()` generates from `circuits/h7-platform/carrier-board.ts`, as one
+  copperhead group, then two akcli op-lists and literal text edits; every part
+  position and wire is agent-authored. The page's `RECORD.md` and
+  `repair/REPLAY.md` have the detail.
+- **Shown** 2026-11-12, as the 150 dpi PNG and the committed SVG of this sheet,
+  with the question *"What is your verdict on this carrier page?"* An earlier
+  page (sha256 `dc9e93ea4ca6f42249df5faf7004965f83396db9f0c8e366474ca3e3ec5252af`)
+  was shown first and withdrawn unjudged when issue 30 found the sense-node
+  capacitor missing from the model.
+- **Verdict, verbatim:**
+
+  > *"ok, approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** The words came after an exchange about the
+issue 30 follow-up review, in which the settling-time bound was corrected
+(`022e172`, analysis only; the sheet's bytes are unchanged). The page verdict was
+the one request open to the owner, and it is recorded against this sheet on that
+reading; the owner may correct it. It is not a clearance of the circuit:
+VBUS-HOTPLUG stays open and the carrier's USB sense path is not cleared for
+physical bring-up ([decisions.md](../h7-platform/decisions.md) CR-CARRIER-VBUS-SENSE-CAP).
+It covers none of the controller rulings the page rests on, each of which the
+owner may still override.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.

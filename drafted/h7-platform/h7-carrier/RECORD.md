@@ -1,10 +1,13 @@
 h7-carrier - drafted page record
 ================================
 
-**STATUS: UNREVIEWED.** The owner has not seen this page. Nothing below assesses
-it; every line is an observation or a measurement another reader can check.
-When a verdict is given it goes in `../../../docs/schematic/verdicts.md`, bound
-to the sha256 below, and that register is then the authority over this file.
+**STATUS: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"ok, approved"*.
+It is recorded in `../../../docs/schematic/verdicts.md`, bound to the sha256
+below, and that register is the authority over this file: change one byte of the
+sheet and the page is awaiting review again. The verdict is on the drawing, not a
+clearance of the circuit: the USB sense path is not cleared for physical bring-up
+(VBUS-HOTPLUG). Nothing below assesses the page; every line is an observation or
+a measurement another reader can check.
 
 | | |
 | --- | --- |
@@ -12,7 +15,7 @@ to the sha256 below, and that register is then the authority over this file.
 | **sha256 of the sheet - THE BINDING** | `c9355a88d72d589edccc457b3648e0141baf9f5cceb231adb94c3af69061d8f8` |
 | Render | `h7-carrier.generated-do-not-edit.svg` |
 | sha256 of the render, volatile `<title>` line dropped - **evidence, not a binding** | `b49ee79296e37e0aeef957ef9c473759a5e19cca16315439b219126367fe8e67` |
-| Status | **unreviewed** - awaiting the owner's verdict |
+| Status | **reviewed 2026-11-12** - *"ok, approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above |
 | Authority | model-authoritative: `circuits/h7-platform/carrier-board.ts` (`h7Carrier()`), the circuit's own transcription record |
 | Drafted by | `make -C boards/h7-carrier draw`, copperhead 0.12.0, from the intent `drawingIntent()` generates from the model - **one group**, captioned `H7 bring-up carrier` (`carrier-board.drawing.ts`). At first draft the board declared no netlist, so `make draw` printed its `NO INDEPENDENT NETLIST:` block (`TOOLING.md`, design change C2): the pre-draft partition check did not run, and the binding comparison is this page's own `kicad-cli` export against the model, below and in `tests/circuits/drafted-kicad-round-trip.test.ts`. **Redrafted when the model gained C4** (commit `5dafd81`, CR-CARRIER-VBUS-SENSE-CAP): with `sch`/`netlist` declared as the previous page and its export, `make draw` refused on net partition, and the disagreement was exactly C4.1 on USB_VBUS_SENSE and C4.2 on GND, the intended model change. Per `TOOLING.md` C2 the declaration's `sch`/`netlist` were removed for that one draft (the `NO INDEPENDENT NETLIST:` block printed again), the page was repaired, and the declaration was restored with the fixture re-exported from the new page |
 | Draft sha256 (as `make draw` wrote it, re-papered) | `f5c427e8c6558c2e744762890dc8dd2a24bd39ff52784d29af9e4ad89c27419f` |
@@ -198,10 +201,10 @@ Left as it is, and why
   copperhead's embedded `USBLC6-2SC6` differs from the installed copy (measured below).
 - **Total wire length is about five times the draft's**, because the draft's
   labels stood in for the band wires and the taps.
-- **The arrangement is agent-authored and unreviewed as an arrangement**, as is
-  every part orientation and every hidden Value on it. C4's position and its
-  fields below its GND wire are agent-chosen and unreviewed as well, and are the
-  region changed since the previous page.
+- **The arrangement is agent-authored**, as is every part orientation and every
+  hidden Value on it, including C4's position and its fields below its GND wire,
+  the region changed since the previous page. The owner's verdict on this sheet
+  is in `docs/schematic/verdicts.md`.
 
 U2's embedded symbol (`Power_Protection:USBLC6-2SC6`), measured against the sheet and the installed
 `Power_Protection.kicad_sym`
