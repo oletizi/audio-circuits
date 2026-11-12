@@ -11,10 +11,12 @@ import { NC } from "../../lib/model/index.ts"
 import type { Component, Network } from "../../lib/model/index.ts"
 import { MODULE_PIN_NUMBERS } from "../../circuits/h7-platform/module/build.ts"
 import { mcuBlock } from "../../circuits/h7-platform/module/mcu.ts"
+import { mcuDecouplingBlock } from "../../circuits/h7-platform/module/mcu-decoupling.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
   mcu: mcuBlock,
+  decoupling: mcuDecouplingBlock,
 }
 
 const MAX_SYMBOLS = 40
@@ -83,5 +85,39 @@ describe("U_MCU", () => {
     expect(Object.keys(net.ports).sort()).toEqual(used)
     // 52 internal nets (MODULE_PINS) + 31 interface signals + 3V3_D, GND, VSSA, VREF_A, VCAP, NRST, BOOT0.
     expect(used).toHaveLength(52 + 31 + 7)
+  })
+})
+
+/** Each capacitor's value (farads) and its two nets, sorted, as "value a|b". */
+function capacitors(network: Network): string[] {
+  return network.components.filter((c) => c.kind === "capacitor").map((c) => {
+    const f = Reflect.get(c.parameters, "farads")
+    const nets = Object.values(netsOf(c)).sort().join("|")
+    return `${typeof f === "number" ? f.toExponential(2) : "?"} ${nets}`
+  }).sort()
+}
+
+function count(list: readonly string[], item: string): number {
+  return list.filter((x) => x === item).length
+}
+
+describe("MCU decoupling (processor-and-memory.md :31, :136-141; CORE-01 to CORE-06)", () => {
+  const net = mcuDecouplingBlock()
+  const caps = capacitors(net)
+
+  test("100 nF at each of the 14 VDD pins, at VDD33USB and at VBAT, all on 3V3_D", () => {
+    expect(count(caps, "1.00e-7 3V3_D|GND")).toBe(14 + 1 + 1)
+  })
+  test("one 4.7 uF for the package and VDD33USB's 1 uF", () => {
+    expect(count(caps, "4.70e-6 3V3_D|GND")).toBe(1)
+    expect(count(caps, "1.00e-6 3V3_D|GND")).toBe(1)
+  })
+  test("2.2 uF on each VCAP pin, on the joined VCAP net", () => {
+    expect(count(caps, "2.20e-6 GND|VCAP")).toBe(2)
+    expect(caps).toHaveLength(20)
+  })
+  test("bench pads on VCAP and VDDA (VREF_A) each with a GND pad, and a pogo pad on BOOT0 (D15)", () => {
+    const pads = net.components.filter((c) => c.kind === "connector").map((c) => netsOf(c)["1"] ?? "?").sort()
+    expect(pads).toEqual(["BOOT0", "GND", "GND", "VCAP", "VREF_A"])
   })
 })
