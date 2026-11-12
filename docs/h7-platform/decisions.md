@@ -1448,6 +1448,94 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan Task 3, on the implementer's report that no candidate reaches Q ≤ 1.
 - **Carried in:** `circuits/h7-platform/vdda-noise.ts` (`VDDA_RULED`, which the module model reads).
 
+### CR-MODULE-USB-ESD
+
+**The module's DFU socket takes the pedal's USBLC6-2SC6, wired as USB-04 wires it, with its VBUS pin on the socket's VBUS and nothing else.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the ESD part named only as "the ESD part" in [processor-and-memory.md](processor-and-memory.md) §8 (line 267) is the USBLC6-2SC6, the part the pedal fits ([parts.md](parts.md), USB-04 at [schematic-checklist.md](schematic-checklist.md) line 213): D+ and D− through I/O1 (pins 1 and 6) and I/O2 (pins 3 and 4), pin 2 GND, pin 5 VBUS with 100 nF from pin 5 to GND at the part. D+ is on I/O1 and D− on I/O2, the order USB-04 gives. Socket side is pins 1 and 3, MCU side pins 6 and 4 (`DFU_ESD_WIRING`). Symbol `Power_Protection:USBLC6-2SC6`.
+- **What pin 5 connects to:** line 267 describes DP1/DP2 and DN1/DN2 "through the ESD part" and says nothing of the module socket's VBUS. Ruled: pin 5 joins the socket's four VBUS pins (A4, B4, A9, B9) and nothing else. VBUS is on no rail and reaches no MCU pin, as USB-02 has it for the pedal (line 208), and the ROM DFU does not need it: its conditions are USB FS on PA11/PA12 in forced device mode with VDD33USB fed from the module's 3V3 ([processor-and-memory.md](processor-and-memory.md) §3, line 128).
+- **The 100 nF** is USB-04's, for the reason USB-04 gives (the pin-5 node has no low-impedance return but the cable; ST Doc ID 11265 Rev 5 §2.1, Figures 15 and 18). Whether 100 nF is inside USB 2.0's device VBUS capacitance limit was not checked (USB2-SPEC-UNREAD).
+- **Settles:** the ESD half of USB-DFU-VERTICAL. The footprint half, the land pattern, the thickness note and the plug column stay open for phase 4. The socket's shell connection is not stated for the module and is not ruled here.
+- **Set by:** the controller, H7 module plan Task 4.
+- **Carried in:** `circuits/h7-platform/module-parts.ts` (`DFU_ESD`, `DFU_ESD_WIRING`, `DFU_VBUS_CAP_F`).
+
+### CR-MODULE-SDRAM-SYMBOL
+
+**The SDRAM's symbol is a project symbol, `h7-platform:W9825G6KH`; `part.mpn` stays W9825G6KH-6I.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** spec C4 allows the stock `Memory_RAM:MT48LC16M16A2TG` only if its 54 pins match the W9825G6KH datasheet pin for pin, by name and number. Read from Winbond's W9825G6KH Rev. A04 (20 Mar 2017) p. 4 section 4 and p. 5 section 5, the numbers all match, and the names differ at five pins: 15 (datasheet LDQM, stock DQML), 20 and 21 (BS0 and BS1, stock BA0 and BA1), 22 (A10/AP, stock A10) and 39 (UDQM, stock DQMH). So the project symbol, with the datasheet's names, is used.
+- **Shown drawable:** `tests/circuits/h7-project-symbol.test.ts` ("h7 project symbol W9825G6KH") has copperhead draft all 54 pins and `kicad-cli` export each on the datasheet's name.
+- **Compared in:** `tests/circuits/h7-module-parts.test.ts`, which records the datasheet table with its citation and asserts the five mismatches.
+- **Set by:** the controller, H7 module plan Task 4.
+
+### CR-MODULE-SUPERVISOR-SYMBOL
+
+**The NRST supervisor's symbol is `Power_Supervisor:TPS3839DBZ`; `part.mpn` is TLV803EA30DBZR.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** no installed symbol is named for the TLV803E. TI's SLVSES2J (rev. May 2021) p. 5 Table 6-1, column "DCK, DBZ", gives pin 1 GND, pin 2 RESET (overbarred, active low), pin 3 VDD; p. 4 Figure 6-1 labels it "Pin 1 = GND", and section 12.1's worked example, TLV803EA29DBZR, reads "Pin 1 = GND". TLV803EA30DBZR carries no R or V pinout letter before DBZ, so that column applies (Table 12-1's letters are the alternatives). The first `Power_Supervisor` symbol in library order whose pins match by name and number is TPS3839DBZ (`1=GND 2=~{RESET} 3=VDD`). The ones before it differ: LM809 (pin 3 VCC), TCM809 (V_{DD}) and TLV810EA29DBZ (RESET without the overbar: the active-high part).
+- **A stand-in for the pins only:** the symbol's name is another part's; the value field and `mpn` say which part is fitted.
+- **Compared in:** `tests/circuits/h7-module-parts.test.ts`, which scans the library for the first match rather than trusting this entry.
+- **Set by:** the controller, H7 module plan Task 4.
+
+### CR-MODULE-ID-STRAP-VALUES
+
+**The ID strap is revision 1's divider of the HW_REV scheme: 20.0 kΩ from VDDA to the strap pin, 2.49 kΩ from the pin to GND, 100 nF at the pin.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** [processor-and-memory.md](processor-and-memory.md) §9 gives the strap "the same divider scheme as the audio board's HW_REV" ([analog.md](analog.md) §11, line 347). That scheme has revisions 1 to 8, coded at n / 9, and **no code 0**: a ratio of 0 is in the "below 0.0556 is a strap fault" band that firmware refuses. The module is the first build, so it takes revision 1: R_top 20.0 kΩ, R_bot 2.49 kΩ, both 1 %, nominal ratio 0.1107, 12-bit code 453, worst-case band 0.0973 to 0.1242, 100 nF at the pin (`ID_STRAP`). The source "does not say which code each split board carries" (analog.md, below the table), so this is a choice, and any other row is as faithful.
+- **Where the top connects:** VDDA (VREF+), because the scheme's "the result is a ratio, so reference error cancels" holds only against the ADC's own reference. The 100 nF is on the 3V3 domain's far side of the divider's top resistor, and `moduleCapacitance3v3` counts it.
+- **Set by:** the controller, H7 module plan Task 4.
+- **Carried in:** `circuits/h7-platform/module-parts.ts` (`ID_STRAP`).
+
+### CR-MODULE-BLEEDER
+
+**The VREF_A back-feed bleeder is not fitted.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the option (≤ 12 kΩ on the module's 3V3, 0.29 mA when powered; [analog.md](analog.md) line 325; open item VREF-A-BLEEDER-DECISION) is not fitted. The reason: nothing in `docs/h7-platform/` states a load on the module's 3V3 that the bleeder serves. It was recorded as an analysis-level backstop to the single-sample bring-up gate (VREF-A-BACKFEED-GATE), the document that records it calls it "an option not adopted", and the back-feed it bounds comes from out-of-specification use of the expression jack, which VREF-A-BACKFEED-GATE carries.
+- **Not changed:** VREF-A-BACKFEED-GATE stays open and is still the gate.
+- **Set by:** the controller, H7 module plan Task 4.
+
+### CR-MODULE-VIN-PROTECTION
+
+**Nothing is fitted ahead of L_FILT beyond what [power.md](power.md) lists.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the owner decision PW-NOTVS (power.md line 293) is no input TVS, provided the buck's VIN peak stays at or below about 28 V; the analysis gives 26.3 V at pin 39 (R-59). [open-items.md](open-items.md) MODULE-POWER-PARTS-TO-MODEL names only a 26.3 V rating for anything fitted at pin 39. The module's input network is R-48's unchanged: L_FILT, C_BIN1, C_BIN2, C_BINHF, R_DAMP, C_DAMP, with R_UV1 and R_UV2 on EN. A transcription adds no part the documents do not name.
+- **Set by:** the controller, H7 module plan Task 4.
+
+### CR-MODULE-HSE-LOAD
+
+**The HSE load capacitors are 8 pF each, C0G, with no series resistor.**
+- **Label:** Controller ruling (the owner may override). The values are stated in the source; the ruling records only that the module takes them.
+- **Date:** 2026-11-12.
+- **Decides:** [processor-and-memory.md](processor-and-memory.md) §3 (line 117) states "CL1 = CL2 = 8 pF C0G, no series resistor", from CL = 8 pF and Cs = 4 pF assumed, by CL = CL1·CL2/(CL1 + CL2) + Cs (AN2867 §3.3): 4 + 4 = 8. No value is derived here. Trimmed at bring-up (BU-05); Cs depends on the layout (HSE-CRYSTAL-CHECKS).
+- **Set by:** the controller, H7 module plan Task 4.
+- **Carried in:** `circuits/h7-platform/module-parts.ts` (`HSE_LOAD_CAP_F`).
+
+### CR-MODULE-SWD-HEADER
+
+**The SWD header is USB-06's pinout on `Connector:Conn_ARM_JTAG_SWD_10`.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** [schematic-checklist.md](schematic-checklist.md) USB-06 (line 215), [processor-and-memory.md](processor-and-memory.md) line 266: pin 1 VTref is the module's 3V3, 2 SWDIO (PA13), 3 and 5 GND, 4 SWCLK (PA14), 6 SWO not connected, 7 key not connected, 8 not connected, 9 GNDDetect to GND, 10 NRST. The stock symbol's ten pins are those functions (`1 VTref, 2 SWDIO/TMS, 3 GND, 4 SWCLK/TCK, 5 GND, 6 SWO/TDO, 7 KEY, 8 NC/TDI, 9 GNDDetect, 10 ~{RESET}`). The pins left open stay marked not connected.
+- **Not settled:** the check against DDI0314H appendix C, which is not in hand (SWD-PINOUT-FORMAL-SPEC stays open).
+- **Set by:** the controller, H7 module plan Task 4.
+- **Carried in:** `circuits/h7-platform/module-parts.ts` (`SWD_HEADER_CONNECTIONS`).
+
+### CR-MODULE-3V3-SUM
+
+**The module's 3V3 capacitance is the sum over the domain the buck charges, found by topology; at most 150 µF (R-50).**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** `moduleCapacitance3v3` (`circuits/h7-platform/module-3v3-budget.ts`) walks from the 3V3 net (the contract's `3V3_D`) through two-terminal resistors and inductors, which takes in FB_VDDA and the damping leg's series resistor, and counts every capacitor with a pin on a net it reaches, at nominal, once. It stops at GND, at an `ic`, connector or switch, and at a capacitor, so VCAP (charged by the MCU's internal regulator) is out of the domain. A capacitor with no value, or any other kind of part on a domain net not listed with a reason, refuses. [power.md](power.md) line 183 uses this sum for the switch-on bound and [analog.md](analog.md) line 298 says the VDDA bank counts toward it; [CR-MODULE-VDDA-BANK](#cr-module-vdda-bank) puts 42.2 µF of it behind the bead and the 0.30 Ω resistor.
+- **Over-counts, in the safe direction:** C_BST counts 100 nF, because the walk crosses L_BUCK to the switching node; and nominal values are not derated.
+- **Settles:** the 150 µF half of MODULE-BUCK-LOOP-STARTUP, once Task 6's model carries the real total. The loop and start-up check needs TI's application report or a simulation and stays open.
+- **Set by:** the controller, H7 module plan Task 4.
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1). The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
