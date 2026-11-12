@@ -1,0 +1,44 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "J3.1",
+   "TP9.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "J3.3",
+   "J3.5",
+   "J3.9",
+   "TP10.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "NRST",
+  "pins": [
+   "J3.10",
+   "TP8.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "SWCLK",
+  "pins": [
+   "J3.4",
+   "TP7.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "SWDIO",
+  "pins": [
+   "J3.2",
+   "TP6.1"
+  ],
+  "drafted": true
+ }
+]

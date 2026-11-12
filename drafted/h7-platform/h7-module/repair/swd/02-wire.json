@@ -1,0 +1,300 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "swd.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3900
+    ],
+    [
+     5800,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5800,
+     3900
+    ],
+    [
+     6800,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     4100
+    ],
+    [
+     6100,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6100,
+     4100
+    ],
+    [
+     6800,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     4200
+    ],
+    [
+     6400,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     4200
+    ],
+    [
+     6800,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5000,
+     3600
+    ],
+    [
+     5000,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5000,
+     3400
+    ],
+    [
+     4500,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3400
+    ],
+    [
+     4000,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     5000
+    ],
+    [
+     4400,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4400,
+     5000
+    ],
+    [
+     4900,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     5000
+    ],
+    [
+     5000,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5000,
+     5000
+    ],
+    [
+     5000,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     5000
+    ],
+    [
+     4900,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4400,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4500,
+    3400
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4900,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5800,
+    3900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6100,
+    4100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6400,
+    4200
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J3.6"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J3.7"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "J3.8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "NRST",
+   "at": [
+    6800,
+    3900
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWCLK",
+   "at": [
+    6800,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWDIO",
+   "at": [
+    6800,
+    4200
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    4000,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4000,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: swd",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

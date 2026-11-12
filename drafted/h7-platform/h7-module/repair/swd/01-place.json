@@ -1,0 +1,179 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "swd.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "b03a997f-1e55-5f29-a14e-441b1421414f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "49c53725-c4a0-53a6-b1ec-fc691ec15c61"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "42fa5a23-42c0-59cf-812b-9d4bbe601903"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5a09f90b-d2b2-56d9-91d0-1d9789b48a71"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2fef4464-76d3-5340-bb1f-b60750d4806b"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4549d495-5297-54a5-8ab0-ce63c1afe6f7"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "dd4cf80a-de9d-5a42-b4e1-02d5d408d06d"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8228398e-c032-58de-a431-4a10722fdfe2"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3ae24bb1-6b54-5fa0-a6a9-10145feca153"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2dadd9a1-27ae-510b-9446-d50cdb7fa64f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0dc266aa-8e73-58dc-96ec-31531df81af3"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cbc7777b-54db-5ca4-ab92-edbe8110ac99"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f4494bc8-d71a-56aa-9ad5-af64fd66e80f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ccc85aca-54c2-5066-9244-4deff65ab06f"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c35a4e03-98b1-568f-bd4f-d439d85bb4a5"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "060bf46e-a4c5-53fc-b9b0-3a8d731310c0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1d5e14a0-eb52-5f49-b497-14680f351771"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "61a37cd0-4441-5f08-bc75-15c33a6083bc"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "178a78e0-171e-5f82-8fbc-42288a259de8"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6e6e4f3a-0d6b-54a4-92a6-f5a0e677ae67"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1ef53eba-5881-54cc-a438-ce33345cf10c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "80ceebca-e58b-5f57-830e-3fb46e4df7c0"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b6821ff3-9585-5a3c-805d-5162af5448a8"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d3a3859c-e39a-5791-80c3-b2e550aaee1c"
+  },
+  {
+   "op": "delete_object",
+   "uuid": "94d6c4b4-c069-58eb-b066-5abdf3bcc304"
+  },
+  {
+   "op": "move_component",
+   "designator": "J3",
+   "x_mil": 5000,
+   "y_mil": 4200
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "J3",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP8",
+   "x_mil": 5800,
+   "y_mil": 3900
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP8",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP7",
+   "x_mil": 6100,
+   "y_mil": 4100
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP7",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP6",
+   "x_mil": 6400,
+   "y_mil": 4200
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP6",
+   "rotation": 180,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP9",
+   "x_mil": 4500,
+   "y_mil": 3400
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP9",
+   "rotation": 0,
+   "mirror": "none"
+  },
+  {
+   "op": "move_component",
+   "designator": "TP10",
+   "x_mil": 4400,
+   "y_mil": 5000
+  },
+  {
+   "op": "set_component_transform",
+   "designator": "TP10",
+   "rotation": 0,
+   "mirror": "none"
+  }
+ ]
+}

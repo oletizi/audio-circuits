@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "swd.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "df8246bb-480d-5a55-a896-0682d1a03c64"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    4000,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c243a59a-4a4e-5cea-9698-dea510df6862"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4000,
+    5000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2ce76c68-8b77-5556-8f6e-eab0a236cffd"
+  },
+  {
+   "op": "add_net_label",
+   "name": "NRST",
+   "at": [
+    6800,
+    3900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "98f2a197-27a8-543f-b188-a1e2ab84fe79"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWCLK",
+   "at": [
+    6800,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e18fbd1f-6175-5d88-b938-a991c987b472"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SWDIO",
+   "at": [
+    6800,
+    4200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

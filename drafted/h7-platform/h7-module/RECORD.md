@@ -21,6 +21,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
 | `reset_boot.kicad_sch` | block reset_boot | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
+| `swd.kicad_sch` | block swd | `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -31,6 +32,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | interface | UNREVIEWED | `interface.svg` |
 | clock | UNREVIEWED | `clock.svg` |
 | reset_boot | UNREVIEWED | `reset_boot.svg` |
+| swd | UNREVIEWED | `swd.svg` |
 
 ## The drafts every repair starts from
 
@@ -428,4 +430,61 @@ SW2), ports 3V3_D, BOOT0, GND and NRST.
   from it to GND. The NRST row ends in NRST's hierarchical label on the east edge.
 - Every part's Reference and Value are horizontal: east of each resistor, capacitor and SW1, west of
   SW2, and under the NRST row east of U5's GND drop for U5.
+- Every wire carries copperhead's default stroke.
+
+## swd: the SWD header and its test points
+
+**Status: UNREVIEWED.** sha256 `486923651c80caf44123005ed47fcb5a756c128674a052a4f99727a96b8cfef8`.
+Render: `swd.svg` beside it.
+
+The block: `circuits/h7-platform/module/swd.ts`, 6 parts (J3 `Connector:Conn_ARM_JTAG_SWD_10`, TP6 to
+TP10 `Connector:TestPoint`), ports 3V3_D, GND, NRST, SWCLK and SWDIO.
+
+### The rulings this page rests on
+
+- [CR-MODULE-SWD-HEADER](../../../docs/h7-platform/decisions.md#cr-module-swd-header): J3's pinout;
+  pins 6 (SWO), 7 (KEY) and 8 (NC/TDI) carry no-connects.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
+  are rows ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. J3's VTref (3V3_D) and GND are power inputs, so the sheet alone reports
+  `power_pin_not_driven` on both; under the one-block root the stubs carry their flags, which clears
+  both. (This is `erc-control.sh`'s control 9, on the draft.)
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 6, 8, 15 | 6, 8, 15 |
+| exported nets carrying a model net name | 5 of 8 (the 3 others are J3's no-connect pins) | 5 of 8 |
+| ERC, the sheet alone | 2 errors (`power_pin_not_driven` 2), 0 warnings | 7 errors (`pin_not_connected` 5: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, on 3V3_D and GND), 0 warnings |
+| ERC under a one-block root, `/swd/` | 2 errors (`power_pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 8 errors (`hier_label_mismatch` 5, `label_dangling` 3), 2 warnings | 3 errors (`label_dangling` 3: the NRST, SWCLK and SWDIO stub labels are alone with one block), 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 0 | 0 of 6 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 7 on 5 nets (4 global) | 5 on 5 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 7 | 0 of 5 |
+| symbols (parts, power symbols, PWR_FLAGs) | 6 (6, 0, 0) | 6 (6, 0, 0) |
+| placed pins | 15 | 15 |
+| wires, total length | 15, 95.25 mm | 14, 165.10 mm |
+| wire corners | 2 | 2 |
+| junctions | 0 | 6 |
+
+### What the page shows, as observations
+
+- J3 in the middle. ~RESET (pin 10), SWCLK (pin 4) and SWDIO (pin 2) each run east from J3 to its
+  hierarchical label (NRST, SWCLK, SWDIO) on the east edge.
+- Each of those rows carries its test point at a junction: TP8 on NRST and TP7 on SWCLK stand up
+  from their rows; TP6 on SWDIO hangs down from its row, which is 100 mil under SWCLK's.
+- VTref (pin 1) rises to a 3V3_D row that runs west past TP9, standing up from it, to 3V3_D's label
+  on the west edge.
+- GND (pins 3 and 5, which the symbol stacks at one point) and GNDDetect (pin 9) drop to a GND row
+  under J3 that runs west past TP10, standing up from it, to GND's label on the west edge.
+- J3's pins 6, 7 and 8 carry no-connects; pin 7 (KEY) is on J3's west side.
+- J3's Reference and Value are above its body, west of the VTref rise; each test point's are east
+  of its body.
 - Every wire carries copperhead's default stroke.
