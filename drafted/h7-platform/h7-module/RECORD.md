@@ -17,6 +17,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 
 | sheet | role | sha256 |
 | --- | --- | --- |
+| `h7-module.kicad_sch` | root | `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86` |
 | `power.kicad_sch` | block power | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |

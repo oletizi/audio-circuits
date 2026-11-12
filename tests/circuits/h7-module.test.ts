@@ -7,6 +7,11 @@
  * is in exactly one block and has exactly one designator; the 3V3 capacitance sum is within R-50's
  * 150 uF; the VDDA values are Task 3's constant; every symbol and pin number checks; every block page
  * lowers, within 40 symbols except the MCU's.
+ *
+ * And the drawn project (design change C3, Task 7e): the root `drafted/h7-platform/h7-module/h7-module.kicad_sch`
+ * and its twelve block sheets, bound by `registerDraftedProjectTests` - kicad-cli's export of the
+ * root against the whole model, every component drawn once on its block's sheet, every sheet's
+ * sha256 against `RECORD.md`. The model declares no footprint, so every component is footprintless.
  */
 import { describe, expect, test } from "bun:test"
 import { NC } from "../../lib/model/index.ts"
@@ -18,6 +23,8 @@ import { assertModuleCapacitanceWithinLimit, moduleCapacitance3v3 } from "../../
 import { DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, drawingPages, h7Module } from "../../circuits/h7-platform/module-board.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
 import { EXPECTED_NC_PORTS, mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
+import { registerDraftedProjectTests, type ProjectModel } from "./drafted-project.ts"
+import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
 
 const MODULE = h7Module()
 
@@ -168,4 +175,20 @@ describe("pages (design change C3)", () => {
       }
     }
   })
+})
+
+function projectModel(): ProjectModel {
+  const network = h7Module()
+  return { network, designators: new Map(Object.entries(DESIGNATORS)), pinNumbers: pinNumbersFromTable(network, PIN_NUMBERS) }
+}
+
+registerDraftedProjectTests({
+  board: "h7-module",
+  circuit: "h7-platform",
+  netlist: "tests/fixtures/h7-module.net",
+  model: projectModel,
+  pinDisagreements: [],
+  valueDisagreements: [],
+  footprintComparisons: "none",
+  footprintlessParts: MODULE.components.map((c) => c.id).sort(),
 })

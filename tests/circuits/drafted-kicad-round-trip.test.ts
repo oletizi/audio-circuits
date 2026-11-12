@@ -44,6 +44,7 @@ import { moduleRepoRoot } from "../../tools/perfboard/repo-root.ts"
 import { exportProjectRoot, type ProjectModel } from "./drafted-project.ts"
 import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
 import { DESIGNATORS as TWO_BLOCK_DESIGNATORS, PIN_NUMBERS as TWO_BLOCK_PIN_NUMBERS, twoBlockBoard } from "../fixtures/two-block-board/two-block-board.ts"
+import { DESIGNATORS as H7_MODULE_DESIGNATORS, PIN_NUMBERS as H7_MODULE_PIN_NUMBERS, h7Module } from "../../circuits/h7-platform/module-board.ts"
 
 /**
  * The boards with a page committed under `drafted/`, and the committed netlist fixture each
@@ -101,7 +102,7 @@ for (const { board, circuit, netlist } of BOARDS) {
  * export against the model; this asserts the committed fixture says the same.
  *
  * The two-block board is the C3 test fixture, kept under tests/fixtures/ rather than drafted/: its
- * pages are test data and never sent for review.
+ * pages are test data and never sent for review. The h7 module is the first board drawn this way.
  */
 const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string; readonly netlist: string; readonly model: () => ProjectModel }> = [
   {
@@ -111,6 +112,15 @@ const PROJECTS: ReadonlyArray<{ readonly board: string; readonly dir: string; re
     model: () => {
       const network = twoBlockBoard()
       return { network, designators: new Map(Object.entries(TWO_BLOCK_DESIGNATORS)), pinNumbers: pinNumbersFromTable(network, TWO_BLOCK_PIN_NUMBERS) }
+    },
+  },
+  {
+    board: "h7-module",
+    dir: path.join(moduleRepoRoot(), "drafted", "h7-platform", "h7-module"),
+    netlist: "tests/fixtures/h7-module.net",
+    model: () => {
+      const network = h7Module()
+      return { network, designators: new Map(Object.entries(H7_MODULE_DESIGNATORS)), pinNumbers: pinNumbersFromTable(network, H7_MODULE_PIN_NUMBERS) }
     },
   },
 ]

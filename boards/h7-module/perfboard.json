@@ -1,5 +1,7 @@
 {
   "kind": "pcb",
+  "sch": "../../drafted/h7-platform/h7-module/h7-module.kicad_sch",
   "circuit": "../../circuits/h7-platform/module-board.ts",
-  "export": "h7Module"
+  "export": "h7Module",
+  "netlist": "../../tests/fixtures/h7-module.net"
 }
