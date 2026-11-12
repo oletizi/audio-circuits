@@ -48,11 +48,15 @@ echo "== parenthesis depth (root)"
 python3 "$here/depth.py" "$sch" || fail "parenthesis depth is not 0 (or depth.py could not run)"
 
 echo "== root export vs the whole model"
-"$kc" sch export netlist --format kicadsexpr -o "$out/export.net" "$sch" >/dev/null 2>"$out/kc.err" \
+# kicad-cli prints its annotation warning on STDOUT (measured), so stdout is kept and read too.
+"$kc" sch export netlist --format kicadsexpr -o "$out/export.net" "$sch" >"$out/kc.out" 2>"$out/kc.err" \
   || { quiet "$out/kc.err"; fail "kicad-cli sch export netlist exited non-zero on $sch"; }
 quiet "$out/kc.err"
 [ -s "$out/export.net" ] || fail "kicad-cli wrote no netlist export for $sch"
-if grep -q 'annotation errors' "$out/kc.err"; then failed="$failed export-annotation"; echo "   kicad-cli warned of annotation errors (above)"; fi
+if grep -q 'annotation errors' "$out/kc.out" "$out/kc.err"; then
+  grep -h 'annotation errors' "$out/kc.out" "$out/kc.err"
+  failed="$failed export-annotation"
+fi
 (cd "$root" && bun "$here/root-netcompare.ts" "$out/export.net") || failed="$failed export"
 
 echo "== PWR_FLAGs across the hierarchy"
