@@ -72,7 +72,8 @@ echo "$log" | grep -q 'status: APPLIED' || { echo "$log" >&2; fail "akcli did no
   || { quiet "$out/kc.err"; fail "kicad-cli sch erc exited non-zero on the one-block root"; }
 quiet "$out/kc.err"
 [ -s "$ctx/erc.json" ] || fail "kicad-cli wrote no ERC report for the one-block root"
-python3 "$here/erc_sheets.py" "$ctx/erc.json" || fail "erc_sheets.py could not read the one-block root's ERC report"
+python3 "$here/erc_sheets.py" "$ctx/erc.json" "$block" \
+  || fail "ERC under the one-block root: the block's sheet has an error, is missing, or the root has an error other than its stubs' (listed above)"
 
 echo "== selftest"; python3 "$m/selftest.py" | tail -1
 echo "== crossings"; python3 "$m/crossings.py" "$sch" | tail -3

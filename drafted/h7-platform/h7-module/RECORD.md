@@ -129,6 +129,24 @@ VIN_MOD, 3V3_D and GND.
 
 From `repair/tools/verify.sh power <sheet>` on each. None of these is a judgement of the page.
 
+**Since issue 32, `verify.sh` fails on ERC**, not only reports it. It exits non-zero when, under
+the one-block root:
+- the block's own sheet is missing or carries any error;
+- the root carries an error other than its stubs' `label_dangling`;
+- or any other sheet appears.
+
+The sheet-alone run is still only reported, because its `pin_not_connected` errors on the
+hierarchical labels are expected of a sheet with no parent.
+
+`repair/tools/erc-control.sh` holds the controls:
+- the committed page verifies;
+- the page with its two PWR_FLAGs removed fails on `/power/`'s `power_pin_not_driven`, which is the
+  reviewer's reproduction;
+- and five synthetic reports each come out as stated.
+
+The draft column below would now fail, on its `/power/` errors and its root `hier_label_mismatch`.
+That is expected, because a draft is not a page.
+
 | measure | draft | page |
 | --- | --- | --- |
 | netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |

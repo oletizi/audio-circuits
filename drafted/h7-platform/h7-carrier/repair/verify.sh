@@ -51,7 +51,7 @@ echo "== ERC"
   || { quiet "$out/kc.err"; fail "kicad-cli sch erc exited non-zero on $sch"; }
 quiet "$out/kc.err"
 [ -s "$out/erc.json" ] || fail "kicad-cli wrote no ERC report for $sch"
-python3 "$here/erc_counts.py" "$out/erc.json" || fail "erc_counts.py could not read the ERC report"
+python3 "$here/erc_counts.py" "$out/erc.json" || fail "the sheet has an ERC error, or erc_counts.py could not read the report (listed above)"
 
 echo "== selftest"; python3 "$m/selftest.py" | tail -1
 echo "== crossings"; python3 "$m/crossings.py" "$sch" | tail -3
