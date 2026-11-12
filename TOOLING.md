@@ -1003,6 +1003,112 @@ board; that line is not an `ok` and does not change the exit status.
 
 ---
 
+Multi-page drawing (design change C3)
+-------------------------------------
+
+A board too large for one page is drawn **one page per functional block**, each block an
+`include()`d sub-network of the model (`Network.blocks`), assembled into ONE hierarchical KiCad
+project: a root sheet holding one sheet per block, each block's ports drawn as hierarchical
+labels on its own page, joined on the root. **`kicad-cli`'s export of the assembled root is the
+evidence of how the pages connect.** It was built and checked on a two-block test board,
+`tests/fixtures/two-block-board/`, which is test data and never sent for review.
+
+**Whether a board is multi-page is read from its circuit module, never guessed.** The module
+exports `drawingPages()`, built by `tools/draught/drawing-pages.ts`'s `drawingPagesFromNetwork`
+from the `Network`, the board-wide `DESIGNATORS` and `PIN_NUMBERS`, and one caption per block. A
+module exporting it beside `drawingIntent()`, or a board also named in `COMMITTED_INTENT`,
+refuses. The declaration (`tools/perfboard/declaration.ts`) says nothing new: a `pcb` board's
+`sch` names the ROOT `.kicad_sch` and its `netlist` is the root's export, exactly as a one-page
+board's name its one sheet and that sheet's export. There is no field saying "root".
+
+**What a page's intent carries, and the two choices it makes:**
+
+- **A private net is labelled by its UNPREFIXED model name.** `include()` names block `a`'s
+  private `FB` net `a_FB` in the model; its page labels it `FB`. Two blocks therefore carry the
+  same text for two different nets, which is safe **only because a private net's label is LOCAL
+  to its sheet**. `tests/draught/drawing-pages.test.ts` tests the choice, and the fixture's
+  negative control 3 is written against it.
+- **A port net is labelled by its PORT name** - the name the block uses for it, which is also the
+  root sheet pin's name. The root's label names the PARENT net the port is bound to; the two
+  differ whenever an `include()` renames.
+- **Every net on a page is `kind: "signal"`, so copperhead draws no power symbol on a block
+  page.** copperhead infers ground and power from a net's NAME (its report says
+  `GND=ground~ (~=inferred from the net name)`), and a KiCad power symbol joins every sheet of a
+  hierarchy by name - a block's `GND` drawn as a symbol would reach the other pages without going
+  through the root, so the root's wiring for it could be deleted and the round trip would not
+  notice. `signal` is copperhead's documented override. The cost: ground and rails on a block page
+  are labelled wires, not symbols.
+- **A port reaching ONE pin of its block is left out of the intent**, because copperhead refuses a
+  net with one endpoint; its hierarchical label goes on that pin. Each page's `ports` lists every
+  port with its parent net, its pins and whether copperhead drafts it.
+
+**`make draw` on such a board** drafts each page into `build/draw/<board>/<block>/<block>.kicad_sch`,
+its intent beside that directory at `build/draw/<board>/<block>.intent.json`, and re-papers,
+renders and measures each one (`tools/draught/draw-pages.ts`). The pre-draft partition check
+runs **per block**, against the model's committed netlist restricted to that block's parts
+(`verifyPageAgainstModel`, `tools/draught/draw-draft.ts`); with no netlist declared, the C2
+`NO INDEPENDENT NETLIST:` block prints **once for the board**. It stops where `make draw` always
+stops: each page is a copperhead draft with copperhead's labels.
+
+**The repair adds two op-lists that a one-page board does not have**, committed and replayed like
+any other (step 5.5):
+
+- **per block, `tools/draught/hierarchical-labels.ts`**: on each port net, every copperhead label
+  of the port's text is deleted and ONE hierarchical label added at the first one's place (or on
+  the port's pin when copperhead drew none); further labels on that net become LOCAL labels of the
+  same text, which join the hierarchical one on the sheet (measured with `kicad-cli`). Every
+  GLOBAL label on a private net becomes local - copperhead marks a stubbed net global, and a global
+  label joins every sheet by name. **Deletes go by the label's uuid**, never by position: akcli's
+  `delete_object` on a point that misses is a "replay-safe note", not an error, so a missed match
+  would leave the global label silently. `hierarchical-labels.ts check` is the post-condition (one
+  hierarchical label per port, no global label), and the replay runs it.
+- **the root, `tools/draught/assemble-root.ts`**: its starting text (`blank`; the uuid is seeded
+  by the board's name because `akcli new` mints a random one, and the paper is US Letter from the
+  start), then an op-list (`ops`) with one `add_sheet` per block, one sheet pin per port, each pin
+  wired to a short stub ending in a LOCAL label that names the parent net. The arrangement is
+  fixed - blocks in `Network.blocks` order, three to a row, pins down the left edge in name order -
+  not a layout computed from the circuit.
+
+**The committed form** is `drafted/<circuit>/<board>/`: `<board>.kicad_sch` (the root),
+`<block>.kicad_sch` per block, one `RECORD.md` with a table row per sheet - the file name in backticks, its role
+(`root`, or `block <name>`), and its sha256 in backticks - and `repair/` with one directory per block plus
+`root/` and one `replay.sh` that reaches every sha256. The test fixture keeps the same form under
+`tests/fixtures/two-block-board/drafted/`.
+
+**The binding check** is `registerDraftedProjectTests` (`tests/circuits/drafted-project.ts`,
+re-exported from `drafted-sheet.ts`): it exports the ROOT with `kicad-cli` and runs
+`compareSheetToModel` on the whole board model, asserts every model component is drawn exactly
+once across the sheets under its designator and on its own block's sheet, and checks every
+sheet's sha256 against `RECORD.md`. `drafted-kicad-round-trip.test.ts`'s `PROJECTS` list asserts
+the committed root export says what a fresh one says. **The three negative controls**
+(`tests/circuits/two-block-project.test.ts`) edit a copy of the assembled fixture and each must
+fail the round trip: deleting one sheet pin's wire at the root; swapping two sheet pins' wires;
+and drawing both blocks' private `FB` as a GLOBAL label of the same text `FB`, which merges
+`a_FB` and `b_FB`. The positive controls: the unedited copy passes, and the two LOCAL `FB` labels
+stay two nets.
+
+**What a block page shares with a one-page board** is everything after the intent: the same
+draft, re-paper, render and measurement sequence (`tools/draught/draw-sheet.ts`, moved out of
+`tools/cli/draw.ts` unchanged - the h7-carrier still drafts to its recorded sha256), the same
+repair loop and repair classes, the same project symbol libraries (C4), US Letter, and the same
+rule that no measurement withholds a page. **What is new** is the per-block intent, the
+per-block partition check, the two op-lists above, the root sheet, and the project-level check.
+
+**What C3 does not cover:**
+
+- **One level only.** `include()` refuses a network that itself includes blocks, so there is no
+  nested hierarchy to draw.
+- **No `.kicad_pro` is written beside a project.** KiCad's defaults apply, the sheet instances name
+  the project `noname`, and ERC on the fixture's root ran with KiCad's default severities
+  (0 errors, 0 warnings).
+- **A sheet pin's type and a hierarchical label's shape are both `input`**, because that is the
+  shape akcli 0.22.0 writes a hierarchical label in; KiCad's connectivity ignores both.
+- **Ground and rails as labelled wires on a block page** is a consequence of refusing power
+  symbols, not a reviewed drawing choice. Whether a block page may draw a power symbol for a net
+  bound to a root net of the same name is open.
+
+---
+
 Project symbol libraries (design change C4)
 -------------------------------------------
 

@@ -93,6 +93,38 @@ is not re-drafted in order to follow the loop from the top - steps 3 through
 6 run directly against it. Re-drafting a page he has accepted throws away
 work only he is positioned to have approved.
 
+## Multi-page drawing (design change C3)
+
+Copied from `TOOLING.md`, C3, which is the original; read it there in full. A board too large
+for one page is drawn one page per `include()`d block, assembled into one hierarchical KiCad
+project, and **`kicad-cli`'s export of the assembled root is the evidence of how the pages
+connect.**
+
+- **Multi-page is read from the circuit module**, which exports `drawingPages()`
+  (`tools/draught/drawing-pages.ts`), never guessed. The declaration's `sch` names the ROOT sheet
+  and its `netlist` the root's export; there is no other field.
+- **A private net is labelled by its UNPREFIXED model name** (`a_FB` is `FB` on its page), safe
+  only because its label is LOCAL. A port net is labelled by its PORT name; the root's label names
+  the PARENT net. **Every net on a page is `kind: "signal"`**: a power symbol joins every sheet by
+  name, around the root. A port reaching one pin of its block is not in the intent (copperhead
+  refuses a one-endpoint net); its hierarchical label goes on that pin.
+- **`make draw`** drafts each page into `build/draw/<board>/<block>/<block>.kicad_sch` and
+  re-papers, renders and measures each; the partition check runs per block; with no netlist the
+  `NO INDEPENDENT NETLIST:` block prints once for the board.
+- **The repair adds two op-lists**: per block, `tools/draught/hierarchical-labels.ts` (`ops`, then
+  `check` as the post-condition; deletes go by uuid, because a position match that misses is a
+  silent note in akcli); and the root, `tools/draught/assemble-root.ts` (`blank`, then `ops`).
+- **Committed form**: `drafted/<circuit>/<board>/` holds `<board>.kicad_sch` (the root),
+  `<block>.kicad_sch` per block, one `RECORD.md` with a sha256 row per sheet, and `repair/` with a
+  directory per block plus `root/` and one `replay.sh` reaching every sha256.
+- **The binding check** is `registerDraftedProjectTests` (`tests/circuits/drafted-project.ts`),
+  and the three negative controls in `tests/circuits/two-block-project.test.ts` - a deleted sheet
+  pin wire, two swapped sheet pin wires, and both blocks' private `FB` drawn as the SAME global
+  label - each must fail the round trip.
+- **A block page shares with a one-page board** everything after the intent: the same draft,
+  re-paper, render and measure sequence (`tools/draught/draw-sheet.ts`), the same repair loop and
+  classes, C4's project libraries, US Letter, and no measurement withholding a page.
+
 ## Project symbol libraries (design change C4)
 
 A part with no stock symbol is drawn from a project `.kicad_sym` beside the circuit. The circuit

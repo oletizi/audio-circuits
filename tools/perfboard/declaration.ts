@@ -19,6 +19,18 @@
  * against the checked-in netlist fixture. A board that declares only one of
  * the two has a broken declaration, not a partial one: half a dependency
  * edge names nothing.
+ *
+ * **A `pcb` board's `sch` may name a HIERARCHICAL ROOT SHEET (design change
+ * C3), and the declaration says so by nothing more than naming it.** A
+ * multi-page board's `sch` is its root `.kicad_sch` - the file whose sheets
+ * name the block pages - and its `netlist` is `kicad-cli`'s export of that
+ * root, which reads every page through it; both behave here exactly as a
+ * one-page board's do. There is deliberately no field saying "this is a
+ * root": whether a board is multi-page is read from its circuit module, which
+ * exports `drawingPages()` (`tools/draught/draw-intent.ts`
+ * `resolveDrawingPages`), never guessed from this file or from the sheet. A
+ * second statement of the same fact here would be a second place for it to
+ * be wrong. `TOOLING.md`, design change C3, states it.
  */
 import fs from "node:fs"
 import path from "node:path"
