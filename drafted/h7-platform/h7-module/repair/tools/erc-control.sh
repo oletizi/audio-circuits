@@ -39,6 +39,7 @@
 # 18. the module ROOT, every sheet together: root-control.sh's controls (Task 7e; added at Task 7e
 #     fix round 1, once root ERC reached 0 errors apart from the VCAP exclusion). Its control 1
 #     requires verify-root.sh to pass on the committed project, ERC included.
+# 19. render.sh's SVG-matches-PDF check: render-control.sh's controls (Task 7e fix round 2).
 #
 # usage: sh erc-control.sh
 set -eu
@@ -212,5 +213,10 @@ echo "== 18. the module root (root-control.sh)"
 sh "$here/root-control.sh" >"$work/root-control.log" 2>&1 || { cat "$work/root-control.log" >&2; bad "root-control.sh: a root control did not come out as stated"; }
 grep -q '^root-control.sh: every control came out as stated$' "$work/root-control.log" || bad "root-control.sh exited 0 without its closing line"
 echo "   $(grep -c '^== ' "$work/root-control.log") root controls came out as stated"
+
+echo "== 19. render.sh refuses a sub-sheet page whose SVG is another page (render-control.sh)"
+sh "$here/render-control.sh" >"$work/render-control.log" 2>&1 || { cat "$work/render-control.log" >&2; bad "render-control.sh: a render control did not come out as stated"; }
+grep -q '^render-control.sh: every control came out as stated$' "$work/render-control.log" || bad "render-control.sh exited 0 without its closing line"
+echo "   $(grep -c '^== ' "$work/render-control.log") render controls came out as stated"
 
 echo "erc-control.sh: every control came out as stated"

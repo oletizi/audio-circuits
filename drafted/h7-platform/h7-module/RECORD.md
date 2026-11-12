@@ -41,11 +41,11 @@ sha256. `registerDraftedProjectTests` binds this table.
 
 | page | status | render |
 | --- | --- | --- |
-| root | UNREVIEWED; `verify-root.sh` exits 1, on ONE root ERC error the block checks could not see: `pin_to_pin` on NRST between J3 pin 10 (open collector) and U5 pin 2 (output), which needs a ruling (see "root", below) (Task 7e) | `h7-module.svg` |
+| root | UNREVIEWED. `verify-root.sh` exits 0: root ERC 0 errors, with one excluded violation (`pin_to_pin` on `/mcu/`, U1 pins 81 and 125, CR-MODULE-VCAP-ERC). Task 7e's one NRST `pin_to_pin` error was cleared in fix round 1 by retyping U5's symbol (see "The root's ERC error at Task 7e", below) | `h7-module.svg` |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 | interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `interface.svg` |
 | clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `clock.svg` |
-| reset_boot | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `reset_boot.svg` |
+| reset_boot | **UNREVIEWED, changed after approval.** The owner's verdict *"approved. proceed"* (2026-11-12, `docs/schematic/verdicts.md`) was of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`. The page now at sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` has U5's symbol swapped under the amended CR-MODULE-SUPERVISOR-SYMBOL (Task 7e fix round 1); that verdict does not bind it | `reset_boot.svg` |
 | swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
 | usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
@@ -258,7 +258,7 @@ From `repair/tools/verify-root.sh` (kicad-cli 10.0.5). None of these is a judgem
 | true crossings, T-meetings, orphan junctions, tees without a dot | 0, 0, 0, 0 |
 | paper fit (US Letter), `paper_fit.py` | fits: yes (content x 25.400 to 232.410 mm, y 20.320 to 177.800 mm). At Task 7e it did not fit: overshoot south 779.103 mm |
 | sheet symbols on the paper, `root_sheets_fit.py` | 12 of 12, each inside the inner frame and clear of the title block. At Task 7e, 2 of 12 |
-| drawn text, from the SVG's stroked text (a scratch measurement, not a committed check) | no two text boxes overlap. Four sheet names (power, qspi, id_strap, decoupling) dip into their box's top line with a descender. Before the pin justification and the flag rule, 50 pairs overlapped |
+| drawn text, from the SVG's stroked text (`repair/tools/svg_stroked_text.py`, reported by `verify-root.sh`, never judged) | no two text boxes overlap. Four sheet names (power, qspi, id_strap, decoupling) dip into their box's top line with a descender. Before the pin justification and the flag rule, 50 pairs overlapped |
 
 **The root's ERC error at Task 7e, and what cleared it.** NRST joins J3 (swd) pin 10, typed open
 collector by `Connector:Conn_ARM_JTAG_SWD_10`, and U5 (reset_boot) pin 2. At Task 7e, U5 pin 2 was
@@ -290,7 +290,7 @@ paper. `repair/tools/render.sh` now takes a page argument, so the root page's PN
 - PWR_FLAGs stand on the stub labels of 3V3_D (mcu, west edge, the top pin, flag above), VREF_A
   (decoupling, the bottom pin, flag below) and VSSA (mcu, east edge, the bottom pin, flag below).
 - The title block reads `Sheet: /`, `File: h7-module.kicad_sch`, `Size: USLetter`, `Id: 1/13`, with
-  no title.
+  no title. The sub-sheets' page numbers, which the project's page list and each page's title block ("Id: N/13") show, are printed by `repair/tools/root_pages.py` and reported by `verify-root.sh`.
 
 ## power: 3.3 V buck and input network
 

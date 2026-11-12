@@ -5,20 +5,23 @@
  * deterministic: the same `Network` always gives the same arrangement.
  *
  * The rule:
- * - Blocks in `Network.blocks` order, stacked down a column from the frame's north-west corner.
- *   A new column starts, east of the widest cell of the last, when the next block would run past
- *   the frame's south edge or into the title block.
  * - Each block is a cell: its sheet box, the sheet name above it and the file name below it, and
- *   on each side that carries pins, a stub and its label's text. A column's sheet boxes share one
- *   west edge, set by the widest west reach in the column.
+ *   on each side that carries pins, a stub and its label's text.
+ * - Cells are packed tallest first (ties in `Network.blocks` order). Each goes at the first
+ *   candidate point - smallest y, then smallest x - where its whole cell lies inside the frame,
+ *   clear of the title block and at least `CELL_GAP_MIL` from every cell already placed. The
+ *   candidate points are the frame's north-west corner and, for each placed cell, the points just
+ *   east of it and just south of it. The result is returned in `Network.blocks` order.
  * - Sheet pins are in port-name order, `ROOT_PIN_PITCH_MIL` apart. They go down the west edge,
  *   unless the block has more ports than one edge holds within the frame's height: then the first
  *   half (rounded up) goes down the west edge and the rest down the east edge.
  * - A box is wide enough for its pin names on both sides and for its own name and file name.
  * - Every coordinate is on akcli's 50 mil grid.
  *
- * A block that does not fit even in a column of its own, or a board whose columns run past the
- * frame's east edge, is REFUSED, naming the block and the overshoot. Nothing is drawn off the paper.
+ * A board is REFUSED, naming the block, when a block cannot be placed: either it does not fit
+ * the frame with nothing else on the page, or it finds no free candidate point once the larger or
+ * earlier blocks are placed. The message reads "<board>: the root does not fit US Letter's inner
+ * frame: block "<name>" ..." and ends by naming this file. Nothing is drawn off the paper.
  *
  * Text widths are estimated at `ROOT_CHAR_MIL` per character. KiCad 10.0.5's default 1.27 mm text
  * measured 48 mil per character on the h7-module root's SVG export (textLength of "SDRAM_A10",

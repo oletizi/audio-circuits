@@ -5,10 +5,11 @@
  * and a board that cannot fit refused rather than drawn off the paper.
  *
  * The h7 module is the case that needed it: its root as first assembled overshot the paper by
- * 779 mm, with 9 of its 12 sheet symbols off the page (Task 7e report, ruling
- * CR-MODULE-ROOT-FITS-LETTER).
+ * 779 mm, with 10 of its 12 sheet symbols off the page (root_sheets_fit.py on the Task 7e root, commit
+ * 71db737: "sheets on the paper: 2 of 12"; ruling CR-MODULE-ROOT-FITS-LETTER).
  */
 import { expect, test } from "bun:test"
+import { readFileSync } from "node:fs"
 import type { BlockRecord, Network } from "../../lib/model/types.ts"
 import { h7Module } from "../../circuits/h7-platform/module-board.ts"
 import { rootSheetOps } from "../../tools/draught/assemble-root.ts"
@@ -79,6 +80,16 @@ test("a sheet pin on the east edge is wired east to its label", () => {
 
 test("the arrangement is deterministic", () => {
   expect(JSON.stringify(rootSheetOps(h7Module(), "h7-module"))).toBe(JSON.stringify(rootSheetOps(h7Module(), "h7-module")))
+})
+
+test("the arrangement is the one in the committed op-list, whatever ran in this process before", () => {
+  // A call made first on another board must not change the result (no state outside the function),
+  // and the result must be the bytes the replay checks against: repair/root/01-assemble.json.
+  rootSheetOps(syntheticNetwork([block("zz", 3), block("aa", 90)]), "other")
+  const committed = readFileSync(
+    "drafted/h7-platform/h7-module/repair/root/01-assemble.json", "utf8",
+  )
+  expect(JSON.stringify(rootSheetOps(h7Module(), "h7-module"), null, 1) + "\n").toBe(committed)
 })
 
 function syntheticNetwork(blocks: readonly BlockRecord[]): Network {

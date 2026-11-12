@@ -228,7 +228,7 @@ same root/02-pwr-flags.json
 apply "$board.kicad_sch" root/02-pwr-flags.json
 python3 "$here/tools/root_flag_refs.py" "$work/$board.kicad_sch" 3 || fail "root_flag_refs.py failed"
 python3 "$here/tools/root_pin_justify.py" "$work/$board.kicad_sch" "$work/repair/root/01-assemble.json" || fail "root_pin_justify.py failed"
-check "$board.kicad_sch" "root 01 to 04" "$ROOT"
+check "$board.kicad_sch" "root, blank to step 5" "$ROOT"
 cmp -s "$work/$board.kicad_sch" "$drafted/$board.kicad_sch" || fail "the replayed $board.kicad_sch differs from the committed $drafted/$board.kicad_sch"
 echo "the replayed $board.kicad_sch is byte-identical to the committed root"
 (cd "$root" && bun "$here/tools/kicad-pro.ts" "$work" "$board") > "$work/$board.kicad_pro" || fail "kicad-pro.ts failed"

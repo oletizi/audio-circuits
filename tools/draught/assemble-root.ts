@@ -10,12 +10,12 @@
  * included with a port map that renames.
  *
  * The placement is a fixed rule, not a judgement made here, and it puts every sheet symbol inside
- * US Letter's inner frame (`./root-arrangement.ts`): blocks in `Network.blocks` order, stacked down
- * columns from the frame's north-west corner, a new column when the next block would leave the
- * frame or enter the title block; sheet pins in port-name order at a fixed pitch, down the left
- * edge, or - for a block with more ports than one edge holds within the frame - the first half
- * down the left edge and the rest down the right. A board whose blocks cannot all fit is refused,
- * naming the block and the overshoot, rather than drawn off the paper. akcli's `add_sheet` writes
+ * US Letter's inner frame (`./root-arrangement.ts`): blocks packed tallest first, each at the
+ * first free point (smallest y, then smallest x) where its cell lies inside the frame, clear of the
+ * title block and of the cells already placed; sheet pins in port-name order at a fixed pitch, down
+ * the left edge, or - for a block with more ports than one edge holds within the frame - the first
+ * half down the left edge and the rest down the right. A board whose blocks cannot all be placed
+ * is refused, naming the block, rather than drawn off the paper. akcli's `add_sheet` writes
  * the sheet node, its pins at the edge points and its `(instances ...)` page block
  * (`akcli/writers/handlers/sheets.py`).
  *

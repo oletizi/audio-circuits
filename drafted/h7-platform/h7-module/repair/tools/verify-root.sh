@@ -13,7 +13,9 @@
 #  6. the paper: paper_fit.py must report "fits: yes", and root_sheets_fit.py must find every sheet
 #     symbol inside US Letter's inner frame and clear of the title block (ruling
 #     CR-MODULE-ROOT-FITS-LETTER; paper_fit.py does not measure a sheet box).
-#  7. the rest of the draughting/measure suite on the root sheet, and counts. Reported, never judged.
+#  7. the rest of the draughting/measure suite on the root sheet, and counts, the sheets' page
+#     numbers (root_pages.py) and the committed render's drawn text (svg_stroked_text.py). Reported,
+#     never judged.
 #
 # EVERY STEP FAILS LOUDLY, as verify.sh's do: outputs go to a fresh temporary directory, kicad-cli's
 # exit status is checked, each output must exist and be non-empty. Steps 2 to 5 each record a
@@ -100,5 +102,9 @@ grep -qx 'fits: yes' "$out/fit.log" || failed="$failed paper-fit"
 echo "== sheet symbols on the paper"
 python3 "$here/root_sheets_fit.py" "$sch" || failed="$failed sheets-fit"
 echo "== counts"; python3 "$here/counts.py" "$sch"
+echo "== sheet page numbers (reported, never judged)"; python3 -I "$here/root_pages.py" "$sch" | tr '\n' ';'; echo
+if [ -s "$dir/$board.svg" ]; then
+  echo "== drawn text of the committed render (reported, never judged)"; python3 -I "$here/svg_stroked_text.py" "$dir/$board.svg" "$sch"
+fi
 [ -z "$failed" ] || fail "these checks failed:$failed (each named above)"
 echo "verify-root.sh: every check passed"

@@ -1472,8 +1472,8 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 
 ### CR-MODULE-SUPERVISOR-SYMBOL
 
-**The NRST supervisor's symbol is `Power_Supervisor:TPS3839DBZ`; `part.mpn` is TLV803EA30DBZR.**
-*Amended 2026-11-12 (below): the symbol is now the project symbol `h7-platform:TLV803EA30DBZR`, because TPS3839DBZ types the RESET pin push-pull and the TLV803E's is open drain. The original entry is kept as history.*
+**The NRST supervisor's symbol is the project symbol `h7-platform:TLV803EA30DBZR` (RESET typed open collector); `part.mpn` is TLV803EA30DBZR.**
+*Amended 2026-11-12 (below): the entry first ruled `Power_Supervisor:TPS3839DBZ` as a pin stand-in, and the body below keeps that reasoning as history. TPS3839DBZ types the RESET pin push-pull and the TLV803E's is open drain, so it was replaced.*
 - **Label:** Controller ruling (the owner may override).
 - **Date:** 2026-11-12.
 - **Decides:** no installed symbol is named for the TLV803E. TI's SLVSES2J (rev. May 2021) p. 5 Table 6-1, column "DCK, DBZ", gives pin 1 GND, pin 2 RESET (overbarred, active low), pin 3 VDD; p. 4 Figure 6-1 labels it "Pin 1 = GND", and section 12.1's worked example, TLV803EA29DBZR, reads "Pin 1 = GND". TLV803EA30DBZR carries no R or V pinout letter before DBZ, so that column applies (Table 12-1's letters are the alternatives). The first `Power_Supervisor` symbol in library order whose pins match by name and number is TPS3839DBZ (`1=GND 2=~{RESET} 3=VDD`). The ones before it differ: LM809 (pin 3 VCC), TCM809 (V_{DD}) and TLV810EA29DBZ (RESET without the overbar: the active-high part).
@@ -1667,7 +1667,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 **The module root fits US Letter's inner frame, with every sheet symbol on the paper.**
 - **Label:** Controller ruling (the owner may override).
 - **Date:** 2026-11-12.
-- **What was wrong.** The root as assembled at Task 7e overshot US Letter by 779 mm, and 9 of its 12 sheet symbols lay off the paper. `tools/draught/assemble-root.ts` used a fixed arrangement: three blocks to a row, pins 200 mil apart down the left edge. The mcu sheet alone was 462 mm tall. `assemble-root.ts` is this repository's own tool, so making it fit is completing that tool's job, not a judgement of layout.
+- **What was wrong.** The root as assembled at Task 7e overshot US Letter by 779 mm, and 10 of its 12 sheet symbols lay off the paper (`root_sheets_fit.py` on that root: "2 of 12"). `tools/draught/assemble-root.ts` used a fixed arrangement: three blocks to a row, pins 200 mil apart down the left edge. The mcu sheet alone was 462 mm tall. `assemble-root.ts` is this repository's own tool, so making it fit is completing that tool's job, not a judgement of layout.
 - **Decides:**
   - The arrangement fits the frame (`tools/draught/root-arrangement.ts`). It is deterministic, and it is a fixed rule computed from the blocks' port counts and the lengths of their texts:
     - Pins are 100 mil apart, and stubs are 200 mil long.
@@ -1677,8 +1677,8 @@ Each entry below is a controller ruling. The owner may override any of them. Non
     - A board that cannot fit is refused, naming the block.
   - Two repair steps follow, because of what the first render showed:
     - **Pin names.** akcli 0.22.0 writes no justify on a sheet pin, so kicad-cli 10.0.5 centres a pin name about 1.45 mm inside the edge. A long name then crossed its box edge and its stub, and ran into its own label. `repair/tools/root_pin_justify.py` justifies west-edge pins left and east-edge pins right, as KiCad's own files write them (810 sheet pins in KiCad's demo projects, read from the files).
-    - **PWR_FLAGs.** With pins 100 mil apart, a PWR_FLAG drawn toward a neighbouring stub put its text on that stub's label. `repair/tools/root-flags.ts` now puts each root flag on the first stub label of its net that is the top pin of its edge (rotation 0), or else the bottom pin (rotation 180). That puts 3V3_D on mcu's west edge, and VREF_A on decoupling.
-  - After both steps, a measurement of the render's drawn text finds no two text boxes overlapping.
+    - **PWR_FLAGs.** With pins 100 mil apart, a PWR_FLAG drawn toward a neighbouring stub put its text on that stub's label. `repair/tools/root-flags.ts` now puts each root flag on the first stub label of its net that is the top pin of its edge (rotation 0), or else the bottom pin (rotation 180). That puts 3V3_D on mcu's west edge, VREF_A on decoupling's west edge, and VSSA on mcu's east edge.
+  - After both steps, a measurement of the render's drawn text finds no two text boxes overlapping. The measure is `repair/tools/svg_stroked_text.py`, which `verify-root.sh` reports and does not judge.
   - `repair/tools/verify-root.sh` now judges the paper:
     - `draughting/measure/paper_fit.py` must report "fits: yes".
     - `repair/tools/root_sheets_fit.py` must find every sheet box inside the frame and clear of the title block. paper_fit.py does not measure a sheet box, and on the old root it said nothing about the 9 sheets off the paper.

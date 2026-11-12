@@ -6,7 +6,8 @@
 #
 # A ROOT sheet exports as one PDF page per sheet of its hierarchy (the h7-module root: 13), so
 # rendering it needs a page: the optional third argument is a KiCad page number, passed to
-# kicad-cli's --pages for the PDF and the SVG alike, or `root`, which is read from the sheet's own
+# kicad-cli's --pages for the PDF and the SVG alike (but see the Sheet: check below: the SVG export
+# ignores --pages for a sub-sheet page, and such a page is refused), or `root`, which is read from the sheet's own
 # (sheet_instances (path "/" (page "N"))). With no page argument the PDF must have exactly one page;
 # a multi-page PDF is refused, naming the argument, rather than rendered as several PNGs.
 #
@@ -85,6 +86,19 @@ count="$(ls "$svgdir" | wc -l | tr -d ' ')"
 [ "$count" = 1 ] || fail "kicad-cli wrote $count SVG files, expected 1: $(ls "$svgdir" | tr '\n' ' ')"
 mv "$svgdir"/*.svg "$out/$stem.svg"
 [ -s "$out/$stem.svg" ] || fail "kicad-cli wrote no SVG"
+
+# The SVG must be the page the PDF is. kicad-cli 10.0.5's `sch export svg --pages N` ignores N for a
+# page of a sub-sheet and writes the root (the PDF export honours it), so the title block's
+# "Sheet:" text of the SVG is compared with the PDF's (Task 7e fix round 2, review I4). A mismatch
+# deletes every output and refuses, rather than leaving a PDF, PNG and SVG of two different pages.
+pdf_sheet="$(pdftotext "$out/$stem.pdf" - 2>/dev/null | grep -o 'Sheet: [^ ]*' | head -1)" || true
+svg_sheet="$(grep -o 'Sheet:[^<]*' "$out/$stem.svg" | head -1 | sed 's/[[:space:]]*$//')" || true
+[ -n "$pdf_sheet" ] || fail "the PDF's title block has no 'Sheet:' text to compare the SVG against"
+[ -n "$svg_sheet" ] || fail "the SVG's title block has no 'Sheet:' text to compare against the PDF's '$pdf_sheet'"
+if [ "$pdf_sheet" != "$svg_sheet" ]; then
+  rm -f "$out/$stem.pdf" "$out/$stem.svg" "$out/$stem.png"
+  fail "the PDF is '$pdf_sheet' but the SVG is '$svg_sheet': kicad-cli's SVG export ignores --pages for a sub-sheet page and writes the root, so page ${page:-none} cannot be rendered as an SVG through the root; render the sub-sheet's own .kicad_sch, or use the root page"
+fi
 
 status=0
 magick -density 150 "$out/$stem.pdf" -background white -alpha remove "$out/$stem.png" 2>"$err" || status=$?

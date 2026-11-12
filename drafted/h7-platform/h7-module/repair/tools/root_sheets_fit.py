@@ -5,7 +5,8 @@ the title block? (Ruling CR-MODULE-ROOT-FITS-LETTER, Task 7e fix round 1.)
 but not a `(sheet ...)` box, so on a root it can report "fits: yes" while a sheet box runs off the
 page. This reads every top-level `(sheet (at x y) (size w h) ...)` node and checks the whole box.
 
-The frame is paper_fit.py's FRAME_X and FRAME_Y (imported, not copied); the title block is
+The frame is paper_fit.py's FRAME_X and FRAME_Y, copied here and text-checked against paper_fit.py by
+`check_frame_constants` on every run (a moved frame is refused); the title block is
 `docs/research/2026-10-30-letter-repaper.md` section 3, US Letter landscape, KiCad 10.0.5.
 
 usage: root_sheets_fit.py <root.kicad_sch>
