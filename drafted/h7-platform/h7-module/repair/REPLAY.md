@@ -18,6 +18,7 @@ is not assembled yet.
 | end: `id_strap.kicad_sch` | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
 | end: `qspi.kicad_sch` | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 | end: `vdda.kicad_sch` (Task 7c) | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
+| end: `sdram.kicad_sch` (Task 7c) | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
 
 ## Replay
 

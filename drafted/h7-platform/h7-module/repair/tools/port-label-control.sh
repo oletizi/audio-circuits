@@ -24,7 +24,7 @@ bad() {
 }
 
 echo "== P1. every committed module page verifies, no port on the wrong net"
-for block in power interface clock reset_boot swd usb_dfu id_strap qspi vdda; do
+for block in power interface clock reset_boot swd usb_dfu id_strap qspi vdda sdram; do
   sh "$here/verify.sh" "$block" "$pages/$block.kicad_sch" >"$work/$block.log" 2>&1 \
     || { cat "$work/$block.log" >&2; bad "the committed $block page did not verify"; }
   line="$(grep '^port labels: ' "$work/$block.log")" || { cat "$work/$block.log" >&2; bad "$block: verify.sh printed no port-label count"; }

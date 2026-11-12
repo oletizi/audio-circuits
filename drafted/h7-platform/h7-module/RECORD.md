@@ -26,6 +26,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `id_strap.kicad_sch` | block id_strap | `7649af4311431f60b159a7d6717c26d136ed3311182f3d5330f11a44eba6cf09` |
 | `qspi.kicad_sch` | block qspi | `a9578cf6b8bc881ce1cd57d98c862a80241e772c9e7e687195b897e33ca23ea1` |
 | `vdda.kicad_sch` | block vdda | `7f066a9ab786252b592d14ffaa8886e934876bcc678666b73c1922f06eee2444` |
+| `sdram.kicad_sch` | block sdram | `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -41,6 +42,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
 | qspi | UNREVIEWED; `verify.sh` exits 1 on one ERC error under the one-block root, awaiting a controller ruling (see its section) | `qspi.svg` |
 | vdda | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
+| sdram | UNREVIEWED; `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
 
 ## The drafts every repair starts from
 
@@ -120,7 +122,8 @@ ERC is itself a backstop, but it does not name the table entry at fault.
 **And about cross-page drivers.** Ruling
 [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
 `repair/tools/cross-page-drivers.ts` declares each signal net whose driver is on another page
-(FLASH_CLK -> mcu, U1 PF10, as the table stands), and the one-block root puts a stand-in driver, a
+(FLASH_CLK -> mcu, U1 PF10, and since Task 7c the sdram page's 22 input nets -> mcu, U1's FMC
+pins, as the table stands), and the one-block root puts a stand-in driver, a
 `Connector:TestPoint`, on that net's stub when the block under check is not the driving block. The
 stand-in only says the net is driven somewhere, and a passive pin cannot raise a `pin_to_pin`
 conflict, so the root assembled in Task 7b (step 4) must:
@@ -827,4 +830,105 @@ hierarchical label, so no port's net is named `/<port>`.
   C25 from DAMP down to the VSSA row.
 - FB1's and R2's Reference and Value are centred above their bodies, Reference over Value; every
   other part's are east of its body.
+- Every wire carries copperhead's default stroke.
+
+## sdram: the SDRAM and its decoupling (Task 7c)
+
+**Status: UNREVIEWED.** sha256 `0812ab0287bdb8e126f8bd3b2d4a09e54251ee6dc0e62e784d871b9947a48bcf`.
+Render: `sdram.svg` beside it.
+
+Repaired by the Task 7b steps, with `repair/sdram/layout.py` and `repair/sdram/02-wire.py`;
+`repair/replay.sh` runs it through `repair_block`.
+
+The block: `circuits/h7-platform/module/sdram.ts`, 9 parts (U3 `h7-platform:W9825G6KH`, C36 to C42,
+R9), 41 ports: 3V3_D, GND and SDRAM_NE, which each reach more than one pin, and 38 SDRAM nets that
+each reach one of U3's pins.
+
+### The rulings this page rests on
+
+- Design change C4 (`TOOLING.md`, "Project symbol libraries"): U3 is drawn with the project symbol
+  `h7-platform:W9825G6KH`, embedded in the sheet. The committed `sym-lib-table` already names
+  `circuits/h7-platform/h7-platform.kicad_sym` in place, and was not changed.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
+  are rows ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. U3's VDD/VDDQ (3V3_D) and VSS/VSSQ (GND) are power inputs, so the sheet alone reports
+  `power_pin_not_driven` on both; under the one-block root the stubs carry their flags, which clears
+  both. `pwr-flag-homes.ts` is unchanged.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  **22 entries added to `repair/tools/cross-page-drivers.ts`**, one per SDRAM net whose only pin on
+  this page is a U3 input: SDRAM_A0 to SDRAM_A12, SDRAM_BA0, SDRAM_BA1, SDRAM_NBL0, SDRAM_NBL1,
+  SDRAM_CLK, SDRAM_CKE, SDRAM_NWE, SDRAM_NRAS and SDRAM_NCAS, each driven by U1's FMC pin on the mcu
+  page. Each entry names the `module-pins.ts` line the assignment is taken from and the LQFP-176
+  position, and the table's model check holds every one of them on each run (the pin is on the net
+  in the model, U1 is in the mcu block, and the installed STM32H743IITx symbol names the pin as the
+  entry does). These are exactly the 22 `pin_not_driven` errors the draft reports on `/sdram/`.
+  SDRAM_NE needs none: R9's passive pin is on it with U3's /CS, and ERC reports nothing there. The
+  sixteen data nets need none: U3's DQ pins are bidirectional.
+- The stroke of the 38 one-pin SDRAM nets, which the draft drew no wire for: the default stroke the
+  draft gives SDRAM_NE (`sdram/layout.py`, `UNDRAWN_STROKES`, which says why no family colour was
+  taken, as on the qspi page). A drawing choice, not a transcription.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| ports on the wrong net (CR-MODULE-PORT-LABEL-CHECK) | 40 of 41 (only SDRAM_NE's net is `/SDRAM_NE`; 38 one-pin ports unwired) | 0 of 41 |
+| exported components, nets, net members | 9, 42, 70 | 9, 42, 70 |
+| exported nets carrying a model net name | 3 of 42 (/SDRAM_NE, 3V3_D, GND) | 41 of 42 (every port; the other is U3's NC pin 40) |
+| ERC, the sheet alone | 62 errors (`pin_not_connected` 38: U3's one-pin signals, unwired; `pin_not_driven` 22; `power_pin_not_driven` 2), 0 warnings | 55 errors (`pin_not_connected` 31: hierarchical labels with no parent sheet, see below; `pin_not_driven` 22; `power_pin_not_driven` 2), 39 warnings (`isolated_pin_label` 38, `lib_symbol_issues` 1, see below) |
+| ERC under a one-block root, `/sdram/` | 62 errors (`pin_not_connected` 38, `pin_not_driven` 22, `power_pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 80 errors (`hier_label_mismatch` 41, `label_dangling` 39), 3 warnings | 1 error (`label_dangling` 1: SDRAM_NE's stub label is alone with one block), 33 warnings (`isolated_pin_label` 32, `lib_symbol_issues` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings | 0 | 6: the west GND stubs from pins 6 and 12 over the west 3V3_D bus, at (91.44, 91.44) and (91.44, 106.68); SDRAM_NE's row over both west buses, at (91.44, 124.46) and (88.9, 124.46); the east 3V3_D stubs from pins 49 and 43 over the east GND bus, at (172.72, 91.44) and (172.72, 106.68) |
+| T-meetings | 0 | 0 |
+| orphan junctions, of total | 0 of 0 | 0 of 28 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 30 on 3 nets (29 global) | 41 on 41 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 30 | 0 of 41 |
+| symbols (parts, power symbols, PWR_FLAGs) | 9 (9, 0, 0) | 9 (9, 0, 0) |
+| placed pins | 70 | 70 |
+| wires, total length | 33, 193.04 mm | 102, 1932.94 mm |
+| wire corners | 1 | 6 |
+| junctions | 0 | 28 |
+
+**Two things in the ERC rows, measured and not diagnosed further:**
+
+- **`lib_symbol_issues`** (warning): *"The current configuration does not include the symbol library
+  'h7-platform'"*, on U3. kicad-cli reads the directory's `sym-lib-table` only for a sheet with a
+  `.kicad_pro` beside it, and `drafted/h7-platform/h7-module/` has none yet (the root's project
+  comes in Task 7 step 4). Measured with kicad-cli 10.0.5: this page, the committed `sym-lib-table`
+  and the library copied into the same relative layout in a scratch directory report the counts in
+  the table; with an empty `sdram.kicad_pro` (`{}`) added beside the page, the same counts by type
+  less the one `lib_symbol_issues`. The one-block root's scratch directory carries no `sym-lib-table`, so
+  it reports the warning on `/` as well. The draft's sheet-alone run does not, because `make draw`
+  writes a `.kicad_pro` beside each draft.
+- **The sheet-alone `pin_not_connected` count is 31, not 41.** Each is a hierarchical label with no
+  parent sheet; kicad-cli 10.0.5 did not report the labels GND, SDRAM_A0 to A3, SDRAM_A10,
+  SDRAM_BA0, SDRAM_BA1, SDRAM_D9 and SDRAM_D10 on this page, the same on two runs. An earlier layout
+  of this page (the capacitors 300 mil apart) gave 41. The sheet-alone run is reported, not judged
+  (`verify.sh` judges the run under the one-block root), so this changes no verdict; why kicad-cli
+  leaves those ten out was not looked into.
+
+### What the page shows, as observations
+
+- U3 in the middle, its pins in the part's own order: 1 to 27 down the west side, 28 to 54 up the
+  east side.
+- Each one-pin signal runs straight out by one short stub to its hierarchical label beside its pin.
+  West: SDRAM_D0 to D7, SDRAM_NBL0, NWE, NCAS, NRAS, BA0, BA1, A10 and A0 to A3. East: SDRAM_A4 to
+  A9, A11, A12, CKE, CLK, NBL1 and D8 to D15.
+- West of the west labels stand two vertical buses: 3V3_D nearer, taking VDD/VDDQ pins 1, 3, 9, 14
+  and 27; GND farther, taking VSSQ pins 6 and 12, whose stubs cross the 3V3_D bus. East of the east
+  labels: GND nearer, taking VSS/VSSQ pins 28, 41, 46, 52 and 54; 3V3_D farther, taking VDDQ pins
+  43 and 49, whose stubs cross the GND bus.
+- A 3V3_D row along the top of the page, from 3V3_D's hierarchical label at its west end, joins both
+  3V3_D buses; a GND row along the bottom, from GND's label, joins both GND buses.
+- SDRAM_NE runs west from pin 19 across both west buses to R9's pin 1 and on to its hierarchical
+  label on the west edge; R9 stands above it, its pin 2 rising to the 3V3_D row.
+- C36 to C42 stand in a row east of everything, each from the 3V3_D row down to the GND row.
+- U3's pin 40 (NC) carries a no-connect.
+- U3's Reference and Value are centred above its body, under the 3V3_D row; R9's and each
+  capacitor's are east of its body.
 - Every wire carries copperhead's default stroke.

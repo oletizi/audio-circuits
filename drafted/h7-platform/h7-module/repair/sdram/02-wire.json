@@ -1,0 +1,1950 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "sdram.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3200
+    ],
+    [
+     4400,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3400
+    ],
+    [
+     4400,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3500
+    ],
+    [
+     4400,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3700
+    ],
+    [
+     4400,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3800
+    ],
+    [
+     4400,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4000
+    ],
+    [
+     4400,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4100
+    ],
+    [
+     4400,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4300
+    ],
+    [
+     4400,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4500
+    ],
+    [
+     4400,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4600
+    ],
+    [
+     4400,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4700
+    ],
+    [
+     4400,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4800
+    ],
+    [
+     4400,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5000
+    ],
+    [
+     4400,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5100
+    ],
+    [
+     4400,
+     5100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5200
+    ],
+    [
+     4400,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5300
+    ],
+    [
+     4400,
+     5300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5400
+    ],
+    [
+     4400,
+     5400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5500
+    ],
+    [
+     4400,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5600
+    ],
+    [
+     4400,
+     5600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5600
+    ],
+    [
+     6000,
+     5600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5500
+    ],
+    [
+     6000,
+     5500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5400
+    ],
+    [
+     6000,
+     5400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5300
+    ],
+    [
+     6000,
+     5300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5200
+    ],
+    [
+     6000,
+     5200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5100
+    ],
+    [
+     6000,
+     5100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5000
+    ],
+    [
+     6000,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4900
+    ],
+    [
+     6000,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4800
+    ],
+    [
+     6000,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4700
+    ],
+    [
+     6000,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4600
+    ],
+    [
+     6000,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4300
+    ],
+    [
+     6000,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4100
+    ],
+    [
+     6000,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4000
+    ],
+    [
+     6000,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3800
+    ],
+    [
+     6000,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3700
+    ],
+    [
+     6000,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3500
+    ],
+    [
+     6000,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3400
+    ],
+    [
+     6000,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3200
+    ],
+    [
+     6000,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4900
+    ],
+    [
+     3200,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     4900
+    ],
+    [
+     2900,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     2600
+    ],
+    [
+     3600,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     3100
+    ],
+    [
+     3600,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     3300
+    ],
+    [
+     3600,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     3900
+    ],
+    [
+     3600,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     4400
+    ],
+    [
+     3600,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3100
+    ],
+    [
+     3600,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3300
+    ],
+    [
+     3600,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3900
+    ],
+    [
+     3600,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4400
+    ],
+    [
+     3600,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5700
+    ],
+    [
+     3600,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3500,
+     3600
+    ],
+    [
+     3500,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3500,
+     4200
+    ],
+    [
+     3500,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3600
+    ],
+    [
+     3500,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4200
+    ],
+    [
+     3500,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     3100
+    ],
+    [
+     6800,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     3300
+    ],
+    [
+     6800,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     3900
+    ],
+    [
+     6800,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     4400
+    ],
+    [
+     6800,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     5700
+    ],
+    [
+     6800,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     5700
+    ],
+    [
+     6800,
+     5700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4400
+    ],
+    [
+     6800,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3900
+    ],
+    [
+     6800,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3300
+    ],
+    [
+     6800,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3100
+    ],
+    [
+     6800,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6900,
+     2600
+    ],
+    [
+     6900,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6900,
+     3600
+    ],
+    [
+     6900,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4200
+    ],
+    [
+     6900,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3600
+    ],
+    [
+     6900,
+     3600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2900,
+     2600
+    ],
+    [
+     3200,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     2600
+    ],
+    [
+     3600,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3600,
+     2600
+    ],
+    [
+     6900,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6900,
+     2600
+    ],
+    [
+     7200,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     2600
+    ],
+    [
+     7600,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     2600
+    ],
+    [
+     8000,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     2600
+    ],
+    [
+     8400,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8400,
+     2600
+    ],
+    [
+     8800,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8800,
+     2600
+    ],
+    [
+     9200,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9200,
+     2600
+    ],
+    [
+     9600,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     2600
+    ],
+    [
+     3200,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     2600
+    ],
+    [
+     7200,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     2600
+    ],
+    [
+     7600,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     2600
+    ],
+    [
+     8000,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8400,
+     2600
+    ],
+    [
+     8400,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8800,
+     2600
+    ],
+    [
+     8800,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9200,
+     2600
+    ],
+    [
+     9200,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9600,
+     2600
+    ],
+    [
+     9600,
+     4250
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2900,
+     6000
+    ],
+    [
+     3500,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3500,
+     6000
+    ],
+    [
+     6800,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6800,
+     6000
+    ],
+    [
+     7200,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     6000
+    ],
+    [
+     7600,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     6000
+    ],
+    [
+     8000,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     6000
+    ],
+    [
+     8400,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8400,
+     6000
+    ],
+    [
+     8800,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8800,
+     6000
+    ],
+    [
+     9200,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9200,
+     6000
+    ],
+    [
+     9600,
+     6000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     6000
+    ],
+    [
+     7200,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     6000
+    ],
+    [
+     7600,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     6000
+    ],
+    [
+     8000,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8400,
+     6000
+    ],
+    [
+     8400,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8800,
+     6000
+    ],
+    [
+     8800,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9200,
+     6000
+    ],
+    [
+     9200,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     9600,
+     6000
+    ],
+    [
+     9600,
+     4550
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3200,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3200,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3500,
+    4200
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3500,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3600,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3600,
+    3100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3600,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3600,
+    3900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3600,
+    4400
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6800,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6800,
+    3900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6800,
+    4400
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6800,
+    5700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6800,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6900,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6900,
+    3600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7200,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7200,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7600,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7600,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8000,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8000,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8400,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8400,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8800,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8800,
+    6000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    9200,
+    2600
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    9200,
+    6000
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U3.40"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D0",
+   "at": [
+    4400,
+    3200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D1",
+   "at": [
+    4400,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D2",
+   "at": [
+    4400,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D3",
+   "at": [
+    4400,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D4",
+   "at": [
+    4400,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D5",
+   "at": [
+    4400,
+    4000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D6",
+   "at": [
+    4400,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D7",
+   "at": [
+    4400,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL0",
+   "at": [
+    4400,
+    4500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NWE",
+   "at": [
+    4400,
+    4600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NCAS",
+   "at": [
+    4400,
+    4700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NRAS",
+   "at": [
+    4400,
+    4800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA0",
+   "at": [
+    4400,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA1",
+   "at": [
+    4400,
+    5100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A10",
+   "at": [
+    4400,
+    5200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A0",
+   "at": [
+    4400,
+    5300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A1",
+   "at": [
+    4400,
+    5400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A2",
+   "at": [
+    4400,
+    5500
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A3",
+   "at": [
+    4400,
+    5600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A4",
+   "at": [
+    6000,
+    5600
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A5",
+   "at": [
+    6000,
+    5500
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A6",
+   "at": [
+    6000,
+    5400
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A7",
+   "at": [
+    6000,
+    5300
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A8",
+   "at": [
+    6000,
+    5200
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A9",
+   "at": [
+    6000,
+    5100
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A11",
+   "at": [
+    6000,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A12",
+   "at": [
+    6000,
+    4900
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CKE",
+   "at": [
+    6000,
+    4800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CLK",
+   "at": [
+    6000,
+    4700
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL1",
+   "at": [
+    6000,
+    4600
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D8",
+   "at": [
+    6000,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D9",
+   "at": [
+    6000,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D10",
+   "at": [
+    6000,
+    4000
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D11",
+   "at": [
+    6000,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D12",
+   "at": [
+    6000,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D13",
+   "at": [
+    6000,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D14",
+   "at": [
+    6000,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D15",
+   "at": [
+    6000,
+    3200
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NE",
+   "at": [
+    2900,
+    4900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    2900,
+    2600
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    2900,
+    6000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: sdram",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

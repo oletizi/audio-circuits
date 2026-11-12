@@ -1,0 +1,317 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "C36.1",
+   "C37.1",
+   "C38.1",
+   "C39.1",
+   "C40.1",
+   "C41.1",
+   "C42.1",
+   "R9.2",
+   "U3.1",
+   "U3.14",
+   "U3.27",
+   "U3.3",
+   "U3.43",
+   "U3.49",
+   "U3.9"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C36.2",
+   "C37.2",
+   "C38.2",
+   "C39.2",
+   "C40.2",
+   "C41.2",
+   "C42.2",
+   "U3.12",
+   "U3.28",
+   "U3.41",
+   "U3.46",
+   "U3.52",
+   "U3.54",
+   "U3.6"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "SDRAM_A0",
+  "pins": [
+   "U3.23"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A1",
+  "pins": [
+   "U3.24"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A10",
+  "pins": [
+   "U3.22"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A11",
+  "pins": [
+   "U3.35"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A12",
+  "pins": [
+   "U3.36"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A2",
+  "pins": [
+   "U3.25"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A3",
+  "pins": [
+   "U3.26"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A4",
+  "pins": [
+   "U3.29"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A5",
+  "pins": [
+   "U3.30"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A6",
+  "pins": [
+   "U3.31"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A7",
+  "pins": [
+   "U3.32"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A8",
+  "pins": [
+   "U3.33"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_A9",
+  "pins": [
+   "U3.34"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_BA0",
+  "pins": [
+   "U3.20"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_BA1",
+  "pins": [
+   "U3.21"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_CKE",
+  "pins": [
+   "U3.37"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_CLK",
+  "pins": [
+   "U3.38"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D0",
+  "pins": [
+   "U3.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D1",
+  "pins": [
+   "U3.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D10",
+  "pins": [
+   "U3.45"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D11",
+  "pins": [
+   "U3.47"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D12",
+  "pins": [
+   "U3.48"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D13",
+  "pins": [
+   "U3.50"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D14",
+  "pins": [
+   "U3.51"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D15",
+  "pins": [
+   "U3.53"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D2",
+  "pins": [
+   "U3.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D3",
+  "pins": [
+   "U3.7"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D4",
+  "pins": [
+   "U3.8"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D5",
+  "pins": [
+   "U3.10"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D6",
+  "pins": [
+   "U3.11"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D7",
+  "pins": [
+   "U3.13"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D8",
+  "pins": [
+   "U3.42"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_D9",
+  "pins": [
+   "U3.44"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NBL0",
+  "pins": [
+   "U3.15"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NBL1",
+  "pins": [
+   "U3.39"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NCAS",
+  "pins": [
+   "U3.17"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NE",
+  "pins": [
+   "R9.1",
+   "U3.19"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "SDRAM_NRAS",
+  "pins": [
+   "U3.18"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SDRAM_NWE",
+  "pins": [
+   "U3.16"
+  ],
+  "drafted": false
+ }
+]

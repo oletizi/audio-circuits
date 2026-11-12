@@ -1,0 +1,581 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "sdram.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "018ed063-85d7-569d-b39f-2061e299e3e6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    2900,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9450c6ae-b102-557e-8591-8d980a49fec6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    2900,
+    6000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6377d91f-874c-5a63-b165-8f304c515167"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A0",
+   "at": [
+    4400,
+    5300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f474dceb-7bd4-5934-9f20-f3847c2fdfcd"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A1",
+   "at": [
+    4400,
+    5400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "046f9b6d-ab48-548b-b7c9-e10a2ff1b13f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A10",
+   "at": [
+    4400,
+    5200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "efc7ad66-9c93-5e08-b7d3-be0fbaf96556"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A11",
+   "at": [
+    6000,
+    5000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f7459be6-96ac-5ec7-99cc-288d5d144417"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A12",
+   "at": [
+    6000,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b940c19a-7644-5ce7-a942-c5268aee7c7b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A2",
+   "at": [
+    4400,
+    5500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "08b29dbb-08e5-5ba9-9927-feba2d0c2302"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A3",
+   "at": [
+    4400,
+    5600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "da92bd42-5fe2-5c2f-8e9a-1e37c4cb44bc"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A4",
+   "at": [
+    6000,
+    5600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d98039b1-d0d0-5c83-a861-1999f3babead"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A5",
+   "at": [
+    6000,
+    5500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ac6da195-300d-56d3-b1d3-177904bb95b3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A6",
+   "at": [
+    6000,
+    5400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "adc76b8a-f738-5722-afa4-f996d25fe08d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A7",
+   "at": [
+    6000,
+    5300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bc4cf6d4-d853-5cc7-941e-4939187a0b52"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A8",
+   "at": [
+    6000,
+    5200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5187a140-0024-5e97-a387-bc24711e91a5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_A9",
+   "at": [
+    6000,
+    5100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "731c33c9-3a5a-5e48-979b-b4d3f66a8ae9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA0",
+   "at": [
+    4400,
+    5000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3945d7c6-e670-5818-aec7-32ba3164f6f4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_BA1",
+   "at": [
+    4400,
+    5100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8f62f42e-954b-5b2e-8dba-4d0f22df543f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CKE",
+   "at": [
+    6000,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "a0616512-dbb4-5e0a-b441-7d48fce254a5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_CLK",
+   "at": [
+    6000,
+    4700
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fe4046cc-d218-5173-b6ce-6681b4a7f103"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D0",
+   "at": [
+    4400,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e1a769df-f5eb-5345-a534-e7989f2d713a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D1",
+   "at": [
+    4400,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9cb1d743-9638-5bb1-9a83-6d3ab75d0ac6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D10",
+   "at": [
+    6000,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "546c38cd-2b7d-5419-aca3-f35ca24f93f9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D11",
+   "at": [
+    6000,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "69a612c2-5b60-5d33-9d35-d1d542769e1a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D12",
+   "at": [
+    6000,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "02c2b652-67e4-5afc-baee-a29fe739c08d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D13",
+   "at": [
+    6000,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "01f6be9c-2ad4-594a-8360-f444d8f80fb8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D14",
+   "at": [
+    6000,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6cb45bd9-eaa7-5e36-bb9a-9b00decaeb58"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D15",
+   "at": [
+    6000,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1964fc2c-29c5-5a18-b3c4-6a9f3f7ad04b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D2",
+   "at": [
+    4400,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "30b0eff5-478e-5219-b628-45eee4bc9ef1"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D3",
+   "at": [
+    4400,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7627ebbe-6a72-5206-915a-e0d776ce04db"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D4",
+   "at": [
+    4400,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2e396633-2d8d-52da-ae11-8cd21cc89bb4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D5",
+   "at": [
+    4400,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ef2f8a1c-3f04-501b-806a-b80f518a86f0"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D6",
+   "at": [
+    4400,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "18567e96-a174-514c-8e2d-90d467ae012f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D7",
+   "at": [
+    4400,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d6b4d48c-0fb6-5aed-a167-786dab50f8c9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D8",
+   "at": [
+    6000,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e36cd889-d0c0-5e4d-b742-31cb59740d3b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_D9",
+   "at": [
+    6000,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5ea7740c-57ad-5d7a-bcb6-fda951a58196"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL0",
+   "at": [
+    4400,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "92c37a2d-7f71-5276-b569-de4fa16566fc"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NBL1",
+   "at": [
+    6000,
+    4600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7fb3b35d-3c50-57cb-89db-ade2cc8e7cfe"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NCAS",
+   "at": [
+    4400,
+    4700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "02376fcb-9803-5c84-ad97-830b06f6b9d7"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NE",
+   "at": [
+    2900,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "00cf2727-4262-5dc6-99d9-fc7b0901119b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NRAS",
+   "at": [
+    4400,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "287f3bd0-f869-5b77-97cc-e6413c4fb210"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SDRAM_NWE",
+   "at": [
+    4400,
+    4600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}
