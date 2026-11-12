@@ -20,7 +20,9 @@
  * source. Task 7c added the sdram page's 22 input nets: every SDRAM address, bank, byte-mask, clock
  * and command net whose only pin on that page is a W9825G6KH input, driven by the MCU's FMC pin.
  * SDRAM_NE is not one: R9, a passive pin, is on it with U3's /CS, and ERC reports nothing there. The
- * sixteen data nets are not: U3's DQ pins are bidirectional.
+ * sixteen data nets are not: U3's DQ pins are bidirectional. Task 7d added the mcu page's two:
+ * NRST and BOOT0, U1's two KiCad input pins whose nets have no other pin on that page, each driven
+ * on the reset_boot page.
  * The assembled module's root ERC (Task 7 step 4) must clear each entry with its REAL driver, since
  * the stand-in only says the net is driven somewhere (`../../RECORD.md`).
  *
@@ -88,6 +90,25 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
   mcuDriver("SDRAM_NRAS", "59", "PF11", "circuits/h7-platform/module-pins.ts:69 (SDRAM_NRAS on PF11, FMC_SDNRAS; pedals CORE-BRIEF.md:354 @5b926d0); PF11 is LQFP-176 position 59 in ST's pin data"),
   mcuDriver("SDRAM_NCAS", "160", "PG15", "circuits/h7-platform/module-pins.ts:70 (SDRAM_NCAS on PG15, FMC_SDNCAS; pedals CORE-BRIEF.md:355 @5b926d0); PG15 is LQFP-176 position 160 in ST's pin data"),
   mcuDriver("SDRAM_CKE", "43", "PH2", "circuits/h7-platform/module-pins.ts:72 (SDRAM_CKE on PH2, FMC_SDCKE0; pedals split spec 2026-10-05-h7-modular-split-design.md:518 (section 6.2, D23): FMC_SDCKE0 PC3_C to PH2; CORE-BRIEF.md:357 gave PC3_C); PH2 is LQFP-176 position 43 in ST's pin data"),
+  // Task 7d, the mcu page: its two KiCad input pins whose net has no other pin on the page. Every
+  // other U1 pin on a port is bidirectional (the GPIOs), power (3V3_D, VREF_A, GND, VSSA, VCAP), or
+  // VREF+ and PDR_ON, inputs on nets whose root stub carries the root's PWR_FLAG.
+  {
+    net: "NRST",
+    block: "reset_boot",
+    designator: "U5",
+    pin: "2",
+    pinName: "~{RESET}",
+    source: "circuits/h7-platform/module/reset-boot.ts:27 (u_sup pin 2 RESET to NRST, open drain; processor-and-memory.md:264; CORE-11); U5's symbol Power_Supervisor:TPS3839DBZ types pin 2 output (ruling CR-MODULE-SUPERVISOR-SYMBOL)",
+  },
+  {
+    net: "BOOT0",
+    block: "reset_boot",
+    designator: "SW2",
+    pin: "1",
+    pinName: "1",
+    source: "circuits/h7-platform/module/reset-boot.ts:35 (sw_boot, the BOOT button to VDD, pin 1 on BOOT0; processor-and-memory.md:265; CORE-12). R12, the 4.7 kOhm pull-down on the same page, is the other passive pin on BOOT0 there; it is not named because the model keys a resistor's pins a/b, not by symbol pin number, which this table's check requires",
+  },
 ]
 
 /** Where the stand-in comes from: one passive pin at the symbol origin (measured; the ruling). */
