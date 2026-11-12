@@ -1,0 +1,574 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "reset_boot.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3700,
+     3700
+    ],
+    [
+     4300,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     3700
+    ],
+    [
+     5900,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     3700
+    ],
+    [
+     6500,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6500,
+     3700
+    ],
+    [
+     7200,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     3700
+    ],
+    [
+     4300,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     3700
+    ],
+    [
+     5900,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6500,
+     3700
+    ],
+    [
+     6500,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     3700
+    ],
+    [
+     7200,
+     3850
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3700,
+     5000
+    ],
+    [
+     4700,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5000
+    ],
+    [
+     5100,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     5000
+    ],
+    [
+     5900,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     5000
+    ],
+    [
+     6500,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6500,
+     5000
+    ],
+    [
+     7600,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     5000
+    ],
+    [
+     8000,
+     5000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     5000
+    ],
+    [
+     4700,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     5000
+    ],
+    [
+     5100,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     5000
+    ],
+    [
+     5900,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6500,
+     5000
+    ],
+    [
+     6500,
+     4600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     5000
+    ],
+    [
+     7600,
+     4800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     5000
+    ],
+    [
+     8000,
+     4850
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3700,
+     4300
+    ],
+    [
+     4300,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     4300
+    ],
+    [
+     4700,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4300
+    ],
+    [
+     5100,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     4300
+    ],
+    [
+     4300,
+     4200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     4300
+    ],
+    [
+     4700,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4300
+    ],
+    [
+     5100,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6900,
+     4300
+    ],
+    [
+     7200,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     4300
+    ],
+    [
+     7600,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     4300
+    ],
+    [
+     8000,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     4300
+    ],
+    [
+     8400,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7200,
+     4300
+    ],
+    [
+     7200,
+     4150
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7600,
+     4300
+    ],
+    [
+     7600,
+     4500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     4300
+    ],
+    [
+     8000,
+     4450
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4300,
+    3700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4300,
+    4300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    4300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5100,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5900,
+    3700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5900,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6500,
+    3700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6500,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7200,
+    4300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7600,
+    4300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7600,
+    5000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    8000,
+    4300
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    3700,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    3700,
+    5000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "BOOT0",
+   "at": [
+    3700,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "NRST",
+   "at": [
+    8400,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-module: reset_boot",
+   "date": "2026-11-12",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

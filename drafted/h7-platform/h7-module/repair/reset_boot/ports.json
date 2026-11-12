@@ -1,0 +1,43 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "C46.1",
+   "R11.1",
+   "SW2.2",
+   "U5.3"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "BOOT0",
+  "pins": [
+   "C48.1",
+   "R12.1",
+   "SW2.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C46.2",
+   "C47.2",
+   "C48.2",
+   "R12.2",
+   "SW1.2",
+   "U5.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "NRST",
+  "pins": [
+   "C47.1",
+   "R11.2",
+   "SW1.1",
+   "U5.2"
+  ],
+  "drafted": true
+ }
+]

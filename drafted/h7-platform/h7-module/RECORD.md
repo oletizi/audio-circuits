@@ -20,6 +20,7 @@ in the table below; `docs/schematic/verdicts.md` is where it is recorded.
 | `power.kicad_sch` | block power | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | `interface.kicad_sch` | block interface | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | `clock.kicad_sch` | block clock | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
+| `reset_boot.kicad_sch` | block reset_boot | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
 
 The root sheet, its `.kicad_pro` and the block sheets not listed above are not drawn yet. This table
 has no root row, so `registerDraftedProjectTests` is not yet bound to this directory.
@@ -29,6 +30,7 @@ has no root row, so `registerDraftedProjectTests` is not yet bound to this direc
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
 | interface | UNREVIEWED | `interface.svg` |
 | clock | UNREVIEWED | `clock.svg` |
+| reset_boot | UNREVIEWED | `reset_boot.svg` |
 
 ## The drafts every repair starts from
 
@@ -371,3 +373,59 @@ ports GND, HSE_IN and HSE_OUT.
   GND's hierarchical label is at the row's west end, under HSE_IN's.
 - Y1's Reference and Value are centred above its case outline; C44's and C45's are to their east.
 - Wires on HSE_IN and HSE_OUT carry copperhead's blue stroke; GND its default.
+
+## reset_boot: the NRST supervisor and the two buttons
+
+**Status: UNREVIEWED.** sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`.
+Render: `reset_boot.svg` beside it.
+
+The block: `circuits/h7-platform/module/reset-boot.ts`, 8 parts (U5, C46, R11, C47, SW1, R12, C48,
+SW2), ports 3V3_D, BOOT0, GND and NRST.
+
+### The rulings this page rests on
+
+- [CR-MODULE-SUPERVISOR-SYMBOL](../../../docs/h7-platform/decisions.md#cr-module-supervisor-symbol):
+  U5 is drawn with `Power_Supervisor:TPS3839DBZ` and reads "TLV803EA30DBZR".
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
+  are rows ending in their hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. U5's VDD (3V3_D) and GND are power inputs, so the sheet alone reports
+  `power_pin_not_driven` on both; their flags live on the root (3V3_D) and the power page (GND), and
+  under the one-block root the stubs carry them, which clears both.
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| exported components, nets, net members | 8, 4, 17 | 8, 4, 17 |
+| exported nets carrying a model net name | 4 of 4 | 4 of 4 |
+| ERC, the sheet alone | 2 errors (`power_pin_not_driven` 2), 0 warnings | 6 errors (`pin_not_connected` 4: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, on 3V3_D and GND), 0 warnings |
+| ERC under a one-block root, `/reset_boot/` | 2 errors (`power_pin_not_driven` 2), 1 warning (`same_local_global_label`) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 6 errors (`hier_label_mismatch` 4, `label_dangling` 2), 2 warnings | 2 errors (`label_dangling` 2: the BOOT0 and NRST stub labels are alone with one block), 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 1, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 2 | 0 of 13 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 10 on 4 nets (5 global) | 4 on 4 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 10 | 0 of 4 |
+| symbols (parts, power symbols, PWR_FLAGs) | 8 (8, 0, 0) | 8 (8, 0, 0) |
+| placed pins | 17 | 17 |
+| wires, total length | 26, 114.30 mm | 33, 365.76 mm |
+| wire corners | 7 | 3 |
+| junctions | 2 | 13 |
+
+### What the page shows, as observations
+
+- A 3V3_D row along the top and a GND row along the bottom, each entering from its hierarchical
+  label on the west edge.
+- West part: SW2 stands between the 3V3_D row and the BOOT0 row, which runs west to BOOT0's
+  hierarchical label on the west edge, between the 3V3_D and GND labels. R12 and C48 hang from the
+  BOOT0 row to GND.
+- East part: C46 stands between the rows. U5 has VDD (pin 3) up to 3V3_D, GND (pin 1) down to GND,
+  and ~RESET (pin 2) east on the NRST row. R11 hangs from 3V3_D to the NRST row; C47 and SW1 hang
+  from it to GND. The NRST row ends in NRST's hierarchical label on the east edge.
+- Every part's Reference and Value are horizontal: east of each resistor, capacitor and SW1, west of
+  SW2, and under the NRST row east of U5's GND drop for U5.
+- Every wire carries copperhead's default stroke.

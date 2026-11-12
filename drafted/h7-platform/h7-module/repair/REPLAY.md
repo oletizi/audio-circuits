@@ -12,6 +12,7 @@ is not assembled yet.
 | end: `power.kicad_sch` | `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f` |
 | end: `interface.kicad_sch` | `0cfb3dac4f7a8c8f63c965390c36897a0f21793d865e379070d6d610cd028296` |
 | end: `clock.kicad_sch` | `83f751b213f71266095f3826df5283bc5ae53208d95f4757f5d53824a83b55b1` |
+| end: `reset_boot.kicad_sch` | `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397` |
 
 ## Replay
 

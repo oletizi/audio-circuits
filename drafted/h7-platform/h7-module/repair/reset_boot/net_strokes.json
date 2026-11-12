@@ -1,0 +1,6 @@
+{
+ "3V3_D": "(stroke (width 0.254) (type default))",
+ "BOOT0": "(stroke (width 0.254) (type default))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "NRST": "(stroke (width 0.254) (type default))"
+}

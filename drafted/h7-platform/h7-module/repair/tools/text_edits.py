@@ -106,7 +106,11 @@ def plan_for(ref, x, y, rot):
     if ref not in layout.FIELDS:
         raise SystemExit(f"text_edits: layout.FIELDS has no placement for {ref}")
     angle = rot % 180
-    return {f: (x + dx, y + dy, angle, just) for f, (dx, dy, just) in layout.FIELDS[ref].items()}
+    # KiCad applies a field's justification in the symbol's frame: on a part at rotation 90 or 180 a
+    # field written "right" renders left-justified on the page, and the reverse (seen on the
+    # reset_boot page's SW2, rotation 90). FIELDS says how a field should READ, so swap it here.
+    flip = {"left": "right", "right": "left"} if rot in (90, 180) else {}
+    return {f: (x + dx, y + dy, angle, flip.get(just, just)) for f, (dx, dy, just) in layout.FIELDS[ref].items()}
 
 
 def edit_block(text, ref, plan):
