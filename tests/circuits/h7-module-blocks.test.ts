@@ -21,9 +21,11 @@ import { resetBootBlock } from "../../circuits/h7-platform/module/reset-boot.ts"
 import { swdBlock } from "../../circuits/h7-platform/module/swd.ts"
 import { idStrapBlock } from "../../circuits/h7-platform/module/id-strap.ts"
 import { powerBlock } from "../../circuits/h7-platform/module/power.ts"
+import { interfaceBlock } from "../../circuits/h7-platform/module/interface.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  interface: interfaceBlock,
   power: powerBlock,
   id_strap: idStrapBlock,
   swd: swdBlock,
@@ -332,5 +334,17 @@ describe("Power (power.md :256, :270, :370-382; PWR-05 to PWR-07; R-47, R-48, CR
     expect(net.components).toHaveLength(19)
     const onVin = net.components.filter((c) => Object.values(netsOf(c)).includes("VIN_MOD")).map((c) => c.id).sort()
     expect(onVin).toEqual(["l_filt", "r_uv1"])
+  })
+})
+
+describe("Interface headers (architecture.md section 4.2, 4.11; module-interface.json)", () => {
+  const net = interfaceBlock()
+  test("pad n of J_MOD_A is contract pin n, of J_MOD_B pin n + 20; reserved pins 16-19 NC; GND on 20 and 40", () => {
+    const a = netsOf(only(net, "j_mod_a"))
+    const b = netsOf(only(net, "j_mod_b"))
+    expect([a["1"], a["11"], a["16"], a["19"], a["20"]]).toEqual(["SPARE1", "USB_EN_N", "NC", "NC", "GND"])
+    expect([b["1"], b["11"], b["18"], b["19"], b["20"]]).toEqual(["VREF_A", "USB_VBUS_SENSE", "3V3_D", "VIN_MOD", "GND"])
+    expect(Object.keys(a)).toHaveLength(20)
+    expect(Object.keys(b)).toHaveLength(20)
   })
 })
