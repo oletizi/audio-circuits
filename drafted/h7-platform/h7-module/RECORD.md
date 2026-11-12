@@ -43,12 +43,12 @@ sha256. `registerDraftedProjectTests` binds this table.
 | --- | --- | --- |
 | root | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify-root.sh` exits 0: root ERC 0 errors, with one excluded violation (`pin_to_pin` on `/mcu/`, U1 pins 81 and 125, CR-MODULE-VCAP-ERC). Task 7e's one NRST `pin_to_pin` error was cleared in fix round 1 by retyping U5's symbol (see "The root's ERC error at Task 7e", below) | `h7-module.svg` |
 | power | **reviewed 2026-11-12**, *"approved"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `power.svg` |
-| interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `interface.svg` |
-| clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `clock.svg` |
+| interface | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `interface.svg` |
+| clock | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `clock.svg` |
 | reset_boot | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`) of the changed page, sha256 `00407478…`. History: The owner's verdict *"approved. proceed"* (2026-11-12, `docs/schematic/verdicts.md`) was of sha256 `ca60cfca271a78d79085015c5d5ffa6b7a7812701842b81b00adaec6f4954397`. The page now at sha256 `00407478a4357332aa46164387305ba433dec173796b8d343d3bad86e09bdd24` has U5's symbol swapped under the amended CR-MODULE-SUPERVISOR-SYMBOL (Task 7e fix round 1); that verdict does not bind it | `reset_boot.svg` |
-| swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `swd.svg` |
-| usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `usb_dfu.svg` |
-| id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 below | `id_strap.svg` |
+| swd | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `swd.svg` |
+| usb_dfu | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `usb_dfu.svg` |
+| id_strap | **reviewed 2026-11-12**, *"approved. proceed"*, recorded in `docs/schematic/verdicts.md` against the sha256 above | `id_strap.svg` |
 | qspi | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 since ruling CR-MODULE-CROSS-PAGE-DRIVERS (27bc5a0); before it, it exited 1 (the history is in its section) | `qspi.svg` |
 | vdda | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `vdda.svg` |
 | sdram | **reviewed 2026-11-12**, *"approved"* (`docs/schematic/verdicts.md`); `verify.sh` exits 0 (Task 7c) | `sdram.svg` |
