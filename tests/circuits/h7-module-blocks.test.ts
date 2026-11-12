@@ -20,9 +20,11 @@ import { clockBlock } from "../../circuits/h7-platform/module/clock.ts"
 import { resetBootBlock } from "../../circuits/h7-platform/module/reset-boot.ts"
 import { swdBlock } from "../../circuits/h7-platform/module/swd.ts"
 import { idStrapBlock } from "../../circuits/h7-platform/module/id-strap.ts"
+import { powerBlock } from "../../circuits/h7-platform/module/power.ts"
 import { mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 
 const BLOCKS: Readonly<Record<string, () => Network>> = {
+  power: powerBlock,
   id_strap: idStrapBlock,
   swd: swdBlock,
   reset_boot: resetBootBlock,
@@ -267,5 +269,68 @@ describe("ID strap (processor-and-memory.md:277; CR-MODULE-ID-STRAP-PIN, CR-MODU
     expect(Reflect.get(only(net, "r_id_bottom").parameters, "ohms")).toBe(2_490)
     expect(nets("r_id_bottom")).toEqual(["GND", "MODULE_ID_STRAP"])
     expect(capacitors(net)).toEqual(["1.00e-7 GND|MODULE_ID_STRAP"])
+  })
+})
+
+describe("Power (power.md :256, :270, :370-382; PWR-05 to PWR-07; R-47, R-48, CR-MODULE-VIN-PROTECTION)", () => {
+  const net = powerBlock()
+  const nets = (id: string): string[] => Object.values(netsOf(only(net, id))).sort()
+  const ohms = (id: string): unknown => Reflect.get(only(net, id).parameters, "ohms")
+  const farads = (id: string): unknown => Reflect.get(only(net, id).parameters, "farads")
+
+  test("U_BUCK: RT no-connect, EN, VIN = VIN_BUCK, GND, SW, BST, SS, FB (PWR-06)", () => {
+    const u = netsOf(only(net, "u_buck"))
+    expect(u["1"]).toBe("NC")
+    expect(u["4"]).toBe("GND")
+    expect(only(net, "u_buck").part?.mpn).toBe("TPS62933FDRLR")
+    // The private nets are the block's own; their pins are checked through the parts on them.
+    expect(nets("l_filt")).toEqual(["VIN_BUCK", "VIN_MOD"].sort())
+    expect(u["3"]).toBe("VIN_BUCK")
+  })
+  test("the input network: L_FILT from VIN_MOD, C_BIN1, C_BIN2, C_BINHF, and R_DAMP with C_DAMP in series to GND", () => {
+    expect(capacitors(net).filter((c) => c.endsWith("GND|VIN_BUCK"))).toEqual(["1.00e-5 GND|VIN_BUCK", "1.00e-5 GND|VIN_BUCK", "1.00e-7 GND|VIN_BUCK"])
+    expect(ohms("r_damp")).toBe(0.22)
+    expect(farads("c_damp")).toBe(47e-6)
+    const dampNode = nets("r_damp").find((n) => n !== "VIN_BUCK") ?? "missing"
+    expect(nets("r_damp")).toContain("VIN_BUCK")
+    // C_DAMP is C_Polarized: pin 1 (a) is +, on the damping node; pin 2 (b) on GND.
+    expect(netsOf(only(net, "c_damp"))).toEqual({ a: dampNode, b: "GND" })
+    expect(Reflect.get(only(net, "l_filt").parameters, "henries")).toBe(4.7e-6)
+  })
+  test("EN from VIN_MOD through R_UV1 18.0 k, R_UV2 4.30 k to GND", () => {
+    const en = netsOf(only(net, "u_buck"))["2"] ?? "missing"
+    expect(ohms("r_uv1")).toBe(18_000)
+    expect(nets("r_uv1")).toEqual([en, "VIN_MOD"].sort())
+    expect(ohms("r_uv2")).toBe(4_300)
+    expect(nets("r_uv2")).toEqual([en, "GND"].sort())
+  })
+  test("SW to L_BUCK 4.7 uH to 3V3_D; BST through R_BST 0 ohm and C_BST 100 nF to SW", () => {
+    const u = netsOf(only(net, "u_buck"))
+    const sw = u["5"] ?? "missing"
+    const bst = u["6"] ?? "missing"
+    expect(nets("l_buck")).toEqual([sw, "3V3_D"].sort())
+    expect(Reflect.get(only(net, "l_buck").parameters, "henries")).toBe(4.7e-6)
+    expect(ohms("r_bst")).toBe(0)
+    const mid = nets("r_bst").find((n) => n !== bst) ?? "missing"
+    expect(nets("r_bst")).toContain(bst)
+    expect(nets("c_bst")).toEqual([mid, sw].sort())
+    expect(farads("c_bst")).toBe(100e-9)
+  })
+  test("SS 33 nF to GND; FB 32.4 k from 3V3_D and 10.0 k to GND", () => {
+    const u = netsOf(only(net, "u_buck"))
+    expect(nets("c_ss")).toEqual([u["7"] ?? "missing", "GND"].sort())
+    expect(farads("c_ss")).toBe(33e-9)
+    expect(nets("r_fb_top")).toEqual([u["8"] ?? "missing", "3V3_D"].sort())
+    expect(ohms("r_fb_top")).toBe(32_400)
+    expect(nets("r_fb_bottom")).toEqual([u["8"] ?? "missing", "GND"].sort())
+    expect(ohms("r_fb_bottom")).toBe(10_000)
+  })
+  test("the output: 3 x 22 uF plus 100 nF on 3V3_D", () => {
+    expect(capacitors(net).filter((c) => c.endsWith("3V3_D|GND"))).toEqual(["1.00e-7 3V3_D|GND", "2.20e-5 3V3_D|GND", "2.20e-5 3V3_D|GND", "2.20e-5 3V3_D|GND"])
+  })
+  test("nothing else: 19 parts, and nothing ahead of L_FILT but R_UV1 (CR-MODULE-VIN-PROTECTION)", () => {
+    expect(net.components).toHaveLength(19)
+    const onVin = net.components.filter((c) => Object.values(netsOf(c)).includes("VIN_MOD")).map((c) => c.id).sort()
+    expect(onVin).toEqual(["l_filt", "r_uv1"])
   })
 })
