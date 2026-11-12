@@ -77,18 +77,12 @@
  */
 import fs from "node:fs"
 import path from "node:path"
-import {
-  DRAFT_TOOLS,
-  draftWithCopperhead,
-} from "../draught/draw-draft.ts"
+import { DRAFT_TOOLS } from "../draught/draw-draft.ts"
 import { checkPartition } from "../draught/draw-partition.ts"
-import { projectSymbolLibrariesFor, resolveDrawIntent } from "../draught/draw-intent.ts"
-import {
-  RENDER_TOOLS,
-  renderSheet,
-  repaperToUSLetter,
-  runMeasurementSuite,
-} from "../draught/draw-render.ts"
+import { projectSymbolLibrariesFor, resolveDrawingPages, resolveDrawIntent } from "../draught/draw-intent.ts"
+import { runDrawPages } from "../draught/draw-pages.ts"
+import { RENDER_TOOLS } from "../draught/draw-render.ts"
+import { draftRenderMeasure } from "../draught/draw-sheet.ts"
 import { checkToolchain, readLock, type Toolchain } from "../draught/toolchain.ts"
 import { loadDeclaration, type PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
@@ -289,9 +283,23 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
 
+  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
+
+  // Step 1.5 (design change C3): a circuit module exporting drawingPages() is drawn one page per
+  // block, by ../draught/draw-pages.ts; every other board continues below exactly as before.
+  let pages: Awaited<ReturnType<typeof resolveDrawingPages>>
+  try {
+    pages = await resolveDrawingPages({ board, declaration, override: options.intentPath })
+  } catch (error) {
+    return refusal(error instanceof Error ? error.message : String(error), advisorySections)
+  }
+  if (pages !== undefined) {
+    if ("refusal" in pages) return refusal(pages.refusal, advisorySections)
+    return runDrawPages({ board, declaration, pages: pages.pages, outDir, scope: SCOPE_DISCLOSURE, advisory: advisorySections })
+  }
+
   // Step 2: resolve the intent - a committed file, a circuit's drawingIntent() export, or a
   // refusal naming the board and both sources.
-  const outDir = options.outDir ?? path.join(repoRoot, "build", "draw", board)
   let resolvedIntent: Awaited<ReturnType<typeof resolveDrawIntent>>
   try {
     resolvedIntent = await resolveDrawIntent({
@@ -316,58 +324,20 @@ export async function runDraw(options: DrawOptions = {}): Promise<DrawResult> {
   } catch (error) {
     return refusal(error instanceof Error ? error.message : String(error), advisorySections)
   }
-  const draft = draftWithCopperhead({ outDir, board, intentPath: resolvedIntent.path, projectSymbolLibraries })
+  const sheet = draftRenderMeasure({ outDir, name: board, intentPath: resolvedIntent.path, projectSymbolLibraries })
   const stdoutSections: string[] = [
     SCOPE_DISCLOSURE,
     ...(partition.kind === "not-run" ? [partition.notice] : []),
     ...advisorySections,
-    `draft (copperhead, intent ${resolvedIntent.path}):\n${draft.stdout}`.trim(),
+    ...sheet.stdout,
   ]
-  const stderrSections: string[] = []
-  if (draft.stderr.trim() !== "") stderrSections.push(`draft:\n${draft.stderr.trim()}`)
-  if (!draft.ok) {
-    return { exitCode: 1, drew: false, stdout: stdoutSections.join("\n\n"), stderr: stderrSections.join("\n\n") }
+  const stderrSections: string[] = [...sheet.stderr]
+  if (!sheet.ok) {
+    if (!sheet.drafted) {
+      return { exitCode: 1, drew: false, stdout: stdoutSections.join("\n\n"), stderr: stderrSections.join("\n\n") }
+    }
+    return partialFailure(stdoutSections, stderrSections, sheet.schematicPath)
   }
-
-  // Step 4.5: re-paper to USLetter - every approved page's paper; copperhead's own draft
-  // engine cannot be asked to target it directly (see draw-draft.ts's draftWithCopperhead).
-  const repaper = repaperToUSLetter(draft.schematicPath)
-  stdoutSections.push(`re-paper (US Letter):\n${repaper.stdout}`.trim())
-  if (repaper.stderr.trim() !== "") stderrSections.push(`re-paper:\n${repaper.stderr.trim()}`)
-  if (!repaper.ok) {
-    return partialFailure(stdoutSections, stderrSections, draft.schematicPath)
-  }
-  // THREE OUTCOMES, NOT TWO (Task 5 fix round 2) - "overflow" is a finding about the board;
-  // "unmeasured" is the fit check itself not having run, and must read as exactly that, never
-  // as a claim about the board's content. Collapsing the two into one boolean is how a broken
-  // measurement tool used to report itself as a false layout finding.
-  if (repaper.fitStatus === "overflow") {
-    stderrSections.push(
-      `re-paper: ${board}'s content does not fit US Letter's inner frame after re-papering - see the ` +
-        "paper_fit.py measurement above. This is a finding, not a withholding ground " +
-        "(EVALUATING-DRAWINGS.md §3): the page is still rendered below.",
-    )
-  } else if (repaper.fitStatus === "unmeasured") {
-    stderrSections.push(
-      `re-paper: whether ${board}'s content fits US Letter's inner frame could not be determined - ` +
-        "see the paper_fit.py output above for why. This is the fit CHECK not running, not a " +
-        "finding about the board; the page is still rendered below.",
-    )
-  }
-
-  // Step 5: render, and the one crop a mechanical pass can write.
-  const render = renderSheet({ schematicPath: draft.schematicPath, outDir, board })
-  stdoutSections.push(`render (kicad-cli + ImageMagick):\n${render.stdout}`.trim())
-  if (render.stderr.trim() !== "") stderrSections.push(`render:\n${render.stderr.trim()}`)
-  if (!render.ok) {
-    return partialFailure(stdoutSections, stderrSections, draft.schematicPath)
-  }
-
-  // Step 6: the measurement suite. Findings are printed beside the page, never used to
-  // withhold it - the page is already written by this point.
-  const measurement = runMeasurementSuite(draft.schematicPath)
-  stdoutSections.push(`measurement suite (draughting/measure/):\n${measurement.report}`)
-  if (!measurement.ok) stderrSections.push("measurement suite: at least one script did not run cleanly - see stdout.")
 
   return {
     exitCode: 0,

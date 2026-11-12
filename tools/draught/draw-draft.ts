@@ -13,6 +13,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
 import { defaultCopperheadDir, defaultCopperheadTsx } from "./copperhead-install.ts"
+import type { DrawingPage } from "./drawing-pages.ts"
 
 /**
  * One board's committed copperhead intent, repository-relative.
@@ -189,6 +190,32 @@ export type Agreement = { readonly agrees: true } | { readonly agrees: false; re
 export function verifyIntentAgainstModel(intent: Intent, netlistText: string): Agreement {
   const modelSets = partitionOf(Object.values(importNetlist(netlistText).nets))
   const intentSets = partitionOf([...intent.nets.map((net) => net.pins), ...intent.noConnect.map((pin) => [pin])])
+  return comparePartitions(modelSets, intentSets)
+}
+
+/**
+ * THE PER-BLOCK PARTITION CHECK (design change C3): one block page's intent against the model's
+ * netlist RESTRICTED TO THAT BLOCK'S PARTS. A net crossing the block boundary is compared by the
+ * part of it inside the block, which is exactly what the block's page draws of it; a net with no
+ * pin in the block drops out. Which parts are the block's comes from the model's `Network.blocks`
+ * record, through the page's own refs (`./drawing-pages.ts` takes them from that record).
+ *
+ * A port net copperhead cannot draft (one pin in the block, `PagePort.drafted` false) is not in
+ * the intent; it is counted here as the singleton it is, so it is compared rather than skipped.
+ */
+export function verifyPageAgainstModel(page: DrawingPage, modelNets: Readonly<Record<string, readonly string[]>>): Agreement {
+  const refs = new Set(page.intent.parts.map((part) => part.ref))
+  const inBlock = (member: string): boolean => refs.has(member.slice(0, member.lastIndexOf(".")))
+  const restricted = Object.values(modelNets).map((members) => members.filter(inBlock)).filter((members) => members.length > 0)
+  const intentSets = [
+    ...page.intent.nets.map((net) => net.pins),
+    ...page.intent.noConnect.map((pin) => [pin]),
+    ...page.ports.filter((port) => !port.drafted).map((port) => port.pins),
+  ]
+  return comparePartitions(partitionOf(restricted), partitionOf(intentSets))
+}
+
+function comparePartitions(modelSets: readonly string[], intentSets: readonly string[]): Agreement {
   if (modelSets.join("\n") === intentSets.join("\n")) return { agrees: true }
   const disagreements: string[] = []
   for (const set of withoutOnce(modelSets, intentSets)) {

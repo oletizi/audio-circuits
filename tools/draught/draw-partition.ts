@@ -17,7 +17,9 @@
  */
 import fs from "node:fs"
 import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
-import { verifyIntentAgainstModel } from "./draw-draft.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
+import { verifyIntentAgainstModel, verifyPageAgainstModel } from "./draw-draft.ts"
+import type { DrawingPage } from "./drawing-pages.ts"
 
 type Intent = Parameters<typeof verifyIntentAgainstModel>[0]
 
@@ -82,6 +84,49 @@ export function checkPartition(opts: {
         "disagrees with the circuit model.",
       `  The fixture compared against is ${declaration.netlistPath}. TOOLING.md, section C2, says what to do for (a).`,
       ...agreement.disagreements,
+    ].join("\n"),
+  }
+}
+
+/**
+ * The same check for a MULTI-PAGE board (design change C3): each block page against the model's
+ * committed netlist restricted to that block's parts (`verifyPageAgainstModel`). With no netlist
+ * declared, a `pcb` board gets the C2 notice ONCE for the whole board, not once per page - there is
+ * one missing export, not one per page.
+ */
+export function checkPagesPartition(opts: {
+  readonly board: string
+  readonly declaration: PerfboardDeclaration
+  readonly pages: readonly DrawingPage[]
+}): PartitionOutcome {
+  const { board, declaration } = opts
+  if (declaration.netlistPath === undefined) {
+    if (declaration.kind === "pcb") return { kind: "not-run", notice: noIndependentNetlistNotice(board, declaration.file) }
+    return {
+      kind: "refused",
+      message: `${declaration.file} declares no "netlist" field, so there is no committed model export to verify ${board}'s pages against.`,
+    }
+  }
+  let nets: Readonly<Record<string, readonly string[]>>
+  try {
+    nets = importNetlist(fs.readFileSync(declaration.netlistPath, "utf8")).nets
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    return { kind: "refused", message: `could not read ${declaration.netlistPath}: ${detail}.` }
+  }
+  const disagreements: string[] = []
+  for (const page of opts.pages) {
+    const agreement = verifyPageAgainstModel(page, nets)
+    if (!agreement.agrees) disagreements.push(...agreement.disagreements.map((d) => `block ${page.block}: ${d}`))
+  }
+  if (disagreements.length === 0) return { kind: "agrees" }
+  return {
+    kind: "refused",
+    message: [
+      `${board}'s pages disagree with the model's committed netlist (${declaration.netlistPath}), compared block by ` +
+        "block, so nothing was drafted. The two causes in TOOLING.md section C2 apply to a page as to a board: " +
+        "the model moved on and the committed project is stale, or the model is wrong.",
+      ...disagreements,
     ].join("\n"),
   }
 }

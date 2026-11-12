@@ -23,6 +23,7 @@ import type { PerfboardDeclaration } from "../perfboard/declaration.ts"
 import { importCircuitModule } from "../perfboard/load.ts"
 import { moduleRepoRoot } from "../perfboard/repo-root.ts"
 import { COMMITTED_INTENT, parseIntent, type Intent } from "./draw-draft.ts"
+import type { DrawingPage } from "./drawing-pages.ts"
 
 export type DrawIntent = {
   readonly source: "committed" | "override" | "derived"
@@ -113,4 +114,59 @@ export async function projectSymbolLibrariesFor(declaration: PerfboardDeclaratio
     throw new Error(`${circuit} exports PROJECT_SYMBOL_LIBRARY "${exported}", which does not exist; the drawing names symbols in it.`)
   }
   return [exported]
+}
+
+/**
+ * A MULTI-PAGE board's pages (design change C3), read from its circuit module's `drawingPages()`
+ * export - never guessed from its declaration or its files. `undefined` when the module exports
+ * none: the board is one page, and resolves through `resolveDrawIntent` exactly as before.
+ *
+ * A module exporting `drawingPages` beside `drawingIntent`, or a board also named in
+ * `COMMITTED_INTENT`, refuses for the reason `resolveDrawIntent` refuses two sources: two
+ * declarations of one board's drawing are two places for one fact to be wrong. A test-only intent
+ * override refuses too - it names one sheet, and a multi-page board has several.
+ */
+export async function resolveDrawingPages(opts: {
+  readonly board: string
+  readonly declaration: PerfboardDeclaration
+  readonly override: string | undefined
+  readonly committed?: Readonly<Record<string, string>>
+}): Promise<{ readonly pages: readonly DrawingPage[] } | { readonly refusal: string } | undefined> {
+  const module = await importCircuitModule(opts.declaration)
+  const exported = module["drawingPages"]
+  if (exported === undefined) return undefined
+  const circuit = opts.declaration.circuitPath
+  const others = [
+    ...(module["drawingIntent"] !== undefined ? [`${circuit} also exports drawingIntent`] : []),
+    ...((opts.committed ?? COMMITTED_INTENT)[opts.board] !== undefined ? ["COMMITTED_INTENT in tools/draught/draw-draft.ts names it"] : []),
+    ...(opts.override !== undefined ? [`an intent override (${opts.override}) was given`] : []),
+  ]
+  if (others.length > 0) {
+    return {
+      refusal:
+        `${opts.board} declares a multi-page drawing (${circuit} exports drawingPages) and ${others.join(", and ")}. ` +
+        "Two declarations of one board's drawing are two places for one fact to be wrong: a multi-page board " +
+        "exports drawingPages() and nothing else.",
+    }
+  }
+  if (typeof exported !== "function") {
+    return { refusal: `${circuit} exports drawingPages as a ${typeof exported}, not a function returning the pages.` }
+  }
+  const pages: unknown = exported()
+  if (!Array.isArray(pages) || pages.length === 0 || !pages.every(isDrawingPage)) {
+    return {
+      refusal:
+        `${circuit}'s drawingPages() did not return a non-empty array of { block, intent, ports } - build it with ` +
+        "drawingPagesFromNetwork (tools/draught/drawing-pages.ts).",
+    }
+  }
+  return { pages }
+}
+
+function isDrawingPage(value: unknown): value is DrawingPage {
+  if (typeof value !== "object" || value === null) return false
+  const block: unknown = Reflect.get(value, "block")
+  const intent: unknown = Reflect.get(value, "intent")
+  const ports: unknown = Reflect.get(value, "ports")
+  return typeof block === "string" && typeof intent === "object" && intent !== null && Array.isArray(ports)
 }
