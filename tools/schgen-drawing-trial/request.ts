@@ -70,7 +70,8 @@ import path from "node:path"
 import { intendedLibId } from "../../lib/kicad/sheet-agreement.ts"
 import { valueFor } from "../../lib/kicad/value-notation.ts"
 import type { Component } from "../../lib/model/types.ts"
-import { modelForSheet, pinNumbersFor } from "../../tests/circuits/sheet-model.ts"
+import { modelForSheet } from "../../tests/circuits/sheet-model.ts"
+import { pinNumbersFor } from "../../tests/circuits/sheet-pin-numbers.ts"
 import { assertTrialBoard } from "./boards.ts"
 
 export interface TrialRequest {

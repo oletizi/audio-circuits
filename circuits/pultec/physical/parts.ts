@@ -274,7 +274,7 @@ export const POLE_PIN: Readonly<Record<string, string>> = {
  * 1x12"*, recorded on `ELEVEN_THROW_SYMBOL` below. The detents past the circuit's last position
  * are DECLARED no-connect by number and never inferred from the count: that declaration was the
  * deleted schematic generator's `ComponentOverride.ncPins`, and it is now
- * `tests/circuits/sheet-model.ts`'s `rotaryPinNumbers`, which enters an unwired detent under its
+ * `tests/circuits/sheet-pin-numbers.ts`'s `rotaryPinNumbers`, which enters an unwired detent under its
  * own pin number so the drafted page's `unconnected-(SW1-Pad12)` net has something to agree with.
  */
 export const THROW_PINS: Readonly<Record<string, readonly string[]>> = {
