@@ -39,8 +39,9 @@ const MIL_PER_MM = 1 / 0.0254
  * `docs/research/2026-10-30-letter-repaper.md` section 3 (the frame is also
  * `draughting/measure/paper_fit.py`'s FRAME_X and FRAME_Y).
  */
-export const LETTER_FRAME_MM = { x0: 11.98, x1: 267.377, y0: 11.98, y1: 203.877 } as const
-export const LETTER_TITLE_BLOCK_MM = { x0: 159.3, x1: 267.25, y0: 171.831, y1: 203.75 } as const
+export interface PaperRect { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number }
+export const LETTER_FRAME_MM: PaperRect = { x0: 11.98, x1: 267.377, y0: 11.98, y1: 203.877 }
+export const LETTER_TITLE_BLOCK_MM: PaperRect = { x0: 159.3, x1: 267.25, y0: 171.831, y1: 203.75 }
 
 const GRID_MIL = 50
 /** Clearance kept inside the frame and around the title block. */
