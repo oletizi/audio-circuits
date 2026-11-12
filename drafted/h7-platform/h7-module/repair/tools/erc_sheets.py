@@ -11,30 +11,35 @@ ERC errors in its own sheet still verified, because this script only printed cou
   - non-zero when the target sheet carries any error-severity violation not excused below;
   - non-zero when the root `/` carries an error of any type but `label_dangling`, the one the
     synthetic root is known to produce, so the allowance is scoped to the root and to that type;
-  - non-zero when any other sheet appears, since the one-block root holds only the target.
-Warnings are printed and never fail: none of the four rules above is about a warning.
+  - non-zero when any other sheet appears, since the one-block root holds only the target;
+  - non-zero when one declared allowance matches more than one violation.
+Warnings are printed and never fail: none of the rules above is about a warning. Known limitation
+(H7 module plan, Task 7d review M5): on `/` they are counted by type, not itemised or bounded, so a
+new warning type there passes; it shows only as a new line in the per-type counts.
 Each error on the target sheet is printed with the items KiCad names (`at <type>: <items>`), so a
 failure names the symbol and pin, and a control can require it.
 
 DECLARED ALLOWANCES (the third argument, the JSON `erc-allowances.ts` writes after checking each
-entry against the model). An error is excused ONLY on an exact match: the same sheet path, the same
-violation type, and exactly two items whose (designator, pin number), parsed from KiCad's
-"Symbol <ref> Pin <number> [...]" item, are the allowance's two pairs. Never on free text alone,
-never on the type alone. Each excused violation is printed on a line starting `excused:` with its
-ruling; verify.sh repeats those lines in its closing output. An allowance whose sheet is in the
-report and which matched nothing is printed on a line starting `stale allowance:`, and does not fail
-the run. An allowance for a sheet the report does not hold is not applicable to the run and is not
-reported.
+entry against the model). An error is excused ONLY on an exact match, `erc_match.py`'s rule, which
+`root_erc.py` shares: the same sheet path, the same violation type, and exactly two items whose
+(designator, pin number), parsed from KiCad's "Symbol <ref> Pin <number> [...]" item, are the
+allowance's two pairs. Never on free text alone, never on the type alone. ONE ALLOWANCE EXCUSES AT
+MOST ONE VIOLATION: a second match (the same pair reported twice, say by a sheet instantiated
+twice) fails the run (Task 7d review M4). Each excused violation is printed on a line starting
+`excused:` with its ruling; verify.sh repeats those lines in its closing output. An allowance whose
+sheet is in the report and which matched nothing is printed on a line starting `stale allowance:`,
+and does not fail the run. An allowance for a sheet the report does not hold is not applicable to
+the run and is not reported.
 
 usage: python3 erc_sheets.py <erc.json> <block> <allowances.json>
 """
 import collections
 import json
-import re
 import sys
 
+from erc_match import items_text, matches
+
 ROOT_ALLOWED_ERRORS = {"label_dangling"}
-ITEM = re.compile(r"^Symbol (\S+) Pin (\S+) \[")
 
 if len(sys.argv) != 4:
     sys.exit("erc_sheets.py: expected three arguments, the ERC report, the block name and the "
@@ -46,37 +51,19 @@ if not isinstance(allowances, list):
     sys.exit(f"erc_sheets.py: {sys.argv[3]} is not a JSON array of allowances")
 
 
-def pin_pairs(violation):
-    """The (designator, pin) of each item, or None when any item is not a symbol pin."""
-    pairs = []
-    for item in violation.get("items", []):
-        m = ITEM.match(item.get("description", ""))
-        if m is None:
-            return None
-        pairs.append((m.group(1), m.group(2)))
-    return pairs
-
-
 def matching_allowance(path, violation):
+    """The index of the allowance that excuses this violation, or None."""
     if violation["severity"] != "error":
         return None
-    pairs = pin_pairs(violation)
-    if pairs is None or len(pairs) != 2:
-        return None
-    for a in allowances:
-        want = sorted((p["designator"], p["pin"]) for p in a["pins"])
-        if a["sheet"] == path and a["type"] == violation["type"] and sorted(pairs) == want:
-            return a
+    for i, a in enumerate(allowances):
+        if matches(a, path, violation):
+            return i
     return None
-
-
-def items_text(violation):
-    return "; ".join(i.get("description", "?") for i in violation.get("items", []))
 
 
 failures = []
 seen = set()
-used = set()
+used = collections.Counter()
 for sheet in report["sheets"]:
     path = sheet["path"]
     seen.add(path)
@@ -88,12 +75,12 @@ for sheet in report["sheets"]:
     for v in sheet["violations"]:
         if v["severity"] != "error":
             continue
-        a = matching_allowance(path, v)
-        if a is None:
+        i = matching_allowance(path, v)
+        if i is None:
             unexcused.append(v)
         else:
-            excused.append((v, a))
-            used.add(id(a))
+            excused.append((v, allowances[i]))
+            used[i] += 1
     note = f" ({len(excused)} excused by a declared allowance)" if excused else ""
     print(f"sheet {path}: errors {errors}{note}, warnings {warnings}")
     for (sev, kind), n in sorted(by.items()):
@@ -117,9 +104,12 @@ for sheet in report["sheets"]:
         failures.append(f"unexpected sheet {path} in the one-block root's ERC report "
                         f"(it should hold only {target})")
 
-for a in allowances:
-    if a["sheet"] in seen and id(a) not in used:
-        pins = " and ".join(f"{p['designator']} pin {p['pin']}" for p in a["pins"])
+for i, a in enumerate(allowances):
+    pins = " and ".join(f"{p['designator']} pin {p['pin']}" for p in a["pins"])
+    if used[i] > 1:
+        failures.append(f"allowance {a['ruling']} ({a['type']} on {a['sheet']} between {pins}) matched "
+                        f"{used[i]} violations; an allowance excuses exactly the one violation its ruling describes")
+    elif a["sheet"] in seen and used[i] == 0:
         print(f"stale allowance: {a['ruling']} ({a['type']} on {a['sheet']} between {pins}) "
               f"matched no violation in this run; it may no longer be needed")
 

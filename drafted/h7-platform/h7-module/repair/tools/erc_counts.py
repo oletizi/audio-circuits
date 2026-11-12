@@ -3,8 +3,9 @@
 EXIT STATUS: ALWAYS 0 when the report can be read. This copy NEVER FAILS on a violation, and that
 is the one way it differs from the h7-carrier's `../../../h7-carrier/repair/erc_counts.py`, which
 fails on any error since issue 32. Why: verify.sh runs it on the block sheet ALONE, and a block
-sheet alone always carries one `pin_not_connected` error per hierarchical label ("cannot be
-connected to non-existent parent sheet"), which no repair of the block can remove. The ERC verdict
+sheet alone carries `pin_not_connected` errors on its hierarchical labels ("cannot be connected to
+non-existent parent sheet"), which no repair of the block can remove. Not one per label in every
+case: the final review counted 31 such errors on the sdram page's 41 labels. The ERC verdict
 on a block page is `erc_sheets.py`'s, on the sheet under a one-block root
 (`erc-one-block-root.sh`), which does fail. This run is a printout for the record.
 

@@ -5,9 +5,9 @@ kicad-cli 10.0.5 HONOURS the `.kicad_pro`'s `erc_exclusions` (measured, Task 7e;
 the measurement): a violation an exclusion matches is reported with `"excluded": true`, and an
 exclusion that matches nothing is reported as a separate excluded marker while the real violation
 stays an error. So excluded entries are read here and held to the declared allowances
-(`erc-allowances.ts`, ruling CR-MODULE-VCAP-ERC) by the same exact match `erc_sheets.py` uses -
-the sheet path, the type, and exactly the two (designator, pin) pairs parsed from KiCad's items -
-rather than trusting the project file.
+(`erc-allowances.ts`, ruling CR-MODULE-VCAP-ERC) by the exact match `erc_match.py` defines and
+`erc_sheets.py` shares - the sheet path, the type, and exactly the two (designator, pin) pairs
+parsed from KiCad's items - rather than trusting the project file.
 
 EXIT STATUS. Non-zero when:
   - any violation that is NOT excluded has severity error (each is printed with its items);
@@ -15,7 +15,9 @@ EXIT STATUS. Non-zero when:
   - a declared allowance is matched by no excluded violation, or by more than one;
   - the `.kicad_pro` carries a number of exclusions other than the number of allowances;
   - the report holds no sheet path other than the root, so the hierarchy was not read.
-Warnings never fail; they are printed per sheet and in total by type.
+Warnings never fail; they are printed per sheet and in total by type. Known limitation (H7 module
+plan, Task 7d review): they are counted, not bounded, so a new warning type passes here; RECORD.md's
+root measurement table itemises today's by type, and a change shows as a disagreement with it.
 
 Ruling CR-MODULE-CROSS-PAGE-DRIVERS asks that the real root clear every table net with its real
 driver: a `pin_not_driven` anywhere is an error and fails here, and the driving pin's net is checked
@@ -25,10 +27,9 @@ usage: python3 root_erc.py <erc.json> <allowances.json> <project.kicad_pro>
 """
 import collections
 import json
-import re
 import sys
 
-ITEM = re.compile(r"^Symbol (\S+) Pin (\S+) \[")
+from erc_match import items_text, matches
 
 if len(sys.argv) != 4:
     sys.exit(f"root_erc.py: expected three arguments, the ERC report, the allowances JSON and the .kicad_pro; got {len(sys.argv) - 1}")
@@ -38,21 +39,6 @@ project = json.load(open(sys.argv[3]))
 exclusions = project.get("erc", {}).get("erc_exclusions")
 if not isinstance(allowances, list) or not isinstance(exclusions, list):
     sys.exit("root_erc.py: the allowances must be a JSON array and the .kicad_pro must carry erc.erc_exclusions as an array")
-
-
-def pairs(violation):
-    out = []
-    for item in violation.get("items", []):
-        m = ITEM.match(item.get("description", ""))
-        if m is None:
-            return None
-        out.append((m.group(1), m.group(2)))
-    return sorted(out)
-
-
-def items_text(violation):
-    return "; ".join(i.get("description", "?") for i in violation.get("items", []))
-
 
 failures = []
 matched = collections.Counter()
@@ -74,10 +60,7 @@ for sheet in report["sheets"]:
             print(f"   at {v['type']}: {items_text(v)}")
             failures.append(f"{path} has an ERC error, {v['type']}: {items_text(v)}")
     for v in excluded:
-        got = pairs(v)
-        hits = [i for i, a in enumerate(allowances)
-                if a["sheet"] == path and a["type"] == v["type"] and got is not None
-                and got == sorted((p["designator"], p["pin"]) for p in a["pins"])]
+        hits = [i for i, a in enumerate(allowances) if matches(a, path, v)]
         if not hits:
             failures.append(f"{path}: an excluded {v['type']} ({items_text(v)}) matches no declared allowance in erc-allowances.ts")
         for i in hits:

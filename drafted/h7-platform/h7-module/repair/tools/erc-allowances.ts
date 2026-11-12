@@ -8,13 +8,14 @@
  * D7), so ERC reports `pin_to_pin`, "Pins of type Power output and Power output are connected", on
  * the mcu sheet. The error comes from the symbol's pin typing, not from the circuit.
  *
- * How narrow an allowance is. `./erc_sheets.py` excuses a violation only when ALL of these hold: it
+ * How narrow an allowance is. `./erc_sheets.py` (by `./erc_match.py`'s rule, which `./root_erc.py`
+ * shares) excuses a violation only when ALL of these hold: it
  * is on the entry's sheet path, it is of the entry's violation type, and the items KiCad reports for
  * it are exactly the entry's two (designator, pin number) pairs, parsed from each item - never a match
  * on free text, and never on the type alone. Any other `pin_to_pin`, the same type on other pins, and
- * the same pins on another sheet all stay errors. An allowance that matches nothing in a run whose
- * report holds its sheet is printed as STALE, and the run still passes, so an allowance that has
- * become unnecessary is visible.
+ * the same pins on another sheet all stay errors. One allowance excuses at most one violation: a
+ * second match fails the run. An allowance that matches nothing in a run whose report holds its sheet
+ * is printed as STALE, and the run still passes, so an allowance that has become unnecessary is visible.
  *
  * Held to the model on every run (`checkErcAllowances`): the sheet names a block of `h7Module()`; the
  * designator is a component of that block; both pins are on the entry's net in the model (so they
@@ -29,10 +30,11 @@
  * usage: bun erc-allowances.ts <out.json>
  *   checks the table against h7Module() and writes it as JSON, the form erc_sheets.py reads
  */
-import { readFileSync, writeFileSync } from "node:fs"
-import { DESIGNATORS, h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
+import { writeFileSync } from "node:fs"
+import { h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { Network } from "../../../../../lib/model/index.ts"
 import { libraryPin, pinConnection } from "./cross-page-drivers.ts"
+import { componentIdFor, isRecord, overrideOr, requiredString } from "./table-input.ts"
 
 export interface AllowedPin {
   /** The reference designator KiCad reports (`DESIGNATORS`). */
@@ -77,59 +79,36 @@ export const ERC_ALLOWANCES: readonly ErcAllowance[] = [
 
 const OVERRIDE_ENV = "H7_ERC_ALLOWANCES_TABLE"
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function text(entry: Record<string, unknown>, key: string, where: string): string {
-  const value = entry[key]
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`${where}: "${key}" must be a non-empty string; got ${JSON.stringify(value)}`)
-  }
-  return value
-}
-
 function allowedPin(value: unknown, where: string): AllowedPin {
   if (!isRecord(value)) throw new Error(`${where}: not an object with "designator" and "pin"`)
-  return { designator: text(value, "designator", where), pin: text(value, "pin", where) }
+  return { designator: requiredString(value, "designator", where), pin: requiredString(value, "pin", where) }
 }
 
-function parseOverride(file: string): readonly ErcAllowance[] {
-  const parsed: unknown = JSON.parse(readFileSync(file, "utf8"))
-  if (!Array.isArray(parsed)) throw new Error(`${OVERRIDE_ENV}=${file}: the table must be a JSON array of allowances`)
-  return parsed.map((entry: unknown, i): ErcAllowance => {
-    const where = `${OVERRIDE_ENV}=${file}, entry ${i}`
-    if (!isRecord(entry)) throw new Error(`${where}: not an object`)
-    const pins = entry["pins"]
-    if (!Array.isArray(pins) || pins.length !== 2) {
-      throw new Error(`${where}: "pins" must be an array of exactly two (designator, pin) objects; got ${JSON.stringify(pins)}`)
-    }
-    return {
-      ruling: text(entry, "ruling", where),
-      sheet: text(entry, "sheet", where),
-      type: text(entry, "type", where),
-      pins: [allowedPin(pins[0], `${where}, pins[0]`), allowedPin(pins[1], `${where}, pins[1]`)],
-      net: text(entry, "net", where),
-      symbolPinType: text(entry, "symbolPinType", where),
-      source: text(entry, "source", where),
-    }
-  })
+function parseAllowance(entry: Record<string, unknown>, where: string): ErcAllowance {
+  const pins = entry["pins"]
+  if (!Array.isArray(pins) || pins.length !== 2) {
+    throw new Error(`${where}: "pins" must be an array of exactly two (designator, pin) objects; got ${JSON.stringify(pins)}`)
+  }
+  return {
+    ruling: requiredString(entry, "ruling", where),
+    sheet: requiredString(entry, "sheet", where),
+    type: requiredString(entry, "type", where),
+    pins: [allowedPin(pins[0], `${where}, pins[0]`), allowedPin(pins[1], `${where}, pins[1]`)],
+    net: requiredString(entry, "net", where),
+    symbolPinType: requiredString(entry, "symbolPinType", where),
+    source: requiredString(entry, "source", where),
+  }
 }
 
 /** The committed table, or the test override when `H7_ERC_ALLOWANCES_TABLE` is set (said on stderr). */
 export function ercAllowanceTable(): readonly ErcAllowance[] {
-  const file = process.env[OVERRIDE_ENV]
-  if (file === undefined || file === "") return ERC_ALLOWANCES
-  console.error(`erc-allowances.ts: TEST OVERRIDE - the table is read from ${file}, not the committed ERC_ALLOWANCES`)
-  return parseOverride(file)
+  return overrideOr(OVERRIDE_ENV, ERC_ALLOWANCES, "erc-allowances.ts", "ERC_ALLOWANCES", parseAllowance)
 }
 
 function pinProblems(entry: ErcAllowance, p: AllowedPin, componentIds: readonly string[], module: Network): string[] {
-  const ids = Object.entries(DESIGNATORS).filter(([, d]) => d === p.designator).map(([id]) => id)
-  const id = ids[0]
-  if (ids.length !== 1 || id === undefined) {
-    return [`designator ${p.designator} names ${ids.length} components in DESIGNATORS (module-board.ts); expected exactly one`]
-  }
+  const resolved = componentIdFor(p.designator)
+  if ("problem" in resolved) return [resolved.problem]
+  const id = resolved.id
   if (!componentIds.includes(id)) return [`${p.designator} (${id}) is not a component of the block whose sheet is ${entry.sheet}`]
   const component = module.components.find((c) => c.id === id)
   if (component === undefined) return [`${id} is in the block but not in h7Module()'s components`]

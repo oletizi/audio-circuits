@@ -19,7 +19,8 @@ export, which drops `#` references, cannot show which. Exit 1 is a probe that co
 Sheets are found from the root's own (sheet ...) entries (Sheetname, Sheetfile), never by listing the
 directory, so a stray file is not read and a missing one refuses. Flags are found by lib_id through
 `draughting/measure/kicad_sheet.py`'s parser; the reference is rewritten only inside each flag's own
-symbol list. Refuses a sheet already carrying a FLGPROBE reference.
+symbol list, by `flag_rewrite.py`, which `flag_probe.py` shares. Refuses a sheet already carrying a
+FLGPROBE reference.
 
 usage: python3 hierarchy_flag_probe.py <project-dir> <board> <out-dir>
 """
@@ -29,11 +30,13 @@ import pathlib
 import shutil
 import sys
 
+from flag_rewrite import refuse_if_probed, rewrite_flags
+
 ROOT = pathlib.Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "draughting" / "measure"))
 import kicad_sheet  # noqa: E402
 
-PREFIX = "FLGPROBE"
+TOOL = "hierarchy_flag_probe.py"
 
 if len(sys.argv) != 4:
     sys.exit(f"hierarchy_flag_probe.py: expected three arguments, the project directory, the board and the output directory; got {len(sys.argv) - 1}")
@@ -67,25 +70,16 @@ for name, file in sheets:
     if not src.is_file():
         sys.exit(f"hierarchy_flag_probe.py: the root names sheet {name!r} in {file}, which is not in {project}")
     text = open(src, encoding="utf-8", newline="").read()
-    if PREFIX in text:
-        sys.exit(f"hierarchy_flag_probe.py: {src} already contains {PREFIX}; a probe reference would not be unique")
+    refuse_if_probed(text, src, TOOL)
     symbols = kicad_sheet.read(str(src)).symbols()
     for s in symbols:
         if s.ref and s.ref.startswith("#"):
             refs[s.ref].append(name)
-    edits = []
-    for s in sorted((s for s in symbols if s.lib_id == "power:PWR_FLAG"), key=lambda s: s.node.start):
-        if not s.ref:
-            sys.exit(f"hierarchy_flag_probe.py: a PWR_FLAG on sheet {name!r} at ({s.x}, {s.y}) has no Reference")
-        block = text[s.node.start:s.node.end]
-        old = f'"{s.ref}"'
-        if old not in block:
-            sys.exit(f"hierarchy_flag_probe.py: the PWR_FLAG {s.ref} on sheet {name!r} does not carry its reference as {old}")
-        k += 1
-        probe_map[f"{PREFIX}{k}"] = {"sheet": name, "ref": s.ref}
-        edits.append((s.node.start, s.node.end, block.replace(old, f'"{PREFIX}{k}"')))
-    for start, end, new in sorted(edits, reverse=True):
-        text = text[:start] + new + text[end:]
+    flags = sorted((s for s in symbols if s.lib_id == "power:PWR_FLAG"), key=lambda s: s.node.start)
+    text, renamed = rewrite_flags(text, flags, k + 1, f"on sheet {name!r}", TOOL)
+    for probe, ref in renamed:
+        probe_map[probe] = {"sheet": name, "ref": ref}
+    k += len(renamed)
     open(out / file, "w", encoding="utf-8", newline="").write(text)
 for extra in ("sym-lib-table", f"{board}.kicad_pro"):
     if (project / extra).is_file():

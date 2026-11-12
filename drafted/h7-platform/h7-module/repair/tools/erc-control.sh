@@ -34,12 +34,18 @@
 # 16. negative, the same ruling: an allowance naming U1 pins 81 and 126 is refused by the model
 #     check in erc-allowances.ts (pin 126 is not on VCAP), so the run fails.
 # 17. erc_sheets.py alone on synthetic reports under the VCAP allowance: the exact pair on /mcu/ is
-#     excused and named; other pins, another type, a third item, or another sheet each fail; an
-#     allowance matching nothing on a sheet the report holds is reported stale and passes.
+#     excused and named; other pins, another designator, another type, a third item, another sheet,
+#     or the exact pair reported twice each fail; an allowance matching nothing on a sheet the
+#     report holds is reported stale and passes.
 # 18. the module ROOT, every sheet together: root-control.sh's controls (Task 7e; added at Task 7e
 #     fix round 1, once root ERC reached 0 errors apart from the VCAP exclusion). Its control 1
 #     requires verify-root.sh to pass on the committed project, ERC included.
 # 19. render.sh's SVG-matches-PDF check: render-control.sh's controls (Task 7e fix round 2).
+# 20. erc-allowances.ts's model check, each refusal alone (the final review's isolating controls,
+#     Task 7d review M3): pins 81 and 125 stated as power_in are refused as typed power_out (that
+#     refusal and no other, once for each pin); a designator naming no component is refused as such
+#     and nothing else; the same pin twice is refused as such and nothing else. Each override
+#     differs from the committed entry in that one field only.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -192,12 +198,18 @@ cat >"$work/vcap-allow.json" <<'JSON'
 JSON
 p81='{"description":"Symbol U1 Pin 81 [VCAP, Power output, Line]"}'
 p125='{"description":"Symbol U1 Pin 125 [VCAP, Power output, Line]"}'
-p126='{"description":"Symbol U1 Pin 126 [VDD, Power input, Line]"}'
+p126='{"description":"Symbol U1 Pin 126 [VSS, Passive, Line]"}'
+u2p81='{"description":"Symbol U2 Pin 81 [VCAP, Power output, Line]"}'
 synth exact "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p125,$p81]}]}]}"
 expect 0 exact "$work/vcap-allow.json" mcu
 grep -q '^excused: error pin_to_pin on /mcu/ under CR-MODULE-VCAP-ERC' "$work/exact.log" || { cat "$work/exact.log" >&2; bad "exact: the excused violation is not named with its ruling"; }
 synth other-pins "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p126]}]}]}"
 expect 1 other-pins "$work/vcap-allow.json" mcu
+synth other-designator "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$u2p81,$p125]}]}]}"
+expect 1 other-designator "$work/vcap-allow.json" mcu
+synth twice "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p125]},{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p125,$p81]}]}]}"
+expect 1 twice "$work/vcap-allow.json" mcu
+grep -q 'matched 2 violations' "$work/twice.log" || { cat "$work/twice.log" >&2; bad "twice: erc_sheets.py failed, but not on the allowance matching two violations"; }
 synth other-type "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_not_driven\",\"items\":[$p81,$p125]}]}]}"
 expect 1 other-type "$work/vcap-allow.json" mcu
 synth third-item "{\"sheets\":[{\"path\":\"/\",\"violations\":[]},{\"path\":\"/mcu/\",\"violations\":[{\"severity\":\"error\",\"type\":\"pin_to_pin\",\"items\":[$p81,$p125,$p126]}]}]}"
@@ -218,5 +230,25 @@ echo "== 19. render.sh refuses a sub-sheet page whose SVG is another page (rende
 sh "$here/render-control.sh" >"$work/render-control.log" 2>&1 || { cat "$work/render-control.log" >&2; bad "render-control.sh: a render control did not come out as stated"; }
 grep -q '^render-control.sh: every control came out as stated$' "$work/render-control.log" || bad "render-control.sh exited 0 without its closing line"
 echo "   $(grep -c '^== ' "$work/render-control.log") render controls came out as stated"
+
+echo "== 20. erc-allowances.ts refuses each wrong field alone"
+refuses() {
+  name="$1"; json="$2"; want="$3"; n="$4"
+  printf '%s\n' "$json" >"$work/$name.json"
+  if (cd "$root" && H7_ERC_ALLOWANCES_TABLE="$work/$name.json" bun "$here/erc-allowances.ts" "$work/$name.out.json") >"$work/$name.log" 2>&1; then
+    cat "$work/$name.log" >&2; bad "$name: erc-allowances.ts accepted the entry"
+  fi
+  grep -q 'TEST OVERRIDE' "$work/$name.log" || { cat "$work/$name.log" >&2; bad "$name: the override was not announced"; }
+  grep -q "erc-allowances.ts: $n problem(s)" "$work/$name.log" \
+    || { cat "$work/$name.log" >&2; bad "$name: expected exactly $n problem(s), all of them this refusal, so it is isolated"; }
+  [ "$(grep -c "$want" "$work/$name.log")" -ge "$n" ] || { cat "$work/$name.log" >&2; bad "$name: refused, but not $n time(s) with '$want'"; }
+  echo "   $name refused as expected: $(grep -o "$want.*" "$work/$name.log" | head -1)"
+}
+vcap() {
+  printf '[{"ruling":"CR-MODULE-VCAP-ERC","sheet":"/mcu/","type":"pin_to_pin","pins":[{"designator":"%s","pin":"81"},{"designator":"U1","pin":"%s"}],"net":"VCAP","symbolPinType":"%s","source":"erc-control.sh control 20, deliberately wrong"}]' "$1" "$2" "$3"
+}
+refuses pin-type "$(vcap U1 125 power_in)" 'typed power_out in its library, not power_in' 2
+refuses designator "$(vcap U99 125 power_out)" 'designator U99 names 0 components in DESIGNATORS' 1
+refuses same-pin "$(vcap U1 81 power_out)" 'the two pins are the same pin' 1
 
 echo "erc-control.sh: every control came out as stated"

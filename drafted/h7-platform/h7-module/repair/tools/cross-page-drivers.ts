@@ -34,11 +34,12 @@
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { DESIGNATORS, PROJECT_SYMBOL_LIBRARY } from "../../../../../circuits/h7-platform/module-board.ts"
+import { PROJECT_SYMBOL_LIBRARY } from "../../../../../circuits/h7-platform/module-board.ts"
 import type { Component, Network } from "../../../../../lib/model/index.ts"
 import { defaultSymbolDir } from "../../../../../lib/kicad/install.ts"
 import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../../../../lib/kicad/symbol-library.ts"
 import type { SymbolPin } from "../../../../../lib/kicad/symbol-library.ts"
+import { componentIdFor, overrideOr, requiredString } from "./table-input.ts"
 
 export interface CrossPageDriver {
   /** The module net (the parent net the blocks' ports bind to). */
@@ -61,14 +62,7 @@ function mcuDriver(net: string, pin: string, pinName: string, source: string): C
 }
 
 export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
-  {
-    net: "FLASH_CLK",
-    block: "mcu",
-    designator: "U1",
-    pin: "28",
-    pinName: "PF10",
-    source: "circuits/h7-platform/module-pins.ts (FLASH_CLK on PF10, QUADSPI_CLK; pedals CORE-BRIEF.md:382 @5b926d0); PF10 is LQFP-176 position 28 in ST's pin data (module/mcu.ts keys U1's pins by position)",
-  },
+  mcuDriver("FLASH_CLK", "28", "PF10", "circuits/h7-platform/module-pins.ts (FLASH_CLK on PF10, QUADSPI_CLK; pedals CORE-BRIEF.md:382 @5b926d0); PF10 is LQFP-176 position 28 in ST's pin data (module/mcu.ts keys U1's pins by position)"),
   // Task 7c, the sdram page. Each source names the module-pins.ts line and the line it cites.
   mcuDriver("SDRAM_A0", "16", "PF0", "circuits/h7-platform/module-pins.ts:34 (SDRAM_A0 on PF0, FMC_A0; pedals CORE-BRIEF.md:319 @5b926d0); PF0 is LQFP-176 position 16 in ST's pin data"),
   mcuDriver("SDRAM_A1", "17", "PF1", "circuits/h7-platform/module-pins.ts:35 (SDRAM_A1 on PF1, FMC_A1; pedals CORE-BRIEF.md:320 @5b926d0); PF1 is LQFP-176 position 17 in ST's pin data"),
@@ -116,44 +110,26 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
 /** Where the stand-in comes from: one passive pin at the symbol origin (measured; the ruling). */
 export const STAND_IN_LIB_ID = "Connector:TestPoint"
 
+// Known limitation (H7 module plan, Task 7b review): the installed kicad-cli's path is written out
+// here and in seven of this directory's shell scripts. The repair tooling is macOS-only, as the
+// toolchain lock (draughting/tools.lock.json) pins kicad-cli 10.0.5 from the macOS KiCad.app.
 const KICAD_CLI = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 const OVERRIDE_ENV = "H7_CROSS_PAGE_DRIVERS_TABLE"
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function field(entry: Record<string, unknown>, key: string, where: string): string {
-  const value = entry[key]
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`${where}: "${key}" must be a non-empty string; got ${JSON.stringify(value)}`)
+function parseDriver(entry: Record<string, unknown>, where: string): CrossPageDriver {
+  return {
+    net: requiredString(entry, "net", where),
+    block: requiredString(entry, "block", where),
+    designator: requiredString(entry, "designator", where),
+    pin: requiredString(entry, "pin", where),
+    pinName: requiredString(entry, "pinName", where),
+    source: requiredString(entry, "source", where),
   }
-  return value
-}
-
-function parseOverride(file: string): readonly CrossPageDriver[] {
-  const parsed: unknown = JSON.parse(readFileSync(file, "utf8"))
-  if (!Array.isArray(parsed)) throw new Error(`${OVERRIDE_ENV}=${file}: the table must be a JSON array of entries`)
-  return parsed.map((entry: unknown, i): CrossPageDriver => {
-    const where = `${OVERRIDE_ENV}=${file}, entry ${i}`
-    if (!isRecord(entry)) throw new Error(`${where}: not an object`)
-    return {
-      net: field(entry, "net", where),
-      block: field(entry, "block", where),
-      designator: field(entry, "designator", where),
-      pin: field(entry, "pin", where),
-      pinName: field(entry, "pinName", where),
-      source: field(entry, "source", where),
-    }
-  })
 }
 
 /** The committed table, or the test override when `H7_CROSS_PAGE_DRIVERS_TABLE` is set (said on stderr). */
 export function crossPageDriverTable(): readonly CrossPageDriver[] {
-  const file = process.env[OVERRIDE_ENV]
-  if (file === undefined || file === "") return CROSS_PAGE_DRIVERS
-  console.error(`cross-page-drivers.ts: TEST OVERRIDE - the table is read from ${file}, not the committed CROSS_PAGE_DRIVERS`)
-  return parseOverride(file)
+  return overrideOr(OVERRIDE_ENV, CROSS_PAGE_DRIVERS, "cross-page-drivers.ts", "CROSS_PAGE_DRIVERS", parseDriver)
 }
 
 /** The net a component's pin is on in the model: a net name, null for a no-connect, undefined for no such pin. */
@@ -187,11 +163,9 @@ function problemsWith(entry: CrossPageDriver, module: Network): string[] {
   if (record === undefined) {
     return [`driving block "${entry.block}" is not a block of h7Module(); its blocks are ${module.blocks.map((b) => b.prefix).join(", ")}`]
   }
-  const ids = Object.entries(DESIGNATORS).filter(([, d]) => d === entry.designator).map(([id]) => id)
-  const id = ids[0]
-  if (ids.length !== 1 || id === undefined) {
-    return [`designator ${entry.designator} names ${ids.length} components in DESIGNATORS (module-board.ts); expected exactly one`]
-  }
+  const resolved = componentIdFor(entry.designator)
+  if ("problem" in resolved) return [resolved.problem]
+  const id = resolved.id
   if (!record.componentIds.includes(id)) {
     return [`${entry.designator} (${id}) is not a component of block "${entry.block}"; it cannot be that block's driver`]
   }
