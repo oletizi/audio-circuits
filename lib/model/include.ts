@@ -24,6 +24,14 @@ import type { Component, Connection, Network, Unit } from "./types.ts"
 
 export type PortMap = Readonly<Record<string, string>>
 
+/** The prefix of the block holding the component, or null for a top-level part. */
+export function blockOf(network: Network, componentId: string): string | null {
+  for (const block of network.blocks) {
+    if (block.componentIds.includes(componentId)) return block.prefix
+  }
+  return null
+}
+
 function rename(
   c: Connection,
   prefix: string,
@@ -40,6 +48,16 @@ export function includeNetwork(
   portMap: PortMap,
 ): readonly Component[] {
   if (prefix.length === 0) throw new Error("include prefix must not be empty")
+
+  if (network.blocks.length > 0) {
+    throw new Error(
+      `cannot include "${prefix}": the included network itself includes blocks ` +
+        `(${network.blocks.map((b) => b.prefix).join(", ")}). Nested composition is ` +
+        `not yet drawn (C3 draws one level), and flattening would lose the inner ` +
+        `boundary, so it is refused rather than flattened. Include the inner ` +
+        `blocks directly in the parent instead.`,
+    )
+  }
 
   for (const portName of Object.keys(portMap)) {
     if (!Object.prototype.hasOwnProperty.call(network.ports, portName)) {

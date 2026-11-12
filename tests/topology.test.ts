@@ -20,6 +20,7 @@ function isMutableResistor(
 
 // Synthetic bridge: deliberately NOT a Pultec transcription or acceptance fixture.
 const reference: MutableNetwork = {
+  blocks: [],
   ports: { input: "in", output: "out", ground: "0" },
   components: [
     { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
@@ -36,7 +37,7 @@ const ownership: Record<string, string> = { R1: "lf", C1: "lf", P1: "hf" }
 test("physical partition preserves topology and exposes all shared nets", () => {
   const split = partitionTopology(reference, ownership)
   expect(split.boundaryNets).toEqual(["0", "in", "out"].map(netName => ({ net: netName, owners: ["hf", "lf"] })))
-  assertSameTopology(reference, { ports: split.ports, components: Object.values(split.modules).flat().reverse() })
+  assertSameTopology(reference, { blocks: [], ports: split.ports, components: Object.values(split.modules).flat().reverse() })
 })
 
 const mutations: readonly (readonly [string, (n: MutableNetwork) => void])[] = [

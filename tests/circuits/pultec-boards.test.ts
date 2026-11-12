@@ -65,7 +65,7 @@ test("each board projects back to its electrical partition", () => {
   const modules = partitionReference().modules
   for (const [owner] of BOARDS) {
     const board = boardNetwork(owner, ALL)
-    const target: Network = { ports: board.ports, components: modules[owner] ?? [] }
+    const target: Network = { blocks: [], ports: board.ports, components: modules[owner] ?? [] }
     expect(() => assertSameTopology(target, projectPhysical(board)), owner).not.toThrow()
   }
 })

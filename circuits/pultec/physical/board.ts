@@ -319,7 +319,7 @@ export function boardNetwork(section: string, present: ReadonlySet<string>): Net
   }
   const ports = portsOn(components)
   components.push(...junctionComponents())
-  return { ports, components }
+  return { ports, components, blocks: [] }
 }
 
 /**

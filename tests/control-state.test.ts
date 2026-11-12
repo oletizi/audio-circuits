@@ -13,6 +13,7 @@ function isSwitchComponent(c: Network["components"][number]): c is SwitchCompone
 const NO_CONTROLS: ControlState = { potPositions: {}, switchPositions: {} }
 
 const physical: Network = {
+  blocks: [],
   ports: { input: "in", output: "out", ground: "0" },
   components: [
     { id: "P1", kind: "potentiometer",
@@ -53,6 +54,7 @@ function potSections(
   fraction: number,
 ): { readonly lower: number; readonly upper: number } {
   const network: Network = {
+    blocks: [],
     ports: { input: "in", output: "out", ground: "0" },
     components: [
       { id: "P1", kind: "potentiometer", parameters: { ohms: 10000, taper }, pins: {},
@@ -139,6 +141,7 @@ test("rewrites ports through the canonical net representative after a switch mer
 
 test("a contact shorting a net to ground keeps ground as the canonical representative", () => {
   const groundShort: Network = {
+    blocks: [],
     ports: { input: "in", output: "out", ground: "0" },
     components: [
       { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
@@ -161,6 +164,7 @@ test("rejects a switch position with no contacts entry", () => {
   // structural well-formedness check first, which rejects a port landing on a net no
   // component touches.
   const missingContacts: Network = {
+    blocks: [],
     ports: { output: "out" },
     components: [
       { id: "S9", kind: "switch",
@@ -177,6 +181,7 @@ test("rejects a pot missing a declared terminal", () => {
   // the structural check requires, and so `netPreference` finds the ground port it is
   // told to use. The pot's missing `cw` terminal is still what this test exercises.
   const missingTerminal: Network = {
+    blocks: [],
     ports: { input: "in", output: "out", ground: "0" },
     components: [
       { id: "P9", kind: "potentiometer",
@@ -194,6 +199,7 @@ test("an unconnected port is diagnosed by the topology validator, not the union-
   // Before resolveNetwork validated structure first, this surfaced as the union-find's
   // "Unknown ... member: mid" from a module that has no idea what a port is.
   const unconnectedPort: Network = {
+    blocks: [],
     ports: { input: "in", output: "mid", ground: "0" },
     components: [
       { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
@@ -208,6 +214,7 @@ test("refuses a network that declares no ground port instead of silently reorder
   // netPreference is told which port key carries the reference node; an absent one
   // throws rather than quietly dropping the ground rule from the tie-break.
   const noGround: Network = {
+    blocks: [],
     ports: { input: "in", output: "out" },
     components: [
       { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
@@ -231,6 +238,7 @@ test("rejects invalid or missing control settings instead of defaulting", () => 
 
 test("ganged switches must select the same position", () => {
   const ganged: Network = {
+    blocks: [],
     ports: physical.ports,
     components: [
       ...physical.components,
@@ -243,6 +251,7 @@ test("ganged switches must select the same position", () => {
     ],
   }
   const gangedPhysical: Network = {
+    blocks: [],
     ports: ganged.ports,
     components: ganged.components.map(c =>
       c.id === "S1" && isSwitchComponent(c)
@@ -271,6 +280,7 @@ test("a switch's unit pin colliding with a package pin of the same name is rejec
     // `ground` is required by `netPreference` regardless of what this test exercises
     // (see "refuses a network that declares no ground port" below); reusing "in" keeps
     // the fixture minimal.
+    blocks: [],
     ports: { input: "in", output: "out", ground: "in" },
     components: [{
       id: "s1", kind: "switch",
@@ -299,6 +309,7 @@ test("a package-pin collision is refused before resolution can produce a network
   // `opamp` rather than a switch because a switch is caught either way; this is
   // the multi-pin, model-backed shape whose loss reaches a deck.
   const collision: Network = {
+    blocks: [],
     ports: { ground: "GND", input: "IN", output: "OUT" },
     components: [
       {
@@ -328,6 +339,7 @@ test("a package-pin collision is refused before resolution can produce a network
 
 test("an active device passes through resolution with its structure intact", () => {
   const network: Network = {
+    blocks: [],
     components: [{
       id: "amp", kind: "opamp", parameters: {},
       pins: { "v+": net("VCC"), "v-": net("VEE") },
@@ -349,6 +361,7 @@ test("an active device passes through resolution with its structure intact", () 
 
 test("a dual package stays ONE component with two units", () => {
   const dual: Network = {
+    blocks: [],
     components: [{
       id: "amp", kind: "opamp", parameters: {},
       pins: { "v+": net("VCC"), "v-": net("VEE") },
@@ -371,6 +384,7 @@ test("a dual package stays ONE component with two units", () => {
 
 test("a no-connect is omitted from resolved pins, not rendered as a net name", () => {
   const withNc: Network = {
+    blocks: [],
     components: [{
       id: "u", kind: "ic", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { "1": net("IN"), "2": { kind: "nc" } } }],
@@ -391,6 +405,7 @@ test("a no-connect PACKAGE pin is omitted from resolved pins, not rendered as a 
   // exercised it on a unit pin. A package pin is a separate map on `ResolvedComponent`
   // (Finding 1: it is not merged with the unit's), so it needs its own coverage.
   const withNc: Network = {
+    blocks: [],
     components: [{
       id: "amp", kind: "opamp", parameters: {},
       pins: { "v+": net("VCC"), "v-": { kind: "nc" } },
@@ -422,6 +437,7 @@ test("a potentiometer still resolves into two resistors", () => {
 
 test("a single-pin electrically inert connector (a test point) resolves without throwing", () => {
   const withTestPoint: Network = {
+    blocks: [],
     ports: { input: "in", ground: "0" },
     components: [
       { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},
@@ -435,6 +451,7 @@ test("a single-pin electrically inert connector (a test point) resolves without 
 
 test("a single-pin connector that is not declared electrically inert still throws Missing pins", () => {
   const withTestPoint: Network = {
+    blocks: [],
     ports: { input: "in", ground: "0" },
     components: [
       { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},

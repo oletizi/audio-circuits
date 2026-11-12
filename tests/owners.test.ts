@@ -4,6 +4,7 @@ import { net } from "../lib/model/types.ts"
 import type { Network } from "../lib/model/types.ts"
 
 const network: Network = {
+  blocks: [],
   ports: { input: "in", output: "out", ground: "0" },
   components: [
     { id: "R1", kind: "resistor", parameters: { ohms: 1000 }, pins: {},

@@ -147,6 +147,17 @@ export interface Network {
   readonly components: readonly Component[]
   /** External interface: port name -> net name. */
   readonly ports: Readonly<Record<string, string>>
+  /** Composition record: one entry per `include()`, in call order. */
+  readonly blocks: readonly BlockRecord[]
+}
+
+/** What one `include()` brought in. */
+export interface BlockRecord {
+  readonly prefix: string
+  /** The prefixed ids of the components the block contributed. */
+  readonly componentIds: readonly string[]
+  /** Included network's port name -> the parent net it was bound to. */
+  readonly ports: Readonly<Record<string, string>>
 }
 
 /** Per-kind component views.

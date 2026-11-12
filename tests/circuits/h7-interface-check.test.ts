@@ -30,6 +30,7 @@ function fixture(board: BoardKind, overrides: Overrides = {}, extra: readonly Co
   const socket = (id: string, pins: Record<string, Connection>): Component =>
     ({ id, kind: "connector", parameters: {}, pins: {}, units: [{ name: "MAIN", pins }] })
   return {
+    blocks: [],
     components: [
       socket(SOCKETS.J_MOD_A, pads.J_MOD_A), socket(SOCKETS.J_MOD_B, pads.J_MOD_B),
       socket("breakout", breakouts), ...extra,

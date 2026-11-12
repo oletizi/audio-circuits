@@ -20,6 +20,7 @@ test("every element is owned exactly once, by a declared module", () => {
 test("partitioning preserves the reference exactly", () => {
   const split = partitionReference()
   const recomposed = {
+    blocks: [],
     ports: split.ports,
     components: Object.values(split.modules).flat().reverse(),
   }

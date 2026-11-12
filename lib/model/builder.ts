@@ -10,7 +10,7 @@ import { parseValue } from "./units.ts"
 import { validateNetwork } from "./validate.ts"
 import { includeNetwork } from "./include.ts"
 import { net } from "./types.ts"
-import type { Component, Connection, Network, PartSpec, Unit } from "./types.ts"
+import type { BlockRecord, Component, Connection, Network, PartSpec, Unit } from "./types.ts"
 import type { PortMap } from "./include.ts"
 
 /** A pin map accepts a bare net name as shorthand for net(name). */
@@ -31,6 +31,7 @@ const mainUnit = (pins: PinMap): readonly Unit[] => [
 export class Builder {
   private readonly components: Component[] = []
   private readonly ports: Record<string, string> = {}
+  private readonly blocks: BlockRecord[] = []
 
   private push(component: Component): this {
     if (this.components.some((c) => c.id === component.id)) {
@@ -81,9 +82,15 @@ export class Builder {
   }
 
   include(prefix: string, network: Network, portMap: PortMap): this {
-    for (const component of includeNetwork(prefix, network, portMap)) {
+    const included = includeNetwork(prefix, network, portMap)
+    for (const component of included) {
       this.push(component)
     }
+    this.blocks.push({
+      prefix,
+      componentIds: included.map((c) => c.id),
+      ports: { ...portMap },
+    })
     return this
   }
 
@@ -99,6 +106,7 @@ export class Builder {
     const network: Network = {
       components: [...this.components],
       ports: { ...this.ports },
+      blocks: [...this.blocks],
     }
     validateNetwork(network)
     return network

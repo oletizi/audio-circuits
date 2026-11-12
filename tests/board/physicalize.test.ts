@@ -39,7 +39,7 @@ test("a component is physical-only when its provenance says so", () => {
 })
 
 test("projection removes physical-only components and keeps the rest", () => {
-  const board: Network = { ports: { input: "IN" }, components: [CAP, BLOCK] }
+  const board: Network = { blocks: [], ports: { input: "IN" }, components: [CAP, BLOCK] }
   const projected = projectPhysical(board)
   expect(projected.components.map((c) => c.id)).toEqual(["c1"])
   expect(projected.ports).toEqual({ input: "IN" })
@@ -71,7 +71,7 @@ test("projection ACCEPTS a physical-only component that repeats a net across pin
     id: "repeating_block",
     units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("IN") } }],
   }
-  const board: Network = { ports: {}, components: [CAP, repeating] }
+  const board: Network = { blocks: [], ports: {}, components: [CAP, repeating] }
   expect(() => projectPhysical(board)).not.toThrow()
   expect(projectPhysical(board).components.map((c) => c.id)).toEqual(["c1"])
 })
@@ -104,11 +104,11 @@ test("projection REFUSES a physical-only component whose pins are on different n
     units: [{ name: "MAIN", pins: { a: net("0"), b: net("CHASSIS") } }],
     provenance: { source: PHYSICAL_ONLY },
   }
-  const board: Network = { ports: {}, components: [CAP, maybeConducting] }
+  const board: Network = { blocks: [], ports: {}, components: [CAP, maybeConducting] }
   expect(() => projectPhysical(board)).toThrow(/electricallyInert/)
 })
 
 test("projecting a network with no physical-only components changes nothing", () => {
-  const board: Network = { ports: {}, components: [CAP] }
+  const board: Network = { blocks: [], ports: {}, components: [CAP] }
   expect(projectPhysical(board).components).toEqual([CAP])
 })

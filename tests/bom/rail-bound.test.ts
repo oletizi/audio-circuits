@@ -102,6 +102,7 @@ test("a non-positive rail is refused rather than yielding a bound of zero watts"
 
 test("a potentiometer is refused: a wiper that can reach 0 ohms has no rail bound", () => {
   const withPot: Network = {
+    blocks: [],
     components: [
       {
         id: "level", kind: "potentiometer",

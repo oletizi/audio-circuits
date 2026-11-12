@@ -88,6 +88,7 @@ const HEADER: Component = {
 }
 
 const NETWORK: Network = {
+  blocks: [],
   ports: { IN: "IN", OUT: "OUT" },
   components: [CAP, POT, SELECTOR, MODE, BLOCK, HEADER],
 }

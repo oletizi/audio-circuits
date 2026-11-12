@@ -81,8 +81,14 @@ export function projectPhysical(network: Network): Network {
   for (const component of network.components) {
     if (physicalOnly(component)) assertElectricallyTransparent(component)
   }
+  const components = network.components.filter((component) => !physicalOnly(component))
+  const kept = new Set(components.map((component) => component.id))
   return {
     ports: network.ports,
-    components: network.components.filter((component) => !physicalOnly(component)),
+    components,
+    blocks: network.blocks.map((block) => ({
+      ...block,
+      componentIds: block.componentIds.filter((id) => kept.has(id)),
+    })),
   }
 }

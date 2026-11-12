@@ -114,7 +114,7 @@ export function fixtureCircuit(
   components: readonly Component[] = COMPONENTS,
 ): BoardCircuit {
   return boardCircuitFrom(
-    { components, ports: { input: "IN_EXT" } },
+    { blocks: [], components, ports: { input: "IN_EXT" } },
     DESIGNATORS,
     PIN_NUMBERS,
     powerUpChecks,

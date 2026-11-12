@@ -155,7 +155,7 @@ test("a pin count beyond the import string's declared count refuses", () => {
     units: [{ name: "MAIN", pins: { a: net("W"), b: net("OUT") } }],
   }
 
-  const NETWORK: Network = { ports: { input: "IN" }, components: [POT, LOAD] }
+  const NETWORK: Network = { blocks: [], ports: { input: "IN" }, components: [POT, LOAD] }
   const DESIGNATORS = { level_pot: "RV1", load: "R1" }
   const PIN_NUMBERS = { resistor: { a: "1", b: "2" } }
 

@@ -71,6 +71,7 @@ export function withResistance(network: Network, id: string, ohms: number): Netw
     throw new Error(`component "${id}" is a ${target.kind}, not a resistor`)
   }
   return {
+    blocks: [],
     ports: network.ports,
     components: network.components.map(component =>
       component.id === id ? { ...component, parameters: { ohms } } : component,

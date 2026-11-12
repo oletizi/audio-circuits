@@ -12,6 +12,7 @@ export const RESISTOR_FOOTPRINT = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P1
 
 export function demoNetwork(): Network {
   return {
+    blocks: [],
     components: [{
       id: "bias_resistor", kind: "resistor", parameters: { ohms: 100_000 },
       part: { footprint: RESISTOR_FOOTPRINT }, pins: {},

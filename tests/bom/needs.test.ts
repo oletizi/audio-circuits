@@ -91,7 +91,7 @@ test("groups identical requirements, sorts designators naturally and computes ra
     input_cap: "C3", gain_transistor: "Q1", gain_trim: "RV1", drive_pot: "RV5",
     input_header: "J1",
   }
-  const circuit = boardCircuitFrom({ components, ports: {} }, designators, BJT_PIN_NUMBERS)
+  const circuit = boardCircuitFrom({ blocks: [], components, ports: {} }, designators, BJT_PIN_NUMBERS)
   const dissipation = new Map([
     ["bias_resistor", 0.01],
     ["load_resistor", 0.2],
@@ -155,14 +155,14 @@ test("groups identical requirements, sorts designators naturally and computes ra
 
 test("a kind with no rule (e.g. a diode) throws naming the component and kind", () => {
   const components: readonly Component[] = [diode("clip_diode")]
-  const circuit = boardCircuitFrom({ components, ports: {} }, { clip_diode: "D1" }, {})
+  const circuit = boardCircuitFrom({ blocks: [], components, ports: {} }, { clip_diode: "D1" }, {})
   expect(() => deriveNeeds(circuit, 24, new Map())).toThrow(/"clip_diode"/)
   expect(() => deriveNeeds(circuit, 24, new Map())).toThrow(/diode/)
 })
 
 test("a component with no footprint throws", () => {
   const components: readonly Component[] = [bareResistor("bare_resistor", 100)]
-  const circuit = boardCircuitFrom({ components, ports: {} }, { bare_resistor: "R1" }, {})
+  const circuit = boardCircuitFrom({ blocks: [], components, ports: {} }, { bare_resistor: "R1" }, {})
   expect(() => deriveNeeds(circuit, 24, new Map([["bare_resistor", 0.01]]))).toThrow(
     /"bare_resistor"/,
   )
@@ -170,6 +170,6 @@ test("a component with no footprint throws", () => {
 
 test("a resistor missing from the dissipation map throws", () => {
   const components: readonly Component[] = [resistor("undissipated_resistor", 100)]
-  const circuit = boardCircuitFrom({ components, ports: {} }, { undissipated_resistor: "R1" }, {})
+  const circuit = boardCircuitFrom({ blocks: [], components, ports: {} }, { undissipated_resistor: "R1" }, {})
   expect(() => deriveNeeds(circuit, 24, new Map())).toThrow(/"undissipated_resistor"/)
 })

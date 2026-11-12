@@ -78,7 +78,7 @@ const ALL_FIVE: ReadonlySet<string> = new Set(LADDER_ORDER)
 function composedNetwork(): Network {
   const components: Component[] = []
   for (const section of LADDER_ORDER) components.push(...boardNetwork(section, ALL_FIVE).components)
-  return projectPhysical({ ports: THREE_BAND_REFERENCE.ports, components })
+  return projectPhysical({ blocks: [], ports: THREE_BAND_REFERENCE.ports, components })
 }
 
 const combined: Network = composedNetwork()
@@ -161,7 +161,7 @@ test("GATE C (model) CAN fail: a stand-in group wrongly populated when all five 
   // ever put it there - a gate that cannot fail proves nothing, and this feature has
   // already had two tests that could not fail, both found by mutation.
   const leak = standInGroup("low-cut").components
-  const corrupted: Network = { ports: combined.ports, components: [...combined.components, ...leak] }
+  const corrupted: Network = { blocks: [], ports: combined.ports, components: [...combined.components, ...leak] }
 
   // Property (a) catches it directly and unconditionally: the corrupted network now
   // carries components whose provenance says they stand in for an absent section,

@@ -93,7 +93,7 @@ function composed(present: readonly string[]): Network {
     if (present.includes(section)) continue
     for (const component of STAND_INS[section]!.components) components.push(asComponent(component))
   }
-  return { components, ports: { input: "in", output: "out", ground: "0" } }
+  return { blocks: [], components, ports: { input: "in", output: "out", ground: "0" } }
 }
 
 function raise(state: ControlState, pots: readonly string[]): ControlState {
@@ -210,7 +210,7 @@ function boardComposed(present: readonly string[]): Network {
   const built = new Set(present)
   const components: Component[] = []
   for (const section of present) components.push(...boardNetwork(section, built).components)
-  return projectPhysical({ ports: THREE_BAND_REFERENCE.ports, components })
+  return projectPhysical({ blocks: [], ports: THREE_BAND_REFERENCE.ports, components })
 }
 
 function boundaryOf(network: Network, hz: number): ReadonlyMap<string, Complex> {

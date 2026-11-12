@@ -428,6 +428,7 @@ test("a stand-in part that IS a panel part says which group it belongs to", () =
     boardName: "pultec-low-cut",
     circuitPath: "circuits/pultec/physical/low-cut.ts",
     network: {
+      blocks: [],
       ports: board.network.ports,
       components: [...board.network.components, panelPart],
     },
@@ -460,7 +461,7 @@ test("a group's part that is not on the rendered board refuses, not silently ren
   // The guide is generated per board; handing one board's doc the WRONG board's network
   // must refuse rather than produce a document naming parts that board has no position
   // for.
-  const wrong: Network = { ports: {}, components: [] }
+  const wrong: Network = { blocks: [], ports: {}, components: [] }
   expect(() => standInGroupsSection(docFor("mid"), wrong, {}, {}, new Set()))
     .toThrow(/not on that board's network/)
 })

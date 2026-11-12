@@ -40,7 +40,7 @@ const BOARDS: readonly (() => Network)[] = [
 function reconstructed(): Network {
   const components: Component[] = []
   for (const build of BOARDS) components.push(...projectPhysical(build()).components)
-  return { ports: THREE_BAND_REFERENCE.ports, components }
+  return { blocks: [], ports: THREE_BAND_REFERENCE.ports, components }
 }
 
 test("partitioning, physicalization and interconnection do not change the circuit", () => {
@@ -73,6 +73,7 @@ test("the junction's two rows are the only thing projection removes", () => {
 
 test("removing a board is caught, so the test is not vacuous", () => {
   const short: Network = {
+    blocks: [],
     ports: THREE_BAND_REFERENCE.ports,
     components: BOARDS.slice(1).flatMap((build) => [...projectPhysical(build()).components]),
   }

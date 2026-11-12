@@ -9,6 +9,7 @@ const r = (id: string, a: string, b: string, ohms: number): Component => ({
 })
 
 const divider: Network = {
+  blocks: [],
   components: [r("top", "IN", "MID", 1000), r("bottom", "MID", "GND", 1000)],
   ports: { IN: "IN", GND: "GND" },
 }
@@ -31,6 +32,7 @@ test("provenance is metadata and does not affect topology", () => {
 
 test("a different component value is a different topology", () => {
   const changed: Network = {
+    blocks: [],
     components: [r("top", "IN", "MID", 2200), r("bottom", "MID", "GND", 1000)],
     ports: { IN: "IN", GND: "GND" },
   }
@@ -44,6 +46,7 @@ test("a rewired pin is a different topology", () => {
   // independently well-formed and the only difference is where r1.b sits - not
   // an incidental floating net that would throw for the wrong reason.
   const base: Network = {
+    blocks: [],
     components: [
       r("r1", "A", "B", 1000),
       r("r2", "A", "B", 1000),
@@ -53,6 +56,7 @@ test("a rewired pin is a different topology", () => {
     ports: { A: "A", C: "C" },
   }
   const rewired: Network = {
+    blocks: [],
     components: [
       r("r1", "A", "C", 1000),
       r("r2", "A", "B", 1000),
@@ -69,6 +73,7 @@ test("a no-connect is not the same as a net named nc", () => {
   // "nc" is well-formed on its own merits either way - the difference the test
   // is named for is the only thing that can make assertSameTopology throw.
   const withNc: Network = {
+    blocks: [],
     components: [
       { id: "u", kind: "ic", parameters: {}, pins: {},
         units: [{ name: "MAIN", pins: { "1": net("IN"), "2": { kind: "nc" } } }] },
@@ -79,6 +84,7 @@ test("a no-connect is not the same as a net named nc", () => {
     ports: { IN: "IN", GND: "GND" },
   }
   const withNetNamedNc: Network = {
+    blocks: [],
     components: [
       { id: "u", kind: "ic", parameters: {}, pins: {},
         units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("nc") } }] },

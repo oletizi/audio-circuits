@@ -37,7 +37,7 @@ const BOTH_POT: Component = {
 
 function bothCircuit() {
   return boardCircuitFrom(
-    { components: [BOTH_POT], ports: {} },
+    { blocks: [], components: [BOTH_POT], ports: {} },
     { both_pot: "RV_BOTH" },
     { potentiometer: { ccw: "1", wiper: "2", cw: "3" } },
     undefined,

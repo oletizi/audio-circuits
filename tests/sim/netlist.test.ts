@@ -681,6 +681,7 @@ test("a package-pin collision stops the pipeline before any deck exists", () => 
   // because the claim being pinned is that no deck comes back - not merely that
   // one function complains.
   const colliding: Network = {
+    blocks: [],
     ports: { ground: "GND", input: "IN", output: "OUT" },
     components: [
       {

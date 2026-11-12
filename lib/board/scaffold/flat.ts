@@ -144,7 +144,7 @@ export function referenceNetwork(
   for (const boundaryNet of [...boundary].sort()) {
     if (boundaryNet !== GROUND_NET) ports[boundaryNet] = boundaryNet
   }
-  return { components, ports }
+  return { components, ports, blocks: [] }
 }
 
 /** Which section a resolved component came from.

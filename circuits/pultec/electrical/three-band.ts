@@ -206,6 +206,7 @@ function buildMid(): readonly Component[] {
  * section absent. */
 export const THREE_BAND_REFERENCE: Network = {
   ports: { input: "in", output: "out", ground: "0" },
+  blocks: [],
   components: [
     ...buildPassives(),
     ...buildPots(),

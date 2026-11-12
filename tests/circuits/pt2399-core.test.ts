@@ -250,6 +250,7 @@ test("a declared-NC pin the netlist shows WIRED is refused, not excused by its o
 
 test("the designator map walks package pins, not only unit pins", () => {
   const withPackagePins: Network = {
+    blocks: [],
     components: [{
       id: "amp", kind: "opamp", parameters: {},
       pins: { "v+": net("VCC"), "v-": net("GND") },

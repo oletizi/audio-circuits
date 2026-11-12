@@ -14,6 +14,7 @@ const opamp = (id: string, inp: string, inm: string, out: string, vp: string, vm
 })
 
 const twoResistors: Network = {
+  blocks: [],
   components: [resistor("r1", "IN", "MID"), resistor("r2", "MID", "OUT")],
   ports: { IN: "IN", OUT: "OUT" },
 }
@@ -24,6 +25,7 @@ test("a well-formed network validates", () => {
 
 test("duplicate component ids are rejected", () => {
   const dup: Network = {
+    blocks: [],
     components: [resistor("r1", "IN", "MID"), resistor("r1", "MID", "OUT")],
     ports: { IN: "IN", OUT: "OUT" },
   }
@@ -32,6 +34,7 @@ test("duplicate component ids are rejected", () => {
 
 test("a pin outside the kind's vocabulary is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "r1", kind: "resistor", parameters: { ohms: 1 }, pins: {},
       units: [{ name: "MAIN", pins: { a: net("IN"), wiper: net("OUT") } }],
@@ -43,6 +46,7 @@ test("a pin outside the kind's vocabulary is rejected", () => {
 
 test("a missing pin from the kind's vocabulary is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "r1", kind: "resistor", parameters: { ohms: 1 }, pins: {},
       units: [{ name: "MAIN", pins: { a: net("IN") } }],
@@ -54,6 +58,7 @@ test("a missing pin from the kind's vocabulary is rejected", () => {
 
 test("a net with only one component pin and no port is floating", () => {
   const floating: Network = {
+    blocks: [],
     components: [resistor("r1", "IN", "DANGLE")],
     ports: { IN: "IN" },
   }
@@ -62,6 +67,7 @@ test("a net with only one component pin and no port is floating", () => {
 
 test("one component pin plus a declared port is valid", () => {
   const connectorLike: Network = {
+    blocks: [],
     components: [{
       id: "j1", kind: "connector", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { "1": net("OUT") } }],
@@ -73,6 +79,7 @@ test("one component pin plus a declared port is valid", () => {
 
 test("an explicit no-connect is exempt from the floating rule", () => {
   const withNc: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "ic", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { "1": net("IN"), "2": net("OUT"), "3": NC } }],
@@ -84,6 +91,7 @@ test("an explicit no-connect is exempt from the floating rule", () => {
 
 test("a net named nc is an ordinary net, not a no-connect", () => {
   const trap: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "ic", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { "1": net("nc") } }],
@@ -95,6 +103,7 @@ test("a net named nc is an ordinary net, not a no-connect", () => {
 
 test("a port naming a net no pin sits on is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [resistor("r1", "IN", "OUT")],
     ports: { IN: "IN", OUT: "OUT", SPARE: "NOWHERE" },
   }
@@ -103,6 +112,7 @@ test("a port naming a net no pin sits on is rejected", () => {
 
 test("an open-vocabulary kind still rejects an empty pin map", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "ic", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: {} }],
@@ -115,6 +125,7 @@ test("an open-vocabulary kind still rejects an empty pin map", () => {
 // Finding 1: Package-pin walk coverage tests
 test("opamp with valid package pins is accepted", () => {
   const valid: Network = {
+    blocks: [],
     components: [opamp("u1", "IN+", "IN-", "OUT", "VCC", "GND"), resistor("r1", "OUT", "GND")],
     ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", VCC: "VCC", GND: "GND" },
   }
@@ -123,6 +134,7 @@ test("opamp with valid package pins is accepted", () => {
 
 test("opamp missing required package pin is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "opamp", parameters: {}, pins: { "v+": net("VCC") },
       units: [{ name: "MAIN", pins: { "in+": net("IN+"), "in-": net("IN-"), out: net("OUT") } }],
@@ -134,6 +146,7 @@ test("opamp missing required package pin is rejected", () => {
 
 test("opamp with extra package pin is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "opamp", parameters: {}, pins: { "v+": net("VCC"), "v-": net("GND"), vcc: net("VCC") },
       units: [{ name: "MAIN", pins: { "in+": net("IN+"), "in-": net("IN-"), out: net("OUT") } }],
@@ -167,6 +180,7 @@ test("a unit pin colliding with a package pin of the same name is rejected", () 
   // vocabularies but closed (empty) PACKAGE vocabularies, so they cannot
   // express a collision until one of them gains a package pin.
   const collide: Network = {
+    blocks: [],
     components: [
       {
         id: "u1", kind: "opamp", parameters: {},
@@ -191,6 +205,7 @@ test("two units of one package may share pin names with each other", () => {
   // AGAINST THE PACKAGE, so a dual op-amp's two sections both naming `in+`
   // stays legal. A check written unit-against-unit would reject this.
   const dual: Network = {
+    blocks: [],
     components: [
       {
         id: "u1", kind: "opamp", parameters: {},
@@ -213,6 +228,7 @@ test("two units of one package may share pin names with each other", () => {
 
 test("opamp package pin on floating net is rejected", () => {
   const floating: Network = {
+    blocks: [],
     components: [opamp("u1", "IN+", "IN-", "OUT", "VFLOAT", "GND"), resistor("r1", "OUT", "GND")],
     ports: { "IN+": "IN+", "IN-": "IN-", OUT: "OUT", GND: "GND" },
   }
@@ -222,6 +238,7 @@ test("opamp package pin on floating net is rejected", () => {
 // Finding 3: Missing validation tests
 test("component with empty id is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "", kind: "resistor", parameters: { ohms: 1 }, pins: {},
       units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
@@ -233,6 +250,7 @@ test("component with empty id is rejected", () => {
 
 test("component with empty units array is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "r1", kind: "resistor", parameters: { ohms: 1 }, pins: {},
       units: [],
@@ -244,6 +262,7 @@ test("component with empty units array is rejected", () => {
 
 test("component with duplicate unit names is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "u1", kind: "ic", parameters: {}, pins: {},
       units: [
@@ -266,6 +285,7 @@ test("a photoresistor without ohms is rejected at construction, not at emission"
   // validated here and threw later inside the SPICE emitter, with a different
   // message that named neither the kind nor the requirement.
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "ldr1", kind: "photoresistor", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
@@ -277,6 +297,7 @@ test("a photoresistor without ohms is rejected at construction, not at emission"
 
 test("a resistor without ohms is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "r1", kind: "resistor", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
@@ -288,6 +309,7 @@ test("a resistor without ohms is rejected", () => {
 
 test("a capacitor without farads is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "c1", kind: "capacitor", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
@@ -299,6 +321,7 @@ test("a capacitor without farads is rejected", () => {
 
 test("an inductor without henries is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "l1", kind: "inductor", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { a: net("A"), b: net("B") } }],
@@ -310,6 +333,7 @@ test("an inductor without henries is rejected", () => {
 
 test("a potentiometer without ohms is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "p1", kind: "potentiometer", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { ccw: net("A"), wiper: net("B"), cw: net("C") } }],
@@ -325,6 +349,7 @@ test("a potentiometer without a taper is rejected", () => {
   // this check exists to close - so it typechecks as a `potentiometer` missing
   // only `taper`, exercising checkParameters' second required field.
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "p1", kind: "potentiometer", parameters: { ohms: 1000 }, pins: {},
       units: [{ name: "MAIN", pins: { ccw: net("A"), wiper: net("B"), cw: net("C") } }],
@@ -336,6 +361,7 @@ test("a potentiometer without a taper is rejected", () => {
 
 test("a switch without positions is rejected", () => {
   const bad: Network = {
+    blocks: [],
     components: [{
       id: "s1", kind: "switch", parameters: {}, pins: {},
       units: [{ name: "MAIN", pins: { common: net("A"), thru: net("B") } }],

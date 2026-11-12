@@ -469,7 +469,7 @@ test("a network naming no nets refuses, rather than deriving a floor of zero fro
   // physicalize a network that has nothing in it to physicalize. Same refusal
   // set, wrong member, wrong fix named. The net-count clause therefore comes
   // first, and this assertion names which one fired. Reverted.
-  expect(refusalFrom(() => deriveTargets({ components: [], ports: {} }, STRIPS, "empty")))
+  expect(refusalFrom(() => deriveTargets({ blocks: [], components: [], ports: {} }, STRIPS, "empty")))
     .toStartWith("targets-nets: empty's network names no nets at all.")
 })
 
