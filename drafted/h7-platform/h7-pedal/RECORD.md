@@ -45,6 +45,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `fsw_led.kicad_sch` | block fsw_led | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
 | `controls_a.kicad_sch` | block controls_a | `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` |
 | `controls_b.kicad_sch` | block controls_b | `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` |
+| `expr_ref.kicad_sch` | block expr_ref | `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -62,6 +63,7 @@ committed bytes, with the pinned kicad-cli.
 | fsw_led | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
 | controls_a | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
 | controls_b | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
+| expr_ref | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
 
 ## The drafts every repair starts from
 
@@ -1616,7 +1618,9 @@ drawn as wire, with no label. No no-connects.
 
 ### Measurements, before (the draft) and after (this page)
 
-Both columns with the tables as Task 9a leaves them (Task 9b changes none). The draft column was
+Both columns with the tables as Task 9b leaves them (VREF_A's flag homed on the root, from the
+expr_ref page; with Task 9a's tables `/` read one `label_dangling` more, the VREF_A stub's, and the
+draft one `isolated_pin_label` fewer). The draft column was
 measured on the draft copied beside the committed `sym-lib-table`, by `verify.sh`'s steps run one at
 a time, since `verify.sh` stops at the draft's port labels.
 
@@ -1629,7 +1633,7 @@ a time, since `verify.sh` stops at the draft's port labels.
 | ports whose label is on the wrong net | 3 of 6 (3V3_D, GND and VREF_A, drawn as global labels) | 0 of 6 |
 | ERC, the sheet alone | 0 errors, 0 warnings | 5 errors (`pin_not_connected` 5: the hierarchical labels VREF_A, GND, POS1, POS2 and 3V3_D have no parent sheet), 0 warnings |
 | ERC under a one-block root, `/controls_a/` | 0 errors, 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
-| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 2 warnings (`isolated_pin_label` 2) | 4 errors (`label_dangling` 4, the stubs' labels alone with one block; `erc_sheets.py` admits them), 0 warnings |
+| ERC under a one-block root, `/` | 9 errors (`hier_label_mismatch` 6, `label_dangling` 3), 3 warnings (`isolated_pin_label` 3) | 3 errors (`label_dangling` 3, the stubs' labels alone with one block; `erc_sheets.py` admits them), 0 warnings |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 3, 0 | 1, 0 |
 | orphan junctions, of total | 0 of 3 | 0 of 21 |
@@ -1748,7 +1752,9 @@ drawn as wire, with no label. No no-connects.
 
 ### Measurements, before (the draft) and after (this page)
 
-Both columns with the tables as Task 9a leaves them (Task 9b changes none). Every figure in both
+Both columns with the tables as Task 9b leaves them (VREF_A's flag homed on the root, from the
+expr_ref page; with Task 9a's tables `/` read one `label_dangling` more, the VREF_A stub's, and the
+draft one `isolated_pin_label` fewer). Every figure in both
 columns is the same as controls_a's; only the names differ. The draft column was
 measured on the draft copied beside the committed `sym-lib-table`, by `verify.sh`'s steps run one at
 a time, since `verify.sh` stops at the draft's port labels.
@@ -1762,7 +1768,7 @@ a time, since `verify.sh` stops at the draft's port labels.
 | ports whose label is on the wrong net | 3 of 6 (3V3_D, GND and VREF_A, drawn as global labels) | 0 of 6 |
 | ERC, the sheet alone | 0 errors, 0 warnings | 5 errors (`pin_not_connected` 5: the hierarchical labels VREF_A, GND, POS4, POS5 and 3V3_D have no parent sheet), 0 warnings |
 | ERC under a one-block root, `/controls_b/` | 0 errors, 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
-| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 2 warnings (`isolated_pin_label` 2) | 4 errors (`label_dangling` 4, the stubs' labels alone with one block; `erc_sheets.py` admits them), 0 warnings |
+| ERC under a one-block root, `/` | 9 errors (`hier_label_mismatch` 6, `label_dangling` 3), 3 warnings (`isolated_pin_label` 3) | 3 errors (`label_dangling` 3, the stubs' labels alone with one block; `erc_sheets.py` admits them), 0 warnings |
 | parenthesis depth at end, lowest | 0, 0 | 0, 0 |
 | true wire crossings, T-meetings | 3, 0 | 1, 0 |
 | orphan junctions, of total | 0 of 3 | 0 of 21 |
@@ -1815,3 +1821,191 @@ row crossing the 3V3_D bus on its way to the outer GND vertical that comes down 
   which KiCad draws on the east side at rotation 270 and the west at 90), and R_POS's centred on
   the node row's side away from its button (above on positions 1 and 3, below on position 2).
 - The page note is below the group rectangle, at the west.
+
+## expr_ref: the expression input, the VREF_A blocking network and HW_REV (Task 9b)
+
+**Status: UNREVIEWED.** sha256 `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c`.
+Render: `expr_ref.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/expr-ref.ts`, 23 parts. J4 (`j_exp`, NMJ6HCD2,
+`Connector_Audio:NMJ6HCD2`: T on EXP_TIP_J, R on EXP_RING, S on GND, RN on EXP_RN, TN and SN not
+connected); the tip chain D7 (`d_esd_tip`, PESD12VL1BA), R44 (`r_tip`, 22.0 kOhm), C45 (`c_tip`,
+1 nF), R45 (`r_tip_pd`, 10 MOhm), R46 (`r_expin`, 2.2 MOhm), U13 (`u_exp`, MCP6001T-I/OT,
+`h7-platform:MCP6001T-OT`), C46 (`c_exp`, 100 nF), R47 (`r_exp_out`, 1.00 kOhm), C47 (`c_exp_out`,
+100 nF); plug detect R48 (`r_det`, 1 kOhm) and R49 (`r_det_pd`, 100 kOhm); the ring D8
+(`d_esd_ring`, PESD12VL1BA), C44 (`c_ring`, 100 nF) and R43 (`r_ref`, 3.30 kOhm); the blocking network
+U12 (`u_refblk`, LM66100DCKR, `h7-platform:LM66100DCK`), Q6 (`q_refen`, 2N7002,215,
+`Transistor_FET:2N7002`), R41 (`r_eng`, 100 kOhm), R42 (`r_ce`, 100 kOhm), D9 (`d_rclamp`,
+PMEG4005AEA,115, `Device:D_Schottky`); the HW_REV divider R50 (`r_hwrev_top`, 20.0 kOhm), R51
+(`r_hwrev_bottom`, 2.49 kOhm), C48 (`c_hwrev`, 100 nF). Ports VREF_A, EXPR_TIP, HW_REV,
+EXPR_DETECT and GND, each reaching two or more pins, so copperhead drafted a wire for every net and
+no stroke is written by hand. The eleven private nets are drawn as wire, with no label. Two
+no-connects, J4's TN and SN.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `expr_ref` is the
+  expression jack and its chain, the VREF_A blocking network, U_EXP and HW_REV.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings): J4's
+  pins (T, R, S on their nets, RN the ring-normal, TN and SN not connected); EXPR_DETECT's 100 kOhm at
+  the pin, after the 1 kOhm; each PESD12VL1BA with pin 1 on the line and pin 2 on GND; U_EXP a unity
+  follower, VSS on GND, VDD on VREF_A, then 1.00 kOhm to EXPR_TIP and 100 nF from EXPR_TIP to GND;
+  C46 from VREF_A to GND. **Open row EXPR-JACK-CONTACT-MAP** (`docs/h7-platform/open-items.md`
+  line 130): Neutrik's data sheet was not fetched, so which physical contact each of J4's letters is
+  stays open; EXP_RN, and so EXPR_DETECT, depend on RN being the ring-normal leaf.
+- [CR-PEDAL-HW-REV](../../../docs/h7-platform/decisions.md#cr-pedal-hw-rev): revision 1's divider,
+  20.0 kOhm, 2.49 kOhm, 100 nF at the pin.
+- [CR-PEDAL-SYMBOL-LM66100](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-lm66100),
+  [CR-PEDAL-SYMBOL-MCP6001](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-mcp6001) and
+  [CR-PEDAL-SYMBOL-PESD12VL1BA](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-pesd12vl1ba):
+  U12, U13, D7 and D8 are project symbols; [CR-PEDAL-SYMBOL-DIODES](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-diodes):
+  D9 is `Device:D_Schottky`, cathode 1.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): clause 5 types
+  U12's ST `open_collector`, which is what the allowance below excuses; clause 1 makes Q6's gate
+  `input`.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the jack is `switch`, the
+  TVS, U12 and Q6 `ic`, D9 `diode`, U13 `opamp`.
+- **[CR-PEDAL-LM66100-ST-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-lm66100-st-erc)**,
+  drafted by this task and awaiting the controller: the page's one ERC error under its one-block root,
+  `pin_to_pin` between U12's ST and the PWR_FLAG on GND, is excused by one declared allowance (below).
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VREF_A and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; VREF_A's is homed on the root (below).
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 5 ports on the wrong net.
+- Checklist items, not rulings: CTL-08 (schematic-checklist.md line 196), CTL-09 (line 197), CTL-10
+  (line 201). Design notes the block cites: `analog.md` lines 307 to 314, 320, 322, 331, 335, 339,
+  340, 347 and 351; `parts.md` lines 106 to 114 and 133.
+- Drawing choices, not transcriptions (`expr_ref/layout.py` says each): J4 at the west, mirrored top
+  to bottom so its pins read TN, T, RN, R, SN, S from the north; three bands east of it, the tip
+  chain at the top, plug detect in the middle and the ring with the blocking network at the bottom,
+  the last read east to west (VREF_A in at U12's VIN on the east, U12 mirrored left to right, REF_OUT
+  out of VOUT westward through R43 to the ring); Q6 mirrored left to right, gate east; the VREF_A and
+  GND verticals east of the labels; the HW_REV divider east of them.
+
+### The tables and shared tools after Task 9b
+
+- `pwr-flag-homes.ts`: **VREF_A on the root.** Under the expr_ref page's one-block root, `/expr_ref/`
+  reported `power_pin_not_driven` on U12's VIN (pin 1, `power_in`). Survey of `h7Pedal()` (a script
+  over the model and the symbol libraries): VREF_A's pins are J2 pin 1 (passive), U12's VIN and U13's
+  VDD (`power_in`), and passives (the six pots' cw ends, C46, R41, R50); no power output. Of the
+  earlier pages, interface (J2 pin 1), controls_a and controls_b have a VREF_A port; their bytes do
+  not change, and each still verifies: interface's `/` reads 0 errors and 62 warnings where it read
+  64, and controls_a's and controls_b's `/` 3 errors where they read 4.
+- `erc-allowances.ts`: **its first entry**, CR-PEDAL-LM66100-ST-ERC: sheet `/expr_ref/`, `pin_to_pin`
+  between U12 pin 5 and the PWR_FLAG on GND. To name a flag as an allowance's partner, the shared
+  tools changed: `draughting/pages/erc_match.py` reads an item `Symbol #PWR<n> Pin 1 [Power output`
+  as (`PWR_FLAG`, "1"), since the number is the holding sheet's; `draughting/pages/erc-allowances.ts`
+  holds a `PWR_FLAG` partner to pin 1 and to a declared flag home for the entry's net;
+  `draughting/pages/kicad-pro.ts` refuses such an entry, because a `.kicad_pro` exclusion keys the
+  flag's uuid on the root, which it cannot read yet (the pedal root's task). The module's one
+  allowance is unchanged and the module's replay and controls pass. `repair/tools/erc-control.sh`
+  controls 7 to 10 re-run the allowance: the page verifies with it, fails without it on that pin
+  pair, and an allowance naming U12 pin 4 or the flag's pin 2 is refused.
+- `draughting/pages/text_edits.py` reads a mirror in both of the sheet's forms. copperhead drafted J4
+  mirrored top to bottom and Q6 left to right, as the layout places them, so akcli left each mirror on
+  a line of its own (copperhead's form); the tool read only akcli's form, on the `(at ...)` line, and
+  refused J4 as unmirrored. No committed pedal or module sheet held the own-line form before this
+  page (counted), and every earlier page replays byte-identical.
+  `tests/draught/text-edits-mirror-forms.test.ts` reproduces this page's bytes from a reset copy and,
+  as a control, requires the refusal when J4's own-line mirror is deleted.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 9b leaves them. The draft column was measured on the draft
+copied beside the committed `sym-lib-table`, by `verify.sh`'s steps run one at a time.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 23 (the model declares none) | 0; 23 |
+| exported components, nets, net members | 23, 16, 58 | 23, 16, 58 |
+| exported nets carrying a model net name | 14 of 16 | 5 of 16 (the five ports; the other eleven private and unlabelled) |
+| ports whose label is on the wrong net | 3 of 5 | 0 of 5 |
+| ERC, the sheet alone | 2 errors (`power_pin_not_driven` 2, U12's VIN and GND), 6 warnings (`lib_symbol_issues` 4, `lib_symbol_mismatch` 2) | 7 errors (`pin_not_connected` 5: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U12's VIN and GND), 6 warnings (the same six) |
+| ERC under a one-block root, `/expr_ref/` | 2 errors (`power_pin_not_driven` 2, U12's VIN and GND), 3 warnings (`same_local_global_label` 3) | **1 error, excused by CR-PEDAL-LM66100-ST-ERC** (`pin_to_pin`, U12 pin 5 ST against the stub PWR_FLAG on GND), 0 warnings |
+| ERC under a one-block root, `/` | 8 errors (`hier_label_mismatch` 5, `label_dangling` 3), 8 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 4, `lib_symbol_mismatch` 2) | 3 errors (`label_dangling` 3, the stubs' labels alone with one block; `erc_sheets.py` admits them), 6 warnings (`lib_symbol_issues` 4, `lib_symbol_mismatch` 2) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 5, 6 | 4, 0 |
+| orphan junctions, of total | 0 of 11 | 0 of 33 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 3; 6 | 0; 0 |
+| pins on a wire's interior without a dot | 1 | 0 |
+| labels | 31 on 14 nets (24 global) | 5 on 5 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 31 | 0 of 14 |
+| symbols (parts, power symbols, PWR_FLAGs) | 23 (23, 0, 0) | 23 (23, 0, 0) |
+| placed pins | 58 | 58 |
+| wires, total length | 94, 740.41 mm | 88, 1287.78 mm |
+| wire corners | 13 | 16 |
+| junctions | 11 | 33 |
+
+The draft under the one-block root reports no `pin_to_pin` on U12's ST because its GND is drawn as
+global labels, a net apart from the root's `/GND`, whose stub carries the flag; and it reports U12's
+VIN and GND undriven for the same reason.
+
+**`lib_symbol_issues` 4**: *"The current configuration does not include the symbol library
+'h7-platform'"*, on D7, D8, U12 and U13, the pf page's warning: a block page has no `.kicad_pro`, and
+kicad-cli 10.0.5 does not take the committed `sym-lib-table` without one. The symbols are embedded in
+the sheet.
+
+**`lib_symbol_mismatch` 2**, on J4 and Q6, both `extends` symbols whose embedded copy is the parent
+flattened (measured against the installed libraries):
+
+| | J4 embedded | `NMJ6HCD2` installed (`Connector_Audio.kicad_sym` line 20009) | Q6 embedded | `2N7002` installed (`Transistor_FET.kicad_sym` line 813) |
+| --- | --- | --- | --- | --- |
+| parent | `AudioJack3_Switch` (line 4113) | | `Q_NMOS_GSD` (line 68850) | |
+| Value | `AudioJack3_Switch` | `NMJ6HCD2` | `Q_NMOS_GSD` | `2N7002` |
+| Footprint | (none) | `Connector_Audio:Jack_6.35mm_Neutrik_NMJ6HCD2_Horizontal` | (none) | `Package_TO_SOT_SMD:SOT-23` |
+| Datasheet | (none) | `https://www.neutrik.com/en/product/nmj6hcd2` | (none) | `https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF` |
+| Description | "Audio Jack, 3 Poles (Stereo / TRS), Switched Poles (Normalling)" | "M Series, 6.35mm (1/4in) stereo jack, switched, with chrome ferrule and straight PCB pins" | "N-MOSFET transistor, gate/source/drain" | "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23" |
+| pins | T, R, S, TN, RN, SN, all passive: the parent's | | 1 G input, 2 S passive, 3 D passive: the parent's | |
+
+The instances' own Values on the page are `NMJ6HCD2` and `2N7002,215`. **Not an electrical fault**:
+the model comparison is 0, 0, 0, 0. **Trap for a later output**: an export reading the library fields
+gets the generic jack and MOSFET with no footprint or data sheet; J4's Neutrik footprint in
+particular is on the installed child only.
+
+### Why the page has four crossings, as the layout records it
+
+Observations, not a judgement of the page, each crossing at the point `crossings.py` reports:
+
+- (114.3, 48.26) mm, **C46's GND lead across the row into U13's + input.** The tip band's signal row
+  runs from J4 to EXPR_TIP, interrupted only by U13's body, and C46 joins VREF_A above it to GND below
+  it, so any place for C46 beside U13 crosses that row; the alternative, C46 on the VREF_A and GND
+  verticals at the east, puts it 3 inches from the VDD pin it decouples.
+- (124.46, 62.23) mm, **the follower's feedback across U13's VSS lead.** The symbol has VDD on top and
+  VSS underneath, and a loop from the output to the - input closes round one side of the body or the
+  other, enclosing one supply pin; it runs under, crossing VSS.
+- (144.78, 105.41) mm, **R42's run across U12's GND lead.** R42 joins VOUT (west) to CE (east); a path
+  between them closes round U12, and encloses either VIN or the GND, N/C and ST pins, whose net must
+  leave; it runs under U12, crossing the one GND lead the three are joined into.
+- (195.58, 66.04) mm, **the tip band's GND row across the VREF_A vertical.** VREF_A reaches the bottom
+  band from the top row down a vertical east of the labels, and the tip band's GND reaches the bottom
+  row down a vertical further east; the inner of the two is crossed by the outer one's row.
+
+### What the page shows, as observations
+
+- J4 at the west, its pins facing east: T rises to the tip row, RN runs straight east, R drops to the
+  ring row, S drops to the bottom GND row; TN and SN carry no-connect flags.
+- The tip row at the top: past D7 (down to the tip band's GND row), through R44, past C45 and R45
+  (down to that row), through R46 into U13's + input. U13's VDD rises to the VREF_A row along the
+  top, with C46 hanging from that row west of U13; its VSS drops to the GND row. Its output runs east
+  past the feedback tap, through R47 to EXPR_TIP's label, pointing east, with C47 down to GND.
+- The detect row in the middle, from RN through R48 to EXPR_DETECT's label, pointing east; R49 rises
+  from it to the tip band's GND row.
+- The bottom band, read east to west: VREF_A comes down the vertical east of the labels into U12's
+  VIN (U12 mirrored, VOUT west); REF_OUT runs west past R42's run and D9 (down to GND) through R43 to
+  the ring row, past C44 and D8 (down to GND) to J4's R. U12's N/C and ST join west of it and meet its
+  GND lead under it. Its CE row runs east past R42 to Q6's drain (Q6 mirrored, gate east), whose gate
+  takes R41 from the VREF_A vertical; Q6's source drops to the bottom GND row, which runs west to GND's
+  label, pointing west.
+- East of the labels, the VREF_A vertical, then the GND vertical joining the two GND rows, then the
+  HW_REV divider: R50 down from the VREF_A row to the HW_REV node, R51 and C48 down to the tip band's
+  GND row, HW_REV's label east, pointing east; VREF_A's label is at the top row's east end, pointing
+  east.
+- The EXP_ nets (the tip chain's, EXP_RING and EXP_RN) carry copperhead's blue, EXPR_TIP and
+  EXPR_DETECT its purple, REF_OUT, REF_CE and REF_ENG its teal; the rest its default.
+- U13's VDD and VSS pin names, drawn by the project symbol inside the triangle, overlap the VIN+ and
+  VIN- names on the render; the symbol's geometry is `Amplifier_Operational:MCP6001-OT`'s
+  (CR-PEDAL-SYMBOL-MCP6001), and this page does not change it.

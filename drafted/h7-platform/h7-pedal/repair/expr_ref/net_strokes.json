@@ -1,0 +1,16 @@
+{
+ "EXPR_DETECT": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "EXPR_TIP": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "EXP_BUF": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "EXP_IN": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "EXP_RING": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "EXP_RN": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "EXP_TIP_J": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "EXP_TIP_RC": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "HW_REV": "(stroke (width 0.254) (type default))",
+ "REF_CE": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "REF_ENG": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "REF_OUT": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "VREF_A": "(stroke (width 0.254) (type default))"
+}

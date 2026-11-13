@@ -4,10 +4,20 @@
  * limitation, each under its own controller ruling in `docs/h7-platform/decisions.md`, as the
  * module's one entry rests on CR-MODULE-VCAP-ERC.
  *
- * It is EMPTY, and that is a measured claim: under each page's one-block root, `kicad-cli sch erc`
- * reports 0 errors on the block's own sheet (`../../RECORD.md`) for every page drawn so far, the
- * interface and entry pages (Task 7a), pf and modsw (Task 7b) and prail and ldo_vmid (Task 7c), so
- * nothing needs excusing.
+ * Until Task 9b it was empty, a measured claim: under each page's one-block root, `kicad-cli sch erc`
+ * reported 0 errors on the block's own sheet (`../../RECORD.md`) for the interface and entry pages
+ * (Task 7a), pf and modsw (Task 7b), prail and ldo_vmid (Task 7c), usb, midi_i2c and fsw_led (Task 9a)
+ * and controls_a and controls_b (Task 9b).
+ *
+ * Task 9b (the expr_ref page) added the first entry, ruling CR-PEDAL-LM66100-ST-ERC. U12 (U_REFBLK,
+ * LM66100) has its ST pin, an open-drain status output typed `open_collector` (SLVSEZ8A; ruling
+ * CR-PEDAL-PIN-MATCH, clause 5), tied to GND as analog.md line 314 states ("ST and N/C to GND"). GND
+ * carries the board's one PWR_FLAG (`pwr-flag-homes.ts`, on the root), and KiCad's pin matrix makes an
+ * open-collector pin on a net with a power output an error: under the expr_ref page's one-block root,
+ * `/expr_ref/` reported exactly one error, `pin_to_pin` between "Symbol U12 Pin 5 [ST, Open collector,
+ * Line]" and "Symbol #PWR01 Pin 1 [Power output, Line]", the root's stub flag on GND. The error comes
+ * from the pin typing, not from the circuit. Its partner is the flag, so the entry names it as
+ * `PWR_FLAG` (`draughting/pages/erc-allowances.ts`, the PWR_FLAG partner).
  *
  * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are
  * `draughting/pages/erc-allowances.ts`; the shared tools read this table through the board's drafted
@@ -15,4 +25,20 @@
  */
 import type { ErcAllowance } from "../../../../../draughting/pages/erc-allowances.ts"
 
-export const ERC_ALLOWANCES: readonly ErcAllowance[] = []
+export const ERC_ALLOWANCES: readonly ErcAllowance[] = [
+  {
+    ruling: "CR-PEDAL-LM66100-ST-ERC",
+    sheet: "/expr_ref/",
+    type: "pin_to_pin",
+    pins: [
+      { designator: "U12", pin: "5" },
+      { designator: "PWR_FLAG", pin: "1" },
+    ],
+    net: "GND",
+    symbolPinType: "open_collector",
+    source:
+      "circuits/h7-platform/pedal/expr-ref.ts (u_refblk pin 5, ST, on GND: analog.md:314, \"ST and N/C to GND\"); " +
+      "h7-platform:LM66100DCK types ST open_collector (SLVSEZ8A; CR-PEDAL-SYMBOL-LM66100, CR-PEDAL-PIN-MATCH clause 5); " +
+      "GND's one PWR_FLAG is on the root (pwr-flag-homes.ts); ruling CR-PEDAL-LM66100-ST-ERC in docs/h7-platform/decisions.md",
+  },
+]

@@ -17,6 +17,17 @@
  * (so they are on the SAME net); and each pin carries, on the installed KiCad symbol, the pin type the
  * entry says causes the violation. An entry failing any of these is refused, naming what is missing.
  *
+ * A PWR_FLAG PARTNER (h7 pedal pages plan, Task 9b). One of the two items may be the net's PWR_FLAG
+ * rather than a part's pin: the allowance names it as designator `PWR_FLAG` (`FLAG_PARTNER`), pin
+ * "1". KiCad reports a flag as `Symbol #PWR<n> Pin 1 [Power output, ...]`, and the number `<n>` is
+ * whatever the sheet holding the flag assigned (the one-block root's stub, or the board's root), so
+ * `erc_match.py` reads such an item as (`PWR_FLAG`, "1") and never matches the number. The model
+ * check then requires, for the partner, pin "1" and a declared flag home for the entry's net in the
+ * board's `pwr-flag-homes.ts` (so a flag is on that net and nowhere else); the pin-type check holds
+ * for the other item, the part's own pin. First needed for the h7 pedal's U12 ST, an open-drain
+ * output the circuit ties to GND (ruling CR-PEDAL-LM66100-ST-ERC). `kicad-pro.ts` refuses such an
+ * entry: a `.kicad_pro` exclusion keys the flag's uuid on the root, which no tool here reads yet.
+ *
  * TEST OVERRIDE. When the environment variable `PAGES_ERC_ALLOWANCES_TABLE` names a JSON file, the
  * table is read from it instead, and that is said on stderr. It exists for a board's negative
  * controls (the module's `erc-control.sh`), so they can remove the allowance or name a wrong pin
@@ -33,6 +44,7 @@ import { writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { boardFromArgs, type PageBoard } from "./board.ts"
 import { libraryPin, pinConnection } from "./cross-page-drivers.ts"
+import { FLAG_HOMES_FILE, flagHomes, type FlagHomes } from "./flag-homes.ts"
 import { componentIdFor, exported, importTable, isRecord, overrideOr, parsedArray, requiredString } from "./table-input.ts"
 
 export interface AllowedPin {
@@ -60,6 +72,8 @@ export interface ErcAllowance {
 }
 
 export const ALLOWANCES_FILE = "erc-allowances.ts"
+/** The designator an allowance gives an item that is the net's PWR_FLAG (see the module comment). */
+export const FLAG_PARTNER = "PWR_FLAG"
 const OVERRIDE_ENV = "PAGES_ERC_ALLOWANCES_TABLE"
 
 function allowedPin(value: unknown, where: string): AllowedPin {
@@ -94,6 +108,16 @@ export async function ercAllowanceTable(board: PageBoard): Promise<readonly ErcA
   return overrideOr(OVERRIDE_ENV, await committedErcAllowances(board), "erc-allowances.ts", "ERC_ALLOWANCES", parseAllowance)
 }
 
+function flagPartnerProblems(entry: ErcAllowance, p: AllowedPin, homes: FlagHomes): string[] {
+  const problems: string[] = []
+  if (p.pin !== "1") problems.push(`a ${FLAG_PARTNER} partner is the flag's pin 1, not pin ${p.pin}`)
+  const declared = homes.shared[entry.net] !== undefined || Object.values(homes.privateFlags).some((nets) => nets.includes(entry.net))
+  if (!declared) {
+    problems.push(`net ${entry.net} has no declared PWR_FLAG home in ${FLAG_HOMES_FILE}, so no flag on it can be the ${FLAG_PARTNER} partner`)
+  }
+  return problems
+}
+
 function pinProblems(entry: ErcAllowance, p: AllowedPin, componentIds: readonly string[], board: PageBoard): string[] {
   const resolved = componentIdFor(board, p.designator)
   if ("problem" in resolved) return [resolved.problem]
@@ -120,8 +144,11 @@ function pinProblems(entry: ErcAllowance, p: AllowedPin, componentIds: readonly 
   return problems
 }
 
-/** Hold every allowance to the board's model; throw, naming each allowance and what is missing, if any fails. */
-export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBoard): void {
+/**
+ * Hold every allowance to the board's model, and a PWR_FLAG partner to the board's flag homes; throw,
+ * naming each allowance and what is missing, if any fails.
+ */
+export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBoard, homes: FlagHomes): void {
   const module = board.network
   const failures: string[] = []
   for (const entry of table) {
@@ -134,7 +161,9 @@ export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBo
     } else {
       const [a, b] = entry.pins
       if (a.designator === b.designator && a.pin === b.pin) problems.push("the two pins are the same pin")
-      for (const p of entry.pins) problems.push(...pinProblems(entry, p, record.componentIds, board))
+      for (const p of entry.pins) {
+        problems.push(...(p.designator === FLAG_PARTNER ? flagPartnerProblems(entry, p, homes) : pinProblems(entry, p, record.componentIds, board)))
+      }
     }
     for (const problem of problems) failures.push(`${label}: ${problem}`)
   }
@@ -152,7 +181,7 @@ if (import.meta.main) {
   const out = rest[0]
   if (out === undefined) throw new Error("usage: bun erc-allowances.ts <board-dir> <out.json> - the path to write the checked table to is required")
   const table = await ercAllowanceTable(board)
-  checkErcAllowances(table, board)
+  checkErcAllowances(table, board, await flagHomes(board))
   writeFileSync(out, JSON.stringify(table, null, 1) + "\n")
   console.log(`erc-allowances.ts: ${table.length} allowance(s) checked against ${board.modelName}: ${table.map((e) => e.ruling).join(", ") || "none"}`)
 }

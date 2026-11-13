@@ -45,6 +45,14 @@
  *   other pins are passive (the pull-ups, C42, C59, C61, R83, R86, R93, R94, TP6, J8 pin 1) or power
  *   inputs (U10, U15, U16); no power output.
  *
+ * Task 9b (the controls_a, controls_b and expr_ref pages) added one, on the ROOT for the reason GND's
+ * is there:
+ * - VREF_A. Under the expr_ref page's one-block root, `kicad-cli sch erc` reported
+ *   `power_pin_not_driven` on U12's VIN (pin 1, `power_in`; U13's VDD, pin 5, is `power_in` too).
+ *   Survey of h7Pedal(): VREF_A reaches the module through J2 pin 1 (passive); its other pins
+ *   are passive (the six control pots' cw ends, C46, R41, R50) or power inputs (U12's VIN, U13's
+ *   VDD); no power output. The controls pages, whose VREF_A pins are all passive, reported nothing.
+ *
  * The pages still to be repaired (the digital and analog groups) add their nets here, each with its
  * home, when they are repaired.
  *
@@ -65,6 +73,7 @@ export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = {
   VIN_MOD: ROOT_SHEET,
   VIN_A: ROOT_SHEET,
   "3V3_D": ROOT_SHEET,
+  VREF_A: ROOT_SHEET,
 }
 
 /** Block -> the private nets its own page flags. Empty: no page drawn so far flags a net. */

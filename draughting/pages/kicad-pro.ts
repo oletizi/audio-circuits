@@ -32,7 +32,8 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { child, children, parseSexpr, type SNode } from "../../lib/kicad/sexpr.ts"
 import { boardFromArgs, type PageBoard } from "./board.ts"
-import { checkErcAllowances, ercAllowanceTable, type ErcAllowance } from "./erc-allowances.ts"
+import { checkErcAllowances, ercAllowanceTable, FLAG_PARTNER, type ErcAllowance } from "./erc-allowances.ts"
+import { flagHomes } from "./flag-homes.ts"
 
 const UNITS_PER_MIL = 254
 
@@ -86,6 +87,14 @@ export function exclusionKey(entry: ErcAllowance, projectDir: string, board: str
   if (block === undefined) throw new Error(`kicad-pro.ts: allowance sheet ${entry.sheet} is not /<block>/`)
   const path = sheetPath(join(projectDir, `${board}.kicad_sch`), block)
   const [main, aux] = entry.pins
+  if (main.designator === FLAG_PARTNER || aux.designator === FLAG_PARTNER) {
+    throw new Error(
+      `kicad-pro.ts: allowance ${entry.ruling} (${entry.type} on ${entry.sheet}) names a ${FLAG_PARTNER} partner, whose ` +
+        "exclusion key needs the uuid of that flag on the board's root sheet; this tool reads pins from a block sheet only, " +
+        "so it cannot key it. Not implemented: the PWR_FLAG partner was added for the one-block root (h7 pedal Task 9b); " +
+        "the board's root task must teach this tool to read the flag's uuid from the root before writing the .kicad_pro.",
+    )
+  }
   const sheetFile = join(projectDir, `${block}.kicad_sch`)
   const [x, y] = pinPointMil(join(repairDir, block, "pins.json"), main.designator, main.pin)
   return [
@@ -102,7 +111,7 @@ export function exclusionKey(entry: ErcAllowance, projectDir: string, board: str
 
 export async function kicadProject(board: PageBoard, projectDir: string): Promise<string> {
   const table = await ercAllowanceTable(board)
-  checkErcAllowances(table, board)
+  checkErcAllowances(table, board, await flagHomes(board))
   const exclusions = table.map((entry) => [
     exclusionKey(entry, projectDir, board.name, board.repairDir),
     `${entry.ruling}: ${entry.type} on ${entry.sheet} between ${entry.pins.map((p) => `${p.designator} pin ${p.pin}`).join(" and ")} ` +

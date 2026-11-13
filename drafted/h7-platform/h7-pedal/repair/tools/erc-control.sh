@@ -25,6 +25,12 @@
 #     one-block-root.ts for block pf is refused too.
 #  5. negative, the refusal: the same with 5V_A homed on the root, refused by tables.ts.
 #  6. positive: the committed tables pass the same check (tables.ts exit 0 on this board).
+#  7. positive (Task 9b): the committed expr_ref page verifies, its one ERC error, U12's ST (open
+#     collector) against the root's stub PWR_FLAG on GND, excused by CR-PEDAL-LM66100-ST-ERC.
+#  8. negative: the same page with no allowance (PAGES_ERC_ALLOWANCES_TABLE, an empty table) fails on
+#     that pin_to_pin.
+#  9. negative: an allowance naming U12 pin 4 (N/C, on GND, typed free) is refused by the model check.
+# 10. negative: an allowance whose PWR_FLAG partner is not the flag's pin 1 is refused.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -123,5 +129,50 @@ echo "   tables.ts refused as expected: $(grep -o "$REFUSAL root" "$work/home-ro
 echo "== 6. the committed tables pass the same check"
 (cd "$root" && bun "$pages/tables.ts" "$board") >"$work/tables.log" 2>&1 || { cat "$work/tables.log" >&2; bad "tables.ts refused this board's committed tables"; }
 echo "   $(cat "$work/tables.log")"
+
+# Controls 7 to 10 (h7 pedal pages plan, Task 9b): the PWR_FLAG partner of an ERC allowance and the
+# pedal's one allowance, ruling CR-PEDAL-LM66100-ST-ERC (U12's ST, open_collector, on GND, which
+# carries the flag).
+er="$board/expr_ref.kicad_sch"
+ST='Symbol U12 Pin 5 \[ST, Open collector, Line\]; Symbol #PWR[0-9]* Pin 1 \[Power output, Line\]'
+
+echo "== 7. the committed expr_ref page verifies, its one ERC error excused by CR-PEDAL-LM66100-ST-ERC"
+sh "$pages/verify.sh" "$board" expr_ref "$er" >"$work/er.log" 2>&1 || { cat "$work/er.log" >&2; bad "the committed expr_ref page did not verify"; }
+grep -q '^sheet /expr_ref/: errors 1 (1 excused by a declared allowance), warnings 0' "$work/er.log" \
+  || { cat "$work/er.log" >&2; bad "/expr_ref/ is not at 1 error, excused, and 0 warnings"; }
+grep -q "^excused: error pin_to_pin on /expr_ref/ under CR-PEDAL-LM66100-ST-ERC: $ST" "$work/er.log" \
+  || { cat "$work/er.log" >&2; bad "the excused error is not U12 ST against a PWR_FLAG"; }
+echo "   pass: $(grep '^excused: ' "$work/er.log")"
+
+echo "== 8. no allowance (test override, an empty table): the expr_ref page fails on U12 ST against the flag"
+printf '%s\n' '[]' >"$work/no-allow.json"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/no-allow.json" sh "$pages/verify.sh" "$board" expr_ref "$er" >"$work/er-none.log" 2>&1; then
+  cat "$work/er-none.log" >&2; bad "verify.sh passed the expr_ref page with no allowance"
+fi
+grep -q 'TEST OVERRIDE' "$work/er-none.log" || { cat "$work/er-none.log" >&2; bad "the override was not announced"; }
+grep -q "at pin_to_pin: $ST" "$work/er-none.log" || { cat "$work/er-none.log" >&2; bad "verify.sh failed, but not on U12 ST against a PWR_FLAG"; }
+echo "   fails as expected: $(grep -o 'at pin_to_pin: .*' "$work/er-none.log" | head -1)"
+
+# An allowance like the committed one, with one field changed; the model check must refuse it.
+allow() {
+  printf '[{"ruling":"erc-control.sh","sheet":"/expr_ref/","type":"pin_to_pin","pins":[{"designator":"U12","pin":"%s"},{"designator":"PWR_FLAG","pin":"%s"}],"net":"GND","symbolPinType":"open_collector","source":"erc-control.sh, a control"}]\n' "$1" "$2"
+}
+echo "== 9. an allowance naming U12 pin 4 (N/C, on GND, typed free) is refused by the model check"
+allow 4 1 >"$work/pin4.json"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/pin4.json" sh "$pages/verify.sh" "$board" expr_ref "$er" >"$work/er-pin4.log" 2>&1; then
+  cat "$work/er-pin4.log" >&2; bad "verify.sh accepted an allowance naming U12 pin 4"
+fi
+grep -q 'pin 4 is typed free in its library, not open_collector' "$work/er-pin4.log" \
+  || { cat "$work/er-pin4.log" >&2; bad "the allowance was not refused for pin 4's type"; }
+echo "   refused as expected: $(grep -o 'h7-platform:LM66100DCK pin 4 is typed free[^;]*' "$work/er-pin4.log" | head -1)"
+
+echo "== 10. a PWR_FLAG partner other than the flag's pin 1 is refused"
+allow 5 2 >"$work/flag2.json"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/flag2.json" sh "$pages/verify.sh" "$board" expr_ref "$er" >"$work/er-flag2.log" 2>&1; then
+  cat "$work/er-flag2.log" >&2; bad "verify.sh accepted a PWR_FLAG partner on pin 2"
+fi
+grep -q "a PWR_FLAG partner is the flag's pin 1, not pin 2" "$work/er-flag2.log" \
+  || { cat "$work/er-flag2.log" >&2; bad "the allowance was not refused for the partner's pin"; }
+echo "   refused as expected"
 
 echo "erc-control.sh: every control came out as stated"

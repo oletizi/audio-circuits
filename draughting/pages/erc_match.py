@@ -17,12 +17,20 @@ exactly once, since the root's `.kicad_pro` exclusions must equal the allowances
 import re
 
 ITEM = re.compile(r"^Symbol (\S+) Pin (\S+) \[")
+# A PWR_FLAG, as KiCad names it in an item: its reference is numbered by the sheet holding it (the
+# one-block root's stub, or the board's root), so it is read as the allowance's PWR_FLAG partner,
+# (`PWR_FLAG`, "1"), never by its number (`erc-allowances.ts`, the PWR_FLAG partner; h7 pedal Task 9b).
+FLAG_ITEM = re.compile(r"^Symbol #PWR\d+ Pin 1 \[Power output[,\]]")
+FLAG_PARTNER = "PWR_FLAG"
 
 
 def pin_pairs(violation):
     """The sorted (designator, pin) of each item, or None when any item is not a symbol pin."""
     pairs = []
     for item in violation.get("items", []):
+        if FLAG_ITEM.match(item.get("description", "")):
+            pairs.append((FLAG_PARTNER, "1"))
+            continue
         m = ITEM.match(item.get("description", ""))
         if m is None:
             return None

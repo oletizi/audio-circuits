@@ -100,7 +100,12 @@ prop_re = re.compile(r'\(property "(Reference|Value)" "([^"]*)" \(at [-\d.]+ [-\
                      r'(\t+)\(effects \(font \(size 1\.27 1\.27\)\)( \(justify [a-z ]+\))?( hide)?\)')
 
 
-mirror_re = re.compile(r'\n\t\t\(at [-\d.]+ [-\d.]+ \d+\)(?: \(mirror ([xy])\))?\n')
+# A mirror is in one of two textual forms (SKILL.md, the trap index): akcli's, on the `(at ...)` line
+# when its set_component_transform changed the mirror, and copperhead's, on a line of its own, which
+# survives when the draft already carried the mirror the layout asks for (the h7 pedal's expr_ref
+# draft mirrors J4 top to bottom and Q6 left to right, as its layout does; Task 9b). Until then only
+# akcli's form was read, so a part in copperhead's form read "none" and its own mirror was refused.
+mirror_re = re.compile(r'\n\t\t\(at [-\d.]+ [-\d.]+ \d+\)(?: \(mirror ([xy])\)|\n\t\t\(mirror ([xy])\))?\n')
 
 
 def mirror_of(text, ref):
@@ -108,7 +113,7 @@ def mirror_of(text, ref):
     m = mirror_re.search(text)
     if m is None:
         raise SystemExit(f"text_edits: {ref}'s placement line is not in the expected form")
-    return m.group(1) or "none"
+    return m.group(1) or m.group(2) or "none"
 
 
 def plan_for(ref, x, y, rot, mirror):

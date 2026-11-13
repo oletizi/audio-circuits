@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "expr_ref.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "fcbbfa92-1934-5221-8229-24dcb7580672"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_DETECT",
+   "at": [
+    6500,
+    3000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5b1f7bb9-26ba-59c3-8a92-4f95921d10fd"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_TIP",
+   "at": [
+    6500,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9cb4faf4-40b3-518d-be5c-8e85adec601a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1400,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "169d13f9-5d22-5fae-9291-58569599b72c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "HW_REV",
+   "at": [
+    9200,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "49e2f241-2c91-50cb-ad77-d2540c7e4335"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    9200,
+    1400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

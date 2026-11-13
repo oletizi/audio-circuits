@@ -4,7 +4,7 @@
 `make -C boards/h7-pedal draw` (`TOOLING.md` step 5.5, and design change C3 for what a multi-page
 board adds). It grows one block at a time as each page is repaired (h7 pedal pages plan, Task 7:
 7a interface and entry, 7b pf and modsw, 7c prail and ldo_vmid; Task 9a, usb, midi_i2c and
-fsw_led; Task 9b, controls_a and controls_b). The root sheet and its
+fsw_led; Task 9b, controls_a, controls_b and expr_ref). The root sheet and its
 `.kicad_pro` come once every page is drawn.
 
 | | sha256 |
@@ -21,6 +21,7 @@ fsw_led; Task 9b, controls_a and controls_b). The root sheet and its
 | end: `fsw_led.kicad_sch` (Task 9a) | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
 | end: `controls_a.kicad_sch` (Task 9b) | `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` |
 | end: `controls_b.kicad_sch` (Task 9b) | `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` |
+| end: `expr_ref.kicad_sch` (Task 9b) | `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` |
 
 ## Replay
 
