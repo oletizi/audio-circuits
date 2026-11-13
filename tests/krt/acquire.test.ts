@@ -5,6 +5,7 @@ import path from "node:path"
 import {
   readPin, ensureBuilt, builtCommit, builtCommitFile, engineEnv, routerLibraryPath,
 } from "../../tools/krt/acquire.ts"
+import { ROUTER_BUILD_ARGS } from "../../tools/krt/acquire.ts"
 import type { Pin, CommandRunner, CommandResult } from "../../tools/krt/acquire.ts"
 
 function withTempDir(body: (dir: string) => void): void {
@@ -129,5 +130,28 @@ test("readPin parses url, tag and commit, and refuses a missing field by name", 
     expect(readPin(file)).toEqual({ url: "u", tag: "t", commit: "c" })
     fs.writeFileSync(file, "url u\ntag t\n")
     expect(() => readPin(file)).toThrow(/"commit"/)
+  })
+})
+
+test("the router is built with exactly build_router.py --from-source", () => {
+  withTempDir((root) => {
+    const calls: Call[] = []
+    ensureBuilt(PIN, { repoRoot: root, run: fakeRunner(root, calls), env: {} })
+    const builds = calls.filter((c) => c.args.includes("build_router.py"))
+    expect(builds.length).toBe(1)
+    expect(builds[0].args).toEqual(["build_router.py", "--from-source"])
+    expect(ROUTER_BUILD_ARGS).toEqual(["build_router.py", "--from-source"])
+  })
+})
+
+test("a build that exits 0 without producing a library is refused even if an old library existed", () => {
+  withTempDir((root) => {
+    const lib = routerLibraryPath(root)
+    fs.mkdirSync(path.dirname(lib), { recursive: true })
+    fs.writeFileSync(lib, "old")
+    stamp(root, "old123")
+    const noop: CommandRunner = () => ({ status: 0, output: "" })
+    expect(() => ensureBuilt(PIN, { repoRoot: root, run: noop, env: {} })).toThrow(/router library is not there/)
+    expect(builtCommit(root)).toBeUndefined()
   })
 })

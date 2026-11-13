@@ -58,14 +58,15 @@ export interface CommandResult {
 
 /**
  * The injection seam every git/build step runs through. `env` is the COMPLETE
- * environment for that invocation, not an overlay: removing a variable cannot
- * be expressed as a merge.
+ * environment for that invocation, not an overlay (removing a variable cannot
+ * be expressed as a merge), and it is REQUIRED: an omitted env would silently
+ * inherit KiCad's PYTHONHOME/PYTHONPATH, so omission must be a compile error.
  */
 export type CommandRunner = (
   command: string,
   args: readonly string[],
   cwd: string,
-  env?: Env,
+  env: Env,
 ) => CommandResult
 
 function parseLine(line: string, file: string): readonly [string, string] {
@@ -113,6 +114,14 @@ const VENV_RELATIVE = ".venv"
 /** Where `build_router.py --from-source` leaves the router library. */
 const ROUTER_LIBRARY_RELATIVE = path.join("rust_router", "grid_router.so")
 
+/**
+ * build_router.py's default downloads a prebuilt release and, if that fails,
+ * falls back to a source build: which binary results depends on the network,
+ * yet the stamp would read the pinned commit either way. --from-source is
+ * therefore load-bearing, and a test asserts this exact argv.
+ */
+export const ROUTER_BUILD_ARGS: readonly string[] = ["build_router.py", "--from-source"]
+
 /** The variables KiCad's shell sets that make the engine's venv load the wrong Python. */
 const POISONED_ENV = ["PYTHONHOME", "PYTHONPATH"] as const
 
@@ -155,11 +164,11 @@ export function engineEnv(env: Env): Env {
   return kept
 }
 
-function defaultRun(command: string, args: readonly string[], cwd: string, env?: Env): CommandResult {
+function defaultRun(command: string, args: readonly string[], cwd: string, env: Env): CommandResult {
   const result = spawnSync(command, [...args], {
     cwd,
     encoding: "utf8",
-    ...(env === undefined ? {} : { env: { ...env } }),
+    env: { ...env },
   })
   if (result.error) {
     throw new Error(`could not run ${command}: ${result.error.message}`)
@@ -252,9 +261,12 @@ export function acquire(pin: Pin, opts: AcquireOptions): Built {
   step(run, env, "venv", "python3", ["-m", "venv", venv], dir)
   const python = venvPython(opts.repoRoot)
   step(run, env, "python dependencies", python, ["-m", "pip", "install", "-r", "requirements.txt"], dir)
-  step(run, env, "router build (build_router.py)", python, ["build_router.py", "--from-source"], dir)
-
+  // Delete any library left by the previous commit's build, so the existence
+  // check below is evidence THIS build produced it, not an exit code alone.
   const library = routerLibraryPath(opts.repoRoot)
+  fs.rmSync(library, { force: true })
+  step(run, env, "router build (build_router.py)", python, ROUTER_BUILD_ARGS, dir)
+
   if (!fs.existsSync(library)) {
     throw new Error(
       `${library}: build_router.py reported success but the router library is not there. A build ` +
