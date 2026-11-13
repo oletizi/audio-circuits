@@ -1,0 +1,5 @@
+{
+  "kind": "pcb",
+  "circuit": "../../circuits/h7-platform/pedal-board.ts",
+  "export": "h7Pedal"
+}

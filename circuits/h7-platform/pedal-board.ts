@@ -1,0 +1,91 @@
+/**
+ * The h7 audio pedal board, h7-pedal (h7 pedal pages plan, Task 5): one `include()`d block per
+ * function, each in `pedal/`, each drawn as its own page (design change C3). Model-authoritative:
+ * the drawing is derived from this file (TOOLING.md step 0).
+ *
+ * THE BLOCKS are controller ruling CR-PEDAL-BLOCKS (`pedal/build.ts`, `PEDAL_BLOCKS`): 19, in three
+ * groups and the interface. This file includes a block once its task has built it, so `h7Pedal()`
+ * grows as each group lands: Task 5 the interface, Task 6 the power group, Task 8 the digital and
+ * controls group, Task 10 the analog group. `BLOCKS`, `DESIGNATORS`, `PIN_NUMBERS` and `PAGE_GROUPS`
+ * hold only what is built.
+ *
+ * NET NAMES are `pedal/nets.ts`: the contract's names where a net crosses the interface, the
+ * documents' names inside the pedal, and CR-PEDAL-NETS where the documents give none. Every block
+ * port is named by the root net it binds to, so each binding below is the identity.
+ *
+ * AUTHORITIES. `docs/h7-platform/` (power.md, analog.md, bypass-relay.md, architecture.md, parts.md,
+ * schematic-checklist.md), the 40-pin contract `module-interface.json`, and the pedal's controller
+ * rulings in `decisions.md` (CR-PEDAL-*), with the values Task 3 ruled in `pedal-rulings.ts` and
+ * `pedal-population.ts`. Every component carries its source in `provenance`.
+ */
+import { circuit } from "../../lib/model/index.ts"
+import type { Network } from "../../lib/model/index.ts"
+import { drawingPagesFromNetwork, type DrawingPage } from "../../tools/draught/drawing-pages.ts"
+import { PEDAL_BLOCKS, PEDAL_PIN_NUMBERS } from "./pedal/build.ts"
+import { interfaceBlock } from "./pedal/interface.ts"
+import { contractNet } from "./pedal/nets.ts"
+
+// The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
+export { PROJECT_SYMBOL_LIBRARY } from "./parts.ts"
+
+/** Pin numbers by kind (`pedal/build.ts`). */
+export const PIN_NUMBERS = PEDAL_PIN_NUMBERS
+
+/** Block prefix -> its builder and the caption copperhead draws around its page. Built blocks only. */
+const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
+  ["interface", interfaceBlock, "Module sockets"],
+]
+
+for (const [prefix] of BLOCKS) {
+  if (!PEDAL_BLOCKS.some((b) => b.prefix === prefix)) {
+    throw new Error(`block "${prefix}" is not one of CR-PEDAL-BLOCKS' 19 (pedal/build.ts); a page outside the ruled list has no ruling behind it`)
+  }
+}
+
+export const PAGE_GROUPS: Readonly<Record<string, string>> = Object.fromEntries(BLOCKS.map(([p, , caption]) => [p, caption]))
+
+/**
+ * The contract nets nothing on the pedal loads yet: on the board, each reaches only its socket pad.
+ * A one-pin net is refused by validation unless it is a port, and these nets do leave the board, on
+ * to the module, so each is a port of the board itself (CR-PEDAL-NETS, "Socket-only nets").
+ *
+ * - The five spares stay here for good: "SPARE1-SPARE5: signal pins, GPIO inputs, no pedal-board
+ *   load" (architecture.md:181).
+ * - The rest wait for the block that loads them (`pedal/nets.ts` lists which). The task that builds
+ *   that block removes the net here; the board test refuses a net listed here that reaches more than
+ *   its pad, and validation refuses one left out that reaches only its pad.
+ */
+export const SOCKET_ONLY_NETS: readonly string[] = [
+  // For good (architecture.md:181).
+  "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
+  // Until Task 6 (power group): modsw and prail.
+  "VIN_MOD",
+  // Until Task 8 (digital and controls group).
+  "3V3_D", "VREF_A", "CODEC_DOUT", "CODEC_DIN", "CODEC_LRCK", "CODEC_BCK", "LED1", "LED2", "FSW1", "FSW2",
+  "POS1", "POS2", "POS3", "POS4", "POS5", "POS6", "EXPR_TIP", "HW_REV", "EXPR_DETECT",
+  "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
+  // Until Task 10 (analog group): jacks_byp.
+  "RELAY_EN",
+].map(contractNet)
+
+/** The pedal: every built block included, each port bound to the root net of its own name. */
+export function h7Pedal(): Network {
+  const builder = circuit()
+  for (const [prefix, build] of BLOCKS) {
+    const net = build()
+    builder.include(prefix, net, Object.fromEntries(Object.keys(net.ports).map((port) => [port, port])))
+  }
+  for (const net of SOCKET_ONLY_NETS) builder.port(net, net)
+  return builder.done()
+}
+
+/** Prefixed component id -> reference designator, one numbering across every page. */
+export const DESIGNATORS: Readonly<Record<string, string>> = {
+  // interface: J1 and J2, the numbers the module's headers and the carrier's sockets carry
+  interface_j_mod_a: "J1", interface_j_mod_b: "J2",
+}
+
+/** One page per block (design change C3). */
+export function drawingPages(): readonly DrawingPage[] {
+  return drawingPagesFromNetwork(h7Pedal(), DESIGNATORS, PIN_NUMBERS, PAGE_GROUPS)
+}
