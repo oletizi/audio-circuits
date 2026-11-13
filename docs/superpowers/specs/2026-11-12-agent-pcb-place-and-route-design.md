@@ -74,6 +74,7 @@ nothing outside it. See **The port constraint**.
 | The stripboard governance vocabulary is NOT unified with this one yet | this spec | the domains differ in kind - holes, strips, cuts and wire links against zones, keepouts, net classes and clearances. Precondition for revisiting is named under **Open questions** |
 | The KiCad project and board live in `circuits/pt2399-core/` | existing convention, commit `0f5d775` *"Every KiCad source lives in `circuits/<circuit>/`"* | `circuits/pultec/pultec-three-band-eq.kicad_pro` is already there; a new top-level family would overload `boards/`, whose meaning is "a directory with a `perfboard.json`" |
 | The engine is pinned at the commit that produced a manufactured board | this spec | a pin is a commit, moved only deliberately. Starting from a newer release would put an unmeasured engine under the first board |
+| The outline is a rectangle sized to the parts, with four M3 mounting holes inset from the corners and `J1` on one long edge | this spec, the owner having delegated the call on 2026-11-12 | there is no enclosure for the outline to answer to, so nothing argues for a target size, and a size chosen before the placement is known would constrain the router for no reason. M3 at the corners is the generic module convention and costs nothing to drill. `J1` on a long edge keeps the five off-board nets reachable on a breadboard or in a jig, and gives the router one clean escape rather than five crossing it |
 
 ## The board
 
@@ -160,9 +161,14 @@ Steps:
    `pt2399-core.kicad_pro` and a `pt2399-core.kicad_pcb`, carrying the Board
    Setup constraints and net-class widths of the fabrication standard below. The
    existing `pt2399-core.kicad_sch` is the schematic; it is not modified.
-3. **Draw the board outline.** A bare module needs dimensions and mounting
-   holes, and nothing in this repository declares either. **This needs the
-   owner** - see **Open questions**.
+3. **Draw the board outline**, per the decision above: a rectangle, four M3
+   holes inset from the corners, `J1` on one long edge. **The size is an
+   OUTPUT of placement, not an input to it.** The rectangle starts generously,
+   placement runs, and the outline is then brought in to the placed extent plus
+   the standard's copper-to-edge clearance. Fixing a size first would constrain
+   the router to serve a number nothing asked for. The mounting holes are
+   keepouts in the floorplan intent, so placement never has to be undone to
+   make room for them.
 4. **Draft the intent** - `floorplan-intent.json` (blocks, zones, keepouts, the
    header's edge and setback), `placement-rules.json` (input-to-output
    separation, each filter node compact around its own pins, the header's
@@ -273,23 +279,20 @@ public upstream, which is the one citation that is legitimately shared.
 
 ## Open questions
 
-1. **The board outline and mounting holes.** A bare module needs dimensions, a
-   mounting-hole pattern and a header edge, and nothing in this repository
-   declares any of them. These are the owner's to set, and the placement intent
-   cannot be drafted without them. **Phase 1 is blocked on this one.** A
-   starting proposal, for him to accept or replace: a rectangle sized to the
-   parts rather than to a target, four M3 holes inset from the corners, and `J1`
-   on one long edge.
-2. **Whether the engine pin should move to its newest release.** The spec pins
+**Nothing here blocks Phase 1.** The outline question that did was answered on
+2026-11-12 and is in the decisions table; it is deleted from this list rather
+than marked closed.
+
+1. **Whether the engine pin should move to its newest release.** The spec pins
    the commit that has produced a manufactured board. Moving it is a separate,
    deliberate commit, and it can change what a passing board is.
-3. **Whether this governance vocabulary and the stripboard one should become
+2. **Whether this governance vocabulary and the stripboard one should become
    one.** Named rather than left implicit, because two parallel vocabularies for
    two layout media is exactly the silting this repository objects to. The
    precondition for revisiting: **a second PCB exists, and the two vocabularies
    have been observed to overlap in fact.** Not before, and not on the strength
    of a guess - the domains differ in kind, and the intent format is upstream's.
-4. **Breakout for prototyping.** The owner's purpose for this board is trying
+3. **Breakout for prototyping.** The owner's purpose for this board is trying
    configurations. `VCO` on `J1` pin 3 already serves that without a change, but
    test points on the filter and regeneration nodes, or a wider header, would
    serve it better. Deliberately deferred to a second board, where it is a
