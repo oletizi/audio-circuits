@@ -33,9 +33,11 @@ const MAX_FARADS = 1e-3
 // Both ends were widened independently and both widenings are kept: down to 1R
 // for the Pultec's 430R hi-cut series resistor, up to 10M for the transistor
 // preamp's bias network. The range this formatter is PROVEN over is the union,
-// and the tests assert both boundaries.
+// and the tests assert both boundaries. The top was widened once more to take
+// 10M itself, "10M", for the h7 pedal's expression-tip resistor to GND
+// (schematic-checklist.md:196, CTL-08); 10.5M and above stay refused.
 const MIN_OHMS = 1
-const MAX_OHMS_EXCLUSIVE = 1e7
+const MAX_OHMS = 1e7
 // The sub-ohm band, spelled in RKM ("0R22"), was added for the h7 module's two damping resistors
 // (0.22 ohm, power.md:270; 0.30 ohm, CR-MODULE-VDDA-BANK). Its floor is the smallest value tested.
 const MIN_SUB_OHMS = 0.1
@@ -82,10 +84,10 @@ export function resistanceText(ohms: number, id: string): string {
   // been checked against. The band from 100mR up to 1R is admitted below, in RKM ("0R22"),
   // by CR-MODULE-SUBOHM-RKM; the band between 0 and 100mR stays refused.
   if (ohms === 0) return "0R"
-  if (!Number.isFinite(ohms) || ohms < MIN_SUB_OHMS || ohms >= MAX_OHMS_EXCLUSIVE) {
+  if (!Number.isFinite(ohms) || ohms < MIN_SUB_OHMS || ohms > MAX_OHMS) {
     throw new Error(
       `resistance ${ohms}R on "${id}" is outside the range this formatter has been proven ` +
-        "over (100mR up to but not including 10M). Extend lib/kicad/value-notation.ts with a test " +
+        "over (100mR up to and including 10M). Extend lib/kicad/value-notation.ts with a test " +
         "rather than letting it guess a spelling.",
     )
   }

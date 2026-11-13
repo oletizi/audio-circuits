@@ -35,7 +35,7 @@ test("decades the board does not exercise are refused, not guessed", () => {
   // Both ends widened independently, so the refusals moved outwards: 470R and
   // 2M are now inside the proven range and only these remain outside it.
   expect(() => valueFor(resistor(0.05))).toThrow(/100mR.*10M/s)
-  expect(() => valueFor(resistor(1e7))).toThrow(/100mR.*10M/s)
+  expect(() => valueFor(resistor(1.05e7))).toThrow(/100mR.*10M/s)
   expect(() => valueFor(capacitor(2e-3))).toThrow(/1pF.*1000uF/s)
 })
 
@@ -54,14 +54,16 @@ test("capacitor boundary: highest accepted value just below 1000uF formats", () 
   expect(valueFor(capacitor(9.99e-4))).toBe("999uF")
 })
 
-test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M refuses", () => {
+test("resistor boundaries: 1k formats, the K/M boundary is 1M, 10M formats and above it refuses", () => {
   expect(valueFor(resistor(1000))).toBe("1K")
   expect(valueFor(resistor(999000))).toBe("999K")
   // The K/M boundary sits at 1M, and 999K is the last value spelled in K.
   expect(valueFor(resistor(999000))).toBe("999K")
   expect(valueFor(resistor(1e6))).toBe("1M")
   expect(valueFor(resistor(1.5e6))).toBe("1.5M")
-  expect(() => valueFor(resistor(1e7))).toThrow(/100mR.*10M/s)
+  // 10M is the h7 pedal's expression-tip resistor to GND (schematic-checklist.md:196).
+  expect(valueFor(resistor(1e7))).toBe("10M")
+  expect(() => valueFor(resistor(1.05e7))).toThrow(/up to and including 10M/)
 })
 
 test("an IC's value is its manufacturer part number", () => {

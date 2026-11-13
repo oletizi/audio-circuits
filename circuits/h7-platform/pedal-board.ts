@@ -31,6 +31,7 @@ import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
 import { codecSupBlock } from "./pedal/codec-sup.ts"
 import { codecBlock } from "./pedal/codec.ts"
 import { saiIsoBlock } from "./pedal/sai-iso.ts"
+import { exprRefBlock } from "./pedal/expr-ref.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -49,6 +50,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["codec_sup", codecSupBlock, "Codec supply, clock and reset"],
   ["codec", codecBlock, "Codec PCM3060"],
   ["sai_iso", saiIsoBlock, "SAI domain isolation"],
+  ["expr_ref", exprRefBlock, "Expression input and HW_REV"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -75,8 +77,8 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
   // Until Task 8 (digital and controls group).
-  "VREF_A", "LED1", "LED2", "FSW1", "FSW2",
-  "POS1", "POS2", "POS3", "POS4", "POS5", "POS6", "EXPR_TIP", "HW_REV", "EXPR_DETECT",
+  "LED1", "LED2", "FSW1", "FSW2",
+  "POS1", "POS2", "POS3", "POS4", "POS5", "POS6",
   "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
   "RELAY_EN",
@@ -143,6 +145,12 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   sai_iso_u_iso_m: "U10", sai_iso_r_bias_dout: "R34", sai_iso_r_bias_lrck: "R35", sai_iso_r_bias_bck: "R36",
   sai_iso_r_iso_dout: "R37", sai_iso_r_iso_lrck: "R38", sai_iso_r_iso_bck: "R39", sai_iso_u_iso_c: "U11",
   sai_iso_r_bias_din: "R40", sai_iso_c_iso_m: "C42", sai_iso_c_iso_c: "C43",
+  // expr_ref
+  expr_ref_j_exp: "J4", expr_ref_d_esd_tip: "D7", expr_ref_d_esd_ring: "D8", expr_ref_u_refblk: "U12", expr_ref_q_refen: "Q6",
+  expr_ref_r_eng: "R41", expr_ref_r_ce: "R42", expr_ref_d_rclamp: "D9", expr_ref_r_ref: "R43", expr_ref_c_ring: "C44",
+  expr_ref_r_tip: "R44", expr_ref_c_tip: "C45", expr_ref_r_tip_pd: "R45", expr_ref_r_expin: "R46", expr_ref_u_exp: "U13",
+  expr_ref_c_exp: "C46", expr_ref_r_exp_out: "R47", expr_ref_c_exp_out: "C47", expr_ref_r_det: "R48", expr_ref_r_det_pd: "R49",
+  expr_ref_r_hwrev_top: "R50", expr_ref_r_hwrev_bottom: "R51", expr_ref_c_hwrev: "C48",
 }
 
 /** One page per block (design change C3). */
