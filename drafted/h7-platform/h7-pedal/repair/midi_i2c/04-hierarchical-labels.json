@@ -1,0 +1,133 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "midi_i2c.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "2714de9e-39a9-534b-8d94-0fe90e069191"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    900,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ccd78e7f-ee96-554d-b2a9-309f8aa612b2"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    5100,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ed39632d-2734-50fe-a7c0-e5eb913c6c51"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SCL",
+   "at": [
+    1300,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7d5a8fea-2cc5-515b-baae-db8685d6cc9f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SDA",
+   "at": [
+    1300,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "24e30359-c23b-5673-a105-e4ae836fd1d6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    900,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8dbe105b-312f-541e-b3e2-6ee9a758ac92"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_PIN4",
+   "at": [
+    8000,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4ab75da5-50d8-5a57-be91-8efcd3f4b205"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_PIN5",
+   "at": [
+    8000,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "21e719b7-0a53-536c-91d7-b66627f3215c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_RX",
+   "at": [
+    3100,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b7c4006d-3d65-59fe-8d0a-027a1c18e500"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_TX",
+   "at": [
+    1900,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

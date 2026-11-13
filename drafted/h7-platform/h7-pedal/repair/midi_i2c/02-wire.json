@@ -1,0 +1,834 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "midi_i2c.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1900,
+     2800
+    ],
+    [
+     2300,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2300,
+     2800
+    ],
+    [
+     2700,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     2800
+    ],
+    [
+     3600,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     3400
+    ],
+    [
+     2700,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     900,
+     3100
+    ],
+    [
+     1100,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     3100
+    ],
+    [
+     1500,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1500,
+     3100
+    ],
+    [
+     1800,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1800,
+     3100
+    ],
+    [
+     2100,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2100,
+     3100
+    ],
+    [
+     2600,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2600,
+     3100
+    ],
+    [
+     2600,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     3100
+    ],
+    [
+     1100,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     2300
+    ],
+    [
+     2300,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2300,
+     2300
+    ],
+    [
+     4000,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     2300
+    ],
+    [
+     4900,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2300,
+     2500
+    ],
+    [
+     2300,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     2400
+    ],
+    [
+     4000,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1300,
+     3400
+    ],
+    [
+     1500,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1300,
+     3700
+    ],
+    [
+     1800,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1800,
+     3700
+    ],
+    [
+     1800,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2800,
+     3400
+    ],
+    [
+     2800,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2800,
+     3100
+    ],
+    [
+     3100,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     2800
+    ],
+    [
+     5300,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5300,
+     2800
+    ],
+    [
+     5600,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     2000
+    ],
+    [
+     5300,
+     2000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5300,
+     2000
+    ],
+    [
+     5900,
+     2000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     2000
+    ],
+    [
+     5900,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5300,
+     2500
+    ],
+    [
+     5300,
+     2000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     3000
+    ],
+    [
+     5900,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5900,
+     3200
+    ],
+    [
+     6200,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6200,
+     3200
+    ],
+    [
+     6600,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6600,
+     3200
+    ],
+    [
+     7000,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7000,
+     3200
+    ],
+    [
+     7400,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6200,
+     3500
+    ],
+    [
+     6600,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6600,
+     3500
+    ],
+    [
+     7000,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7000,
+     3500
+    ],
+    [
+     7400,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7400,
+     3500
+    ],
+    [
+     8000,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     8000,
+     3800
+    ],
+    [
+     7700,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     900,
+     4100
+    ],
+    [
+     4000,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     4100
+    ],
+    [
+     4900,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     4100
+    ],
+    [
+     7700,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     3200
+    ],
+    [
+     4000,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4000,
+     3300
+    ],
+    [
+     4000,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2900,
+     3400
+    ],
+    [
+     2900,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2900,
+     3300
+    ],
+    [
+     4000,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     2600
+    ],
+    [
+     4900,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    1100,
+    3100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    1500,
+    3100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    1800,
+    3100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2100,
+    3100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2300,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2300,
+    2800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2700,
+    2800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4000,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4000,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4000,
+    4100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4900,
+    4100
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5300,
+    2000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5300,
+    2800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6200,
+    3200
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6600,
+    3200
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6600,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7000,
+    3200
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7000,
+    3500
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    7400,
+    3500
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U16.1"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_TX",
+   "at": [
+    1900,
+    2800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    900,
+    3100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SCL",
+   "at": [
+    1300,
+    3400
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SDA",
+   "at": [
+    1300,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_RX",
+   "at": [
+    3100,
+    3100
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    5100,
+    2000
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_PIN4",
+   "at": [
+    8000,
+    3500
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_PIN5",
+   "at": [
+    8000,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    900,
+    4100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_text",
+   "text": "Not drawn on this page:\n- The MIDI OUT loop's connector and the CA-033 ferrites at it: no source names the connector\n  or its pinout (CR-PEDAL-MIDI; open row MIDI-OUT-CONNECTOR). MIDI_PIN4 and MIDI_PIN5 run on\n  to it as ports of the board.\n- The MIDI IN receiver and its network, until open row MIDI-IN-RECEIVER-STOCK closes\n  (CR-PEDAL-MIDI). MIDI_UART_RX reaches only J8 pin 3 here.\n- An I2C expansion connector: no source names one (CR-PEDAL-I2C-EXPANSION; open row\n  I2C-EXPANSION-CONNECTOR).\nJ8, the MIDI UART header (USB-08, OWN-04), is drawn and is NOT FITTED (CR-PEDAL-POPULATION, class 2).",
+   "at": [
+    1000,
+    4900
+   ]
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-pedal: midi_i2c",
+   "date": "2026-11-13",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

@@ -41,6 +41,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `prail.kicad_sch` | block prail | `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780` |
 | `ldo_vmid.kicad_sch` | block ldo_vmid | `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` |
 | `usb.kicad_sch` | block usb | `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` |
+| `midi_i2c.kicad_sch` | block midi_i2c | `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -54,6 +55,7 @@ committed bytes, with the pinned kicad-cli.
 | prail | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `prail.svg` |
 | ldo_vmid | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
 | usb | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
+| midi_i2c | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
 
 ## The drafts every repair starts from
 
@@ -127,6 +129,7 @@ The measurement suite on each draft (selftest: 10 controls, every one moved or f
 | ldo_vmid | 85 | 15 (5) | 2 | 6 | 0 | 0 | 0 |
 | interface | 3 | 1 (0) | 4 | 0 | 0 | 0 | 0 |
 | usb (Task 9a) | 74 | 21 (17) | 4 | 23 | 4 | 0 | 3, with 4 collinear overlapping pairs |
+| midi_i2c (Task 9a) | 48 | 14 (10) | 1 | 0 | 0 | 0 | 0 |
 
 ## How the pages are repaired
 
@@ -165,6 +168,14 @@ drafts). `tests/draught/net-strokes-mirror.test.ts` runs it on `pultec-low-boost
 potentiometer); it fails on the former tool. **KiCad mirrors a field's justification with the
 part**, as it turns it with a rotation of 90 or 180 (`text_edits.py`): on U15, a field written
 `left` read right-justified on the render, so U15's `layout.py` writes its fields `right`.
+
+**A page note** (the midi_i2c page's, Task 9a): `layout.py` may declare `NOTES`, each a list of lines
+and a point; `02-wire.py` adds each through `page.Wiring.note`, an akcli `add_text` op in op-list 02
+with its lines joined by a newline built in code, and `text_edits.py` makes each left-justified
+(akcli writes none, and KiCad centres a text on its point, measured on a probe) and refuses a count
+that is not `NOTES`'s. Its group-caption match now requires the caption's `(at ...)` to end the line,
+which is copperhead's form and not akcli's, so a note is never taken for the caption. A page with no
+`NOTES` gets no op and no edit: the replay reaches every earlier page's sha256 with the change.
 
 The measurements in each table are `draughting/pages/verify.sh` on the page, and the same steps run
 without stopping on the draft (a draft fails verify.sh's model comparison and its ERC, as a draft is
@@ -1204,3 +1215,198 @@ An observation of where the pins are, not a judgement of the page (`usb/layout.p
 - The hanging parts carry Reference over Value east of their bodies; R82's, R84's and R85's west;
   R80's above its row and R81's below it; J7's above its body; U14's under the D- loop, east of its
   GND drop; U15's above its body, east of its VCC rise.
+
+## midi_i2c: MIDI OUT, the MIDI UART header and the I2C pull-ups (Task 9a)
+
+**Status: UNREVIEWED.** sha256 `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f`.
+Render: `midi_i2c.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/midi-i2c.ts`, 14 parts: U16 (U_MIDIDRV,
+`h7-platform:SN74LVC1G07DBV`, SN74LVC1G07DBVR), C61 (C_MIDIDRV 100 nF), R86 (R_TXPU 18.0 kOhm), Q9
+(Q_MIDI, `Transistor_FET:AO3401A`), R87 (R_MGP 160 Ohm), R88-R91 (RA, four 130 Ohm), R92 (RC 10 Ohm),
+J8 (J_MIDI, `Connector_Generic:Conn_01x04`, the MIDI UART header, not fitted), R93 and R94
+(R_SCL_PU, R_SDA_PU_EXP 2.40 kOhm), TP6 (the 3V3_D pad, `Connector:TestPoint`). Ports 3V3_D, 3V3_P,
+EXP_I2C_SCL, EXP_I2C_SDA, GND, MIDI_PIN4, MIDI_PIN5, MIDI_UART_RX and MIDI_UART_TX (EXP_I2C_SCL,
+EXP_I2C_SDA, MIDI_PIN5 and MIDI_UART_RX each reach one pin: R93's 1, R94's 1, R92's 1 and J8's 3).
+MIDI_GATE and MIDI_DRAIN are private to the page and drawn as wire, with no label. U16's NC (pin 1)
+is a no-connect.
+
+**What the page does not draw, and its note.** The page carries a text note under the GND row (in
+`midi_i2c/layout.py`, `NOTES`), which reads:
+
+> Not drawn on this page:
+> - The MIDI OUT loop's connector and the CA-033 ferrites at it: no source names the connector or
+>   its pinout (CR-PEDAL-MIDI; open row MIDI-OUT-CONNECTOR). MIDI_PIN4 and MIDI_PIN5 run on to it as
+>   ports of the board.
+> - The MIDI IN receiver and its network, until open row MIDI-IN-RECEIVER-STOCK closes
+>   (CR-PEDAL-MIDI). MIDI_UART_RX reaches only J8 pin 3 here.
+> - An I2C expansion connector: no source names one (CR-PEDAL-I2C-EXPANSION; open row
+>   I2C-EXPANSION-CONNECTOR).
+>
+> J8, the MIDI UART header (USB-08, OWN-04), is drawn and is NOT FITTED (CR-PEDAL-POPULATION, class 2).
+
+Each part left undrawn, and the open row that holds it:
+
+| not drawn | open row | ruling |
+| --- | --- | --- |
+| the connector carrying MIDI pins 4 and 5 (MIDI_PIN4, MIDI_PIN5) | MIDI-OUT-CONNECTOR (`docs/h7-platform/open-items.md` line 128) | CR-PEDAL-MIDI; the nets are ports by CR-PEDAL-DIGITAL-READINGS (`UNDRAWN_CONNECTOR_NETS`) |
+| the CA-033 ferrites that "go at the jack" | MIDI-OUT-CONNECTOR, and PEDAL-POWER-PARTS-TO-MODEL (line 62) | CR-PEDAL-MIDI |
+| the MIDI IN receiver and its network | MIDI-IN-RECEIVER-STOCK (line 73) | CR-PEDAL-MIDI |
+| an I2C expansion connector | I2C-EXPANSION-CONNECTOR (line 129) | CR-PEDAL-I2C-EXPANSION |
+
+Nothing stands in for any of them on the page: MIDI_PIN4 and MIDI_PIN5 end in their hierarchical
+labels at the east edge, pointing east.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `midi_i2c` is one of the
+  pedal's 19 blocks: the MIDI OUT driver and switch, the MIDI header and the I2C pull-ups.
+- [CR-PEDAL-MIDI](../../../docs/h7-platform/decisions.md#cr-pedal-midi): the not-fitted 4-pin header
+  and R-26's MIDI OUT driver and switch are drawn, up to the nets the sources name, MIDI_PIN4 and
+  MIDI_PIN5; the connector carrying the loop and the MIDI IN receiver are not.
+- [OWN-04](../../../docs/h7-platform/decisions.md#own-04): the header stays unpopulated; its pinout,
+  USB-08's 1 = 3V3_D, 2 = MIDI_UART_TX, 3 = MIDI_UART_RX, 4 = GND.
+- [CR-PEDAL-POPULATION](../../../docs/h7-platform/decisions.md#cr-pedal-population), class 2: a
+  connector whose fitting adds no on-board path is modelled and drawn, with a note that it is not
+  fitted; J8 is that connector.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings): the
+  3V3_D test pad is on this page; MIDI_PIN4 and MIDI_PIN5 are ports of the block and of the board
+  (`UNDRAWN_CONNECTOR_NETS`); C61's other end is on GND.
+- [R-26](../../../docs/h7-platform/decisions.md#r-26): the high-side P-MOSFET switch, Q9 with R87,
+  RA and RC. [R-23](../../../docs/h7-platform/decisions.md#r-23): U16 on 3V3_D pulls Q9's gate low.
+  [R-28](../../../docs/h7-platform/decisions.md#r-28): R86 18.0 kOhm from MIDI_UART_TX to 3V3_D.
+  [R-53](../../../docs/h7-platform/decisions.md#r-53), cited with R-26 through `power.md` line 460.
+- [R-21](../../../docs/h7-platform/decisions.md#r-21): the I2C expansion pull-ups, 2.40 kOhm, on the
+  pedal only. [CR-PEDAL-I2C-EXPANSION](../../../docs/h7-platform/decisions.md#cr-pedal-i2c-expansion):
+  no I2C expansion connector is drawn.
+- [CR-PEDAL-LOGIC-DECOUPLING](../../../docs/h7-platform/decisions.md#cr-pedal-logic-decoupling): C61,
+  100 nF at U16's VCC.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): TP6 on 3V3_D.
+- [CR-PEDAL-SYMBOL-SN74LVC1G07](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-sn74lvc1g07):
+  U16 is the project symbol, A and Y named, Y `open_collector`.
+- [CR-PEDAL-SYMBOL-AO3400A](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a): Q9 is
+  the stock AO3401A, G 1, S 2, D 3.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): clause 1 makes Q9's
+  gate `input`; clause 2 makes U16's VCC and GND `power_in`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D, 3V3_P
+  and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; GND's and 3V3_D's single flags are on the root, so the one-block root puts a stub flag
+  on each. 3V3_P needs none here: Q9's source and R87 are passive.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 9 ports on the wrong net.
+- Checklist items, not rulings: the schematic checklist's USB-08 (line 217, the header). The block
+  also cites `power.md` lines 413 and 460, `parts.md` lines 138 to 144, `architecture.md` line 342 and
+  TI SCES296AG p. 11 section 8.3; those are design notes.
+- Drawing choices, not transcriptions: Q9 mirrored top to bottom, source up; J8 turned 270 and
+  mirrored left to right, pins up, 3V3_D, TX, RX, GND west to east; the lower 3V3_D row joined to the
+  top one by a vertical west of MIDI_UART_TX's label; 3V3_P's and MIDI_UART_RX's labels mid-page;
+  MIDI_PIN5 and MIDI_UART_RX, which the draft drew no wire for, take the MIDI family's purple, and
+  EXP_I2C_SCL and EXP_I2C_SDA the palette's third colour, teal (`midi_i2c/layout.py`,
+  `UNDRAWN_STROKES`, says why); fields and the note moved after the renders listed in
+  `midi_i2c/layout.py`.
+
+### MIDI_PIN4 and MIDI_PIN5 under ERC
+
+The brief expected dangling-label or single-pin findings on the two nets that lead to the undrawn
+connector, and an error, if any, to be judged as a fault or as a consequence of the omission.
+Measured on this page:
+
+- **The sheet alone**: MIDI_PIN4's hierarchical label reports `pin_not_connected` (*"Hierarchical
+  Label 'MIDI_PIN4'"*, as all nine labels do with no parent sheet), and MIDI_PIN5's
+  `isolated_pin_label`, a warning: its net has one pin, R92's 1.
+- **Under the one-block root**: `/midi_i2c/` reports **0 errors and 0 warnings**. On `/`, MIDI_PIN4's
+  stub label is one of the three `label_dangling` errors (with 3V3_P's and MIDI_UART_TX's), each a
+  stub whose net reaches no other sheet under a one-block root, which `erc_sheets.py` admits for
+  every page; MIDI_PIN5's stub label is an `isolated_pin_label` warning.
+
+**So no ERC error on the block's sheet comes from the omission, and no allowance is proposed or
+added** (`erc-allowances.ts` is still empty). What this does not settle: on the pedal's assembled
+root (Task 11), MIDI_PIN4's and MIDI_PIN5's sheet pins reach no other sheet there either, so the root
+can be expected to report a dangling label on each, which no stub admission covers. That is the
+root's check to make, and the allowance ruling in the shape of CR-MODULE-VCAP-ERC, if one is wanted,
+belongs with it.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 9a leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 14 (the model declares none) | 0; 14 |
+| exported components, nets, net members | 14, 12, 33 | 14, 12, 33 |
+| exported nets carrying a model net name | 7 of 12 | 9 of 12 (the nine ports; MIDI_GATE and MIDI_DRAIN private and unlabelled, and U16's NC) |
+| ports whose label is on the wrong net | 7 of 9 | 0 of 9 |
+| ERC, the sheet alone | 6 errors (`pin_not_connected` 4, R92 pin 1, R93 pin 1, R94 pin 1, J8 pin 3; `power_pin_not_driven` 2, U16's VCC and GND), 2 warnings (`lib_symbol_issues` 1, U16; `lib_symbol_mismatch` 1, Q9) | 10 errors (`pin_not_connected` 8: eight of the nine hierarchical labels have no parent sheet, MIDI_PIN5's reports `isolated_pin_label` instead; `power_pin_not_driven` 2, U16's VCC and GND), 6 warnings (`isolated_pin_label` 4, EXP_I2C_SCL, EXP_I2C_SDA, MIDI_UART_RX and MIDI_PIN5; `lib_symbol_issues` 1; `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/midi_i2c/` | 6 errors (`pin_not_connected` 4, `power_pin_not_driven` 2), 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 16 errors (`hier_label_mismatch` 9, `label_dangling` 7), 4 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 1, `lib_symbol_mismatch` 1) | 3 errors (`label_dangling` 3, the 3V3_P, MIDI_PIN4 and MIDI_UART_TX stubs' labels, alone with one block; `erc_sheets.py` admits them), 10 warnings (`isolated_pin_label` 8, the four one-pin ports' labels and stubs; `lib_symbol_issues` 1; `lib_symbol_mismatch` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 1, 0 |
+| orphan junctions, of total | 0 of 6 | 0 of 19 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 14 on 7 nets (10 global) | 9 on 9 nets, all hierarchical |
+| text notes | 0 | 1 |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 14 | 0 of 11 |
+| symbols (parts, power symbols, PWR_FLAGs) | 14 (14, 0, 0) | 14 (14, 0, 0) |
+| placed pins | 33 | 33 |
+| wires, total length | 48, 339.09 mm | 45, 706.12 mm |
+| wire corners | 12 | 7 |
+| junctions | 6 | 19 |
+
+**`lib_symbol_mismatch` 1**, on Q9: *"Symbol 'AO3401A' doesn't match copy in library
+'Transistor_FET'"*. The installed symbol is an `extends`, and the embedded copy is the parent
+flattened, as the modsw page's AO3400A is. Measured:
+
+| | embedded (`midi_i2c.kicad_sch` line 861) | installed `AO3401A` (`Transistor_FET.kicad_sym` line 1674, `(extends "TP0610T")`) |
+| --- | --- | --- |
+| pins and graphics | identical to the installed parent `TP0610T`'s (line 83318): 1 G input, 2 S passive, 3 D passive | the parent's |
+| Value | `TP0610T` (the parent's) | `AO3401A` |
+| Datasheet | `http://www.vishay.com/docs/70209/70209.pdf` (the parent's) | `http://www.aosmd.com/pdfs/datasheet/AO3401A.pdf` |
+| Description | "-0.18A Id, -60V Vds, P-Channel MOSFET, SOT-23" (the parent's) | "-4.0A Id, -30V Vds, P-Channel MOSFET, SOT-23" |
+| Footprint; `ki_fp_filters`; `ki_keywords` | the same as the child's | `Package_TO_SOT_SMD:SOT-23`; `SOT?23*`; "P-Channel MOSFET" |
+
+Q9's own Value on the page is `AO3401A`. **Not an electrical fault**: pins, numbers, types and
+positions are the installed part's, and the model comparison is 0, 0, 0, 0. **Trap for a later
+output**: an export reading Q9's library fields gets the 0.18 A, 60 V Vishay TP0610T and its data
+sheet, where the fitted part is the 4.0 A, 30 V AO3401A.
+
+**`lib_symbol_issues` 1**, on U16: *"The current configuration does not include the symbol library
+'h7-platform'"*, the pf page's U1 warning: a block page has no `.kicad_pro`. The symbol is embedded.
+
+**`isolated_pin_label` 4**, on the sheet alone: the four one-pin ports' hierarchical labels; their
+nets' other pins are on the interface page (EXP_I2C_SCL, EXP_I2C_SDA, MIDI_UART_RX) or on no page
+(MIDI_PIN5, above).
+
+### Why the page has one crossing, as the layout records it
+
+An observation of where the pins are, not a judgement of the page: the MIDI OUT chain runs from
+MIDI_UART_TX's label at the west to MIDI_PIN4's at the east, with U16's VCC above it and its GND below
+it, so C61, 3V3_D to GND at U16, crosses it once: its GND drop crosses the gate row east of U16.
+
+### What the page shows, as observations
+
+- MIDI_UART_TX's label at the west, pointing west; the TX row runs east past R86 (standing up to the
+  top 3V3_D row) and J8's TX riser into U16's A (pin 2), U16 pointing east.
+- U16's Y (pin 4) runs east on the gate row past C61's GND drop and R87 (standing up to the 3V3_P
+  row) into Q9's gate. Q9, mirrored top to bottom: its source rises to the 3V3_P row, whose label is
+  at its west end, pointing west, mid-page; its drain drops to the drain row, from which R88-R91 hang
+  side by side to the MIDI_PIN4 row, which runs east to MIDI_PIN4's label at the east edge, pointing
+  east.
+- MIDI_PIN5's label under it, pointing east, goes west to R92, which hangs to the GND row.
+- 3V3_D's label at the west edge, pointing west, starts the lower 3V3_D row: R93 and R94 hang from it
+  to the SCL and SDA rows, whose labels are at the west, pointing west; TP6 hangs under it; it ends
+  in J8's 3V3_D pin. A vertical from it, west of MIDI_UART_TX's label, rises to the top 3V3_D row,
+  which takes R86's top, U16's VCC and C61's top.
+- J8, pins up: 3V3_D, TX, RX, GND west to east. RX rises and runs east to MIDI_UART_RX's label,
+  pointing east, between the TX row and U16's foot; GND rises one step and runs east to U16's GND
+  drop, which drops to the GND row along the bottom, GND's label at its west end, pointing west.
+- U16's NC (pin 1) carries a no-connect.
+- The note, under the group rectangle, left-justified, in nine lines.
+- MIDI_UART_TX, MIDI_UART_RX, MIDI_GATE, MIDI_DRAIN, MIDI_PIN4 and MIDI_PIN5 carry copperhead's
+  purple; 3V3_D and 3V3_P its blue; EXP_I2C_SCL and EXP_I2C_SDA teal; GND its default.
+- The hanging parts carry Reference over Value east of their bodies; R93's and R92's west; U16's
+  west of its VCC pin, above its A pin; Q9's east of its body; J8's under its east end; TP6's under
+  it.

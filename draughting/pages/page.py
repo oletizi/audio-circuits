@@ -18,7 +18,8 @@ nets are wired (`02-wire.py`). The steps:
   interior, a wire end at a pin of a different net than the one the wire is drawn for, a
   label that is not on exactly one wire end, and a label on a wire drawn for a different net.
 - `layout.py` names, for `text_edits.py`, every part's field placement, the group rectangle and
-  the strokes of nets the draft drew no wire for.
+  the strokes of nets the draft drew no wire for, and (optionally, `NOTES`) the page's text notes,
+  which `02-wire.py` adds through `Wiring.note`.
 
 Coordinates are mils, sheet coordinates (x east, y south), as akcli takes them.
 """
@@ -136,6 +137,7 @@ class Wiring:
         self.no_connect_pins = list(intent["noConnect"])
         self.segments = []   # ((x1, y1), (x2, y2), net)
         self.labels = []     # (name, (x, y), rotation)
+        self.notes = []      # (text, (x, y))
 
     def p(self, ref_pin):
         ref, pin = ref_pin.split(".")
@@ -168,6 +170,14 @@ class Wiring:
 
     def label(self, name, at, rotation):
         self.labels.append((name, tuple(at), rotation))
+
+    def note(self, lines, at):
+        """A text note on the page (akcli `add_text`), its lines joined by a newline built in code;
+        `text_edits.py` left-justifies it, so `at` is its first line's left end. First used by the
+        h7 pedal's midi_i2c page (Task 9a), for the parts a ruling leaves undrawn."""
+        if not lines or any(not isinstance(t, str) or not t or chr(10) in t or '"' in t for t in lines):
+            raise SystemExit(f"wire: a note is a non-empty list of non-empty one-line strings without a quote; got {lines!r}")
+        self.notes.append((chr(10).join(lines), tuple(at)))
 
     def op_list(self, sheet_name, title, title_block, nets_out):
         """The op-list; `title` (the page's) and the board's `title_block` module (its
@@ -228,6 +238,7 @@ class Wiring:
         ops += [{"op": "add_no_connect", "pin": pin} for pin in self.no_connect_pins]
         for name, (lx, ly), rot in self.labels:
             ops.append({"op": "add_net_label", "name": name, "at": [lx, ly], "scope": "local", "rotation": rot})
+        ops += [{"op": "add_text", "text": text, "at": [nx, ny]} for text, (nx, ny) in self.notes]
         ops.append({"op": "set_title_block", "title": title, "date": block["DATE"], "rev": block["REV"],
                     "comment1": block["COMMENT1"]})
         pathlib.Path(nets_out).write_text(json.dumps(

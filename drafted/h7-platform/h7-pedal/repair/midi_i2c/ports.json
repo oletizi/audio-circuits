@@ -1,0 +1,80 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "C61.1",
+   "J8.1",
+   "R86.2",
+   "R93.2",
+   "R94.2",
+   "TP6.1",
+   "U16.5"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "3V3_P",
+  "pins": [
+   "Q9.2",
+   "R87.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "EXP_I2C_SCL",
+  "pins": [
+   "R93.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXP_I2C_SDA",
+  "pins": [
+   "R94.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C61.2",
+   "J8.4",
+   "R92.2",
+   "U16.3"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "MIDI_PIN4",
+  "pins": [
+   "R88.2",
+   "R89.2",
+   "R90.2",
+   "R91.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "MIDI_PIN5",
+  "pins": [
+   "R92.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_RX",
+  "pins": [
+   "J8.3"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_TX",
+  "pins": [
+   "J8.2",
+   "R86.1",
+   "U16.2"
+  ],
+  "drafted": true
+ }
+]

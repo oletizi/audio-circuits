@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U16",
+      "libId": "h7-platform:SN74LVC1G07DBV",
+      "value": "SN74LVC1G07DBVR",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "C61",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R86",
+      "libId": "Device:R",
+      "value": "18K",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "Q9",
+      "libId": "Transistor_FET:AO3401A",
+      "value": "AO3401A",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R87",
+      "libId": "Device:R",
+      "value": "160R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R88",
+      "libId": "Device:R",
+      "value": "130R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R89",
+      "libId": "Device:R",
+      "value": "130R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R90",
+      "libId": "Device:R",
+      "value": "130R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R91",
+      "libId": "Device:R",
+      "value": "130R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R92",
+      "libId": "Device:R",
+      "value": "10R",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "J8",
+      "libId": "Connector_Generic:Conn_01x04",
+      "value": "Conn_01x04",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R93",
+      "libId": "Device:R",
+      "value": "2.4K",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "R94",
+      "libId": "Device:R",
+      "value": "2.4K",
+      "group": "MIDI OUT and I2C pull-ups"
+    },
+    {
+      "ref": "TP6",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "MIDI OUT and I2C pull-ups"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C61.1",
+        "J8.1",
+        "R86.2",
+        "R93.2",
+        "R94.2",
+        "TP6.1",
+        "U16.5"
+      ]
+    },
+    {
+      "name": "3V3_P",
+      "kind": "signal",
+      "pins": [
+        "Q9.2",
+        "R87.2"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C61.2",
+        "J8.4",
+        "R92.2",
+        "U16.3"
+      ]
+    },
+    {
+      "name": "MIDI_DRAIN",
+      "kind": "signal",
+      "pins": [
+        "Q9.3",
+        "R88.1",
+        "R89.1",
+        "R90.1",
+        "R91.1"
+      ]
+    },
+    {
+      "name": "MIDI_GATE",
+      "kind": "signal",
+      "pins": [
+        "Q9.1",
+        "R87.1",
+        "U16.4"
+      ]
+    },
+    {
+      "name": "MIDI_PIN4",
+      "kind": "signal",
+      "pins": [
+        "R88.2",
+        "R89.2",
+        "R90.2",
+        "R91.2"
+      ]
+    },
+    {
+      "name": "MIDI_UART_TX",
+      "kind": "signal",
+      "pins": [
+        "J8.2",
+        "R86.1",
+        "U16.2"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U16.1"
+  ],
+  "hints": {
+    "groupOrder": [
+      "MIDI OUT and I2C pull-ups"
+    ]
+  }
+}

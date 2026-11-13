@@ -11,6 +11,8 @@
    symbol rotation + field angle is a multiple of 180). A hidden field stays hidden.
 3. THE GROUP RECTANGLE AND ITS CAPTION, to layout.RECT (TOOLING.md repair class 8); the caption's
    text is copperhead's, only its place moves.
+4. NOTES (layout.NOTES, added by 02-wire.py through `page.Wiring.note`): each akcli text note is
+   made left-justified; their count must be layout.NOTES's (none on a page that declares none).
 
 Refuses a part not at layout.PARTS's place, a symbol count that does not add up (parts plus
 layout.PWR_FLAGS one-line PWR_FLAG instances), and a field not in the expected form.
@@ -161,10 +163,26 @@ if len(rect_re.findall(src)) != 1:
     raise SystemExit("text_edits: expected exactly one group rectangle in copperhead's form")
 src = rect_re.sub(f'(rectangle (start {RECT[0]:g} {RECT[1]:g}) (end {RECT[2]:g} {RECT[3]:g})\n'
                   '\t\t(stroke (width 0.3) (type dash)', src)
-cap_re = re.compile(r'\n\t\(text "([^"]*)" \(at [-\d.]+ [-\d.]+ 0\)')
+# The caption is copperhead's block form, its `(at ...)` ending the line; a note akcli's add_text
+# wrote (step 4) is one line with its effects after the `(at ...)`, so it does not match here.
+cap_re = re.compile(r'\n\t\(text "([^"]*)" \(at [-\d.]+ [-\d.]+ 0\)(?=\n)')
 if len(cap_re.findall(src)) != 1:
     raise SystemExit("text_edits: expected exactly one group caption")
 src = cap_re.sub(lambda m: f'\n\t(text "{m.group(1)}" (at {RECT[0] + 2:g} {RECT[1] + 2:g} 0)', src)
 print(f"group rectangle: {RECT}")
+
+# 4. Notes ----------------------------------------------------------------------------------
+# akcli's add_text writes no justification, and KiCad centres a text on its point; each note
+# (`page.Wiring.note`, from layout.NOTES) is made left-justified, so its point is its left end.
+# The count must be layout.NOTES's: a page with none has none.
+note_re = re.compile(r'(\n\t\(text "(?:[^"\\]|\\.)*" \(at [-\d.]+ [-\d.]+ 0\) \(effects \(font \(size 1\.27 1\.27\)\))'
+                     r'(\) \(uuid )')
+want_notes = len(getattr(layout, "NOTES", ()))
+src, n_notes = note_re.subn(lambda m: m.group(1) + " (justify left)" + m.group(2), src)
+if n_notes != want_notes or src.count("\n\t(text ") != 1 + want_notes:
+    raise SystemExit(f"text_edits: justified {n_notes} notes; layout.NOTES has {want_notes}, "
+                     f"the sheet has {src.count(chr(10) + chr(9) + '(text ')} '(text' tokens at the top level")
+if want_notes:
+    print(f"notes: {n_notes}")
 
 path.write_text(src)
