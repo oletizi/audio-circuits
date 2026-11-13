@@ -12,11 +12,14 @@
  *   2. the user table in KiCad's per-user configuration directory
  *
  * An entry whose `(type ...)` is `Table` is a NESTED TABLE - its `uri` names
- * another `fp-lib-table` to read in place of a library directory. On this
- * machine the user table is exactly that, and it is how one line of
- * configuration reaches 157 libraries. Recursion is guarded by a visited set of
- * REAL paths, so a table that includes itself (directly or through a symlink)
- * terminates instead of looping.
+ * another `fp-lib-table` to read in place of a library directory, and it is how
+ * one line of user configuration can reach every installed library. NO COUNT OF
+ * THEM BELONGS HERE: how many a machine resolves is a property of that machine,
+ * and a figure in a comment is a transcription with a date on it.
+ * `tests/pcb/update-from-schematic.test.ts` asserts that the end-to-end run
+ * resolves some, which is the part that must not silently become zero.
+ * Recursion is guarded by a visited set of REAL paths, so a table that includes
+ * itself (directly or through a symlink) terminates instead of looping.
  *
  * This reader is GENERIC over the table's contents. It must not special-case,
  * depend on, or reproduce any particular entry: the user table here also names

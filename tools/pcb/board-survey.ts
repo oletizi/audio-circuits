@@ -26,10 +26,16 @@ export interface BoardSurvey {
   readonly nettedPads: number
   /**
    * Every key in the board's `(setup ...)` block as a `/`-joined path, nested
-   * blocks included (`pcbplotparams/layerselection`), sorted. A SET of keys and
-   * not a size: KiCad writes out values it previously left implicit, so the
-   * block legitimately GROWS across a load-and-save, and only a key that
-   * DISAPPEARED is a loss.
+   * blocks included (`pcbplotparams/layerselection`), sorted - KEYS, not sizes:
+   * KiCad writes out values it previously left implicit, so the block
+   * legitimately GROWS across a load-and-save, and only a key that DISAPPEARED
+   * is a loss.
+   *
+   * REPEATS ARE KEPT, not deduped. A key written twice before and once after has
+   * lost one, and a deduplicated set would read that as no loss at all - which
+   * is not what "any key present before is absent after" says. The comparison
+   * is `lostSetupKeys` in `./update-from-schematic.ts`, and it is a multiset
+   * comparison for this reason.
    */
   readonly setupKeys: readonly string[]
 }
@@ -48,7 +54,7 @@ export function setupKeysOf(board: SNode): readonly string[] {
   if (setup === undefined) return []
   const keys: string[] = []
   collectKeys(setup, "", keys)
-  return [...new Set(keys)].sort()
+  return keys.sort()
 }
 
 export function surveyBoardText(text: string): BoardSurvey {

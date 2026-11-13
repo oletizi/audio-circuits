@@ -23,15 +23,50 @@
 import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
 import path from "node:path"
-import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
-import { PLACEMENT, updateBoardFromSchematic, UpdateRefusal } from "../../tools/pcb/update-from-schematic.ts"
+import { cleanUpTempScratch, freshTempScratch, tempScratchMatching } from "../support/temp-scratch.ts"
+import {
+  lostSetupKeys,
+  PLACEMENT,
+  updateBoardFromSchematic,
+  UpdateRefusal,
+} from "../../tools/pcb/update-from-schematic.ts"
 import type { PythonRunner, UpdateGuard } from "../../tools/pcb/update-from-schematic.ts"
+import { planNets } from "../../tools/pcb/update-instructions.ts"
 import { surveyBoard } from "../../tools/pcb/board-survey.ts"
 import { runDrc } from "../../tools/pcb/drc.ts"
 
 const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const CIRCUIT = path.join(REPO_ROOT, "circuits", "pt2399-core")
 const FIXTURES = path.join(REPO_ROOT, "tests", "fixtures", "pcb")
+
+/**
+ * The tool's OWN scratch directories under TMPDIR, which
+ * `tests/stripboard/temp-scratch.test.ts` cannot see: that audit scans `tests/`,
+ * and these are made in `tools/`. Measured leaking 8 per run of this file before
+ * the retention rule below was written, so the count is asserted here rather
+ * than left to a guard that is blind to it.
+ */
+function toolScratchDirs(): readonly string[] {
+  return tempScratchMatching("pcb-update-")
+}
+
+const PRE_EXISTING_TOOL_SCRATCH = new Set(toolScratchDirs())
+
+/**
+ * Remove the tool's own scratch directories THIS FILE caused, and only those.
+ *
+ * The tool keeps its scratch for a refusal whose message names a path inside it
+ * - that is the retention rule, and two tests below drive such a refusal
+ * deliberately. Those directories are this file's to clear up: the per-test
+ * assertions prove the behaviour, and this hook is what keeps TMPDIR as the file
+ * found it. Directories that were already there when this file loaded are left
+ * alone; they are not this file's to delete.
+ */
+afterAll(() => {
+  for (const dir of toolScratchDirs()) {
+    if (!PRE_EXISTING_TOOL_SCRATCH.has(dir)) fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
 
 /** Every scratch directory below goes through the one registry; see tests/support/temp-scratch.ts. */
 const SCRATCH_PREFIX = "pcb-update-test-"
@@ -129,8 +164,16 @@ test("end to end: the real schematic's 24 components land on the real board, net
   const { board, schematic } = scratchCircuit()
   const before = surveyBoard(board)
   expect(before.footprints).toBe(0)
+  const scratchBefore = toolScratchDirs().length
 
   const result = updateBoardFromSchematic(board, { schematicPath: schematic })
+
+  // The resolver found libraries. A NUMBER is deliberately not asserted: how
+  // many a machine resolves is a property of that machine, and this is the part
+  // that must not silently become zero.
+  expect(result.librariesResolved).toBeGreaterThan(0)
+  // A successful run leaves no scratch directory behind.
+  expect(toolScratchDirs().length).toBe(scratchBefore)
 
   // The counts, taken from the written file by tools/pcb/board-survey.ts - not
   // from the Python writer, and not from an exit code.
@@ -276,23 +319,51 @@ test("R6 refuses a missing or non-executable KiCad Python, naming the path and K
 test("R7 refuses a writer that exits 0 having written a board that does not match the netlist", () => {
   const { board, schematic } = scratchCircuit()
   // The injected writer stands in for the failure the guard exists for: it
-  // exits 0, prints a healthy-looking summary, and writes a board with nothing
-  // on it. The real writer cannot be asked to do that, and a check that trusted
+  // exits 0, prints a healthy-looking summary, and writes a board that does not
+  // match. The real writer cannot be asked to do that, and a check that trusted
   // the summary would pass here.
+  //
+  // IT WRITES A TWO-FOOTPRINT BOARD, not the empty one, so the destination
+  // assertion below can fail. With an empty board on both sides, "the
+  // destination is untouched" held whether or not the copy had happened - a
+  // vacuous assertion that read as coverage, and it let the mutation that moves
+  // copyFileSync ahead of R7 and R8 leave this test green.
   const liar: PythonRunner = (_interpreter, _script, instructions) => {
-    fs.copyFileSync(path.join(CIRCUIT, "pt2399-core.kicad_pcb"), boardOutOf(instructions))
+    fs.copyFileSync(path.join(FIXTURES, "good", "pair.kicad_pcb"), boardOutOf(instructions))
     return { status: 0, stdout: JSON.stringify({ footprints: 24, nettedPads: 65 }), stderr: "" }
   }
   const refusal = expectGuard(
     () => updateBoardFromSchematic(board, { schematicPath: schematic, runPython: liar }),
     "post-run-counts",
   )
-  expect(refusal.message).toContain("0 footprint(s)")
+  expect(refusal.message).toContain("2 footprint(s)")
   expect(refusal.message).toContain("24 component(s)")
-  expect(refusal.message).toContain("0 netted pad(s)")
   expect(refusal.message).toContain("65 node(s)")
-  // The destination is untouched by a refused run.
+  // The destination is untouched by a refused run - and the two cases are now
+  // distinguishable, because the board the writer produced has 2 footprints.
   expect(surveyBoard(board).footprints).toBe(0)
+})
+
+test("R7's refusal keeps its scratch directory, because its message names the board inside it", () => {
+  const { board, schematic } = scratchCircuit()
+  const liar: PythonRunner = (_interpreter, _script, instructions) => {
+    fs.copyFileSync(path.join(FIXTURES, "good", "pair.kicad_pcb"), boardOutOf(instructions))
+    return { status: 0, stdout: "{}", stderr: "" }
+  }
+  const before = new Set(toolScratchDirs())
+  const refusal = expectGuard(
+    () => updateBoardFromSchematic(board, { schematicPath: schematic, runPython: liar }),
+    "post-run-counts",
+  )
+  // The retention rule is not a list of guards: the directory survives exactly
+  // when the message names a path inside it, so the evidence a refusal points at
+  // is still there to open.
+  const kept = toolScratchDirs().filter((dir) => !before.has(dir))
+  expect(kept.length).toBe(1)
+  const keptDir = kept[0] ?? ""
+  expect(refusal.message).toContain(keptDir)
+  expect(fs.existsSync(path.join(keptDir, "instructions.json"))).toBe(true)
+  fs.rmSync(keptDir, { recursive: true, force: true })
 })
 
 test("R8 fires on a real load-and-save that drops a (setup) key, naming the key", () => {
@@ -314,6 +385,112 @@ test("R8 fires on a real load-and-save that drops a (setup) key, naming the key"
   // Nothing was written to the destination, so the key is still there to fix.
   expect(surveyBoard(board).setupKeys).toContain("zone_45_only")
   expect(surveyBoard(board).footprints).toBe(0)
+})
+
+test("R8 compares (setup) keys with multiplicity: a key written twice and saved once has lost one", () => {
+  // The real pcbnew collapses the repeat on load-and-save, so this is a real
+  // loss and not a contrived one. A deduplicated key SET would read it as no
+  // loss at all, which is not what "any key present before is absent after"
+  // says.
+  const { board, schematic } = scratchCircuit()
+  const original = fs.readFileSync(board, "utf8")
+  fs.writeFileSync(
+    board,
+    original.replace(
+      "\t\t(pad_to_mask_clearance 0)\n",
+      "\t\t(pad_to_mask_clearance 0)\n\t\t(pad_to_mask_clearance 0)\n",
+    ),
+  )
+  expect(surveyBoard(board).setupKeys.filter((key) => key === "pad_to_mask_clearance").length).toBe(2)
+
+  const refusal = expectGuard(() => updateBoardFromSchematic(board, { schematicPath: schematic }), "setup-block")
+  expect(refusal.message).toContain("1 key(s)")
+  expect(refusal.message).toContain("pad_to_mask_clearance")
+})
+
+test("lostSetupKeys is a multiset comparison, and additions are not losses", () => {
+  expect(lostSetupKeys(["a", "a", "b"], ["a", "b"])).toEqual(["a"])
+  expect(lostSetupKeys(["a", "b"], ["a", "b", "c", "c"])).toEqual([])
+  expect(lostSetupKeys(["a", "b"], ["b"])).toEqual(["a"])
+  expect(lostSetupKeys([], ["a"])).toEqual([])
+})
+
+test("a repeated net name in the export is refused, because the parse would silently discard one", () => {
+  // THE FALSE GREEN THIS CLOSES. importNetlist keys nets by name in a Record, so
+  // a second net of the same name LAST-WINS and the first one's nodes vanish.
+  // R7's right-hand side is counted from the export TEXT rather than from that
+  // collapsed map, which is the only reason the loss is visible at all - summed
+  // from the map, a board missing half a net would match its own netlist.
+  const { board, schematic } = scratchCircuit()
+  const netlist = netlistText(
+    [
+      { ref: "C1", value: "100nF", footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" },
+      { ref: "C2", value: "100nF", footprint: "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm" },
+    ],
+    [
+      { name: "VCC", nodes: [{ ref: "C1", pin: "1" }] },
+      { name: "VCC", nodes: [{ ref: "C2", pin: "1" }, { ref: "C2", pin: "2" }] },
+    ],
+  )
+  const refusal = expectGuard(
+    () => updateBoardFromSchematic(board, { schematicPath: schematic, exportNetlist: fakeExport(netlist) }),
+    "netlist-nodes",
+  )
+  expect(refusal.message).toContain("3 (node) form(s)")
+  expect(refusal.message).toContain("parses to 2")
+  expect(refusal.message).toContain("REPEATED (net (name ...))")
+})
+
+test("planNets refuses a net member whose designator has no loaded footprint", () => {
+  // REACHED DIRECTLY, because the orchestrator cannot reach it: importNetlist
+  // refuses an undeclared designator first. planNets is exported and a later
+  // caller - the placer - may hand it a pad map built some other way, so the
+  // branch is kept and driven here rather than left as unreachable code.
+  const refusal = refusalOf(() => planNets({ VCC: ["R9.1"] }, new Map()))
+  expect(refusal.guard).toBe("net-member")
+  expect(refusal.message).toContain('net "VCC"')
+  expect(refusal.message).toContain("R9")
+  expect(refusal.message).toContain("no component declares")
+})
+
+test("a board this tool cannot parse is a refusal, not a raw reader error", () => {
+  const { board, schematic } = scratchCircuit()
+  fs.writeFileSync(board, "(kicad_pcb\n\t(version 20260206)\n")
+  const refusal = expectGuard(() => updateBoardFromSchematic(board, { schematicPath: schematic }), "board-unreadable")
+  expect(refusal.message).toContain(board)
+  expect(refusal.message).toContain("unbalanced")
+})
+
+test("an output directory that does not exist is refused before any work, not as an ENOENT after it", () => {
+  const { board, schematic } = scratchCircuit()
+  const absent = path.join(board, "..", "no-such-directory", "pt2399-core.kicad_pcb")
+  const scratchBefore = toolScratchDirs().length
+  const refusal = expectGuard(
+    () => updateBoardFromSchematic(board, { schematicPath: schematic, outputPath: absent }),
+    "invocation",
+  )
+  expect(refusal.message).toContain("no-such-directory")
+  // Refused BEFORE the work: nothing ran, so there is no scratch directory and
+  // no board was left written in one.
+  expect(toolScratchDirs().length).toBe(scratchBefore)
+  expect(surveyBoard(board).footprints).toBe(0)
+})
+
+test("a refusal whose message names nothing in the scratch directory leaves none behind", () => {
+  // Six of the nine guards name no path inside the scratch, and keeping it for
+  // them leaked 8 directories per run of this file. tests/stripboard's mkdtemp
+  // audit cannot see this: it scans tests/, and these are made in tools/.
+  const { board, schematic } = scratchCircuit()
+  const netlist = netlistText(
+    [{ ref: "R1", value: "10k", footprint: "SYNTHETIC:NoFootprintOfThisName" }],
+    [{ name: "IN", nodes: [{ ref: "R1", pin: "1" }] }],
+  )
+  const scratchBefore = toolScratchDirs().length
+  expectGuard(
+    () => updateBoardFromSchematic(board, { schematicPath: schematic, exportNetlist: fakeExport(netlist) }),
+    "library-nickname",
+  )
+  expect(toolScratchDirs().length).toBe(scratchBefore)
 })
 
 test("a component with no (footprint) is refused, not placed on a guess", () => {

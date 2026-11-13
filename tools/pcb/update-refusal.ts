@@ -13,6 +13,14 @@ export type UpdateGuard =
   | "invocation"
   /** R1: the exported netlist has no components. `kicad-cli sch export netlist` exits 0 on an empty schematic. */
   | "netlist-components"
+  /**
+   * The exported netlist's `(node ...)` forms outnumber the parsed nets' members - connections lost in the
+   * parse, a repeated net name being the known cause. R7's right-hand side comes from the text because of
+   * this; see `exportedNodeCount` in `./update-from-schematic.ts`.
+   */
+  | "netlist-nodes"
+  /** A `.kicad_pcb` this tool cannot parse, input or written: raw reader errors are not a failure mode here. */
+  | "board-unreadable"
   /** R2: the input board already holds footprints. This tool does not do incremental updates. */
   | "board-not-empty"
   /** R3: a footprint library nickname resolves in none of the `fp-lib-table` files searched. */
