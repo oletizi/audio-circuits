@@ -145,6 +145,12 @@ Part counts are the reconnaissance's estimates, not measurements.
 | h7-module | 90 parts, nearly all with value and MPN (`parts.md` module table) | STM32H743IIT6 (LQFP-176) and its supplies, VDDA/VREF+ network, W9825G6KH SDRAM, W25Q128JV QSPI flash, 25 MHz crystal, reset/BOOT0, SWD header, the ROM-DFU USB-C socket, the TPS62933F 3V3 buck and its input network, the module ID strap, the two interface headers | the internal MCU pin map (MODULE-INTERNAL-PIN-MAP); the VDDA bank and damping leg (VDDA-WIDEBAND, 3V3D-RIPPLE-INTO-VREF-A, VDDA-DAMPING-LEG); the module USB ESD part; the ID strap pin and values; protection ahead of L_FILT; the bleeder fit (VREF-A-BLEEDER-DECISION) |
 | h7-pedal | 270-300 parts | power entry, hold-up and power-fail; the 3V3_P buck; the 5V_A LDO; the PCM3060 codec domain; SAI isolation; four OPA1688 duals of analog stages; expression and VREF_A loads; two bypass relays; six control positions, two footswitch inputs, two LEDs; USB-C; MIDI; I2C; five jacks; the interface sockets | the pedal USB-C receptacle; the MIDI IN receiver (MIDI-IN-RECEIVER-STOCK) and MIDI header; the DC jack (a study assumption); PCM3060 strap and decoupling values; the HW_REV code per board; C_VBUS fit (VBUS-HOTPLUG); the FB_IN position; test pads (TEST-PAD-SPLIT) |
 
+*Plan-time note, 2026-11-13 (h7 pedal pages plan, Task 3):* the h7-pedal row's
+"PCM3060 strap and decoupling values" are not open. `docs/h7-platform/schematic-checklist.md`
+lines 88-105 (CODEC-02 to CODEC-10) give them, and they are taken from there by
+`decisions.md` CR-PEDAL-PCM3060-VALUES. Only the 10 µF parts' MPNs are absent,
+which a schematic does not need (G245). The row's text is left as written.
+
 ## Sequence (controller ruling)
 
 The ruling: **one board at a time, each one carried all the way to a drawn

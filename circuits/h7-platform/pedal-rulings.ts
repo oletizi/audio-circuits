@@ -117,7 +117,7 @@ export const TEST_PADS = {
     { v1: "VIN_BUCK bench pads", reason: "VIN_BUCK is the module's input network (power.md:29); it is not a pedal net" },
   ],
   sources: [
-    "docs/h7-platform/layout-carry-forward.md:88", `${OI}:124`, `${OI}:142`, "docs/h7-platform/architecture.md:344",
+    "docs/h7-platform/layout-carry-forward.md:88", `${OI}:124`, `${OI}:144`, "docs/h7-platform/architecture.md:344",
     `${CHK}:152`, `${CHK}:167`, "docs/h7-platform/bring-up.md:88", "docs/h7-platform/decisions.md:241",
     "docs/h7-platform/decisions.md:133", "docs/h7-platform/power.md:26",
   ],
