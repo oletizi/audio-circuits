@@ -117,8 +117,21 @@ tool reads, not from this document.
   project's `net_settings.netclass_patterns`, and
   `tests/pcb/netclass-patterns.test.ts` is what holds it: it asks `pcbnew` which
   class each net on the board resolves into, rather than reading the patterns
-  back out of the JSON that is the matcher's input. `rule_severities` is not
-  checked by either and is set by hand.
+  back out of the JSON that is the matcher's input.
+
+  **`rule_severities` IS CHECKED, AND NOT WHERE YOU WOULD LOOK FOR IT.** Neither
+  of the two checks above touches it, which is why it reads as unguarded and was
+  briefly recorded here as such. It is enforced by `tools/pcb/drc-report.ts`,
+  which refuses when a real DRC report's `ignored_checks` array contains any of
+  `items_not_allowed`, `courtyards_overlap` or `missing_courtyard`
+  (`REQUIRED_ACTIVE_CHECKS`), and `tests/pcb/drc.test.ts` pins it. **That is a
+  stronger check than reading the project file would be**, and deliberately so:
+  it establishes that the three checks ACTUALLY RAN in the invocation whose
+  report is being trusted, rather than that a `.kicad_pro` promised they would.
+  A project file can be correct while the run that produced a report ignored
+  them anyway - a different `--severity` selection, a stale project, a board
+  opened against another project - and only the report can tell you which
+  happened.
 - **`circuits/pt2399-core/route-fab-floor.txt`** carries the same minimums as a
   standing instruction to the router.
 
