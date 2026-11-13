@@ -20,10 +20,10 @@
  * demand, and that is exactly the failure the guard exists to catch. Every
  * other refusal is driven by real inputs.
  */
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
-import os from "node:os"
 import path from "node:path"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { PLACEMENT, updateBoardFromSchematic, UpdateRefusal } from "../../tools/pcb/update-from-schematic.ts"
 import type { PythonRunner, UpdateGuard } from "../../tools/pcb/update-from-schematic.ts"
 import { surveyBoard } from "../../tools/pcb/board-survey.ts"
@@ -33,9 +33,13 @@ const REPO_ROOT = path.resolve(import.meta.dir, "..", "..")
 const CIRCUIT = path.join(REPO_ROOT, "circuits", "pt2399-core")
 const FIXTURES = path.join(REPO_ROOT, "tests", "fixtures", "pcb")
 
+/** Every scratch directory below goes through the one registry; see tests/support/temp-scratch.ts. */
+const SCRATCH_PREFIX = "pcb-update-test-"
+afterAll(cleanUpTempScratch)
+
 /** The pt2399-core board, schematic and project copied to a scratch directory under one basename. */
 function scratchCircuit(): { dir: string; board: string; schematic: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-update-test-"))
+  const dir = freshTempScratch(SCRATCH_PREFIX)
   for (const extension of ["kicad_pcb", "kicad_sch", "kicad_pro"]) {
     fs.copyFileSync(path.join(CIRCUIT, `pt2399-core.${extension}`), path.join(dir, `pt2399-core.${extension}`))
   }
@@ -167,7 +171,7 @@ test("R1 refuses a schematic that exports no components, although kicad-cli exit
   // The real exporter against a real, valid, component-free schematic - the
   // whole point being that nothing in the process's result says anything is
   // wrong.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-update-test-"))
+  const dir = freshTempScratch(SCRATCH_PREFIX)
   const board = path.join(dir, "empty.kicad_pcb")
   fs.copyFileSync(path.join(CIRCUIT, "pt2399-core.kicad_pcb"), board)
   const schematic = path.join(dir, "empty.kicad_sch")
@@ -181,7 +185,7 @@ test("R1 refuses a schematic that exports no components, although kicad-cli exit
 
 test("R2 refuses a board that already holds footprints, saying it must be empty and that placement regenerates", () => {
   const { schematic } = scratchCircuit()
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-update-test-"))
+  const dir = freshTempScratch(SCRATCH_PREFIX)
   const board = path.join(dir, "pt2399-core.kicad_pcb")
   fs.copyFileSync(path.join(FIXTURES, "good", "pair.kicad_pcb"), board)
   expect(surveyBoard(board).footprints).toBe(2)

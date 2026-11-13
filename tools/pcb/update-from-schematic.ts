@@ -250,6 +250,12 @@ export function updateBoardFromSchematic(boardPath: string, opts: UpdateOptions)
   }
 
   fs.copyFileSync(written, outputPath)
+  // The scratch directory holds the export, the instruction file and the board
+  // Python wrote. On a REFUSAL it is left in place and the message names it -
+  // that is the evidence for what went wrong. On success nothing references it
+  // again, and leaving one behind per run is how this repository's TMPDIR
+  // reached 60,000 directories and filled a disk (tests/support/temp-scratch.ts).
+  fs.rmSync(scratch, { recursive: true, force: true })
   return {
     outputPath,
     components: netlist.components.length,
