@@ -12,8 +12,8 @@ import fs from "node:fs"
 import type { Component, Connection } from "../../lib/model/index.ts"
 import { everyPin, pinNumberFor } from "../../lib/kicad/from-network.ts"
 import type { PinNumbers } from "../../lib/kicad/from-network.ts"
-import { librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
-import { installedSymbolNames, installedSymbolPins } from "../kicad/symbol-library-disk.ts"
+import { librarySymbols, splitLibId, symbolUnitPins } from "../../lib/kicad/symbol-library.ts"
+import { installedSymbolNames, installedSymbolUnitPins } from "../kicad/symbol-library-disk.ts"
 import { loadContract } from "../../circuits/h7-platform/contract.ts"
 import { MODULE_PINS } from "../../circuits/h7-platform/module-pins.ts"
 import { PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
@@ -21,15 +21,15 @@ import { loadPinData, portName } from "../../circuits/h7-platform/st-pin-data.ts
 
 const PROJECT_NICKNAME = "h7-platform"
 
-/** A symbol's pins, number -> name: the project library for `h7-platform:`, the installed KiCad otherwise. */
+/** A symbol's pins, number -> name, every unit merged (a multi-unit symbol is one package): the project library for `h7-platform:`, the installed KiCad otherwise. */
 export function pinsOf(libId: string): ReadonlyMap<string, string> {
   const { library, name } = splitLibId(libId)
   if (library === PROJECT_NICKNAME) {
     const blockText = librarySymbols(fs.readFileSync(PROJECT_SYMBOL_LIBRARY, "utf8")).get(name)
     if (blockText === undefined) throw new Error(`${PROJECT_SYMBOL_LIBRARY} defines no symbol "${name}"`)
-    return new Map(symbolPins(blockText).map((p) => [p.number, p.name]))
+    return new Map(symbolUnitPins(blockText).flatMap((u) => u.pins.map((p): [string, string] => [p.number, p.name])))
   }
-  return new Map(installedSymbolPins(libId).map((p) => [p.number, p.name]))
+  return new Map(installedSymbolUnitPins(libId).flatMap((u) => u.pins.map((p): [string, string] => [p.number, p.name])))
 }
 
 export function symbolExists(libId: string): boolean {

@@ -27,6 +27,7 @@ import { modswBlock } from "./pedal/modsw.ts"
 import { pfBlock } from "./pedal/pf.ts"
 import { prailBlock } from "./pedal/prail.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
+import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -41,6 +42,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["pf", pfBlock, "Power-fail supervisor"],
   ["modsw", modswBlock, "Module load switch"],
   ["prail", prailBlock, "Pedal digital rail 3V3_P"],
+  ["ldo_vmid", ldoVmidBlock, "5V_A and VMID"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -83,6 +85,8 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
  * more than one pin or whose loading block is already built.
  */
 export const AWAITING_NETS: readonly string[] = [
+  // Until Task 8 (codec_sup, codec): R_5VA's codec end (power.md:489).
+  "5V_A_CODEC",
 ]
 
 /** The pedal: every built block included, each port bound to the root net of its own name. */
@@ -116,6 +120,11 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   prail_c_pout1: "C17", prail_c_pout2: "C18", prail_c_pout3: "C19", prail_c_pout_hf: "C20", prail_r_fb_top: "R13",
   prail_r_fb_bottom: "R14", prail_c_ss: "C21", prail_r_bst: "R15", prail_c_bst: "C22", prail_r_pen: "R16",
   prail_r_penpd: "R17", prail_c_pen1: "C23", prail_c_pen2: "C24", prail_q_pen: "Q4", prail_r_pens: "R18",
+  // ldo_vmid
+  ldo_vmid_u_ldo: "U4", ldo_vmid_r_ldot: "R19", ldo_vmid_r_ldob: "R20", ldo_vmid_c_lin: "C25", ldo_vmid_c_lout: "C26",
+  ldo_vmid_c_nr: "C27", ldo_vmid_c_ff: "C28", ldo_vmid_r_5va: "R21", ldo_vmid_r_vmid_top: "R22",
+  ldo_vmid_r_vmid_bottom: "R23", ldo_vmid_c_vmid: "C29", ldo_vmid_r_vmid_in_l: "R24", ldo_vmid_r_vmid_in_r: "R25",
+  ldo_vmid_u_vmid: "U5", ldo_vmid_c_vmid_hf: "C30", ldo_vmid_c_vmid_bulk: "C31", ldo_vmid_tp_5v_a: "TP5",
 }
 
 /** One page per block (design change C3). */

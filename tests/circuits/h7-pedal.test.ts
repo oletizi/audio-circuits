@@ -173,6 +173,9 @@ function blocksOn(network: Network): ReadonlyMap<string, ReadonlySet<string>> {
 describe("shared nets reach the blocks section 1.2 lists, and no others (built blocks)", () => {
   const built = new Set(PEDAL.blocks.map((b) => b.prefix))
   const reach = blocksOn(PEDAL)
+  test("the power group is built: entry, pf, modsw, prail, ldo_vmid", () => {
+    for (const b of ["entry", "pf", "modsw", "prail", "ldo_vmid"]) expect([b, built.has(b)]).toEqual([b, true])
+  })
   test("VIN_A, VIN_MOD, 5V_A and 3V3_P: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
     expect(sharedNet("VIN_A").blocks).toEqual(["entry", "ldo_vmid", "in_fe", "out"])
     expect(sharedNet("VIN_MOD").blocks).toEqual(["modsw", "prail", "interface"])
