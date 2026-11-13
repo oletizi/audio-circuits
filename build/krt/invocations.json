@@ -140,7 +140,8 @@
           "expectedStatus": 0,
           "observedStatus": 0,
           "succeeded": true,
-          "evidence": "the output holds 7 track segments the input did not"
+          "evidence": "the output holds 7 track segments the input did not",
+          "sideEffects": "Writes or modifies a .kicad_pro beside the output and may relax the DRC floors; grep the output for \"FAB FLOOR RELAXED\"."
         }
       ]
     },
@@ -175,7 +176,8 @@
           "expectedStatus": 0,
           "observedStatus": 0,
           "succeeded": true,
-          "evidence": "wrote a zone with no filled polygons"
+          "evidence": "wrote a zone with no filled polygons",
+          "sideEffects": "Writes or modifies a .kicad_pro beside the output and may relax the DRC floors; grep the output for \"FAB FLOOR RELAXED\"."
         },
         {
           "label": "refill zones and save the board (kicad-cli, not the engine)",

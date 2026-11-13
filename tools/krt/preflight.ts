@@ -120,7 +120,7 @@ const PROJECT_SIDE_EFFECT =
 /** Run one command, check its exit status against what it MUST be, and record it. */
 function invoke(
   ctx: Context, label: string, binary: string, cwd: string, args: readonly string[],
-  tokens: Readonly<Record<string, string>>, expectedStatus: number, evidence: () => string,
+  tokens: Readonly<Record<string, string>>, expectedStatus: number, evidence: () => string, sideEffects?: string,
 ): Invocation {
   const result = ctx.run(binary, args.map((a) => local(ctx.repoRoot, cwd, a)), cwd, ctx.env)
   const argv = [local(ctx.repoRoot, ctx.repoRoot, binary), ...args.map((a) => local(ctx.repoRoot, cwd, a))]
