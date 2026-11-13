@@ -4,61 +4,94 @@ This is the one place the bare-board fabrication rules are written down. The
 KiCad project's Board Setup and the autorouter's floor instruction are both set
 from this document, so neither depends on anyone's memory of a number.
 
-Two numbers sit beside every rule, because a reader needs to know which is ours
-and which is the vendor's:
+Scope: a 2-layer FR-4 bare board with 1 oz (35 um) outer copper, sent to PCBWay
+for fabrication. Through-hole parts, no assembly.
 
-- **Vendor floor (as adopted)** is the "no extra cost" floor this project
-  adopted for each rule. It is deliberately more conservative than the bare
-  minimum PCBWay publishes; see "Where the published page differs" below.
-- **Project value** is what this project designs to. It is the binding column.
+Three columns sit beside every rule, because a reader needs to know whose number
+is whose:
 
-Scope: a 2-layer FR-4 bare board sent to PCBWay for fabrication. THT parts, no
-assembly.
+- **PCBWay publishes** is what PCBWay's capabilities page states, with its tier.
+  It is the only column that is the vendor's.
+- **Adopted floor** is the plan's approved floor for this project. **PCBWay does
+  not publish these as a tier.** They are this project's own values, set at or
+  above what the page publishes.
+- **Project value** is what this project designs to. It is the binding column,
+  and the one the KiCad project and the router file are set from.
 
 ## Rules
 
-| Rule | Vendor floor (as adopted) | Project value |
-| --- | --- | --- |
-| Track width | >= 0.15 mm | 0.3 mm signal, 0.5 mm power; 0.25 mm minimum |
-| Copper clearance | >= 0.15 mm | 0.25 mm |
-| Drill, vias and PTH | >= 0.3 mm | 0.4 mm via drill; 0.3 mm minimum hole |
-| Annular ring | >= 0.15 mm | 0.2 mm (0.8 mm via pad on a 0.4 mm drill) |
-| Hole to hole | >= 0.4 mm | 0.5 mm |
-| Mounting holes (NPTH) | non-plated, no annular ring | 3.2 mm hole, 7.0 mm keepout envelope (see below) |
-| Copper to board edge | >= 0.25 mm | 0.5 mm |
-| Silkscreen text | stroke >= 0.15 mm, height >= 0.8 mm | stroke 0.15 mm, height 0.8 mm minimum |
-| Layers, material | 2-layer FR-4, standard thickness and copper | same |
+| Rule | PCBWay publishes | Adopted floor | Project value |
+| --- | --- | --- | --- |
+| Track width | 0.1 mm (4 mil), standard tier | >= 0.15 mm | 0.3 mm signal, 0.5 mm power; 0.25 mm minimum |
+| Copper clearance | 0.1 mm (4 mil), standard tier | >= 0.15 mm | 0.25 mm |
+| Drill, vias and PTH | 0.15 mm minimum; below 0.2 mm or above 6 mm is surcharged, standard tier | >= 0.3 mm | 0.4 mm via drill; 0.3 mm minimum hole |
+| Via annular ring | 0.15 mm (6 mil) for pads with vias, standard tier | >= 0.15 mm | 0.2 mm (0.8 mm via pad on a 0.4 mm drill) |
+| Component-hole annular ring | not in the standard tier; advanced normal process >= 10 mil (0.254 mm) | not set by this standard | set by each footprint; must clear 0.254 mm (see below) |
+| Hole to hole | not in the standard tier; advanced normal process: component hole >= 16 mil (0.406 mm), via (<= 0.45 mm) >= 11 mil | >= 0.4 mm | 0.5 mm |
+| Mounting holes (NPTH) | NPTH finished-hole tolerance +/-0.05 mm, standard tier | non-plated, no annular ring | 3.2 mm hole, 7.0 mm keepout (see below) |
+| Copper to board edge | not in the standard tier; advanced normal process, CNC milling, 0.25 mm | >= 0.25 mm | 0.5 mm |
+| Silkscreen text | character width >= 0.15 mm, character height >= 0.8 mm, standard tier | stroke >= 0.15 mm, height >= 0.8 mm | stroke 0.15 mm, height 0.8 mm minimum |
+| Layers, material | standard table spans 1 to 14 layers, FR-4 among materials; no separate 2-layer table | 2-layer FR-4, standard thickness and copper | same |
+
+Silkscreen note: PCBWay's figure is a minimum **character width**; this
+project's figure is **stroke** width. They are different quantities and are not
+asserted equal. The 0.15 mm stroke is the project's own choice, and PCBWay's
+page does not state a stroke figure.
+
+### Caveat on the advanced-tier figures
+
+Rows marked "advanced normal process" come from PCBWay's advanced-capability
+table, not the standard table. Two things limit how far to trust them here.
+
+- The page's tables render with garbled columns when fetched, so the tier
+  (normal / medium / high) of each advanced figure was **read, not copied**.
+  Re-check them on the live page before quoting one elsewhere.
+- The advanced weld-ring and width/spacing rows are conditioned on outer copper
+  weight. The figures quoted here are the **35 um (1 oz) outer copper** rows,
+  which is why this standard assumes 2-layer, 1 oz copper.
+
+For the same 35 um row, the advanced normal process also lists minimum outer
+width/spacing of 5/6 mil and a via weld ring of >= 5 mil. The standard tier's
+looser 4 mil trace and spacing figures are the ones in the table above.
+
+### Annular rings: vias and component holes are different rules
+
+PCBWay publishes two different annular-ring figures, and they must not be
+conflated.
+
+- **Vias.** Standard tier: 0.15 mm (6 mil) "for pads with vias in the middle".
+  Advanced, 35 um, normal process: >= 5 mil. This project's 0.2 mm (7.87 mil)
+  is a **via** ring, from a 0.8 mm pad on a 0.4 mm drill, and it sits above both
+  of those figures.
+- **Component holes (PTH pads).** Advanced tier, "Minimum weld ring (outer
+  layer)", 35 um: **>= 10 mil (0.254 mm)** normal process, >= 8 mil medium
+  difficulty. The standard tier publishes no component-hole figure. The 0.2 mm
+  via ring above would fall below even the medium figure if read as a
+  component-hole ring.
+
+**This standard does not set the component-hole annular ring.** It comes from
+each footprint's own pad and drill geometry. This is a through-hole board, so
+every part pad is a component hole; the via rule does not cover them. The figure
+those footprints must clear is 0.254 mm.
 
 ### Mounting holes
 
 The fastener is a standard M3 screw in a 3.2 mm non-plated hole. The 7.0 mm
 keepout envelope is taken from a DIN 125 Type A / ISO 7089 washer (3.2 mm
-inside diameter, 7.0 mm outside diameter): no copper, part or silkscreen may
-sit under the washer.
+inside diameter, 7.0 mm outside diameter): no copper, part or silkscreen may sit
+under the washer. This is an owner decision, recorded verbatim in
+`docs/known-gaps.md` as G311.
 
-## Where the published page differs
+## Why the adopted floors differ from what PCBWay publishes
 
-Checked against PCBWay's capabilities page (source below) on 2026-11-13. The
-page's figures are looser than the adopted floors in most rows. The adopted
-floors were not changed to match; they are the more conservative choice and the
-project values sit above both. Recorded here so nobody mistakes the adopted
-column for a quotation.
-
-| Rule | Adopted floor | What the page publishes |
-| --- | --- | --- |
-| Track width | 0.15 mm | Standard PCB: min trace 0.1 mm (4 mil). Advanced, normal process, 35 um outer copper: >= 5 mil (about 0.127 mm) |
-| Copper clearance | 0.15 mm | Standard PCB: min spacing 0.1 mm (4 mil). Advanced, normal: >= 6 mil (about 0.152 mm) |
-| Drill | 0.3 mm | Standard: drill 0.15 to 6.0 mm; holes under 0.2 mm or over 6 mm "subject to extra charges". Advanced, normal: 0.20 to 6.5 mm. No 0.3 mm figure appears |
-| Annular ring | 0.15 mm | Standard: 0.15 mm (6 mil) for pads with vias. Advanced, normal: via >= 5 mil, component hole >= 10 mil (about 0.254 mm) |
-| Hole to hole | 0.4 mm | Advanced, normal: component hole >= 16 mil (about 0.406 mm); via (<= 0.45 mm) >= 11 mil (about 0.28 mm) |
-| Copper to board edge | 0.25 mm | Advanced, normal, CNC milling: 0.25 mm. Matches |
-| Silkscreen | 0.15 mm stroke, 0.8 mm height | 0.15 mm minimum character width, 0.8 mm minimum character height. Matches |
-| NPTH | non-plated | NPTH finished-hole tolerance +/-0.05 mm (standard); slot width, non-plated >= 0.8 mm |
-| Layers, material | 2-layer FR-4 | Standard table covers 1 to 14 layers, FR-4 among materials, thickness 0.2 to 3.2 mm. The page publishes no separate 2-layer table |
-
-The page does not use the phrase "no extra cost" for any of these rows other than
-the drill-size surcharge. The adopted floors are therefore this project's
-reading of the safe, standard-priced region, not PCBWay's own words.
+The adopted floors are the plan's approved values. PCBWay does not publish them
+as a tier: its page has no tier by that name, and its only extra-cost statement
+for hole size is that holes above 6 mm or below 0.2 mm are surcharged. Where an
+adopted floor is tighter than the page's figure (track, clearance, drill), that
+is a project choice, not a vendor requirement. Where the page has no figure at
+all in the standard tier (hole to hole, copper to edge, component-hole ring),
+the advanced-tier figure is recorded as the nearest published reference and is
+subject to the caveat above.
 
 ## Where each value is enforced
 
@@ -66,9 +99,9 @@ A rule written only in prose drifts, so each value is enforced from a file a
 tool reads, not from this document.
 
 - **`circuits/pt2399-core/pt2399-core.kicad_pro`** carries the Board Setup
-  constraints (minimum track width, clearance, via and hole sizes, annular ring,
-  hole-to-hole, copper-to-edge, minimum text size) and the net-class widths
-  (0.3 mm signal, 0.5 mm power). KiCad's DRC reads these.
+  constraints (minimum track width, clearance, via and hole sizes, via annular
+  ring, hole-to-hole, copper-to-edge, minimum text size) and the net-class
+  widths (0.3 mm signal, 0.5 mm power). KiCad's DRC reads these.
 - **`circuits/pt2399-core/route-fab-floor.txt`** carries the same minimums as a
   standing instruction to the router.
 
@@ -87,17 +120,15 @@ None of these is checked, so none should be mistaken for checked.
 1. **Trace impedance and via inductance.** They do not matter at this board's
    audio frequencies and are not why these rules exist.
 2. **Silkscreen graphic line width.** KiCad has no design rule for it at all.
-   Text stroke is set above; graphic line width is not. A later task measures
-   and records it rather than gating on it.
+   Text stroke is set above; graphic line width is not. Task 6 measures and
+   records it rather than gating on it.
 3. **Assembly.** These are bare-board rules. Nothing here constrains part
    placement for an assembler, paste stencils or pick-and-place.
 
 ## Sources
 
 - PCBWay, "PCB Capabilities": https://www.pcbway.com/capabilities.html
-  (figures in this document checked against the page on 2026-11-13; the page's
-  tables render with garbled columns, so the tier mapping of the advanced table
-  was read, not copied, and should be re-checked on the live page before a
-  figure is quoted elsewhere).
+  (figures checked against the page on 2026-11-13, twice; see the caveat on the
+  advanced-tier figures above).
 - Mounting-hole washer envelope: DIN 125 Type A / ISO 7089 (3.2 mm ID, 7.0 mm
-  OD), by owner decision.
+  OD), by owner decision G311 in `docs/known-gaps.md`.
