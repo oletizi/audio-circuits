@@ -10,12 +10,11 @@
  */
 import fs from "node:fs"
 import type { Component, Connection } from "../../lib/model/index.ts"
-import { pinNumberFor } from "../../lib/kicad/from-network.ts"
+import { everyPin, pinNumberFor } from "../../lib/kicad/from-network.ts"
 import type { PinNumbers } from "../../lib/kicad/from-network.ts"
 import { librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
 import { installedSymbolNames, installedSymbolPins } from "../kicad/symbol-library-disk.ts"
 import { loadContract } from "../../circuits/h7-platform/contract.ts"
-import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/module-parts.ts"
 import { MODULE_PINS } from "../../circuits/h7-platform/module-pins.ts"
 import { PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import { loadPinData, portName } from "../../circuits/h7-platform/st-pin-data.ts"
@@ -54,13 +53,17 @@ const CRYSTAL_GND24: Readonly<Record<string, string>> = { "1": "1", "2": "G", "3
  * symbol pin, a symbol pin the model does not list, or an `ic` pin whose symbol name is not the
  * datasheet's (the MCU against ST's pin data). Empty is a pass.
  */
-export function symbolProblems(c: Component, pinNumbers: PinNumbers): string[] {
+export function symbolProblems(
+  c: Component,
+  pinNumbers: PinNumbers,
+  datasheetNames: Readonly<Record<string, Readonly<Record<string, string>>>>,
+): string[] {
   const symbol = c.part?.symbol
   if (symbol === undefined) return [`${c.id} has no part.symbol`]
   if (!symbolExists(symbol)) return [`${c.id}: symbol ${symbol} is not in the installed KiCad libraries or the project library`]
   const pins = pinsOf(symbol)
   const problems: string[] = []
-  const numbers = allPins(c).map(([pin]) => pinNumberFor(c, pin, pinNumbers))
+  const numbers = everyPin(c).map((pin) => pinNumberFor(c, pin, pinNumbers))
   const sortedModel = [...numbers].sort().join(",")
   const sortedSymbol = [...pins.keys()].sort().join(",")
   if (sortedModel !== sortedSymbol) problems.push(`${c.id}: model pins [${sortedModel}] are not the symbol's [${sortedSymbol}]`)
@@ -74,7 +77,7 @@ export function symbolProblems(c: Component, pinNumbers: PinNumbers): string[] {
     }
     return problems
   }
-  const names = symbol === "Device:Crystal_GND24" ? CRYSTAL_GND24 : DATASHEET_PIN_NAMES[symbol]
+  const names = symbol === "Device:Crystal_GND24" ? CRYSTAL_GND24 : datasheetNames[symbol]
   if (names === undefined) return [...problems, `${c.id}: no datasheet pin names are recorded for ${symbol}`]
   for (const n of numbers) {
     if (pins.get(n) !== names[n]) problems.push(`${c.id}: pin ${n} is "${pins.get(n)}" on the symbol, "${names[n]}" in the datasheet`)

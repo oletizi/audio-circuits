@@ -22,6 +22,7 @@ import { checkInterface } from "../../circuits/h7-platform/interface-check.ts"
 import { assertModuleCapacitanceWithinLimit, moduleCapacitance3v3 } from "../../circuits/h7-platform/module-3v3-budget.ts"
 import { DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, drawingPages, h7Module } from "../../circuits/h7-platform/module-board.ts"
 import { VDDA_RULED } from "../../circuits/h7-platform/vdda-noise.ts"
+import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/module-parts.ts"
 import { EXPECTED_NC_PORTS, mcuNcPorts, mcuPinProblems, symbolProblems, withPin } from "./h7-module-checks.ts"
 import { registerDraftedProjectTests, type ProjectModel } from "./drafted-project.ts"
 import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
@@ -154,7 +155,7 @@ describe("VDDA against Task 3's constant", () => {
 
 describe("symbols and pin numbers", () => {
   test("every part names a symbol that exists and numbers every pin as the symbol does", () => {
-    expect(MODULE.components.flatMap((c) => symbolProblems(c, PIN_NUMBERS))).toEqual([])
+    expect(MODULE.components.flatMap((c) => symbolProblems(c, PIN_NUMBERS, DATASHEET_PIN_NAMES))).toEqual([])
   })
 })
 

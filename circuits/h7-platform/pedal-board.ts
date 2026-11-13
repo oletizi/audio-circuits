@@ -22,6 +22,7 @@ import { circuit } from "../../lib/model/index.ts"
 import type { Network } from "../../lib/model/index.ts"
 import { drawingPagesFromNetwork, type DrawingPage } from "../../tools/draught/drawing-pages.ts"
 import { PEDAL_BLOCKS, PEDAL_PIN_NUMBERS } from "./pedal/build.ts"
+import { entryBlock } from "./pedal/entry.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { contractNet } from "./pedal/nets.ts"
 
@@ -33,6 +34,7 @@ export const PIN_NUMBERS = PEDAL_PIN_NUMBERS
 
 /** Block prefix -> its builder and the caption copperhead draws around its page. Built blocks only. */
 const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
+  ["entry", entryBlock, "Power entry"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -68,6 +70,19 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   "RELAY_EN",
 ].map(contractNet)
 
+/**
+ * Pedal nets that, on the board as built so far, reach one pin only: a block has built one end and
+ * the block that loads the other is a later task's. Validation refuses a one-pin net that is not a
+ * port, so each is a port of the board until that block lands, and that task removes it here
+ * (CR-PEDAL-NETS, "Nets awaiting their other block"). Unlike SOCKET_ONLY_NETS these do not leave
+ * the board; the list is a construction state, and the board test refuses an entry that reaches
+ * more than one pin or whose loading block is already built.
+ */
+export const AWAITING_NETS: readonly string[] = [
+  // Until modsw (this task): D_MIN's cathode, which Q_MSW's source takes.
+  "VIN_MSW",
+]
+
 /** The pedal: every built block included, each port bound to the root net of its own name. */
 export function h7Pedal(): Network {
   const builder = circuit()
@@ -75,7 +90,7 @@ export function h7Pedal(): Network {
     const net = build()
     builder.include(prefix, net, Object.fromEntries(Object.keys(net.ports).map((port) => [port, port])))
   }
-  for (const net of SOCKET_ONLY_NETS) builder.port(net, net)
+  for (const net of [...SOCKET_ONLY_NETS, ...AWAITING_NETS]) builder.port(net, net)
   return builder.done()
 }
 
@@ -83,6 +98,10 @@ export function h7Pedal(): Network {
 export const DESIGNATORS: Readonly<Record<string, string>> = {
   // interface: J1 and J2, the numbers the module's headers and the carrier's sockets carry
   interface_j_mod_a: "J1", interface_j_mod_b: "J2",
+  // entry
+  entry_j_dc: "J3", entry_fb_in: "FB1", entry_c_sch: "C1", entry_c_prothf: "C2", entry_d_ain: "D1", entry_d_min: "D2",
+  entry_c_bulk: "C3", entry_c_bulk2: "C4", entry_c_bulk3: "C5", entry_c_bulk4: "C6", entry_c_prot: "C7",
+  entry_r_vbld: "R1", entry_tp_vin: "TP1", entry_tp_vin_a: "TP2", entry_tp_gnd: "TP3",
 }
 
 /** One page per block (design change C3). */

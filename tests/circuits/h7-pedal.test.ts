@@ -21,9 +21,10 @@ import { loadContract } from "../../circuits/h7-platform/contract.ts"
 import { checkInterface } from "../../circuits/h7-platform/interface-check.ts"
 import { MODULE_SOCKET } from "../../circuits/h7-platform/parts.ts"
 import { PEDAL_BLOCKS, PEDAL_GROUPS } from "../../circuits/h7-platform/pedal/build.ts"
-import { SHARED_NETS, contractNet } from "../../circuits/h7-platform/pedal/nets.ts"
+import { SHARED_NETS, contractNet, sharedNet } from "../../circuits/h7-platform/pedal/nets.ts"
+import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/pedal-parts.ts"
 import {
-  DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, drawingPages, h7Pedal,
+  AWAITING_NETS, DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, drawingPages, h7Pedal,
 } from "../../circuits/h7-platform/pedal-board.ts"
 import { provenanceProblems } from "./h7-pedal-provenance.ts"
 import { symbolProblems } from "./h7-module-checks.ts"
@@ -126,8 +127,8 @@ describe("the interface block (J_MOD_A, J_MOD_B)", () => {
 })
 
 describe("contract nets nothing on the pedal loads yet", () => {
-  test("are exactly the root ports, and each is on one pad and nothing else", () => {
-    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS].sort())
+  test("with the pedal nets awaiting their other block, are exactly the root ports, and each is on one pad and nothing else", () => {
+    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS, ...AWAITING_NETS].sort())
     for (const net of SOCKET_ONLY_NETS) {
       expect([net, PEDAL.ports[net], pinsOn(PEDAL, net)]).toEqual([net, net, 1])
     }
@@ -139,6 +140,50 @@ describe("contract nets nothing on the pedal loads yet", () => {
     const signals = [...new Set(loadContract().pins.flatMap((p) => (p.signal === null ? [] : [p.signal])))]
     for (const net of signals.filter((s) => !SOCKET_ONLY_NETS.includes(s))) {
       expect([net, pinsOn(PEDAL, net) >= 2]).toEqual([net, true])
+    }
+  })
+})
+
+describe("pedal nets awaiting their other block (CR-PEDAL-NETS)", () => {
+  const built = new Set(PEDAL.blocks.map((b) => b.prefix))
+  test("each is a shared net on exactly one pin, which a block not yet built will load", () => {
+    for (const net of AWAITING_NETS) {
+      expect([net, PEDAL.ports[net], pinsOn(PEDAL, net)]).toEqual([net, net, 1])
+      expect([net, sharedNet(net).blocks.some((b) => !built.has(b))]).toEqual([net, true])
+    }
+  })
+})
+
+/** Root net -> the built blocks whose parts sit on it. */
+function blocksOn(network: Network): ReadonlyMap<string, ReadonlySet<string>> {
+  const out = new Map<string, Set<string>>()
+  for (const c of network.components) {
+    const prefix = blockOf(network, c.id)
+    if (prefix === null) continue
+    for (const conn of [...Object.values(c.pins), ...c.units.flatMap((u) => Object.values(u.pins))]) {
+      if (conn.kind !== "net") continue
+      const set = out.get(conn.net) ?? new Set<string>()
+      set.add(prefix)
+      out.set(conn.net, set)
+    }
+  }
+  return out
+}
+
+describe("shared nets reach the blocks section 1.2 lists, and no others (built blocks)", () => {
+  const built = new Set(PEDAL.blocks.map((b) => b.prefix))
+  const reach = blocksOn(PEDAL)
+  test("VIN_A, VIN_MOD, 5V_A and 3V3_P: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
+    expect(sharedNet("VIN_A").blocks).toEqual(["entry", "ldo_vmid", "in_fe", "out"])
+    expect(sharedNet("VIN_MOD").blocks).toEqual(["modsw", "prail", "interface"])
+    expect(sharedNet("5V_A").blocks).toEqual(["pf", "ldo_vmid", "adc_drv"])
+    expect(sharedNet("3V3_P").blocks).toEqual(["prail", "jacks_byp", "fsw_led", "midi_i2c"])
+  })
+  test("every shared net reaches exactly its listed blocks that are built", () => {
+    for (const n of SHARED_NETS) {
+      const want = n.blocks.filter((b) => built.has(b)).sort()
+      const got = [...(reach.get(n.net) ?? new Set<string>())].sort()
+      expect([n.net, got]).toEqual([n.net, want])
     }
   })
 })
@@ -232,7 +277,7 @@ describe("shared net names (inventory section 1.2; CR-PEDAL-NETS)", () => {
 
 describe("symbols and pages", () => {
   test("every part names a symbol that exists and numbers every pin as the symbol does", () => {
-    expect(PEDAL.components.flatMap((c) => symbolProblems(c, PIN_NUMBERS))).toEqual([])
+    expect(PEDAL.components.flatMap((c) => symbolProblems(c, PIN_NUMBERS, DATASHEET_PIN_NAMES))).toEqual([])
   })
   test("every block lowers to a page, every part on exactly one page, at the model's value", () => {
     const pages = drawingPages()

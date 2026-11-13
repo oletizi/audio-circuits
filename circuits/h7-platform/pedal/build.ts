@@ -14,9 +14,44 @@
  * reason that file gives. Kinds the module never needed are added here by the task that needs them.
  */
 import type { PinNumbers } from "../../../lib/kicad/from-network.ts"
+import type { Component, PartSpec } from "../../../lib/model/index.ts"
 
 export { block, capacitor, inductor, part, pushButton, resistor } from "../module/build.ts"
 export type { Pins } from "../module/build.ts"
+
+const net = (name: string): { readonly kind: "net"; readonly net: string } => ({ kind: "net", net: name })
+
+/** A two-terminal diode (kind `diode`, pins `anode` and `cathode`; numbered by `PEDAL_PIN_NUMBERS.diode`). */
+export function diode(id: string, anode: string, cathode: string, spec: PartSpec, source: string): Component {
+  return {
+    id, kind: "diode", parameters: {}, part: spec, pins: {},
+    units: [{ name: "MAIN", pins: { anode: net(anode), cathode: net(cathode) } }], provenance: { source },
+  }
+}
+
+/** One op-amp section's three pins, by net. */
+export interface OpampSection {
+  readonly "in+": string
+  readonly "in-": string
+  readonly out: string
+}
+
+/**
+ * A whole dual op-amp: sections A and B and the package's supply pins, numbered through the part's
+ * own `symbolPins` (Task 1; `lib/kicad/unit-pins.ts`), because a per-kind table cannot tell the two
+ * sections apart. Channel A = L and B = R (schematic-checklist.md:149).
+ */
+export function dualOpamp(
+  id: string, a: OpampSection, b: OpampSection, supply: { readonly "v+": string; readonly "v-": string },
+  spec: PartSpec, source: string,
+): Component {
+  const section = (s: OpampSection) => ({ "in+": net(s["in+"]), "in-": net(s["in-"]), out: net(s.out) })
+  return {
+    id, kind: "opamp", parameters: {}, part: spec,
+    pins: { "v+": net(supply["v+"]), "v-": net(supply["v-"]) },
+    units: [{ name: "A", pins: section(a) }, { name: "B", pins: section(b) }], provenance: { source },
+  }
+}
 
 export const PEDAL_GROUPS = ["power", "digital and controls", "analog", "interface"] as const
 export type PedalGroup = (typeof PEDAL_GROUPS)[number]
@@ -54,8 +89,17 @@ export const PEDAL_BLOCKS: readonly PedalBlock[] = [
 
 /**
  * Pin numbers by kind, for `intentFromNetwork` and the symbol checks. Only what the built blocks
- * need: the sockets' pins are already their symbol's pin numbers, so the interface block needs no
- * entry. Each later task adds the kinds its blocks bring (a resistor's `a`/`b`, a pot's
- * `POTENTIOMETER_PIN_NUMBERS`), checked by the board test's symbol check.
+ * need: the sockets', test pads', DC jack's and every `ic`'s pins are already their symbol's pin
+ * numbers. Task 6 added the two-terminal kinds: `Device:R`, `Device:C`, `Device:C_Polarized` (pin 1
+ * the + terminal, so a polarised capacitor's `a` is its + side), `Device:FerriteBead`, each numbered
+ * 1 and 2; and the diode, cathode 1 and anode 2 (CR-PEDAL-KINDS; PMEG4030ER v.4 and BAS116H Rev. 3
+ * Table 2, `pedal-pin-tables.ts`). The dual op-amps are numbered from their own `symbolPins`. Later
+ * tasks add the kinds their blocks bring (a pot's `POTENTIOMETER_PIN_NUMBERS`), checked by the board
+ * test's symbol check.
  */
-export const PEDAL_PIN_NUMBERS: PinNumbers = {}
+export const PEDAL_PIN_NUMBERS: PinNumbers = {
+  resistor: { a: "1", b: "2" },
+  capacitor: { a: "1", b: "2" },
+  inductor: { a: "1", b: "2" },
+  diode: { cathode: "1", anode: "2" },
+}

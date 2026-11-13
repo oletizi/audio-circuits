@@ -10,6 +10,7 @@ import { describe, expect, test } from "bun:test"
 import { NC } from "../../lib/model/index.ts"
 import type { Component, Network } from "../../lib/model/index.ts"
 import { MODULE_PIN_NUMBERS } from "../../circuits/h7-platform/module/build.ts"
+import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/module-parts.ts"
 import { mcuBlock } from "../../circuits/h7-platform/module/mcu.ts"
 import { mcuDecouplingBlock } from "../../circuits/h7-platform/module/mcu-decoupling.ts"
 import { vddaBlock } from "../../circuits/h7-platform/module/vdda.ts"
@@ -64,7 +65,7 @@ for (const [name, build] of Object.entries(BLOCKS)) {
       else expect(n).toBeLessThanOrEqual(MAX_SYMBOLS)
     })
     test("every part's symbol exists and every pin is the symbol's", () => {
-      expect(build().components.flatMap((c) => symbolProblems(c, MODULE_PIN_NUMBERS))).toEqual([])
+      expect(build().components.flatMap((c) => symbolProblems(c, MODULE_PIN_NUMBERS, DATASHEET_PIN_NAMES))).toEqual([])
     })
     test("every part cites its source", () => {
       expect(build().components.filter((c) => (c.provenance?.source ?? "").length === 0).map((c) => c.id)).toEqual([])
