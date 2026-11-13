@@ -19,6 +19,13 @@
  * written a board that does not match, which the real writer will not do on
  * demand, and that is exactly the failure the guard exists to catch. Every
  * other refusal is driven by real inputs.
+ *
+ * THE SCRATCH-RETENTION CONTRACT IS NOT HERE. It is in
+ * `./update-scratch-retention.test.ts`, which iterates every guard in
+ * `UPDATE_GUARDS` rather than sampling two of them; the two worked cases that
+ * used to sit in this file are deleted rather than left beside it, because a
+ * second partial copy of a contract is the thing that goes stale. What stays
+ * here is the success side: a run that succeeds leaves no scratch directory.
  */
 import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
@@ -32,6 +39,7 @@ import {
 } from "../../tools/pcb/update-from-schematic.ts"
 import type { PythonRunner, UpdateGuard } from "../../tools/pcb/update-from-schematic.ts"
 import { planNets } from "../../tools/pcb/update-instructions.ts"
+import { defaultRunPython } from "../../tools/pcb/update-io.ts"
 import { surveyBoard } from "../../tools/pcb/board-survey.ts"
 import { runDrc } from "../../tools/pcb/drc.ts"
 
@@ -42,9 +50,9 @@ const FIXTURES = path.join(REPO_ROOT, "tests", "fixtures", "pcb")
 /**
  * The tool's OWN scratch directories under TMPDIR, which
  * `tests/stripboard/temp-scratch.test.ts` cannot see: that audit scans `tests/`,
- * and these are made in `tools/`. Measured leaking 8 per run of this file before
- * the retention rule below was written, so the count is asserted here rather
- * than left to a guard that is blind to it.
+ * and these are made in `tools/`. They leaked on every refusal once, so the
+ * count is asserted here rather than left to a guard that is blind to it - and
+ * `./update-scratch-retention.test.ts` holds the contract over every guard.
  */
 function toolScratchDirs(): readonly string[] {
   return tempScratchMatching("pcb-update-")
@@ -344,28 +352,6 @@ test("R7 refuses a writer that exits 0 having written a board that does not matc
   expect(surveyBoard(board).footprints).toBe(0)
 })
 
-test("R7's refusal keeps its scratch directory, because its message names the board inside it", () => {
-  const { board, schematic } = scratchCircuit()
-  const liar: PythonRunner = (_interpreter, _script, instructions) => {
-    fs.copyFileSync(path.join(FIXTURES, "good", "pair.kicad_pcb"), boardOutOf(instructions))
-    return { status: 0, stdout: "{}", stderr: "" }
-  }
-  const before = new Set(toolScratchDirs())
-  const refusal = expectGuard(
-    () => updateBoardFromSchematic(board, { schematicPath: schematic, runPython: liar }),
-    "post-run-counts",
-  )
-  // The retention rule is not a list of guards: the directory survives exactly
-  // when the message names a path inside it, so the evidence a refusal points at
-  // is still there to open.
-  const kept = toolScratchDirs().filter((dir) => !before.has(dir))
-  expect(kept.length).toBe(1)
-  const keptDir = kept[0] ?? ""
-  expect(refusal.message).toContain(keptDir)
-  expect(fs.existsSync(path.join(keptDir, "instructions.json"))).toBe(true)
-  fs.rmSync(keptDir, { recursive: true, force: true })
-})
-
 test("R8 fires on a real load-and-save that drops a (setup) key, naming the key", () => {
   // zone_45_only is a legacy KiCad setup key, and the real pcbnew DISCARDS it on
   // load-and-save - silently, with a parity check that still passes. That is the
@@ -476,21 +462,16 @@ test("an output directory that does not exist is refused before any work, not as
   expect(surveyBoard(board).footprints).toBe(0)
 })
 
-test("a refusal whose message names nothing in the scratch directory leaves none behind", () => {
-  // Six of the nine guards name no path inside the scratch, and keeping it for
-  // them leaked 8 directories per run of this file. tests/stripboard's mkdtemp
-  // audit cannot see this: it scans tests/, and these are made in tools/.
-  const { board, schematic } = scratchCircuit()
-  const netlist = netlistText(
-    [{ ref: "R1", value: "10k", footprint: "SYNTHETIC:NoFootprintOfThisName" }],
-    [{ name: "IN", nodes: [{ ref: "R1", pin: "1" }] }],
-  )
-  const scratchBefore = toolScratchDirs().length
-  expectGuard(
-    () => updateBoardFromSchematic(board, { schematicPath: schematic, exportNetlist: fakeExport(netlist) }),
-    "library-nickname",
-  )
-  expect(toolScratchDirs().length).toBe(scratchBefore)
+test("an interpreter that will not spawn is a refusal from the runner itself, not a raw spawn error", () => {
+  // DRIVEN DIRECTLY, because the orchestrator cannot reach it: R6 refuses a
+  // non-executable interpreter before any spawn is attempted. The branch is
+  // still live - an interpreter that passes the executable check and then fails
+  // to spawn (a bad interpreter line, a broken binary) lands here - and it had
+  // no test before.
+  const refusal = refusalOf(() => defaultRunPython(path.join(CIRCUIT, "no-such-python3"), "x.py", "y.json"))
+  expect(refusal.guard).toBe("invocation")
+  expect(refusal.message).toContain("no-such-python3")
+  expect(refusal.message).toContain("could not run")
 })
 
 test("a component with no (footprint) is refused, not placed on a guess", () => {

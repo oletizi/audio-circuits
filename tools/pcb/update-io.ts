@@ -58,8 +58,16 @@ export function defaultRunPython(
   return { status: result.status, stdout: result.stdout, stderr: result.stderr }
 }
 
-/** A board read, with an unparseable file inside the refusal vocabulary rather than raw from the reader. */
-export function readBoard(boardPath: string, role: string): BoardSurvey {
+/**
+ * A board read, with an unparseable file inside the refusal vocabulary rather
+ * than raw from the reader.
+ *
+ * `keepsEvidence` is the CALLER's assertion, passed because only the caller
+ * knows whether `boardPath` is inside the run's scratch directory: it is for the
+ * board Python wrote, and is not for the input board, which the person already
+ * has. See `UpdateRefusal.keepsEvidence`.
+ */
+export function readBoard(boardPath: string, role: string, keepsEvidence = false): BoardSurvey {
   try {
     return surveyBoard(boardPath)
   } catch (error) {
@@ -69,6 +77,7 @@ export function readBoard(boardPath: string, role: string): BoardSurvey {
       `the ${role} board at ${boardPath} could not be read as a KiCad s-expression: ${message}. Nothing is ` +
         "guessed from a file this tool cannot parse - a partially understood board is how a footprint lands " +
         "on a board whose configuration was silently discarded.",
+      keepsEvidence,
     )
   }
 }

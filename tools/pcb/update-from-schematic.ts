@@ -23,16 +23,26 @@
  * R7 below is satisfied by `./board-survey.ts`'s independent read of the bytes
  * on disk, because a tool that asks the thing it is checking has not checked it.
  *
- * REFUSAL IS THE ONLY FAILURE MODE, as in `./drc.ts`: either the board was
- * updated and the result verified, or an `UpdateRefusal` names the guard. That
- * includes the edges a first pass left raw - an unparseable board file and an
- * output directory that does not exist, which used to throw a bare `parseSexpr`
- * error and a bare ENOENT, the second AFTER a wholly successful run. The eight
- * refusals the plan requires live here and in two modules split out for length
- * alone: `./update-instructions.ts` holds the three that are about resolving a
- * component (R3, R4, R5), and `./update-io.ts` holds the two subprocess
- * invocations and the three reads, so each one's failure arrives as a refusal
- * rather than as a raw reader or filesystem error.
+ * REFUSAL IS THE FAILURE MODE EVERYWHERE THIS TOOL REACHES, WITH ONE NAMED
+ * EXCEPTION, which is stated rather than papered over: `defaultRunExport` in
+ * `tools/perfboard/netlist-sync.ts` throws a raw `Error` when `kicad-cli` will
+ * not spawn or exits non-zero, and it is left alone deliberately - it is shared
+ * with the perfboard workflow, which has its own expectations of it, and an
+ * accurate claim with a named exception is worth more than a tidy claim that is
+ * false. Everything else here either returns a verified board or throws an
+ * `UpdateRefusal` naming the guard, including the edges earlier passes left raw:
+ * an unparseable board file, an output directory that does not exist, the
+ * instruction-file write, and the final copy - the last two because a raw error
+ * there strands a wholly successful update behind a bare filesystem message.
+ *
+ * THE REFUSALS LIVE HERE AND IN THREE MODULES SPLIT OUT FOR LENGTH ALONE, each
+ * on a boundary worth stating: `./update-preconditions.ts` holds the phase in
+ * which nothing has run yet, so none of its refusals can keep evidence;
+ * `./update-instructions.ts` holds the ones about resolving a component (R3, R4,
+ * R5); and `./update-io.ts` holds the subprocess invocations and the reads, so
+ * each one's failure arrives as a refusal rather than as a raw reader or
+ * filesystem error. The guards themselves are enumerated at runtime in
+ * `./update-refusal.ts`, which is what lets a test iterate every one of them.
  *
  * NOTHING IS WRITTEN TO THE DESTINATION UNTIL IT PASSES. Python saves to a
  * scratch file; the destination is replaced only after R7 and R8 both hold, so
@@ -41,8 +51,8 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { defaultKicadPython } from "../../lib/kicad/install.ts"
 import type { BoardSurvey } from "./board-survey.ts"
+import { checkPreconditions } from "./update-preconditions.ts"
 import { planNets, planPlacement } from "./update-instructions.ts"
 import { UpdateRefusal } from "./update-refusal.ts"
 import {
@@ -84,18 +94,18 @@ export interface UpdateResult {
   readonly pythonSummary: string
 }
 
-/** R6. The interpreter must exist AND be executable. */
-function requireInterpreter(interpreter: string): void {
-  try {
-    fs.accessSync(interpreter, fs.constants.X_OK)
-  } catch {
-    throw new UpdateRefusal(
-      "python-interpreter",
-      `no executable KiCad Python interpreter at ${interpreter}. pcbnew ships only inside KiCad's own bundled ` +
-        "interpreter, so no system or uv-managed python3 can stand in for it. Set KICAD_PYTHON to the " +
-        "interpreter that can import pcbnew.",
-    )
-  }
+/**
+ * Passed as `UpdateRefusal`'s third argument by every throw below whose message
+ * embeds a path inside the run's scratch directory, which is what makes that
+ * directory evidence rather than litter. Named rather than written as a bare
+ * `true` so the call site says what it is asserting, and read by the cleanup in
+ * `updateBoardFromSchematic` - never inferred from the message text, for the
+ * reason `./update-refusal.ts` gives on the field itself.
+ */
+const KEEPS_EVIDENCE = true
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 /** Everything one run needs after the input checks have passed and the scratch directory exists. */
@@ -114,7 +124,11 @@ function buildBoard(run: Run): UpdateResult {
   const netlistPath = path.join(run.scratch, "netlist.net")
   run.exportNetlist(run.schematicPath, netlistPath)
   if (!fs.existsSync(netlistPath)) {
-    throw new UpdateRefusal("invocation", `the netlist export of ${run.schematicPath} wrote no file at ${netlistPath}.`)
+    throw new UpdateRefusal(
+      "invocation",
+      `the netlist export of ${run.schematicPath} wrote no file at ${netlistPath}.`,
+      KEEPS_EVIDENCE,
+    )
   }
   const netlistSource = fs.readFileSync(netlistPath, "utf8")
   const netlist = parseNetlist(netlistSource, netlistPath)
@@ -137,6 +151,7 @@ function buildBoard(run: Run): UpdateResult {
         "form keys nets by name, so a second net of the same name discards the first one's nodes. Nothing is " +
         "placed from a netlist whose connections this tool cannot account for; give the nets distinct names in " +
         "the schematic. See exportedNodeCount in ./update-io.ts for why the count is taken from the text.",
+      KEEPS_EVIDENCE,
     )
   }
 
@@ -145,32 +160,44 @@ function buildBoard(run: Run): UpdateResult {
 
   const written = path.join(run.scratch, path.basename(run.outputPath))
   const instructions = path.join(run.scratch, "instructions.json")
-  fs.writeFileSync(
-    instructions,
-    JSON.stringify(
-      { boardIn: path.resolve(run.boardPath), boardOut: written, footprints: plan.placed, nets },
-      null,
-      2,
-    ),
+  const spec = JSON.stringify(
+    { boardIn: path.resolve(run.boardPath), boardOut: written, footprints: plan.placed, nets },
+    null,
+    2,
   )
+  try {
+    fs.writeFileSync(instructions, spec)
+  } catch (error) {
+    throw new UpdateRefusal(
+      "invocation",
+      `could not write the instruction file at ${instructions}: ${messageOf(error)}. It is the only thing the ` +
+        "pcbnew half reads, so nothing was run and nothing was written to " +
+        `${run.outputPath}.`,
+    )
+  }
 
   const result = run.runPython(run.interpreter, PYTHON_SCRIPT, instructions)
   if (result.status !== 0) {
     throw new UpdateRefusal(
       "invocation",
-      `${run.interpreter} ${PYTHON_SCRIPT} exited ${result.status}. Nothing was written to ${run.outputPath}.\n` +
-        result.stderr.trim(),
+      `${run.interpreter} ${PYTHON_SCRIPT} exited ${result.status} on ${instructions}. Nothing was written to ` +
+        `${run.outputPath}.\n${result.stderr.trim()}`,
+      KEEPS_EVIDENCE,
     )
   }
   if (!fs.existsSync(written)) {
-    throw new UpdateRefusal("invocation", `${PYTHON_SCRIPT} exited 0 but wrote no board at ${written}.`)
+    throw new UpdateRefusal(
+      "invocation",
+      `${PYTHON_SCRIPT} exited 0 but wrote no board at ${written}, although it read ${instructions}.`,
+      KEEPS_EVIDENCE,
+    )
   }
   // STDERR IS NOT A FAILURE SIGNAL: KiCad's bundled interpreter writes a wxApp
   // assertion, and kicad-cli writes Fontconfig warnings, on every run here. The
   // two checks below are the signal.
   const pythonSummary = result.stdout.trim().split("\n").filter((line) => line.trim() !== "").at(-1) ?? ""
 
-  const after = readBoard(written, "written")
+  const after = readBoard(written, "written", KEEPS_EVIDENCE)
   // R7. A tool that exits 0 having written nothing is this repository's
   // most-repeated failure; these two counts are what make that impossible. The
   // netted-pad side is compared against the EXPORT's node count, not the parsed
@@ -182,14 +209,16 @@ function buildBoard(run: Run): UpdateResult {
         `${netlist.components.length} component(s) in the netlist, and ${after.nettedPads} netted pad(s) ` +
         `against ${exportedNodes} node(s). Both board figures are read off the file at ${written}, not taken ` +
         `from the writer. Nothing was written to ${run.outputPath}. (Python reported: ${pythonSummary})`,
+      KEEPS_EVIDENCE,
     )
   }
   // R8, the false-green guard. LoadBoard + SaveBoard rewrites the ENTIRE file,
   // so it could silently drop the board's configuration while parity still
   // passes. ADDITIONS ARE EXPECTED and allowed: KiCad writes out values it
-  // previously left implicit (measured on this board: 186 -> 1193 bytes, gaining
-  // tenting, covering, plugging and the pcbplotparams defaults, with nothing
-  // removed), so this compares keys - never bytes, and never sizes.
+  // previously left implicit - tenting, covering, plugging and the pcbplotparams
+  // defaults, on this board - so this compares keys, never bytes and never
+  // sizes. tests/pcb/update-from-schematic.test.ts asserts the growth and the
+  // absence of any loss on a real run; no figure for it belongs here.
   const lost = lostSetupKeys(run.before.setupKeys, after.setupKeys)
   if (lost.length > 0) {
     throw new UpdateRefusal(
@@ -201,7 +230,17 @@ function buildBoard(run: Run): UpdateResult {
     )
   }
 
-  fs.copyFileSync(written, run.outputPath)
+  try {
+    fs.copyFileSync(written, run.outputPath)
+  } catch (error) {
+    throw new UpdateRefusal(
+      "invocation",
+      `every check passed, but the verified board at ${written} could not be copied to ${run.outputPath}: ` +
+        `${messageOf(error)}. The update itself succeeded - this is the last step, so the result is the file ` +
+        "named here and copying it by hand loses nothing.",
+      KEEPS_EVIDENCE,
+    )
+  }
   return {
     outputPath: run.outputPath,
     components: netlist.components.length,
@@ -218,42 +257,12 @@ export function updateBoardFromSchematic(boardPath: string, opts: UpdateOptions)
   const runPython = opts.runPython ?? defaultRunPython
   const outputPath = opts.outputPath ?? boardPath
 
-  if (!fs.existsSync(boardPath)) {
-    throw new UpdateRefusal("invocation", `no board at ${boardPath}.`)
-  }
-  if (!fs.existsSync(opts.schematicPath)) {
-    throw new UpdateRefusal("invocation", `no schematic at ${opts.schematicPath}: there is nothing to update from.`)
-  }
-  // CHECKED BEFORE ANY WORK, not at the copy: an output directory that does not
-  // exist used to surface as a bare ENOENT from the final copyFileSync, which
-  // stranded a wholly successful update - every check passed, the board was
-  // written in scratch, and the caller got a raw filesystem error.
-  const outputDir = path.dirname(path.resolve(outputPath))
-  if (!fs.existsSync(outputDir)) {
-    throw new UpdateRefusal(
-      "invocation",
-      `the output directory ${outputDir} does not exist, so ${outputPath} could not be written. It is not ` +
-        "created here: a board written into a directory this tool invented is a board nobody will find, and " +
-        "the schematic, project and board belong side by side under one basename.",
-    )
-  }
-
-  // R2, and the (setup) keys R8 compares against, both read off the input board
-  // before anything else runs.
-  const before = readBoard(boardPath, "input")
-  if (before.footprints !== 0) {
-    throw new UpdateRefusal(
-      "board-not-empty",
-      `${boardPath} already holds ${before.footprints} footprint(s), and this tool does not do incremental ` +
-        "updates: the real updater matches existing footprints by UUID path, and reproducing that is out of " +
-        "scope, so updating here would half-update or duplicate instead. The board must be empty of " +
-        "footprints. Placement is regenerated from the schematic on every run, so re-deriving it costs a tool " +
-        "run and not a person's work.",
-    )
-  }
-
-  const interpreter = opts.kicadPython ?? defaultKicadPython()
-  requireInterpreter(interpreter)
+  const { before, interpreter } = checkPreconditions({
+    boardPath,
+    outputPath,
+    schematicPath: opts.schematicPath,
+    ...(opts.kicadPython !== undefined ? { kicadPython: opts.kicadPython } : {}),
+  })
 
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-update-"))
   const run: Run = {
@@ -271,16 +280,17 @@ export function updateBoardFromSchematic(boardPath: string, opts: UpdateOptions)
     fs.rmSync(scratch, { recursive: true, force: true })
     return result
   } catch (error) {
-    // THE SCRATCH DIRECTORY IS KEPT ONLY WHEN IT IS EVIDENCE, and that is
-    // decided from the thrown message itself rather than from a list of guards:
-    // a refusal that names a path inside the scratch is pointing at something a
-    // person will open (the export, the instruction file, the board Python
-    // wrote), and three of the nine guards do. The other six name nothing in
-    // there, and keeping it for them leaked eight directories per run of the
-    // test file - which tests/stripboard/temp-scratch.ts's audit cannot see,
-    // because it scans tests/ and this leak comes from tools/. Deciding from the
-    // message means a new refusal cannot drift out of step with this.
-    if (!(error instanceof Error) || !error.message.includes(scratch)) {
+    // THE SCRATCH DIRECTORY IS KEPT ONLY WHEN THE REFUSAL SAYS IT IS EVIDENCE -
+    // a flag the thrower sets, read here as a fact. It is NOT inferred from the
+    // message: an earlier version searched the message for the scratch path,
+    // which meant rewording any refusal silently changed whether its evidence
+    // survived. Keeping it for refusals that point at nothing in there leaked a
+    // directory per run, which the mkdtemp audit in
+    // tests/stripboard/temp-scratch.test.ts cannot see, because it scans tests/
+    // and this leak comes from tools/. The contract over every guard is
+    // tests/pcb/update-scratch-retention.test.ts; the helper that keeps a test's
+    // own scratch registered is tests/support/temp-scratch.ts.
+    if (!(error instanceof UpdateRefusal) || !error.keepsEvidence) {
       fs.rmSync(scratch, { recursive: true, force: true })
     }
     throw error
