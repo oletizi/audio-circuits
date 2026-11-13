@@ -24,6 +24,10 @@
  *   and Q3's G, CR-PEDAL-PIN-MATCH clause 1), and the modsw draft's ERC reported `pin_not_driven` on
  *   each; each is driven by U2 (U_PFINV) on the pf page.
  * Interface and entry (Task 7a) need none: every pin on both is passive.
+ * Task 9c added, by the page whose ERC reported it:
+ * - the sai_iso page: 3V3_CODEC. U11's VCC (pin 5, `power_in`) reported `power_pin_not_driven` under
+ *   the sai_iso page's one-block root; 3V3_CODEC is driven by U6's OUT on the codec_sup page, a
+ *   `power_out` pin (h7-platform:TPS7A2433DBV), so its stand-in is a PWR_FLAG, as 5V_A's is.
  *
  * DATA ONLY; the shared tools read it through the board's drafted directory, and refuse a board
  * without it, naming the file.
@@ -57,5 +61,13 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
     pin: "4",
     pinName: "2Y",
     source: "circuits/h7-platform/pedal/pf.ts:63 (u_pfinv pin 4, 2Y, on PF_ON: channel B re-inverts PF_TRIP into PF_ON; bypass-relay.md:185; CR-PEDAL-POWER-READINGS, channel B is gate 2); 74xGxx:SN74LVC2G14DBV types pin 4 output",
+  },
+  {
+    net: "3V3_CODEC",
+    block: "codec_sup",
+    designator: "U6",
+    pin: "5",
+    pinName: "OUT",
+    source: "circuits/h7-platform/pedal/codec-sup.ts:42 (u_cvdd pin 5 OUT = 3V3_CODEC; analog.md:387, R-30); U6's symbol h7-platform:TPS7A2433DBV types pin 5 power_out (CR-PEDAL-SYMBOL-TPS7A2433), so its stand-in is a PWR_FLAG (CR-PEDAL-CROSS-PAGE-POWER-DRIVERS)",
   },
 ]

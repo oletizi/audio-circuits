@@ -1,0 +1,161 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "sai_iso.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "dbeebf1f-aedf-56f4-b7da-1a3629268185"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_CODEC",
+   "at": [
+    2000,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "49b7762b-46a6-538d-9676-52e07769be25"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    7000,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fecb34d1-8324-57b2-a984-d1ca1178759c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "BCK_CODEC",
+   "at": [
+    2000,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6f59ca18-6a70-59e5-b43e-03ac81793a6f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_BCK",
+   "at": [
+    5300,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e36a3595-9957-5803-a360-133a8e630d3c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DIN",
+   "at": [
+    2000,
+    4200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d583db3a-fc74-5495-b314-2cb56e101b2f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DOUT",
+   "at": [
+    5300,
+    1800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1a0a4805-fefa-5e67-b41a-d1251a2e1e8c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_LRCK",
+   "at": [
+    5300,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "850146a1-19b7-5288-9832-e2a6cae6f61b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DIN_CODEC",
+   "at": [
+    5300,
+    4200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "beda9955-b614-5f72-b0df-fb554ae5c205"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DOUT_CODEC",
+   "at": [
+    2000,
+    1800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f4c4d71d-a9e8-5820-b74f-96dec28abcd7"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    7000,
+    5300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c94e6f70-8713-518b-9547-fd124387af62"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LRCK_CODEC",
+   "at": [
+    2000,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

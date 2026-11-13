@@ -47,6 +47,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `controls_b.kicad_sch` | block controls_b | `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` |
 | `expr_ref.kicad_sch` | block expr_ref | `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` |
 | `codec_sup.kicad_sch` | block codec_sup | `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` |
+| `sai_iso.kicad_sch` | block sai_iso | `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -66,6 +67,7 @@ committed bytes, with the pinned kicad-cli.
 | controls_b | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 | expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
 | codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
+| sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
 
 ## The drafts every repair starts from
 
@@ -2186,3 +2188,160 @@ either side of it, so no row is crossed.
   its body, above and below the RESET row.
 - Renders: the first had R26's fields over C33's and D6's Value over the diode; the parts east of C33
   moved 100 to 200 mil east, D6's fields moved up and the rectangle's top edge with them.
+
+## sai_iso: the SAI domain isolation buffers (Task 9c)
+
+**Status: UNREVIEWED.** sha256 `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8`.
+Render: `sai_iso.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/sai-iso.ts`, 11 parts. U10 (U_ISO_M, SN74LVC3G34DCTR,
+`h7-platform:SN74LVC3G34DCT`, four units: gate 1 DOUT_CODEC to ISO_DOUT, gate 2 LRCK_CODEC to
+ISO_LRCK, gate 3 BCK_CODEC to ISO_BCK, the supply unit on 3V3_D and GND) with C42 (C_ISO_M 100 nF,
+3V3_D to GND); R34, R35 and R36 (R_BIAS_DOUT, _LRCK, _BCK, 47 kOhm, each gate's input to GND); R37,
+R38 and R39 (R_ISO_DOUT, _LRCK, _BCK, 470 Ohm, each ISO_ output to the contract nets CODEC_DOUT,
+CODEC_LRCK and CODEC_BCK); U11 (U_ISO_C, SN74LVC1G34DBVR, `h7-platform:SN74LVC1G34DBV`: A on
+CODEC_DIN, Y on DIN_CODEC, VCC on 3V3_CODEC, GND, pin 1 "No internal connection") with C43 (C_ISO_C
+100 nF, 3V3_CODEC to GND) and R40 (R_BIAS_DIN 47 kOhm, CODEC_DIN to GND). Ports 3V3_CODEC, 3V3_D,
+BCK_CODEC, LRCK_CODEC, DOUT_CODEC, DIN_CODEC, CODEC_DOUT, CODEC_DIN, CODEC_LRCK, CODEC_BCK and GND
+(CODEC_DOUT, CODEC_LRCK, CODEC_BCK and DIN_CODEC each reach one pin: R37's, R38's and R39's pin 2 and
+U11's Y). ISO_DOUT, ISO_LRCK and ISO_BCK are private to the page and drawn as wire, with no label.
+One no-connect, U11's pin 1.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `sai_iso` is one of the
+  pedal's blocks: the SAI crossing between the module's 3V3_D domain and the codec's 3V3_CODEC
+  domain.
+- [R-10](../../../docs/h7-platform/decisions.md#r-10): the SAI domain isolation, architecture.md
+  lines 255 and 256 (IF-PD-1): U_ISO_M powered from the receiving side toward the module, 47 kOhm
+  bias to GND on each input, 470 Ohm 1 % between each output and its interface pin; U_ISO_C on the
+  codec rail toward the codec with a 47 kOhm bias on its input.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings):
+  U_ISO_M's gate order (gate 1 DOUT, gate 2 LRCK, gate 3 BCK) and its supply as a fourth unit; R40 to
+  GND; each decoupling capacitor from its rail to GND.
+- [CR-PEDAL-LOGIC-DECOUPLING](../../../docs/h7-platform/decisions.md#cr-pedal-logic-decoupling): C42
+  and C43, 100 nF at each buffer's VCC (TI SCES366L p. 10 section 10; SCES519O p. 15 section 8.3).
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): the codec-side nets
+  BCK_CODEC, LRCK_CODEC, DOUT_CODEC and DIN_CODEC; the module side is the contract's pins 32 to 35.
+- [CR-PEDAL-SYMBOL-SN74LVC3G34](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-sn74lvc3g34):
+  U10's project symbol; its unit 2 is gate 3 (pins 6, 2) and unit 3 gate 2 (pins 3, 5), so the page
+  shows U10A on DOUT, U10C on LRCK and U10B on BCK.
+- [CR-PEDAL-SYMBOL-SN74LVC1G34](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-sn74lvc1g34):
+  U11's project symbol, pins 2 (A) and 4 (Y) named from SCES519O.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): the buffers' A pins
+  `input`, Y pins `output`, VCC and GND `power_in`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D,
+  3V3_CODEC and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; the one-block root puts the root's stub flags on 3V3_D and GND (homes since Tasks 9a and
+  7b).
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers)
+  and [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers):
+  3V3_CODEC's driver, U6's OUT on the codec_sup page, is a new entry (below); the one-block root
+  stands a PWR_FLAG in for it.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 11 ports on the wrong net.
+- Design notes, not rulings: architecture.md lines 255 and 256, parts.md lines 115 and 116 and
+  open-items.md line 45, which the block cites part by part. The 47 kOhm and 470 Ohm carry no MPN;
+  a schematic needs none (G245).
+- Drawing choices, not transcriptions: four signal rows stacked, the to-module three in
+  architecture.md line 255's order and then DIN, each read west to east; U11 mirrored top to bottom so
+  its GND faces the comb's run above it and its VCC the 3V3_CODEC row below; a GND comb down the west
+  side, west of the labels; U10's supply unit at the bottom east with C42; CODEC_DOUT, CODEC_LRCK,
+  CODEC_BCK and DIN_CODEC, which the draft drew no wire for, take the default stroke, as CODEC_DIN,
+  the drafted member of their CODEC family, has it on the draft (`sai_iso/layout.py`,
+  `UNDRAWN_STROKES`, says why); fields and the rectangle moved after the renders listed below.
+
+### The tables after this page
+
+- `cross-page-drivers.ts`: **3V3_CODEC, driven by U6's OUT (pin 5) on the codec_sup page.** Under
+  this page's one-block root `kicad-cli sch erc` reported `power_pin_not_driven` on U11's VCC (pin 5,
+  `power_in`). U6's symbol, `h7-platform:TPS7A2433DBV`, types pin 5 `power_out`, so `standInKind`
+  makes the stand-in a PWR_FLAG (CR-PEDAL-CROSS-PAGE-POWER-DRIVERS), and 3V3_CODEC takes no flag
+  home (`checkPowerDriversUnflagged`). With it, `/sai_iso/` reads 0 errors.
+- `pwr-flag-homes.ts` and `erc-allowances.ts` are unchanged by this page.
+
+**What the entry does to the earlier pages: nothing.** Of the thirteen, only codec_sup reaches
+3V3_CODEC, and it holds the driver, so its one-block root places no stand-in; its `verify.sh` output
+is unchanged.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 11 (the model declares none) | 0; 11 |
+| exported components, nets, net members | 11, 15, 31 | 11, 15, 31 |
+| exported nets carrying a model net name | 10 of 15 | 11 of 15 (the eleven ports; the other four are ISO_DOUT, ISO_LRCK and ISO_BCK, private and unlabelled, and U11's pin 1) |
+| ports whose label is on the wrong net | 7 of 11 | 0 of 11 |
+| ERC, the sheet alone | 7 errors (`pin_not_connected` 4, R37, R38 and R39 pin 2 and U11 pin 4; `power_pin_not_driven` 3, U11's VCC, U10's VCC and GND), 5 warnings (`lib_symbol_issues` 5) | 12 errors (`pin_not_connected` 9, hierarchical labels with no parent sheet; `power_pin_not_driven` 3, the same three pins), 9 warnings (`isolated_pin_label` 4, the four one-pin ports' labels; `lib_symbol_issues` 5) |
+| ERC under a one-block root, `/sai_iso/` | 7 errors (`pin_not_connected` 4, `power_pin_not_driven` 3), 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 19 errors (`hier_label_mismatch` 11, `label_dangling` 8), 8 warnings (`isolated_pin_label` 3, `lib_symbol_issues` 5) | 4 errors (`label_dangling` 4, the BCK_CODEC, CODEC_DIN, DOUT_CODEC and LRCK_CODEC stubs' labels, alone with one block; `erc_sheets.py` admits them), 13 warnings (`isolated_pin_label` 8, the four one-pin ports' stub labels and sheet labels; `lib_symbol_issues` 5) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 0 | 0 of 13 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 16 on 10 nets (9 global, 7 local) | 11 on 11 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 16 | 0 of 14 |
+| symbols (part instances, power symbols, PWR_FLAGs) | 14 (14: U10's four units and ten single-unit parts, 0, 0) | 14 (14, 0, 0) |
+| placed pins | 31 | 31 |
+| wires, total length | 39, 191.77 mm | 36, 675.64 mm |
+| wire corners | 14 | 3 |
+| junctions | 0 | 13 |
+| no-connects | 1 (U11 pin 1) | 1 (U11 pin 1) |
+
+**`power_pin_not_driven` 3 on the sheet alone**: U11's VCC (3V3_CODEC, driven by U6 on codec_sup),
+U10's VCC (3V3_D's flag is on the root) and U10's GND (GND's flag is on the root). Under the
+one-block root the PWR_FLAG stand-in and the two stub flags remove all three.
+
+**`lib_symbol_issues` 5**, on U10's four units and U11: *"The current configuration does not include
+the symbol library 'h7-platform'"*. This is the pf page's U1 warning: a block page has no
+`.kicad_pro`, and kicad-cli 10.0.5 does not take the committed `sym-lib-table` without one. Both
+symbols are embedded in the sheet. No `lib_symbol_mismatch`: the `Device` symbols match their
+installed copies.
+
+**`isolated_pin_label` 4**, on the sheet alone: CODEC_DOUT, CODEC_LRCK, CODEC_BCK and DIN_CODEC, each
+on one pin here; the contract nets' other pins are module-socket pins on the interface page, and
+DIN_CODEC's other pin is the codec's DIN (pin 12, codec page).
+
+**Observation, undiagnosed: the sheet-alone ERC reports `pin_not_connected` on 9 of the 11
+hierarchical labels; CODEC_LRCK's and CODEC_BCK's are not reported** (repeatable). This is the
+controls pages' observation (the sheet alone omitted the third position's label there). Under the
+one-block root `/sai_iso/` reads 0 errors and 0 warnings, the port-label check reads 0 of 11, and the
+export puts /CODEC_LRCK on R38's pin 2 and /CODEC_BCK on R39's pin 2, so the omission hides no fault.
+
+### Why the page has no crossing, as the layout records it
+
+An observation, not a judgement of the page: the GND comb runs down the west side, west of every
+label, so each bias resistor's run reaches it without passing a signal row; R36's run drops onto
+U11's GND run; the two supply rows sit under the DIN row, each from its own buffer, and the GND row
+runs under them.
+
+### What the page shows, as observations
+
+- Three to-module rows at the top, one under another: DOUT_CODEC, LRCK_CODEC and BCK_CODEC, each
+  label at the west, pointing west, past its 47 kOhm (hanging down) into its gate of U10 (U10A, U10C,
+  U10B), the gate's output through its 470 Ohm to the contract net's label at the east (CODEC_DOUT,
+  CODEC_LRCK, CODEC_BCK), pointing east.
+- The DIN row under them: CODEC_DIN's label at the west, pointing west, past R40 (hanging down) into
+  U11's A; U11's Y east to DIN_CODEC's label, pointing east. U11 is mirrored top to bottom: its GND
+  (pin 3) and pin 1, with its no-connect, face up; its VCC faces down.
+- A GND comb down the west side, west of the labels, taking R34's, R35's and R40's runs, and U11's GND
+  run, onto which R36 drops; it runs down to a GND row along the bottom, which runs east past C43,
+  U10D's GND and C42 to GND's label, pointing east.
+- The 3V3_CODEC row under the DIN row: from U11's VCC west past C43 (down to GND) to its label,
+  pointing west. U10D, the supply unit, at the bottom east: its VCC up to the 3V3_D row, which runs
+  east past C42 (down to GND) to its label, pointing east.
+- ISO_DOUT, ISO_LRCK and ISO_BCK carry copperhead's purple, 3V3_D and 3V3_CODEC its blue, every other
+  net its default.
+- The gate units carry Reference over Value above their bodies; U11's east of its body under the DIN
+  row; U10D's west of its body; the bias resistors' and capacitors' east of their bodies; the 470 Ohm
+  resistors' above them.
+- Renders: the first had U10's fields on the gate bodies' tops, U11's fields over its own body and
+  U10D's Value across C42's lead; the rows went from 600 to 800 mil apart, U11's fields moved east,
+  U10D's west, and the rectangle's top and bottom with them.

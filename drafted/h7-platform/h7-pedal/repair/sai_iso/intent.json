@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U10",
+      "libId": "h7-platform:SN74LVC3G34DCT",
+      "value": "SN74LVC3G34DCTR",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R34",
+      "libId": "Device:R",
+      "value": "47K",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R35",
+      "libId": "Device:R",
+      "value": "47K",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R36",
+      "libId": "Device:R",
+      "value": "47K",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R37",
+      "libId": "Device:R",
+      "value": "470R",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R38",
+      "libId": "Device:R",
+      "value": "470R",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R39",
+      "libId": "Device:R",
+      "value": "470R",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "U11",
+      "libId": "h7-platform:SN74LVC1G34DBV",
+      "value": "SN74LVC1G34DBVR",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "R40",
+      "libId": "Device:R",
+      "value": "47K",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "C42",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SAI domain isolation"
+    },
+    {
+      "ref": "C43",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "SAI domain isolation"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_CODEC",
+      "kind": "signal",
+      "pins": [
+        "C43.1",
+        "U11.5"
+      ]
+    },
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C42.1",
+        "U10.8"
+      ]
+    },
+    {
+      "name": "BCK_CODEC",
+      "kind": "signal",
+      "pins": [
+        "R36.1",
+        "U10.6"
+      ]
+    },
+    {
+      "name": "CODEC_DIN",
+      "kind": "signal",
+      "pins": [
+        "R40.1",
+        "U11.2"
+      ]
+    },
+    {
+      "name": "DOUT_CODEC",
+      "kind": "signal",
+      "pins": [
+        "R34.1",
+        "U10.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C42.2",
+        "C43.2",
+        "R34.2",
+        "R35.2",
+        "R36.2",
+        "R40.2",
+        "U10.4",
+        "U11.3"
+      ]
+    },
+    {
+      "name": "ISO_BCK",
+      "kind": "signal",
+      "pins": [
+        "R39.1",
+        "U10.2"
+      ]
+    },
+    {
+      "name": "ISO_DOUT",
+      "kind": "signal",
+      "pins": [
+        "R37.1",
+        "U10.7"
+      ]
+    },
+    {
+      "name": "ISO_LRCK",
+      "kind": "signal",
+      "pins": [
+        "R38.1",
+        "U10.5"
+      ]
+    },
+    {
+      "name": "LRCK_CODEC",
+      "kind": "signal",
+      "pins": [
+        "R35.1",
+        "U10.3"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U11.1"
+  ],
+  "hints": {
+    "groupOrder": [
+      "SAI domain isolation"
+    ]
+  }
+}
