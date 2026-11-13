@@ -29,8 +29,21 @@ for s in sheet.symbols():
     # Each instance's own unit's pins only (`instance_pins`): a multi-unit part is one reference with
     # one instance per unit, and every library pin placed at every instance put the other units' pins
     # where nothing is (Task 7c review I1: ldo_vmid's U5, whose VMID_L and VMID_R wires were missed).
+    # A MIRRORED part's pins are reflected after the rotation, in sheet coordinates, as `pins.py` does
+    # (`(mirror x)` flips y, `(mirror y)` flips x). Until the h7 pedal pages plan's Task 9a this
+    # ignored the mirror: on the usb draft, copperhead mirrors J7 (the USB-C receptacle) top to
+    # bottom, so every J7 pin was seeded at its unmirrored place, and J7's SBU2 (an unconnected pin)
+    # landed on another net's wire there and took its stroke.
+    mirror = s.node.kid("mirror")
+    axis = mirror.atoms[0] if mirror is not None and mirror.atoms else None
+    if axis not in (None, "x", "y"):
+        raise SystemExit(f"net_strokes: {s.ref} carries (mirror {axis}), which is neither x nor y")
     for lp in sheet.instance_pins(s):
         dx, dy = kicad_sheet.rotate(lp.sx, -lp.sy, s.rot)
+        if axis == "x":
+            dy = -dy
+        elif axis == "y":
+            dx = -dx
         member_points[f"{s.ref}.{lp.number}"] = (round(s.x + dx, 3), round(s.y + dy, 3))
 
 wires = sheet.wires()
