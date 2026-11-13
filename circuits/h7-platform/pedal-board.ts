@@ -32,6 +32,7 @@ import { codecSupBlock } from "./pedal/codec-sup.ts"
 import { codecBlock } from "./pedal/codec.ts"
 import { saiIsoBlock } from "./pedal/sai-iso.ts"
 import { exprRefBlock } from "./pedal/expr-ref.ts"
+import { controlsABlock, controlsBBlock } from "./pedal/controls.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -51,6 +52,8 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["codec", codecBlock, "Codec PCM3060"],
   ["sai_iso", saiIsoBlock, "SAI domain isolation"],
   ["expr_ref", exprRefBlock, "Expression input and HW_REV"],
+  ["controls_a", controlsABlock, "Control positions 1-3"],
+  ["controls_b", controlsBBlock, "Control positions 4-6"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -78,7 +81,6 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
   // Until Task 8 (digital and controls group).
   "LED1", "LED2", "FSW1", "FSW2",
-  "POS1", "POS2", "POS3", "POS4", "POS5", "POS6",
   "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
   "RELAY_EN",
@@ -151,6 +153,14 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   expr_ref_r_tip: "R44", expr_ref_c_tip: "C45", expr_ref_r_tip_pd: "R45", expr_ref_r_expin: "R46", expr_ref_u_exp: "U13",
   expr_ref_c_exp: "C46", expr_ref_r_exp_out: "R47", expr_ref_c_exp_out: "C47", expr_ref_r_det: "R48", expr_ref_r_det_pd: "R49",
   expr_ref_r_hwrev_top: "R50", expr_ref_r_hwrev_bottom: "R51", expr_ref_c_hwrev: "C48",
+  // controls_a
+  controls_a_rv_pos1: "RV1", controls_a_r_pu1: "R52", controls_a_sw_btn1: "SW1", controls_a_r_btn1: "R53", controls_a_r_pos1: "R54", controls_a_c_pos1: "C49",
+  controls_a_rv_pos2: "RV2", controls_a_r_pu2: "R55", controls_a_sw_btn2: "SW2", controls_a_r_btn2: "R56", controls_a_r_pos2: "R57", controls_a_c_pos2: "C50",
+  controls_a_rv_pos3: "RV3", controls_a_r_pu3: "R58", controls_a_sw_btn3: "SW3", controls_a_r_btn3: "R59", controls_a_r_pos3: "R60", controls_a_c_pos3: "C51",
+  // controls_b
+  controls_b_rv_pos4: "RV4", controls_b_r_pu4: "R61", controls_b_sw_btn4: "SW4", controls_b_r_btn4: "R62", controls_b_r_pos4: "R63", controls_b_c_pos4: "C52",
+  controls_b_rv_pos5: "RV5", controls_b_r_pu5: "R64", controls_b_sw_btn5: "SW5", controls_b_r_btn5: "R65", controls_b_r_pos5: "R66", controls_b_c_pos5: "C53",
+  controls_b_rv_pos6: "RV6", controls_b_r_pu6: "R67", controls_b_sw_btn6: "SW6", controls_b_r_btn6: "R68", controls_b_r_pos6: "R69", controls_b_c_pos6: "C54",
 }
 
 /** One page per block (design change C3). */

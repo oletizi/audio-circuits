@@ -66,6 +66,18 @@ describe("checkDefaultPopulation (CR-PEDAL-POPULATION)", () => {
 })
 
 describe("the variant exemption is exactly VARIANT_PART_IDS", () => {
+  test("with no exemption, the board's six positions each report the pot fit beside the button fit", () => {
+    const findings = populationFindings(h7Pedal(), [])
+    expect(findings).toHaveLength(12)
+    for (let p = 1; p <= 6; p++) {
+      expect(findings.some((f) => f.includes(`rv_pos${p}`) && f.includes(`sw_btn${p}`))).toBe(true)
+      expect(findings.some((f) => f.includes(`rv_pos${p}`) && f.includes(`r_pu${p}`))).toBe(true)
+    }
+  })
+  test("control: VARIANT_PART_IDS less one id leaves that position's findings", () => {
+    const less = VARIANT_PART_IDS.filter((id) => id !== "sw_btn4")
+    expect(populationFindings(h7Pedal(), less)).toEqual([expect.stringContaining("sw_btn4")])
+  })
   test("control: a pot and a button on one node outside the variant ids are rejected", () => {
     const pot: Component = {
       id: "test_only_pot", kind: "potentiometer", parameters: { ohms: 10e3, taper: { type: "linear" } }, part: RV16AF_41, pins: {},
