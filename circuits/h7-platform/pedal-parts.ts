@@ -56,7 +56,11 @@ export const OPA1688: PartSpec = {
   },
 }
 
-/** U_ISO_M, triple buffer on 3V3_D. Project symbol, 4 units (CR-PEDAL-SYMBOL-SN74LVC3G34): the stock gate pins are unnamed. Units are the gates. */
+/**
+ * U_ISO_M, triple buffer on 3V3_D. Project symbol, 4 units (CR-PEDAL-SYMBOL-SN74LVC3G34): the stock gate pins are unnamed.
+ * Units are the gates, and `power` the supply unit: an `ic` declares no package pins (lib/model/kinds.ts), so the supply
+ * is a model unit of its own (CR-PEDAL-DIGITAL-READINGS).
+ */
 export const SN74LVC3G34: PartSpec = {
   mpn: "SN74LVC3G34DCTR",
   symbol: "h7-platform:SN74LVC3G34DCT",
@@ -64,7 +68,7 @@ export const SN74LVC3G34: PartSpec = {
     "1": { A: "1", Y: "7" },
     "2": { A: "3", Y: "5" },
     "3": { A: "6", Y: "2" },
-    package: { GND: "4", VCC: "8" },
+    power: { GND: "4", VCC: "8" },
   },
 }
 

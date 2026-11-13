@@ -14,12 +14,75 @@
  * reason that file gives. Kinds the module never needed are added here by the task that needs them.
  */
 import type { PinNumbers } from "../../../lib/kicad/from-network.ts"
-import type { Component, PartSpec } from "../../../lib/model/index.ts"
+import type { Component, Connection, PartSpec } from "../../../lib/model/index.ts"
+import { parseValue } from "../../../lib/model/units.ts"
+import { MODULE_PIN_NUMBERS, type Pins } from "../module/build.ts"
+import { POTENTIOMETER_PIN_NUMBERS } from "../pedal-parts.ts"
 
 export { block, capacitor, inductor, part, pushButton, resistor } from "../module/build.ts"
 export type { Pins } from "../module/build.ts"
 
 const net = (name: string): { readonly kind: "net"; readonly net: string } => ({ kind: "net", net: name })
+
+/** The USB-C receptacle's lettered pins, read from the module's map rather than retyped. */
+function receptaclePins(): Readonly<Record<string, string>> {
+  const pins = MODULE_PIN_NUMBERS.connector
+  if (pins === undefined) {
+    throw new Error(
+      "circuits/h7-platform/module/build.ts MODULE_PIN_NUMBERS has no connector map; the pedal numbers its USB-C " +
+        "receptacle's lettered pins from it (CR-PEDAL-USB-C). Not defaulted, because a lettered pin has no number of its own.",
+    )
+  }
+  return pins
+}
+
+function pinsOf(pins: Pins): Record<string, Connection> {
+  return Object.fromEntries(Object.entries(pins).map(([pin, c]) => [pin, typeof c === "string" ? net(c) : c]))
+}
+
+/**
+ * An `ic` whose package has more than one unit (Task 1, spec C6): one model unit per symbol unit,
+ * each numbered through the part's own `symbolPins`. An `ic` declares no package pins
+ * (`lib/model/kinds.ts`), so a supply unit is a unit like the others (CR-PEDAL-DIGITAL-READINGS,
+ * for U_ISO_M).
+ */
+export function multiUnitIc(id: string, units: Readonly<Record<string, Pins>>, spec: PartSpec, source: string): Component {
+  return {
+    id, kind: "ic", parameters: {}, part: spec, pins: {},
+    units: Object.entries(units).map(([name, pins]) => ({ name, pins: pinsOf(pins) })), provenance: { source },
+  }
+}
+
+/** A single op-amp: one section and its supply pins, numbered by `PEDAL_PIN_NUMBERS.opamp`. */
+export function singleOpamp(
+  id: string, s: OpampSection, supply: { readonly "v+": string; readonly "v-": string }, spec: PartSpec, source: string,
+): Component {
+  return {
+    id, kind: "opamp", parameters: {}, part: spec,
+    pins: { "v+": net(supply["v+"]), "v-": net(supply["v-"]) },
+    units: [{ name: "MAIN", pins: { "in+": net(s["in+"]), "in-": net(s["in-"]), out: net(s.out) } }], provenance: { source },
+  }
+}
+
+/** A linear potentiometer, pins ccw, wiper and cw (numbered by `POTENTIOMETER_PIN_NUMBERS`, CR-PEDAL-KINDS). */
+export function potentiometer(
+  id: string, value: string, pins: { readonly ccw: string; readonly wiper: string; readonly cw: string }, spec: PartSpec, source: string,
+): Component {
+  return {
+    id, kind: "potentiometer", parameters: { ohms: parseValue(value), taper: { type: "linear" } }, part: spec, pins: {},
+    units: [{ name: "MAIN", pins: pinsOf(pins) }], provenance: { source },
+  }
+}
+
+/** A switching part (a switching jack): its pins, and the pin pairs each named position joins. */
+export function switchingPart(
+  id: string, pins: Pins, contacts: Readonly<Record<string, readonly (readonly [string, string])[]>>, spec: PartSpec, source: string,
+): Component {
+  return {
+    id, kind: "switch", parameters: { positions: Object.keys(contacts), contacts }, part: spec, pins: {},
+    units: [{ name: "MAIN", pins: pinsOf(pins) }], provenance: { source },
+  }
+}
 
 /** A two-terminal diode (kind `diode`, pins `anode` and `cathode`; numbered by `PEDAL_PIN_NUMBERS.diode`). */
 export function diode(id: string, anode: string, cathode: string, spec: PartSpec, source: string): Component {
@@ -93,13 +156,20 @@ export const PEDAL_BLOCKS: readonly PedalBlock[] = [
  * numbers. Task 6 added the two-terminal kinds: `Device:R`, `Device:C`, `Device:C_Polarized` (pin 1
  * the + terminal, so a polarised capacitor's `a` is its + side), `Device:FerriteBead`, each numbered
  * 1 and 2; and the diode, cathode 1 and anode 2 (CR-PEDAL-KINDS; PMEG4030ER v.4 and BAS116H Rev. 3
- * Table 2, `pedal-pin-tables.ts`). The dual op-amps are numbered from their own `symbolPins`. Later
- * tasks add the kinds their blocks bring (a pot's `POTENTIOMETER_PIN_NUMBERS`), checked by the board
- * test's symbol check.
+ * Table 2, `pedal-pin-tables.ts`). The dual op-amps are numbered from their own `symbolPins`. Task 8
+ * added: the pot, by `POTENTIOMETER_PIN_NUMBERS` (CR-PEDAL-KINDS); the one single op-amp, U_EXP,
+ * MCP6001 SOT-23-5 (1 VOUT, 2 VSS, 3 VIN+, 4 VIN-, 5 VDD; DS20001733L Table 3-1, `pedal-pin-tables.ts`;
+ * schematic-checklist.md:196); the USB-C receptacle's lettered pins, the module's own map; and the
+ * switching jack's lettered pins (`Connector_Audio:NMJ6HCD2`, numbered T, R, S, TN, RN, SN on disk).
+ * Each is checked by the board test's symbol check.
  */
 export const PEDAL_PIN_NUMBERS: PinNumbers = {
   resistor: { a: "1", b: "2" },
   capacitor: { a: "1", b: "2" },
   inductor: { a: "1", b: "2" },
   diode: { cathode: "1", anode: "2" },
+  potentiometer: POTENTIOMETER_PIN_NUMBERS,
+  opamp: { out: "1", "v-": "2", "in+": "3", "in-": "4", "v+": "5" },
+  connector: receptaclePins(),
+  switch: { T: "T", R: "R", S: "S", TN: "TN", RN: "RN", SN: "SN" },
 }
