@@ -73,6 +73,7 @@
 
 import type { Component, Connection, Network } from "../model/types.ts"
 import type { ImportedNetlist } from "./netlist.ts"
+import { pinKey } from "./unit-pins.ts"
 import { valueFor } from "./value-notation.ts"
 
 /** The comparisons, each sorted and stable so a caller can print or diff them. */
@@ -259,6 +260,10 @@ interface ResolvedPin {
  * accounted for without this module reading an authoring file.
  *
  * A MECHANICAL pin is the other case and is NOT named in the map - see `MECHANICAL_PINS`.
+ *
+ * **A UNIT PIN OF A MULTI-UNIT PACKAGE IS LOOKED UP AS `<unit>/<pin>`** (`pinKey`, spec C6), the key
+ * `pinNumbersFromTable` builds the map under, because a dual's sections name their pins alike. A
+ * package pin, and every pin of a single-unit part, is looked up by its own name, as before.
  */
 function resolvePins(
   component: Component,
@@ -296,7 +301,7 @@ function resolvePins(
   }
   for (const unit of component.units) {
     for (const [canonical, connection] of Object.entries(unit.pins)) {
-      place(canonical, `unit "${unit.name}"`, connection)
+      place(pinKey(component, unit, canonical), `unit "${unit.name}"`, connection)
     }
   }
   const unclaimed = new Set<string>()

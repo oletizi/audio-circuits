@@ -15,6 +15,7 @@
  */
 import type { Component, Network } from "../../lib/model/types.ts"
 import { pinNumberFor, type PinNumbers } from "../../lib/kicad/from-network.ts"
+import { pinKey } from "../../lib/kicad/unit-pins.ts"
 import { valueFor } from "../../lib/kicad/value-notation.ts"
 
 export type NetKind = "ground" | "power"
@@ -106,9 +107,11 @@ export function intentFromNetwork(
     owner.set(ref, component.id)
     parts.push({ ref, libId: libIdFor(component), value: valueFor(component), group: inputs.group })
 
-    for (const pins of [component.pins, ...component.units.map((unit) => unit.pins)]) {
-      for (const [pin, connection] of Object.entries(pins)) {
-        const member = `${ref}.${pinNumberFor(component, pin, pinNumbers)}`
+    // A multi-unit package's unit pins are keyed by unit (`pinKey`), so each section reaches its
+    // own pins through `part.symbolPins` (spec C6); every other pin keeps its own name.
+    for (const group of [{ unit: undefined, pins: component.pins }, ...component.units.map((unit) => ({ unit, pins: unit.pins }))]) {
+      for (const [pin, connection] of Object.entries(group.pins)) {
+        const member = `${ref}.${pinNumberFor(component, pinKey(component, group.unit, pin), pinNumbers)}`
         if (connection.kind === "nc") {
           noConnect.push(member)
           continue

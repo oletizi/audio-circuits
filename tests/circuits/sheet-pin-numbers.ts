@@ -6,6 +6,7 @@
  */
 import { POLE_PIN, rotaryPadOrder, SPDT_PINS, THROW_PINS, TOGGLE_SYMBOL } from "../../circuits/pultec/physical/parts.ts"
 import type { Component, ComponentKind } from "../../lib/model/types.ts"
+import { isMultiUnit, symbolPinTable } from "../../lib/kicad/unit-pins.ts"
 
 /**
  * Kinds whose canonical pin vocabulary IS the symbol's pins 1..n, in the order written here.
@@ -46,11 +47,10 @@ export function soleUnitPinNames(component: Component): readonly string[] {
   const unit = component.units[0]
   if (unit === undefined || component.units.length !== 1) {
     throw new Error(
-      `component "${component.id}" has ${component.units.length} units, and the pin-number map ` +
-        "compareSheetToModel takes is keyed by CANONICAL PIN NAME, so it cannot address two " +
-        "units that name a pin the same way. A multi-unit part needs that map re-keyed by unit " +
-        "before it can be compared; nothing is guessed, because a dual part's second section " +
-        "silently taking the first's pin numbers is a wrong drawing that looks right.",
+      `component "${component.id}" has ${component.units.length} units, and this reads the pins of a ` +
+        "part with exactly one. A multi-unit part is numbered from its part.symbolPins, unit by unit " +
+        "(lib/kicad/unit-pins.ts, spec C6), which pinNumbersFor below does before reaching here; a " +
+        "part with no unit at all has no pins to number.",
     )
   }
   return Object.keys(unit.pins)
@@ -141,11 +141,14 @@ function rotaryPinNumbers(component: Component, symbol: string): ReadonlyMap<str
  * Canonical pin name -> KiCad pin number for one component, by a declared table or a refusal.
  *
  * Four cases and nothing else: a rotary selector, the SPDT mode toggle, a `connector` whose own
- * pin names are the symbol's pin numbers, and the positional kinds above. `part.symbolPins` is
- * REFUSED rather than honoured - no component of these five boards declares one, so that path
- * would be written against nothing and checked by nothing.
+ * pin names are the symbol's pin numbers, and the positional kinds above - plus a multi-unit package,
+ * numbered from its own `part.symbolPins` by `symbolPinTable` (spec C6), the same table every
+ * lowering path reads, with its unit pins keyed `<unit>/<pin>`. On a SINGLE-unit part
+ * `part.symbolPins` is still REFUSED rather than honoured - no component of these five boards
+ * declares one, so that path would be written against nothing and checked by nothing.
  */
 export function pinNumbersFor(component: Component): ReadonlyMap<string, string> {
+  if (isMultiUnit(component)) return symbolPinTable(component)
   if (component.part?.symbolPins !== undefined) {
     throw new Error(
       `component "${component.id}" declares part.symbolPins, and this builder does not read it. ` +

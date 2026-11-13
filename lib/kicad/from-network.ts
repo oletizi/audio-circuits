@@ -11,6 +11,7 @@ import type { Component, Network } from "../model/types.ts"
 import type { ImportedComponent, ImportedNetlist } from "./netlist.ts"
 import { declaredPinCount, importStringFor } from "./import-string.ts"
 import { valueFor } from "./value-notation.ts"
+import { isMultiUnit, pinKey, symbolPinTable } from "./unit-pins.ts"
 
 export type PinNumbers = Readonly<Record<string, Readonly<Record<string, string>>>>
 
@@ -66,7 +67,21 @@ function isPinNumber(pin: string): boolean {
   return /^[0-9]+$/.test(pin)
 }
 
+/**
+ * The KiCad pin number of one pin. A single-unit part is numbered by kind, `PIN_NUMBERS[kind][pin]`.
+ * A multi-unit package is numbered from its own `part.symbolPins` (`./unit-pins.ts`, spec C6), and
+ * `pin` is then its key as `everyPin` lists it: a package pin's name, or `<unit>/<pin>` for a unit's.
+ */
 export function pinNumberFor(component: Component, pin: string, pinNumbers: PinNumbers): string {
+  if (isMultiUnit(component)) {
+    const number = symbolPinTable(component).get(pin)
+    if (number !== undefined) return number
+    throw new Error(
+      `component "${component.id}" has no pin "${pin}". It is a multi-unit package, so a unit's pin is ` +
+        'named "<unit>/<pin>" and a package pin by its own name; its pins are ' +
+        `${[...symbolPinTable(component).keys()].join(", ")}.`,
+    )
+  }
   const mapped = pinNumbers[component.kind]?.[pin]
   if (mapped !== undefined) return mapped
   if (isPinNumber(pin)) return pin
@@ -81,10 +96,14 @@ export function pinNumberFor(component: Component, pin: string, pinNumbers: PinN
 /** Component id -> that component's pins, in the order their pads are numbered. */
 export type PadOrders = Readonly<Record<string, readonly string[]>>
 
-/** Every pin a component declares, package pins and unit pins together. */
+/**
+ * Every pin a component declares, package pins and unit pins together, each by its key: its own
+ * name, or `<unit>/<pin>` for a unit pin of a multi-unit package (`pinKey`), whose canonical names
+ * repeat from unit to unit.
+ */
 export function everyPin(component: Component): readonly string[] {
   const pins = Object.keys(component.pins)
-  for (const unit of component.units) pins.push(...Object.keys(unit.pins))
+  for (const unit of component.units) pins.push(...Object.keys(unit.pins).map((pin) => pinKey(component, unit, pin)))
   return pins
 }
 
@@ -202,13 +221,14 @@ export function toImportedNetlist(
     components.push({ designator, value: valueFor(component), footprint: importStr })
 
     const emitted: string[] = []
-    const groups = [component.pins, ...component.units.map((unit) => unit.pins)]
+    const groups = [{ unit: undefined, pins: component.pins }, ...component.units.map((unit) => ({ unit, pins: unit.pins }))]
     for (const group of groups) {
-      for (const [pin, connection] of Object.entries(group)) {
+      for (const [pin, connection] of Object.entries(group.pins)) {
         if (connection.kind === "nc") continue
+        const key = pinKey(component, group.unit, pin)
         const number = order === undefined
-          ? pinNumberFor(component, pin, pinNumbers)
-          : String(order.indexOf(pin) + 1)
+          ? pinNumberFor(component, key, pinNumbers)
+          : String(order.indexOf(key) + 1)
         emitted.push(number)
         ;(nets[connection.net] ??= []).push(`${designator}.${number}`)
       }

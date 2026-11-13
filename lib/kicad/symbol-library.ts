@@ -19,7 +19,8 @@
  * paste. What survives reads symbol GEOMETRY and symbol NAMES:
  * `tests/kicad/symbol-library-disk.ts` builds `installedSymbolPins`,
  * `installedSymbolPinNumbers` and `installedSymbolStrokeEndpoints` on
- * `symbolPins`/`symbolStrokeSegments`/`strokeEndpointsAt`, and through it
+ * `symbolPins`/`symbolStrokeSegments`/`strokeEndpointsAt` (and `installedSymbolUnitPins` on
+ * `symbolUnitPins`, the multi-unit reader, spec C6), and through it
  * `tests/kicad/sheet-agreement-tables.test.ts` and
  * `tests/circuits/pultec-switch-geometry.test.ts` hold
  * `lib/kicad/sheet-agreement.ts`'s `MECHANICAL_PINS` and
@@ -27,7 +28,7 @@
  * installed library. `tools/kicad/vendor-symbols.ts` writes the vendored set,
  * and `tests/kicad/symbol-names.test.ts` checks it against the installed
  * library (see the next paragraph). **So every caller of the embedding half -
- * `embeddedSymbol`, `supportedUnitSymbols` - is now a test.** That is a fact
+ * `embeddedSymbol` - is now a test.** That is a fact
  * about today rather than a judgement to act on; check who imports what at the
  * time you read this rather than trusting this paragraph.
  *
@@ -211,102 +212,137 @@ function unitSubSymbolName(unit: SNode, symbolName: string): string {
   return unitName
 }
 
+/** One unit sub-symbol of the default body style, with the unit number its name carries. */
+interface UnitSubSymbol {
+  readonly unit: number
+  readonly node: SNode
+}
+
 /**
- * This symbol's SUPPORTED unit sub-symbols: unit 0 (pins and graphics common to every unit)
- * and unit 1 (the part's own body, which is every pin and every graphic a single-unit symbol
- * has). KiCad names a unit sub-symbol "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common
- * unit or 1, 2, 3... for a specific one, and `<bodyStyle>` is 0 or 1 for every vendored symbol
- * here (a De Morgan alternate would be 2 and is skipped, since this repository has none). A
- * unit sub-symbol with no name, or with a unit number greater than 1, refuses: the now-deleted
- * stub writer (`lib/kicad/schematic.ts`, removed by Task 6 of
- * `docs/superpowers/plans/2026-10-30-remove-schgen.md`) always placed a symbol's `(unit 1)` and
- * merged every returned pin onto it, which would have silently dropped or wrongly combined a
- * genuine multi-unit part's pins or graphics rather than being wrong about it loudly - the
- * refusal below is what made that loud while the stub writer was this function's caller.
+ * This symbol's unit sub-symbols of the default body style. KiCad names a unit sub-symbol
+ * "Name_<unit>_<bodyStyle>": `<unit>` is 0 for the common unit (pins and graphics drawn on every
+ * unit) or 1, 2, 3... for a specific one, and `<bodyStyle>` is 0 or 1 for every symbol this
+ * repository reads (a De Morgan alternate would be 2 and is skipped). A unit sub-symbol with no
+ * name, or no numeric unit field, refuses.
  *
- * **THE REFUSAL WAS THE STUB WRITER'S LIMIT AND NEVER THE REPOSITORY'S.** The
- * schematic generator handled multi-unit packages - a UNIT was its unit of
- * placement, its IR keyed parts by `unitKey(label, unit)`, and one of its tests
- * drew a three-unit op-amp through that path - and it never called this
- * function. Both are deleted now (Task 9 of
- * `docs/superpowers/plans/2026-10-30-remove-schgen.md`), so the refusal below
- * binds the only callers there are: `symbolPins` and `symbolStrokeSegments`,
- * reached from `tests/kicad/symbol-library-disk.ts`, over SINGLE-unit symbols.
- * **Nothing in production calls either**, which is a fact about today and not a
- * judgement to act on - see this file's own header.
- *
- * **SHARED BY `symbolPins` AND `symbolStrokeSegments`**, so a pin walk and a graphics walk of
- * the same block can never disagree about which unit sub-symbols are in scope - the one thing
- * that would make a stroke-endpoint comparison between the two meaningless.
+ * **SHARED BY EVERY READER BELOW**, so a pin walk and a graphics walk of the same block can never
+ * disagree about which unit sub-symbols are in scope - the one thing that would make a
+ * stroke-endpoint comparison between the two meaningless.
  */
-function supportedUnitSymbols(block: string): { readonly name: string; readonly units: readonly SNode[] } {
+function unitSubSymbols(block: string): { readonly name: string; readonly units: readonly UnitSubSymbol[] } {
   const root = parseSexpr(block)
   const name = root.atoms[0] ?? "(unnamed)"
-  const units: SNode[] = []
-  for (const unit of root.nodes.filter((n) => n.name === "symbol")) {
-    const unitName = unitSubSymbolName(unit, name)
+  const units: UnitSubSymbol[] = []
+  for (const node of root.nodes.filter((n) => n.name === "symbol")) {
+    const unitName = unitSubSymbolName(node, name)
     const fields = unitName.split("_")
     const bodyStyle = fields[fields.length - 1]
     const unitNumberText = fields[fields.length - 2]
-    const unitNumber = unitNumberText === undefined ? Number.NaN : Number(unitNumberText)
-    if (!Number.isFinite(unitNumber)) {
+    const unit = unitNumberText === undefined ? Number.NaN : Number(unitNumberText)
+    if (!Number.isFinite(unit)) {
       throw new Error(
         `symbol "${name}" unit "${unitName}" has no numeric unit field; expected "Name_<unit>_<bodyStyle>"`,
       )
     }
-    if (unitNumber > 1) {
-      throw new Error(
-        `symbol "${name}" has unit ${unitNumber} ("${unitName}"): a multi-unit symbol. This ` +
-          "function does not support multi-unit symbols: lib/kicad/schematic.ts, the now-" +
-          "deleted stub writer that was once its only caller, always placed a symbol as " +
-          "\"(unit 1)\" and merged every unit's pins onto it, which would have been wrong once " +
-          "there was more than one unit. If you reached this refusal, you are calling " +
-          "symbolPins or symbolStrokeSegments directly on a multi-unit block, which neither " +
-          "supports: read the units you want out of the block yourself, or widen this function " +
-          "with a test over a real multi-unit symbol beside it.",
-      )
-    }
     if (bodyStyle !== "0" && bodyStyle !== "1") continue
-    units.push(unit)
+    units.push({ unit, node })
   }
   return { name, units }
 }
 
-export function symbolPins(block: string): readonly SymbolPin[] {
-  const { name, units } = supportedUnitSymbols(block)
+/**
+ * The unit sub-symbols of a SINGLE-unit symbol (unit 0 and unit 1), refusing a multi-unit one with
+ * `why`, the caller's own reason. The flat readers below merge every unit they are given, which
+ * is right for one body and wrong for several: a dual op-amp's two sections would come back as
+ * one list with nothing saying which pin is in which section.
+ */
+function singleUnitSubSymbols(block: string, why: string): { readonly name: string; readonly units: readonly SNode[] } {
+  const { name, units } = unitSubSymbols(block)
+  const multi = units.find((u) => u.unit > 1)
+  if (multi !== undefined) {
+    throw new Error(`symbol "${name}" has unit ${multi.unit}: a multi-unit symbol. ${why}`)
+  }
+  return { name, units: units.map((u) => u.node) }
+}
+
+/** One `(pin ...)` form, read and checked. */
+function readPin(pin: SNode, name: string): SymbolPin {
+  const at = pin.nodes.find((n) => n.name === "at")
+  const number = pin.nodes.find((n) => n.name === "number")?.atoms[0]
+  if (at === undefined || number === undefined) {
+    throw new Error(`symbol "${name}" has a pin with no (at) or no (number)`)
+  }
+  const [x, y, angle] = at.atoms.map(Number)
+  if (x === undefined || y === undefined || angle === undefined ||
+    !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(angle)) {
+    throw new Error(`symbol "${name}" pin "${number}" has an unreadable (at ...)`)
+  }
+  const type = pin.atoms[0]
+  if (type === undefined) {
+    throw new Error(`symbol "${name}" pin "${number}" has no electrical type (expected "(pin <type> <style> ...)")`)
+  }
+  const pinName = pin.nodes.find((n) => n.name === "name")?.atoms[0]
+  if (pinName === undefined) {
+    throw new Error(`symbol "${name}" pin "${number}" has no (name ...)`)
+  }
+  const lengthText = pin.nodes.find((n) => n.name === "length")?.atoms[0]
+  const length = lengthText === undefined ? Number.NaN : Number(lengthText)
+  if (!Number.isFinite(length)) {
+    throw new Error(`symbol "${name}" pin "${number}" has no numeric (length ...)`)
+  }
+  return { number, x, y, angle, type, name: pinName, length }
+}
+
+/** Every pin of `units`, refusing a pin number declared twice anywhere among them. */
+function pinsOf(units: readonly SNode[], name: string): SymbolPin[] {
   const pins: SymbolPin[] = []
   for (const unit of units) {
-    for (const pin of unit.nodes.filter((n) => n.name === "pin")) {
-      const at = pin.nodes.find((n) => n.name === "at")
-      const number = pin.nodes.find((n) => n.name === "number")?.atoms[0]
-      if (at === undefined || number === undefined) {
-        throw new Error(`symbol "${name}" has a pin with no (at) or no (number)`)
+    for (const node of unit.nodes.filter((n) => n.name === "pin")) {
+      const pin = readPin(node, name)
+      if (pins.some((p) => p.number === pin.number)) {
+        throw new Error(`symbol "${name}" declares pin "${pin.number}" twice`)
       }
-      const [x, y, angle] = at.atoms.map(Number)
-      if (x === undefined || y === undefined || angle === undefined ||
-        !Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(angle)) {
-        throw new Error(`symbol "${name}" pin "${number}" has an unreadable (at ...)`)
-      }
-      const type = pin.atoms[0]
-      if (type === undefined) {
-        throw new Error(`symbol "${name}" pin "${number}" has no electrical type (expected "(pin <type> <style> ...)")`)
-      }
-      const pinName = pin.nodes.find((n) => n.name === "name")?.atoms[0]
-      if (pinName === undefined) {
-        throw new Error(`symbol "${name}" pin "${number}" has no (name ...)`)
-      }
-      const lengthText = pin.nodes.find((n) => n.name === "length")?.atoms[0]
-      const length = lengthText === undefined ? Number.NaN : Number(lengthText)
-      if (!Number.isFinite(length)) {
-        throw new Error(`symbol "${name}" pin "${number}" has no numeric (length ...)`)
-      }
-      if (pins.some((p) => p.number === number)) {
-        throw new Error(`symbol "${name}" declares pin "${number}" twice`)
-      }
-      pins.push({ number, x, y, angle, type, name: pinName, length })
+      pins.push(pin)
     }
   }
   return pins
+}
+
+/**
+ * A single-unit symbol's pins, as one list. A multi-unit symbol refuses: its pins belong to
+ * different units, and `symbolUnitPins` is the reader that keeps them apart.
+ */
+export function symbolPins(block: string): readonly SymbolPin[] {
+  const { name, units } = singleUnitSubSymbols(
+    block,
+    "symbolPins returns one flat list and would merge every unit's pins into it, losing which " +
+      "section each pin belongs to. Read a multi-unit symbol with symbolUnitPins, which returns " +
+      "its pins unit by unit (spec C6).",
+  )
+  return pinsOf(units, name)
+}
+
+/** One unit's pins, as `symbolUnitPins` returns them. */
+export interface SymbolUnitPins {
+  /** KiCad's unit number: 1, 2, 3... for a unit, 0 for pins common to every unit. */
+  readonly unit: number
+  readonly pins: readonly SymbolPin[]
+}
+
+/**
+ * A symbol's pins UNIT BY UNIT, in unit order - for a multi-unit symbol (a dual op-amp, a gate
+ * pack) as for a single-unit one, which comes back as one entry. Unit 0, the pins KiCad draws on
+ * every unit, is an entry of its own only when it carries pins. A pin number declared twice,
+ * within one unit or across two, refuses: a net endpoint `REF.<number>` must name one pin of one
+ * unit, and copperhead refuses the same symbol for the same reason.
+ */
+export function symbolUnitPins(block: string): readonly SymbolUnitPins[] {
+  const { name, units } = unitSubSymbols(block)
+  const numbers = [...new Set(units.map((u) => u.unit))].sort((a, b) => a - b)
+  pinsOf(units.map((u) => u.node), name)
+  return numbers
+    .map((unit) => ({ unit, pins: pinsOf(units.filter((u) => u.unit === unit).map((u) => u.node), name) }))
+    .filter((u) => u.unit !== 0 || u.pins.length > 0)
 }
 
 /** A straight stroke's two endpoints, in the library frame (raw mm, not snapped to any grid). */
@@ -349,7 +385,13 @@ function legsOf(points: readonly (readonly [number, number])[]): SymbolSegment[]
  * computed body-side point against these endpoints without converting either side's units.
  */
 export function symbolStrokeSegments(block: string): readonly SymbolSegment[] {
-  const { units } = supportedUnitSymbols(block)
+  const { units } = singleUnitSubSymbols(
+    block,
+    "symbolStrokeSegments reads single-unit symbols only, and it stays that way because nothing on " +
+      "the drawing path needs it: its one use is strokeEndpointsAt's mounting-lug test, run on " +
+      "single-unit switch symbols. Widen it, with a test over a real multi-unit symbol, when " +
+      "something needs a multi-unit symbol's strokes.",
+  )
   const segments: SymbolSegment[] = []
   for (const unit of units) {
     for (const item of unit.nodes) {

@@ -29,9 +29,9 @@ import path from "node:path"
 import { defaultSymbolDir } from "../../lib/kicad/install.ts"
 import { KICAD_CLI } from "../../lib/kicad/netlist.ts"
 import {
-  flattenedSymbol, librarySymbols, splitLibId, strokeEndpointsAt, symbolPins,
+  flattenedSymbol, librarySymbols, splitLibId, strokeEndpointsAt, symbolPins, symbolUnitPins,
 } from "../../lib/kicad/symbol-library.ts"
-import type { SymbolPin } from "../../lib/kicad/symbol-library.ts"
+import type { SymbolPin, SymbolUnitPins } from "../../lib/kicad/symbol-library.ts"
 
 /**
  * Overridable the way `KICAD_FOOTPRINTS` is, and DERIVED from the same
@@ -130,6 +130,19 @@ function installedFlattenedBlock(libId: string): { readonly name: string; readon
  */
 export function installedSymbolPins(libId: string): readonly SymbolPin[] {
   return symbolPins(installedFlattenedBlock(libId).block)
+}
+
+/** The installed symbol `libId`'s flattened text, refusing an absent symbol as the readers above do. */
+export function installedFlattenedSymbol(libId: string): string {
+  return installedFlattenedBlock(libId).block
+}
+
+/**
+ * The installed symbol `libId`'s pins UNIT BY UNIT (`symbolUnitPins`), for a multi-unit symbol the
+ * flat `installedSymbolPins` refuses. Refuses an absent symbol the same way.
+ */
+export function installedSymbolUnitPins(libId: string): readonly SymbolUnitPins[] {
+  return symbolUnitPins(installedFlattenedBlock(libId).block)
 }
 
 /** The PIN NUMBERS the installed symbol `libId` has. See `installedSymbolPins` for the full shape. */
