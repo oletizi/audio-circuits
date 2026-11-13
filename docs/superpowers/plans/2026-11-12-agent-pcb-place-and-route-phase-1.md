@@ -274,6 +274,7 @@ Content, not a sketch - the project values with the vendor floor beside each, be
 | Drill, vias and PTH | >= 0.3 mm | 0.4 mm via drill; 0.3 mm minimum hole |
 | Annular ring | >= 0.15 mm | 0.2 mm (0.8 mm via pad on a 0.4 mm drill) |
 | Hole to hole | >= 0.4 mm | 0.5 mm |
+| Mounting holes (NPTH) | non-plated, no annular ring | 4.5 mm, free fit for the 8-32 screw (Task 7) |
 | Copper to board edge | >= 0.25 mm | 0.5 mm |
 | Silkscreen text | stroke >= 0.15 mm, height >= 0.8 mm | stroke 0.15 mm, height 0.8 mm minimum |
 | Layers, material | 2-layer FR-4, standard thickness and copper | same |
@@ -491,7 +492,20 @@ The spec marks this NOT VERIFIED. Read the `F.Silkscreen` graphic line widths of
 
 Blocks from the circuit's own structure, which the model already names: supply decoupling (`C1`, `C2`), the PT2399's reference and oscillator bypassing (`C3`, `C4`, `C5`), the input path (`C7`, `R3`, `R4`), the LPF1 node (`R1`, `R2`, `C6`, `C8`), the LPF2 and regeneration node (`R6`, `R7`, `R8`, `C11`, `C12`), the op-amp feedback caps (`C13`, `C14`), and the output path (`R5`, `C9`, `C10`). `J1` as the edge connector with a `max_setback_mm` and `must_lock`.
 
-**The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough to hold the standard's copper-to-edge clearance around the full envelope, with the envelope diameter read from the hardware's catalogue entry. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
+**The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough to hold the standard's copper-to-edge clearance around the full envelope, with the hole and envelope diameters taken from the fastener the owner specified. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
+
+**The fastener is an 8-32 screw**, the owner's instruction of 2026-11-13, recorded verbatim in `docs/known-gaps.md` **G311**. The two diameters that follow from it, and where each comes from:
+
+| Quantity | Value | Source |
+| --- | --- | --- |
+| 8-32 UNC major diameter | 4.166 mm (0.1640 in) | thread standard |
+| hole, **free fit** | **4.5 mm** (#16 drill, 0.1770 in = 4.496 mm) | clearance-hole standard |
+| hole, close fit, **not used** | 4.3 mm (#18 drill, 0.1695 in = 4.305 mm) | same |
+| envelope, from the washer | **11.51 mm** | #8 SAE flat washer, ASME B18.21.1-2009, OD nominal 7/16 in, **maximum 0.453 in** |
+
+**Free fit, not close fit, and the reason is that there are four of them.** A single hole could be a close fit. Four holes have to line up simultaneously with four standoffs whose own positions carry tolerance, on top of PCBWay's drill-position tolerance, and a close fit on this board's 4.166 mm screw leaves 0.07 mm of radial slack to absorb all of it. The free fit costs nothing and is what makes the board assemble.
+
+**The envelope is taken at the washer's MAXIMUM OD, not its nominal.** An envelope is a worst case by definition; sizing it to 11.11 mm nominal would be exceeded by a conforming washer.
 
 - [ ] **Step 2: Draft `placement-rules.json`**
 
@@ -521,11 +535,17 @@ Place against the approved intent to discover the extent the parts and their har
 
 - [ ] **Step 2: Fix the final geometry**
 
-Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four M3 holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - screw head, washer and standoff footprint, not a 3.2 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
+Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four **8-32** holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - the washer's footprint, not a 4.5 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
 
-**Do not reach for a stock footprint and call its courtyard the envelope.** Measured from the installed KiCad 10.0.5 library on 2026-11-13, the `MountingHole:MountingHole_3.2mm_M3*` courtyards are circles of diameter 6.1 mm (`DIN965`), 6.2 mm (`ISO7380`) and 6.9 mm (plain and `_Pad`). Those model the **screw head**. None of them models a washer or a standoff, so adopting one would quietly deliver head clearance where this plan promised head-plus-washer-plus-standoff, and every check would pass.
+The two numbers, from Task 7's table: **4.5 mm** non-plated hole, **11.51 mm** envelope. So each hole centre sits at least **5.76 mm** from both edges it is near, and the copper keepout is a circle of 11.51 mm about it.
 
-So the envelope is sourced, not assumed: **the mounting hardware gets a `parts/` catalogue entry with sourcing evidence**, exactly as the PT2399 does in Task 2, and the envelope diameter is the washer or standoff OD read from that entry. A project-local mounting-hole footprint carries that diameter as its courtyard. If the hardware is not yet chosen, this is an owner question - and it is a real one, because it changes the board outline.
+**This is a large exclusion and it is worth seeing before the board is sized.** Four corners at 11.51 mm are a materially bigger bite out of a small through-hole board than the M3 this plan previously assumed, whose envelope was around 6.9 mm. It is a direct consequence of the fastener, not of anything the layout chose, and it is the kind of thing that should surprise nobody at Step 3 when the regrade comes back tight.
+
+**Do not reach for a stock footprint and call its courtyard the envelope.** Measured from the installed KiCad 10.0.5 library on 2026-11-13: `MountingHole:MountingHole_4.5mm` is the right *class* - `np_thru_hole`, 4.5 mm drill, correctly non-plated - but its courtyard is a circle of **9.5 mm**, which is 2 mm short of the washer. Every stock mounting-hole courtyard in that library models the screw head, and heads are smaller than washers. Adopting one would quietly deliver head clearance where this plan promises washer clearance, and every check would pass.
+
+So the envelope is sourced, not assumed: **the mounting hardware gets a `parts/` catalogue entry with sourcing evidence**, exactly as the PT2399 does in Task 2, recording the 8-32 screw and the #8 SAE washer with the ASME figure above. A **project-local** mounting-hole footprint then carries the 4.5 mm non-plated drill with an 11.51 mm courtyard.
+
+**One thing the owner's instruction does not settle, and it does not block this task.** He specified the screw. If a standoff larger across corners than an 11.51 mm washer is fitted, the envelope grows and the inset with it - a 5/16 in hex standoff measures about 9.2 mm across corners and stays inside; a 3/8 in one does not. The washer governs unless the catalogue entry records a standoff that exceeds it, and that comparison belongs in the entry rather than here.
 
 - [ ] **Step 3: Regrade placement on the final geometry**
 
@@ -626,4 +646,6 @@ If it routed clean: the finding, and Phase 2 gets its own plan and spec section.
 | 4 · perfboard write conflict | **The plan was wrong, not the write.** The approved spec says "read-only **verbs** only"; the plan had broadened that to the whole directory on its own authority. Restored to the spec's wording and narrowed to name the layout artifacts |
 | - · Task 0 false negative (found while verifying, not raised by the review) | `command -v kicad-cli` reports missing on a machine where it is installed off `PATH`; replaced with `defaultKicadCli()`, which this repository already owns |
 
-**Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). **New, and this one can move the board outline:** which mounting hardware is fitted, since Task 8 now sources the keepout envelope from the washer or standoff OD rather than assuming it. None blocks starting; the third blocks Task 8.
+**Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). Neither blocks starting.
+
+**Answered 2026-11-13, and it moved real numbers:** the mounting hardware. The owner specified an **8-32 screw** (`docs/known-gaps.md` **G311**), which sets a 4.5 mm free-fit non-plated hole and an 11.51 mm envelope from the #8 SAE washer - against the M3 and roughly 6.9 mm envelope this plan had been carrying. Tasks 3, 7 and 8 are updated. The residual, which does not block Task 8, is whether a standoff wider across corners than the washer is fitted; the washer governs until the catalogue entry says otherwise.

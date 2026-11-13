@@ -4408,3 +4408,59 @@ GGUF converter, the mispacked cautionary artifact) are in
 - **What would REOPEN it** a new SchGen release, or a different model, that he
   asks to see - not an agent's view that the glue run would have changed the
   answer.
+
+### G311 - OWNER DECISION, 2026-11-13: the `pt2399-core` PCB's mounting holes take an 8-32 screw, which sets a 4.5 mm free-fit hole and an 11.51 mm keepout envelope
+
+> *"make the mounting holes large enough for an 8-32 screw"*
+
+**This answers the open question raised against the Phase 1 plan the same day** -
+which mounting hardware is fitted - and it is recorded because it moves board
+geometry, so an agent that loses it would re-ask it and stall the layout behind
+it. The plan had been carrying M3 as an unstated assumption.
+
+**What follows from the screw, with the source of each figure.** None of these
+is a preference and none was chosen by an agent:
+
+| Quantity | Value | Source |
+| --- | --- | --- |
+| 8-32 UNC major diameter | 4.166 mm (0.1640 in) | thread standard |
+| hole, free fit | **4.5 mm** (#16 drill, 0.1770 in) | clearance-hole standard |
+| hole, close fit, not used | 4.3 mm (#18 drill, 0.1695 in) | same |
+| envelope, from the washer | **11.51 mm** | #8 SAE flat washer, ASME B18.21.1-2009, OD nominal 7/16 in, maximum 0.453 in |
+
+**Free fit rather than close fit, because there are four holes.** One hole could
+be a close fit. Four must align simultaneously with four standoffs carrying
+their own tolerance plus the fabricator's drill-position tolerance, and a close
+fit leaves 0.07 mm of radial slack on this screw to absorb all of it.
+
+**The envelope is the washer's MAXIMUM OD, not its nominal**, because an
+envelope is a worst case and a conforming washer would exceed the nominal.
+
+**TWO MEASURED TRAPS THAT THIS ENTRY EXISTS TO STOP BEING REDISCOVERED**, both
+read off the installed KiCad 10.0.5 library rather than recalled:
+
+- **The stock footprint's courtyard is not the envelope.**
+  `MountingHole:MountingHole_4.5mm` is the right class - `np_thru_hole`, 4.5 mm
+  drill, correctly non-plated - but its courtyard is **9.5 mm**, 2 mm short of
+  the washer. Every stock mounting-hole courtyard in that library models the
+  **screw head**, and heads are smaller than washers. Adopting one delivers head
+  clearance where washer clearance was promised, **and every check passes**.
+  The board therefore uses a project-local footprint: 4.5 mm non-plated drill,
+  11.51 mm courtyard.
+- **`missing_courtyard` is in KiCad 10.0.5's DEFAULT ignored-checks set.** So a
+  mounting-hole footprint that reached the board with no courtyard at all raises
+  nothing, and the envelope check silently would not exist. This is why the
+  Phase 1 DRC reader validates the report's `ignored_checks` field.
+
+**What this does NOT settle, and it blocks nothing.** He specified the screw,
+not the standoff. If a standoff wider across corners than an 11.51 mm washer is
+fitted the envelope grows and the corner inset with it - a 5/16 in hex standoff
+is about 9.2 mm across corners and stays inside; a 3/8 in one does not. **The
+washer governs unless the hardware's `parts/` catalogue entry records a standoff
+that exceeds it**, and that comparison belongs in the entry, where it can carry
+sourcing evidence, rather than in a plan document.
+
+**Where this is implemented** `docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md`,
+Task 3 (the fabrication standard's NPTH row), Task 7 Step 1 (the approved
+derivation rule, which carries the two diameters) and Task 8 Step 2 (the final
+coordinates and the project-local footprint).
