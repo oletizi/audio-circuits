@@ -21,12 +21,10 @@
  * would put the released RST across VIH, so it is never fitted, and the default build does not carry it.
  */
 import { NC } from "../../../lib/model/index.ts"
-import type { Network, PartSpec } from "../../../lib/model/index.ts"
+import type { Network } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR } from "../parts.ts"
 import { AO3400A, PMEG4005AEA, SG_210STF, TLV803EA29, TPS7A2433 } from "../pedal-parts.ts"
-import { block, capacitor, diode, part, resistor } from "./build.ts"
-
-const withMpn = (base: PartSpec, mpn: string): PartSpec => ({ ...base, mpn })
+import { block, capacitor, diode, part, resistor, withMpn } from "./build.ts"
 
 const V5A_CODEC = "5V_A_CODEC"
 const V3_CODEC = "3V3_CODEC"

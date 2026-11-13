@@ -17,14 +17,12 @@
  * The private nets are FSWn_SW (CR-PEDAL-FOOTSWITCH's name) and LEDn_A, LEDn_K, LEDn_G, the anode,
  * cathode and gate nodes.
  */
-import type { Component, Network, PartSpec } from "../../../lib/model/index.ts"
+import type { Component, Network } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR } from "../parts.ts"
 import { WP7113ID } from "../pedal-parts.ts"
 import { FOOTSWITCH_CONNECTION, LED_SWITCH } from "../pedal-rulings.ts"
-import { block, capacitor, diode, part, resistor } from "./build.ts"
+import { block, capacitor, diode, part, resistor, withMpn } from "./build.ts"
 import { contractNet } from "./nets.ts"
-
-const withMpn = (base: PartSpec, mpn: string): PartSpec => ({ ...base, mpn })
 
 const V3D = contractNet("3V3_D")
 const V3P = "3V3_P"

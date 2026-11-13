@@ -11,7 +11,8 @@ import { codecBlock } from "../../circuits/h7-platform/pedal/codec.ts"
 import { checkDefaultPopulation, populationFindings } from "../../circuits/h7-platform/pedal/population.ts"
 import { RESISTOR } from "../../circuits/h7-platform/parts.ts"
 import { TC_6610, RV16AF_41 } from "../../circuits/h7-platform/pedal-parts.ts"
-import { NOT_FITTED_PARTS, VARIANT_PART_IDS } from "../../circuits/h7-platform/pedal-population.ts"
+import { NOT_FITTED_PARTS, VARIANT_PART_IDS, VARIANT_POSITIONS } from "../../circuits/h7-platform/pedal-population.ts"
+import { controlsABlock, controlsBBlock } from "../../circuits/h7-platform/pedal/controls.ts"
 import { h7Pedal } from "../../circuits/h7-platform/pedal-board.ts"
 
 const n = (net: string) => ({ kind: "net" as const, net })
@@ -57,6 +58,16 @@ describe("checkDefaultPopulation (CR-PEDAL-POPULATION)", () => {
     expect(checkDefaultPopulation({ ...block, components: block.components.filter((c) => c.id !== "r_mode") }))
       .toEqual([expect.stringContaining("MODE (pin 28)")])
   })
+  test("control: a network with no PCM3060 is a finding, not a pass (a skipped check is never a passing one)", () => {
+    const block = codecBlock()
+    expect(checkDefaultPopulation({ ...block, components: block.components.filter((c) => c.id !== "u_codec") }))
+      .toEqual([expect.stringContaining("no PCM3060")])
+  })
+  test("control: a 10 kohm from CODEC_RST_N to GND under another id (v1's R_RST_PD) is rejected", () => {
+    const findings = checkDefaultPopulation(codecWith(testResistor("test_only_rst_pd", 10e3, "CODEC_RST_N", "GND")))
+    expect(findings).toEqual([expect.stringContaining("test_only_rst_pd")])
+    expect(findings[0]).toContain("RST (pin 15)")
+  })
   test("control: a part carrying a NOT_FITTED_PARTS id is rejected, whatever it joins", () => {
     for (const p of NOT_FITTED_PARTS) {
       const findings = checkDefaultPopulation(codecWith(testResistor(p.id, 10e3, "TEST_ONLY_A", "TEST_ONLY_B")))
@@ -65,7 +76,10 @@ describe("checkDefaultPopulation (CR-PEDAL-POPULATION)", () => {
   })
 })
 
-describe("the variant exemption is exactly VARIANT_PART_IDS", () => {
+describe("the variant exemption is exactly VARIANT_POSITIONS' pairs (VARIANT_PART_IDS), by full id", () => {
+  test("VARIANT_POSITIONS' pot-fit and button-fit ids are VARIANT_PART_IDS", () => {
+    expect(VARIANT_POSITIONS.flatMap((v) => [...v.potFit, ...v.buttonFit]).sort()).toEqual([...VARIANT_PART_IDS].sort())
+  })
   test("with no exemption, the board's six positions each report the pot fit beside the button fit", () => {
     const findings = populationFindings(h7Pedal(), [])
     expect(findings).toHaveLength(12)
@@ -74,9 +88,37 @@ describe("the variant exemption is exactly VARIANT_PART_IDS", () => {
       expect(findings.some((f) => f.includes(`rv_pos${p}`) && f.includes(`r_pu${p}`))).toBe(true)
     }
   })
-  test("control: VARIANT_PART_IDS less one id leaves that position's findings", () => {
-    const less = VARIANT_PART_IDS.filter((id) => id !== "sw_btn4")
+  test("control: VARIANT_POSITIONS less one id leaves that position's finding", () => {
+    const less = VARIANT_POSITIONS.map((v) => ({ ...v, buttonFit: v.buttonFit.filter((id) => id !== "sw_btn4") }))
     expect(populationFindings(h7Pedal(), less)).toEqual([expect.stringContaining("sw_btn4")])
+  })
+  test("control: rv_pos1 on POS4_NODE beside sw_btn4 is rejected: the pair is from two positions", () => {
+    const b = controlsBBlock()
+    const stray: Component = {
+      id: "rv_pos1", kind: "potentiometer", parameters: { ohms: 10e3, taper: { type: "linear" } }, part: RV16AF_41, pins: {},
+      units: [{ name: "MAIN", pins: { ccw: n("GND"), wiper: n("POS4_NODE"), cw: n("VREF_A") } }], provenance: { source: "test-only control" },
+    }
+    const findings = checkDefaultPopulation({ ...b, components: [...b.components, stray] }).filter((f) => !f.includes("no PCM3060"))
+    expect(findings.some((f) => f.includes("rv_pos1") && f.includes("sw_btn4"))).toBe(true)
+    expect(findings.every((f) => f.includes("rv_pos1"))).toBe(true)
+  })
+  test("control: an r_pu1 in another block, beside controls_a's rv_pos1, is not exempt", () => {
+    const board = h7Pedal()
+    const wiper = board.components.find((c) => c.id === "controls_a_rv_pos1")?.units[0]?.pins.wiper
+    if (wiper?.kind !== "net") throw new Error("controls_a_rv_pos1 has no wiper net on the board")
+    const stray = testResistor("fsw_led_r_pu1", 10e3, "3V3_D", wiper.net)
+    const findings = checkDefaultPopulation({
+      ...board,
+      components: [...board.components, stray],
+      blocks: board.blocks.map((blk) => (blk.prefix === "fsw_led" ? { ...blk, componentIds: [...blk.componentIds, stray.id] } : blk)),
+    })
+    expect(findings).toEqual([expect.stringContaining("fsw_led_r_pu1")])
+  })
+  test("control: a button fit's pull-up to VREF_A is rejected (architecture.md:230, never to VREF_A)", () => {
+    const a = controlsABlock()
+    const components = a.components.map((c) => (c.id === "r_pu1" ? testResistor("r_pu1", 10e3, "VREF_A", "POS1_NODE") : c))
+    expect(checkDefaultPopulation({ ...a, components }).filter((f) => !f.includes("no PCM3060")))
+      .toEqual([expect.stringContaining("up to VREF_A")])
   })
   test("control: a pot and a button on one node outside the variant ids are rejected", () => {
     const pot: Component = {

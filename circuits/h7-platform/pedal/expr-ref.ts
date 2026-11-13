@@ -27,14 +27,12 @@
  * EXP_TIP_RC (after R_TIP), EXP_IN (U_EXP's input), EXP_BUF (its output), REF_OUT, REF_CE, REF_ENG.
  */
 import { NC } from "../../../lib/model/index.ts"
-import type { Network, PartSpec } from "../../../lib/model/index.ts"
+import type { Network } from "../../../lib/model/index.ts"
 import { CAPACITOR, RESISTOR } from "../parts.ts"
 import { FET_2N7002, LM66100, MCP6001, NMJ6HCD2, PESD12VL1BA, PMEG4005AEA } from "../pedal-parts.ts"
 import { HW_REV_STRAP } from "../pedal-rulings.ts"
-import { block, capacitor, diode, part, resistor, singleOpamp, switchingPart } from "./build.ts"
+import { block, capacitor, diode, part, resistor, singleOpamp, switchingPart, withMpn } from "./build.ts"
 import { contractNet } from "./nets.ts"
-
-const withMpn = (base: PartSpec, mpn: string): PartSpec => ({ ...base, mpn })
 
 const VREF_A = contractNet("VREF_A")
 const EXPR_TIP = contractNet("EXPR_TIP")

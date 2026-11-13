@@ -35,10 +35,8 @@ import { CAPACITOR, RESISTOR } from "../parts.ts"
 import { AO3401A, SN74LVC1G07 } from "../pedal-parts.ts"
 import { MIDI, NOT_FITTED_CONNECTORS } from "../pedal-population.ts"
 import { LOGIC_DECOUPLING, TEST_PADS } from "../pedal-rulings.ts"
-import { block, capacitor, part, resistor } from "./build.ts"
+import { block, capacitor, part, resistor, withMpn } from "./build.ts"
 import { contractNet } from "./nets.ts"
-
-const withMpn = (base: PartSpec, mpn: string): PartSpec => ({ ...base, mpn })
 
 const V3D = contractNet("3V3_D")
 const V3P = "3V3_P"

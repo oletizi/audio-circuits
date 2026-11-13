@@ -24,6 +24,11 @@ export type { Pins } from "../module/build.ts"
 
 const net = (name: string): { readonly kind: "net"; readonly net: string } => ({ kind: "net", net: name })
 
+/** A part spec with the MPN a source names for this position. */
+export function withMpn(base: PartSpec, mpn: string): PartSpec {
+  return { ...base, mpn }
+}
+
 /** The USB-C receptacle's lettered pins, read from the module's map rather than retyped. */
 function receptaclePins(): Readonly<Record<string, string>> {
   const pins = MODULE_PIN_NUMBERS.connector

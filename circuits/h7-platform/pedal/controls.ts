@@ -64,12 +64,15 @@ function controls(positions: readonly number[]): Network {
   return block(positions.flatMap(position), ["VREF_A", "3V3_D", ...positions.map((n) => contractNet(`POS${n}`)), "GND"].map((p) => (p === "GND" ? p : contractNet(p))))
 }
 
+/** CR-PEDAL-BLOCKS: which control block holds which positions. `population.ts` reads it to match a variant pair by full id. */
+export const CONTROL_BLOCK_POSITIONS = { controls_a: [1, 2, 3], controls_b: [4, 5, 6] } as const satisfies Readonly<Record<string, readonly number[]>>
+
 /** Positions 1-3 (contract pins 22-24). */
 export function controlsABlock(): Network {
-  return controls([1, 2, 3])
+  return controls(CONTROL_BLOCK_POSITIONS.controls_a)
 }
 
 /** Positions 4-6 (contract pins 25-27). */
 export function controlsBBlock(): Network {
-  return controls([4, 5, 6])
+  return controls(CONTROL_BLOCK_POSITIONS.controls_b)
 }

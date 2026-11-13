@@ -35,7 +35,7 @@ const CODEC: readonly PartExpectation[] = [
       ["schematic-checklist.md:94", "RST (pin 15) from the local reset"], ["analog.md:407", "on CODEC_RST_N (PCM3060 pin 15)"],
       ["schematic-checklist.md:99", "MS/ADR/IFMD (pin 27) to the codec's VDD"],
       [C106, "SCKI1 (6) and SCKI2 (9) from the 12.288 MHz oscillator"], [C106, "ZEROL (14) and ZEROR (13) left open"],
-      [C106, "DIN (12) from the socket through the isolation"], [SERIES, "BCK1 (5) and BCK2 (10) are joined at the codec"],
+      [C106, "DIN (12) from the socket through the isolation"], ["architecture.md:213", "BCK1/BCK2 tied and LRCK1/LRCK2 tied"],
       ["schematic-checklist.md:110", "VOUTL+ (20)"], ["schematic-checklist.md:110", "VINL (25) and VINR (26) from the ADC drivers"],
       ["parts.md:96", "PCM3060PWR"],
     ],

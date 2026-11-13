@@ -11,7 +11,7 @@
  * - MODE (28) 220 kOhm to DGND (CODEC-06, :98); MS/ADR/IFMD (27) to the codec's VDD, 3V3_CODEC
  *   (CODEC-07, :99); MC/SCL/FMT (1) 4.7 kOhm to VDD (CODEC-08, :103); MD/SDA/DEMP (2) 4.7 kOhm to
  *   DGND (CODEC-09, :104).
- * - SCKI1 (6) and SCKI2 (9) on XO_OUT; BCK1/BCK2 and LRCK1/LRCK2 joined, then each pair and DOUT
+ * - SCKI1 (6) and SCKI2 (9) on XO_OUT; BCK1/BCK2 and LRCK1/LRCK2 tied (architecture.md:213), then each pair and DOUT
  *   through 33 ohm at the codec to the codec-side SAI nets BCK_CODEC, LRCK_CODEC and DOUT_CODEC; DIN
  *   (12) on DIN_CODEC; ZEROL and ZEROR open (CODEC-11, :106; analog.md:486; CR-PEDAL-NETS;
  *   CR-PEDAL-DIGITAL-READINGS for where the 33 ohm parts sit).
@@ -36,7 +36,7 @@ import { PCM3060_VALUES } from "../pedal-rulings.ts"
 import { block, capacitor, part, resistor } from "./build.ts"
 
 const V5A_CODEC = "5V_A_CODEC"
-const VDD = PCM3060_VALUES.ifmd
+const VDD = "3V3_CODEC"
 const GND = "GND"
 const MODE = "CODEC_MODE"
 const FMT = "CODEC_FMT"
@@ -61,6 +61,7 @@ export function codecBlock(): Network {
     }, PCM3060,
       `${CHK}:88 (CODEC-02: VCC from 5V_A through PWR-15's 0 ohm; VDD); analog.md:370 (VDD on 3V3_CODEC); ${CHK}:93 (CODEC-04 grounds); ` +
         `${CHK}:94 (CODEC-05 RST); ${CHK}:99 (CODEC-07 IFMD to VDD, D20); ${CHK}:106 (CODEC-11 clocks, SAI, ZERO pins open); ` +
+        "architecture.md:213 (BCK1/BCK2 tied and LRCK1/LRCK2 tied); " +
         `${CHK}:110 (CODEC-12 analog pins); CR-PEDAL-NETS; CR-PEDAL-DIGITAL-READINGS; parts.md:96`),
     capacitor("c_vcc_hf", hf, V5A_CODEC, GND, CAPACITOR, `${CHK}:88 (CODEC-02, VCC 100 nF + 10 uF to AGND); ${VALUES}`),
     capacitor("c_vcc_bulk", bulk, V5A_CODEC, GND, CAPACITOR, `${CHK}:88 (CODEC-02, VCC 100 nF + 10 uF to AGND); ${VALUES}`),
