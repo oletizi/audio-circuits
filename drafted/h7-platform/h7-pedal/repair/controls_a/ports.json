@@ -1,0 +1,59 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "R52.1",
+   "R55.1",
+   "R58.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C49.2",
+   "C50.2",
+   "C51.2",
+   "R53.2",
+   "R56.2",
+   "R59.2",
+   "RV1.1",
+   "RV2.1",
+   "RV3.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "POS1",
+  "pins": [
+   "C49.1",
+   "R54.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "POS2",
+  "pins": [
+   "C50.1",
+   "R57.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "POS3",
+  "pins": [
+   "C51.1",
+   "R60.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VREF_A",
+  "pins": [
+   "RV1.3",
+   "RV2.3",
+   "RV3.3"
+  ],
+  "drafted": true
+ }
+]

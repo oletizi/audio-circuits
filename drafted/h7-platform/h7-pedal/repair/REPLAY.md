@@ -4,7 +4,7 @@
 `make -C boards/h7-pedal draw` (`TOOLING.md` step 5.5, and design change C3 for what a multi-page
 board adds). It grows one block at a time as each page is repaired (h7 pedal pages plan, Task 7:
 7a interface and entry, 7b pf and modsw, 7c prail and ldo_vmid; Task 9a, usb, midi_i2c and
-fsw_led). The root sheet and its
+fsw_led; Task 9b, controls_a). The root sheet and its
 `.kicad_pro` come once every page is drawn.
 
 | | sha256 |
@@ -19,6 +19,7 @@ fsw_led). The root sheet and its
 | end: `usb.kicad_sch` (Task 9a) | `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` |
 | end: `midi_i2c.kicad_sch` (Task 9a) | `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` |
 | end: `fsw_led.kicad_sch` (Task 9a) | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
+| end: `controls_a.kicad_sch` (Task 9b) | `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` |
 
 ## Replay
 
@@ -57,7 +58,8 @@ and after adding modsw; each reached every sha256, the Task 7a pages' included. 
 into a new directory after adding prail and ldo_vmid; it reached every sha256, the earlier four
 pages' included. Task 9a added the nine drafts of the digital and controls group to the check and
 replayed into a new directory after each of its pages; each replay reached every sha256, the earlier
-six pages' included.
+six pages' included. Task 9b replayed into a new directory after each of its pages; each replay
+reached every sha256, the earlier pages' included.
 
 Then, to check and look at a page:
 
@@ -79,4 +81,5 @@ sh draughting/pages/render.sh drafted/h7-platform/h7-pedal/<block>.kicad_sch <ou
 | `tools/erc-allowances.ts` | the pedal's table of ERC errors a page's verification excuses; empty, with the measurement that says why in its header. An entry needs its own ruling in `docs/h7-platform/decisions.md` |
 | `tools/erc-control.sh` | the pedal's controls for CR-PEDAL-CROSS-PAGE-POWER-DRIVERS (Task 7c): the pf page with 5V_A's stand-in a TestPoint and with none each fail on U1's VDD, and 5V_A homed on a page is refused board-wide |
 | `tools/title_block.py` | the date, revision and first comment the pedal's pages' title blocks carry |
+| `tools/controls_page.py` | the placement, fields, note and wiring the two control pages share (Task 9b): controls_a and controls_b are the same three-position circuit, so each block's `layout.py` and `02-wire.py` name only their parts and call it |
 | `replay.sh` | the replay above |
