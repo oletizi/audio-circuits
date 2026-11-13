@@ -51,12 +51,24 @@ afterAll(() => {
 })
 afterAll(cleanUpTempScratch)
 
-/** The pt2399-core board, schematic and project copied to a scratch directory under one basename. */
+/**
+ * The empty board every guard below needs as its input, taken from the fixture
+ * rather than from `circuits/pt2399-core/`: the committed board now holds 24
+ * footprints, and R2 refuses any board that does. Without this, every driver in
+ * `DRIVERS` refused at `board-not-empty` before reaching its own guard, and the
+ * contract this file asserts was being measured on the wrong refusal. The
+ * fixture's provenance and its staleness guard are in
+ * `tests/fixtures/pcb/pt2399-core-empty/NOTES.txt`.
+ */
+const EMPTY_BOARD = path.join(FIXTURES, "pt2399-core-empty", "pt2399-core.kicad_pcb")
+
+/** The pt2399-core schematic and project, with the empty board, copied to a scratch directory under one basename. */
 function scratchCircuit(): { board: string; schematic: string } {
   const dir = freshTempScratch(SCRATCH_PREFIX)
-  for (const extension of ["kicad_pcb", "kicad_sch", "kicad_pro"]) {
+  for (const extension of ["kicad_sch", "kicad_pro"]) {
     fs.copyFileSync(path.join(CIRCUIT, `pt2399-core.${extension}`), path.join(dir, `pt2399-core.${extension}`))
   }
+  fs.copyFileSync(EMPTY_BOARD, path.join(dir, "pt2399-core.kicad_pcb"))
   return { board: path.join(dir, "pt2399-core.kicad_pcb"), schematic: path.join(dir, "pt2399-core.kicad_sch") }
 }
 

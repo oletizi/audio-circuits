@@ -1,0 +1,24 @@
+The pt2399-core board BEFORE it was populated: the exact bytes committed by
+aa5034b, "pcb: KiCad project and empty 2-layer board for pt2399-core", which is
+the commit that created it. Byte-identical to that revision, not re-authored.
+
+WHY A COPY EXISTS AT ALL. The headless update tool refuses a board that already
+holds footprints, so its tests need an EMPTY board, and they used to copy
+circuits/pt2399-core/pt2399-core.kicad_pcb for that. Running the tool against
+the committed board for real - a deliberate act, and the point of the tool -
+filled it with 24 footprints, and every one of those tests then refused at
+board-not-empty instead of reaching the guard it was written for: 25 tests red
+across tests/pcb/update-from-schematic.test.ts and
+tests/pcb/update-scratch-retention.test.ts, every one of them a false red.
+
+This file is NOT a reduced or synthetic board. It is the real board's own
+configuration - the layer stack, the (setup) block and the DRC floors task 6a
+wrote - which is what makes the end-to-end test a test of this circuit rather
+than of a toy. The schematic and the .kicad_pro those tests use still come from
+circuits/pt2399-core/.
+
+STALENESS IS GUARDED, NOT TRUSTED. A later change to the real board's (setup)
+block would leave this fixture testing a configuration the circuit no longer
+has. tests/pcb/update-from-schematic.test.ts asserts that no (setup) key here is
+absent from the committed board, and that this file still holds zero footprints,
+so the drift shows up as a failure rather than as a quietly weaker test.

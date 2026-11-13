@@ -80,12 +80,27 @@ afterAll(() => {
 const SCRATCH_PREFIX = "pcb-update-test-"
 afterAll(cleanUpTempScratch)
 
-/** The pt2399-core board, schematic and project copied to a scratch directory under one basename. */
+/**
+ * The board this tool can accept: EMPTY, and the real board's own bytes before
+ * it was populated. See `tests/fixtures/pcb/pt2399-core-empty/NOTES.txt`.
+ *
+ * THIS USED TO BE `circuits/pt2399-core/pt2399-core.kicad_pcb` AND CANNOT BE
+ * AGAIN. Running the tool against the committed board - the deliberate act this
+ * file's header already names - put 24 footprints on it, and R2 refuses a board
+ * that holds any. Every test below then refused at `board-not-empty` instead of
+ * reaching its own guard: 25 false reds across this file and
+ * `./update-scratch-retention.test.ts`, each one reporting the wrong guard
+ * rather than reporting nothing.
+ */
+const EMPTY_BOARD = path.join(FIXTURES, "pt2399-core-empty", "pt2399-core.kicad_pcb")
+
+/** The pt2399-core schematic and project, with the empty board, copied to a scratch directory under one basename. */
 function scratchCircuit(): { dir: string; board: string; schematic: string } {
   const dir = freshTempScratch(SCRATCH_PREFIX)
-  for (const extension of ["kicad_pcb", "kicad_sch", "kicad_pro"]) {
+  for (const extension of ["kicad_sch", "kicad_pro"]) {
     fs.copyFileSync(path.join(CIRCUIT, `pt2399-core.${extension}`), path.join(dir, `pt2399-core.${extension}`))
   }
+  fs.copyFileSync(EMPTY_BOARD, path.join(dir, "pt2399-core.kicad_pcb"))
   return {
     dir,
     board: path.join(dir, "pt2399-core.kicad_pcb"),
@@ -168,6 +183,24 @@ function fakeExport(text: string): (schPath: string, outPath: string) => void {
   }
 }
 
+test("the empty-board fixture is still empty, and still carries the committed board's own configuration", () => {
+  // THE COUPLING THE FIXTURE INTRODUCED, GUARDED RATHER THAN TRUSTED. Taking
+  // the input board from a fixture means a later change to the real board's
+  // (setup) block - DRC floors, plot parameters - would leave every test below
+  // exercising a configuration this circuit no longer has, and nothing would
+  // say so. Both halves of the fixture's claim are checked here.
+  const fixture = surveyBoard(EMPTY_BOARD)
+  expect(fixture.footprints).toBe(0)
+  expect(fixture.nettedPads).toBe(0)
+  // Nothing in the fixture's (setup) block may be missing from the committed
+  // board's. The committed board legitimately has MORE, both because KiCad
+  // writes out values it previously left implicit and because later tasks add
+  // to it; only a key the fixture has and the real board lacks is drift.
+  const committed = surveyBoard(path.join(CIRCUIT, "pt2399-core.kicad_pcb"))
+  expect(lostSetupKeys(fixture.setupKeys, committed.setupKeys)).toEqual([])
+  expect(fixture.setupKeys.length).toBeGreaterThan(0)
+})
+
 test("end to end: the real schematic's 24 components land on the real board, netted, and parity reports nothing", () => {
   const { board, schematic } = scratchCircuit()
   const before = surveyBoard(board)
@@ -224,7 +257,7 @@ test("R1 refuses a schematic that exports no components, although kicad-cli exit
   // wrong.
   const dir = freshTempScratch(SCRATCH_PREFIX)
   const board = path.join(dir, "empty.kicad_pcb")
-  fs.copyFileSync(path.join(CIRCUIT, "pt2399-core.kicad_pcb"), board)
+  fs.copyFileSync(EMPTY_BOARD, board)
   const schematic = path.join(dir, "empty.kicad_sch")
   fs.copyFileSync(path.join(FIXTURES, "empty-schematic", "empty.kicad_sch"), schematic)
 
