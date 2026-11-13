@@ -4409,58 +4409,53 @@ GGUF converter, the mispacked cautionary artifact) are in
   asks to see - not an agent's view that the glue run would have changed the
   answer.
 
-### G311 - OWNER DECISION, 2026-11-13: the `pt2399-core` PCB's mounting holes take an 8-32 screw, which sets a 4.5 mm free-fit hole and an 11.51 mm keepout envelope
+### G311 - OWNER DECISION, 2026-11-13: the `pt2399-core` PCB takes the STANDARD M3 mounting hole - 3.2 mm, with a 7.0 mm washer envelope - and the reason is that the board is a prototype
 
-> *"make the mounting holes large enough for an 8-32 screw"*
+> *"ok, then use the standard m3 hole. It doesn't matter that much. I have both
+> sizes and this is for prototyping"*
 
 **This answers the open question raised against the Phase 1 plan the same day** -
-which mounting hardware is fitted - and it is recorded because it moves board
+which mounting hardware is fitted - and it is recorded because it fixes board
 geometry, so an agent that loses it would re-ask it and stall the layout behind
-it. The plan had been carrying M3 as an unstated assumption.
-
-**What follows from the screw, with the source of each figure.** None of these
-is a preference and none was chosen by an agent:
+it.
 
 | Quantity | Value | Source |
 | --- | --- | --- |
-| 8-32 UNC major diameter | 4.166 mm (0.1640 in) | thread standard |
-| hole, free fit | **4.5 mm** (#16 drill, 0.1770 in) | clearance-hole standard |
-| hole, close fit, not used | 4.3 mm (#18 drill, 0.1695 in) | same |
-| envelope, from the washer | **11.51 mm** | #8 SAE flat washer, ASME B18.21.1-2009, OD nominal 7/16 in, maximum 0.453 in |
+| hole | **3.2 mm**, non-plated | the standard M3 clearance; `MountingHole:MountingHole_3.2mm_M3` is exactly this |
+| envelope, from the washer | **7.0 mm** | M3 flat washer, DIN 125 Type A / ISO 7089 - 3.2 mm ID, 7.0 mm OD |
 
-**Free fit rather than close fit, because there are four holes.** One hole could
-be a close fit. Four must align simultaneously with four standoffs carrying
-their own tolerance plus the fabricator's drill-position tolerance, and a close
-fit leaves 0.07 mm of radial slack on this screw to absorb all of it.
+When sourcing, two neighbours are easy to grab by mistake: **DIN 433 / ISO 7092**
+is the small series at 6.0 mm OD, **DIN 9021** the large series at 9.0 mm OD.
+Either changes the envelope.
 
-**The envelope is the washer's MAXIMUM OD, not its nominal**, because an
-envelope is a worst case and a conforming washer would exceed the nominal.
+**HE ASKED FOR 8-32 FIRST, AND THE REVERSAL IS THE PART WORTH KEEPING.** On being
+shown what the larger fastener cost - a 4.5 mm free-fit hole and an **11.51 mm**
+envelope from the #8 SAE washer, nearly double the M3 exclusion at each of four
+corners on a small board - he chose the smaller hole on the grounds above: he
+owns both sizes, and this board is for prototyping. **The durable rule is his
+reasoning, not the number**: on a prototype whose purpose is trying
+configurations, hardware that costs board area loses to hardware already in the
+drawer. An agent must not read this as a standing preference for M3 on boards
+that are not prototypes.
 
-**TWO MEASURED TRAPS THAT THIS ENTRY EXISTS TO STOP BEING REDISCOVERED**, both
-read off the installed KiCad 10.0.5 library rather than recalled:
+**ONE MEASURED TRAP THIS ENTRY EXISTS TO STOP BEING REDISCOVERED**, and the
+8-32 excursion is what exposed it: **a stock footprint's courtyard is not the
+envelope.** Every stock mounting-hole courtyard in the KiCad 10.0.5 library
+models the **screw head**, and heads are smaller than washers. For 8-32 the gap
+was 9.5 mm of courtyard against an 11.51 mm washer - **2 mm short, silently**,
+with every check still passing. For M3 it is 6.9 mm against 7.0 mm, which is
+why this board uses the stock footprint and takes its keepout from the washer
+instead of cutting a custom one. **Whether the gap matters is a property of the
+fastener, not of the library, so it is re-measured whenever the fastener
+changes** - this entry is not a finding that stock courtyards are fine.
 
-- **The stock footprint's courtyard is not the envelope.**
-  `MountingHole:MountingHole_4.5mm` is the right class - `np_thru_hole`, 4.5 mm
-  drill, correctly non-plated - but its courtyard is **9.5 mm**, 2 mm short of
-  the washer. Every stock mounting-hole courtyard in that library models the
-  **screw head**, and heads are smaller than washers. Adopting one delivers head
-  clearance where washer clearance was promised, **and every check passes**.
-  The board therefore uses a project-local footprint: 4.5 mm non-plated drill,
-  11.51 mm courtyard.
-- **`missing_courtyard` is in KiCad 10.0.5's DEFAULT ignored-checks set.** So a
-  mounting-hole footprint that reached the board with no courtyard at all raises
-  nothing, and the envelope check silently would not exist. This is why the
-  Phase 1 DRC reader validates the report's `ignored_checks` field.
-
-**What this does NOT settle, and it blocks nothing.** He specified the screw,
-not the standoff. If a standoff wider across corners than an 11.51 mm washer is
-fitted the envelope grows and the corner inset with it - a 5/16 in hex standoff
-is about 9.2 mm across corners and stays inside; a 3/8 in one does not. **The
-washer governs unless the hardware's `parts/` catalogue entry records a standoff
-that exceeds it**, and that comparison belongs in the entry, where it can carry
-sourcing evidence, rather than in a plan document.
+Related, and the reason the Phase 1 DRC reader validates the report's
+`ignored_checks` field: **`missing_courtyard` is in KiCad 10.0.5's DEFAULT
+ignored-checks set**, so a mounting-hole footprint reaching the board with no
+courtyard at all raises nothing, and the envelope check would silently not
+exist.
 
 **Where this is implemented** `docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md`,
 Task 3 (the fabrication standard's NPTH row), Task 7 Step 1 (the approved
-derivation rule, which carries the two diameters) and Task 8 Step 2 (the final
-coordinates and the project-local footprint).
+derivation rule, which carries both diameters) and Task 8 Step 2 (the final
+coordinates and the keepout).

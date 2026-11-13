@@ -274,7 +274,7 @@ Content, not a sketch - the project values with the vendor floor beside each, be
 | Drill, vias and PTH | >= 0.3 mm | 0.4 mm via drill; 0.3 mm minimum hole |
 | Annular ring | >= 0.15 mm | 0.2 mm (0.8 mm via pad on a 0.4 mm drill) |
 | Hole to hole | >= 0.4 mm | 0.5 mm |
-| Mounting holes (NPTH) | non-plated, no annular ring | 4.5 mm, free fit for the 8-32 screw (Task 7) |
+| Mounting holes (NPTH) | non-plated, no annular ring | 3.2 mm, the standard M3 clearance (Task 7) |
 | Copper to board edge | >= 0.25 mm | 0.5 mm |
 | Silkscreen text | stroke >= 0.15 mm, height >= 0.8 mm | stroke 0.15 mm, height 0.8 mm minimum |
 | Layers, material | 2-layer FR-4, standard thickness and copper | same |
@@ -494,18 +494,14 @@ Blocks from the circuit's own structure, which the model already names: supply d
 
 **The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough to hold the standard's copper-to-edge clearance around the full envelope, with the hole and envelope diameters taken from the fastener the owner specified. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
 
-**The fastener is an 8-32 screw**, the owner's instruction of 2026-11-13, recorded verbatim in `docs/known-gaps.md` **G311**. The two diameters that follow from it, and where each comes from:
+**The fastener is an M3 screw in the standard 3.2 mm hole**, the owner's instruction of 2026-11-13, recorded verbatim in `docs/known-gaps.md` **G311**. The two diameters that follow from it:
 
 | Quantity | Value | Source |
 | --- | --- | --- |
-| 8-32 UNC major diameter | 4.166 mm (0.1640 in) | thread standard |
-| hole, **free fit** | **4.5 mm** (#16 drill, 0.1770 in = 4.496 mm) | clearance-hole standard |
-| hole, close fit, **not used** | 4.3 mm (#18 drill, 0.1695 in = 4.305 mm) | same |
-| envelope, from the washer | **11.51 mm** | #8 SAE flat washer, ASME B18.21.1-2009, OD nominal 7/16 in, **maximum 0.453 in** |
+| hole | **3.2 mm**, non-plated | the standard M3 clearance; `MountingHole:MountingHole_3.2mm_M3` is exactly this |
+| envelope, from the washer | **7.0 mm** | M3 flat washer, DIN 125 Type A / ISO 7089 - 3.2 mm ID, 7.0 mm OD |
 
-**Free fit, not close fit, and the reason is that there are four of them.** A single hole could be a close fit. Four holes have to line up simultaneously with four standoffs whose own positions carry tolerance, on top of PCBWay's drill-position tolerance, and a close fit on this board's 4.166 mm screw leaves 0.07 mm of radial slack to absorb all of it. The free fit costs nothing and is what makes the board assemble.
-
-**The envelope is taken at the washer's MAXIMUM OD, not its nominal.** An envelope is a worst case by definition; sizing it to 11.11 mm nominal would be exceeded by a conforming washer.
+Beware the two neighbours when sourcing: **DIN 433 / ISO 7092** is the small series at 6.0 mm OD and **DIN 9021** is the large series at 9.0 mm OD. The envelope above is the ordinary DIN 125 washer, and fitting either of the others changes it.
 
 - [ ] **Step 2: Draft `placement-rules.json`**
 
@@ -535,17 +531,15 @@ Place against the approved intent to discover the extent the parts and their har
 
 - [ ] **Step 2: Fix the final geometry**
 
-Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four **8-32** holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - the washer's footprint, not a 4.5 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
+Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four **M3** holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - the washer's footprint, not a 3.2 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
 
-The two numbers, from Task 7's table: **4.5 mm** non-plated hole, **11.51 mm** envelope. So each hole centre sits at least **5.76 mm** from both edges it is near, and the copper keepout is a circle of 11.51 mm about it.
+The two numbers, from Task 7's table: **3.2 mm** non-plated hole, **7.0 mm** envelope. So each hole centre sits at least **3.5 mm** from both edges it is near, and the copper keepout is a circle of 7.0 mm about it.
 
-**This is a large exclusion and it is worth seeing before the board is sized.** Four corners at 11.51 mm are a materially bigger bite out of a small through-hole board than the M3 this plan previously assumed, whose envelope was around 6.9 mm. It is a direct consequence of the fastener, not of anything the layout chose, and it is the kind of thing that should surprise nobody at Step 3 when the regrade comes back tight.
+**Use the stock footprint. `MountingHole:MountingHole_3.2mm_M3` is correct here** - `np_thru_hole`, 3.2 mm drill, non-plated - and its courtyard, measured from the installed KiCad 10.0.5 library on 2026-11-13, is a circle of **6.9 mm** against the washer's 7.0 mm. A tenth of a millimetre. **Take the keepout Rule Area from the washer at 7.0 mm and leave the stock courtyard alone**; cutting a project-local footprint to recover 0.1 mm would be work this board cannot feel.
 
-**Do not reach for a stock footprint and call its courtyard the envelope.** Measured from the installed KiCad 10.0.5 library on 2026-11-13: `MountingHole:MountingHole_4.5mm` is the right *class* - `np_thru_hole`, 4.5 mm drill, correctly non-plated - but its courtyard is a circle of **9.5 mm**, which is 2 mm short of the washer. Every stock mounting-hole courtyard in that library models the screw head, and heads are smaller than washers. Adopting one would quietly deliver head clearance where this plan promises washer clearance, and every check would pass.
+**The reason that sentence is worth writing down is that the answer was different an hour earlier.** Under the 8-32 fastener this task briefly carried, the stock courtyard was 9.5 mm against an 11.51 mm washer - **2 mm short, and silently so**. Every stock mounting-hole courtyard in that library models the **screw head**, and heads are smaller than washers; whether that gap matters is a property of the fastener, not of the library. It happens not to matter for M3. **Check it again if the fastener ever changes**, rather than reading this paragraph as "stock courtyards are fine."
 
-So the envelope is sourced, not assumed: **the mounting hardware gets a `parts/` catalogue entry with sourcing evidence**, exactly as the PT2399 does in Task 2, recording the 8-32 screw and the #8 SAE washer with the ASME figure above. A **project-local** mounting-hole footprint then carries the 4.5 mm non-plated drill with an 11.51 mm courtyard.
-
-**One thing the owner's instruction does not settle, and it does not block this task.** He specified the screw. If a standoff larger across corners than an 11.51 mm washer is fitted, the envelope grows and the inset with it - a 5/16 in hex standoff measures about 9.2 mm across corners and stays inside; a 3/8 in one does not. The washer governs unless the catalogue entry records a standoff that exceeds it, and that comparison belongs in the entry rather than here.
+The hardware still gets a `parts/` catalogue entry with sourcing evidence, as in Task 2, recording the M3 screw and the DIN 125 washer. Its job here is to make the 7.0 mm figure checkable rather than remembered.
 
 - [ ] **Step 3: Regrade placement on the final geometry**
 
@@ -648,4 +642,4 @@ If it routed clean: the finding, and Phase 2 gets its own plan and spec section.
 
 **Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). Neither blocks starting.
 
-**Answered 2026-11-13, and it moved real numbers:** the mounting hardware. The owner specified an **8-32 screw** (`docs/known-gaps.md` **G311**), which sets a 4.5 mm free-fit non-plated hole and an 11.51 mm envelope from the #8 SAE washer - against the M3 and roughly 6.9 mm envelope this plan had been carrying. Tasks 3, 7 and 8 are updated. The residual, which does not block Task 8, is whether a standoff wider across corners than the washer is fitted; the washer governs until the catalogue entry says otherwise.
+**Answered 2026-11-13:** the mounting hardware. The owner settled on the **standard M3 hole** (`docs/known-gaps.md` **G311**) - 3.2 mm non-plated, with a 7.0 mm envelope from the DIN 125 washer. Tasks 3, 7 and 8 carry those two numbers. The assumption the plan had been making silently is now a recorded decision with a source, which is the part that was actually missing.
