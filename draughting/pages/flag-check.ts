@@ -21,7 +21,7 @@
  */
 import { readFileSync } from "node:fs"
 import { importNetlist } from "../../lib/kicad/netlist.ts"
-import { boardFromArgs } from "./board.ts"
+import { blockOf, boardFromArgs } from "./board.ts"
 import { flagHomes } from "./flag-homes.ts"
 
 const usage = "bun flag-check.ts <board-dir> <block> <probe-export.net> <expected-flag-count>"
@@ -35,10 +35,7 @@ if (!Number.isInteger(expected) || expected < 0) {
   throw new Error(`flag-check.ts: expected-flag-count must be a whole number; got "${expectedText}"`)
 }
 const homes = await flagHomes(board)
-const record = board.network.blocks.find((b) => b.prefix === block)
-if (record === undefined) {
-  throw new Error(`${board.modelName} has no block "${block}"`)
-}
+const record = blockOf(board, block)
 const ports: Readonly<Record<string, string>> = record.ports
 const exported = importNetlist(readFileSync(file, "utf8"))
 const probes = exported.components.map((c) => c.designator).filter((d) => d.startsWith("FLGPROBE")).sort()

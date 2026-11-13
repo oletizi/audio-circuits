@@ -16,7 +16,7 @@ import kicad_sheet  # noqa: E402
 sheet = kicad_sheet.read(sys.argv[1])
 symbols = sheet.symbols()
 # By lib_id, not by reference prefix: akcli names a PWR_FLAG `#PWR0n`, so a prefix test counted
-# the power page's two flags as power symbols (Task 7a review, M4).
+# the h7-module power page's two flags as power symbols (Task 7a review, M4).
 flags = [s for s in symbols if s.lib_id == "power:PWR_FLAG"]
 power = [s for s in symbols if s.lib_id.startswith("power:") and s.lib_id != "power:PWR_FLAG"]
 parts = [s for s in symbols if not s.lib_id.startswith("power:")]

@@ -15,7 +15,7 @@ sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
-from title_block import DATE  # noqa: E402
+import title_block  # noqa: E402
 from layout import TITLE, X_EAST, X_WEST, Y_3V3, Y_GND, Y_SIG  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -45,4 +45,4 @@ w.path("NRST", "U5.2", *[(w.x(t), Y_SIG) for t in nrst], (X_EAST, Y_SIG))
 for t in nrst:
     w.path("NRST", (w.x(t), Y_SIG), t)
 w.label("NRST", (X_EAST, Y_SIG), 0)
-print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, title_block, sys.argv[4]))

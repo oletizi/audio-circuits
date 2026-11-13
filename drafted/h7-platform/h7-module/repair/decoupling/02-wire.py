@@ -12,7 +12,7 @@ sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
-from title_block import DATE  # noqa: E402
+import title_block  # noqa: E402
 from layout import (TITLE, X_BOOT0, X_EAST, X_VREF, X_WEST, Y_3V3, Y_GND, Y_GND2, Y_LOWER)  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -48,4 +48,4 @@ w.label("BOOT0", (X_BOOT0, Y_LOWER), 180)
 w.path("GND", (X_EAST, Y_GND2), "TP4.1", "TP2.1", (w.x("C20.2"), Y_GND2), (w.x("C19.2"), Y_GND2))
 for c in ("C19.2", "C20.2"):
     w.path("GND", (w.x(c), Y_GND2), c)
-print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, title_block, sys.argv[4]))

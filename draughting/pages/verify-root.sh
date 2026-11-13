@@ -14,8 +14,9 @@
 #  5. ERC on the root, every sheet, with the .kicad_pro's exclusions, judged by root_erc.py against
 #     the declared allowances (the board's erc-allowances.ts).
 #  6. the paper: paper_fit.py must report "fits: yes", and root_sheets_fit.py must find every sheet
-#     symbol inside US Letter's inner frame and clear of the title block (the module's ruling
-#     CR-MODULE-ROOT-FITS-LETTER; paper_fit.py does not measure a sheet box).
+#     symbol inside US Letter's inner frame and clear of the title block (every C3 root is drawn on US Letter, `TOOLING.md` design change C3,
+#     "Multi-page drawing"; first ruled for the h7-module as CR-MODULE-ROOT-FITS-LETTER; paper_fit.py
+#     does not measure a sheet box).
 #  7. the rest of the draughting/measure suite on the root sheet, and counts, the sheets' page
 #     numbers (root_pages.py) and the committed render's drawn text (svg_stroked_text.py). Reported,
 #     never judged.

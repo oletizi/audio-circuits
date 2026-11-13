@@ -12,7 +12,7 @@ sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
-from title_block import DATE  # noqa: E402
+import title_block  # noqa: E402
 from layout import TITLE, X_EAST, X_WEST, Y_VREF, Y_VSSA  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -46,4 +46,4 @@ w.label("VSSA", (X_EAST, Y_VSSA), 0)
 # GND: R2's pin 2 west to its label, under 3V3_D's.
 w.path("GND", "R2.2", (X_WEST, Y_VSSA))
 w.label("GND", (X_WEST, Y_VSSA), 180)
-print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, title_block, sys.argv[4]))

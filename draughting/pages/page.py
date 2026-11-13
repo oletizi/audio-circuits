@@ -138,11 +138,17 @@ class Wiring:
     def label(self, name, at, rotation):
         self.labels.append((name, tuple(at), rotation))
 
-    def op_list(self, sheet_name, title, date, nets_out):
-        """The op-list; `title` and `date` go in the title block. The date is the board's own (each
-        board's `repair/tools/title_block.py` holds it), never today's, so a replay writes the same bytes."""
-        if not isinstance(date, str) or not date:
-            raise SystemExit(f"wire: the title block's date must be a non-empty string; got {date!r}")
+    def op_list(self, sheet_name, title, title_block, nets_out):
+        """The op-list; `title` (the page's) and the board's `title_block` module (its
+        `repair/tools/title_block.py`: DATE, REV, COMMENT1) fill the title block. Each is the board's
+        own datum, never computed here, so a replay writes the same bytes; a missing one refuses."""
+        block = {}
+        for name in ("DATE", "REV", "COMMENT1"):
+            value = getattr(title_block, name, None)
+            if not isinstance(value, str) or not value:
+                raise SystemExit(f"wire: the board's title_block.py must define {name} as a non-empty string "
+                                 f"(it is the board's title-block datum, not the tool's); got {value!r}")
+            block[name] = value
         ends = Counter()
         for a, b, _ in self.segments:
             ends[a] += 1
@@ -177,7 +183,7 @@ class Wiring:
                 raise SystemExit(f"wire: label {name} at {at} is not on exactly one wire end")
             # The label names the net of the wire it sits on. Without this, two one-pin ports' labels
             # could be swapped and every membership check would still pass (ruling
-            # CR-MODULE-PORT-LABEL-CHECK; verify.sh checks the same on the export).
+            # CR-MODULE-PORT-LABEL-CHECK, the h7-module's; verify.sh checks the same on the export).
             under = [net for a, b, net in self.segments if at in (a, b)]
             if under != [name]:
                 raise SystemExit(f"wire: label {name} at {at} sits on the end of a wire drawn for {under}; "
@@ -191,8 +197,8 @@ class Wiring:
         ops += [{"op": "add_no_connect", "pin": pin} for pin in self.no_connect_pins]
         for name, (lx, ly), rot in self.labels:
             ops.append({"op": "add_net_label", "name": name, "at": [lx, ly], "scope": "local", "rotation": rot})
-        ops.append({"op": "set_title_block", "title": title, "date": date, "rev": "A",
-                    "comment1": "generated - do not edit"})
+        ops.append({"op": "set_title_block", "title": title, "date": block["DATE"], "rev": block["REV"],
+                    "comment1": block["COMMENT1"]})
         pathlib.Path(nets_out).write_text(json.dumps(
             [[a[0], a[1], b[0], b[1], net] for a, b, net in self.segments], indent=0) + "\n")
         return op_list(sheet_name, ops)

@@ -5,7 +5,7 @@ is the one way it differs from the h7-carrier's `../../../h7-carrier/repair/erc_
 fails on any error since issue 32. Why: verify.sh runs it on the block sheet ALONE, and a block
 sheet alone carries `pin_not_connected` errors on its hierarchical labels ("cannot be connected to
 non-existent parent sheet"), which no repair of the block can remove. Not one per label in every
-case: the final review counted 31 such errors on the sdram page's 41 labels. The ERC verdict
+case: the h7-module's final review counted 31 such errors on its sdram page's 41 labels. The ERC verdict
 on a block page is `erc_sheets.py`'s, on the sheet under a one-block root
 (`erc-one-block-root.sh`), which does fail. This run is a printout for the record.
 

@@ -3,8 +3,8 @@ each placed power:PWR_FLAG carries the reference FLGPROBE<k>, so that `kicad-cli
 of the probe root lists every flag of the hierarchy and says which net each sits on. The whole-project
 form of `flag_probe.py` (which probes one sheet), for `hierarchy-flags.ts`.
 
-Why a probe: kicad-cli's export leaves out every `#` reference, and every flag here is one (#PWR0<n>
-on the power page, #FLG0<n> on the root). The copy is scratch, written to <out-dir>, never committed;
+Why a probe: kicad-cli's export leaves out every `#` reference, and every flag is one (on the h7-module,
+#PWR0<n> on the power page, #FLG0<n> on the root). The copy is scratch, written to <out-dir>, never committed;
 the project under check is not touched.
 
 Writes <out-dir>/probe-map.json: FLGPROBE<k> -> {"sheet": "root" or the block's Sheetname, "ref": the
@@ -12,7 +12,7 @@ flag's real reference}. Prints the number of flags.
 
 ALSO FAILS ON A `#` REFERENCE USED TWICE ACROSS THE HIERARCHY, naming it and its sheets, with exit
 status 3 AFTER the probe is written, so the flag check can still run and a run names both faults.
-kicad-cli's export warns "schematic has annotation errors" on one (measured, Task 7e: the root's
+kicad-cli's export warns "schematic has annotation errors" on one (measured on the h7-module, its Task 7e: the root's
 flags as akcli numbered them, #PWR01 to #PWR03, beside the power page's #PWR01 and #PWR02), and the
 export, which drops `#` references, cannot show which. Exit 1 is a probe that could not be written.
 

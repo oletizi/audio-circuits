@@ -1,5 +1,5 @@
-"""Tamper with a COPY of a block sheet's hierarchical labels, for erc-control.sh's port-label controls
-(ruling CR-MODULE-PORT-LABEL-CHECK). Never run on a committed page.
+"""Tamper with a COPY of a block sheet's hierarchical labels, for a board's port-label controls
+(first written for the h7-module's, under its ruling CR-MODULE-PORT-LABEL-CHECK). Never run on a committed page.
 
 Parses by parenthesis depth (quoted strings honoured), finds the top-level `(hierarchical_label "NAME"
 ...)` nodes, and either swaps the texts of two of them or deletes one. Refuses a name the sheet does

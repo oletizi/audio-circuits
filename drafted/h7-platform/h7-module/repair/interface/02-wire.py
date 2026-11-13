@@ -16,7 +16,7 @@ sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
-from title_block import DATE  # noqa: E402
+import title_block  # noqa: E402
 from layout import STUB, TEE, TITLE, Y_GND_BELOW  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -37,4 +37,4 @@ y_row = y1 + Y_GND_BELOW
 w.path("GND", "J1.20", (x1 - TEE, y1), (x1 - STUB, y1))
 w.label("GND", (x1 - STUB, y1), 180)
 w.path("GND", "J2.20", (x2 - TEE, y2), (x2 - TEE, y_row), (x1 - TEE, y_row), (x1 - TEE, y1))
-print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, title_block, sys.argv[4]))

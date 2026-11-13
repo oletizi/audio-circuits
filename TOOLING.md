@@ -1123,13 +1123,13 @@ variable - and reaches the board's model through `boards/<board>/perfboard.json`
 - `sh draughting/pages/render.sh <sheet> <out-dir> [<page> | root]`, and
   `sh draughting/pages/render-control.sh <board-dir> <block>`, its controls.
 - the repair steps a board's `replay.sh` runs: `ports.ts`, `net_strokes.py`, `place.py`, `pins.py`,
-  `text_edits.py` and `page.py` (`Wiring`, which takes the title block's date from the board), and,
+  `text_edits.py` and `page.py` (`Wiring`, which takes the title block's date, revision and comment from the board), and,
   for the root, `root-flags.ts`, `root_flag_refs.py` and `kicad-pro.ts`.
 
 **What stays with the board** is its data, in `<board-dir>/repair/tools/`: three declared tables,
 each under the ruling it names - `pwr-flag-homes.ts` (where each shared net's single PWR_FLAG
 lives), `cross-page-drivers.ts` (each signal net whose driver is on another page) and
-`erc-allowances.ts` (each ERC error a page's check excuses) - and `title_block.py` (the date its
+`erc-allowances.ts` (each ERC error a page's check excuses) - and `title_block.py` (the date, revision and comment its
 pages' title blocks carry). The shared tools hold every table to the model on every run. **A
 missing table is refused**, naming the file and why it is not defaulted: an empty table would be
 a claim about the board that nobody made. Also with the board are its CONTROLS, which name its

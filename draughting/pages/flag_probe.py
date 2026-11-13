@@ -2,7 +2,7 @@
 FLGPROBE<n>, so that `kicad-cli sch export netlist` lists it and says which net it sits on.
 
 Why a probe. kicad-cli's netlist export leaves out every symbol whose reference starts with `#`,
-and akcli names a PWR_FLAG `#PWR0n` (measured: the power page's export lists neither flag; the
+and akcli names a PWR_FLAG `#PWR0n` (measured: the h7-module power page's export lists neither flag; the
 probe copy's lists both, each as a node of its net). The copy is scratch and never committed; the
 sheet under check is not touched.
 

@@ -82,7 +82,7 @@ Task 7e, with the root and its `.kicad_pro`, and after Task 7e fix round 1, with
 
 Then, to check and look at a page (the tools are in `draughting/pages/` since the H7 pedal plan's
 Task 4, each given this board's drafted directory; `tools/` here keeps the module's tables, its
-title-block date and its controls):
+title-block data and its controls):
 
 ```
 sh draughting/pages/verify.sh drafted/h7-platform/h7-module <block> <sheet.kicad_sch>
@@ -120,7 +120,7 @@ sh drafted/h7-platform/h7-module/repair/tools/erc-control.sh     (every control,
 | `draughting/pages/erc-one-block-root.sh` | ERC on one block sheet under that root, judged by `erc_sheets.py`; called by `verify.sh` and by `tools/erc-control.sh` |
 | `tools/pwr-flag-homes.ts` (data) and `draughting/pages/flag-homes.ts` (logic) | the one table of where each shared module net's single PWR_FLAG lives (ruling CR-MODULE-PWR-FLAGS), and its reader |
 | `tools/cross-page-drivers.ts` (data) and `draughting/pages/cross-page-drivers.ts` (logic) | the one table of the module's signal nets whose driver is on another page (ruling CR-MODULE-CROSS-PAGE-DRIVERS), and its model check; `PAGES_CROSS_PAGE_DRIVERS_TABLE` is its announced test override |
-| `tools/title_block.py` | the date the module's pages' title blocks carry, which `draughting/pages/page.py`'s `Wiring.op_list` takes from each `<block>/02-wire.py` |
+| `tools/title_block.py` | the date, revision and first comment the module's pages' title blocks carry, which `draughting/pages/page.py`'s `Wiring.op_list` takes from each `<block>/02-wire.py` |
 | `draughting/pages/flag_probe.py`, `draughting/pages/flag-check.ts` | a probe copy whose PWR_FLAGs (found by lib_id) the `kicad-cli` export lists, and the check on that export failing a flag on a shared net whose flag lives elsewhere, naming the net |
 | `draughting/pages/flag_at_label.py`, `draughting/pages/strip_pwr_flags.py` | for `tools/erc-control.sh`'s controls: add a PWR_FLAG at a hierarchical label; remove every placed PWR_FLAG |
 | `tools/erc-control.sh` | the module's controls for `verify.sh`'s ERC and PWR_FLAG verdicts, each of which must come out as stated; control 13 runs `tools/port-label-control.sh`; controls 14 to 17 hold the VCAP allowance; control 18 runs `tools/root-control.sh`; control 19 runs `draughting/pages/render-control.sh` on reset_boot; control 20 isolates the allowance model check's pin-type, designator and same-pin refusals. It stays with the module because every control names its pages, nets, pins and rulings |
@@ -134,10 +134,10 @@ sh drafted/h7-platform/h7-module/repair/tools/erc-control.sh     (every control,
 | `draughting/pages/verify-root.sh`, `tools/root-control.sh` | the root's verification set, `sh draughting/pages/verify-root.sh <board-dir> [project-dir]` (fails on ERC, on `paper_fit.py` not reporting "fits: yes", and on a sheet box off the paper), and the module's ten controls for it; `tools/erc-control.sh` runs the controls as its control 18 |
 | `draughting/pages/root-netcompare.ts`, `root-drivers.ts`, `hierarchy_flag_probe.py`, `hierarchy-flags.ts`, `root_erc.py`, `root_tamper.py` | the root's export against the whole model; each cross-page driver entry on its net with its real driver; the whole-hierarchy PWR_FLAG check; the root's ERC verdict; and the scratch edits `tools/root-control.sh` makes |
 | `draughting/pages/root-flags.ts`, `draughting/pages/root_flag_refs.py`, `draughting/pages/kicad-pro.ts` | root steps 3, 4 and 6: the root-held PWR_FLAGs from `tools/pwr-flag-homes.ts`, their `#FLG0<n>` references, and the `.kicad_pro` from `tools/erc-allowances.ts` |
-| `draughting/pages/page.py` | the shared op-list writers for the Task 7b to 7d pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals, among them a port label on a wire drawn for another net; the title block's date is the board's, `tools/title_block.py`), and the field placements `layout.py` uses |
+| `draughting/pages/page.py` | the shared op-list writers for the Task 7b to 7d pages: `load_layout`, `place_ops` (op-list 01), `Wiring` (op-list 02, with its refusals, among them a port label on a wire drawn for another net; the title block's date, revision and comment are the board's, `tools/title_block.py`), and the field placements `layout.py` uses |
 | `draughting/pages/place.py`, `draughting/pages/text_edits.py` | op-list 01, and the direct text edits (strokes, fields, the group rectangle), for any Task 7b block, driven by its `layout.py` |
 | `draughting/pages/ports.ts` | a block's ports and the pins each reaches, from `drawingPages()` (`<block>/ports.json`) |
 | `<block>/layout.py`, Task 7b, 7c and 7d blocks | every part's position, rotation and mirror, the rows and columns its wiring uses, its field placements, group rectangle and title, and the stroke of any net the draft drew no wire for |
-| `<block>/02-wire.py`, Task 7b, 7c and 7d blocks | the block's wiring through `draughting/pages/page.py`'s `Wiring`, with the date from `tools/title_block.py` |
+| `<block>/02-wire.py`, Task 7b, 7c and 7d blocks | the block's wiring through `draughting/pages/page.py`'s `Wiring`, with the title-block data from `tools/title_block.py` |
 | `<block>/ports.json`, `net_strokes.json`, `01-place.json`, `pins.json`, `02-wire.json`, `02-wire.nets.json`, `04-hierarchical-labels.json`, Task 7b, 7c and 7d blocks | generated by the steps above; checked by the replay |
 | `replay.sh` | the replay above |

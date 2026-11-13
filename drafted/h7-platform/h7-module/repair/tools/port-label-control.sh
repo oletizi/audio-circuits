@@ -72,7 +72,7 @@ w.path("A", "R1.1", (500, 0))
 w.path("B", "R2.1", (500, 1000))
 w.label("B", (500, 0), 0)
 w.label("A", (500, 1000), 0)
-w.op_list("x.kicad_sch", "x", "2026-11-12", f"{sys.argv[2]}/nets.json")
+w.op_list("x.kicad_sch", "x", type("TitleBlock", (), {"DATE": "2026-11-12", "REV": "A", "COMMENT1": "x"}), f"{sys.argv[2]}/nets.json")
 PY
 then
   cat "$work/wiring.log" >&2; bad "Wiring.op_list accepted labels A and B swapped"

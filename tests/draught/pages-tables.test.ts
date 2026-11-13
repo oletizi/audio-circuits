@@ -55,6 +55,14 @@ test("without pwr-flag-homes.ts, the tool that reads it (flag-check.ts) refuses 
   expect(out).toContain(`${join(dir, "repair", "tools", "pwr-flag-homes.ts")} does not exist`)
 })
 
+test("without erc-allowances.ts, the CLI the shell scripts run (erc-allowances.ts <board-dir> <out>) refuses, naming the file", () => {
+  const dir = boardWithout("erc-allowances-cli", "erc-allowances.ts")
+  const { status, out } = run(["draughting/pages/erc-allowances.ts", dir, join(scratch, "unwritten.json")])
+  expect(status).not.toBe(0)
+  expect(out).toContain(`${join(dir, "repair", "tools", "erc-allowances.ts")} does not exist. erc-allowances.ts is board h7-module's declared table of`)
+  expect(out).toContain("It is not defaulted")
+})
+
 test("a directory with no boards/<name>/perfboard.json is refused, naming the declaration", () => {
   const dir = join(scratch, "no-board", "not-a-board")
   mkdirSync(dir, { recursive: true })

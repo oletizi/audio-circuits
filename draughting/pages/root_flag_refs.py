@@ -1,15 +1,15 @@
-"""Give the h7-module ROOT's PWR_FLAGs references no other sheet of the hierarchy uses: #FLG01,
+"""Give a board ROOT's PWR_FLAGs references no other sheet of the hierarchy uses: #FLG01,
 #FLG02, ... in file order, in place of the #PWR0<n> akcli writes.
 
-Why (Task 7e, the parked minor "duplicate #PWR references across sheets"). akcli numbers #PWR0<n>
+Why (the h7-module's Task 7e, where this was first written: the parked minor "duplicate #PWR references across sheets"). akcli numbers #PWR0<n>
 per SHEET (`akcli/writers/instances.py`: one past the highest #PWR0<n> already in that sheet), so
-the root's three flags came out #PWR01 to #PWR03 while the power page's two are #PWR01 and #PWR02.
+the root's three flags came out #PWR01 to #PWR03 while the module's power page's two are #PWR01 and #PWR02.
 MEASURED with kicad-cli 10.0.5 on the assembled root: with those references, `kicad-cli sch export
 netlist` prints "Warning: schematic has annotation errors, please use the schematic editor to fix
 them"; the same root without its flags prints nothing, and the two exports are identical apart from
 their (source) line (an export leaves out every `#` reference). ERC reported no violation for it in
 either case. A warning that something is wrong with the drawing's annotation is a warning nobody
-should have to learn to ignore, and the power page is approved, so it is the root that renumbers.
+should have to learn to ignore, and a block page may already be approved (the module's power page was), so it is the root that renumbers.
 "#FLG" is the reference prefix KiCad's own `power:PWR_FLAG` symbol carries.
 
 akcli 0.22.0 has no operation that sets a reference, so this is a direct text edit, like the block

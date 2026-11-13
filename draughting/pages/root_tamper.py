@@ -1,4 +1,5 @@
-"""Scratch edits for root-control.sh's controls on a COPY of the h7-module project. Never run on the
+"""Scratch edits for a board's root controls (first written for the h7-module's root-control.sh) on a
+COPY of the board's project. Never run on the
 committed files: each mode refuses a path under drafted/.
 
 Modes:
@@ -15,7 +16,7 @@ Modes:
       from the rest of its net on the root.
   move-sheet <root.kicad_sch> <sheet-name> <dy-mm>
       move that sheet symbol's box (its (at), nothing else) <dy-mm> south; its pins, stubs and labels
-      stay where they were. For the paper-fit control (CR-MODULE-ROOT-FITS-LETTER).
+      stay where they were. For the paper-fit control (the US Letter rule of `TOOLING.md`, design change C3).
 
 Labels and symbols are found through `draughting/measure/kicad_sheet.py`'s parser, never by a line
 pattern; numbers are compared as numbers.

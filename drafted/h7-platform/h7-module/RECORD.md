@@ -20,7 +20,7 @@ Each now takes this board's drafted directory first, which is where it reads the
 drafted/h7-platform/h7-module <block> <sheet>`, `sh draughting/pages/verify-root.sh
 drafted/h7-platform/h7-module`. A command written below in the older form, `verify.sh <block> <sheet>`,
 is the same check. `repair/tools/` keeps what is the module's own: the three tables
-(`pwr-flag-homes.ts`, `cross-page-drivers.ts`, `erc-allowances.ts`), the title-block date
+(`pwr-flag-homes.ts`, `cross-page-drivers.ts`, `erc-allowances.ts`), the title-block data
 (`title_block.py`), and the controls (`erc-control.sh`, `root-control.sh`, `port-label-control.sh`),
 which name its pages, nets and pins. The move changed no page byte: the replay reached every sha256
 below, and every control came out as stated.

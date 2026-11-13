@@ -1,11 +1,12 @@
-"""The verdict on the h7-module ROOT's ERC, every sheet together, read from a kicad-cli ERC JSON report
-run on the committed project (the root sheet with its `.kicad_pro` beside it).
+"""The verdict on a board's ROOT ERC, every sheet together, read from a kicad-cli ERC JSON report
+run on the committed project (the root sheet with its `.kicad_pro` beside it). First written for the
+h7-module's root (H7 module plan, Task 7e).
 
-kicad-cli 10.0.5 HONOURS the `.kicad_pro`'s `erc_exclusions` (measured, Task 7e; `kicad-pro.ts` has
+kicad-cli 10.0.5 HONOURS the `.kicad_pro`'s `erc_exclusions` (measured on the h7-module's root, its Task 7e; `kicad-pro.ts` has
 the measurement): a violation an exclusion matches is reported with `"excluded": true`, and an
 exclusion that matches nothing is reported as a separate excluded marker while the real violation
 stays an error. So excluded entries are read here and held to the declared allowances
-(`erc-allowances.ts`, ruling CR-MODULE-VCAP-ERC) by the exact match `erc_match.py` defines and
+(the board's `erc-allowances.ts`; the h7-module's is under ruling CR-MODULE-VCAP-ERC) by the exact match `erc_match.py` defines and
 `erc_sheets.py` shares - the sheet path, the type, and exactly the two (designator, pin) pairs
 parsed from KiCad's items - rather than trusting the project file.
 
@@ -19,7 +20,7 @@ Warnings never fail; they are printed per sheet and in total by type. Known limi
 plan, Task 7d review): they are counted, not bounded, so a new warning type passes here; RECORD.md's
 root measurement table itemises today's by type, and a change shows as a disagreement with it.
 
-Ruling CR-MODULE-CROSS-PAGE-DRIVERS asks that the real root clear every table net with its real
+A board's cross-page driver table (the h7-module's ruling CR-MODULE-CROSS-PAGE-DRIVERS) asks that the real root clear every table net with its real
 driver: a `pin_not_driven` anywhere is an error and fails here, and the driving pin's net is checked
 by `root-drivers.ts` on the export.
 

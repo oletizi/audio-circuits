@@ -6,7 +6,7 @@
 # directories with the same .kicad_pro (TOOLING.md step 3), since the title block prints the file
 # name and the render depends on the project file.
 #
-# A ROOT sheet exports as one PDF page per sheet of its hierarchy (the h7-module root: 13), so
+# A ROOT sheet exports as one PDF page per sheet of its hierarchy (13 for the h7-module's root), so
 # rendering it needs a page: the optional third argument is a KiCad page number, passed to
 # kicad-cli's --pages for the PDF and the SVG alike (but see the Sheet: check below: the SVG export
 # ignores --pages for a sub-sheet page, and such a page is refused), or `root`, which is read from the sheet's own
