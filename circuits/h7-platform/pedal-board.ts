@@ -34,6 +34,7 @@ import { saiIsoBlock } from "./pedal/sai-iso.ts"
 import { exprRefBlock } from "./pedal/expr-ref.ts"
 import { controlsABlock, controlsBBlock } from "./pedal/controls.ts"
 import { fswLedBlock } from "./pedal/fsw-led.ts"
+import { usbBlock } from "./pedal/usb.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -56,6 +57,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["controls_a", controlsABlock, "Control positions 1-3"],
   ["controls_b", controlsBBlock, "Control positions 4-6"],
   ["fsw_led", fswLedBlock, "Footswitches and LEDs"],
+  ["usb", usbBlock, "USB-C and isolation switch"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -82,7 +84,7 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
   // Until Task 8 (digital and controls group).
-  "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
+  "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
   "RELAY_EN",
 ].map(contractNet)
@@ -167,6 +169,9 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   fsw_led_j_fsw2: "J6", fsw_led_r_fsw_pu2: "R72", fsw_led_c_fsw2: "C56", fsw_led_r_fsw2: "R73",
   fsw_led_led1: "D10", fsw_led_r_led1: "R74", fsw_led_q_led1: "Q7", fsw_led_r_led1_g: "R75", fsw_led_r_led1_pd: "R76",
   fsw_led_led2: "D11", fsw_led_r_led2: "R77", fsw_led_q_led2: "Q8", fsw_led_r_led2_g: "R78", fsw_led_r_led2_pd: "R79",
+  // usb
+  usb_j_usb: "J7", usb_r_cc1: "R80", usb_r_cc2: "R81", usb_r_shld: "R82", usb_c_shld: "C57", usb_u_esd: "U14", usb_c_vbus: "C58",
+  usb_u_usbsw: "U15", usb_r_usben: "R83", usb_c_usbsw: "C59", usb_r_vbus_top: "R84", usb_r_vbus_bot: "R85", usb_c_vbus_sense: "C60",
 }
 
 /** One page per block (design change C3). */
