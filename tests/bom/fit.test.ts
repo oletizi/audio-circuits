@@ -254,3 +254,30 @@ test("panel pot: only value and taper are checked, nothing physical", () => {
   const wrongOhms = misfits(PANEL_POT_LINE, entry({ kind: "potentiometer", specs: { ohms: 10_000, taper: "linear" } }))
   expect(wrongOhms).toEqual([{ field: "ohms", needed: "25000", found: "10000" }])
 })
+
+const DIP_LINE: BomLine = {
+  key: "ic PT2399 DIP-16_W7.62mm",
+  placement: "on-board",
+  designators: ["U1"],
+  quantity: 1,
+  kind: "ic",
+  partType: "PT2399",
+  physical: { kind: "dip", pins: 16, rowSpacingMm: 7.62, pitchMm: 2.54 },
+}
+
+test("dip: pins, row spacing and pitch must all equal; a wrong row spacing is a misfit by name", () => {
+  const ok = misfits(DIP_LINE, entry({
+    kind: "ic", specs: { type: "PT2399", pins: 16, rowSpacingMm: 7.62, pitchMm: 2.54 },
+  }))
+  expect(ok).toEqual([])
+
+  const wrongRows = misfits(DIP_LINE, entry({
+    kind: "ic", specs: { type: "PT2399", pins: 16, rowSpacingMm: 15.24, pitchMm: 2.54 },
+  }))
+  expect(wrongRows).toEqual([{ field: "rowSpacingMm", needed: "7.62", found: "15.24" }])
+
+  const unstated = misfits(DIP_LINE, entry({
+    kind: "ic", specs: { type: "PT2399", pins: 16, pitchMm: 2.54 },
+  }))
+  expect(unstated.map((m) => m.field)).toEqual(["rowSpacingMm"])
+})

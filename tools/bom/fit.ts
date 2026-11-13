@@ -92,6 +92,10 @@ function physicalMisfits(line: BomLine, specs: Specs): readonly Misfit[] {
   } else if (physical.kind === "pin-header") {
     push(checkEqual("pins", physical.pins, specs.pins))
     push(checkEqual("pitchMm", physical.pitchMm, specs.pitchMm))
+  } else if (physical.kind === "dip") {
+    push(checkEqual("pins", physical.pins, specs.pins))
+    push(checkEqual("rowSpacingMm", physical.rowSpacingMm, specs.rowSpacingMm))
+    push(checkEqual("pitchMm", physical.pitchMm, specs.pitchMm))
   }
   // physical.kind === "panel-pot": value and taper only, checked below regardless of
   // physical kind - nothing further to check here.

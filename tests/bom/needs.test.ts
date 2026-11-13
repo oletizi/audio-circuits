@@ -173,3 +173,38 @@ test("a resistor missing from the dissipation map throws", () => {
   const circuit = boardCircuitFrom({ components, ports: {} }, { undissipated_resistor: "R1" }, {})
   expect(() => deriveNeeds(circuit, 24, new Map())).toThrow(/"undissipated_resistor"/)
 })
+
+function dipIc(id: string, mpn: string, footprint: string): Component {
+  return {
+    id, kind: "ic", parameters: {}, part: { mpn, footprint }, pins: {},
+    units: [{ name: "MAIN", pins: { "1": net("X") } }],
+  }
+}
+
+test("an ic derives one line carrying its DIP physical, designator and part type", () => {
+  const footprint = "Package_DIP:DIP-16_W7.62mm"
+  const circuit = boardCircuitFrom({ components: [dipIc("delay_ic", "PT2399", footprint)], ports: {} }, { delay_ic: "U1" }, {})
+  const lines = deriveNeeds(circuit, 24, new Map())
+  expect(lines).toHaveLength(1)
+  expect(lines[0]).toMatchObject({
+    key: "ic PT2399 DIP-16_W7.62mm", kind: "ic", designators: ["U1"], quantity: 1,
+    partType: "PT2399", placement: "on-board",
+    physical: { kind: "dip", pins: 16, rowSpacingMm: 7.62, pitchMm: 2.54 },
+  })
+})
+
+test("an ic with no footprint is refused naming it", () => {
+  const bare: Component = { ...dipIc("delay_ic", "PT2399", "x"), part: { mpn: "PT2399" } }
+  const circuit = boardCircuitFrom({ components: [bare], ports: {} }, { delay_ic: "U1" }, {})
+  expect(() => deriveNeeds(circuit, 24, new Map())).toThrow(/"delay_ic"/)
+})
+
+test("two ics of one part type and footprint share one line", () => {
+  const footprint = "Package_DIP:DIP-16_W7.62mm"
+  const circuit = boardCircuitFrom(
+    { components: [dipIc("a_ic", "PT2399", footprint), dipIc("b_ic", "PT2399", footprint)], ports: {} },
+    { a_ic: "U1", b_ic: "U2" }, {})
+  const lines = deriveNeeds(circuit, 24, new Map())
+  expect(lines).toHaveLength(1)
+  expect(lines[0]?.designators).toEqual(["U1", "U2"])
+})

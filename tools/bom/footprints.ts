@@ -29,13 +29,16 @@ const TO92_INLINE = "Package_TO_SOT_THT:TO-92_Inline"
 const TRIMMER_RM065 = "Potentiometer_THT:Potentiometer_Runtron_RM-065_Vertical"
 const PIN_HEADER = /^Connector_PinHeader_2\.54mm:PinHeader_1x([0-9]+)_P2\.54mm_Vertical$/
 const PIN_HEADER_PITCH_MM = 2.54
+const DIP = /^Package_DIP:DIP-([0-9]+)_W([0-9]+(?:\.[0-9]+)?)mm$/
+const DIP_PITCH_MM = 2.54
 
 const KNOWN_FOOTPRINTS =
   "Resistor_THT:R_Axial_DIN0207_*_P<p>mm_* (axial resistor), " +
   "Capacitor_THT:CP_Radial_D<d>mm_P<p>mm (radial electrolytic), " +
   "Capacitor_THT:C_Disc_D<d>mm_W<w>mm_P<p>mm (non-polarised two-lead capacitor), " +
   `${TO92_INLINE} (TO-92), ${TRIMMER_RM065} (trimmer), ` +
-  "Connector_PinHeader_2.54mm:PinHeader_1x<n>_P2.54mm_Vertical (pin header)"
+  "Connector_PinHeader_2.54mm:PinHeader_1x<n>_P2.54mm_Vertical (pin header), " +
+  "Package_DIP:DIP-<n>_W<w>mm (dual-in-line package)"
 
 function parseMm(text: string, footprint: string, what: string): number {
   const value = Number(text)
@@ -106,6 +109,15 @@ export function physicalFor(footprint: string, component: Component, pinNumbers:
   const header = PIN_HEADER.exec(footprint)
   if (header !== null) {
     return { kind: "pin-header", pins: Number(header[1]), pitchMm: PIN_HEADER_PITCH_MM }
+  }
+  const dip = DIP.exec(footprint)
+  if (dip !== null) {
+    return {
+      kind: "dip",
+      pins: Number(dip[1]),
+      rowSpacingMm: parseMm(dip[2], footprint, "row spacing"),
+      pitchMm: DIP_PITCH_MM,
+    }
   }
   throw new Error(
     `component "${component.id}": footprint "${footprint}" is not one of the footprints ` +

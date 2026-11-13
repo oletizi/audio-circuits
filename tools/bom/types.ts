@@ -25,6 +25,13 @@ export type Physical =
   | { readonly kind: "to92"; readonly pinOrder: readonly string[] }
   | { readonly kind: "trimmer"; readonly package: "RM-065" }
   | { readonly kind: "pin-header"; readonly pins: number; readonly pitchMm: number }
+  /**
+   * A dual-in-line package. `rowSpacingMm` is the footprint's `W` - the distance
+   * between the two pad rows - which a DIP datasheet states and a socket must match.
+   * Body length has NO field: it follows from the pin count at this pitch, so a
+   * number nothing independently checks is deliberately absent.
+   */
+  | { readonly kind: "dip"; readonly pins: number; readonly rowSpacingMm: number; readonly pitchMm: number }
   | { readonly kind: "panel-pot" }
 
 /** One line of a board's derived needs: a requirement shared by every designator it covers. */

@@ -60,3 +60,10 @@ test("panel pot: value, taper and placement", () => {
     physical: { kind: "panel-pot" },
   }))).toBe("25K, log, panel pot")
 })
+
+test("DIP: the part number, pin count, row spacing and pitch", () => {
+  expect(needsText(line({
+    kind: "ic", partType: "PT2399",
+    physical: { kind: "dip", pins: 16, rowSpacingMm: 7.62, pitchMm: 2.54 },
+  }))).toBe("PT2399, DIP-16, 7.62 mm rows, 2.54 mm pitch")
+})

@@ -90,3 +90,23 @@ test("an unrecognised footprint throws, naming it", () => {
   expect(() => physicalFor("Capacitor_SMD:C_0805_2012Metric", resistor("c9"), {}))
     .toThrow(/Capacitor_SMD:C_0805/)
 })
+
+const DIP16_FOOTPRINT = "Package_DIP:DIP-16_W7.62mm"
+
+function dipIc(footprint: string): Component {
+  return {
+    id: "delay_ic", kind: "ic", parameters: {}, part: { footprint },
+    pins: {}, units: [{ name: "MAIN", pins: {} }],
+  }
+}
+
+test("a DIP footprint yields its pin count, row spacing and pitch", () => {
+  expect(physicalFor(DIP16_FOOTPRINT, dipIc(DIP16_FOOTPRINT), {})).toEqual({
+    kind: "dip", pins: 16, rowSpacingMm: 7.62, pitchMm: 2.54,
+  })
+})
+
+test("a DIP footprint with a malformed name is still refused, naming it", () => {
+  const bad = "Package_DIP:DIP-16_Wwide"
+  expect(() => physicalFor(bad, dipIc(bad), {})).toThrow(/Package_DIP:DIP-16_Wwide/)
+})

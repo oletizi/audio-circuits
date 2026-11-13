@@ -24,7 +24,7 @@ import type { BomLine, Physical } from "./types.ts"
 
 /** Kinds this table has no rule for; a board using one of these is refused rather than guessed at. */
 const UNSUPPORTED_KINDS: ReadonlySet<ComponentKind> = new Set([
-  "switch", "diode", "inductor", "photoresistor", "opamp", "ic",
+  "switch", "diode", "inductor", "photoresistor", "opamp",
 ])
 
 function isResistor(component: Component): component is ResistorComponent {
@@ -216,24 +216,18 @@ function potentiometerInput(component: PotentiometerComponent): LineInput {
   }
 }
 
-function connectorInput(component: Component, pinNumbers: BoardCircuit["pinNumbers"]): LineInput {
+/**
+ * A packaged part whose line is identified by kind, value, part type and footprint, with
+ * no electrical rating of its own to derive - a transistor, a connector, an IC.
+ *
+ * ONE function rather than three identical ones. `bjtInput` and `connectorInput` were
+ * byte-identical bodies, and the `ic` rule would have been a third copy.
+ */
+function packagedPartInput(component: Component, pinNumbers: BoardCircuit["pinNumbers"]): LineInput {
   const footprint = footprintOf(component)
-  const value = valueFor(component)
-  const partType = component.part?.mpn
   return {
-    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, partType,
-    physical: physicalFor(footprint, component, pinNumbers),
-  }
-}
-
-function bjtInput(component: Component, pinNumbers: BoardCircuit["pinNumbers"]): LineInput {
-  const footprint = footprintOf(component)
-  const value = valueFor(component)
-  const partType = component.part?.mpn
-  return {
-    key: lineKey(component.kind, value, undefined, partType, footprintName(footprint)),
-    placement: "on-board", kind: component.kind, partType,
+    key: lineKey(component.kind, valueFor(component), undefined, component.part?.mpn, footprintName(footprint)),
+    placement: "on-board", kind: component.kind, partType: component.part?.mpn,
     physical: physicalFor(footprint, component, pinNumbers),
   }
 }
@@ -277,12 +271,8 @@ export function deriveNeeds(
       addToGroup(groups, ref, potentiometerInput(component))
       continue
     }
-    if (component.kind === "bjt") {
-      addToGroup(groups, ref, bjtInput(component, circuit.pinNumbers))
-      continue
-    }
-    if (component.kind === "connector") {
-      addToGroup(groups, ref, connectorInput(component, circuit.pinNumbers))
+    if (component.kind === "bjt" || component.kind === "connector" || component.kind === "ic") {
+      addToGroup(groups, ref, packagedPartInput(component, circuit.pinNumbers))
       continue
     }
     // assertSupportedKind above only rules out UNSUPPORTED_KINDS; every ComponentKind is one of

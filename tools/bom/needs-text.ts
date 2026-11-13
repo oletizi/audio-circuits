@@ -32,6 +32,8 @@ function physicalText(physical: Physical): string {
       return `${physical.package} trimmer`
     case "pin-header":
       return `${physical.pins}-pin ${physical.pitchMm} mm header`
+    case "dip":
+      return `DIP-${physical.pins}, ${physical.rowSpacingMm} mm rows, ${physical.pitchMm} mm pitch`
     case "panel-pot":
       return "panel pot"
   }

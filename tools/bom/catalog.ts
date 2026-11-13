@@ -52,6 +52,8 @@ export interface Specs {
   readonly pinout?: readonly string[]
   readonly pins?: number
   readonly pitchMm?: number
+  /** A DIP's distance between its two pad rows (the footprint's `W`), as its datasheet states it. */
+  readonly rowSpacingMm?: number
   readonly taper?: "linear" | "log"
   /** An active device's type (bjt, diode, opamp, ic), e.g. "2N3904" or "TL072" - what the
    * circuit's part number is compared with. `mpn` stays the real order code (e.g.
@@ -64,7 +66,7 @@ export interface Specs {
  * for `ALL_KINDS`. */
 const SPEC_KEY_LIST = [
   "ohms", "farads", "tolerancePercent", "volts", "watts", "leadSpacingMm", "diameterMm",
-  "package", "pinout", "pins", "pitchMm", "taper", "type",
+  "package", "pinout", "pins", "pitchMm", "rowSpacingMm", "taper", "type",
 ] as const
 
 function everySpecKey<T extends readonly (keyof Specs)[]>(
@@ -221,6 +223,7 @@ function parseSpecs(value: unknown, where: string): Specs {
     pinout: optionalStringArray(record["pinout"], "specs.pinout", where),
     pins: optionalFiniteNumber(record["pins"], "specs.pins", where),
     pitchMm: optionalFiniteNumber(record["pitchMm"], "specs.pitchMm", where),
+    rowSpacingMm: optionalFiniteNumber(record["rowSpacingMm"], "specs.rowSpacingMm", where),
     taper: optionalTaper(record["taper"], "specs.taper", where),
     type: optionalNonEmptyString(record["type"], "specs.type", where),
   }
