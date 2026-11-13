@@ -2225,7 +2225,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 ### CR-PEDAL-LM66100-ST-ERC
 
 **The expr_ref page's one `pin_to_pin` error, between U12's ST and the PWR_FLAG on GND, is admitted as one declared ERC allowance whose partner is the flag; the project symbol is kept.**
-- **Label:** Controller ruling (the owner may override). Drafted by the h7 pedal pages plan's Task 9b implementer, on the expr_ref page's verify failure, for the controller to adopt or reject.
+- **Label:** Controller ruling (the owner may override). Drafted by the h7 pedal pages plan's Task 9b implementer, on the expr_ref page's verify failure; adopted by the controller, 2026-11-13.
 - **Date:** 2026-11-13.
 - **Decides:**
   - U_REFBLK's ST (U12 pin 5) on GND is the documented circuit: "ST and N/C to GND" ([analog.md](analog.md) line 314; `circuits/h7-platform/pedal/expr-ref.ts`). ST is TI's open-drain status output (SLVSEZ8A p. 3, Pin Functions; `circuits/h7-platform/pedal-pin-tables.ts`, LM66100), so the project symbol types it `open_collector` ([CR-PEDAL-SYMBOL-LM66100](#cr-pedal-symbol-lm66100); [CR-PEDAL-PIN-MATCH](#cr-pedal-pin-match), clause 5). GND carries the pedal's one PWR_FLAG, on the root (`drafted/h7-platform/h7-pedal/repair/tools/pwr-flag-homes.ts`; [CR-MODULE-PWR-FLAGS](#cr-module-pwr-flags)), and KiCad's pin matrix makes an open-collector pin on a net with a power output an error. Under the page's one-block root, `/expr_ref/` reported exactly that, and nothing else of error severity: `pin_to_pin` between "Symbol U12 Pin 5 [ST, Open collector, Line]" and "Symbol #PWR01 Pin 1 [Power output, Line]", the root's stub flag on GND. The error comes from the pin typing, not from the circuit.
@@ -2234,7 +2234,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
   - The project symbol is kept. No retyped ST, which would depart from the data sheet's reading under CR-PEDAL-PIN-MATCH.
 - **Why:** no wiring of an `open_collector` pin on a net that carries a PWR_FLAG avoids the error, and GND needs its flag: U12's GND (pin 2), U13's VSS and other pedal pins on GND are `power_in`, and nothing on the pedal's GND is a power output.
 - **Costs if wrong:** the owner wants ST retyped (a project-symbol change and a redraw of the expr_ref page, removing this allowance) or ST left open (a model and page change, and a reading of analog.md line 314 reversed). The shared tools' PWR_FLAG partner would then have no user, and should go.
-- **Set by:** drafted by the Task 9b implementer; awaiting the controller.
+- **Set by:** drafted by the Task 9b implementer; adopted by the controller, which checked line 314's "ST and N/C to GND" against the page and found the alternatives each depart from a source (a retyped ST from the data sheet, an open ST from analog.md).
 - **Carried in:** `drafted/h7-platform/h7-pedal/repair/tools/erc-allowances.ts`; `draughting/pages/erc-allowances.ts`, `erc_match.py`, `kicad-pro.ts`; `drafted/h7-platform/h7-pedal/repair/tools/erc-control.sh`.
 
 ## What this document does not carry
