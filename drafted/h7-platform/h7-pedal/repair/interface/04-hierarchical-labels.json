@@ -1,0 +1,497 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "interface.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "713ed555-ef9d-518d-8a94-2295f22383e8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    6800,
+    5000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "113d934c-82db-5d37-9501-a5b40b5483d3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_BCK",
+   "at": [
+    6800,
+    4700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "0bec9801-0636-5fb7-bd6f-d499ca0ffbc9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DIN",
+   "at": [
+    6800,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f1d8a31a-9f9e-56e9-b110-51d88608f9c1"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_DOUT",
+   "at": [
+    6800,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b2bae965-3d14-5dea-a33b-f5f22c5a56d4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_LRCK",
+   "at": [
+    6800,
+    4600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "11f9c98c-b78d-5dd4-821a-ea8547955a27"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_DETECT",
+   "at": [
+    6800,
+    4200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7dda244e-9402-5787-b193-8badd044d07d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXPR_TIP",
+   "at": [
+    6800,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c4c8d42b-e114-5783-9dd6-5fa7c96a326c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SCL",
+   "at": [
+    4200,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6499ab8f-4ad3-5432-bbd9-66f7cd024470"
+  },
+  {
+   "op": "add_net_label",
+   "name": "EXP_I2C_SDA",
+   "at": [
+    4200,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "731138c5-8170-50ba-8ae0-0c257daa6544"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW1",
+   "at": [
+    4200,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "fc70c58c-926d-57a3-ab07-4d92197ecc0b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW2",
+   "at": [
+    4200,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "9f5f121c-42d5-5c58-9172-ea8cc424ed02"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    4200,
+    5200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6ede522b-e366-5a6a-b196-0e56df797ce6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "HW_REV",
+   "at": [
+    6800,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f17f0cfe-8994-5cf1-b350-fb7f81541b02"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED1",
+   "at": [
+    4200,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "48e2b667-f57c-5348-a0bd-b60774184908"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED2",
+   "at": [
+    4200,
+    3600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c8f2dae2-ea66-5050-b1b0-9bfa6ffb9c24"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_RX",
+   "at": [
+    4200,
+    4700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "677a7e23-d744-5531-aa2d-03d96edaf874"
+  },
+  {
+   "op": "add_net_label",
+   "name": "MIDI_UART_TX",
+   "at": [
+    4200,
+    4600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "27e978b5-c681-5af2-88c8-edbc63ab8d75"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS1",
+   "at": [
+    6800,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b8bdfe30-0004-5b0a-a461-1c7f65a6aa46"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS2",
+   "at": [
+    6800,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8d0a59a9-fcf7-5837-8a1b-291cc26ecfc2"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS3",
+   "at": [
+    6800,
+    3600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c315f947-6fbf-5967-8373-00560609fae8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS4",
+   "at": [
+    6800,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7579f34f-da0b-5ccc-8885-7cdd76b31bdb"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS5",
+   "at": [
+    6800,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "708fafd3-843f-5334-88b0-6013a74715c4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS6",
+   "at": [
+    6800,
+    3900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "85ee6117-a67b-5966-b77e-5240f4f24268"
+  },
+  {
+   "op": "add_net_label",
+   "name": "RELAY_EN",
+   "at": [
+    4200,
+    4000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "55679768-bd9d-5fdf-9777-9fbd2cac79d9"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE1",
+   "at": [
+    4200,
+    3300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bb80426e-c659-5a0b-b408-08925539fae5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE2",
+   "at": [
+    4200,
+    3400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bea7d309-40a6-53f8-8aaa-f254eb510310"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE3",
+   "at": [
+    4200,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6a9e691e-44ea-526d-a868-ffe5be4a7fe5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE4",
+   "at": [
+    4200,
+    3900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "956128bd-a223-5192-862a-5c6e8d2b956b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "SPARE5",
+   "at": [
+    4200,
+    4200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "48b3f2c7-2341-50c5-9852-7ddc244b29d4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DM",
+   "at": [
+    6800,
+    4800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d0f37f93-9c65-5f58-8894-5d5da7e37037"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DP",
+   "at": [
+    6800,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2714b2c0-7476-517a-b7b2-5539ac99eea4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_EN_N",
+   "at": [
+    4200,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "547e2a26-3c51-58c2-8dd9-9399418a3e5b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_VBUS_SENSE",
+   "at": [
+    6800,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bab0149d-0e1d-58d7-8ca8-c6ccb780e523"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MOD",
+   "at": [
+    6800,
+    5100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "20183552-ebbe-5555-b472-d5b19c64bde7"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    6800,
+    3300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J1",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "801-43-020-10-012000",
+      "group": "Module sockets"
+    },
+    {
+      "ref": "J2",
+      "libId": "Connector_Generic:Conn_01x20",
+      "value": "801-43-020-10-012000",
+      "group": "Module sockets"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "J1.20",
+        "J2.20"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J1.16",
+    "J1.17",
+    "J1.18",
+    "J1.19"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Module sockets"
+    ]
+  }
+}

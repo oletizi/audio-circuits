@@ -1,0 +1,4 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "h7-platform")(type "KiCad")(uri "${KIPRJMOD}/../../../circuits/h7-platform/h7-platform.kicad_sym")(options "")(descr "project library, circuits/h7-platform/h7-platform.kicad_sym"))
+)

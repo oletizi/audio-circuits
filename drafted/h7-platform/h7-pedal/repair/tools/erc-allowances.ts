@@ -1,0 +1,17 @@
+/**
+ * THE h7-pedal ERC ALLOWANCES - the pedal's own declared table of ERC errors a block page's
+ * verification excuses. An entry is admitted only for an ERC finding that is a recorded tool
+ * limitation, each under its own controller ruling in `docs/h7-platform/decisions.md`, as the
+ * module's one entry rests on CR-MODULE-VCAP-ERC.
+ *
+ * As of Task 7a (the interface and entry pages) it is EMPTY, and that is a measured claim: under
+ * each page's one-block root, `kicad-cli sch erc` reports 0 errors on the block's own sheet
+ * (`../../RECORD.md`), so nothing needs excusing.
+ *
+ * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are
+ * `draughting/pages/erc-allowances.ts`; the shared tools read this table through the board's drafted
+ * directory, and refuse a board without it, naming the file.
+ */
+import type { ErcAllowance } from "../../../../../draughting/pages/erc-allowances.ts"
+
+export const ERC_ALLOWANCES: readonly ErcAllowance[] = []

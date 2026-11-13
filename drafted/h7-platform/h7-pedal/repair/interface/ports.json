@@ -1,0 +1,248 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "J2.18"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_BCK",
+  "pins": [
+   "J2.15"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_DIN",
+  "pins": [
+   "J2.13"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_DOUT",
+  "pins": [
+   "J2.12"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_LRCK",
+  "pins": [
+   "J2.14"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXPR_DETECT",
+  "pins": [
+   "J2.10"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXPR_TIP",
+  "pins": [
+   "J2.8"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXP_I2C_SCL",
+  "pins": [
+   "J1.12"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "EXP_I2C_SDA",
+  "pins": [
+   "J1.13"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FSW1",
+  "pins": [
+   "J1.6"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FSW2",
+  "pins": [
+   "J1.9"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "J1.20",
+   "J2.20"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "HW_REV",
+  "pins": [
+   "J2.9"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "LED1",
+  "pins": [
+   "J1.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "LED2",
+  "pins": [
+   "J1.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_RX",
+  "pins": [
+   "J1.15"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "MIDI_UART_TX",
+  "pins": [
+   "J1.14"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS1",
+  "pins": [
+   "J2.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS2",
+  "pins": [
+   "J2.3"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS3",
+  "pins": [
+   "J2.4"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS4",
+  "pins": [
+   "J2.5"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS5",
+  "pins": [
+   "J2.6"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "POS6",
+  "pins": [
+   "J2.7"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "RELAY_EN",
+  "pins": [
+   "J1.8"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE1",
+  "pins": [
+   "J1.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE2",
+  "pins": [
+   "J1.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE3",
+  "pins": [
+   "J1.3"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE4",
+  "pins": [
+   "J1.7"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "SPARE5",
+  "pins": [
+   "J1.10"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_DM",
+  "pins": [
+   "J2.16"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_DP",
+  "pins": [
+   "J2.17"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_EN_N",
+  "pins": [
+   "J1.11"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_VBUS_SENSE",
+  "pins": [
+   "J2.11"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VIN_MOD",
+  "pins": [
+   "J2.19"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VREF_A",
+  "pins": [
+   "J2.1"
+  ],
+  "drafted": false
+ }
+]
