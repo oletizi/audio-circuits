@@ -1911,7 +1911,8 @@ Each entry below is a controller ruling. The owner may override any of them. Non
   - **C_PROTHF** (the same part) is on VIN_A beside C_PROT, where v1 had it beside C_PROT on VIN_PROT, which the split renames VIN_A (power.md line 26).
 - **Why there:** the hot-plug analysis behind HOT-PLUG-PEAK models "an optional ferrite 0–3 µH" (power.md line 295) as part of one series path from the source to the diode pair: the pinned model's own description is "a series inductance and resistance (cable plus any ferrite), and one or two Schottky branches" ([hotPlug.ts](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/circuit/analysis/hotPlug.ts), lines 3–4). This position is the one that grid covers; a ferrite in one branch only is a circuit the analysis did not model. It is also v1's arrangement carried across the split: on v1 the ferrite was on the path every load shared, so it filtered the switching regulator's conducted emission as well as the analog branch's; ahead of the per-branch diodes is where that path now is. C_SCH ahead of the diodes sees a reversed plug: as a non-polar 50 V ceramic it takes −18 V within the rating power.md line 498 gives the input HF capacitor, and the jack's 24.64 V hot-plug extreme (power.md §4.5) is under 50 V.
 - **Not modelled by the analysis, recorded:** C_SCH's 100 nF between the cable and the ferrite (the model lumps the two), as v1's model did. HOT-PLUG-PEAK stays open; it closes on BU-25, not on this ruling.
-- **Costs if wrong:** one ferrite and two capacitors move between three nets on one page, and VIN_FB disappears if the ferrite moves into a branch; the hot-plug grid would then not cover the position.
+- **FB_IN's model inductance is 3 µH** (amended by the controller, h7 pedal pages plan Task 6 fix round 1). FB_IN is an `inductor` in the model, which must carry henries, and no document gives FB_IN an inductance. It takes the upper bound of the hot-plug analysis grid, "an optional ferrite 0–3 µH" ([power.md](power.md) line 295), the largest series inductance any analysis here covers. It is the model's figure only; the page draws the rating, 600 Ω at 100 MHz (Murata JENF243A_0091C-01 p. 1, `FERRITE_IN.beadImpedance`), as [CR-MODULE-BEAD-VALUE](#cr-module-bead-value) draws a bead. It replaces 0.955 µH, the rating divided by 2π × 100 MHz, which no analysis used.
+- **Costs if wrong:** one ferrite and two capacitors move between three nets on one page, and VIN_FB disappears if the ferrite moves into a branch; the hot-plug grid would then not cover the position. A model inductance that a later analysis reads would need that analysis's own figure.
 - **Set by:** the controller, h7 pedal pages plan Task 3.
 - **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`FB_IN_POSITION`).
 
@@ -2134,6 +2135,38 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Costs if wrong:** a renamed net changes one label on two pages and one name in `circuits/h7-platform/pedal/nets.ts`; if KiCad or copperhead refuses `+` or `-` in a label, the four output nets would take `_P` and `_N` suffixes, recorded as an amendment of this ruling. A socket-only net wrongly declared would hide an unconnected contract pin from validation, which is why the list is explicit and tested pin by pin.
 - **Set by:** the controller, h7 pedal pages plan Task 5.
 - **Carried in:** `circuits/h7-platform/pedal/nets.ts` (`SHARED_NETS`, with each net's source and blocks) and `circuits/h7-platform/pedal-board.ts` (`SOCKET_ONLY_NETS`); tested in `tests/circuits/h7-pedal.test.ts`.
+
+### CR-PEDAL-POWER-READINGS
+
+**The power group's connections that the sources leave open, ruled: six readings and choices behind the `entry`, `pf`, `modsw`, `prail` and `ldo_vmid` models.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:**
+  - **R_VDIS on the VIN_MOD side.** Q_VDIS with R_VDIS 10.0 Ω "discharges VIN_MOD while tripped" ([power.md](power.md) line 150; line 60 draws "Q_VDIS + R_VDIS 10 ohm"); no line orders the pair. R_VDIS runs from VIN_MOD to Q_VDIS's drain, and Q_VDIS's source is on GND. The two orders are the same circuit: the FET blocks VIN_MOD when off, and R_VDIS takes the pulse when on.
+  - **Q_VDIS's source on GND**, read from power.md line 162: the discharge is "τ = 10 Ω × 220 µF", to 0 V through R_VDIS alone.
+  - **Q_MSWD's source on GND**, read from power.md line 156: the gate current is "(VS − 1.7 V) / R_MSWB", which puts R_MSWB's far end at 0 V while Q_MSWD conducts.
+  - **C_PEN's other end on GND**, read from power.md line 85: Q_PEN, source on GND, "holds C_PEN at ≤ 0.5 mV".
+  - **U_PRAIL's "copied" network is the module buck's own network of power.md §5.2, without the module's input filter.** "U_PRAIL, a TPS62933F with the module buck's network copied" (power.md line 437) is read as RT floating, L_BUCK, 3 × 22 µF + 100 nF, the 32.4 kΩ / 10.0 kΩ feedback, C_SS 33 nF and C_BST with its 0 Ω R_BST (power.md lines 374–380). L_FILT, C_BIN1/C_BIN2, C_BINHF and the damping leg are "The module's own input network" (power.md line 30, line 270), U_PRAIL sits straight on VIN_MOD (power.md line 59), and its input is counted as "U_PRAIL's 2 × 10 µF + 100 nF at most" (power.md line 272).
+  - **The bootstrap order and C_SS's GND end** come from the pedals checklist the module's network was ruled from: "BST (6) C_BST 100 nF X7R ≥ 16 V (C1591) to SW through a 0 Ω R_BST footprint (C21189); SS/PG (7) C_SS 33 nF to GND" ([pedals SCHEMATIC-CHECKLIST.md, line 110 at 5b926d0](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/SCHEMATIC-CHECKLIST.md#L110), PWR-06), with the order written "BST → R_BST → C_BST → SW" ([pedals h7-platform/boards/v1/VERIFICATION.md, line 739 at 5b926d0](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/boards/v1/VERIFICATION.md#L739)).
+  - **U_PFINV's channel A is gate 1 and channel B gate 2.** "channel A makes **PF_TRIP** … channel B re-inverts PF_TRIP into **PF_ON**" ([bypass-relay.md](bypass-relay.md) line 185): 1A (pin 1) takes PF_OK and 1Y (pin 6) is PF_TRIP; 2A (pin 3) takes PF_TRIP and 2Y (pin 4) is PF_ON.
+  - **U_LDO's pin 3 is left open.** PWR-08 allows "NC (3) open or GND" ([schematic-checklist.md](schematic-checklist.md) line 129); the data sheet's NC "can either be left open or tied to GND" (TI SBVS121E p. 4). Open is drawn as a no-connect.
+- **Costs if wrong:** R_VDIS and Q_VDIS swap places on one page, the same circuit; a source not on GND would add a net no document names; U_PRAIL would gain five parts (L_FILT, two C_BIN, C_BINHF, the damping pair) if "copied" covers the input filter; U_PFINV's gates swap, the same inverter twice; U_LDO pin 3 moves to GND by one wire. Nothing in any rating or analysis changes.
+- **Set by:** the controller, h7 pedal pages plan Task 6 fix round 1.
+- **Carried in:** `circuits/h7-platform/pedal/modsw.ts`, `prail.ts`, `pf.ts` and `ldo-vmid.ts`, in each part's provenance; tested in `tests/circuits/h7-pedal-{modsw,prail,pf,ldo-vmid}.test.ts`.
+
+### CR-PEDAL-POWER-DATASHEET-ENDS
+
+**The GND or FB end of four power-group capacitors, which the documents do not write, comes from the parts' data sheets, quoted here as fetched.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** each data sheet was fetched from ti.com on 2026-11-13 and read; the quotes, one per line:
+  - C_PFCT, CT to GND: TI SBVS050N (revised August 2026) p. 10 §7.3, "connecting a capacitor between CT and GND allows the designer to select any reset delay period from 1.25ms to 10s" (https://www.ti.com/lit/ds/symlink/tps3808.pdf).
+  - C_PFS, SENSE to GND: TI SBVS050N p. 10 §7.3.1, "Good analog design practice is to put a from 1nF to 10nF bypass capacitor on the SENSE input", drawn to ground in Figure 7-1 (p. 11).
+  - C_NR, NR/SS to GND: TI SBVS121E (revised May 2015) p. 4 Pin Functions, NR/SS, "Connecting an external capacitor to this pin bypasses noise generated by the internal band gap" (https://www.ti.com/lit/ds/symlink/tps7a49.pdf).
+  - C_FF, FB to OUT: TI SBVS121E p. 6 Electrical Characteristics note 4, "CFF refers to a feed-forward capacitor connected to the FB and OUT pins".
+- **Costs if wrong:** one capacitor end moves on one page.
+- **Set by:** the controller, h7 pedal pages plan Task 6 fix round 1.
+- **Carried in:** `circuits/h7-platform/pedal/pf.ts` and `ldo-vmid.ts`; tested in `tests/circuits/h7-pedal-{pf,ldo-vmid}.test.ts`.
 
 ## What this document does not carry
 

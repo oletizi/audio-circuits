@@ -35,7 +35,7 @@ const PF: readonly PartExpectation[] = [
   },
   {
     id: "c_pfs", kind: "capacitor", value: 1e-9, pins: { a: "PF_SENSE", b: "GND" }, mpn: "CL10C102JB8NNNC",
-    cites: [[P121, "C_PFS 1 nF at SENSE"], ["parts.md:70", "CL10C102JB8NNNC"]],
+    cites: [[P121, "C_PFS 1 nF at SENSE"], ["parts.md:70", "CL10C102JB8NNNC"], ["decisions.md:2164", "bypass capacitor on the SENSE input"]],
   },
   {
     id: "c_pf", kind: "capacitor", value: 100e-9, pins: { a: "5V_A", b: "GND" }, mpn: "CL10B104KB8NNNC",
@@ -43,7 +43,7 @@ const PF: readonly PartExpectation[] = [
   },
   {
     id: "c_pfct", kind: "capacitor", value: 47e-9, pins: { a: "PF_CT", b: "GND" }, mpn: "C1206N473J050T",
-    cites: [["power.md:149", "C_PFCT 47 nF C0G on U_PF's CT"], ["parts.md:72", "C1206N473J050T"]],
+    cites: [["power.md:149", "C_PFCT 47 nF C0G on U_PF's CT"], ["parts.md:72", "C1206N473J050T"], ["decisions.md:2163", "connecting a capacitor between CT and GND"]],
   },
   {
     id: "r_pfpu", kind: "resistor", value: 100e3, pins: { a: "PF_OK", b: "5V_A" }, mpn: "0603WAF1003T5E",
@@ -53,7 +53,7 @@ const PF: readonly PartExpectation[] = [
     // SN74LVC2G14 DBV: 1 1A, 2 GND, 3 2A, 4 2Y, 5 VCC, 6 1Y. Channel A (gate 1) makes PF_TRIP; B re-inverts it to PF_ON.
     id: "u_pfinv", kind: "ic", pins: { "1": "PF_OK", "2": "GND", "3": "PF_TRIP", "4": "PF_ON", "5": "5V_A", "6": "PF_TRIP" },
     mpn: "SN74LVC2G14DBVR",
-    cites: [["bypass-relay.md:185", "channel A makes **PF_TRIP**"], ["bypass-relay.md:185", "channel B re-inverts PF_TRIP into **PF_ON**"], ["parts.md:60", "SN74LVC2G14DBVR"]],
+    cites: [["bypass-relay.md:185", "channel A makes **PF_TRIP**"], ["bypass-relay.md:185", "channel B re-inverts PF_TRIP into **PF_ON**"], ["parts.md:60", "SN74LVC2G14DBVR"], ["decisions.md:2151", "U_PFINV's channel A is gate 1 and channel B gate 2"]],
   },
   {
     id: "c_pfinv", kind: "capacitor", value: 100e-9, pins: { a: "5V_A", b: "GND" }, mpn: "GRM188R71H104KA93D",

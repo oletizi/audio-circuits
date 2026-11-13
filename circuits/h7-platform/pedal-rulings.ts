@@ -53,6 +53,8 @@ export const FB_IN_POSITION = {
   cSch: "VIN",
   cProtHf: "VIN_A",
   diodeAnodes: "VIN_FB",
+  /** The model's inductance: the hot-plug grid's upper bound, "an optional ferrite 0-3 uH" (power.md:295). Drawn as the rating. */
+  modelHenries: 3e-6,
   sources: [
     "docs/h7-platform/power.md:25", "docs/h7-platform/power.md:28", "docs/h7-platform/power.md:295",
     "docs/h7-platform/power.md:498", "docs/h7-platform/parts.md:58", "docs/h7-platform/parts.md:82", `${OI}:56`,

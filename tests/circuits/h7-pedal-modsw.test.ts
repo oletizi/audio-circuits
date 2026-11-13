@@ -20,7 +20,7 @@ const P151 = "power.md:151"
 const MODSW: readonly PartExpectation[] = [
   {
     id: "q_msw", kind: "ic", pins: { "1": "MSW_G", "2": "VIN_MOD", "3": "VIN_MSW" }, mpn: "AOD4185",
-    cites: [[P147, "between D_MIN and VIN_MOD"], ["decisions.md:2126", "between D_MIN's cathode and Q_MSW's source"], ["parts.md:62", "AOD4185"]],
+    cites: [[P147, "between D_MIN and VIN_MOD"], ["decisions.md:2127", "between D_MIN's cathode and Q_MSW's source"], ["parts.md:62", "AOD4185"]],
   },
   {
     id: "r_mswt", kind: "resistor", value: 15.0e3, pins: { a: "VIN_MSW", b: "MSW_G" }, mpn: "0603WAF1502T5E",
@@ -33,7 +33,7 @@ const MODSW: readonly PartExpectation[] = [
   {
     // Source on GND: the gate current is (VS - 1.7 V) / R_MSWB, R_MSWB's far end at 0 V (power.md:156).
     id: "q_mswd", kind: "ic", pins: { "1": "PF_ON", "2": "GND", "3": "MSWD_D" }, mpn: "AO3400A",
-    cites: [[P147, "Q_MSWD (AO3400A, gate on PF_ON)"], ["power.md:156", "gate current (VS − 1.7 V) / R_MSWB"]],
+    cites: [[P147, "Q_MSWD (AO3400A, gate on PF_ON)"], ["power.md:156", "gate current (VS − 1.7 V) / R_MSWB"], ["decisions.md:2147", "**Q_MSWD's source on GND**"]],
   },
   {
     id: "c_ss", kind: "capacitor", value: 2.2e-6, pins: { a: "VIN_MOD", b: "MSW_X" }, mpn: "CL31B225KBHNNNE",
@@ -62,13 +62,13 @@ const MODSW: readonly PartExpectation[] = [
   {
     // Source on GND: VIN_MOD discharges through 10 ohm alone, tau = 10 ohm x 220 uF (power.md:162).
     id: "q_vdis", kind: "ic", pins: { "1": "PF_TRIP", "2": "GND", "3": "VDIS_D" }, mpn: "AO3400A",
-    cites: [[P150, "Q_VDIS (AO3400A, gate PF_TRIP)"], ["power.md:162", "τ = 10 Ω × 220 µF"]],
+    cites: [[P150, "Q_VDIS (AO3400A, gate PF_TRIP)"], ["power.md:162", "τ = 10 Ω × 220 µF"], ["decisions.md:2146", "**Q_VDIS's source on GND**"]],
   },
   {
     id: "r_vdis", kind: "resistor", value: 10.0, pins: { a: "VIN_MOD", b: "VDIS_D" }, mpn: "CRCW201010R0FKEFHP",
-    cites: [[P150, "R_VDIS 10.0 Ω Vishay CRCW201010R0FKEFHP"], [P150, "discharges VIN_MOD while tripped"]],
+    cites: [[P150, "R_VDIS 10.0 Ω Vishay CRCW201010R0FKEFHP"], [P150, "discharges VIN_MOD while tripped"], ["decisions.md:2145", "**R_VDIS on the VIN_MOD side.**"]],
   },
-  { id: "tp_vin_mod", kind: "connector", pins: { "1": "VIN_MOD" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1952", "**Added: VIN_MOD**"]] },
+  { id: "tp_vin_mod", kind: "connector", pins: { "1": "VIN_MOD" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1953", "**Added: VIN_MOD**"]] },
 ]
 
 describe("modsw (B3)", () => {

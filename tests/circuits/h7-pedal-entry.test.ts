@@ -13,8 +13,8 @@ const BULK = (id: string): PartExpectation => ({
   cites: [["power.md:29", "C_BULK and C_BULK2 to C_BULK4 on VIN_A"], ["power.md:113", "EEE-FK1V101P 100 µF 35 V aluminium"]],
 })
 
-/** 600 ohm at 100 MHz (Murata JENF243A_0091C-01 p. 1), as an inductance at that frequency: |Z| / (2 pi f). */
-const FB_IN_HENRIES = 600 / (2 * Math.PI * 100e6)
+/** The model's inductance: the hot-plug grid's upper bound (power.md:295; CR-PEDAL-FB-IN). */
+const FB_IN_HENRIES = 3e-6
 
 const ENTRY: readonly PartExpectation[] = [
   {
@@ -24,7 +24,7 @@ const ENTRY: readonly PartExpectation[] = [
   {
     id: "fb_in", kind: "inductor", value: FB_IN_HENRIES, pins: { a: "VIN", b: "VIN_FB" }, mpn: "BLM31KN601SN1L",
     symbol: "Device:FerriteBead",
-    cites: [["parts.md:58", "BLM31KN601SN1L"], ["decisions.md:1909", "runs from **VIN**"]],
+    cites: [["parts.md:58", "BLM31KN601SN1L"], ["decisions.md:1909", "runs from **VIN**"], ["power.md:295", "an optional ferrite 0–3 µH"], ["decisions.md:1914", "FB_IN's model inductance is 3 µH"]],
   },
   {
     id: "c_sch", kind: "capacitor", value: 100e-9, pins: { a: "VIN", b: "GND" }, mpn: "CL21B104KBCNNNC",
@@ -51,9 +51,9 @@ const ENTRY: readonly PartExpectation[] = [
     id: "r_vbld", kind: "resistor", value: 10e3, pins: { a: "VIN", b: "GND" }, mpn: "1206W4F1002T5E",
     cites: [["power.md:121", "R_VBLD 10.0 kΩ on VIN"], ["parts.md:73", "1206W4F1002T5E"]],
   },
-  { id: "tp_vin", kind: "connector", pins: { "1": "VIN" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1948", "→ VIN"]] },
-  { id: "tp_vin_a", kind: "connector", pins: { "1": "VIN_A" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1949", "→ VIN_A"]] },
-  { id: "tp_gnd", kind: "connector", pins: { "1": "GND" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1951", "one GND pad"]] },
+  { id: "tp_vin", kind: "connector", pins: { "1": "VIN" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1949", "→ VIN"]] },
+  { id: "tp_vin_a", kind: "connector", pins: { "1": "VIN_A" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1950", "→ VIN_A"]] },
+  { id: "tp_gnd", kind: "connector", pins: { "1": "GND" }, symbol: "Connector:TestPoint", cites: [["decisions.md:1952", "one GND pad"]] },
 ]
 
 describe("entry (B1)", () => {

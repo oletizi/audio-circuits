@@ -6,17 +6,15 @@
  *   (CR-PEDAL-NETS, D_MIN's cathode), drain on VIN_MOD, the side that "rises" (power.md:148).
  *   Numbered 1 G, 2 D, 3 S (CR-PEDAL-SYMBOL-AOD4185).
  * - Gate network: R_MSWT 15.0 kOhm source to gate; R_MSWB 4.30 kOhm gate to Q_MSWD's drain; Q_MSWD
- *   (AO3400A) gate on PF_ON (power.md:147). Q_MSWD's source is GND: the documents do not write it, and
- *   power.md:156 computes the gate current as (VS - 1.7 V) / R_MSWB, which puts R_MSWB's far end at
- *   0 V when Q_MSWD is on.
+ *   (AO3400A) gate on PF_ON (power.md:147). Q_MSWD's source is GND, read from power.md:156's gate
+ *   current (VS - 1.7 V) / R_MSWB (CR-PEDAL-POWER-READINGS).
  * - Soft start: C_SS 2.2 uF from the drain to node X, D_SS from X to the gate (anode X), R_SSR 15.0
  *   kOhm from the source to X (power.md:148).
  * - Plug-in gate hold: C_GS 220 nF from the source to D_GS, D_GS's cathode on the gate, R_GSB 470 kOhm
  *   across C_GS (power.md:151).
  * - Discharge: Q_VDIS (AO3400A, gate PF_TRIP) with R_VDIS 10.0 ohm "discharges VIN_MOD while tripped"
- *   (power.md:150), its source on GND (the discharge is tau = 10 ohm x 220 uF to 0 V, power.md:162).
- *   The documents do not say which of the two series parts sits on VIN_MOD; R_VDIS is drawn there and
- *   Q_VDIS's drain on the inner node VDIS_D. The two orders are the same circuit.
+ *   (power.md:150), its source on GND (power.md:162, tau = 10 ohm x 220 uF to 0 V), R_VDIS on the
+ *   VIN_MOD side and Q_VDIS's drain on the inner node VDIS_D: both CR-PEDAL-POWER-READINGS.
  * - Test pad on VIN_MOD (CR-PEDAL-TEST-PADS, "Added: VIN_MOD").
  *
  * AO3400A and 2N7002 numbering: 1 G, 2 S, 3 D (CR-PEDAL-SYMBOL-AO3400A). Block-private nets: MSW_G
@@ -54,7 +52,7 @@ export function modswBlock(): Network {
     resistor("r_mswt", "15.0k", VIN_MSW, G, R15K, `${SW}: R_MSWT source to gate; parts.md:75`),
     resistor("r_mswb", "4.30k", G, MSWD_D, withMpn(RESISTOR, "0603WAF4301T5E"), `${SW}: R_MSWB gate to Q_MSWD; parts.md:76`),
     part("q_mswd", "ic", { "1": PF_ON, "2": GND, "3": MSWD_D }, AO3400A,
-      `${SW}: Q_MSWD gate on PF_ON; parts.md:61; source on GND per power.md:156 (gate current (VS - 1.7 V) / R_MSWB)`),
+      `${SW}: Q_MSWD gate on PF_ON; parts.md:61; source on GND per power.md:156 (CR-PEDAL-POWER-READINGS)`),
     capacitor("c_ss", "2.2u", VIN_MOD, X, withMpn(CAPACITOR, "CL31B225KBHNNNE"), `${SS}: C_SS from the drain to node X; parts.md:77`),
     diode("d_ss", X, G, BAS116H, `${SS}: D_SS from X to the gate; parts.md:64`),
     resistor("r_ssr", "15.0k", VIN_MSW, X, R15K, `${SS}: R_SSR from the source to X; parts.md:75`),
@@ -62,9 +60,9 @@ export function modswBlock(): Network {
     diode("d_gs", GH, G, BAS116H, `${HOLD}: D_GS cathode on the gate; parts.md:64`),
     resistor("r_gsb", "470k", VIN_MSW, GH, withMpn(RESISTOR, "0603WAF4703T5E"), `${HOLD}: R_GSB across C_GS; parts.md:66`),
     part("q_vdis", "ic", { "1": PF_TRIP, "2": GND, "3": VDIS_D }, AO3400A,
-      `${DIS}: Q_VDIS gate PF_TRIP; parts.md:61; source on GND per power.md:162 (tau = 10 ohm x 220 uF)`),
+      `${DIS}: Q_VDIS gate PF_TRIP; parts.md:61; source on GND per power.md:162 (CR-PEDAL-POWER-READINGS)`),
     resistor("r_vdis", "10.0", VIN_MOD, VDIS_D, withMpn(RESISTOR, "CRCW201010R0FKEFHP"),
-      `${DIS}: R_VDIS 10.0 ohm discharges VIN_MOD; parts.md:63; series order drawn, not stated (module comment)`),
+      `${DIS}: R_VDIS 10.0 ohm discharges VIN_MOD; parts.md:63; on the VIN_MOD side (CR-PEDAL-POWER-READINGS)`),
     part("tp_vin_mod", "connector", { "1": VIN_MOD }, TEST_POINT, "CR-PEDAL-TEST-PADS (Added: VIN_MOD)"),
   ], [VIN_MSW, VIN_MOD, PF_ON, PF_TRIP, GND])
 }

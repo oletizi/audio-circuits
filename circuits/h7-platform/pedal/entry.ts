@@ -6,12 +6,9 @@
  *   (1) GND, sleeve (2) VIN, "centre pin GND, sleeve +V" (schematic-checklist.md:117, PWR-01).
  * - FB_IN between the jack node VIN and VIN_FB, the node both Schottkys' anodes take; C_SCH on VIN,
  *   C_PROTHF on VIN_A beside C_PROT (CR-PEDAL-FB-IN). FB_IN is an `inductor` (CR-PEDAL-KINDS'
- *   FERRITE_IN), which must carry henries: no document gives FB_IN an inductance, so it carries its
- *   rated impedance expressed at the rating frequency, |Z| / (2 pi f), computed here from the part
- *   spec's `beadImpedance` (600 ohm at 100 MHz, Murata JENF243A_0091C-01 p. 1). Nothing reads that
- *   figure: no analysis in this repository uses FB_IN, and the page prints the rating, not henries
- *   (CR-MODULE-BEAD-VALUE; `valueFor`). It is the module's FB_VDDA treatment, without an analysis
- *   bound to give it, so it is labelled here as what it is.
+ *   FERRITE_IN), which must carry henries, and no document gives FB_IN an inductance: CR-PEDAL-FB-IN
+ *   gives it 3 uH, the hot-plug grid's upper bound (power.md:295), `FB_IN_POSITION.modelHenries`. The
+ *   page draws the rating, 600 ohm at 100 MHz, not henries (CR-MODULE-BEAD-VALUE; `valueFor`).
  * - D_AIN from VIN_FB to VIN_A and D_MIN from VIN_FB to VIN_MSW, one PMEG4030ER per branch
  *   (power.md:26-27, R-35; schematic-checklist.md:118, PWR-02). VIN_MSW is CR-PEDAL-NETS' name for
  *   the module branch between D_MIN and Q_MSW.
@@ -33,20 +30,6 @@ const C_HF = withMpn(CAPACITOR, "CL21B104KBCNNNC")
 const C_PROT = withMpn(CAPACITOR, "CL31B106KBHNNNE")
 const R_VBLD = withMpn(RESISTOR, "1206W4F1002T5E")
 
-/** FB_IN's rated impedance as an inductance at its rating frequency (module comment). */
-function ferriteHenries(spec: PartSpec): number {
-  const z = spec.beadImpedance
-  if (z === undefined) {
-    throw new Error(
-      `FB_IN's part spec (${spec.mpn ?? "no MPN"}) carries no beadImpedance. FB_IN is an inductor in the model and ` +
-        "no document gives it an inductance, so it is carried as its rated impedance at the rating frequency; add the " +
-        "rating to FERRITE_IN in circuits/h7-platform/pedal-parts.ts from the Murata data sheet. Not defaulted: a guessed " +
-        "inductance would be a figure nobody can trace.",
-    )
-  }
-  return z.ohms / (2 * Math.PI * z.hertz)
-}
-
 const VIN = "VIN"
 const VIN_A = "VIN_A"
 const VIN_MSW = "VIN_MSW"
@@ -61,8 +44,8 @@ const PADS = "CR-PEDAL-TEST-PADS"
 export function entryBlock(): Network {
   return block([
     part("j_dc", "connector", { "1": DC_JACK.pins["1"], "2": DC_JACK.pins["2"] }, DC_JACK.part, JACK),
-    inductor("fb_in", ferriteHenries(FERRITE_IN), FB_IN_POSITION.ferrite.a, FB_IN_POSITION.ferrite.b, FERRITE_IN,
-      `${FB}; parts.md:58 (BLM31KN601SN1L); inductance = rated |Z| / (2 pi f) from FERRITE_IN.beadImpedance (module comment)`),
+    inductor("fb_in", FB_IN_POSITION.modelHenries, FB_IN_POSITION.ferrite.a, FB_IN_POSITION.ferrite.b, FERRITE_IN,
+      `${FB}; parts.md:58 (BLM31KN601SN1L); model inductance 3 uH, power.md:295 (the hot-plug grid's 0-3 uH)`),
     capacitor("c_sch", "100n", FB_IN_POSITION.cSch, GND, C_HF, `${FB}; parts.md:82 (C_SCH, 100 nF 50 V X7R 0805)`),
     capacitor("c_prothf", "100n", FB_IN_POSITION.cProtHf, GND, C_HF, `${FB}; parts.md:82 (C_PROTHF, 100 nF 50 V X7R 0805)`),
     diode("d_ain", VIN_FB, VIN_A, PMEG4030ER, `power.md:26 (D_AIN to the analog branch, R-35); power.md:27 (VIN_A after D_AIN); parts.md:55; ${FB} (anodes on VIN_FB)`),

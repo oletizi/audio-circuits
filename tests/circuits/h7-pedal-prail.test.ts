@@ -25,7 +25,7 @@ const IN10 = (id: string): PartExpectation => ({
 })
 const PEN = (id: string): PartExpectation => ({
   id, kind: "capacitor", value: 4.7e-6, pins: { a: "PRAIL_EN", b: "GND" }, mpn: "CL31B475KBHNNNE",
-  cites: [[P85, "into C_PEN, two 4.7 µF 50 V X7R in parallel"], [P85, "Q_PEN holds C_PEN at ≤ 0.5 mV"], ["parts.md:79", "CL31B475KBHNNNE"]],
+  cites: [[P85, "into C_PEN, two 4.7 µF 50 V X7R in parallel"], [P85, "Q_PEN holds C_PEN at ≤ 0.5 mV"], ["decisions.md:2148", "**C_PEN's other end on GND**"], ["parts.md:79", "CL31B475KBHNNNE"]],
 })
 
 const PRAIL: readonly PartExpectation[] = [
@@ -34,7 +34,7 @@ const PRAIL: readonly PartExpectation[] = [
     id: "u_prail", kind: "ic",
     pins: { "1": "NC", "2": "PRAIL_EN", "3": "VIN_MOD", "4": "GND", "5": "PRAIL_SW", "6": "PRAIL_BST", "7": "PRAIL_SS", "8": "PRAIL_FB" },
     mpn: "TPS62933FDRLR",
-    cites: [COPIED, ["power.md:437", "on VIN_MOD, RT floating"], ["schematic-checklist.md:124", "RT (pin 1) carries a no-connect flag"], ["parts.md:87", "TPS62933FDRLR"]],
+    cites: [COPIED, ["power.md:437", "on VIN_MOD, RT floating"], ["schematic-checklist.md:124", "RT (pin 1) carries a no-connect flag"], ["decisions.md:2149", "without the module's input filter"], ["parts.md:87", "TPS62933FDRLR"]],
   },
   IN10("c_pin1"), IN10("c_pin2"),
   {
@@ -57,15 +57,15 @@ const PRAIL: readonly PartExpectation[] = [
   },
   {
     id: "c_ss", kind: "capacitor", value: 33e-9, pins: { a: "PRAIL_SS", b: "GND" }, mpn: "CL10B333KB8NNNC",
-    cites: [COPIED, ["power.md:379", "C_SS 33 nF"], ["parts.md:90", "U_PRAIL's soft-start capacitor (33 nF)"], ["circuits/h7-platform/module/power.ts:19", "C_SS 33 nF to GND"]],
+    cites: [COPIED, ["power.md:379", "C_SS 33 nF"], ["parts.md:90", "U_PRAIL's soft-start capacitor (33 nF)"], ["decisions.md:2150", "SS/PG (7) C_SS 33 nF to GND"]],
   },
   {
     id: "r_bst", kind: "resistor", value: 0, pins: { a: "PRAIL_BST", b: "PRAIL_BST_CAP" },
-    cites: [COPIED, ["power.md:380", "with a 0 Ω R_BST footprint"], ["circuits/h7-platform/module/power.ts:17", "BST -> R_BST -> C_BST -> SW"]],
+    cites: [COPIED, ["power.md:380", "with a 0 Ω R_BST footprint"], ["decisions.md:2150", "BST → R_BST → C_BST → SW"]],
   },
   {
     id: "c_bst", kind: "capacitor", value: 100e-9, pins: { a: "PRAIL_BST_CAP", b: "PRAIL_SW" },
-    cites: [COPIED, ["power.md:380", "C_BST 100 nF"], ["circuits/h7-platform/module/power.ts:17", "BST -> R_BST -> C_BST -> SW"]],
+    cites: [COPIED, ["power.md:380", "C_BST 100 nF"], ["decisions.md:2150", "BST → R_BST → C_BST → SW"]],
   },
   {
     id: "r_pen", kind: "resistor", value: 150e3, pins: { a: "PF_ON", b: "PRAIL_EN" }, mpn: "0603WAF1503T5E",
