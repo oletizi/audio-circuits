@@ -33,6 +33,7 @@ import { codecBlock } from "./pedal/codec.ts"
 import { saiIsoBlock } from "./pedal/sai-iso.ts"
 import { exprRefBlock } from "./pedal/expr-ref.ts"
 import { controlsABlock, controlsBBlock } from "./pedal/controls.ts"
+import { fswLedBlock } from "./pedal/fsw-led.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -54,6 +55,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["expr_ref", exprRefBlock, "Expression input and HW_REV"],
   ["controls_a", controlsABlock, "Control positions 1-3"],
   ["controls_b", controlsBBlock, "Control positions 4-6"],
+  ["fsw_led", fswLedBlock, "Footswitches and LEDs"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -80,7 +82,6 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
   // Until Task 8 (digital and controls group).
-  "LED1", "LED2", "FSW1", "FSW2",
   "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
   "RELAY_EN",
@@ -161,6 +162,11 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   controls_b_rv_pos4: "RV4", controls_b_r_pu4: "R61", controls_b_sw_btn4: "SW4", controls_b_r_btn4: "R62", controls_b_r_pos4: "R63", controls_b_c_pos4: "C52",
   controls_b_rv_pos5: "RV5", controls_b_r_pu5: "R64", controls_b_sw_btn5: "SW5", controls_b_r_btn5: "R65", controls_b_r_pos5: "R66", controls_b_c_pos5: "C53",
   controls_b_rv_pos6: "RV6", controls_b_r_pu6: "R67", controls_b_sw_btn6: "SW6", controls_b_r_btn6: "R68", controls_b_r_pos6: "R69", controls_b_c_pos6: "C54",
+  // fsw_led
+  fsw_led_j_fsw1: "J5", fsw_led_r_fsw_pu1: "R70", fsw_led_c_fsw1: "C55", fsw_led_r_fsw1: "R71",
+  fsw_led_j_fsw2: "J6", fsw_led_r_fsw_pu2: "R72", fsw_led_c_fsw2: "C56", fsw_led_r_fsw2: "R73",
+  fsw_led_led1: "D10", fsw_led_r_led1: "R74", fsw_led_q_led1: "Q7", fsw_led_r_led1_g: "R75", fsw_led_r_led1_pd: "R76",
+  fsw_led_led2: "D11", fsw_led_r_led2: "R77", fsw_led_q_led2: "Q8", fsw_led_r_led2_g: "R78", fsw_led_r_led2_pd: "R79",
 }
 
 /** One page per block (design change C3). */
