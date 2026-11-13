@@ -35,6 +35,8 @@ import { exprRefBlock } from "./pedal/expr-ref.ts"
 import { controlsABlock, controlsBBlock } from "./pedal/controls.ts"
 import { fswLedBlock } from "./pedal/fsw-led.ts"
 import { usbBlock } from "./pedal/usb.ts"
+import { midiI2cBlock } from "./pedal/midi-i2c.ts"
+import { MIDI } from "./pedal-population.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -58,6 +60,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["controls_b", controlsBBlock, "Control positions 4-6"],
   ["fsw_led", fswLedBlock, "Footswitches and LEDs"],
   ["usb", usbBlock, "USB-C and isolation switch"],
+  ["midi_i2c", midiI2cBlock, "MIDI OUT and I2C pull-ups"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -83,8 +86,6 @@ export const PAGE_GROUPS: Readonly<Record<string, string>> = Object.fromEntries(
 export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
-  // Until Task 8 (digital and controls group).
-  "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
   "RELAY_EN",
 ].map(contractNet)
@@ -102,6 +103,15 @@ export const AWAITING_NETS: readonly string[] = [
   "VINL", "VINR", "VOUTL+", "VOUTL-", "VOUTR+", "VOUTR-",
 ]
 
+/**
+ * Pedal nets that run on to a connector no source names, so on the board they reach only the parts
+ * drawn up to them: the MIDI OUT loop's MIDI_PIN4 (the four RA) and MIDI_PIN5 (RC alone), which
+ * CR-PEDAL-MIDI draws up to and stops at (open row MIDI-OUT-CONNECTOR). A one-pin net is refused by
+ * validation unless it is a port, so both are ports of the board (CR-PEDAL-DIGITAL-READINGS). They are
+ * not a construction state: no later task of this plan removes them; naming the connector does.
+ */
+export const UNDRAWN_CONNECTOR_NETS: readonly string[] = [MIDI.loopNets.pin4, MIDI.loopNets.pin5]
+
 /** The pedal: every built block included, each port bound to the root net of its own name. */
 export function h7Pedal(): Network {
   const builder = circuit()
@@ -109,7 +119,7 @@ export function h7Pedal(): Network {
     const net = build()
     builder.include(prefix, net, Object.fromEntries(Object.keys(net.ports).map((port) => [port, port])))
   }
-  for (const net of [...SOCKET_ONLY_NETS, ...AWAITING_NETS]) builder.port(net, net)
+  for (const net of [...SOCKET_ONLY_NETS, ...AWAITING_NETS, ...UNDRAWN_CONNECTOR_NETS]) builder.port(net, net)
   return builder.done()
 }
 
@@ -172,6 +182,10 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   // usb
   usb_j_usb: "J7", usb_r_cc1: "R80", usb_r_cc2: "R81", usb_r_shld: "R82", usb_c_shld: "C57", usb_u_esd: "U14", usb_c_vbus: "C58",
   usb_u_usbsw: "U15", usb_r_usben: "R83", usb_c_usbsw: "C59", usb_r_vbus_top: "R84", usb_r_vbus_bot: "R85", usb_c_vbus_sense: "C60",
+  // midi_i2c
+  midi_i2c_u_mididrv: "U16", midi_i2c_c_mididrv: "C61", midi_i2c_r_txpu: "R86", midi_i2c_q_midi: "Q9", midi_i2c_r_mgp: "R87",
+  midi_i2c_r_ra1: "R88", midi_i2c_r_ra2: "R89", midi_i2c_r_ra3: "R90", midi_i2c_r_ra4: "R91", midi_i2c_r_rc: "R92",
+  midi_i2c_j_midi: "J8", midi_i2c_r_scl_pu: "R93", midi_i2c_r_sda_pu_exp: "R94", midi_i2c_tp_3v3_d: "TP6",
 }
 
 /** One page per block (design change C3). */

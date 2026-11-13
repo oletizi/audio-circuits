@@ -24,8 +24,9 @@ import { PEDAL_BLOCKS, PEDAL_GROUPS } from "../../circuits/h7-platform/pedal/bui
 import { SHARED_NETS, contractNet, sharedNet } from "../../circuits/h7-platform/pedal/nets.ts"
 import { DATASHEET_PIN_NAMES } from "../../circuits/h7-platform/pedal-parts.ts"
 import {
-  AWAITING_NETS, DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, drawingPages, h7Pedal,
+  AWAITING_NETS, DESIGNATORS, PAGE_GROUPS, PIN_NUMBERS, SOCKET_ONLY_NETS, UNDRAWN_CONNECTOR_NETS, drawingPages, h7Pedal,
 } from "../../circuits/h7-platform/pedal-board.ts"
+import { MIDI } from "../../circuits/h7-platform/pedal-population.ts"
 import { provenanceProblems } from "./h7-pedal-provenance.ts"
 import { symbolProblems } from "./h7-module-checks.ts"
 
@@ -128,7 +129,7 @@ describe("the interface block (J_MOD_A, J_MOD_B)", () => {
 
 describe("contract nets nothing on the pedal loads yet", () => {
   test("with the pedal nets awaiting their other block, are exactly the root ports, and each is on one pad and nothing else", () => {
-    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS, ...AWAITING_NETS].sort())
+    expect(Object.keys(PEDAL.ports).sort()).toEqual([...SOCKET_ONLY_NETS, ...AWAITING_NETS, ...UNDRAWN_CONNECTOR_NETS].sort())
     for (const net of SOCKET_ONLY_NETS) {
       expect([net, PEDAL.ports[net], pinsOn(PEDAL, net)]).toEqual([net, net, 1])
     }
@@ -154,6 +155,18 @@ describe("pedal nets awaiting their other block (CR-PEDAL-NETS)", () => {
   })
 })
 
+describe("nets running on to a connector no source names (CR-PEDAL-DIGITAL-READINGS, CR-PEDAL-MIDI)", () => {
+  test("are exactly the MIDI OUT loop's two nets, each a port of the board reached only by midi_i2c", () => {
+    expect([...UNDRAWN_CONNECTOR_NETS].sort()).toEqual([MIDI.loopNets.pin4, MIDI.loopNets.pin5].sort())
+    for (const net of UNDRAWN_CONNECTOR_NETS) {
+      expect(PEDAL.ports[net]).toBe(net)
+      const on = PEDAL.components.filter((c) => [...Object.values(c.pins), ...c.units.flatMap((u) => Object.values(u.pins))]
+        .some((x) => x.kind === "net" && x.net === net))
+      expect([net, [...new Set(on.map((c) => blockOf(PEDAL, c.id)))]]).toEqual([net, ["midi_i2c"]])
+    }
+  })
+})
+
 /** Root net -> the built blocks whose parts sit on it. */
 function blocksOn(network: Network): ReadonlyMap<string, ReadonlySet<string>> {
   const out = new Map<string, Set<string>>()
@@ -175,6 +188,18 @@ describe("shared nets reach the blocks section 1.2 lists, and no others (built b
   const reach = blocksOn(PEDAL)
   test("the power group is built: entry, pf, modsw, prail, ldo_vmid", () => {
     for (const b of ["entry", "pf", "modsw", "prail", "ldo_vmid"]) expect([b, built.has(b)]).toEqual([b, true])
+  })
+  test("the digital and controls group is built: codec_sup, codec, sai_iso, expr_ref, controls_a, controls_b, fsw_led, usb, midi_i2c", () => {
+    for (const b of ["codec_sup", "codec", "sai_iso", "expr_ref", "controls_a", "controls_b", "fsw_led", "usb", "midi_i2c"]) {
+      expect([b, built.has(b)]).toEqual([b, true])
+    }
+  })
+  test("3V3_D, VREF_A, 3V3_CODEC, 5V_A_CODEC and PF_TRIP: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
+    expect(sharedNet("3V3_D").blocks).toEqual(["sai_iso", "controls_a", "controls_b", "fsw_led", "usb", "midi_i2c", "interface"])
+    expect(sharedNet("VREF_A").blocks).toEqual(["expr_ref", "controls_a", "controls_b", "interface"])
+    expect(sharedNet("3V3_CODEC").blocks).toEqual(["codec_sup", "codec", "sai_iso"])
+    expect(sharedNet("5V_A_CODEC").blocks).toEqual(["ldo_vmid", "codec_sup", "codec"])
+    expect(sharedNet("PF_TRIP").blocks).toEqual(["pf", "modsw", "prail", "codec_sup", "jacks_byp"])
   })
   test("VIN_A, VIN_MOD, 5V_A and 3V3_P: the inventory's section 1.2 lists, as SHARED_NETS carries them", () => {
     expect(sharedNet("VIN_A").blocks).toEqual(["entry", "ldo_vmid", "in_fe", "out"])
