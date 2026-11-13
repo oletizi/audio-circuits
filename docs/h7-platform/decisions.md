@@ -1706,6 +1706,189 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** the controller, H7 module plan Task 6.
 - **Carried in:** `lib/kicad/value-notation.ts`; R3 on the power page reads "0R22".
 
+### CR-PEDAL-KINDS
+
+**The pedal adds no model kind; each part type is built as an existing one.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:**
+  - MOSFETs, the bypass relays, regulators, supervisors, logic, the isolation buffers, the USB switch, the ESD array, the bidirectional jack TVS (PESD12VL1BA, which has no anode and cathode), the oscillator, the ideal diode and the codec are `ic`, as the module and carrier build their buck, supervisor, USB switch and ESD part.
+  - Diodes, Schottkys, Zeners and LEDs are `diode`, numbered `{ cathode: "1", anode: "2" }`. Every diode symbol the pedal uses has pin 1 named K and pin 2 named A on disk (`Diode:PMEG4030ER`, `Diode:1N4148W`, `Device:D`, `Device:D_Schottky`, `Device:D_Zener`, `Device:LED`).
+  - The switching audio jacks are `switch` (a part that switches is not an inert connector, `lib/model/types.ts` `electricallyInert`). The control pots are `potentiometer`. The OPA1688 and MCP6001 are `opamp`.
+  - **Which end of `Device:R_Potentiometer` is `ccw`.** Its graphics carry no rotation sense: a plain resistor body with pin 1 at its top end `(at 0 3.81 270)`, pin 3 at its bottom end `(at 0 -3.81 90)` and the wiper, pin 2, entering from the side `(at 3.81 0 180)` with the arrow. The pot's own data sheet was not fetched from the manufacturer. So this is a choice, not a reading: **ccw = pin 1, wiper = pin 2, cw = pin 3** (`POTENTIOMETER_PIN_NUMBERS`).
+- **Costs if wrong:** for the pot, every control's direction reverses (a swap of two numbers and the footprint check at layout). For the kinds, a kind added later and the parts moved to it.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+- **Carried in:** `circuits/h7-platform/pedal-parts.ts`; tested in `tests/circuits/h7-pedal-parts.test.ts`.
+
+### CR-PEDAL-PIN-MATCH
+
+**A pedal part's symbol matches its data sheet when every pin agrees in number, name and electrical type, as stated here.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** how the amended rule of [CR-MODULE-SUPERVISOR-SYMBOL](#cr-module-supervisor-symbol) (names, numbers and types) is applied to the pedal, for its own stock symbols and stand-ins alike.
+  - **Number:** exact. Where the manufacturer labels the leads but numbers none, the number comes from where the part's ruling says, and the ruling carries the cost.
+  - **Name:** exact and case-sensitive, in KiCad's spelling: an overbar `~{…}` only where the data sheet's own figure or table draws one; a minus or en dash as ASCII `-`. KiCad's subscript markup `_{…}` is compared rendered (`V_{DD}` is the data sheet's subscripted VDD). An empty symbol name does not match a named pin.
+  - **Type, in this order:** a supply or ground pin is `power_in`; a regulator's or ideal diode's output is `power_out`; otherwise the data sheet's I/O column (I `input`, O `output`, I/O `bidirectional`, an open-drain output `open_collector`); "no internal connection" is `free`, KiCad's "not internally connected"; "do not connect" is `no_connect`; a pin whose column gives no direction and that only takes an external part (soft-start, bootstrap, timing or bias) is `passive`. A discrete part's terminals are `passive`, except a MOSFET's gate, which is `input` (an insulated gate drawing only I_GSS).
+- **The documents read (2026-11-12), each fetched as a PDF:** TI SLAS533B (PCM3060), SBOS724A (OPA1688), SCES366L (SN74LVC3G34), SCES519O (SN74LVC1G34), SCES296AG (SN74LVC1G07), SCES200O (SN74LVC2G14), SBVS050N (TPS3808), SLVSES2J (TLV803E), SBVS121E (TPS7A49), SBVS386E (TPS7A24), SLUSEA4D (TPS62933F), SCDS220M (TS3USB221), SLVSEZ8A (LM66100), all from ti.com; Microchip DS20001733L (MCP6001) from microchip.com; Alpha & Omega AO3400A Rev 3.1, AO3401A Rev 3.1, AOD4185 Rev.4.2 and package outlines PO-00001 (SOT23) and PO-00009 (TO252) from aosmd.com; Diodes Inc. DS30086 Rev. 32-2 (1N4148W) and DS18004 Rev. 38-2 (BZT52C) from diodes.com; Omron Cat. No. K106-E1-11 (G6K) from omron.com; Epson SG-210STF brief from epsondevice.com. nexperia.com, st.com and kingbright.com refused or timed out, so these were read from LCSC's copies (datasheet.lcsc.com): Nexperia BAS116H Rev. 3, PMEG4005AEA v.4, PMEG4030ER v.4, PESDxL1BA Rev. 02, 2N7002 Rev. 7; ST USBLC6-2 Doc ID 11265 Rev 5; Kingbright WP7113ID DSAF0012 Rev V.13A; Epson SGxxxxCAN_E_Ver2.16; Murata JENF243A_0091C-01 (BLM31KN601SN1L). Each part's document, revision, page, table and URL are in `circuits/h7-platform/pedal-pin-tables.ts`.
+- **Costs if wrong:** a rule loosened or tightened changes which parts need project symbols; each table and symbol is re-checked by the test.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+- **Carried in:** `circuits/h7-platform/pedal-pin-tables.ts`; `tests/circuits/h7-pedal-symbols.ts`.
+
+### CR-PEDAL-SYMBOL-PROJECT
+
+**Eleven pedal parts are drawn from project symbols, each generated from a stock symbol and its data sheet table.**
+- **Label:** Controller ruling (the owner may override), under spec C4.
+- **Date:** 2026-11-12.
+- **Decides:** the parts below have no installed symbol that matches under [CR-PEDAL-PIN-MATCH](#cr-pedal-pin-match). A scan of all 22,734 installed symbols the pin reader accepts (50 more declare a pin number twice and are counted, not compared) finds none for any of them, and the same scan, as a control, does find `74xGxx:SN74LVC2G14DBV` and `Oscillator:SG-5032CAN`. Each project symbol in `circuits/h7-platform/h7-platform.kicad_sym` is the stock symbol named, flattened and renamed, its pins renamed and retyped from the table, Value, Datasheet and Description set to the part, Footprint emptied. Its geometry is the stock symbol's, except that a stock pin hidden as not connected is shown and moved to an empty place on the body edge, because it is a pin of the fitted part that a page may wire. The differences from each base, which the test asserts pin by pin, are the reason for each, and each part's entry below states them.
+- **Shown drawable (C4):** `tests/circuits/h7-pedal-project-symbol-draw.test.ts` has the real copperhead draft each one with every pin on its own net, and the real kicad-cli export each pin with its data sheet name and type. It measured that kicad-cli writes a space in a pin name as "_" in the netlist (OPA1688's "OUT A" as "OUT_A"); the drafted page carries the space.
+- **Regenerated:** `tests/circuits/h7-pedal-project-symbols.ts` makes them; `tests/circuits/h7-pedal-parts.test.ts` regenerates each and compares it with the committed library. The writer is `docs/superpowers/plans/2026-11-12-h7-pedal-pages-execution/task-2/write-project-symbols.ts`.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+- **Costs if wrong:** each part's entry below.
+
+### CR-PEDAL-SYMBOL-PCM3060
+
+**U_CODEC, PCM3060PWR is drawn from the project symbol `h7-platform:PCM3060PW`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:PCM3060PW` from `Audio:PCM3060`: pin 27 is `~{MS}/ADR/IFMD` (SLAS533B p. 7 and p. 8 Table 1; stock "AD"); pin 21 VCOM is `passive` (Table 1 gives it no direction; stock `output`).
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-OPA1688
+
+**U_VMID, U_IN, U_OUT and U_ADC, OPA1688IDR is drawn from the project symbol `h7-platform:OPA1688xD`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:OPA1688xD` from `Amplifier_Operational:OPA1692xD`, 3 units (A, B, supply): no stock OPA1688; the stand-ins name the pins `+`, `-` and nothing where SBOS724A p. 3 Table 6-1 names them +IN A, -IN A, OUT A (and B). `part.symbolPins` numbers each unit.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-SN74LVC3G34
+
+**U_ISO_M, SN74LVC3G34DCTR is drawn from the project symbol `h7-platform:SN74LVC3G34DCT`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:SN74LVC3G34DCT` from `74xGxx:74LVC3G34`, 4 units: the stock gate pins are unnamed; SCES366L p. 3 names them 1A, 1Y, 2A, 2Y, 3A, 3Y. Its types matched. Stock unit 2 is gate 3 (pins 2, 6) and unit 3 is gate 2 (pins 3, 5); `part.symbolPins` keys the units by gate.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-SN74LVC1G34
+
+**U_ISO_C, SN74LVC1G34DBVR is drawn from the project symbol `h7-platform:SN74LVC1G34DBV`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:SN74LVC1G34DBV`, `SN74LVC1G07DBV` from `74xGxx:74LVC1G34`, `74LVC1G07`: A and Y are unnamed on the stock symbols (SCES519O p. 3 Table 4-1, SCES296AG p. 3).
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-SN74LVC1G07
+
+**U_MIDIDRV, SN74LVC1G07DBVR is drawn from the project symbol `h7-platform:SN74LVC1G07DBV`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:SN74LVC1G34DBV`, `SN74LVC1G07DBV` from `74xGxx:74LVC1G34`, `74LVC1G07`: A and Y are unnamed on the stock symbols (SCES519O p. 3 Table 4-1, SCES296AG p. 3).
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-TPS3808G01
+
+**U_PF, TPS3808G01DBVR is drawn from the project symbol `h7-platform:TPS3808G01DBV`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:TPS3808G01DBV` from `Power_Supervisor:TPS3808DBV`: RESET "is an open-drain output" (SBVS050N p. 4 Table 5-1), `open_collector`; the stock symbol types it `output`, the defect [CR-MODULE-SUPERVISOR-SYMBOL](#cr-module-supervisor-symbol) found in TPS3839DBZ.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-TPS7A4901
+
+**U_LDO, TPS7A4901DGNR is drawn from the project symbol `h7-platform:TPS7A4901DGN`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:TPS7A4901DGN` from `Regulator_Linear:TPS7A4101DGN`: pin 6 is NR/SS (`passive`) and pin 7 DNC (`no_connect`) per SBVS121E p. 4, which the stock symbol hides as NC; pin 3 NC is "not internally connected" (`free`); pin 9 is PowerPAD, stacked under GND pin 4 as the stock symbol draws it, which is how the pedal wires it ([schematic-checklist.md](schematic-checklist.md) PWR-08). Pins 3, 6 and 7 are moved to the body edge and shown.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-TPS7A2433
+
+**U_CVDD, TPS7A2433DBVR is drawn from the project symbol `h7-platform:TPS7A2433DBV`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:TPS7A2433DBV` from `Regulator_Linear:TLV70033_SOT23-5` (no stock TPS7A24, same pin roles): pin 4 is "No internal connection" (SBVS386E p. 3 Table 5-1), `free`, and shown.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-LM66100
+
+**U_REFBLK, LM66100DCKR is drawn from the project symbol `h7-platform:LM66100DCK`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:LM66100DCK` from `Power_Management:LM66100DCK`: pin 4 is "N/C", "Not internally connected" (SLVSEZ8A p. 3), `free`, and shown, since the pedal ties it to GND ([analog.md](analog.md) line 314).
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-MCP6001
+
+**U_EXP, MCP6001T-I/OT is drawn from the project symbol `h7-platform:MCP6001T-OT`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:MCP6001T-OT` from `Amplifier_Operational:MCP6001-OT`: DS20001733L p. 11 Table 3-1 names the pins VOUT, VSS, VIN+, VIN-, VDD; the stock symbol has nothing, V-, +, -, V+.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-PESD12VL1BA
+
+**The jack ESD diodes, PESD12VL1BA,115 is drawn from the project symbol `h7-platform:PESD12VL1BA`.**
+- **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
+- **Date:** 2026-11-12.
+- **Decides:** `h7-platform:PESD12VL1BA` from `Device:D_TVS`: Nexperia's pinning table gives "cathode 1" and "cathode 2" (PESDxL1BA Rev. 02, Table 2), written K1 and K2 with Nexperia's own K for cathode (PMEG4005AEA v.4 Table 2); the stock symbol says A1, A2.
+- **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-TLV803EA29
+
+**U_CRST, TLV803EA29DBZR, is drawn from the module's project symbol `h7-platform:TLV803EA30DBZR`.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the pedal's supervisor is TLV803EA29DBZR ([parts.md](parts.md) §3, U_CRST), checked in the sources before this ruling. SLVSES2J p. 26 section 12.1.1 reads "TLV803EA29DBZR is open-drain, active-low, … Pin 1 = GND", the same DBZ pins (p. 5 Table 6-1, "DCK, DBZ") and output stage as the module's TLV803EA30DBZR. The module's symbol matches by name, number and type, so it stands in; the value field and `mpn` say which part is fitted. The control in `tests/circuits/h7-pedal-parts.test.ts`: `Power_Supervisor:TPS3839DBZ` is rejected for this part with exactly one difference, pin 2 typed `output`.
+- **Costs if wrong:** none beyond a renamed symbol: both parts' pins are the same.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-SG-210STF
+
+**U_XO, Epson X1G0041710019 (SG-210STF), is drawn from the stand-in `Oscillator:SG-5032CAN`.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** the SG-210STF's own stock symbol differs from Epson's pin map only in pin 4's case, "Vcc" against "VCC" (Epson SG-210STF brief p. 2 Pin Map; SGxxxxCAN_E_Ver2.16 p. 2 Terminal Assignment). Under [CR-PEDAL-PIN-MATCH](#cr-pedal-pin-match) names are case-sensitive, and Epson's SG-5032CAN symbol, the same four pins, matches by name, number and type, so it stands in before a project symbol is made. Its stock Footprint field names the 5032 package; no footprint is taken from it.
+- **Costs if wrong:** if case is ruled not to matter, the own symbol replaces it, one symbol swap.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-AO3400A
+
+**The AO3400A and AO3401A use their own stock symbols, numbered G 1, S 2, D 3; Alpha & Omega does not number the pins.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** AO3400A Rev 3.1 and AO3401A Rev 3.1, p. 1, label the SOT23 leads D, G and S in a top-view drawing and number none; the SOT23 outline PO-00001 numbers none either. The numbers are read from that drawing: the pin-1 dot sits at the G lead, and D is the lead alone on its side, which is pin 3 in Nexperia's SOT23 numbering (2N7002 Rev. 7 Table 2: 1 G, 2 S, 3 D). That gives 1 G, 2 S, 3 D, which is the stock `Transistor_FET:AO3400A` and `AO3401A`. **The numbering is an inference from a drawing, not a stated table.**
+- **Costs if wrong:** gate and source swapped on the footprint for six N-MOSFETs and Q_MIDI; the schematic's connectivity is unchanged, and the layout's footprint check would have to catch it.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-AOD4185
+
+**Q_MSW, AOD4185 (TO-252), is drawn from `Transistor_FET:Q_PMOS_GDS`: 1 G, 2 D, 3 S.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** there is no AOD4185 symbol. AOD4185 Rev.4.2 p. 1 labels the TO252 leads G and S with the tab D, and the TO-251A version's three leads G, D, S in order; it numbers none, and the outline PO-00009 numbers none. Reading the leads in that order gives 1 G, 2 D (the centre lead, the tab), 3 S, which the generic `Q_PMOS_GDS` has (gate `input`, drain and source `passive`). **The numbering is an inference from a drawing.**
+- **Costs if wrong:** the load switch's gate and source swapped on the footprint; caught only at layout.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
+### CR-PEDAL-SYMBOL-DIODES
+
+**Four diodes without a stock symbol of their own use generic Device symbols; three manufacturers do not number the terminals.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-12.
+- **Decides:** PMEG4005AEA (D_CVCL, D_RCLAMP) uses `Device:D_Schottky`, BAS116H (D_PFCL, D_SS, D_GS) `Device:D`, BZT52C12-7-F (D_BZ_IN, D_BZ_OUT) `Device:D_Zener` (the stock `Diode:BZT52Bxx` names the B tolerance, not the fitted C), and WP7113ID (LED1, LED2) `Device:LED`. Each has pin 1 K, pin 2 A, both `passive`. Nexperia numbers its terminals (PMEG4005AEA v.4 and PMEG4030ER v.4 Table 2, 1 K cathode, 2 A anode; BAS116H Rev. 3 Table 2, 1 cathode, 2 anode). Diodes Inc. (DS30086 Rev. 32-2, DS18004 Rev. 38-2: "Polarity: Cathode Band") and Kingbright (DSAF0012 Rev V.13A p. 1: the cathode lead labelled) say which terminal is the cathode and number neither; their numbers are [CR-PEDAL-KINDS](#cr-pedal-kinds)'s cathode 1, anode 2.
+- **Costs if wrong:** for the unnumbered three, a diode reversed on the footprint, caught at layout.
+- **Set by:** the controller, h7 pedal pages plan Task 2.
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1); the module's own allowance for the same VCAP1–VCAP2 error is a new controller ruling, [CR-MODULE-VCAP-ERC](#cr-module-vcap-erc), not this carried. The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
