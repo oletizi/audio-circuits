@@ -61,9 +61,9 @@ committed bytes, with the pinned kicad-cli.
 | usb | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
 | midi_i2c | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
 | fsw_led | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
-| controls_a | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
-| controls_b | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
-| expr_ref | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
+| controls_a | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
+| controls_b | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
+| expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
 
 ## The drafts every repair starts from
 
@@ -1556,7 +1556,7 @@ no row is crossed.
 
 ## controls_a: control positions 1 to 3 (Task 9b)
 
-**Status: UNREVIEWED.** sha256 `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888`.
 Render: `controls_a.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/controls.ts` (`controlsABlock`), 18 parts, six per position
@@ -1690,7 +1690,7 @@ row crossing the 3V3_D bus on its way to the outer GND vertical that comes down 
 
 ## controls_b: control positions 4 to 6 (Task 9b)
 
-**Status: UNREVIEWED.** sha256 `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db`.
 Render: `controls_b.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/controls.ts` (`controlsBBlock`), 18 parts, six per position
@@ -1824,7 +1824,7 @@ row crossing the 3V3_D bus on its way to the outer GND vertical that comes down 
 
 ## expr_ref: the expression input, the VREF_A blocking network and HW_REV (Task 9b)
 
-**Status: UNREVIEWED.** sha256 `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c`.
 Render: `expr_ref.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/expr-ref.ts`, 23 parts. J4 (`j_exp`, NMJ6HCD2,
