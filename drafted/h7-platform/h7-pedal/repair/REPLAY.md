@@ -10,6 +10,7 @@ board adds). It grows one block at a time as each page is repaired (h7 pedal pag
 | --- | --- |
 | start: each block's draft, `build/draw/h7-pedal/<block>/<block>.kicad_sch` as `make draw` writes it (re-papered to US Letter) | the six values in `../RECORD.md`, "The drafts every repair starts from", and in `replay.sh` |
 | end: `interface.kicad_sch` (Task 7a) | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
+| end: `entry.kicad_sch` (Task 7a) | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 
 ## Replay
 

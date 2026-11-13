@@ -35,6 +35,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | sheet | role | sha256 |
 | --- | --- | --- |
 | `interface.kicad_sch` | block interface | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
+| `entry.kicad_sch` | block entry | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -42,6 +43,7 @@ committed bytes, with the pinned kicad-cli.
 | page | status | render |
 | --- | --- | --- |
 | interface | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
+| entry | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
 
 ## The drafts every repair starts from
 
@@ -171,3 +173,89 @@ and J2.20, and 34 that each reach one pad. J1's pads 16 to 19 are the contract's
   rectangle.
 - The page's arrangement is the module interface page's, and so are its 35 port names and the pad
   each sits on: the two blocks' `ports.json` are equal (compared as name-to-pins maps).
+
+## entry: the power entry (Task 7a)
+
+**Status: UNREVIEWED.** sha256 `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736`.
+Render: `entry.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/entry.ts`, 15 parts: J3 (J_DC, `Connector:Barrel_Jack`),
+FB1 (FB_IN, `Device:FerriteBead`), D1 and D2 (D_AIN, D_MIN, `Diode:PMEG4030ER`), C1 (C_SCH), C2
+(C_PROTHF), C3 to C6 (C_BULK to C_BULK4, `Device:C_Polarized`), C7 (C_PROT), R1 (R_VBLD), TP1, TP2
+and TP3 (`Connector:TestPoint`). Ports GND, VIN, VIN_A and VIN_MSW (VIN_MSW reaches one pin, D2's
+cathode). VIN_FB is private to the page and is drawn as wire, with no label.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-DC-JACK](../../../docs/h7-platform/decisions.md#cr-pedal-dc-jack): J3 on the generic
+  `Connector:Barrel_Jack`, pin 1 (centre) on GND, pin 2 (sleeve) on VIN, no switch contact.
+- [CR-PEDAL-FB-IN](../../../docs/h7-platform/decisions.md#cr-pedal-fb-in): FB1 from VIN to VIN_FB,
+  both diodes' anodes on VIN_FB, C1 (C_SCH) on VIN, C2 (C_PROTHF) on VIN_A beside C7 (C_PROT).
+- [CR-MODULE-BEAD-VALUE](../../../docs/h7-platform/decisions.md#cr-module-bead-value), as
+  CR-PEDAL-FB-IN applies it: FB1 reads its rating, "600R@100MHz" (`valueFor`), not the model's 3 µH.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): TP1 on VIN, TP2
+  on VIN_A, TP3 the one GND pad.
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): VIN_MSW, D2's cathode.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): GND, VIN and
+  VIN_A are wires ending in hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Every pin on it is passive, so ERC needs none here; `repair/tools/pwr-flag-homes.ts`
+  is empty.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 4 ports on the wrong net.
+- Drawing choices, not transcriptions: J3 is mirrored top to bottom (`mirror x`) so its VIN pin is
+  its upper pin and VIN's row runs above GND's; both diodes are turned 180 so each anode is west;
+  VIN_MSW, which the draft drew no wire for, takes the blue stroke copperhead gives the VIN family
+  (VIN_A and VIN_FB on the draft), by copperhead's own family rule (`entry/layout.py`,
+  `UNDRAWN_STROKES`).
+- The placement is the third: the first render showed FB1's Value running into D1's, TP1's Value
+  into C1's, and each capacitor's Value reaching its east neighbour's body; the second, TP2's Value
+  running into VIN_A's label (`entry/layout.py` records each change).
+
+### Measurements, before (the draft) and after (this page)
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 15 (the model declares none) | 0; 15 |
+| exported components, nets, net members | 15, 5, 27 | 15, 5, 27 |
+| exported nets carrying a model net name | 4 of 5 (/GND, VIN, VIN_A, VIN_FB) | 4 of 5 (/GND, /VIN, /VIN_A, /VIN_MSW; the fifth is VIN_FB, private and unlabelled) |
+| ports whose label is on the wrong net | 3 of 4 | 0 of 4 |
+| ERC, the sheet alone | 1 error (`pin_not_connected` 1, D2 pin 1), 2 warnings (`lib_symbol_mismatch` 2) | 4 errors (`pin_not_connected` 4: each hierarchical label has no parent sheet), 3 warnings (`isolated_pin_label` 1, `lib_symbol_mismatch` 2) |
+| ERC under a one-block root, `/entry/` | 1 error (`pin_not_connected` 1, D2 pin 1), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 8 errors (`hier_label_mismatch` 4, `label_dangling` 4), 2 warnings (`lib_symbol_mismatch` 2) | 3 errors (`label_dangling` 3, the stubs' labels with one block, which `erc_sheets.py` admits), 4 warnings (`isolated_pin_label` 2, `lib_symbol_mismatch` 2) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 2, 10 | 0, 0 |
+| orphan junctions, of total | 0 of 4 | 0 of 21 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 7; 10 | 0; 0 |
+| labels | 9 on 4 nets (8 global) | 4 on 4 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east by 3.133 mm | fits |
+| wire groups with more than one stroke | 0 of 9 | 0 of 5 |
+| symbols (parts, power symbols, PWR_FLAGs) | 15 (15, 0, 0) | 15 (15, 0, 0) |
+| placed pins | 27 | 27 |
+| wires, total length | 47, 731.52 mm | 47, 370.84 mm |
+| wire corners | 8 | 3 |
+| junctions | 4 | 21 |
+
+**`lib_symbol_mismatch`, 2 warnings on the draft and on the page**, measured with `kicad-cli sch erc
+--severity-all`: *"Symbol 'PMEG4030ER' doesn't match copy in library 'Diode'"*, on D1 and on D2.
+The draft carries them as copperhead embedded the symbol; the repair does not touch `lib_symbols`.
+They are warnings; nothing was done about them, and what differs between the embedded and the
+installed copy was not measured.
+
+### What the page shows, as observations
+
+- J3 stands at the west, mirrored top to bottom: pin 2 (VIN) is its upper pin, pin 1 (GND) its
+  lower, both facing east.
+- VIN runs east on one row from J3.2. VIN's hierarchical label sits on a stub rising from the row
+  just east of J3, its text vertical; TP1 stands on the row; C1 and R1 hang from it to the GND row;
+  FB1 lies in the row.
+- At VIN_FB, east of FB1, a riser goes up to a second row: D2, anode west, runs east to VIN_MSW's
+  hierarchical label, which points east. D1, anode west, continues on the first row into VIN_A.
+- VIN_A runs east from D1's cathode: C3 to C6, C7 and C2 hang from it to the GND row, 450 mil apart;
+  TP2 stands on the row; VIN_A's hierarchical label ends the row at the east, pointing east.
+- GND runs along a row under the VIN row, its hierarchical label at the west end pointing west;
+  J3.1 drops to it, TP3 hangs under it, and every hanging part's pin 2 meets it.
+- VIN_A, VIN_FB and VIN_MSW wires carry copperhead's blue stroke; VIN and GND its default.
+- The hanging parts carry Reference over Value east of their bodies; D1's below the row, D2's and
+  FB1's above their rows; J3's above its body; the pads' east of their circles.

@@ -1,0 +1,63 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "entry.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "44de0dcb-b715-567a-b0f1-50722758e8ce"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1500,
+    3600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2eda5972-e2d3-5b35-8e98-5913ee4ee0ca"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN",
+   "at": [
+    2000,
+    2700
+   ],
+   "scope": "hierarchical",
+   "rotation": 90
+  },
+  {
+   "op": "delete_object",
+   "uuid": "1d04b653-5ba4-595f-954e-0b27b19e50dd"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_A",
+   "at": [
+    7600,
+    3000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "caa00ece-6ea7-511d-be2e-681d5a1ca377"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MSW",
+   "at": [
+    4550,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

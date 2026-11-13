@@ -6,7 +6,7 @@
 # It grows one block at a time, as each page is repaired (h7 pedal pages plan, Task 7). Today it
 # drafts every page the model holds, checks each draft and its intent against the committed record
 # (the drafts of the blocks not yet repaired are checked too, so a model change shows here first),
-# and repairs the Task 7a pages by repair_block (interface so far). Each later part adds its
+# and repairs the Task 7a pages, interface and entry, by repair_block. Each later part adds its
 # blocks' sha256s and repair_block calls; the root and its .kicad_pro come when every page is drawn.
 #
 # Copied from drafted/h7-platform/h7-module/repair/replay.sh, its repair_block unchanged; the
@@ -47,8 +47,9 @@ draft_sha() {
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface"
+REPAIRED="interface entry"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
+PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -142,6 +143,7 @@ repair_block() {
 }
 # Task 7a.
 repair_block interface "$PAGE_INTERFACE"
+repair_block entry "$PAGE_ENTRY"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make
