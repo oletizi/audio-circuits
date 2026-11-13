@@ -25,6 +25,7 @@ import { PEDAL_BLOCKS, PEDAL_PIN_NUMBERS } from "./pedal/build.ts"
 import { entryBlock } from "./pedal/entry.ts"
 import { modswBlock } from "./pedal/modsw.ts"
 import { pfBlock } from "./pedal/pf.ts"
+import { prailBlock } from "./pedal/prail.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { contractNet } from "./pedal/nets.ts"
 
@@ -39,6 +40,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["entry", entryBlock, "Power entry"],
   ["pf", pfBlock, "Power-fail supervisor"],
   ["modsw", modswBlock, "Module load switch"],
+  ["prail", prailBlock, "Pedal digital rail 3V3_P"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -109,6 +111,11 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   modsw_q_msw: "Q1", modsw_r_mswt: "R8", modsw_r_mswb: "R9", modsw_q_mswd: "Q2", modsw_c_ss: "C12", modsw_d_ss: "D4",
   modsw_r_ssr: "R10", modsw_c_gs: "C13", modsw_d_gs: "D5", modsw_r_gsb: "R11", modsw_q_vdis: "Q3", modsw_r_vdis: "R12",
   modsw_tp_vin_mod: "TP4",
+  // prail
+  prail_u_prail: "U3", prail_c_pin1: "C14", prail_c_pin2: "C15", prail_c_pinhf: "C16", prail_l_prail: "L1",
+  prail_c_pout1: "C17", prail_c_pout2: "C18", prail_c_pout3: "C19", prail_c_pout_hf: "C20", prail_r_fb_top: "R13",
+  prail_r_fb_bottom: "R14", prail_c_ss: "C21", prail_r_bst: "R15", prail_c_bst: "C22", prail_r_pen: "R16",
+  prail_r_penpd: "R17", prail_c_pen1: "C23", prail_c_pen2: "C24", prail_q_pen: "Q4", prail_r_pens: "R18",
 }
 
 /** One page per block (design change C3). */
