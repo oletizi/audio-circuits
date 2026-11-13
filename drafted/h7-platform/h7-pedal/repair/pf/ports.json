@@ -1,0 +1,54 @@
+[
+ {
+  "name": "5V_A",
+  "pins": [
+   "C11.1",
+   "C9.1",
+   "R5.2",
+   "U1.3",
+   "U1.6",
+   "U2.5"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C10.2",
+   "C11.2",
+   "C8.2",
+   "C9.2",
+   "D3.2",
+   "R4.2",
+   "R6.2",
+   "R7.2",
+   "U1.2",
+   "U2.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "PF_ON",
+  "pins": [
+   "R7.1",
+   "U2.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "PF_TRIP",
+  "pins": [
+   "R6.1",
+   "U2.3",
+   "U2.6"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VIN",
+  "pins": [
+   "R2.1"
+  ],
+  "drafted": false
+ }
+]

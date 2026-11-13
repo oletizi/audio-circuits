@@ -1619,6 +1619,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
   - So the stand-in is `Connector:TestPoint`. A passive pin cannot raise a `pin_to_pin` conflict, so a type conflict between a block's pin and its real driver is visible only at the real root, which is why the real root must clear each entry.
 - **Costs if wrong:** one tooling revision. No page bytes change: the stand-in is placed only on the scratch root `verify.sh` builds.
 - **Set by:** the controller, H7 module plan, Task 7b, on the qspi page's verify failure.
+- **Extended by:** [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](#cr-pedal-cross-page-power-drivers) (drafted in the h7 pedal pages plan, Task 7b, not yet adopted): where the declared driving pin is `power_out`, the stand-in is a PWR_FLAG, since a passive pin does not drive a power input (measured). The TestPoint stays the stand-in for every other driving pin, so nothing above changes for the module.
 - **Carried in:** the table `drafted/h7-platform/h7-module/repair/tools/cross-page-drivers.ts`, beside `pwr-flag-homes.ts`; its model check is `draughting/pages/cross-page-drivers.ts` (moved there with the other page tools by the H7 pedal plan's Task 4). `draughting/pages/one-block-root.ts` places the stand-in; `draughting/pages/erc_sheets.py` now prints each error on the block's sheet with the symbol and pin KiCad names; `repair/tools/erc-control.sh` holds a positive control (the committed qspi page verifies, `/qspi/` at 0 and 0) and two negatives (the table overridden through `PAGES_CROSS_PAGE_DRIVERS_TABLE` (named `H7_CROSS_PAGE_DRIVERS_TABLE` until the H7 pedal plan's Task 4) to omit FLASH_CLK fails with `pin_not_driven` on U4's CLK; an entry naming U1 pin 29, which the model puts on HSE_IN, is refused by the model check).
 
 ### CR-MODULE-PORT-LABEL-CHECK
@@ -2167,6 +2168,24 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Costs if wrong:** one capacitor end moves on one page.
 - **Set by:** the controller, h7 pedal pages plan Task 6 fix round 1.
 - **Carried in:** `circuits/h7-platform/pedal/pf.ts` and `ldo-vmid.ts`; tested in `tests/circuits/h7-pedal-{pf,ldo-vmid}.test.ts`.
+
+### CR-PEDAL-CROSS-PAGE-POWER-DRIVERS
+
+**A power net whose driver is a `power_out` pin on another page is a cross-page driver entry, and a block page's one-block root stands in for that driver with a PWR_FLAG; the net has no flag home.**
+- **Label:** Controller ruling (the owner may override). Drafted by the h7 pedal pages plan's Task 7b implementer, on the pf page's verify failure, for the controller to adopt or strike at review; it is not adopted until then.
+- **Date:** 2026-11-13.
+- **Decides:**
+  - A net is in the board's `cross-page-drivers.ts` when a page's ERC under its one-block root reports its input undriven and its driver is on another page, as [CR-MODULE-CROSS-PAGE-DRIVERS](#cr-module-cross-page-drivers) has it, and that now includes a power input (`power_pin_not_driven`) whose driver is a `power_out` pin. The entry is held to the model as every entry is.
+  - The stand-in follows the driving pin's own type, read from its symbol on every run (`standInKind`, `draughting/pages/cross-page-drivers.ts`): a `power_out` driving pin is stood in for by a PWR_FLAG, whose one pin is `power_out` (`power:PWR_FLAG` in KiCad 10.0.5's `power.kicad_sym`, checked on disk); every other driving pin keeps CR-MODULE-CROSS-PAGE-DRIVERS' `Connector:TestPoint`. The stand-in sits only on the scratch one-block root; the assembled root carries none, and its ERC and `root-drivers.ts` must clear the net with the real driver.
+  - Such a net takes no entry in `pwr-flag-homes.ts`: its real driver is a power output, and [CR-MODULE-PWR-FLAGS](#cr-module-pwr-flags) flags a net only where nothing on the board has a power output on it. `one-block-root.ts` refuses a net that has both a flag home and a `power_out` driver entry.
+  - The first entry is the pedal's 5V_A, driven by U4's OUT (pin 1; U_LDO, `h7-platform:TPS7A4901`, typed `power_out` under [CR-PEDAL-PIN-MATCH](#cr-pedal-pin-match) clause 3) on the ldo_vmid page, and reaching the pf page's U1 VDD and U2 VCC (`power_in`).
+- **Why:** on the pf page (Task 7b), under its one-block root, `kicad-cli sch erc` (10.0.5) reported `power_pin_not_driven` on *"Symbol U1 Pin 6 [VDD, Power input, Line]"*, on 5V_A. MEASURED on that page, with the GND stub flag in place in every run:
+  - with a `Connector:TestPoint` stand-in on 5V_A's stub (the `PAGES_CROSS_PAGE_DRIVERS_TABLE` override naming U4 pin 1): `/pf/` still reports the same `power_pin_not_driven`. KiCad's ERC does not count a passive pin as driving a power input, so CR-MODULE-CROSS-PAGE-DRIVERS' stand-in cannot clear it;
+  - with a PWR_FLAG on 5V_A's stub: `/pf/` reports **0 errors and 0 warnings**.
+  - The alternative under CR-MODULE-PWR-FLAGS alone, a flag home for 5V_A, would put a PWR_FLAG on a net U4's `power_out` already drives in the assembled hierarchy: two `power_out` pins on one net, the same pair of pin types that ruling measured as a `pin_to_pin` error with two PWR_FLAGs. That is an inference from the pin types; it is not measured with U4 itself, because the ldo_vmid page is not drawn yet. An ERC allowance for the `power_pin_not_driven` is not taken: the page is not at fault, and the check lacked the driver.
+- **Costs if wrong:** one tooling revision and one table entry. No page bytes change: the stand-in is placed only on the scratch root `verify.sh` builds. The module's entries all have a driving pin that is not `power_out` (bidirectional GPIOs, U5's open-collector `~{RESET}`, SW2's passive pin), so their stand-in is the TestPoint, as before.
+- **Set by:** drafted by the implementer, h7 pedal pages plan Task 7b; for the controller.
+- **Carried in:** `draughting/pages/cross-page-drivers.ts` (`standInKind`) and `draughting/pages/one-block-root.ts`; the table `drafted/h7-platform/h7-pedal/repair/tools/cross-page-drivers.ts`; the measurement in `drafted/h7-platform/h7-pedal/RECORD.md`, the pf section.
 
 ## What this document does not carry
 

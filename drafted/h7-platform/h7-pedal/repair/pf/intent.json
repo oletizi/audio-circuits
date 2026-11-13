@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U1",
+      "libId": "h7-platform:TPS3808G01DBV",
+      "value": "TPS3808G01DBVR",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R2",
+      "libId": "Device:R",
+      "value": "13K",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R3",
+      "libId": "Device:R",
+      "value": "174K",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R4",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "D3",
+      "libId": "Device:D",
+      "value": "BAS116H,115",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "C8",
+      "libId": "Device:C",
+      "value": "1000pF",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "C9",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "C10",
+      "libId": "Device:C",
+      "value": ".047uF",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R5",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "U2",
+      "libId": "74xGxx:SN74LVC2G14DBV",
+      "value": "SN74LVC2G14DBVR",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "C11",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R6",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Power-fail supervisor"
+    },
+    {
+      "ref": "R7",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "Power-fail supervisor"
+    }
+  ],
+  "nets": [
+    {
+      "name": "5V_A",
+      "kind": "signal",
+      "pins": [
+        "C11.1",
+        "C9.1",
+        "R5.2",
+        "U1.3",
+        "U1.6",
+        "U2.5"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C10.2",
+        "C11.2",
+        "C8.2",
+        "C9.2",
+        "D3.2",
+        "R4.2",
+        "R6.2",
+        "R7.2",
+        "U1.2",
+        "U2.2"
+      ]
+    },
+    {
+      "name": "PF_CLAMP",
+      "kind": "signal",
+      "pins": [
+        "D3.1",
+        "R2.2",
+        "R3.1"
+      ]
+    },
+    {
+      "name": "PF_CT",
+      "kind": "signal",
+      "pins": [
+        "C10.1",
+        "U1.4"
+      ]
+    },
+    {
+      "name": "PF_OK",
+      "kind": "signal",
+      "pins": [
+        "R5.1",
+        "U1.1",
+        "U2.1"
+      ]
+    },
+    {
+      "name": "PF_ON",
+      "kind": "signal",
+      "pins": [
+        "R7.1",
+        "U2.4"
+      ]
+    },
+    {
+      "name": "PF_SENSE",
+      "kind": "signal",
+      "pins": [
+        "C8.1",
+        "R3.2",
+        "R4.1",
+        "U1.5"
+      ]
+    },
+    {
+      "name": "PF_TRIP",
+      "kind": "signal",
+      "pins": [
+        "R6.1",
+        "U2.3",
+        "U2.6"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Power-fail supervisor"
+    ]
+  }
+}

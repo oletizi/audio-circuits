@@ -21,8 +21,12 @@
  * table and checked against the model (`./cross-page-drivers.ts`), gets a stand-in driver on its stub
  * when this block is not the driving block: one `Connector:TestPoint` (a single passive pin, which
  * KiCad's ERC counts as driving an input; the ruling has the measurement), at the stub's label,
- * referenced `#DRV<n>`. Not a PWR_FLAG: these are not power nets. The board's real root must clear
- * each such net with its real driver.
+ * referenced `#DRV<n>`. Not a PWR_FLAG: these are not power nets. EXCEPT where the declared driving
+ * pin is itself `power_out` (a regulator's output, driving a power input on this page): KiCad's ERC
+ * does not count a passive pin as driving a `power_in`, so that stand-in is a PWR_FLAG, the one-pin
+ * `power_out` symbol (`standInKind`; the h7-pedal's ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS has the
+ * measurement). A net cannot take both a flag-home stub flag and such a stand-in; that is refused.
+ * The board's real root must clear each such net with its real driver.
  *
  * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
  *
@@ -35,7 +39,7 @@ import type { Network } from "../../lib/model/index.ts"
 import { blankRootSheet, rootSheetOps } from "../../tools/draught/assemble-root.ts"
 import type { AkcliOp } from "../../tools/draught/akcli-ops.ts"
 import { blockOf, boardFromArgs } from "./board.ts"
-import { checkCrossPageDrivers, crossPageDriverTable, STAND_IN_LIB_ID, standInsFor } from "./cross-page-drivers.ts"
+import { checkCrossPageDrivers, crossPageDriverTable, STAND_IN_LIB_ID, standInKind, standInsFor } from "./cross-page-drivers.ts"
 import { flagHomes, flagLivesElsewhere } from "./flag-homes.ts"
 
 const usage = "bun one-block-root.ts <board-dir> <block> <out-dir>"
@@ -70,9 +74,16 @@ for (const entry of driven) {
   if (labels.length !== 1 || !Array.isArray(at) || typeof at[0] !== "number" || typeof at[1] !== "number") {
     throw new Error(`one-block root for "${block}": ${entry.net} needs a stand-in driver and ${labels.length} stub label(s) carry its name with a point; assemble-root.ts no longer writes one label per port`)
   }
-  standIns.push({ op: "place_component", lib_id: STAND_IN_LIB_ID, designator: `#DRV${standIns.length + 1}`, x_mil: at[0], y_mil: at[1], rotation: 0 })
+  if (standInKind(entry, loaded) === "pwr_flag") {
+    if (flagged.has(entry.net)) {
+      throw new Error(`one-block root for "${block}": ${entry.net} has a declared flag home (pwr-flag-homes.ts) and a power_out cross-page driver (cross-page-drivers.ts); a net driven by a power output takes no PWR_FLAG, so remove one of the two`)
+    }
+    standIns.push({ op: "place_pwr_flag", at: [at[0], at[1]], rotation: 0 })
+  } else {
+    standIns.push({ op: "place_component", lib_id: STAND_IN_LIB_ID, designator: `#DRV${standIns.length + 1}`, x_mil: at[0], y_mil: at[1], rotation: 0 })
+  }
 }
 writeFileSync(join(outDir, `${board}.kicad_sch`), blankRootSheet(board))
 writeFileSync(join(outDir, `${board}.json`), JSON.stringify({ ...base, ops: [...base.ops, ...flags, ...standIns] }, null, 1) + "\n")
-const driverText = driven.map((e) => `${e.net} (for ${e.block} ${e.designator} ${e.pinName})`).join(", ") || "none"
+const driverText = driven.map((e) => `${e.net} (for ${e.block} ${e.designator} ${e.pinName}${standInKind(e, loaded) === "pwr_flag" ? ", a PWR_FLAG" : ""})`).join(", ") || "none"
 console.log(`${board}: one sheet "${block}" with pins ${Object.keys(record.ports).sort().join(", ")}; stub PWR_FLAGs on ${[...flagged].sort().join(", ") || "none"}; stand-in drivers on ${driverText}`)

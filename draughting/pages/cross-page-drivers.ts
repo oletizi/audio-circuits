@@ -181,3 +181,26 @@ export function standInsFor(table: DriverTable, block: string, ports: Readonly<R
   const nets = new Set(Object.values(ports))
   return table.entries.filter((e) => e.block !== block && nets.has(e.net))
 }
+
+/**
+ * WHAT STANDS IN FOR AN ENTRY'S DRIVER, read from the driving pin's own electrical type. A
+ * `power_out` driving pin (a regulator's output feeding a power input on another page) is stood in
+ * for by a PWR_FLAG, whose one pin is `power_out` too (`power:PWR_FLAG`, KiCad 10.0.5's
+ * `power.kicad_sym`): KiCad's ERC does not count a passive pin as driving a `power_in`, measured on
+ * the h7-pedal's pf page (`power_pin_not_driven` on U1's VDD stays with the TestPoint stand-in and
+ * clears with a PWR_FLAG; ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS). Every other driving pin keeps
+ * the passive `STAND_IN_LIB_ID` (ruling CR-MODULE-CROSS-PAGE-DRIVERS). Either way the stand-in sits
+ * only on the scratch one-block root; the assembled root carries none and its ERC must clear the net
+ * with the real driver. Throws, naming the entry, when the driving pin cannot be resolved; call
+ * `checkCrossPageDrivers` first.
+ */
+export function standInKind(entry: CrossPageDriver, board: PageBoard): "pwr_flag" | "test_point" {
+  const label = `${entry.net} -> ${entry.block}, ${entry.designator} pin ${entry.pin}`
+  const resolved = componentIdFor(board, entry.designator)
+  if ("problem" in resolved) throw new Error(`cross-page-drivers.ts: ${label}: ${resolved.problem}`)
+  const libId = board.network.components.find((c) => c.id === resolved.id)?.part?.symbol
+  if (libId === undefined) throw new Error(`cross-page-drivers.ts: ${label}: ${resolved.id} names no KiCad symbol, so its pin's type is unknown`)
+  const pin = libraryPin(board, libId, entry.pin)
+  if (pin === undefined) throw new Error(`cross-page-drivers.ts: ${label}: ${libId} has no pin ${entry.pin}`)
+  return pin.type === "power_out" ? "pwr_flag" : "test_point"
+}

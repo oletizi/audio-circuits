@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "pf.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "77a678a9-aa51-578f-bfe2-29d554b650d5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A",
+   "at": [
+    1500,
+    2100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c3f15854-15a3-54e5-9547-f6dd068fcdbb"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1500,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d881f5fa-e576-566a-8ead-f9e014edc17d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_ON",
+   "at": [
+    9400,
+    3000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d52bc2a3-0c96-5fae-8f56-ddc9c365542a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_TRIP",
+   "at": [
+    9400,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8d31c9e7-aef3-57c8-89d1-2b74a9cf6c79"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN",
+   "at": [
+    2700,
+    2700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}
