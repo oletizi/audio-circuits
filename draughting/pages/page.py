@@ -52,16 +52,39 @@ def op_list(target, ops):
                       indent=1)
 
 
+def instance_key(ref, unit, units_of_ref):
+    """layout.PARTS's key for one placed instance: the reference for a single-unit part, and
+    `<ref>:<unit>` for each unit of a multi-unit part (as `U5:1`, `U5:2`, `U5:3`)."""
+    return f"{ref}:{unit}" if units_of_ref > 1 else ref
+
+
+def instance_keys(sheet):
+    """[(key, Symbol)] for every part instance on the sheet, keyed as `instance_key` says."""
+    units = {}
+    for s in sheet.symbols():
+        u = s.node.kid("unit")
+        units.setdefault(s.ref, []).append((int(u.atoms[0]) if u is not None and u.atoms else 1, s))
+    return [(instance_key(ref, unit, len(each)), s) for ref, each in units.items() for unit, s in each]
+
+
 def place_ops(draft, layout):
-    """Op-list 01: delete copperhead's wiring and labels, then place and orient every part."""
+    """Op-list 01: delete copperhead's wiring and labels, then place and orient every part.
+
+    A MULTI-UNIT PART is placed unit by unit, each under its `<ref>:<unit>` key (`instance_key`), by
+    `move_component` with its `unit`. akcli 0.22.0's `set_component_transform` takes no unit and
+    acts on the first instance of a reference only, so a multi-unit part's units must stay at
+    rotation 0, unmirrored, as copperhead drafts them; anything else is refused, naming the unit.
+    """
     sheet = kicad_sheet.read(draft)
-    refs = {s.ref for s in sheet.symbols()}
+    keyed = instance_keys(sheet)
+    refs = {key for key, _ in keyed}
     power = sorted(r for r in refs if r.startswith("#"))
     if power:
         raise SystemExit(f"place: the draft carries power symbols or flags {power}; a block page draws none (TOOLING.md C3)")
     if refs != set(layout.PARTS):
         raise SystemExit(f"place: the draft's parts {sorted(refs)} are not layout.py's {sorted(layout.PARTS)}; "
                          "is this the draft make draw wrote?")
+    drafted = dict(keyed)
     ops = []
     for w in sheet.wires():
         ops.append({"op": "delete_object", "uuid": w.uuid})
@@ -71,9 +94,17 @@ def place_ops(draft, layout):
         ops.append({"op": "delete_object", "uuid": j[2]})
     for n in sheet.no_connects():
         ops.append({"op": "delete_object", "uuid": n[2]})
-    for ref, (x, y, rot, mirror) in layout.PARTS.items():
-        ops.append({"op": "move_component", "designator": ref, "x_mil": x, "y_mil": y})
-        ops.append({"op": "set_component_transform", "designator": ref, "rotation": rot, "mirror": mirror})
+    for key, (x, y, rot, mirror) in layout.PARTS.items():
+        if ":" not in key:
+            ops.append({"op": "move_component", "designator": key, "x_mil": x, "y_mil": y})
+            ops.append({"op": "set_component_transform", "designator": key, "rotation": rot, "mirror": mirror})
+            continue
+        ref, unit = key.split(":")
+        unmirrored = drafted[key].node.kid("mirror") is None
+        if (rot, mirror) != (0, "none") or drafted[key].rot != 0 or not unmirrored:
+            raise SystemExit(f"place: {key} is a unit of a multi-unit part; akcli's set_component_transform "
+                             "cannot reach one unit, so it must be drafted and placed at rotation 0, unmirrored")
+        ops.append({"op": "move_component", "designator": ref, "x_mil": x, "y_mil": y, "unit": int(unit)})
     return op_list(pathlib.Path(draft).name, ops)
 
 

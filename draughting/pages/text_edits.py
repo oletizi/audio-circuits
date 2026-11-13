@@ -129,9 +129,18 @@ def edit_block(text, ref, plan):
 out = []
 last = 0
 seen = set()
+ref_re = re.compile(r'\(property "Reference" "([^"]+)"')
+unit_re = re.compile(r'\n\t\t\(unit (\d+)\)')
+units_of = {}
+for start, end, _, _, _, _ in blocks:
+    r = ref_re.search(src[start:end]).group(1)
+    units_of[r] = units_of.get(r, 0) + 1
 for start, end, lib_id, x, y, rot in blocks:
     text = src[start:end]
-    ref = re.search(r'\(property "Reference" "([^"]+)"', text).group(1)
+    # A multi-unit part's instances are keyed <ref>:<unit> in layout.py (`page.instance_key`).
+    reference = ref_re.search(text).group(1)
+    unit = unit_re.search(text)
+    ref = page.instance_key(reference, int(unit.group(1)) if unit else 1, units_of[reference])
     if ref not in layout.PARTS:
         raise SystemExit(f"text_edits: {ref} is on the sheet and not in layout.py")
     seen.add(ref)

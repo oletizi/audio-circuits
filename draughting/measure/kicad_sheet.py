@@ -611,22 +611,57 @@ class Sheet:
             self._symbols = out
         return self._symbols
 
+    def instance_pins(self, s):
+        """The library pins symbol instance `s` places: those of its own unit, and those common to
+        every unit (unit 0).
+
+        A MULTI-UNIT SYMBOL'S PINS ARE SPLIT ACROSS ITS UNITS, and each placed unit is its own
+        `(symbol` instance carrying `(unit N)`. Placing every pin of the entry at every instance
+        (what `pin_points` did until the h7 pedal pages plan's Task 7c, which drew the first
+        multi-unit part on a page, OPA1688) puts the other units' pins at points where nothing is.
+        A single-unit symbol's pins are all unit 1 or 0, so its result is unchanged. The unit of a
+        pin is read from the name of the sub-symbol holding it, `<name>_<unit>_<body style>`.
+        """
+        unit_node = s.node.kid("unit")
+        unit = int(unit_node.atoms[0]) if unit_node is not None and unit_node.atoms else 1
+        entry = self.lib_entries().get(s.lib_id)
+        if entry is None:
+            return []
+        out = []
+        for sub in entry.kids("symbol"):
+            parts = (sub.atoms[0] if sub.atoms else "").rsplit("_", 2)
+            if len(parts) != 3 or not parts[1].isdigit():
+                raise SheetParseError(f"{s.lib_id}: sub-symbol {sub.atoms} is not named <name>_<unit>_<body style>")
+            if int(parts[1]) not in (0, unit):
+                continue
+            for p in sub.walk("pin"):
+                at = p.kid("at")
+                ln = p.kid("length")
+                a = nums(at, f"{s.lib_id}: a pin (at")
+                num = p.kid("number")
+                out.append(Pin(a[0], a[1], int(a[2]) if len(a) > 2 else 0,
+                               nums(ln)[0] if ln else 0.0,
+                               p.atoms[0] if p.atoms else None,
+                               p.atoms[1] if len(p.atoms) > 1 else None,
+                               "hide" in p.atoms,
+                               num.atoms[0] if num and num.atoms else None))
+        return out
+
     def pin_points(self):
-        """{(x, y)} every placed symbol pin's connection point in sheet space."""
-        table = self.lib_pins()
+        """{(x, y)} every placed symbol pin's connection point in sheet space (each instance's
+        own unit's pins, `instance_pins`)."""
         out = set()
         for s in self.symbols():
-            for p in table.get(s.lib_id, []):
+            for p in self.instance_pins(s):
                 dx, dy = rotate(p.sx, -p.sy, s.rot)
                 out.add((round(s.x + dx, 3), round(s.y + dy, 3)))
         return out
 
     def pin_points_by_ref(self):
         """[(x, y, ref)] - the same points, each with the instance it belongs to."""
-        table = self.lib_pins()
         out = []
         for s in self.symbols():
-            for p in table.get(s.lib_id, []):
+            for p in self.instance_pins(s):
                 dx, dy = rotate(p.sx, -p.sy, s.rot)
                 out.append((round(s.x + dx, 3), round(s.y + dy, 3), s.ref))
         return out

@@ -19,7 +19,6 @@ import kicad_sheet  # noqa: E402
 
 path = sys.argv[1]
 sheet = kicad_sheet.read(path)
-lib = sheet.lib_pins()
 out = {}
 MM = 0.0254
 for s in sheet.symbols():
@@ -30,8 +29,10 @@ for s in sheet.symbols():
     pins = {}
     for p in comp["pins"]:
         pins[p["number"]] = [round(p["x_mil"]), round(p["y_mil"])]
-    # Cross-check against the sheet's own library reading.
-    for lp in lib[s.lib_id]:
+    # Cross-check against the sheet's own library reading: the pins of this instance's own unit
+    # (a multi-unit part is one akcli component holding every unit's pins, and one sheet instance
+    # per unit; `kicad_sheet.instance_pins`).
+    for lp in sheet.instance_pins(s):
         dx, dy = kicad_sheet.rotate(lp.sx, -lp.sy, s.rot)
         if mirror == "y":
             dx = -dx
@@ -41,5 +42,5 @@ for s in sheet.symbols():
         got = pins.get(lp.number)
         if got is None or abs(got[0] - x) > 1 or abs(got[1] - y) > 1:
             raise SystemExit(f"pins.py: {s.ref} pin {lp.number}: akcli says {got}, lib_symbols says {[x, y]}")
-    out[s.ref] = pins
+    out.setdefault(s.ref, {}).update(pins)
 print(json.dumps(out, indent=1, sort_keys=True))
