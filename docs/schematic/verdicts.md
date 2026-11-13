@@ -779,6 +779,33 @@ I2C-EXPANSION-CONNECTOR and MIDI-IN-RECEIVER-STOCK among them, stay open.
 
 ---
 
+## h7-pedal controls_a, controls_b and expr_ref pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-pedal/controls_a.kicad_sch` sha256 `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` (commit `9cd04ce`)
+  - `drafted/h7-platform/h7-pedal/controls_b.kicad_sch` sha256 `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` (commit `56f23df`)
+  - `drafted/h7-platform/h7-pedal/expr_ref.kicad_sch` sha256 `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` (commit `f71f61e`)
+- **Produced by** as the nine pedal pages above; the pedal's `RECORD.md` and `repair/<block>/` have the detail.
+- **Shown** 2026-11-13 as 150 dpi PNGs, twice, the second time at the owner's request
+  ("Present the three pages again"), each time with only the question *"What is your verdict on
+  each of these three pedal pages: control positions 1–3 (controls_a), control positions 4–6
+  (controls_b), and the expression-pedal reference (expr_ref)?"* The sheets were unchanged between
+  the two showings.
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** One word answered a question about three pages, and it is
+recorded against each of the three sheets on that reading; the owner may correct it for any one
+of them. expr_ref verifies with one declared ERC allowance, U12's ST against the PWR_FLAG on GND,
+under CR-PEDAL-LM66100-ST-ERC; the verdict records no owner decision on that ruling, on
+CR-PEDAL-POPULATION (both fits of each control position drawn), or on any other controller ruling
+these pages rest on. Each stays the controller's, and the owner may override it. It covers no page
+not yet shown and the pedal's root, and it is not a clearance of the circuit; EXPR-JACK-CONTACT-MAP
+stays open.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
