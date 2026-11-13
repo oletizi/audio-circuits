@@ -12,10 +12,14 @@
  * standard. So a DRC result is only meaningful once the project still equals
  * the standard; a difference is a refusal naming the constraint and its value.
  *
- * ASSUMPTION a later task must honour: the standard names "0.3 mm signal, 0.5
- * mm power" without naming the net classes. They are read here as the classes
- * `Default` (signal) and `Power`. A project that names them otherwise is
- * refused, loudly, rather than guessed at.
+ * The net class names `Default` (signal) and `Power` are written in that
+ * standard, so this file and the project file read them from one source. A
+ * project that names them otherwise is refused.
+ *
+ * EQUALITY IS DELIBERATE. A project stricter than the standard is refused too.
+ * That is a loud failure fixed in a minute; the hazard here is the router
+ * relaxing a floor silently. Tolerating "better than the standard" would need a
+ * per-constraint definition of better, which is more judgment than this needs.
  */
 
 import fs from "node:fs"

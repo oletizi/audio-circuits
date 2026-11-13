@@ -101,7 +101,12 @@ tool reads, not from this document.
 - **`circuits/pt2399-core/pt2399-core.kicad_pro`** carries the Board Setup
   constraints (minimum track width, clearance, via and hole sizes, via annular
   ring, hole-to-hole, copper-to-edge, minimum text size) and the net-class
-  widths (0.3 mm signal, 0.5 mm power). KiCad's DRC reads these.
+  widths. KiCad's DRC reads these. The net classes are named, and the names
+  are part of this standard: **`Default`** is signal (track 0.3 mm, via
+  diameter 0.8 mm, via drill 0.4 mm) and **`Power`** is power (track 0.5 mm).
+  The project's `rule_severities` must also leave `items_not_allowed`,
+  `courtyards_overlap` and `missing_courtyard` enabled (KiCad ignores
+  `missing_courtyard` by default). `tools/pcb/fab-standard.ts` checks all of it.
 - **`circuits/pt2399-core/route-fab-floor.txt`** carries the same minimums as a
   standing instruction to the router.
 

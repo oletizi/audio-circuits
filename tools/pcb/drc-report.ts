@@ -133,8 +133,9 @@ export function parseReport(text: string, where: string): ParsedReport {
   if (disabled.length > 0) {
     throw new DrcRefusal(
       "ignored-checks",
-      `${where} ignores ${disabled.join(", ")}. The hardware-envelope gate depends on each; set their severity ` +
-        "in the project's board_setup rule severities to error or warning.",
+      `${where} ignores ${disabled.join(", ")}. The hardware-envelope gate depends on all of items_not_allowed, ` +
+        "courtyards_overlap and missing_courtyard (KiCad ignores missing_courtyard by default). Set each of them to " +
+        '"error" or "warning" under the .kicad_pro\'s board.design_settings.rule_severities.',
     )
   }
 
