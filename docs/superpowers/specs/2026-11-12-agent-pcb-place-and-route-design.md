@@ -314,11 +314,17 @@ The facility also brings:
   graphic line width, for which KiCad has no design rule at all.** The second
   one bears on this board specifically rather than in the abstract: every
   footprint it uses is a stock KiCad through-hole footprint, and stock
-  footprints are where thin legend outlines come from. **NOT VERIFIED HERE** -
-  `kicad-cli` is not installed in this worktree, so the outline widths of the
-  seven footprints this board uses have not been read. Phase 1 reads them and
-  records what it finds. The expected consequence is a faint outline rather than
-  a rejected or dearer board, so this is a disclosure, not a gate.
+  footprints are where thin legend outlines come from. **VERIFIED, and the
+  measurement lives in `tests/pcb/silkscreen-widths.test.ts`** - it reads the
+  widths off the populated board through `tools/pcb/silkscreen-survey.ts`,
+  re-derives the comparison against the standard's silkscreen stroke figure on
+  every run, and prints what it found. No width is written down here or in the
+  standard, because a figure in prose is a transcription with a date on it and
+  these widths belong to stock KiCad libraries that get upgraded. That test
+  asserts only that the measurement RAN and covered every footprint on the
+  board: the expected consequence of a thin outline is a faint legend rather
+  than a rejected or dearer board, so this is a disclosure and nothing goes red
+  over it.
 - **A gated fab target.** Gerbers, Excellon drill, position file, IPC-D-356
   netlist and BOM, zipped and named with the board's declared revision -
   produced **only** from a board that passes parity, ERC and DRC, and whose

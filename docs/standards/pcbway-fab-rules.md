@@ -138,8 +138,15 @@ None of these is checked, so none should be mistaken for checked.
 1. **Trace impedance and via inductance.** They do not matter at this board's
    audio frequencies and are not why these rules exist.
 2. **Silkscreen graphic line width.** KiCad has no design rule for it at all.
-   Text stroke is set above; graphic line width is not. Task 6 measures and
-   records it rather than gating on it.
+   Text stroke is set above; graphic line width is not. It is MEASURED and
+   disclosed rather than gated: `tests/pcb/silkscreen-widths.test.ts` reads the
+   widths off the populated board through `tools/pcb/silkscreen-survey.ts`,
+   compares them with the silkscreen stroke figure in the table above, and
+   prints the result - run it to read the widths. No width is transcribed into
+   this document, because these widths belong to the stock KiCad footprints the
+   board places and change when its parts or KiCad's libraries change. Nothing
+   refuses over the comparison; the consequence of a thin outline is a faint
+   legend, not a rejected or dearer board.
 3. **Assembly.** These are bare-board rules. Nothing here constrains part
    placement for an assembler, paste stencils or pick-and-place.
 
