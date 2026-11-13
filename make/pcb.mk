@@ -13,7 +13,16 @@ PCB_REPO_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 PT2399_BOARD := $(PCB_REPO_ROOT)/circuits/pt2399-core/pt2399-core.kicad_pcb
 PT2399_SCH := $(PCB_REPO_ROOT)/circuits/pt2399-core/pt2399-core.kicad_sch
 
-.PHONY: parity-pt2399-core drc-pt2399-core drc-unrouted-pt2399-core
+.PHONY: parity-pt2399-core drc-pt2399-core drc-unrouted-pt2399-core update-pt2399-core
+
+# The headless Tools > Update PCB from Schematic (tools/pcb/update-from-schematic.ts):
+# puts every schematic component on the board, with its fields, its schematic
+# link and its nets. IN PLACE, and it refuses a board that already holds
+# footprints - it does not do incremental updates, so the board it updates is an
+# empty one and placement is regenerated from the schematic every run. Nobody
+# clicks that menu item in this repository.
+update-pt2399-core:
+	@bun "$(PCB_REPO_ROOT)/tools/pcb/update-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)"
 
 parity-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/drc-cli.ts" "$(PT2399_BOARD)" "$(PT2399_SCH)" parity

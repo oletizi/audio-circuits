@@ -1,0 +1,8 @@
+A VALID KiCad 10 schematic WITH NO COMPONENTS, for the netlist-components refusal (R1) of
+tools/pcb/update-from-schematic.ts.
+
+Why it is a fixture rather than a fake netlist: `kicad-cli sch export netlist` EXITS 0 on this
+file and writes a well-formed 957-byte export whose `(components)` section is present and empty.
+That is the whole trap - requiring a successful exit does not catch it, and neither does
+requiring the section - so the refusal is driven by the real tool against this real file rather
+than by a hand-written netlist that could differ from what KiCad actually produces.
