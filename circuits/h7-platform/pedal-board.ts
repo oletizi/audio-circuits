@@ -30,6 +30,7 @@ import { interfaceBlock } from "./pedal/interface.ts"
 import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
 import { codecSupBlock } from "./pedal/codec-sup.ts"
 import { codecBlock } from "./pedal/codec.ts"
+import { saiIsoBlock } from "./pedal/sai-iso.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -47,6 +48,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["ldo_vmid", ldoVmidBlock, "5V_A and VMID"],
   ["codec_sup", codecSupBlock, "Codec supply, clock and reset"],
   ["codec", codecBlock, "Codec PCM3060"],
+  ["sai_iso", saiIsoBlock, "SAI domain isolation"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -73,7 +75,7 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
   // Until Task 8 (digital and controls group).
-  "3V3_D", "VREF_A", "CODEC_DOUT", "CODEC_DIN", "CODEC_LRCK", "CODEC_BCK", "LED1", "LED2", "FSW1", "FSW2",
+  "VREF_A", "LED1", "LED2", "FSW1", "FSW2",
   "POS1", "POS2", "POS3", "POS4", "POS5", "POS6", "EXPR_TIP", "HW_REV", "EXPR_DETECT",
   "USB_VBUS_SENSE", "USB_EN_N", "USB_DM", "USB_DP", "EXP_I2C_SCL", "EXP_I2C_SDA", "MIDI_UART_TX", "MIDI_UART_RX",
   // Until Task 10 (analog group): jacks_byp.
@@ -89,8 +91,6 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
  * more than one pin or whose loading block is already built.
  */
 export const AWAITING_NETS: readonly string[] = [
-  // Until sai_iso (Task 8): the codec side of the SAI isolation (CR-PEDAL-NETS).
-  "BCK_CODEC", "LRCK_CODEC", "DOUT_CODEC", "DIN_CODEC",
   // Until Task 10 (adc_drv, out): the codec's analog inputs and outputs (schematic-checklist.md:110).
   "VINL", "VINR", "VOUTL+", "VOUTL-", "VOUTR+", "VOUTR-",
 ]
@@ -139,6 +139,10 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   codec_u_codec: "U9", codec_c_vcc_hf: "C36", codec_c_vcc_bulk: "C37", codec_c_vdd_hf: "C38", codec_c_vdd_bulk: "C39",
   codec_c_vcom_hf: "C40", codec_c_vcom_bulk: "C41", codec_r_mode: "R28", codec_r_fmt: "R29", codec_r_demp: "R30",
   codec_r_bck: "R31", codec_r_lrck: "R32", codec_r_dout: "R33",
+  // sai_iso
+  sai_iso_u_iso_m: "U10", sai_iso_r_bias_dout: "R34", sai_iso_r_bias_lrck: "R35", sai_iso_r_bias_bck: "R36",
+  sai_iso_r_iso_dout: "R37", sai_iso_r_iso_lrck: "R38", sai_iso_r_iso_bck: "R39", sai_iso_u_iso_c: "U11",
+  sai_iso_r_bias_din: "R40", sai_iso_c_iso_m: "C42", sai_iso_c_iso_c: "C43",
 }
 
 /** One page per block (design change C3). */
