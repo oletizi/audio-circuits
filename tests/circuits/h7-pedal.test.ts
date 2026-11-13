@@ -135,7 +135,7 @@ describe("contract nets nothing on the pedal loads yet", () => {
   test("include the five spares for good, which carry no pedal-board load (architecture.md:181)", () => {
     for (const net of ["SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5"]) expect(SOCKET_ONLY_NETS).toContain(net)
   })
-  test("every other contract net reaches a pedal part besides its pad", () => {
+  test("every other contract net has two or more members (until a group loads it, two socket pads can be its only members)", () => {
     const signals = [...new Set(loadContract().pins.flatMap((p) => (p.signal === null ? [] : [p.signal])))]
     for (const net of signals.filter((s) => !SOCKET_ONLY_NETS.includes(s))) {
       expect([net, pinsOn(PEDAL, net) >= 2]).toEqual([net, true])

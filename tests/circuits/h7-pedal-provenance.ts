@@ -12,6 +12,9 @@
  *
  * A source with no citation, or with one citation that does not resolve, is a problem: a citation
  * that points at nothing is a source nobody can read, which is the failure this check exists for.
+ *
+ * Its limit: it proves a citation resolves, not that the cited line supports the claim. A pass here
+ * is not verification of a part; a reviewer still reads the cited line.
  */
 import fs from "node:fs"
 import path from "node:path"
