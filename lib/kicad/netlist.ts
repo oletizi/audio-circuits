@@ -7,6 +7,7 @@
  * caller supplies.
  */
 import { attr, child, children, parseSexpr } from "./sexpr.ts"
+import type { SNode } from "./sexpr.ts"
 import { defaultKicadCli } from "./install.ts"
 
 /**
@@ -46,12 +47,55 @@ export interface ImportedComponent {
   readonly value: string
   readonly footprint?: string
   readonly libPart?: string
+  /**
+   * The component's schematic link, as a board footprint's `(path ...)` wants
+   * it: the sheet's `(sheetpath (tstamps ...))` joined to the component's own
+   * `(tstamps ...)` by exactly one `/`. A root-sheet component, whose
+   * sheetpath tstamps is `/`, therefore gets `/<comp-uuid>`.
+   *
+   * ABSENT, not empty, when the `(comp)` carries neither part: a footprint
+   * placed with an invented path claims a link to a symbol that may not
+   * exist, which is worse than having no link.
+   */
+  readonly uuidPath?: string
+  /**
+   * The `(fields)` block, `(field (name "X") "value")` by name. A field
+   * written with no value - KiCad emits `(field (name "Datasheet"))` for an
+   * empty one - carries the empty string, which is what it means; the KEY is
+   * absent only when the `(comp)` has no `(fields)` block at all.
+   */
+  readonly fields?: Readonly<Record<string, string>>
 }
 
 export interface ImportedNetlist {
   readonly components: readonly ImportedComponent[]
   /** net name -> sorted "designator.pin" members */
   readonly nets: Readonly<Record<string, readonly string[]>>
+}
+
+/**
+ * The `(comp)`'s schematic link, or undefined when either half is missing.
+ * Joined by exactly one `/`, whichever way the two halves are punctuated.
+ */
+function uuidPathOf(comp: SNode): string | undefined {
+  const sheetpath = child(comp, "sheetpath")
+  const sheetTstamps = sheetpath === undefined ? undefined : attr(sheetpath, "tstamps")
+  const own = attr(comp, "tstamps")
+  if (sheetTstamps === undefined || own === undefined) return undefined
+  return `${sheetTstamps.replace(/\/+$/, "")}/${own.replace(/^\/+/, "")}`
+}
+
+/** The `(fields)` block by field name, or undefined when there is no such block. */
+function fieldsOf(comp: SNode): Readonly<Record<string, string>> | undefined {
+  const fieldsNode = child(comp, "fields")
+  if (fieldsNode === undefined) return undefined
+  const fields: Record<string, string> = {}
+  for (const field of children(fieldsNode, "field")) {
+    const name = attr(field, "name")
+    if (name === undefined) throw new Error("(field) with no (name)")
+    fields[name] = field.atoms[0] ?? ""
+  }
+  return fields
 }
 
 export function importNetlist(text: string): ImportedNetlist {
@@ -69,11 +113,15 @@ export function importNetlist(text: string): ImportedNetlist {
     const libsource = child(comp, "libsource")
     const footprint = attr(comp, "footprint")
     const libPart = libsource === undefined ? undefined : attr(libsource, "part")
+    const uuidPath = uuidPathOf(comp)
+    const fields = fieldsOf(comp)
     return {
       designator,
       value,
       ...(footprint !== undefined ? { footprint } : {}),
       ...(libPart !== undefined ? { libPart } : {}),
+      ...(uuidPath !== undefined ? { uuidPath } : {}),
+      ...(fields !== undefined ? { fields } : {}),
     }
   })
 

@@ -169,6 +169,54 @@ export function defaultSymbolDir(cliPath: string, platform: string = process.pla
   ])
 }
 
+/**
+ * A best-effort path to the interpreter that can `import pcbnew`, DERIVED from
+ * the resolved `kicad-cli` exactly as the two library-root functions above
+ * derive their roots - and for the same reason the module comment gives: an
+ * interpreter written out separately could name a different install from the
+ * one a run's own `kicad-cli` points at, and `pcbnew` is a binary extension
+ * built against its own bundle. `KICAD_PYTHON` overrides, as `KICAD_CLI` does
+ * for the cli itself.
+ *
+ * WHY ANY OF THIS IS NEEDED: `kicad-cli` has no "update PCB from schematic"
+ * verb, so `tools/pcb/update-from-schematic.ts` drives the `pcbnew` SWIG
+ * bindings directly - and those ship only inside KiCad's bundled Python, not
+ * on any system or `uv`-managed interpreter.
+ *
+ *  - **darwin**: the bundle's own framework Python, a sibling of the
+ *    `Contents/MacOS` directory holding `kicad-cli`.
+ *  - **linux**: the distro interpreter at `/usr/bin/python3`, which is where a
+ *    distro-packaged KiCad installs its `pcbnew` module for.
+ *    **UNVERIFIED**: no Linux machine exercised this.
+ *  - **win32**: the interpreter the official installer puts beside
+ *    `kicad-cli.exe`. **UNVERIFIED**: no Windows machine exercised this.
+ *
+ * Best-effort and NEVER a refusal, per this file's convention: the refusal
+ * belongs where the interpreter is actually executed, and
+ * `tools/pcb/update-from-schematic.ts`'s `python-interpreter` guard names this
+ * variable. An unknown platform throws, as `defaultKicadCli` does, rather than
+ * handing back the macOS literal for a platform nothing here has evidence for.
+ */
+export function defaultKicadPython(platform: string = process.platform): string {
+  const override = process.env["KICAD_PYTHON"]
+  if (override !== undefined && override !== "") return override
+  if (!isKicadPlatform(platform)) {
+    throw new Error(
+      `no known KiCad Python default for platform "${platform}". Set KICAD_PYTHON to the interpreter that ` +
+        "can import pcbnew - lib/kicad/install.ts has no candidate for this platform.",
+    )
+  }
+  const platformPath = pathFor(platform)
+  const cliDir = platformPath.dirname(defaultKicadCli(platform))
+  if (platform === "darwin") {
+    return firstExisting([
+      platformPath.join(cliDir, "..", "Frameworks", "Python.framework", "Versions", "Current", "bin", "python3"),
+    ])
+  }
+  if (platform === "linux") return firstExisting(["/usr/bin/python3"])
+  return firstExisting([platformPath.join(cliDir, "python.exe")])
+}
+
 /** The footprint-library counterpart of `defaultSymbolDir`. */
 export function defaultFootprintDir(cliPath: string, platform: string = process.platform): string {
   const platformPath = pathFor(platform)

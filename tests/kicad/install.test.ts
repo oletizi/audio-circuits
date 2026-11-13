@@ -29,7 +29,7 @@
 import { expect, test } from "bun:test"
 import { execFileSync } from "node:child_process"
 import path from "node:path"
-import { defaultFootprintDir, defaultKicadCli, defaultSymbolDir } from "../../lib/kicad/install.ts"
+import { defaultFootprintDir, defaultKicadCli, defaultKicadPython, defaultSymbolDir } from "../../lib/kicad/install.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
 import { defaultHtmlToPdf } from "../../tools/guide/browser-install.ts"
 import { defaultPdfMerge } from "../../tools/guide/pdf-merge-install.ts"
@@ -98,6 +98,60 @@ test("defaultKicadCli covers darwin, linux and win32 as distinct, justified cand
 
 test("defaultKicadCli refuses an unrecognised platform by naming KICAD_CLI", () => {
   expect(() => defaultKicadCli("plan9")).toThrow(/KICAD_CLI/)
+})
+
+/**
+ * Runs `body` with `KICAD_PYTHON` genuinely unset, whatever the shell that ran
+ * the suite happened to have - the same "assert unset rather than whatever was
+ * there" discipline `makePrint` above applies to Make's variables, and the only
+ * way the derivation under test is what gets asserted.
+ */
+function withoutKicadPython<T>(body: () => T): T {
+  const saved = process.env["KICAD_PYTHON"]
+  delete process.env["KICAD_PYTHON"]
+  try {
+    return body()
+  } finally {
+    if (saved !== undefined) process.env["KICAD_PYTHON"] = saved
+  }
+}
+
+test("defaultKicadPython derives the interpreter from the resolved kicad-cli, per platform", () => {
+  withoutKicadPython(() => {
+    // The darwin arm is the only one that can be checked against a real install
+    // here, and it is checked as the DERIVATION rather than as a literal: the
+    // interpreter must be a sibling of the directory kicad-cli resolved into, so
+    // a machine with KiCad somewhere else gets ITS python, not this one's.
+    const cli = defaultKicadCli("darwin")
+    expect(defaultKicadPython("darwin")).toBe(
+      path.join(path.dirname(cli), "..", "Frameworks", "Python.framework", "Versions", "Current", "bin", "python3"),
+    )
+    // Pure path arithmetic, as with defaultSymbolDir's non-darwin arms above:
+    // neither of these has run against a real install, and this claims no more
+    // than that the derivation is the one the module documents.
+    expect(defaultKicadPython("linux")).toBe("/usr/bin/python3")
+    expect(defaultKicadPython("win32")).toBe("C:\\Program Files\\KiCad\\10.0\\bin\\python.exe")
+  })
+})
+
+test("defaultKicadPython honours an explicit KICAD_PYTHON on every platform", () => {
+  const saved = process.env["KICAD_PYTHON"]
+  const sentinel = "/tmp/task-6ab-kicad-python-sentinel"
+  process.env["KICAD_PYTHON"] = sentinel
+  try {
+    for (const platform of ["darwin", "linux", "win32"]) {
+      expect(defaultKicadPython(platform)).toBe(sentinel)
+    }
+  } finally {
+    if (saved === undefined) delete process.env["KICAD_PYTHON"]
+    else process.env["KICAD_PYTHON"] = saved
+  }
+})
+
+test("defaultKicadPython refuses an unrecognised platform by naming KICAD_PYTHON", () => {
+  withoutKicadPython(() => {
+    expect(() => defaultKicadPython("plan9")).toThrow(/KICAD_PYTHON/)
+  })
 })
 
 test("defaultHtmlToPdf refuses an unrecognised platform by naming HTML_TO_PDF", () => {
