@@ -7,6 +7,9 @@
  *   text on both sides (`V_{DD}` is VDD drawn with DD lowered, which is how the data sheets draw it).
  *   An overbar `~{...}` is NOT removed: it marks an active-low pin and is part of the name.
  * - **Electrical type:** exact.
+ * - **Hidden:** a symbol pin is hidden only where the table says so (`hidden: true`). A hidden pin
+ *   cannot be seen or wired on a page, and a hidden `power_in` pin is an implicit global net in KiCad,
+ *   so a stand-in that hides a pin the data sheet's part has to show does not match.
  *
  * Pins are read unit by unit (`symbolUnitPins`) and merged, so a multi-unit symbol is compared as the
  * one package it is; a pin number declared twice refuses there, as it does for copperhead.
@@ -14,7 +17,9 @@
 import fs from "node:fs"
 import { librarySymbols, splitLibId, symbolUnitPins } from "../../lib/kicad/symbol-library.ts"
 import type { SymbolUnitPins } from "../../lib/kicad/symbol-library.ts"
-import { SYMBOL_LIBRARY_ROOT, installedSymbolNames, installedSymbolUnitPins } from "../kicad/symbol-library-disk.ts"
+import {
+  SYMBOL_LIBRARY_ROOT, installedFlattenedSymbol, installedSymbolNames, installedSymbolUnitPins,
+} from "../kicad/symbol-library-disk.ts"
 import { PROJECT_SYMBOL_LIBRARY } from "../../circuits/h7-platform/parts.ts"
 import type { DatasheetPin } from "../../circuits/h7-platform/pedal-pin-tables.ts"
 
@@ -28,28 +33,51 @@ export function renderedName(name: string): string {
 /** A symbol's pins unit by unit: the project library for `h7-platform:`, the installed KiCad otherwise. */
 export function unitPinsOf(libId: string): readonly SymbolUnitPins[] {
   const { library, name } = splitLibId(libId)
-  if (library === PROJECT_NICKNAME) {
-    const block = librarySymbols(fs.readFileSync(PROJECT_SYMBOL_LIBRARY, "utf8")).get(name)
-    if (block === undefined) throw new Error(`${PROJECT_SYMBOL_LIBRARY} defines no symbol "${name}"`)
-    return symbolUnitPins(block)
-  }
+  if (library === PROJECT_NICKNAME) return symbolUnitPins(projectBlock(name))
   return installedSymbolUnitPins(libId)
 }
 
-/** Every pin of the symbol, all units merged: number -> name and type. */
-export function pinTableOf(libId: string): ReadonlyMap<string, DatasheetPin> {
-  const table = new Map<string, DatasheetPin>()
+function projectBlock(name: string): string {
+  const block = librarySymbols(fs.readFileSync(PROJECT_SYMBOL_LIBRARY, "utf8")).get(name)
+  if (block === undefined) throw new Error(`${PROJECT_SYMBOL_LIBRARY} defines no symbol "${name}"`)
+  return block
+}
+
+/**
+ * The pin numbers a symbol block hides: a `(hide yes)` form, or the older bare `hide` atom, in the
+ * pin's own form before its name (`symbolUnitPins` does not read the flag).
+ */
+export function hiddenPinNumbers(block: string): ReadonlySet<string> {
+  const hidden = new Set<string>()
+  const pin = /\(pin \w+ \w+([\s\S]*?)\(name "(?:[^"\\]|\\.)*"[\s\S]*?\(number "([^"]*)"/g
+  for (const m of block.matchAll(pin)) {
+    if (/\(hide yes\)|\shide(\s|\))/.test(m[1] ?? "")) hidden.add(m[2] ?? "")
+  }
+  return hidden
+}
+
+/** One symbol pin as compared: name, type and whether it is hidden. */
+export interface SymbolPinFacts extends DatasheetPin {
+  readonly hidden: boolean
+}
+
+/** Every pin of the symbol, all units merged: number -> name, type and hidden flag. */
+export function pinTableOf(libId: string): ReadonlyMap<string, SymbolPinFacts> {
+  const { library, name } = splitLibId(libId)
+  const hidden = hiddenPinNumbers(library === PROJECT_NICKNAME ? projectBlock(name) : installedFlattenedSymbol(libId))
+  const table = new Map<string, SymbolPinFacts>()
   for (const unit of unitPinsOf(libId)) {
-    for (const pin of unit.pins) table.set(pin.number, { name: pin.name, type: pin.type })
+    for (const pin of unit.pins) table.set(pin.number, { name: pin.name, type: pin.type, hidden: hidden.has(pin.number) })
   }
   return table
 }
 
 /**
  * Where the symbol disagrees with the data sheet table, one line per pin: a pin missing on either
- * side, a name differing after rendering, or a type differing. Empty means it matches.
+ * side, a name differing after rendering, a type differing, or a pin hidden (or shown) against the
+ * table. Empty means it matches.
  */
-export function pinMismatches(table: Readonly<Record<string, DatasheetPin>>, symbolPins: ReadonlyMap<string, DatasheetPin>): string[] {
+export function pinMismatches(table: Readonly<Record<string, DatasheetPin>>, symbolPins: ReadonlyMap<string, SymbolPinFacts>): string[] {
   const numbers = [...new Set([...Object.keys(table), ...symbolPins.keys()])]
     .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
   const out: string[] = []
@@ -60,6 +88,7 @@ export function pinMismatches(table: Readonly<Record<string, DatasheetPin>>, sym
     if (got === undefined) { out.push(`${n}: not on the symbol`); continue }
     if (renderedName(want.name) !== renderedName(got.name)) out.push(`${n}: name "${got.name}", data sheet "${want.name}"`)
     if (want.type !== got.type) out.push(`${n}: type ${got.type}, data sheet ${want.type}`)
+    if ((want.hidden ?? false) !== got.hidden) out.push(`${n}: ${got.hidden ? "hidden" : "shown"} on the symbol, ${want.hidden === true ? "hidden" : "shown"} in the table`)
   }
   return out
 }
@@ -90,7 +119,7 @@ export function scanInstalled(tables: Readonly<Record<string, Readonly<Record<st
   for (const library of installedLibraries()) {
     for (const name of installedSymbolNames(`${library}:x`)) {
       const libId = `${library}:${name}`
-      let pins: ReadonlyMap<string, DatasheetPin>
+      let pins: ReadonlyMap<string, SymbolPinFacts>
       try {
         pins = pinTableOf(libId)
       } catch (e) {

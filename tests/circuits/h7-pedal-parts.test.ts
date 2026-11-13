@@ -134,12 +134,15 @@ describe("pedal project symbols", () => {
       SN74LVC1G34DBV: ["2: name \"\", data sheet \"A\"", "4: name \"\", data sheet \"Y\""],
       SN74LVC1G07DBV: ["2: name \"\", data sheet \"A\"", "4: name \"\", data sheet \"Y\""],
       TPS3808G01DBV: ["1: type output, data sheet open_collector"],
+      // The stock TPS7A41, TPS7A24-like and LM66100 symbols hide the pins they mark NC; the project
+      // symbols show them. Pin 9 (PowerPAD) is hidden on both, stacked under GND.
       TPS7A4901DGN: [
-        "3: type no_connect, data sheet free", "6: name \"NC\", data sheet \"NR/SS\"", "6: type no_connect, data sheet passive",
-        "7: name \"NC\", data sheet \"DNC\"", "9: name \"GND\", data sheet \"PowerPAD\"",
+        "3: type no_connect, data sheet free", "3: hidden on the symbol, shown in the table", "6: name \"NC\", data sheet \"NR/SS\"",
+        "6: type no_connect, data sheet passive", "6: hidden on the symbol, shown in the table", "7: name \"NC\", data sheet \"DNC\"", "7: hidden on the symbol, shown in the table",
+        "9: name \"GND\", data sheet \"PowerPAD\"",
       ],
-      TPS7A2433DBV: ["4: type no_connect, data sheet free"],
-      LM66100DCK: ["4: name \"NC\", data sheet \"N/C\"", "4: type no_connect, data sheet free"],
+      TPS7A2433DBV: ["4: type no_connect, data sheet free", "4: hidden on the symbol, shown in the table"],
+      LM66100DCK: ["4: name \"NC\", data sheet \"N/C\"", "4: type no_connect, data sheet free", "4: hidden on the symbol, shown in the table"],
       "MCP6001T-OT": [
         "1: name \"\", data sheet \"VOUT\"", "2: name \"V-\", data sheet \"VSS\"", "3: name \"+\", data sheet \"VIN+\"",
         "4: name \"-\", data sheet \"VIN-\"", "5: name \"V+\", data sheet \"VDD\"",
@@ -166,6 +169,48 @@ describe("pedal project symbols", () => {
     // The oscillator's own symbol differs only in the case of pin 4 (CR-PEDAL-SYMBOL-SG-210STF).
     expect(pinMismatches(tableFor("SG_210STF"), pinTableOf("Oscillator:SG-210STF"))).toEqual(["4: name \"Vcc\", data sheet \"VCC\""])
   }, 180_000)
+})
+
+describe("CR-PEDAL-PIN-MATCH", () => {
+  test("the hidden flag is compared: a hidden pin the table shows, or a hidden power_in, mismatches", () => {
+    const table = { "1": { name: "VDD", type: "power_in" }, "2": { name: "GND", type: "power_in" } }
+    const shown = new Map([["1", { name: "VDD", type: "power_in", hidden: false }], ["2", { name: "GND", type: "power_in", hidden: false }]])
+    expect(pinMismatches(table, shown)).toEqual([])
+    const hiddenSupply = new Map([...shown, ["1", { name: "VDD", type: "power_in", hidden: true }]])
+    expect(pinMismatches(table, hiddenSupply)).toEqual(["1: hidden on the symbol, shown in the table"])
+    // On disk: the stock TPS7A24-like base hides pin 4, which the TPS7A2433's table shows.
+    expect(pinTableOf("Regulator_Linear:TLV70033_SOT23-5").get("4")?.hidden).toBe(true)
+    expect(pinTableOf("h7-platform:TPS7A2433DBV").get("4")?.hidden).toBe(false)
+    // And the one ruled hidden pin reads as hidden on the project symbol.
+    expect(pinTableOf("h7-platform:TPS7A4901DGN").get("9")?.hidden).toBe(true)
+  })
+
+  test("the type rule's clauses that need no I/O column predict every table entry they reach", () => {
+    // Clauses 1-4 of CR-PEDAL-PIN-MATCH, applied in order from facts the tables carry (the part's kind
+    // and the pin's name). Clauses 5-7 read the data sheet's I/O column and description, which the
+    // tables do not record, so those pins are counted and left to the per-part citations.
+    const discrete = new Set(["G6K_2F_Y", "USBLC6_2SC6", "PESD12VL1BA", "AO3400A", "AO3401A", "FET_2N7002", "AOD4185"])
+    const supply = new Set(["GND", "AGND1", "AGND2", "DGND", "SGND", "VCC", "VDD", "VSS", "V+", "V-", "IN", "VIN"])
+    const regulatorOut = new Set(["TPS7A4901", "TPS7A2433", "LM66100"])
+    let decided = 0
+    let undecided = 0
+    for (const [key, entry] of Object.entries(PEDAL_PARTS)) {
+      if (entry.table === undefined) continue
+      for (const [n, pin] of Object.entries(tableFor(entry.table))) {
+        let want: string | undefined
+        if (entry.kind === "diode" || discrete.has(entry.table)) want = pin.name === "G" ? "input" : "passive"
+        else if (supply.has(pin.name.replace(/_\{([^}]*)\}/g, "$1"))) want = "power_in"
+        else if (regulatorOut.has(entry.table) && /OUT$/.test(pin.name)) want = "power_out"
+        else if (pin.name === "NC" || pin.name === "N/C") want = "free"
+        else if (pin.name === "DNC") want = "no_connect"
+        if (want === undefined) { undecided++; continue }
+        decided++
+        expect({ key, pin: n, type: pin.type }).toEqual({ key, pin: n, type: want })
+      }
+    }
+    expect(decided).toBeGreaterThan(80)
+    expect(undecided).toBeGreaterThan(0)
+  })
 })
 
 describe("CR-PEDAL-KINDS", () => {

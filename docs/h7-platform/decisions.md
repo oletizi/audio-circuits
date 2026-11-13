@@ -1727,11 +1727,12 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Date:** 2026-11-12.
 - **Decides:** how the amended rule of [CR-MODULE-SUPERVISOR-SYMBOL](#cr-module-supervisor-symbol) (names, numbers and types) is applied to the pedal, for its own stock symbols and stand-ins alike.
   - **Number:** exact. Where the manufacturer labels the leads but numbers none, the number comes from where the part's ruling says, and the ruling carries the cost.
+  - **Hidden:** a symbol pin is hidden only where the part's ruling says so (the TPS7A49's PowerPAD, CR-PEDAL-SYMBOL-TPS7A4901). A hidden pin cannot be wired on a page, and a hidden `power_in` pin is an implicit global net in KiCad, so a stand-in that hides a pin does not match. *Added in the Task 2 review.*
   - **Name:** exact and case-sensitive, in KiCad's spelling: an overbar `~{…}` only where the data sheet's own figure or table draws one; a minus or en dash as ASCII `-`. KiCad's subscript markup `_{…}` is compared rendered (`V_{DD}` is the data sheet's subscripted VDD). An empty symbol name does not match a named pin.
-  - **Type, in this order:** a supply or ground pin is `power_in`; a regulator's or ideal diode's output is `power_out`; otherwise the data sheet's I/O column (I `input`, O `output`, I/O `bidirectional`, an open-drain output `open_collector`); "no internal connection" is `free`, KiCad's "not internally connected"; "do not connect" is `no_connect`; a pin whose column gives no direction and that only takes an external part (soft-start, bootstrap, timing or bias) is `passive`. A discrete part's terminals are `passive`, except a MOSFET's gate, which is `input` (an insulated gate drawing only I_GSS).
+  - **Type: the first clause that applies decides.** (1) A discrete or protection part's terminals (diode, relay, ESD array, TVS) are `passive`, except a MOSFET's gate, which is `input` (an insulated gate drawing only I_GSS). (2) A supply or ground pin is `power_in`. (3) A regulator's or ideal diode's output is `power_out`. (4) "No internal connection" is `free`, KiCad's "not internally connected"; "do not connect" is `no_connect`. (5) The data sheet's I/O column where it gives a direction: I `input`, O `output`, I/O `bidirectional`, an open-drain output `open_collector`. (6) Where the column gives none (TI's A, P or a dash), a pin whose only function is to take an external part (soft-start, bootstrap, timing or bias) or a thermal connection (an exposed pad) is `passive`. (7) Otherwise the description's own word: "input" `input`, "output" `output`. *Amended in the Task 2 review: the discrete-part clause was listed last, and in that order USBLC6-2SC6's GND would have been `power_in` where the table, and the stock symbol, have `passive`; clauses 6 and 7 are written out so that the order predicts TPS62933F's RT (passive) and SW (output).*
 - **The documents read (2026-11-12), each fetched as a PDF:** TI SLAS533B (PCM3060), SBOS724A (OPA1688), SCES366L (SN74LVC3G34), SCES519O (SN74LVC1G34), SCES296AG (SN74LVC1G07), SCES200O (SN74LVC2G14), SBVS050N (TPS3808), SLVSES2J (TLV803E), SBVS121E (TPS7A49), SBVS386E (TPS7A24), SLUSEA4D (TPS62933F), SCDS220M (TS3USB221), SLVSEZ8A (LM66100), all from ti.com; Microchip DS20001733L (MCP6001) from microchip.com; Alpha & Omega AO3400A Rev 3.1, AO3401A Rev 3.1, AOD4185 Rev.4.2 and package outlines PO-00001 (SOT23) and PO-00009 (TO252) from aosmd.com; Diodes Inc. DS30086 Rev. 32-2 (1N4148W) and DS18004 Rev. 38-2 (BZT52C) from diodes.com; Omron Cat. No. K106-E1-11 (G6K) from omron.com; Epson SG-210STF brief from epsondevice.com. nexperia.com, st.com and kingbright.com refused or timed out, so these were read from LCSC's copies (datasheet.lcsc.com): Nexperia BAS116H Rev. 3, PMEG4005AEA v.4, PMEG4030ER v.4, PESDxL1BA Rev. 02, 2N7002 Rev. 7; ST USBLC6-2 Doc ID 11265 Rev 5; Kingbright WP7113ID DSAF0012 Rev V.13A; Epson SGxxxxCAN_E_Ver2.16; Murata JENF243A_0091C-01 (BLM31KN601SN1L). Each part's document, revision, page, table and URL are in `circuits/h7-platform/pedal-pin-tables.ts`.
 - **Costs if wrong:** a rule loosened or tightened changes which parts need project symbols; each table and symbol is re-checked by the test.
-- **Set by:** the controller, h7 pedal pages plan Task 2.
+- **Set by:** Drafted by the Task 2 implementer; adopted by the controller after the Task 2 review.
 - **Carried in:** `circuits/h7-platform/pedal-pin-tables.ts`; `tests/circuits/h7-pedal-symbols.ts`.
 
 ### CR-PEDAL-SYMBOL-PROJECT
@@ -1777,7 +1778,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 **U_ISO_C, SN74LVC1G34DBVR is drawn from the project symbol `h7-platform:SN74LVC1G34DBV`.**
 - **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
 - **Date:** 2026-11-12.
-- **Decides:** `h7-platform:SN74LVC1G34DBV`, `SN74LVC1G07DBV` from `74xGxx:74LVC1G34`, `74LVC1G07`: A and Y are unnamed on the stock symbols (SCES519O p. 3 Table 4-1, SCES296AG p. 3).
+- **Decides:** `h7-platform:SN74LVC1G34DBV` from `74xGxx:74LVC1G34`: pins 2 (A) and 4 (Y) are unnamed on the stock symbol, where SCES519O p. 3 Table 4-1 names them A and Y. Its numbers and types match.
 - **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
 - **Set by:** the controller, h7 pedal pages plan Task 2.
 
@@ -1786,7 +1787,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 **U_MIDIDRV, SN74LVC1G07DBVR is drawn from the project symbol `h7-platform:SN74LVC1G07DBV`.**
 - **Label:** Controller ruling (the owner may override), under spec C4 and [CR-PEDAL-SYMBOL-PROJECT](#cr-pedal-symbol-project).
 - **Date:** 2026-11-12.
-- **Decides:** `h7-platform:SN74LVC1G34DBV`, `SN74LVC1G07DBV` from `74xGxx:74LVC1G34`, `74LVC1G07`: A and Y are unnamed on the stock symbols (SCES519O p. 3 Table 4-1, SCES296AG p. 3).
+- **Decides:** `h7-platform:SN74LVC1G07DBV` from `74xGxx:74LVC1G07`: pins 2 (A) and 4 (Y) are unnamed on the stock symbol, where SCES296AG p. 3 Pin Functions names them A and Y. Its numbers and types match, Y `open_collector`.
 - **Costs if wrong:** one project symbol to drop for the stock one, and the pages that use it redrawn.
 - **Set by:** the controller, h7 pedal pages plan Task 2.
 
@@ -1868,7 +1869,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Label:** Controller ruling (the owner may override).
 - **Date:** 2026-11-12.
 - **Decides:** AO3400A Rev 3.1 and AO3401A Rev 3.1, p. 1, label the SOT23 leads D, G and S in a top-view drawing and number none; the SOT23 outline PO-00001 numbers none either. The numbers are read from that drawing: the pin-1 dot sits at the G lead, and D is the lead alone on its side, which is pin 3 in Nexperia's SOT23 numbering (2N7002 Rev. 7 Table 2: 1 G, 2 S, 3 D). That gives 1 G, 2 S, 3 D, which is the stock `Transistor_FET:AO3400A` and `AO3401A`. **The numbering is an inference from a drawing, not a stated table.**
-- **Costs if wrong:** gate and source swapped on the footprint for six N-MOSFETs and Q_MIDI; the schematic's connectivity is unchanged, and the layout's footprint check would have to catch it.
+- **Costs if wrong:** gate and source swapped on the footprint for the five AO3400A N-MOSFETs, Q_PFG, Q_PFR, Q_VDIS, Q_MSWD and Q_BYP ([parts.md](parts.md) lines 61 and 123), and the AO3401A Q_MIDI (line 141); the schematic's connectivity is unchanged, and the layout's footprint check would have to catch it.
 - **Set by:** the controller, h7 pedal pages plan Task 2.
 
 ### CR-PEDAL-SYMBOL-AOD4185

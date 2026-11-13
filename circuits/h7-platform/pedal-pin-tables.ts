@@ -9,14 +9,19 @@
  * sheet's own pin figure or table draws one; a minus or en dash as ASCII "-". Subscripts are written
  * plain ("VDD"): CR-PEDAL-PIN-MATCH compares names with KiCad's `_{...}` subscript markup rendered.
  *
- * TYPES (CR-PEDAL-PIN-MATCH). In order: a supply or ground pin is `power_in`; a regulator's or
- * ideal diode's regulated output is `power_out`; otherwise the data sheet's own I/O column decides
- * (I `input`, O `output`, I/O `bidirectional`, an open-drain output `open_collector`); a pin the data
- * sheet says has no internal connection is `free` (KiCad's "not internally connected"); a pin it
- * says must not be connected is `no_connect`; a pin whose column gives no direction and that only
- * takes an external part (a soft-start, bootstrap, timing or bias capacitor or resistor) is
- * `passive`. A discrete part's terminals (diode, relay, ESD array) are `passive`, except a MOSFET's
- * gate, which is `input`: an insulated gate that draws only its leakage, I_GSS.
+ * TYPES (CR-PEDAL-PIN-MATCH), the first clause that applies deciding:
+ *   1. a discrete or protection part's terminals (diode, relay, ESD array, TVS) are `passive`,
+ *      except a MOSFET's gate, which is `input`: an insulated gate that draws only I_GSS;
+ *   2. a supply or ground pin is `power_in`;
+ *   3. a regulator's or ideal diode's output is `power_out`;
+ *   4. a pin the data sheet says has no internal connection is `free` (KiCad's "not internally
+ *      connected"); one it says must not be connected is `no_connect`;
+ *   5. the data sheet's I/O column, where it gives a direction: I `input`, O `output`, I/O
+ *      `bidirectional`, an open-drain output `open_collector`;
+ *   6. where the column gives none (TI's A, P or a dash), a pin whose only function is to take an
+ *      external part (a soft-start, bootstrap, timing or bias capacitor or resistor) or a thermal
+ *      connection (an exposed pad) is `passive`;
+ *   7. otherwise the description's own word: "input" `input`, "output" `output`.
  *
  * NUMBERS. Where the manufacturer numbers the pins, the number is theirs. Where it labels the leads
  * but numbers none (Alpha & Omega's MOSFETs, Diodes Inc.'s and Kingbright's diodes), the row says so
@@ -27,6 +32,11 @@
 export interface DatasheetPin {
   readonly name: string
   readonly type: string
+  /**
+   * Drawn hidden on the symbol. Every pin is shown unless its part's ruling says otherwise; the only
+   * one is the TPS7A49's PowerPAD, stacked hidden under GND (CR-PEDAL-SYMBOL-TPS7A4901).
+   */
+  readonly hidden?: boolean
 }
 
 /** A part's data sheet pin table and the document it was read from. */
@@ -146,7 +156,7 @@ export const PEDAL_PIN_TABLES: Readonly<Record<string, DatasheetTable>> = {
       "Mask1.88x1.98mm_ThermalVias; https://www.ti.com/lit/ds/symlink/tps7a49.pdf",
     pins: {
       "1": p("OUT", PWR_OUT), "2": p("FB", IN), "3": p("NC", FREE), "4": p("GND", PWR), "5": p("EN", IN),
-      "6": p("NR/SS", PAS), "7": p("DNC", NO_CONNECT), "8": p("IN", PWR), "9": p("PowerPAD", PAS),
+      "6": p("NR/SS", PAS), "7": p("DNC", NO_CONNECT), "8": p("IN", PWR), "9": { name: "PowerPAD", type: PAS, hidden: true },
     },
   },
   TPS7A2433: {
