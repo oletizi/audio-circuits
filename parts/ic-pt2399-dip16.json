@@ -1,0 +1,58 @@
+{
+  "id": "ic-pt2399-dip16",
+  "kind": "ic",
+  "description": "PT2399 CMOS echo audio processor, 16-pin DIP (300 mil), through hole",
+  "manufacturer": "Princeton Technology Corp",
+  "mpn": "PT2399",
+  "specs": {
+    "type": "PT2399",
+    "pins": 16,
+    "rowSpacingMm": 7.62,
+    "pitchMm": 2.54
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.pedalpcb.com/product/a6006/",
+      "note": "PedalPCB product page, read 2026-11-13: SKU A6006, 'PT2399', 'CMOS echo / delay processor', Manufacturer 'Princeton Technology Corp', Package 'DIP-16' / 'PDIP-16', Mounting Style 'Through Hole', $1.50, In Stock. The datasheet's ORDER INFORMATION table also lists the bare 'PT2399' as the 16 pins, DIP, 300 mil part (the SO variants are PT2399S and PT2399-SN)."
+    },
+    {
+      "spec": "type",
+      "url": "https://static.chipdip.ru/lib/370/DOC004370558.pdf",
+      "note": "Princeton Technology Corp PT2399 datasheet V1.6, February 2010 (copy hosted by chipdip.ru; the manufacturer's own princeton.com.tw PDF is not reachable from here), titled 'PT2399 Echo Processor IC'; ORDER INFORMATION: 'PT2399 - 16 Pins, DIP, 300mil, top code PT2399'."
+    },
+    {
+      "spec": "pins",
+      "url": "https://static.chipdip.ru/lib/370/DOC004370558.pdf",
+      "note": "PT2399 datasheet V1.6, February 2010: ORDER INFORMATION states 'PT2399 16 Pins, DIP, 300mil'; page 6 'PACKAGE INFORMATION 16 PINS, DIP, 300 MIL' (JEDEC MS-001 Variation BB). Pin configuration lists pins 1 (VCC) to 16 (LPF1-IN)."
+    },
+    {
+      "spec": "rowSpacingMm",
+      "url": "https://static.chipdip.ru/lib/370/DOC004370558.pdf",
+      "note": "PT2399 datasheet V1.6, February 2010, page 6 'PACKAGE INFORMATION 16 PINS, DIP, 300 MIL' dimension table (mm): E = 7.62 BSC (row spacing, 300 mil); E1 = 7.62 min / 7.87 nom / 8.26 max is the body width."
+    },
+    {
+      "spec": "pitchMm",
+      "url": "https://static.chipdip.ru/lib/370/DOC004370558.pdf",
+      "note": "PT2399 datasheet V1.6, February 2010, page 6 'PACKAGE INFORMATION 16 PINS, DIP, 300 MIL' dimension table (mm): e = 2.54 BSC."
+    }
+  ],
+  "why": "Neither Mouser nor Digi-Key lists the PT2399 (lookup and search for PT2399, PT2399 echo and PT2399-DIP16 found no exact match at either), so there is no standard source; PedalPCB, a stomp-box parts supplier (specialty use), lists it as Princeton Technology's own DIP-16 part at $1.50 and I could read the listing. Tayda also sells it but its page returned HTTP 403, so it was not recorded. The bare 'PT2399' is the through-hole 300 mil DIP in the datasheet's order table, which matches Package_DIP:DIP-16_W7.62mm. The PT2399 is an IC with many counterfeits and clones (the reach.dog listing warns of cheap fakes), so a marketplace such as Amazon was not considered. Datasheet evidence is the V1.6 copy at chipdip.ru; a v1.2 copy (experimentalistsanonymous.com) agrees on 16-pin DIP 300 mil but has no package drawing.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "PedalPCB",
+      "url": "https://www.pedalpcb.com/product/a6006/",
+      "sku": "A6006",
+      "currency": "USD",
+      "breaks": [
+        {
+          "quantity": 1,
+          "unitPrice": 1.5
+        }
+      ],
+      "checked": "2026-11-13",
+      "use": "specialty"
+    }
+  ]
+}

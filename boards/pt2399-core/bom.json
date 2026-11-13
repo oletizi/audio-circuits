@@ -1,7 +1,14 @@
 {
   "purchasing": { "mode": "prototype", "shrinkage": 0.1, "stockQuantity": 100, "maxStockUnitPrice": 0.15, "maxStockOverage": 0.5 },
   "lines": {
-    "capacitor .1uF C_Disc_D5.0mm_W2.5mm_P2.50mm": "ceramic-100nf-50v-x7r-radial-2.5mm"
+    "capacitor .1uF C_Disc_D5.0mm_W2.5mm_P2.50mm": "ceramic-100nf-50v-x7r-radial-2.5mm",
+    "ic PT2399 DIP-16_W7.62mm": "ic-pt2399-dip16"
   },
-  "extras": []
+  "extras": [
+    {
+      "part": "socket-dip16-open-frame-tin-7.62mm",
+      "quantity": 1,
+      "why": "DIP-16 socket under U1 so the PT2399 can be swapped; the owner ruled on 2026-11-13 to fit one"
+    }
+  ]
 }

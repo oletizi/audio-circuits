@@ -1,0 +1,76 @@
+{
+  "id": "socket-dip16-open-frame-tin-7.62mm",
+  "kind": "accessory",
+  "description": "16-position DIP IC socket, 2.54 mm pitch, 7.62 mm (0.3 in) row spacing, tin contacts, through hole, for a PT2399 in Package_DIP:DIP-16_W7.62mm",
+  "manufacturer": "TE Connectivity",
+  "mpn": "2485264-3",
+  "specs": {
+    "pins": 16,
+    "pitchMm": 2.54,
+    "rowSpacingMm": 7.62
+  },
+  "evidence": [
+    {
+      "spec": "mpn",
+      "url": "https://www.mouser.com/en/ProductDetail/TE-Connectivity/2485264-3?qs=IKkN%2F947nfCox2m7PgP00g%3D%3D",
+      "note": "Mouser Search API, 2026-11-13: exact match for 2485264-3 (TE Connectivity), Mouser part 571-2485264-3, 'IC & Component Sockets DIP IC SOCKET 16P,Sn'. Digi-Key Product Information API, 2026-11-13: 17-2485264-3-ND, 'DIP IC SOCKET 16P,SN', TE Connectivity AMP Connectors."
+    },
+    {
+      "spec": "pins",
+      "url": "https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/2485264-3/24770051",
+      "note": "Digi-Key Product Information API, 2026-11-13: 'Number of Positions or Pins (Grid): 16'; Mouser description 'DIP IC SOCKET 16P'."
+    },
+    {
+      "spec": "pitchMm",
+      "url": "https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/2485264-3/24770051",
+      "note": "Digi-Key Product Information API, 2026-11-13: 'Pitch - Mating: 0.100\" (2.54mm)'."
+    },
+    {
+      "spec": "rowSpacingMm",
+      "url": "https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/2485264-3/24770051",
+      "note": "Digi-Key Product Information API, 2026-11-13: 'Type: DIP, 0.3\" (7.62mm) Row Spacing'; 'Mounting Type: Through Hole'."
+    }
+  ],
+  "why": "A plain open-frame stamped DIP-16 socket in tin, 0.3 in row spacing, at the lowest price seen for a 16-position socket in ones ($2.16 Mouser, $2.27 Digi-Key; the Samtec ICO-316-STT is $1.76 but at Digi-Key is 0 stock and the Mill-Max 110-93-316-41-001000 and Samtec ICA/ICO machined types cost more). Owner ruled 2026-11-13 to fit a DIP-16 socket for the PT2399. No datasheet was read: the pins, pitch and row spacing are the supplier's own stated parameters (Digi-Key), and TE's datasheet was not fetched. A socket shares the IC's land pattern, so the board's footprint is unchanged.",
+  "stock": false,
+  "sources": [
+    {
+      "supplier": "Mouser",
+      "url": "https://www.mouser.com/en/ProductDetail/TE-Connectivity/2485264-3?qs=IKkN%2F947nfCox2m7PgP00g%3D%3D",
+      "sku": "571-2485264-3",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 2.16 },
+        { "quantity": 10, "unitPrice": 1.86 },
+        { "quantity": 28, "unitPrice": 1.71 },
+        { "quantity": 112, "unitPrice": 1.61 },
+        { "quantity": 252, "unitPrice": 1.49 },
+        { "quantity": 504, "unitPrice": 1.39 },
+        { "quantity": 1008, "unitPrice": 1.28 },
+        { "quantity": 2520, "unitPrice": 1.2 },
+        { "quantity": 5012, "unitPrice": 1.09 }
+      ],
+      "checked": "2026-11-13",
+      "use": "standard"
+    },
+    {
+      "supplier": "Digi-Key",
+      "url": "https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/2485264-3/24770051",
+      "sku": "17-2485264-3-ND",
+      "currency": "USD",
+      "breaks": [
+        { "quantity": 1, "unitPrice": 2.27 },
+        { "quantity": 10, "unitPrice": 1.93 },
+        { "quantity": 28, "unitPrice": 1.79429 },
+        { "quantity": 56, "unitPrice": 1.70857 },
+        { "quantity": 112, "unitPrice": 1.62696 },
+        { "quantity": 252, "unitPrice": 1.53647 },
+        { "quantity": 504, "unitPrice": 1.4631 },
+        { "quantity": 1008, "unitPrice": 1.39328 },
+        { "quantity": 2520, "unitPrice": 1.30611 }
+      ],
+      "checked": "2026-11-13",
+      "use": "standard"
+    }
+  ]
+}
