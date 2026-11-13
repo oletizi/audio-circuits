@@ -742,6 +742,43 @@ It is not a clearance of the module circuit. These rows stay open:
 
 ---
 
+## h7-pedal interface, entry, pf, modsw, prail, ldo_vmid, usb, midi_i2c and fsw_led pages, copperhead drafts repaired with akcli
+
+- **Sheets:**
+  - `drafted/h7-platform/h7-pedal/interface.kicad_sch` sha256 `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` (commit `25a2f97`)
+  - `drafted/h7-platform/h7-pedal/entry.kicad_sch` sha256 `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` (commit `22a0d1d`)
+  - `drafted/h7-platform/h7-pedal/pf.kicad_sch` sha256 `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` (commit `d742a3a`)
+  - `drafted/h7-platform/h7-pedal/modsw.kicad_sch` sha256 `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2` (commit `0eff293`)
+  - `drafted/h7-platform/h7-pedal/prail.kicad_sch` sha256 `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780` (commit `19414c9`)
+  - `drafted/h7-platform/h7-pedal/ldo_vmid.kicad_sch` sha256 `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` (commit `19414c9`)
+  - `drafted/h7-platform/h7-pedal/usb.kicad_sch` sha256 `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` (commit `37aaf63`)
+  - `drafted/h7-platform/h7-pedal/midi_i2c.kicad_sch` sha256 `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` (commit `0185444`)
+  - `drafted/h7-platform/h7-pedal/fsw_led.kicad_sch` sha256 `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` (commit `33b210c`)
+- **Produced by** one copperhead intent per block of `circuits/h7-platform/pedal-board.ts`,
+  each draft repaired with akcli op-lists and literal text edits; every part position and
+  wire is agent-authored. The pedal's `RECORD.md`, one section per page, and
+  `repair/<block>/` have the detail.
+- **Shown** as 150 dpi PNGs in four messages, each carrying only a question:
+  - *"What is your verdict on each of these two pedal pages: the module socket (interface) and the DC power entry (entry)?"*
+  - *"What is your verdict on each of these two pedal pages: the power-fail circuit (pf) and the module power switch (modsw)?"*
+  - *"What is your verdict on each of these two pedal pages: the rail supply (prail) and the mid-rail reference (ldo_vmid)?"*
+  - *"What is your verdict on each of these three pedal pages: the USB port (usb), MIDI and I²C (midi_i2c), and the footswitches and LEDs (fsw_led)?"*
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"schematics approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** One message answered four questions about nine pages,
+and it is recorded against each of the nine sheets on that reading; the owner may correct
+it for any one of them. It covers no page not yet shown: controls_a, controls_b, expr_ref,
+the codec group, the analog group and the pedal's root. It is not a clearance of the pedal
+circuit, and it records no owner decision on any controller ruling these pages rest on (the
+CR-PEDAL-* entries each page's `RECORD.md` section cites, among them CR-PEDAL-POPULATION,
+CR-PEDAL-MIDI and CR-PEDAL-CROSS-PAGE-POWER-DRIVERS); each stays the controller's, and the
+owner may override it. The open rows those pages name, MIDI-OUT-CONNECTOR,
+I2C-EXPANSION-CONNECTOR and MIDI-IN-RECEIVER-STOCK among them, stay open.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.

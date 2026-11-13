@@ -51,15 +51,15 @@ committed bytes, with the pinned kicad-cli.
 
 | page | status | render |
 | --- | --- | --- |
-| interface | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
-| entry | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
-| pf | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
-| modsw | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `modsw.svg` |
-| prail | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `prail.svg` |
-| ldo_vmid | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
-| usb | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
-| midi_i2c | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
-| fsw_led | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
+| interface | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
+| entry | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
+| pf | **REVIEWED, 2026-11-13** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
+| modsw | **REVIEWED, 2026-11-13** (Task 7b); `verify.sh` exits 0 | `modsw.svg` |
+| prail | **REVIEWED, 2026-11-13** (Task 7c); `verify.sh` exits 0 | `prail.svg` |
+| ldo_vmid | **REVIEWED, 2026-11-13** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
+| usb | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
+| midi_i2c | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
+| fsw_led | **REVIEWED, 2026-11-13** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
 | controls_a | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
 | controls_b | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 
@@ -275,7 +275,7 @@ the replay into a new directory reaches every earlier page's sha256.
 
 ## interface: the two module sockets (Task 7a)
 
-**Status: UNREVIEWED.** sha256 `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a`.
 Render: `interface.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/interface.ts`, 2 parts (J1 and J2, J_MOD_A and J_MOD_B,
@@ -350,7 +350,7 @@ and J2.20, and 34 that each reach one pad. J1's pads 16 to 19 are the contract's
 
 ## entry: the power entry (Task 7a)
 
-**Status: UNREVIEWED.** sha256 `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736`.
 Render: `entry.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/entry.ts`, 15 parts: J3 (J_DC, `Connector:Barrel_Jack`),
@@ -486,7 +486,7 @@ pages were sent to the owner at their current sha256.
 
 ## pf: the power-fail supervisor (Task 7b)
 
-**Status: UNREVIEWED.** sha256 `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385`.
 Render: `pf.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/pf.ts`, 13 parts: U1 (U_PF, `h7-platform:TPS3808G01DBV`,
@@ -655,7 +655,7 @@ Observations of the symbols' pin order, not a judgement of the page:
 
 ## modsw: the module load switch (Task 7b)
 
-**Status: UNREVIEWED.** sha256 `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2`.
 Render: `modsw.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/modsw.ts`, 13 parts: Q1 (Q_MSW, AOD4185 on
@@ -797,7 +797,7 @@ outside. R9's drop crosses the X row once.
 
 ## prail: the pedal digital rail 3V3_P (Task 7c)
 
-**Status: UNREVIEWED.** sha256 `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780`.
 Render: `prail.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/prail.ts`, 20 parts: U3 (U_PRAIL,
@@ -939,7 +939,7 @@ each row is crossed by nothing. The FB row runs west under C22 and L1 from R13's
 
 ## ldo_vmid: 5V_A and VMID (Task 7c)
 
-**Status: UNREVIEWED.** sha256 `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd`.
 Render: `ldo_vmid.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/ldo-vmid.ts`, 17 parts on 19 placed instances: U4 (U_LDO,
@@ -1069,7 +1069,7 @@ it. Here C27's drop to the GND row crosses the FB row once.
 
 ## usb: the USB-C socket and its isolation switch (Task 9a)
 
-**Status: UNREVIEWED.** sha256 `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653`.
 Render: `usb.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/usb.ts`, 13 parts, the carrier's USB path with the carrier's
@@ -1233,7 +1233,7 @@ An observation of where the pins are, not a judgement of the page (`usb/layout.p
 
 ## midi_i2c: MIDI OUT, the MIDI UART header and the I2C pull-ups (Task 9a)
 
-**Status: UNREVIEWED.** sha256 `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f`.
 Render: `midi_i2c.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/midi-i2c.ts`, 14 parts: U16 (U_MIDIDRV,
@@ -1428,7 +1428,7 @@ it, so C61, 3V3_D to GND at U16, crosses it once: its GND drop crosses the gate 
 
 ## fsw_led: the footswitch inputs and the LEDs (Task 9a)
 
-**Status: UNREVIEWED.** sha256 `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021`.
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"schematics approved"* (`docs/schematic/verdicts.md`). sha256 `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021`.
 Render: `fsw_led.svg` beside it.
 
 The block: `circuits/h7-platform/pedal/fsw-led.ts`, 18 parts. Per footswitch: J5 and J6 (J_FSW1/2,
