@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U4",
+      "libId": "h7-platform:TPS7A4901DGN",
+      "value": "TPS7A4901DGNR",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R19",
+      "libId": "Device:R",
+      "value": "32.4K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R20",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C25",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C26",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C27",
+      "libId": "Device:C",
+      "value": ".01uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C28",
+      "libId": "Device:C",
+      "value": ".01uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R21",
+      "libId": "Device:R",
+      "value": "0R",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R22",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R23",
+      "libId": "Device:R",
+      "value": "100K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C29",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R24",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "R25",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "U5",
+      "libId": "h7-platform:OPA1688xD",
+      "value": "OPA1688IDR",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C30",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "C31",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "5V_A and VMID"
+    },
+    {
+      "ref": "TP5",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "5V_A and VMID"
+    }
+  ],
+  "nets": [
+    {
+      "name": "5V_A",
+      "kind": "signal",
+      "pins": [
+        "C26.1",
+        "C28.1",
+        "R19.1",
+        "R21.1",
+        "TP5.1",
+        "U4.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C25.2",
+        "C26.2",
+        "C27.2",
+        "C29.2",
+        "C30.2",
+        "C31.2",
+        "R20.2",
+        "R23.2",
+        "U4.4",
+        "U4.9",
+        "U5.4"
+      ]
+    },
+    {
+      "name": "LDO_FB",
+      "kind": "signal",
+      "pins": [
+        "C28.2",
+        "R19.2",
+        "R20.1",
+        "U4.2"
+      ]
+    },
+    {
+      "name": "LDO_NR",
+      "kind": "signal",
+      "pins": [
+        "C27.1",
+        "U4.6"
+      ]
+    },
+    {
+      "name": "VIN_A",
+      "kind": "signal",
+      "pins": [
+        "C25.1",
+        "C30.1",
+        "C31.1",
+        "R22.1",
+        "U4.5",
+        "U4.8",
+        "U5.8"
+      ]
+    },
+    {
+      "name": "VMID",
+      "kind": "signal",
+      "pins": [
+        "C29.1",
+        "R22.2",
+        "R23.1",
+        "R24.1",
+        "R25.1"
+      ]
+    },
+    {
+      "name": "VMID_IN_L",
+      "kind": "signal",
+      "pins": [
+        "R24.2",
+        "U5.3"
+      ]
+    },
+    {
+      "name": "VMID_IN_R",
+      "kind": "signal",
+      "pins": [
+        "R25.2",
+        "U5.5"
+      ]
+    },
+    {
+      "name": "VMID_L",
+      "kind": "signal",
+      "pins": [
+        "U5.1",
+        "U5.2"
+      ]
+    },
+    {
+      "name": "VMID_R",
+      "kind": "signal",
+      "pins": [
+        "U5.6",
+        "U5.7"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U4.3",
+    "U4.7"
+  ],
+  "hints": {
+    "groupOrder": [
+      "5V_A and VMID"
+    ]
+  }
+}

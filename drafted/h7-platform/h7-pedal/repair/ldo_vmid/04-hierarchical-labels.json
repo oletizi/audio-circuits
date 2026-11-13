@@ -1,0 +1,91 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "ldo_vmid.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "3f98e069-c05a-5075-b350-d52ce94485df"
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A",
+   "at": [
+    5500,
+    2900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "971b42cf-e060-535d-9c73-3182ef5c625f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A_CODEC",
+   "at": [
+    5500,
+    3500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "52234dc3-bc24-5ed3-9d6c-6d5ee5119f7f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1300,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b0d4c2b1-54cd-58aa-9165-aa120a6b5d5c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_A",
+   "at": [
+    1300,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "b2872c94-67c9-5e42-8448-3c27504980c7"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_L",
+   "at": [
+    10000,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "887a8d09-a3b6-5e7a-b4dc-8cd6da3ecab2"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VMID_R",
+   "at": [
+    10000,
+    3900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

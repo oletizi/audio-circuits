@@ -1,0 +1,67 @@
+[
+ {
+  "name": "5V_A",
+  "pins": [
+   "C26.1",
+   "C28.1",
+   "R19.1",
+   "R21.1",
+   "TP5.1",
+   "U4.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "5V_A_CODEC",
+  "pins": [
+   "R21.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C25.2",
+   "C26.2",
+   "C27.2",
+   "C29.2",
+   "C30.2",
+   "C31.2",
+   "R20.2",
+   "R23.2",
+   "U4.4",
+   "U4.9",
+   "U5.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VIN_A",
+  "pins": [
+   "C25.1",
+   "C30.1",
+   "C31.1",
+   "R22.1",
+   "U4.5",
+   "U4.8",
+   "U5.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VMID_L",
+  "pins": [
+   "U5.1",
+   "U5.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VMID_R",
+  "pins": [
+   "U5.6",
+   "U5.7"
+  ],
+  "drafted": true
+ }
+]

@@ -6,7 +6,8 @@
  *
  * It is EMPTY, and that is a measured claim: under each page's one-block root, `kicad-cli sch erc`
  * reports 0 errors on the block's own sheet (`../../RECORD.md`) for every page drawn so far, the
- * interface and entry pages (Task 7a) and pf and modsw (Task 7b), so nothing needs excusing.
+ * interface and entry pages (Task 7a), pf and modsw (Task 7b) and prail and ldo_vmid (Task 7c), so
+ * nothing needs excusing.
  *
  * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are
  * `draughting/pages/erc-allowances.ts`; the shared tools read this table through the board's drafted

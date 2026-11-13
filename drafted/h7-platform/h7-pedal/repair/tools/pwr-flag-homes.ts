@@ -27,8 +27,19 @@
  * 5V_A is NOT here, although the pf page reported it too (U1's VDD): it is driven by U4's OUT on the
  * ldo_vmid page, a `power_out` pin, and a PWR_FLAG anywhere on it would be a second power output on
  * the net. Its stand-in on a one-block root is a cross-page driver entry (`cross-page-drivers.ts`;
- * ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS). The pages still to be repaired (prail, ldo_vmid, and
- * the digital and analog groups) add their nets here, each with its home, when they are repaired.
+ * ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS).
+ *
+ * Task 7c (the prail and ldo_vmid pages) added two, each on the ROOT for the reason GND's is there:
+ * - VIN_MOD. Under the prail page's one-block root, `kicad-cli sch erc` reported
+ *   `power_pin_not_driven` on U3's VIN (pin 3, `power_in`). Survey of h7Pedal(): VIN_MOD's other
+ *   pins are all passive (C12, C14-C16, R12, TP4, Q1's drain, J2 pin 19); no power output.
+ * - VIN_A. Under the ldo_vmid page's one-block root, `kicad-cli sch erc` reported
+ *   `power_pin_not_driven` on U4's IN (pin 8, `power_in`; U5's V+, pin 8, is `power_in` too).
+ *   Survey of h7Pedal(): VIN_A's other pins are passive (C2-C7, C25, C30, C31, R22, TP2, D1's
+ *   cathode) or an input (U4's EN); no power output.
+ *
+ * The pages still to be repaired (the digital and analog groups) add their nets here, each with its
+ * home, when they are repaired.
  *
  * DATA ONLY. The tools that read it are in `draughting/pages/` (`flag-homes.ts` loads and checks it),
  * each given this board's drafted directory. A board without this file is refused by those tools,
@@ -42,7 +53,11 @@ export const RULING = "CR-MODULE-PWR-FLAGS"
 export const ROOT_SHEET = "root"
 
 /** Pedal net -> the page carrying its single PWR_FLAG: a block prefix, or `ROOT_SHEET`. */
-export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = { GND: ROOT_SHEET }
+export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = {
+  GND: ROOT_SHEET,
+  VIN_MOD: ROOT_SHEET,
+  VIN_A: ROOT_SHEET,
+}
 
 /** Block -> the private nets its own page flags. Empty: no page drawn so far flags a net. */
 export const PRIVATE_FLAGS: Readonly<Record<string, readonly string[]>> = {}

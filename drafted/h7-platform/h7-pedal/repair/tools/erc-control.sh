@@ -80,11 +80,11 @@ homed() {
 import pathlib, sys
 path, home = pathlib.Path(sys.argv[1]), sys.argv[2]
 value = "ROOT_SHEET" if home == "root" else '"' + home + '"'
-old = "SHARED_FLAG_HOME: Readonly<Record<string, string>> = { GND: ROOT_SHEET }"
+old = "SHARED_FLAG_HOME: Readonly<Record<string, string>> = {"
 text = path.read_text()
 if text.count(old) != 1:
     raise SystemExit("erc-control.sh: pwr-flag-homes.ts no longer holds the line this control rewrites: " + old)
-path.write_text(text.replace(old, old[:-2] + ', "5V_A": ' + value + " }"))
+path.write_text(text.replace(old, old + ' "5V_A": ' + value + ","))
 PY
   grep -q '"5V_A": ' "$dir/repair/tools/pwr-flag-homes.ts" || bad "the scratch pwr-flag-homes.ts does not home 5V_A on $1"
   echo "$dir"

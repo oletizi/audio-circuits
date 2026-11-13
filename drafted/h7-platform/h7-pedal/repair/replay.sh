@@ -6,8 +6,9 @@
 # It grows one block at a time, as each page is repaired (h7 pedal pages plan, Task 7). Today it
 # drafts every page the model holds, checks each draft and its intent against the committed record
 # (the drafts of the blocks not yet repaired are checked too, so a model change shows here first),
-# and repairs the Task 7a pages, interface and entry, and the Task 7b pages, pf and modsw, by repair_block. Each later part adds its
-# blocks' sha256s and repair_block calls; the root and its .kicad_pro come when every page is drawn.
+# and repairs the Task 7a pages, interface and entry, the Task 7b pages, pf and modsw, and the Task 7c pages, prail and
+# ldo_vmid, by repair_block. Each later part adds its blocks' sha256s and repair_block calls; the root and its
+# .kicad_pro come when every page is drawn.
 #
 # Copied from drafted/h7-platform/h7-module/repair/replay.sh, its repair_block unchanged; the
 # module's power page (its own op-list scripts) and root steps have no counterpart here yet.
@@ -47,11 +48,13 @@ draft_sha() {
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface entry pf modsw"
+REPAIRED="interface entry pf modsw prail ldo_vmid"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
 PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 PAGE_PF=7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385
 PAGE_MODSW=89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2
+PAGE_PRAIL=f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780
+PAGE_LDO_VMID=584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -149,6 +152,9 @@ repair_block entry "$PAGE_ENTRY"
 # Task 7b.
 repair_block pf "$PAGE_PF"
 repair_block modsw "$PAGE_MODSW"
+# Task 7c.
+repair_block prail "$PAGE_PRAIL"
+repair_block ldo_vmid "$PAGE_LDO_VMID"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

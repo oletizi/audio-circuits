@@ -38,6 +38,8 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `entry.kicad_sch` | block entry | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 | `pf.kicad_sch` | block pf | `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` |
 | `modsw.kicad_sch` | block modsw | `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2` |
+| `prail.kicad_sch` | block prail | `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780` |
+| `ldo_vmid.kicad_sch` | block ldo_vmid | `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -48,6 +50,8 @@ committed bytes, with the pinned kicad-cli.
 | entry | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
 | pf | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
 | modsw | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `modsw.svg` |
+| prail | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `prail.svg` |
+| ldo_vmid | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
 
 ## The drafts every repair starts from
 
@@ -108,6 +112,17 @@ runs the steps for each block (`repair_block`, copied from the module's unchange
 `net_strokes.py`, `place.py`, `pins.py`, `02-wire.py`, `hierarchical-labels.ts ops` then `check`,
 `text_edits.py`.
 
+**A multi-unit part** (the ldo_vmid page's U5, an OPA1688 in three units) is placed unit by unit,
+each unit a `layout.py` key `<ref>:<unit>` (Task 7c): `page.py`'s `place_ops` moves each unit by
+`move_component` with its `unit` and refuses any rotation or mirror on one, since akcli 0.22.0's
+`set_component_transform` takes no unit; `pins.py` and `text_edits.py` key it the same way; and
+`draughting/measure/kicad_sheet.py` places each instance's own unit's pins only (`instance_pins`),
+where it had placed every unit's pins at every instance. The single-unit result is unchanged: across
+51 sheets (every `.kicad_sch` under `drafted/`, `docs/research/` and `tests/fixtures/`, and the six
+pedal drafts), only the two holding a multi-unit symbol (this draft and the
+dual-op-amp test fixture) gave different pin points, and the module's replay, `verify-root.sh` and
+`erc-control.sh` came out as before.
+
 The measurements in each table are `draughting/pages/verify.sh` on the page, and the same steps run
 without stopping on the draft (a draft fails verify.sh's model comparison and its ERC, as a draft is
 not a page). None of these is a judgement of a page.
@@ -137,6 +152,41 @@ stub's label no longer dangles. Re-run after the tables changed: `verify.sh` exi
 pages; `/interface/` and `/entry/` stay at 0 errors and 0 warnings; `/` drops from 1 to 0
 `label_dangling` on interface and from 3 to 2 on entry. Each page's own table below is as it was
 measured in Task 7a.
+
+## The tables after Task 7c
+
+The prail and ldo_vmid pages each added one net to `pwr-flag-homes.ts`, from that page's ERC
+report under its one-block root (the file's header has both):
+
+- **VIN_MOD on the root.** The prail page's U3 VIN (pin 3) is `power_in`, and `/prail/` reported
+  `power_pin_not_driven` on it. No pin on the pedal's VIN_MOD is a power output (measured over
+  `h7Pedal()`: C12, C14, C15, C16, R12, TP4, Q1's drain and J2 pin 19, all passive, and U3's VIN).
+- **VIN_A on the root.** The ldo_vmid page's U4 IN (pin 8) is `power_in` (U5's V+, pin 8, too), and
+  `/ldo_vmid/` reported `power_pin_not_driven` on U4's IN. No pin on the pedal's VIN_A is a power
+  output (C2-C7, C25, C30, C31, R22, TP2 and D1's cathode passive; U4's EN `input`; U4's IN and U5's
+  V+ `power_in`).
+
+`cross-page-drivers.ts` is unchanged. **The 5V_A entry was checked against the page that holds its
+driver**: the ldo_vmid page draws U4 pin 1, named OUT and typed `power_out` in the embedded
+`h7-platform:TPS7A4901DGN` (sheet line 897), on 5V_A (the page's model comparison is 0, 0, 0, 0),
+and the entry's source line, `circuits/h7-platform/pedal/ldo-vmid.ts:66`, is U_LDO's part line, pin
+1 on 5V_A. Under the ldo_vmid page's own one-block root no stand-in is placed for 5V_A, since
+ldo_vmid is the driving block. Whether the assembled root clears 5V_A with U4 itself is the root's
+check (`root-drivers.ts`), and is not run until the root exists.
+[CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers)
+was adopted by the controller at the Task 7b review and amended at Task 7c (its appended
+**Amended** note): the refusal of a flag on a `power_out` driver's net now runs board-wide, and
+`repair/tools/erc-control.sh` re-runs the pf page's measurement and the refusal.
+
+`erc-allowances.ts` is still empty: no page needs an allowance.
+
+**What this does to the four earlier pages: nothing to their bytes, and counts under their
+one-block roots only.** Re-run with these tables, `verify.sh` exits 0 on interface, entry, pf and
+modsw, each block sheet at 0 errors and 0 warnings, and each sha256 unchanged. Their one-block roots
+now carry the root's flag on a VIN_MOD or VIN_A stub where they reach one: `/` on entry drops from 2
+to 1 `label_dangling` (VIN_A), on modsw from 2 to 1 (VIN_MOD), and interface's `/` reads 0 errors and
+66 warnings (VIN_MOD); pf reaches neither. Each page's own table below is as it was measured in its
+task.
 
 ## interface: the two module sockets (Task 7a)
 
@@ -659,3 +709,275 @@ outside. R9's drop crosses the X row once.
   and only one); a reader following VIN_MSW across the two pages sees two colours.
 - The hanging parts carry Reference over Value east of their bodies; D4's west; D5's and Q1's above;
   Q2's and Q3's east of their bodies; TP4's east of its circle.
+
+## prail: the pedal digital rail 3V3_P (Task 7c)
+
+**Status: UNREVIEWED.** sha256 `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780`.
+Render: `prail.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/prail.ts`, 20 parts: U3 (U_PRAIL,
+`Regulator_Switching:TPS62933F`, TPS62933FDRLR), C14 and C15 (C_PIN1/2 10 uF), C16 (C_PINHF 100 nF),
+L1 (L_PRAIL 4.7 uH, 74439346047), C17-C19 (C_POUT1-3 22 uF), C20 (C_POUT_HF 100 nF), R13 (R_FB_TOP
+32.4 kOhm), R14 (R_FB_BOTTOM 10.0 kOhm), C21 (C_SS 33 nF), R15 (R_BST 0 Ohm), C22 (C_BST 100 nF),
+R16 (R_PEN 150 kOhm), R17 (R_PENPD 1.00 MOhm), C23 and C24 (C_PEN1/2 4.7 uF), Q4 (Q_PEN,
+`Transistor_FET:2N7002`, 2N7002,215), R18 (R_PENS 180 Ohm). Ports 3V3_P, GND, PF_ON, PF_TRIP and
+VIN_MOD (PF_ON and PF_TRIP each reach one pin, R16's pin 1 and Q4's gate). PRAIL_EN, PRAIL_SW,
+PRAIL_BST, PRAIL_BST_CAP, PRAIL_SS, PRAIL_FB and PEN_D are private to the page and drawn as wire,
+with no label. U3's RT (pin 1) is a no-connect.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `prail` is one of the
+  pedal's 19 blocks: U_PRAIL and its EN delay, with Q_PEN (the single transistor placed here).
+- [R-25](../../../docs/h7-platform/decisions.md#r-25): 3V3_P from a TPS62933FDRLR on VIN_MOD, its EN
+  following PF_ON through the network of R-44.
+- [R-44](../../../docs/h7-platform/decisions.md#r-44), [R-45](../../../docs/h7-platform/decisions.md#r-45),
+  [R-52](../../../docs/h7-platform/decisions.md#r-52) and [R-58](../../../docs/h7-platform/decisions.md#r-58):
+  the EN network, R_PEN (R16) from PF_ON, R_PENPD (R17) and C_PEN (C23, C24) to GND, and Q_PEN (Q4,
+  gate PF_TRIP, source GND) through R_PENS 180 Ohm (R18) to EN. The block cites them through
+  power.md:85 (EC-QPEN-RESET).
+- [CR-PEDAL-POWER-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-power-readings): "copied"
+  is the module buck's own network without its input filter; the bootstrap order BST, R_BST, C_BST,
+  SW and C_SS's GND end (the pedals checklist's PWR-06 and v1 verification, quoted there); C_PEN's
+  other end on GND.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): U3 (a regulator) and Q4 (a
+  MOSFET) are `ic`.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): U3 and Q4 are on
+  their own stock symbols, held to the rule; clause 1 makes Q4's gate `input`, which is why PF_TRIP
+  needs its driver on this page's check; clauses 6 and 7 predict TPS62933F's RT `passive` and SW
+  `output`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VIN_MOD, 3V3_P
+  and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. GND's and VIN_MOD's single flags are on the root ("The tables after Task 7c"), so the
+  one-block root puts a stub flag on each.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  PF_ON and PF_TRIP are driven by U2's 2Y and 1Y on the pf page (`cross-page-drivers.ts`, the
+  entries the modsw page added); each takes a `Connector:TestPoint` stand-in under this page's
+  one-block root. The sheet alone reports `pin_not_driven` on *"Symbol Q4 Pin 1 [G, Input, Line]"*;
+  under the one-block root, with the stand-ins, `/prail/` is at 0 and 0.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 5 ports on the wrong net.
+- The block also cites `power.md` lines 85, 272, 376 to 380 and 437, the schematic checklist's PWR-06
+  (line 124) and `parts.md` lines 57 and 78 to 90 for each part; those are design notes, not rulings.
+- Drawing choices, not transcriptions: C14-C16 stand together at the west, next to the VIN_MOD and
+  GND labels, because the EN row runs west to east between the two rows and any column nearer U3's
+  VIN would cross it; R18 is turned 180 so its EN pin is up; R16, R15 and L1 lie in their rows
+  (rotation 90); PF_ON and PF_TRIP, which the draft drew no wire for, take the teal (copperhead
+  palette colour 3) the modsw page gives them, so the PF family is one colour on both pages that
+  draw it (`prail/layout.py`, `UNDRAWN_STROKES`); fields moved after the renders listed in
+  `prail/layout.py`.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 7c leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 20 (the model declares none) | 0; 20 |
+| exported components, nets, net members | 20, 13, 47 | 20, 13, 47 |
+| exported nets carrying a model net name | 10 of 13 | 5 of 13 (/3V3_P, /GND, /PF_ON, /PF_TRIP, /VIN_MOD, the ports; the other 8 private and unlabelled) |
+| ports whose label is on the wrong net | 3 of 5 | 0 of 5 |
+| ERC, the sheet alone | 5 errors (`pin_not_connected` 2, R16 pin 1 and Q4 pin 1; `pin_not_driven` 1, Q4's gate; `power_pin_not_driven` 2, U3's VIN and GND), 2 warnings (`lib_symbol_mismatch` 2) | 8 errors (`pin_not_connected` 5: each hierarchical label has no parent sheet; `pin_not_driven` 1, Q4's gate; `power_pin_not_driven` 2, U3's VIN and GND), 4 warnings (`isolated_pin_label` 2, PF_ON and PF_TRIP; `lib_symbol_mismatch` 2) |
+| ERC under a one-block root, `/prail/` | 5 errors (`pin_not_connected` 2, `pin_not_driven` 1, `power_pin_not_driven` 2), 1 warning (`same_local_global_label` 1) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 6 errors (`hier_label_mismatch` 5, `label_dangling` 1), 6 warnings (`isolated_pin_label` 4, `lib_symbol_mismatch` 2) | 1 error (`label_dangling` 1, the 3V3_P stub's label, alone with one block; `erc_sheets.py` admits it), 2 warnings (`lib_symbol_mismatch` 2) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 5, 13 | 0, 0 |
+| orphan junctions, of total | 0 of 13 | 0 of 27 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 10; 7 | 0; 0 |
+| labels | 14 on 10 nets (5 global) | 5 on 5 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east 81.873 mm | fits |
+| wire groups with more than one stroke | 0 of 14 | 0 of 12 |
+| symbols (parts, power symbols, PWR_FLAGs) | 20 (20, 0, 0) | 20 (20, 0, 0) |
+| placed pins | 47 | 47 |
+| wires, total length | 94, 1578.61 mm | 66, 894.08 mm |
+| wire corners | 22 | 3 |
+| junctions | 13 | 27 |
+
+**`lib_symbol_mismatch` 2**, on U3 and on Q4: *"Symbol 'TPS62933F' doesn't match copy in library
+'Regulator_Switching'"* and *"Symbol '2N7002' doesn't match copy in library 'Transistor_FET'"*.
+Each installed symbol is an `extends`, and each embedded copy is the parent flattened under the
+child's name, as the pf page's U2 and the modsw page's Q2 and Q3 are. Measured with the same
+comparison (whitespace-normalised units and pins against the installed parent):
+
+| | embedded (`prail.kicad_sch` line 487) | installed `TPS62933F` (`Regulator_Switching.kicad_sym` line 149786, `(extends "TPS62933")`) |
+| --- | --- | --- |
+| pins and graphics | identical to the installed parent `TPS62933`'s: 1 RT passive, 2 EN input, 3 VIN power_in, 4 GND power_in, 5 SW output, 6 BST passive, 7 SS passive, 8 FB input | the parent's |
+| Value | `TPS62933` (the parent's) | `TPS62933F` |
+| Datasheet; Footprint; `ki_fp_filters` | the same as the child's | `https://www.ti.com/lit/ds/symlink/tps62933.pdf`; `Package_TO_SOT_SMD:SOT-583-8`; `SOT?583*` |
+| Description | "3.8-30V, 3A Synchronous Buck Converters with pulse frequency modulation (PFM), SOT583-8" (the parent's) | "... with forced continuous conduction mode (FCCM), SOT583-8" |
+| `ki_keywords` | "synchronous buck converter pulse frequency modulation" (the parent's) | "synchronous buck converter forced continuous conduction mode" |
+
+| | embedded (`prail.kicad_sch` line 729) | installed `2N7002` (`Transistor_FET.kicad_sym` line 813, `(extends "Q_NMOS_GSD")`) |
+| --- | --- | --- |
+| pins and graphics | identical to the installed parent `Q_NMOS_GSD`'s: 1 G input, 2 S passive, 3 D passive | the parent's |
+| Value | `Q_NMOS_GSD` (the parent's) | `2N7002` |
+| Datasheet | empty (the parent's) | `https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF` |
+| Description | "N-MOSFET transistor, gate/source/drain" (the parent's) | "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23" |
+| Footprint; `ki_fp_filters` | empty; none (the parent's) | `Package_TO_SOT_SMD:SOT-23`; `SOT?23*` |
+
+U3's and Q4's own Values on the page are `TPS62933FDRLR` and `2N7002,215`, the fitted parts. **Not
+an electrical fault**: pins, numbers, types and positions are the installed parts', and the model
+comparison is 0, 0, 0, 0. **Trap for a later output**: an export reading U3's library description
+gets the PFM part, TPS62933, where the fitted part is the FCCM TPS62933F; Q4's gets the generic
+MOSFET with no data sheet or footprint. The module's power page draws the same embedded TPS62933F
+and carries the same warning (`../h7-module/RECORD.md`). What would settle it is the pf page's U2's,
+above. Not done here.
+
+### Why the page has no crossing, as the layout records it
+
+An observation, not a judgement of the page: every net here reaches U3 from one side only (VIN, EN,
+SS and RT west; BST, SW and FB east; GND down), and the EN network's parts all hang from one row, so
+each row is crossed by nothing. The FB row runs west under C22 and L1 from R13's foot to U3's FB.
+
+### What the page shows, as observations
+
+- A VIN_MOD row along the top and a GND row along the bottom, each from its hierarchical label at
+  the west edge, pointing west. C14, C15 and C16 stand across the two rows at the west.
+- PF_ON's label, pointing west, starts the EN row: R16 lies in it, and the row runs east into U3's
+  EN. Hanging from it, west to east: R18 (from Q4's drain below), R17, C23 and C24, to GND.
+- PF_TRIP's label, pointing west, under PF_ON's, goes by one stub into Q4's gate; Q4's source drops
+  to GND.
+- The VIN_MOD row runs east past the EN network and drops into U3's VIN, just west of U3.
+- C21 hangs from U3's SS to GND; U3's RT carries a no-connect.
+- East of U3: BST through R15 to C22's top; SW east through C22's bottom pin and L1 onto the 3V3_P
+  row, which runs to 3V3_P's label at the east edge, pointing east, with R13 and C17-C20 hanging
+  from it. FB runs east under C22 and L1 to R13's foot, R14 below it to GND.
+- PRAIL_* wires carry copperhead's blue stroke; PF_ON and PF_TRIP the teal they carry on the modsw
+  page; VIN_MOD, 3V3_P, GND and PEN_D its default. On the modsw page VIN_MOD is purple, because
+  copperhead colours each page's families on their own (there VIN_MOD and VIN_MSW are a family; here
+  VIN_MOD is alone); a reader following VIN_MOD across the two pages sees two colours.
+- The hanging parts carry Reference over Value east of their bodies; C21's, R18's, C22's, R13's and
+  R14's west; R16's, R15's and L1's above the row; U3's above its body; Q4's west of its source.
+
+## ldo_vmid: 5V_A and VMID (Task 7c)
+
+**Status: UNREVIEWED.** sha256 `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd`.
+Render: `ldo_vmid.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/ldo-vmid.ts`, 17 parts on 19 placed instances: U4 (U_LDO,
+`h7-platform:TPS7A4901DGN`, TPS7A4901DGNR), R19 (R_LDOT 32.4 kOhm), R20 (R_LDOB 10.0 kOhm), C25
+(C_LIN 10 uF), C26 (C_LOUT 10 uF), C27 (C_NR 10 nF), C28 (C_FF 10 nF), R21 (R_5VA 0 Ohm), R22 and R23
+(R_VMID_TOP/BOTTOM 100 kOhm), C29 (C_VMID 10 uF), R24 and R25 (R_VMID_IN_L/R 10.0 kOhm), U5 (U_VMID,
+`h7-platform:OPA1688xD`, OPA1688IDR, three units: A, B and the supply), C30 (C_VMID_HF 100 nF), C31
+(C_VMID_BULK 10 uF), TP5 (`Connector:TestPoint`). Ports 5V_A, 5V_A_CODEC, GND, VIN_A, VMID_L and
+VMID_R (5V_A_CODEC reaches one pin, R21's pin 2). LDO_FB, LDO_NR, VMID, VMID_IN_L and VMID_IN_R are
+private to the page and drawn as wire, with no label. U4's NC (pin 3) and DNC (pin 7) are
+no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `ldo_vmid` is one of the
+  pedal's 19 blocks: U_LDO, R_5VA, the VMID divider and U_VMID.
+- [D3](../../../docs/h7-platform/decisions.md#d3): the 5V_A LDO, rated for the protected input.
+- [CR-PEDAL-SYMBOL-TPS7A4901](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-tps7a4901): U4
+  is the project symbol: pin 6 NR/SS `passive`, pin 7 DNC `no_connect`, pin 3 NC `free`, pin 9
+  PowerPAD stacked under GND pin 4, OUT `power_out`.
+- [CR-PEDAL-SYMBOL-OPA1688](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-opa1688): U5 is
+  the project symbol, three units (A, B, supply), under
+  [CR-PEDAL-SYMBOL-PROJECT](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-project).
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): the rule both
+  project symbols are held to; clause 3 makes U4's OUT `power_out`, which is why 5V_A takes no flag
+  home and is the pf page's cross-page power driver.
+- [CR-PEDAL-POWER-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-power-readings): U_LDO's
+  pin 3 left open, drawn as a no-connect.
+- [CR-PEDAL-POWER-DATASHEET-ENDS](../../../docs/h7-platform/decisions.md#cr-pedal-power-datasheet-ends):
+  C27 (C_NR) from NR/SS to GND and C28 (C_FF) from FB to OUT, from TI SBVS121E.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): TP5 on 5V_A.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): U4 (a regulator) is an
+  `ic`, and U5, the OPA1688, an `opamp`.
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): 5V_A_CODEC is an awaiting
+  net of the board until the codec blocks are built, which is why its port reaches one pin.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VIN_A, 5V_A,
+  5V_A_CODEC and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. GND's and VIN_A's single flags are on the root ("The tables after Task 7c"); 5V_A has
+  none, its driver being U4's `power_out` OUT on this page.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers)
+  and [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers):
+  this page holds the 5V_A entry's driver, U4 pin 1 OUT; no stand-in is placed under its own
+  one-block root, and nothing on it needs one.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 6 ports on the wrong net.
+- The block also cites `power.md` lines 33, 474, 488 and 489, `analog.md` lines 148 and 149, the
+  schematic checklist's PWR-08 to PWR-11 and PWR-15 (lines 129 to 132 and 138) and `parts.md` lines
+  57, 83, 84, 86 and 105; those are design notes, not rulings. Its note that a schematic needs no
+  MPN for the feedback, divider, follower-input, 0 Ohm and 100 nF parts cites `docs/known-gaps.md`
+  G245, the owner's decision on where a fully specified BOM binds.
+- Drawing choices, not transcriptions: one band, read west to east as two sections, the LDO and
+  then VMID, both between the VIN_A and GND rows; U5's three units at rotation 0, unmirrored (akcli
+  0.22.0 cannot rotate one unit, `draughting/pages/page.py`, `place_ops`); 5V_A_CODEC takes the
+  default stroke 5V_A has; VMID_L and VMID_R, which the draft drew no wire for, take the VMID
+  family's purple (`ldo_vmid/layout.py`, `UNDRAWN_STROKES`, says why); fields and parts moved after
+  the renders listed in `ldo_vmid/layout.py`.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 7c leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`. The placed-pin count counts each unit's own pins
+(`draughting/measure/kicad_sheet.py`, `instance_pins`, Task 7c); U4's GND and PowerPAD are two pins
+at one point, so the junction audit reports 45 pin points.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 17 (the model declares none) | 0; 17 |
+| exported components, nets, net members | 17, 13, 46 | 17, 13, 46 |
+| exported nets carrying a model net name | 10 of 13 | 6 of 13 (/5V_A, /5V_A_CODEC, /GND, /VIN_A, /VMID_L, /VMID_R, the ports; the other 7 private and unlabelled) |
+| ports whose label is on the wrong net | 1 of 6 | 0 of 6 |
+| ERC, the sheet alone | 3 errors (`pin_not_connected` 1, R21 pin 2; `power_pin_not_driven` 2, U4's IN and GND), 4 warnings (`lib_symbol_issues` 4) | 8 errors (`pin_not_connected` 6: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U4's IN and GND), 5 warnings (`isolated_pin_label` 1, 5V_A_CODEC; `lib_symbol_issues` 4) |
+| ERC under a one-block root, `/ldo_vmid/` | 3 errors (`pin_not_connected` 1, `power_pin_not_driven` 2), 0 warnings | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 6 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 4) | 3 errors (`label_dangling` 3, the 5V_A, VMID_L and VMID_R stubs' labels, alone with one block; `erc_sheets.py` admits them), 6 warnings (`isolated_pin_label` 2, 5V_A_CODEC's; `lib_symbol_issues` 4) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 6, 0 | 1, 0 |
+| orphan junctions, of total | 0 of 15 | 0 of 26 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 15 on 10 nets (5 global) | 6 on 6 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east 10.753 mm | fits |
+| wire groups with more than one stroke | 0 of 15 | 0 of 11 |
+| symbols (part instances, power symbols, PWR_FLAGs) | 19 (19, 0, 0) | 19 (19, 0, 0) |
+| placed pins | 46 | 46 |
+| wires, total length | 85, 894.08 mm | 78, 1004.57 mm |
+| wire corners | 26 | 15 |
+| junctions | 15 | 26 |
+
+**`lib_symbol_issues` 4**: *"The current configuration does not include the symbol library
+'h7-platform'"*, on U4 and on each of U5's three units. This is the pf page's U1 warning: a block page
+has no `.kicad_pro`, and kicad-cli 10.0.5 does not take the committed `sym-lib-table` without one.
+Both symbols are embedded in the sheet. No `lib_symbol_mismatch`: TP5's `Connector:TestPoint` and the
+`Device` symbols match their installed copies.
+
+### Why the page has one crossing, as the layout records it
+
+An observation of U4's pin order, not a judgement of the page: on the symbol's east side NR/SS (pin
+6) sits between OUT (pin 1) above and FB (pin 2) below, and OUT and FB are joined outside the body
+through R19 and C28 (5V_A to LDO_FB). That loop encloses NR/SS, while C27 takes NR/SS to GND, outside
+it. Here C27's drop to the GND row crosses the FB row once.
+
+### What the page shows, as observations
+
+- A VIN_A row along the top and a GND row along the bottom, each from its hierarchical label at the
+  west edge, pointing west. C25 stands across the two rows at the west.
+- A riser from the VIN_A row goes down into U4's IN and on into its EN; U4's NC on the west side and
+  DNC on top carry no-connects; its GND and PowerPAD drop to the GND row.
+- U4's OUT runs east on the 5V_A row to 5V_A's label, pointing east, in the middle of the page; on
+  it, west to east, R19 and C28 hang to the FB row, C26 hangs to GND, TP5 stands on the row, and R21
+  hangs down to the 5V_A_CODEC row, whose label is under 5V_A's.
+- U4's FB drops and runs east on the FB row under R19 and C28; R20 hangs from it to GND. C27 hangs
+  from NR/SS to GND, crossing the FB row.
+- East of the LDO section, between the same rows: C30, C31 and U5's supply unit (V+ up, V- down);
+  then R22 from the VIN_A row down to the VMID row, with R23 and C29 hanging from it to GND.
+- The VMID row runs east through R24 into U5A's +IN; from a node it drops to a lower row through R25
+  into U5B's +IN. Each unit's output runs east to its label (VMID_L, VMID_R) at the east edge,
+  pointing east, and from a node loops down, west under the body, and up into its -IN.
+- On U4, the project symbol's pin names NC and NR/SS run into each other across the body, and DNC
+  and GND, drawn vertical, run into OUT's; that is the symbol's own drawing
+  (CR-PEDAL-SYMBOL-TPS7A4901: pins 3, 6 and 7 moved to the body edge and shown), not a placement.
+  U5A's and U5B's pin names OUT_A and OUT_B meet the triangle's edge.
+- LDO_FB and LDO_NR carry copperhead's blue stroke; VMID_IN_L, VMID_IN_R, VMID_L and VMID_R its
+  purple; VIN_A, 5V_A, 5V_A_CODEC, VMID and GND its default.
+- The hanging parts carry Reference over Value east of their bodies; R24's and R25's above their
+  rows; U4's above its body, under the VIN_A row; U5A's and U5B's above their bodies, U5C's east of
+  its pins; TP5's east of its circle.

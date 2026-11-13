@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "prail.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "61b48044-a53e-5680-af21-fc6328205fc6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    10050,
+    3300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "ab1d1889-8dbc-575b-8737-b5aa8e656d4a"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1300,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c6ceb7b5-c7fa-5e35-826d-1322a8a9e600"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_ON",
+   "at": [
+    3050,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "af45ad26-4653-567c-9639-4ae5dbe66a4b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_TRIP",
+   "at": [
+    3050,
+    3850
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "127d7da3-6b19-58a0-b553-2b47955b24a8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MOD",
+   "at": [
+    1300,
+    2600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}
