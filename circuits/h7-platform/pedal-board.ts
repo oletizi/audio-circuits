@@ -23,6 +23,7 @@ import type { Network } from "../../lib/model/index.ts"
 import { drawingPagesFromNetwork, type DrawingPage } from "../../tools/draught/drawing-pages.ts"
 import { PEDAL_BLOCKS, PEDAL_PIN_NUMBERS } from "./pedal/build.ts"
 import { entryBlock } from "./pedal/entry.ts"
+import { modswBlock } from "./pedal/modsw.ts"
 import { pfBlock } from "./pedal/pf.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { contractNet } from "./pedal/nets.ts"
@@ -37,6 +38,7 @@ export const PIN_NUMBERS = PEDAL_PIN_NUMBERS
 const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["entry", entryBlock, "Power entry"],
   ["pf", pfBlock, "Power-fail supervisor"],
+  ["modsw", modswBlock, "Module load switch"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -62,8 +64,6 @@ export const PAGE_GROUPS: Readonly<Record<string, string>> = Object.fromEntries(
 export const SOCKET_ONLY_NETS: readonly string[] = [
   // For good (architecture.md:181).
   "SPARE1", "SPARE2", "SPARE3", "SPARE4", "SPARE5",
-  // Until Task 6 (power group): modsw and prail.
-  "VIN_MOD",
   // Until Task 8 (digital and controls group).
   "3V3_D", "VREF_A", "CODEC_DOUT", "CODEC_DIN", "CODEC_LRCK", "CODEC_BCK", "LED1", "LED2", "FSW1", "FSW2",
   "POS1", "POS2", "POS3", "POS4", "POS5", "POS6", "EXPR_TIP", "HW_REV", "EXPR_DETECT",
@@ -81,8 +81,6 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
  * more than one pin or whose loading block is already built.
  */
 export const AWAITING_NETS: readonly string[] = [
-  // Until modsw (this task): D_MIN's cathode, which Q_MSW's source takes.
-  "VIN_MSW",
 ]
 
 /** The pedal: every built block included, each port bound to the root net of its own name. */
@@ -107,6 +105,10 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   // pf
   pf_u_pf: "U1", pf_r_pft1: "R2", pf_r_pft2: "R3", pf_r_pfb: "R4", pf_d_pfcl: "D3", pf_c_pfs: "C8", pf_c_pf: "C9",
   pf_c_pfct: "C10", pf_r_pfpu: "R5", pf_u_pfinv: "U2", pf_c_pfinv: "C11", pf_r_pftpd: "R6", pf_r_pfonpd: "R7",
+  // modsw
+  modsw_q_msw: "Q1", modsw_r_mswt: "R8", modsw_r_mswb: "R9", modsw_q_mswd: "Q2", modsw_c_ss: "C12", modsw_d_ss: "D4",
+  modsw_r_ssr: "R10", modsw_c_gs: "C13", modsw_d_gs: "D5", modsw_r_gsb: "R11", modsw_q_vdis: "Q3", modsw_r_vdis: "R12",
+  modsw_tp_vin_mod: "TP4",
 }
 
 /** One page per block (design change C3). */
