@@ -18,6 +18,7 @@ fsw_led). The root sheet and its
 | end: `ldo_vmid.kicad_sch` (Task 7c) | `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` |
 | end: `usb.kicad_sch` (Task 9a) | `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` |
 | end: `midi_i2c.kicad_sch` (Task 9a) | `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` |
+| end: `fsw_led.kicad_sch` (Task 9a) | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
 
 ## Replay
 

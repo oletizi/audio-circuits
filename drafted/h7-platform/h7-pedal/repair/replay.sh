@@ -58,7 +58,7 @@ draft_sha() {
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c"
+REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c fsw_led"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
 PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 PAGE_PF=7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385
@@ -67,6 +67,7 @@ PAGE_PRAIL=f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780
 PAGE_LDO_VMID=584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd
 PAGE_USB=efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653
 PAGE_MIDI_I2C=fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f
+PAGE_FSW_LED=de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -170,6 +171,7 @@ repair_block ldo_vmid "$PAGE_LDO_VMID"
 # Task 9a.
 repair_block usb "$PAGE_USB"
 repair_block midi_i2c "$PAGE_MIDI_I2C"
+repair_block fsw_led "$PAGE_FSW_LED"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

@@ -1,0 +1,60 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "R70.1",
+   "R72.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "3V3_P",
+  "pins": [
+   "R74.1",
+   "R77.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "FSW1",
+  "pins": [
+   "R71.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "FSW2",
+  "pins": [
+   "R73.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C55.2",
+   "C56.2",
+   "J5.2",
+   "J6.2",
+   "Q7.2",
+   "Q8.2",
+   "R76.2",
+   "R79.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "LED1",
+  "pins": [
+   "R75.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "LED2",
+  "pins": [
+   "R78.1"
+  ],
+  "drafted": false
+ }
+]

@@ -42,6 +42,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `ldo_vmid.kicad_sch` | block ldo_vmid | `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` |
 | `usb.kicad_sch` | block usb | `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` |
 | `midi_i2c.kicad_sch` | block midi_i2c | `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` |
+| `fsw_led.kicad_sch` | block fsw_led | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -56,6 +57,7 @@ committed bytes, with the pinned kicad-cli.
 | ldo_vmid | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
 | usb | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
 | midi_i2c | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
+| fsw_led | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
 
 ## The drafts every repair starts from
 
@@ -130,6 +132,7 @@ The measurement suite on each draft (selftest: 10 controls, every one moved or f
 | interface | 3 | 1 (0) | 4 | 0 | 0 | 0 | 0 |
 | usb (Task 9a) | 74 | 21 (17) | 4 | 23 | 4 | 0 | 3, with 4 collinear overlapping pairs |
 | midi_i2c (Task 9a) | 48 | 14 (10) | 1 | 0 | 0 | 0 | 0 |
+| fsw_led (Task 9a) | 52 | 21 (13) | 0 | 1 | 0 | 0 | 0 |
 
 ## How the pages are repaired
 
@@ -1410,3 +1413,129 @@ it, so C61, 3V3_D to GND at U16, crosses it once: its GND drop crosses the gate 
 - The hanging parts carry Reference over Value east of their bodies; R93's and R92's west; U16's
   west of its VCC pin, above its A pin; Q9's east of its body; J8's under its east end; TP6's under
   it.
+
+## fsw_led: the footswitch inputs and the LEDs (Task 9a)
+
+**Status: UNREVIEWED.** sha256 `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021`.
+Render: `fsw_led.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/fsw-led.ts`, 18 parts. Per footswitch: J5 and J6 (J_FSW1/2,
+`Connector_Generic:Conn_01x02`, the header to the hung footswitch board), R70 and R72 (R_FSW_PU1/2
+10.0 kOhm), C55 and C56 (C_FSW1/2 100 nF), R71 and R73 (R_FSW1/2 1.20 kOhm). Per LED: D10 and D11
+(LED1/2, WP7113ID, `Device:LED`), R74 and R77 (R_LED1/2 100 Ohm), Q7 and Q8 (Q_LED1/2,
+`Transistor_FET:AO3400A`), R75 and R78 (R_LED1/2_G 100 Ohm), R76 and R79 (R_LED1/2_PD 10.0 kOhm).
+Ports 3V3_D, 3V3_P, FSW1, FSW2, GND, LED1 and LED2 (FSW1, FSW2, LED1 and LED2 each reach one pin:
+R71's 2, R73's 2, R75's 1 and R78's 1). FSW1_SW, FSW2_SW and LEDn_A, LEDn_K, LEDn_G are private to the
+page and drawn as wire, with no label. No no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `fsw_led` is one of the
+  pedal's 19 blocks: the two footswitch inputs and the two LED drivers.
+- [CR-PEDAL-FOOTSWITCH](../../../docs/h7-platform/decisions.md#cr-pedal-footswitch): each footswitch
+  input is a 2-pad connector, pin 1 the switch node FSWn_SW, pin 2 GND; the switch is on the hung
+  board.
+- [R-22](../../../docs/h7-platform/decisions.md#r-22): the footswitch series resistor and debounce,
+  the 10.0 kOhm pull-up, 100 nF and 1.20 kOhm.
+- [CR-PEDAL-LED-MOSFET](../../../docs/h7-platform/decisions.md#cr-pedal-led-mosfet): the LED switches
+  are AO3400A, gate through 100 Ohm, 10.0 kOhm gate pull-down.
+- [R-13](../../../docs/h7-platform/decisions.md#r-13): the gate pull-down. [R-27](../../../docs/h7-platform/decisions.md#r-27):
+  the LED resistors, 100 Ohm on 3V3_P.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings): each
+  LED gate's pull-down sits on the gate, after the 100 Ohm series resistor.
+- [CR-PEDAL-SYMBOL-AO3400A](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a): Q7 and Q8
+  are the stock AO3400A, G 1, S 2, D 3.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the LEDs are `diode`
+  (cathode 1, anode 2), the MOSFETs `ic`.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): clause 1 makes Q7's
+  and Q8's gates `input`, and the LEDs' terminals `passive`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D, 3V3_P
+  and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. No pin here is a power input, so nothing on the page needs one; the one-block root puts
+  the root's stub flags on GND and 3V3_D, as for every page reaching them.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 7 ports on the wrong net.
+- Checklist items, not rulings: the schematic checklist's CTL-04 (line 183, the footswitch node) and
+  CTL-05 (line 187, the LED switch). The block also cites `power.md` lines 415 and 458,
+  `parts.md` lines 135 to 137, `mechanical-and-controls.md` line 398 and `architecture.md` line 266;
+  those are design notes.
+- Drawing choices, not transcriptions: two sections, the LEDs west and the footswitches east, each
+  channel 2 the mirror image of channel 1 about one GND row across the page (Q8 mirrored top to
+  bottom, D11 turned 270 and D10 90, J5 mirrored left to right and J6 turned 180); the two 3V3_P rows
+  joined west of the LED labels and the two 3V3_D rows east of the FSW labels; FSW1, FSW2, LED1 and
+  LED2, which the draft drew no wire for, take copperhead's default stroke, as none of them is in a
+  family (`fsw_led/layout.py`, `UNDRAWN_STROKES`, says why); fields and the rectangle moved after the
+  renders listed in `fsw_led/layout.py`.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 9a leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 18 (the model declares none) | 0; 18 |
+| exported components, nets, net members | 18, 15, 38 | 18, 15, 38 |
+| exported nets carrying a model net name | 11 of 15 | 7 of 15 (the seven ports; the other 8 private and unlabelled) |
+| ports whose label is on the wrong net | 6 of 7 | 0 of 7 |
+| ERC, the sheet alone | 4 errors (`pin_not_connected` 4, R71 pin 2, R73 pin 2, R75 pin 1, R78 pin 1), 2 warnings (`lib_symbol_mismatch` 2, Q7 and Q8) | 7 errors (`pin_not_connected` 7: each hierarchical label has no parent sheet), 6 warnings (`isolated_pin_label` 4, FSW1, FSW2, LED1 and LED2; `lib_symbol_mismatch` 2) |
+| ERC under a one-block root, `/fsw_led/` | 4 errors (`pin_not_connected` 4), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 12 errors (`hier_label_mismatch` 7, `label_dangling` 5), 4 warnings (`isolated_pin_label` 2, `lib_symbol_mismatch` 2) | 1 error (`label_dangling` 1, the 3V3_P stub's label, alone with one block; `erc_sheets.py` admits it), 10 warnings (`isolated_pin_label` 8, the four one-pin ports' labels and stubs; `lib_symbol_mismatch` 2) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 1, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 5 | 0 of 12 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 21 on 11 nets (13 global) | 7 on 7 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 21 | 0 of 15 |
+| symbols (parts, power symbols, PWR_FLAGs) | 18 (18, 0, 0) | 18 (18, 0, 0) |
+| placed pins | 38 | 38 |
+| wires, total length | 52, 322.58 mm | 38, 546.10 mm |
+| wire corners | 8 | 2 |
+| junctions | 5 | 12 |
+
+**`lib_symbol_mismatch` 2**, on Q7 and Q8: *"Symbol 'AO3400A' doesn't match copy in library
+'Transistor_FET'"*, the modsw page's Q2 and Q3 warning. The installed AO3400A
+(`Transistor_FET.kicad_sym` line 1590) is `(extends "Q_NMOS_GSD")`, and the embedded copy
+(`fsw_led.kicad_sch` line 668) is the parent flattened: pins and graphics identical to the installed
+parent `Q_NMOS_GSD`'s (line 68850: 1 G input, 2 S passive, 3 D passive); Value `Q_NMOS_GSD`, no
+Footprint, no Datasheet, Description "N-MOSFET transistor, gate/source/drain", all the parent's,
+where the child has `AO3400A`, `Package_TO_SOT_SMD:SOT-23`,
+`http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf` and "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23".
+Q7's and Q8's own Values on the page are `AO3400A`. **Not an electrical fault**: the model
+comparison is 0, 0, 0, 0. **Trap for a later output**: an export reading their library fields gets
+the generic MOSFET with no footprint or data sheet. J5's and J6's `Conn_01x02` and the LEDs'
+`Device:LED` are not `extends` and report nothing.
+
+**`isolated_pin_label` 4**, on the sheet alone: the four one-pin ports' hierarchical labels; each
+net's other pin is a module-socket pin on the interface page, which has a port for each of the four.
+
+### Why the page has no crossing, as the layout records it
+
+An observation, not a judgement of the page: each channel's parts hang between its own rail row and
+the one GND row, channel 2 the mirror of channel 1 about it, and the rail rows of each section meet
+by a vertical outside its labels (3V3_P west of the LED labels, 3V3_D east of the FSW labels), so
+no row is crossed.
+
+### What the page shows, as observations
+
+- A GND row across the middle of the page, from GND's label at the west edge, pointing west.
+- The LED section at the west. LED1's label above GND's and LED2's below, each pointing west,
+  starts a gate row through R75 or R78 into Q7's or Q8's gate; R76 hangs from LED1's gate row down to
+  the GND row and R79 rises from LED2's up to it. Q7's source drops to the GND row and its drain
+  rises into D10's cathode; D10 points down, its anode up through R74 to a 3V3_P row along the top,
+  whose label is at its west end, pointing west. Q8, D11 and R77 are the mirror image below, to a
+  3V3_P row along the bottom. A vertical west of the LED labels joins the two 3V3_P rows.
+- The footswitch section at the east. J5, pins facing east, starts FSW1_SW's row, which runs east
+  past R70 (up to a 3V3_D row) and C55 (down to GND) and through R71 to FSW1's label, pointing east;
+  J5's pin 2 drops to the GND row. J6, turned 180, its pin 2 above its pin 1, is the mirror image
+  below, R72 down to a 3V3_D row along the bottom, C56 up to GND, through R73 to FSW2's label. A
+  vertical east of the FSW labels joins the two 3V3_D rows, and 3V3_D's label is at the top row's
+  east end, pointing east.
+- LED1's private nets carry copperhead's purple, LED2's its teal, 3V3_D and 3V3_P its blue; FSW1_SW,
+  FSW2_SW, the four one-pin ports and GND its default.
+- The hanging parts carry Reference over Value east of their bodies; R75's and R71's above their
+  rows, R78's and R73's below; J5's above it and J6's below it; Q7's, Q8's, D10's and D11's east of
+  their bodies.

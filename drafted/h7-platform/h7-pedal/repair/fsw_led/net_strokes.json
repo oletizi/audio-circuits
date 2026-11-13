@@ -1,0 +1,13 @@
+{
+ "3V3_D": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "3V3_P": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "FSW1_SW": "(stroke (width 0.254) (type default))",
+ "FSW2_SW": "(stroke (width 0.254) (type default))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "LED1_A": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "LED1_G": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "LED1_K": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "LED2_A": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "LED2_G": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "LED2_K": "(stroke (width 0.254) (type default) (color 0 130 120 1))"
+}

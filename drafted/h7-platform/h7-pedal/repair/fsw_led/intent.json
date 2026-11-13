@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J5",
+      "libId": "Connector_Generic:Conn_01x02",
+      "value": "Conn_01x02",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R70",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "C55",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R71",
+      "libId": "Device:R",
+      "value": "1.2K",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "J6",
+      "libId": "Connector_Generic:Conn_01x02",
+      "value": "Conn_01x02",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R72",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "C56",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R73",
+      "libId": "Device:R",
+      "value": "1.2K",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "D10",
+      "libId": "Device:LED",
+      "value": "WP7113ID",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R74",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "Q7",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R75",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R76",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "D11",
+      "libId": "Device:LED",
+      "value": "WP7113ID",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R77",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "Q8",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R78",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "Footswitches and LEDs"
+    },
+    {
+      "ref": "R79",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Footswitches and LEDs"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "R70.1",
+        "R72.1"
+      ]
+    },
+    {
+      "name": "3V3_P",
+      "kind": "signal",
+      "pins": [
+        "R74.1",
+        "R77.1"
+      ]
+    },
+    {
+      "name": "FSW1_SW",
+      "kind": "signal",
+      "pins": [
+        "C55.1",
+        "J5.1",
+        "R70.2",
+        "R71.1"
+      ]
+    },
+    {
+      "name": "FSW2_SW",
+      "kind": "signal",
+      "pins": [
+        "C56.1",
+        "J6.1",
+        "R72.2",
+        "R73.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C55.2",
+        "C56.2",
+        "J5.2",
+        "J6.2",
+        "Q7.2",
+        "Q8.2",
+        "R76.2",
+        "R79.2"
+      ]
+    },
+    {
+      "name": "LED1_A",
+      "kind": "signal",
+      "pins": [
+        "D10.2",
+        "R74.2"
+      ]
+    },
+    {
+      "name": "LED1_G",
+      "kind": "signal",
+      "pins": [
+        "Q7.1",
+        "R75.2",
+        "R76.1"
+      ]
+    },
+    {
+      "name": "LED1_K",
+      "kind": "signal",
+      "pins": [
+        "D10.1",
+        "Q7.3"
+      ]
+    },
+    {
+      "name": "LED2_A",
+      "kind": "signal",
+      "pins": [
+        "D11.2",
+        "R77.2"
+      ]
+    },
+    {
+      "name": "LED2_G",
+      "kind": "signal",
+      "pins": [
+        "Q8.1",
+        "R78.2",
+        "R79.1"
+      ]
+    },
+    {
+      "name": "LED2_K",
+      "kind": "signal",
+      "pins": [
+        "D11.1",
+        "Q8.3"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Footswitches and LEDs"
+    ]
+  }
+}

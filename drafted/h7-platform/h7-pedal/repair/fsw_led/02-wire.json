@@ -1,0 +1,662 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "fsw_led.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1600,
+     2900
+    ],
+    [
+     1750,
+     2900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2050,
+     2900
+    ],
+    [
+     2250,
+     2900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2250,
+     2900
+    ],
+    [
+     2400,
+     2900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2250,
+     3200
+    ],
+    [
+     2250,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     3100
+    ],
+    [
+     2700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     2700
+    ],
+    [
+     2700,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     2300
+    ],
+    [
+     2700,
+     2200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1600,
+     3700
+    ],
+    [
+     1750,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2050,
+     3700
+    ],
+    [
+     2250,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2250,
+     3700
+    ],
+    [
+     2400,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2250,
+     3400
+    ],
+    [
+     2250,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     3500
+    ],
+    [
+     2700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     3900
+    ],
+    [
+     2700,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     4300
+    ],
+    [
+     2700,
+     4400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     900,
+     1900
+    ],
+    [
+     1100,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     1900
+    ],
+    [
+     2700,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     1900
+    ],
+    [
+     1100,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1100,
+     4700
+    ],
+    [
+     2700,
+     4700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     2800
+    ],
+    [
+     4300,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     2800
+    ],
+    [
+     4700,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     2800
+    ],
+    [
+     5050,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5350,
+     2800
+    ],
+    [
+     5700,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     2900
+    ],
+    [
+     3900,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3100
+    ],
+    [
+     4700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     3800
+    ],
+    [
+     4300,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     3800
+    ],
+    [
+     4700,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3800
+    ],
+    [
+     5050,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5350,
+     3800
+    ],
+    [
+     5700,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     3700
+    ],
+    [
+     3900,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4700,
+     3500
+    ],
+    [
+     4700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     2500
+    ],
+    [
+     6400,
+     2500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     2500
+    ],
+    [
+     6600,
+     2500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     2500
+    ],
+    [
+     6400,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6400,
+     4100
+    ],
+    [
+     4300,
+     4100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1600,
+     3300
+    ],
+    [
+     2250,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2250,
+     3300
+    ],
+    [
+     2700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     3300
+    ],
+    [
+     3900,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     3300
+    ],
+    [
+     4700,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    1100,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2250,
+    2900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2250,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2250,
+    3700
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2700,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3900,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4300,
+    2800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4300,
+    3800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    2800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4700,
+    3800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6400,
+    2500
+   ]
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED1",
+   "at": [
+    1600,
+    2900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED2",
+   "at": [
+    1600,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    900,
+    1900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW1",
+   "at": [
+    5700,
+    2800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW2",
+   "at": [
+    5700,
+    3800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    6600,
+    2500
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1600,
+    3300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-pedal: fsw_led",
+   "date": "2026-11-13",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}

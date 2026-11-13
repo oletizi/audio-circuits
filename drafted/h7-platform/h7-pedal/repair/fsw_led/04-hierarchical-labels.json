@@ -1,0 +1,105 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "fsw_led.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "9392e51f-37f9-59e6-b288-81ecf8783c73"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    6600,
+    2500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "765b1a38-e9fb-5b1a-a8a7-10c27054e512"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_P",
+   "at": [
+    900,
+    1900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "aa0d2741-9b5b-5db2-9ef1-8fd756d0663b"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW1",
+   "at": [
+    5700,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e2693774-a56f-58ea-b65e-0e9da4e27177"
+  },
+  {
+   "op": "add_net_label",
+   "name": "FSW2",
+   "at": [
+    5700,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4beea322-4385-5c73-af4a-940bc4609773"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1600,
+    3300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "2d09c5bb-c97c-5f8d-8125-109960365913"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED1",
+   "at": [
+    1600,
+    2900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cd9b617b-7574-5e25-b408-48d583be5cae"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LED2",
+   "at": [
+    1600,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}
