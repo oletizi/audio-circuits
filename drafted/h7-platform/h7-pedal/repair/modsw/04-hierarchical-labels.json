@@ -1,0 +1,77 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "modsw.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "9297f796-ae9d-522e-807a-d8c34db19799"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    3700,
+    4400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e865ff86-5a78-54ac-a676-9958c38435af"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_ON",
+   "at": [
+    3700,
+    4100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7e83bd57-248e-5285-b523-7ad94d3c8d82"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_TRIP",
+   "at": [
+    5700,
+    3600
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c4221118-465c-5ed6-8585-ce3ae9360197"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MOD",
+   "at": [
+    6800,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "7bf1241b-67e6-5c91-a865-0201efe6cbb2"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VIN_MSW",
+   "at": [
+    1500,
+    2400
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

@@ -12,6 +12,7 @@ board adds). It grows one block at a time as each page is repaired (h7 pedal pag
 | end: `interface.kicad_sch` (Task 7a) | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
 | end: `entry.kicad_sch` (Task 7a) | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 | end: `pf.kicad_sch` (Task 7b) | `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` |
+| end: `modsw.kicad_sch` (Task 7b) | `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2` |
 
 ## Replay
 
@@ -45,7 +46,8 @@ bash drafted/h7-platform/h7-pedal/repair/replay.sh <work-dir>
 Toolchain: copperhead 0.12.0 and akcli 0.22.0 under `draughting/` (`make draught-doctor` matched
 every pinned tool), kicad-cli 10.0.5, python3, bun. Replayed on 2026-11-13 into a new directory and
 reached every sha256; that replay's `make draw` was the second run, and it drafted the same six
-sheets, byte for byte, as the first.
+sheets, byte for byte, as the first. Task 7b replayed again, into new directories, after adding pf
+and after adding modsw; each reached every sha256, the Task 7a pages' included.
 
 Then, to check and look at a page:
 

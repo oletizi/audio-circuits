@@ -1,0 +1,45 @@
+[
+ {
+  "name": "GND",
+  "pins": [
+   "Q2.2",
+   "Q3.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "PF_ON",
+  "pins": [
+   "Q2.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "PF_TRIP",
+  "pins": [
+   "Q3.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VIN_MOD",
+  "pins": [
+   "C12.1",
+   "Q1.2",
+   "R12.1",
+   "TP4.1"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VIN_MSW",
+  "pins": [
+   "C13.1",
+   "Q1.3",
+   "R10.1",
+   "R11.1",
+   "R8.1"
+  ],
+  "drafted": true
+ }
+]

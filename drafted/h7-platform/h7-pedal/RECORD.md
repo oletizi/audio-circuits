@@ -37,6 +37,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `interface.kicad_sch` | block interface | `963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a` |
 | `entry.kicad_sch` | block entry | `5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736` |
 | `pf.kicad_sch` | block pf | `7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385` |
+| `modsw.kicad_sch` | block modsw | `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -46,6 +47,7 @@ committed bytes, with the pinned kicad-cli.
 | interface | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
 | entry | **UNREVIEWED** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
 | pf | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
+| modsw | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `modsw.svg` |
 
 ## The drafts every repair starts from
 
@@ -515,3 +517,145 @@ Observations of the symbols' pin order, not a judgement of the page:
 - The private nets carry copperhead's blue stroke; 5V_A, GND and VIN its default.
 - The hanging parts carry Reference over Value east of their bodies; D3's and R6's west; R2's and R3's
   above the row; U1's under its body; U2's above its body.
+
+## modsw: the module load switch (Task 7b)
+
+**Status: UNREVIEWED.** sha256 `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2`.
+Render: `modsw.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/modsw.ts`, 13 parts: Q1 (Q_MSW, AOD4185 on
+`Transistor_FET:Q_PMOS_GDS`), R8 (R_MSWT 15.0 kOhm), R9 (R_MSWB 4.30 kOhm), Q2 (Q_MSWD, AO3400A),
+C12 (C_SS 2.2 uF), D4 (D_SS, BAS116H on `Device:D`), R10 (R_SSR 15.0 kOhm), C13 (C_GS 220 nF), D5
+(D_GS, BAS116H), R11 (R_GSB 470 kOhm), Q3 (Q_VDIS, AO3400A), R12 (R_VDIS 10.0 Ohm), TP4
+(`Connector:TestPoint`). Ports GND, PF_ON, PF_TRIP, VIN_MOD and VIN_MSW (PF_ON and PF_TRIP each reach
+one pin, Q2's and Q3's gates). MSW_G, MSW_X, MSW_GH, MSWD_D and VDIS_D are private to the page and
+drawn as wire, with no label.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `modsw` is one of the
+  pedal's 19 blocks: Q_MSW, its soft start and gate hold, and Q_VDIS (the single transistor placed
+  here).
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the MOSFETs are `ic`; D4
+  and D5 are `diode`, pin 1 K and pin 2 A, so each cathode is on the gate row.
+- [R-38](../../../docs/h7-platform/decisions.md#r-38): Q_MSW between D_MIN and VIN_MOD, switched
+  through Q_MSWD from PF_ON, gate network R_MSWT and R_MSWB; the soft start C_SS, D_SS and R_SSR;
+  Q_VDIS with R_VDIS discharging VIN_MOD while tripped. As amended by
+  [R-41](../../../docs/h7-platform/decisions.md#r-41) (Q_MSW an AOD4185, its network re-sized),
+  [R-42](../../../docs/h7-platform/decisions.md#r-42) (R_VDIS 10.0 Ohm, CRCW201010R0FKEFHP) and
+  [R-49](../../../docs/h7-platform/decisions.md#r-49) (C_GS, D_GS and R_GSB hold the gate through the
+  plug-in edge).
+- [CR-PEDAL-POWER-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-power-readings): R_VDIS
+  (R12) on the VIN_MOD side with Q_VDIS's drain on VDIS_D; Q_VDIS's and Q_MSWD's sources on GND.
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): VIN_MSW, Q_MSW's source,
+  D_MIN's cathode on the entry page.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads): TP4 on VIN_MOD
+  ("Added: VIN_MOD").
+- [CR-PEDAL-SYMBOL-AOD4185](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-aod4185): Q1 on
+  the generic `Q_PMOS_GDS`, 1 G, 2 D, 3 S.
+- [CR-PEDAL-SYMBOL-AO3400A](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a): Q2 and
+  Q3 on the stock `Transistor_FET:AO3400A`, 1 G, 2 S, 3 D.
+- [CR-PEDAL-SYMBOL-DIODES](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-diodes): BAS116H on
+  `Device:D`.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): clause 1, a
+  MOSFET's gate is `input`, which is why PF_ON and PF_TRIP need their drivers on this page's check.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VIN_MSW,
+  VIN_MOD and GND are wires ending in hierarchical labels.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; GND's single flag is on the root, and no pin here is a power input.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  PF_ON and PF_TRIP are driven by U2's 2Y and 1Y on the pf page (`cross-page-drivers.ts`); each
+  takes a `Connector:TestPoint` stand-in on its stub under this page's one-block root. With the
+  table overridden to no entries, `/modsw/` reports 2 errors, `pin_not_driven` on *"Symbol Q2 Pin 1
+  [G, Input, Line]"* and *"Symbol Q3 Pin 1 [G, Input, Line]"*; with the entries, 0 and 0.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 5 ports on the wrong net.
+- The block also cites `power.md` lines 147 to 162 and `parts.md` lines 61 to 77 for each part;
+  those are design notes, not rulings.
+- Drawing choices, not transcriptions: Q1 is turned 270 and mirrored top to bottom, so its source is
+  west, its drain east and its gate down; D4 is turned 270 (cathode up); D5 is turned 180 (anode
+  west, cathode east); PF_ON and PF_TRIP, which the draft drew no wire for, take copperhead's third
+  palette colour, the next one no family on this page uses (`modsw/layout.py`, `UNDRAWN_STROKES`,
+  says why); Q1's fields moved up after the first render showed its Value touching its body.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 7b leaves them.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 13 (the model declares none) | 0; 13 |
+| exported components, nets, net members | 13, 10, 28 | 13, 10, 28 |
+| exported nets carrying a model net name | 8 of 10 (/GND, /VDIS_D, MSWD_D, MSW_G, MSW_GH, MSW_X, VIN_MOD, VIN_MSW; PF_ON and PF_TRIP are unconnected) | 5 of 10 (/GND, /PF_ON, /PF_TRIP, /VIN_MOD, /VIN_MSW, the ports; the other 5 private and unlabelled) |
+| ports whose label is on the wrong net | 4 of 5 | 0 of 5 |
+| ERC, the sheet alone | 4 errors (`pin_not_connected` 2 and `pin_not_driven` 2, on Q2's and Q3's gates), 0 warnings | 7 errors (`pin_not_connected` 5: each hierarchical label has no parent sheet; `pin_not_driven` 2, on Q2's and Q3's gates), 4 warnings (`isolated_pin_label` 2, `lib_symbol_mismatch` 2) |
+| ERC under a one-block root, `/modsw/` | 4 errors (`pin_not_connected` 2, `pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 7 errors (`hier_label_mismatch` 5, `label_dangling` 2), 5 warnings (`isolated_pin_label` 3, `lib_symbol_mismatch` 2) | 2 errors (`label_dangling` 2, the VIN_MOD and VIN_MSW stubs' labels, alone with one block; `erc_sheets.py` admits them), 2 warnings (`lib_symbol_mismatch` 2) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 1, 0 |
+| orphan junctions, of total | 0 of 2 | 0 of 13 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 17 on 8 nets (15 global) | 5 on 5 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 17 | 0 of 10 |
+| symbols (parts, power symbols, PWR_FLAGs) | 13 (13, 0, 0) | 13 (13, 0, 0) |
+| placed pins | 28 | 28 |
+| wires, total length | 41, 257.81 mm | 40, 464.82 mm |
+| wire corners | 15 | 5 |
+| junctions | 2 | 13 |
+
+The draft's 0 warnings alone are where `make draw` wrote it; copied beside the committed
+`sym-lib-table` it reports the page's `lib_symbol_mismatch` 2, so they come from the library context,
+as on the pf page.
+
+**`lib_symbol_mismatch` 2**: *"Symbol 'AO3400A' doesn't match copy in library 'Transistor_FET'"*, on
+Q2 and on Q3, one embedded symbol. Measured as the pf page's U2 was:
+
+| | embedded in the sheet (draft and page alike, `modsw.kicad_sch` line 620) | installed `AO3400A` (`Transistor_FET.kicad_sym` line 1590) |
+| --- | --- | --- |
+| form | a whole symbol, no `extends` | `(extends "Q_NMOS_GSD")`: fields only, its pins and graphics the parent's |
+| pins and graphics | identical, whitespace-normalised, to the installed parent `Q_NMOS_GSD`'s: 1 G input, 2 S passive, 3 D passive | the parent's |
+| Value | `Q_NMOS_GSD` (the parent's) | `AO3400A` |
+| Datasheet | empty (the parent's) | `http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf` |
+| Description | "N-MOSFET transistor, gate/source/drain" (the parent's) | "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23" |
+| Footprint | empty (the parent's) | `Package_TO_SOT_SMD:SOT-23` |
+| `ki_keywords`; `ki_fp_filters` | "transistor NMOS N-MOS N-MOSFET"; none (the parent's) | "N-Channel MOSFET"; `SOT?23*` |
+
+In the page's export, Q2's and Q3's own Value is `AO3400A`, the fitted part; their libsource and
+libpart describe them as "N-MOSFET transistor, gate/source/drain", with no data sheet or footprint,
+and the libpart's Value field is `Q_NMOS_GSD`. **Not an electrical fault**: pins, numbers, types and
+positions are the installed part's, and the model comparison is 0, 0, 0, 0. The trap and what would
+settle it are the pf page's U2's, above. Q1's `Q_PMOS_GDS` is a symbol of its own, not an
+`extends`, and reports no mismatch.
+
+### Why the page has one crossing, as the layout records it
+
+An observation of the circuit's connections, not a judgement of the page: node X joins R10, on
+Q1's source side, to C12, on its drain side, so the X wire runs under Q1 from west to east and, with
+the power row through Q1, closes a loop around the gate network. The gate network (the gate row, R8,
+D4, D5 and the GH run) sits inside it; R9 joins the gate row to Q2, which takes GND and PF_ON from
+outside. R9's drop crosses the X row once.
+
+### What the page shows, as observations
+
+- VIN_MSW's hierarchical label at the west, pointing west, starts the power row; Q1 lies in the row
+  with its source (pin 3) west, its drain (pin 2) east and its gate (pin 1) pointing down; the row
+  ends east in VIN_MOD's hierarchical label, pointing east.
+- West of Q1, hanging from the VIN_MSW row: R10 down to the X row; C13 and R11 down to a short run
+  that ends in D5's anode; R8 down to the gate row.
+- D5 lies on the gate row's level, anode west and cathode east; from its cathode the gate row runs
+  east, taking R8, D4's cathode (D4 rising from the X row) and R9, to Q1's gate column, where it turns
+  up into the gate.
+- The X row runs from R10 east, under the gate row and under Q1, to C12, which hangs from the VIN_MOD
+  row east of Q1. R9's drop crosses the X row on its way down to Q2's drain.
+- Q2 stands under R9: its gate west on one stub to PF_ON's label, its source down to the GND row,
+  whose label is at its west end, under PF_ON's, both pointing west.
+- East of C12 on the VIN_MOD row: TP4 standing on the row, then R12 hanging to Q3's drain; Q3's gate
+  west on one stub to PF_TRIP's label, pointing west; its source down to the GND row.
+- VIN_MSW and VIN_MOD wires carry copperhead's purple stroke; MSW_G, MSW_GH and MSW_X its blue;
+  PF_ON and PF_TRIP its teal; GND, MSWD_D and VDIS_D its default. On the entry page VIN_MSW is blue,
+  because copperhead colours each page's families on their own (there the VIN family is the first
+  and only one); a reader following VIN_MSW across the two pages sees two colours.
+- The hanging parts carry Reference over Value east of their bodies; D4's west; D5's and Q1's above;
+  Q2's and Q3's east of their bodies; TP4's east of its circle.

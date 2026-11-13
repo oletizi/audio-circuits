@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "Q1",
+      "libId": "Transistor_FET:Q_PMOS_GDS",
+      "value": "AOD4185",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "R8",
+      "libId": "Device:R",
+      "value": "15K",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "R9",
+      "libId": "Device:R",
+      "value": "4.3K",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "Q2",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "C12",
+      "libId": "Device:C",
+      "value": "2.2uF",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "D4",
+      "libId": "Device:D",
+      "value": "BAS116H,115",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "R10",
+      "libId": "Device:R",
+      "value": "15K",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "C13",
+      "libId": "Device:C",
+      "value": ".22uF",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "D5",
+      "libId": "Device:D",
+      "value": "BAS116H,115",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "R11",
+      "libId": "Device:R",
+      "value": "470K",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "Q3",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "R12",
+      "libId": "Device:R",
+      "value": "10R",
+      "group": "Module load switch"
+    },
+    {
+      "ref": "TP4",
+      "libId": "Connector:TestPoint",
+      "value": "TestPoint",
+      "group": "Module load switch"
+    }
+  ],
+  "nets": [
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "Q2.2",
+        "Q3.2"
+      ]
+    },
+    {
+      "name": "MSWD_D",
+      "kind": "signal",
+      "pins": [
+        "Q2.3",
+        "R9.2"
+      ]
+    },
+    {
+      "name": "MSW_G",
+      "kind": "signal",
+      "pins": [
+        "D4.1",
+        "D5.1",
+        "Q1.1",
+        "R8.2",
+        "R9.1"
+      ]
+    },
+    {
+      "name": "MSW_GH",
+      "kind": "signal",
+      "pins": [
+        "C13.2",
+        "D5.2",
+        "R11.2"
+      ]
+    },
+    {
+      "name": "MSW_X",
+      "kind": "signal",
+      "pins": [
+        "C12.2",
+        "D4.2",
+        "R10.2"
+      ]
+    },
+    {
+      "name": "VDIS_D",
+      "kind": "signal",
+      "pins": [
+        "Q3.3",
+        "R12.2"
+      ]
+    },
+    {
+      "name": "VIN_MOD",
+      "kind": "signal",
+      "pins": [
+        "C12.1",
+        "Q1.2",
+        "R12.1",
+        "TP4.1"
+      ]
+    },
+    {
+      "name": "VIN_MSW",
+      "kind": "signal",
+      "pins": [
+        "C13.1",
+        "Q1.3",
+        "R10.1",
+        "R11.1",
+        "R8.1"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Module load switch"
+    ]
+  }
+}
