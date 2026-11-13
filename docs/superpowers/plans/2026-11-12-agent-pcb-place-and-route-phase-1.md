@@ -235,7 +235,7 @@ git commit -F <message file>
 ## Task 2: The PT2399 catalogue entry, and the socket decision
 
 **Files:**
-- Create: `parts/ic-pt2399-dip16.json` (and a socket entry if the decision below goes that way)
+- Create: `parts/ic-pt2399-dip16.json` and a DIP-16 socket entry (the socket is decided - Step 2)
 - Modify: `boards/pt2399-core/bom.json`
 
 - [ ] **Step 1: Research the part with the `part-researcher` agent**
@@ -244,7 +244,13 @@ That agent exists for exactly this and writes catalogue entries with evidence fo
 
 - [ ] **Step 2: Decide the socket, and record it**
 
-**Open question for the owner, with a recommendation.** A DIP-16 socket uses the same land pattern as the IC, so this changes the parts list and **not** the layout - it can be decided at any point without a respin. **Recommendation: fit a socket**, added as an `extras` line in `bom.json`. The board exists to prototype configurations, and a socketed PT2399 can be swapped or rescued; the cost is one more line and a little height. If he declines, drop the extra and nothing else changes.
+**Decided: fit a socket.** The owner, 2026-11-13 - *"yes to the dip-16 socket"* - recorded in `docs/known-gaps.md` **G312**.
+
+A DIP-16 socket shares the IC's land pattern, so this changes the parts list and **not** the layout. Nothing in Tasks 6 through 10 moves because of it: the board still carries one `DIP-16_W7.62mm` footprint, and whether an IC or a socket sits in it is a sourcing fact. What changes is `bom.json`, which gains the socket as an `extras` line beside the PT2399's own `lines` entry.
+
+Add the socket to the Step 1 researcher brief rather than running that agent twice: a through-hole DIP-16 socket on 2.54 mm pitch with 7.62 mm row spacing, catalogue entry in `parts/`, sourcing evidence per spec as for the IC.
+
+**One consequence worth stating, because it is the only thing a socket costs this board:** the PT2399 now sits roughly a socket's height higher, so if anything is ever mounted over it the clearance is measured to the socketed height, not the bare IC's.
 
 - [ ] **Step 3: Record the choice in `boards/pt2399-core/bom.json`**
 
@@ -564,7 +570,11 @@ The engine cannot carry either - the spec records that it has no per-region desi
 
 ## Task 9: Measure the ground pour
 
-Numbers only. **Do not write a threshold** - the owner sets those, and open question 1 in the spec is where they land.
+Numbers only. **Do not write a threshold.**
+
+**The owner declined to set them**, 2026-11-13: *"I don't care about pour thresholds"* (`docs/known-gaps.md` **G313**). That is a declination, and it is **not** a delegation - this repository's standing rule is that an agent may never author the acceptance criteria for the artifact it is producing, and a declination does not lift it. So the measurements are reported beside the render and **gate nothing, indefinitely**, rather than acquiring a pass mark written by the thing being measured.
+
+**This is safe rather than merely compliant, which is why it needs no escalation.** The gates that decide whether this board is sound are elsewhere and unaffected: schematic parity, DRC at error severity, and unconnected items. A pour bad enough to matter is visible in the render he reviews, and he rules on it then, looking at it - which is how every drawing decision is made here. Nobody raises the thresholds with him again unprompted.
 
 **Files:** Create `tools/pcb/pour.ts`; test `tests/pcb/pour.test.ts`
 
@@ -640,6 +650,10 @@ If it routed clean: the finding, and Phase 2 gets its own plan and spec section.
 | 4 · perfboard write conflict | **The plan was wrong, not the write.** The approved spec says "read-only **verbs** only"; the plan had broadened that to the whole directory on its own authority. Restored to the spec's wording and narrowed to name the layout artifacts |
 | - · Task 0 false negative (found while verifying, not raised by the review) | `command -v kicad-cli` reports missing on a machine where it is installed off `PATH`; replaced with `defaultKicadCli()`, which this repository already owns |
 
-**Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). Neither blocks starting.
+**Open questions carried for the owner: none remain.** All three were settled on 2026-11-13 and each is recorded in `docs/known-gaps.md` with his words.
+
+- **The DIP-16 socket: fit one** (**G312**). Parts list only; no task after 2 changes.
+- **The ground pour's thresholds: declined** (**G313**). The measurements are reported and gate nothing, indefinitely. A declination is not a delegation, so no agent writes the pass mark; a pour bad enough to matter shows in the render he reviews.
+- **The mounting hardware: standard M3** (**G311**). 3.2 mm hole, 7.0 mm envelope.
 
 **Answered 2026-11-13:** the mounting hardware. The owner settled on the **standard M3 hole** (`docs/known-gaps.md` **G311**) - 3.2 mm non-plated, with a 7.0 mm envelope from the DIN 125 washer. Tasks 3, 7 and 8 carry those two numbers. The assumption the plan had been making silently is now a recorded decision with a source, which is the part that was actually missing.

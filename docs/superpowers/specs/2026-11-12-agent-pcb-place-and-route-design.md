@@ -406,16 +406,24 @@ public upstream, which is the one citation that is legitimately shared.
 2026-11-12 and is in the decisions table; it is deleted from this list rather
 than marked closed.
 
-1. **The ground pour's thresholds.** Phase 1 measures continuity around `U1`,
-   the narrowest bridge between pour regions, the spoke count on every
-   through-hole ground pad, and whether the supply bypass return rides the pour.
-   **What counts as acceptable is the owner's to set**, and until he does the
-   numbers are reported beside the render and gate nothing. Of the criteria
-   review issue 34 proposed, continuity and the thermal connections are the two
-   worth gating on; return-path length is the weakest limb, since impedance and
-   via inductance do not matter here - though the PT2399's own VCO and sample
-   clock mean this is not a purely audio-frequency board either, so it is
-   reported rather than dismissed.
+1. ~~**The ground pour's thresholds.**~~ **DECLINED by the owner, 2026-11-13**
+   (*"I don't care about pour thresholds"*, `docs/known-gaps.md` **G313**).
+   Phase 1 still measures continuity around `U1`, the narrowest bridge between
+   pour regions, the spoke count on every through-hole ground pad, and whether
+   the supply bypass return rides the pour. Those numbers are **reported beside
+   the render and gate nothing, indefinitely.**
+
+   **A declination is not a delegation.** It does not transfer the thresholds to
+   an agent, because the rule it would have to override - an agent may never
+   author the acceptance criteria for the artifact it is producing - is this
+   project's, not a gap waiting to be filled. The pour therefore has no pass
+   mark rather than an agent-written one, and **nobody raises this with him
+   again unprompted.**
+
+   This costs little: the gates deciding whether the board is sound are
+   schematic parity, DRC at error severity, and unconnected items, none of them
+   affected. A pour bad enough to matter is visible in the render he reviews,
+   and `EVALUATING-DRAWINGS.md` already governs how that ruling is made.
 2. ~~**The flags and report keys on the pinned KiCad.**~~ **Closed 2026-11-13
    by running the pinned 10.0.5**, which is what this question asked for. The
    flags and keys are as the spec assumed, and the measurement is kept as tests

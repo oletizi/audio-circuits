@@ -4459,3 +4459,58 @@ exist.
 Task 3 (the fabrication standard's NPTH row), Task 7 Step 1 (the approved
 derivation rule, which carries both diameters) and Task 8 Step 2 (the final
 coordinates and the keepout).
+
+### G312 - OWNER DECISION, 2026-11-13: `pt2399-core` is built with a DIP-16 SOCKET, not a soldered PT2399
+
+> *"yes to the dip-16 socket"*
+
+**A socket shares the IC's land pattern, so this is a parts-list fact and not a
+layout one.** The board carries one `DIP-16_W7.62mm` footprint either way;
+whether an IC or a socket sits in it is decided when the board is stuffed. That
+is why this could be asked late and answered without a respin, and an agent
+should not treat it as a geometry input.
+
+**Where it lands** `boards/pt2399-core/bom.json` gains the socket as an
+`extras` line beside the PT2399's own `lines` entry, and `parts/` gains a
+catalogue entry for the socket with sourcing evidence, as for any part.
+
+**The one physical consequence** the PT2399 sits roughly a socket's height
+higher. If anything is ever mounted over it, clearance is measured to the
+socketed height rather than the bare IC's.
+
+**Why he was asked at all** the board exists to prototype configurations, where
+a swappable delay IC is worth a line in the parts list - `G311` records the same
+reasoning applied to the mounting hardware on the same day, and it is the same
+principle: a prototype's purpose governs its cheap choices.
+
+### G313 - OWNER DECLINATION, 2026-11-13: he will NOT set the ground-pour thresholds, so the pour measurements gate NOTHING - and this is not a delegation to an agent
+
+> *"I don't care about pour thresholds"*
+
+**Asked whether he wanted to set acceptance criteria for `pt2399-core`'s ground
+pour - continuity around `U1`, the narrowest bridge between pour regions, spokes
+per through-hole ground pad, and whether the supply bypass return rides the pour
+- he declined.** The measurements are still taken and still reported beside the
+render. They gate nothing, indefinitely.
+
+**THE TRAP THIS ENTRY EXISTS TO PREVENT: reading "I don't care" as "you
+decide."** It is not. The rule that would have to be overridden -
+**an agent may never author the acceptance criteria for the artifact it is
+producing** - is this project's standing invariant, stated in `CLAUDE.md`, and
+it is not a gap left open for want of an owner's attention. A declination
+removes HIS pass mark; it does not authorise an agent's. So the pour has **no**
+threshold rather than an agent-written one, and an agent that later proposes one
+because "nobody set it" has reproduced the exact failure `CLAUDE.md` describes:
+every check passing because the agent chose what the checks were.
+
+**WHY THIS IS SAFE AND NEEDS NO ESCALATION, which is the other half.** The gates
+that decide whether this board is sound are untouched by it: schematic parity,
+DRC at error severity against the fabrication standard, and unconnected items. A
+pour bad enough to matter is visible in the render he reviews, and
+`EVALUATING-DRAWINGS.md` already governs how a ruling on a drawing is made and
+by whom. The declination costs an informational gate, not a real one.
+
+**NOBODY ASKS HIM AGAIN UNPROMPTED.** A question he declined is not a closed
+question, but re-asking it costs his attention and stalls the work behind it.
+What would REOPEN it: his own request, or a measured pour he looks at and
+objects to - not an agent's view that thresholds would be tidier.
