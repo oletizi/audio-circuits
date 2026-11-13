@@ -198,15 +198,22 @@ test("R2 refuses a board that already holds footprints, saying it must be empty 
 
 test("R3 refuses a footprint library nickname that no fp-lib-table defines, naming it and the tables searched", () => {
   const { board, schematic } = scratchCircuit()
+  // THE NICKNAME IS `SYNTHETIC`, this repository's own marker for a footprint
+  // name that is deliberately fictional (tests/kicad/footprint-sweep.ts). The
+  // refusal needs a nickname NO fp-lib-table defines, and that sweep asserts
+  // KiCad ships no library by this name and that the name half is installed
+  // nowhere - so the one thing this test needs is the one thing that list
+  // guarantees, and an invented nickname of my own would have been a new
+  // fictional footprint name for the sweep to find.
   const netlist = netlistText(
-    [{ ref: "R1", value: "10k", footprint: "NoSuchLibraryNickname:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" }],
+    [{ ref: "R1", value: "10k", footprint: "SYNTHETIC:NoFootprintOfThisName" }],
     [{ name: "IN", nodes: [{ ref: "R1", pin: "1" }] }],
   )
   const refusal = expectGuard(
     () => updateBoardFromSchematic(board, { schematicPath: schematic, exportNetlist: fakeExport(netlist) }),
     "library-nickname",
   )
-  expect(refusal.message).toContain("NoSuchLibraryNickname")
+  expect(refusal.message).toContain("SYNTHETIC")
   expect(refusal.message).toContain("fp-lib-table")
 })
 

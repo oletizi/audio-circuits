@@ -175,6 +175,13 @@ export const CONSTRUCTED_FOR_A_REFUSAL: ReadonlyMap<string, string> = new Map([
       "count first; no installed block carries _1x at 7.62, 10.16, 12.70 or 15.24mm.",
   ],
   [
+    "Capacitor_THT:NoSuchFootprintName",
+    "the footprint-not-in-library refusal in tools/pcb/update-from-schematic.ts needs a name whose " +
+      "LIBRARY resolves in fp-lib-table and whose .kicad_mod is absent from that directory. Every " +
+      "installed footprint is by definition present in its own library, so no real name can drive " +
+      "it; Capacitor_THT is the real library, and the name half is the fictional part.",
+  ],
+  [
     "Package_DIP:DIP-16_Wwide",
     "the DIP row-spacing refusal in tools/bom/footprints.ts needs a W field that is not a number. " +
       "Package_DIP.pretty only ships numeric widths (DIP-16_W7.62mm and the like), so no installed " +
