@@ -55,6 +55,8 @@ export interface Invocation {
   readonly observedStatus: number | null
   readonly succeeded: boolean
   readonly evidence: string
+  /** Present when the command changes something beyond its named output. */
+  readonly sideEffects?: string
 }
 
 export interface OperationRecord {
@@ -105,6 +107,16 @@ function countOf(file: string, needle: string): number {
   return fs.readFileSync(file, "utf8").split(needle).length - 1
 }
 
+/**
+ * route.py and route_planes.py rewrite a .kicad_pro beside their output and may
+ * relax the DRC floors, printing "FAB FLOOR RELAXED" (engine
+ * py_router/fix_kicad_drc_settings.py). The engine's own authors record that
+ * saying nothing about this let sub-floor vias through in silence, so it is
+ * written into the contract, not left to a report.
+ */
+const PROJECT_SIDE_EFFECT =
+  'Writes or modifies a .kicad_pro beside the output and may relax the DRC floors; grep the output for "FAB FLOOR RELAXED".'
+
 /** Run one command, check its exit status against what it MUST be, and record it. */
 function invoke(
   ctx: Context, label: string, binary: string, cwd: string, args: readonly string[],
@@ -129,6 +141,7 @@ function invoke(
   return {
     label, argv, template, cwd: rel(ctx.repoRoot, cwd) || ".", expectedStatus,
     observedStatus: result.status, succeeded, evidence: detail,
+    ...(sideEffects === undefined ? {} : { sideEffects }),
   }
 }
 
@@ -207,6 +220,7 @@ function routing(ctx: Context, placed: string, routed: string): OperationRecord 
       ensure(segments > 0, `${routed} holds no track segments after routing`)
       return `the output holds ${segments} track segments the input did not`
     },
+    PROJECT_SIDE_EFFECT,
   )
   return { operation: "routing", engineEntryPoint: script, succeeded: inv.succeeded, invocations: [inv] }
 }
@@ -222,7 +236,14 @@ function zoneRefill(ctx: Context, routed: string, zoned: string, filled: string)
       ensure(countOf(zoned, "(filled_polygon") === 0, "the freshly created pour is already filled, so a later fill proves nothing")
       return "wrote a zone with no filled polygons"
     },
+    PROJECT_SIDE_EFFECT,
   )
+  if (!create.succeeded) {
+    // The pour was not made, so there is nothing to refill. Record the failure
+    // (writeRecord turns it into invocations.failed.json) instead of letting a
+    // copy of a missing file throw a raw ENOENT first.
+    return { operation: "zone-refill", engineEntryPoint: `${script} (creates the pour) + kicad-cli (fills it)`, succeeded: false, invocations: [create] }
+  }
   fs.copyFileSync(zoned, filled)
   const report = path.join(ctx.work, "refill-drc.rpt")
   const refill = invoke(

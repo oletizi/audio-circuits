@@ -103,3 +103,36 @@ test("an unstamped engine is refused rather than given a guessed commit", () => 
     fs.rmSync(root, { recursive: true, force: true })
   }
 })
+
+test("a failed run leaves a pre-existing good record byte-identical and writes the failed record", () => {
+  withRepo((root) => {
+    const good = preflight({ repoRoot: root, run: fakeEngine(false, []), env: {}, kicadCli: "/k" })
+    const file = writeRecord(root, good)
+    const before = fs.readFileSync(file)
+    const bad = preflight({ repoRoot: root, run: fakeEngine(true, []), env: {}, kicadCli: "/k" })
+    expect(() => writeRecord(root, bad)).toThrow(/grading/)
+    expect(fs.readFileSync(file).equals(before)).toBe(true)
+    expect(fs.existsSync(path.join(root, "build", "krt", "invocations.failed.json"))).toBe(true)
+  })
+})
+
+test("a failed pour creation is recorded as a failure, not thrown as ENOENT", () => {
+  withRepo((root) => {
+    const engine = fakeEngine(false, [])
+    const run: CommandRunner = (command, args, cwd, env) =>
+      (args[0] ?? "").endsWith("route_planes.py") ? { status: 2, output: "boom" } : engine(command, args, cwd, env)
+    const record = preflight({ repoRoot: root, run, env: {}, kicadCli: "/k" })
+    expect(record.operations[3]?.succeeded).toBe(false)
+    expect(() => writeRecord(root, record)).toThrow(/zone-refill/)
+    expect(fs.existsSync(path.join(root, "build", "krt", "invocations.failed.json"))).toBe(true)
+  })
+})
+
+test("the routing and pour-creation invocations declare the .kicad_pro side effect", () => {
+  withRepo((root) => {
+    const record = preflight({ repoRoot: root, run: fakeEngine(false, []), env: {}, kicadCli: "/k" })
+    const effects = record.operations.flatMap((o) => o.invocations).filter((i) => i.sideEffects !== undefined)
+    expect(effects.map((i) => i.label)).toEqual(["route the fixture nets", "create an unfilled pour on B.Cu"])
+    for (const i of effects) expect(i.sideEffects).toContain("FAB FLOOR RELAXED")
+  })
+})
