@@ -3,7 +3,7 @@
  *
  * CR-PEDAL-POPULATION. The model is the default fitted build. `Component`, `PartSpec`, the drawing intent
  * and the sheet-agreement path carry no population state, and this plan adds none. So every not-fitted
- * position the sources name falls in one of two classes:
+ * position the sources name falls in one of three classes:
  * - `NOT_FITTED_PARTS`: a part whose fitting would join or load nets. It is left out of the model and off
  *   the page; the block's module comment names it and its source, and the codec page carries a text note
  *   listing these parts with CODEC-10's sheet note verbatim (`CODEC10_SHEET_NOTE`). A drawn one would make
@@ -92,7 +92,7 @@ export interface VariantPosition {
  * Class 3, variant positions: the sources make each control position's fit a per-effect choice and name
  * no default (mechanical-and-controls.md:298; analog.md:364), so both fits are modelled and drawn, and the
  * page note says exactly one fit is placed per position. architecture.md:230 bounds the union (a press with
- * both fitted draws at most 3.5 mA). The ids are the ones the controls block model must use; Task 8's
+ * both fitted draws at most 3.5 mA, "which the overlapping footprints prevent": a bound, not a build). The ids are the ones the controls block model must use; Task 8's
  * default-population check exempts exactly the `potFit` and `buttonFit` ids here and nothing else.
  */
 export const VARIANT_POSITIONS: readonly VariantPosition[] = [1, 2, 3, 4, 5, 6].map((n) => ({
@@ -125,7 +125,7 @@ export const POPULATION = {
  * CR-PEDAL-MIDI. Drawn: U_MIDIDRV, R_TXPU, Q_MIDI, R_MGP, RA (four) and RC, up to the nets R-26 names, here
  * MIDI_PIN4 (RA's far end) and MIDI_PIN5 (RC's far end), and the not-fitted header `j_midi`. Not drawn: the
  * connector that carries MIDI pins 4 and 5 (no source names it; open row MIDI-OUT-CONNECTOR) with the CA-033
- * ferrites that would sit at it, and the MIDI IN receiver (until MIDI-IN-RECEIVER-STOCK closes; spec:347-348).
+ * ferrites that would sit at it, and the MIDI IN receiver (until MIDI-IN-RECEIVER-STOCK closes; the spec's Pedal open-row bullet naming it).
  */
 export const MIDI = {
   ruling: "CR-PEDAL-MIDI",
