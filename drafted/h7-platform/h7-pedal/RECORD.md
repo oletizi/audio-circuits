@@ -44,6 +44,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `midi_i2c.kicad_sch` | block midi_i2c | `fb12cf76ea6924f8cc1a983c9eaed4f85a004e15e399836941852d0e818afc4f` |
 | `fsw_led.kicad_sch` | block fsw_led | `de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021` |
 | `controls_a.kicad_sch` | block controls_a | `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` |
+| `controls_b.kicad_sch` | block controls_b | `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -60,6 +61,7 @@ committed bytes, with the pinned kicad-cli.
 | midi_i2c | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `midi_i2c.svg` |
 | fsw_led | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `fsw_led.svg` |
 | controls_a | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
+| controls_b | **UNREVIEWED** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 
 ## The drafts every repair starts from
 
@@ -1675,6 +1677,138 @@ row crossing the 3V3_D bus on its way to the outer GND vertical that comes down 
   POS labels; position 2's row runs on east across the 3V3_D vertical to an outer vertical down to
   position 3's GND row, which runs west to GND's label at the bottom west, pointing west.
 - POS1's private nets carry copperhead's blue, POS2's its purple, POS3's its teal; the rails and the
+  POS nets its default.
+- The pots carry Reference over Value west of their bodies, the resistors and capacitors theirs east
+  of their bodies, the buttons theirs east of their bodies (on positions 1 and 3 past the plunger,
+  which KiCad draws on the east side at rotation 270 and the west at 90), and R_POS's centred on
+  the node row's side away from its button (above on positions 1 and 3, below on position 2).
+- The page note is below the group rectangle, at the west.
+
+## controls_b: control positions 4 to 6 (Task 9b)
+
+**Status: UNREVIEWED.** sha256 `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db`.
+Render: `controls_b.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/controls.ts` (`controlsBBlock`), 18 parts, six per position
+(position n: pot, R_PUn, button, R_BTNn, R_POSn, C_POSn; ids from `VARIANT_POSITIONS`): POS4 RV4
+(`rv_pos4`, RV16AF-41 B10K, `Device:R_Potentiometer`), R61 (`r_pu4`, 10.0 kOhm), SW4 (`sw_btn4`,
+TC-6610-17-100G, `Switch:SW_Push`), R62 (`r_btn4`, 1.00 kOhm), R63 (`r_pos4`, 10.0 kOhm), C52
+(`c_pos4`, 100 nF); POS5 RV5, R64, SW5, R65, R66, C53; POS6 RV6, R67, SW6, R68, R69, C54. Ports
+VREF_A, 3V3_D, POS4, POS5, POS6 and GND, each reaching two or more pins, so copperhead drafted a wire
+for every net and no stroke is written by hand. POSn_NODE and POSn_BTN are private to the page and
+drawn as wire, with no label. No no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): the inventory's
+  `controls` is split in two, `controls_b` holding positions 4 to 6 (contract pins 25 to 27).
+- [CR-PEDAL-CONTROL-NODE](../../../docs/h7-platform/decisions.md#cr-pedal-control-node): each
+  position is one node joining the pot's wiper, R_PUn, the button and R_POSn; the button returns
+  through R_BTNn to GND; R_POSn runs to the pin, where C_POSn goes to GND; the pot runs from ccw = GND
+  to cw = VREF_A; both fits are drawn at every position, and the page says each position is fitted
+  with a pot or a button per effect.
+- [CR-PEDAL-POPULATION](../../../docs/h7-platform/decisions.md#cr-pedal-population), the third class,
+  variant positions: both fits modelled and drawn, **with a note that exactly one fit is placed per
+  position**. The page note (text on the sheet, below the group rectangle), quoted:
+
+  > Each control position is fitted per effect with a pot or a button: exactly one fit is placed per position.
+  > Both fits are drawn (CR-PEDAL-POPULATION, variant positions; CR-PEDAL-CONTROL-NODE; open row CONTROL-POSITION-VARIANTS).
+  > - POS4: pot fit RV4; button fit SW4 with its pull-up R61; always fitted R62, R63, C52.
+  > - POS5: pot fit RV5; button fit SW5 with its pull-up R64; always fitted R65, R66, C53.
+  > - POS6: pot fit RV6; button fit SW6 with its pull-up R67; always fitted R68, R69, C54.
+
+  The pot fit is `rv_posn`, the button fit `sw_btnn` and `r_pun`, and always fitted `r_btnn`,
+  `r_posn`, `c_posn`, as `VARIANT_POSITIONS` lists them. Open row CONTROL-POSITION-VARIANTS
+  (`docs/h7-platform/open-items.md` line 115) holds whether the variant export carries only the fitted
+  parts.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the pots are
+  `potentiometer`, and which end of `Device:R_Potentiometer` is ccw is a choice: ccw = pin 1, wiper =
+  pin 2, cw = pin 3. On this page pin 1 of every pot is on GND and pin 3 on VREF_A. The buttons are
+  `switch`.
+- [O-17](../../../docs/h7-platform/decisions.md#o-17) and [O-18](../../../docs/h7-platform/decisions.md#o-18):
+  the owner's choice of the TC-6610-17-100G button, and each of the six positions a pot or a button
+  per effect (`docs/h7-platform/parts.md` lines 131 and 132).
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VREF_A, 3V3_D
+  and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. Every pin here is `passive`, so nothing on the page needs one; the one-block root puts
+  the root's stub flags on GND and 3V3_D, as for every page reaching them.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 6 ports on the wrong net.
+- Design notes the block cites, not rulings: `power.md` line 417, `analog.md` line 364,
+  `mechanical-and-controls.md` lines 298 and 300, `architecture.md` line 230.
+- Drawing choices, not transcriptions: controls_a's, unchanged (`repair/tools/controls_page.py`,
+  shared by the two pages, which are the same circuit; `controls_b/layout.py` names the parts): the three positions stand one above
+  another, each read west to east from the pot to its POSn label, the second the mirror image of the
+  first top to bottom; the pots of positions 1 and 3 mirrored top to bottom (pin 3 north), position
+  2's not; the buttons turned 270 (positions 1 and 3) and 90 (position 2); R_POS turned 90 in the
+  node row; VREF_A's bus west of the pots, 3V3_D's east of the POS labels, GND's rows joined east of
+  the POS labels; fields and the rectangle moved after the renders listed in
+  `repair/tools/controls_page.py`.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 9a leaves them (Task 9b changes none). Every figure in both
+columns is the same as controls_a's; only the names differ. The draft column was
+measured on the draft copied beside the committed `sym-lib-table`, by `verify.sh`'s steps run one at
+a time, since `verify.sh` stops at the draft's port labels.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 18 (the model declares none) | 0; 18 |
+| exported components, nets, net members | 18, 12, 39 | 18, 12, 39 |
+| exported nets carrying a model net name | 12 of 12 | 6 of 12 (the six ports; the other six private and unlabelled) |
+| ports whose label is on the wrong net | 3 of 6 (3V3_D, GND and VREF_A, drawn as global labels) | 0 of 6 |
+| ERC, the sheet alone | 0 errors, 0 warnings | 5 errors (`pin_not_connected` 5: the hierarchical labels VREF_A, GND, POS4, POS5 and 3V3_D have no parent sheet), 0 warnings |
+| ERC under a one-block root, `/controls_b/` | 0 errors, 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 2 warnings (`isolated_pin_label` 2) | 4 errors (`label_dangling` 4, the stubs' labels alone with one block; `erc_sheets.py` admits them), 0 warnings |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 3, 0 | 1, 0 |
+| orphan junctions, of total | 0 of 3 | 0 of 21 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 6 | 0; 0 |
+| labels | 23 on 12 nets (11 global, 12 local) | 6 on 6 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 23 | 0 of 12 |
+| symbols (parts, power symbols, PWR_FLAGs) | 18 (18, 0, 0) | 18 (18, 0, 0) |
+| placed pins | 39 | 39 |
+| wires, total length | 63, 306.07 mm | 58, 1024.89 mm |
+| wire corners | 19 | 10 |
+| junctions | 3 | 21 |
+
+**The sheet alone reports five of the six hierarchical labels, not six**, as on controls_a: here
+POS6's label (at 119.38, 124.46 mm, the third position's, as POS3's there) draws no
+`pin_not_connected`. Not diagnosed; under the one-block root every label meets a sheet pin and
+`/controls_b/` reads 0 errors, 0 warnings.
+
+No symbol on this page is an `extends` symbol, and no `lib_symbol_mismatch` is reported.
+
+### Why the page has one crossing, as the layout records it
+
+An observation, not a judgement of the page: each of the three positions joins all three rails
+(VREF_A at the pot's cw end, 3V3_D at R_PU, GND at the pot's ccw end, R_BTN and C_POS), and each rail
+is one connected wire ending in one label. Contracted to its rails and positions, the page is the
+graph K3,3, which has no drawing in a plane without a crossing, so at least one crossing is a
+property of the circuit as drawn with one label per port. The one on the page is position 2's GND
+row crossing the 3V3_D bus on its way to the outer GND vertical that comes down to position 3.
+
+### What the page shows, as observations
+
+- Three rows, one per position, POS4 at the top, POS5 in the middle, POS6 at the bottom. In each,
+  the pot's wiper starts the node row, which runs east past R_PU and the button and through R_POS to
+  the POSn label at the east, pointing east; C_POS hangs from the row between R_POS and the label.
+- Positions 1 and 3: R_PU above the row, its top on a 3V3_D stub; the button and R_BTN below, down
+  to the position's GND row; C_POS down to the same row; the pot's pin 3 up to a VREF_A stub and its
+  pin 1 down to the GND row. Position 2 is their mirror image top to bottom: its GND row above, its
+  3V3_D and VREF_A stubs below.
+- VREF_A: a vertical west of the pots joins the three positions' stubs; VREF_A's label is at the top
+  stub's west end, pointing west.
+- 3V3_D: a vertical east of the POS labels joins the three stubs; 3V3_D's label is at the top stub's
+  east end, pointing east.
+- GND: positions 1 and 2's GND rows meet between them and are joined by a short vertical east of the
+  POS labels; position 2's row runs on east across the 3V3_D vertical to an outer vertical down to
+  position 3's GND row, which runs west to GND's label at the bottom west, pointing west.
+- POS4's private nets carry copperhead's blue, POS5's its purple, POS6's its teal; the rails and the
   POS nets its default.
 - The pots carry Reference over Value west of their bodies, the resistors and capacitors theirs east
   of their bodies, the buttons theirs east of their bodies (on positions 1 and 3 past the plunger,

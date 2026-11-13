@@ -1,0 +1,14 @@
+{
+ "3V3_D": "(stroke (width 0.254) (type default))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "POS4": "(stroke (width 0.254) (type default))",
+ "POS4_BTN": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "POS4_NODE": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "POS5": "(stroke (width 0.254) (type default))",
+ "POS5_BTN": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "POS5_NODE": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "POS6": "(stroke (width 0.254) (type default))",
+ "POS6_BTN": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "POS6_NODE": "(stroke (width 0.254) (type default) (color 0 130 120 1))",
+ "VREF_A": "(stroke (width 0.254) (type default))"
+}

@@ -1,0 +1,91 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "controls_b.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "55aec026-5d44-5554-ba48-18c0f95cc01f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    6200,
+    1600
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "6b941802-afa2-54b6-8e42-5112e3c8597d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1700,
+    5800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "02cd422b-9e2f-5cf3-9cf3-6b961b246537"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS4",
+   "at": [
+    4700,
+    1900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "e77259a1-2770-5dde-a1a0-28ca1dc03cb5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS5",
+   "at": [
+    4700,
+    3900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "743de057-c3d1-5cc6-8eaa-5dce2496200c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "POS6",
+   "at": [
+    4700,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "23302737-a47b-516d-b2bd-2241326254ab"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VREF_A",
+   "at": [
+    1700,
+    1500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

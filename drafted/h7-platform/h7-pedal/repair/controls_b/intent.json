@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "RV4",
+      "libId": "Device:R_Potentiometer",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R61",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "SW4",
+      "libId": "Switch:SW_Push",
+      "value": "TC-6610-17-100G",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R62",
+      "libId": "Device:R",
+      "value": "1K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R63",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "C52",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "RV5",
+      "libId": "Device:R_Potentiometer",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R64",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "SW5",
+      "libId": "Switch:SW_Push",
+      "value": "TC-6610-17-100G",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R65",
+      "libId": "Device:R",
+      "value": "1K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R66",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "C53",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "RV6",
+      "libId": "Device:R_Potentiometer",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R67",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "SW6",
+      "libId": "Switch:SW_Push",
+      "value": "TC-6610-17-100G",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R68",
+      "libId": "Device:R",
+      "value": "1K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "R69",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "Control positions 4-6"
+    },
+    {
+      "ref": "C54",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Control positions 4-6"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "R61.1",
+        "R64.1",
+        "R67.1"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C52.2",
+        "C53.2",
+        "C54.2",
+        "R62.2",
+        "R65.2",
+        "R68.2",
+        "RV4.1",
+        "RV5.1",
+        "RV6.1"
+      ]
+    },
+    {
+      "name": "POS4",
+      "kind": "signal",
+      "pins": [
+        "C52.1",
+        "R63.2"
+      ]
+    },
+    {
+      "name": "POS4_BTN",
+      "kind": "signal",
+      "pins": [
+        "R62.1",
+        "SW4.2"
+      ]
+    },
+    {
+      "name": "POS4_NODE",
+      "kind": "signal",
+      "pins": [
+        "R61.2",
+        "R63.1",
+        "RV4.2",
+        "SW4.1"
+      ]
+    },
+    {
+      "name": "POS5",
+      "kind": "signal",
+      "pins": [
+        "C53.1",
+        "R66.2"
+      ]
+    },
+    {
+      "name": "POS5_BTN",
+      "kind": "signal",
+      "pins": [
+        "R65.1",
+        "SW5.2"
+      ]
+    },
+    {
+      "name": "POS5_NODE",
+      "kind": "signal",
+      "pins": [
+        "R64.2",
+        "R66.1",
+        "RV5.2",
+        "SW5.1"
+      ]
+    },
+    {
+      "name": "POS6",
+      "kind": "signal",
+      "pins": [
+        "C54.1",
+        "R69.2"
+      ]
+    },
+    {
+      "name": "POS6_BTN",
+      "kind": "signal",
+      "pins": [
+        "R68.1",
+        "SW6.2"
+      ]
+    },
+    {
+      "name": "POS6_NODE",
+      "kind": "signal",
+      "pins": [
+        "R67.2",
+        "R69.1",
+        "RV6.2",
+        "SW6.1"
+      ]
+    },
+    {
+      "name": "VREF_A",
+      "kind": "signal",
+      "pins": [
+        "RV4.3",
+        "RV5.3",
+        "RV6.3"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "Control positions 4-6"
+    ]
+  }
+}
