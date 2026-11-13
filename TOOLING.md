@@ -1145,6 +1145,60 @@ file name without `.kicad_sym`.
 
 ---
 
+Packages with more than one unit (design change C6)
+---------------------------------------------------
+
+A package with more than one unit - a dual op-amp, a gate pack - is lowered to KiCad pin numbers
+from its OWN part, unit by unit: `part.symbolPins[<unit name>][<pin>]` for a unit's pin and
+`part.symbolPins.package[<pin>]` for a pin the package shares (a supply). A per-kind
+`PIN_NUMBERS[kind][pin]` cannot do it, because every section names its pins alike: both sections
+of a dual landed on section A's pins (issue 28, finding 1, both inputs on `U1.3`). **A single-unit
+part is unchanged** and keeps the per-kind path, even when it declares `symbolPins`.
+
+- **The lookup** is `lib/kicad/unit-pins.ts`'s `symbolPinTable`. It refuses a multi-unit component
+  with no `symbolPins`, naming the component and its units; a unit or package pin with no number; a
+  number for a pin the model lacks; a key that is neither a unit nor `package`; and one number given
+  to two pins.
+- **Wherever a component's pins are listed by one string, a unit pin of a multi-unit part is keyed
+  `<unit>/<pin>`** (`pinKey`): `everyPin`, `pinNumbersFromTable`, and the pin-number map
+  `compareSheetToModel` takes. Package pins and single-unit pins keep their own names, so every
+  existing map is unchanged.
+- **copperhead needs nothing new.** The intent names `REF.<number>`, and copperhead places each unit
+  of a multi-unit symbol as its own instance from the pin numbers.
+- **Reading a symbol unit by unit** is `symbolUnitPins` (`lib/kicad/symbol-library.ts`),
+  `{ unit, pins }[]` in unit order. The flat `symbolPins` and `symbolStrokeSegments` still refuse a
+  multi-unit symbol: the first would merge the units' pins, and nothing on the drawing path needs
+  the second.
+- **The fixture** is `tests/fixtures/dual-opamp-board/`: one `Amplifier_Operational:TL072` with both
+  sections as buffers and its supplies, drafted by `make draw`'s program and committed with its
+  replay (no repair was needed). Test data, never sent for review. `tests/kicad/multi-unit.test.ts`
+  exports it fresh with `kicad-cli` and compares it with the model; its controls swap A's and B's
+  mappings, and duplicate A's onto B, and each fails.
+
+**Where the spec's citations point, measured.** The spec cited
+`tools/draught/intent-from-network.ts:100-102`, `lib/kicad/from-network.ts:69-72` and
+`lib/kicad/sheet-agreement.ts:267`. At the commit this change started from (`04ce50e`) the code
+was at:
+
+| what | before (`04ce50e`) | after this change |
+| --- | --- | --- |
+| intent: the pin walk and its lookup | `tools/draught/intent-from-network.ts:109-111` | `:112-114`, through `pinKey` |
+| `pinNumberFor`, the per-kind lookup | `lib/kicad/from-network.ts:69-70` | `:75`, the multi-unit branch at `:76` |
+| `everyPin` | `lib/kicad/from-network.ts:85` | `:104` |
+| `pinNumbersFromTable` | `lib/kicad/from-network.ts:97` | `:116` |
+| `toImportedNetlist`'s pin walk | `lib/kicad/from-network.ts:205` | `:224-228` |
+| `resolvePins`, the unit-pin lookup | `lib/kicad/sheet-agreement.ts:263`, `:299` | `:268`, `:304` |
+| the multi-unit symbol refusal | `lib/kicad/symbol-library.ts:242`, `:257` (`supportedUnitSymbols`) | `unitSubSymbols` `:232`, `singleUnitSubSymbols` `:259`, `symbolUnitPins` `:339` |
+| the Pultec pin builder's `symbolPins` refusal | `tests/circuits/sheet-pin-numbers.ts:149` | multi-unit routed to `symbolPinTable` at `:151` |
+
+Those line numbers are a transcription of the day this was written; the code is the authority.
+
+**What C6 does not cover:** a multi-unit part that is OFF-BOARD on a perfboard
+(`tools/guide/off-board.ts` numbers its pins by canonical name and would refuse one), and a symbol
+that repeats a pin number across units (refused by `symbolUnitPins` and by copperhead alike).
+
+---
+
 The failure mode this document exists inside
 --------------------------------------------
 
