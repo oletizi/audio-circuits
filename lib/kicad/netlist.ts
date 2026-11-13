@@ -86,16 +86,41 @@ function uuidPathOf(comp: SNode): string | undefined {
 }
 
 /** The `(fields)` block by field name, or undefined when there is no such block. */
-function fieldsOf(comp: SNode): Readonly<Record<string, string>> | undefined {
+function fieldsOf(comp: SNode, designator: string): Readonly<Record<string, string>> | undefined {
   const fieldsNode = child(comp, "fields")
   if (fieldsNode === undefined) return undefined
   const fields: Record<string, string> = {}
   for (const field of children(fieldsNode, "field")) {
     const name = attr(field, "name")
-    if (name === undefined) throw new Error("(field) with no (name)")
+    if (name === undefined) {
+      throw new Error(
+        `component "${designator}" has a (field) with no (name): ${JSON.stringify(field.atoms)}. A field is ` +
+          "identified only by its name, so there is no key to store this value under and no name may be " +
+          "invented - a guessed one would either overwrite a different field or add one the schematic does " +
+          "not have, and both reach a board as a silent parity difference. Fix the field in the schematic " +
+          "and export the netlist again.",
+      )
+    }
     fields[name] = field.atoms[0] ?? ""
   }
   return fields
+}
+
+/**
+ * The tail of the undeclared-reference refusal below, and the predicate that
+ * recognises it.
+ *
+ * BOTH LIVE HERE, BESIDE THE THROW THAT PRODUCES THE MESSAGE.
+ * `tools/pcb/update-from-schematic.ts` re-raises exactly that error under its
+ * own `net-member` guard and has to recognise it; writing the wording down a
+ * second time in that file would be one string in two places, which is the only
+ * real hazard in the arrangement. Importing the predicate means a reword here
+ * cannot leave that caller matching nothing.
+ */
+const UNDECLARED_REF_TAIL = "is not declared in (components)"
+
+export function isUndeclaredRefMessage(message: string): boolean {
+  return message.includes(UNDECLARED_REF_TAIL)
 }
 
 export function importNetlist(text: string): ImportedNetlist {
@@ -114,7 +139,7 @@ export function importNetlist(text: string): ImportedNetlist {
     const footprint = attr(comp, "footprint")
     const libPart = libsource === undefined ? undefined : attr(libsource, "part")
     const uuidPath = uuidPathOf(comp)
-    const fields = fieldsOf(comp)
+    const fields = fieldsOf(comp, designator)
     return {
       designator,
       value,
@@ -142,7 +167,7 @@ export function importNetlist(text: string): ImportedNetlist {
         throw new Error(`net "${name}" has a (node) missing (ref) or (pin)`)
       }
       if (!declared.has(ref)) {
-        throw new Error(`net "${name}" references "${ref}", which is not declared in (components)`)
+        throw new Error(`net "${name}" references "${ref}", which ${UNDECLARED_REF_TAIL}`)
       }
       return `${ref}.${pin}`
     })
