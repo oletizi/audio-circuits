@@ -3,8 +3,8 @@
 # hierarchical label meets a sheet pin, as under the board's real root, so the sheet-alone run's
 # pin_not_connected errors on the hierarchical labels ("non-existent parent sheet") do not arise.
 # The root's stubs carry a PWR_FLAG on each net whose single flag lives off this page (the board's
-# pwr-flag-homes.ts), and a stand-in driver on each signal net whose driver is on another page (the
-# board's cross-page-drivers.ts). Reported per sheet: the block's own is /<block>/; the root /
+# pwr-flag-homes.ts), and a stand-in driver on each net whose driver is on another page (the board's
+# cross-page-drivers.ts: a TestPoint, or a PWR_FLAG for a power_out driver). Reported per sheet: the block's own is /<block>/; the root /
 # holds the stubs, whose labels dangle with one block. erc_sheets.py is the verdict, given the
 # declared ERC allowances (the board's erc-allowances.ts), which are held to the model first. Called
 # by verify.sh, and by a board's own controls (the module's erc-control.sh, on a block draft).

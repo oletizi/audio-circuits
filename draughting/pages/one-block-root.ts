@@ -25,8 +25,10 @@
  * pin is itself `power_out` (a regulator's output, driving a power input on this page): KiCad's ERC
  * does not count a passive pin as driving a `power_in`, so that stand-in is a PWR_FLAG, the one-pin
  * `power_out` symbol (`standInKind`; the h7-pedal's ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS has the
- * measurement). A net cannot take both a flag-home stub flag and such a stand-in; that is refused.
- * The board's real root must clear each such net with its real driver.
+ * measurement). A net driven by a power_out pin may carry no flag on any page; that is refused
+ * board-wide, before any stand-in is placed (`checkPowerDriversUnflagged`, which `tables.ts` also
+ * runs once per board on the committed tables). The board's real root must clear each such net with
+ * its real driver.
  *
  * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
  *
@@ -39,7 +41,7 @@ import type { Network } from "../../lib/model/index.ts"
 import { blankRootSheet, rootSheetOps } from "../../tools/draught/assemble-root.ts"
 import type { AkcliOp } from "../../tools/draught/akcli-ops.ts"
 import { blockOf, boardFromArgs } from "./board.ts"
-import { checkCrossPageDrivers, crossPageDriverTable, STAND_IN_LIB_ID, standInKind, standInsFor } from "./cross-page-drivers.ts"
+import { checkCrossPageDrivers, checkPowerDriversUnflagged, crossPageDriverTable, STAND_IN_LIB_ID, standInKind, standInsFor } from "./cross-page-drivers.ts"
 import { flagHomes, flagLivesElsewhere } from "./flag-homes.ts"
 
 const usage = "bun one-block-root.ts <board-dir> <block> <out-dir>"
@@ -66,6 +68,8 @@ if (flags.length !== flagged.size) {
 // stub of each net this block reaches whose driver is on another page.
 const table = await crossPageDriverTable(loaded)
 checkCrossPageDrivers(table, loaded)
+// Board-wide, not this block's nets only: a power_out driver's net may carry no flag on any page.
+checkPowerDriversUnflagged(table, homes, loaded)
 const driven = standInsFor(table, block, record.ports)
 const standIns: AkcliOp[] = []
 for (const entry of driven) {
@@ -75,9 +79,6 @@ for (const entry of driven) {
     throw new Error(`one-block root for "${block}": ${entry.net} needs a stand-in driver and ${labels.length} stub label(s) carry its name with a point; assemble-root.ts no longer writes one label per port`)
   }
   if (standInKind(entry, loaded) === "pwr_flag") {
-    if (flagged.has(entry.net)) {
-      throw new Error(`one-block root for "${block}": ${entry.net} has a declared flag home (pwr-flag-homes.ts) and a power_out cross-page driver (cross-page-drivers.ts); a net driven by a power output takes no PWR_FLAG, so remove one of the two`)
-    }
     standIns.push({ op: "place_pwr_flag", at: [at[0], at[1]], rotation: 0 })
   } else {
     standIns.push({ op: "place_component", lib_id: STAND_IN_LIB_ID, designator: `#DRV${standIns.length + 1}`, x_mil: at[0], y_mil: at[1], rotation: 0 })

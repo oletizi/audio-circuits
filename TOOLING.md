@@ -1128,7 +1128,8 @@ variable - and reaches the board's model through `boards/<board>/perfboard.json`
 
 **What stays with the board** is its data, in `<board-dir>/repair/tools/`: three declared tables,
 each under the ruling it names - `pwr-flag-homes.ts` (where each shared net's single PWR_FLAG
-lives), `cross-page-drivers.ts` (each signal net whose driver is on another page) and
+lives), `cross-page-drivers.ts` (each net whose driver is on another page: a signal driver, or a
+`power_out` pin whose one-block stand-in is a PWR_FLAG) and
 `erc-allowances.ts` (each ERC error a page's check excuses) - and `title_block.py` (the date, revision and comment its
 pages' title blocks carry). The shared tools hold every table to the model on every run. **A
 missing table is refused**, naming the file and why it is not defaulted: an empty table would be

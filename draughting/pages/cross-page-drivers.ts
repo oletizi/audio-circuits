@@ -1,14 +1,20 @@
 /**
- * THE SIGNAL NETS WHOSE DRIVER IS ON ANOTHER PAGE - the logic for a board's declared table,
+ * THE NETS WHOSE DRIVER IS ON ANOTHER PAGE - the logic for a board's declared table,
  * `<board-dir>/repair/tools/cross-page-drivers.ts` (the module's ruling is
- * CR-MODULE-CROSS-PAGE-DRIVERS). The table exports `CROSS_PAGE_DRIVERS` (its entries) and `RULING`.
+ * CR-MODULE-CROSS-PAGE-DRIVERS; the h7-pedal's CR-PEDAL-CROSS-PAGE-POWER-DRIVERS extends it to a
+ * power net). The table exports `CROSS_PAGE_DRIVERS` (its entries) and `RULING`.
  *
  * Why it exists. `verify.sh` runs ERC on a block page under a root holding that block alone
  * (`./one-block-root.ts`). A net whose only pin on the page is a KiCad input, and whose driver is a
  * pin on another page, then reports `pin_not_driven` ("Input pin not driven by any Output pins"),
  * an error the page cannot remove, because the driver is not on it. For each net in the table, the
  * one-block root places a stand-in driver on the net's stub when the block under check is not the
- * driving block. A PWR_FLAG is not the stand-in: these are signal nets, not power nets.
+ * driving block. The stand-in is a passive `Connector:TestPoint` for a signal driver. THE EXCEPTION
+ * is a driving pin typed `power_out` (a regulator's output feeding a power input on another page,
+ * which reports `power_pin_not_driven`): KiCad's ERC does not count a passive pin as driving a
+ * `power_in`, so that stand-in is a PWR_FLAG (`standInKind`; ruling
+ * CR-PEDAL-CROSS-PAGE-POWER-DRIVERS, which has the measurement). Such a net takes no flag home, and
+ * `checkPowerDriversUnflagged` refuses one that has both, board-wide.
  *
  * Declared, never derived: an entry is written in the table, from the model, with its source. It is
  * NOT found by scanning drafts or pages. `checkCrossPageDrivers` holds each entry to the model on every
@@ -36,6 +42,7 @@ import { defaultSymbolDir } from "../../lib/kicad/install.ts"
 import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../lib/kicad/symbol-library.ts"
 import type { SymbolPin } from "../../lib/kicad/symbol-library.ts"
 import type { PageBoard } from "./board.ts"
+import type { FlagHomes } from "./flag-homes.ts"
 import { componentIdFor, exported, importTable, overrideOr, parsedArray, requiredString } from "./table-input.ts"
 
 export interface CrossPageDriver {
@@ -82,7 +89,7 @@ export interface DriverTable {
 
 /** The board's committed table, as declared; no override is read. */
 export async function committedDriverTable(board: PageBoard): Promise<DriverTable> {
-  const module = await importTable(board, DRIVERS_FILE, "the signal nets whose driver is on another page")
+  const module = await importTable(board, DRIVERS_FILE, "the nets whose driver is on another page (a signal driver, or a power_out pin)")
   const ruling = exported(module, "RULING", board, DRIVERS_FILE)
   if (typeof ruling !== "string") throw new Error(`${join(board.tablesDir, DRIVERS_FILE)}'s RULING is not a string`)
   return { entries: parsedArray(exported(module, "CROSS_PAGE_DRIVERS", board, DRIVERS_FILE), join(board.tablesDir, DRIVERS_FILE), parseDriver), ruling }
@@ -203,4 +210,41 @@ export function standInKind(entry: CrossPageDriver, board: PageBoard): "pwr_flag
   const pin = libraryPin(board, libId, entry.pin)
   if (pin === undefined) throw new Error(`cross-page-drivers.ts: ${label}: ${libId} has no pin ${entry.pin}`)
   return pin.type === "power_out" ? "pwr_flag" : "test_point"
+}
+
+/**
+ * A NET DRIVEN BY A POWER OUTPUT TAKES NO PWR_FLAG, checked across the whole board (ruling
+ * CR-PEDAL-CROSS-PAGE-POWER-DRIVERS, as amended at the h7 pedal pages plan's Task 7c). Refuses every
+ * entry whose driving pin is `power_out` and whose net also has a flag in `pwr-flag-homes.ts` -
+ * a shared home on ANY page (the root, the driving page, or a page that reads the net) or a private
+ * flag of any block - since the assembled hierarchy would then carry two `power_out` pins on the net,
+ * a `pin_to_pin` error (CR-MODULE-PWR-FLAGS). Only entries on a flagged net have their pin type
+ * resolved (`standInKind`, which throws naming the entry when it cannot be). Run once per board by
+ * `tables.ts`, the first step of `verify.sh` and `verify-root.sh`, on the committed tables, and by
+ * `one-block-root.ts` on the table it uses, so a control's test override is held to it too.
+ */
+export function checkPowerDriversUnflagged(table: DriverTable, homes: FlagHomes, board: PageBoard): void {
+  const flags = new Map<string, string[]>()
+  const note = (net: string, where: string): void => {
+    flags.set(net, [...(flags.get(net) ?? []), where])
+  }
+  for (const [net, home] of Object.entries(homes.shared)) note(net, `a shared flag home on ${home}`)
+  for (const [block, nets] of Object.entries(homes.privateFlags)) for (const net of nets) note(net, `a private flag on ${block}`)
+  const failures: string[] = []
+  for (const entry of table.entries) {
+    const where = flags.get(entry.net)
+    if (where === undefined || standInKind(entry, board) !== "pwr_flag") continue
+    failures.push(
+      `${entry.net}: pwr-flag-homes.ts declares ${where.join(" and ")}, and cross-page-drivers.ts declares its driver ` +
+        `${entry.block} ${entry.designator} ${entry.pinName} (pin ${entry.pin}), a power_out pin`,
+    )
+  }
+  if (failures.length > 0) {
+    throw new Error(
+      `${board.name}: ${failures.length} net(s) have both a PWR_FLAG and a power_out driver (ruling CR-PEDAL-CROSS-PAGE-POWER-DRIVERS: ` +
+        "a net driven by a power output takes no PWR_FLAG, since two power outputs on one net are a pin_to_pin error under " +
+        `${homes.ruling}); remove the flag home or the entry:\n  ` +
+        failures.join("\n  "),
+    )
+  }
 }
