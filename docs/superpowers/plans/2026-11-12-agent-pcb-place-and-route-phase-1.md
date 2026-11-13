@@ -1,5 +1,7 @@
 # Agent place-and-route, Phase 1: the probe — Implementation Plan
 
+**Status** APPROVED by the owner, 2026-11-13 (*"phase 1 plan approved"*), after four rounds of third-party review recorded in issue 34. The fourth round is the one to know about: its clean control **refuted the hardware-clearance mechanism this plan had adopted in the third**, and Task 8 Step 4 carries the measured replacement. No open owner questions remain - the socket (**G312**), the pour thresholds (declined, **G313**) and the mounting hardware (**G311**) were all settled the same day.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Answer one question with evidence - can the pinned KiCadRoutingTools engine place and route `pt2399-core` as a two-layer through-hole board with a ground pour, inside the PCBWay floor, with KiCad's DRC and schematic parity clean - and leave behind the checks, the standard and the acquisition that Phase 2 builds on.
