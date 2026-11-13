@@ -10,9 +10,15 @@ KRT_MK := 1
 
 KRT_REPO_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 
-.PHONY: krt
+.PHONY: krt krt-preflight
 
 krt:
 	@bun "$(KRT_REPO_ROOT)/tools/krt/acquire.ts"
+
+# Drive the engine's four core operations on a throwaway fixture board and write
+# build/krt/invocations.json: the exact command lines that worked, which later
+# tasks read instead of inventing their own. Fails as a toolchain failure.
+krt-preflight: krt
+	@bun "$(KRT_REPO_ROOT)/tools/krt/preflight.ts"
 
 endif

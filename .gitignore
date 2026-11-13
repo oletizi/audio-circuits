@@ -3,7 +3,14 @@ node_modules/
 
 # Build output
 dist/
-build/
+build/*
+
+# The one committed build artifact: the engine invocations the preflight proved
+# (tools/krt/preflight.ts). Everything else under build/krt/ is the preflight's
+# throwaway fixture and stays ignored.
+!build/krt/
+build/krt/*
+!build/krt/invocations.json
 
 # Two build/ subdirectories were named here with their own explanations - the
 # board schematic census and the deliberately defective fixture, both written by

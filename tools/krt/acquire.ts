@@ -164,7 +164,7 @@ export function engineEnv(env: Env): Env {
   return kept
 }
 
-function defaultRun(command: string, args: readonly string[], cwd: string, env: Env): CommandResult {
+export function defaultRun(command: string, args: readonly string[], cwd: string, env: Env): CommandResult {
   const result = spawnSync(command, [...args], {
     cwd,
     encoding: "utf8",
