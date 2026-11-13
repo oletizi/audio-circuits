@@ -17,7 +17,7 @@ import {
   VBUS_CAP_IDS, VBUS_SENSE_CAP, controlPositionNets,
 } from "../../circuits/h7-platform/pedal-rulings.ts"
 import {
-  CODEC10_SHEET_NOTE, MIDI, NOT_FITTED_CONNECTORS, NOT_FITTED_PARTS, POPULATION,
+  CODEC10_SHEET_NOTE, MIDI, NOT_FITTED_CONNECTORS, NOT_FITTED_PARTS, POPULATION, VARIANT_PART_IDS, VARIANT_POSITIONS,
 } from "../../circuits/h7-platform/pedal-population.ts"
 import { symbolExistsOnDisk } from "../kicad/symbol-library-disk.ts"
 
@@ -177,6 +177,20 @@ describe("CR-PEDAL-POPULATION", () => {
       expect(cited(position.source)).toMatch(/not[- ]fitted|unpopulated/i)
       expect(position.ifFitted.length).toBeGreaterThan(0)
     }
+  })
+
+  test("the six variant positions list each fit's parts, and share no id with the not-fitted parts", () => {
+    expect(VARIANT_POSITIONS.map((p) => p.position)).toEqual(["POS1", "POS2", "POS3", "POS4", "POS5", "POS6"])
+    expect(VARIANT_POSITIONS[0]).toEqual({
+      position: "POS1", potFit: ["rv_pos1"], buttonFit: ["sw_btn1", "r_pu1"], alwaysFitted: ["r_btn1", "r_pos1", "c_pos1"],
+    })
+    expect(VARIANT_PART_IDS.length).toBe(18)
+    expect(new Set(VARIANT_PART_IDS).size).toBe(VARIANT_PART_IDS.length)
+    const notFitted = new Set([...NOT_FITTED_PARTS, ...NOT_FITTED_CONNECTORS].map((p) => p.id))
+    for (const id of VARIANT_PART_IDS) expect(notFitted.has(id)).toBe(false)
+    for (const p of VARIANT_POSITIONS) for (const id of p.alwaysFitted) expect(VARIANT_PART_IDS).not.toContain(id)
+    expect(cited("docs/h7-platform/mechanical-and-controls.md:298")).toContain("design variant")
+    expect(cited("docs/h7-platform/architecture.md:230")).toContain("both fitted")
   })
 
   test("the not-fitted MIDI header is modelled, and states why fitting it joins no on-board nets", () => {

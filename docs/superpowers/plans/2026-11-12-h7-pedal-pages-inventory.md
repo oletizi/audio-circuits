@@ -257,7 +257,7 @@ Per position n = 1..6 (analog:364; mech:300; power:417):
 
 #### B18 `interface` (2 + unruled)
 - J_MOD_A, J_MOD_B 1 x 20 female, Mill-Max 801-43-020-10-012000, pedal underside (parts:158; arch:127). Reserved pins 16-19 unconnected (arch:288; interface-check.ts:13-15).
-- Test pads: "The power and audio pads" (arch:344); per-board list **[UNRULED]** (oi:124 TEST-PAD-SPLIT; conflict oi:138-143).
+- Test pads: "The power and audio pads" (arch:344); per-board list **[UNRULED]** (oi:124 TEST-PAD-SPLIT; conflict oi:138-143 [*dated note, 2026-11-13: oi:140-145 after Task 3 added two rows; the pedal's list is now CR-PEDAL-TEST-PADS*]).
 - Contract: all 40 pins (contract pins array from contract:416).
 
 ### 1.4 Unruled parts, values and connections (count: 17)
@@ -313,7 +313,7 @@ Per position n = 1..6 (analog:364; mech:300; power:417):
 | STACK-HEIGHT-OWNER-REPORT | oi:107 | "open — reported to the controller, not shown reported to the owner" | the 15.17 mm stack and 4.97 mm connector-face limit put to the owner, answer recorded, before the freeze | C (owner) | contract, B18 |
 | DC-JACK-FIT (the DC jack) | oi:123 | "open — part not chosen; not checked" | the jack chosen, footprint and hole placed, a plug fitted by hand; phase 4 | C + B | B1 |
 | TEST-PAD-SPLIT | oi:124 | "open — not settled by any source" | each board's test-pad list in its model, each v1 pad placed on a named net or dropped with a reason | C | B18 (and B9/B11 pads) |
-| Conflict: the v1 test pads on the split boards | oi:138-143 | (conflict entry) | "Assigning them is a design choice, not a reading of the sources" (oi:142); "Settled by phase 2's per-board pad lists" (oi:143) | C | B18 |
+| Conflict: the v1 test pads on the split boards | oi:138-143 [*dated note, 2026-11-13: oi:140-145 after Task 3 added two rows*] | (conflict entry) | "Assigning them is a design choice, not a reading of the sources" (oi:142, now oi:144); "Settled by phase 2's per-board pad lists" (oi:143, now oi:145) | C | B18 |
 | USB2-SPEC-UNREAD | oi:125 | "open — not verified" | USB 2.0 VBUS capacitance limit vs pedal VBUS capacitance | Q (needs USB 2.0 spec, not in repository) | B16 |
 | MLCC-DC-BIAS | oi:52 | "open — not verified; allowances" | DC-bias curves of fitted parts, incl. pedal VIN_A ceramics and U_PRAIL input | Q | B1, B4 |
 | POWER-PARTS-STOCK | oi:72 | "open — dated observations" | phase 4 | B | several |
@@ -467,7 +467,7 @@ Library path `/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols`; lin
 
 6.9 **Input coupling capacitor name.** analog:124, :176 call the 22 uF input coupling capacitor "C2" (ANALOG.md's local name, analog:132); chk:149, :158 call it C_AC; analog:197 and chk:163 call the output's 10 uF coupling capacitors C_A / C_A+ / C_A-. Not a disagreement in substance, but C_AC (input, 22 uF aluminium) and C_A (output, 10 uF X7R) are one letter apart.
 
-6.10 **Test pads (recorded conflict).** oi:138-143: chk PWR-16/USB-07 and LAYOUT-CARRYFORWARD (one pogo grid on v1) against split spec §9.3/§6.1/§7.1 (the pedal "keeps the power and audio pads"); "Assigning them is a design choice" (oi:142).
+6.10 **Test pads (recorded conflict).** oi:138-143 [*dated note, 2026-11-13: oi:140-145 after Task 3 added two rows*]: chk PWR-16/USB-07 and LAYOUT-CARRYFORWARD (one pogo grid on v1) against split spec §9.3/§6.1/§7.1 (the pedal "keeps the power and audio pads"); "Assigning them is a design choice" (oi:142).
 
 6.11 **HW_REV code.** Not a disagreement, recorded for the plan: analog:360 says no source assigns a code to the split pedal; chk:73 CORE-24 records v1's revision-1 parts (20.0 kOhm, 2.49 kOhm); the module ruled revision 1 for its own ID strap as "a choice, and any other row is as faithful" (dec:1504).
 

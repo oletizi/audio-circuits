@@ -10,6 +10,8 @@
  *   the round trip fail, since the page would carry a part the model does not.
  * - `NOT_FITTED_CONNECTORS`: a connector whose fitting adds no on-board path. It is modelled and drawn, and
  *   its page note says it is not fitted. Whether it is placed is a BOM fact for the assembly consumer (G245).
+ * - `VARIANT_POSITIONS`: the six control positions, whose fit (pot or button) is a per-effect choice with no
+ *   default. Both fits are modelled and drawn; the page note says exactly one is placed per position.
  * Every other "not fitted" the documents name is listed, with why it is not a pedal position, in the
  * decisions.md entry.
  *
@@ -75,6 +77,34 @@ export const NOT_FITTED_CONNECTORS: readonly NotFittedConnector[] = [
   },
 ]
 
+export interface VariantPosition {
+  /** The contract pin net the position drives. */
+  readonly position: string
+  /** The pot fit's parts. */
+  readonly potFit: readonly string[]
+  /** The button fit's parts. */
+  readonly buttonFit: readonly string[]
+  /** Fitted in every build (mechanical-and-controls.md:300); not a variant part. */
+  readonly alwaysFitted: readonly string[]
+}
+
+/**
+ * Class 3, variant positions: the sources make each control position's fit a per-effect choice and name
+ * no default (mechanical-and-controls.md:298; analog.md:364), so both fits are modelled and drawn, and the
+ * page note says exactly one fit is placed per position. architecture.md:230 bounds the union (a press with
+ * both fitted draws at most 3.5 mA). The ids are the ones the controls block model must use; Task 8's
+ * default-population check exempts exactly the `potFit` and `buttonFit` ids here and nothing else.
+ */
+export const VARIANT_POSITIONS: readonly VariantPosition[] = [1, 2, 3, 4, 5, 6].map((n) => ({
+  position: `POS${n}`,
+  potFit: [`rv_pos${n}`],
+  buttonFit: [`sw_btn${n}`, `r_pu${n}`],
+  alwaysFitted: [`r_btn${n}`, `r_pos${n}`, `c_pos${n}`],
+}))
+
+/** Every variant part id: the parts a default-population check may find alongside their alternative. */
+export const VARIANT_PART_IDS: readonly string[] = VARIANT_POSITIONS.flatMap((p) => [...p.potFit, ...p.buttonFit])
+
 /** CODEC-10's sheet note, verbatim (schematic-checklist.md:105); the codec page's population note carries it. */
 export const CODEC10_SHEET_NOTE =
   "I2C mode = fit both links, fit MODE 0 Ω (CODEC-06) and remove the 220 kΩ, remove the pin-2 4.7 kΩ pull-down and fit the DNF pull-up."
@@ -84,8 +114,11 @@ export const POPULATION = {
   ruling: "CR-PEDAL-POPULATION",
   parts: NOT_FITTED_PARTS,
   connectors: NOT_FITTED_CONNECTORS,
+  variants: VARIANT_POSITIONS,
   sheetNote: CODEC10_SHEET_NOTE,
-  sources: [`${CHK}:98`, `${CHK}:104`, `${CHK}:105`, `${CHK}:217`, `${CHK}:245`, "docs/h7-platform/analog.md:63", "docs/h7-platform/decisions.md:613"],
+  sources: [
+    "docs/h7-platform/mechanical-and-controls.md:298", "docs/h7-platform/mechanical-and-controls.md:300",
+    "docs/h7-platform/architecture.md:230", `${CHK}:98`, `${CHK}:104`, `${CHK}:105`, `${CHK}:217`, `${CHK}:245`, "docs/h7-platform/analog.md:63", "docs/h7-platform/decisions.md:613"],
 } as const
 
 /**
