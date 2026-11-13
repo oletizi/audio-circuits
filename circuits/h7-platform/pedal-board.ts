@@ -29,6 +29,7 @@ import { prailBlock } from "./pedal/prail.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
 import { codecSupBlock } from "./pedal/codec-sup.ts"
+import { codecBlock } from "./pedal/codec.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -45,6 +46,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["prail", prailBlock, "Pedal digital rail 3V3_P"],
   ["ldo_vmid", ldoVmidBlock, "5V_A and VMID"],
   ["codec_sup", codecSupBlock, "Codec supply, clock and reset"],
+  ["codec", codecBlock, "Codec PCM3060"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -87,8 +89,10 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
  * more than one pin or whose loading block is already built.
  */
 export const AWAITING_NETS: readonly string[] = [
-  // Until codec (Task 8): U_XO's output, which drives SCKI1 and SCKI2 (analog.md:383).
-  "XO_OUT",
+  // Until sai_iso (Task 8): the codec side of the SAI isolation (CR-PEDAL-NETS).
+  "BCK_CODEC", "LRCK_CODEC", "DOUT_CODEC", "DIN_CODEC",
+  // Until Task 10 (adc_drv, out): the codec's analog inputs and outputs (schematic-checklist.md:110).
+  "VINL", "VINR", "VOUTL+", "VOUTL-", "VOUTR+", "VOUTR-",
 ]
 
 /** The pedal: every built block included, each port bound to the root net of its own name. */
@@ -131,6 +135,10 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   codec_sup_u_cvdd: "U6", codec_sup_c_cvddin: "C32", codec_sup_c_cvddout: "C33", codec_sup_d_cvcl: "D6",
   codec_sup_r_cbld: "R26", codec_sup_u_xo: "U7", codec_sup_c_xo: "C34", codec_sup_u_crst: "U8", codec_sup_c_crst: "C35",
   codec_sup_r_crst: "R27", codec_sup_q_pfr: "Q5",
+  // codec
+  codec_u_codec: "U9", codec_c_vcc_hf: "C36", codec_c_vcc_bulk: "C37", codec_c_vdd_hf: "C38", codec_c_vdd_bulk: "C39",
+  codec_c_vcom_hf: "C40", codec_c_vcom_bulk: "C41", codec_r_mode: "R28", codec_r_fmt: "R29", codec_r_demp: "R30",
+  codec_r_bck: "R31", codec_r_lrck: "R32", codec_r_dout: "R33",
 }
 
 /** One page per block (design change C3). */
