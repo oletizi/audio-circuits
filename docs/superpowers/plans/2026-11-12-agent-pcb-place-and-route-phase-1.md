@@ -506,20 +506,39 @@ Board Setup: `min_track_width`, `min_clearance` on the Default net class, `min_v
 
 - [ ] **Step 2: Load the footprints onto a fresh board - and read this first**
 
-**KiCad has no headless "Update PCB from Schematic".** This step is therefore a **one-time operator action in the KiCad PCB editor**: open the project, Tools > Update PCB from Schematic, apply, save. It is the one manual step in Phase 1 and it is manual because the tool offers no alternative, not as a convenience.
+> **THIS STEP SAID THE OPPOSITE UNTIL 2026-11-13, AND THE OLD WORDING IS SHOWN STRUCK RATHER THAN EDITED AWAY, because the refuted claim is the part a later reader needs.** It read: *"**KiCad has no headless "Update PCB from Schematic".** This step is therefore a **one-time operator action in the KiCad PCB editor**: open the project, Tools > Update PCB from Schematic, apply, save. It is the one manual step in Phase 1 and it is manual because the tool offers no alternative, not as a convenience."* - followed by a prohibition on working around it by hand-writing footprint s-expressions.
+>
+> **The first sentence is false, and the owner refused the step before anyone tested it:** *"I can't believe there isnt a way to update from schematic headlessly. I'm not going to be your dumb secretary and click a button for you every time. You need to figure out how to do it yourself"*. He was right, and the controller had repeated this plan's own assertion without measuring it. **The spec already forbade this on page one** - *"I don't want to lay out the tht board by hand if I don't have to"* - so a manual step in the plan contradicted the document the plan argues from.
+>
+> **The prohibition on hand-writing s-expressions is KEPT, and the headless path honours it** rather than circumventing it: KiCad writes the board file itself.
 
-Do not work around it by writing footprint s-expressions by hand. That would be inventing a loader this repository would then own, to replace a GUI action performed once.
+**There IS a headless equivalent: the `pcbnew` Python API.** Run `make update-pt2399-core`. Four plausible routes are dead ends, and the reason this was got wrong once is that a search stopping at any of them concludes the step is manual:
 
-- [ ] **Step 3: Prove the manual step landed correctly**
+| Route | Why it does not work |
+| --- | --- |
+| a `kicad-cli` verb | None exists; `kicad-cli pcb` offers only `{drc,export,import,render,upgrade}` |
+| `BOARD_NETLIST_UPDATER`, the class the menu item drives | **The SWIG bindings expose no netlist classes at all** - `[n for n in dir(pcbnew) if 'NETLIST' in n.upper()]` is empty |
+| a jobset job | The registry holds export/DRC/ERC jobs plus only `special_copyfiles` and `special_execute` |
+| the IPC API | `RunAction` can fire `common.Control.updatePcbFromSchematic`, but that **opens the modal dialog** and needs a running GUI |
+
+What works is doing the updater's own job through the primitives the bindings *do* expose - `FootprintLoad`, `NETINFO_ITEM`, `BOARD.Add`, `SetFPIDAsString`, `SetReference`, `SetValue`, `SetField`, `SetPath`, `PAD.SetNet`, `LoadBoard`, `SaveBoard`. Task 6ab builds this as `tools/pcb/update-from-schematic.ts` (parsing, validation and every refusal) over `tools/pcb/update-from-schematic.py` (the `pcbnew` calls only).
+
+**Two defects a weak check would miss, because neither presents as a missing footprint.** `FootprintLoad` returns a footprint whose FPID carries an **empty library nickname**, which parity reports as *"CP_Radial_D5.0mm_P2.50mm doesn't match footprint given by symbol (Capacitor_THT:CP_Radial_D5.0mm_P2.50mm)"*; and the schematic's fields are not carried across, reported as *"Field 'Description' differs"*. The GUI updater does both; so must this.
+
+**And a KiCad 10 format change, so nobody reads a correct board as a broken one:** a pad's net is written `(net "Net-(U1-LPF2-IN)")` - **name only, no code - with no top-level net table at all.** A grep for the KiCad 7-9 form `(net <n> "<name>")` matches nothing on a correctly netted board.
+
+- [ ] **Step 3: Prove the update landed correctly**
 
 Run: `make parity-pt2399-core`
-Expected: **zero** `schematic_parity` violations. This is the point of doing Task 5 first - the manual step is verified by a check rather than by having been careful. 24 components and 65 pads should be present; a missing or misassigned footprint shows up here as a parity violation naming it.
+Expected: **zero** `schematic_parity` violations. This is the point of doing Task 5 first - the update is verified by a check rather than by trusting the tool that performed it. 24 components and 65 pads should be present; a missing or misassigned footprint shows up here as a parity violation naming it.
+
+**The guard that matters most here is not parity.** `LoadBoard` + `SaveBoard` rewrites the entire board file, so it could silently discard Step 1's configuration while parity still passed - the same shape as this plan's other false greens. The tool therefore compares the `(setup ...)` block's key set before and after and refuses on any loss. **Additions are expected and allowed:** KiCad writes out values it had left implicit, measured on this board as 186 -> 1193 bytes gaining `tenting`, `covering`, `plugging` and the `pcbplotparams` defaults, with nothing removed. Compare key sets, never sizes.
 
 - [ ] **Step 4: Read and record the silkscreen outline widths**
 
 The spec marks this NOT VERIFIED. Read the `F.Silkscreen` graphic line widths of the seven footprints this board uses, and record which fall below 0.15 mm. KiCad has no design rule for graphic line width, so this is a recorded disclosure, not a gate. Expected consequence of a thin outline is a faint legend, not a rejected or dearer board.
 
-- [ ] **Step 5: Commit the project and board, naming the manual step in the message**
+- [ ] **Step 5: Commit the project and board**
 
 ---
 
