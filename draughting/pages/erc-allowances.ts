@@ -19,9 +19,10 @@
  *
  * A PWR_FLAG PARTNER (h7 pedal pages plan, Task 9b). One of the two items may be the net's PWR_FLAG
  * rather than a part's pin: the allowance names it as designator `PWR_FLAG` (`FLAG_PARTNER`), pin
- * "1". KiCad reports a flag as `Symbol #PWR<n> Pin 1 [Power output, ...]`, and the number `<n>` is
- * whatever the sheet holding the flag assigned (the one-block root's stub, or the board's root), so
- * `erc_match.py` reads such an item as (`PWR_FLAG`, "1") and never matches the number. The model
+ * "1". KiCad reports a flag as `Symbol <ref> Pin 1 [Power output, ...]`, its reference `#PWR<n>` as
+ * akcli writes it (a one-block root's stub flags) or `#FLG<n>` once `root_flag_refs.py` has renamed a
+ * board root's flags; `erc_match.py` reads exactly those two forms as (`PWR_FLAG`, "1") and never
+ * matches the number. The model
  * check then requires, for the partner, pin "1" and a declared flag home for the entry's net in the
  * board's `pwr-flag-homes.ts` (so a flag is on that net and nowhere else); the pin-type check holds
  * for the other item, the part's own pin. First needed for the h7 pedal's U12 ST, an open-drain

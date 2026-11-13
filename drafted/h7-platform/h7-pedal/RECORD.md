@@ -1866,7 +1866,8 @@ no-connects, J4's TN and SN.
 - [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the jack is `switch`, the
   TVS, U12 and Q6 `ic`, D9 `diode`, U13 `opamp`.
 - **[CR-PEDAL-LM66100-ST-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-lm66100-st-erc)**,
-  drafted by this task and awaiting the controller: the page's one ERC error under its one-block root,
+  drafted by this task and adopted by the controller, 2026-11-13 (commit 00a1bcc): the page's one
+  ERC error under its one-block root,
   `pin_to_pin` between U12's ST and the PWR_FLAG on GND, is excused by one declared allowance (below).
 - [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): VREF_A and GND
   are wires ending in hierarchical labels; no power symbol on the page.
@@ -1902,7 +1903,9 @@ no-connects, J4's TN and SN.
   flag's uuid on the root, which it cannot read yet (the pedal root's task). The module's one
   allowance is unchanged and the module's replay and controls pass. `repair/tools/erc-control.sh`
   controls 7 to 10 re-run the allowance: the page verifies with it, fails without it on that pin
-  pair, and an allowance naming U12 pin 4 or the flag's pin 2 is refused.
+  pair, and an allowance naming U12 pin 4 or the flag's pin 2 is refused. Since the fix round the
+  matcher also reads a board root's renamed flag, `#FLG<n>` (`tests/draught/erc-match-flag.test.ts`),
+  so what the pedal root still needs is the flag's uuid for its `.kicad_pro`.
 - `draughting/pages/text_edits.py` reads a mirror in both of the sheet's forms. copperhead drafted J4
   mirrored top to bottom and Q6 left to right, as the layout places them, so akcli left each mirror on
   a line of its own (copperhead's form); the tool read only akcli's form, on the `(at ...)` line, and

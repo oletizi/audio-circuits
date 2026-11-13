@@ -17,10 +17,13 @@ exactly once, since the root's `.kicad_pro` exclusions must equal the allowances
 import re
 
 ITEM = re.compile(r"^Symbol (\S+) Pin (\S+) \[")
-# A PWR_FLAG, as KiCad names it in an item: its reference is numbered by the sheet holding it (the
-# one-block root's stub, or the board's root), so it is read as the allowance's PWR_FLAG partner,
-# (`PWR_FLAG`, "1"), never by its number (`erc-allowances.ts`, the PWR_FLAG partner; h7 pedal Task 9b).
-FLAG_ITEM = re.compile(r"^Symbol #PWR\d+ Pin 1 \[Power output[,\]]")
+# A PWR_FLAG, as KiCad names it in an item, read as the allowance's PWR_FLAG partner, (`PWR_FLAG`,
+# "1"), never by its number (`erc-allowances.ts`, the PWR_FLAG partner; h7 pedal Task 9b). Matched:
+# exactly the references the tools give a flag, pin 1, typed Power output - `#PWR<n>`, which akcli
+# writes (a one-block root's stub flags), and `#FLG<n>`, to which `root_flag_refs.py` renames a board
+# root's flags. Not matched: any other reference, any other pin, any other type (a stock power
+# symbol's pin is Power input). Controlled by tests/draught/erc-match-flag.test.ts.
+FLAG_ITEM = re.compile(r"^Symbol #(?:PWR|FLG)\d+ Pin 1 \[Power output[,\]]")
 FLAG_PARTNER = "PWR_FLAG"
 
 
