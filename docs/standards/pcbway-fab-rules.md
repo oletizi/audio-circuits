@@ -115,8 +115,9 @@ router's own fabrication tier necks tracks and shrinks vias below this
 standard. KiCad's DRC would catch the result afterward, but the router should
 not produce it in the first place.
 
-Neither file exists yet; later tasks create them from this document. If a value
-here changes, both files change in the same commit.
+`pt2399-core.kicad_pro` exists and passes `tools/pcb/fab-standard.ts`;
+`route-fab-floor.txt` does not exist yet and a later task creates it from this
+document. If a value here changes, both files change in the same commit.
 
 ## Not enforced
 
