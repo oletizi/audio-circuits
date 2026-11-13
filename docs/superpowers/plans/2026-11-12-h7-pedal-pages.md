@@ -63,6 +63,8 @@ The pedal gets its own copies of the per-board tables (flag homes, cross-page dr
 4. **A part with no source.** Every pedal component's provenance cites a `file:line` or a ruling id, and a test refuses one that does not. The control is owned by Task 5. The test runs again over each group in Tasks 6, 8 and 10.
 5. **A cross-page signal whose real driver never meets it.** The pedal's root ERC must clear every cross-page-drivers entry with its real driver. Each net must carry exactly one PWR_FLAG across the pedal hierarchy. Test owned by Task 11.
 6. **The moved tools changing a module result.** After Task 4, the module's replay must reach every sha256 it reached before, and `verify-root.sh` must still pass. Test owned by Task 4.
+7. **A not-fitted option drawn or modelled as fitted** (issue 33 P1). The MODE 0 Ω, the DEMP pull-up and the two codec I²C links would each change the default build if fitted. The default-population check must refuse a model with any one of them added. Test owned by Task 8; the ruling by Task 3 (CR-PEDAL-POPULATION).
+8. **A contract freeze the verifier cannot tell from a contract edit** (issue 33 P2). A status-only `draft → frozen` change must pass the port verifier, and a pin or limit change must fail it. Test owned by Task 12.
 
 ---
 
@@ -151,12 +153,16 @@ The pedal gets its own copies of the per-board tables (flag homes, cross-page dr
 - **The TS3USB221 decoupling and S pin on the pedal (#13).** The carrier's rulings, re-read for the pedal's role.
 - **C_VBUS_SENSE (#14) and VBUS-HOTPLUG.** Fitted, with the carrier's value (CR-CARRIER-VBUS-SENSE-CAP), unless the pedal's divider differs. If it differs, re-run `vbusSenseAnalysis` on the pedal's values. This also settles which board owes the fix (the inventory's 6.3).
 - **MIDI (#15, #16, #17; the inventory's 6.4).**
-  - OWN-04's unpopulated 4-pin header governs: it is an owner decision.
+  - OWN-04's unpopulated 4-pin header governs. OWN-04 is a controller ruling under an ambiguous heading (`decisions.md`, OWN-04 "Label"), not an owner decision; it binds here as the standing ruling, and the owner may override it.
   - R-26's MIDI OUT driver and switch are drawn up to the nets the sources name.
   - If no source names the connector that carries R-26's pin-4/pin-5 loop, that loop's connector is NOT invented. It is left undrawn, the page says so, and a new open row records the gap for the owner to see on that page.
   - The MIDI IN receiver is left undrawn until MIDI-IN-RECEIVER-STOCK closes (spec). Task 12 attempts that.
 - **The PCM3060 values (the inventory's 6.6).** Taken from `chk:88-105`. The spec's line saying they are open is corrected by a plan-time note. The 10 µF parts' MPNs are not needed for a schematic (G245).
 - **Two C_VBUS ids (6.5).** Adopt the carrier's ids, `c_vbus` and `c_vbus_sense`.
+- **Not-fitted positions (CR-PEDAL-POPULATION, from issue 33 P1).** The model is the default fitted build. The repository's `Component` and `PartSpec`, the intent and the sheet-agreement path carry no population state, and this plan adds none. Every not-fitted position the sources name is listed in the ruling and put in one of two classes:
+  - **A part whose fitting would join or load nets** (CODEC-06's MODE 0 Ω; CODEC-09's DEMP pull-up; CODEC-10's two I²C links; any other the inventory finds). It is **left out of the model and off the page**. The block's module comment names each one and its source. The codec page carries a text note listing them, with CODEC-10's sheet note verbatim: "I2C mode = fit both links, fit MODE 0 Ω (CODEC-06) and remove the 220 kΩ, remove the pin-2 4.7 kΩ pull-down and fit the DNF pull-up." Drawing one would make the round trip fail, because the page would carry a part the model does not: that is the drawing-side check.
+  - **A connector whose fitting adds no on-board path** (OWN-04's unpopulated MIDI header). Fitting it attaches a cable and joins no two on-board nets, so the fitted and unfitted circuits are the same on the board. It is modelled and drawn, because it is where the MIDI nets leave the board, and the page's text note says it is not fitted. Whether it is placed is a BOM fact for the assembly consumer (G245).
+  - Cost if wrong: the I²C-mode build has no drawing until a later plan adds a population property; and a connector misclassed as the second kind would hide an on-board join. The ruling's list states, for each connector, why it joins no on-board nets.
 
 - [ ] **Step 1: Write the failing tests.** Each ruled constant exists, carries its ruling id, and that id exists as a heading in `decisions.md`.
 - [ ] **Step 2: Run them and confirm they fail.**
@@ -270,6 +276,8 @@ The MIDI IN receiver, and any MIDI connector no source names, are left out of th
 - [ ] **Step 1: Write the failing tests:**
   - per block: its parts, values and ports;
   - the PCM3060's straps and decoupling against `chk:88-105`;
+  - `checkDefaultPopulation(n: Network): string[]`, in `circuits/h7-platform/pedal/population.ts`, returns no findings for `h7Pedal()`. It asserts: MODE (pin 28) meets exactly the 220 kΩ and nothing else but its DGND end; DEMP (pin 2) meets the 4.7 kΩ pull-down and no pull-up to VDD; no component joins codec pin 1 or pin 2 to EXP_I2C_SCL or EXP_I2C_SDA;
+  - **controls**, each a test-only copy of the codec block with one change, each of which `checkDefaultPopulation` must reject: a 0 Ω added from MODE to DGND; a 4.7 kΩ added from pin 2 to VDD; a 0 Ω added from pin 1 to EXP_I2C_SCL;
   - the SAI isolation: U_ISO_M and U_ISO_C directions and resistors against INTERFACE-PARTS-TO-MODEL's figures (`oi:45`);
   - the HW_REV divider against Task 3's constant;
   - the USB path against the carrier's equivalent where the sources make them the same circuit.
@@ -310,7 +318,7 @@ Blocks: in_fe, adc_drv, out and jacks_byp. Three whole OPA1688 duals (U_IN, U_AD
 - [ ] **Step 3: Implement one block per commit.**
 - [ ] **Step 4: Verify.**
   - Narrow PEDAL-ANALOG-PARTS-TO-MODEL and BYPASS-PARTS-TO-MODEL. Their re-derivations and the relay footprint check stay open where they need a data sheet or an analysis.
-  - Record the pedal half of CONTRACT-MODEL-CHECK.
+  - Record the pedal half of CONTRACT-MODEL-CHECK as the pin and net comparison only. The row's protection and failsafe portion stays open: a passing pin/net comparison is not described as closing it.
   - Commit and push.
 
 ### Task 11: Draw the analog group, then the root
@@ -338,13 +346,19 @@ This task runs whenever an implementer slot is free. It never blocks a page, and
 4. **STACK-HEIGHT-OWNER-REPORT.** The implementer writes the report as a file: the 15.17 mm stack and the 4.97 mm connector-face limit, with their sources. **The controller sends it to the owner as a message of its own, never with a drawing.** The owner's answer is recorded in `decisions.md` if they decide anything.
 5. **CONTRACT-FREEZE**, only when rows 1–4 and every freeze blocker the topic documents carry are closed.
    - The step first enumerates those blockers from the documents into the row. The row does not list them today.
-   - The freeze edits `module-interface.json`'s `status`, in a commit of its own. That contradicts `contract.ts:4` ("never edited here"), so a controller ruling amends that comment in the same commit.
+   - The freeze edits `module-interface.json`'s `status`, in a commit of its own. That contradicts `contract.ts:4` ("never edited here"), so a controller ruling (CR-PEDAL-CONTRACT-FREEZE) amends that comment in the same commit.
+   - **It also breaks the port verifier unless the verifier changes first** (issue 33 P2). `verify.sh`'s `BYTE_PAIRS`/`check_bytes` compares the whole contract byte for byte with pedals at `5b926d0`, so a status-only freeze fails `bytes`. In a commit before the freeze, amend `docs/superpowers/plans/2026-11-10-digital-pedal-platform-port-execution/verify.sh`:
+     - the pinned pedals file stays the immutable provenance baseline;
+     - the contract leaves `BYTE_PAIRS` and gets its own comparison inside the `bytes` check: the live file must equal the baseline byte for byte, or equal it byte for byte after replacing the one line-3 `"status": "draft",` with `"status": "frozen",`. Any other difference fails, naming the file;
+     - the other four pairs stay byte-identical, unchanged; the check count stays 17;
+     - controls, run on temporary copies, each with its expected exit: the original contract passes; a status-only freeze passes; a changed pin assignment fails; a changed electrical limit fails; a status of any other value fails; a byte change to one of the other four pairs still fails.
+   - A value change to the contract is not authorized by this plan. One would need its own reviewed ruling and its own verifier change.
    - G4 then re-runs on every board, and every page it changes is redrawn and re-sent.
    - If any blocker stays open, the freeze does not happen in this plan. The row says which blocker holds it.
 
 - [ ] **Step 1:** Rows 1–3, each with its fetch record, rows updated, committed.
 - [ ] **Step 2:** Write the row-4 report for the controller.
-- [ ] **Step 3:** Row 5, or record what holds it.
+- [ ] **Step 3:** If row 5 can proceed: first the verifier amendment and its six controls, committed on their own, with `verify.sh` still printing 17 `PASS` on the unfrozen contract; then the freeze commit. Otherwise record what holds it.
 
 ### Task 13: Records
 
