@@ -168,9 +168,17 @@ does, and refuses any other mirror atom. Across every committed `.kicad_sch` (`d
 former and the present tool both run gives a different result; five the former tool stopped on now
 run (the approved `pultec-low-boost` page, two research sheets and the pedal's usb and expr_ref
 drafts). `tests/draught/net-strokes-mirror.test.ts` runs it on `pultec-low-boost` (one mirrored
-potentiometer); it fails on the former tool. **KiCad mirrors a field's justification with the
-part**, as it turns it with a rotation of 90 or 180 (`text_edits.py`): on U15, a field written
-`left` read right-justified on the render, so U15's `layout.py` writes its fields `right`.
+potentiometer); it fails on the former tool, and checks that RV1's two nets take the stroke of the
+wire at each mirrored pin. **KiCad mirrors a field's justification with a part mirrored left to
+right**, as it turns it with a rotation of 90 or 180: on U15 (rotation 0) and J8 (rotation 270), a
+field written `left` in the sheet read right-justified on the render. Until the Task 9a fix round
+U15's `layout.py` wrote `right` to get a left-justified page, and J8's wrote `left` and read right.
+**Controller ruling (the owner may override), the fix round:** `text_edits.py` now swaps the
+justification for a `(mirror y)` part too, so a layout states the justification the page shows (U15
+`left`, J8 `right`), and refuses a justified field on a part mirrored top to bottom at rotation 90 or
+270, which no page has measured. Both pages' bytes are unchanged; `tests/draught/text-edits-mirror-justify.test.ts`
+re-runs the tool on both committed pages and requires their bytes, and a control (U15's layout
+stating `right`) requires the tool to write `left`.
 
 **A page note** (the midi_i2c page's, Task 9a): `layout.py` may declare `NOTES`, each a list of lines
 and a point; `02-wire.py` adds each through `page.Wiring.note`, an akcli `add_text` op in op-list 02
@@ -1139,7 +1147,7 @@ copied beside the committed `sym-lib-table`.
 | wire groups with more than one stroke | 0 of 21 | 0 of 12 |
 | symbols (parts, power symbols, PWR_FLAGs) | 13 (13, 0, 0) | 13 (13, 0, 0) |
 | placed pins | 53 | 53 |
-| wires, total length | 74, 825.50 mm | 71, 1115.06 mm |
+| wires, total length | 74, 825.50 mm | 71, 1120.14 mm (read 1115.06 mm here until the Task 9a fix round: a figure taken before a last wire change; `verify.sh` on the committed sheet reports 1120.14) |
 | wire corners | 24 | 19 |
 | junctions | 8 | 24 |
 

@@ -2213,6 +2213,15 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Set by:** Drafted by the Task 8 implementer; adopted by the controller after the Task 8 review.
 - **Carried in:** `circuits/h7-platform/pedal/{codec-sup,codec,sai-iso,expr-ref,controls,fsw-led,usb,midi-i2c}.ts`, in each part's provenance; `circuits/h7-platform/pedal-parts.ts` (`SN74LVC3G34`); `circuits/h7-platform/pedal-board.ts` (`UNDRAWN_CONNECTOR_NETS`); tested in `tests/circuits/h7-pedal-*.test.ts`.
 
+### CR-PEDAL-SYMBOL-AO3400A-AMENDED
+
+**Amends [CR-PEDAL-SYMBOL-AO3400A](#cr-pedal-symbol-ao3400a): its cost list also covers the two LED switches, Q_LED1 and Q_LED2.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Amended** (h7 pedal pages plan, Task 9a fix round 1; written here rather than in the clauses of CR-PEDAL-SYMBOL-AO3400A, because the pedal's tests cite this file by line number): the ruling's **Costs if wrong** lists the five AO3400A N-MOSFETs Q_PFG, Q_PFR, Q_VDIS, Q_MSWD and Q_BYP and the AO3401A Q_MIDI. The two AO3400A LED switches of [CR-PEDAL-LED-MOSFET](#cr-pedal-led-mosfet), Q_LED1 and Q_LED2 (the fsw_led page's Q7 and Q8; `circuits/h7-platform/pedal/fsw-led.ts`), are on the same symbol and pin numbers, so a wrong reading swaps their gate and source on the footprint as well. Its **Decides** clause covers the part in general and is unchanged.
+- **Costs if wrong:** the cost list is incomplete for the review of the footprint numbering; no page or model changes.
+- **Set by:** the controller, at the Task 9a review (its Minor 5).
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1); the module's own allowance for the same VCAP1–VCAP2 error is a new controller ruling, [CR-MODULE-VCAP-ERC](#cr-module-vcap-erc), not this carried. The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.

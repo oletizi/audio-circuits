@@ -100,18 +100,40 @@ prop_re = re.compile(r'\(property "(Reference|Value)" "([^"]*)" \(at [-\d.]+ [-\
                      r'(\t+)\(effects \(font \(size 1\.27 1\.27\)\)( \(justify [a-z ]+\))?( hide)?\)')
 
 
-def plan_for(ref, x, y, rot):
+mirror_re = re.compile(r'\n\t\t\(at [-\d.]+ [-\d.]+ \d+\)(?: \(mirror ([xy])\))?\n')
+
+
+def mirror_of(text, ref):
+    """The instance's mirror as layout.PARTS spells it: "none", "x" or "y"."""
+    m = mirror_re.search(text)
+    if m is None:
+        raise SystemExit(f"text_edits: {ref}'s placement line is not in the expected form")
+    return m.group(1) or "none"
+
+
+def plan_for(ref, x, y, rot, mirror):
     """field -> (x_mm, y_mm, angle, justify or None)."""
-    px, py, prot, _ = layout.PARTS[ref]
-    if (round(x / MIL), round(y / MIL), rot) != (px, py, prot):
-        raise SystemExit(f"text_edits: {ref} is at {(x, y, rot)}, not layout.py's {layout.PARTS[ref]}")
+    px, py, prot, pmirror = layout.PARTS[ref]
+    if (round(x / MIL), round(y / MIL), rot, mirror) != (px, py, prot, pmirror):
+        raise SystemExit(f"text_edits: {ref} is at {(x, y, rot, mirror)}, not layout.py's {layout.PARTS[ref]}")
     if ref not in layout.FIELDS:
         raise SystemExit(f"text_edits: layout.FIELDS has no placement for {ref}")
     angle = rot % 180
     # KiCad applies a field's justification in the symbol's frame: on a part at rotation 90 or 180 a
     # field written "right" renders left-justified on the page, and the reverse (seen on the
-    # reset_boot page's SW2, rotation 90). FIELDS says how a field should READ, so swap it here.
-    flip = {"left": "right", "right": "left"} if rot in (90, 180) else {}
+    # reset_boot page's SW2, rotation 90). A part mirrored left to right, `(mirror y)`, swaps it once
+    # more (seen on the h7 pedal's usb U15, rotation 0, and midi_i2c J8, rotation 270: a field written
+    # "left" rendered right-justified; Task 9a). FIELDS says how a field should READ, so swap it here.
+    # A part mirrored top to bottom at rotation 0 or 180 keeps it (midi_i2c's Q9 and fsw_led's Q8,
+    # rotation 0, read as written). At rotation 90 or 270 a top-to-bottom mirror acts on the page's
+    # horizontal, which no page here has measured, so a justified field there is refused.
+    justified = any(just for _, _, just in layout.FIELDS[ref].values())
+    if mirror == "x" and rot in (90, 270) and justified:
+        raise SystemExit(f"text_edits: {ref} is mirrored top to bottom at rotation {rot}, and how KiCad then "
+                         "justifies a field has not been measured; centre its fields (justify None), or "
+                         "measure a render and extend this rule")
+    swap = (rot in (90, 180)) != (mirror == "y")
+    flip = {"left": "right", "right": "left"} if swap else {}
     return {f: (x + dx, y + dy, angle, flip.get(just, just)) for f, (dx, dy, just) in layout.FIELDS[ref].items()}
 
 
@@ -147,7 +169,7 @@ for start, end, lib_id, x, y, rot in blocks:
         raise SystemExit(f"text_edits: {ref} is on the sheet and not in layout.py")
     seen.add(ref)
     out.append(src[last:start])
-    out.append(edit_block(text, ref, plan_for(ref, x, y, rot)))
+    out.append(edit_block(text, ref, plan_for(ref, x, y, rot, mirror_of(text, ref))))
     last = end
 out.append(src[last:])
 src = "".join(out)

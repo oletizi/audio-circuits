@@ -84,13 +84,16 @@ PARTS = {
 # Offsets in mm, placed after renders: U16's west of its VCC pin, above its A pin (the first render
 # had them east of VCC, across C61's); RA's resistors 400 mil apart (at 300 each Value ran into the
 # next body). KiCad centres a multi-line note on its point vertically, so the note's point is set
-# below the GND row by half the note's height (the first render, at 4500, overlapped the row).
+# below the GND row by half the note's height (the first render, at 4500, overlapped the row). J8's
+# fields read right-justified, ending under its east end: J8 is mirrored left to right, and since the
+# Task 9a fix round `text_edits.py` swaps a mirrored part's justification so that what is written here
+# is what the page shows (until then this entry said "left", and the page read right-justified).
 FIELDS = {
     "R86": east(1.778),
     "R93": west(1.778),
     "R94": east(1.778),
     "TP6": fields((1.27, 3.81, "left"), (1.27, 6.35, "left")),
-    "J8": fields((7.62, 2.54, "left"), (7.62, 5.08, "left")),
+    "J8": fields((7.62, 2.54, "right"), (7.62, 5.08, "right")),
     "U16": fields((-8.89, -8.89, "right"), (-8.89, -6.35, "right")),
     "C61": east(2.794),
     "R87": east(1.778),

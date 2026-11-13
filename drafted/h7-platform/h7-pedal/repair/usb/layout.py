@@ -99,9 +99,10 @@ PARTS = {
 # render put its Value across VBUS); R80's above it, R81's below it (the two rows are 100 mil apart);
 # R85's west of it (east, its Value ran into C60's body);
 # U14's east of its GND drop under the D- loop (the first render had them across R84's VBUS drop and
-# U15's fields); U15's above its body, east of its VCC rise. U15 is mirrored left to right and KiCad
-# mirrors a field's justification with it (measured on the second render: a field written "left" read
-# right-justified), so its fields are written "right" to read left-justified, starting just east of VCC.
+# U15's fields); U15's above its body, left-justified, starting just east of its VCC rise. U15 is
+# mirrored left to right, and KiCad mirrors a field's justification with it (the second render: a field
+# written "left" in the file read right-justified); `text_edits.py` swaps it for such a part since the
+# Task 9a fix round, so the justification here is the one the page shows.
 FIELDS = {
     "J7": above(25.4, 22.86),
     "R80": above(4.445, 2.159),
@@ -111,7 +112,7 @@ FIELDS = {
     "R84": west(1.778),
     "R85": west(1.778),
     "C60": east(2.794),
-    "U15": fields((1.27, -13.97, "right"), (1.27, -11.43, "right")),
+    "U15": fields((1.27, -13.97, "left"), (1.27, -11.43, "left")),
     "C59": east(2.794),
     "R83": east(1.778),
     "R82": west(1.778),
