@@ -28,6 +28,7 @@ import { pfBlock } from "./pedal/pf.ts"
 import { prailBlock } from "./pedal/prail.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { ldoVmidBlock } from "./pedal/ldo-vmid.ts"
+import { codecSupBlock } from "./pedal/codec-sup.ts"
 import { contractNet } from "./pedal/nets.ts"
 
 // The project symbol library the pedal's project symbols draw from (spec C4); `make draw` reads this export.
@@ -43,6 +44,7 @@ const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["modsw", modswBlock, "Module load switch"],
   ["prail", prailBlock, "Pedal digital rail 3V3_P"],
   ["ldo_vmid", ldoVmidBlock, "5V_A and VMID"],
+  ["codec_sup", codecSupBlock, "Codec supply, clock and reset"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -85,8 +87,8 @@ export const SOCKET_ONLY_NETS: readonly string[] = [
  * more than one pin or whose loading block is already built.
  */
 export const AWAITING_NETS: readonly string[] = [
-  // Until Task 8 (codec_sup, codec): R_5VA's codec end (power.md:489).
-  "5V_A_CODEC",
+  // Until codec (Task 8): U_XO's output, which drives SCKI1 and SCKI2 (analog.md:383).
+  "XO_OUT",
 ]
 
 /** The pedal: every built block included, each port bound to the root net of its own name. */
@@ -125,6 +127,10 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   ldo_vmid_c_nr: "C27", ldo_vmid_c_ff: "C28", ldo_vmid_r_5va: "R21", ldo_vmid_r_vmid_top: "R22",
   ldo_vmid_r_vmid_bottom: "R23", ldo_vmid_c_vmid: "C29", ldo_vmid_r_vmid_in_l: "R24", ldo_vmid_r_vmid_in_r: "R25",
   ldo_vmid_u_vmid: "U5", ldo_vmid_c_vmid_hf: "C30", ldo_vmid_c_vmid_bulk: "C31", ldo_vmid_tp_5v_a: "TP5",
+  // codec_sup
+  codec_sup_u_cvdd: "U6", codec_sup_c_cvddin: "C32", codec_sup_c_cvddout: "C33", codec_sup_d_cvcl: "D6",
+  codec_sup_r_cbld: "R26", codec_sup_u_xo: "U7", codec_sup_c_xo: "C34", codec_sup_u_crst: "U8", codec_sup_c_crst: "C35",
+  codec_sup_r_crst: "R27", codec_sup_q_pfr: "Q5",
 }
 
 /** One page per block (design change C3). */
