@@ -1,6 +1,6 @@
 """The sdram page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 U3 (the project symbol `h7-platform:W9825G6KH`, design change C4) stands in the middle, its pins in

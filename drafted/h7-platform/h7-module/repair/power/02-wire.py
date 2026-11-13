@@ -1,6 +1,6 @@
 """Write op-list 02 for the power page: every wire, junction and no-connect, and one LOCAL label per port.
 
-Reads the pin points `../tools/pins.py` reports from the sheet after op-list 01, so a wire that
+Reads the pin points `draughting/pages/pins.py` reports from the sheet after op-list 01, so a wire that
 names a pin lands on akcli's own reading of it. Every wire is one straight segment and carries the
 net it is drawn for, written to a sidecar (`02-wire.nets.json`) that 05-text-edits.py reads to give
 each wire its net's stroke. A junction goes wherever three or more connections meet (wire ends and

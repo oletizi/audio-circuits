@@ -1,4 +1,4 @@
-"""Write op-list 02 for the interface page (`../tools/page.py`, `Wiring`).
+"""Write op-list 02 for the interface page (`draughting/pages/page.py`, `Wiring`).
 
 Every pad with a signal runs west by one stub to a LOCAL label of its port's name, which op-list 04
 (`tools/draught/hierarchical-labels.ts`) turns into the block's hierarchical label at the same
@@ -12,9 +12,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
+from title_block import DATE  # noqa: E402
 from layout import STUB, TEE, TITLE, Y_GND_BELOW  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -35,4 +37,4 @@ y_row = y1 + Y_GND_BELOW
 w.path("GND", "J1.20", (x1 - TEE, y1), (x1 - STUB, y1))
 w.label("GND", (x1 - STUB, y1), 180)
 w.path("GND", "J2.20", (x2 - TEE, y2), (x2 - TEE, y_row), (x1 - TEE, y_row), (x1 - TEE, y1))
-print(w.op_list(sys.argv[3], TITLE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))

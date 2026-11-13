@@ -1,34 +1,37 @@
 /**
- * THE h7-module ROOT'S `.kicad_pro`, written from the declared ERC allowances (ruling
- * CR-MODULE-VCAP-ERC; the table is `./erc-allowances.ts`) and nothing else: one `erc_exclusions`
- * entry per allowance, and no other setting, so KiCad's defaults apply everywhere else. The
- * project file is committed beside the root (the Task 5 controller ruling: the module's root carries
+ * A BOARD ROOT'S `.kicad_pro`, written from the board's declared ERC allowances (its
+ * `erc-allowances.ts`; the module's ruling CR-MODULE-VCAP-ERC) and nothing else: one `erc_exclusions`
+ * entry per allowance, and no other setting, so KiCad's defaults apply everywhere else. The project
+ * file is committed beside the root (the module's Task 5 controller ruling: the module's root carries
  * one, as the carrier page does), and it is what makes kicad-cli read the directory's
- * `sym-lib-table` (measured on the sdram page, `../../RECORD.md`).
+ * `sym-lib-table` (measured on the module's sdram page, `drafted/h7-platform/h7-module/RECORD.md`).
  *
  * HOW KICAD KEYS AN EXCLUSION, which this writes and `./root_erc.py` checks. An entry is
  * `[<serialised marker>, <comment>]`, the marker being
  *   `<type>|<x>|<y>|<main item uuid>|<aux item uuid>|<sheet path>|<main item sheet path>|<aux item sheet path>`
  * with x, y in KiCad schematic units (10 000 per mm) at the main item, and each sheet path
  * `/<root uuid>/<sheet uuid>`. That form is the one the pedals repository's v1 `h7-platform.kicad_pro`
- * carries for the same VCAP violation. MEASURED with kicad-cli 10.0.5 on the assembled root: an
- * entry built this way, main item U1 pin 81, is honoured (`kicad-cli sch erc` reports the violation
+ * carries for the same VCAP violation. MEASURED with kicad-cli 10.0.5 on the module's assembled root:
+ * an entry built this way, main item U1 pin 81, is honoured (`kicad-cli sch erc` reports the violation
  * with `"excluded": true` and no longer as an error); the same entry with the two pins swapped, or
  * with x one unit off, is not, and KiCad then reports the real violation as an error AND the
- * unmatched exclusion as a separate excluded marker. So the order is the allowance's own (pin 81
- * first, as KiCad lists the items), and the position is the main pin's point.
+ * unmatched exclusion as a separate excluded marker. So the order is the allowance's own (the main
+ * pin first, as KiCad lists the items), and the position is the main pin's point.
  *
  * Every value comes from a committed file, never from an ERC run: the root and sheet uuids from the
  * root sheet, the pin uuids from the block sheet's placed symbol, and the main pin's point from
- * `repair/<block>/pins.json` (mil; 254 schematic units per mil). The allowances are held to the
- * model first (`checkErcAllowances`), exactly as `verify.sh` holds them.
+ * `<board-dir>/repair/<block>/pins.json` (mil; 254 schematic units per mil). The allowances are held
+ * to the model first (`checkErcAllowances`), exactly as `verify.sh` holds them.
  *
- * usage: bun kicad-pro.ts <project-dir> <board>    (from the repository root; writes the JSON to stdout)
+ * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
+ *
+ * usage: bun kicad-pro.ts <board-dir> <project-dir>    (from the repository root; writes the JSON to stdout)
+ *   <project-dir> holds the root and block sheets (the board directory itself, or a replay's work directory)
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
-import { child, children, parseSexpr, type SNode } from "../../../../../lib/kicad/sexpr.ts"
+import { child, children, parseSexpr, type SNode } from "../../lib/kicad/sexpr.ts"
+import { boardFromArgs, type PageBoard } from "./board.ts"
 import { checkErcAllowances, ercAllowanceTable, type ErcAllowance } from "./erc-allowances.ts"
 
 const UNITS_PER_MIL = 254
@@ -97,22 +100,24 @@ export function exclusionKey(entry: ErcAllowance, projectDir: string, board: str
   ].join("|")
 }
 
-export function kicadProject(projectDir: string, board: string, repairDir: string): string {
-  const table = ercAllowanceTable()
-  checkErcAllowances(table, h7Module())
+export async function kicadProject(board: PageBoard, projectDir: string): Promise<string> {
+  const table = await ercAllowanceTable(board)
+  checkErcAllowances(table, board)
   const exclusions = table.map((entry) => [
-    exclusionKey(entry, projectDir, board, repairDir),
+    exclusionKey(entry, projectDir, board.name, board.repairDir),
     `${entry.ruling}: ${entry.type} on ${entry.sheet} between ${entry.pins.map((p) => `${p.designator} pin ${p.pin}`).join(" and ")} ` +
       `(net ${entry.net}; the installed symbol types both ${entry.symbolPinType}). Declared in repair/tools/erc-allowances.ts.`,
   ])
-  const project = { erc: { erc_exclusions: exclusions }, meta: { filename: `${board}.kicad_pro`, version: 3 } }
+  const project = { erc: { erc_exclusions: exclusions }, meta: { filename: `${board.name}.kicad_pro`, version: 3 } }
   return JSON.stringify(project, null, 2) + "\n"
 }
 
 if (import.meta.main) {
-  const [projectDir, board] = process.argv.slice(2)
-  if (projectDir === undefined || board === undefined) {
-    throw new Error("usage: bun kicad-pro.ts <project-dir> <board> - the directory holding the root and block sheets, and the board name")
+  const usage = "bun kicad-pro.ts <board-dir> <project-dir>"
+  const { board, rest } = await boardFromArgs(process.argv.slice(2), usage)
+  const projectDir = rest[0]
+  if (projectDir === undefined) {
+    throw new Error(`usage: ${usage} - the directory holding the root and block sheets is required`)
   }
-  process.stdout.write(kicadProject(projectDir, board, join(import.meta.dir, "..")))
+  process.stdout.write(await kicadProject(board, projectDir))
 }

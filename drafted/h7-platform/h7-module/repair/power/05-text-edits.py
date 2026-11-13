@@ -1,7 +1,7 @@
 """The power page's direct text edits - what akcli 0.22.0 has no operation for.
 
 1. WIRE STROKE. akcli's add_wire writes `(stroke (width 0) (type default))`. Each wire takes the
-   stroke copperhead drew its net in on the draft (`../tools/net_strokes.py`), found through the
+   stroke copperhead drew its net in on the draft (`draughting/pages/net_strokes.py`), found through the
    net 02-wire.py drew it for (its sidecar). Refuses a wire the sidecar does not name, and a net the
    draft gives no stroke.
 2. FIELDS. Every part's Reference and Value, as literals placed by a rule on layout.py's

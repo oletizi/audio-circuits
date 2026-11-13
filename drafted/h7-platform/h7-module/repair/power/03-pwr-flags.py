@@ -20,7 +20,7 @@ Power output are connected" on /a/; one flag in a alone gave 0 violations. On a 
 with a second flag on its own GND row the Task 7a review measured the same error on one sheet. So
 each module net carries at most one PWR_FLAG across the hierarchy, at the home declared in
 `../tools/pwr-flag-homes.ts`: ruling CR-MODULE-PWR-FLAGS (docs/h7-platform/decisions.md). GND's
-single flag is this one; VIN_BUCK is private to this page. `../tools/verify.sh` fails a block page
+single flag is this one; VIN_BUCK is private to this page. `draughting/pages/verify.sh` fails a block page
 carrying a flag on a shared net whose flag lives elsewhere, and the one-block root supplies the
 flag on the stub when it does.
 

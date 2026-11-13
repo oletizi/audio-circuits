@@ -10,8 +10,20 @@ The project is drawn under design change C3 (`TOOLING.md`, "Multi-page drawing")
 block, each block's ports drawn as hierarchical labels, and a root sheet joining them (Task 7e).
 `kicad-cli`'s export of that root is the evidence of how the pages connect
 (`registerDraftedProjectTests` in `tests/circuits/h7-module.test.ts`, and
-`repair/tools/verify-root.sh`). Each block page is also checked against its own block of the model
-(`repair/tools/verify.sh`).
+`draughting/pages/verify-root.sh`). Each block page is also checked against its own block of the model
+(`draughting/pages/verify.sh`).
+
+**The page tools are in `draughting/pages/` since the H7 pedal plan's Task 4**, which moved them
+from `repair/tools/` so that every multi-page board uses one copy (`TOOLING.md`, design change C3).
+Each now takes this board's drafted directory first, which is where it reads the model (through
+`boards/h7-module/perfboard.json`) and the module's tables: `sh draughting/pages/verify.sh
+drafted/h7-platform/h7-module <block> <sheet>`, `sh draughting/pages/verify-root.sh
+drafted/h7-platform/h7-module`. A command written below in the older form, `verify.sh <block> <sheet>`,
+is the same check. `repair/tools/` keeps what is the module's own: the three tables
+(`pwr-flag-homes.ts`, `cross-page-drivers.ts`, `erc-allowances.ts`), the title-block date
+(`title_block.py`), and the controls (`erc-control.sh`, `root-control.sh`, `port-label-control.sh`),
+which name its pages, nets and pins. The move changed no page byte: the replay reached every sha256
+below, and every control came out as stated.
 
 **A page here is UNREVIEWED until the owner records a verdict on its sha256; each page's status below says which it is.** A verdict is bound to the sha256
 in the table below; `docs/schematic/verdicts.md` is where it is recorded.
@@ -87,7 +99,7 @@ What `make draw` printed, beside the pages:
   `"netlist"`, so the pre-draft partition check did not run against a committed export. *"There is
   no schematic to export a netlist from yet, and none was derived from the model to stand in: a
   check that compares the model with itself cannot fail."* The binding check is each page's own
-  `kicad-cli` export against the model, which `repair/tools/verify.sh` runs per block and the root's
+  `kicad-cli` export against the model, which `draughting/pages/verify.sh` runs per block and the root's
   export runs for the project. **Since Task 7e the board declares the root's export as its
   `netlist`**, so `make draw` now runs the per-block partition check against it and prints no
   such block; `repair/replay.sh` requires its absence, and the drafts are the same bytes.
@@ -119,14 +131,14 @@ moved or fired, on every page):
 ## What the root does about PWR_FLAGs, cross-page drivers and the VCAP allowance (Task 7e)
 
 Until Task 7e this section said what the root *must* do; each requirement is below with what was
-done and the evidence. `repair/tools/verify-root.sh` runs every check on the committed project, and
+done and the evidence. `draughting/pages/verify-root.sh` runs every check on the committed project, and
 `repair/tools/root-control.sh` holds the controls (ten; each must come out as stated). Since Task 7e fix round 1 `erc-control.sh` runs them as its control 18.
 
 **PWR_FLAGs.** Ruling [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags):
 each module net carries at most one PWR_FLAG across the hierarchy, at the home
 `repair/tools/pwr-flag-homes.ts` declares.
 
-- **The root-held flags are placed:** `repair/tools/root-flags.ts` writes `repair/root/02-pwr-flags.json`,
+- **The root-held flags are placed:** `draughting/pages/root-flags.ts` writes `repair/root/02-pwr-flags.json`,
   one `place_pwr_flag` on each net the table homes on `root` (3V3_D, VREF_A, VSSA). None goes on GND,
   whose flag is the power page's.
   - Until Task 7e fix round 1 each flag stood at its net's FIRST root stub label. All three were mcu's.
@@ -134,9 +146,9 @@ each module net carries at most one PWR_FLAG across the hierarchy, at the home
   - With pins 100 mil apart, a flag drawn toward a neighbouring stub put its text on that stub's label. That was measured on the fix round's first render (CR-MODULE-ROOT-FITS-LETTER).
   - Placements: 3V3_D on mcu's west edge, top; VREF_A on decoupling's west edge, bottom; VSSA on mcu's east edge, bottom.
 - **Exactly one per net, across the whole hierarchy, is checked against the table:**
-  `repair/tools/hierarchy_flag_probe.py` renames every flag of every sheet the root names to
+  `draughting/pages/hierarchy_flag_probe.py` renames every flag of every sheet the root names to
   `FLGPROBE<k>` in a scratch copy, `kicad-cli` exports the probe root, and
-  `repair/tools/hierarchy-flags.ts` maps each flag's net to its MODULE net through the real pins on it
+  `draughting/pages/hierarchy-flags.ts` maps each flag's net to its MODULE net through the real pins on it
   (never a net name). On the committed project: 5 flags - 3V3_D, VREF_A, VSSA on the root,
   `power_VIN_BUCK` and GND on power - exactly one on each of the 5 declared nets, each at its home.
   Controls (`root-control.sh`): a second 3V3_D flag on the decoupling page fails, *"3V3_D carries 2
@@ -153,7 +165,7 @@ each module net carries at most one PWR_FLAG across the hierarchy, at the home
   *"Warning: schematic has annotation errors, please use the schematic editor to fix them"* (on
   stdout); the same root without flags printed nothing, and the two exports were identical apart from
   their `(source)` line (an export leaves out `#` references). ERC reported nothing for it. Fixed on
-  the root, which is not approved: `repair/tools/root_flag_refs.py` renames the root's flags `#FLG01`
+  the root, which is not approved: `draughting/pages/root_flag_refs.py` renames the root's flags `#FLG01`
   to `#FLG03` (`#FLG` is KiCad's own PWR_FLAG prefix). After it, the export prints no warning and is
   otherwise the same. Checked on every run: the probe fails on any `#` reference used twice across
   the hierarchy, and `verify-root.sh` on an annotation warning. Control 5: the root's `#FLG01` renamed
@@ -169,7 +181,7 @@ its real driver:
 - **no `pin_not_driven` anywhere** in the root's ERC, every sheet together (and `root_erc.py` fails
   on any error);
 - **each driving pin is on its net with every pin the model puts there**, in the root's export:
-  `repair/tools/root-drivers.ts` - FLASH_CLK by U1.28 (2 pins), the 22 SDRAM entries by U1's FMC pins,
+  `draughting/pages/root-drivers.ts` - FLASH_CLK by U1.28 (2 pins), the 22 SDRAM entries by U1's FMC pins,
   NRST by U5.2 (7 pins), BOOT0 by SW2.1 (5 pins). Control 9: the root stub of reset_boot's NRST pin
   cut fails it, *"the driving pin U5.2's exported net /NRST_CUT lacks U1.31, J3.10, TP8.1"*.
 - **What the stand-in could not catch, the real root did.** A passive stand-in raises no
@@ -179,7 +191,7 @@ its real driver:
 **The VCAP allowance.** Ruling [CR-MODULE-VCAP-ERC](../../../docs/h7-platform/decisions.md#cr-module-vcap-erc):
 
 - **The root's `.kicad_pro` carries the one exclusion and no other:** `h7-module.kicad_pro`, written by
-  `repair/tools/kicad-pro.ts` from `erc-allowances.ts` (held to the model first), one
+  `draughting/pages/kicad-pro.ts` from `erc-allowances.ts` (held to the model first), one
   `erc_exclusions` entry: `pin_to_pin`, U1 pin 81 (main item) and pin 125, on `/mcu/`, each value
   taken from a committed file (the root's and mcu sheet's uuids, U1's pin uuids, pin 81's point
   from `repair/mcu/pins.json`). The serialisation is the one the pedals repository's v1
@@ -188,7 +200,7 @@ its real driver:
   the entry, the violation is reported with `"excluded": true` (and severity warning) and no longer
   as an error; with the two pins swapped, or x one unit off, it is not honoured, and KiCad reports the
   real violation as an error AND the unmatched exclusion as a separate excluded marker.
-- **Checked the same way as `verify.sh`:** `repair/tools/root_erc.py` reads the report, and an
+- **Checked the same way as `verify.sh`:** `draughting/pages/root_erc.py` reads the report, and an
   excluded violation passes only if it matches a declared allowance exactly (sheet, type, the two
   (designator, pin) pairs, `erc_sheets.py`'s matching); each allowance must be matched exactly once,
   the `.kicad_pro` must carry as many exclusions as there are allowances, and any other error
@@ -200,7 +212,7 @@ its real driver:
 **Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `3590b959500bd1a3d359915094601450f5437ce071a644dad084aa20e98a99ed` (Task 7e fix round 1; it was
 `fd7baeabadac2ed81049b24484c8ee53c27f82fbcb5efb569a1328726fef1d86` at Task 7e, off the paper and with one ERC error).
 Render: `h7-module.svg` beside it, and a 150 dpi PNG of the root page by
-`sh repair/tools/render.sh h7-module.kicad_sch <out-dir> root`. Its ERC has 0 errors apart from the one
+`sh draughting/pages/render.sh h7-module.kicad_sch <out-dir> root`. Its ERC has 0 errors apart from the one
 VCAP exclusion, and every sheet symbol lies on US Letter's paper.
 
 ### How it was assembled
@@ -212,11 +224,11 @@ VCAP exclusion, and every sheet symbol lies on US Letter's paper.
 2. `assemble-root.ts ops`, `01-assemble.json`: one sheet per block, placed by
    `tools/draught/root-arrangement.ts` to fit US Letter (CR-MODULE-ROOT-FITS-LETTER), each port a sheet
    pin wired to a 200 mil stub ending in a LOCAL label naming the parent net.
-3. `repair/tools/root-flags.ts`, `02-pwr-flags.json`: the three root-held PWR_FLAGs.
-4. `repair/tools/root_flag_refs.py`: their references `#FLG01` to `#FLG03`.
+3. `draughting/pages/root-flags.ts`, `02-pwr-flags.json`: the three root-held PWR_FLAGs.
+4. `draughting/pages/root_flag_refs.py`: their references `#FLG01` to `#FLG03`.
 5. `draughting/repair/root_pin_justify.py` (Task 7e fix round 1; it was `repair/tools/` until the final review moved it): every sheet pin's name justified into its
    box, west-edge pins left and east-edge pins right, as KiCad writes them (akcli writes no justify).
-6. `repair/tools/kicad-pro.ts`: `h7-module.kicad_pro`, unchanged by the fix round.
+6. `draughting/pages/kicad-pro.ts`: `h7-module.kicad_pro`, unchanged by the fix round.
 
 The committed `sym-lib-table` (C4) was already here; with the `.kicad_pro` beside the root, kicad-cli
 reads it, and the root's ERC carries no `lib_symbol_issues` for `h7-platform` (a scratch copy without
@@ -240,7 +252,7 @@ the library in reach reports it once).
 
 ### Measurements
 
-From `repair/tools/verify-root.sh` (kicad-cli 10.0.5). None of these is a judgement of the page.
+From `draughting/pages/verify-root.sh` (kicad-cli 10.0.5). None of these is a judgement of the page.
 
 | measure | root |
 | --- | --- |
@@ -260,7 +272,7 @@ From `repair/tools/verify-root.sh` (kicad-cli 10.0.5). None of these is a judgem
 | true crossings, T-meetings, orphan junctions, tees without a dot | 0, 0, 0, 0 |
 | paper fit (US Letter), `paper_fit.py` | fits: yes (content x 25.400 to 232.410 mm, y 20.320 to 177.800 mm). At Task 7e it did not fit: overshoot south 779.103 mm |
 | sheet symbols on the paper, `root_sheets_fit.py` | 12 of 12, each inside the inner frame and clear of the title block. At Task 7e, 2 of 12 |
-| drawn text, from the SVG's stroked text (`repair/tools/svg_stroked_text.py`, reported by `verify-root.sh`, never judged) | no two text boxes overlap. Four sheet names (power, qspi, id_strap, decoupling) dip into their box's top line with a descender. Before the pin justification and the flag rule, 50 pairs overlapped |
+| drawn text, from the SVG's stroked text (`draughting/pages/svg_stroked_text.py`, reported by `verify-root.sh`, never judged) | no two text boxes overlap. Four sheet names (power, qspi, id_strap, decoupling) dip into their box's top line with a descender. Before the pin justification and the flag rule, 50 pairs overlapped |
 
 **The root's ERC error at Task 7e, and what cleared it.** NRST joins J3 (swd) pin 10, typed open
 collector by `Connector:Conn_ARM_JTAG_SWD_10`, and U5 (reset_boot) pin 2. At Task 7e, U5 pin 2 was
@@ -277,7 +289,7 @@ row, pins 200 mil apart) made the mcu sheet 462.28 mm tall and reached y 982.98 
 boxes lay off the frame (`root_sheets_fit.py` on that root). Since Task 7e fix round 1 the
 arrangement fits (CR-MODULE-ROOT-FITS-LETTER), and `verify-root.sh` fails on a root that does not:
 `paper_fit.py` must report "fits: yes", and `root_sheets_fit.py` must find every sheet box on the
-paper. `repair/tools/render.sh` now takes a page argument, so the root page's PNG is made by
+paper. `draughting/pages/render.sh` now takes a page argument, so the root page's PNG is made by
 `render.sh h7-module.kicad_sch <out-dir> root` (kicad-cli's `--pages 1`).
 
 ### What the page shows, as observations
@@ -292,12 +304,12 @@ paper. `repair/tools/render.sh` now takes a page argument, so the root page's PN
 - PWR_FLAGs stand on the stub labels of 3V3_D (mcu, west edge, the top pin, flag above), VREF_A
   (decoupling, the bottom pin, flag below) and VSSA (mcu, east edge, the bottom pin, flag below).
 - The title block reads `Sheet: /`, `File: h7-module.kicad_sch`, `Size: USLetter`, `Id: 1/13`, with
-  no title. The sub-sheets' page numbers, which the project's page list and each page's title block ("Id: N/13") show, are printed by `repair/tools/root_pages.py` and reported by `verify-root.sh`.
+  no title. The sub-sheets' page numbers, which the project's page list and each page's title block ("Id: N/13") show, are printed by `draughting/pages/root_pages.py` and reported by `verify-root.sh`.
 
 ## power: 3.3 V buck and input network
 
 **Status: REVIEWED, 2026-11-12.** The owner's verdict, verbatim: *"approved"* (`docs/schematic/verdicts.md`). sha256 `906f454928df01a8c32826a277f041e2a3151fef8ac69a967f14f7abf8b7875f`.
-Render: `power.svg` beside it (PDF and PNG from `repair/tools/render.sh`).
+Render: `power.svg` beside it (PDF and PNG from `draughting/pages/render.sh`).
 
 The block: `circuits/h7-platform/module/power.ts`, 19 parts (L1, C26 to C35, R3 to R8, U2), ports
 VIN_MOD, 3V3_D and GND.
@@ -348,7 +360,7 @@ VIN_MOD, 3V3_D and GND.
 
 ### Measurements, before (the draft) and after (this page)
 
-From `repair/tools/verify.sh power <sheet>` on each. None of these is a judgement of the page.
+From `draughting/pages/verify.sh power <sheet>` on each. None of these is a judgement of the page.
 
 **Since issue 32, `verify.sh` fails on ERC**, not only reports it. It exits non-zero when, under
 the one-block root:
@@ -371,7 +383,7 @@ hierarchical labels are expected of a sheet with no parent.
   whose GND and 3V3_D stubs carry the flags.
 
 `verify.sh` also fails, before ERC, when the page carries a PWR_FLAG on a shared net whose single
-flag lives elsewhere (`repair/tools/flag-check.ts`, on the `kicad-cli` export of a probe copy whose
+flag lives elsewhere (`draughting/pages/flag-check.ts`, on the `kicad-cli` export of a probe copy whose
 flags `flag_probe.py` renames so the export lists them; the export leaves out `#` references). The
 one-block root puts a flag on a stub exactly when that net's flag lives off the block under check;
 for this page that is 3V3_D's stub, and GND's stub carries none.
@@ -430,14 +442,14 @@ The pages after power are repaired by shared tools, each block's directory holdi
 placement (`repair/<block>/layout.py`) and wiring (`repair/<block>/02-wire.py`). The steps are the
 power page's, in the same order, and `repair/replay.sh` runs them for each block (`repair_block`):
 
-1. `tools/ports.ts <block>`: the block's ports and the pins each reaches, from `drawingPages()`
+1. `draughting/pages/ports.ts <block>`: the block's ports and the pins each reaches, from `drawingPages()`
    (`ports.json`). A port reaching one pin is not in the block's intent, so this is where the wiring
    learns which net such a pin is on.
-2. `tools/net_strokes.py` on the draft (`net_strokes.json`), as for power.
-3. `tools/place.py`: delete every copperhead wire, label, junction and no-connect; place and orient
+2. `draughting/pages/net_strokes.py` on the draft (`net_strokes.json`), as for power.
+3. `draughting/pages/place.py`: delete every copperhead wire, label, junction and no-connect; place and orient
    every part to `layout.py` (`01-place.json`).
-4. `tools/pins.py` on the placed sheet (`pins.json`), as for power.
-5. `<block>/02-wire.py`, through `tools/page.py`'s `Wiring` (`02-wire.json`, `02-wire.nets.json`):
+4. `draughting/pages/pins.py` on the placed sheet (`pins.json`), as for power.
+5. `<block>/02-wire.py`, through `draughting/pages/page.py`'s `Wiring` (`02-wire.json`, `02-wire.nets.json`):
    every wire one straight segment; a junction wherever three or more connections meet; the
    intent's no-connects; one local label per port net; the title block. It refuses a segment that is
    not axis-aligned or has zero length, a segment ending inside another, a pin on a wire's interior,
@@ -445,7 +457,7 @@ power page's, in the same order, and `repair/replay.sh` runs them for each block
    `ports.json`), a label not on exactly one wire end, and labels that are not one per port.
 6. `<block>/03-pwr-flags.py`, only where a block has one (none of the pages below does).
 7. `tools/draught/hierarchical-labels.ts ops`, then its `check` (`04-hierarchical-labels.json`).
-8. `tools/text_edits.py`: wire strokes, every part's Reference and Value from `layout.py`'s
+8. `draughting/pages/text_edits.py`: wire strokes, every part's Reference and Value from `layout.py`'s
    `FIELDS`, the group rectangle. A net the draft drew no wire for takes the stroke `layout.py`'s
    `UNDRAWN_STROKES` names, with its reason there.
 
@@ -456,7 +468,7 @@ single flags live on the power page (GND) and the root (3V3_D, VREF_A), per
 [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags); the one-block
 root supplies them on its stubs when `verify.sh` runs ERC.
 
-The measurements in each table are `repair/tools/verify.sh <block> <sheet>` on the page, and the same
+The measurements in each table are `draughting/pages/verify.sh <block> <sheet>` on the page, and the same
 steps run without stopping on the draft (a draft fails verify.sh's ERC, as a draft is not a page).
 None of these is a judgement of a page.
 

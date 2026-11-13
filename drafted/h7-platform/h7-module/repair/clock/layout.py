@@ -1,6 +1,6 @@
 """The clock page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 The page reads west to east along the HSE row: HSE_IN's label on the west edge, C44 hanging from the

@@ -13,6 +13,10 @@
 # `akcli draw` must report APPLIED (its dry run also exits 0 having written nothing - TOOLING.md
 # step 4), and each repaired block sheet must pass hierarchical-labels.ts's post-condition.
 #
+# The board-independent tools it runs are in draughting/pages/ (moved there from repair/tools/ by
+# the H7 pedal plan's Task 4), each given this board's drafted directory where it reads the
+# board's model or tables; repair/tools/ keeps the module's own tables and title_block.py.
+#
 # usage: bash replay.sh <new-or-empty-work-dir>
 set -eu
 set -o pipefail
@@ -20,6 +24,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 drafted="$(cd "$here/.." && pwd)"
 root="$(cd "$here/../../../.." && pwd)"
 akcli="$root/draughting/venv-akcli/bin/akcli"
+pages="$root/draughting/pages"
 module="$root/circuits/h7-platform/module-board.ts"
 board=h7-module
 
@@ -119,12 +124,12 @@ echo "every block's intent matches its committed copy"
 # 2. power: place, wire, flag, hierarchical labels, text edits.
 b=power
 mkdir -p "$work/repair/$b"
-python3 "$here/tools/net_strokes.py" "$work/$b.kicad_sch" > "$work/repair/$b/net_strokes.json" || fail "net_strokes.py $b failed"
+python3 "$pages/net_strokes.py" "$work/$b.kicad_sch" > "$work/repair/$b/net_strokes.json" || fail "net_strokes.py $b failed"
 same "$b/net_strokes.json"
 python3 "$here/$b/01-place.py" "$work/$b.kicad_sch" > "$work/repair/$b/01-place.json" || fail "01-place.py $b failed"
 same "$b/01-place.json"
 apply "$b.kicad_sch" "$b/01-place.json"
-python3 "$here/tools/pins.py" "$work/$b.kicad_sch" > "$work/repair/$b/pins.json" || fail "pins.py $b failed"
+python3 "$pages/pins.py" "$work/$b.kicad_sch" > "$work/repair/$b/pins.json" || fail "pins.py $b failed"
 same "$b/pins.json"
 python3 "$here/$b/02-wire.py" "$work/repair/$b/pins.json" "$b.kicad_sch" "$work/repair/$b/02-wire.nets.json" \
   > "$work/repair/$b/02-wire.json" || fail "02-wire.py $b failed"
@@ -147,21 +152,21 @@ check "$b.kicad_sch" "01 to 05" "$PAGE_POWER"
 cmp -s "$work/$b.kicad_sch" "$drafted/$b.kicad_sch" || fail "the replayed $b.kicad_sch differs from the committed $drafted/$b.kicad_sch"
 echo "the replayed $b.kicad_sch is byte-identical to the committed sheet"
 
-# 2b. The blocks repaired in Task 7b, each by the shared tools (tools/page.py) and its own layout.py
+# 2b. The blocks repaired in Task 7b, each by the shared tools (draughting/pages/page.py) and its own layout.py
 #     and 02-wire.py: ports, strokes, place, pins, wire, any private PWR_FLAGs, hierarchical labels,
 #     text edits. The ports file is generated first because layout.py may read it.
 repair_block() {
   b="$1"
   want="$2"
   mkdir -p "$work/repair/$b"
-  (cd "$root" && bun "$here/tools/ports.ts" "$b") > "$work/repair/$b/ports.json" || fail "ports.ts $b failed"
+  (cd "$root" && bun "$pages/ports.ts" "$drafted" "$b") > "$work/repair/$b/ports.json" || fail "ports.ts $b failed"
   same "$b/ports.json"
-  python3 "$here/tools/net_strokes.py" "$work/$b.kicad_sch" > "$work/repair/$b/net_strokes.json" || fail "net_strokes.py $b failed"
+  python3 "$pages/net_strokes.py" "$work/$b.kicad_sch" > "$work/repair/$b/net_strokes.json" || fail "net_strokes.py $b failed"
   same "$b/net_strokes.json"
-  python3 "$here/tools/place.py" "$here/$b" "$work/$b.kicad_sch" > "$work/repair/$b/01-place.json" || fail "place.py $b failed"
+  python3 "$pages/place.py" "$here/$b" "$work/$b.kicad_sch" > "$work/repair/$b/01-place.json" || fail "place.py $b failed"
   same "$b/01-place.json"
   apply "$b.kicad_sch" "$b/01-place.json"
-  python3 "$here/tools/pins.py" "$work/$b.kicad_sch" > "$work/repair/$b/pins.json" || fail "pins.py $b failed"
+  python3 "$pages/pins.py" "$work/$b.kicad_sch" > "$work/repair/$b/pins.json" || fail "pins.py $b failed"
   same "$b/pins.json"
   python3 "$here/$b/02-wire.py" "$work/repair/$b/pins.json" "$work/repair/$b/ports.json" "$b.kicad_sch" \
     "$work/repair/$b/02-wire.nets.json" > "$work/repair/$b/02-wire.json" || fail "02-wire.py $b failed"
@@ -180,7 +185,7 @@ repair_block() {
   apply "$b.kicad_sch" "$b/04-hierarchical-labels.json"
   (cd "$root" && bun tools/draught/hierarchical-labels.ts check "$module" "$b" "$work/$b.kicad_sch") \
     || fail "block $b fails the hierarchical-label post-condition after its op-list"
-  python3 "$here/tools/text_edits.py" "$here/$b" "$work/$b.kicad_sch" "$work/repair/$b/02-wire.nets.json" \
+  python3 "$pages/text_edits.py" "$here/$b" "$work/$b.kicad_sch" "$work/repair/$b/02-wire.nets.json" \
     "$work/repair/$b/net_strokes.json" || fail "text_edits.py $b failed"
   check "$b.kicad_sch" "01 to 05" "$want"
   cmp -s "$work/$b.kicad_sch" "$drafted/$b.kicad_sch" || fail "the replayed $b.kicad_sch differs from the committed $drafted/$b.kicad_sch"
@@ -212,7 +217,7 @@ echo "the committed sym-lib-table matches the one this replay makes"
 
 # 4. The root (Task 7e): assemble-root.ts's starting text and op-list (its arrangement fits US Letter
 #    since Task 7e fix round 1, ruling CR-MODULE-ROOT-FITS-LETTER), the root-held PWR_FLAGs
-#    (root-flags.ts, ruling CR-MODULE-PWR-FLAGS), their references renamed #FLG0<n> (root_flag_refs.py),
+#    (draughting/pages/root-flags.ts, ruling CR-MODULE-PWR-FLAGS), their references renamed #FLG0<n> (root_flag_refs.py),
 #    every sheet pin's name justified into its box (draughting/repair/root_pin_justify.py; akcli
 #    writes no justify),
 #    and the .kicad_pro with its one ERC exclusion (kicad-pro.ts, ruling CR-MODULE-VCAP-ERC). Every
@@ -224,15 +229,15 @@ check "$board.kicad_sch" "assemble-root blank" "$ROOT_BLANK"
   || fail "assemble-root.ts ops failed"
 same root/01-assemble.json
 apply "$board.kicad_sch" root/01-assemble.json
-(cd "$root" && bun "$here/tools/root-flags.ts" "$board") > "$work/repair/root/02-pwr-flags.json" || fail "root-flags.ts failed"
+(cd "$root" && bun "$pages/root-flags.ts" "$drafted") > "$work/repair/root/02-pwr-flags.json" || fail "root-flags.ts failed"
 same root/02-pwr-flags.json
 apply "$board.kicad_sch" root/02-pwr-flags.json
-python3 "$here/tools/root_flag_refs.py" "$work/$board.kicad_sch" 3 || fail "root_flag_refs.py failed"
+python3 "$pages/root_flag_refs.py" "$work/$board.kicad_sch" 3 || fail "root_flag_refs.py failed"
 python3 "$root/draughting/repair/root_pin_justify.py" "$work/$board.kicad_sch" "$work/repair/root/01-assemble.json" || fail "root_pin_justify.py failed"
 check "$board.kicad_sch" "root, blank to step 5" "$ROOT"
 cmp -s "$work/$board.kicad_sch" "$drafted/$board.kicad_sch" || fail "the replayed $board.kicad_sch differs from the committed $drafted/$board.kicad_sch"
 echo "the replayed $board.kicad_sch is byte-identical to the committed root"
-(cd "$root" && bun "$here/tools/kicad-pro.ts" "$work" "$board") > "$work/$board.kicad_pro" || fail "kicad-pro.ts failed"
+(cd "$root" && bun "$pages/kicad-pro.ts" "$drafted" "$work") > "$work/$board.kicad_pro" || fail "kicad-pro.ts failed"
 check "$board.kicad_pro" "kicad-pro.ts" "$ROOT_PRO"
 cmp -s "$work/$board.kicad_pro" "$drafted/$board.kicad_pro" || fail "the replayed $board.kicad_pro differs from the committed one"
 echo "the replayed $board.kicad_pro is byte-identical to the committed one"

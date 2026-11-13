@@ -12,7 +12,7 @@ import pathlib
 import subprocess
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[5]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 AKCLI = ROOT / "draughting" / "venv-akcli" / "bin" / "akcli"
 sys.path.insert(0, str(ROOT / "draughting" / "measure"))
 import kicad_sheet  # noqa: E402

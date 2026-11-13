@@ -1,4 +1,4 @@
-"""Write op-list 02 for the reset_boot page (`../tools/page.py`, `Wiring`).
+"""Write op-list 02 for the reset_boot page (`draughting/pages/page.py`, `Wiring`).
 
 One 3V3_D row on top and one GND row at the bottom, each from its label on the west edge, with
 every part that returns to them dropping onto them. The BOOT0 row runs from SW2's pin 1 east past
@@ -11,9 +11,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
+from title_block import DATE  # noqa: E402
 from layout import TITLE, X_EAST, X_WEST, Y_3V3, Y_GND, Y_SIG  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -43,4 +45,4 @@ w.path("NRST", "U5.2", *[(w.x(t), Y_SIG) for t in nrst], (X_EAST, Y_SIG))
 for t in nrst:
     w.path("NRST", (w.x(t), Y_SIG), t)
 w.label("NRST", (X_EAST, Y_SIG), 0)
-print(w.op_list(sys.argv[3], TITLE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))

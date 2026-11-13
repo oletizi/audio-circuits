@@ -1,5 +1,7 @@
 #!/bin/sh
-# Render one h7-module sheet (copied from the h7-carrier's repair/render.sh) to PDF, SVG and a 150 dpi PNG in <out-dir>. Both sides of a
+# Render one sheet of a board (first copied from the h7-carrier's repair/render.sh for the h7-module;
+# moved here from drafted/h7-platform/h7-module/repair/tools/ by the H7 pedal plan's Task 4; it needs
+# no board argument) to PDF, SVG and a 150 dpi PNG in <out-dir>. Both sides of a
 # before/after comparison are rendered from a copy under the same file name in sibling
 # directories with the same .kicad_pro (TOOLING.md step 3), since the title block prints the file
 # name and the render depends on the project file.

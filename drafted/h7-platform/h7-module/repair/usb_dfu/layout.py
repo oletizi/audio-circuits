@@ -1,6 +1,6 @@
 """The usb_dfu page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 The page reads west to east: the socket J4, then the ESD part U6, then the two MCU-side ports

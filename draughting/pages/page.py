@@ -1,9 +1,11 @@
-"""Shared op-list writers for the h7-module block pages repaired in Task 7b.
+"""Shared op-list writers for a board's block pages (first written for the h7-module pages repaired
+in its Task 7b; moved here from `drafted/h7-platform/h7-module/repair/tools/` by the H7 pedal plan's
+Task 4, which made the title block's date an argument, since it is the board's and not the tool's).
 
-The power page (Task 7a) carries its own copies of these steps in `../power/`; this module is the
-same three steps, written once and driven by each block's `layout.py`, so each block's directory
-holds only what is particular to it: where its parts go (`layout.py`) and how its nets are wired
-(`02-wire.py`). The steps:
+The module's power page (its Task 7a) carries its own copies of these steps in its `repair/power/`;
+this module is the same three steps, written once and driven by each block's `layout.py`, so each
+block's directory holds only what is particular to it: where its parts go (`layout.py`) and how its
+nets are wired (`02-wire.py`). The steps:
 
 - `place_ops`: op-list 01. Delete every wire, label, junction and no-connect copperhead drew, then
   move and orient every part to the layout. Refuses a draft carrying a power symbol or flag, and
@@ -26,7 +28,7 @@ import pathlib
 import sys
 from collections import Counter
 
-ROOT = pathlib.Path(__file__).resolve().parents[5]
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "draughting" / "measure"))
 import kicad_sheet  # noqa: E402
 
@@ -136,7 +138,11 @@ class Wiring:
     def label(self, name, at, rotation):
         self.labels.append((name, tuple(at), rotation))
 
-    def op_list(self, sheet_name, title, nets_out):
+    def op_list(self, sheet_name, title, date, nets_out):
+        """The op-list; `title` and `date` go in the title block. The date is the board's own (each
+        board's `repair/tools/title_block.py` holds it), never today's, so a replay writes the same bytes."""
+        if not isinstance(date, str) or not date:
+            raise SystemExit(f"wire: the title block's date must be a non-empty string; got {date!r}")
         ends = Counter()
         for a, b, _ in self.segments:
             ends[a] += 1
@@ -185,7 +191,7 @@ class Wiring:
         ops += [{"op": "add_no_connect", "pin": pin} for pin in self.no_connect_pins]
         for name, (lx, ly), rot in self.labels:
             ops.append({"op": "add_net_label", "name": name, "at": [lx, ly], "scope": "local", "rotation": rot})
-        ops.append({"op": "set_title_block", "title": title, "date": "2026-11-12", "rev": "A",
+        ops.append({"op": "set_title_block", "title": title, "date": date, "rev": "A",
                     "comment1": "generated - do not edit"})
         pathlib.Path(nets_out).write_text(json.dumps(
             [[a[0], a[1], b[0], b[1], net] for a, b, net in self.segments], indent=0) + "\n")

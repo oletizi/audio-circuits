@@ -1,6 +1,6 @@
 """The id_strap page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 The divider stands upright: VREF_A enters on a row from its label on the west edge and turns down

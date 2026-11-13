@@ -1,6 +1,6 @@
 """The decoupling page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 Two bands, one above the other.

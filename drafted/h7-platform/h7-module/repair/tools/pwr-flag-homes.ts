@@ -26,7 +26,14 @@
  * PRIVATE nets are not in this table, because no other page can reach them: VIN_BUCK (U2's VIN,
  * fed through L1) carries its own flag on the power page, and that flag joins nothing elsewhere.
  * `PRIVATE_FLAGS` lists them so a reader sees every flag the module draws in one place.
+ *
+ * DATA ONLY. The tools that read it are in `draughting/pages/` (`flag-homes.ts` loads and checks it,
+ * and holds `flagLivesElsewhere`, which lived here until the H7 pedal plan's Task 4), each given this
+ * board's drafted directory. A board without this file is refused by those tools, naming it.
  */
+
+/** The ruling this table is declared under; the shared tools' messages name it. */
+export const RULING = "CR-MODULE-PWR-FLAGS"
 
 /** The module's root sheet, as a flag home. */
 export const ROOT_SHEET = "root"
@@ -42,10 +49,4 @@ export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = {
 /** Block -> the private nets its own page flags. Documentary: a private net reaches no other page. */
 export const PRIVATE_FLAGS: Readonly<Record<string, readonly string[]>> = {
   power: ["VIN_BUCK"],
-}
-
-/** True when the module net's declared flag is NOT on `block`'s page, so `block` must not carry one. */
-export function flagLivesElsewhere(net: string, block: string): boolean {
-  const home = SHARED_FLAG_HOME[net]
-  return home !== undefined && home !== block
 }

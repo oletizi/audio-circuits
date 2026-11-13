@@ -1,6 +1,6 @@
 """The interface page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 The page holds the two 1 x 20 module headers, J1 (contract pins 1-20) and J2 (contract pins 21-40),

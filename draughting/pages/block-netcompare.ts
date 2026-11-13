@@ -1,47 +1,47 @@
 /**
- * Compare a kicad-cli netlist export of ONE h7-module block sheet against that block's part of the
- * model, with `compareSheetToModel` - the same six lists the round-trip tests assert.
+ * Compare a kicad-cli netlist export of ONE block sheet of a board against that block's part of the
+ * board's model, with `compareSheetToModel` - the same six lists the round-trip tests assert.
  *
- * The model side is `h7Module()` restricted to the components the block's `include()` contributed
- * (`Network.blocks`), under the module's own `DESIGNATORS` and `PIN_NUMBERS`. A net the block
- * shares with other pages (a port: GND, 3V3_D, ...) is therefore compared as its members ON THIS
- * PAGE, which is all one sheet can say; how the pages join is the root's export, checked when the
- * root exists.
+ * The model side is the board's model restricted to the components the block's `include()`
+ * contributed (`Network.blocks`), under the board's own `DESIGNATORS` and `PIN_NUMBERS`. A net the
+ * block shares with other pages (a port: GND, 3V3_D, ...) is therefore compared as its members ON
+ * THIS PAGE, which is all one sheet can say; how the pages join is the root's export, checked by
+ * `verify-root.sh`.
  *
  * Prints every list; exits 1 when `componentIdentity`, `netMembership`, `pinIdentity` or `values`
  * is non-empty, since each of those says the page is a different circuit from the model.
  *
- * Then the PORT LABELS (`port-labels.ts`, ruling CR-MODULE-PORT-LABEL-CHECK): membership alone
- * cannot see two one-pin ports' labels swapped, so each port's net `/<port>` in the export must
- * hold exactly the pins `drawingPages()` gives that port. Exits 1 on any mismatch, naming the
- * port, the pins expected and the pins found.
+ * Then the PORT LABELS (`port-labels.ts`): membership alone cannot see two one-pin ports' labels
+ * swapped, so each port's net `/<port>` in the export must hold exactly the pins `drawingPages()`
+ * gives that port. Exits 1 on any mismatch, naming the port, the pins expected and the pins found.
  *
- * usage: bun block-netcompare.ts <block> <export.net>   (from the repository root)
+ * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
+ *
+ * usage: bun block-netcompare.ts <board-dir> <block> <export.net>   (from the repository root)
  */
 import { readFileSync } from "node:fs"
-import { DESIGNATORS, PIN_NUMBERS, h7Module } from "../../../../../circuits/h7-platform/module-board.ts"
-import { pinNumbersFromTable } from "../../../../../lib/kicad/from-network.ts"
-import { importNetlist } from "../../../../../lib/kicad/netlist.ts"
-import { compareSheetToModel } from "../../../../../lib/kicad/sheet-agreement.ts"
-import type { Network } from "../../../../../lib/model/index.ts"
+import { pinNumbersFromTable } from "../../lib/kicad/from-network.ts"
+import { importNetlist } from "../../lib/kicad/netlist.ts"
+import { compareSheetToModel } from "../../lib/kicad/sheet-agreement.ts"
+import type { Network } from "../../lib/model/index.ts"
+import { blockOf, boardFromArgs } from "./board.ts"
 import { checkPortLabels } from "./port-labels.ts"
 
-const [block, file] = process.argv.slice(2)
+const usage = "bun block-netcompare.ts <board-dir> <block> <export.net>"
+const { board, rest } = await boardFromArgs(process.argv.slice(2), usage)
+const [block, file] = rest
 if (block === undefined || file === undefined) {
-  throw new Error("usage: bun block-netcompare.ts <block> <export.net> - a block name and an export path are both required")
+  throw new Error(`usage: ${usage} - a block name and an export path are both required`)
 }
-const module = h7Module()
-const record = module.blocks.find((b) => b.prefix === block)
-if (record === undefined) {
-  throw new Error(`h7Module() has no block "${block}"; its blocks are ${module.blocks.map((b) => b.prefix).join(", ")}`)
-}
+const module = board.network
+const record = blockOf(board, block)
 const ids = new Set(record.componentIds)
 const network: Network = { components: module.components.filter((c) => ids.has(c.id)), ports: {}, blocks: [] }
 if (network.components.length !== ids.size) {
-  throw new Error(`block "${block}" names ${ids.size} components and the module holds ${network.components.length} of them`)
+  throw new Error(`block "${block}" names ${ids.size} components and the board's model holds ${network.components.length} of them`)
 }
 const exported = importNetlist(readFileSync(file, "utf8"))
-const result = compareSheetToModel(network, new Map(Object.entries(DESIGNATORS)), pinNumbersFromTable(network, PIN_NUMBERS), exported)
+const result = compareSheetToModel(network, new Map(Object.entries(board.designators)), pinNumbersFromTable(network, board.pinNumbers), exported)
 for (const [list, entries] of Object.entries(result)) {
   console.log(`${list}: ${entries.length}`)
   for (const entry of entries) console.log(`   ${entry}`)
@@ -63,7 +63,7 @@ for (const component of network.components) {
 const named = Object.keys(exported.nets).filter((name) => modelNames.has(name.replace(/^\//, "")))
 console.log(`net names: ${named.length} of ${nets} exported nets carry a model net name (${named.sort().join(", ")})`)
 const faults = result.componentIdentity.length + result.netMembership.length + result.pinIdentity.length + result.values.length
-const ports = checkPortLabels(block, exported)
+const ports = checkPortLabels(board, block, exported)
 console.log(`port labels: ${ports.faults.length} of ${ports.checked} ports on the wrong net`)
 for (const fault of ports.faults) console.log(`   ${fault}`)
 process.exit(faults === 0 && ports.faults.length === 0 ? 0 : 1)

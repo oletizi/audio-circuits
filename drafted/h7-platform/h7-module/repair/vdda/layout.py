@@ -1,6 +1,6 @@
 """The vdda page's placement, in mils, sheet coordinates (x east, y south).
 
-Read by `../tools/place.py` (op-list 01), `02-wire.py` and `../tools/text_edits.py`. Nothing here is
+Read by `draughting/pages/place.py` (op-list 01), `02-wire.py` and `draughting/pages/text_edits.py`. Nothing here is
 computed from the draft.
 
 The page reads west to east along two rows. The VREF_A row on top: 3V3_D's hierarchical label on the

@@ -1106,6 +1106,36 @@ repair loop and repair classes, the same project symbol libraries (C4), US Lette
 rule that no measurement withholds a page. **What is new** is the per-block intent, the
 per-block partition check, the two op-lists above, the root sheet, and the project-level check.
 
+**The page tools a multi-page board is repaired and checked with are in `draughting/pages/`**,
+shared by every such board (moved there from `drafted/h7-platform/h7-module/repair/tools/` by the
+H7 pedal plan's Task 4, so the next board does not carry a third copy). Each takes the board's
+drafted directory, `drafted/<circuit>/<board>/`, as its first argument - never an environment
+variable - and reaches the board's model through `boards/<board>/perfboard.json`
+(`draughting/pages/board.ts`; the circuit module must export `DESIGNATORS`, `PIN_NUMBERS`,
+`drawingPages` and `PROJECT_SYMBOL_LIBRARY`, as `circuits/h7-platform/module-board.ts` does):
+
+- `sh draughting/pages/verify.sh <board-dir> <block> <sheet>`: one block page - its export against
+  its block of the model, each port's label on its port's pins, the PWR_FLAG homes, ERC alone and
+  under a one-block root, the `draughting/measure/` suite and the counts.
+- `sh draughting/pages/verify-root.sh <board-dir> [project-dir]`: the assembled project - the
+  root's export against the whole model, one PWR_FLAG per flagged net, each cross-page driver
+  cleared by its real driver, the root's ERC against the `.kicad_pro`'s exclusions, and the paper.
+- `sh draughting/pages/render.sh <sheet> <out-dir> [<page> | root]`, and
+  `sh draughting/pages/render-control.sh <board-dir> <block>`, its controls.
+- the repair steps a board's `replay.sh` runs: `ports.ts`, `net_strokes.py`, `place.py`, `pins.py`,
+  `text_edits.py` and `page.py` (`Wiring`, which takes the title block's date from the board), and,
+  for the root, `root-flags.ts`, `root_flag_refs.py` and `kicad-pro.ts`.
+
+**What stays with the board** is its data, in `<board-dir>/repair/tools/`: three declared tables,
+each under the ruling it names - `pwr-flag-homes.ts` (where each shared net's single PWR_FLAG
+lives), `cross-page-drivers.ts` (each signal net whose driver is on another page) and
+`erc-allowances.ts` (each ERC error a page's check excuses) - and `title_block.py` (the date its
+pages' title blocks carry). The shared tools hold every table to the model on every run. **A
+missing table is refused**, naming the file and why it is not defaulted: an empty table would be
+a claim about the board that nobody made. Also with the board are its CONTROLS, which name its
+own pages, nets and pins (the h7 module's `erc-control.sh`, `root-control.sh` and
+`port-label-control.sh`), run through the shared tools.
+
 **What C3 does not cover:**
 
 - **One level only.** `include()` refuses a network that itself includes blocks, so there is no
@@ -1115,7 +1145,7 @@ per-block partition check, the two op-lists above, the root sheet, and the proje
   severities (0 errors, 0 warnings). A board may commit one beside its root: the h7 module does,
   carrying only its declared ERC exclusion (`docs/h7-platform/decisions.md`,
   CR-MODULE-ROOT-PROJECT-FILE), and kicad-cli 10.0.5 honours a `.kicad_pro`'s `erc_exclusions`
-  (measured; `drafted/h7-platform/h7-module/repair/tools/kicad-pro.ts`).
+  (measured; `draughting/pages/kicad-pro.ts`, which writes it from the board's `erc-allowances.ts`).
 - **A sheet pin's type and a hierarchical label's shape are both `input`**, because that is the
   shape akcli 0.22.0 writes a hierarchical label in; KiCad's connectivity ignores both.
 - **Ground and rails as labelled wires on a block page** is a consequence of refusing power

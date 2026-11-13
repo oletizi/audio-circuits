@@ -1,4 +1,4 @@
-"""Write op-list 02 for the clock page (`../tools/page.py`, `Wiring`).
+"""Write op-list 02 for the clock page (`draughting/pages/page.py`, `Wiring`).
 
 HSE_IN runs from its label on the west edge to the crystal's pin 1, with C44 dropping from it;
 HSE_OUT from the crystal's pin 3 to its label on the east edge, with C45 dropping from it. One GND
@@ -12,9 +12,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
+from title_block import DATE  # noqa: E402
 from layout import TITLE, X_EAST, X_WEST, Y_GND, Y_HSE  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -37,4 +39,4 @@ w.path("GND", (X_WEST, Y_GND), *[(w.x(t), Y_GND) for t in taps])
 for t in taps:
     w.path("GND", (w.x(t), Y_GND), t)
 w.label("GND", (X_WEST, Y_GND), 180)
-print(w.op_list(sys.argv[3], TITLE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))

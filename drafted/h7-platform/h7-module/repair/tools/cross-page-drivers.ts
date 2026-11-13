@@ -3,7 +3,7 @@
  * controller ruling CR-MODULE-CROSS-PAGE-DRIVERS (`docs/h7-platform/decisions.md`).
  *
  * Why it exists. `verify.sh` runs ERC on a block page under a root holding that block alone
- * (`./one-block-root.ts`). A net whose only pin on the page is a KiCad input, and whose driver is a
+ * (`draughting/pages/one-block-root.ts`). A net whose only pin on the page is a KiCad input, and whose driver is a
  * pin on another page, then reports `pin_not_driven` ("Input pin not driven by any Output pins"),
  * an error the page cannot remove, because the driver is not on it. For each net here, the
  * one-block root places a stand-in driver on the net's stub when the block under check is not the
@@ -27,34 +27,15 @@
  * The assembled module's root ERC (Task 7 step 4) must clear each entry with its REAL driver, since
  * the stand-in only says the net is driven somewhere (`../../RECORD.md`).
  *
- * TEST OVERRIDE. When the environment variable `H7_CROSS_PAGE_DRIVERS_TABLE` names a JSON file,
- * `crossPageDriverTable()` reads the table from it instead, and says so on stderr. It exists for
- * `./erc-control.sh`'s negative controls, so they can remove an entry or name a wrong pin without
- * touching this file. The override is checked against the model exactly as the committed table is.
+ * DATA ONLY. The logic - the model check, the stand-ins, the announced test override
+ * (`PAGES_CROSS_PAGE_DRIVERS_TABLE`) - is `draughting/pages/cross-page-drivers.ts`, moved there
+ * from this file by the H7 pedal plan's Task 4; the shared tools read this table through the board's
+ * drafted directory, and refuse a board without it, naming the file.
  */
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
-import { PROJECT_SYMBOL_LIBRARY } from "../../../../../circuits/h7-platform/module-board.ts"
-import type { Component, Network } from "../../../../../lib/model/index.ts"
-import { defaultSymbolDir } from "../../../../../lib/kicad/install.ts"
-import { flattenedSymbol, librarySymbols, splitLibId, symbolPins } from "../../../../../lib/kicad/symbol-library.ts"
-import type { SymbolPin } from "../../../../../lib/kicad/symbol-library.ts"
-import { componentIdFor, overrideOr, requiredString } from "./table-input.ts"
+import type { CrossPageDriver } from "../../../../../draughting/pages/cross-page-drivers.ts"
 
-export interface CrossPageDriver {
-  /** The module net (the parent net the blocks' ports bind to). */
-  readonly net: string
-  /** The block whose page holds the driver. */
-  readonly block: string
-  /** The driving component's reference designator (`DESIGNATORS`). */
-  readonly designator: string
-  /** The driving pin's number: the model's pin key, which is the KiCad symbol's pin number. */
-  readonly pin: string
-  /** The driving pin's name on the KiCad symbol, for a reader; checked against the symbol's library. */
-  readonly pinName: string
-  /** Where the model takes the assignment from. */
-  readonly source: string
-}
+/** The ruling this table is declared under; the shared tools' messages name it. */
+export const RULING = "CR-MODULE-CROSS-PAGE-DRIVERS"
 
 /** An entry whose driver is the MCU, U1 on the mcu page: the form every entry so far takes. */
 function mcuDriver(net: string, pin: string, pinName: string, source: string): CrossPageDriver {
@@ -106,117 +87,3 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
     source: "circuits/h7-platform/module/reset-boot.ts:35 (sw_boot, the BOOT button to VDD, pin 1 on BOOT0; processor-and-memory.md:265; CORE-12). R12, the 4.7 kOhm pull-down on the same page, is the other passive pin on BOOT0 there; it is not named because the model keys a resistor's pins a/b, not by symbol pin number, which this table's check requires",
   },
 ]
-
-/** Where the stand-in comes from: one passive pin at the symbol origin (measured; the ruling). */
-export const STAND_IN_LIB_ID = "Connector:TestPoint"
-
-// Known limitation (H7 module plan, Task 7b review): the installed kicad-cli's path is written out
-// here and in seven of this directory's shell scripts. The repair tooling is macOS-only, as the
-// toolchain lock (draughting/tools.lock.json) pins kicad-cli 10.0.5 from the macOS KiCad.app.
-const KICAD_CLI = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
-const OVERRIDE_ENV = "H7_CROSS_PAGE_DRIVERS_TABLE"
-
-function parseDriver(entry: Record<string, unknown>, where: string): CrossPageDriver {
-  return {
-    net: requiredString(entry, "net", where),
-    block: requiredString(entry, "block", where),
-    designator: requiredString(entry, "designator", where),
-    pin: requiredString(entry, "pin", where),
-    pinName: requiredString(entry, "pinName", where),
-    source: requiredString(entry, "source", where),
-  }
-}
-
-/** The committed table, or the test override when `H7_CROSS_PAGE_DRIVERS_TABLE` is set (said on stderr). */
-export function crossPageDriverTable(): readonly CrossPageDriver[] {
-  return overrideOr(OVERRIDE_ENV, CROSS_PAGE_DRIVERS, "cross-page-drivers.ts", "CROSS_PAGE_DRIVERS", parseDriver)
-}
-
-/** The net a component's pin is on in the model: a net name, null for a no-connect, undefined for no such pin. */
-export function pinConnection(component: Component, pin: string): string | null | undefined {
-  const all = [component.pins, ...component.units.map((u) => u.pins)]
-  for (const pins of all) {
-    const c = pins[pin]
-    if (c !== undefined) return c.kind === "net" ? c.net : null
-  }
-  return undefined
-}
-
-/**
- * The pin with this number on the symbol as the drawing resolves it, or undefined: a stock symbol from
- * the INSTALLED KiCad library (not a vendored copy), a project symbol (nickname `h7-platform`, design
- * change C4) from the committed project library `PROJECT_SYMBOL_LIBRARY`.
- */
-export function libraryPin(libId: string, number: string): SymbolPin | undefined {
-  const { library, name } = splitLibId(libId)
-  const file = library === "h7-platform" ? PROJECT_SYMBOL_LIBRARY : join(defaultSymbolDir(KICAD_CLI), `${library}.kicad_sym`)
-  const block = flattenedSymbol(librarySymbols(readFileSync(file, "utf8")), name)
-  return symbolPins(block).find((p) => p.number === number)
-}
-
-function symbolPinName(libId: string, number: string): string | undefined {
-  return libraryPin(libId, number)?.name
-}
-
-function problemsWith(entry: CrossPageDriver, module: Network): string[] {
-  const record = module.blocks.find((b) => b.prefix === entry.block)
-  if (record === undefined) {
-    return [`driving block "${entry.block}" is not a block of h7Module(); its blocks are ${module.blocks.map((b) => b.prefix).join(", ")}`]
-  }
-  const resolved = componentIdFor(entry.designator)
-  if ("problem" in resolved) return [resolved.problem]
-  const id = resolved.id
-  if (!record.componentIds.includes(id)) {
-    return [`${entry.designator} (${id}) is not a component of block "${entry.block}"; it cannot be that block's driver`]
-  }
-  const component = module.components.find((c) => c.id === id)
-  if (component === undefined) return [`${id} is in block "${entry.block}" but not in h7Module()'s components`]
-  const problems: string[] = []
-  const on = pinConnection(component, entry.pin)
-  if (on === undefined) {
-    problems.push(`${entry.designator} has no pin "${entry.pin}" in the model`)
-  } else if (on !== entry.net) {
-    problems.push(`${entry.designator} pin ${entry.pin} is on ${on === null ? "no net (not connected)" : `net ${on}`} in the model, not on ${entry.net}`)
-  }
-  if (!Object.values(record.ports).includes(entry.net)) {
-    problems.push(`block "${entry.block}" has no port bound to ${entry.net}, so ${entry.net} does not leave its page`)
-  }
-  const libId = component.part?.symbol
-  if (libId === undefined) {
-    problems.push(`${entry.designator} (${id}) names no KiCad symbol in the model, so pin name ${entry.pinName} cannot be checked`)
-  } else if (on !== undefined) {
-    const name = symbolPinName(libId, entry.pin)
-    if (name !== entry.pinName) {
-      problems.push(`${libId} pin ${entry.pin} is named ${name ?? "nothing (no such pin)"} in its library, not ${entry.pinName}`)
-    }
-  }
-  return problems
-}
-
-/**
- * Hold every entry to the model; throw, naming each entry and what is missing, if any fails.
- * Also refuses two entries on one net, since a net has one driver.
- */
-export function checkCrossPageDrivers(table: readonly CrossPageDriver[], module: Network): void {
-  const failures: string[] = []
-  const seen = new Set<string>()
-  for (const entry of table) {
-    const label = `${entry.net} -> ${entry.block}, ${entry.designator} ${entry.pinName} (pin ${entry.pin})`
-    if (seen.has(entry.net)) failures.push(`${label}: ${entry.net} has a second entry; a net has one driver`)
-    seen.add(entry.net)
-    for (const problem of problemsWith(entry, module)) failures.push(`${label}: ${problem}`)
-  }
-  if (failures.length > 0) {
-    throw new Error(
-      `cross-page-drivers.ts: ${failures.length} entr${failures.length === 1 ? "y is" : "ies are"} not borne out by the model ` +
-        `(ruling CR-MODULE-CROSS-PAGE-DRIVERS; an entry is taken from circuits/h7-platform/module-board.ts, never guessed):\n  ` +
-        failures.join("\n  "),
-    )
-  }
-}
-
-/** The entries for which `block`'s one-block root needs a stand-in: nets it reaches, driven off its page. */
-export function standInsFor(table: readonly CrossPageDriver[], block: string, ports: Readonly<Record<string, string>>): readonly CrossPageDriver[] {
-  const nets = new Set(Object.values(ports))
-  return table.filter((e) => e.block !== block && nets.has(e.net))
-}

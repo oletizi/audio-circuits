@@ -1,4 +1,4 @@
-"""Write op-list 02 for the usb_dfu page (`../tools/page.py`, `Wiring`). See layout.py for the plan.
+"""Write op-list 02 for the usb_dfu page (`draughting/pages/page.py`, `Wiring`). See layout.py for the plan.
 
 Each label is LOCAL here; op-list 04 makes it the block's hierarchical label. J4's A8 and B8 carry
 the intent's no-connects.
@@ -9,9 +9,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
+from title_block import DATE  # noqa: E402
 from layout import (TITLE, X_DM_DOWN, X_DM_JOIN, X_DP_DOWN, X_DP_JOIN, X_EAST, X_GND_DROP,  # noqa: E402
                     X_GND_WEST, X_VBUS_UP, X_WEST, Y_GND, Y_GTOP, Y_POCKET_GND, Y_SHIELD, Y_VBUS)
 
@@ -59,4 +61,4 @@ bottom = ["R15.2", "C50.2", "J4.A1", "U6.2"]
 w.path("GND", (X_GND_WEST, Y_GTOP), (X_GND_WEST, Y_GND), *[(w.x(t), Y_GND) for t in bottom])
 for t in bottom:
     w.path("GND", (w.x(t), Y_GND), t)
-print(w.op_list(sys.argv[3], TITLE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))

@@ -1,12 +1,12 @@
 /**
- * Ruling CR-MODULE-PORT-LABEL-CHECK: each port's hierarchical label must sit on the net the model
- * puts that port on. `compareSheetToModel` compares MEMBERSHIP, which a one-pin port cannot fail:
- * swap two one-pin ports' labels and every net still holds the same pins. This compares NAMES.
+ * Each port's hierarchical label must sit on the net the model puts that port on (the module's ruling
+ * CR-MODULE-PORT-LABEL-CHECK). `compareSheetToModel` compares MEMBERSHIP, which a one-pin port cannot
+ * fail: swap two one-pin ports' labels and every net still holds the same pins. This compares NAMES.
  *
- * The expected side is `drawingPages()`'s `ports` for the block: each port's name and the block's
- * pins on it, as `DESIGNATOR.PIN`. The found side is the kicad-cli export of the block sheet alone,
- * read by `importNetlist`. Exported on its own, the block sheet is the root of what kicad-cli sees,
- * so a hierarchical (or local) label `NAME` names its net `/NAME`. A private net's label is its
+ * The expected side is the board's `drawingPages()` `ports` for the block: each port's name and the
+ * block's pins on it, as `DESIGNATOR.PIN`. The found side is the kicad-cli export of the block sheet
+ * alone, read by `importNetlist`. Exported on its own, the block sheet is the root of what kicad-cli
+ * sees, so a hierarchical (or local) label `NAME` names its net `/NAME`. A private net's label is its
  * UNPREFIXED model name (TOOLING.md, "Multi-page drawing"), which `drawingPagesFromNetwork` refuses
  * to let equal a port name (`checkPrivateTexts`), so `/<port>` can only be the port's own net.
  *
@@ -18,9 +18,11 @@
  * gave a port the wrong pins, this check would agree with a page drawn the same wrong way.
  * `block-netcompare.ts` still compares the page's membership against the model directly, which is
  * what catches that.
+ *
+ * Moved from `drafted/h7-platform/h7-module/repair/tools/` (H7 pedal plan Task 4).
  */
-import { drawingPages } from "../../../../../circuits/h7-platform/module-board.ts"
-import type { ImportedNetlist } from "../../../../../lib/kicad/netlist.ts"
+import type { ImportedNetlist } from "../../lib/kicad/netlist.ts"
+import type { PageBoard } from "./board.ts"
 
 export interface PortLabelResult {
   readonly checked: number
@@ -35,8 +37,8 @@ function list(pins: readonly string[]): string {
   return pins.length === 0 ? "(none)" : pins.join(", ")
 }
 
-export function checkPortLabels(block: string, exported: ImportedNetlist): PortLabelResult {
-  const pages = drawingPages()
+export function checkPortLabels(board: PageBoard, block: string, exported: ImportedNetlist): PortLabelResult {
+  const pages = board.drawingPages()
   const page = pages.find((p) => p.block === block)
   if (page === undefined) {
     throw new Error(`drawingPages() has no page "${block}"; its pages are ${pages.map((p) => p.block).join(", ")}`)

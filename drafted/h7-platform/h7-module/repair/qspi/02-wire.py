@@ -1,4 +1,4 @@
-"""Write op-list 02 for the qspi page (`../tools/page.py`, `Wiring`). See layout.py for the plan.
+"""Write op-list 02 for the qspi page (`draughting/pages/page.py`, `Wiring`). See layout.py for the plan.
 
 Each label is LOCAL here; op-list 04 makes it the block's hierarchical label.
 
@@ -8,9 +8,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[4] / "draughting" / "pages"))
 sys.path.insert(0, str(HERE.parent / "tools"))
 sys.path.insert(0, str(HERE))
 import page  # noqa: E402
+from title_block import DATE  # noqa: E402
 from layout import TITLE, X_WEST, Y_3V3, Y_GND  # noqa: E402
 
 if len(sys.argv) != 5:
@@ -42,4 +44,4 @@ w.path("GND", (X_WEST, Y_GND), *[(w.x(t), Y_GND) for t in taps])
 for t in taps:
     w.path("GND", (w.x(t), Y_GND), t)
 w.label("GND", (X_WEST, Y_GND), 180)
-print(w.op_list(sys.argv[3], TITLE, sys.argv[4]))
+print(w.op_list(sys.argv[3], TITLE, DATE, sys.argv[4]))
