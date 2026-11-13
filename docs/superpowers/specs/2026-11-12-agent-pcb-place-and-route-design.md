@@ -78,6 +78,7 @@ nothing outside it. See **The port constraint**.
 | The outline and hole geometry are final BEFORE routing, and placement is regraded against them | review issue 34, point 2, accepted | **a defect this spec introduced.** "The size is an output of placement" put routing ahead of the final geometry, so the corner holes and the edge anchoring `J1` could move after the grade that approved them: initial keepouts pass, final hardware overlaps a part, and the header silently loses its approved setback. The size still derives from the parts - it just settles before a track is laid. Hardware is modelled by envelope, not by drill |
 | Schematic parity is a fail-closed check from Phase 1, with the three report classes under three separate policies | review issue 34, point 1, accepted | the probe's answer gates the entire spec, and this spec had left parity's fail-closed behaviour in Phase 2. A missing or unreadable report, or a missing parity field, must fail rather than read as zero violations, and `unconnected_items` must be counted rather than conflated with parity |
 | The owner's approval is a checked input to `adopt`, and the fab packet is bound to the adopted board by input digest | review issue 34, point 3, accepted | this spec made "adopted without the owner seeing a render" its first anti-goal and then left the enforcement in prose. `stripboard/render-approvals.json` already holds five approvals in the needed shape, so this is reuse |
+| The fab target COMPARES current inputs against the adoption record before creating anything, and refuses on mismatch | review issue 34 follow-up, accepted | **an ambiguity in this spec's own wording, which could have been implemented into the defect it was written to prevent.** "The packet records the digest of its inputs" describes a digest taken at export time, which faithfully describes a post-approval edit and yields a packet that is self-consistent and unapproved. Recording is not checking. The authority is the adoption record, the comparison precedes the archive, and the negative test asserts that no packet is produced at all |
 | The ground pour is MEASURED in Phase 1; the owner sets the thresholds | review issue 34, point 4, accepted in substance, moved and split | the review placed this in Phase 2, after ranking. It belongs in Phase 1: connectivity and dead-copper checks can both hold on a barely-connected pour, so a probe blind to it can report success and hand Phase 2 a false pass. Split because an agent does not author the acceptance criteria for the artifact it produces - it states the numbers, the owner sets the bar |
 
 ## The board
@@ -324,11 +325,28 @@ The facility also brings:
 
   **And it is bound to the adopted board, not merely to a clean one.** "Clean,
   with a matching revision" is satisfied by a board that was edited after
-  approval and still passes, so the packet records the digest of its inputs -
-  the adopted board, the schematic, the project configuration, the custom rules
-  - and the release commit it was cut at. A packet whose inputs no longer digest
-  the same is not the packet that was approved, and says so rather than
-  shipping.
+  approval and still passes.
+
+  **The binding is a COMPARISON made BEFORE the archive is created, never a
+  digest recorded as it is written.** This spec said "the packet records the
+  digest of its inputs", and recording is not checking: a digest taken at export
+  time faithfully describes whatever is on disk, including a DRC-clean edit made
+  after the owner approved something else, and the resulting packet is
+  self-consistent and unapproved. The order is therefore fixed and is the whole
+  of the mechanism:
+
+  1. **Read the authoritative record** - the adoption record for this board,
+     and the release commit it was adopted at. It is the authority; the working
+     tree is not.
+  2. **Digest the current inputs** - the board, the schematic, the project
+     configuration, the custom rules.
+  3. **Compare, and refuse on any mismatch**, naming which input differs, with
+     nothing written. No archive directory, no partial zip, no plot output.
+  4. **Only then** run the exports and build the archive.
+
+  The negative test runs the fab target against an adopted board carrying a
+  later DRC-clean edit and asserts that **no packet is produced** - not that a
+  warning is printed, and not that the packet carries a different digest.
 - **The measured trap, pinned by a test.** `kicad-cli pcb drc
   --severity-error` silently filters out every schematic-parity violation - the
   one thing a parity check exists to catch. The check must run `--severity-all`
