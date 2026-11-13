@@ -349,11 +349,17 @@ The facility also brings:
   The negative test runs the fab target against an adopted board carrying a
   later DRC-clean edit and asserts that **no packet is produced** - not that a
   warning is printed, and not that the packet carries a different digest.
-- **The measured trap, pinned by a test.** `kicad-cli pcb drc
+- **Two measured traps, each pinned by a test.** First, `kicad-cli pcb drc
   --severity-error` silently filters out every schematic-parity violation - the
   one thing a parity check exists to catch. The check must run `--severity-all`
-  and read only the report's `schematic_parity` key. A test asserts this,
-  because a check that cannot fail is worse than no check.
+  and read the report's `schematic_parity` key. Second, and found on the pinned
+  10.0.5 while answering open question 2: a parity run whose schematic cannot
+  be fetched **exits 0 and writes `schematic_parity: []`**, so refusing only an
+  absent key still reads clean on a check that never ran. The check must have
+  positive evidence that parity ran. Both are asserted by tests, because a
+  check that cannot fail is worse than no check - and the second one is a
+  *skipped* check wearing a passing check's clothes, which this repository
+  names as the failure mode the whole workflow exists to prevent.
 - **The `ic` parts-list rule.** `tools/bom/needs.ts` has no rule for kind `ic`,
   so `make check` and `bom` both refuse this board today by name. A rule, a
   test, and a PT2399 catalogue entry with sourcing evidence. This is independent
@@ -410,12 +416,21 @@ than marked closed.
    via inductance do not matter here - though the PT2399's own VCO and sample
    clock mean this is not a purely audio-frequency board either, so it is
    reported rather than dismissed.
-2. **The flags and report keys on the pinned KiCad.** The review's citation is
-   the KiCad 9.0 CLI reference; this repository pins `kicad-cli` 10.0.5. The
-   flag spellings and the report's key names are therefore **confirmed by
-   running 10.0.5** in Phase 1, not read off the 9.0 page. This repository's
-   standing practice is that a version string comes from `--version` on the
-   installed artifact.
+2. ~~**The flags and report keys on the pinned KiCad.**~~ **Closed 2026-11-13
+   by running the pinned 10.0.5**, which is what this question asked for. The
+   flags and keys are as the spec assumed, and the measurement is kept as tests
+   in Phase 1 Task 5 rather than as a table here. **What it also found is not a
+   flag question and changes the check's requirements**: run against a board
+   whose schematic cannot be fetched, `kicad-cli` reports the parity fetch
+   failure on stderr, **exits 0**, and writes `"schematic_parity": []`. An empty
+   array, not a missing key - so a gate that refuses only an absent key reads
+   *zero parity violations* on a parity test that never ran. **The parity check
+   must therefore rest on positive evidence that parity ran**, and requiring a
+   successful exit does not supply it. A second find in the same report makes
+   this spec's central trap self-detecting: `included_severities` records what
+   the run requested, so a `--severity-error` invocation is visible in the
+   report as `["error"]` and can be refused from the report itself rather than
+   guarded by passing the right flag and trusting it.
 3. **Whether this governance vocabulary and the stripboard one should become
    one.** Named rather than left implicit, because two parallel vocabularies for
    two layout media is exactly the silting this repository objects to. The

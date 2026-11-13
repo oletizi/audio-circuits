@@ -21,7 +21,7 @@ What this plan therefore delivers: an acquired engine, a fabrication standard, a
 Every task's requirements implicitly include these. The first four are the spec's; the rest are the repository's.
 
 - **Zero references to the project this discipline is ported from.** No path, URL, branch, commit or repository name from it in code, tests, docs, commit messages or PR text. The engine is cited from its own public upstream, which is the one legitimately shared citation.
-- **No write to `boards/pt2399-core/`.** That directory holds a layout that was built and works. Read-only throughout.
+- **`boards/pt2399-core/` gets read-only verbs only**, which is the spec's wording and the owner's. The protected artifacts are the **layout** - `perfboard.json`, `pt2399-core.perfboard.vrt`, `pt2399-core.perfboard.png` - and the prohibition is on the verbs that regenerate them: never `update`, never `stripboard`, against this board. `bom.json` is not a layout artifact; it is the board's selection record, already carrying a `lines` entry and an `extras` array, and Task 2 writes one line to it.
 - **No change to `circuits/pt2399-core/pt2399-core.ts`.** The circuit is used strictly as it stands. Its schematic `pt2399-core.kicad_sch` is likewise not modified.
 - **An agent does not author the acceptance criteria for the artifact it is producing.** Measurements are stated as numbers; thresholds are the owner's. Do not invent a pass mark for the pour.
 - **A check that cannot fail is a defect, not a check.** Every check added here gets a test proving it fails on a bad input, not only that it passes on a good one.
@@ -39,6 +39,8 @@ Every task's requirements implicitly include these. The first four are the spec'
 | --- | --- |
 | `krt.pin` | the engine's URL, provenance tag and commit - same format and rules as `veroroute.pin` |
 | `tools/krt/acquire.ts` | clone, checkout, build the engine; write the build stamp |
+| `tools/krt/preflight.ts` | prove placement, grading (both ways), routing and saved zone refill on the pin, on a throwaway fixture |
+| `build/krt/invocations.json` | the exact argv the preflight used for each operation - Tasks 8 and 10 read this instead of inventing a command |
 | `tools/pcb/drc.ts` | drive `kicad-cli pcb drc`; parse the JSON report; fail closed |
 | `tools/pcb/drc-policy.ts` | the three report classes and what each tolerates |
 | `tools/pcb/pour.ts` | measure a filled pour: continuity, narrowest bridge, spokes per ground pad |
@@ -64,17 +66,21 @@ Every task's requirements implicitly include these. The first four are the spec'
 
 - [ ] **Step 1: Probe each tool and record the version string from the tool itself**
 
+**Do not probe `kicad-cli` with `command -v`.** It is installed on this machine and is **not on `PATH`**, so `command -v` reports it missing and this task would stop the whole plan on a false negative. This repository already owns the right mechanism: `defaultKicadCli()` in `lib/kicad/install.ts` resolves the binary by trying candidate **paths** for the platform and throwing a message that names what to set. Use it.
+
 ```bash
-command -v kicad-cli && kicad-cli --version
-command -v cargo && cargo --version
+bun -e 'import {defaultKicadCli} from "./lib/kicad/install.ts"; console.log(defaultKicadCli())'
+cargo --version
 python3 --version
 ```
 
-Expected: `kicad-cli` 10.0.5, the version `draughting/tools.lock.json` pins. `cargo` is needed because the pinned engine's Rust router builds from source.
+Then run `<resolved> version` on the path that comes back. Both `version` and `--version` print the bare string on 10.0.5.
 
-- [ ] **Step 2: If `kicad-cli` is absent, stop and report**
+**Measured on this machine, 2026-11-13:** `kicad-cli` 10.0.5 present at `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`; `cargo` present at `/opt/homebrew/bin/cargo`; neither is a blocker. This is a note about one machine at one moment, not a substitute for running the probe - which is the whole reason this task reports a measurement rather than a document stating a version.
 
-`kicad-cli` is not installed in this worktree as of this plan's writing. Installing KiCad is an operator action on their machine, not something this task performs silently. Report what is missing and wait.
+- [ ] **Step 2: If a tool is genuinely absent, stop and report**
+
+Installing KiCad or a Rust toolchain is an operator action on their machine, not something this task performs silently. Report what is missing, by the resolver's own error message, and wait.
 
 - [ ] **Step 3: Record the confirmed versions in the task report**
 
@@ -299,7 +305,15 @@ Three items, so none is mistaken for checked: trace impedance and via inductance
 
 - [ ] **Step 1: Write `krt.pin`**
 
-One `<field> <value>` pair per line, `#` comments, exactly as `veroroute.pin` does. Fields: `url`, `tag` (provenance only), `commit` (the authority). Pin the commit the spec's decisions table names - the known-good one, not the newest release.
+One `<field> <value>` pair per line, `#` comments, exactly as `veroroute.pin` does. Fields: `url`, `tag` (provenance only), `commit` (the authority). **The exact values, verified against the public upstream on 2026-11-13 rather than transcribed:**
+
+| Field | Value |
+| --- | --- |
+| `url` | `https://github.com/drandyhaas/KiCadRoutingTools.git` |
+| `tag` | `v0.21.3` |
+| `commit` | `749cfa8333765288a807f825064b68015fd10ea9` |
+
+How that was verified, and how to re-verify if it is ever doubted: `git ls-remote --tags <url>` prints `749cfa83…` for `refs/tags/v0.21.3^{}` - the **dereferenced** tag, which is the commit, not the annotated tag object `ebcea927…`. Pinning the tag object instead of its target is a real and easy mistake, and `commit` must be the dereferenced value. The commit is dated 2026-08-22. The repository is MIT and public, which is why a URL and SHA may appear here at all; it is the one legitimately shared citation the Global Constraints allow.
 
 - [ ] **Step 2: Write the failing test for the stamp**
 
@@ -330,7 +344,26 @@ A no-op once built and stamped. Print the resolved path and the commit it was bu
 
 - [ ] **Step 7: Acquire for real, and record the engine commit** - Run: `make krt`
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Preflight the engine, and record the invocations it used**
+
+**This step exists so that a broken toolchain fails as a toolchain failure, rather than arriving later disguised as "the board does not route."** Review issue 34 point 1 asked for it, and it is also what lets Tasks 8 and 10 name real commands instead of placeholders.
+
+Create `tools/krt/preflight.ts` and `make krt-preflight`. On a **throwaway two-part fixture board** - never `pt2399-core`, so nothing here can be mistaken for a result about the real board - drive the four operations the probe depends on, in order, each failing loudly:
+
+| Operation | Proves |
+| --- | --- |
+| placement | the optimizer runs and writes a board |
+| grading (`check-intent`) | the grader loads intent and returns a grade, including a **failing** one on deliberately bad intent |
+| routing | the router runs and lays copper |
+| zone refill, **saved** | the refilled pour is written back to the board file, which is what Task 9 measures |
+
+The grader step must be exercised **both ways**. A grader that returns "pass" unconditionally would satisfy a one-sided preflight and then silently approve every placement in Task 8.
+
+- [ ] **Step 9: Write `build/krt/invocations.json` and commit it**
+
+The preflight's output artifact: for each of the four operations, the exact argv it invoked, the engine commit from the **stamp**, and the environment it required (`PYTHONHOME`/`PYTHONPATH` unset). **Tasks 8 and 10 read this file rather than inventing a command line.** If an invocation in it stops working, the preflight fails before the probe runs.
+
+- [ ] **Step 10: Commit**
 
 ---
 
@@ -357,18 +390,45 @@ test("a wrong pad-to-net assignment is reported as a schematic_parity violation"
 test("a missing report file FAILS rather than reading as zero violations", () => { /* throws, naming the path */ })
 test("an unreadable report FAILS rather than reading as zero violations", () => { /* malformed JSON -> throws */ })
 test("a report with no parity field FAILS, because a missing field is not zero", () => { /* throws */ })
+test("a report with no violations array FAILS", () => { /* the policy consumes it; absent is not empty */ })
+test("a report with no unconnected_items array FAILS", () => { /* same */ })
+test("a violation with no severity FAILS, because the policy is severity-scoped", () => { /* throws */ })
+test("a non-zero kicad-cli exit FAILS even when a clean report sits at the output path", () => { /* stale report from an earlier run must not be read */ })
+test("included_severities missing 'warning' or 'exclusion' FAILS - the severity-error trap, caught from the report", () => { /* throws */ })
+test("a report whose parity could not run FAILS, although schematic_parity is []", () => { /* MEASURED: see Step 4 */ })
 test("the known-good pair reports zero parity violations", () => { /* expect 0 */ })
 ```
 
-The first four matter more than the fifth. A check that only passes on good input has not been shown to work.
+Every test but the last matters more than the last. A check that only passes on good input has not been shown to work.
 
 - [ ] **Step 3: Run them** - Expected: FAIL, no module yet.
 
 - [ ] **Step 4: Implement `runDrc`**
 
-Invoke `kicad-cli pcb drc --schematic-parity --format json --severity-all -o <report> <board>`, on the candidate paired with **its own** schematic and project configuration. Then: refuse a missing file naming the path; refuse unparseable JSON naming the parse error; refuse a report object with no parity key. Never substitute a default for an absent field.
+Invoke `kicad-cli pcb drc --schematic-parity --format json --severity-all -o <report> <board>`, on the candidate paired with **its own** schematic and project configuration, writing to a **fresh output path per run** - a stale report from an earlier run at a reused path is readable, self-consistent and wrong.
 
-`--exit-code-violations` is deliberately **not** used to decide the verdict: this module reads the report, because the exit code cannot distinguish the three classes. Record that in the module comment so nobody "simplifies" it back.
+**The measured behaviour this step must defend against, taken from the pinned 10.0.5 on 2026-11-13.** Run against a board whose schematic cannot be fetched, `kicad-cli`:
+
+- prints `Failed to fetch schematic netlist for parity tests` to stderr,
+- **exits 0**,
+- and writes a report containing `"schematic_parity": []`.
+
+**An empty array, not a missing key.** So the parity gate reads *zero parity violations* on a parity test that never ran - a skipped check wearing a passing check's clothes, which is the failure mode this whole module exists to prevent. Note what does *not* catch it: requiring a successful process exit does not, because the exit is 0. The refusal must rest on **positive evidence that parity ran**, and the test above is the one that re-runs this measurement rather than leaving it as prose.
+
+The full refusal set, four fields rather than three:
+
+| Read | Refuse when |
+| --- | --- |
+| process | `kicad-cli` exits non-zero, or its stderr carries a parity-fetch failure |
+| `schematic_parity` | key absent; or present-but-empty without positive evidence parity ran |
+| `violations` | key absent; or any entry lacking `severity` (confirmed per-violation string, e.g. `"error"`) |
+| `unconnected_items` | key absent |
+| `included_severities` | does not contain all of `error`, `warning`, `exclusion` |
+| `ignored_checks` | contains a check this gate depends on (see Task 8) |
+
+**`included_severities` is the find worth keeping.** It is in the report, and it records what the run actually requested: a `--severity-error` run writes `["error"]`, a `--severity-all` run writes `["error","warning","exclusion"]`. So the `--severity-error` trap is **detectable from the report itself** rather than guarded by passing the right flag and trusting it. Assert the field. This is a check that catches its own misinvocation.
+
+`--exit-code-violations` is deliberately **not** used to decide the verdict: this module reads the report, because the exit code cannot distinguish the classes. That omission is also what makes "exit 0" meaningful as a ran-to-completion signal - **adding the flag later would silently invert the process check**, turning an ordinary violation into a refusal. Record both halves in the module comment so nobody "simplifies" it back.
 
 - [ ] **Step 5: Implement `verdictOf` with the three policies in `drc-policy.ts`**
 
@@ -378,9 +438,13 @@ Invoke `kicad-cli pcb drc --schematic-parity --format json --severity-all -o <re
 | DRC violations | zero tolerated at error severity, against the standard's values |
 | `unconnected_items` | zero on a routed candidate; **counted, not ignored, on an unrouted one**, where it measures what the router left undone |
 
-- [ ] **Step 6: Confirm the flags and key names against the pinned KiCad**
+- [ ] **Step 6: The flags and key names are already confirmed - verify the version, do not re-derive the names**
 
-Open question 2 in the spec. The flag spellings and the report's key names are **confirmed by running 10.0.5**, not read off the 9.0 CLI reference. If a name differs, the code follows what the installed tool does and the finding is recorded.
+Spec open question 2, **closed on 2026-11-13 by running the pinned tool** rather than reading the 9.0 page. `kicad-cli` 10.0.5 is installed at `/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli` and is **not on `PATH`** - resolve it through `defaultKicadCli()`, never by bare name.
+
+Confirmed present on 10.0.5: `--schematic-parity`, `--format json`, `--severity-all`, `--severity-error`, `--exit-code-violations`, `--refill-zones`, `--save-board` (the last two coupled - `--save-board` must be used with `--refill-zones`). Report top-level keys: `$schema`, `coordinate_units`, `date`, `ignored_checks`, `included_severities`, `kicad_version`, `schematic_parity`, `source`, `unconnected_items`, `violations`.
+
+What this step still does: assert the version from `kicad-cli version` on the installed artifact, per this repository's standing practice. If a future bump changes a key, the Step 2 tests fail - which is the point of them being tests rather than a table in prose.
 
 - [ ] **Step 7: Run the suite** - Expected: PASS.
 
@@ -425,7 +489,9 @@ The spec marks this NOT VERIFIED. Read the `F.Silkscreen` graphic line widths of
 
 - [ ] **Step 1: Draft `floorplan-intent.json`**
 
-Blocks from the circuit's own structure, which the model already names: supply decoupling (`C1`, `C2`), the PT2399's reference and oscillator bypassing (`C3`, `C4`, `C5`), the input path (`C7`, `R3`, `R4`), the LPF1 node (`R1`, `R2`, `C6`, `C8`), the LPF2 and regeneration node (`R6`, `R7`, `R8`, `C11`, `C12`), the op-amp feedback caps (`C13`, `C14`), and the output path (`R5`, `C9`, `C10`). `J1` as the edge connector with a `max_setback_mm` and `must_lock`. The four mounting holes and their hardware envelopes as keepouts.
+Blocks from the circuit's own structure, which the model already names: supply decoupling (`C1`, `C2`), the PT2399's reference and oscillator bypassing (`C3`, `C4`, `C5`), the input path (`C7`, `R3`, `R4`), the LPF1 node (`R1`, `R2`, `C6`, `C8`), the LPF2 and regeneration node (`R6`, `R7`, `R8`, `C11`, `C12`), the op-amp feedback caps (`C13`, `C14`), and the output path (`R5`, `C9`, `C10`). `J1` as the edge connector with a `max_setback_mm` and `must_lock`.
+
+**The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough to hold the standard's copper-to-edge clearance around the full envelope, with the envelope diameter read from the hardware's catalogue entry. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
 
 - [ ] **Step 2: Draft `placement-rules.json`**
 
@@ -455,13 +521,28 @@ Place against the approved intent to discover the extent the parts and their har
 
 - [ ] **Step 2: Fix the final geometry**
 
-Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four M3 holes against the **final** corners, modelled by **envelope, not drill** - screw head, washer and standoff footprint, not a 3.2 mm hole. Measure the header's setback from the final edge.
+Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four M3 holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - screw head, washer and standoff footprint, not a 3.2 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
+
+**Do not reach for a stock footprint and call its courtyard the envelope.** Measured from the installed KiCad 10.0.5 library on 2026-11-13, the `MountingHole:MountingHole_3.2mm_M3*` courtyards are circles of diameter 6.1 mm (`DIN965`), 6.2 mm (`ISO7380`) and 6.9 mm (plain and `_Pad`). Those model the **screw head**. None of them models a washer or a standoff, so adopting one would quietly deliver head clearance where this plan promised head-plus-washer-plus-standoff, and every check would pass.
+
+So the envelope is sourced, not assumed: **the mounting hardware gets a `parts/` catalogue entry with sourcing evidence**, exactly as the PT2399 does in Task 2, and the envelope diameter is the washer or standoff OD read from that entry. A project-local mounting-hole footprint carries that diameter as its courtyard. If the hardware is not yet chosen, this is an owner question - and it is a real one, because it changes the board outline.
 
 - [ ] **Step 3: Regrade placement on the final geometry**
 
 Run `check-intent` against the final board. **If the regrade fails, re-place** - do not adjust the geometry to suit a placement that was graded against different geometry. That inversion is the defect this task exists to prevent.
 
-- [ ] **Step 4: Confirm DRC verifies clearance to the hardware independently** - the grader and DRC are two checks, not one.
+- [ ] **Step 4: Make the hardware envelope independently checkable by DRC**
+
+The grader and DRC are two checks, not one, and review issue 34 point 2 is right that drill clearance alone cannot check a washer. **KiCad's drill-clearance rules measure the hole, so the envelope needs its own mechanism, and it takes two** - because the envelope has two different intruders:
+
+| Intruder | Mechanism | DRC check |
+| --- | --- | --- |
+| a **part** sitting on the hardware | the project-local footprint's courtyard from Step 2 | `courtyards_overlap` |
+| **copper** under the washer or standoff | a Rule Area at the envelope diameter, copper keepout | the keepout rule |
+
+The engine cannot carry either - the spec records that it has no per-region design rules - which is exactly why these live in KiCad's DRC and not in the router.
+
+**And this is where Task 5's `ignored_checks` field earns its place.** `missing_courtyard` is in KiCad 10.0.5's **default ignored set** (measured 2026-11-13: 5 checks ignored by default, `missing_courtyard` among them, `courtyards_overlap` not). So a mounting-hole footprint that reached the board with **no courtyard at all** would raise nothing, and the envelope check would silently not exist. Task 5 therefore refuses a report whose `ignored_checks` contains a check this gate depends on. Confirm the `.kicad_dru` / Rule Area spelling by running the pinned tool, as with the flags.
 
 - [ ] **Step 5: Commit the final geometry**
 
@@ -485,6 +566,8 @@ One fixture whose pour is a single region; one split into two regions joined by 
 
 The spec is explicit and the review insisted: the board measured is the one that would be adopted and plotted, **after** zone refill - not the pre-fill state, where the pour does not yet exist as copper.
 
+The refill is not a separate tool. Confirmed on the pinned 10.0.5: `kicad-cli pcb drc --refill-zones --save-board` refills and writes the board back, and `--save-board` is rejected without `--refill-zones`. `measurePour` therefore reads a board file that has already been through that, and **refuses a board whose zones are unfilled** rather than reporting zeroes for a pour that has not been poured - the same skipped-check-as-passing-check hazard as Task 5, in a different costume.
+
 - [ ] **Step 4: Run the tests** - Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -499,11 +582,13 @@ Read its checks before routing more. A failure here is usually systematic - fix 
 
 - [ ] **Step 2: Route the rest, detached**
 
+The batch invocation is **the routing argv recorded in `build/krt/invocations.json`** by Task 4 Step 9, iterated over the placement candidates - not a command invented at this point in the plan. Wrap it:
+
 ```bash
-nohup <route-all command> > build/logs/route-all.log 2>&1 &
+nohup make krt-route-all BOARD=pt2399-core > build/logs/route-all.log 2>&1 &
 ```
 
-Detached with `nohup` as a quick-returning call, because it can run long and a tracked background task is reaped at the end of a turn. Stop on repeated identical failures - a batch hides a systematic failure.
+Detached with `nohup` as a quick-returning call, because it can run long and a tracked background task is reaped at the end of a turn. The target reads the recorded invocation, so if the engine's interface has drifted the preflight fails first and this never starts. Stop on repeated identical failures - a batch hides a systematic failure.
 
 - [ ] **Step 3: Run every Phase 1 check on each result**
 
@@ -529,6 +614,16 @@ If it routed clean: the finding, and Phase 2 gets its own plan and spec section.
 
 **Type consistency.** `Physical` and `Specs` both gain the same `dip` arm in Task 1 Step 3, and Task 2's catalogue entry states exactly those three fields. `DrcReport`'s three counts (Task 5) are what Task 10 Step 3 consumes. `PourMetrics` (Task 9) is what Task 10 Step 5 reports.
 
-**Placeholder scan.** One known soft spot, declared rather than hidden: Tasks 7 through 10 specify procedure and checks rather than code, because they drive an engine whose behaviour on this board is the very thing being measured. Writing literal command invocations for them now would be inventing an interface before reading the engine's own. Each of those tasks instead names its inputs, its checks and its stopping condition - and Task 10 Step 6 treats a systematic failure as a recordable result.
+**Placeholder scan.** The first draft declared a "known soft spot" here - that Tasks 7 through 10 specify procedure rather than commands, because writing invocations before reading the engine's interface would be inventing one. Review issue 34 point 1 was right that this did not hold: `nohup <route-all command>` in Task 10 was a placeholder of precisely the kind this plan's own No Placeholders rule forbids, and declaring it in the self-review did not stop it being one. The fix is not to guess the interface but to **discover it in a task and record it**: Task 4's preflight now runs the four operations and writes their argv to `build/krt/invocations.json`, which Tasks 8 and 10 consume. The remaining procedural latitude in Tasks 7 to 10 is over *which* candidate and *what* the numbers turn out to be - which is the measurement, not a gap.
 
-**Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). Both are his; neither blocks starting.
+**Revisions from the Phase 1 plan review (issue 34, 2026-11-13).** All four findings taken; one with a different resolution than either option offered.
+
+| Point | Resolution |
+| --- | --- |
+| 1 · engine pin and probe commands | Verified upstream URL, tag and dereferenced commit written into Task 4 Step 1; preflight added as Steps 8-9 with a recorded invocation contract; Task 10's placeholder deleted |
+| 2 · final geometry into the graded inputs | Mounting keepouts approved as a **derivation rule**, not coordinates, so Task 8's final geometry cannot invalidate the approval; envelope made independently checkable by a project-local courtyard plus a copper-keepout Rule Area; envelope diameter sourced from a `parts/` entry because the stock footprints model the screw head only |
+| 3 · failed invocations and incomplete reports | Four-field validation, fresh output path, per-violation `severity`, `included_severities` asserted so the `--severity-error` trap is caught from the report, and the measured `schematic_parity: []`-on-failed-parity case given its own test |
+| 4 · perfboard write conflict | **The plan was wrong, not the write.** The approved spec says "read-only **verbs** only"; the plan had broadened that to the whole directory on its own authority. Restored to the spec's wording and narrowed to name the layout artifacts |
+| - · Task 0 false negative (found while verifying, not raised by the review) | `command -v kicad-cli` reports missing on a machine where it is installed off `PATH`; replaced with `defaultKicadCli()`, which this repository already owns |
+
+**Open questions carried for the owner.** The DIP-16 socket (Task 2 Step 2, recommendation: fit one, since it changes the parts list and not the layout). The ground pour's thresholds (spec open question 1). **New, and this one can move the board outline:** which mounting hardware is fitted, since Task 8 now sources the keepout envelope from the washer or standoff OD rather than assuming it. None blocks starting; the third blocks Task 8.
