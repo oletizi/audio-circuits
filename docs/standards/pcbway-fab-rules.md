@@ -106,7 +106,19 @@ tool reads, not from this document.
   diameter 0.8 mm, via drill 0.4 mm) and **`Power`** is power (track 0.5 mm).
   The project's `rule_severities` must also leave `items_not_allowed`,
   `courtyards_overlap` and `missing_courtyard` enabled (KiCad ignores
-  `missing_courtyard` by default). `tools/pcb/fab-standard.ts` checks all of it.
+  `missing_courtyard` by default). `tools/pcb/fab-standard.ts` checks the
+  constraint values and the net-class widths.
+
+  **WHICH NETS ARE IN `Power` IS A SEPARATE CHECK, because the gate above
+  cannot see it.** `fab-standard.ts` compares class DEFINITIONS, so a project
+  declaring `Power` with no net assigned to it passes - and DRC passes too,
+  because the signal width clears the minimum. The supply rails would then
+  route at signal width with nothing red anywhere. The assignment lives in that
+  project's `net_settings.netclass_patterns`, and
+  `tests/pcb/netclass-patterns.test.ts` is what holds it: it asks `pcbnew` which
+  class each net on the board resolves into, rather than reading the patterns
+  back out of the JSON that is the matcher's input. `rule_severities` is not
+  checked by either and is set by hand.
 - **`circuits/pt2399-core/route-fab-floor.txt`** carries the same minimums as a
   standing instruction to the router.
 

@@ -57,7 +57,10 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {"netclass": "Power", "pattern": "+5V"},
+      {"netclass": "Power", "pattern": "GND"}
+    ]
   },
   "sheets": [
     ["b067ad5c-6912-410c-9032-a73099e58a77", "Root"]
