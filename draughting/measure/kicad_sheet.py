@@ -297,13 +297,13 @@ class Pin:
     """A library pin's connection point in SYMBOL space, y up."""
 
     __slots__ = ("sx", "sy", "angle", "length", "kind", "shape", "hidden",
-                 "number", "name")
+                 "number", "name", "unit")
 
     def __init__(self, sx, sy, angle, length, kind, shape, hidden,
-                 number=None, name=None):
+                 number=None, name=None, unit=None):
         self.sx, self.sy, self.angle, self.length = sx, sy, angle, length
         self.kind, self.shape, self.hidden = kind, shape, hidden
-        self.number, self.name = number, name
+        self.number, self.name, self.unit = number, name, unit
 
     def __repr__(self):
         return (f"Pin({self.number}: {self.sx}, {self.sy}, {self.angle}deg, "
@@ -377,6 +377,15 @@ def rotate(dx, dy, rot):
     if rot == 270:
         return -dy, dx
     raise SheetParseError(f"unhandled rotation {rot}")
+
+
+def unit_of_sub_symbol(lib_id, sub):
+    """The unit a lib_symbols sub-symbol draws, from its name `<name>_<unit>_<body style>`; refuses
+    a name in any other form, since a pin's unit would then be a guess."""
+    parts = (sub.atoms[0] if sub.atoms else "").rsplit("_", 2)
+    if len(parts) != 3 or not parts[1].isdigit():
+        raise SheetParseError(f"{lib_id}: sub-symbol {sub.atoms} is not named <name>_<unit>_<body style>")
+    return int(parts[1])
 
 
 class Sheet:
@@ -503,8 +512,14 @@ class Sheet:
         if self._lib_pins is None:
             out = {}
             for lib_id, entry in self.lib_entries().items():
+                units = [(sub.start, sub.end, unit_of_sub_symbol(lib_id, sub))
+                         for sub in entry.kids("symbol")]
                 pins = []
                 for p in entry.walk("pin"):
+                    unit = next((u for a, b, u in units if a <= p.start and p.end <= b), None)
+                    if unit is None:
+                        raise SheetParseError(
+                            f"{lib_id}: a pin at offset {p.start} is in no unit sub-symbol")
                     at = p.kid("at")
                     if at is None:
                         raise SheetParseError(
@@ -520,7 +535,8 @@ class Sheet:
                         p.atoms[1] if len(p.atoms) > 1 else None,
                         "hide" in p.atoms,
                         num.atoms[0] if num and num.atoms else None,
-                        nam.atoms[0] if nam and nam.atoms else None))
+                        nam.atoms[0] if nam and nam.atoms else None,
+                        unit))
                 require_complete(len(pins), self.src[entry.start:entry.end],
                                  "pin", f"lib_symbols entry {lib_id}")
                 out[lib_id] = pins
@@ -613,39 +629,17 @@ class Sheet:
 
     def instance_pins(self, s):
         """The library pins symbol instance `s` places: those of its own unit, and those common to
-        every unit (unit 0).
+        every unit (unit 0), filtered from `lib_pins` by the unit each pin carries.
 
         A MULTI-UNIT SYMBOL'S PINS ARE SPLIT ACROSS ITS UNITS, and each placed unit is its own
         `(symbol` instance carrying `(unit N)`. Placing every pin of the entry at every instance
         (what `pin_points` did until the h7 pedal pages plan's Task 7c, which drew the first
         multi-unit part on a page, OPA1688) puts the other units' pins at points where nothing is.
-        A single-unit symbol's pins are all unit 1 or 0, so its result is unchanged. The unit of a
-        pin is read from the name of the sub-symbol holding it, `<name>_<unit>_<body style>`.
+        A single-unit symbol's pins are all unit 1 or 0, so its result is unchanged.
         """
         unit_node = s.node.kid("unit")
         unit = int(unit_node.atoms[0]) if unit_node is not None and unit_node.atoms else 1
-        entry = self.lib_entries().get(s.lib_id)
-        if entry is None:
-            return []
-        out = []
-        for sub in entry.kids("symbol"):
-            parts = (sub.atoms[0] if sub.atoms else "").rsplit("_", 2)
-            if len(parts) != 3 or not parts[1].isdigit():
-                raise SheetParseError(f"{s.lib_id}: sub-symbol {sub.atoms} is not named <name>_<unit>_<body style>")
-            if int(parts[1]) not in (0, unit):
-                continue
-            for p in sub.walk("pin"):
-                at = p.kid("at")
-                ln = p.kid("length")
-                a = nums(at, f"{s.lib_id}: a pin (at")
-                num = p.kid("number")
-                out.append(Pin(a[0], a[1], int(a[2]) if len(a) > 2 else 0,
-                               nums(ln)[0] if ln else 0.0,
-                               p.atoms[0] if p.atoms else None,
-                               p.atoms[1] if len(p.atoms) > 1 else None,
-                               "hide" in p.atoms,
-                               num.atoms[0] if num and num.atoms else None))
-        return out
+        return [p for p in self.lib_pins().get(s.lib_id, []) if p.unit in (0, unit)]
 
     def pin_points(self):
         """{(x, y)} every placed symbol pin's connection point in sheet space (each instance's

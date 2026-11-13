@@ -106,16 +106,14 @@ FIELDS = {
 RECT = (21.59, 53.34, 264.16, 119.38)
 TITLE = "h7-pedal: ldo_vmid"
 PWR_FLAGS = 0
-# Three nets reach no wire on the draft: 5V_A_CODEC reaches one pin on this page (R21's pin 2), so
-# copperhead drafted nothing for it; VMID_L and VMID_R join each unit's OUT to its own -IN, and the
-# draft carries no wire on either. By copperhead's own family rule
-# (`draughting/copperhead/src/kicad/draft/engine.ts`, netColorsOf: two or more nets sharing the
-# prefix before the first underscore), VMID_L and VMID_R are of the draft's VMID family with
-# VMID_IN_L and VMID_IN_R, which the draft draws in palette colour 2 (130 50 170), so they take it.
-# 5V_A_CODEC's prefix is 5V, 5V_A's; the draft draws 5V_A, alone in that family on the draft, in the
-# default stroke, so 5V_A_CODEC takes the default too. Drawing choices, not transcriptions.
+# One net reaches no wire on the draft: 5V_A_CODEC reaches one pin on this page (R21's pin 2), so
+# copperhead drafted nothing for it. Its prefix is 5V, 5V_A's (copperhead's family rule,
+# `draughting/copperhead/src/kicad/draft/engine.ts`, netColorsOf: two or more nets sharing the prefix
+# before the first underscore); the draft draws 5V_A, alone in that family on the draft, in the
+# default stroke, so 5V_A_CODEC takes the default too. A drawing choice, not a transcription.
+# (VMID_L and VMID_R were listed here until the Task 7c review: net_strokes.py placed every unit's
+# pins at every instance of U5 and missed their draft wires, which do exist and carry the VMID
+# family's 130 50 170; it now reads each unit's own pins, and the draft gives their stroke.)
 UNDRAWN_STROKES = {
     "5V_A_CODEC": "(stroke (width 0.254) (type default))",
-    "VMID_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
-    "VMID_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
 }

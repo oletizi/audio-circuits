@@ -6,5 +6,7 @@
  "VIN_A": "(stroke (width 0.254) (type default))",
  "VMID": "(stroke (width 0.254) (type default))",
  "VMID_IN_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
- "VMID_IN_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))"
+ "VMID_IN_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "VMID_L": "(stroke (width 0.254) (type default) (color 130 50 170 1))",
+ "VMID_R": "(stroke (width 0.254) (type default) (color 130 50 170 1))"
 }

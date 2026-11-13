@@ -117,7 +117,11 @@ each unit a `layout.py` key `<ref>:<unit>` (Task 7c): `page.py`'s `place_ops` mo
 `move_component` with its `unit` and refuses any rotation or mirror on one, since akcli 0.22.0's
 `set_component_transform` takes no unit; `pins.py` and `text_edits.py` key it the same way; and
 `draughting/measure/kicad_sheet.py` places each instance's own unit's pins only (`instance_pins`),
-where it had placed every unit's pins at every instance. The single-unit result is unchanged: across
+where it had placed every unit's pins at every instance. `net_strokes.py` did the same and was
+missed until the Task 7c review: it found no draft wire on ldo_vmid's VMID_L and VMID_R, and their
+stroke was written by hand; it now uses `instance_pins`, the hand entries are gone, and
+`tests/draught/net-strokes-multi-unit.test.ts` holds it on the dual-op-amp fixture (it fails on the
+former tool, which found only VCC and VEE there). The single-unit result is unchanged: across
 51 sheets (every `.kicad_sch` under `drafted/`, `docs/research/` and `tests/fixtures/`, and the six
 pedal drafts), only the two holding a multi-unit symbol (this draft and the
 dual-op-amp test fixture) gave different pin points, and the module's replay, `verify-root.sh` and
@@ -909,8 +913,8 @@ no-connects.
 - Drawing choices, not transcriptions: one band, read west to east as two sections, the LDO and
   then VMID, both between the VIN_A and GND rows; U5's three units at rotation 0, unmirrored (akcli
   0.22.0 cannot rotate one unit, `draughting/pages/page.py`, `place_ops`); 5V_A_CODEC takes the
-  default stroke 5V_A has; VMID_L and VMID_R, which the draft drew no wire for, take the VMID
-  family's purple (`ldo_vmid/layout.py`, `UNDRAWN_STROKES`, says why); fields and parts moved after
+  default stroke 5V_A has (`ldo_vmid/layout.py`, `UNDRAWN_STROKES`, says why); VMID_L and VMID_R
+  keep the stroke the draft draws them in, the VMID family's purple; fields and parts moved after
   the renders listed in `ldo_vmid/layout.py`.
 
 ### Measurements, before (the draft) and after (this page)
@@ -975,7 +979,7 @@ it. Here C27's drop to the GND row crosses the FB row once.
 - On U4, the project symbol's pin names NC and NR/SS run into each other across the body, and DNC
   and GND, drawn vertical, run into OUT's; that is the symbol's own drawing
   (CR-PEDAL-SYMBOL-TPS7A4901: pins 3, 6 and 7 moved to the body edge and shown), not a placement.
-  U5A's and U5B's pin names OUT_A and OUT_B meet the triangle's edge.
+  U5A's and U5B's pin names "OUT A" and "OUT B" meet the triangle's edge.
 - LDO_FB and LDO_NR carry copperhead's blue stroke; VMID_IN_L, VMID_IN_R, VMID_L and VMID_R its
   purple; VIN_A, 5V_A, 5V_A_CODEC, VMID and GND its default.
 - The hanging parts carry Reference over Value east of their bodies; R24's and R25's above their

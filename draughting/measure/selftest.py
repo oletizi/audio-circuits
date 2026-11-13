@@ -217,7 +217,7 @@ def control_interior_vs_endpoint():
     sheet = kicad_sheet.read(MID)
     target = None
     for s in sheet.symbols():
-        for p in sheet.lib_pins().get(s.lib_id, []):
+        for p in sheet.instance_pins(s):
             dx, dy = kicad_sheet.rotate(p.sx, -p.sy, s.rot)
             px, py = round(s.x + dx, 3), round(s.y + dy, 3)
             h = kicad_sheet.wire_hits(px, py, sheet.wires())

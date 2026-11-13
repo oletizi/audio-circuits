@@ -24,10 +24,12 @@ nets = json.loads(subprocess.run([str(AKCLI), "nets", path, "--json"], check=Tru
 pin_at = {}
 for x, y, ref in sheet.pin_points_by_ref():
     pin_at.setdefault((x, y), set()).add(ref)
-lib = sheet.lib_pins()
 member_points = {}
 for s in sheet.symbols():
-    for lp in lib[s.lib_id]:
+    # Each instance's own unit's pins only (`instance_pins`): a multi-unit part is one reference with
+    # one instance per unit, and every library pin placed at every instance put the other units' pins
+    # where nothing is (Task 7c review I1: ldo_vmid's U5, whose VMID_L and VMID_R wires were missed).
+    for lp in sheet.instance_pins(s):
         dx, dy = kicad_sheet.rotate(lp.sx, -lp.sy, s.rot)
         member_points[f"{s.ref}.{lp.number}"] = (round(s.x + dx, 3), round(s.y + dy, 3))
 
