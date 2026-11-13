@@ -174,6 +174,12 @@ export const CONSTRUCTED_FOR_A_REFUSAL: ReadonlyMap<string, string> = new Map([
       "is Wuerth_691311400102_P7.62mm, which has no _1x field and therefore refuses on the pin " +
       "count first; no installed block carries _1x at 7.62, 10.16, 12.70 or 15.24mm.",
   ],
+  [
+    "Package_DIP:DIP-16_Wwide",
+    "the DIP row-spacing refusal in tools/bom/footprints.ts needs a W field that is not a number. " +
+      "Package_DIP.pretty only ships numeric widths (DIP-16_W7.62mm and the like), so no installed " +
+      "footprint can drive the malformed-width path and a name must be constructed.",
+  ],
 ])
 
 function sourceFiles(dir: string, extension: string): readonly string[] {
