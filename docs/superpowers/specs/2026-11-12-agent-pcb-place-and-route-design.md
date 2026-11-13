@@ -1,7 +1,9 @@
 Agent place-and-route for a through-hole PCB
 ============================================
 
-**Status** awaiting owner review. **Scope** the first fabricated PCB from this
+**Status** APPROVED by the owner, 2026-11-12 (*"approved"*), after two rounds of
+third-party review recorded in issue 34. **Next** the Phase 1 implementation
+plan. **Scope** the first fabricated PCB from this
 repository: `pt2399-core`, through-hole, laid out by the pinned
 KiCadRoutingTools engine rather than by hand, and sent to PCBWay as a gated fab
 packet.
@@ -73,7 +75,7 @@ nothing outside it. See **The port constraint**.
 | Intent, rules and policy keep the engine's own file format | this spec | graded floorplan intent is the engine's feature, not something the proven flow added. Re-expressing it would mean translating back into it - a layer invented to avoid reuse |
 | The stripboard governance vocabulary is NOT unified with this one yet | this spec | the domains differ in kind - holes, strips, cuts and wire links against zones, keepouts, net classes and clearances. Precondition for revisiting is named under **Open questions** |
 | The KiCad project and board live in `circuits/pt2399-core/` | existing convention, commit `0f5d775` *"Every KiCad source lives in `circuits/<circuit>/`"* | `circuits/pultec/pultec-three-band-eq.kicad_pro` is already there; a new top-level family would overload `boards/`, whose meaning is "a directory with a `perfboard.json`" |
-| The engine is pinned at the commit that produced a manufactured board | this spec | a pin is a commit, moved only deliberately. Starting from a newer release would put an unmeasured engine under the first board |
+| The engine is pinned at the commit that produced a manufactured board, NOT at its newest release | this spec, the owner having delegated the call on 2026-11-12 (*"I don't care which version of the vendored tooling you use"*) | the probe asks one question - can the engine route THIS board - and a newer engine would put a second unmeasured variable under it, so a failure could not be attributed. A known-good engine makes the board the only unknown. The pin moves later in a deliberate commit of its own, which is the standing rule for every pin here, and a newer release is as able to regress as to improve |
 | The outline is a rectangle sized to the parts, with four M3 mounting holes inset from the corners and `J1` on one long edge | this spec, the owner having delegated the call on 2026-11-12 | there is no enclosure for the outline to answer to, so nothing argues for a target size, and a size chosen before the placement is known would constrain the router for no reason. M3 at the corners is the generic module convention and costs nothing to drill. `J1` on a long edge keeps the five off-board nets reachable on a breadboard or in a jig, and gives the router one clean escape rather than five crossing it |
 | The outline and hole geometry are final BEFORE routing, and placement is regraded against them | review issue 34, point 2, accepted | **a defect this spec introduced.** "The size is an output of placement" put routing ahead of the final geometry, so the corner holes and the edge anchoring `J1` could move after the grade that approved them: initial keepouts pass, final hardware overlaps a part, and the header silently loses its approved setback. The size still derives from the parts - it just settles before a track is laid. Hardware is modelled by envelope, not by drill |
 | Schematic parity is a fail-closed check from Phase 1, with the three report classes under three separate policies | review issue 34, point 1, accepted | the probe's answer gates the entire spec, and this spec had left parity's fail-closed behaviour in Phase 2. A missing or unreadable report, or a missing parity field, must fail rather than read as zero violations, and `unconnected_items` must be counted rather than conflated with parity |
@@ -414,16 +416,13 @@ than marked closed.
    running 10.0.5** in Phase 1, not read off the 9.0 page. This repository's
    standing practice is that a version string comes from `--version` on the
    installed artifact.
-3. **Whether the engine pin should move to its newest release.** The spec pins
-   the commit that has produced a manufactured board. Moving it is a separate,
-   deliberate commit, and it can change what a passing board is.
-4. **Whether this governance vocabulary and the stripboard one should become
+3. **Whether this governance vocabulary and the stripboard one should become
    one.** Named rather than left implicit, because two parallel vocabularies for
    two layout media is exactly the silting this repository objects to. The
    precondition for revisiting: **a second PCB exists, and the two vocabularies
    have been observed to overlap in fact.** Not before, and not on the strength
    of a guess - the domains differ in kind, and the intent format is upstream's.
-5. **Breakout for prototyping.** The owner's purpose for this board is trying
+4. **Breakout for prototyping.** The owner's purpose for this board is trying
    configurations. `VCO` on `J1` pin 3 already serves that without a change, but
    test points on the filter and regeneration nodes, or a wider header, would
    serve it better. Deliberately deferred to a second board, where it is a
