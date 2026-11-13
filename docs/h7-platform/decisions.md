@@ -1890,6 +1890,210 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Costs if wrong:** for the unnumbered three, a diode reversed on the footprint, caught at layout.
 - **Set by:** the controller, h7 pedal pages plan Task 2.
 
+### CR-PEDAL-DC-JACK
+
+**The pedal's DC jack is drawn from the generic 2-pin `Connector:Barrel_Jack`, with no part number: centre pin GND, sleeve VIN, no switch contact.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** J_DC uses `Connector:Barrel_Jack` (checked on disk), with no MPN, because a schematic needs none (CLAUDE.md, G245) and the only part named, the PJ-057AH, is a study assumption ([parts.md](parts.md) line 134; open item DC-JACK-FIT). Pin 1 is drawn as the centre pin (its graphic is the rounded centre contact at the top of the symbol) and goes to GND; pin 2, the sleeve contact, goes to VIN, as PWR-01 states the polarity: "centre pin GND, sleeve +V" ([schematic-checklist.md](schematic-checklist.md) line 117). Which pin is the centre is read from the symbol's graphics, not from a part's drawing. **No switch contact is used**: no document in `docs/h7-platform/` connects one, so `Barrel_Jack_Switch` would add a pin with nothing on it. Carried in `circuits/h7-platform/pedal-rulings.ts` (`DC_JACK`).
+- **Not settled by this:** DC-JACK-FIT, which closes only in phase 4 on a chosen part, its footprint and a plug fitted by hand.
+- **Costs if wrong:** if the chosen part numbers its centre pin 2, the two nets swap on one symbol, caught when the footprint is chosen; if a later source uses a switch contact, the symbol becomes `Barrel_Jack_Switch` and one pin is added.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+
+### CR-PEDAL-FB-IN
+
+**FB_IN sits in series on the input path both branches share, between the jack node VIN and the node the two Schottkys take; C_SCH is on VIN and C_PROTHF on VIN_A.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** "Where FB_IN sits on the split pedal is an S2 choice" ([power.md](power.md) line 28). It is ruled here:
+  - **FB_IN** (BLM31KN601SN1L, [parts.md](parts.md) line 58) runs from **VIN**, the jack node and the supervisor's sense point (power.md lines 25 and 47), to a new node **VIN_FB**, which takes the anodes of D_AIN and D_MIN.
+  - **C_SCH** (100 nF 50 V X7R, parts.md line 82) is on VIN, the ferrite's jack side, as v1 put it on the ferrite's input side ([POWER.md §1](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/POWER.md), "C39 (C_SCH) … FB2 (FB_IN)").
+  - **C_PROTHF** (the same part) is on VIN_A beside C_PROT, where v1 had it beside C_PROT on VIN_PROT, which the split renames VIN_A (power.md line 26).
+- **Why there:** the hot-plug analysis behind HOT-PLUG-PEAK models "an optional ferrite 0–3 µH" (power.md line 295) as part of one series path from the source to the diode pair: the pinned model's own description is "a series inductance and resistance (cable plus any ferrite), and one or two Schottky branches" ([hotPlug.ts](https://github.com/oletizi/pedals/blob/5b926d0aaf002d3ea111786f6ab9cdb72b8a913e/h7-platform/circuit/analysis/hotPlug.ts), lines 2–3). This position is the one that grid covers; a ferrite in one branch only is a circuit the analysis did not model. It is also v1's arrangement carried across the split: on v1 the ferrite was on the path every load shared, so it filtered the switching regulator's conducted emission as well as the analog branch's; ahead of the per-branch diodes is where that path now is. C_SCH ahead of the diodes sees a reversed plug: as a non-polar 50 V ceramic it takes −18 V within the rating power.md line 498 gives the input HF capacitor, and the jack's 24.64 V hot-plug extreme (power.md §4.5) is under 50 V.
+- **Not modelled by the analysis, recorded:** C_SCH's 100 nF between the cable and the ferrite (the model lumps the two), as v1's model did. HOT-PLUG-PEAK stays open; it closes on BU-25, not on this ruling.
+- **Costs if wrong:** one ferrite and two capacitors move between three nets on one page, and VIN_FB disappears if the ferrite moves into a branch; the hot-plug grid would then not cover the position.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`FB_IN_POSITION`).
+
+### CR-PEDAL-CHASSIS-PAD
+
+**The chassis-bond GND pad is not a model part.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** [PW-CHASSIS](#pw-chassis)'s "dedicated GND solder pad (plated through-hole, Ø2.5 mm pad, 1.2 mm drill) near the DC jack" ([power.md](power.md) line 533; [layout-carry-forward.md](layout-carry-forward.md) line 71) is pad geometry on the GND net, which is layout: a wire from the enclosure lug lands on it. It joins no two nets and carries no value, so a model part for it would add a single pin to GND and nothing else. It goes on the board as a pad in phase 4, from layout-carry-forward.md line 71.
+- **Costs if wrong:** one `Connector:TestPoint`-like part on GND added to the power-entry page.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+
+### CR-PEDAL-LOGIC-DECOUPLING
+
+**U_ISO_M, U_ISO_C and U_MIDIDRV each take 100 nF at their VCC pin, as each part's data sheet recommends.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** no document in `docs/h7-platform/` gives these values. Each data sheet was fetched on 2026-11-13 from ti.com and read:
+  - U_ISO_M, SN74LVC3G34DCTR, on 3V3_D ([architecture.md](architecture.md) line 255): TI SCES366L (rev. October 2015) p. 10, §10 Power Supply Recommendations: "For devices with a single supply, a 0.1-μF capacitor is recommended" (https://www.ti.com/lit/ds/symlink/sn74lvc3g34.pdf).
+  - U_ISO_C, SN74LVC1G34DBVR, on 3V3_CODEC (architecture.md line 256): TI SCES519O (rev. October 2025) p. 15, §8.3: "A 0.1μF capacitor is recommended for this device" (https://www.ti.com/lit/ds/symlink/sn74lvc1g34.pdf).
+  - U_MIDIDRV, SN74LVC1G07DBVR, on 3V3_D ([parts.md](parts.md) line 139): TI SCES296AG (rev. October 2025) p. 11, §8.3: "A 0.1-μF capacitor is recommended for devices with a single supply" (https://www.ti.com/lit/ds/symlink/sn74lvc1g07.pdf).
+  Each part has one VCC pin, so each takes one 100 nF capacitor from VCC to GND. The data sheets' optional 1 µF in parallel is not fitted.
+- **Not settled by this:** the two 100 nF on 3V3_D count toward its 10 µF external-capacitance limit ([R-24](#r-24)); the pedal's total is for the block models to sum.
+- **Costs if wrong:** a capacitor value on three parts.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`LOGIC_DECOUPLING`).
+
+### CR-PEDAL-TEST-PADS
+
+**The pedal's test pads: power pads on VIN, VIN_A, VIN_MOD, 5V_A and 3V3_D with a GND pad, and the four audio pads each with a GND pad beside it.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the pedal half of TEST-PAD-SPLIT, and so the pedal's side of the conflict entry on the v1 test pads ([open-items.md](open-items.md)), which says "Assigning them is a design choice, not a reading of the sources". The split spec says the pedal "keeps the power and audio pads" ([architecture.md](architecture.md) line 344; [layout-carry-forward.md](layout-carry-forward.md) line 88). Each pad is a `Connector:TestPoint`. Each v1 pad ([layout-carry-forward.md](layout-carry-forward.md) line 88), placed or dropped:
+  - **VIN before the Schottky** → VIN, still the node before both Schottkys ([CR-PEDAL-FB-IN](#cr-pedal-fb-in)).
+  - **VIN_PROT** → VIN_A, VIN_PROT's split name ([power.md](power.md) line 26).
+  - **5V_A** → 5V_A. **3V3_D** → 3V3_D: the audio board is tested first with a real Seed ([O-9](#o-9)), which carries none of our module's pads, and 3V3_D is the pedal's logic supply.
+  - **GND** (the grid's) → one GND pad.
+  - **Added: VIN_MOD**, because BU-25 scopes VIN_MOD at pin 39 ([bring-up.md](bring-up.md) line 88) and TEST-PAD-SPLIT asks for the pads its measurements need.
+  - **Audio:** an input pad on each channel's R_RF/C_RF node (AIO-02, [schematic-checklist.md](schematic-checklist.md) line 152; nets named IN_RF_L and IN_RF_R here, since no document names that node) and an output pad on each FX_OUT_x (AIO-17, line 167), each with a GND pad beside it.
+  - **Dropped, with the reason:** SWDIO, SWCLK and NRST (the SWD header and its pogo pads go to the module, split spec §6.1; `circuits/h7-platform/module/swd.ts`); BOOT0, VDDA and VCAP ([D15](#d15) keeps them on the module); VIN_BUCK (the module's input network, power.md line 29, not a pedal net).
+- **Not settled by this:** whether the pads form a pogo grid, and where they sit (layout); the module half of TEST-PAD-SPLIT.
+- **Costs if wrong:** test points added or removed on the power-entry, input and output pages; nothing in the circuit changes.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`TEST_PADS`).
+
+### CR-PEDAL-HW-REV
+
+**The pedal's HW_REV strap is revision 1's divider: 20.0 kΩ from VREF_A to HW_REV, 2.49 kΩ to GND, 100 nF at the pin.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** [analog.md](analog.md) §11 gives the divider, VREF_A to GND with 100 nF at pin 29 (line 347), and revisions 1 to 8 (line 351 onward), and "the sources read do not say which code each split board carries". The pedal is the first build, so it takes revision 1, the same row and the same reasoning as the module's [CR-MODULE-ID-STRAP-VALUES](#cr-module-id-strap-values). The values are read from the module's `ID_STRAP` constant, not retyped. Any other row is as faithful.
+- **Costs if wrong:** two resistor values; firmware reads another code.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`HW_REV_STRAP`).
+
+### CR-PEDAL-CONTROL-NODE
+
+**Each control position is drawn as one node joining the pot's wiper, R_PUn, the button and R_POSn; the button returns through R_BTNn to GND; both fits are drawn at every position.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** no document draws the node; it is assembled from [power.md](power.md) line 417 ("R_PUn 10.0 kΩ to 3V3_D, R_BTNn 1.00 kΩ to GND, R_POSn 10.0 kΩ to the pin") and [architecture.md](architecture.md) line 230 ("a press draws at most 3.513 V / 1.00 kΩ = 3.5 mA through the always-fitted 1.00 kΩ resistor"). For position n:
+  - **POSn_NODE** joins the pot's wiper, R_PUn (10.0 kΩ from 3V3_D), one side of the button and R_POSn.
+  - The button's other side is **POSn_BTN**, which R_BTNn (1.00 kΩ) takes to GND. R_BTNn's far end is GND, as power.md line 417 states it.
+  - R_POSn (10.0 kΩ) runs to the contract pin **POSn**, where C_POSn (100 nF) goes to GND ([analog.md](analog.md) line 364).
+  - The pot (RV16AF-41 B10K) runs from **ccw = GND to cw = VREF_A** ([analog.md](analog.md) line 364: "from VREF_A to GND"). Which end is cw is a choice: turning clockwise raises the reading.
+  - **Both fits are drawn at every position.** Each position "carries the pot footprint and the button footprint", and the per-effect fit is a KiCad design variant that marks parts fitted or Do Not Populate per symbol instance ([mechanical-and-controls.md](mechanical-and-controls.md) line 298), so every symbol of both fits is on the schematic. The union is the circuit architecture.md line 230 already bounds ("with a pot and a button both fitted … at most 3.5 mA"). The page notes that each position is fitted with a pot or a button per effect (open item CONTROL-POSITION-VARIANTS, phase 4). These are variant positions, not [CR-PEDAL-POPULATION](#cr-pedal-population)'s not-fitted parts.
+- **Costs if wrong:** for the order of the button and R_BTNn, two nets swap names on six positions; for the pot's direction, every control reverses (firmware can invert it); for drawing both fits, a check of the default build (Task 8) has to know the six positions are variants.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`CONTROL_POSITION`, `controlPositionNets`).
+
+### CR-PEDAL-FOOTSWITCH
+
+**Each footswitch input is a 2-pad connector on the pedal: pin 1 the switch node, pin 2 GND.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** "FSWn and GND cross on a 2-pin 2.54 straight header soldered through both boards", and "the audio board gets the header's two through-holes" ([mechanical-and-controls.md](mechanical-and-controls.md) line 398). The pedal side is modelled as a 2-pin connector, `Connector_Generic:Conn_01x02` (the carrier's `HEADER_2`), per input. Pin 1 is the switch node, named **FSW1_SW** / **FSW2_SW** here: the node with the 10.0 kΩ pull-up and 100 nF ([power.md](power.md) line 415), ahead of R_FSWn (1.20 kΩ) to the contract net FSWn. Pin 2 is GND. The switch is on the hung board and is not on the pedal's model.
+- **Costs if wrong:** one symbol per input; pin 1 and pin 2 swapped is caught at layout.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`FOOTSWITCH_CONNECTION`).
+
+### CR-PEDAL-LED-MOSFET
+
+**The LED switches are AO3400A, gate through 100 Ω, 10.0 kΩ gate pull-down.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** CTL-05 names only v1's BSS138-7-F ([schematic-checklist.md](schematic-checklist.md) line 187), and records that its RDS(on) at a 3.3 V gate is typical only. The split's N-MOSFET everywhere else on the pedal is the AO3400A ([parts.md](parts.md) line 61; Q_BYP, line 123), with the stock symbol and pin numbers of [CR-PEDAL-SYMBOL-AO3400A](#cr-pedal-symbol-ao3400a); no source names another part for the LEDs. The gate series resistor is **100 Ω**, the value [architecture.md](architecture.md) line 266 used to compute the LED gates' 60.8 kΩ onboard-pull margin ("with CTL-05's 100 Ω"); the pull-down is [R-13](#r-13)'s 10.0 kΩ.
+- **Costs if wrong:** a part number on two positions; another MOSFET's pinout may change the symbol.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`LED_SWITCH`).
+
+### CR-PEDAL-USB-C
+
+**The pedal's USB-C receptacle is the stock `Connector:USB_C_Receptacle_USB2.0_16P`, with no part number.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the receptacle takes USB-01's wiring ([schematic-checklist.md](schematic-checklist.md) line 207), USB-02's VBUS (line 208) and USB-05's shield (line 214), on the symbol the carrier and module use ([CR-CARRIER-USB-C](#cr-carrier-usb-c)). No MPN, because a schematic needs none (G245); v1's HC-TYPE-C-16P-01A is named only as "v1 contained".
+- **Costs if wrong:** none for the schematic; a part number at the BOM.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+
+### CR-PEDAL-USBSW
+
+**On the pedal, U_USBSW's S pin goes to GND, its second port is unused, and VCC takes 100 nF: the carrier's rulings.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the switch has the same role on the pedal as on the carrier, between J_MOD pins 36/37 and the ESD part and receptacle ([R-14](#r-14); [architecture.md](architecture.md) line 258), so [CR-CARRIER-USBSW-SELECT](#cr-carrier-usbsw-select) (S to GND selects port 1, TI SCDS220M Table 7-1; 2D+/2D− not connected) and the carrier's 100 nF at VCC (SCDS220M p. 15 §8.3) carry to the pedal. The capacitor's value is read from the carrier model, not retyped.
+- **Costs if wrong:** one pin's net and one capacitor, on the carrier as well.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`PEDAL_USB_SWITCH`).
+
+### CR-PEDAL-VBUS-SENSE-CAP
+
+**R-57's sense-node capacitor is fitted on the pedal: 100 nF from USB_VBUS_SENSE to GND, the carrier's part.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the pedal fits `c_vbus_sense`, the carrier's [CR-CARRIER-VBUS-SENSE-CAP](#cr-carrier-vbus-sense-cap) value (100 nF X7R, [parts.md](parts.md) line 177's option), from USB_VBUS_SENSE (pin 31) to GND. The pedal's divider is the carrier's, 12.0 kΩ over 20.0 kΩ, 1 % ([architecture.md](architecture.md) line 257), so `vbusSenseAnalysis`'s windows hold for it unchanged and were not re-run; `tests/circuits/h7-pedal-rulings.test.ts` compares the pedal's divider and capacitor with the carrier's model, and fails if they part.
+- **Which board owes the fix** (the inventory's conflict 6.3): [analog.md](analog.md) FIG-VBUS-HOTPLUG says "the module design … fits C_VBUS", and VBUS-HOTPLUG says "fitted in the phase-2 pedal model and the carrier model". The divider and the sense node are on the pedal and the carrier, not the module, so the pedal and the carrier owe it; the open-items row is followed.
+- **Not settled by this:** whether a real host and cable stay inside the windows. VBUS-HOTPLUG stays open, as it does for the carrier.
+- **Costs if wrong:** one capacitor, and a delay on the VBUS-present reading the carrier's test already states.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`VBUS_SENSE_CAP`).
+
+### CR-PEDAL-VBUS-IDS
+
+**The two capacitors both called C_VBUS take the carrier's ids: `c_vbus` at the USBLC6-2's pin 5, `c_vbus_sense` on USB_VBUS_SENSE.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** USB-04's C_VBUS ([schematic-checklist.md](schematic-checklist.md) line 213) is `c_vbus`; the sense-node option of [parts.md](parts.md) line 177 and VBUS-HOTPLUG is `c_vbus_sense`, as the carrier names them (the row itself says "a model gives them distinct ids").
+- **Costs if wrong:** two ids renamed.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+
+### CR-PEDAL-MIDI
+
+**MIDI on the pedal: the not-fitted 4-pin header and R-26's MIDI OUT driver and switch are drawn; the connector carrying the loop and the MIDI IN receiver are not.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:**
+  - [OWN-04](#own-04)'s unpopulated header governs: USB-08's 1 × 4 header, 1 = 3V3_D, 2 = MIDI_UART_TX, 3 = MIDI_UART_RX, 4 = GND ([schematic-checklist.md](schematic-checklist.md) line 217). OWN-04 is itself a controller ruling under an ambiguous heading, so it binds here as the standing ruling, and the owner may override it. The header is modelled and drawn, not fitted ([CR-PEDAL-POPULATION](#cr-pedal-population)).
+  - [R-26](#r-26)'s MIDI OUT driver and switch are drawn up to the nets the sources name ([power.md](power.md) line 460): U_MIDIDRV and R_TXPU on 3V3_D, Q_MIDI, R_MGP, RA (four 130 Ω) and RC. RA's far end is "MIDI pin 4" and RC's far end "pin 5"; the nets are named **MIDI_PIN4** and **MIDI_PIN5** here.
+  - **The connector that carries MIDI pins 4 and 5 is not drawn.** No source names it: the header carries neither 3V3_P nor the loop (the inventory's conflict 6.4), and the CA-033 ferrites "go at the jack" ([open-items.md](open-items.md) line 62) of a jack no document names. It is not invented. The page says so, and the open row MIDI-OUT-CONNECTOR records the gap for the owner.
+  - **The MIDI IN receiver is not drawn** until MIDI-IN-RECEIVER-STOCK closes (spec, lines 347–348); its network is not in the repository.
+  - U_MIDIDRV's decoupling is [CR-PEDAL-LOGIC-DECOUPLING](#cr-pedal-logic-decoupling)'s.
+- **Costs if wrong:** if the owner names a MIDI jack, MIDI_PIN4 and MIDI_PIN5 land on it and the ferrites are added; if he wants the loop on the header, the header grows two pins and OWN-04's pinout changes.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-population.ts` (`MIDI`).
+
+### CR-PEDAL-I2C-EXPANSION
+
+**No I²C expansion connector is drawn: no source names one.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the pedal carries the expansion bus's pull-ups, 2.40 kΩ to 3V3_D ([power.md](power.md) line 413; [architecture.md](architecture.md) line 342), and the codec's not-fitted links. Where an expansion device connects is in no document, so no connector is invented; the open row I2C-EXPANSION-CONNECTOR records the gap.
+- **Costs if wrong:** one connector added to the MIDI and I²C page when the owner names it.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+
+### CR-PEDAL-PCM3060-VALUES
+
+**The PCM3060's straps and decoupling are schematic-checklist.md's CODEC-02 to CODEC-10, as written there.**
+- **Label:** Controller ruling (the owner may override).
+- **Date:** 2026-11-13.
+- **Decides:** the values are given, not open (the inventory's conflict 6.6): VCC (24) and VDD (7) each 100 nF + 10 µF ([schematic-checklist.md](schematic-checklist.md) line 88); VCOM (21) 100 nF + 10 µF and nothing else (line 92); the four grounds on GND (line 93); MODE 220 kΩ ± 5 % to DGND (line 98); IFMD to the codec's VDD, 3V3_CODEC (line 99); FMT 4.7 kΩ to VDD (line 103); DEMP 4.7 kΩ to DGND (line 104); and the not-fitted positions of lines 98, 104 and 105, which [CR-PEDAL-POPULATION](#cr-pedal-population) takes out of the model. The 10 µF parts' MPNs, which line 88 says are "in parts.md" and are not, are not needed for a schematic (G245). The spec's line listing these values as open carries a dated note pointing here.
+- **Costs if wrong:** none beyond the checklist's own values.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-rulings.ts` (`PCM3060_VALUES`).
+
+### CR-PEDAL-POPULATION
+
+**The pedal model is the default fitted build: a not-fitted part that would join or load nets is left out of the model and off the page; a not-fitted connector is drawn with a note.**
+- **Label:** Controller ruling (the owner may override). From [issue 33](https://github.com/oletizi/audio-circuits/issues/33), P1.
+- **Date:** 2026-11-13.
+- **Decides:** `Component`, `PartSpec`, the drawing intent and the sheet-agreement path carry no population state, and this plan adds none. Every not-fitted position the documents name for the pedal, found by searching `docs/h7-platform/` for "not fitted", "not-fitted", "DNF", "unpopulated" and "not populated", is in one of two classes.
+  - **A part whose fitting would join or load nets: left out of the model and off the page.** The block's module comment names each and its source, and the codec page carries a text note listing them with CODEC-10's sheet note verbatim: "I2C mode = fit both links, fit MODE 0 Ω (CODEC-06) and remove the 220 kΩ, remove the pin-2 4.7 kΩ pull-down and fit the DNF pull-up." Drawing one would fail the round trip, since the page would carry a part the model does not.
+    - CODEC-06's 0 Ω from MODE to DGND ([schematic-checklist.md](schematic-checklist.md) line 98): fitted, it shorts the 220 kΩ hardware-mode strap.
+    - CODEC-09's 4.7 kΩ pull-up from pin 2 to VDD (line 104): fitted, it loads pin 2 against its pull-down.
+    - CODEC-10's two 0 Ω links, pin 1 to EXP_I2C_SCL and pin 2 to EXP_I2C_SDA (line 105): fitted, each joins a codec pin's net to a contract net.
+    - v1's R_RST_PD, 10 kΩ from CODEC_RST_N to GND ([analog.md](analog.md) lines 63 and 411; [R-53](#r-53)): fitted, it would put the released RST across VIH, so it is never fitted. It is listed because the documents name the position.
+  - **A connector whose fitting adds no on-board path: modelled and drawn, with a note that it is not fitted.** Fitting it gives a cable somewhere to land and joins no two on-board nets, so the fitted and unfitted boards are the same circuit. Whether it is placed is a BOM fact for the assembly consumer (G245).
+    - USB-08's MIDI UART header (line 217; [OWN-04](#own-04), "The header stays unpopulated"). It joins no on-board nets because its four pins have no internal connection (`MIDI_HEADER` is `electricallyInert`), and each lands on a net the board already has: 3V3_D, MIDI_UART_TX, MIDI_UART_RX, GND.
+  - **Named "not fitted" and not a pedal position:** the Seed's AGND/DGND link (architecture.md line 377, on the Seed); the PA11 pull-up (firmware-facing-requirements.md line 144) and the second QSPI flash (processor-and-memory.md line 258), both on the module; [parts.md](parts.md) §7's alternates (line 163), which are other part numbers for fitted positions, the PESD15VL1BA among them, and whose C_VBUS option is now fitted ([CR-PEDAL-VBUS-SENSE-CAP](#cr-pedal-vbus-sense-cap)); lines that restate CODEC-10's links (architecture.md lines 94 and 206, processor-and-memory.md line 26, this document's [O-2](#o-2), [RR-11](#rr-11) and [D2](#d2)); and *Not in force:* lines (schematic-checklist.md lines 81 and 96, bring-up.md line 86, this document's line 378). The control positions' per-effect fit (mechanical-and-controls.md line 298) is a design variant, not a not-fitted part: [CR-PEDAL-CONTROL-NODE](#cr-pedal-control-node) draws both fits.
+- **Costs if wrong:** the I²C-mode build has no drawing until a later plan adds a population property; a connector misclassed as the second kind would hide an on-board join, which is why each connector's reason is stated.
+- **Set by:** the controller, h7 pedal pages plan Task 3.
+- **Carried in:** `circuits/h7-platform/pedal-population.ts` (`NOT_FITTED_PARTS`, `NOT_FITTED_CONNECTORS`, `CODEC10_SHEET_NOTE`).
+
 ## What this document does not carry
 
 - **Generator-only rulings.** S1 ledger R-3 (hermetic `kicad-cli` gates and the v1 manifest), R-4 (the gate-9 role model) and R-7 (which gates apply to the carrier). Every entry of [the A1 rulings][a1], which are about the pedals generator; its one ruling touching an owner approval, that gate 8 accepts deltas `CORE-BRIEF.md` §4 declares with owner approval, is a generator rule, and the approvals themselves are [D14](#d14) to [D19](#d19); its words are quoted as evidence under [D1](#d1). The unnumbered controller rulings in [the A2 rulings][a2], except the two still live in the design notes, carried as [PW-CHASSIS](#pw-chassis) and [AN-RING](#an-ring), and the first, quoted under [OWN-02](#own-02). `OWNER-DEFAULTS.md` ALL-07 (an ERC exclusion for a stock KiCad symbol on v1); the module's own allowance for the same VCAP1–VCAP2 error is a new controller ruling, [CR-MODULE-VCAP-ERC](#cr-module-vcap-erc), not this carried. The gate clauses of [O-8](#o-8), [O-10](#o-10), [RR-5](#rr-5), [RR-9](#rr-9) and [RR-10](#rr-10), and split spec §10; and O-10's clause putting the pedals layout tooling (Sub-project B) before both layouts.
