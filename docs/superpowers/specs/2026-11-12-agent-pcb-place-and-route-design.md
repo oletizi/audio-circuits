@@ -75,6 +75,10 @@ nothing outside it. See **The port constraint**.
 | The KiCad project and board live in `circuits/pt2399-core/` | existing convention, commit `0f5d775` *"Every KiCad source lives in `circuits/<circuit>/`"* | `circuits/pultec/pultec-three-band-eq.kicad_pro` is already there; a new top-level family would overload `boards/`, whose meaning is "a directory with a `perfboard.json`" |
 | The engine is pinned at the commit that produced a manufactured board | this spec | a pin is a commit, moved only deliberately. Starting from a newer release would put an unmeasured engine under the first board |
 | The outline is a rectangle sized to the parts, with four M3 mounting holes inset from the corners and `J1` on one long edge | this spec, the owner having delegated the call on 2026-11-12 | there is no enclosure for the outline to answer to, so nothing argues for a target size, and a size chosen before the placement is known would constrain the router for no reason. M3 at the corners is the generic module convention and costs nothing to drill. `J1` on a long edge keeps the five off-board nets reachable on a breadboard or in a jig, and gives the router one clean escape rather than five crossing it |
+| The outline and hole geometry are final BEFORE routing, and placement is regraded against them | review issue 34, point 2, accepted | **a defect this spec introduced.** "The size is an output of placement" put routing ahead of the final geometry, so the corner holes and the edge anchoring `J1` could move after the grade that approved them: initial keepouts pass, final hardware overlaps a part, and the header silently loses its approved setback. The size still derives from the parts - it just settles before a track is laid. Hardware is modelled by envelope, not by drill |
+| Schematic parity is a fail-closed check from Phase 1, with the three report classes under three separate policies | review issue 34, point 1, accepted | the probe's answer gates the entire spec, and this spec had left parity's fail-closed behaviour in Phase 2. A missing or unreadable report, or a missing parity field, must fail rather than read as zero violations, and `unconnected_items` must be counted rather than conflated with parity |
+| The owner's approval is a checked input to `adopt`, and the fab packet is bound to the adopted board by input digest | review issue 34, point 3, accepted | this spec made "adopted without the owner seeing a render" its first anti-goal and then left the enforcement in prose. `stripboard/render-approvals.json` already holds five approvals in the needed shape, so this is reuse |
+| The ground pour is MEASURED in Phase 1; the owner sets the thresholds | review issue 34, point 4, accepted in substance, moved and split | the review placed this in Phase 2, after ranking. It belongs in Phase 1: connectivity and dead-copper checks can both hold on a barely-connected pour, so a probe blind to it can report success and hand Phase 2 a false pass. Split because an agent does not author the acceptance criteria for the artifact it produces - it states the numbers, the owner sets the bar |
 
 ## The board
 
@@ -161,14 +165,24 @@ Steps:
    `pt2399-core.kicad_pro` and a `pt2399-core.kicad_pcb`, carrying the Board
    Setup constraints and net-class widths of the fabrication standard below. The
    existing `pt2399-core.kicad_sch` is the schematic; it is not modified.
-3. **Draw the board outline**, per the decision above: a rectangle, four M3
-   holes inset from the corners, `J1` on one long edge. **The size is an
-   OUTPUT of placement, not an input to it.** The rectangle starts generously,
-   placement runs, and the outline is then brought in to the placed extent plus
-   the standard's copper-to-edge clearance. Fixing a size first would constrain
-   the router to serve a number nothing asked for. The mounting holes are
-   keepouts in the floorplan intent, so placement never has to be undone to
-   make room for them.
+3. **Settle the outline BEFORE routing, in two passes.** Per the decision
+   above: a rectangle, four M3 holes inset from the corners, `J1` on one long
+   edge. The size still derives from the parts rather than from a target - but
+   it must be final before a single track is laid, and the first version of this
+   spec got that wrong. See the decisions table row on review issue 34.
+   - **Pass 1, discover the extent.** A generous rectangle, placement only, to
+     find out how much board the parts and their hardware actually need.
+   - **Then fix the final geometry.** Bring the edge in to that extent plus the
+     standard's copper-to-edge clearance, and place the four holes against the
+     final corners. Hardware is modelled by its **envelope, not its drill**: an
+     M3 screw head, washer and standoff footprint, not a 3.2 mm hole. The
+     header's approved setback is measured from the final edge.
+   - **Then regrade placement on the final geometry**, and re-place if the
+     regrade fails. Routing starts only after a placement that passed against
+     the geometry that will exist.
+
+   The holes and hardware envelopes are keepouts in the floorplan intent, and
+   DRC verifies copper clearance to them independently of the grader.
 4. **Draft the intent** - `floorplan-intent.json` (blocks, zones, keepouts, the
    header's edge and setback), `placement-rules.json` (input-to-output
    separation, each filter node compact around its own pins, the header's
@@ -177,11 +191,49 @@ Steps:
    standard), and a `.kicad_dru` if the input and output prove to need an
    isolation rule. **An independent review checks these, then the owner approves
    them**, and nothing is adopted under unapproved intent.
-5. **Place, route, and check.** Seed candidates, grade each against the intent,
-   route the ones that pass, and run connectivity, the engine's DRC, KiCad's
-   DRC, schematic parity and a no-dead-copper check on each result.
+5. **Place, route, and check**, to the acceptance criteria below.
 6. **Show the owner a render**, beside the question and nothing else. Commit
    everything the run produced.
+
+### Phase 1 acceptance criteria
+
+The probe's answer gates the whole spec, so its checks are stated here rather
+than left to Phase 2's facility. A check that cannot fail would make the gate
+decorative.
+
+**Schematic parity is fail-closed, from this phase.** The check runs KiCad's DRC
+with `--schematic-parity --format json --severity-all`, on the candidate paired
+with its own schematic and project configuration. It **fails** on a missing
+report, an unreadable report, or a report with no parity field - a missing field
+is not zero violations. An integration test runs the production check against a
+known-good pair and against a board with a deliberately wrong pad-to-net
+assignment, so the check is proven able to fail before it is trusted.
+
+**`--severity-error` is the trap, and it is why the above is spelled out.** That
+setting silently filters out every schematic-parity violation, which is the one
+thing a parity check exists to catch. The severity setting controls what gets
+reported, so a check with the wrong one passes a board it never examined.
+
+**The three result classes get three separate policies**, stated rather than
+conflated:
+
+| Report class | Policy |
+| --- | --- |
+| `schematic_parity` | zero tolerated. A board that disagrees with its schematic is not this board |
+| DRC violations | zero tolerated at error severity, against the fabrication standard's values |
+| `unconnected_items` | zero tolerated on a routed candidate, and **counted, not ignored, on an unrouted one** - it is the measure of how much the router left undone |
+
+**The ground pour is measured in this phase, not deferred.** Zero unrouted nets
+and zero dead copper can both hold on a pour that is barely connected, so a
+probe blind to the pour can report "it routes" and hand Phase 2 a false pass.
+Measured on the **saved post-refill board** - the one that would be adopted and
+plotted, not the pre-fill state: ground-plane continuity around `U1`, the
+narrowest bridge joining any two regions of the pour, the spoke count on every
+through-hole ground pad, and whether the supply bypass return rides the pour or
+a track. **The measurements are stated as numbers; the thresholds are the
+owner's to set** - an agent does not author the acceptance criteria for the
+artifact it is producing. Until he sets them the numbers are reported beside the
+render and gate nothing.
 
 **The decision gate.** If it routes clean, Phase 2 ports the facility in the
 shape this phase proved. If it fails systematically, this spec has cost one
@@ -205,7 +257,7 @@ Five verbs, with run provenance, and exactly one of them writes the board.
 | `place` | seed candidates from the canonical board into a stamped run directory, strip old routing in the run's own copy, grade every seed, repair seeds that fail only proximity, and write each passing candidate with a render and a report. **Never writes the board** |
 | `route` | route one selected candidate, join the pour's islands, refill zones, remove dead copper, and record connectivity, both DRCs, parity, intent and that no part moved. Exits non-zero if any check fails; the run directory stays as evidence |
 | `route-all` | route a place run's candidates one at a time, stopping at N passes or at N identical failures in a row - a batch hides a systematic failure |
-| `adopt` | **the only write to the board.** Accepts a route run only if its result still hashes the same, every check passed, the intent, rules and policy are unchanged, and it traces to a place run whose source is the board as it now is |
+| `adopt` | **the only write to the board.** Accepts a route run only if its result still hashes the same, every check passed, **the owner's recorded approval names this exact routed board**, the intent, rules, policy, schematic, project configuration and custom rules are all unchanged, and it traces to a place run whose source is the board as it now is |
 
 Every run directory carries a manifest recording the source board's hash, the
 intent, rules and policy hashes, the engine commit, the overrides used, and the
@@ -218,6 +270,26 @@ Ranking, for choosing among passing runs: input-to-output gap largest first
 ground plane is worth keeping), then total track length. **The owner chooses, on
 the render.**
 
+**And his choice is a checked input, not a note.** The first version of this
+spec made "a layout adopted without the owner seeing a render" its own first
+anti-goal and then left the enforcement in prose: `adopt`'s predicate was
+hashes and checks, so it would have accepted any passing candidate, including
+one he never saw. The approval is therefore recorded against the exact routed
+board and the exact render he looked at, and `adopt` requires that record.
+
+**The mechanism already exists and is reused rather than invented.**
+`stripboard/render-approvals.json` carries five approvals in precisely this
+shape - a `candidateSha256`, a `renderedFrom` saying what was rendered, the
+owner's own words, who granted it and when, and what it `admits` against what it
+`doesNotExcuse`. One of them states the distinction this needs out loud: what he
+looked at was the picture and not the bytes, with the hash recorded so the two
+cannot drift apart. A PCB approval is the same record about a different
+artifact.
+
+Two things consequently need fresh approval, and a test asserts each: **a
+different passing candidate** from the same run, and **a DRC-clean edit to the
+approved board**. Neither is covered by "every check passed".
+
 The facility also brings:
 
 - **A fabrication standard**, `docs/standards/pcbway-fab-rules.md`:
@@ -227,11 +299,36 @@ The facility also brings:
   0.5 mm hole-to-hole and copper-to-edge, silkscreen stroke 0.15 mm and height
   0.8 mm. A rule tighter than this raises the price of every order, so it is a
   project standard and not a per-board choice.
+
+  Each value lives in the file a tool reads - the Board Setup constraints and
+  net-class widths in the `.kicad_pro` for KiCad's DRC, the same minimums in
+  `route-fab-floor.txt` for the router - because a rule written only in prose
+  drifts.
+
+  **Two things the standard cannot enforce, named so they are not mistaken for
+  checked:** trace impedance and via inductance, which do not matter at this
+  board's frequencies and are not the reason the rules exist; and **silkscreen
+  graphic line width, for which KiCad has no design rule at all.** The second
+  one bears on this board specifically rather than in the abstract: every
+  footprint it uses is a stock KiCad through-hole footprint, and stock
+  footprints are where thin legend outlines come from. **NOT VERIFIED HERE** -
+  `kicad-cli` is not installed in this worktree, so the outline widths of the
+  seven footprints this board uses have not been read. Phase 1 reads them and
+  records what it finds. The expected consequence is a faint outline rather than
+  a rejected or dearer board, so this is a disclosure, not a gate.
 - **A gated fab target.** Gerbers, Excellon drill, position file, IPC-D-356
   netlist and BOM, zipped and named with the board's declared revision -
   produced **only** from a board that passes parity, ERC and DRC, and whose
   declared revision agrees with the release tags. A stale or broken board cannot
   be sent to fab, because the target refuses to build one.
+
+  **And it is bound to the adopted board, not merely to a clean one.** "Clean,
+  with a matching revision" is satisfied by a board that was edited after
+  approval and still passes, so the packet records the digest of its inputs -
+  the adopted board, the schematic, the project configuration, the custom rules
+  - and the release commit it was cut at. A packet whose inputs no longer digest
+  the same is not the packet that was approved, and says so rather than
+  shipping.
 - **The measured trap, pinned by a test.** `kicad-cli pcb drc
   --severity-error` silently filters out every schematic-parity violation - the
   one thing a parity check exists to catch. The check must run `--severity-all`
@@ -283,16 +380,32 @@ public upstream, which is the one citation that is legitimately shared.
 2026-11-12 and is in the decisions table; it is deleted from this list rather
 than marked closed.
 
-1. **Whether the engine pin should move to its newest release.** The spec pins
+1. **The ground pour's thresholds.** Phase 1 measures continuity around `U1`,
+   the narrowest bridge between pour regions, the spoke count on every
+   through-hole ground pad, and whether the supply bypass return rides the pour.
+   **What counts as acceptable is the owner's to set**, and until he does the
+   numbers are reported beside the render and gate nothing. Of the criteria
+   review issue 34 proposed, continuity and the thermal connections are the two
+   worth gating on; return-path length is the weakest limb, since impedance and
+   via inductance do not matter here - though the PT2399's own VCO and sample
+   clock mean this is not a purely audio-frequency board either, so it is
+   reported rather than dismissed.
+2. **The flags and report keys on the pinned KiCad.** The review's citation is
+   the KiCad 9.0 CLI reference; this repository pins `kicad-cli` 10.0.5. The
+   flag spellings and the report's key names are therefore **confirmed by
+   running 10.0.5** in Phase 1, not read off the 9.0 page. This repository's
+   standing practice is that a version string comes from `--version` on the
+   installed artifact.
+3. **Whether the engine pin should move to its newest release.** The spec pins
    the commit that has produced a manufactured board. Moving it is a separate,
    deliberate commit, and it can change what a passing board is.
-2. **Whether this governance vocabulary and the stripboard one should become
+4. **Whether this governance vocabulary and the stripboard one should become
    one.** Named rather than left implicit, because two parallel vocabularies for
    two layout media is exactly the silting this repository objects to. The
    precondition for revisiting: **a second PCB exists, and the two vocabularies
    have been observed to overlap in fact.** Not before, and not on the strength
    of a guess - the domains differ in kind, and the intent format is upstream's.
-3. **Breakout for prototyping.** The owner's purpose for this board is trying
+5. **Breakout for prototyping.** The owner's purpose for this board is trying
    configurations. `VCO` on `J1` pin 3 already serves that without a change, but
    test points on the filter and regeneration nodes, or a wider header, would
    serve it better. Deliberately deferred to a second board, where it is a
