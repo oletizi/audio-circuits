@@ -46,6 +46,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `controls_a.kicad_sch` | block controls_a | `0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888` |
 | `controls_b.kicad_sch` | block controls_b | `cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db` |
 | `expr_ref.kicad_sch` | block expr_ref | `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` |
+| `codec_sup.kicad_sch` | block codec_sup | `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -64,6 +65,7 @@ committed bytes, with the pinned kicad-cli.
 | controls_a | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_a.svg` |
 | controls_b | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `controls_b.svg` |
 | expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
+| codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
 
 ## The drafts every repair starts from
 
@@ -2012,3 +2014,175 @@ Observations, not a judgement of the page, each crossing at the point `crossings
 - U13's VDD and VSS pin names, drawn by the project symbol inside the triangle, overlap the VIN+ and
   VIN- names on the render; the symbol's geometry is `Amplifier_Operational:MCP6001-OT`'s
   (CR-PEDAL-SYMBOL-MCP6001), and this page does not change it.
+
+## codec_sup: the codec domain's supply, oscillator and local reset (Task 9c)
+
+**Status: UNREVIEWED.** sha256 `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147`.
+Render: `codec_sup.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/codec-sup.ts`, 11 parts. U6 (U_CVDD, TPS7A2433DBVR,
+`h7-platform:TPS7A2433DBV`: IN and EN on 5V_A_CODEC, OUT on 3V3_CODEC, GND, pin 4 NC open) with C32
+(C_CVDDIN 1 uF, 5V_A_CODEC to GND) and C33 (C_CVDDOUT 1 uF, 3V3_CODEC to GND); D6 (D_CVCL,
+PMEG4005AEA, `Device:D_Schottky`: anode 3V3_CODEC, cathode 5V_A_CODEC); R26 (R_CBLD 3.60 kOhm,
+3V3_CODEC to GND); U7 (U_XO, X1G0041710019, the SG-210STF, on the stand-in `Oscillator:SG-5032CAN`: ST
+and VCC on 3V3_CODEC, GND, OUT on XO_OUT) with C34 (C_XO 100 nF); U8 (U_CRST, TLV803EA29DBZR, on
+`h7-platform:TLV803EA30DBZR`: VDD on 3V3_CODEC, GND, open-drain RESET on CODEC_RST_N) with C35
+(C_CRST 100 nF); R27 (R_CRST 4.70 kOhm, CODEC_RST_N to 3V3_CODEC); Q5 (Q_PFR, AO3400A: drain on
+CODEC_RST_N, gate PF_TRIP, source GND). Ports 3V3_CODEC, 5V_A_CODEC, CODEC_RST_N, GND, PF_TRIP and
+XO_OUT (PF_TRIP and XO_OUT each reach one pin: Q5's gate and U7's OUT). No private net. One
+no-connect, U6's pin 4.
+
+**Not modelled and not drawn** (CR-PEDAL-POPULATION, class 1): v1's R_RST_PD, 10 kOhm from
+CODEC_RST_N to GND (analog.md line 63, "stays not fitted"; R-31, R-53). The codec page's population
+note lists it with the codec's not-fitted parts.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `codec_sup` is one of
+  the pedal's blocks: the codec domain's regulator, clamp, oscillator and local reset.
+- [R-29](../../../docs/h7-platform/decisions.md#r-29): U_XO, the SG-210STF 12.288 MHz on 3V3_CODEC
+  with 100 nF, ST tied high.
+- [R-30](../../../docs/h7-platform/decisions.md#r-30): U_CVDD from 5V_A_CODEC to 3V3_CODEC, D_CVCL
+  from OUT to IN, R_CBLD 3.60 kOhm to GND (amended by
+  [R-53](../../../docs/h7-platform/decisions.md#r-53)).
+- [R-31](../../../docs/h7-platform/decisions.md#r-31): U_CRST, R_CRST 4.70 kOhm to 3V3_CODEC, and
+  R_RST_PD not fitted (amended by [R-40](../../../docs/h7-platform/decisions.md#r-40) and R-53).
+- [R-37](../../../docs/h7-platform/decisions.md#r-37): Q_PFR, an AO3400A, on CODEC_RST_N, driven by
+  PF_TRIP.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings):
+  U_CVDD's EN tied to IN and pin 4 open (TI SBVS386E p. 3 Table 5-1, p. 11 section 7.3.1); Q_PFR's
+  source on GND; each decoupling capacitor from its rail to GND.
+- [CR-PEDAL-POPULATION](../../../docs/h7-platform/decisions.md#cr-pedal-population): R_RST_PD, class
+  1, is not on the page.
+- [CR-PEDAL-SYMBOL-TPS7A2433](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-tps7a2433): U6
+  is the project symbol from `Regulator_Linear:TLV70033_SOT23-5`, pin 4 `free` and shown.
+- [CR-PEDAL-SYMBOL-SG-210STF](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-sg-210stf): U7
+  is drawn from the stand-in `Oscillator:SG-5032CAN`; its stock Footprint field names the 5032
+  package, and no footprint is taken from it.
+- [CR-PEDAL-SYMBOL-TLV803EA29](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-tlv803ea29):
+  U8 is the module's `h7-platform:TLV803EA30DBZR`; its Value field and the model's `mpn` say
+  TLV803EA29DBZR.
+- [CR-PEDAL-SYMBOL-AO3400A](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a) and
+  [CR-PEDAL-SYMBOL-AO3400A-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-ao3400a-amended):
+  Q5 is the stock AO3400A, G 1, S 2, D 3 (Q_PFR is on the ruling's cost list).
+- [CR-PEDAL-SYMBOL-DIODES](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-diodes): D6, the
+  PMEG4005AEA, is `Device:D_Schottky`, 1 K, 2 A.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): Q5's gate is
+  `input`; U8's RESET `open_collector`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 5V_A_CODEC,
+  3V3_CODEC and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; 5V_A_CODEC's flag is on the root (below), and the one-block root puts the root's stub
+  flags on 5V_A_CODEC and GND.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers):
+  PF_TRIP's driver is U2 on the pf page, an entry since Task 7b; the one-block root stands a
+  TestPoint in for it.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 6 ports on the wrong net.
+- Design notes, not rulings: analog.md lines 63, 374, 383, 387, 401 and 407 and parts.md lines 97 to
+  104, which the block cites part by part.
+- Drawing choices, not transcriptions: one band read west to east along the 3V3_CODEC rail, D6 over
+  U6 between taps on the rows either side of it, XO_OUT's and PF_TRIP's labels mid-page; PF_TRIP and
+  XO_OUT, which the draft drew no wire for, take copperhead's default stroke, as neither shares its
+  prefix with another net on the page (`codec_sup/layout.py`, `UNDRAWN_STROKES`, says why); fields
+  and the rectangle moved after the renders listed below.
+
+### The tables after this page
+
+- `pwr-flag-homes.ts`: **5V_A_CODEC on the root.** Under this page's one-block root `kicad-cli sch
+  erc` reported `power_pin_not_driven` on U6's IN (pin 1, `power_in`). Survey of `h7Pedal()` with the
+  installed and project libraries: 5V_A_CODEC's pins are R21's pin 2 (ldo_vmid, PWR-15's 0 ohm from
+  5V_A, passive), C32, C36, C37 and D6's cathode (passive), U6's EN (pin 3, `input`), and U6's IN and
+  U9's VCC (pin 24, codec page; `power_in`). No power output, so CR-MODULE-PWR-FLAGS puts its one
+  flag on the root, as for GND, VIN_MOD, VIN_A, 3V3_D and VREF_A. With it, `/codec_sup/` reads 0
+  errors.
+- 3V3_CODEC is not homed: U6's OUT (pin 5) is `power_out`. The pages that reach 3V3_CODEC without U6
+  (codec, sai_iso) take a cross-page driver entry when their ERC reports it.
+- `cross-page-drivers.ts` and `erc-allowances.ts` are unchanged by this page.
+
+**What the new home does to the earlier pages: nothing to their bytes.** Of the twelve, only
+ldo_vmid has a 5V_A_CODEC port (R21's pin 2). Its one-block root's 5V_A_CODEC stub now carries the
+root's flag, and its `/` reads 3 errors and 4 warnings where its section above records 6 warnings
+(the two `isolated_pin_label` warnings on the 5V_A_CODEC stub's label and the sheet's hierarchical
+label are gone). Re-run with this table, `verify.sh` exits 0 on ldo_vmid, `/ldo_vmid/` at 0 errors
+and 0 warnings, its sha256 unchanged, and the replay into a new directory reaches every earlier
+page's sha256.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 11 (the model declares none) | 0; 11 |
+| exported components, nets, net members | 11, 7, 29 | 11, 7, 29 |
+| exported nets carrying a model net name | 4 of 7 | 6 of 7 (the six ports; the seventh is U6's pin 4, unconnected) |
+| ports whose label is on the wrong net | 5 of 6 | 0 of 6 |
+| ERC, the sheet alone | 5 errors (`pin_not_connected` 2, U7 pin 3 and Q5 pin 1; `pin_not_driven` 1, Q5's gate; `power_pin_not_driven` 2, U6's IN and GND), 3 warnings (`lib_symbol_issues` 2, U6 and U8; `lib_symbol_mismatch` 1, Q5) | 9 errors (`pin_not_connected` 6: each hierarchical label has no parent sheet; `pin_not_driven` 1, Q5's gate; `power_pin_not_driven` 2, U6's IN and GND), 5 warnings (`isolated_pin_label` 2, XO_OUT and PF_TRIP; `lib_symbol_issues` 2; `lib_symbol_mismatch` 1) |
+| ERC under a one-block root, `/codec_sup/` | 5 errors (`pin_not_connected` 2, `pin_not_driven` 1, `power_pin_not_driven` 2, U6's IN and GND), 3 warnings (`same_local_global_label` 3) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 9 errors (`hier_label_mismatch` 6, `label_dangling` 3), 6 warnings (`isolated_pin_label` 3, `lib_symbol_issues` 2, `lib_symbol_mismatch` 1) | 2 errors (`label_dangling` 2, the 3V3_CODEC and CODEC_RST_N stubs' labels, alone with one block; `erc_sheets.py` admits them), 5 warnings (`isolated_pin_label` 2, XO_OUT's stub label and the sheet's XO_OUT label; `lib_symbol_issues` 2; `lib_symbol_mismatch` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 6 | 0 of 22 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 15 on 4 nets (14 global, 1 local) | 6 on 6 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 15 | 0 of 6 |
+| symbols (parts, power symbols, PWR_FLAGs) | 11 (11, 0, 0) | 11 (11, 0, 0) |
+| placed pins | 29 | 29 |
+| wires, total length | 42, 269.24 mm | 44, 591.82 mm |
+| wire corners | 10 | 4 |
+| junctions | 6 | 22 |
+| no-connects | 1 (U6 pin 4) | 1 (U6 pin 4) |
+
+**`pin_not_driven` 1 and `power_pin_not_driven` 2 on the sheet alone** are Q5's gate (PF_TRIP's
+driver is on the pf page), U6's IN (5V_A_CODEC's flag is on the root) and U6's GND (GND's flag is on
+the root). Under the one-block root the TestPoint stand-in and the two stub flags remove all three.
+
+**`lib_symbol_issues` 2**, on U6 and U8: *"The current configuration does not include the symbol
+library 'h7-platform'"*. This is the pf page's U1 warning: a block page has no `.kicad_pro`, and
+kicad-cli 10.0.5 does not take the committed `sym-lib-table` without one. Both symbols are embedded
+in the sheet.
+
+**`lib_symbol_mismatch` 1**, on Q5: *"Symbol 'AO3400A' doesn't match copy in library
+'Transistor_FET'"*, the fsw_led page's Q7 and Q8 warning: the installed AO3400A is `(extends
+"Q_NMOS_GSD")`, and the embedded copy (`codec_sup.kicad_sch` line 1013) is the parent flattened,
+with the parent's Value, no Footprint and no Datasheet. Q5's own Value on the page is `AO3400A`.
+**Not an electrical fault**: the model comparison is 0, 0, 0, 0. **Trap for a later output**: an
+export reading Q5's library fields gets the generic MOSFET with no footprint or data sheet. U7's
+`Oscillator:SG-5032CAN` is not reported: it is the parent of its library's `extends` entry, not an
+`extends` itself.
+
+**`isolated_pin_label` 2**, on the sheet alone: XO_OUT's and PF_TRIP's hierarchical labels, each on
+one pin here; XO_OUT's other pins are the codec's SCKI1 and SCKI2 (codec page) and PF_TRIP's are on
+the pf and modsw pages.
+
+### Why the page has no crossing, as the layout records it
+
+An observation, not a judgement of the page: every part hangs between the one rail row and the GND
+row, or between the CODEC_RST_N row and one of them, and D6 runs over U6 between taps on the rows on
+either side of it, so no row is crossed.
+
+### What the page shows, as observations
+
+- One band. 5V_A_CODEC's label at the west edge, pointing west, starts a row that runs east past C32
+  (down to the GND row) and a tap for D6 into U6's IN; U6's EN, below IN, joins the row west of it.
+- D6 over U6, pointing west: its cathode from a tap on the 5V_A_CODEC row west of U6, its anode to a
+  tap on the 3V3_CODEC rail east of it.
+- U6's OUT starts the 3V3_CODEC rail, which runs east past C33, R26, C34, U7 (VCC straight up to it,
+  ST up to it from the west), C35, U8 (VDD straight up) and R27 to 3V3_CODEC's label at the east edge,
+  pointing east. U6's NC (pin 4) carries a no-connect.
+- U7's OUT runs east to XO_OUT's label, pointing east, before C35.
+- U8's RESET starts the CODEC_RST_N row, which runs east past R27 (up to the rail) and Q5's drain to
+  its label at the east edge, pointing east, under 3V3_CODEC's. PF_TRIP's label, pointing west, sits
+  west of Q5's gate.
+- The GND row runs under the band from GND's label at the west edge, pointing west, to Q5's source.
+- Every wire carries copperhead's default stroke.
+- The hanging parts carry Reference over Value east of their bodies; D6's above it; U6's Reference
+  above it and Value below; U7's Reference above and Value below; U8's Reference and Value east of
+  its body, above and below the RESET row.
+- Renders: the first had R26's fields over C33's and D6's Value over the diode; the parts east of C33
+  moved 100 to 200 mil east, D6's fields moved up and the rectangle's top edge with them.

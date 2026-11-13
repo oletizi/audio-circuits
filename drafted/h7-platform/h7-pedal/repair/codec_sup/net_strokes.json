@@ -1,0 +1,6 @@
+{
+ "3V3_CODEC": "(stroke (width 0.254) (type default))",
+ "5V_A_CODEC": "(stroke (width 0.254) (type default))",
+ "CODEC_RST_N": "(stroke (width 0.254) (type default))",
+ "GND": "(stroke (width 0.254) (type default))"
+}

@@ -1,0 +1,91 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "codec_sup.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "6eacfe0c-388e-5964-9965-db2353ddf761"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_CODEC",
+   "at": [
+    9600,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "4106195c-bf1e-5438-87c2-689b04789d17"
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A_CODEC",
+   "at": [
+    1200,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "927eb8c5-9035-584a-9283-c960ad36bf7d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_RST_N",
+   "at": [
+    9600,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8f2c82a5-efce-5cf6-9dd2-8dd36b39eed7"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1200,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f1ac5598-33ff-506e-b216-fcfae017d9f1"
+  },
+  {
+   "op": "add_net_label",
+   "name": "PF_TRIP",
+   "at": [
+    8350,
+    2500
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8626021e-0681-5ea6-851a-987f515f52e2"
+  },
+  {
+   "op": "add_net_label",
+   "name": "XO_OUT",
+   "at": [
+    5900,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

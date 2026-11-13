@@ -53,8 +53,18 @@
  *   are passive (the six control pots' cw ends, C46, R41, R50) or power inputs (U12's VIN, U13's
  *   VDD); no power output. The controls pages, whose VREF_A pins are all passive, reported nothing.
  *
- * The pages still to be repaired (the digital and analog groups) add their nets here, each with its
- * home, when they are repaired.
+ * Task 9c (the codec_sup, sai_iso and codec pages) added one, on the ROOT for the reason GND's is
+ * there:
+ * - 5V_A_CODEC. Under the codec_sup page's one-block root, `kicad-cli sch erc` reported
+ *   `power_pin_not_driven` on U6's IN (pin 1, `power_in`; U9's VCC, pin 24 on the codec page, is
+ *   `power_in` too). Survey of h7Pedal(): 5V_A_CODEC is fed from 5V_A through R21 (PWR-15's 0 ohm,
+ *   ldo_vmid page, passive); its other pins are passive (C32, C36, C37, D6's cathode), an input (U6's
+ *   EN) or power inputs (U6's IN, U9's VCC); no power output.
+ * 3V3_CODEC is NOT here: U6's OUT (pin 5, codec_sup page) is `power_out`, so on the codec and sai_iso
+ * pages it is a cross-page driver entry (`cross-page-drivers.ts`), as 5V_A is.
+ *
+ * The pages still to be repaired (the analog group) add their nets here, each with its home, when
+ * they are repaired.
  *
  * DATA ONLY. The tools that read it are in `draughting/pages/` (`flag-homes.ts` loads and checks it),
  * each given this board's drafted directory. A board without this file is refused by those tools,
@@ -74,6 +84,7 @@ export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = {
   VIN_A: ROOT_SHEET,
   "3V3_D": ROOT_SHEET,
   VREF_A: ROOT_SHEET,
+  "5V_A_CODEC": ROOT_SHEET,
 }
 
 /** Block -> the private nets its own page flags. Empty: no page drawn so far flags a net. */

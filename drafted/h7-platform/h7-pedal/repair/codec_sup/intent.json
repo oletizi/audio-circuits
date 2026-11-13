@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U6",
+      "libId": "h7-platform:TPS7A2433DBV",
+      "value": "TPS7A2433DBVR",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "C32",
+      "libId": "Device:C",
+      "value": "1uF",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "C33",
+      "libId": "Device:C",
+      "value": "1uF",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "D6",
+      "libId": "Device:D_Schottky",
+      "value": "PMEG4005AEA,115",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "R26",
+      "libId": "Device:R",
+      "value": "3.6K",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "U7",
+      "libId": "Oscillator:SG-5032CAN",
+      "value": "X1G0041710019",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "C34",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "U8",
+      "libId": "h7-platform:TLV803EA30DBZR",
+      "value": "TLV803EA29DBZR",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "C35",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "R27",
+      "libId": "Device:R",
+      "value": "4.7K",
+      "group": "Codec supply, clock and reset"
+    },
+    {
+      "ref": "Q5",
+      "libId": "Transistor_FET:AO3400A",
+      "value": "AO3400A",
+      "group": "Codec supply, clock and reset"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_CODEC",
+      "kind": "signal",
+      "pins": [
+        "C33.1",
+        "C34.1",
+        "C35.1",
+        "D6.2",
+        "R26.1",
+        "R27.2",
+        "U6.5",
+        "U7.1",
+        "U7.4",
+        "U8.3"
+      ]
+    },
+    {
+      "name": "5V_A_CODEC",
+      "kind": "signal",
+      "pins": [
+        "C32.1",
+        "D6.1",
+        "U6.1",
+        "U6.3"
+      ]
+    },
+    {
+      "name": "CODEC_RST_N",
+      "kind": "signal",
+      "pins": [
+        "Q5.3",
+        "R27.1",
+        "U8.2"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C32.2",
+        "C33.2",
+        "C34.2",
+        "C35.2",
+        "Q5.2",
+        "R26.2",
+        "U6.2",
+        "U7.2",
+        "U8.1"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U6.4"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Codec supply, clock and reset"
+    ]
+  }
+}

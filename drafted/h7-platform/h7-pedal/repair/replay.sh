@@ -7,7 +7,7 @@
 # drafts every page the model holds, checks each draft and its intent against the committed record
 # (the drafts of the blocks not yet repaired are checked too, so a model change shows here first),
 # and repairs the Task 7a pages, interface and entry, the Task 7b pages, pf and modsw, the Task 7c pages, prail and
-# ldo_vmid, the Task 9a pages and the Task 9b pages, by repair_block. Since Task 9a it checks all fifteen drafts (Task 8 built the
+# ldo_vmid, the Task 9a pages, the Task 9b pages and the Task 9c pages, by repair_block. Since Task 9a it checks all fifteen drafts (Task 8 built the
 # digital and controls group's nine blocks). Each later part adds its blocks' sha256s and repair_block calls; the root and its
 # .kicad_pro come when every page is drawn.
 #
@@ -58,7 +58,7 @@ draft_sha() {
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c fsw_led controls_a controls_b expr_ref"
+REPAIRED="interface entry pf modsw prail ldo_vmid usb midi_i2c fsw_led controls_a controls_b expr_ref codec_sup"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
 PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 PAGE_PF=7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385
@@ -71,6 +71,7 @@ PAGE_FSW_LED=de6b3e173b854daef218356aa2ade4c1b66cdd5277eed411b969780865fb2021
 PAGE_CONTROLS_A=0e01516c5059915c4bc1b9b22d711689c7f5311af0c78d22bbc7cda3fbdd5888
 PAGE_CONTROLS_B=cd3f1a0869064b31cd5d9302e188614e4fb6f58e74481c8c2ae342644f0da9db
 PAGE_EXPR_REF=f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c
+PAGE_CODEC_SUP=9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -179,6 +180,8 @@ repair_block fsw_led "$PAGE_FSW_LED"
 repair_block controls_a "$PAGE_CONTROLS_A"
 repair_block controls_b "$PAGE_CONTROLS_B"
 repair_block expr_ref "$PAGE_EXPR_REF"
+# Task 9c.
+repair_block codec_sup "$PAGE_CODEC_SUP"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make
