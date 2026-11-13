@@ -23,6 +23,7 @@ import type { Network } from "../../lib/model/index.ts"
 import { drawingPagesFromNetwork, type DrawingPage } from "../../tools/draught/drawing-pages.ts"
 import { PEDAL_BLOCKS, PEDAL_PIN_NUMBERS } from "./pedal/build.ts"
 import { entryBlock } from "./pedal/entry.ts"
+import { pfBlock } from "./pedal/pf.ts"
 import { interfaceBlock } from "./pedal/interface.ts"
 import { contractNet } from "./pedal/nets.ts"
 
@@ -35,6 +36,7 @@ export const PIN_NUMBERS = PEDAL_PIN_NUMBERS
 /** Block prefix -> its builder and the caption copperhead draws around its page. Built blocks only. */
 const BLOCKS: readonly (readonly [string, () => Network, string])[] = [
   ["entry", entryBlock, "Power entry"],
+  ["pf", pfBlock, "Power-fail supervisor"],
   ["interface", interfaceBlock, "Module sockets"],
 ]
 
@@ -102,6 +104,9 @@ export const DESIGNATORS: Readonly<Record<string, string>> = {
   entry_j_dc: "J3", entry_fb_in: "FB1", entry_c_sch: "C1", entry_c_prothf: "C2", entry_d_ain: "D1", entry_d_min: "D2",
   entry_c_bulk: "C3", entry_c_bulk2: "C4", entry_c_bulk3: "C5", entry_c_bulk4: "C6", entry_c_prot: "C7",
   entry_r_vbld: "R1", entry_tp_vin: "TP1", entry_tp_vin_a: "TP2", entry_tp_gnd: "TP3",
+  // pf
+  pf_u_pf: "U1", pf_r_pft1: "R2", pf_r_pft2: "R3", pf_r_pfb: "R4", pf_d_pfcl: "D3", pf_c_pfs: "C8", pf_c_pf: "C9",
+  pf_c_pfct: "C10", pf_r_pfpu: "R5", pf_u_pfinv: "U2", pf_c_pfinv: "C11", pf_r_pftpd: "R6", pf_r_pfonpd: "R7",
 }
 
 /** One page per block (design change C3). */

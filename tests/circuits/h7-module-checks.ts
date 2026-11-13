@@ -49,6 +49,14 @@ function allPins(c: Component): [string, Connection][] {
 const CRYSTAL_GND24: Readonly<Record<string, string>> = { "1": "1", "2": "G", "3": "3", "4": "G" }
 
 /**
+ * A pin name with KiCad's subscript markup rendered (`V_{CC}` -> `VCC`), both sides alike: the rule
+ * CR-PEDAL-PIN-MATCH states for the pedal, and a no-op for the module's names, which carry none.
+ */
+function rendered(name: string | undefined): string | undefined {
+  return name?.replace(/_\{([^}]*)\}/g, "$1")
+}
+
+/**
  * Every problem with one component against its symbol: the symbol missing, a model pin on no
  * symbol pin, a symbol pin the model does not list, or an `ic` pin whose symbol name is not the
  * datasheet's (the MCU against ST's pin data). Empty is a pass.
@@ -80,7 +88,7 @@ export function symbolProblems(
   const names = symbol === "Device:Crystal_GND24" ? CRYSTAL_GND24 : datasheetNames[symbol]
   if (names === undefined) return [...problems, `${c.id}: no datasheet pin names are recorded for ${symbol}`]
   for (const n of numbers) {
-    if (pins.get(n) !== names[n]) problems.push(`${c.id}: pin ${n} is "${pins.get(n)}" on the symbol, "${names[n]}" in the datasheet`)
+    if (rendered(pins.get(n)) !== rendered(names[n])) problems.push(`${c.id}: pin ${n} is "${pins.get(n)}" on the symbol, "${names[n]}" in the datasheet`)
   }
   return problems
 }
