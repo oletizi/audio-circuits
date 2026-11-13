@@ -1,0 +1,63 @@
+[
+ {
+  "name": "3V3_D",
+  "pins": [
+   "C59.1",
+   "R83.1",
+   "U15.10"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C57.2",
+   "C58.2",
+   "C59.2",
+   "C60.2",
+   "J7.A1",
+   "J7.A12",
+   "J7.B1",
+   "J7.B12",
+   "R80.2",
+   "R81.2",
+   "R82.2",
+   "R85.2",
+   "U14.2",
+   "U15.5",
+   "U15.9"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "USB_DM",
+  "pins": [
+   "U15.7"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_DP",
+  "pins": [
+   "U15.8"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "USB_EN_N",
+  "pins": [
+   "R83.2",
+   "U15.6"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "USB_VBUS_SENSE",
+  "pins": [
+   "C60.1",
+   "R84.2",
+   "R85.1"
+  ],
+  "drafted": true
+ }
+]

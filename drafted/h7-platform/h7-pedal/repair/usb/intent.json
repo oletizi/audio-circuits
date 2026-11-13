@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "J7",
+      "libId": "Connector:USB_C_Receptacle_USB2.0_16P",
+      "value": "USB_C_Receptacle_USB2.0_16P",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R80",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R81",
+      "libId": "Device:R",
+      "value": "5.1K",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R82",
+      "libId": "Device:R",
+      "value": "1M",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "C57",
+      "libId": "Device:C",
+      "value": "4700pF",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "U14",
+      "libId": "Power_Protection:USBLC6-2SC6",
+      "value": "USBLC6-2SC6",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "C58",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "U15",
+      "libId": "h7-platform:TS3USB221RSER",
+      "value": "TS3USB221RSER",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R83",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "C59",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R84",
+      "libId": "Device:R",
+      "value": "12K",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "R85",
+      "libId": "Device:R",
+      "value": "20K",
+      "group": "USB-C and isolation switch"
+    },
+    {
+      "ref": "C60",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "USB-C and isolation switch"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_D",
+      "kind": "signal",
+      "pins": [
+        "C59.1",
+        "R83.1",
+        "U15.10"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C57.2",
+        "C58.2",
+        "C59.2",
+        "C60.2",
+        "J7.A1",
+        "J7.A12",
+        "J7.B1",
+        "J7.B12",
+        "R80.2",
+        "R81.2",
+        "R82.2",
+        "R85.2",
+        "U14.2",
+        "U15.5",
+        "U15.9"
+      ]
+    },
+    {
+      "name": "USB_CC1",
+      "kind": "signal",
+      "pins": [
+        "J7.A5",
+        "R80.1"
+      ]
+    },
+    {
+      "name": "USB_CC2",
+      "kind": "signal",
+      "pins": [
+        "J7.B5",
+        "R81.1"
+      ]
+    },
+    {
+      "name": "USB_C_DM",
+      "kind": "signal",
+      "pins": [
+        "J7.A7",
+        "J7.B7",
+        "U14.3",
+        "U14.4",
+        "U15.2"
+      ]
+    },
+    {
+      "name": "USB_C_DP",
+      "kind": "signal",
+      "pins": [
+        "J7.A6",
+        "J7.B6",
+        "U14.1",
+        "U14.6",
+        "U15.1"
+      ]
+    },
+    {
+      "name": "USB_EN_N",
+      "kind": "signal",
+      "pins": [
+        "R83.2",
+        "U15.6"
+      ]
+    },
+    {
+      "name": "USB_SHIELD",
+      "kind": "signal",
+      "pins": [
+        "C57.1",
+        "J7.SH",
+        "R82.1"
+      ]
+    },
+    {
+      "name": "USB_VBUS_SENSE",
+      "kind": "signal",
+      "pins": [
+        "C60.1",
+        "R84.2",
+        "R85.1"
+      ]
+    },
+    {
+      "name": "VBUS",
+      "kind": "signal",
+      "pins": [
+        "C58.1",
+        "J7.A4",
+        "J7.A9",
+        "J7.B4",
+        "J7.B9",
+        "R84.1",
+        "U14.5"
+      ]
+    }
+  ],
+  "noConnect": [
+    "J7.A8",
+    "J7.B8",
+    "U15.3",
+    "U15.4"
+  ],
+  "hints": {
+    "groupOrder": [
+      "USB-C and isolation switch"
+    ]
+  }
+}

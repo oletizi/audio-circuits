@@ -1,0 +1,12 @@
+{
+ "3V3_D": "(stroke (width 0.254) (type default))",
+ "GND": "(stroke (width 0.254) (type default))",
+ "USB_CC1": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_CC2": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_C_DM": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_C_DP": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_EN_N": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_SHIELD": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "USB_VBUS_SENSE": "(stroke (width 0.254) (type default) (color 30 90 200 1))",
+ "VBUS": "(stroke (width 0.254) (type default))"
+}

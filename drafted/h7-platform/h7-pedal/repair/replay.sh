@@ -6,8 +6,9 @@
 # It grows one block at a time, as each page is repaired (h7 pedal pages plan, Task 7). Today it
 # drafts every page the model holds, checks each draft and its intent against the committed record
 # (the drafts of the blocks not yet repaired are checked too, so a model change shows here first),
-# and repairs the Task 7a pages, interface and entry, the Task 7b pages, pf and modsw, and the Task 7c pages, prail and
-# ldo_vmid, by repair_block. Each later part adds its blocks' sha256s and repair_block calls; the root and its
+# and repairs the Task 7a pages, interface and entry, the Task 7b pages, pf and modsw, the Task 7c pages, prail and
+# ldo_vmid, and the Task 9a pages, by repair_block. Since Task 9a it checks all fifteen drafts (Task 8 built the
+# digital and controls group's nine blocks). Each later part adds its blocks' sha256s and repair_block calls; the root and its
 # .kicad_pro come when every page is drawn.
 #
 # Copied from drafted/h7-platform/h7-module/repair/replay.sh, its repair_block unchanged; the
@@ -35,7 +36,7 @@ fail() {
 }
 
 # The drafts make draw writes, one per block, in Network.blocks order.
-BLOCKS="entry pf modsw prail ldo_vmid interface"
+BLOCKS="entry pf modsw prail ldo_vmid codec_sup codec sai_iso expr_ref controls_a controls_b fsw_led usb midi_i2c interface"
 draft_sha() {
   case "$1" in
     entry) echo 561fc836dbaf7178ab2742b2f7d24edcd8d63647040c78678bd2518b46ddec56 ;;
@@ -43,18 +44,28 @@ draft_sha() {
     modsw) echo b7d0331996774d07ec11b3d761bdedec98c665bf2a1b12da2aba75dee62f4fa6 ;;
     prail) echo ef60fc61776a0806efbc1d389534dec23494317f53ab8c1c0fddabb18fbd5cb9 ;;
     ldo_vmid) echo 4ab75dd0e2aad78af64d3e949bce37bf81401380570ae5844ef1b8576017d096 ;;
+    codec_sup) echo 9390a014569c83cd32908125a65d021e58f18488b79d0f4b4ed6d1f9c4fa723c ;;
+    codec) echo 06a886b93ffa8ff1a3bb52a04de5d018f765dbd83031ffc6fb8695f547af1a60 ;;
+    sai_iso) echo 8686ecd5ebd920c4e74f9f5d90efe3c8bf074b519669507341d439a73690bb6e ;;
+    expr_ref) echo c850a8f2602995833845c1261997bc721ee4b5a7994e3cd76f1892fa8494694d ;;
+    controls_a) echo 74224c99b06a91fb19df787204fd1b7ac2965f8711ba172f9d5d77148920da68 ;;
+    controls_b) echo 645388b8dfb1b473cc68711b52898714208841062be5523cc8fdef59bb8b751e ;;
+    fsw_led) echo 88f1ad86fec322ef31f5263a60a4be09dcc5570aeaf18840b50da4b9ffc9daa7 ;;
+    usb) echo 9413b7ab36e0947f4b25542a752f1ab5c03a28def027e82afd0074a2490bff2b ;;
+    midi_i2c) echo bb11ba3014f260df8f60200c9e968a62e22c9248cc4cc91c6e6cece0f74a2eb2 ;;
     interface) echo 11fc06bf395a95e524a2406fe24b24a3890dcfa2ea60b95ae4ad498d8d95c6df ;;
     *) fail "no draft sha256 recorded for block $1" ;;
   esac
 }
 # The intents committed so far: a block's intent is committed with its page.
-REPAIRED="interface entry pf modsw prail ldo_vmid"
+REPAIRED="interface entry pf modsw prail ldo_vmid usb"
 PAGE_INTERFACE=963777f3bf9df9c3b5d966ce48c71bf76071f902c716f88a65b07c621b88822a
 PAGE_ENTRY=5352fd5b917c96520681efa8421b8b63d9a0f92345156c776044f48708af0736
 PAGE_PF=7096a9befaf2e62b42218a2153a34fa317fc9cad0a1ad5e1ae9c0d198a4b2385
 PAGE_MODSW=89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2
 PAGE_PRAIL=f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780
 PAGE_LDO_VMID=584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd
+PAGE_USB=efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653
 
 [ "$#" -eq 1 ] || fail "expected one argument, a new or empty work directory; got $#"
 mkdir -p "$1"
@@ -155,6 +166,8 @@ repair_block modsw "$PAGE_MODSW"
 # Task 7c.
 repair_block prail "$PAGE_PRAIL"
 repair_block ldo_vmid "$PAGE_LDO_VMID"
+# Task 9a.
+repair_block usb "$PAGE_USB"
 
 # 3. The committed sym-lib-table names the project symbol library IN PLACE in the repository (one
 #    copy of each symbol), where a draft's names a copy in its own directory (TOOLING.md C4). Make

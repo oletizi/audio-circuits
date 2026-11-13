@@ -38,6 +38,13 @@
  *   Survey of h7Pedal(): VIN_A's other pins are passive (C2-C7, C25, C30, C31, R22, TP2, D1's
  *   cathode) or an input (U4's EN); no power output.
  *
+ * Task 9a (the usb, midi_i2c and fsw_led pages) added one, on the ROOT for the reason GND's is there:
+ * - 3V3_D. Under the usb page's one-block root, `kicad-cli sch erc` reported `power_pin_not_driven`
+ *   on U15's VCC (pin 10, `power_in`; U16's VCC on the midi_i2c page and U10's on sai_iso are
+ *   `power_in` too). Survey of h7Pedal(): 3V3_D reaches the module through J2 pin 18 (passive); its
+ *   other pins are passive (the pull-ups, C42, C59, C61, R83, R86, R93, R94, TP6, J8 pin 1) or power
+ *   inputs (U10, U15, U16); no power output.
+ *
  * The pages still to be repaired (the digital and analog groups) add their nets here, each with its
  * home, when they are repaired.
  *
@@ -57,6 +64,7 @@ export const SHARED_FLAG_HOME: Readonly<Record<string, string>> = {
   GND: ROOT_SHEET,
   VIN_MOD: ROOT_SHEET,
   VIN_A: ROOT_SHEET,
+  "3V3_D": ROOT_SHEET,
 }
 
 /** Block -> the private nets its own page flags. Empty: no page drawn so far flags a net. */

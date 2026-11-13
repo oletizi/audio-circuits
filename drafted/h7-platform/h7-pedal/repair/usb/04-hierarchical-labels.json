@@ -1,0 +1,91 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "usb.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "b3937ad0-c027-5206-a427-939b7e474eb5"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_D",
+   "at": [
+    8000,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c6ca7a13-e265-5e7c-a4ad-ae1487c71da1"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1100,
+    2000
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "8f95a0ef-99b4-5397-8413-7f73011b2b77"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DM",
+   "at": [
+    8000,
+    3800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "80bdf7c0-3c0b-57f2-93db-0fc1ae3e3d8e"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_DP",
+   "at": [
+    8000,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "bb5755e4-7f48-5be7-a068-6a07fc72c87f"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_EN_N",
+   "at": [
+    8000,
+    4500
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "3d00c6e0-0e61-5caa-a703-528f10bad3ef"
+  },
+  {
+   "op": "add_net_label",
+   "name": "USB_VBUS_SENSE",
+   "at": [
+    6400,
+    2300
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  }
+ ]
+}

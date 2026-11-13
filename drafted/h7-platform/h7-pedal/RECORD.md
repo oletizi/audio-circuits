@@ -40,6 +40,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `modsw.kicad_sch` | block modsw | `89ed82bcbc60b4e2f075257768f68a4a66370348dc5db4e7c4b9632ca3099dc2` |
 | `prail.kicad_sch` | block prail | `f440c0c355718e6e280f955abe1ef8df8f2075cf89d5866f3ef854f90ae15780` |
 | `ldo_vmid.kicad_sch` | block ldo_vmid | `584cdc4ce97d96875c2c2b76a9504e99997eb1a21623668b7feb7202e6f96ecd` |
+| `usb.kicad_sch` | block usb | `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -52,6 +53,7 @@ committed bytes, with the pinned kicad-cli.
 | modsw | **UNREVIEWED** (Task 7b); `verify.sh` exits 0 | `modsw.svg` |
 | prail | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `prail.svg` |
 | ldo_vmid | **UNREVIEWED** (Task 7c); `verify.sh` exits 0 | `ldo_vmid.svg` |
+| usb | **UNREVIEWED** (Task 9a); `verify.sh` exits 0 | `usb.svg` |
 
 ## The drafts every repair starts from
 
@@ -68,6 +70,28 @@ checks each draft against the sha256 here, so every later repair starts from the
 | `build/draw/h7-pedal/prail/prail.kicad_sch` | prail | 20 | `ef60fc61776a0806efbc1d389534dec23494317f53ab8c1c0fddabb18fbd5cb9` |
 | `build/draw/h7-pedal/ldo_vmid/ldo_vmid.kicad_sch` | ldo_vmid | 19 | `4ab75dd0e2aad78af64d3e949bce37bf81401380570ae5844ef1b8576017d096` |
 | `build/draw/h7-pedal/interface/interface.kicad_sch` | interface | 2 | `11fc06bf395a95e524a2406fe24b24a3890dcfa2ea60b95ae4ad498d8d95c6df` |
+
+The digital and controls group (Task 8 built its nine blocks; `make draw` drafts every block the
+model holds). Drafted 2026-11-13 by Task 9a's first replay, toolchain checked first by `make
+draught-doctor` (every pinned tool matched); `repair/replay.sh` checks every one of them from Task 9a
+on, so a model change shows there first. The six drafts above were byte-identical on the same run.
+
+| draft | block | parts | sha256 |
+| --- | --- | --- | --- |
+| `build/draw/h7-pedal/codec_sup/codec_sup.kicad_sch` | codec_sup | 11 | `9390a014569c83cd32908125a65d021e58f18488b79d0f4b4ed6d1f9c4fa723c` |
+| `build/draw/h7-pedal/codec/codec.kicad_sch` | codec | 13 | `06a886b93ffa8ff1a3bb52a04de5d018f765dbd83031ffc6fb8695f547af1a60` |
+| `build/draw/h7-pedal/sai_iso/sai_iso.kicad_sch` | sai_iso | 11 | `8686ecd5ebd920c4e74f9f5d90efe3c8bf074b519669507341d439a73690bb6e` |
+| `build/draw/h7-pedal/expr_ref/expr_ref.kicad_sch` | expr_ref | 23 | `c850a8f2602995833845c1261997bc721ee4b5a7994e3cd76f1892fa8494694d` |
+| `build/draw/h7-pedal/controls_a/controls_a.kicad_sch` | controls_a | 18 | `74224c99b06a91fb19df787204fd1b7ac2965f8711ba172f9d5d77148920da68` |
+| `build/draw/h7-pedal/controls_b/controls_b.kicad_sch` | controls_b | 18 | `645388b8dfb1b473cc68711b52898714208841062be5523cc8fdef59bb8b751e` |
+| `build/draw/h7-pedal/fsw_led/fsw_led.kicad_sch` | fsw_led | 18 | `88f1ad86fec322ef31f5263a60a4be09dcc5570aeaf18840b50da4b9ffc9daa7` |
+| `build/draw/h7-pedal/usb/usb.kicad_sch` | usb | 13 | `9413b7ab36e0947f4b25542a752f1ab5c03a28def027e82afd0074a2490bff2b` |
+| `build/draw/h7-pedal/midi_i2c/midi_i2c.kicad_sch` | midi_i2c | 14 | `bb11ba3014f260df8f60200c9e968a62e22c9248cc4cc91c6e6cece0f74a2eb2` |
+
+For these nine, `make draw` again printed no ADVISORY section and one `NO INDEPENDENT NETLIST:`
+block for the board. copperhead drafted codec_sup, controls_a, controls_b, fsw_led and midi_i2c on
+A5 and codec, sai_iso, expr_ref and usb on A4; re-papered to US Letter, every one fits the inner
+frame except codec, which overshoots it east by 8.213 mm. No power symbol on any of them.
 
 What `make draw` printed, beside the pages:
 
@@ -102,6 +126,7 @@ The measurement suite on each draft (selftest: 10 controls, every one moved or f
 | prail | 94 | 14 (5) | 1 | 5 | 13 | 0 | 10, with 7 collinear overlapping pairs |
 | ldo_vmid | 85 | 15 (5) | 2 | 6 | 0 | 0 | 0 |
 | interface | 3 | 1 (0) | 4 | 0 | 0 | 0 | 0 |
+| usb (Task 9a) | 74 | 21 (17) | 4 | 23 | 4 | 0 | 3, with 4 collinear overlapping pairs |
 
 ## How the pages are repaired
 
@@ -126,6 +151,20 @@ former tool, which found only VCC and VEE there). The single-unit result is unch
 pedal drafts), only the two holding a multi-unit symbol (this draft and the
 dual-op-amp test fixture) gave different pin points, and the module's replay, `verify-root.sh` and
 `erc-control.sh` came out as before.
+
+**A mirrored part** (the usb page's U15, mirrored left to right, and the usb draft's J7, which
+copperhead mirrors top to bottom; Task 9a): `draughting/pages/net_strokes.py` placed every pin as if
+no part were mirrored. On the usb draft that seeded J7's pins at their unmirrored places, J7's SBU2
+(an unconnected pin, named no net by akcli) landed on another net's wire, and the tool stopped
+sorting a `None` net name. It now reflects a mirrored part's pins after the rotation, as `pins.py`
+does, and refuses any other mirror atom. Across every committed `.kicad_sch` (`drafted/`,
+`tests/fixtures/`, `docs/research/`, `circuits/`) and the fifteen pedal drafts, no sheet on which the
+former and the present tool both run gives a different result; five the former tool stopped on now
+run (the approved `pultec-low-boost` page, two research sheets and the pedal's usb and expr_ref
+drafts). `tests/draught/net-strokes-mirror.test.ts` runs it on `pultec-low-boost` (one mirrored
+potentiometer); it fails on the former tool. **KiCad mirrors a field's justification with the
+part**, as it turns it with a rotation of 90 or 180 (`text_edits.py`): on U15, a field written
+`left` read right-justified on the render, so U15's `layout.py` writes its fields `right`.
 
 The measurements in each table are `draughting/pages/verify.sh` on the page, and the same steps run
 without stopping on the draft (a draft fails verify.sh's model comparison and its ERC, as a draft is
@@ -191,6 +230,22 @@ now carry the root's flag on a VIN_MOD or VIN_A stub where they reach one: `/` o
 to 1 `label_dangling` (VIN_A), on modsw from 2 to 1 (VIN_MOD), and interface's `/` reads 0 errors and
 66 warnings (VIN_MOD); pf reaches neither. Each page's own table below is as it was measured in its
 task.
+
+## The tables after Task 9a
+
+- `pwr-flag-homes.ts`: **3V3_D on the root**, from the usb page's report under its one-block root:
+  U15's VCC (pin 10) is `power_in`, and `/usb/` reported `power_pin_not_driven` on it. No pin on the
+  pedal's 3V3_D is a power output (measured over `h7Pedal()`: J2 pin 18, the module's 3V3_D, and the
+  pull-ups, decoupling capacitors, R83, R86, R93, R94, TP6 and J8 pin 1 are passive; U10's, U15's and
+  U16's VCC are `power_in`). Under the one-block root the stub flag clears it: `/usb/` reads 0
+  errors.
+- `cross-page-drivers.ts` and `erc-allowances.ts` are unchanged.
+
+**What this does to the six earlier pages: nothing to their bytes.** Of the six, only interface has a
+3V3_D port (J2 pin 18), so only its one-block root changes: its 3V3_D stub now carries the root's
+flag, and its `/` reads 0 errors and 64 warnings where it read 66. Re-run with this table,
+`verify.sh` exits 0 on all six, each block sheet at 0 errors and 0 warnings, each sha256 unchanged;
+the replay into a new directory reaches every earlier page's sha256.
 
 ## interface: the two module sockets (Task 7a)
 
@@ -985,3 +1040,167 @@ it. Here C27's drop to the GND row crosses the FB row once.
 - The hanging parts carry Reference over Value east of their bodies; R24's and R25's above their
   rows; U4's above its body, under the VIN_A row; U5A's and U5B's above their bodies, U5C's east of
   its pins; TP5's east of its circle.
+
+## usb: the USB-C socket and its isolation switch (Task 9a)
+
+**Status: UNREVIEWED.** sha256 `efe062770501a63ad44dfe33558fcb54f7bd6676b5bab682b25278317aecb653`.
+Render: `usb.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/usb.ts`, 13 parts, the carrier's USB path with the carrier's
+ids: J7 (J_USB, `Connector:USB_C_Receptacle_USB2.0_16P`, no MPN), R80 and R81 (R_CC1, R_CC2 5.1
+kOhm), R82 (R_SHLD 1 MOhm), C57 (C_SHLD 4.7 nF), U14 (U_ESD, `Power_Protection:USBLC6-2SC6`), C58
+(C_VBUS 100 nF), U15 (U_USBSW, `h7-platform:TS3USB221RSER`), R83 (R_USBEN 10.0 kOhm), C59 (C_USBSW
+100 nF), R84 and R85 (R_VBUS_TOP 12.0 kOhm, R_VBUS_BOT 20.0 kOhm), C60 (C_VBUS_SENSE 100 nF). Ports
+3V3_D, GND, USB_DM, USB_DP, USB_EN_N and USB_VBUS_SENSE (USB_DM and USB_DP each reach one pin, U15's
+7 and 8). VBUS, USB_C_DP, USB_C_DM, USB_CC1, USB_CC2 and USB_SHIELD are private to the page and drawn
+as wire, with no label. J7's SBU1 and SBU2 (A8, B8) and U15's second port (pins 3 and 4) are
+no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `usb` is one of the
+  pedal's 19 blocks: the receptacle, its ESD part, the isolation switch and the VBUS sense divider.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings): the
+  pedal's USB path takes the carrier's ids and the carrier's names for its private nets.
+- [CR-PEDAL-USB-C](../../../docs/h7-platform/decisions.md#cr-pedal-usb-c): J7 is the stock 16-pin
+  receptacle with no part number, as on the carrier and the module; no MPN because a schematic needs
+  none, citing `docs/known-gaps.md` G245, the owner's decision on where a fully specified BOM binds.
+- [D10](../../../docs/h7-platform/decisions.md#d10): the USB ESD part and the VBUS sense.
+- [R-14](../../../docs/h7-platform/decisions.md#r-14): U15 between the socket's USB pins and the ESD
+  part and receptacle, VCC from 3V3_D, its active-low OE held off by R83 to 3V3_D.
+- [CR-PEDAL-USBSW](../../../docs/h7-platform/decisions.md#cr-pedal-usbsw), carrying
+  [CR-CARRIER-USBSW-SELECT](../../../docs/h7-platform/decisions.md#cr-carrier-usbsw-select): U15's S
+  (pin 9) on GND, its second port (pins 3 and 4) not connected, C59 100 nF at VCC.
+- [CR-CARRIER-USBSW-SYMBOL](../../../docs/h7-platform/decisions.md#cr-carrier-usbsw-symbol): U15 is
+  the project symbol `h7-platform:TS3USB221RSER`, pin for pin from TI SCDS220M Table 4-1.
+- [CR-PEDAL-VBUS-IDS](../../../docs/h7-platform/decisions.md#cr-pedal-vbus-ids): C58 is `c_vbus`, at
+  U14's pin 5; C60 is `c_vbus_sense`, on USB_VBUS_SENSE.
+- [CR-PEDAL-VBUS-SENSE-CAP](../../../docs/h7-platform/decisions.md#cr-pedal-vbus-sense-cap) and
+  [R-57](../../../docs/h7-platform/decisions.md#r-57): C60 is fitted, the carrier's 100 nF; the
+  divider is the carrier's 12.0 kOhm over 20.0 kOhm. The open row VBUS-HOTPLUG stays open.
+- [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match): the rule U14's and
+  U15's symbols are held to; clause 1 makes U14's terminals, its GND included, `passive`, and clause 2
+  makes U15's VCC and GND `power_in`.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 3V3_D and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page. GND's and 3V3_D's single flags are on the root ("The tables after Task 9a"), so the
+  one-block root puts a stub flag on each. With neither, `/usb/` reports `power_pin_not_driven` on
+  *"Symbol U15 Pin 10 [VCC, Power input, Line]"* (measured with 3V3_D not yet in the table).
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 6 ports on the wrong net.
+- Checklist items, not rulings: the schematic checklist's USB-01 (line 207, CC1 and CC2 5.1 kOhm to
+  GND, the D pairs joined), USB-02 (line 208, VBUS on no rail), USB-04 (line 213, the USBLC6-2's
+  pins and C_VBUS) and USB-05 (line 214, the shell through R_SHLD and C_SHLD). The block also cites
+  `architecture.md` lines 257 and 258, `parts.md` lines 145, 146 and 177, and TI SCDS220M p. 15
+  section 8.3; those are design notes.
+- Drawing choices, not transcriptions: U15 mirrored left to right, so that its connector side faces
+  U14 and its MCU side faces east; U14 at rotation 0 with each I/O pair joined by a loop round its
+  body (below); USB_VBUS_SENSE's label mid-page, so that C59 can reach the top GND row east of it;
+  USB_DM and USB_DP, which the draft drew no wire for, take the USB family's blue
+  (`usb/layout.py`, `UNDRAWN_STROKES`, says why); fields moved after the renders listed in
+  `usb/layout.py`.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as Task 9a leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 13 (the model declares none) | 0; 13 |
+| exported components, nets, net members | 13, 16, 53 | 13, 16, 53 |
+| exported nets carrying a model net name | 10 of 16 | 6 of 16 (/3V3_D, /GND, /USB_DM, /USB_DP, /USB_EN_N, /USB_VBUS_SENSE, the ports; 6 private and unlabelled, and 4 single no-connect pins) |
+| ports whose label is on the wrong net | 4 of 6 | 0 of 6 |
+| ERC, the sheet alone | 4 errors (`pin_not_connected` 2, U15 pins 8 and 7; `power_pin_not_driven` 2, U15's VCC and GND), 2 warnings (`lib_symbol_mismatch` 1, U14; `lib_symbol_issues` 1, U15) | 8 errors (`pin_not_connected` 6: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U15's VCC and GND), 4 warnings (`isolated_pin_label` 2, USB_DP and USB_DM; `lib_symbol_mismatch` 1; `lib_symbol_issues` 1) |
+| ERC under a one-block root, `/usb/` | 4 errors (`pin_not_connected` 2, `power_pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 4 warnings (`isolated_pin_label` 2, `lib_symbol_mismatch` 1, `lib_symbol_issues` 1) | 2 errors (`label_dangling` 2, the USB_EN_N and USB_VBUS_SENSE stubs' labels, alone with one block; `erc_sheets.py` admits them), 6 warnings (`isolated_pin_label` 4, USB_DP's and USB_DM's labels and stubs; `lib_symbol_mismatch` 1; `lib_symbol_issues` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 23, 4 | 7, 0 |
+| orphan junctions, of total | 0 of 8 | 0 of 24 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 3; 4 | 0; 0 |
+| labels | 21 on 10 nets (17 global) | 6 on 6 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 21 | 0 of 12 |
+| symbols (parts, power symbols, PWR_FLAGs) | 13 (13, 0, 0) | 13 (13, 0, 0) |
+| placed pins | 53 | 53 |
+| wires, total length | 74, 825.50 mm | 71, 1115.06 mm |
+| wire corners | 24 | 19 |
+| junctions | 8 | 24 |
+
+**`lib_symbol_mismatch` 1**, on U14: *"Symbol 'USBLC6-2SC6' doesn't match copy in library
+'Power_Protection'"*. The installed symbol is an `extends`, and the embedded copy is the parent
+flattened under the child's name, as the carrier page's U2 (the same part,
+`../h7-carrier/RECORD.md`, "U2's embedded symbol") and this board's PMEG4030ER, SN74LVC2G14,
+AO3400A, TPS62933F and 2N7002 are. Measured (the embedded fields and pins against the installed
+child and parent):
+
+| | embedded (`usb.kicad_sch` line 1300) | installed `USBLC6-2SC6` (`Power_Protection.kicad_sym` line 36479, `(extends "USBLC6-2P6")`) |
+| --- | --- | --- |
+| pins and graphics | identical to the installed parent `USBLC6-2P6`'s (line 36016): 1 I/O1, 2 GND, 3 I/O2, 4 I/O2, 5 VBUS, 6 I/O1, all `passive`, same positions and lengths | the parent's |
+| Value | `USBLC6-2P6` (the parent's) | `USBLC6-2SC6` |
+| Datasheet; `ki_keywords` | the same as the child's | `https://www.st.com/resource/en/datasheet/usblc6-2.pdf`; "usb ethernet video" |
+| Footprint; `ki_fp_filters` | `Package_TO_SOT_SMD:SOT-666`; `SOT?666*` (the parent's) | `Package_TO_SOT_SMD:SOT-23-6`; `SOT?23*` |
+| Description | "Very low capacitance ESD protection diode, 2 data-line, SOT-666" (the parent's) | "... SOT-23-6" |
+
+U14's own Value on the page is `USBLC6-2SC6`, and its own Footprint field is empty. **Not an
+electrical fault**: pins, numbers, types and positions are the installed part's, and the model
+comparison is 0, 0, 0, 0. **Trap for a later output**, the carrier's: a footprint read from U14's
+library fields is SOT-666 where the part is SOT-23-6.
+
+**`lib_symbol_issues` 1**, on U15: *"The current configuration does not include the symbol library
+'h7-platform'"*. This is the pf page's U1 warning: a block page has no `.kicad_pro`, and kicad-cli
+10.0.5 does not take the committed `sym-lib-table` without one. The symbol is embedded in the sheet.
+J7's `Connector:USB_C_Receptacle_USB2.0_16P` is not an `extends` and reports nothing.
+
+**`isolated_pin_label` 2**, on the sheet alone: USB_DP's and USB_DM's hierarchical labels each sit on a
+net with one pin (U15's 8 and 7), as the board's model has them; their other pins are on the
+interface page. Under the one-block root the same two nets add the stub labels' two.
+
+### Why the page has seven crossings, as the layout records it
+
+An observation of where the pins are, not a judgement of the page (`usb/layout.py` gives each):
+
+- J7 has D- (A7, B7) above D+ (A6, B6), and U14 has I/O1 (D+, pin 1) above I/O2 (D-, pin 3), so the
+  two data nets cross once between them.
+- U14's two I/O1 pins (1 and 6) and two I/O2 pins (3 and 4) are separate pins on the symbol, each pair
+  on opposite sides of the body, and its VBUS pin is on top and its GND underneath. D+ is joined by a
+  loop over the body and D- by a loop under it, so VBUS's drop to pin 5 crosses the D+ loop and the
+  GND drop from pin 2 crosses the D- loop. (The first version drew each data row through U14, pin 1
+  in and pin 6 out; its export split each data net in two at U14, and `verify.sh` refused it on
+  netMembership.)
+- R80, R81 and C58 sit between the VBUS row and the data rows, so their GND rises across the VBUS row
+  once to the top GND row.
+- U15's S (pin 9) sits between its D- (pin 7) and OE (pin 6) on one side of the body, so its drop to
+  GND crosses OE's row once.
+- R83 joins 3V3_D, which U15's VCC takes above the data rows, to OE, below them, so the 3V3_D
+  vertical crosses USB_DP and USB_DM.
+
+### What the page shows, as observations
+
+- J7 at the west, its pins facing east: VBUS at the top, then CC1, CC2, the two D- and the two D+
+  pins, SBU1 and SBU2 with no-connects; GND (A1, with A12, B1 and B12 at the same point) and the
+  shell (SH) at the bottom.
+- A GND row along the top of the page from GND's hierarchical label at the west edge, pointing west;
+  it runs down J7's west side to a GND row along the bottom.
+- VBUS rises from J7 to a row that runs east past C58 to U14's column and drops into U14's VBUS
+  (pin 5). R84 stands on that corner; from its top the sense row runs east past R85 and C60, which
+  stand between it and the top GND row, to USB_VBUS_SENSE's label, pointing east, in the middle of
+  the page.
+- CC1 and CC2 run east to R80 and R81, lying in their rows; their GND ends and C58's join a bar that
+  rises to the top GND row.
+- The data rows run east from J7, D+ stepping up across D-, into U14's west pins; from tees west of
+  U14 each loops round the body (D+ over it, D- under it) and rejoins its row east of U14, which runs
+  on into U15's 1D+ and 1D-.
+- U15, mirrored left to right: its D+ and D- run east to USB_DP's and USB_DM's labels at the east,
+  pointing east; its VCC rises to the 3V3_D row, which runs east to 3V3_D's label; its GND and S
+  drop to the bottom GND row; its OE runs east and down to the USB_EN_N row, which runs east past R83
+  to USB_EN_N's label. C59 stands on the 3V3_D vertical between the 3V3_D row and the top GND row;
+  R83 hangs from it, crossing the two MCU-side data rows, to the USB_EN_N row.
+- The shell drops to a short row under J7, with R82 and C57 hanging from it to the bottom GND row.
+- The USB family's nets (USB_CC1, USB_CC2, USB_C_DP, USB_C_DM, USB_SHIELD, USB_VBUS_SENSE, USB_EN_N,
+  USB_DP, USB_DM) carry copperhead's blue stroke; VBUS, 3V3_D and GND its default.
+- The hanging parts carry Reference over Value east of their bodies; R82's, R84's and R85's west;
+  R80's above its row and R81's below it; J7's above its body; U14's under the D- loop, east of its
+  GND drop; U15's above its body, east of its VCC rise.
