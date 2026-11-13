@@ -8,6 +8,7 @@ include $(shell git rev-parse --show-toplevel)/make/perfboard.mk
 # the generic board mechanism having to know the reference exists.
 include $(shell git rev-parse --show-toplevel)/make/pultec.mk
 include $(shell git rev-parse --show-toplevel)/make/tascam-38.mk
+include $(shell git rev-parse --show-toplevel)/make/krt.mk
 
 # The type checker is a GATE and not a thing to remember. Nothing else in this
 # repository runs it: there is no CI, `bun test` does not typecheck, and until

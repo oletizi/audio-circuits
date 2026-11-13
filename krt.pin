@@ -1,0 +1,10 @@
+# The autorouter this repository drives: KiCadRoutingTools (MIT, public).
+# One "<field> <value>" pair per line, as veroroute.pin does.
+#
+# commit is the AUTHORITY: it is the DEREFERENCED tag target. tag is
+# provenance only. `git ls-remote --tags <url>` prints two lines for the
+# tag: the annotated tag object (ebcea927...) on refs/tags/v0.21.3, and the
+# commit it points at (749cfa83...) on refs/tags/v0.21.3^{}. Pin the second.
+url     https://github.com/drandyhaas/KiCadRoutingTools.git
+tag     v0.21.3
+commit  749cfa8333765288a807f825064b68015fd10ea9
