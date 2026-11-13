@@ -403,7 +403,12 @@ test("a violation with no severity FAILS, because the policy is severity-scoped"
 test("a non-zero kicad-cli exit FAILS even when a clean report sits at the output path", () => { /* stale report from an earlier run must not be read */ })
 test("included_severities missing 'warning' or 'exclusion' FAILS - the severity-error trap, caught from the report", () => { /* throws */ })
 test("a report whose parity could not run FAILS, although schematic_parity is []", () => { /* MEASURED: see Step 4 */ })
-test("the known-good pair reports zero parity violations", () => { /* expect 0 */ })
+test("a result field holding null or a string FAILS - present is not an array", () => { /* throws */ })
+test("a violation with an unrecognised severity FAILS before the policy is applied", () => { /* throws */ })
+test("ignored_checks containing items_not_allowed FAILS - Task 8's gate would be disabled", () => { /* throws */ })
+test("INTEGRATION, real kicad-cli: an empty schematic yields a netlist with no components", () => { /* leg 1 can fail */ })
+test("INTEGRATION, real kicad-cli: the failed-fetch pair is refused although exit is 0", () => { /* leg 2 pinned to the live message */ })
+test("the known-good pair reports zero parity violations and passes both legs", () => { /* expect 0 */ })
 ```
 
 Every test but the last matters more than the last. A check that only passes on good input has not been shown to work.
@@ -422,16 +427,29 @@ Invoke `kicad-cli pcb drc --schematic-parity --format json --severity-all -o <re
 
 **An empty array, not a missing key.** So the parity gate reads *zero parity violations* on a parity test that never ran - a skipped check wearing a passing check's clothes, which is the failure mode this whole module exists to prevent. Note what does *not* catch it: requiring a successful process exit does not, because the exit is 0. The refusal must rest on **positive evidence that parity ran**, and the test above is the one that re-runs this measurement rather than leaving it as prose.
 
-The full refusal set, four fields rather than three:
+The full refusal set, four fields rather than three. **Every one of the three result fields must be an ARRAY, not merely present** - a key holding `null`, a string or an object is a malformed report, not an empty one:
 
 | Read | Refuse when |
 | --- | --- |
-| process | `kicad-cli` exits non-zero, or its stderr carries a parity-fetch failure |
-| `schematic_parity` | key absent; or present-but-empty without positive evidence parity ran |
-| `violations` | key absent; or any entry lacking `severity` (confirmed per-violation string, e.g. `"error"`) |
-| `unconnected_items` | key absent |
+| process | `kicad-cli` exits non-zero, or its stderr carries the parity-fetch diagnostic |
+| parity ran | the positive evidence below is absent - see **Step 4b**, which is the whole of this row |
+| `schematic_parity` | key absent, or not an array |
+| `violations` | key absent, not an array, or any entry lacking `severity`, or carrying a `severity` outside `error` / `warning` / `exclusion` |
+| `unconnected_items` | key absent, or not an array |
 | `included_severities` | does not contain all of `error`, `warning`, `exclusion` |
-| `ignored_checks` | contains a check this gate depends on (see Task 8) |
+| `ignored_checks` | contains `items_not_allowed`, on which the Task 8 hardware-envelope gate depends |
+
+**Reject an unknown severity before applying the policy, not after.** The policy is severity-scoped - "zero tolerated at error severity" - so a violation carrying a severity the code does not recognise cannot be classified, and silently treating it as not-an-error is how a real violation becomes a pass. The three accepted values are measured, not assumed: a `--severity-all` run reports exactly `["error","warning","exclusion"]` in `included_severities`.
+
+- [ ] **Step 4b: Establish that parity actually RAN, and say plainly what that rests on**
+
+Review issue 34 is right that the previous draft asserted "positive evidence that parity ran" and then supplied only a non-zero-exit check and a stderr string. This is the contract, and **the honest part is that KiCad offers no affirmative "parity ran" signal, so one is constructed from two independent legs**:
+
+**Leg 1, a precondition that does not depend on any message text.** Before DRC, export the candidate schematic's own netlist with `kicad-cli sch export netlist`, and require it to yield **at least one component**. Measured 2026-11-13: that command **exits 0 even on a schematic with nothing in it**, writing a well-formed 956-byte netlist with no components, against 36 KB for the real `pt2399-core` schematic. **So the count is the check and the exit code is not** - the same lesson as `schematic_parity: []`, one tool along. This establishes that the schematic this pair names is locatable, loadable and non-empty, which is the condition whose absence produces the failed fetch.
+
+**Leg 2, the diagnostic, named as what it is.** The runner also treats the stderr line `Failed to fetch schematic netlist for parity tests` as a refusal. **This leg is version-coupled and the plan says so rather than implying robustness it does not have**: the wording is KiCad's, not ours, and a release could change it. It is therefore pinned by a test that runs the real pinned tool against a failed-fetch pair and asserts the refusal still fires - so a version bump that reworded the message **fails loudly instead of silently disabling the guard.** That test is the reason this leg is acceptable at all.
+
+**Both paths go through the actual runner, not a stubbed report**, as the review asks: the clean pair, which must report zero parity violations *and* pass both legs; and the failed-fetch pair, which must be refused although `kicad-cli` exits 0 and writes `schematic_parity: []`. A unit test over a hand-written JSON fixture cannot establish either, because the behaviour under test is the tool's.
 
 **`included_severities` is the find worth keeping.** It is in the report, and it records what the run actually requested: a `--severity-error` run writes `["error"]`, a `--severity-all` run writes `["error","warning","exclusion"]`. So the `--severity-error` trap is **detectable from the report itself** rather than guarded by passing the right flag and trusting it. Assert the field. This is a check that catches its own misinvocation.
 
@@ -498,7 +516,17 @@ The spec marks this NOT VERIFIED. Read the `F.Silkscreen` graphic line widths of
 
 Blocks from the circuit's own structure, which the model already names: supply decoupling (`C1`, `C2`), the PT2399's reference and oscillator bypassing (`C3`, `C4`, `C5`), the input path (`C7`, `R3`, `R4`), the LPF1 node (`R1`, `R2`, `C6`, `C8`), the LPF2 and regeneration node (`R6`, `R7`, `R8`, `C11`, `C12`), the op-amp feedback caps (`C13`, `C14`), and the output path (`R5`, `C9`, `C10`). `J1` as the edge connector with a `max_setback_mm` and `must_lock`.
 
-**The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough to hold the standard's copper-to-edge clearance around the full envelope, with the hole and envelope diameters taken from the fastener the owner specified. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
+**The four mounting holes go in as a derivation rule, not as coordinates** - review issue 34 point 2, and the ordering defect it is still chasing. Task 8 moves the edge and the corners, so any literal keepout coordinate approved here is stale by the time Step 3 of that task regrades against it, and the regrade would then check the wrong keepouts while reporting a pass. What is approved is therefore the **invariant**: one hole at each corner, inset far enough that the full envelope sits on the board with margin, with the hole and envelope diameters taken from the fastener the owner specified.
+
+**The inset is 4.0 mm, and the two numbers inside it are different in kind** - review issue 34 found it stated two ways: implied as 4.0 mm here, by a clause that added 0.5 mm to the envelope, and written as 3.5 mm in Task 8, which used the envelope radius alone.
+
+| Part | Value | What it is |
+| --- | --- | --- |
+| geometric floor | 3.5 mm | the washer's radius. Below this the washer **overhangs the board**. Hard. |
+| margin | 0.5 mm | **a design margin for board-outline routing tolerance**, which is commonly around ±0.2 mm. Soft, and ours. |
+| **inset** | **4.0 mm** | the sum |
+
+**The 0.5 mm is NOT the standard's copper-to-edge clearance**, although it shares its value, and the earlier wording here said it was. That was wrong: copper-to-edge governs copper against the board edge and is enforced globally by DRC, while the envelope is a keepout rather than copper, so the two do not stack. A reader must not cite this 0.5 mm as a PCBWay rule - it is a margin this plan chose, and it is the one number in this table that could reasonably be argued down to the floor. Task 8 computes the coordinates from the final outline and the rule. The owner approves a rule that survives the geometry changing; he is not asked to re-approve four numbers that were always going to move.
 
 **The fastener is an M3 screw in the standard 3.2 mm hole**, the owner's instruction of 2026-11-13, recorded verbatim in `docs/known-gaps.md` **G311**. The two diameters that follow from it:
 
@@ -539,11 +567,11 @@ Place against the approved intent to discover the extent the parts and their har
 
 Bring the edge in to the placed extent plus the standard's 0.5 mm copper-to-edge clearance. Place the four **M3** holes against the **final** corners, by the rule Task 7 approved, modelled by **envelope, not drill** - the washer's footprint, not a 3.2 mm hole. Measure the header's setback from the final edge. Feed the computed coordinates back as the grader's keepouts for Step 3.
 
-The two numbers, from Task 7's table: **3.2 mm** non-plated hole, **7.0 mm** envelope. So each hole centre sits at least **3.5 mm** from both edges it is near, and the copper keepout is a circle of 7.0 mm about it.
+The numbers, from Task 7's table: **3.2 mm** non-plated hole, **7.0 mm** envelope, **4.0 mm** centre inset from each of the two edges a corner hole is near (3.5 mm geometric floor plus 0.5 mm routing-tolerance margin - see that table for why those are not the same kind of number).
 
-**Use the stock footprint. `MountingHole:MountingHole_3.2mm_M3` is correct here** - `np_thru_hole`, 3.2 mm drill, non-plated - and its courtyard, measured from the installed KiCad 10.0.5 library on 2026-11-13, is a circle of **6.9 mm** against the washer's 7.0 mm. A tenth of a millimetre. **Take the keepout Rule Area from the washer at 7.0 mm and leave the stock courtyard alone**; cutting a project-local footprint to recover 0.1 mm would be work this board cannot feel.
+**Use the stock footprint. `MountingHole:MountingHole_3.2mm_M3` is correct here** - `np_thru_hole`, 3.2 mm drill, non-plated. Its courtyard is 6.9 mm, measured from the installed library on 2026-11-13, and **it is not the envelope and gates nothing**: the 7.0 mm Rule Area in Step 4 is the only thing that enforces clearance to the hardware, for parts and copper alike. Cutting a project-local footprint to bring a non-gating courtyard from 6.9 mm to 7.0 mm would be work this board cannot feel.
 
-**The reason that sentence is worth writing down is that the answer was different an hour earlier.** Under the 8-32 fastener this task briefly carried, the stock courtyard was 9.5 mm against an 11.51 mm washer - **2 mm short, and silently so**. Every stock mounting-hole courtyard in that library models the **screw head**, and heads are smaller than washers; whether that gap matters is a property of the fastener, not of the library. It happens not to matter for M3. **Check it again if the fastener ever changes**, rather than reading this paragraph as "stock courtyards are fine."
+**That the stock courtyard happens to be close is luck, not a finding.** Under the 8-32 fastener this task briefly carried, the stock courtyard was 9.5 mm against an 11.51 mm washer - **2 mm short, and silently so**. Every stock mounting-hole courtyard in that library models the **screw head**, and heads are smaller than washers. This is exactly why the gate is a Rule Area sized from the washer rather than anything the footprint carries: **the gate does not change when the fastener does.**
 
 The hardware still gets a `parts/` catalogue entry with sourcing evidence, as in Task 2, recording the M3 screw and the DIN 125 washer. Its job here is to make the 7.0 mm figure checkable rather than remembered.
 
@@ -553,16 +581,32 @@ Run `check-intent` against the final board. **If the regrade fails, re-place** -
 
 - [ ] **Step 4: Make the hardware envelope independently checkable by DRC**
 
-The grader and DRC are two checks, not one, and review issue 34 point 2 is right that drill clearance alone cannot check a washer. **KiCad's drill-clearance rules measure the hole, so the envelope needs its own mechanism, and it takes two** - because the envelope has two different intruders:
+The grader and DRC are two checks, not one, and review issue 34 point 2 is right that drill clearance alone cannot check a washer: KiCad's drill-clearance rules measure the hole.
 
-| Intruder | Mechanism | DRC check |
-| --- | --- | --- |
-| a **part** sitting on the hardware | the project-local footprint's courtyard from Step 2 | `courtyards_overlap` |
-| **copper** under the washer or standoff | a Rule Area at the envelope diameter, copper keepout | the keepout rule |
+**ONE mechanism, at ONE diameter, enforcing BOTH intruders: a Rule Area of 7.0 mm centred on each hole, on `F.Cu` and `B.Cu`, with `tracks`, `vias`, `pads`, `copperpour` and `footprints` all `not_allowed`.** An earlier draft of this step used two mechanisms at two diameters - a courtyard for parts and a keepout for copper - which is what review issue 34 found inconsistent, and it was right: 6.9 mm of courtyard against a 7.0 mm keepout is two different answers to one question.
 
-The engine cannot carry either - the spec records that it has no per-region design rules - which is exactly why these live in KiCad's DRC and not in the router.
+**Measured on the pinned 10.0.5, 2026-11-13**, on a fixture board with one footprint inside such a Rule Area and one outside it:
 
-**And this is where Task 5's `ignored_checks` field earns its place.** `missing_courtyard` is in KiCad 10.0.5's **default ignored set** (measured 2026-11-13: 5 checks ignored by default, `missing_courtyard` among them, `courtyards_overlap` not). So a mounting-hole footprint that reached the board with **no courtyard at all** would raise nothing, and the envelope check would silently not exist. Task 5 therefore refuses a report whose `ignored_checks` contains a check this gate depends on. Confirm the `.kicad_dru` / Rule Area spelling by running the pinned tool, as with the flags.
+| Result | Observed |
+| --- | --- |
+| the footprint inside | `items_not_allowed`, **error**, `Items not allowed (keepout area 'hw_envelope')`, item `Footprint …` |
+| its pad | a second `items_not_allowed`, **error**, item `PTH pad 1 …` |
+| the footprint outside | no keepout violation |
+
+So a single rule rejects a part intruding on the hardware and copper under the washer alike, at error severity, where the DRC policy already tolerates zero. The engine cannot carry it - the spec records that it has no per-region design rules - which is why it lives in KiCad's DRC and not in the router.
+
+**This also removes a dependency the previous draft had, and the removal is the point.** With the courtyard as the gate, the gate rested on `missing_courtyard`, which is in KiCad 10.0.5's **default ignored set** - so a mounting-hole footprint arriving with no courtyard at all would have raised nothing and the check would silently not have existed. **The Rule Area does not depend on any footprint having a courtyard**, so there is nothing to un-ignore here. Task 5 still validates `ignored_checks`, now against `items_not_allowed`: a board whose configuration ignored *that* would disable this gate, and that is the check to refuse on.
+
+The stock footprint's 6.9 mm courtyard stays on the board as ordinary footprint data. It is **not** the envelope and nothing gates on it.
+
+- [ ] **Step 4b: Prove both intrusions are rejected, with fixtures**
+
+Two fixture boards, each a Rule Area at 7.0 mm with a deliberate intruder, and each asserted to produce `items_not_allowed` at error severity:
+
+1. **a component intruding on the envelope** - placed so its body enters the 7.0 mm circle;
+2. **a copper intrusion** - a track or pour region entering the same circle.
+
+A third fixture, clean, asserts zero. The first two are the ones that matter: the gate has to be shown rejecting before it is trusted to accept.
 
 - [ ] **Step 5: Commit the final geometry**
 
