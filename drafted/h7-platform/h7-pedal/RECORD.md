@@ -119,6 +119,14 @@ and J2.20, and 34 that each reach one pad. J1's pads 16 to 19 are the contract's
 
 ### The rulings this page rests on
 
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `interface` is one of the pedal's 19 blocks and holds
+  J_MOD_A and J_MOD_B only.
+- [CR-PEDAL-TEST-PADS](../../../docs/h7-platform/decisions.md#cr-pedal-test-pads), cited by the block for what it does NOT hold: no
+  test pad is on this page; each pad goes to the block that builds its net.
+- [R-5](../../../docs/h7-platform/decisions.md#r-5): the 40-pin interface is two 1 x 20 parts, J_MOD_A (contract pins 1-20) and
+  J_MOD_B (21-40), female on the pedal.
+- [R-61](../../../docs/h7-platform/decisions.md#r-61): the socket is Mill-Max 801-43-020-10-012000, the Value both parts carry.
+- [RR-5](../../../docs/h7-platform/decisions.md#rr-5): contract pins 16-19 are reserved, so J1's pads 16-19 carry no-connects.
 - [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): GND, 3V3_D,
   VREF_A and VIN_MOD are wires ending in hierarchical labels.
 - [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
@@ -187,6 +195,21 @@ cathode). VIN_FB is private to the page and is drawn as wire, with no label.
 
 ### The rulings this page rests on
 
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `entry` is one of the pedal's 19 blocks: the DC jack,
+  both Schottkys, FB_IN, the hold-up reservoir on VIN_A, R_VBLD (and, by CR-PEDAL-TEST-PADS, the
+  VIN, VIN_A and GND pads).
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds): the pedal adds no model kind. D1
+  and D2 are `diode`, pin 1 K and pin 2 A on `Diode:PMEG4030ER`, which is why each anode is pin 2
+  on the page. FB_IN is an `inductor` (the block cites it as CR-PEDAL-KINDS' FERRITE_IN), so the
+  model carries henries and the page draws the rating (CR-MODULE-BEAD-VALUE, below).
+- [CR-PEDAL-CHASSIS-PAD](../../../docs/h7-platform/decisions.md#cr-pedal-chassis-pad), cited by the block for what it does NOT hold:
+  the chassis-bond GND pad is layout, not a model part, so it is not on this page.
+- [R-35](../../../docs/h7-platform/decisions.md#r-35), amended by [R-40](../../../docs/h7-platform/decisions.md#r-40): one PMEG4030ER per branch (D1 to VIN_A, D2 to the
+  module branch), and VIN_A's reservoir of four 100 uF 35 V cans, C3 to C6 (R-40 the fourth).
+- [R-36](../../../docs/h7-platform/decisions.md#r-36): R1 (R_VBLD) 10.0 kOhm on VIN, so VIN falls after a plug pull.
+- The block also cites PWR-01 and PWR-02 (`schematic-checklist.md` lines 117 and 118, the jack's
+  polarity and one Schottky per branch); those are checklist items, not rulings, and reach this page
+  through CR-PEDAL-DC-JACK and R-35.
 - [CR-PEDAL-DC-JACK](../../../docs/h7-platform/decisions.md#cr-pedal-dc-jack): J3 on the generic
   `Connector:Barrel_Jack`, pin 1 (centre) on GND, pin 2 (sleeve) on VIN, no switch contact.
 - [CR-PEDAL-FB-IN](../../../docs/h7-platform/decisions.md#cr-pedal-fb-in): FB1 from VIN to VIN_FB,
@@ -239,9 +262,43 @@ cathode). VIN_FB is private to the page and is drawn as wire, with no label.
 
 **`lib_symbol_mismatch`, 2 warnings on the draft and on the page**, measured with `kicad-cli sch erc
 --severity-all`: *"Symbol 'PMEG4030ER' doesn't match copy in library 'Diode'"*, on D1 and on D2.
-The draft carries them as copperhead embedded the symbol; the repair does not touch `lib_symbols`.
-They are warnings; nothing was done about them, and what differs between the embedded and the
-installed copy was not measured.
+
+D1's and D2's embedded symbol (`Diode:PMEG4030ER`, `entry.kicad_sch` line 970; line 969 on the
+draft), measured against the sheet and the installed `Diode.kicad_sym` (KiCad 10.0.5):
+
+| | embedded in the sheet (draft and page alike) | installed `PMEG4030ER` |
+| --- | --- | --- |
+| form | a whole symbol, no `extends` | `(extends "PMEG40T10ER")` (installed line 43025): fields only, its pins and graphics the parent's |
+| pins | K pin 1 at (-3.81, 0), A pin 2 at (3.81, 0), both passive, length 2.54: identical, token for token, to the installed parent `PMEG40T10ER`'s | the parent's: the same two |
+| graphics | the parent's three polylines, the same 12 points | the parent's |
+| Value | `PMEG40T10ER` (the parent's) | `PMEG4030ER` |
+| Datasheet | `.../data-sheet/PMEG40T10ER.pdf` (the parent's) | `.../data-sheet/PMEG4030ER.pdf` |
+| Description | "40V, 1A low Vf Trench MEGA Schottky barrier rectifier, SOD-123W" (the parent's) | "40V, 3A low Vf MEGA Schottky barrier rectifier, SOD-123W" |
+| Footprint, `ki_fp_filters`, `ki_keywords` | `Diode_SMD:Nexperia_CFP3_SOD-123W`, `Nexperia*CFP3*SOD?123W*`, "forward voltage diode" | the same |
+
+So the embedded copy is the parent `PMEG40T10ER` flattened under the child's name. That is what
+copperhead's flattening of an `extends` symbol produces, as the carrier record measured for
+`USBLC6-2SC6` (`../h7-carrier/RECORD.md`, U2's embedded symbol). It is third-party behaviour, and this
+repair does not touch `lib_symbols`.
+
+**What reaches the page's netlist export** (`kicad-cli sch export netlist --format kicadxml` on the
+committed sheet): each instance's own Value is `PMEG4030ER,115`, the fitted part. Its instance
+Datasheet and Description fields are empty. But the `libpart` for `Diode` / `PMEG4030ER` carries
+the description "40V, 1A low Vf Trench MEGA Schottky barrier rectifier, SOD-123W", the doc
+`PMEG40T10ER.pdf`, and the field Value `PMEG40T10ER`. D1's and D2's `libsource` repeats that
+description. So the export describes D1 and D2 as the 40 V 1 A part, with that part's data sheet.
+
+**This is not an electrical fault.** The pins, their numbers, types and positions are the
+installed part's, the model comparison is 0, 0, 0, 0, and ERC reports it as a warning. The fitted
+part is the 3 A PMEG4030ER (R-35, `PMEG4030ER` in `pedal-parts.ts`), and the instance Value says
+so.
+
+**Trap for a later output:** a reader taking the description or data sheet from this page's export
+or symbol fields gets the 1 A part's. **What would settle it:** the embedded symbol carrying the
+installed `PMEG4030ER`'s own Value, Datasheet and Description. Either the repair rewrites those three
+properties in `lib_symbols` (a direct text edit; it changes the page's bytes, so it is a redraw the
+owner sees), or copperhead resolves `extends` with the child's fields. Neither is done here: both
+pages were sent to the owner at their current sha256.
 
 ### What the page shows, as observations
 
