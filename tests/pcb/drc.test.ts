@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test"
+import { afterAll, test, expect } from "bun:test"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
@@ -7,8 +7,18 @@ import { runDrc, verdictOf, DrcRefusal, PARITY_FETCH_DIAGNOSTIC } from "../../to
 import type { KicadInvoker, KicadResult, DrcGuard } from "../../tools/pcb/drc.ts"
 import { parseReport } from "../../tools/pcb/drc-report.ts"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
+import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 
 const FIXTURES = path.resolve(import.meta.dir, "../fixtures/pcb")
+
+// THE TWO FIXTURES BELOW THAT NAME A SCRATCH DIRECTORY GO THROUGH THE ONE
+// REGISTRY (tests/support/temp-scratch.ts). They were mkdtemp sites that
+// nothing removed - the `pair.dir` removals in individual tests are not the
+// same thing, since several tests never reach their finally and `lowered`
+// returns a path with no handle on its directory at all. That made this file
+// two of the three offenders in tests/stripboard/temp-scratch.test.ts, inside a
+// guard that was already red for an unrelated file, so the total never moved.
+afterAll(cleanUpTempScratch)
 
 /** Copies a committed fixture directory to a scratch one, optionally renaming the files. */
 function scratchPair(fixture: string, names: { board: string; schematic: string | null; project: string }): {
@@ -16,7 +26,7 @@ function scratchPair(fixture: string, names: { board: string; schematic: string 
   board: string
   schematic: string
 } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-drc-test-"))
+  const dir = freshTempScratch("pcb-drc-test-")
   fs.copyFileSync(path.join(FIXTURES, fixture, "pair.kicad_pcb"), path.join(dir, `${names.board}.kicad_pcb`))
   fs.copyFileSync(path.join(FIXTURES, fixture, "pair.kicad_pro"), path.join(dir, `${names.project}.kicad_pro`))
   if (names.schematic !== null) {
@@ -220,7 +230,7 @@ function node(parent: Record<string, unknown>, key: string): Record<string, unkn
 }
 
 function lowered(edit: (project: Record<string, unknown>) => void): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-drc-pro-"))
+  const dir = freshTempScratch("pcb-drc-pro-")
   for (const f of ["pair.kicad_pcb", "pair.kicad_sch"]) fs.copyFileSync(path.join(FIXTURES, "good", f), path.join(dir, f))
   const project = asNode(JSON.parse(fs.readFileSync(path.join(FIXTURES, "good/pair.kicad_pro"), "utf8")))
   edit(project)
