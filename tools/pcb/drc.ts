@@ -32,6 +32,12 @@
  * flag later would make an ordinary violation exit non-zero and silently invert
  * the process check into a refusal. Do not "simplify" it back in.
  *
+ * `--refill-zones` IS PASSED so DRC never evaluates stale copper-pour fills, and `--save-board` IS
+ * DELIBERATELY NOT: the refill stays in memory, so the check never mutates the board under test.
+ *
+ * The version is checked here, at the gate, from the report's own `kicad_version`, because the wording of leg 2
+ * is version-coupled and a test suite is the easiest place in this repository to miss a new failure.
+ *
  * The report goes to a FRESH directory per run: a stale report at a reused path
  * is readable, self-consistent and wrong.
  *
@@ -66,7 +72,10 @@ export interface KicadResult {
 export type KicadInvoker = (args: readonly string[]) => KicadResult
 
 export interface RunDrcOptions {
-  /** The schematic this board is meant to match. Named, never inferred from the board. */
+  /**
+   * The schematic this board is meant to match. Named by the caller, and then REQUIRED to be the one DRC
+   * compares against: same directory and basename as the board, since DRC finds it by that convention.
+   */
   readonly schematicPath: string
   readonly invoke?: KicadInvoker
 }
@@ -124,6 +133,25 @@ function netlistComponentCount(schematicPath: string, scratch: string, invoke: K
   return count
 }
 
+/** The version whose diagnostic wording and report keys this module was measured on. */
+export const PINNED_KICAD_VERSION = "10.0.5"
+
+/**
+ * Evidence about the named schematic (leg 1's component count) is only evidence about the comparison if DRC
+ * compared against that same file. DRC resolves the schematic by directory and basename, so those must agree.
+ */
+function requirePaired(boardPath: string, schematicPath: string): void {
+  const stem = (p: string): string => path.join(path.dirname(path.resolve(p)), path.basename(p, path.extname(p)))
+  if (stem(boardPath) !== stem(schematicPath)) {
+    throw new DrcRefusal(
+      "schematic-pairing",
+      `the board ${boardPath} and the named schematic ${schematicPath} are not the same directory and basename. ` +
+        "DRC compares the board against the schematic it finds beside it, so any component count taken from a " +
+        "differently placed file is evidence about the wrong artifact. Put them side by side with one basename.",
+    )
+  }
+}
+
 export function runDrc(boardPath: string, opts: RunDrcOptions): DrcReport {
   const invoke = opts.invoke ?? realInvoker
   if (!fs.existsSync(boardPath)) {
@@ -137,7 +165,7 @@ export function runDrc(boardPath: string, opts: RunDrcOptions): DrcReport {
 
   const reportPath = path.join(scratch, "drc.json")
   const result = invoke([
-    "pcb", "drc", "--schematic-parity", "--format", "json", "--severity-all", "-o", reportPath, boardPath,
+    "pcb", "drc", "--schematic-parity", "--format", "json", "--severity-all", "--refill-zones", "-o", reportPath, boardPath,
   ])
   if (result.status !== 0) {
     throw new DrcRefusal(
@@ -153,11 +181,20 @@ export function runDrc(boardPath: string, opts: RunDrcOptions): DrcReport {
         `${opts.schematicPath} has ${netlistComponents} component(s). Name them alike beside the board.`,
     )
   }
+  requirePaired(boardPath, opts.schematicPath)
   if (!fs.existsSync(reportPath)) {
     throw new DrcRefusal("report-unreadable", `kicad-cli exited 0 but wrote no report at ${reportPath}.`)
   }
 
   const parsed = parseReport(fs.readFileSync(reportPath, "utf8"), reportPath)
+  if (parsed.kicadVersion !== PINNED_KICAD_VERSION) {
+    throw new DrcRefusal(
+      "kicad-version",
+      `the report was written by KiCad ${parsed.kicadVersion}, not the ${PINNED_KICAD_VERSION} this module's leg 2 ` +
+        "wording and report keys were measured on. A release may have reworded the parity-fetch diagnostic, which " +
+        "would disable leg 2 without a sound. Re-measure, then update PINNED_KICAD_VERSION.",
+    )
+  }
   return {
     ...parsed,
     reportPath,

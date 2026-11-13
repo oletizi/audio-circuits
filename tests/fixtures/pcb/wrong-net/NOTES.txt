@@ -1,0 +1,3 @@
+Same as good/ except for ONE line of pair.kicad_pcb: R2 pad 2 is on net /MID instead of /OUT.
+The board then disagrees with its schematic, so schematic_parity must report a net_conflict.
+Regenerate by copying good/ and changing only that line (diff the two to confirm).

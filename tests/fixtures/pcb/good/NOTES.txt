@@ -1,0 +1,3 @@
+Known-good pair: two 10k axial resistors in series (IN - R1 - MID - R2 - OUT), board and
+schematic agree, so schematic_parity is legitimately empty. Nothing is routed, so it has one
+unconnected item and passes only under an unrouted policy. Must stay in step with wrong-net/.

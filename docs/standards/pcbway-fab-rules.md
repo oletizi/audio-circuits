@@ -24,7 +24,7 @@ is whose:
 | --- | --- | --- | --- |
 | Track width | 0.1 mm (4 mil), standard tier | >= 0.15 mm | 0.3 mm signal, 0.5 mm power; 0.25 mm minimum |
 | Copper clearance | 0.1 mm (4 mil), standard tier | >= 0.15 mm | 0.25 mm |
-| Drill, vias and PTH | 0.15 mm minimum; below 0.2 mm or above 6 mm is surcharged, standard tier | >= 0.3 mm | 0.4 mm via drill; 0.3 mm minimum hole |
+| Drill, vias and PTH | 0.15 mm minimum; below 0.2 mm or above 6 mm is surcharged, standard tier | >= 0.3 mm | 0.4 mm via drill; 0.8 mm via pad diameter; 0.3 mm minimum hole |
 | Via annular ring | 0.15 mm (6 mil) for pads with vias, standard tier | >= 0.15 mm | 0.2 mm (0.8 mm via pad on a 0.4 mm drill) |
 | Component-hole annular ring | not in the standard tier; advanced normal process >= 10 mil (0.254 mm) | not set by this standard | set by each footprint; must clear 0.254 mm (see below) |
 | Hole to hole | not in the standard tier; advanced normal process: component hole >= 16 mil (0.406 mm), via (<= 0.45 mm) >= 11 mil | >= 0.4 mm | 0.5 mm |

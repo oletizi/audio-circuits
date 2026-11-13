@@ -14,6 +14,8 @@ export type DrcGuard =
   | "severity-coverage"
   | "ignored-checks"
   | "project-config"
+  | "schematic-pairing"
+  | "kicad-version"
   | "invocation"
 
 export class DrcRefusal extends Error {

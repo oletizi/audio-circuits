@@ -131,7 +131,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "1a14511b-6829-46c5-b719-4403ba9e05b2")
+		(uuid "468ce791-46ed-40d7-9405-c3481caa41c2")
 	)
 	(label "OUT"
 		(at 120 53.81 0)
@@ -140,7 +140,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "86e79adc-c669-404f-9500-ddfa6b129d3d")
+		(uuid "6e42804d-4d0d-4107-9423-76f2a8949230")
 	)
 	(label "MID"
 		(at 100 53.81 0)
@@ -149,7 +149,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "d2fbebf6-ea95-426d-8072-7c8ecfa660fd")
+		(uuid "a9389e72-24f7-4537-ad40-7e91644a193a")
 	)
 	(label "MID"
 		(at 120 46.19 0)
@@ -158,7 +158,7 @@
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "eecffe40-b5e1-441b-ae15-5026e4d1b60e")
+		(uuid "d2d8c6af-b2ee-4674-8e16-961168366bb0")
 	)
 	(symbol
 		(lib_id "Device:R")

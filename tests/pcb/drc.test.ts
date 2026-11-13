@@ -46,6 +46,7 @@ function expectGuard(body: () => unknown, guard: DrcGuard): DrcRefusal {
 }
 
 const CLEAN_REPORT = {
+  kicad_version: "10.0.5",
   included_severities: ["error", "warning", "exclusion"],
   ignored_checks: [{ key: "footprint_type_mismatch", description: "x" }],
   schematic_parity: [],
@@ -169,6 +170,39 @@ test("a clean, complete report is accepted by the fake path", () => {
   expect(report.netlistComponents).toBe(1)
 })
 
+test("a report with no kicad_version FAILS rather than reading as an unreported version", () => {
+  expectGuard(() => runFake(without("kicad_version")), "report-shape")
+})
+
+test("a report from an unexpected KiCad version FAILS at the gate, not only in the suite", () => {
+  const refusal = expectGuard(() => runFake({ ...CLEAN_REPORT, kicad_version: "10.1.0" }), "kicad-version")
+  expect(refusal.message).toContain("10.1.0")
+})
+
+test("DRC is invoked with --refill-zones and never --save-board", () => {
+  const seen: string[][] = []
+  const inner = fakeKicad(CLEAN_REPORT)
+  withGood((board, schematic) =>
+    runDrc(board, { schematicPath: schematic, invoke: (args) => (seen.push([...args]), inner(args)) }),
+  )
+  const drc = seen.find((a) => a[0] === "pcb")
+  expect(drc).toContain("--refill-zones")
+  expect(drc).not.toContain("--save-board")
+})
+
+test("a schematic that is not the board's sibling is refused even though leg 1 counts its components", () => {
+  const pair = scratchPair("good", { board: "pair", schematic: "pair", project: "pair" })
+  const elsewhere = fs.mkdtempSync(path.join(os.tmpdir(), "pcb-drc-elsewhere-"))
+  try {
+    const other = path.join(elsewhere, "pair.kicad_sch")
+    fs.copyFileSync(path.join(FIXTURES, "good/pair.kicad_sch"), other)
+    expectGuard(() => runDrc(pair.board, { schematicPath: other }), "schematic-pairing")
+  } finally {
+    fs.rmSync(pair.dir, { recursive: true, force: true })
+    fs.rmSync(elsewhere, { recursive: true, force: true })
+  }
+})
+
 // ---- project configuration equals the fabrication standard -----------------
 
 function isObj(value: unknown): value is Record<string, unknown> {
@@ -219,6 +253,14 @@ test("a net class whose track width was lowered is refused", () => {
   const refusal = expectGuard(() => drcOnLowered(board), "project-config")
   expect(refusal.message).toContain("Power")
   expect(refusal.message).toContain("track_width")
+})
+
+test("a constraint stored as a string is refused, not coerced into equality", () => {
+  const board = lowered((p) => {
+    node(node(node(p, "board"), "design_settings"), "rules")["min_clearance"] = "0.25"
+  })
+  const refusal = expectGuard(() => drcOnLowered(board), "project-config")
+  expect(refusal.message).toContain("min_clearance")
 })
 
 test("a project with no .kicad_pro is refused rather than assumed to be at the standard", () => {
@@ -335,6 +377,26 @@ test("each run writes its report to a fresh path", () => {
     expect(a.reportPath).not.toBe(b.reportPath)
   } finally {
     fs.rmSync(pair.dir, { recursive: true, force: true })
+  }
+})
+
+// ---- the command line: the policy is never defaulted --------------------------
+
+function cli(...args: string[]): { status: number | null; stderr: string } {
+  const cliPath = path.resolve(import.meta.dir, "../../tools/pcb/drc-cli.ts")
+  const r = spawnSync("bun", [cliPath, "b.kicad_pcb", "b.kicad_sch", ...args], { encoding: "utf8" })
+  return { status: r.status, stderr: r.stderr }
+}
+
+test("the CLI refuses an unrecognised or missing policy argument with exit 2", () => {
+  for (const args of [["drc"], ["drc", "--route"], ["drc", "--routed=true"], ["parity", "--routed"], ["drc", "--routed", "x"]]) {
+    const r = cli(...args)
+    expect(r.status).toBe(2)
+    expect(r.stderr).toContain("usage:")
+  }
+  // Valid policies get past argument handling (and are then refused for the missing board).
+  for (const args of [["drc", "--routed"], ["drc", "--unrouted"], ["parity"]]) {
+    expect(cli(...args).stderr).toContain("no board at")
   }
 })
 

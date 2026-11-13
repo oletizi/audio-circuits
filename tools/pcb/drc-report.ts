@@ -139,6 +139,9 @@ export function parseReport(text: string, where: string): ParsedReport {
     )
   }
 
-  const kicadVersion = typeof json["kicad_version"] === "string" ? json["kicad_version"] : "unreported"
+  const kicadVersion = json["kicad_version"]
+  if (typeof kicadVersion !== "string") {
+    throw new DrcRefusal("report-shape", `${where} has no string "kicad_version"; the version is load-bearing for leg 2.`)
+  }
   return { kicadVersion, schematicParity, violations, unconnectedItems, includedSeverities, ignoredChecks }
 }
