@@ -80,7 +80,9 @@ export function checkPreconditions(inputs: PreconditionInputs): Preconditions {
         "incremental updates: the real updater matches existing footprints by UUID path, and reproducing that " +
         "is out of scope, so updating here would half-update or duplicate instead. The board must be empty of " +
         "footprints. Placement is regenerated from the schematic on every run, so re-deriving it costs a tool " +
-        "run and not a person's work.",
+        "run and not a person's work. To get an empty board back, copy the fixture that holds this board's own " +
+        "bytes from before it was populated: tests/fixtures/pcb/pt2399-core-empty/pt2399-core.kicad_pcb, whose " +
+        "provenance and drift are pinned by tests/pcb/empty-board-fixture.test.ts.",
     )
   }
 
