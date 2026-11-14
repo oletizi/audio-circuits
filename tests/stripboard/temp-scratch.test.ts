@@ -74,6 +74,10 @@ const REGISTERING: Readonly<Record<string, readonly string[]>> = {
   // stale entry fails rather than guarding nothing.
   "materialize-low-boost.ts": ["materialisedLowBoost"],
   "run-scratch.ts": ["freshRoot", "registerCreated", "scratchStamp", "registerStampPrefix"],
+  // The headless-update test files' shared fixtures. `scratchCircuit` is the one
+  // export that makes registered scratch; the three test files that call it each
+  // arm afterAll(cleanUpTempScratch) of their own.
+  "pcb-update.ts": ["scratchCircuit"],
 }
 
 /**

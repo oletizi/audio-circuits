@@ -19,9 +19,11 @@
  *
  * READ FROM THE BOARD, NOT FROM THE LIBRARIES. The board holds the footprints as
  * they will be fabricated, libraries included by value; a library read would
- * measure what a future update might place rather than what this board has. Both
- * answers are the same today, and only one of them stays true after someone
- * edits a graphic on the board.
+ * measure what a future update might place rather than what this board has, and
+ * it would not see a graphic edited on the board. NO LIBRARY READ WAS TAKEN, so
+ * nothing here claims the two agree - a sentence asserting they did stood in
+ * this comment and was struck, because an unmeasured figure in prose is exactly
+ * what this module exists to avoid.
  *
  * TEXT IS DELIBERATELY EXCLUDED. `fp_text` and a footprint's `property` fields
  * carry a font thickness, not a graphic stroke, and the standard already sets

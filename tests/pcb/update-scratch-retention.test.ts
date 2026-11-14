@@ -57,8 +57,8 @@ afterAll(cleanUpTempScratch)
  * footprints, and R2 refuses any board that does. Without this, every driver in
  * `DRIVERS` refused at `board-not-empty` before reaching its own guard, and the
  * contract this file asserts was being measured on the wrong refusal. The
- * fixture's provenance and its staleness guard are in
- * `tests/fixtures/pcb/pt2399-core-empty/NOTES.txt`.
+ * fixture's provenance and its drift guard are `./empty-board-fixture.test.ts`,
+ * which is the authority on both.
  */
 const EMPTY_BOARD = path.join(FIXTURES, "pt2399-core-empty", "pt2399-core.kicad_pcb")
 

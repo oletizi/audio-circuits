@@ -80,7 +80,13 @@ test("the silkscreen survey covers every footprint on the board, and reports the
     expect({ fpid: row.fpid, positive: row.minWidthMm > 0 }).toEqual({ fpid: row.fpid, positive: true })
     expect(row.references.length).toBeGreaterThan(0)
   }
-  expect(survey.items.length).toBe(survey.byFootprint.reduce((total, row) => total + row.graphics, 0))
+  // A SUM OVER `byFootprint` AGAINST `items.length` STOOD HERE AND IS STRUCK
+  // RATHER THAN REPLACED. `byFootprint` is derived from `items`, so it could not
+  // fail, and a vacuous assertion is worse than a missing one because it reads
+  // as coverage. Nothing took its place: the independent check is the BY-NAME
+  // coverage above, since `EXPECTED_FOOTPRINTS` is the only input here not
+  // derived from the survey, and a second bound computed from the same parse
+  // would be the same mistake in a new shape.
 
   // THE DISCLOSURE. Printed, not asserted: see this file's header.
   console.log(`\nF.Silkscreen/B.Silkscreen graphic line widths, read from ${BOARD}:`)
