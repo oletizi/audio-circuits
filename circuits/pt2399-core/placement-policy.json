@@ -9,6 +9,30 @@
   "entry_points": "The argv for each operation is the one Task 4's preflight recorded in build/krt/invocations.json, not a command invented at the point of use. This file names flags; it does not restate those invocations.",
 
   "operations": {
+    "resolve-intent": {
+      "entry_point": "bun tools/pcb/resolve-intent-zones.ts <board> circuits/pt2399-core/floorplan-intent.json <run-dir>/resolved-intent.json",
+      "required": [
+        {
+          "flag": "the approved intent as the second argument",
+          "value": "circuits/pt2399-core/floorplan-intent.json, never a resolved copy",
+          "reason": "The approved file declares no board coordinates: its geometry is fractions of whatever outline Task 8 settles on, and this step turns those into the rects and the compass edge the engine reads. Resolving a resolved file would double-apply the fractions, so the tool refuses an intent that already carries a rect or an edge."
+        }
+      ],
+      "allowed": [],
+      "forbidden": [
+        {
+          "flag": "editing the resolved file by hand",
+          "reason": "It is a derived artifact and belongs in a run directory under build/. A hand edit there is a coordinate nobody approved, in a file that looks machine-made."
+        }
+      ],
+      "post_conditions": [
+        {
+          "check": "Every later step in the run - seeding, refinement and grading - reads the SAME resolved file.",
+          "why": "Two resolutions of one intent against two outlines are two different criteria. A run that seeds against one and grades against another reports a verdict about neither."
+        }
+      ],
+      "note": "The tool refuses a board with no Edge.Cuts rather than defaulting a rectangle, because the outline is Task 8's decision and a rectangle invented at this step would become the design by accident."
+    },
     "check-intent": {
       "entry_point": "py_tools/check_floorplan.py",
       "required": [
@@ -19,8 +43,8 @@
         },
         {
           "flag": "--intent",
-          "value": "circuits/pt2399-core/floorplan-intent.json",
-          "reason": "The approved intent is the only thing this board is graded against. A run against any other file is not a run on this board."
+          "value": "the run's own resolved-intent.json, produced by `resolve-intent` from the approved circuits/pt2399-core/floorplan-intent.json and this run's board",
+          "reason": "The approved intent is the only thing this board is graded against, and the resolved copy is that intent with its fractions turned into this outline's rects - nothing else added. A run against any other file is not a run on this board, and a run manifest therefore hashes both files, not one."
         }
       ],
       "allowed": [
@@ -57,23 +81,62 @@
     },
 
     "place": {
-      "entry_point": "py_placer/place_optimize.py (the one placement entry point Task 4's preflight probed)",
-      "required": [],
+      "entry_point": "py_placer/place_seed.py for the FIRST pass; py_placer/place_optimize.py only to refine a pass that already graded clean. Both are recorded in build/krt/invocations.json; neither is a command invented here.",
+      "the_two_contracts_are_opposite": "`place_seed.py <in> <out> --intent <json>` seeds an INITIAL placement from the intent. `place_optimize.py <in> <out>` REFINES an existing one within a displacement cap. Confusing them is the hazard this entry exists to prevent - see first_placement_warning.",
+      "seeding_exit_codes": {
+        "0": "seeded and graded clean against the intent",
+        "2": "bad arguments",
+        "3": "cannot seed: the board has no Edge.Cuts outline, or it already looks placed",
+        "4": "a board was written, but a part is unseated or the grade found errors"
+      },
+      "required": [
+        {
+          "flag": "--intent",
+          "value": "the run's own resolved-intent.json",
+          "reason": "The seeder is the one tool that reads the intent as a CONSTRAINT SOURCE rather than only as a gate, and the zone and the compass edge it reads exist only in the resolved copy. Seeded against the approved file alone it places no block early, its decap stage seats nothing, and the one enforced rule in the intent becomes unreachable - measured, zero clean seeds in sixteen runs."
+        }
+      ],
       "allowed": [
         {
+          "flag": "--seed",
+          "reason": "Chooses the packing order and jitter; the same seed reproduces byte for byte. It selects a candidate, not a criterion, and the pipeline's shape is a portfolio of seeds whose failures are discarded."
+        },
+        {
+          "flag": "--force",
+          "value": "on the first pass only, and only to discard the update tool's scaffolding",
+          "reason": "Without it the seeder refuses a board that already looks placed (exit 3). `--force` DISCARDS that placement rather than refining it, which is exactly what should happen to a mechanical grid nobody designed. Passing it to preserve a placement is a misreading: it destroys one."
+        },
+        {
+          "flag": "--anchors-first",
+          "reason": "Reorders the connectivity-centroid stage to seed large parts first. It changes which candidate comes out, not what is acceptable. Measured on this board's intent it made the grade worse, not better, so it is allowed and not recommended."
+        },
+        {
+          "flag": "--no-polish",
+          "reason": "Emits the raw packed seed. Useful for attributing a failure to the packer rather than the polish; it cannot loosen a gate."
+        },
+        {
+          "flag": "--repair",
+          "reason": "Moves only the parts violating the intent, worst first, each seated nearest its current pose. It is driven BY the criteria and cannot change them. Measured once on this board: it reported `1 repaired (0 moved)` and the grade still failed, so a repair that claims success is not evidence that one happened - read the regrade, not the repair line."
+        },
+        {
           "flag": "--max-displacement",
-          "value": "only on a REFINEMENT run, whose input is a placement that has already been graded against the approved intent",
-          "reason": "It bounds how far a part may move from where it already is. On a refinement that is a useful brake. On the FIRST placement of this board it is a trap, and the trap is specific: see first_placement_warning below."
-        }
+          "value": "on a REFINEMENT run, whose input is a placement that has already graded clean against the resolved intent",
+          "reason": "It bounds how far a part may move from where it already is. On a refinement that is a useful brake. On a first pass it is the trap below."
+        },
+        { "flag": "--dry-run", "reason": "Reports without writing." }
       ],
       "forbidden": [
         {
           "flag": "--max-displacement",
           "value": "on the first placement pass, or any run whose input is the board as the headless update tool left it",
           "reason": "See first_placement_warning."
+        },
+        {
+          "flag": "--clearance",
+          "reason": "Same objection as on check-intent: seeding at a clearance other than the board's own produces a placement that is legal against nothing the board declares."
         }
       ],
-      "first_placement_warning": "THE 24 FOOTPRINTS ON THIS BOARD SIT ON A MECHANICAL 15 mm GRID WRITTEN BY THE UPDATE TOOL. That is scaffolding so the parts exist somewhere; nobody designed it and it carries no intent. `place_optimize.py --max-displacement 3` refines an existing placement within 3 mm of where it already is, so running it on this board as it stands would return a tidied version of that grid - and the grid would then BE the floorplan, chosen by a tool and graded against an intent that had nothing to say about it. Task 8's pass 1 needs a SEEDING run, not a refinement. Task 4's preflight probed only the optimiser, on a throwaway two-part fixture, so there is no recorded invocation for seeding yet. Task 8 must discover and record one the way Task 4 recorded these, and this policy must then be amended to name it - before approval if the reviewer agrees, otherwise as an amendment the owner signs.",
+      "first_placement_warning": "THE 24 FOOTPRINTS ON THIS BOARD SIT ON A MECHANICAL 15 mm GRID WRITTEN BY THE UPDATE TOOL. That is scaffolding so the parts exist somewhere; nobody designed it and it carries no intent. `place_optimize.py --max-displacement 3` refines an existing placement within 3 mm of where it already is, so running it on this board as it stands would return a tidied version of that grid - and the grid would then BE the floorplan, chosen by a tool and graded against an intent that had nothing to say about it. The first pass is therefore `place_seed.py`, which seeds from the intent instead. THE TOOL ALSO FORECLOSES THE HAZARD BETTER THAN THIS FILE DOES, which is worth knowing because nothing enforces this file in Phase 1: the seeder refuses a board that already looks placed at exit 3, and `--force` discards that placement rather than refining it. There is no path through `place_seed.py` by which an existing arrangement survives into the result. Task 4's preflight probed only the optimiser; the seeding entry point was found by this plan's independent reviewer, and build/krt/invocations.json now records BOTH its arms - the exit-3 refusal and the forced seed - because the refusal is the half that matters here.",
       "note": "Nothing in this operation writes the committed board. The spec's `adopt` is the only verb that does, and it is Phase 2."
     },
 

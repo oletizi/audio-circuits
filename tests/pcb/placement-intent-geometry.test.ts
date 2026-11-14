@@ -1,12 +1,12 @@
 /**
- * THE TWO GEOMETRIC FACTS THE DRAFTED PLACEMENT INTENT TURNS ON, re-derived on
+ * THE GEOMETRIC FACTS THE DRAFTED PLACEMENT INTENT TURNS ON, re-derived on
  * every run from the circuit model and the installed KiCad footprint library.
  *
  * `circuits/pt2399-core/floorplan-intent.json` and `placement-rules.json` each
- * carry one number that is a DERIVATION rather than a preference, and a
- * derivation written into a JSON note is a transcription with a date on it.
- * This repository's rule is that a measurement lives in a tool or a test that
- * re-runs it, so these two live here:
+ * carry numbers that are DERIVATIONS rather than preferences, and a derivation
+ * written into a JSON note is a transcription with a date on it. This
+ * repository's rule is that a measurement lives in a tool or a test that
+ * re-runs it, so they live here:
  *
  *  1. **`edge_connectors[J1].max_setback_mm` is below the narrowest courtyard
  *     dimension of any footprint this circuit places.** That is what the
@@ -24,6 +24,17 @@
  *     writing NO custom `.kicad_dru` isolation rule: a rule demanding more than
  *     this gap would reject the board's own connector, and one demanding less
  *     than the project's global copper clearance would add nothing.
+ *
+ *  3. **`decaps.max_distance_mm` clears the second row of parts around U1.**
+ *     That is the whole of its derivation: the limit is a feasibility bound,
+ *     and it has to admit a second row because nine caps and six resistors
+ *     cannot all reach the first one. The row onsets are computed here from
+ *     U1's own pad field and courtyard and from the narrowest part on the
+ *     board, so the four figures the rules file used to quote in prose -
+ *     1.055 mm of courtyard overhang, the 2.555 mm first row, the 5.555 mm and
+ *     6.020 mm second rows - are re-derived rather than transcribed. An
+ *     earlier draft wrote "about 5.8 mm" for the last two, which was a
+ *     hand-rounded figure between them.
  *
  * And one figure quoted from the library rather than derived: the stock
  * `MountingHole:MountingHole_3.2mm_M3` courtyard, which `placement-rules.json`
@@ -299,6 +310,58 @@ test("the INPUT/OUTPUT floor is J1's own pad gap, which the schematic fixes", ()
     "min_gap_mm",
   )
   expect(floor).toBeCloseTo(gap, 2)
+})
+
+test("the decap limit admits a second row of parts around U1", () => {
+  const delayIc = pt2399Core().components.find((c) => c.id === "delay_ic")
+  if (delayIc === undefined) throw new Error("the circuit model declares no delay_ic")
+  const footprint = delayIc.part?.footprint
+  if (footprint === undefined) throw new Error("delay_ic declares no part.footprint")
+
+  const pads = padsOf(footprint)
+  const padWidth = Math.max(...pads.map((p) => p.x)) - Math.min(...pads.map((p) => p.x))
+  const padHeight = Math.max(...pads.map((p) => p.y)) - Math.min(...pads.map((p) => p.y))
+  const court = courtyardExtent(footprint)
+  // The engine's decap tether measures from a cap's centroid to the IC's PAD
+  // bounding box, while a courtyard is what stops the two bodies touching, so
+  // the gap between the two is what a neighbour must clear before it begins.
+  const padShort = Math.min(padWidth, padHeight)
+  const padLong = Math.max(padWidth, padHeight)
+  const overhangLong = (court.narrow - padShort) / 2
+  const overhangShort = (court.wide - padLong) / 2
+
+  const narrow = Math.min(
+    ...[...declaredFootprints().keys()].map((name) => courtyardExtent(name).narrow),
+  )
+  const firstRow = overhangLong + narrow / 2
+  const secondRowLong = overhangLong + narrow + narrow / 2
+  const secondRowShort = overhangShort + narrow + narrow / 2
+  console.log(
+    `  U1 pad field ${padWidth.toFixed(2)} x ${padHeight.toFixed(2)} mm inside a ` +
+      `${court.narrow.toFixed(3)} x ${court.wide.toFixed(3)} mm courtyard`,
+  )
+  console.log(
+    `  courtyard overhang ${overhangLong.toFixed(3)} mm (long side) / ` +
+      `${overhangShort.toFixed(3)} mm (short side); narrowest part ${narrow.toFixed(3)} mm`,
+  )
+  console.log(
+    `  first row at ${firstRow.toFixed(3)} mm; second row at ${secondRowLong.toFixed(3)} mm ` +
+      `(long) / ${secondRowShort.toFixed(3)} mm (short)`,
+  )
+
+  const intent = readJson("floorplan-intent.json")
+  const limit = numberAt(intent, "floorplan-intent.json", "decaps", "max_distance_mm")
+  // The claim the derivation makes, and the only one asserted: the limit is
+  // reachable by a second row. It is NOT asserted to be the smallest such
+  // number - that would be an acceptance criterion this test is not entitled
+  // to author - only that it does not demand the impossible.
+  expect(limit).toBeGreaterThan(secondRowLong)
+  expect(limit).toBeGreaterThan(secondRowShort)
+
+  // And the search radius must exceed the limit, or the tether silently drops
+  // a cap placed too far away and the rule goes quiet exactly when it matters.
+  const radius = numberAt(intent, "floorplan-intent.json", "decaps", "search_radius_mm")
+  expect(radius).toBeGreaterThan(limit)
 })
 
 test("the stock M3 mounting-hole courtyard is still the 6.9 mm the rules cite", () => {

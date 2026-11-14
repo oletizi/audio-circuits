@@ -1,5 +1,5 @@
 /**
- * Preflight the pinned routing engine: prove its four core operations run on
+ * Preflight the pinned routing engine: prove its five core operations run on
  * THIS machine, and record the exact command lines that did, so later tasks
  * drive the engine from `build/krt/invocations.json` rather than inventing
  * commands.
@@ -9,7 +9,16 @@
  * verbs; it is a directory of Python scripts. The real entry points, found by
  * reading each one's `--help`, are:
  *
+ *   seeding     py_placer/place_seed.py       input output --intent FILE [--force]
+ *               INITIAL placement from the intent. exit 0 = seeded and graded
+ *               clean, 2 = bad args, 3 = cannot seed (no outline, or the board
+ *               already looks placed), 4 = written but unseated or graded with
+ *               errors. `--force` DISCARDS an existing placement rather than
+ *               refining it, which is the opposite contract to the next line
  *   placement   py_placer/place_optimize.py   input.kicad_pcb output.kicad_pcb
+ *               REFINES an existing placement within a displacement cap. On a
+ *               board whose parts a tool parked on a grid, that returns a
+ *               tidied grid - so this is not the entry point for a first pass
  *   grading     py_tools/check_floorplan.py   board --intent FILE --require-rules 1
  *               exit 0 = graded clean, exit 4 = graded and VIOLATIONS found
  *               (2 = bad intent file, 3 = board not gradable, 1 = crash)
@@ -60,7 +69,7 @@ export interface Invocation {
 }
 
 export interface OperationRecord {
-  readonly operation: "placement" | "grading" | "routing" | "zone-refill"
+  readonly operation: "seeding" | "placement" | "grading" | "routing" | "zone-refill"
   readonly engineEntryPoint: string
   readonly succeeded: boolean
   readonly invocations: readonly Invocation[]
@@ -179,12 +188,69 @@ function intentText(zone: readonly number[]): string {
   }, null, 2)
 }
 
-function grading(ctx: Context, placed: string): OperationRecord {
-  const script = "py_tools/check_floorplan.py"
+/** The two fixture intents, written once and driven by both grading and seeding. */
+interface Intents {
+  readonly good: string
+  readonly bad: string
+}
+
+function writeIntents(ctx: Context): Intents {
   const good = path.join(ctx.work, "intent-parts-inside-zone.json")
   const bad = path.join(ctx.work, "intent-parts-outside-zone.json")
   fs.writeFileSync(good, intentText(INTENT_ZONE_HOLDS))
   fs.writeFileSync(bad, intentText(INTENT_ZONE_MISSES))
+  return { good, bad }
+}
+
+/**
+ * INITIAL, INTENT-DRIVEN PLACEMENT - the operation this record was missing, and
+ * the one the plan's first-pass placement actually needs.
+ *
+ * `place_optimize.py` above REFINES an existing placement within a displacement
+ * cap. Run on a board whose parts the headless update tool parked on a
+ * mechanical grid, it returns a tidied grid, and the grid becomes the design -
+ * an agent's own scaffolding turned into a floorplan nobody authored.
+ * `place_seed.py` is the other contract: it seeds from the intent, and it
+ * REFUSES a board that already looks placed (exit 3) unless `--force` is
+ * passed, which DISCARDS the existing placement rather than refining it.
+ *
+ * BOTH ARMS ARE PROBED, because the refusal is the half that forecloses the
+ * hazard. A record that only showed the forced run would not establish that the
+ * tool declines to quietly re-seed a placed board.
+ */
+function seeding(ctx: Context, fixture: string, seeded: string, intent: string): OperationRecord {
+  const script = "py_placer/place_seed.py"
+  const before = fs.readFileSync(fixture, "utf8")
+  const refuse = invoke(
+    ctx, "refuse to seed a board that already looks placed", ctx.python, ctx.engine,
+    [script, fixture, seeded, "--intent", intent],
+    { [fixture]: "{input}", [seeded]: "{output}", [intent]: "{intent}" }, 3,
+    () => {
+      ensure(!fs.existsSync(seeded), `${seeded} was written by a run that was supposed to refuse`)
+      return "refused at exit 3 and wrote no output; --force is required to discard a placement"
+    },
+  )
+  const force = invoke(
+    ctx, "seed from the intent, discarding the existing placement", ctx.python, ctx.engine,
+    [script, fixture, seeded, "--intent", intent, "--force"],
+    { [fixture]: "{input}", [seeded]: "{output}", [intent]: "{intent}" }, 0,
+    () => {
+      ensure(fs.existsSync(seeded), `${seeded} was not written`)
+      const after = fs.readFileSync(seeded, "utf8")
+      ensure(after !== before, "the seeded board is byte-identical to the input, so nothing was seeded")
+      ensure(after.includes('"TP1"') && after.includes('"TP2"'), "the seeded board lost a footprint")
+      return "seeded both footprints and graded clean against the intent (exit 0)"
+    },
+  )
+  return {
+    operation: "seeding", engineEntryPoint: script,
+    succeeded: refuse.succeeded && force.succeeded, invocations: [refuse, force],
+  }
+}
+
+function grading(ctx: Context, placed: string, intents: Intents): OperationRecord {
+  const script = "py_tools/check_floorplan.py"
+  const { good, bad } = intents
   const grade = (label: string, intent: string, expected: number, pass: boolean): Invocation => {
     const findings = `${intent}.findings.json`
     return invoke(
@@ -270,7 +336,7 @@ export interface PreflightOptions {
   readonly kicadCli?: string
 }
 
-/** Run all four operations on the fixture and return the record. Does not write it. */
+/** Run every operation on the fixture and return the record. Does not write it. */
 export function preflight(opts: PreflightOptions): InvocationsFile {
   const commit = builtCommit(opts.repoRoot)
   if (commit === undefined) {
@@ -293,14 +359,17 @@ export function preflight(opts: PreflightOptions): InvocationsFile {
 
   const fixture = path.join(work, "fixture.kicad_pcb")
   fs.writeFileSync(fixture, fixtureBoardText())
+  const seeded = path.join(work, "seeded.kicad_pcb")
   const placed = path.join(work, "placed.kicad_pcb")
   const routed = path.join(work, "routed.kicad_pcb")
   const zoned = path.join(work, "zoned.kicad_pcb")
   const filled = path.join(work, "filled.kicad_pcb")
+  const intents = writeIntents(ctx)
 
   const operations = [
+    seeding(ctx, fixture, seeded, intents.good),
     placement(ctx, fixture, placed),
-    grading(ctx, placed),
+    grading(ctx, placed, intents),
     routing(ctx, placed, routed),
     zoneRefill(ctx, routed, zoned, filled),
   ]
@@ -341,6 +410,8 @@ if (import.meta.main) {
   ensureBuilt(readPin(path.join(repoRoot, "krt.pin")), { repoRoot })
   const record = preflight({ repoRoot })
   const file = writeRecord(repoRoot, record)
-  console.log(`krt preflight: all four operations held on engine ${record.engineCommit}`)
+  console.log(
+    `krt preflight: all ${record.operations.length} operations held on engine ${record.engineCommit}`,
+  )
   console.log(`recorded: ${file}`)
 }

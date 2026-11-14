@@ -34,6 +34,14 @@ function fakeEngine(graderAlwaysPasses: boolean, seenEnv: Array<Record<string, s
     const ok = (output = ""): CommandResult => ({ status: 0, output })
     const script = args[0] ?? ""
     const abs = (p: string): string => path.resolve(cwd, p)
+    if (script.endsWith("place_seed.py")) {
+      // The real tool refuses a board that already looks placed and writes
+      // nothing; --force discards the placement and re-seeds. Both arms are
+      // modelled, because the refusal is the half the record exists to show.
+      if (!args.includes("--force")) return { status: 3, output: "already looks PLACED" }
+      fs.writeFileSync(abs(arg(args, 2)), fs.readFileSync(abs(arg(args, 1)), "utf8").replace("(at 12 12)", "(at 14 12)"))
+      return ok()
+    }
     if (script.endsWith("place_optimize.py")) {
       fs.writeFileSync(abs(arg(args, 2)), fs.readFileSync(abs(arg(args, 1)), "utf8").replace("(at 12 12)", "(at 13 12)"))
       return ok()
@@ -71,9 +79,16 @@ test("a grader that can fail and an engine that works yield a recorded success",
     })
     expect(record.allSucceeded).toBe(true)
     expect(record.engineCommit).toBe("abc123")
-    expect(record.operations.map((o) => o.operation)).toEqual(["placement", "grading", "routing", "zone-refill"])
-    const grading = record.operations[1]
+    expect(record.operations.map((o) => o.operation)).toEqual([
+      "seeding", "placement", "grading", "routing", "zone-refill",
+    ])
+    const grading = record.operations.find((o) => o.operation === "grading")
     expect(grading?.invocations.map((i) => i.observedStatus)).toEqual([0, 4])
+    // Seeding is recorded BOTH ways for the same reason grading is: the
+    // already-placed refusal is what stops a scaffolded board being re-seeded
+    // silently, and a record showing only the forced run would not say so.
+    const seeding = record.operations.find((o) => o.operation === "seeding")
+    expect(seeding?.invocations.map((i) => i.observedStatus)).toEqual([3, 0])
     for (const env of seen) {
       expect(env["PYTHONHOME"]).toBeUndefined()
       expect(env["PYTHONPATH"]).toBeUndefined()
@@ -122,7 +137,7 @@ test("a failed pour creation is recorded as a failure, not thrown as ENOENT", ()
     const run: CommandRunner = (command, args, cwd, env) =>
       (args[0] ?? "").endsWith("route_planes.py") ? { status: 2, output: "boom" } : engine(command, args, cwd, env)
     const record = preflight({ repoRoot: root, run, env: {}, kicadCli: "/k" })
-    expect(record.operations[3]?.succeeded).toBe(false)
+    expect(record.operations.find((o) => o.operation === "zone-refill")?.succeeded).toBe(false)
     expect(() => writeRecord(root, record)).toThrow(/zone-refill/)
     expect(fs.existsSync(path.join(root, "build", "krt", "invocations.failed.json"))).toBe(true)
   })

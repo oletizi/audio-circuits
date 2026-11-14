@@ -12,6 +12,63 @@
   "allSucceeded": true,
   "operations": [
     {
+      "operation": "seeding",
+      "engineEntryPoint": "py_placer/place_seed.py",
+      "succeeded": true,
+      "invocations": [
+        {
+          "label": "refuse to seed a board that already looks placed",
+          "argv": [
+            ".tools/krt/.venv/bin/python",
+            "py_placer/place_seed.py",
+            "../../build/krt/preflight/fixture.kicad_pcb",
+            "../../build/krt/preflight/seeded.kicad_pcb",
+            "--intent",
+            "../../build/krt/preflight/intent-parts-inside-zone.json"
+          ],
+          "template": [
+            ".tools/krt/.venv/bin/python",
+            "py_placer/place_seed.py",
+            "{input}",
+            "{output}",
+            "--intent",
+            "{intent}"
+          ],
+          "cwd": ".tools/krt",
+          "expectedStatus": 3,
+          "observedStatus": 3,
+          "succeeded": true,
+          "evidence": "refused at exit 3 and wrote no output; --force is required to discard a placement"
+        },
+        {
+          "label": "seed from the intent, discarding the existing placement",
+          "argv": [
+            ".tools/krt/.venv/bin/python",
+            "py_placer/place_seed.py",
+            "../../build/krt/preflight/fixture.kicad_pcb",
+            "../../build/krt/preflight/seeded.kicad_pcb",
+            "--intent",
+            "../../build/krt/preflight/intent-parts-inside-zone.json",
+            "--force"
+          ],
+          "template": [
+            ".tools/krt/.venv/bin/python",
+            "py_placer/place_seed.py",
+            "{input}",
+            "{output}",
+            "--intent",
+            "{intent}",
+            "--force"
+          ],
+          "cwd": ".tools/krt",
+          "expectedStatus": 0,
+          "observedStatus": 0,
+          "succeeded": true,
+          "evidence": "seeded both footprints and graded clean against the intent (exit 0)"
+        }
+      ]
+    },
+    {
       "operation": "placement",
       "engineEntryPoint": "py_placer/place_optimize.py",
       "succeeded": true,
