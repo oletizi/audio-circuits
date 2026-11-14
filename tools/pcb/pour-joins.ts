@@ -25,6 +25,21 @@
  *
  * NOT READ: zone-to-zone joins across layers by anything but a via, and tracks
  * on the layers the pour is not on.
+ *
+ * **REUSE, CHECKED AND DECLINED, WITH THE REASON.** The engine ships the real
+ * connectivity oracle for exactly this question: `py_router/kicad_exact_fill.py`
+ * `exact_clusters`, which clusters a net's fill, tracks, vias and pads with a
+ * deterministic union-find ("len(clusters) > 1 => KiCad demands links"). This
+ * repository's rule is to reuse rather than invent, so declining it needs a stated
+ * reason. Two. (1) `kicad_exact_fill.refill_islands` runs its refill through
+ * `find_kicad_python()`, which returns KiCad's OWN bundled interpreter (measured:
+ * the Python.framework inside KiCad.app), not the engine's venv - and every engine
+ * invocation in this plan strips `PYTHONHOME` and `PYTHONPATH`, so reusing it walks
+ * into a known environment hazard for one module's worth of benefit. (2) What it
+ * would replace is this file's track, via and pad joins over a board that is
+ * already saved and refilled, which is read here directly in this repository's
+ * language and is mutation-tested. If a later task needs the oracle's pad-to-fill
+ * and nearest-approach geometry as well, that is the point to revisit.
  */
 import type { Pt } from "./pour-geometry.ts"
 import type { GroundPour } from "./pour-read.ts"

@@ -45,7 +45,12 @@
  *  - `measurePour` takes a required `PourSubject` (ground net, supply net, IC
  *    reference). The plan's `measurePour(boardPath)` assumed `GND`, `+5V` and `U1`,
  *    which refuses any other circuit; `PT2399_CORE` is this board's.
- *  - `continuityAroundU1` is `continuityAroundIc`, per layer, with break lengths.
+ *  - `continuityAroundU1` is `continuityAroundIc`, per layer, reporting COVERAGE
+ *    (fraction, break lengths) and CONNECTEDNESS (electrical groups touched)
+ *    side by side so that nobody has to define "continuity" (`./pour-types.ts`).
+ *    It is placed from the largest clearance in the zone, the `.kicad_pro` and the
+ *    `.kicad_dru` (`./pour-project.ts`), so `measurePour` reads those beside the
+ *    board and `measurePourText` takes them as a parameter.
  *  - `narrowestBridgeMm` is a `Reading<number>` and means a join between regions;
  *    the fill's constriction is `narrowestNeckMm`.
  *  - `spokesByGroundPad` is per pad, per layer, with the zone's declared
@@ -57,7 +62,9 @@
  * gaps are refused rather than resolved by which zone contains the pad (it could
  * be, and is not written); surface-mount ground pads get no spoke reading (the
  * plan names through-hole); a neighbour's pad void that reaches the continuity
- * loop reads as a break (the fill alone cannot tell it from a gap in the pour).
+ * loop reads as a break (the fill alone cannot tell it from a gap in the pour, and
+ * a guess at which is which would be an invention - stated on `LoopContinuity`,
+ * where the number is read, and in `./pour-continuity.ts`).
  *
  * **NOT PINNED BY ANY TEST, found by mutation:** the raster's half-pixel column
  * offset (`./pour-bridge.ts`) and the minimum sample count of a resampled loop
@@ -70,6 +77,9 @@ import fs from "node:fs"
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"
 import type { SNode } from "../../lib/kicad/sexpr.ts"
 import { continuityAround } from "./pour-continuity.ts"
+import { groundGroups } from "./pour-connectivity.ts"
+import { readProjectClearance } from "./pour-project.ts"
+import type { ProjectClearance } from "./pour-project.ts"
 import { NOISE_FLOOR_MM, RESOLUTION_MM, measureLayer } from "./pour-bridge.ts"
 import { bypassReturnOf, spokesOn } from "./pour-pads.ts"
 import { narrowestBridge, regionJoins, viaLinks } from "./pour-joins.ts"
@@ -77,7 +87,7 @@ import { copperLayersOf, readGroundPour } from "./pour-read.ts"
 import type { GroundPour } from "./pour-read.ts"
 import { readGroundTracks, readGroundVias, readPads } from "./pour-read-pads.ts"
 import { PourRefusal } from "./pour-refusal.ts"
-import type { PourMetrics, PourSubject } from "./pour-types.ts"
+import type { PourMetrics, PourSubject, Reading } from "./pour-types.ts"
 
 export { PourRefusal, POUR_GUARDS } from "./pour-refusal.ts"
 export type { PourGuard } from "./pour-refusal.ts"
@@ -103,7 +113,12 @@ function necks(pour: GroundPour): Pick<PourMetrics, "regionsByLayer" | "narrowes
 }
 
 /** Measures the pour on the text of a saved, refilled board. `where` names it in refusals. */
-export function measurePourText(boardText: string, where: string, subject: PourSubject): PourMetrics {
+export function measurePourText(
+  boardText: string,
+  where: string,
+  subject: PourSubject,
+  project: Reading<ProjectClearance>,
+): PourMetrics {
   let root: SNode
   try {
     root = parseSexpr(boardText)
@@ -122,14 +137,21 @@ export function measurePourText(boardText: string, where: string, subject: PourS
   const vias = readGroundVias(root, where, groundNet)
   const regions = necks(pour)
   const joins = regionJoins(pour, tracks)
+  const links = viaLinks(pour, vias)
   return {
     resolutionMm: RESOLUTION_MM,
     noiseFloorMm: NOISE_FLOOR_MM,
     ...regions,
     narrowestBridgeMm: narrowestBridge(regions.regionsByLayer, joins),
     regionJoins: joins,
-    viaLinks: viaLinks(pour, vias),
-    continuityAroundIc: continuityAround(pour, pads.filter((p) => p.ref === icReference), icReference),
+    viaLinks: links,
+    continuityAroundIc: continuityAround(
+      pour,
+      pads.filter((p) => p.ref === icReference),
+      icReference,
+      project,
+      groundGroups(pour, pads.filter((p) => p.net === groundNet), joins, links),
+    ),
     spokesByGroundPad: spokesOn(pour, pads.filter((p) => p.net === groundNet)),
     bypassReturn: bypassReturnOf(pour, pads, icReference, supplyNet, groundNet, tracks, vias),
   }
@@ -139,5 +161,5 @@ export function measurePour(boardPath: string, subject: PourSubject): PourMetric
   if (!fs.existsSync(boardPath)) {
     throw new PourRefusal("board-unreadable", `no board at ${boardPath}.`)
   }
-  return measurePourText(fs.readFileSync(boardPath, "utf8"), boardPath, subject)
+  return measurePourText(fs.readFileSync(boardPath, "utf8"), boardPath, subject, readProjectClearance(boardPath))
 }

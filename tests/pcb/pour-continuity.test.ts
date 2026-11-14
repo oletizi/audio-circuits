@@ -18,6 +18,8 @@
 import { test, expect } from "bun:test"
 import type { Pt } from "../../tools/pcb/pour-geometry.ts"
 import { OPEN_PLACE, RECTANGLE, fixtureBoard } from "./pour-fixtures.ts"
+import { measured, unavailable } from "../../tools/pcb/pour.ts"
+import type { ProjectClearance } from "../../tools/pcb/pour-project.ts"
 import { measure, near, reasonOf, valueOf } from "./pour-helpers.ts"
 
 const FOUR = { "U1-3": 4, "U1-4": 4, "C1-2": 4 } as const
@@ -32,7 +34,7 @@ test("on an unbroken pour with a relief round every pad of the IC the loop reads
   const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }))
   expect(loop.coveredFraction).toBe(1)
   expect(loop.breaksMm).toEqual([])
-  expect(loop.polygonsTouched).toBe(1)
+  expect(loop.fillPiecesTouched).toBe(1)
 })
 
 test("the loop is placed 1.0 mm outside the pad extent: the zone's clearance 0.5 plus its thermal gap 0.5", () => {
@@ -49,7 +51,7 @@ test("the loop is not placed so far out that it reads a neighbouring part of the
   ]
   const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": slotted } }))
   expect(loop.coveredFraction).toBe(1)
-  expect(loop.polygonsTouched).toBe(1)
+  expect(loop.fillPiecesTouched).toBe(1)
 })
 
 test("a slot across the loop is a break of its own width on each edge it crosses", () => {
@@ -63,7 +65,7 @@ test("a slot across the loop is a break of its own width on each edge it crosses
   for (const b of loop.breaksMm) near(b, 0.99, 0.06)
   near(loop.coveredFraction, 1 - 1.98 / 26.4, 0.01)
   // The covered parts of the loop are on two separate pieces of copper.
-  expect(loop.polygonsTouched).toBe(2)
+  expect(loop.fillPiecesTouched).toBe(2)
 })
 
 test("one break and fifty breaks are told apart, though they cover the same fraction", () => {
@@ -85,7 +87,7 @@ test("one break and fifty breaks are told apart, though they cover the same frac
   expect(a.breaksMm.length).toBe(2)
   expect(b.breaksMm.length).toBeGreaterThanOrEqual(10)
   expect(Math.max(...b.breaksMm)).toBeLessThan(0.3)
-  expect(b.polygonsTouched).toBeGreaterThan(a.polygonsTouched)
+  expect(b.fillPiecesTouched).toBeGreaterThan(a.fillPiecesTouched)
   // And they are NOT told apart by the covered fraction alone, which is the point of reporting the rest.
   near(b.coveredFraction, a.coveredFraction, 0.03)
 })
@@ -143,7 +145,7 @@ test("a loop with no copper under it is one break the length of the loop, covere
   const far: readonly (readonly Pt[])[] = [[[0, 0], [5, 0], [5, 5], [0, 5]]]
   const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": far } }))
   expect(loop.coveredFraction).toBe(0)
-  expect(loop.polygonsTouched).toBe(0)
+  expect(loop.fillPiecesTouched).toBe(0)
   expect(loop.breaksMm.length).toBe(1)
   near(loop.breaksMm[0], 26.4, 0.1)
 })
@@ -157,4 +159,67 @@ test("a break that runs across the start of the walk is one break, not two", () 
   const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band } }))
   expect(loop.breaksMm.length).toBe(1)
   near(loop.breaksMm[0], 10.0, 0.15)
+})
+
+// --- The clearance that applies is the largest the project declares ----------
+
+test("a netclass clearance larger than the zone's moves the loop out with it, and an unbroken pour reads whole", () => {
+  // The voids reach 1.2 mm past the pad copper - what a 0.9 mm netclass clearance plus margin cuts - and the zone itself declares 0.5.
+  // From the zone's clearance alone the loop would sit 1.0 mm out, inside the void, and read the IC's own pad voids as breaks.
+  const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 1.2 })
+  const zoneOnly = loopOf(text)
+  expect(zoneOnly.offsetMm).toBe(1)
+  expect(zoneOnly.coveredFraction).toBeLessThan(1)
+  const project = measured({ maxMm: 0.9, sources: [{ source: "test netclass", mm: 0.9 }] })
+  const loop = valueOf(measure(text, project).continuityAroundIc).get("F.Cu")
+  expect(loop?.offsetMm).toBeCloseTo(1.4, 9)
+  expect(loop?.coveredFraction).toBe(1)
+  expect(loop?.breaksMm).toEqual([])
+})
+
+test("a project clearance below the zone's does not pull the loop in", () => {
+  expect(loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR })).offsetMm).toBe(1)
+})
+
+test("a project whose clearance could not be read gives no loop and says why; the other figures stand", () => {
+  const none = unavailable<ProjectClearance>("SYNTHETIC: no project")
+  const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR }), none)
+  expect(reasonOf(metrics.continuityAroundIc)).toContain("no project")
+  expect(valueOf(metrics.spokesByGroundPad).size).toBe(3)
+})
+
+// --- Coverage and connectedness, side by side --------------------------------
+
+const SPLIT: readonly (readonly Pt[])[] = [
+  [[0, 0], [30.52, 0], [30.52, 40], [0, 40]],
+  [[31.51, 0], [60, 0], [60, 40], [31.51, 40]],
+]
+const via = (x: number): string =>
+  `\t(via (at ${x} 10) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))`
+
+test("two pieces of fill the loop touches are isolated when nothing joins them: pieces 2, groups 2", () => {
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT } }))
+  expect(loop.fillPiecesTouched).toBe(2)
+  expect(loop.connectedGroupsTouched).toBe(2)
+})
+
+test("the same two pieces are one group when a ground track joins them: pieces 2, groups 1", () => {
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, track: { from: [20, 10], to: [40, 10], layer: "F.Cu" } }))
+  expect(loop.fillPiecesTouched).toBe(2)
+  expect(loop.connectedGroupsTouched).toBe(1)
+})
+
+test("vias join them through the other layer's fill, but only when each piece has one", () => {
+  const board = (vias: readonly string[]) => loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, extraZones: vias, padType: "smd" }))
+  // One via ties only the right piece to B.Cu: the left is still on its own.
+  expect(board([via(45)]).connectedGroupsTouched).toBe(2)
+  expect(board([via(45), via(10)]).connectedGroupsTouched).toBe(1)
+  expect(board([via(45), via(10)]).fillPiecesTouched).toBe(2)
+})
+
+test("through-hole ground pads join the fill they sit in on every layer, so a solid back plane joins a split front", () => {
+  // Same board, with through-hole pads: U1's ground pads touch F.Cu's left piece and B.Cu; C1's touches F.Cu's right piece and B.Cu.
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
+  expect(loop.fillPiecesTouched).toBe(2)
+  expect(loop.connectedGroupsTouched).toBe(1)
 })

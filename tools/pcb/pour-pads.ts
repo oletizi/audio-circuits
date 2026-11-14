@@ -34,7 +34,7 @@ import { measured, unavailable } from "./pour-types.ts"
 import type { BypassKind, BypassReturn, Reading, SpokeReading } from "./pour-types.ts"
 
 /** Reads the ring cut round `pad` on each pour layer it is on. */
-function ringReadings(pour: GroundPour, pad: BoardPad): ReadonlyMap<string, LoopReading & { declaredConnection: string }> {
+export function ringReadings(pour: GroundPour, pad: BoardPad): ReadonlyMap<string, LoopReading & { declaredConnection: string }> {
   const out = new Map<string, LoopReading & { declaredConnection: string }>()
   for (const layer of pour.layers.filter((l) => pad.layers.includes(l))) {
     const settings = pour.settingsByLayer.get(layer)

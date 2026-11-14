@@ -21,7 +21,7 @@ import { measureLayer } from "../../tools/pcb/pour-bridge.ts"
 import { measurePour, measurePourText, POUR_GUARDS, PT2399_CORE } from "../../tools/pcb/pour.ts"
 import type { PourSubject } from "../../tools/pcb/pour.ts"
 import { LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard } from "./pour-fixtures.ts"
-import { measure, near, reasonOf, refusalOf, seenGuards, valueOf } from "./pour-helpers.ts"
+import { QUARTER_MM, measure, near, reasonOf, refusalOf, seenGuards, valueOf } from "./pour-helpers.ts"
 
 /** One spoke is 0.5 mm of arc on a ring of radius 1.05 mm. */
 const PER_SPOKE = 0.5 / (2 * Math.PI * 1.05)
@@ -220,7 +220,7 @@ test("a board whose rails are not GND and +5V is measured against the nets the c
 })
 
 function measureWith(text: string, subject: PourSubject) {
-  return measurePourText(text, "fixture", subject)
+  return measurePourText(text, "fixture", subject, QUARTER_MM)
 }
 
 // --- The result carries numbers and nothing else -----------------------------

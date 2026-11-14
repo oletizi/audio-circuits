@@ -41,7 +41,23 @@ export interface PourSubject {
 /** This repository's `pt2399-core` board. Named so a caller passes a subject rather than inheriting one. */
 export const PT2399_CORE: PourSubject = { groundNet: "GND", supplyNet: "+5V", icReference: "U1" }
 
-/** One closed loop walked around the IC on one pour layer. */
+/**
+ * One closed loop walked around the IC on one pour layer.
+ *
+ * **TWO ANSWERS TO "IS THE GROUND CONTINUOUS", REPORTED SIDE BY SIDE ON PURPOSE.**
+ * "Continuity" was never defined by the owner, who declined to engage with pour
+ * metrics (G313), and nobody here has authority to define it for him. It can mean
+ * COVERAGE - how much of the way round the IC there is ground under the loop
+ * (`coveredFraction`, `breaksMm`) - or CONNECTEDNESS - whether the ground there is
+ * one electrical piece (`connectedGroupsTouched`). The result carries both, and
+ * whoever reads it, or looks at the render, decides which they meant.
+ *
+ * **KNOWN LIMIT, STATED WHERE THE NUMBER IS READ:** a pad void belonging to a
+ * NEIGHBOUR of the IC that reaches the loop reads as a break. From the fill alone
+ * a neighbour's void and a gap in the pour are the same thing, and a way of
+ * guessing which is which would be an invention. The break lengths are reported so
+ * a reader can see a 1.5 mm void from a 20 mm gap; they are not filtered.
+ */
 export interface LoopContinuity {
   /** Fraction, 0 to 1, of the loop's samples that lie on poured copper. */
   readonly coveredFraction: number
@@ -50,8 +66,21 @@ export interface LoopContinuity {
    * fraction cannot tell one 5 mm break from fifty 0.1 mm ones, and these can.
    */
   readonly breaksMm: readonly number[]
-  /** How many distinct filled polygons (pieces of copper) the loop touches. 1 means the covered part is all one piece. */
-  readonly polygonsTouched: number
+  /**
+   * How many distinct pieces of FILL (KiCad's filled polygons) the loop touches.
+   * This is a count of polygons and says nothing about whether they are joined:
+   * two pieces here may be tied together by a track, a via, a through-hole pad or
+   * fill on the other layer, or may be isolated. `connectedGroupsTouched` says which.
+   */
+  readonly fillPiecesTouched: number
+  /**
+   * How many electrically separate groups those pieces of fill fall into, once
+   * ground tracks, ground vias and ground pads (which join the fill they touch on
+   * every layer they are on) are taken to join them. Equal to `fillPiecesTouched`
+   * means the pieces are isolated from one another; 1 with several pieces means
+   * they are joined elsewhere. Only joins this tool reads count (`./pour-joins.ts`).
+   */
+  readonly connectedGroupsTouched: number
   /** How far outside the IC's pad extent the loop was walked, and where that came from. */
   readonly offsetMm: number
 }

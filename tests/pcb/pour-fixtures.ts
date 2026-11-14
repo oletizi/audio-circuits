@@ -46,8 +46,8 @@ export function spokeAngles(count: number): readonly number[] {
 }
 
 /** The outline of the void around a pad at (cx, cy), with `count` spokes left standing across it. */
-export function relief(cx: number, cy: number, count: number): readonly Pt[] {
-  const outer = PAD_RADIUS + THERMAL_GAP
+export function relief(cx: number, cy: number, count: number, gap = THERMAL_GAP): readonly Pt[] {
+  const outer = PAD_RADIUS + gap
   const half = SPOKE_WIDTH / 2
   const delta = (Math.asin(half / outer) * 180) / Math.PI
   const inner = Math.sqrt(PAD_RADIUS * PAD_RADIUS - half * half)
@@ -151,6 +151,8 @@ export interface FixtureOptions {
   /** Layers that carry a saved fill. Defaults to the layers named in `pour`. Fewer than `zoneLayers` is an unfilled layer. */
   readonly filledLayers?: readonly string[]
   readonly thermalGap?: number | null
+  /** How far past the pad copper each relief void reaches, in mm. Defaults to 0.5. A larger void is what a larger netclass clearance cuts. */
+  readonly voidMm?: number
   /** The zone's (connect_pads ...) mode: omitted is KiCad's thermal relief. */
   readonly connect?: "yes" | "no" | "thru_hole_only"
   /** The zone's own clearance; null writes a (connect_pads ...) with none. Defaults to 0.5. */
@@ -211,7 +213,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
   const holes = Object.entries(opts.spokes ?? {}).map(([key, count]) => {
     const centre = centres[key]
     if (centre === undefined) throw new Error(`pour-fixtures has no pad ${key}`)
-    return relief(centre[0], centre[1], count)
+    return relief(centre[0], centre[1], count, opts.voidMm)
   })
   const drawn = Object.keys(opts.pour)
   const zoneLayers = opts.zoneLayers ?? drawn
