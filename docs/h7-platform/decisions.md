@@ -2239,8 +2239,8 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 
 ### CR-PEDAL-CODEC-VIN-AWAITING-ERC
 
-**Awaiting the controller. The codec page's two `pin_not_driven` errors, on U9's VINL and VINR, are admitted as two one-item ERC allowances until the block that drives those nets is built; the shared allowance tools take a one-item allowance for that violation type only.**
-- **Label:** Controller ruling (the owner may override). Drafted by the h7 pedal pages plan's Task 9c implementer, on the codec page's verify failure; awaiting the controller.
+**The codec page's two `pin_not_driven` errors, on U9's VINL and VINR, are admitted as two one-item ERC allowances until the block that drives those nets is built; the shared allowance tools take a one-item allowance for that violation type only.**
+- **Label:** Controller ruling (the owner may override). Drafted by the h7 pedal pages plan's Task 9c implementer, on the codec page's verify failure; adopted by the controller, 2026-11-13.
 - **Date:** 2026-11-13.
 - **Decides:**
   - U_CODEC's VINL (U9 pin 25) and VINR (pin 26) are typed `input` by `h7-platform:PCM3060PW` ([CR-PEDAL-SYMBOL-PCM3060](#cr-pedal-symbol-pcm3060)). The nets reach only those two pins today: what drives them is in the adc_drv block ([schematic-checklist.md](schematic-checklist.md) line 110, CODEC-12), which the model does not hold until the plan's Task 10, so VINL and VINR are ports of `h7Pedal()` as a construction state (`AWAITING_NETS`, `circuits/h7-platform/pedal-board.ts`; [CR-PEDAL-NETS](#cr-pedal-nets), "Nets awaiting their other block"). Under the codec page's one-block root, with cross-page driver entries for the page's other three inputs (CODEC_RST_N, XO_OUT, DIN_CODEC), `/codec/` reported exactly two errors, `pin_not_driven` on "Symbol U9 Pin 25 [V_{IN}L, Input, Line]" and "Symbol U9 Pin 26 [V_{IN}R, Input, Line]". A cross-page driver entry cannot stand in for them: it is held to the model, and the model has no driver to name.
@@ -2249,7 +2249,7 @@ Each entry below is a controller ruling. The owner may override any of them. Non
 - **Why:** U9's inputs are the data sheet's, and the page is the model's; nothing on the codec page can drive VINL or VINR, and nothing in the model can yet. The error is the board's construction state, not the circuit.
 - **Alternatives, not taken:** (1) a stand-in driver for a net awaiting its block, placed by the one-block root like a cross-page driver: a new kind of table entry naming a driver the model does not hold, so it could not be checked; (2) leave the codec page failing `verify.sh` until Task 10, and draw it then: the page is withheld for a construction state, not an electrical fault; (3) draw the codec page after the analog group, changing Task 9's order.
 - **Costs if wrong:** two allowance entries and the one-item support in three shared tools to remove (the module's and the pedal's other allowances are two-item and unaffected), and the codec page left failing `verify.sh` until Task 10, or redrawn then.
-- **Set by:** drafted by the Task 9c implementer; awaiting the controller.
+- **Set by:** drafted by the Task 9c implementer; adopted by the controller as temporary, since alternative (2) withholds a page for no electrical fault. The task that models adc_drv (Task 10) replaces the two allowances with cross-page driver entries naming adc_drv's drivers, and deletes the one-item support in the shared tools with its controls and test, which then have no user; the codec page's bytes do not change.
 - **Carried in:** `drafted/h7-platform/h7-pedal/repair/tools/erc-allowances.ts`; `draughting/pages/erc-allowances.ts`, `erc_match.py`, `erc_sheets.py`, `root_erc.py`, `kicad-pro.ts`; `drafted/h7-platform/h7-pedal/repair/tools/erc-control.sh`; `tests/draught/erc-allowances-one-item.test.ts`.
 
 ## What this document does not carry
