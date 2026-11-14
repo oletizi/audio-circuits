@@ -38,7 +38,9 @@ import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"
 import { topLevelForms, withTopLevelForms } from "../../tools/pcb/board-forms.ts"
 import { footprintInstanceForm } from "../../tools/pcb/footprint-instance.ts"
-import { isMountingHoleFootprint, placedMountingHoles } from "../../tools/pcb/mounting-hardware.ts"
+import {
+  MOUNTING_FOOTPRINT, isMountingHoleFootprint, isOurMountingHole, placedMountingHoles,
+} from "../../tools/pcb/mounting-hardware.ts"
 import { REFERENCES, withMountingHardware } from "../../tools/pcb/place-mounting-holes.ts"
 import { footprintFile } from "../kicad/footprint-library.ts"
 import { LIBRARY_ROOT } from "../../lib/kicad/pin-pattern-sources.ts"
@@ -198,7 +200,7 @@ test("REAL mixed-pad parts survive the tool, and nothing but the holes is remove
   const result = withMountingHardware(withParts, FIXTURE, RULES, LIBRARY)
   const after = refsOn(result.text)
   console.log(`  after:  ${after.join(", ")}`)
-  console.log(`  removed ${result.removedFootprints} footprint(s), ${result.removedZones} Rule Area(s)`)
+  console.log(`  removed ${result.removed.length} footprint(s), ${result.removedZones} Rule Area(s)`)
 
   // EVERY mixed-pad part is still there, by name.
   for (let index = 0; index < parts.length; index += 1) {
@@ -207,7 +209,7 @@ test("REAL mixed-pad parts survive the tool, and nothing but the holes is remove
   // The fixture's own REF** mounting hole is the one thing removed, and the
   // four derived holes are the one thing added.
   expect(after).toEqual([...REFERENCES, ...parts.map((_, i) => `P${i + 1}`)].sort())
-  expect(result.removedFootprints).toBe(1)
+  expect(result.removed.length).toBe(1)
   expect(placedMountingHoles(result.text, "after").map((h) => h.ref).sort()).toEqual([...REFERENCES].sort())
 })
 
@@ -218,9 +220,9 @@ test("a STALE hole at a wrong position IS removed, so the predicate still does i
     instanceOf("MountingHole:MountingHole_3.2mm_M3", "MH9", 25, 25, "bbbb0000-0000-4000-8000-000000000001"),
   ])
   const result = withMountingHardware(stale, FIXTURE, RULES, LIBRARY)
-  console.log(`  removed ${result.removedFootprints} footprint(s) (the fixture's REF** plus MH9)`)
+  console.log(`  removed ${result.removed.length} footprint(s) (the fixture's REF** plus MH9)`)
   expect(refsOn(result.text)).toEqual([...REFERENCES].sort())
-  expect(result.removedFootprints).toBe(2)
+  expect(result.removed.length).toBe(2)
 })
 
 // ---- M2: the documented regeneration path is byte-idempotent ----------------
@@ -233,7 +235,7 @@ test("running the tool on the COMMITTED board reproduces it byte for byte", () =
   // idempotent against its own output either way.
   const committed = boardText()
   const result = withMountingHardware(committed, BOARD, RULES, LIBRARY)
-  expect(result.removedFootprints).toBe(REFERENCES.length)
+  expect(result.removed.length).toBe(REFERENCES.length)
   expect(result.removedZones).toBe(REFERENCES.length)
   expect(result.text).toBe(committed)
 })
@@ -300,4 +302,153 @@ test("the scratch directories these tests make are registered, not leaked", () =
   // temp-scratch.test.ts is the repository-wide guard.
   const dir = freshTempScratch("pcb-hole-placement-")
   expect(fs.existsSync(dir)).toBe(true)
+})
+
+// ---- NEW-1: all-NPTH is not the same as "a hole this tool placed" ----------
+
+/**
+ * Footprints whose pads are ALL non-plated and which are NOT mounting holes.
+ *
+ * **THE CLASS THE FIRST SWEEP EXPLICITLY SKIPPED.** `mixedPadFootprints` drops
+ * `npth === pads.length`, so its 2215 are mixed-pad only and this class was
+ * never asked. The installed libraries hold 87 all-NPTH footprints and 49 of
+ * them are not holes: a heatsink with three M3 fixation holes, a DIN-rail
+ * adapter, eighteen lightpipes, the panelization break lines and mouse bites.
+ * `isMountingHoleFootprint` is true of every one, which is the engine's
+ * classification and is fine for grading - and was, for one fix round, the test
+ * this tool DELETED on.
+ */
+function allNpthFootprints(): readonly MixedPad[] {
+  const out: MixedPad[] = []
+  for (const entry of fs.readdirSync(LIBRARY_ROOT).sort()) {
+    if (!entry.endsWith(".pretty")) continue
+    const library = entry.slice(0, -".pretty".length)
+    for (const file of fs.readdirSync(path.join(LIBRARY_ROOT, entry)).sort()) {
+      if (!file.endsWith(".kicad_mod")) continue
+      const text = fs.readFileSync(path.join(LIBRARY_ROOT, entry, file), "utf8")
+      const pads = [...text.matchAll(PAD)]
+      if (pads.length === 0) continue
+      const npth = pads.filter((pad) => pad[3] === "np_thru_hole").length
+      if (npth !== pads.length) continue
+      const name = file.slice(0, -".kicad_mod".length)
+      // Not a hole BY NAME, which is a weaker test than identity and is used
+      // only to pick witnesses a reader will recognise as obviously not holes.
+      if (/mountinghole/i.test(name)) continue
+      if (!text.includes('"Reference" "REF**"')) continue
+      out.push({ name: `${library}:${name}`, pads: pads.length, npth })
+    }
+  }
+  if (out.length < 20) {
+    throw new Error(
+      `only ${out.length} all-NPTH non-hole footprints found under ${LIBRARY_ROOT}; the installed ` +
+        "libraries hold dozens. A scan that found almost nothing would make the assertions below " +
+        "pass having examined almost nothing.",
+    )
+  }
+  return out
+}
+
+test("an all-NPTH footprint is a HOLE BY SHAPE and NOT one of this tool's holes", () => {
+  const all = allNpthFootprints()
+  console.log(`  ${all.length} all-NPTH footprints that are not mounting holes by name`)
+  for (const part of all.slice(0, 4)) console.log(`    ${part.name}: ${part.pads} pads, all NPTH`)
+
+  const claimed: string[] = []
+  for (const part of all) {
+    const node = parseSexpr(fs.readFileSync(footprintFile(part.name), "utf8"))
+    // SHAPE says yes - that is the engine's classification and this asserts it
+    // rather than disputing it, so the distinction is visible.
+    expect(isMountingHoleFootprint(node), `${part.name} is all-NPTH`).toBe(true)
+    // IDENTITY says no, and identity is what deletion is allowed to use.
+    if (isOurMountingHole(node)) claimed.push(part.name)
+  }
+  expect(claimed, "all-NPTH non-holes that this tool would claim as its own").toEqual([])
+})
+
+test("a HEATSINK, a LIGHTPIPE and a DIN-RAIL ADAPTER survive the tool, each named if removed", () => {
+  // THE REVIEWER'S CRITERION, verbatim: "running place-mounting-holes --write on
+  // a board carrying Heatsink:Heatsink_125x35x50mm_3xFixationM3 leaves it on the
+  // board, or names every footprint it removes in its output." Both, because the
+  // naming is the net for the next variant of this nobody anticipates.
+  const named = [
+    "Heatsink:Heatsink_125x35x50mm_3xFixationM3",
+    "MountingEquipment:DINRailAdapter_3xM3_PhoenixContact_1201578",
+    "OptoDevice:Lightpipe_Bivar_SLP3-150-100-F",
+  ]
+  const withParts = withTopLevelForms(
+    fs.readFileSync(FIXTURE, "utf8"),
+    FIXTURE,
+    named.map((name, index) =>
+      instanceOf(name, `P${index + 1}`, 20 + index * 6, 45, `cccc0000-0000-4000-8000-00000000000${index + 1}`),
+    ),
+  )
+  console.log(`  before: ${refsOn(withParts).join(", ")}`)
+  const result = withMountingHardware(withParts, FIXTURE, RULES, LIBRARY)
+  console.log(`  after:  ${refsOn(result.text).join(", ")}`)
+  for (const gone of result.removed) console.log(`  REMOVED ${gone.reference} (${gone.library}) - ${gone.why}`)
+
+  // ALL THREE SURVIVE. Before the fix all three left the board with
+  // `removedFootprints 4` and nothing naming them.
+  expect(refsOn(result.text)).toEqual([...REFERENCES, "P1", "P2", "P3"].sort())
+  // And the one thing removed is the fixture's own hole, named with its reason.
+  expect(result.removed.length).toBe(1)
+  expect(result.removed[0]?.reference).toBe("REF**")
+  expect(result.removed[0]?.library).toBe(`pt2399-core:${MOUNTING_FOOTPRINT}`)
+  expect(result.removed[0]?.why).toBe("project library id")
+
+  // AND ALL THREE ARE NAMED AS LEFT ALONE, so a reader can tell the tool saw
+  // them and declined rather than never having looked.
+  const left = result.report.filter((line) => line.startsWith("LEFT ALONE "))
+  for (const line of left) console.log(`  ${line.slice(0, 92)}`)
+  expect(left.length).toBe(named.length)
+  for (const name of named) expect(left.join("\n")).toContain(name)
+})
+
+test("EVERY removal is named in the tool's own report, not just counted", () => {
+  // The second half of the criterion. A count is a number a reader has to
+  // already be suspicious of to notice; `removedFootprints: 2` on a board that
+  // should have lost one says nothing. The report lines are what a person sees.
+  const stale = withTopLevelForms(fs.readFileSync(FIXTURE, "utf8"), FIXTURE, [
+    instanceOf("MountingHole:MountingHole_3.2mm_M3", "MH9", 25, 25, "dddd0000-0000-4000-8000-000000000001"),
+  ])
+  const result = withMountingHardware(stale, FIXTURE, RULES, LIBRARY)
+  const lines = result.report.filter((line) => line.startsWith("REMOVED "))
+  for (const line of lines) console.log(`  ${line}`)
+  expect(lines.length).toBe(result.removed.length)
+  expect(lines.length).toBe(2)
+  expect(lines.join("\n")).toContain("REF**")
+  expect(lines.join("\n")).toContain("MH9")
+  // The stale hole is removed for the REFERENCE reason, not the library one -
+  // it came from KiCad's stock library, so the identity test's second arm is
+  // what caught it and the report says which.
+  const mh9 = result.removed.find((r) => r.reference === "MH9")
+  expect(mh9?.why).toBe("MH-shaped reference on an all-NPTH footprint")
+  expect(mh9?.library).toBe("MountingHole:MountingHole_3.2mm_M3")
+})
+
+test("a foreign mounting hole is LEFT ALONE and said so, not deleted and not refused", () => {
+  // A stock mounting hole labelled `H1` rather than `MH<n>` is somebody else's
+  // hardware. Identity does not claim it, so it is NOT deleted - which is the
+  // whole point - and the tool is not entitled to refuse the board over it
+  // either. What it must not do is say nothing: silence leaves a reader unable
+  // to tell "saw it and left it" from "never looked", and the second is what
+  // two rounds of this defect felt like from outside.
+  const foreign = withTopLevelForms(fs.readFileSync(FIXTURE, "utf8"), FIXTURE, [
+    instanceOf("MountingHole:MountingHole_3.2mm_M3", "H1", 25, 25, "eeee0000-0000-4000-8000-000000000001"),
+  ])
+  const result = withMountingHardware(foreign, FIXTURE, RULES, LIBRARY)
+  const left = result.report.filter((line) => line.startsWith("LEFT ALONE "))
+  for (const line of left) console.log(`  ${line}`)
+
+  expect(refsOn(result.text)).toEqual([...REFERENCES, "H1"].sort())
+  expect(result.removed.map((r) => r.reference)).toEqual(["REF**"])
+  expect(left.length).toBe(1)
+  expect(left[0]).toContain("H1")
+  expect(left[0]).toContain("gets no envelope keepout")
+
+  // AND IT IS NOT COUNTED AS ONE OF OURS ANYWHERE DOWNSTREAM: the read-back
+  // check passed (four written, four found) and `placedMountingHoles` reports
+  // only the four. `derivedHardware` therefore does not mistake H1 for a stray
+  // hole at the wrong centre, which the shape test would have.
+  expect(placedMountingHoles(result.text, "foreign").map((h) => h.ref).sort()).toEqual([...REFERENCES].sort())
 })

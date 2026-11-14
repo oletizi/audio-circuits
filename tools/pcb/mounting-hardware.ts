@@ -208,12 +208,71 @@ export function isMountingHoleFootprint(footprint: SNode): boolean {
   return pads.every((pad) => pad.atoms[1] === "np_thru_hole")
 }
 
-/** Every footprint on the board that `isMountingHoleFootprint` recognises. */
+/** The reference designators this repository gives a mounting hole it placed. */
+const OUR_REFERENCE = /^MH\d+$/
+
+/**
+ * Whether a footprint IS ONE OF THIS TOOL'S OWN HOLES - by IDENTITY, not by
+ * shape.
+ *
+ * **SHAPE IS THE RIGHT TEST FOR "SHOULD I COUNT THIS" AND THE WRONG TEST FOR
+ * "MAY I DELETE THIS", and that distinction is the whole reason this function
+ * exists beside `isMountingHoleFootprint`.** The first fix round made the
+ * removal test identical to the detection test, which closed the DRIFT between
+ * them and left the WIDTH: all-NPTH is true of 87 footprints in the installed
+ * libraries, and **49 of them are not mounting holes at all** -
+ * `Heatsink:Heatsink_125x35x50mm_3xFixationM3`,
+ * `MountingEquipment:DINRailAdapter_3xM3_PhoenixContact_1201578`, eighteen
+ * `OptoDevice:Lightpipe_*`, the `Panelization:*` break lines and mouse bites.
+ * This task's reviewer placed three on a board, ran the tool, and watched a
+ * heatsink, a lightpipe and a DIN-rail adapter leave it with
+ * `removedFootprints 4`, nothing in the output naming them, the read-back
+ * self-check reporting exactly the four holes it expected, and
+ * `assertStillParses` passing - **the same three reasons the first version was
+ * invisible.**
+ *
+ * So identity: either the footprint came from this project's own library, or it
+ * is all-NPTH AND carries a reference this tool hands out. A heatsink satisfies
+ * neither and is left alone.
+ *
+ * **WHY THE `MH<n>` ARM IS NEEDED and is not just belt-and-braces.** A hole
+ * this tool placed on an EARLIER run, at a corner the outline has since moved
+ * away from, must still go - otherwise the board ends up with two MH1s. Its
+ * library id identifies it, so that arm alone would cover the normal case; the
+ * reference arm covers a hole fitted from another library and labelled by hand,
+ * which is a thing a person does in pcbnew.
+ *
+ * **AND WHAT HAPPENS TO A HEATSINK NOW, said out loud because the answer is not
+ * "nothing":** it stays on the board, and `derivedHardware` no longer mistakes
+ * it for a stray hole either, so it is graded as the ordinary part it is - which
+ * means the keepout rule requires it to stay out of the washer envelope, which
+ * is correct. The engine's own grader would still CLASSIFY it as a mount_hole by
+ * `part_class.py`'s all-NPTH rule, and that is the engine's business and
+ * defensible for grading; it is not a licence to delete.
+ */
+export function isOurMountingHole(footprint: SNode): boolean {
+  const library = footprint.atoms[0] ?? ""
+  if (library === `${PROJECT_LIBRARY}:${MOUNTING_FOOTPRINT}`) return true
+  const reference =
+    footprint.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? ""
+  return OUR_REFERENCE.test(reference) && isMountingHoleFootprint(footprint)
+}
+
+/**
+ * Every one of THIS TOOL'S holes on the board, by `isOurMountingHole`.
+ *
+ * **IT WAS `isMountingHoleFootprint` - the SHAPE test - AND EVERY CALLER WANTED
+ * IDENTITY.** The deletion arm of `./place-mounting-holes.ts` wanted "a hole I
+ * put here"; its read-back self-check wanted "the holes I just wrote";
+ * `derivedHardware`'s keepout `allow` list and its stray-hole refusal wanted
+ * "the hardware this rule governs". Shape answered a different question for all
+ * four, and on a board carrying a heatsink it answered it wrongly.
+ */
 export function placedMountingHoles(boardText: string, where: string): readonly PlacedMountingHole[] {
   const root = parseSexpr(boardText)
   const out: PlacedMountingHole[] = []
   for (const footprint of root.nodes.filter((n) => n.name === "footprint")) {
-    if (!isMountingHoleFootprint(footprint)) continue
+    if (!isOurMountingHole(footprint)) continue
     const ref =
       footprint.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? ""
     if (ref === "") throw new Error(`${where}: a non-plated footprint carries no Reference property`)
