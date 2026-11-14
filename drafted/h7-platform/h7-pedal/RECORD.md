@@ -66,7 +66,7 @@ sheet, so it has no row here; `repair/replay.sh` checks its sha256.
 
 | page | status | render |
 | --- | --- | --- |
-| root | UNREVIEWED (Task 11b); `verify-root.sh` exits 0: root ERC 0 errors, with two excluded violations (CR-PEDAL-LM66100-ST-ERC on `/expr_ref/`, CR-PEDAL-ROOT-MIDI-PIN4-ERC on `/`) | `h7-pedal.svg` |
+| root | **REVIEWED, 2026-11-13** (Task 11b); `verify-root.sh` exits 0: root ERC 0 errors, with two excluded violations (CR-PEDAL-LM66100-ST-ERC on `/expr_ref/`, CR-PEDAL-ROOT-MIDI-PIN4-ERC on `/`) | `h7-pedal.svg` |
 | interface | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `interface.svg` |
 | entry | **REVIEWED, 2026-11-13** (Task 7a); `verify.sh` exits 0 | `entry.svg` |
 | pf | **REVIEWED, 2026-11-13** (Task 7b); `verify.sh` exits 0 | `pf.svg` |
@@ -3230,7 +3230,7 @@ lie east of FX_OUT_x's labels.
 
 ## root: the pedal's root sheet (Task 11b)
 
-**Status: UNREVIEWED.** sha256 `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37`. Render:
+**Status: REVIEWED, 2026-11-13.** The owner's verdict, verbatim: *"top-level sheet approved"* (`docs/schematic/verdicts.md`). sha256 `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37`. Render:
 `h7-pedal.svg` beside it, and a 150 dpi PNG of the root page by
 `sh draughting/pages/render.sh h7-pedal.kicad_sch <out-dir> root`. `verify-root.sh` exits 0: the root
 export agrees with `h7Pedal()`, every part is drawn once, every cross-page driver entry is cleared by

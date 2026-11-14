@@ -831,6 +831,28 @@ relay footprint check and the failsafe half of CONTRACT-MODEL-CHECK stay open.
 
 ---
 
+## h7-pedal root sheet, assembled by assemble-root.ts
+
+- **Sheet:** `drafted/h7-platform/h7-pedal/h7-pedal.kicad_sch` sha256 `d45839b414cced93c076514fc225cbcb82385e20bf55b7454ad9ebbdf5531d37` (commit `4a45bb8`), with
+  `h7-pedal.kicad_pro` sha256 `f2c88fa30a87d948403e3cfd36d4d4e0a52e85a7fe804fb022280d10e28c194b`.
+- **Produced by** `tools/draught/assemble-root.ts` over the 19 committed pedal pages, with its
+  `.kicad_pro`; the pedal's `RECORD.md` root section has the detail. `verify-root.sh` passes: the root
+  export against `h7Pedal()` with 0 disagreements, every component once, the cross-page drivers found,
+  and root ERC 0 errors with two excluded violations.
+- **Shown** 2026-11-13 as a 150 dpi PNG with only the question *"What is your verdict on the pedal's
+  top-level sheet?"* The fix round after it changed neither the sheet's nor the project file's bytes.
+- **Verdict, verbatim** (2026-11-13):
+
+  > *"top-level sheet approved"*
+
+**WHAT THIS ENTRY DOES NOT CLAIM.** It records no owner decision on the controller rulings the root
+rests on (CR-PEDAL-ROOT-FLAG-EDGE-SLOT, CR-PEDAL-ROOT-MIDI-PIN4-ERC, CR-PEDAL-LM66100-ST-ERC and its
+root key, CR-PEDAL-CROSS-PAGE-POWER-DRIVERS), each of which stays the controller's and the owner may
+override. It covers neither the codec_sup, sai_iso and codec pages, whose verdicts are still open,
+nor a frozen contract (CONTRACT-FREEZE stays open), and it is not a clearance of the pedal circuit.
+
+---
+
 ## Microsoft SchGen's attempts at the five approved Pultec boards
 
 - **Date:** 2026-11-10.
