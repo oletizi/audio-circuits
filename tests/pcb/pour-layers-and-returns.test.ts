@@ -12,6 +12,7 @@ import { measureLayer } from "../../tools/pcb/pour-bridge.ts"
 import { measurePourText, PourRefusal } from "../../tools/pcb/pour.ts"
 import type { Pt } from "../../tools/pcb/pour-geometry.ts"
 import { LEFT_PLACE, OPEN_PLACE, RECTANGLE, dumbbell, fixtureBoard } from "./pour-fixtures.ts"
+import type { TrackSpec } from "./pour-fixtures.ts"
 
 const measure = (text: string) => measurePourText(text, "fixture")
 
@@ -66,7 +67,7 @@ test("a layer's figures are read from that layer's own polygons, not from whiche
 // --- What counts as touching a pad ------------------------------------------
 
 /** F.Cu pour only, split so C1's side is not U1's, and C1 a surface-mount part on F.Cu. */
-function splitWithTrack(track: { from: Pt; to: Pt; layer: string }) {
+function splitWithTrack(track: TrackSpec) {
   return fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT }, c1Smd: true, track })
 }
 
@@ -83,6 +84,30 @@ test("a ground track that stops short of the pad, or ends on the wrong layer, do
   // On the pad's centre exactly, but on a layer an F.Cu surface-mount pad is not on.
   const wrongLayer = refusalOf(() => measure(splitWithTrack({ from: [30, 18], to: [45, 28], layer: "B.Cu" })))
   expect(wrongLayer.guard).toBe("bypass-unconnected")
+})
+
+test("only a GROUND track counts, and an arc is a track as much as a straight segment is", () => {
+  const onPad: Pt = [45, 28]
+  // The same track on a signal net does not return anything to ground.
+  expect(refusalOf(() => measure(splitWithTrack({ from: [30, 18], to: onPad, layer: "F.Cu", net: "SIG" }))).guard).toBe("bypass-unconnected")
+  expect(measure(splitWithTrack({ from: [30, 18], to: onPad, layer: "F.Cu", arc: true })).bypassReturnByCap.get("C1")).toBe("track")
+})
+
+test("a surface-mount pad on F.Cu is not on a B.Cu pour: a pour there does not carry its return", () => {
+  // F.Cu is split so C1's side is not U1's; B.Cu is one solid pour that WOULD reach both if the pad were on it.
+  const refusal = refusalOf(() =>
+    measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] }, c1Smd: true })),
+  )
+  expect(refusal.guard).toBe("bypass-unconnected")
+})
+
+test("a C-numbered part with no ground pad is not a bypass capacitor, and with nothing else to ask about the board is refused", () => {
+  const text = fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] } })
+  const signal = text.replace('(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "GND"))', '(pad "2" thru_hole circle (at 0 5) (size 1.6 1.6) (drill 0.8) (layers "*.Cu" "*.Mask") (net "SIG"))')
+  expect(signal).not.toBe(text)
+  const refusal = refusalOf(() => measure(signal))
+  expect(refusal.guard).toBe("subject-missing")
+  expect(refusal.message).toContain("bypass")
 })
 
 // --- More than one bypass capacitor ------------------------------------------

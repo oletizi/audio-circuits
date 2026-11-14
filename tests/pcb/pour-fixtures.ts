@@ -117,6 +117,10 @@ export interface TrackSpec {
   readonly from: Pt
   readonly to: Pt
   readonly layer: string
+  /** Defaults to GND. */
+  readonly net?: string
+  /** Written as an `(arc ...)` with its midpoint halfway between the ends, not as a `(segment ...)`. */
+  readonly arc?: boolean
 }
 
 /** U1's ground pads are at +0 and +6 in y; C1's +5V pad is at its origin and its ground pad 5 below. */
@@ -176,7 +180,14 @@ function footprint(ref: string, at: Pt, courtyard: readonly [number, number, num
 function pad(number: string, y: number, net: string, shape: string, type: string, turn?: UTurn): string {
   const angle = turn === undefined ? "" : ` ${turn.degrees}`
   const [layers, drill] = type === "smd" ? ['"F.Cu" "F.Mask"', ""] : ['"*.Cu" "*.Mask"', " (drill 0.8)"]
-  return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers}) (net "${net}"))`
+  const ratio = shape === "roundrect" ? " (roundrect_rratio 0.25)" : ""
+  return `  (pad "${number}" ${type} ${shape} (at 0 ${y}${angle}) (size ${turn?.padSize ?? "1.6 1.6"})${drill} (layers ${layers})${ratio} (net "${net}"))`
+}
+
+function trackForm(spec: TrackSpec): string {
+  const [a, b] = [spec.from, spec.to]
+  const mid = spec.arc === true ? ` (mid ${n((a[0] + b[0]) / 2 + 0.01)} ${n((a[1] + b[1]) / 2)})` : ""
+  return `\t(${spec.arc === true ? "arc" : "segment"} (start ${a[0]} ${a[1]})${mid} (end ${b[0]} ${b[1]}) (width 0.5) (layer "${spec.layer}") (net "${spec.net ?? "GND"}") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`
 }
 
 function capacitor(ref: string, at: Pt, shape: string, type: string, uuid: string): string {
@@ -226,7 +237,7 @@ export function fixtureBoard(opts: FixtureOptions): string {
   const track =
     spec === null
       ? []
-      : [`\t(segment (start ${spec.from[0]} ${spec.from[1]}) (end ${spec.to[0]} ${spec.to[1]}) (width 0.5) (layer "${spec.layer}") (net "GND") (uuid "bbbbbbbb-0000-4000-8000-000000000001"))`]
+      : [trackForm(spec)]
   const c2 = opts.place.c2 === undefined ? [] : [capacitor("C2", opts.place.c2, shape, type, "33333333-0000-4000-8000-000000000001")]
   return [
     "(kicad_pcb",
