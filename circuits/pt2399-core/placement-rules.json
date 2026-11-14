@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "kind": "placement-rules",
+  "board": "circuits/pt2399-core/pt2399-core.kicad_pcb",
+  "units": "mm",
+  "status": "DRAFT. Not approved. Drafted by Task 7 of docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md, to be independently reviewed and then approved by the owner. Changing it after approval invalidates every run made under it.",
+  "derived_from": "circuits/pt2399-core/pt2399-core.ts (the circuit model), docs/standards/pcbway-fab-rules.md (every fabrication value), and the installed KiCad footprint library (every footprint dimension quoted below). NOT from the board's current part positions: those were written by the headless update tool on a mechanical 15 mm grid and are not a floorplan.",
+  "reading_the_enforced_by_field": "Each rule names the mechanism that can make it fail. Where that field says `none-in-phase-1`, NOTHING CHECKS THE RULE YET and it must not be read as checked. Phase 1 is a probe; the spec's facility, with check-intent carrying the repository-side rules, is Phase 2.",
+
+  "separation": {
+    "input_to_output": {
+      "what": "INPUT copper and OUTPUT copper must not run together anywhere on the board.",
+      "why": "Both nets land on J1, and the circuit between them has gain and a regeneration path through Net-(C12-Pad1). Coupling from the output back into the input is the failure this rule exists to prevent.",
+      "min_gap_mm": 0.84,
+      "min_gap_derivation": "This floor is read off the board's own worst case rather than chosen. The model puts OUTPUT on J1 pin 4 and INPUT on J1 pin 5 - ADJACENT pins. Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical places them 2.54 mm apart centre to centre with 1.7 mm pads, so 0.84 mm of copper gap at the header is forced by the schematic and the footprint and cannot be improved by any placement or routing decision. The rule is therefore: nowhere ELSE may the two nets come closer than they already are at J1's own pads. A smaller number would permit the rest of the board to be worse than the one place that cannot be fixed.",
+      "measure": "The closest input/output copper gap on the routed candidate, which the spec already lists among the route step's recorded metrics.",
+      "ranking": "Among candidates that pass, largest gap first - the spec's ranking rule for this board. The floor refuses; the ranking chooses.",
+      "no_upper_criterion_authored": "There is no 'good' gap written here. Nothing in this repository establishes a crosstalk clearance for audio at these impedances, and an agent may not author the acceptance criteria for the artifact it is producing. The gap is measured, ranked, and ruled on by the owner on the render.",
+      "kicad_dru_decision": "NO custom .kicad_dru isolation rule is written for this board, and the reason is the measurement above rather than a judgement that it does not matter. A net-to-net clearance rule can only add something if it demands more than the project's global 0.25 mm copper clearance, and it cannot demand more than 0.84 mm without rejecting J1's own pads - the schematic puts INPUT and OUTPUT on adjacent header pins and the schematic is authoritative here. So the usable window is 0.25 to 0.84 mm, and the tightest input-to-output approach on the board sits at the top of it, at the header, where no rule can move it. A rule inside that window would add a check, a cost and a new way to fail without moving the binding constraint. The separation that does matter on this board is a PLACEMENT property - the ordering rule below keeps the two paths at opposite ends with the DIP between them - and that is where it is expressed. tests/pcb/placement-intent-geometry.test.ts re-derives the 0.84 mm and the pin adjacency on every run, so if either changes, this decision fails rather than going stale.",
+      "enforced_by": "none-in-phase-1 for the floor. The route step records the metric (spec Phase 1 metrics); Task 10 compares it against this floor by reading it. Phase 2's check-intent is where it becomes a gate."
+    }
+  },
+
+  "ordering": {
+    "signal_path": {
+      "what": "The blocks lie along the signal path in this order, pairwise non-overlapping: input_path, lpf1_node, delay_ic, lpf2_regen_node, output_path.",
+      "why": "This is a fact of the netlist, not a preference. INPUT enters C7, through R3 into the LPF1 summing node Net-(C8-Pad2), through R1 into U1 pin 16; the delayed signal leaves U1 pin 14 into the regeneration node Net-(C12-Pad1) and, through R5, into Net-(C10-Pad1) and out of C10 to OUTPUT. Laying the blocks along that chain is also what holds the input and output paths apart, with the DIP between them, so this rule and separation.input_to_output are two statements of one arrangement.",
+      "attached_to_delay_ic": ["supply_decoupling", "pt2399_reference_and_oscillator_bypass", "opamp_feedback"],
+      "attached_to_delay_ic_why": "These three blocks have no position in the chain: every member connects to a U1 pin and to GND or to a second U1 pin, so they belong against the IC rather than anywhere along the path.",
+      "enforced_by": "none-in-phase-1. Task 8 reads this when it chooses where the blocks sit on the final outline; no tool compares a placement against it."
+    }
+  },
+
+  "proximity": {
+    "decoupling_to_u1": {
+      "what": "Every cap sharing a non-ground net with U1 sits within 10.0 mm of U1.",
+      "binds": ["C1", "C2", "C3", "C4", "C5", "C6", "C11", "C13", "C14"],
+      "measured_as": "cap centroid to U1's pad bounding box, which is what the engine's decap tether measures. U1's pad field is 7.62 by 17.78 mm.",
+      "derivation": "10.0 mm is a feasibility bound, not a taste figure. Measured from the installed library: U1's courtyard (9.73 by 20.82 mm) extends 1.055 mm beyond its pad field on each long side, and the narrowest courtyard dimension of a part on this board is 3.000 mm. A part laid broadside against the IC therefore has its centroid about 2.6 mm from the pad field, and a second row begins at about 5.8 mm. Nine caps and the six resistors that land on a U1 pin (R1, R2, R5, R6, R7 and R8) all want a place against a 61 mm courtyard perimeter, so the limit has to admit a second row; 10.0 mm does, with margin, while still failing a cap parked across the board.",
+      "enforced_by": "floorplan-intent.json `decaps.max_distance_mm`, graded by the engine's `decap_distance` rule at error severity. Its `search_radius_mm` is 100.0 and is not a second limit - see that file's context.",
+      "least_certain": "This is the number in this file I am least able to defend as THE value rather than A value. It is bounded below by what the geometry allows and above by what would be vacuous, and the owner may reasonably move it inside that range."
+    },
+    "first_ring_caps": {
+      "what": "The caps that serve a PT2399 pin directly sit in the FIRST row against U1 - within 5.0 mm, measured the same way as above.",
+      "binds": ["C3", "C4", "C5", "C6", "C11", "C13", "C14"],
+      "why_these": "C4 and C5 bypass the internal oscillator at pins 7 and 8 and C3 bypasses the reference at pin 2; C6, C11, C13 and C14 each bridge two ADJACENT DIP pins (15/16, 13/14, 11/12 and 9/10) and are the compensation around the PT2399's own filter and op-amp sections. A part across two pins 2.54 mm apart has no business anywhere but against those pins.",
+      "derivation": "5.0 mm sits between the bulkiest member's first-row position and where a second row starts. C3 is a Capacitor_THT:CP_Radial_D6.3mm_P2.50mm with a 6.8 mm circular courtyard, so in the first row its centroid is 1.055 + 3.4 = 4.46 mm from U1's pad field; a second row of 3.0 mm-narrow parts starts at about 5.8 mm. 5.0 admits the first and excludes the second.",
+      "feasibility_warning": "This is the rule most likely to prove unsatisfiable, and it is named here rather than discovered quietly. Seven caps at 5.0 mm plus the six resistors on U1's pins - R1, R2, R5, R6, R7 and R8, 12.26 mm long each - all want the first row around a 61 mm perimeter. Task 8's pass-1 placement is where that is found out. If it cannot be met, C3 is the member to relax - it is the bulkiest and, as a 47 uF reference reservoir rather than a high-frequency bypass, the least sensitive to lead length. Relaxing it is an amendment the owner makes, not something a placer may do on its own.",
+      "enforced_by": "none-in-phase-1. The engine's decap rule carries ONE distance for the whole board, which is the 10.0 mm above; it cannot express a tighter subset."
+    },
+    "node_compactness": {
+      "what": "Each filter node is compact - lpf1_node around U1 pins 15 and 16, lpf2_regen_node around pins 12, 13 and 14, output_path around pin 14.",
+      "why": "Each of these nodes is a high-impedance summing point (10K to 15K series resistors into a few nF) and its area is its antenna.",
+      "max_span_mm": null,
+      "why_no_number": "Deliberately not authored. Nothing in this repository establishes a span for a node of this impedance, and this project's rule is to refuse rather than guess; an empty criterion that says so beats a general one that quietly accepts an invented figure. What does constrain these blocks is their membership in floorplan-intent.json, the ordering rule above, and first_ring_caps. If the owner wants a span, he sets it on the render.",
+      "enforced_by": "none-in-phase-1, and nothing is claimed for it."
+    }
+  },
+
+  "anchors": {
+    "header": {
+      "ref": "J1",
+      "what": "J1 is anchored on a LONG edge of the final rectangular outline, not overhanging it, with its courtyard no more than 2.5 mm from that edge, and it is locked in the board file.",
+      "why_a_long_edge": "The spec's decision for this board. J1 is 13.70 mm of courtyard along its pin row; the long edge is where it fits without eating into a corner the mounting holes need.",
+      "max_setback_mm": 2.5,
+      "max_setback_derivation": "Below the 3.000 mm narrowest courtyard dimension of any footprint this circuit places, so nothing on this board can be placed between the header and the edge; above the fabrication standard's 0.5 mm copper-to-edge floor, so the header's own pads have room. See floorplan-intent.json for the same derivation beside the value the grader reads.",
+      "which_compass_edge": "Not decided here, and deliberately. The engine states an edge as north/south/east/west, which is only meaningful once the outline has an aspect, and the outline is Task 8's. Task 8 records which edge it chose; the approved rule is `a long edge`.",
+      "enforced_by": "floorplan-intent.json `edge_connectors[J1]` (setback and overhang, error severity) and `must_lock` (locked, error severity). The LONG-edge half is enforced by none-in-phase-1."
+    },
+    "mounting_holes": {
+      "what": "Four mounting holes, one near each corner of the rectangular outline, each centred 4.0 mm in from BOTH of the two edges its corner is formed by.",
+      "approved_as_a_rule_not_as_coordinates": "Task 8 moves the board edge and therefore the corners, so any literal coordinate approved now would be stale by the time Task 8 Step 3 regrades against it - and the regrade would then check the wrong keepouts while reporting a pass. What is approved is the invariant below. Task 8 computes the four coordinates from the FINAL outline and this rule and writes them into floorplan-intent.json `keepouts`.",
+      "count": 4,
+      "hole_diameter_mm": 3.2,
+      "plated": false,
+      "hole_source": "A standard M3 screw in the standard 3.2 mm clearance hole - the owner's instruction of 2026-11-13, recorded verbatim in docs/known-gaps.md G311. MountingHole:MountingHole_3.2mm_M3 is exactly this hole, non-plated.",
+      "envelope_diameter_mm": 7.0,
+      "envelope_source": "The outside diameter of an M3 flat washer, DIN 125 Type A / ISO 7089 - 3.2 mm inside, 7.0 mm outside. No copper, part or silkscreen may sit under the washer. Two neighbours to avoid when sourcing: DIN 433 / ISO 7092 is the small series at 6.0 mm OD and DIN 9021 is the large series at 9.0 mm OD; fitting either changes this number.",
+      "centre_inset_mm": 4.0,
+      "centre_inset_parts": {
+        "geometric_floor_mm": 3.5,
+        "geometric_floor_is": "The washer's radius. Below this the washer overhangs the board. Hard.",
+        "design_margin_mm": 0.5,
+        "design_margin_is": "A design margin for board-outline routing tolerance, which is commonly around plus or minus 0.2 mm. Soft, and this plan's own.",
+        "do_not_cite_the_margin_as_a_vendor_rule": "The 0.5 mm is NOT the fabrication standard's copper-to-edge clearance, although it happens to share the value. Copper-to-edge governs copper against the board edge and is enforced globally by DRC; this envelope is a keepout and not copper, so the two do not stack. It is a margin this plan chose, and it is the one number in this rule that could reasonably be argued down to the 3.5 mm floor."
+      },
+      "modelled_by": "envelope, not drill",
+      "modelled_by_why": "KiCad's drill-clearance rules measure the hole, and the hole is 3.2 mm while the thing that must stay clear is the 7.0 mm washer. Task 8 Step 4 carries the two DRC mechanisms that enforce this - a copper-only Rule Area at 7.0 mm, and `courtyards_overlap` against a PROJECT-LOCAL footprint derived from MountingHole:MountingHole_3.2mm_M3 with its courtyard changed from the stock 6.9 mm to 7.0 mm, drill and non-plated attribute untouched. The stock 6.9 mm was measured from the installed library on 2026-11-13 and again while drafting this file.",
+      "must_lock": "Task 8 adds the four references to floorplan-intent.json `must_lock` in the same change that places them. They are not there now because a must_lock pattern matching no footprint is itself a violation, and the intent would then fail for bookkeeping rather than for the board.",
+      "enforced_by": "none-in-phase-1 while the holes do not exist. After Task 8: floorplan-intent.json `keepouts` (grader) and KiCad DRC's `items_not_allowed`, `courtyards_overlap` and `missing_courtyard`, all at error severity per docs/standards/pcbway-fab-rules.md."
+    }
+  }
+}

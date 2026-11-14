@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "kind": "floorplan-intent",
+  "board": "circuits/pt2399-core/pt2399-core.kicad_pcb",
+  "units": "mm",
+  "blocks": [
+    {
+      "name": "supply_decoupling",
+      "refs": ["C1", "C2"],
+      "note": "supply_bypass_local (.1uF) and supply_bulk (100uF), both across +5V and GND. The model's own 'Supply decoupling' section."
+    },
+    {
+      "name": "pt2399_reference_and_oscillator_bypass",
+      "refs": ["C3", "C4", "C5"],
+      "note": "reference_bypass on Net-(U1-REF) (U1 pin 2), oscillator_cc1_bypass on Net-(U1-CC1) (pin 7), oscillator_cc0_bypass on Net-(U1-CC0) (pin 8). All three return to GND. The model's 'PT2399 reference and internal-oscillator bypassing' section."
+    },
+    {
+      "name": "input_path",
+      "refs": ["C7", "R3", "R4"],
+      "note": "input_coupling_cap from INPUT, input_bias_resistor from INPUT to GND, input_mix_resistor from the coupling cap into the LPF1 summing node. The model's 'Input path' section."
+    },
+    {
+      "name": "lpf1_node",
+      "refs": ["R1", "R2", "C6", "C8"],
+      "note": "The LPF1 summing/filter node Net-(C8-Pad2) and the parts that form it: lpf1_input_resistor to U1 pin 16 (LPF1-IN), lpf1_feedback_resistor to U1 pin 15 (LPF1-OUT), lpf1_feedback_cap across those two pins, lpf1_node_filter_cap to GND."
+    },
+    {
+      "name": "lpf2_regen_node",
+      "refs": ["R6", "R7", "R8", "C11", "C12"],
+      "note": "The LPF2/regeneration node Net-(C12-Pad1): regen_feedback_resistor from U1 pin 14 (LPF2-OUT), regen_input_resistor to U1 pin 13 (LPF2-IN), op2_mix_resistor from U1 pin 12 (OP2-OUT), lpf2_feedback_cap across pins 13 and 14, regen_node_filter_cap to GND. This is the node the delay's feedback runs through."
+    },
+    {
+      "name": "opamp_feedback",
+      "refs": ["C13", "C14"],
+      "note": "op2_feedback_cap across U1 pins 11 and 12 (OP2-IN/OP2-OUT) and op1_feedback_cap across U1 pins 9 and 10 (OP1-OUT/OP1-IN). Each sits directly across two adjacent PT2399 pins and has no reason to be anywhere but against them."
+    },
+    {
+      "name": "output_path",
+      "refs": ["R5", "C9", "C10"],
+      "note": "output_mix_resistor from U1 pin 14 (LPF2-OUT) into Net-(C10-Pad1), output_node_filter_cap from that node to GND, output_coupling_cap from that node to OUTPUT. The model's 'Output path' section."
+    },
+    {
+      "name": "delay_ic",
+      "refs": ["U1"],
+      "note": "The PT2399, DIP-16. Every block above except input_path and output_path connects to one of its pins, so it is the part the rest of the floorplan is arranged around. Declared as a block of one so the block census covers every footprint on the board."
+    },
+    {
+      "name": "edge_header",
+      "refs": ["J1"],
+      "note": "The 1x05 power and signal header. Carries +5V, GND, VCO, OUTPUT and INPUT - every net that leaves this board. Also declared under edge_connectors and must_lock; the block exists so the census is complete."
+    }
+  ],
+  "keepouts": [],
+  "edge_connectors": [
+    {
+      "ref": "J1",
+      "overhang_mm": { "min": 0.0, "max": 0.0 },
+      "max_setback_mm": 2.5,
+      "note": "A vertical pin header mates upward, not sideways, so it must NOT overhang the outline at all - hence max 0.0, which is a different claim from the card-edge and USB-shell cases this rule was written for. What it does need is to sit close enough to an edge that a cable reaches it without crossing the board. 2.5 mm is derived, not chosen for feel: the narrowest courtyard dimension of any footprint this circuit places is 3.000 mm (the disc cap and the axial resistor, across their short axis), so at a setback below that no part on this board can be placed between the header and the edge. 2.5 mm also clears the fabrication standard's 0.5 mm copper-to-edge floor with room for the header's own pads. tests/pcb/placement-intent-geometry.test.ts re-derives the 3.000 mm from the installed KiCad library on every run and fails if this number stops being below it."
+    }
+  ],
+  "decaps": {
+    "max_distance_mm": 10.0,
+    "search_radius_mm": 100.0
+  },
+  "must_lock": ["J1"],
+  "legality_budget": {
+    "overlap_area": 0.0,
+    "oob_count": 0,
+    "oob_amount": 0.0
+  },
+  "severity": {
+    "envelope": "error",
+    "zone_containment": "error",
+    "zone_side": "error",
+    "zone_exclusive": "error",
+    "keepout": "error",
+    "edge_connector": "error",
+    "decap_distance": "error",
+    "must_lock": "error",
+    "legality": "error"
+  },
+  "context": {
+    "status": "DRAFT. Not approved. Task 7 of docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md drafts this file; an independent reviewer checks it and the owner approves it. Nothing is placed for adoption under it until he has. Changing this file after approval invalidates every run made under it.",
+    "where_the_blocks_came_from": "circuits/pt2399-core/pt2399-core.ts - the circuit model's own section comments and its DESIGNATORS map, read for this draft. NOT from the board's current part positions, which were written by the headless update tool on a mechanical 15 mm grid and carry no floorplan intent at all. This repository's standing invariant is that an agent may never author the acceptance criteria for the artifact it is producing, and deriving blocks from the layout being graded is the named form of that failure.",
+    "no_envelope_declared": "There is deliberately no `envelope` key. The engine READS the outline from the board and never writes Edge.Cuts; an authored envelope is a claim about a board outline that Task 8 has not settled yet. The `envelope` rule therefore reports as skipped, which is the honest state rather than a silent pass.",
+    "no_zones_declared": "No block carries a `zone` rect, so `zone_containment`, `zone_side` and `zone_exclusive` all report as skipped. A zone is a rectangle in board coordinates and the board's coordinates are Task 8's to fix; a rect approved now is stale the moment the outline moves, and the regrade would then check the wrong rectangles while reporting a pass. The block list here is approved MEMBERSHIP - which parts belong together - and Task 8 may add zone rects derived from the final outline without reopening that membership.",
+    "mounting_holes": "No keepout is written here, and that is the point. The four M3 mounting holes are approved as a DERIVATION RULE, which lives in circuits/pt2399-core/placement-rules.json under anchors.mounting_holes together with the hole diameter, the washer envelope and the corner inset and where each of those three numbers comes from. Task 8 Step 2 computes the four coordinates from the final outline and that rule, and writes them into this file's `keepouts` array. Until then `keepouts` is empty and the `keepout` rule reports as skipped.",
+    "must_lock_is_incomplete_on_purpose": "`must_lock` names J1 only. The four mounting holes are not in it because they are not on the board yet and a must_lock pattern that matches no footprint is itself a violation - the intent would fail for bookkeeping rather than for the board. Task 8 adds their references to this list in the same change that places them, as part of the same derivation. Until Task 8 locks J1, `must_lock` reports J1 as unlocked: that is the intent refusing a board that is not finished, not a defect in the intent.",
+    "decap_rule": "`decap_distance` measures from each cap's centroid to U1's pad bounding box, using the same nearest-IC-sharing-a-power-net tether the placement optimiser itself uses. On this board it binds C1, C2, C3, C4, C5, C6, C11, C13 and C14 - the nine caps with a non-ground net in common with the PT2399. It does NOT bind C7, C8, C9, C10 or C12, whose non-ground net touches no IC; those are covered by the block structure and by placement-rules.json instead. 10.0 mm is the limit and the derivation is in placement-rules.json under proximity.decoupling_to_u1. `search_radius_mm` is 100.0 and is NOT a second limit: the tether silently DROPS any cap beyond the search radius, so a radius at or below the limit would make the rule go quiet exactly when a cap had been placed too far away. 100 mm is larger than any diagonal this board will have.",
+    "what_this_file_does_not_check": "Four of the nine rules report as skipped by construction (envelope, zone_containment, zone_side, zone_exclusive) and a fifth (keepout) until Task 8 fills it. What actually runs here is edge_connector, decap_distance, must_lock and legality. Every grader invocation must pass --require-rules 1 so that a file which has stopped declaring anything refuses instead of passing: an intent running zero rules grades every placement as acceptable, which is a false green of exactly the kind this plan exists to catch.",
+    "this_board_cannot_be_graded_yet_and_that_is_not_this_file": "Run against the board as it stands, the grader exits 3 - `the board has no Edge.Cuts outline` - and refuses rather than grading. That is the placement family's board-state code, not an intent error: with no usable outline every containment check would silently degrade to the bounding box and a clean report would mean 'stopped checking'. Task 8 Step 1's generous rectangle is what makes grading possible at all, so the first thing that happens under this intent is an outline, not a placement. What HAS been checked without a board: this file loads, contradicts itself nowhere, its nine blocks resolve to 24 distinct references with no duplicates, and exactly four rules would run.",
+    "legality_budget_reasoning": "overlap_area 0.0 and oob_count 0 are not new criteria: `courtyards_overlap` is already an error-severity DRC check under docs/standards/pcbway-fab-rules.md, and a part off the outline is not manufacturable. The budget states the same two requirements where the placement grader can see them, so a seed that violates either is rejected before it reaches DRC. oob_amount 0.0 is the same requirement measured in millimetres rather than parts. J1 is declared with overhang max 0.0, so the edge connector creates no exception to any of the three."
+  }
+}

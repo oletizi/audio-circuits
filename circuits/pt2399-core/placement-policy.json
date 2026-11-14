@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "kind": "placement-policy",
+  "board": "circuits/pt2399-core/pt2399-core.kicad_pcb",
+  "status": "DRAFT. Not approved. Drafted by Task 7 of docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md, to be independently reviewed and then approved by the owner. Changing it after approval invalidates every run made under it.",
+
+  "principle": "An override is allowed only where this file lists it for that operation. Anything not listed is REFUSED, not defaulted and not quietly passed through. The reason is that every flag below changes what a run is graded against or what fabrication floor it is built to, so a flag nobody approved is a criterion nobody approved.",
+
+  "entry_points": "The argv for each operation is the one Task 4's preflight recorded in build/krt/invocations.json, not a command invented at the point of use. This file names flags; it does not restate those invocations.",
+
+  "operations": {
+    "check-intent": {
+      "entry_point": "py_tools/check_floorplan.py",
+      "required": [
+        {
+          "flag": "--require-rules",
+          "value": "1 or more",
+          "reason": "The grader's long-standing default is that an intent running ZERO rules exits 0. That is how a vacuous intent can constrain a placement with nothing while every consumer stays silent. Passing it is what makes 'graded clean' mean something, and it is required on every invocation, not merely allowed."
+        },
+        {
+          "flag": "--intent",
+          "value": "circuits/pt2399-core/floorplan-intent.json",
+          "reason": "The approved intent is the only thing this board is graded against. A run against any other file is not a run on this board."
+        }
+      ],
+      "allowed": [
+        { "flag": "--json", "reason": "Writes every measurement to a file, which is what the run record keeps. Reporting only." },
+        { "flag": "-q", "reason": "Suppresses the text report and keeps the machine summary. Reporting only; it cannot change a verdict." },
+        { "flag": "--health", "reason": "Adds the advisory routability signals. They say the floorplan will fight the router, not that it breaks the intent, and they gate nothing." }
+      ],
+      "forbidden": [
+        {
+          "flag": "--emit-intent",
+          "reason": "It writes a starter intent READ OFF the board and grades clean by construction. Using it on this board would make the layout author the criteria it is then checked against - the exact failure this repository's standing invariant names. The approved intent was authored from the circuit model and nothing may regenerate it from a placement."
+        },
+        {
+          "flag": "--declare-classes",
+          "reason": "A modifier of --emit-intent, which is forbidden above."
+        },
+        {
+          "flag": "--exit-zero",
+          "reason": "Reports violations and exits 0 anyway. A skipped or failed check must never look like a passing one."
+        },
+        {
+          "flag": "--clearance",
+          "reason": "Grades the legality model at a clearance other than the board's own. Tighter manufactures violations that are not there; looser hides ones that are. The board's Default netclass is the right source and the tool already reads it."
+        },
+        {
+          "flag": "--board-edge-clearance",
+          "reason": "Same objection as --clearance, for the outline gate. The board's own min_copper_edge_clearance comes from docs/standards/pcbway-fab-rules.md and is the figure to grade at."
+        },
+        {
+          "flag": "--group-by",
+          "reason": "Not needed and not approved. Every block in the approved intent is declared by `refs`, so no block derives its membership from the board. Permitting a derivation source would let block membership come from the layout rather than from the circuit model."
+        }
+      ]
+    },
+
+    "place": {
+      "entry_point": "py_placer/place_optimize.py (the one placement entry point Task 4's preflight probed)",
+      "required": [],
+      "allowed": [
+        {
+          "flag": "--max-displacement",
+          "value": "only on a REFINEMENT run, whose input is a placement that has already been graded against the approved intent",
+          "reason": "It bounds how far a part may move from where it already is. On a refinement that is a useful brake. On the FIRST placement of this board it is a trap, and the trap is specific: see first_placement_warning below."
+        }
+      ],
+      "forbidden": [
+        {
+          "flag": "--max-displacement",
+          "value": "on the first placement pass, or any run whose input is the board as the headless update tool left it",
+          "reason": "See first_placement_warning."
+        }
+      ],
+      "first_placement_warning": "THE 24 FOOTPRINTS ON THIS BOARD SIT ON A MECHANICAL 15 mm GRID WRITTEN BY THE UPDATE TOOL. That is scaffolding so the parts exist somewhere; nobody designed it and it carries no intent. `place_optimize.py --max-displacement 3` refines an existing placement within 3 mm of where it already is, so running it on this board as it stands would return a tidied version of that grid - and the grid would then BE the floorplan, chosen by a tool and graded against an intent that had nothing to say about it. Task 8's pass 1 needs a SEEDING run, not a refinement. Task 4's preflight probed only the optimiser, on a throwaway two-part fixture, so there is no recorded invocation for seeding yet. Task 8 must discover and record one the way Task 4 recorded these, and this policy must then be amended to name it - before approval if the reviewer agrees, otherwise as an amendment the owner signs.",
+      "note": "Nothing in this operation writes the committed board. The spec's `adopt` is the only verb that does, and it is Phase 2."
+    },
+
+    "route": {
+      "entry_point": "py_router/route.py",
+      "required": [
+        {
+          "flag": "--fab-overrides",
+          "value": "circuits/pt2399-core/route-fab-floor.txt",
+          "reason": "NOT OPTIONAL, and this is the standing route entry the plan calls for. The router's own fabrication tiers come from a different vendor's capability page and are looser than this project's standard in every dimension that matters; left to itself it necks a blocked track and shrinks a via DOWN that ladder, and will escalate tiers on its own. Supplying this file replaces those values with the standard's and collapses the ladder to a single hard rung, which also disables escalation. KiCad's DRC would catch the result afterwards; the router should not produce it in the first place."
+        }
+      ],
+      "allowed": [
+        { "flag": "--nets", "reason": "Selects which nets to route. It chooses work, not fabrication limits or acceptance criteria." },
+        { "flag": "--output", "reason": "The run's own output path. The committed board is never the output of a route run." }
+      ],
+      "forbidden": [
+        {
+          "flag": "--fab-tier",
+          "value": "advanced",
+          "reason": "It is the routing engine's tighter, more costly tier, taken from another vendor's page. This board's floor is docs/standards/pcbway-fab-rules.md and it reaches the router through --fab-overrides and nothing else. A rule tighter than the standard raises the price of every order."
+        }
+      ],
+      "post_conditions": [
+        {
+          "check": "The route run's output must not report FAB FLOOR RELAXED.",
+          "why": "Task 4's preflight recorded that routing writes or modifies a .kicad_pro beside its output and MAY RELAX THE DRC FLOORS, printing that phrase when it does. A relaxed project file would make a later DRC pass against looser constraints than the standard, which is a false green with the evidence sitting in the run log. The run fails on the phrase; the board is not the thing being inspected here, the log is."
+        },
+        {
+          "check": "The .kicad_pro the run leaves beside its output must still satisfy tools/pcb/fab-standard.ts.",
+          "why": "Same hazard, checked on the artifact rather than on the log, because a log line can be absent for reasons other than the floors being intact."
+        }
+      ]
+    },
+
+    "zone-refill": {
+      "entry_point": "py_router/route_planes.py creates the pour; kicad-cli fills it",
+      "required": [
+        {
+          "flag": "--refill-zones --save-board",
+          "value": "both, on the kicad-cli drc invocation",
+          "reason": "The pour does not exist as copper until it is filled, and the board that would be adopted and plotted is the SAVED post-refill one. --save-board is rejected without --refill-zones on the pinned KiCad, so the pair is the mechanism and not two choices."
+        }
+      ],
+      "allowed": [
+        { "flag": "--plane-layers", "reason": "Which layers carry a pour. A geometry choice recorded in the run, not a criterion." },
+        { "flag": "--nets", "reason": "Which net the pour belongs to - GND on this board." }
+      ],
+      "forbidden": [],
+      "post_conditions": [
+        {
+          "check": "Same two FAB FLOOR RELAXED checks as `route`.",
+          "why": "Task 4's preflight recorded the same side effect for route_planes.py."
+        }
+      ]
+    }
+  },
+
+  "custom_design_rules": {
+    "kicad_dru": "none",
+    "why": "Task 7 Step 3 asked whether the input and output proximity on J1 needs a .kicad_dru isolation rule. It does not, and the reasoning is a measurement rather than a shrug: it is recorded in circuits/pt2399-core/placement-rules.json under separation.input_to_output.kicad_dru_decision, and the two figures it turns on are re-derived by tests/pcb/placement-intent-geometry.test.ts on every run.",
+    "if_this_changes": "A .kicad_dru is a graded input like the intent, the rules and this policy. Adding one later invalidates every run made before it, and it is approved the same way."
+  },
+
+  "what_this_policy_does_not_do": "Nothing here is enforced by code yet. The spec puts the refusing wrapper in Phase 2, and Phase 1 is the probe that decides whether there is a Phase 2. Until then this file is the list a reviewer and the owner hold a run against by reading it, and a run that used a flag not listed here is out of policy whether or not anything stopped it. It must not be read as a gate."
+}

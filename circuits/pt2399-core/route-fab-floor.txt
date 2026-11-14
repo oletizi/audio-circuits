@@ -1,0 +1,52 @@
+# route-fab-floor.txt - the standing fabrication floor for the router on this board.
+#
+# DRAFT. Not approved. Drafted by Task 7 of
+# docs/superpowers/plans/2026-11-12-agent-pcb-place-and-route-phase-1.md.
+#
+# WHAT THIS FILE IS. The routing engine models fabrication limits as a tier
+# ladder sourced from a DIFFERENT vendor's capability page, and by default it
+# necks tracks and shrinks vias DOWN that ladder whenever a route is blocked -
+# and will escalate from its cheap tier to its tight one on its own. Handing it
+# this file as its fab overrides replaces those values with the ones below and
+# collapses the ladder to a single HARD rung: escalation is then disabled,
+# because the file states the exact limits. Without it the router produces
+# copper below this project's standard and KiCad's DRC only finds out
+# afterwards. That is why the policy entry carrying this file is not optional.
+#
+# WHERE THESE NUMBERS COME FROM. Every one is the "Project value" column of
+# docs/standards/pcbway-fab-rules.md, which is the one place this project's
+# bare-board rules are written down and the same document the Board Setup in
+# pt2399-core.kicad_pro is set from. If a value there changes, this file
+# changes in the same commit. Nothing here is a figure from memory and nothing
+# here is a vendor tier name.
+#
+# A FLOOR IS NOT A TARGET. These are the smallest values the router may neck
+# to. The widths it should ROUTE at are the net classes in the project file -
+# Default at 0.3 mm signal and Power at 0.5 mm - and those are a separate
+# mechanism with a separate check (tests/pcb/netclass-patterns.test.ts).
+#
+# Units are millimetres. Key names are the engine's; the comment on each line
+# names the standard's row it was read from.
+
+clearance        = 0.25   # Copper clearance, project value
+track_width      = 0.25   # Track width, the "0.25 mm minimum" of that row - NOT the 0.3/0.5 routing widths
+via_diameter     = 0.8    # Drill, vias and PTH: 0.8 mm via pad diameter
+via_drill        = 0.4    # Drill, vias and PTH: 0.4 mm via drill
+annular          = 0.2    # Via annular ring, project value (0.8 mm pad on a 0.4 mm drill).
+                          #   READ THIS ONE BEFORE RELYING ON IT. It is the only key here whose
+                          #   value is LOOSER than the routing engine's own 2-layer default
+                          #   (0.25), and the engine's own notes call this key informational -
+                          #   the fan-out via clamp derives its minimum ring from via_diameter
+                          #   and via_drill above, where (0.8 - 0.4) / 2 is exactly this 0.2.
+                          #   It is a VIA ring. The standard says in terms that this project
+                          #   does NOT set the component-hole annular ring - that comes from
+                          #   each footprint's own pad and drill geometry and must clear
+                          #   0.254 mm - and that reading 0.2 mm as a component-hole ring
+                          #   would put it below even PCBWay's medium-difficulty figure. If
+                          #   the engine ever applies this key to component holes, this line
+                          #   is wrong and the standard, not this file, is what to go back to.
+hole_to_hole     = 0.5    # Hole to hole, project value
+pad_hole_to_hole = 0.5    # Hole to hole, project value, applied to component holes. This is a
+                          #   through-hole board, so every part pad is a component hole; the
+                          #   standard sets one hole-to-hole figure and it governs both.
+board_edge       = 0.5    # Copper to board edge, project value
