@@ -1,0 +1,58 @@
+[
+ {
+  "name": "5V_A",
+  "pins": [
+   "C80.1",
+   "C81.1",
+   "R105.1",
+   "R110.1",
+   "U18.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C74.2",
+   "C75.2",
+   "C78.2",
+   "C79.2",
+   "C80.2",
+   "C81.2",
+   "R106.2",
+   "R111.2",
+   "U18.4"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "IN_FOLLOW_L",
+  "pins": [
+   "C72.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "IN_FOLLOW_R",
+  "pins": [
+   "C76.1"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VINL",
+  "pins": [
+   "C75.1",
+   "R107.2"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "VINR",
+  "pins": [
+   "C79.1",
+   "R112.2"
+  ],
+  "drafted": true
+ }
+]

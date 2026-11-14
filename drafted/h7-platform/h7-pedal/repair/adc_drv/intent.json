@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "C72",
+      "libId": "Device:C_Polarized",
+      "value": "22uF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R103",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R104",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C73",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R105",
+      "libId": "Device:R",
+      "value": "2K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R106",
+      "libId": "Device:R",
+      "value": "2K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C74",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R107",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C75",
+      "libId": "Device:C",
+      "value": "2200pF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C76",
+      "libId": "Device:C_Polarized",
+      "value": "22uF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R108",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R109",
+      "libId": "Device:R",
+      "value": "10K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C77",
+      "libId": "Device:C",
+      "value": "47pF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R110",
+      "libId": "Device:R",
+      "value": "2K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R111",
+      "libId": "Device:R",
+      "value": "2K",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C78",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "R112",
+      "libId": "Device:R",
+      "value": "100R",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C79",
+      "libId": "Device:C",
+      "value": "2200pF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "U18",
+      "libId": "h7-platform:OPA1688xD",
+      "value": "OPA1688IDR",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C80",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "ADC drivers"
+    },
+    {
+      "ref": "C81",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "ADC drivers"
+    }
+  ],
+  "nets": [
+    {
+      "name": "5V_A",
+      "kind": "signal",
+      "pins": [
+        "C80.1",
+        "C81.1",
+        "R105.1",
+        "R110.1",
+        "U18.8"
+      ]
+    },
+    {
+      "name": "ADC_AC_L",
+      "kind": "signal",
+      "pins": [
+        "C72.2",
+        "R103.1"
+      ]
+    },
+    {
+      "name": "ADC_AC_R",
+      "kind": "signal",
+      "pins": [
+        "C76.2",
+        "R108.1"
+      ]
+    },
+    {
+      "name": "ADC_INV_L",
+      "kind": "signal",
+      "pins": [
+        "C73.1",
+        "R103.2",
+        "R104.1",
+        "U18.2"
+      ]
+    },
+    {
+      "name": "ADC_INV_R",
+      "kind": "signal",
+      "pins": [
+        "C77.1",
+        "R108.2",
+        "R109.1",
+        "U18.6"
+      ]
+    },
+    {
+      "name": "ADC_OUT_L",
+      "kind": "signal",
+      "pins": [
+        "C73.2",
+        "R104.2",
+        "R107.1",
+        "U18.1"
+      ]
+    },
+    {
+      "name": "ADC_OUT_R",
+      "kind": "signal",
+      "pins": [
+        "C77.2",
+        "R109.2",
+        "R112.1",
+        "U18.7"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C74.2",
+        "C75.2",
+        "C78.2",
+        "C79.2",
+        "C80.2",
+        "C81.2",
+        "R106.2",
+        "R111.2",
+        "U18.4"
+      ]
+    },
+    {
+      "name": "VBIAS_L",
+      "kind": "signal",
+      "pins": [
+        "C74.1",
+        "R105.2",
+        "R106.1",
+        "U18.3"
+      ]
+    },
+    {
+      "name": "VBIAS_R",
+      "kind": "signal",
+      "pins": [
+        "C78.1",
+        "R110.2",
+        "R111.1",
+        "U18.5"
+      ]
+    },
+    {
+      "name": "VINL",
+      "kind": "signal",
+      "pins": [
+        "C75.1",
+        "R107.2"
+      ]
+    },
+    {
+      "name": "VINR",
+      "kind": "signal",
+      "pins": [
+        "C79.1",
+        "R112.2"
+      ]
+    }
+  ],
+  "noConnect": [],
+  "hints": {
+    "groupOrder": [
+      "ADC drivers"
+    ]
+  }
+}

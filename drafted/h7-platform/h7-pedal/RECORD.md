@@ -51,6 +51,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `codec.kicad_sch` | block codec | `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` |
 | `jacks_byp.kicad_sch` | block jacks_byp | `2ad7be98ed45efb192ccd5dc4a56f892bc009c6b3c98beb4d3d3a0de7565c489` |
 | `in_fe.kicad_sch` | block in_fe | `37049f7c8c5bb7894936c2ae6df4e62d10ef8aceaa6d7e939ad224e11bb196d2` |
+| `adc_drv.kicad_sch` | block adc_drv | `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -74,6 +75,7 @@ committed bytes, with the pinned kicad-cli.
 | codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
 | jacks_byp | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `jacks_byp.svg` |
 | in_fe | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `in_fe.svg` |
+| adc_drv | UNREVIEWED (Task 11a); `verify.sh` exits 0 | `adc_drv.svg` |
 
 ## The drafts every repair starts from
 
@@ -2929,3 +2931,137 @@ no other wire uses.
   GND row, TP8's Value beside GND's label and U17C's fields over C70; the capacitors' fields moved
   0.889 mm out, TP8's and TP10's 1.27 mm off the row, and C70, C71 and VIN_A's label 400 mil east. The
   second had TP7's Value on the IN_RF_L row; TP7's fields moved 1.27 mm up.
+
+## adc_drv: the ADC drivers (Task 11a)
+
+**Status: UNREVIEWED.** sha256 `7b35259f9717da2d34344fb030f0ba8d46db3c6001b41a04aa9c092a49da5079`.
+Render: `adc_drv.svg` beside it.
+
+The block: `circuits/h7-platform/pedal/adc-drv.ts`, 21 parts. Per channel, left then right: C72 and
+C76 (`c_ac_x`, 22 uF, `Device:C_Polarized`, + on IN_FOLLOW_x) to ADC_AC_x; R103 and R108 (`r_in_x`,
+10.0 kOhm) to ADC_INV_x; R104 and R109 (`r_fa_x`, 10.0 kOhm) and C73 and C77 (`c_fa_x`, 47 pF) from
+ADC_INV_x to ADC_OUT_x; R105 and R110 (`r_vbias_top_x`, 2.00 kOhm) from 5V_A to VBIAS_x; R106 and R111
+(`r_vbias_bot_x`, 2.00 kOhm) and C74 and C78 (`c_vbias_x`, 10 uF) from VBIAS_x to GND; R107 and R112
+(`r_o_x`, 100 Ohm) from ADC_OUT_x to VINL or VINR; C75 and C79 (`c_vin_x`, 2.2 nF) from VINx to GND.
+U18 (`u_adc`, OPA1688, `h7-platform:OPA1688xD`, three units): unit A the left stage, unit B the right
+(+IN on VBIAS_x, -IN on ADC_INV_x, OUT on ADC_OUT_x), unit C V+ on 5V_A and V- on GND, with C80
+(`c_uadc_hf`, 100 nF) and C81 (`c_uadc_bulk`, 10 uF). Ports 5V_A, GND, IN_FOLLOW_L, IN_FOLLOW_R, VINL
+and VINR; two reach one pin each (C72's and C76's pin 1). ADC_AC_x, ADC_INV_x, ADC_OUT_x and VBIAS_x
+are private to the page and drawn as wire, with no label. No no-connects.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `adc_drv` is one of the
+  pedal's blocks: each channel from its follower's output to the codec's analog input.
+- [CR-PEDAL-ANALOG-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-analog-readings): the
+  private names ADC_AC_x, ADC_INV_x and ADC_OUT_x; each VBIAS_x capacitor to GND; U18's 10 uF as
+  parts.md's op-amp decoupling part although on 5V_A; R_O modelled, AIO-11 read against AIO-12.
+- [CR-PEDAL-SYMBOL-OPA1688](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-opa1688): U18's
+  project symbol, numbered unit by unit (A 1 OUT, 2 -IN, 3 +IN; B 5 +IN, 6 -IN, 7 OUT; C 8 V+, 4 V-).
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match).
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): IN_FOLLOW_x, VINL and VINR as
+  shared nets.
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 5V_A and GND
+  are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; GND's flag is on the root.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers)
+  and [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers):
+  5V_A, driven by U4's OUT on the ldo_vmid page (`power_out`), a PWR_FLAG stand-in under the one-block
+  root, which clears U18's V+. This page holds the drivers the VINL and VINR entries name
+  ([CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc-amended)):
+  R107 pin 2 on VINL and R112 pin 2 on VINR, which the model comparison confirms; under this page's own
+  root no stand-in is placed for them, since adc_drv is the driving block. Those entries certify
+  connectivity, not drive; whether the assembled root clears the codec's VINL and VINR with R107 and
+  R112 is the root's check (`root-drivers.ts`, Task 11b).
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 6 ports on the wrong net.
+- Sources, not rulings: schematic-checklist.md AIO-08 to AIO-12 (lines 158 to 162), PWR-11 (line
+  132), line 149 (A = L, B = R); analog.md lines 159 and 176; parts.md lines 57, 105 and 108, which the
+  block cites part by part.
+- Drawing choices, not transcriptions: two bands, the left channel above the right, each read west to
+  east from IN_FOLLOW_x's label to VINx's; each band's 5V_A and GND rows above it, R_VBIAS_TOP hanging
+  from the 5V_A row west of where the GND row starts, R_VBIAS_BOT, C_VBIAS and C_VIN rising to the GND
+  row; the feedback under each unit, R_FA's loop and C_FA's below it; U18's units at rotation 0, as
+  `page.place_ops` requires; the supply unit and its capacitors between the upper band's rows, east of
+  the outputs; the two 5V_A rows joined by a vertical down the west edge, the two GND rows by one down
+  the east edge (`adc_drv/layout.py` says why the rails are above each band). IN_FOLLOW_x, which the
+  draft drew no wire for, takes the default stroke (`UNDRAWN_STROKES` says why). The supply section
+  moved after the first render (below).
+
+### The tables after this page
+
+Unchanged. `verify.sh` read 6 flag homes, 9 cross-page drivers and 1 ERC allowance; the page uses the
+5V_A entry and no allowance. The VINL and VINR entries (Task 10) are checked against the model on
+every run (`tables.ts`), and this page draws the pins they name on those nets.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 21 (the model declares none) | 0; 21 |
+| exported components, nets, net members | 21, 14, 48 | 21, 14, 48 |
+| exported nets carrying a model net name | 12 of 14 | 6 of 14 (the six ports; the other eight are the eight private nets, unlabelled) |
+| ports whose label is on the wrong net | 4 of 6 | 0 of 6 |
+| ERC, the sheet alone | 4 errors (`pin_not_connected` 2, C72 pin 1 and C76 pin 1; `power_pin_not_driven` 2, U18's V+ and V-), 3 warnings (`lib_symbol_issues` 3) | 8 errors (`pin_not_connected` 6: each hierarchical label has no parent sheet; `power_pin_not_driven` 2, U18's V+ and V-), 5 warnings (`isolated_pin_label` 2, IN_FOLLOW_L's and IN_FOLLOW_R's labels; `lib_symbol_issues` 3) |
+| ERC under a one-block root, `/adc_drv/` | 4 errors (`pin_not_connected` 2, `power_pin_not_driven` 2), 2 warnings (`same_local_global_label` 2) | **0 errors, 0 warnings** |
+| ERC under a one-block root, `/` | 10 errors (`hier_label_mismatch` 6, `label_dangling` 4), 5 warnings (`isolated_pin_label` 2, `lib_symbol_issues` 3) | 2 errors (`label_dangling` 2, the VINL and VINR stubs' labels, alone with one block; `erc_sheets.py` admits them), 7 warnings (`isolated_pin_label` 4, the stub and sheet labels of IN_FOLLOW_L and IN_FOLLOW_R; `lib_symbol_issues` 3) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 0, 0 | 0, 0 |
+| orphan junctions, of total | 0 of 10 | 0 of 26 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 0 | 0; 0 |
+| labels | 25 on 12 nets (17 global, 8 local) | 6 on 6 nets, all hierarchical |
+| paper fit (US Letter) | fits | fits |
+| wire groups with more than one stroke | 0 of 25 | 0 of 14 |
+| symbols (part instances, power symbols, PWR_FLAGs) | 23 (23: 21 parts, U18 in three units; 0, 0) | 23 (23, 0, 0) |
+| placed pins | 48 | 48 |
+| wires, total length | 75, 580.39 mm | 74, 1280.16 mm |
+| wire corners | 16 | 12 |
+| junctions | 10 | 26 |
+| no-connects | 0 | 0 |
+
+The selftest ran first on both: 10 controls, every one moved or fired.
+
+**`power_pin_not_driven` 2 on the sheet alone**: U18's V+ (pin 8, 5V_A) and V- (pin 4, GND), both
+`power_in`; under the one-block root 5V_A's PWR_FLAG stand-in (for U4's OUT) and GND's stub flag clear
+both.
+
+**`lib_symbol_issues` 3**, on U18's three units: *"The current configuration does not include the
+symbol library 'h7-platform'"*, the pf page's U1 warning (no `.kicad_pro` beside a block page). The
+symbol is embedded in the sheet. No `lib_symbol_mismatch`: `Device:R`, `Device:C` and
+`Device:C_Polarized` match their installed copies.
+
+**`isolated_pin_label` 2**, on the sheet alone: IN_FOLLOW_L's and IN_FOLLOW_R's labels; each net's
+other end is on in_fe (U17's outputs).
+
+### Why the page has no crossing, as the layout records it
+
+Observations, not a judgement of the page: on each unit's west side +IN (VBIAS_x) is over -IN (the
+input row), so both ends of the bias divider are drawn above VBIAS_x, where no signal wire runs, and
+the GND row starts east of R_VBIAS_TOP's drop to the 5V_A row; the feedback loops lie under the unit,
+on the side away from the rails; C_VIN rises from VINx into the empty span between the output row and
+the GND row; the two bands' rails meet on verticals at the page's west and east edges, beyond the
+input and VIN labels.
+
+### What the page shows, as observations
+
+- Each band, west to east: IN_FOLLOW_x's label (pointing west), C_AC with its + terminal west, R_IN,
+  the ADC_INV_x node into U18's -IN; from the node, a vertical down to R_FA's loop and C_FA's loop
+  under the unit, both returning up a vertical east of U18's OUT; OUT east through R_O, past C_VIN
+  (rising to the GND row), to VINx's label (pointing east).
+- Over each band: the 5V_A row; R_VBIAS_TOP hanging from it and dropping to the VBIAS_x row, which runs
+  east past R_VBIAS_BOT and C_VBIAS (both rising to the band's GND row) into U18's +IN.
+- The upper band's 5V_A row runs east past U18C's V+, C80 and C81 to 5V_A's label (pointing east); its
+  GND row east past U18C's V-, C80 and C81 to a vertical down the east edge to the lower band's GND row,
+  which ends at GND's label (pointing east). A vertical down the west edge joins the two 5V_A rows.
+- The VBIAS nets carry copperhead's purple, the ADC nets its blue; 5V_A, GND, VINx and IN_FOLLOW_x the
+  default.
+- The horizontal parts' fields above them, C_FA's below its loop; the vertical parts' east of their
+  bodies; U18A's and U18B's centred above the body; U18C's east of its body.
+- Renders: the first had U18C's fields over C80; C80, C81, the east GND vertical and both rail labels
+  moved 400 mil east.
