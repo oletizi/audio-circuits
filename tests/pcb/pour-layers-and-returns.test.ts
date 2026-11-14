@@ -40,9 +40,9 @@ test("the narrowest neck is the narrowest over the layers, and each layer keeps 
 test("continuity is read per layer and not folded: a slot across the loop on F.Cu is not covered by a solid B.Cu", () => {
   const metrics = measure(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "B.Cu": [RECTANGLE] } }))
   const loops = valueOf(metrics.continuityAroundIc)
-  expect(loops.get("F.Cu")?.best.breaksMm.length).toBe(2)
-  near(loops.get("F.Cu")?.best.uncoveredMm, 1.98, 0.1)
-  expect(loops.get("B.Cu")?.best.coveredFraction).toBe(1)
+  expect(loops.get("F.Cu")?.leastUncovered.breaksMm.length).toBe(2)
+  near(loops.get("F.Cu")?.leastUncovered.uncoveredMm, 1.98, 0.1)
+  expect(loops.get("B.Cu")?.leastUncovered.coveredFraction).toBe(1)
   // Each layer's figures come from that layer's own polygons.
   expect(metrics.regionsByLayer.get("F.Cu")).toBe(2)
   expect(metrics.regionsByLayer.get("B.Cu")).toBe(1)
@@ -81,7 +81,7 @@ test("a ground via in the pad is its own fact: via, which is neither pour nor tr
   const metrics = measure(splitWith(undefined, [via]))
   expect(valueOf(metrics.bypassReturn).byCap.get("C1")).toBe("via")
   // And it did not silence the other figures, which the refusal it replaces did.
-  expect(valueOf(metrics.continuityAroundIc).get("F.Cu")?.best.breaksMm.length).toBe(2)
+  expect(valueOf(metrics.continuityAroundIc).get("F.Cu")?.leastUncovered.breaksMm.length).toBe(2)
   expect(valueOf(metrics.spokesByGroundPad).size).toBe(2)
   // A via that is not in the pad is not its return.
   const away = '\t(via (at 20 5) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))'

@@ -72,20 +72,46 @@ function filledCopy(config: Configuration): string {
 function expectWholeOnBothLayers(board: string): void {
   const loops = valueOf(measurePour(board, PT2399_CORE).continuityAroundIc)
   for (const layer of ["F.Cu", "B.Cu"]) {
-    expect(loops.get(layer)?.best.coveredFraction).toBe(1)
-    expect(loops.get(layer)?.best.breaksMm).toEqual([])
+    expect(loops.get(layer)?.leastUncovered.coveredFraction).toBe(1)
+    expect(loops.get(layer)?.leastUncovered.breaksMm).toEqual([])
   }
 }
 
-test("the profile on an unbroken full-board pour has the plateau the headline is taken from, and the pad extent itself is far from it", () => {
+test("the profile on an unbroken full-board pour has the plateau the least-uncovered loop is taken from, and the pad extent itself is far from it", () => {
   const loops = valueOf(measurePour(filledCopy({}), PT2399_CORE).continuityAroundIc).get("F.Cu")
   if (loops === undefined) throw new Error("no F.Cu reading")
-  expect(loops.best.coveredFraction).toBe(1)
+  expect(loops.leastUncovered.coveredFraction).toBe(1)
   // The loop at the pad extent is inside U1's own sixteen pad voids; the plateau starts further out.
   expect(loops.profile[0]?.coveredFraction).toBeLessThan(0.5)
   const whole = loops.profile.filter((l) => l.coveredFraction === 1).map((l) => l.offsetMm)
-  expect(whole.length).toBeGreaterThanOrEqual(4)
-  expect(whole).toContain(1.5)
+  // Whole from 0.75 mm to 2.75 mm out, and not at 3.0: the plateau is nine loops wide and the band's last loop is off it.
+  expect(whole).toEqual([0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75])
+  expect(loops.profile[loops.profile.length - 1]?.coveredFraction).toBeLessThan(1)
+})
+
+test("a slot that dead-ends 2 mm short of the IC leaves the least-uncovered loop whole, and the profile shows it from 2.25 mm out", () => {
+  // A 0.3 mm copper-pour keepout from the left to x = 82.2; U1's pad extent starts at x = 84.195, so the slot ends 2.0 mm short.
+  const slot = [
+    "\t(zone",
+    "\t\t(net 0)",
+    '\t\t(net_name "")',
+    '\t\t(layers "F.Cu" "B.Cu")',
+    '\t\t(uuid "cccccccc-0000-4000-8000-000000000001")',
+    '\t\t(name "dead_end_slot")',
+    "\t\t(hatch edge 0.5)",
+    "\t\t(connect_pads (clearance 0))",
+    "\t\t(min_thickness 0.25)",
+    "\t\t(keepout (tracks allowed) (vias allowed) (pads allowed) (copperpour not_allowed) (footprints allowed))",
+    '\t\t(placement (enabled no) (sheetname ""))',
+    "\t\t(polygon (pts (xy 20 68) (xy 82.2 68) (xy 82.2 68.3) (xy 20 68.3)))",
+    "\t)",
+  ].join("\n")
+  const loops = valueOf(measurePour(filledCopy({ extraZones: [slot] }), PT2399_CORE).continuityAroundIc).get("F.Cu")
+  if (loops === undefined) throw new Error("no F.Cu reading")
+  expect(loops.leastUncovered.uncoveredMm).toBe(0)
+  expect(loops.leastUncovered.breaksMm).toEqual([])
+  const beyond = loops.profile.filter((l) => l.offsetMm >= 2.25 && l.offsetMm <= 2.75)
+  for (const loop of beyond) expect(loop.uncoveredMm).toBeGreaterThan(0.2)
 })
 
 test("a second ground zone on the layer declaring no clearance does not move the figure", () => {

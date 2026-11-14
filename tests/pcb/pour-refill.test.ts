@@ -141,8 +141,8 @@ test("the real board with an unbroken full-board pour reads full coverage round 
   const metrics = measurePour(board, PT2399_CORE)
   const loops = valueOf(metrics.continuityAroundIc)
   for (const layer of ["F.Cu", "B.Cu"]) {
-    expect(loops.get(layer)?.best.coveredFraction).toBe(1)
-    expect(loops.get(layer)?.best.breaksMm).toEqual([])
+    expect(loops.get(layer)?.leastUncovered.coveredFraction).toBe(1)
+    expect(loops.get(layer)?.leastUncovered.breaksMm).toEqual([])
     expect(metrics.regionsByLayer.get(layer)).toBe(1)
   }
   expect(metrics.narrowestBridgeMm.kind).toBe("unavailable")

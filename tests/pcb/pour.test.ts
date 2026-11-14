@@ -211,12 +211,12 @@ test("a board with no U1, no through-hole ground pad or no bypass capacitor stil
 
   const noCap = measure(fixtureBoard({ ...GOOD, refs: { c1: "X1" } }))
   expect(reasonOf(noCap.bypassReturn)).toContain("bypass")
-  expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.best.coveredFraction).toBe(1)
+  expect(valueOf(noCap.continuityAroundIc).get("F.Cu")?.leastUncovered.coveredFraction).toBe(1)
 
   // A surface-mount build: no through-hole ground pad, and all the other figures stand.
   const smd = measure(fixtureBoard({ ...GOOD, padType: "smd" }))
   expect(reasonOf(smd.spokesByGroundPad)).toContain("through-hole")
-  expect(valueOf(smd.continuityAroundIc).get("F.Cu")?.best.coveredFraction).toBe(1)
+  expect(valueOf(smd.continuityAroundIc).get("F.Cu")?.leastUncovered.coveredFraction).toBe(1)
   expect(smd.regionsByLayer.get("F.Cu")).toBe(1)
 })
 

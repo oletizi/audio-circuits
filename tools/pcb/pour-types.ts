@@ -81,8 +81,8 @@ export interface LoopAtOffset {
 }
 
 /**
- * THE CONTINUITY FIGURE FOR ONE LAYER: a band of loops, and the one that shows the
- * most ground.
+ * THE CONTINUITY FIGURE FOR ONE LAYER: a band of loops, and the one with the least
+ * of the way round uncovered.
  *
  * **IT DOES NOT PREDICT WHERE THE POUR'S VOIDS WILL BE.** An earlier version placed
  * a single loop from the clearances the project declares, and the set of things that
@@ -93,12 +93,16 @@ export interface LoopAtOffset {
  * three different sources). A loop too far OUT is as wrong as one too near: it walks
  * off the pour into other parts' voids. So this measures the fill instead of
  * guessing at it: loops are walked from the pad extent outward in `bandMm` steps,
- * every one is reported in `profile`, and `best` is the one with the least of the
- * way round uncovered (ties to the nearest). A real break in the ground depresses
- * the whole band; the IC's own voids depress only its inner part.
+ * every one is reported in `profile`, and `leastUncovered` is the one with the least
+ * of the way round uncovered (ties to the nearest). A break that spans the whole band
+ * depresses every loop; the IC's own voids depress only its inner part; and a FINITE
+ * break - a slot that dead-ends short of the IC - depresses only the loops beyond its
+ * end, so `leastUncovered` can be whole while the profile shows the break.
  *
- * `best` is a DEFINITION of the headline and not a pass mark: it is the loop that
- * shows the most ground, and the profile it was chosen from is in the result.
+ * **`leastUncovered` IS NOT THE ANSWER TO "IS THE GROUND CONTINUOUS" ON ITS OWN, and
+ * is named for what it is - the loop with the least uncovered - so as not to read as
+ * a grade. Read it WITH the profile.** It is a definition of which loop is put first
+ * and not a pass mark.
  *
  * **KNOWN LIMITS, STATED WHERE THE NUMBER IS READ:** (1) a void belonging to a
  * NEIGHBOUR of the IC that reaches every loop in the band reads as a break. From the
@@ -110,7 +114,8 @@ export interface LoopAtOffset {
  */
 export interface LoopContinuity {
   readonly bandMm: { readonly fromMm: number; readonly toMm: number; readonly stepMm: number }
-  readonly best: LoopAtOffset
+  /** The loop with the least of the way round uncovered. Whole does not mean nothing is broken further out: see `profile`. */
+  readonly leastUncovered: LoopAtOffset
   readonly profile: readonly LoopAtOffset[]
 }
 

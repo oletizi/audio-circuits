@@ -78,7 +78,10 @@ function endpoints(track: GroundTrack): readonly Pt[] {
  * whose switching-on first made all the chain's pieces of fill one. A dead-end stub
  * hanging off a bridge never joins two pieces of fill, so it never sets the width:
  * two 0.5 mm tracks bridging two pieces still read 0.5 with a 0.2 mm stub off the
- * shared endpoint, where "the narrowest track in the chain" read 0.2.
+ * shared endpoint, where "the narrowest track in the chain" read 0.2. And two
+ * parallel tracks from a shared endpoint that each bridge the same two pieces read
+ * the WIDER one (1.0 mm and 0.2 mm read 1.0): it read 0.2 until a reviewer's
+ * question was built as a test, because the merge took the narrower branch's width.
  */
 export function regionJoins(pour: GroundPour, tracks: readonly GroundTrack[]): readonly RegionJoin[] {
   const joins: RegionJoin[] = []
@@ -113,13 +116,24 @@ export function regionJoins(pour: GroundPour, tracks: readonly GroundTrack[]): r
         const [ra, rb] = [find(i), find(j)]
         const [fa, fb] = [fill[ra] ?? new Set<number>(), fill[rb] ?? new Set<number>()]
         const union = new Set([...fa, ...fb])
-        // This track is what first joins pieces of fill that neither side joined alone: that is the width.
-        const event = union.size > fa.size && union.size > fb.size
-        const carried = bottleneck.get(ra) ?? bottleneck.get(rb)
-        parent[ra] = rb
-        fill[rb] = union
-        const width = event ? track.widthMm : carried
-        if (width !== undefined) bottleneck.set(rb, width)
+        const [wa, wb] = [bottleneck.get(ra), bottleneck.get(rb)]
+        // Which pieces of fill each side already joins decides the width of the whole. (A set of two or more
+        // pieces always has a width, so a missing one means fewer than two pieces and nothing to carry.)
+        //  - the same pieces both ways (two parallel tracks from a shared endpoint): the WIDER way across, never the narrower;
+        //  - this side's pieces contain the other's: this side's width, the other joins nothing more;
+        //  - the other side's contain this one's: the surviving root keeps its own width;
+        //  - neither contains the other: this track is what first joins them, and that is the width.
+        //    (Tracks are switched on widest first, so this one is never wider than anything already joined: its width is the minimum.)
+        const survivor = rb
+        parent[ra] = survivor
+        fill[survivor] = union
+        if (union.size === fa.size && union.size === fb.size) {
+          if (wa !== undefined && wb !== undefined) bottleneck.set(survivor, Math.max(wa, wb))
+        } else if (union.size === fa.size) {
+          if (wa !== undefined) bottleneck.set(survivor, wa)
+        } else if (union.size !== fb.size) {
+          bottleneck.set(survivor, track.widthMm)
+        }
       }
     }
     for (const root of new Set(here.map((_, i) => find(i)))) {

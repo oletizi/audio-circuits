@@ -17,13 +17,20 @@
  *
  * **SO THIS READS THE FILL AND PREDICTS NOTHING.** Loops are walked from the pad
  * extent outward in fixed steps (`LOOP_BAND`), each is read against the saved
- * polygons, all are reported, and the headline is the loop with the least of the
- * way round uncovered, ties going to the nearest. Measured on the real board with
- * an unbroken plane the profile has a plateau at full coverage from 0.75 mm to
- * 2.5 mm out and falls away either side (0.35 at the pad extent itself, 0.89 and
- * 0.69 at 3.0 and 4.0 mm out, where the loop reaches other parts). A real break in
- * the ground cuts every loop in the band; the IC's own voids cut only the inner
- * ones. No clearance is read from anywhere, so no clearance can be the wrong one.
+ * polygons, all are reported, and the one put first is the loop with the least of the
+ * way round uncovered (`leastUncovered`), ties going to the nearest. Measured on the
+ * real board with an unbroken plane the profile has a plateau at full coverage from
+ * 0.75 mm to 2.5 mm out and falls away either side (0.35 at the pad extent itself,
+ * 0.89 and 0.69 at 3.0 and 4.0 mm out, where the loop reaches other parts). A break
+ * that spans the whole band cuts every loop in it; the IC's own voids cut only the
+ * inner ones; and A FINITE BREAK - a slot or void that dead-ends short of the IC -
+ * CUTS ONLY THE LOOPS BEYOND ITS END, so `leastUncovered` can read whole with a real
+ * break in the ground. Measured on the real board: a 0.3 mm keepout slot ending 2.0
+ * mm short of the pad extent leaves the least-uncovered loop at 1.0 with no break,
+ * while the profile reads 0.30 mm uncovered from 2.25 mm out. THE PROFILE IS WHERE
+ * THAT SHOWS, which is why it is in the result and why `leastUncovered` is not the
+ * answer to "is the ground continuous" on its own. No clearance is read from
+ * anywhere, so no clearance can be the wrong one.
  *
  * **THE BAND IS A CHOICE AND IS REPORTED** (`bandMm`). It runs from the pad extent
  * to 3 mm beyond it. A void of the IC's own reaching further than that is read as a
@@ -109,10 +116,12 @@ export function continuityAround(
       }
     })
     // Least of the way round uncovered; the strict `<` leaves a tie with the nearest loop.
-    let best = profile[0]
-    for (const loop of profile) if (best === undefined || loop.uncoveredMm < best.uncoveredMm - 1e-9) best = loop
-    if (best === undefined) throw new Error("the loop band is empty")
-    out.set(layer, { bandMm: LOOP_BAND, best, profile })
+    let leastUncovered = profile[0]
+    for (const loop of profile) {
+      if (leastUncovered === undefined || loop.uncoveredMm < leastUncovered.uncoveredMm - 1e-9) leastUncovered = loop
+    }
+    if (leastUncovered === undefined) throw new Error("the loop band is empty")
+    out.set(layer, { bandMm: LOOP_BAND, leastUncovered, profile })
   }
   return measured(out)
 }

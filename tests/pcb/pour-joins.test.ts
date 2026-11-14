@@ -102,6 +102,31 @@ test("a dead-end stub off a bridge does not narrow it: two 0.5 mm tracks bridgin
   expect(valueOf(thin.narrowestBridgeMm)).toBe(0.3)
 })
 
+test("a chain whose first track touches only one piece and whose second reaches the other reads the second's width", () => {
+  // The wide track stays in the left piece; the narrow one carries on across the slot. The pieces are joined at 0.4.
+  const chain: readonly TrackSpec[] = [
+    { from: [20, 10], to: [25, 10], layer: "F.Cu", width: 1.0 },
+    { from: [25, 10], to: [40, 10], layer: "F.Cu", width: 0.4 },
+  ]
+  for (const order of [chain, [...chain].reverse()]) {
+    expect(measure(board(order)).regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1], widthMm: 0.4 }])
+  }
+})
+
+test("two parallel tracks from a shared endpoint, each bridging both pieces, join them at the WIDER one: 1.0 mm and 0.2 mm read 1.0", () => {
+  // Both start at (20, 10) and both end in the right-hand piece, so they are one chain by their shared endpoint.
+  // Either alone joins the pieces; the width at which the pieces are joined is that of the better way across.
+  const parallel: readonly TrackSpec[] = [
+    { from: [20, 10], to: [40, 10], layer: "F.Cu", width: 1.0 },
+    { from: [20, 10], to: [40, 14], layer: "F.Cu", width: 0.2 },
+  ]
+  for (const order of [parallel, [...parallel].reverse()]) {
+    const metrics = measure(board(order))
+    expect(metrics.regionJoins).toEqual([{ layer: "F.Cu", polygons: [0, 1], widthMm: 1.0 }])
+    expect(valueOf(metrics.narrowestBridgeMm)).toBe(1.0)
+  }
+})
+
 test("a ground via in fill on two layers links the polygons it sits in; a via in one polygon links nothing", () => {
   const via = (x: number): string =>
     `\t(via (at ${x} 10) (size 0.8) (drill 0.4) (layers "F.Cu" "B.Cu") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))`

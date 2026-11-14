@@ -49,8 +49,9 @@
  *    (fraction, break lengths) and CONNECTEDNESS (electrical groups touched)
  *    side by side so that nobody has to define "continuity" (`./pour-types.ts`).
  *    It reads NO CLEARANCE from anywhere: it walks a band of loops out from the
- *    IC's pad extent and reports every one, with the one showing the most ground as
- *    the headline (`./pour-continuity.ts` says why). A clearance-placed loop moved
+ *    IC's pad extent and reports every one, with the one with the least uncovered
+ *    put first as `leastUncovered`, which is NOT the answer on its own - a finite
+ *    break shows only in the profile (`./pour-continuity.ts` says why). A clearance-placed loop moved
  *    with configuration and not with the pour, in both directions.
  *  - `narrowestBridgeMm` is a `Reading<number>` and means a join between regions;
  *    the fill's constriction is `narrowestNeckMm`.
