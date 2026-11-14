@@ -7,8 +7,8 @@ the measurement): a violation an exclusion matches is reported with `"excluded":
 exclusion that matches nothing is reported as a separate excluded marker while the real violation
 stays an error. So excluded entries are read here and held to the declared allowances
 (the board's `erc-allowances.ts`; the h7-module's is under ruling CR-MODULE-VCAP-ERC) by the exact match `erc_match.py` defines and
-`erc_sheets.py` shares - the sheet path, the type, and exactly the (designator, pin) pairs
-parsed from KiCad's items (two; one only for a one-item type, which `kicad-pro.ts` refuses on a root) - rather than trusting the project file.
+`erc_sheets.py` shares - the sheet path, the type, and exactly the two (designator, pin) pairs
+parsed from KiCad's items - rather than trusting the project file.
 
 EXIT STATUS. Non-zero when:
   - any violation that is NOT excluded has severity error (each is printed with its items);

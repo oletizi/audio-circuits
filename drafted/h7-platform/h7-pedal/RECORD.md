@@ -2360,9 +2360,12 @@ runs under them.
 ## codec: the PCM3060 in hardware mode (Task 9c)
 
 **Status: UNREVIEWED.** sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588`.
-Render: `codec.svg` beside it. **Its block sheet is not at 0 ERC errors**: two `pin_not_driven`
-errors, on U9's VINL and VINR, are excused by allowances under CR-PEDAL-CODEC-VIN-AWAITING-ERC, a
-ruling drafted by this task and **adopted by the controller as temporary, 2026-11-13 (d3e0e95); Task 10 removes it** (below).
+Render: `codec.svg` beside it. **Since Task 10 its block sheet is at 0 ERC errors and 0 warnings
+under its one-block root, with no allowance**: VINL and VINR, the two `pin_not_driven` errors this
+task had excused by one-item allowances under CR-PEDAL-CODEC-VIN-AWAITING-ERC (adopted by the
+controller as temporary, d3e0e95), are met by cross-page driver entries naming adc_drv's R_O, and the
+allowances are gone (CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED; "Task 10: VINL and VINR driven", at the
+end of this section). The sha256 is unchanged. The Task 9c text below is the record as it was then.
 
 The block: `circuits/h7-platform/pedal/codec.ts`, 13 parts. U9 (U_CODEC, PCM3060PWR,
 `h7-platform:PCM3060PW`) with C36 and C37 (C_VCC_HF 100 nF and C_VCC_BULK 10 uF, 5V_A_CODEC to GND),
@@ -2452,7 +2455,7 @@ every class 1 part.
   `output`) on the sai_iso page; each stand-in is a TestPoint. With them, three of the five errors are
   gone. On the codec_sup and sai_iso pages, which hold those drivers, the one-block root places no
   stand-in, and their `verify.sh` output is unchanged.
-- `erc-allowances.ts`: **two one-item allowances, CR-PEDAL-CODEC-VIN-AWAITING-ERC.** The other two
+- `erc-allowances.ts` (**removed at Task 10**; see the end of this section): **two one-item allowances, CR-PEDAL-CODEC-VIN-AWAITING-ERC.** The other two
   errors, `pin_not_driven` on U9's VINL (pin 25) and VINR (pin 26), have no driver in the model: what
   drives them is in the adc_drv block, which the model holds from Task 10 (`AWAITING_NETS`). A
   cross-page driver entry is held to the model, so cannot name one. Each error is admitted as an
@@ -2567,3 +2570,35 @@ Observations, not a judgement of the page:
   rectangle's bottom edge, and the east GND vertical well east of the labels; the capacitors were
   spread, R28 moved beside U9 rising to the west GND run, R33 and DOUT_CODEC's label moved west to the
   VOUT labels' column, the east vertical with them, and the note down.
+
+### Task 10: VINL and VINR driven, and the allowances removed
+
+Task 10 built `adc_drv`, so the model holds VINL's and VINR's drivers, and carried out
+[CR-PEDAL-CODEC-VIN-AWAITING-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc)'s
+Set by clause, recorded in
+[CR-PEDAL-CODEC-VIN-AWAITING-ERC-AMENDED](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc-amended).
+**No byte of this page changed.**
+
+- `cross-page-drivers.ts` gains VINL (adc_drv R107, `r_o_l`, pin 2) and VINR (adc_drv R112, `r_o_r`,
+  pin 2): R_O's end on the codec pin, passive, so each stand-in is a TestPoint. The driver check now
+  resolves a resistor's `b` to `Device:R` pin 2 through PIN_NUMBERS, and takes an empty `pinName` for
+  the symbol's unnamed pin; both mechanisms await the controller in that amendment.
+- `erc-allowances.ts` holds the expr_ref entry alone. The one-item support is deleted from
+  `draughting/pages/erc-allowances.ts`, `erc_match.py`, `erc_sheets.py`, `root_erc.py` and
+  `kicad-pro.ts`, with `tests/draught/erc-allowances-one-item.test.ts` and the one-item case of
+  `tests/draught/kicad-pro-refusals.test.ts`.
+- `erc-control.sh` controls 11 to 14 are replaced by 11 to 13: the page at 0 errors with the two
+  stand-ins; with the driver table less VINL and VINR, `/codec/` at 2 errors, `pin_not_driven` on U9
+  pins 25 and 26 and nothing else; a VINL entry naming R107 pin 1 refused ("R107 pin 1 is on net
+  adc_drv_ADC_OUT_L in the model, not on VINL").
+
+Measured with `sh draughting/pages/verify.sh drafted/h7-platform/h7-pedal codec
+drafted/h7-platform/h7-pedal/codec.kicad_sch` at Task 10, against the Task 9c page column above:
+
+| measure | Task 9c | Task 10 |
+| --- | --- | --- |
+| sha256 | `1c17ed16...4c414588` | `1c17ed16...4c414588` (unchanged) |
+| stand-in drivers under the one-block root | 3V3_CODEC (PWR_FLAG), CODEC_RST_N, XO_OUT, DIN_CODEC | the same, and VINL (for adc_drv R107 pin 2), VINR (for adc_drv R112 pin 2) |
+| ERC under a one-block root, `/codec/` | 2 errors, both excused by CR-PEDAL-CODEC-VIN-AWAITING-ERC, 0 warnings | **0 errors, 0 warnings; no error excused by an allowance** |
+| ERC under a one-block root, `/` | 0 errors, 19 warnings (`isolated_pin_label` 18, `lib_symbol_issues` 1) | 0 errors, 15 warnings (`isolated_pin_label` 14: the stub and sheet labels of the seven one-pin ports with no stand-in; `lib_symbol_issues` 1) |
+| `verify.sh` exit | 0 | 0 |

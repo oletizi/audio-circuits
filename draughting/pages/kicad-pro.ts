@@ -85,17 +85,9 @@ function pinPointMil(pinsFile: string, designator: string, pin: string): readonl
 export function exclusionKey(entry: ErcAllowance, projectDir: string, board: string, repairDir: string): string {
   const block = /^\/([^/]+)\/$/.exec(entry.sheet)?.[1]
   if (block === undefined) throw new Error(`kicad-pro.ts: allowance sheet ${entry.sheet} is not /<block>/`)
-  // The two refusals come before any file is read: neither depends on the root or the block sheet,
-  // so each refuses by name with no project on disk (tests/draught/kicad-pro-refusals.test.ts).
+  // The refusal comes before any file is read: it does not depend on the root or the block sheet,
+  // so it refuses by name with no project on disk (tests/draught/kicad-pro-refusals.test.ts).
   const [main, aux] = entry.pins
-  if (aux === undefined) {
-    throw new Error(
-      `kicad-pro.ts: allowance ${entry.ruling} (${entry.type} on ${entry.sheet}) names one pin, ${main.designator} pin ${main.pin}. ` +
-        "A one-item allowance stands in for a driver on a block the model does not hold yet (h7 pedal Task 9c, ruling " +
-        "CR-PEDAL-CODEC-VIN-AWAITING-ERC); a board root is assembled once every block is built, so the driver is on it and " +
-        "the allowance must be deleted, not excluded. Not implemented: a one-item exclusion key.",
-    )
-  }
   if (main.designator === FLAG_PARTNER || aux.designator === FLAG_PARTNER) {
     throw new Error(
       `kicad-pro.ts: allowance ${entry.ruling} (${entry.type} on ${entry.sheet}) names a ${FLAG_PARTNER} partner, whose ` +

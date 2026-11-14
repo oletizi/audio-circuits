@@ -21,11 +21,10 @@ failure names the symbol and pin, and a control can require it.
 
 DECLARED ALLOWANCES (the third argument, the JSON `erc-allowances.ts` writes after checking each
 entry against the model). An error is excused ONLY on an exact match, `erc_match.py`'s rule, which
-`root_erc.py` shares: the same sheet path, the same violation type, and exactly the items whose
+`root_erc.py` shares: the same sheet path, the same violation type, and exactly two items whose
 (designator, pin number), parsed from KiCad's "Symbol <ref> Pin <number> [...]" item, are the
-allowance's two pairs (one, for a type KiCad reports with one item: `erc-allowances.ts`,
-ONE_ITEM_TYPES). Never on free text alone, never on the type alone. ONE ALLOWANCE EXCUSES AT MOST
-ONE VIOLATION: a second match (the same pair reported twice, say by a sheet instantiated
+allowance's two pairs. Never on free text alone, never on the type alone. ONE ALLOWANCE EXCUSES AT
+MOST ONE VIOLATION: a second match (the same pair reported twice, say by a sheet instantiated
 twice) fails the run (Task 7d review M4). Each excused violation is printed on a line starting
 `excused:` with its ruling; verify.sh repeats those lines in its closing output. An allowance whose
 sheet is in the report and which matched nothing is printed on a line starting `stale allowance:`,

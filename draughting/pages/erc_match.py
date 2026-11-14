@@ -4,11 +4,10 @@ and `root_erc.py` (the module root, every sheet) both import it, so the per-page
 verdicts cannot disagree on what an allowance excuses (H7 module plan, final review M6).
 
 A violation matches an allowance ONLY when all of these hold: it is on the allowance's sheet path, it
-is of the allowance's violation type, and its items are exactly the allowance's (designator, pin
-number) pairs, each parsed from KiCad's "Symbol <ref> Pin <number> [...]" item: two, or one for a
-type KiCad reports with one item (`erc-allowances.ts`, ONE_ITEM_TYPES, which refuses any other count;
-h7 pedal Task 9c). An item that is not a symbol pin, an extra item, or a missing one, never
-matches. Never a match on free text alone, and never on the type alone.
+is of the allowance's violation type, and its items are exactly the allowance's two (designator, pin
+number) pairs, each parsed from KiCad's "Symbol <ref> Pin <number> [...]" item. An item that is not
+a symbol pin, a third item, or a missing one, never matches. Never a match on free text alone, and
+never on the type alone.
 
 How many violations one allowance may excuse is each caller's to enforce, and both enforce one:
 `erc_sheets.py` fails an allowance matched more than once (zero is reported as stale and passes,
@@ -43,7 +42,7 @@ def pin_pairs(violation):
 
 
 def allowance_pairs(allowance):
-    """The allowance's (designator, pin) pairs, sorted: two, or one for a one-item type."""
+    """The allowance's two (designator, pin) pairs, sorted."""
     return sorted((p["designator"], p["pin"]) for p in allowance["pins"])
 
 
@@ -52,8 +51,7 @@ def matches(allowance, path, violation):
     if allowance["sheet"] != path or allowance["type"] != violation["type"]:
         return False
     got = pin_pairs(violation)
-    want = allowance_pairs(allowance)
-    return got is not None and len(want) in (1, 2) and len(got) == len(want) and got == want
+    return got is not None and len(got) == 2 and got == allowance_pairs(allowance)
 
 
 def items_text(violation):
