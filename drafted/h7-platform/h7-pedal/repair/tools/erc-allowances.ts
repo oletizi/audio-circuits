@@ -34,7 +34,11 @@
  * On the assembled root, `kicad-cli sch erc` reported exactly one error that no other entry covers,
  * `label_dangling` on `/`, "Label 'MIDI_PIN4'", the stub label of midi_i2c's MIDI_PIN4 sheet pin. Its
  * twin MIDI_PIN5 and the five SPARE nets (SOCKET_ONLY_NETS) are reported as `isolated_pin_label`, a
- * warning, and need no entry. The expr_ref entry is keyed in the root's `.kicad_pro` with the GND
+ * warning, and need no entry. The difference is the pin count of the net on its page (diagnosed by the
+ * Task 11b review, re-measured at its fix round 1): kicad-cli 10.0.5 reports a root stub label that
+ * meets no other sheet as `label_dangling` when its net has two or more pins (MIDI_PIN4: R88 to R91)
+ * and `isolated_pin_label` when it has one (MIDI_PIN5: R92; each SPARE: its socket pad); with R89 to
+ * R91 removed in a scratch copy, MIDI_PIN4's became the warning too. The expr_ref entry is keyed in the root's `.kicad_pro` with the GND
  * flag's uuid on the root (`draughting/pages/kicad-pro.ts`, Task 11b).
  *
  * DATA ONLY. How narrowly an allowance matches, and the model check every entry is held to, are

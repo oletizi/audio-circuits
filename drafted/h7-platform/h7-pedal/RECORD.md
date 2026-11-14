@@ -3322,18 +3322,34 @@ value read from the committed root and block sheets:
 - **CR-PEDAL-ROOT-MIDI-PIN4-ERC**, `label_dangling` on `/`, "Label 'MIDI_PIN4'", midi_i2c's MIDI_PIN4
   stub: the net leads to the MIDI connector, which is not drawn (CR-PEDAL-MIDI). It is a root label
   allowance, a form the shared tools gained at this task: one item, a root stub label, held to the
-  model as a board port bound to one block.
+  model as a board port bound to one block. Since fix round 1 (review I1) `kicad-pro.ts` keys it only
+  while the label stands at the stub point `assemble-root.ts` writes, and `verify-root.sh` requires
+  the `.kicad_pro` to be what `kicad-pro.ts` writes from the project.
+
+The key forms' negative results (the ST key's aux path and uuid variants; the label key's 27 path
+combinations, of which kicad-cli honours 7) are re-run by `repair/tools/exclusion_key_probe.py`,
+which exits non-zero on any result that differs from its record; all 31 came out as recorded at fix
+round 1.
 
 `root_erc.py` matches each excluded violation to exactly one allowance and fails on any other error.
 Controls (`root-control.sh`, each came out as stated): without the ST exclusion the run fails on U12
 pin 5 and #FLG03 and on the count; with the flag's uuid in the key replaced by the nil uuid, the error
 stays; without the MIDI_PIN4 exclusion it fails on that label; with the label key's x one unit off,
-the error stays; the root's six flags removed fails, naming each net.
+the error stays; the root's six flags removed fails, naming each net; MIDI_PIN4's root label moved
+5.08 mm off its stub is refused by `kicad-pro.ts`, naming the point found and the stub point, and
+`verify-root.sh`, with the exclusion keyed at the moved point (as the review measured it passing
+before the fix), fails on `kicad-pro` (control 8).
 
 **MIDI_PIN5 and the five SPARE nets** are reported as `isolated_pin_label`, a warning, each twice (its
-root stub label and its block page's hierarchical label): 12 warnings, no error, so no allowance. Why
-MIDI_PIN4 (four RA pins on its net) draws the error and MIDI_PIN5 (R92's one pin) the warning is not
-diagnosed.
+root stub label and its block page's hierarchical label): 12 warnings, no error, so no allowance.
+**Why MIDI_PIN4 draws the error and MIDI_PIN5 the warning is the pin count of the net on its page**
+(diagnosed by the Task 11b review; re-measured at fix round 1 with its `midi_probe2.py` on scratch
+copies, the MIDI exclusion removed): midi_i2c as committed (R88 to R91 pin 2, four pins) gives
+`label_dangling`; R90 and R91 removed (two pins), `label_dangling`; R89 to R91 removed (R88 alone),
+`isolated_pin_label` on the root label and the hierarchical label, as MIDI_PIN5 (R92 alone) and the
+SPAREs (one pad each) show. kicad-cli 10.0.5 reports a root stub label meeting no other sheet as
+`label_dangling` when its net has two or more pins and `isolated_pin_label` when it has one, so any
+one-block board port with two or more pins draws the error on such a root.
 
 ### Measurements
 

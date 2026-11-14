@@ -30,8 +30,9 @@
  * A ROOT LABEL ALLOWANCE (`RootLabelAllowance`; h7 pedal Task 11b). The one item is the stub label on
  * the root: `<type>|<x>|<y>|<label uuid>|<nil uuid>|/<root uuid>||`, x, y at the label's point.
  * MEASURED on the pedal root (kicad-cli 10.0.5), MIDI_PIN4's `label_dangling`, trying every
- * combination of "", "/" and `/<root uuid>` in the three path fields: honoured only with `/<root
- * uuid>` as the sheet path and the main item path empty (or "/"); this writes the empty form. The
+ * combination of "", "/" and `/<root uuid>` in the three path fields: honoured in 7 of 27, each with
+ * `/<root uuid>` as the sheet path, and the main item path "" or "/" (or `/<root uuid>` with the aux
+ * path "/", which is not understood); this writes `/<root uuid>||`. The
  * label must stand at its stub's end, the point `assemble-root.ts` writes for it; a label of that
  * text anywhere else is refused, since it would dangle for another reason (Task 11b review I1).
  * The key forms' negative results are re-run by the pedal's
