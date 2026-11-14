@@ -22,12 +22,28 @@
  *     than merely detectable - and `make grade-pt2399-core` is the documented
  *     grading path for that reason.
  *
- * **WHAT REMAINS UNGUARDED, said plainly rather than implied:** running
- * `check_floorplan.py` by hand against a resolved file nobody re-resolved. The
- * digest makes that checkable - `bun tools/pcb/grade-cli.ts` is one command and
- * `verifyResolvedIntent` is exported for anyone driving the engine themselves -
- * but nothing can stop a hand-run of a third-party tool, and this file does not
- * pretend to.
+ * **WHAT REMAINS UNGUARDED, and it is TWO paths rather than the one this
+ * paragraph used to name.**
+ *
+ *  1. Running `check_floorplan.py` by hand against a resolved file nobody
+ *     re-resolved. The digest makes that checkable - this CLI is one command
+ *     and `verifyResolvedIntent` is exported for anyone driving the engine
+ *     themselves - but nothing can stop a hand-run of a third-party tool.
+ *  2. **THE SEEDER CONSUMES THE SAME FILE AND NOTHING BINDS THAT PATH.**
+ *     `place_seed.py --intent <resolved>` places parts against the zone rects
+ *     in that file, so a stale one seeds against the OLD rectangle. There is no
+ *     `seed-cli.ts` to put the check in, because seeding is not a make target
+ *     here - `make/pcb.mk` says which step that is and why.
+ *
+ * **The two are not equally bad, and the difference is worth stating rather
+ * than flattening:** a stale GRADE can report a pass, which is the silent
+ * failure this whole construct is about. A stale SEED produces a placement
+ * aimed at the wrong rectangle, and the next `make grade-pt2399-core`
+ * re-resolves and grades it against the right one - so the error SURFACES as a
+ * failing grade instead of passing. Still worth running
+ * `verifyResolvedIntent` before a hand seed, and the reason it is only
+ * mentioned here rather than enforced is that there is no chokepoint to enforce
+ * it at.
  */
 import fs from "node:fs"
 import path from "node:path"

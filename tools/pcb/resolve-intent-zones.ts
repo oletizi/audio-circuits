@@ -133,11 +133,16 @@ interface Record_ {
 /**
  * The board size an intent DECLARES, or `undefined` when it declares none.
  *
- * `undefined` is not a default and not a pass: `resolveIntentZones` says in its
- * console output that the size went unchecked, and
+ * `undefined` is not a default and not a pass: `./resolved-intent.ts`'s CLI says
+ * out loud that the size went unchecked, and
  * `tests/pcb/resolve-intent-zones.test.ts` pins that the APPROVED intent carries
  * `[150, 100]` - so this key disappearing is a red test rather than a guard
  * quietly switching itself off.
+ *
+ * **THIS SAID `resolveIntentZones` PRINTS IT, AND IT DOES NOT.** That console
+ * output moved to `./resolved-intent.ts` when the CLI moved there, so the
+ * sentence named a function that prints nothing. See that file's `note` field
+ * for the same class of defect and the reason both happened in one change.
  *
  * A `rect` here is REFUSED, by the same argument the approved file makes for
  * declaring a size: a rect carries an origin, an origin is a board coordinate,

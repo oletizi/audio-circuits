@@ -87,35 +87,73 @@ drc-pt2399-core: courtyard-rule-pt2399-core
 # floorplan-intent.json says why it declares a SIZE and not a rect. The resolver
 # compares the size and ignores the origin.
 #
-# SEEDING AND GRADING ARE NOT TARGETS HERE. They need the pinned engine's venv
-# with PYTHONHOME/PYTHONPATH stripped, which is make/krt.mk's business and a
-# later task's to wire up; build/krt/invocations.json records the command
-# shapes. The two that settled this board, run from .tools/krt:
+# GRADING IS A TARGET: `grade-pt2399-core` below, and it is the one to use.
+# SEEDING is not, and needs the pinned engine's venv by hand.
+#
+# THIS COMMENT SAID "SEEDING AND GRADING ARE NOT TARGETS HERE ... a later task's
+# to wire up" WHILE grade-pt2399-core WAS DEFINED FIFTY LINES BELOW IT, added in
+# the same change that wrote the sentence. The stale half is not the problem;
+# where it sent the reader is. It handed them a raw `check_floorplan.py --intent
+# <resolved>` line, which BYPASSES the board binding - so after the outline
+# changed, someone following this file's own documentation would grade the new
+# board against whatever resolved intent was sitting in
+# build/pcb/pt2399-core/, which is exactly where both resolve-pt2399-core and
+# grade-cli.ts write one. The old zone rect and the old keepout circles would
+# then grade the new board and could report a pass. The guard that makes that
+# unreachable was already here and this comment denied it existed.
+#
+# THE STEP ORDER, which the rest of this block left to be inferred:
+#
+#   1. geometry-pt2399-core        the outline, then the four holes
+#   2. resolve-pt2399-core         the rects, the edge and the keepouts, from
+#                                  that outline, stamped with the board's sha256
+#   3. place_seed.py               the placement, against that resolved intent
+#   4. grade-pt2399-core           re-resolves and grades (do NOT skip to the
+#                                  raw grader: see above)
+#
+# Step 3 is the only one without a target, run from .tools/krt with
+# PYTHONHOME/PYTHONPATH unset (build/krt/invocations.json records the shapes):
 #
 #   .venv/bin/python py_placer/place_seed.py <in> <out> --intent <resolved> \
 #       --force --clearance 2.0 --seed 1
-#   .venv/bin/python py_tools/check_floorplan.py <board> --intent <resolved> \
-#       --require-rules 1
 #
-# THE SEED STEP'S INPUT MUST BE A BOARD WITH NO PLACEMENT LOCKS, and the
-# committed board is not one. The seeder STAMPS `(locked yes)` on the intent's
-# must_lock refs, so the committed board carries a lock on J1 (plus the four
-# holes, which this tool writes locked on purpose) - and `seed_from_intent`
-# treats a file-locked ref as ALREADY PLACED, so re-seeding from the committed
-# board leaves J1 wherever it is instead of seating it on its edge, and the
-# whole packing comes out different. Measured: seeding from the committed board
-# gives hpwl 525.433 and a decap_distance failure, while seeding from the
-# pre-placement board gives the committed hpwl 532.594 and a clean grade. This
-# task's reviewer hit it independently. The board to start from is one that has
-# never been seeded - `make update-pt2399-core` on the empty fixture produces
-# one, and so does `git show <pre-placement commit>:<board>`.
+# AND ITS INPUT MUST BE A BOARD WITH NO PLACEMENT LOCKS, which the committed
+# board is not. The seeder STAMPS `(locked yes)` on the intent's must_lock refs,
+# so the committed board carries a lock on J1 (plus the four holes, which the
+# geometry step writes locked on purpose) - and `seed_from_intent` treats a
+# file-locked ref as ALREADY PLACED, so re-seeding from the committed board
+# leaves J1 wherever it is instead of seating it on its edge and the whole
+# packing comes out different. Measured: from the committed board, hpwl 525.433
+# and a decap_distance failure; from the pre-placement board, the committed hpwl
+# 532.594 and a clean grade. The pinned engine does not converge on its own
+# output, and that is its property rather than something this repository can fix.
 #
-# geometry-pt2399-core above is NOT affected: it rewrites only the outline and
-# the holes, is byte-idempotent against the committed board, and
+# THE STARTING BOARD IS b926f69's, and that sha is pinned here rather than left
+# as `<pre-placement commit>`:
+#
+#   git show b926f69:circuits/pt2399-core/pt2399-core.kicad_pcb > $(PT2399_BOARD)
+#
+# It is the last commit before the placement was settled, it carries 0 locks
+# against the committed board's 5 (measured), and both this task's reviewers
+# regenerated the delivered board from it byte-identically modulo uuids. The
+# placeholder was the whole defect: b926f69 appeared NOWHERE in the repository -
+# its only copy was in gitignored .superpowers/, which this project's own rule
+# says is "destroyed by `git clean -fdx`" - so the documented route named a
+# commit nobody could find.
+#
+# `make update-pt2399-core` on the empty fixture ALSO produces a board with no
+# locks, and it is NOT offered as equivalent, because nothing here establishes
+# that it reproduces the board the adopted seed was computed from.
+# tests/pcb/empty-board-fixture.test.ts is the authority on that fixture's
+# provenance and says nothing about re-running the update. Use it if you want a
+# fresh board; use the sha if you want THIS one.
+#
+# geometry-pt2399-core above is NOT affected by any of this: it rewrites only the
+# outline and the holes, is byte-idempotent against the committed board, and
 # tests/pcb/mounting-hole-placement.test.ts pins that.
 #
-# where <resolved> is written by resolve-pt2399-core below. place_seed exits 4
-# on this board and the board is still correct: its internal grade takes
+# AND place_seed EXITS 4 on this board while the board is still correct: its
+# internal grade takes
 # `margin = max(clearance, board_edge_clearance)`, so --clearance 2.0 also
 # becomes a 2.0 mm board-edge margin, and the four mounting-hole courtyards sit
 # 0.5 mm from the edge BY THE APPROVED RULE. check_floorplan grades at the

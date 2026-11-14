@@ -95,6 +95,27 @@ export interface ResolvedAgainst {
 }
 
 /**
+ * **A POINTER WRITTEN WHILE MOVING CODE IS THE ONE THAT ROTS, and both of this
+ * module's did.** The `note` below said `verifyResolvedIntent` was in
+ * `resolve-intent-zones.ts`, and that file's docstring said `resolveIntentZones`
+ * printed the unchecked-size line. Both sentences were TRUE where they were
+ * written and both were moved verbatim into their new home - which is exactly
+ * the move that falsifies a self-reference, because a pointer to "this file"
+ * written as a path survives the cut while its subject does not. The round that
+ * introduced them was the round that FIXED the same class of defect two files
+ * over (`m6`), so care was not the missing ingredient.
+ *
+ * What would have caught them is not more care but a different kind of check:
+ * the first-round sweep verified that every path string RESOLVES TO A FILE, and
+ * both of these did - they named a real file, just not the right one. A pointer
+ * that is wrong about WHICH module is invisible to an existence check, and the
+ * cheap discipline is to re-read a moved block's own self-references as part of
+ * moving it rather than to trust that moved text is still true.
+ *
+ * AND THIS ONE SHIPPED INSIDE THE ARTIFACT: the `note` is written into every
+ * resolved intent, so the wrong pointer travelled to anyone reading a derived
+ * file, which is a place a later agent would reasonably trust.
+ *
  * The stamp lives at `context.resolved_against`, NOT at the top level, and the
  * engine is why: `check_floorplan.py` validates its intent schema strictly and
  * refuses an unknown top-level key -
@@ -115,7 +136,7 @@ function resolvedAgainst(boardPath: string, boardText: string, bounds: Bounds, s
       "The board this file was resolved against. Every zone rect, compass edge and keepout circle " +
       "below is derived from that outline, and the engine does not re-derive it - so a resolved " +
       "intent used against a different board would grade the wrong rectangle and report a pass. " +
-      "tools/pcb/resolve-intent-zones.ts's verifyResolvedIntent refuses that, and " +
+      "tools/pcb/resolved-intent.ts's verifyResolvedIntent refuses that, and " +
       "`make grade-pt2399-core` runs the resolve first so it cannot be skipped. Regenerate with " +
       "`make resolve-pt2399-core`; this file is derived and belongs under build/.",
   }
