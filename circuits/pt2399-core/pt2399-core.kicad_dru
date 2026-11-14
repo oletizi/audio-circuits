@@ -1,0 +1,7 @@
+(version 1)
+
+(rule "hand assembly courtyard clearance"
+	(constraint courtyard_clearance
+		(min 2mm))
+	(severity error)
+)

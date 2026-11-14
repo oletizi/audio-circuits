@@ -36,6 +36,7 @@
  * region a superset of the circle.
  */
 import fs from "node:fs"
+import { child, parseSexpr } from "../../lib/kicad/sexpr.ts"
 import { footprintInstanceForm } from "./footprint-instance.ts"
 import type { Bounds } from "./resolve-intent-zones.ts"
 
@@ -263,6 +264,8 @@ export function mountingFootprintForm(
     readonly y: number
     readonly uuid: string
     readonly locked: boolean
+    /** Move the Reference label to this y offset; see `inwardLabelOffsetY`. */
+    readonly referenceOffsetY?: number
     /**
      * KiCad's "Not in schematic" attribute. MEASURED in
      * `tests/pcb/mounting-envelope-drc.test.ts` on KiCad 10.0.5: a mounting
@@ -280,6 +283,184 @@ export function mountingFootprintForm(
     name: MOUNTING_FOOTPRINT,
     ...opts,
   })
+}
+
+/**
+ * The y offset of a footprint's `Reference` label, in the footprint's own frame.
+ *
+ * Needed because the stock mounting hole puts its label 4.15 mm ABOVE the
+ * origin, and a hole inset 4.0 mm from the top edge therefore has its label
+ * 0.15 mm off the board - measured, two `silk_edge_clearance` warnings,
+ * `Reference field of MH1` and `of MH2`. Read from the file rather than written
+ * down, because the whole point of deriving the footprint is that its numbers
+ * live in one place.
+ */
+export function referenceLabelOffsetY(libraryText: string, where: string): number {
+  const root = parseSexpr(libraryText)
+  const property = root.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")
+  if (property === undefined) throw new Error(`${where}: no (property "Reference" ...) form`)
+  const at = child(property, "at")
+  if (at === undefined) throw new Error(`${where}: the Reference property has no (at ...)`)
+  const y = Number(at.atoms[1])
+  if (!Number.isFinite(y)) throw new Error(`${where}: the Reference property's (at ...) y is not a number`)
+  return y
+}
+
+/**
+ * The Reference label's y offset turned TOWARD the board's interior - same
+ * distance from the hole, opposite side when the library's side points off the
+ * board.
+ *
+ * **WHAT THIS FIXES, measured on the settled board.** The stock label sits
+ * 4.15 mm ABOVE the origin. A hole inset 4.0 mm from the top edge therefore has
+ * its label 0.15 mm off the board, and `kicad-cli pcb drc` reports
+ * `silk_edge_clearance` - *"Silkscreen clipped by board edge"*, `Reference field
+ * of MH1` and `of MH2`. There is no library-level position that fixes it: the
+ * courtyard is 3.5 mm in radius at a 4.0 mm inset, so only 0.5 mm of board
+ * remains on the near side and which side is "near" depends on the corner.
+ *
+ * **AND WHY IT MOVES THE LABEL RATHER THAN ROTATING THE FOOTPRINT, which was
+ * tried first and measured worse.** A mounting hole is radially symmetric, so
+ * rotating it 180 degrees moves nothing but the text - an appealing fix. It
+ * trades two warnings for two others: KiCad then reports
+ * `lib_footprint_mismatch`, *"Footprint 'MountingHole_3.2mm_M3_Washer7.0mm'
+ * does not match copy in library 'pt2399-core'"*, on exactly the two rotated
+ * holes. Diffing the board forms showed the ROTATION to be their only
+ * difference from the unrotated pair, and a 180-degree `CP_Radial_D5.0mm_P2.00mm`
+ * on the same board draws no such warning - so the check is sensitive to
+ * rotation for an all-circles footprint, plausibly because a circle's `end`
+ * point is direction-bearing. Measured both ways: moving the label leaves ONE
+ * warning on the whole board (`silk_overlap` between C12's own reference and its
+ * own silkscreen, which the circuit placement produced and this does not touch);
+ * rotating leaves three. A field position is also the thing KiCad expects to
+ * differ from a library - the moved-label board draws no mismatch at all.
+ */
+export function inwardLabelOffsetY(hole: MountingHole, outline: Bounds, labelOffsetY: number): number {
+  if (labelOffsetY === 0) return 0
+  const inTopHalf = hole.y < (outline.y0 + outline.y1) / 2
+  // Toward the middle: positive (downward, in KiCad's sense) for a hole in the
+  // top half, negative for one in the bottom half.
+  return inTopHalf ? Math.abs(labelOffsetY) : -Math.abs(labelOffsetY)
+}
+
+/** A mounting hole found ON a board: its reference and where its origin sits. */
+export interface PlacedMountingHole {
+  readonly ref: string
+  readonly x: number
+  readonly y: number
+}
+
+/**
+ * Every footprint on the board whose pads are ALL copper-less drilled holes.
+ *
+ * THE SAME TEST THE ROUTING ENGINE USES, and deliberately so: its
+ * `placement/part_class.py` calls an npth-only pad set *"the strongest rule"*
+ * for classifying a mounting hole, ahead of matching the footprint's name. A
+ * name test here would miss a hole fitted from another library and would match
+ * a part merely called `MountingHole_something`.
+ */
+export function placedMountingHoles(boardText: string, where: string): readonly PlacedMountingHole[] {
+  const root = parseSexpr(boardText)
+  const out: PlacedMountingHole[] = []
+  for (const footprint of root.nodes.filter((n) => n.name === "footprint")) {
+    const pads = footprint.nodes.filter((n) => n.name === "pad")
+    if (pads.length === 0) continue
+    if (!pads.every((pad) => pad.atoms[1] === "np_thru_hole")) continue
+    const ref =
+      footprint.nodes.find((n) => n.name === "property" && n.atoms[0] === "Reference")?.atoms[1] ?? ""
+    if (ref === "") throw new Error(`${where}: a non-plated footprint carries no Reference property`)
+    const at = child(footprint, "at")
+    if (at === undefined) throw new Error(`${where}: mounting hole ${ref} has no (at ...)`)
+    out.push({ ref, x: Number(at.atoms[0]), y: Number(at.atoms[1]) })
+  }
+  return out
+}
+
+/** One keepout entry in the shape `placement/floorplan.py` parses. */
+export interface DerivedKeepout {
+  readonly name: string
+  /** `[x, y, radius]`, which is the engine's `circle` form. */
+  readonly circle: readonly [number, number, number]
+  readonly sides: readonly string[]
+  readonly allow: readonly string[]
+  readonly note: string
+}
+
+export interface DerivedHardware {
+  readonly keepouts: readonly DerivedKeepout[]
+  /** References to add to the intent's `must_lock` - only holes that EXIST on the board. */
+  readonly mustLock: readonly string[]
+  readonly holes: readonly MountingHole[]
+}
+
+/** How far a placed hole may sit from its derived centre before it is a different hole. */
+export const CENTRE_TOLERANCE_MM = 0.001
+
+/**
+ * The grader-side half of the mounting hardware: four keepout circles derived
+ * from the OUTLINE and the approved rule, plus the `must_lock` references of
+ * the holes actually on the board.
+ *
+ * **THE CIRCLES COME FROM THE OUTLINE, NOT FROM WHERE THE HOLES ARE.** That
+ * direction is the whole point. A keepout derived from a placed hole's position
+ * would follow the artifact: a hole placed in the wrong spot would get a
+ * keep-out around its wrong position and the grader would report a pass. So the
+ * circles are computed from the rule, and a hole that is NOT at a derived
+ * centre is a REFUSAL naming both positions.
+ *
+ * **AND EACH CIRCLE ALLOWS ITS OWN HOLE.** `rule_keepout` iterates every part
+ * on the board, mounting holes included, so a circle centred on a hole flags
+ * that hole unless its reference is in `allow`. That is the same
+ * rejects-its-own-mounting-hole defect the Rule Area had, in grader form.
+ */
+export function derivedHardware(
+  boardText: string,
+  boardWhere: string,
+  outline: Bounds,
+  rule: MountingHoleRule,
+): DerivedHardware {
+  const holes = mountingHoles(outline, rule)
+  const placed = placedMountingHoles(boardText, boardWhere)
+  const radius = rule.envelopeDiameterMm / 2
+
+  const keepouts: DerivedKeepout[] = []
+  const claimed = new Set<string>()
+  for (const hole of holes) {
+    const at = placed.filter(
+      (p) => Math.hypot(p.x - hole.x, p.y - hole.y) <= CENTRE_TOLERANCE_MM,
+    )
+    for (const match of at) claimed.add(match.ref)
+    keepouts.push({
+      name: `mounting_hole_${hole.corner}`,
+      circle: [hole.x, hole.y, radius],
+      sides: ["F", "B"],
+      allow: at.map((p) => p.ref),
+      note:
+        `The ${rule.envelopeDiameterMm} mm washer envelope at the ${hole.corner} corner, derived ` +
+        `from the board outline and placement-rules.json anchors.mounting_holes ` +
+        `(${rule.centreInsetMm} mm inset from both edges). ` +
+        (at.length === 0
+          ? "No mounting hole is placed here yet, so `allow` is empty."
+          : `\`allow\` names ${at.map((p) => p.ref).join(", ")} because rule_keepout iterates every ` +
+            "part on the board and a circle centred on a hole would otherwise flag that hole."),
+    })
+  }
+
+  const stray = placed.filter((p) => !claimed.has(p.ref))
+  if (stray.length > 0) {
+    throw new Error(
+      `${boardWhere} carries ${stray.length} non-plated mounting hole(s) that are NOT at a centre ` +
+        "this rule derives: " +
+        `${stray.map((p) => `${p.ref} at (${p.x}, ${p.y})`).join(", ")}. The derived centres are ` +
+        `${holes.map((h) => `${h.corner} (${h.x}, ${h.y})`).join(", ")}. ` +
+        "This refuses rather than deriving a keep-out around where the hole happens to be: a " +
+        "criterion computed from the artifact it grades always passes, and that inversion is the " +
+        "defect this whole construct exists to prevent. Move the hole, or change the approved " +
+        "rule - which is the owner's to change, not a tool's.",
+    )
+  }
+
+  return { keepouts, mustLock: placed.map((p) => p.ref).sort(), holes }
 }
 
 /** Reads the project-local library file, refusing a missing one rather than inlining a copy. */

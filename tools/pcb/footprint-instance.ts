@@ -51,6 +51,16 @@ export interface FootprintInstanceOptions {
    * this attribute fails `make parity-pt2399-core`.
    */
   readonly boardOnly: boolean
+  /**
+   * Move the `Reference` label to this y offset in the footprint's own frame,
+   * leaving its x and its angle alone.
+   *
+   * A per-INSTANCE silkscreen position, which is what KiCad expects to differ
+   * from a library copy: the moved-label board draws no `lib_footprint_mismatch`
+   * at all, while rotating the footprint to achieve the same thing does. See
+   * `./mounting-hardware.ts`'s `inwardLabelOffsetY` for the measurement.
+   */
+  readonly referenceOffsetY?: number
 }
 
 /** Children of a `.kicad_mod` root that describe the FILE rather than the part. */
@@ -95,6 +105,26 @@ export function footprintInstanceForm(
         )
       }
       body = body.replace('"REF**"', `"${opts.reference}"`)
+      if (opts.referenceOffsetY !== undefined) {
+        const at = /\(at\s+(-?[\d.]+)\s+-?[\d.]+(\s+-?[\d.]+)?\)/
+        // MATCHED, not compared against the result. An earlier version of this
+        // guard tested whether the replacement changed the text, which fires
+        // falsely for a hole whose inward offset already equals the library's -
+        // two of the four, every run.
+        if (!at.test(body)) {
+          throw new Error(
+            `${where}: the Reference property has no (at x y [angle]) form to move, so ` +
+              `referenceOffsetY ${String(opts.referenceOffsetY)} would have been silently ignored - ` +
+              "and a label left where it was is exactly the silkscreen clipped by the board edge " +
+              "that this option exists to prevent.",
+          )
+        }
+        body = body.replace(
+          at,
+          (_whole, x: string, angle: string | undefined) =>
+            `(at ${x} ${Number(opts.referenceOffsetY?.toFixed(4))}${angle ?? ""})`,
+        )
+      }
       sawReference = true
     }
     if (form.name === "attr") {

@@ -86,7 +86,7 @@
 	(footprint "Package_DIP:DIP-16_W7.62mm"
 		(layer "F.Cu")
 		(uuid "02dbf7cd-07bb-4209-93eb-858aa76963c0")
-		(at 95 65)
+		(at 85.000000 60.000000)
 		(descr "16-lead though-hole mounted DIP package, row spacing 7.62mm (300 mils)")
 		(tags "THT DIP DIL PDIP 2.54mm 7.62mm 300mil")
 		(property "Reference" "U1"
@@ -448,7 +448,7 @@
 	(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm"
 		(layer "F.Cu")
 		(uuid "088912fb-807e-4450-88ec-f88c4e5eeabe")
-		(at 35 20)
+		(at 81.000000 54.000000 180)
 		(descr "CP, Radial series, Radial, pin pitch=2.00mm, diameter=5mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.00mm diameter 5mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C2"
@@ -1765,7 +1765,7 @@
 			)
 		)
 		(pad "1" thru_hole roundrect
-			(at 0 0)
+			(at 0 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -1775,7 +1775,7 @@
 			(uuid "c58c0c96-4ef8-4194-b061-e84ca1d144b3")
 		)
 		(pad "2" thru_hole circle
-			(at 2 0)
+			(at 2 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -1799,7 +1799,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "0e21af75-f551-428b-aa40-7cb80359f9d8")
-		(at 20 65)
+		(at 96.600000 93.000000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R4"
@@ -1979,7 +1979,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "21cc143d-7dec-4d6e-945f-d55d42c93140")
-		(at 80 20)
+		(at 85.000000 82.800000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C5"
@@ -2148,7 +2148,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "273e379d-e48c-4e9a-bb06-50786f9bf393")
-		(at 95 35)
+		(at 107.000000 80.400000 270)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C12"
@@ -2284,7 +2284,7 @@
 			)
 		)
 		(pad "1" thru_hole circle
-			(at 0 0)
+			(at 0 0 270)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -2293,7 +2293,7 @@
 			(uuid "c92dadc8-e973-4ea2-b9a9-6cd0b422143c")
 		)
 		(pad "2" thru_hole circle
-			(at 2.5 0)
+			(at 2.5 0 270)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -2317,7 +2317,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "27dace03-1af2-43fb-8138-24070318a417")
-		(at 65 20)
+		(at 80.000000 81.200000 180)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C4"
@@ -2453,7 +2453,7 @@
 			)
 		)
 		(pad "1" thru_hole circle
-			(at 0 0)
+			(at 0 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -2462,7 +2462,7 @@
 			(uuid "d6f3eb57-ac0c-42ea-af30-bd2c3c60e5f6")
 		)
 		(pad "2" thru_hole circle
-			(at 2.5 0)
+			(at 2.5 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -2486,7 +2486,7 @@
 	(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "4911720a-87e4-452f-a7ad-4794611b285b")
-		(at 20 35)
+		(at 89.100000 89.500000)
 		(descr "CP, Radial series, Radial, pin pitch=2.50mm, diameter=5mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.50mm diameter 5mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C7"
@@ -3847,7 +3847,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "4f077b10-0e07-4db2-ad8c-f2f90bcac3ad")
-		(at 20 50)
+		(at 97.600000 72.700000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C13"
@@ -4016,7 +4016,7 @@
 	(footprint "Capacitor_THT:CP_Radial_D6.3mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "533597d4-0a39-44b6-af89-800d5a58537b")
-		(at 50 20)
+		(at 79.000000 62.500000 180)
 		(descr "CP, Radial series, Radial, pin pitch=2.50mm, diameter=6.3mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.50mm diameter 6.3mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C3"
@@ -5503,7 +5503,7 @@
 			)
 		)
 		(pad "1" thru_hole roundrect
-			(at 0 0)
+			(at 0 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -5513,7 +5513,7 @@
 			(uuid "b9f49079-2833-4f42-80b3-210ba3e01459")
 		)
 		(pad "2" thru_hole circle
-			(at 2.5 0)
+			(at 2.5 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -5537,7 +5537,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "56504be8-f5a3-4099-b61a-0b8bb1c52d92")
-		(at 80 50)
+		(at 101.270000 51.702000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R2"
@@ -5715,9 +5715,10 @@
 		)
 	)
 	(footprint "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical"
+		(locked yes)
 		(layer "F.Cu")
 		(uuid "598b0ab7-61a2-465f-8594-c35d3ff94d04")
-		(at 50 50)
+		(at 85.000000 96.070000)
 		(descr "Through hole straight pin header, 1x05, 2.54mm pitch, single row")
 		(tags "Through hole pin header THT 1x05 2.54mm single row")
 		(property "Reference" "J1"
@@ -5972,7 +5973,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "60e95ae4-6bba-40d8-b065-ffbcd58488c8")
-		(at 80 65)
+		(at 104.929000 70.712000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R8"
@@ -6152,7 +6153,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "6a2238ce-b08e-4228-9157-44a01a913c42")
-		(at 20 20)
+		(at 93.593000 83.141000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C1"
@@ -6321,7 +6322,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "728213fc-db86-48d1-8023-b279b22a00ae")
-		(at 65 50)
+		(at 86.443000 51.809000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R1"
@@ -6501,7 +6502,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "85068e40-7343-4d63-818f-41bd3835db18")
-		(at 80 35)
+		(at 97.600000 67.600000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C11"
@@ -6670,7 +6671,7 @@
 	(footprint "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "93f099d5-84a5-4650-bf6d-f0a41b308224")
-		(at 65 35)
+		(at 76.800000 100.500000)
 		(descr "CP, Radial series, Radial, pin pitch=2.50mm, diameter=5mm, height=7mm, Electrolytic Capacitor")
 		(tags "CP Radial series Radial pin pitch 2.50mm diameter 5mm height 7mm Electrolytic Capacitor")
 		(property "Reference" "C10"
@@ -8031,7 +8032,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "98855f7a-88aa-48e8-8961-4a607c0915c1")
-		(at 50 65)
+		(at 104.800000 64.800000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R6"
@@ -8211,7 +8212,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "9a8de447-e7ef-4a82-923e-0455368a38c9")
-		(at 95 20)
+		(at 97.600000 62.500000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C6"
@@ -8380,7 +8381,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "bddb9410-2ada-4687-a3b4-1f3b3d0b1747")
-		(at 35 50)
+		(at 97.600000 77.800000)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C14"
@@ -8549,7 +8550,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "c2c0feee-370f-415c-8652-ed4350d0486b")
-		(at 35 65)
+		(at 100.200000 88.000000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R5"
@@ -8729,7 +8730,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "e5a14120-f0c7-4f0c-8fac-637dd373f8c5")
-		(at 50 35)
+		(at 80.700000 89.900000 90)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C9"
@@ -8865,7 +8866,7 @@
 			)
 		)
 		(pad "1" thru_hole circle
-			(at 0 0)
+			(at 0 0 90)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -8874,7 +8875,7 @@
 			(uuid "dfb447ac-9778-45ba-9b19-0bed004a1cd0")
 		)
 		(pad "2" thru_hole circle
-			(at 2.5 0)
+			(at 2.5 0 90)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -8898,7 +8899,7 @@
 	(footprint "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
 		(layer "F.Cu")
 		(uuid "ecba5034-7fd7-4f6c-a2d8-39dd818a1544")
-		(at 35 35)
+		(at 74.300000 75.300000 180)
 		(descr "C, Disc series, Radial, pin pitch=2.50mm, diameter*width=5*2.5mm^2, Capacitor, http://cdn-reichelt.de/documents/datenblatt/B300/DS_KERKO_TC.pdf")
 		(tags "C Disc series Radial pin pitch 2.50mm diameter 5mm width 2.5mm Capacitor")
 		(property "Reference" "C8"
@@ -9034,7 +9035,7 @@
 			)
 		)
 		(pad "1" thru_hole circle
-			(at 0 0)
+			(at 0 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -9043,7 +9044,7 @@
 			(uuid "67cb121e-9bf8-4275-beac-d6719b4911df")
 		)
 		(pad "2" thru_hole circle
-			(at 2.5 0)
+			(at 2.5 0 180)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -9067,7 +9068,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "fe5dd984-6f56-4019-923b-688568e67f1c")
-		(at 95 50)
+		(at 66.800000 69.600000 270)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R3"
@@ -9214,7 +9215,7 @@
 			)
 		)
 		(pad "1" thru_hole circle
-			(at 0 0)
+			(at 0 0 270)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -9223,7 +9224,7 @@
 			(uuid "a4e4c2ce-6e90-4d48-98ee-749f58cb9ba4")
 		)
 		(pad "2" thru_hole circle
-			(at 10.16 0)
+			(at 10.16 0 270)
 			(size 1.6 1.6)
 			(drill 0.8)
 			(layers "*.Cu" "*.Mask")
@@ -9247,7 +9248,7 @@
 	(footprint "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "ffa6e1d5-893a-4488-926e-09311ee7679b")
-		(at 65 65)
+		(at 97.484000 57.427000)
 		(descr "Resistor, Axial_DIN0207 series, Axial, Horizontal, pin pitch=10.16mm, 0.25W = 1/4W, length*diameter=6.3*2.5mm^2, http://cdn-reichelt.de/documents/datenblatt/B400/1_4W%23YAG.pdf")
 		(tags "Resistor Axial_DIN0207 series Axial Horizontal pin pitch 10.16mm 0.25W = 1/4W length 6.3mm diameter 2.5mm")
 		(property "Reference" "R7"
@@ -9425,4 +9426,523 @@
 		)
 	)
 	(embedded_fonts no)
+	(gr_rect
+		(start 10 10)
+		(end 160 110)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "Edge.Cuts")
+		(uuid "7a110000-0000-4000-8000-00000000ed9e")
+	)
+	(footprint "pt2399-core:MountingHole_3.2mm_M3_Washer7.0mm"
+		(locked yes)
+		(uuid "3c0a0000-0000-4000-8000-000001000001")
+		(at 14.000000 14.000000)
+	(layer "F.Cu")
+	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+	(tags "mountinghole M3 washer envelope DIN125")
+	(property "Reference" "MH1"
+			(at 0 4.15 0)
+			(layer "F.SilkS")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+			(at 0 4.15 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(attr board_only exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+			(center 0 0)
+			(end 3.2 0)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(fill no)
+			(layer "Cmts.User")
+		)
+	(fp_circle
+			(center 0 0)
+			(end 3.5 0)
+			(stroke
+				(width 0.05)
+				(type solid)
+			)
+			(fill no)
+			(layer "F.CrtYd")
+		)
+	(fp_text user "${REFERENCE}"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(pad "" np_thru_hole circle
+			(at 0 0)
+			(size 3.2 3.2)
+			(drill 3.2)
+			(layers "*.Cu" "*.Mask")
+		)
+	(embedded_fonts no)
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "F.Cu" "B.Cu")
+		(uuid "3c0a0000-0000-4000-8000-000002000001")
+		(name "mounting_hole_nw")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(polygon
+			(pts
+				(xy 17.517 14)
+				(xy 17.4495 14.6861)
+				(xy 17.2493 15.3459)
+				(xy 16.9243 15.954)
+				(xy 16.4869 16.4869)
+				(xy 15.954 16.9243)
+				(xy 15.3459 17.2493)
+				(xy 14.6861 17.4495)
+				(xy 14 17.517)
+				(xy 13.3139 17.4495)
+				(xy 12.6541 17.2493)
+				(xy 12.046 16.9243)
+				(xy 11.5131 16.4869)
+				(xy 11.0757 15.954)
+				(xy 10.7507 15.3459)
+				(xy 10.5505 14.6861)
+				(xy 10.483 14)
+				(xy 10.5505 13.3139)
+				(xy 10.7507 12.6541)
+				(xy 11.0757 12.046)
+				(xy 11.5131 11.5131)
+				(xy 12.046 11.0757)
+				(xy 12.6541 10.7507)
+				(xy 13.3139 10.5505)
+				(xy 14 10.483)
+				(xy 14.6861 10.5505)
+				(xy 15.3459 10.7507)
+				(xy 15.954 11.0757)
+				(xy 16.4869 11.5131)
+				(xy 16.9243 12.046)
+				(xy 17.2493 12.6541)
+				(xy 17.4495 13.3139)
+			)
+		)
+	)
+	(footprint "pt2399-core:MountingHole_3.2mm_M3_Washer7.0mm"
+		(locked yes)
+		(uuid "3c0a0000-0000-4000-8000-000001000002")
+		(at 156.000000 14.000000)
+	(layer "F.Cu")
+	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+	(tags "mountinghole M3 washer envelope DIN125")
+	(property "Reference" "MH2"
+			(at 0 4.15 0)
+			(layer "F.SilkS")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+			(at 0 4.15 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(attr board_only exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+			(center 0 0)
+			(end 3.2 0)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(fill no)
+			(layer "Cmts.User")
+		)
+	(fp_circle
+			(center 0 0)
+			(end 3.5 0)
+			(stroke
+				(width 0.05)
+				(type solid)
+			)
+			(fill no)
+			(layer "F.CrtYd")
+		)
+	(fp_text user "${REFERENCE}"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(pad "" np_thru_hole circle
+			(at 0 0)
+			(size 3.2 3.2)
+			(drill 3.2)
+			(layers "*.Cu" "*.Mask")
+		)
+	(embedded_fonts no)
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "F.Cu" "B.Cu")
+		(uuid "3c0a0000-0000-4000-8000-000002000002")
+		(name "mounting_hole_ne")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(polygon
+			(pts
+				(xy 159.517 14)
+				(xy 159.4495 14.6861)
+				(xy 159.2493 15.3459)
+				(xy 158.9243 15.954)
+				(xy 158.4869 16.4869)
+				(xy 157.954 16.9243)
+				(xy 157.3459 17.2493)
+				(xy 156.6861 17.4495)
+				(xy 156 17.517)
+				(xy 155.3139 17.4495)
+				(xy 154.6541 17.2493)
+				(xy 154.046 16.9243)
+				(xy 153.5131 16.4869)
+				(xy 153.0757 15.954)
+				(xy 152.7507 15.3459)
+				(xy 152.5505 14.6861)
+				(xy 152.483 14)
+				(xy 152.5505 13.3139)
+				(xy 152.7507 12.6541)
+				(xy 153.0757 12.046)
+				(xy 153.5131 11.5131)
+				(xy 154.046 11.0757)
+				(xy 154.6541 10.7507)
+				(xy 155.3139 10.5505)
+				(xy 156 10.483)
+				(xy 156.6861 10.5505)
+				(xy 157.3459 10.7507)
+				(xy 157.954 11.0757)
+				(xy 158.4869 11.5131)
+				(xy 158.9243 12.046)
+				(xy 159.2493 12.6541)
+				(xy 159.4495 13.3139)
+			)
+		)
+	)
+	(footprint "pt2399-core:MountingHole_3.2mm_M3_Washer7.0mm"
+		(locked yes)
+		(uuid "3c0a0000-0000-4000-8000-000001000003")
+		(at 156.000000 106.000000)
+	(layer "F.Cu")
+	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+	(tags "mountinghole M3 washer envelope DIN125")
+	(property "Reference" "MH3"
+			(at 0 -4.15 0)
+			(layer "F.SilkS")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+			(at 0 4.15 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(attr board_only exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+			(center 0 0)
+			(end 3.2 0)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(fill no)
+			(layer "Cmts.User")
+		)
+	(fp_circle
+			(center 0 0)
+			(end 3.5 0)
+			(stroke
+				(width 0.05)
+				(type solid)
+			)
+			(fill no)
+			(layer "F.CrtYd")
+		)
+	(fp_text user "${REFERENCE}"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(pad "" np_thru_hole circle
+			(at 0 0)
+			(size 3.2 3.2)
+			(drill 3.2)
+			(layers "*.Cu" "*.Mask")
+		)
+	(embedded_fonts no)
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "F.Cu" "B.Cu")
+		(uuid "3c0a0000-0000-4000-8000-000002000003")
+		(name "mounting_hole_se")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(polygon
+			(pts
+				(xy 159.517 106)
+				(xy 159.4495 106.6861)
+				(xy 159.2493 107.3459)
+				(xy 158.9243 107.954)
+				(xy 158.4869 108.4869)
+				(xy 157.954 108.9243)
+				(xy 157.3459 109.2493)
+				(xy 156.6861 109.4495)
+				(xy 156 109.517)
+				(xy 155.3139 109.4495)
+				(xy 154.6541 109.2493)
+				(xy 154.046 108.9243)
+				(xy 153.5131 108.4869)
+				(xy 153.0757 107.954)
+				(xy 152.7507 107.3459)
+				(xy 152.5505 106.6861)
+				(xy 152.483 106)
+				(xy 152.5505 105.3139)
+				(xy 152.7507 104.6541)
+				(xy 153.0757 104.046)
+				(xy 153.5131 103.5131)
+				(xy 154.046 103.0757)
+				(xy 154.6541 102.7507)
+				(xy 155.3139 102.5505)
+				(xy 156 102.483)
+				(xy 156.6861 102.5505)
+				(xy 157.3459 102.7507)
+				(xy 157.954 103.0757)
+				(xy 158.4869 103.5131)
+				(xy 158.9243 104.046)
+				(xy 159.2493 104.6541)
+				(xy 159.4495 105.3139)
+			)
+		)
+	)
+	(footprint "pt2399-core:MountingHole_3.2mm_M3_Washer7.0mm"
+		(locked yes)
+		(uuid "3c0a0000-0000-4000-8000-000001000004")
+		(at 14.000000 106.000000)
+	(layer "F.Cu")
+	(descr "M3 mounting hole, 3.2mm non-plated drill, WITH ITS COURTYARD SET TO THE WASHER instead of the screw head: 7.0mm, the maximum outside diameter of an M3 DIN 125 Type A / ISO 7089 flat washer (parts/washer-m3-flat-din125a-7mm-steel-zinc.json). Derived from MountingHole:MountingHole_3.2mm_M3 by changing ONE number - the F.CrtYd circle's radius, 3.45 to 3.5 - because that stock courtyard is 6.9mm and models the SCREW HEAD, which is 5.40mm across on the fastener this board fits. courtyards_overlap is the only DRC check that catches a part whose body overlaps the washer while its origin and pads sit clear, and it compares courtyards, so the courtyard IS the envelope. The drill, the np_thru_hole pad and the attributes come across untouched. tests/pcb/mounting-hardware.test.ts re-derives all of this from the installed library and the parts catalogue on every run.")
+	(tags "mountinghole M3 washer envelope DIN125")
+	(property "Reference" "MH4"
+			(at 0 -4.15 0)
+			(layer "F.SilkS")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(property "Value" "MountingHole_3.2mm_M3_Washer7.0mm"
+			(at 0 4.15 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(attr board_only exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_circle
+			(center 0 0)
+			(end 3.2 0)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(fill no)
+			(layer "Cmts.User")
+		)
+	(fp_circle
+			(center 0 0)
+			(end 3.5 0)
+			(stroke
+				(width 0.05)
+				(type solid)
+			)
+			(fill no)
+			(layer "F.CrtYd")
+		)
+	(fp_text user "${REFERENCE}"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+	(pad "" np_thru_hole circle
+			(at 0 0)
+			(size 3.2 3.2)
+			(drill 3.2)
+			(layers "*.Cu" "*.Mask")
+		)
+	(embedded_fonts no)
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "F.Cu" "B.Cu")
+		(uuid "3c0a0000-0000-4000-8000-000002000004")
+		(name "mounting_hole_sw")
+		(hatch edge 0.5)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.25)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks not_allowed)
+			(vias not_allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(polygon
+			(pts
+				(xy 17.517 106)
+				(xy 17.4495 106.6861)
+				(xy 17.2493 107.3459)
+				(xy 16.9243 107.954)
+				(xy 16.4869 108.4869)
+				(xy 15.954 108.9243)
+				(xy 15.3459 109.2493)
+				(xy 14.6861 109.4495)
+				(xy 14 109.517)
+				(xy 13.3139 109.4495)
+				(xy 12.6541 109.2493)
+				(xy 12.046 108.9243)
+				(xy 11.5131 108.4869)
+				(xy 11.0757 107.954)
+				(xy 10.7507 107.3459)
+				(xy 10.5505 106.6861)
+				(xy 10.483 106)
+				(xy 10.5505 105.3139)
+				(xy 10.7507 104.6541)
+				(xy 11.0757 104.046)
+				(xy 11.5131 103.5131)
+				(xy 12.046 103.0757)
+				(xy 12.6541 102.7507)
+				(xy 13.3139 102.5505)
+				(xy 14 102.483)
+				(xy 14.6861 102.5505)
+				(xy 15.3459 102.7507)
+				(xy 15.954 103.0757)
+				(xy 16.4869 103.5131)
+				(xy 16.9243 104.046)
+				(xy 17.2493 104.6541)
+				(xy 17.4495 105.3139)
+			)
+		)
+	)
 )

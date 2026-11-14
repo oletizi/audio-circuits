@@ -9,7 +9,18 @@
  * still has to write one, so it is here, where the derivation can be stated and
  * checked rather than chosen.
  *
- * THE DERIVATION, and it is the whole of what this module decides:
+ * **AN OUTLINE CAN COME FROM TWO PLACES AND ONLY ONE OF THEM IS A DERIVATION.
+ * READ THIS BEFORE CHOOSING A MODE.** For `pt2399-core` the size is the OWNER'S
+ * DECISION - *"increase the board size to 150mm x 100mm"*, 2026-11-13 - and
+ * `floorplan-intent.json` `envelope.size_mm` records it. A board whose intent
+ * declares a size takes `--write-declared`, and shrinking it to the parts would
+ * be overriding him with a measurement. `--write-derived` is for a board whose
+ * size nobody has ruled on. Picking the wrong one is not silent:
+ * `./resolve-intent-zones.ts` refuses a board whose outline disagrees with its
+ * intent's declared size.
+ *
+ * THE DERIVATION, which is what `--write-derived` computes and the whole of
+ * what this module decides for itself:
  *
  *   outline = the bounding box of every placed footprint's COURTYARD,
  *             grown by the fabrication standard's copper-to-edge clearance
@@ -34,6 +45,7 @@ import fs from "node:fs"
 import { child, parseSexpr, type SNode } from "../../lib/kicad/sexpr.ts"
 import { assertStillParses, withoutTopLevelForms, withTopLevelForms } from "./board-forms.ts"
 import { RULE_MINIMUMS } from "./fab-standard.ts"
+import { declaredEnvelopeSize } from "./resolve-intent-zones.ts"
 import type { Bounds } from "./resolve-intent-zones.ts"
 
 /** The standard's copper-to-edge floor, read from the one place it is written. */
@@ -309,31 +321,68 @@ export function describeBounds(bounds: Bounds): string {
   )
 }
 
+const USAGE = [
+  "usage: bun tools/pcb/board-outline.ts <board.kicad_pcb> [mode]",
+  "",
+  "  (no mode)                                  REPORT only; changes nothing.",
+  "  --write-declared <intent.json> <x> <y> <uuid>",
+  "       Write the size the intent's `envelope.size_mm` declares, at origin (x, y).",
+  "       THIS IS THE MODE FOR A BOARD WHOSE SIZE SOMEBODY RULED ON. The size comes",
+  "       from the intent and is never a command-line number; the origin is, because",
+  "       where the rectangle sits on the sheet is not a criterion and the intent says",
+  "       so ('a rect carries an origin, and an origin goes stale').",
+  "  --write-derived <uuid>",
+  "       Write the placed courtyard extent grown by the standard's copper-to-edge",
+  "       clearance. ONLY for a board whose size nobody has ruled on - on pt2399-core",
+  "       this would override the owner with a measurement.",
+  "",
+  "  The uuid is required and never generated, so re-running produces the same bytes.",
+].join("\n")
+
 if (import.meta.main) {
   const args = process.argv.slice(2)
   const board = args[0]
-  if (board === undefined || args.length > 3) {
-    throw new Error(
-      "usage: bun tools/pcb/board-outline.ts <board.kicad_pcb> [--write <uuid>]\n" +
-        "  With no --write it REPORTS the placed extent and the outline derived from it and\n" +
-        "  changes nothing. With --write it replaces the board's Edge.Cuts with that rectangle.\n" +
-        "  The uuid is required and not generated, so re-running produces the same bytes.",
-    )
-  }
+  if (board === undefined) throw new Error(USAGE)
   const text = fs.readFileSync(board, "utf8")
   const extent = placedExtent(text, board)
-  const outline = derivedOutline(text, board)
   const courtyards = placedCourtyards(text, board)
   console.log(`${courtyards.length} placed footprint(s)`)
   console.log(`placed courtyard extent ${describeBounds(extent)}`)
-  console.log(`derived outline ${describeBounds(outline)} (extent + ${EDGE_CLEARANCE_MM} mm all round)`)
-  if (args[1] === "--write") {
-    const uuid = args[2]
-    if (uuid === undefined) throw new Error("--write needs a uuid argument; it is not generated here.")
-    const written = withOutlineRect(text, board, outline, uuid)
+  console.log(
+    `outline DERIVED from it would be ${describeBounds(derivedOutline(text, board))} ` +
+      `(extent + ${EDGE_CLEARANCE_MM} mm all round)`,
+  )
+
+  const mode = args[1]
+  if (mode === undefined) {
+    console.log("no mode given, so nothing was written")
+  } else if (mode === "--write-declared") {
+    const [intentPath, xText, yText, uuid] = args.slice(2)
+    if (intentPath === undefined || xText === undefined || yText === undefined || uuid === undefined) {
+      throw new Error(`--write-declared needs <intent.json> <x> <y> <uuid>.\n\n${USAGE}`)
+    }
+    const size = declaredEnvelopeSize(JSON.parse(fs.readFileSync(intentPath, "utf8")), intentPath)
+    if (size === undefined) {
+      throw new Error(
+        `${intentPath} declares no envelope.size_mm, so there is no declared size to write. Use ` +
+          "--write-derived if this board's size is genuinely nobody's decision, and say so.",
+      )
+    }
+    const x = Number(xText)
+    const y = Number(yText)
+    if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error(`origin (${xText}, ${yText}) is not two numbers`)
+    const declared = { x0: x, y0: y, x1: x + size[0], y1: y + size[1] }
+    const written = withOutlineRect(text, board, declared, uuid)
     fs.writeFileSync(board, written.text)
-    console.log(`replaced ${written.replaced} Edge.Cuts shape(s) with one rectangle in ${board}`)
-  } else if (args[1] !== undefined) {
-    throw new Error(`unrecognised argument ${JSON.stringify(args[1])}; only --write <uuid> is accepted.`)
+    console.log(`declared size ${size[0]} x ${size[1]} mm from ${intentPath}`)
+    console.log(`replaced ${written.replaced} Edge.Cuts shape(s) with ${describeBounds(declared)} in ${board}`)
+  } else if (mode === "--write-derived") {
+    const uuid = args[2]
+    if (uuid === undefined) throw new Error(`--write-derived needs a uuid argument.\n\n${USAGE}`)
+    const written = withOutlineRect(text, board, derivedOutline(text, board), uuid)
+    fs.writeFileSync(board, written.text)
+    console.log(`replaced ${written.replaced} Edge.Cuts shape(s) with the DERIVED rectangle in ${board}`)
+  } else {
+    throw new Error(`unrecognised mode ${JSON.stringify(mode)}.\n\n${USAGE}`)
   }
 }

@@ -57,6 +57,35 @@ const EXPECTED_FOOTPRINTS = [
   "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
 ].sort()
 
+/**
+ * Footprints on the board that draw NO silkscreen at all, and therefore have no
+ * width to disclose.
+ *
+ * **NAMED RATHER THAN SUBTRACTED, which is the whole reason this list exists.**
+ * The coverage assertion below compares the survey's rows against the board's
+ * footprints, and this test went red the moment the four M3 mounting holes
+ * landed - correctly, because its own header says a part change should. The
+ * tempting fix is to compare against "footprints with silkscreen" computed from
+ * the same parse, and that would be the vacuous assertion the struck sum below
+ * already warned about: it can no longer fail. So the exception is written
+ * down, one entry, with what makes it one.
+ *
+ * `MountingHole_3.2mm_M3_Washer7.0mm` draws exactly three things - a comment
+ * circle on `Cmts.User`, the courtyard circle on `F.CrtYd` and the `${REFERENCE}`
+ * text on `F.Fab` - and not one of them is silkscreen. That is inherited from
+ * KiCad's stock `MountingHole:MountingHole_3.2mm_M3`, which this one is derived
+ * from by changing the courtyard radius and nothing else
+ * (`tests/pcb/mounting-hardware.test.ts` compares the two files form by form).
+ * A mounting hole with no legend is correct: there is nothing to identify and
+ * nothing to orient.
+ *
+ * The holes' REFERENCE FIELDS are on `F.SilkS` and do appear on the board, but
+ * a field is text and this survey measures graphic LINES - which is the
+ * distinction `docs/standards/pcbway-fab-rules.md` draws and the reason this
+ * survey exists at all.
+ */
+const NO_SILKSCREEN = ["pt2399-core:MountingHole_3.2mm_M3_Washer7.0mm"].sort()
+
 test("the silkscreen survey covers every footprint on the board, and reports the widths", () => {
   const survey = surveySilkscreen(BOARD)
 
@@ -67,9 +96,16 @@ test("the silkscreen survey covers every footprint on the board, and reports the
     children(parseSexpr(fs.readFileSync(BOARD, "utf8")), "footprint").map((fp) => fp.atoms[0] ?? ""),
   )
   const measured = new Set(survey.byFootprint.map((row) => row.fpid))
-  expect([...measured].sort()).toEqual([...placed].sort())
+  // Every placed footprint either has a row or is one of the written-down
+  // exceptions that draw no silkscreen at all. The exception list is an INPUT
+  // and not derived from this parse, which is what keeps the comparison able to
+  // fail - see NO_SILKSCREEN above.
+  expect([...measured, ...NO_SILKSCREEN].sort()).toEqual([...placed].sort())
+  // And nothing on the exception list has a row, so an entry cannot sit there
+  // excusing a footprint that is in fact being measured.
+  for (const fpid of NO_SILKSCREEN) expect(measured.has(fpid)).toBe(false)
 
-  // COVERAGE, BY NAME: the seven this board is known to place.
+  // COVERAGE, BY NAME: the seven circuit footprints this board is known to place.
   expect([...measured].sort()).toEqual(EXPECTED_FOOTPRINTS)
 
   // THE MEASUREMENT ACTUALLY MEASURED SOMETHING. A survey returning seven rows
