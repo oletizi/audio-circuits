@@ -53,6 +53,12 @@ update-pt2399-core:
 # would leave a DRC run passing with the spacing unchecked - so the check runs
 # BEFORE the DRC rather than beside it, and a drift refuses instead of being
 # reported after a clean-looking result.
+#
+# THIS GATES ONE BOARD, BY THIS PREREQUISITE AND NOTHING ELSE. A second board
+# that gains a .kicad_dru gets no check until someone adds the same
+# prerequisite for it; the generic mechanism is deliberately not built, since
+# there is no second board. tools/pcb/fab-standard.ts's header carries the
+# whole limitation, in the file a second board's author would read.
 courtyard-rule-pt2399-core:
 	@bun "$(PCB_REPO_ROOT)/tools/pcb/courtyard-rule.ts" "$(PT2399_BOARD)" "$(PT2399_RULES)"
 

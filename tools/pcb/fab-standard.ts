@@ -22,6 +22,26 @@
  * here while no net was in it; `tests/pcb/netclass-patterns.test.ts` holds the
  * assignment, measured through `pcbnew`.
  *
+ * AND THE SECOND THING IT DOES NOT CHECK, WHICH MATTERS TO THE NEXT BOARD
+ * RATHER THAN TO THIS ONE: a `.kicad_dru`. KiCad takes CUSTOM design rules from
+ * a file of that name beside the board, and nothing here reads one - this file
+ * compares the `.kicad_pro`'s `rules`, `rule_severities` and net classes and
+ * stops there. A custom rule that was deleted, renamed or quietly loosened
+ * therefore leaves a DRC run reporting nothing with the constraint unchecked,
+ * which is the same shape of failure this file exists to catch in the project.
+ *
+ * `pt2399-core` DOES carry one - `circuits/pt2399-core/pt2399-core.kicad_dru`,
+ * `(constraint courtyard_clearance (min 2mm))`, which is the second of the two
+ * mechanisms its `placement-rules.json` `separation.part_to_part` names for the
+ * owner's hand-assembly spacing. It is gated by `./courtyard-rule.ts` made a
+ * PREREQUISITE of every DRC target in `make/pcb.mk`, so that one board is
+ * covered. **A SECOND BOARD GAINING A `.kicad_dru` GETS NO CHECK AT ALL** until
+ * someone either adds the same prerequisite for it or generalises the
+ * mechanism. That generic mechanism is deliberately NOT built: there is no
+ * second board, and a facility with one caller is a guess about the second.
+ * This paragraph is here so the limitation is findable from the file a second
+ * board's author would read, rather than discovered from a clean DRC result.
+ *
  * AND WHAT IT CHECKS THAT THE STANDARD'S TABLE DOES NOT LIST: the three
  * `REQUIRED_ACTIVE_CHECKS` severities, which live in the standard's prose rather
  * than its "Project value" column. See `REQUIRED_CHECK_SEVERITY` below, and

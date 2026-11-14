@@ -33,12 +33,13 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { cleanUpTempScratch, freshTempScratch } from "../support/temp-scratch.ts"
 import { defaultKicadCli } from "../../lib/kicad/install.ts"
+import { builtCommit, engineDir, engineEnv, venvPython } from "../../tools/krt/acquire.ts"
 import { parseReport, REQUIRED_ACTIVE_CHECKS } from "../../tools/pcb/drc-report.ts"
 import { verdictOf } from "../../tools/pcb/drc-policy.ts"
 import {
-  declaredEnvelopeSize, outlineBounds, requireDeclaredSize, resolveToFile,
+  declaredEnvelopeSize, outlineBounds, requireDeclaredSize, resolveToFile, type Bounds,
 } from "../../tools/pcb/resolve-intent-zones.ts"
-import { placedCourtyards } from "../../tools/pcb/board-outline.ts"
+import { EDGE_CLEARANCE_MM, placedCourtyards } from "../../tools/pcb/board-outline.ts"
 import {
   CENTRE_TOLERANCE_MM, derivedHardware, inwardLabelOffsetY, mountingHoleRule, mountingHoles,
   placedMountingHoles, referenceLabelOffsetY, readMountingFootprint, MOUNTING_FOOTPRINT,
@@ -366,4 +367,174 @@ test("INTEGRATION, real kicad-cli: the rule FIRES, and it fires as a type the ga
   expect(REQUIRED_ACTIVE_CHECKS).toContain("courtyards_overlap")
   expect(verdictOf(tightened, { routed: false }).pass).toBe(false)
   expect(verdictOf(tightened, { routed: false }).counts.requiredCheckViolations).toBe(overlaps.length)
+})
+
+// ---- the margined-outline false positive, pinned ---------------------------
+
+/**
+ * How far a rect leaves `inset`, by the engine's own measure: the overhang
+ * SUMMED OVER EDGES, not the worst one.
+ *
+ * That is `rect_outside_amount`'s semantics and it is why a CORNER part counts
+ * twice. Reproduced here rather than imported because the engine is Python; the
+ * `INTEGRATION` test below checks this arithmetic against the real grader's own
+ * number, so the reimplementation is held to the thing it reimplements.
+ */
+function outsideAmount(rect: Bounds, inset: Bounds): number {
+  return (
+    Math.max(0, inset.x0 - rect.x0) +
+    Math.max(0, rect.x1 - inset.x1) +
+    Math.max(0, inset.y0 - rect.y0) +
+    Math.max(0, rect.y1 - inset.y1)
+  )
+}
+
+function insetBy(bounds: Bounds, margin: number): Bounds {
+  return {
+    x0: bounds.x0 + margin,
+    y0: bounds.y0 + margin,
+    x1: bounds.x1 - margin,
+    y1: bounds.y1 - margin,
+  }
+}
+
+/** Which parts leave `inset`, and by how much, by the measure above. */
+function partsLeaving(inset: Bounds): readonly { readonly ref: string; readonly amount: number }[] {
+  return placedCourtyards(boardText(), BOARD)
+    .map((c) => ({ ref: c.ref, amount: outsideAmount(c.box, inset) }))
+    .filter((p) => p.amount > 1e-9)
+    .sort((a, b) => a.ref.localeCompare(b.ref))
+}
+
+test("ONLY the mounting holes leave a 2.0 mm margined outline, and the amount is derived from the three approved numbers", () => {
+  // WHY THIS TEST EXISTS, and it is not to excuse a failure.
+  //
+  // `place_seed.py` exits 4 on this board with two `GRADE ERROR [legality]`
+  // lines - "parts leaving the board outline: 4.000" and "total off-board
+  // overhang (mm): 12.000" - while `check_floorplan.py` grades the same bytes
+  // as a clean PASS. The cause is parameter plumbing in the engine, not a
+  // property of this board, and it is documented in the engine's own source:
+  //
+  //   .tools/krt/py_placer/placement/quench.py:424
+  //       `margin = max(clearance, board_edge_clearance)` - so --clearance,
+  //       which the owner's 2.0 mm PART SPACING sets, also becomes the
+  //       board-EDGE margin. The same expression is at
+  //       placement/fanout_clearance.py:276.
+  //   .tools/krt/py_placer/placement/legality.py:1827
+  //       the off-board quantity is measured against an outline inflated by
+  //       "the GRADING CLEARANCE -- so it moves when --clearance moves".
+  //   .tools/krt/py_placer/placement/seeder.py:1747
+  //       the same false positive, named as "cosmetic and common on legitimate
+  //       boards (tigard's own corner mounting holes overhang by courtyard;
+  //       the human original grades oob 7)", and fixed in that census but not
+  //       in `legality_metrics`, which is what floorplan.py reads.
+  //
+  // "KNOWN FALSE POSITIVE" IS EXACTLY THE SENTENCE SOMEONE WILL REACH FOR TO
+  // WAVE THROUGH A REAL OUT-OF-BOUNDS PART, so the claim is narrowed to
+  // something that can fail: at this margin the parts leaving the outline are
+  // EXACTLY the four mounting holes, by name, and the total is the figure the
+  // three approved numbers produce. A circuit part drifting off the board
+  // breaks the first clause; a change to the inset, the envelope or the
+  // spacing moves the second.
+  const rule = mountingHoleRule(rules(), RULES)
+  const margin = minPartGapMm(rules(), RULES)
+  const radius = rule.envelopeDiameterMm / 2
+  // Each hole's courtyard reaches `radius` from a centre `centre_inset_mm` in,
+  // so it sits `inset - radius` clear of the real edge and overhangs an outline
+  // inflated by `margin` by this much - on EACH of the two edges its corner is
+  // formed by.
+  const perEdge = radius - rule.centreInsetMm + margin
+  const expected = perEdge > 0 ? perEdge * 2 * rule.count : 0
+  console.log(
+    `  radius ${radius} - inset ${rule.centreInsetMm} + margin ${margin} = ${perEdge} mm per edge; ` +
+      `${rule.count} holes x 2 edges = ${expected} mm`,
+  )
+
+  const bounds = outlineBounds(boardText(), BOARD)
+  const leaving = partsLeaving(insetBy(bounds, margin))
+  for (const part of leaving) console.log(`  ${part.ref}: ${part.amount.toFixed(3)} mm outside`)
+
+  // THE DISCRIMINATING CLAUSE. Not "the holes are among them" and not a count:
+  // the exact set, by name. Nudge any circuit part off the board and this line
+  // goes red - verified by mutation, see the Task 8 report.
+  expect(leaving.map((p) => p.ref)).toEqual(perEdge > 0 ? [...REFERENCES].sort() : [])
+
+  const total = leaving.reduce((sum, p) => sum + p.amount, 0)
+  expect(total).toBeCloseTo(expected, 6)
+  for (const part of leaving) expect(part.amount).toBeCloseTo(perEdge * 2, 6)
+})
+
+test("at the board's OWN copper-to-edge clearance, nothing leaves the outline at all", () => {
+  // The other half of the same fact, and the one that says the board is right:
+  // the approved rule puts each washer 0.5 mm inside the edge deliberately, so
+  // at the board's own 0.5 mm floor - which is what `check_floorplan.py` grades
+  // at, reporting "edge 0.5 (board constraint)" - no part is off the board,
+  // mounting holes included.
+  const bounds = outlineBounds(boardText(), BOARD)
+  const leaving = partsLeaving(insetBy(bounds, EDGE_CLEARANCE_MM))
+  console.log(`  at ${EDGE_CLEARANCE_MM} mm: ${leaving.length} part(s) outside`)
+  expect(leaving).toEqual([])
+
+  // And at zero margin too, which is the honest floor: nothing is over the edge
+  // even before any clearance is allowed for.
+  expect(partsLeaving(bounds)).toEqual([])
+})
+
+test("INTEGRATION, real engine: check_floorplan grades the committed board with oob_count 0 and oob_amount 0.0", () => {
+  // THE GRADER'S OWN VERDICT, not a reimplementation of it. The two tests above
+  // compute the off-board quantity in TypeScript, which is the only way to
+  // assert WHICH parts leave a margined outline - but a reimplementation cannot
+  // establish what the engine reports, and the engine is what the evidence bar
+  // is phrased in terms of. So this runs the real grader.
+  //
+  // IT IS THE FIRST TEST HERE TO INVOKE THE PINNED ENGINE, and it REFUSES
+  // rather than skipping when the engine is not built, for the reason every
+  // kicad-cli test in this directory gives: a green suite on a machine with no
+  // engine would be the skipped check that reads as a pass. `make krt` builds
+  // it; build/krt/invocations.json records the command shapes.
+  const repoRoot = path.resolve(import.meta.dir, "../..")
+  const python = venvPython(repoRoot)
+  if (builtCommit(repoRoot) === undefined || !fs.existsSync(python)) {
+    throw new Error(
+      `the pinned routing engine is not built at ${engineDir(repoRoot)} (no stamp, or no venv ` +
+        `interpreter at ${python}). Run \`make krt\`. This does NOT skip: it is the only check ` +
+        "that the grader's own verdict on this board is a PASS, and that claim is what settles " +
+        "the two GRADE ERROR [legality] lines place_seed prints - see the two tests above.",
+    )
+  }
+  const dir = freshTempScratch("pcb-grade-")
+  const resolved = path.join(dir, "resolved-intent.json")
+  resolveToFile(BOARD, INTENT, resolved, RULES)
+
+  const result = spawnSync(
+    python,
+    ["py_tools/check_floorplan.py", BOARD, "--intent", resolved, "--require-rules", "1"],
+    { cwd: engineDir(repoRoot), encoding: "utf8", env: { ...engineEnv(process.env) } },
+  )
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`
+  const summary = /JSON_SUMMARY: (\{.*\})/.exec(output)
+  if (summary === null) {
+    throw new Error(
+      `check_floorplan.py printed no JSON_SUMMARY (exit ${String(result.status)}). Its output is ` +
+        `the evidence here and an absent summary is not a pass:\n${output}`,
+    )
+  }
+  const graded = JSON.parse(summary[1] as string) as Record<string, unknown>
+  console.log(
+    `  exit ${String(result.status)}; ${String(graded["rules_run"])} rule(s) ran, ` +
+      `${String(graded["violations"])} violation(s); oob_count ${String(graded["oob_count"])}, ` +
+      `oob_amount ${String(graded["oob_amount"])}, overlap_area ${String(graded["overlap_area"])}`,
+  )
+  // The clearance it graded at, said out loud: the board's own netclass and
+  // edge constraint, which is the correct pair and the whole point.
+  expect(output).toContain(`edge ${EDGE_CLEARANCE_MM} (board constraint)`)
+  expect(result.status).toBe(0)
+  expect(graded["oob_count"]).toBe(0)
+  expect(graded["oob_amount"]).toBe(0.0)
+  expect(graded["overlap_area"]).toBe(0.0)
+  expect(graded["violations"]).toBe(0)
+  // --require-rules 1 makes "no rule ran" a failure rather than a pass; this
+  // asserts the stronger thing, that the five rules with something to check
+  // plus legality all ran.
+  expect(graded["rules_run"]).toBe(6)
 })
