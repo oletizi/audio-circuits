@@ -58,6 +58,13 @@
  * be, and is not written); surface-mount ground pads get no spoke reading (the
  * plan names through-hole); a neighbour's pad void that reaches the continuity
  * loop reads as a break (the fill alone cannot tell it from a gap in the pour).
+ *
+ * **NOT PINNED BY ANY TEST, found by mutation:** the raster's half-pixel column
+ * offset (`./pour-bridge.ts`) and the minimum sample count of a resampled loop
+ * (`./pour-geometry.ts`); both move a figure by less than one pixel or sample.
+ * The join filter in `narrowestBridge` that keeps only layers with more than one
+ * region is equivalent to not having it on any board where separate polygons are
+ * not raster-adjacent, so no test can tell the two apart.
  */
 import fs from "node:fs"
 import { parseSexpr } from "../../lib/kicad/sexpr.ts"

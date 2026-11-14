@@ -122,3 +122,39 @@ test("a pad's size and the turn of its footprint change the loop: the same band 
   // the angle and sign of the rotation are pinned against hand-worked figures in ./pour-geometry.test.ts.)
   expect(upright.breaksMm).not.toEqual(flat.breaksMm)
 })
+
+test("breaks are listed longest first, and the longest is the one a reader looks at", () => {
+  // A vertical gap x 30.0..31.0 cuts the top and bottom edges (1.0 mm each); a horizontal gap y 20.0..20.3 cuts the left and right (0.3 each).
+  const quadrants: readonly (readonly Pt[])[] = [
+    [[0, 0], [30.0, 0], [30.0, 20.0], [0, 20.0]],
+    [[31.0, 0], [60, 0], [60, 20.0], [31.0, 20.0]],
+    [[0, 20.3], [30.0, 20.3], [30.0, 40], [0, 40]],
+    [[31.0, 20.3], [60, 20.3], [60, 40], [31.0, 40]],
+  ]
+  const breaks = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": quadrants } })).breaksMm
+  expect(breaks.length).toBe(4)
+  near(breaks[0], 1.0, 0.06)
+  near(breaks[1], 1.0, 0.06)
+  near(breaks[2], 0.3, 0.06)
+  near(breaks[3], 0.3, 0.06)
+})
+
+test("a loop with no copper under it is one break the length of the loop, covered 0, touching nothing", () => {
+  const far: readonly (readonly Pt[])[] = [[[0, 0], [5, 0], [5, 5], [0, 5]]]
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": far } }))
+  expect(loop.coveredFraction).toBe(0)
+  expect(loop.polygonsTouched).toBe(0)
+  expect(loop.breaksMm.length).toBe(1)
+  near(loop.breaksMm[0], 26.4, 0.1)
+})
+
+test("a break that runs across the start of the walk is one break, not two", () => {
+  // The band x 28.0..28.4 holds the loop's whole left edge (x 28.2) and the first and last 0.2 mm of the top and bottom edges.
+  const band: readonly (readonly Pt[])[] = [
+    [[0, 0], [28.0, 0], [28.0, 40], [0, 40]],
+    [[28.4, 0], [60, 0], [60, 40], [28.4, 40]],
+  ]
+  const loop = loopOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": band } }))
+  expect(loop.breaksMm.length).toBe(1)
+  near(loop.breaksMm[0], 10.0, 0.15)
+})

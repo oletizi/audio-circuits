@@ -59,6 +59,11 @@ test("a ground track that ends on the capacitor's pad, on the pad's layer, is it
   expect(returnOf(splitWith({ from: [30, 18], to: [45.5, 28], layer: "F.Cu" }))).toBe("track")
 })
 
+test("a track's own width reaches the pad: an end 0.15 mm off the rim of a pad is touching with a 0.5 mm track, and 0.4 mm off is not", () => {
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 28.95], layer: "F.Cu" }))).toBe("track")
+  expect(returnOf(splitWith({ from: [30, 18], to: [45, 29.2], layer: "F.Cu" }))).toBe("none-found")
+})
+
 test("a ground track that stops short of the pad, or ends on the wrong layer, does not touch it: none found", () => {
   // 0.4 mm clear of the pad's rim, and the track is 0.25 mm to a side.
   expect(returnOf(splitWith({ from: [30, 18], to: [45, 29.2], layer: "F.Cu" }))).toBe("none-found")
