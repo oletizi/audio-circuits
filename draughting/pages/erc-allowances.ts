@@ -6,15 +6,15 @@
  * How narrow an allowance is. `./erc_sheets.py` (by `./erc_match.py`'s rule, which `./root_erc.py`
  * shares) excuses a violation only when ALL of these hold: it is on the entry's sheet path, it is of
  * the entry's violation type, and the items KiCad reports for it are exactly the entry's two
- * (designator, pin number) pairs, parsed from each item - never a match on free text, and never on
- * the type alone. Any other violation of that type, the same type on other pins, and the same pins on
- * another sheet all stay errors. One allowance excuses at most one violation: a second match fails the
+ * (designator, pin number) pairs (one, for a one-item type, below), parsed from each item - never a
+ * match on free text, and never on the type alone. Any other violation of that type, the same type
+ * on other pins, and the same pins on another sheet all stay errors. One allowance excuses at most one violation: a second match fails the
  * run. An allowance that matches nothing in a run whose report holds its sheet is printed as STALE,
  * and the run still passes, so an allowance that has become unnecessary is visible.
  *
  * Held to the model on every run (`checkErcAllowances`): the sheet names a block of the board's
- * model; the designator is a component of that block; both pins are on the entry's net in the model
- * (so they are on the SAME net); and each pin carries, on the installed KiCad symbol, the pin type the
+ * model; the designator is a component of that block; each pin is on the entry's net in the model
+ * (so two are on the SAME net); and each pin carries, on the installed KiCad symbol, the pin type the
  * entry says causes the violation. An entry failing any of these is refused, naming what is missing.
  *
  * A PWR_FLAG PARTNER (h7 pedal pages plan, Task 9b). One of the two items may be the net's PWR_FLAG
@@ -28,6 +28,15 @@
  * for the other item, the part's own pin. First needed for the h7 pedal's U12 ST, an open-drain
  * output the circuit ties to GND (ruling CR-PEDAL-LM66100-ST-ERC). `kicad-pro.ts` refuses such an
  * entry: a `.kicad_pro` exclusion keys the flag's uuid on the root, which no tool here reads yet.
+ *
+ * A ONE-ITEM ALLOWANCE (h7 pedal pages plan, Task 9c). KiCad reports `pin_not_driven` ("Input pin not
+ * driven by any Output pins") with one item, the input pin. An allowance of that type, and only of
+ * that type (`ONE_ITEM_TYPES`), names exactly one pin; every other type names exactly two. The model
+ * check is the same for its one pin: in the block, on the entry's net, with the stated library pin type.
+ * It cannot name a PWR_FLAG partner. First needed for the h7 pedal's codec page, whose VINL and VINR
+ * inputs are driven by a block the model does not hold yet (ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC,
+ * awaiting the controller); `kicad-pro.ts` refuses such an entry, since a board root is assembled only
+ * once every block, and so every driver, is built.
  *
  * TEST OVERRIDE. When the environment variable `PAGES_ERC_ALLOWANCES_TABLE` names a JSON file, the
  * table is read from it instead, and that is said on stderr. It exists for a board's negative
@@ -62,9 +71,9 @@ export interface ErcAllowance {
   readonly sheet: string
   /** The KiCad ERC violation type. */
   readonly type: string
-  /** Exactly the two items of the violation. */
-  readonly pins: readonly [AllowedPin, AllowedPin]
-  /** The net the model puts both pins on. */
+  /** Exactly the items of the violation: one for a `ONE_ITEM_TYPES` type, two for every other. */
+  readonly pins: readonly [AllowedPin] | readonly [AllowedPin, AllowedPin]
+  /** The net the model puts the pins on. */
   readonly net: string
   /** The type the installed symbol gives each pin, which is the violation's cause. */
   readonly symbolPinType: string
@@ -76,22 +85,36 @@ export const ALLOWANCES_FILE = "erc-allowances.ts"
 /** The designator an allowance gives an item that is the net's PWR_FLAG (see the module comment). */
 export const FLAG_PARTNER = "PWR_FLAG"
 const OVERRIDE_ENV = "PAGES_ERC_ALLOWANCES_TABLE"
+/**
+ * The violation types KiCad reports with ONE item, the pin itself, and so the only types an allowance
+ * may name one pin for. Measured with kicad-cli 10.0.5 on the h7 pedal's codec page: `pin_not_driven`
+ * carries one item, "Symbol U9 Pin 25 [V_{IN}L, Input, Line]". Every other type an allowance has
+ * needed (`pin_to_pin`) carries two.
+ */
+export const ONE_ITEM_TYPES: ReadonlySet<string> = new Set(["pin_not_driven"])
 
 function allowedPin(value: unknown, where: string): AllowedPin {
   if (!isRecord(value)) throw new Error(`${where}: not an object with "designator" and "pin"`)
   return { designator: requiredString(value, "designator", where), pin: requiredString(value, "pin", where) }
 }
 
-function parseAllowance(entry: Record<string, unknown>, where: string): ErcAllowance {
-  const pins = entry["pins"]
-  if (!Array.isArray(pins) || pins.length !== 2) {
-    throw new Error(`${where}: "pins" must be an array of exactly two (designator, pin) objects; got ${JSON.stringify(pins)}`)
+function parsePins(pins: unknown, type: string, where: string): ErcAllowance["pins"] {
+  const one = ONE_ITEM_TYPES.has(type)
+  if (!Array.isArray(pins) || pins.length !== (one ? 1 : 2)) {
+    const want = one ? `one (designator, pin) object, since KiCad reports a ${type} with one item` : "two (designator, pin) objects"
+    throw new Error(`${where}: "pins" must be an array of exactly ${want}; got ${JSON.stringify(pins)}`)
   }
+  const first = allowedPin(pins[0], `${where}, pins[0]`)
+  return one ? [first] : [first, allowedPin(pins[1], `${where}, pins[1]`)]
+}
+
+function parseAllowance(entry: Record<string, unknown>, where: string): ErcAllowance {
+  const type = requiredString(entry, "type", where)
   return {
     ruling: requiredString(entry, "ruling", where),
     sheet: requiredString(entry, "sheet", where),
-    type: requiredString(entry, "type", where),
-    pins: [allowedPin(pins[0], `${where}, pins[0]`), allowedPin(pins[1], `${where}, pins[1]`)],
+    type,
+    pins: parsePins(entry["pins"], type, where),
     net: requiredString(entry, "net", where),
     symbolPinType: requiredString(entry, "symbolPinType", where),
     source: requiredString(entry, "source", where),
@@ -161,7 +184,10 @@ export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBo
       problems.push(`sheet ${entry.sheet} is not /<block>/ for a block of ${board.modelName}; its blocks are ${module.blocks.map((b) => b.prefix).join(", ")}`)
     } else {
       const [a, b] = entry.pins
-      if (a.designator === b.designator && a.pin === b.pin) problems.push("the two pins are the same pin")
+      if (b !== undefined && a.designator === b.designator && a.pin === b.pin) problems.push("the two pins are the same pin")
+      if (b === undefined && a.designator === FLAG_PARTNER) {
+        problems.push(`a one-item (${entry.type}) allowance names the part's own pin; a ${FLAG_PARTNER} partner is one of two items`)
+      }
       for (const p of entry.pins) {
         problems.push(...(p.designator === FLAG_PARTNER ? flagPartnerProblems(entry, p, homes) : pinProblems(entry, p, record.componentIds, board)))
       }
@@ -171,7 +197,7 @@ export function checkErcAllowances(table: readonly ErcAllowance[], board: PageBo
   if (failures.length > 0) {
     throw new Error(
       `erc-allowances.ts: ${failures.length} problem(s); an allowance is excused only while the model bears it out ` +
-        `(both pins on its net in ${board.circuitRel}, with the stated symbol pin type), never on trust:\n  ` +
+        `(each pin on its net in ${board.circuitRel}, with the stated symbol pin type), never on trust:\n  ` +
         failures.join("\n  "),
     )
   }

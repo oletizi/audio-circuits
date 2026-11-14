@@ -48,6 +48,7 @@ below says which it is.** A verdict is bound to the sha256 in the table below;
 | `expr_ref.kicad_sch` | block expr_ref | `f85af0345995f4a4b162ecbe287849ebbcbbdaa6eea9b06f229dab14b011539c` |
 | `codec_sup.kicad_sch` | block codec_sup | `9f98870190e4b1207c005494b73ec8fb75f2f48857df9723e612a96902ce3147` |
 | `sai_iso.kicad_sch` | block sai_iso | `ffc831855bd99856e6c84610169623a34f99ca50e15a834fccb0b23251cff9c8` |
+| `codec.kicad_sch` | block codec | `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588` |
 
 Each committed `.svg` beside a sheet is `draughting/pages/render.sh`'s render of that sheet's
 committed bytes, with the pinned kicad-cli.
@@ -68,6 +69,7 @@ committed bytes, with the pinned kicad-cli.
 | expr_ref | **REVIEWED, 2026-11-13** (Task 9b); `verify.sh` exits 0 | `expr_ref.svg` |
 | codec_sup | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec_sup.svg` |
 | sai_iso | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `sai_iso.svg` |
+| codec | UNREVIEWED (Task 9c); `verify.sh` exits 0 | `codec.svg` |
 
 ## The drafts every repair starts from
 
@@ -2158,6 +2160,15 @@ export reading Q5's library fields gets the generic MOSFET with no footprint or 
 `Oscillator:SG-5032CAN` is not reported: it is the parent of its library's `extends` entry, not an
 `extends` itself.
 
+Q5's fields, read from the installed library and the sheet (`Transistor_FET.kicad_sym`):
+
+| field | installed `AO3400A` (line 1590, `extends "Q_NMOS_GSD"`) | installed parent `Q_NMOS_GSD` (line 68850) | embedded copy (`codec_sup.kicad_sch` line 1013) |
+| --- | --- | --- | --- |
+| Value | `AO3400A` | `Q_NMOS_GSD` | `Q_NMOS_GSD` (the instance's own Value is `AO3400A`) |
+| Footprint | `Package_TO_SOT_SMD:SOT-23` | empty | empty |
+| Datasheet | `http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf` | empty | empty |
+| Description | "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23" | "N-MOSFET transistor, gate/source/drain" | "N-MOSFET transistor, gate/source/drain" |
+
 **`isolated_pin_label` 2**, on the sheet alone: XO_OUT's and PF_TRIP's hierarchical labels, each on
 one pin here; XO_OUT's other pins are the codec's SCKI1 and SCKI2 (codec page) and PF_TRIP's are on
 the pf and modsw pages.
@@ -2345,3 +2356,208 @@ runs under them.
 - Renders: the first had U10's fields on the gate bodies' tops, U11's fields over its own body and
   U10D's Value across C42's lead; the rows went from 600 to 800 mil apart, U11's fields moved east,
   U10D's west, and the rectangle's top and bottom with them.
+
+## codec: the PCM3060 in hardware mode (Task 9c)
+
+**Status: UNREVIEWED.** sha256 `1c17ed164ce98f749cb2db3a88f815e59d10ed82d92b5ca5a924952f4c414588`.
+Render: `codec.svg` beside it. **Its block sheet is not at 0 ERC errors**: two `pin_not_driven`
+errors, on U9's VINL and VINR, are excused by allowances under CR-PEDAL-CODEC-VIN-AWAITING-ERC, a
+ruling drafted by this task and **awaiting the controller** (below).
+
+The block: `circuits/h7-platform/pedal/codec.ts`, 13 parts. U9 (U_CODEC, PCM3060PWR,
+`h7-platform:PCM3060PW`) with C36 and C37 (C_VCC_HF 100 nF and C_VCC_BULK 10 uF, 5V_A_CODEC to GND),
+C38 and C39 (C_VDD_HF 100 nF and C_VDD_BULK 10 uF, 3V3_CODEC to GND), C40 and C41 (C_VCOM_HF 100 nF
+and C_VCOM_BULK 10 uF, CODEC_VCOM to GND); the straps R28 (R_MODE 220 kOhm, MODE pin 28 to GND), R29
+(R_FMT 4.7 kOhm, MC/SCL/FMT pin 1 to 3V3_CODEC) and R30 (R_DEMP 4.7 kOhm, MD/SDA/DEMP pin 2 to GND),
+and MS/ADR/IFMD (pin 27) on 3V3_CODEC; R31, R32 and R33 (33 Ohm: BCK1 and BCK2 to BCK_CODEC, LRCK1
+and LRCK2 to LRCK_CODEC, DOUT to DOUT_CODEC); SCKI1 and SCKI2 on XO_OUT; DIN on DIN_CODEC; RST on
+CODEC_RST_N; VINL, VINR and VOUTL+/-, VOUTR+/-; ZEROL and ZEROR (pins 13, 14) open; DGND, SGND and the
+two AGNDs on GND. Ports 3V3_CODEC, 5V_A_CODEC, BCK_CODEC, CODEC_RST_N, DIN_CODEC, DOUT_CODEC, GND,
+LRCK_CODEC, VINL, VINR, VOUTL+, VOUTL-, VOUTR+, VOUTR- and XO_OUT (eleven reach one pin each: R31's,
+R32's and R33's pin 2, and U9's RST, DIN, VINL, VINR and the four VOUTs). CODEC_FMT, CODEC_DEMP,
+CODEC_MODE, CODEC_VCOM, BCK_PIN, LRCK_PIN and DOUT_PIN are private to the page and drawn as wire, with
+no label. Two no-connects, U9's pins 13 and 14.
+
+**The population note** (text on the page, CR-PEDAL-POPULATION class 1), verbatim:
+
+```
+Not fitted, not modelled and not drawn (CR-PEDAL-POPULATION, class 1):
+- codec_mode_link: CODEC-06's 0 ohm from MODE (pin 28) to DGND, for the I2C option
+- codec_demp_pullup: CODEC-09's 4.7 kohm pull-up from MD/SDA/DEMP (pin 2) to VDD, the SDA pull-up for I2C mode
+- codec_scl_link: CODEC-10's 0 ohm from MC/SCL/FMT (pin 1) to EXP_I2C_SCL (contract pin 12)
+- codec_sda_link: CODEC-10's 0 ohm from MD/SDA/DEMP (pin 2) to EXP_I2C_SDA (contract pin 13)
+- codec_rst_pulldown: v1's R_RST_PD, 10 kohm from CODEC_RST_N to GND
+CODEC-10's sheet note:
+I2C mode = fit both links, fit MODE 0 Ω (CODEC-06) and remove the 220 kΩ, remove the pin-2 4.7 kΩ pull-down and fit the DNF pull-up.
+```
+
+Each part's line is its id and `what` from `NOT_FITTED_PARTS`, and the last line is
+`CODEC10_SHEET_NOTE` (`circuits/h7-platform/pedal-population.ts`).
+`tests/circuits/h7-pedal-codec-note.test.ts` holds the committed sheet's note to both; its control,
+the expr_ref page, carries none of the lines. codec_rst_pulldown would load CODEC_RST_N, which the
+codec_sup page draws; it is listed here because CR-PEDAL-POPULATION has the codec page's note list
+every class 1 part.
+
+### The rulings this page rests on
+
+- [CR-PEDAL-BLOCKS](../../../docs/h7-platform/decisions.md#cr-pedal-blocks): `codec` is one of the
+  pedal's blocks: the PCM3060 and its straps, decoupling and series resistors.
+- [CR-PEDAL-PCM3060-VALUES](../../../docs/h7-platform/decisions.md#cr-pedal-pcm3060-values): the
+  values read from CODEC-02 to CODEC-09 (the decoupling pairs, 220 kOhm, 4.7 kOhm, 4.7 kOhm).
+- [D20](../../../docs/h7-platform/decisions.md#d20), [D2](../../../docs/h7-platform/decisions.md#d2):
+  IFMD to VDD (CODEC-07) and MODE's 220 kOhm (CODEC-06), as the block cites them.
+- [CR-PEDAL-DIGITAL-READINGS](../../../docs/h7-platform/decisions.md#cr-pedal-digital-readings): the
+  33 Ohm parts between the codec's pins and the codec-side SAI nets, BCK1/BCK2 and LRCK1/LRCK2 joined
+  ahead of theirs, DIN with none; the private net names; each decoupling capacitor to GND.
+- [CR-PEDAL-NETS](../../../docs/h7-platform/decisions.md#cr-pedal-nets): BCK_CODEC, LRCK_CODEC,
+  DOUT_CODEC, DIN_CODEC, VINL, VINR and VOUTL+/-, VOUTR+/-, and "Nets awaiting their other block"
+  (VINL, VINR and the VOUTs, `AWAITING_NETS`, until Task 10).
+- [CR-PEDAL-POPULATION](../../../docs/h7-platform/decisions.md#cr-pedal-population): the five class 1
+  parts are not on the page, and the page carries the note above.
+- [CR-PEDAL-SYMBOL-PCM3060](../../../docs/h7-platform/decisions.md#cr-pedal-symbol-pcm3060): U9's
+  project symbol, pin 27 `~{MS}/ADR/IFMD`, VCOM `passive`.
+- [CR-PEDAL-KINDS](../../../docs/h7-platform/decisions.md#cr-pedal-kinds) and
+  [CR-PEDAL-PIN-MATCH](../../../docs/h7-platform/decisions.md#cr-pedal-pin-match).
+- [CR-MODULE-PAGE-RAILS](../../../docs/h7-platform/decisions.md#cr-module-page-rails): 5V_A_CODEC,
+  3V3_CODEC and GND are wires ending in hierarchical labels; no power symbol on the page.
+- [CR-MODULE-PWR-FLAGS](../../../docs/h7-platform/decisions.md#cr-module-pwr-flags): no PWR_FLAG on
+  this page; the one-block root puts the root's stub flags on 5V_A_CODEC and GND.
+- [CR-MODULE-CROSS-PAGE-DRIVERS](../../../docs/h7-platform/decisions.md#cr-module-cross-page-drivers)
+  and [CR-PEDAL-CROSS-PAGE-POWER-DRIVERS](../../../docs/h7-platform/decisions.md#cr-pedal-cross-page-power-drivers):
+  3V3_CODEC (U6's OUT, a PWR_FLAG stand-in, since the sai_iso page), and three new entries, below.
+- [CR-PEDAL-CODEC-VIN-AWAITING-ERC](../../../docs/h7-platform/decisions.md#cr-pedal-codec-vin-awaiting-erc),
+  **drafted by this task, awaiting the controller**: the two allowances, below.
+- [CR-MODULE-PORT-LABEL-CHECK](../../../docs/h7-platform/decisions.md#cr-module-port-label-check):
+  0 of 15 ports on the wrong net.
+- Checklist items, not rulings: the schematic checklist's CODEC-02 to CODEC-12 (lines 88 to 110),
+  which the block cites part by part; analog.md lines 370, 407 and 486; architecture.md line 213. The
+  10 uF parts carry no MPN; a schematic needs none (G245).
+- Drawing choices, not transcriptions: U9 unrotated in the middle, its west side's straps, inputs and
+  SAI pins wired west and its east side's outputs east; the supply rows over U9 (3V3_CODEC west from
+  VDD, 5V_A_CODEC east from VCC) with their capacitors hanging to GND runs; the three SAI pairs joined
+  on three columns, LRCK nearest; a GND vertical down the west side and another down the east, joined
+  by a GND row along the bottom; the population note under the band. CODEC_RST_N, which the draft drew
+  no wire for, takes the CODEC family's blue (CODEC_DEMP, CODEC_FMT, CODEC_MODE and CODEC_VCOM are blue
+  on the draft), and BCK_CODEC, LRCK_CODEC and DOUT_CODEC the default of BCK_PIN, LRCK_PIN and
+  DOUT_PIN; the other one-pin ports the default (`codec/layout.py`, `UNDRAWN_STROKES`, says why). On
+  the codec_sup page CODEC_RST_N is in the default stroke: there it shares its prefix with no other
+  net. Fields, the rectangle and the note moved after the renders listed below.
+
+### The tables and shared tools after this page
+
+- `cross-page-drivers.ts`: **CODEC_RST_N, XO_OUT and DIN_CODEC.** Under this page's one-block root
+  `kicad-cli sch erc` reported `pin_not_driven` on U9's RST (pin 15), SCKI1 (pin 6) and DIN (pin 12),
+  each `input`. CODEC_RST_N is driven by U8's `~{RESET}` (pin 2, `open_collector`) on the codec_sup
+  page, XO_OUT by U7's OUT (pin 3, `output`) on the codec_sup page, DIN_CODEC by U11's Y (pin 4,
+  `output`) on the sai_iso page; each stand-in is a TestPoint. With them, three of the five errors are
+  gone. On the codec_sup and sai_iso pages, which hold those drivers, the one-block root places no
+  stand-in, and their `verify.sh` output is unchanged.
+- `erc-allowances.ts`: **two one-item allowances, CR-PEDAL-CODEC-VIN-AWAITING-ERC.** The other two
+  errors, `pin_not_driven` on U9's VINL (pin 25) and VINR (pin 26), have no driver in the model: what
+  drives them is in the adc_drv block, which the model holds from Task 10 (`AWAITING_NETS`). A
+  cross-page driver entry is held to the model, so cannot name one. Each error is admitted as an
+  allowance of one item, the pin. To hold one, the shared tools now take a one-item allowance for
+  `pin_not_driven` only (`ONE_ITEM_TYPES`, `draughting/pages/erc-allowances.ts`), match exactly its one
+  item (`erc_match.py`), and refuse it in `kicad-pro.ts`. Controls: `erc-control.sh` 11 to 14 (the
+  page verifies with the allowances; without them it fails on exactly U9 pins 25 and 26; a VINL
+  allowance on U9 pin 15, and a one-item `pin_to_pin` allowance, are refused);
+  `tests/draught/erc-allowances-one-item.test.ts` (the matcher takes exactly the one pin, not pin 26,
+  not a second item, not another sheet; a one-item PWR_FLAG partner is refused; and every allowance
+  under the ruling names a net still in `AWAITING_NETS`, so the test fails on the change that builds
+  adc_drv). A scratch edit taking VINL out of `AWAITING_NETS` made that test fail; the edit was
+  reverted. The expr_ref allowance and the module's are two-item and unaffected: their replays and
+  controls are unchanged.
+- `pwr-flag-homes.ts` is unchanged by this page.
+
+### Measurements, before (the draft) and after (this page)
+
+Both columns with the tables as this page leaves them. The draft columns were measured on the draft
+copied beside the committed `sym-lib-table`.
+
+| measure | draft | page |
+| --- | --- | --- |
+| netlist export against the block's model: componentIdentity, netMembership, pinIdentity, values | 0, 0, 0, 0 | 0, 0, 0, 0 |
+| footprints; footprints undeclared | 0; 13 (the model declares none) | 0; 13 |
+| exported components, nets, net members | 13, 24, 52 | 13, 24, 52 |
+| exported nets carrying a model net name | 11 of 24 | 15 of 24 (the fifteen ports; the other nine are the seven private nets, unlabelled, and U9's pins 13 and 14) |
+| ports whose label is on the wrong net | 14 of 15 | 0 of 15 |
+| ERC, the sheet alone | 19 errors (`pin_not_connected` 11, the eleven one-pin ports' pins; `pin_not_driven` 5, U9's RST, VINL, VINR, SCKI1 and DIN; `power_pin_not_driven` 3, U9's DGND, VDD and VCC), 1 warning (`lib_symbol_issues` 1, U9) | 23 errors (`pin_not_connected` 15: each hierarchical label has no parent sheet; `pin_not_driven` 5 and `power_pin_not_driven` 3, the same pins), 12 warnings (`isolated_pin_label` 11, the eleven one-pin ports' labels; `lib_symbol_issues` 1) |
+| ERC under a one-block root, `/codec/` | 19 errors (2 excused: `pin_not_connected` 11, `pin_not_driven` 5, `power_pin_not_driven` 3), 3 warnings (`same_local_global_label` 3) | **2 errors, both excused by CR-PEDAL-CODEC-VIN-AWAITING-ERC (`pin_not_driven`, U9 pins 25 and 26), 0 warnings** |
+| ERC under a one-block root, `/` | 24 errors (`hier_label_mismatch` 15, `label_dangling` 9), 7 warnings (`isolated_pin_label` 6, `lib_symbol_issues` 1) | 0 errors, 19 warnings (`isolated_pin_label` 18, the stub label and the sheet label of each of the nine one-pin ports with no stand-in; `lib_symbol_issues` 1) |
+| parenthesis depth at end, lowest | 0, 0 | 0, 0 |
+| true wire crossings, T-meetings | 10, 0 | 4, 0 |
+| orphan junctions, of total | 0 of 11 | 0 of 21 |
+| wire-to-wire tees without a dot; collinear overlapping pairs | 0; 2 | 0; 0 |
+| labels | 15 on 11 nets (7 global, 8 local) | 15 on 15 nets, all hierarchical |
+| paper fit (US Letter) | overshoots east by 8.213 mm | fits |
+| wire groups with more than one stroke | 0 of 15 | 0 of 22 |
+| symbols (parts, power symbols, PWR_FLAGs) | 13 (13, 0, 0) | 13 (13, 0, 0) |
+| placed pins | 52 | 52 |
+| wires, total length | 74, 1338.58 mm | 72, 1115.06 mm |
+| wire corners | 16 | 13 |
+| junctions | 11 | 21 |
+| no-connects | 2 (U9 pins 13 and 14) | 2 (U9 pins 13 and 14) |
+| text notes | 0 | 1 (the population note) |
+
+**`pin_not_driven` 5 and `power_pin_not_driven` 3 on the sheet alone**: RST, SCKI1 and DIN, whose
+drivers are on the codec_sup and sai_iso pages (TestPoint stand-ins under the one-block root); VINL
+and VINR, whose driver the model does not hold (the allowances); DGND (GND's flag is on the root),
+VDD (3V3_CODEC, U6's OUT on codec_sup; a PWR_FLAG stand-in) and VCC (5V_A_CODEC's flag is on the
+root). Under the one-block root only VINL and VINR remain.
+
+**`lib_symbol_issues` 1**, on U9: *"The current configuration does not include the symbol library
+'h7-platform'"*. This is the pf page's U1 warning: a block page has no `.kicad_pro`, and kicad-cli
+10.0.5 does not take the committed `sym-lib-table` without one. The symbol is embedded in the sheet.
+No `lib_symbol_mismatch`: the `Device` symbols match their installed copies.
+
+**`isolated_pin_label` 11**, on the sheet alone: the eleven one-pin ports' labels; each net's other
+end is on another page (BCK_CODEC, LRCK_CODEC and DOUT_CODEC on sai_iso, CODEC_RST_N on codec_sup,
+DIN_CODEC on sai_iso) or in a block the model does not hold yet (VINL, VINR and the VOUTs).
+
+### Why the page has four crossings, as the layout records it
+
+Observations, not a judgement of the page:
+
+- **Three among the SAI pairs.** U9's west side runs, north to south, LRCK1, BCK1, SCKI1, DIN, LRCK2,
+  BCK2, SCKI2, and the model joins LRCK1 to LRCK2, BCK1 to BCK2 and SCKI1 to SCKI2 on that side. Each
+  pair's two pins interleave with each other pair's (L B S, then L B S), so any two of the three
+  joins cross at least once on that side, three crossings in all. The page has three: BCK1's run
+  over the LRCK column, SCKI1's over it, and BCK2's over the SCKI column. DIN's label sits between
+  the pins and the columns, so DIN adds none.
+- **One between IFMD and DEMP.** FMT (pin 1, through R29) and IFMD (pin 27) both go to 3V3_CODEC, and
+  the DEMP pin between them (pin 2, through R30) goes to GND, so with VDD's rail over U9 the DEMP
+  branch is enclosed by 3V3_CODEC and its way to GND crosses it once: IFMD's vertical up to the rail
+  crosses DEMP's row.
+
+### What the page shows, as observations
+
+- U9 in the middle, unrotated, its west pins wired west and its east pins east.
+- Over U9: VDD rises to the 3V3_CODEC rail, which runs west past R29 (up from the FMT row), the IFMD
+  vertical, C38 and C39 to 3V3_CODEC's label, pointing west; VCC rises to the 5V_A_CODEC row, which
+  runs east past C36 and C37 to its label, pointing east. The four capacitors hang down to GND runs.
+- West of U9, north to south: FMT through R29 up to the rail; DEMP west to R30, which rises to the
+  west GND run; IFMD west to its vertical up to the rail; RST west to CODEC_RST_N's label; MODE west to
+  R28, which rises to the west GND run; VINL and VINR each to its label, pointing west.
+- The SAI pairs on three columns: LRCK1 and LRCK2 join on the nearest, which rises to a row through
+  R32 to LRCK_CODEC's label; BCK1 and BCK2 on the farthest, which runs west through R31 to
+  BCK_CODEC's label; SCKI1 and SCKI2 on the middle one, which drops to a row west to XO_OUT's label.
+  DIN runs west to DIN_CODEC's label, between U9 and the columns. Every one of these labels points
+  west.
+- East of U9: VOUTL+, VOUTL-, VOUTR+ and VOUTR- each east to its label, pointing east; ZEROR and ZEROL
+  carry no-connects; DOUT east through R33 to DOUT_CODEC's label, pointing east; VCOM east past C40
+  and C41, which hang down to the GND row.
+- GND: the west run under C38 and C39 (taking R30 and R28) runs to a vertical down the west side,
+  west of the labels, to the GND row along the bottom, which takes U9's four ground pins, C40 and C41
+  and runs east to a vertical up to the east run under C36 and C37; GND's label at the row's west
+  end, pointing west.
+- The population note under the band, left-justified.
+- The CODEC family (CODEC_FMT, CODEC_DEMP, CODEC_MODE, CODEC_VCOM, CODEC_RST_N) carries copperhead's
+  blue; every other net its default.
+- U9's Reference and Value west of its bottom, right-justified; the vertical resistors' and the
+  capacitors' fields beside their bodies (R30's west, R28's west); the horizontal resistors' above
+  them.
+- Renders: the first had C38's and C39's fields over each other, likewise C36's and C37's and C40's
+  and C41's, R28 at the west GND vertical at the end of a MODE row across the page, the note over the
+  rectangle's bottom edge, and the east GND vertical well east of the labels; the capacitors were
+  spread, R28 moved beside U9 rising to the west GND run, R33 and DOUT_CODEC's label moved west to the
+  VOUT labels' column, the east vertical with them, and the note down.

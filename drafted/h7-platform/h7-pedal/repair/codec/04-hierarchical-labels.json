@@ -1,0 +1,217 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "codec.kicad_sch",
+ "ops": [
+  {
+   "op": "delete_object",
+   "uuid": "5d62cfb4-e17d-55ac-a272-8b3a3510e455"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_CODEC",
+   "at": [
+    2300,
+    1900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "d1ac78b8-d742-5388-8746-922e9c5d7fce"
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A_CODEC",
+   "at": [
+    6600,
+    1900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c5a5f41c-8421-5752-97cd-729f38c0eac6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "BCK_CODEC",
+   "at": [
+    2400,
+    3650
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "034f05d7-4c78-52fd-b705-6fba2bb7ed69"
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_RST_N",
+   "at": [
+    4000,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "f7e24bf9-4000-539d-8346-d607f7b9be56"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DIN_CODEC",
+   "at": [
+    4000,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "5a79d98c-9bb8-5937-88a8-c7c25c9135ba"
+  },
+  {
+   "op": "add_net_label",
+   "name": "DOUT_CODEC",
+   "at": [
+    6200,
+    3700
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "497263d1-ac22-5da0-8a79-c4f17b8c8204"
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1200,
+    4900
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "52d17881-3f7d-5360-84bd-d85c5dd883ee"
+  },
+  {
+   "op": "add_net_label",
+   "name": "LRCK_CODEC",
+   "at": [
+    2400,
+    3050
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "65b79397-0ff5-5516-90a5-3fa48cd538e4"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VINL",
+   "at": [
+    4000,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "065610d1-6265-5b61-b857-2b9cc73a885c"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VINR",
+   "at": [
+    4000,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  },
+  {
+   "op": "delete_object",
+   "uuid": "10904dda-a2b4-59f5-899e-5f8459f815b3"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL+",
+   "at": [
+    6200,
+    2800
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "49ef4f37-67e8-543a-9dec-6a6976cca8b6"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL-",
+   "at": [
+    6200,
+    2900
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "623c3b55-952c-54cd-958c-e093df970d29"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR+",
+   "at": [
+    6200,
+    3100
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "c1117e1d-7716-5b84-948c-2cebb84255f8"
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR-",
+   "at": [
+    6200,
+    3200
+   ],
+   "scope": "hierarchical",
+   "rotation": 0
+  },
+  {
+   "op": "delete_object",
+   "uuid": "cc84af83-4f5f-5a2f-adaa-0a0fec2fd37d"
+  },
+  {
+   "op": "add_net_label",
+   "name": "XO_OUT",
+   "at": [
+    2900,
+    4300
+   ],
+   "scope": "hierarchical",
+   "rotation": 180
+  }
+ ]
+}

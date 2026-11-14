@@ -1,0 +1,125 @@
+[
+ {
+  "name": "3V3_CODEC",
+  "pins": [
+   "C38.1",
+   "C39.1",
+   "R29.2",
+   "U9.27",
+   "U9.7"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "5V_A_CODEC",
+  "pins": [
+   "C36.1",
+   "C37.1",
+   "U9.24"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "BCK_CODEC",
+  "pins": [
+   "R31.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "CODEC_RST_N",
+  "pins": [
+   "U9.15"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "DIN_CODEC",
+  "pins": [
+   "U9.12"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "DOUT_CODEC",
+  "pins": [
+   "R33.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "GND",
+  "pins": [
+   "C36.2",
+   "C37.2",
+   "C38.2",
+   "C39.2",
+   "C40.2",
+   "C41.2",
+   "R28.2",
+   "R30.2",
+   "U9.16",
+   "U9.22",
+   "U9.23",
+   "U9.8"
+  ],
+  "drafted": true
+ },
+ {
+  "name": "LRCK_CODEC",
+  "pins": [
+   "R32.2"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VINL",
+  "pins": [
+   "U9.25"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VINR",
+  "pins": [
+   "U9.26"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTL+",
+  "pins": [
+   "U9.20"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTL-",
+  "pins": [
+   "U9.19"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTR+",
+  "pins": [
+   "U9.18"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "VOUTR-",
+  "pins": [
+   "U9.17"
+  ],
+  "drafted": false
+ },
+ {
+  "name": "XO_OUT",
+  "pins": [
+   "U9.6",
+   "U9.9"
+  ],
+  "drafted": true
+ }
+]

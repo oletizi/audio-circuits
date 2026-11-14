@@ -31,6 +31,13 @@
 #     that pin_to_pin.
 #  9. negative: an allowance naming U12 pin 4 (N/C, on GND, typed free) is refused by the model check.
 # 10. negative: an allowance whose PWR_FLAG partner is not the flag's pin 1 is refused.
+# 11. positive (Task 9c): the committed codec page verifies, its two ERC errors, pin_not_driven on U9's
+#     VINL and VINR (inputs whose driver is in a block the model does not hold yet), excused by
+#     CR-PEDAL-CODEC-VIN-AWAITING-ERC, a one-item allowance each.
+# 12. negative: the same page with no allowance fails on exactly those two.
+# 13. negative: a one-item allowance for VINL naming U9 pin 15 (RST, on CODEC_RST_N) is refused by the
+#     model check.
+# 14. negative: a one-item allowance of a two-item type (pin_to_pin) is refused.
 #
 # usage: sh erc-control.sh
 set -eu
@@ -173,6 +180,55 @@ if PAGES_ERC_ALLOWANCES_TABLE="$work/flag2.json" sh "$pages/verify.sh" "$board" 
 fi
 grep -q "a PWR_FLAG partner is the flag's pin 1, not pin 2" "$work/er-flag2.log" \
   || { cat "$work/er-flag2.log" >&2; bad "the allowance was not refused for the partner's pin"; }
+echo "   refused as expected"
+
+# Controls 11 to 14 (h7 pedal pages plan, Task 9c): the one-item allowance (pin_not_driven) and the
+# codec page's two, ruling CR-PEDAL-CODEC-VIN-AWAITING-ERC (U9's VINL and VINR, inputs whose driver is
+# in the adc_drv block, which the model does not hold yet).
+cd_="$board/codec.kicad_sch"
+VINL='Symbol U9 Pin 25 \[V_{IN}L, Input, Line\]'
+VINR='Symbol U9 Pin 26 \[V_{IN}R, Input, Line\]'
+
+echo "== 11. the committed codec page verifies, its two ERC errors excused by CR-PEDAL-CODEC-VIN-AWAITING-ERC"
+sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd.log" 2>&1 || { cat "$work/cd.log" >&2; bad "the committed codec page did not verify"; }
+grep -q '^sheet /codec/: errors 2 (2 excused by a declared allowance), warnings 0' "$work/cd.log" \
+  || { cat "$work/cd.log" >&2; bad "/codec/ is not at 2 errors, both excused, and 0 warnings"; }
+grep -q "^excused: error pin_not_driven on /codec/ under CR-PEDAL-CODEC-VIN-AWAITING-ERC: $VINL" "$work/cd.log" \
+  || { cat "$work/cd.log" >&2; bad "U9's VINL is not among the excused errors"; }
+grep -q "^excused: error pin_not_driven on /codec/ under CR-PEDAL-CODEC-VIN-AWAITING-ERC: $VINR" "$work/cd.log" \
+  || { cat "$work/cd.log" >&2; bad "U9's VINR is not among the excused errors"; }
+echo "   pass: $(grep -c '^excused: ' "$work/cd.log") excused, U9 pins 25 and 26"
+
+echo "== 12. no allowance (test override, an empty table): the codec page fails on U9's VINL and VINR"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/no-allow.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-none.log" 2>&1; then
+  cat "$work/cd-none.log" >&2; bad "verify.sh passed the codec page with no allowance"
+fi
+grep -q 'TEST OVERRIDE' "$work/cd-none.log" || { cat "$work/cd-none.log" >&2; bad "the override was not announced"; }
+grep -q "at pin_not_driven: $VINL" "$work/cd-none.log" && grep -q "at pin_not_driven: $VINR" "$work/cd-none.log" \
+  || { cat "$work/cd-none.log" >&2; bad "verify.sh failed, but not on U9's VINL and VINR"; }
+grep -q '^sheet /codec/: errors 2, warnings 0' "$work/cd-none.log" || { cat "$work/cd-none.log" >&2; bad "/codec/ carries errors other than the two"; }
+echo "   fails as expected: /codec/ errors 2, pin_not_driven on U9 pins 25 and 26"
+
+# A one-item allowance on the codec page; the model check or the parse must refuse each.
+one() {
+  printf '[{"ruling":"erc-control.sh","sheet":"/codec/","type":"%s","pins":[{"designator":"U9","pin":"%s"}],"net":"VINL","symbolPinType":"input","source":"erc-control.sh, a control"}]\n' "$1" "$2"
+}
+echo "== 13. a one-item allowance naming U9 pin 15 (RST, an input on CODEC_RST_N) for VINL is refused by the model check"
+one pin_not_driven 15 >"$work/rst.json"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/rst.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-rst.log" 2>&1; then
+  cat "$work/cd-rst.log" >&2; bad "verify.sh accepted a VINL allowance naming U9 pin 15"
+fi
+grep -q 'U9 pin 15 is on net CODEC_RST_N in the model, not on VINL' "$work/cd-rst.log" \
+  || { cat "$work/cd-rst.log" >&2; bad "the allowance was not refused for pin 15's net"; }
+echo "   refused as expected"
+
+echo "== 14. a one-item allowance of a two-item type (pin_to_pin) is refused"
+one pin_to_pin 25 >"$work/one-p2p.json"
+if PAGES_ERC_ALLOWANCES_TABLE="$work/one-p2p.json" sh "$pages/verify.sh" "$board" codec "$cd_" >"$work/cd-p2p.log" 2>&1; then
+  cat "$work/cd-p2p.log" >&2; bad "verify.sh accepted a one-item pin_to_pin allowance"
+fi
+grep -q '"pins" must be an array of exactly two (designator, pin) objects' "$work/cd-p2p.log" \
+  || { cat "$work/cd-p2p.log" >&2; bad "the allowance was not refused for its item count"; }
 echo "   refused as expected"
 
 echo "erc-control.sh: every control came out as stated"

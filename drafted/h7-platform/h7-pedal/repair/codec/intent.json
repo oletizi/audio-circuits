@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "parts": [
+    {
+      "ref": "U9",
+      "libId": "h7-platform:PCM3060PW",
+      "value": "PCM3060PWR",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C36",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C37",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C38",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C39",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C40",
+      "libId": "Device:C",
+      "value": ".1uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "C41",
+      "libId": "Device:C",
+      "value": "10uF",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R28",
+      "libId": "Device:R",
+      "value": "220K",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R29",
+      "libId": "Device:R",
+      "value": "4.7K",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R30",
+      "libId": "Device:R",
+      "value": "4.7K",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R31",
+      "libId": "Device:R",
+      "value": "33R",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R32",
+      "libId": "Device:R",
+      "value": "33R",
+      "group": "Codec PCM3060"
+    },
+    {
+      "ref": "R33",
+      "libId": "Device:R",
+      "value": "33R",
+      "group": "Codec PCM3060"
+    }
+  ],
+  "nets": [
+    {
+      "name": "3V3_CODEC",
+      "kind": "signal",
+      "pins": [
+        "C38.1",
+        "C39.1",
+        "R29.2",
+        "U9.27",
+        "U9.7"
+      ]
+    },
+    {
+      "name": "5V_A_CODEC",
+      "kind": "signal",
+      "pins": [
+        "C36.1",
+        "C37.1",
+        "U9.24"
+      ]
+    },
+    {
+      "name": "BCK_PIN",
+      "kind": "signal",
+      "pins": [
+        "R31.1",
+        "U9.10",
+        "U9.5"
+      ]
+    },
+    {
+      "name": "CODEC_DEMP",
+      "kind": "signal",
+      "pins": [
+        "R30.1",
+        "U9.2"
+      ]
+    },
+    {
+      "name": "CODEC_FMT",
+      "kind": "signal",
+      "pins": [
+        "R29.1",
+        "U9.1"
+      ]
+    },
+    {
+      "name": "CODEC_MODE",
+      "kind": "signal",
+      "pins": [
+        "R28.1",
+        "U9.28"
+      ]
+    },
+    {
+      "name": "CODEC_VCOM",
+      "kind": "signal",
+      "pins": [
+        "C40.1",
+        "C41.1",
+        "U9.21"
+      ]
+    },
+    {
+      "name": "DOUT_PIN",
+      "kind": "signal",
+      "pins": [
+        "R33.1",
+        "U9.3"
+      ]
+    },
+    {
+      "name": "GND",
+      "kind": "signal",
+      "pins": [
+        "C36.2",
+        "C37.2",
+        "C38.2",
+        "C39.2",
+        "C40.2",
+        "C41.2",
+        "R28.2",
+        "R30.2",
+        "U9.16",
+        "U9.22",
+        "U9.23",
+        "U9.8"
+      ]
+    },
+    {
+      "name": "LRCK_PIN",
+      "kind": "signal",
+      "pins": [
+        "R32.1",
+        "U9.11",
+        "U9.4"
+      ]
+    },
+    {
+      "name": "XO_OUT",
+      "kind": "signal",
+      "pins": [
+        "U9.6",
+        "U9.9"
+      ]
+    }
+  ],
+  "noConnect": [
+    "U9.13",
+    "U9.14"
+  ],
+  "hints": {
+    "groupOrder": [
+      "Codec PCM3060"
+    ]
+  }
+}

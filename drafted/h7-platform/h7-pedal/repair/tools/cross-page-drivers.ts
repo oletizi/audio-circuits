@@ -28,6 +28,13 @@
  * - the sai_iso page: 3V3_CODEC. U11's VCC (pin 5, `power_in`) reported `power_pin_not_driven` under
  *   the sai_iso page's one-block root; 3V3_CODEC is driven by U6's OUT on the codec_sup page, a
  *   `power_out` pin (h7-platform:TPS7A2433DBV), so its stand-in is a PWR_FLAG, as 5V_A's is.
+ * - the codec page: CODEC_RST_N, XO_OUT and DIN_CODEC. U9's RST (pin 15), SCKI1 (pin 6; SCKI2, pin 9,
+ *   is on the same net) and DIN (pin 12), each typed `input`, reported `pin_not_driven` under the
+ *   codec page's one-block root. CODEC_RST_N is driven by U8's RESET on the codec_sup page
+ *   (`open_collector`; Q5's drain beside it is passive), XO_OUT by U7's OUT on the codec_sup page
+ *   (`output`), DIN_CODEC by U11's Y on the sai_iso page (`output`); each stand-in is a TestPoint.
+ *   VINL and VINR, U9's other two inputs, have no entry: their driver is the adc_drv block, which the
+ *   model does not hold until Task 10, and an entry is held to the model.
  *
  * DATA ONLY; the shared tools read it through the board's drafted directory, and refuse a board
  * without it, naming the file.
@@ -69,5 +76,29 @@ export const CROSS_PAGE_DRIVERS: readonly CrossPageDriver[] = [
     pin: "5",
     pinName: "OUT",
     source: "circuits/h7-platform/pedal/codec-sup.ts:42 (u_cvdd pin 5 OUT = 3V3_CODEC; analog.md:387, R-30); U6's symbol h7-platform:TPS7A2433DBV types pin 5 power_out (CR-PEDAL-SYMBOL-TPS7A2433), so its stand-in is a PWR_FLAG (CR-PEDAL-CROSS-PAGE-POWER-DRIVERS)",
+  },
+  {
+    net: "CODEC_RST_N",
+    block: "codec_sup",
+    designator: "U8",
+    pin: "2",
+    pinName: "~{RESET}",
+    source: "circuits/h7-platform/pedal/codec-sup.ts:51 (u_crst pin 2, open-drain RESET on CODEC_RST_N; analog.md:407, R-31); h7-platform:TLV803EA30DBZR types pin 2 open_collector (CR-PEDAL-SYMBOL-TLV803EA29)",
+  },
+  {
+    net: "XO_OUT",
+    block: "codec_sup",
+    designator: "U7",
+    pin: "3",
+    pinName: "OUT",
+    source: "circuits/h7-platform/pedal/codec-sup.ts:48 (u_xo pin 3 OUT = XO_OUT; analog.md:374 and :383, R-29); Oscillator:SG-5032CAN types pin 3 output (CR-PEDAL-SYMBOL-SG-210STF)",
+  },
+  {
+    net: "DIN_CODEC",
+    block: "sai_iso",
+    designator: "U11",
+    pin: "4",
+    pinName: "Y",
+    source: "circuits/h7-platform/pedal/sai-iso.ts:61 (u_iso_c pin 4, Y, on DIN_CODEC; architecture.md:256, R-10); h7-platform:SN74LVC1G34DBV types pin 4 output (CR-PEDAL-SYMBOL-SN74LVC1G34)",
   },
 ]

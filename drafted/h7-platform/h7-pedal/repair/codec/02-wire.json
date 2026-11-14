@@ -1,0 +1,1263 @@
+{
+ "protocol_version": 2,
+ "target_format": "kicad",
+ "target_file": "codec.kicad_sch",
+ "ops": [
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     2200
+    ],
+    [
+     4900,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     1900
+    ],
+    [
+     4300,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     1900
+    ],
+    [
+     4100,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4100,
+     1900
+    ],
+    [
+     3150,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3150,
+     1900
+    ],
+    [
+     2700,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     1900
+    ],
+    [
+     2300,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4300,
+     2200
+    ],
+    [
+     4300,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     2700
+    ],
+    [
+     4100,
+     2700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4100,
+     2700
+    ],
+    [
+     4100,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     2500
+    ],
+    [
+     4300,
+     2500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     2200
+    ],
+    [
+     5100,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     1900
+    ],
+    [
+     5700,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     1900
+    ],
+    [
+     6150,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     1900
+    ],
+    [
+     6600,
+     1900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     2600
+    ],
+    [
+     3900,
+     2600
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     2800
+    ],
+    [
+     4000,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     2900
+    ],
+    [
+     3300,
+     2900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3100
+    ],
+    [
+     4000,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3200
+    ],
+    [
+     4000,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3700
+    ],
+    [
+     4000,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3300
+    ],
+    [
+     3400,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3800
+    ],
+    [
+     3400,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3400,
+     3800
+    ],
+    [
+     3400,
+     3300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3400,
+     3300
+    ],
+    [
+     3400,
+     3050
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3400,
+     3050
+    ],
+    [
+     3050,
+     3050
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2750,
+     3050
+    ],
+    [
+     2400,
+     3050
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3500
+    ],
+    [
+     3300,
+     3500
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     4000
+    ],
+    [
+     3300,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     3500
+    ],
+    [
+     3300,
+     4000
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     4000
+    ],
+    [
+     3300,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     4300
+    ],
+    [
+     2900,
+     4300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3400
+    ],
+    [
+     3200,
+     3400
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4500,
+     3900
+    ],
+    [
+     3200,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     3400
+    ],
+    [
+     3200,
+     3650
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     3650
+    ],
+    [
+     3200,
+     3900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3200,
+     3650
+    ],
+    [
+     3050,
+     3650
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2750,
+     3650
+    ],
+    [
+     2400,
+     3650
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     2800
+    ],
+    [
+     6200,
+     2800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     2900
+    ],
+    [
+     6200,
+     2900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3100
+    ],
+    [
+     6200,
+     3100
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3200
+    ],
+    [
+     6200,
+     3200
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3700
+    ],
+    [
+     5750,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6050,
+     3700
+    ],
+    [
+     6200,
+     3700
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5500,
+     3800
+    ],
+    [
+     5700,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     3800
+    ],
+    [
+     6150,
+     3800
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3150,
+     2200
+    ],
+    [
+     3150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     2200
+    ],
+    [
+     2700,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     2200
+    ],
+    [
+     5700,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     2200
+    ],
+    [
+     6150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     2600
+    ],
+    [
+     3300,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3900,
+     2300
+    ],
+    [
+     3300,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3300,
+     2300
+    ],
+    [
+     3150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     3150,
+     2300
+    ],
+    [
+     2700,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     2700,
+     2300
+    ],
+    [
+     1500,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1500,
+     2300
+    ],
+    [
+     1500,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     4400
+    ],
+    [
+     4800,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     4400
+    ],
+    [
+     4900,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4400
+    ],
+    [
+     5100,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     4400
+    ],
+    [
+     5200,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4100
+    ],
+    [
+     5700,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     4100
+    ],
+    [
+     6150,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1200,
+     4900
+    ],
+    [
+     1500,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     1500,
+     4900
+    ],
+    [
+     4800,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4800,
+     4900
+    ],
+    [
+     4900,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     4900,
+     4900
+    ],
+    [
+     5100,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5100,
+     4900
+    ],
+    [
+     5200,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5200,
+     4900
+    ],
+    [
+     5700,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     5700,
+     4900
+    ],
+    [
+     6150,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     4900
+    ],
+    [
+     7000,
+     4900
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7000,
+     4900
+    ],
+    [
+     7000,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     7000,
+     2300
+    ],
+    [
+     6150,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_wire",
+   "vertices": [
+    [
+     6150,
+     2300
+    ],
+    [
+     5700,
+     2300
+    ]
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    1500,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2700,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    2700,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3150,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3150,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3200,
+    3650
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3300,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3300,
+    4000
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    3400,
+    3300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4100,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4300,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4800,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    4900,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5100,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5200,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5700,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5700,
+    3800
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    5700,
+    4900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6150,
+    1900
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6150,
+    2300
+   ]
+  },
+  {
+   "op": "add_junction",
+   "at": [
+    6150,
+    4900
+   ]
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U9.13"
+  },
+  {
+   "op": "add_no_connect",
+   "pin": "U9.14"
+  },
+  {
+   "op": "add_net_label",
+   "name": "3V3_CODEC",
+   "at": [
+    2300,
+    1900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "5V_A_CODEC",
+   "at": [
+    6600,
+    1900
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "CODEC_RST_N",
+   "at": [
+    4000,
+    2800
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VINL",
+   "at": [
+    4000,
+    3100
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VINR",
+   "at": [
+    4000,
+    3200
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "DIN_CODEC",
+   "at": [
+    4000,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "LRCK_CODEC",
+   "at": [
+    2400,
+    3050
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "XO_OUT",
+   "at": [
+    2900,
+    4300
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "BCK_CODEC",
+   "at": [
+    2400,
+    3650
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL+",
+   "at": [
+    6200,
+    2800
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTL-",
+   "at": [
+    6200,
+    2900
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR+",
+   "at": [
+    6200,
+    3100
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "VOUTR-",
+   "at": [
+    6200,
+    3200
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "DOUT_CODEC",
+   "at": [
+    6200,
+    3700
+   ],
+   "scope": "local",
+   "rotation": 0
+  },
+  {
+   "op": "add_net_label",
+   "name": "GND",
+   "at": [
+    1200,
+    4900
+   ],
+   "scope": "local",
+   "rotation": 180
+  },
+  {
+   "op": "add_text",
+   "text": "Not fitted, not modelled and not drawn (CR-PEDAL-POPULATION, class 1):\n- codec_mode_link: CODEC-06's 0 ohm from MODE (pin 28) to DGND, for the I2C option\n- codec_demp_pullup: CODEC-09's 4.7 kohm pull-up from MD/SDA/DEMP (pin 2) to VDD, the SDA pull-up for I2C mode\n- codec_scl_link: CODEC-10's 0 ohm from MC/SCL/FMT (pin 1) to EXP_I2C_SCL (contract pin 12)\n- codec_sda_link: CODEC-10's 0 ohm from MD/SDA/DEMP (pin 2) to EXP_I2C_SDA (contract pin 13)\n- codec_rst_pulldown: v1's R_RST_PD, 10 kohm from CODEC_RST_N to GND\nCODEC-10's sheet note:\nI2C mode = fit both links, fit MODE 0 \u03a9 (CODEC-06) and remove the 220 k\u03a9, remove the pin-2 4.7 k\u03a9 pull-down and fit the DNF pull-up.",
+   "at": [
+    1000,
+    5700
+   ]
+  },
+  {
+   "op": "set_title_block",
+   "title": "h7-pedal: codec",
+   "date": "2026-11-13",
+   "rev": "A",
+   "comment1": "generated - do not edit"
+  }
+ ]
+}
