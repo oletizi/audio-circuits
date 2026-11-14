@@ -67,6 +67,12 @@
  * a guess at which is which would be an invention - stated on `LoopContinuity`,
  * where the number is read, and in `./pour-continuity.ts`).
  *
+ * A fill whose polygons rasterise to no copper pixel at all (zero area) refuses the
+ * whole board, in `./pour-bridge.ts`, rather than only the neck figure of that
+ * layer. KiCad does not write such a fill, `min_thickness` makes one hard to reach,
+ * and a layer reported as "poured, with no copper" is a contradiction this module
+ * would rather stop on than carry; it is a question, not a defect found.
+ *
  * **NOT PINNED BY ANY TEST, found by mutation:** the raster's half-pixel column
  * offset (`./pour-bridge.ts`) and the minimum sample count of a resampled loop
  * (`./pour-geometry.ts`); both move a figure by less than one pixel or sample.

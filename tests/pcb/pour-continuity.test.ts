@@ -32,6 +32,13 @@ function continuityOf(text: string, layer = "F.Cu") {
 
 const bestOf = (text: string, layer = "F.Cu") => continuityOf(text, layer).best
 
+/** The offset of the nearest loop with nothing uncovered. */
+function firstWhole(profile: readonly { readonly offsetMm: number; readonly uncoveredMm: number }[]): number {
+  const whole = profile.find((l) => l.uncoveredMm === 0)
+  if (whole === undefined) throw new Error("no loop in the band is whole")
+  return whole.offsetMm
+}
+
 // --- The band: an unbroken pour, with the IC's own voids at three depths -----
 
 test("on an unbroken pour with a relief round every pad the headline loop reads full coverage, and the loop at the pad extent shows the IC's own voids", () => {
@@ -39,6 +46,9 @@ test("on an unbroken pour with a relief round every pad the headline loop reads 
   expect(loops.best.coveredFraction).toBe(1)
   expect(loops.best.breaksMm).toEqual([])
   expect(loops.best.uncoveredMm).toBe(0)
+  // Several loops are whole; ties go to the nearest one.
+  expect(loops.best.offsetMm).toBe(firstWhole(loops.profile))
+  expect(loops.profile.filter((l) => l.uncoveredMm === 0).length).toBeGreaterThan(1)
   // The loop at the pad extent itself crosses the voids; that is the 0.593 the first version reported as the pour.
   const inner = loops.profile[0]
   expect(inner?.offsetMm).toBe(0)
@@ -54,6 +64,7 @@ test("a deeper void - what a larger clearance cuts - still leaves a loop in the 
   const loops = continuityOf(fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": [RECTANGLE] }, spokes: FOUR, voidMm: 1.2 }))
   expect(loops.best.coveredFraction).toBe(1)
   expect(loops.best.offsetMm).toBeGreaterThanOrEqual(1.25)
+  expect(loops.best.offsetMm).toBe(firstWhole(loops.profile))
   expect(loops.profile[0]?.coveredFraction).toBeLessThan(0.9)
 })
 

@@ -116,15 +116,17 @@ test("a ground via in fill on two layers links the polygons it sits in; a via in
 test("a via links only the layers it pierces: a blind via does not reach a pour deeper in the stack", () => {
   const layers = (from: string, to: string): string =>
     `\t(via (at 45 10) (size 0.8) (drill 0.4) (layers "${from}" "${to}") (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))`
-  // F.Cu split (polygons 0 and 1), In2.Cu solid (polygon 2), In1.Cu and B.Cu not poured; the board declares B.Cu before the inner layers.
+  // F.Cu split (polygons 0 and 1), In2.Cu solid (2) and B.Cu solid (3), In1.Cu not poured; the board declares B.Cu BEFORE the
+  // inner layers, so a stack read in declared order would put B.Cu inside any span that ends on an inner layer.
   const fixture = (via: string) =>
-    fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "In2.Cu": [RECTANGLE] }, innerLayers: true, extraZones: [via], padType: "smd" })
+    fixtureBoard({ place: OPEN_PLACE, pour: { "F.Cu": SPLIT, "In2.Cu": [RECTANGLE], "B.Cu": [RECTANGLE] }, innerLayers: true, extraZones: [via], padType: "smd" })
   expect(measure(fixture(layers("F.Cu", "In2.Cu"))).viaLinks).toEqual([{ at: [45, 10], polygons: [1, 2] }])
   expect(measure(fixture(layers("In2.Cu", "F.Cu"))).viaLinks).toEqual([{ at: [45, 10], polygons: [1, 2] }])
+  expect(measure(fixture(layers("F.Cu", "B.Cu"))).viaLinks).toEqual([{ at: [45, 10], polygons: [1, 2, 3] }])
   // Blind F.Cu to In1.Cu stops short of In2.Cu; In1.Cu to B.Cu starts past F.Cu.
   expect(measure(fixture(layers("F.Cu", "In1.Cu"))).viaLinks).toEqual([])
-  expect(measure(fixture(layers("In1.Cu", "B.Cu"))).viaLinks).toEqual([])
+  expect(measure(fixture(layers("In1.Cu", "B.Cu"))).viaLinks).toEqual([{ at: [45, 10], polygons: [2, 3] }])
   // A via written with no layer span is not assumed to go all the way through.
   const spanless = '\t(via (at 45 10) (size 0.8) (drill 0.4) (net "GND") (uuid "eeeeeeee-0000-4000-8000-000000000001"))'
-  expect(refusalOf(() => measure(fixture(spanless))).message).toContain("span")
+  expect(refusalOf(() => measure(fixture(spanless))).message).toContain("no two-layer")
 })
